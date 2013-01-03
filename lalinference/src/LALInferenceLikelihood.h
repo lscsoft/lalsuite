@@ -21,9 +21,15 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef LALInferenceLikelihood_h
+#define LALInferenceLikelihood_h
+
+#include <lal/LALInference.h>
 
 /**
- * \file LALInferenceLikelihood.h
+ * \defgroup LALInferenceLikelihood_h Header LALInferenceLikelihood.h
+ * \ingroup pkg_LALInference
+ *
  * \brief Header file for likelihood functions used by LALInference codes
  *
  * LALInferenceLikelihood contains all the necessary routines to compute the likelihood 
@@ -48,13 +54,7 @@
  * Note that the likelihood is reported unnormalised.
  * 
  */
-
-
-
-#ifndef LALInferenceLikelihood_h
-#define LALInferenceLikelihood_h
-
-#include <lal/LALInference.h>
+/*@{*/
 
 /***********************************************************//**
  * (log-) likelihood function.                                 
@@ -277,5 +277,7 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
 REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
                                           LALInferenceIFOData *data,
                                           LALInferenceTemplateFunction *template);
+
+/*@}*/
 
 #endif

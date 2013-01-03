@@ -162,7 +162,7 @@ static void ReadClusterInfo( LALStatus *, FSTClustInfoPair *, FSTUserInput * );
 /*! Read frequency, Fa Fb from files and store them in FSTFstatPair */
 static void ReadData( LALStatus *, FSTFstatPair *, FSTUserInput * );
 /*! Compute Veto statistic */
-static void ComputeVetoStatistic( LALStatus *, 
+static void ComputeVetoStatistic( LALStatus *,                    /*!< LAL status pointer */
 				  FSTFVetoStat *,                 /*!< output veto statistic and degrees of freedom. */ 
 				  FSTFstatPair *FaFbPair,         /*!< input Fa Fb of observed data and veto signal. */
 				  FSTClustInfoPair *clustInfoPair /*!< input cluster information of observed data and veto signal. */);
@@ -338,7 +338,7 @@ INT4 main(INT4 argc, CHAR ** argv)
 /*                                                                 */
 /*-----------------------------------------------------------------*/
 static void 
-HandleComArg( LALStatus *status, 
+HandleComArg( LALStatus *status, /*!< LAL status pointer */
 	      FSTUserInput *cla, /*!< output */ 
 	      INT4 argc,      /*!< input */
 	      CHAR *argv[]    /*!< input */) 
@@ -400,7 +400,7 @@ HandleComArg( LALStatus *status,
 /* ShowHelp                                                        */
 /*-----------------------------------------------------------------*/
 static void 
-showHelp( LALStatus *status, 
+showHelp( LALStatus *status, /*!< LAL status pointer */
 	  FSTUserInput *cla /*!< input */) 
 {
   INITSTATUS(status);
@@ -446,7 +446,7 @@ showHelp( LALStatus *status,
 /* Read file header information into FSTClusterInfoPair            */
 /*-----------------------------------------------------------------*/
 static void 
-ReadClusterInfo( LALStatus *status, 
+ReadClusterInfo( LALStatus *status, /*!< LAL status pointer */
 		 FSTClustInfoPair *clustInfoPair, /*!< output */
 		 FSTUserInput *cla /*!< input */)
 { 
@@ -623,7 +623,7 @@ ReadClusterInfo( LALStatus *status,
 /* Compute Veto statistic                                          */
 /*-----------------------------------------------------------------*/
 static void 
-ComputeVetoStatistic( LALStatus *status, 
+ComputeVetoStatistic( LALStatus *status, /*!< LAL status pointer */
 		      FSTFVetoStat *vetoStatistic, /*!< output */
 		      FSTFstatPair *FaFbPair, /*!< input */
 		      FSTClustInfoPair *clustInfoPair /*!< input */)
@@ -755,7 +755,7 @@ ComputeVetoStatistic( LALStatus *status,
 /*   Find local maxima of cluster                                  */                                                                    
 /*-----------------------------------------------------------------*/
 static void 
-SummitFinder( LALStatus *status, 
+SummitFinder( LALStatus *status, /*!< LAL status pointer */
 	      REAL8Vector *searchFreq, /*!<  output. Memory must be pre-allocated */
 	      FSTFstatPair *FaFbPair,  /*!<  input */
 	      REAL8 *threshold /*!< input */)
@@ -792,7 +792,7 @@ SummitFinder( LALStatus *status,
 /* local maxima of veto (test) signal                              */   
 /*-----------------------------------------------------------------*/
 static void 
-ShiftData( LALStatus *status, 
+ShiftData( LALStatus *status, /*!< LAL status pointer */
 	   FSTClustInfo *TestCI, /*!< input/output */
 	   REAL8 *searchFreq     /*!< input */)
 {
@@ -956,7 +956,7 @@ static REAL8 myRound( REAL8 x )
 /* Read frequency, Fa Fb from files and store them in FSTFstatPair */
 /*-----------------------------------------------------------------*/
 static void 
-ReadData( LALStatus *status, 
+ReadData( LALStatus *status, /*!< LAL status pointer */
 	  FSTFstatPair *FaFbPair, /*!< output. Memory must be pre-allocated.  */
 	  FSTUserInput *cla       /*!< input = filenames */)
 {
@@ -1048,7 +1048,7 @@ ReadData( LALStatus *status,
 /* Compute veto statistic                                          */ 
 /*-----------------------------------------------------------------*/
 static void 
-ComputeVetoStatisticCore( LALStatus *status, 
+ComputeVetoStatisticCore( LALStatus *status, /*!< LAL status pointer */
 			  REAL8 *vetoStatistic, /*!< outputs */
 			  FSTFstatPair *FaFbPair,  /*!< inputs */
 			  FSTControlParameters *CP   /*!< parameters */)
@@ -1178,7 +1178,7 @@ ComputeVetoStatisticCore( LALStatus *status,
  * AUTHOR: Yousuke Itoh                     
  *-----------------------------------------------------------------*/
 static void 
-LALChi2CDFP( LALStatus *status, 
+LALChi2CDFP( LALStatus *status, /*!< LAL status pointer */
 	     REAL8 *cdfp, /*!< output chi-square cumulative probability */
 	     const REAL8 *data, /*!< input sample data */ 
 	     const REAL8 *dof /*!< input Degrees of freedom  */)

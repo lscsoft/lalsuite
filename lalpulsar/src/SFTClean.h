@@ -16,16 +16,19 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef _SFTCLEAN_H
+#define _SFTCLEAN_H
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 /**
+ * \defgroup SFTClean_h Header SFTClean.h
+ * \ingroup pkg_SFTIO
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
- * \file SFTClean.h
+ *
  * \brief Header file for cleaning routines
-\ingroup pulsarTODO
-
-\heading{Header \ref SFTClean.h}
-\latexonly\label{s_SFTClean_h}\endlatexonly
 
 Routines for cleaning SFT files using known spectral disturbances.
 
@@ -43,19 +46,12 @@ them to clean SFT data
  Test program. %%
 
 */
-
+/*@{*/
 
 /* REVISIONS: */
 /* 09/09/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT. Thus only need to */
 /*               initialze RandomParams *randPar once and avoid repeatly opening /dev/urandom.  */
 
-/*
- * 4.  Protection against double inclusion (include-loop protection)
- *     Note the naming convention!
- */
-
-#ifndef _SFTCLEAN_H
-#define _SFTCLEAN_H
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately
@@ -86,21 +82,14 @@ them to clean SFT data
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_sort.h>
-/*
- *   Protection against C++ name mangling
- */
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
 
 /*
  * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
 
-/**\name Error Codes */ /*@{*/
-
+/**\name Error Codes */
+/*@{*/
 #define SFTCLEANH_ENULL 1
 #define SFTCLEANH_EFILE 2
 #define SFTCLEANH_EHEADER 3
@@ -120,8 +109,6 @@ extern "C" {
 #define SFTCLEANH_MSGESEEK "fseek failed"
 #define SFTCLEANH_MSGEREAD "fread failed"
 #define SFTCLEANH_MSGEWRITE "fwrite failed"
-
-
 /*@}*/
 
 
@@ -246,16 +233,10 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,
 					  RandomParams     *randPar);
 
 
+/*@}*/
+
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif
 
 #endif     /* Close double-include protection _SFTCLEAN_H */
-
-
-
-
-
-
-
-

@@ -16,11 +16,20 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#ifndef _LALDEMOD_H
+#define _LALDEMOD_H
+
+#include <lal/LALDatatypes.h>
+#include <lal/LALComputeAM.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
+\defgroup LALDemod_h  Header LALDemod.h
+\ingroup pkg_pulsarCoh
 \author Berukoff, S.J., Papa, M.A.
-\file
-\ingroup pulsarTODO
 
 \brief Computes a demodulated transform.
 
@@ -162,31 +171,20 @@ of the individual "filters" \f$F_a\f$ and \f$F_b\f$, depending on the
 <dt><tt>COMPLEX16 *Fa</tt></dt><dd> Results of match filter with \f$a(t)\f$.</dd>
 <dt><tt>COMPLEX16 *Fb</tt></dt><dd> Results of match filter with \f$b(t)\f$.</dd>
 </dl>
-
 */
+/*@{*/
 
-
-#ifndef _LALDEMOD_H
-#define _LALDEMOD_H
-
-#include <lal/LALDatatypes.h>
-#include <lal/LALComputeAM.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- \name Error Codes */ /*@{*/
-#define LALDEMODH_ENULL 		1
-
-#define LALDEMODH_MSGENULL 	"Arguments contained an unexpected null pointer"
-
+/** \name Error Codes */
+/*@{*/
+#define LALDEMODH_ENULL 		1	/**< Arguments contained an unexpected null pointer */
 /*@}*/
+/** \cond DONT_DOXYGEN */
+#define LALDEMODH_MSGENULL 	"Arguments contained an unexpected null pointer"
+/** \endcond */
 
 #define SMALL	0.000000001
 
-/* PARAMETERS */
+/** PARAMETERS */
 typedef struct tagDemodPar {
   INT4		spinDwnOrder;	/* Maximum order of spdwn parameter */
   REAL8		*skyConst;	/* Constants computed in ComputeSky.c */
@@ -225,6 +223,8 @@ typedef struct tagFFT
 
 void LALDemod (LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params);
 void LALDemodFAST (LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params);
+
+/*@}*/
 
 #ifdef __cplusplus
 }

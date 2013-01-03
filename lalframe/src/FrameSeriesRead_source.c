@@ -21,7 +21,7 @@
 
 
 int XFSFUNC ( FSTYPE *series, FrStream *stream )
-{ 
+{
   struct FrVect	*vect;
 
   if ( stream->state & LAL_FR_ERR )
@@ -74,7 +74,7 @@ FSFUNC (
     FrChanIn		*chanin,
     FrStream		*stream
     )
-{ 
+{
   struct FrVect	*vect;
   INITSTATUS(status);
 
@@ -371,7 +371,7 @@ FUNC (
     FrChanIn		*chanin,
     FrStream		*stream
     )
-{ 
+{
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
   UINT4		 need;
@@ -585,7 +585,7 @@ FUNCM (
     FrChanIn		*chanin,
     FrStream		*stream
     )
-{ 
+{
   void *sequence;
 
   INITSTATUS(status);

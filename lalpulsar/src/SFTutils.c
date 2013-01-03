@@ -17,16 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Reinhard Prix, Badri Krishnan, John T. Whelan
- * \date 2005, 2007
- * \file
- * \ingroup SFTfileIO
- * \brief Utility functions for handling of SFTtype and SFTVector's.
- *
- *
- */
-
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>
 

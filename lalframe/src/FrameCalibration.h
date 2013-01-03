@@ -16,12 +16,23 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#include <lal/LALDatatypes.h>
+#include <lal/Calibration.h>
+#include <lal/FrameCache.h>
+#ifndef _FRAMECALIBRATION_H
+#define _FRAMECALIBRATION_H
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 /**
- * \author Brown, D. A.
- * \file
+ * \defgroup FrameCalibration_h Header FrameCalibration.h
+ * \ingroup pkg_framedata
  *
- * \heading{Header \ref FrameCalibration.h}
+ * \author Brown, D. A.
  *
  * High-level routines for exctracting calibration data from frames
  *
@@ -34,18 +45,7 @@
  * functions from raw calibration data provided by the calibration team.
  *
 */
-
-#include <lal/LALDatatypes.h>
-#include <lal/Calibration.h>
-#include <lal/FrameCache.h>
-#ifndef _FRAMECALIBRATION_H
-#define _FRAMECALIBRATION_H
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
+/*@{*/
 
 /**
  *
@@ -64,7 +64,8 @@ extern "C" {
  * of the functions used to update the reference calibration.
  *
 */
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define FRAMECALIBRATIONH_ENULL 1
 #define FRAMECALIBRATIONH_ENNUL 2
 #define FRAMECALIBRATIONH_EMCHE 3
@@ -104,6 +105,8 @@ LALCreateCalibFrCache(
     const CHAR         *dirstr,
     const CHAR         *calGlobPattern
     );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

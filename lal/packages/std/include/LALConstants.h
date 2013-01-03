@@ -109,9 +109,9 @@ extern "C" {
 #define LAL_G_SI      6.67259e-11    /**< Gravitational constant, N m^2 kg^-2 */
 #define LAL_H_SI      6.6260755e-34  /**< Planck constant, J s */
 #define LAL_HBAR_SI   1.0545726691251019773669079307477023e-34 /**< Reduced Planck constant, J s.  = LAL_H_SI / LAL_TWOPI */
-#define LAL_MPL_SI    2.1767140835297016797409334934257335e-8  /**< Planck mass, kg.  = \sqrt{LAL_HBAR_SI * LAL_C_SI / LAL_G_SI} */
-#define LAL_LPL_SI    1.6160486159348859434398861412879278e-35 /**< Planck length, m.  = \sqrt{LAL_HBAR_SI * LAL_G_SI / LAL_C_SI^3} */
-#define LAL_TPL_SI    5.3905579437054615411301846068720240e-44 /**< Planck time, s.  = \sqrt{LAL_HBAR_SI * LAL_G_SI / LAL_C_SI^5} */
+#define LAL_MPL_SI    2.1767140835297016797409334934257335e-8  /**< Planck mass, kg.  = sqrt{LAL_HBAR_SI * LAL_C_SI / LAL_G_SI} */
+#define LAL_LPL_SI    1.6160486159348859434398861412879278e-35 /**< Planck length, m.  = sqrt{LAL_HBAR_SI * LAL_G_SI / LAL_C_SI^3} */
+#define LAL_TPL_SI    5.3905579437054615411301846068720240e-44 /**< Planck time, s.  = sqrt{LAL_HBAR_SI * LAL_G_SI / LAL_C_SI^5} */
 #define LAL_K_SI      1.380658e-23   /**< Boltzmann constant, J K^-1 */
 #define LAL_R_SI      8.314511       /**< Ideal gas constant, J K^-1 */
 #define LAL_MOL       6.0221367e23   /**< Avogadro constant, dimensionless */

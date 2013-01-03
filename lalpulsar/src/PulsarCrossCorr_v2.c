@@ -17,15 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author John Whelan, Shane Larson, Badri Krishnan
- * \date 2012
- * \file
- * \ingroup pulsarTODO
- * \brief XLAL routines for v2 CW cross-correlation searches
- *
- */
-
 #include <lal/PulsarCrossCorr_v2.h>
 
 #define SQUARE(x) ((x)*(x))
@@ -40,7 +31,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    UINT4               numBins,       /**< Number of frequency bins to use */
    PulsarDopplerParams *dopp,         /**< Doppler parameters for signal */
    LIGOTimeGPSVector   *timestamps,   /**< List of SFT timestamps */
-   REAL8VectorSequence *vByC          /**< List of dimensionless detector velocities*/ 
+   REAL8VectorSequence *vByC          /**< List of dimensionless detector velocities*/
   )
 {
   UINT8 numSFTs;

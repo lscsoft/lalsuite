@@ -48,7 +48,7 @@
  * 
  * e.g.
  *
- * \tilde{h}_{l,m}(t) = D^l_{m,m'} h_{l,m'}(t)
+ * \f$\tilde{h}_{l,m}(t) = D^l_{m,m'} h_{l,m'}(t)\f$
  */
 int XLALSimInspiralPrecessionRotateModes(
                 SphHarmTimeSeries* h_lm, /**< spherical harmonic decomposed modes, modified in place */

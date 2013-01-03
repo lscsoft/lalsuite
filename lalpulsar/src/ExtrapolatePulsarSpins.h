@@ -16,9 +16,19 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef _EXTRAPOLATEPULSARSPINS_H  /* Double-include protection. */
+#define _EXTRAPOLATEPULSARSPINS_H
 
-/** \defgroup ExtrapolatePulsarSpins Extrapolate Pulsar Spins and Phase
- *  \ingroup pulsarTODO
+#include <lal/PulsarDataTypes.h>
+#include <lal/AVFactories.h>
+
+#ifdef  __cplusplus   /* C++ protection. */
+extern "C" {
+#endif
+
+/**
+ * \defgroup ExtrapolatePulsarSpins_h Header ExtrapolatePulsarSpins.h
+ * \ingroup pkg_pulsarCommon
  *  \author Reinhard Prix
  *  \brief  Extrapolate the Pulsar spin-paramters
  *  \f$\{f^{(k)}\}\equiv\{f, \stackrel{.}{f},\ddot{f},...\}\f$, and "spin-ranges"
@@ -70,29 +80,14 @@
  * This function is used in LALEstimatePulsarAmplitudeParams() to propagate the estimated initial phase
  * from the internal reference time back to the user-input reference time.
  */
-
-/** \file
- * \ingroup ExtrapolatePulsarSpins
- * \author Reinhard Prix
- * \brief Contains prototype for XLALExtrapolatePulsarSpins().
- */
-
-#ifndef _EXTRAPOLATEPULSARSPINS_H  /* Double-include protection. */
-#define _EXTRAPOLATEPULSARSPINS_H
-
-#include <lal/PulsarDataTypes.h>
-#include <lal/AVFactories.h>
-
-#ifdef  __cplusplus   /* C++ protection. */
-extern "C" {
-#endif
+/*@{*/
 
 /*---------- exported INCLUDES ----------*/
 
 /*---------- exported DEFINES ----------*/
 
-/*----- Error-codes -----*/
-
+/** \name Error-codes */
+/*@{*/
 #define EXTRAPOLATEPULSARSPINS_ENULL 		1
 #define EXTRAPOLATEPULSARSPINS_ENONULL		2
 #define EXTRAPOLATEPULSARSPINS_EMEM		3
@@ -108,6 +103,7 @@ extern "C" {
 #define EXTRAPOLATEPULSARSPINS_MSGELIST		"Error occurred in list-handling ..."
 #define EXTRAPOLATEPULSARSPINS_MSGEXLAL		"(X)LAL sub-routine failed"
 #define EXTRAPOLATEPULSARSPINS_MSGENUMSPINS	"Inconsistent number of spins"
+/*@}*/
 
 /*---------- exported TYPES ----------*/
 
@@ -121,6 +117,8 @@ void LALExtrapolatePulsarSpins (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS epo
 void LALExtrapolatePulsarPhase (LALStatus *, REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1, REAL8 phi0, LIGOTimeGPS epoch0 );
 
 int XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut, const PulsarSpins fkdotIn, REAL8 DeltaTau );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

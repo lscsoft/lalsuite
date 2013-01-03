@@ -17,11 +17,21 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _STACKMETRIC_H
+#define _STACKMETRIC_H
+
+#include <lal/LALStdlib.h>
+#include <lal/PulsarTimes.h>
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 /**
- * \defgroup StackMetric_h StackMetric
+ * \defgroup StackMetric_h Header StackMetric.h
  * \author Creighton, T. D.
  * \date 2000 -- 2003
- * \ingroup PulsarMetric
+ * \ingroup pkg_pulsarMetric
  * \brief Provides routines to compute parameter-space metrics for coherent or stacked pulsar searches.
  *
  * \heading{Synopsis}
@@ -108,20 +118,10 @@
  \f$\gamma_{ij}\f$ will \em overestimate the detection scheme's
  sensitivity to the ``shape'' parameters.
 */
-
-#ifndef _STACKMETRIC_H
-#define _STACKMETRIC_H
-
-#include <lal/LALStdlib.h>
-#include <lal/PulsarTimes.h>
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
+/*@{*/
 
 /** \name Error conditions */
 /*@{*/
-/** \ingroup StackMetric_h */
 #define STACKMETRICH_ENUL 1
 #define STACKMETRICH_EBAD 2
 
@@ -130,7 +130,6 @@ extern "C" {
 /*@}*/
 
 /** \brief This structure stores and passes parameters for computing a parameter-space metric.
-    \ingroup StackMetric_h
     It points to the canonical time function used
     to compute the metric and to the parameters required by this function.
     In addition, this structure must indicate the timespan over which the
@@ -162,6 +161,8 @@ LALStackMetric( LALStatus *,
 
 void
 LALProjectMetric( LALStatus *, REAL8Vector *metric, BOOLEAN errors );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

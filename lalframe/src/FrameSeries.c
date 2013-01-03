@@ -19,7 +19,8 @@
 
 /**
  * \author Jolien D. E. Creighton
- * \file
+ * \defgroup FrameSeries_c Module FrameSeries.c
+ * \ingroup pkg_framedata
  *
  * \heading{Module \ref FrameSeries.c}
  *
@@ -62,7 +63,7 @@
  * before the start of the data, and duration is the number of seconds between
  * value of GPS-seconds and the GPS end time of the data, rounded up.
  */
-
+/*@{*/
 
 int rename( const char *from, const char *to );
 
@@ -816,3 +817,5 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 #undef TYPE
 #undef FRTYPE
 #undef FRDATA
+
+/*@}*/

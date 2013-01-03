@@ -457,7 +457,6 @@ main(int argc, char *argv[])
 	  SFTVector noise;
 
 	  sftParams.Tsft = uvar_Tsft;
-	  sftParams.make_v2SFTs = 1;
 
 	  switch (uvar_generationMode)
 	    {

@@ -620,8 +620,6 @@ int main(int argc, char *argv[]){
  
   sftParams.Tsft = timeBase;
   sftParams.noiseSFTs = NULL;       
-  sftParams.make_v2SFTs = 1;	/* UPGRADING switch: should be set to 1 to avoid
-  					  verbose complaints. */
   
   params.orbit = NULL;
   /* params.transferFunction = NULL; */

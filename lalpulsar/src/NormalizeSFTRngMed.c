@@ -18,9 +18,13 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <lal/NormalizeSFTRngMed.h>
+
+static const LALStatus empty_LALStatus;
+
 /**
- * \file
- * \ingroup pulsarCommon
+ * \addtogroup NormalizeSFTRngMed_h
  * \author Badri Krishnan and Alicia Sintes
  * \brief Normalizes SFTs based on their noise floor calculated using the running median
  *
@@ -63,11 +67,6 @@ of SFT vectors and also returns a collection of power-estimates for these vector
 the Running median method.
 
 */
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/NormalizeSFTRngMed.h>
-
-static const LALStatus empty_LALStatus;
 
 /** Normalize an sft based on RngMed estimated PSD, and returns running-median.
  */

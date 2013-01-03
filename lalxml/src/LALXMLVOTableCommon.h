@@ -16,13 +16,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
-/**
- * \file
- * \ingroup XML
- * \brief Header file declaring the public common VOTable XML API
- */
-
 /* Double-include protection */
 #ifndef _LALXMLVOTABLECOMMON_H
 #define _LALXMLVOTABLECOMMON_H
@@ -31,6 +24,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * \defgroup LALXMLVOTableCommon_h Header LALXMLVOTableCommon.h
+ * \ingroup pkg_XML
+ * \brief Header file declaring the public common VOTable XML API
+ */
+/*@{*/
 
 /* ---------- exported includes ---------- */
 #include <libxml/tree.h>
@@ -219,6 +219,8 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
                          UINT4 arrayIndex		/**< [in] index of element to write: arrayPtr[index] */
                          );
 
+
+/*@}*/
 
 /* C++ protection */
 #ifdef  __cplusplus

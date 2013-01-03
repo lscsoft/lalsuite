@@ -16,14 +16,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
-
-/**
- * \file
- * \ingroup XML
- * \brief Header file declaring the public VOTable serializers XML LALInference API
- */
-
 /* Double-include protection */
 #ifndef _LALXMLVOTABLESERIALIZERLALINFERENCE_H
 #define _LALXMLVOTABLESERIALIZERSLALINFERENCE_H
@@ -32,6 +24,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * \defgroup LALInferenceXML_h Header LALInferenceXML.h
+ * \ingroup pkg_XML
+ * \brief Header file declaring the public VOTable serializers XML LALInference API
+ */
+/*@{*/
 
 /*#include <libxml/tree.h>
 #include <libxml/xpath.h>
@@ -58,14 +57,7 @@ VOTABLE_DATATYPE LALInferenceVariableType2VOT(const LALInferenceVariableType lit
 
 xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varitem);
 
-
-
-
-
-
-
-
-
+/*@}*/
 
 /* C++ protection */
 #ifdef __cplusplus

@@ -20,7 +20,7 @@
 /**
 \author Mendell, Greg A.
 \file
-\ingroup pulsarTODO
+\ingroup FoldAmplitudes_h
 
 \heading{Program \ref FoldAmplitudesTest.c}
 
@@ -44,26 +44,24 @@ FoldAmplitudesTest
 LALFoldAmplitudes()
 \endcode
 
-\heading{Notes}
-
-
 */
 
-/******* INCLUDE STANDARD LIBRARY HEADERS; ************/
+/* ****** INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
 #include <math.h>
 
-/******* INCLUDE ANY LDAS LIBRARY HEADERS ************/
+/* ****** INCLUDE ANY LDAS LIBRARY HEADERS ************/
 
-/******* INCLUDE ANY LAL HEADERS ************/
+/* ****** INCLUDE ANY LAL HEADERS ************/
 #include <lal/LALStdlib.h>
 #include <lal/FoldAmplitudes.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 
-/******* DEFINE LOCAL CONSTANTS AND MACROS ************/
+/* ****** DEFINE LOCAL CONSTANTS AND MACROS ************/
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define FOLDAMPLITUDESTESTC_ENOM 0
 #define FOLDAMPLITUDESTESTC_ECHK 1
 #define FOLDAMPLITUDESTESTC_EFLS 2
@@ -81,8 +79,9 @@ LALFoldAmplitudes()
 #define FOLDAMPLITUDESTESTC_NUMBINS  	        10
 #define FOLDAMPLITUDESTESTC_FREQ      		33.2
 #define FOLDAMPLITUDESTESTC_FREQDOT  		2.5
-/******* DECLARE AND SET GLOBAL lalDebugLevel ************/
+/* ****** DECLARE AND SET GLOBAL lalDebugLevel ************/
 
+/** \cond DONT_DOXYGEN */
 extern int lalDebugLevel;
 
 /* See the section (currently 7.4.1) of the LSD
@@ -124,7 +123,7 @@ int main( void )
   LALSCreateVector( &status, &badinput.amplitudeVec, FOLDAMPLITUDESTESTC_LENGTH  );
   LALSCreateVector( &status, &output, FOLDAMPLITUDESTESTC_NUMBINS );
 
-  /*******  TEST RESPONSE TO INVALID DATA  ************/
+  /* ******  TEST RESPONSE TO INVALID DATA  ************/
 
   /* Test that all the error conditions are correctly detected by the function */
 
@@ -220,7 +219,7 @@ int main( void )
   }
 #endif /* LAL_NDEBUG */
 
-  /*******  TEST RESPONSE TO VALID DATA  ************/
+  /* ******  TEST RESPONSE TO VALID DATA  ************/
 
   /* Test that valid data generate the correct answers */
 
@@ -548,7 +547,7 @@ int main( void )
 
   /* some check on the contents of output */
 
-  /*******  CLEAN UP  ************/
+  /* ******  CLEAN UP  ************/
   LALSDestroyVector( &status, &input.phaseVec );
   LALSDestroyVector( &status, &input.amplitudeVec );
   LALSDestroyVector( &status, &badinput.phaseVec );
@@ -563,3 +562,4 @@ int main( void )
 
   return FOLDAMPLITUDESTESTC_ENOM;
 }
+/** \endcond */

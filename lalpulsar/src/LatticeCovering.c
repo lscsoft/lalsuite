@@ -20,8 +20,7 @@
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file
- * \ingroup moduleLatticeCovering
+ * \addtogroup LatticeCovering_h
  * \brief Functions for covering metric parameter-spaces with a lattice.
  *
  *

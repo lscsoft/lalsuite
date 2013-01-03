@@ -16,13 +16,20 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#ifndef _FOLDAMPLITUDES_H
+#define _FOLDAMPLITUDES_H
+
+#include <lal/LALStdlib.h>
+/* ****** INCLUDE ANY OTHER LAL HEADERS needed for header (NOT module) *** */
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 /**
 \author Mendell, Greg A.
-\file
-\ingroup pulsarTODO
-
-\heading{Header \ref FoldAmplitudes.h}
+\defgroup FoldAmplitudes_h Header FoldAmplitudes.h
+\ingroup pkg_pulsarFold
 
 \heading{Synopsis}
 
@@ -40,9 +47,6 @@ function LALFoldAmplitudes
 
 %[Generic documentation on the header; this is the main place to
 %document any stuff not specific to the module]
-
-\heading{Error conditions}
-
 
 \heading{Structures}
 
@@ -70,19 +74,10 @@ typedef struct tagFoldAmplitudesParams
 \endcode
 
 */
+/*@{*/
 
-#ifndef _FOLDAMPLITUDES_H
-#define _FOLDAMPLITUDES_H
-
-#include <lal/LALStdlib.h>
-/******* INCLUDE ANY OTHER LAL HEADERS needed for header (NOT module) ****/
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/**\name Error Codes */ /*@{*/
-
+/**\name Error Codes */
+/*@{*/
 #define FOLDAMPLITUDESH_ENULLP        	1
 #define FOLDAMPLITUDESH_EVECSIZE   	2
 #define FOLDAMPLITUDESH_ENUMBINS        3
@@ -94,12 +89,11 @@ extern "C" {
 #define FOLDAMPLITUDESH_MSGENUMBINS     "Number of bins was less than 1!"
 #define FOLDAMPLITUDESH_MSGEBINSIZE     "Bin max was less than bin min!"
 #define FOLDAMPLITUDESH_MSGEBINMIN      "Bin min was not zero; nonzero bin min has not yet been implemented!"
-
 /*@}*/
 
-/****** DEFINE OTHER GLOBAL CONSTANTS OR MACROS ************/
+/* ***** DEFINE OTHER GLOBAL CONSTANTS OR MACROS *********** */
 
-/****** DEFINE NEW STRUCTURES AND TYPES ************/
+/* ***** DEFINE NEW STRUCTURES AND TYPES *********** */
 
 typedef struct tagFoldAmplitudesInput
 {
@@ -135,6 +129,8 @@ LALFoldAmplitudes( LALStatus                      *status,
 		     REAL4Vector         	  *output,
 		     const FoldAmplitudesInput    *input,
 		     const FoldAmplitudesParams   *params );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

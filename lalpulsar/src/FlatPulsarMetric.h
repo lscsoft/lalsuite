@@ -17,16 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Reinhard Prix
- * \date 2005
- * \file
- * \ingroup PulsarMetric
- * \brief Header-file defining the API for the flat pulsar-metric functions.
- *
- *
- */
-
 #ifndef _FLATPULSARMETRIC_H  /* Double-include protection. */
 #define _FLATPULSARMETRIC_H
 
@@ -34,6 +24,16 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+/**
+ * \defgroup FlatPulsarMetric_h Header FlatPulsarMetric.h
+ * \ingroup pkg_pulsarMetric
+ * \author Reinhard Prix
+ * \date 2005
+ * \brief Header-file defining the API for the flat pulsar-metric functions.
+ *
+ */
+/*@{*/
 
 /*---------- INCLUDES ----------*/
 #include <gsl/gsl_block.h>
@@ -51,7 +51,8 @@ extern "C" {
 #define SIN_EPS		0.3977771557	/**< sin(LAL_IEARTH) */
 #define COS_EPS		0.9174820622	/**< cos(LAL_IEARTH) */
 
-/*----- Error-codes -----*/
+/** \name Error-codes */
+/*@{*/
 #define FLATPULSARMETRIC_ENULL 		1
 #define FLATPULSARMETRIC_ENONULL	2
 #define FLATPULSARMETRIC_EMEM		3
@@ -65,6 +66,7 @@ extern "C" {
 #define FLATPULSARMETRIC_MSGEINPUT	"Invald input parameter"
 #define FLATPULSARMETRIC_MSGELIST	"Error occurred in list-handling ..."
 #define FLATPULSARMETRIC_MSGEFUNC	"Sub-routine failed"
+/*@}*/
 
 /*---------- exported types ----------*/
 
@@ -74,6 +76,8 @@ extern "C" {
 int XLALFlatMetricCW ( gsl_matrix *gij, LIGOTimeGPS refTime, LIGOTimeGPS startTime, REAL8 Tspan, const EphemerisData *edat );
 
 void LALFlatPulsarMetric ( LALStatus *, REAL8Vector **metric, LIGOTimeGPS startTime, REAL8 duration, const LALDetector *site);
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

@@ -146,7 +146,7 @@ bool XLALSimInspiralTestGRParamExists(
 
 /** Function that prints the whole test GR params linked list */
 int XLALSimInspiralPrintTestGRParam(
-        FILE *fp, 			/** FILE pointer to write to */
+        FILE *fp, 			/**< FILE pointer to write to */
         LALSimInspiralTestGRParam *parameter 	/**< Linked list to print */
         )
 {

@@ -16,15 +16,6 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 // MA  02111-1307  USA
 //
-
-///
-/// \addtogroup FlatLatticeTiling_h
-/// \author Karl Wette
-/// \brief Lattice-based template generation for flat metric parameter spaces
-///
-
-/// @{
-
 #ifndef _FLATLATTICETILING_H
 #define _FLATLATTICETILING_H
 
@@ -40,6 +31,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+///
+/// \addtogroup FlatLatticeTiling_h
+/// \author Karl Wette
+/// \brief Lattice-based template generation for flat metric parameter spaces
+///
+/// @{
 
 ///
 /// Flat lattice tiling bound function
@@ -243,10 +241,10 @@ int XLALSetFlatLatticeEllipticalBounds(
   const double y_semi		///< [in] Length of Y semi-diameter
   );
 
+/// @}
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
-/// @}

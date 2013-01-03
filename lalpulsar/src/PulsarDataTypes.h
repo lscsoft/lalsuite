@@ -20,6 +20,26 @@
 #ifndef _PULSARDATATYPES_H  /* Double-include protection. */
 #define _PULSARDATATYPES_H
 
+/* C++ protection. */
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+/**
+ * \author Reinhard Prix
+ * \date 2005
+ * \defgroup PulsarDataTypes_h Header PulsarDataTypes.h
+ * \ingroup pkg_pulsarCommon
+ * \brief Some common useful data-types for pulsar-searches.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/PulsarDataTypes.h>
+ * \endcode
+ *
+ */
+/*@{*/
+
 #include <gsl/gsl_matrix.h>
 
 #include <lal/LALDatatypes.h>
@@ -29,25 +49,6 @@
 #include <lal/LALBarycenter.h>
 
 #include "SFTutils.h"
-
-/* C++ protection. */
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/**
- * \author Reinhard Prix
- * \date 2005
- * \defgroup PulsarDataTypes_h Pulsar Data Types
- * \ingroup pulsarCommon
- * \brief Some common useful data-types for pulsar-searches.
- *
- * \heading{Synopsis}
- * \code
- * #include <lal/PulsarDataTypes.h>
- * \endcode
- *
- */ /*@{*/
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7
@@ -129,11 +130,9 @@ typedef struct tagPulsarSourceParams {
    REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
 } PulsarSourceParams;
 
-/*@}*/
-
 /*---------- Global variables ----------*/
-/** \name empty struct initializers *//* @{ */
-/** \ingroup PulsarDataTypes_h */
+/** \name empty struct initializers */
+/*@{*/
 extern const BinaryOrbitParams empty_BinaryOrbitParams;
 extern const PulsarAmplitudeParams empty_PulsarAmplitudeParams;
 extern const PulsarSpinRange empty_PulsarSpinRange;
@@ -148,6 +147,7 @@ extern const EphemerisData empty_EphemerisData;
 extern const SkyPosition empty_SkyPosition;
 /*@}*/
 
+/*@}*/
 
 #ifdef  __cplusplus
 }

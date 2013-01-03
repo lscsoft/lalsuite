@@ -16,20 +16,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
-/**
-\file
-
-\brief Root finding routines.
-
-\heading{Synopsis}
-\code
-#include <lal/FrameData.h>
-\endcode
-
-Gets IFO_DMRO data from frame files.
-*/
-
 #ifndef _FRAMEDATA_H
 #define _FRAMEDATA_H
 
@@ -39,8 +25,23 @@ Gets IFO_DMRO data from frame files.
 extern "C" {
 #endif
 
-/** \name Error Codes */ /*@{*/
+/**
+ * \defgroup FrameData_h Header FrameData.h
+ * \ingroup pkg_framedata
+ *
+ * \brief Root finding routines.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/FrameData.h>
+ * \endcode
+ *
+ * Gets IFO_DMRO data from frame files.
+ */
+/*@{*/
 
+/** \name Error Codes */
+/*@{*/
 #define FRAMEDATAH_ENULL 1
 #define FRAMEDATAH_ENNUL 2
 #define FRAMEDATAH_EREAD 4
@@ -62,7 +63,6 @@ extern "C" {
 #define FRAMEDATAH_MSGELOHI "No locklo/lockhi data in frame"
 #define FRAMEDATAH_MSGESIZE "Invalid vector length"
 #define FRAMEDATAH_MSGESSSZ "Bad sweptsine calibration data"
-
 /*@}*/
 
 /**
@@ -172,13 +172,7 @@ LALGetFrameDataResponse (
     FrameData               *frameData
     );
 
-
-
-
-
-
-
-
+/*@}*/
 
 #ifdef  __cplusplus
 }

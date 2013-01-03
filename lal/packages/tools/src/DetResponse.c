@@ -98,7 +98,7 @@ void XLALComputeDetAMResponse(
  * scalar polarisation modes of general metric theories of gravity. We follow
  * the convention of [\ref Blaut2012] (this is also equivalent to the
  * Equations in [\ref ABCF2001] and  [\ref Nishizawa2009] in albeit with a
- * rotated set of coordinates), but with [\ref Blaut]'s \f$\theta = \pi/2 -
+ * rotated set of coordinates), but with [\ref Blaut2012]'s \f$\theta = \pi/2 -
  * dec\f$ and \f$\phi = ra-GMST\f$ rather than the gha = gmst - ra used here.
  *
  * The values computed are the tensor mode response, F+ and Fx ("cross"), the

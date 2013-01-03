@@ -16,6 +16,12 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#ifndef _COINCINSPIRALELLIPSOID_H
+#define _COINCINSPIRALELLIPSOID_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 /*-----------------------------------------------------------------------
  *
@@ -27,14 +33,9 @@
  */
 
 /**
- * \defgroup CoincInspiralEllipsoid_h CoincInspiralEllipsoid_h
- * \ingroup inspiral
- */
-
-/**
-\author Robinson, C. A.
-\file
-\ingroup CoincInspiralEllipsoid_h
+ * \defgroup CoincInspiralEllipsoid_h Header CoincInspiralEllipsoid.h
+ * \ingroup ch_inspiral
+ * \author Robinson, C. A.
 
 \brief Provides function definitions for performing inspiral coincidence analysis
 using error ellipsoids.
@@ -44,12 +45,8 @@ using error ellipsoids.
 #include <lal/CoincInspiralEllipsoid.h>
 \endcode
 
-
 */
-
-#ifndef _COINCINSPIRALELLIPSOID_H
-#define _COINCINSPIRALELLIPSOID_H
-
+/*@{*/
 
 #include    <math.h>
 #include    <lal/LALStdlib.h>
@@ -66,10 +63,6 @@ using error ellipsoids.
 #include    <gsl/gsl_matrix.h>
 #include    <gsl/gsl_blas.h>
 #include    <gsl/gsl_linalg.h>
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
 
 /** The \c TriggerErrorList is a linked list used within e-thinca. It
 contains pointers to the \c SnglInspiralTable for a given trigger,
@@ -137,6 +130,8 @@ REAL8 XLALEThincaParameterForInjection(
                     SimInspiralTable  *injection,
                     SnglInspiralTable *trigger
                     );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

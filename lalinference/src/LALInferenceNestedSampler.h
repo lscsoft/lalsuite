@@ -21,24 +21,24 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-
-/**
- * \file LALInferenceNestedSampler.h
- * \brief Nested sampler written for LALInference. Independent of model.
- */
-
 #ifndef LALInferenceNestedSampler_h
 #define LALInferenceNestedSampler_h
 
+#include <lal/LALInference.h>
 
-/** Nested Sampling algorithm defined using the LALInference
+/**
+ * \defgroup LALInferenceNestedSampler_h Header LALInferenceNestedSampler.h
+ * \ingroup pkg_LALInference
+ * \brief Nested sampler written for LALInference. Independent of model.
+ *
+ *
+ * Nested Sampling algorithm defined using the LALInference
  * Infrastructure. This code should be independent of choice
- * of model. Provided are a LALAlgorithm function and a 
+ * of model. Provided are a LALAlgorithm function and a
  * LALEvolveOneStepFunction which implement the evidence
  * calculation
  */
-
-#include <lal/LALInference.h>
+/*@{*/
 
 /* logadd(a,b) = log(exp(a) + exp(b)) using Stirling's approximation */
 /* double logadd(double a,double b); */
@@ -82,5 +82,7 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState );
 
 /** Project the sample in params onto the eigenvectors given in eigenvectors. */
 void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);
-#endif
 
+/*@}*/
+
+#endif

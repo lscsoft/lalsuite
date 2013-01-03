@@ -16,10 +16,23 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#include <lal/LALDatatypes.h>
+#include <lal/FrameCache.h>
+
+#ifndef _FRAMESTREAM_H
+#define _FRAMESTREAM_H
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 /**
+ * \defgroup FrameStream_h Header FrameStream.h
+ * \ingroup pkg_framedata
+ *
  * \author Jolien D. E. Creighton
- * \file
  *
  * \brief Low-level routines for manupulating frame data streams.
  *
@@ -36,20 +49,10 @@
  * similar functions.
  *
 */
+/*@{*/
 
-#include <lal/LALDatatypes.h>
-#include <lal/FrameCache.h>
-
-#ifndef _FRAMESTREAM_H
-#define _FRAMESTREAM_H
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define FRAMESTREAMH_ENULL 00001
 #define FRAMESTREAMH_ENNUL 00002
 #define FRAMESTREAMH_EALOC 00004
@@ -111,6 +114,13 @@ typedef struct tagFrFileInfo
   INT4  t0;
   INT4  dt;
 }
+
+/**
+ *
+ * This structure details the state of the frame stream.  The contents are
+ * private; you should not tamper with them!
+ *
+*/
 FrFileInfo;
 typedef struct tagFrStream
 {
@@ -125,21 +135,6 @@ typedef struct tagFrStream
 }
 FrStream;
 
-/**
- *
- * This structure details the state of the frame stream.  The contents are
- * private; you should not tamper with them!
- *
-*/
-
-typedef struct
-tagFrPos
-{
-  LIGOTimeGPS epoch;
-  UINT4       fnum;
-  INT4        pos;
-}
-FrPos;
 
 /**
  *
@@ -153,6 +148,15 @@ FrPos;
  * </dl>
  *
 */
+typedef struct
+tagFrPos
+{
+  LIGOTimeGPS epoch;
+  UINT4       fnum;
+  INT4        pos;
+}
+FrPos;
+
 typedef enum
 { LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN }
 FrChanType;
@@ -171,6 +175,15 @@ FrChanType;
 */
 
 
+/**
+ *
+ * This structure specifies the channel to read as input.  The fields are:
+ * <dl>
+ * <dt>name</dt><dd> the name of the channel.
+ * </dd><dt>type</dt><dd> the channel type.
+ * </dd></dl>
+ *
+*/
 #ifdef SWIG /* SWIG interface directives */
 %warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrChanIn::name;
 #endif /* SWIG */
@@ -182,32 +195,6 @@ tagFrChanIn
 }
 FrChanIn;
 
-/**
- *
- * This structure specifies the channel to read as input.  The fields are:
- * <dl>
- * <dt>name</dt><dd> the name of the channel.
- * </dd><dt>type</dt><dd> the channel type.
- * </dd></dl>
- *
-*/
-
-
-#ifdef SWIG /* SWIG interface directives */
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrOutPar::source;
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrOutPar::description;
-#endif /* SWIG */
-typedef struct
-tagFrOutPar
-{
-  const CHAR *source;
-  const CHAR *description;
-  ChannelType type;
-  UINT4 nframes;
-  UINT4 frame;
-  UINT4 run;
-}
-FrOutPar;
 
 /**
  *
@@ -227,6 +214,22 @@ FrOutPar;
  * \f$\langle\mbox{duration}\rangle\f$<tt>.gwf</tt>.
  *
 */
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrOutPar::source;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrOutPar::description;
+#endif /* SWIG */
+typedef struct
+tagFrOutPar
+{
+  const CHAR *source;
+  const CHAR *description;
+  ChannelType type;
+  UINT4 nframes;
+  UINT4 frame;
+  UINT4 run;
+}
+FrOutPar;
+
 
 FrStream * XLALFrCacheOpen( FrCache *cache );
 FrStream * XLALFrOpen( const char *dirname, const char *pattern );
@@ -647,6 +650,8 @@ LALFrWriteCOMPLEX16FrequencySeries(
     FrOutPar            *params,
     INT4             subtype
     );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

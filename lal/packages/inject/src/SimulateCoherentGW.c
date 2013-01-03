@@ -133,8 +133,8 @@ is found by interpolating <tt>detector-\>transfer</tt>.  The amplitude of
 the transfer function is multiplied with \f$A_1\f$ and \f$A_2\f$, and the
 phase of the transfer function is added to \f$\phi\f$,</li>
 <li> The plus and cross contributions \f$o_+\f$, \f$o_\times\f$ to the
-detector output are computed as in Eqs.\eqref{eq_quasiperiodic_hplus}
-and \eqref{eq_quasiperiodic_hcross} of \ref SimulateCoherentGW_h, but
+detector output are computed as in Eqs.\eqref{eq_quasiperiodic_hpluscross}
+of \ref SimulateCoherentGW_h, but
 using the response-adjusted amplitudes and phase.</li>
 <li> The final detector response \f$o\f$ is computed as
 \f$o=(o_+F_+)+(o_\times F_\times)\f$.</li>
@@ -168,7 +168,7 @@ A(t_k) = f \times A_{j+1} + (1-f) \times A_j \; .
 
 The major computational hit in this routine comes from computing the
 sine and cosine of the phase angle in
-Eqs.\eqref{eq_quasiperiodic_hplus} and \eqref{eq_quasiperiodic_hcross} of
+Eqs.\eqref{eq_quasiperiodic_hpluscross} of
 \ref SimulateCoherentGW_h.  For better online performance, these can
 be replaced by other (approximate) trig functions.  Presently the code
 uses the native \c libm functions by default, or the function

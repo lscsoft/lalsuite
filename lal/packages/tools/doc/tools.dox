@@ -14,6 +14,7 @@
     \defgroup FrequencySeriesManipulation Frequency Series Manipulation
     \defgroup TimeSeriesManipulation 	Time Series Manipulation
     \defgroup TriggerInterpolation 	Trigger Interpolation
+    \defgroup FlatLatticeTiling_h	Header FlatLatticeTiling.h
     @}
 
 */
