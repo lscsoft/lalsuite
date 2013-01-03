@@ -27,11 +27,6 @@
  * effects of causing the viewing angle to precess about a cone of L around J.
  * The cone currently has a constant opening angle.
  *
- * */
-
-/* Considerations:
- * Don't have full time series for alpha, beta, and gamma unless we have a
- * specific need for it. It's wasteful of memory.
  */
 
 #include <lal/Units.h>
@@ -42,64 +37,32 @@
 #include <lal/LALDatatypes.h>
 #include <lal/SphericalHarmonics.h>
 
-/**
- * Takes in the h_lm spherical harmonic decomposed modes and rotates the modes
- * by Euler angles alpha, beta, and gamma using the Wigner D matricies.
- * 
- * e.g.
- *
- * \f$\tilde{h}_{l,m}(t) = D^l_{m,m'} h_{l,m'}(t)\f$
- */
 int XLALSimInspiralPrecessionRotateModes(
-				SphHarmTimeSeries* h_lm, /**< spherical harmonic decomposed modes, modified in place */
-				REAL8TimeSeries* alpha, /**< alpha Euler angle time series */
-				REAL8TimeSeries* beta, /**< beta Euler angle time series */
-				REAL8TimeSeries* gam /**< gamma Euler angle time series */
+				SphHarmTimeSeries* h_lm,
+				REAL8TimeSeries* alpha,
+				REAL8TimeSeries* beta,
+				REAL8TimeSeries* gam
 );
 
-/**
- * Takes in the l=2, abs(m)=2 decomposed modes as a strain time series and
- * imposes the effect of a constant cone of precession. This is accomplished
- * by taking the axis of the binary rotational plane and rotating the Y_lm
- * such that it appears to "precess" around a fixed J direction.
- * Note that h_2_2 and h_22 are modified in place.
- *
- * Future revisions will change the first two pointers to this:
- * COMPLEX16TimeSeries** h_lm
- *
- * and add 
- * unsigned int l
- *
- * Thus the input h_lm will be considered a list of pointers to the h_lm for a
- * given l and the appropriate action will be taken for *all* of the submodes.
- */
 int XLALSimInspiralConstantPrecessionConeWaveformModes(
-				COMPLEX16TimeSeries** h_2_2, /**< (2,-2) mode, modified in place */
-				COMPLEX16TimeSeries** h_22, /**< (2,2) mode, modified in place */
-				double precess_freq, /**< Precession frequency in Hz */
-				double a, /**< Opening angle of precession cone in rads  */
-				double phi_precess, /**< initial phase in cone of L around J */
-				double alpha_0, /**< azimuth btwn center of cone and line of sight */
-				double beta_0 /**< zenith btwn center of cone and line of sight */
+				COMPLEX16TimeSeries** h_2_2,
+				COMPLEX16TimeSeries** h_22,
+				double precess_freq,
+				double a,
+				double phi_precess,
+				double alpha_0,
+				double beta_0
 );
 
-/**
- * Takes in the l=2, abs(m)=2 decomposed modes as a strain time series and
- * imposes the effect of a constant cone of precession. The result is returned
- * in the physical waveforms hp, hx, after they have been resummed from the 
- * modified h_22 waveforms.
- *
- * NOTE: the modes h_2_2 and h_22 will be modified in place
- */
 int XLALSimInspiralConstantPrecessionConeWaveform(
-				REAL8TimeSeries* hp, /**< Output precessing plus polarization */
-				REAL8TimeSeries* hx, /**< Output precessing cross polarization*/
-				COMPLEX16TimeSeries* h_2_2, /**< Input non-precessing (2,-2) mode - modified in place */
-				COMPLEX16TimeSeries* h_22, /**< Input non-precessing (2,2) mode - modified in place */
-				double precess_freq, /**< Precession frequency in Hz */
-				double a, /**< Opening angle of precession cone in rads  */
-				double phi_precess, /**< initial phase in cone of L around J */
-				double alpha_0, /**< azimuth btwn center of cone and line of sight */
-				double beta_0 /**< zenith btwn center of cone and line of sight */
+				REAL8TimeSeries* hp,
+				REAL8TimeSeries* hx,
+				COMPLEX16TimeSeries* h_2_2,
+				COMPLEX16TimeSeries* h_22,
+				double precess_freq,
+				double a,
+				double phi_precess,
+				double alpha_0,
+				double beta_0
 );
 

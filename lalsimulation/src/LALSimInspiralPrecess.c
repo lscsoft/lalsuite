@@ -17,28 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- *
- * \author Chris Pankow
- *
- * \file
- *
- * \brief Functions to take an arbitrary waveform time series and impose the
- * effects of causing the viewing angle to precess about a cone of L around J.
- * The cone currently has a constant opening angle.
- *
- * */
-
-/* Considerations...
- * 1. Instead of h_lm, have the user give the mode decomposition for a specific
- * l, and provide that l to the function. Then everything proceeds as before
- * with the assumption that the double pointer provided has 2l+1 values to 
- * operate on.
- * 
- * 2. Don't have full time series for alpha, beta, and gamma unless we have a
- * specific need for it. It's wasteful of memory.
- */
-
 #include "LALSimInspiralPrecess.h"
 #include "lal/LALAtomicDatatypes.h"
 
