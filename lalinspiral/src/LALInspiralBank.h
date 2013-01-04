@@ -435,7 +435,7 @@ tagInspiralCoarseBankIn
   FreqCut                       maxFreqCut;	/**< largest upper frequency cutoff to use */
   FreqCut                       minFreqCut;	/**< smallest upper frequency cutoff to use */
 
-  InsidePolygon                 insidePolygon;	/**< UNDOCUMENTED */
+  InsidePolygonEnum             insidePolygon;	/**< UNDOCUMENTED */
   ComputeMoments                computeMoments;	/**< ComputeMoments tells whether to re-compute the moments
                                                  * using an upper limit defined by flso; This is done after
                                                  * the template bank is gnerated

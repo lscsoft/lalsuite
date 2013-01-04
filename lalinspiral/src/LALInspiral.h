@@ -274,9 +274,7 @@ tagInspiralTemplate
   REAL8 eccentricity;		/**< initial eccentricity of the orbit  (currently not in use) */
   /*@}*/
 
-  LALSimInspiralFrameAxis axisChoice;
-  UINT4 fixedStep;
-  UINT4 inspiralOnly;
+  LALSimInspiralFrameAxis axisChoice;	/**< UNDOCUMENTED */
 
   /** \name Paramters which are computed using LALInspiralParameterCalc
    * Note that tc and fFinal are computed during waveform generation!!!
@@ -335,7 +333,6 @@ tagInspiralTemplate
   REAL4  qmParameter[2];	/**< UNDOCUMENTED */
   LALSimInspiralInteraction	interaction;	/**< UNDOCUMENTED */
 
-  InputAxis axisChoice;		/**< UNDOCUMENTED */
   UINT4 fixedStep;		/**< UNDOCUMENTED */
   UINT4 inspiralOnly;		/**< UNDOCUMENTED */
   /*@}*/
