@@ -1,3 +1,9 @@
+ligo-gracedb (1.8-1) unstable; urgency=low
+
+  * Incorporated Leo's patch for fixing import problem
+
+ -- Brian Moe <brian.moe@ligo.org>  Fri, 04 Jan 2013 15:01:58 -0500
+
 ligo-gracedb (1.7-1) unstable; urgency=low
 
   * Workaround for Python bug http://bugs.python.org/issue11898

@@ -23,7 +23,7 @@ import json
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.7-1'
+GIT_TAG = 'gracedb-1.8-1'
 
 #-----------------------------------------------------------------
 # Util routines
@@ -259,7 +259,7 @@ class Client:
                     host, port, key_file=key, cert_file=cert)
         self.url = url
         # XXX sad sad hack for transition from our somewhat ad hoc to rest api.
-        if url.endswith('cli'):
+        if url.endswith('cli') or url.endswith('cli/'):
             self.rest_url = url[:url.rindex('cli')]+"api"
         else:
             self.rest_url = url
