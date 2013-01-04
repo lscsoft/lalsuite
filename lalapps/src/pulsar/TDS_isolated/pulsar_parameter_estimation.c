@@ -3285,19 +3285,20 @@ ParamData *multivariate_normal_deviates( REAL8Array *cholmat, ParamData *data,
     for(j=0;j<dim;j++)
       Z->data[i] += cholmat->data[i*dim + j]*randNum->data[j];
 
-  /* count the number of parameters in the cov matrix */
   for(i=0;i<MAXPARAMS;i++)
     if( data[i].matPos != 0 ) parcount++;
-
+  
   /* get the output random deviates by doing the mean plus Z */
   for(i=0;i<MAXPARAMS;i++){
     deviates[i].name = data[i].name;
     deviates[i].sigma = data[i].sigma;
     deviates[i].matPos = data[i].matPos;
     if( data[i].matPos != 0 ){
-      /* divide jump by the number of parameters to reduce the step size*/
-      deviates[i].val = data[i].val + 
-        (Z->data[data[i].matPos-1] / (REAL8)parcount);
+      /* on average only change 3 of the parameters on each MCMC iteration */
+      if( XLALUniformDeviate( randomParams ) < (3./(REAL8)parcount) ) 
+        deviates[i].val = data[i].val + Z->data[data[i].matPos-1];
+      else
+        deviates[i].val = data[i].val;
     }
     else
       deviates[i].val = data[i].val;
