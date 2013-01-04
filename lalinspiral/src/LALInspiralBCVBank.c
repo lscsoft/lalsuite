@@ -17,128 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-Author Cokelaer, T
-\file
-\ingroup LALInspiralBank_h
-
-
-\brief Lay a flat grid of BCV templates in the user specified range
-of the parameters \f$(\psi_0, \psi_3)\f$ in \c coarseIn structure
-(see below).
-
-\heading{Prototypes}
-
-
-<tt>LALInspiralCreateBCVBank()</tt>:
-<ul>
-   <li> <tt>list,</tt> Output, an array containing the template bank parameters.
-   </li><li> <tt>nlist,</tt> Output, the number of templates in bank.</li>
-</ul>
-
-\heading{Description}
-Given the range of the parameters \f$(\psi_0, \psi_3),\f$
-the number of templates in the \c fCut direction,
-\e minimalMatch, noise spectral density, upper and
-lower frequency cutoffs (all in the input structure \c coarseIn)
-this routine outputs the list of templates in the BCV bank
-for the parameters \f$(\psi_0, \psi_3, f_{\mathrm{cut}}).\f$
-\heading{Algorithm}
-A flat signal manifold is assumed and templates are laid
-uniform in the three dimensions.  See below for an explanation
-of how templates are chosen in the \c fcut direction.
-
-\heading{Uses}
-\code
-LALInspiralUpdateParams()
-LALRalloc()
-\endcode
-
-<tt>LALInspiralBCVFcutBank()</tt>
-Given a grid of templates with distinct values of \f$(\psi_0, \psi_3)\f$
-this routine returns a new grid in which every template has \c numFcutTemplates
-partners differing from one another in the ending frequency <tt>fendBCV.</tt>
-A call to this function should be preceeded by a call to LALInspiralCreateFlatBank()
-or a similar function, that gives a grid in \f$(\psi_0, \psi_3)\f$ space.
-
-<ul>
-   <li> <tt>list,</tt> Output/Input, an array initially containing the template
-   bank with the values of <tt>list[j]->psi0, list[j]->psi3, list[j]->fLower,</tt> specified,
-   is replaced on return with a re-sized array specifying also <tt>list->fFinal.</tt>
-   </li><li> <tt>Nlist,</tt> Output/Input, the number of templates in the Input bank is
-   replaced by the number of templates in the output bank.
-   </li><li> <tt>numFcutTemplates,</tt> Input, the largest number of templates for the
-   parameter \f$f_{cut}\f$ of BCV.</li>
-</ul>
-
-\heading{Description}
-
-A lattice of templates for BCV models should include,
-in addition to the values of \f$(\psi_0, \psi_3)\f$
-a range of \f$f_{\mathrm{cut}}\f$ -- the cutoff frequency.
-The right approach would be
-to compute the metric in the three-dimensional space of
-\f$(\psi_0, \psi_3, f_{\mathrm{cut}})\f$ and to choose templates as
-dictated by the metric. However, analytic computation of the
-metric has not been easy. Therefore, it has become necessary
-(at least for the time being) to make alternate choice of
-the cutoff frequencies.
-
-In this routine we implement a simple
-choice based on physical grounds: The post-Newtonian models
-predict an ending frequency that is larger than, but close to,
-the Schwarzschild last-stable orbit frequency
-\f$f_{\mathrm{lso}} = (6^{3/2} \pi M )^{-1}\f$ where \f$M\f$ is the total mass,
-while the effective one-body model has an ending frequency close
-to the light-ring, whose Schwarzschild value is
-\f$f_{\mathrm{lr}} = (3^{3/2} \pi M )^{-1}.\f$ It is necessary to know
-the total mass of the system in both cases.  However, not all
-pairs of \f$(\psi_0, \psi_3)\f$ can be inverted to get a positive
-\f$M\f$ but only when \f$\psi_0 > 0\f$ and \f$\psi_3 < 0.\f$ Even then
-it is not guaranteed that the symmetric mass ratio will be
-less than \f$1/4,\f$ a necessary condition so that the component
-masses are found to be real. However, we do not demand that the
-symmetric mass ratio is less than a quarter. If the total mass
-is non-negative then we compute the \f$(f_{\mathrm{lso}}, f_{\mathrm{lr}})\f$
-and choose a user specified \c numFcutTemplates number of
-templates with their cutoff frequency <tt>list->fFinal</tt> defined
-uniformly spaced in the range \f$[f_{\mathrm{lso}},\ f_{\mathrm{lr}}].\f$
-
-Furthermore, this routine discards all templates for which
-either the mass is not defined or, when defined, <tt>list->fFinal</tt> is
-smaller than the user defined lower frequency cutoff or larger
-than the Nyquist frequency of templates.
-Thus, the number of templates returned by this routine could
-be larger or fewer than the input number of templates.
-
-\heading{Algorithm}
-Given \f$(\psi_0, \psi_3)\f$ one can solve for \f$(M, \eta)\f$ using:
-\f{equation}{
-M = \frac{-\psi_3}{16 \pi^2 \psi_0},\ \ \eta = \frac{3}{128 \psi_0 (\pi M)^{5/3}}.
-\f}
-Given the total mass compute the last stable orbit and light-ring frequencies using
-\f{equation}{
-f_{\mathrm{lso}} = (6^{3/2} \pi M)^{-1},\ \  f_{\mathrm{lr}} = (3^{3/2} \pi M)^{-1}.
-\f}
-Divide the range \f$(f_{\mathrm{lso}}, f_{\mathrm{lr}})\f$ so as to have \f$n_{\mathrm{cut}}= \mathtt{numFcutTemplates}\f$
-templates over this range:
-\f{equation}{
-df = f_{\mathrm{lr}} \frac {\left( 1 - 2^{-3/2} \right) }{ (n_{\mathrm{cut}} -1) }.
-\f}
-Next, choose templates at \f$f_k = f_\mathrm{lr} - k \times df,\f$ where \f$k=0, \ldots, n_\mathrm{cut}-1.\f$
-Note that by definition \f$f_0 = f_\mathrm{lr}\f$ and \f$f_{n_\mathrm{cut}-1} = f_\mathrm{lso};\f$
-there are exatly \f$n_\mathrm{cut}\f$ templates in the range \f$(f_\mathrm{lso}, f_\mathrm{lr}).\f$
-We discard a template if either \f$M\f$ is not defined or if \f$f_\mathrm{cut}\f$ is smaller
-than the lower frequency cutoff specified in  <tt>list[j]->fLower.</tt>
-
-\heading{Uses}
-\code
-LALRalloc()
-\endcode
-\heading{Notes}
-
-*/
-
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/AVFactories.h>
@@ -152,12 +30,35 @@ LALRalloc()
 #define UNUSED
 #endif
 
+/** \defgroup LALInspiralBCVBank_c Module LALInspiralBCVBank.c
+    \ingroup LALInspiralBank_h
+    \brief BCV template bank
+*/
+/*@{*/
+
+/** \brief Lay a flat grid of BCV templates in the user specified range
+ * of the parameters \f$(\psi_0, \psi_3)\f$ in \c coarseIn structure
+ * \author Cokelaer, T
+ *
+ * \heading{Description}
+ * Given the range of the parameters \f$(\psi_0, \psi_3),\f$
+ * the number of templates in the \c fCut direction,
+ * \e minimalMatch, noise spectral density, upper and
+ * lower frequency cutoffs (all in the input structure \c coarseIn)
+ * this routine outputs the list of templates in the BCV bank
+ * for the parameters \f$(\psi_0, \psi_3, f_{\mathrm{cut}}).\f$
+ *
+ * \heading{Algorithm}
+ * A flat signal manifold is assumed and templates are laid
+ * uniform in the three dimensions.  See below for an explanation
+ * of how templates are chosen in the \c fcut direction.
+ */
 void
 LALInspiralCreateBCVBank (
-    LALStatus            *status,
-    InspiralTemplateList **list,
-    INT4                 *nlist,
-    InspiralCoarseBankIn coarseIn
+    LALStatus            *status,	/**< LAL status pointer */
+    InspiralTemplateList **list,	/**< [out] an array containing the template bank parameters. */
+    INT4                 *nlist,	/**< [out] the number of templates in bank */
+    InspiralCoarseBankIn coarseIn	/**< UNDOCUMENTED */
     )
 
 {
@@ -318,13 +219,56 @@ LALInspiralCreateBCVBank (
 }
 
 
+/** The code expects <tt>list-\>vectorLength=2</tt> and allocates just the
+ * requisite amount of memory to \c list and returns the number
+ * of grid points in <tt>list-\>length</tt>.
+ * The data points <tt>list-\>data[2j]</tt>, <tt>j=1,2, ... list-\>length</tt>,
+ * contain the \f$x_0\f$-coordinates of the grid and data points <tt>list-\>data[2j+1]</tt>,
+ * contain the \f$x_1\f$-coordinates of the grid.
+ *
+\heading{Description}
+Given the \c metric and the \c minimalMatch this routine calls
+<tt>bank/LALInspiralUpdateParams</tt> to get the spacings in user coordinates (which are
+not necessarily the eigen-directions) and lays a uniform grid of templates in
+the range specified in (<tt>bankParams-\>x0Min</tt>, <tt>bankParams-\>x0Max</tt>) and
+(<tt>bankParams-\>x1Min</tt>, <tt>bankParams-\>x1Max</tt>).
+
+\heading{Algorithm}
+The algorithm to lay templates is as follows: Given the increments \f$Dx_0\f$ and
+\f$Dx_1\f$ found from calling <tt>bank/LALInspiralUpdateParams</tt> lay a rectangular
+grid in the space of \f$(x_0, x_1).\f$
+
+<tt>
+<ul>
+<li> \f$x_1 = x_1^{\mathrm{min}}\f$
+<li> do while (\f$x_1 \le x_1^{\mathrm{max}}\f$)<br>
+   <ul>
+   <li> \f$x_0 = x_0^{\mathrm{min}}\f$
+   <li> do while (\f$x_0 \le x_0^{\mathrm{max}}\f$)<br>
+      <ul>
+      <li> Add (\f$x_0, x_1\f$) to list
+      <li> numTemplates++
+      <li> Increment \f$x_0: \; x_0 = x_0 + Dx_0\f$
+      </ul>
+   <li> Increment \f$x_1: \; x_1 = x_1 + Dx_1\f$
+   </ul>
+</ul>
+</tt>
+*/
 void
 LALInspiralCreateFlatBank (
-    LALStatus            *status,
-    REAL4VectorSequence  *list,
-    InspiralBankParams   *bankParams
+    LALStatus            *status,	/**< LAL status pointer */
+    REAL4VectorSequence  *list,		/**< [out] an array containing the template bank parameters */
+    InspiralBankParams   *bankParams	/**< [in] It is necessary and sufficient to input
+                                         * the eigenvalues of the metric and the angle between the \f$x_0\f$ axis and the
+                                         * semi-major axis of the ambiguity ellipse, that is,
+                                         * <tt>bankParams.metric.g00, bankParams.metric.g11, bankParams.metric.theta</tt>,
+                                         * the minimal match, <tt>bankParams.minimalMatch</tt> and the range of the two
+                                         * coordinates over which templates must be chosen:
+                                         * (<tt>bankParams-\>x0Min</tt>, <tt>bankParams-\>x0Max</tt>) and
+                                         * (<tt>bankParams-\>x1Min</tt>, <tt>bankParams-\>x1Max</tt>)
+                                         */
     )
-
 {
   InspiralMetric *metric;
   REAL8 minimalMatch;
@@ -365,16 +309,83 @@ LALInspiralCreateFlatBank (
   RETURN (status);
 }
 
+/** \brief Given a grid of templates with distinct values of \f$(\psi_0, \psi_3)\f$
+ * this routine returns a new grid in which every template has \c numFcutTemplates
+ * partners differing from one another in the ending frequency <tt>fendBCV</tt>.
+ *
+ * A call to this function should be preceeded by a call to LALInspiralCreateFlatBank()
+ * or a similar function, that gives a grid in \f$(\psi_0, \psi_3)\f$ space.
 
+\heading{Description}
 
+A lattice of templates for BCV models should include,
+in addition to the values of \f$(\psi_0, \psi_3)\f$
+a range of \f$f_{\mathrm{cut}}\f$ -- the cutoff frequency.
+The right approach would be
+to compute the metric in the three-dimensional space of
+\f$(\psi_0, \psi_3, f_{\mathrm{cut}})\f$ and to choose templates as
+dictated by the metric. However, analytic computation of the
+metric has not been easy. Therefore, it has become necessary
+(at least for the time being) to make alternate choice of
+the cutoff frequencies.
+
+In this routine we implement a simple
+choice based on physical grounds: The post-Newtonian models
+predict an ending frequency that is larger than, but close to,
+the Schwarzschild last-stable orbit frequency
+\f$f_{\mathrm{lso}} = (6^{3/2} \pi M )^{-1}\f$ where \f$M\f$ is the total mass,
+while the effective one-body model has an ending frequency close
+to the light-ring, whose Schwarzschild value is
+\f$f_{\mathrm{lr}} = (3^{3/2} \pi M )^{-1}\f$. It is necessary to know
+the total mass of the system in both cases.  However, not all
+pairs of \f$(\psi_0, \psi_3)\f$ can be inverted to get a positive
+\f$M\f$ but only when \f$\psi_0 > 0\f$ and \f$\psi_3 < 0\f$. Even then
+it is not guaranteed that the symmetric mass ratio will be
+less than \f$1/4,\f$ a necessary condition so that the component
+masses are found to be real. However, we do not demand that the
+symmetric mass ratio is less than a quarter. If the total mass
+is non-negative then we compute the \f$(f_{\mathrm{lso}}, f_{\mathrm{lr}})\f$
+and choose a user specified \c numFcutTemplates number of
+templates with their cutoff frequency <tt>list-\>fFinal</tt> defined
+uniformly spaced in the range \f$[f_{\mathrm{lso}},\ f_{\mathrm{lr}}]\f$.
+
+Furthermore, this routine discards all templates for which
+either the mass is not defined or, when defined, <tt>list-\>fFinal</tt> is
+smaller than the user defined lower frequency cutoff or larger
+than the Nyquist frequency of templates.
+Thus, the number of templates returned by this routine could
+be larger or fewer than the input number of templates.
+
+\heading{Algorithm}
+Given \f$(\psi_0, \psi_3)\f$ one can solve for \f$(M, \eta)\f$ using:
+\f{equation}{
+M = \frac{-\psi_3}{16 \pi^2 \psi_0},\ \ \eta = \frac{3}{128 \psi_0 (\pi M)^{5/3}}.
+\f}
+Given the total mass compute the last stable orbit and light-ring frequencies using
+\f{equation}{
+f_{\mathrm{lso}} = (6^{3/2} \pi M)^{-1},\ \  f_{\mathrm{lr}} = (3^{3/2} \pi M)^{-1}.
+\f}
+Divide the range \f$(f_{\mathrm{lso}}, f_{\mathrm{lr}})\f$ so as to have \f$n_{\mathrm{cut}}= \mathtt{numFcutTemplates}\f$
+templates over this range:
+\f{equation}{
+df = f_{\mathrm{lr}} \frac {\left( 1 - 2^{-3/2} \right) }{ (n_{\mathrm{cut}} -1) }.
+\f}
+Next, choose templates at \f$f_k = f_\mathrm{lr} - k \times df,\f$ where \f$k=0, \ldots, n_\mathrm{cut}-1\f$.
+Note that by definition \f$f_0 = f_\mathrm{lr}\f$ and \f$f_{n_\mathrm{cut}-1} = f_\mathrm{lso}\f$;
+there are exatly \f$n_\mathrm{cut}\f$ templates in the range \f$(f_\mathrm{lso}, f_\mathrm{lr})\f$.
+We discard a template if either \f$M\f$ is not defined or if \f$f_\mathrm{cut}\f$ is smaller
+than the lower frequency cutoff specified in  <tt>list[j]-\>fLower</tt>.
+*/
 void
 LALInspiralBCVFcutBank (
-    LALStatus            *status,
-    InspiralTemplateList **list,
-    INT4                *NList,
-    InspiralCoarseBankIn coarseIn
+    LALStatus            *status,	/**< LAL status pointer */
+    InspiralTemplateList **list,	/**< [out,in] an array initially containing the template
+                                         * bank with the values of <tt>list[j]-\>psi0, list[j]-\>psi3, list[j]-\>fLower,</tt> specified,
+                                         * is replaced on return with a re-sized array specifying also <tt>list-\>fFinal.</tt>
+                                         */
+    INT4                *NList,		/**< [out,in] the number of templates in the Input bank is replaced by the number of templates in the output bank. */
+    InspiralCoarseBankIn coarseIn	/**< UNDOCUMENTED */
     )
-
 {
   UINT4 nf; 	/* number of layers */
   UINT4 nlist; 	/* number of final templates */
@@ -464,7 +475,7 @@ LALInspiralBCVFcutBank (
   RETURN( status );
 }
 
-
+/** UNDOCUMENTED */
 void
 LALPSItoMasses (
     LALStatus			*status,
@@ -519,12 +530,7 @@ LALPSItoMasses (
   RETURN (status);
 }
 
-
-
-
-
-
-
+/** UNDOCUMENTED */
 void
 LALInspiralBCVBankFcutS3S4 (
     LALStatus            	*status,
@@ -631,9 +637,7 @@ LALInspiralBCVBankFcutS3S4 (
   RETURN( status );
 }
 
-
-
-
+/** UNDOCUMENTED */
 void
 LALInspiralBCVRegularFcutBank (
     LALStatus            	*status,
@@ -691,12 +695,7 @@ LALInspiralBCVRegularFcutBank (
   RETURN( status );
 }
 
-
-
-
-
-
-
+/** UNDOCUMENTED */
 void
 LALEmpiricalPSItoMassesConversion (
     LALStatus 			*status,
@@ -733,9 +732,7 @@ LALEmpiricalPSItoMassesConversion (
   RETURN (status);
 }
 
-
-
-
+/** UNDOCUMENTED */
 void
 LALInspiralCreateFlatBankS3S4 (
     LALStatus            *status,
@@ -910,7 +907,7 @@ LALInspiralCreateFlatBankS3S4 (
 }
 
 
-/* Thomas: 31 Aug 2006. This function is redundant with the polygon fit.
+/** Thomas: 31 Aug 2006. This function is redundant with the polygon fit.
 It was design for BBH and therefore had tight boundary. For a more general
 purpose, I extended the range to generous values
  */
@@ -940,3 +937,4 @@ LALExcludeTemplate(
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
+/*@}*/

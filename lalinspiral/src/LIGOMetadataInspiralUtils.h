@@ -15,11 +15,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-   \file
-   \brief unknown
-*/
-
 #ifndef _LIGOMETADATAINSPIRALUTILS_H
 #define _LIGOMETADATAINSPIRALUTILS_H
 
@@ -31,11 +26,15 @@ extern "C" {
 #include <lal/LALInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 
-/*
- *
- * inspiral specific structures
- *
+
+/** \defgroup LIGOMetadataInspiralUtils_h Header LIGOMetadataInspiralUtils.h
+ * \ingroup pkg_CBC_NEW
+ * \brief unknown
  */
+/*@{*/
+
+
+/* ---------- inspiral specific structures ---------- */
 
 /** The \c SnglInspiralParameterTest contains an enum type for each of the
     tests of mass parameters which are used.
@@ -219,11 +218,9 @@ tagCDataNode
 }
 CDataNode;
 
-/*
- *
- * inspiral specific functions
- *
- */
+/*@}*/ /* end:LIGOMetadataInspiralUtils_h */
+
+/* ---------- inspiral specific functions ---------- */
 
 /* sngl inspiral */
 void

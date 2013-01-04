@@ -53,6 +53,7 @@ physical template family.
 \endcode
 
 */
+/*@{*/
 
 void
 LALFindChirpPTFTemplate (
@@ -120,6 +121,8 @@ LALFindChirpPTFFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     );
+
+/*@}*/ /* end:FindChirpPTF.h */
 
 #if 0
 { /* so that editors will match succeeding brace */

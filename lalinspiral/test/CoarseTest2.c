@@ -41,16 +41,9 @@ It can be extended to the BCV case easily by replacing approximant (BCV) and
 parameter space (Psi0andPsi3). The code has to be changed to use psi0/psi3
 inteasd of tau0/tau3 though.
 
-\heading{Uses}
-\code
-lalDebugLevel
-LALRectangleVertices
-LALInspiralCreateCoarseBank
-\endcode
-
-\heading{Notes}
-
 */
+
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <lal/AVFactories.h>
@@ -170,3 +163,4 @@ main(void)
   LALCheckMemoryLeaks();
   return(0);
 }
+/** \endcond */

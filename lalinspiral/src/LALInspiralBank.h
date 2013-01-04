@@ -81,6 +81,7 @@ This header file covers routines that are used in template placement.
 #define LALINSPIRALBANKH_MSGENUMFCUT "Number of fcut must be greater or equal to 1"
 /** \endcond */
 
+/** UNDOCUMENTED */
 typedef enum
 {
   disable,
@@ -139,11 +140,11 @@ GridSpacing;
 */
 typedef enum
 {
-  In,
-  Above,
-  Below,
-  Out,
-  Edge
+  In,		/**< UNDOCUMENTED */
+  Above,	/**< UNDOCUMENTED */
+  Below,	/**< UNDOCUMENTED */
+  Out,		/**< UNDOCUMENTED */
+  Edge		/**< UNDOCUMENTED */
 }
 Position;
 
@@ -187,123 +188,82 @@ InspiralBankMassRange;
 
 
 /** An enum that lists all the formulas that can be used to specify an upper
-    frequency cutoff. From lowest to highest, the choices are:
-    <ul>
-    <li> \c FreqCut_SchwarzISCO,
-    the innermost stable circular orbit (ISCO) for a test particle orbiting a
-    Schwarzschild black hole.</li>
-    <li> \c FreqCut_BKLISCO,
-    a mass ratio dependent ISCO derived from
-    estimates of the final spin of a merged black found in a paper by Buonanno,
-    Kidder, and Lehner (arXiv:0709.3839).</li>
-    <li> \c FreqCut_LightRing,
-    the unstable circular orbit
-    for photons orbiting a Schwarzschild black hole.</li>
-    <li> \c FreqCut_FRD,
-    the "Fundamental
-    RingDown" frequency which is calculated from the Berti, Cardoso and Will
-    (arXiv:gr-qc/0512160) value for the \f$\omega_{220}\f$ QNM frequency using mass
-    ratio dependent fits to the final BH mass and spin from Buonanno et al
-    (arXiv:0706.3732).</li>
-    <li> \c FreqCut_ERD,
-    an effective ringdown
-    frequency studied in Pan et al (arXiv:0704.1964) that was found to give good
-    fit between stationary-phase templates and  numerical relativity waveforms.</li>
-    <li> \c FreqCut_LRD,
-    the "Lorentzian RingDown" frequency = 1.2*FRD which captures part of the
-    Lorentzian tail from the decay of the QNMs.</li>
-    </ul>
-*/
+    frequency cutoff.
+ */
 typedef enum
 {
-  FreqCut_SchwarzISCO,
-  FreqCut_BKLISCO,
-  FreqCut_LightRing,
-  FreqCut_ERD,
-  FreqCut_FRD,
-  FreqCut_LRD
+  FreqCut_SchwarzISCO,	/**<     the innermost stable circular orbit (ISCO) for a test particle orbiting a Schwarzschild black hole */
+  FreqCut_BKLISCO,	/**<     a mass ratio dependent ISCO derived from estimates of the final spin of a merged black found in a
+                         *       paper by Buonanno, Kidder, and Lehner (arXiv:0709.3839)
+                         */
+  FreqCut_LightRing,	/**<     the unstable circular orbit for photons orbiting a Schwarzschild black hole */
+  FreqCut_ERD,		/**<     an effective ringdown frequency studied in Pan et al (arXiv:0704.1964) that was found to give good
+                         *       fit between stationary-phase templates and  numerical relativity waveforms
+                         */
+  FreqCut_FRD,		/**<     the "Fundamental RingDown" frequency which is calculated from the Berti, Cardoso and Will (arXiv:gr-qc/0512160)
+                         *       value for the \f$\omega_{220}\f$ QNM frequency using mass ratio dependent fits to the final BH mass and spin from Buonanno et al (arXiv:0706.3732)
+                         */
+  FreqCut_LRD		/**<     the "Lorentzian RingDown" frequency = 1.2*FRD which captures part of the Lorentzian tail from the decay of the QNMs */
 }
 FreqCut;
 
 
-
 /** Structure to store metric at various points the signal manifold.
-We store the diagonalized metric together with the angle theta
-between the \f$\tau_0\f$-axis and the semi-major axis of the ambiguity ellipse.
-The members of this structure are:
-<ul>
-<li> \c G00: 00-component of the metric in \f$(\tau_0,\tau_{2(3)})\f$ coordinates.</li>
-<li> \c G11: 11-component of the metric in \f$(\tau_0,\tau_{2(3)})\f$ coordinates.</li>
-<li> \c G01: 01-component of the metric in \f$(\tau_0,\tau_{2(3)})\f$ coordinates.</li>
-<li> \c g00: 00-component of the diagonalised metric.</li>
-<li> \c g11: 11-component of the diagonalised metric.</li>
-<li> \c theta:  Angle from tau0 to semi-major axis of the ellipse.</li>
-<li> <tt>Gamma[6]</tt>: 3d metric co-efficients in \f$(t_C, \tau_0,\tau_{2(3)})\f$ coordinates.</li>
-<li> \c space:  The enum describing the coordinate space in which
-the metric is computed.</li>
-</ul>
-*/
+ * We store the diagonalized metric together with the angle theta
+ * between the \f$\tau_0\f$-axis and the semi-major axis of the ambiguity ellipse.
+ */
 typedef struct
 tagInspiralMetric
 {
-  REAL8            G00;
-  REAL8            G11;
-  REAL8            G01;
+  REAL8            G00;		/**< 00-component of the metric in \f$(\tau_0,\tau_{2(3)})\f$ coordinates */
+  REAL8            G11;		/**< 11-component of the metric in \f$(\tau_0,\tau_{2(3)})\f$ coordinates */
+  REAL8            G01;		/**< 01-component of the metric in \f$(\tau_0,\tau_{2(3)})\f$ coordinates */
 
-  REAL8            g00;
-  REAL8            g11;
-  REAL8            theta;
+  REAL8            g00;		/**< 00-component of the diagonalised metric */
+  REAL8            g11;		/**< 11-component of the diagonalised metric */
+  REAL8            theta;	/**< Angle from tau0 to semi-major axis of the ellipse */
 
-  /* Gamma[] is a vector that stores the upper triangular part of the metric in
-   * the space of parameters. For time domain searches, Gamma[0,...,5] stores
-   * the following information :
-   *    Gamma[0] -> (tc,tc) metric component
-   *    Gamma[1] -> (tc,t0) metric component
-   *    Gamma[2] -> (tc,t3) metric component
-   *    Gamma[3] -> (t0,t0) metric component
-   *    Gamma[4] -> (t0,t3) metric component
-   *    Gamma[5] -> (t3,t3) metric component
-   * For spinBCV searches, (in 4 dimensions) Gamma[0,...,9] would be required.
-   */
-  REAL4            Gamma[10];
-
-  CoordinateSpace  space;
+  REAL4            Gamma[10];	/**< 3d metric co-efficients in \f$(t_C, \tau_0,\tau_{2(3)})\f$ coordinates;
+                                 * Gamma[6] is a vector that stores the upper triangular part of the metric in
+                                 * the space of parameters; For time domain searches, Gamma[0,...,5] stores
+                                 * the following information :<br>
+                                 *    Gamma[0] -> (tc,tc) metric component<br>
+                                 *    Gamma[1] -> (tc,t0) metric component<br>
+                                 *    Gamma[2] -> (tc,t3) metric component<br>
+                                 *    Gamma[3] -> (t0,t0) metric component<br>
+                                 *    Gamma[4] -> (t0,t3) metric component<br>
+                                 *    Gamma[5] -> (t3,t3) metric component<br>
+                                 * For spinBCV searches, (in 4 dimensions) Gamma[0,...,9] would be required
+                                 */
+  CoordinateSpace  space;	/**< The enum describing the coordinate space in which the metric is computed */
 }
 InspiralMetric;
 
 
-/** A grid of inspiral templates (i.e., a template list).
-Structure returned by the coarse and fine bank generation routines.
-Currently we generate an array of type \c InspiralTemplateList
-which contains the coordinate markers (the parameter structure
-\c InspiralTemplate defined in the \c inspiral package)
-and the metric at each of those points. There is a desire to make this
-a truly linked list at some time in the future. The member of this
-structure are:
-<ul>
-<li> \c ID: An unique integer ID of the template</li>
-<li> \c params: Value of the parameters at the lattice point</li>
-<li> \c metric:  metric at the lattice point</li>
-<li> <tt>*next</tt>:  pointer to next lattice point; but this is currently
-not filled by the bank code.</li>
-</ul>
-*/
+/** A grid of inspiral templates (ie a template list).
+ * Structure returned by the coarse and fine bank generation routines.
+ * Currently we generate an array of type \c InspiralTemplateList
+ * which contains the coordinate markers (the parameter structure
+ * \c InspiralTemplate defined in the \c inspiral package)
+ * and the metric at each of those points. There is a desire to make this
+ * a truly linked list at some time in the future.
+ */
 typedef struct
 tagInspiralTemplateList
 {
-  INT4              ID;
-  InspiralTemplate  params;
-  InspiralMetric    metric;
-  UINT4             nLayer;
-  struct tagInspiralTemplateList *next;
+  INT4              ID;		/**< An unique integer ID of the template */
+  InspiralTemplate  params;	/**< Value of the parameters at the lattice point */
+  InspiralMetric    metric;	/**< metric at the lattice point */
+  UINT4             nLayer;	/**< UNDOCUMENTED */
+  struct tagInspiralTemplateList *next;	/**< pointer to next lattice point; but this is currently not filled by the bank code */
 }
 InspiralTemplateList;
 
 /** This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
-It contains some part of CoarseBankIn and some other standard parameters.  It provides the
-parameter space boundaries with the minimum and maximum values of mass parameters, the
-minimal match, the space, massRange and gridSpacing parameter.
-*/
+ * It contains some part of CoarseBankIn and some other standard parameters.  It provides the
+ * parameter space boundaries with the minimum and maximum values of mass parameters, the
+ * minimal match, the space, massRange and gridSpacing parameter.
+ */
 typedef struct
 tagHexaGridParam
 {
@@ -325,12 +285,12 @@ tagHexaGridParam
 HexaGridParam;
 
 /** This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
-
-This structure checks the status of the placement. \c fertile tells if the
-placement is still evolving or not. \c nTemplateMax is the number of maximum templates allowed,
- which can be resized. And \c nTemplate is the number of template set. nTemplate can not
- be higher than nTemplateMax.
-*/
+ *
+ * This structure checks the status of the placement. \c fertile tells if the
+ * placement is still evolving or not. \c nTemplateMax is the number of maximum templates allowed,
+ * which can be resized. And \c nTemplate is the number of template set. nTemplate can not
+ * be higher than nTemplateMax.
+ */
 typedef struct
 tagCellEvolution
 {
@@ -342,13 +302,13 @@ CellEvolution;
 
 
 /** This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
-
-Similarly to the square placement, which uses InspiralList, we used a
-linked list for the hexagonal placement. A different structure has been
-implemented so as to simplify the complexity of the algorithm. It also set
-an id to each cell which has been created. This id is unique to each
-cell/template.
-*/
+ *
+ * Similarly to the square placement, which uses InspiralList, we used a
+ * linked list for the hexagonal placement. A different structure has been
+ * implemented so as to simplify the complexity of the algorithm. It also set
+ * an id to each cell which has been created. This id is unique to each
+ * cell/template.
+ */
 typedef struct
 tagCellList
 {
@@ -358,13 +318,13 @@ tagCellList
 CellList;
 
 /** This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
-
-Each cell is defined by this structure, which contains the position of
-each cell in the tau0/tau3 parameter space, the metric at that point, and various
-information such as the status of the cell. Is it still fertile ? what is its position
-with respect to the parameter space and so on. child is a 6-length array with a link
-to the 6 templates (hexagonal) around the current template that we are dealing with.
-*/
+ *
+ * Each cell is defined by this structure, which contains the position of
+ * each cell in the tau0/tau3 parameter space, the metric at that point, and various
+ * information such as the status of the cell. Is it still fertile ? what is its position
+ * with respect to the parameter space and so on. child is a 6-length array with a link
+ * to the 6 templates (hexagonal) around the current template that we are dealing with.
+ */
 typedef struct
 tagInspiralCell
 {
@@ -384,248 +344,166 @@ InspiralCell;
 
 
 /** This is a structure needed in the inner workings
-of the \c LALInspiralCreateCoarseBank code.
-<ul>
-<li> \c nparams: Number of parameters (currently fixed at 2, so this
-		is as of now unused)</li>
-<li> \c x0: the first coordinate, chosen to be always \f$\tau_0\f$</li>
-<li> \c x1: the second coordinate, chosen to be either \f$\tau_2\f$ or \f$\tau_3\f$</li>
-<li> \c dx0: increment in the x0-direction</li>
-<li> \c dx1: increment in the x1-direction</li>
-<li> \c x0Min: minimum value of the first coordinate as
-defined by the search region</li>
-<li> \c x0Max: maximum value of the first coordinate as
-defined by the search region</li>
-<li> \c x1Min: minimum value of the second coordinate as
-defined by the search region</li>
-<li> \c x1Max: maximum value of the second coordinate as
-defined by the search region</li>
-<li> <tt>*metric</tt>: pointer to the metric at the current location.</li>
-</ul>
-*/
+ * of the \c LALInspiralCreateCoarseBank code.
+ */
 typedef struct
 tagInspiralBankParams
 {
-  INT4           nparams;
-  REAL8          minimalMatch;
-  REAL8          x0;
-  REAL8          x1;
-  REAL8          dx0;
-  REAL8          dx1;
-  REAL8          x0Min;
-  REAL8          x0Max;
-  REAL8          x1Min;
-  REAL8          x1Max;
-  InspiralMetric *metric;
+  INT4           nparams;	/**< Number of parameters (currently fixed at 2, so this is as of now unused) */
+  REAL8          minimalMatch;	/**< UNDOCUMENTED */
+  REAL8          x0;		/**< the first coordinate, chosen to be always \f$\tau_0\f$ */
+  REAL8          x1;		/**< the second coordinate, chosen to be either \f$\tau_2\f$ or \f$\tau_3\f$ */
+  REAL8          dx0;		/**< increment in the x0-direction */
+  REAL8          dx1;		/**< increment in the x1-direction */
+  REAL8          x0Min;		/**< minimum value of the first coordinate as defined by the search region */
+  REAL8          x0Max;		/**< maximum value of the first coordinate as defined by the search region */
+  REAL8          x1Min;		/**< minimum value of the second coordinate as defined by the search region */
+  REAL8          x1Max;		/**< maximum value of the second coordinate as defined by the search region */
+  InspiralMetric *metric;	/**< pointer to the metric at the current location */
 }
 InspiralBankParams;
 
 
 /** Input for choosing a template bank. This is the structure that must
-    be filled by a routine calling the code \c InspiralCreateCoarseBank or \c InspiralCreateBCVBank.
-    Unless BCV template bank is needed (that is, \c InspiralCreateBCVBank)  then one can ignore the
-    parameters <tt>psi0Min, psi0Max, psi3Min, psi3Max, alpha, numFcutTemplates.</tt>
-
-<ul>
-<li> \c massRange:   enum that determines whether templates should be
-	chosen using fixed ranges for component masses or
-	to use minimum component mass and maximum totalmass.</li>
-<li> \c space: enum that decides whether to use \f$(\tau_0,\tau_2)\f$
-        or \f$(\tau_0,\tau_3)\f$ in constructing the template bank</li>
-<li> \c alpha: 	the BCV amplitude correction parameter</li>
-<li> \c psi0Min: minimum value of the parameter \f$\psi_0\f$</li>
-<li> \c psi0Max: maximum value of the parameter \f$\psi_0\f$</li>
-<li> \c psi3Min: minimum value of the parameter \f$\psi_3\f$</li>
-<li> \c psi3Max: maximum value of the parameter \f$\psi_3\f$</li>
-<li> \c mMin: 	minimum mass of components to search for</li>
-<li> \c mMax: 	maximum mass of components to search for</li>
-<li> \c MMax:   	alternatively, maximum total mass of binary to search for</li>
-<li> \c mmCoarse:Coarse grid minimal match</li>
-<li> \c mmFine:  Fine grid minimal match</li>
-<li> \c fLower:  Lower frequency cutoff</li>
-<li> \c fUpper:  Upper frequency cutoff</li>
-<li> \c tSampling:  Sampling rate</li>
-<li> \c etamin: 	minimum value of eta in our search</li>
-<li> \c shf: 	Frequency series containing the PSD</li>
-<li> \c iflso: 	(currently not implemented) flso will be used as an</li>
-<li> \c numFcutTemplates: number of templates in the \c fcut direction
-
-The next two members are used in setting up the InspiralTemplate
-parameter structure but not in creating the template bank.</li>
-
-<li> \c order: Post-Newtonian order of the waveform</li>
-<li> \c approximant: Approximant of the waveform</li>
-<li> \c numFreqCut: Number of different upper frequency cutoffs (spaced evenly between minFreqCut and maxFreqCut) to use when creating a template bank.</li>
-<li> \c maxFreqCut: largest upper frequency cutoff to use</li>
-<li> \c minFreqCut: smallest upper frequency cutoff to use</li>
-</ul>
+ * be filled by a routine calling the code \c InspiralCreateCoarseBank() or \c InspiralCreateBCVBank().
+ * Unless BCV template bank is needed (that is, \c InspiralCreateBCVBank())  then one can ignore the
+ * parameters <tt>psi0Min, psi0Max, psi3Min, psi3Max, alpha, numFcutTemplates.</tt>
 */
 typedef struct
 tagInspiralCoarseBankIn
 {
-  InspiralBankMassRange         massRange;
-  CoordinateSpace               space;
+  InspiralBankMassRange         massRange;	/**< enum that determines whether templates should be chosen using fixed ranges for component masses or
+                                                 * to use minimum component mass and maximum totalmass
+                                                 */
+  CoordinateSpace               space;		/**< enum that decides whether to use \f$(\tau_0,\tau_2)\f$ or \f$(\tau_0,\tau_3)\f$ in constructing the template bank */
+  REAL8                         mMin;		/**< minimum mass of components to search for */
+  REAL8                         mMax;		/**< maximum mass of components to search for */
+  REAL8                         MMax;		/**< alternatively, maximum total mass of binary to search for */
+  REAL8                         MMin;		/**< UNDOCUMENTED */
+  REAL8                         alpha;		/**< the BCV amplitude correction parameter */
+  REAL8                         psi0Min;	/**< minimum value of the parameter \f$\psi_0\f$ */
+  REAL8                         psi0Max;	/**< maximum value of the parameter \f$\psi_0\f$ */
+  REAL8                         psi3Min;	/**< minimum value of the parameter \f$\psi_3\f$ */
+  REAL8                         psi3Max;	/**< maximum value of the parameter \f$\psi_3\f$ */
+  REAL8                         mmCoarse;	/**< Coarse grid minimal match */
+  REAL8                         mmFine;		/**< Fine grid minimal match */
+  REAL8                         fLower;		/**< Lower frequency cutoff */
+  REAL8                         fUpper;		/**< Upper frequency cutoff */
+  REAL8                         tSampling;	/**< Sampling rate */
+  REAL8                         etamin;		/**< minimum value of eta in our search */
+  REAL8				betaMin;	/**< UNDOCUMENTED */
+  REAL8				betaMax;	/**< UNDOCUMENTED */
+  REAL8                         chiMin;		/**< UNDOCUMENTED */
+  REAL8                         chiMax;		/**< UNDOCUMENTED */
+  REAL8                         kappaMin;	/**< UNDOCUMENTED */
+  REAL8                         kappaMax;	/**< UNDOCUMENTED */
+  INT4                          nPointsChi;	/**< UNDOCUMENTED */
+  INT4                          nPointsKappa;	/**< UNDOCUMENTED */
+  REAL8FrequencySeries          shf;		/**< Frequency series containing the PSD */
+  UINT4				ShMaxSz;	/**< Maximum size of the power spectral density array for use in
+                                                 * the computation of the metric in SBBH; typical values that
+                                                 * assures that the code runs quickly are 1024-8192
+                                                 */
+  UINT4				iseed;		/**< See for random number generation in RandomBank algorithm */
+  UINT4				nTIni;		/**< nTIni is an estimate for the number of templates that might
+                                                 * be required; this is used in the random bank generation
+                                                 * routine with a seed number of templates = nTIni*sqrt(nTIni)
+                                                 */
+  INT4                          iflso;		/**< iflso is an integer that tells whether to compute the moments
+                                                 * using an upper limit defined by flso; this is not used anywhere
+                                                 * at the moment
+                                                 */
 
-  REAL8                         mMin;
-  REAL8                         mMax;
-  REAL8                         MMax;
-  REAL8                         MMin;
-  REAL8                         alpha;
-  REAL8                         psi0Min;
-  REAL8                         psi0Max;
-  REAL8                         psi3Min;
-  REAL8                         psi3Max;
-  REAL8                         mmCoarse;
-  REAL8                         mmFine;
-  REAL8                         fLower;
-  REAL8                         fUpper;
-  REAL8                         tSampling;
-  REAL8                         etamin;
-  REAL8				betaMin;
-  REAL8				betaMax;
-  REAL8                         chiMin;
-  REAL8                         chiMax;
-  REAL8                         kappaMin;
-  REAL8                         kappaMax;
-  INT4                          nPointsChi;
-  INT4                          nPointsKappa;
-  REAL8FrequencySeries          shf;
-  /* Maximum size of the power spectral density array for use in
-   * the computation of the metric in SBBH; typical values that
-   * assures that the code runs quickly are 1024-8192.
-   */
-  UINT4				ShMaxSz;
-
-  /* See for random number generation in RandomBank algorithm */
-  UINT4				iseed;
-  /* nTIni is an estimate for the number of templates that might
-   * be required; this is used in the random bank generation
-   * routine with a seed number of templates = nTIni*sqrt(nTIni)
-   */
-  UINT4				nTIni;
-  /* iflso is an integer that tells whether to compute the moments
-   * using an upper limit defined by flso; this is not used anywhere
-   * at the moment
-   */
-  INT4                          iflso;
-  /* spinBank=0:use Owen+Hanna bank*/
-  /* spinBank=1:use extended bank by AEI/Cardiff/Osaka */
-  /* spinBank=2:use random bank algorithm */
-  INT4                          spinBank;
-  /* Number of templates required in the fCut (upper cutoff)
-   * dimension and the value of upper and lower cutoffs
-   */
-
-  UINT4                         numFcutTemplates;
-  REAL4				HighGM;
-  REAL4				LowGM;
-
-  /* Type of gridspacing required:
-  1=SquareNotOriented,
-  2=Square,
-  3=HexagonalNotOriented,
-  4=Hexagonal,
-  5=HybridHexagonal,
-  6=S2BCV
-  */
-  GridSpacing                   gridSpacing;
+  INT4                          spinBank;	/**< spinBank=0:use Owen+Hanna bank,
+                                                 * spinBank=1:use extended bank by AEI/Cardiff/Osaka,
+                                                 * spinBank=2:use random bank algorithm
+                                                 */
+  UINT4                         numFcutTemplates;  /**< Number of templates required in the fCut (upper cutoff)
+                                                    * dimension and the value of upper and lower cutoffs
+                                                    */
+  REAL4				HighGM;		/**< UNDOCUMENTED */
+  REAL4				LowGM;		/**< UNDOCUMENTED */
+  GridSpacing                   gridSpacing;	/**< Type of gridspacing required */
 
   /* post-Newtonian order( phase), approximant, and amplitude PN order */
-  LALPNOrder                    order;
-  Approximant                   approximant;
+  LALPNOrder                    order;		/**< Post-Newtonian order of the waveform */
+  Approximant                   approximant;	/**< Approximant of the waveform */
   LALPNOrder                    ampOrder;
 
-  /* parameters for different/multiple freq. cutoffs */
-  INT4                          numFreqCut;
-  FreqCut                       maxFreqCut;
-  FreqCut                       minFreqCut;
+  /* parameters for different/multiple freq cutoffs */
+  INT4                          numFreqCut;	/**< Number of different upper frequency cutoffs (spaced evenly between minFreqCut and maxFreqCut) to use when creating a template bank */
+  FreqCut                       maxFreqCut;	/**< largest upper frequency cutoff to use */
+  FreqCut                       minFreqCut;	/**< smallest upper frequency cutoff to use */
 
-  InsidePolygonEnum             insidePolygon;
-  ComputeMoments                computeMoments;
-  /* ComputeMoments tells whether to re-compute the moments
-   * using an upper limit defined by flso; This is done after
-   * the template bank is gnerated
-   */
+  InsidePolygon                 insidePolygon;	/**< UNDOCUMENTED */
+  ComputeMoments                computeMoments;	/**< ComputeMoments tells whether to re-compute the moments
+                                                 * using an upper limit defined by flso; This is done after
+                                                 * the template bank is gnerated
+                                                 */
 }
 InspiralCoarseBankIn;
 
 /** Inputs to the function that computes the moments of the PSD.
-	The moment is defined as:
-	\f[I(p) \equiv \int_{x_\textrm{min}}^{x_\textrm{max}}
-\frac{x^{-p}}{S_h(x)} dx,\f]
-	where \f$x=f/f_0\f$ is a scaled frequency, \f$f_0\f$
-	being a fiducial frequency, taken in these routines
-	as the user supplied lower cutoff of the detector
-	response.
-
-<ul>
-<li> \c xmin: lower limit of the integral \f$x_\textrm{min}\f$</li>
-<li> \c xmax: upper limit of the integral \f$x_\textrm{max}\f$</li>
-<li> \c ndx: index \f$p\f$ (without the negative sign) in the moment integral as above</li>
-<li> \c norm: norm to be used in computing the moment, the returned value is
-the above integral divided by the norm.</li>
-<li> <tt>*shf</tt>: the frequency series containing the noise psd.</li>
-</ul>
-*/
+ * The moment is defined as:
+ * \f[I(p) \equiv \int_{x_\textrm{min}}^{x_\textrm{max}}
+ * \frac{x^{-p}}{S_h(x)} dx,\f]
+ * where \f$x=f/f_0\f$ is a scaled frequency, \f$f_0\f$
+ * being a fiducial frequency, taken in these routines
+ * as the user supplied lower cutoff of the detector
+ * response.
+ */
 typedef struct
 tagInspiralMomentsIn
 {
-  REAL8                xmin;
-  REAL8                xmax;
-  REAL8                ndx;
-  REAL8	             norm;
-  REAL8FrequencySeries *shf;
+  REAL8                xmin;	/**< lower limit of the integral \f$x_\textrm{min}\f$ */
+  REAL8                xmax;	/**< upper limit of the integral \f$x_\textrm{max}\f$ */
+  REAL8                ndx;	/**< index \f$p\f$ (without the negative sign) in the moment integral as above */
+  REAL8	               norm;	/**< norm to be used in computing the moment, the returned value is the above integral divided by the norm */
+  REAL8FrequencySeries *shf;	/**< the frequency series containing the noise psd */
 }
 InspiralMomentsIn;
 
 
 /** Structure needed by the function \c LALInspiralCreateFineBank.
-    which computes a finer mesh around a given lattice point
-    using the value of the fine-mesh minimal match, coarse-mesh
-    minimal match and the metric at the current lattice point.
-
-    <ul>
-    <li> {templateList:} A list containing all the fine-mesh templates</li>
-    <li> {coarseIn:} input structure that contains useful necessary parameters
-    to construct a fine-mesh.</li>
-    </ul>
-*/
+ * which computes a finer mesh around a given lattice point
+ * using the value of the fine-mesh minimal match, coarse-mesh
+ * minimal match and the metric at the current lattice point.
+ */
 typedef struct
 tagInspiralFineBankIn
 {
-  InspiralTemplateList templateList;
-  InspiralCoarseBankIn coarseIn;
+  InspiralTemplateList templateList;	/**< A list containing all the fine-mesh templates */
+  InspiralCoarseBankIn coarseIn;	/**< input structure that contains useful necessary parameters to construct a fine-mesh  */
 }
 InspiralFineBankIn;
 
 
 /** Parameter structure that holds the moments of the PSD and other useful
-    constants required in the computation of the metric.
-
-<ul>
-<li> {a01, a21, ...:} Coefficients in the expansion of the phase
-	of the Fourier transform of an inspiral waveform computed
-	in the stationary phase approximation. See documentation under
-	the function \c LALInspiralComputeMetric later in this
-	Section for a description of these coefficients.</li>
-<li><tt>j[18]:</tt> The required moments are all computed once and
-stored in this array. The required moments are from J(1) to J(17)
-(except J(2), J(3) and J(16) that are not required at 2PN order,
- however, they are computed since future extensions, planned in the
- near future, will require them). However, in C we need an array size
-18 to use an array that has an index 18. To ease the notation we have
-therefore defined an over sized (by one element) array.</li>
-</ul>
-*/
+ * constants required in the computation of the metric.
+ */
 typedef struct
 tagInspiralMomentsEtc
 {
+  /** \name Expansion coefficients
+   * Coefficients in the expansion of the phase of the Fourier transform of an inspiral waveform computed
+   * in the stationary phase approximation. See documentation under the function \c LALInspiralComputeMetric() in this
+   * Section for a description of these coefficients
+   */
+  /*@{*/
   REAL8 a01, a21, a22, a31, a41, a42, a43;
-  REAL8 j[18];
+  /*@}*/
+  REAL8 j[18];	/**< The required moments are all computed once and
+                 * stored in this array; The required moments are from J(1) to J(17)
+                 * (except J(2), J(3) and J(16) that are not required at 2PN order,
+                 * however, they are computed since future extensions, planned in the
+                 * near future, will require them); However, in C we need an array size
+                 * 18 to use an array that has an index 18; To ease the notation we have
+                 * therefore defined an over sized (by one element) array
+                 */
 }
 InspiralMomentsEtc;
 
-
+/** UNDOCUMENTED */
 typedef struct
 tagInspiralMomentsEtcBCV
 {
@@ -669,6 +547,7 @@ tagRectangleOut
 }
 RectangleOut;
 
+/** UNDOCUMENTED */
 typedef struct
 tagHexagonOut
 {
@@ -689,6 +568,7 @@ tagHexagonOut
 }
 HexagonOut;
 
+/** UNDOCUMENTED */
 typedef struct
 tagPRIN
 {
@@ -697,7 +577,7 @@ REAL4 b;
 }
 PRIN;
 
-/*@}*/
+/*@}*/ /* end:LALInspiralBank_h */
 
 /* ---------- Function prototypes ---------- */
 
@@ -760,14 +640,6 @@ LALInspiralBCVFcutBank (
     INT4                *NList,
     InspiralCoarseBankIn coarseIn
     );
-
-void
-PSItoMasses (
-    LALStatus            *status,
-    InspiralTemplate 	                *params,
-    UINT4 				*valid,
-    REAL4 				highGM
-);
 
 
 void

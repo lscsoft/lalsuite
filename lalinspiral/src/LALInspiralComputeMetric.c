@@ -17,25 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Churches, D. K., Cokelaer, T., Sathyaprakash, B. S.
-\file
-\ingroup LALInspiralBank_h
 
-\brief Module to compute the components of the metric which is used
-to describe distances on the signal manifold.
-
-\heading{Prototypes}
-
-<tt>LALInspiralComputeMetric()</tt>
-<ul>
-   <li> <tt>metric,</tt> Output, the metric at the lattice point defined by \c params
-   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
-   </li><li> <tt>moments,</tt> Input, moments \f$J(1), \ldots, J(17),\f$ of the PSD and other constants needed
-   in the computation of the metric.</li>
-</ul>
-
-\section sec_icm_desc Description
+/** \ingroup LALInspiralBank_h
+ * \brief Function to compute the components of the metric which is used to describe distances on the signal manifold.
+ * \author Churches, D. K., Cokelaer, T., Sathyaprakash, B. S.
 
 We calculate the components of the metric using the procedure outlined
 in Owen [\ref Owen_96].
@@ -231,7 +216,7 @@ the 2-dimensional metric \f$g_{mn}\f$ by
 g_{mn} = \gamma_{mn} - \frac{\gamma_{0m} \gamma_{0n}}{\gamma_{00}}.
 \f}
 
-\subsection sec_icm_metric Metric computation in the \f$\tau_0-\tau_3\f$ space
+\heading{Metric computation in the \f$\tau_0-\tau_3\f$ space}
 
 The metric cannot be directly computed in the \f$(\tau_0,\tau_2)\f$ space.
 Therefore, in the previous Section we first computed the metric
@@ -298,24 +283,6 @@ g_{mn}  & = & \frac{1}{2}\sum_{k,l=0}^N \Psi_{mk} \Psi_{nl}
 \biggr ]
 \f}
 where \f$J\f$'s are the moments introduced earlier.
-
-
-\heading{Algorithm}
-
-
-\heading{Uses}
-\code
-LALMAlloc
-LALInspiralMoments
-LALInverse3
-LALMatrixTransform
-LALFree
-\endcode
-
-\heading{Notes}
-
-
-
 */
 
 /*
@@ -358,12 +325,11 @@ InspiralComputeMetricGetPsiCoefficients (
 
 void
 LALInspiralComputeMetric (
-    LALStatus          *status,
-    InspiralMetric     *metric,
-    InspiralTemplate   *params,
-    InspiralMomentsEtc *moments
+    LALStatus          *status,		/**< LAL status pointer */
+    InspiralMetric     *metric,		/**< [out] the metric at the lattice point defined by \c params */
+    InspiralTemplate   *params,		/**< [in] the parameters where metric must be computed */
+    InspiralMomentsEtc *moments		/**< [in] moments \f$J(1), \ldots, J(17),\f$ of the PSD and other constants needed in the computation of the metric */
     )
-
 {
   INITSTATUS(status);
 
@@ -552,7 +518,9 @@ InspiralComputeMetricGetPsiCoefficients (
     4.L * moments->a43/3.L * cbrt(t2/t1);
 }
 
-
+/** UNDOCUMENTED
+ * \see See LALInspiralComputeMetric() for documentation
+ */
 void
 LALInspiralComputeMetricBCV (
     LALStatus             *status,

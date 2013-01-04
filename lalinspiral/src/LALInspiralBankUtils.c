@@ -17,10 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Cokelaer Thomas
-\file
+/** \defgroup LALInspiralBankUtils_c Module LALInspiralBankUtils.c
 \ingroup LALInspiralBank_h
+\author Cokelaer Thomas
 
 \brief NONE
 
@@ -29,6 +28,7 @@ In a parameter space defined by \f$m_1\f$ and \f$m_2\f$, or equivalently, \f$M=m
 to chirp-time parameter such as \f$\tau_0\f$ and \f$\tau_3\f$ si quite common. In particular, it is interesting to get the value of
 \f$\tau_3\f$ when only \f$\tau_0\f$ is known, and a constraint on the masses exists (e.g., \f$m_1=m_2\f$ or one of the mass equals mMin or mMax.
 This modules contains a few functions to perform these conversion.
+
 \heading{Algorithm}
 We know that
 \anchor eq_tau0a \f{equation}{
@@ -60,21 +60,21 @@ if \f$\eta=0.25\f$ on the equal-mass line, then
 \f}
 
 Equation\eqref{eq_tau3b} returns \f$\tau_3\f$ given in \f$M, \eta\f$ and \f$f_L\f$ and is defined
-in\c XLALInspiralTau3FromNonEqualMassLine.
-
+in\c XLALInspiralTau3FromNonEqualMass().
 
 Equation\eqref{eq_tau3a} returns tau3 in the particular case \f$m_1=m_2\f$, given
-\f$\tau_0\f$ only, and is defined in \c XLALInspiralTau3FromTau0AndEqualMassLine.
+\f$\tau_0\f$ only, and is defined in \c XLALInspiralTau3FromTau0AndEqualMassLine().
 
 Equation\eqref{eq_tau0a} returns \f$tau_0\f$ given \f$M, \eta\f$ and \f$f_L\f$, and is defined
-\c XLALInspiralTau0FromMEta.
+\c XLALInspiralTau0FromMEta().
 
-Finally, \c XLALInspiralMFromTau0AndNonEqualMass returns \f$M\f$ when \f$\tau_0\f$ is known
+Finally, \c XLALInspiralMFromTau0AndNonEqualMass() returns \f$M\f$ when \f$\tau_0\f$ is known
  and a constraint exists on one of the individual mass (e.g., \f$m_1=\textrm{mMax}\f$ or
  \f$m_1=\textrm{mMin}\f$). This functions requires a little more algebra and is used in the
-HybridHexagonal placement. The function LALInspiralHybridHexagonal describes this algebra.
+HybridHexagonal placement. The \ref LALInspiralHybridHexagonalBank_c describes this algebra.
 
 */
+/*@{*/
 
 #include <stdio.h>
 #include <lal/LALStdio.h>
@@ -85,6 +85,8 @@ HybridHexagonal placement. The function LALInspiralHybridHexagonal describes thi
 #include <lal/LALInspiralBank.h>
 #include <math.h>
 
+
+/** \see See \ref LALInspiralBankUtils_c for documentation */
 REAL4
 XLALInspiralTau3FromTau0AndEqualMassLine(
     REAL4               tau0,
@@ -103,7 +105,7 @@ XLALInspiralTau3FromTau0AndEqualMassLine(
 }
 
 
-
+/** \see See \ref LALInspiralBankUtils_c for documentation */
 REAL4
 XLALInspiralTau3FromNonEqualMass(
     REAL4              	M,
@@ -120,7 +122,7 @@ XLALInspiralTau3FromNonEqualMass(
   return tau3;
 }
 
-
+/** \see See \ref LALInspiralBankUtils_c for documentation */
 REAL4
 XLALInspiralTau0FromMEta(
     REAL4              	M,
@@ -140,7 +142,7 @@ XLALInspiralTau0FromMEta(
   return tau0;
 }
 
-
+/** \see See \ref LALInspiralBankUtils_c for documentation */
 REAL8
 XLALInspiralMFromTau0AndNonEqualMass(
   REAL8 tau0,
@@ -164,3 +166,4 @@ XLALInspiralMFromTau0AndNonEqualMass(
 
   return result;
 }
+/*@}*/

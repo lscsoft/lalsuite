@@ -1,9 +1,18 @@
 /**
    \addtogroup pkg_bank
 
-\brief This is a module that generates a template bank to search for
-       inspiralling and merging binaries consisting of neutron stars
-       and/or black holes.
+@{
+        \defgroup LALInspiralBank_h 		Header LALInspiralBank.h
+        \defgroup TemplateBankGeneration_h 	Header TemplateBankGeneration.h
+@}
+*/
+
+/**
+   \addtogroup pkg_bank
+
+   \brief This is a module that generates a template bank to search for
+          inspiralling and merging binaries consisting of neutron stars
+          and/or black holes.
 
 Template placement is based on the geometrical
 formalism [\ref Owen_96,\ref OwenAndSathyaprakash99].  A user
@@ -241,10 +250,5 @@ for more details. This algorithm is called by setting gridSpacing to  #HybridHex
 There is also the ability to create a bank for the non-spinning BCV templates.
 See the documentation. If so, the user must set approximant to BCV instead of
 one of the physical approximant (EOB, TaylorT1, ...).
-
-@{
-        \defgroup LALInspiralBank_h 		Header LALInspiralBank.h
-        \defgroup TemplateBankGeneration_h 	Header TemplateBankGeneration.h
-@}
 
 */

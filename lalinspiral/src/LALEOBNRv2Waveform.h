@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson 
+*  Copyright (C) 2010 Craig Robinson
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,13 +18,6 @@
 */
 
 
-/**
- * \author Craig Robinson
- *
- * \brief File containing most of the structures and prototypes which are
- * used in the generation of the EOBNRv2 waveform.
- */
-
 #include <lal/LALInspiral.h>
 
 
@@ -42,6 +35,15 @@ extern "C" {
 #endif
 
 #define LALEOB_MAX_MULTIPOLE 8
+
+/** \defgroup LALEOBNRv2Waveform_h Header LALEOBNRv2Waveform.h
+ * \ingroup pkg_CBC_NEW
+ * \author Craig Robinson
+ *
+ * \brief %Header containing most of the structures and prototypes which are
+ * used in the generation of the EOBNRv2 waveform.
+ */
+/*@{*/
 
 /**
  *  Structure containing the coefficients for EOBNRv2 A potential function.
@@ -298,7 +300,7 @@ FacWaveformCoeffs;
  * Structure containing all the terms of the Newtonian multipole which
  * are constant over the course of the evolution, and can therefore be
  * pre-computed. They are stored in a two-dimensional array, which is
- * indexed as values[l][m]. Since m has to be <= l, this structure
+ * indexed as values[l][m]. Since m has to be \<= l, this structure
  * is larger than it needs to be; but it makes the coding a bit neater...
  */
 typedef
@@ -313,7 +315,6 @@ NewtonMultipolePrefixes;
  * It contains eta, the pre-computed parameters for the A potential function,
  * and the pre-computed parameters for the factorized waveform
  */
-
 typedef
 struct tagEOBParams
 {
@@ -364,7 +365,7 @@ XLALGetFactorizedWaveform(
 int XLALGetCalibratedNQCCoeffs( EOBNonQCCoeffs *coeffs,
                                 INT4            l,
                                 INT4            m,
-                                REAL8           eta 
+                                REAL8           eta
                                 );
 
 int  XLALEOBNonQCCorrection(
@@ -396,7 +397,7 @@ int XLALCalcFacWaveformCoefficients(
           const REAL8               eta
           );
 
-int XLALModifyFacWaveformCoefficients( 
+int XLALModifyFacWaveformCoefficients(
           FacWaveformCoeffs * const coeffs,
           const REAL8               eta
           );
@@ -405,6 +406,8 @@ int XLALComputeNewtonMultipolePrefixes(
                 NewtonMultipolePrefixes *prefix,
                 const REAL8             m1,
                 const REAL8             m2 );
+
+/*@}*/ /* end:LALEOBNRv2Waveform_h */
 
 #ifdef  __cplusplus
 }

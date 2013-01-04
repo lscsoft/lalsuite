@@ -17,46 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief A routine to transform a second rank tensor under a given transformation.
-
-\heading{Prototypes}
-
-<tt>LALMatrixTransform()</tt>
-<ul>
-   <li> <tt>n,</tt> Input, dimension of the matrix (currently, and possibly always, only 3)
-   </li><li> <tt>data1,</tt> Input, transformation matrix
-   </li><li> <tt>data2,</tt> Input, matrix whose transformation is required
-   </li><li> <tt>data3,</tt> Output, transformed matrix</li>
-</ul>
-
-\heading{Description}
-Given the matrix of transformation in \c data1 and a second rank tensor
-\c data2, this routine computes the transformed tensor in \c data3.
-
-\heading{Algorithm}
-\f[ C_{ij} = A_{im} A_{jl}  B_{ml}.\f]
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-
-*/
-
-
-
 #include <lal/LALInspiralBank.h>
 
-void LALMatrixTransform (LALStatus *status,
-                         INT4 n,
-                         REAL8 **data1,
-                         REAL8 **data2,
-                         REAL8 **data3)
+/** \ingroup LALInspiralBank_h
+ * \brief A routine to transform a second rank tensor under a given transformation.
+ * \author Sathyaprakash, B. S.
+ *
+ * Given the matrix of transformation in \c data1 and a second rank tensor
+ * \c data2, this routine computes the transformed tensor in \c data3.
+ *
+ * \heading{Algorithm}
+ * \f[ C_{ij} = A_{im} A_{jl}  B_{ml}.\f]
+ */
+void LALMatrixTransform (LALStatus *status,	/**< LAL status pointer */
+                         INT4 n,		/**< [in] dimension of the matrix (currently, and possibly always, only 3) */
+                         REAL8 **data1,		/**< [in] transformation matrix */
+                         REAL8 **data2,		/**< [in] matrix whose transformation is required */
+                         REAL8 **data3		/**< [out] transformed matrix */
+                         )
 {
 
    INT4 i, j, l, m;

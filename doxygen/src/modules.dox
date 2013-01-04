@@ -41,6 +41,8 @@
    \defgroup pkg_findchirp	Package 'findchirp'
    \defgroup pkg_inspiral	Package 'inspiral'
    \defgroup pkg_noisemodels	Package 'noisemodels'
+
+   \defgroup pkg_CBC_NEW	Package 'New, unclassified CBC modules'
    @}
 
 \defgroup ch_inference	LAL Inference Packages

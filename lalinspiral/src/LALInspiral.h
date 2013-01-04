@@ -42,19 +42,19 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup LALInspiral_h
-   \author Churches, D. K ,  B. S. Sathyaprakash,  T. Cokelaer.
-
-\brief %Header file for the template generation codes.
-
-\heading{Synopsis}
-\code
-#include <lal/LALInspiral.h>
-\endcode
-
-This header file covers routines that are used in template generation.
-
-*/
+ * \addtogroup LALInspiral_h
+ * \author Churches, D. K ,  B. S. Sathyaprakash,  T. Cokelaer.
+ *
+ * \brief %Header file for the template generation codes.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LALInspiral.h>
+ * \endcode
+ *
+ * This header file covers routines that are used in template generation.
+ *
+ */
 /*@{*/
 
 /** \cond DONT_DOXYGEN */
@@ -126,20 +126,21 @@ This header file covers routines that are used in template generation.
 
 
 /** These are the input structures needed to solve for the mass
-    ratio \f$\eta\f$ given the chirptimes \f$(\tau_0,\, \tau_2)\f$ or
-    \f$(\tau_0, \, \tau_4).\f$
-
-Here, \c t2\f$ = \tau_2,\f$ \c A2 \f$ = A_2 ({\tau_0}/{A_0})^{3/5},\f$  and \c B2 \f$=B_2\f$,
-where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$ \f$A_2 = 3715 / [64512 (\pi f_s)^2],\f$
-\f$B_2 = 4620/3715.\f$
-
-Similarly, \c t4 \f$ = \tau_4,\f$ \c A4 \f$ = A_4 ({\tau_0}/{A_0})^{1/5},\f$
-\c B4 \f$=B_4\f$ and \c C4 \f$=C_4,\f$ where
-where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$
-\f$A_4 = 5 \times 3058673/ [128 \times 1016064  (\pi f_s)^{4/3}],\f$
-\f$B_4 = 5429 \times 1016064 /(1008 \times 3058673),\f$ and \f$C_4 = 617 \times
-1016064/(144 \times 3058673).\f$
-*//** @{ */
+ * ratio \f$\eta\f$ given the chirptimes \f$(\tau_0,\, \tau_2)\f$ or
+ * \f$(\tau_0, \, \tau_4).\f$
+ *
+ * Here, \c t2\f$ = \tau_2,\f$ \c A2 \f$ = A_2 ({\tau_0}/{A_0})^{3/5},\f$  and \c B2 \f$=B_2\f$,
+ * where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$ \f$A_2 = 3715 / [64512 (\pi f_s)^2],\f$
+ * \f$B_2 = 4620/3715.\f$
+ *
+ * Similarly, \c t4 \f$ = \tau_4,\f$ \c A4 \f$ = A_4 ({\tau_0}/{A_0})^{1/5},\f$
+ * \c B4 \f$=B_4\f$ and \c C4 \f$=C_4,\f$ where
+ * where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$
+ * \f$A_4 = 5 \times 3058673/ [128 \times 1016064  (\pi f_s)^{4/3}],\f$
+ * \f$B_4 = 5429 \times 1016064 /(1008 \times 3058673),\f$ and \f$C_4 = 617 \times
+ * 1016064/(144 \times 3058673).\f$
+ */
+/*@{*/
 typedef struct
 tagEtaTau02In
 {
@@ -156,7 +157,7 @@ tagEtaTau04In
    REAL8 B4;
    REAL8 C4;
 } EtaTau04In;
-/** @} */
+/*@}*/
 
 
 /** This structure is one of the members of the \c InspiralTemplate structure.
@@ -174,16 +175,16 @@ typedef enum {
   totalMassAndEta,	/**< total mass and symmetric mass ratio */
   totalMassUAndEta,	/**< total mass and eta but uniform distribution in totalMass */
   totalMassAndMu,	/**< total mass and reduced mass */
-  t01,			/**< unused; shouldn't be used. */
+  t01,			/**< unused; shouldn't be used */
   t02,			/**< chirptimes \f$\tau_0\f$ and \f$\tau_2\f$ */
   t03,			/**< chirptimes \f$\tau_0\f$ and \f$\tau_3\f$, and */
   t04,			/**< chirptimes \f$\tau_0\f$ and \f$\tau_4\f$ */
   psi0Andpsi3,		/**< BCV parameters \f$\psi_0\f$ and \f$\psi_3\f$ */
 
-  bhns,			/**< One of the mass is a Neutron star and the other a black hole. (m1 \f$\in\f$ [minMass-3] and m2 \f$\in\f$ [3-maxMass]). */
-  fixedMasses,		/**< The two masses are given by the input parameter structure. */
-  fixedPsi,		/**< The two psi values are given by the input parameter structure. */
-  fixedTau,		/**< The two tau values are given by the input parameter structure. */
+  bhns,			/**< One of the mass is a Neutron star and the other a black hole (m1 \f$\in\f$ [minMass-3] and m2 \f$\in\f$ [3-maxMass]) */
+  fixedMasses,		/**< The two masses are given by the input parameter structure */
+  fixedPsi,		/**< The two psi values are given by the input parameter structure */
+  fixedTau,		/**< The two tau values are given by the input parameter structure */
   massesAndSpin,	/**< UNDOCUMENTED */
   minmaxTotalMass,	/**< UNDOCUMENTED */
   spinOnly		/**< UNDOCUMENTED */
@@ -192,197 +193,159 @@ typedef enum {
 
 
 /** The inspiral waveform parameter structure containing information about the waveform to be generated.
-<ul>
-<li> <tt> ieta:</tt> parameter that tells whether the symmetric mass ratio \f$\eta\f$
-	  should be set to zero in the PN expansions of GW flux and binding energy.
-	  If <tt>ieta=0</tt> \f$\eta\f$ will be set to zero, otherwise the appropriate
-	  value of \f$\eta\f$ from the given parameters will be used.
-
-  </li><li> <tt> level:</tt> Flag used in heirarical serached to indicate if this is a coarse or a fine template
-  </li><li> <tt> *segmentIdVec:</tt> Vector of segment that have been filtered against this template needed for the LDAS implementation of the inspiral search.
-  </li><li> <tt> number:</tt> Unique ID number for this template needed for the LDAS implementation of the inspiral search.
-  </li><li> <tt> minMatch:</tt> The minimal match specified by the user when the bank that contains this template was created.
-  </li><li> <tt> nStartPad:</tt> Number of leading elements in the signal generation to be set to zero (input). If template is requested, that value must be set to zero. In the injection routines related to inject package, that nStartPad is set to zero. However, for injection performed using the inspiral package, that value can be set to non zero.
-  </li><li> <tt> nEndPad:</tt> Number of trailing bins to be set to zero, the
-  resulting waveform will have at least this many bins zero at the end, probably
-  more since we always deal with an integer power of 2 array (input).
-  </li><li> <tt> mass1:</tt>  Mass of the primary in solar mass (input/output).
-  </li><li> <tt> mass2:</tt>  Mass of the secondary in solar mass
-  (\c mass1 need not be larger than \c mass2 (input/output).
-  </li><li> <tt> spin1[3]:</tt> Spin vector of the primary (currently not in use)
-  </li><li> <tt> spin2[3]:</tt> Spin vector of the secondary (currently not in use)
-  </li><li> <tt> sourceTheta:</tt> Co-latitute in the direction to the source.
-  </li><li> <tt> sourcePhi:</tt> Azimuth angle in the direction to the source.
-  </li><li> <tt> orbitTheta0:</tt> Initial co-latitute of the orbit.
-  </li><li> <tt> orbitPhi0:</tt> Initial azimuth angle of the orbit.
-  </li><li> <tt> inclination:</tt> Inclination of the orbit  (currently not in use)
-  </li><li> <tt> distance:</tt> Distance to the binary in seconds
-  </li><li> <tt> psi0:</tt> BCV parameter \f$\psi_0.\f$
-  </li><li> <tt> psi3:</tt> BCV parameter \f$\psi_3.\f$
-  </li><li> <tt> alpha:</tt> BCV amplitude correction factor \f$\alpha f_\mathrm{cut}^{2/3}\f$
-  </li><li> <tt> eccentricity:</tt> initial eccentricity of the orbit  (currently not in use)
-  </li><li> <tt> totalMass:</tt> total mass of the binary \f$m=m_1+m_2\f$ in solar mass (input/output).
-  </li><li> <tt> eta:</tt> symmetric mass ratio \f$\eta=m_1m_2/m^2.\f$ (input/output).
-  </li><li> <tt> chirpMass:</tt> chirp mass of the binary \f$=\eta^{3/5} m\f$ in solar mass (output).
-  </li><li> <tt> t0:</tt> Newtonain chirp time in seconds (input/output).
-  </li><li> <tt> t2:</tt> first post-Newtonian chirp time in seconds (input/output).
-  </li><li> <tt> t3:</tt> 1.5 post-Newtonian chirp time in seconds (input/output).
-  </li><li> <tt> t4:</tt> second post-Newtonian chirp time in seconds (output).
-  </li><li> <tt> t5:</tt> 2.5 post-Newtonian chirp time in seconds (output).
-  </li><li> <tt> t6:</tt> third post-Newtonian chirp time in seconds (output).
-  </li><li> <tt> t7:</tt> 3.5 post-Newtonian chirp time in seconds (output).
-  </li><li> <tt> tC:</tt> total chirp time seconds (output).
-  </li><li> <tt> mu:</tt> reduced mass (in solar mass) (input/output)
-  </li><li> <tt> fLower:</tt> lower frequency cutoff of the detector in Hz (input)
-  </li><li> <tt> fCutoff:</tt> upper frequency cutoff in Hz to be used in generating the waveform.
-  If the last stable orbit frequency is smaller than the upper cutoff it will be used
-  in terminating the waveform instead of fCutoff (input).
-  </li><li> <tt> tSampling:</tt> Sampling rate in Hz (input)
-  </li><li> <tt> startPhase:</tt> starting phase of the waveform in radians (input)
-  </li><li> <tt> startTime:</tt> starting time of the waveform (in sec); if different from zero, the
-  waveform will start with an instantaneous frequency different from fLower and reach
-  fLower at time (approximately) zero (input, not used in Stationary phase approximation)
-  </li><li> <tt> signalAmplitude:</tt> dimensionless amplitude of the signal (input, currently unused.)
-  </li><li> <tt> rInitial:</tt> initial radial separation of the two, in units of total mass
-  bodies (used only in EOB waveforms) (output)
-  </li><li> <tt> vInitial:</tt> initial velocity parameter, in units of the speed of light (output)
-  </li><li> <tt> rFinal:</tt> final 'separation' between the bodies, in units of total mass (output)
-  </li><li> <tt> vFinal:</tt> final velocity parameter, in units of the speed of light (output)
-  </li><li> <tt> fFinal:</tt> final frequency reached, in units of Hz (output)
-  </li><li> <tt> rLightRing:</tt> radial coordinate at the light ring, in units of total mass (output)
-  </li><li> <tt> OmegaS:</tt> The 3PN (unknown) parameter; calculated to be equal to zero
-  by Damour, Jaranowski and Schaffer (input).
-  </li><li> <tt> Theta:</tt> The 3PN unknown flux parameter; likely to be around unity;
-  most waveform generation routines take theta to be zero. Robustness of the EOB waveform
-	  has been demonstrated for \f$-2 < \f$ \c Theta \f$< 2.\f$ (input)
-  </li><li> <tt> massChoice:</tt> The pair of (mass) parameters given (see structure
-		  defining this member for more details) (input).
-  </li><li> <tt> order:</tt> Post-Newtonain order to be used in generating the wave (input).
-  </li><li> <tt> approximant:</tt> Post-Newtonain approximant to be used in generating the wave (input).
-  </li><li> <tt> tagInspiralTemplate *next:</tt> Linked list to the next coarse bank template
-  (currently not filled by inspiral or bank codes)
-  </li><li> <tt> tagInspiralTemplate *fine:</tt> Linked list to the next fine bank template
-  (currently not filled by inspiral or bank codes)</li>
-</ul>
-*/
+ */
 typedef struct
 tagInspiralTemplate
 {
-/*  Parameters needed to generate Taylor/Pade waveforms */
-  Approximant approximant;
-  LALPNOrder order;
-  LALPNOrder ampOrder;
-  REAL8 mass1;
-  REAL8 mass2;
-  REAL8 fCutoff;
-  REAL8 fLower;
-  REAL8 tSampling;
-  REAL8 distance;
-  REAL8 signalAmplitude;
-  REAL8 startPhase;
-  REAL8 startTime;
-  INT4  ieta;
+  /** \name Parameters needed to generate Taylor/Pade waveforms */
+  /*@{*/
+  Approximant approximant;	/**< Post-Newtonain approximant to be used in generating the wave (input) */
+  LALPNOrder order;		/**< Post-Newtonain order to be used in generating the wave (input) */
+  LALPNOrder ampOrder;		/**< UNDOCUMENTED */
+  REAL8 mass1;			/**< Mass of the primary in solar mass (input/output) */
+  REAL8 mass2;			/**< Mass of the secondary in solar mass   (\c mass1 need not be larger than \c mass2 (input/output) */
+  REAL8 fCutoff;		/**< upper frequency cutoff in Hz to be used in generating the waveform;
+                                 * If the last stable orbit frequency is smaller than the upper cutoff it will be used
+                                 * in terminating the waveform instead of fCutoff (input)
+                                 */
+  REAL8 fLower;			/**< lower frequency cutoff of the detector in Hz (input) */
+  REAL8 tSampling;		/**< Sampling rate in Hz (input) */
+  REAL8 distance;		/**< Distance to the binary in seconds */
+  REAL8 signalAmplitude;	/**< dimensionless amplitude of the signal (input, currently unused) */
+  REAL8 startPhase;		/**< starting phase of the waveform in radians (input) */
+  REAL8 startTime;		/**< starting time of the waveform (in sec); if different from zero, the
+                                 * waveform will start with an instantaneous frequency different from fLower and reach
+                                 * fLower at time (approximately) zero (input, not used in Stationary phase approximation)
+                                 */
+  INT4  ieta;			/**< parameter that tells whether the symmetric mass ratio \f$\eta\f$
+                                 * should be set to zero in the PN expansions of GW flux and binding energy;
+                                 * If <tt>ieta=0</tt> \f$\eta\f$ will be set to zero, otherwise the appropriate
+                                 * value of \f$\eta\f$ from the given parameters will be used
+                                 */
+  /*@}*/
 
-/* Additional parameters for EOB waveforms */
+  /** \name Additional parameters for EOB waveforms */
+  /*@{*/
+  REAL8 Theta;			/**< The 3PN unknown flux parameter; likely to be around unity;
+                                 * most waveform generation routines take theta to be zero; Robustness of the EOB waveform
+                                 * has been demonstrated for \f$-2 < \f$ \c Theta \f$< 2\f$ (input)
+                                 */
+  REAL8 Zeta2;			/**< UNDOCUMENTED */
+  /*@}*/
 
-  REAL8 Theta;
-  REAL8 Zeta2;
+  /** \name Parameters for BCV1 template */
+  /*@{*/
+  REAL8 alpha;			/**< BCV amplitude correction factor \f$\alpha f_\mathrm{cut}^{2/3}\f$ */
+  REAL8 psi0;			/**< BCV parameter \f$\psi_0\f$ */
+  REAL8 psi3;			/**< BCV parameter \f$\psi_3\f$ */
+  /*@}*/
 
-/* Parameters for BCV1 template */
+  /** \name Additional parameters for BCV2 template */
+  /*@{*/
+  REAL8 beta;			/**< UNDOCUMENTED */
+  REAL8 alpha1;			/**< UNDOCUMENTED */
+  REAL8 alpha2;			/**< UNDOCUMENTED */
+  REAL8 alpha3;			/**< UNDOCUMENTED */
+  REAL8 alpha4;			/**< UNDOCUMENTED */
+  REAL8 alpha5;			/**< UNDOCUMENTED */
+  REAL8 alpha6;			/**< UNDOCUMENTED */
+  /*@}*/
 
-  REAL8 alpha;
-  REAL8 psi0;
-  REAL8 psi3;
-
-/* Additional parameters for BCV2 template */
-
-  REAL8 beta;
-  REAL8 alpha1;
-  REAL8 alpha2;
-  REAL8 alpha3;
-  REAL8 alpha4;
-  REAL8 alpha5;
-  REAL8 alpha6;
-
-/* Parameters for spinning BH waveform */
-
-  REAL8 inclination;
-  REAL8 orbitTheta0;
-  REAL8 orbitPhi0;
-  REAL8 spin1[3];
-  REAL8 spin2[3];
-  REAL8 sourceTheta;
-  REAL8 sourcePhi;
+  /** \name Parameters for spinning BH waveform */
+  /*@{*/
+  REAL8 inclination;		/**< Inclination of the orbit  (currently not in use) */
+  REAL8 orbitTheta0;		/**< Initial co-latitute of the orbit */
+  REAL8 orbitPhi0;		/**< Initial azimuth angle of the orbit */
+  REAL8 spin1[3];		/**< Spin vector of the primary (currently not in use) */
+  REAL8 spin2[3];		/**< Spin vector of the secondary (currently not in use) */
+  REAL8 sourceTheta;		/**< Co-latitute in the direction to the source */
+  REAL8 sourcePhi;		/**< Azimuth angle in the direction to the source */
   REAL8 polarisationAngle;
+  /*@}*/
 
-/* Spin parameters for the PTF template */
-  REAL8 chi; /* dimensionless spin of black hole (i.e. mass1) */
-  REAL8 kappa; /* cosine of angle between spin of mass1 and orb ang mom */
+  /** \name Spin parameters for the PTF template */\
+  /*@{*/
+  REAL8 chi; 			/**< dimensionless spin of black hole (ie mass1) */
+  REAL8 kappa;			/**< cosine of angle between spin of mass1 and orb ang mom */
+  /*@}*/
 
-/* Parameters which are currently might be used */
-
-  REAL8 eccentricity;
-
-/* Paramters which are computed using LALInspiralParameterCalc */
-
-  REAL8 chirpMass;
-  REAL8 eta;
-  REAL8 totalMass;
-  REAL8 fFinal;
-  REAL8 t0;
-  REAL8 t2;
-  REAL8 t3;
-  REAL8 t4;
-  REAL8 t5;
-  REAL8 t6;
-  REAL8 t7;
-  REAL8 tC;
-
-/* Note that tc and fFinal are computed during waveform generation!!! */
-
-  REAL4 minMatch;
-  REAL8 mu;
-  INT4  level;
-  INT4  number;
-  INT4  nStartPad;
-  INT4  nEndPad;
-  REAL8 OmegaS;
-  REAL8 vFinal;
-/*  REAL8 vInitial;
-  REAL8 rFinal;
-  REAL8 rInitial;
-  REAL8 rLightRing;*/
-  InputMasses massChoice;
-  INT4Vector *segmentIdVec;
-  LIGOTimeGPS end_time;
-  EventIDColumn *event_id;
-  CHAR ifo[LIGOMETA_IFO_MAX];
-
-  /* Gamma[] is a vector that stores the upper triangular part of the metric in
-   * the space of parameters. For time domain searches, Gamma[0,...,5] stores
-   * the following information :
-   *    Gamma[0] -> (tc,tc) metric component
-   *    Gamma[1] -> (tc,t0) metric component
-   *    Gamma[2] -> (tc,t3) metric component
-   *    Gamma[3] -> (t0,t0) metric component
-   *    Gamma[4] -> (t0,t3) metric component
-   *    Gamma[5] -> (t3,t3) metric component
-   * For spinBCV searches, (in 4 dimensions) Gamma[0,...,9] would be required.
-   */
-  REAL4  Gamma[10];
-  REAL4  qmParameter[2];
-  LALSimInspiralInteraction	interaction;
+  /** \name Parameters which are currently might be used */
+  /*@{*/
+  REAL8 eccentricity;		/**< initial eccentricity of the orbit  (currently not in use) */
+  /*@}*/
 
   LALSimInspiralFrameAxis axisChoice;
   UINT4 fixedStep;
   UINT4 inspiralOnly;
 
-  struct tagInspiralTemplate *next;
-  struct tagInspiralTemplate *fine;
+  /** \name Paramters which are computed using LALInspiralParameterCalc
+   * Note that tc and fFinal are computed during waveform generation!!!
+   */
+  /*@{*/
+  REAL8 chirpMass;		/**< chirp mass of the binary \f$=\eta^{3/5} m\f$ in solar mass (output) */
+  REAL8 eta;			/**< symmetric mass ratio \f$\eta=m_1m_2/m^2\f$ (input/output) */
+  REAL8 totalMass;		/**< total mass of the binary \f$m=m_1+m_2\f$ in solar mass (input/output) */
+  REAL8 fFinal;			/**< final frequency reached, in units of Hz (output) */
+  REAL8 t0;			/**< Newtonain chirp time in seconds (input/output) */
+  REAL8 t2;			/**< first post-Newtonian chirp time in seconds (input/output) */
+  REAL8 t3;			/**< 1.5 post-Newtonian chirp time in seconds (input/output) */
+  REAL8 t4;			/**< second post-Newtonian chirp time in seconds (output) */
+  REAL8 t5;			/**< 2.5 post-Newtonian chirp time in seconds (output) */
+  REAL8 t6;			/**< third post-Newtonian chirp time in seconds (output) */
+  REAL8 t7;			/**< 3.5 post-Newtonian chirp time in seconds (output) */
+  REAL8 tC;			/**< total chirp time seconds (output) */
+
+  REAL4 minMatch;		/**< The minimal match specified by the user when the bank that contains this template was created */
+  REAL8 mu;			/**< reduced mass (in solar mass) (input/output) */
+  INT4  level;			/**< Flag used in heirarical serached to indicate if this is a coarse or a fine template */
+  INT4  number;			/**< Unique ID number for this template needed for the LDAS implementation of the inspiral search */
+  INT4  nStartPad;		/**< Number of leading elements in the signal generation to be set to zero (input)
+                                 * If template is requested, that value must be set to zero; In the injection routines related to inject
+                                 * package, that nStartPad is set to zero; However, for injection performed using the inspiral package,
+                                 * that value can be set to non zero
+                                 */
+  INT4  nEndPad;		/**< Number of trailing bins to be set to zero, the resulting waveform will have at least this many bins zero at the end, probably
+                                 * more since we always deal with an integer power of 2 array (input)
+                                 */
+  REAL8 OmegaS;			/**< The 3PN (unknown) parameter; calculated to be equal to zero by Damour, Jaranowski and Schaffer (input) */
+  REAL8 vFinal;			/**< final velocity parameter, in units of the speed of light (output) */
+
+  /*  REAL8 vInitial;		// initial velocity parameter, in units of the speed of light (output)
+  REAL8 rFinal;			// final 'separation' between the bodies, in units of total mass (output)
+  REAL8 rInitial;		// initial radial separation of the two, in units of total mass bodies (used only in EOB waveforms) (output)
+  REAL8 rLightRing;*/		//  radial coordinate at the light ring, in units of total mass (output)
+
+  InputMasses massChoice;	/**< The pair of (mass) parameters given (see structure defining this member for more details) (input) */
+  INT4Vector *segmentIdVec;	/**< %Vector of segment that have been filtered against this template needed for the LDAS implementation of the inspiral search */
+  LIGOTimeGPS end_time;		/**< UNDOCUMENTED */
+  EventIDColumn *event_id;	/**< UNDOCUMENTED */
+  CHAR ifo[LIGOMETA_IFO_MAX];	/**< UNDOCUMENTED */
+
+  REAL4  Gamma[10];		  /**< Gamma[] is a vector that stores the upper triangular part of the metric in
+                                   * the space of parameters; For time domain searches, Gamma[0,...,5] stores
+                                   * the following information :<br>
+                                   *    Gamma[0] -> (tc,tc) metric component<br>
+                                   *    Gamma[1] -> (tc,t0) metric component<br>
+                                   *    Gamma[2] -> (tc,t3) metric component<br>
+                                   *    Gamma[3] -> (t0,t0) metric component<br>
+                                   *    Gamma[4] -> (t0,t3) metric component<br>
+                                   *    Gamma[5] -> (t3,t3) metric component<br>
+                                   * For spinBCV searches, (in 4 dimensions) Gamma[0,...,9] would be required
+                                   */
+  REAL4  qmParameter[2];	/**< UNDOCUMENTED */
+  LALSimInspiralInteraction	interaction;	/**< UNDOCUMENTED */
+
+  InputAxis axisChoice;		/**< UNDOCUMENTED */
+  UINT4 fixedStep;		/**< UNDOCUMENTED */
+  UINT4 inspiralOnly;		/**< UNDOCUMENTED */
+  /*@}*/
+
+  struct tagInspiralTemplate *next;	/**< Linked list to the next coarse bank template (currently not filled by inspiral or bank codes) */
+  struct tagInspiralTemplate *fine;	/**< Linked list to the next fine bank template (currently not filled by inspiral or bank codes) */
 } InspiralTemplate;
 
 
-/** This is a structure needed by the inner workings of the inspiral wave generation code.
+/** This is a structure needed by the inner workings of the inspiral wave generation code
  */
 typedef struct
 tagInspiralToffInput
@@ -402,139 +365,140 @@ tagInspiralToffInput
 
 
 /** This structure is needed to solve the differential equation
-    giving the evolution of the orbital angular momentum and the
-    spin angular momenta in the case of spinning black hole binaries.
-<ul>
-   <li>	\c v: parameter of 'integration': v=sqrt(M/r)
-  </li><li> \c magS1: The constant spin magnitude of the primary.
-  </li><li> \c magS2: The constant spin magnitude of the secondary.
-  </li><li> <tt>NCap[3]:</tt> Source direction (unit vector) in detector coordinate system.
-  </li><li> <tt>spin1[3]:</tt> Spin of the larger body.
-  </li><li> \c M: Total mass of the binary (in seconds).
-  </li><li> \c fourM1Plus: = \f$(4 m_1+3 m_2)/(2 m_1 M^3)\f$ (all masses expressed in seconds).
-  </li><li> \c fourM2Plus: = \f$(4 m_2+3 m_1)/(2 m_2 M^3)\f$ (all masses expressed in seconds).
-  </li><li> \c oneBy2Mcube: = \f$1/(2 M^3)\f$
-  </li><li> \c threeBy2Mcube:  = \f$3/(2 M^3)\f$
-  </li><li> \c thirtytwoBy5etc:=  \f$(32/5) \eta^2 M\f$</li>
-</ul>
-*/
+ * giving the evolution of the orbital angular momentum and the
+ * spin angular momenta in the case of spinning black hole binaries.
+ */
 typedef struct
 tagInspiralACSTParams
 {
-   REAL8 v;
-   REAL8 magS1;
-   REAL8 magS2;
-   REAL8 NCap[3];
-   REAL8 spin1[3];
-   REAL8 M;
-   REAL8 fourM1Plus;
-   REAL8 fourM2Plus;
-   REAL8 oneBy2Mcube;
-   REAL8 threeBy2Mcube;
-   REAL8 thirtytwoBy5etc;
+  REAL8 v;			/**< parameter of 'integration': v=sqrt(M/r) */
+  REAL8 magS1;			/**< The constant spin magnitude of the primary */
+  REAL8 magS2;			/**< The constant spin magnitude of the secondary */
+  REAL8 NCap[3];		/**< Source direction (unit vector) in detector coordinate system */
+  REAL8 spin1[3];		/**< Spin of the larger body */
+  REAL8 M;			/**< Total mass of the binary (in seconds) */
+  REAL8 fourM1Plus;		/**< fourM1Plus: = \f$(4 m_1+3 m_2)/(2 m_1 M^3)\f$ (all masses expressed in seconds) */
+  REAL8 fourM2Plus;		/**< fourM2Plus: = \f$(4 m_2+3 m_1)/(2 m_2 M^3)\f$ (all masses expressed in seconds) */
+  REAL8 oneBy2Mcube;		/**< oneBy2Mcube: = \f$1/(2 M^3)\f$ */
+  REAL8 threeBy2Mcube;		/**< threeBy2Mcube:  = \f$3/(2 M^3)\f$ */
+  REAL8 thirtytwoBy5etc;	/**< thirtytwoBy5etc:=  \f$(32/5) \eta^2 M\f$ */
 }  InspiralACSTParams;
 
-
-
-
-
-
-
 /** This structure contains various post-Newtonian and P-approximant expansion
-    coefficients; the meanings of the coefficients is indicated as comments
-    before each list.
-
-<ul>
-<li> {Energy, flux, phase, time and frequency functions:} The following
-	functions are generic function definitions that will be used in
-	template generation. The function <tt>LALInspiralChooseModel,</tt>
-	which is called by wave generation interface code, points these
-	functions to the appropriate specific functions depending on the
-	choices made by the user.</li>
-
-
-<li> \c expnFunc: Structure to hold the pointers to the generic
-	functions defined above.</li>
-
-
-<li> <tt>TofVIn</tt> and <tt>TofVIntegrandIn:</tt> Structures needed to
-	compute the time elapsed
-	from/to the starting epoch of the waveform when the velocity
-	parameter was \f$v_0,\f$ to/from the current epoch when velocity
-	parameter is \f$v.\f$</li>
-
-
-<li> <tt>InspiralPhaseIn</tt> and <tt>PhiofVIntegrandIn:</tt> Structures used
-	to compute the phase of the signal from the `beginning', when the
-	veolcity parameter is \f$v_0,\f$ to a time when the velocity parameter
-	has evolved to a user input value \f$v.\f$</li>
-
-
-<li> \c InspiralDerivativesIn: Structure used as an input to compute
-	the derivatives needed in solving the phasing formula when the
-	\c approximant is <tt>TaylorT1, TaylorP1</tt> or <tt>EOB.</tt></li>
-
-
-<li> \c rk4GSLIntegrator: Structure containing steps and controls
-for the GSL Runge-Kutta solver</li>
-
-<li> \c rk4In: Structure used as an input to Runge-Kutta solver.</li>
-</ul>
-*/
+ * coefficients; the meanings of the coefficients is indicated as comments
+ * before each list.
+ */
 typedef struct
 tagexpnCoeffs {
-   int ieta;
-   /* coefficients in the Taylor expansion of new energy function*/
-   REAL8 eTaN, eTa1, eTa2, eTa3;
-   /* coefficients in the Pade expression of new energy function*/
-   REAL8 ePaN, ePa1, ePa2, ePa3;
-   /* coefficients in the Taylor expansion of usual energy function*/
-   REAL8 ETaN, ETa1, ETa2, ETa3;
-   /* coefficients in the Taylor expansion of the derivative of the
-    usual energy function*/
-   REAL8 dETaN, dETa1, dETa2, dETa3;
+  int ieta;
 
-   /* Taylor expansion coefficients of energy flux*/
-   REAL8 FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTa8, FTl6, FTl8;
-   /* Taylor expansion coefficients of factored flux*/
-   REAL8 fTaN, fTa1, fTa2, fTa3, fTa4, fTa5, fTa6, fTa7, fTa8;
-   /* Coefficients of the corresponding P-approximant*/
-   REAL8 fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7, fPa8;
+  /** \name Coefficients in the Taylor expansion of new energy function */
+  /*@{*/
+  REAL8 eTaN, eTa1, eTa2, eTa3;
+  /*@}*/
 
-   /* Taylor expansion coefficents in t(v)*/
-   REAL8 tvaN, tva2, tva3, tva4, tva5, tva6, tva7, tvl6;
-   /* Taylor expansion coefficents in phi(v)*/
-   REAL8 pvaN, pva2, pva3, pva4, pva5, pva6, pva7, pvl6;
-   /* Taylor expansion coefficents in phi(t)*/
-   REAL8 ptaN, pta2, pta3, pta4, pta5, pta6, pta7, ptl6;
-   /* Taylor expansion coefficents in f(t)*/
-   REAL8 ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6;
-   /* Taylor expansion coefficents in psi(f) in the Fourier phase*/
-   REAL8 pfaN, pfa2, pfa3, pfa4, pfa5, pfa6, pfa7, pfl5, pfl6;
-   /* Taylor expansion for the spinning case */
-   REAL8 ST[9], thetahat ;
+  /** \name Coefficients in the Pade expression of new energy function */
+  /*@{*/
+  REAL8 ePaN, ePa1, ePa2, ePa3;
+  /*@}*/
 
+  /** \name Coefficients in the Taylor expansion of usual energy function */
+  /*@{*/
+  REAL8 ETaN, ETa1, ETa2, ETa3;
+  /*@}*/
 
-   /* sampling rate and interval*/
-   REAL8 samplingrate, samplinginterval;
-   /* symmetric mass ratio, total mass, component masses*/
-   REAL8 eta, totalmass, m1, m2;
-   /* unknown 3PN parameters, euler constant*/
-   REAL8 lambda, theta, EulerC, omegaS, zeta2;
+  /** \name Coefficients in the Taylor expansion of the derivative of the usual energy function */
+  /*@{*/
+  REAL8 dETaN, dETa1, dETa2, dETa3;
+  /*@}*/
 
-   /* initial and final values of frequency, time, velocity; lso
-    values of velocity and frequency; final phase.*/
-   REAL8 f0, fn, t0, tn, v0, vn, vf, vlso, flso, phiC;
+  /** \name Taylor expansion coefficients of energy flux */
+  /*@{*/
+  REAL8 FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTa8, FTl6, FTl8;
+  /*@}*/
 
-   /* last stable orbit and pole defined by various Taylor and P-approximants*/
-   REAL8 vlsoT0, vlsoT2, vlsoT4, vlsoT6;
-   REAL8 vlsoP0, vlsoP2, vlsoP4, vlsoP6;
-   REAL8 vlsoPP;
-   REAL8 vpoleP4, vpoleP6;
-   REAL8 vpolePP;
+  /** \name Taylor expansion coefficients of factored flux */
+  /*@{*/
+  REAL8 fTaN, fTa1, fTa2, fTa3, fTa4, fTa5, fTa6, fTa7, fTa8;
+  /*@}*/
+
+  /* \name Coefficients of the corresponding P-approximant */
+  /*@{*/
+  REAL8 fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7, fPa8;
+  /*@}*/
+
+  /** \name Taylor expansion coefficents in t(v) */
+  /*@{*/
+  REAL8 tvaN, tva2, tva3, tva4, tva5, tva6, tva7, tvl6;
+  /*@}*/
+
+  /** \name Taylor expansion coefficents in phi(v) */
+  /*@{*/
+  REAL8 pvaN, pva2, pva3, pva4, pva5, pva6, pva7, pvl6;
+  /*@}*/
+
+  /** \name Taylor expansion coefficents in phi(t) */
+  /*@{*/
+  REAL8 ptaN, pta2, pta3, pta4, pta5, pta6, pta7, ptl6;
+  /*@}*/
+
+  /** \name Taylor expansion coefficents in f(t) */
+  /*@{*/
+  REAL8 ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6;
+  /*@}*/
+
+  /** \name Taylor expansion coefficents in psi(f) in the Fourier phase */
+  /*@{*/
+  REAL8 pfaN, pfa2, pfa3, pfa4, pfa5, pfa6, pfa7, pfl5, pfl6;
+  /*@}*/
+
+  /** \name Taylor expansion for the spinning case */
+  /*@{*/
+  REAL8 ST[9], thetahat ;
+  /*@}*/
+
+  /** \name Sampling rate and interval */
+  /*@{*/
+  REAL8 samplingrate, samplinginterval;
+  /*@}*/
+
+  /** \name Symmetric mass ratio, total mass, component masses */
+  /*@{*/
+  REAL8 eta, totalmass, m1, m2;
+  /*@}*/
+
+  /** \name Unknown 3PN parameters, euler constant */
+  /*@{*/
+  REAL8 lambda, theta, EulerC, omegaS, zeta2;
+  /*@}*/
+
+  /** \name Initial and final values of frequency, time, velocity; lso
+   * values of velocity and frequency; final phase.
+   */
+  /*@{*/
+  REAL8 f0, fn, t0, tn, v0, vn, vf, vlso, flso, phiC;
+  /*@}*/
+
+  /** \name Last stable orbit and pole defined by various Taylor and P-approximants */
+  /*@{*/
+  REAL8 vlsoT0, vlsoT2, vlsoT4, vlsoT6;
+  REAL8 vlsoP0, vlsoP2, vlsoP4, vlsoP6;
+  REAL8 vlsoPP;
+  REAL8 vpoleP4, vpoleP6;
+  REAL8 vpolePP;
+  /*@}*/
+
 }  expnCoeffs;
 
 
+/** \name Energy, flux, phase, time and frequency functions.
+ * The following functions are generic function definitions that will be used in
+ * template generation. The function <tt>LALInspiralChooseModel,</tt>
+ * which is called by wave generation interface code, points these
+ * functions to the appropriate specific functions depending on the
+ * choices made by the user.
+ */
+/*@{*/
 typedef REAL8 EnergyFunction(
    REAL8 v,
    expnCoeffs *ak);
@@ -563,7 +527,10 @@ typedef REAL8 (InspiralFrequency3)(
 typedef REAL8 (InspiralTiming2) (
    REAL8 f,
    void *params);
+/*@}*/
 
+/** Structure to hold the pointers to the generic functions defined above
+ */
 typedef struct
 tagexpnFunc
 {
@@ -576,6 +543,11 @@ tagexpnFunc
 } expnFunc;
 
 
+/** Structure needed to compute the time elapsed
+ * from/to the starting epoch of the waveform when the velocity
+ * parameter was \f$v_0,\f$ to/from the current epoch when velocity
+ * parameter is \f$v\f$
+ */
 typedef struct
 tagTofVIn
 {
@@ -589,6 +561,11 @@ tagTofVIn
    expnCoeffs *coeffs;
 } TofVIn;
 
+/** Structure needed to compute the time elapsed
+ * from/to the starting epoch of the waveform when the velocity
+ * parameter was \f$v_0,\f$ to/from the current epoch when velocity
+ * parameter is \f$v\f$
+ */
 typedef struct
 tagTofVIntegrandIn
 {
@@ -609,6 +586,9 @@ tagEOBNonQCCoeffs
   REAL8 b2;
 } EOBNonQCCoeffs;
 
+/** Structure used as an input to compute the derivatives needed in solving the phasing formula when the
+ * \c approximant is <tt>TaylorT1, TaylorP1</tt> or <tt>EOB</tt>
+ */
 typedef struct
 tagInspiralDerivativesIn
 {
@@ -619,7 +599,8 @@ tagInspiralDerivativesIn
    EOBNonQCCoeffs *nqcCoeffs;
 } InspiralDerivativesIn;
 
-
+/** Structure used as an input to Runge-Kutta solver.
+ */
 typedef struct
 tagrk4In
 {
@@ -634,6 +615,8 @@ tagrk4In
    INT4 n;
 } rk4In;
 
+/** Structure containing steps and controls for the GSL Runge-Kutta solver.
+ */
 typedef struct
 tagrk4GSLIntegrator
 {
@@ -645,6 +628,11 @@ tagrk4GSLIntegrator
    rk4In *input;
 } rk4GSLIntegrator;
 
+
+/** Structures used to compute the phase of the signal from the `beginning', when the
+ * veolcity parameter is \f$v_0,\f$ to a time when the velocity parameter
+ * has evolved to a user input value \f$v\f$.
+ */
 typedef struct
 tagInspiralPhaseIn
 {
@@ -655,6 +643,10 @@ tagInspiralPhaseIn
    expnCoeffs *coeffs;
 } InspiralPhaseIn;
 
+/** Structures used to compute the phase of the signal from the `beginning', when the
+ * veolcity parameter is \f$v_0,\f$ to a time when the velocity parameter
+ * has evolved to a user input value \f$v\f$.
+ */
 typedef struct
 tagPhiofVIntegrandIn
 {
@@ -672,7 +664,7 @@ tagInspiralInit
 
 }  InspiralInit;
 
-/*@}*/
+/*@}*/ /* end:LALInspiral_h */
 
 
 /* ---------- Function prototypes ---------- */

@@ -17,22 +17,14 @@
 *  MA  02111-1307  USA
 */
 
+
+#include <lal/LALInspiralBank.h>
+#include <stdio.h>
+
 /**
-\author Churches, D. K. and Sathyaprakash, B.S.
-\file
 \ingroup LALInspiralBank_h
-
-\brief Module which checks whether or not a pair of parameter
-values are consistent with the search space.
-
-\heading{Prototypes}
-
-<tt>LALInspiralValidParams()</tt>
-<ul>
-   <li> <tt>valid,</tt> Output, 0 means invalid template, 1 means valid
-   </li><li> <tt>bankParams,</tt> Input
-   </li><li> <tt>coarseIn,</tt> Input</li>
-</ul>
+\author Churches, D. K. and Sathyaprakash, B.S.
+\brief Function which checks whether or not a pair of parameter values are consistent with the search space.
 
 Module which checks whether or not a pair of parameter
 values \f$\tau_{0}\f$ and \f$\tau_{2(3)}\f$ correspond to
@@ -80,7 +72,7 @@ m_{1} = m - m_{2}
 This may be substituted into Eq.\eqref{eq_eta} to give
 \f{equation}{
 \eta = \frac{(m - m_{2}) m_{2}}{\left[ (m - m_{2}) + m_{2} \right]^{2}}
-     = \frac{(m - m_{2}) m_{2}}{m^{2}}
+= \frac{(m - m_{2}) m_{2}}{m^{2}}
 \f}
 which may be re--arranged to give
 \f{equation}{
@@ -120,24 +112,12 @@ and
 \f{equation}{
 m_{2} \geq \mathtt{mMin}
 \f}
-
-\heading{Algorithm}
-
-\heading{Uses}
-
-\heading{Notes}
-
-*/
-
-
-#include <lal/LALInspiralBank.h>
-#include <stdio.h>
-
+ */
 void LALInspiralValidParams(
-    LALStatus            *status,
-    INT4                 *valid,
-    InspiralBankParams   bankParams,
-    InspiralCoarseBankIn coarseIn
+    LALStatus            *status,	/**< LAL status pointer */
+    INT4                 *valid,	/**< [out] 0 means invalid template, 1 means valid */
+    InspiralBankParams   bankParams,	/**< [in] Input */
+    InspiralCoarseBankIn coarseIn	/**< [in] Input */
     )
 
 {

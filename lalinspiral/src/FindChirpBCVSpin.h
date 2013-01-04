@@ -60,23 +60,23 @@ template family.
 
 /**\name Error Codes */
 /*@{*/
-#define FINDCHIRPBCVSPINH_ENULL 1
-#define FINDCHIRPBCVSPINH_ENNUL 2
-#define FINDCHIRPBCVSPINH_EALOC 3
-#define FINDCHIRPBCVSPINH_ENUMZ 4
-#define FINDCHIRPBCVSPINH_ESEGZ 5
-#define FINDCHIRPBCVSPINH_EMISM 6
-#define FINDCHIRPBCVSPINH_EDELT 7
-#define FINDCHIRPBCVSPINH_EFLOW 8
-#define FINDCHIRPBCVSPINH_EDYNR 9
-#define FINDCHIRPBCVSPINH_EISTN 10
-#define FINDCHIRPBCVSPINH_EDIVZ 11
-#define FINDCHIRPBCVSPINH_EMAPX 12
-#define FINDCHIRPBCVSPINH_EUAPX 13
-#define FINDCHIRPBCVSPINH_ECLUW 14
-/*@}*/
+#define FINDCHIRPBCVSPINH_ENULL 1	/**< Null pointer */
+#define FINDCHIRPBCVSPINH_ENNUL 2	/**< Non-null pointer */
+#define FINDCHIRPBCVSPINH_EALOC 3	/**< Memory allocation error */
+#define FINDCHIRPBCVSPINH_ENUMZ 4	/**< Invalid number of segments */
+#define FINDCHIRPBCVSPINH_ESEGZ 5	/**< Invalid number of points in segments */
+#define FINDCHIRPBCVSPINH_EMISM 6	/**< Mismatch between number of points in segments */
+#define FINDCHIRPBCVSPINH_EDELT 7	/**< deltaT is zero or negative */
+#define FINDCHIRPBCVSPINH_EFLOW 8	/**< Low frequency cutoff is negative */
+#define FINDCHIRPBCVSPINH_EDYNR 9	/**< Dynamic range scaling is zero or negative */
+#define FINDCHIRPBCVSPINH_EISTN 10	/**< Truncation of inverse power spectrum is negative */
+#define FINDCHIRPBCVSPINH_EDIVZ 11	/**< Attempting to divide by zero */
+#define FINDCHIRPBCVSPINH_EMAPX 12	/**< Mismatch in waveform approximant */
+#define FINDCHIRPBCVSPINH_EUAPX 13	/**< Unknown approximant */
+#define FINDCHIRPBCVSPINH_ECLUW 14	/**< Unacceptable max-over-chirp clustering method for BCVSpin */
 /*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define FINDCHIRPBCVSPINH_MSGENULL "Null pointer"
 #define FINDCHIRPBCVSPINH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPBCVSPINH_MSGEALOC "Memory allocation error"
@@ -91,7 +91,7 @@ template family.
 #define FINDCHIRPBCVSPINH_MSGEMAPX "Mismatch in waveform approximant"
 #define FINDCHIRPBCVSPINH_MSGEUAPX "Unknown approximant"
 #define FINDCHIRPBCVSPINH_MSGECLUW "Unacceptable max-over-chirp clustering method for BCVSpin"
-
+/** \endcond */
 
 
 void
@@ -102,12 +102,6 @@ LALFindChirpBCVSpinData (
     FindChirpDataParams        *params
     );
 
-
-
-
-
-
-
 void
 LALFindChirpBCVSpinTemplate (
     LALStatus                  *status,
@@ -117,12 +111,6 @@ LALFindChirpBCVSpinTemplate (
     FindChirpDataParams        *fcDataParams
     );
 
-
-
-
-
-
-
 void
 LALFindChirpBCVSpinFilterSegment (
     LALStatus                  *status,
@@ -131,6 +119,8 @@ LALFindChirpBCVSpinFilterSegment (
     FindChirpFilterParams      *params,
     FindChirpDataParams        *fcDataParams
   );
+
+/*@}*/ /* end:FindChirpBCVSpin_h */
 
 #if 0
 { /* so that editors will match succeeding brace */

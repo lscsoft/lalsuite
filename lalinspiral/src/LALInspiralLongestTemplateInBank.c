@@ -17,34 +17,18 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Sathyaprakash, B.S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief To find the longest template in a template bank.
-
-\heading{Description}
-Given the parameters of a template bank find the longest template
-in the bank. This is done by looking at the duration for which
-a signal corresponding to smallest masses lasts. One simply calls
-the \c LALInspiralWaveLength code for a system consisting
-of two stars each of mass <tt>mMin.</tt>
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-LALInspiralParameterCalc
-LALInspiralWaveLength
-\endcode
-
-\heading{Notes}
-
-*/
-
 #include <lal/LALInspiralBank.h>
 
+/** \ingroup LALInspiralBank_h
+ * \brief Function to find the longest template in a template bank.
+ * \author Sathyaprakash, B.S.
+ *
+ * Given the parameters of a template bank find the longest template
+ * in the bank. This is done by looking at the duration for which
+ * a signal corresponding to smallest masses lasts. One simply calls
+ * the \c LALInspiralWaveLength code for a system consisting
+ * of two stars each of mass <tt>mMin.</tt>
+ */
 void
 LALInspiralLongestTemplateInBank
    (
@@ -82,4 +66,3 @@ LALInspiralLongestTemplateInBank
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
-

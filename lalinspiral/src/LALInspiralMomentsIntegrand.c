@@ -17,55 +17,32 @@
 *  MA  02111-1307  USA
 */
 
-/**
-Authors: Brown, D. A., and Sathyaprakash, B. S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief NONE
-
-
-\heading{Prototypes}
-<tt>LALInspiralMomentsIntegrand()</tt>:
-<ul>
-   <li> <tt>integrand,</tt> Output, the value of the integrand
-   </li><li> <tt>x,</tt> Input, the point where the integrand is required
-   </li><li> <tt>params,</tt> Input, of type \c InspiralMomentsIn containing the details
-   required in moments calculation</li>
-</ul>
-
-\heading{Description}
-
-The moments of the noise curve are defined as
-\f{equation}{
-I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
-\frac{x^{-q/3}}{S_{h}(x)} \, dx \,.
-\f}
-This function calculates the integrand of this integral, i.e.\ for a given \f$x\f$
-it calculates
-\f{equation}{
-\frac{x^{-q/3}}{S_{h}(x)} \,\,.
-\f}
-by interpolating the frequency series containing \f$S_h(f)\f$.
-
-\heading{Algorithm}
-
-\heading{Uses}
-LALDPolynomialInterpolation
-
-\heading{Notes}
-
-*/
-
 #include <lal/Interpolate.h>
 #include <lal/LALInspiralBank.h>
 
+
+/** \ingroup LALInspiralBank_h
+ * \brief NO BRIEF DESCRIPTION
+ * \author Brown, D. A., and Sathyaprakash, B. S.
+ *
+ * The moments of the noise curve are defined as
+ * \f{equation}{
+ * I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
+ * \frac{x^{-q/3}}{S_{h}(x)} \, dx \,.
+ * \f}
+ * This function calculates the integrand of this integral, i.e.\ for a given \f$x\f$
+ * it calculates
+ * \f{equation}{
+ * \frac{x^{-q/3}}{S_{h}(x)} \,\,.
+ * \f}
+ * by interpolating the frequency series containing \f$S_h(f)\f$.
+ */
 void
 LALInspiralMomentsIntegrand(
-    LALStatus  *status,
-    REAL8      *integrand,
-    REAL8       x,
-    void       *params
+    LALStatus  *status,		/**< LAL status pointer */
+    REAL8      *integrand,	/**< [out] the value of the integrand */
+    REAL8       x,		/**< [in] the point where the integrand is required */
+    void       *params		/**< [in] of type \c InspiralMomentsIn containing the details required in moments calculation */
     )
 
 {
