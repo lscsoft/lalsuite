@@ -2395,7 +2395,13 @@ paramData ) ) == NULL ){
     fprintf(stderr, "Error... Can't open MCMC output chain file!\n");
     exit(0);
   }
-
+  else{
+    /* buffer the output, so that file system is not thrashed when outputing */
+    /* buffer will be 1Mb */
+    if( setvbuf(fp, NULL, _IOFBF, 0x100000) )
+      fprintf(stderr, "Warning: Unable to set output file buffer!");
+  }
+    
   /* write MCMC chain header info */
   fprintf(fp, "%% MCMC for %s with %s data using %d iterations\n",
     input.pulsar, det, input.mcmc.iterations);
