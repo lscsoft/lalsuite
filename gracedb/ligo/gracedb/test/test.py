@@ -228,7 +228,8 @@ if __name__ == "__main__":
     service = os.environ.get('TEST_SERVICE', TEST_SERVICE)
     testdatadir = os.environ.get('TEST_DATA_DIR', testdatadir)
 
-    gracedb = GraceDb(TEST_SERVICE)
+    gracedb = GraceDb(service)
+    print "Using service", service
 
     eventFile = os.path.join(testdatadir, "cbc-lm.xml")
     createdEvent = gracedb.createEvent(

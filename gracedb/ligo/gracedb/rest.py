@@ -32,7 +32,7 @@ class HTTPError(Exception):
         self.status = status
         self.reason = reason
         self.message = message
-        Exception.__init__(self, (status, reason))
+        Exception.__init__(self, (status, reason+" / "+message))
 
 #-----------------------------------------------------------------
 # Generic GSI REST
