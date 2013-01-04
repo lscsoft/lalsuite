@@ -76,6 +76,20 @@ C           = SOL
 KPC         = float('3.0856776e19')   # kiloparsec in metres
 I38         = float('1e38')           # moment of inertia kg m^2 
 
+# some parameter names for special LaTeX treatment in figures
+paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
+             'PSI': '$\psi$ (rad)', 'PHI0': '$\phi_0$ (rad)', \
+             'RA': '$\\alpha$ (rad)', 'DEC': '$\delta$ (rad)', \
+             'F0': '$f_0$ (Hz)', 'F1': '$\dot{f}$ (Hz/s)', 'F2':
+             '$\\ddot{f}$ (Hz/s$^2$)', 'LOGL': '$\log{L}$', \
+             'PMRA': 'proper motion $\\alpha$ (rad/s)', \
+             'PMDEC': 'proper motion $\delta$ (rad/s)', \
+             'PMDC': 'proper motion $\delta$ (rad/s)', \
+             'X': '$a \sin{i}$ (lt s)', 'PB': 'Period (days)', \
+             'T0': '$T_0$ (s)', 'TASC': '$T_{\\textrm{asc}}$ (s)', \
+             'OM': '$\omega_0$ (deg)', 'PBDT': '$\dot{P}$ (s/s)', \
+             'E': 'eccentricity'}
+
 # some angle conversion functions taken from psr_utils.py in PRESTO
 def rad_to_dms(rad):
   """
@@ -502,15 +516,6 @@ def plot_posterior_hist(poslist, param, ifos,
   
   # ifos line colour specs
   coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint':'k'}
-  
-  # some parameter names for special LaTeX treatment in figures
-  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
-               'PSI': '$\psi$ (rad)', 'PHI0': '$\phi_0$ (rad)', \
-               'RA': '$\\alpha$ (rad)', 'DEC': '$\delta$ (rad)', \
-               'F0': '$f_0$ (Hz)', 'F1': '$\dot{f}$ (Hz/s)', 'F2':
-               '$\\\\ddot{f}$ (Hz/s$^2$)', 'LOGL': '$\log{L}$', \
-               'PMRA': 'proper motion $\\alpha$ (rad/s)', \
-               'PMDEC': 'proper motion $\delta$ (rad/s)'}
                
   # param name for axis label
   try:
@@ -616,16 +621,7 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
       'font.size': 14 }
   
   matplotlib.rcParams.update(mplparams)
-  
-  # some parameter names for special LaTeX treatment in figures
-  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
-               'PSI': '$\psi$ (rad)', 'PHI0': '$\phi_0$ (rad)', \
-               'RA': '$\\alpha$ (rad)', 'DEC': '$\delta$ (rad)', \
-               'F0': '$f_0$ (Hz)', 'F1': '$\dot{f}$ (Hz/s)', 'F2':
-               '$\\\\ddot{f}$ (Hz/s$^2$)', 'LOGL': '$\log{L}$', \
-               'PMRA': 'proper motion $\\alpha$ (rad/s)', \
-               'PMDC': 'proper motion $\delta$ (rad/s)'}
- 
+               
   coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', \
              'Joint': 'k'}
   
@@ -738,16 +734,7 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
       'font.size': 12 }
   
   matplotlib.rcParams.update(mplparams)
-  
-  # some parameter names for special LaTeX treatment in figures
-  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
-               'PSI': '$\psi$ (rad)', 'PHI0': '$\phi_0$ (rad)', \
-               'RA': '$\\alpha$ (rad)', 'DEC': '$\delta$ (rad)', \
-               'F0': '$f_0$ (Hz)', 'F1': '$\dot{f}$ (Hz/s)', 'F2':
-               '$\\\\ddot{f}$ (Hz/s$^2$)', 'LOGL': '$\log{L}$', \
-               'PMRA': 'proper motion $\\alpha$ (rad/s)', \
-               'PMDC': 'proper motion $\delta$ (rad/s)'}
-  
+
   myfigs = []
   
   # param name for axis label
