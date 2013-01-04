@@ -1,19 +1,21 @@
 // -*- mode: c -*-
 
 /* ----- defining packages within the pulsar-class of packages ----- */
-/** \addtogroup ch_pulsar
-    @{
-    \defgroup pkg_pulsarCommon	 Package 'pulsarCommon': Common Pulsar APIs
-    \defgroup pkg_pulsarHough	 Package 'pulsarHough': The Hough transform
-    \defgroup pkg_pulsarFold	 Package 'pulsarFold': amplitude folding routines
-    \defgroup pkg_pulsarCoh	 Package 'pulsarCoh': Coherent search routines
-    \defgroup pkg_pulsarKnown	 Package 'pulsarKnown': known pulsar time-domain search routines
-    \defgroup pkg_pulsarMetric   Package 'pulsarMetric':  Pulsar Metric modules
-    \defgroup pkg_pulsarCovering Package 'pulsarCovering': template bank covering
-    \defgroup pkg_pulsarCrossCorr Package 'pulsarCrossCorr': Cross-correlation
-    \defgroup pkg_pulsarApps	 Applications for pulsar searches
-    \defgroup pulsarTODO         TODO: not-yet properly structured
-    @}
+/**
+   \addtogroup ch_pulsar
+   @{
+    \defgroup pkg_pulsarCommon	 Common Pulsar APIs
+    \defgroup pkg_pulsarHough	 The Hough transform
+    \defgroup pkg_pulsarFold	 Amplitude folding routines
+    \defgroup pkg_pulsarCoh	 Coherent search routines
+    \defgroup pkg_pulsarKnown	 Known pulsar time-domain search
+    \defgroup pkg_pulsarMetric   Pulsar Metric modules
+    \defgroup pkg_pulsarCovering Template bank covering
+    \defgroup pkg_pulsarCrossCorr Cross-correlation
+    \defgroup pkg_pulsarXML	 XML Serializers
+    \defgroup pkg_pulsarApps	 Applications
+    \defgroup pulsarTODO         TODO: unstructured modules
+   @}
 */
 
 /**
@@ -25,11 +27,6 @@
 /**
    \addtogroup pkg_pulsarMetric
    \brief  Modules to deal with pulsar-specific parameter-space metrics and coverings.
-*/
-
-/**
-   \addtogroup pkg_pulsarFold
-   \brief Contains function LALFoldAmplitudes: folds amplitudes into phase bins.
 */
 
 /**

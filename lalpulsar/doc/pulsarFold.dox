@@ -2,6 +2,7 @@
 
 /**
   \addtogroup pkg_pulsarFold
+  \brief Contains function LALFoldAmplitudes: folds amplitudes into phase bins.
 
 Periodic sources of gravitational radiation will produce measured
 strains of the following form:

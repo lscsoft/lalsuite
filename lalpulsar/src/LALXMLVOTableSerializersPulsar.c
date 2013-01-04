@@ -31,10 +31,6 @@
 #include <lal/LALXMLVOTableSerializers.h>
 #include <lal/LALXMLVOTableSerializersPulsar.h>
 
-/**
- * \ingroup LALXMLVOTableSerializersPulsar_h
- */
-
 #define INT4STR_MAXLEN          15
 #define REAL8STR_MAXLEN         25
 #define PULSARSPINSTR_MAXLEN    4

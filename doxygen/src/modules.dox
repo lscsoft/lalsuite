@@ -28,28 +28,10 @@
    @}
 
 \defgroup ch_burst	Burst Packages
-   @{
-   \defgroup pkg_burstsearch	Package 'burstsearch'
-   \defgroup pkg_tracksearch	Package 'tracksearch'
-   \defgroup pkg_TFR		Package 'TFR'
-   \defgroup pkg_ring		Package 'ring'
-   @}
 
 \defgroup ch_inspiral	Inspiral Packages
-   @{
-   \defgroup pkg_bank		Package 'bank'
-   \defgroup pkg_findchirp	Package 'findchirp'
-   \defgroup pkg_inspiral	Package 'inspiral'
-   \defgroup pkg_noisemodels	Package 'noisemodels'
 
-   \defgroup pkg_CBC_NEW	Package 'New, unclassified CBC modules'
-   @}
-
-\defgroup ch_inference	LAL Inference Packages
-   @{
-   \defgroup pkg_LALInference	Package 'LALInference'
-   @}
-
+\defgroup ch_inference	Inference Packages
 
 \defgroup ch_pulsar	Pulsar Packages
 
@@ -58,14 +40,14 @@
    \defgroup pkg_stochastic	Package 'stochastic'
    @}
 
-\defgroup ch_support	LAL Support Interface
+\defgroup ch_support	Support Interface
    @{
    \defgroup pkg_support	Package 'support'
    \defgroup pkg_XML 		VOTable XML package
    \defgroup pkg_SFTIO		Package 'SFT file IO'
    @}
 
-\defgroup ch_lalframe	LAL Framedata Interface (optional)
+\defgroup ch_lalframe	Framedata Interface
    @{
    \defgroup pkg_framedata	Package 'framedata'
    @}

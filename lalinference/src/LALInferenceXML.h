@@ -27,7 +27,7 @@ extern "C" {
 
 /**
  * \defgroup LALInferenceXML_h Header LALInferenceXML.h
- * \ingroup pkg_XML
+ * \ingroup pkg_LALInferenceXML
  * \brief Header file declaring the public VOTable serializers XML LALInference API
  */
 /*@{*/

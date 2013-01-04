@@ -27,7 +27,7 @@ extern "C" {
 
 /**
  * \defgroup LALXMLVOTableSerializersPulsar_h Header LALXMLVOTableSerializersPulsar.h
- * \ingroup pkg_XML
+ * \ingroup pkg_pulsarXML
  * \brief Header file declaring the public VOTable serializers XML Pulsar API
  */
 /*@{*/
