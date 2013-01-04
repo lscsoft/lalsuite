@@ -5,7 +5,8 @@ EXTRA_DIST = \
 	lalburst.pc.in \
 	lalburst.spec.in \
 	lalburst.spec \
-	aclocal.m4
+	aclocal.m4 \
+	doc
 
 SUBDIRS = \
 	gnuscripts \

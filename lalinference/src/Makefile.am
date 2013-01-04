@@ -61,6 +61,7 @@ EXTRA_DIST = \
 	LALInferenceConfig.h.in \
 	LALInferenceXML.c \
 	LALInferenceXML.h \
+	chapter_inference.dox \
 	generate_user_env.awk
 
 if HAVE_GIT_REPO

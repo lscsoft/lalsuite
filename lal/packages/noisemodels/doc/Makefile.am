@@ -1,4 +1,6 @@
 EXTRA_DIST = \
 	noisemodels.dox \
 	NoisePSDTest.pdf \
-	RandomSignal.pdf
+	NoisePSDTest.png \
+	RandomSignal.pdf \
+	RandomSignal.png

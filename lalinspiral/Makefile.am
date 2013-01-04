@@ -5,7 +5,8 @@ EXTRA_DIST = \
 	lalinspiral.pc.in \
 	lalinspiral.spec.in \
 	lalinspiral.spec \
-	aclocal.m4
+	aclocal.m4 \
+	doc
 
 SUBDIRS = \
 	gnuscripts \
