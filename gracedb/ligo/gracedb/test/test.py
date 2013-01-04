@@ -197,7 +197,7 @@ class TestGracedb(unittest.TestCase):
     def test_logger(self):
         import logging
         import ligo.gracedb.rest
-        import ligo.gracedb.logger
+        import ligo.gracedb.logging
      
         logging.basicConfig()
         log = logging.getLogger('testing')
@@ -206,7 +206,7 @@ class TestGracedb(unittest.TestCase):
         #gracedb = ligo.gracedb.rest.GraceDb()
         graceid = eventId
      
-        log.addHandler(ligo.gracedb.logger.GraceDbLogHandler(gracedb, graceid))
+        log.addHandler(ligo.gracedb.logging.GraceDbLogHandler(gracedb, graceid))
 
         message = "Message is {0}".format(random.random())
         log.warn(message)
