@@ -147,7 +147,7 @@ def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpse
 	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
           coinc_id=int(coinc_id.split(":")[-1])
 	  if not coinc_id in output.keys():
-	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={})
+	    output[coinc_id]=Event(trig_time=sngl_time,timeslide_dict={})
             extra[coinc_id]={}
 	  output[coinc_id].timeslides[ifo]=0
 	  output[coinc_id].ifos.append(ifo)
