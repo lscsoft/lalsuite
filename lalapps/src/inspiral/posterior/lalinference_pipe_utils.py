@@ -144,20 +144,21 @@ def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpse
 	if max_cfar !=-1:
 		get_coincs=get_coincs+' and coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
+    extra={}
 	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
-          coinc_id=int(coinc_id.split(":")[-1])
+      coinc_id=int(coinc_id.split(":")[-1])
 	  if not coinc_id in output.keys():
-	    output[coinc_id]=Event(trig_time=sngl_time,timeslide_dict={})
-            extra[coinc_id]={}
+          output[coinc_id]=Event(trig_time=sngl_time,timeslide_dict={})
+          extra[coinc_id]={}
 	  output[coinc_id].timeslides[ifo]=0
 	  output[coinc_id].ifos.append(ifo)
-          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
-        if dumpfile is not None:
-          fh=open(dumpfile,'w')
-          for co in output.keys():
-            for ifo in output[co].ifos:
-              fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
-          fh.close()
+      extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
+      if dumpfile is not None:
+        fh=open(dumpfile,'w')
+        for co in output.keys():
+          for ifo in output[co].ifos:
+            fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
+        fh.close()
 	return output.values()
 	
 
