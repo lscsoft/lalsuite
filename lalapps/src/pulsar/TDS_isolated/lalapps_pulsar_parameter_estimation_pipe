@@ -419,6 +419,9 @@ while i < len(param_files):
           if pulsar in f:
             h0priorfile = h0priordir+'/'+f
             break
+            
+      if h0priorfile == None:
+        h0priorfile = 'None' # just set the file name to None
     
     units = None
     ephem = None

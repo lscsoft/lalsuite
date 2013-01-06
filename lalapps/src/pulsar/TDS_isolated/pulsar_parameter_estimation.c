@@ -1038,53 +1038,56 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
     inputParams->priors.iotaPrior = inputParams->priors.priorFile;
     
     if( (fp = fopen(inputParams->priors.priorFile, "rb")) == NULL ){
-      fprintf(stderr, "Error... could not open prior file %s\n",
-              inputParams->priors.priorFile);
-      exit(0);
+      fprintf(stderr, "Error... could not open prior file %s\n\
+Just revert to uniform prior", inputParams->priors.priorFile);
+      inputParams->priors.priorFile = NULL;
+      inputParams->priors.h0Prior = uniform_string;
     }
-    
-    /* file should contain a header of six doubles with:
-     *  - h0 minimum
-     *  - dh0 - the step size in h0
-     *  - N - number of h0 values
-     *  - cos(iota) minimum
-     *  - dci - the step size in cos(iota)
-     *  - M - number of cos(iota) values
-     * followed by an NxM double array of posterior values. */
+    else{
+      /* file should contain a header of six doubles with:
+       *  - h0 minimum
+       *  - dh0 - the step size in h0
+       *  - N - number of h0 values
+       *  - cos(iota) minimum
+       *  - dci - the step size in cos(iota)
+       *  - M - number of cos(iota) values
+       * followed by an NxM double array of posterior values. */
    
-    double header[6];
+      double header[6];
     
-    /* read in header data */
-    if ( !fread(header, sizeof(double), 6, fp) ){
-      fprintf(stderr, "Error... could not read prior file header %s\n",
-              inputParams->priors.priorFile);
-      exit(0);
-    }
-    
-    /* allocate h0 and cos(iota) vectors */
-    inputParams->priors.h0vals = XLALCreateREAL8Vector( (UINT4)header[2] );
-    for( i = 0; i < (UINT4)header[2]; i++ )
-      inputParams->priors.h0vals->data[i] = header[0] + (REAL8)i*header[1];
-    
-    inputParams->priors.civals = XLALCreateREAL8Vector( (UINT4)header[5] );
-    for( i = 0; i < (UINT4)header[5]; i++ )
-      inputParams->priors.civals->data[i] = header[3] + (REAL8)i*header[4];
-    
-    /* read in prior NxM array */
-    inputParams->priors.h0cipdf = XLALMalloc((UINT4)header[2]*sizeof(double*));
-    for( i = 0; i < (UINT4)header[2]; i++ ){
-      inputParams->priors.h0cipdf[i] = XLALMalloc( (UINT4)header[5] *
-                                                   sizeof(double) );
-   
-      if ( !fread(inputParams->priors.h0cipdf[i], sizeof(double),
-                 (UINT4)(header[5]), fp ) ){
-        fprintf(stderr, "Error... could not read prior file array %s\n",
+      /* read in header data */
+      if ( !fread(header, sizeof(double), 6, fp) ){
+        fprintf(stderr, "Error... could not read prior file header %s\n",
                 inputParams->priors.priorFile);
         exit(0);
       }
-    }
     
-    fclose(fp);
+      /* allocate h0 and cos(iota) vectors */
+      inputParams->priors.h0vals = XLALCreateREAL8Vector( (UINT4)header[2] );
+      for( i = 0; i < (UINT4)header[2]; i++ )
+        inputParams->priors.h0vals->data[i] = header[0] + (REAL8)i*header[1];
+    
+      inputParams->priors.civals = XLALCreateREAL8Vector( (UINT4)header[5] );
+      for( i = 0; i < (UINT4)header[5]; i++ )
+        inputParams->priors.civals->data[i] = header[3] + (REAL8)i*header[4];
+    
+      /* read in prior NxM array */
+      inputParams->priors.h0cipdf =
+        XLALMalloc((UINT4)header[2]*sizeof(double*));
+      for( i = 0; i < (UINT4)header[2]; i++ ){
+        inputParams->priors.h0cipdf[i] = XLALMalloc( (UINT4)header[5] *
+                                                     sizeof(double) );
+   
+        if ( !fread(inputParams->priors.h0cipdf[i], sizeof(double),
+                  (UINT4)(header[5]), fp ) ){
+          fprintf(stderr, "Error... could not read prior file array %s\n",
+                  inputParams->priors.priorFile);
+          exit(0);
+        }
+      }
+    
+      fclose(fp);
+    }
   } 
 }
 
