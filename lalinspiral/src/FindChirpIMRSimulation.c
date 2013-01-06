@@ -26,29 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-/**
-\author Brown, D. A. and Creighton, T. D
-\file
-
-\brief Provides an interface between code build from \c findchirp and
-various simulation packages for injecting chirps into data.
-
-<dl>
-<dt>LALFindChirpInjectSignals()</dt><dd> injects the signals described
-in the linked list of \c SimInspiralTable structures \c events
-into the data \c chan. The response function \c resp should
-contain the response function to use when injecting the signals into the data.</dd>
-</dl>
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-\endcode
-
-
-*/
-
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/Date.h>
@@ -71,6 +48,16 @@ LALFree()
 #include <lal/GenerateInspRing.h>
 #include <lal/TimeSeries.h>
 
+
+/** \brief Provides an interface between code build from \ref pkg_findchirp and
+ * various simulation packages for injecting chirps into data.
+ * \author Brown, D. A. and Creighton, T. D
+ *
+ * Injects the signals described
+ * in the linked list of \c SimInspiralTable structures \c events
+ * into the data \c chan. The response function \c resp should
+ * contain the response function to use when injecting the signals into the data.
+ */
 void
 LALFindChirpInjectIMR (
     LALStatus                  *status,
@@ -417,5 +404,3 @@ LALFindChirpInjectIMR (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-
-

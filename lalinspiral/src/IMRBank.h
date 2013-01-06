@@ -13,8 +13,7 @@
 #define _IMRBANK_H
 
 
-/* New structure to hold moments full arrays!! */
-
+/** New structure to hold moments full arrays!! */
 typedef struct
   {
   REAL8Vector * minus3[25];
@@ -32,7 +31,7 @@ typedef struct
   LALUnit sampleUnits;
   } IMRBankCumulativeNoiseMoments;
 
-/* A more convenient metric type */
+/** A more convenient metric type */
 typedef struct
   {
   REAL8 data[3][3];
@@ -44,7 +43,7 @@ typedef struct
   REAL8 tau3;
   } IMRBankMetric;
 
-/* This holds a box in m1,m2 */
+/** This holds a box in m1,m2 */
 typedef struct tagIMRBankMassRegion
   {
   REAL8 mbox[3];

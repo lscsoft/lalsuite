@@ -20,6 +20,7 @@
  */
 
 #include <complex.h>
+#include <lal/LALAtomicDatatypes.h>
 
 #ifndef _TRIGGERINTERPOLATION_H
 #define _TRIGGERINTERPOLATION_H
@@ -55,7 +56,7 @@ extern "C" {
  * array \c y:
  *
  * \code{.c}
- *    double complex y[] = {...};
+ *    COMPLEX16 y[] = {...};
  * \endcode
  *
  * and suppose that the maximum of |y[i]| occurs at i = 8.
@@ -64,7 +65,7 @@ extern "C" {
  *
  * \code{.c}
  *    double tmax;
- *    double complex ymax;
+ *    COMPLEX16 ymax;
  *    int result = XLALApplyLanczosTriggerInterpolant(interp, &tmax, &ymax, &y[8]);
  * \endcode
  *
@@ -135,8 +136,8 @@ void XLALDestroyCubicSplineTriggerInterpolant(CubicSplineTriggerInterpolant *);
 int XLALApplyCubicSplineTriggerInterpolant(
     CubicSplineTriggerInterpolant *interp,
     double *tmax,
-    double complex *ymax,
-    const double complex *y);
+    COMPLEX16 *ymax,
+    const COMPLEX16 *y);
 
 /* \} */
 
@@ -183,8 +184,8 @@ void XLALDestroyLanczosTriggerInterpolant(LanczosTriggerInterpolant *);
 int XLALApplyLanczosTriggerInterpolant(
     LanczosTriggerInterpolant *interp,
     double *tmax,
-    double complex *ymax,
-    const double complex *y);
+    COMPLEX16 *ymax,
+    const COMPLEX16 *y);
 
 /* \} */
 
@@ -237,8 +238,8 @@ void XLALDestroyNearestNeighborTriggerInterpolant(NearestNeighborTriggerInterpol
 int XLALApplyNearestNeighborTriggerInterpolant(
     NearestNeighborTriggerInterpolant *interp,
     double *tmax,
-    double complex *ymax,
-    const double complex *y);
+    COMPLEX16 *ymax,
+    const COMPLEX16 *y);
 
 /* \} */
 
@@ -287,8 +288,8 @@ void XLALDestroyQuadraticFitTriggerInterpolant(QuadraticFitTriggerInterpolant *)
 int XLALApplyQuadraticFitTriggerInterpolant(
     QuadraticFitTriggerInterpolant *interp,
     double *tmax,
-    double complex *ymax,
-    const double complex *y);
+    COMPLEX16 *ymax,
+    const COMPLEX16 *y);
 
 /* \} */
 

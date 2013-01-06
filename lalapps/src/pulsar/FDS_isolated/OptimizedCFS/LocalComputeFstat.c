@@ -408,7 +408,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 		       const PulsarSpins fkdot,
 		       const SSBtimes *tSSB,
 		       const AMCoeffs *amcoe,
-		       const ComputeFParams *params)       /**< addition computational params */
+		       const ComputeFParams *params)       /* addition computational params */
 { 
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */

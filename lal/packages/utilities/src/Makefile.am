@@ -1,6 +1,7 @@
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
 
 noinst_LTLIBRARIES = libutilities.la
+
 libutilities_la_SOURCES = \
 	CoarseGrainFrequencySeries.c \
 	DetInverse.c \
@@ -23,6 +24,3 @@ libutilities_la_SOURCES = \
 	SphericalHarmonics.c
 
 noinst_HEADERS = MatrixOps_source.c
-
-MOSTLYCLEANFILES =
-DISTCLEANFILES =

@@ -1,0 +1,72 @@
+/*
+ * LALInspiralVCSInfo.h - LALInspiral VCS Information Header
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or (at
+ * your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with with program; see the file COPYING. If not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
+ * Copyright (C) 2009-2011 Adam Mercer
+ */
+
+#ifndef _LALINSPIRALVCSINFO_H
+#define _LALINSPIRALVCSINFO_H
+
+#include <lal/LALVCSInfo.h>
+#include <lal/LALInspiralLibVCSInfo.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* vcs information defines */
+#define LALINSPIRAL_VCS_NAME "LALInspiral"
+#define LALINSPIRAL_VCS_ID "@ID@"
+#define LALINSPIRAL_VCS_DATE "@DATE@"
+#define LALINSPIRAL_VCS_BRANCH "@BRANCH@"
+#define LALINSPIRAL_VCS_TAG "@TAG@"
+#define LALINSPIRAL_VCS_AUTHOR "@AUTHOR@"
+#define LALINSPIRAL_VCS_COMMITTER "@COMMITTER@"
+#define LALINSPIRAL_VCS_STATUS "@STATUS@"
+
+/* vcs information defines - identable*/
+#define LALINSPIRAL_VCS_IDENT_ID "$" "LALInspiralId: @ID@ " "$"
+#define LALINSPIRAL_VCS_IDENT_DATE "$" "LALInspiralDate: @DATE@ " "$"
+#define LALINSPIRAL_VCS_IDENT_BRANCH "$" "LALInspiralBranch: @BRANCH@ " "$"
+#define LALINSPIRAL_VCS_IDENT_TAG "$" "LALInspiralTag: @TAG@ " "$"
+#define LALINSPIRAL_VCS_IDENT_AUTHOR "$" "LALInspiralAuthor: @AUTHOR@ " "$"
+#define LALINSPIRAL_VCS_IDENT_COMMITTER "$" "LALInspiralCommitter: @COMMITTER@ " "$"
+#define LALINSPIRAL_VCS_IDENT_STATUS "$" "LALInspiralStatus: @STATUS@ " "$"
+
+/* vcs information structures */
+static const struct tagLALVCSInfo lalInspiralHeaderVCSInfo = { \
+  LALINSPIRAL_VCS_NAME, \
+  LALINSPIRAL_VERSION, \
+  LALINSPIRAL_VCS_ID, \
+  LALINSPIRAL_VCS_DATE, \
+  LALINSPIRAL_VCS_BRANCH, \
+  LALINSPIRAL_VCS_TAG, \
+  LALINSPIRAL_VCS_AUTHOR, \
+  LALINSPIRAL_VCS_COMMITTER, \
+  LALINSPIRAL_VCS_STATUS \
+};
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _LALINSPIRALVCSINFO_H */
+
+/*
+ * vim: tw=0 ts=2 et
+ */

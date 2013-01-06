@@ -41,7 +41,7 @@ bin_PROGRAMS = $(metaio_progs) $(frame_progs) $(pulsar_progs) $(mpi_progs)
 
 noinst_PROGRAMS = $(td_test_progs)
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 
 if HAVE_PYTHON
 bin_SCRIPTS = \
@@ -50,7 +50,8 @@ bin_SCRIPTS = \
 	lalapps_nest_pipe \
 	lalapps_vo_nest2pos \
 	lalinference_pipe \
-	lalapps_nest2pos
+	lalapps_nest2pos \
+	lalapps_merge_nested_sampling_runs
 pkgpython_DATA = \
 	nest_utils.py \
 	combine_evidence.py \
@@ -70,7 +71,8 @@ EXTRA_DIST = \
 	lalinference_pipe.in \
 	lalinference_pipe_utils.py \
 	nest2pos.in \
-	nest2pos.py
+	nest2pos.py \
+	merge_nested_sampling_runs.in
 
 python_config.sed: Makefile
 	@-rm -f python_config.sed
@@ -100,6 +102,11 @@ lalinference_pipe: $(srcdir)/lalinference_pipe.in python_config.sed
 lalapps_nest2pos: $(srcdir)/nest2pos.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/nest2pos.in > lalapps_nest2pos
 	@chmod a+x lalapps_nest2pos
+
+lalapps_merge_nested_sampling_runs: $(srcdir)/merge_nested_sampling_runs.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/merge_nested_sampling_runs.in >lalapps_merge_nested_sampling_runs
+	@chmod a+x lalapps_merge_nested_sampling_runs
+
 
 CLEANFILES = \
 	$(bin_SCRIPTS) \

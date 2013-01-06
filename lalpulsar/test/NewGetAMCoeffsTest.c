@@ -32,6 +32,16 @@
  * Monte-Carlo validation by simply running this script repeatedly.
  *
  *********************************************************************************/
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 #include <math.h>
 #include <sys/times.h>
 
@@ -124,8 +134,8 @@ int main(int argc, char *argv[])
   UINT4 pickedSite;
   BOOLEAN ignoreErrors = 0; /* Don't fail if tolerance exceeded */
   UINT4 numChecks = 1; /* Number of times to check */
-  char earthEphem[] = "earth00-04.dat";
-  char sunEphem[] = "sun00-04.dat";
+  char earthEphem[] = DATADIR "earth00-04.dat";
+  char sunEphem[] = DATADIR "sun00-04.dat";
 
   /* ----- old testing code to use 9 degree earth rotations ----- */
   /* startTime.gpsSeconds = 714275242;

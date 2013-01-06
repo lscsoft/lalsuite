@@ -140,6 +140,13 @@ LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t );
 /* Returns GPS time as a REAL8. */
 REAL8 XLALGPSGetREAL8( const LIGOTimeGPS *epoch );
 
+/** Breaks the GPS time into REAL8 integral and fractional parts,
+ * each of which has the same sign as the epoch.  Returns the
+ * fractional part, and stores the integral part (as a REAL8)
+ * in the object pointed to by iptr.  Like the standard C math
+ * library function modf(). */
+REAL8 XLALGPSModf( REAL8 *iptr, const LIGOTimeGPS *epoch );
+
 /* Adds dt to a GPS time. */
 LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt );
 

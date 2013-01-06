@@ -550,6 +550,8 @@ void initVariables(LALInferenceRunState *state)
   REAL8 fRef = 0.0;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 analytic=0;
+  LALInferenceIFOData *dataPtr;
+  LALInferenceDomain modelDomain;
   UINT4 event=0;
   UINT4 i=0;
   REAL8 m1=0;
@@ -743,107 +745,107 @@ void initVariables(LALInferenceRunState *state)
     if ( ! strcmp( "GeneratePPN", ppt->value ) )
       {
         approx = GeneratePPN;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT1", ppt->value ) )
       {
         approx = TaylorT1;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT2", ppt->value ) )
       {
         approx = TaylorT2;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT3", ppt->value ) )
       {
         approx = TaylorT3;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT4", ppt->value ) )
       {
         approx = TaylorT4;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorF1", ppt->value ) )
       {
         approx = TaylorF1;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+        modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "TaylorF2", ppt->value ) )
       {
         approx = TaylorF2;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+        modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "TaylorF2RedSpin", ppt->value ) )
       {
         approx = TaylorF2RedSpin;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+        modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
       else if ( ! strcmp( "TaylorF2RedSpinTidal", ppt->value ) )
       {
         approx = TaylorF2RedSpinTidal;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+        modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "EOB", ppt->value ) )
       {
         approx = EOB;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "EOBNR", ppt->value ) )
       {
         approx = EOBNR;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "EOBNRv2", ppt->value ) )
       {
         approx = EOBNRv2;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "EOBNRv2HM", ppt->value ) )
       {
         approx = EOBNRv2HM;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinTaylor", ppt->value ) )
       {
         approx = SpinTaylor;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinTaylorT4", ppt->value ) )
       {
         approx = SpinTaylorT4;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
       {
         approx = SpinQuadTaylor;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinTaylorFrameless", ppt->value ) )
       {
         approx = SpinTaylorFrameless;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
       {
         approx = PhenSpinTaylorRD;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "NumRel", ppt->value ) )
       {
         approx = NumRel;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+        modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "IMRPhenomA", ppt->value ) )
       {
         approx = IMRPhenomA;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+        modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "IMRPhenomB", ppt->value ) )
       {
         approx = IMRPhenomB;
-        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+        modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else
       {
@@ -967,11 +969,11 @@ void initVariables(LALInferenceRunState *state)
   if(ppt){
     if ( ! strcmp( "time", ppt->value ) )
     {
-      state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+      modelDomain = LALINFERENCE_DOMAIN_TIME;
     }
     else if ( ! strcmp( "frequency", ppt->value ) )
     {
-      state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+      modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
     }
     else
     {
@@ -982,6 +984,11 @@ void initVariables(LALInferenceRunState *state)
     }
   }
   
+  dataPtr = state->data;
+  while (dataPtr != NULL) {
+    dataPtr->modelDomain = modelDomain;
+    dataPtr = dataPtr->next;
+  }
   /* This flag was added to account for the broken Big Dog
      injection, which had the opposite sign in H and L compared
      to Virgo. */
@@ -1001,6 +1008,12 @@ void initVariables(LALInferenceRunState *state)
     if(strstr(ppt->value,"ENDONLY")) bookends=LALINFERENCE_TAPER_END;
     if(strstr(ppt->value,"RING")) bookends=LALINFERENCE_RING;
     if(strstr(ppt->value,"SMOOTH")) bookends=LALINFERENCE_SMOOTH;
+  }
+
+  /* Over-ride time prior if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
+  if(ppt){
+    dt=atof(ppt->value);
   }
 
   /* Over-ride end time if specified */
@@ -1106,12 +1119,6 @@ void initVariables(LALInferenceRunState *state)
     start_lambda2 = atof(ppt->value);
   }
   
-  /* Over-ride time prior if specified */
-  ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
-  if(ppt){
-    dt=atof(ppt->value);
-  }
-
   /* Over-ride Distance min if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--Dmin");
   if(ppt){
@@ -1656,8 +1663,6 @@ void initVariables(LALInferenceRunState *state)
     for (i = 0; i < N; i++) {
       sigmaVec->data[i] = sqrt(gsl_matrix_get(covM, i, i)); /* Single-parameter sigma. */
     }
-
-    LALInferenceAddVariable(state->proposalArgs, LALInferenceSigmaJumpName, &sigmaVec, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
     /* Set up eigenvectors and eigenvalues. */
     gsl_matrix *eVectors = gsl_matrix_alloc(N,N);

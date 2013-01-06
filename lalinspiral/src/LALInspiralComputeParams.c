@@ -17,99 +17,74 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Churches, D. K.
-\file
-\ingroup LALInspiralBank_h
-
-\brief This function takes as input \f$\tau_{0}\f$, \f$\tau_{3}\f$ and \f$f_a\f$ (the lower frequency of the detectors
-sensitivity). It then calculates \f$m\f$ (the total mass of the binary), \f$\eta\f$ (the
-symmetric mass ratio) and the individual mass of the compact objects.
-
-\heading{Prototypes}
-
-<tt>LALInspiralComputeParams()</tt>:
-<ul>
-   <li> <tt>pars,</tt> Output, inspiral wave parameter structure
-   </li><li> <tt>bankParams,</tt> Input, the parameters of the template bank
-   </li><li> <tt>coarseIn,</tt> Input, input parameters specifying the coarse bank</li>
-</ul>
-
-
-\heading{Description}
-
-We start with the definition of the chirp times \f$\tau_{0}\f$ and \f$\tau_{3}\f$,
-\f{equation}{
-\tau_{0} = \frac{5}{256 (\pi f_{a} )^{8/3} m^{5/3} \eta}
-\f}
-and
-\f{equation}{
-\tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{5} )^{1/3} m^{2/3} \eta}
-\f}
- These equations may be inverted to yield
-\f{equation}{
-m = \frac{5}{32 \pi^{2} f_{a}} \frac{\tau_{3}}{\tau_{0}}
-\f}
-and
-\f{equation}{
-\eta = \left( \frac{2 \pi^{2}}{25 f_{a}^{3}} \frac{\tau_{0}^{2}}{\tau_{3}^{5}}
-\right)^{1/3}\f}
-The individual masses may be calculated as follows.  We have
-
-\anchor mass1 \f{equation}{
-m = m_{1} + m_{2}
-\label{mass1}
-\f}
-and
-\anchor eta1 \f{equation}{
-\eta = \frac{m_{1} m_{2}}{(m_{1} + m_{2})^{2}}
-\label{eta1}
-\f}
-From Eq.\eqref{mass1} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
-\f{equation}{
-m_{1} = m - m_{2}
-\f}
-This may be substituted into Eq.\eqref{eta1} to give
-\f{equation}{
-\eta = \frac{(m - m_{2}) m_{2}}{\left[ (m - m{2}) + m_{2} \right]^{2}}
-\f}
-which may be re--arranged to give
-\f{equation}{
-m_{2}^{2} - m m_{2} + \eta m^{2} = 0
-\f}
-i.e.\
-\f{equation}{
-m_{2} = \frac{ m \pm \sqrt{m^{2}(1 - 4 \eta) }}{2}
-\f}
-Therefore, since we know that \f$\eta \leq 1/4\f$, real roots are guaranteed.
-If we had eliminated \f$m_{2}\f$ rather than \f$m_{1}\f$ then we would have arrived at an identical
-expression for
-\f$m_{1}\f$, and so of one object has mass
-\f{equation}{
-m_{1} = \frac{m + \sqrt{m^{2}(1-4 \eta)}}{2}
-\f}
-then the other object must have mass
-\f{equation}{
-m_{2} = \frac{m - \sqrt{m^{2}(1-4 \eta)}}{2}
-\f}
-
-\heading{Algorithm}
-
-\heading{Uses}
-LALInspiralParameterCalc
-\heading{Notes}
-
-
-
-*/
-
-
 #include <lal/LALInspiralBank.h>
 
-void LALInspiralComputeParams(LALStatus            *status,
-                              InspiralTemplate     *pars,
-                              InspiralBankParams   bankParams,
-                              InspiralCoarseBankIn coarseIn)
+/** \ingroup LALInspiralBank_h
+ * \brief This function takes as input \f$\tau_{0}\f$, \f$\tau_{3}\f$ and \f$f_a\f$ (the lower frequency of the detectors
+ * sensitivity), it then calculates \f$m\f$ (the total mass of the binary), \f$\eta\f$ (the
+ * symmetric mass ratio) and the individual mass of the compact objects.
+ * \author Churches, D. K.
+ *
+ * We start with the definition of the chirp times \f$\tau_{0}\f$ and \f$\tau_{3}\f$,
+ * \f{equation}{
+ * \tau_{0} = \frac{5}{256 (\pi f_{a} )^{8/3} m^{5/3} \eta}
+ * \f}
+ * and
+ * \f{equation}{
+ * \tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{5} )^{1/3} m^{2/3} \eta}
+ * \f}
+ * These equations may be inverted to yield
+ * \f{equation}{
+ * m = \frac{5}{32 \pi^{2} f_{a}} \frac{\tau_{3}}{\tau_{0}}
+ * \f}
+ * and
+ * \f{equation}{
+ * \eta = \left( \frac{2 \pi^{2}}{25 f_{a}^{3}} \frac{\tau_{0}^{2}}{\tau_{3}^{5}}
+ * \right)^{1/3}\f}
+ * The individual masses may be calculated as follows.  We have
+ *
+ * \anchor mass1 \f{equation}{
+ * m = m_{1} + m_{2}
+ * \label{mass1}
+ * \f}
+ * and
+ * \anchor eta1 \f{equation}{
+ * \eta = \frac{m_{1} m_{2}}{(m_{1} + m_{2})^{2}}
+ * \label{eta1}
+ * \f}
+ * From Eq.\eqref{mass1} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
+ * \f{equation}{
+ * m_{1} = m - m_{2}
+ * \f}
+ * This may be substituted into Eq.\eqref{eta1} to give
+ * \f{equation}{
+ * \eta = \frac{(m - m_{2}) m_{2}}{\left[ (m - m{2}) + m_{2} \right]^{2}}
+ * \f}
+ * which may be re--arranged to give
+ * \f{equation}{
+ * m_{2}^{2} - m m_{2} + \eta m^{2} = 0
+ * \f}
+ * i.e.                                          \
+ * \f{equation}{
+ * m_{2} = \frac{ m \pm \sqrt{m^{2}(1 - 4 \eta) }}{2}
+ * \f}
+ * Therefore, since we know that \f$\eta \leq 1/4\f$, real roots are guaranteed.
+ * If we had eliminated \f$m_{2}\f$ rather than \f$m_{1}\f$ then we would have arrived at an identical
+ * expression for
+ * \f$m_{1}\f$, and so of one object has mass
+ * \f{equation}{
+ * m_{1} = \frac{m + \sqrt{m^{2}(1-4 \eta)}}{2}
+ * \f}
+ * then the other object must have mass
+ * \f{equation}{
+ * m_{2} = \frac{m - \sqrt{m^{2}(1-4 \eta)}}{2}
+ * \f}
+ */
+void LALInspiralComputeParams(LALStatus            *status,	/**< LAL status pointer */
+                              InspiralTemplate     *pars,	/**< [out] inspiral wave parameter structure */
+                              InspiralBankParams   bankParams,	/**< [in] the parameters of the template bank */
+                              InspiralCoarseBankIn coarseIn	/**< [in] input parameters specifying the coarse bank */
+                              )
 {
 
 

@@ -18,8 +18,8 @@
 */
 
 /** \cond DONT_DOXYGEN */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 /** \endcond */
+#include <complex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <ctype.h>
@@ -236,14 +236,14 @@ do {                                                                 \
    precision. */
 #define ASSIGNFILTER                                                 \
 do {                                                                 \
-  zpgFilter->poles->data[0].re = wc*SQRT3_2;                         \
-  zpgFilter->poles->data[0].im = wc*0.5;                             \
-  zpgFilter->poles->data[1].re = 0.0;                                \
-  zpgFilter->poles->data[1].im = wc;                                 \
-  zpgFilter->poles->data[2].re = -wc*SQRT3_2;                        \
-  zpgFilter->poles->data[2].im = wc*0.5;                             \
-  zpgFilter->gain.re = 0.0;                                          \
-  zpgFilter->gain.im = wc*wc*wc;                                     \
+  zpgFilter->poles->data[0] = wc*SQRT3_2;                         \
+  zpgFilter->poles->data[0] += I*wc*0.5;                             \
+  zpgFilter->poles->data[1] = 0.0;                                \
+  zpgFilter->poles->data[1] += I*wc;                                 \
+  zpgFilter->poles->data[2] = -wc*SQRT3_2;                        \
+  zpgFilter->poles->data[2] += I*wc*0.5;                             \
+  zpgFilter->gain = 0.0;                                          \
+  zpgFilter->gain = I*wc*wc*wc;                                     \
 } while (0)
 
 /* A script to print a data vector, which may be single or double

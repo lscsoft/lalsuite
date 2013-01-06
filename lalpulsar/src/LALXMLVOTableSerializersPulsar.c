@@ -18,12 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \file
- * \ingroup XML
- * \brief Implementation of the VOTable serializers XML Pulsar API
- */
-
 #include <string.h>
 
 #include <libxml/parser.h>
@@ -36,7 +30,6 @@
 #include <lal/LALXMLVOTableCommon.h>
 #include <lal/LALXMLVOTableSerializers.h>
 #include <lal/LALXMLVOTableSerializersPulsar.h>
-
 
 #define INT4STR_MAXLEN          15
 #define REAL8STR_MAXLEN         25

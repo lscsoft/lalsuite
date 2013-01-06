@@ -17,12 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#include <complex.h>
 #include <math.h>
 #include <string.h>
 #include <gsl/gsl_sf_gamma.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALComplex.h>
 #include <lal/FrequencySeries.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -31,6 +31,13 @@
 #include <lal/Units.h>
 #include <lal/Window.h>
 #include <lal/Date.h>
+
+static COMPLEX16 cabs2(COMPLEX16 z)
+{
+	double x = creal(z);
+	double y = cimag(z);
+	return x * x + y * y;
+}
 
 /**
  *
@@ -1115,13 +1122,13 @@ int XLALREAL4SpectrumInvertTruncate(
     for ( k = cut; k < vtilde->length - 1; ++k )
     {
       if ( spectrum->data->data[k] )
-        vtilde->data[k] = XLALCOMPLEX8Rect( 1.0 / sqrt( spectrum->data->data[k] ), 0.0 ); /* purely real */
+        vtilde->data[k] = 1.0 / sqrt( spectrum->data->data[k] ); /* purely real */
       else
-        vtilde->data[k] = LAL_COMPLEX8_ZERO;
+        vtilde->data[k] = 0.0;
     }
 
     /* no Nyquist */
-    vtilde->data[vtilde->length - 1] = LAL_COMPLEX8_ZERO;
+    vtilde->data[vtilde->length - 1] = 0.0;
 
     /* construct time-domain version of root-inv-spectrum */
     XLALREAL4ReverseFFT( vector, vtilde, revplan );
@@ -1219,13 +1226,13 @@ int XLALREAL8SpectrumInvertTruncate(
     for ( k = cut; k < vtilde->length - 1; ++k )
     {
       if ( spectrum->data->data[k] )
-        vtilde->data[k] = XLALCOMPLEX16Rect( 1.0 / sqrt( spectrum->data->data[k] ), 0.0 ); /* purely real */
+        vtilde->data[k] = 1.0 / sqrt( spectrum->data->data[k] ); /* purely real */
       else
-        vtilde->data[k] = LAL_COMPLEX16_ZERO;
+        vtilde->data[k] = 0.0;
     }
 
     /* no Nyquist */
-    vtilde->data[vtilde->length - 1] = LAL_COMPLEX16_ZERO;
+    vtilde->data[vtilde->length - 1] = 0.0;
 
     /* construct time-domain version of root-inv-spectrum */
     XLALREAL8ReverseFFT( vector, vtilde, revplan );
@@ -1329,18 +1336,18 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
   for(i = 0; i < fseries->data->length; i++, j++)
   {
     if(pdata[j])
-      fdata[i] = XLALCOMPLEX8MulReal(fdata[i], sqrt(norm / pdata[j]));
+      fdata[i] *= sqrt(norm / pdata[j]);
     else
       /* PSD has a 0 in it, treat as a zero in the filter */
-      fdata[i] = LAL_COMPLEX8_ZERO;
+      fdata[i] = 0.0;
   }
 
   /* zero the DC and Nyquist components for safety */
   if(fseries->data->length)
   {
     if(fseries->f0 == 0)
-      fdata[0] = LAL_COMPLEX8_ZERO;
-    fdata[fseries->data->length - 1] = LAL_COMPLEX8_ZERO;
+      fdata[0] = 0.0;
+    fdata[fseries->data->length - 1] = 0.0;
   }
 
   /* update the units of fseries.  norm has units of Hz */
@@ -1380,18 +1387,18 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
   for(i = 0; i < fseries->data->length; i++, j++)
   {
     if(pdata[j])
-      fdata[i] = XLALCOMPLEX16MulReal(fdata[i], sqrt(norm / pdata[j]));
+      fdata[i] *= sqrt(norm / pdata[j]);
     else
       /* PSD has a 0 in it, treat as a zero in the filter */
-      fdata[i] = LAL_COMPLEX16_ZERO;
+      fdata[i] = 0.0;
   }
 
   /* zero the DC and Nyquist components for safety */
   if(fseries->data->length)
   {
     if(fseries->f0 == 0)
-      fdata[0] = LAL_COMPLEX16_ZERO;
-    fdata[fseries->data->length - 1] = LAL_COMPLEX16_ZERO;
+      fdata[0] = 0.0;
+    fdata[fseries->data->length - 1] = 0.0;
   }
 
   /* update the units of fseries.  norm has units of Hz */
@@ -1408,13 +1415,58 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
  */
 
 
-/** compute the median bias */
+/**
+ * Geometric mean median bias factor.
+ *
+ * For a sample of nn 2-degree of freedom \f$\chi^{2}\f$-distributed random
+ * variables, compute and return the natural logarithm of the ratio of the
+ * sample median to the geometric mean.  See Section III.A. of
+ * LIGO-T0900462 for the derivation.
+ */
 REAL8 XLALLogMedianBiasGeometric( UINT4 nn )
 {
   return log(XLALMedianBias(nn)) - nn * (gsl_sf_lngamma(1.0 / nn) - log(nn));
 }
 
-/** UNDOCUMENTED */
+/**
+ * Allocate and initialize a LALPSDRegressor object.
+ *
+ * The LALPSDRegressor object implements an algorithm for iteratively
+ * estimating a moving mean power spectral density from a sequence of
+ * frequency series objects containing Fourier-transformed snippets of a
+ * time series.  The algorithm is designed to converge quickly even with
+ * high dynamic range data and to be stable against periods of
+ * non-Gaussianity ("glitches").  These things are achieved, respectively,
+ * by using a running geometric mean instead of an arithmetic mean and
+ * updating the running mean from a median of recent frequency series
+ * objects.  Obtaining a correctly normalized PSD from these steps requires
+ * the application of certain correction factors that have been derived
+ * from the assumption that the underlying statistics are Gaussian.  If the
+ * noise is not Gaussian then the resulting PSD estimate will be biased ---
+ * it will differ from the true arithmetic mean of spectrum by some unknown
+ * factor.
+ *
+ * Two parameters control the behaviour of the LALPSDRegressor object:  the
+ * average_samples and median_samples.  When new data is supplied, the
+ * median of the most recent median_samples frequency series object is used
+ * to update the moving average.  For each update, the new PSD estimate is
+ * computed from 1 part the new data and (average_samples - 1) parts the
+ * old data.  This makes the regressor implement a moving
+ * exponentially-distributed weighted average, with average_samples setting
+ * the scale of the distribution.
+ *
+ * Changes to the PSD must persist for approximately 1/2 the number of median
+ * samples before they begin to be reflected in the running average, and so
+ * the median_samples parameter controls the robustness of the PSD estimate
+ * to glitches.  Increasing the median_samples also increases the time
+ * required for the PSD to converge.
+ *
+ * Increasing the average_samples parameter decreases the sample noise in
+ * the resulting PSD by averaging over more frequency series samples but
+ * increases the time required to converge to a new PSD should the spectrum
+ * changes.
+ */
+
 LALPSDRegressor *XLALPSDRegressorNew(unsigned average_samples, unsigned median_samples)
 {
   LALPSDRegressor *new;
@@ -1444,7 +1496,10 @@ LALPSDRegressor *XLALPSDRegressorNew(unsigned average_samples, unsigned median_s
   return new;
 }
 
-/** UNDOCUMENTED */
+/**
+ * Reset a LALPSDRegressor object to the newly-allocated state.  This
+ * resets the internal frequency series parameters.
+ */
 void XLALPSDRegressorReset(LALPSDRegressor *r)
 {
   if(r->history)
@@ -1462,7 +1517,10 @@ void XLALPSDRegressorReset(LALPSDRegressor *r)
   r->n_samples = 0;
 }
 
-/** UNDOCUMENTED */
+/**
+ * Free all memory associated with a LALPSDRegressor object.  The object
+ * must not be used again after calling this function.
+ */
 void XLALPSDRegressorFree(LALPSDRegressor *r)
 {
   if(r)
@@ -1474,7 +1532,9 @@ void XLALPSDRegressorFree(LALPSDRegressor *r)
   free(r);
 }
 
-/** UNDOCUMENTED */
+/**
+ * Change the average_samples of a LALPSDRegressor object.
+ */
 int XLALPSDRegressorSetAverageSamples(LALPSDRegressor *r, unsigned average_samples)
 {
   /* require the number of samples used for the average to be positive */
@@ -1484,13 +1544,30 @@ int XLALPSDRegressorSetAverageSamples(LALPSDRegressor *r, unsigned average_sampl
   return 0;
 }
 
-/** UNDOCUMENTED */
+/**
+ * Return the average_samples of a LALPSDRegressor object.
+ */
 unsigned XLALPSDRegressorGetAverageSamples(const LALPSDRegressor *r)
 {
   return r->average_samples;
 }
 
-/** UNDOCUMENTED */
+/**
+ * Return the number of frequency series samples over which the running
+ * average has been computed.  This initially counts the number of
+ * frequency series updates the LALPSDRegressor has received, until the
+ * count reaches average_samples and then it stops increasing.
+ */
+unsigned XLALPSDRegressorGetNSamples(const LALPSDRegressor *r)
+{
+  return r->n_samples;
+}
+
+/**
+ * Change the median_samples of a LALPSDRegressor object.  Any existing
+ * median history is preserved to the extent possible:  if median_samples
+ * is being reduced then the most recent samples are preserved.
+ */
 int XLALPSDRegressorSetMedianSamples(LALPSDRegressor *r, unsigned median_samples)
 {
   unsigned i;
@@ -1532,13 +1609,29 @@ int XLALPSDRegressorSetMedianSamples(LALPSDRegressor *r, unsigned median_samples
   return 0;
 }
 
-/** UNDOCUMENTED */
+/**
+ * Return the median_samples of a LALPSDRegressor object.
+ */
 unsigned XLALPSDRegressorGetMedianSamples(const LALPSDRegressor *r)
 {
   return r->median_samples;
 }
 
-/** UNDOCUMENTED */
+/**
+ * Update a LALPSDRegressor object from a frequency series object.  The
+ * frequency series is assumed to have been computed from real-valued data
+ * and to contain only non-negative frequency components.  The contents of
+ * the frequency series object are digested, and this code does not take
+ * ownership of if;  the calling code is responsible for freeing the
+ * frequency series object when it is done with it.
+ *
+ * The properties of the first frequency series object added to the
+ * regressor set certain internal parameters like the frequency resolution
+ * and Nyquist frequency of the PSD.  Once those parameters have been set,
+ * the only mechanism by which they can be changed is to call
+ * XLALPSDRegressorReset() and reset the regressor to the newly-allocated
+ * state.
+ */
 int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *sample)
 {
   double *bin_history;
@@ -1581,7 +1674,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
 
     XLALUnitSquare(&r->mean_square->sampleUnits, &r->mean_square->sampleUnits);
     for(i = 0; i < sample->data->length; i++)
-      r->mean_square->data->data[i] = log(r->history[0]->data[i] = XLALCOMPLEX16Abs2(sample->data->data[i]));
+      r->mean_square->data->data[i] = log(r->history[0]->data[i] = cabs2(sample->data->data[i]));
 
     /* set n_samples to 1 */
 
@@ -1614,7 +1707,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   /* copy data from current sample into history buffer */
 
   for(i = 0; i < sample->data->length; i++)
-    r->history[0]->data[i] = XLALCOMPLEX16Abs2(sample->data->data[i]);
+    r->history[0]->data[i] = cabs2(sample->data->data[i]);
 
   /* bump the number of samples that have been recorded */
 
@@ -1675,7 +1768,11 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   return 0;
 }
 
-/** UNDOCUMENTED */
+/**
+ * Retrieve a copy of the current PSD estimate.  The return value is a
+ * newly-allocated frequency series object.  The calling code is
+ * responsible for freeing it when it no longer needs it.
+ */
 REAL8FrequencySeries *XLALPSDRegressorGetPSD(const LALPSDRegressor *r)
 {
   REAL8FrequencySeries *psd;
@@ -1726,7 +1823,14 @@ REAL8FrequencySeries *XLALPSDRegressorGetPSD(const LALPSDRegressor *r)
   return psd;
 }
 
-/** UNDOCUMENTED */
+/**
+ * Initialize the running average of a LALPSDRegressor to the given PSD,
+ * and record it has having counted as weight samples of the running
+ * history.  The median history is erased, and repopulated with values
+ * derived from the PSD.  The PSD data is copied, this function does not
+ * take ownership of the PSD object, the calling code is responsible for
+ * freeing it when it no longer needs it.
+ */
 int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, unsigned weight)
 {
   /* arbitrary constant to remove from LAL definition of PSD */

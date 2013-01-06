@@ -150,5 +150,6 @@ REAL8 XLALInspiralSBankComputeMatch(const COMPLEX8FrequencySeries *inj, const CO
     result *= (min_len - 1.) / (max_len - 1.);
 
     /* compute match */
-    return 4. * inj->deltaF * sqrt(result) / n;  /* inverse FFT = reverse / n */
+    /* return 4. * inj->deltaF * sqrt(result) / n; */  /* inverse FFT = reverse / n */
+    return 4. * inj->deltaF * sqrt(result);  /* Ajith, 2012-11-09: The division by n is inconsistent with the revised convention of the normalization in compute_sigmasq in SBank. I check this by computing the match of a normalized, whitened template with itself */
 }

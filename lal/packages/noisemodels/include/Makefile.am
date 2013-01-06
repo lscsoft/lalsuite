@@ -1,8 +1,6 @@
 pkginclude_HEADERS = \
 	LALNoiseModels.h
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
+
 all-local: include-link
 @INCLUDEMKFILE@
 

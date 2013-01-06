@@ -457,7 +457,6 @@ main(int argc, char *argv[])
 	  SFTVector noise;
 
 	  sftParams.Tsft = uvar_Tsft;
-	  sftParams.make_v2SFTs = 1;
 
 	  switch (uvar_generationMode)
 	    {
@@ -915,6 +914,14 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
         XLALPrintError ("\nERROR: I can't combine --SFToverlap with --noiseSFTs or --timestampsFile, only use with (--startTime, --duration)!\n\n");
         ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
+    /* don't allow --SFToverlap with generationMode==1 (one timeseries per SFT), as this would
+     * result in independent noise realizations in the overlapping regions
+     */
+    if ( haveOverlap && (uvar_generationMode != 0) )
+      {
+        XLALPrintError ("\nERROR: --SFToverlap can only be used with --generationMode=0, otherwise we'll get overlapping independent noise!\n\n");
+        ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      }
 
     /*-------------------- check special case: Hardware injection ---------- */
     /* don't allow timestamps-file, noise-SFTs or SFT-output */
@@ -957,7 +964,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       } /* if haveTimestampsFile */
 
     /* ----- if real noise-SFTs given: load them now using EITHER (start,start+duration) OR timestamps
-     * as constraints if given, otherwise load all of them
+     * as constraints if given, otherwise load all of them. Also require window option to be given
      */
     if ( uvar_noiseSFTs )
       {
@@ -965,6 +972,14 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	SFTCatalog *catalog = NULL;
 	SFTConstraints constraints = empty_SFTConstraints;
 	LIGOTimeGPS minStartTime, maxEndTime;
+        BOOLEAN have_window = LALUserVarWasSet ( &uvar_window );
+
+        /* user must specify the window function used for the noiseSFTs */
+        if ( !have_window )
+          {
+            XLALPrintError ("%s: require window option to be given when specifying noiseSFTs.\n", fn);
+            ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);;
+          }
 
 	if ( lalDebugLevel )
 	  printf ( "\nWARNING: only SFTs corresponding to the noiseSFT-timestamps will be produced!\n" );
@@ -1117,9 +1132,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	}
 
-      if ( !strcmp ( uvar_window, "hann") || !strcmp ( uvar_window, "hanning") )
+      /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
+      UINT4 lengthOfTimeSeries = (UINT4)round(uvar_Tsft * 2 * cfg->fBand_eff);
+
+      if ( !strcmp ( uvar_window, "hann" ) || !strcmp ( uvar_window, "hanning" ) )
         {
-          REAL4Window *win = XLALCreateHannREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
+          REAL4Window *win = XLALCreateHannREAL4Window( lengthOfTimeSeries );
           cfg->window = win;
         }
       else if ( !strcmp ( uvar_window, "tukey" ) )
@@ -1133,12 +1151,14 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	      XLALPrintError ("%s: Tukey beta value '%f' was specified; must be between 0 and 1.\n\n", fn, uvar_tukeyBeta );
 	      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	    }
-	    REAL4Window *win = XLALCreateTukeyREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band), (REAL4) uvar_tukeyBeta );
+	    REAL4Window *win = XLALCreateTukeyREAL4Window( lengthOfTimeSeries, (REAL4) uvar_tukeyBeta );
           cfg->window = win;
 	}
+      else if ( !strcmp ( uvar_window, "none" ) || !strcmp ( uvar_window, "rectangular" ) || !strcmp ( uvar_window, "boxcar" ) || !strcmp ( uvar_window, "tophat" ) )
+        cfg->window = NULL;
       else
         {
-          XLALPrintError ("%s: Window function '%s' was entered, currently only Hann or Tukey windowing is supported.\n\n", fn, uvar_window );
+          XLALPrintError ("%s: Window function '%s' was entered, currently only None, Hann, or Tukey windowing is supported.\n\n", fn, uvar_window );
           ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
         }
     }
@@ -1252,7 +1272,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTDBMJDtoGPS(uvar_orbitTpSSBMJD);
+	  GPSfloat = LALTTMJDtoGPS(uvar_orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbit->tp),GPSfloat);
 	}
       else if ((set5 && set6) && !set7)
@@ -1347,7 +1367,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
       /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
-      GPSfloat = LALTDBMJDtoGPS(uvar_refTimeMJD);
+      GPSfloat = LALTTMJDtoGPS(uvar_refTimeMJD);
       XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),GPSfloat);
     }
   else
@@ -1500,7 +1520,7 @@ InitUserVars (LALStatus *status)
   /* SFT properties */
   LALregREALUserVar(status,   Tsft, 	 	 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
   LALregREALUserVar(status,   SFToverlap,	 0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
-  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function to be applied to the SFTs ('Hann' or 'Tukey'; omit for rectangular)");
+  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function to be applied to the SFTs; required when using --noiseSFTs ('None', 'Hann', or 'Tukey'; when --noiseSFTs is not given, default is 'None')");
   LALregREALUserVar(status,   tukeyBeta,	 0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
 
   /* pulsar params */

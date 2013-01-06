@@ -26,6 +26,7 @@
  * spinning binaries, as described in Barausse and Buonanno ( arXiv 0912.3517 ).
  */
 
+#include <complex.h>
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
@@ -35,7 +36,6 @@
 #include <gsl/gsl_sf_gamma.h>
 
 #include <math.h>
-#include <lal/LALComplex.h>
 
 #include "LALSimIMREOBNRv2.h"
 #include "LALSimIMRSpinEOB.h"

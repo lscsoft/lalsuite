@@ -17,24 +17,13 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Sathyaprakash, B.S. and Churches, D. K.
-\file
-\ingroup LALInspiralBank_h
 
-\brief Function to create a fine grid of templates.
+#include <stdio.h>
+#include <lal/LALInspiralBank.h>
 
-\heading{Prototypes}
-
-
-<tt>LALInspiralCreateFineBank()</tt>:
-<ul>
-   <li> <tt>outlist,</tt> Output, containing an array of template bank parameters
-   </li><li> <tt>nlist,</tt> Output, the number of fine bank templates around a given coarse-mesh point
-   </li><li> <tt>fineIn,</tt> Input, the parameters required to find the fine bank</li>
-</ul>
-
-\heading{Description}
+/** \ingroup LALInspiralBank_h
+    \author Sathyaprakash, B.S. and Churches, D. K.
+    \brief Function to create a fine grid of templates.
 
 The fine grid algorithm is a very simple algorithm that computes a uniform
 grid of templates around a given coordinate point -- which can in particular be
@@ -104,28 +93,12 @@ The Fine grid algorithm works as follows:
     }
 </ul>
 </tt>
-
-
-\heading{Uses}
-\code
-LALInspiralComputeParams()
-LALInspiralUpdateParams()
-LALInspiralValidTemplate()
-\endcode
-
-\heading{Notes}
-
-
-
 */
-
-#include <stdio.h>
-#include <lal/LALInspiralBank.h>
-
-void LALInspiralCreateFineBank(LALStatus            *status,
-                               InspiralTemplateList **outlist,
-                               INT4                 *nlist,
-                               InspiralFineBankIn   fineIn)
+void LALInspiralCreateFineBank(LALStatus            *status,	/**< LAL status pointer */
+                               InspiralTemplateList **outlist,	/**< [out] containing an array of template bank parameters */
+                               INT4                 *nlist,	/**< [out] the number of fine bank templates around a given coarse-mesh point */
+                               InspiralFineBankIn   fineIn	/**< [in] the parameters required to find the fine bank */
+                               )
 {
 
   REAL8 x0, x1, Dx0, Dx1, dx0, dx1, x0FineMin, x1FineMin;
@@ -213,4 +186,3 @@ void LALInspiralCreateFineBank(LALStatus            *status,
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
-

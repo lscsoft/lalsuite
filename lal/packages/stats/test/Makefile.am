@@ -1,17 +1,19 @@
-## Process this file with automake to produce Makefile.in
-check_PROGRAMS = LALMomentTest LALCorrelationTest
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
+LDADD = \
+	$(top_builddir)/lib/lal/liblal.la \
+	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
 
-LALMomentTest_SOURCES = LALMomentTest.c CheckStatus.c
-LALMomentTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+check_PROGRAMS = \
+	LALMomentTest \
+	LALCorrelationTest
 
-LALCorrelationTest_SOURCES = LALCorrelationTest.c
-LALCorrelationTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+LALMomentTest_SOURCES = \
+	LALMomentTest.c \
+	CheckStatus.c
 
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = LALMomentTest LALCorrelationTest
-TESTS_ENVIRONMENT = 1>/dev/null
+TESTS = \
+	$(check_PROGRAMS)
 
-EXTRA_DIST = CheckStatus.c CheckStatus.h
-
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
+EXTRA_DIST = \
+	CheckStatus.c \
+	CheckStatus.h

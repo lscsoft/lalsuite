@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include
 
 lalmetaioincludedir = $(includedir)/lal
 lalmetaioinclude_HEADERS = \
@@ -26,11 +26,9 @@ liblalmetaio_la_LDFLAGS = -version-info $(LIBVERSION)
 
 EXTRA_DIST = \
 	LALMetaIOConfig.h.in \
-	LALMetaIOVCSInfo.h.in \
-	generate_user_env.awk \
-	generate_vcs_info.py
+	generate_user_env.awk
 
-CLEANFILES = \
+MOSTLYCLEANFILES = \
 	lalmetaio-user-env.shell \
 	lalmetaio-user-env.sh \
 	lalmetaio-user-env.csh
@@ -40,8 +38,6 @@ sysconf_DATA = \
 	lalmetaio-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALMetaIOVCSInfo.h \
 	lalmetaio-user-env.sh \
 	lalmetaio-user-env.csh
 
@@ -50,16 +46,18 @@ lalmetaio-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "set LALMETAIO_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
 lalmetaio-user-env.csh lalmetaio-user-env.sh: lalmetaio-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
-LALMetaIOVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALMetaIOConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALMetaIO $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALMetaIOVCSInfo.h
+MOSTLYCLEANFILES += LALMetaIOVCSInfo.h
+LALMetaIOVCSInfo.h .PHONY : gen-LALMetaIOVCSInfo.h
+gen-LALMetaIOVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALMetaIOVCSInfo.h $(srcdir)/LALMetaIOVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@

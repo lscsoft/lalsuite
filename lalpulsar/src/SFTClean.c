@@ -16,11 +16,12 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <lal/SFTClean.h>
 
 /**
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
- * \file SFTClean.c
- \ingroup pulsarTODO
+ * \addtogroup SFTClean_h
  * \brief Module containing routines for dealing with spectral disturbances in SFTs
 
    \heading{Description}
@@ -60,7 +61,6 @@
    void LALCleanCOMPLEX8SFT (LALStatus, SFTtype, INT4, INT4, LineNoiseInfo, RandomParams)
    \endcode
 
-
 */
 
 /* REVISIONS: */
@@ -71,8 +71,6 @@
 /* 09/09/05 gam; only assert harmonicInfo and fname in LALFindNumberHarmonic and fix assert of fp. */
 /*               Other pointers can be unititialized until nHarmonicSets is determined.            */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/SFTClean.h>
 
 /*
  * The functions that make up the guts of this module
@@ -83,7 +81,6 @@
  * Looks into the input file containing list of lines, does some checks on the
  * file format, and calculates the number of harmonic sets in this file.
  */
-
 void LALFindNumberHarmonics (LALStatus    *status,	/**< pointer to LALStatus structure */
 			     LineHarmonicsInfo   *harmonicInfo, /**< list of harmonics */
 			     CHAR         *fname /**< input filename */)

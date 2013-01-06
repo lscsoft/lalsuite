@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2007 S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson
+ * Copyright (C) 2007 S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson,
+ * C. Pankow
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +23,7 @@
 #include <lal/XLALGSL.h>
 
 #include <gsl/gsl_sf_legendre.h>
+#include <gsl/gsl_sf_gamma.h>
 
 /**
  * Computes the (s)Y(l,m) spin-weighted spherical harmonic.
@@ -487,4 +489,97 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
   }
 
   return XLAL_SUCCESS;
+}
+
+/**
+ * Computes the n-th Jacobi polynomial for polynomial weights alpha and beta.
+ * The implementation here is only valid for real x -- enforced by the argument
+ * type. An extension to complex values would require evaluation of several 
+ * gamma functions.
+ *
+ * See http://en.wikipedia.org/wiki/Jacobi_polynomials
+ */
+double XLALJacobiPolynomial(int n, int alpha, int beta, double x){
+	double f1 = (x-1)/2.0, f2 = (x+1)/2.0;
+	int s=0;
+	double sum=0, val=0;
+	if( n == 0 ) return 1.0;
+	for( s=0; n-s >= 0; s++ ){
+		val=1.0;
+		val *= gsl_sf_choose( n+alpha, s );
+		val *= gsl_sf_choose( n+beta, n-s );
+		if( n-s != 0 ) val *= pow( f1, n-s );
+		if( s != 0 ) val*= pow( f2, s );
+
+		sum += val;
+	}
+	return sum;
+}
+
+/**
+ * Computes the 'little' d Wigner matrix for the Euler angle beta. Single angle 
+ * small d transform with major index 'l' and minor index transition from m to 
+ * mp. 
+ *
+ * Uses a slightly unconventional method since the intuitive version by Wigner 
+ * is less suitable to algorthmic development. 
+ *
+ * See http://en.wikipedia.org/wiki/Wigner_D-matrix#Wigner_.28small.29_d-matrix
+ */
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+double XLALWignerdMatrix(
+                                   int l,        /**< mode number l */
+                                   int mp,        /**< mode number m' */
+                                   int m,        /**< mode number m */
+                                   double beta  /**< euler angle (rad) */
+    )
+{
+
+	int k = MIN( l+m, MIN( l-m, MIN( l+mp, l-mp )));
+	double a=0, lam=0;
+	if(k == l+m){
+		a = mp-m;
+		lam = mp-m;
+	} else if(k == l-m) {
+		a = m-mp;
+		lam = 0;
+	} else if(k == l+mp) {
+		a = m-mp;
+		lam = 0;
+	} else if(k == l-mp) {
+		a = mp-m;
+		lam = mp-m;
+	}
+
+	int b = 2*l-2*k-a;
+	double pref = pow(-1, lam) * sqrt(gsl_sf_choose( 2*l-k, k+a )) / sqrt(gsl_sf_choose( k+b, b ));
+
+	return pref * pow(sin(beta/2.0), a) * pow( cos(beta/2.0), b) * XLALJacobiPolynomial(k, a, b, cos(beta));
+
+}
+
+/**
+ * Computes the full Wigner D matrix for the Euler angle alpha, beta, and gamma
+ * with major index 'l' and minor index transition from m to mp. 
+ *
+ * Uses a slightly unconventional method since the intuitive version by Wigner 
+ * is less suitable to algorthmic development. 
+ *
+ * See http://en.wikipedia.org/wiki/Wigner_D-matrix
+ *
+ * Currently only supports the modes which are implemented for the spin
+ * weighted spherical harmonics.
+ */
+COMPLEX16 XLALWignerDMatrix(
+                                   int l,        /**< mode number l */
+                                   int mp,        /**< mode number m' */
+                                   int m,        /**< mode number m */
+                                   double alpha,  /**< euler angle (rad) */
+                                   double beta, /**< euler angle (rad) */
+                                   double gam  /**< euler angle (rad) */
+    )
+{
+	 return exp( -(1.0I)*mp*alpha ) *
+			XLALWignerdMatrix( l, mp, m, beta ) * 
+			exp( -(1.0I)*m*gam );
 }

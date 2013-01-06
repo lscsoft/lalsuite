@@ -7,20 +7,16 @@
 /**
 \defgroup ch_spec	LAL Specification and Style Guide
 
-\defgroup ch_std	LAL Standard Package
+\defgroup ch_gen	General LAL Packages
    @{
    \defgroup pkg_std		Package 'std'
-   @}
-
-\defgroup ch_gen	General Packages
-   @{
    \defgroup pkg_date		Package 'date'
    \defgroup pkg_factories	Package 'factories'
    \defgroup pkg_tools		Package 'tools'
    \defgroup pkg_vectorops	Package 'vectorops'
    @}
 
-\defgroup ch_genMath	General Mathematical and Signal Analysis Packages
+\defgroup ch_genMath	General Signal Analysis Packages
    @{
    \defgroup pkg_clremoval	Package 'clremoval'
    \defgroup pkg_fft		Package 'fft'
@@ -28,49 +24,30 @@
    \defgroup pkg_tdfilter	Package 'tdfilter'
    \defgroup pkg_utilities	Package 'utilities'
    \defgroup pkg_window		Package 'window'
-   @}
-
-\defgroup ch_coreDA	Core Data Analysis Packages
-   @{
    \defgroup pkg_inject		Package 'inject'
    @}
 
 \defgroup ch_burst	Burst Packages
-   @{
-   \defgroup pkg_burstsearch	Package 'burstsearch'
-   \defgroup pkg_tracksearch	Package 'tracksearch'
-   \defgroup pkg_TFR		Package 'TFR'
-   \defgroup pkg_ring		Package 'ring'
-   @}
 
 \defgroup ch_inspiral	Inspiral Packages
-   @{
-   \defgroup pkg_bank		Package 'bank'
-   \defgroup pkg_findchirp	Package 'findchirp'
-   \defgroup pkg_inspiral	Package 'inspiral'
-   \defgroup pkg_noisemodels	Package 'noisemodels'
-   @}
+
+\defgroup ch_inference	Inference Packages
 
 \defgroup ch_pulsar	Pulsar Packages
-   @{
-   \defgroup pkg_houghpulsar	Package 'houghpulsar': The Hough transform
-   \defgroup pkg_pulsarCommon	Package 'pulsar': common routines
-   \defgroup pkg_pulsarFold	Package 'pulsar': amplitude folding routines
-   \defgroup pkg_pulsarCoh	Package 'pulsar': Coherent search routines
-   \defgroup pkg_pulsarKnown	Package 'pulsar': known pulsar time-domain search routines
-   @}
 
 \defgroup ch_stoch	Stochastic Packages
    @{
    \defgroup pkg_stochastic	Package 'stochastic'
    @}
 
-\defgroup ch_support	LAL Support Interface
+\defgroup ch_support	Support Interface
    @{
    \defgroup pkg_support	Package 'support'
+   \defgroup pkg_XML 		VOTable XML package
+   \defgroup pkg_SFTIO		Package 'SFT file IO'
    @}
 
-\defgroup ch_lalframe	LAL Framedata Interface (optional)
+\defgroup ch_lalframe	Framedata Interface
    @{
    \defgroup pkg_framedata	Package 'framedata'
    @}

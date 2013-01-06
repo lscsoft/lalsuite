@@ -16,18 +16,6 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-
-/**
- * \author Reinhard Prix
- * \ingroup pulsarCommon
- * \date 2005
- * \file
- * \ingroup pulsarTODO
- * \brief API for the DetectorStates.c functions.
- *
- *
- */
-
 #ifndef _DETECTORSTATES_H  /* Double-include protection. */
 #define _DETECTORSTATES_H
 
@@ -36,13 +24,25 @@
 extern "C" {
 #endif
 
+/**
+ * \author Reinhard Prix
+ * \ingroup pkg_pulsarCommon
+ * \date 2005
+ * \ingroup pulsarTODO
+ * \brief API for the DetectorStates.c functions.
+ *
+ *
+ */
+/*@{*/
+
 /*---------- exported INCLUDES ----------*/
 #include <lal/PulsarDataTypes.h>
 #include <lal/SeqFactories.h>
 
 /*---------- exported DEFINES ----------*/
 
-/*----- Error-codes -----*/
+/** \name Error-codes */
+/*@{*/
 #define DETECTORSTATES_ENULL 		1
 #define DETECTORSTATES_ENONULL 		2
 #define DETECTORSTATES_EINPUT  		3
@@ -56,6 +56,7 @@ extern "C" {
 #define DETECTORSTATES_MSGEMEM   	"Out of memory. Bad."
 #define DETECTORSTATES_MSGEXLAL		"XLAL function call failed"
 #define DETECTORSTATES_MSGEIEEE		"Floating point failure"
+/*@}*/
 
 /*---------- exported types ----------*/
 
@@ -189,6 +190,8 @@ void LALGetMultiDetectorVelTimePos(LALStatus                *status,
 				   REAL8VectorSequence      **outPos,
 				   LIGOTimeGPSVector        **outTime,
 				   MultiDetectorStateSeries *in);
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

@@ -303,8 +303,7 @@ typedef struct tagSFTParams {
   REAL8 Tsft;			 /**< length of each SFT in seconds */
   LIGOTimeGPSVector *timestamps; /**< timestamps to produce SFTs for (can be NULL) */
   SFTVector *noiseSFTs;		 /**< noise SFTs to be added (can be NULL) */
-  INT4 make_v2SFTs;		 /**< UPGRADING switch: should be set to 1 to avoid verbose complaints */
-  REAL4Window *window;		 /**< window function for the time series (can be NULL) */
+  REAL4Window *window;		 /**< window function for the time series (can be NULL, which is equivalent to a rectangular window) */
 } SFTParams;
 
 /** Parameters defining the pulsar signal and SFTs used by LALFastGeneratePulsarSFTs().  Lookup tables (LUTs) are

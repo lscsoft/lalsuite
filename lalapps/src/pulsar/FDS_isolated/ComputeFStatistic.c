@@ -671,7 +671,7 @@ int main(int argc,char *argv[])
 #endif
   else
     strcpy(ckp_fname, "Fstats");
-  strncat(ckp_fname, ".ckp", sizeof(ckp_fname));
+  strncat(ckp_fname, ".ckp", sizeof(ckp_fname) - strlen(ckp_fname) - 1 );
 
 #if USE_BOINC
   /* only boinc_resolve the filename if we run CFS once */

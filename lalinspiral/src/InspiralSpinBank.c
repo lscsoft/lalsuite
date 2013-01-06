@@ -17,76 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \author Hanna, C. R. and Owen, B. J.
- * \file
- * \ingroup LALInspiralBank_h
- *
- * \brief This module creates a bank of templates to search for precessing
- * binaries.
- *
- * \heading{Description}
- *
- * This function creates a bank of BCVSpin templates to search for
- * precessing binaries.
- *
- * \heading{Algorithm}
- *
- * The code checks <tt>coarseIn->mMin</tt> to determine whether the limits on
- * the target region are in terms of masses or phenomenological parameters.
- * A positive value indicates that mass limits are being used.
- *
- * If mass limits are used, the target region of parameter space is a
- * distorted box in the coordinates \f$(x=\psi_0, y=\psi_3, z=\beta)\f$. The
- * metric at high values of \f$\beta\f$ is constant. It is convenient to rotate
- * to coordinates \f$(x',y',z')\f$ which lie along eigenvectors of the metric.
- *
- * The algorithm first draws a rectilinear box in the primed coordinates
- * which includes the target region, then steps through along the
- * directions of the primed coordinates.  At each point it tests if the
- * point lies within the target region. If the point is inside the target
- * region, the algorithm adds a template to the linked list. If not, it
- * continues through the box containing the target region.
- *
- * The tiling is done with a body-centered cubic lattice. People usually
- * solve the non-overlapping bcc problem rather than the overlapping one
- * here, so it's worth mentioning how we do it. I don't have time to stick
- * in the 3D figures you need to show it properly, but you can figure out
- * the spacing by finding the smallest sphere that contains the
- * Wigner-Seitz cell. When you do that you find that the lattice constant
- * (spacing between templates in the plane, in proper distance) is
- * \f$(4/3)\sqrt{2\mu}\f$. So the coordinate spacing is that divided by the
- * square root of the corresponding eigenvalue of the metric. (The vertical
- * spacing in the bcc lattice is multiplied by a further 1/2.)
- *
- * If \f$(\psi_0, \psi_3, \beta)\f$ limits are used, the tiling is done in the
- * given box with a bcc lattice.
- *
- * \heading{Uses}
- *
- * \code
- * LALCalloc()
- * LALFree()
- * LALGetInspiralMoments()
- * LALSSymmetricEigenVectors()
- * \endcode
- *
- * \heading{Notes}
- *
- * Currently we use a static function for the metric based on an
- * approximation that is good only for large \f$\beta\f$. We should update it
- * and put it out in the LAL namespace.
- *
- * The metric relies on approximations that make it valid only for a binary
- * system with a total mass \f$<15M\odot\f$ where the larger body's minimum mass
- * is at least twice the smaller body's maximum mass.  If the parameter
- * range is specified with physical parameters rather than the
- * phenomenological parameters \f$(\psi_0, \psi_3, \beta)\f$ then using mass
- * values that violate these conditions will result in an error message.
- *
-*/
-
-
 #include <math.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConfig.h>
@@ -288,7 +218,56 @@ allocate(
 } /* allocate() */
 
 
-
+/** \ingroup LALInspiralBank_h
+ * \author Hanna, C. R. and Owen, B. J.
+ * \brief This function creates a bank of BCVSpin templates to search for precessing binaries.
+ *
+ * \heading{Algorithm}
+ *
+ * The code checks <tt>coarseIn-\>mMin</tt> to determine whether the limits on
+ * the target region are in terms of masses or phenomenological parameters.
+ * A positive value indicates that mass limits are being used.
+ *
+ * If mass limits are used, the target region of parameter space is a
+ * distorted box in the coordinates \f$(x=\psi_0, y=\psi_3, z=\beta)\f$. The
+ * metric at high values of \f$\beta\f$ is constant. It is convenient to rotate
+ * to coordinates \f$(x',y',z')\f$ which lie along eigenvectors of the metric.
+ *
+ * The algorithm first draws a rectilinear box in the primed coordinates
+ * which includes the target region, then steps through along the
+ * directions of the primed coordinates.  At each point it tests if the
+ * point lies within the target region. If the point is inside the target
+ * region, the algorithm adds a template to the linked list. If not, it
+ * continues through the box containing the target region.
+ *
+ * The tiling is done with a body-centered cubic lattice. People usually
+ * solve the non-overlapping bcc problem rather than the overlapping one
+ * here, so it's worth mentioning how we do it. I don't have time to stick
+ * in the 3D figures you need to show it properly, but you can figure out
+ * the spacing by finding the smallest sphere that contains the
+ * Wigner-Seitz cell. When you do that you find that the lattice constant
+ * (spacing between templates in the plane, in proper distance) is
+ * \f$(4/3)\sqrt{2\mu}\f$. So the coordinate spacing is that divided by the
+ * square root of the corresponding eigenvalue of the metric. (The vertical
+ * spacing in the bcc lattice is multiplied by a further 1/2.)
+ *
+ * If \f$(\psi_0, \psi_3, \beta)\f$ limits are used, the tiling is done in the
+ * given box with a bcc lattice.
+ *
+ * \heading{Notes}
+ *
+ * Currently we use a static function for the metric based on an
+ * approximation that is good only for large \f$\beta\f$. We should update it
+ * and put it out in the LAL namespace.
+ *
+ * The metric relies on approximations that make it valid only for a binary
+ * system with a total mass \f$<15M\odot\f$ where the larger body's minimum mass
+ * is at least twice the smaller body's maximum mass.  If the parameter
+ * range is specified with physical parameters rather than the
+ * phenomenological parameters \f$(\psi_0, \psi_3, \beta)\f$ then using mass
+ * values that violate these conditions will result in an error message.
+ *
+ */
 void
 LALInspiralSpinBank(
     LALStatus         	 *status,

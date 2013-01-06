@@ -17,10 +17,19 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _FLATMESH_H
+#define _FLATMESH_H
+
+#include <lal/LALStdlib.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
 \author Creighton, T. D.
-\defgroup FlatMesh_h FlatMesh
-\ingroup PulsarMetric
+\defgroup FlatMesh_h Header FlatMesh.h
+\ingroup pkg_pulsarCovering
 \brief Provides routines to place search meshes for parameter spaces with
 constant parameter metrics.
 
@@ -110,18 +119,10 @@ with corrections on the order of the observation time over the
 spindown timescale.
 
 */
+/*@{*/
 
-#ifndef _FLATMESH_H
-#define _FLATMESH_H
-
-#include <lal/LALStdlib.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/** \name Error Codes */ /*@{*/
-/** \ingroup FlatMesh_h */
+/** \name Error Codes */
+/*@{*/
 #define FLATMESHH_ENUL 1
 #define FLATMESHH_EOUT 2
 #define FLATMESHH_EMEM 3
@@ -135,7 +136,7 @@ extern "C" {
 #define FLATMESHH_MSGELEN "Too few points specified"
 /*@}*/
 
-/** \ingroup FlatMesh_h
+/**
  * \brief This structure stores and passes parameters for computing a
  * search mesh by the routines in the module \ref FlatMesh_h : it
  * defines the transformation matrices between signal parameters and
@@ -158,7 +159,6 @@ typedef struct tagFlatMeshParamStruc
 } FlatMeshParamStruc;
 
 
-/** \cond DONT_DOXYGEN */
 /* Function prototypes. */
 void
 LALCreateFlatMesh( LALStatus           *status,
@@ -170,9 +170,7 @@ LALRectIntersect( LALStatus           *status,
 		  REAL4VectorSequence *mesh,
 		  REAL4VectorSequence *controlPoints );
 
-/** \endcond */
-
-
+/*@}*/
 
 #ifdef __cplusplus
 }

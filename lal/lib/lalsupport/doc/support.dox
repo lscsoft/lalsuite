@@ -1,0 +1,26 @@
+/**
+\addtogroup pkg_support
+
+\brief This package covers LAL support routines.
+
+These routines do not conform to LAL requirements, and many of them should be
+used only for debugging and in test code, not in production code.  These are
+compiled and installed as a separate library \c lalsupport.
+
+@{
+\defgroup FileIO_h 		Header FileIO.h
+\defgroup PrintVector_h		Header PrintVector.h
+\defgroup PrintFTSeries_h	Header PrintFTSeries.h
+\defgroup ReadFTSeries_h	Header ReadFTSeries.h
+\defgroup ReadNoiseSpectrum_h	Header ReadNoiseSpectrum.h
+\defgroup StreamInput_h		Header StreamInput.h
+\defgroup StreamOutput_h	Header StreamOutput.h
+\defgroup ConfigFile_h		Header ConfigFile.h
+\defgroup UserInput_h		Header UserInput.h
+\defgroup LALMathematica_h	Header LALMathematica.h
+\defgroup LogPrintf_h		Header LogPrintf.h
+\defgroup SegmentsIO_h		Header SegmentsIO.h
+
+@}
+
+*/

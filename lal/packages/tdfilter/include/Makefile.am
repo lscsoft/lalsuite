@@ -1,8 +1,8 @@
-## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = LPC.h BandPassTimeSeries.h IIRFilter.h ZPGFilter.h
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
+pkginclude_HEADERS = \
+	BandPassTimeSeries.h \
+	IIRFilter.h \
+	ZPGFilter.h
+
 all-local: include-link
 @INCLUDEMKFILE@
 

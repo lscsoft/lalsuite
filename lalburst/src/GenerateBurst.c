@@ -35,7 +35,6 @@
 #include <lal/Date.h>
 #include <lal/GenerateBurst.h>
 #include <lal/Units.h>
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
@@ -152,7 +151,7 @@ int XLALBurstInjectSignals(
 	/* turn the first two characters of the channel name into a
 	 * detector */
 
-	detector = XLALInstrumentNameToLALDetector(series->name);
+	detector = XLALDetectorPrefixToLALDetector(series->name);
 	if(!detector)
 		XLAL_ERROR(XLAL_EFUNC);
 	XLALPrintInfo("%s(): channel name is '%s', instrument appears to be '%s'\n", __func__, series->name, detector->frDetector.prefix);

@@ -140,7 +140,7 @@ typedef struct {
   double       *data;           /* data vector (in time domain)                                 */
   double       *window;         /* (values of) windowing function                               */
   double       winss;           /* sum of squared windowing coefficients                        */
-  double complex *dataFT;       /* Fourier transformed (and windowed) data                      */
+  COMPLEX16 *dataFT;       /* Fourier transformed (and windowed) data                      */
   long         FTSize;          /* size of `dataFT' vector                                      */
   double       FTDeltaF;        /* frequency resolution of data                                 */
   double       *powspec;        /* logarithmic 1-sided (!) power spectral density values        */
@@ -248,21 +248,21 @@ double mc2mt(double mc, double eta);
 double logJacobianMcEta(double mc, double eta);
 double logJacobianChirptimes(double mc, double eta);
 
-void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double complex *output);
+void signaltemplate(DataFramework *DF, int waveform, vector *parameter, COMPLEX16 *output);
 void template2025(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                  double complex *output);
+                  COMPLEX16 *output);
 void template2535(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                  double complex *output);
+                  COMPLEX16 *output);
 void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                       double complex *output, double PNOrder);
+                       COMPLEX16 *output, double PNOrder);
 void templateR2PN(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                  double complex *output);
+                  COMPLEX16 *output);
 void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                 double complex *output, int approximant, int order);
+                 COMPLEX16 *output, int approximant, int order);
 void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                    double complex *output, int order);
+                    COMPLEX16 *output, int order);
 void templateSineGaussianBurst(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                               double complex *output);
+                               COMPLEX16 *output);
 void inject(DataFramework *DF, int coherentN, int waveform, vector *parameter);
 void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *filenameT);
 
@@ -1433,7 +1433,7 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
     /* See also the "FTexec()" function.                                                      */
   
     /* Fourier transform (and also window) data: */
-    DF[i].dataFT = (double complex*) malloc(sizeof(double complex)*DF[i].FTSize);
+    DF[i].dataFT = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF[i].FTSize);
     FTexec(&DF[i], DF[i].data, DF[i].dataFT);
   }
 
@@ -2161,7 +2161,7 @@ int estimatePSD(DataFramework *DF)
   double from, step;
   double *origData=NULL;
   double *dsdata=NULL;
-  double complex *dataFT=NULL;
+  COMPLEX16 *dataFT=NULL;
   double power, psdcoef;
   int PsdOk = 1;
 
@@ -2215,7 +2215,7 @@ int estimatePSD(DataFramework *DF)
     }
     /*-- window and FT data: --*/
     if (dataFT==NULL)
-      dataFT = (double complex*) malloc(sizeof(double complex) * (N/2 + 1));
+      dataFT = (COMPLEX16*) malloc(sizeof(COMPLEX16) * (N/2 + 1));
     FTexec(DF, dsdata, dataFT);
     for (i=0; i<DF->FTSize; ++i) {
       power = cabs(dataFT[i]);
@@ -2255,14 +2255,14 @@ void simulatePsdEstimation(DataFramework *DF)
 {
   int i;
   double *noise;
-  double complex *noiseFT;
+  COMPLEX16 *noiseFT;
   long j;
   double power, psdcoef;
 
   if (verbose) printf(" | simulating noise PSD estimation (%s)\n", DF->ifo->name);
 
   noise   = (double*) malloc(sizeof(double)*DF->dataSize);
-  noiseFT = (double complex*) malloc(sizeof(double complex) * (DF->dataSize/2 + 1));
+  noiseFT = (COMPLEX16*) malloc(sizeof(COMPLEX16) * (DF->dataSize/2 + 1));
   for (j=0; j<DF->FTSize; ++j)
     DF->powspec[j] = 0.0;
 
@@ -2834,11 +2834,11 @@ double logJacobianChirptimes(double mass1, double mass2)
 }
 
 
-void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double complex *output)
+void signaltemplate(DataFramework *DF, int waveform, vector *parameter, COMPLEX16 *output)
 /* 'wrapper' function for signal waveform templates.                                */
 /* Checks the "waveform" character string and calls                                 */
 /* the corresponding waveform-generating function (with "parameter" argument)       */
-/* and returns the frequancy-domain template in the (pre-allocated, double complex) */
+/* and returns the frequancy-domain template in the (pre-allocated, COMPLEX16) */
 /* "output" vector of length "DF->FTSize".                                          */
 {
   double Fplus, Fcross;
@@ -2888,7 +2888,7 @@ void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double c
 
 
 void template2025(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                  double complex *output)
+                  COMPLEX16 *output)
 /*************************************************************/
 /* returns the (numerically FT'd) frequency-domain template. */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -3017,7 +3017,7 @@ void template2025(DataFramework *DF, vector *parameter, double Fplus, double Fcr
 
 
 void template2535(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                  double complex *output)
+                  COMPLEX16 *output)
 /***************************************************************************/
 /* returns the (numerically FT'd) frequency-domain template.               */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -3212,7 +3212,7 @@ void template2535(DataFramework *DF, vector *parameter, double Fplus, double Fcr
 
 
 void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                       double complex *output, double PNOrder)
+                       COMPLEX16 *output, double PNOrder)
 /*************************************************************/
 /* returns the (analytic) frequency-domain template.         */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -3233,7 +3233,7 @@ void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, doubl
   double f, f01, f02, f04, f06, f07, f10, Psi, twopitc;
   double ampliConst;
   double sineCoef, cosineCoef;
-  double complex cosinechirp;
+  COMPLEX16 cosinechirp;
   double phase = vectorGetValue(parameter,"phase");
 
   ampliConst = 0.5*log(5.0)+(5.0/6.0)*log(G)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(pi)-1.5*log(C);
@@ -3273,7 +3273,7 @@ void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, doubl
 
 
 void templateR2PN(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                  double complex *output)
+                  COMPLEX16 *output)
 /***************************************************************************/
 /* returns the (numerically FT'd) frequency-domain template.               */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -3362,7 +3362,7 @@ void templateR2PN(DataFramework *DF, vector *parameter, double Fplus, double Fcr
 
 
 void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                 double complex *output, int approximant, int order)
+                 COMPLEX16 *output, int approximant, int order)
 /***************************************************************/
 /* returns the (numerically FT'd) frequency-domain template.   */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -3384,7 +3384,7 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
   double *timedomainwaveform=NULL;
   double timeshift = 0.0; /* time by which to shift template (in seconds) */
   double twopit;
-  double complex *cosinechirp=NULL;  /*, *sinechirp=NULL; */
+  COMPLEX16 *cosinechirp=NULL;  /*, *sinechirp=NULL; */
 
   /* some (fixed) settings: */
   params.OmegaS      = 0.0;     /* (?) */
@@ -3490,7 +3490,7 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
   if (FDomain && (n % 2 != 0))
     printf(" : WARNING: frequency-domain LAL waveforms require even number of samples `n' !!\n");
              
-  cosinechirp = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
+  cosinechirp = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
   if (!FDomain){ /* (approximant yields a time-domain waveform) */
     /* fill `timedomainwaveform' with time-domain (cosine chirp) waveform: */
     timedomainwaveform = (double*) malloc(sizeof(double)*DF->dataSize);
@@ -3598,7 +3598,7 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
 
 
 void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                    double complex *output, int order)
+                    COMPLEX16 *output, int order)
 /*  uses LAL function "LALGeneratePPNInspiral()"     */
 /*  "order" parameter doesn't (yet?) have an effect. */
 {
@@ -3607,7 +3607,7 @@ void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double F
   double chirptime, timeshift;
   long i,j, jStart;
   double sineCoef, cosineCoef, twopit;
-  double complex *cosinechirp=NULL;
+  COMPLEX16 *cosinechirp=NULL;
   static LALStatus status;
   CoherentGW       waveform;
   PPNParamStruc    PPNPar;
@@ -3686,7 +3686,7 @@ void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double F
   waveform.phi = NULL;
 
   /* numerically Fourier-transform waveform: */
-  cosinechirp = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
+  cosinechirp = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
   FTexec(DF, timedomainwaveform, cosinechirp);
   free(timedomainwaveform);
 
@@ -3716,7 +3716,7 @@ void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double F
 
 
 void templateSineGaussianBurst(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
-                               double complex *output)
+                               COMPLEX16 *output)
 /*************************************************************/
 /* returns the (numerically FT'd) frequency-domain template. */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -3770,7 +3770,7 @@ void templateSineGaussianBurst(DataFramework *DF, vector *parameter, double Fplu
 void inject(DataFramework *DF, int coherentN, int waveform, vector *parameter)
      /* Inject a signal into the (already FT'd) data. */
 {
-  double complex *FourierTemplate=NULL;
+  COMPLEX16 *FourierTemplate=NULL;
   double *indivSNR;
   double netSNR;
   long i, j;
@@ -3786,7 +3786,7 @@ void inject(DataFramework *DF, int coherentN, int waveform, vector *parameter)
   vectorAdd(&localparameter, "altitude", 0.0);
 
   for (i=0; i<coherentN; ++i) {
-    FourierTemplate = (double complex*) malloc(sizeof(double complex)*DF[i].FTSize);
+    FourierTemplate = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF[i].FTSize);
     /* determine "local" parameters: */
     localParameters(parameter, DF[i].ifo, &locdeltat, &locpolar, &localti, &locazi);
     vectorSetValue(&localparameter, "time",         vectorGetValue(parameter,"time")+locdeltat);
@@ -3818,16 +3818,16 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
 /* and (1-sided) power spectral density to a text file. */
 /* (for sanity checking etc.)                           */
 {
-  double complex *FourierTemplate01=NULL;
-  double complex *FourierTemplate02=NULL;
-  double complex *FourierTemplate03=NULL;
-  double complex *FourierTemplate04=NULL;
-  double complex *FourierTemplate05=NULL;
-  double complex *FourierTemplate06=NULL;
-  double complex *FourierTemplate07=NULL;
+  COMPLEX16 *FourierTemplate01=NULL;
+  COMPLEX16 *FourierTemplate02=NULL;
+  COMPLEX16 *FourierTemplate03=NULL;
+  COMPLEX16 *FourierTemplate04=NULL;
+  COMPLEX16 *FourierTemplate05=NULL;
+  COMPLEX16 *FourierTemplate06=NULL;
+  COMPLEX16 *FourierTemplate07=NULL;
 
   fftw_plan InvFTplan;
-  double complex *fourierdomain=NULL;
+  COMPLEX16 *fourierdomain=NULL;
   double *timedomain=NULL;
 
   double *TimeTemplate01=NULL;
@@ -3856,13 +3856,13 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
   vectorSetValue(&localparameter, "altitude",     localti);
 
   printf(" : writing F'domain templates to file '%s'...\n", filenameF);
-  FourierTemplate01 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
-  FourierTemplate02 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
-  FourierTemplate03 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
-  FourierTemplate04 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
-  FourierTemplate05 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
-  FourierTemplate06 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
-  FourierTemplate07 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
+  FourierTemplate01 = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
+  FourierTemplate02 = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
+  FourierTemplate03 = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
+  FourierTemplate04 = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
+  FourierTemplate05 = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
+  FourierTemplate06 = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
+  FourierTemplate07 = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
 
   /* compute (Fourier-domain) templates: */
   signaltemplate(DF, i25SP,          &localparameter, FourierTemplate01);
@@ -3891,7 +3891,7 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
   printf(" : ...done.\n");
 
   printf(" : back-transforming Fourier-domain templates to time domain...\n");
-  fourierdomain = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
+  fourierdomain = (COMPLEX16*) malloc(sizeof(COMPLEX16)*DF->FTSize);
   timedomain = (double*) malloc(sizeof(double)*DF->dataSize);
   InvFTplan = fftw_plan_dft_c2r_1d(DF->dataSize, fourierdomain, timedomain, FFTW_ESTIMATE);
 
@@ -3979,7 +3979,7 @@ double loglikelihood(DataFramework *DF, int coherentN, int waveform, vector *par
 /* NOT compute a template but rather plug in zeroes and com-   */
 /* pute the "null"-likelihood instead.                         */
 {
-  double complex *FourierTemplate=NULL;
+  COMPLEX16 *FourierTemplate=NULL;
   long i, j, maxftsize;
   double absdiff, chisquared=0.0;
   double logfactor;
@@ -3988,7 +3988,7 @@ double loglikelihood(DataFramework *DF, int coherentN, int waveform, vector *par
   maxftsize = 0;
   for (i=0; i<coherentN; ++i)
     if (DF[i].FTSize > maxftsize) maxftsize = DF[i].FTSize;
-  FourierTemplate = (double complex*) malloc(sizeof(double complex)*maxftsize);
+  FourierTemplate = (COMPLEX16*) malloc(sizeof(COMPLEX16)*maxftsize);
 
   vectorInit(&localparameter);
   if (parameter != NULL) {
@@ -4039,7 +4039,7 @@ double signaltonoiseratio(DataFramework *DF, int coherentN, int waveform, vector
 /* Computes signal-to-noise ratio (SNR).                                  */
 /* If "indivSNRs" is not NULL, individual SNRs are returned here as well. */
 {
-  double complex *FourierTemplate=NULL;
+  COMPLEX16 *FourierTemplate=NULL;
   long i, j, maxftsize;
   double power, sum=0.0, networksum=0.0;
   double snrcoef;
@@ -4049,7 +4049,7 @@ double signaltonoiseratio(DataFramework *DF, int coherentN, int waveform, vector
   maxftsize = 0;
   for (i=0; i<coherentN; ++i)
     if (DF[i].FTSize > maxftsize) maxftsize = DF[i].FTSize;
-  FourierTemplate = (double complex*) malloc(sizeof(double complex)*maxftsize);
+  FourierTemplate = (COMPLEX16*) malloc(sizeof(COMPLEX16)*maxftsize);
 
   /* copy over everything except longitude & latitude, and add azimuth & altitude instead: */
   vectorInit(&localparameter);
@@ -5529,7 +5529,7 @@ double longitude(double rightascension, double gmst)
 
 void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coherentN)
 {
-  double complex *FourierTemplate=NULL;
+  COMPLEX16 *FourierTemplate=NULL;
   long i, j, maxftsize;
   double locdeltat, locpolar, locazi, localti;
   vector localparameter;
@@ -5555,7 +5555,7 @@ void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coher
   maxftsize = 0;
   for (i=0; i<coherentN; ++i)
     if (DF[i].FTSize > maxftsize) maxftsize = DF[i].FTSize;
-  FourierTemplate = (double complex*) malloc(sizeof(double complex)*maxftsize);
+  FourierTemplate = (COMPLEX16*) malloc(sizeof(COMPLEX16)*maxftsize);
 
   vectorInit(&localparameter);
   /* copy over everything except longitude & latitude, and add azimuth & altitude instead: */

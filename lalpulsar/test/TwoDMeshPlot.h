@@ -17,10 +17,22 @@
 *  MA  02111-1307  USA
 */
 
+
+#ifndef _TWODMESHPLOT_H
+#define _TWODMESHPLOT_H
+
+#include <lal/LALStdlib.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 /**
 \author Creighton, T. D.
-\defgroup TwoDMeshPlot_h TwoDMeshPlot
-\ingroup PulsarMetric
+\defgroup TwoDMeshPlot_h Header TwoDMeshPlot.h
+\ingroup pkg_pulsarMetric
 \brief Provides routines to plot two-dimensional parameter meshes.
 
 \heading{Synopsis}
@@ -38,20 +50,10 @@ means that they cannot be included in LAL (although executables, in
 particular the \ref TwoDMesh_h test programs, may statically link
 against their object files).
 */
+/*@{*/
 
-#ifndef _TWODMESHPLOT_H
-#define _TWODMESHPLOT_H
-
-#include <lal/LALStdlib.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/** \name Error Codes */ /*@{*/
-/** \ingroup TwoDMeshPlot_h */
+/** \name Error Codes */
+/*@{*/
 #define TWODMESHPLOTH_ENUL    1
 #define TWODMESHPLOTH_EOUT    2
 #define TWODMESHPLOTH_EMEM    3
@@ -67,7 +69,8 @@ extern "C" {
 
 /** \name Constants
  * \brief The values in the table above are stored in the constants \c TWODMESHPLOTH_<tt><</tt>\e name<tt>></tt>.
- */ /*@{*/ /** \ingroup TwoDMeshPlot_h */
+ */
+/*@{*/
 #define TWODMESHPLOTH_XSIZE 540 /**< Horizontal size of plotting area (points = \f$1/72''\f$) */
 #define TWODMESHPLOTH_YSIZE 720 /**< Vertical size of plotting area (points) */
 #define TWODMESHPLOTH_XMARG  36 /**< Distance from left of page to plotting area (points) */
@@ -75,7 +78,6 @@ extern "C" {
 /*@}*/
 
 /** \brief This structure stores parameters specifying how to plot a PostScript diagram of the parameter mesh.
- * \ingroup TwoDMeshPlot_h
  */
 typedef struct tagTwoDMeshPlotStruc {
   REAL4 theta;		/**< Angle from the horizontal direction of the plot counterclockwise to the \f$x\f$-coordinate axis of the mesh, in degrees */
@@ -122,6 +124,7 @@ LALPlotTwoDMesh( LALStatus         *stat,
 
 /** \endcond */
 
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

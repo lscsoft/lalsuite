@@ -21,12 +21,14 @@ lalframe-*.tar.gz
 lalframe.pc
 lalframe.spec
 libtool
+python/__init__.py
+python/git_version.py
 src/LALFrameConfig.h
 src/LALFrameVCSInfo.h
+src/lalfr-*
 src/lalframe-user-env.csh
 src/lalframe-user-env.sh
 src/lalframe-user-env.shell
-src/lalframe_lld
 src/stamp-h2
 test/AggregationTest
 test/FrameCacheTest

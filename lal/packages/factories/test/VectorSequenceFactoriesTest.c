@@ -34,12 +34,11 @@ lalDebugLevel
 */
 
 /** \cond DONT_DOXYGEN */
+#include <config.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <lal/LALConfig.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

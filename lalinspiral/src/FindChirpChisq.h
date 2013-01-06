@@ -83,23 +83,13 @@ function.
 /* --- structure for storing input to the chisq veto --------------------- */
 
 /** This structure contains the input to the \f$\chi^2\f$ veto function.
-The quantities should be populated by <tt>FindChirpFilter()</tt> on entry.
-The fields are:
-
-<dl>
-<dt><tt>COMPLEX8Vector *qtildeVec</tt></dt><dd> A vector containing the frequncy
-domain quantity \f$\tilde{q}_k\f$ as defined in <tt>FindChirpFilter()</tt>.</dd>
-
-<dt><tt>COMPLEX8Vector *qVec</tt></dt><dd> A vector containing the time
-domain quantity \f$q_j\f$ as defined in <tt>FindChirpFilter()</tt>.</dd>
-</dl>
-
+ * The quantities should be populated by <tt>FindChirpFilter()</tt> on entry.
 */
 typedef struct
 tagFindChirpChisqInput
 {
-  COMPLEX8Vector               *qtildeVec;
-  COMPLEX8Vector               *qVec;
+  COMPLEX8Vector               *qtildeVec;	/**< A vector containing the frequncy domain quantity \f$\tilde{q}_k\f$ as defined in FindChirpFilter() */
+  COMPLEX8Vector               *qVec;		/**< A vector containing the time domain quantity \f$q_j\f$ as defined in FindChirpFilter() */
 }
 FindChirpChisqInput;
 
@@ -107,72 +97,35 @@ FindChirpChisqInput;
 /* --- parameter structure for the chisq veto ---------------------------- */
 
 /** This structure contains the parameters used by the \f$\chi^2\f$ veto
-function <tt>FindChirpChisqVeto()</tt>.  It is created and destroyed by the
-<tt>FindChirpChisqVetoInit()</tt> and <tt>FindChirpChisqVetoFinalize()</tt>
-functions. The fields are:
-
-<dl>
-<dt><tt>REAL4 norm</tt></dt><dd> The normalization factor for the SP templates.
-Equals \f$4 \Delta t / (N segNorm)\f$.</dd>
-
-<dt><tt>REAL4 a1</tt></dt><dd> BCV-template normalization parameter.</dd>
-
-<dt><tt>REAL4 b1</tt></dt><dd> BCV-template normalization parameter.</dd>
-
-<dt><tt>REAL4 b2</tt></dt><dd> BCV-template normalization parameter.</dd>
-
-<dt><tt>REAL4 bankMatch</tt></dt><dd> Template bank match...</dd>
-
-<dt><tt>UINT4Vector *chisqBinVec</tt></dt><dd> A vector containing the boundaries
-of the bins for the chi-squared veto for the stationary phase chirps, or the
-boundaries of the bins for the first sum of the chi-squared veto for the
-BCV templates.</dd>
-
-<dt><tt>UINT4Vector *chisqBinVecBCV</tt></dt><dd> A vector containing the boundaries
-of the bins for the second part of the chi-squared statistic, for the BCV
-templates.</dd>
-
-<dt><tt>ComplexFFTPlan *plan</tt></dt><dd> The FFTW plan used by the inverse DFT.</dd>
-
-<dt><tt>COMPLEX8Vector *qtildeBinVec</tt></dt><dd> ...</dd>
-
-<dt><tt>COMPLEX8Vector *qtildeBinVecBCV</tt></dt><dd> ...</dd>
-
-<dt><tt>COMPLEX8Vector **qBinVecPtr</tt></dt><dd> Pointer to an array of pointers.
-Corresponds to \f$q^{(1)}_l(t_j)\f$, which is the contribution of the \f$l\f$-th
-frequency
-bin to the signal-to-noise ratio at the time \f$t_j\f$ (up to the appropriate
-normalization). It is used for both the stationary phase chirps and the
-BCV templates.</dd>
-
-<dt><tt>COMPLEX8Vector **qBinVecPtrBCV</tt></dt><dd> Pointer to an array of pointers.
-Corresponds to \f$q^{(2)}_l(t_j)\f$, which is the contribution of the \f$l\f$-th
-frequency
-bin to the signal-to-noise ratio at the time \f$t_j\f$ (up to the appropriate
-normalization). It is used only for the BCV templates.
-</dd>
-</dl>
-
-*/
+ * function <tt>FindChirpChisqVeto()</tt>.  It is created and destroyed by the
+ * <tt>FindChirpChisqVetoInit()</tt> and <tt>FindChirpChisqVetoFinalize()</tt>
+ * functions.
+ */
 typedef struct
 tagFindChirpChisqParams
 {
-  REAL4                         norm;
-  REAL4                         a1;
-  REAL4                         b1;
-  REAL4                         b2;
-  UINT4Vector                  *chisqBinVec;
-  UINT4Vector                  *chisqBinVecBCV;
-  ComplexFFTPlan               *plan;
-  COMPLEX8Vector               *qtildeBinVec;
-  COMPLEX8Vector               *qtildeBinVecBCV;
-  COMPLEX8Vector              **qBinVecPtr;
-  COMPLEX8Vector              **qBinVecPtrBCV;
-  Approximant                   approximant;
+  REAL4                         norm;		/**< The normalization factor for the SP templates; Equals \f$4 \Delta t / (N segNorm)\f$ */
+  REAL4                         a1;		/**< BCV-template normalization parameter */
+  REAL4                         b1;		/**< BCV-template normalization parameter */
+  REAL4                         b2;		/**< BCV-template normalization parameter */
+  UINT4Vector                  *chisqBinVec;	/**< A vector containing the boundaries of the bins for the chi-squared veto for the stationary phase chirps, or the
+                                                 * boundaries of the bins for the first sum of the chi-squared veto for the BCV templates
+                                                 */
+  UINT4Vector                  *chisqBinVecBCV;	/**< A vector containing the boundaries of the bins for the second part of the chi-squared statistic, for the BCV templates */
+  ComplexFFTPlan               *plan;		/**< The FFTW plan used by the inverse DFT */
+  COMPLEX8Vector               *qtildeBinVec;	/**< UNDOCUMENTED */
+  COMPLEX8Vector               *qtildeBinVecBCV;/**< UNDOCUMENTED */
+  COMPLEX8Vector              **qBinVecPtr;	/**< Pointer to an array of pointers; Corresponds to \f$q^{(1)}_l(t_j)\f$, which is the contribution of the \f$l\f$-th
+                                                 * frequency bin to the signal-to-noise ratio at the time \f$t_j\f$ (up to the appropriate normalization);
+                                                 * It is used for both the stationary phase chirps and the BCV templates
+                                                 */
+  COMPLEX8Vector              **qBinVecPtrBCV;	/**< Pointer to an array of pointers; Corresponds to \f$q^{(2)}_l(t_j)\f$, which is the contribution of the \f$l\f$-th
+                                                 * frequency bin to the signal-to-noise ratio at the time \f$t_j\f$ (up to the appropriate normalization);
+                                                 * It is used only for the BCV templates
+                                                 */
+  Approximant                   approximant;	/**< UNDOCUMENTED */
 }
 FindChirpChisqParams;
-
-/*@}*/
 
 /* ---------- Function prototypes ---------- */
 
@@ -206,6 +159,8 @@ LALFindChirpChisqVeto (
     FindChirpChisqInput        *input,
     FindChirpChisqParams       *params
     );
+
+/*@}*/ /* end:FindChirpChisq_h */
 
 #if 0
 { /* so that editors will match succeeding brace */

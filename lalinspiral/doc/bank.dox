@@ -1,0 +1,254 @@
+/**
+   \addtogroup pkg_bank
+
+@{
+        \defgroup LALInspiralBank_h 		Header LALInspiralBank.h
+        \defgroup TemplateBankGeneration_h 	Header TemplateBankGeneration.h
+@}
+*/
+
+/**
+   \addtogroup pkg_bank
+
+   \brief This is a module that generates a template bank to search for
+          inspiralling and merging binaries consisting of neutron stars
+          and/or black holes.
+
+Template placement is based on the geometrical
+formalism [\ref Owen_96,\ref OwenAndSathyaprakash99].  A user
+calls either LALInspiralCreateCoarseBank(),
+to create a coarse bank, or LALInspiralCreateFineBank(),
+to create a fine bank, at specified minimal matches.
+LALInspiralCreateCoarseBank() first chooses templates
+along the \f$\eta=1/4\f$ curve and then systematically lays a
+rectangular grid in the \f$\tau_0-\tau_2\f$ plane, or \f$\tau_0-\tau_3\f$
+plane depending on user's choice.
+
+If the metric on a (two-dimensional) signal manifold characterised
+by parameters \f$(x_0,x_1)\f$ is \f$g_{ij}\f$ then the spacing between templates
+is given by
+\f{equation}{
+   dx_0 = \sqrt{ \frac{2(1 -MM)}{g_{00}} },\ \
+   dx_1 = \sqrt{ \frac{2(1 -MM)}{g_{11}} }.
+\f}
+
+\section sec_TemplatePlacement Template Placement for Binary Inspiral Searches
+
+<em>%Template placement</em> is a problem of populating the binary
+parameter space (masses, spins, etc.) with as small a number of
+templates as possible, subject to the constraint that every signal
+that lies within the space has an overlap greater
+than or equal to a certain <em>minimal match</em> with at least one template in
+the grid. Past studies [\ref SathyaprakashDhurandhar1991,\ref Sathyaprakash1994,\ref OwenAndSathyaprakash99]
+have shown that this is most easily achieved by using the space of
+<em>chirp-times</em> to lay templates rather than the space of component masses.
+
+\floatfig{h,fig_chirp_times}
+\image html LALInspiralBankH4Figures.png "Fig. [fig_chirp_times]: Parameter space binary masses and corresponding chirp-times"
+\image latex LALInspiralBankH4Figures.pdf "Parameter space binary masses and corresponding chirp-times"
+
+Fig.\figref{fig_chirp_times} shows the parameter space binary masses and corresponding chirp-times.
+Chirp times are computed using an \f$f_0\f$ of 40 Hz. Note
+that our parameter is specified by \f$m_1, m_2 >m_\mathrm{min}\f$ and
+\f$M=m_1+m_2 < M_\mathrm{max}\f$ rather than by \f$m_\mathrm{min} < m_1,m_2 < m_\mathrm{max}.\f$
+(We use capital \f$M\f$ to denote the total mass and lower-case \f$m\f$ to denote
+the component masses.) In the above example \f$m_\mathrm{min} = 0.2 M_\odot\f$
+and \f$M_\mathrm{max} = 100 M_\odot.\f$
+
+
+The number of chirp
+times that one can define is determined by the post-Newtonian order
+one is working with. At the second post-Newtonian order (i.e.
+an approximation accurate to order
+\latexonly\footnote{We use units in which $c=G=1;$ thus $1M_\odot=4.92549095 \times 10^{-6}$~s.}
+\endlatexonly
+\if HTML
+[Note: we use units in which \f$c=G=1;\f$ thus \f$1M_\odot=4.92549095 \times 10^{-6}\f$\ s]
+\endif
+\f$v^4\f$) and for
+a binary consisting of two non-spinning compact objects in a quasi-circular
+orbit, there are
+four chirp-times \f$\tau_k,\; k=0,\ 2,\ 3,\ 4,\f$ of which we can choose
+any two to characterize the binary:
+\f{equation}{
+\tau_{0} = \frac{5M}{256 \eta v_{0}^{8}}
+\f}
+\f{equation}{
+\tau_{2} = \frac{5M}{192 \eta v_{0}^{6}} \left( \frac{743}{336} + \frac{11}{4} \eta \right)
+\f}
+\f{equation}{
+\tau_{3} = \frac{\pi M}{8 \eta v_{0}^{5}}
+\f}
+\f{equation}{
+\tau_{4} = \frac{5M}{128 \eta v_{0}^4} \left( \frac{3\,058\,673}{1\,016\,064} + \frac{5429}{1008}
+\eta +
+\frac{617}{144} \eta^{2} \right)
+\f}
+where \f$m\f$ is the total mass of the
+binary, \f$\eta=m_1m_2/m^2\f$ is the symmetric mass ratio and
+\f$v_0 = (\pi m f_0)^{1/3}\f$ is a fiducial velocity parameter corresponding
+to a fiducial frequency \f$f_0,\f$ usually chosen to be the <em>lower
+frequency cutoff</em> of the detector sensitivity.
+
+This algorithm allows one to choose
+a coarse grid of templates either in the \f$\tau_0-\tau_2\f$
+or \f$\tau_0-\tau_3\f$ space depending on the value of the
+\c enum ::CoordinateSpace, which can take one of two values:
+#Tau0Tau2 or #Tau0Tau3. The shape of the coordinate
+spaces for some interesting range of masses is shown
+in Fig.\figref{fig_chirp_times}. The important point to note in these
+figures is that the \f$\eta=1/4\f$ curve spans from the \e minimum to the
+\e maximum value of the <em>Newtonian chirp-time</em> \f$\tau_0.\f$  This
+feature will be used in the construction of the grid. Note that
+the minimum (maximum) value of the Newtonian chirp-time occurs when
+the two masses are equal and the total mass is a maximum (minimum).
+
+\subsection sec_CoarseGrid Coarse Grid Algorithm : the square placement
+
+The coarse grid algorithm used in this module is most economically
+described by the following main steps in the algorithm:
+<ol>
+<li> Compute the minimum and maximum chirp-times corresponding to the
+search space: \f$(\tau_0^\mathrm{min}, \tau_0^\mathrm{max}),\f$
+\f$(\tau_3^\mathrm{min}, \tau_3^\mathrm{max})\f$ (or
+\latexonly\footnote{In what follows we will only mention $\tau_3$; however, the algorithm is itself valid,
+and has been implemented, in the case of $(\tau_0,\tau_2)$ too.}\endlatexonly
+\f$(\tau_2^\mathrm{min}, \tau_2^\mathrm{max})\f$
+\if HTML
+[Note: In what follows we will only mention \f$\tau_3\f$; however, the algorithm is itself valid,
+and has been implemented, in the case of \f$(\tau_0,\tau_2)\f$ too.]
+\endif
+)
+</li>
+
+<li> Choose a lattice of templates along the equal mass curve.</li>
+
+<li> Lay a rectangular grid in the rectangular region defined by
+the minimum and maximum values of the chirp-times and retain only
+if (a) the point lies in the parameter space, OR (b) one of the
+vertices defined by the rectangle lies in the parameter space.
+If, instead of choosing the templates as specified in (b), we accept
+every template whose span has a non-zero overlap with the parameter
+space, then we
+would generate too many spurious templates, especially in the low-mass
+region. This is because of the following reason:
+We have chosen to lay templates along the
+equal-mass curve and the parameter space is very thin for large values
+of \f$\tau_0\f$ along this curve -- the region where the `distance'
+between the \f$m_1=m_\mathrm{min}\f$ curve and the equal-mass curve is
+smaller than one minimal-match.
+By laying templates in a rectangular grid in the
+\f$\tau_0-\tau_3\f$ space we would be encoutering templates in this
+region and just above the equal-mass curve
+none of whose vertices would be within the search space. By
+throwing away such templates there is no danger of creating any
+`holes' in the parameter space. Indeed, criterion (b)
+will help in filling the holes below the \f$m_1=m_\mathrm{min}\f$
+curve that would be created by accepting templates that meet
+only criterion (a).
+</li>
+</ol>
+
+The algorithm begins by identifying the vertices at the boundary of
+the search space corresponding to the range of masses over which one
+intends to carry out a search. It first chooses a set of templates
+along the equal mass curve and then lays a rectangular lattice
+of templates in the rectangular region defined by
+\f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{min}),\; (\tau_0^\mathrm{max}, \tau_3^\mathrm{min}),\f$
+\f$(\tau_0^\mathrm{max}, \tau_3^\mathrm{max}),\f$ and \f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{max}).\f$
+
+\subsubsection sec_ParamsCG Parameters specifying a coarse grid
+
+The algorithm takes as input the structure
+::InspiralCoarseBankIn and returns a pointer to an array of
+type ::InspiralTemplateList and the number of elements in the
+array.  ::InspiralCoarseBankIn is designed to provide the coarse
+bank algorithm with information about the search space such as the
+minimum mass of component stars, maximum total mass, etc., as well as
+other parameters not directly used by the coarse grid algorithm but
+are needed by inspiral wave generation algorithms. This is so that
+the coarse grid algorithm can correctly set the members of the
+::InspiralTemplateList structure. In particular, the members
+of the ::InspiralCoarseBankIn structure used by the coarse grid
+algorithm are:
+<ul>
+<li> <tt>REAL8 mMin,</tt> minimum mass of the component stars</li>
+<li> <tt>REAL8 MMax,</tt> maximum total mass of the binary</li>
+<li> <tt>REAL8 mmCoarse,</tt> coarse grid minimum match</li>
+<li> <tt>REAL8 fLower,</tt> lower frequency cutoff to be used in the computation of the
+noise moments</li>
+<li> <tt>REAL8 fUpper,</tt> upper frequency cutoff to be used in the computation of the
+noise moments</li>
+<li> <tt>void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f),</tt> pointer to
+a function that returns the noise spectral density (in units of per Hz\f$^{-1}\f$);
+\c noisemodels modules have built in noise power spectral densities
+LALGEOPsd(), LALLIGOIPsd(), LALTAMAPsd() and \c LALVIRGOPsd().</li>
+<li> <tt>REAL8 order,</tt> the post-Newtonian order to be used
+for wave generation the choices being
+<tt>newtonian, onePN, onePointFivePN, twoPN, twoPointFivePN,
+threePN, threePointFivePN</tt>.</li>
+<li> ::CoordinateSpace space, the coordinate space in which templates
+are laid (the choices being #Tau0Tau2, #Tau0Tau3; at \c onePN
+order the only choice is #Tau0Tau2).</li>
+<li> <tt>etamin,</tt> minimum value of eta; must be pre-computed using the
+formula <tt>etamin = mMin * (MMax - mMin) / pow(MMax,2)</tt>
+before calling the LALInspiralCreateCoarseBank().</li>
+</ul>
+Additionally, the user may specify the fine bank minimal match
+<tt>mmFine,</tt> if LALInspiralCreateFineBank() is called.
+A fine bank can be created only around grid points where the
+metric is known.
+
+Other members of the ::InspiralCoarseBankIn structure that
+are not directly used by the coarse grid algorithm but are needed to
+correctly set all the members of the ::InspiralTemplate are:
+<ul>
+<li> <tt>REAL8 tSampling,</tt> time-domain sampling rate in Hz.</li>
+<li> <tt>REAL8 approximant,</tt> the approximation method to be used
+for wave generation which can be anyone of #TaylorT1, #TaylorT2,
+#TaylorT3, #TaylorF1, #TaylorF2, or #PadeT1, #PadeF1, #EOB. Note that
+the placement algorithm is guaranteed to work with only #TaylorF2
+approximants. A detailed study of approximants that are well captured by
+this template placement algorithm is described elsewhere [\ref Sathyaprakash2001a].</li>
+<li> ::GridSpacing, specify the type of placement to be used. For the
+physical template families placement, it must be #SquareNotOriented,
+#Hexagonal, #HybridHexagonal. For the non-BCV case, it could be #Square,
+#SquareNotOriented, #Hexagonal, #HexagonalNotOriented. Concerning
+the physical case, the non oriented square placement, as described in this
+section, places the template on a square lattice but does not take into
+account the orientation of the ellipse, which might cause problem in some
+particular cases. The Hexagonal placement was then implemented taking  into
+account the orientation of the ellipse. No square placement with the correct
+orientation has been implemented since the hexagonal is now used for in the
+LIGO analysis. Concerning the non-spinning BCV placement, all 4 cases are
+available. However, only the non oriented square placement and oriented
+hexagonal placement hav ebeen thouroughly tested as well.
+</li>
+</ul>
+
+\subsection sec_CGAlgHex Coarse Grid Algorithm : the hexagonal placement
+
+This module has the ability to place the templates on an hexagonal lattice.
+This placement reduces by 30\% (as expected) the number of templates used by
+the square lattice. Although the algorithm is different (and described in this
+documentation), it is based on the same structure and uses the same function
+to be called, namely LALInspiralCreateCoarseBank(). The lattice is
+specified by the variable \c gridSpacing from the structure ::InspiralCoarseBankIn, where
+the user must set gridSpacing to #Hexagonal.
+
+\subsection sec_CGAlgHybrid Coarse Grid Algorithm : the hybrid hexagonal placement
+
+A very similar placement place the template on an hexagonal lattice similarly
+to the previous hexagonal placement bu has a slightly different placement when
+upper an lower boundaries of the parameter space are coverred by a single
+template. In such a case, the hexagonal placement is replace by a placement
+along the bissectrice of the upper and lower boundaries. See the documentation
+for more details. This algorithm is called by setting gridSpacing to  #HybridHexagonal.
+
+\subsection sec_CGAlgBCV Coarse Grid algorithm: non physical placement (BCV)
+
+There is also the ability to create a bank for the non-spinning BCV templates.
+See the documentation. If so, the user must set approximant to BCV instead of
+one of the physical approximant (EOB, TaylorT1, ...).
+
+*/

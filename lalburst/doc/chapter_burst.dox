@@ -1,0 +1,12 @@
+// -*- mode: c -*-
+
+/**
+\addtogroup ch_burst
+   @{
+   \defgroup pkg_burstsearch	Package 'burstsearch'
+   \defgroup pkg_tracksearch	Package 'tracksearch'
+   \defgroup pkg_TFR		Package 'TFR'
+   \defgroup pkg_ring		Package 'ring'
+   @}
+
+*/

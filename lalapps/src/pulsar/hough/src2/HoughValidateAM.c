@@ -484,7 +484,6 @@ int main( int argc, char *argv[]){
   sftParams.Tsft = timeBase;
   sftParams.timestamps = &(timeV);
   sftParams.noiseSFTs = inputSFTs;  
-  sftParams.make_v2SFTs = 1; /* switch to tell Reinhard that we know SFTs are v2 */
 
   /* signal generation parameters */
   params.orbit = NULL;

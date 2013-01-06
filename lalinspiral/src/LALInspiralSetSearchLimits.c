@@ -17,20 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Churches, D. K.
-\file
-\ingroup LALInspiralBank_h
+#include <lal/LALInspiralBank.h>
+#include <lal/LALStdlib.h>
 
-\brief Function which calculates the minimum and maximum values of \f$\tau_{0}\f$ and \f$\tau_{3}\f$.
-
-\heading{Prototypes}
-
-<tt>LALInspiralSetSearchLimits()</tt>
-<ul>
-   <li> <tt>bankParams,</tt> Output containing the boundary of search, current lattice point, etc.
-   </li><li> <tt>coarseIn,</tt> Input, specifies the parameters of the search space.</li>
-</ul>
+/** \ingroup LALInspiralBank_h
+ * \brief Function which calculates the minimum and maximum values of \f$\tau_{0}\f$ and \f$\tau_{3}\f$.
+ * \author Churches, D. K.
 
 This Function calculates the minimum and maximum values of \f$\tau_{0}\f$ and \f$\tau_{3}\f$
 as determined by the total mass of the binary \f$m\f$ and the symmetric
@@ -56,29 +48,12 @@ and
 \f$\tau_{3}\f$ is minimised when \f$\eta=1/4\f$ and \f$\mathtt{m=MMax}\f$.
 \f$\tau_{3}\f$ is maximised when
 \f$\eta=\mathtt{ mMin(MMax-mMin)/MMax^{2} }\f$.
-
-
-\heading{Algorithm}
-
-
-\heading{Uses}
-
-\heading{Notes}
-
-
-
 */
-
-
-
-#include <lal/LALInspiralBank.h>
-#include <lal/LALStdlib.h>
-
 void
 LALInspiralSetSearchLimits (
-    LALStatus            *status,
-    InspiralBankParams   *bankParams,
-    InspiralCoarseBankIn  coarseIn
+    LALStatus            *status,	/**< LAL status pointer */
+    InspiralBankParams   *bankParams,	/**< [out] containing the boundary of search, current lattice point, etc. */
+    InspiralCoarseBankIn  coarseIn	/**< [in] specifies the parameters of the search space */
     )
 
 {

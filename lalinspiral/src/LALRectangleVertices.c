@@ -17,23 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#include <lal/LALInspiralBank.h>
+
 /**
-\author Sathyaprakash, B. S.
-\file
 \ingroup LALInspiralBank_h
-
-\brief Module to find the vertices of a rectangle given its centre,
-half side-lengths and orientation angle.
-
-\heading{Prototypes}
-
-<tt>LALRectangleVertices()</tt>
-<ul>
-   <li> <tt>out,</tt> Output.
-   </li><li> <tt>in,</tt> Input.</li>
-</ul>
-
-\heading{Description}
+\brief Function to find the vertices of a rectangle given its centre, half side-lengths and orientation angle.
+\author Sathyaprakash, B. S.
 
 This code computes the vertices of a rectangle for plotting
 a grid of templates with xmgr, useful when looking at the
@@ -44,10 +33,10 @@ Given the centre \f$(x_0,y_0)\f$ and half-sides \f$(dx,dy),\f$
 the vertices of a rectangle in a \e diagonal coordinate
 system are given by
 \f{eqnarray}{
-x_1 & = & x_0 - dx, \ \ y_1 = y_0 - dy, \nonumber \\
-x_2 & = & x_0 + dx, \ \ y_2 = y_0 - dy, \nonumber \\
-x_3 & = & x_0 + dx, \ \ y_3 = y_0 + dy, \nonumber \\
-x_4 & = & x_0 - dx, \ \ y_4 = y_0 + dy. \nonumber
+x_1 & = & x_0 - dx, \quad y_1 = y_0 - dy, \nonumber \\
+x_2 & = & x_0 + dx, \quad y_2 = y_0 - dy, \nonumber \\
+x_3 & = & x_0 + dx, \quad y_3 = y_0 + dy, \nonumber \\
+x_4 & = & x_0 - dx, \quad y_4 = y_0 + dy. \nonumber
 \f}
 The coordinates of a rectangle oriented at an angle \f$\theta\f$ is
 found by using the formulas
@@ -58,21 +47,12 @@ y' = y \cos(\theta) + x \sin(\theta).\nonumber
 The function returns five coordinate points (1,2,3,4,1),
 and not just the four verticies, to help
 a plotting programme to complete the rectangle.
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-
-*/
-
-#include <lal/LALInspiralBank.h>
-
+ */
 void
 LALRectangleVertices(
-   LALStatus *status,
-   RectangleOut *out,
-   RectangleIn *in
+   LALStatus *status,	/**< LAL status pointer */
+   RectangleOut *out,	/**< Output */
+   RectangleIn *in	/**< Input */
 )
 {
 

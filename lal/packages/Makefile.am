@@ -1,4 +1,3 @@
-## Process this file with automake to produce Makefile.in
 SUBDIRS = \
 	std \
 	tools \
@@ -11,8 +10,7 @@ SUBDIRS = \
 	tdfilter \
 	window \
 	fft \
-	noisemodels \
-	support
+	noisemodels
 
 include-links:
 	@set fnord $(MAKEFLAGS); amf=$$2; \

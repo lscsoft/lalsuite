@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson 
+*  Copyright (C) 2010 Craig Robinson, Yi Pan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -19,16 +19,19 @@
 
 
 /**
- * \author Craig Robinson
+ * \author Craig Robinson, Yi Pan
  *
- * \brief Function to compute the factorized flux as uses in the new EOBNR_PP
- * model. Flux function given by Phys.Rev.D79:064004,2009.
+ * \brief Function to compute the factorized flux as uses in the SEOBNRv1
+ * model. Flux function given in
+ * Taracchini et al. ( PRD 86, 024011 (2012), arXiv 1202.0790 ).
+ * All equation numbers in this file refer to equations of this paper,
+ * unless otherwise specified.
  */
 
 #ifndef _LALSIMIMRSPINEOBFACTORIZEDFLUX_C
 #define _LALSIMIMRSPINEOBFACTORIZEDFLUX_C
 
-#include <lal/LALComplex.h>
+#include <complex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 
@@ -117,11 +120,12 @@ static REAL8 XLALInspiralSpinFactorizedFlux(
         COMPLEX16 hNQC;
         XLALSimIMRGetEOBCalibratedSpinNQC( &nqcCoeffs, l, m, ak->eobParams->eta, ak->a );    
         XLALSimIMREOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
-
-        hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+        /* Eq. 16 */
+        hLM *= hNQC;
       }
-//      printf( "l = %d, m = %d, mag(hLM) = %.17e\n", l, m,  XLALCOMPLEX16Abs2( hLM ) );
-      flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+      // printf( "l = %d, m = %d, mag(hLM) = %.17e\n", l, m,  XLALCOMPLEX16Abs2( hLM ) );
+      /* Eq. 13 */
+      flux += (REAL8)(m * m) * omegaSq * ( creal(hLM)*creal(hLM) + cimag(hLM)*cimag(hLM) );
     }
   }
   return flux * LAL_1_PI / 8.0;

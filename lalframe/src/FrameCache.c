@@ -19,9 +19,8 @@
 
 /**
  * \author Jolien D. E. Creighton
- * \file
  *
- * \heading{Module \ref FrameCache.c}
+ * \ingroup FrameCache_h
  *
  * Routines for importing, exporting, generating, and manipulating frame
  * catalogs and cache structures.
@@ -82,8 +81,6 @@
  * files of interst.  The routine \c LALDestroyFrCache destroys a frame
  * cache.
 */
-
-
 
 
 #include <stdlib.h>

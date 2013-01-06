@@ -52,12 +52,15 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
                             LIGOTimeGPSVector *datatimes,
                             EphemerisData *ephem,
+                            TimeCorrectionData *tdat,
+                            TimeCorrectionType ttype,
                             LALDetector *detector,
                             REAL8 interptime );
                             
 REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
                             LIGOTimeGPSVector *datatimes,
-                            REAL8Vector *dts );                
+                            REAL8Vector *dts,
+                            EphemerisData *ephem );                
                               
 void get_triaxial_amplitude_model( BinaryPulsarParams pars, 
                                    LALInferenceIFOData *data );
@@ -69,6 +72,9 @@ REAL8 noise_only_model( LALInferenceRunState *runState );
 
 REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2,
                           LIGOTimeGPSVector *ts );
+
+void get_earth_pos_vel( EarthState *earth, EphemerisData *ephem,
+                        LIGOTimeGPS *t ); 
 
 #ifdef __cplusplus
 }

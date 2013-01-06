@@ -17,20 +17,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
-/**
- * \defgroup XML VOTable and generic XML support
- * \ingroup support
- * \author Oliver Bock, Reinhard Prix, Jolien Creighton
- * \brief Module for reading/writing/manipulating XML as well as data serialization.
- */
-
-/**
- * \file
- * \ingroup XML
- * \brief Header file declaring the public XML API
- */
-
 /* Double-include protection */
 #ifndef _LALXML_H
 #define _LALXML_H
@@ -40,9 +26,21 @@
 extern "C" {
 #endif
 
-
 #include <libxml/tree.h>
 #include <lal/LALDatatypes.h>
+
+/**
+ * \addtogroup pkg_XML
+ * \author Oliver Bock, Reinhard Prix, Jolien Creighton
+ * \brief Module for reading/writing/manipulating XML as well as data serialization.
+ */
+
+/**
+ * \defgroup LALXML_h Header LALXML.h
+ * \ingroup pkg_XML
+ * \brief Header file declaring the public XML API
+ */
+/*@{*/
 
 /** Cast macro to use instead of libxml2's 'BAD_CAST' macro,
  * with are more descriptive name.
@@ -96,6 +94,8 @@ INT4 XLALReconcileDefaultNamespace(const xmlNodePtr xmlRootElement, const xmlNsP
 
 xmlDocPtr XLALXMLString2Doc ( const char *xmlString );
 xmlChar *XLALXMLDoc2String ( xmlDoc *xmlDocument );
+
+/*@}*/
 
 /* C++ protection */
 #ifdef __cplusplus

@@ -27,4 +27,10 @@
 /* Define if you have inotify */
 #undef HAVE_INOTIFY
 
+/* Define to use FrameC */
+#undef USE_FRAMEC
+
+/* Define to use FrameL */
+#undef USE_FRAMEL
+
 #endif /* _LALFRAMECONFIG_H */

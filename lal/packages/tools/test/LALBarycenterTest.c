@@ -82,26 +82,29 @@ inline REAL8 relerr ( REAL8 x, REAL8 xapprox )
     return abserr;
 }
 
-
-REAL8 ReldiffEmissionTime ( const EmissionTime *emit1, const EmissionTime *emit2 );
+int diffEmissionTime  ( EmissionTime  *diff, const EmissionTime *emit1, const EmissionTime *emit2 );
+int absmaxEmissionTime ( EmissionTime *absmax, const EmissionTime *demit1, const EmissionTime *demit2 );
+REAL8 maxErrInEmissionTime ( const EmissionTime *demit );
 
 INT4 lalDebugLevel = 5;
 
 // empty local initializers
 static const BarycenterInput empty_BarycenterInput;
-static const BarycenterBuffer empty_BarycenterBuffer;
+static const EmissionTime empty_EmissionTime;
 
 const INT4 t2000 = 630720013; 		/* gps time at Jan 1, 2000 00:00:00 UTC */
 const INT4 t1998 = 630720013-730*86400-1;	/* gps at Jan 1,1998 00:00:00 UTC*/
+
+// ----------------------------------------------------------------------
 
 int
 main( void )
 {
   static LALStatus status;
 
-  char eEphFileBad[] = "earth47.dat";
-  char eEphFile[] = "earth98.dat";
-  char sEphFile[] = "sun98.dat";
+  char eEphFileBad[] = DATADIR "earth47.dat";
+  char eEphFile[] = DATADIR "earth98.dat";
+  char sEphFile[] = DATADIR "sun98.dat";
 
   /* Checking response if data files not present */
   EphemerisData edat;
@@ -115,7 +118,7 @@ main( void )
     }
   else
     {
-      XLALPrintError ("==================== this error is as expected and OK!! ==================== \n");
+      // XLALPrintError ("==================== this error is as expected and OK!! ==================== \n");
       xlalErrno = 0;
     }
 
@@ -202,25 +205,29 @@ main( void )
   }
 
   /* ---------- Now running program w/o errors, to illustrate proper use. ---------- */
-  REAL8 summedReldiff = 0, summedReldiffOpt=0;
+  EmissionTime maxDiff 		= empty_EmissionTime;
+  EmissionTime maxDiffOpt	= empty_EmissionTime;
   REAL8 tic, toc;
-  UINT4 NRepeat = 1000;
+  UINT4 NRepeat = 1;
   UINT4 counter = 0;
   REAL8 tau_lal = 0, tau_xlal = 0, tau_opt = 0;
-  BarycenterBuffer buffer = empty_BarycenterBuffer;	// for optimized XLALBarycenterOpt() function
+  BarycenterBuffer *buffer = NULL;
+
+  unsigned int seed = XLALGetTimeOfDay();
+  srand ( seed );
 
   /* Outer loop over different sky positions */
-  for ( UINT4 k=0; k < 3; k++)
+  for ( UINT4 k=0; k < 300; k++)
     {
-      baryinput.alpha = (LAL_PI/12.0)*(14.e0 + 51.e0/60.e0 + 38.56024702e0/3.6e3) + LAL_PI*k/10.e0;
-      baryinput.delta = (LAL_PI/180.e0)*(12.e0+ 19.e0/60.e0 + 59.1434800e0/3.6e3);
+      baryinput.alpha = ( 1.0 * rand() / RAND_MAX ) * LAL_TWOPI;	// in [0, 2pi]
+      baryinput.delta = ( 1.0 * rand() / RAND_MAX ) * LAL_PI - LAL_PI_2;// in [-pi/2, pi/2]
       baryinput.dInv = 0.e0;
 
       /* inner loop over pulse arrival times */
-      for ( UINT4 i=0; i < 10; i++ )
+      for ( UINT4 i=0; i < 100; i++ )
         {
-          tGPS.gpsSeconds = t1998 + i * 3600 * 50;
-          tGPS.gpsNanoSeconds = 0;
+          REAL8 tPulse = t1998 + ( 1.0 * rand() / RAND_MAX ) * LAL_YRSID_SI;	// t in [1998, 1999]
+          XLALGPSSetREAL8( &tGPS, tPulse );
           baryinput.tgps = tGPS;
 
           /* ----- old LAL interface ---------- */
@@ -248,8 +255,10 @@ main( void )
           toc = XLALGetTimeOfDay();
           tau_xlal += ( toc - tic ) / NRepeat;
 
-          /* sum up cumulative relative differences over all iterations */
-          summedReldiff += ReldiffEmissionTime ( &emit, &emit_xlal );
+          /* collect maximal deviations over all struct-fields of 'emit' */
+          EmissionTime thisDiff;
+          diffEmissionTime ( &thisDiff, &emit, &emit_xlal );
+          absmaxEmissionTime ( &maxDiff, &maxDiff, &thisDiff );
 
           /* ----- optimized XLAL version with buffering ---------- */
           tic = XLALGetTimeOfDay();
@@ -258,25 +267,36 @@ main( void )
           toc = XLALGetTimeOfDay();
           tau_opt += ( toc - tic ) / NRepeat;
 
-          /* sum up cumulative relative differences over all iterations */
-          summedReldiffOpt += ReldiffEmissionTime ( &emit, &emit_opt );
+          /* collect maximal deviations over all struct-fields of 'emit' */
+          diffEmissionTime ( &thisDiff, &emit, &emit_opt );
+          absmaxEmissionTime ( &maxDiffOpt, &maxDiffOpt, &thisDiff );
 
           counter ++;
         } /* for i */
 
     } /* for k */
 
-  /* ----- check differences in results ---------- */
-  REAL8 tolerance = 10 * LAL_REAL8_EPS;
-  XLALPrintInfo ( "Summed Relative error between LALBarycenter() and XLALBarycenter()     = %g (tolerance = %g)\n", summedReldiff, tolerance );
-  XLAL_CHECK ( summedReldiff < tolerance, XLAL_EFAILED,
-               "Summed Relative error between LALBarycenter() and XLALBarycenter()  = %g, exceeding tolerance of %g\n",
-               summedReldiff, tolerance );
+  XLALFree ( buffer );
+  buffer = NULL;
 
-  XLALPrintInfo ( "Summed Relative error between LALBarycenter() and XLALBarycenterOpt()  = %g (tolerance = %g)\n", summedReldiffOpt, tolerance );
-  XLAL_CHECK ( summedReldiffOpt < tolerance, XLAL_EFAILED,
-               "Summed Relative error between LALBarycenter() and XLALBarycenterOpt()  = %g, exceeding tolerance of %g\n",
-               summedReldiffOpt, tolerance );
+  /* ----- check differences in results ---------- */
+  REAL8 tolerance = 1e-9;	// in seconds: can't go beyond nanosecond precision due to GPS limitation
+  REAL8 maxEmitDiff = maxErrInEmissionTime ( &maxDiff );
+  REAL8 maxEmitDiffOpt = maxErrInEmissionTime ( &maxDiffOpt );
+  XLALPrintInfo ( "Max error (in seconds) between LALBarycenter() and XLALBarycenter()     = %g s (tolerance = %g s)\n", maxEmitDiff, tolerance );
+  XLAL_CHECK ( maxEmitDiff < tolerance, XLAL_EFAILED,
+               "Max error (in seconds) between LALBarycenter() and XLALBarycenter()  = %g s, exceeding tolerance of %g s\n", maxEmitDiff, tolerance );
+
+  XLALPrintInfo ( "Max error (in seconds) between LALBarycenter() and XLALBarycenterOpt()  = %g s (tolerance = %g s)\n", maxEmitDiffOpt, tolerance );
+  XLAL_CHECK ( maxEmitDiffOpt < tolerance, XLAL_EFAILED,
+               "Max error (in seconds) between LALBarycenter() and XLALBarycenterOpt()  = %g s, exceeding tolerance of %g s\n",
+               maxEmitDiffOpt, tolerance );
+  printf ( "%g	%g %d %d %g	%g %g %g	%g %g %g\n",
+           maxEmitDiffOpt,
+           maxDiffOpt.deltaT, maxDiffOpt.te.gpsSeconds, maxDiffOpt.te.gpsNanoSeconds, maxDiffOpt.tDot,
+           maxDiffOpt.rDetector[0], maxDiffOpt.rDetector[1], maxDiffOpt.rDetector[2],
+           maxDiffOpt.vDetector[0], maxDiffOpt.vDetector[1], maxDiffOpt.vDetector[2]
+           );
 
   /* ----- output runtimes ---------- */
   XLALPrintError ("Runtimes per function-call, averaged over %g calls\n", 1.0 * NRepeat * counter );
@@ -410,24 +430,63 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
 
 } /* compare_ephemeris() */
 
-/* return summed relative differences in all fields from EmissionTime struct */
-REAL8
-ReldiffEmissionTime ( const EmissionTime *emit1, const EmissionTime *emit2 )
+/* return differences in all fields from EmissionTime struct */
+int
+diffEmissionTime ( EmissionTime *diff, const EmissionTime *emit1, const EmissionTime *emit2 )
 {
-  REAL8 reldiff = 0;
+  if ( diff == NULL )
+    return -1;
 
-  reldiff += relerr ( emit1->deltaT, emit2->deltaT );
-  reldiff += relerr ( emit1->te.gpsSeconds,emit2->te.gpsSeconds );
-  reldiff += relerr ( emit1->te.gpsNanoSeconds, emit2->te.gpsNanoSeconds );
-  reldiff += relerr ( emit1->tDot, emit2->tDot );
+  diff->deltaT = emit1->deltaT - emit2->deltaT;
+  diff->te.gpsSeconds = emit1->te.gpsSeconds - emit2->te.gpsSeconds;
+  diff->te.gpsNanoSeconds = emit1->te.gpsNanoSeconds - emit2->te.gpsNanoSeconds;
+  diff->tDot = emit1->tDot - emit2->tDot;
   for ( UINT4 i = 0; i < 3; i ++ )
     {
-      reldiff += relerr ( emit1->rDetector[i], emit2->rDetector[i] );
-      reldiff += relerr ( emit1->vDetector[i], emit2->vDetector[i] );
+      diff->rDetector[i] = emit1->rDetector[i] - emit2->rDetector[i];
+      diff->vDetector[i] = emit1->vDetector[i] - emit2->vDetector[i];
     }
 
-  return reldiff;
+  return 0;
 
-} /* ReldiffEmissionTime() */
+} /* DiffEmissionTime() */
+
+/* return max ( fabs ( de1, e2 ) ) on all struct fields of 'de1' and 'de2' respectively */
+int
+absmaxEmissionTime ( EmissionTime *absmax, const EmissionTime *demit1, const EmissionTime *demit2 )
+{
+  if ( absmax == NULL )
+    return -1;
+
+  absmax->deltaT 		= fmax ( fabs ( demit1->deltaT ) , fabs ( demit2->deltaT ) );
+  absmax->te.gpsSeconds 	= fmax ( fabs ( demit1->te.gpsSeconds) , fabs ( demit2->te.gpsSeconds ) );
+  absmax->te.gpsNanoSeconds 	= fmax ( fabs ( demit1->te.gpsNanoSeconds ), fabs ( demit2->te.gpsNanoSeconds ) );
+  absmax->tDot 			= fmax ( fabs ( demit1->tDot ) , fabs ( demit2->tDot ) );
+  for ( UINT4 i = 0; i < 3; i ++ )
+    {
+      absmax->rDetector[i] 	= fmax ( fabs ( demit1->rDetector[i] ) , fabs ( demit2->rDetector[i] ) );
+      absmax->vDetector[i] 	= fmax ( fabs ( demit1->vDetector[i] ), fabs ( demit2->vDetector[i] ) );
+    }
+
+  return 0;
+
+} /* absmaxEmissionTime() */
+
+/* return maximal struct entry from 'demit' */
+REAL8
+maxErrInEmissionTime ( const EmissionTime *demit )
+{
+  REAL8 maxdiff = 0;
+  maxdiff 		= fmax ( maxdiff, fabs ( demit->deltaT ) );
+  maxdiff		= fmax ( maxdiff, fabs ( demit->te.gpsSeconds ));
+  maxdiff 		= fmax ( maxdiff, 1e-9 * fabs ( demit->te.gpsNanoSeconds ) );
+  maxdiff 		= fmax ( maxdiff, fabs ( demit->tDot ) );
+  for ( UINT4 i = 0; i < 3; i ++ )
+    {
+      maxdiff  		= fmax ( maxdiff, fabs ( demit->rDetector[i] ) );
+      maxdiff  		= fmax ( maxdiff, fabs ( demit->vDetector[i] ) );
+    }
+  return maxdiff;
+}
 
 /** \endcond */

@@ -10,23 +10,13 @@ RINGPROG = \
 	lalapps_coincringread \
 	lalapps_collatesim \
 	lalapps_coh_PTF_inspiral \
-	lalapps_coh_PTF_testing \
 	lalapps_coh_PTF_spin_checker
 endif
 endif
 endif
 endif
 
-if LALINSPIRAL
-INSPPROG = \
-	lalapps_qnmode \
-	lalapps_qnmode_table \
-	lalapps_spheroidal_harmonic \
-	lalapps_ringdown_amplitude \
-	lalapps_ringdown_waveform
-endif
-
-bin_PROGRAMS = $(RINGPROG) $(INSPPROG)
+bin_PROGRAMS = $(RINGPROG)
 
 if FRAME
 if LALFRAME
@@ -65,10 +55,6 @@ lalapps_coh_PTF_inspiral_SOURCES = \
 	coh_PTF_inspiral.c \
 	$(COH_PTF_SOURCES) \
 	$(GENERAL_SOURCES)
-lalapps_coh_PTF_testing_SOURCES = \
-	coh_PTF_testing.c \
-	$(COH_PTF_SOURCES) \
-	$(GENERAL_SOURCES)
 lalapps_coh_PTF_spin_checker_SOURCES = \
 	coh_PTF_spin_checker.c \
 	$(COH_PTF_SOURCES) \
@@ -82,13 +68,6 @@ endif
 endif
 endif
 endif
-if LALINSPIRAL
-lalapps_qnmode_SOURCES = qnmode.c
-lalapps_qnmode_table_SOURCES = qnmode_table.c
-lalapps_spheroidal_harmonic_SOURCES = spheroidal_harmonic.c
-lalapps_ringdown_amplitude_SOURCES = ringdown_amplitude.c
-lalapps_ringdown_waveform_SOURCES = ringdown_waveform.c
-endif
 
 if HAVE_PYTHON
 pkgpython_PYTHON = ring.py
@@ -98,7 +77,7 @@ bin_SCRIPTS = \
 endif
 
 pkgdata_DATA = ring_test.ini ringpost_remove_cluster.sql
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 CLEANFILES = python_config.sed lalapps_ring_pipe lalapps_ringcorse
 EXTRA_DIST = ring.c ring_pipe.in ringcorse.in ring.py $(DATA)

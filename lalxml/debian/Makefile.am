@@ -6,6 +6,9 @@ EXTRA_DIST = \
 	docs \
 	lalxml-dev.dirs \
 	lalxml-dev.install \
+	lalxml-octave.install \
+	lalxml-python.install \
 	lalxml.dirs \
 	lalxml.install \
-	rules
+	rules \
+	source/format

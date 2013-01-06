@@ -43,10 +43,11 @@
 #include <lal/CoincInspiralEllipsoid.h>
 
 /**
-\author Fairhurst, S.
-\file
+   \defgroup CoincInspiralEllipsoid_c Module CoincInspiralEllipsoid.c
+   \ingroup CoincInspiralEllipsoid_h
+   \author Fairhurst, S.
 
-\brief Blah.
+    \brief Blah.
 
 \heading{Description}
 
@@ -150,7 +151,7 @@ linked list of new single inspirals which were created in the process of
 completing the coincs.
 
 */
-
+/*@{*/
 
 void
 LALCreateTwoIFOCoincList(
@@ -3506,3 +3507,4 @@ XLALPopulateAccuracyParamsExt(
 
 }
 
+/*@}*/ /* end:CoincInspiralUtils_c */

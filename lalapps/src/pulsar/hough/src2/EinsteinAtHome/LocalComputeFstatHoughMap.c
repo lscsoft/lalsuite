@@ -551,7 +551,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
    except for that it calls LocalHOUGHAddPHMD2HD_W instead of LALHOUGHAddPHMD2HD_W
 */
 static void
-LocalHOUGHConstructHMT_W (LALStatus                  *status, 
+LocalHOUGHConstructHMT_W (LALStatus                  *status, /**< LAL status pointer */
 			  HOUGHMapTotal              *ht, /**< The output hough map */
 			  UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
 			  PHMDVectorSequence         *phmdVS) /**< set of partial hough map derivatives */

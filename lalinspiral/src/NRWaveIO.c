@@ -18,7 +18,7 @@
  */
 
 /** \file NRWaveIO.c
- *  \ingroup NRWaveIO
+ *  \ingroup NRWaveIO_h
  *  \author S.Fairhurst, B.Krishnan, L.Santamaria
  *
  *  \brief Functions for reading/writing numerical relativity waveforms

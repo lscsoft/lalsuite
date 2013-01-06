@@ -80,7 +80,7 @@
 
 #include "inspiral.h"
 
-/**
+/*
 #include <lal/AVFactories.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALNoiseModels.h>

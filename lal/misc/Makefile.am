@@ -34,18 +34,17 @@ BUILT_SOURCES = \
 	lal-user-env.csh
 
 all-local: include-link
+@INCLUDEMKFILE@
 
 lal-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "# generic user environment script" >$@
 	@echo "set LAL_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir) $(pythondir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 	@printf "$(SWIG_USER_ENV)" >>$@
 
 lal-user-env.csh lal-user-env.sh: lal-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
-
-@INCLUDEMKFILE@

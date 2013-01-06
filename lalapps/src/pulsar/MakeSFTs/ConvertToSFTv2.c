@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
@@ -21,9 +21,9 @@
 /**
  * \author Reinhard Prix
  * \date 2006
- * \file 
+ * \file
  * \ingroup pulsarApps
- * \brief Code to convert given input-SFTs (v1 or v2) to v2-SFTs with given extra-comment, 
+ * \brief Code to convert given input-SFTs (v1 or v2) to v2-SFTs with given extra-comment,
  *        and write them out following the SFTv2 naming conventions (see LIGO-T040164-01-Z)
  */
 
@@ -66,6 +66,7 @@
 BOOLEAN uvar_help;
 CHAR *uvar_inputSFTs;
 CHAR *uvar_outputDir;
+CHAR *uvar_outputSingleSFT;
 CHAR *uvar_extraComment;
 CHAR *uvar_descriptionMisc;
 CHAR *uvar_IFO;
@@ -84,10 +85,10 @@ void applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor );
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /*----------------------------------------------------------------------
- * main function 
+ * main function
  *----------------------------------------------------------------------*/
 int
-main(int argc, char *argv[]) 
+main(int argc, char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
   SFTConstraints constraints = empty_SFTConstraints;
@@ -102,20 +103,21 @@ main(int argc, char *argv[])
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
-  
+
   /* set debug level */
   LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
 
   /* register all user-variables */
-  LAL_CALL (initUserVars (&status), &status);	  
+  LAL_CALL (initUserVars (&status), &status);
 
-  /* read cmdline & cfgfile  */	
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);  
+  /* read cmdline & cfgfile  */
+  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);
 
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
 
   /* ----- make sure output directory exists ---------- */
+  if ( uvar_outputDir )
   {
     int ret;
     ret = mkdir ( uvar_outputDir, 0777);
@@ -140,11 +142,11 @@ main(int argc, char *argv[])
   constraints.endTime = &maxEndTimeGPS;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
-  LAL_CALL ( LALSFTdataFind ( &status, &FullCatalog, uvar_inputSFTs, &constraints ), &status);    
-  if ( constraints.detector ) 
+  LAL_CALL ( LALSFTdataFind ( &status, &FullCatalog, uvar_inputSFTs, &constraints ), &status);
+  if ( constraints.detector )
     LALFree ( constraints.detector );
 
-  if ( !FullCatalog || (FullCatalog->length == 0)  ) 
+  if ( !FullCatalog || (FullCatalog->length == 0)  )
     {
       XLALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_inputSFTs );
       return CONVERTSFT_EINPUT;
@@ -180,6 +182,11 @@ main(int argc, char *argv[])
   if ( LALUserVarWasSet ( &uvar_fmax ) )
     fMax = uvar_fmax;
 
+  FILE *fpSingleSFT = NULL;
+  if ( uvar_outputSingleSFT )
+    XLAL_CHECK ( ( fpSingleSFT = fopen ( uvar_outputSingleSFT, "wb" )) != NULL,
+                 XLAL_EIO, "Failed to open singleSFT file '%s' for writing\n", uvar_outputSingleSFT );
+
   /* loop over all SFTs in SFTCatalog */
   for ( i=0; i < FullCatalog->length; i ++ )
     {
@@ -214,21 +221,29 @@ main(int argc, char *argv[])
 	LAL_CALL ( applyFactor2SFTs ( &status, thisSFT, uvar_mysteryFactor ), &status );
       }
 
+      // if user asked for single-SFT output, add this SFT to the open file
+      if ( uvar_outputSingleSFT )
+        XLAL_CHECK ( XLAL_SUCCESS == XLALWriteSFT2fp( &(thisSFT->data[0]), fpSingleSFT, new_comment ),
+                     XLAL_EFUNC,  "XLALWriteSFT2fp() failed to write SFT to '%s'!\n", uvar_outputSingleSFT );
 
-      LAL_CALL ( LALWriteSFTVector2Dir (&status, thisSFT, uvar_outputDir, new_comment, uvar_descriptionMisc ), &status );
+      // if user asked for directory output, write this SFT into that directory
+      if ( uvar_outputDir )
+        LAL_CALL ( LALWriteSFTVector2Dir (&status, thisSFT, uvar_outputDir, new_comment, uvar_descriptionMisc ), &status );
 
       LAL_CALL ( LALDestroySFTVector ( &status, &thisSFT ), &status );
-      
+
       LALFree ( new_comment );
 
     } /* for i < numSFTs */
+
+  if ( fpSingleSFT ) fclose ( fpSingleSFT );
 
   /* free memory */
   LALFree ( add_comment );
   LAL_CALL (LALDestroySFTCatalog (&status, &FullCatalog), &status );
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   return 0;
 } /* main */
@@ -243,8 +258,8 @@ initUserVars (LALStatus *status)
   ATTATCHSTATUSPTR (status);
 
   /* set defaults */
-  uvar_outputDir = LALMalloc (2);
-  strcpy ( uvar_outputDir, "." );
+  uvar_outputDir = NULL;
+  uvar_outputSingleSFT = NULL;
 
   uvar_extraComment = NULL;
   uvar_descriptionMisc = NULL;
@@ -260,6 +275,7 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, inputSFTs,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
   LALregSTRINGUserVar(status, IFO,		'I', UVAR_OPTIONAL, "IFO of input SFTs: 'G1', 'H1', 'H2', ...(required for v1-SFTs)");
 
+  LALregSTRINGUserVar(status, outputSingleSFT,	'O', UVAR_OPTIONAL, "Output all SFTs into a single concatenated SFT-file with this name");
   LALregSTRINGUserVar(status, outputDir,	'o', UVAR_OPTIONAL, "Output directory for SFTs");
 
   LALregSTRINGUserVar(status, extraComment,	'C', UVAR_OPTIONAL, "Additional comment to be added to output-SFTs");
@@ -272,12 +288,13 @@ initUserVars (LALStatus *status)
   LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest GPS start-time to include");
   LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest GPS end-time to include");
 
+
   /* developer-options */
   LALregREALUserVar(status,   mysteryFactor,	 0, UVAR_DEVELOPER, "Change data-normalization by applying this factor (for E@H)");
 
 
 
-  
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -298,7 +315,7 @@ applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor )
     {
       SFTtype *thisSFT = &(SFTs->data[i]);
       UINT4 k, numBins = thisSFT->data->length;
-      
+
       for ( k=0; k < numBins; k ++ )
 	{
 	  thisSFT->data->data[k].re *= factor;

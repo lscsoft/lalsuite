@@ -148,7 +148,14 @@ bin_SCRIPTS = \
 	lalapps_cbc_pipedown \
 	lalapps_glitch_probe \
 	lalapps_cohPTF_hipe \
-	lalapps_coh_PTF_post_processing
+	lalapps_coh_PTF_post_processing \
+	lalapps_cbc_sbank \
+	lalapps_cbc_sbank_choose_mchirp_boundaries \
+	lalapps_cbc_sbank_splitter \
+	lalapps_cbc_sbank_merge_sims \
+	lalapps_cbc_sbank_pipe \
+	lalapps_cbc_sbank_plot_sim \
+	lalapps_cbc_sbank_sim
 
 pkgpython_PYTHON = \
 	inspiral.py \
@@ -263,6 +270,33 @@ lalapps_coh_PTF_post_processing: $(srcdir)/coh_PTF_post_processing.in python_con
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/coh_PTF_post_processing.in > lalapps_coh_PTF_post_processing
 	@chmod +x lalapps_coh_PTF_post_processing
 
+lalapps_cbc_sbank: $(srcdir)/cbc_sbank.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank.in > lalapps_cbc_sbank
+	@chmod +x lalapps_cbc_sbank
+
+lalapps_cbc_sbank_choose_mchirp_boundaries: $(srcdir)/cbc_sbank_choose_mchirp_boundaries.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank_choose_mchirp_boundaries.in > lalapps_cbc_sbank_choose_mchirp_boundaries
+	@chmod +x lalapps_cbc_sbank_choose_mchirp_boundaries
+
+lalapps_cbc_sbank_splitter: $(srcdir)/cbc_sbank_splitter.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank_splitter.in > lalapps_cbc_sbank_splitter
+	@chmod +x lalapps_cbc_sbank_splitter
+
+lalapps_cbc_sbank_merge_sims: $(srcdir)/cbc_sbank_merge_sims.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank_merge_sims.in > lalapps_cbc_sbank_merge_sims
+	@chmod +x lalapps_cbc_sbank_merge_sims
+
+lalapps_cbc_sbank_pipe: $(srcdir)/cbc_sbank_pipe.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank_pipe.in > lalapps_cbc_sbank_pipe
+	@chmod +x lalapps_cbc_sbank_pipe
+
+lalapps_cbc_sbank_plot_sim: $(srcdir)/cbc_sbank_plot_sim.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank_plot_sim.in > lalapps_cbc_sbank_plot_sim
+	@chmod +x lalapps_cbc_sbank_plot_sim
+
+lalapps_cbc_sbank_sim: $(srcdir)/cbc_sbank_sim.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank_sim.in > lalapps_cbc_sbank_sim
+	@chmod +x lalapps_cbc_sbank_sim
 
 pkgdata_DATA = \
 	BNSMasses.dat \
@@ -360,9 +394,17 @@ EXTRA_DIST = \
 	check_flag.in \
 	flag_triggers.in \
 	glitch_probe.in \
-	coh_PTF_post_processing.in $(DATA)
+	coh_PTF_post_processing.in \
+	cbc_sbank.in \
+	cbc_sbank_choose_mchirp_boundaries.in \
+	cbc_sbank_merge_sims.in \
+	cbc_sbank_pipe.in \
+	cbc_sbank_plot_sim.in \
+	cbc_sbank_sim.in \
+	cbc_sbank_splitter.in \
+	$(DATA)
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = \

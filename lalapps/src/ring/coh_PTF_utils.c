@@ -36,7 +36,8 @@ REAL4TimeSeries *coh_PTF_get_data(
       channel = get_zero_data( ifoChannel, &params->startTime,
           params->duration, LALRINGDOWN_DATATYPE_ZERO, params->sampleRate );
     }
-    else if ( params->doubleData )
+    else if ( (ifoNumber == LAL_IFO_V1 && params->virgoDoubleData)
+              || (ifoNumber != LAL_IFO_V1 && params->ligoDoubleData) )
     {
       channel = get_frame_data_dbl_convert( dataCache, ifoChannel,
           &params->frameDataStartTime, params->frameDataDuration,
@@ -94,9 +95,9 @@ REAL4TimeSeries *coh_PTF_get_data(
 int coh_PTF_get_null_stream(
     struct coh_PTF_params *params,
     REAL4TimeSeries *channel[LAL_NUM_IFO + 1],
-    REAL8 *Fplus,
-    REAL8 *Fcross,
-    REAL8 *timeOffsets )
+    REAL4 *Fplus,
+    REAL4 *Fcross,
+    REAL4 *timeOffsets )
 {
   UINT4 j,n[3],ifoNumber;
   INT4 i,t[3];
@@ -386,13 +387,12 @@ void coh_PTF_calculate_bmatrix(
   struct coh_PTF_params   *params,
   gsl_matrix *eigenvecs,
   gsl_vector *eigenvals,
-  REAL4 a[LAL_NUM_IFO],
-  REAL4 b[LAL_NUM_IFO],
+  REAL4 Fplus[LAL_NUM_IFO],
+  REAL4 Fcross[LAL_NUM_IFO],
   REAL8Array              *PTFM[LAL_NUM_IFO+1],
   UINT4 vecLength,
   UINT4 vecLengthTwo,
-  UINT4 PTFMlen,
-  UINT4 detectorNum
+  UINT4 PTFMlen
   )
 {
   // This function calculates the eigenvectors and eigenvalues of the
@@ -416,28 +416,21 @@ void coh_PTF_calculate_bmatrix(
       zh[i*vecLength+j] = 0;
       sh[i*vecLength+j] = 0;
       yu[i*vecLength+j] = 0;
-      if (detectorNum == LAL_NUM_IFO)
+      for( k = 0; k < LAL_NUM_IFO; k++)
       {
-        for( k = 0; k < LAL_NUM_IFO; k++)
+        if ( params->haveTrig[k] )
         {
-          if ( params->haveTrig[k] )
+          if ( params->faceOnStatistic )
           {
-            if ( params->faceOnStatistic )
-            {
-              zh[i*vecLength+j] += (a[k]*a[k] + b[k] * b[k])* PTFM[k]->data[i*PTFMlen+j];
-            }
-            else
-            {
-              zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*PTFMlen+j];
-              sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
-              yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
-            }
+            zh[i*vecLength+j] += (Fplus[k]*Fplus[k] + Fcross[k] * Fcross[k])* PTFM[k]->data[i*PTFMlen+j];
+          }
+          else
+          {
+            zh[i*vecLength+j] += Fplus[k]*Fplus[k] * PTFM[k]->data[i*PTFMlen+j];
+            sh[i*vecLength+j] += Fcross[k]*Fcross[k] * PTFM[k]->data[i*PTFMlen+j];
+            yu[i*vecLength+j] += Fplus[k]*Fcross[k] * PTFM[k]->data[i*PTFMlen+j];
           }
         }
-      }
-      else
-      {
-        zh[i*vecLength+j] += PTFM[detectorNum]->data[i*PTFMlen+j];
       }
     }
   }
@@ -465,9 +458,7 @@ void coh_PTF_calculate_bmatrix(
       }
       else
         fprintf(stderr,"BUGGER! Something went wrong.");
-      /*fprintf(stdout,"%f ",gsl_matrix_get(B2,i,j));*/
     }
-    /*fprintf(stdout,"\n");*/
   }
 
   /* Here we compute the eigenvalues and eigenvectors of B2 */
@@ -482,8 +473,8 @@ void coh_PTF_calculate_rotated_vectors(
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
     REAL4 *u1,
     REAL4 *u2,
-    REAL4 a[LAL_NUM_IFO],
-    REAL4 b[LAL_NUM_IFO],
+    REAL4 Fplus[LAL_NUM_IFO],
+    REAL4 Fcross[LAL_NUM_IFO],
     INT4  timeOffsetPoints[LAL_NUM_IFO],
     gsl_matrix *eigenvecs,
     gsl_vector *eigenvals,
@@ -513,17 +504,17 @@ void coh_PTF_calculate_rotated_vectors(
           if ( params->faceOnStatistic)
           {
             /* Currently non-spin only! */
-            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-            v1[j] += b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+            v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+            v1[j] += Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
             if (params->faceOnStatistic == 1)
             {
-              v2[j] += b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-              v2[j] -= a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+              v2[j] += Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+              v2[j] -= Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
             }
             else if (params->faceOnStatistic == 2)
             {
-              v2[j] -= b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-              v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+              v2[j] -= Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+              v2[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
             }
             else
             {
@@ -532,13 +523,13 @@ void coh_PTF_calculate_rotated_vectors(
           }
           else if (j < vecLength)
           {
-            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-            v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+            v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+            v2[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
           }
           else
           {
-            v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].re;
-            v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].im;
+            v1[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].re;
+            v2[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].im;
           }
         }
       }
@@ -586,11 +577,11 @@ void coh_PTF_cleanup(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL8Array              *PTFN[LAL_NUM_IFO+1],
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
-    REAL8                   *timeOffsets,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross,
-    REAL8                   *Fplustrig,
-    REAL8                   *Fcrosstrig
+    REAL4                   *timeOffsets,
+    REAL4                   *Fplus,
+    REAL4                   *Fcross,
+    REAL4                   *Fplustrig,
+    REAL4                   *Fcrosstrig
     )
 {
   if ( params->injectList )
@@ -968,7 +959,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
   }
 
   /* calculate angular resolution */
-  if (! params->singlePolFlag && (! params->numIFO == 1))
+  if ((! params->singlePolFlag) && (params->numIFO != 1))
   {
     angularResolution = 2. * params->timingAccuracy / alpha;
   }
@@ -1680,4 +1671,120 @@ void REALToGSLVector(
   {
     gsl_vector_set(output, i, input[i]);
   }
+}
+
+void findInjectionSegment(
+    UINT4 *start,
+    UINT4 *end,
+    LIGOTimeGPS *epoch,
+    struct coh_PTF_params *params
+    )
+{
+    /* define variables */
+    LIGOTimeGPS injTime, segmentStart, segmentEnd;
+    UINT4 injSamplePoint, injWindow, numPoints;
+    REAL8 injDiff;
+    INT8 startDiff, endDiff;
+    SimInspiralTable *thisInject = NULL;
+
+    /* set variables */
+    segmentStart = *epoch;
+    segmentEnd   = *epoch;
+    XLALGPSAdd(&segmentEnd, params->segmentDuration/2.0);
+    thisInject = params->injectList;
+    numPoints = floor(params->segmentDuration * params->sampleRate + 0.5);
+
+    /* loop over injections */
+    while (thisInject)
+    {
+        injTime = thisInject->geocent_end_time;
+        startDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentStart);
+        endDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentEnd);
+
+        if ((startDiff > 0) && (endDiff < 0))
+        {
+            verbose("Generating analysis segment for injection at %d.\n",
+                    injTime.gpsSeconds);
+            if (*start)
+            {
+                verbose("warning: multiple injections in this segment.\n");
+                *start = numPoints/4;
+                *end = 3 * numPoints/4;
+            }
+            else
+            {
+                injDiff = (REAL8) ((XLALGPSToINT8NS(&injTime) - \
+                                    XLALGPSToINT8NS(&segmentStart)) / 1E9);
+                injSamplePoint = floor(injDiff * params->sampleRate + 0.5);
+                injSamplePoint += numPoints/4;
+                injWindow = floor(params->injSearchWindow * params->sampleRate
+                                  + 1);
+                *start = injSamplePoint - injWindow;
+                if (*start < numPoints/4)
+                    *start = numPoints/4;
+                *end = injSamplePoint + injWindow + 1;
+                if (*end > 3*numPoints/4)
+                    *end = 3*numPoints/4;
+                verbose("Found analysis segment at [%d,%d).\n", *start, *end);
+            }
+        }
+        thisInject = thisInject->next;
+    }
+}
+
+UINT4 checkInjectionMchirp(
+    struct coh_PTF_params *params,
+    InspiralTemplate *tmplt,
+    LIGOTimeGPS *epoch
+    )
+{
+  /* define variables */
+  LIGOTimeGPS injTime, segmentStart, segmentEnd;
+  REAL8 tmpltMchirp,injMchirp,mchirpDiff;
+  INT8 startDiff, endDiff;
+  SimInspiralTable *thisInject = NULL;
+  UINT4 passMchirpCheck;
+
+  /* set variables */
+  segmentStart = *epoch;
+  segmentEnd   = *epoch;
+  XLALGPSAdd(&segmentEnd, params->segmentDuration/2.0);
+  passMchirpCheck = 2;
+  thisInject = params->injectList;
+  
+  /* loop over injections */
+  while (thisInject)
+  {
+    injTime = thisInject->geocent_end_time;
+    startDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentStart);
+    endDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentEnd);
+    fprintf(stderr,"%ld %ld\n",startDiff,endDiff);
+    if ((startDiff > 0) && (endDiff < 0))
+    {
+      verbose("Generating analysis segment for injection at %d.\n",
+              injTime.gpsSeconds);
+      if (passMchirpCheck != 2)
+      {
+        verbose("warning: multiple injections in this segment.\n");
+        passMchirpCheck = 1;
+        break;
+      }
+      injMchirp = thisInject->mchirp;
+      tmpltMchirp = tmplt->chirpMass;
+      fprintf(stderr,"%e %e \n",injMchirp,tmpltMchirp);
+      mchirpDiff = (injMchirp - tmpltMchirp)/tmpltMchirp;
+      if (fabs(mchirpDiff) > params->injMchirpWindow)
+        passMchirpCheck = 0;
+      else
+        passMchirpCheck = 1;
+    }
+    thisInject = thisInject->next;
+  }
+
+  if (passMchirpCheck == 2)
+  {
+    verbose("WARNING: No injections found in this segment!? Not analysing\n");
+    passMchirpCheck = 0;
+  }
+  return passMchirpCheck;
 }

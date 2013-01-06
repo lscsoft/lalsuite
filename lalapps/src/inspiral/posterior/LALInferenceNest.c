@@ -41,6 +41,9 @@
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
 void initVariables(LALInferenceRunState *state);
+void initVariablesReviewEvidence(LALInferenceRunState *state);
+void initVariablesReviewEvidence_bimod(LALInferenceRunState *state);
+void initVariablesReviewEvidence_banana(LALInferenceRunState *state);
 void initStudentt(LALInferenceRunState *state);
 void initializeTemplate(LALInferenceRunState *runState);
 // static void mc2masses(double mc, double eta, double *m1, double *m2);
@@ -247,6 +250,7 @@ void initializeNS(LALInferenceRunState *runState)
 Nested sampling arguments:\n\
  --Nlive N\tNumber of live points to use\n\
 (--Nmcmc M)\tOver-ride auto chain length determination and use this number of MCMC samples.\n\
+(--maxmcmc M)\tUse at most this number of MCMC points when autodetermining the chain (5000).\n\
 (--sloppyratio S)\tNumber of sub-samples of the prior for every sample from the limited prior\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
@@ -361,6 +365,15 @@ Nested sampling arguments:\n\
     	LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&tmp,
                     LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
+        /* Maximum number of points in MCMC chain */
+        ppt=LALInferenceGetProcParamVal(commandLine,"--maxmcmc");
+        if(ppt){
+          tmpi=atoi(ppt->value);
+          LALInferenceAddVariable(runState->algorithmParams,"maxmcmc",&tmpi,
+                                LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+        }
+
+
 	printf("set number of parallel runs.\n");
 	/* Optionally specify number of parallel runs */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Nruns");
@@ -398,7 +411,6 @@ Nested sampling arguments:\n\
 /* Setup the variable for the evidence calculation test for review */
 /* 5-sigma ranges for analytic likeliood function */
 /* https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/LALInferenceReviewAnalyticGaussianLikelihood */
-void initVariablesReviewEvidence(LALInferenceRunState *state);
 void initVariablesReviewEvidence(LALInferenceRunState *state)
 {
     ProcessParamsTable *commandLine=state->commandLine;
@@ -461,6 +473,8 @@ void initVariables(LALInferenceRunState *state)
 	LALInferenceVariables *priorArgs=state->priorArgs;
 	state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	LALInferenceVariables *currentParams=state->currentParams;
+  LALInferenceIFOData *dataPtr;
+  LALInferenceDomain modelDomain;
 	ProcessParamsTable *commandLine=state->commandLine;
 	REAL8 endtime;
 	ProcessParamsTable *ppt=NULL;
@@ -550,12 +564,16 @@ Parameter arguments:\n\
 		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
         fprintf(stderr,"Read trig time %lf from injection XML file\n",endtime);
 		AmpOrder=injTable->amp_order;
-		PhaseOrder = XLALGetOrderFromString(injTable->waveform);
-		if( (int) PhaseOrder == XLAL_FAILURE)
-		  ABORTXLAL(&status);
-		approx = XLALGetApproximantFromString(injTable->waveform);
-		if( (int) approx == XLAL_FAILURE)
-		  ABORTXLAL(&status);
+		/* Only check this if the user has not specified an approximant */
+		if(!LALInferenceGetProcParamVal(commandLine,"--approx") && !LALInferenceGetProcParamVal(commandLine,"--approximant"))
+		{
+			PhaseOrder = XLALGetOrderFromString(injTable->waveform);
+			if( (int) PhaseOrder == XLAL_FAILURE)
+		  		ABORTXLAL(&status);
+			approx = XLALGetApproximantFromString(injTable->waveform);
+			if( (int) approx == XLAL_FAILURE)
+		  		ABORTXLAL(&status);
+		}
 		/* See if there are any parameters pinned to injection values */
 		if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
 			pinned_params=ppt->value;
@@ -571,7 +589,7 @@ Parameter arguments:\n\
 				char *name=strings[N];
 				node=LALInferenceGetItem(&tempParams,name);
 				if(node) LALInferenceAddVariable(currentParams,node->name,node->value,node->type,node->vary);
-				else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",node->name);}
+				else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",name);}
 			}
 		}
 	}
@@ -609,7 +627,7 @@ Parameter arguments:\n\
 		case SpinTaylorFrameless:
 		case PhenSpinTaylorRD:
 		case NumRel:
-			state->data->modelDomain=LALINFERENCE_DOMAIN_TIME;
+			modelDomain=LALINFERENCE_DOMAIN_TIME;
 			break;
 		case TaylorF1:
 		case TaylorF2:
@@ -617,13 +635,20 @@ Parameter arguments:\n\
 		case TaylorF2RedSpinTidal:
 		case IMRPhenomA:
 		case IMRPhenomB:
-			state->data->modelDomain=LALINFERENCE_DOMAIN_FREQUENCY;
+			modelDomain=LALINFERENCE_DOMAIN_FREQUENCY;
 			break;
 		default:
 			fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
 			exit(1);
 			break;
 	}
+
+  /* Set model domain for all IFOs */
+  dataPtr = state->data;
+  while (dataPtr != NULL) {
+    dataPtr->modelDomain = modelDomain;
+    dataPtr = dataPtr->next;
+  }
 
 	/* Over-ride end time if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
@@ -697,7 +722,7 @@ Parameter arguments:\n\
 
     ppt=LALInferenceGetProcParamVal(commandLine,"--mtotalmax");
     if(ppt) mtot_max=atof(ppt->value);
-    else mtot_max=2.*(mMax-mMin);
+    else mtot_max=2.*mMax;
     LALInferenceAddVariable(priorArgs,"MTotMax",&mtot_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
     /* Set the minimum and maximum chirp mass, using user values if specified */
@@ -968,7 +993,6 @@ Arguments for each section follow:\n\n";
 	return(0);
 }
 
-void initVariablesReviewEvidence_bimod(LALInferenceRunState *state);
 void initVariablesReviewEvidence_bimod(LALInferenceRunState *state)
 {
     ProcessParamsTable *commandLine=state->commandLine;
@@ -1021,7 +1045,6 @@ void initVariablesReviewEvidence_bimod(LALInferenceRunState *state)
         return;
 }
 
-void initVariablesReviewEvidence_banana(LALInferenceRunState *state);
 void initVariablesReviewEvidence_banana(LALInferenceRunState *state)
 {
     ProcessParamsTable *commandLine=state->commandLine;

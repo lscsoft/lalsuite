@@ -17,12 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/*********************************************************************************/
-/** \author Reinhard Prix
- * \file
- * \brief Tests for exported functions in UniversalDopplerMetric
- *
- *********************************************************************************/
 #include <math.h>
 #include <sys/times.h>
 
@@ -32,6 +26,13 @@
 #include <lal/LALConstants.h>
 
 #include <lal/UniversalDopplerMetric.h>
+
+/** \author Reinhard Prix
+ * \file
+ * \ingroup UniversalDopplerMetric_h
+ * \brief Tests for exported functions in UniversalDopplerMetric
+ *
+ */
 
 // ---------- defines --------------------
 #define TEST_OK		0
@@ -96,8 +97,8 @@ test_XLALComputeOrbitalDerivatives ( void )
   // orbit w period of one year
   EphemerisData edat = empty_EphemerisData;
   LALStatus status = empty_status;
-  CHAR earthfname[] = "circularEphem.dat";
-  CHAR sunfname[] = "sun00-04.dat";
+  CHAR earthfname[] = DATADIR "circularEphem.dat";
+  CHAR sunfname[] = DATADIR "sun00-04.dat";
 
   printf ("\nEntering test_XLALComputeOrbitalDerivatives() ... ");
 

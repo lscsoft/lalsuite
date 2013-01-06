@@ -26,21 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-/**
-
-\author Santamaria L, Krishnan B, Whelan JT, Dias M, Parameswaran A.
-\file
-
-\brief Provides coëfficients for the phenomenological waveforms
-introduced by Ajith et al. in arXiv:0710.2335 [gr-qc]
-
-\heading{Synopsis}
-\code
-#include <lal/FindChirpPhenomCoeffs.h>
-\endcode
-
-*/
-
 #ifndef _BBHPHENOMCOEFFSH_H
 #define _BBHPHENOMCOEFFSH_H
 
@@ -50,9 +35,24 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/* This header contains the coeffs from the matching with the LONG */
-/* Jena waveforms (those are not the ones published in the original paper */
-/* but in the Amaldi 07 proceedings: http://arxiv.org/abs/0712.0343) */
+/** \defgroup BBHPhenomCoeffs_h Header BBHPhenomCoeffs.h
+ * \ingroup pkg_CBC_NEW
+ * \author Santamaria L, Krishnan B, Whelan JT, Dias M, Parameswaran A.
+ *
+ * \brief Provides coëfficients for the phenomenological waveforms
+ * introduced by Ajith et al. in arXiv:0710.2335 [gr-qc]
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/BBHPhenomCoeffs.h>
+ * \endcode
+ *
+ * This header contains the coeffs from the matching with the LONG
+ * Jena waveforms (those are not the ones published in the original paper
+ * but in the Amaldi 07 proceedings: http://arxiv.org/abs/0712.0343)
+ *
+ */
+/*@{*/
 
 #define BBHPHENOMCOEFFSH_FMERG_A   6.6389e-01
 #define BBHPHENOMCOEFFSH_FMERG_B   -1.0321e-01
@@ -93,6 +93,8 @@ extern "C" {
 #define BBHPHENOMCOEFFSH_PSI7_X   -0.0000e+00
 #define BBHPHENOMCOEFFSH_PSI7_Y   0.0000e+00
 #define BBHPHENOMCOEFFSH_PSI7_Z   0.0000e+00
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -175,6 +175,9 @@ parser.add_option("-g", "--grid-site",action="store",type="string",\
 parser.add_option("--data-checkpoint", action="store_true",default=False,\
     help="checkpoint the inspiral code")
 
+parser.add_option("--use-gpus", action="store_true", default=False,\
+    help="run inspiral jobs on GPU nodes")
+
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
@@ -183,6 +186,10 @@ command_line = sys.argv[1:]
 if not opts.config_file:
   print >> sys.stderr, "No configuration file specified."
   print >> sys.stderr, "Use --config-file FILE to specify location."
+  sys.exit(1)
+
+if not opts.config_file[-4:]==".ini":
+  print >> sys.stderr, "Configuration file name must end in '.ini'!" 
   sys.exit(1)
 
 if not opts.log_path:
@@ -340,12 +347,16 @@ cp.set("pipeline", "matplotlibdir", opts.node_local_dir )
 if opts.run_pipedown:
   cp.set("pipeline", "node-tmp-dir", opts.node_local_dir)
 
+# Add GPU flag
+if opts.use_gpus:
+  cp.set('condor', 'use-gpus', '')
+
 ##############################################################################
 # create a directory called executables and copy them over
 inspiralutils.mkdir("executables")
 os.chdir("../")
 for (job, executable) in cp.items("condor"):
-  if job != "universe":
+  if job not in ("universe", "use-gpus") and executable != "":
     shutil.copy( executable, analysisDirectory + "/executables" )
     if job == "hardware_inj_page":
       executable = "executables/" + executable.split("/")[-1]
@@ -357,7 +368,9 @@ os.chdir(analysisDirectory)
 
 ##############################################################################
 # create a log file that the Condor jobs will write to
-basename = opts.config_file.rstrip(".ini")
+# 
+# we already checked that the last 4 characters of the config file are '.ini'
+basename = opts.config_file[:-4]
 logname = basename + '.dag.log.'
 try:
   os.mkdir(opts.log_path)

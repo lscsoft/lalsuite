@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 20
+# serial 25
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -142,7 +142,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # flags for generating SWIG wrapping module sources
     AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror"])
 
-    # directories SWIG should look in for interfaces and LAL headers
+    # look here for interfaces and LAL headers
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -I\$(abs_top_builddir)/include"
 
     # send language-specific SWIG output files to libtool directory
@@ -157,6 +157,9 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DNDEBUG"
       SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DNDEBUG"
     ])
+
+    # look here for interfaces and LAL headers (but not for preprocessing)
+    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I/usr/include"
 
     # flags for compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CFLAGS,["${swig_save_CFLAGS}"])
@@ -175,18 +178,18 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     ])
 
     # flags for linking SWIG wrapping modules
-    AC_SUBST(SWIG_LDFLAGS,["${swig_save_LDFLAGS}"])
+    AC_SUBST(SWIG_LDFLAGS,[])
 
     # libraries SWIG wrapping module should be linked against
-    AC_SUBST(SWIG_LIBS,["${swig_save_LIBS}"])
+    AC_SUBST(SWIG_LIBS,[])
     AS_IF([test ${lalswig} = true],[
-      SWIG_LIBS="${SWIG_LIBS} \$(abs_top_builddir)/packages/support/src/liblalsupport.la \$(abs_top_builddir)/lib/liblal.la"
+      SWIG_LIBS="\$(abs_top_builddir)/lib/lalsupport/src/liblalsupport.la \$(abs_top_builddir)/lib/lal/liblal.la"
     ],[
-      SWIG_LIBS="${SWIG_LIBS} \$(abs_top_builddir)/src/lib${PACKAGE_NAME}.la"
+      SWIG_LIBS="\$(abs_top_builddir)/src/lib${PACKAGE_NAME}.la"
     ])
 
     # dynamic linker search path for pre-installed LAL libraries
-    SWIG_LD_LIBRARY_PATH=[`for n in ${SWIG_LIBS}; do echo $n | ${SED} -n 's|/liblal[^.]*\.la|/'"${objdir}"'|p'; done`]
+    SWIG_LD_LIBRARY_PATH=[`for n in ${swig_save_LIBS} ${SWIG_LIBS}; do echo $n | ${SED} -n 's|/liblal[^.]*\.la|/'"${objdir}"'|p'; done`]
     SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH}`]   # get rid of newlines
     SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH} | ${SED} 's|(top_builddir)|(abs_top_builddir)|g;s|  *|:|g'`]
     AC_SUBST(SWIG_LD_LIBRARY_PATH)
@@ -343,12 +346,6 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       OCTAVE_CXXFLAGS="${OCTAVE_CXXFLAGS} "`${OCTAVE} -qfH --eval "mkoctfile -p $n"`
     done
     AC_MSG_RESULT([${OCTAVE_CXXFLAGS}])
-    AC_MSG_CHECKING([for ${OCTAVE} module LDFLAGS])
-    AC_SUBST(OCTAVE_LDFLAGS,[""])
-    for n in RDYNAMIC_FLAG LFLAGS RLD_FLAG OCTAVE_LIBS LIBS; do
-      OCTAVE_LDFLAGS="${OCTAVE_LDFLAGS} "`${OCTAVE} -qfH --eval "mkoctfile -p $n"`
-    done
-    AC_MSG_RESULT([${OCTAVE_LDFLAGS}])
 
     # check for Octave headers
     CPPFLAGS=${OCTAVE_CPPFLAGS}
@@ -361,13 +358,12 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     CPPFLAGS=
     AC_LANG_POP([C++])
 
-    # determine where to install Octave module:
-    # take site .oct file directory given by octave-config,
-    # and strip off prefix; thus, if LALSuite is installed in
-    # the same directory as Octave, .oct module files will be
+    # determine where to install Octave module: take versioned site .oct file
+    # directory given by octave-config, and strip off prefix; thus, if LALSuite
+    # is installed in the same directory as Octave, .oct module files will be
     # found by Octave without having to add to OCTAVE_PATH
     AC_MSG_CHECKING([for ${OCTAVE} module installation directory])
-    octexecdir=[`${OCTAVE} -qfH --eval "disp(octave_config_info('localoctfiledir'))" | ${SED} 's|/*$||'`]
+    octexecdir=[`${OCTAVE} -qfH --eval "disp(octave_config_info('localveroctfiledir'))" | ${SED} 's|/*$||'`]
     octexecdir=[`echo ${octexecdir} | ${SED} "s|^${octave_prefix}/||"`]
     AS_IF([test "x`echo ${octexecdir} | ${SED} -n '\|^/|p'`" != x],[
       AC_MSG_ERROR([could not build relative path from "${octexecdir}"])
@@ -450,23 +446,6 @@ EOD`]
     AC_SUBST(PYTHON_CFLAGS)
     AC_MSG_RESULT([${PYTHON_CFLAGS}])
 
-    # determine Python module LDFLAGS
-    AC_MSG_CHECKING([for ${PYTHON} module LDFLAGS])
-    PYTHON_LDFLAGS=[`cat <<EOD | ${PYTHON} - 2>/dev/null
-import sys, os
-import distutils.sysconfig as cfg
-sys.stdout.write(cfg.get_config_var('LINKFORSHARED'))
-sys.stdout.write(' -L' + cfg.get_python_lib())
-sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
-sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
-sys.stdout.write(' -L' + cfg.get_config_var('LIBDIR'))
-EOD`]
-    AS_IF([test $? -ne 0],[
-      AC_MSG_ERROR([could not determine ${PYTHON} module LDFLAGS])
-    ])
-    AC_SUBST(PYTHON_LDFLAGS)
-    AC_MSG_RESULT([${PYTHON_LDFLAGS}])
-
     # check for Python headers
     CPPFLAGS=${PYTHON_CPPFLAGS}
     AC_LANG_PUSH([C])
@@ -483,9 +462,5 @@ EOD`]
     ])
     CPPFLAGS=
     AC_LANG_POP([C])
-
-    # string to add to user environment setup scripts
-    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend PYTHONPATH $(pyexecdir)\n'
-
   ])
 ])

@@ -44,10 +44,13 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/LALBarycenter.h>
+#include <lal/LALVCSInfo.h>
+#include <LALAppsVCSInfo.h>
 
 #define MERCURY 0
 #define VENUS 1
-#define EARTH 2                                     /* Earth-Moon Barycenter */
+#define EARTH 2                                    /* Earth-Moon barycenter */
 #define MARS 3
 #define JUPITER 4
 #define SATURN 5
@@ -112,7 +115,7 @@ typedef struct taginputParams_t{
   CHAR outputfile[256]; /* path and name of output ephemeris file */
 
   INT4 year;  /* year of ephemeris file to extract */
-  INT4 nhre;  /* number of hours between successive data point for output */
+  REAL8 nhre;  /* number of hours between successive data point for output */
   INT4 noverlap; /* number of days overlap with previos years */
   INT4 nyears; /* number of years over which to create ephemeris */
 
@@ -164,7 +167,8 @@ int main(int argc, char **argv){
   REAL8 fgps=0.; /* float version of gps */
   REAL8 time[2], R[6], A[3], gps_JD[2];
   REAL8 Vlast[3], Vnow[3], Vnext[3], Rnow[3];
-  INT4 nyr=0, nhr=0, ndays=0;
+  INT4 nyr=0, ndays=0;
+  REAL8 nhr=0.;
 
   REAL8 finterval=0, halfinterval_jd=0;
 
@@ -238,7 +242,7 @@ inputs.ephemfile);
     fprintf(stderr, "  Targeting solar system body:- %s\n", inputs.targName);
     fprintf(stderr, "  Ephemeris year:- %d\n", inputs.year);
     fprintf(stderr, "  Number of years:- %d\n", inputs.nyears);
-    fprintf(stderr, "  Output interval (hours):- %d\n", inputs.nhre);
+    fprintf(stderr, "  Output interval (hours):- %.2lf\n", inputs.nhre);
     fprintf(stderr, "  Outout overlap with adjacent years (days):- %d\n",
 inputs.noverlap);
   }
@@ -322,6 +326,37 @@ in the existing file!\n");
 writing!\n");
       exit(1);
     }
+
+    /* output header information on lines starting with a # comment */
+    fprintf(fpe, "# Build information for %s\n", argv[0]);
+    fprintf(fpe, "# Author: "LALAPPS_VCS_AUTHOR"\n");
+    fprintf(fpe, "# LALApps Commit ID: "LALAPPS_VCS_ID"\n");
+    fprintf(fpe, "# LALApps Commit Date: "LALAPPS_VCS_DATE"\n");
+    fprintf(fpe, "#\n# Ephemeris creation command:-\n#\t");
+    for( INT4 k=0; k<argc; k++ ) fprintf(fpe, "%s ", argv[k]);
+    fprintf(fpe, "\n");
+
+    CHAR *efile = strrchr(inputs.ephemfile, '/');
+
+    fprintf(fpe, "#\n# JPL ephemeris file %s from TEMPO2 \
+(http://www.atnf.csiro.au/research/pulsar/tempo2/)\n", efile+1);
+
+    /* some information about the data */
+    fprintf(fpe, "#\n# This file consists of a header line containing:\n");
+    fprintf(fpe, "#\tGPS time of the start year, interval between entries \
+(secs), no. of entries\n");
+    fprintf(fpe, "# Each entry consists of:\n");
+    fprintf(fpe, "#\tGPS time\t\tPos. x (lt sec)\t\tPos. y (lt sec)\n\
+#\tPos. z (lt sec)\t\tVel. x (lt sec/sec)\tVel. y (lt sec/sec)\n\
+#\tVel. z (lt sec/sec)\tAcc. x (lt sec/sec^2)\tAcc. y (lt sec/sec^2)\n\
+#\tAcc. z (lt sec/sec^2)\n");
+    fprintf(fpe, "# with entries calculated at an approximation to \
+\"ephemeris time\" via the conversion:\n\
+#    dT = (GPS(JD) + 51.148/86400) - 2451545\n\
+#    Teph = GPS(JD) + (51.148 + 0.001658*sin(6.24008 + 0.017202*dT)\n\
+#           + 1.4e-5*sin(2*(6.24008 + 0.017202*dT)))/86400.\n\
+# where GPS(JD) is the GPS time converted into Julian Days, and with 1 A.U. \
+defined as %.3f km\n", JPL_AU_DE405);
 
     fprintf(fpe, "\t%d\t%lf\t%d\n", gps_yr, inputs.nhre*hour, nentries);
   }
@@ -420,7 +455,7 @@ A[0], A[1], A[2]);
     gps = gps_2000 + (gps_JD[0] - jd_2000)*day + (INT4)(gps_JD[1]*day + 1.e-4);
 /* the int call and 1.d-4 are just to make sure gps is the ``right'' integer*/
     convert(gps_JD, time);
-
+    
     pleph(coeffArray, time, inputs.target, R, fp);
     Rnow[0] = R[0];
     Rnow[1] = R[1];
@@ -428,7 +463,7 @@ A[0], A[1], A[2]);
     Vnow[0] = R[3];
     Vnow[1] = R[4];
     Vnow[2] = R[5];
-
+    
     gps_JD[1] += halfinterval_jd;
     if(gps_JD[1] >= 1.){
       gps_JD[1] -= 1.;
@@ -581,7 +616,7 @@ INT4 fsizer(FILE *fp){
   /* Initialise to ephemeris to the point at which the coefficient values start
   */
   fseek(fp, 2*size*sizeof(REAL8), SEEK_SET);
-
+  
   /* flip bytes of values */
   endian_swap((CHAR*)&head1.data.au, sizeof(REAL8), 1);
   endian_swap((CHAR*)&head1.data.emrat, sizeof(REAL8), 1);
@@ -593,7 +628,7 @@ INT4 fsizer(FILE *fp){
   if(verbose){
     fprintf(stderr, "Check value of AU is correct:\n");
     if(head1.data.au > 149597870. && head1.data.au < 149597871.)
-      fprintf(stderr, "  Correct: 1 AU = %.4lf km\n", head1.data.au);
+      fprintf(stderr, "  Correct: 1 AU = %.16lf km\n", head1.data.au);
     else{
       fprintf(stderr, "Error: value of AU is wrong = %.4lf km ... abort!\n",
         head1.data.au);
@@ -688,13 +723,13 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
 
   INT4 i=0;
 
-  REAL8 au=1.4959787066e8;
-  /* Curt's AU value from his code - this is slightly different from the one
-     in the JPL binary ephemeris files (of order a few hundred metres), so I
-     need to muliply things be a factor of au_Curt/au_JPLephem */
+  /* fix all ephemerides to use the metre / second definition the JPL DE405
+   * ephemeris */
+  REAL8 au = JPL_AU_DE405;
 
   /* if we're getting the Earth data then correct for the Moon */
   if( target == EARTH ){
+    /* get the Earth-Moon barycenter */
     interpolate_state(coeffArray, time, target, stateTemp, fp);
 
     for (i=0; i<6; i++)
@@ -703,18 +738,21 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
     /* get moon position */
     interpolate_state(coeffArray, time, MOON, stateTemp, fp);
 
+    /* remove the effect of the Moon */
     for (i=0; i<6; i++)
       state[i] -= stateTemp[i]/(1. + head1.data.emrat);
   }
   else if( target == MOON ){
+    /* get the Moon position */
     interpolate_state(coeffArray, time, target, stateTemp, fp);
 
     for (i=0; i<6; i++)
       state[i] = stateTemp[i];
 
-    /* get Earth position */
+    /* get Earth-Moon barycenter position */
     interpolate_state(coeffArray, time, EARTH, stateTemp, fp);
 
+    /* remove the effect of the Earth */
     for (i=0; i<6; i++)
       state[i] = stateTemp[i] + state[i]*(1.-1./(1.+head1.data.emrat));
   }
@@ -727,7 +765,6 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
     state[i] *= (au/head1.data.au)*1.e3/(REAL8)LAL_C_SI;
     state[i+3] *= (au/head1.data.au)*1.e3/((REAL8)LAL_C_SI*86400.);
   }
-
 }
 
 /* this function will compute the position and velocity vector of a given
@@ -736,7 +773,6 @@ of librations */
 void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   REAL8 *state, FILE *fp){
   REAL8 A[50], Cp[50], Psum[3], Vsum[3], Up[50];
-  // unused: REAL8 B[50];
   REAL8 Tbreak = 0., Tseg = 0., Tsub=0., Tc=0.;
 
   INT4 i=0, j=0;
@@ -745,7 +781,6 @@ void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   /* initialise local arrays */
   for(i=0; i<50 ;i++){
     A[i] = 0.;
-    // unused: B[i] = 0.;
   }
 
   /* determin if we need a new record to be read, or if the current one is OK */
@@ -899,7 +934,7 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
         inputParams->year = atoi(optarg);
         break;
       case 'i':
-        inputParams->nhre = atoi(optarg);
+        inputParams->nhre = atof(optarg);
         break;
       case 'n':
         inputParams->noverlap = atoi(optarg);

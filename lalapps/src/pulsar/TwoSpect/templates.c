@@ -38,34 +38,27 @@
 
 
 //////////////////////////////////////////////////////////////
-// Allocate memory for farStruct struct  -- done
+// Allocate memory for farStruct struct
 farStruct * new_farStruct(void)
 {
-   
    farStruct *farstruct = XLALMalloc(sizeof(*farstruct));
    if (farstruct==NULL) {
       fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", __func__, sizeof(*farstruct));
       XLAL_ERROR_NULL(XLAL_ENOMEM);
    }
-   
    farstruct->far = 1.0;
    farstruct->topRvalues = NULL;
-
    return farstruct;
-
 } /* new_farStruct() */
 
 
 //////////////////////////////////////////////////////////////
-// Destroy farStruct struct  -- done
+// Destroy farStruct struct
 void free_farStruct(farStruct *farstruct)
 {
-   
    XLALDestroyREAL4Vector(farstruct->topRvalues);
    farstruct->topRvalues = NULL;
-   
    XLALFree((farStruct*)farstruct);
-
 } /* free_farStruct() */
 
 
@@ -149,9 +142,8 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
 // method = 1: Newton's method
 void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inputParams, INT4 method)
 {
-   
+
    INT4 ii;
-   
    INT4 errcode = 0;
    
    //Set up solver: method 0 is Brent's method, method 1 is Newton's method
@@ -163,7 +155,6 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    }
    gsl_function F;
    const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_newton;
-   //const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_steffenson;
    gsl_root_fdfsolver *s0 = gsl_root_fdfsolver_alloc(T0);
    if (s0==NULL) {
       fprintf(stderr,"%s: gsl_root_fdfsolver_alloc() failed.\n", __func__);
@@ -337,36 +328,20 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    //Explicit computation of slope
    REAL8 R1 = (1.0+dR)*R;
    REAL8 R2 = (1.0-dR)*R;
-   //REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &errcode1);
-   //REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &errcode2);
    REAL8 prob1 = gsl_probR(R1, pars);
    REAL8 prob2 = gsl_probR(R2, pars);
    while (fabs(prob1-prob2)<100.0*LAL_REAL8_EPS) {
       dR *= 2.0;
       R1 = (1.0+dR)*R;
       R2 = (1.0-dR)*R;
-      //prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &errcode1);
-      //prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &errcode2);
       prob1 = gsl_probR(R1, pars);
       prob2 = gsl_probR(R2, pars);
    }
    REAL8 diffR = R1 - R2;
    REAL8 slope = (prob1-prob2)/diffR;
-   //fprintf(stderr,"GSL derivative = %g\n", slope);
-   
-   //Added for improved resolution:
-   /* REAL8 R3 = R-2.0*diffR;
-   REAL8 prob3 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R3, &pars->errcode);
-   REAL8 R4 = R+2.0*diffR;
-   REAL8 prob4 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R4, &pars->errcode);
-   
-   slope = (8.0*(prob1-prob2)+prob3-prob4)/(12.0*diffR); */
-   
-   if (errcode1!=0) {
-      pars->errcode = errcode1;
-   } else if (errcode2!=0) {
-      pars->errcode = errcode2;
-   }
+
+   if (errcode1!=0)  pars->errcode = errcode1;
+   else if (errcode2!=0) pars->errcode = errcode2;
    
    return slope;
    
@@ -431,7 +406,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.c = Rpr;
    vars.useSSE = params->useSSE;
    REAL8 sigma = 0.0;
-   REAL8 accuracy = 1.0e-10;   //(1e-5) old value
+   REAL8 accuracy = 1.0e-11;   //(1e-5) old value
    
    //sort the weights here so we don't have to do it later (qsort)
    sort_double_ascend(newweights);
@@ -451,13 +426,13 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       REAL8 probslope=0.0, tempprob, c1;
       REAL8 lowerend = 0.0;
       REAL8 upperend = Rpr;
-      REAL8Vector *probvals = XLALCreateREAL8Vector(10);
-      REAL8Vector *cvals = XLALCreateREAL8Vector(10);
+      REAL8Vector *probvals = XLALCreateREAL8Vector(20);
+      REAL8Vector *cvals = XLALCreateREAL8Vector(20);
       if (probvals==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 10);
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 20);
          XLAL_ERROR_REAL8(XLAL_EFUNC);
       } else if (cvals==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 10);
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 20);
          XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       
@@ -521,21 +496,16 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    XLALDestroyREAL8Vector(newweights);
    XLALDestroyINT4Vector(sorting);
    
-   if (estimatedTheProb==1) {
-      return logprobest;
-   } else {
-      return log10(prob);
-   }
-   
+   if (estimatedTheProb==1) return logprobest;
+   else return log10(prob);
+
 } /* probR() */
 
 
 //Create a new template structure
 templateStruct * new_templateStruct(INT4 length)
 {
-   
-   //INT4 ii;
-   
+
    templateStruct *templatestruct = XLALMalloc(sizeof(*templatestruct));
    if (templatestruct==NULL) {
       fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", __func__, sizeof(*templatestruct));
@@ -588,7 +558,7 @@ void resetTemplateStruct(templateStruct *templatestruct)
    templatestruct->period = 0.0;
    templatestruct->moddepth = 0.0;
    
-}
+} /* resetTemplateStruct() */
 
 
 //Free the memory of a template structure
@@ -708,24 +678,18 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    INT4 bin0 = (INT4)round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0);      //bin number of fmin
-   //INT4 m0 = (INT4)round(input.fsig*params->Tcoh) - bin0;   //central frequency bin
-   REAL4 m0 = input.fsig*params->Tcoh - bin0;
-   //INT4 mextent = (INT4)floor(input.moddepth*params->Tcoh); //Bins filled by modulation
-   REAL4 mextent = input.moddepth*params->Tcoh;
-   //REAL4 overage = (k-(REAL4)mextent)-1.0;                  //spillage
-   REAL4 overage = 1.0;
-   //INT4 fnumstart = m0-mextent-2, fnumend = m0+mextent+2;   //start and end bins
-   INT4 fnumstart = (INT4)round(m0-mextent-overage), fnumend = (INT4)round(m0+mextent+overage);
+   REAL4 m0 = input.fsig*params->Tcoh - bin0;  //central frequency bin
+   REAL4 mextent = input.moddepth*params->Tcoh;  //Bins filled by modulation                
+   REAL4 overage = 1.0;  //spillage
+   INT4 fnumstart = (INT4)round(m0-mextent-overage), fnumend = (INT4)round(m0+mextent+overage);  //start and end bins
    memset(scale->data, 0, numfbins*sizeof(*scale->data));
-   //for (ii=m0-mextent; ii<=m0+mextent; ii++) scale->data[ii] = 1.0;
-   //scale->data[m0-mextent-2] = scale->data[m0+mextent+2] = sqsincxoverxsqminusone(overage-1.0);
-   //scale->data[m0-mextent-1] = scale->data[m0+mextent+1] = sqsincxoverxsqminusone(overage);
    for (ii=fnumstart; ii<=fnumend; ii++) {
       if ((REAL4)ii>=(m0-mextent) && (REAL4)ii<=(m0+mextent)) scale->data[ii] = 1.0;
       else scale->data[ii] = sqsincxoverxsqminusone(fmin(fabs((REAL4)ii-(m0-mextent)), fabs((REAL4)ii-(m0+mextent))));
    }
    
    //Make sigmas for each frequency
+   //First, allocate vectors
    REAL4Vector *sigmas = XLALCreateREAL4Vector((UINT4)(fnumend-fnumstart+1));
    REAL4Vector *wvals = XLALCreateREAL4Vector((UINT4)floor(4.0*input.period/params->Tcoh));
    if (sigmas==NULL) {
@@ -755,9 +719,9 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       
       //if the velocity approaches zero, the sigma calculation will diverge (which it should do) but this is bad numerically, so we cap it
       if (sigbinvelocity<1.0e-4) sigbinvelocity = 1.0e-4;
-      
-      //REAL8 sigma = 0.5 * params->Tcoh * ((383.85*LAL_1_PI)*(0.5*6.1e-3) / ((sigbinvelocity+0.1769)*(sigbinvelocity+0.1769)+(0.5*6.1e-3)*(0.5*6.1e-3)) + 0.3736);   //Old, derived fit from simulation
+
       REAL4 sigma = 0.5*params->Tcoh * (0.5346 * powf(sigbinvelocity, -1.0213f));   //Derived fit from simulation
+      //REAL4 sigma = 0.5*params->Tcoh * (0.5979 / (sigbinvelocity - 3.2895e-5));  //Could think about using this fit in the future
       
       for (jj=0; jj<(INT4)sigmas->length; jj++) {
          weightvals->data[ii*sigmas->length + jj] = sqsincxoverxsqminusone(sigbin-(bin0+jj+fnumstart));
@@ -766,9 +730,6 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       
    } /* for ii < wvals->length */
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
-      /* for (jj=0; jj<(INT4)wvals->length; jj++) wvals->data[jj] = allsigmas->data[ii + jj*sigmas->length];
-      INT4 indexval = max_index(wvals);
-      sigmas->data[ii] = wvals->data[indexval]; */
       REAL8 wavesigma = 0.0;
       REAL8 totalw = 0.0;
       for (jj=0; jj<(INT4)wvals->length; jj++) {
@@ -776,9 +737,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          totalw += weightvals->data[ii + jj*sigmas->length];
       }
       sigmas->data[ii] = (REAL4)(wavesigma/totalw);
-   }
-   
-   
+   } /* for ii < sigmas->length */
+
    //Allocate more useful data vectors. These get computed for each different first FFT frequency bin in the F-F plane
    REAL4Vector *exp_neg_sigma_sq_times_omega_pr_sq = XLALCreateREAL4Vector(omegapr_squared->length);
    if (exp_neg_sigma_sq_times_omega_pr_sq==NULL) {
@@ -959,7 +919,6 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       //Now loop through the second FFT frequencies, starting with index 4
       for (jj=4; jj<(INT4)omegapr->length; jj++) {
          //Sum up the weights in total
-         //sum += (REAL8)dataval;
          sum += (REAL8)(datavector->data[jj]);
          
          //Compare with weakest top bins and if larger, launch a search to find insertion spot (insertion sort)
@@ -1026,7 +985,6 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    INT4 ii, jj, numfbins, numffts;
    
    //Reset to zero, just in case
-   //for (ii=0; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
    memset(output->templatedata->data, 0, sizeof(REAL4)*output->templatedata->length);
    
    numfbins = (INT4)(round(params->fspan*params->Tcoh+2.0*params->dfmax*params->Tcoh)+12+1);   //Number of frequency bins
@@ -1178,6 +1136,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    //Destroy stuff
    XLALDestroyREAL4Vector(psd1);
    XLALDestroyREAL8Vector(freqbins);
+   XLALDestroyREAL8Vector(bindiffs);
    XLALDestroyREAL4Vector(x);
    XLALDestroyREAL4Window(win);
    XLALDestroyREAL4Vector(psd);
@@ -1548,7 +1507,6 @@ void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc,
 {
    
    //INT4 ii;
-   
    INT4 insertionpoint = (INT4)output->templatedata->length-1;
    INT4 numbertomove = 0;
    while (insertionpoint > 0 && weight > output->templatedata->data[insertionpoint-1]) {

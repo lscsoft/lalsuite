@@ -1,3 +1,9 @@
+EXTRA_DIST = LALConfig.dox \
+	LALDatatypes.dox \
+	LALError.dox \
+	LALMalloc.dox \
+	LALStatusMacros.dox
+
 pkginclude_HEADERS = \
 	Grid.h \
 	LALAtomicDatatypes.h \
@@ -20,14 +26,7 @@ pkginclude_HEADERS = \
 	lalswig_gsl.i \
 	lalswig_ligotimegps.i
 
-EXTRA_DIST =
-
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
-
 all-local: include-link
-
 @INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)

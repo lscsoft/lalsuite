@@ -17,50 +17,29 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief Uses \f$g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}\f$ to compute the inverse.
-
-\heading{Prototypes}
-
-<tt>LALInverse3()</tt>
-<ul>
-   <li> <tt>inverse,</tt> Output, inverse of the \f$(3\times 3)\f$ input matrix
-   </li><li> <tt>*matrix,</tt> Input, matrix whose inverse is required</li>
-</ul>
-
-\heading{Description}
-
-Uses \f$g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}\f$ to compute
-the inverse; though not efficient, it is good enough for the
-3-d matrix that we have. Prevents the need for having a new library.
-
-\heading{Algorithm}
-
-
-\heading{Uses}
-
-\code
-LALDeterminant3()
-\endcode
-
-\heading{Notes}
-Do not generalise to more than 3 dimensions.
-
-*/
 
 #include <lal/LALInspiralBank.h>
 
 #define Dim 3
 
 
-
-void LALInverse3(LALStatus *status,
-                 REAL8     **inverse,
-                 REAL8     **matrix)
+/** \ingroup LALInspiralBank_h
+ * \brief Uses \f$g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}\f$ to compute the inverse.
+ * \author Sathyaprakash, B. S.
+ *
+ * \heading{Description}
+ *
+ * Uses \f$g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}\f$ to compute
+ * the inverse; though not efficient, it is good enough for the
+ * 3-d matrix that we have. Prevents the need for having a new library.
+ *
+ * \heading{Notes}
+ * Do not generalise to more than 3 dimensions.
+ */
+void LALInverse3(LALStatus *status,	/**< LAL status pointer */
+                 REAL8     **inverse,	/**< [out] inverse of the \f$(3\times 3)\f$ input matrix */
+                 REAL8     **matrix	/**< [in] matrix whose inverse is required */
+                 )
 {
 
    REAL8 epsilon[Dim][Dim][Dim] = {{

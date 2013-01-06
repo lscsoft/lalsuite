@@ -18,16 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-
-/** \file
- * \ingroup SFTfileIO
- * \author R. Prix, B. Machenschalk, A.M. Sintes
- *
- * \brief Test-code for SFT-fileIO library
- *
- *
- */
-
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 /*---------- INCLUDES ----------*/
 #include <config.h>
@@ -35,6 +25,14 @@
 #include <lal/Units.h>
 
 /*---------- DEFINES ----------*/
+/** \file
+ * \ingroup SFTfileIO_h
+ * \author R. Prix, B. Machenschalk, A.M. Sintes
+ *
+ * \brief Test-code for SFT-fileIO library
+ *
+ *
+ */
 
 /** \name Error codes */
 /*@{*/
@@ -54,13 +52,7 @@
 /*@}*/
 
 
-#ifndef SRCDIR
-#define SRCDIR "."
-#endif
-
-#define TESTDIR SRCDIR "/"
-
-
+/** \cond DONT_DOXYGEN */
 /* Default parameters. */
 
 /*********************************************************************/
@@ -214,34 +206,34 @@ int main(int argc, char *argv[])
     argc = 1;
 
   /* check that mal-formated SFTs are properly detected */
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad1", NULL ), &status, SFTFILEIO_EMERGEDSFT );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad2", NULL ), &status, SFTFILEIO_EMERGEDSFT );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad3", NULL ), &status, SFTFILEIO_EMERGEDSFT );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad4", NULL ), &status, SFTFILEIO_EMERGEDSFT );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad5", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad1", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad2", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad3", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad4", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad5", NULL ), &status, SFTFILEIO_EMERGEDSFT );
 
   /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is
    * not checked in LALSFTdataFind, so it should succeed! */
-  SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad6", NULL ), &status );
+  SHOULD_WORK( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad6", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad7", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad8", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad9", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad10", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad11", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad12", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad13", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad14", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad7", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad8", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad9", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad10", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad11", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad12", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad13", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad14", NULL ), &status, SFTFILEIO_EHEADER );
 
   /* now check some crc-checksums */
-  SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, TESTDIR "SFT-test1", NULL ), &status );
+  SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, DATADIR "SFT-test1", NULL ), &status );
   if ( crc_check != 0 )
     {
       XLALPrintError ("\nLALCheckSFTs(): SFT-test1 has correct checksum but LALCheckSFTs claimed it hasn't.\n\n");
       return crc_check;
     }
-  SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, TESTDIR "SFT-bad6", NULL ), &status );
+  SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, DATADIR "SFT-bad6", NULL ), &status );
   if ( crc_check != SFTFILEIO_ECRC64 )
     {
       XLALPrintError ( "\nLALCheckSFTs() failed to catch invalid CRC checksum in SFT-bad6 \n\n");
@@ -249,36 +241,36 @@ int main(int argc, char *argv[])
     }
 
   /* check that proper v2-SFTs are read-in properly */
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test1", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test1", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test2", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test2", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test3", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test3", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test4", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test4", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test5", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test5", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test6", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test6", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test7", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test7", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* now completely read-in a v2 merged-SFT */
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test*", NULL ), &status,  SFTFILEIO_EDIFFTSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test*", NULL ), &status,  SFTFILEIO_EDIFFTSFT );
   /* skip sft nr 4 with has Tsft=50 instead of Tsft=60 */
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123567]*", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test[123567]*", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
   /* try the same with a ";" separated list of files and of patterns */
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog,
-				 TESTDIR "SFT-test1;"
-				 TESTDIR "SFT-test2;"
-				 TESTDIR "SFT-test3;"
-				 TESTDIR "SFT-test5;"
-				 TESTDIR "SFT-test6;"
-				 TESTDIR "SFT-test7", NULL ), &status );
+				 DATADIR "SFT-test1;"
+				 DATADIR "SFT-test2;"
+				 DATADIR "SFT-test3;"
+				 DATADIR "SFT-test5;"
+				 DATADIR "SFT-test6;"
+				 DATADIR "SFT-test7", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123]*;" TESTDIR "SFT-test[5]*", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test[123]*;" DATADIR "SFT-test[5]*", NULL ), &status );
 
   /* load once as a single SFT-vector (mix of detectors) */
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
@@ -452,7 +444,7 @@ int main(int argc, char *argv[])
   /* `----- v1 SFT writing */
 
   /* read v1-SFTs: 'inputsft.0' and 'inputsft.1' (one is big-endian, the other little-endian!) */
-  SUB ( LALSFTdataFind (&status, &catalog, TESTDIR "inputsft.?", &constraints ), &status );
+  SUB ( LALSFTdataFind (&status, &catalog, DATADIR "inputsft.?", &constraints ), &status );
   SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, fMin, fMax ), &status );
   if ( sft_vect->length != 2 )
     {
@@ -493,9 +485,9 @@ int main(int argc, char *argv[])
     LIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL;
 
     /* ----- load timestamps with deprecated LAL function  */
-    SUB ( LALReadTimestampsFile ( &status, &ts1, TESTDIR TS_FNAME ), &status );
+    SUB ( LALReadTimestampsFile ( &status, &ts1, DATADIR TS_FNAME ), &status );
     /* ----- load timestamps w new XLAL function */
-    if ( (ts2 = XLALReadTimestampsFile ( TS_FNAME )) == NULL ) {
+    if ( (ts2 = XLALReadTimestampsFile ( DATADIR TS_FNAME )) == NULL ) {
       XLALPrintError ("XLALReadTimestampsFile() failed to read timestamps from file '%s'. xlalErrno = %d\n", TS_FNAME );
       return SFTFILEIOTESTC_ESUB;
     }
@@ -536,3 +528,4 @@ int main(int argc, char *argv[])
   INFO( SFTFILEIOTESTC_MSGENORM );
   return SFTFILEIOTESTC_ENORM;
 }
+/** \endcond */

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson 
+*  Copyright (C) 2010 Craig Robinson, Yi Pan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -19,12 +19,18 @@
 
 
 /**
- * \author Craig Robinson
+ * \author Craig Robinson, Yi Pan
  *
  * \brief In newer versions of the EOBNR approximant, we
  * do not have an analytic expression for the derivative of the waveform.
  * As such, it is necessary to calculate the derivatives numerically. This
- * function provides the means to do just that.
+ * function provides the means to do that for the SEOBNRv1 Hamiltonian
+ * in the spin-aligned case, i.e. equatorial orbits with four dynamical variables:
+ * r, phi, pr and pphi. It then combines energy flux and numerical derivatives of 
+ * the Hamiltonian to calculate the right hand side of the ODEs given by
+ * Eqs. 10a - 10d of Pan et al. PRD 84, 124052 (2011). 
+ * Since SEOBNRv1 is a spin-aligned model, the ODEs are written 
+ * in the same format as ODEs of a nonspinning model.
  * 
  */
 
@@ -64,14 +70,19 @@ static int XLALSpinAlignedHcapDerivative(
 
 /**
  * Function to calculate R.H.S. of the ODEs, given dyanmical variables,
- * their derivatives and EOB parameters
+ * their derivatives and EOB parameters. Since SEOBNRv1 spin Hamiltonian
+ * was implemented for Cartesean coordinates while dynamical evolution was 
+ * implemented in polar coordinates, we need to perform a transform. 
+ * This is done in a particular transform in which
+ * x = r, y = z = 0, px = pr, py = pphi/r, pz = 0, and
+ * omega = v/r = (dy/dt)/r = (dH/dpy)/r, dr/dt = dx/dt = dH/dpx, etc.
  */
 static int XLALSpinAlignedHcapDerivative(
-                          double     UNUSED     t,          //** UNUSED */
-                          const REAL8           values[],   //** dynamical varables */
-                          REAL8                 dvalues[],  //** time derivativ os */
-                          void                  *funcParams //** EOB parameters */
-                               )
+                  double UNUSED t,          /**< UNUSED */
+                  const REAL8   values[],   /**< dynamical varables */
+                  REAL8         dvalues[],  /**< time derivative of dynamical variables */
+                  void         *funcParams  /**< EOB parameters */
+                  )
 {
 
   static const REAL8 STEP_SIZE = 1.0e-4;
@@ -141,20 +152,21 @@ static int XLALSpinAlignedHcapDerivative(
   /* that the spin vector is along the z-axis.         */
   a  = sKerr->data[2];
 
-  /* Calculate the potential functions */
+  /* Calculate the potential functions and the tortoise coordinate factor csi,
+     given by Eq. 28 of Pan et al. PRD 81, 084041 (2010) */
   DeltaT = XLALSimIMRSpinEOBHamiltonianDeltaT( params.params->seobCoeffs, r, eta, a );
   DeltaR = XLALSimIMRSpinEOBHamiltonianDeltaR( params.params->seobCoeffs, r, eta, a );
   csi    = sqrt( DeltaT * DeltaR ) / (r*r + a*a);
   //printf( "csi in derivatives function = %.16e\n", csi );
 
-  /* Populate the Cartesian values vector */
+  /* Populate the Cartesian values vector, using polar coordinate values */
   /* We can assume phi is zero wlog */
   memset( cartValues, 0, sizeof( cartValues ) );
   cartValues[0] = values[0];
   cartValues[3] = values[2];
   cartValues[4] = values[3] / values[0];
 
-  /* Now calculate derivatives w.r.t. each parameter */
+  /* Now calculate derivatives w.r.t. each Cartesian variable */
   for ( i = 0; i < 6; i++ )
   {
     params.varyParam = i;
@@ -168,7 +180,7 @@ static int XLALSpinAlignedHcapDerivative(
     }
   }
 
-  /* Calculate the polar data */
+  /* Calculate the Cartesian vectors rVec and pVec */
   polarDynamics.length = 4;
   polarDynamics.data   = polData;
 
@@ -184,7 +196,7 @@ static int XLALSpinAlignedHcapDerivative(
   rData[0] = values[0];
   pData[0] = values[2];
   pData[1] = values[3] / values[0];
-
+  /* Calculate Hamiltonian using Cartesian vectors rVec and pVec */
   H =  XLALSimIMRSpinEOBHamiltonian( eta, &rVec, &pVec, sKerr, sStar, params.params->tortoise, params.params->seobCoeffs ); 
 
   //printf( "csi = %.16e, ham = %.16e ( tortoise = %d)\n", csi, H, params.params->tortoise );
@@ -207,8 +219,10 @@ static int XLALSpinAlignedHcapDerivative(
 
   /* Now we can calculate the final (spherical) derivatives */
   /* csi is needed because we use the tortoise co-ordinate */
+  /* Right hand side of Eqs. 10a - 10d of Pan et al. PRD 84, 124052 (2011) */
   dvalues[0] = csi * tmpDValues[3];
   dvalues[1] = omega;
+  /* Note: in this special coordinate setting, namely y = z = 0, dpr/dt = dpx/dt + dy/dt * py/r, where py = pphi/r */ 
   dvalues[2] = - tmpDValues[0] + tmpDValues[4] * values[3] / (r*r);
   dvalues[2] = dvalues[2] * csi - ( values[2] / values[3] ) * flux / omega;
   dvalues[3] = - flux / omega;

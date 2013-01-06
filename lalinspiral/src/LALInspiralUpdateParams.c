@@ -17,53 +17,32 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Sathyaprakash, B. S., T. Cokelaer
-\file
-\ingroup LALInspiralBank_h
-
-\brief Module to update the parameters used in creating a coarse bank
-based on a square lattice.
-
-\heading{Prototypes}
-
-<tt>LALInspiralUpdateParams()</tt>
-<ul>
-   <li> \c bankParams Output, refreshed to get the next location
-   </li><li> \c metric Input, metric at the current location
-   </li><li> \c minimalmatch Input, the minimal match</li>
-</ul>
-
-\heading{Description}
-While scanning the \f$\tau_0\f$-direction after reaching the
-boundary of the parameter space, we have to return to the
-starting point of the same line and use the metric there
-to increment one step upwards in the direction of \f$\tau_{2(3)}.\f$
-to a <em>template list</em>.
-
-The \f$dx_i\f$ returned by this function gives the spacing for a
-square lattice (e.g., \f$dx_i\f$ as given in [\ref Owen_96].
-
-\heading{Algorithm}
-
-Copy the parameters in the temporary parameter structure
-to the current parameter structure.
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-
-*/
-
-
-
 #include <lal/LALInspiralBank.h>
 
-void LALInspiralUpdateParams(LALStatus          *status,
-                             InspiralBankParams *bankParams,
-                             InspiralMetric     metric,
-                             REAL8              minimalmatch)
+/** \ingroup LALInspiralBank_h
+ * \brief Function to update the parameters used in creating a coarse bank based on a square lattice.
+ * \author Sathyaprakash, B. S., T. Cokelaer
+ *
+ *
+ * While scanning the \f$\tau_0\f$-direction after reaching the
+ * boundary of the parameter space, we have to return to the
+ * starting point of the same line and use the metric there
+ * to increment one step upwards in the direction of \f$\tau_{2(3)}.\f$
+ * to a <em>template list</em>.
+ *
+ * The \f$dx_i\f$ returned by this function gives the spacing for a
+ * square lattice (e.g., \f$dx_i\f$ as given in [\ref Owen_96].
+ *
+ * \heading{Algorithm}
+ *
+ * Copy the parameters in the temporary parameter structure
+ * to the current parameter structure.
+ */
+void LALInspiralUpdateParams(LALStatus          *status,	/**< LAL status pointer */
+                             InspiralBankParams *bankParams,	/**< [out] refreshed to get the next location */
+                             InspiralMetric     metric,		/**< [in] metric at the current location */
+                             REAL8              minimalmatch	/**< [in] the minimal match */
+                             )
 {
    REAL8 dx0, dx1, myphi, theta, fac;
 

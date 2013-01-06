@@ -20,7 +20,6 @@
 
 #include <string.h>
 #include <lal/Date.h>
-#include <lal/LALComplex.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStatusMacros.h>

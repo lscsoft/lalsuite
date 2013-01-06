@@ -17,19 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/** \defgroup NRWaveIO Numrel-waveform IO
- * \ingroup support
- * \author S.Fairhurst, B. Krishnan, L.Santamaria
- *
- * \brief Module for reading/writing Numrel waveforms
- *
- */
-
-/** \file NRWaveIO.h
- *  \ingroup NRWaveIO
- *
- */
-
 #ifndef _NRWAVEIO_H  	/* Double-include protection. */
 #define _NRWAVEIO_H
 
@@ -56,23 +43,33 @@
 extern "C" {
 #endif
 
+/** \defgroup NRWaveIO_h Header NRWaveIO.h
+ * \ingroup pkg_CBC_NEW
+ * \author S.Fairhurst, B. Krishnan, L.Santamaria
+ *
+ * \brief Module for reading/writing Numrel waveforms
+ *
+ */
+/*@{*/
+
 /** \name Error codes */
 /*@{*/
-#define NRWAVEIO_ENULL 	  1
-#define NRWAVEIO_EFILE 	  2
-#define NRWAVEIO_ENONULL  3
-#define NRWAVEIO_ENOMEM   4
-#define NRWAVEIO_EVAL 	  5
-#define NRWAVEIO_EFORMAT  6
+#define NRWAVEIO_ENULL 	  1	/**< Null pointer */
+#define NRWAVEIO_EFILE 	  2	/**< Error in file-IO */
+#define NRWAVEIO_ENONULL  3	/**< Not a Null pointer */
+#define NRWAVEIO_ENOMEM   4	/**< Memory ellocation error */
+#define NRWAVEIO_EVAL 	  5	/**< Invalid value */
+#define NRWAVEIO_EFORMAT  6	/**< Meta data file format incorrect */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define NRWAVEIO_MSGENULL 	"Null pointer"
 #define NRWAVEIO_MSGEFILE 	"Error in file-IO"
 #define NRWAVEIO_MSGENONULL 	"Not a Null pointer"
 #define NRWAVEIO_MSGENOMEM 	"Memory ellocation error"
 #define NRWAVEIO_MSGEVAL  	"Invalid value"
 #define NRWAVEIO_MSGEFORMAT     "Meta data file format incorrect"
-/*@}*/
-
+/** \endcond */
 
 
 /** Struct containing metadata information about a
@@ -126,6 +123,8 @@ void LALAddStrainModes( LALStatus *status, REAL4TimeVectorSeries  **outStrain,
 		     NRWaveCatalog *nrCatalog, INT4 modeLlo, INT4 modeLhi, const SimInspiralTable *thisInj);
 
 void LALDriveNRInject( LALStatus *status, REAL4TimeSeries *injData, SimInspiralTable *injections, NumRelInjectParams *params );
+
+/*@}*/ /* end:NRWaveIO_h */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

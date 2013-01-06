@@ -17,23 +17,22 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef _PULSARCROSSCORR_H
+#define _PULSARCROSSCORR_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 /**
+ * \defgroup PulsarCrossCorr_h Header PulsarCrossCorr.h
+ * \ingroup pkg_pulsarCrossCorr
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
- * \file
- * \ingroup pulsarTODO
  * \brief Header-file for LAL routines for CW cross-correlation searches
  *
  */
-
-/*
- *   Protection against double inclusion (include-loop protection)
- *     Note the naming convention!
- */
-
-#ifndef _PULSARCROSSCORR_H
-#define _PULSARCROSSCORR_H
+/*@{*/
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -68,20 +67,8 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 
-
-/******************************************************
- *   Protection against C++ name mangling
- */
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-
-/******************************************************
- *  Error codes and messages.
- */
-
+/** \name Error codes */
+/*@{*/
 #define PULSARCROSSCORR_ENULL 1
 #define PULSARCROSSCORR_ENONULL 2
 #define PULSARCROSSCORR_EVAL 3
@@ -89,6 +76,7 @@ extern "C" {
 #define PULSARCROSSCORR_MSGENULL "Null pointer"
 #define PULSARCROSSCORR_MSGENONULL "Non-null pointer"
 #define PULSARCROSSCORR_MSGEVAL "Invalid value"
+/*@}*/
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
@@ -235,7 +223,7 @@ void LALCalculateEstimators(LALStatus    *status,
 				COMPLEX16Vector  *gcross,
 				REAL8Vector      *sigmaAlphasq);
 
-/* ****************************************************** */
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

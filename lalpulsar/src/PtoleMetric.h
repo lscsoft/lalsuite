@@ -20,6 +20,10 @@
 #ifndef _PTOLEMETRIC_H
 #define _PTOLEMETRIC_H
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 #include <gsl/gsl_matrix.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALConstants.h>
@@ -27,36 +31,11 @@
 #include <lal/SkyCoordinates.h>
 #include <lal/LALBarycenter.h>
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/** @{ \name Error conditions */
-/** \ingroup PtoleMetric_h */
-#define PTOLEMETRICH_ENULL   1
-#define PTOLEMETRICH_EPARM   2
-#define PTOLEMETRICH_EDIM    3
-#define PTOLEMETRICH_ENONULL 4
-#define PTOLEMETRICH_EMETRIC 5
-
-#define PTOLEMETRICH_MSGENULL   "unexpected null pointer"
-#define PTOLEMETRICH_MSGEPARM   "bad parameter value"
-#define PTOLEMETRICH_MSGEDIM    "bad array length"
-#define PTOLEMETRICH_MSGENONULL "unexpected non-null pointer"
-#define PTOLEMETRICH_MSGEMETRIC "unknown metric type"
-/* @} */
-
-#define PMETRIC_MIN(x,y) ((x) < (y) ? (x) : (y))
-#define PMETRIC_MAX(x,y) ((x) > (y) ? (x) : (y))
-
-/** Translate metrix matrix-indices (a,b) into vector-index l */
-#define PMETRIC_INDEX(a,b) (PMETRIC_MIN((a),(b))+PMETRIC_MAX((a),(b))*(PMETRIC_MAX((a),(b)) + 1 ) / 2 )
-
 /**
- * \defgroup PtoleMetric_h PtoleMetric
+ * \defgroup PtoleMetric_h Header PtoleMetric.h
  * \author Jones, D. I.  Owen, B. J.
  * \date 2001 -- 2006
- * \ingroup PulsarMetric
+ * \ingroup pkg_pulsarMetric
  * \brief Provides routines to compute pulsar parameter-space metrics using the
  * ``Ptolemaic'' approximation.
  *
@@ -89,6 +68,29 @@ extern "C" {
  *
  */
 /*@{*/
+
+#define PMETRIC_MIN(x,y) ((x) < (y) ? (x) : (y))
+#define PMETRIC_MAX(x,y) ((x) > (y) ? (x) : (y))
+
+/** Translate metrix matrix-indices (a,b) into vector-index l */
+#define PMETRIC_INDEX(a,b) (PMETRIC_MIN((a),(b))+PMETRIC_MAX((a),(b))*(PMETRIC_MAX((a),(b)) + 1 ) / 2 )
+
+/** \name Error conditions */
+/*@{*/
+#define PTOLEMETRICH_ENULL   1
+#define PTOLEMETRICH_EPARM   2
+#define PTOLEMETRICH_EDIM    3
+#define PTOLEMETRICH_ENONULL 4
+#define PTOLEMETRICH_EMETRIC 5
+
+#define PTOLEMETRICH_MSGENULL   "unexpected null pointer"
+#define PTOLEMETRICH_MSGEPARM   "bad parameter value"
+#define PTOLEMETRICH_MSGEDIM    "bad array length"
+#define PTOLEMETRICH_MSGENONULL "unexpected non-null pointer"
+#define PTOLEMETRICH_MSGEMETRIC "unknown metric type"
+/* @} */
+
+
 /** Constants defining different types of pulsar-metrics. */
 typedef enum
 {
@@ -115,10 +117,8 @@ tagPtoleMetricIn
   const EphemerisData  *ephemeris;	/**< Not used for the Ptolemaic approximation, this is for compatibility with other metrics. */
   LALPulsarMetricType metricType; /**< The type of metric to use: analytic, Ptolemaic or fully ephemeris-based. */
 } PtoleMetricIn;
-/*@}*/
 
 /* ----- prototypes ----- */
-/** \cond DONT_DOXYGEN */
 void
 LALPtoleMetric( LALStatus      *status,
                 REAL8Vector    *metric,
@@ -131,9 +131,12 @@ LALPulsarMetric( LALStatus      *status,
 
 int XLALFindMetricDim ( const REAL8Vector *metric );
 
-gsl_matrix *XLALSpindownMetric(UINT4, REAL8);
+int XLALSpindownMetric(
+  gsl_matrix* metric,
+  double Tspan
+  );
 
-/** \endcond */
+/*@}*/
 
 #ifdef  __cplusplus
 }

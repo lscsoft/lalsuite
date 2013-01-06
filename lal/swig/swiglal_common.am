@@ -16,8 +16,8 @@ swig_lt_sources =
 swig_lt_cppflags = $(AM_CPPFLAGS) -shared
 swig_lt_cflags = $(AM_CFLAGS)
 swig_lt_cxxflags = $(AM_CXXFLAGS)
-swig_lt_ldflags = $(AM_LDFLAGS) -module -version-info $(LIBVERSION)
 swig_lt_libadd =
+swig_lt_ldflags = $(AM_LDFLAGS) -module -avoid-version -version-info 0:0:0
 swig_lt_libtoolflags = --tag=disable-static
 
 # installation location for SWIG interfaces
@@ -33,8 +33,9 @@ EXTRA_DIST =
 
 # clean files
 CLEANFILES = \
-	$(swig_iface_deps) \
 	$(swig_modl_src)
+DISTCLEANFILES = \
+	$(swig_iface_deps)
 
 if SWIG_BUILD
 
@@ -59,7 +60,7 @@ swig-iface-links :
 	done
 
 # rebuild SWIG interface dependencies file
-$(swig_iface_deps) : ../$(swig_iface)
+$(swig_iface_deps) :
 	@echo '#dummy' > $@
 	@touch $(srcdir)/Makefile.in
 

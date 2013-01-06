@@ -12,19 +12,17 @@ oldcode="${builddir}lalapps_makefakedata_test"
 newcodeDEFAULT="${builddir}lalapps_Makefakedata_v4"
 compCode="${builddir}lalapps_compareSFTs"
 
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    oldcode="${oldcode} -E ${LALPULSAR_DATADIR}"
+    newcodeDEFAULT="${newcodeDEFAULT} -E ${LALPULSAR_DATADIR}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
-export LAL_DATA_PATH
 
 if [ -z "$1" ]; then
     newcode=${newcodeDEFAULT}
@@ -43,25 +41,8 @@ else
 fi
 
 tol="1e-4";	## tolerance on relative difference between SFTs in comparison
+
 # input parameters
-## FIXED
-#ephemdir=$LALPULSAR_PREFIX/share/lalpulsar
-# determine ephemdir from LAL_DATA_PATH
-SAVEIFS="$IFS"
-foundEphem=no
-IFS=:
-for ephemdir in $LAL_DATA_PATH; do test -r $ephemdir/earth00-04.dat && foundEphem=yes && break; done
-IFS="$SAVEIFS"
-
-if [ "$foundEphem" = "no" ]; then
-    echo "Failed to located ephemeris files."
-    echo "Need environment-variable LAL_DATA_PATH to be set"
-    echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
-fi
-
 Tsft=1800
 nTsft=20
 timestamps="$srcdir/testT8_1800"
@@ -85,9 +66,9 @@ f1dot="-1.e-9"
 f2dot="1e-14"
 
 dataTMP=In.data-test
-oldCL="-i $dataTMP  -I $IFO -E $ephemdir -S $refTime" ## -D $noiseDir"
-newCL="-E $ephemdir --Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
-newCL2="-E $ephemdir --Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --Freq=$f0  --Alpha=$alpha --Delta=$delta --IFO=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
+oldCL="-i $dataTMP  -I $IFO -S $refTime" ## -D $noiseDir"
+newCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
+newCL2="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --Freq=$f0  --Alpha=$alpha --Delta=$delta --IFO=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
 
 
 ## produce In.data file for makefakedata_v2

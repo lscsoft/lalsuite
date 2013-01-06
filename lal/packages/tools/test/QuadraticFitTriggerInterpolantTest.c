@@ -27,8 +27,8 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 {
     int result;
     double tmax;
-    double complex ymax;
-    const double complex y[] = {0, 3, 4, 3, 0};
+    COMPLEX16 ymax;
+    const COMPLEX16 y[] = {0, 3, 4, 3, 0};
 
     QuadraticFitTriggerInterpolant *interp = XLALCreateQuadraticFitTriggerInterpolant(2);
     if (!interp)

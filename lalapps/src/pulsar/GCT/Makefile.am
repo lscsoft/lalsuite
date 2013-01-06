@@ -5,7 +5,7 @@ OPTsrc = $(top_srcdir)/src/pulsar/FDS_isolated/OptimizedCFS
 EAHsrc = $(top_srcdir)/src/pulsar/hough/src2/EinsteinAtHome
 
 # for using lalapps-defines + functions
-INCLUDES = -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc)
+AM_CPPFLAGS = -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc)
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
@@ -55,8 +55,6 @@ eah_HierarchSearchGCT_LDADD = $(LDADD) $(RELEASE_LDADD)
 
 libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
-libz.a:
-	cp -f `$(CC) -print-file-name=$@` $@
 
 exchndl.o: $(EAHsrc)/exchndl.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
@@ -92,9 +90,7 @@ EXTRA_DIST = testHS.sh
 
 TESTS = testHS.sh testLineVeto
 
-TESTS_ENVIRONMENT = 1>/dev/null \
-LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
-LAL_DATA_PATH=$(LAL_DATA_PATH):.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
+TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 CLEANFILES =
 

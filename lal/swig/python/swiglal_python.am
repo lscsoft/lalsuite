@@ -10,7 +10,6 @@ swig_langflags = -python -O -builtin -globals cvar
 # add Python compilation flags
 swig_lt_cppflags += $(PYTHON_CPPFLAGS)
 swig_lt_cxxflags += $(PYTHON_CFLAGS)
-swig_lt_ldflags  += $(PYTHON_LDFLAGS)
 
 # SWIG Python wrapping module source file
 swig_modl_src = @PACKAGE_NAME@swig_python.c
@@ -24,7 +23,7 @@ EXTRA_DIST += $(swig_modl_check).py
 if SWIG_BUILD_PYTHON
 
 # SWIG Python generated source files
-nodist_pyexec_PYTHON = $(SWIG_OUTDIR)/$(PACKAGE_NAME).py
+nodist_pkgpyexec_PYTHON = $(SWIG_OUTDIR)/$(PACKAGE_NAME).py
 
 # run SWIG wrapping module test script
 TESTS = $(swig_modl_check).py

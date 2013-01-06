@@ -17,55 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief Routine to compute the parameters of the template next to the
-current template, but in the positive \f$\tau_{2(3)}\f$ axis.
-
-\heading{Prototypes}
-
-<tt>LALInspiralNextTemplate()</tt>:
-<ul>
-   <li> <tt>bankPars,</tt> Output, the parameters of the bank at the next grid point; the
-   point may, indeed, lay outside the parameter space.
-   </li><li> \c matrix Input, the value of the metric which would allow computation of the
-   next lattice point (in the \f$\tau_{2(3)}\f$ direction).</li>
-</ul>
-
-\heading{Description}
-
-The coarse grid algorithm works by starting at one corner of the
-parameter space, incrementing along positive \f$\tau_0\f$ direction,
-with increments determined by the local value of the metric,
-till the boundary of the parameter space is reached. It then gets back to
-the starting point and increments along positive \f$\tau_{2(3)}\f$
-direction, with an increment defined by the metric defined locally;
-it starts at the first point inside the parameter space but
-\e consistent with a square lattice. This routine is called each
-time a translation along the \f$\tau_{2(3)}\f$ direction is required.
-
-\heading{Algorithm}
-
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-
-
-
-*/
-
-
-
 #include <lal/LALInspiralBank.h>
 
-void LALInspiralNextTemplate(LALStatus          *status,
-                             InspiralBankParams *bankPars,
-                             InspiralMetric     metric)
+/** \ingroup LALInspiralBank_h
+ *  \brief Routine to compute the parameters of the template next to the
+ *         current template, but in the positive \f$\tau_{2(3)}\f$ axis.
+ * \author Sathyaprakash, B. S.
+ *
+ * The coarse grid algorithm works by starting at one corner of the
+ * parameter space, incrementing along positive \f$\tau_0\f$ direction,
+ * with increments determined by the local value of the metric,
+ * till the boundary of the parameter space is reached. It then gets back to
+ * the starting point and increments along positive \f$\tau_{2(3)}\f$
+ * direction, with an increment defined by the metric defined locally;
+ * it starts at the first point inside the parameter space but
+ * \e consistent with a square lattice. This routine is called each
+ * time a translation along the \f$\tau_{2(3)}\f$ direction is required.
+ */
+void LALInspiralNextTemplate(LALStatus          *status,	/**< LAL status pointer */
+                             InspiralBankParams *bankPars,	/**< [out] the parameters of the bank at the next grid point; the point may, indeed, lay outside */
+                             InspiralMetric     metric		/**< [in] the value of the metric which would allow computation of the next lattice point (in the \f$\tau_{2(3)}\f$ direction) */
+                             )
 {
 
    REAL8 x0tmp, myphi, theta;

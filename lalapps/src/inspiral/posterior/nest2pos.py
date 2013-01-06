@@ -30,7 +30,7 @@ def compute_weights(data, Nlive):
 
     # Each remaining live point contributes Vol/Nlive*like to
     # integral.
-    log_wts[-Nlive:] = log_vol+end_data -log(Nlive)
+    log_wts[-Nlive:] = log_vol+end_data
 
     log_ev = logaddexp(log_ev, avg_log_like_end + log_vol)
 

@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdlib.h>
 #include <math.h>
 #include <lal/Date.h>
@@ -96,15 +96,15 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinComputeChi(
  */
 int XLALSimInspiralTaylorF2ReducedSpin(
     COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
-    const REAL8 phiStart,            /**< initial GW phase (rad) */
-    const REAL8 deltaF,              /**< frequency resolution */
+    const REAL8 phic,                /**< orbital coalescence phase (rad) */
+    const REAL8 deltaF,              /**< frequency resolution (Hz) */
     const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
     const REAL8 chi,                 /**< dimensionless aligned-spin param */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
     const REAL8 r,                   /**< distance of source (m) */
-    const INT4 phaseO,              /**< twice PN phase order */
-    const INT4 ampO                 /**< twice PN amplitude order */
+    const INT4 phaseO,               /**< twice PN phase order */
+    const INT4 ampO                  /**< twice PN amplitude order */
     ) {
     /* external: SI; internal: solar masses */
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -120,7 +120,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
     REAL8 v0 = cbrt(piM * fStart);
     REAL8 logv0 = log(v0);
-    REAL8 shft, phi0, amp0, f_max;
+    REAL8 shft, amp0, f_max;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;
     REAL8 eta_fac = -113. + 76. * eta;
@@ -130,7 +130,6 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 
     /* check inputs for sanity */
     if (*htilde) XLAL_ERROR(XLAL_EFAULT);
-    if (phiStart < 0) XLAL_ERROR(XLAL_EDOM);
     if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
@@ -150,7 +149,6 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
 
     /* extrinsic parameters */
-    phi0 = phiStart;
     amp0 = pow(m_sec, 5./6.) * sqrt(5. * eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
     shft = -LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
@@ -254,8 +252,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
             + (alpha6 + alpha6L * (LAL_GAMMA + log4 + logv)) * v6
             + alpha7 * v7);
 
-        data[i] = (COMPLEX16) {amp * cos(Psi + shft * f + phi0 + LAL_PI_4),
-                               -(amp * sin(Psi + shft * f + phi0 + LAL_PI_4))};
+        data[i] = amp * cos(Psi + shft * f - 2.*phic + LAL_PI_4) - I * (amp * sin(Psi + shft * f - 2.*phic + LAL_PI_4));
     }
 
     return XLAL_SUCCESS;
@@ -269,7 +266,7 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
     const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,   /**< mass of companion 2 (kg) */
     const REAL8 chi,     /**< dimensionless aligned-spin param */
-    const INT4 O        /**< twice PN phase order */
+    const INT4 O         /**< twice PN phase order */
     ) {
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
     const REAL8 m2 = m2_SI / LAL_MSUN_SI;

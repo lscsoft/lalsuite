@@ -21,22 +21,19 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-
-/**
- * \file LALInferencePrior.h
- * \brief Collection of commonly used Prior functions and utilities
- * \ingroup LALInference
- * 
- * This file contains 
- * 
- */
-
 #ifndef LALInferencePrior_h
 #define LALInferencePrior_h
 
-
 #include <lal/LALInference.h>
 #include <lal/LALInferenceNestedSampler.h>
+
+/**
+ * \defgroup LALInferencePrior_h Header LALInferencePrior.h
+ * \ingroup pkg_LALInference
+ * \brief Collection of commonly used Prior functions and utilities
+ */
+/*@{*/
+
 /** Return the logarithmic prior density of the variables specified, for the non-spinning/spinning inspiral signal case.
  */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *variables);
@@ -174,5 +171,6 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
 */
 REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
+/*@}*/
 
 #endif

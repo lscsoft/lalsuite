@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include
 
 lalxmlincludedir = $(includedir)/lal
 lalxmlinclude_HEADERS = \
@@ -17,7 +17,7 @@ liblalxml_la_SOURCES = \
 	LALXMLVOTableSerializers.c
 liblalxml_la_LDFLAGS = -version-info $(LIBVERSION)
 
-CLEANFILES = \
+MOSTLYCLEANFILES = \
 	lalxml-user-env.shell \
 	lalxml-user-env.sh \
 	lalxml-user-env.csh
@@ -27,8 +27,6 @@ sysconf_DATA = \
 	lalxml-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALXMLVCSInfo.h \
 	lalxml-user-env.sh \
 	lalxml-user-env.csh
 
@@ -37,8 +35,8 @@ lalxml-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "set LALXML_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 	@printf "$(SWIG_USER_ENV)" >>$@
 
@@ -47,14 +45,15 @@ lalxml-user-env.csh lalxml-user-env.sh: lalxml-user-env.shell $(srcdir)/generate
 
 EXTRA_DIST = \
 	generate_user_env.awk \
-	generate_vcs_info.py \
-	LALXMLConfig.h.in \
-	LALXMLVCSInfo.h.in
+	LALXMLConfig.h.in
 
-LALXMLVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALXMLConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALXML $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALXMLVCSInfo.h
+MOSTLYCLEANFILES += LALXMLVCSInfo.h
+LALXMLVCSInfo.h .PHONY : gen-LALXMLVCSInfo.h
+gen-LALXMLVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALXMLVCSInfo.h $(srcdir)/LALXMLVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@
 

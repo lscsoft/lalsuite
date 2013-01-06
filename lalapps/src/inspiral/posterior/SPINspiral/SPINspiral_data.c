@@ -1147,7 +1147,7 @@ void writeSignalsToFiles(struct interferometer *ifo[], int networkSize, struct r
   
   for(i=0; i<networkSize; i++){
     double f;
-    double complex FFTout;
+    COMPLEX16 FFTout;
     
     // Fill ifo[i]->FTin with time-domain template:
     injectionWF = 1;                              //Call waveformTemplate with the injection template

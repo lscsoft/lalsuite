@@ -44,10 +44,10 @@ Given the centre \f$(x_0,y_0)\f$ and half-sides \f$(dx,dy),\f$
 the vertices of a Hexagon in a \e diagonal coordinate
 system are given by
 \f{eqnarray}{
-x_1 & = & x_0 - dx, \ \ y_1 = y_0 - dy, \nonumber \\
-x_2 & = & x_0 + dx, \ \ y_2 = y_0 - dy, \nonumber \\
-x_3 & = & x_0 + dx, \ \ y_3 = y_0 + dy, \nonumber \\
-x_4 & = & x_0 - dx, \ \ y_4 = y_0 + dy. \nonumber
+x_1 & = & x_0 - dx, \quad y_1 = y_0 - dy, \nonumber \\
+x_2 & = & x_0 + dx, \quad y_2 = y_0 - dy, \nonumber \\
+x_3 & = & x_0 + dx, \quad y_3 = y_0 + dy, \nonumber \\
+x_4 & = & x_0 - dx, \quad y_4 = y_0 + dy. \nonumber
 \f}
 The coordinates of a Hexagon oriented at an angle \f$\theta\f$ is
 found by using the formulas

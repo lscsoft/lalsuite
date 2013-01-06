@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include
 
 if LALXML
 XMLHDR = LALXMLVOTableSerializersPulsar.h
@@ -134,7 +134,7 @@ liblalpulsar_la_SOURCES = \
 
 liblalpulsar_la_LDFLAGS = -version-info $(LIBVERSION)
 
-CLEANFILES = \
+MOSTLYCLEANFILES = \
 	lalpulsar-user-env.shell \
 	lalpulsar-user-env.sh \
 	lalpulsar-user-env.csh
@@ -144,8 +144,6 @@ sysconf_DATA = \
 	lalpulsar-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALPulsarVCSInfo.h \
 	lalpulsar-user-env.sh \
 	lalpulsar-user-env.csh
 
@@ -154,8 +152,8 @@ lalpulsar-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "set LALPULSAR_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 	@printf "$(SWIG_USER_ENV)" >>$@
 
@@ -164,14 +162,15 @@ lalpulsar-user-env.csh lalpulsar-user-env.sh: lalpulsar-user-env.shell $(srcdir)
 
 EXTRA_DIST = \
 	LALPulsarConfig.h.in \
-	LALPulsarVCSInfo.h.in \
-	generate_user_env.awk \
-	generate_vcs_info.py
+	generate_user_env.awk
 
-LALPulsarVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALPulsarConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALPulsar $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALPulsarVCSInfo.h
+MOSTLYCLEANFILES += LALPulsarVCSInfo.h
+LALPulsarVCSInfo.h .PHONY : gen-LALPulsarVCSInfo.h
+gen-LALPulsarVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALPulsarVCSInfo.h $(srcdir)/LALPulsarVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@
 

@@ -93,13 +93,13 @@ the rotation of the Earth:
 	{24\,\mathrm{hours}}\right)\times\mathrm{GMST} \; ,
 \f}
 where GMST is Greenwich mean sidereal time.  The conversion routines
-here simply use the functions in the \c date package to compute
+here simply use the functions in the date package to compute
 GMST for a given GPS time, and add it to the longitude.  While this is
 simple enough, it does involve several function calls, so it is
 convenient to collect these into one routine.
 
 \heading{Horizon coordinates:} We correct a typographical
-error on the second line of Eq. 5.45 of [\ref Lang_K1999] (it should
+error on the second line of Eq. 5.45 of [\ref Lang_K1999], (it should
 have \f$\cos A\f$, not \f$\sin A\f$).  We also note that while our latitudinal
 coordinate is just the altitude \f$a\f$ in this system, our longitudinal
 coordinate increases counterclockwise, and thus corresponds to the

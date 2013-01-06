@@ -59,32 +59,14 @@ by many LAL routines:
 #include <stdarg.h>
 #include <lal/LALMalloc.h>
 
-//! Define the macro ::RESTRICT for use in place of the C99
-//! <tt>restrict</tt> keyword, to retain compatibility with C++
-#undef RESTRICT
+/* Redefine the restict keyword when compiling with C++ */
 #ifdef  __cplusplus
+#undef restrict
 #ifdef __GNUC__
-#define RESTRICT __restrict__
+#define restrict __restrict__
 #else
-#define RESTRICT
+#define restrict
 #endif
-#else
-#define RESTRICT restrict
-#endif
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/* These are non-ANSI standard routines that will be allowed in LAL */
-#ifndef SWIG /* exclude from SWIG interface */
-int getopt( int, char * const *, const char * );
-FILE *popen( const char *, const char * );
-int pclose( FILE * );
-#endif /* SWIG */
-
-#ifdef  __cplusplus
-}
 #endif
 
 #endif /* _LALSTDLIB_H */
