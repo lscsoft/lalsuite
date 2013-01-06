@@ -92,7 +92,6 @@ const MultiSSBtimes empty_MultiSSBtimes;
 const Fcomponents empty_Fcomponents;
 const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
-const BarycenterBuffer empty_BarycenterBuffer;
 
 static const LALStatus blank_status;
 
@@ -1514,32 +1513,6 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
 
 	} /* for i < numSteps */
 
-    case SSBPREC_RELATIVISTICOPT:	/* use optimized version XLALBarycenterOpt() */
-
-      baryinput.site = DetectorStates->detector;
-      baryinput.site.location[0] /= LAL_C_SI;
-      baryinput.site.location[1] /= LAL_C_SI;
-      baryinput.site.location[2] /= LAL_C_SI;
-
-      baryinput.alpha = alpha;
-      baryinput.delta = delta;
-      baryinput.dInv = 0;
-
-      for ( i=0; i < numSteps; i++ )
-        {
-          EmissionTime emit;
-          DetectorState *state = &(DetectorStates->data[i]);
-          baryinput.tgps = state->tGPS;
-
-          if ( XLALBarycenterOpt ( &emit, &baryinput, &(state->earthState), &bBuffer ) != XLAL_SUCCESS ) {
-            XLALPrintError ("XLALBarycenterOpt() failed with xlalErrno = %d\n", xlalErrno );
-            ABORT (status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL);
-          }
-
-          tSSB->DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTimeREAL8;
-          tSSB->Tdot->data[i] = emit.tDot;
-
-        } /* for i < numSteps */
       break;
 
     case SSBPREC_RELATIVISTICOPT:	/* use optimized version XLALBarycenterOpt() */
