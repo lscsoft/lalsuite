@@ -61,8 +61,6 @@
 #define EA_ACC          1E-9                    /* the timing accuracy of LALGetBinaryTimes in seconds */
 
 /*----- Macros ----- */
-/** convert GPS-time to REAL8 */
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 #define MYSIGN(x) ( ((x) < 0) ? (-1.0):(+1.0) )
@@ -268,7 +266,11 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
-      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
+      if ( (multiSSB = XLALGetMultiSSBtimes ( multiDetStates, skypos, doppler->refTime, params->SSBprec )) == NULL )
+        {
+          XLALPrintError("XLALGetMultiSSBtimes() failed with error = %d\n\n", xlalErrno );
+          ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+        }
       if ( cfBuffer )
 	{
 	  XLALDestroyMultiSSBtimes ( cfBuffer->multiSSB );
@@ -1475,53 +1477,43 @@ XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB )
  *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
  *  derivatives \f$\dot{T}_\alpha \equiv d T / d t (t_\alpha)\f$.
  *
- *  \note The return-vectors \a DeltaT and \a Tdot must be allocated already
- *  and have the same length as the input time-series \a DetStates.
+ *  \note The return-vector is allocated here
  *
  */
-void
-LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
-		SSBtimes *tSSB,			/**< [out] DeltaT_alpha = T(t_alpha) - T_0; and Tdot(t_alpha) */
-		const DetectorStateSeries *DetectorStates,/**< [in] detector-states at timestamps t_i */
-		SkyPosition pos,		/**< source sky-location */
-		LIGOTimeGPS refTime,		/**< SSB reference-time T_0 of pulsar-parameters */
-		SSBprecision precision		/**< relativistic or Newtonian SSB transformation? */
-		)
+SSBtimes *
+XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-states at timestamps t_i */
+                  SkyPosition pos,				/**< source sky-location */
+                  LIGOTimeGPS refTime,				/**< SSB reference-time T_0 of pulsar-parameters */
+                  SSBprecision precision			/**< relativistic or Newtonian SSB transformation? */
+                  )
 {
-  UINT4 numSteps, i;
-  REAL8 vn[3];		/* unit-vector pointing to source in Cart. coord. */
-  REAL8 alpha, delta;	/* source position */
-  REAL8 refTimeREAL8;
+  XLAL_CHECK_NULL ( DetectorStates != NULL, XLAL_EINVAL, "Invalid NULL input 'DetectorStates'\n" );
+  XLAL_CHECK_NULL ( precision < SSBPREC_LAST, XLAL_EDOM, "Invalid value precision=%d, allowed are [0, %d]\n", precision, SSBPREC_LAST -1 );
+  XLAL_CHECK_NULL ( pos.system == COORDINATESYSTEM_EQUATORIAL, XLAL_EDOM, "Only equatorial coordinate system (=%d) allowed, got %d\n", COORDINATESYSTEM_EQUATORIAL, pos.system );
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  UINT4 numSteps = DetectorStates->length;		/* number of timestamps */
 
-  ASSERT (DetectorStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  numSteps = DetectorStates->length;		/* number of timestamps */
-
-  ASSERT (tSSB, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (tSSB->DeltaT, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (tSSB->Tdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-
-  ASSERT (tSSB->DeltaT->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-  ASSERT (tSSB->Tdot->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-
-  ASSERT (precision < SSBPREC_LAST, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-  ASSERT ( pos.system == COORDINATESYSTEM_EQUATORIAL, status,
-	   COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-
+  // prepare output SSBtimes struct
+  int len;
+  SSBtimes *ret = XLALCalloc ( 1, len = sizeof(*ret) );
+  XLAL_CHECK_NULL ( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%d)\n", len );
+  ret->DeltaT = XLALCreateREAL8Vector ( numSteps );
+  XLAL_CHECK_NULL ( ret->DeltaT != NULL, XLAL_EFUNC, "ret->DeltaT = XLALCreateREAL8Vector(%d) failed\n", numSteps );
+  ret->Tdot = XLALCreateREAL8Vector ( numSteps );
+  XLAL_CHECK_NULL ( ret->Tdot != NULL, XLAL_EFUNC, "ret->Tdot = XLALCreateREAL8Vector(%d) failed\n", numSteps );
 
   /* convenience variables */
-  alpha = pos.longitude;
-  delta = pos.latitude;
-  refTimeREAL8 = XLALGPSGetREAL8 ( &refTime );
+  REAL8 alpha = pos.longitude;
+  REAL8 delta = pos.latitude;
+  REAL8 refTimeREAL8 = XLALGPSGetREAL8 ( &refTime );
 
   BarycenterInput baryinput = empty_BarycenterInput;
-  BarycenterBuffer *bBuffer = NULL;
 
   /*----- now calculate the SSB transformation in the precision required */
   switch (precision)
     {
+      REAL8 vn[3];		/* unit-vector pointing to source in Cart. coord. */
+
     case SSBPREC_NEWTONIAN:	/* use simple vr.vn to calculate time-delay */
 
       /*----- get the cartesian source unit-vector */
@@ -1529,16 +1521,16 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
       vn[1] = sin(alpha) * cos(delta);
       vn[2] = sin(delta);
 
-      for (i=0; i < numSteps; i++ )
+      for (UINT4 i = 0; i < numSteps; i++ )
 	{
 	  LIGOTimeGPS *ti = &(DetectorStates->data[i].tGPS);
 	  /* DeltaT_alpha */
-	  tSSB->DeltaT->data[i]  = XLALGPSGetREAL8 ( ti );
-	  tSSB->DeltaT->data[i] += SCALAR(vn, DetectorStates->data[i].rDetector);
-	  tSSB->DeltaT->data[i] -= refTimeREAL8;
+	  ret->DeltaT->data[i]  = XLALGPSGetREAL8 ( ti );
+	  ret->DeltaT->data[i] += SCALAR(vn, DetectorStates->data[i].rDetector);
+	  ret->DeltaT->data[i] -= refTimeREAL8;
 
 	  /* Tdot_alpha */
-	  tSSB->Tdot->data[i] = 1.0 + SCALAR(vn, DetectorStates->data[i].vDetector);
+	  ret->Tdot->data[i] = 1.0 + SCALAR(vn, DetectorStates->data[i].vDetector);
 
 	} /* for i < numSteps */
 
@@ -1555,17 +1547,18 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
       baryinput.delta = delta;
       baryinput.dInv = 0;
 
-      for (i=0; i < numSteps; i++ )
+      for (UINT4 i = 0; i < numSteps; i++ )
 	{
 	  EmissionTime emit;
 	  DetectorState *state = &(DetectorStates->data[i]);
 
 	  baryinput.tgps = state->tGPS;
 
-	  TRY ( LALBarycenter(status->statusPtr, &emit, &baryinput, &(state->earthState)), status);
+          if ( XLALBarycenter ( &emit, &baryinput, &(state->earthState) ) != XLAL_SUCCESS )
+            XLAL_ERROR_NULL ( XLAL_EFUNC, "XLALBarycenter() failed with xlalErrno = %d\n", xlalErrno );
 
-	  tSSB->DeltaT->data[i] = XLALGPSGetREAL8 ( &emit.te ) - refTimeREAL8;
-	  tSSB->Tdot->data[i] = emit.tDot;
+	  ret->DeltaT->data[i] = XLALGPSGetREAL8 ( &emit.te ) - refTimeREAL8;
+	  ret->Tdot->data[i] = emit.tDot;
 
 	} /* for i < numSteps */
 
@@ -1582,116 +1575,75 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
       baryinput.delta = delta;
       baryinput.dInv = 0;
 
-      for ( i=0; i < numSteps; i++ )
+      BarycenterBuffer *bBuffer = NULL;
+      for ( UINT4 i = 0; i < numSteps; i++ )
         {
           EmissionTime emit;
           DetectorState *state = &(DetectorStates->data[i]);
           baryinput.tgps = state->tGPS;
 
-          if ( XLALBarycenterOpt ( &emit, &baryinput, &(state->earthState), &bBuffer ) != XLAL_SUCCESS ) {
-            XLALPrintError ("XLALBarycenterOpt() failed with xlalErrno = %d\n", xlalErrno );
-            ABORT (status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL);
-          }
+          if ( XLALBarycenterOpt ( &emit, &baryinput, &(state->earthState), &bBuffer ) != XLAL_SUCCESS )
+            XLAL_ERROR_NULL ( XLAL_EFUNC, "XLALBarycenterOpt() failed with xlalErrno = %d\n", xlalErrno );
 
-          tSSB->DeltaT->data[i] = XLALGPSGetREAL8 ( &emit.te ) - refTimeREAL8;
-          tSSB->Tdot->data[i] = emit.tDot;
+          ret->DeltaT->data[i] = XLALGPSGetREAL8 ( &emit.te ) - refTimeREAL8;
+          ret->Tdot->data[i] = emit.tDot;
 
         } /* for i < numSteps */
+      // free buffer memory
+      XLALFree ( bBuffer );
+
       break;
 
     default:
-      XLALPrintError ("\n?? Something went wrong.. this should never be called!\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      XLAL_ERROR_NULL (XLAL_EFAILED, "\n?? Something went wrong.. this should never be called!\n\n" );
       break;
     } /* switch precision */
 
-
-  // free buffer memory
-  if ( bBuffer ) XLALFree ( bBuffer );
-
   /* finally: store the reference-time used into the output-structure */
-  tSSB->refTime = refTime;
+  ret->refTime = refTime;
 
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
+  return ret;
 
-} /* LALGetSSBtimes() */
+} /* XLALGetSSBtimes() */
 
 /** Multi-IFO version of LALGetSSBtimes().
  * Get all SSB-timings for all input detector-series.
  *
- * NOTE: contrary to LALGetSSBtimes(), this functions *allocates* the output-vector,
+ * NOTE: this functions *allocates* the output-vector,
  * use XLALDestroyMultiSSBtimes() to free this.
  */
-void
-LALGetMultiSSBtimes (LALStatus *status,			/**< pointer to LALStatus structure */
-		     MultiSSBtimes **multiSSB,		/**< [out] SSB-timings for all input detector-state series */
-		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
-		     SkyPosition skypos,		/**< source sky-position [in equatorial coords!] */
-		     LIGOTimeGPS refTime,		/**< SSB reference-time T_0 for SSB-timing */
-		     SSBprecision precision		/**< use relativistic or Newtonian SSB timing?  */
-		     )
+MultiSSBtimes *
+XLALGetMultiSSBtimes ( const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
+                       SkyPosition skypos,		/**< source sky-position [in equatorial coords!] */
+                       LIGOTimeGPS refTime,		/**< SSB reference-time T_0 for SSB-timing */
+                       SSBprecision precision		/**< use relativistic or Newtonian SSB timing?  */
+                       )
 {
-  UINT4 X, numDetectors;
-  MultiSSBtimes *ret = NULL;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
   /* check input */
-  ASSERT (multiDetStates, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (multiDetStates->length, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (multiSSB, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( *multiSSB == NULL, status,COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
-  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+  XLAL_CHECK_NULL ( multiDetStates != NULL, XLAL_EINVAL, "Invalid NULL input 'multiDetStates'\n");
+  XLAL_CHECK_NULL ( multiDetStates->length > 0, XLAL_EINVAL, "Invalid zero-length 'multiDetStates'\n");
 
-  numDetectors = multiDetStates->length;
+  UINT4 numDetectors = multiDetStates->length;
 
-  if ( ( ret = LALCalloc( 1, sizeof( *ret ) )) == NULL ) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
+  // prepare return struct
+  int len;
+  MultiSSBtimes *ret = XLALCalloc ( 1, len = sizeof( *ret ) );
+  XLAL_CHECK_NULL ( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%d)\n", len );
   ret->length = numDetectors;
-  if ( ( ret->data = LALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
-    LALFree ( ret );
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
+  ret->data = XLALCalloc ( numDetectors, len=sizeof ( *ret->data ) );
+  XLAL_CHECK_NULL ( ret->data != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(%d,%d)\n", numDetectors, len );
 
-  for ( X=0; X < numDetectors; X ++ )
+  // loop over detectors
+  for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
-      SSBtimes *SSBtimesX = NULL;
-      UINT4 numStepsX = multiDetStates->data[X]->length;
-
-      ret->data[X] = LALCalloc ( 1, sizeof ( *(ret->data[X]) ) );
-      SSBtimesX = ret->data[X];
-      SSBtimesX->DeltaT = XLALCreateREAL8Vector ( numStepsX );
-      if ( (SSBtimesX->Tdot = XLALCreateREAL8Vector ( numStepsX )) == NULL ) {
-	XLALPrintError ("\nOut of memory!\n\n");
-	goto failed;
-      }
-
-      LALGetSSBtimes (status->statusPtr, SSBtimesX, multiDetStates->data[X], skypos, refTime, precision );
-      if ( status->statusPtr->statusCode )
-	{
-	  XLALPrintError ( "\nCall to LALGetSSBtimes() has failed ... \n\n");
-	  goto failed;
-	}
+      ret->data[X] = XLALGetSSBtimes ( multiDetStates->data[X], skypos, refTime, precision );
+      XLAL_CHECK_NULL ( ret->data[X] != NULL, XLAL_EFUNC, "ret->data[%d] = XLALGetSSBtimes() failed with xlalErrno = %d\n", X, xlalErrno );
 
     } /* for X < numDet */
 
-  goto success;
+  return ret;
 
- failed:
-  /* free all memory allocated so far */
-  XLALDestroyMultiSSBtimes ( ret );
-  ABORT ( status, -1, "LALGetMultiSSBtimes failed" );
-
- success:
-  (*multiSSB) = ret;
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-
-} /* LALGetMultiSSBtimes() */
+} /* XLALGetMultiSSBtimes() */
 
 /* ===== Object creation/destruction functions ===== */
 

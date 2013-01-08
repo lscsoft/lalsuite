@@ -256,15 +256,18 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
       multiSSB = cfBuffer->multiSSB;
       multiAMcoef = cfBuffer -> multiAMcoef;
     }
-  else 
+  else
     {
       SkyPosition skypos;
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
       /* compute new AM-coefficients and SSB-times */
-      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
-
+      if ( (multiSSB = XLALGetMultiSSBtimes ( multiDetStates, skypos, doppler->refTime, params->SSBprec )) == NULL )
+        {
+          XLALPrintError("XLALGetMultiSSBtimes() failed with error = %d\n\n", xlalErrno );
+          ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+        }
       LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
       BEGINFAIL ( status ) {
 	XLALDestroyMultiSSBtimes ( multiSSB );

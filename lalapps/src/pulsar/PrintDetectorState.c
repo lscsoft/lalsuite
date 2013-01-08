@@ -143,21 +143,8 @@ main(int argc, char *argv[])
   XLAL_CHECK ( (detStates = XLALGetDetectorStates ( config.timestamps, config.det, config.edat, 0 )) != NULL, XLAL_EFUNC );
 
   /* ----- compute associated SSB timing info ----- */
-  SSBtimes *tSSB = NULL;
-  if ( (tSSB = XLALCalloc (1, sizeof(*tSSB))) == NULL ){
-    XLALPrintError("%s: XCalloc (1, %s) failed.\n", __func__, sizeof(*tSSB) );
-    XLAL_ERROR ( XLAL_ENOMEM );
-  }
-  if ( (tSSB->DeltaT = XLALCreateREAL8Vector (1)) == NULL ) {
-    XLALPrintError ("%s: XLALCreateREAL8Vector (1) failed.\n", __func__ );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
-  if ( (tSSB->Tdot = XLALCreateREAL8Vector (1)) == NULL ) {
-    XLALPrintError ("%s: XLALCreateREAL8Vector (1) failed.\n", __func__ );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
-
-  LAL_CALL ( LALGetSSBtimes (&status, tSSB, detStates, config.skypos, config.timeGPS, SSBPREC_RELATIVISTIC ), &status);
+  SSBtimes *tSSB = XLALGetSSBtimes ( detStates, config.skypos, config.timeGPS, SSBPREC_RELATIVISTIC );
+  XLAL_CHECK ( tSSB != NULL, XLAL_EFUNC, "XLALGetSSBtimes() failed with xlalErrno = %d\n", xlalErrno );
 
   /* ===== 1) compute AM-coeffs the 'old way': [used in CFSv1] ===== */
   BarycenterInput baryinput = empty_BarycenterInput;

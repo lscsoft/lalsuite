@@ -206,21 +206,9 @@ int XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut, const MultiSSBtimes *
 SSBtimes *XLALDuplicateSSBtimes ( const SSBtimes *tSSB );
 MultiSSBtimes *XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB );
 
-void
-LALGetSSBtimes (LALStatus *,
-		SSBtimes *tSSB,
-		const DetectorStateSeries *DetectorStates,
-		SkyPosition pos,
-		LIGOTimeGPS refTime,
-		SSBprecision precision);
+SSBtimes *XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates, SkyPosition pos, LIGOTimeGPS refTime, SSBprecision precision );
+MultiSSBtimes *XLALGetMultiSSBtimes ( const MultiDetectorStateSeries *multiDetStates, SkyPosition skypos, LIGOTimeGPS refTime, SSBprecision precision);
 
-void
-LALGetMultiSSBtimes (LALStatus *,
-		     MultiSSBtimes **multiSSB,
-		     const MultiDetectorStateSeries *multiDetStates,
-		     SkyPosition pos,
-		     LIGOTimeGPS refTime,
-		     SSBprecision precision );
 
 void ComputeFStat ( LALStatus *, Fcomponents *Fstat,
 		    const PulsarDopplerParams *doppler,
