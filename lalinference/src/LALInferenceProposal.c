@@ -353,7 +353,7 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
       LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
     }
     */
-    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--proposal-drawprior"))
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
     
     if(LALInferenceCheckVariable(proposedParams,"phase")) {
