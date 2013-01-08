@@ -52,10 +52,6 @@
 #include "ComplexAM.h"
 
 /*---------- local DEFINES ----------*/
-#define TRUE (1==1)
-#define FALSE (1==0)
-
-
 #define LD_SMALL4       (2.0e-4)		/**< "small" number for REAL4*/
 #define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
 
@@ -94,12 +90,9 @@ const Fcomponents empty_Fcomponents;
 const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
 
-static const LALStatus blank_status;
-
 static REAL8 p,q,r;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
 
 /*---------- internal prototypes ----------*/
-int finite(double x);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -418,7 +411,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 	}
 
 #ifndef LAL_NDEBUG
-      if ( !finite(creal(FcX.Fa)) || !finite(cimag(FcX.Fa)) || !finite(creal(FcX.Fb)) || !finite(cimag(FcX.Fb)) ) {
+      if ( !isfinite(creal(FcX.Fa)) || !isfinite(cimag(FcX.Fa)) || !isfinite(creal(FcX.Fb)) || !isfinite(cimag(FcX.Fb)) ) {
 	XLALPrintError("XLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n",
 		      creal(FcX.Fa), cimag(FcX.Fa), creal(FcX.Fb), cimag(FcX.Fb) );
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
@@ -707,7 +700,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	  V_alpha = Tn / qn;
 
 #ifndef LAL_NDEBUG
-	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
+	  if ( !isfinite(U_alpha) || !isfinite(V_alpha) || !isfinite(pn) || !isfinite(qn) || !isfinite(Sn) || !isfinite(Tn) ) {
 	    XLAL_ERROR (COMPUTEFSTATC_EIEEE);
 	  }
 #endif
@@ -980,7 +973,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 	  V_alpha = Tn / qn;
 
 #ifndef LAL_NDEBUG
-	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
+	  if ( !isfinite(U_alpha) || !isfinite(V_alpha) || !isfinite(pn) || !isfinite(qn) || !isfinite(Sn) || !isfinite(Tn) ) {
 	    XLAL_ERROR (COMPUTEFSTATC_EIEEE);
 	  }
 #endif
@@ -1787,7 +1780,7 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
   REAL8 ts, tc;
   REAL8 dummy;
 
-  static BOOLEAN firstCall = TRUE;
+  static BOOLEAN firstCall = 1;
   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
 
   /* the first time we get called, we set up the lookup-table */
@@ -1799,7 +1792,7 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
           sinVal[k] = sin( LAL_TWOPI * k * OO_LUT_RES );
           cosVal[k] = cos( LAL_TWOPI * k * OO_LUT_RES );
         }
-      firstCall = FALSE;
+      firstCall = 0;
     }
 
   /* we only need the fractional part of 'x', which is number of cylces,
