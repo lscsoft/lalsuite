@@ -266,6 +266,10 @@ tagFindChirpTmpltParams
                                                          * \c REAL4 rather than \c REAL8; This must be set to the same value as \c dynRange in the \c FindChirpDataParams; For LIGO data a
                                                          * value of \f$d = 2^{69}\f$ is appropriate
                                                          */
+  UINT4                         invSpecTrunc;           /**< The length to which to truncate the inverse power spectral density of the data in the time domain; If set to zero, no
+                                                         * truncation is performed
+                                                         */
+
   REAL4Vector                  *xfacVec;		/**< For frequency domain templates, this is a
                                                          * vector of length \f$N/2+1\f$ which contains the quantity \f$k^{-1/3}\f$; For time
                                                          * domain templates, this is a workspace vector of length \f$N\f$ which contains the
