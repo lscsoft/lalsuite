@@ -1758,7 +1758,7 @@ UINT4 checkInjectionMchirp(
     injTime = thisInject->geocent_end_time;
     startDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentStart);
     endDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentEnd);
-    fprintf(stderr,"%ld %ld\n",startDiff,endDiff);
+    fprintf(stderr,"%" LAL_INT8_FORMAT " %" LAL_INT8_FORMAT "\n",startDiff,endDiff);
     if ((startDiff > 0) && (endDiff < 0))
     {
       verbose("Generating analysis segment for injection at %d.\n",
