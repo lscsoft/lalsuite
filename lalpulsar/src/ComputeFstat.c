@@ -1514,7 +1514,7 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
   /* convenience variables */
   alpha = pos.longitude;
   delta = pos.latitude;
-  refTimeREAL8 = GPS2REAL8(refTime);
+  refTimeREAL8 = XLALGPSGetREAL8 ( &refTime );
 
   BarycenterInput baryinput = empty_BarycenterInput;
   BarycenterBuffer *bBuffer = NULL;
@@ -1533,7 +1533,7 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
 	{
 	  LIGOTimeGPS *ti = &(DetectorStates->data[i].tGPS);
 	  /* DeltaT_alpha */
-	  tSSB->DeltaT->data[i]  = GPS2REAL8 ( (*ti) );
+	  tSSB->DeltaT->data[i]  = XLALGPSGetREAL8 ( ti );
 	  tSSB->DeltaT->data[i] += SCALAR(vn, DetectorStates->data[i].rDetector);
 	  tSSB->DeltaT->data[i] -= refTimeREAL8;
 
@@ -1564,7 +1564,7 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
 
 	  TRY ( LALBarycenter(status->statusPtr, &emit, &baryinput, &(state->earthState)), status);
 
-	  tSSB->DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTimeREAL8;
+	  tSSB->DeltaT->data[i] = XLALGPSGetREAL8 ( &emit.te ) - refTimeREAL8;
 	  tSSB->Tdot->data[i] = emit.tDot;
 
 	} /* for i < numSteps */
@@ -1593,7 +1593,7 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
             ABORT (status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL);
           }
 
-          tSSB->DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTimeREAL8;
+          tSSB->DeltaT->data[i] = XLALGPSGetREAL8 ( &emit.te ) - refTimeREAL8;
           tSSB->Tdot->data[i] = emit.tDot;
 
         } /* for i < numSteps */
@@ -2153,7 +2153,6 @@ XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiFstatAtoms )
  * 'canonical' coordinates A^mu = {A1, A2, A3, A4}. The equations are found in
  * \ref JKS98 or \ref Prix07 Eq.(2).
  *
- * NOTE: Amu[] need to be an allocated 4-dim gsl-vector!
  */
 int
 XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu,		/**< [out] canonical amplitude coordinates A^mu = {A1, A2, A3, A4} */
