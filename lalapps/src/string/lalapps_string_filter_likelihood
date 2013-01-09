@@ -63,7 +63,7 @@ def parse_command_line():
 
 	filename = filenames or []
 	if options.likelihood_cache is not None:
-		filenames += [lal.CacheEntry(line).path() for line in file(options.likelihood_cache)]
+		filenames += [lal.CacheEntry(line).path for line in file(options.likelihood_cache)]
 
 	return options, (filenames or [None])
 
