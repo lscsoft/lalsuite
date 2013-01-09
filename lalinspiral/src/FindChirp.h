@@ -134,6 +134,7 @@ that implement the search.
 #define FINDCHIRPH_EPTFW 27	/**< Error generating PTF waveform */
 #define FINDCHIRPH_EIGEN 28	/**< Error computing eigenvalues */
 #define FINDCHIRPH_EIMRW 29	/**< Error computing IMR waveform */
+#define FINDCHIRPH_EFLOX 30     /**< Error computing variable flower */
 /*@}*/
 
 /** \cond DONT_DOXYGEN */
@@ -163,6 +164,7 @@ that implement the search.
 #define FINDCHIRPH_MSGEPTFW "Error generating PTF waveform"
 #define FINDCHIRPH_MSGEIGEN "Error computing eigenvalues"
 #define FINDCHIRPH_MSGEIMRW "Error computing IMR waveform"
+#define FINDCHIRPH_MSGEFLOX "Error calculating an appropriate value of f_low"
 /** \endcond */
 
 /** This structure provides the essential information for the

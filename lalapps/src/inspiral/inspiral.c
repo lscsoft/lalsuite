@@ -3682,6 +3682,7 @@ fprintf( a, "  --number-of-segments N       set number of data segments to N\n")
 fprintf( a, "  --segment-overlap N          overlap data segments by N points\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --low-frequency-cutoff F     do not filter below F Hz\n");\
+fprintf( a, " --vary-template-flower        use variable template f_lower\n");\
 fprintf( a, "  --inverse-spec-length T      set length of inverse spectrum to T seconds\n");\
 fprintf( a, "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n");\
 fprintf( a, "\n");\
@@ -5697,6 +5698,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     fprintf( stderr, "--bank-file must be specified\n" );
     exit( 1 );
+  }
+  /* Check FindChirpSP is used if variable f_lower is specified */
+  if ((approximant != FindChirpSP) && (doVaryTmpFlower))
+  {
+    fprintf( stderr, "Approximant must be FindChirpSP if "
+        "--vary-template-flower is used\n" );
+    exit(1);
   }
 
   /* check FindChirpSP is used if reverse chirp bank is specified */

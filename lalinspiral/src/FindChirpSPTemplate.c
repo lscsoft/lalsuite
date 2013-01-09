@@ -300,6 +300,7 @@ LALFindChirpSPTemplate (
     REAL4 currTime;
     REAL4 maxT = ((REAL4) params->deltaT * (REAL4) (numPoints-12))/4.;
     maxT -= 0.5 * (REAL4) params->invSpecTrunc * (REAL4) params->deltaT;
+    fLow = -101;
     for (f=0; f < 100; f++)
     {
       currTime = XLALFindChirpChirpTime( tmplt->mass1,
@@ -312,13 +313,16 @@ LALFindChirpSPTemplate (
         break;
       }
     }   
+    // If nothing passed then fail
+    if ( fLow < -100)
+    {
+      ABORT( status, FINDCHIRPH_EFLOX, FINDCHIRPH_MSGEFLOX );
+    }
   }
   else
   {
     fLow = params->fLow;
   }
-
-  fprintf(stderr,"Using an flow of %e\n",fLow);
 
   kmin = fLow / deltaF > 1 ? fLow / deltaF : 1;
   kmax = tmplt->fFinal / deltaF < numPoints/2 ?
