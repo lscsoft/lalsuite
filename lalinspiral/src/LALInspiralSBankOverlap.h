@@ -7,8 +7,8 @@
 typedef struct tagWS {
     size_t n;
     fftwf_plan plan;
-    complex float *zf;
-    complex float *zt;
+    COMPLEX8 *zf;
+    COMPLEX8 *zt;
 } WS;
 
 WS *XLALCreateSBankWorkspaceCache(void);
