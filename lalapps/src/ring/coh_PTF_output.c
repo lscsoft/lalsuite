@@ -103,15 +103,17 @@ int coh_PTF_output_events_xml(
   results = XLALOpenLIGOLwXMLFile(outputFile);
 
   /* output the process table */
-  XLALWriteLIGOLwXMLProcessTable(results,\
-                                 coh_PTF_create_process_table(params));
+  ProcessTable* processTable = coh_PTF_create_process_table(params);
+  XLALWriteLIGOLwXMLProcessTable(results,processTable);
+  LALFree(processTable);
 
   /* output process params table */
   XLALWriteLIGOLwXMLProcessParamsTable(results, processParamsTable);
 
   /* output search summary table */
-  XLALWriteLIGOLwXMLSearchSummaryTable(results,\
-                                       coh_PTF_create_search_summary(params));
+  SearchSummaryTable* searchSummTable = coh_PTF_create_search_summary(params);
+  XLALWriteLIGOLwXMLSearchSummaryTable(results,searchSummTable);
+  LALFree(searchSummTable);
 
   /* write the signals injected in a template bank simulation */
   if ( injections )
