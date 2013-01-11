@@ -309,8 +309,7 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState) {
   }
 }
 
-static void
-SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const UINT4 BIGWEIGHT = 20;
   const UINT4 SMALLWEIGHT = 5;
   const UINT4 TINYWEIGHT = 1;
@@ -329,7 +328,7 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
   {
     LALInferenceSetupAdaptiveProposals(runState);
-    LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
+    LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, TINYWEIGHT);
   }
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi"))
@@ -2116,7 +2115,7 @@ void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables
     if(LALInferenceGetProcParamVal(runState->commandLine,"--mcmcprop")) 
 	   { SetupDefaultProposal(runState, proposedParams); }
 	 else {
-	 	SetupDefaultNSProposal(runState,proposedParams);
+	 	LALInferenceSetupDefaultNSProposal(runState,proposedParams);
 	 }
   }  
   

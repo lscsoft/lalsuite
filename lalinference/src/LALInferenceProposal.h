@@ -249,6 +249,8 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
 /** Helper function to setup the adaptive step proposals before the run */
 void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state);
 
+void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 /*@}*/
 
 #endif
