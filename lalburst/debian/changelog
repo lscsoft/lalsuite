@@ -1,3 +1,9 @@
+lalburst (1.1.6-1) unstable; urgency=low
+
+  * LALBurst 1.1.6
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 Jan 2013 16:36:51 -0600
+
 lalburst (1.1.5-1) unstable; urgency=low
 
   * LALburst 1.1.5
