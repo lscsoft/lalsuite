@@ -1178,8 +1178,8 @@ int main(int argc, char **argv)
     fprintf(stderr,"There are %d total triggers after cluster.\n", params->numEvents);
   }
 
-  coh_PTF_output_events_xml(params->outputFile, eventList, procpar,\
-                            time_slide_head, params);
+  coh_PTF_output_events_xml(params->outputFile, eventList, params->injectList,\
+                            procpar, time_slide_head, params);
 
   if (skyPoints->data)
     LALFree(skyPoints->data);

@@ -983,6 +983,9 @@ Arguments for each section follow:\n\n";
 	/* Call setupLivePointsArray() to populate live points structures */
 	LALInferenceSetupLivePointsArray(state);
 
+	LALInferenceSetupDefaultNSProposal(state,state->currentParams);
+	
+	
 	/* Call nested sampling algorithm */
 	state->algorithm(state);
 

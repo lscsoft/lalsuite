@@ -1740,7 +1740,7 @@ UINT4 checkInjectionMchirp(
 {
   /* define variables */
   LIGOTimeGPS injTime, segmentStart, segmentEnd;
-  REAL8 tmpltMchirp,injMchirp,mchirpDiff;
+  REAL8 tmpltMchirp,injMchirp,mchirpDiff,mchirpWin;
   INT8 startDiff, endDiff;
   SimInspiralTable *thisInject = NULL;
   UINT4 passMchirpCheck;
@@ -1758,7 +1758,6 @@ UINT4 checkInjectionMchirp(
     injTime = thisInject->geocent_end_time;
     startDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentStart);
     endDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentEnd);
-    fprintf(stderr,"%ld %ld\n",startDiff,endDiff);
     if ((startDiff > 0) && (endDiff < 0))
     {
       verbose("Generating analysis segment for injection at %d.\n",
@@ -1771,9 +1770,19 @@ UINT4 checkInjectionMchirp(
       }
       injMchirp = thisInject->mchirp;
       tmpltMchirp = tmplt->chirpMass;
-      fprintf(stderr,"%e %e \n",injMchirp,tmpltMchirp);
       mchirpDiff = (injMchirp - tmpltMchirp)/tmpltMchirp;
-      if (fabs(mchirpDiff) > params->injMchirpWindow)
+      /* The mchirp window is increased with mchirp */
+      if (injMchirp < 2)
+        mchirpWin = params->injMchirpWindow;
+      else if (injMchirp < 3)
+        mchirpWin = params->injMchirpWindow * 2.5;
+      else if (injMchirp < 4)
+        mchirpWin = params->injMchirpWindow * 5;
+      else
+        // Note that I haven't tuned this above Mchirp = 6
+        mchirpWin = params->injMchirpWindow * 10;
+
+      if (fabs(mchirpDiff) > mchirpWin)
         passMchirpCheck = 0;
       else
         passMchirpCheck = 1;
