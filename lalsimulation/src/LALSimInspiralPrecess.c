@@ -17,8 +17,8 @@
  *  MA  02111-1307  USA
  */
 
-#include "LALSimInspiralPrecess.h"
-#include "lal/LALAtomicDatatypes.h"
+#include <lal/LALSimInspiralPrecess.h>
+#include <lal/LALAtomicDatatypes.h>
 
 /**
  * Takes in the h_lm spherical harmonic decomposed modes and rotates the modes
