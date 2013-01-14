@@ -1848,10 +1848,14 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   
   static REAL8 previous_m1;
   static REAL8 previous_m2;
-  static REAL8 previous_spin1z;
-  static REAL8 previous_spin2z;
+  static REAL8 previous_spin1z, previous_spin1y, previous_spin1x;
+  static REAL8 previous_spin2z, previous_spin2y, previous_spin2x;
   static REAL8 previous_phi0;
-  static REAL8 previous_inclination;
+  static REAL8 previous_inclination, previous_distance;
+  static REAL8 previous_deltaF, previous_f_min, previous_f_max;
+  static REAL8 previous_lambda1, previous_lambda2;
+  static int previous_order, previous_amporder;
+  static Approximant previous_approximant;
   REAL8 *m1_p,*m2_p;
   REAL8 deltaF, f_max;
   
@@ -1952,28 +1956,54 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
       XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'freqData'.\n");
       XLAL_ERROR_VOID(XLAL_EFAULT);
     }
+
     deltaF = IFOdata->freqData->deltaF;
-    
+    /* Currently (2013-01-13) the inclination parameter is unused in XLALSimInspiralChooseFDWaveform.
+     * If this ever changes, the following code needs to be updated to avoid
+     * applying iota corrections twice
+     */
     double cosi = cos(inclination);
     double plusCoef  = -0.5 * (1.0 + cosi*cosi);
     double crossCoef = cosi;
     
-    if(previous_m1 != m1 || previous_m2 != m2 || previous_spin1z != spin1z || previous_spin2z != spin2z || previous_phi0 != phi0){
-      XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&htilde, phi0, deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
+    /* Recalculate waveform only if parameters changed.
+     DOES NOT CHECK nonGRparams or waveFlags! */
+    if(previous_m1 != m1 || previous_m2 != m2 ||\
+      previous_spin1z != spin1z || previous_spin1y!=spin1y ||\
+      previous_spin1x != spin1x || previous_spin2z != spin2z ||\
+      previous_spin2y != spin2y || previous_spin2x != spin2x ||\
+      previous_phi0 != phi0 || previous_deltaF != deltaF ||\
+      previous_f_min != f_min || previous_f_max != f_max ||\
+      previous_distance != distance || previous_lambda1 != lambda1 ||\
+      previous_lambda2 != lambda2 || previous_order != order ||\
+      previous_amporder != amporder || previous_approximant!=approximant ){
+	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&htilde, phi0, deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
 						   spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, f_max, distance,
 						   inclination, lambda1, lambda2, waveFlags, nonGRparams,
 						   amporder, order, approximant), errnum);  
-      previous_m1 = m1;
-      previous_m2 = m2;
-      previous_spin1z = spin1z;
-      previous_spin2z = spin2z;
-      previous_phi0 = phi0;
-      previous_inclination = inclination;
-    
-      if (htilde==NULL || htilde->data==NULL || htilde->data->data==NULL ) {
-        XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'htilde'.\n");
-        XLAL_ERROR_VOID(XLAL_EFAULT);
-      }
+	previous_m1 = m1;
+	previous_m2 = m2;
+	previous_spin1z = spin1z;
+	previous_spin1y = spin1y;
+	previous_spin1x = spin1x;
+	previous_spin2z = spin2z;
+	previous_spin2y = spin2y;
+	previous_spin2x = spin2x;
+	previous_phi0 = phi0;
+	previous_distance = distance;
+	previous_lambda1 = lambda1;
+	previous_lambda2 = lambda2;
+	previous_amporder = amporder;
+	previous_order = order;
+	previous_f_min = f_min;
+	previous_f_max = f_max;
+	previous_approximant = approximant;
+	previous_deltaF = deltaF;
+
+	if (htilde==NULL || htilde->data==NULL || htilde->data->data==NULL ) {
+	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'htilde'.\n");
+	  XLAL_ERROR_VOID(XLAL_EFAULT);
+	}
       
       COMPLEX16 *dataPtr = htilde->data->data;
 
