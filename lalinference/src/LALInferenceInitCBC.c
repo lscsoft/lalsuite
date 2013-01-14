@@ -398,6 +398,23 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(state->priorArgs,"densityVNR", &densityVNR , LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   }
 
+  /* Read injection XML file for parameters if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
+  if(ppt){
+    SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
+    if(!injTable){
+      fprintf(stderr,"Unable to open injection file %s\n",ppt->value);
+      exit(1);
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--event");
+    if(ppt){
+      event= atoi(ppt->value);
+      fprintf(stderr,"Reading event %d from file\n",event);
+      i=0;
+      while(i<event) {i++; injTable=injTable->next;} /* select event */
+    }
+  }
+
   /* See if there are any parameters pinned to injection values */
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
     char *pinned_params=ppt->value;
@@ -417,25 +434,6 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     }
   }
   
-  
-  
-  /* Read injection XML file for parameters if specified */
-  ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
-  if(ppt){
-    SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
-    if(!injTable){
-      fprintf(stderr,"Unable to open injection file %s\n",ppt->value);
-      exit(1);
-    }
-    ppt=LALInferenceGetProcParamVal(commandLine,"--event");
-    if(ppt){
-      event= atoi(ppt->value);
-      fprintf(stderr,"Reading event %d from file\n",event);
-      i=0;
-      while(i<event) {i++; injTable=injTable->next;} /* select event */
-    }
-  }
-
   
   /* Over-ride approximant if user specifies */
   ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
