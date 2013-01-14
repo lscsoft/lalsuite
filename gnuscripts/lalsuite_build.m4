@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 49
+# serial 50
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -350,19 +350,6 @@ AC_ARG_ENABLE(
   ], [ lalsimulation=${all_lal:-true} ] )
 ])
 
-AC_DEFUN([LALSUITE_ENABLE_LALDETCHAR],
-[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
-AC_ARG_ENABLE(
-  [laldetchar],
-  AC_HELP_STRING([--enable-laldetchar],[compile code that requires laldetchar library [default=no]]),
-  [ case "${enableval}" in
-      yes) laldetchar=true;;
-      no) laldetchar=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-laldetchar) ;;
-    esac
-  ], [ laldetchar=${all_lal:-false} ] )
-])
-
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
@@ -379,6 +366,25 @@ if test "$lalmetaio" = "false"; then
 fi
 if test "$lalsimulation" = "false"; then
   lalburst=false
+fi
+])
+
+AC_DEFUN([LALSUITE_ENABLE_LALDETCHAR],
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
+  [laldetchar],
+  AC_HELP_STRING([--enable-laldetchar],[compile code that requires laldetchar library [default=no]]),
+  [ case "${enableval}" in
+      yes) laldetchar=true;;
+      no) laldetchar=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-laldetchar) ;;
+    esac
+  ], [ laldetchar=${all_lal:-false} ] )
+if test "$lalmetaio" = "false"; then
+  laldetchar=false
+fi
+if test "$lalburst" = "false"; then
+  laldetchar=false
 fi
 ])
 
