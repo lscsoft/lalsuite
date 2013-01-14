@@ -1,5 +1,5 @@
 /**
-\addtogroup support
+\addtogroup pkg_support
 
 \brief This package covers LAL support routines.
 

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lal],[6.7.2.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.9.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -115,8 +115,8 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[3])
-AC_SUBST([LIBREVISION],[2])
+AC_SUBST([LIBCURRENT],[5])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -134,11 +134,13 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[1])
-AC_SUBST([LIBREVISION_SUPPORT],[2])
-AC_SUBST([LIBAGE_SUPPORT],[1])
+AC_SUBST([LIBCURRENT_SUPPORT],[2])
+AC_SUBST([LIBREVISION_SUPPORT],[0])
+AC_SUBST([LIBAGE_SUPPORT],[2])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
 
+# check for git repo
+LALSUITE_CHECK_GIT_REPO
 
 LAL_WITH_CC
 LAL_WITH_CFLAGS
@@ -178,8 +180,6 @@ AC_DEFINE_UNQUOTED([LAL_VERSION_MICRO],[$lal_version_micro],[LAL Version Micro N
 AC_DEFINE_UNQUOTED([LAL_VERSION_DEVEL],[$lal_version_devel],[LAL Version Devel Number])
 AC_DEFINE_UNQUOTED([LAL_CONFIGURE_ARGS],["$ac_configure_args"],[LAL Configure Arguments])
 AC_DEFINE_UNQUOTED([LAL_CONFIGURE_DATE],["$lal_configure_date"],[LAL Configure Date])
-test "$prefix"="NONE" && lal_prefix="$ac_default_prefix" || lal_prefix="$prefix"
-AC_DEFINE_UNQUOTED([LAL_PREFIX],["$lal_prefix"],[LAL Install Prefix])
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -230,7 +230,8 @@ LALSUPPORT_LIBADD=""
 
 # system library checks
 AC_CHECK_LIB([m],[sin])
-AC_CHECK_LIB([z],[compress],[LALSUPPORT_LIBADD="$LALSUPPORT_LIBADD -lz"])
+AC_CHECK_LIB([z],[compress],[LALSUPPORT_LIBADD="$LALSUPPORT_LIBADD -lz"],
+             [AC_MSG_ERROR([could not find the zlib library])])
 
 # check for platform specific libs
 case "${host_os}" in
@@ -239,7 +240,8 @@ esac
 
 # check for system headers files
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h])
+AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h regex.h glob.h])
+AC_CHECK_HEADERS([zlib.h],,[AC_MSG_ERROR([could not find zlib.h])])
 AC_CHECK_HEADERS([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
 AC_CHECK_HEADERS([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
 AC_MSG_CHECKING([for gethostname prototype in unistd.h])
@@ -356,8 +358,9 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 
 # checks for library functions
-AC_CHECK_FUNCS([getopt])
-AC_CHECK_FUNCS([getopt_long])
+AC_CHECK_FUNCS([stat],,[AC_MSG_ERROR([could not find the stat() function])])
+AC_CHECK_FUNCS([getopt],,[AC_MSG_ERROR([could not find the getopt() function])])
+AC_CHECK_FUNCS([getopt_long],,[AC_MSG_ERROR([could not find the getopt_long() function])])
 AC_CHECK_FUNCS([putenv])
 
 # set package documentation install path
@@ -380,20 +383,19 @@ INCLUDEMKFILE=$srcdir/misc/include.mk
 AC_SUBST_FILE([INCLUDEMKFILE])
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LAL has now been successfully configured:
 
-        LAL has now been successfully configured:
+* CUDA support is $CUDA_ENABLE_VAL
+* BOINC support is $BOINC_ENABLE_VAL
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
-            CUDA support is $CUDA_ENABLE_VAL
-            BOINC support is $BOINC_ENABLE_VAL
-            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+and will be installed under the directory:
 
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LAL
-        and run 'make install' to install LAL
-
-================================================================="
+Now run 'make' to build LAL,
+and run 'make install' to install LAL.
+==================================================
+"

@@ -28,11 +28,6 @@
 #include "boinc/filesys.h"
 
 #include <lal/LALError.h>
-#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
-#include "../HoughFStatToplist.h"
-#else
-#include "GCTtoplist.h"
-#endif
 
 #ifndef EAH_LOGLEVEL
 #define EAH_LOGLEVEL 1        /* LOG_DEBUG */
@@ -41,10 +36,17 @@
 #define EAH_LALDEBUGLEVEL 33  /* DebugLevel = 1, but without time-consuming memory debugging */
 #endif
 
-/* linking proper functions to the hooks in HierarchicalSearch.c */
+/* linking proper functions to the hooks in HierarchicalSearch.c and HierarchSearchGCT.c */
 
-#define SHOW_PROGRESS show_progress
-#define fopen boinc_fopen
+#ifdef HIERARCHSEARCHGCT /* used for HierarchSearchGCT */
+
+#include "GCTtoplist.h"
+#define GET_GCT_CHECKPOINT read_gct_checkpoint
+#define SET_GCT_CHECKPOINT write_boinc_gct_checkpoint
+
+#else /* #ifdef HIERARCHSEARCHGCT */
+
+#include "../HoughFStatToplist.h"
 
 #ifndef HS_CHECKPOINTING
 #define HS_CHECKPOINTING 1
@@ -64,10 +66,15 @@
   }
 #define SET_CHECKPOINT set_checkpoint()
 
-#else
+#else /* if (HS_CHECKPOINTING) */
 #define SET_CHECKPOINT
 #define GET_CHECKPOINT(toplist,count,total,outputname,cptname) *count=0;
-#endif
+#endif /* if (HS_CHECKPOINTING) */
+
+#endif /* #ifdef HIERARCHSEARCHGCT */
+
+#define SHOW_PROGRESS show_progress
+#define fopen boinc_fopen
 
 #ifdef  __cplusplus
 extern "C" {
@@ -115,6 +122,12 @@ extern void show_progress(REAL8 rac,   REAL8 dec,
 			  REAL8 count, REAL8 total,
 			  REAL8 freq,  REAL8 fband);
 
+#ifdef HIERARCHSEARCHGCT /* used for HierarchSearchGCT */
+
+extern int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync);
+
+#else /* #ifdef HIERARCHSEARCHGCT */
+
 /** inits checkpointing for the toplist and reads the last checkpoint if present
     This expects all passed variables (toplist, total, count) to be already
     initialized. In case of an error, the toplist is cleared and the count
@@ -137,6 +150,8 @@ extern void set_checkpoint(void);
 
 /** writes the toplist to the final (ASCII) output file */
 extern void write_and_close_checkpointed_file (void);
+
+#endif /* #ifdef HIERARCHSEARCHGCT */
 
 /** LALApps error handler for BOINC */
 extern int BOINC_LAL_ErrHand (LALStatus*, const char*, const char*, const int, volatile const char*);

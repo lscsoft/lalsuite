@@ -17,21 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Churches, D. K and Sathyaprakash, B.S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief Function to create a coarse grid of templates.
-
-\heading{Prototypes}
-
-<tt>LALInspiralCreateCoarseBank()</tt>:
-<ul>
-   <li> <tt>list,</tt> Output, an array containing the template bank parameters
-   </li><li> <tt>nlist,</tt> Output, the number of templates found by the function
-   </li><li> <tt>coarseIn,</tt> Input, specifies the search space, range of masses, etc.</li>
-</ul>
+/** \defgroup LALInspiralCreateCoarseBank_c Module LALInspiralCreateCoarseBank.c
+ * \ingroup LALInspiralBank_h
+   \author Churches, D. K and Sathyaprakash, B.S.
+   \brief Functions to create a coarse grid of templates.
 
 The coarse grid algorithm works in two stages:
 After computing the minimum and maximum chirp-times corresponding to the
@@ -50,7 +39,6 @@ if (a) the point lies in the parameter space, OR (b) one of the
 vertices defined by the rectangle lies in the parameter space.</li>
 </ol>
 
-\heading{Description}
 \heading{Templates along the equal mass curve}
 The algorithm works in two
 stages: In the first stage, templates are built along the equal
@@ -175,82 +163,9 @@ is as follows:
    }<br>
 </ul>
 </tt>
-
-
-\heading{Uses}
-\code
-LALInspiralNextTemplate()
-LALInspiralParameterCalc()
-LALInspiralSetParams()
-LALInspiralSetSearchLimits()
-LALInspiralComputeParams()
-LALInspiralComputeMetric()
-LALInspiralUpdateParams()
-LALInspiralValidTemplate()
-\endcode
-
-\heading{Notes}
-
-<tt>LALInspiralCreateFlatBank()</tt>:
-<ul>
-   <li> <tt>list,</tt> Output, an array containing the template bank parameters
-   </li><li> <tt>bankParams,</tt> Input. It is necessary and sufficient to input
-   the eigenvalues of the metric and the angle between the \f$x_0\f$ axis and the
-   semi-major axis of the ambiguity ellipse, that is,
-   <tt>bankParams.metric.g00, bankParams.metric.g11, bankParams.metric.theta,</tt>
-   the minimal match, <tt>bankParams.minimalMatch</tt> and the range of the two
-   coordinates over which templates must be chosen:
-(<tt>bankParams->x0Min</tt>, <tt>bankParams->x0Max</tt>) and
-(<tt>bankParams->x1Min</tt>, <tt>bankParams->x1Max</tt>).</li>
-</ul>
-The code expects <tt>list->vectorLength=2</tt> and allocates just the
-requisite amount of memory to \c list and returns the number
-of grid points in <tt>list->length.</tt> The data points <tt>list->data[2j],</tt>
-<tt>j=1,2, ... list->length,</tt> contain the \f$x_0\f$-coordinates of the grid
-and data points <tt>list->data[2j+1],</tt> contain the \f$x_1\f$-coordinates
-of the grid.
-
-\heading{Description}
-Given the \c metric and the \c minimalMatch this routine calls
-<tt>bank/LALInspiralUpdateParams</tt> to get the spacings in user coordinates (which are
-not necessarily the eigen-directions) and lays a uniform grid of templates in
-the range specified in (<tt>bankParams->x0Min</tt>, <tt>bankParams->x0Max</tt>) and
-(<tt>bankParams->x1Min</tt>, <tt>bankParams->x1Max</tt>).
-\heading{Algorithm}
-The algorithm to lay templates is as follows: Given the increments \f$Dx_0\f$ and
-\f$Dx_1\f$ found from calling <tt>bank/LALInspiralUpdateParams</tt> lay a rectangular
-grid in the space of \f$(x_0, x_1).\f$
-
-<tt>
-<ul>
-<li> \f$x_1 = x_1^{\min}\f$
-<li> do while (\f$x_1 <= x_1^\mathrm{max}\f$)<br>
-   {<br>
-   <ul>
-   <li> \f$x_0 = x_0^{\min}\f$
-   <li> do while (\f$x_0 <= x_0^\mathrm{max}\f$)<br>
-      {<br>
-      <ul>
-      <li> Add (\f$x_0, x_1\f$) to list
-      <li> numTemplates++
-      <li> Increment \f$x_0:\f$ \f$x_0 = x_0 + Dx_0\f$
-      </ul>
-      }<br>
-   <li> Increment \f$x_1:\f$ \f$x_1 = x_1 + Dx_1\f$
-   </ul>
-   }<br>
-</ul>
-</tt>
-
-\heading{Uses}
-\code
-LALInspiralUpdateParams()
-LALRalloc()
-\endcode
-
-\heading{Notes}
-
 */
+/*@{*/
+
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
@@ -259,12 +174,14 @@ LALRalloc()
 #include <lal/LALStdio.h>
 #include <lal/FindRoot.h>
 
+
+/** \see See \ref LALInspiralCreateCoarseBank_c for documentation */
 void
 LALInspiralCreateCoarseBank(
-    LALStatus            *status,
-    InspiralTemplateList **list,
-    INT4                 *nlist,
-    InspiralCoarseBankIn coarseIn
+    LALStatus            *status,	/**< LAL-status pointer */
+    InspiralTemplateList **list,	/**< [out] an array containing the template bank parameters */
+    INT4                 *nlist,	/**< [out] the number of templates found by the function */
+    InspiralCoarseBankIn coarseIn	/**< [in] specifies the search space, range of masses, etc */
     )
 {
   INT4 i;
@@ -368,7 +285,7 @@ LALInspiralCreateCoarseBank(
   RETURN (status);
 }
 
-/* Anand:: 26 October 2006
+/** Anand: 26 October 2006
  * This function nudges the templates in the list to
  * the (max-total-mass = constant) line.
  * This is done only for those templates whose total
@@ -484,6 +401,7 @@ LALNudgeTemplatesToConstantTotalMassLine(
   RETURN (status);
 }
 
+/** \see See \ref LALInspiralCreateCoarseBank_c for documentation */
 void
 LALInspiralCreatePNCoarseBank(
     LALStatus            *status,
@@ -715,5 +633,4 @@ LALInspiralCreatePNCoarseBank(
   DETATCHSTATUSPTR( status );
   RETURN ( status );
 }
-
-
+/*@}*/

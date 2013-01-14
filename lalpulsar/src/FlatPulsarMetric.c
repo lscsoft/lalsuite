@@ -17,16 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Reinhard Prix
- * \date 2005, 2006
- * \file
- * \ingroup PulsarMetric
- * \brief Calculate flat approximation to the pulsar-metric.
- *
- *
- */
-
 /*---------- INCLUDES ----------*/
 #include <math.h>
 

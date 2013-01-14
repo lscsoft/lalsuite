@@ -17,22 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/**
-Authors: Brown, D. A., Cokelaer, T. and  Sathyaprakash, B. S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief Module to calculate the moment of the noise power spectral density.
-
-\heading{Prototypes}
-
-<tt>LALInspiralMoments()</tt>:
-<ul>
-   <li> <tt>moment,</tt> Output, the value of the moment
-   </li><li> <tt>pars,</tt> Input</li>
-</ul>
-
-\heading{Description}
+/** \defgroup LALInspiralMoments_c Module LALInspiralMoments.c
+ * \ingroup LALInspiralBank_h
+ * \brief Functions to calculate the moment of the noise power spectral density.
+ * \author Brown, D. A., Cokelaer, T. and  Sathyaprakash, B. S.
 
 The moments of the noise curve are defined as
 \f{equation}{
@@ -62,16 +50,16 @@ the power spectral density specified by the frequency series
 \mathtt{moment} = \int_{\mathtt{xmin}}^{\mathtt{xmax}}
 \frac{x^{-\mathtt{ndx}}}{S_h(x)}\, dx \, .
 \f}
-
-\heading{Notes}
-
 */
+
+/*@{*/
 
 #include <lal/LALInspiralBank.h>
 #include <lal/Integrate.h>
 
 /* Deprecation Warning */
 
+/** \see See \ref LALInspiralMoments_c for documentation */
 void
 LALGetInspiralMoments (
     LALStatus            *status,
@@ -160,7 +148,7 @@ XLALGetInspiralMoments (
   return XLAL_SUCCESS;
 }
 
-
+/** \see See \ref LALInspiralMoments_c for documentation */
 void
 LALGetInspiralMomentsBCV (
     LALStatus               *status,
@@ -281,14 +269,12 @@ LALGetInspiralMomentsBCV (
   RETURN( status );
 }
 
-
-/* Deprecation Warning */
-
+/** \see See \ref LALInspiralMoments_c for documentation */
 void
 LALInspiralMoments(
-    LALStatus         *status,
-    REAL8             *moment,
-    InspiralMomentsIn  pars
+    LALStatus         *status,	/**< LAL status pointer */
+    REAL8             *moment,	/**< [out] the value of the moment */
+    InspiralMomentsIn  pars	/**< [in] input parameters */
     )
 
 {
@@ -367,3 +353,4 @@ XLALInspiralMoments(
 
   return moment;
 }
+/*@}*/

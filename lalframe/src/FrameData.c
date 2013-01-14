@@ -16,10 +16,19 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/SeqFactories.h>
+#include <lal/FrameData.h>
+#include <lal/LALFrameL.h>
 
 /**
-\file
-\brief Functions for reading frame data.
+   \ingroup FrameData_h
+   \brief Functions for reading frame data.
 
 \heading{Description}
 
@@ -111,17 +120,6 @@ LALI2DestroyVector( &status, &dmro.data );
 
 \heading{Notes}
 */
-
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/SeqFactories.h>
-#include <lal/FrameData.h>
-#include <lal/LALFrameL.h>
 
 void
 LALInitializeFrameData (

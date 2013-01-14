@@ -18,11 +18,10 @@
 */
 
 /**
-\author Cokelaer Thomas
-\file
+\defgroup LALInspiralHybridHexagonalBank_c Module LALInspiralHybridHexagonalBank.c
 \ingroup LALInspiralBank_h
-
-\brief NONE
+\author Cokelaer Thomas
+\brief Hybrid hexagonal template bank.
 
 \heading{Description}
 This code does almost the same as the standard Hexagonal Bank code. However,
@@ -85,16 +84,8 @@ x =  \left(-\frac{q}{2}-\frac{1}{2}*\sqrt{\frac{27 q^2 + 4 p^3}{27}}\right)^{\fr
 \floatfig{h,fig_hybridhexa1}
 \image html  LALInspiralHybridHexa1.png "Fig.[fig_hybridhexa1]: Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at tau0=3.6 and tau0=0.4), then the placement is switched from the hexagonal to a placement along the bissectric of the upper/lower boundaries as described in the text."
 \image latex LALInspiralHybridHexa1.pdf "Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at tau0=3.6 and tau0=0.4), then the placement is switched from the hexagonal to a placement along the bissectric of the upper/lower boundaries as described in the text." width=3.5in
-
-\heading{Uses}
-\code
-LALPopulateNarrowEdge()
-XLALInspiralBissectionLine ()
-\endcode
-
-\heading{Notes}
-
 */
+/*@{*/
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
@@ -102,9 +93,6 @@ XLALInspiralBissectionLine ()
 #include <lal/SeqFactories.h>
 #include <lal/LALStdio.h>
 #include <lal/FindRoot.h>
-
-
-
 
 
 void
@@ -119,6 +107,8 @@ LALPopulateNarrowEdge(LALStatus       	*status,
 		      INT4 flag
 		      );
 
+
+/** \see See \ref LALInspiralHybridHexagonalBank_c for documentation */
 void
 LALInspiralCreatePNCoarseBankHybridHexa(
     LALStatus            *status,
@@ -515,13 +505,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
   RETURN ( status );
 }
 
-
-
-
-
-
-
-
+/** \see See \ref LALInspiralHybridHexagonalBank_c for documentation */
 REAL8
 XLALInspiralBissectionLine (
 	REAL8 tau0,
@@ -557,8 +541,7 @@ XLALInspiralBissectionLine (
   return (0.5 * (tau3_a + tau3_b));
 }
 
-
-
+/** \see See \ref LALInspiralHybridHexagonalBank_c for documentation */
 void
 LALPopulateNarrowEdge(LALStatus               *status,
 		      InspiralMomentsEtc      *moments,
@@ -693,3 +676,4 @@ LALPopulateNarrowEdge(LALStatus               *status,
   RETURN ( status );
 
 }
+/*@}*/

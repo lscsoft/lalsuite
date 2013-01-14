@@ -21,18 +21,17 @@ cmp_code="${builddir}lalapps_compareFstats"
 
 SFTdir="./testGridv2_sfts"
 
-# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lal";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
+    cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR}"
+    cfsv2_code="${cfsv2_code} -E ${LALPULSAR_DATADIR}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 # ---------- fixed parameter of our test-signal
@@ -219,7 +218,7 @@ awk_extract6='{printf "%s %s %s %s %s %s\n", $1, $2, $3, $4, $5, $6 >> "gridv2_2
 grid_line=$(sed '/^%.*/d' ${outputv2_2} | awk "$awk_extract6")
 
 
-cmd0="$cmdlinev2 --gridType=6 --gridFile=${gridFile} --outputFstat=$outputv2_6";
+cmd0="$cmdlinev2 --gridType=6 --gridFile=./${gridFile} --outputFstat=$outputv2_6";
 echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd2' ..."

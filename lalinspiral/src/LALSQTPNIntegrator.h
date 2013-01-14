@@ -1,11 +1,3 @@
-/**
- * @file LALSQTPNIntegrator.h
- *		Contains the function declarations and structures needed by the
- *	integration method.
- * @author László Veréb
- * @date 2010.05.21.
- */
-
 #ifndef LALSQTPNINTEGRATOR_H
 #define LALSQTPNINTEGRATOR_H
 
@@ -21,7 +13,17 @@
 extern "C" {
 #endif
 
-/**		The structure contains the integration method and its settings.
+/**
+ * \defgroup LALSQTPNIntegrator_h Header LALSQTPNIntegrator.h
+ * \ingroup pkg_CBC_NEW
+ *
+ * \brief Contains the function declarations and structures needed by the integration method.
+ * \author László Veréb
+ * \date 2010.05.21.
+ */
+/*@{*/
+
+/** The structure contains the integration method and its settings.
  */
 typedef struct tagLALSQTPNIntegratorSystem{
 	const gsl_odeiv_step_type* type;
@@ -53,6 +55,9 @@ void XLALSQTPNIntegratorFree(LALSQTPNIntegratorSystem *integrator);
  * @param[in]		step	: the step size
  */
 int XLALSQTPNIntegratorFunc(REAL8 values[], LALSQTPNIntegratorSystem *integrator, REAL8 step);
+
+  /*@}*//* end: LALSQTPNIntegrator_h */
+
 
 #ifdef __cplusplus
 }

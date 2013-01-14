@@ -534,6 +534,7 @@ int main(int argc, char *argv[]) {
 	  LALInferenceMCMCSamplePrior(state);
 	  /* output sample */
 	  if(!(i%thinfac)){
+        LALInferenceSortVariablesByName(state->currentParams);
 	    if(state->logsample) state->logsample(state,state->currentParams);
 	    if(outfile) LALInferencePrintSample(outfile,state->currentParams);
 	    if(outfile) fprintf(outfile,"\n");
@@ -574,6 +575,17 @@ int main(int argc, char *argv[]) {
         XLALDestroyREAL8Vector(sampvec);
         XLALDestroyREAL8Vector(cumvec);
     }
+   
+    FILE *lout=NULL;
+    char param_list[FILENAME_MAX];
+    sprintf(param_list,"%s_params.txt",filename);
+    lout=fopen(param_list,"w");
+    LALInferenceSortVariablesByName(state->livePoints[0]);
+    for(LALInferenceVariableItem *param_ptr=state->livePoints[0]->head;param_ptr;param_ptr=param_ptr->next)
+    {
+        fprintf(lout,"%s\t",param_ptr->name);
+    }
+    fclose(lout);
     
     return(0);
 }

@@ -115,7 +115,7 @@ int main(int argc, char *argv[]){
   if ( argc > 1 )
     XLALPrintError ("WARNING: commond-line arguments useless here \n");
 
-  SUB (LALParseDataFile (&status, &cfgdata, "ConfigFileSample.cfg"), &status);
+  SUB (LALParseDataFile (&status, &cfgdata, DATADIR "ConfigFileSample.cfg"), &status);
 
   SUB (LALReadConfigREAL8Variable  (&status, &somefloat, cfgdata, "float1", &wasRead), &status);
   SUB (LALReadConfigSTRINGVariable (&status, &string1,   cfgdata, "string1", &wasRead), &status);

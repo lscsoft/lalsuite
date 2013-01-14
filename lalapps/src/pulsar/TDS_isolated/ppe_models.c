@@ -326,6 +326,7 @@ void pulsar_model( BinaryPulsarParams params,
  * additional info
  * \param freqFactor [in] the multiplicative factor on the pulsar frequency for
  * a particular model
+ * \param downsampled *UNDOCUMENTED*
  * 
  * \return A vector of rotational phase values
  * 
@@ -340,10 +341,10 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
 
   REAL8 T0 = 0., DT = 0., deltat = 0., deltat2 = 0.;
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
-  
+
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
   LIGOTimeGPSVector *datatimes = NULL;
- 
+
   /* check if we want to calculate the phase at a the downsampled rate */
   if ( downsampled ){
     if( LALInferenceCheckVariable( data->dataParams, "downsampled_times" ) ){
@@ -356,29 +357,29 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
     }
   }
   else datatimes = data->dataTimes;
-  
+
   /* if edat is NULL then return a NULL pointer */
   if( data->ephem == NULL )
     return NULL;
 
   length = datatimes->length;
-  
+
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( length );
-  
-  /* get time delays */ 
+
+  /* get time delays */
   /*Why ==NULL, surely it will equal null if not set to get ssb delays?*/
   if( (dts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "ssb_delays" )) == NULL || varyskypos == 1 ){
     /* get time delays with an interpolation of interptime (30 mins) */
-    dts = get_ssb_delay( params, datatimes, data->ephem, data->detector,
-                         interptime );
+    dts = get_ssb_delay( params, datatimes, data->ephem, data->tdat,
+                         data->ttype, data->detector, interptime );
   }
-  
+
   if( (bdts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "bsb_delays" )) == NULL || varybinary == 1 ){
     /* get binary system time delays */
-    bdts = get_bsb_delay( params, datatimes, dts );
+    bdts = get_bsb_delay( params, datatimes, dts, data->ephem );
   }
   
   for( i=0; i<length; i++){
@@ -433,9 +434,9 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
  * \param datatimes [in] A vector of GPS times at Earth
  * \param ephem [in] Information on the solar system ephemeris
  * \param detector [in] Information on the detector position on the Earth
- * \param interptime [in] The time (in seconds) between explicit recalculations
- * of the time delay
- * 
+ * \param interptime [in] The time (in seconds) between explicit recalculations of the time delay
+ * \param tdat *UNDOCUMENTED*
+ * \param ttype *UNDOCUMENTED*
  * \return A vector of time delays in seconds
  *
  * \sa XLALBarycenter
@@ -444,6 +445,8 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
                             LIGOTimeGPSVector *datatimes,
                             EphemerisData *ephem,
+                            TimeCorrectionData *tdat,
+                            TimeCorrectionType ttype,
                             LALDetector *detector,
                             REAL8 interptime ){
   INT4 i = 0, length = 0;
@@ -504,8 +507,8 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
          pars.pmra/cos(bary->delta);
      
       /* call barycentring routines */
-      XLAL_CHECK_NULL( XLALBarycenterEarth( &earth, &bary->tgps, ephem ) ==
-                       XLAL_SUCCESS, XLAL_EFUNC ); 
+      XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth, &bary->tgps, ephem, tdat,
+                       ttype ) == XLAL_SUCCESS, XLAL_EFUNC ); 
       XLAL_CHECK_NULL( XLALBarycenter( &emit, bary, &earth ) ==
                        XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -515,8 +518,8 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
         XLALGPSAdd( &bary->tgps, interptime );
 
         /* No point in updating the positions as difference will be tiny */
-        XLAL_CHECK_NULL( XLALBarycenterEarth( &earth2, &bary->tgps, ephem ) ==
-                         XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth2, &bary->tgps, ephem,
+                         tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_NULL( XLALBarycenter( &emit2, bary, &earth2 ) ==
                          XLAL_SUCCESS, XLAL_EFUNC );
       }
@@ -549,14 +552,15 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
  * \param pars [in] A set of pulsar parameters
  * \param datatimes [in] A vector of GPS times
  * \param dts [in] A vector of solar system barycentre time delays
- * 
+ * \param edat *UNDOCUMENTED*
  * \return A vector of time delays in seconds
  * 
  * \sa XLALBinaryPulsarDeltaT
  */
 REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
                             LIGOTimeGPSVector *datatimes,
-                            REAL8Vector *dts ){
+                            REAL8Vector *dts,
+                            EphemerisData *edat ){
   BinaryPulsarInput binput;
   BinaryPulsarOutput boutput;
   REAL8Vector *bdts = NULL;
@@ -568,7 +572,13 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
   for ( i = 0; i < length; i++ ){
     /* check whether there's a binary model */
     if ( pars.model ){
+      EarthState earth;
+      
       binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
+      
+      get_earth_pos_vel( &earth, edat, &datatimes->data[i] );
+      
+      binput.earth = earth; /* current Earth state */
       XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );    
       bdts->data[i] = boutput.deltaT;
     }
@@ -647,8 +657,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
        h(t) = (h0/2) * ((1/2)*F+(t)*(1+cos(iota)^2)*exp(i*phi0) 
          - i*Fx(t)*cos(iota)*exp(i*phi0))
    ****************************************************************************/
-  
-  
+
   Xplus = 0.25*(1.+pars.cosiota*pars.cosiota)*pars.h0;
   Xcross = 0.5*pars.cosiota*pars.h0;
   Xpexpphi = Xplus*expiphi;
@@ -1034,4 +1043,58 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
   return (1. - fabs(mismatch)/(2.*T));
 }
 
+
+/** \brief Get the position and velocity of the Earth at a given time
+ * 
+ * This function will get the position and velocity of the Earth from the
+ * ephemeris data at the time t. It will be returned in an EarthState
+ * structure. This is based on the start of the XLALBarycenterEarth function. */
+void get_earth_pos_vel( EarthState *earth, EphemerisData *edat, 
+                        LIGOTimeGPS *tGPS){
+  REAL8 tgps[2]; 
+
+  REAL8 t0e;        /*time since first entry in Earth ephem. table */
+  INT4 ientryE;      /*entry in look-up table closest to current time, tGPS */
+
+  REAL8 tinitE;           /*time (GPS) of first entry in Earth ephem table*/
+  REAL8 tdiffE;           /*current time tGPS minus time of nearest entry
+                             in Earth ephem look-up table */
+  REAL8 tdiff2E;          /*tdiff2=tdiffE*tdiffE */
+
+  INT4 j; /*dummy index */
+
+  /* check input */
+  if ( !earth || !tGPS || !edat || !edat->ephemE || !edat->ephemS ) {
+    XLALPrintError ("%s: invalid NULL input 'earth', 'tGPS', 'edat',\
+'edat->ephemE' or 'edat->ephemS'\n", __func__ );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
+  }
+
+  tgps[0] = (REAL8)tGPS->gpsSeconds; /*convert from INT4 to REAL8 */
+  tgps[1] = (REAL8)tGPS->gpsNanoSeconds;
+
+  tinitE = edat->ephemE[0].gps;
+
+  t0e = tgps[0] - tinitE;
+  ientryE = ROUND(t0e/edat->dtEtable);  /*finding Earth table entry */
+
+  if ( ( ientryE < 0 ) || ( ientryE >=  edat->nentriesE )) {
+    XLALPrintError ("%s: input GPS time %f outside of Earth ephem range [%f,\
+%f]\n", __func__, tgps[0], tinitE, tinitE + edat->nentriesE * edat->dtEtable );
+    XLAL_ERROR_VOID( XLAL_EDOM );
+  }
+    
+  tdiffE = t0e -edat->dtEtable*ientryE + tgps[1]*1.e-9; /*tdiff is arrival
+              time minus closest Earth table entry; tdiff can be pos. or neg. */
+  tdiff2E = tdiffE*tdiffE;
+
+  REAL8* pos = edat->ephemE[ientryE].pos;
+  REAL8* vel = edat->ephemE[ientryE].vel;
+  REAL8* acc = edat->ephemE[ientryE].acc;
+
+  for (j=0;j<3;j++){
+    earth->posNow[j]=pos[j] + vel[j]*tdiffE + 0.5*acc[j]*tdiff2E;
+    earth->velNow[j]=vel[j] + acc[j]*tdiffE;
+  }                    
+}
 /*------------------------ END OF MODEL FUNCTIONS ----------------------------*/

@@ -17,22 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+#include <lal/LALInspiralBank.h>
+#include <stdio.h>
+
 /**
-\author Churches, D. K. and Sathyaprakash, B.S.
-\file
 \ingroup LALInspiralBank_h
-
-\brief Module which checks whether or not a given template should
-be kept in the template list.
-
-\heading{Prototypes}
-
-<tt>LALInspiralValidTemplate()</tt>
-<ul>
-   <li> <tt>valid,</tt> Output, 0 means invalid template, 1 means valid
-   </li><li> <tt>bankParams,</tt> Input
-   </li><li> <tt>coarseIn,</tt> Input</li>
-</ul>
+\brief Function which checks whether or not a given template should be kept in the template list.
+\author Churches, D. K. and Sathyaprakash, B.S.
 
 \heading{Description}
 Given the parameter values \f$\tau_{0}\f$ and \f$\tau_{2(3)}\f$ this code
@@ -44,7 +35,6 @@ At the moment the code allows extra templates only
 in the positive-\f$\tau_{2(3)}\f$ direction only. We have found
 that placing templates in other directions is redundant.
 
-
 \heading{Algorithm}
 
 Consider the point \f$(\tau_0,\tau_{2(3)})\f$ describing the template, and
@@ -54,23 +44,14 @@ also a point at \f$(\tau_0,\tau_{2(3)}\mbox{bankParams.dx1/2})\f$ ,
 to the vertical spacing between the horizontal rows of templates being
 considered.
 Accept the template if at least one of those points is within the search space.
-
-\heading{Uses}
-
-\heading{Notes}
-
-*/
-
-
-#include <lal/LALInspiralBank.h>
-#include <stdio.h>
-
+ */
 void
 LALInspiralValidTemplate(
-  LALStatus            *status,
-  INT4                 *valid,
-  InspiralBankParams   bankParams,
-  InspiralCoarseBankIn coarseIn)
+  LALStatus            *status,		/**< LAL status pointer */
+  INT4                 *valid,		/**< [out] 0 means invalid template, 1 means valid */
+  InspiralBankParams   bankParams,	/**< [in] Input */
+  InspiralCoarseBankIn coarseIn		/**< [in] Input */
+  )
 {
 
 

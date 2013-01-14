@@ -8,4 +8,7 @@ EXTRA_DIST = \
 	lal-dev.install \
 	lal.dirs \
 	lal.install \
-	rules
+	lal-octave.install \
+	lal-python.install \
+	rules \
+	source/format

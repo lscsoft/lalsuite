@@ -91,6 +91,8 @@ extern "C" {
                           injections when this should be set to 751680013.0)\n"\
 " --ephem-earth-file (-e)  name of file containing the earth ephemeris\n"\
 " --ephem-sun-file (-S)    name of file containing the sun ephemeris\n"\
+" --ephem-time-file (-t)   name of file containing the Einstein delay\n\
+                          correction values\n"\
 " --filter-knee (-k)       knee frequency of low-pass filter (don't filter\n\
                           if = 0)\n"\
 " --sample-rate (-s)       sample rate of input data\n"\
@@ -157,6 +159,7 @@ typedef struct tagInputParams{
   
   CHAR earthfile[256];
   CHAR sunfile[256];
+  CHAR *timeCorrFile;
 
   REAL8 filterknee;
   REAL8 samplerate;
@@ -195,6 +198,8 @@ typedef struct tagHeterodyneParams{
 
   CHAR earthfile[256];
   CHAR sunfile[256];
+  CHAR *timeCorrFile;
+  TimeCorrectionType ttype;
 }HeterodyneParams;
 
 typedef struct tagFilters{

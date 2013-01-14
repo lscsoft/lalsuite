@@ -25,7 +25,7 @@
  * model. Flux function given by Phys.Rev.D79:064004,2009.
  */
 
-#include <lal/LALComplex.h>
+#include <complex.h>
 
 #ifndef _LALSIMIMRFACTORIZEDFLUX_C
 #define _LALSIMIMRFACTORIZEDFLUX_C
@@ -90,9 +90,9 @@ static REAL8 XLALSimIMREOBFactorizedFlux(
     XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
   /* For the 2,2 mode, we apply NQC correction to the flux */
-  hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+  hLM *= hNQC;
 
-  flux = (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+  flux = (REAL8)(m * m) * omegaSq * (creal(hLM)*creal(hLM) + cimag(hLM)*cimag(hLM));
 
   /* (2,1) */
   l = 2;
@@ -104,7 +104,7 @@ static REAL8 XLALSimIMREOBFactorizedFlux(
     XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
 
-  flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+  flux += (REAL8)(m * m) * omegaSq * (creal(hLM)*creal(hLM) + cimag(hLM)*cimag(hLM));
 
   /* All other modes */
   for ( l = 3; l <= lMax; l++ )
@@ -122,7 +122,7 @@ static REAL8 XLALSimIMREOBFactorizedFlux(
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
 
-      flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+      flux += (REAL8)(m * m) * omegaSq * (creal(hLM)*creal(hLM) + cimag(hLM)*cimag(hLM));
     }
   }
 

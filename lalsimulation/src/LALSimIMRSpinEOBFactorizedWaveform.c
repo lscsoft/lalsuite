@@ -34,7 +34,7 @@
 #ifndef _LALSIMIMRSPINEOBFACTORIZEDWAVEFORM_C
 #define _LALSIMIMRSPINEOBFACTORIZEDWAVEFORM_C
 
-#include <lal/LALComplex.h>
+#include <complex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 
@@ -65,6 +65,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 
 UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
           FacWaveformCoeffs * const coeffs,
+          const REAL8               m1,
+          const REAL8               m2,
           const REAL8               eta,
           const REAL8               a,
           const REAL8               chiS,
@@ -115,7 +117,10 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 	{
 	  XLAL_ERROR( XLAL_EINVAL );
 	}
-	
+        if ( m == 0 )
+	{
+	  XLAL_ERROR( XLAL_EINVAL );
+	}	
 
         eta = params->eobParams->eta;
 
@@ -196,9 +201,9 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 	  XLALPrintError("XLAL Error - %s: Error in GSL function\n", __func__ );
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
-	Tlm = XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( lnr1.val + LAL_PI * hathatk, 
+	Tlm = cexp( ( lnr1.val + LAL_PI * hathatk ) + I * ( 
 				arg1.val + 2.0 * hathatk * log(4.0*k/sqrt(LAL_E)) ) );
-	Tlm = XLALCOMPLEX16DivReal( Tlm, z2.val );
+	Tlm /= z2.val;
 
 
         /* Calculate the residue phase and amplitude terms */
@@ -213,8 +218,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 	    {
 	      case 2:
 	        deltalm = vh3*(hCoeffs->delta22vh3 + vh3*(hCoeffs->delta22vh6 
-                    + vh*vh*(0.*hCoeffs->delta22vh8 + hCoeffs->delta22vh9*vh)))
-                    + hCoeffs->delta22v5 *v*v2*v2 + hCoeffs->delta22vh8 *v2*v2*v2*v2;
+                    + vh*vh*(hCoeffs->delta22vh9*vh)))
+                    + hCoeffs->delta22v5 *v*v2*v2 + hCoeffs->delta22v8 *v2*v2*v2*v2;
             rholm	= 1. + v2*(hCoeffs->rho22v2 + v*(hCoeffs->rho22v3
                 + v*(hCoeffs->rho22v4
                 + v*(hCoeffs->rho22v5 + v*(hCoeffs->rho22v6 
@@ -472,6 +477,11 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
         {
           rholmPwrl *= rholm;
         }
+        /* In the equal-mass odd m case, there is no contribution from nonspin terms,  
+         * and the only contribution comes from the auxflm term that is proportional to chiA (asymmetric spins). 
+         * In this case, we must ignore the nonspin terms directly, since the leading term defined by 
+         * CalculateThisMultipolePrefix in LALSimIMREOBNewtonianMultipole.c is not zero (see comments there).
+         */ 
         if (eta == 0.25 && m % 2)
         {
           rholmPwrl = auxflm;
@@ -486,9 +496,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 	  printf("YP::dynamics variables in waveform: %i, %i, %e, %e\n",l,m,r,pp); 
 	  printf( "rholm^l = %.16e, Tlm = %.16e + i %.16e, \nSlm = %.16e, hNewton = %.16e + i %.16e, delta = %.16e\n", rholmPwrl, Tlm.re, Tlm.im, Slm, hNewton.re, hNewton.im, deltalm );}*/
         /* Put all factors in Eq. 17 together */
-	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ), 
-				     Slm*rholmPwrl );
-        *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
+	*hlm = Tlm * cexp(I * deltalm) * Slm * rholmPwrl;
+        *hlm *= hNewton;
 	/*if (r > 8.5)
 	{
 	  printf("YP::FullWave: %.16e,%.16e, %.16e\n",hlm->re,hlm->im,sqrt(hlm->re*hlm->re+hlm->im*hlm->im));
@@ -509,6 +518,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 
 UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
           FacWaveformCoeffs * const coeffs, /**< OUTPUT, pre-computed waveform coefficients */
+          const REAL8               m1,     /**< mass 1 */
+          const REAL8               m2,     /**< mass 2 */
           const REAL8               eta,    /**< symmetric mass ratio */
           const REAL8               a,      /**< Kerr spin parameter for test-particle terms */
           const REAL8               chiS,   /**< (chi1+chi2)/2 */
@@ -536,6 +547,10 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
   }
 
   dM  = sqrt( dM2 );
+  if (m1 < m2)
+  {
+    dM = -dM;
+  }
   //dM3 = dM2 * dM;
 
   a2 = a*a;
@@ -555,7 +570,7 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
 
   coeffs->delta22vh3 = 7./3.;
   coeffs->delta22vh6 = (-4.*a)/3. + (428.*LAL_PI)/105.;
-  coeffs->delta22vh8 = (20.*a)/63.;
+  coeffs->delta22v8 = (20.*a)/63.;
   coeffs->delta22vh9 = -2203./81. + (1712.*LAL_PI*LAL_PI)/315.;
   coeffs->delta22v5  = - 24.*eta;
 

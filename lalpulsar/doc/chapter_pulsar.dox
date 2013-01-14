@@ -1,0 +1,52 @@
+// -*- mode: c -*-
+
+/* ----- defining packages within the pulsar-class of packages ----- */
+/**
+   \addtogroup ch_pulsar
+   @{
+    \defgroup pkg_pulsarCommon	 Common Pulsar APIs
+    \defgroup pkg_pulsarHough	 The Hough transform
+    \defgroup pkg_pulsarFold	 Amplitude folding routines
+    \defgroup pkg_pulsarCoh	 Coherent search routines
+    \defgroup pkg_pulsarKnown	 Known pulsar time-domain search
+    \defgroup pkg_pulsarMetric   Pulsar Metric modules
+    \defgroup pkg_pulsarCovering Template bank covering
+    \defgroup pkg_pulsarCrossCorr Cross-correlation
+    \defgroup pkg_pulsarXML	 XML Serializers
+    \defgroup pkg_pulsarApps	 Applications
+    \defgroup pulsarTODO         TODO: unstructured modules
+   @}
+*/
+
+/**
+   \addtogroup pkg_pulsarCommon
+   \brief This package provides a common data-types and APIs for
+   pulsar searches. (eg APIs related to timing, barycentering,
+   metric calculation, mesh-generation ...)
+*/
+/**
+   \addtogroup pkg_pulsarMetric
+   \brief  Modules to deal with pulsar-specific parameter-space metrics and coverings.
+*/
+
+/**
+   \addtogroup pkg_pulsarCoh
+   \brief This package provides routines to perform a demodulation on a set of data.
+*/
+
+/**
+   \addtogroup pkg_pulsarKnown
+   \brief This package provides routines for a time domain search of
+   gravitational wave signals from known pulsars.
+   The documentation and functionality of this package is <b>incomplete</b>.
+*/
+
+/**
+   \addtogroup pulsarTODO
+   \brief doxygen documentation that still needs more work.
+*/
+
+/**
+ * \addtogroup pkg_pulsarApps
+ *  \brief Applications related to continuous GW (pulsar) searches.
+ */

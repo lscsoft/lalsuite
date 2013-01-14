@@ -18,9 +18,30 @@
  *  MA  02111-1307  USA
  */
 
-/*********************************************************************************/
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
+#include <math.h>
+#include <sys/times.h>
+
+#include <gsl/gsl_math.h>
+
+#include <lal/ComputeFstat.h>
+#include <lal/LALBarycenter.h>
+#include <lal/LALInitBarycenter.h>
+#include <lal/AVFactories.h>
+
 /** \author Reinhard Prix, John Whelan
  * \file
+ * \ingroup LALComputeAM_h
+ *
  * \brief Test for XLALComputeAMCoeffs() and XLALComputeMultiAMCoeffs() by
  * comparison with the equivalent LAL functions LALNewGetAMCoeffs() and LALGetMultiAMCoeffs().
  *
@@ -31,16 +52,8 @@
  * Sky-location is picked at random each time, which allows a minimal
  * Monte-Carlo validation by simply running this script repeatedly.
  *
- *********************************************************************************/
-#include <math.h>
-#include <sys/times.h>
+ */
 
-#include <gsl/gsl_math.h>
-
-#include <lal/ComputeFstat.h>
-#include <lal/LALBarycenter.h>
-#include <lal/LALInitBarycenter.h>
-#include <lal/AVFactories.h>
 extern char *optarg;
 
 static const LALStatus empty_status;
@@ -67,8 +80,8 @@ int main(int argc, char *argv[])
 
   REAL8 tolerance = 2e-6;	/* same algorithm, should be basically identical results */
 
-  char earthEphem[] = "earth00-04.dat";
-  char sunEphem[] = "sun00-04.dat";
+  char earthEphem[] = DATADIR "earth00-04.dat";
+  char sunEphem[] = DATADIR "sun00-04.dat";
   UINT4 numChecks = 1; /* Number of times to check */
 
   /* read user input */

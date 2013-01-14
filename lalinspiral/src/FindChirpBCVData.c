@@ -29,7 +29,6 @@
 /**
 
 \author Brown, D. A. and Messaritaki E.
-\file
 \ingroup FindChirpBCV_h
 
 \brief Provides functions to condition the input data from the interferometer

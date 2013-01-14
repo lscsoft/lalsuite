@@ -353,7 +353,7 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 	assert len(binj_cache) < 2
 	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
 		if verbose:
-			print >>sys.stderr, "%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path())
+			print >>sys.stderr, "%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path)
 		tisi_cache = set([time_slides_cache_entry])
 		if do_injections:
 			# lalapps_binj has already copied the time slide

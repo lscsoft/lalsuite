@@ -247,7 +247,9 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
     numRead = 0;
 #if COMPLEX
     do {
-      STRINGTODATA ( stat->statusPtr, &(sData->re), start = end,
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      STRINGTODATA ( stat->statusPtr, &(zData.x->re), start = end,
 		     &end );
       BEGINFAIL( stat ) {
 	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -255,7 +257,7 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
       } ENDFAIL( stat );
       if ( start != end ) {
 	numRead = 1;
-	STRINGTODATA ( stat->statusPtr, &(sData->im), start = end,
+	STRINGTODATA ( stat->statusPtr, &(zData.x->im), start = end,
 		       &end );
 	BEGINFAIL( stat ) {
 	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -282,7 +284,9 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
     TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 #if COMPLEX
     if ( numRead == 1 ) {
-      if ( fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      if ( fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) {
 	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
@@ -290,8 +294,10 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
       n--;
     }
     while ( n-- ) {
-      if ( ( fscanf( stream, "%" FMT, &(sData->re) ) != 1 ||
-	   fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) ) {
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      if ( ( fscanf( stream, "%" FMT, &(zData.x->re) ) != 1 ||
+	   fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) ) {
 	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
@@ -387,8 +393,8 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 	n = length;
       length -= n;
       while ( n-- ) {
-	sData->re = *(data++);
-	(sData++)->im = *(data++);
+	*sData = *(data++);
+	*(sData++) += *(data++) * I;
       }
       here = here->next;
       if ( here )
@@ -659,7 +665,9 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
     numRead = 0;
 #if COMPLEX
     do {
-      STRINGTODATA ( stat->statusPtr, &(sData->re), start = end,
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      STRINGTODATA ( stat->statusPtr, &(zData.x->re), start = end,
 		     &end );
       BEGINFAIL( stat ) {
 	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -667,7 +675,7 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
       } ENDFAIL( stat );
       if ( start != end ) {
 	numRead = 1;
-	STRINGTODATA ( stat->statusPtr, &(sData->im), start = end,
+	STRINGTODATA ( stat->statusPtr, &(zData.x->im), start = end,
 		       &end );
 	BEGINFAIL( stat ) {
 	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -764,8 +772,8 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 	  n = vectorLength;
 	vectorLength -= n;
 	while ( n-- ) {
-	  sData->re = *(data++);
-	  (sData++)->im = *(data++);
+	  *sData = *(data++);
+	  *(sData++) += *(data++) * I;
 	}
 	here = here->next;
 	if ( here )
@@ -797,7 +805,9 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
   if ( length > 0 ) {
 #if COMPLEX
     if ( numRead == 1 ) {
-      if ( fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      if ( fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) {
 	TRY( VDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
@@ -805,8 +815,10 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
       n--;
     }
     while ( n-- ) {
-      if ( fscanf( stream, "%" FMT, &(sData->re) ) != 1 ||
-	   fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      if ( fscanf( stream, "%" FMT, &(zData.x->re) ) != 1 ||
+	   fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) {
 	TRY( VDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
@@ -865,8 +877,8 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 	n = length;
       length -= n;
       while ( n-- ) {
-	sData->re = *(data++);
-	(sData++)->im = *(data++);
+	*sData = *(data++);
+	*(sData++) += *(data++) * I;
       }
       here = here->next;
       if ( here )
@@ -1272,7 +1284,9 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
     numRead = 0;
 #if COMPLEX
     do {
-      STRINGTODATA ( stat->statusPtr, &(sData->re), start = end,
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      STRINGTODATA ( stat->statusPtr, &(zData.x->re), start = end,
 		     &end );
       BEGINFAIL( stat ) {
 	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -1280,7 +1294,7 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
       } ENDFAIL( stat );
       if ( start != end ) {
 	numRead = 1;
-	STRINGTODATA ( stat->statusPtr, &(sData->im), start = end,
+	STRINGTODATA ( stat->statusPtr, &(zData.x->im), start = end,
 		       &end );
 	BEGINFAIL( stat ) {
 	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -1307,7 +1321,9 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
     TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 #if COMPLEX
     if ( numRead == 1 ) {
-      if ( fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      if ( fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) {
 	TRY( ADESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
@@ -1315,8 +1331,10 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
       n--;
     }
     while ( n-- ) {
-      if ( fscanf( stream, "%" FMT, &(sData->re) ) != 1 ||
-	   fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      if ( fscanf( stream, "%" FMT, &(zData.x->re) ) != 1 ||
+	   fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) {
 	TRY( ADESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
@@ -1417,8 +1435,8 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 	n = length;
       length -= n;
       while ( n-- ) {
-	sData->re = *(data++);
-	(sData++)->im = *(data++);
+	*sData = *(data++);
+	*(sData++) += *(data++) * I;
       }
       here = here->next;
       if ( here )
@@ -1670,7 +1688,9 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
     numRead = 0;
 #if COMPLEX
     do {
-      STRINGTODATA ( stat->statusPtr, &(sData->re), start = end,
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      STRINGTODATA ( stat->statusPtr, &(zData.x->re), start = end,
 		     &end );
       BEGINFAIL( stat ) {
 	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -1678,7 +1698,7 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
       } ENDFAIL( stat );
       if ( start != end ) {
 	numRead = 1;
-	STRINGTODATA ( stat->statusPtr, &(sData->im), start = end,
+	STRINGTODATA ( stat->statusPtr, &(zData.x->im), start = end,
 		       &end );
 	BEGINFAIL( stat ) {
 	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -1705,7 +1725,9 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
     TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 #if COMPLEX
     if ( numRead == 1 ) {
-      if ( fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      if ( fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) {
 	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
@@ -1713,8 +1735,10 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
       n--;
     }
     while ( n-- ) {
-      if ( fscanf( stream, "%" FMT, &(sData->re) ) != 1 ||
-	   fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+      union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
+      zData.z = sData;
+      if ( fscanf( stream, "%" FMT, &(zData.x->re) ) != 1 ||
+	   fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) {
 	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
@@ -1810,8 +1834,8 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
 	n = length;
       length -= n;
       while ( n-- ) {
-	sData->re = *(data++);
-	(sData++)->im = *(data++);
+	*sData = *(data++);
+	*(sData++) += *(data++) * I;
       }
       here = here->next;
       if ( here )

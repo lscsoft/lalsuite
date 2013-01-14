@@ -1,5 +1,13 @@
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include -DPKGDATADIR='"$(pkgdatadir)"'
 LDADD = liblalsimulation.la
+
+NOISEPSDFILES = \
+	LIGO-T0900288-v3-BHBH_20deg.txt \
+	LIGO-T0900288-v3-High_Freq.txt \
+	LIGO-T0900288-v3-NO_SRM.txt \
+	LIGO-T0900288-v3-NSNS_Opt.txt \
+	LIGO-T0900288-v3-ZERO_DET_high_P.txt \
+	LIGO-T0900288-v3-ZERO_DET_low_P.txt
 
 bin_PROGRAMS = \
 	lalsim-bh-qnmode \
@@ -13,6 +21,7 @@ lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
+	LALSimInspiralPrecess.h \
 	LALSimInspiralWaveformFlags.h \
 	LALSimInspiralTestGRParams.h \
 	LALSimIMR.h \
@@ -53,6 +62,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimInspiralWaveformFlags.c \
 	LALSimInspiralTestGRParams.c \
+	LALSimInspiralPrecess.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
 	LALSimInspiralSpinTaylorT4.c \
@@ -86,18 +96,18 @@ lalsim_sgwb_SOURCES = sgwb.c
 lalsim_unicorn_SOURCES = unicorn.c
 lalsim_detector_noise_SOURCES = detector_noise.c
 
-CLEANFILES = \
+MOSTLYCLEANFILES = \
 	lalsimulation-user-env.shell \
 	lalsimulation-user-env.sh \
 	lalsimulation-user-env.csh
+
+pkgdata_DATA = $(NOISEPSDFILES)
 
 sysconf_DATA = \
 	lalsimulation-user-env.sh \
 	lalsimulation-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALSimulationVCSInfo.h \
 	lalsimulation-user-env.sh \
 	lalsimulation-user-env.csh
 
@@ -106,8 +116,8 @@ lalsimulation-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "set LALSIMULATION_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 	@printf "$(SWIG_USER_ENV)" >>$@
 
@@ -116,14 +126,16 @@ lalsimulation-user-env.csh lalsimulation-user-env.sh: lalsimulation-user-env.she
 
 EXTRA_DIST = \
 	generate_user_env.awk \
-	generate_vcs_info.py \
 	LALSimulationConfig.h.in \
-	LALSimulationVCSInfo.h.in
+	$(NOISEPSDFILES)
 
-LALSimulationVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALSimulationConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALSimulation $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALSimulationVCSInfo.h
+MOSTLYCLEANFILES += LALSimulationVCSInfo.h
+LALSimulationVCSInfo.h .PHONY : gen-LALSimulationVCSInfo.h
+gen-LALSimulationVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALSimulationVCSInfo.h $(srcdir)/LALSimulationVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@
 

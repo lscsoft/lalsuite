@@ -16,9 +16,15 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef _LUT_H
+#define _LUT_H
 
-/** \defgroup LUT_h LookUpTables (LUT)
- * \ingroup pulsarHough
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+/** \defgroup LUT_h Header LUT.h
+ * \ingroup pkg_pulsarHough
  * \date 2001, 2003
  * \brief Provides structures and function prototypes required for the construction of look up tables
  * that are the core for building the Hough maps.
@@ -112,14 +118,7 @@ algorithm simpler. The stereographic projection has the property to map circles
 on the celestial sphere to circles on the projected plane.
 
 */
-
-/*
- * 4.  Protection against double inclusion (include-loop protection)
- *     Note the naming convention!
- */
-
-#ifndef _LUT_H
-#define _LUT_H
+/*@{*/
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately
@@ -141,20 +140,12 @@ on the celestial sphere to circles on the projected plane.
 #include <lal/SeqFactories.h>
 
 /*
- *   Protection against C++ name mangling
- */
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/*
  * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
 
-/**\name Error Codes */ /*@{*/
-/** \ingroup LUT_h */
+/**\name Error Codes */
+/*@{*/
 #define LUTH_ENULL 1
 #define LUTH_ESIZE 2
 #define LUTH_ESZMM 4
@@ -185,7 +176,6 @@ extern "C" {
 
 /** \name Constant declarations */
 /*@{*/
-/** \ingroup LUT_h */
 
 /* *******************************************************
  * 9. Constant Declarations. (discouraged)
@@ -217,12 +207,10 @@ extern "C" {
 /* vtot = 2*pi* 1AU / (year * c) */
 
 /*@}*/
+
 /* **************************************************************
  * 10. Structure, enum, union, etc., typdefs.
  */
-
-/** \addtogroup LUT_h */
-/*@{*/
 
 /** To be changed to {<tt>INT2 COORType</tt>} if the number of pixels in the x-direction exceeds 255. */
 typedef INT2 COORType;  /* typedef INT4 COORType; */ /* typedef  UCHAR COORType; */
@@ -369,14 +357,11 @@ typedef struct tagHOUGHDemodPar{
                                  */
 } HOUGHDemodPar;
 
-/*@}*/
-
 /*
  * 11. Extern Global variables. (discouraged)
  */
 
 
-/** \cond DONT_DOXYGEN */
 /*
  * 12. Functions Declarations (i.e., prototypes).
  */
@@ -446,8 +431,7 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 			   HOUGHParamPLUT  *par
 			   );
 
-
-/** \endcond */
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

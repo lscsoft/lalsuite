@@ -69,13 +69,13 @@ typedef struct
    /* coefficients in the Pade expression of new energy function */
    REAL8 ePaN, ePa1, ePa2, ePa3;
    /* coefficients in the Taylor expansion of usual energy function */
-   REAL8 ETaN, ETa1, ETa2, ETa3;
+   REAL8 ETaN, ETa1, ETa2, ETa3, ETa5, ETa6;
    /* coefficients in the Taylor expansion of the derivative of the
     usual energy function */
-   REAL8 dETaN, dETa1, dETa2, dETa3;
+   REAL8 dETaN, dETa1, dETa2, dETa3, dETa5, dETa6;
 
    /* Taylor expansion coefficients of energy flux*/
-   REAL8 FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTa8, FTl6, FTl8;
+   REAL8 FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTa8, FTl6, FTl8, FTa10, FTa12;
    /* Coefficients of the corresponding P-approximant */
    REAL8 fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7, fPa8;
 
@@ -138,7 +138,9 @@ static REAL8 UNUSED XLALSimInspiralEt2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 Energy;
    REAL8 x = v*v;
-   Energy = ak->ETaN * x * (1. + ak->ETa1*x);
+   REAL8 x5 = x*x*x*x*x;
+   REAL8 x6 = x*x5;
+   Energy = ak->ETaN * x * (1. + ak->ETa1*x + ak->ETa5*x5 + ak->ETa6*x6);
    return Energy;
 }
 
@@ -147,7 +149,10 @@ static REAL8 UNUSED XLALSimInspiralEt4(REAL8 v, expnCoeffsdEnergyFlux *ak)
    REAL8 Energy;
    REAL8 x = v*v;
    REAL8 x2 = x*x;
-   Energy = ak->ETaN * x * (1. + ak->ETa1*x + ak->ETa2*x2);
+   REAL8 x5 = x*x2*x2;
+   REAL8 x6 = x*x5;
+   Energy = ak->ETaN * x * (1. + ak->ETa1*x + ak->ETa2*x2 + ak->ETa5*x5
+          + ak->ETa6*x6);
    return Energy;
 }
 
@@ -157,7 +162,10 @@ static REAL8 UNUSED XLALSimInspiralEt6(REAL8 v, expnCoeffsdEnergyFlux *ak)
    REAL8 x = v*v;
    REAL8 x2 = x*x;
    REAL8 x3 = x*x2;
-   Energy = ak->ETaN * x * (1. + ak->ETa1*x + ak->ETa2*x2 + ak->ETa3*x3);
+   REAL8 x5 = x3*x2;
+   REAL8 x6 = x*x5;
+   Energy = ak->ETaN * x * (1. + ak->ETa1*x + ak->ETa2*x2 + ak->ETa3*x3
+          + ak->ETa5*x5 + ak->ETa6*x6);
    return Energy;
 }
 
@@ -173,7 +181,9 @@ static REAL8 UNUSED XLALSimInspiraldEt2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
    REAL8 dEnergy;
    REAL8 x = v*v;
-   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x);
+   REAL8 x5 = x*x*x*x*x;
+   REAL8 x6 = x*x5;
+   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x + ak->dETa5*x5 + ak->dETa6*x6);
    return (dEnergy);
 }
 
@@ -183,7 +193,10 @@ static REAL8 UNUSED XLALSimInspiraldEt4(REAL8 v, expnCoeffsdEnergyFlux *ak)
    REAL8 dEnergy;
    REAL8 x = v*v;
    REAL8 x2 = x*x;
-   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x + ak->dETa2*x2);
+   REAL8 x5 = x*x2*x2;
+   REAL8 x6 = x*x5;
+   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x + ak->dETa2*x2 + ak->dETa5*x5
+           + ak->dETa6*x6);
    return (dEnergy);
 }
 
@@ -194,7 +207,10 @@ static REAL8 UNUSED XLALSimInspiraldEt6(REAL8 v, expnCoeffsdEnergyFlux *ak)
    REAL8 x = v*v;
    REAL8 x2 = x*x;
    REAL8 x3 = x*x2;
-   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x + ak->dETa2*x2 + ak->dETa3*x3);
+   REAL8 x5 = x3*x2;
+   REAL8 x6 = x*x5;
+   dEnergy = ak->dETaN * v * (1. + ak->dETa1*x + ak->dETa2*x2 + ak->dETa3*x3
+           + ak->dETa5*x5 + ak->dETa6*x6);
    return (dEnergy);
 }
 
@@ -213,77 +229,87 @@ static REAL8 UNUSED XLALSimInspiralFt0(REAL8 v, expnCoeffsdEnergyFlux *ak)
 
 static REAL8 UNUSED XLALSimInspiralFt2(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
-   REAL8 flux,v2,v4,v8,v10;
+   REAL8 flux,v2,v4,v8,v10,v12;
    v2 = v*v;
    v4 = v2*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->FTaN * v10 * (1. + ak->FTa2*v2);
+   v12 = v10*v2;
+   flux = ak->FTaN * v10 * (1. + ak->FTa2*v2 + ak->FTa10*v10 + ak->FTa12*v12);
    return (flux);
 }
 
 
 static REAL8 UNUSED XLALSimInspiralFt3(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
-   REAL8 flux,v2,v4,v8,v10;
+   REAL8 flux,v2,v4,v8,v10,v12;
    v2 = v*v;
    v4 = v2*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->FTaN * v10 * (1. + ak->FTa2*v2 + ak->FTa3*v2*v);
+   v12 = v10*v2;
+   flux = ak->FTaN * v10 * (1. + ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa10*v10
+        + ak->FTa12*v12);
    return (flux);
 }
 
 
 static REAL8 UNUSED XLALSimInspiralFt4(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
-   REAL8 flux,v2,v4,v8,v10;
+   REAL8 flux,v2,v4,v8,v10,v12;
    v2 = v*v;
    v4 = v2*v2;
    v8 = v4*v4;
    v10 = v8*v2;
-   flux = ak->FTaN * v10 * (1. + ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4);
+   v12 = v10*v2;
+   flux = ak->FTaN * v10 * (1. + ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
+        + ak->FTa10*v10 + ak->FTa12*v12);
    return (flux);
 }
 
 
 static REAL8 UNUSED XLALSimInspiralFt5(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
-   REAL8 flux,v2,v4,v8,v10;
+   REAL8 flux,v2,v4,v8,v10,v12;
    v2 = v*v;
    v4 = v2*v2;
    v8 = v4*v4;
    v10 = v8*v2;
+   v12 = v10*v2;
    flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
-        + ak->FTa5*v4*v);
+        + ak->FTa5*v4*v + ak->FTa10*v10 + ak->FTa12*v12);
    return (flux);
 }
 
 
 static REAL8 UNUSED XLALSimInspiralFt6(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
-   REAL8 flux,v2,v4,v6,v8,v10;
+   REAL8 flux,v2,v4,v6,v8,v10,v12;
    v2 = v*v;
    v4 = v2*v2;
    v6 = v4*v2;
    v8 = v4*v4;
    v10 = v8*v2;
+   v12 = v10*v2;
    flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
-        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(16.0*v2))*v6);
+        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(16.0*v2))*v6 + ak->FTa10*v10
+        + ak->FTa12*v12);
    return (flux);
 }
 
 
 static REAL8 UNUSED XLALSimInspiralFt7(REAL8 v, expnCoeffsdEnergyFlux *ak)
 {
-   REAL8 flux,v2,v4,v6,v8,v10;
+   REAL8 flux,v2,v4,v6,v8,v10,v12;
    v2 = v*v;
    v4 = v2*v2;
    v6 = v4*v2;
    v8 = v4*v4;
    v10 = v8*v2;
+   v12 = v10*v2;
    flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
-        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(16.0*v2))*v6 + ak->FTa7*v6*v);
+        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(16.0*v2))*v6 + ak->FTa7*v6*v
+        + ak->FTa10*v10 + ak->FTa12*v12);
    return (flux);
 }
 

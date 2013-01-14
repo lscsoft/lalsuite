@@ -16,13 +16,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
-/**
- * \file
- * \ingroup XML
- * \brief Header file declaring the public VOTable serializers XML Pulsar API
- */
-
 /* Double-include protection */
 #ifndef _LALXMLVOTABLESERIALIZERSPULSAR_H
 #define _LALXMLVOTABLESERIALIZERSPULSAR_H
@@ -32,6 +25,12 @@
 extern "C" {
 #endif
 
+/**
+ * \defgroup LALXMLVOTableSerializersPulsar_h Header LALXMLVOTableSerializersPulsar.h
+ * \ingroup pkg_pulsarXML
+ * \brief Header file declaring the public VOTable serializers XML Pulsar API
+ */
+/*@{*/
 
 #include <libxml/tree.h>
 
@@ -51,6 +50,8 @@ INT4 XLALVOTDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
 xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp, const char *name);
 INT4 XLALVOTDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const char *name, PulsarDopplerParams *pdp);
 
+
+/*@}*/
 
 /* C++ protection */
 #ifdef __cplusplus

@@ -78,7 +78,7 @@ static WS *get_workspace(WS *workspace_cache, const size_t n) {
 }
 
 /* by default, complex arithmetic will call built-in function __muldc3, which does a lot of error checking for inf and nan; just do it manually */
-static void multiply_conjugate(complex float * restrict out, complex float *a, complex float *b, const size_t size) {
+static void multiply_conjugate(COMPLEX8 * restrict out, COMPLEX8 *a, COMPLEX8 *b, const size_t size) {
     size_t k = 0;
     for (;k < size; ++k) {
         const float ar = crealf(a[k]);
@@ -90,7 +90,7 @@ static void multiply_conjugate(complex float * restrict out, complex float *a, c
     }
 }
 
-static double abs2(const complex float x) {
+static double abs2(const COMPLEX8 x) {
     const REAL8 re = crealf(x);
     const REAL8 im = cimagf(x);
     return re * re + im * im;
@@ -126,7 +126,7 @@ REAL8 XLALInspiralSBankComputeMatch(const COMPLEX8FrequencySeries *inj, const CO
     fftwf_execute(ws->plan); /* plan is reverse */
 
     /* maximize over |z(t)|^2 */
-    complex float *zdata = ws->zt;
+    COMPLEX8 *zdata = ws->zt;
     size_t k = n;
     ssize_t argmax = -1;
     REAL8 max = 0.;
@@ -150,5 +150,6 @@ REAL8 XLALInspiralSBankComputeMatch(const COMPLEX8FrequencySeries *inj, const CO
     result *= (min_len - 1.) / (max_len - 1.);
 
     /* compute match */
-    return 4. * inj->deltaF * sqrt(result) / n;  /* inverse FFT = reverse / n */
+    /* return 4. * inj->deltaF * sqrt(result) / n; */  /* inverse FFT = reverse / n */
+    return 4. * inj->deltaF * sqrt(result);  /* Ajith, 2012-11-09: The division by n is inconsistent with the revised convention of the normalization in compute_sigmasq in SBank. I check this by computing the match of a normalized, whitened template with itself */
 }

@@ -19,10 +19,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \author R. Prix, J. T. Whelan
- * \ingroup pulsarCoherent
- * \file
- * \brief
+/*
  * Functions to calculate the so-called F-statistic for a given point in parameter-space,
  * following the equations in \ref JKS98.
  *
@@ -95,7 +92,6 @@ const MultiSSBtimes empty_MultiSSBtimes;
 const Fcomponents empty_Fcomponents;
 const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
-const BarycenterBuffer empty_BarycenterBuffer;
 
 static const LALStatus blank_status;
 
@@ -1465,7 +1461,7 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
   refTimeREAL8 = GPS2REAL8(refTime);
 
   BarycenterInput baryinput = empty_BarycenterInput;
-  BarycenterBuffer bBuffer = empty_BarycenterBuffer;
+  BarycenterBuffer *bBuffer = NULL;
 
   /*----- now calculate the SSB transformation in the precision required */
   switch (precision)
@@ -1517,6 +1513,8 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
 
 	} /* for i < numSteps */
 
+      break;
+
     case SSBPREC_RELATIVISTICOPT:	/* use optimized version XLALBarycenterOpt() */
 
       baryinput.site = DetectorStates->detector;
@@ -1550,6 +1548,10 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       break;
     } /* switch precision */
+
+
+  // free buffer memory
+  if ( bBuffer ) XLALFree ( bBuffer );
 
   /* finally: store the reference-time used into the output-structure */
   tSSB->refTime = refTime;

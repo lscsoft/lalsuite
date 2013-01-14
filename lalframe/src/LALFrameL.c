@@ -54,7 +54,7 @@ struct tagLALFrameUFrDetector {
  * FrFile functions
  */
 
-int XLALFrameUFrFileClose(LALFrameUFrFile * stream)
+void XLALFrameUFrFileClose(LALFrameUFrFile * stream)
 {
     if (stream) {
         if (stream->mode == XLAL_FRAMEU_FR_FILE_MODE_R)
@@ -63,7 +63,6 @@ int XLALFrameUFrFileClose(LALFrameUFrFile * stream)
             FrFileOEnd(stream->handle);
         LALFree(stream);
     }
-    return 0;
 }
 
 LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)

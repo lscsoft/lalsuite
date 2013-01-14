@@ -151,43 +151,43 @@ int XLALConfigSectionExists(const LALParsedDataFile *, const CHAR *);
 
 int
 XLALReadConfigBOOLVariable (BOOLEAN *varp,
-			    const LALParsedDataFile *cfgdata,
-			    const CHAR *secName,
-			    const CHAR *varName,
-			    BOOLEAN *wasRead);
+                            const LALParsedDataFile *cfgdata,
+                            const CHAR *secName,
+                            const CHAR *varName,
+                            BOOLEAN *wasRead);
 int
 XLALReadConfigINT4Variable (INT4 *varp,
-			   const LALParsedDataFile *cfgdata,
-			   const CHAR *secName,
-			   const CHAR *varName,
-			   BOOLEAN *wasRead);
+                           const LALParsedDataFile *cfgdata,
+                           const CHAR *secName,
+                           const CHAR *varName,
+                           BOOLEAN *wasRead);
 
 int
 XLALReadConfigREAL8Variable (REAL8 *varp,
-			    const LALParsedDataFile *cfgdata,
-			    const CHAR *secName,
-			    const CHAR *varName,
-			    BOOLEAN *wasRead);
+                            const LALParsedDataFile *cfgdata,
+                            const CHAR *secName,
+                            const CHAR *varName,
+                            BOOLEAN *wasRead);
 
 int
 XLALReadConfigSTRINGVariable (CHAR **varp,
-			     const LALParsedDataFile *cfgdata,
-			     const CHAR *secName,
-			     const CHAR *varName,
-			     BOOLEAN *wasRead);
+                             const LALParsedDataFile *cfgdata,
+                             const CHAR *secName,
+                             const CHAR *varName,
+                             BOOLEAN *wasRead);
 
 int
 XLALReadConfigSTRINGNVariable (CHARVector *varp,
-			      const LALParsedDataFile *cfgdata,
-			      const CHAR *secName,
-			      const CHAR *varName,
-			      BOOLEAN *wasRead);
+                              const LALParsedDataFile *cfgdata,
+                              const CHAR *secName,
+                              const CHAR *varName,
+                              BOOLEAN *wasRead);
 
 int
 XLALReadConfigVariable (void *varp,
-		       const LALParsedDataFile *cfgdata,
-		       const LALConfigVar *param,
-		       BOOLEAN *wasRead);
+                       const LALParsedDataFile *cfgdata,
+                       const LALConfigVar *param,
+                       BOOLEAN *wasRead);
 
 int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictness strict);
 int XLALLowerCaseString (CHAR *string);
@@ -213,7 +213,7 @@ int XLALLowerCaseString (CHAR *string);
 /*@}*/
 
 /** \cond DONT_DOXYGEN */
-#define CONFIGFILEH_MSGENULL 		"Arguments contained an unexpected null pointer."
+#define CONFIGFILEH_MSGENULL            "Arguments contained an unexpected null pointer."
 #define CONFIGFILEH_MSGEFILE		"File error."
 #define CONFIGFILEH_MSGEVAR		"Config variable not found."
 #define CONFIGFILEH_MSGEFMT		"Config variable not readable using given format-string."

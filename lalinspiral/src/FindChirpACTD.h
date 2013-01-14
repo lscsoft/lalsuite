@@ -32,10 +32,14 @@ templates using AmpCorPPN.
 */
 /*@{*/
 
-/**\name Error Codes */ /*@{*/
-#define FINDCHIRPACTDH_EQMAS 1
-#define FINDCHIRPACTDH_MSGEQMAS "AmpCorPPN template equal mass"
+/**\name Error Codes */
+/*@{*/
+#define FINDCHIRPACTDH_EQMAS 1	/**< AmpCorPPN template equal mass */
 /*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define FINDCHIRPACTDH_MSGEQMAS "AmpCorPPN template equal mass"
+/** \endcond */
 
 
 /** Define number of vectors, 6 for 0.5PN. */

@@ -212,6 +212,7 @@ LALStringVector *corlist = NULL;
                      their upper and lower ranges\n"\
 " --ephem-earth       Earth ephemeris file\n"\
 " --ephem-sun         Sun ephemeris file\n"\
+" --ephem-timecorr    Einstein delay time correction ephemeris file\n"\
 " --model-type        (CHAR) the signal model that you want to use. Currently\n\
                      this can only be 'triaxial', which is the default\n\
                      value.\n"\
@@ -586,8 +587,8 @@ void readPulsarData( LALInferenceRunState *runState ){
   
   CHAR *filestr = NULL;
   
-  CHAR efile[1024];
-  CHAR sfile[1024];
+  CHAR *efile = NULL, *sfile = NULL, *tfile = NULL;
+  TimeCorrectionType ttype;
   
   CHAR *tempdets = NULL;
   CHAR *tempdet = NULL;
@@ -611,6 +612,9 @@ void readPulsarData( LALInferenceRunState *runState ){
   REAL8Vector *modelFreqFactors = NULL;
   INT4 ml = 1, downs = 1;
   
+  CHAR *parFile = NULL;
+  BinaryPulsarParams pulsar;
+  
   runState->data = NULL;
   
   /* check pulsar model required */
@@ -622,7 +626,7 @@ void readPulsarData( LALInferenceRunState *runState ){
     /* default model type is triaxial */
     modeltype = XLALStringDuplicate( "triaxial" );
   }
-  
+
   /* set parameters to read in data for different models - if adding a new
      model different parameters may be required. Different models may use sets
      of data at multiple frequencies. */
@@ -645,6 +649,15 @@ void readPulsarData( LALInferenceRunState *runState ){
     fprintf(stderr, "Error... model type %s is unknown!\n", modeltype);
     exit(0);
   }
+  
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
+  if( ppt == NULL ) { 
+    fprintf(stderr,"Must specify --par-file!\n"); exit(1);
+  }
+  parFile = XLALStringDuplicate( ppt->value );
+        
+  /* get the pulsar parameters to give a value of f */
+  XLALReadTEMPOParFile( &pulsar, parFile );
   
   /* get the detectors - must */
   ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
@@ -723,18 +736,7 @@ void readPulsarData( LALInferenceRunState *runState ){
     }
     /*------------------------------------------------------------------------*/
     else{ /* get PSDs from model functions and set detectors */
-      CHAR *parFile = NULL;
-      BinaryPulsarParams pulsar;
       REAL8 pfreq = 0.;
-      
-      ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
-      if( ppt == NULL ) { 
-        fprintf(stderr,"Must specify --par-file!\n"); exit(1);
-      }
-      parFile = XLALStringDuplicate( ppt->value );
-        
-      /* get the pulsar parameters to give a value of f */
-      XLALReadTEMPOParFile( &pulsar, parFile );
       
       /* putting in pulsar frequency at f here */
       pfreq = pulsar.f0;
@@ -943,7 +945,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     REAL8 dataValsRe = 0., dataValsIm = 0.;
     REAL8Vector *temptimes = NULL;
     INT4 j = 0, k = 0, datalength = 0;
-    ProcessParamsTable *ppte = NULL, *ppts = NULL;
+    ProcessParamsTable *ppte = NULL, *ppts = NULL, *pptt = NULL;
     
     FILE *fp = NULL;
     
@@ -1165,14 +1167,31 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     /* get ephemeris files */
     ppte = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
     ppts = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
+    pptt = LALInferenceGetProcParamVal( commandLine, "--ephem-timecorr" );
     if( ppte && ppts ){
-      XLALStringCopy( efile, ppte->value, sizeof(efile) );
-      XLALStringCopy( sfile, ppts->value, sizeof(sfile) );
+      efile = XLALStringDuplicate( ppte->value );
+      sfile = XLALStringDuplicate( ppts->value );
+      
+      if ( pptt ){
+        tfile = XLALStringDuplicate( pptt->value );
+      
+        if ( pulsar.units != NULL ){
+          if( !strcmp(pulsar.units, "TDB") )
+            ttype = TIMECORRECTION_TDB;
+          else ttype = TIMECORRECTION_TCB; /* default to TCB otherwise */
+        }
+        else
+          ttype = TIMECORRECTION_TCB;
+      }
+      else{
+        tfile = NULL;
+        ttype = TIMECORRECTION_ORIGINAL;
+      }
     }
     else{ /* try getting files automatically */
-      if( XLALAutoSetEphemerisFiles( efile, sfile,
-        ifodata->dataTimes->data[0].gpsSeconds,
-        ifodata->dataTimes->data[datalength-1].gpsSeconds ) ){
+      if( !( ttype = XLALAutoSetEphemerisFiles( efile, sfile, tfile,
+            pulsar, ifodata->dataTimes->data[0].gpsSeconds,
+            ifodata->dataTimes->data[datalength-1].gpsSeconds ) ) ){
         fprintf(stderr, "Error... not been able to set ephemeris files!\n");
         exit(3);
       }
@@ -1186,7 +1205,15 @@ defined!\n");
     }
     
     /* set up ephemeris information */
-    ifodata->ephem = XLALInitBarycenter( efile, sfile );
+    XLAL_CHECK_VOID( (ifodata->ephem = XLALInitBarycenter( efile, sfile ) )
+                     != NULL, XLAL_EFUNC );
+    if( tfile ){
+      XLAL_CHECK_VOID( (ifodata->tdat = XLALInitTimeCorrections( tfile ) ) 
+                       != NULL, XLAL_EFUNC );
+    }
+    else ifodata->tdat = NULL;
+    ifodata->ttype = ttype;
+    
     XLALDestroyRandomParams( randomParams );
     
     /* get maximum data length */
@@ -1305,23 +1332,23 @@ void setupFromParFile( LALInferenceRunState *runState )
   while( data ){
     REAL8Vector *freqFactors = NULL;
     UINT4 j = 0;
-    
+
     freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
                                                             "freqfactors" );
-    
+
     for( j = 0; j < freqFactors->length; j++ ){
       UINT4 i = 0;
       LALInferenceVariableItem *scaleitem = scaletemp->head;
       REAL8Vector *dts = NULL, *bdts = NULL;
 
-      dts = get_ssb_delay( pulsar, data->dataTimes, data->ephem, data->detector,
-                           0. );
-      
+      dts = get_ssb_delay( pulsar, data->dataTimes, data->ephem, data->tdat,
+                           data->ttype, data->detector, 0. );
+
       LALInferenceAddVariable( data->dataParams, "ssb_delays", &dts,
                               LALINFERENCE_REAL8Vector_t, 
                               LALINFERENCE_PARAM_FIXED );
-     
-      bdts = get_bsb_delay( pulsar, data->dataTimes, dts );
+      
+      bdts = get_bsb_delay( pulsar, data->dataTimes, dts, data->ephem );
       
       LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts,
                               LALINFERENCE_REAL8Vector_t, 
@@ -3817,39 +3844,34 @@ void get_loudest_snr( LALInferenceRunState *runState ){
  * LALPULSAR_PREFIX variable is set, which should mean that ephemeris files are
  * installed in the directory \c ${LALPULSAR_PREFIX}/share/lalpulsar/.
  *
- * Within this directory the should be ephemeris files of the format 
- * earthXX-YY.dat, or earthXX.dat, where XX are two digit years e.g.
- * earth11.dat and represent the year or years for which the ephemeris is
- * valid. The function will find the appropriate ephemeris files that cover the 
- * time range (in GPS seconds) required. If no files exist errors will be
- * returned.
- * 
- * The function requires <code>dirent.h</code> and <code>time.h</code>. 
- * 
- * NOTE: This may want to be moved into LAL at some point.
  * 
  * \param efile [in] a string that will return the Earth ephemeris file
- * \param sfile [in] a string that will return the Sun ephemeris file 
+ * \param sfile [in] a string that will return the Sun ephemeris file
+ * \param tfile [in] a string that will return the time correction file
+ * \param pulsar [in] the pulsar parameters read from a .par file
  * \param gpsstart [in] the GPS time of the start of the data
  * \param gpsend [in] the GPS time of the end of the data
  * 
- * \return Zero will be return on successful completion
+ * \return The TimeCorrectionType e.g. TDB or TCB
  */
-INT4 XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, 
-                                INT4 gpsstart, INT4 gpsend ){
-  struct tm utcstart,  utcend;
-  CHAR *eftmp = NULL, *sftmp = NULL;
-  INT4 buf = 3;
-  CHAR yearstart[buf], yearend[buf]; /* the two digit year i.e. 11 for 2011*/
-  INT4 ys = 0, ye = 0;
+TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
+                                              CHAR *tfile,
+                                              BinaryPulsarParams pulsar,
+                                              INT4 gpsstart, INT4 gpsend ){
+  /* set the times that the ephemeris files span */
+  INT4 ephemstart = 630720013; /* GPS time of Jan 1, 2000, 00:00:00 UTC */
+  INT4 ephemend = 1261872015; /* GPS time of Jan 1, 2020, 00:00:00 UTC */
+  CHAR *eftmp = NULL, *sftmp = NULL, *tftmp = NULL;
+  TimeCorrectionType ttype = TIMECORRECTION_NONE;
+  
   CHAR *lalpath = NULL, *lalpulsarpath = NULL;
   
-  INT4 yr1 = 0, yr2 = 0, i = 0;
-    
-  CHAR tmpyr[6];
-    
-  struct dirent *entry;
-  DIR *dp;
+  if( gpsstart < ephemstart || gpsend < ephemstart || gpsstart > ephemend ||
+      gpsend > ephemend ){
+    XLALPrintError("Start and end times are outside the ephemeris file \
+ranges!\n");
+    XLAL_ERROR(XLAL_EFUNC);
+  }
   
   /* first check that the path to the Ephemeris files is available in the
      environment variables */
@@ -3859,90 +3881,45 @@ automatically generate ephemeris files!\n");
     XLAL_ERROR(XLAL_EFUNC);
   }
   
-  /* get the utc times of the start and end GPS times */
-  if( !XLALGPSToUTC( &utcstart, gpsstart ) )
-    XLAL_ERROR(XLAL_EFUNC);
-  if( !XLALGPSToUTC( &utcend, gpsend ) )
-    XLAL_ERROR(XLAL_EFUNC);
-  
-  /* get years */
-  if( strftime(yearstart, buf, "%y", &utcstart) != 2 )
-    XLAL_ERROR(XLAL_EFUNC);
-  
-  if( strftime(yearend, buf, "%y", &utcend) != 2 )
-    XLAL_ERROR(XLAL_EFUNC);
-  
-  ys = atoi(yearstart);
-  ye = atoi(yearend);
-  
   lalpulsarpath = XLALStringDuplicate( lalpath );
   
   if ( (lalpulsarpath = XLALStringAppend(lalpulsarpath, "/share/lalpulsar/")) ==
-NULL )
+    NULL )
     XLAL_ERROR(XLAL_EFUNC);
   
   eftmp = XLALStringDuplicate(lalpulsarpath);
   sftmp = XLALStringDuplicate(lalpulsarpath);
+  tftmp = XLALStringDuplicate(lalpulsarpath);
   
-  eftmp = XLALStringAppend(eftmp, "earth");
-  sftmp = XLALStringAppend(sftmp, "sun");
- 
-  /* find the ephemeris file that bounds the required range */
-  if ( ( dp = opendir(lalpulsarpath) ) == NULL ){
-    XLALPrintError("Error... cannot open directory path %s!\n", lalpulsarpath);
-    XLAL_ERROR(XLAL_EFUNC);
+  eftmp = XLALStringAppend(eftmp, "earth00-19-");
+  sftmp = XLALStringAppend(sftmp, "sun00-19-");
+
+  if( pulsar.ephem == NULL ){
+    /* default to use DE405 */
+    eftmp = XLALStringAppend(eftmp, "DE405");
+    sftmp = XLALStringAppend(sftmp, "DE405");
   }
-    
-  while( (entry = readdir(dp) ) ){
-    /* just use "earth" files rather than doubling up */
-    if ( strstr(entry->d_name, "earth") != NULL ){
-      /* get current set of ranges - filenames are of the format
-         earthXX-YY.dat, so find the '-' and extract two characters either
-         side */
-      if ( strchr(entry->d_name, '-') ){
-        sscanf(entry->d_name, "earth%d-%d.dat", &yr1, &yr2);
-        
-        if ( ys >= yr1 && ye <= yr2 ) {
-          snprintf(tmpyr, 6, "%02d-%02d", yr1, yr2);
-          
-          eftmp = XLALStringAppend(eftmp, tmpyr);
-          sftmp = XLALStringAppend(sftmp, tmpyr);
-          i++;
-          break;
-        }
-      }
-      /* get the single year value ephemeris file e.g. earthXX.dat */
-      else{
-        sscanf(entry->d_name, "earth%d.dat", &yr1);
-        
-        if ( ys == yr1 && ye == yr1 ){
-          snprintf(tmpyr, 3, "%02d", yr1);
-          eftmp = XLALStringAppend(eftmp, tmpyr);
-          sftmp = XLALStringAppend(sftmp, tmpyr);
-          i++;
-          break;
-        }
-      }
+  else{
+    if( !strcmp(pulsar.ephem, "DE405") || !strcmp(pulsar.ephem, "DE200") ||
+        !strcmp(pulsar.ephem, "DE414") ){
+      eftmp = XLALStringAppend(eftmp, pulsar.ephem);
+      sftmp = XLALStringAppend(sftmp, pulsar.ephem);
+    }
+    else{
+      XLALPrintError("Unknown ephemeris %s in par file\n", pulsar.ephem);
+      XLAL_ERROR(XLAL_EFUNC);
     }
   }
-    
-  closedir(dp);
-    
-  if( i == 0 ){
-    XLALPrintError("No ephemeris files in the time range %02d-%02d found!\n",
-                   ys, ye);
-    XLAL_ERROR(XLAL_EFUNC);
-  }
-
+  
   /* add .dat extension */
-  eftmp = XLALStringAppend(eftmp, ".dat");
-  sftmp = XLALStringAppend(sftmp, ".dat");
+  eftmp = XLALStringAppend(eftmp, ".dat.gz");
+  sftmp = XLALStringAppend(sftmp, ".dat.gz");
   
   if ( eftmp == NULL || sftmp == NULL )
     XLAL_ERROR(XLAL_EFUNC);
-
-  XLALStringCopy( efile, eftmp, 1024 );
-  XLALStringCopy( sfile, sftmp, 1024 );
+  
+  efile = XLALStringDuplicate( eftmp );
+  sfile = XLALStringDuplicate( sftmp );
   
   /* double check that the files exist */
   if( fopen(sfile, "r") == NULL || fopen(efile, "r") == NULL ){
@@ -3950,7 +3927,33 @@ NULL )
     XLAL_ERROR(XLAL_EFUNC);
   }
   
-  return 0;
+  if( pulsar.units == NULL ){
+    /* default to using TCB units */
+    tftmp = XLALStringAppend(sftmp, "te405_2000-2019.dat.gz");
+    ttype = TIMECORRECTION_TCB;
+  }
+  else{
+    if ( !strcmp( pulsar.units, "TDB" ) ){
+      tftmp = XLALStringAppend(sftmp, "tdb_2000-2019.dat.gz");
+      ttype = TIMECORRECTION_TDB;
+    }
+    else{
+      XLALPrintError("Error... unknown units %s in par file!\n", pulsar.units);
+      XLAL_ERROR(XLAL_EFUNC);
+    }
+  }
+  
+  if ( tftmp == NULL ) XLAL_ERROR(XLAL_EFUNC);
+    
+  tfile = XLALStringDuplicate( tftmp );
+    
+  if( fopen(tfile, "r") == NULL ){
+    XLALPrintError("Error... time ephemeris files not, or incorrectly, \
+defined!\n");
+    XLAL_ERROR(XLAL_EFUNC);
+  }
+  
+  return ttype;
 }
 
 /** \brief Convert \f$\phi_0\f$ and \f$\psi\f$ to a new coordinate system

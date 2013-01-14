@@ -109,9 +109,9 @@ extern "C" {
 #define LAL_G_SI      6.67259e-11    /**< Gravitational constant, N m^2 kg^-2 */
 #define LAL_H_SI      6.6260755e-34  /**< Planck constant, J s */
 #define LAL_HBAR_SI   1.0545726691251019773669079307477023e-34 /**< Reduced Planck constant, J s.  = LAL_H_SI / LAL_TWOPI */
-#define LAL_MPL_SI    2.1767140835297016797409334934257335e-8  /**< Planck mass, kg.  = \sqrt{LAL_HBAR_SI * LAL_C_SI / LAL_G_SI} */
-#define LAL_LPL_SI    1.6160486159348859434398861412879278e-35 /**< Planck length, m.  = \sqrt{LAL_HBAR_SI * LAL_G_SI / LAL_C_SI^3} */
-#define LAL_TPL_SI    5.3905579437054615411301846068720240e-44 /**< Planck time, s.  = \sqrt{LAL_HBAR_SI * LAL_G_SI / LAL_C_SI^5} */
+#define LAL_MPL_SI    2.1767140835297016797409334934257335e-8  /**< Planck mass, kg.  = sqrt{LAL_HBAR_SI * LAL_C_SI / LAL_G_SI} */
+#define LAL_LPL_SI    1.6160486159348859434398861412879278e-35 /**< Planck length, m.  = sqrt{LAL_HBAR_SI * LAL_G_SI / LAL_C_SI^3} */
+#define LAL_TPL_SI    5.3905579437054615411301846068720240e-44 /**< Planck time, s.  = sqrt{LAL_HBAR_SI * LAL_G_SI / LAL_C_SI^5} */
 #define LAL_K_SI      1.380658e-23   /**< Boltzmann constant, J K^-1 */
 #define LAL_R_SI      8.314511       /**< Ideal gas constant, J K^-1 */
 #define LAL_MOL       6.0221367e23   /**< Avogadro constant, dimensionless */
@@ -144,6 +144,8 @@ extern "C" {
 #define LAL_BWGS84_SI 6.356752314e6   /**< Semiminor axis of WGS-84 Reference Ellipsoid, m */
 #define LAL_MEARTH_SI 5.97370e24      /**< Earth mass, kg */
 #define LAL_IEARTH    0.409092804     /**< Earth inclination (2000), radians */
+#define LAL_COSIEARTH 0.91748206215761919815	/**< Cosine of Earth inclination (2000) */
+#define LAL_SINIEARTH 0.39777715572793088957	/**< Sine of Earth inclination (2000) */
 #define LAL_EEARTH    0.0167          /**< Earth orbital eccentricity */
 #define LAL_RSUN_SI   6.960e8         /**< Solar equatorial radius, m */
 #define LAL_MSUN_SI   1.98892e30      /**< Solar mass, kg */

@@ -97,18 +97,22 @@
 
 extern char *optarg;
 
+/**\name Error Codes */
+/*@{*/
+#define INSPIRALSPINBANKTESTC_ENORM     0	/**< Normal exit */
+#define INSPIRALSPINBANKTESTC_EMEM      1	/**< Memory allocation error */
+#define INSPIRALSPINBANKTESTC_ESUB      2	/**< Subroutine error */
+#define INSPIRALSPINBANKTESTC_EFILE     4	/**< File I/O error */
+/*@}*/
 
-/**\name Error Codes */ /*@{*/
-#define INSPIRALSPINBANKTESTC_ENORM     0
-#define INSPIRALSPINBANKTESTC_EMEM      1
-#define INSPIRALSPINBANKTESTC_ESUB      2
-#define INSPIRALSPINBANKTESTC_EFILE     4
+/** \cond DONT_DOXYGEN */
 
 #define INSPIRALSPINBANKTESTC_MSGENORM  "Normal exit"
 #define INSPIRALSPINBANKTESTC_MSGEMEM   "Memory allocation error"
 #define INSPIRALSPINBANKTESTC_MSGESUB   "Subroutine error"
 #define INSPIRALSPINBANKTESTC_MSGEFILE  "File I/O error"
-/*@}*/
+
+
 
 int main( int argc, char *argv[] )
 {
@@ -257,3 +261,4 @@ int main( int argc, char *argv[] )
   else
     return INSPIRALSPINBANKTESTC_ENORM;
 }
+/** \endcond */

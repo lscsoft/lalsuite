@@ -52,6 +52,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     {"l1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_L1]),1},
 /*    {"t1-data",             no_argument, &(haveTrig[LAL_IFO_T1]), 1 },*/
     {"v1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_V1]),1},
+    {"face-on-analysis",    no_argument, &(localparams.faceOnAnalysis),1},
+    {"face-away-analysis",    no_argument, &(localparams.faceAwayAnalysis),1},
     { "help",               no_argument, 0, 'h' },
     { "version",            no_argument, 0, 'V' },
     { "simulated-data",          required_argument, 0, '6' },
@@ -117,9 +119,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "fft-level",               required_argument, 0, '|' },
     { "cluster-window",          required_argument, 0, '4' },
     { "inj-search-window",       required_argument, 0, '3' },
+    { "inj-mchirp-window",       required_argument, 0, '5' },
+    { "ligo-calibrated-data",    required_argument, 0, '7' }, 
+    { "virgo-calibrated-data",   required_argument, 0, '8' }, 
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:6:<:>:!:&:(:):#:|";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:5:6:7:8:<:>:!:&:(:):#:|";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -435,6 +440,43 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case '3': /* Injection search window */
         localparams.injSearchWindow = atof( optarg );
         break;
+      case '5': /* Injection search window */
+        localparams.injMchirpWindow = atof( optarg );
+        break;
+      case '7':
+        if (!strcmp("real_4", optarg))
+        {
+          localparams.ligoDoubleData = 0;
+        }
+        else if (!strcmp("real_8", optarg))
+        {
+          localparams.ligoDoubleData = 1;
+        }
+        else
+        {
+          fprintf(stderr, "invalid argument to --%s:\n"
+                  "unknown data type specified;\n"
+                  "%s (must be one of: real_4, real_8)\n",
+                  long_options[option_index].name, optarg);
+        }
+        break;
+      case '8':
+        if (!strcmp("real_4", optarg))
+        {
+          localparams.virgoDoubleData = 0;
+        }
+        else if (!strcmp("real_8", optarg))
+        {
+          localparams.virgoDoubleData = 1;
+        }
+        else
+        {
+          fprintf(stderr, "invalid argument to --%s:\n"
+                  "unknown data type specified;\n"
+                  "%s (must be one of: real_4, real_8)\n",
+                  long_options[option_index].name, optarg);
+        }
+        break;
      case '?':
         error( "unknown error while parsing options\n" );
      default:
@@ -475,6 +517,16 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       }
     }
   }
+  /* Set the faceOn-faceAway flag */
+  if (localparams.faceOnAnalysis)
+  {
+    params->faceOnStatistic = 1;
+  }
+  else if (localparams.faceAwayAnalysis)
+  {
+    params->faceOnStatistic = 2;
+  }
+  // Otherwise it takes default value of 0
 
   *params = localparams;
 
@@ -537,6 +589,10 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
 
   params->approximant = NumApproximants;
   params->order = LAL_PNORDER_NUM_ORDER;
+
+  /* numeric type for data, set to S6 data options */
+  params->ligoDoubleData = 1;
+  params->virgoDoubleData = 0;
 
   return 0;
 }
@@ -765,6 +821,9 @@ int coh_PTF_usage( const char *program )
 
   fprintf( stderr, "\ncalibration options:\n" );
   fprintf( stderr, "--strain-data              data is strain (already calibrated)\n" );
+  fprintf( stderr, "--ligo-calibrated-data=TYPE   LIGO calibrated data of TYPE real_4 or real_8\n");
+  fprintf( stderr, "--virgo-calibrated-data=TYPE   Virgo calibrated data of TYPE real_4 or real_8\n");
+  fprintf( stderr, "--strain-data              data is strain (already calibrated)\n" );
   fprintf( stderr, "--dynamic-range-factor=dynfac  scale calibration by factor dynfac\n" );
   fprintf( stderr, "--fft-level=PLAN Set the fft plan to use level=PLAN\n" );
 
@@ -791,6 +850,8 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--analyze-inj-segs-only  Only analyze times when injections have been made\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
+  fprintf( stderr, "--face-on-analysis  Run with templates demanding inclination=0\n" );
+  fprintf( stderr, "--face-away-analysis  Run with templates demanding inclination=pi/2\n" );
 
   fprintf( stderr, "\nsky location options:\n" );
   fprintf( stderr, "--right-ascension=ra       right ascension of external trigger in degrees\n" );
@@ -802,6 +863,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "\ninjection options:\n" );
   fprintf( stderr, "--injection-file=file list of software injections to make into the data. If this option is not given injections are not made\n");
   fprintf( stderr, "--inj-search-window=arg    output injection triggers only within arg of the injections\n");
+  fprintf( stderr, "--inj-mchirp-window=arg    search for injections only with templates with fractional mchirp distance within arg\n");
 
   fprintf( stderr, "\nTrigger extraction options:\n" );
   fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );

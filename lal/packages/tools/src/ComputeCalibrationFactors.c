@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -26,42 +26,6 @@
 
 /* Independently computes the calibration factors \alpha(t)*\beta(t) and \alpha (t) from */
 
-
-static COMPLEX16 *cmul( COMPLEX16 *pc, COMPLEX16 *pa, COMPLEX16 *pb )
-{
-  COMPLEX16 a = *pa;
-  COMPLEX16 b = *pb;
-  COMPLEX16 c;
-  c.re = a.re * b.re - a.im * b.im;
-  c.im = a.re * b.im + a.im * b.re;
-  *pc = c;
-  return pc;
-}
-
-static COMPLEX16 *cdiv( COMPLEX16 *pc, COMPLEX16 *pa, COMPLEX16 *pb )
-{
-  COMPLEX16 a = *pa;
-  COMPLEX16 b = *pb;
-  COMPLEX16 c;
-  REAL8 rat;
-  REAL8 den;
-  if ( fabs( b.re ) > fabs( b.im ) )
-  {
-    rat = b.im / b.re;
-    den = b.re + rat * b.im;
-    c.re = ( a.re + rat * a.im ) / den;
-    c.im = ( a.im - rat * a.re ) / den;
-  }
-  else
-  {
-    rat = b.re / b.im;
-    den = b.im + rat * b.re;
-    c.re = ( a.re * rat + a.im ) / den;
-    c.im = ( a.im * rat - a.re ) / den;
-  }
-  *pc = c;
-  return pc;
-}
 
 void LALComputeCalibrationFactors(
     LALStatus               *status,
@@ -122,7 +86,7 @@ void LALComputeCalibrationFactors(
   /* ------------------------------------- match filtering ----------------------------------- */
 
   /* filter DARM_CTRL against sinusoids at f0 */
-  DARM_CTRL.re = DARM_CTRL.im = 0;
+  DARM_CTRL = 0;
   a = cos( 2.0 * LAL_PI * f0 * params->darmCtrl->deltaT );
   b = sin( 2.0 * LAL_PI * f0 * params->darmCtrl->deltaT );
   c = 1;
@@ -130,25 +94,24 @@ void LALComputeCalibrationFactors(
   for ( i = 0; i < params->darmCtrl->data->length; ++i )
   {
     REAL8 tmp = a * c - b * s;
-    DARM_CTRL.re += c * params->darmCtrl->data->data[i];
-    DARM_CTRL.im += s * params->darmCtrl->data->data[i];
+    DARM_CTRL += c * params->darmCtrl->data->data[i];
+    DARM_CTRL += I * s * params->darmCtrl->data->data[i];
     s = b * c + a * s;
     c = tmp;
   }
 
-  DARM_CTRL.re *= params->darmCtrl->deltaT;
-  DARM_CTRL.im *= -params->darmCtrl->deltaT;  /* The negative sign is needed for correct FT convention */
+  DARM_CTRL = -conj(DARM_CTRL) * params->darmCtrl->deltaT;  /* The conjugation is needed for correct FT convention */
 
   /* De-whiten DARM_CTRL */
-  if(W0.re != 0 && W0.im != 0)
+  if(W0 != 0.0)
     {
-     cmul( &DARM_CTRL, &DARM_CTRL, &W0);
+     DARM_CTRL *= W0;
     }
 
   output->darm=DARM_CTRL;
 
   /* filter AS_Q against sinusoids at f0 */
-  AS_Q.re = AS_Q.im = 0;
+  AS_Q = 0;
   a = cos( 2.0 * LAL_PI * f0 * params->asQ->deltaT );
   b = sin( 2.0 * LAL_PI * f0 * params->asQ->deltaT );
   c = 1;
@@ -156,19 +119,18 @@ void LALComputeCalibrationFactors(
   for ( i = 0; i < params->asQ->data->length; ++i )
   {
     REAL8 tmp = a * c - b * s;
-    AS_Q.re += c * params->asQ->data->data[i];
-    AS_Q.im += s * params->asQ->data->data[i];
+    AS_Q += c * params->asQ->data->data[i];
+    AS_Q += I * s * params->asQ->data->data[i];
     s = b * c + a * s;
     c = tmp;
   }
 
-  AS_Q.re *= params->asQ->deltaT;
-  AS_Q.im *= -params->asQ->deltaT;
+  AS_Q = conj(AS_Q) * params->asQ->deltaT;
 
   output->asq=AS_Q;
 
   /* filter EXC against sinusoids at f0 */
-  EXC.re = EXC.im = 0;
+  EXC = 0;
   a = cos( 2.0 * LAL_PI * f0 * params->exc->deltaT );
   b = sin( 2.0 * LAL_PI * f0 * params->exc->deltaT );
   c = 1;
@@ -176,23 +138,20 @@ void LALComputeCalibrationFactors(
   for ( i = 0; i < params->exc->data->length; ++i )
   {
     REAL8 tmp = a * c - b * s;
-    EXC.re += c * params->exc->data->data[i];
-    EXC.im += s * params->exc->data->data[i];
+    EXC += c * params->exc->data->data[i];
+    EXC += I * s * params->exc->data->data[i];
     s = b * c + a * s;
     c = tmp;
   }
 
-  EXC.re *= params->exc->deltaT;
-  EXC.im *= -params->exc->deltaT;
+  EXC = conj(EXC) * params->exc->deltaT;
 
   output->exc=EXC;
 
-  if (( fabs( EXC.re ) < tiny && fabs( EXC.im ) < tiny )) /* check on DARM_CTRL too?? */
+  if (( fabs( creal(EXC) ) < tiny && fabs( cimag(EXC) ) < tiny )) /* check on DARM_CTRL too?? */
   {
-    output->alphabeta.re=0.0;
-    output->alphabeta.im=0.0;
-    output->alpha.re=0.0;
-    output->alpha.im=0.0;
+    output->alphabeta=0.0;
+    output->alpha=0.0;
     RETURN(status);
   }
 
@@ -200,33 +159,26 @@ void LALComputeCalibrationFactors(
   /* ------------------------------ compute alpha*beta ------------------------------------- */
 
   {
-    COMPLEX16 RD, RDminus1;
+    COMPLEX16 RD;
 
-    cdiv( &RD, &EXC, &DARM_CTRL);
-    RDminus1.re=RD.re-1.0;
-    RDminus1.im=RD.im;
-    cdiv( &alphabeta, &RDminus1, &G0 );
+    RD = EXC / DARM_CTRL;
+    alphabeta = (RD - 1.0) / G0;
   }
 
   /* ------------------------------- compute alpha ----------------------------------------- */
   {
     COMPLEX16 RQ;
 
-    cdiv( &RQ, &AS_Q, &DARM_CTRL );
-    cmul( &alpha, &RQ, &D0);
-    cdiv( &alpha, &alpha, &G0 );
-    alpha.re *= -1.0;
-    alpha.im *= -1.0;
+    RQ = AS_Q / DARM_CTRL;
+    alpha = -RQ * D0 / G0;
   }
   /* ------------------------------- compute beta ----------------------------------------- */
 
   {
-    COMPLEX16 DmL,DmLoQ;
+    COMPLEX16 DmLoQ;
 
-    DmL.re = DARM_CTRL.re - EXC.re;
-    DmL.im = DARM_CTRL.im - EXC.im;
-    cdiv( &DmLoQ, &DmL , &AS_Q );
-    cdiv( &beta, &DmLoQ, &D0);
+    DmLoQ = (DARM_CTRL - EXC) / AS_Q;
+    beta = DmLoQ / D0;
   }
   /* ------------------ Done, now put alpha, beta  and alpha*beta in the output structure --------- */
 

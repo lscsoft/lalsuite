@@ -97,11 +97,10 @@ phases of the two waveforms derive from a single underlying
 instantaneous frequency.  We therefore write the waveforms in terms of
 two polarization amplitudes \f$A_1(t)\f$ and \f$A_2(t)\f$, a single phase
 function \f$\phi(t)\f$, and a polarization shift \f$\Phi(t)\f$:
-\anchor eq_quasiperiodic_hplus \anchor eq_quasiperiodic_hcross \f{eqnarray}{
-\label{eq_quasiperiodic_hplus}
+\anchor eq_quasiperiodic_hpluscross \f{eqnarray}{
+\label{eq_quasiperiodic_hpluscross}
 h_+(t) & = & A_1(t)\cos\Phi(t)\cos\phi(t)
 		- A_2(t)\sin\Phi(t)\sin\phi(t) \; , \\
-\label{eq_quasiperiodic_hcross}
 h_\times(t) & = & A_1(t)\sin\Phi(t)\cos\phi(t)
 		+ A_2(t)\cos\Phi(t)\sin\phi(t) \; .
 \f}

@@ -199,8 +199,8 @@ int main( int argc, char *argv[] ) {
   REAL8           determinant;      /* Determinant of projected metric */
   REAL4           f0;               /* carrier frequency */
   UINT2           numSpindown;      /* Number of spindowns */
-  char earth[] = "earth00-04.dat";
-  char sun[] = "sun00-04.dat";
+  char earth[] = DATADIR "earth00-04.dat";
+  char sun[] = DATADIR "sun00-04.dat";
 
   lalDebugLevel = 0;
 

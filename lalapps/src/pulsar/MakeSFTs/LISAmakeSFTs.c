@@ -235,7 +235,6 @@ main(int argc, char *argv[])
   sftParams.timestamps = NULL;
   sftParams.noiseSFTs = NULL;
   sftParams.window = NULL;
-  sftParams.make_v2SFTs = 1;
 
   if ( ( SFTVectList = LALCalloc( multiTs->length, sizeof(*SFTVectList) ) ) == NULL )
       return LISAMAKESFTS_EMEM;

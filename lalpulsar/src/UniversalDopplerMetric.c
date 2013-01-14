@@ -18,17 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \file
- *
- * \author Reinhard Prix
- * \ingroup PulsarMetric
- * \brief Function to compute the full F-statistic metric, including
- *  antenna-pattern functions from multi-detector, as derived in \ref Prix07.
- *
- *
- */
-
 /*---------- INCLUDES ----------*/
 #include <math.h>
 
@@ -48,7 +37,31 @@
 
 #include <lal/UniversalDopplerMetric.h>
 
-/*---------- HELP STRING LOOKUP ARRAYS ----------*/
+/**
+ *
+ * \author Reinhard Prix, Karl Wette
+ * \ingroup UniversalDopplerMetric_h
+ * \brief Function to compute the full F-statistic metric, including
+ *  antenna-pattern functions from multi-detector, as derived in \ref Prix07.
+ *
+ *
+ */
+
+/*---------- SCALING FACTORS ----------*/
+
+/** shortcuts for integer powers */
+#define POW2(a)  ( (a) * (a) )
+#define POW3(a)  ( (a) * (a) * (a) )
+#define POW4(a)  ( (a) * (a) * (a) * (a) )
+#define POW5(a)  ( (a) * (a) * (a) * (a) * (a) )
+
+/* These constants define an internal scale used within CWPhaseDeriv_i().
+ * Distances are normalised by SCALE_R, and times are normalised by SCALE_T.
+ */
+#define SCALE_R (LAL_AU_SI)
+#define SCALE_T (LAL_YRSID_SI)
+
+/*---------- LOOKUP ARRAYS ----------*/
 
 /** Array of symbolic 'names' for various detector-motions
  */
@@ -64,61 +77,55 @@ static const CHAR *const DetectorMotionNames[DETMOTION_LAST] = {
   [DETMOTION_ORBIT_SPINXY] = "orbit+spin_XY",
 };
 
-/** Array of Doppler coordinate names, and help-strings explaining the meaning/conventions of the Doppler coordinate names
- *
- * NOTE: It's important to also specify the "coordinate-set" this coordinate is meant to belong to,
- * in the sense of which other coordinates need to be held constant in partial derivatives wrt to this coordinate!
+/** Array of descriptor structs for each Doppler coordinate name
  */
-const CHAR *const DopplerCoordinateNames[DOPPLERCOORD_LAST][2] = {
-  [DOPPLERCOORD_FREQ_SI] = {"Freq", "Signal frequency in SSB [Units:Hz]. Coordinate-set: {fkdot, sky}."},
-  [DOPPLERCOORD_F1DOT_SI] = {"f1dot", "First frequency-derivative dFreq/dtau in SSB [Units:Hz/s]. Coordinate-set: {fkdot, sky}."},
-  [DOPPLERCOORD_F2DOT_SI] = {"f2dot", "Second frequency-derivative d2Freq/dtau^2 in SSB [Units:Hz/s^2]. Coordinate-set: {fkdot, sky}."},
-  [DOPPLERCOORD_F3DOT_SI] = {"f3dot", "Third frequency-derivative d3Freq/dtau^3 in SSB [Units:Hz/s^3]. Coordinate-set: {fkdot, sky}."},
+const struct {
+  const char *const name;	/**< coordinate name */
+  const double scale;		/**< multiplicative scaling factor of the coordinate */
+  const char *const help;	/**< help string explaining the coordinate's meaning and units */
+} DopplerCoordinates[DOPPLERCOORD_LAST] = {
 
-  [DOPPLERCOORD_ALPHA_RAD] = {"Alpha", "Sky-position: Right-ascension (longitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}."},
-  [DOPPLERCOORD_DELTA_RAD] = {"Delta", "Sky-position: Declination (latitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}."},
+  [DOPPLERCOORD_FREQ]     = {"freq",    SCALE_T,          "Frequency [Units: Hz]."},
+  [DOPPLERCOORD_F1DOT]    = {"f1dot",   POW2(SCALE_T),    "First spindown [Units: Hz/s]."},
+  [DOPPLERCOORD_F2DOT]    = {"f2dot",   POW3(SCALE_T),    "Second spindown [Units: Hz/s^2]."},
+  [DOPPLERCOORD_F3DOT]    = {"f3dot",   POW4(SCALE_T),    "Third spindown [Units: Hz/s^3]."},
 
-  [DOPPLERCOORD_FREQ_NAT] = {"Freq_Nat", "Same as Freq, but in 'natural units': Freq_Nat = 2 pi Freq (Tspan/2) [Units:1]"},
-  [DOPPLERCOORD_F1DOT_NAT] = {"f1dot_Nat", "Same as f1dot, but in 'natural units': f1dot_Nat = 2 pi f1dot/2! (Tspan/2)^2 [Units:1]"},
-  [DOPPLERCOORD_F2DOT_NAT] = {"f2dot_Nat", "Same as f2dot, but in 'natural units': f2dot_Nat = 2 pi f2dot/3! (Tspan/2)^3 [Units:1]"},
-  [DOPPLERCOORD_F3DOT_NAT] = {"f3dot_Nat", "Same as f3dot, but in 'natural units': f3dot_Nat = 2 pi f3dot/4! (Tspan/2)^4 [Units:1]"},
+  [DOPPLERCOORD_GC_NU0]   = {"gc_nu0",  SCALE_T,          "Global correlation frequency [Units: Hz]."},
+  [DOPPLERCOORD_GC_NU1]   = {"gc_nu1",  POW2(SCALE_T),    "Global correlation first spindown [Units: Hz/s]."},
+  [DOPPLERCOORD_GC_NU2]   = {"gc_nu2",  POW3(SCALE_T),    "Global correlation second spindown [Units: Hz/s^2]."},
+  [DOPPLERCOORD_GC_NU3]   = {"gc_nu3",  POW4(SCALE_T),    "Global correlation third spindown [Units: Hz/s^3]."},
 
-  [DOPPLERCOORD_ALPHA_NAT] = {"Alpha_Nat", "Sky-position: Right-ascension (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )"},
-  [DOPPLERCOORD_DELTA_NAT] = {"Delta_Nat", "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )"},
+  [DOPPLERCOORD_ALPHA]    = {"alpha",   SCALE_R/LAL_C_SI, "Right ascension [Units: radians]."},
+  [DOPPLERCOORD_DELTA]    = {"delta",   SCALE_R/LAL_C_SI, "Declination [Units: radians]."},
 
-  [DOPPLERCOORD_NECL_X_NAT] = {"nEcl_x_Nat", "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const"},
-  [DOPPLERCOORD_NECL_Y_NAT] = {"nEcl_y_Nat", "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const"},
+  [DOPPLERCOORD_N2X_EQU]  = {"n2x_equ", SCALE_R/LAL_C_SI, "X component of constrained sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N2Y_EQU]  = {"n2y_equ", SCALE_R/LAL_C_SI, "Y component of constrained sky position in equatorial coordinates [Units: none]."},
 
-  [DOPPLERCOORD_NEQU_X_NAT] = {"nEqu_x_Nat", "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const"},
-  [DOPPLERCOORD_NEQU_Y_NAT] = {"nEqu_y_Nat", "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const"},
+  [DOPPLERCOORD_N2X_ECL]  = {"n2x_ecl", SCALE_R/LAL_C_SI, "X component of constrained sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N2Y_ECL]  = {"n2y_ecl", SCALE_R/LAL_C_SI, "Y component of constrained sky position in ecliptic coordinates [Units: none]."},
 
-  [DOPPLERCOORD_N3X_EQU] = {"n3Equ_x", "experimental: unconstrained sky-vector n3: equatorial-x coordinate"},
-  [DOPPLERCOORD_N3Y_EQU] = {"n3Equ_y", "experimental: unconstrained sky-vector n3: equatorial-y coordinate"},
-  [DOPPLERCOORD_N3Z_EQU] = {"n3Equ_z", "experimental: unconstrained sky-vector n3: equatorial-z coordinate"},
+  [DOPPLERCOORD_N3X_EQU]  = {"n3x_equ", SCALE_R/LAL_C_SI, "X component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3Y_EQU]  = {"n3y_equ", SCALE_R/LAL_C_SI, "Y component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3Z_EQU]  = {"n3z_equ", SCALE_R/LAL_C_SI, "Z component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
 
-  [DOPPLERCOORD_N3X_ECL] = {"n3Ecl_x", "experimental: unconstrained sky-vector n3: ecliptic-x coordinate"},
-  [DOPPLERCOORD_N3Y_ECL] = {"n3Ecl_y", "experimental: unconstrained sky-vector n3: ecliptic-y coordinate"},
-  [DOPPLERCOORD_N3Z_ECL] = {"n3Ecl_z", "experimental: unconstrained sky-vector n3: ecliptic-z coordinate"},
+  [DOPPLERCOORD_N3X_ECL]  = {"n3x_ecl", SCALE_R/LAL_C_SI, "X component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3Y_ECL]  = {"n3y_ecl", SCALE_R/LAL_C_SI, "Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3Z_ECL]  = {"n3z_ecl", SCALE_R/LAL_C_SI, "Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
 
-  [DOPPLERCOORD_NU0] = {"nu0", "'global correlation' frequency coordinate nu_0"},
-  [DOPPLERCOORD_NU1] = {"nu1", "'global correlation' f1dot coordinate nu_1"},
-  [DOPPLERCOORD_NU2] = {"nu2", "'global correlation' f2dot coordinate nu_2"},
-  [DOPPLERCOORD_NU3] = {"nu3", "'global correlation' f3dot coordinate nu_3"},
+  [DOPPLERCOORD_N3SX_EQU] = {"n3sx_equ",SCALE_R/LAL_C_SI, "X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3SY_EQU] = {"n3sy_equ",SCALE_R/LAL_C_SI, "Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
 
-  /* Karl's coordinates */
-  [DOPPLERCOORD_KAPPA_S] = {"kappa_s", "Karl's coordinates 'kappa_s': cosine-part of Earth-spin sky-coordinate"},
-  [DOPPLERCOORD_SIGMA_S] = {"sigma_s", "Karl's coordinates 'sigma_s': sine-part of Earth-spin sky-coordinate"},
-  [DOPPLERCOORD_KAPPA_O] = {"kappa_o", "Karl's coordinates 'kappa_o': cosine-part of Earth-orbit sky-coordinate"},
-  [DOPPLERCOORD_SIGMA_O] = {"sigma_o", "Karl's coordinates 'sigma_o': sine-part of Earth-orbit sky-coordinate"},
-  [DOPPLERCOORD_OMEGA_0] = {"omega_0", "Karl's coordinates 'omega_0': rescaled natural frequency"},
-  [DOPPLERCOORD_OMEGA_1] = {"omega_1", "Karl's coordinates 'omega_1': rescaled natural 1st spindown"},
-  [DOPPLERCOORD_OMEGA_2] = {"omega_2", "Karl's coordinates 'omega_2': rescaled natural 2nd spindown"},
-  [DOPPLERCOORD_OMEGA_3] = {"omega_3", "Karl's coordinates 'omega_3': rescaled natural 3rd spindown"},
+  [DOPPLERCOORD_N3OX_ECL] = {"n3ox_ecl",SCALE_R/LAL_C_SI, "X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+
 };
 
 /*---------- DEFINES ----------*/
 #define TRUE  (1==1)
 #define FALSE (0==1)
+
+/* get the scale associated with Doppler coordinate ID */
+#define GET_SCALE(ID) ( (ID) == DOPPLERCOORD_NONE ? 1.0 : DopplerCoordinates[ID].scale )
 
 /** copy 3 components of Euklidean vector */
 #define COPY_VECT(dst,src) do { (dst)[0] = (src)[0]; (dst)[1] = (src)[1]; (dst)[2] = (src)[2]; } while(0)
@@ -148,11 +155,7 @@ const CHAR *const DopplerCoordinateNames[DOPPLERCOORD_LAST][2] = {
 #define MYMAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MYMIN(a,b) ( (a) < (b) ? (a) : (b) )
 
-/** shortcuts for integer powers */
-#define POW2(a)  ( (a) * (a) )
-#define POW3(a)  ( (a) * (a) * (a) )
-#define POW4(a)  ( (a) * (a) * (a) * (a) )
-#define POW5(a)  ( (a) * (a) * (a) * (a) * (a) )
+#define RELERR(dx,x) ( (x) == 0 ? (dx) : ( (dx) / (x) ) )
 
 /* highest supported spindown-order */
 #define MAX_SPDNORDER 4
@@ -190,8 +193,6 @@ typedef struct
   const EphemerisData *edat;		/**< ephemeris data */
   vect3Dlist_t *rOrb_n;			/**< list of orbital-radius derivatives at refTime of order n = 0, 1, ... */
   BOOLEAN approxPhase;			/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders \>= 1) */
-  PosVel3D_t spin_posvel_ref;           /**< spin position of (average) detector at refTime */
-  PosVel3D_t orbit_posvel_ref;          /**< orbital position of (average) detector at refTime */
 } intparams_t;
 
 
@@ -212,14 +213,7 @@ BOOLEAN outputIntegrand = 0;
 
 /* Some local constants. */
 #define rOrb_c  (LAL_AU_SI / LAL_C_SI)
-#define rEarth_c (LAL_REARTH_SI / LAL_C_SI)
 #define vOrb_c  (LAL_TWOPI * LAL_AU_SI / LAL_C_SI / LAL_YRSID_SI)
-#define Omega_s	(LAL_TWOPI / LAL_DAYSID_SI)
-#define Omega_o	(LAL_TWOPI / LAL_YRSID_SI)
-
-// sin,cos(LAL_IEARTH);
-#define cosiEcl 0.917482062157619
-#define siniEcl 0.397777155727931
 
 /*---------- internal prototypes ----------*/
 DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
@@ -230,13 +224,6 @@ double CWPhaseDeriv_i ( double tt, void *params );
 
 double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max );
 double CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params, double *relerr_max );
-
-int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
-gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
-
-void equatorialVect2ecliptic ( vect3D_t out, const vect3D_t in );
-void eclipticVect2equatorial ( vect3D_t out, const vect3D_t in );
-void matrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in );
 
 UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 
@@ -286,6 +273,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
   wksp = gsl_integration_workspace_alloc(limit);
   XLAL_CHECK_REAL8(wksp != NULL, XLAL_EFAULT);
 
+  const double scale12 = GET_SCALE(par.deriv1) * GET_SCALE(par.deriv2);
+
   integrand.function = &CW_am1_am2_Phi_i_Phi_j;
   for (n=0; n < Nseg; n ++ )
     {
@@ -304,12 +293,15 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
           /* XLAL_ERROR_REAL8( XLAL_EFUNC ); */
         }
 
+      res_n *= scale12;
+      err_n *= scale12;
+
       res += res_n;
       abserr2 += SQUARE ( err_n );
 
     } /* for i < Nseg */
 
-  REAL8 relerr = sqrt(abserr2) / fabs(res);
+  REAL8 relerr = RELERR( sqrt(abserr2), fabs(res) );
   if ( relerr_max )
     (*relerr_max) = relerr;
 
@@ -429,23 +421,15 @@ CWPhaseDeriv_i ( double tt, void *params )
   PosVel3D_t orbit_posvel = empty_PosVel3D_t;
   PosVel3D_t posvel = empty_PosVel3D_t;
 
-  /* spin position in equatorial plane */
-  vect3D_t equ_spin_pos = empty_vect3D_t;
-  vect3D_t equ_spin_pos_ref = empty_vect3D_t;
-
   /* orbit position in ecliptic plane */
+  vect3D_t ecl_pos = empty_vect3D_t;
   vect3D_t ecl_orbit_pos = empty_vect3D_t;
-  vect3D_t ecl_orbit_pos_ref = empty_vect3D_t;
-
-  REAL8 Freq = par->dopplerPoint->fkdot[0];
-
-  REAL8 Tspan = par->Tspan;
 
   /* get skypos-vector */
-  REAL8 cosa = cos(par->dopplerPoint->Alpha);
-  REAL8 sina = sin(par->dopplerPoint->Alpha);
-  REAL8 cosd = cos(par->dopplerPoint->Delta);
-  REAL8 sind = sin(par->dopplerPoint->Delta);
+  const REAL8 cosa = cos(par->dopplerPoint->Alpha);
+  const REAL8 sina = sin(par->dopplerPoint->Alpha);
+  const REAL8 cosd = cos(par->dopplerPoint->Delta);
+  const REAL8 sind = sin(par->dopplerPoint->Delta);
 
   /* ... in an equatorial coordinate-frame */
   nn_equ[0] = cosd * cosa;
@@ -453,204 +437,170 @@ CWPhaseDeriv_i ( double tt, void *params )
   nn_equ[2] = sind;
 
   /* and in an ecliptic coordinate-frame */
-  equatorialVect2ecliptic ( nn_ecl, nn_equ );
+  XLALequatorialVect2ecliptic ( nn_ecl, nn_equ );
 
-  /* get current detector position r(t) */
-  REAL8 ttSI = par->startTime + tt * Tspan;	/* current GPS time in seconds */
+  /* get current detector position r(t) and velocity v(t) */
+  REAL8 ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
   LIGOTimeGPS ttGPS;
   XLALGPSSetREAL8( &ttGPS, ttSI );
-
   int errnum;
   XLAL_TRY( XLALDetectorPosVel ( &spin_posvel, &orbit_posvel, &ttGPS, par->site, par->edat, par->detMotionType ), errnum );
   if ( errnum ) {
     XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", __func__);
     GSL_ERROR_VAL( "Failure in CWPhaseDeriv_i", GSL_EFAILED, GSL_NAN );
   }
+
+  /* XLALDetectorPosVel() returns detector positions and velocities from XLALBarycenter(),
+     which are in units of LAL_C_SI, so we multiply by LAL_C_SI to get back to SI units.
+     We then divide by the internal scale SCALE_R. */
+  MULT_VECT(spin_posvel.pos, LAL_C_SI / SCALE_R );
+  MULT_VECT(orbit_posvel.pos, LAL_C_SI / SCALE_R );
+  MULT_VECT(spin_posvel.vel, LAL_C_SI / SCALE_R );
+  MULT_VECT(orbit_posvel.vel, LAL_C_SI / SCALE_R );
+
   /* calculate detector total motion = spin motion + orbital motion */
   COPY_VECT(posvel.pos, spin_posvel.pos);
   ADD_VECT(posvel.pos, orbit_posvel.pos);
   COPY_VECT(posvel.vel, spin_posvel.vel);
   ADD_VECT(posvel.vel, orbit_posvel.vel);
 
-  /* compute spin detector positions projected onto equatorial plane */
-  COPY_VECT(equ_spin_pos, spin_posvel.pos);
-  equ_spin_pos[2] = 0;
-  COPY_VECT(equ_spin_pos_ref, par->spin_posvel_ref.pos);
-  equ_spin_pos_ref[2] = 0;
-
   /* compute orbital detector positions projected onto ecliptic plane */
-  equatorialVect2ecliptic(ecl_orbit_pos, orbit_posvel.pos);
-  ecl_orbit_pos[2] = 0;
-  equatorialVect2ecliptic(ecl_orbit_pos_ref, par->orbit_posvel_ref.pos);
-  ecl_orbit_pos_ref[2] = 0;
+  XLALequatorialVect2ecliptic(ecl_pos, posvel.pos);
+  XLALequatorialVect2ecliptic(ecl_orbit_pos, orbit_posvel.pos);
 
-  /* account for referenceTime != startTime */
-  REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
+  /* get frequency of Doppler point */
+  const REAL8 Freq = par->dopplerPoint->fkdot[0];
 
-  /* barycentric time-delay since reference time, measured in units of Tspan */
-  REAL8 tau = tau0 + tt;
+  /* get time span, normalised by internal scale SCALE_R */
+  const REAL8 Tspan = par->Tspan / SCALE_T;
+
+  /* account for referenceTime != startTime, in units of SCALE_T */
+  REAL8 tau0 = ( par->startTime - par->refTime ) / SCALE_T;
+
+  /* barycentric time-delay since reference time, in units of SCALE_T */
+  REAL8 tau = tau0 + ( tt * Tspan );
 
   /* correct for time-delay from SSB to detector (Roemer delay), neglecting relativistic effects */
   if ( !par->approxPhase )
     {
-      REAL8 dTRoemerSI = DOT_VECT(nn_equ, posvel.pos );
-      REAL8 dTRoemer = dTRoemerSI / Tspan;		/* SSB time-delay in 'natural units' */
+      /* SSB time-delay in internal scaled units */
+      REAL8 dTRoemer = DOT_VECT(nn_equ, posvel.pos) * (SCALE_R / LAL_C_SI / SCALE_T);
 
       tau += dTRoemer;
     }
 
-  REAL8 nNat = Freq * Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
-
   /* get 'reduced' detector position of order 'n': r_n(t) [passed in as argument]
    * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) tau - 1/2! ddot{r_orb}(tau_re) tau^2 - ....
    */
-  REAL8 tauSec = tau * Tspan;
-
   vect3D_t rr_ord_Equ, rr_ord_Ecl;
   UINT4 i, n;
   COPY_VECT ( rr_ord_Equ, posvel.pos );		/* 0th order */
   if ( par->rOrb_n )
     {
+      /* par->rOrb_n are derivatives with SI time units, so multiply tau by SCALE_T */
+      const double tauSI = tau * SCALE_T;
       for (n=0; n < par->rOrb_n->length; n ++ )
         {
-          REAL8 pre_n = LAL_FACT_INV[n] * pow(tauSec,n);
+          /* par->rOrb_n->data[n][i] is calculated from detector positions given by XLALBarycenter(),
+             which are in units of LAL_C_SI, so we multiply by LAL_C_SI to get back to SI units.
+             We then divide by the internal scale SCALE_R. */
+          REAL8 pre_n = LAL_FACT_INV[n] * pow(tauSI, n) * (LAL_C_SI / SCALE_R);
           for (i=0; i<3; i++)
+          {
             rr_ord_Equ[i] -=  pre_n * par->rOrb_n->data[n][i];
+          }
         }
     } /* if rOrb_n */
-  equatorialVect2ecliptic ( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
+  XLALequatorialVect2ecliptic ( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
 
   /* now compute the requested phase derivative */
   switch ( par->deriv )
     {
-      /* ----- sky derivatives ----- */
-    case DOPPLERCOORD_ALPHA_RAD:				/* longitude/right-ascension/Alpha in radians */
-    case DOPPLERCOORD_ALPHA_NAT:				/* longitude/right-ascension/Alpha in natural units */
+
+    case DOPPLERCOORD_FREQ:		/**< Frequency [Units: Hz]. */
+    case DOPPLERCOORD_GC_NU0:		/**< Global correlation frequency [Units: Hz]. Activates 'reduced' detector position. */
+      ret = LAL_TWOPI * tau * LAL_FACT_INV[1];
+      break;
+    case DOPPLERCOORD_F1DOT:		/**< First spindown [Units: Hz/s]. */
+    case DOPPLERCOORD_GC_NU1:		/**< Global correlation first spindown [Units: Hz/s]. Activates 'reduced' detector position. */
+      ret = LAL_TWOPI * POW2(tau) * LAL_FACT_INV[2];
+      break;
+    case DOPPLERCOORD_F2DOT:		/**< Second spindown [Units: Hz/s^2]. */
+    case DOPPLERCOORD_GC_NU2:		/**< Global correlation second spindown [Units: Hz/s^2]. Activates 'reduced' detector position. */
+      ret = LAL_TWOPI * POW3(tau) * LAL_FACT_INV[3];
+      break;
+    case DOPPLERCOORD_F3DOT:		/**< Third spindown [Units: Hz/s^3]. */
+    case DOPPLERCOORD_GC_NU3:		/**< Global correlation third spindown [Units: Hz/s^3]. Activates 'reduced' detector position. */
+      ret = LAL_TWOPI * POW4(tau) * LAL_FACT_INV[4];
+      break;
+
+    case DOPPLERCOORD_ALPHA:		/**< Right ascension [Units: radians]. Uses 'reduced' detector position. */
       nDeriv_i[0] = - cosd * sina;
       nDeriv_i[1] =   cosd * cosa;
       nDeriv_i[2] =   0;
-
-      ret = LAL_TWOPI * Freq * DOT_VECT(rr_ord_Equ, nDeriv_i);	/* dPhi/dAlpha = 2 pi f (r/c) . (dn/dAlpha) */
-      if ( par->deriv == DOPPLERCOORD_ALPHA_NAT )
-        ret *= nNat;
+      ret = LAL_TWOPI * Freq * DOT_VECT(rr_ord_Equ, nDeriv_i);
       break;
-
-    case DOPPLERCOORD_DELTA_RAD:				/* latitude/declination/Delta in radians */
-    case DOPPLERCOORD_DELTA_NAT:				/* latitude/declination/Delta in natural units */
+    case DOPPLERCOORD_DELTA:		/**< Declination [Units: radians]. Uses 'reduced' detector position. */
       nDeriv_i[0] = - sind * cosa;
       nDeriv_i[1] = - sind * sina;
       nDeriv_i[2] =   cosd;
-
-      ret = LAL_TWOPI * Freq * DOT_VECT(rr_ord_Equ, nDeriv_i);	/* dPhi/dDelta = 2 pi f (r/c) . (dn/dDelta) */
-      if ( par->deriv == DOPPLERCOORD_DELTA_NAT )
-        ret *= nNat;
+      ret = LAL_TWOPI * Freq * DOT_VECT(rr_ord_Equ, nDeriv_i);
       break;
 
-    case DOPPLERCOORD_NEQU_X_NAT:
-      ret = ( rr_ord_Equ[0] - (nn_equ[0]/nn_equ[2]) * rr_ord_Equ[2] ) / rEarth_c;
+    case DOPPLERCOORD_N2X_EQU:		/**< X component of constrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
+      ret = LAL_TWOPI * Freq * ( rr_ord_Equ[0] - (nn_equ[0]/nn_equ[2]) * rr_ord_Equ[2] );
       break;
-    case DOPPLERCOORD_NEQU_Y_NAT:
-      ret = ( rr_ord_Equ[1] - (nn_equ[1]/nn_equ[2]) * rr_ord_Equ[2] ) / rEarth_c;
-      break;
-
-    case DOPPLERCOORD_NECL_X_NAT:
-      ret = ( rr_ord_Ecl[0] - (nn_ecl[0]/nn_ecl[2]) * rr_ord_Ecl[2] ) / rOrb_c;
-      break;
-    case DOPPLERCOORD_NECL_Y_NAT:
-      ret = ( rr_ord_Ecl[1] - (nn_ecl[1]/nn_ecl[2]) * rr_ord_Ecl[2] ) / rOrb_c;
+    case DOPPLERCOORD_N2Y_EQU:		/**< Y component of constrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
+      ret = LAL_TWOPI * Freq * ( rr_ord_Equ[1] - (nn_equ[1]/nn_equ[2]) * rr_ord_Equ[2] );
       break;
 
-      /* unconstrained skypos vector n3 */
-      /* ----- equatorial coords ----- */
-    case DOPPLERCOORD_N3X_EQU:
-      ret = rr_ord_Equ[0] / rOrb_c;
+    case DOPPLERCOORD_N2X_ECL:		/**< X component of constrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
+      ret = LAL_TWOPI * Freq * ( rr_ord_Ecl[0] - (nn_ecl[0]/nn_ecl[2]) * rr_ord_Ecl[2] );
       break;
-    case DOPPLERCOORD_N3Y_EQU:
-      ret = rr_ord_Equ[1] / rOrb_c;
-      break;
-    case DOPPLERCOORD_N3Z_EQU:
-      ret = rr_ord_Equ[2] / rOrb_c;
-      break;
-      /* ----- equatorial coords ----- */
-    case DOPPLERCOORD_N3X_ECL:
-      ret = rr_ord_Ecl[0] / rOrb_c;
-      break;
-    case DOPPLERCOORD_N3Y_ECL:
-      ret = rr_ord_Ecl[1] / rOrb_c;
-      break;
-    case DOPPLERCOORD_N3Z_ECL:
-      ret = rr_ord_Ecl[2] / rOrb_c;
+    case DOPPLERCOORD_N2Y_ECL:		/**< Y component of constrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
+      ret = LAL_TWOPI * Freq * ( rr_ord_Ecl[1] - (nn_ecl[1]/nn_ecl[2]) * rr_ord_Ecl[2] );
       break;
 
-
-      /* ----- frequency derivatives SI-units ----- */
-    case DOPPLERCOORD_FREQ_SI:
-    case DOPPLERCOORD_FREQ_NAT:				/* om0 = 2pi f (T/2) */
-    case DOPPLERCOORD_NU0:
-      ret = 2*tau;					/* in natural units: dPhi/dom0 = tau */
-      if ( par->deriv == DOPPLERCOORD_FREQ_SI )
-        ret *= 0.5 * LAL_TWOPI * Tspan * LAL_FACT_INV[1];	/* dPhi/dFreq = 2 * pi * tSSB_i */
+    case DOPPLERCOORD_N3X_EQU:		/**< X component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * posvel.pos[0];
+      break;
+    case DOPPLERCOORD_N3Y_EQU:		/**< Y component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * posvel.pos[1];
+      break;
+    case DOPPLERCOORD_N3Z_EQU:		/**< Z component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * posvel.pos[2];
       break;
 
-    case DOPPLERCOORD_F1DOT_SI:
-    case DOPPLERCOORD_F1DOT_NAT:			/* om1 = 2pi f/2! (T/2)^2 */
-    case DOPPLERCOORD_NU1:
-      ret = POW2 ( 2*tau );				/* in natural units: dPhi/dom1 = tau^2 */
-      if ( par->deriv == DOPPLERCOORD_F1DOT_SI )
-        ret *= LAL_TWOPI * POW2(0.5*Tspan) * LAL_FACT_INV[2];/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
+    case DOPPLERCOORD_N3X_ECL:		/**< X component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_pos[0];
+      break;
+    case DOPPLERCOORD_N3Y_ECL:		/**< Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_pos[1];
+      break;
+    case DOPPLERCOORD_N3Z_ECL:		/**< Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_pos[2];
       break;
 
-    case DOPPLERCOORD_F2DOT_SI:
-    case DOPPLERCOORD_F2DOT_NAT:			/* om2 = 2pi f/3! (T/2)^3 */
-    case DOPPLERCOORD_NU2:
-      ret =  POW3 ( 2*tau );			/* in natural units: dPhi/dom2 = tau^3 */
-      if ( par->deriv == DOPPLERCOORD_F2DOT_SI )
-        ret *= LAL_TWOPI * POW3 ( 0.5*Tspan ) * LAL_FACT_INV[3];/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
+    case DOPPLERCOORD_N3SX_EQU:	/**< X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * spin_posvel.pos[0];
+      break;
+    case DOPPLERCOORD_N3SY_EQU:	/**< Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * spin_posvel.pos[1];
       break;
 
-    case DOPPLERCOORD_F3DOT_SI:
-    case DOPPLERCOORD_F3DOT_NAT:			/* om3 = 2pi f/4! (T/2)^4 */
-    case DOPPLERCOORD_NU3:
-      ret = POW4 ( 2*tau );			/* in natural units: dPhi/dom3 = tau^4 */
-      if ( par->deriv == DOPPLERCOORD_F3DOT_SI )
-        ret *= LAL_TWOPI * POW4 ( 0.5 * Tspan ) * LAL_FACT_INV[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
+    case DOPPLERCOORD_N3OX_ECL:	/**< X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_orbit_pos[0];
       break;
-
-    /* ---------- Karl's super-duper-sky coordinates ---------- */
-    case DOPPLERCOORD_KAPPA_S:			/* 'kappa_s': cosine-part of Earth-spin sky-coordinate */
-      ret = DOT_VECT(equ_spin_pos_ref, equ_spin_pos);
-      ret /= NORMSQ_VECT(equ_spin_pos_ref);
-      break;
-    case DOPPLERCOORD_SIGMA_S:			/* 'sigma_s': sine-part of Earth-spin sky-coordinate */
-      ret = CROSS_VECT_2(equ_spin_pos_ref, equ_spin_pos);
-      ret /= NORMSQ_VECT(equ_spin_pos_ref);
-      break;
-    case DOPPLERCOORD_KAPPA_O:			/* 'kappa_o': cosine-part of Earth-orbit sky-coordinate */
-      ret = DOT_VECT(ecl_orbit_pos_ref, ecl_orbit_pos);
-      ret /= NORMSQ_VECT(ecl_orbit_pos_ref);
-      break;
-    case DOPPLERCOORD_SIGMA_O:			/* 'sigma_o': sine-part of Earth-orbit sky-coordinate */
-      ret = CROSS_VECT_2(ecl_orbit_pos_ref, ecl_orbit_pos);
-      ret /= NORMSQ_VECT(ecl_orbit_pos_ref);
-      break;
-    case DOPPLERCOORD_OMEGA_0:			/* 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3)) */
-      ret = tau * LAL_FACT_INV[1];
-      break;
-    case DOPPLERCOORD_OMEGA_1:			/* 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5)) */
-      ret = POW2 ( tau ) * LAL_FACT_INV[2];
-      break;
-    case DOPPLERCOORD_OMEGA_2:			/* 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7)) */
-      ret = POW3 ( tau ) * LAL_FACT_INV[3];
-      break;
-    case DOPPLERCOORD_OMEGA_3:			/* 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9)) */
-      ret = POW4 ( tau ) * LAL_FACT_INV[4];
+    case DOPPLERCOORD_N3OY_ECL:	/**< Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_orbit_pos[1];
       break;
 
     default:
       XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, par->deriv );
       GSL_ERROR_VAL( "Failure in CWPhaseDeriv_i", GSL_EFAILED, GSL_NAN );
       break;
-    } /* switch phderiv */
+
+    } /* switch par->deriv */
 
   return ret;
 
@@ -680,7 +630,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   PosVel3D_t Spin_z, Spin_xy;
   REAL8 eZ[3];
 
-  if ( !spin_posvel || !orbit_posvel || !tGPS || !site || !edat ) {
+  if ( !tGPS || !site || !edat ) {
     XLALPrintError ( "%s: Illegal NULL pointer passed!\n", __func__);
     XLAL_ERROR( XLAL_EINVAL );
   }
@@ -707,7 +657,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   COPY_VECT(Det_wrt_Earth.vel, emit.vDetector);
   SUB_VECT(Det_wrt_Earth.vel, earth.velNow);
 
-  eZ[0] = 0; eZ[1] = -siniEcl; eZ[2] = cosiEcl; 	/* ecliptic z-axis in equatorial coordinates */
+  eZ[0] = 0; eZ[1] = -LAL_SINIEARTH; eZ[2] = LAL_COSIEARTH; 	/* ecliptic z-axis in equatorial coordinates */
   /* compute ecliptic-z projected spin motion */
   REAL8 pz = DOT_VECT ( Det_wrt_Earth.pos, eZ );
   REAL8 vz = DOT_VECT ( Det_wrt_Earth.vel, eZ );
@@ -739,47 +689,67 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
     {
       /* full detector-motion: ephemeris-orbital + Earth-spin */
     case DETMOTION_SPIN_ORBIT:
-      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      if ( spin_posvel ) {
+        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
       break;
 
       /* full ephemeris orbital detector-motion, neglecting Earth-spin */
     case DETMOTION_ORBIT:
-      ZERO_VECT(spin_posvel->pos);
-      ZERO_VECT(spin_posvel->vel);
+      if ( spin_posvel ) {
+        ZERO_VECT(spin_posvel->pos);
+        ZERO_VECT(spin_posvel->vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
       break;
 
       /* detector-motion including only Earth-spin, no orbital motion */
     case DETMOTION_SPIN:
-      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      if ( spin_posvel ) {
+        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      }
 
-      ZERO_VECT(orbit_posvel->pos);
-      ZERO_VECT(orbit_posvel->vel);
+      if ( orbit_posvel ) {
+        ZERO_VECT(orbit_posvel->pos);
+        ZERO_VECT(orbit_posvel->vel);
+      }
       break;
 
       /* pure orbital detector motion, using "Ptolemaic" (ie. circular) approximation */
     case DETMOTION_PTOLEORBIT:
-      ZERO_VECT(spin_posvel->pos);
-      ZERO_VECT(spin_posvel->vel);
+      if ( spin_posvel ) {
+        ZERO_VECT(spin_posvel->pos);
+        ZERO_VECT(spin_posvel->vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-      COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
+        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      }
       break;
 
       /* Ptolemaic-orbital motion, plus Earth spin */
     case DETMOTION_SPIN_PTOLEORBIT:
-      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      if ( spin_posvel ) {
+        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-      COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
+        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      }
       /*
       printf ("\nPtole = [ %f, %f, %f ], Ephem = [%f, %f, %f]\n",
 	      posvel->pos[0], posvel->pos[1], posvel->pos[2],
@@ -789,21 +759,29 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
 
       /**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
     case DETMOTION_ORBIT_SPINZ:
-      COPY_VECT ( spin_posvel->pos, Spin_z.pos );
-      COPY_VECT ( spin_posvel->vel, Spin_z.vel );
+      if ( spin_posvel ) {
+        COPY_VECT ( spin_posvel->pos, Spin_z.pos );
+        COPY_VECT ( spin_posvel->vel, Spin_z.vel );
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
 
       break;
 
       /**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
     case DETMOTION_ORBIT_SPINXY:
-      COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
-      COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
+      if ( spin_posvel ) {
+        COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
+        COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
 
       break;
 
@@ -860,13 +838,13 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 
   /* Get instantaneous position. */
   posvel->pos[0] = rOrb_c * cosOrb;
-  posvel->pos[1] = rOrb_c * sinOrb * cosiEcl;
-  posvel->pos[2]=  rOrb_c * sinOrb * siniEcl;
+  posvel->pos[1] = rOrb_c * sinOrb * LAL_COSIEARTH;
+  posvel->pos[2]=  rOrb_c * sinOrb * LAL_SINIEARTH;
 
   /* Get instantaneous velocity. */
   posvel->vel[0] = -vOrb_c * sinOrb;
-  posvel->vel[1] =  vOrb_c * cosOrb * cosiEcl;
-  posvel->vel[2] =  vOrb_c * cosOrb * siniEcl;
+  posvel->vel[1] =  vOrb_c * cosOrb * LAL_COSIEARTH;
+  posvel->vel[2] =  vOrb_c * cosOrb * LAL_SINIEARTH;
 
   return XLAL_SUCCESS;
 
@@ -923,6 +901,10 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
   wksp = gsl_integration_workspace_alloc(limit);
   XLAL_CHECK_REAL8(wksp != NULL, XLAL_EFAULT);
 
+  const double scale1 = GET_SCALE(par.deriv1);
+  const double scale2 = GET_SCALE(par.deriv2);
+  const double scale12 = scale1 * scale2;
+
   // loop over detectors
   REAL8 total_weight = 0;
   for (UINT4 det = 0; det < detInfo->length; ++det) {
@@ -949,9 +931,10 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
                          __func__, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
+      res_n *= scale12;
+      abserr *= scale12;
       av_ij += weight * res_n;
       av_ij_err += weight * SQUARE (abserr);
-
 
       /* compute <phi_i> */
       integrand.function = &CWPhaseDeriv_i;
@@ -962,6 +945,8 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
                          __func__, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
+      res_n *= scale1;
+      abserr *= scale1;
       av_i += weight * res_n;
       av_i_err += weight * SQUARE (abserr);
 
@@ -974,6 +959,8 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
                          __func__, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
+      res_n *= scale2;
+      abserr *= scale2;
       av_j += weight * res_n;
       av_j_err += weight * SQUARE (abserr);
 
@@ -995,9 +982,9 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
   av_i_err *= inv_total_weight;
   av_j_err *= inv_total_weight;
 
-  av_ij_err = sqrt(av_ij_err) / fabs(av_ij);
-  av_i_err = sqrt(av_i_err) / fabs (av_i);
-  av_j_err = sqrt(av_j_err) / fabs (av_j);
+  av_ij_err = RELERR( sqrt(av_ij_err), fabs(av_ij) );
+  av_i_err = RELERR( sqrt(av_i_err), fabs (av_i) );
+  av_j_err = RELERR( sqrt(av_j_err), fabs (av_j) );
 
   maxrelerr = MYMAX ( av_ij_err, av_i_err );
   maxrelerr = MYMAX ( maxrelerr, av_j_err );
@@ -1085,11 +1072,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     printf ("[%g, %g, %g]%s", intparams.rOrb_n->data[n][0], intparams.rOrb_n->data[n][1], intparams.rOrb_n->data[n][2],
             (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
 #endif
-
-  // compute spin and orbital position of detector at reference time
-  XLAL_CHECK_NULL( XLALAverageDetectorPosVel(&intparams.spin_posvel_ref, &intparams.orbit_posvel_ref,
-                                             &intparams.dopplerPoint->refTime,
-                                             &metricParams->detInfo, edat, metricParams->detMotionType) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- compute components of the phase-metric ---------- */
   double maxrelerr = 0, err;
@@ -1320,11 +1302,6 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
     XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
     XLAL_ERROR_NULL( XLAL_EFUNC );
   }
-
-  // compute spin and orbital position of detector at reference time
-  XLAL_CHECK_NULL( XLALAverageDetectorPosVel(&intparams.spin_posvel_ref, &intparams.orbit_posvel_ref,
-                                             &intparams.dopplerPoint->refTime,
-                                             &metricParams->detInfo, edat, metricParams->detMotionType) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
   A = B = C = 0;
@@ -1596,7 +1573,7 @@ XLALParseDopplerCoordinateString ( const CHAR *coordName )
 
   for ( i=0; i < DOPPLERCOORD_LAST; i ++ )
     {
-      if ( DopplerCoordinateNames[i][0] && strcmp ( coordName, DopplerCoordinateNames[i][0] ) )
+      if ( DopplerCoordinates[i].name && strcmp ( coordName, DopplerCoordinates[i].name ) )
 	continue;
       return i;	/* found the right entry */
     }
@@ -1643,11 +1620,11 @@ XLALDopplerCoordinateName ( DopplerCoordinateID coordID )
     XLAL_ERROR_NULL ( XLAL_EINVAL, "coordID '%d' outside valid range [0, %d]\n\n", coordID, DOPPLERCOORD_LAST - 1 );
   }
 
-  if ( !DopplerCoordinateNames[coordID][0] ) {
+  if ( !DopplerCoordinates[coordID].name ) {
     XLAL_ERROR_NULL ( XLAL_EINVAL, "coordID '%d' has no associated name\n\n", coordID );
   }
 
-  return ( DopplerCoordinateNames[coordID][0] );
+  return ( DopplerCoordinates[coordID].name );
 
 } /* XLALDopplerCoordinateName() */
 
@@ -1662,11 +1639,11 @@ XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID )
     XLAL_ERROR_NULL ( XLAL_EINVAL, "coordID '%d' outside valid range [0, %d]\n\n", coordID, DOPPLERCOORD_LAST - 1 );
   }
 
-  if ( !DopplerCoordinateNames[coordID][1] ) {
+  if ( !DopplerCoordinates[coordID].help ) {
     XLAL_ERROR_NULL ( XLAL_EINVAL, "coordID '%d' has no associated help text\n\n", coordID );
   }
 
-  return ( DopplerCoordinateNames[coordID][1] );
+  return ( DopplerCoordinates[coordID].help );
 
 } /* XLALDopplerCoordinateHelp() */
 
@@ -2190,31 +2167,31 @@ XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
 
 /** Convert 3-D vector from equatorial into ecliptic coordinates */
 void
-equatorialVect2ecliptic ( vect3D_t out, const vect3D_t in )
+XLALequatorialVect2ecliptic ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEqu2Ecl = { { 1.0,        0,       0 },
-                                { 0.0,  cosiEcl, siniEcl },
-                                { 0.0, -siniEcl, cosiEcl } };
+                                { 0.0,  LAL_COSIEARTH, LAL_SINIEARTH },
+                                { 0.0, -LAL_SINIEARTH, LAL_COSIEARTH } };
 
-  matrix33_in_vect3 ( out, rotEqu2Ecl, in );
+  XLALmatrix33_in_vect3 ( out, rotEqu2Ecl, in );
 
-} /* equatorialVect2ecliptic() */
+} /* XLALequatorialVect2ecliptic() */
 
 /** Convert 3-D vector from ecliptic into equatorial coordinates */
 void
-eclipticVect2equatorial ( vect3D_t out, const vect3D_t in )
+XLALeclipticVect2equatorial ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEcl2Equ =  { { 1.0,        0,       0 },
-                                 { 0.0,  cosiEcl, -siniEcl },
-                                 { 0.0,  siniEcl,  cosiEcl } };
+                                 { 0.0,  LAL_COSIEARTH, -LAL_SINIEARTH },
+                                 { 0.0,  LAL_SINIEARTH,  LAL_COSIEARTH } };
 
-  matrix33_in_vect3 ( out, rotEcl2Equ, in );
+  XLALmatrix33_in_vect3 ( out, rotEcl2Equ, in );
 
-} /* eclipticVect2equatorial() */
+} /* XLALeclipticVect2equatorial() */
 
 /** compute matrix product mat . vect */
 void
-matrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
+XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
 {
 
   UINT4 i,j;
@@ -2227,7 +2204,7 @@ matrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
         }
     }
 
-} /* matrix33_in_vect3() */
+} /* XLALmatrix33_in_vect3() */
 
 /** Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
  * \f$r_{\mathrm{orb}}(t)\f$.
@@ -2372,15 +2349,112 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
   for ( i=0; i < coordSys->dim; i ++ )
     {
       UINT4 order = 0;
-      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU0 ) order = 1;
-      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU1 ) order = 2;
-      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU2 ) order = 3;
-      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_NU3 ) order = 4;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU0 ) order = 1;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU1 ) order = 2;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU2 ) order = 3;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU3 ) order = 4;
       maxorder = MYMAX ( maxorder, order );
     }
 
   return maxorder;
 } /*  findHighestSpinOrder() */
+
+
+/**
+ * Return a metric in "naturalized" coordinates.
+ * Frequency coordinates of spindown order \f$s\f$ are scaled by
+ * \f[ \frac{2\pi}{(s+1)!} \left(\frac{T}{2}\right)^{s+1} \f]
+ * where \f$T\f$ is the observation time-span.
+ * Sky coordinates are scaled by
+ * \f[ \frac{2\pi \bar{f} R_{ES}}{c} \f]
+ * where \f$\bar{f}\f$ is a fiducial frequency and
+ * \f$R_{ES}\f$ the mean Earth--Sun distance.
+ *
+ * Returns NULL on error, otherwise a new matrix is allocated.
+ */
+gsl_matrix* XLALNaturalizeMetric(
+  const gsl_matrix* g_ij,			/**< [in] Input metric */
+  const DopplerMetricParams *metricParams	/**< [in] Input parameters used to calculate g_ij */
+  )
+{
+
+  /* Check input */
+  XLAL_CHECK_NULL( g_ij, XLAL_EINVAL );
+  XLAL_CHECK_NULL( g_ij->size1 == g_ij->size2, XLAL_EINVAL, "Input matrix g_ij must be square! (got %d x %d)\n", g_ij->size1, g_ij->size2 );
+
+  /* Compute naturalization scale */
+  double nat_scale[g_ij->size1];
+  for (size_t i = 0; i < g_ij->size1; ++i) {
+    const DopplerCoordinateID coordID = metricParams->coordSys.coordIDs[i];
+    const double Freq = metricParams->signalParams.Doppler.fkdot[0];
+    const double T = metricParams->Tspan;
+    double scale;
+    switch (coordID) {
+    case DOPPLERCOORD_NONE:
+      scale = 1;
+      break;
+
+    case DOPPLERCOORD_FREQ:
+    case DOPPLERCOORD_GC_NU0:
+      scale = LAL_TWOPI * LAL_FACT_INV[1] * (0.5 * T);
+      break;
+
+    case DOPPLERCOORD_F1DOT:
+    case DOPPLERCOORD_GC_NU1:
+      scale = LAL_TWOPI * LAL_FACT_INV[2] * POW2(0.5 * T);
+      break;
+
+    case DOPPLERCOORD_F2DOT:
+    case DOPPLERCOORD_GC_NU2:
+      scale = LAL_TWOPI * LAL_FACT_INV[3] * POW3(0.5 * T);
+      break;
+
+    case DOPPLERCOORD_F3DOT:
+    case DOPPLERCOORD_GC_NU3:
+      scale = LAL_TWOPI * LAL_FACT_INV[4] * POW4(0.5 * T);
+      break;
+
+    case DOPPLERCOORD_ALPHA:
+    case DOPPLERCOORD_DELTA:
+    case DOPPLERCOORD_N2X_EQU:
+    case DOPPLERCOORD_N2Y_EQU:
+    case DOPPLERCOORD_N2X_ECL:
+    case DOPPLERCOORD_N2Y_ECL:
+    case DOPPLERCOORD_N3X_EQU:
+    case DOPPLERCOORD_N3Y_EQU:
+    case DOPPLERCOORD_N3Z_EQU:
+    case DOPPLERCOORD_N3X_ECL:
+    case DOPPLERCOORD_N3Y_ECL:
+    case DOPPLERCOORD_N3Z_ECL:
+    case DOPPLERCOORD_N3SX_EQU:
+    case DOPPLERCOORD_N3SY_EQU:
+    case DOPPLERCOORD_N3OX_ECL:
+    case DOPPLERCOORD_N3OY_ECL:
+      scale = LAL_TWOPI * Freq * rOrb_c;
+      break;
+
+    default:
+      XLAL_ERROR_NULL(XLAL_EINVAL, "Unknown phase-derivative type '%d'\n", coordID );
+    }
+    nat_scale[i] = scale;
+  }
+
+  /* Allocate return matrix */
+  gsl_matrix* ret_ij = gsl_matrix_alloc ( g_ij->size1, g_ij->size2 );
+  XLAL_CHECK_NULL( ret_ij, XLAL_ENOMEM );
+
+  /* Rescale metric to naturalized coordinates */
+  for (size_t i = 0; i < g_ij->size1; ++i) {
+    for (size_t j = 0; j < g_ij->size2; ++j) {
+      double tmp = gsl_matrix_get(g_ij, i, j);
+      tmp /= nat_scale[i] * nat_scale[j];
+      gsl_matrix_set(ret_ij, i, j, tmp);
+    }
+  }
+
+  return ret_ij;
+
+} /* XLALNaturalizeMetric() */
 
 
 /** "DiagNormalize" a metric matrix.
@@ -2445,69 +2519,3 @@ XLALDiagNormalizeMetric ( const gsl_matrix * g_ij )
   return ret_ij;
 
 } /* XLALDiagNormalizeMetric() */
-
-
-
-int
-XLALAverageDetectorPosVel ( PosVel3D_t *avg_spin_posvel,	/**< [out] instantaneous sidereal position and velocity vector */
-                            PosVel3D_t *avg_orbit_posvel,	/**< [out] instantaneous orbital position and velocity vector */
-                            const LIGOTimeGPS *tGPS,		/**< [in] GPS time */
-                            const MultiDetectorInfo *detInfo,	/**< [in] detector info */
-                            const EphemerisData *edat,		/**< [in] ephemeris data */
-                            DetectorMotionType special		/**< [in] detector motion type */
-                            )
-{
-
-  REAL8 total_weight = 0;
-
-  XLAL_CHECK(avg_spin_posvel != NULL, XLAL_EFAULT);
-  XLAL_CHECK(avg_orbit_posvel != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tGPS != NULL, XLAL_EFAULT);
-  XLAL_CHECK(detInfo != NULL, XLAL_EFAULT);
-  XLAL_CHECK(edat != NULL, XLAL_EFAULT);
-
-  // zero vectors
-  ZERO_VECT(avg_spin_posvel->pos);
-  ZERO_VECT(avg_spin_posvel->vel);
-  ZERO_VECT(avg_orbit_posvel->pos);
-  ZERO_VECT(avg_orbit_posvel->vel);
-
-  // loop over detectors
-  for (UINT4 det = 0; det < detInfo->length; ++det) {
-
-    PosVel3D_t spin_posvel = empty_PosVel3D_t;
-    PosVel3D_t orbit_posvel = empty_PosVel3D_t;
-
-    // get position of this detector
-    XLAL_CHECK( XLALDetectorPosVel(&spin_posvel, &orbit_posvel, tGPS, &detInfo->sites[det], edat, special) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // add weighted position and velocity to total
-    MULT_VECT(spin_posvel.pos, detInfo->detWeights[det]);
-    ADD_VECT(avg_spin_posvel->pos, spin_posvel.pos);
-    MULT_VECT(spin_posvel.vel, detInfo->detWeights[det]);
-    ADD_VECT(avg_spin_posvel->vel, spin_posvel.vel);
-    MULT_VECT(orbit_posvel.pos, detInfo->detWeights[det]);
-    ADD_VECT(avg_orbit_posvel->pos, orbit_posvel.pos);
-    MULT_VECT(orbit_posvel.vel, detInfo->detWeights[det]);
-    ADD_VECT(avg_orbit_posvel->vel, orbit_posvel.vel);
-
-    // accumulate total weight
-    total_weight += detInfo->detWeights[det];
-
-  }
-
-  // raise error if no detector weights were given
-  if (total_weight == 0) {
-    XLAL_ERROR( XLAL_EDOM, "Detectors weights are all zero!" );
-  }
-
-  // normalise by total weight
-  const REAL8 inv_total_weight = 1.0 / total_weight;
-  MULT_VECT(avg_spin_posvel->pos, inv_total_weight);
-  MULT_VECT(avg_spin_posvel->vel, inv_total_weight);
-  MULT_VECT(avg_orbit_posvel->pos, inv_total_weight);
-  MULT_VECT(avg_orbit_posvel->vel, inv_total_weight);
-
-  return XLAL_SUCCESS;
-
-} // XLALAverageDetectorPosVel

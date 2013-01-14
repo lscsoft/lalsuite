@@ -18,8 +18,8 @@
 */
 
 /**
+ * \ingroup FrameCalibration_h
  * \author Brown, D. A.
- * \file
  *
  * \brief This module contains code used to extract calibration information contained
  * in frame files, and to construct a response (or transfer) function.
@@ -165,7 +165,7 @@ LALExtractFrameResponse(
     CalibrationUpdateParams *calfacts
     )
 
-{ 
+{
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
   FrCache      *refCache  = NULL;
@@ -643,7 +643,7 @@ LALCreateCalibFrCache(
     const CHAR         *calGlobPattern
     )
 
-{ 
+{
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );

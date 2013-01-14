@@ -18,15 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Christine Chung, Badri Krishnan, John Whelan
- * \date 2008
- * \file
- * \ingroup pulsarTODO
- * \brief LAL routines for CW cross-correlation searches
- *
- */
-
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/DopplerScan.h>
 #include <lal/PulsarCrossCorr.h>

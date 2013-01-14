@@ -143,8 +143,9 @@ XLALLorentzian (
 
 
 
-/* This function contains the coeffs from the matching with the LONG */
-/* Jena waveforms (those are not the ones published in the paper)         */
+/** This function contains the coeffs from the matching with the LONG
+ * Jena waveforms (those are not the ones published in the paper)
+ */
 void
 GetPhenomCoeffsLongJena(
 			PhenomCoeffs *co)
@@ -178,6 +179,7 @@ XLALLorentzian (
 }
 
 
+/** Computes effective phase as in arXiv:0710.2335 [gr-qc] */
 REAL4FrequencySeries *
 XLALHybridP1Phase(
 		  PhenomParams  *params,
@@ -187,8 +189,6 @@ XLALHybridP1Phase(
 		  REAL8         M,
 		  UINT4         n )
 {
-  /* Computes effective phase as in arXiv:0710.2335 [gr-qc] */
-
   UINT4 k;
   REAL8 piM;
   REAL8 f, psi0, psi2, psi3, psi4, psi6, psi7;
@@ -362,8 +362,3 @@ ComputeParamsFromCoeffs(
   return;
 
 }
-
-
-
-
-

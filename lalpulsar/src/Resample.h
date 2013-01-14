@@ -26,27 +26,9 @@
 extern "C" {
 #endif
 
-/** \name Error Codes */
-/*@{*/
-/** \ingroup Resample_h */
-#define RESAMPLEH_ENUL    1
-#define RESAMPLEH_EOUT    2
-#define RESAMPLEH_EMEM    3
-#define RESAMPLEH_EDTPOS  4
-#define RESAMPLEH_ELENGTH 5
-#define RESAMPLEH_ETIME   6
-
-#define RESAMPLEH_MSGENUL    "Unexpected null pointer in arguments"
-#define RESAMPLEH_MSGEOUT    "Output handle points to a non-null pointer"
-#define RESAMPLEH_MSGEMEM    "Memory allocation error"
-#define RESAMPLEH_MSGELENGTH "Vector lengths in polyco structure don't argree"
-#define RESAMPLEH_MSGEDTPOS  "Sampling interval is not positive"
-#define RESAMPLEH_MSGETIME   "Requested output time span extends beyond range of validity of input"
-/*@}*/
-
 /**
-   \defgroup Resample_h Resample
-   \ingroup pulsarCommon
+   \defgroup Resample_h Header Resample.h
+   \ingroup pkg_pulsarCommon
    \author Creighton, T. D.
    \brief Provides routines for resampling time series according to a new canonical time coordinate.
 
@@ -127,6 +109,24 @@ standalone code or in these LAL routines.
 */
 /*@{*/
 
+/** \name Error Codes */
+/*@{*/
+#define RESAMPLEH_ENUL    1
+#define RESAMPLEH_EOUT    2
+#define RESAMPLEH_EMEM    3
+#define RESAMPLEH_EDTPOS  4
+#define RESAMPLEH_ELENGTH 5
+#define RESAMPLEH_ETIME   6
+
+#define RESAMPLEH_MSGENUL    "Unexpected null pointer in arguments"
+#define RESAMPLEH_MSGEOUT    "Output handle points to a non-null pointer"
+#define RESAMPLEH_MSGEMEM    "Memory allocation error"
+#define RESAMPLEH_MSGELENGTH "Vector lengths in polyco structure don't argree"
+#define RESAMPLEH_MSGEDTPOS  "Sampling interval is not positive"
+#define RESAMPLEH_MSGETIME   "Requested output time span extends beyond range of validity of input"
+/*@}*/
+
+
 /**
  * The rules for taking a time series \f$t\f$, sampled at constant intervals \f$\Delta t\f$, and resampling it at
  * constant intervals \f$d\Delta t\f$ in the canonical time coordinate \f$\tau\f$.
@@ -181,8 +181,6 @@ typedef struct tagResampleParamStruc{
   INT4        decimate; /**< The decimation factor */
 } ResampleParamStruc;
 
-/*@}*/
-
 
 /* Function prototypes. */
 void
@@ -229,7 +227,7 @@ LALRulesToTimingDifference( LALStatus       *status,
 
 
 
-
+/*@}*/
 
 #ifdef __cplusplus
 }

@@ -17,53 +17,26 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Churches, D. K and Sathyaprakash, B.S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief A routine that fills an \c ::InspiralTemplate structure
-based on the values in the \c ::InspiralCoarseBankIn structure.
-
-\heading{Prototypes}
-
-<tt>LALInspiralSetParams()</tt>
-<ul>
-   <li> <tt>tempPars,</tt> Output
-   </li><li> <tt>coarseIn,</tt> Input</li>
-</ul>
-
-\heading{Description}
-
-This function takes as an input a structure of type
-\c ::InspiralCoarseBankIn and it fills up the
-elements of a structure of type \c ::InspiralTemplate.
-The function sets the fields
-\c massChoice, \c ieta, \c signalAmplitude,
-\c tSampling, \c fLower, \c fCutoff,
-\c order,
-\c approximant, \c nStartPad, \c nEndPad.
-
-\heading{Algorithm}
-
-
-\heading{Uses}
-\code
-None
-\endcode
-
-\heading{Notes}
-
-
-
-*/
-
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 
-void LALInspiralSetParams(LALStatus            *status,
-                          InspiralTemplate     *tempPars,
-                          InspiralCoarseBankIn coarseIn)
+/** \ingroup LALInspiralBank_h
+ * \brief A routine that fills an \c ::InspiralTemplate structure based on the values in the \c ::InspiralCoarseBankIn structure.
+ * \author Churches, D. K and Sathyaprakash, B.S.
+ *
+ * This function takes as an input a structure of type
+ * \c ::InspiralCoarseBankIn and it fills up the
+ * elements of a structure of type \c ::InspiralTemplate.
+ * The function sets the fields
+ * \c massChoice, \c ieta, \c signalAmplitude,
+ * \c tSampling, \c fLower, \c fCutoff,
+ * \c order,
+ * \c approximant, \c nStartPad, \c nEndPad.
+ */
+void LALInspiralSetParams(LALStatus            *status,		/**< LAL status pointer */
+                          InspiralTemplate     *tempPars,	/**< [out] Output */
+                          InspiralCoarseBankIn coarseIn		/**< [in] Input */
+                          )
 {
 
    INITSTATUS(status);

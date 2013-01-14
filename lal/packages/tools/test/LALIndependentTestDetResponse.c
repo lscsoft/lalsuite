@@ -60,6 +60,16 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
               WARNING: LHO AND LLO VALUES WERE TAKEN FROM OTHER LIGO SOURCES; GEO VALUES ARE NOT INDEPENDENT BUT TAKEN FROM LAL
 */
 
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -67,7 +77,6 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 /* #include <lalapps.h> */ /* 05/20/03 gam */
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/LALConfig.h>
 #include <lal/AVFactories.h>
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>

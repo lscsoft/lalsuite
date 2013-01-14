@@ -16,15 +16,6 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 // MA  02111-1307  USA
 //
-
-///
-/// \addtogroup FlatLatticeTiling_h
-/// \author Karl Wette
-/// \brief Lattice-based template generation for flat metric parameter spaces
-///
-
-/// @{
-
 #ifndef _FLATLATTICETILING_H
 #define _FLATLATTICETILING_H
 
@@ -42,14 +33,26 @@ extern "C" {
 #endif
 
 ///
+/// \addtogroup FlatLatticeTiling_h
+/// \author Karl Wette
+/// \brief Lattice-based template generation for flat metric parameter spaces
+///
+/// @{
+
+///
 /// Flat lattice tiling bound function
 ///
 typedef void (*FlatLatticeBound)(
+  const size_t dimension,	///< [in] Dimension on which bound applies
   const gsl_vector_uint* bound,	///< [in] Indices of current bounds
   const gsl_vector* point,	///< [in] Point on which to find bounds
   const void* data,		///< [in] Arbitrary data describing parameter space
+  const gsl_vector* incr,	///< [in] Increments of the lattice tiling generator
+  const gsl_vector* bbox,	///< [in] Metric ellipse bounding box extents
   gsl_vector* lower,		///< [out] Lower bounds on point in dimension
-  gsl_vector* upper		///< [out] Upper bounds on point in dimension
+  gsl_vector* upper,		///< [out] Upper bounds on point in dimension
+  double* lower_pad,		///< [out] Padding of lower parameter space bounds
+  double* upper_pad		///< [out] Padding of upper parameter space bounds
   );
 
 ///
@@ -65,12 +68,6 @@ typedef int (*FlatLatticeGenerator)(
 /// Flat lattice tiling state structure
 ///
 typedef struct tagFlatLatticeTiling FlatLatticeTiling;
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(NO_NEW_OBJECT(XLALNextFlatLatticePoint));
-SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
-SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
-#endif
 
 ///
 /// Create a new flat lattice tiling state structure
@@ -94,14 +91,21 @@ size_t XLALGetFlatLatticeDimensions(
   );
 
 ///
-/// Return the current number of flat lattice tiling parameter space points
+/// Return the current lattice tiling parameter space point
 ///
-uint64_t XLALGetFlatLatticePointCount(
+const gsl_vector* XLALGetFlatLatticePoint(
   FlatLatticeTiling* tiling	///< [in] Tiling state
   );
 
 ///
-/// Add a parameter space bound to the flat lattice tiling
+/// Return the current number of flat lattice tiling parameter space points
+///
+unsigned long XLALGetFlatLatticePointCount(
+  FlatLatticeTiling* tiling	///< [in] Tiling state
+  );
+
+///
+/// Set a parameter space bound on the flat lattice tiling
 ///
 int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
@@ -128,20 +132,16 @@ int XLALSetFlatLatticeMetric(
   const double max_mismatch		///< [in] Maximum prescribed mismatch
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(NO_NEW_OBJECT(XLALNextFlatLatticePoint));
+#endif
 ///
-/// Return the next point in the flat lattice tiling parameter space
+/// Move to the next point in the flat lattice tiling parameter space.
+/// Returns the index of the lowest dimension where the point has changed,
+/// or a negative number when the template bank is exhausted.
 ///
-gsl_vector* XLALNextFlatLatticePoint(
+int XLALNextFlatLatticePoint(
   FlatLatticeTiling* tiling		///< [in] Tiling state
-  );
-
-///
-/// Return a set of points in the flat lattice tiling parameter space
-///
-size_t XLALNextFlatLatticePoints(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
-  gsl_matrix* points,			///< [in] Flat lattice tiling points
-  const bool fill_last			///< [in] If not enought points to fill 'points', whether to fill in using the last tiling point
   );
 
 ///
@@ -154,19 +154,49 @@ int XLALRestartFlatLatticeTiling(
 ///
 /// Calculate the total number of flat lattice tiling parameter space points
 ///
-uint64_t XLALCountTotalFlatLatticePoints(
+unsigned long XLALCountTotalFlatLatticePoints(
   FlatLatticeTiling* tiling		///< [in] Tiling state
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(gsl_matrix**, random_points, workspace));
+SWIGLAL(INOUT_STRUCTS(gsl_vector**, nearest_distances));
+SWIGLAL(INOUT_STRUCTS(gsl_vector_ulong**, nearest_indices));
+#endif
 ///
-/// Generate random points within the flat lattice tiling parameter space
+/// Generate random points within the flat lattice tiling parameter space,
+/// then calculate the nearest flat lattice point to each random point
 ///
-int XLALGenerateRandomFlatLatticePoints(
+int XLALNearestFlatLatticePointToRandomPoints(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
-  RandomParams* randpar,		///< [in] Random number generator state
-  gsl_matrix* randpoints		///< [in] Random points (column-wise)
+  RandomParams* rng,			///< [in] Random number generator
+  const size_t num_random_points,	///< [in] Number of random points to generate
+  gsl_matrix** random_points,		///< [in/out] Pointer to matrix of random points
+  gsl_vector_ulong** nearest_indices,	///< [in/out] Pointer to vector of indices of nearest lattice point
+  gsl_vector** nearest_distances,	///< [in/out] Pointer to vector of distances to nearest lattice point
+  gsl_matrix** workspace		///< [in/out] Pointer to workspace matrix for computing distances
   );
 
+///
+/// Find the bounding box of the mismatch ellipses of a metric
+///
+gsl_vector* XLALMetricEllipseBoundingBox(
+  const gsl_matrix* metric,	///< [in] Metric to bound
+  const double max_mismatch	///< [in] Maximum mismatch with respect to metric
+  );
+
+///
+/// Find the lattice increment vectors for a given metric and mismatch
+///
+gsl_matrix* XLALMetricLatticeIncrements(
+  const FlatLatticeGenerator generator,	///< [in] Lattice generator function
+  const gsl_matrix* metric,		///< [in] Parameter space metric
+  const double max_mismatch		///< [in] Maximum prescribed mismatch
+  );
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
+#endif
 ///
 /// Calculate the generator matrix for a cubic (\f$Z_n\f$) lattice
 ///
@@ -176,6 +206,9 @@ int XLALCubicLatticeGenerator(
   double* norm_thickness	///< [out] Normalised thickness
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
+#endif
 ///
 /// Calculate the generator matrix for a \f$A_n^*\f$ lattice
 ///
@@ -186,96 +219,32 @@ int XLALAnstarLatticeGenerator(
   );
 
 ///
-/// Add a constant parameter space bound to the flat lattice tiling
+/// Set a constant parameter space bound, given by the minimum and
+/// maximum of the two supplied bounds, on the flat lattice tiling
 ///
 int XLALSetFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   const size_t dimension,	///< [in] Dimension on which bound applies
-  const double lower,		///< [in] Lower bound on dimension
-  const double upper		///< [in] Upper bound on dimension
+  const double bound1,		///< [in] First bound on dimension
+  const double bound2		///< [in] Second bound on dimension
   );
 
 ///
-/// Find the bounding box of the mismatch ellipses of a metric
+/// Set elliptical bounds in two dimensions on the flat lattice tiling
 ///
-gsl_vector* XLALMetricEllipseBoundingBox(
-  gsl_matrix* metric,		///< [in] Metric to bound
-  const double max_mismatch	///< [in] Maximum mismatch with respect to metric
+int XLALSetFlatLatticeEllipticalBounds(
+  FlatLatticeTiling* tiling,	///< [in] Tiling state
+  const size_t dimension,	///< [in] Dimension of X bound (Y bound is one higher)
+  const double x_centre,	///< [in] X centre of ellipse
+  const double y_centre,	///< [in] Y centre of ellipse
+  const double x_semi,		///< [in] Length of X semi-diameter
+  const double y_semi		///< [in] Length of Y semi-diameter
   );
 
-///
-/// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
-///
-int XLALOrthonormaliseWRTMetric(
-  gsl_matrix* matrix,		///< [in] Matrix of columns to orthonormalise
-  const gsl_matrix* metric	///< [in] Metric to orthonormalise with respect to
-  );
-
-///
-/// Transform a lattice generator to a square lower triangular form
-///
-gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(
-  gsl_matrix* generator		///< [in] Generator matrix of lattice
-  );
-
-///
-/// Normalise a lattice generator matrix to have a specified covering radius
-///
-int XLALNormaliseLatticeGenerator(
-  gsl_matrix* generator,	///< [in] Generator matrix of lattice
-  const double norm_thickness,	///< [in] Normalised thickness of lattice
-  const double covering_radius	///< [in] Desired covering radius
-  );
-
-///
-/// Workspace for computing the nearest template to a set of injections
-///
-typedef struct tagNearestTemplateWorkspace NearestTemplateWorkspace;
-
-///
-/// Create a new workspace for computing the nearest template to a set of injections
-///
-NearestTemplateWorkspace* XLALCreateNearestTemplateWorkspace(
-  const gsl_matrix* metric,		///< [in] Parameter space metric
-  const size_t num_templates,		///< [in] Number of templates to compare at once
-  const size_t num_injections		///< [in] Nunber of injections to compare at once
-  );
-
-///
-/// Destroy a nearest template workspace
-///
-void XLALDestroyNearestTemplateWorkspace(
-  NearestTemplateWorkspace* wksp	///< [in] Nearest template workspace
-  );
-
-///
-/// Update the templates used to compute distances from, and reset nearest template index
-///
-int XLALUpdateWorkspaceTemplates(
-  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
-  const gsl_matrix* templates,		///< [in] Template bank
-  gsl_vector_uint* nearest_template	///< [in] Index of nearest template
-  );
-
-///
-/// Update the injections used to compute distances to, and reset minimum distances
-///
-int XLALUpdateWorkspaceInjections(
-  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
-  const gsl_matrix* injections,		///< [in] Injection set
-  gsl_vector* min_distance		///< [in] Distance from injection to nearest template
-  );
-
-int XLALUpdateNearestTemplateToInjections(
-  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
-  gsl_vector* min_distance,		///< [in] Distance from injection to nearest template
-  gsl_vector_uint* nearest_template	///< [in] Index of nearest template
-  );
+/// @}
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
-/// @}

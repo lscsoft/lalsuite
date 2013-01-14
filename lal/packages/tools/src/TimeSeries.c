@@ -18,7 +18,7 @@
  */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <math.h>
 #include <string.h>
 #include <lal/Date.h>
@@ -30,64 +30,41 @@
 #include <lal/XLALError.h>
 
 #define DATATYPE REAL4
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
 
 #define DATATYPE REAL8
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
 
 #define DATATYPE COMPLEX8
-#define ARG arg1->data->data[i].re += arg2->data->data[j].re * unit_ratio; \
-            arg1->data->data[i].im += arg2->data->data[j].im * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
 
 #define DATATYPE COMPLEX16
-#define ARG arg1->data->data[i].re += arg2->data->data[j].re * unit_ratio; \
-            arg1->data->data[i].im += arg2->data->data[j].im * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
 
 #define DATATYPE INT2
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
 
 #define DATATYPE UINT2
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
 
 #define DATATYPE INT4
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
 
 #define DATATYPE UINT4
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
 
 #define DATATYPE INT8
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
 
 #define DATATYPE UINT8
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 #include "TimeSeries_source.c"
 #undef DATATYPE
-#undef ARG
-

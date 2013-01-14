@@ -1,5 +1,6 @@
 /*
-*  Copyright (C) 2007 Badri Krishnan
+*  Copyright (C) 2012 Reinhard Prix
+*  Copyright (C) 2005,2006 Badri Krishnan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,181 +18,166 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: SFTCleanTest.c
- * Authors:  Krishnan, B.
- *
- *
- * History:   Created by Krishnan August 2005
- *
- *
- *-----------------------------------------------------------------------
- */
-/**
-\author Krishnan, B.
-\file
-\ingroup pulsarTODO
-
-*/
-
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <lal/FrequencySeries.h>
 #include <lal/NormalizeSFTRngMed.h>
-#include <glob.h>
-#include <lal/GeneratePulsarSignal.h>
+#include <lal/Units.h>
 
-/**\name Error Codes */ /*@{*/
-#define NORMALIZESFTRNGMEDC_ENORM 0
-#define NORMALIZESFTRNGMEDC_ESUB  1
-#define NORMALIZESFTRNGMEDC_EARG  2
-#define NORMALIZESFTRNGMEDC_EBAD  3
-#define NORMALIZESFTRNGMEDC_EFILE 4
-
-#define NORMALIZESFTRNGMEDC_MSGENORM "Normal exit"
-#define NORMALIZESFTRNGMEDC_MSGESUB  "Subroutine failed"
-#define NORMALIZESFTRNGMEDC_MSGEARG  "Error parsing arguments"
-#define NORMALIZESFTRNGMEDC_MSGEBAD  "Bad argument values"
-#define NORMALIZESFTRNGMEDC_MSGEFILE "Could not create output file"
-/*@}*/
-
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+#define REL_ERR(x,y) ( fabs((x) - (y)) / fabs( (x) ) )
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
+INT4 lalDebugLevel=3;
+LALStatus empty_status;
 
+REAL8 tol = LAL_REAL4_EPS;
 
-#define MAXFILENAMELENGTH 256
-#define INPUTSFTDIR "/local_data/badkri/fakesfts/"
-#define OUTPUTSFTDIR "./test/"
-#define FMIN 251.0
-#define FMAX 259.0
-#define BLKSIZE 101
+int main ( void )
+{
+  const char *fn = __func__;
 
-/*********************************************************************/
-/* Macros for printing errors & testing subroutines (from Creighton) */
-/*********************************************************************/
+  //LALStatus status = empty_status;
 
-#define ERROR( code, msg, statement )                                \
-do {                                                                 \
-  if ( lalDebugLevel & LALERROR )                                    \
-    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
-                   "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, "$Id$", statement ? statement :  \
-                   "", (msg) );                                      \
-} while (0)
+  SFTtype *mySFT;
+  LIGOTimeGPS epoch = { 731210229, 0 };
+  REAL8 dFreq = 1.0 / 1800.0;
+  REAL8 f0 = 150.0 - 2.0 * dFreq;
 
-#define INFO( statement )                                            \
-do {                                                                 \
-  if ( lalDebugLevel & LALINFO )                                     \
-    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
-                   "        %s\n", *argv, __FILE__, __LINE__,        \
-              "$Id$", (statement) );                     \
-} while (0)
+  /* init data array */
+  COMPLEX8 vals[] = {
+    { -1.249241e-21,   1.194085e-21 },
+    {  2.207420e-21,   2.472366e-22 },
+    {  1.497939e-21,   6.593609e-22 },
+    {  3.544089e-20,  -9.365807e-21 },
+    {  1.292773e-21,  -1.402466e-21 }
+  };
+  UINT4 numBins = sizeof ( vals ) / sizeof(vals[0] );
 
-#define SUB( func, statusptr )                                       \
-do {                                                                 \
-  if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( NORMALIZESFTRNGMEDC_ESUB, NORMALIZESFTRNGMEDC_MSGESUB,      \
-           "Function call \"" #func "\" failed:" );                  \
-    return NORMALIZESFTRNGMEDC_ESUB;                                  \
-  }                                                                  \
-} while (0)
-/******************************************************************/
+  if ( (mySFT = XLALCreateSFT ( numBins )) == NULL ) {
+    XLALPrintError ("%s: Failed to create test-SFT using XLALCreateSFT(), xlalErrno = %d\n", fn, xlalErrno );
+    return XLAL_EFAILED;
+  }
+  /* init header */
+  strcpy ( mySFT->name, "H1;testSFTRngmed" );
+  mySFT->epoch = epoch;
+  mySFT->f0 = f0;
+  mySFT->deltaF = dFreq;
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
+  /* we simply copy over these data-values into the SFT */
+  UINT4 iBin;
+  for ( iBin = 0; iBin < numBins; iBin ++ )
+    mySFT->data->data[iBin] = vals[iBin];
 
-#define TRUE (1==1)
-#define FALSE (1==0)
+  /* get memory for running-median vector */
+  REAL8FrequencySeries rngmed;
+  INIT_MEM ( rngmed );
+  XLAL_CHECK ( (rngmed.data = XLALCreateREAL8Vector ( numBins )) != NULL, XLAL_EFUNC, "Failed  XLALCreateREAL8Vector ( %d )", numBins );
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){
-  static LALStatus    status;  /* LALStatus pointer */
+  // ---------- Test running-median PSD estimation in simple blocksize cases
+  // ------------------------------------------------------------
+  // TEST 1: odd blocksize = 3
+  // ------------------------------------------------------------
+  UINT4 blockSize3 = 3;
 
-  /*static SFTVector  *sft=NULL;*/
+  /* reference result for 3-bin block running-median computed in octave:
+octave> sft = [ \
+        -1.249241e-21 +  1.194085e-21i, \
+         2.207420e-21 +  2.472366e-22i, \
+         1.497939e-21 +  6.593609e-22i, \
+         3.544089e-20 -  9.365807e-21i, \
+         1.292773e-21 -  1.402466e-21i  \
+         ];
+octave> periodo = abs(sft).^2;
+octave> m1 = median ( periodo(1:3) ); m2 = median ( periodo(2:4) ); m3 = median ( periodo (3:5 ) );
+octave> rngmed = [ m1, m1, m2, m3, m3 ];
+octave> printf ("rngmedREF3 = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
+        rngmedREF3[] = { 2.986442063306e-42, 2.986442063306e-42, 4.933828992779561e-42, 3.638172910684999e-42, 3.638172910684999e-42 };
+  */
+  REAL8 rngmedREF3[] = { 2.986442063306e-42, 2.986442063306e-42, 4.933828992779561e-42, 3.638172910684999e-42, 3.638172910684999e-42 };
 
-  static MultiSFTVector *multsftvect=NULL;
-  static MultiPSDVector *multpsdvect=NULL;
+  /* compute running median */
+  XLAL_CHECK ( XLALSFTtoRngmed ( &rngmed, mySFT, blockSize3 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTtoRngmed() failed.");
 
-  CHAR *fname=NULL;
+  /* get median->mean bias correction, needed for octave-reference results, to make
+   * them comparable to the bias-corrected results from LALSFTtoRngmed()
+   */
+  REAL8 medianBias3 = XLALRngMedBias ( blockSize3 );
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALRngMedBias() failed.");
 
-  SFTCatalog *catalog = NULL;
+  BOOLEAN pass = 1;
+  const CHAR *passStr;
+  printf ("%4s %22s %22s %8s    <%g\n", "Bin", "rngmed(LAL)", "rngmed(Octave)", "relError", tol);
+  for (iBin=0; iBin < numBins; iBin ++ )
+    {
+      REAL8 rngmedVAL = rngmed.data->data[iBin];
+      REAL8 rngmedREF = rngmedREF3[iBin] / medianBias3;	// apply median-bias correction
+      REAL8 relErr = REL_ERR ( rngmedREF, rngmedVAL );
+      if ( relErr > tol ) {
+        pass = 0;
+        passStr = "fail";
+      } else {
+        passStr = "OK.";
+      }
 
-  /* user input variables */
-  BOOLEAN uvar_help;
-  CHAR *uvar_inputSFTDir;    /* directory for unclean sfts */
-  CHAR *uvar_outputSFTDir;   /* directory for cleaned sfts */
-  /* REAL8 uvar_fmin, uvar_fmax; */
-  INT4 uvar_blockSize;
-  /* set defaults */
+      printf ("%4d %22.16g %22.16g %8.1g    %s\n", iBin, rngmedVAL, rngmedREF, relErr, passStr );
 
-  lalDebugLevel = 0;
-  /* LALDebugLevel must be called before anything else */
-  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+    } /* for iBin < numBins */
 
-  uvar_help = FALSE;
+  // ------------------------------------------------------------
+  // TEST 2: even blocksize = 4
+  // ------------------------------------------------------------
+  UINT4 blockSize4 = 4;
 
-  uvar_blockSize = BLKSIZE;
+  /* reference result for 4-bin block running-median computed in octave:
+octave> m1 = median ( periodo(1:4) ); m2 = median ( periodo(2:5) );
+octave> rngmed = [ m1, m1, m1, m2, m2 ];
+octave> printf ("rngmedREF4[] = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
+rngmedREF4[] = { 3.96013552804278e-42, 3.96013552804278e-42, 3.96013552804278e-42, 4.28600095173228e-42, 4.28600095173228e-42 };
+  */
+  REAL8 rngmedREF4[] = { 3.96013552804278e-42, 3.96013552804278e-42, 3.96013552804278e-42, 4.28600095173228e-42, 4.28600095173228e-42 };
 
-  uvar_inputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(uvar_inputSFTDir, INPUTSFTDIR);
+  /* compute running median */
+  XLAL_CHECK ( XLALSFTtoRngmed ( &rngmed, mySFT, blockSize4 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTtoRngmed() failed.");
 
-  uvar_outputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(uvar_outputSFTDir, OUTPUTSFTDIR);
+  /* get median->mean bias correction, needed for octave-reference results, to make
+   * them comparable to the bias-corrected results from LALSFTtoRngmed()
+   */
+  REAL8 medianBias4 = XLALRngMedBias ( blockSize4 );
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALRngMedBias() failed.");
 
-  /* register user input variables */
-  SUB( LALRegisterBOOLUserVar(   &status, "help",         'h', UVAR_HELP,     "Print this message",    &uvar_help),         &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "inputSFTDir",  'i', UVAR_OPTIONAL, "Input SFT Directory",   &uvar_inputSFTDir),  &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "outputSFTDir", 'o', UVAR_OPTIONAL, "Output SFT Directory",  &uvar_outputSFTDir), &status);
-  SUB( LALRegisterINTUserVar(    &status, "blockSize",    'b', UVAR_OPTIONAL, "Rng Med block size",    &uvar_blockSize),    &status);
+  printf ("%4s %22s %22s %8s    <%g\n", "Bin", "rngmed(LAL)", "rngmed(Octave)", "relError", tol);
+  for (iBin=0; iBin < numBins; iBin ++ )
+    {
+      REAL8 rngmedVAL = rngmed.data->data[iBin];
+      REAL8 rngmedREF = rngmedREF4[iBin] / medianBias4;	// apply median-bias correction
+      REAL8 relErr = REL_ERR ( rngmedREF, rngmedVAL );
+      if ( relErr > tol ) {
+        pass = 0;
+        passStr = "fail";
+      } else {
+        passStr = "OK.";
+      }
 
-  /* read all command line variables */
-  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+      printf ("%4d %22.16g %22.16g %8.1g    %s\n", iBin, rngmedVAL, rngmedREF, relErr, passStr );
 
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0);
-
-  fname = (CHAR *)LALMalloc(256*sizeof(CHAR));
-  strcpy(fname, uvar_inputSFTDir);
-  strcat(fname, "/*SFT-test*");
-
-  SUB ( LALSFTdataFind ( &status, &catalog, fname, NULL), &status);
-
-  SUB ( LALLoadMultiSFTs ( &status, &multsftvect, catalog, -1, -1 ), &status );
-
-  SUB ( LALNormalizeMultiSFTVect(&status, &multpsdvect, multsftvect, uvar_blockSize), &status);
-
-  SUB ( LALNormalizeSFTVect(&status, multsftvect->data[0], uvar_blockSize), &status);
+    } /* for iBin < numBins */
 
   /* free memory */
-  SUB ( LALDestroyMultiPSDVector ( &status, &multpsdvect), &status);
-  SUB ( LALDestroyMultiSFTVector ( &status, &multsftvect), &status);
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-
-  LALFree(fname);
-
-  SUB (LALDestroyUserVars(&status), &status);
+  XLALDestroyREAL8Vector ( rngmed.data );
+  XLALDestroySFT ( mySFT );
 
   LALCheckMemoryLeaks();
 
-  INFO( NORMALIZESFTRNGMEDC_MSGENORM );
-  return NORMALIZESFTRNGMEDC_ENORM;
-}
+  if ( !pass )
+    {
+      printf ("Test failed! Difference exceeded tolerance.\n");
+      return XLAL_EFAILED;
+    }
+  else
+    {
+      printf ("Test passed.\n");
+      return XLAL_SUCCESS;
+    }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-
-
-
-
-
-
-
-
-
-
-
-
-
+} /* main() */

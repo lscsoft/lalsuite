@@ -47,12 +47,13 @@
 */
 
 /** \cond DONT_DOXYGEN */
+#include <config.h>
 
+#include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <lal/LALConfig.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -62,7 +63,6 @@
 #include <getopt.h>
 #endif
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
@@ -133,9 +133,9 @@ main( int argc, char *argv[] )
 
   for ( i = 0; i < n; ++i )
   {
-    avec->data[i].im = rand() % 5 - 2;
-    avec->data[i].re = rand() % 3 - 1;
-    fp ? fprintf( fp, "%+.0f\t%+.0f\n", avec->data[i].re, avec->data[i].im )
+    avec->data[i] = rand() % 5 - 2;
+    avec->data[i] += I * (rand() % 3 - 1);
+    fp ? fprintf( fp, "%+.0f\t%+.0f\n", crealf(avec->data[i]), cimagf(avec->data[i]) )
        : 0;
   }
   fp ? fprintf( fp, "\n" ) : 0;
@@ -146,7 +146,7 @@ main( int argc, char *argv[] )
 
   for ( i = 0; i < n; ++i )
   {
-    fp ? fprintf( fp, "%+f\t%+f\n", bvec->data[i].re, bvec->data[i].im ) : 0;
+    fp ? fprintf( fp, "%+f\t%+f\n", crealf(bvec->data[i]), cimagf(bvec->data[i]) ) : 0;
   }
   fp ? fprintf( fp, "\n" ) : 0;
   fflush( stdout );
@@ -156,23 +156,22 @@ main( int argc, char *argv[] )
 
   for ( i = 0; i < n; ++i )
   {
-    cvec->data[i].re /= n;
-    cvec->data[i].im /= n;
-    fp ? fprintf( fp, "%+.0f\t%+.0f\n", cvec->data[i].re, cvec->data[i].im )
+    cvec->data[i] /= n;
+    fp ? fprintf( fp, "%+.0f\t%+.0f\n", crealf(cvec->data[i]), cimagf(cvec->data[i]) )
        : 0;
     fflush( stdout );
-    if ( fabs( avec->data[i].re - cvec->data[i].re ) > eps )
+    if ( fabs( creal(avec->data[i] - cvec->data[i]) ) > eps )
     {
       fprintf( stderr, "FAIL: IFFT( FFT( a[] ) ) not equal to a[].\n" );
-      fprintf( stderr, "avec->data[%d].re = %e\n", i, avec->data[i].re );
-      fprintf( stderr, "cvec->data[%d].re = %e\n", i, cvec->data[i].re );
+      fprintf( stderr, "Re(avec->data[%d]) = %e\n", i, crealf(avec->data[i]) );
+      fprintf( stderr, "Re(cvec->data[%d]) = %e\n", i, crealf(cvec->data[i]) );
       return 1;
     }
-    if ( fabs( avec->data[i].im - cvec->data[i].im ) > eps )
+    if ( fabs( cimag(avec->data[i] - cvec->data[i]) ) > eps )
     {
       fprintf( stderr, "FAIL: IFFT( FFT( a[] ) ) not equal to a[].\n" );
-      fprintf( stderr, "avec->data[%d].im = %e\n", i, avec->data[i].im );
-      fprintf( stderr, "cvec->data[%d].im = %e\n", i, cvec->data[i].im );
+      fprintf( stderr, "Im(avec->data[%d]) = %e\n", i, cimagf(avec->data[i]) );
+      fprintf( stderr, "Im(cvec->data[%d]) = %e\n", i, cimagf(cvec->data[i]) );
       return 1;
     }
   }

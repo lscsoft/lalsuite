@@ -21,8 +21,7 @@
 /**
  * \author S.J. Berukoff, Reinhard Prix, John Whelan
  * \date 2007
- * \ingroup pulsarAntenna
- * \file
+ * \addtogroup LALComputeAM_h
  * \brief Computes quantities for amplitude demodulation.
  *
  * This routine computes the quantities \f$a(t)\f$ and \f$b(t)\f$ as defined in
@@ -51,11 +50,6 @@
  * products of these two quantities for later use.
  *
  */
-
-/* loop protection */
-#ifndef LALCOMPUTEAM_C
-#define LALCOMPUTEAM_C
-#endif
 
 /*---------- INCLUDES ----------*/
 #include <lal/LALComputeAM.h>

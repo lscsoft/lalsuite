@@ -49,15 +49,10 @@
 #define UNUSED
 #endif
 
-/**
+/** \defgroup CoincInspiralEllipsoid_c Module CoincInspiralEllipsoid.c
+    \ingroup CoincInspiralEllipsoid_h
 
-\author Craig Robinson
-\file
-\ingroup CoincInspiralEllipsoid_h
-
-\brief Blah.
-
-\section sec_cie_desc Description
+\heading{Description}
 
 <tt>LALCreateTwoIFOCoincListEllipsoid()</tt> takes in a linked list of
 single inspiral tables and returns a list of two instrument coincidences.
@@ -100,6 +95,7 @@ calculating the square of the metric distance between the two points in
 \f$(t_C, \tau_0, \tau_3)\f$ space.
 
 */
+/*@{*/
 
 typedef struct tagEThincaMinimizer
 {
@@ -751,3 +747,5 @@ static REAL8 minimizeEThincaParameterOverTimeDiff( REAL8 timeShift,
 
   return overlap;
 }
+
+/*@}*/ /* end:CoincInspiralEllipsoid_c */

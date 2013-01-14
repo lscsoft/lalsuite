@@ -5,7 +5,6 @@
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
-#include <lal/LALComplex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/Date.h>

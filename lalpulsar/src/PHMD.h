@@ -16,9 +16,15 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef _PHMD_H
+#define _PHMD_H
 
-/** \defgroup PHMD_h PartialHoughMapDerivative (PHMD)
- *  \ingroup pulsarHough
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+/** \defgroup PHMD_h Header PHMD.h
+ *  \ingroup pkg_pulsarHough
  *  \author Sintes, A. M.
  *  \date 2001
  *  \brief Conversion from peaks in a spectrum into a partial Hough map derivative
@@ -46,14 +52,7 @@ pointers to the borders in a pre-calculated look-up-table, plus some extra infor
 their character and edge effects when clipping on a finite patch.
 
 */
-
-/*
- * 4.  Protection against double inclusion (include-loop protection)
- *     Note the naming convention!
- */
-
-#ifndef _PHMD_H
-#define _PHMD_H
+/*@{*/
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately
@@ -77,20 +76,12 @@ their character and edge effects when clipping on a finite patch.
 #include <lal/LUT.h>
 
 /*
- *   Protection against C++ name mangling
- */
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/*
  * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
 
-/**\name Error Codes */ /*@{*/
-/** \ingroup PHMD_h */
+/**\name Error Codes */
+/*@{*/
 #define PHMDH_ENULL 1
 #define PHMDH_ESIZE 2
 #define PHMDH_ESZMM 4
@@ -132,7 +123,6 @@ typedef REAL8 HoughDT; /* for weighted hough maps */
 
 
 /** \brief This structure stores the ``peak-gram''
- * \ingroup PHMD_h
  */
   typedef struct tagHOUGHPeakGram{
     INT2    timeIndex;  /**< The time index of the peak-gram */
@@ -144,7 +134,6 @@ typedef REAL8 HoughDT; /* for weighted hough maps */
   } HOUGHPeakGram;
 
 /** \brief This structure stores a partial Hough map derivative
-* \ingroup PHMD_h
 */
 typedef struct tagHOUGHphmd{
   UINT8          fBin;  	/**< Frequency bin of this partial map derivative */
@@ -164,7 +153,6 @@ typedef struct tagHOUGHphmd{
  * 11. Extern Global variables. (discouraged)
  */
 
-/** \cond DONT_DOXYGEN */
 /*
  * 12. Functions Declarations (i.e., prototypes).
  */
@@ -175,7 +163,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 			HOUGHPeakGram *pg
 			);
 
-/** \endcond */
+/*@}*/
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif

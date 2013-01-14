@@ -28,7 +28,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 {
     int result;
     double tmax;
-    double complex ymax;
+    COMPLEX16 ymax;
 
     LanczosTriggerInterpolant *interp = XLALCreateLanczosTriggerInterpolant(16);
     if (!interp)
@@ -39,7 +39,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
         const double expected_tmax = -0.35923390727111837;
         const double expected_re_ymax = 22.592995414852155;
         const double expected_im_ymax = -24.25569756344451;
-        const double complex y[] = {
+        const COMPLEX16 y[] = {
             -14.04298458-12.42025719*I, -13.54512279-13.9975707*I ,
             -12.81987146-15.65632332*I, -11.83145220-17.25894236*I,
             -10.67978351-18.78930327*I,  -9.38321345-20.26279014*I,
@@ -75,7 +75,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
         const double expected_tmax = 0.0080079263861989602;
         const double expected_re_ymax = 8.346533081471625;
         const double expected_im_ymax = 46.70076293771792;
-        const double complex y[] = {
+        const COMPLEX16 y[] = {
             24.33546507 -4.37237844*I,  25.21430734 -2.94850093*I,
             26.24653016 -1.46698428*I,  27.43392439 +0.31641935*I,
             28.55556797 +2.4344684*I ,  29.53970968 +4.9329713*I ,
@@ -111,7 +111,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
         const double expected_tmax = 0.35605452045274433;
         const double expected_re_ymax = 14.731795690833726;
         const double expected_im_ymax = 43.90822049035633;
-        const double complex y[] = {
+        const COMPLEX16 y[] = {
             25.38672374-10.46990646*I,  26.98036717 -8.74105323*I,
             28.42577358 -6.75887934*I,  29.67590345 -4.50925463*I,
             30.62545698 -2.16923242*I,  31.44275377 +0.18575934*I,

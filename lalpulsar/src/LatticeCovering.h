@@ -16,27 +16,6 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-
-/**
- * \defgroup moduleLatticeCovering Lattice Covering
- * \ingroup coreDA
- *
- * \brief Module implementing a practical (approximate) solution to the "covering problem".
- *  This is achieved by producing a lattice-covering with the \f$A_n^*\f$ lattice,
- *  which is the best known covering up to dimension \f$n\le 23\f$
- *  (see \ref CS99 for details).
- */
-
-/**
- * \author Reinhard Prix
- * \date 2005
- * \file
- * \ingroup moduleLatticeCovering
- * \brief Header-file defining the API for the lattice-covering functions.
- *
- *
- */
-
 #ifndef _LATTICECOVERING_H  /* Double-include protection. */
 #define _LATTICECOVERING_H
 
@@ -44,6 +23,17 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+/**
+ * \defgroup LatticeCovering_h Header LatticeCovering.h
+ * \ingroup pkg_pulsarCovering
+ *
+ * \brief Module implementing a practical (approximate) solution to the "covering problem".
+ *  This is achieved by producing a lattice-covering with the \f$A_n^*\f$ lattice,
+ *  which is the best known covering up to dimension \f$n\le 23\f$
+ *  (see \ref CS99 for details).
+ */
+/*@{*/
 
 /*---------- INCLUDES ----------*/
 #include <gsl/gsl_matrix.h>
@@ -57,8 +47,8 @@ extern "C" {
 
 /*---------- DEFINES ----------*/
 
-/*----- Error-codes -----*/
-
+/** \name Error codes */
+/*@{*/
 #define LATTICECOVERING_ENULL 		1
 #define LATTICECOVERING_ENONULL		2
 #define LATTICECOVERING_EMEM		3
@@ -72,6 +62,7 @@ extern "C" {
 #define LATTICECOVERING_MSGEINPUT	"Invald input parameter"
 #define LATTICECOVERING_MSGELIST	"Error occurred in list-handling ..."
 #define LATTICECOVERING_MSGEFUNC	"Sub-routine failed"
+/*@}*/
 
 /*---------- exported types ----------*/
 
@@ -132,6 +123,8 @@ REAL8Vector *XLALgsl2LALmetric (const gsl_matrix *gmetric);
 
 /* convert LAL-encoded metric into a symmetric gsl-matrix */
 gsl_matrix *XLALmetric2gsl (const REAL8Vector *metric);
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

@@ -1,3 +1,9 @@
+EXTRA_DIST = LALConfig.dox \
+	LALDatatypes.dox \
+	LALError.dox \
+	LALMalloc.dox \
+	LALStatusMacros.dox
+
 pkginclude_HEADERS = \
 	Grid.h \
 	LALAtomicDatatypes.h \

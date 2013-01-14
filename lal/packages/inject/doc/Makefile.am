@@ -26,5 +26,6 @@ EXTRA_DIST = \
 	inject_lat_long.eps \
 	inject_phase_diagram.png \
 	inject_phase_diagram.eps \
+	SkyCoordinates.dox \
 	SkyCoordinates_conversions.eps \
 	SkyCoordinates_conversions.png

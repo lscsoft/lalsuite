@@ -24,11 +24,8 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_odeiv.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALSimInspiral.h>
-#define LAL_USE_COMPLEX_SHORT_MACROS
 #include <lal/FindRoot.h>
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
@@ -466,7 +463,7 @@ XLALSimInspiralTaylorEtSetup(
 int XLALSimInspiralTaylorEtPNEvolveOrbit(
 		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 		REAL8TimeSeries **phi, /**< orbital phase [returned] */
-		REAL8 phic,            /**< coalescence phase */
+		REAL8 phic,            /**< orbital phase at end */
 		REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
 		REAL8 m2,              /**< mass of companion 2 */
@@ -551,11 +548,7 @@ int XLALSimInspiralTaylorEtPNEvolveOrbit(
 	XLALGPSAdd(&(*V)->epoch, -1.0*j*deltaT);
 	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
 
-	/* phi here is the orbital phase = 1/2 * GW phase.
-	 * End GW phase specified on command line.
-	 * Adjust phase so phi = phi_end/2 at the end */
-
-	phic /= 2.;
+	/* Shift phase so phi = phic at the end */
 	phic -= (*phi)->data->data[j-1];
 	for (j = 0; j < (*phi)->data->length; ++j)
 		(*phi)->data->data[j] += phic;
@@ -573,7 +566,7 @@ int XLALSimInspiralTaylorEtPNEvolveOrbit(
 int XLALSimInspiralTaylorEtPNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 phic,               /**< orbital phase at end */
 	       	REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
@@ -613,7 +606,7 @@ int XLALSimInspiralTaylorEtPNGenerator(
 int XLALSimInspiralTaylorEtPN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 phic,               /**< orbital phase at end */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
@@ -639,7 +632,7 @@ int XLALSimInspiralTaylorEtPN(
 int XLALSimInspiralTaylorEtPNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 phic,               /**< orbital phase at end */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */

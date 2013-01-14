@@ -36,6 +36,10 @@
 
 #include <lal/LowLatencyData.h>
 
+/**
+   \ingroup LowLatencyData_h
+*/
+
 struct tagLowLatencyData
 {
   /* File descriptor for inotify or directory */

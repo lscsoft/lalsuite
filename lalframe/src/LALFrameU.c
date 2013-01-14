@@ -1,3 +1,5 @@
+#include "config.h"
+
 #if defined USE_FRAMEC && ! defined USE_FRAMEL
 #include "LALFrameC.c"
 #elif defined USE_FRAMEL && ! defined USE_FRAMEC

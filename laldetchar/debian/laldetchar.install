@@ -1,0 +1,3 @@
+usr/bin/lalsim*
+etc/*
+usr/lib/*.so*

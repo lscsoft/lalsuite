@@ -113,7 +113,6 @@ int main ( void )
   const  UINT4   l =  7; /* number of harmonics to build the ref. signa l*/
 
   FILE   *in_file, *out_file;
-  char   filename[100];
   int    UNUSED number;
 
   INT4            i;
@@ -182,13 +181,12 @@ int main ( void )
   /* read data  x(t) */
   /* insert here your own data from a given file/frame */
 
-  strcpy(filename,"CLRindata.asc\0");
-  in_file = LALOpenDataFile(filename);
+  in_file = fopen(DATADIR "CLRindata.asc", "r");
   for (i = 0; i < (int)n; ++i) {
     number = fscanf(in_file, "%f\n", &dummy );
     x->data[i] = dummy;
   }
-  LALFclose(in_file);
+  fclose(in_file);
 
   /* --------------------------------------------------- */
   /*          what the program should do                 */
@@ -253,8 +251,7 @@ int main ( void )
   /* ------------------------------------------------- */
   /* write clean  data  x(t) */
 
-  strcpy(filename,"CLRoutdata.asc\0");
-  out_file = fopen(filename,"w");
+  out_file = fopen("CLRoutdata.asc", "w");
   for (i = 0; i < (int)n; ++i) {
     fprintf(out_file, "%f\n", xtclean->data[i] );
     fflush(out_file);

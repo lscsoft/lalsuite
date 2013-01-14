@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdlib.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_interp.h>
@@ -193,8 +193,8 @@ Blanchet et. al, Phys. Rev. Lett. 93, 091101 (2004) */
 #define thetahat 1039.0/4620.0
 
 
-static int XLALSimInspiralSpinTaylorCoeffs(REAL8 ST[9], /** Output: spin coefficients array */
-		      REAL8 eta /** Symmetric mass ratio */ )
+static int XLALSimInspiralSpinTaylorCoeffs(REAL8 ST[9], /**< Output: spin coefficients array */
+		      REAL8 eta /**< Symmetric mass ratio */ )
 {
   if(!ST) XLAL_ERROR(XLAL_EFAULT);
   
@@ -274,14 +274,14 @@ REAL8 ETaN(REAL8 eta)
  */
 
 static int XLALPSpinInspiralRDparamsSetup(
-    LALPSpinInspiralRDparams *mparams,  /** Output: RDparams structure */
-    UINT4 inspiralOnly,                 /** Only generate inspiral */
-    REAL8 deltaT,                       /** sampling interval */
-    REAL8 fLow,                         /** Starting frequency */
-    REAL8 m1,                           /** Mass 1 */
-    REAL8 m2,                           /** Mass 2 */
-    LALSimInspiralInteraction interaction, /** Spin interaction */
-    UINT4 order                         /** twice PN Order in Phase */
+    LALPSpinInspiralRDparams *mparams,  /**< Output: RDparams structure */
+    UINT4 inspiralOnly,                 /**< Only generate inspiral */
+    REAL8 deltaT,                       /**< sampling interval */
+    REAL8 fLow,                         /**< Starting frequency */
+    REAL8 m1,                           /**< Mass 1 */
+    REAL8 m2,                           /**< Mass 2 */
+    LALSimInspiralInteraction interaction, /**< Spin interaction */
+    UINT4 order                         /**< twice PN Order in Phase */
     )
 {
   REAL8 totalMass = m1+m2;
@@ -1660,122 +1660,110 @@ static int XLALPSpinGenerateQNMFreq(
   if ((l==2)&&(abs(m)==2)) {
     for (i = 0; i < nmodes; i++)
 		{
-			modefreqs->data[i].re = BCW22re[i][0] + BCW22re[i][1] * pow(1.- finalSpin, BCW22re[i][2]);
-			modefreqs->data[i].im = modefreqs->data[i].re / 2.
+			modefreqs->data[i] = BCW22re[i][0] + BCW22re[i][1] * pow(1.- finalSpin, BCW22re[i][2]);
+			modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 			/ (BCW22im[i][0] + BCW22im[i][1] * pow(1.- finalSpin, BCW22im[i][2]));
-			modefreqs->data[i].re *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
-			modefreqs->data[i].im *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
+			modefreqs->data[i] *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
 		}
   }
   else {
     if ((l==2)&&(m==0)) {
       for (i = 0; i < nmodes; i++)
 			{
-				modefreqs->data[i].re = BCW20re[i][0] + BCW20re[i][1] * pow(1.- finalSpin, BCW20re[i][2]);
-				modefreqs->data[i].im = modefreqs->data[i].re / 2.
+				modefreqs->data[i] = BCW20re[i][0] + BCW20re[i][1] * pow(1.- finalSpin, BCW20re[i][2]);
+				modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 				/ (BCW20im[i][0] + BCW20im[i][1] * pow(1.- finalSpin, BCW20im[i][2]));
-				modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-				modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+				modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 			}
     }
     else {
       if ((l==2)&&(abs(m)==1)) {
 				for (i = 0; i < nmodes; i++) {
-					modefreqs->data[i].re = BCW21re[i][0] + BCW21re[i][1] * pow(1.- finalSpin, BCW21re[i][2]);
-					modefreqs->data[i].im = modefreqs->data[i].re / 2.
+					modefreqs->data[i] = BCW21re[i][0] + BCW21re[i][1] * pow(1.- finalSpin, BCW21re[i][2]);
+					modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 					/ (BCW21im[i][0] + BCW21im[i][1] * pow(1.- finalSpin, BCW21im[i][2]));
-					modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-					modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+					modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 				}
       }
       else {
 				if ((l==3)&&(abs(m)==3)) {
 					for (i = 0; i < nmodes; i++) {
-						modefreqs->data[i].re = BCW33re[i][0] + BCW33re[i][1] * pow(1.- finalSpin, BCW33re[i][2]);
-						modefreqs->data[i].im = modefreqs->data[i].re / 2.
+						modefreqs->data[i] = BCW33re[i][0] + BCW33re[i][1] * pow(1.- finalSpin, BCW33re[i][2]);
+						modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 						/ (BCW33im[i][0] + BCW33im[i][1] * pow(1.- finalSpin, BCW33im[i][2]));
-						modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-						modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+						modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 					}
 				}
 				else
 					if ((l==3)&&(abs(m)==2)) {
 						for (i = 0; i < nmodes; i++) {
-							modefreqs->data[i].re = BCW32re[i][0] + BCW32re[i][1] * pow(1.- finalSpin, BCW32re[i][2]);
-							modefreqs->data[i].im = modefreqs->data[i].re / 2.
+							modefreqs->data[i] = BCW32re[i][0] + BCW32re[i][1] * pow(1.- finalSpin, BCW32re[i][2]);
+							modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 							/ (BCW32im[i][0] + BCW32im[i][1] * pow(1.- finalSpin, BCW32im[i][2]));
-							modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-							modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+							modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 						}
 					}
 					else {
 						if ((l==3)&&(abs(m)==1)) {
 							for (i = 0; i < nmodes; i++) {
-								modefreqs->data[i].re = BCW31re[i][0] + BCW31re[i][1] * pow(1.- finalSpin, BCW31re[i][2]);
-								modefreqs->data[i].im = modefreqs->data[i].re / 2.
+								modefreqs->data[i] = BCW31re[i][0] + BCW31re[i][1] * pow(1.- finalSpin, BCW31re[i][2]);
+								modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 								/ (BCW31im[i][0] + BCW31im[i][1] * pow(1.- finalSpin, BCW31im[i][2]));
-								modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-								modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+								modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 							}
 						}
 						else {
 							if ((l==3)&&(m==0)) {
 								for (i = 0; i < nmodes; i++) {
-									modefreqs->data[i].re = BCW30re[i][0] + BCW30re[i][1] * pow(1.- finalSpin, BCW30re[i][2]);
-									modefreqs->data[i].im = modefreqs->data[i].re / 2.
+									modefreqs->data[i] = BCW30re[i][0] + BCW30re[i][1] * pow(1.- finalSpin, BCW30re[i][2]);
+									modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 									/ (BCW30im[i][0] + BCW30im[i][1] * pow(1.- finalSpin, BCW30im[i][2]));
-									modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-									modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+									modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 								}
 							}
 							else {
 								if ((l==4)&&(abs(m)==4)) {
 									for (i = 0; i < nmodes; i++) {
-										modefreqs->data[i].re = BCW44re[i][0] + BCW44re[i][1] * pow(1.- finalSpin, BCW44re[i][2]);
-										modefreqs->data[i].im = modefreqs->data[i].re / 2.
+										modefreqs->data[i] = BCW44re[i][0] + BCW44re[i][1] * pow(1.- finalSpin, BCW44re[i][2]);
+										modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 										/ (BCW44im[i][0] + BCW44im[i][1] * pow(1.- finalSpin, BCW44im[i][2]));
-										modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-										modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+										modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 									}
 								}
 								else {
 									if ((l==4)&&(abs(m)==3)) {
 										for (i = 0; i < nmodes; i++) {
-											modefreqs->data[i].re = BCW43re[i][0] + BCW43re[i][1] * pow(1.- finalSpin, BCW43re[i][2]);
-											modefreqs->data[i].im = modefreqs->data[i].re / 2.
+											modefreqs->data[i] = BCW43re[i][0] + BCW43re[i][1] * pow(1.- finalSpin, BCW43re[i][2]);
+											modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 											/ (BCW43im[i][0] + BCW43im[i][1] * pow(1.- finalSpin, BCW43im[i][2]));
-											modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-											modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+											modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 										}
 									}
 									else {
 										if ((l==4)&&(abs(m)==2)) {
 											for (i = 0; i < nmodes; i++) {
-												modefreqs->data[i].re = BCW42re[i][0] + BCW42re[i][1] * pow(1.- finalSpin, BCW42re[i][2]);
-												modefreqs->data[i].im = modefreqs->data[i].re / 2.
+												modefreqs->data[i] = BCW42re[i][0] + BCW42re[i][1] * pow(1.- finalSpin, BCW42re[i][2]);
+												modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 												/ (BCW42im[i][0] + BCW42im[i][1] * pow(1.- finalSpin, BCW42im[i][2]));
-												modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-												modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+												modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 											}
 										}
 										else {
 											if ((l==4)&&(abs(m)==1)) {
 												for (i = 0; i < nmodes; i++) {
-													modefreqs->data[i].re = BCW41re[i][0] + BCW41re[i][1] * pow(1.- finalSpin, BCW41re[i][2]);
-													modefreqs->data[i].im = modefreqs->data[i].re / 2.
+													modefreqs->data[i] = BCW41re[i][0] + BCW41re[i][1] * pow(1.- finalSpin, BCW41re[i][2]);
+													modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 													/ (BCW41im[i][0] + BCW41im[i][1] * pow(1.- finalSpin, BCW41im[i][2]));
-													modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-													modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+													modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 												}
 											}
 											else {
 												if ((l==4)&&(m==0)) {
 													for (i = 0; i < nmodes; i++) {
-														modefreqs->data[i].re = BCW40re[i][0] + BCW40re[i][1] * pow(1.- finalSpin, BCW40re[i][2]);
-														modefreqs->data[i].im = modefreqs->data[i].re / 2.
+														modefreqs->data[i] = BCW40re[i][0] + BCW40re[i][1] * pow(1.- finalSpin, BCW40re[i][2]);
+														modefreqs->data[i] += I * creal(modefreqs->data[i]) / 2.
 														/ (BCW40im[i][0] + BCW40im[i][1] * pow(1.- finalSpin, BCW40im[i][2]));
-														modefreqs->data[i].re /= finalMass * totalMass * LAL_MTSUN_SI;
-														modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
+														modefreqs->data[i] /= finalMass * totalMass * LAL_MTSUN_SI;
 													}
 												}
 												else {
@@ -1857,26 +1845,26 @@ static int XLALPSpinInspiralRingdownWave (
       for (i = 0; i < nmodes; i++) {
 				gsl_matrix_set(coef, 2*j, i, 1.);
 				gsl_matrix_set(coef, 2*j, i+nmodes, 0.);
-				gsl_matrix_set(coef, 2*j+1, i, -modefreqs->data[i].im);
-				gsl_matrix_set(coef, 2*j+1, i+nmodes, modefreqs->data[i].re);
+				gsl_matrix_set(coef, 2*j+1, i, -cimag(modefreqs->data[i]));
+				gsl_matrix_set(coef, 2*j+1, i+nmodes, creal(modefreqs->data[i]));
       }
     }
     else {
       if (j==1) {
 				for (i = 0; i < nmodes; i++) {
-					gsl_matrix_set(coef, 2*j, i, modefreqs->data[i].im*modefreqs->data[i].im-modefreqs->data[i].re*modefreqs->data[i].re);
-					gsl_matrix_set(coef, 2*j, i+nmodes, -2.*modefreqs->data[i].im*modefreqs->data[i].re);
-					gsl_matrix_set(coef, 2*j+1, i, -modefreqs->data[i].im*modefreqs->data[i].im*modefreqs->data[i].im+3.*modefreqs->data[i].im*modefreqs->data[i].re*modefreqs->data[i].re);
-					gsl_matrix_set(coef, 2*j+1, i+nmodes, -modefreqs->data[i].re*modefreqs->data[i].re*modefreqs->data[i].re+3.*modefreqs->data[i].re*modefreqs->data[i].im*modefreqs->data[i].im);
+					gsl_matrix_set(coef, 2*j, i, cimag(modefreqs->data[i])*cimag(modefreqs->data[i])-creal(modefreqs->data[i])*creal(modefreqs->data[i]));
+					gsl_matrix_set(coef, 2*j, i+nmodes, -2.*cimag(modefreqs->data[i])*creal(modefreqs->data[i]));
+					gsl_matrix_set(coef, 2*j+1, i, -cimag(modefreqs->data[i])*cimag(modefreqs->data[i])*cimag(modefreqs->data[i])+3.*cimag(modefreqs->data[i])*creal(modefreqs->data[i])*creal(modefreqs->data[i]));
+					gsl_matrix_set(coef, 2*j+1, i+nmodes, -creal(modefreqs->data[i])*creal(modefreqs->data[i])*creal(modefreqs->data[i])+3.*creal(modefreqs->data[i])*cimag(modefreqs->data[i])*cimag(modefreqs->data[i]));
 				}
       }
       else {
 				if (j==2) {
 					for (i = 0; i < nmodes; i++) {
-						gsl_matrix_set(coef, 2*j, i, pow(modefreqs->data[i].im,4.)+pow(modefreqs->data[i].re,4.)-6.*pow(modefreqs->data[i].re*modefreqs->data[i].im,2.));
-						gsl_matrix_set(coef, 2*j, i+nmodes, -4.*pow(modefreqs->data[i].im,3.)*modefreqs->data[i].re+4.*pow(modefreqs->data[i].re,3.)*modefreqs->data[i].im);
-						gsl_matrix_set(coef, 2*j+1, i, -pow(modefreqs->data[i].im,5.)+10.*pow(modefreqs->data[i].im,3.)*pow(modefreqs->data[i].re,2.)-5.*modefreqs->data[i].im*pow(modefreqs->data[i].re,4.));
-						gsl_matrix_set(coef, 2*j+1, i+nmodes, 5.*pow(modefreqs->data[i].im,4.)*modefreqs->data[i].re-10.*pow(modefreqs->data[i].im,2.)*pow(modefreqs->data[i].re,3.)+pow(modefreqs->data[i].re,5.));
+						gsl_matrix_set(coef, 2*j, i, pow(cimag(modefreqs->data[i]),4.)+pow(creal(modefreqs->data[i]),4.)-6.*pow(creal(modefreqs->data[i])*cimag(modefreqs->data[i]),2.));
+						gsl_matrix_set(coef, 2*j, i+nmodes, -4.*pow(cimag(modefreqs->data[i]),3.)*creal(modefreqs->data[i])+4.*pow(creal(modefreqs->data[i]),3.)*cimag(modefreqs->data[i]));
+						gsl_matrix_set(coef, 2*j+1, i, -pow(cimag(modefreqs->data[i]),5.)+10.*pow(cimag(modefreqs->data[i]),3.)*pow(creal(modefreqs->data[i]),2.)-5.*cimag(modefreqs->data[i])*pow(creal(modefreqs->data[i]),4.));
+						gsl_matrix_set(coef, 2*j+1, i+nmodes, 5.*pow(cimag(modefreqs->data[i]),4.)*creal(modefreqs->data[i])-10.*pow(cimag(modefreqs->data[i]),2.)*pow(creal(modefreqs->data[i]),3.)+pow(creal(modefreqs->data[i]),5.));
 					}
 				}
 				else {
@@ -1938,9 +1926,9 @@ static int XLALPSpinInspiralRingdownWave (
     tj = j * dt;
     rdwave->data[j] = 0.;
     for (i = 0; i < nmodes; i++) {
-      rdwave->data[j] += exp(- tj * modefreqs->data[i].im)
-			* ( modeamps->data[i] * cos(tj * modefreqs->data[i].re)
-				 +   modeamps->data[i + nmodes] * sin(tj * modefreqs->data[i].re) );
+      rdwave->data[j] += exp(- tj * cimag(modefreqs->data[i]))
+			* ( modeamps->data[i] * cos(tj * creal(modefreqs->data[i]))
+				 +   modeamps->data[i + nmodes] * sin(tj * creal(modefreqs->data[i])) );
     }
   }
 	
@@ -1994,7 +1982,7 @@ static int XLALPSpinInspiralAttachRingdownWave (
   }
 
   /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-  Nrdwave = (INT4) (10. / modefreqs->data[0].im / dt);
+  Nrdwave = (INT4) (10. / cimag(modefreqs->data[0]) / dt);
   /* Patch length, centered around the matching point "attpos" */
 
   (*attpos)+=Nrdwave;
@@ -2640,7 +2628,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
         XLAL_ERROR(XLAL_EFAILED);
       }
 
-      omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
+      omegaRD = creal(modefreqs->data[0]) * unitHz / LAL_PI / 2.;
       frOmRD = fracRD(phenPars.LNhS1,phenPars.LNhS2,phenPars.S1S1,phenPars.S1S2,phenPars.S2S2)*omegaRD;
 
       v     = cbrt(om);
@@ -2873,8 +2861,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     x1 = h2P2->data[2 * i + 1];
     x2 = h2M2->data[2 * i];
     x3 = h2M2->data[2 * i + 1];
-    sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
+    sigp->data[i] +=   x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] += - x0 * cimag(MultSphHarmP) - x1 * creal(MultSphHarmP) - x2 * cimag(MultSphHarmM) - x3 * creal(MultSphHarmM);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 2, 1);
@@ -2884,16 +2872,16 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     x1 = h2P1->data[2 * i + 1];
     x2 = h2M1->data[2 * i];
     x3 = h2M1->data[2 * i + 1];
-    sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
+    sigp->data[i] +=   x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] += - x0 * cimag(MultSphHarmP) - x1 * creal(MultSphHarmP) - x2 * cimag(MultSphHarmM) - x3 * creal(MultSphHarmM);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 2, 0);
   for (i = 0; i < length; i++) {
     x0 = h20->data[2 * i];
     x1 = h20->data[2 * i + 1];
-    sigp->data[i] += x1 * MultSphHarmP.re - x1 * MultSphHarmP.im;
-    sigc->data[i] -= x1 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+    sigp->data[i] += x1 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP);
+    sigc->data[i] -= x1 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 3, 3);
@@ -2903,8 +2891,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     x1 = h3P3->data[2 * i + 1];
     x2 = h3M3->data[2 * i];
     x3 = h3M3->data[2 * i + 1];
-    sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 3, 2);
@@ -2914,8 +2902,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     x1 = h3P2->data[2 * i + 1];
     x2 = h3M2->data[2 * i];
     x3 = h3M2->data[2 * i + 1];
-    sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 3, 1);
@@ -2925,16 +2913,16 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     x1 = h3P1->data[2 * i + 1];
     x2 = h3M1->data[2 * i];
     x3 = h3M1->data[2 * i + 1];
-    sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 3, 0);
   for (i = 0; i < length; i++) {
     x0 = h30->data[2 * i];
     x1 = h30->data[2 * i + 1];    
-    sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im;
-    sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+    sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP);
+    sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 4, 4);
@@ -2944,8 +2932,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     x1 = h4P4->data[2 * i + 1];
     x2 = h4P4->data[2 * i];
     x3 = h4M4->data[2 * i + 1];
-    sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 4, 3);
@@ -2955,8 +2943,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     x1 = h4P3->data[2 * i + 1];
     x2 = h4M3->data[2 * i];
     x3 = h4M3->data[2 * i + 1];
-    sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 4, 2);
@@ -2966,8 +2954,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     x1 = h4P2->data[2 * i + 1];
     x2 = h4M2->data[2 * i];
     x3 = h4M2->data[2 * i + 1];
-    sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 4, 1);
@@ -2977,16 +2965,16 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     x1 = h4P1->data[2 * i + 1];
     x2 = h4M1->data[2 * i];
     x3 = h4M1->data[2 * i + 1];
-    sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+    sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
   }
 
   MultSphHarmP=XLALSpinWeightedSphericalHarmonic(inc, 0., -2, 4, 0);
   for (i = 0; i < length; i++) {
     x0 = h40->data[2 * i];
     x1 = h40->data[2 * i + 1];
-    sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im;
-    sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+    sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP);
+    sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP);
   }
 
   /*------------------------------------------------------

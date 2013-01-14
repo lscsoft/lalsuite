@@ -77,7 +77,7 @@ enum {
 int XLALFrameUFrFileIGWDVersion(LALFrameUFrFile *stream);
 */
 
-int XLALFrameUFrFileClose(LALFrameUFrFile * stream);
+void XLALFrameUFrFileClose(LALFrameUFrFile * stream);
 LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode);
 int XLALFrameUFileCksumValid(LALFrameUFrFile * stream);
 

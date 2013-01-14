@@ -28,7 +28,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 {
     int result;
     double tmax;
-    double complex ymax;
+    COMPLEX16 ymax;
 
     CubicSplineTriggerInterpolant *interp = XLALCreateCubicSplineTriggerInterpolant(2);
     if (!interp)
@@ -36,7 +36,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 
     {
         /* Concave-up, increasing series: maximum should occur at upper sample boundary */
-        const double complex y[] = {0, 1, 8, 27, 256};
+        const COMPLEX16 y[] = {0, 1, 8, 27, 256};
 
         result = XLALApplyCubicSplineTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
         if (result)
@@ -52,7 +52,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 
     {
         /* Concave-up, decreasing series: maximum should occur at lower sample boundary */
-        const double complex y[] = {256, 27, 8, 1, 0};
+        const COMPLEX16 y[] = {256, 27, 8, 1, 0};
 
         result = XLALApplyCubicSplineTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
         if (result)
@@ -68,7 +68,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 
     {
         /* Test some random sample data. */
-        const double complex y[] = {0, 1.23412285-1.56122275*I, -2.06157986+0.78298714*I, -0.52811449+0.47859189*I, 0.42450302+2.06877714*I};
+        const COMPLEX16 y[] = {0, 1.23412285-1.56122275*I, -2.06157986+0.78298714*I, -0.52811449+0.47859189*I, 0.42450302+2.06877714*I};
 
         result = XLALApplyCubicSplineTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
         if (result)

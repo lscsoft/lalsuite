@@ -55,11 +55,13 @@ Usage: lalapps_heterodyne_pulsar_pipe [options]
   -c, --coarse             run lalapps_heterodyne_pulsar in coarse mode
   -f, --fine               run lalapps_heterodyne_pulsar in fine mode
   -u, --update             run lalapps_heterodyne_pulsar in update mode
+  -U, --update-only        only heterodyne pulsars with an updated parameter file 
   -C, --calibrate          run lalapps_heterodyne_pulsar with calibration flag set
   -b, --binary-input       run lalapps_heterodyne_pulsar to read in a binary
                            data file (for fine/update heterodyne mode) 
   -O, --binary-output      run lalapps_heterodyne_pulsar to output to binary
-                           file (for coarse, fine or update heterodyne mode) 
+                           file (for coarse, fine or update heterodyne mode)
+  -t, --tdb-units          force the fine heterodyne to use the TDB time system
   -V, --verbose            run lalapps_heterodyne_pulsar in verbose mode  
   -F, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
@@ -67,7 +69,7 @@ Usage: lalapps_heterodyne_pulsar_pipe [options]
   print >> sys.stderr, msg
   
 # parse the command line options to figure out what we should do
-shortop = "hvds:cfuCF:l:VbO"
+shortop = "hvds:cfuUCF:l:VbOt"
 longop = [
   "help",
   "version",
@@ -76,12 +78,14 @@ longop = [
   "coarse",
   "fine",
   "update",
+  "update-only",
   "calibrate",
   "config-file=",
   "log-path=",
   "verbose",
   "binary-input",
-  "binary-output"
+  "binary-output",
+  "tdb-units"
   ]
 
 try:
@@ -96,12 +100,14 @@ config_file = None
 do_fine = None
 do_coarse = None
 do_update = None
+do_updateonly = None
 do_calibrate = None
 config_file = None
 log_path = None
 do_verbose = None
 do_bininput = None
 do_binoutput = None
+do_tdb = None
 
 # process options
 for o, a in opts:
@@ -123,6 +129,8 @@ for o, a in opts:
     do_fine = 1
   elif o in ("-u", "--update"):
     do_update = 1
+  elif o in ("-U", "--update-only"):
+    do_updateonly = 1  
   elif o in ("-C", "--calibrate"):
     do_calibrate = 1
   elif o in ("-F", "--config-file"):
@@ -133,6 +141,8 @@ for o, a in opts:
     do_bininput = 1 # set this to read in input data from a binary file
   elif o in ("-O", "--binary-output"):
     do_binoutput = 1 # set this if you want the data outout to a binary file
+  elif o in ("-t", "--tdb-units"):
+    do_tdb = 1 # force all fine heterodynes to use TDB
   elif o in ("-V", "--verbose"):
     do_verbose = 1 # this is the set verbose when running lalapps_heterodyne_pulsar NOT this script
   else:
@@ -192,8 +202,8 @@ update_job.set_sub_file(basename + subsuffix)
 # set values from config file
 pulsar_param_dir = cp.get('data','pulsar_param_dir')
 
-earth_ephem = cp.get('ephem','earth_ephem')
-sun_ephem = cp.get('ephem','sun_ephem')
+# the path to the ephemeris file directory
+ephem_path = cp.get('ephem','path')
 
 # actual info on the analysis
 tstart = cp.get('input','starttime')
@@ -294,13 +304,17 @@ if do_coarse:
       try:
         par = pppu.psr_par(param_file)
         pulsar = par['PSRJ']
+
+        # if the pulsar name is not specfied in the par file the use the file name
+        if pulsar is None:
+          # set pulsar name from .par file
+          pulsar = re.sub(r'\.par', r'', param_files[i])
+          # add a J if necessary
+          if pulsar.find('J') == -1:
+            pulsar = 'J' + pulsar
       except:
         print >> sys.stderr, "Could not read PSRJ from %s" % param_file
         sys.exit(0)
-      
-      # set pulsar name from .par file
-      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i])
-      #pulsar = re.sub(r'\.par', r'', param_files[i])
       
       # add heterodyneNode for DAG
       coarse.append(ppu.heterodyneNode(coarse_job))
@@ -309,11 +323,7 @@ if do_coarse:
       coarse[j].set_pulsar(pulsar)
       coarse[j].set_param_file(param_file)
       coarse[j].set_freq_factor(freq_factor)
-      """
-      don't need ephem files in coarse heterodyne YET!!
-      coarse[j].set_earth_ephem(earth_ephem)
-      coarse[j].set_sun_ephem(sun_ephem)
-      """
+
       if manual_epoch != None:
         coarse[j].set_manual_epoch(manual_epoch)
       coarse[j].set_filter_knee(filter_knee)
@@ -352,12 +362,12 @@ if do_coarse:
     i = i+1
 
 # code to create dag for fine heterodyne
-if do_fine or do_update:
+if do_fine or do_update or do_updateonly:
   param_files = os.listdir(pulsar_param_dir)
   param_files.sort()
   
   # get updated parameter file
-  if do_update:
+  if do_update or do_updateonly:
     pulsar_update_dir = cp.get('data', 'pulsar_update_dir')
     
     update_files = os.listdir(pulsar_update_dir)
@@ -386,20 +396,26 @@ if do_fine or do_update:
         par = pppu.psr_par(param_file)
         pulsar = par['PSRJ']
         ephem1 = par['EPHEM']
+        units = par['UNITS']
         
+        # if the pulsar name is not specfied in the par file the use the file name
+        if pulsar is None:
+          # set pulsar name from .par file
+          pulsar = re.sub(r'\.par', r'', param_files[i])
+          # add a J if necessary
+          if pulsar.find('J') == -1:
+            pulsar = 'J' + pulsar
+
         if not ephem1:
           ephem1 = 'DE405' # default to DE405
       except:
         print >> sys.stderr, "Could not read PSRJ from %s" % param_file
         sys.exit(0)
       
-      #set pulsar name from .par file
-      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i])
-      
       # set heterodyne flag
       if do_fine:
         het_flag = 1
-      if do_update:
+      if do_update or do_updateonly:
         het_flag = 2
       
       # find correct input file
@@ -418,15 +434,13 @@ if do_fine or do_update:
         i = i+1
         continue 
       
-      # add heterodyneNode for DAG
-      fine.append(ppu.heterodyneNode(fine_job))
-      
       """ 
       if updating parameters check that an updated .par file exists - else just 
       do normal fine heterodyne
       """
-      if do_update:
+      if do_update or do_updateonly:
         z = 0
+        upsrj = None
         while z < len(update_files):
           pulsar_update_file = pulsar_update_dir + '/' + update_files[z]
           
@@ -434,6 +448,7 @@ if do_fine or do_update:
             try:
               upar = pppu.psr_par(pulsar_update_file)
               ephem2 = upar['EPHEM']
+              units = upar['UNITS']
 
               if not ephem2:
                 ephem2 = 'DE405' # default to DE405
@@ -442,53 +457,79 @@ if do_fine or do_update:
               sys.exit(1)
             
             if par['PSRJ'] == upar['PSRJ']:
-              break
-          
+              upsrj = upar['PSRJ']
+              break      
+
           z = z+1
 
-        if par['PSRJ'] == upar['PSRJ'] and os.path.isfile(pulsar_update_file):
+        if par['PSRJ'] == upsrj and os.path.isfile(pulsar_update_file):
+          # add heterodyneNode for DAG
+          fine.append(ppu.heterodyneNode(fine_job))
+          
           fine[j].set_param_file_update(pulsar_update_file)
+        elif do_updateonly:
+          # don't analyse this pulsar as there is no parameter file in the update
+          # directory
+          i = i+1
+          continue
         else:
           print >> sys.stderr, """No updated parameter file exists for PSR%s, just perform fine
 heterodyne using old parameters.""" % (pulsar)
           
+          # add heterodyneNode for DAG
+          fine.append(ppu.heterodyneNode(fine_job))
+          
           # set default null value for the update file as it wil appear in the sub file
-          pulsar_update_file = 'none'
-          fine[j].set_param_file_update(pulsar_update_file)
           het_flag = 1
-      
+      else: # normal fine heterodyne
+        # add heterodyneNode for DAG
+        fine.append(ppu.heterodyneNode(fine_job))      
+
       fine[j].set_het_flag(het_flag)
       fine[j].set_ifo(detector)
       fine[j].set_pulsar(pulsar)
       fine[j].set_param_file(param_file)
       fine[j].set_freq_factor(freq_factor)
+
+      if het_flag == 2: # check if updated parameters are used
+        if 'DE200' in ephem2:
+          eephem = ephem_path + '/earth00-19-DE200.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE200.dat.gz'
+        elif 'DE405' in ephem2:
+          eephem = ephem_path + '/earth00-19-DE405.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE405.dat.gz'
+        elif 'DE414' in ephem2:
+          eephem = ephem_path + '/earth00-19-DE414.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE414.dat.gz'
+        else: # default to DE405
+          eephem = ephem_path + '/earth00-19-DE405.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE405.dat.gz'
+      elif het_flag == 1 or het_flag == 3:
+        if 'DE200' in ephem1:
+          eephem = ephem_path + '/earth00-19-DE200.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE200.dat.gz'
+        elif 'DE405' in ephem1:
+          eephem = ephem_path + '/earth00-19-DE405.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE405.dat.gz'
+        elif 'DE414' in ephem1:
+          eephem = ephem_path + '/earth00-19-DE414.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE414.dat.gz'
+        else: # default to DE405
+          eephem = ephem_path + '/earth00-19-DE405.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE405.dat.gz'
       
-      # there are two ephemeris files for the 09-11 period (e.g. S6) - the
-      # files with the DE405 suffix use DE405 and those without are DE200.
-      # Therefore if using data between within 2009-2011 check the ephemeris
-      # from the par file and set accordingly (assume that the config file
-      # leaves off the .dat suffix) - default to use DE405 if none is specified
-      if float(tstart) > 914803215 and float(tend) < 1009324815:
-        if het_flag == 2: # check if updated parameters are used
-          if 'DE200' in ephem2:
-            eephem = earth_ephem + '.dat'
-            sephem = sun_ephem + '.dat'
-          else:
-            eephem = earth_ephem + '-DE405.dat'
-            sephem = sun_ephem + '-DE405.dat'
-        elif het_flag == 1:
-          if 'DE200' in ephem1:
-            eephem = earth_ephem + '.dat'
-            sephem = sun_ephem + '.dat'
-          else:
-            eephem = earth_ephem + '-DE405.dat'
-            sephem = sun_ephem + '-DE405.dat'
+      if units is None:
+        units = []
+    
+      # check time correction file to use
+      if 'TDB' in units or do_tdb:
+        tephem = ephem_path + '/tdb_2000-2019.dat.gz'
       else:
-        eephem = earth_ephem
-        sephem = sun_ephem
+        tephem = ephem_path + '/te405_2000-2019.dat.gz'
       
       fine[j].set_ephem_earth_file(eephem)
       fine[j].set_ephem_sun_file(sephem)
+      fine[j].set_ephem_time_file(tephem)
       
       fine[j].set_filter_knee(filter_knee)
       fine[j].set_sample_rate(sample_rate)

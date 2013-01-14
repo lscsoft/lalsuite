@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/ComputeDataQualityVector.h>
 
 #include <math.h>  /* to use isnan() and isinf() */
@@ -126,7 +126,7 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
         badgamma = 0;
 
         for (j = 0; j < r_gamma; j++) {
-            REAL8 re = gamma_data[i*r_gamma + j].re;
+            REAL8 re = creal(gamma_data[i*r_gamma + j]);
             if (re < 0.8 || re > 1.2 || isnan(re) || isinf(re))
                 badgamma = 1;
         }

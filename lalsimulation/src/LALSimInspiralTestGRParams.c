@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Walter Del Pozzo, Evan Ochsner
+/* Copyright (C) 2012 Walter Del Pozzo, Evan Ochsner and Salvatore Vitale
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -146,7 +146,7 @@ bool XLALSimInspiralTestGRParamExists(
 
 /** Function that prints the whole test GR params linked list */
 int XLALSimInspiralPrintTestGRParam(
-        FILE *fp, 			/** FILE pointer to write to */
+        FILE *fp, 			/**< FILE pointer to write to */
         LALSimInspiralTestGRParam *parameter 	/**< Linked list to print */
         )
 {
@@ -171,10 +171,11 @@ void XLALSimInspiralDestroyTestGRParam(
         LALSimInspiralTestGRParam *parameter 	/**< Linked list to destroy */
         )
 {
-    if( parameter!= NULL ) 
-    { 
-        XLALSimInspiralDestroyTestGRParam(parameter->next);
-        parameter->next = NULL;
-    }
-    XLALFree(parameter);
+   LALSimInspiralTestGRParam *tmp;
+   while(parameter){
+	tmp=parameter->next;
+	XLALFree(parameter->data);
+	XLALFree(parameter);
+	parameter=tmp;
+	}
 }

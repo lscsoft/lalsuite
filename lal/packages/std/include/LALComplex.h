@@ -60,8 +60,6 @@ extern "C" {
 
 #ifdef LAL_USE_COMPLEX_MACROS
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define creal(z) ((z).re)
-#define cimag(z) ((z).im)
 #define crect(x,y) (XLALCOMPLEX16Rect((x),(y)))
 #define csetr(x) (XLALCOMPLEX16Rect((x),0.0))
 #define cseti(y) (XLALCOMPLEX16Rect(0.0,(y)))
@@ -71,7 +69,6 @@ extern "C" {
 #define cunit (XLALCOMPLEX16Rect(1.0,0.0))
 #define czero (XLALCOMPLEX16Rect(0.0,0.0))
 #define cnegone (XLALCOMPLEX16Rect(-1.0,0.0))
-#define I (XLALCOMPLEX16Rect(0.0,1.0))
 #endif
 #endif
 
@@ -88,8 +85,6 @@ REAL8 XLALCOMPLEX16LogAbs (COMPLEX16 z);
 #define LAL_CABS2(z) (XLALCOMPLEX16Abs2(z))
 #define LAL_CLOGABS(z) (XLALCOMPLEX16LogAbs(z))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define carg(z) (XLALCOMPLEX16Arg(z))
-#define cabs(z) (XLALCOMPLEX16Abs(z))
 #define cabs2(z) (XLALCOMPLEX16Abs2(z))
 #define clogabs(z) (XLALCOMPLEX16LogAbs(z))
 #endif
@@ -150,7 +145,6 @@ COMPLEX16 XLALCOMPLEX16Negative (COMPLEX16 a);
 #define cmuli(a,y) (XLALCOMPLEX16MulImag((a),(y)))
 #define cdivi(a,y) (XLALCOMPLEX16DivImag((a),(y)))
 
-#define conj(z) (XLALCOMPLEX16Conjugate(z))
 #define cinv(a) (XLALCOMPLEX16Inverse(a))
 #define cneg(a) (XLALCOMPLEX16Negative(a))
 #endif
@@ -179,15 +173,10 @@ COMPLEX16 XLALCOMPLEX16LogB (COMPLEX16 a, COMPLEX16 b);
 #define LAL_CLOG10(a) (XLALCOMPLEX16Log10(a))
 #define LAL_CLOGB(a,b) (XLALCOMPLEX16LogB((a),(b)))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define csqrt(z) (XLALCOMPLEX16Sqrt(z))
 #define csqrtr(x) (XLALCOMPLEX16SqrtReal(x))
 
-#define cpow(a,b) (XLALCOMPLEX16Pow((a),(b)))
 #define cpowr(a,x) (XLALCOMPLEX16PowReal((a),(x)))
 
-#define cexp(a) (XLALCOMPLEX16Exp(a))
-#define clog(a) (XLALCOMPLEX16Log(a))
-#define clog10(a) (XLALCOMPLEX16Log10(a))
 #define clogb(a,b) (XLALCOMPLEX16LogB((a),(b)))
 #endif
 #endif
@@ -207,11 +196,8 @@ COMPLEX16 XLALCOMPLEX16Cot (COMPLEX16 a);
 #define LAL_CTAN(a) (XLALCOMPLEX16Tan(a))
 #define LAL_CCOT(a) (XLALCOMPLEX16Cot(a))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define csin(a) (XLALCOMPLEX16Sin(a))
-#define ccos(a) (XLALCOMPLEX16Cos(a))
 #define csec(a) (XLALCOMPLEX16Sec(a))
 #define ccsc(a) (XLALCOMPLEX16Csc(a))
-#define ctan(a) (XLALCOMPLEX16Tan(a))
 #define ccot(a) (XLALCOMPLEX16Cot(a))
 #endif
 #endif
@@ -240,15 +226,12 @@ COMPLEX16 XLALCOMPLEX16Arccot (COMPLEX16 a);
 #define LAL_CATAN(a) (XLALCOMPLEX16Arctan(a))
 #define LAL_CACOT(a) (XLALCOMPLEX16Arccot(a))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define casin(a) (XLALCOMPLEX16Arcsin(a))
 #define casinr(x) (XLALCOMPLEX16ArcsinReal(x))
-#define cacos(a) (XLALCOMPLEX16Arccos(a))
 #define cacosr(x) (XLALCOMPLEX16ArccosReal(x))
 #define casec(a) (XLALCOMPLEX16Arcsec(a))
 #define casecr(x) (XLALCOMPLEX16ArcsecReal(x))
 #define cacsc(a) (XLALCOMPLEX16Arccsc(a))
 #define cacscr(x) (XLALCOMPLEX16ArccscReal(x))
-#define catan(a) (XLALCOMPLEX16Arctan(a))
 #define cacot(a) (XLALCOMPLEX16Arccot(a))
 #endif
 #endif
@@ -269,11 +252,8 @@ COMPLEX16 XLALCOMPLEX16Coth (COMPLEX16 a);
 #define LAL_CTANH(a) (XLALCOMPLEX16Tanh(a))
 #define LAL_CCOTH(a) (XLALCOMPLEX16Coth(a))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define csinh(a) (XLALCOMPLEX16Sinh(a))
-#define ccosh(a) (XLALCOMPLEX16Cosh(a))
 #define csech(a) (XLALCOMPLEX16Sech(a))
 #define ccsch(a) (XLALCOMPLEX16Csch(a))
-#define ctanh(a) (XLALCOMPLEX16Tanh(a))
 #define ccoth(a) (XLALCOMPLEX16Coth(a))
 #endif
 #endif
@@ -298,12 +278,9 @@ COMPLEX16 XLALCOMPLEX16Arccoth (COMPLEX16 a);
 #define LAL_CATANH_REAL(x) (XLALCOMPLEX16ArctanhReal(x))
 #define LAL_CACOTH(a) (XLALCOMPLEX16Arccoth(a))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define casinh(a) (XLALCOMPLEX16Arcsinh(a))
-#define cacosh(a) (XLALCOMPLEX16Arccosh(a))
 #define cacoshr(x) (XLALCOMPLEX16ArccoshReal(x))
 #define casech(a) (XLALCOMPLEX16Arcsech(a))
 #define cacsch(a) (XLALCOMPLEX16Arccsch(a))
-#define catanh(a) (XLALCOMPLEX16Arctanh(a))
 #define catanhr(x) (XLALCOMPLEX16ArctanhReal(x))
 #define cacoth(a) (XLALCOMPLEX16Arccoth(a))
 #endif
@@ -344,8 +321,6 @@ REAL4 XLALCOMPLEX8LogAbs (COMPLEX8 z);
 #define LAL_CABS2F(z) (XLALCOMPLEX8Abs2(z))
 #define LAL_CLOGABSF(z) (XLALCOMPLEX8LogAbs(z))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define cargf(z) (XLALCOMPLEX8Arg(z))
-#define cabsf(z) (XLALCOMPLEX8Abs(z))
 #define cabs2f(z) (XLALCOMPLEX8Abs2(z))
 #define clogabsf(z) (XLALCOMPLEX8LogAbs(z))
 #endif
@@ -406,7 +381,6 @@ COMPLEX8 XLALCOMPLEX8Negative (COMPLEX8 a);
 #define cmulif(a,y) (XLALCOMPLEX8MulImag((a),(y)))
 #define cdivif(a,y) (XLALCOMPLEX8DivImag((a),(y)))
 
-#define conjf(z) (XLALCOMPLEX8Conjugate(z))
 #define cinvf(a) (XLALCOMPLEX8Inverse(a))
 #define cnegf(a) (XLALCOMPLEX8Negative(a))
 #endif
@@ -435,15 +409,10 @@ COMPLEX8 XLALCOMPLEX8LogB (COMPLEX8 a, COMPLEX8 b);
 #define LAL_CLOG10F(a) (XLALCOMPLEX8Log10(a))
 #define LAL_CLOGBF(a,b) (XLALCOMPLEX8LogB((a),(b)))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define csqrtf(z) (XLALCOMPLEX8Sqrt(z))
 #define csqrtrf(x) (XLALCOMPLEX8SqrtReal(x))
 
-#define cpowf(a,b) (XLALCOMPLEX8Pow((a),(b)))
 #define cpowrf(a,x) (XLALCOMPLEX8PowReal((a),(x)))
 
-#define cexpf(a) (XLALCOMPLEX8Exp(a))
-#define clogf(a) (XLALCOMPLEX8Log(a))
-#define clog10f(a) (XLALCOMPLEX8Log10(a))
 #define clogbf(a,b) (XLALCOMPLEX8LogB((a),(b)))
 #endif
 #endif
@@ -463,11 +432,8 @@ COMPLEX8 XLALCOMPLEX8Cot (COMPLEX8 a);
 #define LAL_CTANF(a) (XLALCOMPLEX8Tan(a))
 #define LAL_CCOTF(a) (XLALCOMPLEX8Cot(a))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define csinf(a) (XLALCOMPLEX8Sin(a))
-#define ccosf(a) (XLALCOMPLEX8Cos(a))
 #define csecf(a) (XLALCOMPLEX8Sec(a))
 #define ccscf(a) (XLALCOMPLEX8Csc(a))
-#define ctanf(a) (XLALCOMPLEX8Tan(a))
 #define ccotf(a) (XLALCOMPLEX8Cot(a))
 #endif
 #endif
@@ -496,15 +462,12 @@ COMPLEX8 XLALCOMPLEX8Arccot (COMPLEX8 a);
 #define LAL_CATANF(a) (XLALCOMPLEX8Arctan(a))
 #define LAL_CACOTF(a) (XLALCOMPLEX8Arccot(a))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define casinf(a) (XLALCOMPLEX8Arcsin(a))
 #define casinrf(x) (XLALCOMPLEX8ArcsinReal(x))
-#define cacosf(a) (XLALCOMPLEX8Arccos(a))
 #define cacosrf(x) (XLALCOMPLEX8ArccosReal(x))
 #define casecf(a) (XLALCOMPLEX8Arcsec(a))
 #define casecrf(x) (XLALCOMPLEX8ArcsecReal(x))
 #define cacscf(a) (XLALCOMPLEX8Arccsc(a))
 #define cacscrf(x) (XLALCOMPLEX8ArccscReal(x))
-#define catanf(a) (XLALCOMPLEX8Arctan(a))
 #define cacotf(a) (XLALCOMPLEX8Arccot(a))
 #endif
 #endif
@@ -525,11 +488,8 @@ COMPLEX8 XLALCOMPLEX8Coth (COMPLEX8 a);
 #define LAL_CTANHF(a) (XLALCOMPLEX8Tanh(a))
 #define LAL_CCOTHF(a) (XLALCOMPLEX8Coth(a))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define csinhf(a) (XLALCOMPLEX8Sinh(a))
-#define ccoshf(a) (XLALCOMPLEX8Cosh(a))
 #define csechf(a) (XLALCOMPLEX8Sech(a))
 #define ccschf(a) (XLALCOMPLEX8Csch(a))
-#define ctanhf(a) (XLALCOMPLEX8Tanh(a))
 #define ccothf(a) (XLALCOMPLEX8Coth(a))
 #endif
 #endif
@@ -554,12 +514,9 @@ COMPLEX8 XLALCOMPLEX8Arccoth (COMPLEX8 a);
 #define LAL_CATANH_REALF(x) (XLALCOMPLEX8ArctanhReal(x))
 #define LAL_CACOTHF(a) (XLALCOMPLEX8Arccoth(a))
 #ifdef LAL_USE_COMPLEX_SHORT_MACROS
-#define casinhf(a) (XLALCOMPLEX8Arcsinh(a))
-#define cacoshf(a) (XLALCOMPLEX8Arccosh(a))
 #define cacoshrf(x) (XLALCOMPLEX8ArccoshReal(x))
 #define casechf(a) (XLALCOMPLEX8Arcsech(a))
 #define cacschf(a) (XLALCOMPLEX8Arccsch(a))
-#define catanhf(a) (XLALCOMPLEX8Arctanh(a))
 #define catanhrf(x) (XLALCOMPLEX8ArctanhReal(x))
 #define cacothf(a) (XLALCOMPLEX8Arccoth(a))
 #endif

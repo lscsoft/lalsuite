@@ -31,8 +31,7 @@
  * for calculating the standard scalar spherical harmonics Ylm.
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALComplex.h>
+#include <complex.h>
 
 #include <gsl/gsl_sf_gamma.h>
 
@@ -113,7 +112,7 @@ XLALSimIMREOBCalculateNewtonianMultipole(
 
    INT4 epsilon = (l + m) % 2;
 
-   y.re = y.im = 0.0;
+   y = 0.0;
 
   /* Calculate the necessary Ylm */
   xlalStatus = XLALScalarSphHarmThetaPiBy2( &y, l - epsilon, - m, phi );
@@ -125,13 +124,13 @@ XLALSimIMREOBCalculateNewtonianMultipole(
   /* Special treatment for (2,1) and (4,4) modes, defined in Eq. 17ab of PRD84:124052 2011 */
   if ( (l == 4 && m == 4) || ( l == 2 && m == 1 ) )
   {
-    *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0 - 1.0)/r );
+    *multipole = params->prefixes->values[l][m] * pow( x, (REAL8)(l+epsilon)/2.0 - 1.0)/r;
   }
   else
   {
-    *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
+    *multipole = params->prefixes->values[l][m] * pow( x, (REAL8)(l+epsilon)/2.0);
   }
-  *multipole = XLALCOMPLEX16Mul( *multipole, y );
+  *multipole *= y;
 
   return XLAL_SUCCESS;
 }
@@ -158,7 +157,7 @@ XLALSimIMRSpinEOBCalculateNewtonianMultipole(
 
    INT4 epsilon = (l + m) % 2;
 
-   y.re = y.im = 0.0;
+   y = 0.0;
 
   /* Calculate the necessary Ylm */
   xlalStatus = XLALScalarSphHarmThetaPiBy2( &y, l - epsilon, - m, phi );
@@ -167,8 +166,8 @@ XLALSimIMRSpinEOBCalculateNewtonianMultipole(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
-  *multipole = XLALCOMPLEX16Mul( *multipole, y );
+  *multipole = params->prefixes->values[l][m] * pow( x, (REAL8)(l+epsilon)/2.0) ;
+  *multipole *= y;
 
   return XLAL_SUCCESS;
 }
@@ -206,14 +205,13 @@ XLALScalarSphHarmThetaPiBy2(
   }
 
   /* Compute the values for the spherical harmonic */
-  y->re = legendre * cos(m * phi);
-  y->im = legendre * sin(m * phi);
+  *y = legendre * cos(m * phi);
+  *y += I * legendre * sin(m * phi);
 
   /* If m is negative, perform some jiggery-pokery */
   if ( m < 0 && absM % 2  == 1 )
   {
-    y->re = - y->re;
-    y->im = - y->im;
+    *y *= -1.0;
   }
 
   return XLAL_SUCCESS;
@@ -445,7 +443,7 @@ CalculateThisMultipolePrefix(
    INT4 sign; /* To give the sign of some additive terms */
 
 
-   n.re = n.im = 0.0;
+   n = 0.0;
 
    totalMass = m1 + m2;
  
@@ -464,7 +462,16 @@ CalculateThisMultipolePrefix(
    {
      sign = -1;
    }
-   /* Eq. 7. When m1 = m2, taking limit m1-m2 -> 0 to get the correct numerical values */
+   /** 
+    * Eq. 7 of Damour, Iyer and Nagar 2008. 
+    * For odd m, c is proportional to dM = m1-m2. In the equal-mass case, c = dM = 0. 
+    * In the equal-mass unequal-spin case, however, when spins are different, the odd m term is generally not zero.
+    * In this case, c can be written as c0 * dM, while spins terms in PN expansion may take the form chiA/dM.
+    * Although the dM's cancel analytically, we can not implement c and chiA/dM with the possibility of dM -> 0.
+    * Therefore, for this case, we give numerical values of c0 for relevant modes, and c0 is calculated as
+    * c / dM in the limit of dM -> 0. Consistently, for this case, we implement chiA instead of chiA/dM
+    * in LALSimIMRSpinEOBFactorizedWaveform.c. 
+    */
    if  ( m1 != m2 || sign == 1 )
    {
      c = pow( x2, l + epsilon - 1 ) + sign * pow(x1, l + epsilon - 1 );
@@ -492,23 +499,22 @@ CalculateThisMultipolePrefix(
    if ( epsilon == 0 )
    {
   
-     n.im = m;
-     n = XLALCOMPLEX16PowReal( n, (REAL8)l );
+     n = I * m;
+     n = cpow( n, (REAL8)l );
   
      mult1 = 8.0 * LAL_PI / gsl_sf_doublefact(2u*l + 1u);
      mult2 = (REAL8)((l+1) * (l+2)) / (REAL8)(l * ((INT4)l - 1));
      mult2 = sqrt(mult2);
 
-     n = XLALCOMPLEX16MulReal( n, mult1 );
-     n = XLALCOMPLEX16MulReal( n, mult2 );
+     n *= mult1;
+     n *= mult2;
   }
   else if ( epsilon == 1 )
   {
   
-     n.im = m;
-     n = XLALCOMPLEX16PowReal( n, (REAL8)l );
-     n.re = -n.re;
-     n.im = -n.im;
+     n = I * m;
+     n = cpow( n, (REAL8)l );
+     n = -n;
 
      mult1 = 16.*LAL_PI / gsl_sf_doublefact( 2u*l + 1u );
 
@@ -516,8 +522,8 @@ CalculateThisMultipolePrefix(
      mult2 /= (REAL8)( (2*l - 1) * (l+1) * l * (l-1) );
      mult2  = sqrt(mult2);
 
-     n = XLALCOMPLEX16MulImag( n, mult1 );
-     n = XLALCOMPLEX16MulReal( n, mult2 );
+     n *= I * mult1;
+     n *= mult2;
   }
   else
   {
@@ -525,7 +531,7 @@ CalculateThisMultipolePrefix(
     XLAL_ERROR( XLAL_EINVAL );
   }
 
-  *prefix = XLALCOMPLEX16MulReal( n, eta * c );
+  *prefix = n * eta * c;
 
   return XLAL_SUCCESS;
 }

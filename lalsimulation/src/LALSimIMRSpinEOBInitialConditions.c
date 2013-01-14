@@ -22,7 +22,7 @@
 typedef
 struct tagSEOBRootParams
 {
-  REAL8          values[12]; /**<< Dynamical variables */
+  REAL8          values[12]; /**<< Dynamical variables, x, y, z, px, py, pz, S1x, S1y, S1z, S2x, S2y and S2z */
   SpinEOBParams *params;     /**<< Spin EOB parameters -- physical, pre-computed, etc. */
   REAL8          omega;      /**<< Orbital frequency */
 }
@@ -69,7 +69,8 @@ NormalizeVector( REAL8 a[] )
 
 /**
  * Calculate the rotation matrix and its inverse.
- * Rotate the ex-ey-ez frame to the r-v-L frame
+ * Rotate the ex-ey-ez frame to the r-v-L frame.
+ * This static function is called only by XLALSimIMRSpinEOBInitialConditions
  */
 static int
 CalculateRotationMatrix(
@@ -81,7 +82,7 @@ CalculateRotationMatrix(
                 )
 {
 
-  /* a, b, g are the angles alpha, beta and gamma */
+  /** a, b, g are the angles alpha, beta and gamma */
   /* Use a, b and g to avoid shadowing gamma and getting a warning */
   REAL8 a, b, g;
   REAL8 cosa, sina, cosb, sinb, cosg, sing;
@@ -107,6 +108,11 @@ CalculateRotationMatrix(
   if ( ( cosg = cos( g ) ) < 1.0e-16 ) cosg = 0.0;
   if ( ( sing = sin( g ) ) < 1.0e-16 ) sing = 0.0;
 
+  /** Implement the Rotation Matrix following the "x-convention"
+   *  1. rotate about the z-axis by an angle a, rotation matrix Rz(a);
+   *  2. rotate about the former x-axis (now x') by an angle b, rotation matrix Rx(b);
+   *  3. rotate about the former z-axis (now z') by an algle g, rotation matrix Rz(g); 
+   */
   /* populate the matrix */
   gsl_matrix_set( rotMatrix, 0, 0, cosg*cosa - cosb*sina*sing );
   gsl_matrix_set( rotMatrix, 0, 1, cosg*sina + cosb*cosa*sing );
@@ -122,8 +128,9 @@ CalculateRotationMatrix(
   gsl_matrix_transpose_memcpy( rotInverse, rotMatrix );
 
   /* Test that the code does what it should do */
-  gsl_matrix *ab = gsl_matrix_alloc( 3, 3 );
-  gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1., rotMatrix, rotInverse, 0., ab );
+  /* gsl_matrix *ab = gsl_matrix_alloc( 3, 3 );
+     gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1., rotMatrix, rotInverse, 0., ab );
+   */
 
   /*printf( "The generated rotation matrix:?\n" );
   for ( int i = 0; i < 3; i++ )
@@ -144,7 +151,7 @@ CalculateRotationMatrix(
     }
     printf( "\n" );
   }*/
-  gsl_matrix_free( ab );
+  /*gsl_matrix_free( ab );*/
 
   return XLAL_SUCCESS;
 }
@@ -181,8 +188,9 @@ ApplyRotationMatrix(
 
 /**
  * Performs a co-ordinate transformation from spherical to Cartesian co-ordinates.
- * In the code from Tyson, this was only applicable to the theta=pi/2, phi=0 case
- * TODO: Make sure I do not need anything more general
+ * In the code from Tyson Littenberg, this was only applicable to the special theta=pi/2, phi=0 case.
+ * This special transformation is a static function called only by 
+ * GSLSpinHamiltonianDerivWrapper and XLALSimIMRSpinEOBInitialConditions
  */
 static int SphericalToCartesian(
                  REAL8 qCart[],      /**<< OUTPUT, position vector in Cartesean coordinates */
@@ -225,8 +233,8 @@ static int SphericalToCartesian(
 
 /**
  * Perform a co-ordinate transformation from Cartesian to spherical co-ordinates.
- * As taken from Tyson's code, this only applies for theta=pi/2, phi=0.
- * TODO: Check this is general enough.
+ * In the code from Tyson Littenberg, this was only applicable to the special theta=pi/2, phi=0 case.
+ * This special transformation is a static function called only by XLALSimIMRSpinEOBInitialConditions
  */
 static int CartesianToSpherical(
                  REAL8 qSph[],        /**<< OUTPUT, position vector in spherical coordinates */
@@ -289,6 +297,7 @@ XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl r
   REAL8 dHdr, dHdptheta, dHdpphi;
 
   /* Populate the appropriate values */
+  /* In the special theta=pi/2 phi=0 case, r is x */
   rootParams->values[0] = r  = gsl_vector_get( x, 0 );
   rootParams->values[4] = py = gsl_vector_get( x, 1 );
   rootParams->values[5] = pz = gsl_vector_get( x, 2 );
@@ -842,7 +851,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
 
     /* The a in the flux has been set to zero, but not in the Hamiltonian */
     a = sqrt(sKerr.data[0]*sKerr.data[0] + sKerr.data[1]*sKerr.data[1] + sKerr.data[2]*sKerr.data[2]);
-    XLALSimIMREOBCalcSpinFacWaveformCoefficients( params->eobParams->hCoeffs, eta, /*a*/0.0, chiS, chiA );
+    XLALSimIMREOBCalcSpinFacWaveformCoefficients( params->eobParams->hCoeffs, mass1, mass2, eta, /*a*/0.0, chiS, chiA );
     XLALSimIMRCalculateSpinEOBHCoeffs( params->seobCoeffs, eta, a );
 
     ham = XLALSimIMRSpinEOBHamiltonian( eta, &qCartVec, &pCartVec, &sKerr, &sStar, params->tortoise, params->seobCoeffs );

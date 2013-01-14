@@ -36,7 +36,8 @@ REAL4TimeSeries *coh_PTF_get_data(
       channel = get_zero_data( ifoChannel, &params->startTime,
           params->duration, LALRINGDOWN_DATATYPE_ZERO, params->sampleRate );
     }
-    else if ( params->doubleData )
+    else if ( (ifoNumber == LAL_IFO_V1 && params->virgoDoubleData)
+              || (ifoNumber != LAL_IFO_V1 && params->ligoDoubleData) )
     {
       channel = get_frame_data_dbl_convert( dataCache, ifoChannel,
           &params->frameDataStartTime, params->frameDataDuration,
@@ -958,7 +959,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
   }
 
   /* calculate angular resolution */
-  if (! params->singlePolFlag && (! params->numIFO == 1))
+  if ((! params->singlePolFlag) && (params->numIFO != 1))
   {
     angularResolution = 2. * params->timingAccuracy / alpha;
   }
@@ -1729,4 +1730,70 @@ void findInjectionSegment(
         }
         thisInject = thisInject->next;
     }
+}
+
+UINT4 checkInjectionMchirp(
+    struct coh_PTF_params *params,
+    InspiralTemplate *tmplt,
+    LIGOTimeGPS *epoch
+    )
+{
+  /* define variables */
+  LIGOTimeGPS injTime, segmentStart, segmentEnd;
+  REAL8 tmpltMchirp,injMchirp,mchirpDiff,mchirpWin;
+  INT8 startDiff, endDiff;
+  SimInspiralTable *thisInject = NULL;
+  UINT4 passMchirpCheck;
+
+  /* set variables */
+  segmentStart = *epoch;
+  segmentEnd   = *epoch;
+  XLALGPSAdd(&segmentEnd, params->segmentDuration/2.0);
+  passMchirpCheck = 2;
+  thisInject = params->injectList;
+  
+  /* loop over injections */
+  while (thisInject)
+  {
+    injTime = thisInject->geocent_end_time;
+    startDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentStart);
+    endDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentEnd);
+    if ((startDiff > 0) && (endDiff < 0))
+    {
+      verbose("Generating analysis segment for injection at %d.\n",
+              injTime.gpsSeconds);
+      if (passMchirpCheck != 2)
+      {
+        verbose("warning: multiple injections in this segment.\n");
+        passMchirpCheck = 1;
+        break;
+      }
+      injMchirp = thisInject->mchirp;
+      tmpltMchirp = tmplt->chirpMass;
+      mchirpDiff = (injMchirp - tmpltMchirp)/tmpltMchirp;
+      /* The mchirp window is increased with mchirp */
+      if (injMchirp < 2)
+        mchirpWin = params->injMchirpWindow;
+      else if (injMchirp < 3)
+        mchirpWin = params->injMchirpWindow * 2.5;
+      else if (injMchirp < 4)
+        mchirpWin = params->injMchirpWindow * 5;
+      else
+        // Note that I haven't tuned this above Mchirp = 6
+        mchirpWin = params->injMchirpWindow * 10;
+
+      if (fabs(mchirpDiff) > mchirpWin)
+        passMchirpCheck = 0;
+      else
+        passMchirpCheck = 1;
+    }
+    thisInject = thisInject->next;
+  }
+
+  if (passMchirpCheck == 2)
+  {
+    verbose("WARNING: No injections found in this segment!? Not analysing\n");
+    passMchirpCheck = 0;
+  }
+  return passMchirpCheck;
 }

@@ -43,7 +43,7 @@ static double square(double x)
 
 
 /* Return |z|^2 for a complex number z. */
-static double cabs2(double complex z)
+static double cabs2(COMPLEX16 z)
 {
     return square(creal(z)) + square(cimag(z));
 }
@@ -62,7 +62,7 @@ struct tagCubicSplineTriggerInterpolant {
 
 /* Data structure providing arguments for minimizer cost function. */
 typedef struct {
-    const double complex *data;
+    const COMPLEX16 *data;
     unsigned int window;
 } CubicSplineTriggerInterpolantParams;
 
@@ -113,7 +113,7 @@ static void poly_interp(double *a, const double y_0, const double y_1, const dou
  * \n complex coefficients. Find all local extrema of the absolute value of the
  * polynomial.
  */
-static int interp_find_roots(size_t *nroots, double complex *roots, const double *are, const double *aim, size_t n, gsl_poly_complex_workspace *workspace)
+static int interp_find_roots(size_t *nroots, COMPLEX16 *roots, const double *are, const double *aim, size_t n, gsl_poly_complex_workspace *workspace)
 {
     int ret = GSL_EFAILED;
     double b[2 * n - 2];
@@ -155,15 +155,15 @@ static int interp_find_roots(size_t *nroots, double complex *roots, const double
  * surrounding the trigger and once for the last four of the five samples
  * surrounding the trigger.
  */
-static double cubic_interp_1(double complex *val, const double complex *y, gsl_poly_complex_workspace *workspace)
+static double cubic_interp_1(COMPLEX16 *val, const COMPLEX16 *y, gsl_poly_complex_workspace *workspace)
 {
     double argmax = NAN, new_argmax;
-    double complex maxval, new_maxval;
+    COMPLEX16 maxval, new_maxval;
     double max_abs2, new_max_abs2;
 
     size_t n = 4;
     double are[n], aim[n];
-    double complex roots[2 * n - 3];
+    COMPLEX16 roots[2 * n - 3];
 
     size_t nroots, iroot;
     int result;
@@ -254,10 +254,10 @@ void XLALDestroyCubicSplineTriggerInterpolant(CubicSplineTriggerInterpolant *int
 int XLALApplyCubicSplineTriggerInterpolant(
     CubicSplineTriggerInterpolant *interp,
     double *t,
-    double complex *y,
-    const double complex *data)
+    COMPLEX16 *y,
+    const COMPLEX16 *data)
 {
-    double complex max1, max2;
+    COMPLEX16 max1, max2;
     double max1_abs1, max2_abs2;
     double argmax1, argmax2;
 
@@ -292,7 +292,7 @@ struct tagLanczosTriggerInterpolant {
 
 /* Data structure providing arguments for minimizer cost function. */
 typedef struct {
-    const double complex *data;
+    const COMPLEX16 *data;
     unsigned int window;
 } LanczosTriggerInterpolantParams;
 
@@ -305,9 +305,9 @@ static double lanczos(double t, double a)
 
 
 /* The Lanczos reconstruction filter interpolant. */
-static double complex lanczos_interpolant(double t, const LanczosTriggerInterpolantParams *params)
+static COMPLEX16 lanczos_interpolant(double t, const LanczosTriggerInterpolantParams *params)
 {
-    double complex ret;
+    COMPLEX16 ret;
     int i;
 
     for (ret = 0, i = -(int)params->window; i <= (int)params->window; i ++)
@@ -358,8 +358,8 @@ void XLALDestroyLanczosTriggerInterpolant(LanczosTriggerInterpolant *interp)
 int XLALApplyLanczosTriggerInterpolant(
     LanczosTriggerInterpolant *interp,
     double *t,
-    double complex *y,
-    const double complex *data)
+    COMPLEX16 *y,
+    const COMPLEX16 *data)
 {
     static const double epsabs = 1e-5;
 
@@ -427,8 +427,8 @@ void XLALDestroyNearestNeighborTriggerInterpolant(NearestNeighborTriggerInterpol
 int XLALApplyNearestNeighborTriggerInterpolant(
     __attribute__((unused)) NearestNeighborTriggerInterpolant *interp,
     double *t,
-    double complex *y,
-    const double complex *data)
+    COMPLEX16 *y,
+    const COMPLEX16 *data)
 {
     *t = 0;
     *y = data[0];
@@ -523,8 +523,8 @@ void XLALDestroyQuadraticFitTriggerInterpolant(QuadraticFitTriggerInterpolant *i
 int XLALApplyQuadraticFitTriggerInterpolant(
     QuadraticFitTriggerInterpolant *interp,
     double *t,
-    double complex *y,
-    const double complex *data)
+    COMPLEX16 *y,
+    const COMPLEX16 *data)
 {
     int i;
     int result;

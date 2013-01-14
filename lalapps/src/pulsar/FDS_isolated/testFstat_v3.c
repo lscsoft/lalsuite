@@ -355,7 +355,6 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
     sftParams.Tsft = Tsft;
     sftParams.timestamps = timestampsSFT;
     sftParams.noiseSFTs = NULL;
-    sftParams.make_v2SFTs = 1;
     sftParams.window = NULL;
 
     outSFTs = NULL;

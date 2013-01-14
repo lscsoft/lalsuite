@@ -17,12 +17,19 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#ifndef _LALCOMPUTEAM_H
+#define _LALCOMPUTEAM_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
+ * \defgroup LALComputeAM_h Header LALComputeAM.h
+ * \ingroup pkg_pulsarCoh
  * \author S.J. Berukoff, Reinhard Prix, John Whelan
  * \date 2007
- * \ingroup pulsarAntenna
- * \file
+
  * \brief Header-file for computing antenna-pattern components for amplitude demodulation.
  *
  * <tt>\#include <lal/LALComputeAM.h></tt>
@@ -32,14 +39,7 @@
  * of parameters.  The frequency evolution of the signal (spindown effects, Doppler modulation, etc.)
  * have already been accounted for; this routine filters the amplitude modulation effects.
  */
-
-#ifndef _LALCOMPUTEAM_H
-#define _LALCOMPUTEAM_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+/*@{*/
 
 /*---------- exported INCLUDES ----------*/
 #include <math.h>
@@ -175,6 +175,7 @@ AMCoeffs *XLALCreateAMCoeffs ( UINT4 numSteps );
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
 void XLALDestroyAMCoeffs ( AMCoeffs *amcoef );
 
+/*@}*/
 
 #ifdef __cplusplus
 }

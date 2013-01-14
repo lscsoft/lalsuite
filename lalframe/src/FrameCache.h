@@ -16,12 +16,22 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#ifndef _FRAMECACHE_H
+#define _FRAMECACHE_H
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
+#include <lal/LALDatatypes.h>
 
 /**
- * \author Jolien D. E. Creighton
- * \file
+ * \defgroup FrameCache_h Header FrameCache.h
+ * \ingroup pkg_framedata
  *
- * \heading{Header \ref FrameCache.h}
+ * \author Jolien D. E. Creighton
  *
  * Routines for manipulating a cache of available frame files.
  *
@@ -36,19 +46,10 @@
  * which can be manipulated.
  *
 */
+/*@{*/
 
-#ifndef _FRAMECACHE_H
-#define _FRAMECACHE_H
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-#include <lal/LALDatatypes.h>
-
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define FRAMECACHEH_ENULL  1
 #define FRAMECACHEH_ENNUL  2
 #define FRAMECACHEH_EALOC  4
@@ -65,17 +66,6 @@ extern "C" {
 #define FRAMECACHEH_MSGEPATH "Unable to glob frame files to build cache"
 #define FRAMECACHEH_MSGENFRM "No frame files"
 /*@}*/
-
-typedef struct
-tagFrStat
-{
-  CHAR *source;
-  CHAR *description;
-  INT4  startTime;
-  INT4  duration;
-  CHAR *url;
-}
-FrStat;
 
 /**
  *
@@ -94,14 +84,16 @@ FrStat;
  * </dd></dl>
  *
 */
-
 typedef struct
-tagFrCache
+tagFrStat
 {
-  UINT4   numFrameFiles;
-  FrStat *frameFiles;
+  CHAR *source;
+  CHAR *description;
+  INT4  startTime;
+  INT4  duration;
+  CHAR *url;
 }
-FrCache;
+FrStat;
 
 /**
  *
@@ -112,22 +104,13 @@ FrCache;
  * </dd></dl>
  *
 */
-
-#ifdef SWIG /* SWIG interface directives */
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::srcRegEx;
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::dscRegEx;
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::urlRegEx;
-#endif /* SWIG */
 typedef struct
-tagFrCacheSieve
+tagFrCache
 {
-  const CHAR *srcRegEx;
-  const CHAR *dscRegEx;
-  const CHAR *urlRegEx;
-  INT4 earliestTime;
-  INT4 latestTime;
+  UINT4   numFrameFiles;
+  FrStat *frameFiles;
 }
-FrCacheSieve;
+FrCache;
 
 /**
  *
@@ -151,6 +134,22 @@ FrCacheSieve;
  *
  *
 */
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::srcRegEx;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::dscRegEx;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::urlRegEx;
+#endif /* SWIG */
+typedef struct
+tagFrCacheSieve
+{
+  const CHAR *srcRegEx;
+  const CHAR *dscRegEx;
+  const CHAR *urlRegEx;
+  INT4 earliestTime;
+  INT4 latestTime;
+}
+FrCacheSieve;
+
 
 FrCache * XLALFrImportCache( const char *fname );
 FrCache * XLALFrSieveCache( FrCache *input, FrCacheSieve *params );
@@ -190,6 +189,8 @@ LALFrCacheGenerate(
     const CHAR  *dirstr,
     const CHAR  *fnptrn
     );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

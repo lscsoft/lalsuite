@@ -1,9 +1,10 @@
 /*
  *
- *  LALInference:             Bayesian Followup        
+ *  LALInference:             Bayesian Followup
  *  include/LALInference.h:   main header file
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *  Copyright (C) 2009,2012 Ilya Mandel, Vivien Raymond, Christian
+ *  Roever, Marc van der Sluys, John Veitch, and Will M. Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -21,27 +22,25 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef LALInference_h
+#define LALInference_h
 
 /**
- * \file LALInference.h
+ * \defgroup LALInference_h Header LALInference.h
+ * \ingroup pkg_LALInference
  * \brief Main header file for LALInference common routines and structures
- * \ingroup LALInference
- * 
+ *
  * LALInference is a Bayesian analysis toolkit for use with LAL. It contains
  * common requirements for Bayesian codes such as Likelihood functions, data
  * handling routines, MCMC and Nested Sampling algorithms and a template generation
  * interface to the LALInspiral package.
- * 
+ *
  * This file contains the basic structures for the algorithm state, inteferometer
  * data, manipulation of variables and type declarations for the standard function types.
- * 
- * 
+ *
+ *
  */
-
-
-
-#ifndef LALInference_h
-#define LALInference_h
+/*@{*/
 
 # include <math.h>
 # include <stdio.h>
@@ -387,6 +386,8 @@ tagLALInferenceIFOData
   LALDetector               *detector;          /** LALDetector structure for where this data came from */
   BarycenterInput           *bary;              /** Barycenter information */
   EphemerisData             *ephem;             /** Ephemeris data */
+  TimeCorrectionData        *tdat; /** Einstein delay time correction data */
+  TimeCorrectionType        ttype; /** The time correction type e.g. TDB, TCB */
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */
@@ -612,5 +613,6 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state);
  */
 void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefilename);
 
+/*@}*/
 
 #endif

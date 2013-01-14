@@ -32,7 +32,7 @@ candidateVector * new_candidateVector(UINT4 length)
       fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", __func__, sizeof(*vector));
       XLAL_ERROR_NULL(XLAL_ENOMEM);
    }
-      
+
    vector->length = length;
    vector->numofcandidates = 0;
    if (length==0) vector->data = NULL;
@@ -404,7 +404,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
                }
-               //remove this
+               //remove this--for testing purposes only
                //for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d %g\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj], aveNoise->data[template->secondfftfrequencies->data[jj]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[jj]]);
                /* for (jj=0; jj<50; jj++) {
                   REAL8 probval = probR(template, aveNoise, aveTFnoisePerFbinRatio, 0.3*jj-2.0, inputParams, &proberrcode);
@@ -462,8 +462,8 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             
             //Shift by harmonics
             for (jj=2; jj<6; jj++) {
-               //if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
-               if (ihsCandidates->data[ii].period/jj>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period/jj<=(0.2*inputParams->Tobs)) {
+	       //Check that the shifted value is valid before testing with a template
+               if (ihsCandidates->data[ii].period/jj>=fmax(7200.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period/jj<=(0.2*inputParams->Tobs)) {
                   ihsCandidates->data[ii].period /= (REAL8)jj;
                   makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                   if (xlalErrno!=0) {
@@ -495,10 +495,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestProb = prob;
                      bestproberrcode = proberrcode;
                   }
-                  ihsCandidates->data[ii].period *= (REAL8)jj;
+                  ihsCandidates->data[ii].period *= (REAL8)jj;  //reset the period back to the original value
                } // shorter period harmonics
-               //if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
-               if (ihsCandidates->data[ii].period*jj>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*jj<=(0.2*inputParams->Tobs)) {
+               //Check again that the longer period is within bounds before testing with a template
+               if (ihsCandidates->data[ii].period*jj>=fmax(7200.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*jj<=(0.2*inputParams->Tobs)) {
                   ihsCandidates->data[ii].period *= (REAL8)jj;
                   makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                   if (xlalErrno!=0) {
@@ -530,15 +530,15 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestProb = prob;
                      bestproberrcode = proberrcode;
                   }
-                  ihsCandidates->data[ii].period /= (REAL8)jj;
+                  ihsCandidates->data[ii].period /= (REAL8)jj;  //Again, reset the period back to the original value
                } // longer period harmonics
             } // shift by harmonics for jj < 6 (harmonics)
             
             //Shift by fractions
             for (jj=1; jj<4; jj++) {
                REAL8 periodfact = (jj+1.0)/(jj+2.0);
-               //if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
-               if (ihsCandidates->data[ii].period*periodfact>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
+               //Check within bounds, as before
+               if (ihsCandidates->data[ii].period*periodfact>=fmax(7200.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
                   
                   ihsCandidates->data[ii].period *= periodfact;   //Shift period
                   
@@ -548,7 +548,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                      XLAL_ERROR(XLAL_EFUNC);
                   }
-                  //Calculate R, FAP, and h0
+                  //Calculate R and FAP
                   R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                   if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                      fprintf(stderr,"%s: calculateR() failed.\n", __func__);
@@ -576,11 +576,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestProb = prob;
                      bestproberrcode = proberrcode;
                   }
-                  ihsCandidates->data[ii].period /= periodfact;
+                  ihsCandidates->data[ii].period /= periodfact;  //Reset period
                } // shift shorter period
-               periodfact = 1.0/periodfact;
-               //if ( periodfact*ihsCandidates->data[ii].period <= 0.2*inputParams->Tobs ) {
-               if (ihsCandidates->data[ii].period*periodfact>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
+               periodfact = 1.0/periodfact;  //Take the inverse of the mutliplicative factor
+               //Again, check the new period value before testing with a template 
+               if (ihsCandidates->data[ii].period*periodfact>=fmax(7200.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
                   ihsCandidates->data[ii].period *= periodfact;
                   makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                   if (xlalErrno!=0) {
@@ -612,13 +612,13 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      bestProb = prob;
                      bestproberrcode = proberrcode;
                   }
-                  ihsCandidates->data[ii].period /= periodfact;
+                  ihsCandidates->data[ii].period /= periodfact;  //Reset the period parameter
                } // shift longer period
             } // for jj < 5 (fractions of period)
             
             
             if (bestProb != 0.0) {
-               REAL8 h0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));
+	       REAL8 h0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));  //Now compute the h0 value
                
                if (output->numofcandidates == output->length-1) {
                   output = resize_candidateVector(output, 2*output->length);
@@ -648,16 +648,18 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
    
    return 0;
    
-}
+} /* testIHScandidates() */
 
 
-//Keep the most significant candidates
+//Keep the most significant candidates, potentially reducing the number of candidates if there are more than allowed
 candidateVector * keepMostSignificantCandidates(candidateVector *input, inputParamsStruct *params)
 {
    
    INT4 ii, jj;
    candidateVector *output = NULL;
-   
+
+   //If the number to keep is > 0 and the number of candidates is less than the number to keep,
+   //just move the input vector to the output vector
    if (params->keepOnlyTopNumIHS>0 && (INT4)input->numofcandidates<=params->keepOnlyTopNumIHS) {
       output = new_candidateVector(input->numofcandidates);
       if (output==NULL) {
@@ -671,6 +673,8 @@ candidateVector * keepMostSignificantCandidates(candidateVector *input, inputPar
       output->numofcandidates = input->numofcandidates;
       
    } else if (params->keepOnlyTopNumIHS>0 && (INT4)input->numofcandidates>params->keepOnlyTopNumIHS) {
+      //If keep is > 0 and the number of candidates is > the number to keep, 
+      //we sort through the list and find the most significant candidates to keep
       output = new_candidateVector(params->keepOnlyTopNumIHS);
       if (output==NULL) {
          fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, params->keepOnlyTopNumIHS);
@@ -695,14 +699,14 @@ candidateVector * keepMostSignificantCandidates(candidateVector *input, inputPar
       output->numofcandidates = params->keepOnlyTopNumIHS;
       
    } else {
+      //Otherwise, we need to fail
       fprintf(stderr, "%s: keepOnlyTopNumIHS given (%d) is not greater than 0, but it should be to use this function.\n", __func__, params->keepOnlyTopNumIHS);
       XLAL_ERROR_NULL(XLAL_EINVAL);
    }
 
-   
    return output;
    
-}
+} /* keepMostSignificantCandidates() */
 
 
 //////////////////////////////////////////////////////////////
@@ -733,11 +737,11 @@ REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vecto
 
 
 //////////////////////////////////////////////////////////////
-// Calculates maximum modulation depth
+// Calculates maximum modulation depth allowed
 REAL8 maxModDepth(REAL8 period, REAL8 cohtime)
 {
    
-   REAL8 maxB = 0.5*period/cohtime/cohtime;
+   REAL8 maxB = 0.5*period/(cohtime*cohtime);
    
    return maxB;
    

@@ -27,11 +27,9 @@
  */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
-#include <lal/LALComplex.h>
 #include <lal/DetResponse.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
@@ -71,16 +69,16 @@ static unsigned long round_up_to_power_of_two(unsigned long x)
 
 
 /**
- * Turn an instrument name into a LALDetector structure.  The first two
- * characters of the input string are used as the instrument name, which
- * allows channel names in the form "H1:LSC-STRAIN" to be used.  The return
- * value is a pointer into the lalCachedDetectors array, so modifications
- * to the contents are global.  Make a copy of the structure if you want to
- * modify it safely.
+ * Turn a detector prefix string into a LALDetector structure.  The first
+ * two characters of the input string are used as the instrument name,
+ * which allows channel names in the form "H1:LSC-STRAIN" to be used.  The
+ * return value is a pointer into the lalCachedDetectors array, so
+ * modifications to the contents are global.  Make a copy of the structure
+ * if you want to modify it safely.
  */
 
 
-const LALDetector *XLALInstrumentNameToLALDetector(
+const LALDetector *XLALDetectorPrefixToLALDetector(
 	const char *string
 )
 {
@@ -93,6 +91,9 @@ const LALDetector *XLALInstrumentNameToLALDetector(
 	XLALPrintError("%s(): error: can't identify instrument from string \"%s\"\n", __func__, string);
 	XLAL_ERROR_NULL(XLAL_EDATA);
 }
+
+/* FIXME:  compatibility wrapper.  remove when not needed */
+const LALDetector *XLALInstrumentNameToLALDetector(const char *string) { return XLALDetectorPrefixToLALDetector(string); }
 
 
 /*
@@ -346,7 +347,7 @@ int XLALSimAddInjectionREAL8TimeSeries(
 
 		/* phase for sub-sample time correction */
 
-		fac = LAL_CEXP(LAL_CMUL_REAL(LAL_COMPLEX16_I, -LAL_TWOPI * f * start_sample_frac * target->deltaT));
+		fac = cexp(-I * LAL_TWOPI * f * start_sample_frac * target->deltaT);
 
 		/* divide the source by the response function.  if a
 		 * frequency is required that lies outside the domain of
@@ -369,15 +370,15 @@ int XLALSimAddInjectionREAL8TimeSeries(
 				j = 0;
 			else if((unsigned) j > response->data->length - 1)
 				j = response->data->length - 1;
-			if(LAL_COMPLEX_EQ(response->data->data[j], LAL_COMPLEX16_ZERO))
-				fac = LAL_COMPLEX16_ZERO;
+			if(response->data->data[j] == 0.0)
+				fac = 0.0;
 			else
-				fac = LAL_CDIV(fac, response->data->data[j]);
+				fac /= response->data->data[j];
 		}
 
 		/* apply factor */
 
-		tilde_h->data->data[i] = LAL_CMUL(tilde_h->data->data[i], fac);
+		tilde_h->data->data[i] *= fac;
 	}
 
 	/* adjust DC and Nyquist components.  the DC component must always
@@ -389,15 +390,15 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		/* a response function has been provided.  zero the DC and
 		 * Nyquist components */
 		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = LAL_COMPLEX16_ZERO;
-		tilde_h->data->data[tilde_h->data->length - 1] = LAL_COMPLEX16_ZERO;
+			tilde_h->data->data[0] = 0.0;
+		tilde_h->data->data[tilde_h->data->length - 1] = 0.0;
 	} else {
 		/* no response has been provided.  set the phase of the DC
 		 * component to 0, set the imaginary component of the
 		 * Nyquist to 0 */
 		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = XLALCOMPLEX16Rect(LAL_CABS(tilde_h->data->data[0]), 0.0);
-		tilde_h->data->data[tilde_h->data->length - 1] = XLALCOMPLEX16Rect(LAL_REAL(tilde_h->data->data[tilde_h->data->length - 1]), 0.0);
+			tilde_h->data->data[0] = cabs(tilde_h->data->data[0]);
+		tilde_h->data->data[tilde_h->data->length - 1] = creal(tilde_h->data->data[tilde_h->data->length - 1]);
 	}
 
 	/* return to time domain */
@@ -454,6 +455,229 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	/* add source time series to target time series */
 
 	if(!XLALAddREAL8TimeSeries(target, h))
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
+
+
+/**
+ * Essentially a wrapper for XLALAddREAL4TimeSeries(), but performs
+ * sub-sample re-interpolation to adjust the source time series epoch to
+ * lie on an integer sample boundary in the target time series.  This
+ * transformation is done in the frequency domain, so it is convenient to
+ * allow a response function to be applied at the same time.  Passing NULL
+ * for the response function turns this feature off (i.e., uses a unit
+ * response).
+ *
+ * NOTE:  the source time series is modified in place by this function!
+ *
+ * This function accepts source and target time series whose units are not
+ * the same, and allows the two time series to be herterodyned (although it
+ * currently requires them to have the same heterodyne frequency).
+ */
+
+
+int XLALSimAddInjectionREAL4TimeSeries(
+	REAL4TimeSeries *target,
+	REAL4TimeSeries *h,
+	const COMPLEX8FrequencySeries *response
+)
+{
+	COMPLEX8FrequencySeries *tilde_h;
+	REAL4FFTPlan *plan;
+	REAL4Window *window;
+	/* the source time series is padded with at least this many 0's at
+	 * the start and end before re-interpolation in an attempt to
+	 * suppress aperiodicity artifacts, and 1/2 this many samples is
+	 * clipped from the start and end afterwards */
+	const unsigned aperiodicity_suppression_buffer = 32768;
+	unsigned i;
+	double start_sample_int;
+	double start_sample_frac;
+
+	/* check input */
+
+	/* FIXME:  since we route the source time series through the
+	 * frequency domain, it might not be hard to adjust the heterodyne
+	 * frequency and sample rate to match the target time series
+	 * instead of making it an error if they don't match. */
+
+	if(h->deltaT != target->deltaT || h->f0 != target->f0) {
+		XLALPrintError("%s(): error: input sample rates or heterodyne frequencies do not match\n", __func__);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
+	/* extend the source time series by adding the "aperiodicity
+	 * padding" to the start and end.  for efficiency's sake, make sure
+	 * the new length is a power of two. */
+
+	i = round_up_to_power_of_two(h->data->length + 2 * aperiodicity_suppression_buffer);
+	if(i < h->data->length) {
+		/* integer overflow */
+		XLALPrintError("%s(): error: source time series too long\n", __func__);
+		XLAL_ERROR(XLAL_EBADLEN);
+	}
+	i -= h->data->length;
+	if(!XLALResizeREAL4TimeSeries(h, -(int) (i / 2), h->data->length + i))
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* compute the integer and fractional parts of the sample index in
+	 * the target time series on which the source time series begins.
+	 * modf() returns integer and fractional parts that have the same
+	 * sign, e.g. -3.9 --> -3 + -0.9.  we adjust these so that the
+	 * magnitude of the fractional part is not greater than 0.5, e.g.
+	 * -3.9 --> -4 + 0.1, so that we never do more than 1/2 a sample of
+	 * re-interpolation.  I don't know if really makes any difference,
+	 * though */
+
+	start_sample_frac = modf(XLALGPSDiff(&h->epoch, &target->epoch) / target->deltaT, &start_sample_int);
+	if(start_sample_frac < -0.5) {
+		start_sample_frac += 1.0;
+		start_sample_int -= 1.0;
+	} else if(start_sample_frac > +0.5) {
+		start_sample_frac -= 1.0;
+		start_sample_int += 1.0;
+	}
+
+	/* transform source time series to frequency domain.  the FFT
+	 * function populates the frequency series' metadata with the
+	 * appropriate values. */
+
+	tilde_h = XLALCreateCOMPLEX8FrequencySeries(NULL, &h->epoch, 0, 0, &lalDimensionlessUnit, h->data->length / 2 + 1);
+	plan = XLALCreateForwardREAL4FFTPlan(h->data->length, 0);
+	if(!tilde_h || !plan) {
+		XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
+		XLALDestroyREAL4FFTPlan(plan);
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+	i = XLALREAL4TimeFreqFFT(tilde_h, h, plan);
+	XLALDestroyREAL4FFTPlan(plan);
+	if(i) {
+		XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+
+	/* apply sub-sample time correction and optional response function
+	 * */
+
+	for(i = 0; i < tilde_h->data->length; i++) {
+		const double f = tilde_h->f0 + i * tilde_h->deltaF;
+		COMPLEX8 fac;
+
+		/* phase for sub-sample time correction */
+
+		fac = cexp(-I * LAL_TWOPI * f * start_sample_frac * target->deltaT);
+
+		/* divide the source by the response function.  if a
+		 * frequency is required that lies outside the domain of
+		 * definition of the response function, then the response
+		 * is assumed equal to its value at the nearest edge of the
+		 * domain of definition.  within the domain of definition,
+		 * frequencies are rounded to the nearest bin.  if the
+		 * response function is zero in some bin, then the source
+		 * data is zeroed in that bin (instead of dividing by 0).
+		 * */
+
+		/* FIXME:  should we use GSL to construct an interpolator
+		 * for the modulus and phase as functions of frequency, and
+		 * use that to evaluate the response?  instead of rounding
+		 * to nearest bin? */
+
+		if(response) {
+			int j = floor((f - response->f0) / response->deltaF + 0.5);
+			if(j < 0)
+				j = 0;
+			else if((unsigned) j > response->data->length - 1)
+				j = response->data->length - 1;
+			if(response->data->data[j] == 0.0)
+				fac = 0.0;
+			else
+				fac /= response->data->data[j];
+		}
+
+		/* apply factor */
+
+		tilde_h->data->data[i] *= fac;
+	}
+
+	/* adjust DC and Nyquist components.  the DC component must always
+	 * be real-valued.  because we have adjusted the source time series
+	 * to have a length that is an even integer (we've made it a power
+	 * of 2) the Nyquist component must also be real valued. */
+
+	if(response) {
+		/* a response function has been provided.  zero the DC and
+		 * Nyquist components */
+		if(tilde_h->f0 == 0.0)
+			tilde_h->data->data[0] = 0.0;
+		tilde_h->data->data[tilde_h->data->length - 1] = 0.0;
+	} else {
+		/* no response has been provided.  set the phase of the DC
+		 * component to 0, set the imaginary component of the
+		 * Nyquist to 0 */
+		if(tilde_h->f0 == 0.0)
+			tilde_h->data->data[0] = cabsf(tilde_h->data->data[0]);
+		tilde_h->data->data[tilde_h->data->length - 1] = crealf(tilde_h->data->data[tilde_h->data->length - 1]);
+	}
+
+	/* return to time domain */
+
+	plan = XLALCreateReverseREAL4FFTPlan(h->data->length, 0);
+	if(!plan) {
+		XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+	i = XLALREAL4FreqTimeFFT(h, tilde_h, plan);
+	XLALDestroyREAL4FFTPlan(plan);
+	XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
+	if(i)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* the deltaT can get "corrupted" by floating point round-off
+	 * during its trip through the frequency domain.  since this
+	 * function starts by confirming that the sample rate of the source
+	 * matches that of the target time series, we can use the target
+	 * series' sample rate to reset the source's sample rate to its
+	 * original value.  but we do a check to make sure we're not
+	 * masking a real bug */
+
+	if(fabs(h->deltaT - target->deltaT) / target->deltaT > 1e-12) {
+		XLALPrintError("%s(): error: oops, internal sample rate mismatch\n", __func__);
+		XLAL_ERROR(XLAL_EERR);
+	}
+	h->deltaT = target->deltaT;
+
+	/* set source epoch from target epoch and integer sample offset */
+
+	h->epoch = target->epoch;
+	XLALGPSAdd(&h->epoch, start_sample_int * target->deltaT);
+
+	/* clip half of the "aperiodicity padding" from the start and end
+	 * of the source time series in a continuing effort to suppress
+	 * aperiodicity artifacts. */
+
+	if(!XLALResizeREAL4TimeSeries(h, aperiodicity_suppression_buffer / 2, h->data->length - aperiodicity_suppression_buffer))
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* apply a Tukey window whose tapers lie within the remaining
+	 * aperiodicity padding. leaving one sample of the aperiodicty
+	 * padding untouched on each side of the original time series
+	 * because the data might have been shifted into it */
+
+	window = XLALCreateTukeyREAL4Window(h->data->length, (double) (aperiodicity_suppression_buffer - 2) / h->data->length);
+	if(!window)
+		XLAL_ERROR(XLAL_EFUNC);
+	for(i = 0; i < h->data->length; i++)
+		h->data->data[i] *= window->data->data[i];
+	XLALDestroyREAL4Window(window);
+
+	/* add source time series to target time series */
+
+	if(!XLALAddREAL4TimeSeries(target, h))
 		XLAL_ERROR(XLAL_EFUNC);
 
 	/* done */
