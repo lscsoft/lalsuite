@@ -48,7 +48,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
-#include "lal/LALVersion.h"
+#include <lal/LALVersion.h>
 
 int mycalls=0;
 int myclears=0;
