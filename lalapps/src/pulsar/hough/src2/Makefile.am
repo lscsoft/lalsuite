@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 # for using lalapps-defines + functions
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 ## Compiling with OpenCL on Linux
@@ -107,8 +107,6 @@ eah_HierarchicalSearch_LDADD = $(LDADD) $(RELEASE_LDADD)
 
 libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
-libz.a:
-	cp -f `$(CC) -print-file-name=$@` $@
 
 exchndl.o: EinsteinAtHome/exchndl.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
@@ -119,9 +117,7 @@ erp_execinfo_plus.o: EinsteinAtHome/erp_execinfo_plus.c
 TESTS = testRecalcHS.sh
 EXTRA_DIST = testRecalcHS.sh
 
-TESTS_ENVIRONMENT = 1>/dev/null \
-LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
-LAL_DATA_PATH=$(LAL_DATA_PATH):.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
+TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =

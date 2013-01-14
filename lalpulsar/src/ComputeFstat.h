@@ -16,12 +16,19 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef _COMPUTEFSTAT_H  /* Double-include protection. */
+#define _COMPUTEFSTAT_H
+
+/* C++ protection. */
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 /**
+ * \defgroup ComputeFstat_h Header ComputeFstat.h
+ * \ingroup pkg_pulsarCoh
  * \author Reinhard Prix
  * \date 2005
- * \ingroup pulsarCoherent
- * \file
  * \brief Header-file defining the API for the F-statistic functions.
  *
  * This code is (partly) a descendant of an earlier implementation found in
@@ -31,14 +38,7 @@
  *
  *
  */
-
-#ifndef _COMPUTEFSTAT_H  /* Double-include protection. */
-#define _COMPUTEFSTAT_H
-
-/* C++ protection. */
-#ifdef  __cplusplus
-extern "C" {
-#endif
+/*@{*/
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALComputeAM.h>
@@ -124,6 +124,7 @@ typedef struct tagFcomponents {
 typedef enum {
   SSBPREC_NEWTONIAN,		/**< simple Newtonian: \f$\tau = t + \vec{r}\cdot\vec{n}/c\f$ */
   SSBPREC_RELATIVISTIC,		/**< detailed relativistic: \f$\tau=\tau(t; \vec{n}, \vec{r})\f$ */
+  SSBPREC_RELATIVISTICOPT,  	/**< optimized relativistic, numerically equivalent to #SSBPREC_RELATIVISTIC, but faster */
   SSBPREC_LAST			/**< end marker */
 } SSBprecision;
 
@@ -271,6 +272,7 @@ void XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms );
 int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x);
 int sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 
+/*@}*/
 
 #ifdef  __cplusplus
 }

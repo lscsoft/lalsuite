@@ -5,7 +5,11 @@ if LALSUPPORT
 check_PROGRAMS = \
 	GenerateSimulation \
 	TestSpinTaylorT4Dynamics \
-	TestEOBNRv2
+	TestEOBNRv2 \
+	GRFlagsTest \
+	WaveformFlagsTest \
+	TestSphHarmTS \
+	TestPrecessWaveform
 TESTS = $(check_PROGRAMS)
 endif
 
@@ -13,4 +17,6 @@ EXTRA_DIST =
 
 MOSTLYCLEANFILES =
 CLEANFILES = \
-	*.dat
+	*.dat \
+	h_ref.txt \
+	h_rot.txt

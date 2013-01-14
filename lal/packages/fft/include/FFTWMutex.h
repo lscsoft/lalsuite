@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2007-2012 Jolien Creighton, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-#ifdef LAL_PTHREAD_LOCK
+#if defined(LAL_PTHREAD_LOCK) && defined(LAL_FFTW3_ENABLED)
 # include <pthread.h>
   extern pthread_mutex_t lalFFTWMutex;
 # define LAL_FFTW_PTHREAD_MUTEX_LOCK pthread_mutex_lock( &lalFFTWMutex )

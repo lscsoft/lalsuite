@@ -25,14 +25,6 @@
  *
  *---------------------------------------------------------------------------*/
 
-/**
-
-\author Anand Sengupta
-\file
-
-*/
-
-
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -45,6 +37,9 @@
 #include <lal/RealFFT.h>
 #include <lal/SeqFactories.h>
 
+/**
+\author Anand Sengupta
+*/
 int XLALBandPassInspiralTemplate(
         REAL4Sequence  *sequence,
         REAL4          fLow,
@@ -104,4 +99,3 @@ int XLALBandPassInspiralTemplate(
     return XLAL_SUCCESS;
 
 }
-

@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <math.h>
 #include <stdio.h>
 #include <lal/LALStdlib.h>
@@ -170,7 +170,7 @@ REAL8IIRFilter ALPHASLPFIR;
  /* copy factors into time series */
  for (p=0; p<(int)ALPHAS.data->length; p++)
    {
-     REAL8 r = output->alphabeta.data->data[p].re;
+     REAL8 r = creal(output->alphabeta.data->data[p]);
 
      /* check alphabeta: If values are outside bounds we replace
       * factors with the last one, or with 1 if it is the first */
@@ -614,7 +614,7 @@ INT4 length = input->DARM_ERR.data->length;
 
       if (input->gamma_fudgefactor != 0)
 	{
-	  factors.alphabeta.re /= input->gamma_fudgefactor;
+	  factors.alphabeta = creal(factors.alphabeta) / input->gamma_fudgefactor + I * cimag(factors.alphabeta);
 	}
 
       output->alpha.data->data[m]= factors.alpha;
@@ -773,10 +773,7 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
   /* multiply both FT's */
   for (n = 0; n < (int)vtilde->data->length; n++)
     {
-      REAL8 re=vtilde->data->data[n].re, im=vtilde->data->data[n].im;
-      REAL8 reFIR=vtildeFIR->data->data[n].re, imFIR=vtildeFIR->data->data[n].im;
-      vtilde->data->data[n].re=re*reFIR-im*imFIR;
-      vtilde->data->data[n].im=re*imFIR+im*reFIR;
+      vtilde->data->data[n] *= vtildeFIR->data->data[n];
     }
 
   /* reverse FFT into original time series */

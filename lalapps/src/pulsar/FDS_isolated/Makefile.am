@@ -60,7 +60,11 @@ lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
 lalapps_compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatisticV2Sources = ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h OptimizedCFS/ComputeFstatREAL4.c OptimizedCFS/ComputeFstatREAL4.h $(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h
+ComputeFStatisticV2Sources = ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h \
+	$(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h \
+	../GCT/ComputeFstat_RS.c Fstat_v3.c Fstat_v3.h\
+	OptimizedCFS/ComputeFstatREAL4.c OptimizedCFS/ComputeFstatREAL4.h
+
 
 lalapps_ComputeFStatistic_v2_SOURCES = $(ComputeFStatisticV2Sources)
 
@@ -96,19 +100,17 @@ lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
 testFstat_v3_SOURCES = testFstat_v3.c Fstat_v3.c Fstat_v3.h
 
 
-EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2GPU.sh
+EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2GPU.sh testCFSv2_resamp.sh
 
 
 TESTS = testFStat.sh testPredictFStat.sh testFstat_v3
 
 if !CONDOR_ENABLED
-TESTS += testCFSv2.sh testGridv2.sh
+TESTS += testCFSv2.sh testCFSv2_resamp.sh testGridv2.sh
 endif
 
 
-TESTS_ENVIRONMENT = 1>/dev/null \
-LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
-LAL_DATA_PATH=$(LAL_DATA_PATH):.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
+TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
 

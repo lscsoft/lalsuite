@@ -80,66 +80,61 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 int coh_PTF_output_events_xml( 
     char               *outputFile,
     MultiInspiralTable  *events,
+    SimInspiralTable *injections,
     ProcessParamsTable *processParamsTable,
     TimeSlide          *time_slide_head,
     struct coh_PTF_params *params
     )
 {
   LALStatus status = blank_status;
-  MetadataTable   process;
-  MetadataTable   processParams;
-  MetadataTable   searchSummary;
+  MetadataTable   siminspiral;
   MetadataTable   ringEvents;
-  LIGOLwXMLStream results;
+  LIGOLwXMLStream *results;
 
   verbose( "output events to LIGOLw XML file %s\n", outputFile );
 
-  memset( &process, 0, sizeof( process ) );
-  memset( &processParams, 0, sizeof( processParams ) );
-  memset( &searchSummary, 0, sizeof( searchSummary ) );
   memset( &ringEvents, 0, sizeof( ringEvents ) );
-  memset( &results, 0, sizeof( results ) );
 
   /* create process table and search summary tables */
-  process.processTable = coh_PTF_create_process_table( params );
-  processParams.processParamsTable = processParamsTable;
-  searchSummary.searchSummaryTable = coh_PTF_create_search_summary( params );
+  siminspiral.simInspiralTable = injections;
   ringEvents.multiInspiralTable = events;
 
   /* open results xml file */
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, outputFile ), &status );
+  results = XLALOpenLIGOLwXMLFile(outputFile);
 
   /* output the process table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, process, process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+  ProcessTable* processTable = coh_PTF_create_process_table(params);
+  XLALWriteLIGOLwXMLProcessTable(results,processTable);
+  LALFree(processTable);
 
   /* output process params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, processParams, process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+  XLALWriteLIGOLwXMLProcessParamsTable(results, processParamsTable);
 
   /* output search summary table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summary_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchSummary, search_summary_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+  SearchSummaryTable* searchSummTable = coh_PTF_create_search_summary(params);
+  XLALWriteLIGOLwXMLSearchSummaryTable(results,searchSummTable);
+  LALFree(searchSummTable);
 
-  /* output time slide table */
-  XLALWriteLIGOLwXMLTimeSlideTable( &results, time_slide_head);
-
-  /* output the events */
-  if ( ringEvents.multiInspiralTable )
+  /* write the signals injected in a template bank simulation */
+  if ( injections )
   {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, ringEvents,multi_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, results, sim_inspiral_table ),
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, results, siminspiral,
+          sim_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, results ), &status );
   }
 
-  /* close the xml file */
-  LAL_CALL( LALCloseLIGOLwXMLFile( &status, &results ), &status );
+  /* output time slide table */
+  XLALWriteLIGOLwXMLTimeSlideTable( results, time_slide_head);
 
-  LALFree( searchSummary.searchSummaryTable );
-  LALFree( process.processTable );
+  /* output the events */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, results, multi_inspiral_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, results, ringEvents,multi_inspiral_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, results ), &status );
+
+  /* close the xml file */
+  XLALCloseLIGOLwXMLFile(results);
 
   return 0;
 }
@@ -248,6 +243,7 @@ ProcessTable *coh_PTF_create_process_table( struct coh_PTF_params *params )
               params->ifoName[2], params->ifoName[3]);
   } 
 
+  processTable->start_time = params->jobStartTime;
   XLALGPSTimeNow(&processTable->end_time);
 
   return processTable;

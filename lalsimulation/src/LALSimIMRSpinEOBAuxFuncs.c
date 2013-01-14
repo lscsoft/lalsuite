@@ -18,18 +18,18 @@
 */
 
 /**
- * \author Craig Robinson, Collin Capano
+ * \author Craig Robinson, Collin Capano, Yi Pan
  *
  * \ file 
  *
  * \brief Functions for producing EOB waveforms for 
- * spinning binaries, as described in Barausse and Buonanno ( arXiv 0912.3517 ).
+ * spinning binaries, as described in Barausse and Buonanno PRD 81, 084024 (2010).
  */
 
 #ifndef _LALSIMIMREOBSPINAUXFUNCS_C
 #define _LALSIMIMREOBSPINAUXFUNCS_C
 
-#include <lal/LALComplex.h>
+#include <complex.h>
 #include "LALSimIMREOBNRv2.h"
 
 /*------------------------------------------------------------------------------------------
@@ -60,11 +60,16 @@ static int XLALSimIMRSpinEOBCalculateSigmaStar(
  *------------------------------------------------------------------------------------------
  */
 
-static int XLALSimIMRSpinEOBCalculateSigmaKerr( REAL8Vector *sigmaKerr,
-                                   REAL8        mass1,
-                                   REAL8        mass2,
-                                   REAL8Vector *s1,
-                                   REAL8Vector *s2 )
+/**
+ * Function to calculate normalized spin of the deformed-Kerr background in SEOBNRv1.
+ * Eq. 5.2 of Barausse and Buonanno PRD 81, 084024 (2010).
+ */
+static int XLALSimIMRSpinEOBCalculateSigmaKerr( 
+                  REAL8Vector *sigmaKerr, /**<< OUTPUT, normalized (to total mass) spin of deformed-Kerr */
+                  REAL8        mass1,     /**<< mass 1 */
+                  REAL8        mass2,     /**<< mass 2 */
+                  REAL8Vector *s1,        /**<< spin vector 1 */
+                  REAL8Vector *s2         /**<< spin vector 2 */)
 {
 
   UINT4 i;
@@ -78,12 +83,16 @@ static int XLALSimIMRSpinEOBCalculateSigmaKerr( REAL8Vector *sigmaKerr,
   return XLAL_SUCCESS;
 }
 
-
-static int XLALSimIMRSpinEOBCalculateSigmaStar( REAL8Vector *sigmaStar,
-                                   REAL8        mass1,
-                                   REAL8        mass2,
-                                   REAL8Vector *s1,
-                                   REAL8Vector *s2 )
+/**
+ * Function to calculate normalized spin of the test particle in SEOBNRv1.
+ * Eq. 5.3 of Barausse and Buonanno PRD 81, 084024 (2010).
+ */
+static int XLALSimIMRSpinEOBCalculateSigmaStar( 
+                  REAL8Vector *sigmaStar, /**<< OUTPUT, normalized (to total mass) spin of test particle */
+                  REAL8        mass1,     /**<< mass 1 */
+                  REAL8        mass2,     /**<< mass 2 */
+                  REAL8Vector *s1,        /**<< spin vector 1 */
+                  REAL8Vector *s2         /**<< spin vector 2 */)
 {
 
   UINT4 i;

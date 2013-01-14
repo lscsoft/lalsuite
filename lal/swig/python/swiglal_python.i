@@ -92,27 +92,6 @@
 %swiglal_py_bin_op(sub, binaryfunc, nb_subtract);
 %swiglal_py_bin_op(xor, binaryfunc, nb_xor);
 
-// In-place binary operators. These are set up to destroy
-// the input (right-hand-side) object, and return a new
-// object (on the left-hand side) which is the result of
-// the operation.
-%define %swiglal_py_inp_op(NAME, FUNCTYPE, SLOT)
-%delobject *::__##NAME##__;
-%newobject *::__##NAME##__;
-%pythonmaybecall *::__##NAME##__;
-%feature("python:slot", #SLOT, functype=#FUNCTYPE) *::__##NAME##__;
-%enddef
-%swiglal_py_inp_op(iadd, binaryfunc, nb_inplace_add);
-%swiglal_py_inp_op(iand, binaryfunc, nb_inplace_and);
-%swiglal_py_inp_op(idiv, binaryfunc, nb_inplace_divide);
-%swiglal_py_inp_op(ilshift, binaryfunc, nb_inplace_lshift);
-%swiglal_py_inp_op(imod, binaryfunc, nb_inplace_remainder);
-%swiglal_py_inp_op(imul, binaryfunc, nb_inplace_multiply);
-%swiglal_py_inp_op(ior, binaryfunc, nb_inplace_or);
-%swiglal_py_inp_op(irshift, binaryfunc, nb_inplace_rshift);
-%swiglal_py_inp_op(isub, binaryfunc, nb_inplace_subtract);
-%swiglal_py_inp_op(ixor, binaryfunc, nb_inplace_xor);
-
 // Comparison operators.
 %define %swiglal_py_cmp_op(NAME, COMPTYPE)
 %pythonmaybecall *::__##NAME##__;
@@ -125,7 +104,33 @@
 %swiglal_py_cmp_op(lt, Py_LT);
 %swiglal_py_cmp_op(ne, Py_NE);
 
-////////// General fragments and typemaps //////////
+////////// General fragments, typemaps, and macros //////////
+
+// Helper fragment and macro for typemap for functions which return 'int'.
+// Drops the first return value (which is the 'int') from the output argument
+// list if the argument list contains at least 2 items (the 'int' and some
+// other output argument).
+%fragment("swiglal_maybe_drop_first_retval", "header") {
+  SWIGINTERN PyObject* swiglal_maybe_drop_first_retval(PyObject* out) {
+    if (!PySequence_Check(out)) {
+      return out;
+    }
+    Py_ssize_t len = PySequence_Length(out);
+    if (len <= 1) {
+      return out;
+    }
+    PyObject* old = out;
+    if (len == 2) {
+      out = PySequence_GetItem(old, 1);
+    } else {
+      out = PySequence_GetSlice(old, 1, len);
+    }
+    Py_CLEAR(old);
+    return out;
+  }
+}
+#define %swiglal_maybe_drop_first_retval() \
+  resultobj = swiglal_maybe_drop_first_retval(resultobj)
 
 // SWIG conversion fragments and typemaps for GSL complex numbers.
 %swig_cplxflt_convn(gsl_complex_float, gsl_complex_float_rect, GSL_REAL, GSL_IMAG);
@@ -668,6 +673,7 @@
         if (!SWIG_IsOK(ecode)) {
           goto end;
         }
+        Py_CLEAR(objelem);
 
         // Increment the NumPy array index.
         swiglal_py_increment_idx(ndims, dims, idx);

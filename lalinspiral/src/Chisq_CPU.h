@@ -29,6 +29,8 @@
 #ifndef _CHISQ_CPU_H
 #define _CHISQ_CPU_H
 
+#include <lal/FindChirp.h>
+
 void Chisq_CPU (REAL4* chisq, COMPLEX8* q, COMPLEX8* qtilde, FindChirpChisqParams* params, 
 		UINT4 numPoints, UINT4 numChisqBins, REAL4 chisqNorm, LALStatus *status);
 

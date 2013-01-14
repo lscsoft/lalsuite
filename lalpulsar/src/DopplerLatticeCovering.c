@@ -1191,7 +1191,7 @@ findCenterOfMass ( vect3D_t *center, const vect3Dlist_t *points )
  *
  * \heading{Algorithm:}
  *     Count the number of intersections of rays emanating to the right
- *     from the point with the lines of the polygon: even=> outside, odd=> inside
+ *     from the point with the lines of the polygon: even =\> outside, odd =\> inside
  *
  * \heading{Note2:}
  *     we try to get this algorith to count all boundary-points as 'inside'
@@ -1202,8 +1202,8 @@ findCenterOfMass ( vect3D_t *center, const vect3Dlist_t *points )
  *     correctly handles the case of a 1-point 'polygon', in which the two
  *     points must agree within eps=1e-10 relative precision.
  *
- * \return : TRUE or FALSE, -1=ERROR
- *----------------------------------------------------------------------*/
+ * \return TRUE or FALSE, -1=ERROR
+ */
 int
 vect2DInPolygon ( const vect2D_t *point, const vect2Dlist_t *polygon )
 {

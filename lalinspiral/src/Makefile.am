@@ -1,9 +1,8 @@
-INCLUDES = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include
 
 lalinspiralincludedir = $(includedir)/lal
 lalinspiralinclude_HEADERS = \
 	BBHPhenomCoeffs.h \
-	BlackHoleMode.h \
 	Chisq_CPU.h \
 	Chisq_GPU.h \
 	CoherentInspiral.h \
@@ -25,15 +24,15 @@ lalinspiralinclude_HEADERS = \
 	InspiralInjectionParams.h \
 	LALEOBNRv2Waveform.h \
 	LALInspiral.h \
-	LALInspiralBCVSpinBank.h \
 	LALInspiralBank.h \
 	LALInspiralConfig.h \
-	LALInspiralRandomBank.h \
+	LALInspiralLibVCSInfo.h \
+	LALInspiralSBankOverlap.h \
 	LALInspiralVCSInfo.h \
 	LALNoiseModelsInspiral.h \
 	LALPSpinInspiralRD.h \
-	LALSBBH-Metric.h \
 	LALTrigScanCluster.h \
+	LALSTPNWaveformErrors.h \
 	LALSTPNWaveform2.h \
 	LALSTPNWaveformFrameless.h \
 	LALSQTPNIntegrator.h \
@@ -45,7 +44,6 @@ lalinspiralinclude_HEADERS = \
 	LIGOMetadataRingdownUtils.h \
 	NRWaveIO.h \
 	NRWaveInject.h \
-	NullStatistic.h \
 	RingUtils.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
@@ -54,7 +52,6 @@ lalinspiralinclude_HEADERS = \
 lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
-	BlackHoleMode.c \
 	Chisq_CPU.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
@@ -153,6 +150,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralPhiofVIntegrand.c \
 	LALInspiralPolarizations.c \
 	LALInspiralRingdownWave.c \
+	LALInspiralSBankOverlap.c \
 	LALInspiralSetParams.c \
 	LALInspiralSetSearchLimits.c \
 	LALInspiralSetup.c \
@@ -230,7 +228,9 @@ liblalinspiral_la_LIBADD = $(INSPLIBCXX)
 liblalinspiral_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
-	Chisq_GPU.cpp \
+	Chisq_GPU.cpp
+
+MOSTLYCLEANFILES = \
 	lalinspiral-user-env.shell \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
@@ -240,8 +240,6 @@ sysconf_DATA = \
 	lalinspiral-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALInspiralVCSInfo.h \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
 
@@ -250,9 +248,10 @@ lalinspiral-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "set LALINSPIRAL_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@printf "$(SWIG_USER_ENV)" >>$@
 
 lalinspiral-user-env.csh lalinspiral-user-env.sh: lalinspiral-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
@@ -260,16 +259,20 @@ lalinspiral-user-env.csh lalinspiral-user-env.sh: lalinspiral-user-env.shell $(s
 EXTRA_DIST = \
 	Chisq_GPU.cu \
 	LALInspiralConfig.h.in \
-	LALInspiralVCSInfo.h.in \
-	generate_user_env.awk \
-	generate_vcs_info.py
+	generate_user_env.awk
 
-LALInspiralVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALInspiralConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALInspiral $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALInspiralVCSInfo.h
+MOSTLYCLEANFILES += LALInspiralVCSInfo.h
+LALInspiralVCSInfo.h .PHONY : gen-LALInspiralVCSInfo.h
+gen-LALInspiralVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALInspiralVCSInfo.h $(srcdir)/LALInspiralVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@
 
 # cuda build rules
 include $(top_srcdir)/gnuscripts/cuda.common
+
+swig_headers = $(lalinspiralinclude_HEADERS)
+include $(top_srcdir)/swig/swiglal_header.am

@@ -21,12 +21,14 @@ lalburst-*.tar.gz
 lalburst.pc
 lalburst.spec
 libtool
+python/__init__.py
+python/git_version.py
 src/LALBurstConfig.h
 src/LALBurstVCSInfo.h
 src/git_version
-src/lalburst-user-env.shell
 src/lalburst-user-env.csh
 src/lalburst-user-env.sh
+src/lalburst-user-env.shell
 src/stamp-h2
 test/CLRTest
 test/CLRoutdata.asc

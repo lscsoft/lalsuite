@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel, Evan Ochsner
+ * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel, Evan Ochsner, C. Pankow
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  *  MA  02111-1307  USA
  */
 
+#include <complex.h>
 #include <math.h>
 
 #include <gsl/gsl_const.h>
@@ -24,10 +25,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_odeiv.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALSimInspiral.h>
-#define LAL_USE_COMPLEX_SHORT_MACROS
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
@@ -42,24 +40,306 @@
 #define UNUSED
 #endif
 
+/**
+ * (Twice) the highest known PN order of amplitude correction for
+ * non-precessing binaries.
+ */
 #define MAX_NONPRECESSING_AMP_PN_ORDER 5
-#define MAX_PRECESSING_AMP_PN_ORDER 3
 
 /**
- * Macro functions to rotate the components of a vector about an axis
+ * (Twice) the highest known PN order of amplitude correction for
+ * precessing binaries.
  */
+#define MAX_PRECESSING_AMP_PN_ORDER 3
+
+/* Macro functions to rotate the components of a vector about an axis */
 #define ROTATEZ(angle, vx, vy, vz)\
 	tmp1 = vx*cos(angle) - vy*sin(angle);\
 	tmp2 = vx*sin(angle) + vy*cos(angle);\
 	vx = tmp1;\
-	vy = tmp2;
+	vy = tmp2
 
 #define ROTATEY(angle, vx, vy, vz)\
-	tmp1 = vx*cos(angle) - vz*sin(angle);\
-	tmp2 = vx*sin(angle) + vz*cos(angle);\
+	tmp1 = vx*cos(angle) + vz*sin(angle);\
+	tmp2 = - vx*sin(angle) + vz*cos(angle);\
 	vx = tmp1;\
-	vz = tmp2;
+	vz = tmp2
 
+/* Internal utility function to check all spin components are zero
+   returns 1 if all spins zero, otherwise returns 0 */
+static int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
+        REAL8 s2x, REAL8 s2y, REAL8 s2z);
+
+static int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
+        REAL8 s2x, REAL8 s2y, REAL8 s2z)
+{
+    if( s1x != 0. || s1y != 0. || s1z != 0.
+            || s2x != 0. || s2y != 0. || s2z != 0. )
+        return 0;
+    else
+        return 1;
+}
+
+/* Internal utility function to check transverse spins are zero
+   returns 1 if x and y components of spins are zero, otherwise returns 0 */
+static int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y);
+
+static int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y)
+{
+    if( s1x != 0. || s1y != 0. || s2x != 0. || s2y != 0. )
+        return 0;
+    else
+        return 1;
+}
+
+/* Internal utility function to check tidal parameters are zero
+   returns 1 if both tidal parameters zero, otherwise returns 0 */
+static int checkTidesZero(REAL8 lambda1, REAL8 lambda2);
+
+static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
+{
+    if( lambda1 != 0. || lambda2 != 0. )
+        return 0;
+    else
+        return 1;
+}
+
+/**
+ * Macro procedure for aborting if non-default LALSimInspiralWaveformFlags
+ * struct was provided, but that approximant does not use the struct
+ * and only has a single default use case.
+ *
+ * The ChooseWaveform functions will fail in such a case, so the user does not
+ * think they are including features that are unavailable.
+ *
+ * All of the macros below will destroy the LALSimInspiralWaveformFlags struct,
+ * print a specific warning and raise a general XLAL_ERROR for invalid argument.
+ */
+#define ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralWaveformFlags given, but this approximant does not support this case.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
+ */
+#define ABORT_NONDEFAULT_WAVEFORM_FLAGS_NULL(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralWaveformFlags given, but this approximant does not support this case.\n", __func__);\
+	XLAL_ERROR_NULL(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Macro procedure for aborting if non-zero spins
+ * given to a non-spinning approximant
+ */
+#define ABORT_NONZERO_SPINS(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-zero spins were given, but this is a non-spinning approximant.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Macro procedure for aborting if non-zero transverse spin
+ * components given to a non-precessing approximant
+ */
+#define ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-zero transverse spins were given, but this is a non-precessing approximant.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Macro procedure for aborting if non-zero tidal parameters
+ * given to an approximant with no tidal corrections
+ */
+#define ABORT_NONZERO_TIDES(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Macro procedure for aborting if non-default value of
+ * LALSimInspiralSpinOrder is given for an approximant
+ * which does not use that flag
+ */
+#define ABORT_NONDEFAULT_SPIN_ORDER(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralSpinOrder provided, but this approximant does not use that flag.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Macro procedure for aborting if non-default value of
+ * LALSimInspiralTidalOrder is given for an approximant
+ * which does not use that flag
+ */
+#define ABORT_NONDEFAULT_TIDAL_ORDER(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralTidalOrder provided, but this approximant does not use that flag.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Macro procedure for aborting if non-default value of
+ * LALSimInspiralInteraction is given for an approximant
+ * which does not use that flag
+ */
+#define ABORT_NONDEFAULT_INTERACTION(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralInteraction provided, but this approximant does not use that flag.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Macro procedure for aborting if non-default value of
+ * LALSimInspiralFrameAxis is given for an approximant
+ * which does not use that flag
+ */
+#define ABORT_NONDEFAULT_FRAME_AXIS(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
+ */
+#define ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.\n", __func__);\
+	XLAL_ERROR_NULL(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Macro procedure for aborting if non-default value of
+ * LALSimInspiralModesChoice is given for an approximant
+ * which does not use that flag
+ */
+#define ABORT_NONDEFAULT_MODES_CHOICE(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/**
+ * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
+ */
+#define ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.\n", __func__);\
+	XLAL_ERROR_NULL(XLAL_EINVAL);\
+	} while (0)
+
+/* 
+ * Structyure to carry a collectio of spherical harmonic modes in COMPLEX16 
+ * time series. Contains convenience getter and setter functions, as well as
+ * a convienence "maximum l mode" function. Implemented as a singly forward
+ * linked list.
+ */
+struct
+tagSphHarmTimeSeries
+{
+    COMPLEX16TimeSeries*            mode; /**< The sequences of sampled data. */
+    UINT4                           l; /**< Node mode l  */
+    INT4                            m; /**< Node submode m  */
+    struct tagSphHarmTimeSeries*    next; /**< next pointer */
+};
+
+/* Prepend a node to the linked list - or - create a new head */
+SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( SphHarmTimeSeries *appended, const COMPLEX16TimeSeries* inmode, UINT4 l, INT4 m ){
+
+    SphHarmTimeSeries* ts;
+
+	// Check if the node with this l, m already exists
+	ts = appended;
+	while( ts ){
+		if( l == ts->l && m == ts->m ){
+			break;
+		}
+		ts = ts->next;
+	}
+
+	if( ts ){
+		XLALDestroyCOMPLEX16TimeSeries( ts->mode );
+    	ts->mode = XLALCutCOMPLEX16TimeSeries( inmode, 0, inmode->data->length );
+		return appended;
+	} else {
+    	ts = XLALMalloc( sizeof(SphHarmTimeSeries) );
+	}
+
+    ts->l = l;
+    ts->m = m;
+	// Cut returns a new series using a slice of the original. I ask it to
+	// return a new one for the full data length --- essentially a duplication
+	if( inmode ){
+    	ts->mode = XLALCutCOMPLEX16TimeSeries( inmode, 0, inmode->data->length );
+	} else {
+		ts->mode = NULL;
+	}
+
+    if( appended ){
+        ts->next = appended;
+    } else {
+        ts->next = NULL;
+    }
+
+    return ts;
+}
+
+/* Delete list from current pointer to the end of the list */
+void XLALDestroySphHarmTimeSeries( SphHarmTimeSeries* ts ){
+    SphHarmTimeSeries* pop;
+    while( (pop = ts) ){
+		if( pop->mode ){
+        	XLALDestroyCOMPLEX16TimeSeries( pop->mode );
+		}
+        ts = pop->next;
+        XLALFree( pop );
+    }
+}
+
+/* 
+ * Get the mode-decomposed time series corresponding to l,m.
+ */
+COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode( SphHarmTimeSeries *ts , UINT4 l, INT4 m ){
+    if( !ts ) return NULL;
+
+    SphHarmTimeSeries *itr = ts;
+    while( itr->l != l || itr->m != m ){
+        itr = itr->next;
+        if( !itr ) return NULL;
+    }
+    return itr->mode;
+}
+
+/* 
+ * Get the maximum major mode added to structure.
+ */
+UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts ){
+    SphHarmTimeSeries *itr = ts;
+	UINT4 maxl=0;
+
+    while( itr ){
+		maxl = itr->l > maxl ? itr->l : maxl;
+		itr = itr ->next;
+    }
+    return maxl;
+}
 
 /**
  * Multiplies a mode h(l,m) by a spin-2 weighted spherical harmonic
@@ -96,17 +376,17 @@ int XLALSimAddMode(
 	Y = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, m);
 	for ( j = 0; j < hmode->data->length; ++j ) {
 		COMPLEX16 hpc;
-		hpc = cmul(Y, hmode->data->data[j]);
+		hpc = Y * hmode->data->data[j];
 		hplus->data->data[j] += creal(hpc);
 		hcross->data->data[j] += -cimag(hpc);
 	}
 	if ( sym ) { /* equatorial symmetry: add in -m mode */
 		Y = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, -m);
 		if ( l % 2 ) /* l is odd */
-			Y = cneg(Y);
+			Y = -Y;
 		for ( j = 0; j < hmode->data->length; ++j ) {
 			COMPLEX16 hpc;
-			hpc = cmul(Y, conj(hmode->data->data[j]));
+			hpc = Y * conj(hmode->data->data[j]);
 			hplus->data->data[j] += creal(hpc);
 			hcross->data->data[j] += -cimag(hpc);
 		}
@@ -127,49 +407,82 @@ int XLALSimAddMode(
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 		REAL8TimeSeries *v,   /**< post-Newtonian parameter */
 	       	REAL8TimeSeries *phi, /**< orbital phase */
-	       	REAL8 v0,             /**< tail-term gauge choice (default = 1) */
-	       	REAL8 m1,             /**< mass of companion 1 */
-	       	REAL8 m2,             /**< mass of companion 2 */
-	       	REAL8 r,              /**< distance of source */
+	       	REAL8 v0,             /**< tail gauge parameter (default = 1) */
+	       	REAL8 m1,             /**< mass of companion 1 (kg) */
+	       	REAL8 m2,             /**< mass of companion 2 (kg) */
+	       	REAL8 r,              /**< distance of source (m) */
 	       	int O,                /**< twice post-Newtonain order */
 	       	int l,                /**< mode number l */
 	       	int m                 /**< mode number m */
 		)
 {
-	COMPLEX16TimeSeries *h;
-	UINT4 j;
 	LAL_CHECK_VALID_SERIES(v, NULL);
 	LAL_CHECK_VALID_SERIES(phi, NULL);
 	LAL_CHECK_CONSISTENT_TIME_SERIES(v, phi, NULL);
-	h = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &v->epoch, 0.0, v->deltaT, &lalStrainUnit, v->data->length );
-	if ( !h )
-		XLAL_ERROR_NULL(XLAL_EFUNC);
+	COMPLEX16TimeSeries *hlm;
+	UINT4 j;
 	if ( l == 2 && abs(m) == 2 )
-		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode22(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
+		hlm = XLALSimInspiralPNMode22(v, phi, v0, m1, m2, r, O);
 	else if ( l == 2 && abs(m) == 1 )
-		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode21(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
+		hlm = XLALSimInspiralPNMode21(v, phi, v0, m1, m2, r, O);
+	else if ( l == 2 && m == 0 )
+		hlm = XLALSimInspiralPNMode20(v, phi, v0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 3 )
-		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode33(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
+		hlm = XLALSimInspiralPNMode33(v, phi, v0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 2 )
-		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode32(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
+		hlm = XLALSimInspiralPNMode32(v, phi, v0, m1, m2, r, O);
 	else if ( l == 3 && abs(m) == 1 )
-		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = XLALSimInspiralPNMode31(v->data->data[j], phi->data->data[j], v0, m1, m2, r, O);
+		hlm = XLALSimInspiralPNMode31(v, phi, v0, m1, m2, r, O);
+	else if ( l == 3 && m == 0 )
+		hlm = XLALSimInspiralPNMode30(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && abs(m) == 4 )
+		hlm = XLALSimInspiralPNMode44(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && abs(m) == 3 )
+		hlm = XLALSimInspiralPNMode43(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && abs(m) == 2 )
+		hlm = XLALSimInspiralPNMode42(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && abs(m) == 1 )
+		hlm = XLALSimInspiralPNMode41(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && m == 0 )
+		hlm = XLALSimInspiralPNMode40(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 5 )
+		hlm = XLALSimInspiralPNMode55(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 4 )
+		hlm = XLALSimInspiralPNMode54(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 3 )
+		hlm = XLALSimInspiralPNMode53(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 2 )
+		hlm = XLALSimInspiralPNMode52(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 1 )
+		hlm = XLALSimInspiralPNMode51(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && m == 0 )
+		hlm = XLALSimInspiralPNMode50(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 6 )
+		hlm = XLALSimInspiralPNMode66(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 5 )
+		hlm = XLALSimInspiralPNMode65(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 4 )
+		hlm = XLALSimInspiralPNMode64(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 3 )
+		hlm = XLALSimInspiralPNMode63(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 2 )
+		hlm = XLALSimInspiralPNMode62(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 1 )
+		hlm = XLALSimInspiralPNMode61(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && m == 0 )
+		hlm = XLALSimInspiralPNMode60(v, phi, v0, m1, m2, r, O);
 	else {
-		XLALDestroyCOMPLEX16TimeSeries(h);
 		XLALPrintError("XLAL Error - %s: Unsupported mode l=%d, m=%d\n", __func__, l, m );
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
+	if ( !hlm )
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	if ( m < 0 ) {
 		REAL8 sign = l % 2 ? -1.0 : 1.0;
-		for ( j = 0; j < h->data->length; ++j )
-			h->data->data[j] = cmulr(conj(h->data->data[j]), sign);
+		for ( j = 0; j < hlm->data->length; ++j )
+			hlm->data->data[j] = sign * conj(hlm->data->data[j]);
 	}
-	return h;
+	return hlm;
 }
 
 
@@ -972,24 +1285,25 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
  * Function to specify the desired orientation of a precessing binary in terms
  * of several angles and then compute the vector components in the so-called
  * \"radiation frame\" (with the z-axis along the direction of propagation) as
- * needed for initial conditions for the SpinTaylorT4 waveform routines.
+ * needed to specify binary configuration for ChooseTDWaveform.
  *
  * Input:
- *     thetaJN, phiJN are angles describing the desired orientation of the
- * total angular momentum (J) relative to direction of propagation (N)
- *     theta1, phi1, theta2, phi2 are angles describing the desired orientation
- * of spin 1 and 2 relative to the Newtonian orbital angular momentum (L_N)
- *     m1, m2, f0 are the component masses and initial GW frequency,
- * they are needed to compute the magnitude of L_N, and thus J
- *     chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$),
- * they are needed to compute the magnitude of S1 and S2, and thus J
+ *     thetaJN is the inclination between total angular momentum (J) and the
+ *         direction of propagation (N)
+ *     theta1 and theta2 are the inclinations of S1 and S2
+ *         measured from the Newtonian orbital angular momentum (L_N)
+ *     phi12 is the difference in azimuthal angles of S1 and S2.
+ *     chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$)
+ *     phiJL is the azimuthal angle of L_N on its cone about J.
+ *     m1, m2, f_ref are the component masses and reference GW frequency,
+ *         they are needed to compute the magnitude of L_N, and thus J.
  *
  * Output:
- *     x, y, z components of LNhat (unit vector along orbital angular momentum),
+ *     incl - inclination angle of L_N relative to N
  *     x, y, z components of E1 (unit vector in the initial orbital plane)
  *     x, y, z components S1 and S2 (unit spin vectors times their
- * dimensionless spin magnitudes - i.e. they have unit magnitude for
- * extremal BHs and smaller magnitude for slower spins)
+ *         dimensionless spin magnitudes - i.e. they have unit magnitude for
+ *         extremal BHs and smaller magnitude for slower spins).
  *
  * NOTE: Here the \"total\" angular momentum is computed as
  * J = L_N + S1 + S2
@@ -999,69 +1313,79 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
  * the PN order of the system and to avoid subtleties with spin-orbit
  * contributions to L. Also, it is believed that the difference in Jhat
  * with or without these PN corrections to L is quite small.
+ *
+ * NOTE: fRef = 0 is not a valid choice. If you will pass fRef=0 into
+ * ChooseWaveform, then here pass in f_min, the starting GW frequency
+ *
+ * The various rotations in this transformation are described in more detail
+ * in a Mathematica notebook available here:
+ * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/Waveforms/TransformPrecessingInitialConditions
  */
 int XLALSimInspiralTransformPrecessingInitialConditions(
-		REAL8 *LNhatx,	/**< LNhat x component (returned) */
-		REAL8 *LNhaty,	/**< LNhat y component (returned) */
-		REAL8 *LNhatz,	/**< LNhat z component (returned) */
-		REAL8 *E1x,	/**< E1 x component (returned) */
-		REAL8 *E1y,	/**< E1 y component (returned) */
-		REAL8 *E1z,	/**< E1 z component (returned) */
+		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
 		REAL8 *S1x,	/**< S1 x component (returned) */
 		REAL8 *S1y,	/**< S1 y component (returned) */
 		REAL8 *S1z,	/**< S1 z component (returned) */
 		REAL8 *S2x,	/**< S2 x component (returned) */
 		REAL8 *S2y,	/**< S2 y component (returned) */
 		REAL8 *S2z,	/**< S2 z component (returned) */
-		REAL8 thetaJN, 	/**< zenith angle between J and N */
-		REAL8 phiJN,  	/**< azimuth angle between J and N */
-		REAL8 theta1,  	/**< zenith angle between S1 and LNhat */
-		REAL8 phi1,  	/**< azimuth angle between S1 and LNhat */
-		REAL8 theta2,  	/**< zenith angle between S2 and LNhat */
-		REAL8 phi2,  	/**< azimuth angle between S2 and LNhat */
+		REAL8 thetaJN, 	/**< zenith angle between J and N (rad) */
+		REAL8 phiJL,  	/**< azimuthal angle of L_N on its cone about J (rad) */
+		REAL8 theta1,  	/**< zenith angle between S1 and LNhat (rad) */
+		REAL8 theta2,  	/**< zenith angle between S2 and LNhat (rad) */
+		REAL8 phi12,  	/**< difference in azimuthal angle btwn S1, S2 (rad) */
+		REAL8 chi1,	/**< dimensionless spin of body 1 */
+		REAL8 chi2,	/**< dimensionless spin of body 2 */
 		REAL8 m1,	/**< mass of body 1 (kg) */
 		REAL8 m2,	/**< mass of body 2 (kg) */
-		REAL8 f0,	/**< initial GW frequency (Hz) */
-		REAL8 chi1,	/**< dimensionless spin of body 1 */
-		REAL8 chi2	/**< dimensionless spin of body 2 */
+		REAL8 fRef	/**< reference GW frequency (Hz) */
 		)
 {
-	REAL8 omega0, M, eta, theta0, phi0, thetaLN, phiLN, Jnorm, tmp1, tmp2;
-	REAL8 Jhatx, Jhaty, Jhatz, LNhx, LNhy, LNhz, Jx, Jy, Jz, LNx, LNy, LNz;
-	REAL8 s1hatx, s1haty, s1hatz, s2hatx, s2haty, s2hatz;
-	REAL8 e1x, e1y, e1z, s1x, s1y, s1z, s2x, s2y, s2z;
+	/* Check that fRef is sane */
+	if( fRef == 0. )
+	{
+		XLALPrintError("XLAL Error - %s: fRef=0 is invalid. Please pass in the starting GW frequency instead.\n", __func__);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
 
-	/* Starting frame: LNhat is along the z-axis and the unit 
-	   spin vectors are defined from the angles relative to LNhat */
+	REAL8 omega0, M, eta, theta0, phi0, Jnorm, tmp1, tmp2;
+	REAL8 Jhatx, Jhaty, Jhatz, LNhx, LNhy, LNhz, Jx, Jy, Jz, LNmag;
+	REAL8 s1hatx, s1haty, s1hatz, s2hatx, s2haty, s2hatz;
+	REAL8 s1x, s1y, s1z, s2x, s2y, s2z;
+
+	/* Starting frame: LNhat is along the z-axis and the unit
+	 * spin vectors are defined from the angles relative to LNhat.
+	 * Note that we put s1hat in the x-z plane, and phi12
+	 * sets the azimuthal angle of s2hat measured from the x-axis.
+	 */
 	LNhx = 0.;
 	LNhy = 0.;
 	LNhz = 1.;
-	s1hatx = sin(theta1) * cos(phi1);
-	s1haty = sin(theta1) * sin(phi1);
+	s1hatx = sin(theta1);
+	s1haty = 0.;
 	s1hatz = cos(theta1);
-	s2hatx = sin(theta2) * cos(phi2);
-	s2haty = sin(theta2) * sin(phi2);
+	s2hatx = sin(theta2) * cos(phi12);
+	s2haty = sin(theta2) * sin(phi12);
 	s2hatz = cos(theta2);
 
 	/* Define several internal variables needed for magnitudes */
-	omega0 = LAL_PI * f0; // initial orbital angular frequency
+	omega0 = LAL_PI * fRef; // orbital angular frequency at reference point
 	m1 *= LAL_G_SI / LAL_C_SI / LAL_C_SI / LAL_C_SI;
 	m2 *= LAL_G_SI / LAL_C_SI / LAL_C_SI / LAL_C_SI;
 	M = m1 + m2;
 	eta = m1 * m2 / M / M;
 	
-	/* Define LN, S1, S2, J with proper magnitudes */
-	LNx = LNy = 0.;
-	LNz = pow(M, 5./3.) * eta * pow(omega0, -1./3.) * LNhz;
+	/* Define S1, S2, J with proper magnitudes */
+	LNmag = pow(M, 5./3.) * eta * pow(omega0, -1./3.);
 	s1x = m1 * m1 * chi1 * s1hatx;
 	s1y = m1 * m1 * chi1 * s1haty;
 	s1z = m1 * m1 * chi1 * s1hatz;
 	s2x = m2 * m2 * chi2 * s2hatx;
 	s2y = m2 * m2 * chi2 * s2haty;
 	s2z = m2 * m2 * chi2 * s2hatz;
-	Jx = LNx + s1x + s2x;
-	Jy = LNy + s1y + s2y;
-	Jz = LNz + s1z + s2z;
+	Jx = s1x + s2x;
+	Jy = s1y + s2y;
+	Jz = LNmag * LNhz + s1z + s2z;
 
 	/* Normalize J to Jhat, find it's angles in starting frame */
 	Jnorm = sqrt( Jx*Jx + Jy*Jy + Jz*Jz);
@@ -1071,33 +1395,53 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 	theta0 = acos(Jhatz);
 	phi0 = atan2(Jhaty, Jhatx);
 
-	/* Rotate about z-axis by -phi0 to put Jhat in x-z plane */
+	/* Rotation 1: Rotate about z-axis by -phi0 to put Jhat in x-z plane */
 	ROTATEZ(-phi0, LNhx, LNhy, LNhz);
 	ROTATEZ(-phi0, s1hatx, s1haty, s1hatz);
 	ROTATEZ(-phi0, s2hatx, s2haty, s2hatz);
 	ROTATEZ(-phi0, Jhatx, Jhaty, Jhatz);
 
-	/* Rotate about new y-axis by theta0 - thetaJN to put Jhat at
-	   desired inclination relative to direction of propagation */
-	ROTATEY(theta0 - thetaJN, LNhx, LNhy, LNhz);
-	ROTATEY(theta0 - thetaJN, s1hatx, s1haty, s1hatz);
-	ROTATEY(theta0 - thetaJN, s2hatx, s2haty, s2hatz);
-	ROTATEY(theta0 - thetaJN, Jhatx, Jhaty, Jhatz);
+	/* Rotation 2: Rotate about new y-axis by -theta0
+	 * to put Jhat along z-axis
+	 */
+	ROTATEY(-theta0, LNhx, LNhy, LNhz);
+	ROTATEY(-theta0, s1hatx, s1haty, s1hatz);
+	ROTATEY(-theta0, s2hatx, s2haty, s2hatz);
+	ROTATEY(-theta0, Jhatx, Jhaty, Jhatz);
 
-	/* Rotate about new z-axis by phiJN to put J at desired azimuth */
-	ROTATEZ(phiJN, LNhx, LNhy, LNhz);
-	ROTATEZ(phiJN, s1hatx, s1haty, s1hatz);
-	ROTATEZ(phiJN, s2hatx, s2haty, s2hatz);
-	ROTATEZ(phiJN, Jhatx, Jhaty, Jhatz);
+	/* Rotation 3: Rotate about new z-axis by phiJL to put L at desired
+	 * azimuth about J. Note that is currently in x-z plane towards -x
+	 * (i.e. azimuth=pi). Hence we rotate about z by phiJL - LAL_PI
+	 */
+	ROTATEZ(phiJL - LAL_PI, LNhx, LNhy, LNhz);
+	ROTATEZ(phiJL - LAL_PI, s1hatx, s1haty, s1hatz);
+	ROTATEZ(phiJL - LAL_PI, s2hatx, s2haty, s2hatz);
+	ROTATEZ(phiJL - LAL_PI, Jhatx, Jhaty, Jhatz);
 
-	/* E1 is at same azimuth as LNhat, but its zenith is an extra pi/2.
-	   Same as sin(theta) -> cos(theta), cos(theta) -> -sin(theta) */
-	thetaLN = acos(LNhz);
-	phiLN = atan2(LNhy, LNhx);
-	e1x = cos(thetaLN)*cos(phiLN);
-	e1y = cos(thetaLN)*sin(phiLN);
-	e1z = -sin(thetaLN);
+	/* Rotation 4: Let N be in x-z plane, inclined from J by thetaJN.
+	 * We don't need to explicitly construct it, but rotating the system
+	 * about the y-axis by - thetaJN will bring N onto the z-axis.
+	 */
+	ROTATEY(-thetaJN, LNhx, LNhy, LNhz);
+	ROTATEY(-thetaJN, s1hatx, s1haty, s1hatz);
+	ROTATEY(-thetaJN, s2hatx, s2haty, s2hatz);
+	ROTATEY(-thetaJN, Jhatx, Jhaty, Jhatz);
 
+	/* Rotation 5: We already have N along z. To complete the
+	 * transformation into the radiation frame we rotate s.t.
+	 * LNhat is in the x-z plane. Thus, if LNhat has azimuth phi0,
+	 * we rotate about the z-axis by -phi0.
+	 */
+	phi0 = atan2(LNhy, LNhx);
+	ROTATEZ(-phi0, LNhx, LNhy, LNhz);
+	ROTATEZ(-phi0, s1hatx, s1haty, s1hatz);
+	ROTATEZ(-phi0, s2hatx, s2haty, s2hatz);
+	ROTATEZ(-phi0, Jhatx, Jhaty, Jhatz);
+
+	/* We have completed the transformation. Now find the inclination
+	 * of LN relative to N (the final z-axis). */
+	*incl = acos(LNhz);
+	
 	/* Multiply spin unit vectors by chi magnitude (but NOT m_i^2) */
 	s1hatx *= chi1;
 	s1haty *= chi1;
@@ -1106,13 +1450,7 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 	s2haty *= chi2;
 	s2hatz *= chi2;
 
-	/* Set pointers to rotated vector components */
-	*LNhatx = LNhx;
-	*LNhaty = LNhy;
-	*LNhatz = LNhz;
-	*E1x = e1x;
-	*E1y = e1y;
-	*E1z = e1z;
+	/* Set pointers to rotated spin vectors */
 	*S1x = s1hatx;
 	*S1y = s1haty;
 	*S1z = s1hatz;
@@ -1134,23 +1472,24 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 int XLALSimInspiralChooseWaveform(
     REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
-    REAL8 phi0,                                 /**< peak phase */
-    REAL8 deltaT,                               /**< sampling interval */
-    REAL8 m1,                                   /**< mass of companion 1 */
-    REAL8 m2,                                   /**< mass of companion 2 */
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
     REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
     REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
     REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
     REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< start frequency (Hz) */
-    REAL8 f_ref,                                /**< reference frequency (Hz) */
-    REAL8 r,                                    /**< distance of source */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
     REAL8 i,                                    /**< inclination of source (rad) */
-    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
@@ -1159,9 +1498,9 @@ int XLALSimInspiralChooseWaveform(
     XLALPrintDeprecationWarning("XLALSimInspiralChooseWaveform", 
             "XLALSimInspiralChooseTDWaveform");
 
-    return XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2,
+    return XLALSimInspiralChooseTDWaveform(hplus, hcross, phiRef, deltaT, m1, m2,
             S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2,
-            interactionFlags, amplitudeO, phaseO, approximant);
+            waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
 }
 
 /**
@@ -1174,23 +1513,24 @@ int XLALSimInspiralChooseWaveform(
 int XLALSimInspiralChooseTDWaveform(
     REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
-    REAL8 phi0,                                 /**< peak phase */
-    REAL8 deltaT,                               /**< sampling interval */
-    REAL8 m1,                                   /**< mass of companion 1 */
-    REAL8 m2,                                   /**< mass of companion 2 */
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
     REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
     REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
     REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
     REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< start frequency (Hz) */
-    REAL8 f_ref,                                /**< reference frequency (Hz) */
-    REAL8 r,                                    /**< distance of source */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
     REAL8 i,                                    /**< inclination of source (rad) */
-    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
@@ -1200,7 +1540,18 @@ int XLALSimInspiralChooseTDWaveform(
     int ret;
     REAL8 v0 = 1.;
 
-    /* Sanity check the input parameters */
+    /* General sanity checks that will abort */
+    /*
+     * If non-GR approximants are added, change the below to
+     * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
+     */
+    if( nonGRparams )
+    {
+        XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    /* General sanity check the input parameters - only give warnings! */
     if( deltaT > 1. )
         XLALPrintWarning("XLAL Warning - %s: Large value of deltaT = %e requested.\nPerhaps sample rate and time step size were swapped?\n", __func__, deltaT);
     if( deltaT < 1./16385. )
@@ -1224,32 +1575,122 @@ int XLALSimInspiralChooseTDWaveform(
     {
         /* non-spinning inspiral-only models */
         case TaylorEt:
-            ret = XLALSimInspiralTaylorEtPNGenerator(hplus, hcross, phi0, v0, deltaT, m1, m2, f_min, r, i, amplitudeO, phaseO);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralTaylorEtPNGenerator(hplus, hcross, phiRef, v0,
+                    deltaT, m1, m2, f_min, r, i, amplitudeO, phaseO);
             break;
+
         case TaylorT1:
-            ret = XLALSimInspiralTaylorT1PNGenerator(hplus, hcross, phi0, v0, deltaT, m1, m2, f_min, r, i, amplitudeO, phaseO);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault( XLALSimInspiralGetFrameAxis(waveFlags)) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault( XLALSimInspiralGetModesChoice(waveFlags)) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( !XLALSimInspiralSpinOrderIsDefault( XLALSimInspiralGetSpinOrder(waveFlags)) )
+                ABORT_NONDEFAULT_SPIN_ORDER(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralTaylorT1PNGenerator(hplus, hcross, phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, i, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO, phaseO);
             break;
+
         case TaylorT2:
-            ret = XLALSimInspiralTaylorT2PNGenerator(hplus, hcross, phi0, v0, deltaT, m1, m2, f_min, r, i, amplitudeO, phaseO);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault( XLALSimInspiralGetFrameAxis(waveFlags)) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault( XLALSimInspiralGetModesChoice(waveFlags)) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( !XLALSimInspiralSpinOrderIsDefault( XLALSimInspiralGetSpinOrder(waveFlags)) )
+                ABORT_NONDEFAULT_SPIN_ORDER(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralTaylorT2PNGenerator(hplus, hcross, phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, i, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO, phaseO);
             break;
+
         case TaylorT3:
-            ret = XLALSimInspiralTaylorT3PNGenerator(hplus, hcross, phi0, v0, deltaT, m1, m2, f_min, r, i, amplitudeO, phaseO);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault( XLALSimInspiralGetFrameAxis(waveFlags)) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault( XLALSimInspiralGetModesChoice(waveFlags)) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( !XLALSimInspiralSpinOrderIsDefault( XLALSimInspiralGetSpinOrder(waveFlags)) )
+                ABORT_NONDEFAULT_SPIN_ORDER(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralTaylorT3PNGenerator(hplus, hcross, phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, i, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO, phaseO);
             break;
+
         case TaylorT4:
-            ret = XLALSimInspiralTaylorT4PNGenerator(hplus, hcross, phi0, v0, deltaT, m1, m2, f_min, r, i, amplitudeO, phaseO);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault( XLALSimInspiralGetFrameAxis(waveFlags)) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault( XLALSimInspiralGetModesChoice(waveFlags)) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( !XLALSimInspiralSpinOrderIsDefault( XLALSimInspiralGetSpinOrder(waveFlags)) )
+                ABORT_NONDEFAULT_SPIN_ORDER(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralTaylorT4PNGenerator(hplus, hcross, phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, i, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO, phaseO);
             break;
 
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
             // NB: f_max = 0 will generate up to the ringdown cut-off frequency
-            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, f_min, 0., r, i);
+            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, phiRef, deltaT,
+                    m1, m2, f_min, 0., r, i);
             break;
+
         case EOBNRv2HM:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
-            ret = XLALSimIMREOBNRv2AllModes(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i);
+            ret = XLALSimIMREOBNRv2AllModes(hplus, hcross, phiRef, deltaT,
+                    m1, m2, f_min, r, i);
             break;
+
         case EOBNRv2:
-            ret = XLALSimIMREOBNRv2DominantMode(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMREOBNRv2DominantMode(hplus, hcross, phiRef, deltaT,
+                    m1, m2, f_min, r, i);
             break;
 
         /* spinning inspiral-only models */
@@ -1261,6 +1702,14 @@ int XLALSimInspiralChooseTDWaveform(
         // L are in the x-z plane) and the spin coordinates are given wrt 
         // initial ** L **.
         case SpinTaylorT4:
+            /* Waveform-specific sanity checks */
+            /* Sanity check unused fields of waveFlags */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -1271,23 +1720,53 @@ int XLALSimInspiralChooseTDWaveform(
              * MAX_PRECESSING_AMP_PN_ORDER */
             amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
-            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phi0, v0, deltaT, 
-                    m1, m2, f_min, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z, 
-                    LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, 
-                    lambda1, lambda2, interactionFlags, phaseO, amplitudeO);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phiRef, v0, deltaT,
+                    m1, m2, f_min, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z,
+                    LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2,
+                    XLALSimInspiralGetSpinOrder(waveFlags),
+                    XLALSimInspiralGetTidalOrder(waveFlags),
+                    phaseO, amplitudeO);
             break;
 
         /* spinning inspiral-merger-ringdown models */
         case IMRPhenomB:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
             // NB: f_max = 0 will generate up to the ringdown cut-off frequency
-            ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z), f_min, 0., r, i);
+            ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phiRef, deltaT,
+                    m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
+                    f_min, 0., r, i);
             break;
+
         case PhenSpinTaylorRD:
+            /* Waveform-specific sanity checks */
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
-	  ret = XLALSimIMRPSpinInspiralRDGenerator(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, S1x, S1y, S1z, S2x, S2y, S2z, phaseO, TotalJ, 0);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPSpinInspiralRDGenerator(hplus, hcross, phiRef,
+                    deltaT, m1, m2, f_min, r, i, S1x, S1y, S1z, S2x, S2y, S2z,
+                    phaseO, XLALSimInspiralGetFrameAxis(waveFlags), 0);
             break;
+
         case SEOBNRv1:
-            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, S1z, S2z);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef, 
+                    deltaT, m1, m2, f_min, r, i, S1z, S2z);
             break;
 
         default:
@@ -1308,23 +1787,24 @@ int XLALSimInspiralChooseTDWaveform(
  */
 int XLALSimInspiralChooseFDWaveform(
     COMPLEX16FrequencySeries **htilde,          /**< FD waveform */
-    REAL8 phi0,                                 /**< peak phase */
-    REAL8 deltaF,                               /**< sampling interval */
-    REAL8 m1,                                   /**< mass of companion 1 */
-    REAL8 m2,                                   /**< mass of companion 2 */
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaF,                               /**< sampling interval (Hz) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
     UNUSED REAL8 S1x,                           /**< x-component of the dimensionless spin of object 1 */
     UNUSED REAL8 S1y,                           /**< y-component of the dimensionless spin of object 1 */
     REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
     UNUSED REAL8 S2x,                           /**< x-component of the dimensionless spin of object 2 */
     UNUSED REAL8 S2y,                           /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< start frequency */
-    REAL8 f_max,                                /**< end frequency */
-    REAL8 r,                                    /**< distance of source */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_max,                                /**< ending GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
     UNUSED REAL8 i,                             /**< inclination of source (rad) */
-    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-    UNUSED LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
@@ -1332,7 +1812,18 @@ int XLALSimInspiralChooseFDWaveform(
 {
     int ret;
 
-    /* Sanity check the input parameters */
+    /* General sanity checks that will abort */
+    /*
+     * If non-GR approximants are added, change the below to
+     * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
+     */
+    if( nonGRparams )
+    {
+        XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    /* General sanity check the input parameters - only give warnings! */
     if( deltaF > 1. )
         XLALPrintWarning("XLAL Warning - %s: Large value of deltaF = %e requested.\nThis corresponds to a very short TD signal (with padding). Consider a smaller value.\n", __func__, deltaF);
     if( deltaF < 1./4096. )
@@ -1356,25 +1847,78 @@ int XLALSimInspiralChooseFDWaveform(
     {
         /* non-spinning inspiral-only models */
         case TaylorF2:
-            ret = XLALSimInspiralTaylorF2(htilde, phi0, deltaF, m1, m2, f_min, r, phaseO);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( !XLALSimInspiralSpinOrderIsDefault(
+                    XLALSimInspiralGetSpinOrder(waveFlags) ) )
+                ABORT_NONDEFAULT_SPIN_ORDER(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralTaylorF2(htilde, phiRef, deltaF, m1, m2, f_min,
+                    r, lambda1, lambda2,XLALSimInspiralGetTidalOrder(waveFlags),
+                    phaseO, amplitudeO);
             break;
 
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
-            ret = XLALSimIMRPhenomAGenerateFD(htilde, phi0, deltaF, m1, m2, f_min, f_max, r);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomAGenerateFD(htilde, phiRef, deltaF, m1, m2,
+                    f_min, f_max, r);
             break;
 
         /* spinning inspiral-only models */
         case TaylorF2RedSpin:
-            ret = XLALSimInspiralTaylorF2ReducedSpin(htilde, phi0, deltaF, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z), f_min, r, phaseO, amplitudeO);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralTaylorF2ReducedSpin(htilde, phiRef, deltaF,
+                    m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
+                    f_min, r, phaseO, amplitudeO);
             break;
+
         case TaylorF2RedSpinTidal:
-            ret = XLALSimInspiralTaylorF2ReducedSpinTidal(htilde, phi0, deltaF, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z), lambda1, lambda2, f_min, r, phaseO, amplitudeO);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralTaylorF2ReducedSpinTidal(htilde, phiRef, deltaF,
+                    m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
+                    lambda1, lambda2, f_min, r, phaseO, amplitudeO);
             break;
 
         /* spinning inspiral-merger-ringdown models */
         case IMRPhenomB:
-            ret = XLALSimIMRPhenomBGenerateFD(htilde, phi0, deltaF, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z), f_min, f_max, r);
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomBGenerateFD(htilde, phiRef, deltaF, m1, m2,
+                    XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
+                    f_min, f_max, r);
             break;
 
         default:
@@ -1386,6 +1930,250 @@ int XLALSimInspiralChooseFDWaveform(
         XLAL_ERROR(XLAL_EFUNC);
 
     return ret;
+}
+
+
+/**
+ * Interface to compute a set of -2 spin-weighted spherical harmonic modes
+ * for a binary inspiral of any available amplitude and phase PN order.
+ * The phasing is computed with any of the TaylorT1, T2, T3, T4 methods.
+ */
+SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    int lmax,                                   /**< generate all modes with l <= lmax */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+    REAL8 v0 = 1.;
+    SphHarmTimeSeries *hlm;
+
+    /* General sanity checks that will abort */
+    /*
+     * If non-GR approximants are added, change the below to
+     * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
+     */
+    if( nonGRparams )
+    {
+        XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+
+    /* General sanity check the input parameters - only give warnings! */
+    if( deltaT > 1. )
+        XLALPrintWarning("XLAL Warning - %s: Large value of deltaT = %e requested.\nPerhaps sample rate and time step size were swapped?\n", __func__, deltaT);
+    if( deltaT < 1./16385. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of deltaT = %e requested.\nCheck for errors, this could create very large time series.\n", __func__, deltaT);
+    if( m1 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
+    if( m2 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
+    if( m1 + m2 > 1000. * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested.\nSignal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
+    if( f_min < 1. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested.\nCheck for errors, this could create a very long waveform.\n", __func__, f_min);
+    if( f_min > 40.000001 )
+        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested.\nCheck for errors, the signal will start in band.\n", __func__, f_min);
+
+    switch (approximant)
+    {
+        case TaylorT1:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags);
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralTaylorT1PNModes(phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
+                    phaseO, lmax);
+            break;
+        case TaylorT2:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags);
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralTaylorT2PNModes(phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
+                    phaseO, lmax);
+            break;
+        case TaylorT3:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags);
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralTaylorT3PNModes(phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
+                    phaseO, lmax);
+            break;
+        case TaylorT4:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags)) )
+                ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags)) )
+                ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags);
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralTaylorT4PNModes(phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
+                    phaseO, lmax);
+            break;
+
+        default:
+            XLALPrintError("Cannot generate modes for this approximant\n");
+            XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+    if ( !hlm )
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+
+    return hlm;
+}
+
+/**
+ * Interface to compute a single -2 spin-weighted spherical harmonic mode
+ * for a binary inspiral of any available amplitude and phase PN order.
+ * The phasing is computed with any of the TaylorT1, T2, T3, T4 methods.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralChooseTDMode(
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    int l,                                      /**< l index of mode */
+    int m,                                      /**< m index of mode */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+    REAL8 v0 = 1.;
+    COMPLEX16TimeSeries *hlm;
+
+    /* General sanity checks that will abort */
+    /*
+     * If non-GR approximants are added, change the below to
+     * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
+     */
+    if( nonGRparams )
+    {
+        XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+
+    /* General sanity check the input parameters - only give warnings! */
+    if( deltaT > 1. )
+        XLALPrintWarning("XLAL Warning - %s: Large value of deltaT = %e requested.\nPerhaps sample rate and time step size were swapped?\n", __func__, deltaT);
+    if( deltaT < 1./16385. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of deltaT = %e requested.\nCheck for errors, this could create very large time series.\n", __func__, deltaT);
+    if( m1 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
+    if( m2 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
+    if( m1 + m2 > 1000. * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested.\nSignal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
+    if( f_min < 1. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested.\nCheck for errors, this could create a very long waveform.\n", __func__, f_min);
+    if( f_min > 40.000001 )
+        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested.\nCheck for errors, the signal will start in band.\n", __func__, f_min);
+
+    switch (approximant)
+    {
+        case TaylorT1:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags)) )
+                ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags)) )
+                ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags);
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralTaylorT1PNMode(phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
+                    phaseO, l, m);
+            break;
+        case TaylorT2:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags)) )
+                ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags)) )
+                ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags);
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralTaylorT2PNMode(phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
+                    phaseO, l, m);
+            break;
+        case TaylorT3:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault( XLALSimInspiralGetFrameAxis(waveFlags)) )
+                ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault( XLALSimInspiralGetModesChoice(waveFlags)) )
+                ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags);
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralTaylorT3PNMode(phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
+                    phaseO, l, m);
+            break;
+        case TaylorT4:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags);
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralTaylorT4PNMode(phiRef, v0,
+                    deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
+                    XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
+                    phaseO, l, m);
+            break;
+
+        default:
+            XLALPrintError("Cannot generate modes for this approximant\n");
+            XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+    if ( !hlm )
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+
+    return hlm;
 }
 
 
@@ -1621,6 +2409,98 @@ int XLALGetApproximantFromString(const CHAR *inString)
 }
 
 /** 
+ * XLAL function to determine string from approximant enum.  
+ * This function needs to be updated when new approximants are added. 
+ */
+char* XLALGetStringFromApproximant(Approximant approximant)
+{
+  switch (approximant)
+  {
+    case TaylorF2RedSpinTidal:
+      return strdup("TaylorF2RedSpinTidal");
+    case TaylorF2RedSpin:
+      return strdup("TaylorF2RedSpin");
+    case TaylorF2:
+      return strdup("TaylorF2");
+    case PhenSpinTaylorRDF:
+      return strdup("PhenSpinTaylorRDF");
+    case PhenSpinTaylorRD:
+      return strdup("PhenSpinTaylorRD");
+    case SpinTaylorT4:
+      return strdup("SpinTaylorT4");
+    case SpinTaylorFrameless:
+      return strdup("SpinTaylorFrameless");
+    case SpinTaylorT3:
+      return strdup("SpinTaylorT3");
+    case SpinTaylor:
+      return strdup("SpinTaylor");
+    case SpinQuadTaylor:
+      return strdup("SpinQuadTaylor");
+    case TaylorT1:
+      return strdup("TaylorT1");
+    case TaylorT2:
+      return strdup("TaylorT2");
+    case TaylorT3:
+      return strdup("TaylorT3");
+    case TaylorT4:
+      return strdup("TaylorT4");
+    case IMRPhenomA:
+      return strdup("IMRPhenomA");
+    case IMRPhenomB:
+      return strdup("IMRPhenomB");
+    case IMRPhenomFA:
+      return strdup("IMRPhenomFA");
+    case IMRPhenomFB:
+      return strdup("IMRPhenomFB");
+    case SEOBNRv1:
+      return strdup("SEOBNRv1");
+    case EOBNRv2HM:
+      return strdup("EOBNRv2HM");
+    case EOBNRv2:
+      return strdup("EOBNRv2");
+    case EOBNR:
+      return strdup("EOBNR");
+    case EOB:
+      return strdup("EOB");
+    case AmpCorPPN:
+      return strdup("AmpCorPPN");
+    case GeneratePPN:
+      return strdup("GeneratePPN");
+    case NumRelNinja2:
+      return strdup("NumRelNinja2");
+    case NumRel:
+      return strdup("NumRel");
+    case FindChirpSP:
+      return strdup("FindChirpSP");
+    case FindChirpPTF:  
+      return strdup("FindChirpPTF");
+    case TaylorEt:
+      return strdup("TaylorET");
+    case TaylorN:  
+      return strdup("TaylorN");
+    case TaylorF1:
+      return strdup("TaylorF1");
+    case PadeT1:
+      return strdup("PadeT1");
+    case PadeF1:
+      return strdup("PadeF1");
+    case BCVSpin:
+      return strdup("BCVSpin");
+    case BCVC:
+      return strdup("BCVC");
+    case BCV:
+      return strdup("BCV");
+    case FrameFile:
+      return strdup("FrameFile");
+    case Eccentricity:
+      return strdup("Eccentricity");
+    default:
+        XLALPrintError("Not a valid approximant\n");
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+}
+
+/** 
  * XLAL function to determine PN order from a string.  The string need not 
  * match exactly, only contain a member of the LALPNOrder enum.
  */
@@ -1741,18 +2621,19 @@ int XLALGetInteractionFromString(const CHAR *inString)
 }
 
 /** 
- * XLAL function to determine axis choice flag from a string.  The string need 
- * not match exactly, only contain a member of the FrameAxis enum.  Will return
- * default case 'View' (line of sight) if the string contains no match.
+ * XLAL function to determine axis choice flag from a string.
+ * The string need not match exactly, only contain a member 
+ * of the LALSimInspiralFrameAxis enum.  Will return default case 
+ * 'View' (line of sight) if the string contains no match.
  */
 int XLALGetFrameAxisFromString(const CHAR *inString) 
 {
   if (strstr(inString, "TotalJ"))
-    return TotalJ;
+    return LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J;
   else if (strstr(inString, "OrbitalL"))
-    return OrbitalL;
+    return LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L;
   else
-    return View;
+    return LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW;
 }
 
 /** 

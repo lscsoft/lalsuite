@@ -16,12 +16,15 @@
 #ifndef _LALSIMIMRSPINEOBINITIALCONDITIONS_C
 #define _LALSIMIMRSPINEOBINITIALCONDITIONS_C
 
+/**
+ * Structure consisting SEOBNR parameters that can be used by gsl root finders
+ */
 typedef
 struct tagSEOBRootParams
 {
-  REAL8         values[12];
-  SpinEOBParams *params;
-  REAL8         omega;
+  REAL8          values[12]; /**<< Dynamical variables, x, y, z, px, py, pz, S1x, S1y, S1z, S2x, S2y and S2z */
+  SpinEOBParams *params;     /**<< Spin EOB parameters -- physical, pre-computed, etc. */
+  REAL8          omega;      /**<< Orbital frequency */
 }
 SEOBRootParams;
 
@@ -65,19 +68,21 @@ NormalizeVector( REAL8 a[] )
 }
 
 /**
- * Calculate the rotation matrix and its inverse
+ * Calculate the rotation matrix and its inverse.
+ * Rotate the ex-ey-ez frame to the r-v-L frame.
+ * This static function is called only by XLALSimIMRSpinEOBInitialConditions
  */
 static int
 CalculateRotationMatrix(
-                gsl_matrix *rotMatrix,
-                gsl_matrix *rotInverse,
-                REAL8       r[],
-                REAL8       v[],
-                REAL8       L[]
+                gsl_matrix *rotMatrix,  /**< OUTPUT, rotation matrix */
+                gsl_matrix *rotInverse, /**< OUTPUT, rotation matrix inversed */
+                REAL8       r[],        /**< position vector */
+                REAL8       v[],        /**< velocity vector */
+                REAL8       L[]         /**< orbital angular momentum */
                 )
 {
 
-  /* a, b, g are the angles alpha, beta and gamma */
+  /** a, b, g are the angles alpha, beta and gamma */
   /* Use a, b and g to avoid shadowing gamma and getting a warning */
   REAL8 a, b, g;
   REAL8 cosa, sina, cosb, sinb, cosg, sing;
@@ -103,6 +108,11 @@ CalculateRotationMatrix(
   if ( ( cosg = cos( g ) ) < 1.0e-16 ) cosg = 0.0;
   if ( ( sing = sin( g ) ) < 1.0e-16 ) sing = 0.0;
 
+  /** Implement the Rotation Matrix following the "x-convention"
+   *  1. rotate about the z-axis by an angle a, rotation matrix Rz(a);
+   *  2. rotate about the former x-axis (now x') by an angle b, rotation matrix Rx(b);
+   *  3. rotate about the former z-axis (now z') by an algle g, rotation matrix Rz(g); 
+   */
   /* populate the matrix */
   gsl_matrix_set( rotMatrix, 0, 0, cosg*cosa - cosb*sina*sing );
   gsl_matrix_set( rotMatrix, 0, 1, cosg*sina + cosb*cosa*sing );
@@ -118,8 +128,9 @@ CalculateRotationMatrix(
   gsl_matrix_transpose_memcpy( rotInverse, rotMatrix );
 
   /* Test that the code does what it should do */
-  gsl_matrix *ab = gsl_matrix_alloc( 3, 3 );
-  gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1., rotMatrix, rotInverse, 0., ab );
+  /* gsl_matrix *ab = gsl_matrix_alloc( 3, 3 );
+     gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1., rotMatrix, rotInverse, 0., ab );
+   */
 
   /*printf( "The generated rotation matrix:?\n" );
   for ( int i = 0; i < 3; i++ )
@@ -140,7 +151,7 @@ CalculateRotationMatrix(
     }
     printf( "\n" );
   }*/
-  gsl_matrix_free( ab );
+  /*gsl_matrix_free( ab );*/
 
   return XLAL_SUCCESS;
 }
@@ -151,8 +162,8 @@ CalculateRotationMatrix(
  */
 static int
 ApplyRotationMatrix(
-             gsl_matrix *rotMatrix,
-             REAL8      a[]
+             gsl_matrix *rotMatrix, /**< rotation matrix */
+             REAL8      a[]         /**< OUTPUT, vector rotated */
                    )
 {
 
@@ -177,15 +188,16 @@ ApplyRotationMatrix(
 
 /**
  * Performs a co-ordinate transformation from spherical to Cartesian co-ordinates.
- * In the code from Tyson, this was only applicable to the theta=pi/2, phi=0 case
- * TODO: Make sure I do not need anything more general
+ * In the code from Tyson Littenberg, this was only applicable to the special theta=pi/2, phi=0 case.
+ * This special transformation is a static function called only by 
+ * GSLSpinHamiltonianDerivWrapper and XLALSimIMRSpinEOBInitialConditions
  */
 static int SphericalToCartesian(
-                      REAL8 qCart[],
-                      REAL8 pCart[],
-                      const REAL8 qSph[],
-                      const REAL8 pSph[]
-                      )
+                 REAL8 qCart[],      /**<< OUTPUT, position vector in Cartesean coordinates */
+                 REAL8 pCart[],      /**<< OUTPUT, momentum vector in Cartesean coordinates */
+                 const REAL8 qSph[], /**<< position vector in spherical coordinates */
+                 const REAL8 pSph[]  /**<< momentum vector in spherical coordinates */
+                 )
 {
 
   REAL8 r;
@@ -221,15 +233,15 @@ static int SphericalToCartesian(
 
 /**
  * Perform a co-ordinate transformation from Cartesian to spherical co-ordinates.
- * As taken from Tyson's code, this only applies for theta=pi/2, phi=0.
- * TODO: Check this is general enough.
+ * In the code from Tyson Littenberg, this was only applicable to the special theta=pi/2, phi=0 case.
+ * This special transformation is a static function called only by XLALSimIMRSpinEOBInitialConditions
  */
 static int CartesianToSpherical(
-                      REAL8 qSph[],
-                      REAL8 pSph[],
-                      const REAL8 qCart[],
-                      const REAL8 pCart[]
-                      )
+                 REAL8 qSph[],        /**<< OUTPUT, position vector in spherical coordinates */
+                 REAL8 pSph[],        /**<< OUTPUT, momentum vector in Cartesean coordinates */
+                 const REAL8 qCart[], /**<< position vector in spherical coordinates */
+                 const REAL8 pCart[]  /**<< momentum vector in Cartesean coordinates */
+                 )
 {
 
   REAL8 r;
@@ -261,11 +273,18 @@ static int CartesianToSpherical(
   return XLAL_SUCCESS;
 }
 
-
+/**
+ * Root function for gsl root finders.
+ * The gsl root finder with look for gsl_vector *x position in parameter space
+ * where the returned values in gsl_vector *f are zero.
+ * The functions on which we search for roots are:
+ * dH/dr, dH/dptheta and dH/dpphi-omega, 
+ * namely, Eqs. 4.8 and 4.9 of Buonanno et al. PRD 74, 104005 (2006).
+ */
 static int
-XLALFindSphericalOrbit( const gsl_vector *x,
-                        void *params,
-                        gsl_vector *f
+XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl root finder */
+                        void *params,        /**<< Spin EOB parameters */
+                        gsl_vector *f        /**<< Function values for the given parameters */
                       )
 {
 
@@ -278,6 +297,7 @@ XLALFindSphericalOrbit( const gsl_vector *x,
   REAL8 dHdr, dHdptheta, dHdpphi;
 
   /* Populate the appropriate values */
+  /* In the special theta=pi/2 phi=0 case, r is x */
   rootParams->values[0] = r  = gsl_vector_get( x, 0 );
   rootParams->values[4] = py = gsl_vector_get( x, 1 );
   rootParams->values[5] = pz = gsl_vector_get( x, 2 );
@@ -328,9 +348,13 @@ XLALFindSphericalOrbit( const gsl_vector *x,
 }
 
 
-/* Wrapper for calculating the second derivative of the Hamiltonian in spherical co-ordinates */
-/* It only works for the specific co-ord system we use here */
-static double GSLSpinHamiltonianDerivWrapper( double x, void *params )
+/** 
+ * Wrapper for calculating specific derivative of the Hamiltonian in spherical co-ordinates,
+ * dH/dr, dH/dptheta and dH/dpphi.
+ * It only works for the specific co-ord system we use here 
+ */
+static double GSLSpinHamiltonianDerivWrapper( double x,    /**<< Derivative at x */
+                                              void  *params /**<< Function parameters */)
 {
 
   HcapSphDeriv2Params *dParams = (HcapSphDeriv2Params *) params;
@@ -386,11 +410,11 @@ static double GSLSpinHamiltonianDerivWrapper( double x, void *params )
 /* Function to calculate the second derivative of the Hamiltonian. */
 /* The derivatives are taken with respect to indices idx1, idx2    */
 static REAL8 XLALCalculateSphHamiltonianDeriv2(
-                                       const int idx1,
-                                       const int idx2,
-                                       const REAL8 values[],
-                                       SpinEOBParams *params
-                                       )
+                 const int      idx1,     /**<< Derivative w.r.t. index 1 */
+                 const int      idx2,     /**<< Derivative w.r.t. index 2 */
+                 const REAL8    values[], /**<< Dynamical variables in spherical coordinates */
+                 SpinEOBParams *params    /**<< Spin EOB Parameters */
+                 )
 {
 
   static const REAL8 STEP_SIZE = 1.0e-5;
@@ -441,22 +465,45 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
   return result;
 }
 
-
-
-
 /**
- * Main function for calculating the spinning EOB initial conditions
+ * Main function for calculating the spinning EOB initial conditions, following the 
+ * quasi-spherical initial conditions described in Sec. IV A of 
+ * Buonanno, Chen & Damour PRD 74, 104005 (2006).
+ * All equation numbers in the comments of this function refer to this paper.
+ * Inputs are binary parameters (masses, spin vectors and inclination), 
+ * EOB model parameters and initial frequency.
+ * Outputs are initial dynamical variables in a vector 
+ * (x, y, z, px, py, pz, S1x, S1y, S1z, S2x, S2y, S2z).
+ * In the paper, the initial conditions are solved for a given initial radius, 
+ * while in this function, they are solved for a given inital orbital frequency. 
+ * This difference is reflected in solving Eq. (4.8).
+ * The calculation is done in 5 steps:
+ * STEP 1) Rotate to LNhat0 along z-axis and N0 along x-axis frame, where 
+ *         LNhat0 and N0 are initial normal to orbital plane and initial orbital separation;
+ * STEP 2) After rotation in STEP 1, in spherical coordinates, 
+ *         phi0 and theta0 are given directly in Eq. (4.7),
+ *         r0, pr0, ptheta0 and pphi0 are obtained by solving Eqs. (4.8) and (4.9) 
+ *         (using gsl_multiroot_fsolver).
+ *         At this step, we find initial conditions for a spherical orbit without 
+ *         radiation reaction.
+ * STEP 3) Rotate to L0 along z-axis and N0 along x-axis frame, where 
+ *         L0 is the initial orbital angular momentum and
+ *         L0 is calculated using initial position and linear momentum obtained in STEP 2.
+ * STEP 4) In the L0-N0 frame, we calculate (dE/dr)|sph using Eq. (4.14), 
+ *         then initial dr/dt using Eq. (4.10), and finally pr0 using Eq. (4.15).
+ * STEP 5) Rotate back to the original inertial frame by inverting the rotation of STEP 3 and
+ *         then inverting the rotation of STEP 1.
  */
 
 static int XLALSimIMRSpinEOBInitialConditions(
-                      REAL8Vector   *initConds,
-                      const REAL8    mass1,
-                      const REAL8    mass2,
-                      const REAL8    fMin,
-                      const REAL8    inc,
-                      const REAL8    spin1[],
-                      const REAL8    spin2[],
-                      SpinEOBParams *params
+                      REAL8Vector   *initConds, /**<< OUTPUT, Initial dynamical variables */
+                      const REAL8    mass1,     /**<< mass 1 */
+                      const REAL8    mass2,     /**<< mass 2 */
+                      const REAL8    fMin,      /**<< Initial frequency (given) */
+                      const REAL8    inc,       /**<< Inclination */
+                      const REAL8    spin1[],   /**<< Initial spin vector 1 */
+                      const REAL8    spin2[],   /**<< Initial spin vector 2 */
+                      SpinEOBParams *params     /**<< Spin EOB parameters */
                       )
 {
 
@@ -526,7 +573,6 @@ static int XLALSimIMRSpinEOBInitialConditions(
   int gslStatus;
   const int maxIter = 100;
 
-
   memset( &rootParams, 0, sizeof( rootParams ) );
 
   memcpy( tmpS1, spin1, sizeof(tmpS1) );
@@ -539,6 +585,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
   tmpTortoise      = params->tortoise;
   params->tortoise = 0;
 
+  /* STEP 1) Rotate to LNhat0 along z-axis and N0 along x-axis frame, where LNhat0 and N0 are initial normal to 
+   *         orbital plane and initial orbital separation;
+   */
+ 
   /* Set the initial orbital ang mom direction. Taken from STPN code */
   LnHat[0] = sin(inc);
   LnHat[1] = 0.;
@@ -552,7 +602,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
   }
   else
   {
-    REAL8 theta0 = atan( - LnHat[2] / LnHat[0] );
+    REAL8 theta0 = atan( - LnHat[2] / LnHat[0] ); /* theta0 is between 0 and Pi */
     rHat[0] = sin( theta0 );
     rHat[1] = 0;
     rHat[2] = cos( theta0 );
@@ -613,6 +663,11 @@ static int XLALSimIMRSpinEOBInitialConditions(
   {
     printf ( " s1[%d] = %.16e, s2[%d] = %.16e\n", i, tmpS1[i], i, tmpS2[i] );
   }*/
+
+  /* STEP 2) After rotation in STEP 1, in spherical coordinates, phi0 and theta0 are given directly in Eq. (4.7),
+   *         r0, pr0, ptheta0 and pphi0 are obtained by solving Eqs. (4.8) and (4.9) (using gsl_multiroot_fsolver).
+   *         At this step, we find initial conditions for a spherical orbit without radiation reaction.
+   */
 
   /* Calculate the initial velocity from the given initial frequency */
   omega = LAL_PI * mTotal * LAL_MTSUN_SI * fMin;
@@ -705,6 +760,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
   gsl_multiroot_fsolver_free( rootSolver );
   gsl_vector_free( initValues );
 
+  /* STEP 3) Rotate to L0 along z-axis and N0 along x-axis frame, where L0 is the initial orbital angular momentum
+   *         and L0 is calculated using initial position and linear momentum obtained in STEP 2.
+   */
+
   /* Now we can calculate the relativistic L and rotate to a new basis */
   memcpy( qHat, qCart, sizeof(qCart) );
   memcpy( pHat, pCart, sizeof(pCart) );
@@ -735,6 +794,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
   ApplyRotationMatrix( rotMatrix2, tmpS2 );
   ApplyRotationMatrix( rotMatrix2, qCart );
   ApplyRotationMatrix( rotMatrix2, pCart );
+
+  /* STEP 4) In the L0-N0 frame, we calculate (dE/dr)|sph using Eq. (4.14), then initial dr/dt using Eq. (4.10),
+   *         and finally pr0 using Eq. (4.15).
+   */
 
   /* Now we can calculate the flux. Change to spherical co-ords */
   CartesianToSpherical( qSph, pSph, qCart, pCart );
@@ -788,7 +851,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
 
     /* The a in the flux has been set to zero, but not in the Hamiltonian */
     a = sqrt(sKerr.data[0]*sKerr.data[0] + sKerr.data[1]*sKerr.data[1] + sKerr.data[2]*sKerr.data[2]);
-    XLALSimIMREOBCalcSpinFacWaveformCoefficients( params->eobParams->hCoeffs, eta, /*a*/0.0, chiS, chiA );
+    XLALSimIMREOBCalcSpinFacWaveformCoefficients( params->eobParams->hCoeffs, mass1, mass2, eta, /*a*/0.0, chiS, chiA );
     XLALSimIMRCalculateSpinEOBHCoeffs( params->seobCoeffs, eta, a );
 
     ham = XLALSimIMRSpinEOBHamiltonian( eta, &qCartVec, &pCartVec, &sKerr, &sStar, params->tortoise, params->seobCoeffs );
@@ -832,6 +895,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
 
   /* Now we are done - convert back to cartesian coordinates ) */
   SphericalToCartesian( qCart, pCart, qSph, pSph );
+
+  /* STEP 5) Rotate back to the original inertial frame by inverting the rotation of STEP 3 and then  
+   *         inverting the rotation of STEP 1.
+   */
 
   /* Undo rotations to get back to the original basis */
   /* Second rotation */

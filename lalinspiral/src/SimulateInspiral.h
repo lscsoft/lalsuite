@@ -36,12 +36,12 @@ extern "C" {
    \addtogroup SimulateInspiral_h
    \author Creighton, T. D.
 
-\brief Provides a routine to inject inspirals into time series data.
+   \brief Provides a routine to inject inspirals into time series data.
 
-\section synopsis Synopsis
-\code
-#include <lal/SimulateInspiral.h>
-\endcode
+   \section synopsis Synopsis
+   \code
+   #include <lal/SimulateInspiral.h>
+   \endcode
 
 The routines in \ref GeneratePPNInspiral_h, \ref SimulateCoherentGW_h,
 and \ref Inject_h provide a powerful
@@ -271,48 +271,36 @@ probability of a noise sample \f$n(t_k)\f$ lying in an infinitesimal range
 /** \endcond */
 
 /** This structure stores the parameters required to simulate a
-set of inspiral signal in white Gaussian noise.  It can be part of a
-linked list of inspiral events, to allow for multiple injections.  It
-consists of the following fields:
-
-<dl>
-<dt><tt>LIGOTimeGPS timeC</tt></dt><dd> The time of coalescence.</dd>
-
-<dt><tt>REAL4 phiC</tt></dt><dd> The wave phase at coalescence, in radians.</dd>
-
-<dt><tt>REAL4 mass1, mass2</tt></dt><dd> The masses of the binary
-components, in \f$M_\odot\f$.</dd>
-
-<dt><tt>REAL4 signalAmplitude, effDist</tt></dt><dd> The characteristic
-detection amplitude \f$A_c\f$, in ADC counts, and the effective distance
-in Mpc of an optimally-oriented source that would give that amplitude.
-A negative number means the quantity is unspecified.  In general only
-one of these must be specified by the user; the simulation routine
-will set the other to be consistent with the first.</dd>
-
-<dt><tt>REAL4 fStart</tt></dt><dd> The lower cutoff frequency at which
-waveform generation will begin, in Hz.  If \f$\leq0\f$, the cutoff
-frequency will be taken as the point where the instrument sensitivity
-function is \f$\sim10^{-6}\f$ of its optimal value, as determined from the
-transfer function.</dd>
-
-<dt><tt>SimulateInspiralParamStruc *next</tt></dt><dd> Pointer to another
-inspiral event to be injected, or \c NULL if this is the last (or
-only) injection.</dd>
-</dl>
-*/
+ * set of inspiral signal in white Gaussian noise.  It can be part of a
+ * linked list of inspiral events, to allow for multiple injections.
+ */
 typedef struct tagSimulateInspiralParamStruc {
   LIGOTimeGPS timeC;      /**< time of coalescence */
-  REAL4 phiC;             /**< phase at coalescence */
-  REAL4 mass1, mass2;     /**< binary masses (solar masses) */
-  REAL4 signalAmplitude;  /**< characteristic amplitude (counts) */
-  REAL4 effDist;          /**< effective distance (Mpc) */
-  REAL4 fStart;           /**< waveform start frequency (Hz) */
-  struct tagSimulateInspiralParamStruc *next; /**< next node in list */
+  REAL4 phiC;             /**< The wave phase at coalescence, in radians */
+  REAL4 mass1, mass2;     /**< The masses of the binary components, in \f$M_\odot\f$ */
+
+  /** \name Amplitude.
+   * The characteristic detection amplitude \f$A_c\f$, in ADC counts, and the effective distance
+   * in Mpc of an optimally-oriented source that would give that amplitude.
+   * A negative number means the quantity is unspecified.  In general only
+   * one of these must be specified by the user; the simulation routine
+   * will set the other to be consistent with the first
+   */
+  /*@{*/
+  REAL4 signalAmplitude;
+  REAL4 effDist;
+  /*@}*/
+  REAL4 fStart;           /**< The lower cutoff frequency at which
+                           * waveform generation will begin, in Hz;  If \f$\leq0\f$, the cutoff
+                           * frequency will be taken as the point where the instrument sensitivity
+                           * function is \f$\sim10^{-6}\f$ of its optimal value, as determined from the
+                           * transfer function
+                           */
+  struct tagSimulateInspiralParamStruc *next; /**< Pointer to another inspiral event to be injected, or \c NULL if this is the last (or only) injection */
 } SimulateInspiralParamStruc;
 
 
-/* Function prototypes. */
+/* ---------- Function prototypes ---------- */
 
 void
 LALSimulateInspiral( LALStatus                  *,
@@ -320,7 +308,7 @@ LALSimulateInspiral( LALStatus                  *,
 		     COMPLEX8FrequencySeries    *transfer,
 		     SimulateInspiralParamStruc *params );
 
-/*@}*/
+/*@}*/ /* end:SimulateInspiral_h */
 
 #if 0
 { /* so that editors will match succeeding brace */

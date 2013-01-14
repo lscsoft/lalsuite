@@ -103,8 +103,6 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
  BinaryPulsarParams params, BarycenterInput bary, EphemerisData *edat );
 
 int main(int argc, char *argv[]){
-  static LALStatus status;
-
   InputParams inputs;
 
   FILE *fp=NULL;
@@ -154,10 +152,8 @@ int main(int argc, char *argv[]){
   baryinput.site.location[1] /= LAL_C_SI;
   baryinput.site.location[2] /= LAL_C_SI;
 
-  edat = XLALMalloc(sizeof(*edat));
-  (*edat).ephiles.earthEphemeris = inputs.earth;
-  (*edat).ephiles.sunEphemeris = inputs.sun;
-  LALInitBarycenter(&status, edat);
+  XLAL_CHECK( (edat = XLALInitBarycenter( inputs.earth, inputs.sun )) != NULL, 
+              XLAL_EFUNC );
 
   /* set the position and frequency epochs if not already set */
   if(params.pepoch == 0. && params.posepoch != 0.)
@@ -368,6 +364,8 @@ maxpowmismatch, meanpowmismatch);
 
   XLALDestroyREAL8Vector( phiMean );
 
+  XLALDestroyEphemerisData( edat );
+ 
   return 0;
 }
 
@@ -458,8 +456,6 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
 /* function to return a vector of the pulsar phase for each data point */
 REAL8Vector *get_phi( double start, double deltaT, int npoints,
  BinaryPulsarParams params, BarycenterInput bary, EphemerisData *edat ){
-  static LALStatus status;
-
   INT4 i=0;
 
   REAL8 T0=0., DT=0., DTplus=0., deltat=0., deltat2=0.;
@@ -500,8 +496,10 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
       bary.alpha = params.ra + DT*params.pmra/cos(bary.delta);
 
       /* call barycentring routines */
-      LALBarycenterEarth(&status, &earth, &bary.tgps, edat);
-      LALBarycenter(&status, &emit, &bary, &earth);
+      XLAL_CHECK_NULL( XLALBarycenterEarth( &earth, &bary.tgps, edat ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALBarycenter( &emit, &bary, &earth ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
 
       /* add 30 minutes (1800secs) to the time */
       DTplus = DT + interptime;
@@ -509,8 +507,10 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
       bary.tgps.gpsNanoSeconds = (UINT8)floor((fmod(time+interptime,1.)*1e9));
 
       /* No point in updating the positions as difference will be tiny */
-      LALBarycenterEarth(&status, &earth2, &bary.tgps, edat);
-      LALBarycenter(&status, &emit2, &bary, &earth2);
+      XLAL_CHECK_NULL( XLALBarycenterEarth( &earth2, &bary.tgps, edat ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALBarycenter( &emit2, &bary, &earth2 ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     /* linearly interpolate to get emitdt */

@@ -26,13 +26,6 @@
  *
  *----------------------------------------------------------------------- */
 
-/**
-
-\author Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
-\file
-\brief NONE
-*/
-
 #ifndef _LALTRIGSCANCLUSTER_H
 #define _LALTRIGSCANCLUSTER_H
 
@@ -43,6 +36,14 @@
 
 #include    <lal/EllipsoidOverlapTools.h>
 #include    <lal/CoincInspiralEllipsoid.h>
+
+/**
+\defgroup LALTrigScanCluster_h Header LALTrigScanCluster.h
+\ingroup pkg_CBC_NEW
+\author Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
+\brief NONE
+*/
+/*@{*/
 
 /** UNDOCUMENTED */
 typedef enum {
@@ -88,5 +89,8 @@ int XLALTrigScanReLinkLists( TrigScanCluster *clusterHead );
 void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
                                 TrigScanStatus   status
                               );
+
+/*@}*/ /* end:LALTrigScanCluster_h */
+
 #endif /* _LALTRIGSCANCLUSTER_H */
 

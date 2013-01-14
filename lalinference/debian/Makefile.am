@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	lalinference-dev.install \
 	lalinference.dirs \
 	lalinference.install \
-	rules
+	rules \
+	source/format

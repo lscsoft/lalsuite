@@ -313,7 +313,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	coinc_nodes = []
 	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
 		if verbose:
-			print >>sys.stderr, "%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path())
+			print >>sys.stderr, "%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path)
 		coinc_nodes.append(set())
 
 		#

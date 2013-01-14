@@ -1,11 +1,14 @@
-## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = ComplexFFT.h RealFFT.h FFTWMutex.h TimeFreqFFT.h
 if CUDA
-pkginclude_HEADERS += CudaPlan.h
+CUDAHDRS = CudaPlan.h
 endif
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
+
+pkginclude_HEADERS = \
+	ComplexFFT.h \
+	RealFFT.h \
+	FFTWMutex.h \
+	TimeFreqFFT.h \
+	$(CUDAHDRS)
+
 all-local: include-link
 @INCLUDEMKFILE@
 

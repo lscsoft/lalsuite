@@ -26,7 +26,7 @@
 /*********************************************************************************/
 #include <math.h>
 #include <gsl/gsl_integration.h>
-#include "lal/cs_lambda_cosmo.h"
+#include <lal/cs_lambda_cosmo.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

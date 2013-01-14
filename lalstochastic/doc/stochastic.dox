@@ -1,5 +1,5 @@
 /**
-\addtogroup stochastic
+\addtogroup pkg_stochastic
 @{
 
 \defgroup StochasticCrossCorrelation_h Header StochasticCrossCorrelation.h

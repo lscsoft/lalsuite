@@ -2,6 +2,9 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+datarootdir=@datarootdir@
+datadir=@datadir@
+pkgdatadir=@datadir@/@PACKAGE@
 
 Name: LALSimulation
 Description: LAL Simulation Library Support

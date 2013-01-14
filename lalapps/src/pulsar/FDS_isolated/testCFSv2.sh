@@ -28,18 +28,18 @@ fi
 
 SFTdir="./testCFSv2_sfts"
 
-# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
+    saf_code="${saf_code} -E ${LALPULSAR_DATADIR}"
+    cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR}"
+    cfsv2_code="${cfsv2_code} -E ${LALPULSAR_DATADIR}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 ## without noise-weights, CFSv1 and CFSv2 should agree extremely well,
@@ -51,7 +51,6 @@ Dterms=8
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
-refTime=701595833  ## $startTime
 duration=144000		## 40 hours
 
 mfd_FreqBand=2.0;
@@ -120,7 +119,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1 -v${debug}"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --outSFTv1 -v${debug}"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -150,7 +149,7 @@ echo "----------------------------------------------------------------------"
 echo
 outfile_v1="Fstat_v1.dat";
 ## common cmdline-options for v1 and v2
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
+cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -169,9 +168,7 @@ echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 outfile_v2NWon="Fstat_v2NWon.dat";
-timingfile="timing_v2NWon.dat";
-cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true --outputTiming=$timingfile"
-
+cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true"
 echo $cmdlineNoiseWeightsOn;
 if ! eval "$cmdlineNoiseWeightsOn &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -185,6 +182,7 @@ if ! eval "$cmdlineNoiseWeightsOff &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
+
 
 echo
 echo "----------------------------------------"
@@ -216,26 +214,11 @@ else
 fi
 echo
 
-echo
-echo "----------------------------------------"
-echo " STEP 5: Timing info: "
-echo "----------------------------------------"
-
-awk_timing='BEGIN { sumTauF0 = 0; counter=0; } \
-           { sumTauF0 = sumTauF0 + $10; counter=counter+1; } \
-           END {printf "tauF0 = %5.3g s", sumTauF0 / counter }'
-timing_tau0=$(sed '/^%.*/d' $timingfile | awk "$awk_timing")
-echo
-echo "Fundamental F-stat timing constant (time per template per SFT):"
-echo $timing_tau0
-echo
-echo
-
 ## -------------------------------------------
 ## clean up files
 ## -------------------------------------------
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfile_v1 $outfile_v2NWon $outfile_v2NWoff $timingfile Fstats Fstats.log
+    rm -rf $SFTdir $outfile_v1 $outfile_v2NWon $outfile_v2NWoff Fstats Fstats.log
 fi
 
 ## restore original locale, just in case someone source'd this file

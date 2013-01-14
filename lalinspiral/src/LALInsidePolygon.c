@@ -17,48 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Cokelaer. T
-\file
-\ingroup LALInspiralBank_h
-
-\brief Module to check whether a point with coordinates (x,y) is inside
-a polygon defined by the vectors (vx, vy), which size (n) must be
-provided. The functions returns 1 if the point is inside or 0 otherwise.
-
-\heading{Prototypes}
-
-
-<tt>LALInsidePolygon()</tt>:
-<ul>
-   <li> <tt>vx, vy</tt> Input, two arrays of floats defining the polygon.
-   </li><li> \c n Input, the size of the vectors.
-   </li><li> <tt>x, y</tt> Input, the coordinate of the point.
-   </li><li> \c valid Output, 0 if outside and 1 if inside.</li>
-</ul>
-
-\heading{Description/Algorithm}
-None
-\heading{Uses}
-None.
-\heading{Notes}
-Tested in matlab codes and some BCV tests within lal/lalapps.
-
-*/
-
-
-
 #include <lal/LALInspiralBank.h>
 
-void LALInsidePolygon(  LALStatus          *status,
-                        REAL4              *inputx,
-                        REAL4              *inputy,
-                        INT4               n,
-                        REAL4              x,
-                        REAL4              y,
-                        INT4               *valid)
-
-
+/** \ingroup LALInspiralBank_h
+ * \brief Module to check whether a point with coordinates (x,y) is inside
+ * a polygon defined by the vectors (vx, vy), which size (n) must be
+ * provided. The functions returns 1 if the point is inside or 0 otherwise.
+ *
+ * \author Cokelaer. T
+ *
+ * \heading{Notes}
+ * Tested in matlab codes and some BCV tests within lal/lalapps.
+ *
+ */
+void LALInsidePolygon(  LALStatus          *status,	/**< LAL status pointer */
+                        REAL4              *inputx,	/**< [in] two arrays of floats defining the polygon */
+                        REAL4              *inputy,	/**< [in] two arrays of floats defining the polygon */
+                        INT4               n,		/**< [in] the size of the vectors */
+                        REAL4              x,		/**< [in] the coordinate of the point */
+                        REAL4              y,		/**< [in] the coordinate of the point */
+                        INT4               *valid	/**< [out] 0 if outside and 1 if inside */
+                        )
 {
 
 

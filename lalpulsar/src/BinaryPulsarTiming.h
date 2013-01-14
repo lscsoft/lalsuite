@@ -50,6 +50,8 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/StringVector.h>
+#include <lal/LALBarycenter.h>
+#include <lal/Date.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +79,13 @@ not be in the binary timing routine"
 #define BINARYPULSARTIMINGH_MSGENAN "Output is NaN!"
 #define BINARYPULSARTIMINGH_MSGEPARFAIL "Failed to read in .par file"
 
+#define GPS0MJD 44244.0 /* start of GPS time (MJD 44244) */
+/* the difference between TDT (or TT) and TAI (see e.g. Eqn 15 of T.-Y. Huang et
+ * al, A&A, 220, p. 329, 1989) */
+#define TDT_TAI 32.184
+/* the difference between TDT/TT and the GPS epoch */
+#define GPS_TDT (TDT_TAI + XLAL_EPOCH_GPS_TAI_UTC)
+                        
 /*@}*/
 
 /** A structure to contain all pulsar parameters and associated errors.
@@ -87,7 +96,9 @@ typedef struct
 tagBinaryPulsarParams
 {
   CHAR *name;   /**< pulsar name */
-
+  CHAR *jname;  /**< pulsar J name */
+  CHAR *bname;  /**< pulsar B name */
+  
   CHAR *model;  /**< TEMPO binary model e.g. BT, DD, ELL1 */
 
   REAL8 f0;     /**< spin frequency (Hz) */
@@ -96,7 +107,11 @@ tagBinaryPulsarParams
   REAL8 f3;     /**< frequency third derivative (Hz/s^3) */
   REAL8 f4;     /**< frequency fourth derivative (Hz/s^4) */
   REAL8 f5;     /**< frequency fifth derivative (Hz/s^5) */
-
+  REAL8 f6;     /**< frequency sixth derivative (Hz/s^6) */
+  REAL8 f7;     /**< frequency seventh derivative (Hz/s^7) */
+  REAL8 f8;     /**< frequency eighth derivative (Hz/s^8) */
+  REAL8 f9;     /**< frequency ninth derivative (Hz/s^9) */
+  
   REAL8 ra;     /**< right ascension (rads) */
   REAL8 dec;    /**< declination (rads) */
   REAL8 pmra;   /**< proper motion in RA (rads/s) */
@@ -104,7 +119,7 @@ tagBinaryPulsarParams
 
   REAL8 posepoch; /**< position epoch */
   REAL8 pepoch;   /**< period/frequency epoch */
-
+  
   /* all parameters will be in the same units as used in TEMPO */
 
   /* Keplerian parameters */
@@ -113,7 +128,7 @@ tagBinaryPulsarParams
   REAL8 w0;     /**< logitude of periastron (deg) */
   REAL8 x;      /**< projected semi-major axis/speed of light (light secs) */
   REAL8 T0;     /**< time of orbital perisastron as measured in TDB (MJD) */
-
+  
   /* add extra parameters for the BT1P and BT2P models which contain two and
      three orbits respectively (only the first one can be relativistic, so the
      others only have the Keplerian parameters) */
@@ -123,7 +138,7 @@ tagBinaryPulsarParams
   REAL8 x2, x3;
   REAL8 T02, T03;
 
-  REAL8 xpbdot;	/**< (10^-12) */
+  REAL8 xpbdot;
 
   /* for low eccentricity orbits (ELL1 model) use Laplace parameters */
   /* (eps1 = e*sin(w), eps2 = e*cos(w)) instead of e, w.             */
@@ -139,13 +154,14 @@ tagBinaryPulsarParams
   /* for Blandford-Teukolsky (BT) model */
   REAL8 wdot;   /**< precesion of longitude of periastron w = w0 + wdot(tb-T0) (degs/year) */
   REAL8 gamma;  /**< gravitational redshift and time dilation parameter (s)*/
-  REAL8 Pbdot;  /**< rate of change of Pb (dimensionless 10^-12) */
-  REAL8 xdot;   /**< rate of change of x(=asini/c) - optional (10^-12)*/
-  REAL8 edot;   /**< rate of change of e (10^-12)*/
+  REAL8 Pbdot;  /**< rate of change of Pb (dimensionless) */
+  REAL8 xdot;   /**< rate of change of x(=asini/c) - optional */
+  REAL8 edot;   /**< rate of change of e */
 
   /* for Epstein-Haugan (EH) model */
   REAL8 s; /**< Shapiro 'shape' parameter sin i */
-
+  CHAR *sstr;
+  
   /* for Damour-Deruelle (DD) model */
   /*REAL8 r; Shapiro 'range' parameter - defined internally as Gm2/c^3 */
   REAL8 dr;
@@ -157,17 +173,27 @@ tagBinaryPulsarParams
   REAL8 M;      /**< M = m1 + m2 (m1 = pulsar mass, m2 = companion mass) */
   REAL8 m2;     /**< companion mass */
 
+  /* for the DDS model we need the shapmax parameter */
+  REAL8 shapmax;
+  
   /* orbital frequency coefficients for BTX model (only for one orbit at the
      moment i.e. a two body system) */
-  REAL8 fb[12]; /**< orbital frequency coefficients for BTX model */
+  REAL8 *fb; /**< orbital frequency coefficients for BTX model */
   INT4 nfb;     /**< the number of fb coefficients */
 
-  REAL8 px;     /**< pulsar parallax (in milliarcsecs) */
+  REAL8 px;     /**< pulsar parallax (converted from milliarcsecs to rads) */
   REAL8 dist;   /**< pulsar distance (in kiloparsecs) */
 
   REAL8 DM;     /**< dispersion measure */
   REAL8 DM1;    /**< first derivative of dispersion measure */
 
+  /* sinusoidal parameters for fitting quasi-periodic timing noise */
+  REAL8 *waveCos;
+  REAL8 *waveSin;
+  REAL8 wave_om;  /**< fundamental frequency timing noise terms */
+  REAL8 waveepoch;
+  INT4 nwaves;
+  
   /* gravitational wave parameters */
   REAL8 h0;     /**< gravitational wave amplitude */
   REAL8 cosiota;/**< cosine of the pulsars orientation angle */
@@ -175,13 +201,22 @@ tagBinaryPulsarParams
   REAL8 phi0;   /**< initial phase */
   REAL8 Aplus;  /**< 0.5*h0*(1+cos^2iota) */
   REAL8 Across; /**< h0*cosiota */
-  /*pinned superfluid gw parameters*/
+  
+  /* pinned superfluid gw parameters*/
   REAL8 I21;    /**< parameter for pinsf model.**/
   REAL8 I31;    /**< parameter for pinsf model.**/
   REAL8 r;      /**< parameter for pinsf model.**/
   REAL8 lambda; /**< this is a longitude like angle between pinning axis and
                      line of sight */
   REAL8 costheta;  /**< angle between rotation axis and pinning axis */
+  
+  /* parameters for Kopeikin terms */
+  REAL8 daop;   /**< parameter for the Kopeikin annual orbital parallax */
+  INT4 daopset; /**< set if daop is set from the par file */
+  REAL8 kin;    /**< binary inclination angle */
+  INT4 kinset;
+  REAL8 kom;
+  INT4 komset;
   
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
@@ -190,7 +225,11 @@ tagBinaryPulsarParams
   REAL8 f3Err;
   REAL8 f4Err;
   REAL8 f5Err;
-
+  REAL8 f6Err;
+  REAL8 f7Err;
+  REAL8 f8Err;
+  REAL8 f9Err;
+  
   REAL8 pepochErr;
   REAL8 posepochErr;
 
@@ -220,7 +259,8 @@ tagBinaryPulsarParams
   REAL8 edotErr;
 
   REAL8 sErr;
-
+  REAL8 shapmaxErr;
+  
   /*REAL8 rErr; Shapiro 'range' parameter - defined internally as Gm2/c^3 */
   REAL8 drErr;
   REAL8 dthErr;
@@ -229,7 +269,7 @@ tagBinaryPulsarParams
   REAL8 MErr;
   REAL8 m2Err;
 
-  REAL8 fbErr[12];
+  REAL8 *fbErr;
 
   REAL8 pxErr;
   REAL8 distErr;
@@ -249,23 +289,78 @@ tagBinaryPulsarParams
   REAL8 rErr;
   REAL8 lambdaErr;
   REAL8 costhetaErr;
+  
+  /* timing noise fitting parameters */
+  REAL8 wave_omErr;
+  
+  CHAR *units; /**< The time system used e.g. TDB */
+  CHAR *ephem; /**< The JPL solar system ephemeris used e.g. DE405 */
 }BinaryPulsarParams;
+
+/** structure containing the Kopeikin terms */
+typedef struct
+tagKopeikinTerms
+{
+  REAL8 DK011;
+  REAL8 DK012;
+  REAL8 DK013;
+  REAL8 DK014;
+  
+  REAL8 DK021;
+  REAL8 DK022;
+  REAL8 DK023;
+  REAL8 DK024;
+  
+  REAL8 DK031;
+  REAL8 DK032;
+  REAL8 DK033;
+  REAL8 DK034;
+  
+  REAL8 DK041;
+  REAL8 DK042;
+  REAL8 DK043;
+  REAL8 DK044;
+}KopeikinTerms;
 
 /** structure containing the input parameters for the binary delay function */
 typedef struct
 tagBinaryPulsarInput
 {
   REAL8 tb;    /**< Time of arrival (TOA) at the SSB */
+  
+  EarthState earth; /**< The current Earth state (for e.g. calculating 
+                         Kopeikin terms) */
 }BinaryPulsarInput;
 
 /** structure containing the output parameters for the binary delay function */
 typedef struct
 tagBinaryPulsarOutput
 {
-  REAL8 deltaT;	/**< deltaT to add to TDB in order to account for binary */
+  REAL8 deltaT; /**< deltaT to add to TDB in order to account for binary */
 }BinaryPulsarOutput;
 
 /**** DEFINE FUNCTIONS ****/
+/** \brief This function will iteratively calculate the eccentric anomaly from
+  * Kelper's equation
+  * 
+  * The equation is solved using a Newton-Raphson technique and the S9
+  * starting value in Odell & Gooding  1986 CeMec 38 307. This is taken from the
+  * TEMPO2 code T2model.C 
+  */
+void
+XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u);
+
+/** \brief This function will compute the effect of binary parameters on the
+  * pulsar parallax
+  * 
+  * This function is based on the terms given in Kopeikin, Ap. J. Lett, 439,
+  * 1995. The computation is copied from the KopeikinTerms function in the
+  * T2model.C file of TEMPO2.
+  */
+void XLALComputeKopeikinTerms( KopeikinTerms *kop,
+                               BinaryPulsarParams *params,
+                               BinaryPulsarInput *input );
+
 /** function to calculate the binary system delay
  */
 void

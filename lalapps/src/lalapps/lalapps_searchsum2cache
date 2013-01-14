@@ -61,7 +61,7 @@ __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 
 def parse_command_line():
 	parser = OptionParser(
-		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		#version = "Name: %%prog\n%s" % git_version.verbose_msg,
 		usage = "%prog [options] filenames ...",
 		description = "Generates a LAL format cache file describing a collection of LIGO light-weight XML files.  The cache is constructed by parsing the search_summary table in each file to extract the instruments and time each file spans.  To allow long file lists to be processed, the filenames are interpreted as shell patterns (wildcard expansion is performed)."
 	)

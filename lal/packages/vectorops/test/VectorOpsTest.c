@@ -44,7 +44,7 @@
 
 /** \cond DONT_DOXYGEN */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -124,10 +124,10 @@ main ( int argc, char *argv[] )
 
   for (i = 0; i < size; ++i)
   {
-    z1->data[i].re = 1 + i;
-    z1->data[i].im = 2 + i*i;
-    z2->data[i].re = 3 + i + i*i*i;
-    z2->data[i].im = 4 + i*i + i*i*i;
+    z1->data[i] = 1 + i;
+    z1->data[i] += I * (2 + i*i);
+    z2->data[i] = 3 + i + i*i*i;
+    z2->data[i] += I * (4 + i*i + i*i*i);
     x1->data[i]    = 5 + i + i*i;
     x2->data[i]    = 6 + i + i*i + i*i*i;
   }
@@ -137,36 +137,36 @@ main ( int argc, char *argv[] )
   TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
     if (verbose) printf("(% 6.0f,% 6.0f) x (% 6.0f,% 6.0f) = (% 6.0f,% 6.0f)\n",
-        z1->data[i].re, z1->data[i].im,
-        z2->data[i].re, z2->data[i].im,
-        z3->data[i].re, z3->data[i].im);
+        crealf(z1->data[i]), cimagf(z1->data[i]),
+        crealf(z2->data[i]), cimagf(z2->data[i]),
+        crealf(z3->data[i]), cimagf(z3->data[i]));
 
   if (verbose) printf("\n");
   LALCCVectorMultiplyConjugate(&status, z3, z1, z2);
   TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
     if (verbose) printf("(% 6.0f,% 6.0f) x (% 6.0f,% 6.0f)* = (% 6.0f,% 6.0f)\n",
-        z1->data[i].re, z1->data[i].im,
-        z2->data[i].re, z2->data[i].im,
-        z3->data[i].re, z3->data[i].im);
+        crealf(z1->data[i]), cimagf(z1->data[i]),
+        crealf(z2->data[i]), cimagf(z2->data[i]),
+        crealf(z3->data[i]), cimagf(z3->data[i]));
 
   if (verbose) printf("\n");
   LALCCVectorDivide(&status, z3, z1, z2);
   TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
     if (verbose) printf("(% 6.0f,% 6.0f) / (% 6.0f,% 6.0f) = (% 9.6f,% 9.6f)\n",
-        z1->data[i].re, z1->data[i].im,
-        z2->data[i].re, z2->data[i].im,
-        z3->data[i].re, z3->data[i].im);
+        crealf(z1->data[i]), cimagf(z1->data[i]),
+        crealf(z2->data[i]), cimagf(z2->data[i]),
+        crealf(z3->data[i]), cimagf(z3->data[i]));
 
   if (verbose) printf("\n");
   LALSCVectorMultiply(&status, z3, x1, z1);
   TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
     if (verbose) printf("% 6.0f x (% 6.0f,% 6.0f) = (% 6.0f,% 6.0f)\n",
-        x1->data[i],
-        z1->data[i].re, z1->data[i].im,
-        z3->data[i].re, z3->data[i].im);
+        crealf(x1->data[i]),
+        crealf(z1->data[i]), cimagf(z1->data[i]),
+        crealf(z3->data[i]), cimagf(z3->data[i]));
 
   if (verbose) printf("\n");
   LALSSVectorMultiply(&status, x3, x1, x2);
@@ -225,8 +225,8 @@ main ( int argc, char *argv[] )
 
   for (i = 0; i < size; ++i)
   {
-    z1->data[i].re = (12.0 + i) *cos(LAL_PI/3.0*i);
-    z1->data[i].im = (12.0 + i )*sin(LAL_PI/3.0*i);
+    z1->data[i] = (12.0 + i) *cos(LAL_PI/3.0*i);
+    z1->data[i] += I * (12.0 + i )*sin(LAL_PI/3.0*i);
   }
 
   if (verbose) printf("\n");
@@ -234,14 +234,14 @@ main ( int argc, char *argv[] )
   TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
     if (verbose) printf(" Abs(% f,%f)  = %f \n",
-        z1->data[i].re, z1->data[i].im,
+        crealf(z1->data[i]), cimagf(z1->data[i]),
         x1->data[i]);
 
   LALCVectorAngle(&status, x2, z1);
   TestStatus( &status, CODES(0), 1 );
   for (i = 0; i < size; ++i)
     if (verbose) printf(" Angle(%f,%f)  = %f \n",
-        z1->data[i].re, z1->data[i].im,
+        crealf(z1->data[i]), cimagf(z1->data[i]),
         x2->data[i]);
 
   LALUnwrapREAL4Angle(&status, x3, x2);

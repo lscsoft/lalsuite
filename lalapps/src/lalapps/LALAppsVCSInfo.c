@@ -26,26 +26,26 @@
 #include <LALAppsVCSInfo.h>
 
 /* global variables for vcs information */
-const char *lalAppsVCSVersion = LALAPPS_VERSION;
-const char *lalAppsVCSId = LALAPPS_VCS_ID;
-const char *lalAppsVCSDate = LALAPPS_VCS_DATE;
-const char *lalAppsVCSBranch = LALAPPS_VCS_BRANCH;
-const char *lalAppsVCSTag = LALAPPS_VCS_TAG;
-const char *lalAppsVCSAuthor = LALAPPS_VCS_AUTHOR;
-const char *lalAppsVCSCommitter = LALAPPS_VCS_COMMITTER;
-const char *lalAppsVCSStatus = LALAPPS_VCS_STATUS;
+const char *const lalAppsVCSVersion = LALAPPS_VERSION;
+const char *const lalAppsVCSId = LALAPPS_VCS_ID;
+const char *const lalAppsVCSDate = LALAPPS_VCS_DATE;
+const char *const lalAppsVCSBranch = LALAPPS_VCS_BRANCH;
+const char *const lalAppsVCSTag = LALAPPS_VCS_TAG;
+const char *const lalAppsVCSAuthor = LALAPPS_VCS_AUTHOR;
+const char *const lalAppsVCSCommitter = LALAPPS_VCS_COMMITTER;
+const char *const lalAppsVCSStatus = LALAPPS_VCS_STATUS;
 
 /* global variables for vcs information - identable */
-const char *lalAppsVCSIdentId = LALAPPS_VCS_IDENT_ID;
-const char *lalAppsVCSIdentDate = LALAPPS_VCS_IDENT_DATE;
-const char *lalAppsVCSIdentBranch = LALAPPS_VCS_IDENT_BRANCH;
-const char *lalAppsVCSIdentTag = LALAPPS_VCS_IDENT_TAG;
-const char *lalAppsVCSIdentAuthor = LALAPPS_VCS_IDENT_AUTHOR;
-const char *lalAppsVCSIdentCommitter = LALAPPS_VCS_IDENT_COMMITTER;
-const char *lalAppsVCSIdentStatus = LALAPPS_VCS_IDENT_STATUS;
+const char *const lalAppsVCSIdentId = LALAPPS_VCS_IDENT_ID;
+const char *const lalAppsVCSIdentDate = LALAPPS_VCS_IDENT_DATE;
+const char *const lalAppsVCSIdentBranch = LALAPPS_VCS_IDENT_BRANCH;
+const char *const lalAppsVCSIdentTag = LALAPPS_VCS_IDENT_TAG;
+const char *const lalAppsVCSIdentAuthor = LALAPPS_VCS_IDENT_AUTHOR;
+const char *const lalAppsVCSIdentCommitter = LALAPPS_VCS_IDENT_COMMITTER;
+const char *const lalAppsVCSIdentStatus = LALAPPS_VCS_IDENT_STATUS;
 
 /* vcs information structure */
-struct tagLALVCSInfo lalAppsVCSInfo = { \
+const struct tagLALVCSInfo lalAppsVCSInfo = { \
   LALAPPS_VCS_NAME, \
   LALAPPS_VERSION, \
   LALAPPS_VCS_ID, \

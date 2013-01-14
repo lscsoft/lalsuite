@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2012 David Keitel, Santiago Caride, Reinhard Prix
  * Copyright (C) 2008 Karl Wette
  * Copyright (C) 2007 Chris Messenger
  * Copyright (C) 2004, 2007, 2010 Reinhard Prix
@@ -75,6 +76,7 @@ int finite(double);
 
 #include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "../GCT/LineVeto.h"
+#include "../GCT/ComputeFstat_RS.h"
 
 /*---------- DEFINES ----------*/
 
@@ -113,6 +115,8 @@ int finite(double);
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 #define LAL_INT4_MAX 2147483647
+
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 /*---------- internal types ----------*/
 
@@ -153,6 +157,14 @@ typedef struct
   REAL8 tauTransMarg;		/**< time to marginalize the Fstat-map to compute transient-search Bayes [s] */
 } timingInfo_t;
 
+/** Enum for which statistic is used to "rank" significance of candidates
+ */
+typedef enum {
+  RANKBY_F  = 0, 	/**< rank candidates by F-statistic */
+  RANKBY_NC = 1,	/**< HierarchSearchGCT also has RANKBY_NC = 1, not applicable here */
+  RANKBY_LV = 2  	/**< rank candidates by LV-statistic */
+} RankingStat_t;
+
 
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
@@ -161,7 +173,7 @@ typedef struct {
   REAL8 Alpha;                              /**< sky position alpha in radians */
   REAL8 Delta;                              /**< sky position delta in radians */
   REAL8 Tsft;                               /**< length of one SFT in seconds */
-  LIGOTimeGPS internalRefTime;	            /**< internal reference time used purely for F-stat computation (defaults to startTime) */
+  LIGOTimeGPS internalRefTime;	            /**< internal reference time used purely for F-stat computation (defaults to midTime) */
   DopplerRegion searchRegion;		    /**< parameter-space region to search over */
   DopplerFullScanState *scanState;          /**< current state of the Doppler-scan */
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
@@ -178,6 +190,7 @@ typedef struct {
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
   REAL4 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
   REAL4Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
+  RankingStat_t RankingStatistic;           /**< rank candidates according to F or LV */
 } ConfigVariables;
 
 
@@ -271,7 +284,7 @@ typedef struct {
   INT4 minStartTime;		/**< earliest start-time to use data from */
   INT4 maxEndTime;		/**< latest end-time to use data from */
   CHAR *workingDir;		/**< directory to use for output files */
-  REAL8 timerCount;		/**< output progress-meter every timerCount templates */
+  REAL8 timerCount;		/**< output progress-meter every timerCount seconds */
 
   INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
 
@@ -281,8 +294,8 @@ typedef struct {
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
-  BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
   BOOLEAN computeLV;		/**< get single-IFO F-stats and compute Line Veto stat */
+  CHAR *RankingStatistic;	/**< rank candidates according to F or LV */
   BOOLEAN LVuseAllTerms;	/**< Use only leading term or all terms in Line Veto computation */
   REAL8   LVrho;		/**< Prior parameter rho_max_line for LineVeto statistic */
   LALStringVector *LVlX;	/**< Line-to-gauss prior ratios lX for LineVeto statistic */
@@ -300,6 +313,7 @@ typedef struct {
 
   CHAR *outputTiming;		/**< output timing measurements and parameters into this file [append!]*/
 
+  BOOLEAN useResamp;		/**< use FFT-resampling method instead of LALDemod() */
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -380,7 +394,6 @@ int main(int argc,char *argv[])
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   ComputeFBufferREAL4 cfBuffer4 = empty_ComputeFBufferREAL4;
   REAL8 numTemplates, templateCounter;
-  REAL8 tickCounter;
   time_t clock0;
   Fcomponents Fstat = empty_Fcomponents;
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
@@ -456,6 +469,41 @@ int main(int argc,char *argv[])
 	}
 
       fprintf (fpFstat, "%s", GV.logstring );
+
+      /* for column headings string, get number of detectors and detector name vector */
+      UINT4 numDetectors = GV.multiSFTs->length;
+      LALStringVector *detectorIDs = NULL;
+      for (UINT4 X = 0; X < numDetectors; X++) {
+        if ( (detectorIDs = XLALAppendString2Vector ( detectorIDs, GV.multiSFTs->data[X]->data[0].name )) == NULL ) {
+          XLALPrintError ("%s: XLALAppendString2Vector() failed with errno=%d\n", __func__, xlalErrno );
+          return (COMPUTEFSTATISTIC_EXLAL);
+        }
+      } /* for X < numDetectors */
+      /* NOTE: we do not actively sort this vector here, but rather keep the sorting of GV.multiSFTs,
+       * as this is the same used by the actual F-stat computation, and should already be alphabetical.
+       */
+
+      /* assemble column headings string */
+      char colum_headings_string_base[] = "freq alpha delta f1dot f2dot f3dot 2F";
+      UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
+      char column_headings_string[column_headings_string_length];
+      INIT_MEM( column_headings_string );
+      strcat ( column_headings_string, colum_headings_string_base );
+      if ( uvar.computeLV )
+        {
+          column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
+          column_headings_string_length += 3; /* 3 for " LV"*/
+          strcat ( column_headings_string, " LV" );
+          for ( UINT4 X = 0; X < numDetectors ; X ++ )
+            {
+              char headingX[7];
+              snprintf ( headingX, sizeof(headingX), " 2F_%s", detectorIDs->data[X] );
+              strcat ( column_headings_string, headingX );
+            } /* for X < numDet */
+        }
+      fprintf (fpFstat, "%%%% columns:\n%%%% %s\n", column_headings_string );
+
+      XLALDestroyStringVector ( detectorIDs );
     } /* if outputFstat */
 
   if ( uvar.outputTransientStats )
@@ -494,7 +542,7 @@ int main(int argc,char *argv[])
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTDBMJDtoGPS(uvar.orbitTpSSBMJD);
+	  GPSfloat = LALTTMJDtoGPS(uvar.orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbitalParams->tp),GPSfloat);
 	}
       else
@@ -514,15 +562,31 @@ int main(int argc,char *argv[])
    * and for each value of the frequency-spindown
    */
   templateCounter = 0.0;
-  tickCounter = 0;
   clock0 = time(NULL);
 
-  REAL8 tic0, tic, toc;	// high-precision timing counters
+  REAL8 tic0, tic, toc, timeOfLastProgressUpdate = 0;	// high-precision timing counters
   timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
   timing.NSFTs = GV.NSFTs;
 
   /* fixed time-offset between internalRefTime and refTime */
   REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
+
+  REAL4FrequencySeries *fstatVector = NULL;
+  UINT4 numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not --useResamp)
+  REAL8 dFreqResamp = 0; // frequency resolution used to allocate vector of F-stat values for resampling
+  if ( uvar.useResamp )	// handle special resampling case, where we deal with a vector of F-stat values instead of one
+    {
+	if ( LALUserVarWasSet(&uvar.dFreq) ) {
+		dFreqResamp = uvar.dFreq;
+	} else {
+		dFreqResamp = 1.0/(2*GV.multiDetStates->Tspan);
+	}
+      numFreqBins_FBand = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / dFreqResamp ) );
+      if ( ( fstatVector = XLALCalloc ( 1, sizeof ( *fstatVector ) )) == NULL )
+        XLAL_ERROR ( XLAL_EFAILED, "Failed to XLALCalloc ( 1, %d )\n", sizeof ( *fstatVector ) );
+      if ( (fstatVector->data = XLALCreateREAL4Vector ( numFreqBins_FBand )) == NULL )
+        XLAL_ERROR ( XLAL_EFAILED, "XLALCreateREAL4Vector(%d) failed.\n", numFreqBins_FBand );
+    }
 
   /* skip search if user supplied --countTemplates */
   while ( !uvar.countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
@@ -531,16 +595,29 @@ int main(int argc,char *argv[])
 
       tic0 = tic = GETTIME();
 
-      /* use internalRefTime in order to safely computing F-statistic (avoid large |tRef - tStart|) */
+      /* use internalRefTime in order to safely computing F-statistic (avoid large |t - tRef|^s) */
       PulsarDopplerParams internalDopplerpos = dopplerpos;
       XLALExtrapolatePulsarSpins ( internalDopplerpos.fkdot, dopplerpos.fkdot, DeltaTRefInt );	// can't fail
       internalDopplerpos.refTime = GV.internalRefTime;
+      // we set these for future-compatibility with XLALComputeFstatFreqBand(), even if currently unused
+      internalDopplerpos.dFreq = dFreqResamp;
+      internalDopplerpos.numFreqBins = numFreqBins_FBand;
 
       /* main function call: compute F-statistic for this template */
       if ( ! uvar.GPUready )
         {
-          LAL_CALL( COMPUTEFSTAT (&status, &Fstat, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights,
-                                 GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+          if ( uvar.useResamp )
+            {
+              fstatVector->epoch = GV.internalRefTime;
+              fstatVector->f0 = internalDopplerpos.fkdot[0];	// set to the fixed lowest-frequency bin
+              fstatVector->deltaF = dFreqResamp;
+
+              LAL_CALL ( ComputeFStatFreqBand_RS ( &status, fstatVector, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights, &GV.CFparams ), &status );
+            }
+          else
+            {
+              LAL_CALL( COMPUTEFSTAT (&status, &Fstat, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+            }
         }
       else
         {
@@ -556,21 +633,29 @@ int main(int argc,char *argv[])
           Fstat.F = F;
 
         } /* if GPUready==true */
-      toc = GETTIME();
-      timing.tauFstat += (toc - tic);	// pure Fstat-calculation time
 
+      toc = GETTIME();
+      timing.tauFstat += (toc - tic);   // pure Fstat-calculation time
 
       /* Progress meter */
       templateCounter += 1.0;
-      if ( lalDebugLevel && ( ++tickCounter > uvar.timerCount) )
-	{
-	  REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
-	  REAL8 taup = diffSec / templateCounter ;
-	  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
-	  tickCounter = 0.0;
-	  LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
-		     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
-	}
+      if ( lalDebugLevel && ( (toc - timeOfLastProgressUpdate) > uvar.timerCount) )
+        {
+          REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
+          REAL8 taup = diffSec / templateCounter ;
+          REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
+          LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
+                     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
+          timeOfLastProgressUpdate = toc;
+        }
+
+      // here we use Santiago's trick to hack the ComputeFStatFreqBand_RS() Fstat(f) into the single-F rest of the main -loop:
+      // we simply loop the remaining body over all frequency-bins in the Fstat-vector, this way nothing needs to be changed!
+      // in the non-resampling case, this loop iterates only once, so nothing is changed ...
+      for ( UINT4 iFreq = 0; iFreq < numFreqBins_FBand; iFreq ++ )
+      {
+        if ( uvar.useResamp )
+          Fstat.F = fstatVector->data->data[iFreq];
 
       /* sanity check on the result */
       if ( !finite(Fstat.F) )
@@ -592,7 +677,21 @@ int main(int argc,char *argv[])
 
       /* collect data on current 'Fstat-candidate' */
       thisFCand.doppler = dopplerpos;	// use 'original' dopplerpos @ refTime !
-      if ( !uvar.GPUready )
+      thisFCand.doppler.fkdot[0] += iFreq * dFreqResamp;	// this only does something for the resampling post-loop over frequency-bins, 0 otherwise ...
+
+      if ( uvar.GPUready )
+        {
+          thisFCand.Mmunu.Ad = cfBuffer4.multiAMcoef->Mmunu.Ad;
+          thisFCand.Mmunu.Bd = cfBuffer4.multiAMcoef->Mmunu.Bd;
+          thisFCand.Mmunu.Cd = cfBuffer4.multiAMcoef->Mmunu.Cd;
+          thisFCand.Mmunu.Sinv_Tsft = cfBuffer4.multiAMcoef->Mmunu.Sinv_Tsft;
+          thisFCand.Mmunu.Ed = 0.0;
+        }
+      else if ( uvar.useResamp )
+        {
+          ;; // currently CFS_RS() doesnt report back antenna-pattern factors, so we leave this empty
+        }
+      else // standard LALDemod() case
         {
           if ( cfBuffer.multiCmplxAMcoef ) {
             thisFCand.Mmunu = cfBuffer.multiCmplxAMcoef->Mmunu;
@@ -603,14 +702,6 @@ int main(int argc,char *argv[])
             thisFCand.Mmunu.Sinv_Tsft = cfBuffer.multiAMcoef->Mmunu.Sinv_Tsft;
             thisFCand.Mmunu.Ed = 0.0;
           }
-        }
-      else
-        {
-          thisFCand.Mmunu.Ad = cfBuffer4.multiAMcoef->Mmunu.Ad;
-          thisFCand.Mmunu.Bd = cfBuffer4.multiAMcoef->Mmunu.Bd;
-          thisFCand.Mmunu.Cd = cfBuffer4.multiAMcoef->Mmunu.Cd;
-          thisFCand.Mmunu.Sinv_Tsft = cfBuffer4.multiAMcoef->Mmunu.Sinv_Tsft;
-          thisFCand.Mmunu.Ed = 0.0;
         }
 
       /* correct normalization in --SignalOnly case:
@@ -656,7 +747,9 @@ int main(int argc,char *argv[])
           REAL4 TwoFX[Fstat.numDetectors];
           for ( UINT4 X=0; X < Fstat.numDetectors; X++ )
             TwoFX[X] = 2.0*Fstat.FX[X];
-          thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, GV.LVlogRhoTerm, GV.LVloglX->data, uvar.LVuseAllTerms );
+          REAL4* LVlogLX = NULL;
+          if ( GV.LVloglX ) LVlogLX = GV.LVloglX->data;
+          thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, GV.LVlogRhoTerm, LVlogLX, uvar.LVuseAllTerms );
           if ( xlalErrno ) {
             XLALPrintError ("%s: XLALComputeLineVetoArray() failed with errno=%d\n", __func__, xlalErrno );
             return xlalErrno;
@@ -668,22 +761,17 @@ int main(int argc,char *argv[])
       /* push new value onto scan-line buffer */
       XLALAdvanceScanlineWindow ( &thisFCand, GV.scanlineWindow );
 
-      /* two types of threshold: fixed (TwoFThreshold) and dynamic (NumCandidatesToKeep) */
-      BOOLEAN acceptCandidate = FALSE;
-      if ( uvar.computeLV )
-        {
-          if ( XLALCenterIsLocalMax ( GV.scanlineWindow, 2 )			/* must be 1D local maximum */
-               && ( GV.scanlineWindow->center->LVstat >= uvar.LVthreshold) ) {	/* fixed threshold */
-            acceptCandidate = TRUE;
-          }
-        }
-     else
-        {
-          if ( XLALCenterIsLocalMax ( GV.scanlineWindow, 1 )				/* must be 1D local maximum */
-               && (2.0 * GV.scanlineWindow->center->Fstat.F >= uvar.TwoFthreshold) )	/* fixed threshold */
-            acceptCandidate = TRUE;
-        }
-      if ( acceptCandidate )
+      /* two types of threshold: fixed (TwoF- and/or LV-threshold) and dynamic (NumCandidatesToKeep) */
+      BOOLEAN is1DlocalMax = FALSE;
+      if ( XLALCenterIsLocalMax ( GV.scanlineWindow, GV.RankingStatistic ) ) /* must be 1D local maximum */
+        is1DlocalMax = TRUE;
+      BOOLEAN isOver2FThreshold = FALSE; /* will always be checked, so start at 'FALSE' */
+      if ( 2.0 * GV.scanlineWindow->center->Fstat.F >= uvar.TwoFthreshold ) /* fixed 2F threshold */
+        isOver2FThreshold = TRUE;
+      BOOLEAN isOverLVThreshold = TRUE;  /* will not be checked in non-LV case, so start at 'TRUE' */
+      if ( uvar.computeLV && ( GV.scanlineWindow->center->LVstat < uvar.LVthreshold ) ) /* fixed LV threshold */
+        isOverLVThreshold = FALSE;
+      if ( is1DlocalMax && isOver2FThreshold && isOverLVThreshold )
         {
 	  FstatCandidate *writeCand = GV.scanlineWindow->center;
 
@@ -714,15 +802,19 @@ int main(int argc,char *argv[])
 	} /* if candidate is local maximum and over threshold */
 
       /* separately keep track of loudest candidate (for --outputLoudest) */
-      if ( uvar.computeLV )
+      switch ( GV.RankingStatistic )
         {
-          if ( thisFCand.LVstat > loudestFCand.LVstat )
-            loudestFCand = thisFCand;
-        }
-      else
-        {
+        case RANKBY_F:
           if ( thisFCand.Fstat.F > loudestFCand.Fstat.F )
             loudestFCand = thisFCand;
+          break;
+        case RANKBY_LV:
+          if ( thisFCand.LVstat > loudestFCand.LVstat )
+            loudestFCand = thisFCand;
+          break;
+        default:
+          XLAL_ERROR ( XLAL_EINVAL, "Invalid ranking statistic '%d', supported are 'F=0', and 'LV=2'\n", GV.RankingStatistic );
+          break;
         }
 
       /* add Fstatistic to histogram if needed */
@@ -865,6 +957,8 @@ int main(int argc,char *argv[])
       if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
       Fstat.multiFstatAtoms = NULL;
 
+      } // for ( iFreq < numFreqBins_FBand )
+
       /* now measure total loop time per template */
       toc = GETTIME();
       timing.tauTemplate += (toc - tic0);
@@ -876,12 +970,13 @@ int main(int argc,char *argv[])
   if ( uvar.outputTiming )
     {
       FILE *fpTiming = NULL;
+      REAL8 num_templates = numTemplates * numFreqBins_FBand;	// 'templates' now refers to number of 'frequency-bands' in resampling case
 
       // compute averages:
-      timing.tauFstat         /= templateCounter;
-      timing.tauTemplate      /= templateCounter;
-      timing.tauTransFstatMap /= templateCounter;
-      timing.tauTransMarg     /= templateCounter;
+      timing.tauFstat         /= num_templates;
+      timing.tauTemplate      /= num_templates;
+      timing.tauTransFstatMap /= num_templates;
+      timing.tauTransMarg     /= num_templates;
 
       if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
         XLALPrintError ("%s: failed to open timing file '%s' for writing \n", __func__, uvar.outputTiming );
@@ -908,7 +1003,12 @@ int main(int argc,char *argv[])
 
       /* sort toplist */
       LogPrintf ( LOG_DEBUG, "Sorting toplist ... ");
-      qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
+      if ( GV.RankingStatistic == RANKBY_F )
+        qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
+      else if ( GV.RankingStatistic == RANKBY_LV )
+        qsort_toplist ( GV.FstatToplist, compareFstatCandidates_LV );
+      else
+        XLAL_ERROR ( XLAL_EINVAL, "Ranking statistic '%d' undefined here, allowed are 'F=0' and 'LV=2'\n", GV.RankingStatistic );
       LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
       for ( el=0; el < GV.FstatToplist->elems; el ++ )
@@ -1001,6 +1101,15 @@ int main(int argc,char *argv[])
 
   /* free memory allocated for binary parameters */
   if (orbitalParams) LALFree(orbitalParams);
+
+  if ( fstatVector ) {
+    if ( fstatVector->data ) XLALDestroyREAL4Vector ( fstatVector->data );
+    XLALFree ( fstatVector );
+  }
+  if ( GV.CFparams.buffer ) {
+    XLALEmptyComputeFBuffer_RS( GV.CFparams.buffer );
+    XLALFree ( GV.CFparams.buffer );
+  }
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 
@@ -1109,16 +1218,19 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar->workingDir, ".");
 
-  uvar->timerCount = 1e5;	/* output a timer/progress count every N templates */
+  uvar->timerCount = 10;	/* output a timer/progress count every N seconds */
 
   uvar->spindownAge = 0.0;
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
 
   uvar->GPUready = 0;
+  uvar->useResamp = FALSE;
 
-  uvar->outputSingleFstats = FALSE;
   uvar->computeLV = FALSE;
+  #define DEFAULT_RANKINGSTATISTIC "F"
+  uvar->RankingStatistic = LALCalloc (1, strlen(DEFAULT_RANKINGSTATISTIC)+1);
+  strcpy (uvar->RankingStatistic, DEFAULT_RANKINGSTATISTIC);
   uvar->LVuseAllTerms = TRUE;
   uvar->LVrho = 0.0;
   uvar->LVlX = NULL;       /* NULL is intepreted as LVlX[X] = 1.0 for all X by XLALComputeLineVeto(Array) */
@@ -1196,8 +1308,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
-  LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
   LALregBOOLUserStruct(status,  computeLV,	0,  UVAR_OPTIONAL, "Get single-detector F-stats and compute Line Veto statistic.");
+  LALregSTRINGUserStruct(status,RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'LV' statistic");
   LALregREALUserStruct(status,  LVrho,		0,  UVAR_OPTIONAL, "LineVeto: Prior rho_max_line, must be >=0");
   LALregLISTUserStruct(status,  LVlX,		0,  UVAR_OPTIONAL, "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..");
   LALregREALUserStruct(status, 	LVthreshold,	0,  UVAR_OPTIONAL, "Set the threshold for selection of LV");
@@ -1213,7 +1325,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
-  LALregBOOLUserStruct(status,  GPUready,        0,  UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines");
+  LALregBOOLUserStruct(status,  GPUready,        0,  UVAR_DEVELOPER, "Use single-precision 'GPU-ready' core routines");
+  LALregBOOLUserStruct(status,  useResamp,       0,  UVAR_OPTIONAL,  "Use FFT-resampling method instead of LALDemod()");
 
   /* ----- more experimental/expert options ----- */
   LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
@@ -1225,8 +1338,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
 
   LALregSTRINGUserStruct(status,workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
-  LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");
-  LALregREALUserStruct(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
+  LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
+  LALregREALUserStruct(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: midTime]");
 
   LALregINTUserStruct(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
   LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
@@ -1494,11 +1607,16 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->stepSizes.orbit = NULL;
 
 
+  REAL8 tmpFreqBandRef = cfg->searchRegion.fkdotBand[0];
+
   /* initialize full multi-dimensional Doppler-scanner */
   {
     DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
 
     scanInit.searchRegion = cfg->searchRegion;
+    if ( uvar->useResamp )	// in the resampling-case, temporarily take out frequency-dimension of the Doppler template bank
+      scanInit.searchRegion.fkdotBand[0] = 0;
+
     scanInit.gridType = uvar->gridType;
     scanInit.gridFile = uvar->gridFile;
     scanInit.metricType = uvar->metricType;
@@ -1543,6 +1661,12 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       LogPrintf ( LOG_CRITICAL, "\nXLALGetDopplerSpinRange() failed\n" );
       ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
     }
+
+    // in the resampling case, we need to restore the frequency-band info now, which we set to 0
+    // before calling the DopplerInit template bank construction
+    if ( uvar->useResamp )
+      spinRangeRef.fkdotBand[0] = tmpFreqBandRef;
+
     // write this search spin-range@refTime back into 'cfg' struct for users' reference
     cfg->searchRegion.refTime = spinRangeRef.refTime;
     memcpy ( cfg->searchRegion.fkdot, spinRangeRef.fkdot, sizeof(cfg->searchRegion.fkdot) );
@@ -1637,14 +1761,18 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.useRAA = uvar->useRAA;
   cfg->CFparams.bufferedRAA = uvar->bufferedRAA;
   cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs;
+  cfg->CFparams.edat = cfg->ephemeris;	// this will be used by ComputeFStatFreqBand_RS() to internally compute the multiDetState series
 
-
-  /* internal refTime is used for computing the F-statistic at, to avoid large (tRef - tStart) values */
+  /* internal refTime is used for computing the F-statistic at, to avoid large (t - tRef)^2 values */
   if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
     XLALGPSSetREAL8 ( &(cfg->internalRefTime), uvar->internalRefTime);
   }
   else
-    cfg->internalRefTime = startTime;
+    {
+      LIGOTimeGPS midTime = startTime;
+      XLALGPSAdd ( &midTime, 0.5 * XLALGPSDiff( &endTime, &startTime ) );	// mid-time of observation
+      cfg->internalRefTime = midTime;
+    }
 
   /* ----- set up scanline-window if requested for 1D local-maximum clustering on scanline ----- */
   if ( (cfg->scanlineWindow = XLALCreateScanlineWindow ( uvar->clusterOnScanline )) == NULL ) {
@@ -1662,15 +1790,33 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- set up toplist if requested ----- */
   if ( toplist_length > 0 ) {
-    if ( uvar->computeLV ) {
-      if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates_LV) != 0 )
-        ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
-    }
-    else {
-      if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates) != 0 )
-        ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
-    }
-  }
+    if ( strcmp(uvar->RankingStatistic, "F") == 0 )
+     cfg->RankingStatistic = RANKBY_F;
+    else if ( strcmp(uvar->RankingStatistic, "LV") == 0 )
+      {
+        if ( !uvar->computeLV ) {
+          XLALPrintError ("\nERROR: Ranking by LV-stat only possible if --computeLV given.\n\n");
+          ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
+        }
+        cfg->RankingStatistic = RANKBY_LV;
+      }
+    else
+      {
+        XLALPrintError ("\nERROR: Invalid value specified for candidate ranking - supported are 'F' and 'LV'.\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
+      }
+
+    if ( cfg->RankingStatistic == RANKBY_LV )
+      {
+        if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates_LV) != 0 )
+          ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+      }
+    else // rank by F-stat
+      {
+        if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates) != 0 )
+          ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+      }
+  } /* if toplist_length > 0 */
 
 
   /* ----- transient-window related parameters ----- */
@@ -1719,8 +1865,16 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* get atoms back from Fstat-computing, either if atoms-output or transient-Bstat output was requested */
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
-  if ( uvar->outputSingleFstats || uvar->computeLV )
-    cfg->CFparams.returnSingleF = TRUE;
+
+  /* return single-IFO Fstat values for Line-veto statistic */
+  if ( uvar->computeLV )
+    {
+      cfg->CFparams.returnSingleF = TRUE;
+      if ( uvar->useResamp ) {
+        XLALPrintError ("Sorry, resampling is not yet compatible with --computeLV\n" );
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+    }
 
   /* ---------- prepare Line Veto statistics parameters ---------- */
   if ( uvar->LVrho < 0.0 ) {
@@ -1760,6 +1914,17 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
             cfg->LVloglX->data[X] = - LAL_REAL4_MAX;
         } /* for X < numDetectors */
     } /* if ( uvar.computeLV && uvar.LVlX ) */
+
+  // ----- check that resampling option was used sensibly ...
+  if ( uvar->useResamp )
+    {
+      if ( uvar->GPUready ) {
+        XLALPrintError ("--useResamp cannot be used with --GPUready\n");
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+      // FIXME: probably should check a few more things, can't think of any right now ...
+      // let's hope users are sensible
+    }
 
   // ----- if user compiled special SSE-tuned code, check that SSE is actually available, otherwise fail!
   // in order to avoid 'unexpected' behaviour, ie the 'SSE-code' falling back on the non-SSE hotloop functions
@@ -2291,40 +2456,29 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
     return -1;
 
   /* add extra output-field containing per-detector FX if non-NULL */
-  char singleFstr[256] = "";     /* defaults to empty */
+  char extraStatsStr[256] = "";     /* defaults to empty */
   char buf0[256];
+  /* LVstat */
+  if ( !isnan(thisFCand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
+      snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->LVstat );
   if ( thisFCand->Fstat.numDetectors > 0 )
     {
-      snprintf ( singleFstr, sizeof(singleFstr), " %.9g", 2.0*thisFCand->Fstat.FX[0] );
-      UINT4 numDet = thisFCand->Fstat.numDetectors;
-      UINT4 X;
-      for ( X = 1; X < numDet ; X ++ )
+      for ( UINT4 X = 0; X < thisFCand->Fstat.numDetectors; X ++ )
         {
           snprintf ( buf0, sizeof(buf0), " %.9g", 2.0*thisFCand->Fstat.FX[X] );
-          UINT4 len1 = strlen ( singleFstr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( singleFstr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(singleFstr ));
+          UINT4 len1 = strlen ( extraStatsStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( extraStatsStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(extraStatsStr ));
             break;      /* we can't really terminate with error in this function, but at least we avoid crashing */
           }
-          strcat ( singleFstr, buf0 );
+          strcat ( extraStatsStr, buf0 );
         } /* for X < numDet */
-      /* LVstat */
-      if ( !isnan(thisFCand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
-        {
-          snprintf ( buf0, sizeof(buf0), " %.9g", thisFCand->LVstat );
-          UINT4 len1 = strlen ( singleFstr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( singleFstr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(singleFstr ));
-          }
-          strcat ( singleFstr, buf0 );
-        }
-
     } /* if FX */
 
-  fprintf (fp, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g%s\n",
+  fprintf (fp, "%.16g %.16g %.16g %.16g %.16g %.16g %.9g%s\n",
 	   thisFCand->doppler.fkdot[0], thisFCand->doppler.Alpha, thisFCand->doppler.Delta,
 	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3],
-	   2.0 * thisFCand->Fstat.F, singleFstr );
+	   2.0 * thisFCand->Fstat.F, extraStatsStr );
 
   return 0;
 
@@ -2400,13 +2554,13 @@ XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *sc
 /** check wether central candidate in Scanline-window is a local maximum
  */
 BOOLEAN
-XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 sortingStatistic )
+XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingStatistic )
 {
 
   if ( !scanWindow || !scanWindow->center )
     return FALSE;
 
-  if ( sortingStatistic == 1 ) /* F statistic */
+  if ( rankingStatistic == RANKBY_F ) /* F statistic */
     {
 
       REAL8 F0 = scanWindow->center->Fstat.F;
@@ -2417,7 +2571,7 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 sortingSt
 
     }
 
-  else if ( sortingStatistic == 2 ) /* LV statistic */
+  else if ( rankingStatistic == RANKBY_LV ) /* LV statistic */
     {
 
       REAL8 LV0 = scanWindow->center->LVstat;
@@ -2427,10 +2581,9 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 sortingSt
          return FALSE;
 
     }
-
   else
     {
-      XLALPrintError ("Unsupported sorting statistic! Supported values are 1 (F-statistic) and 2 (LV statistic).\n");
+      XLALPrintError ("Unsupported ranking statistic '%d' ! Supported: 'F=0' and 'LV=2'.\n", rankingStatistic );
       return FALSE;
     }
 

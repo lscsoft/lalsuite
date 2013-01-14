@@ -211,10 +211,10 @@ void initVariables(LALInferenceRunState *state)
 //	REAL8 mMin=1.0,mMax=30.0,MTotMax=35.0;
 	REAL8 a_spin2_max=1.0, a_spin1_max=1.0;
 	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
-	REAL8 phi_spin1_min=-LAL_PI;
-	REAL8 phi_spin1_max=LAL_PI;
-	REAL8 theta_spin1_min=-LAL_PI/2.0;
-	REAL8 theta_spin1_max=LAL_PI/2.0;	
+	REAL8 phi_spin1_min=0;
+	REAL8 phi_spin1_max=2.0*LAL_PI;
+	REAL8 theta_spin1_min=0.;
+	REAL8 theta_spin1_max=LAL_PI;	
 	REAL8 qMin=0.0;
 	REAL8 qMax=1.0;
 	REAL8 dt=0.1;            /* Width of time prior */
@@ -481,6 +481,8 @@ int main(int argc, char *argv[]) {
         LALInferenceCopyVariables(state->currentParams,samples[i]);
         LALInferenceDrawFromPrior(samples[i], state->priorArgs, state->GSLrandom );
         /* scatter points for CVM calculation */
+        REAL8 prior = state->prior(state,samples[i]);
+	LALInferenceSetVariable(samples[i],"logPrior",&prior);
     }
     state->currentParams=samples[0];
     gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
@@ -532,6 +534,7 @@ int main(int argc, char *argv[]) {
 	  LALInferenceMCMCSamplePrior(state);
 	  /* output sample */
 	  if(!(i%thinfac)){
+        LALInferenceSortVariablesByName(state->currentParams);
 	    if(state->logsample) state->logsample(state,state->currentParams);
 	    if(outfile) LALInferencePrintSample(outfile,state->currentParams);
 	    if(outfile) fprintf(outfile,"\n");
@@ -572,6 +575,17 @@ int main(int argc, char *argv[]) {
         XLALDestroyREAL8Vector(sampvec);
         XLALDestroyREAL8Vector(cumvec);
     }
+   
+    FILE *lout=NULL;
+    char param_list[FILENAME_MAX];
+    sprintf(param_list,"%s_params.txt",filename);
+    lout=fopen(param_list,"w");
+    LALInferenceSortVariablesByName(state->livePoints[0]);
+    for(LALInferenceVariableItem *param_ptr=state->livePoints[0]->head;param_ptr;param_ptr=param_ptr->next)
+    {
+        fprintf(lout,"%s\t",param_ptr->name);
+    }
+    fclose(lout);
     
     return(0);
 }
@@ -592,6 +606,8 @@ REAL8 PriorCDF(const char *name, const REAL8 x, LALInferenceVariables *priorArgs
     REAL8 min=0,max=0;
     LALInferenceGetMinMaxPrior(priorArgs,name,&min,&max);
     if(!strcmp(name,"inclination")) return(FlatInCosine(x,min,max));
+    if(!strcmp(name,"theta_spin1")) return(FlatInCosine(x,min,max));
+    if(!strcmp(name,"theta_spin2")) return(FlatInCosine(x,min,max));
     if(!strcmp(name,"declination")) return(FlatInSine(x,min,max));
     if(!strcmp(name,"distance")) return(rSquaredCDF(x,min,max));
     if(!strcmp(name,"logdistance")) return(rSquaredCDF(exp(x),exp(min),exp(max)));

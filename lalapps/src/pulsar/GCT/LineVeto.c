@@ -517,9 +517,6 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
   if ( !TwoF || !TwoFXvec || !TwoFXvec->data )
     XLAL_ERROR_REAL4 ( XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter!\n\n");
 
-  if ( TwoFXvec->length < 2 )
-    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "\nInput TwoFX vector needs at least 2 detectors (got %d)!\n\n", TwoFXvec->length );
-
   UINT4 numDetectors = TwoFXvec->length;
 
   if ( lXvec && ( lXvec->length != numDetectors ) )
@@ -576,9 +573,6 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
   /* check input parameters and report errors */
   if ( !TwoF || !TwoFX )
     XLAL_ERROR_REAL4 ( XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter!\n\n");
-
-  if ( numDetectors < 2 )
-    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "\nNeed at least 2 detectors (got %d)!\n\n", numDetectors );
 
   /* set up temporary variables and structs */
   REAL4 log0  = - LAL_REAL4_MAX;	/* approximates -inf */

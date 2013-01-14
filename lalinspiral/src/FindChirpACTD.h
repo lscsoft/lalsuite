@@ -32,48 +32,18 @@ templates using AmpCorPPN.
 */
 /*@{*/
 
-/**\name Error Codes */ /*@{*/
-#define FINDCHIRPACTDH_EQMAS 1
-#define FINDCHIRPACTDH_MSGEQMAS "AmpCorPPN template equal mass"
+/**\name Error Codes */
+/*@{*/
+#define FINDCHIRPACTDH_EQMAS 1	/**< AmpCorPPN template equal mass */
 /*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define FINDCHIRPACTDH_MSGEQMAS "AmpCorPPN template equal mass"
+/** \endcond */
 
 
 /** Define number of vectors, 6 for 0.5PN. */
 #define NACTDVECS (3)
-
-void
-LALFindChirpACTDTemplate (
-    LALStatus                  *status,
-    FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *theTmplt,
-    FindChirpTmpltParams       *params
-    );
-
-void
-LALFindChirpACTDNormalize(
-    LALStatus                  *status,
-    FindChirpTemplate          *fcTmplt,
-    FindChirpTmpltParams       *tmpltParams,
-    FindChirpDataParams        *params
-    );
-
-void
-LALFindChirpACTDFilterSegment (
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params
-    );
-
-REAL4  XLALFindChirpACTDInnerProduct(
-    COMPLEX8Vector *a,
-    COMPLEX8Vector *b,
-    COMPLEX8       *wtilde,
-    REAL4           lower,
-    REAL4           deltaT,
-    UINT4           numPoints
-    );
-
 
 /*@}*/
 

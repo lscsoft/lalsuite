@@ -26,25 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-/**
-
-\author Bose, S., Seader, S. E.
-\file
-
-\brief Provides core prototypes, structures and functions to filter
-data from multiple interferometers coherently for binary inspiral chirps.
-
-\section sec_ci_stat Coherent search statistic for binary neutron stars
-
-The coherent statistic will be defined here.
-
-\heading{Synopsis}
-\code
-#include <lal/CoherentInspiral.h>
-\endcode
-
-*/
-
 #ifndef _COHERENTINSPIRALH_H
 #define _COHERENTINSPIRALH_H
 
@@ -64,19 +45,42 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/**\name Error Codes */ /*@{*/
-#define COHERENTINSPIRALH_ENULL 1
-#define COHERENTINSPIRALH_ENNUL 2
-#define COHERENTINSPIRALH_EALOC 3
-#define COHERENTINSPIRALH_ENUMZ 4
-#define COHERENTINSPIRALH_ESEGZ 5
-#define COHERENTINSPIRALH_ECHIZ 6
-#define COHERENTINSPIRALH_EDTZO 7
-#define COHERENTINSPIRALH_EFREE 8
-#define COHERENTINSPIRALH_ERHOT 9
-#define COHERENTINSPIRALH_ECHIT 10
-#define COHERENTINSPIRALH_ESMSM 11
-#define COHERENTINSPIRALH_EZDET 12
+/** \defgroup CoherentInspiral_h Header CoherentInspiral.h
+ * \ingroup pkg_CBC_NEW
+ * \author Bose, S., Seader, S. E.
+ *
+ * \brief Provides core prototypes, structures and functions to filter
+ * data from multiple interferometers coherently for binary inspiral chirps.
+ *
+ * \heading{Coherent search statistic for binary neutron stars}
+ *
+ * The coherent statistic will be defined here.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/CoherentInspiral.h>
+ * \endcode
+ *
+ */
+/*@{*/
+
+/**\name Error Codes */
+/*@{*/
+#define COHERENTINSPIRALH_ENULL 1	/**< Null pointer */
+#define COHERENTINSPIRALH_ENNUL 2	/**< Non-null pointer */
+#define COHERENTINSPIRALH_EALOC 3	/**< Memory allocation error */
+#define COHERENTINSPIRALH_ENUMZ 4	/**< Invalid number of points in segment */
+#define COHERENTINSPIRALH_ESEGZ 5	/**< Invalid number of segments */
+#define COHERENTINSPIRALH_ECHIZ 6	/**< Invalid number of chi squared bins */
+#define COHERENTINSPIRALH_EDTZO 7	/**< deltaT is zero or negative */
+#define COHERENTINSPIRALH_EFREE 8	/**< Error freeing memory */
+#define COHERENTINSPIRALH_ERHOT 9	/**< coherentSNR threshold is negative */
+#define COHERENTINSPIRALH_ECHIT 10	/**< Chisq threshold is negative */
+#define COHERENTINSPIRALH_ESMSM 11	/**< Size mismatch between vectors */
+#define COHERENTINSPIRALH_EZDET 12	/**< Number of detectors should be greater than 1 and less than 5 */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define COHERENTINSPIRALH_MSGENULL "Null pointer"
 #define COHERENTINSPIRALH_MSGENNUL "Non-null pointer"
 #define COHERENTINSPIRALH_MSGEALOC "Memory allocation error"
@@ -89,9 +93,9 @@ extern "C" {
 #define COHERENTINSPIRALH_MSGECHIT "Chisq threshold is negative"
 #define COHERENTINSPIRALH_MSGESMSM "Size mismatch between vectors"
 #define COHERENTINSPIRALH_MSGEZDET "Number of detectors should be greater than 1 and less than 5"
-/*@}*/
+/** \endcond */
 
-/* --- parameter structure for the coherent inspiral filtering function ---- */
+/** Parameter structure for the coherent inspiral filtering function */
 typedef struct
 tagCoherentInspiralInitParams
 {
@@ -136,119 +140,90 @@ CoherentInspiralBeamVector;
 
 
 /** This structure provides the parameters used by the CoherentInspiralFilter() function.
-
-<dl>
-<dt><tt>UINT4 numPoints</tt></dt><dd> Number of time-points in the \f$c\f$ series
-from each detector. This determines the number of time-points in the
-\c cohSNRVec time-series.</dd>
-
-<dt><tt>REAL4 cohSNRThresh</tt></dt><dd> The value to threshold the multi-detector
-coherent signal to noise
-ratio square, \f$\rho^2\f$, on. If the signal to noise exceeds this value, then a
-candidate event is generated. Must be \f$\ge 0\f$ on entry.</dd>
-
-<dt><tt>DetectorVector   detectors</tt></dt><dd> This structure is defined below. It specifies the detectors on which
-the coherent search is being performed.</dd>
-
-<dt><tt>REAL4Vector *cohSNRVec</tt></dt><dd> Pointer to a vector that is set to
-\f$\rho^2(t_j)\f$ on exit. If NULL \f$\rho^2(t_j)\f$ is not stored.
-</dd>
-</dl>
-
-*/
+ */
 typedef struct
 tagCoherentInspiralFilterParams
 {
-  INT4                          numTmplts;
-  UINT4                         maximizeOverChirp;
-  UINT4                         numDetectors;
-  UINT4                         numSegments;
-  INT4                          numPoints;
-  UINT4                         numBeamPoints;
-  UINT4                         threeSiteCase;
-  REAL4                         fLow;
-  REAL8                         deltaT;
-  REAL4                         cohSNRThresh;
-  REAL8Vector                  *sigmasqVec;
-  REAL4Vector                  *chisqVec;
-  REAL4                         templateNorm;
-  INT4                          segmentLength; /* time points */
-  UINT4                         cohSNROut;
-  UINT4                         cohH1H2SNROut;
-  UINT4                         nullStatH1H2Out;
-  UINT4                         nullStatOut;
-  UINT2Vector                  *detIDVec; /* Note: H1, H2 are from same site, but are different detectors */
-  DetectorVector               *detectorVec; /*stores detectors' site info */
-  REAL4TimeSeries              *cohSNRVec;
-  REAL4TimeSeries              *cohH1H2SNRVec;
-  REAL4TimeSeries              *nullStatH1H2Vec;
-  REAL4TimeSeries              *nullStatVec;
-  REAL4TimeSeries              *cohSNRVec3Sites;
-  REAL4TimeSeries              *nullStatVec3Sites;
-  REAL4                         chirpTime;
-  double                        decStep;
-  double                        raStep;
-  UINT4                         estimParams;
-  UINT4                         followup;
-  UINT4                         exttrig;
+  INT4                          numTmplts;		/**< UNDOCUMENTED */
+  UINT4                         maximizeOverChirp;	/**< UNDOCUMENTED */
+  UINT4                         numDetectors;		/**< UNDOCUMENTED */
+  UINT4                         numSegments;		/**< UNDOCUMENTED */
+  INT4                          numPoints;		/**< Number of time-points in the \f$c\f$ series from each detector;
+                                                         * This determines the number of time-points in the \c cohSNRVec time-series
+                                                         */
+  UINT4                         numBeamPoints;		/**< UNDOCUMENTED */
+  UINT4                         threeSiteCase;		/**< UNDOCUMENTED */
+  REAL4                         fLow;			/**< UNDOCUMENTED */
+  REAL8                         deltaT;			/**< UNDOCUMENTED */
+  REAL4                         cohSNRThresh;		/**< The value to threshold the multi-detector coherent signal to noise
+                                                         * ratio square, \f$\rho^2\f$, on; If the signal to noise exceeds this value, then a
+                                                         * candidate event is generated; Must be \f$\ge 0\f$ on entry
+                                                         */
+  REAL8Vector                  *sigmasqVec;		/**< UNDOCUMENTED */
+  REAL4Vector                  *chisqVec;		/**< UNDOCUMENTED */
+  REAL4                         templateNorm;		/**< UNDOCUMENTED */
+  INT4                          segmentLength; 		/**< time points */
+  UINT4                         cohSNROut;		/**< UNDOCUMENTED */
+  UINT4                         cohH1H2SNROut;		/**< UNDOCUMENTED */
+  UINT4                         nullStatH1H2Out;		/**< UNDOCUMENTED */
+  UINT4                         nullStatOut;		/**< UNDOCUMENTED */
+  UINT2Vector                  *detIDVec; 		/**< Note: H1, H2 are from same site, but are different detectors */
+  DetectorVector               *detectorVec; 		/**< This structure is defined below; It specifies the detectors on which
+                                                         * the coherent search is being performed
+                                                         */
+  REAL4TimeSeries              *cohSNRVec;		/**< Pointer to a vector that is set to \f$\rho^2(t_j)\f$ on exit; If NULL \f$\rho^2(t_j)\f$ is not stored */
+  REAL4TimeSeries              *cohH1H2SNRVec;		/**< UNDOCUMENTED */
+  REAL4TimeSeries              *nullStatH1H2Vec;	/**< UNDOCUMENTED */
+  REAL4TimeSeries              *nullStatVec;		/**< UNDOCUMENTED */
+  REAL4TimeSeries              *cohSNRVec3Sites;	/**< UNDOCUMENTED */
+  REAL4TimeSeries              *nullStatVec3Sites;	/**< UNDOCUMENTED */
+  REAL4                         chirpTime;		/**< UNDOCUMENTED */
+  double                        decStep;		/**< UNDOCUMENTED */
+  double                        raStep;			/**< UNDOCUMENTED */
+  UINT4                         estimParams;		/**< UNDOCUMENTED */
+  UINT4                         followup;		/**< UNDOCUMENTED */
+  UINT4                         exttrig;		/**< UNDOCUMENTED */
 }
 CoherentInspiralFilterParams;
 
 /* --- input to the CoherentInspiral filtering functions --------- */
 
 /** This structure groups the \f$c = x+iy\f$ outputs of \f$M\f$ detectors
-into an ordered set. The FindChirpFilter code, when separately run on the
-data from multiple detectors, outputs a \c COMPLEX8TimeSeries, \f$c\f$, for
-each detector. If a coherent search is to be performed on the data from
-these \f$M\f$ detectors, one of the inputs required is the
-\c CoherentInspiralCVector structure with a default vector
-\c length of \f$M=6\f$ and with the vector index ordered as 0=H1, 1=L1,
-2=V (Virgo), 3=G (GEO), 4=T (Tama), (just like the lalcached detector siteIDs)
-and 5=H2. If a coherent search is to be performed on, say, the data from
-H1, L1, Virgo, and GEO, then the \c length
-member above will be set to 6 (by default), but the pointers to the fourth and
-fifth \c COMPLEX8TimeSeries will be set to NULL; the remainder will
-point to the \f$c\f$ outputs from the above 4 detectors, in that order.
-
-<dl>
-<dt><tt>UINT4  length</tt></dt><dd> Length of the vector; set to 6 (by default)
-for the total number of operating (or nearly so) interferometers.</dd>
-
-<dt><tt>COMPLEX8TimeSeries  *cData</tt></dt><dd> Pointer to the c outputs of
-the 6 interferometers.</dd>
-</dl>
-
-*/
+ * into an ordered set. The FindChirpFilter code, when separately run on the
+ * data from multiple detectors, outputs a \c COMPLEX8TimeSeries, \f$c\f$, for
+ * each detector. If a coherent search is to be performed on the data from
+ * these \f$M\f$ detectors, one of the inputs required is the
+ * \c CoherentInspiralCVector structure with a default vector
+ * \c length of \f$M=6\f$ and with the vector index ordered as 0=H1, 1=L1,
+ * 2=V (Virgo), 3=G (GEO), 4=T (Tama), (just like the lalcached detector siteIDs)
+ * and 5=H2. If a coherent search is to be performed on, say, the data from
+ * H1, L1, Virgo, and GEO, then the \c length
+ * member above will be set to 6 (by default), but the pointers to the fourth and
+ * fifth \c COMPLEX8TimeSeries will be set to NULL; the remainder will
+ * point to the \f$c\f$ outputs from the above 4 detectors, in that order.
+ */
 typedef struct
 tagCoherentInspiralCVector
 {
-  UINT4                   numDetectors;
-  COMPLEX8TimeSeries     *cData[4];
+  UINT4                   numDetectors;	/**< Length of the vector; set to 6 (by default) for the total number of operating (or nearly so) interferometers */
+  COMPLEX8TimeSeries     *cData[4];	/**< Pointer to the c outputs of the 6 interferometers */
 }
 CoherentInspiralCVector;
 
-
-
-
 /** This structure provides the essential information for
-computing the coherent SNR from the \f$c\f$ outputs of multiple detectors.
-In addition to this, the code requires the beam-pattern coefficients
-for the different detectors. These coefficients are currently
-computed by a Mathematica code and are read in as ascii files directly
-by the coherent code. But there are plans for the future where a new member
-will be added to this structure to store these coefficients.
-
-<dl>
-<dt><tt>CoherentInspiralCVector   *multiCData</tt></dt><dd> Pointer to the
- vector of COMPLEX8TimeSeries, namely, \c CoherentInspiralCVector.</dd>
-</dl>
-*/
+ * computing the coherent SNR from the \f$c\f$ outputs of multiple detectors.
+ * In addition to this, the code requires the beam-pattern coefficients
+ * for the different detectors. These coefficients are currently
+ * computed by a Mathematica code and are read in as ascii files directly
+ * by the coherent code. But there are plans for the future where a new member
+ * will be added to this structure to store these coefficients.
+ */
 typedef struct
 tagCoherentInspiralFilterInput
 {
-  InspiralTemplate            *tmplt;
-  CoherentInspiralCVector     *multiCData;
-  CoherentInspiralBeamVector  *beamVec;
+  InspiralTemplate            *tmplt;		/**< UNDOCUMENTED */
+  CoherentInspiralCVector     *multiCData;	/**< Pointer to the vector of COMPLEX8TimeSeries, namely, \c CoherentInspiralCVector */
+  CoherentInspiralBeamVector  *beamVec;		/**< UNDOCUMENTED */
 }
 CoherentInspiralFilterInput;
 
@@ -259,12 +234,8 @@ typedef struct tagSkyGrid {
   struct tagSkyGrid *next;
 } SkyGrid;
 
-/*
- *
- * function prototypes for memory management functions
- .*
- */
-
+/** \name Function prototypes for memory management functions */
+/*@{*/
 void
 LALCoherentInspiralFilterInputInit (
     LALStatus                       *status,
@@ -290,13 +261,10 @@ LALCoherentInspiralFilterParamsFinalize (
     LALStatus                       *status,
     CoherentInspiralFilterParams   **output
     );
+/*@}*/
 
-/*
- *
- * function prototypes for coherent inspiral filter function
- *
- */
-
+/** \name Function prototypes for coherent inspiral filter function. */
+/*@{*/
 void
 LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
     LALStatus                             *status,
@@ -333,7 +301,10 @@ XLALCoherentInspiralFilterSegment (
     REAL4                                 eff_snr_denom_fac,
     REAL4                                 nullStatRegul
     );
+/*@}*/
 
+
+/*@}*/ /* end:CoherentInspiral_h */
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -16,15 +16,6 @@ extern "C" {
 
 extern int newswitch;
 
-/* use error codes above 1024 to avoid conflicts with GSL */
-#define LALSTPN_TEST_ENERGY			1025
-#define LALSTPN_TEST_OMEGADOT		1026
-#define LALSTPN_TEST_COORDINATE	1027
-#define LALSTPN_TEST_OMEGANAN		1028
-
-#define LALSTPN_DERIVATIVE_OMEGANONPOS	1030
-#define LALSTPN_DERIVATIVE_COORDINATE		1031
-
 void
 LALSTPNAdaptiveWaveformEngine( LALStatus *status,
                 							 REAL4Vector *signalvec1,REAL4Vector *signalvec2,

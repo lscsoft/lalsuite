@@ -696,14 +696,14 @@ if opts.coherence_test:
             if nparallel>1:
                 (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent,nodeclass=nestclass,timeslides=ts)
                 dag.add_node(merge_node)
-                coherence_test_files[time][ifo]=merge_node.get_output_files()[0]
+                coherence_test_files[time][ifo]=merge_node.get_output_files()[0]+'_B.txt'
                 combine_node.add_parent(merge_node)
                 coherence_test_node.add_parent(merge_node)
                 coherence_inspnest_nodes[time][ifo]=merge_node
             else:
                 inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent,nodeclass=nestclass,timeslides=ts)
                 inspnest_nodes=[inspnest_node]
-                coherence_test_files[time][ifo]=inspnest_node.get_output_files()[0]
+                coherence_test_files[time][ifo]=inspnest_node.get_output_files()[0]+'_B.txt'
                 combine_node.add_parent(inspnest_node)
                 coherence_inspnest_nodes[time][ifo]=inspnest_node
             combine_node.add_var_arg(coherence_test_files[time][ifo])

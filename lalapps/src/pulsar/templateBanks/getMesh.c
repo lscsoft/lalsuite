@@ -41,6 +41,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
 #include <lal/SFTutils.h>
+#include <lal/LogPrintf.h>
 
 #include <lal/DopplerScan.h>
 
@@ -726,16 +727,17 @@ void
 setTrueRandomSeed(void)
 {
   FILE *fpRandom;
-  INT4 seed;		/* NOTE: possibly used un-initialized! that's ok!! */
+  UINT4 seed;
 
   fpRandom = fopen("/dev/urandom", "r");	/* read Linux random-pool for seed */
   if ( fpRandom == NULL )
     {
-      XLALPrintError ("\nCould not open /dev/urandom ... using default seed.\n\n");
+      seed = (UINT4) ( 1e6 * XLALGetTimeOfDay() );
+      XLALPrintError ("\nCould not open /dev/urandom ... using clock microseconds to set seed to %d.\n\n", seed );
     }
   else
     {
-      if ( fread(&seed, sizeof(INT4),1, fpRandom) != 1 )
+      if ( fread(&seed, sizeof(UINT4),1, fpRandom) != 1 )
         XLALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
       fclose(fpRandom);
     }

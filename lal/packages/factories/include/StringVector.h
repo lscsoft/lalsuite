@@ -55,7 +55,6 @@ extern "C" {
 
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(VARIABLE_ARGUMENT_LIST(XLALCreateStringVector, CHAR*, NULL));
-SWIGLAL(RETURN_VOID(LALStringVector*, XLALAppendString2Vector));
 #endif /* SWIG */
 
 LALStringVector *XLALCreateStringVector ( const CHAR *str1, ... );

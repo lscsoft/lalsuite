@@ -89,12 +89,12 @@ def parse_command_line():
 	for cache in options.input_cache:
 		if options.verbose:
 			print >>sys.stderr, "reading '%s' ..." % cache
-		filenames += [lal.CacheEntry(line).path() for line in file(cache)]
+		filenames += [lal.CacheEntry(line).path for line in file(cache)]
 	if not filenames:
 		raise ValueError, "Nothing to do!"
 	if options.likelihood_cache is None:
 		raise ValueError, "must set --likelihood-cache"
-	options.likelihood_filenames = [lal.CacheEntry(line).path() for line in file(options.likelihood_cache)]
+	options.likelihood_filenames = [lal.CacheEntry(line).path for line in file(options.likelihood_cache)]
 
 	return options, filenames
 

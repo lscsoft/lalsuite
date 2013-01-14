@@ -1,3 +1,27 @@
+lalmetaio (1.0.7-1) unstable; urgency=low
+
+  * LALMetaIO 1.0.7
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 Jan 2013 16:29:25 -0600
+
+lalmetaio (1.0.6-1) unstable; urgency=low
+
+  * LALMetaIO 1.0.6
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 10 Dec 2012 11:18:05 -0600
+
+lalmetaio (1.0.5-1) unstable; urgency=low
+
+  * LALMetaIO 1.0.5
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 02 Nov 2012 13:19:14 -0500
+
+lalmetaio (1.0.4-5) unstable; urgency=low
+
+  * convert to source format 3.0 (quilt)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Sep 2012 09:45:00 +0200
+
 lalmetaio (1.0.4-1) unstable; urgency=low
 
   * LALMetaIO 1.0.4

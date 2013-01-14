@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2007 S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson
+ * Copyright (C) 2007 S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson, 
+ * C. Pankow
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,6 +25,7 @@
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/Factorial.h>
 
 #ifndef _SPHERICALHARMONICS_H
 #define _SPHERICALHARMONICS_H
@@ -34,9 +36,10 @@ extern "C" {
 
 /**
  * \addtogroup SphericalHarmonics_h
- * \author S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson
+ * \author S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson, C. Pankow
  *
- * \brief Library of Spin-weighted Spherical Harmonic functions
+ * \brief Library of Spin-weighted Spherical Harmonic functions and an 
+ * implementation of the Wigner-D matrices
  *
  *
  */
@@ -44,6 +47,9 @@ extern "C" {
 COMPLEX16 XLALSpinWeightedSphericalHarmonic( REAL8 theta, REAL8 phi, int s, int l, int m );
 int XLALScalarSphericalHarmonic( COMPLEX16 *y, UINT4 l, INT4  m, REAL8 theta, REAL8 phi );
 INT4 XLALSphHarm ( COMPLEX16 *out, UINT4   L, INT4 M, REAL4 theta, REAL4   phi );
+double XLALJacobiPolynomial( int n, int alpha, int beta, double x );
+double XLALWignerdMatrix( int l, int mp, int m, double beta );
+COMPLEX16 XLALWignerDMatrix( int l, int mp, int m, double alpha, double beta, double gam );
 /*@}*/
 
 

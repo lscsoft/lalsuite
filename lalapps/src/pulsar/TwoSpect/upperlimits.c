@@ -107,14 +107,12 @@ void free_UpperLimitVector(UpperLimitVector *vector)
 // Reset the upperLimitStruct
 void reset_UpperLimitStruct(UpperLimit *ul)
 {
-   
    ul->fsig = NULL;
    ul->period = NULL;
    ul->moddepth = NULL;
    ul->ULval = NULL;
    ul->effSNRval = NULL;
-   
-}
+} /* reset_UpperLimitStruct() */
 
 //Free an upperLimitStruct
 void free_UpperLimitStruct(UpperLimit *ul)
@@ -141,7 +139,7 @@ void free_UpperLimitStruct(UpperLimit *ul)
       ul->effSNRval = NULL;
    }
    
-}
+} /* free_UpperLimitStruct() */
 
 
 //Determine the 95% confidence level upper limit at a particular sky location from the loudest IHS value
@@ -152,6 +150,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    
    INT4 minrows = (INT4)round(2.0*params->dfmin*params->Tcoh)+1;
    
+   //Allocate vectors
    ul->fsig = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
    ul->period = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
    ul->moddepth = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
@@ -178,7 +177,26 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
    gsl_root_fsolver *s = gsl_root_fsolver_alloc (T);
    gsl_function F;
-   F.function = &gsl_ncx2cdf_float_withouttinyprob_solver;     //single precision, without the extremely tiny probability part
+   switch (params->ULsolver) {
+      case 1:
+         F.function = &gsl_ncx2cdf_withouttinyprob_solver;           //double precision, without the extremely tiny probability part
+         break;
+      case 2:
+         F.function = &gsl_ncx2cdf_float_solver;   //single precision
+         break;
+      case 3:
+         F.function = &gsl_ncx2cdf_solver;         //double precision
+         break;
+      case 4:
+         F.function = &ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver;   //single precision, w/ Matlab-based chi2cdf function
+         break;
+      case 5:
+         F.function = &ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver;         //double precision, w/ Matlab-based chi2cdf function
+         break;
+      default:
+         F.function = &gsl_ncx2cdf_float_withouttinyprob_solver;     //single precision, without the extremely tiny probability part
+         break;
+   }
    struct ncx2cdf_solver_params pars;
    
    //loop over modulation depths
@@ -191,7 +209,6 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       //loop over frequency bins
       for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
          INT4 locationinmaximavector = startpositioninmaximavector + jj;      //Current location in IHS maxima vector
-         //REAL8 noise = ihsfar->ihsdistMean->data[ii-2];                       //Expected noise
          REAL8 noise = ihsfar->expectedIHSVector->data[ihsmaxima->locations->data[locationinmaximavector] - 5];  //Expected noise
          
          //Sum across multiple frequency bins scaling noise each time with average noise floor
@@ -247,8 +264,20 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
             root = gsl_root_fsolver_root(s);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s: gsl_root_fsolver_root() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
             lo = gsl_root_fsolver_x_lower(s);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s: gsl_root_fsolver_x_lower() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
             hi = gsl_root_fsolver_x_upper(s);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s: gsl_root_fsolver_x_upper() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
             status = gsl_root_test_interval(lo, hi, 0.0, 0.001);
             if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
                fprintf(stderr,"%s: gsl_root_test_interval() failed with code %d.\n", __func__, status);
@@ -345,6 +374,36 @@ REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p)
    REAL4 val = ncx2cdf_float_withouttinyprob((REAL4)params->val, (REAL4)params->dof, (REAL4)x);
    if (XLAL_IS_REAL4_FAIL_NAN(val)) {
       fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob(%f, %f, %f) failed.\n", __func__, params->val, params->dof, x);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
+   }
+   else return (REAL8)val - (1.0-params->ULpercent);
+   
+}
+
+//The non-central chi-square CDF solver used in the GSL root finding algorithm, using a Matlab-based chi2cdf function
+//Double precision, without the tiny probability
+REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p)
+{
+   
+   struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
+   REAL8 val = ncx2cdf_withouttinyprob_withmatlabchi2cdf(params->val, params->dof, x);
+   if (XLAL_IS_REAL8_FAIL_NAN(val)) {
+      fprintf(stderr, "%s: ncx2cdf_withouttinyprob_withmatlabchi2cdf(%f, %f, %f) failed.\n", __func__, params->val, params->dof, x);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
+   }
+   else return val - (1.0-params->ULpercent);
+   
+}
+
+//The non-central chi-square CDF solver used in the GSL root finding algorithm, using a Matlab-based chi2cdf function
+//Float precision (although output is in double precision for GSL), without the tiny probability
+REAL8 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p)
+{
+   
+   struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
+   REAL4 val = ncx2cdf_float_withouttinyprob_withmatlabchi2cdf((REAL4)params->val, (REAL4)params->dof, (REAL4)x);
+   if (XLAL_IS_REAL4_FAIL_NAN(val)) {
+      fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(%f, %f, %f) failed.\n", __func__, params->val, params->dof, x);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    else return (REAL8)val - (1.0-params->ULpercent);

@@ -1,4 +1,5 @@
-## Process this file with automake to produce Makefile.in
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
+
 noinst_LTLIBRARIES = libvectorops.la
 
 libvectorops_la_SOURCES = \
@@ -16,5 +17,3 @@ noinst_HEADERS = \
 	MatrixPower_source.c \
 	MiscMatlab_source.c \
 	VectorIndexRange_source.c
-
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

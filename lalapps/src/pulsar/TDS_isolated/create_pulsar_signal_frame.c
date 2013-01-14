@@ -59,12 +59,27 @@
 
 #define STRINGLENGTH 256              /* the length of general string */
 
+/* create a detector at the GEO centre based on Virgo's arms */
+//LALFrDetector FrGEOcentre = {
+//  "C1", // the detector name 
+//  "C1", // detector prefix 
+//  0.0, // the vertex longitude (rads) 
+//  LAL_PI_2, // the vertex latitude (rads) 
+//  -LAL_BWGS84_SI, // the vertex elevation (m) - set to Earth centre 
+//  0.0, // the x-arm altitude (rads) 
+//  0.33916285222, // the x-arm azimuth (rads) - same as Virgo 
+//  0.0, // y-arm altitude (rads) 
+//  5.05155183261, // y-arm azimuth (rads) - same as Virgo 
+//  1500.0, // x-arm midpoint (m)
+//  1500.0}; // y-arm midpoint (m)
+  
 #define USAGE \
 "Usage: %s [options]\n\n"\
 " --help, -h        display this message\n"\
 " --detector, -i    the detector for which to create a frame (e.g. H1)\n"\
 " --channel, -c     the channel name into which the signals will be added\n"\
 " --epoch, -e       (int) the start epoch of the created frame\n"\
+" --geocentre, g    set the detector to the geocentre\n"\
 " --duration, -d    (int) the duration (in seconds) of the frame\n"\
 " --pulsar-dir, -p  the directory containing pulsar (.par) files of signals\n\
                    to be added to the frame\n"\
@@ -95,6 +110,8 @@ typedef struct tagInputParams{
 
   UINT4 frDur; /* duration of a frame */
   UINT4 epoch; /* start epoch of a frame */
+  
+  UINT4 geocentre; /* a flag to set the detector to the geocentre */
 } InputParams;
 
 const InputParams empty_InputParams;
@@ -110,7 +127,7 @@ int main(int argc, char **argv){
 
   InputParams inputs = empty_InputParams;
 
-  REAL8 srate = 16384; /*sample rate defaulted to 16384 */
+  REAL8 srate = 16384.0; /*sample rate defaulted to 16384 */
 
   /* read in command line input args */
   ReadInput( &inputs, argc, argv );
@@ -132,6 +149,12 @@ int main(int argc, char **argv){
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
+  if( inputs.geocentre ){ /* set site to the geocentre */
+    site->location[0] = 0.0;
+    site->location[1] = 0.0;
+    site->location[2] = 0.0;
+  }
+  
   struct dirent **pulsars;
   INT4 n=scandir(inputs.pulsarDir, &pulsars, 0, alphasort);
   if ( n < 0){
@@ -139,6 +162,8 @@ int main(int argc, char **argv){
     XLAL_ERROR(XLAL_EIO);
   }
 
+  fprintf(stderr, "x = %le, y = %le, z= %le\n", site->location[0], site->location[1], site->location[2] );
+  
   UINT4 numpulsars = (UINT4)n;
   UINT4 h=0;
 
@@ -306,6 +331,7 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
     { "detector",                 required_argument,  0, 'i' },
     { "channel",                  required_argument,  0, 'c' },
     { "epoch",                    required_argument,  0, 'e' },
+    { "geocentre",                no_argument,        0, 'g' },
     { "duration",                 required_argument,  0, 'd' },
     { "pulsar-dir",               required_argument,  0, 'p' },
     { "output-dir",               required_argument,  0, 'o' },
@@ -317,12 +343,15 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
   };
 
   const CHAR *fn = __func__;
-  CHAR args[] = "hi:c:e:d:p:o:s:m:y:l:";
+  CHAR args[] = "hi:c:e:gd:p:o:s:m:y:l:";
   CHAR *program = argv[0];
 
   /* default the debug level to 1 */
   lalDebugLevel = 1;
 
+  /* default to no set the detector to the geocentre */
+  inputParams->geocentre = 0;
+  
   /* get input arguments */
   while(1){
     INT4 option_index = 0;
@@ -353,6 +382,9 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
         break;
       case 'e': /* frame epoch */
         inputParams->epoch = atoi(optarg);
+        break;
+      case 'g': /* geocentre flag */
+        inputParams->geocentre = 1;
         break;
       case 'd': /* frame duration */
         inputParams->frDur = atoi(optarg);

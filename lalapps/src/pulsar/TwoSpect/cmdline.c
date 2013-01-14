@@ -47,15 +47,16 @@ const char *gengetopt_args_info_full_help[] = {
   "      --IFO=IFO code            Interferometer of whose data is being analyzed  \n                                  (possible values=\"H1\", \"L1\", \"V1\")",
   "      --avesqrtSh=DOUBLE        Expected average of square root of Sh",
   "      --blksize=INT             Blocksize for running median to determine \n                                  expected noise of input SFTs  (default=`101')",
-  "      --sftType=STRING          SFT from either 'MFD' (Makefakedata_v4) or \n                                  'vladimir' (Vladimir's SFT windowed version) \n                                  which uses a factor of 2 rather than \n                                  sqrt(8/3) for the window normalization  \n                                  (possible values=\"MFD\", \"vladimir\" \n                                  default=`vladimir')",
+  "      --sftType=STRING          SFT type of either 'standard' (v2 SFTs; FFT \n                                  coefficients * dt/RMS(window weights)) or \n                                  'vladimir' (Vladimir's Hann windowed SFT \n                                  version; FFT coefficients * 2*dt)  (possible \n                                  values=\"standard\", \"vladimir\" \n                                  default=`standard')",
   "\nInput/ouput parameters:",
   "      --outdirectory=directory  Output directory  (default=`output')",
   "      --outfilename=filename    Output file name  (default=`logfile.txt')",
+  "      --configCopy=filename     Copy of the configuration file whose output is \n                                  gengetopt format  \n                                  (default=`input_values.conf')",
   "      --ULfilename=filename     Upper limit file name  (default=`uls.dat')",
   "      --normRMSoutput=filename  File for the output of the normalized RMS from \n                                  the non-slided data",
-  "      --sftDir=directory        Directory containing SFTs  (default=`./')",
-  "      --sftFile=path/filename   Path and filename of SFTs  (default=`*.sft')",
-  "      --ephemDir=directory      Path to ephemeris files",
+  "      --sftDir=directory        Directory containing SFTs, e.g., /path/to/file \n                                  (one of --sftDir or --sftFile must be \n                                  specified)",
+  "      --sftFile=path/filename   Path and filename of SFTs, e.g., \n                                  /path/to/file/sftdata.sft (one of --sftDir or \n                                  --sftFile must be specified)",
+  "      --ephemDir=directory      Path to ephemeris files, e.g. \n                                  /path/to/ephemeris/files",
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files",
   "\nTwoSpect search parameters:",
   "      --Pmin=DOUBLE             Minimum period to be searched (in seconds)",
@@ -73,8 +74,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --ihsfomfar=DOUBLE        IHS FOM FAR threshold",
   "      --keepOnlyTopNumIHS=INT   Keep the top <number> of IHS candidates based \n                                  on significance",
   "      --tmplfar=DOUBLE          Template FAR threshold",
-  "      --minTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`50')",
-  "      --maxTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`50')",
+  "      --minTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`1')",
+  "      --maxTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`1000')",
   "\nTwoSpect upper limit ranges:",
   "      --ULfmin=DOUBLE           Minimum signal frequency considered for the \n                                  upper limit value (Hz)",
   "      --ULfspan=DOUBLE          Span of signal frequencies considered for the \n                                  upper limit value (Hz)",
@@ -91,6 +92,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --useSSE                  Use SSE functions (caution: user needs to have \n                                  compiled for SSE or program fails)  \n                                  (default=off)",
   "      --followUpOutsideULrange  Follow up outliers outside the range of the UL \n                                  values  (default=off)",
   "\nHidden options:",
+  "      --signalOnly              SFTs contain only signal, no noise  \n                                  (default=off)",
+  "      --ULsolver=INT            Solver function for the upper limit \n                                  calculation: \n                                  0=gsl_ncx2cdf_float_withouttinyprob_solver, \n                                  1=gsl_ncx2cdf_withouttinyprob_solver, \n                                  2=gsl_ncx2cdf_float_solver, \n                                  3=gsl_ncx2cdf_solver, \n                                  4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, \n                                  5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver \n                                   (possible values=\"0\", \"1\", \"2\", \"3\", \n                                  \"4\", \"5\" default=`0')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
   "      --noNotchHarmonics        Do not notch the daily/sidereal harmonics in \n                                  the IHS step.  (default=off)",
@@ -169,11 +172,12 @@ init_help_array(void)
   gengetopt_args_info_help[55] = gengetopt_args_info_full_help[55];
   gengetopt_args_info_help[56] = gengetopt_args_info_full_help[56];
   gengetopt_args_info_help[57] = gengetopt_args_info_full_help[57];
-  gengetopt_args_info_help[58] = 0; 
+  gengetopt_args_info_help[58] = gengetopt_args_info_full_help[58];
+  gengetopt_args_info_help[59] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[59];
+const char *gengetopt_args_info_help[60];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -219,8 +223,9 @@ free_cmd_list(void)
 
 
 const char *cmdline_parser_IFO_values[] = {"H1", "L1", "V1", 0}; /*< Possible values for IFO. */
-const char *cmdline_parser_sftType_values[] = {"MFD", "vladimir", 0}; /*< Possible values for sftType. */
+const char *cmdline_parser_sftType_values[] = {"standard", "vladimir", 0}; /*< Possible values for sftType. */
 const char *cmdline_parser_FFTplanFlag_values[] = {"0", "1", "2", "3", 0}; /*< Possible values for FFTplanFlag. */
+const char *cmdline_parser_ULsolver_values[] = {"0", "1", "2", "3", "4", "5", 0}; /*< Possible values for ULsolver. */
 
 static char *
 gengetopt_strdup (const char *s);
@@ -245,6 +250,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->sftType_given = 0 ;
   args_info->outdirectory_given = 0 ;
   args_info->outfilename_given = 0 ;
+  args_info->configCopy_given = 0 ;
   args_info->ULfilename_given = 0 ;
   args_info->normRMSoutput_given = 0 ;
   args_info->sftDir_given = 0 ;
@@ -279,6 +285,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->fastchisqinv_given = 0 ;
   args_info->useSSE_given = 0 ;
   args_info->followUpOutsideULrange_given = 0 ;
+  args_info->signalOnly_given = 0 ;
+  args_info->ULsolver_given = 0 ;
   args_info->dopplerMultiplier_given = 0 ;
   args_info->IHSonly_given = 0 ;
   args_info->noNotchHarmonics_given = 0 ;
@@ -314,19 +322,21 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->avesqrtSh_orig = NULL;
   args_info->blksize_arg = 101;
   args_info->blksize_orig = NULL;
-  args_info->sftType_arg = gengetopt_strdup ("vladimir");
+  args_info->sftType_arg = gengetopt_strdup ("standard");
   args_info->sftType_orig = NULL;
   args_info->outdirectory_arg = gengetopt_strdup ("output");
   args_info->outdirectory_orig = NULL;
   args_info->outfilename_arg = gengetopt_strdup ("logfile.txt");
   args_info->outfilename_orig = NULL;
+  args_info->configCopy_arg = gengetopt_strdup ("input_values.conf");
+  args_info->configCopy_orig = NULL;
   args_info->ULfilename_arg = gengetopt_strdup ("uls.dat");
   args_info->ULfilename_orig = NULL;
   args_info->normRMSoutput_arg = NULL;
   args_info->normRMSoutput_orig = NULL;
-  args_info->sftDir_arg = gengetopt_strdup ("./");
+  args_info->sftDir_arg = NULL;
   args_info->sftDir_orig = NULL;
-  args_info->sftFile_arg = gengetopt_strdup ("*.sft");
+  args_info->sftFile_arg = NULL;
   args_info->sftFile_orig = NULL;
   args_info->ephemDir_arg = NULL;
   args_info->ephemDir_orig = NULL;
@@ -350,9 +360,9 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ihsfomfar_orig = NULL;
   args_info->keepOnlyTopNumIHS_orig = NULL;
   args_info->tmplfar_orig = NULL;
-  args_info->minTemplateLength_arg = 50;
+  args_info->minTemplateLength_arg = 1;
   args_info->minTemplateLength_orig = NULL;
-  args_info->maxTemplateLength_arg = 50;
+  args_info->maxTemplateLength_arg = 1000;
   args_info->maxTemplateLength_orig = NULL;
   args_info->ULfmin_orig = NULL;
   args_info->ULfspan_orig = NULL;
@@ -367,6 +377,9 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->fastchisqinv_flag = 0;
   args_info->useSSE_flag = 0;
   args_info->followUpOutsideULrange_flag = 0;
+  args_info->signalOnly_flag = 0;
+  args_info->ULsolver_arg = 0;
+  args_info->ULsolver_orig = NULL;
   args_info->dopplerMultiplier_arg = 1.0;
   args_info->dopplerMultiplier_orig = NULL;
   args_info->IHSonly_flag = 0;
@@ -409,54 +422,57 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->sftType_help = gengetopt_args_info_full_help[15] ;
   args_info->outdirectory_help = gengetopt_args_info_full_help[17] ;
   args_info->outfilename_help = gengetopt_args_info_full_help[18] ;
-  args_info->ULfilename_help = gengetopt_args_info_full_help[19] ;
-  args_info->normRMSoutput_help = gengetopt_args_info_full_help[20] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[21] ;
-  args_info->sftFile_help = gengetopt_args_info_full_help[22] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[23] ;
-  args_info->ephemYear_help = gengetopt_args_info_full_help[24] ;
-  args_info->Pmin_help = gengetopt_args_info_full_help[26] ;
-  args_info->Pmax_help = gengetopt_args_info_full_help[27] ;
-  args_info->dfmin_help = gengetopt_args_info_full_help[28] ;
-  args_info->dfmax_help = gengetopt_args_info_full_help[29] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[30] ;
-  args_info->skyRegionFile_help = gengetopt_args_info_full_help[31] ;
-  args_info->linPolAngle_help = gengetopt_args_info_full_help[32] ;
-  args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[33] ;
-  args_info->ihsfactor_help = gengetopt_args_info_full_help[35] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[36] ;
-  args_info->ihsfom_help = gengetopt_args_info_full_help[37] ;
-  args_info->ihsfomfar_help = gengetopt_args_info_full_help[38] ;
-  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[39] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[40] ;
-  args_info->minTemplateLength_help = gengetopt_args_info_full_help[41] ;
-  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[42] ;
-  args_info->ULfmin_help = gengetopt_args_info_full_help[44] ;
-  args_info->ULfspan_help = gengetopt_args_info_full_help[45] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[46] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[47] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[48] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[50] ;
-  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[51] ;
-  args_info->lineDetection_help = gengetopt_args_info_full_help[52] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[54] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[55] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[56] ;
-  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[57] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[59] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[60] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[61] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[62] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[63] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[64] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[65] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[66] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[67] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[68] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[69] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[70] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[71] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[72] ;
+  args_info->configCopy_help = gengetopt_args_info_full_help[19] ;
+  args_info->ULfilename_help = gengetopt_args_info_full_help[20] ;
+  args_info->normRMSoutput_help = gengetopt_args_info_full_help[21] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[22] ;
+  args_info->sftFile_help = gengetopt_args_info_full_help[23] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[24] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[25] ;
+  args_info->Pmin_help = gengetopt_args_info_full_help[27] ;
+  args_info->Pmax_help = gengetopt_args_info_full_help[28] ;
+  args_info->dfmin_help = gengetopt_args_info_full_help[29] ;
+  args_info->dfmax_help = gengetopt_args_info_full_help[30] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[31] ;
+  args_info->skyRegionFile_help = gengetopt_args_info_full_help[32] ;
+  args_info->linPolAngle_help = gengetopt_args_info_full_help[33] ;
+  args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[34] ;
+  args_info->ihsfactor_help = gengetopt_args_info_full_help[36] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[37] ;
+  args_info->ihsfom_help = gengetopt_args_info_full_help[38] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[39] ;
+  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[40] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[41] ;
+  args_info->minTemplateLength_help = gengetopt_args_info_full_help[42] ;
+  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[43] ;
+  args_info->ULfmin_help = gengetopt_args_info_full_help[45] ;
+  args_info->ULfspan_help = gengetopt_args_info_full_help[46] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[47] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[48] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[49] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[51] ;
+  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[52] ;
+  args_info->lineDetection_help = gengetopt_args_info_full_help[53] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[55] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[56] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[57] ;
+  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[58] ;
+  args_info->signalOnly_help = gengetopt_args_info_full_help[60] ;
+  args_info->ULsolver_help = gengetopt_args_info_full_help[61] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[62] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[63] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[64] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[65] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[66] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[67] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[68] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[69] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[70] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[71] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[72] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[73] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[74] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[75] ;
   
 }
 
@@ -610,6 +626,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->outdirectory_orig));
   free_string_field (&(args_info->outfilename_arg));
   free_string_field (&(args_info->outfilename_orig));
+  free_string_field (&(args_info->configCopy_arg));
+  free_string_field (&(args_info->configCopy_orig));
   free_string_field (&(args_info->ULfilename_arg));
   free_string_field (&(args_info->ULfilename_orig));
   free_string_field (&(args_info->normRMSoutput_arg));
@@ -647,6 +665,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->simpleBandRejection_orig));
   free_string_field (&(args_info->lineDetection_orig));
   free_string_field (&(args_info->FFTplanFlag_orig));
+  free_string_field (&(args_info->ULsolver_orig));
   free_string_field (&(args_info->dopplerMultiplier_orig));
   free_string_field (&(args_info->randSeed_orig));
   
@@ -761,6 +780,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "outdirectory", args_info->outdirectory_orig, 0);
   if (args_info->outfilename_given)
     write_into_file(outfile, "outfilename", args_info->outfilename_orig, 0);
+  if (args_info->configCopy_given)
+    write_into_file(outfile, "configCopy", args_info->configCopy_orig, 0);
   if (args_info->ULfilename_given)
     write_into_file(outfile, "ULfilename", args_info->ULfilename_orig, 0);
   if (args_info->normRMSoutput_given)
@@ -829,6 +850,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "useSSE", 0, 0 );
   if (args_info->followUpOutsideULrange_given)
     write_into_file(outfile, "followUpOutsideULrange", 0, 0 );
+  if (args_info->signalOnly_given)
+    write_into_file(outfile, "signalOnly", 0, 0 );
+  if (args_info->ULsolver_given)
+    write_into_file(outfile, "ULsolver", args_info->ULsolver_orig, cmdline_parser_ULsolver_values);
   if (args_info->dopplerMultiplier_given)
     write_into_file(outfile, "dopplerMultiplier", args_info->dopplerMultiplier_orig, 0);
   if (args_info->IHSonly_given)
@@ -1108,8 +1133,92 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   FIX_UNUSED (additional_error);
 
   /* checks for required options */
+  if (! args_info->Tobs_given)
+    {
+      fprintf (stderr, "%s: '--Tobs' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->Tcoh_given)
+    {
+      fprintf (stderr, "%s: '--Tcoh' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->SFToverlap_given)
+    {
+      fprintf (stderr, "%s: '--SFToverlap' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->t0_given)
+    {
+      fprintf (stderr, "%s: '--t0' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->fmin_given)
+    {
+      fprintf (stderr, "%s: '--fmin' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->fspan_given)
+    {
+      fprintf (stderr, "%s: '--fspan' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->IFO_given)
+    {
+      fprintf (stderr, "%s: '--IFO' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
   if (check_multiple_option_occurrences(prog_name, args_info->IFO_given, args_info->IFO_min, args_info->IFO_max, "'--IFO'"))
      error = 1;
+  
+  if (! args_info->avesqrtSh_given)
+    {
+      fprintf (stderr, "%s: '--avesqrtSh' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->ephemDir_given)
+    {
+      fprintf (stderr, "%s: '--ephemDir' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->ephemYear_given)
+    {
+      fprintf (stderr, "%s: '--ephemYear' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->Pmin_given)
+    {
+      fprintf (stderr, "%s: '--Pmin' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->Pmax_given)
+    {
+      fprintf (stderr, "%s: '--Pmax' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->dfmin_given)
+    {
+      fprintf (stderr, "%s: '--dfmin' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->dfmax_given)
+    {
+      fprintf (stderr, "%s: '--dfmax' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
   
   
   /* checks for dependences among options */
@@ -1445,6 +1554,7 @@ cmdline_parser_internal (
         { "sftType",	1, NULL, 0 },
         { "outdirectory",	1, NULL, 0 },
         { "outfilename",	1, NULL, 0 },
+        { "configCopy",	1, NULL, 0 },
         { "ULfilename",	1, NULL, 0 },
         { "normRMSoutput",	1, NULL, 0 },
         { "sftDir",	1, NULL, 0 },
@@ -1479,6 +1589,8 @@ cmdline_parser_internal (
         { "fastchisqinv",	0, NULL, 0 },
         { "useSSE",	0, NULL, 0 },
         { "followUpOutsideULrange",	0, NULL, 0 },
+        { "signalOnly",	0, NULL, 0 },
+        { "ULsolver",	1, NULL, 0 },
         { "dopplerMultiplier",	1, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
         { "noNotchHarmonics",	0, NULL, 0 },
@@ -1669,14 +1781,14 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization.  */
+          /* SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt).  */
           else if (strcmp (long_options[option_index].name, "sftType") == 0)
           {
           
           
             if (update_arg( (void *)&(args_info->sftType_arg), 
                  &(args_info->sftType_orig), &(args_info->sftType_given),
-                &(local_args_info.sftType_given), optarg, cmdline_parser_sftType_values, "vladimir", ARG_STRING,
+                &(local_args_info.sftType_given), optarg, cmdline_parser_sftType_values, "standard", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "sftType", '-',
                 additional_error))
@@ -1711,6 +1823,20 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* Copy of the configuration file whose output is gengetopt format.  */
+          else if (strcmp (long_options[option_index].name, "configCopy") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->configCopy_arg), 
+                 &(args_info->configCopy_orig), &(args_info->configCopy_given),
+                &(local_args_info.configCopy_given), optarg, 0, "input_values.conf", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "configCopy", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* Upper limit file name.  */
           else if (strcmp (long_options[option_index].name, "ULfilename") == 0)
           {
@@ -1739,35 +1865,35 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* Directory containing SFTs.  */
+          /* Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified).  */
           else if (strcmp (long_options[option_index].name, "sftDir") == 0)
           {
           
           
             if (update_arg( (void *)&(args_info->sftDir_arg), 
                  &(args_info->sftDir_orig), &(args_info->sftDir_given),
-                &(local_args_info.sftDir_given), optarg, 0, "./", ARG_STRING,
+                &(local_args_info.sftDir_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "sftDir", '-',
                 additional_error))
               goto failure;
           
           }
-          /* Path and filename of SFTs.  */
+          /* Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified).  */
           else if (strcmp (long_options[option_index].name, "sftFile") == 0)
           {
           
           
             if (update_arg( (void *)&(args_info->sftFile_arg), 
                  &(args_info->sftFile_orig), &(args_info->sftFile_given),
-                &(local_args_info.sftFile_given), optarg, 0, "*.sft", ARG_STRING,
+                &(local_args_info.sftFile_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "sftFile", '-',
                 additional_error))
               goto failure;
           
           }
-          /* Path to ephemeris files.  */
+          /* Path to ephemeris files, e.g. /path/to/ephemeris/files.  */
           else if (strcmp (long_options[option_index].name, "ephemDir") == 0)
           {
           
@@ -1998,7 +2124,7 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->minTemplateLength_arg), 
                  &(args_info->minTemplateLength_orig), &(args_info->minTemplateLength_given),
-                &(local_args_info.minTemplateLength_given), optarg, 0, "50", ARG_INT,
+                &(local_args_info.minTemplateLength_given), optarg, 0, "1", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "minTemplateLength", '-',
                 additional_error))
@@ -2012,7 +2138,7 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->maxTemplateLength_arg), 
                  &(args_info->maxTemplateLength_orig), &(args_info->maxTemplateLength_given),
-                &(local_args_info.maxTemplateLength_given), optarg, 0, "50", ARG_INT,
+                &(local_args_info.maxTemplateLength_given), optarg, 0, "1000", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "maxTemplateLength", '-',
                 additional_error))
@@ -2173,6 +2299,32 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->followUpOutsideULrange_flag), 0, &(args_info->followUpOutsideULrange_given),
                 &(local_args_info.followUpOutsideULrange_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "followUpOutsideULrange", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* SFTs contain only signal, no noise.  */
+          else if (strcmp (long_options[option_index].name, "signalOnly") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->signalOnly_flag), 0, &(args_info->signalOnly_given),
+                &(local_args_info.signalOnly_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "signalOnly", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver.  */
+          else if (strcmp (long_options[option_index].name, "ULsolver") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ULsolver_arg), 
+                 &(args_info->ULsolver_orig), &(args_info->ULsolver_given),
+                &(local_args_info.ULsolver_given), optarg, cmdline_parser_ULsolver_values, "0", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "ULsolver", '-',
                 additional_error))
               goto failure;
           

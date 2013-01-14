@@ -3,13 +3,7 @@ pkginclude_HEADERS = \
 	Matrix.h \
 	VectorIndexRange.h
 
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
-MAINTAINERCLEANFILES =
-
 all-local: include-link
-
 @INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)

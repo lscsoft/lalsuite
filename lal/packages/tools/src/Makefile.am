@@ -1,6 +1,7 @@
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
 
 noinst_LTLIBRARIES = libtools.la
+
 libtools_la_SOURCES = \
 	CoherentEstimation.c \
 	ComputeCalibrationFactors.c \
@@ -20,6 +21,7 @@ libtools_la_SOURCES = \
 	Sequence.c \
 	Skymap.c \
 	TimeSeries.c \
+	TriggerInterpolation.c \
 	UnitCompare.c \
 	UnitDefs.c \
 	UnitMultiply.c \

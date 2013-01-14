@@ -113,18 +113,9 @@ CoarseTest
 This test code gives an example of how one calls \c LALInspiralCreateCoarseBank
 and \c LALInspiralCreateFineBank modules.
 
-\heading{Uses}
-\code
-lalDebugLevel
-LALInspiralCreateCoarseBank
-LALInspiralCreateFineBank
-LALFree
-LALCheckMemoryLeaks
-\endcode
-
-\heading{Notes}
-
 */
+
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
@@ -232,3 +223,4 @@ main ( void )
 
   return(0);
 }
+/** \endcond */

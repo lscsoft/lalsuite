@@ -154,7 +154,7 @@ SERIESTYPE *ASERIES (
 	/* add arg2 to arg1, adjusting the units */
 	for(; i < arg1->data->length && j < arg2->data->length; i++, j++)
 	{
-		ARG
+		arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 	}
 
 	return arg1;
@@ -198,7 +198,7 @@ SERIESTYPE *MSERIES (
 
 		for(i = 0; i < start && i < arg1->data->length; i++)
 		{
-			ARG1
+			arg1->data->data[i] = 0.0;
 		}
 
 		j = 0;
@@ -211,14 +211,14 @@ SERIESTYPE *MSERIES (
 
 	for(; i < arg1->data->length && j < arg2->data->length; i++, j++)
 	{
-		ARG2
+		arg1->data->data[i] *= arg2->data->data[i] * unit_ratio;
 	}
 
 	/* zero the last part of arg1 */
 
 	for(; i < arg1->data->length; i++)
 	{
-		ARG1
+		arg1->data->data[i] = 0.0;
 	}
 
 	return arg1;

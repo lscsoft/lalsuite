@@ -1,10 +1,3 @@
-/**
- * @file LALSQTPNWaveformInterface.h
- *		Contains function declarations to integrate the SpinQuadTaylor code into the other parts of the LALSuit.
- * @author László Veréb
- * @date 2010.06.27.
- */
-
 #ifndef LALSQTPNWAVEFORMINTERFACE_H
 #define LALSQTPNWAVEFORMINTERFACE_H
 
@@ -20,36 +13,45 @@
 extern "C" {
 #endif
 
+/**
+ * \defgroup LALSQTPNWaveformInterface_h Header LALSQTPNWaveformInterface.h
+ * \ingroup pkg_CBC_NEW
+ *
+ * \brief Contains function declarations to integrate the SpinQuadTaylor code into the other parts of the LALSuit.
+ * \author László Veréb
+ * \date 2010.06.27.
+ */
+/*@{*/
+
 #define LALSQTPN_MSGPPNPARAMS "the PPNParamsStruct structure is null"
 #define LALSQTPN_MSGINSPIRALTEMPLATE "the InspiralTemplate structure is null"
 #define LALSQTPN_ZEROLENGTH 3
 #define LALSQTPN_MSGZEROLENGTH "the given length is not positive"
 
-int XLALSQTPNWaveformTemplates (REAL4Vector *signalvec1, 
+int XLALSQTPNWaveformTemplates (REAL4Vector *signalvec1,
 		REAL4Vector *signalvec2, InspiralTemplate *params);
 
 // LAL wrapper to XLAL function
-void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1, 
+void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1,
 		REAL4Vector *signalvec2, InspiralTemplate *params);
 
 /** The function returns the generated waveform.
  * @param[out]	signalvec	: array containing the waveform \f$(h_+, h_\times)\f$
  * @param[in]	params		: structure containing the inspiral parameters
  */
-int XLALSQTPNWaveform (REAL4Vector *signalvec, 
+int XLALSQTPNWaveform (REAL4Vector *signalvec,
 		InspiralTemplate *params);
 
 // LAL wrapper to XLAL function
-void LALSQTPNWaveform (LALStatus *status, REAL4Vector *signalvec, 
+void LALSQTPNWaveform (LALStatus *status, REAL4Vector *signalvec,
 		InspiralTemplate *params);
 
 /** The function returns the generated waveform for injection.
- * @param[out]	wave_out	: structure containing the waveform \f$(a_1,
- * a_2, \Phi, \alpha)\f$
+ * @param[out]	wave_out	: structure containing the waveform \f$(a_1, a_2, \Phi, \alpha)\f$
  * @param[in]	params		: structure containing the inspiral parameters
  * @param[in]	ppnParams	: parameters for restricted post-Newtonian waveform
  */
-int XLALSQTPNWaveformForInjection(CoherentGW *wave_out, 
+int XLALSQTPNWaveformForInjection(CoherentGW *wave_out,
 		InspiralTemplate *params, PPNParamStruc *ppnParams);
 
 // LAL wrapper to XLAL function
@@ -105,6 +107,8 @@ void XLALSQTPNDestroyCoherentGW(CoherentGW *wave);
  * @param[in]		params	: the inspiral parameters
  */
 void XLALSQTPNFillParams(LALSQTPNWaveformParams *wave, InspiralTemplate *params);
+
+/*@}*/ /* end:LALSQTPNWaveformInterface_h */
 
 #ifdef __cplusplus
 }

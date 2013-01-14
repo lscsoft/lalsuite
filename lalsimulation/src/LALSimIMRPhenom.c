@@ -18,11 +18,10 @@
  */
 
 #include <math.h>
+#include <complex.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALSimIMR.h>
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
@@ -122,9 +121,17 @@ int XLALSimIMRPhenomAGenerateFD(
   /* phenomenological parameters*/
   params = ComputeIMRPhenomAParams(m1, m2);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
+  if (params->fCut <= f_min) {
+      XLALPrintError("fCut <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* default f_max to params->fCut */
   f_max_prime = f_max ? f_max : params->fCut;
+  if (f_max_prime <= f_min) {
+      XLALPrintError("f_max <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   return IMRPhenomAGenerateFD(htilde, phi0, deltaF, m1, m2, f_min, f_max_prime, distance, params);
 }
@@ -143,14 +150,14 @@ int XLALSimIMRPhenomAGenerateFD(
 int XLALSimIMRPhenomAGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    const REAL8 phiPeak,            /**< phase at peak */
-    const REAL8 deltaT,             /**< sampling interval */
+    const REAL8 phiPeak,            /**< orbital phase at peak (rad) */
+    const REAL8 deltaT,             /**< sampling interval (s) */
     const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
-    const REAL8 f_min,              /**< start frequency */
-    const REAL8 f_max,              /**< end frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 f_min,              /**< starting GW frequency (Hz) */
+    const REAL8 f_max,              /**< end GW frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,           /**< distance of source (m) */
-    const REAL8 inclination         /**< inclination of source */
+    const REAL8 inclination         /**< inclination of source (rad) */
 ) {
   BBHPhenomParams *params;
   size_t cut_ind, peak_ind;
@@ -174,9 +181,17 @@ int XLALSimIMRPhenomAGenerateTD(
   /* phenomenological parameters*/
   params = ComputeIMRPhenomAParams(m1, m2);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
+  if (params->fCut <= f_min) {
+      XLALPrintError("fCut <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* default f_max to params->fCut */
   f_max_prime = f_max ? f_max : params->fCut;
+  if (f_max_prime <= f_min) {
+      XLALPrintError("f_max <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* generate hplus */
   IMRPhenomAGenerateTD(hplus, 0, deltaT, m1, m2, f_min, f_max_prime, distance, params);
@@ -204,7 +219,8 @@ int XLALSimIMRPhenomAGenerateTD(
   /* set phase and time at peak */
   peak_ind = find_peak_amp(*hplus, *hcross);
   peak_phase = atan2((*hcross)->data->data[peak_ind], (*hplus)->data->data[peak_ind]);
-  apply_phase_shift(*hplus, *hcross, phiPeak - peak_phase);
+  // NB: factor of 2 b/c phiPeak is *orbital* phase, and we're shifting GW phase
+  apply_phase_shift(*hplus, *hcross, 2.*phiPeak - peak_phase);
   XLALGPSSetREAL8(&((*hplus)->epoch), -(peak_ind * deltaT));
   XLALGPSSetREAL8(&((*hcross)->epoch), -(peak_ind * deltaT));
 
@@ -239,15 +255,15 @@ double XLALSimIMRPhenomBComputeChi(
 int XLALSimIMRPhenomBGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    const REAL8 phiPeak,      /**< phase at peak */
-    const REAL8 deltaT,       /**< sampling interval */
+    const REAL8 phiPeak,      /**< orbital phase at peak (rad) */
+    const REAL8 deltaT,       /**< sampling interval (s) */
     const REAL8 m1_SI,        /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,        /**< mass of companion 2 (kg) */
     const REAL8 chi,          /**< mass-weighted aligned-spin parameter */
-    const REAL8 f_min,        /**< start frequency */
-    const REAL8 f_max,        /**< end frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 f_min,        /**< starting GW frequency (Hz) */
+    const REAL8 f_max,        /**< end GW frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,     /**< distance of source (m) */
-    const REAL8 inclination   /**< inclination of source */
+    const REAL8 inclination   /**< inclination of source (rad) */
 ) {
   BBHPhenomParams *params;
   size_t cut_ind, peak_ind;
@@ -272,9 +288,17 @@ int XLALSimIMRPhenomBGenerateTD(
   /* phenomenological parameters*/
   params = ComputeIMRPhenomBParams(m1, m2, chi);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
+  if (params->fCut <= f_min) {
+      XLALPrintError("fCut <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* default f_max to params->fCut */
   f_max_prime = f_max ? f_max : params->fCut;
+  if (f_max_prime <= f_min) {
+      XLALPrintError("f_max <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* generate plus */
   IMRPhenomBGenerateTD(hplus, 0., deltaT, m1, m2, chi, f_min, f_max_prime, distance, params);
@@ -302,7 +326,8 @@ int XLALSimIMRPhenomBGenerateTD(
   /* set phase and time at peak */
   peak_ind = find_peak_amp(*hplus, *hcross);
   peak_phase = atan2((*hcross)->data->data[peak_ind], (*hplus)->data->data[peak_ind]);
-  apply_phase_shift(*hplus, *hcross, phiPeak - peak_phase);
+  // NB: factor of 2 b/c phiPeak is *orbital* phase, and we're shifting GW phase
+  apply_phase_shift(*hplus, *hcross, 2.*phiPeak - peak_phase);
   XLALGPSSetREAL8(&((*hplus)->epoch), -(peak_ind * deltaT));
   XLALGPSSetREAL8(&((*hcross)->epoch), -(peak_ind * deltaT));
 
@@ -353,9 +378,17 @@ int XLALSimIMRPhenomBGenerateFD(
   /* phenomenological parameters*/
   params = ComputeIMRPhenomBParams(m1, m2, chi);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
+  if (params->fCut <= f_min) {
+      XLALPrintError("fCut <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* default f_max to params->fCut */
   f_max_prime = f_max ? f_max : params->fCut;
+  if (f_max_prime <= f_min) {
+      XLALPrintError("f_max <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   status = IMRPhenomBGenerateFD(htilde, phi0, deltaF, m1, m2, chi, f_min, f_max_prime, distance, params);
   LALFree(params);
@@ -646,8 +679,8 @@ static int IMRPhenomAGenerateFD(
       + params->psi7 * f / cbrt_f;       /* f^2/3 */
 
     /* generate the waveform */
-    data[i].re = ampEff * cos(psiEff);
-    data[i].im = ampEff * sin(psiEff);
+    data[i] = ampEff * cos(psiEff);
+    data[i] += I * ampEff * sin(psiEff);
   }
 
   return XLAL_SUCCESS;
@@ -742,8 +775,8 @@ static int IMRPhenomBGenerateFD(
       + params->psi7*v7 + params->psi8*v8);
 
     /* generate the waveform */
-    ((*htilde)->data->data)[i].re = amp0 * ampEff * cos(psiEff);
-    ((*htilde)->data->data)[i].im = -amp0 * ampEff * sin(psiEff);
+    ((*htilde)->data->data)[i] = amp0 * ampEff * cos(psiEff);
+    ((*htilde)->data->data)[i] += -I * amp0 * ampEff * sin(psiEff);
   }
 
   return XLAL_SUCCESS;
@@ -830,8 +863,7 @@ static int FDToTD(REAL8TimeSeries **signalTD, const COMPLEX16FrequencySeries *si
     const REAL8 f = k / (deltaT * nt);
     REAL8 softWin = (1. + tanh(f - winFLo))
                   * (1. - tanh(f - winFHi)) / 4.;
-    FDdata[k].re *= softWin;
-    FDdata[k].im *= softWin;
+    FDdata[k] *= softWin;
   }
 
   /* allocate output */

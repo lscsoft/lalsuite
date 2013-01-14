@@ -86,6 +86,8 @@ LALFree()
 #include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALError.h>
+#include <lal/TimeSeries.h>
+#include <lal/LALSimulation.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -351,6 +353,8 @@ LALFindChirpInjectSignals (
       }
       /* Give a little more breathing space to aid band-passing */
       XLALGPSSetREAL8( &(signalvec.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
+      UINT4 signalvecLength=waveform.phi->data->length + (UINT4)ceil((0.5+timeDelay)/waveform.phi->deltaT);
+      
 
       /* set the parameters for the signal time series */
       signalvec.deltaT = chan->deltaT;
@@ -373,13 +377,13 @@ LALFindChirpInjectSignals (
       /* and to think he'd just come from the hospital */
 
       /* simulate the detectors response to the inspiral */
-      LALSCreateVector( status->statusPtr, &(signalvec.data), chan->data->length );
+      LALSCreateVector( status->statusPtr, &(signalvec.data), signalvecLength );
       CHECKSTATUSPTR( status );
 
       LALSimulateCoherentGW( status->statusPtr,
           &signalvec, &waveform, &detector );
       CHECKSTATUSPTR( status );
-
+      
       /* Taper the signal */
       {
 
@@ -449,8 +453,12 @@ LALFindChirpInjectSignals (
       }
 
       /* inject the signal into the data channel */
-      LALSSInjectTimeSeries( status->statusPtr, chan, &signalvec );
-      CHECKSTATUSPTR( status );
+      int retcode=XLALSimAddInjectionREAL4TimeSeries(chan, &signalvec, NULL);
+
+      if(retcode!=XLAL_SUCCESS){
+	ABORTXLAL(status);
+      }
+
     }
     else
     {
@@ -481,7 +489,7 @@ LALFindChirpInjectSignals (
       if (waveform.h->data->vectorLength != 2)
           LALAbort("expected alternating h+ and hx");
       tmpdata = XLALCalloc(2 * wfmLength, sizeof(*tmpdata));
-      for (;i--;) {
+      for (i=0;i<wfmLength;i++) {
             tmpdata[i] = dataPtr[2*i] * thisEvent->distance;
             tmpdata[wfmLength+i] = dataPtr[2*i+1] * thisEvent->distance;
       }

@@ -1,4 +1,4 @@
-AM_CFLAGS = $(LALSUPPORT_CFLAGS)
+AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DDATADIR='"$(abs_srcdir)/"'
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalburst.la
 
 if LALSUPPORT
@@ -16,8 +16,6 @@ else
 check_PROGRAMS =
 TESTS =
 endif
-
-TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)
 
 noinst_DATA = \
 	a.pgm \

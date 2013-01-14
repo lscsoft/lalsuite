@@ -17,11 +17,35 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef _SFTFILEIO_H  	/* Double-include protection. */
+#define _SFTFILEIO_H
 
-/** \defgroup SFTfileIO SFT-file IO
- * \ingroup support
+/* includes */
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/PulsarDataTypes.h>
+
+#ifdef  __cplusplus   /* C++ protection. */
+extern "C" {
+#endif
+
+/**
+ * \defgroup SFTfileIO_h Header SFTfileIO.h
+ * \ingroup pkg_SFTIO
  * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
  * \brief Module for reading/writing/manipulating SFTs (Short Fourier transforms)
+ *
+ * This implements the SFTv2 standard defined in LIGO-T040164-01-Z
+ * A previous non-LAL implementation of this standard is found in the "SFT reference library"
+ * gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft sftlib, Copyright (C) 2004 Bruce Allen
+ *
  *
  *
  <p> <h3> Overview:</h3>
@@ -144,39 +168,9 @@ Note: in addition to these two function which take properly normalized SFTs as i
 legacy-function, LALWriteSFTfile(), which writes an v1-SFT file, but *without* changing the data-normalization,
 i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 
- *
- */
+*/
 
-/** \file
- * \ingroup SFTfileIO
- * \brief Header file defining the API for the SFTfileIO modules.
- *
- * Routines for reading and writing SFT binary files.
- *
- * This implements the SFTv2 standard defined in LIGO-T040164-01-Z
- * A previous non-LAL implementation of this standard is found in the "SFT reference library"
- * gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft sftlib, Copyright (C) 2004 Bruce Allen
- *
- */
-
-#ifndef _SFTFILEIO_H  	/* Double-include protection. */
-#define _SFTFILEIO_H
-
-/* includes */
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
-#include <lal/PulsarDataTypes.h>
-
-#ifdef  __cplusplus   /* C++ protection. */
-extern "C" {
-#endif
+/*@{*/
 
 /** \name Error codes */
 /*@{*/
@@ -275,13 +269,13 @@ void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern
 void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 
-int  XLALWriteSFT2fp (const SFTtype *sft, FILE *fp, const CHAR *comment );
-int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *comment );
-int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description);
-int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *comment);
+int  XLALWriteSFT2fp (const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
+int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
+int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
+int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment);
 
-void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *comment );
-void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description);
+void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
+void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
 
 void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
 void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints );
@@ -341,6 +335,8 @@ LALGetSFTheaders (LALStatus *,
 		  const LIGOTimeGPS *startTime,
 		  const LIGOTimeGPS *endTime);
 
+
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

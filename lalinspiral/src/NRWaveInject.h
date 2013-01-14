@@ -145,11 +145,6 @@ XLALFindNRFile( NRWaveMetaData *out,
                 INT4  modeL,
                 INT4  modeM);
 
-REAL4TimeVectorSeries *
-XLALSumStrain(
-    REAL4TimeVectorSeries *tempstrain,     /**< storing variable */
-    REAL4TimeVectorSeries *strain          /**< variable to add  */);
-
 void LALInjectStrainGW( LALStatus *status,
                         REAL4TimeSeries *injData,
                         REAL4TimeVectorSeries *strain,

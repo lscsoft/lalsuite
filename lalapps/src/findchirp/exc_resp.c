@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <config.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +25,14 @@
 #include <lalapps.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
 
 /* Calibration Constants for L1:LSC-ETMX        */
 /* Based on mail from Gaby Mon, 24 Jun 2002     */

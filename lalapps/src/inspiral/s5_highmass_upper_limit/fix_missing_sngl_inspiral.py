@@ -2,7 +2,7 @@
 import sys
 from glue.lal import CacheEntry
 from glue.ligolw import lsctables, utils
-for filename in (CacheEntry(line).path() for line in file(sys.argv[1])):
+for filename in (CacheEntry(line).path for line in file(sys.argv[1])):
 	xmldoc = utils.load_filename(filename, gz = (filename or "stdin").endswith(".gz"))
 	try:
 		lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)

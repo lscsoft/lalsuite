@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
 
   const CHAR *sites[] = {"H1", "L1", "V2", "G1", "T1" };
   UINT4 pickedSite;
-  char earthEphem[] = "earth00-04.dat";
-  char sunEphem[] = "sun00-04.dat";
+  char earthEphem[] = DATADIR "earth00-04.dat";
+  char sunEphem[] = DATADIR "sun00-04.dat";
 
   lalDebugLevel = 0;
   if ( argc == 2 && !strcmp(argv[1], "-v1") )

@@ -18,7 +18,7 @@
 */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -129,25 +129,6 @@ but care should be taken if DC is relevant when this function is used.
 */
 /*@{*/
 
-static void product(COMPLEX8 *c,COMPLEX8 *a, COMPLEX8 *b) {
-
-  c->re = a->re * b->re - a->im * b->im;
-  c->im = a->re * b->im + a->im * b->re;
-
-  return;
-}
-
-static void ratio(COMPLEX8 *c,COMPLEX8 *a, COMPLEX8 *b) {
-  REAL4 norm;
-
-  norm = b->re * b->re + b->im * b->im;
-
-  c->re = (a->re * b->re + a->im * b->im)/norm;
-  c->im = (- a->re * b->im + a->im * b->re)/norm;
-
-  return;
-}
-
 /** UNDOCUMENTED */
 void
 LALComputeTransfer( LALStatus                 *stat,
@@ -157,7 +138,6 @@ LALComputeTransfer( LALStatus                 *stat,
 {
   UINT4         i, j;                    /* indexes               */
   UINT4         jmin;                    /* used to handle DC     */
-  COMPLEX8      dummy, dummyC, factor;   /* dummy complex numbers */
   REAL4         f,df;                    /* freq and interval     */
   REAL8         norm;
 
@@ -171,8 +151,6 @@ LALComputeTransfer( LALStatus                 *stat,
   ASSERT( calrec->transfer, stat, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
 
   /* initialise everything */
-  dummyC.re = factor.re = 1.0;
-  dummyC.im = factor.im = 0.0;
   df = calrec->transfer->deltaF;
   jmin = 0;
 
@@ -194,42 +172,27 @@ LALComputeTransfer( LALStatus                 *stat,
   /* Handle DC if necessary */
   if ( calrec->transfer->f0 == 0.0 )
   {
-    calrec->transfer->data->data[0].re = 1.0;
-    calrec->transfer->data->data[0].im = 0.0;
+    calrec->transfer->data->data[0] = 1.0;
     jmin = 1;
   }
 
   /* loop over frequency in the output */
   for ( j=jmin ; j<calrec->transfer->data->length ; j++)
   {
+    COMPLEX8 T = 1.0;
     /* the frequency */
     f = calrec->transfer->f0 + (REAL4) j * df;
-    dummyC.re=1.0;
-    dummyC.im=0.0;
 
     /* loop over zeroes */
     for (i = 0 ; i < calrec->zeros->length ; i++)
-    {
-      factor.re = (calrec->zeros->data[i]);
-      factor.im = f;
-      product( &dummy, &dummyC, &factor);
-      dummyC.re=dummy.re;
-      dummyC.im=dummy.im;
-    }
+      T *= calrec->zeros->data[i] + I * f;
 
     /* loop over poles */
     for (i = 0 ; i < calrec->poles->length ; i++)
-    {
-      factor.re = (calrec->poles->data[i]);
-      factor.im = f;
-      ratio( &dummy, &dummyC, &factor);
-      dummyC.re=dummy.re;
-      dummyC.im=dummy.im;
-    }
+      T /= calrec->zeros->data[i] + I * f;
 
     /* fill the frequency series */
-    calrec->transfer->data->data[j].re = norm * dummyC.re;
-    calrec->transfer->data->data[j].im = norm * dummyC.im;
+    calrec->transfer->data->data[j] = norm * T;
   }
 
 
@@ -237,44 +200,6 @@ LALComputeTransfer( LALStatus                 *stat,
   DETATCHSTATUSPTR (stat);
   RETURN( stat );
 }
-
-/** \cond DONT_DOXYGEN */
-#define cini COMPLEX8 tmpa, tmpb, tmpc; REAL4 tmpx, tmpy
-
-#define cmul( a, b ) \
-( tmpa = (a), tmpb = (b), \
-  tmpc.re = tmpa.re * tmpb.re - tmpa.im * tmpb.im, \
-  tmpc.im = tmpa.re * tmpb.im + tmpa.im * tmpb.re, \
-  tmpc )
-
-#define cdiv( a, b ) \
-( tmpa = (a), tmpb = (b), \
-  fabs( tmpb.re ) >= fabs( tmpb.im ) ? \
-    ( tmpx = tmpb.im / tmpb.re, \
-      tmpy = tmpb.re + tmpx * tmpb.im, \
-      tmpc.re = ( tmpa.re + tmpx * tmpa.im ) / tmpy, \
-      tmpc.im = ( tmpa.im - tmpx * tmpa.re ) / tmpy, \
-      tmpc ) : \
-    ( tmpx = tmpb.re / tmpb.im, \
-      tmpy = tmpb.im + tmpx * tmpb.re, \
-      tmpc.re = ( tmpa.re * tmpx + tmpa.im ) / tmpy, \
-      tmpc.im = ( tmpa.im * tmpx - tmpa.re ) / tmpy, \
-      tmpc ) )
-
-#define cinv( b ) \
-( tmpb = (b), \
-  fabs( tmpb.re ) >= fabs( tmpb.im ) ? \
-    ( tmpx = tmpb.im / tmpb.re, \
-      tmpy = tmpb.re + tmpx * tmpb.im, \
-      tmpc.re = 1 / tmpy, \
-      tmpc.im = -tmpx / tmpy, \
-      tmpc ) : \
-    ( tmpx = tmpb.re / tmpb.im, \
-      tmpy = tmpb.im + tmpx * tmpb.re, \
-      tmpc.re = tmpx / tmpy, \
-      tmpc.im = -1 / tmpy, \
-      tmpc ) )
-/** \endcond */
 
 
 /** UNDOCUMENTED */
@@ -287,7 +212,6 @@ LALUpdateCalibration(
     )
 {
   const REAL4 tiny = 1e-6;
-  cini;
   COMPLEX8Vector *save;
   COMPLEX8 *R;
   COMPLEX8 *C;
@@ -399,7 +323,7 @@ LALUpdateCalibration(
   }
 
   /* compute the sum of the calibration factors */
-  a.re = a.im = ab.re = ab.im = 0;
+  a = ab = 0;
   length = 0;
   do
   {
@@ -415,8 +339,8 @@ LALUpdateCalibration(
     this_ab = params->openLoopFactor->data->data[i];
 
     /* JC: I CHANGED THE LOGIC HERE TO WHAT I THOUGHT IT SHOULD BE! */
-    if ( ( fabs( this_a.re ) < tiny && fabs( this_a.im ) < tiny ) ||
-         ( fabs( this_ab.re ) < tiny && fabs( this_ab.im ) < tiny ) )
+    if ( ( fabs( creal(this_a) ) < tiny && fabs( cimag(this_a) ) < tiny ) ||
+         ( fabs( creal(this_ab) ) < tiny && fabs( cimag(this_ab) ) < tiny ) )
     {
       /* this is a hack for the broken S2 calibration frame data */
       if ( (params->epoch.gpsSeconds >= CAL_S2START) &&
@@ -445,10 +369,8 @@ LALUpdateCalibration(
     }
 
     /* add this value to the sum */
-    a.re += this_a.re;
-    a.im += this_a.im;
-    ab.re += this_ab.re;
-    ab.im += this_ab.im;
+    a += this_a;
+    ab += this_ab;
 
     /* increment the calibration factor index */
     ++i;
@@ -458,45 +380,34 @@ LALUpdateCalibration(
 
   /* if all the calibration factors are zero the abort */
   if ( ! length ||
-      (fabs( a.re ) < tiny && fabs( a.im ) < tiny) ||
-      (fabs( ab.re ) < tiny && fabs( ab.im ) < tiny) )
+      (fabs( creal(a) ) < tiny && fabs( cimag(a) ) < tiny) ||
+      (fabs( creal(ab) ) < tiny && fabs( cimag(ab) ) < tiny) )
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Got %d calibration samples\nalpha and/or beta are zero:\n"
-        "a.re = %e\ta.im = %e\nab.re = %e\tab.im = %e",
-        length, a.re, a.im, ab.re, ab.im );
+        "Re a = %e\tIm a = %e\nRe ab = %e\tIm ab = %e",
+        length, creal(a), cimag(a), creal(ab), cimag(ab) );
     LALWarning( status, warnMsg );
     ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
   }
 
   /* compute the mean of the calibration factors from the sum */
-  a.re /= length;
-  a.im /= length;
-  ab.re /= length;
-  ab.im /= length;
+  a /= length;
+  ab /= length;
 
   /* return the used values of alpha and alphabeta */
   params->alpha = a;
   params->alphabeta = ab;
   snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
       "Got %d calibration samples\n"
-      "a.re = %e\ta.im = %e\nab.re = %e\tab.im = %e",
-      length, a.re, a.im, ab.re, ab.im );
+      "Re a = %e\tIm a = %e\nRe ab = %e\tIm ab = %e",
+      length, creal(a), cimag(a), creal(ab), cimag(ab) );
   LALInfo( status, warnMsg );
 
   for ( i = 0; i < n; ++i )
   {
-    COMPLEX8 tmp;
-    /* compute the reference open loop function */
-    tmp = cmul( C0[i], R0[i] );
-    tmp.re -= 1;
-    /* update the open loop function */
-    tmp = cmul( ab, tmp );
-    /* update the sensing function */
-    C[i] = cmul( a, C0[i] );
-    /* compute the updated response function */
-    tmp.re += 1;
-    R[i] = cdiv( tmp, C[i] );
+    C[i] = a * C0[i];
+    R[i] = (ab * (C0[i] * R0[i] - 1.0) + 1.0) / C[i];
   }
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -511,8 +422,6 @@ LALResponseConvert(
     COMPLEX8FrequencySeries *input
     )
 {
-  COMPLEX8 tmpb, tmpc;
-  REAL4 tmpx, tmpy;
   LALUnit unitOne;
   LALUnit unitTwo;
   UINT4 i;
@@ -538,10 +447,8 @@ LALResponseConvert(
     if ( j > input->data->length - 2 )
       j = input->data->length - 2;
     x -= j;
-    output->data->data[i].re = input->data->data[j].re
-      + x * ( input->data->data[j+1].re - input->data->data[j].re );
-    output->data->data[i].im = input->data->data[j].im
-      + x * ( input->data->data[j+1].im - input->data->data[j].im );
+    output->data->data[i] = input->data->data[j]
+      + x * ( input->data->data[j+1] - input->data->data[j] );
   }
 
 
@@ -605,7 +512,7 @@ LALResponseConvert(
   {
     for ( i = 0; i < output->data->length; ++i )
     {
-      output->data->data[i] = cinv( output->data->data[i] );
+      output->data->data[i] = 1.0 / output->data->data[i];
     }
   }
 
@@ -614,8 +521,7 @@ LALResponseConvert(
     REAL4 scale = pow( 10.0, -fac );
     for ( i = 0; i < output->data->length; ++i )
     {
-      output->data->data[i].re *= scale;
-      output->data->data[i].im *= scale;
+      output->data->data[i] *= scale;
     }
   }
 
@@ -630,8 +536,6 @@ XLALResponseConvert(
     COMPLEX8FrequencySeries *input
     )
 {
-  COMPLEX8 tmpb, tmpc;
-  REAL4 tmpx, tmpy;
   LALUnit unitOne;
   LALUnit unitTwo;
   UINT4 i;
@@ -654,10 +558,8 @@ XLALResponseConvert(
     if ( j > input->data->length - 2 )
       j = input->data->length - 2;
     x -= j;
-    output->data->data[i].re = input->data->data[j].re
-      + x * ( input->data->data[j+1].re - input->data->data[j].re );
-    output->data->data[i].im = input->data->data[j].im
-      + x * ( input->data->data[j+1].im - input->data->data[j].im );
+    output->data->data[i] = input->data->data[j]
+      + x * ( input->data->data[j+1] - input->data->data[j] );
   }
 
 
@@ -722,7 +624,7 @@ XLALResponseConvert(
   {
     for ( i = 0; i < output->data->length; ++i )
     {
-      output->data->data[i] = cinv( output->data->data[i] );
+      output->data->data[i] = 1.0 / output->data->data[i];
     }
   }
 
@@ -731,8 +633,7 @@ XLALResponseConvert(
     REAL4 scale = pow( 10.0, -fac );
     for ( i = 0; i < output->data->length; ++i )
     {
-      output->data->data[i].re *= scale;
-      output->data->data[i].im *= scale;
+      output->data->data[i] *= scale;
     }
   }
 

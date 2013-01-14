@@ -1,9 +1,6 @@
 // Tests of SWIG interface code
 // Author: Karl Wette, 2011, 2012
 
-// Only in debug mode.
-#ifndef NDEBUG
-
 // Test various combinations of 1D and 2D fixed arrays with
 // structs, struct/enum type, and global variables (LAL only).
 typedef enum {
@@ -35,5 +32,3 @@ REAL8 lalswig_test_REAL8_vector[3];
 REAL8 lalswig_test_REAL8_matrix[2][3];
 COMPLEX8 lalswig_test_COMPLEX8_vector[3];
 COMPLEX8 lalswig_test_COMPLEX8_matrix[2][3];
-
-#endif // !NDEBUG

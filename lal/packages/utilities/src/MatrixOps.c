@@ -93,7 +93,7 @@ multiplication (negating the sign of the imaginary part) per element.
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/MatrixUtils.h>
@@ -101,102 +101,82 @@ multiplication (negating the sign of the imaginary part) per element.
 #define TYPECODE I2
 #define TYPE INT2
 #define SIZE 2
-#define COMPLEX 0
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 #define TYPECODE I4
 #define TYPE INT4
 #define SIZE 4
-#define COMPLEX 0
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 #define TYPECODE I8
 #define TYPE INT8
 #define SIZE 8
-#define COMPLEX 0
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 #define TYPECODE U2
 #define TYPE UINT2
 #define SIZE 2
-#define COMPLEX 0
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 #define TYPECODE U4
 #define TYPE UINT4
 #define SIZE 4
-#define COMPLEX 0
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 #define TYPECODE U8
 #define TYPE UINT8
 #define SIZE 8
-#define COMPLEX 0
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 #define TYPECODE S
 #define TYPE REAL4
 #define SIZE 4
-#define COMPLEX 0
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 #define TYPECODE D
 #define TYPE REAL8
 #define SIZE 8
-#define COMPLEX 0
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #define SIZE 8
-#define COMPLEX 1
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 #define TYPECODE C
 #define TYPE COMPLEX8
 #define SIZE 4
-#define COMPLEX 1
 #include "MatrixOps_source.c"
 #undef TYPECODE
 #undef TYPE
 #undef SIZE
-#undef COMPLEX
 
 
 void
@@ -214,8 +194,10 @@ LALCMatrixAdjoint( LALStatus *stat, COMPLEX8Array *out, COMPLEX8Array *in1 )
   /* We just need to conjugate the result. */
   n = out->dimLength->data[0]*out->dimLength->data[1];
   data = out->data;
-  while ( n-- )
-    (data++)->im *= -1.0;
+  while ( n-- ) {
+    *data = conjf(*data);
+    ++data;
+  }
 
   /* That's all. */
   DETATCHSTATUSPTR( stat );
@@ -239,8 +221,10 @@ LALZMatrixAdjoint( LALStatus *stat, COMPLEX16Array *out, COMPLEX16Array *in1 )
   /* We just need to conjugate the result. */
   n = out->dimLength->data[0]*out->dimLength->data[1];
   data = out->data;
-  while ( n-- )
-    (data++)->im *= -1.0;
+  while ( n-- ) {
+    *data = conj(*data);
+    ++data;
+  }
 
   /* That's all. */
   DETATCHSTATUSPTR( stat );

@@ -28,10 +28,18 @@
 
 #include <lal/CoincInspiralEllipsoid.h>
 
-/**
+#ifndef _TRIGSCANETHINCACOMMON_H
+#define _TRIGSCANETHINCACOMMON_H
 
-\author Robinson, C. A. K.
-\file
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+/**
+   \defgroup TrigScanEThincaCommon_h Header TrigScanEThincaCommon.h
+   \ingroup pkg_CBC_NEW
+   \author Robinson, C. A. K.
+
 
 \brief Provides helper functions common to TrigScan and E-thinca.
 
@@ -43,14 +51,8 @@
 This header provides functions used for creating and destroying the
 linked lists used in TrigScan and E-thinca.
 
-*/
-
-#ifndef _TRIGSCANETHINCACOMMON_H
-#define _TRIGSCANETHINCACOMMON_H
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
+ */
+/*@{*/
 
 TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
                                                REAL8             scaleFactor,
@@ -59,6 +61,8 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
 void XLALDestroyTriggerErrorList( TriggerErrorList *errorListHead );
 
 REAL8 XLALSnglInspiralTimeError(const SnglInspiralTable *table, REAL8 eMatch);
+
+/*@}*/ /* end:TrigScanEThincaCommon.h */
 
 #ifdef  __cplusplus
 }

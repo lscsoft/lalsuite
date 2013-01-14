@@ -487,8 +487,11 @@ int XLALPSDRegressorSetAverageSamples(
     unsigned average_samples
 );
 
-
 unsigned XLALPSDRegressorGetAverageSamples(
+    const LALPSDRegressor *r
+);
+
+unsigned XLALPSDRegressorGetNSamples(
     const LALPSDRegressor *r
 );
 

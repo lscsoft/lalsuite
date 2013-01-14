@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.23"
+#define CMDLINE_PARSER_VERSION "1.1.24_1"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -75,30 +75,33 @@ struct gengetopt_args_info
   int blksize_arg;	/**< @brief Blocksize for running median to determine expected noise of input SFTs (default='101').  */
   char * blksize_orig;	/**< @brief Blocksize for running median to determine expected noise of input SFTs original value given at command line.  */
   const char *blksize_help; /**< @brief Blocksize for running median to determine expected noise of input SFTs help description.  */
-  char * sftType_arg;	/**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization (default='vladimir').  */
-  char * sftType_orig;	/**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization original value given at command line.  */
-  const char *sftType_help; /**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization help description.  */
+  char * sftType_arg;	/**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) (default='standard').  */
+  char * sftType_orig;	/**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) original value given at command line.  */
+  const char *sftType_help; /**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) help description.  */
   char * outdirectory_arg;	/**< @brief Output directory (default='output').  */
   char * outdirectory_orig;	/**< @brief Output directory original value given at command line.  */
   const char *outdirectory_help; /**< @brief Output directory help description.  */
   char * outfilename_arg;	/**< @brief Output file name (default='logfile.txt').  */
   char * outfilename_orig;	/**< @brief Output file name original value given at command line.  */
   const char *outfilename_help; /**< @brief Output file name help description.  */
+  char * configCopy_arg;	/**< @brief Copy of the configuration file whose output is gengetopt format (default='input_values.conf').  */
+  char * configCopy_orig;	/**< @brief Copy of the configuration file whose output is gengetopt format original value given at command line.  */
+  const char *configCopy_help; /**< @brief Copy of the configuration file whose output is gengetopt format help description.  */
   char * ULfilename_arg;	/**< @brief Upper limit file name (default='uls.dat').  */
   char * ULfilename_orig;	/**< @brief Upper limit file name original value given at command line.  */
   const char *ULfilename_help; /**< @brief Upper limit file name help description.  */
   char * normRMSoutput_arg;	/**< @brief File for the output of the normalized RMS from the non-slided data.  */
   char * normRMSoutput_orig;	/**< @brief File for the output of the normalized RMS from the non-slided data original value given at command line.  */
   const char *normRMSoutput_help; /**< @brief File for the output of the normalized RMS from the non-slided data help description.  */
-  char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
-  char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
-  const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
-  char * sftFile_arg;	/**< @brief Path and filename of SFTs (default='*.sft').  */
-  char * sftFile_orig;	/**< @brief Path and filename of SFTs original value given at command line.  */
-  const char *sftFile_help; /**< @brief Path and filename of SFTs help description.  */
-  char * ephemDir_arg;	/**< @brief Path to ephemeris files.  */
-  char * ephemDir_orig;	/**< @brief Path to ephemeris files original value given at command line.  */
-  const char *ephemDir_help; /**< @brief Path to ephemeris files help description.  */
+  char * sftDir_arg;	/**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified).  */
+  char * sftDir_orig;	/**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified) original value given at command line.  */
+  const char *sftDir_help; /**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified) help description.  */
+  char * sftFile_arg;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified).  */
+  char * sftFile_orig;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified) original value given at command line.  */
+  const char *sftFile_help; /**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified) help description.  */
+  char * ephemDir_arg;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files.  */
+  char * ephemDir_orig;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files original value given at command line.  */
+  const char *ephemDir_help; /**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files help description.  */
   char * ephemYear_arg;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files.  */
   char * ephemYear_orig;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files original value given at command line.  */
   const char *ephemYear_help; /**< @brief Year or year range (e.g. 08-11) of ephemeris files help description.  */
@@ -144,10 +147,10 @@ struct gengetopt_args_info
   double tmplfar_arg;	/**< @brief Template FAR threshold.  */
   char * tmplfar_orig;	/**< @brief Template FAR threshold original value given at command line.  */
   const char *tmplfar_help; /**< @brief Template FAR threshold help description.  */
-  int minTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
+  int minTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='1').  */
   char * minTemplateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
   const char *minTemplateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
-  int maxTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
+  int maxTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='1000').  */
   char * maxTemplateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
   const char *maxTemplateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
   double ULfmin_arg;	/**< @brief Minimum signal frequency considered for the upper limit value (Hz).  */
@@ -181,6 +184,11 @@ struct gengetopt_args_info
   const char *useSSE_help; /**< @brief Use SSE functions (caution: user needs to have compiled for SSE or program fails) help description.  */
   int followUpOutsideULrange_flag;	/**< @brief Follow up outliers outside the range of the UL values (default=off).  */
   const char *followUpOutsideULrange_help; /**< @brief Follow up outliers outside the range of the UL values help description.  */
+  int signalOnly_flag;	/**< @brief SFTs contain only signal, no noise (default=off).  */
+  const char *signalOnly_help; /**< @brief SFTs contain only signal, no noise help description.  */
+  int ULsolver_arg;	/**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver (default='0').  */
+  char * ULsolver_orig;	/**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver original value given at command line.  */
+  const char *ULsolver_help; /**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver help description.  */
   double dopplerMultiplier_arg;	/**< @brief Multiplier for the Doppler velocity (default='1.0').  */
   char * dopplerMultiplier_orig;	/**< @brief Multiplier for the Doppler velocity original value given at command line.  */
   const char *dopplerMultiplier_help; /**< @brief Multiplier for the Doppler velocity help description.  */
@@ -229,6 +237,7 @@ struct gengetopt_args_info
   unsigned int sftType_given ;	/**< @brief Whether sftType was given.  */
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int outfilename_given ;	/**< @brief Whether outfilename was given.  */
+  unsigned int configCopy_given ;	/**< @brief Whether configCopy was given.  */
   unsigned int ULfilename_given ;	/**< @brief Whether ULfilename was given.  */
   unsigned int normRMSoutput_given ;	/**< @brief Whether normRMSoutput was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
@@ -263,6 +272,8 @@ struct gengetopt_args_info
   unsigned int fastchisqinv_given ;	/**< @brief Whether fastchisqinv was given.  */
   unsigned int useSSE_given ;	/**< @brief Whether useSSE was given.  */
   unsigned int followUpOutsideULrange_given ;	/**< @brief Whether followUpOutsideULrange was given.  */
+  unsigned int signalOnly_given ;	/**< @brief Whether signalOnly was given.  */
+  unsigned int ULsolver_given ;	/**< @brief Whether ULsolver was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int IHSonly_given ;	/**< @brief Whether IHSonly was given.  */
   unsigned int noNotchHarmonics_given ;	/**< @brief Whether noNotchHarmonics was given.  */
@@ -471,6 +482,7 @@ int cmdline_parser_required (struct gengetopt_args_info *args_info,
 extern const char *cmdline_parser_IFO_values[];  /**< @brief Possible values for IFO. */
 extern const char *cmdline_parser_sftType_values[];  /**< @brief Possible values for sftType. */
 extern const char *cmdline_parser_FFTplanFlag_values[];  /**< @brief Possible values for FFTplanFlag. */
+extern const char *cmdline_parser_ULsolver_values[];  /**< @brief Possible values for ULsolver. */
 
 
 #ifdef __cplusplus

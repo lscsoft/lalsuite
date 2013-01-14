@@ -17,45 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief Module to calculate the determinant of a 3-dimensional matrix \f$g_{ij}\f$.
-
-\heading{Prototypes}
-
-
-<b>LALDeterminant()</b>:
-<ul>
-   <li> <tt>determinant,</tt> Output, determinant of the matrix.
-   </li><li> <tt>matrix,</tt> Input, the input \f$(3\times 3)\f$ matrix whose determinant is required.</li>
-</ul>
-
-\heading{Description}
-
-This code computes the determinant of a 3-dimensional matrix.
-
-\heading{Algorithm}
-Given a matrix \f$g_{ij}\f$ its determinant
-is computed using  the formula \f$g = \epsilon^{ijk} g_{i1} g_{j2} g_{k3},\f$
-where \f$\epsilon\f$ is the totally anti-symmetric tensor in 3-dimensions.
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-Don't ever generalise this to higher dimensions since this
-would take many more operations than some of the standard routines.
-
-*/
-
 #include <lal/LALInspiralBank.h>
 
-void LALDeterminant3(LALStatus *status,
-                     REAL8     *determinant,
-                     REAL8     **matrix)
+/** \ingroup LALInspiralBank_h
+ * \brief Function to calculate the determinant of a 3-dimensional matrix \f$g_{ij}\f$.
+ * \author Sathyaprakash, B. S.
+ *
+ * This code computes the determinant of a 3-dimensional matrix.
+ *
+ * \heading{Algorithm}
+ * Given a matrix \f$g_{ij}\f$ its determinant
+ * is computed using  the formula \f$g = \epsilon^{ijk} g_{i1} g_{j2} g_{k3},\f$
+ * where \f$\epsilon\f$ is the totally anti-symmetric tensor in 3-dimensions.
+ *
+ * \heading{Notes}
+ * Don't ever generalise this to higher dimensions since this
+ * would take many more operations than some of the standard routines.
+ */
+void LALDeterminant3(LALStatus *status,		/**< LAL status pointer */
+                     REAL8     *determinant,	/**< [out] determinant of the matrix. */
+                     REAL8     **matrix		/**< [in] the input \f$(3\times 3)\f$ matrix whose determinant is required */
+                     )
 {
 
    REAL8 epsilon[3][3][3] = {{

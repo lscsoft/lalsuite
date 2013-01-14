@@ -7,8 +7,6 @@ check_PROGRAMS = \
 	BasicInjectTest \
 	CoarseTest \
 	CoarseTest2 \
-	CompareLalsimultaionLalinspiralWaveforms \
-	FindChirpBCVSpinTest \
 	FindChirpBankVetoTest \
 	GenerateInspiralWaveform \
 	GeneratePPNAmpCorInspiralTest \
@@ -67,5 +65,3 @@ EXTRA_DIST = \
 CLEANFILES = \
 	*.out \
 	*.dat
-
-TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null

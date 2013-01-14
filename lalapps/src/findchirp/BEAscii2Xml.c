@@ -46,9 +46,9 @@
 
 
 
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralHeaders.h>
 #include "BankEfficiency.h"
-#include "lal/LIGOLwXMLRead.h"
-#include "lal/LIGOLwXMLInspiralHeaders.h"
 
 #define BEASCII2XML_INPUT1 "Trigger.dat"
 #define BEASCII2XML_INPUT2 "BE_Proto.xml"

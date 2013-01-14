@@ -27,6 +27,7 @@
 
 #include <config.h>
 
+#include <complex.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -45,9 +46,7 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_roots.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
-#include <lal/LALComplex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -371,7 +370,7 @@ int AddInjections(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht){
     response = XLALCreateCOMPLEX16FrequencySeries("", &ht->epoch, 0.0, 1.0, &lalDimensionlessUnit, 1);
     if(!response)
       return 1;
-    response->data->data[0] = XLALCOMPLEX16Rect(10, 0);
+    response->data->data[0] = 10;
   }
 
   /* Inject the signals into ht */
@@ -568,7 +567,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned
 
       /* multiply FT of data and String Filter */
       for ( p = 0 ; p < vtilde->data->length; p++ )
-        vtilde->data->data[p] = XLALCOMPLEX16MulReal(vtilde->data->data[p], strtemplate[m].StringFilter->data->data[p]);
+        vtilde->data->data[p] *= strtemplate[m].StringFilter->data->data[p];
 
       /* reverse FFT it */
       if(XLALREAL8FreqTimeFFT( vector, vtilde, rplan )) return 1;
@@ -616,8 +615,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
 
     /* populate vtilde with the template divided by the noise */
     for ( p = 0; p < vtilde->data->length; p++ ){
-      vtilde->data->data[p].re = sqrt(strtemplate[m].waveform_f->data[p].re/Spec->data->data[p]);
-      vtilde->data->data[p].im = sqrt(strtemplate[m].waveform_f->data[p].im/Spec->data->data[p]);
+      vtilde->data->data[p] = sqrt(strtemplate[m].waveform_f->data[p]/Spec->data->data[p]);
     }
 
     /* reverse FFT vtilde into vector */
@@ -639,7 +637,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
 
     /* store the square magnitude in the filter */
     for ( p = 0 ; p < vtilde->data->length; p++ )
-      strtemplate[m].StringFilter->data->data[p] = XLALCOMPLEX16Abs2(vtilde->data->data[p]);
+      strtemplate[m].StringFilter->data->data[p] = creal(vtilde->data->data[p]) * creal(vtilde->data->data[p]) + cimag(vtilde->data->data[p]) * cimag(vtilde->data->data[p]);
 
     /* set DC and Nyquist to 0 */
     strtemplate[m].StringFilter->data->data[0] = strtemplate[m].StringFilter->data->data[strtemplate[m].StringFilter->data->length-1] = 0;
@@ -658,10 +656,9 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
 
       strncpy(vector->name, "fir filter", LALNameLength);
       for ( p = 0 ; p < vtilde->data->length; p++ ) {
-        vtilde->data->data[p].re = XLALCOMPLEX16Abs2(vtilde->data->data[p]);
-        vtilde->data->data[p].im = 0;
+        vtilde->data->data[p] = creal(vtilde->data->data[p]) * creal(vtilde->data->data[p]) + cimag(vtilde->data->data[p]) * cimag(vtilde->data->data[p]);
       }
-      vtilde->data->data[0] = vtilde->data->data[vtilde->data->length - 1] = LAL_COMPLEX16_ZERO;
+      vtilde->data->data[0] = vtilde->data->data[vtilde->data->length - 1] = 0.0;
       XLALREAL8FreqTimeFFT( vector, vtilde, rplan );
 
       snprintf(filterfilename, sizeof(filterfilename)-1, "FIRFilter-%d.txt", m);
@@ -872,18 +869,18 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8
     for ( p = f_low_cutoff_index; p < strtemplate[m].waveform_f->length; p++ ){
       double f = Spec->f0 + p * Spec->deltaF;
       if(f<=strtemplate[m].f)
-	strtemplate[m].waveform_f->data[p] = XLALCOMPLEX16Rect(pow(f, CLA.power), 0.0);
+	strtemplate[m].waveform_f->data[p] = pow(f, CLA.power);
       else
-	strtemplate[m].waveform_f->data[p] = XLALCOMPLEX16Rect(pow(f, CLA.power)*exp(1-f/strtemplate[m].f), 0.0);
+	strtemplate[m].waveform_f->data[p] = pow(f, CLA.power)*exp(1-f/strtemplate[m].f);
     }
 
     /* set DC and Nyquist to zero */
-    strtemplate[m].waveform_f->data[0] = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1] = LAL_COMPLEX16_ZERO;
+    strtemplate[m].waveform_f->data[0] = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1] = 0.0;
 
     /* whiten and convolve the template with itself, store in vtilde.
      * template is assumed to be real-valued */
     for (p=0 ; p< vtilde->length; p++)
-      vtilde->data[p] = XLALCOMPLEX16Rect(pow(strtemplate[m].waveform_f->data[p].re, 2) / Spec->data->data[p], 0.0);
+      vtilde->data[p] = pow(creal(strtemplate[m].waveform_f->data[p]), 2) / Spec->data->data[p];
 
     /* reverse FFT */
     if(XLALREAL8ReverseFFT(vector, strtemplate[m].waveform_f, rplan)) return 1;

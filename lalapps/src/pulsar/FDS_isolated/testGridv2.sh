@@ -21,24 +21,22 @@ cmp_code="${builddir}lalapps_compareFstats"
 
 SFTdir="./testGridv2_sfts"
 
-# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lal";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
+    cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR}"
+    cfsv2_code="${cfsv2_code} -E ${LALPULSAR_DATADIR}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
-refTime=701595833  ## $startTime
 duration=144000		## 40 hours
 
 Alpha=2.0
@@ -98,7 +96,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --outSFTv1"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -137,7 +135,7 @@ outputv1_2="./Fstatv1_grid2.dat";
 ## common cmdline-options for v1 and v2
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
-cfs_CL="--IFO=$IFO --DataFiles='$SFTdir/testSFT*' --refTime=$refTime -v${debug}"
+cfs_CL="--IFO=$IFO --DataFiles='$SFTdir/testSFT*' -v${debug}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -220,7 +218,7 @@ awk_extract6='{printf "%s %s %s %s %s %s\n", $1, $2, $3, $4, $5, $6 >> "gridv2_2
 grid_line=$(sed '/^%.*/d' ${outputv2_2} | awk "$awk_extract6")
 
 
-cmd0="$cmdlinev2 --gridType=6 --gridFile=${gridFile} --outputFstat=$outputv2_6";
+cmd0="$cmdlinev2 --gridType=6 --gridFile=./${gridFile} --outputFstat=$outputv2_6";
 echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd2' ..."
@@ -271,7 +269,7 @@ fi
 ## ----- grid=6
 echo "Comparing gridType=6:"
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv2_2 -2 ./$outputv2_6 --clusterFiles=0 --Ftolerance=0.0 -v${debug}";
+cmd0="$cmp_code -1 ./$outputv2_2 -2 ./$outputv2_6 --clusterFiles=0 --Ftolerance=0.01 -v${debug}";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2

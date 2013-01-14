@@ -20,8 +20,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \file
- * \ingroup SFTfileIO
+/**
+ * \addtogroup SFTfileIO_h
  * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
  *
  * \brief IO library for reading/writing "Short Fourier transform" (SFT) data files.
@@ -145,8 +145,8 @@ static BOOLEAN has_valid_v2_crc64 (FILE *fp );
 static void lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 static UINT4 read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 
-static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins );
-static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian);
+static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins );
+static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **SFTcomment, BOOLEAN swapEndian);
 static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
 static int compareSFTdesc(const void *ptr1, const void *ptr2);
 static int compareSFTloc(const void *ptr1, const void *ptr2);
@@ -714,8 +714,7 @@ typedef struct {
  * SFT-'catalogue' ( returned by LALSFTdataFind() ).
  *
  * Note: \a fMin (or \a fMax) is allowed to be set to \c -1, which means to read in all
- * Frequency-bins from the lowest (or up to the highest) found in the first SFT-file
- * found in the catalogue.
+ * Frequency-bins from the lowest (or up to the highest) found in all SFT-files of the catalog.
  *
  * Note 2: The returned frequency-interval is guaranteed to contain <tt>[fMin, fMax]</tt>,
  * but is allowed to be larger, as it must be an interval of discrete frequency-bins as found
@@ -732,6 +731,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 {
   UINT4 catPos;                    /**< current file in catalog */
   UINT4 firstbin, lastbin;         /**< the first and last bin we want to read */
+  UINT4 minbin, maxbin;            /**< min and max bin of all SFTs in the catalog */
   UINT4 nSFTs = 1;                 /**< number of SFTs, i.e. different GPS timestamps */
   REAL8 deltaF;                    /**< frequency spacing of SFT */
   SFTCatalog locatalog;            /**< local copy of the catalog to be sorted by 'locator' */
@@ -754,7 +754,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       XLALDestroySFT(thisSFT);			\
     if(sftVector)				\
       XLALDestroySFTVector(sftVector);		\
-    XLAL_ERROR_NULL(eno);	\
+    XLAL_ERROR_NULL(eno);	                \
   }
 
   /* initialize locatalog.data so it doesn't get free()d on early error */
@@ -767,29 +767,46 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   /* determine number of SFTs, i.e. number of different GPS timestamps.
      The catalog should be sorted by GPS time, so just count changes.
      Record the 'index' of GPS time in the 'isft' field of the locator,
-     so that we know later in which SFT to put this segment */
-  {
-    LIGOTimeGPS epoch = catalog->data[0].header.epoch;
-    catalog->data[0].locator->isft = nSFTs - 1;
-    for(catPos = 1; catPos < catalog->length; catPos++) {
-      if(!GPSEQUAL(epoch, catalog->data[catPos].header.epoch)) {
-	epoch = catalog->data[catPos].header.epoch;
-	nSFTs++;
-      }
-      catalog->data[catPos].locator->isft = nSFTs - 1;
+     so that we know later in which SFT to put this segment
+
+     while at it, record max and min bin of all SFTs in the catalog */
+
+  LIGOTimeGPS epoch = catalog->data[0].header.epoch;
+  catalog->data[0].locator->isft = nSFTs - 1;
+  deltaF = catalog->data[0].header.deltaF; /* Hz/bin */
+  minbin = firstbin = MYROUND( catalog->data[0].header.f0 / deltaF );
+  maxbin = lastbin = firstbin + catalog->data[0].numBins - 1;
+  for(catPos = 1; catPos < catalog->length; catPos++) {
+    firstbin = MYROUND( catalog->data[catPos].header.f0 / deltaF );
+    lastbin = firstbin + catalog->data[catPos].numBins - 1;
+    if (firstbin < minbin)
+      minbin = firstbin;
+    if (lastbin > maxbin)
+      maxbin = lastbin;
+    if(!GPSEQUAL(epoch, catalog->data[catPos].header.epoch)) {
+      epoch = catalog->data[catPos].header.epoch;
+      nSFTs++;
     }
+    catalog->data[catPos].locator->isft = nSFTs - 1;
   }
+  LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): fMin: %f, fMax: %f, deltaF: %f, minbin: %u, maxbin: %u\n",
+	    fMin, fMax, deltaF, minbin, maxbin);
 
   /* calculate first and last frequency bin to read */
-  deltaF = catalog->data[0].header.deltaF; /* Hz/bin */
   if (fMin < 0)
-    firstbin = MYROUND( catalog->data[0].header.f0 / deltaF );
+    firstbin = minbin;
   else
-    firstbin = floor(fMin / deltaF);
+    firstbin = floor (fMin / deltaF);
   if (fMax < 0)
-    lastbin = firstbin + catalog->data[0].numBins - 1;
-  else
+    lastbin = maxbin;
+  else {
     lastbin = ceil (fMax / deltaF);
+    if((lastbin == 0) && (fMax != 0)) {
+      XLALPrintError("ERROR: last bin to read is 0 (fMax: %f, deltaF: %f)\n", fMax, deltaF);
+      XLALLOADSFTSERROR(XLAL_EINVAL);
+    }
+  }
+  LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): Reading from first bin: %u, last bin: %u\n", firstbin, lastbin);
 
   /* allocate the SFT vector that will be returned */
   if (!(sftVector = XLALCreateSFTVector (nSFTs, lastbin + 1 - firstbin))) {
@@ -890,7 +907,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	}
 	fname = locator->fname;
 	fp = fopen(fname,"rb");
-	LogPrintf(LOG_DETAIL, "Opening file '%s'\n", fname);
+	LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): Opening file '%s'\n", fname);
 	if(!fp) {
 	  XLALPrintError("ERROR: Couldn't open file '%s'\n", fname);
 	  XLALLOADSFTSERROR(XLAL_EIO);
@@ -907,8 +924,8 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
       /* read SFT data */
       lastBinRead = read_sft_bins_from_fp ( thisSFT, &firstBinRead, firstbin, lastbin, fp );
-      LogPrintf(LOG_DETAIL, "Read data from %s:%lu: %u - %u\n",
-		locator->fname, locator->offset, firstBinRead,lastBinRead);
+      LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): Read data from %s:%lu: %u - %u\n",
+		locator->fname, locator->offset, firstBinRead, lastBinRead);
     }
     /* SFT data has been read from file or taken from catalog */
 
@@ -962,7 +979,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
       } else if(!firstBinRead) {
 	/* no needed data had been in this segment */
-	LogPrintf(LOG_DETAIL, "No data read from %s:%lu\n", locator->fname, locator->offset);
+	LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): No data read from %s:%lu\n", locator->fname, locator->offset);
 
 	/* set epoch if not yet set, if already set, check it */
 	if(GPSZERO(segments[isft].epoch))
@@ -1946,22 +1963,22 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
 
 
 /** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a FILE pointer.
- *  Add the comment to SFT if comment != NULL.
+ *  Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
  * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file()
  *
  * NOTE2: the comment written into the SFT-file contains the 'sft->name' field concatenated with
- * the user-specified 'comment'
+ * the user-specified 'SFTcomment'
  *
  */
 int
 XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
                   FILE *fp,		/**< pointer to open file */
-                  const CHAR *comment)	/**< optional comment (for v2 only) */
+                  const CHAR *SFTcomment)/**< optional comment (for v2 only) */
 {
   UINT4 comment_len = 0;
-  CHAR *SFTcomment;
+  CHAR *_SFTcomment;
   UINT4 pad_len = 0;
   CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
   _SFT_header_v2_t rawheader;
@@ -1982,18 +1999,18 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
     XLAL_ERROR ( XLAL_EINVAL );
 
 
-  /* concat sft->name + comment for SFT-file comment-field */
+  /* concat sft->name + SFTcomment for SFT-file comment-field */
   comment_len = strlen(sft->name) + 1;
-  if ( comment )
-    comment_len += strlen(comment) + 2;	/* separate by "; " */
+  if ( SFTcomment )
+    comment_len += strlen(SFTcomment) + 2;	/* separate by "; " */
 
-  if ( (SFTcomment = XLALCalloc( comment_len, sizeof(CHAR) )) == NULL ) {
+  if ( (_SFTcomment = XLALCalloc( comment_len, sizeof(CHAR) )) == NULL ) {
     XLAL_ERROR( XLAL_ENOMEM );
   }
-  strcpy ( SFTcomment, sft->name );
-  if ( comment ) {
-    strcat ( SFTcomment, "; " );
-    strcat ( SFTcomment, comment );
+  strcpy ( _SFTcomment, sft->name );
+  if ( SFTcomment ) {
+    strcat ( _SFTcomment, "; " );
+    strcat ( _SFTcomment, SFTcomment );
   }
 
   /* comment length including null terminator to string must be an
@@ -2018,7 +2035,7 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   /* ----- compute CRC */
   rawheader.crc64 = calc_crc64((const CHAR*)&rawheader, sizeof(rawheader), ~(0ULL));
 
-  rawheader.crc64 = calc_crc64((const CHAR*)SFTcomment, comment_len, rawheader.crc64);
+  rawheader.crc64 = calc_crc64((const CHAR*)_SFTcomment, comment_len, rawheader.crc64);
   rawheader.crc64 = calc_crc64((const CHAR*)pad, pad_len, rawheader.crc64);
 
   rawheader.crc64 = calc_crc64((const CHAR*) sft->data->data, sft->data->length * sizeof( *sft->data->data ), rawheader.crc64);
@@ -2029,14 +2046,14 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   }
 
   /* ----- write the comment to file */
-  if ( comment_len != fwrite( SFTcomment, 1, comment_len, fp) ) {
+  if ( comment_len != fwrite( _SFTcomment, 1, comment_len, fp) ) {
     XLAL_ERROR ( XLAL_EIO );
   }
   if (pad_len != fwrite( pad, 1, pad_len, fp) ) {
     XLAL_ERROR ( XLAL_EIO );
   }
 
-  XLALFree ( SFTcomment );
+  XLALFree ( _SFTcomment );
 
   /* write the data to the file.  Data must be packed REAL,IMAG,REAL,IMAG,... */
   if ( sft->data->length != fwrite( sft->data->data, sizeof(*sft->data->data), sft->data->length, fp) ) {
@@ -2048,20 +2065,20 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
 } /* XLALWriteSFT2fp() */
 
 /** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
- *  Add the comment to SFT if comment != NULL.
+ *  Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
  * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file()
  *
  * NOTE2: the comment written into the SFT-file contains the 'sft->name' field concatenated with
- * the user-specified 'comment'
+ * the user-specified 'SFTcomment'
  *
  */
 int
 XLALWriteSFT2file(
 		  const SFTtype *sft,		/**< SFT to write to disk */
 		  const CHAR *fname,		/**< filename */
-		  const CHAR *comment)		/**< optional comment (for v2 only) */
+		  const CHAR *SFTcomment)	/**< optional comment (for v2 only) */
 {
   FILE  *fp = NULL;
 
@@ -2086,7 +2103,7 @@ XLALWriteSFT2file(
     }
 
   /* write SFT to file */
-  if ( XLALWriteSFT2fp (sft, fp, comment) != XLAL_SUCCESS ) {
+  if ( XLALWriteSFT2fp (sft, fp, SFTcomment) != XLAL_SUCCESS ) {
     XLAL_ERROR ( XLAL_EIO );
   }
 
@@ -2100,12 +2117,12 @@ void
 LALWriteSFT2file (LALStatus *status,			/**< pointer to LALStatus structure */
 		  const SFTtype *sft,		/**< SFT to write to disk */
 		  const CHAR *fname,		/**< filename */
-		  const CHAR *comment)		/**< optional comment (for v2 only) */
+		  const CHAR *SFTcomment)	/**< optional comment (for v2 only) */
 {
   XLALPrintDeprecationWarning("LALWriteSFT2file", "XLALWriteSFT2file");
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
-  if ( XLALWriteSFT2file( sft, fname, comment ) != XLAL_SUCCESS ) {
+  if ( XLALWriteSFT2file( sft, fname, SFTcomment ) != XLAL_SUCCESS ) {
     ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
   }
   DETATCHSTATUSPTR (status);
@@ -2115,7 +2132,7 @@ LALWriteSFT2file (LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 /** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a directory.
- *  Add the comment to SFT if comment != NULL.
+ *  Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
  * If you need to write a v1-SFT, you should use LALWriteSFTfile()
@@ -2126,7 +2143,7 @@ int
 XLALWriteSFTVector2Dir(
 		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
 		       const CHAR *dirname,		/**< base filename (including directory path)*/
-		       const CHAR *comment,		/**< optional comment (for v2 only) */
+		       const CHAR *SFTcomment,		/**< optional comment (for v2 only) */
 		       const CHAR *description)         /**< optional sft description to go in the filename */
 {
   UINT4 length, k;
@@ -2201,7 +2218,7 @@ XLALWriteSFTVector2Dir(
     strcat( filename, ".sft");
 
     /* write the k^th sft */
-    if ( XLALWriteSFT2file( sft, filename, comment ) != XLAL_SUCCESS ) {
+    if ( XLALWriteSFT2file( sft, filename, SFTcomment ) != XLAL_SUCCESS ) {
       XLAL_ERROR ( xlalErrno );
     }
   }
@@ -2216,13 +2233,13 @@ void
 LALWriteSFTVector2Dir (LALStatus *status,			/**< pointer to LALStatus structure */
 		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
 		       const CHAR *dirname,		/**< base filename (including directory path)*/
-		       const CHAR *comment,		/**< optional comment (for v2 only) */
+		       const CHAR *SFTcomment,		/**< optional comment (for v2 only) */
 		       const CHAR *description)         /**< optional sft description to go in the filename */
 {
   XLALPrintDeprecationWarning("LALWriteSFTVector2Dir", "XLALWriteSFTVector2Dir");
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
-  if ( XLALWriteSFTVector2Dir( sftVect, dirname, comment, description ) != XLAL_SUCCESS ) {
+  if ( XLALWriteSFTVector2Dir( sftVect, dirname, SFTcomment, description ) != XLAL_SUCCESS ) {
     ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
   }
   DETATCHSTATUSPTR (status);
@@ -2232,7 +2249,7 @@ LALWriteSFTVector2Dir (LALStatus *status,			/**< pointer to LALStatus structure 
 
 
 /** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
- *  Add the comment to SFT if comment != NULL.
+ *  Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
  * If you need to write a v1-SFT, you should use LALWriteSFTfile()
@@ -2241,7 +2258,7 @@ int
 XLALWriteSFTVector2File(
 		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
 		       const CHAR *filename,		/**< filename of concatenated SFT */
-		       const CHAR *comment)		/**< optional comment (for v2 only) */
+		       const CHAR *SFTcomment)		/**< optional comment (for v2 only) */
 {
   UINT4 length, k;
   FILE *fp = NULL;
@@ -2273,7 +2290,7 @@ XLALWriteSFTVector2File(
     }
 
     /* write the k^th sft */
-    if ( XLALWriteSFT2fp ( sft, fp, comment ) != XLAL_SUCCESS ) {
+    if ( XLALWriteSFT2fp ( sft, fp, SFTcomment ) != XLAL_SUCCESS ) {
       XLAL_ERROR ( xlalErrno );
     }
   }
@@ -2970,7 +2987,7 @@ has_valid_v2_crc64 ( FILE *fp )
   UINT8 computed_crc, ref_crc;
   SFTtype header;
   UINT4 numBins;
-  CHAR *comment = NULL;
+  CHAR *SFTcomment = NULL;
   UINT4 data_len;
   char block[BLOCKSIZE];
   UINT4 version;
@@ -3001,12 +3018,12 @@ has_valid_v2_crc64 ( FILE *fp )
 
   /* ----- compute CRC ----- */
   /* read the header, unswapped, only to obtain it's crc64 checksum */
-  if ( read_v2_header_from_fp ( fp, &header, &numBins, &computed_crc, &ref_crc, &comment, need_swap ) != 0 )
+  if ( read_v2_header_from_fp ( fp, &header, &numBins, &computed_crc, &ref_crc, &SFTcomment, need_swap ) != 0 )
     {
-      if ( comment ) LALFree ( comment );
+      if ( SFTcomment ) LALFree ( SFTcomment );
       return FALSE;
     }
-  if ( comment ) LALFree ( comment );
+  if ( SFTcomment ) LALFree ( SFTcomment );
 
   /* read data in blocks of BLOCKSIZE, computing CRC */
   data_len = numBins * 8 ;	/* COMPLEX8 data */
@@ -3543,7 +3560,7 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
  *
  */
 static int
-read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins )
+read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins )
 {
   SFTtype head = empty_SFTtype;
   UINT4 nsamples;
@@ -3560,7 +3577,7 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
       XLALPrintError ("\nERROR read_sft_header_from_fp(): called with NULL input\n\n");
       return -1;
     }
-  if ( comment && ((*comment) != NULL) )
+  if ( SFTcomment && ((*SFTcomment) != NULL) )
     {
       XLALPrintError ("\nERROR: Comment-string passed to read_sft_header_from_fp() is not empty!\n\n");
       return -1;
@@ -3623,8 +3640,8 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
   (*header) = head;
   (*version) = ver;
 
-  if ( comment )	  /* return of comment is optional */
-    (*comment) = comm;
+  if ( SFTcomment )	  /* return of comment is optional */
+    (*SFTcomment) = comm;
   else
     if ( comm ) LALFree(comm);
 
@@ -3660,7 +3677,7 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
  *
  */
 static int
-read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian)
+read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **SFTcomment, BOOLEAN swapEndian)
 {
   _SFT_header_v2_t rawheader;
   long save_filepos;
@@ -3669,12 +3686,12 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
 
 
   /* check input-consistency */
-  if ( !fp || !header || !nsamples || !comment )
+  if ( !fp || !header || !nsamples || !SFTcomment )
     {
       XLALPrintError ( "\nERROR read_v2_header_from_fp(): called with NULL input!\n\n");
       return -1;
     }
-  if ( comment && (*comment != NULL) )
+  if ( SFTcomment && (*SFTcomment != NULL) )
     {
       XLALPrintError ("\nERROR: Comment-string passed to read_v2_header_from_fp() is not NULL!\n\n");
       return -1;
@@ -3796,7 +3813,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
        * integer multiple of eight bytes. comment==NULL means 'no
        * comment'
        */
-      if (comment)
+      if (SFTcomment)
 	{
 	  CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
 	  UINT4 comment_len = strlen(comm) + 1;
@@ -3823,7 +3840,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
 
   (*nsamples) = rawheader.nsamples;
   (*ref_crc64) = rawheader.crc64;
-  (*comment) = comm;
+  (*SFTcomment) = comm;
   (*header_crc64) = crc;
 
 

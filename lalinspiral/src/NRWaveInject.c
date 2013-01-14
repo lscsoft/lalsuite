@@ -348,6 +348,10 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 
       ret->data->data[k] = y_2 * r + y_1 * (1 - r);
     }
+    /* Copy the end point if we are exactly at it */
+    else if(lo==in->data->length-1){
+      ret->data->data[k]=in->data->data[lo];
+    }
     else {
       ret->data->data[k] = 0.0;
     }
@@ -420,6 +424,9 @@ XLALInterpolateNRWaveREAL8( REAL8TimeSeries *in,           /**< input strain tim
       r = k*deltaTout / deltaTin - lo;
 
       ret->data->data[k] = y_2 * r + y_1 * (1 - r);
+    }    /* Copy the end point if we are exactly at it */
+    else if(lo==in->data->length-1){
+      ret->data->data[k]=in->data->data[lo];
     }
     else {
       ret->data->data[k] = 0.0;
@@ -736,14 +743,31 @@ void LALInjectStrainGW( LALStatus                 *status,
     ABORTXLAL( status );
   }
 
+  /* Cast to REAL8 for injection */
+  REAL8TimeSeries *injData8=XLALCreateREAL8TimeSeries("temporary", &(injData->epoch), injData->f0, injData->deltaT, &(injData->sampleUnits), injData->data->length);
+  if(!injData8) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to allocate injection buffer\n");
+  REAL8TimeSeries *htData8=XLALCreateREAL8TimeSeries("signal, temp", &(htData->epoch), htData->f0, htData->deltaT, &(htData->sampleUnits), htData->data->length);
+  if(!htData8) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to allocate signal buffer\n");
+
+  for(UINT4 i=0;i<htData->data->length;i++) htData8->data->data[i]=(REAL8)htData->data->data[i];
+  for(UINT4 i=0;i<injData->data->length;i++) injData8->data->data[i]=(REAL8)injData->data->data[i];
+
   /* inject the htData into injection time stream */
-  LALSSInjectTimeSeries( status->statusPtr, injData, htData );
-  BEGINFAIL( status )
+  int retcode = XLALSimAddInjectionREAL8TimeSeries(injData8, htData8, NULL);
+  if(retcode!=XLAL_SUCCESS)
   {
-    XLALDestroyREAL4Vector ( htData->data);
-    LALFree( htData );
+    XLALDestroyREAL8TimeSeries(htData8);
+    XLALDestroyREAL8TimeSeries(injData8);
+    XLALDestroyREAL4Vector(htData->data);
+    LALFree(htData);
+    ABORTXLAL(status);
   }
-  ENDFAIL( status );
+
+  for(UINT4 i=0;i<injData8->data->length;i++) injData->data->data[i]=(REAL4)injData8->data->data[i];
+
+  XLALDestroyREAL8TimeSeries(injData8);
+  XLALDestroyREAL8TimeSeries(htData8);
+
 
   /* set channel name */
   snprintf( injData->name, sizeof(injData->name),
@@ -810,7 +834,8 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
   XLALFindNRCoalescenceTimeREAL8( &offset, htData);
   XLALGPSAdd( &(htData->epoch), -offset);
 
-  XLALSimAddInjectionREAL8TimeSeries( injData, htData, NULL);
+  int retcode=XLALSimAddInjectionREAL8TimeSeries( injData, htData, NULL);
+  XLAL_CHECK_VOID(retcode==XLAL_SUCCESS, XLAL_EFUNC, "Unable to add injection to data\n");
 
   /* set channel name */
   snprintf( injData->name, sizeof(injData->name),

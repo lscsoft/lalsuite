@@ -7,7 +7,6 @@
  * targeted pulsar searches.
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "ppe_models.h"
 
 static BinaryPulsarParams empty_BinaryPulsarParams;
@@ -276,18 +275,16 @@ void pulsar_model( BinaryPulsarParams params,
           for( i=0; i<length; i++ ){
             COMPLEX16 M;
             REAL8 dphit;
-            REAL4 sp, cp;
+            COMPLEX16 expp;
     
             dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+           
+            expp = cexp( dphit );
             
-            sin_cos_2PI_LUT( &sp, &cp, dphit );
-    
-            M.re = data->compModelData->data->data[i].re;
-            M.im = data->compModelData->data->data[i].im;
+            M = data->compModelData->data->data[i];
     
             /* heterodyne */
-            data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
-            data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+            data->compModelData->data->data[i] = M * expp;
           }
         
           XLALDestroyREAL8Vector( dphi );      
@@ -329,6 +326,7 @@ void pulsar_model( BinaryPulsarParams params,
  * additional info
  * \param freqFactor [in] the multiplicative factor on the pulsar frequency for
  * a particular model
+ * \param downsampled *UNDOCUMENTED*
  * 
  * \return A vector of rotational phase values
  * 
@@ -343,10 +341,10 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
 
   REAL8 T0 = 0., DT = 0., deltat = 0., deltat2 = 0.;
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
-  
+
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
   LIGOTimeGPSVector *datatimes = NULL;
- 
+
   /* check if we want to calculate the phase at a the downsampled rate */
   if ( downsampled ){
     if( LALInferenceCheckVariable( data->dataParams, "downsampled_times" ) ){
@@ -359,29 +357,29 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
     }
   }
   else datatimes = data->dataTimes;
-  
+
   /* if edat is NULL then return a NULL pointer */
   if( data->ephem == NULL )
     return NULL;
 
   length = datatimes->length;
-  
+
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( length );
-  
-  /* get time delays */ 
+
+  /* get time delays */
   /*Why ==NULL, surely it will equal null if not set to get ssb delays?*/
   if( (dts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "ssb_delays" )) == NULL || varyskypos == 1 ){
     /* get time delays with an interpolation of interptime (30 mins) */
-    dts = get_ssb_delay( params, datatimes, data->ephem, data->detector,
-                         interptime );
+    dts = get_ssb_delay( params, datatimes, data->ephem, data->tdat,
+                         data->ttype, data->detector, interptime );
   }
-  
+
   if( (bdts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "bsb_delays" )) == NULL || varybinary == 1 ){
     /* get binary system time delays */
-    bdts = get_bsb_delay( params, datatimes, dts );
+    bdts = get_bsb_delay( params, datatimes, dts, data->ephem );
   }
   
   for( i=0; i<length; i++){
@@ -436,21 +434,21 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
  * \param datatimes [in] A vector of GPS times at Earth
  * \param ephem [in] Information on the solar system ephemeris
  * \param detector [in] Information on the detector position on the Earth
- * \param interptime [in] The time (in seconds) between explicit recalculations
- * of the time delay
- * 
+ * \param interptime [in] The time (in seconds) between explicit recalculations of the time delay
+ * \param tdat *UNDOCUMENTED*
+ * \param ttype *UNDOCUMENTED*
  * \return A vector of time delays in seconds
  *
- * \sa LALBarycenter
- * \sa LALBarycenterEarth
+ * \sa XLALBarycenter
+ * \sa XLALBarycenterEarth
  */
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
                             LIGOTimeGPSVector *datatimes,
                             EphemerisData *ephem,
+                            TimeCorrectionData *tdat,
+                            TimeCorrectionType ttype,
                             LALDetector *detector,
                             REAL8 interptime ){
-  static LALStatus status;
-
   INT4 i = 0, length = 0;
 
   REAL8 T0 = 0., DT = 0., DTplus = 0.;
@@ -509,10 +507,10 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
          pars.pmra/cos(bary->delta);
      
       /* call barycentring routines */
-      LAL_CALL( LALBarycenterEarth( &status, &earth, &bary->tgps, ephem ),
-                &status );
-      
-      LAL_CALL( LALBarycenter( &status, &emit, bary, &earth ), &status );
+      XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth, &bary->tgps, ephem, tdat,
+                       ttype ) == XLAL_SUCCESS, XLAL_EFUNC ); 
+      XLAL_CHECK_NULL( XLALBarycenter( &emit, bary, &earth ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
 
       /* add interptime to the time */
       if ( interptime > 0 ){
@@ -520,9 +518,10 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
         XLALGPSAdd( &bary->tgps, interptime );
 
         /* No point in updating the positions as difference will be tiny */
-        LAL_CALL( LALBarycenterEarth( &status, &earth2, &bary->tgps, ephem ),
-                  &status );
-        LAL_CALL( LALBarycenter( &status, &emit2, bary, &earth2), &status );
+        XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth2, &bary->tgps, ephem,
+                         tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_NULL( XLALBarycenter( &emit2, bary, &earth2 ) ==
+                         XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
 
@@ -553,14 +552,15 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
  * \param pars [in] A set of pulsar parameters
  * \param datatimes [in] A vector of GPS times
  * \param dts [in] A vector of solar system barycentre time delays
- * 
+ * \param edat *UNDOCUMENTED*
  * \return A vector of time delays in seconds
  * 
  * \sa XLALBinaryPulsarDeltaT
  */
 REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
                             LIGOTimeGPSVector *datatimes,
-                            REAL8Vector *dts ){
+                            REAL8Vector *dts,
+                            EphemerisData *edat ){
   BinaryPulsarInput binput;
   BinaryPulsarOutput boutput;
   REAL8Vector *bdts = NULL;
@@ -572,7 +572,13 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
   for ( i = 0; i < length; i++ ){
     /* check whether there's a binary model */
     if ( pars.model ){
+      EarthState earth;
+      
       binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
+      
+      get_earth_pos_vel( &earth, edat, &datatimes->data[i] );
+      
+      binput.earth = earth; /* current Earth state */
       XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );    
       bdts->data[i] = boutput.deltaT;
     }
@@ -589,10 +595,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
  * triaxial neutron star (see [\ref DupuisWoan2005]). It is defined as:
  * \f{eqnarray*}{
  * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
- * (1+\cos^2\iota)\cos{\phi_0} + F_{\times}(t,\psi)\cos{\iota}\sin{\phi_0}
- * \right) + \\
- *  & & i\frac{h_0}{2}\left( \frac{1}{2}F_+(t,\psi)
- * (1+\cos^2\iota)\sin{\phi_0} - F_{\times}(t,\psi)\cos{\iota}\cos{\phi_0}
+ * (1+\cos^2\iota)\exp{i\phi_0} - iF_{\times}(t,\psi)\cos{\iota}\exp{i\phi_0}
  * \right),
  * \f}
  * where \f$F_+\f$ and \f$F_{\times}\f$ are the antenna response functions for
@@ -626,8 +629,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   REAL8 psiMin, psiMax, timeMin, timeMax;
   REAL8 T;
   REAL8 Xplus, Xcross;
-  REAL8 Xpcosphi, Xccosphi, Xpsinphi, Xcsinphi;
-  REAL4 sinphi, cosphi;
+  COMPLEX16 expiphi, Xpexpphi, Xcexpphi;
   
   gsl_matrix *LU_Fplus, *LU_Fcross;
   REAL8Vector *sidDayFrac = NULL;
@@ -645,25 +647,21 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   /* get the sidereal time since the initial data point % sidereal day */
   sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
                                                         "siderealDay" );
-  
-  sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
+ 
+  expiphi = cexp( I * pars.phi0 );
   
   /************************* CREATE MODEL *************************************/
   /* This model is a complex heterodyned time series for a triaxial neutron
      star emitting at twice its rotation frequency (as defined in Dupuis and
      Woan, PRD, 2005):
-       real = (h0/2) * ((1/2)*F+*(1+cos(iota)^2)*cos(phi0) 
-         + Fx*cos(iota)*sin(phi0))
-       imag = (h0/2) * ((1/2)*F+*(1+cos(iota)^2)*sin(phi0)
-         - Fx*cos(iota)*cos(phi0))
+       h(t) = (h0/2) * ((1/2)*F+(t)*(1+cos(iota)^2)*exp(i*phi0) 
+         - i*Fx(t)*cos(iota)*exp(i*phi0))
    ****************************************************************************/
-  
+
   Xplus = 0.25*(1.+pars.cosiota*pars.cosiota)*pars.h0;
   Xcross = 0.5*pars.cosiota*pars.h0;
-  Xpsinphi = Xplus*sinphi;
-  Xcsinphi = Xcross*sinphi;
-  Xpcosphi = Xplus*cosphi;
-  Xccosphi = Xcross*cosphi;
+  Xpexpphi = Xplus*expiphi;
+  Xcexpphi = Xcross*expiphi;
   
   /* set the psi bin for the lookup table - the lookup table runs from -pi/2
      to pi/2, but for the triaxial case we only require psi values from -pi/4
@@ -710,8 +708,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
       + cross11*psiScaled*timeScaled;
     
     /* create the complex signal amplitude model */
-    data->compModelData->data->data[i].re = plus*Xpcosphi + cross*Xcsinphi;
-    data->compModelData->data->data[i].im = plus*Xpsinphi - cross*Xccosphi;
+    data->compModelData->data->data[i] = plus*Xpexpphi - I*cross*Xcexpphi;
   }
 }
 
@@ -858,13 +855,11 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars,
     
     /* create the complex signal amplitude model */
     /*at f*/
-    data->compModelData->data->data[i].re =
-      plus * Xplusf * ( A1 * cosphi - A2 * sinphi ) + 
-      cross * Xcrossf * ( A2 * cosphi + A1 * sinphi );
-    
-    data->compModelData->data->data[i].im =
-      plus * Xplusf * ( A2 * cosphi + A1 * sinphi ) + 
-      cross * Xcrossf * ( A2 * sinphi - A1 * cosphi );
+    data->compModelData->data->data[i] =
+      ( plus * Xplusf * ( A1 * cosphi - A2 * sinphi ) + 
+      cross * Xcrossf * ( A2 * cosphi + A1 * sinphi ) ) +
+      I * ( plus * Xplusf * ( A2 * cosphi + A1 * sinphi ) + 
+      cross * Xcrossf * ( A2 * sinphi - A1 * cosphi ) );
   }
   /*--------------------------------------------------------------------------*/
   /* set model for 2f component */
@@ -904,13 +899,11 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars,
       + cross11*psiScaled*timeScaled;
     
     /* create the complex signal amplitude model at 2f*/
-    data->next->compModelData->data->data[i].re =
-      plus * Xplus2f * ( B1 * cos2phi - B2 * sin2phi ) +
-      cross * Xcross2f * ( B2 * cos2phi + B1 * sin2phi );
-    
-    data->next->compModelData->data->data[i].im =
-      plus * Xplus2f * ( B2 * cos2phi + B1 * sin2phi ) +
-      cross * Xcross2f * ( B2 * sin2phi - B1 * cos2phi );
+    data->next->compModelData->data->data[i] =
+      ( plus * Xplus2f * ( B1 * cos2phi - B2 * sin2phi ) +
+      cross * Xcross2f * ( B2 * cos2phi + B1 * sin2phi ) ) +
+      I * ( plus * Xplus2f * ( B2 * cos2phi + B1 * sin2phi ) +
+      cross * Xcross2f * ( B2 * sin2phi - B1 * cos2phi ) );
 
   }
   /*--------------------------------------------------------------------------*/
@@ -949,14 +942,16 @@ REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,     
                                                           "freqfactors" );
 
-  /*set the Znoise filename to the outfile name with "_Znoise" appended*/
-  Znoisefile = XLALStringDuplicate( ppt->value );
-  Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
-
   /*Open the Znoise file for writing*/
-  if( (fp = fopen(Znoisefile, "w")) == NULL ){
-    fprintf(stderr, "Error... cannot open output Znoise file!\n");
-    exit(0);
+  if ( (INT4)freqFactors->length > 1 ){
+    /*set the Znoise filename to the outfile name with "_Znoise" appended*/
+    Znoisefile = XLALStringDuplicate( ppt->value );
+    Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
+    
+    if( (fp = fopen(Znoisefile, "w")) == NULL ){
+      fprintf(stderr, "Error... cannot open output Znoise file!\n");
+      exit(0);
+    }
   }
   
   /*calculate the evidence */
@@ -994,7 +989,7 @@ REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
     data = data->next;
   }
   
-  fclose(fp);
+  if( (INT4)freqFactors->length > 1 ) fclose(fp);
   
   return logL;
 }
@@ -1048,4 +1043,58 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
   return (1. - fabs(mismatch)/(2.*T));
 }
 
+
+/** \brief Get the position and velocity of the Earth at a given time
+ * 
+ * This function will get the position and velocity of the Earth from the
+ * ephemeris data at the time t. It will be returned in an EarthState
+ * structure. This is based on the start of the XLALBarycenterEarth function. */
+void get_earth_pos_vel( EarthState *earth, EphemerisData *edat, 
+                        LIGOTimeGPS *tGPS){
+  REAL8 tgps[2]; 
+
+  REAL8 t0e;        /*time since first entry in Earth ephem. table */
+  INT4 ientryE;      /*entry in look-up table closest to current time, tGPS */
+
+  REAL8 tinitE;           /*time (GPS) of first entry in Earth ephem table*/
+  REAL8 tdiffE;           /*current time tGPS minus time of nearest entry
+                             in Earth ephem look-up table */
+  REAL8 tdiff2E;          /*tdiff2=tdiffE*tdiffE */
+
+  INT4 j; /*dummy index */
+
+  /* check input */
+  if ( !earth || !tGPS || !edat || !edat->ephemE || !edat->ephemS ) {
+    XLALPrintError ("%s: invalid NULL input 'earth', 'tGPS', 'edat',\
+'edat->ephemE' or 'edat->ephemS'\n", __func__ );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
+  }
+
+  tgps[0] = (REAL8)tGPS->gpsSeconds; /*convert from INT4 to REAL8 */
+  tgps[1] = (REAL8)tGPS->gpsNanoSeconds;
+
+  tinitE = edat->ephemE[0].gps;
+
+  t0e = tgps[0] - tinitE;
+  ientryE = ROUND(t0e/edat->dtEtable);  /*finding Earth table entry */
+
+  if ( ( ientryE < 0 ) || ( ientryE >=  edat->nentriesE )) {
+    XLALPrintError ("%s: input GPS time %f outside of Earth ephem range [%f,\
+%f]\n", __func__, tgps[0], tinitE, tinitE + edat->nentriesE * edat->dtEtable );
+    XLAL_ERROR_VOID( XLAL_EDOM );
+  }
+    
+  tdiffE = t0e -edat->dtEtable*ientryE + tgps[1]*1.e-9; /*tdiff is arrival
+              time minus closest Earth table entry; tdiff can be pos. or neg. */
+  tdiff2E = tdiffE*tdiffE;
+
+  REAL8* pos = edat->ephemE[ientryE].pos;
+  REAL8* vel = edat->ephemE[ientryE].vel;
+  REAL8* acc = edat->ephemE[ientryE].acc;
+
+  for (j=0;j<3;j++){
+    earth->posNow[j]=pos[j] + vel[j]*tdiffE + 0.5*acc[j]*tdiff2E;
+    earth->velNow[j]=vel[j] + acc[j]*tdiffE;
+  }                    
+}
 /*------------------------ END OF MODEL FUNCTIONS ----------------------------*/

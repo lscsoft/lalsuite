@@ -32,14 +32,9 @@ and \c Mmax. If the variable \c type is set to 0
 it computes the boundary of the region corresponding to the companion
 masses in the range defined by \c mmin and \c mmax.
 
-\heading{Uses}
-\code
-LALInspiralParameterCalc
-\endcode
-
-\heading{Notes}
-
 */
+
+/** \cond DONT_DOXYGEN */
 
 /*
    This code generates the chirp parameter space for a given
@@ -176,3 +171,4 @@ int main ( void ) {
    }
    return 0;
 }
+/** \endcond */

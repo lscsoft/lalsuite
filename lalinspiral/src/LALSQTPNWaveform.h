@@ -1,21 +1,3 @@
-/**
- * @file LALSQTPNWaveform.h
- *		Contains the enumerations, structures and functions declarations to create GWforms.
- *	<b>Notations</b><br />
- *	\f$M=M_{in}M_\odot G/c^3\f$<br />
- *	\f$\hat{L_N}=\left(\sin\iota,0,\cos\iota\right)\f$ is the direction of the
- *	orbital angular momentum in radiation frame see [1].<br />
- *	\f$\omega=\pi f_L\f$<br />
- *	\f$\hat{\chi}_i\f$, \f$M_{in}\f$, \f$\iota\f$, \f$f_L\f$ are defined in
- *	LALSQTPNFillParams() function.<br />
- *	<b>References</b><br />
- *	[1] L. E. Kidder, Phys.Rev. D52, 821 (1995)<br />
- *	[2] Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri, Phys.Rev. D67 (2003) 104025; Erratum-ibid. D74 (2006) 029904<br />
- *	[3] Balázs Mikóczi, Mátyás Vasúth, László Á. Gergely, Phys.Rev. D71 (2005) 124043
- * @author László Veréb
- * @date 2010.05.21.
- */
-
 #ifndef LALSQTPNWAVEFORM_H
 #define LALSQTPNWAVEFORM_H
 
@@ -29,9 +11,35 @@
 extern "C" {
 #endif
 
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
-/**		The macro function returns the square of the argument.
+/**
+ * \defgroup LALSQTPNWaveform_h Header LALSQTPNWaveform.h
+ * \ingroup pkg_CBC_NEW
+ * \brief Contains the enumerations, structures and functions declarations to create GWforms.
+ *
+ * \heading{Notations}
+ *
+ *	\f$M=M_{in}M_\odot G/c^3\f$<br />
+ *	\f$\hat{L_N}=\left(\sin\iota,0,\cos\iota\right)\f$ is the direction of the
+ *	orbital angular momentum in radiation frame see [1].<br />
+ *	\f$\omega=\pi f_L\f$<br />
+ *	\f$\hat{\chi}_i\f$, \f$M_{in}\f$, \f$\iota\f$, \f$f_L\f$ are defined in
+ *	LALSQTPNFillParams() function.<br />
+ *	<b>References</b><br />
+ *	[1] L. E. Kidder, Phys.Rev. D52, 821 (1995)<br />
+ *	[2] Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri, Phys.Rev. D67 (2003) 104025; Erratum-ibid. D74 (2006) 029904<br />
+ *	[3] Balázs Mikóczi, Mátyás Vasúth, László Á. Gergely, Phys.Rev. D71 (2005) 124043
+ * \author László Veréb
+ * \date 2010.05.21.
+ */
+/*@{*/
+
+/** The macro function returns the square of the argument.
  * Do not use with incrementing or decrementing operators!
  * @param[in] a	 : the number
  * @return the square of the number
@@ -180,7 +188,7 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
  * @param[out]	dvalues	: the derived values and the last element is the MECO
  * @param[in]	params	: the LALSQTPN_Generator's parameters
  */
-int XLALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[],
+int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 		void * params);
 
 // LAL wrapper of above XLAL function
@@ -230,6 +238,8 @@ int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params);
 // LAL wrapper to the XLAL function above
 void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform,
 		LALSQTPNWaveformParams *params);
+
+/*@}*/ /* end:LALSQTPNWaveform_h */
 
 #ifdef __cplusplus
 }

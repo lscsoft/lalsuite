@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2012 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,16 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \file
- *
- * \author{Reinhard Prix}
- *
- * Function to compute the full F-statistic metric, including
- * antenna-pattern functions from multi-detector, derived in \ref Prix07.
- *
- */
-
 #ifndef _UNIVERSALDOPPLERMETRIC_H  /* Double-include protection. */
 #define _UNIVERSALDOPPLERMETRIC_H
 
@@ -34,6 +25,17 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+/**
+ * \defgroup UniversalDopplerMetric_h Header UniversalDopplerMetric.h
+ * \ingroup pkg_pulsarMetric
+ * \author Reinhard Prix, Karl Wette
+ *
+ * Function to compute the full F-statistic metric, including
+ * antenna-pattern functions from multi-detector, derived in \ref Prix07.
+ *
+ */
+/*@{*/
 
 /*---------- INCLUDES ----------*/
 #include <math.h>
@@ -107,191 +109,47 @@ typedef enum {
 } MetricType_t;
 
 
-/** Array of symbolic 'names' for various detector-motions
- */
-#ifdef IN_UNIVERSALDOPPLERMETRICC
-const CHAR *DetectorMotionNames[] = {
-  "spin+orbit",
-  "orbit",
-  "spin",
-
-  "spin+ptoleorbit",
-  "ptoleorbit",
-
-  "orbit+spin_Z",
-  "orbit+spin_XY",
-
-  "NONE"
-};
-#endif
-
 /** enum listing symbolic 'names' for all Doppler Coordinates
  * supported by the metric codes in FstatMetric
  */
 typedef enum {
-  DOPPLERCOORD_NONE = -1,		/**< used to denote 'empty', i.e. no Doppler component */
-  DOPPLERCOORD_FREQ_SI = 0,		/**< frequency in Hz */
-  DOPPLERCOORD_F1DOT_SI,		/**< f1dot = dFreq/dt in Hz/s */
-  DOPPLERCOORD_F2DOT_SI,		/**< f2dot = d2Freq/dt2 in Hz/s^2 */
-  DOPPLERCOORD_F3DOT_SI,		/**< f3dot = d3Freq/dt3 in Hz/s^3 */
+  DOPPLERCOORD_NONE = -1,	/**< No Doppler component */
 
-  DOPPLERCOORD_ALPHA_RAD,		/**< right-ascension (longitude) in radians, using coord-system of ephemeris-file */
-  DOPPLERCOORD_DELTA_RAD,		/**< declination (latitude) in radians,  using coord-system of ephemeris-file */
+  DOPPLERCOORD_FREQ,		/**< Frequency [Units: Hz]. */
+  DOPPLERCOORD_F1DOT,		/**< First spindown [Units: Hz/s]. */
+  DOPPLERCOORD_F2DOT,		/**< Second spindown [Units: Hz/s^2]. */
+  DOPPLERCOORD_F3DOT,		/**< Third spindown [Units: Hz/s^3]. */
 
-  DOPPLERCOORD_FREQ_NAT,		/**< frequency in "natural units": om0 = 2pi f * (Tspan/2) */
-  DOPPLERCOORD_F1DOT_NAT,		/**< f1dot in "natural units":     om1 = 2pi f1dot/2! * (Tspan/2)^2 */
-  DOPPLERCOORD_F2DOT_NAT,		/**< f2dot in "natural units":     om2 = 2pi f2dot/3! * (Tspan/2)^3 */
-  DOPPLERCOORD_F3DOT_NAT,		/**< f3dot in "natural units":     om3 = 2pi f3dot/4! * (Tspan/2)^4 */
+  DOPPLERCOORD_GC_NU0,		/**< Global correlation frequency [Units: Hz]. Activates 'reduced' detector position. */
+  DOPPLERCOORD_GC_NU1,		/**< Global correlation first spindown [Units: Hz/s]. Activates 'reduced' detector position. */
+  DOPPLERCOORD_GC_NU2,		/**< Global correlation second spindown [Units: Hz/s^2]. Activates 'reduced' detector position. */
+  DOPPLERCOORD_GC_NU3,		/**< Global correlation third spindown [Units: Hz/s^3]. Activates 'reduced' detector position. */
 
-  DOPPLERCOORD_ALPHA_NAT,		/**< right-ascension (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
-  DOPPLERCOORD_DELTA_NAT,		/**< declination (latitude) in 'natural units' dDelta * (f * T / (Vorb/c) ) */
+  DOPPLERCOORD_ALPHA,		/**< Right ascension [Units: radians]. Uses 'reduced' detector position. */
+  DOPPLERCOORD_DELTA,		/**< Declination [Units: radians]. Uses 'reduced' detector position. */
 
-  DOPPLERCOORD_NECL_X_NAT,		/**< x-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
-  DOPPLERCOORD_NECL_Y_NAT,		/**< y-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_N2X_EQU,		/**< X component of contrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
+  DOPPLERCOORD_N2Y_EQU,		/**< Y component of contrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
 
-  DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
-  DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_N2X_ECL,		/**< X component of contrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
+  DOPPLERCOORD_N2Y_ECL,		/**< Y component of contrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
 
-  DOPPLERCOORD_N3X_EQU,			/**< unconstrained sky-vector n3: equatorial-x coordinate */
-  DOPPLERCOORD_N3Y_EQU,			/**< unconstrained sky-vector n3: equatorial-y coordinate */
-  DOPPLERCOORD_N3Z_EQU,			/**< unconstrained sky-vector n3: equatorial-z coordinate */
+  DOPPLERCOORD_N3X_EQU,		/**< X component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+  DOPPLERCOORD_N3Y_EQU,		/**< Y component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+  DOPPLERCOORD_N3Z_EQU,		/**< Z component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
 
-  DOPPLERCOORD_N3X_ECL,			/**< unconstrained sky-vector n3: ecliptic-x coordinate */
-  DOPPLERCOORD_N3Y_ECL,			/**< unconstrained sky-vector n3: ecliptic-y coordinate */
-  DOPPLERCOORD_N3Z_ECL,			/**< unconstrained sky-vector n3: ecliptic-z coordinate */
+  DOPPLERCOORD_N3X_ECL,		/**< X component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+  DOPPLERCOORD_N3Y_ECL,		/**< Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+  DOPPLERCOORD_N3Z_ECL,		/**< Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
 
-  DOPPLERCOORD_NU0,			/**< 'global correlation' frequency coordinate nu_0 */
-  DOPPLERCOORD_NU1,			/**< 'global correlation' f1dot coordinate nu_1 */
-  DOPPLERCOORD_NU2,			/**< 'global correlation' f2dot coordinate nu_2 */
-  DOPPLERCOORD_NU3,			/**< 'global correlation' f3dot coordinate nu_3 */
+  DOPPLERCOORD_N3SX_EQU,	/**< X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+  DOPPLERCOORD_N3SY_EQU,	/**< Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
 
-  /** \name Karl's super-duper-sky coordinates */
-  /*@{*/
-  DOPPLERCOORD_KAPPA_S,			/**< Karl's coordinates 'kappa_s': cosine-part of Earth-spin sky-coordinate */
-  DOPPLERCOORD_SIGMA_S,			/**< Karl's coordinates 'sigma_s': sine-part of Earth-spin sky-coordinate */
-  DOPPLERCOORD_KAPPA_O,			/**< Karl's coordinates 'kappa_o': cosine-part of Earth-orbit sky-coordinate */
-  DOPPLERCOORD_SIGMA_O,			/**< Karl's coordinates 'sigma_o': sine-part of Earth-orbit sky-coordinate */
-
-  DOPPLERCOORD_OMEGA_0,			/**< Karl's coordinates 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3)) */
-  DOPPLERCOORD_OMEGA_1,			/**< Karl's coordinates 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5)) */
-  DOPPLERCOORD_OMEGA_2,			/**< Karl's coordinates 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7)) */
-  DOPPLERCOORD_OMEGA_3,			/**< Karl's coordinates 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9)) */
-  /*@}*/
+  DOPPLERCOORD_N3OX_ECL,	/**< X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+  DOPPLERCOORD_N3OY_ECL,	/**< Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
-
-#ifdef IN_UNIVERSALDOPPLERMETRICC
-/** Array of Doppler coordinate names, which *MUST*
- * correspond to the order in which they are listed in
- * DopplerCoordinateID
- */
-const CHAR *DopplerCoordinateNames[] = {
-  "Freq",
-  "f1dot",
-  "f2dot",
-  "f3dot",
-
-  "Alpha",
-  "Delta",
-
-  "Freq_Nat",
-  "f1dot_Nat",
-  "f2dot_Nat",
-  "f3dot_Nat",
-
-  "Alpha_Nat",
-  "Delta_Nat",
-
-  "nEcl_x_Nat",
-  "nEcl_y_Nat",
-
-  "nEqu_x_Nat",
-  "nEqu_y_Nat",
-
-  "n3Equ_x",
-  "n3Equ_y",
-  "n3Equ_z",
-
-  "n3Ecl_x",
-  "n3Ecl_y",
-  "n3Ecl_z",
-
-  "nu0",
-  "nu1",
-  "nu2",
-  "nu3",
-
-  /* Karl's coordinates */
-  "kappa_s",
-  "sigma_s",
-  "kappa_o",
-  "sigma_o",
-  "omega_0",
-  "omega_1",
-  "omega_2",
-  "omega_3",
-
-  "NONE"
-};
-
-/** Array of help-strings explaining the meaning/conventions of the Doppler coordinate names,
- * NOTE: this *MUST* correspond to the order in which they are listed in DopplerCoordinateID.
- *
- * NOTE2: It's important to also specify the "coordinate-set" this coordinate is meant to belong to,
- * in the sense of which other coordinates need to be held constant in partial derivatives wrt to this coordinate!
- *
- */
-const CHAR *DopplerCoordinateNamesHelp[] = {
-  "Signal frequency in SSB [Units:Hz]. Coordinate-set: {fkdot, sky}.",
-  "First frequency-derivative dFreq/dtau in SSB [Units:Hz/s]. Coordinate-set: {fkdot, sky}.",
-  "Second frequency-derivative d2Freq/dtau^2 in SSB [Units:Hz/s^2]. Coordinate-set: {fkdot, sky}.",
-  "Third frequency-derivative d3Freq/dtau^3 in SSB [Units:Hz/s^3]. Coordinate-set: {fkdot, sky}.",
-
-  "Sky-position: Right-ascension (longitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}.",
-  "Sky-position: Declination (latitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}.",
-
-  "Same as Freq, but in 'natural units': Freq_Nat = 2 pi Freq (Tspan/2) [Units:1]",
-  "Same as f1dot, but in 'natural units': f1dot_Nat = 2 pi f1dot/2! (Tspan/2)^2 [Units:1]",
-  "Same as f2dot, but in 'natural units': f2dot_Nat = 2 pi f2dot/3! (Tspan/2)^3 [Units:1]",
-  "Same as f3dot, but in 'natural units': f3dot_Nat = 2 pi f3dot/4! (Tspan/2)^4 [Units:1]",
-
-  "Sky-position: Right-ascension (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
-  "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )",
-
-  "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
-  "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
-
-  "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
-  "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
-
-  "experimental: unconstrained sky-vector n3: equatorial-x coordinate",
-  "experimental: unconstrained sky-vector n3: equatorial-y coordinate",
-  "experimental: unconstrained sky-vector n3: equatorial-z coordinate",
-
-  "experimental: unconstrained sky-vector n3: ecliptic-x coordinate",
-  "experimental: unconstrained sky-vector n3: ecliptic-y coordinate",
-  "experimental: unconstrained sky-vector n3: ecliptic-z coordinate",
-
-
-  "'global correlation' frequency coordinate nu_0",
-  "'global correlation' f1dot coordinate nu_1",
-  "'global correlation' f2dot coordinate nu_2",
-  "'global correlation' f3dot coordinate nu_3",
-
-  "Karl's coordinates 'kappa_s': cosine-part of Earth-spin sky-coordinate",
-  "Karl's coordinates 'sigma_s': sine-part of Earth-spin sky-coordinate",
-  "Karl's coordinates 'kappa_o': cosine-part of Earth-orbit sky-coordinate",
-  "Karl's coordinates 'sigma_o': sine-part of Earth-orbit sky-coordinate",
-  "Karl's coordinates 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3))",
-  "Karl's coordinates 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5))",
-  "Karl's coordinates 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7))",
-  "Karl's coordinates 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9))",
-
-  "NONE"
-};
-#endif
-
 
 #define DOPPLERMETRIC_MAX_DIM 60	/**< should be large enough for a long time ... */
 /** type describing a Doppler coordinate system:
@@ -314,7 +172,7 @@ typedef struct tagMultiDetectorInfo
   REAL8 detWeights[DOPPLERMETRIC_MAX_DETECTORS];	/**< array of N detector noise-weights: must satisfy \f$\sum_{i=1}^N w_i = 1\f$ */
 } MultiDetectorInfo;
 
-/**< meta-info specifying a Doppler-metric
+/** meta-info specifying a Doppler-metric
  */
 typedef struct tagDopplerMetricParams
 {
@@ -380,9 +238,11 @@ typedef struct tagDopplerMetric
 
 
 /*---------- Global variables ----------*/
+extern const PosVel3D_t empty_PosVel3D_t;
 extern const DopplerMetricParams empty_DopplerMetricParams;
 extern const MultiDetectorInfo empty_MultiDetectorInfo;
 extern const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
+#define empty_vect3D_t {0,0,0}
 
 /*---------- exported prototypes [API] ----------*/
 gsl_matrix *
@@ -404,13 +264,20 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,
 
 
 int
-XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
+XLALDetectorPosVel (PosVel3D_t *spin_posvel,
+		    PosVel3D_t *orbit_posvel,
 		    const LIGOTimeGPS *tGPS,
 		    const LALDetector *site,
 		    const EphemerisData *edat,
 		    DetectorMotionType special
 		    );
 
+int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
+gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
+
+void XLALequatorialVect2ecliptic ( vect3D_t out, const vect3D_t in );
+void XLALeclipticVect2equatorial ( vect3D_t out, const vect3D_t in );
+void XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in );
 
 vect3Dlist_t *
 XLALComputeOrbitalDerivatives ( UINT4 maxorder, const LIGOTimeGPS *tGPS, const EphemerisData *edat );
@@ -430,10 +297,14 @@ const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
 int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *detWeights );
 
+gsl_matrix* XLALNaturalizeMetric( const gsl_matrix* g_ij, const DopplerMetricParams *metricParams );
+
 gsl_matrix *XLALDiagNormalizeMetric ( const gsl_matrix * g_ij );
 
 // destructor for vect3Dlist_t type
 void XLALDestroyVect3Dlist ( vect3Dlist_t *list );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

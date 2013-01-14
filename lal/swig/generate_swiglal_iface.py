@@ -182,9 +182,12 @@ for header in headers:
 header_files = sorted(headers, key=lambda h : headers[h]['index'])
 
 # process symbols from interface header parse trees
-symbols = { 'swiglal' : {}, 'function' : {}, 'struct' : {}, 'tdstruct' : {} }
+functions = {}
+structs = {}
+tdstructs = {}
+clear_macros = {}
 for header in headers:
-    symbols['swiglal'][header] = set()
+    clear_macros[header] = set()
 
     # C declarations
     for cdecl in headers[header]['cdecl']:
@@ -194,35 +197,36 @@ for header in headers:
             fail("cdecl '%s' in header '%s' has no kind" % (cdecl['name'], header))
         if not 'type' in cdecl or cdecl['type'] == '':
             fail("cdecl '%s' in header '%s' has no type" % (cdecl['name'], header))
+        cdecl['extra_process_args'] = []
 
         # SWIGLAL() and SWIGLAL_CLEAR() macros
         if cdecl['name'] in ['__swiglal__', '__swiglal_clear__']:
             if not 'value' in cdecl:
                 fail("cdecl '%s' in header '%s' has no value" % (cdecl['name'], header))
-            swiglalmacro = re.sub(r'\s', '', cdecl['value'])
+            macro = re.sub(r'\s', '', cdecl['value'])
             if cdecl['name'] == '__swiglal__':
-                if swiglalmacro in symbols['swiglal'][header]:
-                    fail("duplicate definition of SWIGLAL(%s)", swiglalmacro)
+                if macro in clear_macros[header]:
+                    fail("duplicate definition of SWIGLAL(%s)", macro)
                 else:
-                    symbols['swiglal'][header].add(swiglalmacro)
+                    clear_macros[header].add(macro)
             else:
-                if swiglalmacro in symbols['swiglal'][header]:
-                    symbols['swiglal'][header].remove(swiglalmacro)
+                if macro in clear_macros[header]:
+                    clear_macros[header].remove(macro)
                 else:
-                    fail("cannot clear undefined macro SWIGLAL(%s)", swiglalmacro)
+                    fail("cannot clear undefined macro SWIGLAL(%s)", macro)
 
         # functions
         elif cdecl['kind'] == 'function':
-            if cdecl['name'] in symbols['function']:
+            if cdecl['name'] in functions:
                 fail("duplicate function '%s' in header '%s'" % (cdecl['name'], header))
-            symbols['function'][cdecl['name']] = cdecl
+            functions[cdecl['name']] = cdecl
 
         # typedefs to structs
         elif cdecl['kind'] == 'typedef' and cdecl['type'].startswith('struct '):
-            if cdecl['name'] in symbols['tdstruct']:
+            if cdecl['name'] in tdstructs:
                 fail("duplicate struct typedef '%s' in header '%s'" % (cdecl['name'], header))
             cdecl['tagname'] = cdecl['type'][7:]
-            symbols['tdstruct'][cdecl['name']] = cdecl
+            tdstructs[cdecl['name']] = cdecl
 
     # structs
     for struct in headers[header]['struct']:
@@ -230,36 +234,79 @@ for header in headers:
             fail("struct in header '%s' has no name" % header)
         if 'unnamed' in struct:
             fail("struct '%s' in header '%s' has no tag-name" % (struct['name'], header))
-        if struct['name'] in symbols['struct']:
+        if struct['name'] in structs:
             fail("duplicate struct '%s' in header %s" % (struct['name'], header))
-        symbols['struct'][struct['name']] = struct
+        struct['extra_process_args'] = []
+        structs[struct['name']] = struct
 
 # look for a destructor function for each struct
+dtor_name_regexp = re.compile('(Destroy|Close)([A-Z0-9]|$)')
 dtor_decl_regexp = re.compile('^f\(p\.(.*)\)\.$')
-for function_name in symbols['function']:
+for function_name in functions:
 
-    # function must contain 'Destroy' in name, and return void
-    if not 'Destroy' in function_name:
+    # function must match destructor name regexp, and return void
+    dtor_name_match = dtor_name_regexp.search(function_name)
+    if dtor_name_match is None:
         continue
-    if not symbols['function'][function_name]['type'] == 'void':
+    if not functions[function_name]['type'] == 'void':
         continue
 
     # function must take a single pointer argument
-    dtor_decl = symbols['function'][function_name]['decl']
+    dtor_decl = functions[function_name]['decl']
     dtor_decl_match = dtor_decl_regexp.match(dtor_decl)
     if dtor_decl_match is None:
         continue
     dtor_struct_name = dtor_decl_match.group(1)
 
     # function argument must be a struct name
-    if not dtor_struct_name in symbols['tdstruct']:
+    if not dtor_struct_name in tdstructs:
         continue
 
     # save destructor name
-    symbols['tdstruct'][dtor_struct_name]['dtor_function'] = function_name
+    tdstructs[dtor_struct_name]['dtor_function'] = function_name
 
     # remove destructor function from interface
-    symbols['function'][function_name]['feature_ignore'] = '1'
+    functions[function_name]['feature_ignore'] = '1'
+
+# determine whether return value of functions should be ignored
+func_arg_types_regexp = re.compile('^f\((.*)\)\.(p\.)?$')
+for function_name in functions:
+
+    # get function argument and return types
+    func_decl = functions[function_name]['decl']
+    func_arg_types_match = func_arg_types_regexp.match(func_decl)
+    if func_arg_types_match is None:
+        fail("could not match function declaration '%s'" % func_decl)
+    func_arg_types = func_arg_types_match.group(1).split(',')
+    func_retn_type = functions[function_name]['type']
+    if not func_arg_types_match.group(2) is None:
+        func_retn_type = func_arg_types_match.group(2) + func_retn_type
+
+    # return function values by default
+    func_ignore_retn = False
+
+    # ignore function return values whose type is a pointer and which
+    # matches the type of the first argument, since it is common for
+    # XLAL functions to return the value of the first argument
+    if func_retn_type.startswith('p.') and func_retn_type == func_arg_types[0]:
+        func_ignore_retn = True
+
+    if func_ignore_retn:
+
+        # construct return type from SWIG type syntax
+        if func_retn_type.startswith('p.'):
+            func_c_retn_type = func_retn_type[2:] + '*'
+        else:
+            func_c_retn_type = func_retn_type
+        func_c_retn_type = func_c_retn_type.replace('q(const).', 'const ')
+
+    else:
+
+        # empty return type indicates that return value is not ignored
+        func_c_retn_type = ''
+
+    # add return type as extra argument to swiglal_process_function() macro
+    functions[function_name]['extra_process_args'].append(func_c_retn_type)
 
 # open SWIG interface file
 iface_file = open(iface_filename, 'w')
@@ -285,25 +332,29 @@ iface_file.write('%}\n')
 # process interface symbols, with renaming
 symbol_prefix_list = symbol_prefixes.split()
 symbol_prefix_list.append('')
-for (symbol_type, symbol_name_key) in (('function', 'name'), ('tdstruct', 'tagname')):
+symbols_to_process = (
+    (functions, 'function', 'name'),
+    (tdstructs, 'tdstruct', 'tagname')
+    )
+for (symbols, symbol_type, symbol_name_key) in symbols_to_process:
 
     # rank symbol by where their prefix comes in prefix list
-    for symbol_key in symbols[symbol_type]:
+    for symbol_key in symbols:
         for rank in range(len(symbol_prefix_list)):
             if symbol_key.startswith(symbol_prefix_list[rank]):
-                symbols[symbol_type][symbol_key]['rename_rank'] = rank
+                symbols[symbol_key]['rename_rank'] = rank
                 break
 
     # iterate over symbols in order of decreasing rank
     symbol_renames = {}
-    sort_by_rank_then_name = lambda k : '%1d%s' % (symbols[symbol_type][k]['rename_rank'], k)
-    for symbol_key in sorted(symbols[symbol_type], key=sort_by_rank_then_name):
+    sort_by_rank_then_name = lambda k : '%1d%s' % (symbols[k]['rename_rank'], k)
+    for symbol_key in sorted(symbols, key=sort_by_rank_then_name):
 
         # get name of symbol
-        symbol_name = symbols[symbol_type][symbol_key][symbol_name_key]
+        symbol_name = symbols[symbol_key][symbol_name_key]
 
         # strip prefix from symbol key to get rename
-        rank = symbols[symbol_type][symbol_key]['rename_rank']
+        rank = symbols[symbol_key]['rename_rank']
         symbol_rename = symbol_key[len(symbol_prefix_list[rank]):]
 
         # ignore symbol if another symbol has been renamed to this symbol,
@@ -314,24 +365,28 @@ for (symbol_type, symbol_name_key) in (('function', 'name'), ('tdstruct', 'tagna
             symbol_renames[symbol_rename] = True
 
         #  ignore symbol if the 'feature_ignore' attribute has been set
-        if 'feature_ignore' in symbols[symbol_type][symbol_key]:
+        if 'feature_ignore' in symbols[symbol_key]:
             symbol_rename = '$ignore'
 
+        # get macro arguments
+        macro_args = [symbol_name, symbol_rename]
+        macro_args.extend(symbols[symbol_key]['extra_process_args'])
+
         # write to interface file
-        iface_file.write('%%swiglal_process_%s(%s, %s);\n' % (symbol_type, symbol_name, symbol_rename))
+        iface_file.write('%%swiglal_process_%s(%s);\n' % (symbol_type, ', '.join(macro_args)))
 
 # include interface headers, and clear SWIGLAL() macros afterwards
 for header in header_files:
     iface_file.write('%%include <%s>\n' % header)
-    for swiglalmacro in symbols['swiglal'][header]:
-        iface_file.write('SWIGLAL_CLEAR(%s);\n' % swiglalmacro)
+    for macro in clear_macros[header]:
+        iface_file.write('SWIGLAL_CLEAR(%s);\n' % macro)
 
 # generate constructors and destructors for structs
-for struct_name in sorted(symbols['tdstruct']):
-    struct_tagname = symbols['tdstruct'][struct_name]['tagname']
-    struct_opaque = not struct_tagname in symbols['struct']
-    if 'dtor_function' in symbols['tdstruct'][struct_name]:
-        struct_dtor_function = symbols['tdstruct'][struct_name]['dtor_function']
+for struct_name in sorted(tdstructs):
+    struct_tagname = tdstructs[struct_name]['tagname']
+    struct_opaque = not struct_tagname in structs
+    if 'dtor_function' in tdstructs[struct_name]:
+        struct_dtor_function = tdstructs[struct_name]['dtor_function']
     else:
         struct_dtor_function = ''
     iface_file.write('%%swiglal_generate_struct_cdtor(%s, %s, %i, %s)\n' % (struct_name, struct_tagname, struct_opaque, struct_dtor_function))

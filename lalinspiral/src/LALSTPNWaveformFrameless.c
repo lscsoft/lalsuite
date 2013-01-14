@@ -1,4 +1,5 @@
 #include <lal/LALSTPNWaveformFrameless.h>
+#include <lal/LALSTPNWaveformErrors.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <stdio.h>
 

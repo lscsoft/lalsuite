@@ -25,26 +25,26 @@
 #include <lal/LALXMLVCSInfo.h>
 
 /* global variables for vcs information */
-const char *lalXMLVCSVersion = LALXML_VERSION;
-const char *lalXMLVCSId = LALXML_VCS_ID;
-const char *lalXMLVCSDate = LALXML_VCS_DATE;
-const char *lalXMLVCSBranch = LALXML_VCS_BRANCH;
-const char *lalXMLVCSTag = LALXML_VCS_TAG;
-const char *lalXMLVCSAuthor = LALXML_VCS_AUTHOR;
-const char *lalXMLVCSCommitter = LALXML_VCS_COMMITTER;
-const char *lalXMLVCSStatus = LALXML_VCS_STATUS;
+const char *const lalXMLVCSVersion = LALXML_VERSION;
+const char *const lalXMLVCSId = LALXML_VCS_ID;
+const char *const lalXMLVCSDate = LALXML_VCS_DATE;
+const char *const lalXMLVCSBranch = LALXML_VCS_BRANCH;
+const char *const lalXMLVCSTag = LALXML_VCS_TAG;
+const char *const lalXMLVCSAuthor = LALXML_VCS_AUTHOR;
+const char *const lalXMLVCSCommitter = LALXML_VCS_COMMITTER;
+const char *const lalXMLVCSStatus = LALXML_VCS_STATUS;
 
 /* global variables for vcs information - identable */
-const char *lalXMLVCSIdentId = LALXML_VCS_IDENT_ID;
-const char *lalXMLVCSIdentDate = LALXML_VCS_IDENT_DATE;
-const char *lalXMLVCSIdentBranch = LALXML_VCS_IDENT_BRANCH;
-const char *lalXMLVCSIdentTag = LALXML_VCS_IDENT_TAG;
-const char *lalXMLVCSIdentAuthor = LALXML_VCS_IDENT_AUTHOR;
-const char *lalXMLVCSIdentCommitter = LALXML_VCS_IDENT_COMMITTER;
-const char *lalXMLVCSIdentStatus = LALXML_VCS_IDENT_STATUS;
+const char *const lalXMLVCSIdentId = LALXML_VCS_IDENT_ID;
+const char *const lalXMLVCSIdentDate = LALXML_VCS_IDENT_DATE;
+const char *const lalXMLVCSIdentBranch = LALXML_VCS_IDENT_BRANCH;
+const char *const lalXMLVCSIdentTag = LALXML_VCS_IDENT_TAG;
+const char *const lalXMLVCSIdentAuthor = LALXML_VCS_IDENT_AUTHOR;
+const char *const lalXMLVCSIdentCommitter = LALXML_VCS_IDENT_COMMITTER;
+const char *const lalXMLVCSIdentStatus = LALXML_VCS_IDENT_STATUS;
 
 /* vcs information structure */
-struct tagLALVCSInfo lalXMLVCSInfo = { \
+const struct tagLALVCSInfo lalXMLVCSInfo = { \
   LALXML_VCS_NAME, \
   LALXML_VERSION, \
   LALXML_VCS_ID, \

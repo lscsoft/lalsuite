@@ -17,11 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Cokelaer Thomas
-\file
-\brief Functions to manipulate linked list.
-
+/*
+  Author Cokelaer Thomas
+  Functions to manipulate linked list.
 */
 
 

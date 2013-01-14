@@ -80,7 +80,7 @@
   }
 
   // Return integer representations of the LIGOTimeGPS seconds.
-  _int __int__() {
+  int __int__() {
     return $self->gpsSeconds;
   }
   long __long__() {
@@ -159,25 +159,6 @@
       return OPFUNC(retn, $self);
     }
 
-    // Perform op. between two LIGOTimeGPSs, and store the result on the left-hand side.
-    LIGOTimeGPS* __i##NAME##__(LIGOTimeGPS* gps) {
-      return OPFUNC($self, gps);
-    }
-
-    // Perform op. between a LIGOTimeGPS and an INT4, and store the result on the left-hand side.
-    LIGOTimeGPS* __i##NAME##__(INT4 t) {
-      LIGOTimeGPS tgps;
-      XLALGPSSet(&tgps, t, 0);
-      return OPFUNC($self, &tgps);
-    }
-
-    // Perform op. between a LIGOTimeGPS and a REAL8, and store the result on the left-hand side.
-    LIGOTimeGPS* __i##NAME##__(REAL8 t) {
-      LIGOTimeGPS tgps;
-      XLALGPSSetREAL8(&tgps, t);
-      return OPFUNC($self, &tgps);
-    }
-
   %enddef // %lalswig_LIGOTimeGPS_additive_operator
 
   // Addition
@@ -212,16 +193,6 @@
       LIGOTimeGPS* retn = %lalswig_new_LIGOTimeGPS();
       XLALGPSSetREAL8(retn, t);
       return OPFUNC(retn, XLALGPSGetREAL8($self));
-    }
-
-    // Perform op. between two LIGOTimeGPSs, and store the result on the left-hand side.
-    LIGOTimeGPS* __i##NAME##__(LIGOTimeGPS* gps) {
-      return OPFUNC($self, XLALGPSGetREAL8(gps));
-    }
-
-    // Perform op. between a LIGOTimeGPS and a REAL8, and store the result on the left-hand side.
-    LIGOTimeGPS* __i##NAME##__(REAL8 t) {
-      return OPFUNC($self, t);
     }
 
   %enddef // %lalswig_LIGOTimeGPS_multiplicative_operator

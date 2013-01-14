@@ -1,4 +1,4 @@
-# DAG Class definitions for LALInference Pipeline
+#flow DAG Class definitions for LALInference Pipeline
 # (C) 2012 John Veitch, Kiersten Ruisard, Kan Wang
 
 import itertools
@@ -23,7 +23,7 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None):
+  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None):
     self.trig_time=trig_time
     self.injection=SimInspiral
     self.sngltrigger=SnglInspiral
@@ -39,13 +39,14 @@ class Event():
       self.ifos = ifos
     self.duration = duration
     self.srate = srate
+    self.trigSNR = trigSNR
     if event_id is not None:
         self.event_id=event_id
     else:
         self.event_id=Event.new_id()
     if self.injection is not None:
         self.trig_time=self.injection.get_end()
-        self.event_id=int(str(self.injection.simulation_id).split(':')[2])
+        if event_id is None: self.event_id=int(str(self.injection.simulation_id).split(':')[2])
     if self.sngltrigger is not None:
         self.trig_time=self.sngltrigger.get_end()
         self.event_id=int(str(self.sngltrigger.event_id).split(':')[2])
@@ -65,20 +66,39 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   output=[]
   from glue.ligolw import utils
   from glue.ligolw import lsctables
+  from glue.ligolw import ligolw
+  from glue.ligolw import param
+  from glue.ligolw import array
+  from pylal import series as lalseries
+  import numpy as np
   xmldoc=utils.load_filename(lvalertfile)
   coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.getTablesByType(xmldoc, lsctables.SnglInspiralTable)[0]
   sngl_events = [event for event in sngltable]
-  search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
-  ifos = search_summary[0].ifos.split(",")
+  #Issues to identify IFO with good data that did not produce a trigger
+  #search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
+  #ifos = search_summary[0].ifos.split(",")
+  coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
+  ifos = coinc_table[0].instruments.split(",")
+  trigSNR = coinctable[0].snr
+  # Parse PSD
+  xmlpsd = utils.load_filename("psd.xml.gz")
+  psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
+  for instrument, psd in psddict.items():
+    combine=[]
+    for i,p in enumerate(psd.data):
+      combine.append([psd.f0+i*psd.deltaF,np.sqrt(p)])
+    np.savetxt(instrument+'psd.txt',combine)
+  srate = combine[-1][0]
+  
   # Logic for template duration and sample rate disabled
   coinc_map = lsctables.getTablesByType(xmldoc, lsctables.CoincMapTable)[0]
   for coinc in coinc_events:
     these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
     dur = min([e.template_duration for e in these_sngls]) + 2 # Add 2s padding
-    srate = pow(2.0, ceil( log(max([e.f_final]), 2) ) ) # Round up to power of 2
-    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = dur, srate = srate)
+    #srate = pow(2.0, ceil( log(max([e.f_final]), 2) ) ) # Round up to power of 2
+    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = dur, srate = srate, trigSNR = trigSNR)
     if(coinc.snr>SNRthreshold): output.append(ev)
   
   print "Found %d coinc events in table." % len(coinc_events)
@@ -99,8 +119,50 @@ def open_pipedown_database(database_filename,tmp_space):
     dbtables.DBTable_set_connection(connection)
     return (connection,working_filename) 
 
-  
-def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None):
+
+def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1):
+	"""
+	Returns a list of Event objects
+	from pipedown data base. Can dump some stats to dumpfile if given,
+	and filter by gpsstart and gpsend to reduce the nunmber or specify
+	max_cfar to select by combined FAR
+	"""
+	output={}
+	if gpsstart is not None: gpsstart=float(gpsstart)
+	if gpsend is not None: gpsend=float(gpsend)
+	# Get coincs
+	get_coincs = "SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq,coinc_inspiral.combined_far \
+		FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name=='sngl_inspiral' and coinc_event_map.event_id ==\
+		sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) \
+		join coinc_inspiral on (coinc_event.coinc_event_id==coinc_inspiral.coinc_event_id) \
+		WHERE coinc_event.time_slide_id=='time_slide:time_slide_id:10049'\
+		"
+	if gpsstart is not None:
+		get_coincs=get_coincs+' and sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1.0e-9 > %f'%(gpsstart)
+	if gpsend is not None:
+		get_coincs=get_coincs+' and sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1.0e-9 < %f'%(gpsend)
+	if max_cfar !=-1:
+		get_coincs=get_coincs+' and coinc_inspiral.combined_far < %f'%(max_cfar)
+	db_out=database_connection.cursor().execute(get_coincs)
+    	extra={}
+	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
+      		coinc_id=int(coinc_id.split(":")[-1])
+	  	if not coinc_id in output.keys():
+			output[coinc_id]=Event(trig_time=sngl_time,timeslide_dict={})
+			extra[coinc_id]={}
+		output[coinc_id].timeslides[ifo]=0
+		output[coinc_id].ifos.append(ifo)
+		extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
+      	if dumpfile is not None:
+        	fh=open(dumpfile,'w')
+        	for co in output.keys():
+          		for ifo in output[co].ifos:
+            			fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
+        	fh.close()
+	return output.values()
+	
+
+def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1):
 	"""
 	Returns a list of Event objects
 	with times and timeslide offsets
@@ -108,10 +170,6 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	output={}
 	if gpsstart is not None: gpsstart=float(gpsstart)
 	if gpsend is not None: gpsend=float(gpsend)
-	if dumpfile is not None:
-		outfile=open(dumpfile,'w')
-	else:
-		outfile=None
 	db_segments=[]
 	sql_seg_query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
 	db_out = database_connection.cursor().execute(sql_seg_query)
@@ -121,9 +179,11 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	seglist=segments.segmentlist([segments.segment(d[0],d[1]) for d in db_segments])
 	db_out_saved=[]
 	# Get coincidences
-	get_coincs="SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,time_slide.offset,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq \
+	get_coincs="SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,time_slide.offset,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq,coinc_inspiral.combined_far \
 		    FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
-		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) join time_slide on (time_slide.time_slide_id == coinc_event.time_slide_id and time_slide.instrument==sngl_inspiral.ifo)"
+		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) join time_slide\
+		    on (time_slide.time_slide_id == coinc_event.time_slide_id and time_slide.instrument==sngl_inspiral.ifo)\
+		    join coinc_inspiral on (coinc_inspiral.coinc_event_id==coinc_event.coinc_event_id) where coinc_event.time_slide_id!='time_slide:time_slide_id:10049'"
 	if gpsstart is not None:
 		get_coincs=get_coincs+ ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
 		joinstr=' and '
@@ -131,10 +191,13 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 		joinstr=' where '
 	if gpsend is not None:
 		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
+		joinstr=' and '
+	if max_cfar!=-1:
+		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
         from pylal import SnglInspiralUtils
         extra={}
-	for (sngl_time, slide, ifo, coinc_id, snr, chisq) in db_out:
+	for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
           coinc_id=int(coinc_id.split(":")[-1])
 	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
 	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
@@ -143,12 +206,12 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
             extra[coinc_id]={}
 	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
 	  output[coinc_id].ifos.append(ifo)
-          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq}
+          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
         if dumpfile is not None:
           fh=open(dumpfile,'w')
           for co in output.keys():
             for ifo in output[co].ifos:
-              fh.write('%s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq'])))
+              fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
           fh.close()
 	return output.values()
 
@@ -180,8 +243,8 @@ def scan_timefile(timefile):
 	continue
       print 'Read time %s'%(time)
       times.append(float(time))
-      timefilehandle.close()
-      return times
+    timefilehandle.close()
+    return times
   
 class LALInferencePipelineDAG(pipeline.CondorDAG):
   def __init__(self,cp,dax=False):
@@ -286,7 +349,31 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     for time in self.times:
       self.add_full_analysis_lalinferencenest(Event(trig_time=time))
- 
+      
+  def select_events(self):
+    """
+    Read events from the config parser. Understands both ranges and comma separated events, or combinations
+    eg. events=[0,1,5:10,21] adds to the analysis the events: 0,1,5,6,7,8,9,10 and 21
+    """
+    events=[]
+    times=[]
+    raw_events=self.config.get('input','events').replace('[','').replace(']','').split(',')
+    for raw_event in raw_events:
+        if ':' in raw_event:
+            limits=raw_event.split(':')
+            if len(limits) != 2:
+                print "Error: in event config option; ':' must separate two numbers."
+                exit(0)
+            low=int(limits[0])
+            high=int(limits[1])
+            if low>high:
+                events.extend(range(int(high),int(low)+1))
+            elif high>low:
+                events.extend(range(int(low),int(high)+1))
+        else:
+            events.append(int(raw_event))
+    return events
+
   def setup_from_inputs(self):
     """
     Scan the list of inputs, i.e.
@@ -300,6 +387,16 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])!=1:
         print 'Plese specify only one input file'
         sys.exit(1)
+    if self.config.has_option('input','events'):
+      selected_events=self.config.get('input','events')
+      print 'Selected events %s'%(str(selected_events))
+      
+      if selected_events=='all':
+          selected_events=None
+      else:
+          selected_events=self.select_events()
+    else:
+        selected_events=None
     if self.config.has_option('input','gps-start-time'):
       gpsstart=self.config.getfloat('input','gps-start-time')
     if self.config.has_option('input','gps-end-time'):
@@ -331,16 +428,25 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','pipedown-db'):
       db_connection = open_pipedown_database(self.config.get('input','pipedown-db'),None)[0]
       # Timeslides
-      if self.config.get('input','timeslides').lower()=='true':
-        if self.config.has_option('input','time-slide-dump'):
-          timeslidedump=self.config.get('input','time-slide-dump')
-        else:
-          timeslidedump=None
-	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump)
+      if self.config.has_option('input','time-slide-dump'):
+        timeslidedump=self.config.get('input','time-slide-dump')
       else:
-	print 'Reading non-slid triggers from pipedown not implemented yet'
-	sys.exit(1)
-    
+        timeslidedump=None
+      if self.config.has_option('input','max-cfar'):
+	maxcfar=self.config.getfloat('input','max-cfar')
+      else:
+	maxcfar=-1
+      if self.config.get('input','timeslides').lower()=='true':
+	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump,max_cfar=maxcfar)
+      else:
+	events=get_zerolag_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend, dumpfile=timeslidedump,max_cfar=maxcfar)
+    if(selected_events is not None):
+        used_events=[]
+        for i in selected_events:
+            e=events[i]
+            e.event_id=i
+            used_events.append(e)
+        events=used_events
     return events
 
   def add_full_analysis_lalinferencenest(self,event):
@@ -364,34 +470,34 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     pagedir=os.path.join(self.webdir,evstring,myifos)
     mkdirs(pagedir)
     mergenode=MergeNSNode(self.merge_job,parents=enginenodes)
-    mergedir=os.path.join(self.basepath,'nested_samples')
-    mkdirs(mergedir)
-    mergenode.set_output_file(os.path.join(mergedir,'outfile_%s_%s.dat'%(myifos,evstring)))
     mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
     self.add_node(mergenode)
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
-    respagenode.set_bayes_coherent_noise(mergenode.get_ns_file()+'_B.txt')
+    # Call finalize to build final list of available data
+    enginenodes[0].finalize()
+    respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
+    if self.config.has_option('input','injection-file') and event.event_id is not None:
+        respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if event.GID is not None:
         self.add_gracedb_log_node(respagenode,event.GID)
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
         for ifo in enginenodes[0].ifos:
-            print 'adding coherence node for ifo %s'%(ifo)
             cotest_nodes=[self.add_engine_node(event,ifos=[ifo]) for i in range(Npar)]
-            enginenodes[0].finalize()
             for co in cotest_nodes:
               co.set_psdstart(enginenodes[0].GPSstart)
               co.set_psdlength(enginenodes[0].psdlength)
             pmergenode=MergeNSNode(self.merge_job,parents=cotest_nodes)
-            pmergenode.set_output_file(os.path.join(mergedir,'outfile_%s_%s.dat'%(ifo,evstring)))
             pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(ifo,evstring)))
             self.add_node(pmergenode)
             par_mergenodes.append(pmergenode)
             presultsdir=os.path.join(pagedir,ifo)
             mkdirs(presultsdir)
             subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode)
-            subresnode.set_bayes_coherent_noise(pmergenode.get_ns_file()+'_B.txt')
+            subresnode.set_bayes_coherent_noise(pmergenode.get_B_file())
+            if self.config.has_option('input','injection-file') and event.event_id is not None:
+                subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
         coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
         coherence_node.add_coherent_parent(mergenode)
         map(coherence_node.add_incoherent_parent, par_mergenodes)
@@ -478,7 +584,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     end_time=event.trig_time
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
-    node.set_dataseed(self.dataseed+event.event_id)
+    if event.srate: node.set_srate(event.srate)
+    if event.trigSNR: node.set_trigSNR(event.trigSNR)
+    if self.dataseed:
+      node.set_dataseed(self.dataseed+event.event_id)
     gotdata=0
     for ifo in ifos:
       if event.timeslides.has_key(ifo):
@@ -493,7 +602,21 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       node.channels=ast.literal_eval(self.config.get('data','channels'))
       if len(ifos)==0: node.ifos=node.cachefiles.keys()
       else: node.ifos=ifos
-      print 'added ifos %s'%(str(ifos))
+      node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
+      gotdata=1
+    if self.config.has_option('lalinference','flow'):
+      node.flows=ast.literal_eval(self.config.get('lalinference','flow'))
+    if self.config.has_option('lalinference','ER2-cache'):
+      node.cachefiles=ast.literal_eval(self.config.get('lalinference','ER2-cache'))
+      node.channels=ast.literal_eval(self.config.get('data','channels'))
+      node.psds=ast.literal_eval(self.config.get('lalinference','psds'))
+      for ifo in ifos:
+        node.add_input_file(os.path.join(self.basepath,node.cachefiles[ifo]))
+        node.cachefiles[ifo]=os.path.join(self.basepath,node.cachefiles[ifo])
+        node.add_input_file(os.path.join(self.basepath,node.psds[ifo]))
+        node.psds[ifo]=os.path.join(self.basepath,node.psds[ifo])
+      if len(ifos)==0: node.ifos=node.cachefiles.keys()
+      else: node.ifos=ifos
       node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
       gotdata=1
     else:
@@ -502,8 +625,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         dfnode=seg.get_df_node()
         if dfnode is not None and dfnode not in self.get_nodes():
     	  self.add_node(dfnode)
-    self.add_node(node)
-    if gotdata==0:
+    if gotdata:
+      self.add_node(node)
+    else:
       'Print no data found for time %f'%(end_time)
       return None
     if extra_options is not None:
@@ -516,7 +640,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','psd-length'):
       node.set_psdlength(self.config.getint('input','psd-length'))
     if self.config.has_option('input','psd-start-time'):
-      node.set_psdstart(self.config.getint('input','psd-start-time'))
+      node.set_psdstart(self.config.getfloat('input','psd-start-time'))
     node.set_max_psdlength(self.config.getint('input','max-psd-length'))
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
@@ -528,7 +652,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if parent is not None:
       node.add_parent(parent)
       infile=parent.get_pos_file()
-      node.add_var_arg(infile)
+      node.add_file_arg(infile)
     node.set_output_path(outdir)
     self.add_node(node)
     return node
@@ -545,7 +669,8 @@ class EngineJob(pipeline.CondorDAGJob):
     if self.engine=='lalinferencemcmc':
       exe=cp.get('condor','mpirun')
       self.binary=cp.get('condor',self.engine)
-      universe="parallel"
+      #universe="parallel"
+      universe="vanilla"
       self.write_sub_file=self.__write_sub_file_mcmc_mpi
     else:
       exe=cp.get('condor',self.engine)
@@ -554,10 +679,13 @@ class EngineJob(pipeline.CondorDAGJob):
     # Set the options which are always used
     self.set_sub_file(submitFile)
     if self.engine=='lalinferencemcmc':
-      openmpipath=cp.get('condor','openmpi')
+      #openmpipath=cp.get('condor','openmpi')
       machine_count=cp.get('mpi','machine-count')
-      self.add_condor_cmd('machine_count',machine_count)
-      self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
+      #self.add_condor_cmd('machine_count',machine_count)
+      #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
+      self.add_condor_cmd('Requirements','CAN_RUN_MULTICORE')
+      self.add_condor_cmd('+RequiresMultipleCores','True')
+      self.add_condor_cmd('request_cpus',machine_count)
       self.add_condor_cmd('getenv','true')
       
     self.add_ini_opts(cp,self.engine)
@@ -573,7 +701,7 @@ class EngineJob(pipeline.CondorDAGJob):
     pipeline.CondorDAGJob.write_sub_file(self)
     # Then read it back in to mangle the arguments line
     outstring=""
-    MPIextraargs='--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
+    MPIextraargs= ' -np 8 '+self.binary+' -- ' #'--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
     subfilepath=self.get_sub_file()
     subfile=open(subfilepath,'r')
     for line in subfile:
@@ -594,6 +722,8 @@ class EngineNode(pipeline.CondorDAGNode):
     self.ifos=[]
     self.scisegs={}
     self.channels={}
+    self.psds={}
+    self.flows={}
     self.timeslides={}
     self.seglen=None
     self.psdlength=None
@@ -618,6 +748,12 @@ class EngineNode(pipeline.CondorDAGNode):
   def set_seed(self,seed):
     self.add_var_opt('randomseed',str(seed))
   
+  def set_srate(self,srate):
+    self.add_var_opt('srate',str(srate))
+
+  def set_trigSNR(self,trigSNR):
+    self.add_var_opt('trigSNR',str(trigSNR))
+
   def set_dataseed(self,seed):
     self.add_var_opt('dataseed',str(seed))
 
@@ -643,7 +779,7 @@ class EngineNode(pipeline.CondorDAGNode):
     """
     Set a software injection to be performed.
     """
-    self.add_var_opt('inj',injfile)
+    self.add_file_opt('inj',injfile)
     self.set_event_number(event)
 
   def get_trig_time(self): return self.__trigtime
@@ -672,6 +808,8 @@ class EngineNode(pipeline.CondorDAGNode):
       """
       ifostring='['
       cachestring='['
+      psdstring='['
+      flowstring='['
       channelstring='['
       slidestring='['
       first=True
@@ -682,23 +820,28 @@ class EngineNode(pipeline.CondorDAGNode):
         else: delim=','
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
+        if self.psds: psdstring=psdstring+delim+self.psds[ifo]
+        if self.flows: flowstring=flowstring+delim+self.flows[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
         slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
       cachestring=cachestring+']'
+      psdstring=psdstring+']'
+      flowstring=flowstring+']'
       channelstring=channelstring+']'
       slidestring=slidestring+']'
-      self.add_var_opt('IFO',ifostring)
+      self.add_var_opt('ifo',ifostring)
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
+      if self.psds: self.add_var_opt('psd',psdstring)
+      if self.flows: self.add_var_opt('flow',flowstring)
       if any(self.timeslides):
-	self.add_var_opt('timeslides',slidestring)
+	self.add_var_opt('timeslide',slidestring)
       # Start at earliest common time
       # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
       # Used when we are running the coherence test.
       # Otherwise the noise evidence will differ.
       if self.scisegs!={}:
-        print self.scisegs
         starttime=max([int(self.scisegs[ifo].start()) for ifo in self.ifos])
         endtime=min([int(self.scisegs[ifo].end()) for ifo in self.ifos])
       else:
@@ -775,6 +918,7 @@ class ResultsPageJob(pipeline.CondorDAGJob):
     self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
     self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('RequestMemory','2000')
     self.add_ini_opts(cp,'resultspage')
     # self.add_opt('Nlive',cp.get('analysis','nlive'))
     
@@ -791,6 +935,10 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         self.add_var_opt('outpath',path)
         mkdirs(path)
         self.posfile=os.path.join(path,'posterior_samples.dat')
+    def set_injection(self,injfile,eventnumber):
+        self.injfile=injfile
+        self.add_var_arg('--inj '+injfile)
+        self.set_event_number(eventnumber)
     def set_event_number(self,event):
         """
         Set the event number in the injection XML.
@@ -861,50 +1009,6 @@ class CoherenceTestNode(pipeline.CondorDAGNode):
       for inco in self.incoherent_parents:
         self.add_file_arg(inco.get_B_file())
 
-class CombineZJob(pipeline.CondorDAGJob):
-    """
-    Class defining a combineZ script job to be run as part of a pipeline
-    This job combine runs with adjacent prior areas and produces the posterior samples
-    Input Arguments:
-    cp        - A ConfigParser object containing the combinez section
-    submitFile    - Path to store the submit file
-    logdir        - A directory to hold the stderr, stdout files of combineZ
-    """
-    def __init__(self,cp,submitFile,logdir):
-      exe=cp.get('condor','combinez')
-      pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-      self.add_opt('Nlive',str(int(cp.get('lalinferencenest','nlive'))*int(cp.get('analysis','nparallel'))))
-      self.set_stdout_file(os.path.join(logdir,'combineZ-$(cluster)-$(process).out'))
-      self.set_stderr_file(os.path.join(logdir,'combineZ-$(cluster)-$(process).err'))
-      self.add_condor_cmd('getenv','True')
-      self.set_sub_file(submitFile)
-
-
-class CombineZNode(pipeline.CondorDAGNode):
-    """
-    Class defining a Condor DAG Node for combineZ jobs
-    Input Arguments:
-    combine_job - A CombineZJob object
-    """
-    def __init__(self,combine_job):
-      pipeline.CondorDAGNode.__init__(self,combine_job)
-    
-    def add_engine_parent(self,node):
-      self.add_parent(node)
-      self.add_file_arg(node.get_ns_file())
-    
-    def set_output_file(self,file):
-      self.add_file_opt('outsamp',file,file_is_output_file=True)
-      self.nsfile=file
-    
-    def set_pos_output_file(self,file):
-      self.add_file_opt('outpos',file,file_is_output_file=True)
-      self.posfile=file
-    
-    def get_pos_file(self): return self.posfile
-    def get_ns_file(self): return self.nsfile
-
-    
 class MergeNSJob(pipeline.CondorDAGJob):
     """
     Class defining a job which merges several parallel nested sampling jobs into a single file
@@ -921,13 +1025,16 @@ class MergeNSJob(pipeline.CondorDAGJob):
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
       self.add_opt('Nlive',cp.get('lalinferencenest','nlive'))
       self.add_condor_cmd('getenv','True')
+      if cp.has_option('merge','npos'):
+      	self.add_opt('npos',cp.get('merge','npos'))
+
 
 class MergeNSNode(pipeline.CondorDAGNode):
     """
     Class defining the DAG node for a merge job
     Input arguments:
     merge_job = A MergeJob object
-    parents = iterable of parent nodes (must have get_ns_file() method)
+    parents = iterable of parent LALInferenceNest nodes (must have get_ns_file() method)
     """
     def __init__(self,merge_job,parents=None):
         pipeline.CondorDAGNode.__init__(self,merge_job)
@@ -940,17 +1047,12 @@ class MergeNSNode(pipeline.CondorDAGNode):
         self.add_file_arg(parent.get_ns_file())
         self.add_file_opt('headers',parent.get_header_file())
 
-    def set_output_file(self,file):
-        self.add_file_opt('out',file,file_is_output_file=True)
-        self.nsfile=file
-    
     def set_pos_output_file(self,file):
         self.add_file_opt('pos',file,file_is_output_file=True)
         self.posfile=file
     
     def get_pos_file(self): return self.posfile
-    def get_ns_file(self): return self.nsfile
-    def get_B_file(self): return self.nsfile+'_B.txt'
+    def get_B_file(self): return self.posfile+'_B.txt'
 
 class GraceDBJob(pipeline.CondorDAGJob):
     """
@@ -958,7 +1060,8 @@ class GraceDBJob(pipeline.CondorDAGJob):
     """
     def __init__(self,cp,submitFile,logdir):
       exe=cp.get('condor','gracedb')
-      pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+      #pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+      pipeline.CondorDAGJob.__init__(self,"scheduler",exe)
       self.set_sub_file(submitFile)
       self.set_stdout_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).err'))
@@ -971,10 +1074,11 @@ class GraceDBNode(pipeline.CondorDAGNode):
     Run the gracedb executable to report the results
     """
     def __init__(self,gracedb_job,gid=None,parent=None):
-	pipeline.CondorDAGNode.__init__(self,gracedb_job)
+        pipeline.CondorDAGNode.__init__(self,gracedb_job)
         self.resultsurl=""
         if gid: self.set_gid(gid)
         if parent: self.set_parent_resultspage(parent,gid)
+        self.__finalized=False
         
     def set_page_path(self,path):
         """
@@ -993,10 +1097,14 @@ class GraceDBNode(pipeline.CondorDAGNode):
         Setup to log the results from the given parent results page node
         """
         res=respagenode
-        self.set_page_path(res.webpath.replace(self.job().basepath,self.job().baseurl))
+        #self.set_page_path(res.webpath.replace(self.job().basepath,self.job().baseurl))
+        self.resultsurl=res.webpath.replace(self.job().basepath,self.job().baseurl)
         self.set_gid(gid)
     def finalize(self):
+        if self.__finalized:
+            return
         self.add_var_arg('log')
         self.add_var_arg(str(self.gid))
-        self.add_var_arg('parameter estimation finished. '+self.resultsurl)
-        
+        #self.add_var_arg('"Parameter estimation finished. <a href=\"'+self.resultsurl+'/posplots.html\">'+self.resultsurl+'/posplots.html</a>"')
+        self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
+        self.__finalized=True

@@ -107,42 +107,43 @@ InvSpecTruncationParams;
 typedef struct
 tagRandomInspiralSignalIn
 {
-  INT4 useed;       /* Seed for the random number generator */
-  INT4 type;        /* Type of signal required to be generated */
+  INT4 useed;       /**< Seed for the random number generator */
+  INT4 type;        /**< Type of signal required to be generated */
 
-  REAL8 mMin;       /* smallest component mass allowed */
-  REAL8 mMax;       /* largest component mass allowed */
+  REAL8 mMin;       /**< smallest component mass allowed */
+  REAL8 mMax;       /**< largest component mass allowed */
   /* OR */
-  REAL8 MMax;       /* largest total mass allowed */
-  REAL8 MMin;       /* largest total mass allowed */
-  REAL8 SignalAmp;  /* amplitude of the signal (relevant only when type=2) */
-  REAL8 NoiseAmp;   /* amplitude of noise (relevant only when type=2) */
-  REAL8 etaMin;     /* smallest value of the symmetric mass ratio */
-  InspiralTemplate
-    param;      /* parameter stuct; user to specify certain params. */
-  REAL8Vector psd;  /* power spectral density used for coloring the noise */
-  RealFFTPlan *fwdp;/* pre-computed fftw plan for forward fftw */
+  REAL8 MMax;       /**< largest total mass allowed */
+  REAL8 MMin;       /**< largest total mass allowed */
+  REAL8 SignalAmp;  /**< amplitude of the signal (relevant only when type=2) */
+  REAL8 NoiseAmp;   /**< amplitude of noise (relevant only when type=2) */
+  REAL8 etaMin;     /**< smallest value of the symmetric mass ratio */
+  InspiralTemplate param;/**< parameter stuct; user to specify certain params. */
+  REAL8Vector psd;  /**< power spectral density used for coloring the noise */
+  RealFFTPlan *fwdp;/**< pre-computed fftw plan for forward fftw */
 
   /* Chirp times are needed only if param.massChoice is t02 or t03 */
-  REAL8 t0Min;      /* smallest Newtonian chirp time */
-  REAL8 t0Max;      /* largest Newtonian chirp time */
-  REAL8 tnMin;      /* smallest 1, 1.5 PN chirp time */
-  REAL8 tnMax;      /* largest 1, 1.5 PN chirp time  */
+  REAL8 t0Min;      /**< smallest Newtonian chirp time */
+  REAL8 t0Max;      /**< largest Newtonian chirp time */
+  REAL8 tnMin;      /**< smallest 1, 1.5 PN chirp time */
+  REAL8 tnMax;      /**< largest 1, 1.5 PN chirp time  */
   /* min/max values of BCV parameters*/
-  REAL8 psi0Min;      /* smallest Newtonian psi-parameter */
-  REAL8 psi0Max;      /* largest Newtonian psi-parameter */
-  REAL8 psi3Min;      /* smallest 1.5 PN psi-parameter */
-  REAL8 psi3Max;      /* largest 1.5 PN psi-parameter */
+  REAL8 psi0Min;      /**< smallest Newtonian psi-parameter */
+  REAL8 psi0Max;      /**< largest Newtonian psi-parameter */
+  REAL8 psi3Min;      /**< smallest 1.5 PN psi-parameter */
+  REAL8 psi3Max;      /**< largest 1.5 PN psi-parameter */
 
-  INT4  coalescenceTime ;/* bin in which is maximum of the chirp (coalescence time)*/
+  INT4  coalescenceTime ;/**< bin in which is maximum of the chirp (coalescence time)*/
 
-  /* These are for spin Taylor waveforms */
+  /** \name These are for spin Taylor waveforms */
+  /*@{*/
   REAL8 minDistance, maxDistance;
   REAL8 spin1min, spin1max, spin2min, spin2max;
   REAL8 theta0min, theta0max, phi0min, phi0max;
   REAL8 polarisationAngleMin, polarisationAngleMax;
   REAL8 sourceThetaMin, sourceThetaMax, sourcePhiMin, sourcePhiMax;
   REAL8 inclinationMin, inclinationMax;
+  /*@}*/
 }
 RandomInspiralSignalIn;
 

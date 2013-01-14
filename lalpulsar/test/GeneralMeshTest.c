@@ -135,6 +135,15 @@ points very close to the equator.
 #define GENERALMESHTESTC_MSGEMET "determinant of projected metric negative"
 /*@}*/
 
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
 
 #include <math.h>
 #include <stdio.h>
@@ -204,9 +213,9 @@ int main( int argc, char **argv )
                                   /* 3 = Virgo,  4 = GEO,  5 = TAMA */
   float a, b, c, d, e, f;         /* To specify center of search region */
   BOOLEAN rectangular;            /* is the search region rectangular? */
-  char earth[] = "earth00-04.dat";
-  char sun[] = "sun00-04.dat";
 
+  char earth[] = DATADIR "earth00-04.dat";
+  char sun[]   = DATADIR "sun00-04.dat";
 
   /* Set default values. */
   metric_code = 1;

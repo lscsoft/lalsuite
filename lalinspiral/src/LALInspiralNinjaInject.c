@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Patrick Brady
+*  Copyright (C) 2007 Patrick Brady, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * File Name: LALSimNinjaInject.c
  *
- * Author: Pekowsky, L.,  Harry, I.
+ * Author: Pekowsky, L.,  Harry, I., Keppel, D.
  *
  *
  *-----------------------------------------------------------------------
@@ -56,8 +56,7 @@ int XLALCheckFrameHasChannel(
         FrStream *stream
 );
 
-void AddNumRelStrainModesREAL8(
-        LALStatus *status,
+int XLALAddNumRelStrainModesREAL8(
         REAL8TimeSeries **seriesPlus,
         REAL8TimeSeries **seriesCross,
         SimInspiralTable *thisinj
@@ -66,13 +65,6 @@ void AddNumRelStrainModesREAL8(
 REAL8TimeSeries *XLALNRInjectionStrain(
         const char *ifo,
         SimInspiralTable *inj
-);
-
-void XLALSimInjectNinjaSignals(
-        REAL4TimeSeries* chan,
-        const char *ifo,
-        REAL8 dynRange,
-        SimInspiralTable* events
 );
 
 int XLALCheckFrameHasChannel( CHAR *channel, FrStream *stream )
@@ -99,10 +91,13 @@ int XLALCheckFrameHasChannel( CHAR *channel, FrStream *stream )
     return 0;
   return 1;
 }
-void AddNumRelStrainModesREAL8(LALStatus      *status,  /**< pointer to LALStatus structure */
-                            REAL8TimeSeries   **seriesPlus, /**< [out]  h+, hx data    */
-                            REAL8TimeSeries   **seriesCross, /**< [out]  h+, hx data    */
-                            SimInspiralTable  *thisinj  /**< [in]   injection data */)
+
+int
+XLALAddNumRelStrainModesREAL8(
+    REAL8TimeSeries   **seriesPlus, /**< [out]  h+, hx data    */
+    REAL8TimeSeries   **seriesCross, /**< [out]  h+, hx data    */
+    SimInspiralTable  *thisinj  /**< [in]   injection data */
+    )
 {
   INT4 modeL, modeM, modeLlo, modeLhi;
   INT4 len, lenPlus, lenCross, k;
@@ -114,8 +109,6 @@ void AddNumRelStrainModesREAL8(LALStatus      *status,  /**< pointer to LALStatu
   REAL8TimeSeries  *modePlus=NULL;
   REAL8TimeSeries  *modeCross=NULL;
   REAL8 massMpc, timeStep;
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
 
   modeLlo = thisinj->numrel_mode_min;
   modeLhi = thisinj->numrel_mode_max;
@@ -219,59 +212,77 @@ void AddNumRelStrainModesREAL8(LALStatus      *status,  /**< pointer to LALStatu
   (*seriesCross)->deltaT *= timeStep;
   XLALFrClose( frStream );
   LALFree(frCache.frameFiles);
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+
+  return XLAL_SUCCESS;
 }
 
-REAL8TimeSeries *
-XLALNRInjectionStrain(const char *ifo, SimInspiralTable *inj)
+int
+XLALNRInjectionFromSimInspiral(
+    REAL8TimeSeries **hplus,	/**< +-polarization waveform */
+    REAL8TimeSeries **hcross,	/**< x-polarization waveform */
+    SimInspiralTable *thisRow,	/**< row from the sim_inspiral table containing waveform parameters */
+    REAL8 deltaT		/**< time step */
+    )
 {
-  static LALStatus status;
-
   REAL8TimeSeries *plus      = NULL;
-  REAL8TimeSeries *plus_int  = NULL;
   REAL8TimeSeries *cross     = NULL;
-  REAL8TimeSeries *cross_int = NULL;
-  REAL8TimeSeries *strain    = NULL;
-
-  INT4 sampleRate                = 16384;
-  InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
-  LALDetector det;
+  INT4 sampleRate            = (INT4) 1./deltaT;
 
   /* Add the modes together */
-  AddNumRelStrainModesREAL8(&status, &plus, &cross, inj);
+  XLALAddNumRelStrainModesREAL8(&plus, &cross, thisRow);
   /* Place at distance */
   for (uint j = 0; j < plus->data->length; j++)
   {
-    plus->data->data[j]  /= inj->distance;
-    cross->data->data[j] /= inj->distance;
+    plus->data->data[j]  /= thisRow->distance;
+    cross->data->data[j] /= thisRow->distance;
   }
 
   plus->sampleUnits  = lalADCCountUnit;
   cross->sampleUnits = lalADCCountUnit;
 
   /* Interpolate to desired sample rate */
-  plus_int  = XLALInterpolateNRWaveREAL8(plus, sampleRate);
-  cross_int = XLALInterpolateNRWaveREAL8(cross, sampleRate);
+  *hplus  = XLALInterpolateNRWaveREAL8(plus, sampleRate);
+  *hcross = XLALInterpolateNRWaveREAL8(cross, sampleRate);
+  if (*hplus == NULL || *hcross == NULL)
+    XLAL_ERROR(XLAL_EFUNC);
+
+  /* We want the end time to be the time of largest amplitude */
+  REAL8 offset = 0;
+  XLALFindNRCoalescencePlusCrossREAL8(&offset, *hplus, *hcross);
+  XLALGPSAdd( &((*hplus)->epoch), -offset);
+  XLALGPSAdd( &((*hcross)->epoch), -offset);
+
+  XLALDestroyREAL8TimeSeries (plus);
+  XLALDestroyREAL8TimeSeries (cross);
+
+  return XLAL_SUCCESS;
+}
+
+REAL8TimeSeries *
+XLALNRInjectionStrain(const char *ifo, SimInspiralTable *inj)
+{
+  REAL8TimeSeries *hplus = NULL;
+  REAL8TimeSeries *hcross = NULL;
+  REAL8TimeSeries *strain = NULL;
+
+  REAL8 deltaT = 1./16384.;
+  InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
+  LALDetector det;
 
   /* look up detector */
   memset( &det, 0, sizeof(LALDetector) );
   ifoNumber = XLALIFONumber( ifo );
   XLALReturnDetector( &det, ifoNumber );
 
+  /* generate plus and cross polarizations */
+  XLALNRInjectionFromSimInspiral(&hplus, &hcross, inj, deltaT);
+
   /* Use Jolien's method to place on the sky */
-  strain = XLALSimDetectorStrainREAL8TimeSeries(plus_int, cross_int,
+  strain = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross,
            inj->longitude, inj->latitude, inj->polarization, &det);
 
-  /* We want the end time to be the time of largest amplitude */
-  REAL8 offset = 0;
-  XLALFindNRCoalescencePlusCrossREAL8(&offset, plus_int, cross_int);
-  XLALGPSAdd( &(strain->epoch), -offset);
-
-  XLALDestroyREAL8TimeSeries (plus);
-  XLALDestroyREAL8TimeSeries (plus_int);
-  XLALDestroyREAL8TimeSeries (cross);
-  XLALDestroyREAL8TimeSeries (cross_int);
+  XLALDestroyREAL8TimeSeries (hplus);
+  XLALDestroyREAL8TimeSeries (hcross);
 
   return strain;
 }

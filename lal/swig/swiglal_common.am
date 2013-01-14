@@ -6,9 +6,6 @@ swig_iface = @PACKAGE_NAME@swig.i
 
 # SWIG interface dependencies file
 swig_iface_deps = ./$(DEPDIR)/@PACKAGE_NAME@swig.deps
-$(swig_iface_deps) : ../$(swig_iface) Makefile
-	@echo '#dummy' > $@
-@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig.deps@am__quote@
 
 # test script for the SWIG wrapping module
 swig_modl_check = check_@PACKAGE_NAME@swig
@@ -19,8 +16,9 @@ swig_lt_sources =
 swig_lt_cppflags = $(AM_CPPFLAGS) -shared
 swig_lt_cflags = $(AM_CFLAGS)
 swig_lt_cxxflags = $(AM_CXXFLAGS)
-swig_lt_ldflags = $(AM_LDFLAGS) -module -version-info $(LIBVERSION)
 swig_lt_libadd =
+swig_lt_ldflags = $(AM_LDFLAGS) -module -avoid-version -version-info 0:0:0
+swig_lt_libtoolflags = --tag=disable-static
 
 # installation location for SWIG interfaces
 swigincludedir = $(includedir)/lal
@@ -39,12 +37,14 @@ CLEANFILES = \
 DISTCLEANFILES = \
 	$(swig_iface_deps)
 
+if SWIG_BUILD
+
 # delete failed targets
 rm_targets = { rm -f $@; exit 1; }
 
 # create links to SWIG interfaces
-.PHONY : swig_iface_links
-swig_iface_links :
+.PHONY : swig-iface-links
+swig-iface-links :
 	@for file in $(nodist_swiginclude_HEADERS) $(swiginclude_HEADERS); do \
 		srcdir=$(abs_srcdir); \
 		builddir=$(abs_builddir); \
@@ -59,12 +59,22 @@ swig_iface_links :
 		fi; \
 	done
 
+# rebuild SWIG interface dependencies file
+$(swig_iface_deps) :
+	@echo '#dummy' > $@
+	@touch $(srcdir)/Makefile.in
+
 # generate SWIG interface file
-../$(swig_iface) :
+../$(swig_iface) : Makefile
 	@cd .. && $(MAKE) $(swig_iface)
 
+# include SWIG interface dependencies file
+@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig.deps@am__quote@
+
 # generate SWIG wrapping module source
-$(swig_modl_src) : ../$(swig_iface) Makefile
-	@$(MAKE) swig_iface_links
+$(swig_modl_src) : ../$(swig_iface)
+	@$(MAKE) swig-iface-links
 	@$(MKDIR_P) $(SWIG_OUTDIR)
 	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)
+
+endif # SWIG_BUILD

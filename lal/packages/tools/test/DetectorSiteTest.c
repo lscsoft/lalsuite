@@ -68,6 +68,8 @@ LALCreateDetector()
 #define DETECTORSITETESTC_MSGECHK "Error checking failed to catch bad data"
 #define DETECTORSITETESTC_MSGEFLS "Incorrect answer for valid data"
 
+#include <config.h>
+
 #include <stdlib.h>
 
 #include <lal/LALStdlib.h>

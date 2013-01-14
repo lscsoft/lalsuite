@@ -2695,7 +2695,7 @@ void BankEfficiencyParseParameters(
     else if (!strcmp(argv[i],   "--bank-inside-polygon")) {
       INT4 temp;
       BankEfficiencyParseGetInt(argv, &i, &temp);
-      coarseBankIn->insidePolygon = (InsidePolygon)temp;
+      coarseBankIn->insidePolygon = (InsidePolygonEnum)temp;
     }
     else if (!strcmp(argv[i], "--bank-grid-spacing")) {
       BankEfficiencyParseGetString(argv, &i);

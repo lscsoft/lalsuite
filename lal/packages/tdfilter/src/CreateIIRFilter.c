@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -133,12 +133,12 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
      direct coefficients required. */
   numDirect=1;
   for(i=0,num=0;i<numZeros;i++)
-    if(zeros[i].im==0.0){
+    if(cimagf(zeros[i])==0.0){
       num+=1;
-      if(zeros[i].re==0.0)
+      if(crealf(zeros[i])==0.0)
 	numDirect-=1;
     }
-    else if(zeros[i].im>0.0){
+    else if(cimagf(zeros[i])>0.0){
       num+=2;
 
 #ifndef NDEBUG
@@ -148,12 +148,12 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
            multiple zeros at the same location. */
 	INT4 j=0;
 	INT4 k=0;
-	REAL4 x = zeros[i].re - zeros[0].re;
-	REAL4 y = zeros[i].im + zeros[0].im;
+	REAL4 x = crealf(zeros[i]) - crealf(zeros[0]);
+	REAL4 y = cimagf(zeros[i]) + cimagf(zeros[0]);
 	REAL4 sep = x*x + y*y;
 	for(j=1;j<numZeros;j++){
-	  x=zeros[i].re-zeros[j].re;
-	  y=zeros[i].im+zeros[j].im;
+	  x=crealf(zeros[i])-crealf(zeros[j]);
+	  y=cimagf(zeros[i])+cimagf(zeros[j]);
 	  if(sep>x*x+y*y){
 	    sep=x*x+y*y;
 	    k=j;
@@ -163,9 +163,9 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
           XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
           XLALPrintWarning("Complex zero has no conjugate pair\n");
 	  XLALPrintWarning("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
-              zeros[i].re,zeros[i].im);
+              crealf(zeros[i]),cimagf(zeros[i]));
 	  XLALPrintWarning("\tNearest pair   z_%i = %.8e + i*%.8e\n",k,
-              zeros[k].re,zeros[k].im);
+              crealf(zeros[k]),cimagf(zeros[k]));
 	}
       }
 #endif
@@ -179,12 +179,12 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
      recursive coefficients required. */
   numRecurs=1;
   for(i=0,num=0;i<numPoles;i++)
-    if(poles[i].im==0.0){
+    if(cimagf(poles[i])==0.0){
       num+=1;
-      if(poles[i].re==0.0)
+      if(crealf(poles[i])==0.0)
 	numRecurs-=1;
     }
-    else if(poles[i].im>0.0){
+    else if(cimagf(poles[i])>0.0){
       num+=2;
 
 #ifndef NDEBUG
@@ -194,12 +194,12 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
            multiple poles at the same location. */
 	INT4 j=0;
 	INT4 k=0;
-	REAL4 x = poles[i].re - poles[0].re;
-	REAL4 y = poles[i].im + poles[0].im;
+	REAL4 x = crealf(poles[i]) - crealf(poles[0]);
+	REAL4 y = cimagf(poles[i]) + cimagf(poles[0]);
 	REAL4 sep = x*x + y*y;
 	for(j=1;j<numPoles;j++){
-	  x=poles[i].re-poles[j].re;
-	  y=poles[i].im+poles[j].im;
+	  x=crealf(poles[i])-crealf(poles[j]);
+	  y=cimagf(poles[i])+cimagf(poles[j]);
 	  if(sep>x*x+y*y){
 	    sep=x*x+y*y;
 	    k=j;
@@ -209,9 +209,9 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
           XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
           XLALPrintWarning("Complex pole has no conjugate pair\n");
 	  XLALPrintWarning("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
-              poles[i].re,poles[i].im);
+              crealf(poles[i]),cimagf(poles[i]));
 	  XLALPrintWarning("\tNearest pair   p_%i = %.8e + i*%.8e\n",k,
-              poles[k].re,poles[k].im);
+              crealf(poles[k]),cimagf(poles[k]));
 	}
       }
 #endif
@@ -223,20 +223,20 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
 #ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
-    if(fabs(input->gain.im)>fabs(LAL_REAL4_EPS*input->gain.re)){
+    if(fabs(cimag(input->gain))>fabs(LAL_REAL4_EPS*creal(input->gain))){
       XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
       XLALPrintWarning("Gain is non-real\n");
-      XLALPrintWarning("\tg = %.8e + i*%.8e\n", input->gain.re, input->gain.im);
+      XLALPrintWarning("\tg = %.8e + i*%.8e\n", crealf(input->gain), cimagf(input->gain));
     }
     /* Issue a warning if there are any ``removeable'' poles. */
     for(i=0;i<numPoles;i++){
       INT4 j=0;
       for(;j<numZeros;j++)
-	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
+	if((crealf(poles[i])==crealf(zeros[j]))&&(cimagf(poles[i])==cimagf(zeros[j]))){
           XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
 	  XLALPrintWarning("Removeable pole\n");
 	  XLALPrintWarning("\tp_%i = z_%i = %.8e + i*%.8e\n",i,j,
-              poles[i].re,poles[i].im);
+              crealf(poles[i]),cimagf(poles[i]));
 	}
     }
     /* Issue a warning if extra factors of 1/z will be applied. */
@@ -248,12 +248,12 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
     }
     /* Issue a warning if any poles are outside |z|=1. */
     for(i=0;i<numPoles;i++){
-      REAL4 zAbs=poles[i].re*poles[i].re+poles[i].im*poles[i].im;
+      REAL4 zAbs=crealf(poles[i])*crealf(poles[i])+cimagf(poles[i])*cimagf(poles[i]);
       if(zAbs>1.0){
         XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
 	XLALPrintWarning("Filter has pole outside of unit circle\n");
 	XLALPrintWarning("\tp_%i = %.8e + i*%.8e, |p_%i| = %.8e\n",i,
-		      poles[i].re,poles[i].im,i,zAbs);
+		      crealf(poles[i]),cimagf(poles[i]),i,zAbs);
       }
     }
   }
@@ -284,8 +284,8 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
     recurs[i]=0.0;
   for(i=0;i<numPoles;i++){
     INT4 j=numRecurs-1;
-    REAL4 x=poles[i].re;
-    REAL4 y=poles[i].im;
+    REAL4 x=crealf(poles[i]);
+    REAL4 y=cimagf(poles[i]);
     if(y==0.0)
       for(;j>0;j--)
 	recurs[j]-=x*recurs[j-1];
@@ -299,11 +299,11 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
   /* Expand the numerator as a polynomial in z. */
   for(i=0;i<numDirect;i++)
     direct[i]=0.0;
-  direct[num-numZeros]=input->gain.re;
+  direct[num-numZeros]=crealf(input->gain);
   for(i=0;i<numZeros;i++){
     INT4 j=numDirect-1;
-    REAL4 x=zeros[i].re;
-    REAL4 y=zeros[i].im;
+    REAL4 x=crealf(zeros[i]);
+    REAL4 y=cimagf(zeros[i]);
     if(y==0.0)
       for(;j>num-numZeros;j--)
 	direct[j]-=x*direct[j-1];
@@ -366,12 +366,12 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
      direct coefficients required. */
   numDirect=1;
   for(i=0,num=0;i<numZeros;i++)
-    if(zeros[i].im==0.0){
+    if(cimag(zeros[i])==0.0){
       num+=1;
-      if(zeros[i].re==0.0)
+      if(creal(zeros[i])==0.0)
 	numDirect-=1;
     }
-    else if(zeros[i].im>0.0){
+    else if(cimag(zeros[i])>0.0){
       num+=2;
 
 #ifndef NDEBUG
@@ -381,12 +381,12 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
            multiple zeros at the same location. */
 	INT4 j=0;
 	INT4 k=0;
-	REAL8 x = zeros[i].re - zeros[0].re;
-	REAL8 y = zeros[i].im + zeros[0].im;
+	REAL8 x = creal(zeros[i]) - creal(zeros[0]);
+	REAL8 y = cimag(zeros[i]) + cimag(zeros[0]);
 	REAL8 sep = x*x + y*y;
 	for(j=1;j<numZeros;j++){
-	  x=zeros[i].re-zeros[j].re;
-	  y=zeros[i].im+zeros[j].im;
+	  x=creal(zeros[i])-creal(zeros[j]);
+	  y=cimag(zeros[i])+cimag(zeros[j]);
 	  if(sep>x*x+y*y){
 	    sep=x*x+y*y;
 	    k=j;
@@ -396,9 +396,9 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
           XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
           XLALPrintWarning("Complex zero has no conjugate pair\n");
 	  XLALPrintWarning("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
-              zeros[i].re,zeros[i].im);
+              creal(zeros[i]),cimag(zeros[i]));
 	  XLALPrintWarning("\tNearest pair   z_%i = %.8e + i*%.8e\n",k,
-              zeros[k].re,zeros[k].im);
+              creal(zeros[k]),cimag(zeros[k]));
 	}
       }
 #endif
@@ -412,12 +412,12 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
      recursive coefficients required. */
   numRecurs=1;
   for(i=0,num=0;i<numPoles;i++)
-    if(poles[i].im==0.0){
+    if(cimag(poles[i])==0.0){
       num+=1;
-      if(poles[i].re==0.0)
+      if(creal(poles[i])==0.0)
 	numRecurs-=1;
     }
-    else if(poles[i].im>0.0){
+    else if(cimag(poles[i])>0.0){
       num+=2;
 
 #ifndef NDEBUG
@@ -427,12 +427,12 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
            multiple poles at the same location. */
 	INT4 j=0;
 	INT4 k=0;
-	REAL8 x = poles[i].re - poles[0].re;
-	REAL8 y = poles[i].im + poles[0].im;
+	REAL8 x = creal(poles[i]) - creal(poles[0]);
+	REAL8 y = cimag(poles[i]) + cimag(poles[0]);
 	REAL8 sep = x*x + y*y;
 	for(j=1;j<numPoles;j++){
-	  x=poles[i].re-poles[j].re;
-	  y=poles[i].im+poles[j].im;
+	  x=creal(poles[i])-creal(poles[j]);
+	  y=cimag(poles[i])+cimag(poles[j]);
 	  if(sep>x*x+y*y){
 	    sep=x*x+y*y;
 	    k=j;
@@ -442,9 +442,9 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
           XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
           XLALPrintWarning("Complex pole has no conjugate pair\n");
 	  XLALPrintWarning("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
-              poles[i].re,poles[i].im);
+              creal(poles[i]),cimag(poles[i]));
 	  XLALPrintWarning("\tNearest pair   p_%i = %.8e + i*%.8e\n",k,
-              poles[k].re,poles[k].im);
+              creal(poles[k]),cimag(poles[k]));
 	}
       }
 #endif
@@ -456,20 +456,20 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
 #ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
-    if(fabs(input->gain.im)>fabs(LAL_REAL8_EPS*input->gain.re)){
+    if(fabs(cimag(input->gain))>fabs(LAL_REAL8_EPS*creal(input->gain))){
       XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
       XLALPrintWarning("Gain is non-real\n");
-      XLALPrintWarning("\tg = %.8e + i*%.8e\n", input->gain.re, input->gain.im);
+      XLALPrintWarning("\tg = %.8e + i*%.8e\n", creal(input->gain), cimag(input->gain));
     }
     /* Issue a warning if there are any ``removeable'' poles. */
     for(i=0;i<numPoles;i++){
       INT4 j=0;
       for(;j<numZeros;j++)
-	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
+	if((creal(poles[i])==creal(zeros[j]))&&(cimag(poles[i])==cimag(zeros[j]))){
           XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
 	  XLALPrintWarning("Removeable pole\n");
 	  XLALPrintWarning("\tp_%i = z_%i = %.8e + i*%.8e\n",i,j,
-              poles[i].re,poles[i].im);
+              creal(poles[i]),cimag(poles[i]));
 	}
     }
     /* Issue a warning if extra factors of 1/z will be applied. */
@@ -481,12 +481,12 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
     }
     /* Issue a warning if any poles are outside |z|=1. */
     for(i=0;i<numPoles;i++){
-      REAL8 zAbs=poles[i].re*poles[i].re+poles[i].im*poles[i].im;
+      REAL8 zAbs=creal(poles[i])*creal(poles[i])+cimag(poles[i])*cimag(poles[i]);
       if(zAbs>1.0){
         XLALPrintWarning( "XLAL Warning - %s: ", __func__ );
 	XLALPrintWarning("Filter has pole outside of unit circle\n");
 	XLALPrintWarning("\tp_%i = %.8e + i*%.8e, |p_%i| = %.8e\n",i,
-		      poles[i].re,poles[i].im,i,zAbs);
+		      creal(poles[i]),cimag(poles[i]),i,zAbs);
       }
     }
   }
@@ -517,8 +517,8 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
     recurs[i]=0.0;
   for(i=0;i<numPoles;i++){
     INT4 j=numRecurs-1;
-    REAL8 x=poles[i].re;
-    REAL8 y=poles[i].im;
+    REAL8 x=creal(poles[i]);
+    REAL8 y=cimag(poles[i]);
     if(y==0.0)
       for(;j>0;j--)
 	recurs[j]-=x*recurs[j-1];
@@ -532,11 +532,11 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
   /* Expand the numerator as a polynomial in z. */
   for(i=0;i<numDirect;i++)
     direct[i]=0.0;
-  direct[num-numZeros]=input->gain.re;
+  direct[num-numZeros]=creal(input->gain);
   for(i=0;i<numZeros;i++){
     INT4 j=numDirect-1;
-    REAL8 x=zeros[i].re;
-    REAL8 y=zeros[i].im;
+    REAL8 x=creal(zeros[i]);
+    REAL8 y=cimag(zeros[i]);
     if(y==0.0)
       for(;j>num-numZeros;j--)
 	direct[j]-=x*direct[j-1];

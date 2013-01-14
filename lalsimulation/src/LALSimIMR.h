@@ -21,6 +21,7 @@
 #define _LALSIMIMR_H
 
 #include <lal/LALDatatypes.h>
+#include  <lal/LALSimInspiralWaveformFlags.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -41,16 +42,6 @@ extern "C" {
 #define ninty4by3etc 18.687902694437592603
 
 /**
- * Enumerator for choosing the reference frame associated with
- * PSpinInspiralRD waveforms.
- */
-typedef enum {
-  View,
-  TotalJ,
-  OrbitalL,
-} FrameAxis;
-
-/**
  * Driver routine to compute the non-spinning, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomA in the frequency domain.
  *
@@ -63,13 +54,13 @@ typedef enum {
  */
 int XLALSimIMRPhenomAGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                        /**< initial phase */
-    const REAL8 deltaF,                      /**< sampling interval */
-    const REAL8 m1_SI,                       /**< mass of companion 1 (kg) */
-    const REAL8 m2_SI,                       /**< mass of companion 2 (kg) */
-    const REAL8 f_min,                       /**< start frequency */
-    const REAL8 f_max,                       /**< end frequency; 0 defaults to ringdown cutoff freq */
-    const REAL8 distance                     /**< distance of source (m) */
+    const REAL8 phiPeak,               /**< orbital phase at peak (rad) */
+    const REAL8 deltaF,                /**< sampling interval (Hz) */
+    const REAL8 m1_SI,                 /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,                 /**< mass of companion 2 (kg) */
+    const REAL8 f_min,                 /**< starting GW frequency (Hz) */
+    const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 distance               /**< distance of source (m) */
 );
 
 /**
@@ -86,14 +77,14 @@ int XLALSimIMRPhenomAGenerateFD(
 int XLALSimIMRPhenomAGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    const REAL8 phiPeak,            /**< phase at peak */
-    const REAL8 deltaT,             /**< sampling interval */
-    const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
-    const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
-    const REAL8 f_min,              /**< start frequency */
-    const REAL8 f_max,              /**< end frequency; 0 defaults to ringdown cutoff freq */
-    const REAL8 distance,           /**< distance of source (m) */
-    const REAL8 inclination         /**< inclination of source */
+    const REAL8 phiPeak,      /**< orbital phase at peak (rad) */
+    const REAL8 deltaT,       /**< sampling interval (s) */
+    const REAL8 m1_SI,        /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,        /**< mass of companion 2 (kg) */
+    const REAL8 f_min,        /**< starting GW frequency (Hz) */
+    const REAL8 f_max,        /**< end frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 distance,     /**< distance of source (m) */
+    const REAL8 inclination   /**< inclination of source (rad) */
 );
 
 /**
@@ -120,14 +111,14 @@ double XLALSimIMRPhenomBComputeChi(
  */
 int XLALSimIMRPhenomBGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                        /**< initial phase */
-    const REAL8 deltaF,                      /**< sampling interval */
-    const REAL8 m1_SI,                       /**< mass of companion 1 (kg) */
-    const REAL8 m2_SI,                       /**< mass of companion 2 (kg) */
-    const REAL8 chi,                         /**< mass-weighted aligned-spin parameter */
-    const REAL8 f_min,                       /**< start frequency */
-    const REAL8 f_max,                       /**< end frequency; 0 defaults to ringdown cutoff freq */
-    const REAL8 distance                     /**< distance of source (m) */
+    const REAL8 phiPeak,               /**< orbital phase at peak (rad) */
+    const REAL8 deltaF,                /**< sampling interval (Hz) */
+    const REAL8 m1_SI,                 /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,                 /**< mass of companion 2 (kg) */
+    const REAL8 chi,                   /**< mass-weighted aligned-spin parameter */
+    const REAL8 f_min,                 /**< starting GW frequency (Hz) */
+    const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 distance               /**< distance of source (m) */
 );
 
 /**
@@ -143,15 +134,15 @@ int XLALSimIMRPhenomBGenerateFD(
 int XLALSimIMRPhenomBGenerateTD(
     REAL8TimeSeries **hplus,  /**< +-polarization waveform */
     REAL8TimeSeries **hcross, /**< x-polarization waveform */
-    const REAL8 phiPeak,            /**< phase at peak */
-    const REAL8 deltaT,             /**< sampling interval */
-    const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
-    const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
-    const REAL8 chi,                /**< mass-weighted aligned-spin parameter */
-    const REAL8 f_min,              /**< start frequency */
-    const REAL8 f_max,              /**< end frequency; 0 defaults to ringdown cutoff freq */
-    const REAL8 distance,           /**< distance of source (m) */
-    const REAL8 inclination         /**< inclination of source */
+    const REAL8 phiPeak,      /**< orbital phase at peak (rad) */
+    const REAL8 deltaT,       /**< sampling interval (s) */
+    const REAL8 m1_SI,        /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,        /**< mass of companion 2 (kg) */
+    const REAL8 chi,          /**< mass-weighted aligned-spin parameter */
+    const REAL8 f_min,        /**< starting GW frequency (Hz) */
+    const REAL8 f_max,        /**< end frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 distance,     /**< distance of source (m) */
+    const REAL8 inclination   /**< inclination of source (rad) */
 );
 
 /**
@@ -243,7 +234,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
     REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
-    FrameAxis axisChoice,      	/**< Choice of axis for input spin params */
+    LALSimInspiralFrameAxis axisChoice, /**< Choice of axis for input spin params */
     int inspiralOnly            /**< 0 generate RD, 1 generate inspiralOnly*/
     );
 

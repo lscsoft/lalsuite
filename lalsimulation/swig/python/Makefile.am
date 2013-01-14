@@ -9,13 +9,11 @@ LIBS = $(SWIG_LIBS)
 
 TEST_EXTENSIONS = .py
 
-if SWIG_BUILD
-if SWIG_BUILD_PYTHON
-
-include $(top_srcdir)/swig/swiglal_common.am
 include $(top_srcdir)/swig/python/swiglal_python.am
 
-pyexec_LTLIBRARIES = _lalsimulation.la
+if SWIG_BUILD_PYTHON
+
+pkgpyexec_LTLIBRARIES = _lalsimulation.la
 _lalsimulation_la_SOURCES = $(swig_lt_sources)
 nodist__lalsimulation_la_SOURCES = $(swig_lt_nodist_sources)
 _lalsimulation_la_CPPFLAGS = $(swig_lt_cppflags)
@@ -23,6 +21,6 @@ _lalsimulation_la_CFLAGS = $(swig_lt_cflags)
 _lalsimulation_la_CXXFLAGS = $(swig_lt_cxxflags)
 _lalsimulation_la_LDFLAGS = $(swig_lt_ldflags)
 _lalsimulation_la_LIBADD = $(swig_lt_libadd)
+_lalsimulation_la_LIBTOOLFLAGS = $(swig_lt_libtoolflags)
 
 endif # SWIG_BUILD_PYTHON
-endif # SWIG_BUILD

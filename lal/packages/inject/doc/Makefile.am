@@ -1,4 +1,4 @@
-DOCSOURCEFILES = \
+EXTRA_DIST = \
 	inject.dox \
 	inject_ascend.png \
 	inject_ascend.eps \
@@ -26,10 +26,6 @@ DOCSOURCEFILES = \
 	inject_lat_long.eps \
 	inject_phase_diagram.png \
 	inject_phase_diagram.eps \
+	SkyCoordinates.dox \
 	SkyCoordinates_conversions.eps \
 	SkyCoordinates_conversions.png
-
-MOSTLYCLEANFILES =
-CLEANFILES =
-
-EXTRA_DIST = $(DOCSOURCEFILES)

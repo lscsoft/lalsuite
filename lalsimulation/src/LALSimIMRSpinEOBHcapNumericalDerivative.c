@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson 
+*  Copyright (C) 2010 Craig Robinson, Yi Pan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 /**
- * \author Craig Robinson
+ * \author Craig Robinson, Yi Pan
  *
  * \brief In newer versions of the EOBNR approximant, we
  * do not have an analytic expression for the derivative of the waveform.
@@ -81,11 +81,20 @@ static REAL8 XLALSpinHcapNumDerivWRTParam(
  *------------------------------------------------------------------------------------------
  */
 
+/**
+ * Function to calculate numerical derivatives of the spin EOB Hamiltonian,
+ * which correspond to time derivatives of the dynamical variables in conservative dynamcis.
+ * All derivatives, including those on two terms of the orbital phase, are returned together.
+ * The derivatives are combined with energy flux to give right hand side of the ODEs
+ * of a generic spin EOB model, as decribed in Eqs. 21, 22, 26 and 27 of 
+ * Pan et al. PRD 81, 084041 (2010)
+ * This function is not used by the spin-aligned SEOBNRv1 model.
+ */
 static int XLALSpinHcapNumericalDerivative(
-                          double     UNUSED     t,
-                          const REAL8           values[],
-                          REAL8                 dvalues[],
-                          void                  *funcParams
+                 double UNUSED     t,         /**<< UNUSED */
+                 const  REAL8      values[],  /**<< Dynamical variables */
+                 REAL8             dvalues[], /**<< Time derivatives of variables (returned) */
+                 void             *funcParams /**<< EOB parameters */
                                )
 {
 
@@ -221,7 +230,7 @@ static int XLALSpinHcapNumericalDerivative(
 
   a = sqrt(sKerr.data[0]*sKerr.data[0] + sKerr.data[1]*sKerr.data[1] + sKerr.data[2]*sKerr.data[2]);
 
-  XLALSimIMREOBCalcSpinFacWaveformCoefficients( params.params->eobParams->hCoeffs, eta, a, chiS, chiA );
+  XLALSimIMREOBCalcSpinFacWaveformCoefficients( params.params->eobParams->hCoeffs, mass1, mass2, eta, a, chiS, chiA );
   XLALSimIMRCalculateSpinEOBHCoeffs( params.params->seobCoeffs, eta, a );
  
   rVec.length = pVec.length = 3;
@@ -288,7 +297,8 @@ static int XLALSpinHcapNumericalDerivative(
 
   dLhatx = (dLx*magL - Lx*dMagL)/(magL*magL);
   dLhaty = (dLy*magL - Ly*dMagL)/(magL*magL);
-
+  
+  /* Finn Chernoff convention is used here. TODO: implement the geometric precessing convention */
   if ( Lhatx == 0.0 && Lhaty == 0.0 )
   {
     alphadotcosi = 0.0;
@@ -309,21 +319,22 @@ static int XLALSpinHcapNumericalDerivative(
     printf( "\t%e", dvalues[i] );
   }
   printf( "\n" );
-*/
+  */
   return XLAL_SUCCESS;
 }
 
 
 /**
  * Calculate the derivative of the Hamiltonian w.r.t. a specific parameter
+ * Used by generic spin EOB model, including initial conditions solver.
  */
 static REAL8 XLALSpinHcapNumDerivWRTParam(
-                       const INT4 paramIdx,
-                       const REAL8 values[],
-                       SpinEOBParams *funcParams
-                       )
+                 const INT4 paramIdx,      /**<< Index of the parameters */
+                 const REAL8 values[],     /**<< Dynamical variables */
+                 SpinEOBParams *funcParams /**<< EOB Parameters */
+                 )
 {
-  static const REAL8 STEP_SIZE = 1.0e-4;
+  static const REAL8 STEP_SIZE = 1.0e-3;
 
   HcapDerivParams params;
 
@@ -376,7 +387,9 @@ static REAL8 XLALSpinHcapNumDerivWRTParam(
 }
 
 
-/* Wrapper for GSL to call the Hamiltonian function */
+/** 
+ * Wrapper for GSL to call the Hamiltonian function 
+ */
 static double GSLSpinHamiltonianWrapper( double x, void *params )
 {
   HcapDerivParams *dParams = (HcapDerivParams *)params;

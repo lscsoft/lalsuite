@@ -61,7 +61,7 @@ EXTRA_DIST = \
 	calfacs.c \
 	computespec.c
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 BUILT_SOURCES =

@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2012 Miroslav Shaltev, R Prix
 *  Copyright (C) 2007 Curt Cutler, Jolien Creighton, Reinhard Prix, Teviet Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -32,8 +33,8 @@ extern "C" {
 #endif
 
 /**
- * \defgroup LALBarycenter_h Barycentering
- * \ingroup pulsarCommon
+ * \defgroup LALBarycenter_h Header LALBarycenter.h
+ * \ingroup pkg_pulsarCommon
  * \author Curt Cutler
  * \date 2001
  *
@@ -66,8 +67,60 @@ extern "C" {
 #define LALBARYCENTERH_MSGEXLAL 	"XLAL function failed."
 /** \endcond */
 
+/** \brief Enumerated type denoting the time system type to be produced in
+ * the solar system barycentring routines.
+ *
+ * The type denotes the time system in which solar system barycentred times
+ * should be given. \c TIMECORRECTION_TDB and \c TIMECORRECTION_TEMPO will mean
+ * times are in the Barycentric Dynamical Time (TDB) system, where the
+ * conversion has been performed using a time correction ephemeris look-up
+ * table as used by TEMPO2 (\c TIMECORRECTION_TEMPO is so-called because the
+ * pulsar timing software TEMPO uses the TDB time system by default); \c
+ * TIMECORRECTION_ORIGINAL will mean times are in the TDB system, but with the
+ * conversion performed using the original \c XLALBarycenterEarth function; and,
+ * \c TIMECORRECTION_TCB and \c TIMECORRECTION_TEMPO2 will mean times are in the
+ * Coordinate Barycentric Time (TCB) system, where the conversion has been
+ * performed using a time correction ephemeris look-up table as used by TEMPO2
+ * (\c TIMECORRECTION_TEMPO2 is so-called because the pulsar timing software
+ * TEMPO2 uses the TCB time system by default). */
+typedef enum{
+  TIMECORRECTION_NONE = 0,
+  TIMECORRECTION_TDB,
+  TIMECORRECTION_TCB,
+  TIMECORRECTION_TEMPO,
+  TIMECORRECTION_TEMPO2,
+  TIMECORRECTION_ORIGINAL,
+  TIMECORRECTION_LAST
+} TimeCorrectionType;
 
-/** \brief [DEPRECATED] Used as input for LALInitBarycenter(), this structure contains
+/** \brief Enumerated type denoting the JPL solar system ephemeris to be used
+ * in calculating barycentre time corrections.
+ */
+typedef enum {
+  EPHEM_NONE = 0,
+  EPHEM_DE200,
+  EPHEM_DE405,
+  EPHEM_DE414,
+  EPHEM_DE421,
+  EPHEM_LAST
+} EphemerisType;
+
+/** \name Constants from Irwin and Fukushima, A&A, 348, 1999 (taken from TEMPO2)
+ * used for ephemeris conversions. */
+/*@{*/
+#define IFTE_JD0  2443144.5003725 /**< Epoch of TCB, TCG and TT in Julian Days */
+#define IFTE_MJD0 43144.0003725 /**< Epoch of TCB, TCG and TT in Modified Julian Days */
+#define IFTE_TEPH0 -65.564518e-6 /**< Equation 17 of Irwin and Fukushima. */
+#define IFTE_LC 1.48082686742e-8 /**< Equation 20 of Irwin and Fukushima. */
+#define IFTE_KM1 1.55051979176e-8 /**< Value of K-1, defined using the IAU definition of L_B = 1.55051976772e-8 and K=1/(1-L_B) (see TEMPO2). */
+#define IFTE_K (((long double)1.0) + ((long double)IFTE_KM1)) /**< Factor relating ephemeris units for time and distance to corresponding SI units, from Eq. 2 of Irwin and Fukushima. */
+/*@}*/
+
+#define JPL_AU_DE405 149597870.6910000 	/**< Definition of 1 AU from the JPL DE405 ephemeris in km */
+#define JPL_AU_DE200 149597870.6600000 	/**< Definition of 1 AU from the JPL DE200 ephemeris in km */
+#define CURT_AU 149597870.6600 		/**< 1 AU from create_solar_system_barycenter.c as used in Curt's original routines */
+
+/** \brief This structure contains
  * two pointers to the ephemeris data files containing arrays
  * of center-of-mass positions for the Earth and Sun, respectively.
  *
@@ -82,7 +135,6 @@ extern "C" {
  * at that instant.  All in units of seconds; e.g. positions have
  * units of seconds, and accelerations have units 1/sec.
  *
- * \deprecated Use XLALInitBarycenter() instead.
  */
 typedef struct tagEphemerisFilenames
 {
@@ -91,8 +143,7 @@ typedef struct tagEphemerisFilenames
 }
 EphemerisFilenames;
 
-/** Structure holding a REAL8 time, and a position, velocity and
- * acceleration vector. */
+/** Structure holding a REAL8 time, and a position, velocity and acceleration vector. */
 typedef struct tagPosVelAcc
 {
   REAL8 gps;            /**< REAL8 timestamp */
@@ -110,21 +161,42 @@ typedef struct tagEphemerisData
 {
   EphemerisFilenames ephiles; /**< Names of the two files containing positions of
                                * Earth and Sun, respectively at evenly spaced times. */
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(1D_ARRAY(PosVelAcc, ephemE, INT4, nentriesE));
+  SWIGLAL(1D_ARRAY(PosVelAcc, ephemS, INT4, nentriesS));
+#endif /* SWIG */
   INT4  nentriesE;      /**< The number of entries in Earth ephemeris table. */
   INT4  nentriesS;      /**< The number of entries in Sun ephemeris table. */
-  REAL8 dtEtable;       /**< The spacing in sec between consecutive intants in Earth ephemeris table.*/
-  REAL8 dtStable;       /**< The spacing in sec between consecutive intants in Sun ephemeris table.*/
+
+  REAL8 dtEtable;       /**< The spacing in sec between consecutive instants in Earth ephemeris table.*/
+  REAL8 dtStable;       /**< The spacing in sec between consecutive instants in Sun ephemeris table.*/
+
   PosVelAcc *ephemE;    /**< Array containing pos,vel,acc of earth, as extracted from earth
                          * ephem file. Units are sec, 1, 1/sec respectively */
   PosVelAcc *ephemS;    /**< Array with pos, vel and acc for the sun (see ephemE) */
+
+  EphemerisType etype;  /**< The ephemeris type e.g. DE405 */
 }
 EphemerisData;
+
+
+/** This structure will contain a vector of time corrections
+ * used during conversion from TT to TDB/TCB/Teph */
+typedef struct tagTimeCorrectionData{
+  CHAR *timeEphemeris;   /**< File containing the time ephemeris */
+
+  UINT4  nentriesT;      /**< The number of entries in Time ephemeris table. */
+  REAL8 dtTtable;        /**< The spacing in sec between consecutive instants in Time ephemeris table.*/
+  REAL8 *timeCorrs;      /**< Array of time delays for converting TT to TDB/TCB from the Time table (seconds).*/
+  REAL8 timeCorrStart;   /**< The initial GPS time of the time delay table. */
+} TimeCorrectionData;
+
 
 /** Basic output structure of LALBarycenterEarth.c.
  */
 typedef struct tagEarthState
 {
-  REAL8  einstein;      /**<  the einstein delay equiv TDB - TDT */
+  REAL8  einstein;      /**<  the einstein delay equiv TDB - TDT or TCB - TDT */
   REAL8 deinstein;      /**< d(einstein)/d(tgps) */
 
   REAL8 posNow[3];      /**< Cartesian coords of Earth's center at tgps,
@@ -149,6 +221,8 @@ typedef struct tagEarthState
   REAL8 dse[3];         /**< d(se[3])/d(tgps); Dimensionless */
   REAL8 rse;            /**< length of vector se[3]; units = sec */
   REAL8 drse;           /**< d(rse)/d(tgps); dimensionless */
+
+  TimeCorrectionType ttype; /**< Time correction type */
 }
 EarthState;
 
@@ -177,6 +251,14 @@ typedef struct tagBarycenterInput
 }
 BarycenterInput;
 
+/*Curt: probably best to take 1.0 OUT of tDot--ie., output tDot-1.
+But most users would immediately add back the one anyway.
+*/
+
+/*Curt: rem te is ``time pulse would arrive at a GPS clock
+way out in empty space, if you renormalized  and zero-ed the latter
+to give, on average, the same arrival time as the GPS clock on Earth'' */
+
 /**  Basic output structure produced by LALBarycenter.c.
  */
 typedef struct tagEmissionTime
@@ -193,24 +275,48 @@ typedef struct tagEmissionTime
 
   REAL8 vDetector[3];   /* Cartesian coords (0=x,1=y,2=z) of detector velocity
                          * at \f$t_a\f$ (GPS), in ICRS J2000 coords. Dimensionless. */
+
+  REAL8 roemer;         /**<  the Roemer delay */
+  REAL8 droemer;        /**<  d(Roemer)/d(tgps) */
+
+  REAL8 shapiro;        /**<  the Shapiro delay */
+  REAL8 dshapiro;       /**<  d(Shapiro)/d(tgps) */
+
+  REAL8 erot;           /**< Earth rotation delay */
+  REAL8 derot;          /**< d(erot)/d(tgps) */
 }
 EmissionTime;
 
-/*Curt: probably best to take 1.0 OUT of tDot--ie., output tDot-1.
-But most users would immediately add back the one anyway.
-*/
 
-/*Curt: rem te is ``time pulse would arrive at a GPS clock
-way out in empty space, if you renormalized  and zero-ed the latter
-to give, on average, the same arrival time as the GPS clock on Earth'' */
+/// internal (opaque) buffer type for optimized Barycentering function
+typedef struct tagBarycenterBuffer BarycenterBuffer;
 
 
 /* Function prototypes. */
-
 int XLALBarycenterEarth ( EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
 int XLALBarycenter ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
+int XLALBarycenterOpt ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth, BarycenterBuffer **buffer);
 
+/* Function that uses time delay look-up tables to calculate time delays */
+int XLALBarycenterEarthNew ( EarthState *earth,
+                             const LIGOTimeGPS *tGPS,
+                             const EphemerisData *edat,
+                             const TimeCorrectionData *tdat,
+                             TimeCorrectionType ttype );
 
+/* Function to calculate positions */
+void precessionMatrix( REAL8 prn[3][3],
+                       REAL8 mjd,
+                       REAL8 dpsi,
+                       REAL8 deps );
+void observatoryEarth( REAL8 obsearth[3],
+                       const LALDetector det,
+                       const LIGOTimeGPS *tgps,
+                       REAL8 gmst,
+                       REAL8 dpsi,
+                       REAL8 deps );
+
+// deprecated LAL interface
 void LALBarycenterEarth ( LALStatus *status, EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
 void LALBarycenter ( LALStatus *status, EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
 

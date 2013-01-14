@@ -1,3 +1,27 @@
+lal (6.9.1-1) unstable; urgency=low
+
+  * LAL 6.9.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 Jan 2013 16:22:30 -0600
+
+lal (6.9.0-1) unstable; urgency=low
+
+  * LAL 6.9.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 07 Dec 2012 17:04:45 -0600
+
+lal (6.8.0-1) unstable; urgency=low
+
+  * LAL 6.8.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 02 Nov 2012 13:23:50 -0500
+
+lal (6.7.2-5) unstable; urgency=low
+
+  * convert to source format 3.0 (quilt)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Sep 2012 10:45:00 +0200
+
 lal (6.7.2-1) unstable; urgency=low
 
   * LAL 6.7.2

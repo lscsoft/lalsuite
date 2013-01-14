@@ -127,7 +127,10 @@ typedef struct tagMCMCParams{
 typedef struct tagPriorVals{
   CHAR *h0Prior, *phiPrior, *psiPrior, *iotaPrior; /* prior type e.g.
 "uniform", "jeffreys" or "gaussian" */
-
+  CHAR *priorFile; /* a file containing the h0xci prior distribution */
+  REAL8Vector *h0vals, *civals;
+  REAL8 **h0cipdf;
+  
   IntrinsicPulsarVariables vars;
 
   /* for gaussian prior pass in the mean and standard deviation */
@@ -143,7 +146,8 @@ typedef struct tagInputParams{
   CHAR pulsar[20];
   CHAR parFile[256];   /* pulsar parameter file */
   CHAR *matrixFile;    /* pulsar parameter covariance matrix file */
-
+  UINT4 usecov;        /* set whether or not to use a covariance matrix prior */
+  
   CHAR inputDir[256];
   CHAR outputDir[256];
 
@@ -170,6 +174,7 @@ typedef struct tagInputParams{
 
   CHAR earthfile[256];
   CHAR sunfile[256];
+  CHAR timefile[256];
 
   INT4 onlyjoint;
 
@@ -282,11 +287,13 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh);
 
 /* function to perform the MCMC parameter estimation */
 void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets, 
-  CHAR *det, LALDetector *detpos, EphemerisData *edat );
+  CHAR *det, LALDetector *detpos, EphemerisData *edat,
+  TimeCorrectionData *tdat, TimeCorrectionType ttype);
 
 /* function to get a vector of phases for all the points in data */
 REAL8Vector *get_phi(DataStructure data, BinaryPulsarParams params,
-  BarycenterInput bary, EphemerisData *edat );
+  BarycenterInput bary, EphemerisData *edat, TimeCorrectionData *tdat,
+  TimeCorrectionType ttype);
 
 /* function to get the lengths of consecutive chunks of data */
 void get_chunk_lengths(DataStructure data);

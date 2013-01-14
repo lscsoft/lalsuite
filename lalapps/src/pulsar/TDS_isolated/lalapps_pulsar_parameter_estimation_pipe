@@ -25,12 +25,11 @@ import tempfile
 import ConfigParser
 import exceptions
 
-# append the lalapps python path
-sys.path.append('/home/matthew/lscsoft/lib/python')
-
 # import the lalapps pipeline modules
 from glue import pipeline
-import pulsar_parameter_estimation
+import pulsar_parameter_estimation as ppe
+
+from lalapps import pulsarpputils as pppu
 
 # program usage
 def usage():
@@ -143,11 +142,11 @@ dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
 # create Condor Jobs that will be used in the dag
-parameter_job = pulsar_parameter_estimation.parameterJob(cp)
+parameter_job = ppe.parameterJob(cp)
 
 # create a parameter job that will be used if we have a covariance file
 if do_cov:
-  param_job_cov = pulsar_parameter_estimation.parameterJob(cp)
+  param_job_cov = ppe.parameterJob(cp)
 
 # set Condor .sub submit file name
 parameter_job.set_sub_file(basename + '.sub')
@@ -156,36 +155,128 @@ if do_cov:
   param_job_cov.set_sub_file(basename + '_cov.sub')
 
 # set values from config file
-pulsar_param_dir = cp.get('data','pulsar_param_dir')
-input_dir = cp.get('data','input_dir')
-
+try:
+  pulsar_param_dir = cp.get('data','pulsar_param_dir')
+except:
+  print >> sys.stderr, "Must have a pulsar_param_dir in [data] field!"
+  sys.exit(0)
+  
+try:
+  input_dir = cp.get('data','input_dir')
+except:
+  print >> sys.stderr, "Must have a input_dir in [data] field!"
+  sys.exit(0)
+  
 # actual info on the analysis
-detectors = cp.get('input','detectors')
-minh0 = cp.get('input','minh0')
-maxh0 = cp.get('input','maxh0')
-h0steps = cp.get('input','h0steps')
-phi0steps = cp.get('input','phi0steps')
-psisteps = cp.get('input','psisteps')
-cisteps = cp.get('input','cisteps')
+try:
+  detectors = cp.get('input','detectors')
+except:
+  print >> sys.stderr, "Must have a detectors in [input] field!"
+  sys.exit(0)
 
+try:
+  minh0 = cp.get('input','minh0')
+except:
+  minh0 = None
+
+try:
+  maxh0 = cp.get('input','maxh0')
+except:
+  maxh0 = None
+  
+try:
+  h0steps = cp.get('input','h0steps')
+except:
+  h0steps = None
+  
+try:
+  phi0steps = cp.get('input','phi0steps')
+except:
+  phi0steps = None
+  
+try:
+  psisteps = cp.get('input','psisteps')
+except:
+  psisteps = None
+  
+try:
+  cisteps = cp.get('input','cisteps')
+except:
+  cisteps = None
+  
 if do_ul:
-  dob_ul = cp.get('input','dob_ul')
-
+  try:
+    dob_ul = cp.get('input','dob_ul')
+  except:
+    dob_ul = None
+    
 # get prior values if given
 if do_priors:
-  h0pri = cp.get('priors','h0prior')
-  h0mean = cp.get('priors','h0mean')
-  h0sig = cp.get('priors','h0sig')
-  phipri = cp.get('priors','phiprior')
-  phimean = cp.get('priors','phimean')
-  phisig = cp.get('priors','phisig')
-  psipri = cp.get('priors','psiprior')
-  psimean = cp.get('priors','psimean')
-  psisig = cp.get('priors','psisig')
-  iotapri = cp.get('priors','iotaprior')
-  iotamean = cp.get('priors','iotamean')
-  iotasig = cp.get('priors','iotasig')
+  try:
+    h0priordir = cp.get('priors', 'priordir')
+  except:
+    h0priordir = None
 
+  try:
+    h0pri = cp.get('priors','h0prior')
+  except:
+    h0pri = []
+  
+  try:
+    h0mean = cp.get('priors','h0mean')
+  except:
+    h0mean = None
+    
+  try:  
+    h0sig = cp.get('priors','h0sig')
+  except:
+    h0sig = None
+    
+  try:
+    phipri = cp.get('priors','phiprior')
+  except:
+    phipri = []
+    
+  try:
+    phimean = cp.get('priors','phimean')
+  except:
+    phimean = None
+  
+  try:
+    phisig = cp.get('priors','phisig')
+  except:
+    phisig = None
+  
+  try:
+    psipri = cp.get('priors','psiprior')
+  except:
+    psipri = []
+    
+  try:
+    psimean = cp.get('priors','psimean')
+  except:
+    psimean = None
+    
+  try:
+    psisig = cp.get('priors','psisig')
+  except:
+    psisig = None
+    
+  try:
+    iotapri = cp.get('priors','iotaprior')
+  except:
+    iotapri = []
+  
+  try:
+    iotamean = cp.get('priors','iotamean')
+  except:
+    iotamean = None
+  
+  try:
+    iotasig = cp.get('priors','iotasig')
+  except:
+    iotasig = None
+    
 output_dir = cp.get('output','output_path')
 
 # get the list of pulsar parameter files
@@ -194,47 +285,69 @@ param_files.sort() # sort the files into alphabetical order
 
 # check what the MCMC parameters are
 if do_mcmc:
-  iterations = cp.get('mcmc','iterations') # number of MCMC iterations
-  burnin = cp.get('mcmc','burn_in') # number of burn iterations for MCMC
-  temperature = cp.get('mcmc','temperature') # temperature of burn in  
-  outputrate = cp.get('mcmc','output_rate') # output rate of MCMC chain
-
-  h0width = cp.get('mcmc','h0_width') # width of h0 proposal
-  phiwidth = cp.get('mcmc','phi_width') # width of phi0 proposal
-  psiwidth = cp.get('mcmc','psi_width') # width of psi proposal
-  ciwidth = cp.get('mcmc','ci_width') # width of cos(iota) proposal
-
-  # test if variables defined
   try:
-    h0width
-  except NameError:
+    iterations = cp.get('mcmc','iterations') # number of MCMC iterations
+  except:
+    iterations = None
+  
+  try:
+    burnin = cp.get('mcmc','burn_in') # number of burn iterations for MCMC
+  except:
+    burnin = None
+  
+  try:
+    temperature = cp.get('mcmc','temperature') # temperature of burn in  
+  except:
+    temperature = None
+  
+  try:
+    outputrate = cp.get('mcmc','output_rate') # output rate of MCMC chain
+  except:
+    outputrate = None
+  
+  try:
+    h0width = cp.get('mcmc','h0_width') # width of h0 proposal
+  except:
     h0width = None
-
+  
   try:
-    phiwidth
-  except NameError:
+    phiwidth = cp.get('mcmc','phi_width') # width of phi0 proposal
+  except:
     phiwidth = None
-
-  try:
-    psiwidth
-  except NameError:
+    
+  try:    
+    psiwidth = cp.get('mcmc','psi_width') # width of psi proposal
+  except:
     psiwidth = None
-
+  
   try:
-    ciwidth
-  except NameError:
+    ciwidth = cp.get('mcmc','ci_width') # width of cos(iota) proposal
+  except:
     ciwidth = None
 
+  ephempath = None
   if do_cov:
-    covdir = cp.get('mcmc','cov_dir') # directory containing cov matrices  
-    earth = cp.get('mcmc','earth_ephem') # Earth ephemeris
-    sun = cp.get('mcmc','sun_ephem') # Sun ephemeris
+    try:
+      covdir = cp.get('mcmc','cov_dir') # directory containing cov matrices  
+    except:
+      covdir = None
+      cov_files = []
 
-    cov_files = os.listdir(covdir)
-    cov_files.sort()
+    try:
+      ephempath = cp.get('mcmc','ephem_path') # path to Earth and Sun ephemeris
+    except:
+      print >> sys.stderr, "Cannot find an ephemeris path value"
+      sys.exit(0)
 
-    if len(cov_files) > 0:
-      pulsarsCov = [] # initialise a list
+    if covdir:
+      cov_files = os.listdir(covdir)
+      cov_files.sort()
+    
+      if len(cov_files) > 0:
+        pulsarsCov = [] # initialise a list
+    
+    # list for pulsars with no cov file, but using variances from par file
+    pulsarsCov2 = []
 
 # find which detectors we have
 if 'H1' in detectors:
@@ -252,16 +365,34 @@ if 'V1' in detectors:
 input_files = os.listdir(input_dir_det)
 input_files.sort()
 
+# get the list of h0 prior files if set
+if do_priors and h0priordir:
+  try:
+    h0priorfiles = os.listdir(h0priordir)
+  except:
+    print >> sys.stderr, "Cannot list prior file directory %s" % h0priordir
+    sys.exit(0)
+    
+  # sort the files
+  h0priorfiles.sort()
+
 pulsars = [] # create list for parameter estimation nodes
 
 i = 0
 j = 0
 count1 = 0
 count2 = 0
+count3 = 0
 while i < len(param_files):
   if ".par" in param_files[i]:
-    pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from
     param_file = pulsar_param_dir + '/' + param_files[i]
+
+    # set pulsar name from PSRJ name in the par file
+    try:
+      par = pppu.psr_par(param_file)
+      pulsar = par['PSRJ']
+    except:
+      print >> sys.stderr, "Could not read PSRJ from %s" % param_file
 
     # find whether an input file exists for that pulsar
     k=0
@@ -279,28 +410,77 @@ while i < len(param_files):
       i = i+1
       continue 
 
+    # find if there is a h0 prior file for this pulsar
+    if do_priors:
+      if h0priordir:
+        h0priorfile = None
+      
+        for f in h0priorfiles:
+          if pulsar in f:
+            h0priorfile = h0priordir+'/'+f
+            break
+            
+      if h0priorfile == None:
+        h0priorfile = 'None' # just set the file name to None
+    
+    units = None
+    ephem = None
+    
     if do_mcmc:
+      ephem = par['EPHEM']
+      units = par['UNITS']
+      
+      if ephempath:
+        if ephem is None:
+          ephem = 'DE405' # default to DE405
+              
+        if 'DE200' in ephem:
+          eephem = ephempath + '/earth00-19-DE200.dat.gz'
+          sephem = ephempath + '/sun00-19-DE200.dat.gz'
+        elif 'DE405' in ephem:
+          eephem = ephempath + '/earth00-19-DE405.dat.gz'
+          sephem = ephempath + '/sun00-19-DE405.dat.gz'
+        elif 'DE414' in ephem:
+          eephem = ephempath + '/earth00-19-DE414.dat.gz'
+          sephem = ephempath + '/sun00-19-DE414.dat.gz'
+                
+        if units is None:
+          units = []
+    
+        # check time correction file to use
+        if 'TDB' in units:
+          tephem = ephempath + '/tdb_2000-2019.dat.gz'
+        else:
+          tephem = ephempath + '/te405_2000-2019.dat.gz'
+      
       # if there is a covariance matrix set this
       m=0
       if do_cov:
-        while m < len(cov_files):
-          if ".mat" in cov_files[m]:
-            p = 'J' + re.sub(r'\.mat',r'',cov_files[m])
+        cov_file = None
 
+        for f in cov_files:
+          if ".mat" in f:
+            p = 'J' + re.sub(r'\.mat',r'',f)
+            
             if pulsar == p:
               # add parameterNode for covariance job
-              pulsarsCov.append(pulsar_parameter_estimation.parameterNode(param_job_cov))
-              cov_file = covdir + '/' + cov_files[m]
+              pulsarsCov.append(ppe.parameterNode(param_job_cov))
+              cov_file = covdir + '/' + f
               pulsarsCov[count2].set_covfile(cov_file)
-
-              pulsarsCov[count2].set_earth(earth)
-              pulsarsCov[count2].set_sun(sun)
-
+              
+              pulsarsCov[count2].set_earth(eephem)
+              pulsarsCov[count2].set_sun(sephem)
+              pulsarsCov[count2].set_ephem_time(tephem)
+              
               pulsarsCov[count2].set_mcmc()
-              pulsarsCov[count2].set_iterations(iterations)
-              pulsarsCov[count2].set_burnin(burnin)
-              pulsarsCov[count2].set_temperature(temperature)
-              pulsarsCov[count2].set_outputrate(outputrate)
+              if iterations:
+                pulsarsCov[count2].set_iterations(iterations)
+              if burnin:
+                pulsarsCov[count2].set_burnin(burnin)
+              if temperature:
+                pulsarsCov[count2].set_temperature(temperature)
+              if outputrate:
+                pulsarsCov[count2].set_outputrate(outputrate)
 
               pulsarsCov[count2].set_detectors(detectors)
               pulsarsCov[count2].set_param_file(param_file)
@@ -313,8 +493,10 @@ while i < len(param_files):
 
               if do_priors:
                 pulsarsCov[count2].set_usepriors()
-
-                if "uniform" in h0pri or "jeffreys" in h0pri:
+                
+                if h0priordir and h0priorfile:
+                  pulsarsCov[count2].set_priorfile(h0priorfile)
+                elif "uniform" in h0pri or "jeffreys" in h0pri:
                   pulsarsCov[count2].set_h0prior(h0pri)
 
                 if "gaussian" in h0pri:
@@ -365,89 +547,105 @@ while i < len(param_files):
               count2 = count2 + 1
               break;
 
-            # if no covariance file has been found do 4 param MCMC
-            if m == len(cov_files) - 1:
-              pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
+        # if no covariance file just use uncorrelated uncertainties from the par file
+        if cov_file == None:
+          pulsarsCov2.append(ppe.parameterNode(parameter_job))
 
-              if do_only:
-                pulsars[count1].set_onlyjoint()
+          if do_only:
+            pulsarsCov2[count3].set_onlyjoint()
 
-              pulsars[count1].set_mcmc()
-              pulsars[count1].set_iterations(iterations)
-              pulsars[count1].set_burnin(burnin)
-              pulsars[count1].set_temperature(temperature)
-              pulsars[count1].set_outputrate(outputrate)
+          pulsarsCov2[count3].set_mcmc()
+          if iterations:
+            pulsarsCov2[count3].set_iterations(iterations)
+          if burnin:
+            pulsarsCov2[count3].set_burnin(burnin)
+          if temperature:
+            pulsarsCov2[count3].set_temperature(temperature)
+          if outputrate:
+            pulsarsCov2[count3].set_outputrate(outputrate)
 
-              pulsars[count1].set_detectors(detectors)
-              pulsars[count1].set_param_file(param_file)
-              pulsars[count1].set_pulsar(pulsar)
-              pulsars[count1].set_input_dir(input_dir)
-              pulsars[count1].set_output_dir(output_dir)
+          pulsarsCov2[count3].set_detectors(detectors)
+          pulsarsCov2[count3].set_param_file(param_file)
+          pulsarsCov2[count3].set_pulsar(pulsar)
+          pulsarsCov2[count3].set_input_dir(input_dir)
+          pulsarsCov2[count3].set_output_dir(output_dir)
 
-              # set priors
-              if do_priors:
-                pulsars[count1].set_usepriors()
+          if ephempath:
+            pulsarsCov2[count3].set_earth(eephem)
+            pulsarsCov2[count3].set_sun(sephem)
+            pulsarsCov2[count3].set_ephem_time(tephem)
 
-                if "uniform" in h0pri or "jeffreys" in h0pri:
-                  pulsars[count1].set_h0prior(h0pri)
+          # set priors
+          if do_priors:
+            pulsarsCov2[count3].set_usepriors()
 
-                if "gaussian" in h0pri:
-                  pulsars[count1].set_h0prior(h0pri)
-                  pulsars[count1].set_h0mean(h0mean)
-                  pulsars[count1].set_h0sig(h0sig)
+            if h0priordir and h0priorfile:
+              pulsarsCov2[count3].set_priorfile(h0priorfile)
+            elif "uniform" in h0pri or "jeffreys" in h0pri:
+              pulsarsCov2[count3].set_h0prior(h0pri)
 
-                if "uniform" in phipri:
-                  pulsars[count1].set_phiprior(phipri)
+            if "gaussian" in h0pri:
+              pulsarsCov2[count3].set_h0prior(h0pri)
+              pulsarsCov2[count3].set_h0mean(h0mean)
+              pulsarsCov2[count3].set_h0sig(h0sig)
 
-                if "gaussian" in phipri:
-                  pulsars[count1].set_phiprior(phipri)
-                  pulsars[count1].set_phimean(phimean)
-                  pulsars[count1].set_phisig(phisig)
+            if "uniform" in phipri:
+              pulsarsCov2[count3].set_phiprior(phipri)
 
-                if "uniform" in psipri:
-                  pulsars[count1].set_psiprior(psipri)
+            if "gaussian" in phipri:
+              pulsarsCov2[count3].set_phiprior(phipri)
+              pulsarsCov2[count3].set_phimean(phimean)
+              pulsarsCov2[count3].set_phisig(phisig)
 
-                if "gaussian" in psipri:
-                  pulsars[count1].set_psiprior(psipri)
-                  pulsars[count1].set_psimean(psimean)
-                  pulsars[count1].set_psisig(psisig)
+            if "uniform" in psipri:
+              pulsarsCov2[count3].set_psiprior(psipri)
 
-                if "uniform" in iotapri:
-                  pulsars[count1].set_iotaprior(iotapri)
+            if "gaussian" in psipri:
+              pulsarsCov2[count3].set_psiprior(psipri)
+              pulsarsCov2[count3].set_psimean(psimean)
+              pulsarsCov2[count3].set_psisig(psisig)
 
-                if "gaussian" in iotapri:
-                  pulsars[count1].set_iotaprior(iotapri)
-                  pulsars[count1].set_iotamean(iotamean)
-                  pulsars[count1].set_iotasig(iotasig)
+            if "uniform" in iotapri:
+              pulsarsCov2[count3].set_iotaprior(iotapri)
 
-              if h0width:
-                pulsars[count1].set_h0width(h0width)
+            if "gaussian" in iotapri:
+              pulsarsCov2[count3].set_iotaprior(iotapri)
+              pulsarsCov2[count3].set_iotamean(iotamean)
+              pulsarsCov2[count3].set_iotasig(iotasig)
+ 
+          if h0width:
+            pulsarsCov2[count3].set_h0width(h0width)
 
-              if phiwidth:
-                pulsars[count1].set_phiwidth(phiwidth)
+          if phiwidth:
+            pulsarsCov2[count3].set_phiwidth(phiwidth)
 
-              if psiwidth:
-                pulsars[count1].set_psiwidth(psiwidth)
+          if psiwidth:
+            pulsarsCov2[count3].set_psiwidth(psiwidth)
 
-              if ciwidth:
-                pulsars[count1].set_ciwidth(ciwidth)
+          if ciwidth:
+            pulsarsCov2[count3].set_ciwidth(ciwidth)
 
-              dag.add_node(pulsars[count1])
-              count1 = count1 + 1
-              break
-          m = m + 1
+          # use cov
+          pulsarsCov2[count3].set_usecov()
+                
+          dag.add_node(pulsarsCov2[count3])
+          count3 = count3 + 1
 
       else:
-        pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
+        pulsars.append(ppe.parameterNode(parameter_job))
 
         if do_only:
           pulsars[count1].set_onlyjoint()
 
         pulsars[count1].set_mcmc()
-        pulsars[count1].set_iterations(iterations)
-        pulsars[count1].set_burnin(burnin)
-        pulsars[count1].set_temperature(temperature)
-        pulsars[count1].set_outputrate(outputrate)
+        if iterations:
+          pulsars[count1].set_iterations(iterations)
+        if burnin:
+          pulsars[count1].set_burnin(burnin)
+        if temperature:
+          pulsars[count1].set_temperature(temperature)
+        if outputrate:
+          pulsars[count1].set_outputrate(outputrate)
 
         pulsars[count1].set_detectors(detectors)
         pulsars[count1].set_param_file(param_file)
@@ -458,8 +656,10 @@ while i < len(param_files):
         # set priors
         if do_priors:
           pulsars[count1].set_usepriors()
-
-          if "uniform" in h0pri or "jeffreys" in h0pri:
+          
+          if h0priordir and h0priorfile:
+            pulsars[count1].set_priorfile(h0priorfile)
+          elif "uniform" in h0pri or "jeffreys" in h0pri:
             pulsars[count1].set_h0prior(h0pri)
 
           if "gaussian" in h0pri:
@@ -507,31 +707,33 @@ while i < len(param_files):
         count1 = count1 + 1
 
     else: # add a regular job
-      pulsars.append(pulsar_parameter_estimation.parameterNode(parameter_job))
+      pulsars.append(ppe.parameterNode(parameter_job))
 
       pulsars[j].set_detectors(detectors)
       pulsars[j].set_param_file(param_file)
       pulsars[j].set_pulsar(pulsar)
       pulsars[j].set_input_dir(input_dir)
       pulsars[j].set_output_dir(output_dir)
-      if len(maxh0) > 0: 
+      if maxh0: 
         pulsars[j].set_maxh0(maxh0)
-      if len(minh0) > 0:
+      if minh0:
         pulsars[j].set_minh0(minh0)
-      if len(h0steps) > 0:
+      if h0steps:
         pulsars[j].set_h0steps(h0steps)
-      if len(phi0steps) > 0:
+      if phi0steps:
         pulsars[j].set_phi0steps(phi0steps)
-      if len(cisteps) > 0:
+      if cisteps:
         pulsars[j].set_cisteps(cisteps)
-      if len(psisteps) > 0:
+      if psisteps:
         pulsars[j].set_psisteps(psisteps)
 
       # set priors
       if do_priors:
         pulsars[j].set_usepriors()
 
-        if "uniform" in h0pri or "jeffreys" in h0pri:
+        if h0priordir and h0priorfile:
+          pulsars[j].set_h0priorfile(h0priorfile)
+        elif "uniform" in h0pri or "jeffreys" in h0pri:
           pulsars[j].set_h0prior(h0pri)
 
         if "gaussian" in h0pri:

@@ -3,7 +3,7 @@ import os
 
 from distutils.core import setup
 
-version = "1.3"
+version = "1.8"
 
 setup(
   name = "ligo-gracedb",
@@ -16,9 +16,10 @@ setup(
   url = "http://www.lsc-group.phys.uwm.edu/daswg/gracedb.html",
   license = 'GPL',
   provides = ['ligo.gracedb'],
-  packages = [ 'ligo.gracedb'],
+  packages = [ 'ligo.gracedb', 'ligo.gracedb.test'],
+  package_data = { 'ligo.gracedb.test' : ['data/*', 'test.sh'] },
 
-  requires = ['ligo', 'M2Crypto', 'cjson'],
+  requires = ['ligo', 'M2Crypto'],
 
   scripts = [
     os.path.join('bin','gracedb'),

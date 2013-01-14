@@ -24,7 +24,7 @@ libtool
 src/LALMetaIOConfig.h
 src/LALMetaIOVCSInfo.h
 src/git_version
-src/lalmetaio-user-env.shell
 src/lalmetaio-user-env.csh
 src/lalmetaio-user-env.sh
+src/lalmetaio-user-env.shell
 src/stamp-h2

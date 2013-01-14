@@ -26,8 +26,13 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
+/**
+   \defgroup LowLatencyData_h Header LowLatencyData.h
+   \ingroup pkg_framedata
+*/
+/*@{*/
 
-/* Structure representing reader's state and resources for monitoring /dev/shm. */
+/** Structure representing reader's state and resources for monitoring /dev/shm. */
 struct tagLowLatencyData;
 typedef struct tagLowLatencyData LowLatencyData;
 
@@ -60,6 +65,7 @@ void XLALLowLatencyDataClose(LowLatencyData *);
  */
 void *XLALLowLatencyDataNextBuffer(LowLatencyData *, size_t *size);
 
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

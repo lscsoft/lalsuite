@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.23"
+version "1.1.24_1"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -8,32 +8,33 @@ option "config"   - "Configuration file in gengetopt format for passing paramete
 option "laldebug" d "LAL debug level" int default="0" optional
 
 section "Observational parameters"
-option "Tobs"  - "Total observation time (in seconds)" double optional
-option "Tcoh"  - "SFT coherence time (in seconds)" double optional
-option "SFToverlap"    - "SFT overlap (in seconds), usually Tcoh/2" double optional
-option "t0"    - "Start time of the search (in GPS seconds)" double optional
-option "fmin"  - "Minimum frequency of band (Hz)" double optional
-option "fspan" - "Frequency span of band (Hz)" double optional
-option "IFO"   - "Interferometer of whose data is being analyzed" string typestr="IFO code" values="H1","L1","V1" optional multiple(1)
-option "avesqrtSh"     - "Expected average of square root of Sh" double optional
+option "Tobs"  - "Total observation time (in seconds)" double required
+option "Tcoh"  - "SFT coherence time (in seconds)" double required
+option "SFToverlap"    - "SFT overlap (in seconds), usually Tcoh/2" double required
+option "t0"    - "Start time of the search (in GPS seconds)" double required
+option "fmin"  - "Minimum frequency of band (Hz)" double required
+option "fspan" - "Frequency span of band (Hz)" double required
+option "IFO"   - "Interferometer of whose data is being analyzed" string typestr="IFO code" values="H1","L1","V1" required multiple(1)
+option "avesqrtSh"     - "Expected average of square root of Sh" double required
 option "blksize"       - "Blocksize for running median to determine expected noise of input SFTs" int default="101" optional
-option "sftType"  - "SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization" string values="MFD","vladimir" default="vladimir" optional
+option "sftType"  - "SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt)" string values="standard","vladimir" default="standard" optional
 
 section "Input/ouput parameters"
 option "outdirectory"   - "Output directory" string typestr="directory" default="output" optional
 option "outfilename"    - "Output file name" string typestr="filename" default="logfile.txt" optional
+option "configCopy"     - "Copy of the configuration file whose output is gengetopt format" string typestr="filename" default="input_values.conf" optional
 option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
 option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
-option "sftDir"         - "Directory containing SFTs" string typestr="directory" default="./" optional
-option "sftFile"        - "Path and filename of SFTs" string typestr="path/filename" default="*.sft" optional
-option "ephemDir"       - "Path to ephemeris files" string typestr="directory" optional
-option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string optional
+option "sftDir"         - "Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified)" string typestr="directory" optional
+option "sftFile"        - "Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified)" string typestr="path/filename" optional
+option "ephemDir"       - "Path to ephemeris files, e.g. /path/to/ephemeris/files" string typestr="directory" required
+option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string required
 
 section "TwoSpect search parameters"
-option "Pmin"  - "Minimum period to be searched (in seconds)" double optional
-option "Pmax"  - "Maximum period to be searched (in seconds)" double optional
-option "dfmin" - "Minimum modulation depth to search (Hz)" double optional
-option "dfmax" - "Maximum modulation depth to search (Hz)" double optional
+option "Pmin"  - "Minimum period to be searched (in seconds)" double required
+option "Pmax"  - "Maximum period to be searched (in seconds)" double required
+option "dfmin" - "Minimum modulation depth to search (Hz)" double required
+option "dfmax" - "Maximum modulation depth to search (Hz)" double required
 option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string optional
 option "skyRegionFile"  - "File with the grid points" string typestr="filename" optional
 option "linPolAngle"    - "Polarization angle to search using linear polarization (when unspecified default is circular polarization" double optional
@@ -46,8 +47,8 @@ option "ihsfom"    - "IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2" double optional
 option "ihsfomfar" - "IHS FOM FAR threshold" double optional
 option "keepOnlyTopNumIHS"    - "Keep the top <number> of IHS candidates based on significance" int optional
 option "tmplfar"  - "Template FAR threshold" double optional
-option "minTemplateLength" - "Maximum number of pixels to use in the template" int default="50" optional
-option "maxTemplateLength" - "Maximum number of pixels to use in the template" int default="50" optional
+option "minTemplateLength" - "Maximum number of pixels to use in the template" int default="1" optional
+option "maxTemplateLength" - "Maximum number of pixels to use in the template" int default="1000" optional
 
 section "TwoSpect upper limit ranges"
 option "ULfmin"   - "Minimum signal frequency considered for the upper limit value (Hz)" double optional
@@ -68,6 +69,8 @@ option "useSSE"         - "Use SSE functions (caution: user needs to have compil
 option "followUpOutsideULrange"  - "Follow up outliers outside the range of the UL values" flag off
 
 section "Hidden options"
+option "signalOnly"    - "SFTs contain only signal, no noise" flag off hidden
+option "ULsolver" - "Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver" int values="0","1","2","3","4","5" default="0" optional hidden
 option "dopplerMultiplier" - "Multiplier for the Doppler velocity" double default="1.0" optional hidden
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
 option "noNotchHarmonics"  - "Do not notch the daily/sidereal harmonics in the IHS step." flag off hidden

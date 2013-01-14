@@ -25,26 +25,26 @@
 #include <lal/LALPulsarVCSInfo.h>
 
 /* global variables for vcs information */
-const char *lalPulsarVCSVersion = LALPULSAR_VERSION;
-const char *lalPulsarVCSId = LALPULSAR_VCS_ID;
-const char *lalPulsarVCSDate = LALPULSAR_VCS_DATE;
-const char *lalPulsarVCSBranch = LALPULSAR_VCS_BRANCH;
-const char *lalPulsarVCSTag = LALPULSAR_VCS_TAG;
-const char *lalPulsarVCSAuthor = LALPULSAR_VCS_AUTHOR;
-const char *lalPulsarVCSCommitter = LALPULSAR_VCS_COMMITTER;
-const char *lalPulsarVCSStatus = LALPULSAR_VCS_STATUS;
+const char *const lalPulsarVCSVersion = LALPULSAR_VERSION;
+const char *const lalPulsarVCSId = LALPULSAR_VCS_ID;
+const char *const lalPulsarVCSDate = LALPULSAR_VCS_DATE;
+const char *const lalPulsarVCSBranch = LALPULSAR_VCS_BRANCH;
+const char *const lalPulsarVCSTag = LALPULSAR_VCS_TAG;
+const char *const lalPulsarVCSAuthor = LALPULSAR_VCS_AUTHOR;
+const char *const lalPulsarVCSCommitter = LALPULSAR_VCS_COMMITTER;
+const char *const lalPulsarVCSStatus = LALPULSAR_VCS_STATUS;
 
 /* global variables for vcs information - identable */
-const char *lalPulsarVCSIdentId = LALPULSAR_VCS_IDENT_ID;
-const char *lalPulsarVCSIdentDate = LALPULSAR_VCS_IDENT_DATE;
-const char *lalPulsarVCSIdentBranch = LALPULSAR_VCS_IDENT_BRANCH;
-const char *lalPulsarVCSIdentTag = LALPULSAR_VCS_IDENT_TAG;
-const char *lalPulsarVCSIdentAuthor = LALPULSAR_VCS_IDENT_AUTHOR;
-const char *lalPulsarVCSIdentCommitter = LALPULSAR_VCS_IDENT_COMMITTER;
-const char *lalPulsarVCSIdentStatus = LALPULSAR_VCS_IDENT_STATUS;
+const char *const lalPulsarVCSIdentId = LALPULSAR_VCS_IDENT_ID;
+const char *const lalPulsarVCSIdentDate = LALPULSAR_VCS_IDENT_DATE;
+const char *const lalPulsarVCSIdentBranch = LALPULSAR_VCS_IDENT_BRANCH;
+const char *const lalPulsarVCSIdentTag = LALPULSAR_VCS_IDENT_TAG;
+const char *const lalPulsarVCSIdentAuthor = LALPULSAR_VCS_IDENT_AUTHOR;
+const char *const lalPulsarVCSIdentCommitter = LALPULSAR_VCS_IDENT_COMMITTER;
+const char *const lalPulsarVCSIdentStatus = LALPULSAR_VCS_IDENT_STATUS;
 
 /* vcs information structure */
-struct tagLALVCSInfo lalPulsarVCSInfo = { \
+const struct tagLALVCSInfo lalPulsarVCSInfo = { \
   LALPULSAR_VCS_NAME, \
   LALPULSAR_VERSION, \
   LALPULSAR_VCS_ID, \

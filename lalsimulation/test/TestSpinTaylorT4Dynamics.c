@@ -62,11 +62,8 @@ int main (int argc , char **argv)
     REAL8 inclination = 1.;
     REAL8 lambda1 = 500.;
     REAL8 lambda2 = 500.;
-    LALSimInspiralInteraction interactionFlags = 
-            LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN 
-            | LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN 
-            | LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN 
-            | LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN;
+    LALSimInspiralSpinOrder spinO = -1; // All spin effects
+    LALSimInspiralTidalOrder tideO = -1; // All tidal effects
     REAL8 deltaT = 1. / 16384.;
     REAL8 fStart = 40.;
     REAL8 fEnd = 0.;
@@ -86,7 +83,7 @@ int main (int argc , char **argv)
             &S1z, &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
             deltaT, m1, m2, fStart, fEnd, s1x, s1y, s1z, s2x, s2y,
             s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, 
-            lambda1, lambda2, interactionFlags, phaseO);
+            lambda1, lambda2, spinO, tideO, phaseO);
 
     len = V->data->length;
 

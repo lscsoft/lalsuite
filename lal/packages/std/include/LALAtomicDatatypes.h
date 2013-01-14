@@ -22,18 +22,6 @@
 #ifndef _LALATOMICDATATYPES_H
 #define _LALATOMICDATATYPES_H
 
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/** \addtogroup LALDatatypes */ /*@{*/
-
-typedef char CHAR;		/**< One-byte signed integer, see \ref LALDatatypes for more details */
-typedef unsigned char UCHAR;	/**< One-byte unsigned integer, see \ref LALDatatypes for more details */
-typedef unsigned char BOOLEAN;	/**< Boolean logical type, see \ref LALDatatypes for more details */
-
 #include <stdint.h>
 
 #ifndef LAL_USE_OLD_COMPLEX_STRUCTS
@@ -45,6 +33,18 @@ typedef unsigned char BOOLEAN;	/**< Boolean logical type, see \ref LALDatatypes 
 #endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
 
 #include <lal/LALConfig.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
+/** \addtogroup LALDatatypes */ /*@{*/
+
+typedef char CHAR;		/**< One-byte signed integer, see \ref LALDatatypes for more details */
+typedef unsigned char UCHAR;	/**< One-byte unsigned integer, see \ref LALDatatypes for more details */
+typedef unsigned char BOOLEAN;	/**< Boolean logical type, see \ref LALDatatypes for more details */
 
 /* If INT8 etc. are already defined, undefine them */
 #undef CHAR

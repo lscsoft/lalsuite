@@ -1,36 +1,20 @@
-## Process this file with automake to produce Makefile.in
-#
-#
-check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay \
-                 TestGPStoUTC TestUTCtoGPS TestGPStoGMST1 TestLeapSecs \
-		 TestGPStoFloat TestIncrementGPS TestStrToGPS
-TestJulianDay_SOURCES = TestJulianDay.c
-TestJulianDay_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TestLMST_SOURCES = TestLMST.c
-TestLMST_LDADD = $(top_builddir)/lib/liblal.la
-TestLMST2_SOURCES = TestLMST2.c
-TestLMST2_LDADD = $(top_builddir)/lib/liblal.la
-TestDelay_SOURCES = TestDelay.c
-TestDelay_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TestGPStoUTC_SOURCES = TestGPStoUTC.c
-TestGPStoUTC_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TestUTCtoGPS_SOURCES = TestUTCtoGPS.c
-TestUTCtoGPS_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TestGPStoGMST1_SOURCES = TestGPStoGMST1.c
-TestGPStoGMST1_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TestLeapSecs_SOURCES = TestLeapSecs.c
-TestLeapSecs_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TestGPStoFloat_SOURCES = TestGPStoFloat.c
-TestGPStoFloat_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-#TestGPStoMST_SOURCES = TestGPStoMST.c
-#TestGPStoMST_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TestIncrementGPS_SOURCES = TestIncrementGPS.c
-TestIncrementGPS_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-TestStrToGPS_SOURCES = TestStrToGPS.c
-TestStrToGPS_LDADD = $(top_builddir)/lib/liblal.la
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../src
-TESTS = TestJulianDay TestLMST TestDelay TestGPStoUTC \
-        TestUTCtoGPS TestLeapSecs TestGPStoFloat TestIncrementGPS TestStrToGPS
-TESTS_ENVIRONMENT = 1>/dev/null
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../src
+LDADD = \
+	$(top_builddir)/lib/lal/liblal.la \
+	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
+
+check_PROGRAMS = \
+	TestJulianDay\
+	TestLMST \
+	TestLMST2 \
+	TestDelay \
+	TestGPStoUTC \
+	TestUTCtoGPS \
+	TestGPStoGMST1 \
+	TestLeapSecs \
+	TestGPStoFloat \
+	TestIncrementGPS \
+	TestStrToGPS
+
+TESTS = \
+	$(check_PROGRAMS)

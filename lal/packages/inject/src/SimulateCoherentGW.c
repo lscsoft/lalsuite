@@ -133,8 +133,8 @@ is found by interpolating <tt>detector-\>transfer</tt>.  The amplitude of
 the transfer function is multiplied with \f$A_1\f$ and \f$A_2\f$, and the
 phase of the transfer function is added to \f$\phi\f$,</li>
 <li> The plus and cross contributions \f$o_+\f$, \f$o_\times\f$ to the
-detector output are computed as in Eqs.\eqref{eq_quasiperiodic_hplus}
-and \eqref{eq_quasiperiodic_hcross} of \ref SimulateCoherentGW_h, but
+detector output are computed as in Eqs.\eqref{eq_quasiperiodic_hpluscross}
+of \ref SimulateCoherentGW_h, but
 using the response-adjusted amplitudes and phase.</li>
 <li> The final detector response \f$o\f$ is computed as
 \f$o=(o_+F_+)+(o_\times F_\times)\f$.</li>
@@ -168,7 +168,7 @@ A(t_k) = f \times A_{j+1} + (1-f) \times A_j \; .
 
 The major computational hit in this routine comes from computing the
 sine and cosine of the phase angle in
-Eqs.\eqref{eq_quasiperiodic_hplus} and \eqref{eq_quasiperiodic_hcross} of
+Eqs.\eqref{eq_quasiperiodic_hpluscross} of
 \ref SimulateCoherentGW_h.  For better online performance, these can
 be replaced by other (approximate) trig functions.  Presently the code
 uses the native \c libm functions by default, or the function
@@ -741,7 +741,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     if ( n > j )
       n = j;
     while ( ( n >= 0 ) &&
-	    ( aOff + TCENTRE( n )*aDt >= nMax ) )
+	    ( (INT4)floor(aOff + TCENTRE( n )*aDt) > nMax ) )
       n--;
   }
   nMax = CWsignal->phi->data->length - 1;
@@ -750,7 +750,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     if ( n > j )
       n = j;
     while ( ( n >= 0 ) &&
-	    ( phiOff + TCENTRE( n )*phiDt >= nMax ) )
+	    ( (INT4)floor(phiOff + TCENTRE( n )*phiDt) > nMax ) )
       n--;
   }
   if ( n < 0 ) {
@@ -758,7 +758,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 		" time series." );
     n = -1;
   }
-
+  
   /* Compute the values of i for which CWsignal->f is given. */
   if ( CWsignal->f ) {
     fInit = i;
@@ -777,7 +777,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
       if ( fFinal > j )
 	fFinal = j;
       while ( ( fFinal >= i ) &&
-	      ( fOff + TCENTRE( fFinal )*fDt >= nMax ) )
+	      ( (INT4)floor(fOff + TCENTRE( fFinal )*fDt) > nMax ) )
 	fFinal--;
     }
   } else {
@@ -803,7 +803,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
       if ( shiftFinal > j )
 	shiftFinal = j;
       while ( ( shiftFinal >= i ) &&
-	      ( shiftOff + TCENTRE( shiftFinal )*shiftDt >= nMax ) )
+	      ( (INT4)floor(shiftOff + TCENTRE( shiftFinal )*shiftDt) > nMax ) )
 	shiftFinal--;
     }
   } else {
@@ -843,9 +843,18 @@ LALSimulateCoherentGW( LALStatus        *stat,
     j = (INT4)floor( x );
     frac = (REAL8)( x - j );
     j *= 2;
-    a1 = frac*aData[j+2] + ( 1.0 - frac )*aData[j];
-    a2 = frac*aData[j+3] + ( 1.0 - frac )*aData[j+1];
-
+    
+    /* Handle special case where output lands on final sample - no interpolation */
+    if(i==n){
+      a1=aData[j];
+      a2=aData[j+1];
+    }
+    else
+    {
+      a1 = frac*aData[j+2] + ( 1.0 - frac )*aData[j];
+      a2 = frac*aData[j+3] + ( 1.0 - frac )*aData[j+1];
+    }
+    
     /* Interpolate the polarization shift. */
     if ( ( i < shiftInit ) || ( i > shiftFinal ) )
       shift = 0.0;
@@ -853,7 +862,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
       x = shiftOff + iCentre*shiftDt;
       j = (INT4)floor( x );
       frac = (REAL8)( x - j );
-      shift = frac*shiftData[j+1] + ( 1.0 - frac )*shiftData[j];
+      if(i==n) shift=shiftData[j];
+      else     shift = frac*shiftData[j+1] + ( 1.0 - frac )*shiftData[j];
     }
 
     /* Interpolate the signal phase, and apply any heterodyning. */
@@ -872,19 +882,27 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	x = fOff + iCentre*fDt;
 	j = (INT4)floor( x );
 	frac = (REAL8)( x - j );
-	f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
+	if(i==n) f=fData[j];
+	else     f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
 	f *= fFac;
       }
       x = f - f0;
-      if ( ( x < 0.0 ) || ( x >= nMax ) ) {
+      if ( ( x < 0.0 ) || ( x > nMax ) ) {
 	aTrans = 0.0;
 	phiTrans = 0.0;
 	fFlag = 1;
-      } else {
+      } else  {
 	j = (INT4)floor( x );
 	frac = (REAL8)( x - j );
-	aTrans = frac*aTransData[j+1] + ( 1.0 - frac )*aTransData[j];
-	phiTrans = frac*phiTransData[j+1] + ( 1.0 - frac )*phiTransData[j];
+	if(i==n)
+	{
+	  aTrans=aTransData[j];
+	  phiTrans=phiTransData[j];
+	} else
+	{
+	  aTrans = frac*aTransData[j+1] + ( 1.0 - frac )*aTransData[j];
+	  phiTrans = frac*phiTransData[j+1] + ( 1.0 - frac )*phiTransData[j];
+	}
       }
       a1 *= aTrans;
       a2 *= aTrans;
@@ -906,8 +924,15 @@ LALSimulateCoherentGW( LALStatus        *stat,
     x = polOff + i*polDt;
     j = (INT4)floor( x );
     frac = (REAL8)( x - j );
-    oPlus *= frac*plusData[j+1] + ( 1.0 - frac )*plusData[j];
-    oCross *= frac*crossData[j+1] + ( 1.0 - frac )*crossData[j];
+    if(i==n)
+    {
+      oPlus*=plusData[j];
+      oCross*=crossData[j];      
+    } else {
+      oPlus *= frac*plusData[j+1] + ( 1.0 - frac )*plusData[j];
+      oCross *= frac*crossData[j+1] + ( 1.0 - frac )*crossData[j];
+    }
+ 
     outData[i] = oPlus + oCross;
   }
 

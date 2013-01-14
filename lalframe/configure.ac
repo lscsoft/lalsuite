@@ -1,6 +1,6 @@
 AC_PREREQ([2.63])
-AC_INIT([lalframe],[1.0.6.1],[lal-discuss@gravity.phys.uwm.edu])
-AM_CONFIG_HEADER([include/config.h src/LALFrameConfig.h])
+AC_INIT([lalframe],[1.0.9.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_CONFIG_HEADERS([include/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -13,6 +13,8 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  python/Makefile \
+  python/__init__.py \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \
@@ -39,10 +41,13 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[4])
+AC_SUBST([LIBCURRENT],[5])
 AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
+
+# check for git repo
+LALSUITE_CHECK_GIT_REPO
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
@@ -58,6 +63,9 @@ LALSUITE_ENABLE_GCC_FLAGS
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
+
+# allow use of either FrameC or FrameL
+LALFRAME_WITH_FRAME_LIBRARY
 
 # put version/configure info in config header
 lalframe_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -94,9 +102,6 @@ LALSUITE_PROG_CC_CXX
 AX_PTHREAD([lalframe_pthread=true],[lalframe_pthread=false])
 AM_CONDITIONAL([PTHREAD],[test x$lalframe_pthread = xtrue])
 
-# ignore unused flags with clang/clang++
-AS_IF([test -n "$CLANG_CC"],[CFLAGS="-Qunused-arguments ${CFLAGS}"])
-
 # checks for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -124,18 +129,28 @@ AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
-# check for frame library
-PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
-CPPFLAGS="$CPPFLAGS $LIBFRAME_CFLAGS"
-LIBS="$LIBS $LIBFRAME_LIBS"
-AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
-
-# check for frame library headers
-AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
+# check for framec or libframe libraries and headers
+PKG_PROG_PKG_CONFIG
+AS_IF([test "${framec}" = "true"],[
+       PKG_CHECK_MODULES([FRAMEC],[framec >= 1.19.25],[true],[false])
+       CPPFLAGS="$CPPFLAGS $FRAMEC_CFLAGS"
+       LIBS="$LIBS $FRAMEC_LIBS"
+       AC_CHECK_LIB([FrameC],[FrameCFileOpen],,[AC_MSG_ERROR([could not find the framec library])])
+       AC_CHECK_HEADERS([framec/FrameC.h],,[AC_MSG_ERROR([could not find the FrameC.h header])])
+       AC_DEFINE([USE_FRAMEC],[],[Define to use FrameC])
+       FRAME_LIBRARY="FrameC"])
+AS_IF([test "${framel}" = "true"],[
+       PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
+       CPPFLAGS="$CPPFLAGS $LIBFRAME_CFLAGS"
+       LIBS="$LIBS $LIBFRAME_LIBS"
+       AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
+       AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
+       AC_DEFINE([USE_FRAMEL],[],[Define to use FrameL])
+       FRAME_LIBRARY="FrameL"])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.7.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.7.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[6.9.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.9.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # check for inotify
 if test "${inotify}" = "true"; then
@@ -150,14 +165,12 @@ LALSUITE_USE_SWIG([XLAL LAL])
 LALSUITE_SWIG_DEPENDS([lal],[true])
 
 # add gcc specific flags
-if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags"
+LALSUITE_ADD_GCC_FLAGS
 
-  # add mac os x specific flags
-  if test "x$MACOSX_VERSION" != "x"; then
-    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
-  fi
-fi
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
@@ -165,19 +178,25 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LALFrame has now been successfully configured:
 
-        LALFrame has now been successfully configured:
+* using the $FRAME_LIBRARY frame library
+* inotify support is $INOTIFY_ENABLE_VAL
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
-            inotify support is $INOTIFY_ENABLE_VAL
-            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+and will be installed under the directory:
 
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
+Now run 'make' to build LALFrame,
+and run 'make install' to install LALFrame.
+==================================================
+"
 
-        Now run 'make' to build LALFrame
-        and run 'make install' to install LALFrame
-
-================================================================="
+AS_IF([test "${FRAME_LIBRARY}" = "FrameC"],[
+       echo "
+WARNING: You have selected FrameC as the frame library, support for
+FrameC is _not_ complete and is under active development.
+"])

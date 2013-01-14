@@ -25,26 +25,26 @@
 #include <lal/LALInspiralVCSInfo.h>
 
 /* global variables for vcs information */
-const char *lalInspiralVCSVersion = LALINSPIRAL_VERSION;
-const char *lalInspiralVCSId = LALINSPIRAL_VCS_ID;
-const char *lalInspiralVCSDate = LALINSPIRAL_VCS_DATE;
-const char *lalInspiralVCSBranch = LALINSPIRAL_VCS_BRANCH;
-const char *lalInspiralVCSTag = LALINSPIRAL_VCS_TAG;
-const char *lalInspiralVCSAuthor = LALINSPIRAL_VCS_AUTHOR;
-const char *lalInspiralVCSCommitter = LALINSPIRAL_VCS_COMMITTER;
-const char *lalInspiralVCSStatus = LALINSPIRAL_VCS_STATUS;
+const char *const lalInspiralVCSVersion = LALINSPIRAL_VERSION;
+const char *const lalInspiralVCSId = LALINSPIRAL_VCS_ID;
+const char *const lalInspiralVCSDate = LALINSPIRAL_VCS_DATE;
+const char *const lalInspiralVCSBranch = LALINSPIRAL_VCS_BRANCH;
+const char *const lalInspiralVCSTag = LALINSPIRAL_VCS_TAG;
+const char *const lalInspiralVCSAuthor = LALINSPIRAL_VCS_AUTHOR;
+const char *const lalInspiralVCSCommitter = LALINSPIRAL_VCS_COMMITTER;
+const char *const lalInspiralVCSStatus = LALINSPIRAL_VCS_STATUS;
 
 /* global variables for vcs information - identable */
-const char *lalInspiralVCSIdentId = LALINSPIRAL_VCS_IDENT_ID;
-const char *lalInspiralVCSIdentDate = LALINSPIRAL_VCS_IDENT_DATE;
-const char *lalInspiralVCSIdentBranch = LALINSPIRAL_VCS_IDENT_BRANCH;
-const char *lalInspiralVCSIdentTag = LALINSPIRAL_VCS_IDENT_TAG;
-const char *lalInspiralVCSIdentAuthor = LALINSPIRAL_VCS_IDENT_AUTHOR;
-const char *lalInspiralVCSIdentCommitter = LALINSPIRAL_VCS_IDENT_COMMITTER;
-const char *lalInspiralVCSIdentStatus = LALINSPIRAL_VCS_IDENT_STATUS;
+const char *const lalInspiralVCSIdentId = LALINSPIRAL_VCS_IDENT_ID;
+const char *const lalInspiralVCSIdentDate = LALINSPIRAL_VCS_IDENT_DATE;
+const char *const lalInspiralVCSIdentBranch = LALINSPIRAL_VCS_IDENT_BRANCH;
+const char *const lalInspiralVCSIdentTag = LALINSPIRAL_VCS_IDENT_TAG;
+const char *const lalInspiralVCSIdentAuthor = LALINSPIRAL_VCS_IDENT_AUTHOR;
+const char *const lalInspiralVCSIdentCommitter = LALINSPIRAL_VCS_IDENT_COMMITTER;
+const char *const lalInspiralVCSIdentStatus = LALINSPIRAL_VCS_IDENT_STATUS;
 
 /* vcs information structure */
-struct tagLALVCSInfo lalInspiralVCSInfo = { \
+const struct tagLALVCSInfo lalInspiralVCSInfo = { \
   LALINSPIRAL_VCS_NAME, \
   LALINSPIRAL_VERSION, \
   LALINSPIRAL_VCS_ID, \

@@ -176,7 +176,7 @@ LALNormalizeSkyPosition (LALStatus *stat,		/**< pointer to LALStatus structure *
 
   tmp = *posIn;
 
-  XLALNormalizeSkyPosition ( &tmp );
+  XLALNormalizeSkyPosition ( &tmp.longitude, &tmp.latitude );
 
   *posOut = tmp;
 
@@ -189,63 +189,52 @@ LALNormalizeSkyPosition (LALStatus *stat,		/**< pointer to LALStatus structure *
  * \f$(\alpha,\delta)\in [0,2\pi]\times[-\pi/2, \pi/2]\f$, normalize it
  * by mapping it into this coordinate-interval.
  * Based on Alicia's function with some additional "unwinding" added.
- * return 0 = OK, -1 = ERROR
  */
-int
-XLALNormalizeSkyPosition ( SkyPosition *posInOut ) /**< [in,out] sky-position to normalize*/
+void
+XLALNormalizeSkyPosition ( double *restrict longitude,   /**< [in,out] sky-position longitude to normalize*/
+                           double *restrict latitude     /**< [in,out] sky-position latitude to normalize*/
+                           )
 {
-  SkyPosition tmp;
-
-  if ( !posInOut )
-    return -1;
-
-  tmp = *posInOut;
 
   /* FIRST STEP: completely "unwind" positions, i.e. make sure that
    * [0 <= alpha < 2pi] and [-pi < delta <= pi] */
   /* normalize longitude */
-  while (tmp.longitude < 0)
-    tmp.longitude += LAL_TWOPI;
-  while (tmp.longitude >= LAL_TWOPI)
-    tmp.longitude -= LAL_TWOPI;
+  *longitude -= floor(*longitude / LAL_TWOPI) * LAL_TWOPI;
 
   /* pre-normalize (unwind) latitude */
-  while (tmp.latitude <= -LAL_PI)
-    tmp.latitude += LAL_TWOPI;
-  while (tmp.latitude > LAL_TWOPI)
-    tmp.latitude -= LAL_TWOPI;
+  *latitude += LAL_PI;
+  *latitude -= floor(*latitude / LAL_TWOPI) * LAL_TWOPI;
+  *latitude -= LAL_PI;
 
   /* SECOND STEP: get latitude into canonical interval [-pi/2 <= delta <= pi/2 ] */
   /* this requires also a change in longitude by adding/subtracting PI */
-  if (tmp.latitude > LAL_PI_2)
+  if (*latitude > LAL_PI_2)
     {
-      tmp.latitude = LAL_PI - tmp.latitude;
-      if (tmp.longitude < LAL_PI)
+      *latitude = LAL_PI - *latitude;
+      if (*longitude < LAL_PI)
 	{
-	  tmp.longitude += LAL_PI;
+	  *longitude += LAL_PI;
 	}
       else
 	{
-	  tmp.longitude -= LAL_PI;
+	  *longitude -= LAL_PI;
 	}
     }
 
-  if (tmp.latitude < -LAL_PI_2)
+  if (*latitude < -LAL_PI_2)
     {
-      tmp.latitude = -LAL_PI - tmp.latitude;
-      if (tmp.longitude < LAL_PI)
+      *latitude = -LAL_PI - *latitude;
+      if (*longitude < LAL_PI)
 	{
-	  tmp.longitude += LAL_PI;
+	  *longitude += LAL_PI;
 	}
       else
 	{
-	  tmp.longitude -= LAL_PI;
+	  *longitude -= LAL_PI;
 	}
     }
 
-  *posInOut = tmp;
-
-  return 0;
+  return;
 
 } /* XLALNormalizeSkyPosition() */
 

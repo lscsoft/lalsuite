@@ -30,6 +30,16 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(FUNCTION_POINTER(XLALSimNoisePSDiLIGOSRD, XLALSimNoisePSDiLIGOModel,
+	XLALSimNoisePSDeLIGOModel, XLALSimNoisePSDVirgo, XLALSimNoisePSDGEO,
+	XLALSimNoisePSDTAMA, XLALSimNoisePSDaLIGONoSRMLowPower,
+	XLALSimNoisePSDaLIGONoSRMHighPower,
+	XLALSimNoisePSDaLIGOZeroDetLowPower,
+	XLALSimNoisePSDaLIGOZeroDetHighPower, XLALSimNoisePSDaLIGONSNSOpt,
+	XLALSimNoisePSDaLIGOBHBH20Deg, XLALSimNoisePSDaLIGOHighFrequency,
+	XLALSimNoisePSDKAGRA, XLALSimNoisePSDAdvVirgo));
+#endif
 
 /*
  *
@@ -460,6 +470,70 @@ int XLALSimNoisePSD(
 	double (*psdfunc)(double)	/**< function that provides the PSD at a specified frequency */
 );
 
+/**
+ * Reads file fname containing two-column amplitude spectral density data file
+ * and interpolates at the frequencies required to populate the frequency
+ * series psd, with a low frequency cutoff flow.
+ */
+int XLALSimNoisePSDFromFile(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow,			/**< low frequency cutoff (Hz) */
+	const char *fname		/**< file containing amplitude spectral density data */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "NO_SRM.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGONoSRMLowPowerGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "ZERO_DET_low_P.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGOZeroDetLowPowerGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "ZERO_DET_high_P.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGOZeroDetHighPowerGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "NSNS_Opt.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGONSNSOptGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "BBH_20deg.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGOBHBH20DegGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "High_Freq.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGOHighFrequencyGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
 
 /*
  *

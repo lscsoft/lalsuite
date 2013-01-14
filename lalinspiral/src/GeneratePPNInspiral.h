@@ -212,154 +212,79 @@ For the sake of LAL namespace conventions, these termination codes are
 #define GENERATEPPNINSPIRALH_MSGERTOOSMALL "Orbital radius too small for PN approximation"
 /** \endcond */
 
+/*
+ * FIXME: SWIG with -Werror won't let const CHAR *termDescription pass,
+ *        as it leaves a lot of potential for memory leaks. I choose to
+ *        make this an opaque struct.
+ */
+#ifndef SWIG
 /** This structure stores the parameters for constructing a restricted
-post-Newtonian waveform.  It is divided into three parts: parameters
-passed along to the output structure but not used by waveform
-generator, parameters used as input to the waveform generator, and
-parameters set by the generator to evaluate its success.
-
-<em>Passed fields:</em>
-<dl>
-<dt><tt>SkyPosition position</tt></dt><dd> The location of the source on the
-sky, normally in equatorial coordinates.</dd>
-
-<dt><tt>REAL4 psi</tt></dt><dd> The polarization angle of the source, in
-radians.</dd>
-
-<dt><tt>LIGOTimeGPS epoch</tt></dt><dd> The start time of the output series.</dd>
-</dl>
-
-<em>Input fields:</em>
-<dl>
-<dt><tt>REAL4 mTot</tt></dt><dd> The total mass \f$m_\mathrm{tot}=m_1+m_2\f$ of
-the binary system, in solar masses.</dd>
-
-<dt><tt>REAL4 eta</tt></dt><dd> The mass ratio
-\f$\eta=m_1m_2/m_\mathrm{tot}^2\f$ of the binary system.  Physically this
-parameter must lie in the range \f$\eta\in(0,1/4]\f$; values outside of
-this range may be permitted in order to represent "nonphysical"
-post-Newtonian expansions.</dd>
-
-<dt><tt>REAL4 d</tt></dt><dd> The distance to the system, in metres.</dd>
-
-<dt><tt>REAL4 inc</tt></dt><dd> The inclination of the system to the line of
-sight, in radians.</dd>
-
-<dt><tt>REAL4 phi</tt></dt><dd> The phase at coalescence \f$\phi_c\f$ (or
-arbitrary reference phase for a post\f${}^{5/2}\f$-Newtonian
-approximation), in radians.</dd>
-
-<dt><tt>REAL8 deltaT</tt></dt><dd> The requested sampling interval of the
-waveform, in s.</dd>
-
-<dt><tt>REAL4 fStartIn</tt></dt><dd> The requested starting frequency of the
-waveform, in Hz.</dd>
-
-<dt><tt>REAL4 fStopIn</tt></dt><dd> The requested termination frequency of
-the waveform, in Hz.  If set to 0, the waveform will be generated
-until a termination condition (above) is met.  If set to a negative
-number, the generator will use its absolute value as the terminating
-frequency, but will ignore post-Newtonian breakdown; it will terminate
-only at the requested frequency \f$-\mathtt{fStopIn}\f$, a local maximum
-frequency, or the central singularity.</dd>
-
-<dt><tt>UINT4 lengthIn</tt></dt><dd> The maximum number of samples in the
-generated waveform.  If zero, the waveforms can be arbitrarily long.</dd>
-
-<dt><tt>REAL4Vector *ppn</tt></dt><dd> The parameters \f$p_n\f$ selecting the
-type of post-Newtonian expansion.  If \c ppn=\c NULL, a
-"normal" (physical) expansion is assumed.</dd>
-</dl>
-
-<em>Output fields:</em>
-<dl>
-<dt><tt>REAL8 tc</tt></dt><dd> The time \f$t_c-t\f$ from the start of the
-waveform to coalescence (in the point-mass approximation), in s.</dd>
-
-<dt><tt>REAL4 dfdt</tt></dt><dd> The maximum value of \f$\Delta f\Delta t\f$
-encountered over any timestep \f$\Delta t\f$ used in generating the
-waveform.</dd>
-
-<dt><tt>REAL4 fStart</tt></dt><dd> The actual starting frequency of the
-waveform, in Hz (normally close but not identical to \c fStartIn).</dd>
-
-<dt><tt>REAL4 fStop</tt></dt><dd> The frequency at the termination of the
-waveform, in Hz.</dd>
-
-<dt><tt>INT4 length</tt></dt><dd> The length of the generated waveform.</dd>
-
-<dt><tt>INT4 termCode</tt></dt><dd> The termination condition (above) that
-stopped computation of the waveform.</dd>
-
-<dt><tt>const CHAR *termDescription</tt></dt><dd> The termination code
-description (above).</dd>
-</dl>
-
-*/
+ * post-Newtonian waveform.  It is divided into three parts: parameters
+ * passed along to the output structure but not used by waveform
+ * generator, parameters used as input to the waveform generator, and
+ * parameters set by the generator to evaluate its success.
+ */
 typedef struct tagPPNParamStruc {
   /** \name Passed parameters. */
   /*@{*/
-  SkyPosition position; /**<location of source on sky */
-  REAL4 psi;            /**<polarization angle (radians) */
-  LIGOTimeGPS epoch;    /**<start time of output time series */
+  SkyPosition position; /**< location of source on sky */
+  REAL4 psi;            /**< polarization angle (radians) */
+  LIGOTimeGPS epoch;    /**< start time of output time series */
   /*@}*/
 
   /**\name Input parameters. */
   /*@{*/
-  REAL4 mTot;       /**<total system mass (Msun) */
-  REAL4 eta;        /**<mass ratio */
-  REAL4 d;          /**<distance (metres) */
-  REAL4 inc;        /**<inclination angle (radians) */
-  REAL4 phi;        /**<coalescence phase (radians) */
-  REAL8 deltaT;     /**<requested sampling interval (s) */
-  REAL4 fStartIn;   /**<requested start frequency (Hz) */
-  REAL4 fStopIn;    /**<requested stop frequency (Hz) */
-  UINT4 lengthIn;   /**<maximum length of waveform */
-  REAL4Vector *ppn; /**<post-Newtonian selection parameters */
-  INT4 ampOrder;    /**<PN amplitude selection 0-5 */
+  REAL4 mTot;       	/**< The total mass \f$m_\mathrm{tot}=m_1+m_2\f$ of the binary system, in solar masses */
+  REAL4 eta;        	/**< The mass ratio \f$\eta=m_1m_2/m_\mathrm{tot}^2\f$ of the binary system;  Physically this
+                         * parameter must lie in the range \f$\eta\in(0,1/4]\f$; values outside of
+                         * this range may be permitted in order to represent "nonphysical"
+                         * post-Newtonian expansions
+                         */
+  REAL4 d;          	/**< The distance to the system, in metres */
+  REAL4 inc;        	/**< The inclination of the system to the line of sight, in radians */
+  REAL4 phi;        	/**< The phase at coalescence \f$\phi_c\f$ (or arbitrary reference phase for a post\f${}^{5/2}\f$-Newtonian
+                         * approximation), in radians
+                         */
+  REAL8 deltaT;     	/**< The requested sampling interval of the waveform, in s */
+  REAL4 fStartIn;   	/**< The requested starting frequency of the waveform, in Hz */
+  REAL4 fStopIn;    	/**< The requested termination frequency of
+                         * the waveform, in Hz;  If set to 0, the waveform will be generated
+                         * until a termination condition (above) is met;  If set to a negative
+                         * number, the generator will use its absolute value as the terminating
+                         * frequency, but will ignore post-Newtonian breakdown; it will terminate
+                         * only at the requested frequency \f$-\mathtt{fStopIn}\f$, a local maximum
+                         * frequency, or the central singularity
+                         */
+  UINT4 lengthIn;   	/**< The maximum number of samples in the generated waveform;  If zero, the waveforms can be arbitrarily long */
+  REAL4Vector *ppn; 	/**< The parameters \f$p_n\f$ selecting the type of post-Newtonian expansion;  If \c ppn=\c NULL, a "normal" (physical) expansion is assumed */
+  INT4 ampOrder;    	/**< PN amplitude selection 0-5 */
   /*@}*/
 
   /** \name Output parameters. */
   /*@{*/
-  REAL8 tc;         /**<time to coalescence from start of waveform */
-  REAL4 dfdt;       /**<maximum value of df*dt over any timestep */
-  REAL4 fStart;     /**<actual start frequency (Hz) */
-  REAL4 fStop;      /**<actual stop frequency (Hz) */
-  UINT4 length;     /**<length of signal generated */
-  INT4 termCode;    /**<termination code */
-  const CHAR *termDescription; /**<description of termination code */
+  REAL8 tc;         	/**< The time \f$t_c-t\f$ from the start of the waveform to coalescence (in the point-mass approximation), in s */
+  REAL4 dfdt;       	/**< The maximum value of \f$\Delta f\Delta t\f$ encountered over any timestep \f$\Delta t\f$ used in generating the waveform */
+  REAL4 fStart;     	/**< The actual starting frequency of the waveform, in Hz (normally close but not identical to \c fStartIn) */
+  REAL4 fStop;      	/**< The frequency at the termination of the waveform, in Hz */
+  UINT4 length;     	/**< The length of the generated waveform */
+  INT4 termCode;    	/**< The termination condition (above) that stopped computation of the waveform */
+  const CHAR *termDescription; /**< The termination code description (above) */
   /*@}*/
 } PPNParamStruc;
+#else  /* SWIG */
+typedef struct tagPPNParamStruc PPNParamStruc;
+#endif  /* SWIG */
 
-/** This structure stores the position and mass parameters of a galactic
-inspiral event.  The fields are:
-
-<dl>
-<dt><tt>REAL4 rho</tt></dt><dd> The distance of the binary system from the
-Galactic axis, in kpc.</dd>
-
-<dt><tt>REAL4 z</tt></dt><dd> The distance of the system from the Galactic
-plane, in kpc.</dd>
-
-<dt><tt>REAL4 lGal</tt></dt><dd> The Galactocentric Galactic longitude of
-the system (i.e.\ the Galactic longitude of the direction <em>from
-the Galactic centre</em> through the system), in radians.
-See\ \ref SkyCoordinates.h for the definition of this quantity.</dd>
-
-<dt><tt>REAL4 m1, m2</tt></dt><dd> The masses of the binary components, in
-solar masses.</dd>
-
-<dt><tt>LIGOTimeGPS geocentEndTime</tt></dt><dd> The geocentric end time of
-the inspiral event.</dd>
-</dl>
-
-*/
+/** This structure stores the position and mass parameters of a galactic inspiral event.
+ */
 typedef struct tagGalacticInspiralParamStruc {
-  REAL4 rho;    /**<Galactocentric axial radius (kpc) */
-  REAL4 z;      /**<Galactocentric axial height (kpc) */
-  REAL4 lGal;   /**<Galactocentric longitude (radians) */
-  REAL4 m1, m2; /**<system masses (solar masses) */
-  LIGOTimeGPS geocentEndTime; /**<geocentric end time */
+  REAL4 rho;    		/**< The distance of the binary system from the Galactic axis, in kpc */
+  REAL4 z;	      		/**< The distance of the system from the Galactic plane, in kpc */
+  REAL4 lGal;   		/**< The Galactocentric Galactic longitude of the system (ie the Galactic longitude of the direction <em>from
+                                 * the Galactic centre</em> through the system), in radians; See\ \ref SkyCoordinates_h for the definition of this quantity
+                                 */
+  REAL4 m1, m2; 		/**< The masses of the binary components, in solar masses */
+  LIGOTimeGPS geocentEndTime; 	/**< The geocentric end time of the inspiral event */
 } GalacticInspiralParamStruc;
 
 /** UNDOCUMENTED */
@@ -404,7 +329,7 @@ LALGenerateInspiralSmooth( LALStatus            *,
 			   REAL4		*qfactor);
 
 
-/*@}*/
+/*@}*/ /* end:GeneratePPNInspiral_h */
 
 
 #if 0

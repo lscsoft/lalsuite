@@ -510,6 +510,9 @@ int main(int argc,char *argv[])
   if (uvar_help)        /* if help was requested, we're done here */
     return COMPUTEFSTAT_EXIT_USAGE;
 
+  if ( XLALUserVarWasSet ( &uvar_refTime ) )
+    XLAL_ERROR (XLAL_EFAILED, "Sorry, using --refTime in CFSv1 is deprecated, the reference time is forced to be = startTime!\n");
+
   /* This is dangerous for BOINC since it calls system() and makes
      assumptions that might not be true */
 #if !USE_BOINC
@@ -668,7 +671,7 @@ int main(int argc,char *argv[])
 #endif
   else
     strcpy(ckp_fname, "Fstats");
-  strncat(ckp_fname, ".ckp", sizeof(ckp_fname));
+  strncat(ckp_fname, ".ckp", sizeof(ckp_fname) - strlen(ckp_fname) - 1 );
 
 #if USE_BOINC
   /* only boinc_resolve the filename if we run CFS once */

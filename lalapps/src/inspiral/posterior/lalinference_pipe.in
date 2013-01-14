@@ -51,7 +51,7 @@ if opts.run_path is not None:
 
 if opts.daglog_path is not None:
   cp.set('paths','daglogdir',opts.daglog_path)
-else:
+elif opts.run_path is not None:
   cp.set('paths','daglogdir',opts.run_path)
 
 if opts.gps_time_file is not None:

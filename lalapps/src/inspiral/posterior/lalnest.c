@@ -1168,13 +1168,13 @@ int main( int argc, char *argv[])
 	      inputMCMC.fixedStep=0;
 	    }
 	    if (strstr(approx,"TotalJ")) {
-	      inputMCMC.axisChoice=TotalJ;
+	      inputMCMC.axisChoice=LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J;
 	    }
 	    else if (strstr(approx,"OrbitalL")) {
-	      inputMCMC.axisChoice=OrbitalL;
+	      inputMCMC.axisChoice=LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L;
 	    }
 	    else {
-	      inputMCMC.axisChoice=View;
+	      inputMCMC.axisChoice=LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW;
 	    }
 	}
 	else {fprintf(stderr,"Unknown approximant: %s\n",approx); exit(-1);}

@@ -344,7 +344,7 @@ initUserVars (UserVariables_t *uvar)
   uvar->detMotionType = DETMOTION_SPIN_ORBIT;
   uvar->metricType = 0;	/* by default: compute only phase metric */
 
-  if ( (uvar->coords = XLALCreateStringVector ( "Freq_Nat", "Alpha", "Delta", "f1dot_Nat", NULL )) == NULL ) {
+  if ( (uvar->coords = XLALCreateStringVector ( "freq", "alpha", "delta", "f1dot", NULL )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
     XLAL_ERROR ( XLAL_ENOMEM );
   }
@@ -364,7 +364,7 @@ initUserVars (UserVariables_t *uvar)
   XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"third spindown-value d3f/dt3");
   XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   XLALregREALUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
-  XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
+  XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Duration of observation in seconds");
   XLALregSTRINGUserStruct(ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
   XLALregSTRINGUserStruct(ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
 
@@ -650,6 +650,14 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
     {
       fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
       fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
+
+      gsl_matrix *gN_ij;
+      if ( (gN_ij = XLALNaturalizeMetric ( metric->g_ij, meta )) == NULL ) {
+        XLALPrintError ("%s: something failed Naturalizing phase metric g_ij!\n", __func__ );
+        XLAL_ERROR ( XLAL_EFUNC );
+      }
+      fprintf ( fp, "\ngN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gN_ij );
+      gsl_matrix_free ( gN_ij );
 
       gsl_matrix *gDN_ij;
       if ( (gDN_ij = XLALDiagNormalizeMetric ( metric->g_ij )) == NULL ) {

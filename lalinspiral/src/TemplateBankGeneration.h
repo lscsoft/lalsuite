@@ -76,25 +76,24 @@ typedef enum {
   /* Other Searches 400-499 Etc... */
      } TemplateBankType;
 
-
-typedef struct {
-  REAL4                	minCoordinates[12]; 	/* Psi0, Psi3, etc.      */
-  REAL4                	maxCoordinates[12]; 	/* Psi0, Psi3, etc.      */
-  REAL4                	minParameters[12];  	/* mass, eta, etc.       */
-  REAL4                	maxParameters[12];  	/* mass, eta, etc.       */
-  INT2                 	dimension;          	/* 3D?, 4D? -> ND!       */
-  REAL4                	mm;                 	/* mismatch              */
-  TemplateBankType     	type;               	/* whats the search?     */
-  REAL8FrequencySeries *PSD;		   	/* Power Spec. Density   */
-  REAL4			f0;			/* Moment scaling freq	 */
+typedef struct tagNDTemplateBankInput {
+  REAL4                	minCoordinates[12]; 	/**< Psi0, Psi3, etc      */
+  REAL4                	maxCoordinates[12]; 	/**< Psi0, Psi3, etc      */
+  REAL4                	minParameters[12];  	/**< mass, eta, etc       */
+  REAL4                	maxParameters[12];  	/**< mass, eta, etc       */
+  INT2                 	dimension;          	/**< 3D?, 4D? -> ND!       */
+  REAL4                	mm;                 	/**< mismatch              */
+  TemplateBankType     	type;               	/**< whats the search?     */
+  REAL8FrequencySeries *PSD;		   	/**< Power Spec Density    */
+  REAL4			f0;			/**< Moment scaling freq   */
   } NDTemplateBankInput;
 
 
 
-typedef struct NDTemplateBankOutput{
+typedef struct tagNDTemplateBankOutput{
   REAL4				coordinateVals[12];
   REAL4 			parameterVals[12];
-  struct NDTemplateBankOutput	*next;
+  struct tagNDTemplateBankOutput	*next;
   } NDTemplateBankOutput;
 
 
@@ -102,11 +101,11 @@ typedef struct NDTemplateBankOutput{
 typedef void (*NDTemplateBankMetricPtr)( LALStatus *, NDTemplateBankInput *, REAL4Array *);
 typedef void (*NDTemplateBankTestPtr)(LALStatus *, NDTemplateBankInput *, NDTemplateBankOutput *, INT2 *);
 
-typedef struct {
-  NDTemplateBankMetricPtr 	metric; 	/*Ptr to metric function */
-  NDTemplateBankTestPtr		test;		/*Ptr boundary test fct  */
+typedef struct tagNDTemplateBankFunctionPtrs {
+  NDTemplateBankMetricPtr 	metric; 	/**< Ptr to metric function */
+  NDTemplateBankTestPtr		test;		/**< Ptr boundary test fct  */
   } NDTemplateBankFunctionPtrs;
- /* Function Prototypes */
+
 
 void
 LALNDTemplateBank(
@@ -115,8 +114,8 @@ LALNDTemplateBank(
         NDTemplateBankFunctionPtrs *,
        	NDTemplateBankOutput **);
 
-/*@}*/
 
+/*@}*/ /* end:TemplateBankGeneration_h */
 
 #if 0
 void

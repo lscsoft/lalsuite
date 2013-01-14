@@ -1,6 +1,38 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 39
+# serial 49
+
+AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
+  # check for git
+  AC_PATH_PROGS(GIT,[git],[false])
+  # check whether building from a git repository
+  have_git_repo=no
+  AS_IF([test "x${GIT}" != xfalse],[
+    AC_MSG_CHECKING([whether building from a git repository])
+    # git log will print:
+    # * the last log message, if the cwd is in a git repository
+    # * nothing, if the cwd is not part of the git repo (e.g. ignored)
+    # * an error msg to stderr if the cwd is not in a git repository
+    git_log=`( cd "${srcdir}" && ${GIT} log --oneline -n 1 -- . ) 2>/dev/null`
+    AS_IF([test "x${git_log}" != x],[
+      have_git_repo=yes
+    ])
+    AC_MSG_RESULT([${have_git_repo}])
+  ])
+  # conditional for git and building from a git repository
+  AM_CONDITIONAL(HAVE_GIT_REPO,[test "x${have_git_repo}" = xyes])
+  # command line for version information generation script
+  AM_COND_IF(HAVE_GIT_REPO,[
+    m4_pattern_allow([AM_V_GEN])
+    m4_pattern_allow([AM_V_at])
+    AC_SUBST([genvcsinfo_],["\$(genvcsinfo_\$(AM_DEFAULT_VERBOSITY))"])
+    AC_SUBST([genvcsinfo_0],["--am-v-gen='\$(AM_V_GEN)'"])
+    GENERATE_VCS_INFO="\$(AM_V_at)\$(PYTHON) \$(top_srcdir)/../gnuscripts/generate_vcs_info.py --git-path='\$(GIT)' \$(genvcsinfo_\$(V))"
+  ],[
+    GENERATE_VCS_INFO=false
+  ])
+  AC_SUBST(GENERATE_VCS_INFO)
+])
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -35,7 +67,7 @@ AC_DEFUN([LALSUITE_PROG_CC_CXX],[
     # check for clang++
     AS_IF([test "x$GXX" = xyes],
       [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang version'`" != "0"],[CLANG_CXX=1])],
-      [CLANG_CC=])
+      [CLANG_CXX=])
     AC_SUBST(CLANG_CXX)
   ],[
     CXX=
@@ -66,18 +98,18 @@ AC_LANG(_AC_LANG)[]dnl
 
 AC_DEFUN([LALSUITE_ARG_VAR],[
   AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
-  AC_ARG_VAR(LALSUITE_TOP_SRCDIR,[Set to top source directory of lalsuite])
 ])
 
 AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],
 [## $0: libtool incorrectly determine library path on SL6
 case "${host}" in
   x86_64-*-linux-gnu*)
-    redhat_release=`cat /etc/redhat-release 2> /dev/null`
-    if test "${redhat_release}" = "Scientific Linux release 6.1 (Carbon)"; then
-      AC_MSG_NOTICE([hacking round broken libtool multilib support on SL6])
-      lt_cv_sys_lib_dlsearch_path_spec="/lib64 /usr/lib64"
-    fi
+    case `cat /etc/redhat-release 2> /dev/null` in
+      "Scientific Linux"*|"CentOS"*)
+        AC_MSG_NOTICE([hacking round broken libtool multilib support on RedHat systems])
+        lt_cv_sys_lib_dlsearch_path_spec="/lib64 /usr/lib64"
+        ;;
+    esac
     ;;
 esac
 ]) # LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -95,7 +127,10 @@ AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
         DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
       (\'--*\')
         # skip all other ./configure arguments
-       : ;;
+        : ;;
+      (\'DISTCHECK_CONFIGURE_FLAGS=*\')
+        # append value of DISTCHECK_CONFIGURE_FLAGS
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} "`expr "X${arg}" : "X'DISTCHECK_CONFIGURE_FLAGS=\(.*\)'"`;;
       (\'*=*\')
         # save any environment variables given to ./configure
         DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
@@ -112,10 +147,19 @@ eval $1_ENABLE_VAL="`eval test "$$2" = "true" && echo "ENABLED" || echo "DISABLE
 AC_DEFUN([LALSUITE_CHECK_LIB],[
 m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
 m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
-PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
+PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"
+  if test "x${uppercase[]_DATADIR}" = x; then
+    uppercase[]_DATADIR=`${PKG_CONFIG} --variable=pkgdatadir "lowercase >= $2" 2>/dev/null`
+  fi
+],[lowercase="false"])
 if test "$lowercase" = "true"; then
   CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
-  LIBS="$LIBS $[]uppercase[]_LIBS"
+  for arg in $[]uppercase[]_LIBS; do
+    case $arg in
+      -L*) LDFLAGS="$LDFLAGS $arg";;
+      *)   LIBS="$LIBS $arg";;
+    esac
+  done
   if test "$LALSUITE_BUILD" = "true"; then
     AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
     lowercase="true"
@@ -131,6 +175,9 @@ else
   AC_MSG_ERROR([could not find the $1 library])
 fi
 LALSUITE_ENABLE_MODULE(uppercase,lowercase)
+m4_if(lowercase,[lalsupport],[],[
+  AC_ARG_VAR(uppercase[]_DATADIR, [data directory for ]uppercase[, overriding pkg-config])
+])
 m4_popdef([lowercase])
 m4_popdef([uppercase])
 ])
@@ -139,16 +186,23 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
 m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
 if test "$lowercase" = "true"; then
-  PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
+  PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"
+    if test "x${uppercase[]_DATADIR}" = x; then
+      uppercase[]_DATADIR=`${PKG_CONFIG} --variable=pkgdatadir "lowercase >= $2" 2>/dev/null`
+    fi
+  ],[lowercase="false"])
   if test "$lowercase" = "true"; then
+    CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
+    for arg in $[]uppercase[]_LIBS; do
+      case $arg in
+        -L*) LDFLAGS="$LDFLAGS $arg";;
+        *)   LIBS="$LIBS $arg";;
+      esac
+    done
     if test "$LALSUITE_BUILD" = "true"; then
       AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
       lowercase="true"
-      CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
-      LIBS="$LIBS $[]uppercase[]_LIBS"
     else
-      CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
-      LIBS="$LIBS $[]uppercase[]_LIBS"
       AC_CHECK_LIB(lowercase,[$3],[lowercase="true"],[lowercase=false
         AC_MSG_WARN([could not find the $1 library])])
       if test "$lowercase" = true; then
@@ -166,6 +220,9 @@ if test "$lowercase" = "true"; then
   fi
 fi
 LALSUITE_ENABLE_MODULE(uppercase,lowercase)
+m4_if(lowercase,[lalsupport],[],[
+  AC_ARG_VAR(uppercase[]_DATADIR, [data directory for ]uppercase[, overriding pkg-config])
+])
 m4_popdef([lowercase])
 m4_popdef([uppercase])
 ])
@@ -201,7 +258,7 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
   [nightly],
   AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
   [ case "${enableval}" in
-      yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
+      yes) NIGHTLY_VERSION=`date -u +"%Y%m%d"`
            VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
       no) NIGHTLY_VERSION="";;
       *) NIGHTLY_VERSION="${enableval}"
@@ -293,6 +350,19 @@ AC_ARG_ENABLE(
   ], [ lalsimulation=${all_lal:-true} ] )
 ])
 
+AC_DEFUN([LALSUITE_ENABLE_LALDETCHAR],
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
+  [laldetchar],
+  AC_HELP_STRING([--enable-laldetchar],[compile code that requires laldetchar library [default=no]]),
+  [ case "${enableval}" in
+      yes) laldetchar=true;;
+      no) laldetchar=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-laldetchar) ;;
+    esac
+  ], [ laldetchar=${all_lal:-false} ] )
+])
+
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
@@ -323,6 +393,9 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinspiral) ;;
     esac
   ], [ lalinspiral=${all_lal:-true} ] )
+if test "$lalframe" = "false"; then
+  lalinspiral=false
+fi
 if test "$lalmetaio" = "false"; then
   lalinspiral=false
 fi

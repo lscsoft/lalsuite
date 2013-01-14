@@ -32,16 +32,13 @@
 #include <gsl/gsl_sf_log.h>
 #include <gsl/gsl_machine.h>
 
-
 #include "cdfwchisq.h"
 #include "vectormath.h"
-//#include "TwoSpect.h"
 
 
 //Exp function to avoid underflows
 REAL8 exp1(REAL8 x)
 {
-   //if (x<-50.0) return 0.0;
    if (x<-700.0) return 0.0;
    else return exp(x);
 } /* exp1() */
@@ -49,23 +46,17 @@ REAL8 exp1(REAL8 x)
 //Special functions
 REAL8 twospect_log_1plusx(REAL8 x)
 {
-   
    return log1p(x);
-   
-}
+} /* twospect_log_1plusx() */
 REAL8 twospect_log_1plusx_mx(REAL8 x)
 {
-   
    return log1p(x)-x;
-   
-}
+} /* twospect_log_1plusx_mx() */
 
 //count number of calls to errbound, truncation, coeff
 void counter(qfvars *vars)
 {
-   
    vars->count++;
-   
 } /* counter() */
 
 
@@ -109,7 +100,8 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
    REAL8 sum1, x, y, xconst;
    INT4 ii;
    
-   counter(vars);
+   //counter(vars);
+   (vars->count)++;           //Increase counter
    
    xconst = u * vars->sigsq;  //xconst = u * sigma**2 + sum{ }
    sum1 = u * xconst;         //sum1 = u**2 * sigma**2 + sum{ } this is almost the equation after eq 9 in Davies 1973
@@ -126,13 +118,14 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
    return exp1(-0.5 * sum1);
    
 }/* errbound() */
+//Very similar to errbound() but this has no non-centrality parameters and assumes all dofs are 2.0
 REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx)
 {
    
    REAL8 sum1, x, y, xconst;
    INT4 ii;
-   
-   counter(vars);
+
+   (vars->count)++;           //Increase counter
    
    xconst = u * vars->sigsq;
    sum1 = u * xconst;
@@ -186,6 +179,7 @@ REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn)
    return c2;
    
 } /* cutoff() */
+//Same as cutoff() but uses *_twospect() functions
 REAL8 cutoff_twospect(qfvars *vars, REAL8 accx, REAL8* upn)
 {
    
@@ -230,7 +224,8 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
    REAL8 sum1, sum2, prod1, prod2, prod3, x, y, err1, err2;
    INT4 ii, s;
 
-   counter(vars);
+   //counter(vars);
+   (vars->count)++;           //Increase counter
    
    sum1  = 0.0;   //Calculating N(u) = exp(-2u**2 sum_j(lambda_j**2 delta_j**2/(1+4u**2 lambda_j**2)))
    prod2 = 0.0;   //Calculating product (i)
@@ -275,12 +270,13 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
    else return err2;
    
 } /* truncation() */
+//Same as trunction() but assumes dofs are 2.0 and n.c. values are 0.0
 REAL8 truncation_twospect(qfvars *vars, REAL8 u, REAL8 tausq)
 {
    REAL8 sum2, prod1, prod2, prod3, x, y, err1, err2;
    INT4 ii, s;
-   
-   counter(vars);
+
+   (vars->count)++;           //Increase counter
    
    prod2 = 0.0;
    prod3 = 0.0;
@@ -357,6 +353,7 @@ void findu(qfvars *vars, REAL8* utx, REAL8 accx)
    *utx = ut;
    
 } /* findu() */
+//Same as findu() but uses *_twospect() functions
 void findu_twospect(qfvars *vars, REAL8* utx, REAL8 accx)
 {
    
@@ -426,6 +423,7 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
    } /* for ii=nterm --> 0 */
    
 } /* integrate() */
+//Same as integrate() but assumes dofs are 2.0 and n.c. values are 0.0
 void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
    
@@ -459,9 +457,10 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
    } /* for ii=nterm --> 0 */
    
 } /* integrate_twospect() */
+//This is from eq 13 of Davies 1980 and makes more sense than the integrate() function while giving nearly identical results (last digits of double precision are only slightly different)
 void integrate_eg(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
-   //This is from eq 13 of Davies 1980 and makes more sense than the above function while giving nearly identical results (last digits of double precision are slightly different)
+
    INT4 ii, jj;
    
    for (ii=nterm; ii>=0; ii--) {
@@ -492,9 +491,10 @@ void integrate_eg(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 main
    }
    
 }
+//Rewrite of integrate_eg() to make it fast
 void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
-   //Rewrite of integrate_eg() to make it fast
+
    INT4 ii, jj;
    
    for (ii=nterm; ii>=0; ii--) {
@@ -527,10 +527,10 @@ void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, IN
    }
    
 }
+//Use SSE to make the integration even faster
 void sse_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
-   
-   //Use SSE to make the integration even faster
+
    INT4 ii, jj;
    
    REAL8Vector *scaledweightvector = XLALCreateREAL8Vector(vars->weights->length);
@@ -586,8 +586,10 @@ REAL8 coeff(qfvars *vars, REAL8 x)
    REAL8 axl, axl1, axl2, sxl, sum1, lj;
    INT4 ii, jj, t;
    
-   counter(vars);
+   //counter(vars);
+   (vars->count)++;
    
+   //If the sort hasn't been done, then do it now!
    if (vars->ndtsrt) {
       order(vars);
       if (vars->ndtsrt) {
@@ -634,13 +636,14 @@ REAL8 coeff(qfvars *vars, REAL8 x)
    }
    
 } /* coeff() */
+//Same as coeff() but assuming dofs are 2.0 and n.c. values are 0.0
 REAL8 coeff_twospect(qfvars *vars, REAL8 x)
 {
    
    REAL8 axl, axl1, axl2, sxl, sum1, lj;
    INT4 ii, jj, t;
-   
-   counter(vars);
+
+   (vars->count)++;
    
    axl = fabs(x);
    
@@ -844,6 +847,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    
       return qfval;
 } /* cdfwchisq() */
+//Re-write of the cdfwchisq() function, but in a better way, without go-to's and to be more LAL compliant (though not totally!)
 REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
 {
    
@@ -852,7 +856,8 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    REAL8 utx, tausq, wnstd, intv, intv1, x, up, un, d1, d2;
    REAL8 qfval;
    INT4 rats[] = {1, 2, 4, 8};
-   
+
+   //Initialize values
    *ifault = 0;
    vars->count = 0;
    vars->intl = 0.0;
@@ -870,26 +875,29 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    vars->wnmean = 0.0;           //Initial value for weights*noise 'mean'
    for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
       
-      wnstd += 4*vars->weights->data[ii]*vars->weights->data[ii];
-      vars->wnmean += 2*vars->weights->data[ii];
+      wnstd += 4*vars->weights->data[ii]*vars->weights->data[ii];  //weight_i^2 * 2 * 2
+      vars->wnmean += 2*vars->weights->data[ii];                   //2*weight_i
       
-      //Find maximum and minimum values
+      //Find maximum and minimum values of the weights
       if (vars->wnmax < vars->weights->data[ii]) vars->wnmax = vars->weights->data[ii];
       else if (vars->wnmin > vars->weights->data[ii]) vars->wnmin = vars->weights->data[ii];
       
    } /* for ii < vars->weights->length */
-   
-   if ( wnstd == 0.0  ) {  
+
+   //If somehow the wnstd value was 0, then output either 1 or 0
+   if ( wnstd == 0.0 ) {  
       if (vars->c>0.0) qfval = 1.0;
       else qfval = 0.0;
       return qfval;
    } /* if wnstd==0 */
-   
+
+   //If the min and max weight, then there needs to be an error
    if ( vars->wnmin == 0.0 && vars->wnmax == 0.0 ) {
       *ifault = 3;
       return qfval;
    }
-   
+
+   //Do the square root of wnstd
    wnstd = sqrt(wnstd);
    
    //almx is absolute value maximum of weights
@@ -904,7 +912,7 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    /* truncation point with no convergence factor */
    findu_twospect(vars, &utx, 0.5*acc1);
    
-   /* does convergence factor help */
+   /* does convergence factor help? */
    if (vars->c!=0.0  && almx>0.07*wnstd) {
       tausq = 0.25*acc1/coeff_twospect(vars, vars->c);
       if (vars->fail) vars->fail = 0;

@@ -9,24 +9,24 @@ injectdir="../../Injections/"
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 saf_code="${builddir}../lalapps_SemiAnalyticF"
-cfs_code="${builddir}../lalapps_ComputeFStatistic"
-cfs2_code="${builddir}lalapps_ComputeFStatistic_resamp"
+cfs2_code="${builddir}../lalapps_ComputeFStatistic_v2"
+cfs_resamp_code="${builddir}lalapps_ComputeFStatistic_resamp"
 cmp_code="${builddir}../lalapps_compareFstats"
 
 SFTdir="./testCFSv2_resamp_sfts"
 
-# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
+    saf_code="${saf_code} -E ${LALPULSAR_DATADIR}"
+    cfs2_code="${cfs2_code} -E ${LALPULSAR_DATADIR}"
+    cfs_resamp_code="${cfs_resamp_code} -E ${LALPULSAR_DATADIR}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 Ftolerance=0.05
@@ -87,7 +87,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --refTime=$refTime"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -113,17 +113,17 @@ echo "The SemiAnalyticF calculations predicts: 2F = $res2F"
 
 echo
 echo "----------------------------------------------------------------------"
-echo "STEP 2: run CFS_v1 with perfect match"
+echo "STEP 2: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-outfile_v1="Fstat_v1.dat";
+outfile_v2="Fstat_v2.dat";
 ## common cmdline-options for v1 and resamp
-cfs_CL="--IFO=$IFO --Freq=$Freq --FreqBand=$cfsFreqBand --dFreq=$dFreq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
+cfs_CL="--IFO=$IFO --Freq=$Freq --FreqBand=$cfsFreqBand --dFreq=$dFreq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --DataFiles='${SFTdir}/*.sft' --refTime=$refTime"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
 
-cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0";
+cmdline="$cfs2_code $cfs_CL  --outputFstat=$outfile_v2 --TwoFthreshold=0";
 echo $cmdline;
 
 if ! eval $cmdline; then
@@ -137,7 +137,7 @@ echo " STEP 3: run CFS_resamp with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 outfile_resampNWon="Fstat_resampNWon.dat";
-cmdlineNoiseWeightsOn="$cfs2_code $cfs_CL --outputFstat=$outfile_resampNWon --TwoFthreshold=0 --UseNoiseWeights=true $extra_args";
+cmdlineNoiseWeightsOn="$cfs_resamp_code $cfs_CL --outputFstat=$outfile_resampNWon --TwoFthreshold=0 --UseNoiseWeights=true $extra_args";
 echo $cmdlineNoiseWeightsOn;
 if ! eval $cmdlineNoiseWeightsOn; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -157,8 +157,8 @@ echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 echo
-echo "----- CFS v1: "
-cat $outfile_v1 | grep -v "%%"
+echo "----- CFS v2: "
+cat $outfile_v2 | grep -v "%%"
 echo "----- CFS resamp WITH noise-weights: "
 cat $outfile_resampNWon | grep -v "%%"
 echo "----- CFS resamp WITHOUT noise-weights: "
@@ -166,7 +166,7 @@ cat $outfile_resampNWoff | grep -v "%%"
 
 
 echo
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_resampNWoff --clusterFiles=0 --Ftolerance=$Ftolerance"
+cmdline="$cmp_code -1 ./$outfile_v2 -2 ./$outfile_resampNWoff --clusterFiles=0 --Ftolerance=$Ftolerance"
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
@@ -175,7 +175,7 @@ else
     echo "OK."
 fi
 
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_resampNWon --clusterFiles=0 --Ftolerance=$Ftolerance"
+cmdline="$cmp_code -1 ./$outfile_v2 -2 ./$outfile_resampNWon --clusterFiles=0 --Ftolerance=$Ftolerance"
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
@@ -186,5 +186,5 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfile_v1 $outfile_resampNWon $outfile_resampNWoff Fstats Fstats.log
+    rm -rf $SFTdir $outfile_v2 $outfile_resampNWon $outfile_resampNWoff Fstats Fstats.log
 fi

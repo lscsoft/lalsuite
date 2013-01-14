@@ -25,26 +25,26 @@
 #include <lal/LALFrameVCSInfo.h>
 
 /* global variables for vcs information */
-const char *lalFrameVCSVersion = LALFRAME_VERSION;
-const char *lalFrameVCSId = LALFRAME_VCS_ID;
-const char *lalFrameVCSDate = LALFRAME_VCS_DATE;
-const char *lalFrameVCSBranch = LALFRAME_VCS_BRANCH;
-const char *lalFrameVCSTag = LALFRAME_VCS_TAG;
-const char *lalFrameVCSAuthor = LALFRAME_VCS_AUTHOR;
-const char *lalFrameVCSCommitter = LALFRAME_VCS_COMMITTER;
-const char *lalFrameVCSStatus = LALFRAME_VCS_STATUS;
+const char *const lalFrameVCSVersion = LALFRAME_VERSION;
+const char *const lalFrameVCSId = LALFRAME_VCS_ID;
+const char *const lalFrameVCSDate = LALFRAME_VCS_DATE;
+const char *const lalFrameVCSBranch = LALFRAME_VCS_BRANCH;
+const char *const lalFrameVCSTag = LALFRAME_VCS_TAG;
+const char *const lalFrameVCSAuthor = LALFRAME_VCS_AUTHOR;
+const char *const lalFrameVCSCommitter = LALFRAME_VCS_COMMITTER;
+const char *const lalFrameVCSStatus = LALFRAME_VCS_STATUS;
 
 /* global variables for vcs information - identable */
-const char *lalFrameVCSIdentId = LALFRAME_VCS_IDENT_ID;
-const char *lalFrameVCSIdentDate = LALFRAME_VCS_IDENT_DATE;
-const char *lalFrameVCSIdentBranch = LALFRAME_VCS_IDENT_BRANCH;
-const char *lalFrameVCSIdentTag = LALFRAME_VCS_IDENT_TAG;
-const char *lalFrameVCSIdentAuthor = LALFRAME_VCS_IDENT_AUTHOR;
-const char *lalFrameVCSIdentCommitter = LALFRAME_VCS_IDENT_COMMITTER;
-const char *lalFrameVCSIdentStatus = LALFRAME_VCS_IDENT_STATUS;
+const char *const lalFrameVCSIdentId = LALFRAME_VCS_IDENT_ID;
+const char *const lalFrameVCSIdentDate = LALFRAME_VCS_IDENT_DATE;
+const char *const lalFrameVCSIdentBranch = LALFRAME_VCS_IDENT_BRANCH;
+const char *const lalFrameVCSIdentTag = LALFRAME_VCS_IDENT_TAG;
+const char *const lalFrameVCSIdentAuthor = LALFRAME_VCS_IDENT_AUTHOR;
+const char *const lalFrameVCSIdentCommitter = LALFRAME_VCS_IDENT_COMMITTER;
+const char *const lalFrameVCSIdentStatus = LALFRAME_VCS_IDENT_STATUS;
 
 /* vcs information structure */
-struct tagLALVCSInfo lalFrameVCSInfo = { \
+const struct tagLALVCSInfo lalFrameVCSInfo = { \
   LALFRAME_VCS_NAME, \
   LALFRAME_VERSION, \
   LALFRAME_VCS_ID, \

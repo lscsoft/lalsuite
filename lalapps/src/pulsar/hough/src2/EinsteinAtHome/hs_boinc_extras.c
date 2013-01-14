@@ -51,6 +51,9 @@
 #include "boinc/boinc_zip.h"
 #endif
 #include "boinc/svn_version.h"
+/* this ultimately needs to be fixed in boinc_api.h,
+   #include "app_ipc.h" must be moved outside the C++ section */
+extern int boinc_resolve_filename(const char*, char*, int len);
 
 /* our own win_lib includes patches for chdir() and sleep() */
 #ifdef _WIN32
@@ -67,6 +70,15 @@
 #ifdef __GLIBC__
 #define _GNU_SOURCE
 #include <gnu/libc-version.h>
+#endif
+
+#ifdef HAVE_BUILD_INFO_H
+#include "build_info.h"
+#endif
+
+/* try to dlopen("libgcc_s.so.1") */
+#ifdef DLOPEN_LIBGCC
+#include <dlfcn.h>
 #endif
 
 /* our own exception handler / runtime debugger */
@@ -142,18 +154,27 @@ typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
     fputs(" STACK_FAULT",stderr);      \
   PRINT_FPU_EXCEPTION_MASK(fpstat)
 
-static char* myultoa(unsigned long n, char*buf, size_t size) {
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
+static char* myultoa2(unsigned long n, char*buf, size_t size, size_t mindig) {
   int i;
-  memset(buf,'\0',size);
-  for(i=size-1; i>=0; i++) {
+  memset(buf,'0',size);
+  buf[size-1] = '\0';
+  for(i=size-2; i>=0; i--) {
     buf[i] = n % 10 + '0';
     n /= 10;
     if (!n)
       break;
   }
   if (i > 0)
-    return buf + i;
+    return MIN(buf + i, buf + (size - mindig - 1));
   return buf;
+}
+
+static char* myultoa(unsigned long n, char*buf, size_t size) {
+  return myultoa2(n, buf, size, 1);
 }
 
 static char* myltoa(long n, char*buf, size_t size) {
@@ -163,7 +184,7 @@ static char* myltoa(long n, char*buf, size_t size) {
     n = -n;
     m = -1;
   }
-  for(i=size-1; i>=0; i++) {
+  for(i=size-2; i>=0; i--) {
     buf[i] = n % 10 + '0';
     n /= 10;
     if (!n)
@@ -178,33 +199,33 @@ static char* myltoa(long n, char*buf, size_t size) {
   return buf;
 }
 
+/* my own time function - not using vnprintf() */
 void mytime(void) {
   char buf[64];
   struct timeval tv;
   struct tm *tmv;
-  if(gettimeofday(&tv,NULL))
+  if(gettimeofday(&tv,NULL)) {
+    fputs("Couldn't gettimeofday()", stderr);
     return;
+  }
   tmv=localtime(&tv.tv_sec);
-  myultoa(tmv->tm_year,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs("-",stderr);
-  myultoa(tmv->tm_mon,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs("-",stderr);
-  myultoa(tmv->tm_mday,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs(" ",stderr);
-  myultoa(tmv->tm_hour,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs(":",stderr);
-  myultoa(tmv->tm_min,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs(":",stderr);
-  myultoa(tmv->tm_sec,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs(".",stderr);
-  myultoa(tv.tv_usec,buf,sizeof(buf));
-  fputs(buf,stderr);
+  if (!tmv) {
+    fputs("Couldn't get localtime(gettimeofday))", stderr);
+    return;
+  }
+  fputs(myultoa(tmv->tm_year+1900, buf, sizeof(buf)), stderr);
+  fputc('-', stderr);
+  fputs(myultoa2(tmv->tm_mon+1, buf, sizeof(buf), 2), stderr);
+  fputc('-', stderr);
+  fputs(myultoa2(tmv->tm_mday, buf, sizeof(buf), 2), stderr);
+  fputc(' ', stderr);
+  fputs(myultoa2(tmv->tm_hour, buf, sizeof(buf), 2), stderr);
+  fputc(':', stderr);
+  fputs(myultoa2(tmv->tm_min, buf, sizeof(buf), 2), stderr);
+  fputc(':', stderr);
+  fputs(myultoa2(tmv->tm_sec, buf, sizeof(buf), 2), stderr);
+  fputc('.', stderr);
+  fputs(myultoa(tv.tv_usec, buf, sizeof(buf)), stderr);
 }
 
 /*^* global VARIABLES *^*/
@@ -212,13 +233,16 @@ void mytime(void) {
 /** the cpu type, see cpu_type_features.h */
 int global_cpu_type;
 
+
 /** output filename - probably not needed to be public anymore */
 static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to return */
+
 
 /** GPU (CUDA or OpenCL) device id */
 #if USE_OPENCL_KERNEL || defined(USE_CUDA)
 extern int gpu_device_id;
 #endif
+
 
 /** FLOPS estimation - may be set by command line option --WUfpops=.
     When set, ((skypoint_counter / total_skypoints) * estimated_flops) is periodically
@@ -241,6 +265,13 @@ static toplist_t* toplist;                /**< the toplist we're checkpointing *
 static UINT4 last_count, last_total;      /**< last template count, see last_rac */
 static BOOLEAN do_sync = -1;              /**< sync checkpoint file to disk, default: yes */
 
+
+/** record whether loading libgcc_s.so.1 succeeded */
+static int libgcc_s_loaded = 0;
+
+
+/** record the status of the last boinc_finish call in case boinc_finish() throws a signal */
+static int boinc_finish_status = 0;
 
 
 /*^* LOCAL FUNCTION PROTOTYPES *^*/
@@ -359,7 +390,7 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
             id, func, file, line );
     ReportStatus(status);
     LogPrintf (LOG_CRITICAL, "BOINC_LAL_ErrHand(): now calling boinc_finish()\n");
-    boinc_finish( COMPUTEFSTAT_EXIT_LALCALLERROR+status->statusCode );
+    boinc_finish(boinc_finish_status= COMPUTEFSTAT_EXIT_LALCALLERROR+status->statusCode );
   }
   /* should this call boinc_finish too?? */
   return 0;
@@ -386,6 +417,12 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
 #endif /*  __x86_64__ */
 #endif /* __GLIBC__ */
 
+/* Use thread-local storage only where needed & supported */
+#if defined(__GLIBC__) && defined(__GNUC__)
+#define THREAD_LOCAL static __thread
+#else
+#define THREAD_LOCAL static
+#endif
 
 #ifdef __GLIBC__
 static void sighandler(int sig,
@@ -404,25 +441,36 @@ static void sighandler(int sig)
   static char **backtracesymbols = NULL;
   ucontext_t *uc = (ucontext_t *)secret;
 #endif
+  THREAD_LOCAL int boinc_finish_in_sighabdler = 0;
 
-  /* lets start by ignoring ANY further occurences of this signal
-     (hopefully just in THIS thread, if truly implementing POSIX threads */
-  fputs("\n",stderr);
+  fputc('\n',stderr);
   mytime();
   fputs("\n-- signal handler called: signal ",stderr);
   fputs(myultoa(sig, buf, sizeof(buf)), stderr);
-  fputs("\n",stderr);
+  fputc('\n',stderr);
 
-  /* ignore TERM interrupts once  */
-  if ( sig == SIGTERM || sig == SIGINT ) {
+  /* ignore INT interrupts once  */
+  if ( sig == SIGINT ) {
     killcounter ++;
     if ( killcounter >= 4 ) {
-      fputs("App got 4th kill-signal, guess you mean it. Exiting.\n",stderr);
-      boinc_finish(COMPUTEFSTAT_EXIT_USER);
+      fputs("App got 4th SIGINT, guess you mean it.\nCalling boinc_finish().\n",stderr);
+      boinc_finish(boinc_finish_status=COMPUTEFSTAT_EXIT_USER);
     }
     else
       return;
   } /* termination signals */
+
+  /* A SIGABRT most likely came from a failure to load libgcc_s.so.1,
+     which is required for boinc_finish() (calling pthread_exit() calling
+     pthread_cancel()) to work properly. In this case take the "emergency
+     exit" with exit status 0 - the worst that can happen is that
+     the tasks ends up with "too many exits" error. */
+  if ( ( libgcc_s_loaded == -1 ) && ( sig == 6 ) ) {
+    fputs("Program received SIGABRT probably because libgcc_s.so.1 wasn't loaded - trying exit(0)\n", stderr);
+    /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
+    sleep(5);
+    exit(boinc_finish_status);
+  }
 
 #ifdef __GLIBC__
 #ifdef __X86__
@@ -438,47 +486,64 @@ static void sighandler(int sig)
 #endif /* __X86__ */
   /* now get TRUE stacktrace */
   nostackframes = backtrace (stackframes, 64);
-  fputs(myltoa(nostackframes, buf, sizeof(buf)), stderr);
-  fputs(" stack frames obtained for this thread:\n", stderr);
-#if defined(__i386__) && defined(EXT_STACKTRACE)
-  /* overwrite sigaction with caller's address */
-  // stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
-  backtracesymbols = backtrace_symbols(stackframes, nostackframes);
-  if(backtracesymbols != NULL) {
-    backtrace_symbols_fd_plus(backtracesymbols, nostackframes, fileno(stderr));
-    free(backtracesymbols);
-  } else
-#endif /* __X86__ */
-  {
+  if (nostackframes == 0) {
+    fputs("no stack frames obtained for this thread:\n", stderr);
+  } else {
+    fputs(myltoa(nostackframes, buf, sizeof(buf)), stderr);
+    fputs(" stack frames obtained for this thread:\n", stderr);
+    /* overwrite sigaction with caller's address */
+    stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
     fputs("Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n",stderr);
     backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
+#if defined(__i386__) && defined(EXT_STACKTRACE)
+    fputs("Trying extended stacktrace:\n", stderr);
+    backtracesymbols = backtrace_symbols(stackframes, nostackframes);
+    if(backtracesymbols != NULL) {
+      backtrace_symbols_fd_plus((const char *const *)(void**)backtracesymbols, nostackframes, fileno(stderr));
+      free(backtracesymbols);
+    }
+#endif /* EXT_STACKTRACE */
+    fputs("\nEnd of stacktrace\n",stderr);
   }
-  fputs("\nEnd of stcaktrace\n",stderr);
 #endif /* __GLIBC__ */
 
   if (global_status)
     fputs("Stack trace of LAL functions in worker thread:\n", stderr);
   while (global_status) {
-    fputs(global_status->function, stderr);
+    if(global_status->function)
+      fputs(global_status->function, stderr);
+    else
+      fputs("global_status->function=NULL", stderr);
     fputs(" at ", stderr);
-    fputs(global_status->file, stderr);
-    fputs(":", stderr);
+    if(global_status->file)
+      fputs(global_status->file, stderr);
+    else
+      fputs("global_status->file=NULL", stderr);
+    fputc(':', stderr);
     fputs(myultoa(global_status->line, buf, sizeof(buf)), stderr);
-    fputs("\n", stderr);
+    fputc('\n', stderr);
     if (!(global_status->statusPtr)) {
       const char *p=global_status->statusDescription;
       fputs("At lowest level status code = ", stderr);
       fputs(myltoa(global_status->statusCode, buf, sizeof(buf)), stderr);
       fputs(": ", stderr);
       fputs(p?p:"NO LAL ERROR REGISTERED", stderr);
-      fputs("\n", stderr);
+      fputc('\n', stderr);
     }
     global_status=global_status->statusPtr;
   }
   
   /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
   sleep(5);
-  boinc_finish(COMPUTEFSTAT_EXIT_SIGNAL + sig);
+  /* if boinc_finish() was already called from the signal handler and we end up
+     here again, then boinc_finish() itself causes a signal. Prevent an endless
+     loop by callin plain exit() */
+  if(boinc_finish_in_sighabdler) {
+    fputs("boinc_finish already called from signal handler, trying exit()\n", stderr);
+    exit(boinc_finish_status);
+  }
+  boinc_finish_in_sighabdler = 1;
+  boinc_finish(boinc_finish_status=COMPUTEFSTAT_EXIT_SIGNAL + sig);
   return;
 } /* sighandler */
 
@@ -504,16 +569,16 @@ void show_progress(REAL8 rac,   /**< right ascension */
 
   /* tell BOINC client about fraction done and flops so far (faked from estimation) */
   boinc_fraction_done(fraction);
-  if (estimated_flops >= 0)
-    boinc_ops_cumulative( estimated_flops * fraction, 0 /*ignore IOPS*/ );
 
   /* tell APIv6 graphics about status */
-  boincv6_progress.skypos_rac = rac;
-  boincv6_progress.skypos_dec = dec;
+  boincv6_progress.skypos_rac      = rac;
+  boincv6_progress.skypos_dec      = dec;
+  boincv6_progress.frequency       = freq;
+  boincv6_progress.bandwidth       = fband;
+#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
   if(toplist->elems > 0) {
     /* take the last (rightmost) leaf of the heap tree - might not be the
        "best" candidate, but for the graphics it should be good enough */
-#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
     HoughFStatOutputEntry *line = (HoughFStatOutputEntry*)(toplist->heap[toplist->elems - 1]);
 
     boincv6_progress.cand_frequency  = line->Freq;
@@ -521,24 +586,8 @@ void show_progress(REAL8 rac,   /**< right ascension */
     boincv6_progress.cand_rac        = line->Alpha;
     boincv6_progress.cand_dec        = line->Delta;
     boincv6_progress.cand_hough_sign = line->HoughFStat;
-#else
-    boincv6_progress.cand_frequency  = 0.0;
-    boincv6_progress.cand_spindown   = 0.0;
-    boincv6_progress.cand_rac        = 0.0;
-    boincv6_progress.cand_dec        = 0.0;
-    boincv6_progress.cand_hough_sign = 0.0;
-#endif /* used for Hough HierarchicalSearch, not GCT */
-    boincv6_progress.frequency       = freq;
-    boincv6_progress.bandwidth       = fband;
-  } else {
-    boincv6_progress.cand_frequency  = 0.0;
-    boincv6_progress.cand_spindown   = 0.0;
-    boincv6_progress.cand_rac        = 0.0;
-    boincv6_progress.cand_dec        = 0.0;
-    boincv6_progress.cand_hough_sign = 0.0;
-    boincv6_progress.frequency       = 0.0;
-    boincv6_progress.bandwidth       = 0.0;
   }
+#endif /* used for Hough HierarchicalSearch, not GCT */
 }
 
 
@@ -765,7 +814,7 @@ static void worker (void) {
   rargv = (char**)calloc(1,argc*sizeof(char*));
   if(!rargv){
     LogPrintf(LOG_CRITICAL, "Out of memory\n");
-    boinc_finish(HIERARCHICALSEARCH_EMEM);
+    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
   }
 
   /* the program name (argv[0]) remains the same in any case */
@@ -780,7 +829,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       rargv[rarg][0] = '@';
       if (boinc_resolve_filename(argv[arg]+1,rargv[rarg]+1,MAX_PATH_LEN-1)) {
@@ -793,7 +842,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
@@ -805,7 +854,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
@@ -817,7 +866,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
@@ -827,7 +876,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
@@ -842,7 +891,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN + chars, sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
 
       /* copy & skip the "[1|2]=" characters, too */
@@ -872,7 +921,7 @@ static void worker (void) {
 	rargv[rarg] = (char*)realloc(rargv[rarg], (MAX_PATH_LEN + chars) * sizeof(char));
 	if(!rargv[rarg]){
 	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	  boinc_finish(HIERARCHICALSEARCH_EMEM);
+	  boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
 	}
 
 	/* put back the ';' in the original string and skip it for next iteration */
@@ -927,7 +976,7 @@ static void worker (void) {
 	  rargv[rarg] = (char*)calloc(s,sizeof(char));
 	  if(!rargv[rarg]){
 	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	    boinc_finish(HIERARCHICALSEARCH_EMEM);
+	    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
 	  }
 	  strncpy(rargv[rarg],argv[arg], (startc - argv[arg]));
 	  strncat(rargv[rarg],resultfile,s);
@@ -1096,12 +1145,15 @@ static void worker (void) {
 #ifdef __GLIBC__
   /* log the glibc version */
   LogPrintf (LOG_DEBUG, "glibc version/release: %s/%s\n", gnu_get_libc_version(), gnu_get_libc_release());
+  /* test mytime() */
+  mytime();
+  fputs(" - mytime()\n",stderr);
 #endif
 
   /* if there already was an error, there is no use in continuing */
   if (res) {
     LogPrintf (LOG_CRITICAL, "ERROR: error %d in command-line parsing\n", res);
-    boinc_finish(res);
+    boinc_finish(boinc_finish_status=res);
   }
 
   /* test the debugger (and symbol loading) here if we were told to */
@@ -1153,6 +1205,9 @@ static void worker (void) {
 
   /* if the program was called to output the version, output the BOINC revision, too */
   if(output_version)
+#ifdef BUILD_INFO
+    printf("%%%% " BUILD_INFO "\n");
+#endif
     printf("%%%% BOINC: " SVN_VERSION "\n");
 
   if (output_help || output_version || !resultfile_present) {
@@ -1184,7 +1239,7 @@ static void worker (void) {
       printf("      --CrashFPU         -       drain the FPU stack to test FPE\n");
       printf("      --TestNaN          -       raise a NaN to test FPE\n");
       printf("      --TestSQRT         -       try to calculate sqrt(-1) to test FPE\n");
-      boinc_finish(0);
+      boinc_finish(boinc_finish_status=0);
     }
 
   }
@@ -1219,12 +1274,8 @@ static void worker (void) {
   }
 #endif
 
-  /* finally set (fl)ops count if given */
-  if (estimated_flops >= 0)
-    boinc_ops_cumulative( estimated_flops, 0 /*ignore IOPS*/ );
-
   LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",res);
-  boinc_finish(res);
+  boinc_finish(boinc_finish_status=res);
 } /* worker() */
 
 
@@ -1426,12 +1477,24 @@ int main(int argc, char**argv) {
   } /* if !skipsighandler */
 #endif /* WIN32 */
 
+#ifdef DLOPEN_LIBGCC
+  {
+    void *lib_handle = dlopen("libgcc_s.so.1", RTLD_LAZY);
+    if(lib_handle) {
+      LogPrintf (LOG_DEBUG, "Successfully loaded libgcc_s.so.1\n");
+      libgcc_s_loaded = 1;
+    } else {
+      LogPrintf (LOG_DEBUG, "Couldn't load libgcc_s.so.1: %s\n", dlerror());
+      libgcc_s_loaded = -1;
+    }
+  }
+#endif
 
 #ifdef _NO_MSC_VER
   if (try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
     LogPrintf(LOG_NORMAL,"ERROR: Loading of mandantory DLLs failed\n");
     boinc_init();
-    boinc_finish(29);
+    boinc_finish(boinc_finish_status=29);
   }
 #endif
 
@@ -1444,7 +1507,7 @@ int main(int argc, char**argv) {
   boinc_init();
   worker();
   LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",0);
-  boinc_finish(0);
+  boinc_finish(boinc_finish_status=0);
   /* boinc_finish() ends the program, we never get here */
   return(0);
 }
@@ -1461,6 +1524,28 @@ int main(int argc, char**argv) {
     LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, ferr:%d, errno:%d: %s\n",\
 	      mess,filename,__LINE__,ferror(fp),errno,strerror(errno))
 #endif
+
+#ifdef HIERARCHSEARCHGCT
+
+/** sets a checkpoint.
+*/
+int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync) {
+  int ret;
+  /* make sure the exception mask isn't messed up by a badly written device driver etc.,
+     so restore it periodically */
+  enable_floating_point_exceptions();
+  /* checkpoint every time (i.e. sky position) if FORCE_CHECKPOINTING */
+#ifndef FORCE_CHECKPOINTING
+  if (!(boinc_is_standalone() || boinc_time_to_checkpoint()))
+    return 1; /* >0, no checkpoint written, no error */
+#endif
+  ret = write_gct_checkpoint(filename, tl, t2, counter, do_sync);
+  fprintf(stderr,"c\n");
+  boinc_checkpoint_completed();
+  return(ret);
+}
+
+#else /* #ifdef HIERARCHSEARCHGCT */
 
 /** init checkpointing and read a checkpoint if already there */
 int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint */
@@ -1546,9 +1631,6 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
   return(read_hfs_checkpoint(cptfilename,toplist,count));
 }
 
-
-/** sets a checkpoint.
-*/
 void set_checkpoint (void) {
   /* make sure the exception mask isn't messed up by a badly written device driver etc.,
      so restore it periodically */
@@ -1558,12 +1640,11 @@ void set_checkpoint (void) {
   if (boinc_time_to_checkpoint())
 #endif
     {
-      write_hfs_checkpoint(cptfilename,toplist,last_count, do_sync);
+      write_hfs_checkpoint(cptfilename, toplist, last_count, do_sync);
       fprintf(stderr,"c\n");
       boinc_checkpoint_completed();
     }
 }
-
 
 /** finally writes a minimal (compacted) version of the toplist and cleans up
     all structures related to the toplist. After that, the toplist is invalid.
@@ -1571,6 +1652,9 @@ void set_checkpoint (void) {
 void write_and_close_checkpointed_file (void) {
   write_hfs_oputput(outfilename,toplist);
 }
+
+#endif /* #ifdef HIERARCHSEARCHGCT */
+
 
 /* Experimental and / or debugging stuff */
 

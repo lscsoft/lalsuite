@@ -19,13 +19,9 @@
 
 /**
 \author Mendell, Greg A.
-\file
-\ingroup pulsarTODO
+\ingroup FoldAmplitudes_h
 
 \heading{Module \ref FoldAmplitudes.c}
-
-\heading{Prototypes}
-
 
 \heading{Description}
 
@@ -98,22 +94,22 @@ For use in known pulsar search.
 
 */
 
-/******* INCLUDE STANDARD LIBRARY HEADERS; ************/
+/* ****** INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
 #include <math.h>
 
-/******* INCLUDE ANY LDAS LIBRARY HEADERS ************/
+/* ****** INCLUDE ANY LDAS LIBRARY HEADERS ************/
 
-/******* INCLUDE ANY LAL HEADERS ************/
+/* ****** INCLUDE ANY LAL HEADERS ************/
 #include <lal/LALStdlib.h>
 #include <lal/FoldAmplitudes.h>
 
-/******* DEFINE LOCAL CONSTANTS AND MACROS ************/
+/* ****** DEFINE LOCAL CONSTANTS AND MACROS ************/
 
-/******* DECLARE LOCAL (static) FUNCTIONS ************/
+/* ****** DECLARE LOCAL (static) FUNCTIONS ************/
 /* (definitions can go here or at the end of the file) */
 
-/******* DEFINE GLOBAL FUNCTIONS ************/
+/* ****** DEFINE GLOBAL FUNCTIONS ************/
 
 
 void
@@ -124,7 +120,7 @@ LALFoldAmplitudes( LALStatus                      *status,
 
 
 {
-  /******* DECLARE VARIABLES ************/
+  /* ****** DECLARE VARIABLES ************/
 
   	const REAL4Vector 	*amplitudeVec;   /* pointer to input vector of amplitudes */
    	const REAL4Vector  	*phaseVec;       /* pointer to input vector of phases */
@@ -138,7 +134,7 @@ LALFoldAmplitudes( LALStatus                      *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  /******* CHECK VALIDITY OF ARGUMENTS; for example ************/
+  /* ****** CHECK VALIDITY OF ARGUMENTS; for example ************/
 
   if ( output == NULL ) {
     ABORT( status, FOLDAMPLITUDESH_ENULLP, FOLDAMPLITUDESH_MSGENULLP );
@@ -160,7 +156,7 @@ LALFoldAmplitudes( LALStatus                      *status,
     ABORT( status, FOLDAMPLITUDESH_EBINMIN, FOLDAMPLITUDESH_MSGEBINMIN  );
   }
 
-  /******* EXTRACT INPUTS AND PARAMETERS ************/
+  /* ****** EXTRACT INPUTS AND PARAMETERS ************/
 
   phaseVec = input->phaseVec;
   amplitudeVec = input->amplitudeVec;
@@ -168,7 +164,7 @@ LALFoldAmplitudes( LALStatus                      *status,
   binRange = params->binMax - params->binMin;
   binSize =  binRange/params->numBins;
 
-  /******* DO ANALYSIS ************/
+  /* ****** DO ANALYSIS ************/
 
   /* Fold amplitudes into phase bins; store results in output  */
   /* Function is more efficient if binRange == 1 */
@@ -188,7 +184,7 @@ LALFoldAmplitudes( LALStatus                      *status,
   	}
   }
 
-  /******* CONSTRUCT OUTPUT ************/
+  /* ****** CONSTRUCT OUTPUT ************/
 
   /* Already done in the analysis section */
 

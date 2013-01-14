@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -227,26 +227,26 @@ main( int argc, char *argv[] )
    REAL8      f;
 
    const COMPLEX8  testInputDataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0]
-     = {{0.0,0.0}, {1.0,0.0}, {2.0,0.0}, {3.0,0.0},
-        {4.0,0.0}, {5.0,0.0}, {6.0,0.0}, {7.0,0.0}};
+     = {0.0, 1.0, 2.0, 3.0,
+        4.0, 5.0, 6.0, 7.0};
 
    const COMPLEX8
      expectedOutput1DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1]
-     = {{0.5,0.0}, {2.0,0.0}, {4.0,0.0}, {6.0,0.0}};
+     = {0.5, 2.0, 4.0, 6.0};
 
    const COMPLEX8
      expectedOutput2DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2]
-     = {{(2.0/3.0),0.0}, {3.0,0.0}, {6.0,0.0}};
+     = {(2.0/3.0), 3.0, 6.0};
 
    const COMPLEX8
      testInput3DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH3]
-     = {{40.0,1.0/40.0}, {41.0,1.0/41.0}, {42.0,1.0/42.0},
-        {43.0,1.0/43.0}, {44.0,1.0/44.0}};
+     = {40.0 + I * 1.0/40.0, 41.0 + I * 1.0/41.0, 42.0 + I * 1.0/42.0,
+        43.0 + I * 1.0/43.0, 44.0 + I * 1.0/44.0};
 
    const COMPLEX8
      expectedOutput4DataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH4]
-     = {{41.0, (1.0/40.0+2.0/41.0+1.0/42.0) / 4.0},
-        {43.0, (1.0/42.0+2.0/43.0+1.0/44.0) / 4.0}};
+     = {41.0 + I * (1.0/40.0+2.0/41.0+1.0/42.0) / 4.0,
+        43.0 + I * (1.0/42.0+2.0/43.0+1.0/44.0) / 4.0};
 
    COMPLEX8FrequencySeries             goodInput;
    COMPLEX8FrequencySeries     goodOutput;
@@ -260,7 +260,6 @@ main( int argc, char *argv[] )
 
    COMPLEX8               coarseTotal, fineTotal;
    COMPLEX8               cError;
-   const COMPLEX8         cZero = {0,0};
    REAL4TimeSeries        timeSeries;
 
    RealFFTPlan            *fftPlan;
@@ -714,14 +713,14 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("hBarTilde(0)=%g + %g i, should be %g + %g i\n",
-            goodOutput.data->data[0].re, goodOutput.data->data[0].im,
-            expectedOutput1DataData[0].re, expectedOutput1DataData[0].im);
+            crealf(goodOutput.data->data[0]), cimagf(goodOutput.data->data[0]),
+            crealf(expectedOutput1DataData[0]), cimagf(expectedOutput1DataData[0]));
    }
-   if ((fabs(goodOutput.data->data[0].re - expectedOutput1DataData[0].re)
-        /expectedOutput1DataData[0].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+   if ((fabs(creal(goodOutput.data->data[0] - expectedOutput1DataData[0]))
+        /creal(expectedOutput1DataData[0]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
         ||
-       (fabs(goodOutput.data->data[0].im - expectedOutput1DataData[0].im)
-        /expectedOutput1DataData[0].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+       (fabs(cimag(goodOutput.data->data[0] - expectedOutput1DataData[0]))
+        /creal(expectedOutput1DataData[0]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
    {
      printf("  FAIL: Valid data test #1\n");
@@ -739,14 +738,14 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n", f,
-              goodOutput.data->data[i].re, goodOutput.data->data[i].im,
-              expectedOutput1DataData[i].re, expectedOutput1DataData[i].im);
+              crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
+              crealf(expectedOutput1DataData[i]), cimagf(expectedOutput1DataData[i]));
      }
-     if ((fabs(goodOutput.data->data[i].re - expectedOutput1DataData[i].re)
-          /expectedOutput1DataData[i].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+     if ((fabs(creal(goodOutput.data->data[i] - expectedOutput1DataData[i]))
+          /creal(expectedOutput1DataData[i]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
          ||
-         (fabs(goodOutput.data->data[i].im - expectedOutput1DataData[i].im)
-          /expectedOutput1DataData[i].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+         (fabs(cimag(goodOutput.data->data[i] - expectedOutput1DataData[i]))
+          /creal(expectedOutput1DataData[i]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
          )
      {
        printf("  FAIL: Valid data test #1\n");
@@ -911,14 +910,14 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("hBarTilde(0)=%g + %g i, should be %g + %g i\n",
-            goodOutput.data->data[0].re, goodOutput.data->data[0].im,
-            expectedOutput2DataData[0].re, expectedOutput2DataData[0].im);
+            crealf(goodOutput.data->data[0]), cimagf(goodOutput.data->data[0]),
+            crealf(expectedOutput2DataData[0]), cimagf(expectedOutput2DataData[0]));
    }
-   if ((fabs(goodOutput.data->data[0].re - expectedOutput2DataData[0].re)
-        /expectedOutput2DataData[0].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+   if ((fabs(creal(goodOutput.data->data[0] - expectedOutput2DataData[0]))
+        /creal(expectedOutput2DataData[0]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
         ||
-       (fabs(goodOutput.data->data[0].im - expectedOutput2DataData[0].im)
-        /expectedOutput2DataData[0].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+       (fabs(cimag(goodOutput.data->data[0] - expectedOutput2DataData[0]))
+        /creal(expectedOutput2DataData[0]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
    {
      printf("  FAIL: Valid data test #2\n");
@@ -936,14 +935,14 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n", f,
-              goodOutput.data->data[i].re, goodOutput.data->data[i].im,
-              expectedOutput2DataData[i].re, expectedOutput2DataData[i].im);
+              crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
+              crealf(expectedOutput2DataData[i]), cimagf(expectedOutput2DataData[i]));
      }
-     if ((fabs(goodOutput.data->data[i].re - expectedOutput2DataData[i].re)
-          /expectedOutput2DataData[i].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+     if ((fabs(creal(goodOutput.data->data[i] - expectedOutput2DataData[i]))
+          /creal(expectedOutput2DataData[i]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
          ||
-         (fabs(goodOutput.data->data[i].im - expectedOutput2DataData[i].im)
-          /expectedOutput2DataData[i].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+         (fabs(cimag(goodOutput.data->data[i] - expectedOutput2DataData[i]))
+          /creal(expectedOutput2DataData[i]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
      {
        printf("  FAIL: Valid data test #2 \n");
@@ -1137,14 +1136,14 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("hBarTilde(0)=%g + %g i, should be %g + %g i\n",
-            goodOutput.data->data[0].re, goodOutput.data->data[0].im,
-            expectedOutput4DataData[0].re, expectedOutput4DataData[0].im);
+            crealf(goodOutput.data->data[0]), cimagf(goodOutput.data->data[0]),
+            crealf(expectedOutput4DataData[0]), cimagf(expectedOutput4DataData[0]));
    }
-   if ((fabs(goodOutput.data->data[0].re - expectedOutput4DataData[0].re)
-        /expectedOutput4DataData[0].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+   if ((fabs(creal(goodOutput.data->data[0] - expectedOutput4DataData[0]))
+        /creal(expectedOutput4DataData[0]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
         ||
-       (fabs(goodOutput.data->data[0].im - expectedOutput4DataData[0].im)
-        /expectedOutput4DataData[0].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+       (fabs(cimag(goodOutput.data->data[0] - expectedOutput4DataData[0]))
+        /creal(expectedOutput4DataData[0]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
    {
      printf("  FAIL: Valid data test #3\n");
@@ -1162,14 +1161,14 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n", f,
-              goodOutput.data->data[i].re, goodOutput.data->data[i].im,
-              expectedOutput4DataData[i].re, expectedOutput4DataData[i].im);
+              crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
+              crealf(expectedOutput4DataData[i]), cimagf(expectedOutput4DataData[i]));
      }
-     if ((fabs(goodOutput.data->data[i].re - expectedOutput4DataData[i].re)
-          /expectedOutput4DataData[i].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+     if ((fabs(creal(goodOutput.data->data[i] - expectedOutput4DataData[i]))
+          /creal(expectedOutput4DataData[i]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
          ||
-         (fabs(goodOutput.data->data[i].im - expectedOutput4DataData[i].im)
-          /expectedOutput4DataData[i].re > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+         (fabs(cimag(goodOutput.data->data[i] - expectedOutput4DataData[i]))
+          /creal(expectedOutput4DataData[i]) > CCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
      {
        printf("  FAIL: Valid data test #3 \n");
@@ -1270,24 +1269,22 @@ main( int argc, char *argv[] )
 	 i * goodInput.deltaF <= CCOARSEGRAINFREQUENCYSERIESTESTC_FMIN ;
 	 ++i )
    {
-     goodInput.data->data[i] = cZero;
+     goodInput.data->data[i] = 0.0;
    }
 
    for ( i = CCOARSEGRAINFREQUENCYSERIESTESTC_FMAX / goodInput.deltaF ;
 	 i < goodInput.data->length ;
 	 ++i )
    {
-     goodInput.data->data[i] = cZero;
+     goodInput.data->data[i] = 0.0;
    }
 
-   fineTotal = cZero;
+   fineTotal = 0.0;
    for ( i = 0 ; i < goodInput.data->length ; ++i )
    {
-     fineTotal.re += goodInput.data->data[i].re;
-     fineTotal.im += goodInput.data->data[i].im;
+     fineTotal += goodInput.data->data[i];
    }
-   fineTotal.re *= goodInput.deltaF;
-   fineTotal.im *= goodInput.deltaF;
+   fineTotal *= goodInput.deltaF;
 
    params.deltaF
      = goodInput.deltaF * CCOARSEGRAINFREQUENCYSERIESTESTC_RESRATIO;
@@ -1314,37 +1311,35 @@ main( int argc, char *argv[] )
      return code;
    }
 
-   coarseTotal = cZero;
+   coarseTotal = 0.0;
    for ( i = 0 ; i < goodOutput.data->length ; ++i )
    {
-     coarseTotal.re += goodOutput.data->data[i].re;
-     coarseTotal.im += goodOutput.data->data[i].im;
+     coarseTotal += goodOutput.data->data[i];
    }
-   coarseTotal.re *= goodOutput.deltaF;
-   coarseTotal.im *= goodOutput.deltaF;
+   coarseTotal *= goodOutput.deltaF;
 
-   cError.re = ( (coarseTotal.re - fineTotal.re) * fineTotal.re
-		 + (coarseTotal.im - fineTotal.im) * fineTotal.im )
-               / ( fineTotal.re * fineTotal.re + fineTotal.im * fineTotal.im );
-   cError.im = ( (coarseTotal.im - fineTotal.im) * fineTotal.re
-		 - (coarseTotal.re - fineTotal.re) * fineTotal.im )
-               / ( fineTotal.re * fineTotal.re + fineTotal.im * fineTotal.im );
+   cError = ( creal(coarseTotal - fineTotal) * creal(fineTotal)
+		 + cimag(coarseTotal - fineTotal) * cimag(fineTotal) )
+               / ( creal(fineTotal) * creal(fineTotal) + cimag(fineTotal) * cimag(fineTotal) );
+   cError += I * ( cimag(coarseTotal - fineTotal) * creal(fineTotal)
+		 - creal(coarseTotal - fineTotal) * cimag(fineTotal) )
+               / ( creal(fineTotal) * creal(fineTotal) + cimag(fineTotal) * cimag(fineTotal) );
 
    if (optVerbose)
    {
      printf("Integral of fine-grained frequency series = %g + %g i\n",
-	    fineTotal.re, fineTotal.im);
+	    crealf(fineTotal), cimagf(fineTotal));
      printf("Integral of coarse-grained frequency series = %g + %g i\n",
-	    coarseTotal.re, coarseTotal.im);
+	    crealf(coarseTotal), cimagf(coarseTotal));
      printf( "Fractional error is %e + % e i\n",
-	     cError.re, cError.im );
+	     crealf(cError), cimagf(cError) );
 
      LALSPrintTimeSeries( &timeSeries, "ccg_TimeSeries.dat" );
      LALCPrintFrequencySeries( &goodInput, "ccg_fgFreqSeries.dat" );
      LALCPrintFrequencySeries( &goodOutput, "ccg_cgFreqSeries.dat" );
    }
 
-   if ( cError.re * cError.re + cError.im * cError.im
+   if ( creal(cError) * creal(cError) + cimag(cError) * cimag(cError)
 	> ( CCOARSEGRAINFREQUENCYSERIESTESTC_RANTOL
 	    * CCOARSEGRAINFREQUENCYSERIESTESTC_RANTOL )
       )

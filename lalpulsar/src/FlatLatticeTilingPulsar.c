@@ -1,206 +1,316 @@
-/*
- *  Copyright (C) 2007, 2008 Karl Wette
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
- */
-
-/**
- * \author Karl Wette
- * \file
- * \brief Pulsar-specific routines for FlatLatticeTiling
- */
+//
+// Copyright (C) 2007, 2008, 2012 Karl Wette
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with with program; see the file COPYING. If not, write to the
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+// MA  02111-1307  USA
+//
 
 #include <math.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <gsl/gsl_permutation.h>
 #include <gsl/gsl_math.h>
-#include <gsl/gsl_eigen.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_blas.h>
-#include <gsl/gsl_nan.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/LALMalloc.h>
-#include <lal/LALConstants.h>
-#include <lal/XLALError.h>
-#include <lal/GSLSupport.h>
 #include <lal/FlatLatticeTilingPulsar.h>
 
-#define TRUE  (1==1)
-#define FALSE (1==0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
-/**
- * Calculate the factorial of an integer
- */
-static INT4 factorial(
-		      INT4 i
-		      )
+static void SuperSkyNZBound(
+  const size_t dimension,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
+  gsl_vector* lower,
+  gsl_vector* upper UNUSED,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
+  )
 {
 
-  INT4 f = 1;
+  // Get bounds data
+  const FLSSNZ type = *((const FLSSNZ*)data);
 
-  while (i > 1)
-    f *= i--;
+  // Calculate nz from nx and ny
+  const double nx = gsl_vector_get(point, dimension - 2);
+  const double ny = gsl_vector_get(point, dimension - 1);
+  const double nxysqr = nx * nx + ny * ny;
+  const double nz = (nxysqr < 1.0) ? sqrt(1.0 - nxysqr) : 0.0;
 
-  return f;
-
-}
-
-/**
- * Set a flat lattice tiling to the spindown Fstat metric
- * (so no sky position tiling). Components are in the order
- * \f$\omega_0,\alpha,\delta,\omega_1,\omega_2,...\f$
- * and will be converted on output to
- * \f$f_0,\alpha,\delta,f_1,f_2,...\f$
- * using the conversions
- * \f$f_k = \omega_k \frac{(k+1)!}{{2\pi T^{k+1}}}\f$
- */
-int XLALSetFlatLatticeTilingSpindownFstatMetric(
-						FlatLatticeTiling *tiling, /**< Tiling structure */
-						REAL8 max_mismatch,        /**< Maximum mismatch */
-						REAL8 Tspan                /**< Time span of the search */
-						)
-{
-
-  const int n = tiling->dimensions;
-
-  int i, j;
-  gsl_matrix *norm_metric = NULL;
-  gsl_vector *norm_to_real;
-
-  /* Check input */
-  if (Tspan <= 0.0)
-    XLAL_ERROR(XLAL_EINVAL, "Tspan must be strictly positive");
-
-  /* Allocate memory */
-  ALLOC_GSL_MATRIX(norm_metric, n, n, XLAL_FAILURE);
-  ALLOC_GSL_VECTOR(norm_to_real,   n, XLAL_FAILURE);
-  gsl_matrix_set_identity(norm_metric);
-  gsl_vector_set_all(norm_to_real, 1.0);
-
-  /* Calculate metric and conversion factors */
-  for (i = 0; i < n - 2; ++i) {
-
-    for (j = 0; j < n - 2; ++j)
-      gsl_matrix_set(norm_metric, i + 2, j + 2, (1.0 * (i + 1) * (j + 1)) / ((i + 2) * (j + 2) * (i + j + 3)));
-
-    gsl_vector_set(norm_to_real, i + 2, 1.0 * factorial(i + 1) / (LAL_TWOPI * pow(Tspan, i + 1)));
-
+  // Set singular bounds on nz
+  if (nz > 0.0) {
+    switch (type) {
+    case FLSSNZ_LOWER:
+      gsl_vector_set(lower, 0, -nz);
+      break;
+    case FLSSNZ_PLANE:
+      gsl_vector_set(lower, 0, 0.0);
+      break;
+    case FLSSNZ_UPPER:
+      gsl_vector_set(lower, 0, nz);
+      break;
+    case FLSSNZ_SPHERE:
+      gsl_vector_set(lower, 0, -nz);
+      gsl_vector_set(lower, 1, nz);
+      break;
+    default:
+      return;
+    }
+  } else {
+    gsl_vector_set(lower, 0, 0.0);
   }
 
-  /* Swap rows/columns 0 and 2 to get right order */
-  gsl_matrix_swap_rows(norm_metric, 0, 2);
-  gsl_matrix_swap_columns(norm_metric, 0, 2);
-  gsl_vector_swap_elements(norm_to_real, 0, 2);
+};
 
-  /* Set the metric of the flat lattice tiling */
-  if (XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch, norm_to_real) != XLAL_SUCCESS)
-    XLAL_ERROR(XLAL_EFAILED);
+int XLALSetFlatLatticeSuperSkyNZBound(
+  FlatLatticeTiling* tiling,
+  const size_t nz_dimension,
+  const FLSSNZ type
+  )
+{
 
-  /* Cleanup */
-  FREE_GSL_MATRIX(norm_metric);
-  FREE_GSL_VECTOR(norm_to_real);
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(type < FLSSNZ_LAST, XLAL_EINVAL);
+
+  // Allocate and set bounds data
+  FLSSNZ* info = XLALCalloc(1, sizeof(FLSSNZ));
+  XLAL_CHECK(info != NULL, XLAL_ENOMEM);
+  *info = type;
+
+  // Set parameter space bound
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, nz_dimension, true, SuperSkyNZBound, (void*)info) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
 }
 
-/**
- * Set a flat lattice tiling to a parameter space defined by
- * the age and possible braking index range of an object
- */
-static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *point, REAL8 *lower, REAL8 *upper)
-{
-  double x;
+typedef struct {
+  size_t nx_dim;
+  double offset[3];
+  double bounds[2];
+} FnDotConstantBoundInfo;
 
-  /* Set constant based on dimension */
-  switch (dimension) {
-  case 0:
-    x = 1.0;
-    break;
-  case 1:
-    x = gsl_vector_get(point, 0);
-    break;
-  case 2:
-    x = gsl_vector_get(point, 1);
-    x *= x;
-    x /= gsl_vector_get(point, 0);
-    break;
-  default:
-    XLAL_ERROR(XLAL_EINVAL, "invalid dimension %d input, allowed are 0-2", dimension);
+static void FnDotConstantBound(
+  const size_t dimension UNUSED,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point UNUSED,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
+  gsl_vector* lower,
+  gsl_vector* upper,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
+  )
+{
+
+  // Get bounds data
+  const FnDotConstantBoundInfo* info = (const FnDotConstantBoundInfo*)data;
+
+  // Calculate sky offset
+  double offset = 0.0;
+  for (size_t i = 0; i < 3; ++i) {
+    offset += info->offset[i] * gsl_vector_get(point, info->nx_dim + i);
   }
 
-  /* Set lower and upper bound */
-  *lower = x * gsl_matrix_get((gsl_matrix*)data, dimension, 0);
-  *upper = x * gsl_matrix_get((gsl_matrix*)data, dimension, 1);
-
-  return TRUE;
-
-}
-static void AgeBrakingIndexFree(void *data)
-{
-
-  /* Cleanup */
-  FREE_GSL_MATRIX((gsl_matrix*)data);
+  // Set constant lower and upper bounds on offset frequency/spindowns
+  gsl_vector_set(lower, 0, info->bounds[0] + offset);
+  if (upper) {
+    gsl_vector_set(upper, 0, info->bounds[1] + offset);
+  }
 
 }
-int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
-						  FlatLatticeTiling *tiling, /**< Tiling structure */
-						  REAL8 freq,                /**< Starting frequency */
-						  REAL8 freq_band,           /**< Frequency band */
-						  REAL8 age,                 /**< Spindown age */
-						  REAL8 min_braking,         /**< Minimum braking index */
-						  REAL8 max_braking,         /**< Maximum braking index */
-						  INT4 offset,               /**< Number of dimensions offset between first dimension and frequency */
-						  INT4 gap                   /**< Number of dimensions gap netween frequency and first spindown */
-						  )
+
+int XLALSetFlatLatticeFnDotConstantBound(
+  FlatLatticeTiling* tiling,
+  const size_t nx_dimension,
+  const double offset[3],
+  size_t dimension,
+  double bound1,
+  double bound2
+  )
 {
 
-  gsl_matrix *data = NULL;
-  UINT8 bound;
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(nx_dimension + 3 <= dimension, XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
 
-  /* Check tiling dimension */
-  if (tiling->dimensions < (3 + gap))
-    XLAL_ERROR(XLAL_EINVAL, "'tiling->dimensions' is too small");
+  // Allocate and set bounds data
+  FnDotConstantBoundInfo* info = XLALCalloc(1, sizeof(FnDotConstantBoundInfo));
+  XLAL_CHECK(info != NULL, XLAL_ENOMEM);
+  info->nx_dim = nx_dimension;
+  for (size_t i = 0; i < 3; ++i) {
+    if (offset) {
+      XLAL_CHECK(isfinite(info->offset[i]), XLAL_EINVAL);
+      info->offset[i] = offset[i];
+    } else {
+      info->offset[i] = 0;
+    }
+  }
+  info->bounds[0] = GSL_MIN(bound1, bound2);
+  info->bounds[1] = GSL_MAX(bound1, bound2);
 
-  /* Allocate memory */
-  ALLOC_GSL_MATRIX(data, tiling->dimensions, 2, XLAL_FAILURE);
-  gsl_matrix_set_zero(data);
+  // Set parameter space bound
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, false, FnDotConstantBound, (void*)info) == XLAL_SUCCESS, XLAL_EFAILED);
 
-  /* Set frequency bounds */
-  gsl_matrix_set(data, 0, 0, freq);
-  gsl_matrix_set(data, 0, 1, freq + freq_band);
+  return XLAL_SUCCESS;
 
-  /* Set first spindown bounds */
-  gsl_matrix_set(data, 1, 0, -1.0 / ((min_braking - 1.0) * age));
-  gsl_matrix_set(data, 1, 1, -1.0 / ((max_braking - 1.0) * age));
+}
 
-  /* Set second spindown bounds */
-  gsl_matrix_set(data, 2, 0, min_braking);
-  gsl_matrix_set(data, 2, 1, max_braking);
+typedef struct {
+  size_t freq_dim;
+  double lower;
+  double upper;
+} F1DotAgeBrakingBoundInfo;
 
-  /* Set bound dimensions */
-  bound = ((UINT8)1) | (((UINT8)6) << gap) << offset;
+static void F1DotAgeBrakingBound(
+  const size_t dimension UNUSED,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
+  gsl_vector* lower,
+  gsl_vector* upper,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
+  )
+{
 
-  /* Set parameter space */
-  if (XLAL_SUCCESS != XLALAddFlatLatticeTilingBound(tiling, bound, AgeBrakingIndexBound,
-						    (void*)data, AgeBrakingIndexFree))
-    XLAL_ERROR(XLAL_EFAILED);
+  // Get bounds info
+  const F1DotAgeBrakingBoundInfo* info = (const F1DotAgeBrakingBoundInfo*)data;
+
+  // Get current value of frequency
+  const double freq = gsl_vector_get(point, info->freq_dim);
+
+  // Set first spindown bounds
+  gsl_vector_set(lower, 0, info->lower * freq);
+  if (upper != NULL) {
+    gsl_vector_set(upper, 0, info->upper * freq);
+  }
+
+}
+
+int XLALSetFlatLatticeF1DotAgeBrakingBound(
+  FlatLatticeTiling* tiling,
+  const size_t freq_dimension,
+  const size_t f1dot_dimension,
+  const double age,
+  const double min_braking,
+  const double max_braking
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(freq_dimension < f1dot_dimension, XLAL_EINVAL);
+  XLAL_CHECK(age > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(min_braking > 1.0, XLAL_EINVAL);
+  XLAL_CHECK(max_braking > 1.0, XLAL_EINVAL);
+  XLAL_CHECK(min_braking <= max_braking, XLAL_EINVAL);
+
+  // Allocate memory
+  F1DotAgeBrakingBoundInfo* info = XLALCalloc(1, sizeof(F1DotAgeBrakingBoundInfo));
+  XLAL_CHECK(info != NULL, XLAL_ENOMEM);
+
+  // Set bounds info
+  info->freq_dim = freq_dimension;
+  info->lower = -1.0 / ((min_braking - 1.0) * age);
+  info->upper = -1.0 / ((max_braking - 1.0) * age);
+
+  // Set parameter space bound
+  const bool is_singular = (min_braking == max_braking);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, f1dot_dimension, is_singular, F1DotAgeBrakingBound, (void*)info) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  return XLAL_SUCCESS;
+
+}
+
+typedef struct {
+  size_t freq_dim;
+  size_t f1dot_dim;
+  double lower;
+  double upper;
+} F2DotBrakingBoundInfo;
+
+static void F2DotBrakingBound(
+  const size_t dimension UNUSED,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
+  gsl_vector* lower,
+  gsl_vector* upper,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
+  )
+{
+
+  // Get bounds info
+  const F2DotBrakingBoundInfo* info = (const F2DotBrakingBoundInfo*)data;
+
+  // Get current values of frequency and first spindown
+  const double freq = gsl_vector_get(point, info->freq_dim);
+  const double f1dot = gsl_vector_get(point, info->f1dot_dim);
+
+  // Set first spindown bounds
+  const double x = f1dot * f1dot / freq;
+  gsl_vector_set(lower, 0, info->lower * x);
+  if (upper != NULL) {
+    gsl_vector_set(upper, 0, info->upper * x);
+  }
+
+}
+
+int XLALSetFlatLatticeF2DotBrakingBound(
+  FlatLatticeTiling* tiling,
+  const size_t freq_dimension,
+  const size_t f1dot_dimension,
+  const size_t f2dot_dimension,
+  const double min_braking,
+  const double max_braking
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(freq_dimension < f1dot_dimension, XLAL_EINVAL);
+  XLAL_CHECK(f1dot_dimension < f2dot_dimension, XLAL_EINVAL);
+  XLAL_CHECK(min_braking > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(max_braking > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(min_braking <= max_braking, XLAL_EINVAL);
+
+  // Allocate memory
+  F2DotBrakingBoundInfo* info = XLALCalloc(1, sizeof(F2DotBrakingBoundInfo));
+  XLAL_CHECK(info != NULL, XLAL_ENOMEM);
+
+  // Set bounds info
+  info->freq_dim = freq_dimension;
+  info->f1dot_dim = f1dot_dimension;
+  info->lower = min_braking;
+  info->upper = max_braking;
+
+  // Set parameter space bound
+  const bool is_singular = (min_braking == max_braking);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, f2dot_dimension, is_singular, F2DotBrakingBound, (void*)info) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 

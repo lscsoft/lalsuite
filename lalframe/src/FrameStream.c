@@ -19,7 +19,7 @@
 
 /**
  * \author Jolien D. E. Creighton
- * \file
+ * \ingroup FrameStream_h
  *
  * \heading{Module \ref FrameStream.c}
  *
@@ -400,14 +400,13 @@ FrStream * XLALFrOpen( const char *dirname, const char *pattern )
 }
 
 
-int XLALFrClose( FrStream *stream )
+void XLALFrClose( FrStream *stream )
 {
-  if ( ! stream )
-    XLAL_ERROR( XLAL_EFAULT );
-  FrFileIEnd( stream->file );
-  free_flist( stream->flist );
-  LALFree( stream );
-  return 0;
+  if ( stream ) {
+    FrFileIEnd( stream->file );
+    free_flist( stream->flist );
+    LALFree( stream );
+  }
 }
 
 

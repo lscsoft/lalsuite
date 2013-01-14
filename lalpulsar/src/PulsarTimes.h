@@ -22,16 +22,16 @@
 #define _PULSARTIMES_H
 
 #include <lal/LALStdlib.h>
-
 #include <lal/LALBarycenter.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**\defgroup PulsarTimes_h  PulsarTimes
+/**
+   \defgroup PulsarTimes_h  Header PulsarTimes.h
    \author Creighton, T. D.
-   \ingroup pulsarCommon
+   \ingroup pkg_pulsarCommon
    \brief Provides routines to transform among various time coordinates used in a pulsar search.
 
    \heading{Synopsis}
@@ -138,6 +138,7 @@ routines that place different parameters in <tt>*variables</tt> and
 <tt>*constants</tt>, although this may require recompiling the library.
 
 */
+/*@{*/
 
 /** \name Error Codes */
 /*@{*/
@@ -149,7 +150,7 @@ routines that place different parameters in <tt>*variables</tt> and
 #define PULSARTIMESH_MSGEBAD "Bad parameter values"
 /*@}*/
 
-/** \ingroup PulsarTimes_h
+/**
  * This structure stores a superset of all constant parameters
  * required by the functions provided by the header PulsarTimes.h.
  * Although the structure is quite large, it is
@@ -202,6 +203,8 @@ typedef struct tagPulsarTimesParamStruc {
   UINT4 nArgs; 		/**< The number of variable parameters \f$\lambda^k\f$ to be sent to the function t1() */
   /*@} */
 } PulsarTimesParamStruc;
+
+int XLALGetEarthTimes( const LIGOTimeGPS *tepoch, REAL8 *tMidnight, REAL8 *tAutumn );
 
 /** \cond DONT_DOXYGEN */
 
@@ -270,6 +273,8 @@ LALTEphemeris(LALStatus *,
 	      PulsarTimesParamStruc *constants);
 
 /** \endcond */
+
+/*@}*/
 
 #ifdef __cplusplus
 }

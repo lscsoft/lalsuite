@@ -30,6 +30,7 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <complex.h>
 #include <sys/time.h>
 
 /* LAL headers */
@@ -239,8 +240,10 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data );
 
 void get_loudest_snr( LALInferenceRunState *runState );
 
-INT4 XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, INT4 gpsstart, 
-                                INT4 gpsend );
+TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
+                                              CHAR *tfile,
+                                              BinaryPulsarParams pulsar,
+                                              INT4 gpsstart, INT4 gpsend );
 
 void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime,
                          REAL8 *psiprime );

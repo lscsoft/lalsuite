@@ -1,7 +1,6 @@
 /**
 
-\addtogroup noisemodels noisemodels
-\ingroup inspiral
+\addtogroup pkg_noisemodels
 
 This is a module that generates noisemodels of various interferometers
 and helps run simple filtering of data simulated with these noise models.
