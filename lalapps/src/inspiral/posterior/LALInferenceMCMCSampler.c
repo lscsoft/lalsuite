@@ -317,7 +317,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8Vector * adjParameters = NULL;
   REAL8 adjCurrentLikelihood;
   REAL8 adjCurrentPrior;
-  REAL8 adjAcceptanceCount;
   INT4 readyToSwap = 0;
   INT4 tempSwapAccepted = 0;
   MPI_Status MPIstatus;
@@ -334,7 +333,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 numACLchecks=10;             // Number of times to recalculate ACL
   INT4 aclCheckCounter=1;
   INT4 iEff=0;
-  INT4 target;
 
   ProcessParamsTable *ppt;
 
@@ -382,6 +380,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 s_gamma           = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "s_gamma"));                // Sets the size of changes to jump size during adaptation
   INT4  adaptStart        = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptStart"));                  // Keeps track of last iteration adaptation was restarted
   INT4  runPhase          = 0;                  // Phase of run. (0=PT-only run, 1=temporary PT, 2=annealing, 3=single-chain sampling)
+  INT4  endOfPhase        = Neff;
+
 
   LALInferenceAddVariable(runState->algorithmParams, "acl", &acl,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(runState->algorithmParams, "goodACL", &goodACL,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
@@ -446,7 +446,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     if (LALInferenceGetProcParamVal(runState->commandLine,"--annealLength"))
       annealLength = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealLength")->value);
+
+    endOfPhase=annealStart;
   }
+
 
   for (t=0; t<nChain; ++t) {
     tempLadder[t] = 0.0;
@@ -625,23 +628,25 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (annealingOn && MPIrank!=0)
     MPI_Irecv(&runPhase, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, &MPIrequest);
 
-  // iterate:
-  fflush(stdout);
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  /* Setup non-blocking recieve that will succeed when chain 0 is finished. */
+  /* Setup non-blocking recieve that will succeed when chain 0 is complete. */
   if (MPIrank!=0)
     MPI_Irecv(&runComplete, 1, MPI_INT, 0, 2, MPI_COMM_WORLD, &MPIrequest);
 
+  fflush(stdout);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // iterate:
   i=0;
   while (!runComplete) {
     /* Increment iteration counter */
     i++;
+
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 
     if (adaptationOn)
       LALInferenceAdaptation(runState, i);
 
+    // Parallel tempering phase
     if (runPhase < 2) {
       //ACL calculation during parallel tempering
       if (i % (100*Nskip) == 0 && MPIrank == 0) {
@@ -660,16 +665,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             iEff = (i - iEffStart)/acl;
 
             /* Periodically recalculate ACL */
-            if (runPhase==0)
-              target = Neff;
-            else if (runPhase==1)
-              target = annealStart;
-
-            if (runPhase<2 && iEff > floor((REAL8)(aclCheckCounter*target)/(REAL8)numACLchecks)) {
+            if (runPhase<2 && iEff > floor((REAL8)(aclCheckCounter*endOfPhase)/(REAL8)numACLchecks)) {
               updateMaxAutoCorrLen(runState, i);
               acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
               iEff = (i - iEffStart)/acl;
-              aclCheckCounter = ceil((REAL8)iEff / ((REAL8)target/(REAL8)numACLchecks));
+              aclCheckCounter = ceil((REAL8)iEff / ((REAL8)endOfPhase/(REAL8)numACLchecks));
             }
           } //if (goodACL)
         } //if (!adapting)
@@ -691,8 +691,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
     }
 
-    if (runPhase==2) {
     // Annealing phase
+    if (runPhase==2) {
       if (phaseAcknowledged!=2) {
         phaseAcknowledged=2;
 
@@ -737,8 +737,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     } //if (runState==2)
 
 
-    if (runPhase==3) {
     //Post-annealing single-chain sampling
+    if (runPhase==3) {
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
       adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
       iEffStart = adaptStart+adaptLength;
@@ -837,14 +837,19 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
     }
 
+    /* Propose parellel tempering swap */ 
     if (runPhase < 3) {
-      /* If Tskip reached, then block until next hotter chain is prepared to accept swap proposal */
+      /* If Tskip reached, then block until next chain in ladder is prepared to accept swap proposal */
       if ( ((i % Tskip) == 0) && MPIrank < nChain-1 ) {
         MPI_Send(&(runState->currentLikelihood), 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD);
         MPI_Recv(&tempSwapAccepted, 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD, &MPIstatus);
 
+        /* Perform the swap if proposal accepted */
         if (tempSwapAccepted) {
           MPI_Recv(&adjCurrentLikelihood, 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD, &MPIstatus);
+          runState->currentLikelihood = adjCurrentLikelihood;
+
+          /* Package parameters for sending */
           ptr=runState->currentParams->head;
           p=0;
           while(ptr!=NULL) {
@@ -856,14 +861,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             ptr=ptr->next;
           }
 
+          /* Exchange current prior values */
           MPI_Send(&(runState->currentPrior), 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD);
           MPI_Recv(&adjCurrentPrior, 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD, &MPIstatus);
           runState->currentPrior = adjCurrentPrior;
 
-          MPI_Send(&acceptanceCount, 1, MPI_INT, MPIrank+1, 0, MPI_COMM_WORLD);
-          MPI_Recv(&adjAcceptanceCount, 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD, &MPIstatus);
-          acceptanceCount = adjAcceptanceCount;
-
+          /* Exchange current locations in parameter space */
           MPI_Send(parameters->data, nPar, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD);
           MPI_Recv(adjParameters->data, nPar, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD, &MPIstatus);
 
@@ -907,10 +910,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             MPI_Recv(&adjCurrentPrior, 1, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD, &MPIstatus);
             MPI_Send(&(runState->currentPrior), 1, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD);
             runState->currentPrior = adjCurrentPrior;
-
-            MPI_Recv(&adjAcceptanceCount, 1, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD, &MPIstatus);
-            MPI_Send(&acceptanceCount, 1, MPI_INT, MPIrank-1, 0, MPI_COMM_WORLD);
-            acceptanceCount = adjAcceptanceCount;
 
             MPI_Recv(adjParameters->data, nPar, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD, &MPIstatus);
             MPI_Send(parameters->data, nPar, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD);
