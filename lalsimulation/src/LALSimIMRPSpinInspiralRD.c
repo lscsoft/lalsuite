@@ -419,8 +419,6 @@ static int XLALPSpinInspiralRDparamsSetup(
       mparams->S1dot25             = 0.;
       mparams->S2dot25             = 0.;
 
-    case LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN:
-
     case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
       /* This kills all spin interaction intervening at 3PN order or higher*/
       mparams->wdotspin30S1LNh     = 0.;
