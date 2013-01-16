@@ -23,7 +23,7 @@ import json
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.8-1'
+GIT_TAG = 'gracedb-1.9-1'
 
 #-----------------------------------------------------------------
 # Util routines

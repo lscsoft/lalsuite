@@ -1,3 +1,11 @@
+ligo-gracedb (1.9-1) unstable; urgency=low
+
+  * Added slot feature to command line interface
+  * Added unit tests for cli slot feature
+  * Added rudimentary test code documentation
+
+ -- Brian Moe <brian.moe@ligo.org>  Wed, 16 Jan 2013 11:46:05 -0500
+
 ligo-gracedb (1.8-1) unstable; urgency=low
 
   * Incorporated Leo's patch for fixing import problem
