@@ -299,8 +299,8 @@ class Client:
         return host is not None
 
     def rest(self, resource, method="GET", **kw):
-        headers = {'connection' : 'keep-alive'}
-        headers = {}
+        headers = kw.pop('headers', {})
+        headers['connection'] = 'keep-alive'
 #       If absolute URL, use, otherwise pre-append the REST service URL.
         if self._is_absolute_url(resource):
             url = resource
@@ -475,6 +475,9 @@ def main():
 %%prog [options] label GRACEID LABEL
     Label event with GRACEDID with LABEL.  LABEL must already exist.
 
+%%prog [options] slot GRACEID [filename]
+    Tag an uploaded file with a name.
+
 %%prog [options] search SEARCH PARAMS
     Search paramaters are a list of requirements to be satisfied.  They
     may be GPS times, GPS time ranges, graceids and ranges, group(s),
@@ -565,7 +568,7 @@ Longer strings will be truncated.""" % {
             # get/print listing.
             response = client.listfiles(graceid)
             if response and response.status == 200:
-                for fname in json.decode(response.read()):
+                for fname in json.loads(response.read()):
                     print(fname)
                 exit(0)
             print(response.reason)
@@ -607,6 +610,25 @@ Longer strings will be truncated.""" % {
         graceid = args[1]
         filename = args[2]
         response = client.replace(graceid, filename)
+    elif args[0] == 'slot':
+        if len(args) in [3,4]:
+            url = '/events/%s/slot/%s' % (args[1], args[2])
+            if len(args) == 3:
+                response = client.rest(url, method='GET')
+            else:
+                headers = {'content-type' : "application/x-www-form-urlencoded" }
+                response = client.rest(url,
+                        method='PUT',
+                        headers=headers,
+                        filename=args[3])
+            if response and response.status in [200, 201]:
+                print( json.loads(response.read()) ) 
+                exit(0)
+            else:
+                print(response.reason)
+                exit(1)
+        else:
+            op.error("wrong number of args for slot")
     elif len(args) == 3:
         group = args[0]
         type = args[1]

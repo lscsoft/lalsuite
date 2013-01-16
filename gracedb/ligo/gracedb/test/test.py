@@ -138,6 +138,15 @@ class TestGracedb(unittest.TestCase):
         label = r.json()
         self.assertEqual("DQV", label['name'])
 
+    def test_slot_event(self):
+        """Create a slot"""
+        r = gracedb.createSlot(eventId, "newslot", "event.log")
+        self.assertEqual(r.status, 201) # CREATED
+        r = gracedb.slot(eventId, "newslot")
+        self.assertEqual(r.status, 200)
+        slotname = r.json()['value']
+        self.assertTrue(slotname.endswith("event.log"))
+
     def test_create_cwb(self):
         """Create a CWB event"""
         """burst-cwb.txt"""
