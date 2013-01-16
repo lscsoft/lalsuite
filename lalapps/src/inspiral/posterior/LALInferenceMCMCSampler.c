@@ -155,6 +155,44 @@ array2DEbuffer(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, R
 }
 
 static void
+replaceDEbuffer(LALInferenceRunState *runState, REAL8** DEarray) {
+  LALInferenceVariableItem *ptr;
+  UINT4 i=0,p=0;
+  UINT4 nPoints = sizeof(DEarray) / sizeof(REAL8*);
+
+  /* Save last LALInferenceVariables item from buffer to keep fixed params consistent for chain */
+  LALInferenceVariables templateParamSet;
+  LALInferenceCopyVariables(runState->differentialPoints[runState->differentialPointsLength-1], &templateParamSet);
+
+  /* Free old DE buffer */
+  XLALFree(runState->differentialPoints);
+
+  /* Expand DE buffer */
+  size_t newSize = runState->differentialPointsSize;
+  while (nPoints > newSize) {
+    newSize = newSize*2;
+  }
+
+  runState->differentialPoints = XLALCalloc(newSize, sizeof(LALInferenceVariables *));
+  runState->differentialPointsLength = nPoints;
+  runState->differentialPointsSize = newSize;
+
+  for (i=0; i<nPoints; i++) {
+    runState->differentialPoints[i] = XLALCalloc(1, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(&templateParamSet, runState->differentialPoints[i]);
+    ptr = runState->differentialPoints[i]->head;
+    while(ptr!=NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        *((REAL8 *)ptr->value) = (REAL8)DEarray[i][p];
+        p++;
+      }
+      ptr=ptr->next;
+    }
+  }
+}
+
+
+static void
 BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp) {
   INT4 MPIrank;
   INT4 i=0;
@@ -165,10 +203,10 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   INT4 nPoints = runState->differentialPointsLength;
-  INT4 startCycle=0, endCycle=nPoints*Nskip;
 
   /* Prepare a DE buffer of the proper size */
   MPI_Bcast(&nPoints, 1, MPI_INT, sourceTemp, MPI_COMM_WORLD);
+  INT4 startCycle=0, endCycle=nPoints*Nskip;
 
   /* Prepare 2D array for DE points */
   packedDEsamples = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
@@ -185,9 +223,8 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
   MPI_Bcast(packedDEsamples[0], nPoints*nPar, MPI_DOUBLE, sourceTemp, MPI_COMM_WORLD);
 
   /* Unpack it */
-  if (MPIrank != sourceTemp) {
-    array2DEbuffer(runState, startCycle, endCycle, packedDEsamples);
-  }
+  if (MPIrank != sourceTemp)
+    replaceDEbuffer(runState, packedDEsamples);
 
   /* Clean up */
   XLALFree(temp);
@@ -838,7 +875,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
 
     /* Propose parellel tempering swap */ 
-    if (runPhase < 3) {
+    if (runPhase < 2) {
       /* If Tskip reached, then block until next chain in ladder is prepared to accept swap proposal */
       if ( ((i % Tskip) == 0) && MPIrank < nChain-1 ) {
         MPI_Send(&(runState->currentLikelihood), 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD);
