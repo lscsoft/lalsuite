@@ -4,7 +4,7 @@
 #
 
 : ${GRACEDB:="gracedb"}
-: ${DATADIR:=$(dirname $0)/data}
+: ${TEST_DATA_DIR:=$(dirname $0)/data}
 : ${GRACEDB_SERVICE_URL:="https://moe.phys.uwm.edu/gracedb/cli"}
 
 export GRACEDB_SERVICE_URL
@@ -46,7 +46,7 @@ recordTest "ping" "$?" "$OUT"
 # Try creating events of various types
 #
 
-OUT="$(${GRACEDB} Test LowMass $DATADIR/cbc-lm.xml 2>&1)"
+OUT="$(${GRACEDB} Test LowMass $TEST_DATA_DIR/cbc-lm.xml 2>&1)"
 RETCODE=$?
 recordTest "create LowMass" "$RETCODE" "$OUT"
 
@@ -60,12 +60,12 @@ else
 fi
 
 OUTFILE=$(mktemp)
-${GRACEDB} Test MBTAOnline $DATADIR/cbc-mbta.gwf >$OUTFILE 2>&1
+${GRACEDB} Test MBTAOnline $TEST_DATA_DIR/cbc-mbta.gwf >$OUTFILE 2>&1
 recordTest "create MBTA" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
 OUTFILE=$(mktemp)
-${GRACEDB} Test CWB $DATADIR/burst-cwb.txt >$OUTFILE 2>&1
+${GRACEDB} Test CWB $TEST_DATA_DIR/burst-cwb.txt >$OUTFILE 2>&1
 recordTest "create CWB"  "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
@@ -98,7 +98,7 @@ rm $OUTFILE
 # Replace LM event with new data
 #
 OUTFILE=$(mktemp)
-${GRACEDB} replace $GRACEID $DATADIR/cbc-lm2.xml >$OUTFILE 2>&1
+${GRACEDB} replace $GRACEID $TEST_DATA_DIR/cbc-lm2.xml >$OUTFILE 2>&1
 RETCODE=$?
 recordTest "replace $GRACEID" "$RETCODE" "$(cat $OUTFILE)"
 rm $OUTFILE
@@ -124,7 +124,7 @@ rm $OUTFILE
 # Upload a file
 #
 OUTFILE=$(mktemp)
-${GRACEDB} upload $GRACEID "$DATADIR/upload.data" > $OUTFILE 2>&1
+${GRACEDB} upload $GRACEID "$TEST_DATA_DIR/upload.data" > $OUTFILE 2>&1
 recordTest "upload file $GRACEID" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
@@ -136,7 +136,7 @@ recordTest "download file" "$?" "$(cat $DOWNLOAD)"
 
 # Verify that the uploaded file and downloaded file were the same
 #
-cmp --silent "$DOWNLOAD" "$DATADIR/upload.data"
+cmp --silent "$DOWNLOAD" "$TEST_DATA_DIR/upload.data"
 recordTest "verify uploaded file" "$?" "$(cat $DOWNLOAD)"
 rm $DOWNLOAD
 
