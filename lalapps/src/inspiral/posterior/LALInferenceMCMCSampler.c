@@ -122,39 +122,6 @@ static void DEbuffer2array(LALInferenceRunState *runState, INT4 startCycle, INT4
 }
 
 static void
-array2DEbuffer(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, REAL8** DEarray) {
-  LALInferenceVariableItem *ptr;
-  UINT4 i=0,p=0;
-
-  UINT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
-  UINT4 totalPoints = runState->differentialPointsLength;
-  UINT4 start = (INT4)ceil((REAL8)startCycle/(REAL8)Nskip);
-  UINT4 end = (INT4)floor((REAL8)endCycle/(REAL8)Nskip);
-  /* Include last point */
-  if (end > totalPoints-1)
-    end = totalPoints-1;
-
-  /* Expand DE buffer if necessary */
-  while (end > runState->differentialPointsSize) {
-    size_t newSize = runState->differentialPointsSize*2;
-    runState->differentialPoints = XLALRealloc(runState->differentialPoints, newSize*sizeof(LALInferenceVariables *));
-    runState->differentialPointsSize = newSize;
-  }
-
-  for (i=start; i <= end; i++) {
-    ptr=runState->differentialPoints[i]->head;
-    p=0;
-    while(ptr!=NULL) {
-      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-        *((REAL8 *)ptr->value) = (REAL8)DEarray[i-start][p];
-        p++;
-      }
-      ptr=ptr->next;
-    }
-  }
-}
-
-static void
 replaceDEbuffer(LALInferenceRunState *runState, REAL8** DEarray) {
   LALInferenceVariableItem *ptr;
   UINT4 i=0,p=0;
