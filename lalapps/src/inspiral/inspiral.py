@@ -295,8 +295,12 @@ class PTFInspiralJob(InspiralAnalysisJob):
     sections = ['coh_PTF_inspiral']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('Requirements', 'Memory >= 1390')
-    self.add_condor_cmd('request_memory', '1400')
+    ramValue = 1390
+    if cp.has_section('coh_PTF_inspiral-meta'):
+      if cp.has_option('coh_PTF_inspiral-meta','minimum-ram'):
+        ramValue = int(cp.get('coh_PTF_inspiral-meta','minimum-ram'))
+    self.add_condor_cmd('Requirements', 'Memory >= %d' %(ramValue))
+    self.add_condor_cmd('request_memory', '%d' %(ramValue))
 
 
 class PTFSpinCheckerJob(InspiralAnalysisJob):
