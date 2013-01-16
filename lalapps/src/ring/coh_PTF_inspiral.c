@@ -46,6 +46,7 @@ int main(int argc, char **argv)
 
   /* FFT structures */
   REAL4FFTPlan             *fwdplan                 = NULL;
+  REAL4FFTPlan             *psdplan                 = NULL;
   REAL4FFTPlan             *revplan                 = NULL;
   COMPLEX8FFTPlan          *invPlan                 = NULL;
 
@@ -140,6 +141,7 @@ int main(int argc, char **argv)
 
   /* create forward and reverse fft plans */
   fwdplan = coh_PTF_get_fft_fwdplan(params);
+  psdplan = coh_PTF_get_fft_psdplan(params);
   revplan = coh_PTF_get_fft_revplan(params);
 
   verbose("Made fft plans %ld \n", timeval_subtract(&startTime));
@@ -213,7 +215,7 @@ int main(int argc, char **argv)
 
       /* compute the spectrum */
       invspec[ifoNumber] = coh_PTF_get_invspec(channel[ifoNumber], fwdplan,
-                                               revplan, params);
+                                               revplan, psdplan, params);
 
       /* create the segments */
 
@@ -401,7 +403,7 @@ int main(int argc, char **argv)
 
     /* compute the spectrum */
     invspec[ifoNumber] = coh_PTF_get_invspec(channel[ifoNumber], fwdplan,\
-                                              revplan, params);
+                                              revplan, psdplan, params);
     /* If white spectrum need to scale this. FIX ME!!! */
     if (params->whiteSpectrum)
     {
@@ -506,7 +508,17 @@ int main(int argc, char **argv)
   fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan(numPoints, 
                                     params->fftLevel);
   fcTmpltParams->deltaT       = 1.0/params->sampleRate;
-  fcTmpltParams->fLow = params->lowTemplateFrequency;
+  if (params->dynTempLength)
+  {
+    fcTmpltParams->fLow = -101;
+  }
+  else
+  {
+    fcTmpltParams->fLow = params->lowTemplateFrequency;
+  }
+  // This option holds 2x the length of data that is junk in each segment
+  // because of conditioning and the PSD.
+  fcTmpltParams->invSpecTrunc = params->truncateDuration;
 
   for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -1189,7 +1201,7 @@ int main(int argc, char **argv)
   // This function cleans up memory usage
   XLALDestroyTimeSlideTable(time_slide_head);
   LALFree(timeSlideVectors);
-  coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
+  coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,Fplustrig,Fcrosstrig);
   
