@@ -145,6 +145,7 @@ typedef struct
   REAL8 startTime;	/**< GPS start time of observation */
   REAL8 refTime;	/**< GPS reference time of Doppler parameters */
   REAL8 duration;	/**< length of observation in seconds */
+  INT4 Nseg;		/**< number of segments to split duration into */
 
   REAL8 h0;		/**< GW amplitude h_0 */
   REAL8 cosi;		/**< cos(iota) */
@@ -196,7 +197,6 @@ main(int argc, char *argv[])
 {
   ConfigVariables config = empty_ConfigVariables;
   UserVariables_t uvar = empty_UserVariables;
-  DopplerMetric *metric;
   DopplerMetricParams metricParams = empty_DopplerMetricParams;
 
   lalDebugLevel = 0;
@@ -254,10 +254,7 @@ main(int argc, char *argv[])
     } /* if coordsHelp */
 
   /* basic setup and initializations */
-  if ( XLALInitCode( &config, &uvar, argv[0] ) != XLAL_SUCCESS ) {
-    LogPrintf (LOG_CRITICAL, "%s: XInitCode() failed with xlalErrno = %d.\n\n", __func__, xlalErrno );
-    return FSTATMETRIC_EXLAL;
-  }
+  XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALInitCode() failed with xlalErrno = %d\n\n", xlalErrno );
   config.history->VCSInfoString = VCSInfoString;
 
 
@@ -266,12 +263,14 @@ main(int argc, char *argv[])
   metricParams.metricType    = uvar.metricType;
   metricParams.startTime     = config.startTime;
   metricParams.Tspan         = uvar.duration;
+  metricParams.Nseg          = uvar.Nseg;
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
   metricParams.projectCoord  = uvar.projection - 1;	/* user-input counts from 1, but interally we count 0=1st coord. (-1==no projection) */
   metricParams.approxPhase   = uvar.approxPhase;
 
   /* ----- compute metric full metric + Fisher matrix ---------- */
+  DopplerMetric *metric;
   if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerFstatMetric(). xlalErrno = %d\n\n", xlalErrno);
     return -1;
@@ -331,6 +330,7 @@ initUserVars (UserVariables_t *uvar)
 
   uvar->startTime = 714180733;
   uvar->duration = 10 * 3600;
+  uvar->Nseg = 1;
   uvar->refTime = -1;	/* default: use mid-time */
 
   uvar->projection = 0;
@@ -365,6 +365,7 @@ initUserVars (UserVariables_t *uvar)
   XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   XLALregREALUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
   XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Duration of observation in seconds");
+  XLALregINTUserStruct(Nseg,		'N', UVAR_OPTIONAL, 	"Compute semi-coherent metric for this number of segments within 'duration'" );
   XLALregSTRINGUserStruct(ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
   XLALregSTRINGUserStruct(ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
 
@@ -399,6 +400,10 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     LogPrintf (LOG_CRITICAL, "%s: illegal NULL pointer input.\n\n", __func__ );
     XLAL_ERROR (XLAL_EINVAL );
   }
+
+  /* ----- check user-input consistency ---------- */
+  XLAL_CHECK ( uvar->Nseg >= 1, XLAL_EDOM, "Invalid input --Nseg=%d: number of segments must be >= 1\n", uvar->Nseg );
+  XLAL_CHECK ( uvar->duration >= 1, XLAL_EDOM, "Invalid input --duration=%f: duration must be >= 1 s\n", uvar->duration );
 
   /* ----- determine start-time from user-input */
   XLALGPSSetREAL8( &(cfg->startTime), uvar->startTime );
@@ -630,6 +635,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
 
   fprintf ( fp, "%%%% startTime = {%d, %d}\n", meta->startTime.gpsSeconds, meta->startTime.gpsNanoSeconds );
   fprintf ( fp, "%%%% duration  = %f\n", meta->Tspan );
+  fprintf ( fp, "%%%% Nseg      = %d\n", meta->Nseg );
   fprintf ( fp, "%%%% detectors = [");
   for ( i=0; i < meta->detInfo.length; i ++ )
     {

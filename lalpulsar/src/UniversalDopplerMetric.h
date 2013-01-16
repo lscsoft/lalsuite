@@ -181,6 +181,7 @@ typedef struct tagDopplerMetricParams
 
   LIGOTimeGPS startTime;			/**< startTime of the observation */
   REAL8 Tspan;					/**< total spanned duration of the observation */
+  UINT4 Nseg;					/**< semi-coherent metric, averaged over 'Nseg' segments with Tseg=Tspan/Nseg ); */
   MultiDetectorInfo detInfo;			/**< detectors (and their noise-weights) to compute metric for */
 
   PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
@@ -256,6 +257,10 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,
 			 const EphemerisData *edat
 			 );
 
+DopplerMetric*
+XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,
+                            const EphemerisData *edat
+                            );
 
 FmetricAtoms_t*
 XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,
@@ -300,7 +305,8 @@ int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVect
 gsl_matrix* XLALNaturalizeMetric( const gsl_matrix* g_ij, const DopplerMetricParams *metricParams );
 
 gsl_matrix *XLALDiagNormalizeMetric ( const gsl_matrix * g_ij );
-
+int XLALAddDopplerMetric ( DopplerMetric **metric1, const DopplerMetric *metric2 );
+int XLALScaleDopplerMetric ( DopplerMetric *m, REAL8 scale );
 // destructor for vect3Dlist_t type
 void XLALDestroyVect3Dlist ( vect3Dlist_t *list );
 
