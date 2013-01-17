@@ -45,33 +45,35 @@ extern int lalDebugLevel;
 int main(int argc, char** argv){
 
 	GSequence* ignorelist = g_sequence_new(free);
-	if( argc > 3 ){
-		get_ignore_list( argv[3], ignorelist );
+	if( argc > 4 ){
+		get_ignore_list( argv[4], ignorelist );
 	}
 
 	//lalDebugLevel=7;
 
 	double sig_thresh = 3.0;
-	// FIXME: Amplitude or SNR for KW?
-	double min_snr = 100;
+	// TODO: Significance or SNR option
+	double min_de_snr = 30, min_aux_snr = 100;
 
 	fprintf( stderr, "Name: %s\n", argv[1] );
 
 	GSequence* trig_sequence = g_sequence_new((GDestroyNotify)XLALDestroySnglBurst);
 
 	char refchan[1024];
-	if( argc > 1 ){
-		printf( "Reading file: %s\n", argv[1] );
-		populate_trig_sequence_from_file( trig_sequence, argv[1], min_snr, ignorelist );
+	if( argc > 2 ){
 		strcpy(refchan, "LSC-DARM_ERR");
+		printf( "Reading file: %s\n", argv[2] );
+		populate_trig_sequence_from_file( trig_sequence, argv[2], min_de_snr, ignorelist );
+		fprintf( stderr, "list Length: %d\n", g_sequence_get_length( trig_sequence ) );
+		printf( "Reading file: %s\n", argv[1] );
+		populate_trig_sequence_from_file( trig_sequence, argv[1], min_aux_snr, ignorelist );
 	} else {
-		populate_trig_sequence( trig_sequence );
 		strcpy(refchan, "CHAN1");
+		populate_trig_sequence( trig_sequence );
 	}
 	fprintf( stderr, "list Length: %d\n", g_sequence_get_length( trig_sequence ) );
 	fprintf( stderr, "Reference channel: %s\n", refchan );
 
-	int ig_num;
 	GSequenceIter* igitr = g_sequence_get_begin_iter(ignorelist);
 	while( !g_sequence_iter_is_end(igitr) ){
 		printf( "Ignoring %s\n", (char *)g_sequence_get(igitr) );
@@ -80,14 +82,14 @@ int main(int argc, char** argv){
 	g_sequence_free(ignorelist);
 
 	double livetime = 100;
-	if( argc > 2 ){
-		const char* livefname = argv[2];
-		printf( "Livetime: %s\n", livefname );
+	if( argc > 3 ){
+		const char* livefname = argv[3];
+		printf( "Livetime filename: %s\n", livefname );
 		LALSegList live;
 		XLALSegListInit( &live );
-		calculate_livetime( argv[2], &live );
-		size_t i = 0;
-		for( i; i<live.length; i++ ){
+		calculate_livetime( argv[3], &live );
+		size_t i;
+		for( i=0; i<live.length; i++ ){
 			LALSeg s = live.segs[i];
 			livetime += XLALGPSDiff( &s.end, &s.start );
 		}
@@ -102,31 +104,38 @@ int main(int argc, char** argv){
 	XLALSegListInit( &vetoes );
 
 	GHashTable *chancount, *chanhist;
-
-	// Create our channel coincidence histogram
 	//chanhist = g_hash_table_new_full( g_str_hash, g_str_equal, &g_free, &g_free );
 	chanhist = g_hash_table_new( g_str_hash, g_str_equal );
-	// Create our channel count histogram
 	chancount = g_hash_table_new( g_str_hash, g_str_equal );
-
-	double wind = 0.8;
-	scan( chancount, chanhist, trig_sequence, refchan, wind );
-	printf( "Trigger count:\n" );
-	print_hash_table( chancount );
-	printf( "Trigger coincidences with %s, window (%f):\n", refchan, wind );
-	print_hash_table( chanhist );
-	// TODO: Heuristic: check the highest # of coincidences first
-	// (maybe normalize by number of triggers
 
 	int rnd = 1;
 	double rnd_sig = 0;
 
+	double wind = 0.8;
 	double t_ratio = wind / livetime;
+	int coinc_type = 1; // unique coincidences
 
 	GList *channames = g_hash_table_get_keys( chancount );
 	size_t nchans = g_list_length( channames ) - 1;
 	char winner[1024];
 	do {
+
+		// Create our channel coincidence histogram
+		// FIXME: Free memory?
+		g_hash_table_remove_all( chanhist );
+		// Create our channel count histogram
+		// FIXME: Free memory?
+		g_hash_table_remove_all( chancount );
+
+		// TODO: Is there a way to avoid a rescan every round?
+		scan( chancount, chanhist, trig_sequence, refchan, wind, coinc_type );
+		printf( "Trigger count:\n" );
+		print_hash_table( chancount );
+		printf( "Trigger coincidences with %s, window (%f):\n", refchan, wind );
+		print_hash_table( chanhist );
+		// TODO: Heuristic: check the highest # of coincidences first
+		// (maybe normalize by number of triggers
+
 		strcpy( winner, "" );
 		// If there's no value for the target channel, there's no vetoes to do,
 		// move on.
@@ -137,11 +146,12 @@ int main(int argc, char** argv){
 		} else {
 			rnd_sig = veto_round( winner, chancount, chanhist, refchan, t_ratio );
 		}
-		printf( "Done, rnd %d, winner (%s) sig %g\n", rnd, winner, rnd_sig );
-		exit(0);
+		printf( "Done, round %d, winner (%s) sig %g\n", rnd, winner, rnd_sig );
+		//exit(0);
+
 		//if( rnd_sig > sig_thresh ){
-		// TODO: Subtract vetoed livetime?
-		if( rnd <= 1 ){
+		// TODO: Subtract vetoed livetime.
+		if( rnd <= 2 ){
 			//XLALSegListAppend( vetoes, wind );
 			LALSeg veto;
 			LIGOTimeGPS start;
@@ -149,17 +159,21 @@ int main(int argc, char** argv){
 			XLALGPSSetREAL8( &start, -wind/2.0 );
 			XLALGPSSetREAL8( &stop, wind/2.0 );
 			XLALSegSet( &veto, &start, &stop, 0 );
-			remove_trigs( trig_sequence, veto, chancount, chanhist, winner, refchan );
+			remove_trigs( trig_sequence, veto, winner );
 
 			// Remove the channel from consideration
 			printf( "Removing %s from count\n", winner );
-			gpointer cname, n;
 
-			//g_hash_table_lookup( chanhist, winner );
+			// TODO: Reenable
+			/*
+			char* key;
+			size_t *value;
+			gpointer *cname = (gpointer*)&key, *n = (gpointer*)&value;
 			g_hash_table_lookup_extended( chanhist, winner, cname, n );
-			//g_free((char*)cname);
-			//g_free((size_t*)n);
-			g_hash_table_remove( chanhist, winner );
+			g_free(key);
+			g_free(value);
+			*/
+			//g_hash_table_remove( chanhist, winner );
 		}
 		rnd++;
 		//if( rnd > 0 ) break;
@@ -180,20 +194,26 @@ int main(int argc, char** argv){
 void populate_trig_sequence_from_file( GSequence* trig_sequence, const char* fname, double min_snr, GSequence* ignore_list ){
 	SnglBurst* tbl = XLALSnglBurstTableFromLIGOLw( fname );
 	if( !tbl ) return;
-	GSequenceIter* igitr;
 
+	//#pragma omp parallel
+	//{
+	//#pragma omp single
+	//{
+	//for( ; tbl; tbl=tbl->next ){
 	do {
+		//#pragma omp task
+		//{
 		gboolean ignore = FALSE;
+		GSequenceIter* igitr;
+		// FIXME: Support ignorelist == NULL
 		igitr = g_sequence_get_begin_iter(ignore_list);
 		while( !g_sequence_iter_is_end(igitr) ){
 			/*
 			 * Note this will cause incorrect behavior if the same channel name
 			 * with different interferometers is included in the same run as
 			 * the SB channel names do not include ifo by default.
-			 *
-			 * Yeah, yeah, I know strstr isn't a boolean, sue me...
 			 */
-			ignore = strstr(g_sequence_get(igitr), tbl->channel);
+			ignore = (strstr(g_sequence_get(igitr), tbl->channel) != NULL);
 			if( !ignore ) {
 				igitr = g_sequence_iter_next(igitr);
 			} else {
@@ -203,14 +223,19 @@ void populate_trig_sequence_from_file( GSequence* trig_sequence, const char* fna
 		if( tbl->confidence > min_snr && !ignore ){
 			g_sequence_insert_sorted( trig_sequence, tbl, (GCompareDataFunc)compare, NULL );
 			tbl=tbl->next;
-		}
-		// FIXME: Delete the trigger if not necessary
-		else {
+		} else {
+			// Thought: move this node to a new list which you can delete later.
+			// Question: Is that any faster since the delete is probably a big
+			// portion of the CPU time
 			SnglBurst* tmp = tbl;
 			tbl=tbl->next;
 			XLALDestroySnglBurst(tmp);
 		}
+		//} // end pragma task
+	//}
 	} while( tbl );
+	//} // end pragma single
+	//} // end pragma parallel
 }
 
 void populate_trig_sequence( GSequence* trig_sequence ){
@@ -253,10 +278,11 @@ void print_hash_table( GHashTable* tbl ){
 void get_ignore_list( const char* fname, GSequence* ignorel ){
 
 	int cnt = 0;
-	char tmp[512];
+	char* tmp;
+	tmp = malloc( sizeof(char)*512 );
 	FILE* lfile = fopen( fname, "r" );
 	while(!feof(lfile)){
-		cnt = fscanf( lfile, "%s", &tmp );
+		cnt = fscanf( lfile, "%s", tmp );
 		g_sequence_append( ignorel, g_strdup(tmp) );
 	}
 	fclose(lfile);
