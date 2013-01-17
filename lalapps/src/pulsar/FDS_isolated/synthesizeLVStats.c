@@ -376,9 +376,9 @@ int main(int argc,char *argv[])
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
-      REAL4Vector *linepriorX;
-      if ( (linepriorX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
+      REAL8Vector *linepriorX;
+      if ( (linepriorX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
@@ -448,7 +448,7 @@ int main(int argc,char *argv[])
 
       /* ----- free Memory */
       XLALDestroyREAL4Vector ( lvstats.TwoFX );
-      XLALDestroyREAL4Vector ( linepriorX );
+      XLALDestroyREAL8Vector ( linepriorX );
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
       XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
 

@@ -188,8 +188,8 @@ typedef struct {
   CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
   CHAR *logstring;                          /**< log containing max-info on the whole search setup */
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
-  REAL4 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
-  REAL4Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
+  REAL8 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
+  REAL8Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
   RankingStat_t RankingStatistic;           /**< rank candidates according to F or LV */
 } ConfigVariables;
 
@@ -747,7 +747,7 @@ int main(int argc,char *argv[])
           REAL4 TwoFX[Fstat.numDetectors];
           for ( UINT4 X=0; X < Fstat.numDetectors; X++ )
             TwoFX[X] = 2.0*Fstat.FX[X];
-          REAL4* LVlogLX = NULL;
+          REAL8* LVlogLX = NULL;
           if ( GV.LVloglX ) LVlogLX = GV.LVloglX->data;
           thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, GV.LVlogRhoTerm, LVlogLX, uvar.LVuseAllTerms );
           if ( xlalErrno ) {
@@ -1884,7 +1884,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   else if ( uvar->LVrho > 0.0 )
     cfg->LVlogRhoTerm = 4.0 * log(uvar->LVrho) - log(70.0);
   else /* if uvar.LVrho == 0.0, logRhoTerm should become irrelevant in summation */
-    cfg->LVlogRhoTerm = - LAL_REAL4_MAX;
+    cfg->LVlogRhoTerm = - LAL_REAL8_MAX;
   UINT4 numDetectors = cfg->multiSFTs->length;
 
   if ( uvar->computeLV && uvar->LVlX )
@@ -1893,8 +1893,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
         XLALPrintError( "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
-      if ( (cfg->LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("Failed to XLALCreateREAL4Vector ( %d )\n", numDetectors );
+      if ( (cfg->LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("Failed to XLALCreateREAL8Vector ( %d )\n", numDetectors );
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
       for (UINT4 X = 0; X < numDetectors; X++)
@@ -1911,7 +1911,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
           else if ( LVlX > 0.0 )
             cfg->LVloglX->data[X] = log ( LVlX );
           else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-            cfg->LVloglX->data[X] = - LAL_REAL4_MAX;
+            cfg->LVloglX->data[X] = - LAL_REAL8_MAX;
         } /* for X < numDetectors */
     } /* if ( uvar.computeLV && uvar.LVlX ) */
 
@@ -2085,7 +2085,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
     LALFree ( cfg->logstring );
 
   if ( cfg->LVloglX )
-    XLALDestroyREAL4Vector ( cfg->LVloglX );
+    XLALDestroyREAL8Vector ( cfg->LVloglX );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

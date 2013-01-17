@@ -162,8 +162,8 @@ typedef struct {
   UINT4 nStacks;                   /**< number of stacks */
   LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
   BOOLEAN LVuseAllTerms;           /**< which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms */
-  REAL4 LVlogRhoTerm;              /**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
-  REAL4Vector *LVloglX;            /**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
+  REAL8 LVlogRhoTerm;              /**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
+  REAL8Vector *LVloglX;            /**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
   REAL8 dFreqStack;                /**< frequency resolution of Fstat calculation */
   REAL8 df1dot;                    /**< coarse grid resolution in spindown */
   REAL8 df2dot;                    /**< coarse grid resolution in 2nd spindown */
@@ -594,7 +594,7 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
   else if ( uvar_LVrho > 0.0 )
-    usefulParams.LVlogRhoTerm = 4.0 * log((REAL4)uvar_LVrho) - log(70.0);
+    usefulParams.LVlogRhoTerm = 4.0 * log(uvar_LVrho) - log(70.0);
   else /* if uvar_LVrho == 0.0, logRhoTerm should become irrelevant in summation */
     usefulParams.LVlogRhoTerm = - LAL_REAL4_MAX;
 
@@ -1120,13 +1120,13 @@ int MAIN( int argc, char *argv[]) {
       fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
       return( HIERARCHICALSEARCH_EBAD );
     }
-    if ( (usefulParams.LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-      fprintf(stderr, "Failed call to XLALCreateREAL4Vector( %d )\n", numDetectors );
+    if ( (usefulParams.LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+      fprintf(stderr, "Failed call to XLALCreateREAL8Vector( %d )\n", numDetectors );
       return( HIERARCHICALSEARCH_EXLAL );
     }
     for (UINT4 X = 0; X < numDetectors; X++) {
-      if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, &usefulParams.LVloglX->data[X] ) ) {
-        fprintf(stderr, "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
+      if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL8_FORMAT, &usefulParams.LVloglX->data[X] ) ) {
+        fprintf(stderr, "Illegal REAL8 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
         return ( HIERARCHICALSEARCH_EBAD );
       }
       if ( usefulParams.LVloglX->data[X] < 0.0 ) {
@@ -1136,7 +1136,7 @@ int MAIN( int argc, char *argv[]) {
       else if ( usefulParams.LVloglX->data[X] > 0.0 )
         usefulParams.LVloglX->data[X] = log(usefulParams.LVloglX->data[X]);
       else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-        usefulParams.LVloglX->data[X] = - LAL_REAL4_MAX;
+        usefulParams.LVloglX->data[X] = - LAL_REAL8_MAX;
     } /* for X < numDetectors */
   } /* if ( computeLV && uvar_LVlX ) */
 
@@ -1988,7 +1988,7 @@ int MAIN( int argc, char *argv[]) {
   free_gctFStat_toplist ( &semiCohToplist );
   if ( semiCohToplist2 ) free_gctFStat_toplist ( &semiCohToplist2 );
 
-  XLALDestroyREAL4Vector ( usefulParams.LVloglX );
+  XLALDestroyREAL8Vector ( usefulParams.LVloglX );
 
   XLALDestroyExpLUT(); /* lookup table for fast exponential function, used in computeLV case */
   XLALDestroyLogLUT(); /* lookup table for fast logarithm function, used in computeLV case */
@@ -2522,7 +2522,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]; /* here it's still the summed 2F value over segments, not the average */
       xlalErrno = 0;
 
-      REAL4 *loglX = NULL;
+      REAL8 *loglX = NULL;
       if ( usefulparams->LVloglX )
         loglX = usefulparams->LVloglX->data;
 
