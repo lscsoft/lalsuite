@@ -23,9 +23,9 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <glib.h>
 #include <gsl/gsl_sf.h>
 
+#include <lal/LALDetCharGlib.h>
 #include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataBurstUtils.h>

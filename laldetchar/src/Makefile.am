@@ -5,6 +5,7 @@ laldetcharincludedir = $(includedir)/lal
 laldetcharinclude_HEADERS = \
 	LALDetChar.h \
 	LALDetCharConfig.h \
+	LALDetCharGlib.h \
 	LALDetCharLibVCSInfo.h \
 	LALDetCharRange.h \
 	LALDetCharHveto.h \
