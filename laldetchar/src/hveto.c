@@ -94,7 +94,7 @@ int main(int argc, char** argv){
 			livetime += XLALGPSDiff( &s.end, &s.start );
 		}
 		printf( "len: %d\n", g_sequence_get_length( trig_sequence ) );
-		prune_trigs( trig_sequence, &live );
+		XLALDetCharPruneTrigs( trig_sequence, &live );
 		printf( "len: %d\n", g_sequence_get_length( trig_sequence ) );
 		XLALSegListClear( &live );
 	}
@@ -128,7 +128,7 @@ int main(int argc, char** argv){
 		g_hash_table_remove_all( chancount );
 
 		// TODO: Is there a way to avoid a rescan every round?
-		scan( chancount, chanhist, trig_sequence, refchan, wind, coinc_type );
+		XLALDetCharScanTrigs( chancount, chanhist, trig_sequence, refchan, wind, coinc_type );
 		printf( "Trigger count:\n" );
 		print_hash_table( chancount );
 		printf( "Trigger coincidences with %s, window (%f):\n", refchan, wind );
@@ -144,7 +144,7 @@ int main(int argc, char** argv){
 			fprintf( stderr, "No triggers in target channel.\n" );
 			break;
 		} else {
-			rnd_sig = veto_round( winner, chancount, chanhist, refchan, t_ratio );
+			rnd_sig = XLALDetCharVetoRound( winner, chancount, chanhist, refchan, t_ratio );
 		}
 		printf( "Done, round %d, winner (%s) sig %g\n", rnd, winner, rnd_sig );
 		//exit(0);
@@ -159,7 +159,7 @@ int main(int argc, char** argv){
 			XLALGPSSetREAL8( &start, -wind/2.0 );
 			XLALGPSSetREAL8( &stop, wind/2.0 );
 			XLALSegSet( &veto, &start, &stop, 0 );
-			remove_trigs( trig_sequence, veto, winner );
+			XLALDetCharRemoveTrigs( trig_sequence, veto, winner );
 
 			// Remove the channel from consideration
 			printf( "Removing %s from count\n", winner );

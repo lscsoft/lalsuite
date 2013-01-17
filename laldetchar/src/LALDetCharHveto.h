@@ -36,12 +36,12 @@
 extern "C" {
 #endif
 
-void scan( GHashTable *chancount, GHashTable *chantable, GSequence* trig_sequence, const char* chan, double twind, int coinctype );
-double veto_round( char* winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio );
-void prune_trigs( GSequence* trig_sequence, const LALSegList* onsource );
-size_t remove_trigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan );
-void trigs_to_vetolist( LALSegList* vetoes, GSequence* trig_sequence, const LALSeg veto, const char* vchan );
-double significance( double mu, int k );
+void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chantable, GSequence* trig_sequence, const char* chan, double twind, int coinctype );
+double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio );
+void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource );
+size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan );
+void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, const LALSeg veto, const char* vchan );
+double XLALDetCharHvetoSignificance( double mu, int k );
 
 #ifdef  __cplusplus
 }

@@ -52,7 +52,7 @@ size_t _count_subsequence( GSequence* subseq, SnglBurst* trig, float wind ){
  * (e.g. if two triggers from the same channel are found in coincidence, only
  * one is recorded).
  */
-void scan( GHashTable *chancount, GHashTable *chanhist, GSequence* trig_sequence, const char* chan, double twind, int coinctype ){
+void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequence* trig_sequence, const char* chan, double twind, int coinctype ){
 
 	/*
 	 * pointer to the position in the list for the current auxiliary trigger
@@ -205,7 +205,7 @@ void scan( GHashTable *chancount, GHashTable *chanhist, GSequence* trig_sequence
  * chan parameter is the target channel. The t_ratio parameter is the ratio of
  * the veto window duration to the total examined livetime.
  */
-double veto_round( char* winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio ){
+double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio ){
 	double mu, sig, max_sig=-1;
 	size_t *k;
 
@@ -230,7 +230,7 @@ double veto_round( char* winner, GHashTable* chancount, GHashTable* chanhist, co
 
 		fprintf( stderr, "Total coincidences for channel %s: %lu\n", (char *)key, *k );
 		fprintf( stderr, "Mu for channel %s: %g\n", (char *)key, mu );
-		sig = significance( mu, *k );
+		sig = XLALDetCharHvetoSignificance( mu, *k );
 		fprintf( stderr, "Significance for this channel: %g\n", sig );
 		if( sig > max_sig ){
 				max_sig = sig;
@@ -241,7 +241,7 @@ double veto_round( char* winner, GHashTable* chancount, GHashTable* chanhist, co
 	return max_sig;
 }
 
-void prune_trigs( GSequence* trig_sequence, const LALSegList* onsource ){
+void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource ){
 	// FIXME: Actually, this should prune all triggers
 	if( onsource->length == 0 ){
 		return;
@@ -291,7 +291,7 @@ void prune_trigs( GSequence* trig_sequence, const LALSegList* onsource ){
  * TODO: Merge vetolist creation here
  * TODO: Can we also decrement the count / coincidences efficiently here?
  */
-size_t remove_trigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan ){
+size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan ){
 
 	size_t vetoed_events = 0;
 	size_t nevents = g_sequence_get_length(trig_sequence);
@@ -380,7 +380,7 @@ size_t remove_trigs( GSequence* trig_sequence, const LALSeg veto, const char* vc
 /*
  * Turn all the peak times for channel vchan into a segment list of vetoes.
  */
-void trigs_to_vetolist( LALSegList* vetoes, GSequence* trig_sequence, const LALSeg veto, const char* vchan ){
+void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, const LALSeg veto, const char* vchan ){
 
 	float wind = XLALGPSDiff(&veto.end, &veto.start);
 
@@ -412,7 +412,7 @@ void trigs_to_vetolist( LALSegList* vetoes, GSequence* trig_sequence, const LALS
  * Calculate the signifiance of a set of triggers from the Poisson survival
  * function given the expected number of triggers.
  */
-double significance( double mu, int k ){
+double XLALDetCharHvetoSignificance( double mu, int k ){
 	double sig = -log10( gsl_sf_gamma_inc_P(mu, k) );
 	// FIXME: Arbitrary
 	if( sig < 1e-15 ){
