@@ -162,7 +162,8 @@ MACRO(A, B, X);
 %inline %{const bool swig_debug = true;%}
 #endif
 
-// Constructors for GSL complex numbers.
+// Constructors for GSL complex numbers, if required.
+#ifdef HAVE_LIBGSL
 %header %{
   #include <gsl/gsl_complex_math.h>   // provides gsl_complex_rect()
   SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
@@ -171,6 +172,7 @@ MACRO(A, B, X);
     return z;
   }
 %}
+#endif
 
 // Convert XLAL/LAL errors into native scripting-language exceptions:
 //  - XLAL: Before performing any action, clear the XLAL error number.
