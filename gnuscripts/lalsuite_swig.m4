@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 27
+# serial 28
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -192,6 +192,25 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG_CFLAGS="${SWIG_CFLAGS} -O0"
       SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -O0"
     ])
+
+    # check for additional compiler flags
+    extra_flags="-Wno-uninitialized -Wno-unused-variable"
+    for flag in ${extra_flags}; do
+      AC_MSG_CHECKING([if ${flag} is supported])
+      CFLAGS=${flag}
+      AC_LANG_PUSH([C])
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[])
+      ],[
+        AC_MSG_RESULT([yes])
+        SWIG_CFLAGS="${SWIG_CFLAGS} ${flag}"
+        SWIG_CXXFLAGS="${SWIG_CXXFLAGS} ${flag}"
+      ],[
+        AC_MSG_RESULT([no])
+      ])
+      CFLAGS=
+      AC_LANG_POP([C])
+    done
 
     # flags for linking SWIG wrapping modules
     AC_SUBST(SWIG_LDFLAGS,[])
