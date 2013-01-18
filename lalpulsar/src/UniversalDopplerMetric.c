@@ -1021,7 +1021,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   UINT4 i, j;
   REAL8 gg;
   UINT4 dim;
-  const LIGOTimeGPS *refTime, *startTime;
   const DopplerCoordinateSystem *coordSys;
 
   /* ---------- sanity/consistency checks ---------- */
@@ -1029,10 +1028,15 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     XLALPrintError ("\n%s: Illegal NULL pointer passed.\n\n", __func__);
     XLAL_ERROR_NULL( XLAL_EINVAL );
   }
-  XLAL_CHECK_NULL ( metricParams->Nseg <= 1, XLAL_EINVAL, "Number of segments must be 0 or 1, got Nseg=%d\n", metricParams->Nseg );
+  XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
+  UINT4 Nseg = metricParams->segmentList.length;
+  XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
 
-  startTime = &(metricParams->startTime);
-  refTime   = &(metricParams->signalParams.Doppler.refTime);
+  LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
+  LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
+  REAL8 Tspan = XLALGPSDiff( endTime, startTime );
+
+  const LIGOTimeGPS *refTime   = &(metricParams->signalParams.Doppler.refTime);
 
   dim = metricParams->coordSys.dim;
   coordSys = &(metricParams->coordSys);
@@ -1047,7 +1051,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams.edat = edat;
   intparams.startTime = XLALGPSGetREAL8 ( startTime );
   intparams.refTime   = XLALGPSGetREAL8 ( refTime );
-  intparams.Tspan     = metricParams->Tspan;
+  intparams.Tspan     = Tspan;
   intparams.dopplerPoint = &(metricParams->signalParams.Doppler);
   intparams.detMotionType = metricParams->detMotionType;
   intparams.site = NULL;
@@ -1141,31 +1145,29 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
                          )
 {
   XLAL_CHECK_NULL ( metricParams, XLAL_EINVAL, "Invalid NULL input 'metricParams'\n" );
+  XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
 
-  UINT4 Nseg = metricParams->Nseg;	// number of semi-coherent segments to average metrics over
-
-  // for backwards-compatibility: treat Nseg==0 equivalent to Nseg==1
-  if ( Nseg == 0 ) {
-    Nseg = 1;
-  };
+  UINT4 Nseg = metricParams->segmentList.length;	// number of semi-coherent segments to average metrics over
+  XLAL_CHECK_NULL ( Nseg >= 1, XLAL_EINVAL, "Got empty segment list metricParams->segmentList, needs to contain at least 1 segments\n");
 
   DopplerMetric *metric = NULL;
 
-  REAL8 Tspan = metricParams->Tspan;
-  REAL8 Tseg  = Tspan / Nseg;
-  LIGOTimeGPS t0 = metricParams->startTime;
+  LALSegList segList_k;
+  LALSeg segment_k;
+  XLALSegListInit( &segList_k );	// prepare single-segment list containing segment k
+  segList_k.arraySize = 1;
+  segList_k.length = 1;
+  segList_k.segs = &segment_k;
 
-  DopplerMetricParams metricParams_k = (*metricParams);
-  metricParams_k.Nseg  = 1;
-  metricParams_k.Tspan = Tseg;
+  DopplerMetricParams metricParams_k = (*metricParams);	// *copy* of input parameters to be used for single-segment coherent metrics
+  metricParams_k.segmentList = segList_k;
 
   for ( UINT4 k = 0; k < Nseg; k ++ )
     {
       DopplerMetric *metric_k;	// per-segment coherent metric
 
-      // set start-time to the beginning of the kth segment:
-      metricParams_k.startTime = t0;
-      XLAL_CHECK_NULL ( XLALGPSAdd( &(metricParams_k.startTime), k * Tseg ), XLAL_EFUNC, "XLALGPSAdd(t0,%f) failed with xlalErrno=%d ... weird\n", k*Tseg, xlalErrno );
+      // setup 1-segment segment-list pointing k-th segment
+      metricParams_k.segmentList.segs[0] = metricParams->segmentList.segs[k];
 
       // compute coherent metric (+ Fisher matrix) for segment k
       metric_k = XLALDopplerFstatMetricCoh ( &metricParams_k, edat );
@@ -1180,10 +1182,8 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   // semi-coherent metric: <g_ij> = (1/Nseg) sum_{k=1}^Nseg g_{k,ij}
   XLAL_CHECK_NULL ( XLALScaleDopplerMetric ( metric, 1.0/Nseg ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALScaleDopplerMetric() failed with xlalErrno = %d\n", xlalErrno );
 
-  // update meta-info with correct semi-coherent parameters
-  metric->meta.startTime = t0;
-  metric->meta.Tspan = Tspan;
-  metric->meta.Nseg = Nseg;
+  // restore final meta-info with (semi-coherent) input parameters
+  metric->meta = (*metricParams);
 
   return metric;
 
@@ -1216,7 +1216,9 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
   /* ---------- sanity/consistency checks ---------- */
   XLAL_CHECK_NULL ( metricParams, XLAL_EINVAL, "Invalid NULL input 'metricParams'\n" );
   XLAL_CHECK_NULL ( edat, XLAL_EINVAL, "Invalid NULL input 'edat'\n");
-  XLAL_CHECK_NULL ( metricParams->Nseg == 1, XLAL_EINVAL, "Number of segments must be 1, got Nseg=%d\n", metricParams->Nseg );
+  XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
+  UINT4 Nseg = metricParams->segmentList.length;
+  XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
 
   if ( metricParams->metricType >= METRIC_TYPE_LAST ) {
     XLALPrintError ("%s: Invalid value '%d' for metricType received. Must be within [%d,%d]!\n\n",
@@ -1337,7 +1339,6 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   UINT4 dim, numDet, i=-1, j=-1, X;		/* index counters */
   REAL8 A, B, C;			/* antenna-pattern coefficients (gsl-integrated) */
 
-  const LIGOTimeGPS *refTime, *startTime;
   const DopplerCoordinateSystem *coordSys;
 
   REAL8 max_relerr = 0;
@@ -1348,10 +1349,15 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
     XLALPrintError ("\n%s: Illegal NULL pointer passed!\n\n", __func__);
     XLAL_ERROR_NULL( XLAL_EINVAL );
   }
-  XLAL_CHECK_NULL ( metricParams->Nseg <= 1, XLAL_EINVAL, "Number of segments must be 0 or 1, got Nseg=%d\n", metricParams->Nseg );
+  XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
+  UINT4 Nseg = metricParams->segmentList.length;
+  XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
 
-  startTime = &(metricParams->startTime);
-  refTime   = &(metricParams->signalParams.Doppler.refTime);
+  LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
+  LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
+  REAL8 Tspan = XLALGPSDiff( endTime, startTime );
+
+  const LIGOTimeGPS *refTime   = &(metricParams->signalParams.Doppler.refTime);
 
   dim = metricParams->coordSys.dim;	/* shorthand: number of Doppler dimensions */
   numDet = metricParams->detInfo.length;
@@ -1368,7 +1374,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   intparams.dopplerPoint = &metricParams->signalParams.Doppler;
   intparams.startTime = XLALGPSGetREAL8 ( startTime );
   intparams.refTime   = XLALGPSGetREAL8 ( refTime );
-  intparams.Tspan = metricParams->Tspan;
+  intparams.Tspan = Tspan;
   intparams.edat = edat;
 
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
@@ -2440,8 +2446,10 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
 /**
  * Return a metric in "naturalized" coordinates.
  * Frequency coordinates of spindown order \f$s\f$ are scaled by
- * \f[ \frac{2\pi}{(s+1)!} \left(\frac{T}{2}\right)^{s+1} \f]
- * where \f$T\f$ is the per-segment time-span.
+ * \f[ \frac{2\pi}{(s+1)!} \left(\frac{\overline{\Delta T}}{2}\right)^{s+1} \f]
+ * where \f$\overline{\Delta T}\equiv\sum_{k}^{N} \Delta T_k\f$ is the average segment-length
+ * over all \f$N\f$ segments.
+ *
  * Sky coordinates are scaled by
  * \f[ \frac{2\pi \bar{f} R_{ES}}{c} \f]
  * where \f$\bar{f}\f$ is a fiducial frequency and
@@ -2459,18 +2467,23 @@ gsl_matrix* XLALNaturalizeMetric(
   XLAL_CHECK_NULL( g_ij, XLAL_EINVAL );
   XLAL_CHECK_NULL( g_ij->size1 == g_ij->size2, XLAL_EINVAL, "Input matrix g_ij must be square! (got %d x %d)\n", g_ij->size1, g_ij->size2 );
 
-  UINT4 Nseg = metricParams->Nseg;
-  // for backwards-compatibility: treat Nseg==0 equivalent to Nseg==1
-  if ( Nseg == 0 ) {
-    Nseg = 1;
-  }
+  XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
+  UINT4 Nseg = metricParams->segmentList.length;
+  REAL8 sumTseg = 0;
+  for ( UINT4 k=0; k < Nseg; k ++ )
+    {
+      LIGOTimeGPS *startTime_k = &(metricParams->segmentList.segs[k].start);
+      LIGOTimeGPS *endTime_k   = &(metricParams->segmentList.segs[k].end);
+      sumTseg += XLALGPSDiff( endTime_k, startTime_k );
+    }
+  REAL8 avgTseg = sumTseg / Nseg;
 
   /* Compute naturalization scale */
   double nat_scale[g_ij->size1];
   for (size_t i = 0; i < g_ij->size1; ++i) {
     const DopplerCoordinateID coordID = metricParams->coordSys.coordIDs[i];
     const double Freq = metricParams->signalParams.Doppler.fkdot[0];
-    const double T = metricParams->Tspan / Nseg;
+    const double T = avgTseg;
     double scale;
     switch (coordID) {
     case DOPPLERCOORD_NONE:

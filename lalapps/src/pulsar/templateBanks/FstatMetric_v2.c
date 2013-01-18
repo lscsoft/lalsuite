@@ -261,13 +261,13 @@ main(int argc, char *argv[])
   metricParams.coordSys      = config.coordSys;
   metricParams.detMotionType = uvar.detMotionType;
   metricParams.metricType    = uvar.metricType;
-  metricParams.startTime     = config.startTime;
-  metricParams.Tspan         = uvar.duration;
-  metricParams.Nseg          = uvar.Nseg;
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
   metricParams.projectCoord  = uvar.projection - 1;	/* user-input counts from 1, but interally we count 0=1st coord. (-1==no projection) */
   metricParams.approxPhase   = uvar.approxPhase;
+
+  XLAL_CHECK ( XLALSegListInitSimpleSegments ( &metricParams.segmentList, config.startTime, uvar.Nseg, uvar.duration / uvar.Nseg ) == XLAL_SUCCESS,
+               XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
 
   /* ----- compute metric full metric + Fisher matrix ---------- */
   DopplerMetric *metric;
@@ -576,10 +576,14 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   const PulsarDopplerParams *doppler;
   const PulsarAmplitudeParams *Amp;
 
+  // ----- input sanity checks
   if ( !fp || !metric ) {
     LogPrintf (LOG_CRITICAL, "%s: illegal NULL input.\n\n", __func__ );
     XLAL_ERROR ( XLAL_EINVAL );
   }
+  XLAL_CHECK ( XLALSegListIsInitialized ( &(metric->meta.segmentList) ), XLAL_EINVAL, "Got un-initialized segment list in 'metric->meta.segmentList'\n" );
+  UINT4 Nseg = metric->meta.segmentList.length;
+  XLAL_CHECK ( Nseg >= 1, XLAL_EDOM, "Got invalid zero-length segment list 'metric->meta.segmentList'\n" );
 
   /* useful shortcuts */
   meta = &(metric->meta);
@@ -633,9 +637,14 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
     } /* if doppler->orbit */
   fprintf ( fp, "%%%% }\n");
 
-  fprintf ( fp, "%%%% startTime = {%d, %d}\n", meta->startTime.gpsSeconds, meta->startTime.gpsNanoSeconds );
-  fprintf ( fp, "%%%% duration  = %f\n", meta->Tspan );
-  fprintf ( fp, "%%%% Nseg      = %d\n", meta->Nseg );
+  LIGOTimeGPS *tStart = &(meta->segmentList.segs[0].start);
+  LIGOTimeGPS *tEnd   = &(meta->segmentList.segs[Nseg-1].end);
+  REAL8 Tspan = XLALGPSDiff ( tEnd, tStart );
+  fprintf ( fp, "%%%% startTime = {%d, %d}\n", tStart->gpsSeconds, tStart->gpsNanoSeconds );
+  fprintf ( fp, "%%%% Tspan     = %f\n", Tspan );
+  fprintf ( fp, "%%%% Nseg      = %d\n", Nseg );
+  // FIXME: Output full segment list here:
+
   fprintf ( fp, "%%%% detectors = [");
   for ( i=0; i < meta->detInfo.length; i ++ )
     {

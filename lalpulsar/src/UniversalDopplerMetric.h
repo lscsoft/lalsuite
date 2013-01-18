@@ -53,6 +53,7 @@ extern "C" {
 #include <lal/XLALGSL.h>
 #include <lal/DetectorStates.h>
 #include <lal/SFTutils.h>
+#include <lal/Segments.h>
 
 /*---------- exported types ----------*/
   /** 2D vector */
@@ -179,9 +180,7 @@ typedef struct tagDopplerMetricParams
   DopplerCoordinateSystem coordSys;		/**< number of dimensions and coordinate-IDs of Doppler-metric */
   DetectorMotionType detMotionType;		/**< the type of detector-motion assumed: full spin+orbit, pure orbital, Ptole, ... */
 
-  LIGOTimeGPS startTime;			/**< startTime of the observation */
-  REAL8 Tspan;					/**< total spanned duration of the observation */
-  UINT4 Nseg;					/**< semi-coherent metric, averaged over 'Nseg' segments with Tseg=Tspan/Nseg ); */
+  LALSegList segmentList;			/**< segment list: Nseg segments of the form (startGPS endGPS numSFTs) */
   MultiDetectorInfo detInfo;			/**< detectors (and their noise-weights) to compute metric for */
 
   PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
