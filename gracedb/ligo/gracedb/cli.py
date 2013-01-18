@@ -23,7 +23,7 @@ import json
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.9-1'
+GIT_TAG = 'gracedb-1.10-1'
 
 #-----------------------------------------------------------------
 # Util routines
@@ -383,17 +383,12 @@ class Client:
         return self._upload('create', fields, files)
 
     def replace(self, graceid, filename, filecontents=None):
-        if filecontents is None:
-            if filename == '-':
-                filename = 'initial.data'
-                filecontents = sys.stdin.read()
-            else:
-                filecontents = open(filename, 'r').read()
-        fields = []
-        files = [('eventFile', filename, filecontents)]
-#       XXX URL should be discovered, not assumed.  OK - this cli is deprecated.
-        url = "%s/events/%s" % (self.rest_url, graceid)
-        response = self._upload(url, fields, files, http_method="PUT", rawresponse=True)
+        from ligo.gracedb.rest import GraceDb
+        url = self.rest_url
+        if url[-1] != '/':
+            url += '/'
+        server = GraceDb(url)
+        response = server.replaceEvent(graceid, filename, filecontents)
         if response.status == 202:  # Accepted
             return "%s updated" % graceid
         else:
@@ -475,8 +470,8 @@ def main():
 %%prog [options] label GRACEID LABEL
     Label event with GRACEDID with LABEL.  LABEL must already exist.
 
-%%prog [options] slot GRACEID [filename]
-    Tag an uploaded file with a name.
+%%prog [options] slot GRACEID slotname [filename]
+    Tag an uploaded file with a name or view value of slotname.
 
 %%prog [options] search SEARCH PARAMS
     Search paramaters are a list of requirements to be satisfied.  They

@@ -1,3 +1,8 @@
+ligo-gracedb (1.10-1) unstable; urgency=low
+  * CLI replace feature had subtle openssl bug.  Using REST client.
+  * Typo in help text.
+  * Typo in test.py wrt CWB test data.
+
 ligo-gracedb (1.9-1) unstable; urgency=low
 
   * Added slot feature to command line interface

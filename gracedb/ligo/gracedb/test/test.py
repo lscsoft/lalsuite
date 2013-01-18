@@ -156,7 +156,7 @@ class TestGracedb(unittest.TestCase):
         cwb_event = r.json()
         self.assertEqual(cwb_event['group'], "Test")
         self.assertEqual(cwb_event['analysisType'], "CWB")
-        self.assertEqual(cwb_event['gpstime'], 1012125588)
+        self.assertEqual(cwb_event['gpstime'], 1042312876)
 
     def test_create_lowmass(self):
         """Create a Low Mass event"""
