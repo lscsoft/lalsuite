@@ -965,3 +965,57 @@ XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeG
   /* done */
   return 0;
 }
+
+/**
+ * Simple method to check whether a LALSegList is in an initialized state.
+ *
+ * Avoid the user having to deal with LALSegList internal 'magic'.
+ */
+int
+XLALSegListIsInitialized ( const LALSegList *seglist )
+{
+  XLAL_CHECK ( seglist != NULL, XLAL_EINVAL, "Invalid NULL input 'seglist'\n");
+
+  return (seglist->initMagic == SEGMENTSH_INITMAGICVAL);
+
+}  /* XLALSegListIsInitialized() */
+
+/**
+ * (Re-)Initialize a segment list with Nseg 'simple' segments of length 'Tseg',
+ * starting at t0 = startTime, ie
+ * { [t0, t0+Tseg), [t0+Tseg, t0+2*Tseg), ... [t0+(N-1)*Tseg, t0+N*Tseg) }
+ *
+ * Note: accepts un-initialized segments list, as well as existing segment-lists.
+ * The latter will be properly cleared before re-use.
+ *
+ * The 'Id' field of segment k is set to 'k'
+ */
+int
+XLALSegListInitSimpleSegments ( LALSegList *seglist, LIGOTimeGPS startTime, UINT4 Nseg, REAL8 Tseg )
+{
+  XLAL_CHECK ( seglist != NULL, XLAL_EINVAL, "Invalid NULL input 'seglist'\n" );
+  XLAL_CHECK ( Tseg > 0, XLAL_EDOM, "Invalid non-positive input 'Tseg=%g'\n", Tseg );
+
+  if ( XLALSegListIsInitialized ( seglist ) )
+    XLALSegListClear ( seglist );
+  else
+    XLALSegListInit ( seglist );
+
+  for ( UINT4 k = 0; k < Nseg; k ++ )
+    {
+      LALSeg seg_k;
+
+      LIGOTimeGPS start_k = startTime;
+      XLALGPSAdd( &start_k, k * Tseg );		// t0_k = t0 + k * Tseg
+      LIGOTimeGPS end_k = startTime;
+      XLALGPSAdd( &end_k, (k+1) * Tseg );	// t1_k = t0 + (k+1) * Tseg
+
+      XLAL_CHECK ( XLALSegSet ( &seg_k, &start_k, &end_k, k ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      XLAL_CHECK ( XLALSegListAppend ( seglist, &seg_k ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    } // for k < Nseg
+
+  return XLAL_SUCCESS;
+
+} /* XLALSegListInitSimpleSegments() */
