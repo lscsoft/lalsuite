@@ -149,9 +149,8 @@ int main(int argc, char** argv){
 		printf( "Done, round %d, winner (%s) sig %g\n", rnd, winner, rnd_sig );
 		//exit(0);
 
-		//if( rnd_sig > sig_thresh ){
-		// TODO: Subtract vetoed livetime.
-		if( rnd <= 2 ){
+		if( rnd_sig > sig_thresh ){
+			// TODO: Subtract vetoed livetime.
 			//XLALSegListAppend( vetoes, wind );
 			LALSeg veto;
 			LIGOTimeGPS start;
@@ -172,11 +171,11 @@ int main(int argc, char** argv){
 			g_hash_table_lookup_extended( chanhist, winner, cname, n );
 			g_free(key);
 			g_free(value);
+			g_hash_table_remove( chanhist, winner );
 			*/
-			//g_hash_table_remove( chanhist, winner );
 		}
 		rnd++;
-		//if( rnd > 0 ) break;
+		//if( rnd > 2 ) break;
 	} while( rnd_sig > sig_thresh && (size_t)rnd < nchans );
 	printf( "Last round did not pass significance threshold or all channels have been vetoed. Ending run.\n" );
 
@@ -283,6 +282,7 @@ void get_ignore_list( const char* fname, GSequence* ignorel ){
 	FILE* lfile = fopen( fname, "r" );
 	while(!feof(lfile)){
 		cnt = fscanf( lfile, "%s", tmp );
+		if( cnt == EOF ) break;
 		g_sequence_append( ignorel, g_strdup(tmp) );
 	}
 	fclose(lfile);
@@ -290,16 +290,19 @@ void get_ignore_list( const char* fname, GSequence* ignorel ){
 
 void calculate_livetime( const char* fname, LALSegList* live_segs ){
 	FILE* lfile = fopen( fname, "r" );
-	float st, end;
+	//float st, end;
+	int st, end;
 	LALSeg *seg;
 	int cnt = 0;
 	while(!feof(lfile)){
-		cnt = fscanf( lfile, "%f %f", &st, &end );
+		// FIXME: Having floats here causes a 32 second offset for both values
+		//cnt = fscanf( lfile, "%f %f", &st, &end );
+		cnt = fscanf( lfile, "%d %d", &st, &end );
 		if( cnt == EOF ) break;
 		LIGOTimeGPS start;
 		LIGOTimeGPS stop;
-		XLALGPSSetREAL8( &start, st );
-		XLALGPSSetREAL8( &stop, end );
+		XLALGPSSetREAL8( &start, (double)st );
+		XLALGPSSetREAL8( &stop, (double)end );
 		seg = XLALSegCreate( &start, &stop, 0 );
 		XLALSegListAppend( live_segs, seg );
 		XLALFree( seg );

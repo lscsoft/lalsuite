@@ -39,6 +39,23 @@ size_t _count_subsequence( GSequence* subseq, SnglBurst* trig, float wind ){
 	return counter;
 }
 
+void _move_trig_out_wind( GSequenceIter* trig, LIGOTimeGPS* end );
+void _move_trig_out_wind( GSequenceIter* trig, LIGOTimeGPS* end ){
+	GSequenceIter *orig = trig;
+	SnglBurst *sb;
+	int move = 0;
+	do {
+		trig = g_sequence_iter_next(trig);
+		if( g_sequence_iter_is_end(trig) ) {
+			trig = g_sequence_iter_prev( trig );
+			break;
+		}
+		move++;
+		sb = g_sequence_get(trig);
+	} while( XLALGPSCmp(&sb->peak_time, end) == 0 );
+	g_sequence_swap( orig, trig );
+}
+
 /*
  * Scan through a list of triggers and count the instances of each trigger type
  * and count its coincidences with the target channel. The hash tables for the
@@ -108,7 +125,7 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			start = stop = sb_target->peak_time;
 			start = *XLALGPSAdd( &start, -twind/2.0 );
 			stop = *XLALGPSAdd( &stop, twind/2.0 );
-			printf( "creating segment from %s %d %d\n", sb_target->channel, start.gpsSeconds, stop.gpsSeconds );
+			printf( "creating segment from %s %d.%d %d.%d\n", sb_target->channel, start.gpsSeconds, start.gpsNanoSeconds, stop.gpsSeconds, stop.gpsNanoSeconds  );
 			XLALSegSet( wind, &start, &stop, sb_target->event_id );
 		} else { // No, go to the next
 			continue;
@@ -123,24 +140,30 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 		// trigger
 		GSequenceIter *trigp = cur_trig;
 		SnglBurst* sb_aux;
+		gboolean begin = FALSE;
+		if( g_sequence_iter_is_begin(trigp) ){
+			begin = TRUE;
+		} else {
+			trigp = g_sequence_iter_prev(trigp);
+			sb_aux = (SnglBurst*)g_sequence_get(trigp);
+		}
 
 		// Sweep backward, accumulate triggers in the window until we're outside
 		// of it
-		do {
-			if( g_sequence_iter_is_begin(trigp) ) break;
-			trigp = g_sequence_iter_prev(trigp);
-			sb_aux = (SnglBurst*)g_sequence_get(trigp);
-
-			// For now, don't use the target channel
-			// FIXME: We may want this information in the future
-			if( strstr( sb_aux->channel, chan ) ) continue;
+		while( !begin && XLALGPSInSeg( &sb_aux->peak_time, wind ) == 0 ){
 
 			/*
 			 * If we want unique coincidences, check to see if this channel has
 			 * already been added.
+			 *
+			 * For now, don't use the target channel
+			 * FIXME: We may want this information in the future
 			 */
-			if( coinctype == 1 && g_hash_table_lookup( prevcoinc, sb_aux->channel ) ){
-				 continue;
+			if( (coinctype == 1 && g_hash_table_lookup( prevcoinc, sb_aux->channel )) || strstr( sb_aux->channel, chan ) ){
+				if( g_sequence_iter_is_begin(trigp) ) break;
+				trigp = g_sequence_iter_prev(trigp);
+				sb_aux = (SnglBurst*)g_sequence_get(trigp);
+				continue;
 			} else {
 				// FIXME: Use g_hash_table_add when compatible
 				g_hash_table_insert( prevcoinc, &sb_aux->channel, &sb_aux->channel );
@@ -152,27 +175,44 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			// new one
 			if( value != NULL ){
 				(*value)++;
-				printf( "Coincidence: Incrementing, %s value: %lu\n", sb_aux->channel, *value );
+				printf( "Left Coincidence: Incrementing, %s->%ld, time %d.%d value: %lu\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
 				g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			} else {
 				value = g_new(size_t, 1);
 				*value = 1;
-				printf( "Coincidence: Adding %s with time %d.%d\n", sb_aux->channel, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
+				printf( "Left Coincidence: Adding %s->%ld with time %d.%d\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
 				g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			}
-		} while( XLALGPSInSeg( &sb_aux->peak_time, wind ) == 0 );
+			if( g_sequence_iter_is_begin(trigp) ) break;
+			trigp = g_sequence_iter_prev(trigp);
+			sb_aux = (SnglBurst*)g_sequence_get(trigp);
+		}
+
+		trigp = cur_trig;
+		trigp = g_sequence_iter_next(trigp);
+		if( g_sequence_iter_is_end(trigp) ) break;
+		sb_aux = (SnglBurst*)g_sequence_get(trigp);
 
 		// Sweep forward, accumulate triggers in the window until we're outside
 		// of it
-		do {
-			trigp = g_sequence_iter_next(trigp);
-			if( g_sequence_iter_is_end(trigp) ) break;
-			sb_aux = (SnglBurst*)g_sequence_get(trigp);
+		//do {
+		while( XLALGPSInSeg( &sb_aux->peak_time, wind ) == 0 ){
+			//trigp = g_sequence_iter_next(trigp);
+			//if( g_sequence_iter_is_end(trigp) ) break;
+			//sb_aux = (SnglBurst*)g_sequence_get(trigp);
+			
 			// Not the target channel?
-			if( strstr( sb_aux->channel, chan ) ) continue;
+			if( strstr( sb_aux->channel, chan ) ){ 
+				trigp = g_sequence_iter_next(trigp);
+				sb_aux = (SnglBurst*)g_sequence_get(trigp);
+				continue;
+			}
 
 			if( coinctype == 1 && g_hash_table_lookup( prevcoinc, sb_aux->channel ) ){
-				 continue;
+				trigp = g_sequence_iter_next(trigp);
+				if( g_sequence_iter_is_end(trigp) ) break;
+				sb_aux = (SnglBurst*)g_sequence_get(trigp);
+				continue;
 			} else {
 				// FIXME: Use g_hash_table_add when compatible
 				g_hash_table_insert( prevcoinc, &sb_aux->channel, &sb_aux->channel );
@@ -184,15 +224,19 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			// new one
 			if( value != NULL ){
 				(*value)++;
-				printf( "Coincidence: Incrementing, %s value: %lu\n", sb_aux->channel, *value );
+				printf( "Right Coincidence: Incrementing, %s->%ld, time %d.%d value: %lu\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
 				g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			} else {
 				value = g_new(size_t, 1);
 				*value = 1;
-				printf( "Coincidence: Adding %s with time %d.%d\n", sb_aux->channel, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
+				printf( "Right Coincidence: Adding %s->%ld with time %d.%d\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
 				g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			}
-		} while( XLALGPSInSeg( &sb_aux->peak_time, wind ) == 0 );
+			trigp = g_sequence_iter_next(trigp);
+			if( g_sequence_iter_is_end(trigp) ) break;
+			sb_aux = (SnglBurst*)g_sequence_get(trigp);
+		}
+		//} while( XLALGPSInSeg( &sb_aux->peak_time, wind ) == 0 );
 		g_hash_table_destroy(prevcoinc);
 	}
 	XLALFree( wind );
@@ -293,18 +337,22 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
  */
 size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan ){
 
+	char refchan[] = "LSC-DARM_ERR";
 	size_t vetoed_events = 0;
+	size_t de_vetoed_events = 0;
 	size_t nevents = g_sequence_get_length(trig_sequence);
 	fprintf( stderr, "nevents: %lu\n", nevents );
 	fprintf( stderr, "Channel to veto: %s\n", vchan );
 
 	// Pointer to the current position in the trigger list
 	GSequenceIter* trigp = g_sequence_get_begin_iter(trig_sequence);
+	GSequenceIter* veto_trig;
 	// Pointer to the trigger under examination
 	SnglBurst* sb;
 
-	// Reset to beginning for real delete pass
-	trigp = g_sequence_get_begin_iter(trig_sequence);
+	// Store the triggers to be deleted
+	GSequence* tbd = g_sequence_new((GDestroyNotify)XLALDestroySnglBurst);
+	GSequenceIter* tbdit = g_sequence_get_begin_iter(tbd);
 
 	// Loop over our list, looking to remove trigs
 	while( !g_sequence_iter_is_end(trigp) ){
@@ -335,12 +383,18 @@ size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, cons
 		while( !begin & (XLALGPSInSeg( &sb->peak_time, trig_veto ) == 0) ){
 			GSequenceIter *tmp;
 			tmp = st;
-			if( !g_sequence_iter_is_begin(st) ){
-				st = g_sequence_iter_prev(st);
-				sb = (SnglBurst*)g_sequence_get(st);
+			if( g_sequence_iter_is_begin(st) ){
+				break;
 			}
-			g_sequence_remove(tmp);
+			st = g_sequence_iter_prev(st);
+			g_sequence_move(tmp, tbdit);
+			tbdit = g_sequence_iter_next(tbdit);
 			vetoed_events++;
+			printf( "Backwards, deleting %s id %ld\n", sb->channel, sb->event_id );
+			if( strstr(refchan, sb->channel) ){
+				de_vetoed_events++;
+			}
+			sb = (SnglBurst*)g_sequence_get(st);
 		}
 
 		// Check to make sure that we're not at the end of the list
@@ -349,21 +403,37 @@ size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, cons
 		} else {
 			sb = (SnglBurst*)g_sequence_get(end);
 		}
+		veto_trig = end;
 
+		GSequenceIter *tmp;
 		// Forwards
 		while( XLALGPSInSeg( &sb->peak_time, trig_veto ) == 0 ){
 			// don't invalidate the top level iterator
-			GSequenceIter *tmp;
 			tmp = end;
-			trigp = end = g_sequence_iter_next(end);
-			// Delete this trigger
-			g_sequence_remove(tmp);
-			vetoed_events++;
+			end = g_sequence_iter_next(end);
+			// Delete this trigger -- but don't delete anything we'd use later
+			if( !strstr(sb->channel, vchan) ){
+				g_sequence_move(tmp, tbdit);
+				tbdit = g_sequence_iter_next(tbdit);
+				vetoed_events++;
+				printf( "Forwards, deleting %s id %ld\n", sb->channel, sb->event_id );
+				if( strstr(refchan, sb->channel) ){
+					de_vetoed_events++;
+				}
+			}
+
 			if( g_sequence_iter_is_end(end) ){
 				break;
 			}
 			sb = (SnglBurst*)g_sequence_get(end);
 		}
+		tmp = trigp;
+		sb = (SnglBurst*)g_sequence_get(tmp);
+		trigp = g_sequence_iter_next(trigp);
+		g_sequence_move( tmp, tbdit );
+		tbdit = g_sequence_iter_next(tbdit);
+		vetoed_events++;
+		printf( "Veto trig, deleting %s id %ld\n", sb->channel, sb->event_id );
 
 		// FIXME: Add to veto list
 		XLALFree( trig_veto );
@@ -372,7 +442,9 @@ size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, cons
 		nevents = g_sequence_get_length(trig_sequence);
 		fprintf( stderr, "%lu events remain\n", nevents );
 	}
+	g_sequence_free( tbd );
 	fprintf( stderr, "Done, total events removed %lu\n", vetoed_events );
+	fprintf( stderr, "Done, ref channel total events removed %lu\n", de_vetoed_events );
 
 	return vetoed_events;
 }
@@ -413,10 +485,10 @@ void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, c
  * function given the expected number of triggers.
  */
 double XLALDetCharHvetoSignificance( double mu, int k ){
-	double sig = -log10( gsl_sf_gamma_inc_P(mu, k) );
+	//double sig = -log10( gsl_sf_gamma_inc_P(mu, k) );
 	// FIXME: Arbitrary
-	if( sig < 1e-15 ){
+	//if( sig < 1e-15 ){
 		return -k*log10(mu) + mu*log10(exp(1)) + gsl_sf_lngamma(k+1)/log(10);
-	}
-	return sig;
+	//}
+	//return sig;
 }
