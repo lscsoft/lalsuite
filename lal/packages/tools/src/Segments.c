@@ -21,6 +21,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/Segments.h>
+#include <lal/LALString.h>
 
 /**
 \addtogroup Segments_h
@@ -1019,3 +1020,37 @@ XLALSegListInitSimpleSegments ( LALSegList *seglist, LIGOTimeGPS startTime, UINT
   return XLAL_SUCCESS;
 
 } /* XLALSegListInitSimpleSegments() */
+
+
+/**
+ * Output an (octave) formatting of 'seglist' as a string
+ */
+char *
+XLALSegList2String ( const LALSegList *seglist )
+{
+  XLAL_CHECK_NULL ( seglist != NULL, XLAL_EINVAL, "Invalid NULL input 'seglist'\n" );
+  XLAL_CHECK_NULL ( XLALSegListIsInitialized ( seglist ), XLAL_EINVAL, "Got invalid un-initialized seglist\n" );
+
+  char *ret = NULL;
+  XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, "[ " )) != NULL, XLAL_ENOMEM, "Failed to ret=XLALStringAppend()\n" );
+
+  char segfmt[64];
+  sprintf ( segfmt, "%%.%df, %%.%df, %%d; ", seglist->dplaces, seglist->dplaces );	// seglist tells us output precision for GPS times to use
+
+  UINT4 Nseg = seglist->length;
+  for ( UINT4 k = 0; k < Nseg; k ++ )
+    {
+      char seg_buf[512];
+      REAL8 t0_k = XLALGPSGetREAL8 ( &(seglist->segs[k].start) );
+      REAL8 t1_k = XLALGPSGetREAL8 ( &(seglist->segs[k].end) );
+      sprintf ( seg_buf, segfmt, t0_k, t1_k, seglist->segs[k].id );
+
+      XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, seg_buf ) ) != NULL, XLAL_ENOMEM, "Failed to ret=XLALStringAppend() for segment %d/%d\n", k+1, Nseg );
+
+    } // for k < Nseg
+
+  XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, "]" ) ) != NULL, XLAL_ENOMEM, "Failed to ret=XLALStringAppend()" );
+
+  return ret;
+
+} /* XLALSegList2String() */
