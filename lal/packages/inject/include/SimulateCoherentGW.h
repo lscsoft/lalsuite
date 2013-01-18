@@ -290,6 +290,8 @@ typedef struct tagCoherentGW {
   REAL4TimeSeries *f;       /**< A time-sampled sequence storing the instantaneous frequency \f$f(t)\f$, in Hz. */
   REAL8TimeSeries *phi;     /**< A time-sampled sequence storing the phase function \f$\phi(t)\f$, in radians */
   REAL4TimeSeries *shift;   /**< A time-sampled sequence storing the polarization shift \f$\Phi(t)\f$, in radians */
+  UINT4 dtDelayBy2;         /**< A user specified half-interval time step for the Doppler delay look-up table (will default to 400s if set to 0) */
+  UINT4 dtPolBy2;           /**< A user defined half-interval time step for the polarisation response look-up table (will default to 300s if set to 0) */
 } CoherentGW;
 
 /** This structure contains information required to determine the response

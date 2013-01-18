@@ -295,6 +295,8 @@ typedef struct tagPulsarSignalParams {
   UINT4 duration;           	/**< length of time series in seconds */
   REAL8 samplingRate;		/**< sampling rate of time-series (= 2 * frequency-Band) */
   REAL8 fHeterodyne;		/**< heterodyning frequency for output time-series */
+  UINT4 dtDelayBy2; 		/**< half-interval for the Doppler delay look-up table for LALSimulateCoherentGW() */
+  UINT4 dtPolBy2; 		/**< half-interval for the polarisation response look-up table for LALSimulateCoherentGW() */
 } PulsarSignalParams;
 
 /** Parameters defining the SFTs to be returned from LALSignalToSFTs().

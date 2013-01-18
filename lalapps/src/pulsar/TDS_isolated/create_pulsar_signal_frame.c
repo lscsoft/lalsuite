@@ -162,8 +162,6 @@ int main(int argc, char **argv){
     XLAL_ERROR(XLAL_EIO);
   }
 
-  fprintf(stderr, "x = %le, y = %le, z= %le\n", site->location[0], site->location[1], site->location[2] );
-  
   UINT4 numpulsars = (UINT4)n;
   UINT4 h=0;
 
@@ -230,6 +228,9 @@ int main(int argc, char **argv){
     else{
       PulsarSignalParams params = empty_PulsarSignalParams;
 
+      /* set signal generation barycenter delay look-up table step size */
+      params.dtDelayBy2 = 10.; /* generate table every 10 seconds */
+      
       if (( params.pulsar.spindown = XLALCreateREAL8Vector(1)) == NULL ){
         XLALPrintError("Out of memory");
         XLAL_ERROR ( XLAL_EFUNC );
@@ -263,7 +264,7 @@ int main(int argc, char **argv){
 
       REAL4TimeSeries *TSeries = NULL;
 
-      LALGeneratePulsarSignal( &status, &TSeries, &params);
+      LALGeneratePulsarSignal( &status, &TSeries, &params );
 
       if (status.statusCode){
         fprintf(stderr, "LAL Routine failed!\n");
@@ -272,6 +273,7 @@ int main(int argc, char **argv){
       UINT4 i;
       for (i=0; i < TSeries->data->length; i++)
         series->data->data[i] += TSeries->data->data[i];
+
       XLALDestroyREAL4TimeSeries(TSeries);
       XLALDestroyREAL8Vector(params.pulsar.spindown);
     }

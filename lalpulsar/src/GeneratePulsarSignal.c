@@ -92,6 +92,11 @@ LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure
   sourceParams.aCross = params->pulsar.aCross;
   sourceParams.phi0 = params->pulsar.phi0;
   sourceParams.f0 = params->pulsar.f0;
+
+  // internal interpolation parameters for LALSimulateCoherentGW()
+  sourceSignal.dtDelayBy2 = params->dtDelayBy2;
+  sourceSignal.dtPolBy2   = params->dtPolBy2;
+
   /* set source position: make sure it's "normalized", i.e. [0<=alpha<2pi]x[-pi/2<=delta<=pi/2] */
   TRY( LALNormalizeSkyPosition(status->statusPtr, &(sourceParams.position), &(params->pulsar.position)), status);
 
@@ -144,7 +149,7 @@ LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure
 
   /* get duration of source-signal */
   SSBduration = XLALGPSDiff(&t1, &t0);
-  SSBduration += 2.0 * sourceParams.deltaT; /* add two time-steps to be safe */
+  SSBduration += 2.0 * sourceParams.deltaT; /* add two time-steps to be safe*/
 
   sourceParams.epoch = t0;
   sourceParams.length = (UINT4) ceil( SSBduration / sourceParams.deltaT );

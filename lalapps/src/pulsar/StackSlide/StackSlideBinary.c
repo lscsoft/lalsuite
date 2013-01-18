@@ -665,6 +665,8 @@ for (i=0;i<params->numBLKs;i++)
   pPulsarSignalParams->duration = (UINT4)params->duration;
   pPulsarSignalParams->samplingRate = (REAL8)ceil(2.0*params->bandBLK); /* Make sampleRate an integer so that T*samplingRate = integer for integer T */
   pPulsarSignalParams->fHeterodyne = params->f0BLK;  
+  pPulsarSignalParams->dtDelayBy2 = 0;
+  pPulsarSignalParams->dtPosBy2 = 0;
   /* Find the time at the SSB that corresponds to the arrive time at the detector of first data requested. */
   GPSin.gpsSeconds = (INT4)params->gpsEpochStartTimeSec;     /* 12/06/04 gam; GPS epoch Sec that gives reference time in SSB */
   GPSin.gpsNanoSeconds = (INT4)params->gpsEpochStartTimeNan; /* 12/06/04 gam; GPS epoch Nan that gives reference time in SSB */

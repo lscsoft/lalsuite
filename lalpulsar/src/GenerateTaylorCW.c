@@ -213,6 +213,7 @@ LALGenerateTaylorCW( LALStatus          *stat,
   /* Fill frequency and phase arrays. */
   fData = output->f->data->data;
   phiData = output->phi->data->data;
+
   for ( i = 0; i < n; i++ ) {
     t = tPow = i*dt;
     f = 1.0;
