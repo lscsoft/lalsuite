@@ -64,7 +64,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %defattr(-,root,root)
 %{_libdir}/*.so*
 %{_sysconfdir}/*
-%{exclude} %{_libdir}/python*
+%exclude %{_libdir}/python*
 
 %files devel
 %defattr(-,root,root)
