@@ -148,17 +148,17 @@ def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpse
 	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
       		coinc_id=int(coinc_id.split(":")[-1])
 	  	if not coinc_id in output.keys():
-			output[coinc_id]=Event(trig_time=sngl_time,timeslide_dict={})
+			output[coinc_id]=Event(trig_time=sngl_time,timeslide_dict={},event_id=int(coinc_id))
 			extra[coinc_id]={}
 		output[coinc_id].timeslides[ifo]=0
 		output[coinc_id].ifos.append(ifo)
 		extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
-      	if dumpfile is not None:
-        	fh=open(dumpfile,'w')
-        	for co in output.keys():
-          		for ifo in output[co].ifos:
-            			fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
-        	fh.close()
+	if dumpfile is not None:
+		fh=open(dumpfile,'w')
+		for co in output.keys():
+			for ifo in output[co].ifos:
+				fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
+		fh.close()
 	return output.values()
 	
 
@@ -202,17 +202,17 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
 	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
 	  if not coinc_id in output.keys():
-	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={})
+	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={}i,event_id=int(coinc_id))
             extra[coinc_id]={}
 	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
 	  output[coinc_id].ifos.append(ifo)
           extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
-        if dumpfile is not None:
-          fh=open(dumpfile,'w')
-          for co in output.keys():
-            for ifo in output[co].ifos:
-              fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
-          fh.close()
+	if dumpfile is not None:
+		fh=open(dumpfile,'w')
+		for co in output.keys():
+			for ifo in output[co].ifos:
+				fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
+		fh.close()
 	return output.values()
 
 def mkdirs(path):
