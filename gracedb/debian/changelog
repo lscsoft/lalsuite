@@ -2,6 +2,7 @@ ligo-gracedb (1.10-1) unstable; urgency=low
   * CLI replace feature had subtle openssl bug.  Using REST client.
   * Typo in help text.
   * Typo in test.py wrt CWB test data.
+ -- Brian Moe <brian.moe@ligo.org>  Fri, 18 Jan 2013 09:35:25 -0500
 
 ligo-gracedb (1.9-1) unstable; urgency=low
 
