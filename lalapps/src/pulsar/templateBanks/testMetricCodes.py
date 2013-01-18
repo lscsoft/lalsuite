@@ -230,7 +230,7 @@ for mettype in ["PHASE", "PTOLE"]:
 
     print """
 ## --------------------------------------------------------------------------------
-## Comparing %s-METRICS between [0]getMesh, [1]FstatMetric and [2]FstatMetric_v2
+## Comparing %s-METRICS between [0]getMetric, [1]FstatMetric and [2]FstatMetric_v2
 ## using coordinates '%s', startTime=%d, duration=%d, IFO=%s
 ## and Doppler-position: Freq=%f, Alpha=%f, Delta=%f
 ## --------------------------------------------------------------------------------""" \
