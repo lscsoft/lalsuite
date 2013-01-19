@@ -202,7 +202,7 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
 	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
 	  if not coinc_id in output.keys():
-	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={}i,event_id=int(coinc_id))
+	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={},event_id=int(coinc_id))
             extra[coinc_id]={}
 	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
 	  output[coinc_id].ifos.append(ifo)
