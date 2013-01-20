@@ -1,61 +1,5 @@
 #include <lal/LALDetCharHveto.h>
 
-size_t _count_subsequence( GSequence* subseq, SnglBurst* trig, float wind );
-/*
- * This counts the number of coincidences between an input trigger; likely an
- * auxiliary trigger, and a sequence of triggers; likely h(t) triggers, within
- * a window length.
- * Additionally, since the input trigger is assumed to be from a sorted
- * sequence, the input trigger subsequence is pruned against triggers which
- * are guaranteed to no longer cause conincidences
- */
-size_t _count_subsequence( GSequence* subseq, SnglBurst* trig, float wind ){
-	GSequenceIter *tmp, *subitr = g_sequence_get_begin_iter(subseq);
-	size_t counter = 0;
-	while( !g_sequence_iter_is_end(subitr) ){
-		SnglBurst *ht = (SnglBurst*)g_sequence_get(subitr);
-		/*
-		printf( "%d.%d %d.%d %f/%f ", trig->peak_time.gpsSeconds,
-					trig->peak_time.gpsNanoSeconds,
-					ht->peak_time.gpsSeconds,
-					ht->peak_time.gpsNanoSeconds,
-					diff, wind );
-		*/
-		// If |trig time - list| > counter increment
-		if( fabs(XLALGPSDiff( &trig->peak_time, &ht->peak_time )) < wind ){
-			counter++;
-			subitr = g_sequence_iter_next(subitr);
-		// If trig time > list + wind, trim list
-		} else if( XLALGPSCmp( &trig->peak_time, &ht->peak_time ) == 1 ) {
-			tmp = subitr;
-			subitr = g_sequence_iter_next(subitr);
-			g_sequence_remove(tmp);
-		} else {
-			//printf( "%d ", XLALGPSCmp( &trig->peak_time, &ht->peak_time ) );
-			break;
-			//subitr = g_sequence_iter_next(subitr);
-		}
-	}
-	return counter;
-}
-
-void _move_trig_out_wind( GSequenceIter* trig, LIGOTimeGPS* end );
-void _move_trig_out_wind( GSequenceIter* trig, LIGOTimeGPS* end ){
-	GSequenceIter *orig = trig;
-	SnglBurst *sb;
-	int move = 0;
-	do {
-		trig = g_sequence_iter_next(trig);
-		if( g_sequence_iter_is_end(trig) ) {
-			trig = g_sequence_iter_prev( trig );
-			break;
-		}
-		move++;
-		sb = g_sequence_get(trig);
-	} while( XLALGPSCmp(&sb->peak_time, end) == 0 );
-	g_sequence_swap( orig, trig );
-}
-
 /*
  * Scan through a list of triggers and count the instances of each trigger type
  * and count its coincidences with the target channel. The hash tables for the
@@ -335,7 +279,7 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
  * TODO: Merge vetolist creation here
  * TODO: Can we also decrement the count / coincidences efficiently here?
  */
-size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan ){
+GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan ){
 
 	char refchan[] = "LSC-DARM_ERR";
 	size_t vetoed_events = 0;
@@ -346,7 +290,6 @@ size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, cons
 
 	// Pointer to the current position in the trigger list
 	GSequenceIter* trigp = g_sequence_get_begin_iter(trig_sequence);
-	GSequenceIter* veto_trig;
 	// Pointer to the trigger under examination
 	SnglBurst* sb;
 
@@ -403,7 +346,6 @@ size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, cons
 		} else {
 			sb = (SnglBurst*)g_sequence_get(end);
 		}
-		veto_trig = end;
 
 		GSequenceIter *tmp;
 		// Forwards
@@ -442,11 +384,11 @@ size_t XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, cons
 		nevents = g_sequence_get_length(trig_sequence);
 		fprintf( stderr, "%lu events remain\n", nevents );
 	}
-	g_sequence_free( tbd );
+	//g_sequence_free( tbd );
 	fprintf( stderr, "Done, total events removed %lu\n", vetoed_events );
 	fprintf( stderr, "Done, ref channel total events removed %lu\n", de_vetoed_events );
 
-	return vetoed_events;
+	return tbd;
 }
 
 /*

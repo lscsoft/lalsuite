@@ -18,6 +18,7 @@
  */
 
 #include <lal/LALDetCharHveto.h>
+#include <lal/LIGOLwXML.h>
 
 static gint compare(gconstpointer a, gconstpointer b) {
         const SnglBurst *_a = a;
@@ -33,11 +34,13 @@ void populate_trig_sequence( GSequence* trig_sequence );
 // Read a series of triggers from XML
 void populate_trig_sequence_from_file( GSequence* trig_sequence, const char* fname, double min_snr, GSequence* ignore_list );
 // print a hash table of string / int entries
-void print_hash_table( GHashTable* tbl );
+void print_hash_table( GHashTable* tbl, const char* file );
 // Read a sequence of channels to ignore
 void get_ignore_list( const char* fname, GSequence* ignorelist );
 // retrieve live time
 void calculate_livetime( const char* fname, LALSegList* live_segs );
+// Write trigger set
+void write_triggers( GSequence* trig_sequence, const char* fname );
 
 extern int lalDebugLevel;
 
@@ -115,6 +118,8 @@ int main(int argc, char** argv){
 	double t_ratio = wind / livetime;
 	int coinc_type = 1; // unique coincidences
 
+	char outpath[512];
+
 	GList *channames = g_hash_table_get_keys( chancount );
 	size_t nchans = g_list_length( channames ) - 1;
 	char winner[1024];
@@ -130,9 +135,13 @@ int main(int argc, char** argv){
 		// TODO: Is there a way to avoid a rescan every round?
 		XLALDetCharScanTrigs( chancount, chanhist, trig_sequence, refchan, wind, coinc_type );
 		printf( "Trigger count:\n" );
-		print_hash_table( chancount );
+		print_hash_table( chancount, NULL );
+		sprintf( outpath, "round_%d_count.txt", rnd );
+		print_hash_table( chancount, outpath );
 		printf( "Trigger coincidences with %s, window (%f):\n", refchan, wind );
-		print_hash_table( chanhist );
+		print_hash_table( chanhist, NULL );
+		sprintf( outpath, "round_%d_coinc.txt", rnd );
+		print_hash_table( chanhist, outpath );
 		// TODO: Heuristic: check the highest # of coincidences first
 		// (maybe normalize by number of triggers
 
@@ -158,7 +167,10 @@ int main(int argc, char** argv){
 			XLALGPSSetREAL8( &start, -wind/2.0 );
 			XLALGPSSetREAL8( &stop, wind/2.0 );
 			XLALSegSet( &veto, &start, &stop, 0 );
-			XLALDetCharRemoveTrigs( trig_sequence, veto, winner );
+			GSequence *vetoed_trigs = XLALDetCharRemoveTrigs( trig_sequence, veto, winner );
+			sprintf( outpath, "./round_%d_vetoed_triggers.xml", rnd );
+			write_triggers( vetoed_trigs, outpath );
+			g_sequence_free( vetoed_trigs );
 
 			// Remove the channel from consideration
 			printf( "Removing %s from count\n", winner );
@@ -265,12 +277,23 @@ void populate_trig_sequence( GSequence* trig_sequence ){
 	fprintf( stderr, "\nCreated %d events\n", i );
 }
 
-void print_hash_table( GHashTable* tbl ){
+void print_hash_table( GHashTable* tbl, const char* file ){
     GHashTableIter iter;
     gpointer key, val;
 	g_hash_table_iter_init( &iter, tbl );
+	FILE* outfile = NULL;
+	if( file ){
+		outfile = fopen( file, "w" );
+	}
 	while( g_hash_table_iter_next( &iter, &key, &val ) ){
-		printf( "%s: %lu\n", (char *)key, *(size_t*)val );
+		if( file ){
+			fprintf( outfile, "%s: %lu\n", (char *)key, *(size_t*)val );
+		} else {
+			printf( "%s: %lu\n", (char *)key, *(size_t*)val );
+		}
+	}
+	if( outfile ){
+		fclose( outfile );
 	}
 }
 
@@ -308,4 +331,29 @@ void calculate_livetime( const char* fname, LALSegList* live_segs ){
 		XLALFree( seg );
 	}
 	fclose(lfile);
+}
+
+void write_triggers( GSequence* trig_sequence, const char* fname ){
+
+	// Convert a sequence back into SnglBurst
+	GSequenceIter* sbit;
+	SnglBurst *begin, *sb, *tmp;
+	sb = NULL;
+	sbit = g_sequence_get_begin_iter( trig_sequence );
+	while( !g_sequence_iter_is_end( sbit ) ){
+		tmp = (SnglBurst*) g_sequence_get( sbit );
+		sbit = g_sequence_iter_next( sbit );
+		if( sb ){
+			sb->next = tmp;
+			sb = sb->next;
+		} else {
+			begin = sb = tmp;
+		}
+	}
+	sb->next = NULL;
+	
+	LIGOLwXMLStream *str;
+	str = XLALOpenLIGOLwXMLFile( fname );
+	XLALWriteLIGOLwXMLSnglBurstTable( str, begin );
+	XLALCloseLIGOLwXMLFile( str );
 }
