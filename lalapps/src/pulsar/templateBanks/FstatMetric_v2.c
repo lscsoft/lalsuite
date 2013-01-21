@@ -598,13 +598,13 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
       if ( history->VCSInfoString ) fprintf (fp, "%%%% Code Version: %s\n", history->VCSInfoString );
     }
 
-  fprintf ( fp, "%%%% DopplerCoordinates = [ " );
+  fprintf ( fp, "DopplerCoordinates = { " );
   for ( i=0; i < meta->coordSys.dim; i ++ )
     {
       if ( i > 0 ) fprintf ( fp, ", " );
-      fprintf ( fp, "%s", XLALDopplerCoordinateName(meta->coordSys.coordIDs[i]));
+      fprintf ( fp, "\"%s\"", XLALDopplerCoordinateName(meta->coordSys.coordIDs[i]));
     }
-  fprintf ( fp, "];\n");
+  fprintf ( fp, "};\n");
 
   { /* output projection info */
     const char *pname;
@@ -617,13 +617,11 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   }
 
   fprintf ( fp, "%%%% DetectorMotionType = '%s'\n", XLALDetectorMotionName(meta->detMotionType) );
-  fprintf ( fp, "%%%% h0 = %g; cosi = %g; psi = %g; phi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
+  fprintf ( fp, "h0 = %g;\ncosi = %g;\npsi = %g;\nphi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
   fprintf ( fp, "%%%% DopplerPoint = {\n");
-  fprintf ( fp, "%%%% 	refTime = {%d, %d}\n",
-	    doppler->refTime.gpsSeconds, doppler->refTime.gpsNanoSeconds );
-  fprintf ( fp, "%%%% 	Alpha = %f rad; Delta = %f rad\n", doppler->Alpha, doppler->Delta );
-  fprintf ( fp, "%%%% 	fkdot = [%f, %g, %g, %g ]\n",
-	    doppler->fkdot[0], doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3] );
+  fprintf ( fp, "refTime = %.1f;\n", XLALGPSGetREAL8 ( &doppler->refTime ) );
+  fprintf ( fp, "Alpha   = %f;\nDelta = %f;\n", doppler->Alpha, doppler->Delta );
+  fprintf ( fp, "fkdot   = [%f, %g, %g, %g ];\n", doppler->fkdot[0], doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3] );
   if ( doppler->orbit )
     {
       const BinaryOrbitParams *orbit = doppler->orbit;
@@ -640,19 +638,17 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   LIGOTimeGPS *tStart = &(meta->segmentList.segs[0].start);
   LIGOTimeGPS *tEnd   = &(meta->segmentList.segs[Nseg-1].end);
   REAL8 Tspan = XLALGPSDiff ( tEnd, tStart );
-  fprintf ( fp, "%%%% startTime = {%d, %d}\n", tStart->gpsSeconds, tStart->gpsNanoSeconds );
-  fprintf ( fp, "%%%% Tspan     = %f\n", Tspan );
-  fprintf ( fp, "%%%% Nseg      = %d\n", Nseg );
-  // FIXME: Output full segment list here:
-
-  fprintf ( fp, "%%%% detectors = [");
+  fprintf ( fp, "startTime = %.1f;\n", XLALGPSGetREAL8 ( tStart ) );
+  fprintf ( fp, "Tspan     = %.1f;\n", Tspan );
+  fprintf ( fp, "Nseg      = %d;\n", Nseg );
+  fprintf ( fp, "detectors = {");
   for ( i=0; i < meta->detInfo.length; i ++ )
     {
       if ( i > 0 ) fprintf ( fp, ", ");
-      fprintf ( fp, "%s", meta->detInfo.sites[i].frDetector.name );
+      fprintf ( fp, "\"%s\"", meta->detInfo.sites[i].frDetector.name );
     }
-  fprintf ( fp, "];\n");
-  fprintf ( fp, "%%%% detectorWeights = [");
+  fprintf ( fp, "};\n");
+  fprintf ( fp, "detectorWeights = [");
   for ( i=0; i < meta->detInfo.length; i ++ )
     {
       if ( i > 0 ) fprintf ( fp, ", ");
@@ -708,6 +704,13 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
 
       fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->Fisher_ab );
     }
+
+  // ---------- output segment list at the end, as this can potentially become quite long and distracting
+  char *seglist_octave;
+  XLAL_CHECK ( (seglist_octave = XLALSegList2String ( &(meta->segmentList) )) != NULL, XLAL_EFUNC, "XLALSegList2String() with xlalErrno = %d\n", xlalErrno );
+  fprintf ( fp, "\n\nsegmentList = %s;\n", seglist_octave );
+  XLALFree ( seglist_octave );
+
 
   return XLAL_SUCCESS;
 
