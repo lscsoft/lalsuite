@@ -117,7 +117,7 @@ typedef struct
 typedef struct
 {
   EphemerisData *edat;			/**< ephemeris data (from XLALInitBarycenter()) */
-  LIGOTimeGPS startTime;		/**< start time of observation */
+  LALSegList segmentList;		/**< segment list contains start- and end-times of all segments */
   PulsarParams signalParams;		/**< GW signal parameters: Amplitudes + doppler */
   MultiDetectorInfo detInfo;		/**< (multi-)detector info */
   DopplerCoordinateSystem coordSys; 	/**< array of enums describing Doppler-coordinates to compute metric in */
@@ -142,10 +142,12 @@ typedef struct
   CHAR *ephemDir;	/**< directory to look for ephemeris files */
   CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
 
-  REAL8 startTime;	/**< GPS start time of observation */
   REAL8 refTime;	/**< GPS reference time of Doppler parameters */
+
+  REAL8 startTime;	/**< GPS start time of observation */
   REAL8 duration;	/**< length of observation in seconds */
   INT4 Nseg;		/**< number of segments to split duration into */
+  CHAR *segmentList;	/**< ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>" */
 
   REAL8 h0;		/**< GW amplitude h_0 */
   REAL8 cosi;		/**< cos(iota) */
@@ -257,7 +259,7 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALInitCode() failed with xlalErrno = %d\n\n", xlalErrno );
   config.history->VCSInfoString = VCSInfoString;
 
-
+  metricParams.segmentList   = config.segmentList;
   metricParams.coordSys      = config.coordSys;
   metricParams.detMotionType = uvar.detMotionType;
   metricParams.metricType    = uvar.metricType;
@@ -266,8 +268,6 @@ main(int argc, char *argv[])
   metricParams.projectCoord  = uvar.projection - 1;	/* user-input counts from 1, but interally we count 0=1st coord. (-1==no projection) */
   metricParams.approxPhase   = uvar.approxPhase;
 
-  XLAL_CHECK ( XLALSegListInitSimpleSegments ( &metricParams.segmentList, config.startTime, uvar.Nseg, uvar.duration / uvar.Nseg ) == XLAL_SUCCESS,
-               XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
 
   /* ----- compute metric full metric + Fisher matrix ---------- */
   DopplerMetric *metric;
@@ -331,6 +331,8 @@ initUserVars (UserVariables_t *uvar)
   uvar->startTime = 714180733;
   uvar->duration = 10 * 3600;
   uvar->Nseg = 1;
+  uvar->segmentList = NULL;
+
   uvar->refTime = -1;	/* default: use mid-time */
 
   uvar->projection = 0;
@@ -362,10 +364,11 @@ initUserVars (UserVariables_t *uvar)
   XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");
   XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"third spindown-value d3f/dt3");
-  XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   XLALregREALUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
+  XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Duration of observation in seconds");
   XLALregINTUserStruct(Nseg,		'N', UVAR_OPTIONAL, 	"Compute semi-coherent metric for this number of segments within 'duration'" );
+  XLALregSTRINGUserStruct(segmentList,   0,  UVAR_OPTIONAL,     "ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>");
   XLALregSTRINGUserStruct(ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
   XLALregSTRINGUserStruct(ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
 
@@ -401,30 +404,57 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     XLAL_ERROR (XLAL_EINVAL );
   }
 
-  /* ----- check user-input consistency ---------- */
-  XLAL_CHECK ( uvar->Nseg >= 1, XLAL_EDOM, "Invalid input --Nseg=%d: number of segments must be >= 1\n", uvar->Nseg );
-  XLAL_CHECK ( uvar->duration >= 1, XLAL_EDOM, "Invalid input --duration=%f: duration must be >= 1 s\n", uvar->duration );
-
-  /* ----- determine start-time from user-input */
-  XLALGPSSetREAL8( &(cfg->startTime), uvar->startTime );
-
+  // ----- load ephemeris files
   if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) == NULL ) {
     LogPrintf (LOG_CRITICAL, "%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", __func__);
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
+  // ----- figure out which segments to use
+  BOOLEAN manualSegments = XLALUserVarWasSet(&uvar->duration) || XLALUserVarWasSet(&uvar->startTime) || XLALUserVarWasSet(&uvar->Nseg);
+  if ( manualSegments && uvar->segmentList ) {
+    XLAL_ERROR ( XLAL_EDOM, "Can specify EITHER {--startTime, --duration, --Nseg} OR --segmentList\n");
+  }
+  LIGOTimeGPS startTimeGPS;
+  REAL8 duration;
+  if ( manualSegments )
+    {
+      XLAL_CHECK ( uvar->Nseg >= 1, XLAL_EDOM, "Invalid input --Nseg=%d: number of segments must be >= 1\n", uvar->Nseg );
+      XLAL_CHECK ( uvar->duration >= 1, XLAL_EDOM, "Invalid input --duration=%f: duration must be >= 1 s\n", uvar->duration );
+      XLAL_CHECK ( XLALGPSSetREAL8( &startTimeGPS, uvar->startTime ) != NULL, XLAL_EFUNC, "XLALGPSSetREAL8(%f) failed with xlalErrno = %d\n", uvar->startTime, xlalErrno );
+      int ret = XLALSegListInitSimpleSegments ( &cfg->segmentList, startTimeGPS, uvar->Nseg, uvar->duration / uvar->Nseg );
+      XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
+      duration = uvar->duration;
+    }
+  else
+    {
+      LALSegList *segList = XLALReadSegmentsFromFile ( uvar->segmentList );
+      XLAL_CHECK ( segList != NULL, XLAL_EIO, "XLALReadSegmentsFromFile() failed to load segment list from file '%s', xlalErrno = %d\n", uvar->segmentList, xlalErrno );
+      cfg->segmentList = (*segList);	// copy *contents*
+      XLALFree ( segList );
+      startTimeGPS = cfg->segmentList.segs[0].start;
+      UINT4 Nseg = cfg->segmentList.length;
+      LIGOTimeGPS endTimeGPS = cfg->segmentList.segs[Nseg-1].end;
+      duration = XLALGPSDiff( &endTimeGPS, &startTimeGPS );
+    }
+
   /* ----- figure out reference time */
-  REAL8 refTime;
   LIGOTimeGPS refTimeGPS;
+
   /* treat special values first */
   if ( uvar->refTime == 0 )		/* 0 = use startTime */
-    refTime = uvar->startTime;
+    {
+      refTimeGPS = startTimeGPS;
+    }
   else if ( uvar->refTime == -1 )	/* -1 = use mid-time of observation */
-    refTime = uvar->startTime + 0.5 * uvar->duration;
+    {
+      refTimeGPS = startTimeGPS;
+      XLALGPSAdd( &refTimeGPS, duration / 2.0 );
+    }
   else
-    refTime = uvar->refTime;
-
-  XLALGPSSetREAL8( &refTimeGPS, refTime );
+    {
+      XLALGPSSetREAL8( &refTimeGPS, uvar->refTime );
+    }
 
   /* ----- get parameter-space point from user-input) */
   cfg->signalParams.Amp.h0 = uvar->h0;
@@ -522,6 +552,7 @@ XLALDestroyConfig ( ConfigVariables *cfg )
 
   XLALDestroyEphemerisData ( cfg->edat );
 
+  XLALSegListClear ( &(cfg->segmentList) );
   return XLAL_SUCCESS;
 
 } /* XLALDestroyConfig() */
