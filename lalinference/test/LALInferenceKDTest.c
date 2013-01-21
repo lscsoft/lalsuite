@@ -109,7 +109,7 @@ int main(void);
 int main() {
   REAL8 zero[NDIM];
   REAL8 one[NDIM];
-  const size_t NPTS = 100000;
+  const size_t NPTS = 1000;
   size_t i;
   gsl_rng *rng = gsl_rng_alloc(gsl_rng_ranlxd2);
   LALInferenceKDTree *tree = NULL;
