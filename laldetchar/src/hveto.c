@@ -338,7 +338,7 @@ void write_triggers( GSequence* trig_sequence, const char* fname ){
 	// Convert a sequence back into SnglBurst
 	GSequenceIter* sbit;
 	SnglBurst *begin, *sb, *tmp;
-	sb = NULL;
+	begin = sb = NULL;
 	sbit = g_sequence_get_begin_iter( trig_sequence );
 	while( !g_sequence_iter_is_end( sbit ) ){
 		tmp = (SnglBurst*) g_sequence_get( sbit );
