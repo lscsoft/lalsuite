@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 14
+# serial 15
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -60,12 +60,11 @@ AC_DEFUN([LAL_ENABLE_MACROS],
 [AC_ARG_ENABLE(
   [macros],
   AC_HELP_STRING([--enable-macros],[use LAL macros [default=yes]]),
-  [ case "${enableval}" in
-      yes) ;;
-      no) AC_DEFINE(NOLALMACROS, 1, Use functions rather than macros) ;;
-      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-macros) ;;
-    esac
-  ], )
+  AS_CASE(["${enableval}"],
+    [yes],,
+    [no],AC_DEFINE([NOLALMACROS],[1],[Use functions rather than macros]),
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-macros])
+  ),)
 ])
 
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
