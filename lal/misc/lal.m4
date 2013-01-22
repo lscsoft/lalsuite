@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 15
+# serial 16
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -71,12 +71,11 @@ AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
 [AC_ARG_ENABLE(
   [pthread_lock],
   AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety [default=no]]),
-  [ case "${enableval}" in
-      yes) lal_pthread_lock=true; AC_DEFINE(LAL_PTHREAD_LOCK, 1, Use pthread mutex lock for threadsafety) ;;
-      no) lal_pthread_lock=false ;;
-      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-pthread-lock) ;;
-    esac
-  ], [ lal_pthread_lock=false ] )
+  AS_CASE(["${enableval}"],
+    [yes],[lal_pthread_lock=true; AC_DEFINE([LAL_PTHREAD_LOCK],[1],[Use pthread mutex lock for threadsafety])],
+    [no],[lal_pthread_lock=false],
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-pthread-lock])
+  ),[lal_pthread_lock=false])
 ])
 
 AC_DEFUN([LAL_INTEL_MKL_QTHREAD_WARNING],
