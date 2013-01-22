@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 10
+# serial 11
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -13,11 +13,7 @@ AC_DEFUN([LAL_WITH_CFLAGS],
 [AC_ARG_WITH(
   [cflags],
   AC_HELP_STRING([--with-cflags=CFLAGS],[C compiler flags]),
-  [ if test -n "${with_cflags}"
-    then
-      CFLAGS="${with_cflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_cflags}"],[CFLAGS="${with_cflags}"]),)
 ])
 
 AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
