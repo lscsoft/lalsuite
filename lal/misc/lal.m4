@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 12
+# serial 13
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -48,13 +48,12 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
 [AC_ARG_ENABLE(
   [intelfft],
   AC_HELP_STRING([--enable-intelfft],[use Intel FFT libraries insted of FFTW [default=no]]),
-  [ case "${enableval}" in
-      yes) intelfft=true ;;
-      no)  intelfft=false ;;
-      condor) intelfft=true ; qthread=true ; AC_DEFINE(LAL_QTHREAD, 1, Use fake qthread library for MKL Condor compatibility) ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-intelfft) ;;
-    esac
-  ], [ intelfft=false ] )
+  AS_CASE(["${enableval}"],
+    [yes],[intelfft=true],
+    [no],[intelfft=false],
+    [condor],[intelfft=true; qthread=tru; AC_DEFINE([LALQTHREAD],[1],[Use fake qthread library for MKL Condor compatibility])],
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-intelfft])
+  ),[intelfft=false])
 ])
 
 AC_DEFUN([LAL_ENABLE_MACROS],
