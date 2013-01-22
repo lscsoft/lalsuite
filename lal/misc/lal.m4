@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 11
+# serial 12
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -20,44 +20,28 @@ AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
 [AC_ARG_WITH(
   [extra_cflags],
   AC_HELP_STRING([--with-extra-cflags=CFLAGS],[additional C compiler flags]),
-  [ if test -n "${with_extra_cflags}"
-    then
-      CFLAGS="$CFLAGS ${with_extra_cflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_extra_cflags}"],[CFLAGS="$CFLAGS ${with_extra_cflags}"]),)
 ])
 
 AC_DEFUN([LAL_WITH_EXTRA_LDFLAGS],
 [AC_ARG_WITH(
   [extra_ldflags],
   AC_HELP_STRING([--with-extra-ldflags=LDFLAGS],[additional linker flags]),
-  [ if test -n "${with_extra_ldflags}"
-    then
-      LDFLAGS="$LDFLAGS ${with_extra_ldflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_extra_ldflags}"],[LDFLAGS="$LDFLAGS ${with_extra_ldflags}"]),)
 ])
 
 AC_DEFUN([LAL_WITH_EXTRA_LIBS],
 [AC_ARG_WITH(
   [extra_libs],
   AC_HELP_STRING([--with-extra-libs=LIBS],[additional -l and -L linker flags]),
-  [ if test -n "${with_extra_libs}"
-    then
-      LIBS="$LIBS ${with_extra_libs}";
-    fi
-  ],)
+  AS_IF([test -n "${with_extra_libs}"],[LIBS="$LIBS ${with_extra_libs}"]),)
 ])
 
 AC_DEFUN([LAL_WITH_CC],
 [AC_ARG_WITH(
   [cc],
   AC_HELP_STRING([--with-cc=CC],[use the CC C compiler]),
-  [ if test -n "${with_cc}"
-    then
-      CC="${with_cc}";
-    fi
-  ],)
+  AS_IF([test -n "${with_cc}"],[CC="${with_cc}"]),)
 ])
 
 AC_DEFUN([LAL_ENABLE_INTELFFT],
