@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 50
+# serial 51
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -14,9 +14,7 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
     # * nothing, if the cwd is not part of the git repo (e.g. ignored)
     # * an error msg to stderr if the cwd is not in a git repository
     git_log=`( cd "${srcdir}" && ${GIT} log --oneline -n 1 -- . ) 2>/dev/null`
-    AS_IF([test "x${git_log}" != x],[
-      have_git_repo=yes
-    ])
+    AS_IF([test "x${git_log}" != x],[have_git_repo=yes])
     AC_MSG_RESULT([${have_git_repo}])
   ])
   # conditional for git and building from a git repository
@@ -28,9 +26,7 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
     AC_SUBST([genvcsinfo_],["\$(genvcsinfo_\$(AM_DEFAULT_VERBOSITY))"])
     AC_SUBST([genvcsinfo_0],["--am-v-gen='\$(AM_V_GEN)'"])
     GENERATE_VCS_INFO="\$(AM_V_at)\$(PYTHON) \$(top_srcdir)/../gnuscripts/generate_vcs_info.py --git-path='\$(GIT)' \$(genvcsinfo_\$(V))"
-  ],[
-    GENERATE_VCS_INFO=false
-  ])
+  ],[GENERATE_VCS_INFO=false])
   AC_SUBST(GENERATE_VCS_INFO)
 ])
 

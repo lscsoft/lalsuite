@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 12
+# serial 16
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -48,37 +48,34 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
 [AC_ARG_ENABLE(
   [intelfft],
   AC_HELP_STRING([--enable-intelfft],[use Intel FFT libraries insted of FFTW [default=no]]),
-  [ case "${enableval}" in
-      yes) intelfft=true ;;
-      no)  intelfft=false ;;
-      condor) intelfft=true ; qthread=true ; AC_DEFINE(LAL_QTHREAD, 1, Use fake qthread library for MKL Condor compatibility) ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-intelfft) ;;
-    esac
-  ], [ intelfft=false ] )
+  AS_CASE(["${enableval}"],
+    [yes],[intelfft=true],
+    [no],[intelfft=false],
+    [condor],[intelfft=true; qthread=tru; AC_DEFINE([LALQTHREAD],[1],[Use fake qthread library for MKL Condor compatibility])],
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-intelfft])
+  ),[intelfft=false])
 ])
 
 AC_DEFUN([LAL_ENABLE_MACROS],
 [AC_ARG_ENABLE(
   [macros],
   AC_HELP_STRING([--enable-macros],[use LAL macros [default=yes]]),
-  [ case "${enableval}" in
-      yes) ;;
-      no) AC_DEFINE(NOLALMACROS, 1, Use functions rather than macros) ;;
-      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
-    esac
-  ], )
+  AS_CASE(["${enableval}"],
+    [yes],,
+    [no],AC_DEFINE([NOLALMACROS],[1],[Use functions rather than macros]),
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-macros])
+  ),)
 ])
 
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
 [AC_ARG_ENABLE(
   [pthread_lock],
   AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety [default=no]]),
-  [ case "${enableval}" in
-      yes) lal_pthread_lock=true; AC_DEFINE(LAL_PTHREAD_LOCK, 1, Use pthread mutex lock for threadsafety) ;;
-      no) lal_pthread_lock=false ;;
-      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-pthread-lock) ;;
-    esac
-  ], [ lal_pthread_lock=false ] )
+  AS_CASE(["${enableval}"],
+    [yes],[lal_pthread_lock=true; AC_DEFINE([LAL_PTHREAD_LOCK],[1],[Use pthread mutex lock for threadsafety])],
+    [no],[lal_pthread_lock=false],
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-pthread-lock])
+  ),[lal_pthread_lock=false])
 ])
 
 AC_DEFUN([LAL_INTEL_MKL_QTHREAD_WARNING],
