@@ -17,6 +17,7 @@ __version__ = '$Revision$'
 import os,sys,ConfigParser,glob,shutil
 from glue import pipeline,lal
 from optparse import OptionParser
+import tempfile
 
 sys.path.append('@PYTHONLIBDIR@')
 
@@ -27,7 +28,8 @@ sys.path.append('@PYTHONLIBDIR@')
 def init_subDAG(tag, outdir, logdir, cp):
 
   # generate job
-  dag  = pipeline.CondorDAG('%s/%s.log' % (logdir,tag))
+  dag  = pipeline.CondorDAG('%s/%s_%s.log' % (logdir,tag,\
+                                           tempfile.mktemp(dir='',prefix='')))
   dag.set_dag_file(os.path.join(outdir,tag))
   # set max jobs args
   if cp.has_option('condor-max-jobs', tag):
@@ -51,7 +53,6 @@ def init_job(exe, universe, tag, subdir, logdir, cp, memory=None):
 
   job = pipeline.CondorDAGJob(universe,exe)
   job.set_sub_file(os.path.join(subdir,'%s.sub' % (tag)))
-  job.set_log_file(os.path.join(logdir,'%s-%s.log' % (tag,logtag)))
   job.set_stderr_file(os.path.join(nfslogdir,'%s-%s.err' % (tag,logtag)))
   job.set_stdout_file(os.path.join(nfslogdir,'%s-%s.out' % (tag,logtag)))
   job.add_condor_cmd('getenv','True')
