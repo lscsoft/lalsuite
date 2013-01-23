@@ -577,7 +577,7 @@ def plot_posterior_hist(poslist, param, ifos,
       
       # use spline interpolation to find the value at 'upper limit'
       ctu, ui = np.unique(ct, return_index=True)
-      intf = interp1d(ctu, bins[ui], kind='cubic')
+      intf = interp1d(ctu, bins[ui], kind='linear')
       ulvals.append(intf(float(upperlimit)))
   
   # plot parameter values
