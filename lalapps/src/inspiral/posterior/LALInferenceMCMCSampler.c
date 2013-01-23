@@ -900,6 +900,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           
           if (tempSwapAccepted) {
             MPI_Send(&(runState->currentLikelihood), 1, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD);
+            runState->currentLikelihood=adjCurrentLikelihood;
             ptr=runState->currentParams->head;
             p=0;
             while(ptr!=NULL) {
