@@ -23,7 +23,7 @@ import json
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.10-1'
+GIT_TAG = 'gracedb-1.11-1'
 
 #-----------------------------------------------------------------
 # Util routines
@@ -151,10 +151,12 @@ def encode_multipart_formdata(fields, files):
         L.append('--' + BOUNDARY)
         L.append('Content-Disposition: form-data; name="%s"' % key)
         L.append('')
-        L.append(value)
+        # str(value) in case it is unicode
+        L.append(str(value))
     for (key, filename, value) in files:
         L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+        # str(filename) in case it is unicode
+        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, str(filename)))
         L.append('Content-Type: %s' % get_content_type(filename))
         L.append('')
         L.append(value)
@@ -398,8 +400,10 @@ class Client:
     def upload(self, graceid, filename, filecontents=None, comment="", alert=False):
         if filecontents is None:
             if filename == '-':
+                filename = 'stdin'
                 filecontents = sys.stdin.read()
-            filecontents = open(filename, 'r').read()
+            else:
+                filecontents = open(filename, 'r').read()
         fields = [
             ('graceid', graceid),
             ('comment', comment),

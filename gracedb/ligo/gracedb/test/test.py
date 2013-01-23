@@ -203,6 +203,16 @@ class TestGracedb(unittest.TestCase):
         r = gracedb.writeFile(eventId, uploadFile)
         self.assertEqual(r.status, 201) # CREATED
 
+    def test_unicode_param(self):
+        """
+        Test workaround for Python bug
+        http://bugs.python.org/issue11898
+        Raises exception if workaround fails.
+        """
+        uploadFile = os.path.join(testdatadir, "upload.data.gz")
+        r = gracedb.writeFile(eventId, uploadFile)
+        self.assertEqual(r.status, 201) # CREATED
+
     def test_logger(self):
         import logging
         import ligo.gracedb.rest

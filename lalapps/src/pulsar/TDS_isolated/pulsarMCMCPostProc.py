@@ -52,6 +52,9 @@ from lalapps import pulsarpputils as pppu
 import urllib2
 from BeautifulSoup import BeautifulSoup as bs
 
+import gc
+import pprint
+
 __author__="Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__= "git id %s"%git_version.id
 __date__= git_version.date
@@ -106,7 +109,7 @@ h2 {
   font-family: monospace;
   text-align: left;
 }
-  
+
 /* create link style */
 a:link{
   color: #000000;
@@ -131,7 +134,7 @@ a:hover{
   border: 0px solid #999;
   /* box-shadow: 2px 2px 2px #888; */
 }
-  
+
 /* create a class for a rotated image */
 .rotated90clockwise{
   padding: 0px;
@@ -198,7 +201,7 @@ th{
 .bottomborder{
   border-bottom: 1px solid #000;
 }
-  
+
 /* set text colour classes for detectors */
 .H1{
   color: red;
@@ -231,7 +234,7 @@ def exp_str(f, p=1):
   if p > 16:
     print >> sys.stderr, "Precision must be less than 16 d.p."
     p = 16
-  
+
   s = '%.16e' % f
   ssplit = s.split('e')
   return '%.*f&times;10<sup>%d</sup>' % (p, float(ssplit[0]), int(ssplit[1]))
@@ -240,17 +243,17 @@ def exp_latex_str(f, p=1):
   if p > 16:
     print >> sys.stderr, "Precision must be less than 16 d.p."
     p = 16
-  
+
   s = '%.16e' % f
   ssplit = s.split('e')
   return '\\ensuremath{%.*f\!\\times\!10^{%d}}'  % (p, float(ssplit[0]), \
 int(ssplit[1]))
-  
+
 # convert a right ascension string in format 'hh:mm:ss.s' to a html string like
 # H^h M^m S^s.ss
 def ra_htmlstr(ra):
   hms = ra.split(":")
-  
+
   if len(hms) == 1:
     hms.append('0')
     hms.append('0')
@@ -258,7 +261,7 @@ def ra_htmlstr(ra):
     hms.append('0')
 
   ss = ('%.2f' % float(hms[2])).split('.')
-  
+
   return "%s<sup>h</sup>%s<sup>m</sup>%s<sup>s</sup>.%s" % (hms[0].zfill(2), \
 hms[1].zfill(2), ss[0].zfill(2), ss[1].zfill(2) )
 
@@ -266,7 +269,7 @@ hms[1].zfill(2), ss[0].zfill(2), ss[1].zfill(2) )
 # dd^o mm' ss''.ss
 def dec_htmlstr(ra):
   dms = ra.split(":")
-  
+
   if len(dms) == 1:
     dms.append('0')
     dms.append('0')
@@ -274,7 +277,7 @@ def dec_htmlstr(ra):
     dms.append('0')
 
   ss = ('%.2f' % float(dms[2])).split('.')
-    
+
   return "%s&deg;%s'%s\".%s" % ((re.sub('\+', '', dms[0])).zfill(2), \
 dms[1].zfill(2), ss[0].zfill(2), ss[1].zfill(2))
 
@@ -284,81 +287,82 @@ dms[1].zfill(2), ss[0].zfill(2), ss[1].zfill(2))
 def corrcoef(pos):
   header_string=''
   posterior_table=[]
- 
+
   for param_name, one_pos in pos:
     if param_name != 'logl' and param_name != 'post':
       column = np.array(one_pos.samples)
       header_string += param_name + ' '
       posterior_table.append(column)
-  
+
   posterior_table = tuple(posterior_table)
   parray = np.column_stack(posterior_table)
-  
+
   cc = np.corrcoef(parray, rowvar=0, bias=1)
-  
+
   return cc, header_string
 
-  
-# a function that attempt to load an MCMC chain file: first it tries using 
+
+# a function that attempt to load an MCMC chain file: first it tries using
 # numpy.loadtxt; if it fails it tries reading line by line and checking
 # for consistent line numbers, skipping lines that are inconsistent; if this
 # fails it returns None
 def readmcmcfile(cf):
   cfdata = None
-  
+
   # first try reading in with loadtxt (skipping lines starting with %)
   try:
     cfdata = np.loadtxt(cf, comments='%')
   except:
     try:
       fc = open(cf, 'r')
-      
+
       # read in header lines and count how many values each line should have
       headers = fc.readline()
       headers = fc.readline() # column names are on the second line
+      fc.close()
       # remove % from start
       headers = re.sub('%', '', headers)
       # remove rads
       headers = re.sub('rads', '', headers)
       # remove other brackets e.g. around (iota)
       headers = re.sub('[()]', '', headers)
-      
+
       lh = len(headers.split())
-      
+
       cfdata = np.array([])
-      
+
       lines = cf.readlines()
-      
+
       for i, line in enumerate(lines):
         if '%' in line: # skip lines containing %
           continue
-        
+
         lvals = line.split()
-        
+
         # skip line if number of values isn't consistent with header
         if len(lvals) != lh:
           continue
-        
+
         # convert values to floats
         try:
           lvalsf = map(float, lvals)
         except:
           continue
-        
+
         # add values to array
         if i==0:
           cfdata = np.array(lvalsf)
         else:
           cfdata = np.vstack((cfdata, lvalsf))
-      
+
       if cfdata.size == 0:
         cfdata = None
     except:
       cfdata = None
 
   return cfdata
-          
-      
+
+
 # list of parameters to display (in this order)
 paramdisplist = ['RAJ', 'DECJ', 'F0', 'F1', 'F2', 'PEPOCH', 'X' 'E' \
 'EPS1', 'EPS2', 'OM', 'T0', 'TASC', 'PB']
@@ -404,7 +408,7 @@ class paramdisp:
   def COSIOTA(f): return '%.2f' % float(f)
   def PHI0(f): return '%.2f' % float(f)
   def PSI(f): return '%.2f' % float(f)
-  
+
 # a class containing function to output parameter vales in the appropriate
 # format (for use when outputting posterior stats)
 class paramdisp2:
@@ -431,37 +435,40 @@ class paramdisp2:
   def PMRA(f): return exp_str(float(f), 2)
   def PMDC(f): return exp_str(float(f), 2)
   def DEFAULT(f): return '%.2f' % float(f)
-  
+
 # concatenate a list of strings (default to a new line between each)
 def cattext(strlist, delim='\n'):
-  return delim.join([strpart for strpart in strlist]) 
-  
+  return delim.join([strpart for strpart in strlist])
+
 # output figures - take in the figure, the output path, a filename string and a
 # list out output types e.g. ['png', 'eps']. Return a dictionary of the
 # filenames for the different types
 def output_fig(myfig, outpath, fname, ftypes):
   fnameret = {}
-  
+
   if not ftypes or not fname or not outpath:
     print >> sys.stderr, "Error, problem outputting figure"
     sys.exit(1)
-  
+
   for i, t in enumerate(ftypes):
     fnameret[t] = fname + '.' + t
     plotpath = os.path.join(outpath, fnameret[t])
-    
+
     try:
       myfig.savefig(plotpath)
     except:
       print >> sys.stderr, "Error outputting figure %s" % plotpath
       sys.exit(1)
-  
+
+    myfig.clf()
+    matplotlib.pyplot.close(myfig)
+
   return fnameret
-  
+
 # main function
 if __name__=='__main__':
   from optparse import OptionParser
-  
+
   description = \
 """This script is for creating a results output page and plots for the known
    pulsar analysis. It uses inputs from the old MCMC code
@@ -477,13 +484,13 @@ performed for two interferometers (H1 and L1):
 --outpath /home/me/public_html/results
 """ % os.path.basename(sys.argv[0])
   usage = "Usage: %prog [options]"
-  
+
   parser = OptionParser( usage = usage, description = description,
                          version = __version__, epilog = epilog )
-  
+
   parser.add_option("-o", "--outpath", dest="outpath", help="The path for "
                     "the analysis output", metavar="DIR")
-  
+
   """
    data will be read in in the following format:
      multiple MCMC directories from each IFO would be entered as follows:
@@ -496,55 +503,55 @@ performed for two interferometers (H1 and L1):
   parser.add_option("-m","--mcmcdirs", dest="mcmcdirs",\
                     action="append", help="A list "\
                     "of MCMC directories containing chain for all IFOs")
-  
+
   # get pulsar .par file
   parser.add_option("-p", "--parfile", dest="parfile", help="The "
                     "directory containing several, or an individual, "
                     "TEMPO-style pulsar parameter file used in the analysis. "
                     "[required]", metavar="PNAME.par", default=None)
- 
+
   # get heterodyned data files used for analysis
-  parser.add_option("-B", "--Bkfiles", dest="Bkfiles", action="append", 
+  parser.add_option("-B", "--Bkfiles", dest="Bkfiles", action="append",
                     help="A directory containing the heterodyned data files "
                     "for a given detector [required]", default=None)
-  
+
   # get list of the detectors used (same order as Bk files)
   parser.add_option("-i", "--ifo", dest="ifos", help="The individual "
                     "interferometers from which analysis output, and data "
                     "files have been supplied. [required]", action="append",
                     default=None)
-  
+
   # get number of bins for histogramming (default = 50)
   parser.add_option("-b", "--histbins", dest="histbins", help="The number of " \
                     "bins for histrogram plots. [default = 50]", default=50)
-  
+
   # say if you want to output eps figure (default to False)
   parser.add_option("-e", "--epsout", dest="epsout", help="Set if wanting to " \
                     "output eps versions of figures", action="store_true",
                     default=False)
-  
+
   # say if the pulsars are software injections (default to False)
   parser.add_option("-s", "--sw-inj", dest="swinj", help="Set if the " \
                     "pulsars are software injections", action="store_true", \
                     default=False)
-                    
+
   # say if the pulsars are hardware injections (default to False)
   parser.add_option("-w", "--hw-inj", dest="hwinj", help="Set if the " \
                     "pulsars are hardware injections", action="store_true", \
                     default=False)
-                    
+
   # say if you want to compile the latex table (default to False)
   parser.add_option("-l", "--latex", dest="compilelatex", help="Set if you " \
                     "want to compile the latex results table",
                     action="store_true", default=False)
-  
+
   p_args=''
   for arg in sys.argv:
     p_args += arg + ' '
-  
+
   # parse input options
   (opts, args) = parser.parse_args()
-  
+
   # check that output path has been given
   if not opts.__dict__['outpath']:
     print "Must specify an output path"
@@ -552,26 +559,26 @@ performed for two interferometers (H1 and L1):
     exit(-1)
   else:
     outpath = opts.outpath
-  
+
   # check that some data has been given
   if not opts.__dict__['mcmcdirs']:
     print "Must specify MCMC chain directories"
     parser.print_help()
     exit(-1)
-    
+
   # check that parfile has been given
   if not opts.__dict__['parfile']:
     print "Must specify a pulsar TEMPO .par file"
     parser.print_help()
     exit(-1)
-       
+
   if not opts.__dict__['ifos']:
     print "Must specify the interferometers analysed"
     parser.print_help()
     exit(-1)
   else:
     ifos = opts.ifos
-  
+
   if not opts.__dict__['Bkfiles']:
     print "Must specify the heterodyned data files"
     parser.print_help()
@@ -583,10 +590,10 @@ performed for two interferometers (H1 and L1):
     ftypes = ['png', 'eps']
   else:
     ftypes = ['png']
-  
+
   swinj = opts.swinj
   hwinj = opts.hwinj
-  
+
   # create output directory if it doesn't exist
   if not os.path.isdir(outpath):
     try:
@@ -594,22 +601,22 @@ performed for two interferometers (H1 and L1):
     except:
       print >> sys.stderr, "Cannot create output directory %s" % outpath
       sys.exit(1)
-    
+
   # check that number of ifos is the same as the number of data lists
   nifos = len(ifos)
   ndata = len(Bkfiles)
-  
+
   if nifos != ndata:
     print "Number of IFOs and data lists are not equal"
     exit(-1)
-  
+
   ifosNew = list(ifos)
   if nifos > 1:
     ifosNew.append('Joint')
-  
+
   # split MCMC directories
   mcmcdirs = opts.mcmcdirs
-  
+
   # check if parfile is a single file or a directory
   param_files = []
   if os.path.isfile(opts.parfile):
@@ -618,13 +625,13 @@ performed for two interferometers (H1 and L1):
     if os.path.isdir(opts.parfile):
       # list the parameter files in the directory
       pfiles = os.listdir(opts.parfile)
-      
+
       for f in pfiles:
         param_files.append(opts.parfile + '/' + f)
     else:
       print >> sys.stderr, "No par file or directory specified!"
       sys.exit(1)
-  
+
   # create CSS
   cssname = 'psr.css'
   try:
@@ -636,10 +643,10 @@ performed for two interferometers (H1 and L1):
 
   css.write(csstext);
   css.close()
-  
+
   # get time/date for file creation
   now = datetime.datetime.now()
-  
+
   # create html page and table for each result
   # create html page
   htmlpage = os.path.join(outpath, 'index.html')
@@ -647,7 +654,7 @@ performed for two interferometers (H1 and L1):
     htmlout = open(htmlpage, 'w')
   except:
     print >> sys.stderr, 'Could not open html page %s' % htmlpage
-    
+
   htmltext = []
   htmltext.append( \
 """
@@ -657,24 +664,24 @@ performed for two interferometers (H1 and L1):
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
   <meta name="description" content="Results page"/>
-  <meta charset="UTF-8"> 
+  <meta charset="UTF-8">
 
   <title>Results page</title>
 
   <link rel="stylesheet" type="text/css" href="%s"/>
 </head>
 """ % cssname )
-    
+
   htmltext.append('<body>\n')
   htmltext.append('<table>\n')
-  
+
   # create LaTeX table page of results
   latexpage = os.path.join(outpath, 'resultstable.tex')
   try:
     latexout = open(latexpage, 'w')
   except:
     print >> sys.stderr, 'Could not open LaTeX page %s' % htmlpage
-  
+
   latextext = []
   latextext.append( \
 """
@@ -682,84 +689,94 @@ performed for two interferometers (H1 and L1):
 \documentclass{emulateapj}
 
 \usepackage{amsmath}
-% The rotate command for deluxetable does not work in emulateapj, so use a 
+% The rotate command for deluxetable does not work in emulateapj, so use a
 % landscape mode instead
 \usepackage{lscape}
 
 \\begin{document}
 """)
-  
+
   # list of amplitude spectral densities
   asds = []
   ullist = []
   sdlist = []
-  
+
   firstpsr = True
   iscorlatex = None
 
   # loop through par files to produce plots
   for parfile in param_files:
     # read data from par file
+
+    # make sure everything is de-referenced
+    par = None
+    Bkdata = None
+
+    n = gc.collect()
+    print 'Unreachable objects:', n
+    print 'Remaining Garbage:',
+    pprint.pprint(gc.garbage)
+
     try:
       par = pppu.psr_par(parfile)
     except:
       print >> sys.stderr, "Par file %s could not be opened!" % parfile
       continue # move on to next pulsar
-   
+
     pname = par['PSRJ']
     if not pname:
       print >> sys.stderr, "No PSRJ value in par file %s" % parfile
       continue # move on to next pulsar
-    
+
     # check if heterodyned data exists for this pulsar and each detector
     Bkdata = []
     nofile = False
     for i, ifo in enumerate(ifos):
       Bkdata.append(Bkfiles[i] + '/finehet_' + pname + '_' + ifo)
-      
+
       # check files exist if not then skip the pulsar
       if not os.path.isfile(Bkdata[i]):
         nofile = True
         break
     if nofile:
       continue
-    
+
     # check that MCMC chains exist for this pulsar and each detector (including
     # joint)
     for ifo in ifosNew:
       for chaindir in mcmcdirs:
         cfile = chaindir + '/' + 'MCMCchain_' + pname + '_' + ifo
-        
+
         if not os.path.isfile(cfile):
           nofile = True
           break
     if nofile:
       continue
-    
+
     # check required parameters
     f0 = par['F0']
     if not f0:
       print >> sys.stderr, "No F0 value in par file %s" % parfile
       continue # move on to next pulsar
-      
+
     f1 = par['F1']
     if not f1:
       print >> sys.stderr, "No F1 value in par file %s" % parfile
       continue # move on to next pulsar
-    
+
     print 'Results for pulsar ' + pname
-    
+
     # create output directory for pulsar
     puldir = os.path.join(outpath, pname)
     if not os.path.isdir(puldir):
       os.mkdir(puldir)
-    
+
     # attempt to get pulsar distance, proper motion corrected age and any
     # association (e.g. GC) from the ATNF catalogue
     ages = None
     dists = None
     assoc = None
-    notinatnf = False # flag to check if pulsar is in the ATNF catalogue or not    
+    notinatnf = False # flag to check if pulsar is in the ATNF catalogue or not
 
     if not swinj and not hwinj:
       try:
@@ -771,10 +788,13 @@ re.sub('\+', '%2B',pname) + '&ephemeris=selected&submit_ephemeris=\
 Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
 &coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
 linear&y_axis=&y_scale=linear&state=query'
-        
+
+        soup = None
+        pdat = None
+
         soup = bs(urllib2.urlopen(atnfurl).read())
         pdat = soup.pre # data exists in the pre html environment
-        
+
         for line in pdat:
           vals = line.split('\n') # split at any new lines
 
@@ -789,7 +809,7 @@ re.sub('J', '', re.sub('\+', '%2B',pname)) + '&ephemeris=selected&submit_ephemer
 Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
 &coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
 linear&y_axis=&y_scale=linear&state=query'
-              
+
               soup = bs(urllib2.urlopen(atnfurl).read())
               pdat = soup.pre
 
@@ -797,7 +817,7 @@ linear&y_axis=&y_scale=linear&state=query'
 
         for line in pdat:
           vals = line.split('\n') # split at any new lines
-        
+
           for row in vals:
             if 'WARNING' in row or 'not in catalogue' in row and notinatnf == False:
               notinatnf = True
@@ -805,17 +825,17 @@ linear&y_axis=&y_scale=linear&state=query'
 
             if 'DIST' in row:
               dists = row.split() # split row at whitespace
-            
+
             if 'AGE_I' in row:
               ages = row.split()
-              
+
             if 'ASSOC' in row:
               assoc = row.split()
 
       except:
-        print >> sys.stderr, 'Problem accessing ATNF!'
-        sys.exit(1)
- 
+        print >> sys.stderr, 'Problem accessing ATNF for %s!' % pname
+        continue
+
     if ages:
       if len(ages) > 1:
         try:
@@ -826,23 +846,27 @@ linear&y_axis=&y_scale=linear&state=query'
         f1sd = -f0/(2*age*365.25*86400)
       else:
         f1sd = f1
-    # check if pulsar is a GC pulsars for which no proper motion corrected age 
+    # check if pulsar is a GC pulsars for which no proper motion corrected age
     # is known and for these cases set a conservative upper limit assuming
     # tau = f0/(2*f1) = 10^9 years
     elif assoc:
       if len(assoc) > 1:
         if 'GC' in assoc[1]:
           f1sd = -f0/(2*1e9*365.25*86400) # set f1 for spin-down limit calc
+        else:
+          f1sd = f1 # some Fermi pulsars have an assoc, but are no in GCs
+                    # Note: also currently (21/01/13) some Fermi pulsars
+                    # wrongly are given a spin-up in the ATNF catalogue!
     else:
       f1sd = f1
-   
+
     # first try getting a distance from a par file
     dist = par['DIST']
 
     # if pulsar is not in atnf and there's not distance in the par file then skip it
     if notinatnf and not dist:
       print >> sys.stderr, "No distance available for %s" % pname
-      continue 
+      continue
 
     # if not available look in download value
     if not dist:
@@ -857,7 +881,7 @@ linear&y_axis=&y_scale=linear&state=query'
         else:
           print >> sys.stderr, "%s: Distance not a number!" % pname
           sys.exit(1)
-    
+
     # if on first available pulsars create the output page table header
     if firstpsr:
       if not swinj and not hwinj:
@@ -907,7 +931,7 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, ifo))
 """\\\\
 \colhead{Pulsar} & \colhead{$\\nu$ (Hz)} & \colhead{$\dot{\\nu}$ (Hz/s)} %s %s \
 """ % (latexdisttxt, latexsdtxt) )
-      
+
       for ifo in ifosNew:
         htmltext.append( \
 """
@@ -923,18 +947,19 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, ifo))
 
       htmltext.append('</tr>')
       latextext.append('}\n\startdata')
-      
+
       firstpsr = False
-    
+
     # create html page
     htmlppage = os.path.join(puldir, 'index.html')
     try:
       htmlpout = open(htmlppage, 'w')
     except:
       print >> sys.stderr, 'Could not open html page %s' % htmlppage
-    
+
+    htmlptext = None
     htmlptext = []
-    
+
     htmlptext.append( \
 """
 <!DOCTYPE html>
@@ -943,20 +968,20 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, ifo))
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
   <meta name="description" content="PSR %s"/>
-  <meta charset="UTF-8"> 
+  <meta charset="UTF-8">
 
   <title>PSR %s</title>
 
   <link rel="stylesheet" type="text/css" href="../%s"/>
- 
+
 </head>""" % (pname, pname, cssname))
-    
+
     htmlptext.append('<body>')
-    
+
     # add in javascript to allow text toggling
     htmlptext.append( \
 """
-<script language="javascript"> 
+<script language="javascript">
 function toggle(id) {
   var ele = document.getElementById(id);
   if(ele.style.display == "block"){
@@ -967,8 +992,9 @@ function toggle(id) {
 }
 </script>
 """ )
-    
+
     # print out pulsar name to file
+    pheadertext = None
     pheadertext = []
     if not swinj and not hwinj:
       pulsaratnflink = \
@@ -979,7 +1005,7 @@ pulsar_names=' + re.sub('\+', '%2B', pname) + \
 coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2=&style=Long+with+last+digit+\
 error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=\
 query'
-    
+
     # set title prefix depending is injection or not
     psrnameprefix = 'PSR'
     if swinj:
@@ -992,15 +1018,16 @@ query'
 (pulsaratnflink, psrnameprefix, pname))
     else:
       pheadertext.append('<h1>%s %s</h1>\n' % (psrnameprefix, pname))
-    
+
     # copy par file to pulsar directory
     shutil.copy(parfile, os.path.join(puldir, pname + '.par'))
 
     # print out par file info
+    partext = None
     partext = []
     partext.append('<a href="'+pname+'.par">')
     partext.append('<table>')
-    
+
     for param in paramdisplist:
       pa = par[param]
       if pa:
@@ -1008,21 +1035,21 @@ query'
         dispfunc = paramdisp.__dict__[param]
         partext.append('<td>%s</td>\n</tr>' % dispfunc(str(pa)))
     partext.append('</table></a>')
-    
+
     # get spin-down upper limit
     if not swinj and not hwinj:
       sdlim = pppu.spin_down_limit(f0, f1sd, dist)
     else:
       sdlim = None
     sdlist.append(sdlim)
-    
+
     # print out info to the main table
     iscor = ''
-    iscorlatex = ''    
+    iscorlatex = ''
     if f1sd != f1:
       iscor = '<sup>&dagger;</sup>'
       iscorlatex = '^{\dagger}'
-    
+
     if not swinj and not hwinj:
       sdlimtxthtml = '<td>%s%s</td>' % (exp_str(sdlim), iscor)
       sdlimtxtlatex = '& $%s$$%s$' % (exp_latex_str(sdlim), iscorlatex)
@@ -1033,7 +1060,7 @@ query'
       sdlimtxtlatex = ''
       disthtml = ''
       distlatex = ''
-    
+
     htmltext.append( \
 """
 <tr>
@@ -1048,44 +1075,58 @@ query'
 %s & $%.2f$ & $%s$ %s %s \
 """ % (re.sub('\-', '\\textminus', pname), f0, exp_latex_str(f1, 2), distlatex, \
 sdlimtxtlatex) )
-    
+
     # get time series and PSD plots
     Bkdata = []
     plotpsds = True
     plotfscan = True
-    
+
     for i, ifo in enumerate(ifos):
       Bkdata.append(Bkfiles[i] + '/finehet_' + pname + '_' + ifo)
     asdtime = 14400 # set time over which to produce the asds
-    
+
+    Bkfigs = None
+    psdfigs = None
+    fscanfigs = None
+    asdlist = None
+
     Bkfigs, psdfigs, fscanfigs, asdlist = pppu.plot_Bks_ASDs( Bkdata, ifos, \
 asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
-    
+
     if asdlist:
       asds.append(asdlist)
-    
+
     # output plots of time series and psd
+    Bkfigname = None
+    psdfigname = None
+    fscanfigname = None
+
     Bkfigname = []
     psdfigname = []
     fscanfigname = []
     for i, ifo in enumerate(ifos):
       figname = output_fig(Bkfigs[i], puldir, 'Bk_'+ifo, ftypes)
       Bkfigname.append(figname)
-      
+
       if plotpsds:
         figname = output_fig(psdfigs[i], puldir, 'ASD_'+ifo, ftypes)
         psdfigname.append(figname)
-        
+
         if plotfscan:
           figname = output_fig(fscanfigs[i], puldir, 'fscan_'+ifo, ftypes)
           fscanfigname.append(figname)
-    
+
     # loop over detectors
+    poslist = None
+    mcmcgr = None
+    nefflist = None
+    chainlens = None
+
     poslist = []
     mcmcgr = [] # list of Gelman-Rubins stats for detector
     nefflist = [] # effective sample size for each combined chain
     chainlens = [] # original average length of each chain
-    
+
     # get the posterior statistics i.e. maxL, means, std. devs.
     max_pos = []
     maxLvals = []
@@ -1094,10 +1135,12 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
     medvals = []
     corrcoefs = []
     corrcoefsheader = []
-    
+
     erridx = False
-    
+
     for i, ifo in enumerate(ifosNew):
+      mcmc = None
+
       # read in MCMC chains
       mcmc = []
       neffs = [] # number of effective samples for each chain
@@ -1105,11 +1148,12 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
       grr = {}
       for chaindir in mcmcdirs:
         cfile = chaindir + '/' + 'MCMCchain_' + pname + '_' + ifo
-        
+
         if os.path.isfile(cfile):
           # load MCMC chain
+          mcmcChain = None
           mcmcChain = readmcmcfile(cfile)
-          
+
           # if no chain was returned write out an error message and skip this
           # pulsar
           if mcmcChain == None:
@@ -1119,34 +1163,34 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
             errfile.close()
             erridx = True
             break
-          
+
           # find number of effective samples for the chain
           neffstmp = []
           for j in range(1, mcmcChain.shape[1]):
             neff, acl, acf = bppu.effectiveSampleSize(mcmcChain[:,j])
             neffstmp.append(neff)
-            
+
           # get the minimum effective sample size
-          neffs.append(min(neffstmp))
+          #neffs.append(min(neffstmp))
           # get the mean effective sample size
-          #neffs.append(math.floor(np.mean(neffstmp)))
-         
-          nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
-          #nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
-          
+          neffs.append(math.floor(np.mean(neffstmp)))
+
+          #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
+          nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
+
           # output every nskip (independent) value
           mcmc.append(mcmcChain[::nskip,:])
           cl.append(mcmcChain.shape[0])
         else:
           print >> sys.stderr, "File %s does not exist!" % cfile
           sys.exit(1)
-      
+
       if erridx:
         break
-      
+
       nefflist.append(math.fsum(neffs))
       chainlens.append(np.mean(cl))
-      
+
       # output data to common results format
       # get first line of MCMC chain file for header names
       cf = open(cfile, 'r')
@@ -1159,23 +1203,23 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
       # remove other brackets e.g. around (iota)
       headers = re.sub('[()]', '', headers)
       cf.close()
-      
+
       # get Gelman-Rubins stat for each parameter
       for idx, parv in enumerate(headers.split()):
         lgr = []
-        if parv != 'logL':          
+        if parv != 'logL':
           for j in range(0, len(mcmc)):
             achain = mcmc[j]
             singlechain = achain[:,idx]
             lgr.append(singlechain)
           grr[parv.lower()] = pppu.gelman_rubins(lgr)
-      
+
       mcmcgr.append(grr)
-      
+
       # logL in chain is actually log posterior, so also output the posterior
       # values (can be used to estimate the evidence)
       headers = headers.replace('\n', '\tpost\n')
-      
+
       # output full data to common format
       comfile = os.path.join(puldir, 'common_tmp.dat')
       try:
@@ -1183,50 +1227,54 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
       except:
         print >> sys.stderr, "Can't open commom posterior file!"
         sys.exit(1)
-          
+
       cf.write(headers)
       for narr in mcmc:
         for j in range(0, narr.shape[0]):
           mline = narr[j,:]
           # add on posterior
           mline = np.append(mline, np.exp(mline[0]))
-          
+
           strmline = " ".join(str(x) for x in mline) + '\n'
           cf.write(strmline)
       cf.close()
-          
+
       # read in as common object
+      peparser = None
       peparser = bppu.PEOutputParser('common')
       cf = open(comfile, 'r')
+      commonResultsObj = None
       commonResultsObj = peparser.parse(cf)
       cf.close()
-          
+
       # remove temporary file
       os.remove(comfile)
-          
+
       # create posterior class
+      pos = None
       pos = bppu.Posterior( commonResultsObj, SimInspiralTableEntry=None, \
                           votfile=None )
-      
+
       # convert iota back to cos(iota)
       # create 1D posterior class of cos(iota) values
+      cipos = None
       cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(pos['iota'].samples))
-      
+
       # add it back to posterior
       pos.append(cipos)
-      
+
       # remove iota samples
       pos.pop('iota')
-      
+
       # get from info about the posteriors
       mP, mL = pos.maxL # maximum likelihood/posterior point
-      sd = pos.stdevs #  standard deviations of posteriors 
+      sd = pos.stdevs #  standard deviations of posteriors
       mv = pos.means # means of posteriors
       md = pos.medians # medians of posteriors
       cc, hn = corrcoef(pos) # correlation coefficients of posteriors
-      
+
       poslist.append(pos) # append posterior object to list
-      
+
       max_pos.append(mP)
       maxLvals.append(mL)
       stddevvals.append(sd)
@@ -1234,7 +1282,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
       medvals.append(md)
       corrcoefs.append(cc)
       corrcoefsheader.append(hn)
-    
+
     # if error occured in reading in MCMC chains then move to next pulsar
     if erridx:
       # remove directory for that pulsar
@@ -1242,20 +1290,21 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
         shutil.rmtree(puldir)
       except:
         os.system('rm -rf %s' % puldir)
-      
+
       # remove parts from main html and latex tables
       del htmltext[-1]
       del latextext[-1]
-      
+
       continue
-    
+
     # set whether to attempt to output injection parameter on plot
     parinj = None
     if swinj or hwinj:
       parinj = par
-      
+
     # output the MAIN posterior plots
     # h0
+    h0Fig = None
     bounds = [0, float("inf")]
     ul = 0.95
     histbins = 30
@@ -1264,15 +1313,15 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
                                               ul, overplot=True, \
                                               parfile=parinj )
     h0figname = output_fig(h0Fig[0], puldir, 'h0post', ftypes)
-    
+
     # convert h0 uls into ellipticity and spin-down ratio
     ell = []
     sdrat = []
     h0last = ulvals[-1]
     ullist.append(ulvals)
-    
+
     limittable = []
-    
+
     if sdlim == None:
       sdlimtxt = ''
     else:
@@ -1306,7 +1355,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
         ellhtmlstr = 'N/A'
         elllatexstr ='N/A'
         sdrat.append('N/A')
-    
+
       # output values to main page table
       htmltext.append( \
 """
@@ -1335,42 +1384,48 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
     htmltext.append('</tr>')
     latextext.append('\\\\')
     limittable.append('</table>')
-    
+
     # phi0
+    phi0Fig = None
     bounds = [0, 2*math.pi]
     phi0Fig, ulvals = pppu.plot_posterior_hist( poslist, 'phi0', ifosNew, \
                                         bounds, histbins, \
                                         0, overplot=True, parfile=parinj )
     phi0figname = output_fig(phi0Fig[0], puldir, 'phi0post', ftypes)
-    
+
     # cos(iota)
+    cifig = None
     bounds = [-1, 1]
     ciFig, ulvals = pppu.plot_posterior_hist( poslist, 'cosiota', ifosNew, \
                                       bounds, histbins, \
                                       0, overplot=True, parfile=parinj )
     cifigname = output_fig(ciFig[0], puldir, 'cipost', ftypes)
-    
+
     # psi
+    psiFig = None
     bounds = [-math.pi/4, math.pi/4]
     psiFig, ulvals = pppu.plot_posterior_hist( poslist, 'psi', ifosNew, \
                                        bounds, histbins, \
                                        0, overplot=True, parfile=parinj )
     psifigname = output_fig(psiFig[0], puldir, 'psipost', ftypes)
-   
+
     # get h0 vs cos(iota) 2D posterior histrogram (if single detector of for
     # joint posterior)
     #bounds = [[0, 3*h0last], [-1, 1]]
+    h0ciFig = None
     h0ciFig = pppu.plot_posterior_hist2D([poslist[-1]], ['h0', 'cosiota'], \
 [ifosNew[-1]], bounds=None, nbins=[30, 30], parfile=parinj)
     h0cifigname = output_fig(h0ciFig[0], puldir, 'h0cipost', ftypes)
-    
+
     # get phi0 vs psi 2D posterior histogram
+    phi0psiFig = None
     phi0psiFig = pppu.plot_posterior_hist2D([poslist[-1]], ['phi0', 'psi'], \
 [ifosNew[-1]], bounds=[[0, 2.*math.pi], [math.pi/4., -math.pi/4]], \
 nbins=[30, 30], parfile=parinj)
     phi0psifigname = output_fig(phi0psiFig[0], puldir, 'phi0psipost', ftypes)
-    
+
     # produce output table of posterior plots
+    posttabletext = None
     posttabletext = []
     posttabletext.append( \
 """
@@ -1394,23 +1449,25 @@ cifigname['png'], phi0psifigname['png'], phi0psifigname['png'], \
 psifigname['png'], psifigname['png'] ))
 
     # get analysis statistics
+    analysisstatstext = None
     analysisstatstext = []
     analysisstatstext.append('<h2>Analysis statistics</h2>')
 
     analysisstatstext.append('<table>')
     for i, ifo in enumerate(ifos):
       # get the start time, end time and length from the heterodyned data file
-      st = ((os.popen('head -1 %s' % Bkdata[i], "r")).readline()).split()[0]
-      et = ((os.popen('tail -1 %s' % Bkdata[i], "r")).readline()).split()[0]
-      lt = ((os.popen('wc -l %s' % Bkdata[i], "r")).readline()).split()[0]
-      
+      st = et = lt = None
+      st = (sp.Popen(['head', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
+      et = (sp.Popen(['tail', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
+      lt = (sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
+
       # duty cycle
       dc = 100.*(60.*float(lt))/(float(et)-float(st))
-      
+
       analysisstatstext.append( \
 """
   <tr>
-    <td style="text-align: center;"> 
+    <td style="text-align: center;">
       <table>
         <tr>
           <td>&nbsp;</td>
@@ -1437,7 +1494,7 @@ psifigname['png'], psifigname['png'] ))
   </tr>
 """ % (ifo, ifo,int(float(st)), int(float(et)), int(float(et)-float(st)), dc, \
 Bkfigname[i]['png'], Bkfigname[i]['png']) )
-  
+
       if plotpsds and plotfscan:
         analysisstatstext.append( \
 """
@@ -1448,8 +1505,9 @@ Bkfigname[i]['png'], Bkfigname[i]['png']) )
 """ % (psdfigname[i]['png'], psdfigname[i]['png'], fscanfigname[i]['png'], \
 fscanfigname[i]['png']) )
     analysisstatstext.append('</table>')
-    
+
     # output MCMC chains and statistics
+    mcmctabletext = None
     mcmctabletext = []
     mcmctabletext.append('<h2>MCMC chains</h2>')
     mcmctabletext.append( \
@@ -1461,7 +1519,7 @@ fscanfigname[i]['png']) )
     <th>&nbsp;</th>
     <th>no. of chains</th>
     <th>chain length</th>
-    <th>effective sample size</th>
+    <th>mean effective sample size</th>
   </tr>
 """ )
     for i, ifo in enumerate(ifosNew):
@@ -1475,11 +1533,13 @@ fscanfigname[i]['png']) )
   </tr>
 """ % (ifo, ifo, len(mcmcdirs), chainlens[i], nefflist[i]) )
     mcmctabletext.append('</table>')
-    
+
     mcmctabletext.append('<table>')
+    parlist = None
     parlist = poslist[0].names
     for par in parlist:
       if par != 'post' and par != 'logl':
+        chainfig = None
         chainfig = pppu.plot_posterior_chain(poslist, par, ifosNew, mcmcgr, \
                                              withhist=30)
         if chainfig:
@@ -1492,15 +1552,16 @@ fscanfigname[i]['png']) )
 """ % (figname['png'], figname['png']) )
         else:
           break
-    
+
     mcmctabletext.append('</table>')
-    
+
     if chainfig==None:
       # if no MCMC chain figures were made (e.g. because gridspec wasn't
       # available) the remove the last table entries
       del mcmctabletext[-2:]
-    
+
     # output info on the parameters (std dev, mean, max posterior etc)
+    poststatstext = None
     poststatstext = []
     poststatstext.append( \
 """\
@@ -1510,7 +1571,7 @@ fscanfigname[i]['png']) )
 """ )
     poststatstext.append('<div id="toggleText" style="display: none;">')
     poststatstext.append('<table>')
-    
+
     poststatstext.append( \
 """\
   <tr>
@@ -1522,20 +1583,20 @@ fscanfigname[i]['png']) )
     <th>&sigma;</th>
   </tr>\
 """ )
-    
+
     for j, param in enumerate(corrcoefsheader[0].split()):
       try:
         pdisp = paramtextdisp[param.upper()]
       except:
         pdisp = param
-      
+
       poststatstext.append('<tr>\n<td rowspan="%d">%s</td>' % (len(ifosNew), \
 pdisp) )
-      
+
       try:
         dispfunc = paramdisp2.__dict__[param.upper()]
       except:
-        dispfunc = paramdisp2.__dict__['DEFAULT'] 
+        dispfunc = paramdisp2.__dict__['DEFAULT']
 
       for i, ifo in enumerate(ifosNew):
         poststatstext.append('<td class="%s">%s</td>' % (ifo, ifo) )
@@ -1543,20 +1604,20 @@ pdisp) )
         poststatstext.append('<td>%s</td>' % dispfunc(str(maxLvals[i][param])))
 
         poststatstext.append('<td>%s</td>' % dispfunc(str(meanvals[i][param])))
-       
+
         poststatstext.append('<td>%s</td>' % \
 dispfunc(str(medvals[i][param])))
-    
+
         poststatstext.append('<td>%s</td>' % \
 dispfunc(str(stddevvals[i][param])))
-        
+
         poststatstext.append('</tr>')
-        
+
     poststatstext.append('</table>\n</div>')
-    
+
     # output footer giving how the file was made
     pfootertext = []
-    
+
     pfootertext.append( \
 """<div id="footer">
 %s - %s <br>
@@ -1566,13 +1627,13 @@ Command lines used:<br>
 %s<br>
 </div>
 """ % (__author__, now.strftime('%a %d %b %Y'), p_args, __version__))
-    
+
     pfootertext.append('</body>\n')
     pfootertext.append('</html>')
-    
+
     # put all the html bits together in the right order
     htmlptext.append(cattext(pheadertext))
-    
+
     # put parameter table and upper limit table together in a table element
     htmlptext.append('<div class="wrapper">')
     htmlptext.append('<table>\n<tr>\n<td>')
@@ -1580,12 +1641,12 @@ Command lines used:<br>
     htmlptext.append('</td>\n<td>')
     htmlptext.append(cattext(limittable))
     htmlptext.append('</tr>\n</table>\n</div>')
-    
+
     # output the posterior plots in an element
     htmlptext.append('<div class="wrapper">')
     htmlptext.append(cattext(posttabletext))
     htmlptext.append('</div>')
-    
+
     # output the analysis stats
     htmlptext.append('<div class="wrapper">')
     htmlptext.append(cattext(analysisstatstext))
@@ -1595,15 +1656,15 @@ Command lines used:<br>
     htmlptext.append('<div class="wrapper">')
     htmlptext.append(cattext(mcmctabletext))
     htmlptext.append('</div>')
-    
+
     # output the posterior stats
     htmlptext.append('<div class="wrapper">')
     htmlptext.append(cattext(poststatstext))
     htmlptext.append('</div>')
-    
+
     # output footer
     htmlptext.append(cattext(pfootertext))
-    
+
     # add put it all together
     htmlpout.write(cattext(htmlptext))
     htmlpout.close()
@@ -1618,7 +1679,7 @@ Command lines used:<br>
 href="http://www.atnf.csiro.au/research/pulsar/psrcat/psrcat_help.html?type=\
 normal&highlight=age_i#age_i">corrected</a> for proper motion effects.
 </p>""" )
-  
+
   # output footer giving how the file was made
   htmltext.append( \
 """<div id="footer">
@@ -1628,12 +1689,12 @@ Command lines used:<br>
 %s<br>
 </div>
 """ % (__author__, now.strftime('%a %d %b %Y'), p_args, __version__))
- 
-  htmltext.append('</body>\n') 
+
+  htmltext.append('</body>\n')
   htmltext.append('</html>\n')
   htmlout.write(cattext(htmltext))
   htmlout.close()
-  
+
   latextext.append('\\enddata')
   if iscorlatex:
     latextext.append("\\tablenotetext{\dagger}{The pulsar's spin-down is \
@@ -1644,11 +1705,11 @@ corrected for proper motion effects}")
   latextext.append('\\end{document}')
   latexout.write(cattext(latextext))
   latexout.close()
-  
+
   # compile the LaTeX table
   if opts.compilelatex:
     sp.call(['latex', latexpage])
     sp.call(['latex', latexpage])
     sp.call(['dvips', re.sub('tex', 'dvi', latexpage)])
     sp.call(['ps2pdf', re.sub('tex', 'ps', latexpage)])
-  
+
