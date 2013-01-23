@@ -23,6 +23,7 @@ lalpulsarinclude_HEADERS = \
 	FlatPulsarMetric.h \
 	FoldAmplitudes.h \
 	GeneratePulsarSignal.h \
+	SimulatePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
 	HoughMap.h \

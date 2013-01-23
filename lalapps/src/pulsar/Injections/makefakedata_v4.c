@@ -52,6 +52,7 @@
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/GeneratePulsarSignal.h>
+#include <lal/SimulatePulsarSignal.h>
 #include <lal/TimeSeries.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
@@ -373,7 +374,8 @@ main(int argc, char *argv[])
        *----------------------------------------*/
       if ( uvar_exactSignal )
 	{
-	  LAL_CALL ( LALSimulateExactPulsarSignal (&status, &Tseries, &params), &status );
+          Tseries = XLALSimulateExactPulsarSignal ( &params );
+          XLAL_CHECK ( Tseries != NULL, XLAL_EFUNC, "XLALSimulateExactPulsarSignal() failed.\n");
 	}
       else if ( uvar_lineFeature )
 	{
