@@ -121,22 +121,22 @@ fi
 recordTest "verify new GPS time $GRACEID" "$RETCODE" "$(cat $OUTFILE)"
 rm $OUTFILE
 
-# Upload a file
+# Upload a file (a binary file)
 #
 OUTFILE=$(mktemp)
-${GRACEDB} upload $GRACEID "$TEST_DATA_DIR/upload.data" > $OUTFILE 2>&1
+${GRACEDB} upload $GRACEID "$TEST_DATA_DIR/upload.data.gz" > $OUTFILE 2>&1
 recordTest "upload file $GRACEID" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
 # Download that uploaded file
 #
 DOWNLOAD=$(mktemp)
-${GRACEDB} download $GRACEID "upload.data" - > $DOWNLOAD 2>&1
+${GRACEDB} download $GRACEID "upload.data.gz" - > $DOWNLOAD 2>&1
 recordTest "download file" "$?" "$(cat $DOWNLOAD)"
 
 # Verify that the uploaded file and downloaded file were the same
 #
-cmp --silent "$DOWNLOAD" "$TEST_DATA_DIR/upload.data"
+cmp --silent "$DOWNLOAD" "$TEST_DATA_DIR/upload.data.gz"
 recordTest "verify uploaded file" "$?" "$(cat $DOWNLOAD)"
 rm $DOWNLOAD
 
