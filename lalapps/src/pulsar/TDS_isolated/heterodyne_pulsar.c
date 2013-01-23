@@ -605,6 +605,11 @@ sigma for 2nd time.\n",
       }
     }
 
+    /* buffer the output, so that file system is not thrashed when outputing */
+    /* buffer will be 1Mb */
+    if( setvbuf(fpout, NULL, _IOFBF, 0x100000) )
+      fprintf(stderr, "Warning: Unable to set output file buffer!");
+
     for( i=0;i<(INT4)resampData->data->length;i++ ){
       /* if data has been scaled then undo scaling for output */
 
