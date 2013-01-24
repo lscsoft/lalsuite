@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 51
+# serial 52
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -13,7 +13,7 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
     # * the last log message, if the cwd is in a git repository
     # * nothing, if the cwd is not part of the git repo (e.g. ignored)
     # * an error msg to stderr if the cwd is not in a git repository
-    git_log=`( cd "${srcdir}" && ${GIT} log --oneline -n 1 -- . ) 2>/dev/null`
+    git_log=`( cd "${srcdir}" && ${GIT} log --pretty=oneline -n 1 -- . ) 2>/dev/null`
     AS_IF([test "x${git_log}" != x],[have_git_repo=yes])
     AC_MSG_RESULT([${have_git_repo}])
   ])
