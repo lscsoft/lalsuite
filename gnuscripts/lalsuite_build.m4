@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 52
+# serial 53
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -588,17 +588,10 @@ if test "x${osx_version_check}" = "xtrue"; then
       MACOSX_VERSION=`$SW_VERS -productVersion`
       AC_MSG_RESULT([$MACOSX_VERSION])
     fi
-    case "$MACOSX_VERSION" in
-      10.0*|10.1*|10.2*|10.3*)
-        AC_MSG_ERROR([This version of Mac OS X is not supported])
-        ;;
-      10.4*|10.5*|10.6*|10.7*|10.8*)
-        # supported version
-        ;;
-      *)
-        AC_MSG_WARN([Unknown Mac OS X version])
-        ;;
-    esac
+    AS_CASE(["$MACOSX_VERSION"],
+      [10.0*|10.1*|10.2*|10.3*],AC_MSG_ERROR([This version of Mac OS X is not supported]),
+      [10.4*|10.5*|10.6*|10.7*|10.8*],,
+      AC_MSG_WARN([Unknown Mac OS X version]))
   fi
 fi
 ])
