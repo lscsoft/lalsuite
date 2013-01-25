@@ -44,7 +44,8 @@ lalapps_create_pulsar_signal_frame_SOURCES = \
 
 lalapps_CrabTNHeterodyne_SOURCES = \
 	CrabTNHeterodyne.c \
-	HeterodyneCrabPulsar.c
+	HeterodyneCrabPulsar.c \
+	HeterodyneCrabPulsar.h
 
 if HAVE_PYTHON
 pkgpython_DATA = \
