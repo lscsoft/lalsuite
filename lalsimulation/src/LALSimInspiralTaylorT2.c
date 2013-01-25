@@ -750,6 +750,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	REAL8 f, fLso, VRef = 0.;
 	SimInspiralToffInput toffIn;
 	void *funcParams;
+	int errnum;
 
 	expnFuncTaylorT2 expnfunc;
 	expnCoeffsTaylorT2 ak;
@@ -848,9 +849,16 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 		 * timing2(v;tC,t)=0 */
 
 		xmin = 0.8*f;
-		f = XLALDBisectionFindRoot(timing2, xmin, xmax, xacc, funcParams);
-		if (XLAL_IS_REAL8_FAIL_NAN(f))
-			XLAL_ERROR(XLAL_EFUNC);
+		XLAL_TRY(f = XLALDBisectionFindRoot(timing2, xmin, xmax, xacc, funcParams), errnum);
+		if (XLAL_IS_REAL8_FAIL_NAN(f)) {
+			/* It is possible for t(f) to become non-monotonic before reaching
+			 * the ISCO (notably when including tidal effects).
+			 * This causes the Bisector to fail to find a root.
+			 * We throw a warning with freq. of previous step and exit loop */
+			XLALPrintWarning("XLAL Warning - %s: Waveform does not reach ISCO frequency %f (Hz)... generation stopping at frequency %f (Hz)\n",
+					__func__, fLso, v*v*v/toffIn.piM);
+			break;
+		}
 	} while (f < fLso && toffIn.t < -tC);
 
 	/* check termination conditions */
