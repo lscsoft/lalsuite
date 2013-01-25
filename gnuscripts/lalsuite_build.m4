@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 53
+# serial 54
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -569,12 +569,11 @@ AC_DEFUN([LALSUITE_ENABLE_OSX_VERSION_CHECK],
 [AC_ARG_ENABLE(
   [osx_version_check],
   AC_HELP_STRING([--enable-osx-version-check],[disable OS X version check [default=yes]]),
-  [ case "${enableval}" in
-      yes) osx_version_check=true;;
-      no) osx_version_check=false;;
-      *) AC_MSG_ERROR([bad value ${enableval} for --enable-osx-version-check]);;
-    esac
-  ], [ osx_version_check=true ] )
+  AS_CASE(["${enableval}"],
+    [yes],[osx_version_check=true],
+    [no],[osx_version_check=false],
+    AC_MSG_ERROR([bad value ${enableval} for --enable-osx-version-check])
+  ),[osx_version_check=true])
 ])
 
 AC_DEFUN([LALSUITE_OSX_VERSION_CHECK],
