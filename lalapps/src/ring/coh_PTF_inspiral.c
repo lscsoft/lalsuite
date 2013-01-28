@@ -510,10 +510,11 @@ int main(int argc, char **argv)
   fcTmpltParams->deltaT       = 1.0/params->sampleRate;
   if (params->dynTempLength)
   {
-    fcTmpltParams->fLow = -101;
+    fcTmpltParams->dynamicTmpltFlow = 1;
   }
   else
   {
+    fcTmpltParams->dynamicTmpltFlow = 0;
     fcTmpltParams->fLow = params->lowTemplateFrequency;
   }
   // This option holds 2x the length of data that is junk in each segment

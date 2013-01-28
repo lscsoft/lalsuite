@@ -303,6 +303,7 @@ tagFindChirpTmpltParams
   INT4                          reverseChirpBank;	/**< Switches a FindChirpSP template bank to be a reverse chirp template bank if true */
   INT4                          bandPassTmplt;		/**< UNDOCUMENTED */
   LALSimInspiralApplyTaper      taperTmplt;		/**< UNDOCUMENTED */
+  INT4                          dynamicTmpltFlow;       /**< Use longest template that will fit in pad length */
 }
 FindChirpTmpltParams;
 

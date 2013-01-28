@@ -292,16 +292,16 @@ LALFindChirpSPTemplate (
   x1 = pow( LAL_PI * m * LAL_MTSUN_SI * deltaF, -1.0/3.0 );
 
   /* frequency cutoffs */
-  if (params->fLow < -100)
+  if (params->dynamicTmpltFlow)
   {
-    // Dynamic lower cutoff
-    // Work out longest length for template
-    // Keep a few extra sample points for safety
+    /* Dynamic lower cutoff
+     * Work out longest length for template
+     * Keep a few extra sample points for safety */
     REAL4 currTime;
     REAL4 maxT = ((REAL4) params->deltaT * (REAL4) (numPoints-12))/4.;
     maxT -= 0.5 * (REAL4) params->invSpecTrunc * (REAL4) params->deltaT;
-    fLow = -101;
-    for (f=0; f < 100; f++)
+    fLow = -1;
+    for (f=1; f < 100; f++)
     {
       currTime = XLALFindChirpChirpTime( tmplt->mass1,
                                         tmplt->mass2,
@@ -313,8 +313,8 @@ LALFindChirpSPTemplate (
         break;
       }
     }   
-    // If nothing passed then fail
-    if ( fLow < -100)
+    /* If nothing passed then fail */
+    if ( fLow < 0)
     {
       ABORT( status, FINDCHIRPH_EFLOX, FINDCHIRPH_MSGEFLOX );
     }
