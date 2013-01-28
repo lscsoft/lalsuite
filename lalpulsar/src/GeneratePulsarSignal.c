@@ -29,6 +29,7 @@
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
+#include <lal/TimeSeries.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/SFTutils.h>
@@ -38,9 +39,9 @@
 
 /*----------------------------------------------------------------------*/
 /* Internal helper functions */
-static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
-static void checkNoiseSFTs (LALStatus *, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF);
-static void correct_phase (LALStatus *, SFTtype *sft, LIGOTimeGPS tHeterodyne);
+static int XLALcheck_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
+static int XLALcheckNoiseSFTs ( const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF );
+static int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
 
 /*----------------------------------------------------------------------*/
 
@@ -49,7 +50,6 @@ extern INT4 lalDebugLevel;
 static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining if some REAL8 frequency corresponds to an integer "bin-index" */
 
 /* ----- DEFINES ----- */
-#define GPS2REAL(gps) ((gps).gpsSeconds + 1e-9 * (gps).gpsNanoSeconds )
 
 /*---------- Global variables ----------*/
 /* empty init-structs for the types defined in here */
@@ -59,34 +59,24 @@ static CoherentGW emptySignal;
 const PulsarSignalParams empty_PulsarSignalParams;
 const SFTParams empty_SFTParams;
 const SFTandSignalParams empty_SFTandSignalParams;
-
+static LALUnit emptyUnit;
+static LALStatus empty_LALStatus;
 
 /** Generate a time-series at the detector for a given pulsar.
  */
-void
-LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure */
-			 REAL4TimeSeries **signalvec, 	   /**< output time-series */
-			 const PulsarSignalParams *params) /**< input params */
+REAL4TimeSeries *
+XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
+                           )
 {
-  SpinOrbitCWParamStruc sourceParams = emptyCWParams;
-  CoherentGW sourceSignal = emptySignal;
-  DetectorResponse detector;
-  REAL8 SSBduration;
-  LIGOTimeGPS t0, t1, tmpTime;
-  REAL4TimeSeries *output;
-  UINT4 i;
+  XLAL_CHECK_NULL ( params != NULL, XLAL_EINVAL, "Invalid NULL input 'params'\n" );
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (signalvec != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*signalvec == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
-
+  int ret;
   /*----------------------------------------------------------------------
    *
    * First call GenerateSpinOrbitCW() to generate the source-signal
    *
    *----------------------------------------------------------------------*/
+  SpinOrbitCWParamStruc sourceParams = emptyCWParams;
   sourceParams.psi = params->pulsar.psi;
   sourceParams.aPlus = params->pulsar.aPlus;
   sourceParams.aCross = params->pulsar.aCross;
@@ -97,8 +87,9 @@ LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure
   sourceSignal.dtDelayBy2 = params->dtDelayBy2;
   sourceSignal.dtPolBy2   = params->dtPolBy2;
 
+  sourceParams.position = params->pulsar.position;
   /* set source position: make sure it's "normalized", i.e. [0<=alpha<2pi]x[-pi/2<=delta<=pi/2] */
-  TRY( LALNormalizeSkyPosition(status->statusPtr, &(sourceParams.position), &(params->pulsar.position)), status);
+  XLALNormalizeSkyPosition ( &(sourceParams.position.longitude), &(sourceParams.position.latitude) );
 
   /* if pulsar is in binary-orbit, set binary parameters */
   if (params->orbit)
@@ -117,13 +108,19 @@ LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure
       sourceParams.angularSpeed = (LAL_TWOPI/params->orbit->period)*sqrt((1.0 +params->orbit->ecc)/pow((1.0 - params->orbit->ecc),3.0));
     }
   else
-    sourceParams.rPeriNorm = 0.0;		/* this defines an isolated pulsar */
+    {
+      sourceParams.rPeriNorm = 0.0;		/* this defines an isolated pulsar */
+    }
 
   if ( params->pulsar.refTime.gpsSeconds != 0)
-    sourceParams.spinEpoch = params->pulsar.refTime;   /* pulsar reference-time in SSB frame (TDB) */
+    {
+      sourceParams.spinEpoch = params->pulsar.refTime;   /* pulsar reference-time in SSB frame (TDB) */
+    }
   else	/* if not given: use startTime converted to SSB as tRef ! */
     {
-      TRY ( LALConvertGPS2SSB(status->statusPtr, &tmpTime, params->startTimeGPS, params), status);
+      LIGOTimeGPS tmpTime;
+      ret = XLALConvertGPS2SSB ( &tmpTime, params->startTimeGPS, params );
+      XLAL_CHECK_NULL ( ret == XLAL_SUCCESS, XLAL_EFUNC );
       sourceParams.spinEpoch = tmpTime;
     }
 
@@ -139,48 +136,53 @@ LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure
     sourceParams.deltaT = 60;	/* for isolated pulsars */
 
   /* start-time in SSB time */
-  TRY (LALConvertGPS2SSB(status->statusPtr, &t0, params->startTimeGPS, params), status);
+  LIGOTimeGPS t0;
+  ret = XLALConvertGPS2SSB ( &t0, params->startTimeGPS, params );
+  XLAL_CHECK_NULL ( ret == XLAL_SUCCESS, XLAL_EFUNC );
+
   t0.gpsSeconds -= (UINT4)sourceParams.deltaT; /* start one time-step earlier to be safe */
 
   /* end time in SSB */
-  t1 = params->startTimeGPS;
-  XLALGPSAdd(&t1, params->duration);
-  TRY (LALConvertGPS2SSB(status->statusPtr, &t1, t1, params), status);	 /* convert time to SSB */
+  LIGOTimeGPS t1 = params->startTimeGPS;
+  XLALGPSAdd ( &t1, params->duration );
+  ret = XLALConvertGPS2SSB ( &t1, t1, params );
+  XLAL_CHECK_NULL ( ret == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* get duration of source-signal */
-  SSBduration = XLALGPSDiff(&t1, &t0);
-  SSBduration += 2.0 * sourceParams.deltaT; /* add two time-steps to be safe*/
+  REAL8 SSBduration = XLALGPSDiff ( &t1, &t0 );
+  SSBduration += 2.0 * sourceParams.deltaT; /* add two time-steps to be safe */
 
   sourceParams.epoch = t0;
   sourceParams.length = (UINT4) ceil( SSBduration / sourceParams.deltaT );
 
   /* we use frequency-spindowns, but GenerateSpinOrbitCW wants f_k = fkdot / (f0 * k!) */
-  sourceParams.f = NULL;
-  if (params->pulsar.spindown)
+  if ( params->pulsar.spindown )
     {
+      UINT4 numSpindowns = params->pulsar.spindown->length;
+      sourceParams.f = XLALCreateREAL8Vector ( numSpindowns );
+      XLAL_CHECK_NULL ( sourceParams.f != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector(%d) failed.", numSpindowns );
+
       UINT4 kFact = 1;
-      TRY ( LALDCreateVector(status->statusPtr, &(sourceParams.f), params->pulsar.spindown->length), status);
-      for (i=0; i < sourceParams.f->length; i++ )
+      for ( UINT4 i = 0; i < numSpindowns; i++ )
 	{
 	  sourceParams.f->data[i] = params->pulsar.spindown->data[i] / (kFact * params->pulsar.f0);
 	  kFact *= i + 2;
-	}
-    }
+	} // i < numSpindowns
+    } // if pulsar.spindown
 
   /* finally, call the function to generate the source waveform */
-  TRY ( LALGenerateSpinOrbitCW(status->statusPtr, &sourceSignal, &sourceParams), status);
+  CoherentGW sourceSignal = emptySignal;
+  LALStatus status = empty_LALStatus;
+  LALGenerateSpinOrbitCW ( &status, &sourceSignal, &sourceParams);
+  XLAL_CHECK_NULL ( status.statusCode == 0, XLAL_EFAILED, "LALGenerateSpinOrbitCW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
 
   /* free spindown-vector right away, so we don't forget */
   if (sourceParams.f) {
-    TRY ( LALDDestroyVector(status->statusPtr, &(sourceParams.f) ), status);
+    XLALDestroyREAL8Vector ( sourceParams.f );
   }
 
   /* check that sampling interval was short enough */
-  if ( sourceParams.dfdt > 2.0 )  /* taken from makefakedata_v2 */
-    {
-      XLALPrintError ("GenerateSpinOrbitCW() returned df*dt = %f > 2.0", sourceParams.dfdt);
-      ABORT (status, GENERATEPULSARSIGNALH_ESAMPLING, GENERATEPULSARSIGNALH_MSGESAMPLING);
-    }
+  XLAL_CHECK_NULL ( sourceParams.dfdt <= 2.0, XLAL_ETOL, "GenerateSpinOrbitCW() returned df*dt = %f > 2.0\n", sourceParams.dfdt );
 
   /*----------------------------------------------------------------------
    *
@@ -189,6 +191,7 @@ LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure
    *
    *----------------------------------------------------------------------*/
   /* first set up the detector-response */
+  DetectorResponse detector;
   detector.transfer = params->transfer;
   detector.site = params->site;
   detector.ephemerides = params->ephemerides;
@@ -200,129 +203,110 @@ LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure
    */
   detector.heterodyneEpoch = params->startTimeGPS;
 
-  /* ok, we  need to prepare the output time-series */
-  if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
-    ABORT (status,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
-  }
-
   /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
-  LALCreateVector(status->statusPtr, &(output->data), (UINT4) ceil( params->samplingRate * params->duration) );
-  BEGINFAIL(status) {
-    LALFree (output);
-  } ENDFAIL(status);
+  UINT4 numSteps = (UINT4) ceil( params->samplingRate * params->duration );
+  REAL8 dt = 1.0 / params->samplingRate;
+  REAL8 fHet = params->fHeterodyne;
 
-  output->deltaT = 1.0 / params->samplingRate;
-  output->f0 = params->fHeterodyne;
-  output->epoch = params->startTimeGPS;
+  /* ok, we  need to prepare the output time-series */
+  REAL4TimeSeries *output = XLALCreateREAL4TimeSeries ( "", &(params->startTimeGPS), fHet, dt, &emptyUnit, numSteps );
+  XLAL_CHECK_NULL ( output != NULL, XLAL_EFUNC, "XLALCreateREAL4TimeSeries() failed with xlalErrno = %d\n", xlalErrno );
 
-
-  TRY ( LALSimulateCoherentGW(status->statusPtr, output, &sourceSignal, &detector ), status );
+  LALSimulateCoherentGW ( &status, output, &sourceSignal, &detector );
+  XLAL_CHECK_NULL ( status.statusCode == 0, XLAL_EFAILED, "LALSimulateCoherentGW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
 
   /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
-  {
-    CHAR *name = XLALGetChannelPrefix ( params->site->frDetector.name );
-    if ( name == NULL ) {
-      ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
-    }
-    strcpy ( output->name, name );
-    LALFree ( name );
-  }
+  CHAR *name = XLALGetChannelPrefix ( params->site->frDetector.name );
+  XLAL_CHECK_NULL ( name != NULL, XLAL_EFUNC );
+  strcpy ( output->name, name );
+  XLALFree ( name );
 
   /*----------------------------------------------------------------------*/
   /* Free all allocated memory that is not returned */
-  TRY (LALSDestroyVectorSequence( status->statusPtr, &(sourceSignal.a->data)), status);
-  LALFree( sourceSignal.a );
-  TRY (LALSDestroyVector(status->statusPtr, &(sourceSignal.f->data ) ), status);
-  LALFree(sourceSignal.f);
-  TRY (LALDDestroyVector(status->statusPtr, &(sourceSignal.phi->data )), status);
-  LALFree(sourceSignal.phi);
+  XLALDestroyREAL4VectorSequence ( sourceSignal.a->data );
+  XLALFree ( sourceSignal.a );
+  XLALDestroyREAL4TimeSeries ( sourceSignal.f );
+  XLALDestroyREAL8TimeSeries ( sourceSignal.phi );
 
-  *signalvec = output;
+  return output;
 
-  DETATCHSTATUSPTR (status);
+} /* XLALGeneratePulsarSignal() */
+
+/**
+ * \deprecated Use XLALGeneratePulsarSignal() instead.
+ */
+void
+LALGeneratePulsarSignal (LALStatus *status,		   /**< pointer to LALStatus structure */
+			 REAL4TimeSeries **signalvec, 	   /**< output time-series */
+			 const PulsarSignalParams *params) /**< input params */
+{
+  INITSTATUS(status);
+
+  REAL4TimeSeries *output = XLALGeneratePulsarSignal ( params );
+  if ( output == NULL ) {
+    XLALPrintError ("XLALGeneratePulsarSignal() failed with xlalErrno = %d\n", xlalErrno );
+    ABORTXLAL( status );
+  }
+
+  (*signalvec) = output;
+
   RETURN (status);
 
 } /* LALGeneratePulsarSignal() */
 
-
-
 /** Turn the given time-series into (v2-)SFTs and add noise if given.
  */
-void
-LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
-		 SFTVector **outputSFTs,	/**< [out] SFT-vector */
-		 const REAL4TimeSeries *signalvec, /**< input time-series */
-		 const SFTParams *params)	/**< params for output-SFTs */
+SFTVector *
+XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
+                   const SFTParams *params		/**< params for output-SFTs */
+                  )
 {
-  UINT4 numSFTs;			/* number of SFTs */
-  UINT4 numTimesteps;			/* number of time-samples in an Tsft */
-  UINT4 numBins;			/* number of frequency-bins in SFT */
-  UINT4 iSFT;
-  UINT4 idatabin;
-  REAL8 Band, f0, deltaF, dt;
-  LIGOTimeGPSVector *timestamps = NULL;
-  REAL4Vector timeStretch = {0,0};
-  REAL4Vector *timeStretchCopy = NULL;
-  LIGOTimeGPS tStart;			/* start time of input time-series */
-  LIGOTimeGPS tLast;			/* start-time of last _possible_ SFT */
-  LIGOTimeGPS tmpTime;
-  REAL8 duration, delay;
-  UINT4 index0n;			/* first frequency-bin to use from noise-SFT */
-  SFTtype *thisSFT, *thisNoiseSFT;	/* SFT-pointers */
-  SFTVector *sftvect = NULL;		/* return value. For better readability */
-  UINT4 j;
-  RealFFTPlan *pfwd = NULL;		/* FFTW plan */
-  LIGOTimeGPS tPrev;			/* real timstamp of previous SFT */
-  UINT4 totalIndex;			/* timestep-index to start next FFT from */
-  INT4 relIndexShift;			/* relative index-shift from previous SFT (number of timesteps) */
+  XLAL_CHECK_NULL ( signalvec != NULL, XLAL_EINVAL, "Invalid NULL input 'signalvec'\n");
+  XLAL_CHECK_NULL ( params != NULL, XLAL_EINVAL, "Invalid NULL input 'params'\n");
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
+  REAL8 f0 = signalvec->f0;		/* lowest frequency */
+  REAL8 dt = signalvec->deltaT;		/* timeseries timestep */
+  REAL8 Band = 1.0 / (2.0 * dt);	/* NOTE: frequency-band is determined by sampling-rate! */
+  REAL8 deltaF = 1.0 / params->Tsft;	/* frequency-resolution */
 
-  ASSERT (outputSFTs != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*outputSFTs == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
-  ASSERT (signalvec != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (params != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
-
-  f0 = signalvec->f0;				/* lowest frequency */
-  dt = signalvec->deltaT;		/* timeseries timestep */
-  Band = 1.0 / (2.0 * dt);		/* NOTE: frequency-band is determined by sampling-rate! */
-  deltaF = 1.0 / params->Tsft;			/* frequency-resolution */
-
+  int ret;
   /* if noiseSFTs are given: check they are consistent with signal! */
-  if (params->noiseSFTs) {
-    TRY (checkNoiseSFTs(status->statusPtr, params->noiseSFTs, f0, f0 + Band, deltaF), status);
-  }
+  if ( params->noiseSFTs )
+    {
+      ret = XLALcheckNoiseSFTs ( params->noiseSFTs, f0, f0 + Band, deltaF );
+      XLAL_CHECK_NULL ( ret == XLAL_SUCCESS, XLAL_EFUNC );
+    }
 
   /* make sure that number of timesamples/SFT is an integer (up to possible rounding errors) */
-  {
-    REAL8 timesteps = params->Tsft / dt;		/* this is a float!*/
-    numTimesteps = (UINT4) (timesteps + 0.5);		/* round to closest int */
-    ASSERT ( fabs(timesteps - numTimesteps)/timesteps < eps, status,
-	     GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
-  }
+  REAL8 REALnumTimesteps = params->Tsft / dt;		/* this is a float!*/
+  UINT4 numTimesteps = (UINT4) (REALnumTimesteps + 0.5);		/* number of time-samples in an Tsft, round to closest int */
+  XLAL_CHECK_NULL ( fabs ( REALnumTimesteps - numTimesteps ) / REALnumTimesteps < eps, XLAL_ETOL,
+                    "Inconsistent sampling-step (dt=%g) and Tsft=%g: must be integer multiple Tsft/dt = %g >= %g\n",
+                    dt, params->Tsft, REALnumTimesteps, eps );
+
   /* Prepare FFT: compute plan for FFTW */
-  pfwd = XLALCreateForwardREAL4FFTPlan(numTimesteps, 0);
-  if (pfwd == NULL)
-    ABORTXLAL(status);
+  RealFFTPlan *pfwd = XLALCreateForwardREAL4FFTPlan ( numTimesteps, 0 );
+  XLAL_CHECK_NULL ( pfwd != NULL, XLAL_EFUNC, "XLALCreateForwardREAL4FFTPlan(%d,0) failed.\n", numTimesteps );
 
   /* get some info about time-series */
-  tStart = signalvec->epoch;					/* start-time of time-series */
+  LIGOTimeGPS tStart = signalvec->epoch;	/* start-time of time-series */
 
   /* get last possible start-time for an SFT */
-  duration =  (UINT4) (1.0* signalvec->data->length * dt + 0.5); /* total duration rounded to seconds */
-  tLast = tStart;
-  XLALGPSAdd(&tLast, duration - params->Tsft);
+  REAL8 duration =  (UINT4) (1.0* signalvec->data->length * dt + 0.5); /* total duration rounded to seconds */
+  LIGOTimeGPS tLast = tStart;
+  XLALGPSAdd( &tLast, duration - params->Tsft );
+  XLAL_CHECK_NULL ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* for simplicity we _always_ work with timestamps.
    * Therefore, we have to generate them now if none have been provided by the user. */
-  if (params->timestamps == NULL)
+  LIGOTimeGPSVector *timestamps;
+  if ( params->timestamps == NULL )
     {
-      LIGOTimeGPS lastTs;
-      TRY(LALMakeTimestamps(status->statusPtr, &timestamps, tStart, duration, params->Tsft ), status);
+      timestamps = XLALMakeTimestamps ( tStart, duration, params->Tsft );
+      XLAL_CHECK_NULL ( timestamps != NULL, XLAL_EFUNC );
       /* see if the last timestamp is valid (can fit a full SFT in?), if not, drop it */
-      lastTs = timestamps->data[timestamps->length-1];
-      if ( GPS2REAL(lastTs) > GPS2REAL(tLast) )
+      LIGOTimeGPS lastTs = timestamps->data[timestamps->length-1];
+      if ( XLALGPSDiff ( &lastTs, &tLast ) > 0 )	// if lastTs > tLast
 	timestamps->length --;
     }
   else	/* if given, use those, and check they are valid */
@@ -331,61 +315,55 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
     }
 
   /* check that all timestamps lie within [tStart, tLast] */
-  if ( check_timestamp_bounds(timestamps, tStart, tLast) != 0) {
-    ABORT (status, GENERATEPULSARSIGNALH_ETIMEBOUND, GENERATEPULSARSIGNALH_MSGETIMEBOUND);
-  }
+  XLAL_CHECK_NULL ( XLALcheck_timestamp_bounds ( timestamps, tStart, tLast) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  UINT4 numSFTs = timestamps->length;			/* number of SFTs to produce */
   /* check that we have the right number of noise-SFTs */
-  if (  params->noiseSFTs && ( params->noiseSFTs->length != timestamps->length)  ) {
-    ABORT ( status, GENERATEPULSARSIGNALH_ENUMSFTS,  GENERATEPULSARSIGNALH_MSGENUMSFTS );
+  if ( params->noiseSFTs ) {
+    XLAL_CHECK_NULL ( params->noiseSFTs->length == numSFTs, XLAL_EDOM, "Inconsistent number of SFTs in timestamps (%d) and noise-SFTs (%d)\n",
+                      numSFTs, params->noiseSFTs->length );
   }
 
   /* check that if the user gave a window then the length should be correct */
-  if (  params->window && ( numTimesteps != params->window->data->length )  ) {
-    XLALPrintError ("LALSignalToSFTs(): failed because numTimesteps=%d differs from window->data->length=%d.\n", numTimesteps, params->window->data->length);
-    ABORT ( status, GENERATEPULSARSIGNALH_EINPUT,  GENERATEPULSARSIGNALH_MSGEINPUT );
+  if ( params->window ) {
+    XLAL_CHECK_NULL ( numTimesteps == params->window->data->length, XLAL_EDOM, "Inconsistent window-length =%d, differs from numTimesteps=%d\n",
+                      params->window->data->length, numTimesteps );
   }
 
   /* prepare SFT-vector for return */
-  numSFTs = timestamps->length;			/* number of SFTs to produce */
-  numBins = (UINT4)(numTimesteps/2) + 1;		/* number of frequency-bins per SFT */
+  UINT4 numBins = (UINT4)(numTimesteps/2) + 1;		/* number of frequency-bins per SFT */
 
-  LALCreateSFTVector (status->statusPtr, &sftvect, numSFTs, numBins);
-  BEGINFAIL (status) {
-    if (params->timestamps == NULL)
-      LALDestroyTimestampVector(status->statusPtr, &timestamps);
-  } ENDFAIL (status);
+  SFTVector *sftvect = XLALCreateSFTVector ( numSFTs, numBins );
+  XLAL_CHECK_NULL ( sftvect != NULL, XLAL_EFUNC, "XLALCreateSFTVector(numSFTs=%d, numBins=%d) failed.\n", numSFTs, numBins );
 
-  tPrev = tStart;	/* initialize */
-  totalIndex = 0;	/* start from first timestep by default */
+  LIGOTimeGPS tPrev = tStart;	/* initialize */
+  UINT4 totalIndex = 0;		/* timestep-index to start next FFT from */
 
   /* Assign memory to timeStretchCopy */
-  if ( (timeStretchCopy = XLALCreateREAL4Vector(numTimesteps)) == NULL ) {
-     XLALPrintError ("LALSignalToSFTs(): failed to XLALCreateREAL4Vector(%d).\n", numTimesteps);
-     ABORT (status,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
-  }
+  REAL4Vector *timeStretchCopy = XLALCreateREAL4Vector ( numTimesteps );
+  XLAL_CHECK_NULL ( timeStretchCopy != NULL, XLAL_EFUNC, "XLALCreateREAL4Vector(%d) failed.\n", numTimesteps );
 
   /* main loop: apply FFT the requested time-stretches */
-  for (iSFT = 0; iSFT < numSFTs; iSFT++)
+  for (UINT4 iSFT = 0; iSFT < numSFTs; iSFT++ )
     {
-      REAL8 realDelay;
-
-      thisSFT = &(sftvect->data[iSFT]);	/* point to current SFT-slot */
+      SFTtype *thisSFT = &(sftvect->data[iSFT]);	/* point to current SFT-slot */
 
       /* find the start-bin for this SFT in the time-series */
-      delay = XLALGPSDiff(&(timestamps->data[iSFT]), &tPrev);
+      REAL8 delay = XLALGPSDiff ( &(timestamps->data[iSFT]), &tPrev );
+
       /* round properly: picks *closest* timestep (==> "nudging") !!  */
-      relIndexShift = (INT4) (delay / signalvec->deltaT + 0.5);
+      INT4 relIndexShift = (INT4) ( delay / signalvec->deltaT + 0.5 );
       totalIndex += relIndexShift;
 
+      REAL4Vector timeStretch;
       timeStretch.length = numTimesteps;
       timeStretch.data = signalvec->data->data + totalIndex; /* point to the right sample-bin */
-      memcpy(timeStretchCopy->data, timeStretch.data, numTimesteps*sizeof(*timeStretch.data));
+      memcpy ( timeStretchCopy->data, timeStretch.data, numTimesteps * sizeof(*timeStretch.data) );
 
       /* fill the header of the i'th output SFT */
-      realDelay = (REAL4)(relIndexShift * signalvec->deltaT);  /* avoid rounding-errors*/
-      tmpTime = tPrev;
-      XLALGPSAdd(&tmpTime, realDelay);
+      REAL8 realDelay = (REAL4)( relIndexShift * signalvec->deltaT );  /* cast to REAL4 to avoid rounding-errors*/
+      LIGOTimeGPS tmpTime = tPrev;
+      XLALGPSAdd ( &tmpTime, realDelay );
 
       strcpy ( thisSFT->name, signalvec->name );
       /* set the ACTUAL timestamp! (can be different from requested one ==> "nudging") */
@@ -396,74 +374,58 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
       tPrev = tmpTime;				/* prepare next loop */
 
       /* ok, issue at least a warning if we have "nudged" an SFT-timestamp */
-      if (lalDebugLevel > 0)
+      if ( lalDebugLevel > 0 )
 	{
-	  REAL8 diff;
-	  diff = XLALGPSDiff(&(timestamps->data[iSFT]),&tmpTime);
+	  REAL8 diff = XLALGPSDiff ( &(timestamps->data[iSFT]), &tmpTime );
 	  if (diff != 0)
 	    {
-	      XLALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit"
-			     "with time-series\n", iSFT, diff);
+	      XLALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit with time-series\n", iSFT, diff );
 	      /* double check if magnitude of nudging seems reasonable .. */
-	      if ( fabs(diff) >= signalvec->deltaT )
-		{
-		  XLALPrintError ("WARNING: nudged by more than deltaT=%e... "
-				 "this sounds wrong! (We better stop)\n");
-		  ABORT (status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL );
-		}
-	    } /* if nudging */
-	} /* if lalDebugLevel */
+	      XLAL_CHECK_NULL ( fabs(diff) < signalvec->deltaT, XLAL_ETOL, "Nudged by more (%g) than deltaT=%g ... this sounds wrong! (We better stop)\n",
+                                fabs(diff), signalvec->deltaT );
+            } // if nudging
+        } /* if lalDebugLevel */
 
       /* Now window the current time series stretch, if necessary */
-      if ( params->window ) {
+      if ( params->window )
+        {
 	  const float A = 1.0 / sqrt(params->window->sumofsquares / params->window->data->length);
-	  for( idatabin = 0; idatabin < timeStretchCopy->length; idatabin++ ) {
-	      timeStretchCopy->data[idatabin] *= A * params->window->data->data[idatabin];
-	  }
-      }
+	  for( UINT4 idatabin = 0; idatabin < timeStretchCopy->length; idatabin++ )
+            {
+              timeStretchCopy->data[idatabin] *= A * params->window->data->data[idatabin];
+            }
+        } // if window
 
       /* the central step: FFT the ith time-stretch into an SFT-slot */
-      if (XLALREAL4ForwardFFT(thisSFT->data, timeStretchCopy, pfwd) != 0)
-      {
-        LALDestroySFTVector(status->statusPtr, &sftvect);
-        ABORTXLAL(status);
-      }
-
+      ret = XLALREAL4ForwardFFT ( thisSFT->data, timeStretchCopy, pfwd );
+      XLAL_CHECK_NULL ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALREAL4ForwardFFT() failed.\n");
 
       /* normalize DFT-data to conform to v2 ( ie. COMPLEX8FrequencySeries ) specification ==> multiply DFT by dt */
-      {
-	UINT4 i;
-	COMPLEX8 *data = &( thisSFT->data->data[0] );
-	for ( i=0; i < numBins ; i ++ )
+      COMPLEX8 *data = thisSFT->data->data;
+      for ( UINT4 i = 0; i < numBins ; i ++ )
 	{
 	  data->re *= dt;
 	  data->im *= dt;
 	  data ++;
 	} /* for i < numBins */
-      } /* normalize data */
 
       /* correct heterodyning-phase, IF NECESSARY */
-      if ( ( (INT4)signalvec->f0 != signalvec->f0  )
-	   || (signalvec->epoch.gpsNanoSeconds != 0)
-	   || (thisSFT->epoch.gpsNanoSeconds != 0) )
+      if ( ( (INT4)signalvec->f0 != signalvec->f0  ) || (signalvec->epoch.gpsNanoSeconds != 0) || (thisSFT->epoch.gpsNanoSeconds != 0) )
 	{
 	  /* theterodyne = signalvec->epoch!*/
-	  correct_phase(status->statusPtr, thisSFT, signalvec->epoch);
-	  BEGINFAIL (status) {
-	    LALDestroySFTVector(status->statusPtr, &sftvect);
-	  } ENDFAIL (status);
+	  ret = XLALcorrect_phase ( thisSFT, signalvec->epoch);
+          XLAL_CHECK_NULL ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALcorrect_phase() failed.\n");
 	} /* if phase-correction necessary */
 
       /* Now add the noise-SFTs if given */
       if (params->noiseSFTs)
 	{
-	  COMPLEX8 *data, *noise;
-	  thisNoiseSFT = &(params->noiseSFTs->data[iSFT]);
-	  index0n = (UINT4) round ((thisSFT->f0 - thisNoiseSFT->f0) / thisSFT->deltaF);
+	  SFTtype *thisNoiseSFT = &( params->noiseSFTs->data[iSFT] );
+	  UINT4 index0n = round ( (thisSFT->f0 - thisNoiseSFT->f0) / thisSFT->deltaF );
 
-	  data = &(thisSFT->data->data[0]);
-	  noise = &(thisNoiseSFT->data->data[index0n]);
-	  for (j=0; j < numBins; j++)
+	  data  = thisSFT->data->data;
+	  COMPLEX8 *noise = &( thisNoiseSFT->data->data[index0n] );
+	  for ( UINT4 j=0; j < numBins; j++ )
 	    {
 	      data->re += noise->re;
 	      data->im += noise->im;
@@ -476,24 +438,47 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
     } /* for iSFT < numSFTs */
 
   /* free stuff */
-  XLALDestroyREAL4FFTPlan(pfwd);
-  XLALDestroyREAL4Vector(timeStretchCopy);
+  XLALDestroyREAL4FFTPlan ( pfwd );
+  XLALDestroyREAL4Vector ( timeStretchCopy );
 
-  /* did we get timestamps or did we make them? */
-  if (params->timestamps == NULL)
-    {
-      LALFree(timestamps->data);
-      LALFree(timestamps);
-      timestamps = NULL;
-    }
+  /* did we create timestamps ourselves? */
+  if (params->timestamps == NULL) {
+    XLALDestroyTimestampVector ( timestamps );	// if yes, free them
+  }
 
-  *outputSFTs = sftvect;
+  return sftvect;
 
-  DETATCHSTATUSPTR( status );
+} /* XLALSignalToSFTs() */
+
+/**
+ * \deprecated Use XLALSignalToSFTs() instead
+ */
+void
+LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
+		 SFTVector **outputSFTs,	/**< [out] SFT-vector */
+		 const REAL4TimeSeries *signalvec, /**< input time-series */
+		 const SFTParams *params)	/**< params for output-SFTs */
+{
+  INITSTATUS(status);
+
+  if ( outputSFTs == NULL ) {
+    ABORT ( status, XLAL_EINVAL, "Invalid NULL input 'outputSFTs'");
+  }
+  if ( (*outputSFTs) != NULL ) {
+    ABORT ( status, XLAL_EINVAL, "Input-pointer (*outputSFTs) must be NULL");
+  }
+
+  SFTVector *out = XLALSignalToSFTs ( signalvec, params );
+  if ( out == NULL ) {
+    XLALPrintError ("XLALSignalToSFTs() failed with xlalErrno = %d\n", xlalErrno );
+    ABORTXLAL ( status );
+  }
+
+  (*outputSFTs) = out;
+
   RETURN (status);
 
 } /* LALSignalToSFTs() */
-
 
 
 /* 07/14/04 gam */
@@ -710,7 +695,10 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
 
   /* if noiseSFTs are given: check they are consistent with signal! */
   if (params->pSFTParams->noiseSFTs) {
-    TRY (checkNoiseSFTs (status->statusPtr, params->pSFTParams->noiseSFTs, f0, f0 + band, deltaF), status);
+    int ret = XLALcheckNoiseSFTs ( params->pSFTParams->noiseSFTs, f0, f0 + band, deltaF );
+    if ( ret != XLAL_SUCCESS ) {
+      ABORT ( status, XLAL_EFAILED, "XLALcheckNoiseSFTs() failed" );
+    }
   }
 
   /* Signal parameters */
@@ -880,52 +868,46 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
  * \note The only fields used in params are: \a site, \a pulsar.position
  * and \a ephemerides.
  */
-void
-LALConvertGPS2SSB (LALStatus* status,		/**< pointer to LALStatus structure */
-		   LIGOTimeGPS *SSBout, 	/**< [out] arrival-time in SSB */
-		   LIGOTimeGPS GPSin, 		/**< [in]  GPS-arrival time at detector */
-		   const PulsarSignalParams *params) /**< define source-location and detector */
+int
+XLALConvertGPS2SSB ( LIGOTimeGPS *SSBout, 		/**< [out] arrival-time in SSB */
+                     LIGOTimeGPS GPSin, 		/**< [in]  GPS-arrival time at detector */
+                     const PulsarSignalParams *params 	/**< define source-location and detector */
+                     )
 {
-  EarthState earth;
-  EmissionTime emit;
-  BarycenterInput baryinput;
-  SkyPosition tmp;
+  XLAL_CHECK ( SSBout != NULL, XLAL_EINVAL, "Invalid NULL input 'SSBout'\n" );
+  XLAL_CHECK ( params != NULL, XLAL_EINVAL, "Invalid NULL input 'params'\n" );
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (SSBout != NULL, status,  GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (params != NULL, status,  GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-
+  BarycenterInput baryinput = empty_BarycenterInput;
   baryinput.site = *(params->site);
   /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
   baryinput.site.location[0] /= LAL_C_SI;
   baryinput.site.location[1] /= LAL_C_SI;
   baryinput.site.location[2] /= LAL_C_SI;
-  if (params->pulsar.position.system != COORDINATESYSTEM_EQUATORIAL)
-    {
-      /* FIXME: do proper conversion or error-reporting */
-      printf ("\nARGH: non-equatorial coords not implemented here yet, sorry!\n");
-      exit(-1);	/* suicide */
-    }
+  XLAL_CHECK ( params->pulsar.position.system == COORDINATESYSTEM_EQUATORIAL, XLAL_EDOM, "Non-equatorial coords not implemented yet\n");
 
-  TRY( LALNormalizeSkyPosition (status->statusPtr, &tmp, &(params->pulsar.position)), status);
+  SkyPosition tmp = params->pulsar.position;
+  XLALNormalizeSkyPosition ( &(tmp.longitude), &(tmp.latitude) );
   baryinput.alpha = tmp.longitude;
   baryinput.delta = tmp.latitude;
   baryinput.dInv = 0.e0;	/* following makefakedata_v2 */
 
   baryinput.tgps = GPSin;
 
-  TRY (LALBarycenterEarth(status->statusPtr, &earth, &GPSin, params->ephemerides), status);
-  TRY (LALBarycenter(status->statusPtr, &emit, &baryinput, &earth), status);
 
-  *SSBout = emit.te;
+  EarthState earth;
+  EmissionTime emit;
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  int ret = XLALBarycenterEarth ( &earth, &GPSin, params->ephemerides );
+  XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC );
 
-} /* LALConvertGPS2SSB() */
+  ret = XLALBarycenter ( &emit, &baryinput, &earth );
+  XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC );
 
+  (*SSBout) = emit.te;
+
+  return XLAL_SUCCESS;
+
+} /* XLALConvertGPS2SSB() */
 
 /**
  * Convert  barycentric frame SSB time into earth-frame GPS time
@@ -959,7 +941,10 @@ LALConvertSSB2GPS (LALStatus *status,		/**< pointer to LALStatus structure */
   for (iterations = 0; iterations < 100; iterations++)
     {
       /* find SSB time of guess */
-      TRY ( LALConvertGPS2SSB (status->statusPtr, &SSBofguess, GPSguess, params), status);
+      if ( XLALConvertGPS2SSB ( &SSBofguess, GPSguess, params) != XLAL_SUCCESS ) {
+        XLALPrintError ("XLALConvertGPS2SSB() failed with xlalErrno = %d\n", xlalErrno );
+        ABORTXLAL ( status );
+      }
 
       /* compute difference between that and what we want */
       delta  = SSBin.gpsSeconds;
@@ -1021,138 +1006,114 @@ LALConvertSSB2GPS (LALStatus *status,		/**< pointer to LALStatus structure */
 #define oneBillion 1000000000;
 /** Check that all timestamps given lie within the range [t0, t1]
  *
- *  return: 0 if ok, -1 if not
+ *  return: 0 if ok, ERROR if not
  */
 int
-check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1)
+XLALcheck_timestamp_bounds ( const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1 )
 {
-  INT4 diff0_s, diff0_ns, diff1_s, diff1_ns;
-  UINT4 i;
-  LIGOTimeGPS *ti;
+  XLAL_CHECK ( timestamps != NULL, XLAL_EINVAL, "Invalid NULL input 'timestamps'\n");
+  UINT4 numTimestamps = timestamps->length;
+  XLAL_CHECK ( numTimestamps > 0, XLAL_EDOM, "Invalid zero-length vector 'timestamps'\n");
+  REAL8 t0R = XLALGPSGetREAL8 ( &t0 );
+  REAL8 t1R = XLALGPSGetREAL8 ( &t1 );
+  XLAL_CHECK ( t1R >= t0R, XLAL_EDOM, "Invalid negative time range: t0=%f must be <= t1=%f]\n", t0R, t1R );
 
-  for (i = 0; i < timestamps->length; i ++)
+  for (UINT4 i = 0; i < numTimestamps; i ++)
     {
-      ti = &(timestamps->data[i]);
-      diff0_s = ti->gpsSeconds - t0.gpsSeconds;
-      diff0_ns = ti->gpsNanoSeconds - t0.gpsNanoSeconds;
-      if ( diff0_ns < 0 )
-	{
-	  diff0_ns += oneBillion;
-	  diff0_s -= 1;
-	}
+      LIGOTimeGPS *ti = &(timestamps->data[i]);
 
+      REAL8 tiR = XLALGPSGetREAL8 ( ti );
 
-      diff1_s = t1.gpsSeconds - ti->gpsSeconds;
-      diff1_ns = t1.gpsNanoSeconds - ti->gpsNanoSeconds;
-      if (diff1_ns < 0)
-	{
-	  diff1_ns += oneBillion;
-	  diff0_s -= 1;
-	}
+      REAL8 diff0 = XLALGPSDiff ( ti, &t0 );
+      XLAL_CHECK ( diff0 >= 0, XLAL_EDOM, "Timestamp i=%d  outside of bounds: t_i = %f < [%f,%f]\n", i, tiR, t0R, t1R );
 
-      /* check timestamps-bounds */
-      if ( (diff0_s < 0) || (diff1_s < 0) )
-	return (-1);
+      REAL8 diff1 = XLALGPSDiff ( &t1, ti );
+      XLAL_CHECK ( diff1 >= 0, XLAL_EDOM, "Timestamp i=%d  outside of bounds: t_i = %f > [%f,%f]\n", i, tiR, t0R, t1R );
 
-    } /* for i < numSFTs */
+    } /* for i < numTimestamps */
 
-  return (0);
+  return XLAL_SUCCESS;
 
-} /* check_timestamp_bounds() */
+} /* XLALcheck_timestamp_bounds() */
 
 /** Check if frequency-range and resolution of noiseSFTs is consistent with signal-band [f0, f1]
  * \note All frequencies f are required to correspond to integer *bins* f/dFreq, ABORT if not
+ *
+ * return XLAL_SUCCESS if everything fine, error-code otherwise
  */
-void
-checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF)
+static int
+XLALcheckNoiseSFTs ( const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF )
 {
+  XLAL_CHECK ( sfts != NULL, XLAL_EINVAL, "Invalid NULL input 'sfts'\n" );
+  XLAL_CHECK ( (f0 >= 0) && (f1 > 0) && (deltaF > 0), XLAL_EDOM, "Invalid non-positive frequency input: f0 = %g, f1 = %g, deltaF = %g\n", f0, f1, deltaF );
 
-  INITSTATUS(status);
+  int ret;
 
-  for (UINT4 i=0; i < sfts->length; i++)
+  for ( UINT4 i = 0; i < sfts->length; i++ )
     {
       SFTtype *thisSFT = &(sfts->data[i]);
       REAL8 deltaFn    = thisSFT->deltaF;
       REAL8 fn0        = thisSFT->f0;
       REAL8 fn1        = f0 + thisSFT->data->length * deltaFn;
 
-      if ( gsl_fcmp ( deltaFn, deltaF, eps )  !=  0) {
-        XLALPrintError ("Time-base of noise-SFTs Tsft_n=%f differs from signal-SFTs Tsft=%f\n", 1.0/deltaFn, 1.0/deltaF);
-	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
-      }
+      ret = gsl_fcmp ( deltaFn, deltaF, eps );
+      XLAL_CHECK ( ret == 0, XLAL_ETOL, "Time-base of noise-SFTs Tsft_n=%f differs from signal-SFTs Tsft=%f\n", 1.0/deltaFn, 1.0/deltaF );
 
-      if ( (f0 < fn0) || (f1 > fn1) ) {
-        XLALPrintError ("\n\nSignal frequency-band [%f,%f] is not contained in noise SFTs [%f,%f]\n", f0, f1, fn0, fn1);
-	ABORT (status, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
-      }
+      XLAL_CHECK ( (f0 >= fn0) && (f1 <= fn1), XLAL_EDOM, "Signal frequency-band [%f,%f] is not contained in noise SFTs [%f,%f]\n", f0, f1, fn0, fn1 );
 
       /* all frequencies here must correspond to exact integer frequency-bins (wrt dFreq = 1/TSFT) */
       REAL8 binReal    = f0 / deltaF;
       REAL8 binRounded = round ( binReal );
-      if ( gsl_fcmp ( binReal, binRounded, eps ) !=  0) {
-        XLALPrintError ("Signal-band frequency f0/deltaF = %.16g differs from integer bin by more than %g relative deviation.\n", binReal, eps );
-	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
-      }
+      ret = gsl_fcmp ( binReal, binRounded, eps );
+      XLAL_CHECK ( ret == 0, XLAL_ETOL, "Signal-band frequency f0/deltaF = %.16g differs from integer bin by more than %g relative deviation.\n", binReal, eps );
 
       binReal = f1 / deltaF;
       binRounded = round ( binReal );
-      if ( gsl_fcmp ( binReal, binRounded, eps ) !=  0) {
-        XLALPrintError ("Signal-band frequency f1/deltaF = %.16g differs from integer bin by more than %g relative deviation.\n", binReal, eps );
-	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
-      }
+      ret = gsl_fcmp ( binReal, binRounded, eps );
+      XLAL_CHECK ( ret == 0, XLAL_ETOL, "Signal-band frequency f1/deltaF = %.16g differs from integer bin by more than %g relative deviation.\n", binReal, eps );
 
       binReal = fn0 / deltaF;
       binRounded = round ( binReal );
-      if ( gsl_fcmp ( binReal, binRounded, eps ) !=  0) {
-        XLALPrintError ("Noise-SFT start frequency fn0/deltaF = %.16g differs from integer bin by more than %g relative deviation.\n", binReal, eps );
-	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
-      }
+      ret = gsl_fcmp ( binReal, binRounded, eps );
+      XLAL_CHECK ( ret == 0, XLAL_ETOL, "Noise-SFT start frequency fn0/deltaF = %.16g differs from integer bin by more than %g relative deviation.\n", binReal, eps );
 
     } /* for i < numSFTs */
 
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* checkNoiseSFTs() */
+} /* XLALcheckNoiseSFTs() */
 
 
 
 /** Yousuke's phase-correction function, taken from makefakedata_v2
  */
-void
-correct_phase (LALStatus* status, SFTtype *sft, LIGOTimeGPS tHeterodyne)
+int
+XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne )
 {
-  UINT4 i;
-  REAL8 cosx,sinx;
-  COMPLEX8 fvec1;
-  REAL8 deltaT;
+  XLAL_CHECK ( sft != NULL, XLAL_EINVAL, "Invalid NULL input 'sft'\n");
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
-
-  deltaT = XLALGPSDiff(&(sft->epoch), &tHeterodyne);
-  deltaT *= sft->f0;
+  REAL8 deltaT = XLALGPSDiff ( &(sft->epoch), &tHeterodyne );
+  REAL8 deltaFT = deltaT * sft->f0;	// freq * time
 
   /* check if we really need to do anything here? (i.e. is deltaT an integer?) */
-  if ( fabs (deltaT - (INT4) deltaT ) > eps )
+  if ( fabs (deltaFT - (INT4) deltaFT ) > eps )
     {
-      if (lalDebugLevel)
-	XLALPrintError ("Warning: we need to apply  heterodyning phase-correction now: correct_phase()\n");
+      XLALPrintWarning ("XLALcorrect_phase(): we DO need to apply heterodyning phase-correction\n");
 
-      deltaT *= LAL_TWOPI;
+      REAL8 deltaPhase = deltaFT * LAL_TWOPI;	// 'phase' = freq * time * 2pi
 
-      cosx = cos (deltaT);
-      sinx = sin(deltaT);
+      REAL8 cosx = cos ( deltaPhase );
+      REAL8 sinx = sin ( deltaPhase );
 
-      for (i = 0; i < sft->data->length; i++)
+      for (UINT4 i = 0; i < sft->data->length; i++ )
 	{
-	  fvec1 = sft->data->data[i];
+	  COMPLEX8 fvec1 = sft->data->data[i];
 	  sft->data->data[i].re = fvec1.re * cosx - fvec1.im * sinx;
 	  sft->data->data[i].im = fvec1.im * cosx + fvec1.re * sinx;
 	} /* for i < length */
 
-    } /* if deltaT/2pi not integer */
+    } /* if deltaFT not integer */
 
-  DETATCHSTATUSPTR( status );
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* correct_phase() */
+} /* XLALcorrect_phase() */

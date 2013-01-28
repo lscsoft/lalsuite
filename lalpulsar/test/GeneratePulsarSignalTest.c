@@ -129,7 +129,7 @@ int main(int UNUSED argc, char **argv)
 
   static LALStatus status; /* status structure */
 
-  lalDebugLevel = 0;
+  lalDebugLevel = 1;
 
   /* initialize status */
   status.statusCode = 0;
@@ -452,8 +452,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     pPulsarSignalParams->pulsar.position.longitude = skyPosData[iSky][0] + (((REAL8)randval) - 0.5)*tmpDeltaRA;
 
     /* Find reference time in SSB for this sky positions */
-    LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.refTime), GPSin, pPulsarSignalParams);
-    CHECKSTATUSPTR (status);
+    int ret = XLALConvertGPS2SSB ( &(pPulsarSignalParams->pulsar.refTime), GPSin, pPulsarSignalParams );
+    if ( ret != XLAL_SUCCESS ) {
+      XLALPrintError ("XLALConvertGPS2SSB() failed with xlalErrno = %d\n", xlalErrno );
+      ABORTXLAL (status);
+    }
 
     /* one per sky position fill in SkyConstAndZeroPsiAMResponse for use with LALFastGeneratePulsarSFTs */
     LALComputeSkyAndZeroPsiAMResponse (status->statusPtr, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
