@@ -620,7 +620,12 @@ main(int argc, char *argv[]){
       LIGOTimeGPS GPStest;
 
       /* convert SSB to Detector time */
-      LALConvertSSB2GPS (&status,&TDET,TSSB[i],&pulsarparams); 
+      int ret = XLALConvertSSB2GPS ( &TDET, TSSB[i], &pulsarparams);
+      if ( ret != XLAL_SUCCESS ) {
+        XLALPrintError ("XLALConvertSSB2GPS() failed with xlalErrno = %d\n", xlalErrno );
+	return(TEMPOCOMPARISONC_ESUB);
+      }
+
       if (lalDebugLevel) fprintf(stdout,"STATUS : converted SSB TOA %d %d -> Detector TOA %d %d\n",TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds,TDET.gpsSeconds,TDET.gpsNanoSeconds);
       
       /* convert back for testing conversion */

@@ -83,10 +83,6 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
   sourceParams.phi0 = params->pulsar.phi0;
   sourceParams.f0 = params->pulsar.f0;
 
-  // internal interpolation parameters for LALSimulateCoherentGW()
-  sourceSignal.dtDelayBy2 = params->dtDelayBy2;
-  sourceSignal.dtPolBy2   = params->dtPolBy2;
-
   sourceParams.position = params->pulsar.position;
   /* set source position: make sure it's "normalized", i.e. [0<=alpha<2pi]x[-pi/2<=delta<=pi/2] */
   XLALNormalizeSkyPosition ( &(sourceParams.position.longitude), &(sourceParams.position.latitude) );
@@ -211,6 +207,10 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
   /* ok, we  need to prepare the output time-series */
   REAL4TimeSeries *output = XLALCreateREAL4TimeSeries ( "", &(params->startTimeGPS), fHet, dt, &emptyUnit, numSteps );
   XLAL_CHECK_NULL ( output != NULL, XLAL_EFUNC, "XLALCreateREAL4TimeSeries() failed with xlalErrno = %d\n", xlalErrno );
+
+  // internal interpolation parameters for LALSimulateCoherentGW()
+  sourceSignal.dtDelayBy2 = params->dtDelayBy2;
+  sourceSignal.dtPolBy2   = params->dtPolBy2;
 
   LALSimulateCoherentGW ( &status, output, &sourceSignal, &detector );
   XLAL_CHECK_NULL ( status.statusCode == 0, XLAL_EFAILED, "LALSimulateCoherentGW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
@@ -915,87 +915,72 @@ XLALConvertGPS2SSB ( LIGOTimeGPS *SSBout, 		/**< [out] arrival-time in SSB */
  * NOTE: this uses simply the inversion-routine used in the original
  *       makefakedata_v2
  */
-void
-LALConvertSSB2GPS (LALStatus *status,		/**< pointer to LALStatus structure */
-		   LIGOTimeGPS *GPSout,		 /**< [out] GPS-arrival-time at detector */
-		   LIGOTimeGPS SSBin, 		 /**< [in] input: signal arrival time at SSB */
-		   const PulsarSignalParams *params) /**< params defining source-location and detector */
+int XLALConvertSSB2GPS ( LIGOTimeGPS *GPSout,			/**< [out] GPS-arrival-time at detector */
+                         LIGOTimeGPS SSBin,			/**< [in] input: signal arrival time at SSB */
+                         const PulsarSignalParams *params	/**< params defining source-location and detector */
+                         )
 {
-
-  LIGOTimeGPS SSBofguess;
-  LIGOTimeGPS GPSguess;
-  INT4 iterations, E9=1000000000;
-  INT8 delta, guess;
-  INT4 j = 0;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  XLAL_CHECK ( GPSout != NULL, XLAL_EINVAL, "Invalid NULL output-pointer 'GPSout'\n");
+  XLAL_CHECK ( params != NULL, XLAL_EINVAL, "Invalid NULL input 'params'\n");
 
   /*
    * To start root finding, use SSBpulsarparams as guess
    * (not off by more than 400 secs!
    */
-  GPSguess = SSBin;
+  LIGOTimeGPS GPSguess = SSBin;
+  UINT4 flip_flop_counter = 0;
+  INT8 delta;
 
   /* now find GPS time corresponding to SSBin by iterations */
-  for (iterations = 0; iterations < 100; iterations++)
+  UINT4 iterations;
+  for ( iterations = 0; iterations < 100; iterations++ )
     {
+      LIGOTimeGPS SSBofguess;
+
       /* find SSB time of guess */
-      if ( XLALConvertGPS2SSB ( &SSBofguess, GPSguess, params) != XLAL_SUCCESS ) {
-        XLALPrintError ("XLALConvertGPS2SSB() failed with xlalErrno = %d\n", xlalErrno );
-        ABORTXLAL ( status );
-      }
+      int ret = XLALConvertGPS2SSB ( &SSBofguess, GPSguess, params);
+      XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* compute difference between that and what we want */
-      delta  = SSBin.gpsSeconds;
-      delta -= SSBofguess.gpsSeconds;
-      delta *= E9;
-      delta += SSBin.gpsNanoSeconds;
-      delta -= SSBofguess.gpsNanoSeconds;
+      delta = XLALGPSToINT8NS( &SSBin ) - XLALGPSToINT8NS( &SSBofguess );
 
       /* if we are within 1ns of the result increment the flip-flop counter */
-      if (abs(delta) == 1) j++;
+      if ( abs(delta) == 1) {
+        flip_flop_counter ++;
+      }
 
       /* break if we've converged: let's be strict to < 1 ns ! */
       /* also break if the flip-flop counter has reached 3 */
-      if ((delta == 0)||(j == 3))
+      if ( (delta == 0) || (flip_flop_counter >= 3) ) {
 	break;
+      }
 
       /* use delta to make next guess */
-      guess  = GPSguess.gpsSeconds;
-      guess *= E9;
-      guess += GPSguess.gpsNanoSeconds;
+      INT8 guess = XLALGPSToINT8NS ( &GPSguess );
       guess += delta;
 
-      GPSguess.gpsSeconds = guess / E9;
-      guess -= GPSguess.gpsSeconds * E9;	/* get ns remainder */
-      GPSguess.gpsNanoSeconds = guess;
+      XLALINT8NSToGPS( &GPSguess, guess );
 
     } /* for iterations < 100 */
 
   /* check for convergence of root finder */
-  if (iterations == 100) {
-    ABORT ( status, GENERATEPULSARSIGNALH_ESSBCONVERT, GENERATEPULSARSIGNALH_MSGESSBCONVERT);
+  if ( iterations == 100 ) {
+    XLAL_ERROR ( XLAL_EFAILED, "SSB->GPS iterative conversion failed to converge to <= 1ns within 100 iterations: delta = %d ns\n", delta );
   }
 
   /* if we exited because of flip-flop and final delta was +1 then round up to the higher value */
   /* otherwise we are already at the higher value and we do nothing */
-  if ((j == 3)&&(delta == 1)) {
-    if (GPSguess.gpsNanoSeconds<(INT4)1E9-1) GPSguess.gpsNanoSeconds += 1;
-    else {
-      GPSguess.gpsSeconds += 1;
-      GPSguess.gpsNanoSeconds = 0;
+  if ( (flip_flop_counter == 3) && (delta == +1) )
+    {
+      XLALINT8NSToGPS( &GPSguess, XLALGPSToINT8NS ( &GPSguess ) + 1 );
     }
-  }
 
   /* Now that we've found the GPS time that corresponds to the given SSB time */
-  *GPSout = GPSguess;
+  (*GPSout) = GPSguess;
 
+  return XLAL_SUCCESS;
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* LALConvertSSB2GPS() */
+} /* XLALConvertSSB2GPS() */
 
 
 /* ***********************************************************************
@@ -1003,7 +988,6 @@ LALConvertSSB2GPS (LALStatus *status,		/**< pointer to LALStatus structure */
  * module
  ************************************************************************/
 
-#define oneBillion 1000000000;
 /** Check that all timestamps given lie within the range [t0, t1]
  *
  *  return: 0 if ok, ERROR if not
