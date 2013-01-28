@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 55
+# serial 56
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -595,11 +595,7 @@ AC_DEFUN([LALSUITE_WITH_NVCC_CFLAGS],
 [AC_ARG_WITH(
   [nvcc_cflags],
   AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
-  [ if test -n "${with_nvcc_cflags}"
-    then
-      NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_nvcc_cflags}"],[NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"]),)
 ])
 
 AC_DEFUN([LALSUITE_CHECK_CUDA],
