@@ -264,27 +264,13 @@ extern const SFTCatalog empty_SFTCatalog;
 /*================================================================================
  * NEW API: allowing for SFT-v2
  *================================================================================*/
-void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern, SFTConstraints *constraints);
-
-void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
-void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+SFTCatalog *XLALSFTdataFind ( const CHAR *file_pattern, const SFTConstraints *constraints );
 
 int  XLALWriteSFT2fp (const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
 int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
 int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
 int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment);
-
-void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
-void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
-
-void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
-void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints );
-void LALCheckSFTCatalog ( LALStatus *status, INT4 *check_result, SFTCatalog *catalog );
-
 LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
-
-void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
-void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
 
 SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
@@ -296,7 +282,18 @@ const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
  * DEPRECATED LAL-API [use XLAL-API whenever available]
  *================================================================================*/
 void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const CHAR *fname); /* use XLALReadTimestampsFile() instead! */
+void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern, SFTConstraints *constraints);
+void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
+void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
 
+void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
+void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints );
+void LALCheckSFTCatalog ( LALStatus *status, INT4 *check_result, SFTCatalog *catalog );
+
+void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
+void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
 
 /*================================================================================
  * OBSOLETE v1-only API [DEPRECATED!]
