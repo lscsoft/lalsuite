@@ -40,8 +40,7 @@ def get_ifos_from_index(cwb_event):
     """
     ifo_index = list(cwb_event.ifo)
     ndim = cwb_event.ndim
-    return set([CWB_DETECTOR_INDEX[ifo_index[i]-1] for
-                i in range(cwb_event.ndim)])
+    return [CWB_DETECTOR_INDEX[ifo_index[i]-1] for i in range(cwb_event.ndim)]
 
 
 def get_multi_burst(cwb_event,
@@ -53,7 +52,8 @@ def get_multi_burst(cwb_event,
     mb = lsctables.MultiBurst()
 
     ifos = get_ifos_from_index(cwb_event)
-    first_ifo_idx = CWB_DETECTOR_INDEX.index(list(ifos)[0])
+    first_ifo_idx = min(sorted(range(len(ifos)), key=ifos.__getitem__))
+
     if "ifos" in columns:
         mb.set_ifos(ifos)
 
