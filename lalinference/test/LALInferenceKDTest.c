@@ -80,8 +80,15 @@ static int checkFindCell(LALInferenceKDTree *tree, gsl_rng *rng) {
     REAL8 *pt = tree->pts[i];
     LALInferenceKDTree *theCell = LALInferenceKDFindCell(tree, pt, nCell);
 
-    if (nCell > 1 && theCell->npts >= nCell) return 0;
-    if (!inBounds(pt, theCell->lowerLeft, theCell->upperRight)) return 0;
+    if (nCell > 1 && theCell->npts >= nCell) {
+      fprintf(stderr, "Found non-leaf node that has too many points for requested nCell.\n");
+      return 0;
+    }
+
+    if (!inBounds(pt, theCell->lowerLeft, theCell->upperRight)) {
+      fprintf(stderr, "Searched-for point is not in-bounds for cell returned by findCell.\n");
+      return 0;
+    }
   }
 
   /* How about for some points that we make up? */
@@ -97,9 +104,20 @@ static int checkFindCell(LALInferenceKDTree *tree, gsl_rng *rng) {
 
     theCell = LALInferenceKDFindCell(tree, pt, nCell);
     
-    if (theCell == NULL) return 0;
-    if (nCell > 1 && theCell->npts >= nCell) return 0;
-    if (!inBounds(pt, theCell->lowerLeft, theCell->upperRight)) return 0;
+    if (theCell == NULL) {
+      fprintf(stderr, "Random point not contained in some cell of tree.\n");
+      return 0;
+    }
+
+    if (nCell > 1 && theCell->npts >= nCell) {
+      fprintf(stderr, "Random point's cell is non-leaf and contains too many points for requested nCell.\n");
+      return 0;
+    }
+
+    if (!inBounds(pt, theCell->lowerLeft, theCell->upperRight)) {
+      fprintf(stderr, "Random point not contained in bounds of cell returned by findCell.\n");
+      return 0;
+    }
   }
 
   return 1;
