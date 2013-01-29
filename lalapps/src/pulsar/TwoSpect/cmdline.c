@@ -93,6 +93,10 @@ const char *gengetopt_args_info_full_help[] = {
   "      --followUpOutsideULrange  Follow up outliers outside the range of the UL \n                                  values  (default=off)",
   "\nHidden options:",
   "      --signalOnly              SFTs contain only signal, no noise  \n                                  (default=off)",
+  "      --templateTest            Test the doubly-Fourier transformed data \n                                  against a single, exact template  \n                                  (default=off)",
+  "      --templateTestF=DOUBLE    The template test frequency; templateTest flag \n                                  is required",
+  "      --templateTestP=DOUBLE    The template test period; templateTest flag is \n                                  required",
+  "      --templateTestDf=DOUBLE   The template test modulation depth; \n                                  templateTest flag is required",
   "      --ULsolver=INT            Solver function for the upper limit \n                                  calculation: \n                                  0=gsl_ncx2cdf_float_withouttinyprob_solver, \n                                  1=gsl_ncx2cdf_withouttinyprob_solver, \n                                  2=gsl_ncx2cdf_float_solver, \n                                  3=gsl_ncx2cdf_solver, \n                                  4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, \n                                  5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver \n                                   (possible values=\"0\", \"1\", \"2\", \"3\", \n                                  \"4\", \"5\" default=`0')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
@@ -173,11 +177,15 @@ init_help_array(void)
   gengetopt_args_info_help[56] = gengetopt_args_info_full_help[56];
   gengetopt_args_info_help[57] = gengetopt_args_info_full_help[57];
   gengetopt_args_info_help[58] = gengetopt_args_info_full_help[58];
-  gengetopt_args_info_help[59] = 0; 
+  gengetopt_args_info_help[59] = gengetopt_args_info_full_help[59];
+  gengetopt_args_info_help[60] = gengetopt_args_info_full_help[62];
+  gengetopt_args_info_help[61] = gengetopt_args_info_full_help[63];
+  gengetopt_args_info_help[62] = gengetopt_args_info_full_help[64];
+  gengetopt_args_info_help[63] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[60];
+const char *gengetopt_args_info_help[64];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -286,6 +294,10 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->useSSE_given = 0 ;
   args_info->followUpOutsideULrange_given = 0 ;
   args_info->signalOnly_given = 0 ;
+  args_info->templateTest_given = 0 ;
+  args_info->templateTestF_given = 0 ;
+  args_info->templateTestP_given = 0 ;
+  args_info->templateTestDf_given = 0 ;
   args_info->ULsolver_given = 0 ;
   args_info->dopplerMultiplier_given = 0 ;
   args_info->IHSonly_given = 0 ;
@@ -378,6 +390,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->useSSE_flag = 0;
   args_info->followUpOutsideULrange_flag = 0;
   args_info->signalOnly_flag = 0;
+  args_info->templateTest_flag = 0;
+  args_info->templateTestF_orig = NULL;
+  args_info->templateTestP_orig = NULL;
+  args_info->templateTestDf_orig = NULL;
   args_info->ULsolver_arg = 0;
   args_info->ULsolver_orig = NULL;
   args_info->dopplerMultiplier_arg = 1.0;
@@ -458,21 +474,25 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->useSSE_help = gengetopt_args_info_full_help[57] ;
   args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[58] ;
   args_info->signalOnly_help = gengetopt_args_info_full_help[60] ;
-  args_info->ULsolver_help = gengetopt_args_info_full_help[61] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[62] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[63] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[64] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[65] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[66] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[67] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[68] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[69] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[70] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[71] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[72] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[73] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[74] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[75] ;
+  args_info->templateTest_help = gengetopt_args_info_full_help[61] ;
+  args_info->templateTestF_help = gengetopt_args_info_full_help[62] ;
+  args_info->templateTestP_help = gengetopt_args_info_full_help[63] ;
+  args_info->templateTestDf_help = gengetopt_args_info_full_help[64] ;
+  args_info->ULsolver_help = gengetopt_args_info_full_help[65] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[66] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[67] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[68] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[69] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[70] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[71] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[72] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[73] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[74] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[75] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[76] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[77] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[78] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[79] ;
   
 }
 
@@ -665,6 +685,9 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->simpleBandRejection_orig));
   free_string_field (&(args_info->lineDetection_orig));
   free_string_field (&(args_info->FFTplanFlag_orig));
+  free_string_field (&(args_info->templateTestF_orig));
+  free_string_field (&(args_info->templateTestP_orig));
+  free_string_field (&(args_info->templateTestDf_orig));
   free_string_field (&(args_info->ULsolver_orig));
   free_string_field (&(args_info->dopplerMultiplier_orig));
   free_string_field (&(args_info->randSeed_orig));
@@ -852,6 +875,14 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "followUpOutsideULrange", 0, 0 );
   if (args_info->signalOnly_given)
     write_into_file(outfile, "signalOnly", 0, 0 );
+  if (args_info->templateTest_given)
+    write_into_file(outfile, "templateTest", 0, 0 );
+  if (args_info->templateTestF_given)
+    write_into_file(outfile, "templateTestF", args_info->templateTestF_orig, 0);
+  if (args_info->templateTestP_given)
+    write_into_file(outfile, "templateTestP", args_info->templateTestP_orig, 0);
+  if (args_info->templateTestDf_given)
+    write_into_file(outfile, "templateTestDf", args_info->templateTestDf_orig, 0);
   if (args_info->ULsolver_given)
     write_into_file(outfile, "ULsolver", args_info->ULsolver_orig, cmdline_parser_ULsolver_values);
   if (args_info->dopplerMultiplier_given)
@@ -1222,6 +1253,21 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   
   
   /* checks for dependences among options */
+  if (args_info->templateTestF_given && ! args_info->templateTest_given)
+    {
+      fprintf (stderr, "%s: '--templateTestF' option depends on option 'templateTest'%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  if (args_info->templateTestP_given && ! args_info->templateTest_given)
+    {
+      fprintf (stderr, "%s: '--templateTestP' option depends on option 'templateTest'%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  if (args_info->templateTestDf_given && ! args_info->templateTest_given)
+    {
+      fprintf (stderr, "%s: '--templateTestDf' option depends on option 'templateTest'%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
 
   return error;
 }
@@ -1590,6 +1636,10 @@ cmdline_parser_internal (
         { "useSSE",	0, NULL, 0 },
         { "followUpOutsideULrange",	0, NULL, 0 },
         { "signalOnly",	0, NULL, 0 },
+        { "templateTest",	0, NULL, 0 },
+        { "templateTestF",	1, NULL, 0 },
+        { "templateTestP",	1, NULL, 0 },
+        { "templateTestDf",	1, NULL, 0 },
         { "ULsolver",	1, NULL, 0 },
         { "dopplerMultiplier",	1, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
@@ -2311,6 +2361,60 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->signalOnly_flag), 0, &(args_info->signalOnly_given),
                 &(local_args_info.signalOnly_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "signalOnly", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Test the doubly-Fourier transformed data against a single, exact template.  */
+          else if (strcmp (long_options[option_index].name, "templateTest") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->templateTest_flag), 0, &(args_info->templateTest_given),
+                &(local_args_info.templateTest_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "templateTest", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* The template test frequency; templateTest flag is required.  */
+          else if (strcmp (long_options[option_index].name, "templateTestF") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->templateTestF_arg), 
+                 &(args_info->templateTestF_orig), &(args_info->templateTestF_given),
+                &(local_args_info.templateTestF_given), optarg, 0, 0, ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "templateTestF", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* The template test period; templateTest flag is required.  */
+          else if (strcmp (long_options[option_index].name, "templateTestP") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->templateTestP_arg), 
+                 &(args_info->templateTestP_orig), &(args_info->templateTestP_given),
+                &(local_args_info.templateTestP_given), optarg, 0, 0, ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "templateTestP", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* The template test modulation depth; templateTest flag is required.  */
+          else if (strcmp (long_options[option_index].name, "templateTestDf") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->templateTestDf_arg), 
+                 &(args_info->templateTestDf_orig), &(args_info->templateTestDf_given),
+                &(local_args_info.templateTestDf_given), optarg, 0, 0, ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "templateTestDf", '-',
                 additional_error))
               goto failure;
           
