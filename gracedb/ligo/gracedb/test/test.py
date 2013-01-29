@@ -138,6 +138,15 @@ class TestGracedb(unittest.TestCase):
         label = r.json()
         self.assertEqual("DQV", label['name'])
 
+    def test_slot_event(self):
+        """Create a slot"""
+        r = gracedb.createSlot(eventId, "newslot", "event.log")
+        self.assertEqual(r.status, 201) # CREATED
+        r = gracedb.slot(eventId, "newslot")
+        self.assertEqual(r.status, 200)
+        slotname = r.json()['value']
+        self.assertTrue(slotname.endswith("event.log"))
+
     def test_create_cwb(self):
         """Create a CWB event"""
         """burst-cwb.txt"""
@@ -147,7 +156,7 @@ class TestGracedb(unittest.TestCase):
         cwb_event = r.json()
         self.assertEqual(cwb_event['group'], "Test")
         self.assertEqual(cwb_event['analysisType'], "CWB")
-        self.assertEqual(cwb_event['gpstime'], 1012125588)
+        self.assertEqual(cwb_event['gpstime'], 1042312876)
 
     def test_create_lowmass(self):
         """Create a Low Mass event"""
@@ -185,6 +194,16 @@ class TestGracedb(unittest.TestCase):
         self.assertEqual(new_event['gpstime'], 971609249)
 
     def test_upload_binary(self):
+        """
+        Test workaround for Python bug
+        http://bugs.python.org/issue11898
+        Raises exception if workaround fails.
+        """
+        uploadFile = os.path.join(testdatadir, "upload.data.gz")
+        r = gracedb.writeFile(eventId, uploadFile)
+        self.assertEqual(r.status, 201) # CREATED
+
+    def test_unicode_param(self):
         """
         Test workaround for Python bug
         http://bugs.python.org/issue11898

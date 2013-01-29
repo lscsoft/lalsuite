@@ -1,3 +1,6 @@
+SUBDIRS = \
+	triggers
+
 pkgpython_PYTHON = \
 	__init__.py \
 	git_version.py

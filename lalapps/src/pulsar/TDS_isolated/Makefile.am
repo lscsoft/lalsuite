@@ -19,7 +19,7 @@ inference_progs = \
 endif
 endif
 endif
-bin_PROGRAMS = $(frame_progs) $(inference_progs)
+bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_CrabTNHeterodyne
 
 lalapps_heterodyne_pulsar_SOURCES = \
 	heterodyne_pulsar.c \
@@ -41,6 +41,11 @@ lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 
 lalapps_create_pulsar_signal_frame_SOURCES = \
 	create_pulsar_signal_frame.c
+
+lalapps_CrabTNHeterodyne_SOURCES = \
+	CrabTNHeterodyne.c \
+	HeterodyneCrabPulsar.c \
+	HeterodyneCrabPulsar.h
 
 if HAVE_PYTHON
 pkgpython_DATA = \

@@ -1857,11 +1857,12 @@ int XLALSimInspiralChooseFDWaveform(
             if( !XLALSimInspiralSpinOrderIsDefault(
                     XLALSimInspiralGetSpinOrder(waveFlags) ) )
                 ABORT_NONDEFAULT_SPIN_ORDER(waveFlags);
-            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
-                ABORT_NONZERO_SPINS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralTaylorF2(htilde, phiRef, deltaF, m1, m2, f_min,
-                    r, lambda1, lambda2,XLALSimInspiralGetTidalOrder(waveFlags),
+            ret = XLALSimInspiralTaylorF2(htilde, phiRef, deltaF, m1, m2, S1z, S2z, f_min,
+                    r, lambda1, lambda2, XLALSimInspiralGetSpinOrder(waveFlags),
+                    XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
             break;
 

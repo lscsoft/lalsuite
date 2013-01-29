@@ -211,8 +211,8 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
  * NOTE: the modes h_2_2 and h_22 will be modified in place
  */
 int XLALSimInspiralConstantPrecessionConeWaveform(
-				REAL8TimeSeries* hp, /**< Output precessing plus polarization */
-				REAL8TimeSeries* hx, /**< Output precessing cross polarization*/
+				REAL8TimeSeries** hp, /**< Output precessing plus polarization */
+				REAL8TimeSeries** hx, /**< Output precessing cross polarization*/
 				COMPLEX16TimeSeries* h_2_2, /**< Input non-precessing (2,-2) mode */
 				COMPLEX16TimeSeries* h_22, /**< Input non-precessing (2,2) mode */
 				double precess_freq, /**< Precession frequency in Hz */
@@ -228,28 +228,28 @@ int XLALSimInspiralConstantPrecessionConeWaveform(
         if( ret != XLAL_SUCCESS )
             XLAL_ERROR( XLAL_EFUNC );
 
-		if( !hp ){
-			XLALDestroyREAL8TimeSeries( hp );
-			hp = XLALCreateREAL8TimeSeries(
-				"h_+ precessed waveform",
-				&(h_22->epoch),
-				h_22->f0,
-				h_22->deltaT,
-				&(h_22->sampleUnits),
-				h_22->data->length
-			);
+		if( !(*hp) ){
+			XLALDestroyREAL8TimeSeries( *hp );
 		}
-		if( !hx ){
-			XLALDestroyREAL8TimeSeries( hx );
-			hx = XLALCreateREAL8TimeSeries(
-				"h_x precessed waveform",
-				&(h_22->epoch),
-				h_22->f0,
-				h_22->deltaT,
-				&(h_22->sampleUnits),
-				h_22->data->length
-			);
+		*hp = XLALCreateREAL8TimeSeries(
+			"h_+ precessed waveform",
+			&(h_22->epoch),
+			h_22->f0,
+			h_22->deltaT,
+			&(h_22->sampleUnits),
+			h_22->data->length
+		);
+		if( !(*hx) ){
+			XLALDestroyREAL8TimeSeries( *hx );
 		}
+		*hx = XLALCreateREAL8TimeSeries(
+			"h_x precessed waveform",
+			&(h_22->epoch),
+			h_22->f0,
+			h_22->deltaT,
+			&(h_22->sampleUnits),
+			h_22->data->length
+		);
 
 		unsigned int i;
 		COMPLEX16 x_t = 0.I;
@@ -259,8 +259,8 @@ int XLALSimInspiralConstantPrecessionConeWaveform(
 		for(i=0; i<h_22->data->length; i++){
 			x_t = h_22->data->data[i] * XLALSpinWeightedSphericalHarmonic( view_th, view_ph, -2, 2, 2 );
 			x_t += h_2_2->data->data[i] * XLALSpinWeightedSphericalHarmonic( view_th, view_ph, -2, 2, -2 );
-			hp->data->data[i] = crealf( x_t );
-			hx->data->data[i] = cimagf( x_t );
+			(*hp)->data->data[i] = crealf( x_t );
+			(*hx)->data->data[i] = cimagf( x_t );
 		}
 
 		// User should do this.

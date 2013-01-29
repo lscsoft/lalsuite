@@ -94,7 +94,7 @@ sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
 outdirectory /home/egoetz/TwoSpect/ULfactor/$jobnum
-sftType MFD
+sftType standard
 IFO H1
 FFTplanFlag 1
 fastchisqinv
@@ -109,7 +109,7 @@ EOF
    system("/home/egoetz/opt/lscsoft/bin/lalapps_Makefakedata_v4 @/local/user/egoetz/$$/mfdconfig");
    die "system lalapps_Makefakedata_v4 failed: $?" if $?;
    
-   system("/home/egoetz/opt/lscsoft/bin/lalapps_TwoSpect --config=/local/user/egoetz/$$/twospectconfig");
+   system("/home/egoetz/TwoSpect/ULfactor/lalapps_TwoSpect --config=/local/user/egoetz/$$/twospectconfig");
    die "system lalapps_TwoSpect failed: $?" if $?;
    
    system("rm /local/user/egoetz/$$/*.sft");

@@ -114,12 +114,15 @@ EOF
       if($line =~ /^(\d+.\d+) (-?\d+.\d+)/) {
 
          my $disttest1 = sqrt(($1-$alpha)*($1-$alpha) + ($2-$delta)*($2-$delta));
-         my $disttest2 = sqrt((2.0*pi-$1+$alpha)*(2.0*pi-$1+$alpha) + ($2-$delta)*($2-$delta));
+         my $disttest2 = sqrt(($1-2.0*pi-$alpha)*($1-2.0*pi-$alpha) + ($2-$delta)*($2-$delta));
+         my $disttest3 = sqrt(($1+2.0*pi-$alpha)*($1+2.0*pi-$alpha) + ($2-$delta)*($2-$delta));
          my $dist = $disttest1;
-         if($disttest1<=$disttest2) {
+         if($disttest1<=$disttest2 && $disttest1<=$disttest3) {
             $dist = $disttest1;
-         } else {
+         } elsif($disttest2<=$disttest1 && $disttest2<=$disttest3) {
             $dist = $disttest2;
+         } else {
+            $dist = $disttest3;
          }
 
          if($dist<$dist1 || $dist1<0.0) {
