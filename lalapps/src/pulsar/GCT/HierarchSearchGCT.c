@@ -885,7 +885,11 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf(LOG_NORMAL, "dFreqStack = %e, df1dot = %e, df2dot = %e\n", dFreqStack, df1dot, df2dot);
 
   /* number of coarse grid spindown values */
-  nf1dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[1] / df1dot) + 1;
+  if ( df1dot == 0 ) {
+    nf1dot = 1;
+  } else {
+    nf1dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[1] / df1dot) + 1;
+  }
 
   /* set number of fine-grid spindowns */
   if ( LALUserVarWasSet(&uvar_gammaRefine) ) {
@@ -1237,7 +1241,11 @@ int MAIN( int argc, char *argv[]) {
         semiCohPar.extraBinsFstat = usefulParams.extraBinsFstat;
 
         /* calculate total number of bins for Fstat */
-        binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
+        if ( dFreqStack == 0 ) {
+          binsFstatSearch = 1;
+        } else {
+          binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
+        }
         binsFstat1 = binsFstatSearch + 2 * semiCohPar.extraBinsFstat;
 
         /* loop over segments for memory allocation */
