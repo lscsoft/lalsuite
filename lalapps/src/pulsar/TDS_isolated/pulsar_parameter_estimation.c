@@ -1394,14 +1394,18 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
     UINT4 i = 0, j = 0;
 
     /* use h0 prior read in from a file */
-    REAL8 h0low = 0., h0high = 0., pdflow = 0., pdfhigh = 0.;
-    REAL8 cilow = 0., cihigh = 0.;
+    REAL8 h0low = 0., h0high = 0., dh0 = prior.h0vals->data[1] - prior.h0vals->data[0];
+    REAL8 cilow = 0., cihigh = 0., dci = prior.civals->data[1] - prior.civals->data[0];
+    REAL8 pdflow = 0., pdfhigh = 0., grad = 0.;
     REAL8 pdf00 = 0., pdf01 = 0., pdf10 = 0., pdf11 = 0.;
-    REAL8 grad = 0.;
+
+    /* reject points outside allowable h0 and cos(iota) range */
+    if ( prior.vars.h0 < 0. || prior.vars.ci < -1. || prior.vars.ci > 1. )
+      return -INFINITY;
 
     /* find the nearest h0 point */
-    if ( prior.vars.h0 <= prior.h0vals->data[0] ) i = 0;
-    else if ( prior.vars.h0 >= prior.h0vals->data[prior.h0vals->length-1] )
+    if ( prior.vars.h0 < prior.h0vals->data[0] ) i = 0;
+    else if ( prior.vars.h0 > prior.h0vals->data[prior.h0vals->length-1] )
       i = prior.h0vals->length;
     else{
       for( i = 1; i < prior.h0vals->length; i++ ){
@@ -1411,8 +1415,8 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
     }
 
     /* find the nearest cos(iota) point */
-    if ( prior.vars.ci <= prior.civals->data[0] ) j = 0;
-    else if ( prior.vars.ci >= prior.civals->data[prior.civals->length-1] )
+    if ( prior.vars.ci < prior.civals->data[0] ) j = 0;
+    else if ( prior.vars.ci > prior.civals->data[prior.civals->length-1] )
       j = prior.civals->length;
     else{
       for( j = 1; j < prior.civals->length; j++ ){
@@ -1421,58 +1425,76 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
       }
     }
 
-    if( i == 0 || i == prior.h0vals->length ){
-      /* if the point is less than or greater than the edge of h0 range then
-       * just linearly interpolate in cos(iota) */
-      if( i == 0 && j == 0 ) pri += log( prior.h0cipdf[i][j] );
-      else if( i == 0 && j == prior.civals->length )
-        pri += log( prior.h0cipdf[i][j-1] );
-      else if( i == prior.h0vals->length && j == 0 )
-        pri += log( prior.h0cipdf[i-1][j] );
-      else if( i == prior.h0vals->length && j == prior.civals->length )
-        pri += log( prior.h0cipdf[i-1][j-1] );
-      else{
+    /* if point is out of matrix range set prior to be very small (but non-zero)
+     * just in case the MCMC from which the matrix was created didn't well bound
+     * the posterior. */
+    if( i == 0 || i == prior.h0vals->length || j == 0 || j == prior.civals->length ){
+      if ( (prior.vars.h0 > prior.h0vals->data[0] - dh0/2. &&
+           prior.vars.h0 < prior.h0vals->data[0]) && ( j != 0 ) &&
+           ( j != prior.civals->length ) ){
         cilow = prior.civals->data[j-1];
         cihigh = prior.civals->data[j];
 
-        if ( i == 0 ){
-          pdflow = prior.h0cipdf[i][j-1];
-          pdfhigh = prior.h0cipdf[i][j];
-        }
-        else{
-          pdflow = prior.h0cipdf[i-1][j-1];
-          pdfhigh = prior.h0cipdf[i-1][j];
-        }
+        pdflow = prior.h0cipdf[i][j-1];
+        pdfhigh = prior.h0cipdf[i][j];
 
         grad = (pdfhigh-pdflow)/(cihigh-cilow);
         pri += log( pdflow + grad*(prior.vars.ci - cilow) );
       }
-    }
-    else if ( j == 0 || j == prior.civals->length ){
-      /* if the point is less than or greater than the edge of ci range then
-       * just linearly interpolate in h0 */
-      if( j == 0 && i == 0 ) pri += log( prior.h0cipdf[i][j] );
-      else if( j == 0 && i == prior.h0vals->length )
-        pri += log( prior.h0cipdf[i-1][j] );
-      else if( j == prior.civals->length && i == 0 )
-        pri += log( prior.h0cipdf[i][j-1] );
-      else if( j == prior.civals->length && i == prior.h0vals->length )
-        pri += log( prior.h0cipdf[i-1][j-1] );
-      else{
+      else if( (prior.vars.h0 < prior.h0vals->data[prior.h0vals->length-1] + dh0/2. &&
+           prior.vars.h0 > prior.h0vals->data[prior.h0vals->length-1]) && ( j != 0 ) &&
+           ( j != prior.civals->length ) ){
+        cilow = prior.civals->data[j-1];
+        cihigh = prior.civals->data[j];
+
+        pdflow = prior.h0cipdf[i-1][j-1];
+        pdfhigh = prior.h0cipdf[i-1][j];
+
+        grad = (pdfhigh-pdflow)/(cihigh-cilow);
+        pri += log( pdflow + grad*(prior.vars.ci - cilow) );
+      }
+      else if ( (prior.vars.ci > prior.civals->data[0] - dci/2. &&
+           prior.vars.ci < prior.civals->data[0]) && ( i != 0 ) &&
+           ( i != prior.h0vals->length ) ){
         h0low = prior.h0vals->data[i-1];
         h0high = prior.h0vals->data[i];
 
-        if ( j == 0 ){
-          pdflow = prior.h0cipdf[i-1][j];
-          pdfhigh = prior.h0cipdf[i][j];
-        }
-        else{
-          pdflow = prior.h0cipdf[i-1][j-1];
-          pdfhigh = prior.h0cipdf[i][j-1];
-        }
+        pdflow = prior.h0cipdf[i-1][j];
+        pdfhigh = prior.h0cipdf[i][j];
 
         grad = (pdfhigh-pdflow)/(h0high-h0low);
         pri += log( pdflow + grad*(prior.vars.h0 - h0low) );
+      }
+      else if( (prior.vars.ci < prior.civals->data[prior.civals->length-1] + dci/2. &&
+           prior.vars.ci > prior.civals->data[prior.civals->length-1]) && ( i != 0 ) &&
+           ( i != prior.h0vals->length ) ){
+        h0low = prior.h0vals->data[i-1];
+        h0high = prior.h0vals->data[i];
+
+        pdflow = prior.h0cipdf[i-1][j-1];
+        pdfhigh = prior.h0cipdf[i][j-1];
+
+        grad = (pdfhigh-pdflow)/(h0high-h0low);
+        pri += log( pdflow + grad*(prior.vars.h0 - h0low) );
+      }
+      else{
+        /* if h0 is outside the h0 range then make small (but non-zero) prior fall
+         * off exponentially outside the h0 range */
+        REAL8 hdist = 0.;
+        REAL8 hwidth = prior.h0vals->data[prior.h0vals->length-1] - prior.h0vals->data[0];
+
+        REAL8 cidist = 0.;
+        REAL8 ciwidth = prior.civals->data[prior.civals->length-1] - prior.civals->data[0];
+
+        if ( i == 0 ) hdist = prior.h0vals->data[i] - prior.vars.h0;
+        if ( i == prior.h0vals->length )
+          hdist = prior.vars.h0 - prior.h0vals->data[i-1];
+
+        if ( j == 0 ) cidist = prior.civals->data[j] - prior.vars.ci;
+        if ( j == prior.civals->length )
+          cidist = prior.vars.ci - prior.civals->data[j-1];
+
+        pri += -20. - (hdist/hwidth) - (cidist/ciwidth);
       }
     }
     else{ /* bilinearly interpolate */
