@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 57
+# serial 58
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -268,11 +268,10 @@ AC_DEFUN([LALSUITE_ENABLE_DEBUG],
 [AC_ARG_ENABLE(
   [debug],
   AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
-  [ case "${enableval}" in
-      yes) ;;
-      no) AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code) ;;
-      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
-    esac
+  [AS_CASE(["${enableval}"],
+    [yes],,
+    [no],AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code),
+    AC_MSG_ERROR(bad value for ${enableval} for --enable-debug))
   ], )
 ])
 
