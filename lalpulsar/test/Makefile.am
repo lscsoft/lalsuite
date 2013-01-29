@@ -6,6 +6,7 @@ XMLTEST = LALPulsarXMLTest
 endif
 
 check_PROGRAMS = \
+	BinarySSBTimesTest \
 	ExtrapolatePulsarSpinsTest \
 	FitToPulsarTest \
 	FlatMeshTest \
