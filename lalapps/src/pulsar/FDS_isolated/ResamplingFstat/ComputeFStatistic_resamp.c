@@ -2784,7 +2784,11 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       else
 	{
 	  /* compute binary time corrections to the SSB time delays and SSB time derivitive */
-	  TRY ( LALGetMultiBinarytimes ( status->statusPtr, &multiBinary, multiSSB, multiDetStates, doppler->orbit, doppler->refTime ), status );
+	  if ( (XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, doppler->orbit )) != XLAL_SUCCESS )
+            {
+              XLALPrintError("XLALAddMultiBinaryTimes() failed with xlalErrno = %d\n\n", xlalErrno );
+              ABORTXLAL( status );
+            }
 
 	  /* store these in buffer if available */
 	  if ( Buffer )
@@ -2809,7 +2813,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 	XLALPrintError("\nXLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
- 
+
      /* store these in buffer if available */
       if ( Buffer )
 	{

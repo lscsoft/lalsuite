@@ -74,7 +74,7 @@ extern "C" {
  * We also store the SSB reference-time tau0.
  */
 typedef struct tagSSBtimes {
-  LIGOTimeGPS refTime;
+  LIGOTimeGPS refTime;		/**< reference-time 'tau0' */
   REAL8Vector *DeltaT;		/**< Time-difference of SFT-alpha - tau0 in SSB-frame */
   REAL8Vector *Tdot;		/**< dT/dt : time-derivative of SSB-time wrt local time for SFT-alpha */
 } SSBtimes;
@@ -201,21 +201,10 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 		       const CmplxAMCoeffs *amcoe,
 		       const ComputeFParams *params);
 
-void
-LALGetBinarytimes (LALStatus *,
-		   SSBtimes *tBinary,
-		   const SSBtimes *tSSB,
-		   const DetectorStateSeries *DetectorStates,
-		   const BinaryOrbitParams *binaryparams,
-		   LIGOTimeGPS refTime);
-
-void
-LALGetMultiBinarytimes (LALStatus *status,
-			MultiSSBtimes **multiBinary,
-			const MultiSSBtimes *multiSSB,
-			const MultiDetectorStateSeries *multiDetStates,
-			const BinaryOrbitParams *binaryparams,
-			LIGOTimeGPS refTime);
+int XLALAddBinaryTimes ( SSBtimes **tSSBOut, const SSBtimes *tSSBIn, const BinaryOrbitParams *binaryparams );
+int XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut, const MultiSSBtimes *multiSSBIn, const BinaryOrbitParams *binaryparams );
+SSBtimes *XLALDuplicateSSBtimes ( const SSBtimes *tSSB );
+MultiSSBtimes *XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB );
 
 void
 LALGetSSBtimes (LALStatus *,
