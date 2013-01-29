@@ -222,7 +222,6 @@ COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuation
 SFTVector *XLALExtractSFTBand ( const SFTVector *inSFTs, REAL8 f_min, REAL8 Band );
 int XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed );
 int XLALFreeMem ( ConfigVars_t *cfg );
-REAL4TimeSeries *XLALGenerateLineFeature ( const PulsarSignalParams *params );
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
@@ -1738,45 +1737,6 @@ is_directory ( const CHAR *fname )
     return 1;
 
 } /* is_directory() */
-
-/**
- * Generate a REAL4TimeSeries containing a sinusoid with
- * amplitude 'h0', frequency 'Freq-fHeterodyne' and initial phase 'phi0'.
- */
-REAL4TimeSeries *
-XLALGenerateLineFeature ( const PulsarSignalParams *params )
-{
-  XLAL_CHECK_NULL ( params != NULL, XLAL_EINVAL );
-
-  /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
-  char *name;
-  XLAL_CHECK_NULL ( (name = XLALGetChannelPrefix ( params->site->frDetector.name )) != NULL, XLAL_EFUNC );
-
-  /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
-  UINT4 length = (UINT4) ceil( params->samplingRate * params->duration);
-  REAL8 deltaT = 1.0 / params->samplingRate;
-  REAL8 tStart = XLALGPSGetREAL8 ( &params->startTimeGPS );
-
-  LALUnit units = empty_LALUnit;
-  REAL4TimeSeries *ret = XLALCreateREAL4TimeSeries (name, &(params->startTimeGPS), params->fHeterodyne, deltaT, &units, length);
-  XLAL_CHECK_NULL ( ret != NULL, XLAL_EFUNC, "XLALCreateREAL4TimeSeries() failed.\n");
-
-  XLALFree( name );
-
-  REAL8 h0 = params->pulsar.aPlus + sqrt ( pow(params->pulsar.aPlus,2) - pow(params->pulsar.aCross,2) );
-  REAL8 omH = LAL_TWOPI * ( params->pulsar.f0 - params->fHeterodyne );
-
-  for ( UINT4 i = 0; i < length; i++ )
-    {
-      REAL8 ti = tStart + i * deltaT;
-      ret->data->data[i] = h0 * sin( omH * ti  + params->pulsar.phi0 );
-    }
-
-  /* return final timeseries */
-  return ret;
-
-} /* XLALGenerateLineFeature() */
-
 
 /**
  * Check whether given string qualifies as a valid 'description' field of a FRAME (or SFT)

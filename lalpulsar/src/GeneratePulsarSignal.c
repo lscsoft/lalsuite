@@ -50,6 +50,7 @@ static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining
 /* ----- DEFINES ----- */
 
 /*---------- Global variables ----------*/
+
 /* empty init-structs for the types defined in here */
 static SpinOrbitCWParamStruc emptyCWParams;
 static PulsarCoherentGW emptySignal;
@@ -57,7 +58,7 @@ static PulsarCoherentGW emptySignal;
 const PulsarSignalParams empty_PulsarSignalParams;
 const SFTParams empty_SFTParams;
 const SFTandSignalParams empty_SFTandSignalParams;
-static LALUnit emptyUnit;
+static LALUnit empty_LALUnit;
 
 /** Generate a time-series at the detector for a given pulsar.
  */
@@ -201,7 +202,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
   REAL8 fHet = params->fHeterodyne;
 
   /* ok, we  need to prepare the output time-series */
-  REAL4TimeSeries *output = XLALCreateREAL4TimeSeries ( "", &(params->startTimeGPS), fHet, dt, &emptyUnit, numSteps );
+  REAL4TimeSeries *output = XLALCreateREAL4TimeSeries ( "", &(params->startTimeGPS), fHet, dt, &empty_LALUnit, numSteps );
   XLAL_CHECK_NULL ( output != NULL, XLAL_EFUNC, "XLALCreateREAL4TimeSeries() failed with xlalErrno = %d\n", xlalErrno );
 
   // internal interpolation parameters for LALPulsarSimulateCoherentGW()
@@ -976,6 +977,43 @@ int XLALConvertSSB2GPS ( LIGOTimeGPS *GPSout,			/**< [out] GPS-arrival-time at d
   return XLAL_SUCCESS;
 
 } /* XLALConvertSSB2GPS() */
+
+/**
+ * Generate a REAL4TimeSeries containing a sinusoid with
+ * amplitude 'h0', frequency 'Freq-fHeterodyne' and initial phase 'phi0'.
+ */
+REAL4TimeSeries *
+XLALGenerateLineFeature ( const PulsarSignalParams *params )
+{
+  XLAL_CHECK_NULL ( params != NULL, XLAL_EINVAL );
+
+  /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
+  char *name;
+  XLAL_CHECK_NULL ( (name = XLALGetChannelPrefix ( params->site->frDetector.name )) != NULL, XLAL_EFUNC );
+
+  /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
+  UINT4 length = (UINT4) ceil( params->samplingRate * params->duration);
+  REAL8 deltaT = 1.0 / params->samplingRate;
+  REAL8 tStart = XLALGPSGetREAL8 ( &params->startTimeGPS );
+
+  LALUnit units = empty_LALUnit;
+  REAL4TimeSeries *ret;
+  XLAL_CHECK_NULL ( (ret = XLALCreateREAL4TimeSeries (name, &(params->startTimeGPS), params->fHeterodyne, deltaT, &units, length)) != NULL, XLAL_EFUNC );
+  XLALFree ( name );
+
+  REAL8 h0 = params->pulsar.aPlus + sqrt ( pow(params->pulsar.aPlus,2) - pow(params->pulsar.aCross,2) );
+  REAL8 omH = LAL_TWOPI * ( params->pulsar.f0 - params->fHeterodyne );
+
+  for ( UINT4 i = 0; i < length; i++ )
+    {
+      REAL8 ti = tStart + i * deltaT;
+      ret->data->data[i] = h0 * sin( omH * ti  + params->pulsar.phi0 );
+    }
+
+  /* return final timeseries */
+  return ret;
+
+} /* XLALGenerateLineFeature() */
 
 
 /* ***********************************************************************
