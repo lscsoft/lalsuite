@@ -2585,21 +2585,22 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    if (args_info.keepOnlyTopNumIHS_given) params->keepOnlyTopNumIHS = args_info.keepOnlyTopNumIHS_arg;         //Keep only top X IHS candidates
    else params->keepOnlyTopNumIHS = -1;
    if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;  //Simple band rejection (default off)
+   else params->simpleSigmaExclusion = -1.0;
    if (args_info.lineDetection_given) params->lineDetection = args_info.lineDetection_arg;                     //Line detection
-   
+   else params->lineDetection = -1.0;
    
    params->log10templatefar = log10(params->templatefar);                        //log_10(template FAR)
    
    //Settings for IHS FOM
-   //Exit with error if neither is chosen
+   //Exit with error if both or neither is chosen
+   if ((args_info.ihsfomfar_given && args_info.ihsfom_given) || (!args_info.ihsfomfar_given && !args_info.ihsfom_given)) {
+      fprintf(stderr, "%s: You must choose only one of the IHS FOM FAR argument or the IHS FOM argument.\n", __func__);
+      XLAL_ERROR(XLAL_EINVAL);
+   }
    if (args_info.ihsfomfar_given) params->ihsfomfar = args_info.ihsfomfar_arg;   //IHS figure of merit false alarm rate
    else params->ihsfomfar = 0.0;
    if (args_info.ihsfom_given) params->ihsfom = args_info.ihsfom_arg;            //IHS figure of merit threshold value
    else params->ihsfom = 0.0;
-   if ((params->ihsfom!=0.0 && params->ihsfomfar!=0.0) || (params->ihsfom==0.0 && params->ihsfomfar==0.0)) {
-      fprintf(stderr, "%s: You must choose either the IHS FOM FAR argument or the IHS FOM argument.\n", __func__);
-      XLAL_ERROR(XLAL_EINVAL);
-   }
    
    //Blocksize should be an odd number
    if (params->blksize % 2 != 1) params->blksize += 1;
