@@ -53,6 +53,12 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* Hooks for Einstein@Home / BOINC
    These are defined to do nothing special in the standalone case
    and will be set in boinc_extras.h if EAH_BOINC is set
@@ -123,18 +129,6 @@ int global_argc;
 #define Vspin_GCT  = 465.10;
 #define REARTH_GCT = 6.378140e06;
 #define C_GCT      = 299792458;
-
-/**
- * Pre-factors for frequency and spindown spacings:
- * \f$\delta f^{(s)} = \text{COARSE_DFsDOT} \frac{\sqrt{\mu}}{T^{s+1}}\f$
- * Derived from diagonal elements of basic frequency/spindown metric:
- * \f$\delta f^{(s)} = 2 \sqrt{\frac{\mu}}{\gamma_{ii}}\f$
- * where
- * \f$\gamma_{ii} = \frac{4 (1+i)^2 \pi^2 T^{2+2i}}{(3+2i) ((2+i)!)^2}\f$
- */
-#define COARSE_DF0DOT   1.10266
-#define COARSE_DF1DOT   2.13529
-#define COARSE_DF2DOT   6.73735
 
 /* ---------- Macros -------------------- */
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
@@ -786,28 +780,37 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* set Fstat calculation frequency resolution (coarse grid) */
-  if ( LALUserVarWasSet(&uvar_dFreq) ) {
-    usefulParams.dFreqStack = uvar_dFreq;
-  }
-  else {
-    usefulParams.dFreqStack = -1;
-  }
-
-  /* set Fstat spindown resolution (coarse grid) */
-  if ( LALUserVarWasSet(&uvar_df1dot) ) {
-    usefulParams.df1dot = uvar_df1dot;
-  }
-  else {
-    usefulParams.df1dot = -1;
+  if ( LALUserVarWasSet(&uvar_FreqBand) ) {
+    if ( LALUserVarWasSet(&uvar_dFreq) ) {
+      usefulParams.dFreqStack = uvar_dFreq;
+    } else {
+      LALPrintError("--dFreq is required if --FreqBand is given\n");
+      return( HIERARCHICALSEARCH_EBAD );
+    }
+  } else {
+    usefulParams.dFreqStack = 0;
   }
 
   /* set Fstat spindown resolution (coarse grid) */
-  if ( LALUserVarWasSet(&uvar_f2dot) || LALUserVarWasSet(&uvar_f2dotBand) ) {
+  if ( LALUserVarWasSet(&uvar_f1dotBand) ) {
+    if ( LALUserVarWasSet(&uvar_df1dot) ) {
+      usefulParams.df1dot = uvar_df1dot;
+    } else {
+      LALPrintError("--df1dot is required if --f1dotBand is given\n");
+      return( HIERARCHICALSEARCH_EBAD );
+    }
+  } else {
+    usefulParams.df1dot = 0;
+  }
+
+  /* set Fstat 2nd spindown resolution (coarse grid) */
+  if ( LALUserVarWasSet(&uvar_f2dotBand) ) {
     if ( LALUserVarWasSet(&uvar_df2dot) ) {
       usefulParams.df2dot = uvar_df2dot;
     }
     else {
-      usefulParams.df2dot = -1;
+      LALPrintError("--df2dot is required if --f2dotBand is given\n");
+      return( HIERARCHICALSEARCH_EBAD );
     }
   }
   else {
@@ -2004,7 +2007,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
                 MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
                 UsefulStageVariables *in, /**< input params */
                 BOOLEAN useWholeSFTs,	/**< special switch: load all given frequency bins from SFTs */
-                REAL8 mismatch1		/**< 'mismatch1' user-input needed here internally ... */
+                REAL8 UNUSED mismatch1		/**< 'mismatch1' user-input needed here internally ... */
                 )
 {
   SFTCatalog *catalog = NULL;
@@ -2155,21 +2158,10 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_endTime, tEndGPS, &in->spinRange_refTime), status);
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_midTime, tMidGPS, &in->spinRange_refTime), status);
 
-  /* set Fstat calculation frequency resolution (coarse grid) */
-  if ( in->dFreqStack < 0 ) {
-    in->dFreqStack = COARSE_DF0DOT * sqrt(mismatch1) / in->tStack;
-  }
-
   /* set Fstat spindown resolution (coarse grid) */
-  if ( in->df1dot < 0 ) {
-    in->df1dot = COARSE_DF1DOT * sqrt(mismatch1) / ( in->tStack * in->tStack );
-  }
   in->df1dot = HSMIN(in->df1dot, in->spinRange_midTime.fkdotBand[1]);
 
   /* set Fstat 2nd spindown resolution (coarse grid) */
-  if ( in->df2dot < 0 ) {
-    in->df2dot = COARSE_DF2DOT * sqrt(mismatch1) / ( in->tStack * in->tStack * in->tStack );
-  }
   in->df2dot = HSMIN(in->df2dot, in->spinRange_midTime.fkdotBand[2]);
 
   /* calculate number of bins for Fstat overhead due to residual spin-down */
