@@ -1073,7 +1073,7 @@ query'
     latextext.append( \
 """\
 %s & $%.2f$ & $%s$ %s %s \
-""" % (re.sub('\-', '\\textminus', pname), f0, exp_latex_str(f1, 2), distlatex, \
+""" % (re.sub('\-', '\\\\textminus', pname), f0, exp_latex_str(f1, 2), distlatex, \
 sdlimtxtlatex) )
 
     # get time series and PSD plots
