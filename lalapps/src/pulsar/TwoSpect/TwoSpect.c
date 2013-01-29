@@ -2823,8 +2823,8 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr, "%s: An ephemeris year/type suffix must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
-   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*earth_ephemeris));
-   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*sun_ephemeris));
+   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*earth_ephemeris));
+   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*sun_ephemeris));
    if (earth_ephemeris==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*earth_ephemeris));
       XLAL_ERROR(XLAL_ENOMEM);
