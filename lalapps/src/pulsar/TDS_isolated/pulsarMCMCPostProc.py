@@ -1048,11 +1048,11 @@ query'
     iscorlatex = ''
     if f1sd != f1:
       iscor = '<sup>&dagger;</sup>'
-      iscorlatex = '^{\dagger}'
+      iscorlatex = '$^{\dagger}$'
 
     if not swinj and not hwinj:
       sdlimtxthtml = '<td>%s%s</td>' % (exp_str(sdlim), iscor)
-      sdlimtxtlatex = '& $%s$$%s$' % (exp_latex_str(sdlim), iscorlatex)
+      sdlimtxtlatex = '& $%s$%s' % (exp_latex_str(sdlim), iscorlatex)
       disthtml = '<td>%.1f</td>\n' % dist
       distlatex = '& %.1f' % dist
     else:
@@ -1073,7 +1073,7 @@ query'
     latextext.append( \
 """\
 %s & $%.2f$ & $%s$ %s %s \
-""" % (re.sub('\-', '\\textminus', pname), f0, exp_latex_str(f1, 2), distlatex, \
+""" % (re.sub('\-', '\\\\textminus', pname), f0, exp_latex_str(f1, 2), distlatex, \
 sdlimtxtlatex) )
 
     # get time series and PSD plots
