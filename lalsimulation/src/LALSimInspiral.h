@@ -53,6 +53,7 @@ typedef enum {
                          * the waveform given by \c TaylorT1 approximant (see [\ref dis2000] for details);
                          * Outputs a frequency-domain wave. */
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave. */
+   TaylorR2F4,		/**< A frequency domain model closely related to TaylorT4 */
    TaylorF2RedSpin,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec]*/
    TaylorF2RedSpinTidal,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec] plus tidal terms (http://arxiv.org/abs/1101.1673) */
    PadeT1,		/**< Time-domain P-approximant; Outputs a time-domain wave. */
@@ -60,8 +61,10 @@ typedef enum {
    EOB,			/**< Effective one-body waveform; Outputs a time-domain wave. */
    BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri [\ref BCV03]; Outputs a frequency-domain wave. */
    BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects [\ref BCV03b]; Outputs a frequency-domain wave. */
+   SpinTaylorT2,	/**< Spinning case T2 models */
    SpinTaylorT3,	/**< Spinning case T3 models */
    SpinTaylorT4,	/**< Spinning case T4 models (lalsimulation's equivalent of SpinTaylorFrameless) */
+   SpinTaylorF2,	/**< Spinning case F2 models (single spin only) */
    SpinTaylorFrameless,	/**< Spinning case PN models (replace SpinTaylor by removing the coordinate singularity) */
    SpinTaylor,		/**< Spinning case PN models (should replace SpinTaylorT3 in the future) */
    PhenSpinTaylorRD,	/**< Phenomenological waveforms, interpolating between a T4 spin-inspiral and the ringdown. */
@@ -1726,6 +1729,24 @@ int XLALSimInspiralTaylorF2(
 		const INT4 amplitudeO           /**< twice PN amplitude order */
 		);
 
+int XLALSimInspiralSpinTaylorF2(
+	COMPLEX16FrequencySeries **htilde_out, /**< frequency-domain waveform */
+	REAL8 psi,                      /**< desired polarization */
+	REAL8 phic,                     /**< coalescence GW phase */
+	REAL8 deltaF,                   /**< sampling frequency (Hz) */
+	REAL8 m1_SI,                    /**< mass of companion 1 (kg) */
+	REAL8 m2_SI,                    /**< mass of companion 2 (kg) */
+	REAL8 fStart,                   /**< start GW frequency (Hz) */
+	REAL8 r,                        /**< distance of source (m) */
+	REAL8 s1x,                      /**< initial value of S1x */
+	REAL8 s1y,                      /**< initial value of S1y */
+	REAL8 s1z,                      /**< initial value of S1z */
+	REAL8 lnhatx,                   /**< initial value of LNhatx */
+	REAL8 lnhaty,                   /**< initial value of LNhaty */
+	REAL8 lnhatz,                   /**< initial value of LNhatz */
+	int phaseO,                     /**< twice PN phase order */
+	int amplitudeO                  /**< twice PN amplitude order */
+	);
 
 /**
  * Functions for generic spinning waveforms. 
@@ -1794,6 +1815,45 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	INT4 phaseO               /**< twice post-Newtonian order */
 	);
 
+int XLALSimInspiralPNEvolveOrbitSpinTaylorT2(
+	REAL8TimeSeries **V,          /**< post-Newtonian parameter [returned]*/
+	REAL8TimeSeries **Phi,        /**< orbital phase            [returned]*/
+	REAL8TimeSeries **S1x,	      /**< Spin1 vector x component [returned]*/
+	REAL8TimeSeries **S1y,	      /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S1z,	      /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **S2x,	      /**< Spin2 vector x component [returned]*/
+	REAL8TimeSeries **S2y,	      /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S2z,	      /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **LNhatx,     /**< unit orbital ang. mom. x [returned]*/
+	REAL8TimeSeries **LNhaty,     /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **LNhatz,     /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **E1x,	      /**< orb. plane basis vector x[returned]*/
+	REAL8TimeSeries **E1y,	      /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **E1z,	      /**< "    "    "  z component [returned]*/
+	REAL8 deltaT,          	      /**< sampling interval (s) */
+	REAL8 m1,              	      /**< mass of companion 1 (kg) */
+	REAL8 m2,              	      /**< mass of companion 2 (kg) */
+	REAL8 fStart,                 /**< starting GW frequency */
+	REAL8 fEnd,                   /**< ending GW frequency, fEnd=0 means integrate as far forward as possible */
+	REAL8 s1x,                    /**< initial value of S1x */
+	REAL8 s1y,                    /**< initial value of S1y */
+	REAL8 s1z,                    /**< initial value of S1z */
+	REAL8 s2x,                    /**< initial value of S2x */
+	REAL8 s2y,                    /**< initial value of S2y */
+	REAL8 s2z,                    /**< initial value of S2z */
+	REAL8 lnhatx,                 /**< initial value of LNhatx */
+	REAL8 lnhaty,                 /**< initial value of LNhaty */
+	REAL8 lnhatz,                 /**< initial value of LNhatz */
+	REAL8 e1x,                    /**< initial value of E1x */
+	REAL8 e1y,                    /**< initial value of E1y */
+	REAL8 e1z,                    /**< initial value of E1z */
+	REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+	REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	INT4 phaseO                   /**< twice post-Newtonian order */
+	);
+
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral waveform
  * with phasing computed from energy balance using the so-called \"T4\" method.
@@ -1821,6 +1881,37 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
  * 4) fRef < 0 or fRef >= Schwarz. ISCO are forbidden and the code will abort.
  */
 int XLALSimInspiralSpinTaylorT4(
+	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+	REAL8 phiRef,                   /**< orbital phase at reference pt. */
+	REAL8 v0,                       /**< tail gauge term (default = 1) */
+	REAL8 deltaT,                   /**< sampling interval (s) */
+	REAL8 m1,                       /**< mass of companion 1 (kg) */
+	REAL8 m2,                       /**< mass of companion 2 (kg) */
+	REAL8 fStart,                   /**< start GW frequency (Hz) */
+	REAL8 fRef,                     /**< reference GW frequency (Hz) */
+	REAL8 r,                        /**< distance of source (m) */
+	REAL8 s1x,                      /**< initial value of S1x */
+	REAL8 s1y,                      /**< initial value of S1y */
+	REAL8 s1z,                      /**< initial value of S1z */
+	REAL8 s2x,                      /**< initial value of S2x */
+	REAL8 s2y,                      /**< initial value of S2y */
+	REAL8 s2z,                      /**< initial value of S2z */
+	REAL8 lnhatx,                   /**< initial value of LNhatx */
+	REAL8 lnhaty,                   /**< initial value of LNhaty */
+	REAL8 lnhatz,                   /**< initial value of LNhatz */
+	REAL8 e1x,                      /**< initial value of E1x */
+	REAL8 e1y,                      /**< initial value of E1y */
+	REAL8 e1z,                      /**< initial value of E1z */
+	REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	int phaseO,                     /**< twice PN phase order */
+	int amplitudeO                  /**< twice PN amplitude order */
+	);
+
+int XLALSimInspiralSpinTaylorT2(
 	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
 	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
 	REAL8 phiRef,                   /**< orbital phase at reference pt. */

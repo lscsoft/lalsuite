@@ -1694,6 +1694,33 @@ int XLALSimInspiralChooseTDWaveform(
             break;
 
         /* spinning inspiral-only models */
+        case SpinTaylorT2:
+            /* Waveform-specific sanity checks */
+            /* Sanity check unused fields of waveFlags */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            E1x = cos(i);
+            E1y = 0.;
+            E1z = - sin(i);
+            /* Maximum PN amplitude order for precessing waveforms is 
+             * MAX_PRECESSING_AMP_PN_ORDER */
+            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
+                    amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralSpinTaylorT2(hplus, hcross, phiRef, v0, deltaT,
+                    m1, m2, f_min, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z,
+                    LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2,
+                    XLALSimInspiralGetSpinOrder(waveFlags),
+                    XLALSimInspiralGetTidalOrder(waveFlags),
+                    phaseO, amplitudeO);
+            break;
 
         // need to make a consistent choice for SpinTaylorT4 and PSpinInspiralRD waveform inputs
         // proposal: TotalJ frame of PSpinInspiralRD
@@ -1791,16 +1818,16 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 deltaF,                               /**< sampling interval (Hz) */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
     REAL8 m2,                                   /**< mass of companion 2 (kg) */
-    UNUSED REAL8 S1x,                           /**< x-component of the dimensionless spin of object 1 */
-    UNUSED REAL8 S1y,                           /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
     REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
-    UNUSED REAL8 S2x,                           /**< x-component of the dimensionless spin of object 2 */
-    UNUSED REAL8 S2y,                           /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                                /**< starting GW frequency (Hz) */
     REAL8 f_max,                                /**< ending GW frequency (Hz) */
     REAL8 r,                                    /**< distance of source (m) */
-    UNUSED REAL8 i,                             /**< inclination of source (rad) */
+    REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
     REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
     LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
@@ -1810,6 +1837,7 @@ int XLALSimInspiralChooseFDWaveform(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
+    REAL8 LNhatx, LNhaty, LNhatz;
     int ret;
 
     /* General sanity checks that will abort */
@@ -1881,6 +1909,43 @@ int XLALSimInspiralChooseFDWaveform(
             break;
 
         /* spinning inspiral-only models */
+        case SpinTaylorF2:
+            /* Waveform-specific sanity checks */
+            /* Sanity check unused fields of waveFlags */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( S2z != 0. ) // This is a single-spin model
+                ABORT_NONZERO_SPINS(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            /* Maximum PN amplitude order for precessing waveforms is 
+             * MAX_PRECESSING_AMP_PN_ORDER */
+            amplitudeO = 0; /* amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
+                    amplitudeO : MAX_PRECESSING_AMP_PN_ORDER */;
+            /* Call the waveform driver routine */
+            // FIXME: Note the HACK to use lambda1 as polarization angle psi!!
+            ret = XLALSimInspiralSpinTaylorF2(htilde, lambda1, phiRef, deltaF,
+                    m1, m2, f_min, r, S1x, S1y, S1z,
+                    LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
+            break;
+
+        /* FIXME: Comment out this case, as I don't have its source code */
+        //case TaylorR2F4:
+        //    /* Waveform-specific sanity checks */
+        //    if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+        //        ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+        //    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+        //        ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+        //    /* Call the waveform driver routine */
+        //    ret = XLALSimInspiralTaylorR2F4(htilde, phiRef, deltaF, m1, m2,
+        //            S1z, S2z, f_min, r, phaseO, amplitudeO);
+        //    break;
+
         case TaylorF2RedSpin:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
@@ -2212,6 +2277,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case EOBNRv2:
         case IMRPhenomA:
         case EOBNRv2HM:
+        case SpinTaylorT2:
         case SpinTaylorT4:
         case IMRPhenomB:
         case PhenSpinTaylorRD:
@@ -2237,7 +2303,9 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomA:
         case IMRPhenomB:
         case IMRPhenomC:
+        case TaylorR2F4:
         case TaylorF2:
+        case SpinTaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
             return 1;
@@ -2266,9 +2334,17 @@ int XLALGetApproximantFromString(const CHAR *inString)
   {
     return TaylorF2RedSpin;
   }
+  else if ( strstr(inString, "SpinTaylorF2" ) )
+  {
+    return SpinTaylorF2;
+  }
   else if ( strstr(inString, "TaylorF2" ) )
   {
     return TaylorF2;
+  }
+  else if ( strstr(inString, "TaylorR2F4" ) )
+  {
+    return TaylorR2F4;
   }
   else if ( strstr(inString, "PhenSpinTaylorRDF" ) )
   {
@@ -2277,6 +2353,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "PhenSpinTaylorRD" ) )
   {
     return PhenSpinTaylorRD;
+  }
+  else if ( strstr(inString, "SpinTaylorT2" ) )
+  {
+    return SpinTaylorT2;
   }
   else if ( strstr(inString, "SpinTaylorT4" ) )
   {
@@ -2443,10 +2523,16 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("TaylorF2RedSpin");
     case TaylorF2:
       return strdup("TaylorF2");
+    case TaylorR2F4:
+      return strdup("TaylorR2F4");
     case PhenSpinTaylorRDF:
       return strdup("PhenSpinTaylorRDF");
     case PhenSpinTaylorRD:
       return strdup("PhenSpinTaylorRD");
+    case SpinTaylorF2:
+      return strdup("SpinTaylorF2");
+    case SpinTaylorT2:
+      return strdup("SpinTaylorT2");
     case SpinTaylorT4:
       return strdup("SpinTaylorT4");
     case SpinTaylorFrameless:
