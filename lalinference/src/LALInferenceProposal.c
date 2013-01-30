@@ -1167,8 +1167,13 @@ approxLogPrior(LALInferenceVariables *params) {
 
   /* Flat in eta. */
 
-  REAL8 iota = *(REAL8 *)LALInferenceGetVariable(params, "inclination");
-  logP += log(sin(iota));
+  if (LALInferenceCheckVariable(params, "inclination")) {
+    REAL8 iota = *(REAL8 *)LALInferenceGetVariable(params, "inclination");
+    logP += log(sin(iota));
+  }else if (LALInferenceCheckVariable(params, "theta_JN")) {
+    REAL8 thetaJN = *(REAL8 *)LALInferenceGetVariable(params, "theta_JN");
+    logP += log(sin(thetaJN));
+  }
 
   /* Flat in time, ra, psi, phi. */
 
