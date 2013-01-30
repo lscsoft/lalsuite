@@ -59,6 +59,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMREOBNRv2.c \
 	LALSimIMRSpinAlignedEOB.c \
 	LALSimIMRPhenom.c \
+	LALSimIMRPhenomC.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimInspiralWaveformFlags.c \
 	LALSimInspiralTestGRParams.c \

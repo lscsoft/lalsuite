@@ -89,6 +89,7 @@ const char * usage =
 "                           Supported FD approximants:\n"
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
+"                             IMRPhenomC\n"
 "                             TaylorF2\n"
 "                             TaylorF2RedSpin\n"
 "                             TaylorF2RedSpinTidal\n"

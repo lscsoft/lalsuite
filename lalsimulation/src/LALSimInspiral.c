@@ -1922,6 +1922,21 @@ int XLALSimInspiralChooseFDWaveform(
                     f_min, f_max, r);
             break;
 
+        /* spinning inspiral-merger-ringdown models */
+        case IMRPhenomC:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomCGenerateFD(htilde, phiRef, deltaF, m1, m2,
+                    XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
+                    f_min, f_max, r);
+            break;
+
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
             XLAL_ERROR(XLAL_EINVAL);
@@ -2221,6 +2236,7 @@ int XLALSimInspiralImplementedFDApproximants(
     {
         case IMRPhenomA:
         case IMRPhenomB:
+        case IMRPhenomC:
         case TaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
@@ -2305,6 +2321,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "IMRPhenomB" ) )
   {
     return IMRPhenomB;
+  }
+  else if ( strstr(inString, "IMRPhenomC" ) )
+  {
+    return IMRPhenomC;
   }
   else if ( strstr(inString, "IMRPhenomFA" ) )
   {
@@ -2449,6 +2469,8 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("IMRPhenomA");
     case IMRPhenomB:
       return strdup("IMRPhenomB");
+    case IMRPhenomC:
+      return strdup("IMRPhenomC");
     case IMRPhenomFA:
       return strdup("IMRPhenomFA");
     case IMRPhenomFB:
