@@ -137,6 +137,14 @@ typedef enum
 	LALINFERENCE_SMOOTH
 }  LALInferenceApplyTaper;
 
+/** An enumerated type for denoting the spinning parameter variables
+*/
+typedef enum
+{
+  LALINFERENCE_FRAME_RADIATION,
+  LALINFERENCE_FRAME_SYSTEM
+} LALInferenceFrame;
+
 extern size_t LALInferenceTypeSize[];
 
 /** The LALInferenceVariableItem list node structure
