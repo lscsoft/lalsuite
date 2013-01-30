@@ -1981,7 +1981,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&htilde, phi0, deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
 						   spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, f_max, distance,
 						   inclination, lambda1, lambda2, waveFlags, nonGRparams,
-						   amporder, order, approximant), errnum);  
+						     amporder, order, approximant, NULL), errnum);  
 	previous_m1 = m1;
 	previous_m2 = m2;
 	previous_spin1z = spin1z;
@@ -2063,7 +2063,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, 
                                                  spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, fRef, distance, 
                                                  inclination, lambda1, lambda2, waveFlags, nonGRparams,
-                                                 amporder, order, approximant), errnum);
+                                                 amporder, order, approximant, NULL), errnum);
     XLALSimInspiralDestroyWaveformFlags(waveFlags);
     XLALSimInspiralDestroyTestGRParam(nonGRparams);
     if (ret == XLAL_FAILURE || hplus == NULL || hcross == NULL)
