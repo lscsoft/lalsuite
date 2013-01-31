@@ -270,8 +270,6 @@ LALFindChirpSPTemplate (
   pn_gamma = (732985./2268. - 24260./81. * eta - 340./9. * eta * eta ) * chis;
   pn_gamma += (732985./2268. +140./9.0 * eta) * chia * mass_delta;
 
-  fprintf(stderr,"%e %e %e \n",pn_beta,pn_sigma,pn_gamma);
-
   if ( m <= 0 || eta <= 0 || mu <= 0 )
   {
     ABORT( status, FINDCHIRPH_EMASS, FINDCHIRPH_MSGEMASS );
