@@ -196,14 +196,20 @@ LALSimulateCoherentGW( LALStatus        *stat,
   INT4 nMax;          /* used to store limits on index ranges */
   INT4 fInit, fFinal; /* index range for which CWsignal->f is defined */
   INT4 shiftInit, shiftFinal; /* ditto for CWsignal->shift */
-  UINT4 dtDelayBy2 = 400;     /* delay table half-interval (s) */
-  UINT4 dtPolBy2 = 300;       /* polarization table half-interval (s) */
+  UINT4 dtDelayBy2;     /* delay table half-interval (s) */
+  UINT4 dtPolBy2;       /* polarization table half-interval (s) */
   REAL4 *outData;             /* pointer to output data */
   REAL8 delayMin, delayMax;   /* min and max values of time delay */
   SkyPosition source;         /* source sky position */
   BOOLEAN transfer;  /* 1 if transfer function is specified */
   BOOLEAN fFlag = 0; /* 1 if frequency left detector->transfer range */
   BOOLEAN pFlag = 0; /* 1 if frequency was estimated from phase */
+
+  /* get delay table and polaristion tables half intervals if defined (>0) in
+     the CoherentGW structure otherwise default to 400s for dtDelatBy2 and 300s
+     for dtPolBy2 */
+  dtDelayBy2 = CWsignal->dtDelayBy2 > 0 ? CWsignal->dtDelayBy2 : 400;
+  dtPolBy2   = CWsignal->dtPolBy2   > 0 ? CWsignal->dtPolBy2   : 300;
 
   /* The amplitude, frequency, phase, polarization shift, polarization
      response, and propagation delay are stored in arrays that must be

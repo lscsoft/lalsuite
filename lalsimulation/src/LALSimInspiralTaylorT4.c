@@ -360,11 +360,11 @@ XLALSimInspiralTaylorT4Setup(
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
             akdEF->ETa6 = XLALSimInspiralPNEnergy_12PNTidalCoeff(
-                    ak->chi2, ak->chi1, lambda1);
+                    ak->chi2, ak->chi1, lambda1)
                     + XLALSimInspiralPNEnergy_12PNTidalCoeff(
                     ak->chi1, ak->chi2, lambda2);
             ak->aat12   = XLALSimInspiralTaylorT4AngularAccel_12PNTidalCoeff(
-                    ak->nu, ak->chi1, lambda1);
+                    ak->nu, ak->chi1, lambda1)
                     + XLALSimInspiralTaylorT4AngularAccel_12PNTidalCoeff(
                     ak->nu, ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
@@ -373,7 +373,7 @@ XLALSimInspiralTaylorT4Setup(
                     + XLALSimInspiralPNEnergy_10PNTidalCoeff(
                     ak->chi1, ak->chi2, lambda2);
             ak->aat10   = XLALSimInspiralTaylorT4AngularAccel_10PNTidalCoeff(
-                    ak->chi1, lambda1);
+                    ak->chi1, lambda1)
                     + XLALSimInspiralTaylorT4AngularAccel_10PNTidalCoeff(
                     ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:

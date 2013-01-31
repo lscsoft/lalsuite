@@ -22,6 +22,7 @@
  */
 
 /* REVISIONS: */
+/* 01/18/13 mdp; initialise pPulsarSignalParams->dtDelayBy2 and  pPulsarSignalParams->dtPosBy2 to 0 for compatability with changes to LALGeneratePulsarSignal */
 /* 04/12/05 gam; Move from using StackSlideOld to using StackSlide function. */
 /* 04/12/05 gam; add RunStackSlideIsolatedMonteCarloSimulation to StackSlideIsolated.c. Previous REVISIONS: */
 /* 05/11/04 gam; Add RunStackSlideMonteCarloSimulation to software inject signals into the SFTs for Monte Carlo simulations */
@@ -806,7 +807,9 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     CHECKSTATUSPTR (status);
   }
   pPulsarSignalParams->orbit = NULL; 
-  pPulsarSignalParams->transfer = NULL;  
+  pPulsarSignalParams->transfer = NULL;
+  pPulsarSignalParams->dtDelayBy2 = 0;
+  pPulsarSignalParams->dtPosBy2 = 0;
   /* Set up pulsar site */
   if (strstr(params->IFO, "LHO")) {
        cachedDetector = lalCachedDetectors[LALDetectorIndexLHODIFF];

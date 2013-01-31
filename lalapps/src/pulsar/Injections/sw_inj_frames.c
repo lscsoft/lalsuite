@@ -32,6 +32,7 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 /* 23/6/11 v.9; Changed naming of log files to append time, sloppy but works */
 /* 29/6/11 v.10; XLAL functions memory leaks fixed */
 /* 11/7/11 v.11; Outputs surpressed and better log output*/
+/* 30/1/12 v.12: Set signal generation barycenter delay lookup table step size*/
 
 #include <stdio.h>
 #include <unistd.h>
@@ -441,6 +442,9 @@ int main(int argc, char **argv)
 	    /*XLAL_ERROR ( fn, XLAL_EIO );*/
 	    /*}*/
 	    PulsarSignalParams params = empty_PulsarSignalParams; /*pulsar parameter structure*/
+	    /* set signal generation barycenter delay look-up table step size */
+            params.dtDelayBy2 = 10.; /* generate table every 10 seconds */
+            
 	    /*BinaryPulsarParams pulparams; read from the .par file */
 	    if ( (params.pulsar.spindown = XLALCreateREAL8Vector(1))== NULL ) {
 	      XLALPrintError("Out of memory");
