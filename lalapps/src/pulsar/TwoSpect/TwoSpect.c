@@ -50,7 +50,7 @@
 
 //Global variables
 FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
-CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
+CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir_file = NULL;
 static const LALStatus empty_status;
 
 //Main program
@@ -1137,7 +1137,7 @@ int main(int argc, char *argv[])
    free_inputParams(inputParams);
    free_ihsMaxima(ihsmaxima);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
-   XLALFree((CHAR*)sft_dir);
+   XLALFree((CHAR*)sft_dir_file);
    XLALFree((CHAR*)earth_ephemeris);
    XLALFree((CHAR*)sun_ephemeris);
    XLALFree((CHAR*)sky);
@@ -1285,7 +1285,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    constraints.endTime = &end;
    
    //Find SFT files
-   LALSFTdataFind(&status, &catalog, sft_dir, &constraints);
+   LALSFTdataFind(&status, &catalog, sft_dir_file, &constraints);
    if (status.statusCode != 0) {
       fprintf(stderr,"%s: LALSFTdataFind() failed with code = %d.\n", __func__, status.statusCode);
       XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -1387,7 +1387,7 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
    constraints.endTime = &end;
    
    //Find SFT files
-   LALSFTdataFind(&status, &catalog, sft_dir, &constraints);
+   LALSFTdataFind(&status, &catalog, sft_dir_file, &constraints);
    if (status.statusCode != 0) {
       fprintf(stderr,"%s: LALSFTdataFind() failed with code = %d.\n", __func__, status.statusCode);
       XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -2849,19 +2849,19 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr, "%s: One of either sftDir or sftFile must be given but not both or neither.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    } else if (args_info.sftDir_given && !args_info.sftFile_given) {
-      sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
-      if (sft_dir==NULL) {
-	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir));
+      sft_dir_file = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir_file));
+      if (sft_dir_file==NULL) {
+	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir_file));
 	 XLAL_ERROR(XLAL_ENOMEM);
       }
-      sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
+      sprintf(sft_dir_file, "%s/*.sft", args_info.sftDir_arg);
    } else if (!args_info.sftDir_given && args_info.sftFile_given) {
-      sft_dir = XLALCalloc(strlen(args_info.sftFile_arg)+2, sizeof(*sft_dir));
-      if (sft_dir==NULL) {
-	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir));
+      sft_dir_file = XLALCalloc(strlen(args_info.sftFile_arg)+2, sizeof(*sft_dir_file));
+      if (sft_dir_file==NULL) {
+	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir_file));
 	 XLAL_ERROR(XLAL_ENOMEM);
       }
-      sprintf(sft_dir, "%s", args_info.sftFile_arg);
+      sprintf(sft_dir_file, "%s", args_info.sftFile_arg);
    }
    
    return 0;
