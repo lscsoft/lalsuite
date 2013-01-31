@@ -463,7 +463,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             //Shift by harmonics
             for (jj=2; jj<6; jj++) {
 	       //Check that the shifted value is valid before testing with a template
-               if (ihsCandidates->data[ii].period/jj>=fmax(7200.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period/jj<=(0.2*inputParams->Tobs)) {
+               if (ihsCandidates->data[ii].period/jj>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period/jj<=inputParams->Pmax) {
                   ihsCandidates->data[ii].period /= (REAL8)jj;
                   makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                   if (xlalErrno!=0) {
@@ -498,7 +498,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   ihsCandidates->data[ii].period *= (REAL8)jj;  //reset the period back to the original value
                } // shorter period harmonics
                //Check again that the longer period is within bounds before testing with a template
-               if (ihsCandidates->data[ii].period*jj>=fmax(7200.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*jj<=(0.2*inputParams->Tobs)) {
+               if (ihsCandidates->data[ii].period*jj>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*jj<=inputParams->Pmax) {
                   ihsCandidates->data[ii].period *= (REAL8)jj;
                   makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                   if (xlalErrno!=0) {
@@ -538,7 +538,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             for (jj=1; jj<4; jj++) {
                REAL8 periodfact = (jj+1.0)/(jj+2.0);
                //Check within bounds, as before
-               if (ihsCandidates->data[ii].period*periodfact>=fmax(7200.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
+               if (ihsCandidates->data[ii].period*periodfact>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=inputParams->Pmax) {
                   
                   ihsCandidates->data[ii].period *= periodfact;   //Shift period
                   
@@ -580,7 +580,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                } // shift shorter period
                periodfact = 1.0/periodfact;  //Take the inverse of the mutliplicative factor
                //Again, check the new period value before testing with a template 
-               if (ihsCandidates->data[ii].period*periodfact>=fmax(7200.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
+               if (ihsCandidates->data[ii].period*periodfact>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=inputParams->Pmax) {
                   ihsCandidates->data[ii].period *= periodfact;
                   makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                   if (xlalErrno!=0) {
