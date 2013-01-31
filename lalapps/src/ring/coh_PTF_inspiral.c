@@ -2450,8 +2450,9 @@ UINT8 coh_PTF_add_triggers(
         currEvent->kappa = PTFTemplate.kappa;
         currEvent->mchirp = PTFTemplate.totalMass*pow(PTFTemplate.eta,3.0/5.0);
         currEvent->eta = PTFTemplate.eta;
-        currEvent->spin1z = PTFTemplate.spin1[2];
-        currEvent->spin2z = PTFTemplate.spin2[2];
+        // FIXME: Add spins to MultiInspiralTable
+        currEvent->chi = PTFTemplate.spin1[2];
+        currEvent->kappa = PTFTemplate.spin2[2];
         currEvent->end_time = trigTime;
         /* add sky position, but need to track back to sky fixed sky position */
         currEvent->ra = rightAscension - 
