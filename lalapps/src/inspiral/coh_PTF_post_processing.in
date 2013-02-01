@@ -200,6 +200,24 @@ def injection_efficiency_setup(job, category, outdir, segdir, offsource,\
   return node
 
 # =============================================================================
+# Setup for horizon distance plot
+# =============================================================================
+
+def horizon_distance_setup(job, category, ifotag, grb, onoffcache,\
+                        grbdir, outdir):
+
+  # setup node
+  node = pipeline.CondorDAGNode(job)
+  node.set_category(category)
+
+  node.add_var_opt('ifo-tag', ifotag)
+  node.add_var_opt('grb-xml', "%s/grb%s.xml" %(os.path.abspath(grbdir),grb))
+  node.add_var_opt('cache', os.path.abspath(onoffcache))
+  node.add_var_opt('output-dir', os.path.abspath(outdir))
+
+  return node
+
+# =============================================================================
 # Finalise DAG object
 # =============================================================================
 
@@ -304,6 +322,9 @@ The default is to run the full post processing pipeline, various steps can be sk
   parser.add_option("-E", "--skip-efficiency", action="store_true",\
                     default=False, help="skip efficiency, default: %default") 
 
+  parser.add_option("-Z", "--skip-horizon-plot", action="store_true",\
+                    default=False, help="skip horizon plot, default: %default")
+
   (opts, args) = parser.parse_args()
 
   if not opts.run_dir:
@@ -331,7 +352,7 @@ The default is to run the full post processing pipeline, various steps can be sk
 def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
          logdir=None, vetoDir=None,run_combiner=True, run_clustering=True,\
          run_injfind=True, run_sbvplotter=True, run_efficiency=True,\
-         run_injcombiner=True):
+         run_injcombiner=True,run_horizon_dist_plot=True):
 
   # load ini files
   if verbose:
@@ -715,6 +736,30 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     DAGManNode[tag] = finalise_DAG(dag, parents)
     uberdag.add_node(DAGManNode[tag])
 
+  # =================
+  # Horizon dist plot
+  # =================
+
+  if run_horizon_dist_plot:
+
+    tag    = 'horizon_dist'
+    exe    = cp.get('condor', tag)
+
+    # generate job
+    dag = init_subDAG(tag, outdir, logdir, cp)         
+    job = init_job(exe, universe, tag, outdir, logdir, cp, minmemory)
+
+    # setup single node
+    node = horizon_distance_setup(job, tag, ifotag, grb, onoffcache,\
+                               rundir, '%s/%s' %(outdir,plotdir))
+    dag.add_node(node)
+
+    # finalise DAG
+    parents = []
+    if run_combiner: parents.append(DAGManNode['trig_combiner'])
+    DAGManNode[tag] = finalise_DAG(dag,parents=parents)
+    uberdag.add_node(DAGManNode[tag])
+    
   # =============
   # write uberdag
   # =============
@@ -766,4 +811,5 @@ if __name__=='__main__':
        run_injfind=not opts.skip_injfind,\
        run_sbvplotter=not opts.skip_sbv_plotter,\
        run_efficiency=not opts.skip_efficiency,\
-       run_injcombiner=not opts.skip_injcombiner)
+       run_injcombiner=not opts.skip_injcombiner,\
+       run_horizon_dist_plot = not opts.skip_horizon_plot)
