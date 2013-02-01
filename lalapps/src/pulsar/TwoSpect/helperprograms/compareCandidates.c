@@ -127,7 +127,7 @@ int main(void) {
    double tobs = 40551300.0;
    double fdiff_allowed = 0.5/1800.0;
    double dfdiff_allowed = fdiff_allowed;
-   double skydiff_allowed = 0.05*200.0;
+   double skydiff_allowed = 0.02*200.0;
    //int firstmatch = 0, secondmatch = 0;
    for (ii=0; ii<h1count; ii++) {
 

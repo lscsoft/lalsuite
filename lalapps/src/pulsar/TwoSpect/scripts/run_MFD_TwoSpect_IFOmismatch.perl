@@ -109,14 +109,7 @@ EOF
    while(my $line=<SKYFILE>) {
       if($line =~ /^(\d+.\d+) (-?\d+.\d+)/) {
 
-         my $disttest1 = sqrt(($1-$alpha)*($1-$alpha) + ($2-$delta)*($2-$delta));
-         my $disttest2 = sqrt((2.0*pi-$1+$alpha)*(2.0*pi-$1+$alpha) + ($2-$delta)*($2-$delta));
-         my $dist = $disttest1;
-         if($disttest1<=$disttest2) {
-            $dist = $disttest1;
-         } else {
-            $dist = $disttest2;
-         }
+         my $dist = acos(sin(abs($2-0.5*pi))*sin(abs($delta-0.5*pi))*cos($1-$alpha)+cos(abs($2-0.5*pi))*cos(abs($delta-0.5*pi)));
 
          if($dist<$dist1 || $dist1<0.0) {
             @pt16 = @pt15;
@@ -560,18 +553,11 @@ EOF
    @pt14 = (0, 0);
    @pt15 = (0, 0);
    @pt16 = (0, 0);
-   open(SKYFILE, $skygrid2) or die "Cannot open $skygrid $!";
+   open(SKYFILE, $skygrid2) or die "Cannot open $skygrid2 $!";
    while(my $line=<SKYFILE>) {
       if($line =~ /^(\d+.\d+) (-?\d+.\d+)/) {
 
-         my $disttest1 = sqrt(($1-$alpha)*($1-$alpha) + ($2-$delta)*($2-$delta));
-         my $disttest2 = sqrt((2.0*pi-$1+$alpha)*(2.0*pi-$1+$alpha) + ($2-$delta)*($2-$delta));
-         my $dist = $disttest1;
-         if($disttest1<=$disttest2) {
-            $dist = $disttest1;
-         } else {
-            $dist = $disttest2;
-         }
+         my $dist = acos(sin(abs($2-0.5*pi))*sin(abs($delta-0.5*pi))*cos($1-$alpha)+cos(abs($2-0.5*pi))*cos(abs($delta-0.5*pi)));
 
          if($dist<$dist1 || $dist1<0.0) {
             @pt16 = @pt15;
