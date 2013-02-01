@@ -63,7 +63,7 @@ static int test_XLALDopplerFstatMetric ( void );
 static REAL8 compare_metrics ( const gsl_matrix *m1, const gsl_matrix *m2 );
 static gsl_matrix *convert_old_metric_2_new ( const REAL8Vector *m0, REAL8 Freq );
 
-DopplerMetric *XLALOldComputeFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
+DopplerMetric *XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
 
 // ---------- function definitions --------------------
 /** MAIN function: calls a number of unit-tests
@@ -71,7 +71,7 @@ DopplerMetric *XLALOldComputeFstatMetric ( const DopplerMetricParams *metricPara
 int main( void )
 {
   INT4 ret;
-  lalDebugLevel = 1;
+  lalDebugLevel = 3;
 
   ret = test_XLALDopplerFstatMetric();
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "test_XLALDopplerFstatMetric() failed with status = %d.\n", ret );
@@ -127,7 +127,7 @@ test_XLALDopplerFstatMetric ( void )
   XLALDestroyStringVector ( detNames );
   XLALDestroyStringVector ( detWeights );
 
-  // ----- compute metric using UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+  // prepare metric parameters for modern XLALDopplerFstatMetric() and mid-old XLALOldDopplerFstatMetric()
   DopplerCoordinateSystem coordSys = { 4, { DOPPLERCOORD_FREQ, DOPPLERCOORD_ALPHA, DOPPLERCOORD_DELTA, DOPPLERCOORD_F1DOT } };
   PulsarAmplitudeParams Amp = { 0.03, -0.3, 0.0, 0.0 };	// h0, cosi, psi, phi0
   PulsarDopplerParams dop = empty_PulsarDopplerParams;
@@ -143,7 +143,6 @@ test_XLALDopplerFstatMetric ( void )
   ret = XLALSegListInitSimpleSegments ( &segList, startTimeGPS, Nseg, Tseg );
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
 
-  // prepare metric parameters
   DopplerMetricParams pars2 = empty_DopplerMetricParams;
 
   pars2.coordSys      		= coordSys;
@@ -156,12 +155,8 @@ test_XLALDopplerFstatMetric ( void )
   pars2.metricType    		= METRIC_TYPE_PHASE;
   pars2.approxPhase   		= 0;
 
-  DopplerMetric *metric2 = XLALDopplerFstatMetric ( &pars2, edat );
-  XLAL_CHECK ( metric2 != NULL, XLAL_EFUNC, "XLALDopplerFstatMetric() failed with xlalErrno = %d\n", xlalErrno );
-
-  // ----- compute metric using old LALPulsarMetric() function (used in lalapps_getMetric)
+  // ----- prepare call-parameters of ancient LALPulsarMetric()
   LALStatus status = empty_LALStatus;
-  REAL8Vector *metric0 = NULL;
   PtoleMetricIn pars0 = empty_PtoleMetricIn;
 
   pars0.spindown = XLALCreateREAL4Vector ( 1 );
@@ -178,26 +173,92 @@ test_XLALDopplerFstatMetric ( void )
   pars0.ephemeris 		= edat;
   pars0.metricType 		= LAL_PMETRIC_COH_EPHEM;
 
+
+  // ========== BEGINNING OF TEST CALLS ==========
+  REAL8Vector *metric0 = 0;
+  gsl_matrix *g0_ij;
+  DopplerMetric *metric1, *metric2;
+  REAL8 diff_2_0, diff_2_1, diff_1_0;
+
+
+  XLALPrintWarning("\n---------- ROUND 1: ephemeris-based phase-metrics ----------\n");
+
+  // 0) compute metric using ancient LALPulsarMetric() function (used in lalapps_getMetric)
   LALPulsarMetric ( &status, &metric0, &pars0 );
   XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALPulsarMetric() failed with status=%d: '%s'\n", status.statusCode, status.statusDescription );
+  XLAL_CHECK ( (g0_ij = convert_old_metric_2_new ( metric0, Freq )) != NULL, XLAL_EFUNC );
+  XLALDestroyREAL8Vector ( metric0 ); metric0 = NULL;
+  // 1) compute metric using old FstatMetric code, now wrapped into XLALOldDopplerFstatMetric()
+  XLAL_CHECK ( (metric1 = XLALOldDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
+  // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+  XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
 
-  // ---------- now compare metrics against each other:
-  gsl_matrix *g0_ij = convert_old_metric_2_new ( metric0, Freq );
-  XLAL_CHECK ( g0_ij != NULL, XLAL_EFUNC, "convert_old_metric_2_new() failed with xlalErrno = %d\n", xlalErrno );
+  // compare all 3 metrics against each other:
+  XLAL_CHECK ( (diff_2_0 = compare_metrics ( metric2->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g2,g0)= %g exceeds tolerance of %g\n", diff_2_0, tolPh );
+  XLAL_CHECK ( (diff_2_1 = compare_metrics ( metric2->g_ij, metric1->g_ij )) < tolPh, XLAL_ETOL, "Error(g2,g1)= %g exceeds tolerance of %g\n", diff_2_1, tolPh );
+  XLAL_CHECK ( (diff_1_0 = compare_metrics ( metric1->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g1,g0)= %g exceeds tolerance of %g\n", diff_1_0, tolPh );
 
-  REAL8 diff_2_0 = compare_metrics ( g0_ij, metric2->g_ij );
-  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "compare_metrics() failed with xlalErrno = %d\n", xlalErrno );
+  gsl_matrix_free ( g0_ij );
+  XLALDestroyDopplerMetric ( metric1 );
+  XLALDestroyDopplerMetric ( metric2 );
 
-  //printf ("diff_2_0 = %g\n", diff_2_0 );
+  XLALPrintWarning ("diff_2_0 = %g\n", diff_2_0 );
+  XLALPrintWarning ("diff_2_1 = %g\n", diff_2_1 );
+  XLALPrintWarning ("diff_1_0 = %g\n", diff_1_0 );
 
-  XLAL_CHECK ( diff_2_0 < tolPh, XLAL_ETOL, "Tolerance %g exceeds limit of %g\n", diff_2_0, tolPh );
+
+  XLALPrintWarning("\n---------- ROUND 2: Ptolemaic-based phase-metrics ----------\n");
+
+  pars0.metricType    = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
+  pars2.detMotionType = DETMOTION_SPIN_PTOLEORBIT;
+
+  // 0) compute metric using ancient LALPulsarMetric() function (used in lalapps_getMetric)
+  LALPulsarMetric ( &status, &metric0, &pars0 );
+  XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALPulsarMetric() failed with status=%d: '%s'\n", status.statusCode, status.statusDescription );
+  XLAL_CHECK ( (g0_ij = convert_old_metric_2_new ( metric0, Freq )) != NULL, XLAL_EFUNC );
+  XLALDestroyREAL8Vector ( metric0 ); metric0 = NULL;
+  // 1) compute metric using old FstatMetric code, now wrapped into XLALOldDopplerFstatMetric()
+  XLAL_CHECK ( (metric1 = XLALOldDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
+  // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+  XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
+
+  // compare all 3 metrics against each other:
+  XLAL_CHECK ( (diff_2_0 = compare_metrics ( metric2->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g2,g0)= %g exceeds tolerance of %g\n", diff_2_0, tolPh );
+  XLAL_CHECK ( (diff_2_1 = compare_metrics ( metric2->g_ij, metric1->g_ij )) < tolPh, XLAL_ETOL, "Error(g2,g1)= %g exceeds tolerance of %g\n", diff_2_1, tolPh );
+  XLAL_CHECK ( (diff_1_0 = compare_metrics ( metric1->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g1,g0)= %g exceeds tolerance of %g\n", diff_1_0, tolPh );
+
+  gsl_matrix_free ( g0_ij );
+  XLALDestroyDopplerMetric ( metric1 );
+  XLALDestroyDopplerMetric ( metric2 );
+
+  XLALPrintWarning ("diff_2_0 = %g\n", diff_2_0 );
+  XLALPrintWarning ("diff_2_1 = %g\n", diff_2_1 );
+  XLALPrintWarning ("diff_1_0 = %g\n", diff_1_0 );
+
+
+  XLALPrintWarning("\n---------- ROUND 3: (ephemeris-base) *full F-stat* metrics ----------\n");
+
+  pars2.detMotionType = DETMOTION_SPIN_ORBIT;
+  pars2.metricType    = METRIC_TYPE_FSTAT;
+
+  // 1) compute metric using old FstatMetric code, now wrapped into XLALOldDopplerFstatMetric()
+  XLAL_CHECK ( (metric1 = XLALOldDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
+  // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+  XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
+
+  // compare both metrics against each other:
+  XLAL_CHECK ( (diff_2_1 = compare_metrics ( metric2->gF_ij,   metric1->gF_ij ))   < tolPh, XLAL_ETOL, "Error(gF2,gF1)= %g exceeds tolerance of %g\n", diff_2_1, tolPh );
+  XLALPrintWarning ("gF:   diff_2_1 = %g\n", diff_2_1 );
+  XLAL_CHECK ( (diff_2_1 = compare_metrics ( metric2->gFav_ij, metric1->gFav_ij )) < tolPh, XLAL_ETOL, "Error(gFav2,gFav1)= %g exceeds tolerance of %g\n", diff_2_1, tolPh );
+  XLALPrintWarning ("gFav: diff_2_1 = %g\n", diff_2_1 );
+
+  XLALDestroyDopplerMetric ( metric1 );
+  XLALDestroyDopplerMetric ( metric2 );
 
   // ----- clean up memory
   XLALSegListClear ( &segList );
   XLALDestroyREAL4Vector ( pars0.spindown );
   XLALDestroyEphemerisData ( edat );
-  XLALDestroyREAL8Vector ( metric0 );
-  XLALDestroyDopplerMetric ( metric2 );
 
   return XLAL_SUCCESS;
 
@@ -244,27 +305,27 @@ convert_old_metric_2_new ( const REAL8Vector *m0, REAL8 Freq )
 // ie  dg_ij = (g1_ij - g2_ij) / sqrt( g_ii * g_jj )
 // this should always be well-defined, as we deal with positive-definite square matrices
 static REAL8
-compare_metrics ( const gsl_matrix *m1, const gsl_matrix *m2 )
+compare_metrics ( const gsl_matrix *g1_ij, const gsl_matrix *g2_ij )
 {
-  XLAL_CHECK_REAL8 ( m1, XLAL_EINVAL, "Invalid NULL input metric 'm1'\n");
-  XLAL_CHECK_REAL8 ( m2, XLAL_EINVAL, "Invalid NULL input metric 'm2'\n");
+  XLAL_CHECK_REAL8 ( g1_ij, XLAL_EINVAL, "Invalid NULL input metric 'g1_ij'\n");
+  XLAL_CHECK_REAL8 ( g2_ij, XLAL_EINVAL, "Invalid NULL input metric 'g2_ij'\n");
 
-  UINT4 dim = m1->size1;
-  XLAL_CHECK_REAL8 ( m1->size1 == m1->size2, XLAL_EDOM, "Input matrix 'm1' is not square, got %d x %d\n", m1->size1, m1->size2 );
-  XLAL_CHECK_REAL8 ( m2->size1 == m2->size2, XLAL_EDOM, "Input matrix 'm2' is not square, got %d x %d\n", m2->size1, m2->size2 );
-  XLAL_CHECK_REAL8 ( m1->size1 == m2->size1, XLAL_EDOM, "Input metrics have different sizes: m1 = %d-dim, m2 = %d-dim\n", m1->size1, m2->size1 );
+  UINT4 dim = g1_ij->size1;
+  XLAL_CHECK_REAL8 ( g1_ij->size1 == g1_ij->size2, XLAL_EDOM, "Input matrix 'g1_ij' is not square, got %d x %d\n", g1_ij->size1, g1_ij->size2 );
+  XLAL_CHECK_REAL8 ( g2_ij->size1 == g2_ij->size2, XLAL_EDOM, "Input matrix 'g2_ij' is not square, got %d x %d\n", g2_ij->size1, g2_ij->size2 );
+  XLAL_CHECK_REAL8 ( g1_ij->size1 == g2_ij->size1, XLAL_EDOM, "Input metrics have different sizes: g1_ij = %d-dim, g2_ij = %d-dim\n", g1_ij->size1, g2_ij->size1 );
 
-  //XLALfprintfGSLmatrix ( stderr, "%.15e", m1 );
-  //XLALfprintfGSLmatrix ( stderr, "%.15e", m2 );
+  //XLALfprintfGSLmatrix ( stderr, "%.15e", g1_ij );
+  //XLALfprintfGSLmatrix ( stderr, "%.15e", g2_ij );
 
   REAL8 errmax = 0;
   for ( UINT4 i = 0; i < dim; i ++ )
     {
       for ( UINT4 j = 0; j < dim; j ++ )
         {
-          REAL8 norm = sqrt ( gsl_matrix_get ( m1, i, i ) * gsl_matrix_get ( m1, j, j ) );
-          REAL8 e1 = gsl_matrix_get ( m1, i, j ) / norm;
-          REAL8 e2 = gsl_matrix_get ( m2, i, j ) / norm;
+          REAL8 norm = sqrt ( gsl_matrix_get ( g1_ij, i, i ) * gsl_matrix_get ( g1_ij, j, j ) );
+          REAL8 e1 = gsl_matrix_get ( g1_ij, i, j ) / norm;
+          REAL8 e2 = gsl_matrix_get ( g2_ij, i, j ) / norm;
           REAL8 base;
           if ( e2 == 0 )
             base = 1;

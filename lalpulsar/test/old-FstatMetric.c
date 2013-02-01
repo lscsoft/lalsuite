@@ -225,7 +225,17 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
         }
     } // endif metricType==PHASE || ALL
 
+  // ----- Free internal memory
   XLALDestroyMultiPhaseDerivs ( config.multidPhi );
+  XLALDestroyMultiAMCoeffs ( config.multiAMcoe );
+  XLALDestroyMultiDetectorStateSeries ( config.multiDetStates );
+  XLALDestroyREAL8Vector ( config.GLweights );
+  for ( UINT4 X=0; X < config.multiNoiseWeights->length; X++ ) {
+    XLALDestroyREAL8Vector ( config.multiNoiseWeights->data[X] );
+  }
+  XLALFree ( config.multiNoiseWeights->data );
+  XLALFree ( config.multiNoiseWeights );
+  XLALDestroyREAL8Vector ( config.dopplerPoint.fkdot );
 
   return metric;
 
