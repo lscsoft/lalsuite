@@ -63,6 +63,8 @@ static int test_XLALDopplerFstatMetric ( void );
 static REAL8 compare_metrics ( const gsl_matrix *m1, const gsl_matrix *m2 );
 static gsl_matrix *convert_old_metric_2_new ( const REAL8Vector *m0, REAL8 Freq );
 
+DopplerMetric *XLALOldComputeFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
+
 // ---------- function definitions --------------------
 /** MAIN function: calls a number of unit-tests
  */
