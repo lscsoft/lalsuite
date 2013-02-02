@@ -1,8 +1,8 @@
 package "lalapps_TwoSpect"
-version "1.1.24_1"
+version "1.1.25"
 purpose "TwoSpect analysis program"
 
-args "--string-parser --conf-parser"
+args "--string-parser --conf-parser --show-required=[required]"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string typestr="filename" optional
 option "laldebug" d "LAL debug level" int default="0" optional
@@ -70,6 +70,10 @@ option "followUpOutsideULrange"  - "Follow up outliers outside the range of the 
 
 section "Hidden options"
 option "signalOnly"    - "SFTs contain only signal, no noise" flag off hidden
+option "templateTest"  - "Test the doubly-Fourier transformed data against a single, exact template" flag off hidden
+option "templateTestF" - "The template test frequency; templateTest flag is required" double dependon="templateTest" optional hidden
+option "templateTestP" - "The template test period; templateTest flag is required" double dependon="templateTest" optional hidden
+option "templateTestDf"    - "The template test modulation depth; templateTest flag is required" double dependon="templateTest" optional hidden
 option "ULsolver" - "Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver" int values="0","1","2","3","4","5" default="0" optional hidden
 option "dopplerMultiplier" - "Multiplier for the Doppler velocity" double default="1.0" optional hidden
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden

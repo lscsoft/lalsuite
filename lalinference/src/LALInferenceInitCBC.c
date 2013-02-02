@@ -105,6 +105,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
                --- Template Arguments -------------------------------------------------------------------------------------------\n\
                ------------------------------------------------------------------------------------------------------------------\n\
                (--symMassRatio)                Jump in symmetric mass ratio eta, instead of q=m2/m1.\n\
+               (--logdistance)                 Jump in log(distance) instead of distance.\n\
                (--template)                    Specify template [LAL,PhenSpin,LALGenerateInspiral,LALSim] (default LALSim).\n\
                (--approx)                      Specify a template approximant and phase order to use.\n\
                                                (default TaylorF2threePointFivePN). Available approximants:\n\
@@ -219,8 +220,8 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   ProcessParamsTable *ppt=NULL;
   ProcessParamsTable *ppt_order=NULL;
   //INT4 AmpOrder=0;
-  LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
-  LALPNOrder AmpOrder=-1;//LAL_PNORDER_THREE_POINT_FIVE;//LAL_PNORDER_NEWTONIAN;
+  LALPNOrder PhaseOrder=-1;
+  LALPNOrder AmpOrder=-1;
   Approximant approx=TaylorF2;
   REAL8 fRef = 0.0;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
@@ -446,8 +447,11 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     ppt_order=LALInferenceGetProcParamVal(commandLine,"--order");
     if(ppt_order) PhaseOrder = XLALGetOrderFromString(ppt_order->value);
     else PhaseOrder = XLALGetOrderFromString(ppt->value);
-    if( (int) PhaseOrder == XLAL_FAILURE)
-      ABORTXLAL(&status);
+    /* If not given as a separate argument or in the approx string, use maximum available */
+    if( (int) PhaseOrder == XLAL_FAILURE) {
+      fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
+      PhaseOrder=-1;
+    }
   }
   ppt=LALInferenceGetProcParamVal(commandLine,"--amporder");
   if(ppt) AmpOrder=atoi(ppt->value);
@@ -878,15 +882,32 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }
   LALInferenceAddMinMaxPrior(priorArgs, "phase",     &phiMin, &phiMax,   LALINFERENCE_REAL8_t);
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--fixDist");
-  if(ppt){
-    LALInferenceAddVariable(currentParams,"distance", &start_dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    if(lalDebugLevel>0) fprintf(stdout,"distance fixed and set to %f\n",start_dist);
-  }else{
-    LALInferenceAddVariable(currentParams,"distance", &start_dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  /* Jump in log distance if requested, otherwise use distance */
+  if(LALInferenceGetProcParamVal(commandLine,"--logdistance"))
+  { 
+      REAL8 logstartdist=log(start_dist);
+      REAL8 logdmin=log(Dmin);
+      REAL8 logdmax=log(Dmax);
+      ppt=LALInferenceGetProcParamVal(commandLine,"--fixDist");
+      if(ppt){
+        LALInferenceAddVariable(currentParams,"logdistance", &logstartdist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        if(lalDebugLevel>0) fprintf(stdout,"distance fixed and set to %f\n",start_dist);
+      }else{
+        LALInferenceAddVariable(currentParams,"logdistance", &logstartdist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      }
+      LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logdmin, &logdmax,   LALINFERENCE_REAL8_t);
   }
-  LALInferenceAddMinMaxPrior(priorArgs, "distance",     &Dmin, &Dmax,   LALINFERENCE_REAL8_t);
-
+  else
+  {
+      ppt=LALInferenceGetProcParamVal(commandLine,"--fixDist");
+      if(ppt){
+        LALInferenceAddVariable(currentParams,"distance", &start_dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        if(lalDebugLevel>0) fprintf(stdout,"distance fixed and set to %f\n",start_dist);
+      }else{
+        LALInferenceAddVariable(currentParams,"distance", &start_dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      }
+      LALInferenceAddMinMaxPrior(priorArgs, "distance",     &Dmin, &Dmax,   LALINFERENCE_REAL8_t);
+  }
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--fixRa");
   if(ppt){

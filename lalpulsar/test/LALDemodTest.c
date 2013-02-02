@@ -256,6 +256,8 @@ static void times2(REAL8 tSFT, INT4 howMany, LIGOTimeGPS **ts, INT4 **sftPerCoh,
 
 extern int lalDebugLevel;
 
+static CoherentGW emptySignal;
+
 int main(int argc, char **argv)
 {
   static LALStatus status;
@@ -322,7 +324,7 @@ int main(int argc, char **argv)
   /*
    *  Variables for AM correction
    */
-  CoherentGW cgwOutput;
+  CoherentGW cgwOutput = emptySignal;
   TaylorCWParamStruc genTayParams;
   DetectorResponse cwDetector;
   AMCoeffsParams *amParams;

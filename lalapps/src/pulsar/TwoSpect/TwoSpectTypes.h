@@ -58,7 +58,6 @@ typedef struct
    REAL8 ULfspan;
    REAL8 ULmindf;
    REAL8 ULmaxdf;
-   REAL8 simpleSigmaExclusion;
    REAL8 lineDetection;
    INT4 ihsfactor;
    INT4 harmonicNumToSearch;
