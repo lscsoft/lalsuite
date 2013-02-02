@@ -100,8 +100,8 @@ char**global_argv;
 int global_argc;
 #endif /* EAH_BOINC */
 
-#define EARTHEPHEMERIS  "earth05-09.dat"
-#define SUNEPHEMERIS    "sun05-09.dat"
+#define EARTHEPHEMERIS  "earth00-19-DE405.dat"
+#define SUNEPHEMERIS    "sun00-19-DE405.dat"
 #define BLOCKSRNGMED    101     /**< Default running median window size */
 #define FSTART          100.0	/**< Default Start search frequency */
 #define FBAND           0.0  /**< Default search band */

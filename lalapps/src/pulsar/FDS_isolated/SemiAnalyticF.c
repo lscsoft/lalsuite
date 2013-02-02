@@ -227,7 +227,7 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   CLA->sqrtSh=1.0;
   
   /** Default year-span of ephemeris-files to be used */
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
   CLA->ephemYear = LALCalloc(1, strlen(EPHEM_YEARS)+1);
   strcpy (CLA->ephemYear, EPHEM_YEARS);
   

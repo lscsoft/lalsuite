@@ -128,7 +128,7 @@ typedef struct
 
 
 /** Default year-span of ephemeris-files to be used */
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
 
 /* ---------- local prototypes ---------- */
 void FreeMem (LALStatus *, ConfigVars_t *cfg);

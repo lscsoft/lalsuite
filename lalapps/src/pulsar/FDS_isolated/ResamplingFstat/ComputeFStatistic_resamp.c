@@ -80,7 +80,7 @@ int finite(double);
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
-#define EPHEM_YEARS  "00-04"	/**< default range: override with --ephemYear */
+#define EPHEM_YEARS  "00-19-DE405"	/**< default range: override with --ephemYear */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
