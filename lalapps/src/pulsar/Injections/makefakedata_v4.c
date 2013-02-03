@@ -46,7 +46,6 @@
 #include <lal/SeqFactories.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALInitBarycenter.h>
-#include <lal/Random.h>
 #include <gsl/gsl_math.h>
 
 #include <lal/LALString.h>
@@ -142,8 +141,8 @@ typedef struct
 
   /* noise to add [OPTIONAL] */
   CHAR *noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
-  REAL8 noiseSigma;		/**< Gaussian noise with standard-deviation sigma */
-  REAL8 noiseSqrtSh;		/**< ALTERNATIVE: single-sided sqrt(Sh) for Gaussian noise */
+  REAL8 noiseSqrtSh;		/**< single-sided sqrt(Sh) for Gaussian noise */
+  REAL8 noiseSigma;		/**< [DEPRECATED] Alternative: Gaussian noise with standard-deviation sigma */
 
   /* Window function [OPTIONAL] */
   CHAR *window;		/**< Windowing function for the time series */
@@ -219,7 +218,6 @@ int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
 int XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar );
 int XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg );
 COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, const CHAR *fname );
-int XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed );
 int XLALFreeMem ( ConfigVars_t *cfg );
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
@@ -1435,8 +1433,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* noise */
   XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile)");
-  XLALregREALUserStruct (  noiseSigma,           0, UVAR_OPTIONAL,  "Gaussian noise with standard-deviation sigma");
-  XLALregREALUserStruct (  noiseSqrtSh,          0, UVAR_OPTIONAL,  "ALTERNATIVE: Gaussian noise with single-sided PSD sqrt(Sh)");
+  XLALregREALUserStruct (  noiseSqrtSh,          0, UVAR_OPTIONAL,  "Gaussian noise with single-sided PSD sqrt(Sh)");
 
   XLALregBOOLUserStruct (  lineFeature,          0, UVAR_OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
 
@@ -1462,8 +1459,9 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  longitude,            0, UVAR_DEVELOPER, "[DEPRECATED] Use --Alpha instead!");
   XLALregREALUserStruct (  latitude,             0, UVAR_DEVELOPER, "[DEPRECATED] Use --Delta instead!");
   XLALregREALUserStruct (  f0,                   0, UVAR_DEVELOPER, "[DEPRECATED] Use --Freq instead!");
-  XLALregSTRINGUserStruct (detector,             0,  UVAR_DEVELOPER, "[DEPRECATED] Detector: use --IFO instead!.");
+  XLALregSTRINGUserStruct (detector,             0, UVAR_DEVELOPER, "[DEPRECATED] Detector: use --IFO instead!.");
   XLALregBOOLUserStruct( outSFTv1,	 	 0, UVAR_DEVELOPER, "[DEPRECATED]Write output-SFTs in obsolete SFT-v1 format." );
+  XLALregREALUserStruct (  noiseSigma,           0, UVAR_DEVELOPER, "[DEPRECATED] Alternative: Gaussian noise with standard-deviation sigma");
 
   /* read cmdline & cfgfile  */
   ret = XLALUserVarReadAllInput ( argc, argv );
@@ -1513,41 +1511,6 @@ XLALFreeMem ( ConfigVars_t *cfg )
   return XLAL_SUCCESS;
 
 } /* XLALFreeMem() */
-
-/**
- * Generate Gaussian noise with standard-deviation sigma, add it to inSeries.
- *
- * NOTE2: if seed==0, then time(NULL) is used as random-seed!
- *
- */
-int
-XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed )
-{
-  XLAL_CHECK ( inSeries != NULL, XLAL_EINVAL );
-
-  UINT4 numPoints = inSeries->data->length;
-
-  REAL4Vector *v1;
-  XLAL_CHECK ( (v1 = XLALCreateREAL4Vector ( numPoints )) != NULL, XLAL_EFUNC );
-
-  RandomParams *randpar;
-  XLAL_CHECK ( (randpar = XLALCreateRandomParams ( seed )) != NULL, XLAL_EFUNC );
-
-  XLAL_CHECK ( XLALNormalDeviates ( v1, randpar) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  for (UINT4 i = 0; i < numPoints; i++ ) {
-    inSeries->data->data[i] += sigma * v1->data[i];
-  }
-
-  /* destroy randpar*/
-  XLALDestroyRandomParams ( randpar );
-
-  /*   destroy v1 */
-  XLALDestroyREAL4Vector ( v1 );
-
-  return XLAL_SUCCESS;
-
-} /* XLALAddGaussianNoise() */
 
 /** Log the all relevant parameters of this run into a log-file.
  * The name of the log-file used is uvar_logfile

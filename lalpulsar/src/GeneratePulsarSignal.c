@@ -34,6 +34,7 @@
 #include <lal/RealFFT.h>
 #include <lal/SFTutils.h>
 #include <lal/Window.h>
+#include <lal/Random.h>
 
 #include <lal/GeneratePulsarSignal.h>
 
@@ -1014,6 +1015,42 @@ XLALGenerateLineFeature ( const PulsarSignalParams *params )
   return ret;
 
 } /* XLALGenerateLineFeature() */
+
+
+/**
+ * Generate Gaussian noise with standard-deviation sigma, add it to inSeries.
+ *
+ * NOTE2: if seed==0, then time(NULL) is used as random-seed!
+ *
+ */
+int
+XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed )
+{
+  XLAL_CHECK ( inSeries != NULL, XLAL_EINVAL );
+
+  UINT4 numPoints = inSeries->data->length;
+
+  REAL4Vector *v1;
+  XLAL_CHECK ( (v1 = XLALCreateREAL4Vector ( numPoints )) != NULL, XLAL_EFUNC );
+
+  RandomParams *randpar;
+  XLAL_CHECK ( (randpar = XLALCreateRandomParams ( seed )) != NULL, XLAL_EFUNC );
+
+  XLAL_CHECK ( XLALNormalDeviates ( v1, randpar) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  for (UINT4 i = 0; i < numPoints; i++ ) {
+    inSeries->data->data[i] += sigma * v1->data[i];
+  }
+
+  /* destroy randpar*/
+  XLALDestroyRandomParams ( randpar );
+
+  /*   destroy v1 */
+  XLALDestroyREAL4Vector ( v1 );
+
+  return XLAL_SUCCESS;
+
+} /* XLALAddGaussianNoise() */
 
 
 /* ***********************************************************************
