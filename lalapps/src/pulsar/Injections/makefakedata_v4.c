@@ -601,7 +601,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       exit (0);
     }
 
-  BOOLEAN have_parfile = LALUserVarWasSet (&uvar->parfile);
+  BOOLEAN have_parfile = XLALUserVarWasSet (&uvar->parfile);
   BinaryPulsarParams pulparams;
 
   /* read in par file parameters if given */
@@ -619,18 +619,18 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   }
 
   { /* ========== translate user-input into 'PulsarParams' struct ========== */
-    BOOLEAN have_h0     = LALUserVarWasSet ( &uvar->h0 );
-    BOOLEAN have_cosi   = LALUserVarWasSet ( &uvar->cosi );
-    BOOLEAN have_aPlus  = LALUserVarWasSet ( &uvar->aPlus );
-    BOOLEAN have_aCross = LALUserVarWasSet ( &uvar->aCross );
-    BOOLEAN have_Freq   = LALUserVarWasSet ( &uvar->Freq );
-    BOOLEAN have_f0     = LALUserVarWasSet ( &uvar->f0 );
-    BOOLEAN have_longitude = LALUserVarWasSet ( &uvar->longitude );
-    BOOLEAN have_latitude  = LALUserVarWasSet ( &uvar->latitude );
-    BOOLEAN have_Alpha  = LALUserVarWasSet ( &uvar->Alpha );
-    BOOLEAN have_Delta  = LALUserVarWasSet ( &uvar->Delta );
-    BOOLEAN have_RA = LALUserVarWasSet ( &uvar->RA );
-    BOOLEAN have_Dec = LALUserVarWasSet ( &uvar->Dec );
+    BOOLEAN have_h0     = XLALUserVarWasSet ( &uvar->h0 );
+    BOOLEAN have_cosi   = XLALUserVarWasSet ( &uvar->cosi );
+    BOOLEAN have_aPlus  = XLALUserVarWasSet ( &uvar->aPlus );
+    BOOLEAN have_aCross = XLALUserVarWasSet ( &uvar->aCross );
+    BOOLEAN have_Freq   = XLALUserVarWasSet ( &uvar->Freq );
+    BOOLEAN have_f0     = XLALUserVarWasSet ( &uvar->f0 );
+    BOOLEAN have_longitude = XLALUserVarWasSet ( &uvar->longitude );
+    BOOLEAN have_latitude  = XLALUserVarWasSet ( &uvar->latitude );
+    BOOLEAN have_Alpha  = XLALUserVarWasSet ( &uvar->Alpha );
+    BOOLEAN have_Delta  = XLALUserVarWasSet ( &uvar->Delta );
+    BOOLEAN have_RA = XLALUserVarWasSet ( &uvar->RA );
+    BOOLEAN have_Dec = XLALUserVarWasSet ( &uvar->Dec );
 
     /*check .par file for gw parameters*/
     if (have_parfile){
@@ -779,8 +779,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   /* ---------- prepare detector ---------- */
   {
     LALDetector *site;
-    BOOLEAN have_detector = LALUserVarWasSet ( &uvar->detector );
-    BOOLEAN have_IFO = LALUserVarWasSet ( &uvar->IFO );
+    BOOLEAN have_detector = XLALUserVarWasSet ( &uvar->detector );
+    BOOLEAN have_IFO = XLALUserVarWasSet ( &uvar->IFO );
     if ( !have_detector && !have_IFO ) {
       XLAL_ERROR ( XLAL_EINVAL, "Need detector input --IFO!\n\n");
     }
@@ -857,8 +857,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     /* check input consistency: *uvar->timestampsFile, uvar->startTime, uvar->duration */
     BOOLEAN haveStart, haveDuration, haveTimestampsFile, haveOverlap;
 
-    haveStart = LALUserVarWasSet(&uvar->startTime);
-    haveDuration = LALUserVarWasSet(&uvar->duration);
+    haveStart = XLALUserVarWasSet(&uvar->startTime);
+    haveDuration = XLALUserVarWasSet(&uvar->duration);
     haveTimestampsFile = ( uvar->timestampsFile != NULL );
     haveOverlap = ( uvar->SFToverlap > 0 );
 
@@ -888,7 +888,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	if ( !haveStart || !haveDuration ) {
           XLAL_ERROR ( XLAL_EINVAL, "Hardware injection: need to specify --startTime and --duration!\n\n");
         }
-	if ( LALUserVarWasSet( &uvar->outSFTbname ) ) {
+	if ( XLALUserVarWasSet( &uvar->outSFTbname ) ) {
           XLAL_ERROR ( XLAL_EINVAL, "Hardware injection mode is incompatible with producing SFTs\n\n");
         }
       } /* if hardware-injection */
@@ -916,7 +916,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	REAL8 fMin, fMax;
 	SFTConstraints constraints = empty_SFTConstraints;
 	LIGOTimeGPS minStartTime, maxEndTime;
-        BOOLEAN have_window = LALUserVarWasSet ( &uvar->window );
+        BOOLEAN have_window = XLALUserVarWasSet ( &uvar->window );
 
         /* user must specify the window function used for the noiseSFTs */
         if ( !have_window ) {
@@ -1054,7 +1054,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     {
       XLALStringToLowerCase ( uvar->window );	// get rid of case
 
-      if ( LALUserVarWasSet( &uvar->tukeyBeta ) && strcmp ( uvar->window, "tukey" ) ) {
+      if ( XLALUserVarWasSet( &uvar->tukeyBeta ) && strcmp ( uvar->window, "tukey" ) ) {
         XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified with window %s; only allowed for Tukey windowing.\n\n", uvar->tukeyBeta, uvar->window );
       }
 
@@ -1068,7 +1068,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
         }
       else if ( !strcmp ( uvar->window, "tukey" ) )
 	{
-	  if ( !LALUserVarWasSet( &uvar->tukeyBeta ) )
+	  if ( !XLALUserVarWasSet( &uvar->tukeyBeta ) )
 	    {
 	      uvar->tukeyBeta = 0.5;   /* If Tukey window specified, default transition fraction is 1/2 */
 	    }
@@ -1088,7 +1088,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     }
   else
     {
-      if ( LALUserVarWasSet( &uvar->tukeyBeta ) ) {
+      if ( XLALUserVarWasSet( &uvar->tukeyBeta ) ) {
         XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified; only relevant if Tukey windowing specified.\n\n", uvar->tukeyBeta );
       }
     } /* if uvar->window */
@@ -1099,7 +1099,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
     len = strlen(uvar->ephemYear) + 20;
 
-    if (LALUserVarWasSet(&uvar->ephemDir) )
+    if (XLALUserVarWasSet(&uvar->ephemDir) )
       len += strlen (uvar->ephemDir);
 
     if ( (earthdata = XLALCalloc(1, len)) == NULL) {
@@ -1109,7 +1109,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_ERROR ( XLAL_ENOMEM, "sundata = XLALCalloc(1, %d) failed.\n", len );
     }
 
-    if (LALUserVarWasSet(&uvar->ephemDir) )
+    if (XLALUserVarWasSet(&uvar->ephemDir) )
       {
 	sprintf ( earthdata, "%s/earth%s.dat", uvar->ephemDir, uvar->ephemYear);
 	sprintf ( sundata, "%s/sun%s.dat", uvar->ephemDir, uvar->ephemYear);
@@ -1160,13 +1160,13 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	uvar->orbitTpSSBnan = (UINT4)floor((pulparams.T0 - uvar->orbitTpSSBsec)*1e9);
       }
     }
-    BOOLEAN set1 = LALUserVarWasSet(&uvar->orbitasini);
-    BOOLEAN set2 = LALUserVarWasSet(&uvar->orbitEcc);
-    BOOLEAN set3 = LALUserVarWasSet(&uvar->orbitPeriod);
-    BOOLEAN set4 = LALUserVarWasSet(&uvar->orbitArgp);
-    BOOLEAN set5 = LALUserVarWasSet(&uvar->orbitTpSSBsec);
-    BOOLEAN set6 = LALUserVarWasSet(&uvar->orbitTpSSBnan);
-    BOOLEAN set7 = LALUserVarWasSet(&uvar->orbitTpSSBMJD);
+    BOOLEAN set1 = XLALUserVarWasSet(&uvar->orbitasini);
+    BOOLEAN set2 = XLALUserVarWasSet(&uvar->orbitEcc);
+    BOOLEAN set3 = XLALUserVarWasSet(&uvar->orbitPeriod);
+    BOOLEAN set4 = XLALUserVarWasSet(&uvar->orbitArgp);
+    BOOLEAN set5 = XLALUserVarWasSet(&uvar->orbitTpSSBsec);
+    BOOLEAN set6 = XLALUserVarWasSet(&uvar->orbitTpSSBnan);
+    BOOLEAN set7 = XLALUserVarWasSet(&uvar->orbitTpSSBMJD);
     BinaryOrbitParams *orbit = NULL;
 
     if (set1 || set2 || set3 || set4 || set5 || set6 || set7)
@@ -1212,19 +1212,19 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   /* -------------------- handle NOISE params -------------------- */
   {
-    if ( LALUserVarWasSet ( &uvar->noiseSigma ) && LALUserVarWasSet ( &uvar->noiseSqrtSh ) )
+    if ( XLALUserVarWasSet ( &uvar->noiseSigma ) && XLALUserVarWasSet ( &uvar->noiseSqrtSh ) )
       {
 	XLAL_ERROR ( XLAL_EINVAL, "Use only one of '--noiseSigma' and '--noiseSqrtSh' to specify Gaussian noise!\n\n");
       }
-    if ( LALUserVarWasSet ( &uvar->noiseSigma ) )
+    if ( XLALUserVarWasSet ( &uvar->noiseSigma ) )
       cfg->noiseSigma = uvar->noiseSigma;
-    else if ( LALUserVarWasSet ( &uvar->noiseSqrtSh ) )	/* convert Sh -> sigma */
+    else if ( XLALUserVarWasSet ( &uvar->noiseSqrtSh ) )	/* convert Sh -> sigma */
       cfg->noiseSigma = uvar->noiseSqrtSh * sqrt ( cfg->fBand_eff );
     else
       cfg->noiseSigma = 0;
 
     /* set random-number generator seed: either taken from user or from /dev/urandom */
-    if ( LALUserVarWasSet ( &uvar->randSeed ) )
+    if ( XLALUserVarWasSet ( &uvar->randSeed ) )
       {
         if ( uvar->randSeed == 0 ) {
           XLALPrintError ("WARNING: setting randSeed==0 results in the system clock being used as a random seed!\n");
@@ -1255,19 +1255,19 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  if (LALUserVarWasSet (&uvar->parfile)) {
+  if (XLALUserVarWasSet (&uvar->parfile)) {
     uvar->refTime = pulparams.pepoch; /*XLALReadTEMPOParFile already converted pepoch to GPS*/
     XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),uvar->refTime);
   }
-  else if (LALUserVarWasSet(&uvar->refTime) && LALUserVarWasSet(&uvar->refTimeMJD))
+  else if (XLALUserVarWasSet(&uvar->refTime) && XLALUserVarWasSet(&uvar->refTimeMJD))
     {
       XLAL_ERROR ( XLAL_EINVAL, "\nUse only one of '--refTime' and '--refTimeMJD' to specify SSB reference time!\n\n");
     }
-  else if (LALUserVarWasSet(&uvar->refTime))
+  else if (XLALUserVarWasSet(&uvar->refTime))
     {
       XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime), uvar->refTime);
     }
-  else if (LALUserVarWasSet(&uvar->refTimeMJD))
+  else if (XLALUserVarWasSet(&uvar->refTimeMJD))
     {
 
       /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
@@ -1295,14 +1295,14 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
     } /* if uvar->actuation */
 
-  if ( !uvar->actuation && LALUserVarWasSet(&uvar->actuationScale) ) {
+  if ( !uvar->actuation && XLALUserVarWasSet(&uvar->actuationScale) ) {
     XLAL_ERROR ( XLAL_EINVAL, "Actuation-scale was specified without actuation-function file!\n\n");
   }
 
   XLALFree ( channelName );
 
   /* ----- handle transient-signal window if given ----- */
-  if ( !LALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
+  if ( !XLALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
     cfg->transientWindow.type = TRANSIENT_NONE;                /* default: no transient signal window */
   else
     {
