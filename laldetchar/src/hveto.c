@@ -166,6 +166,7 @@ int main(int argc, char** argv){
 		 * function, and only doing a single pass.
 		 */
 		char *winner;
+		winner = malloc( sizeof(char)*1024 );
 		double *sig = malloc(sizeof(double));
 		int nw = nwinds, nt = nthresh;
 		for( nt=nthresh; nt >= 0; nt-- ){
@@ -177,8 +178,6 @@ int main(int argc, char** argv){
 				printf( "Window: %d\n", nw );
 				wind = twins[nw];
 				printf( "wind: %f\n", wind );
-				winner = malloc( sizeof(char)*1024 );
-				printf( "Prev Winner str: %s\n", winner );
 
 				// Create our channel coincidence histogram
 				// FIXME: Free memory?
@@ -227,7 +226,7 @@ int main(int argc, char** argv){
 		// Get the winner over all the subrounds
 		GHashTableIter subrnd;
 		g_hash_table_iter_init( &subrnd, subround_winners );
-		char *chanwin;
+		char *chanwin = NULL;
 		gpointer val, key;
 
 		rnd_sig = 0;
