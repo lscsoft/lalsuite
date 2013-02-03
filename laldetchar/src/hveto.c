@@ -139,7 +139,7 @@ int main(int argc, char** argv){
 	int coinc_type = 1; // unique coincidences
 	double rnd_sig = 0;
 
-	char outpath[512];
+	char bdir[512], outpath[1024], cmd[1024];
 
 	GList *channames = g_hash_table_get_keys( chancount );
 	size_t nchans = g_list_length( channames ) - 1;
@@ -151,8 +151,9 @@ int main(int argc, char** argv){
 		printf( "Round %d\n", rnd );
 		
 		// Set up the output path for this round
-		sprintf( outpath, "mkdir -p round_%d", rnd );
-		system( outpath );
+		sprintf( bdir, "round_%d", rnd );
+		sprintf( cmd, "mkdir -p %s", bdir );
+		system( cmd );
 
 		// Clear the winners of the previous subrounds
 		// FIXME: Free memory?
@@ -192,11 +193,11 @@ int main(int argc, char** argv){
 				XLALDetCharScanTrigs( chancount, chanhist, trig_sequence, refchan, wind, coinc_type );
 				printf( "Trigger count:\n" );
 				print_hash_table( chancount, NULL );
-				sprintf( outpath, "round_%d_count.txt", rnd );
+				sprintf( outpath, "%s/round_%d_count.txt", bdir, rnd );
 				print_hash_table( chancount, outpath );
 				printf( "Trigger coincidences with %s, window (%g):\n", refchan, wind );
 				print_hash_table( chanhist, NULL );
-				sprintf( outpath, "round_%d_coinc.txt", rnd );
+				sprintf( outpath, "%s/round_%d_coinc.txt", bdir, rnd );
 				print_hash_table( chanhist, outpath );
 
 				strcpy( winner, "" );
@@ -253,7 +254,7 @@ int main(int argc, char** argv){
 			XLALSegSet( &veto, &start, &stop, 0 );
 			// Remove the triggers veoted from the main list
 			GSequence *vetoed_trigs = XLALDetCharRemoveTrigs( trig_sequence, veto, winner );
-			sprintf( outpath, "./round_%d_vetoed_triggers.xml", rnd );
+			sprintf( outpath, "%s/round_%d_vetoed_triggers.xml", bdir, rnd );
 			// Write them for later use
 			if( g_sequence_get_length(vetoed_trigs) > 0 ){
 				write_triggers( vetoed_trigs, outpath );
