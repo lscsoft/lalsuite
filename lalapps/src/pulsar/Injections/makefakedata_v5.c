@@ -94,13 +94,6 @@ typedef struct
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 } ConfigVars_t;
 
-typedef enum
-  {
-    GENERATE_ALL_AT_ONCE = 0,	/**< generate whole time-series at once before turning into SFTs */
-    GENERATE_PER_SFT,		/**< generate timeseries individually for each SFT */
-    GENERATE_LAST		/**< end-marker */
-  } GenerationMode;
-
 // ----- User variables
 typedef struct
 {
@@ -120,9 +113,6 @@ typedef struct
   CHAR *timestampsFile;	/**< Timestamps file */
   INT4 startTime;		/**< Start-time of requested signal in detector-frame (GPS seconds) */
   INT4 duration;		/**< Duration of requested signal in seconds */
-
-  /* generation mode of timer-series: all-at-once or per-sft */
-  INT4 generationMode;	/**< How to generate the timeseries: all-at-once or per-sft */
 
   /* time-series sampling + heterodyning frequencies */
   REAL8 fmin;		/**< Lowest frequency in output SFT (= heterodyning frequency) */
@@ -229,7 +219,6 @@ main(int argc, char *argv[])
   ConfigVars_t GV = empty_GV;
   PulsarSignalParams params = empty_PulsarSignalParams;
   REAL4TimeSeries *Tseries = NULL;
-  UINT4 i_chunk, numchunks;
   FILE *fpSingleSFT = NULL;
 
   UserVariables_t uvar = empty_UserVariables;
@@ -279,21 +268,7 @@ main(int argc, char *argv[])
       params.fHeterodyne 	= 0;
     }
 
-  /* set-up main-loop according to 'generation-mode' (all-at-once' or 'per-sft') */
-  switch ( uvar.generationMode )
-    {
-    case GENERATE_ALL_AT_ONCE:
-      params.duration     = GV.duration;
-      numchunks = 1;
-      break;
-    case GENERATE_PER_SFT:
-      params.duration = (UINT4) ceil(uvar.Tsft);
-      numchunks = GV.timestamps->length;
-      break;
-    default:
-      XLAL_ERROR ( XLAL_EINVAL, "Illegal value for generationMode %d\n\n", uvar.generationMode );
-      break;
-    } /* switch generationMode */
+  params.duration     = GV.duration;
 
   /* if user requesting single concatenated SFT */
   if ( uvar.outSingleSFT )
@@ -309,210 +284,172 @@ main(int argc, char *argv[])
       }
     } // if outSingleSFT
 
-  /* ----------
-   * Main loop: produce time-series and turn it into SFTs,
-   * either all-at-once or per-sft
-   * ----------*/
-  for ( i_chunk = 0; i_chunk < numchunks; i_chunk++ )
+  params.startTimeGPS = GV.timestamps->data[0];
+
+  /*----------------------------------------
+   * generate the signal time-series
+   *----------------------------------------*/
+  if ( uvar.exactSignal )
     {
-      params.startTimeGPS = GV.timestamps->data[i_chunk];
+      XLAL_CHECK ( (Tseries = XLALSimulateExactPulsarSignal ( &params )) != NULL, XLAL_EFUNC );
+    }
+  else if ( uvar.lineFeature )
+    {
+      XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
+    }
+  else
+    {
+      XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
+    }
 
-      /*----------------------------------------
-       * generate the signal time-series
-       *----------------------------------------*/
-      if ( uvar.exactSignal )
-	{
-          XLAL_CHECK ( (Tseries = XLALSimulateExactPulsarSignal ( &params )) != NULL, XLAL_EFUNC );
-	}
-      else if ( uvar.lineFeature )
-	{
-          XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
-	}
-      else
-	{
-	  XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
-	}
+  XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, GV.transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, GV.transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      /* for HARDWARE-INJECTION:
-       * before the first chunk we send magic number and chunk-length to stdout
-       */
-      if ( uvar.hardwareTDD && (i_chunk == 0) )
-	{
-	  REAL4 magic = 1234.5;
-	  UINT4 length = Tseries->data->length;
-	  if ( (1 != fwrite ( &magic, sizeof(magic), 1, stdout )) || (1 != fwrite(&length, sizeof(INT4), 1, stdout)) )
-	    {
-	      perror ("Failed to write to stdout");
-	      XLAL_ERROR ( XLAL_EIO );
-	    }
-	} /* if hardware-injection and doing first chunk */
+  /* for HARDWARE-INJECTION:
+   * before the first chunk we send magic number and chunk-length to stdout
+   */
+  if ( uvar.hardwareTDD )
+    {
+      REAL4 magic = 1234.5;
+      UINT4 length = Tseries->data->length;
+      if ( (1 != fwrite ( &magic, sizeof(magic), 1, stdout )) || (1 != fwrite(&length, sizeof(INT4), 1, stdout)) )
+        {
+          perror ("Failed to write to stdout");
+          XLAL_ERROR ( XLAL_EIO );
+        }
+    } /* if hardware-injection and doing first chunk */
 
 
       /* add Gaussian noise if requested */
-      if ( GV.noiseSigma > 0) {
-	XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, GV.noiseSigma, GV.randSeed + i_chunk ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
+  if ( GV.noiseSigma > 0) {
+    XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, GV.noiseSigma, GV.randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
-      /* output ASCII time-series if requested */
-      if ( uvar.TDDfile )
-	{
-	  FILE *fp;
-	  CHAR *fname = XLALCalloc (1, len = strlen(uvar.TDDfile) + 10 );
-          XLAL_CHECK ( fname != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed\n", len );
-	  sprintf (fname, "%s.%02d", uvar.TDDfile, i_chunk);
+  /* output ASCII time-series if requested */
+  if ( uvar.TDDfile )
+    {
+      FILE *fp;
+      if ( (fp = fopen (uvar.TDDfile, "w")) == NULL)
+        {
+          perror ("Error opening outTDDfile for writing");
+          XLAL_ERROR ( XLAL_EIO, "Failed to fopen TDDfile = '%s' for writing\n", uvar.TDDfile );
+        }
 
-	  if ( (fp = fopen (fname, "w")) == NULL)
-	    {
-	      perror ("Error opening outTDDfile for writing");
-              XLAL_ERROR ( XLAL_EIO, "Failed to fopen TDDfile = '%s' for writing\n", fname );
-	    }
-
-	  write_timeSeriesR4(fp, Tseries);
-	  fclose(fp);
-	  XLALFree (fname);
-	} /* if outputting ASCII time-series */
+      write_timeSeriesR4(fp, Tseries);
+      fclose(fp);
+    } /* if outputting ASCII time-series */
 
 
-      /* if hardware injection: send timeseries in binary-format to stdout */
-      if ( uvar.hardwareTDD )
-	{
-	  UINT4  length = Tseries->data->length;
-	  REAL4 *datap = Tseries->data->data;
+  /* if hardware injection: send timeseries in binary-format to stdout */
+  if ( uvar.hardwareTDD )
+    {
+      UINT4  length = Tseries->data->length;
+      REAL4 *datap = Tseries->data->data;
 
-	  if ( length != fwrite (datap, sizeof(datap[0]), length, stdout) )
-	    {
-	      perror( "Fatal error in writing binary data to stdout\n");
-	      XLAL_ERROR ( XLAL_EIO, "fwrite() failed\n");
-	    }
-	  fflush (stdout);
+      if ( length != fwrite (datap, sizeof(datap[0]), length, stdout) )
+        {
+          perror( "Fatal error in writing binary data to stdout\n");
+          XLAL_ERROR ( XLAL_EIO, "fwrite() failed\n");
+        }
+      fflush (stdout);
 
-	} /* if hardware injections */
+    } /* if hardware injections */
 
       /*----------------------------------------
        * last step: turn this timeseries into SFTs
        * and output them to disk
        *----------------------------------------*/
-      SFTVector *SFTs = NULL;
-      if (uvar.outSFTbname)
-	{
-	  SFTParams sftParams = empty_SFTParams;
-	  LIGOTimeGPSVector ts;
-	  SFTVector noise;
+  SFTVector *SFTs = NULL;
+  if (uvar.outSFTbname)
+    {
+      SFTParams sftParams = empty_SFTParams;
 
-	  sftParams.Tsft = uvar.Tsft;
+      sftParams.Tsft = uvar.Tsft;
 
-	  switch (uvar.generationMode)
-	    {
-	    case GENERATE_ALL_AT_ONCE:
-	      sftParams.timestamps = GV.timestamps;
-	      sftParams.noiseSFTs = GV.noiseSFTs;
-	      break;
-	    case GENERATE_PER_SFT:
-	      ts.length = 1;
-	      ts.data = &(GV.timestamps->data[i_chunk]);
-	      sftParams.timestamps = &(ts);
-	      sftParams.noiseSFTs = NULL;
+      sftParams.timestamps = GV.timestamps;
+      sftParams.noiseSFTs = GV.noiseSFTs;
 
-	      if ( GV.noiseSFTs )
-		{
-		  noise.length = 1;
-		  noise.data = &(GV.noiseSFTs->data[i_chunk]);
-		  sftParams.noiseSFTs = &(noise);
-		}
+      /* Enter the window function into the SFTparams struct */
+      sftParams.window = GV.window;
 
-	      break;
+      /* get SFTs from timeseries */
+      XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
 
-	    default:
-	      XLAL_ERROR ( XLAL_EINVAL, "Invalid Value --generationMode=%d\n", uvar.generationMode );
-	      break;
-	    }
+      /* extract requested band if necessary (eg in the exact-signal case) */
+      if ( uvar.exactSignal )
+        {
+          SFTVector *outSFTs;
+          XLAL_CHECK ( (outSFTs = XLALExtractSFTBand ( SFTs, GV.fmin_eff, GV.fBand_eff )) != NULL, XLAL_EFUNC );
+          XLALDestroySFTVector ( SFTs );
+          SFTs = outSFTs;
+        }
 
-	  /* Enter the window function into the SFTparams struct */
-	  sftParams.window = GV.window;
+      if ( uvar.outSFTv1 ) 		/* write output-SFTs using the SFT-v1 format */
+        {
+          CHAR *fname = XLALCalloc (1, len = strlen (uvar.outSFTbname) + 10 );
+          XLAL_CHECK ( fname != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed.\n", len );
 
-	  /* get SFTs from timeseries */
-          XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
+          LALStatus status = blank_status;
+          for (UINT4 i=0; i < SFTs->length; i++)
+            {
+              sprintf (fname, "%s.%05d", uvar.outSFTbname, i);
+              LALWrite_v2SFT_to_v1file ( &status, &(SFTs->data[i]), fname );
+              XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALWrite_v2SFT_to_v1file('%s') failed with status=%d : '%s'\n",
+                           fname, status.statusCode, status.statusDescription );
+            }
+          XLALFree (fname);
+        } /* if outSFTv1 */
+      else
+        {	/* write standard v2-SFTs */
 
-	  /* extract requested band if necessary (eg in the exact-signal case) */
-	  if ( uvar.exactSignal )
-	    {
-	      SFTVector *outSFTs;
-              XLAL_CHECK ( (outSFTs = XLALExtractSFTBand ( SFTs, GV.fmin_eff, GV.fBand_eff )) != NULL, XLAL_EFUNC );
-	      XLALDestroySFTVector ( SFTs );
-	      SFTs = outSFTs;
-	    }
+          /* generate comment string */
+          CHAR *logstr;
+          XLAL_CHECK ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
+          char *comment = XLALCalloc ( 1, len = strlen ( logstr ) + strlen(GV.VCSInfoString) + 512 );
+          XLAL_CHECK ( comment != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed.\n", len );
+          sprintf ( comment, "Generated by:\n%s\n%s\n", logstr, GV.VCSInfoString );
 
-	  if ( uvar.outSFTv1 ) 		/* write output-SFTs using the SFT-v1 format */
-	    {
-	      CHAR *fname = XLALCalloc (1, len = strlen (uvar.outSFTbname) + 10 );
-              XLAL_CHECK ( fname != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed.\n", len );
-
-              LALStatus status = blank_status;
-	      for (UINT4 i=0; i < SFTs->length; i++)
-		{
-		  sprintf (fname, "%s.%05d", uvar.outSFTbname, i_chunk*SFTs->length + i);
-		  LALWrite_v2SFT_to_v1file ( &status, &(SFTs->data[i]), fname );
-                  XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALWrite_v2SFT_to_v1file('%s') failed with status=%d : '%s'\n",
-                               fname, status.statusCode, status.statusDescription );
-		}
-	      XLALFree (fname);
-	    } /* if outSFTv1 */
-	  else
-	    {	/* write standard v2-SFTs */
-
-              /* generate comment string */
-              CHAR *logstr;
-              XLAL_CHECK ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
-              char *comment = XLALCalloc ( 1, len = strlen ( logstr ) + strlen(GV.VCSInfoString) + 512 );
-              XLAL_CHECK ( comment != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed.\n", len );
-              sprintf ( comment, "Generated by:\n%s\n%s\n", logstr, GV.VCSInfoString );
-
-              /* if user requesting single concatenated SFT */
-              if ( uvar.outSingleSFT )
+          /* if user requesting single concatenated SFT */
+          if ( uvar.outSingleSFT )
+            {
+              /* write all SFTs to concatenated file */
+              for ( UINT4 k = 0; k < SFTs->length; k++ )
                 {
-                  /* write all SFTs to concatenated file */
-                  for ( UINT4 k = 0; k < SFTs->length; k++ )
-                    {
-                      ret = XLALWriteSFT2fp ( &(SFTs->data[k]), fpSingleSFT, comment );
-                      XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteSFT2fp() failed to write SFT %d / %d to '%s'!\n", k+1, SFTs->length, uvar.outSFTbname );
-                    } // for k < numSFTs
-                } // if outSingleSFT
-              else
+                  ret = XLALWriteSFT2fp ( &(SFTs->data[k]), fpSingleSFT, comment );
+                  XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteSFT2fp() failed to write SFT %d / %d to '%s'!\n", k+1, SFTs->length, uvar.outSFTbname );
+                } // for k < numSFTs
+            } // if outSingleSFT
+          else
+            {
+              /* check that user didn't follow v1-habits and tried to give us a base filename */
+              if ( ! is_directory ( uvar.outSFTbname ) )
                 {
-                  /* check that user didn't follow v1-habits and tried to give us a base filename */
-                  if ( ! is_directory ( uvar.outSFTbname ) )
-                    {
-                      fprintf (stderr, "\nERROR: the --outSFTbname '%s' is not a directory!\n", uvar.outSFTbname);
-                      fprintf (stderr, "------------------------------------------------------------\n");
-                      fprintf (stderr, "NOTE: v2-SFTs are written using the SFTv2 filename-convention!\n");
-                      fprintf (stderr, "==> therefore, only an (existing) directory-name may be given to --outSFTbname, but no basename!\n");
-                      fprintf (stderr, "------------------------------------------------------------\n\n");
-                      XLAL_ERROR ( XLAL_EINVAL );
-                    }
-                  XLAL_CHECK ( XLALWriteSFTVector2Dir( SFTs, uvar.outSFTbname, comment, "mfdv4" ) == XLAL_SUCCESS, XLAL_EFUNC );
+                  fprintf (stderr, "\nERROR: the --outSFTbname '%s' is not a directory!\n", uvar.outSFTbname);
+                  fprintf (stderr, "------------------------------------------------------------\n");
+                  fprintf (stderr, "NOTE: v2-SFTs are written using the SFTv2 filename-convention!\n");
+                  fprintf (stderr, "==> therefore, only an (existing) directory-name may be given to --outSFTbname, but no basename!\n");
+                  fprintf (stderr, "------------------------------------------------------------\n\n");
+                  XLAL_ERROR ( XLAL_EINVAL );
                 }
-              XLALFree ( logstr );
-              XLALFree ( comment );
+              XLAL_CHECK ( XLALWriteSFTVector2Dir( SFTs, uvar.outSFTbname, comment, "mfdv4" ) == XLAL_SUCCESS, XLAL_EFUNC );
+            }
+          XLALFree ( logstr );
+          XLALFree ( comment );
 
-            } // if v2-SFTs
-        } /* if outSFTbname */
+        } // if v2-SFTs
+    } /* if outSFTbname */
 
-      /* free memory */
-      if (Tseries)
-	{
-	  XLALDestroyREAL4TimeSeries ( Tseries );
-	  Tseries = NULL;
-	}
+  /* free memory */
+  if (Tseries)
+    {
+      XLALDestroyREAL4TimeSeries ( Tseries );
+      Tseries = NULL;
+    }
 
-      if (SFTs)
-	{
-	  XLALDestroySFTVector ( SFTs );
-	  SFTs = NULL;
-	}
-
-    } /* for i_chunk < numchunks */
+  if (SFTs)
+    {
+      XLALDestroySFTVector ( SFTs );
+      SFTs = NULL;
+    }
 
   /* if user requesting single concatenated SFT */
   if ( uvar.outSingleSFT ) {
@@ -820,13 +757,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_ERROR ( XLAL_EINVAL, "I can't combine --SFToverlap with --noiseSFTs or --timestampsFile, only use with (--startTime, --duration)!\n\n");
     }
 
-    /* don't allow --SFToverlap with generationMode==1 (one timeseries per SFT), as this would
-     * result in independent noise realizations in the overlapping regions
-     */
-    if ( haveOverlap && (uvar->generationMode != 0) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "--SFToverlap can only be used with --generationMode=0, otherwise we'll get overlapping independent noise!\n\n");
-    }
-
     /*-------------------- check special case: Hardware injection ---------- */
     /* don't allow timestamps-file, noise-SFTs or SFT-output */
     if ( uvar->hardwareTDD )
@@ -970,31 +900,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     }
 
   } /* END: setup signal start + duration */
-
-  /*----------------------------------------------------------------------*/
-  /* currently there are only two modes: [uvar->generationMode]
-   * 1) produce the whole timeseries at once [default],
-   *       [GENERATE_ALL_AT_ONCE]
-   * 2) produce timeseries for each SFT,
-   *       [GENERATE_PER_SFT]
-   *
-   * Mode 2 which is useful if 1) is too memory-intensive (e.g. for hardware-injections)
-   *
-   * intermediate modes would require a bit more work because the
-   * case with specified timestamps (allowing for gaps) would be
-   * a bit more tricky ==> this is left for future extensions if found useful
-   */
-  if ( (uvar->generationMode < 0) || (uvar->generationMode >= GENERATE_LAST) ) {
-    XLAL_ERROR ( XLAL_EINVAL, "Illegal input for 'generationMode': must lie within [0, %d]\n\n", GENERATE_LAST -1);
-  }
-
-  /* this is a violation of the UserInput-paradigm that no user-variables
-   * should by modified by the code, but this is the easiest way to do
-   * this here, and the log-output of user-variables will not be changed
-   * by this [it's already been written], so in this case it should be safe..
-   */
-  if ( uvar->hardwareTDD )
-    uvar->generationMode = GENERATE_PER_SFT;
 
   /*--------------------- Prepare windowing of time series ---------------------*/
   cfg->window = NULL;
@@ -1304,9 +1209,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   uvar->fmin = 0;	/* no heterodyning by default */
   uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
 
-  // per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging"
-  uvar->generationMode = GENERATE_PER_SFT;
-
   uvar->actuationScale = - 1.0;	/* seems to be the LIGO-default */
 
 #define DEFAULT_TRANSIENT "none"
@@ -1395,9 +1297,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  transientTauDays,     0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in days.");
 
   /* ----- 'expert-user/developer' and deprecated options ----- */
-  XLALregINTUserStruct (   generationMode,       0,  UVAR_DEVELOPER, "How to generate timeseries: 0=all-at-once (faster), 1=per-sft (slower)");
-
-  XLALregBOOLUserStruct (  hardwareTDD,         'b', UVAR_DEVELOPER, "Hardware injection: output TDD in binary format (implies generationMode=1)");
+  XLALregBOOLUserStruct (  hardwareTDD,         'b', UVAR_DEVELOPER, "Hardware injection: output TDD in binary format");
   XLALregSTRINGUserStruct (actuation,            0,  UVAR_DEVELOPER, "Filname containing actuation function of this detector");
   XLALregREALUserStruct (  actuationScale,       0,  UVAR_DEVELOPER,  "(Signed) scale-factor to apply to the actuation-function.");
 

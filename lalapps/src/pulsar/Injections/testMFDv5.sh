@@ -57,6 +57,7 @@ fUpper=311
 ## VARY
 IFO=H1
 h0=0.73
+sqrtSn=1;
 cosi=0.1
 psi=0.5
 phi0=0.9
@@ -79,7 +80,7 @@ echo
 echo "----- mfd_v4: producing SFTs via (generationMode=0 [ALL_AT_ONCE] ):"
 echo
 
-mfdv4_CL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 -v${debug}"
+mfdv4_CL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 --noiseSqrtSh=${sqrtSn} --randSeed=1 -v${debug}"
 cmdline="$mfdv4_CODE $mfdv4_CL --outSingleSFT --outSFTbname=${sftsv4}";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -92,7 +93,7 @@ echo
 echo "----- mfd_v5: producing SFTs:"
 echo
 
-mfdv5_CL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 -v${debug}"
+mfdv5_CL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --noiseSqrtSh=${sqrtSn} --randSeed=1 -v${debug}"
 cmdline="$mfdv5_CODE $mfdv5_CL --outSingleSFT --outSFTbname=${sftsv5}";
 echo $cmdline;
 if ! eval $cmdline; then
