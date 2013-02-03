@@ -1,6 +1,24 @@
 #include <lal/LALDetCharHveto.h>
 
 /*
+ * Okay, now we're playing a bit fast and loose. These are defined for use with
+ * the SnglBurst's next pointer. Since we don't use the SnglBurst as a linked
+ * list --- leaving that instead to the glib sequence --- the next pointer is
+ * hijacked for use with "masking" trigs via the Prune function. Since several
+ * rounds are usually required, when we "prune" a trig via its SNR, we don't
+ * want to remove and then reload it later --- that takes a long time. Instead,
+ * we "mask" it by assigning its next pointer one of the below values. Both
+ * are near guaranteed to crash the program if someone attempts to use them
+ * in the normal fashion, and are informative if looking at them in gdb.
+ *
+ * In short, don't use the SnglBurst next pointer for something in the hveto 
+ * program. I hereby disclaim responsibility if by some magic, the program
+ * actually allocates to 0xDEADBEEFDEADBEFF.
+ */
+#define TRIG_MASKED (SnglBurst*)0xDEADBEEFDEADBEEF
+#define TRIG_NOT_MASKED (SnglBurst*)0x0
+
+/*
  * Scan through a list of triggers and count the instances of each trigger type
  * and count its coincidences with the target channel. The hash tables for the
  * channel count and coincidence count must already be initialized. The
@@ -40,6 +58,7 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 
 		// Current trigger
 		sb_target = (SnglBurst*)g_sequence_get( cur_trig );
+		if( sb_target->next == TRIG_MASKED ) continue;
 
 		/*
 		 * Increment the trigger count for this channel.
@@ -103,7 +122,7 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			 * For now, don't use the target channel
 			 * FIXME: We may want this information in the future
 			 */
-			if( (coinctype == 1 && g_hash_table_lookup( prevcoinc, sb_aux->channel )) || strstr( sb_aux->channel, chan ) ){
+			if( (coinctype == 1 && g_hash_table_lookup( prevcoinc, sb_aux->channel )) || strstr( sb_aux->channel, chan ) || sb_aux->next == TRIG_MASKED ){
 				if( g_sequence_iter_is_begin(trigp) ) break;
 				trigp = g_sequence_iter_prev(trigp);
 				sb_aux = (SnglBurst*)g_sequence_get(trigp);
@@ -146,7 +165,7 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			//sb_aux = (SnglBurst*)g_sequence_get(trigp);
 			
 			// Not the target channel?
-			if( strstr( sb_aux->channel, chan ) ){ 
+			if( strstr( sb_aux->channel, chan ) || sb_aux->next == TRIG_MASKED ){ 
 				trigp = g_sequence_iter_next(trigp);
 				sb_aux = (SnglBurst*)g_sequence_get(trigp);
 				continue;
@@ -261,6 +280,14 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
 			tmp = trigp;
 			trigp = g_sequence_iter_next( trigp );
 			g_sequence_remove(tmp);
+			continue;
+		}
+
+		if( pos != 0 ){
+			tmp = trigp;
+			trigp = g_sequence_iter_next( trigp );
+			g_sequence_remove(tmp);
+			continue;
 		}
 
 		/*
@@ -271,13 +298,17 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
 		gboolean isrefchan = (refchan != NULL);
 		if( isrefchan ) isrefchan = (strstr( refchan, sb->channel ) != NULL);
 
-		if( (pos != 0) | (sb->confidence < snr_thresh && !isrefchan) ){
-			tmp = trigp;
-			trigp = g_sequence_iter_next( trigp );
-			g_sequence_remove(tmp);
+		/*
+		 * Mark the trigger as unused, but don't delete it. This is a common
+		 * where the snr threshold is raised, but we don't want to remove the
+		 * trigger. See warnings and disclaimers at the top of the file.
+		 */
+		if( sb->confidence < snr_thresh && !isrefchan ){
+			sb->next = TRIG_MASKED;
 		} else {
-			trigp = g_sequence_iter_next( trigp );
+			sb->next = TRIG_NOT_MASKED;
 		}
+		trigp = g_sequence_iter_next( trigp );
 	}
 }
 
@@ -342,7 +373,7 @@ GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, 
 			g_sequence_move(tmp, tbdit);
 			tbdit = g_sequence_iter_next(tbdit);
 			vetoed_events++;
-			XLALPrintInfo( "Backwards, deleting %s id %ld\n", sb->channel, sb->event_id );
+			XLALPrintInfo( "Backwards, deleting %s (%d.%d) id %ld\n", sb->channel, sb->peak_time.gpsSeconds, sb->peak_time.gpsNanoSeconds, sb->event_id );
 			if( strstr(refchan, sb->channel) ){
 				de_vetoed_events++;
 			}
@@ -367,7 +398,7 @@ GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, 
 				g_sequence_move(tmp, tbdit);
 				tbdit = g_sequence_iter_next(tbdit);
 				vetoed_events++;
-				XLALPrintInfo( "Forwards, deleting %s id %ld\n", sb->channel, sb->event_id );
+				XLALPrintInfo( "Forwards, deleting %s (%d.%d) id %ld\n", sb->channel, sb->peak_time.gpsSeconds, sb->peak_time.gpsNanoSeconds, sb->event_id );
 				if( strstr(refchan, sb->channel) ){
 					de_vetoed_events++;
 				}
@@ -384,7 +415,7 @@ GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, 
 		g_sequence_move( tmp, tbdit );
 		tbdit = g_sequence_iter_next(tbdit);
 		vetoed_events++;
-		XLALPrintInfo( "Veto trig, deleting %s id %ld\n", sb->channel, sb->event_id );
+		XLALPrintInfo( "Veto trig, deleting %s (%d.%d) id %ld\n", sb->channel, sb->peak_time.gpsSeconds, sb->peak_time.gpsNanoSeconds, sb->event_id );
 
 		// FIXME: Add to veto list
 		XLALFree( trig_veto );
@@ -393,7 +424,6 @@ GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, 
 		nevents = g_sequence_get_length(trig_sequence);
 		XLALPrintInfo( "%lu events remain\n", nevents );
 	}
-	//g_sequence_free( tbd );
 	XLALPrintInfo( "Done, total events removed %lu\n", vetoed_events );
 	XLALPrintInfo( "Done, ref channel total events removed %lu\n", de_vetoed_events );
 

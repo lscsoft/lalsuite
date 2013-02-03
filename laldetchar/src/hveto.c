@@ -58,7 +58,8 @@ int main(int argc, char** argv){
 		get_ignore_list( argv[4], ignorelist );
 	}
 
-	lalDebugLevel=0;
+	//lalDebugLevel = 1 | 2 | 4 | 32;
+	lalDebugLevel = 0;
 
 	double sig_thresh = 3.0;
 	// TODO: Significance or SNR option
@@ -257,11 +258,14 @@ int main(int argc, char** argv){
 			if( g_sequence_get_length(vetoed_trigs) > 0 ){
 				write_triggers( vetoed_trigs, outpath );
 			}
+
+			// Remove livetime
+			// livetime -= XLALDetCharHvetoExciseSegment( live, vetosegs );
+			// TODO: Do this right
+			livetime -= wind*g_sequence_get_length( vetoed_trigs );
+
 			// Begone witcha!
 			g_sequence_free( vetoed_trigs );
-
-			// Remove the channel from consideration
-			//printf( "Removing %s from count\n", chanwin );
 
 			/*
 			 * TODO: This as supposed to remove the channel from the from list
@@ -277,7 +281,7 @@ int main(int argc, char** argv){
 			*/
 		}
 		rnd++;
-		if( rnd > 1 ) break;
+		//if( rnd > 1 ) break;
 	} while( rnd_sig > sig_thresh && (size_t)rnd < nchans );
 	printf( "Last round did not pass significance threshold or all channels have been vetoed. Ending run.\n" );
 
