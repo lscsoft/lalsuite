@@ -663,7 +663,7 @@ for ifo in ["G1", "H1", "H2", "L1", "V1"]:
   ifo_segfile = getattr(opts, "%s_segments" % ifo.lower())
   if ifo_segfile is not None:
     tmplist = segmentsUtils.fromsegwizard(open(ifo_segfile))
-    segdict[ifo] = segments.segmentlist([s for s in tmplist if abs(s) > minsciseg])
+    segdict[ifo] = segments.segmentlist([s for s in tmplist if abs(s) >= minsciseg])
 ifolist = segdict.keys()
 ifolist.sort()
 

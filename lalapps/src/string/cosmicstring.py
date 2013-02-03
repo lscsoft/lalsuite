@@ -164,7 +164,7 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
 		for c in cache:
-			self.add_output_file(c.path())
+			self.add_output_file(c.path)
 
 	def add_likelihood_cache(self, cache):
 		self.likelihood_cache.extend(cache)
@@ -324,7 +324,7 @@ class RunSqliteNode(pipeline.CondorDAGNode):
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
 		for c in cache:
-			filename = c.path()
+			filename = c.path
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 			self.add_output_file(filename)
 
@@ -544,7 +544,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_s
 	# the unpacking indirectly tests that the file count is correct
 	[framecache] = [node.get_output() for node in datafindnodes]
 	if binjnodes:
-		[simfile] = [cache_entry.path() for node in binjnodes for cache_entry in node.get_output_cache()]
+		[simfile] = [cache_entry.path for node in binjnodes for cache_entry in node.get_output_cache()]
 		injargs = {"injection-file": simfile}
 	else:
 		injargs = {}

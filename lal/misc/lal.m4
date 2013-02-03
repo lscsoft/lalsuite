@@ -1,108 +1,81 @@
 # lal.m4 - lal specific macros
 #
-# serial 9
+# serial 16
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
   [extra_cppflags],
   AC_HELP_STRING([--with-extra-cppflags=CPPFLAGS],[additional C preprocessor flags]),
-  [ if test -n "${with_extra_cppflags}"
-    then
-      CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_extra_cppflags}"],[CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}"]),)
 ])
 
 AC_DEFUN([LAL_WITH_CFLAGS],
 [AC_ARG_WITH(
   [cflags],
   AC_HELP_STRING([--with-cflags=CFLAGS],[C compiler flags]),
-  [ if test -n "${with_cflags}"
-    then
-      CFLAGS="${with_cflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_cflags}"],[CFLAGS="${with_cflags}"]),)
 ])
 
 AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
 [AC_ARG_WITH(
   [extra_cflags],
   AC_HELP_STRING([--with-extra-cflags=CFLAGS],[additional C compiler flags]),
-  [ if test -n "${with_extra_cflags}"
-    then
-      CFLAGS="$CFLAGS ${with_extra_cflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_extra_cflags}"],[CFLAGS="$CFLAGS ${with_extra_cflags}"]),)
 ])
 
 AC_DEFUN([LAL_WITH_EXTRA_LDFLAGS],
 [AC_ARG_WITH(
   [extra_ldflags],
   AC_HELP_STRING([--with-extra-ldflags=LDFLAGS],[additional linker flags]),
-  [ if test -n "${with_extra_ldflags}"
-    then
-      LDFLAGS="$LDFLAGS ${with_extra_ldflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_extra_ldflags}"],[LDFLAGS="$LDFLAGS ${with_extra_ldflags}"]),)
 ])
 
 AC_DEFUN([LAL_WITH_EXTRA_LIBS],
 [AC_ARG_WITH(
   [extra_libs],
   AC_HELP_STRING([--with-extra-libs=LIBS],[additional -l and -L linker flags]),
-  [ if test -n "${with_extra_libs}"
-    then
-      LIBS="$LIBS ${with_extra_libs}";
-    fi
-  ],)
+  AS_IF([test -n "${with_extra_libs}"],[LIBS="$LIBS ${with_extra_libs}"]),)
 ])
 
 AC_DEFUN([LAL_WITH_CC],
 [AC_ARG_WITH(
   [cc],
   AC_HELP_STRING([--with-cc=CC],[use the CC C compiler]),
-  [ if test -n "${with_cc}"
-    then
-      CC="${with_cc}";
-    fi
-  ],)
+  AS_IF([test -n "${with_cc}"],[CC="${with_cc}"]),)
 ])
 
 AC_DEFUN([LAL_ENABLE_INTELFFT],
 [AC_ARG_ENABLE(
   [intelfft],
   AC_HELP_STRING([--enable-intelfft],[use Intel FFT libraries insted of FFTW [default=no]]),
-  [ case "${enableval}" in
-      yes) intelfft=true ;;
-      no)  intelfft=false ;;
-      condor) intelfft=true ; qthread=true ; AC_DEFINE(LAL_QTHREAD, 1, Use fake qthread library for MKL Condor compatibility) ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-intelfft) ;;
-    esac
-  ], [ intelfft=false ] )
+  AS_CASE(["${enableval}"],
+    [yes],[intelfft=true],
+    [no],[intelfft=false],
+    [condor],[intelfft=true; qthread=tru; AC_DEFINE([LALQTHREAD],[1],[Use fake qthread library for MKL Condor compatibility])],
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-intelfft])
+  ),[intelfft=false])
 ])
 
 AC_DEFUN([LAL_ENABLE_MACROS],
 [AC_ARG_ENABLE(
   [macros],
   AC_HELP_STRING([--enable-macros],[use LAL macros [default=yes]]),
-  [ case "${enableval}" in
-      yes) ;;
-      no) AC_DEFINE(NOLALMACROS, 1, Use functions rather than macros) ;;
-      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
-    esac
-  ], )
+  AS_CASE(["${enableval}"],
+    [yes],,
+    [no],AC_DEFINE([NOLALMACROS],[1],[Use functions rather than macros]),
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-macros])
+  ),)
 ])
 
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
 [AC_ARG_ENABLE(
   [pthread_lock],
   AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety [default=no]]),
-  [ case "${enableval}" in
-      yes) lal_pthread_lock=true; AC_DEFINE(LAL_PTHREAD_LOCK, 1, Use pthread mutex lock for threadsafety) ;;
-      no) lal_pthread_lock=false ;;
-      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-pthread-lock) ;;
-    esac
-  ], [ lal_pthread_lock=false ] )
+  AS_CASE(["${enableval}"],
+    [yes],[lal_pthread_lock=true; AC_DEFINE([LAL_PTHREAD_LOCK],[1],[Use pthread mutex lock for threadsafety])],
+    [no],[lal_pthread_lock=false],
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-pthread-lock])
+  ),[lal_pthread_lock=false])
 ])
 
 AC_DEFUN([LAL_INTEL_MKL_QTHREAD_WARNING],

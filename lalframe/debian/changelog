@@ -1,3 +1,9 @@
+lalframe (1.0.9-1) unstable; urgency=low
+
+  * LALFrame 1.0.9
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 Jan 2013 16:25:28 -0600
+
 lalframe (1.0.8-1) unstable; urgency=low
 
   * LALFrame 1.0.8

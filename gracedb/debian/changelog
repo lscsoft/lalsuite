@@ -1,3 +1,29 @@
+ligo-gracedb (1.11-2) unstable; urgency=low
+
+  * Re-add "--with python2" to match other ligo-* python modules
+
+ -- Steffen Grunewald <steffen.grunewald@ligo.org>  Thu, 24 Jan 2013 14:15:00 +0100
+
+ligo-gracedb (1.11-1) unstable; urgency=low
+  * Fixed bug where stdin is specified, it is not actually read.
+  * Added python-ligo-common to dependencies
+ -- Brian Moe <brian.moe@ligo.org>  Tue, 22 Jan 2013 17:13:51 -0500
+
+ligo-gracedb (1.10-1) unstable; urgency=low
+  * CLI replace feature had subtle openssl bug.  Using REST client.
+  * Typo in help text.
+  * Typo in test.py wrt CWB test data.
+  * Removed --with-python2 from debian/rules.
+ -- Brian Moe <brian.moe@ligo.org>  Fri, 18 Jan 2013 09:35:25 -0500
+
+ligo-gracedb (1.9-1) unstable; urgency=low
+
+  * Added slot feature to command line interface
+  * Added unit tests for cli slot feature
+  * Added rudimentary test code documentation
+
+ -- Brian Moe <brian.moe@ligo.org>  Wed, 16 Jan 2013 11:46:05 -0500
+
 ligo-gracedb (1.8-1) unstable; urgency=low
 
   * Incorporated Leo's patch for fixing import problem

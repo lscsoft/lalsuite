@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
- *  Copyright (C) 2012 Leo Singer
+ *  Copyright (C) 2012 Leo Singer, Evan Ochsner, Les Wade, Alex Nitz
  *  Assembled from code found in:
  *    - LALInspiralStationaryPhaseApproximation2.c
  *    - LALInspiralChooseModel.c
@@ -55,26 +55,30 @@ static size_t CeilPow2(double n) {
  * a chirp waveform with phase given by Eq.\eqref{eq_InspiralFourierPhase_f2}
  * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
  * set to -1, then the highest implemented order is used.
- * \author B.S. Sathyaprakash
+ *
+ * See arXiv:0810.5336 and arXiv:astro-ph/0504538 for spin corrections
+ * to the phasing.
  */
 int XLALSimInspiralTaylorF2(
-        COMPLEX16FrequencySeries **htilde_out,            /**< FD waveform */
-        const REAL8 phic,                                 /**< orbital coalescence phase (rad) */
-        const REAL8 deltaF,                               /**< frequency resolution */
-        const REAL8 m1_SI,                                /**< mass of companion 1 (kg) */
-        const REAL8 m2_SI,                                /**< mass of companion 2 (kg) */
-        const REAL8 fStart,                               /**< start GW frequency (Hz) */
-        const REAL8 r,                                    /**< distance of source (m) */
-	const REAL8 lambda1,                              /**< (tidal deformation of body 1)/(mass of body 1)^5 */
-	const REAL8 lambda2,                              /**< (tidal deformation of body 2)/(mass of body 2)^5 */
-        const LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-    	const INT4 phaseO,                                /**< twice PN phase order */
-        const INT4 amplitudeO                             /**< twice PN amplitude order */
+        COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
+        const REAL8 phic,                      /**< orbital coalescence phase (rad) */
+        const REAL8 deltaF,                    /**< frequency resolution */
+        const REAL8 m1_SI,                     /**< mass of companion 1 (kg) */
+        const REAL8 m2_SI,                     /**< mass of companion 2 (kg) */
+        const REAL8 S1z,                       /**<  z component of the spin of companion 1 */
+        const REAL8 S2z,                       /**<  z component of the spin of companion 2  */
+        const REAL8 fStart,                    /**< start GW frequency (Hz) */
+        const REAL8 r,                         /**< distance of source (m) */
+        const REAL8 lambda1,                   /**< (tidal deformation of body 1)/(mass of body 1)^5 */
+        const REAL8 lambda2,                   /**< (tidal deformation of body 2)/(mass of body 2)^5 */
+        const LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+        const LALSimInspiralTidalOrder tideO,  /**< flag to control tidal effects */
+        const INT4 phaseO,                     /**< twice PN phase order */
+        const INT4 amplitudeO                  /**< twice PN amplitude order */
         )
 {
     const REAL8 lambda = -1987./3080.;
     const REAL8 theta = -11831./9240.;
-    const int beta = 0., sigma = 0.;
 
     /* external: SI; internal: solar masses */
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -98,9 +102,9 @@ int XLALSimInspiralTaylorF2(
     /* phasing coefficients */
     const REAL8 pfaN = 3.L/(128.L * eta);
     const REAL8 pfa2 = 5.L*(743.L/84.L + 11.L * eta)/9.L;
-    const REAL8 pfa3 = -16.L*LAL_PI + 4.L*beta;
+    const REAL8 pfa3 = -16.L*LAL_PI;
     const REAL8 pfa4 = 5.L*(3058.673L/7.056L + 5429.L/7.L * eta
-                     + 617.L * eta*eta)/72.L - 10.L*sigma;
+                     + 617.L * eta*eta)/72.L;
     const REAL8 pfa5 = 5.L/9.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
     const REAL8 pfl5 = 5.L/3.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
     const REAL8 pfa6 = (11583.231236531L/4.694215680L
@@ -113,32 +117,71 @@ int XLALSimInspiralTaylorF2(
     const REAL8 pfa7 = LAL_PI * 5.L/756.L * ( 15419335.L/336.L
                      + 75703.L/2.L * eta - 14809.L * eta*eta);
 
+    /* Spin coefficients */
+    REAL8 pn_beta = 0;
+    REAL8 pn_sigma = 0;
+    REAL8 pn_gamma = 0;
+
+    REAL8 d = (m1 - m2) / (m1 + m2);
+    REAL8 xs = .5 * (S1z + S2z);
+    REAL8 xa = .5 * (S1z - S2z);
+
+    REAL8 qm_def1 = 1; /* The QM deformability parameters */
+    REAL8 qm_def2 = 1; /* This is 1 for black holes and larger for neutron stars */
+
+    switch( spinO )
+    {
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
+            /* Compute 2.5PN SO correction */
+            // See Eq. (6.25) in arXiv:0810.5336
+            pn_gamma = (732985.L/2268.L - 24260.L/81.L * eta - 340.L/9.L * eta * eta ) * xs;
+            pn_gamma += (732985.L/2268.L +140.L/9.0L * eta) * xa * d;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
+            /* Compute 2.0PN SS, QM, and self-spin */
+            // See Eq. (6.24) in arXiv:0810.5336
+            // 9b,c,d in arXiv:astro-ph/0504538
+            pn_sigma = eta * (721.L/48.L *S1z*S2z-247.L/48.L*S1z*S2z);
+            pn_sigma += (720*qm_def1 - 1)/96.0 * (chi1*chi1*S1z*S1z);
+            pn_sigma += (720*qm_def2 - 1)/96.0 * (chi2*chi2*S2z*S2z);
+            pn_sigma -= (240*qm_def1 - 7)/96.0 * (chi1*chi1*S1z*S1z);
+            pn_sigma -= (240*qm_def2 - 7)/96.0 * (chi2*chi2*S2z*S2z);
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
+            /* Compute 1.5PN SO correction */
+            // Eq. (6.23) in arXiv:0810.5336
+            pn_beta = (113.L/12.L- 19.L/3.L * eta) * xs + 113.L/12.L * d * xa;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
+            break;
+        default:
+            XLALPrintError("XLAL Error - %s: Invalid spin PN order %s\n",
+                    __func__, spinO );
+            XLAL_ERROR(XLAL_EINVAL);
+            break;
+    }
+
     /* Tidal coefficients for phasing, fluz, and energy */
     REAL8 pft10 = 0.;
     REAL8 pft12 = 0.;
-//    REAL8 FTa10 = 0.;
-//    REAL8 FTa12 = 0.;
-//    REAL8 dETa5 = 0.;
-//    REAL8 dETa6 = 0.;
-    if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN )
+    switch( tideO )
     {
-        pft10 = - 24.L * lam2 * chi2*chi2*chi2*chi2 * (1.L + 11.L*chi1)
-                - 24.L * lam1 * chi1*chi1*chi1*chi1 * (1.L + 11.L*chi2);
-//        FTa10 = XLALSimInspiralTaylorT1Flux_10PNTidalCoeff(chi1,lambda1)
-//              + XLALSimInspiralTaylorT1Flux_10PNTidalCoeff(chi2,lambda2);
-//        dETa5 = 6. * ( XLALSimInspiralPNEnergy_10PNTidalCoeff(chi2,chi1,lambda1)
-//                     + XLALSimInspiralPNEnergy_10PNTidalCoeff(chi1,chi2,lambda2));
-    }
-    if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN )
-    {
-        pft12 = - 5.L * lam2 * chi2*chi2*chi2*chi2 * (3179.L - 919.L*chi2
-                - 2286.L*chi2*chi2 + 260.L*chi2*chi2*chi2)/28.L
-                - 5.L * lam1 * chi1*chi1*chi1*chi1 * (3179.L - 919.L*chi1
-                - 2286.L*chi1*chi1 + 260.L*chi1*chi1*chi1)/28.L;
-//        FTa12 = XLALSimInspiralTaylorT1Flux_12PNTidalCoeff(chi1,lambda1)
-//              + XLALSimInspiralTaylorT1Flux_12PNTidalCoeff(chi2,lambda2);
-//        dETa6 = 7. * ( XLALSimInspiralPNEnergy_12PNTidalCoeff(chi2,chi1,lambda1)
-//                     + XLALSimInspiralPNEnergy_12PNTidalCoeff(chi1,chi2,lambda2));
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+            pft12 = - 5.L * lam2 * chi2*chi2*chi2*chi2 * (3179.L - 919.L*chi2
+                    - 2286.L*chi2*chi2 + 260.L*chi2*chi2*chi2)/28.L
+                    - 5.L * lam1 * chi1*chi1*chi1*chi1 * (3179.L - 919.L*chi1
+                    - 2286.L*chi1*chi1 + 260.L*chi1*chi1*chi1)/28.L;
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+            pft10 = - 24.L * lam2 * chi2*chi2*chi2*chi2 * (1.L + 11.L*chi1)
+                    - 24.L * lam1 * chi1*chi1*chi1*chi1 * (1.L + 11.L*chi2);
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
+            break;
+        default:
+            XLALPrintError("XLAL Error - %s: Invalid tidal PN order %s\n",
+                    __func__, tideO );
+            XLAL_ERROR(XLAL_EINVAL);
+            break;
     }
 
     /* flux coefficients */
@@ -254,17 +297,40 @@ int XLALSimInspiralTaylorF2(
                 XLAL_ERROR(XLAL_ETYPE);
         }
 
-        if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN )
+        switch( spinO )
         {
-            phasing += pft10 * v10;
-//            flux    += FTa10 * v10;
-//            dEnergy += dETa5 * v10;
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
+                phasing += -pn_gamma * (1 + 3*log(v/v0)) * v5;
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
+                phasing += -10.L*pn_sigma * v4;
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
+                phasing += 4.L*pn_beta * v3;
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
+                break;
+            default:
+                XLALPrintError("XLAL Error - %s: Invalid spin PN order %s\n",
+                        __func__, spinO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
         }
-        if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN )
+
+        switch( tideO )
         {
-            phasing += pft12 * v12;
-//            flux    += FTa12 * v12;
-//            dEnergy += dETa6 * v12;
+            case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+            case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+                phasing += pft12 * v12;
+            case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+                phasing += pft10 * v10;
+            case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
+                break;
+            default:
+                XLALPrintError("XLAL Error - %s: Invalid tidal PN order %s\n",
+                        __func__, tideO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
         }
 
         phasing *= pfaN / v5;

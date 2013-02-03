@@ -75,7 +75,7 @@ input=/dev/null
 output=$outputPathBase/$band\_$ifokey/$analysisdate/out/out.\$(PID)
 error=$outputPathBase/$band\_$ifokey/$analysisdate/err/err.\$(PID)
 arguments=--config=$outputPathBase/$band\_$ifokey/$analysisdate/in/\$(PID)
-log=/local/user/egoetz/$analysisdate.log
+log=/local/user/egoetz/$band\_$ifokey.$analysisdate.log
 request_memory = 1550
 notification=Never
 notify_user=evan.goetz\@aei.mpg.de

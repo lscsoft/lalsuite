@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 25
+# serial 29
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -158,12 +158,28 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DNDEBUG"
     ])
 
+    # is GSL available?
+    AS_IF([test "x${GSL_LIBS}" != x],[
+      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DHAVE_LIBGSL"
+      SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DHAVE_LIBGSL"
+    ])
+
     # look here for interfaces and LAL headers (but not for preprocessing)
     SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I/usr/include"
 
     # flags for compiling SWIG wrapping module sources
-    AC_SUBST(SWIG_CFLAGS,["${swig_save_CFLAGS}"])
-    AC_SUBST(SWIG_CXXFLAGS,["${swig_save_CXXFLAGS}"])
+    AC_SUBST(SWIG_CFLAGS,[])
+    for arg in ${swig_save_CFLAGS}; do
+      AS_CASE([${arg}],
+        [-g*|-O*],[SWIG_CFLAGS="${SWIG_CFLAGS} ${arg}"]
+      )
+    done
+    AC_SUBST(SWIG_CXXFLAGS,[])
+    for arg in ${swig_save_CXXFLAGS}; do
+      AS_CASE([${arg}],
+        [-g*|-O*],[SWIG_CXXFLAGS="${SWIG_CXXFLAGS} ${arg}"]
+      )
+    done
 
     # define C99 constant and limit macros for C++ sources
     SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
@@ -177,33 +193,8 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -O0"
     ])
 
-    # flags for linking SWIG wrapping modules
-    AC_SUBST(SWIG_LDFLAGS,[])
-
-    # libraries SWIG wrapping module should be linked against
-    AC_SUBST(SWIG_LIBS,[])
-    AS_IF([test ${lalswig} = true],[
-      SWIG_LIBS="\$(abs_top_builddir)/lib/lalsupport/src/liblalsupport.la \$(abs_top_builddir)/lib/lal/liblal.la"
-    ],[
-      SWIG_LIBS="\$(abs_top_builddir)/src/lib${PACKAGE_NAME}.la"
-    ])
-
-    # dynamic linker search path for pre-installed LAL libraries
-    SWIG_LD_LIBRARY_PATH=[`for n in ${swig_save_LIBS} ${SWIG_LIBS}; do echo $n | ${SED} -n 's|/liblal[^.]*\.la|/'"${objdir}"'|p'; done`]
-    SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH}`]   # get rid of newlines
-    SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH} | ${SED} 's|(top_builddir)|(abs_top_builddir)|g;s|  *|:|g'`]
-    AC_SUBST(SWIG_LD_LIBRARY_PATH)
-    AS_IF([test "${build_vendor}" = apple],[
-      SWIG_LD_LIBPATH_NAME=DYLD_LIBRARY_PATH
-    ],[
-      SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
-    ])
-    AC_SUBST(SWIG_LD_LIBPATH_NAME)
-
-    # check for additional compiler flags:
-    extra_flags=
-    # - suppress warnings about uninitialized variables in SWIG-generated code
-    extra_flags="${extra_flags} -Wno-uninitialized"
+    # check for additional compiler flags
+    extra_flags="-Wno-uninitialized -Wno-unused-variable -fno-strict-aliasing"
     for flag in ${extra_flags}; do
       AC_MSG_CHECKING([if ${flag} is supported])
       CFLAGS=${flag}
@@ -216,11 +207,34 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
         SWIG_CXXFLAGS="${SWIG_CXXFLAGS} ${flag}"
       ],[
         AC_MSG_RESULT([no])
-        swig_wordsize=
       ])
       CFLAGS=
       AC_LANG_POP([C])
     done
+
+    # flags for linking SWIG wrapping modules
+    AC_SUBST(SWIG_LDFLAGS,[])
+
+    # libraries SWIG wrapping module should be linked against
+    AC_SUBST(SWIG_LIBS,[])
+    AS_IF([test ${lalswig} = true],[
+      SWIG_LIBS="\$(abs_top_builddir)/lib/lalsupport/src/liblalsupport.la \$(abs_top_builddir)/lib/lal/liblal.la"
+    ],[
+      SWIG_LIBS="\$(abs_top_builddir)/src/lib${PACKAGE_NAME}.la"
+    ])
+
+    # dynamic linker search path for pre-installed LAL libraries
+    AC_SUBST(SWIG_LD_LIBRARY_PATH,[])
+    for arg in ${swig_save_LIBS} ${SWIG_LIBS}; do
+      SWIG_LD_LIBRARY_PATH=["${SWIG_LD_LIBRARY_PATH} "`echo ${arg} | ${SED} -n 's|/liblal[^.]*\.la|/'"${objdir}"'|p'`]
+    done
+    SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH} | ${SED} 's|(top_builddir)|(abs_top_builddir)|g;s|  *|:|g'`]
+    AS_IF([test "${build_vendor}" = apple],[
+      SWIG_LD_LIBPATH_NAME=DYLD_LIBRARY_PATH
+    ],[
+      SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
+    ])
+    AC_SUBST(SWIG_LD_LIBPATH_NAME)
 
   ])
 
@@ -303,11 +317,12 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AS_IF([test "x${OCTAVE}" = x],[
       AC_MSG_ERROR([could not find "octave" in path])
     ])
-    octave_prefix=[`${OCTAVE} -qfH --eval "disp(octave_config_info('prefix'))" | ${SED} 's|/*$||'`]
+    octave_eval="env - ${OCTAVE} -qfH --eval"
+    octave_prefix=[`${octave_eval} "disp(octave_config_info('prefix'))" 2>/dev/null | ${SED} 's|/*$||'`]
 
     # check for Octave mkoctfile binary
     AC_MSG_CHECKING([for mkoctfile])
-    AS_IF([test "x`${OCTAVE} -qfH --eval 'mkoctfile -p CXX' 2>/dev/null`" != x],[
+    AS_IF([test "x`${octave_eval} 'mkoctfile -p CXX' 2>/dev/null`" != x],[
       AC_MSG_RESULT([yes])
     ],[
       AC_MSG_ERROR([mkoctfile is not installed])
@@ -316,7 +331,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     # check Octave version
     octave_min_version=3.2.0
     AC_MSG_CHECKING([${OCTAVE} version])
-    octave_version=[`${OCTAVE} -qfH --eval "disp(version)"`]
+    octave_version=[`${octave_eval} "disp(version)" 2>/dev/null`]
     AS_IF([test "x${octave_version}" = x],[
       AC_MSG_ERROR([could not determine ${OCTAVE} version])
     ])
@@ -327,23 +342,25 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
 
     # check that wrappings are being compiled with the same C++ compiler used to compile Octave itself
     AC_MSG_CHECKING([C++ compiler used for building ${OCTAVE}])
-    octave_CXX=`${OCTAVE} -qfH --eval "mkoctfile -p CXX"`
+    octave_CXX=`${octave_eval} "mkoctfile -p CXX" 2>/dev/null`
     AC_MSG_RESULT([${octave_CXX}])
-    AS_IF([test "x${CXX}" != "x${octave_CXX}"],[
+    octave_CXX_version=`${octave_CXX} --version 2>/dev/null | ${SED} -n '1p'`
+    lalsuite_CXX_version=`${CXX} --version 2>/dev/null | ${SED} -n '1p'`
+    AS_IF([test "x${lalsuite_CXX_version}" != "x${octave_CXX_version}"],[
       AC_MSG_ERROR([configured C++ compiler "${CXX}" differs from ${OCTAVE} C++ compiler "${octave_CXX}"])
     ])
 
     # determine Octave module flags
     AC_MSG_CHECKING([for ${OCTAVE} module CPPFLAGS])
     AC_SUBST(OCTAVE_CPPFLAGS,[""])
-    for n in CPPFLAGS INCFLAGS; do
-      OCTAVE_CPPFLAGS="${OCTAVE_CPPFLAGS} "`${OCTAVE} -qfH --eval "mkoctfile -p $n"`
+    for arg in CPPFLAGS INCFLAGS; do
+      OCTAVE_CPPFLAGS="${OCTAVE_CPPFLAGS} "`${octave_eval} "mkoctfile -p ${arg}" 2>/dev/null`
     done
     AC_MSG_RESULT([${OCTAVE_CPPFLAGS}])
     AC_MSG_CHECKING([for ${OCTAVE} module CXXFLAGS])
     AC_SUBST(OCTAVE_CXXFLAGS,[""])
-    for n in ALL_CXXFLAGS; do
-      OCTAVE_CXXFLAGS="${OCTAVE_CXXFLAGS} "`${OCTAVE} -qfH --eval "mkoctfile -p $n"`
+    for arg in ALL_CXXFLAGS; do
+      OCTAVE_CXXFLAGS="${OCTAVE_CXXFLAGS} "`${octave_eval} "mkoctfile -p ${arg}" 2>/dev/null`
     done
     AC_MSG_RESULT([${OCTAVE_CXXFLAGS}])
 
@@ -363,7 +380,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     # is installed in the same directory as Octave, .oct module files will be
     # found by Octave without having to add to OCTAVE_PATH
     AC_MSG_CHECKING([for ${OCTAVE} module installation directory])
-    octexecdir=[`${OCTAVE} -qfH --eval "disp(octave_config_info('localveroctfiledir'))" | ${SED} 's|/*$||'`]
+    octexecdir=[`${octave_eval} "disp(octave_config_info('localveroctfiledir'))" 2>/dev/null | ${SED} 's|/*$||'`]
     octexecdir=[`echo ${octexecdir} | ${SED} "s|^${octave_prefix}/||"`]
     AS_IF([test "x`echo ${octexecdir} | ${SED} -n '\|^/|p'`" != x],[
       AC_MSG_ERROR([could not build relative path from "${octexecdir}"])

@@ -170,6 +170,7 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
     REAL4TimeSeries         *channel,
     REAL4FFTPlan            *fwdplan,
     REAL4FFTPlan            *revplan,
+    REAL4FFTPlan            *psdplan,
     struct coh_PTF_params   *params
     )
 {
@@ -178,10 +179,46 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
   {
     if ( ! params->whiteSpectrum)
     {
+      UINT4 recordLength,psdSegmentLength,segmentStride,numDoublePsdSegs;
+      UINT4 neededDataLength;
       /* compute raw average spectrum; store spectrum in invspec for now */
-      invspec = compute_average_spectrum( channel,
-          LALRINGDOWN_SPECTRUM_MEDIAN_MEAN, params->segmentDuration,
-          params->strideDuration, fwdplan, 0 );
+      REAL4FrequencySeries *invspecorig = NULL;
+      /* If the data length is no appropriate, don't use all of it */
+      recordLength = params->duration * params->sampleRate;
+      psdSegmentLength = floor(params->psdSegmentDuration * \
+          params->sampleRate + 0.5);
+      segmentStride = floor(params->psdStrideDuration * params->sampleRate \
+          + 0.5);
+      sanity_check( segmentStride > 0 );
+      numDoublePsdSegs = 1 + (recordLength - psdSegmentLength)/ \
+          (segmentStride);
+      numDoublePsdSegs /= 2;
+      // Need enough psd segments for good estimation
+      sanity_check(numDoublePsdSegs > 5);
+      neededDataLength = ((2*numDoublePsdSegs)-1) * segmentStride + psdSegmentLength;
+      verbose("Using %e of %e seconds for PSD estimation in %d segments.\n",\
+          neededDataLength/params->sampleRate,params->duration,\
+          2*numDoublePsdSegs);
+      // Adjust channel length for PSD calculation
+      channel->data->length = neededDataLength;
+      invspecorig = compute_average_spectrum( channel,
+          LALRINGDOWN_SPECTRUM_MEDIAN_MEAN, params->psdSegmentDuration,
+          params->psdStrideDuration, psdplan, 0 );
+      // Set the channel length back
+      channel->data->length = recordLength;
+      /* Resample if necessary */
+      if (params->psdSegmentDuration != params->segmentDuration)
+      {
+        if ( params->writeInvSpectrum ) /* Write spectrum before resampling */
+          write_REAL4FrequencySeries( invspecorig );
+        verbose("Resampling PSD\n");
+        invspec = resample_psd(invspecorig, params->sampleRate,
+                               params->segmentDuration);
+      }
+      else
+      {
+        invspec = invspecorig;
+      } 
     }
     else
     {
@@ -209,9 +246,8 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
       write_REAL4FrequencySeries( invspec );
 
     /* invert spectrum */
-    /* FIXME: What lower frequency should go here? */
     invert_spectrum( invspec, params->sampleRate, params->strideDuration,
-        params->truncateDuration, params->lowTemplateFrequency, fwdplan,
+        params->truncateDuration, params->highpassFrequency, fwdplan,
         revplan );
 
     if ( params->writeInvSpectrum ) /* write inverse calibrated spectrum */
@@ -564,6 +600,7 @@ void coh_PTF_cleanup(
     struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
     REAL4FFTPlan            *fwdplan,
+    REAL4FFTPlan            *psdplan,
     REAL4FFTPlan            *revplan,
     COMPLEX8FFTPlan         *invPlan,
     REAL4TimeSeries         *channel[LAL_NUM_IFO+1],
@@ -658,6 +695,8 @@ void coh_PTF_cleanup(
     XLALDestroyREAL4FFTPlan( revplan );
   if ( fwdplan )
     XLALDestroyREAL4FFTPlan( fwdplan );
+  if ( psdplan )
+    XLALDestroyREAL4FFTPlan( psdplan );
   if ( invPlan )
     XLALDestroyCOMPLEX8FFTPlan( invPlan );
   while ( procpar )
@@ -721,6 +760,19 @@ REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params )
   return plan;
 }
 
+/* gets the psd forward fft plan */
+REAL4FFTPlan *coh_PTF_get_fft_psdplan( struct coh_PTF_params *params )
+{
+  REAL4FFTPlan *plan = NULL;
+  if ( params->psdSegmentDuration > 0.0 )
+  {
+    UINT4 segmentLength;
+    segmentLength = floor( params->psdSegmentDuration * params->sampleRate
+                           + 0.5 );
+    plan = XLALCreateForwardREAL4FFTPlan( segmentLength, params->fftLevel );
+  }
+  return plan;
+}
 
 /* gets the reverse fft plan */
 REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params )
@@ -1740,7 +1792,7 @@ UINT4 checkInjectionMchirp(
 {
   /* define variables */
   LIGOTimeGPS injTime, segmentStart, segmentEnd;
-  REAL8 tmpltMchirp,injMchirp,mchirpDiff;
+  REAL8 tmpltMchirp,injMchirp,mchirpDiff,mchirpWin;
   INT8 startDiff, endDiff;
   SimInspiralTable *thisInject = NULL;
   UINT4 passMchirpCheck;
@@ -1758,7 +1810,6 @@ UINT4 checkInjectionMchirp(
     injTime = thisInject->geocent_end_time;
     startDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentStart);
     endDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentEnd);
-    fprintf(stderr,"%ld %ld\n",startDiff,endDiff);
     if ((startDiff > 0) && (endDiff < 0))
     {
       verbose("Generating analysis segment for injection at %d.\n",
@@ -1771,9 +1822,19 @@ UINT4 checkInjectionMchirp(
       }
       injMchirp = thisInject->mchirp;
       tmpltMchirp = tmplt->chirpMass;
-      fprintf(stderr,"%e %e \n",injMchirp,tmpltMchirp);
       mchirpDiff = (injMchirp - tmpltMchirp)/tmpltMchirp;
-      if (fabs(mchirpDiff) > params->injMchirpWindow)
+      /* The mchirp window is increased with mchirp */
+      if (injMchirp < 2)
+        mchirpWin = params->injMchirpWindow;
+      else if (injMchirp < 3)
+        mchirpWin = params->injMchirpWindow * 2.5;
+      else if (injMchirp < 4)
+        mchirpWin = params->injMchirpWindow * 5;
+      else
+        // Note that I haven't tuned this above Mchirp = 6
+        mchirpWin = params->injMchirpWindow * 10;
+
+      if (fabs(mchirpDiff) > mchirpWin)
         passMchirpCheck = 0;
       else
         passMchirpCheck = 1;

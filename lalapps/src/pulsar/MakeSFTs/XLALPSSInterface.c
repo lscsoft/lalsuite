@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <errno.h>
 #include <math.h>
+#include <lal/XLALError.h>
+#include <lal/Units.h>
+#include <lal/Date.h>
 #include "XLALPSSInterface.h"
-#include "lal/XLALError.h"
-#include "lal/Units.h"
-#include "lal/Date.h"
 #include "pss_serv.h"
 
 /* variables in PSS that aren't exported in the headers */

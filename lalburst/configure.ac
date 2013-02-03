@@ -1,6 +1,6 @@
 AC_PREREQ([2.63])
-AC_INIT([lalburst],[1.1.5.1],[lal-discuss@gravity.phys.uwm.edu])
-AC_CONFIG_HEADER([include/config.h src/LALBurstConfig.h])
+AC_INIT([lalburst],[1.1.6.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_CONFIG_HEADERS([include/config.h src/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([src/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -39,7 +39,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[2])
-AC_SUBST([LIBREVISION],[4])
+AC_SUBST([LIBREVISION],[5])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 

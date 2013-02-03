@@ -95,14 +95,14 @@ const char * usage =
 "                           NOTE: Other approximants may be available if the\n"
 "                           developer forgot to edit this help message\n"
 "--phase-order ORD          Twice PN order of phase (default ORD=7 <==> 3.5PN)\n"
-"--amp-order ORD            Twice PN order of amplitude (default 0 <==> Newt./restricted)\n"
+"--amp-order ORD            Twice PN order of amplitude (default 0 <==> Newt.)\n"
 "--phiRef                   Phase at the reference frequency (default 0)\n"
 "--fRef FREF                Reference frequency in Hz\n"
 "                           (default: 0)\n"
 "--sample-rate SRATE        Sampling rate of TD approximants in Hz (default 4096)\n"
 "--deltaF DF                Frequency bin size for FD approximants in Hz (default 1/8)\n"
-"--m1 M1                    Mass of the first object in solar masses (default 10)\n"
-"--m2 M2                    Mass of the second object in solar masses (default 1.4)\n"
+"--m1 M1                    Mass of the 1st object in solar masses (default 10)\n"
+"--m2 M2                    Mass of the 2nd object in solar masses (default 1.4)\n"
 "--inclination IOTA         Angle in radians between line of sight (N) and \n"
 "                           orbital angular momentum (L) at the reference\n"
 "                           (default 0, face on)\n"
@@ -112,10 +112,15 @@ const char * usage =
 "--spin2x S2X               Vector components for spin of mass2 (default all 0)\n"
 "--spin2y S2Y               z-axis=line of sight, L in x-z plane at reference\n"
 "--spin2z S2Z               Kerr limit: s2x^2 + s2y^2 + s2z^2 <= 1\n"
-"--interaction FLAG         Common choices: 'ALL' (default), 'NO', 'ALL_SPIN', 'TIDAL' (6PN), 'TIDAL5PN'\n"
-"--tidal-lambda1 L1         (tidal deformability of mass 1) / (mass of body 1)^5 (~4-80 for NS, 0 for BH) (default 0)\n"
-"--tidal-lambda2 L2         (tidal deformability of mass 2) / (mass of body 2)^5 (~4-80 for NS, 0 for BH) (default 0)\n"
-"--f-min FMIN               Frequency at which to start waveform in Hz (default 40)\n"
+"--tidal-lambda1 L1         (tidal deformability of mass 1) / (mass of body 1)^5\n"
+"                           (~4-80 for NS, 0 for BH) (default 0)\n"
+"--tidal-lambda2 L2         (tidal deformability of mass 2) / (mass of body 2)^5\n"
+"                           (~4-80 for NS, 0 for BH) (default 0)\n"
+"--spin-order ORD           Twice PN order of spin effects\n"
+"                           (default ORD=-1 <==> All spin effects)\n"
+"--tidal-order ORD          Twice PN order of tidal effects\n"
+"                           (default ORD=-1 <==> All tidal effects)\n"
+"--f-min FMIN               Lower frequency to start waveform in Hz (default 40)\n"
 "--f-max FMAX               Frequency at which to stop waveform in Hz\n"
 "                           (default: generate as much as possible)\n"
 "--distance D               Distance in Mpc (default 100)\n"
@@ -210,18 +215,14 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->s2y = atof(argv[++i]);
         } else if (strcmp(argv[i], "--spin2z") == 0) {
             params->s2z = atof(argv[++i]);
-	} else if (strcmp(argv[i], "--interaction") == 0) {
-            XLALSimInspiralSetInteraction( params->waveFlags,
-                    XLALGetInteractionFromString(argv[++i]) );
-            if ( (int) XLALSimInspiralGetInteraction(params->waveFlags)
-                    == (int) XLAL_FAILURE) {
-                XLALPrintError("Error: invalid value %s for --interaction\n", argv[i]);
-                goto fail;
-            }
-	} else if (strcmp(argv[i], "--tidal-lambda1") == 0) {
+        } else if (strcmp(argv[i], "--tidal-lambda1") == 0) {
             params->lambda1 = atof(argv[++i]);
-	} else if (strcmp(argv[i], "--tidal-lambda2") == 0) {
+        } else if (strcmp(argv[i], "--tidal-lambda2") == 0) {
             params->lambda2 = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--spin-order") == 0) {
+            XLALSimInspiralSetSpinOrder( params->waveFlags, atoi(argv[++i]) );
+        } else if (strcmp(argv[i], "--tidal-order") == 0) {
+            XLALSimInspiralSetTidalOrder( params->waveFlags, atoi(argv[++i]) );
         } else if (strcmp(argv[i], "--f-min") == 0) {
             params->f_min = atof(argv[++i]);
         } else if (strcmp(argv[i], "--f-max") == 0) {
@@ -233,7 +234,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--axis") == 0) {
             XLALSimInspiralSetFrameAxis( params->waveFlags,
                     XLALGetFrameAxisFromString(argv[++i]) );
-            if ( (int) XLALSimInspiralGetInteraction(params->waveFlags)
+            if ( (int) XLALSimInspiralGetFrameAxis(params->waveFlags)
                     == (int) XLAL_FAILURE) {
                 XLALPrintError("Error: invalid value %s for --axis\n", argv[i]);
                 goto fail;

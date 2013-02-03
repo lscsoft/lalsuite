@@ -274,14 +274,14 @@ REAL8 ETaN(REAL8 eta)
  */
 
 static int XLALPSpinInspiralRDparamsSetup(
-    LALPSpinInspiralRDparams *mparams,  /**< Output: RDparams structure */
-    UINT4 inspiralOnly,                 /**< Only generate inspiral */
-    REAL8 deltaT,                       /**< sampling interval */
-    REAL8 fLow,                         /**< Starting frequency */
-    REAL8 m1,                           /**< Mass 1 */
-    REAL8 m2,                           /**< Mass 2 */
-    LALSimInspiralInteraction interaction, /**< Spin interaction */
-    UINT4 order                         /**< twice PN Order in Phase */
+    LALPSpinInspiralRDparams *mparams,  /** Output: RDparams structure */
+    UINT4 inspiralOnly,                 /** Only generate inspiral */
+    REAL8 deltaT,                       /** sampling interval */
+    REAL8 fLow,                         /** Starting frequency */
+    REAL8 m1,                           /** Mass 1 */
+    REAL8 m2,                           /** Mass 2 */
+    LALSimInspiralSpinOrder spinO,      /** twice PN order of spin effects */
+    UINT4 order                         /** twice PN Order in Phase */
     )
 {
   REAL8 totalMass = m1+m2;
@@ -381,9 +381,11 @@ static int XLALPSpinInspiralRDparamsSetup(
       break;
   }
 
-  switch (interaction) {
+  switch (spinO) {
 
-    case LAL_SIM_INSPIRAL_INTERACTION_NONE:
+    case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
+    case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
+    case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
       /*This kills all spin effects in the phase. Still there are spin effects
 	in the waveform due to orbital plane precession*/      
       mparams->epnspin15S1dotLNh = 0.;
@@ -393,14 +395,12 @@ static int XLALPSpinInspiralRDparamsSetup(
       mparams->S1dot15           = 0.;
       mparams->S2dot15           = 0.;
 
-    case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN:  
+    case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
       /* This keeps only the leading spin-orbit interactions*/
       mparams->wdotspin20S1S2      = 0.;
       mparams->epnspin20S1S2       = 0.;
       mparams->epnspin20S1S2dotLNh = 0.;
 
-    case LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN:
-      /* This keeps S1-S2 interactions but kill spin self-interactions*/
       mparams->wdotspin20S1S1 = 0.;
       mparams->epnspin20S1S1 = 0.;
       mparams->epnspin20S2S2 = 0.;
@@ -410,7 +410,7 @@ static int XLALPSpinInspiralRDparamsSetup(
       mparams->epnspin20S1S1dotLNh = 0.;
       mparams->epnspin20S2S2dotLNh = 0.;
 
-    case LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN: 
+    case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
       /* This kills all spin interaction intervening at 2.5PN order or higher*/
       mparams->epnspin25S1dotLNh   = 0.;
       mparams->epnspin25S2dotLNh   = 0.;
@@ -419,22 +419,13 @@ static int XLALPSpinInspiralRDparamsSetup(
       mparams->S1dot25             = 0.;
       mparams->S2dot25             = 0.;
 
-    case LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN:
-
-    case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN:
+    case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
+      /* This kills all spin interaction intervening at 3PN order or higher*/
       mparams->wdotspin30S1LNh     = 0.;
       mparams->wdotspin30S2LNh     = 0.;
 
-    case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN:
-
-    case LAL_SIM_INSPIRAL_INTERACTION_ALL: 
-
-    case LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN:
-
-    case LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN:
-
-    case LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN:
-
+    case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+    case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
     default:
       break;
   }
@@ -2215,7 +2206,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
 			     f_min,		/** Starting frequency */
 			     mass1,		/** Mass 1 */
 			     mass2,		/** Mass 2 */
-			     LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN,	/** Spin interaction */
+			     LAL_SIM_INSPIRAL_SPIN_ORDER_ALL,	/** Spin order */
 			     phaseO		/** PN Order in Phase */ ))
     XLAL_ERROR(XLAL_EFUNC);
 

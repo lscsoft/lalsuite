@@ -33,6 +33,7 @@ int main( int argc, char **argv )
   struct coh_PTF_params      *params    = NULL;
   ProcessParamsTable      *procpar   = NULL;
   REAL4FFTPlan            *fwdplan   = NULL;
+  REAL4FFTPlan            *psdplan   = NULL;
   REAL4FFTPlan            *revplan   = NULL;
   COMPLEX8FFTPlan         *invPlan   = NULL;
   REAL4TimeSeries         *channel[LAL_NUM_IFO+1];
@@ -92,6 +93,7 @@ int main( int argc, char **argv )
 
   /* create forward and reverse fft plans */
   fwdplan = coh_PTF_get_fft_fwdplan( params );
+  psdplan = coh_PTF_get_fft_psdplan( params );
   revplan = coh_PTF_get_fft_revplan( params );
 
   verbose("Made fft plans %ld \n", time(NULL)-startTime);
@@ -156,7 +158,7 @@ int main( int argc, char **argv )
 
       /* compute the spectrum */
       invspec[ifoNumber] = coh_PTF_get_invspec( channel[ifoNumber], fwdplan,\
-                               revplan, params );
+                               revplan, psdplan, params );
 
       /* create the segments */
       segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],\
@@ -327,7 +329,7 @@ int main( int argc, char **argv )
       time(NULL)-startTime);
 
   LALFree(timeSlideVectors);
-  coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
+  coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,NULL,NULL);
   while ( PTFSpinTmpltHead )

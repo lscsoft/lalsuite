@@ -43,6 +43,9 @@ static double logadd(double a,double b){
 	else return(b+log(1.0+exp(a-b)));
 }
 
+static UINT4 checkForSingleAdapt(LALInferenceRunState *runState);
+
+
 static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *runState);
 static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *runState)
 {
@@ -61,6 +64,22 @@ static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *runState)
         this=this->next;
     }
 
+}
+static void UpdateProposalStats(LALInferenceRunState *runState, INT4 accepted);
+static void UpdateProposalStats(LALInferenceRunState *runState, INT4 accepted)
+{
+  const char *currentProposalName;
+  
+  LALInferenceProposalStatistics *propStat;
+  /* Update proposal statistics */
+  if (runState->proposalStats){
+    currentProposalName = *((const char **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceCurrentProposalName));
+    propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(runState->proposalStats, currentProposalName));
+    propStat->proposed++;
+    if (accepted == 1){
+      propStat->accepted++;
+    }
+  }
 }
 
 static void resetProposalStats(LALInferenceRunState *runState);
@@ -443,17 +462,22 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	  eigenValues->data[i] = gsl_vector_get(eValues,i);
 	}
 	
+	/* If there is not a proposal counter, put one into the variables, initialized to zero. */
+	if (!LALInferenceCheckVariable(runState->proposalArgs, cycleArrayCounterName)) {
+	  i = 0;
+	  LALInferenceAddVariable(runState->proposalArgs, cycleArrayCounterName, &i, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_CIRCULAR);
+	}
+	
 	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-	
 	LALInferenceAddVariable(runState->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
     
-    /* set up k-D tree if required and not already set */
-    if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
-                LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
-            !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
-        LALInferenceSetupkDTreeNSLivePoints( runState );
-        
+	/* set up k-D tree if required and not already set */
+	if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
+	  LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
+	  !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
+	  LALInferenceSetupkDTreeNSLivePoints( runState );
+	
 	if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
 	  INT4 tmp=200;
 	  LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmp,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
@@ -462,7 +486,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
 	for(i=0;i<Nlive;i++) {
 	  runState->currentParams=runState->livePoints[i];
-      LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  runState->evolve(runState);
 	  logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
@@ -481,7 +505,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
           }else
             kdupdate = 4.;
         }
-    
+        
+        /* Reset proposal stats before starting */
+        resetProposalStats(runState);
+	
 	/* Set the number of MCMC points */
 	UpdateNMCMC(runState);
     /* Output some information */
@@ -858,20 +885,50 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   return(acls);
 }
 
+UINT4 checkForSingleAdapt(LALInferenceRunState *runState)
+{
+  UINT4 i = 0;
+  LALInferenceProposalFunction **cycle = NULL;
+  LALInferenceVariables *propArgs = runState->proposalArgs;
+  cycle = *((LALInferenceProposalFunction ***)LALInferenceGetVariable(propArgs, cycleArrayName));
+  
+  /* If there is not a proposal counter, put one into the variables, initialized to zero. */
+  if (!LALInferenceCheckVariable(propArgs, cycleArrayCounterName)) {
+    i = 0;
+    LALInferenceAddVariable(propArgs, cycleArrayCounterName, &i, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_CIRCULAR);
+  }
+  
+  i = *((UINT4 *)LALInferenceGetVariable(propArgs, cycleArrayCounterName));
+  
+  if (cycle[i]==&LALInferenceSingleAdaptProposal) return 1;
+  else return 0;
+  
+}
+
 /* Perform one MCMC iteration on runState->currentParams. Return 1 if accepted or 0 if not */
 UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 {
+    UINT4 adaptProp=checkForSingleAdapt(runState);
+    UINT4 outOfBounds=0;
     //LALInferenceVariables tempParams;
     REAL8 logProposalRatio=0.0;
     //LALInferenceVariables *oldParams=&tempParams;
     LALInferenceVariables proposedParams;
     memset(&proposedParams,0,sizeof(proposedParams));
-
+    REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
+    REAL8 thislogL;
     UINT4 accepted=0;
 
     REAL8 logPriorOld=*(REAL8 *)LALInferenceGetVariable(runState->currentParams,"logPrior");
     //LALInferenceCopyVariables(runState->currentParams,oldParams);
     LALInferenceCopyVariables(runState->currentParams,&proposedParams);
+    
+    if(adaptProp)
+    {
+      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->template);
+      if (logLmin<thislogL) outOfBounds=0;
+    }
+    
     runState->proposal(runState,&proposedParams);
     REAL8 logPriorNew=runState->prior(runState,&proposedParams);
     if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
@@ -888,8 +945,16 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     }
     LALInferenceDestroyVariables(&proposedParams);
     
-    LALInferenceUpdateAdaptiveJumps(runState, accepted, 0.35);
+    if((!outOfBounds)&&adaptProp)
+    {
+      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->template);
+      if(logLmin<thislogL) LALInferenceUpdateAdaptiveJumps(runState, accepted, 0.35);
+      else LALInferenceUpdateAdaptiveJumps(runState, 0, 0.35);
 
+    }
+    
+    UpdateProposalStats(runState,accepted);
+    
     return(accepted);
 }
 

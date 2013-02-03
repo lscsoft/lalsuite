@@ -248,9 +248,8 @@ LALSetSpindownParams	( LALStatus			*status,
 void
 LALTimingNoiseHeterodyne	( LALStatus		*status,
 				  TNHeterodyneOutput	*output,
-					TNHeterodyneInput	*input,
+				  TNHeterodyneInput	*input,
 				  ParamsForHeterodyne	*params,
-                                  EphemerisData *edat,
                                   BarycenterInput baryinput,
                                   EarthState earth );
 

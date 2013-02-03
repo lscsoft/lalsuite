@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalsuite],[6.13.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalsuite],[6.14.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -22,8 +22,8 @@ LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALXML
 LALSUITE_ENABLE_LALSIMULATION
-LALSUITE_ENABLE_LALDETCHAR
 LALSUITE_ENABLE_LALBURST
+LALSUITE_ENABLE_LALDETCHAR
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALSTOCHASTIC
 LALSUITE_ENABLE_LALPULSAR
@@ -73,18 +73,18 @@ if test "$lalsimulation" = "true"; then
   export LALSIMULATION_LIBS LALSIMULATION_CFLAGS LALSIMULATION_DATADIR
 fi
 
-if test "$laldetchar" = "true"; then
-  LALDETCHAR_LIBS="-L${libdir} ${lalsuite_top_builddir}/laldetchar/src/liblaldetchar.la"
-  LALDETCHAR_CFLAGS="-I${lalsuite_top_builddir}/laldetchar/include"
-  LALDETCHAR_DATADIR="${lalsuite_top_srcdir}/laldetchar/test"
-  export LALDETCHAR_LIBS LALDETCHAR_CFLAGS LALDETCHAR_DATADIR
-fi
-
 if test "$lalburst" = "true"; then
   LALBURST_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalburst/src/liblalburst.la"
   LALBURST_CFLAGS="-I${lalsuite_top_builddir}/lalburst/include"
   LALBURST_DATADIR="${lalsuite_top_srcdir}/lalburst/test"
   export LALBURST_LIBS LALBURST_CFLAGS LALBURST_DATADIR
+fi
+
+if test "$laldetchar" = "true"; then
+  LALDETCHAR_LIBS="-L${libdir} ${lalsuite_top_builddir}/laldetchar/src/liblaldetchar.la"
+  LALDETCHAR_CFLAGS="-I${lalsuite_top_builddir}/laldetchar/include"
+  LALDETCHAR_DATADIR="${lalsuite_top_srcdir}/laldetchar/test"
+  export LALDETCHAR_LIBS LALDETCHAR_CFLAGS LALDETCHAR_DATADIR
 fi
 
 if test "$lalinspiral" = "true"; then
@@ -133,12 +133,12 @@ if test "$lalsimulation" = "true"; then
   AC_CONFIG_SUBDIRS([lalsimulation])
 fi
 
-if test "$laldetchar" = "true"; then
-  AC_CONFIG_SUBDIRS([laldetchar])
-fi
-
 if test "$lalburst" = "true"; then
   AC_CONFIG_SUBDIRS([lalburst])
+fi
+
+if test "$laldetchar" = "true"; then
+  AC_CONFIG_SUBDIRS([laldetchar])
 fi
 
 if test "$lalinspiral" = "true"; then

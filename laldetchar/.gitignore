@@ -24,6 +24,7 @@ Makefile.in
 python/git_version.py
 python/__init__.py
 src/LALDetCharConfig.h
+src/laldetchar-hveto
 src/laldetchar-user-env.csh
 src/laldetchar-user-env.sh
 src/laldetchar-user-env.shell

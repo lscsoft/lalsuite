@@ -253,7 +253,7 @@ class RMNode(pipeline.CondorDAGNode):
 	def add_input_cache(self, cache):
 		self.input_cache |= cache
 		for cache_entry in cache:
-			pipeline.CondorDAGNode.add_file_arg(self, cache_entry.path())
+			pipeline.CondorDAGNode.add_file_arg(self, cache_entry.path)
 
 	def get_output_cache(self):
 		return set()
@@ -484,7 +484,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 	def add_preserve_cache(self, cache):
 		if self.remove_input:
 			for c in cache:
-				self.add_var_arg("--remove-input-except %s" % c.path())
+				self.add_var_arg("--remove-input-except %s" % c.path)
 
 	def get_input_cache(self):
 		return self.input_cache
@@ -530,7 +530,7 @@ class BucutNode(pipeline.CondorDAGNode):
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
 		for c in cache:
-			filename = c.path()
+			filename = c.path
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 			self.add_output_file(filename)
 
@@ -629,7 +629,7 @@ class BinjfindNode(pipeline.CondorDAGNode):
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
 		for c in cache:
-			filename = c.path()
+			filename = c.path
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 			self.add_output_file(filename)
 
@@ -686,7 +686,7 @@ class BurcaNode(pipeline.CondorDAGNode):
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
 		for c in cache:
-			filename = c.path()
+			filename = c.path
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 			self.add_output_file(filename)
 		longest_duration = max(abs(cache_entry.segment) for cache_entry in self.input_cache)
@@ -741,7 +741,7 @@ class SQLiteNode(pipeline.CondorDAGNode):
 			raise AttributeError, "cannot change attributes after computing output cache"
 		self.input_cache.extend(cache)
 		for c in cache:
-			filename = c.path()
+			filename = c.path
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 			self.add_output_file(filename)
 
@@ -799,7 +799,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 			raise AttributeError, "cannot change attributes after computing output cache"
 		self.input_cache.extend(cache)
 		for c in cache:
-			filename = c.path()
+			filename = c.path
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 		self.add_output_file(filename)
 
@@ -1093,7 +1093,7 @@ def make_binj_fragment(dag, seg, time_slides_cache_entry, tag, offset, flow = No
 	start = seg[0] - seg[0] % binjjob.time_step + binjjob.time_step * offset
 
 	node = BurstInjNode(binjjob)
-	node.set_time_slide_file(time_slides_cache_entry.path())
+	node.set_time_slide_file(time_slides_cache_entry.path)
 	node.set_start(start)
 	node.set_end(seg[1])
 	if flow is not None:
@@ -1193,7 +1193,7 @@ def make_sqlite_fragment(dag, parents, tag, verbose = False):
 		node.add_input_cache([cache_entry])
 		node.add_parent(parent)
 		node.set_name("ligolw_sqlite_%s_%d" % (tag, len(nodes)))
-		node.set_output(cache_entry.path().replace(".xml.gz", ".sqlite"))
+		node.set_output(cache_entry.path.replace(".xml.gz", ".sqlite"))
 		dag.add_node(node)
 		nodes.add(node)
 	return nodes
@@ -1337,7 +1337,7 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ti
 	# the unpacking indirectly tests that the file count is correct
 	[framecache] = [node.get_output() for node in datafindnodes]
 	if binjnodes:
-		[simfile] = [cache_entry.path() for node in binjnodes for cache_entry in node.get_output_cache()]
+		[simfile] = [cache_entry.path for node in binjnodes for cache_entry in node.get_output_cache()]
 		injargs = {"injection-file": simfile}
 	else:
 		injargs = {}

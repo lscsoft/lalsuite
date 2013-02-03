@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 49
+# serial 58
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -13,10 +13,8 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
     # * the last log message, if the cwd is in a git repository
     # * nothing, if the cwd is not part of the git repo (e.g. ignored)
     # * an error msg to stderr if the cwd is not in a git repository
-    git_log=`( cd "${srcdir}" && ${GIT} log --oneline -n 1 -- . ) 2>/dev/null`
-    AS_IF([test "x${git_log}" != x],[
-      have_git_repo=yes
-    ])
+    git_log=`( cd "${srcdir}" && ${GIT} log --pretty=oneline -n 1 -- . ) 2>/dev/null`
+    AS_IF([test "x${git_log}" != x],[have_git_repo=yes])
     AC_MSG_RESULT([${have_git_repo}])
   ])
   # conditional for git and building from a git repository
@@ -28,9 +26,7 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
     AC_SUBST([genvcsinfo_],["\$(genvcsinfo_\$(AM_DEFAULT_VERBOSITY))"])
     AC_SUBST([genvcsinfo_0],["--am-v-gen='\$(AM_V_GEN)'"])
     GENERATE_VCS_INFO="\$(AM_V_at)\$(PYTHON) \$(top_srcdir)/../gnuscripts/generate_vcs_info.py --git-path='\$(GIT)' \$(genvcsinfo_\$(V))"
-  ],[
-    GENERATE_VCS_INFO=false
-  ])
+  ],[GENERATE_VCS_INFO=false])
   AC_SUBST(GENERATE_VCS_INFO)
 ])
 
@@ -272,11 +268,10 @@ AC_DEFUN([LALSUITE_ENABLE_DEBUG],
 [AC_ARG_ENABLE(
   [debug],
   AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
-  [ case "${enableval}" in
-      yes) ;;
-      no) AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code) ;;
-      *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
-    esac
+  [AS_CASE(["${enableval}"],
+    [yes],,
+    [no],AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code),
+    AC_MSG_ERROR(bad value for ${enableval} for --enable-debug))
   ], )
 ])
 
@@ -350,19 +345,6 @@ AC_ARG_ENABLE(
   ], [ lalsimulation=${all_lal:-true} ] )
 ])
 
-AC_DEFUN([LALSUITE_ENABLE_LALDETCHAR],
-[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
-AC_ARG_ENABLE(
-  [laldetchar],
-  AC_HELP_STRING([--enable-laldetchar],[compile code that requires laldetchar library [default=no]]),
-  [ case "${enableval}" in
-      yes) laldetchar=true;;
-      no) laldetchar=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-laldetchar) ;;
-    esac
-  ], [ laldetchar=${all_lal:-false} ] )
-])
-
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
@@ -379,6 +361,25 @@ if test "$lalmetaio" = "false"; then
 fi
 if test "$lalsimulation" = "false"; then
   lalburst=false
+fi
+])
+
+AC_DEFUN([LALSUITE_ENABLE_LALDETCHAR],
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
+  [laldetchar],
+  AC_HELP_STRING([--enable-laldetchar],[compile code that requires laldetchar library [default=no]]),
+  [ case "${enableval}" in
+      yes) laldetchar=true;;
+      no) laldetchar=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-laldetchar) ;;
+    esac
+  ], [ laldetchar=${all_lal:-false} ] )
+if test "$lalmetaio" = "false"; then
+  laldetchar=false
+fi
+if test "$lalburst" = "false"; then
+  laldetchar=false
 fi
 ])
 
@@ -546,20 +547,16 @@ AC_ARG_WITH(
   LALSUITE_ENABLE_MODULE([CUDA],[cuda])
 ])
 
-AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],[
-  AC_ARG_ENABLE(
-    [fast_gsl],
-    AC_HELP_STRING([--enable-fast-gsl],[enable fast/inline GSL code [default=no]]),
-    [ case "${enableval}" in
-        yes)
-          AC_DEFINE([HAVE_INLINE],[1],[Define to 1 to use inline code])
-          AC_DEFINE([GSL_C99_INLINE],[1],[Define to 1 to use GSL C99 inline code])
-          AC_DEFINE([GSL_RANGE_CHECK_OFF],[1],[Define to 1 to turn GSL range checking off])
-          ;;
-        no) ;;
-        *)  AC_MSG_ERROR([bad value ${enableval} for --enable-fast-gsl]);;
-      esac
-    ]
+AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],
+[AC_ARG_ENABLE(
+  [fast_gsl],
+  AC_HELP_STRING([--enable-fast-gsl],[enable fast/inline GSL code [default=no]]),
+  AS_CASE(["${enableval}"],
+    [yes],[AC_DEFINE([HAVE_INLINE],[1],[Define to 1 to use inline code])
+           AC_DEFINE([GSL_C99_INLINE],[1],[Define to 1 to use GSL C99 inline code])
+           AC_DEFINE([GSL_RANGE_CHECK_OFF],[1],[Define to 1 to turn GSL range checking off])],
+    [no],,
+    AC_MSG_ERROR([bad value ${enableval} for --enable-fast-gsl]))
   )
 ])
 
@@ -567,49 +564,33 @@ AC_DEFUN([LALSUITE_ENABLE_OSX_VERSION_CHECK],
 [AC_ARG_ENABLE(
   [osx_version_check],
   AC_HELP_STRING([--enable-osx-version-check],[disable OS X version check [default=yes]]),
-  [ case "${enableval}" in
-      yes) osx_version_check=true;;
-      no) osx_version_check=false;;
-      *) AC_MSG_ERROR([bad value ${enableval} for --enable-osx-version-check]);;
-    esac
-  ], [ osx_version_check=true ] )
+  AS_CASE(["${enableval}"],
+    [yes],[osx_version_check=true],
+    [no],[osx_version_check=false],
+    AC_MSG_ERROR([bad value ${enableval} for --enable-osx-version-check])
+  ),[osx_version_check=true])
 ])
 
-AC_DEFUN([LALSUITE_OSX_VERSION_CHECK],
-[
+AC_DEFUN([LALSUITE_OSX_VERSION_CHECK],[
 LALSUITE_ENABLE_OSX_VERSION_CHECK
-if test "x${osx_version_check}" = "xtrue"; then
-  if test "x$build_vendor" = "xapple"; then
+AS_IF(["x${osx_version_check}" = "xtrue"],[
+  AS_IF([test "x$build_vendor" = "xapple"],[
     AC_CHECK_PROGS([SW_VERS],[sw_vers])
-    if test "x$SW_VERS" != "x"; then
+    AS_IF([test "x$SW_VERS" != "x"],[
       AC_MSG_CHECKING([Mac OS X version])
       MACOSX_VERSION=`$SW_VERS -productVersion`
-      AC_MSG_RESULT([$MACOSX_VERSION])
-    fi
-    case "$MACOSX_VERSION" in
-      10.0*|10.1*|10.2*|10.3*)
-        AC_MSG_ERROR([This version of Mac OS X is not supported])
-        ;;
-      10.4*|10.5*|10.6*|10.7*|10.8*)
-        # supported version
-        ;;
-      *)
-        AC_MSG_WARN([Unknown Mac OS X version])
-        ;;
-    esac
-  fi
-fi
-])
+      AC_MSG_RESULT([$MACOSX_VERSION])])
+    AS_CASE(["$MACOSX_VERSION"],
+      [10.0*|10.1*|10.2*|10.3*],AC_MSG_ERROR([This version of Mac OS X is not supported]),
+      [10.4*|10.5*|10.6*|10.7*|10.8*],,
+      AC_MSG_WARN([Unknown Mac OS X version]))
+])])])
 
 AC_DEFUN([LALSUITE_WITH_NVCC_CFLAGS],
 [AC_ARG_WITH(
   [nvcc_cflags],
   AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
-  [ if test -n "${with_nvcc_cflags}"
-    then
-      NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_nvcc_cflags}"],[NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"]),)
 ])
 
 AC_DEFUN([LALSUITE_CHECK_CUDA],

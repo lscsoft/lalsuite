@@ -1,6 +1,6 @@
 AC_PREREQ([2.63])
-AC_INIT([lalsimulation],[0.6.0.1],[lal-discuss@gravity.phys.uwm.edu])
-AC_CONFIG_HEADER([include/config.h src/LALSimulationConfig.h])
+AC_INIT([lalsimulation],[0.6.1.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_CONFIG_HEADERS([include/config.h src/LALSimulationConfig.h])
 AC_CONFIG_SRCDIR([src/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -42,7 +42,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[6])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 

@@ -67,6 +67,9 @@ static const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
  *
  * The cleaning gets rid of comments ('\#', ';'), empty lines,
  * and performs line-continuation if '\\' is found at EOL
+ *
+ * NOTE: This function can transparently detect and read gzip-compressed
+ * data-files, independently of filename-extension
  */
 int
 XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file lines */
@@ -91,7 +94,7 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
     XLAL_ERROR ( XLAL_ESYS );
   }
 
-  err = XLALCHARReadSequence (&rawdata, fp);
+  err = XLALCHARReadSequence (&rawdata, fp);	// this function can read gzip-compressed files
   fclose (fp);
   if (err)
     return err;

@@ -579,7 +579,7 @@ COMPLEX16 XLALWignerDMatrix(
                                    double gam  /**< euler angle (rad) */
     )
 {
-	 return exp( -(1.0I)*mp*alpha ) *
+	 return cexp( -(1.0I)*mp*alpha ) *
 			XLALWignerdMatrix( l, mp, m, beta ) * 
-			exp( -(1.0I)*m*gam );
+			cexp( -(1.0I)*m*gam );
 }

@@ -346,6 +346,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   }
   pPulsarSignalParams->orbit = NULL;
   pPulsarSignalParams->transfer = NULL;
+  pPulsarSignalParams->dtDelayBy2 = 0;
+  pPulsarSignalParams->dtPolBy2 = 0;
   /* Set up pulsar site */
   if (strstr(IFO, "LHO")) {
        cachedDetector = lalCachedDetectors[LALDetectorIndexLHODIFF];

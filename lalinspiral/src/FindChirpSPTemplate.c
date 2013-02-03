@@ -144,8 +144,10 @@ LALFindChirpSPTemplate (
   REAL4         psi        = 0.0;
   REAL4         psi0       = 0.0;
   INT4          k          = 0;
+  INT4          f          = 0;
   INT4          kmin       = 0;
   INT4          kmax       = 0;
+  REAL4         fLow       = -1;
   CHAR          infomsg[512];
 
   REAL4         distNorm;
@@ -290,7 +292,39 @@ LALFindChirpSPTemplate (
   x1 = pow( LAL_PI * m * LAL_MTSUN_SI * deltaF, -1.0/3.0 );
 
   /* frequency cutoffs */
-  kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
+  if (params->dynamicTmpltFlow)
+  {
+    /* Dynamic lower cutoff
+     * Work out longest length for template
+     * Keep a few extra sample points for safety */
+    REAL4 currTime;
+    REAL4 maxT = ((REAL4) params->deltaT * (REAL4) (numPoints-12))/4.;
+    maxT -= 0.5 * (REAL4) params->invSpecTrunc * (REAL4) params->deltaT;
+    fLow = -1;
+    for (f=1; f < 100; f++)
+    {
+      currTime = XLALFindChirpChirpTime( tmplt->mass1,
+                                        tmplt->mass2,
+                                        (double) f,
+                                        params->order);
+      if (currTime < maxT)
+      {
+        fLow = (REAL4) f;
+        break;
+      }
+    }   
+    /* If nothing passed then fail */
+    if ( fLow < 0)
+    {
+      ABORT( status, FINDCHIRPH_EFLOX, FINDCHIRPH_MSGEFLOX );
+    }
+  }
+  else
+  {
+    fLow = params->fLow;
+  }
+
+  kmin = fLow / deltaF > 1 ? fLow / deltaF : 1;
   kmax = tmplt->fFinal / deltaF < numPoints/2 ?
     tmplt->fFinal / deltaF : numPoints/2;
 
@@ -379,7 +413,7 @@ LALFindChirpSPTemplate (
 
     tmplt->tC = XLALFindChirpChirpTime( tmplt->mass1,
 					tmplt->mass2,
-					params->fLow,
+					fLow,
 					params->order);
 
   /* copy the template parameters to the findchirp template structure */
