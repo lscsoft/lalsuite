@@ -77,7 +77,7 @@ aPlus=1.5
 aCross=0.7
 psi=0.5
 phi0=0.9
-f0=300.2
+Freq=300.2
 alpha=1.7
 delta=0.9
 
@@ -93,7 +93,7 @@ echo
 echo "mfd_v4: producing SFTs via heterodyned timeseries (generationMode=0 [ALL_AT_ONCE] )..."
 echo
 
-mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0"
+mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0"
 cmdline="$mfdCODE $mfdCL --outSFTbname=$testDIR1";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -114,7 +114,7 @@ echo
 echo "mfd_v4: producing SFTs via heterodyned timeseries (generationMode=1 [PER_SFT] )..."
 echo
 
-mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1"
+mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1"
 cmdline="$mfdCODE $mfdCL --outSFTbname=$testDIR2";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -135,7 +135,7 @@ echo
 echo "mfd_v4: producing SFTs via 'exact' timeseries (non-heterodyned)..."
 echo
 
-mfdCL="--Tsft=$Tsft --fmin=0 --Band=$fUpper --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0"
+mfdCL="--Tsft=$Tsft --fmin=0 --Band=$fUpper --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0"
 cmdline="$mfdCODE $mfdCL --outSFTbname=$testDIR3";
 echo $cmdline;
 if ! eval $cmdline; then
