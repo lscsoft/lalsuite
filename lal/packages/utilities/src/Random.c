@@ -228,7 +228,7 @@ int XLALNormalDeviates( REAL4Vector *deviates, RandomParams *params )
     /* throw away y */
   }
 
-  return 0;
+  return XLAL_SUCCESS;
 }
 
 REAL4 XLALNormalDeviate( RandomParams *params )
@@ -343,7 +343,7 @@ LALNormalDeviates (
   ASSERT (deviates->data, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
   ASSERT (deviates->length > 0, status, RANDOMH_ESIZE, RANDOMH_MSGESIZE);
 
-  if ( XLALNormalDeviates( deviates, params ) < 0 )
+  if ( XLALNormalDeviates( deviates, params ) != XLAL_SUCCESS )
   {
     int errnum = xlalErrno;
     XLALClearErrno();

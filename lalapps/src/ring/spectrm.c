@@ -104,6 +104,74 @@ REAL4FrequencySeries *compute_average_spectrum(
   return spectrum;
 }
 
+REAL4FrequencySeries *resample_psd(
+  REAL4FrequencySeries *origspectrum,
+  REAL8        sampleRate,
+  REAL8        segmentDuration
+  )
+{
+  REAL4FrequencySeries *rsmplspectrum;
+  UINT4 segmentLength;
+  REAL8 origDeltaF,rsmplDeltaF;
+  REAL8 currF,belowF,aboveF,belowWeight,aboveWeight,currPower;
+  UINT4 k;
+  INT4 belowK,aboveK;
+
+  segmentLength  = floor( segmentDuration*sampleRate + 0.5 );
+  rsmplspectrum       = LALCalloc( 1, sizeof( *rsmplspectrum ) );
+  rsmplspectrum->data = XLALCreateREAL4Vector( segmentLength/2 + 1 );
+
+  origDeltaF = origspectrum->deltaF;
+  rsmplDeltaF = 1.0/segmentDuration;
+  rsmplspectrum->epoch = origspectrum->epoch;
+  rsmplspectrum->f0 = origspectrum->f0;
+  rsmplspectrum->deltaF = rsmplDeltaF;
+  rsmplspectrum->sampleUnits = origspectrum->sampleUnits;
+  snprintf( rsmplspectrum->name, sizeof( rsmplspectrum->name ),
+      "%s_RSMPL", origspectrum->name);
+
+  for (k=0; k < segmentLength/2 + 1; k++)
+  {
+    currF = k * rsmplDeltaF;
+    belowK = floor( currF / origDeltaF);
+    aboveK = ceil( currF / origDeltaF);
+    belowF = belowK * origDeltaF;
+    aboveF = aboveK * origDeltaF;
+    if (belowK < 0)
+      belowK = 0;
+    if (aboveK < 0)
+    {
+      // Shouldn't this fail?
+      aboveK = 0;
+    }
+    if (belowK > (INT4)origspectrum->data->length)
+      belowK = origspectrum->data->length;
+    if (aboveK > (INT4)origspectrum->data->length)
+      aboveK = origspectrum->data->length;
+    sanity_check( aboveK >= belowK );
+    if (aboveK - belowK == 0)
+    {
+      belowWeight = 1;
+      aboveWeight = 0;
+    }
+    else
+    {
+      belowWeight = (currF - belowF) / (aboveF - belowF);
+      aboveWeight = (aboveF - currF) / (aboveF - belowF);
+      sanity_check( aboveWeight >= 0);
+      sanity_check( belowWeight >= 0);
+    }
+    currPower = origspectrum->data->data[belowK] * belowWeight;
+    currPower += origspectrum->data->data[aboveK] * aboveWeight;
+    rsmplspectrum->data->data[k] = currPower;
+  }
+
+  XLALDestroyREAL4Vector( origspectrum->data );
+  LALFree( origspectrum );
+
+  return rsmplspectrum;
+}
+
 REAL8FrequencySeries *generate_theoretical_psd(
     REAL4                    deltaT,
     REAL8                    segmentDuration,

@@ -36,6 +36,10 @@
 #include <lal/TimeSeries.h>
 #include <lal/LALSimNoise.h>
 
+/* macro for testing validity of a condition that prints an error if invalid */
+#define sanity_check( condition ) \
+  ( condition ? 0 : ( fputs( #condition " not satisfied\n", stderr ), error( "sanity check failed\n" ) ) )
+
 
 /* routine to compute an average spectrum from time series data */
 REAL4FrequencySeries *compute_average_spectrum(
@@ -47,6 +51,12 @@ REAL4FrequencySeries *compute_average_spectrum(
     int                      whiteSpectrum
     );
 
+/* Resample calculated PSD using linear interpolation */
+REAL4FrequencySeries *resample_psd(
+  REAL4FrequencySeries *origspectrum,
+  REAL8        sampleRate,
+  REAL8        segmentDuration
+  );
 
 /* Routine to generate a theoretical PSD */
 REAL8FrequencySeries *generate_theoretical_psd(

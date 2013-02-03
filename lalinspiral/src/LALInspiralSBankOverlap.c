@@ -19,7 +19,8 @@
 #include <string.h>
 #include <math.h>
 #include <complex.h>
-#include <fftw3.h>
+#include <lal/AVFactories.h>
+#include <lal/ComplexFFT.h>
 #include <lal/XLALError.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALInspiralSBankOverlap.h>
@@ -42,9 +43,9 @@ void XLALDestroySBankWorkspaceCache(WS *workspace_cache) {
     size_t k = MAX_NUM_WS;
     for (;k--;) {
         if (workspace_cache[k].n) {
-            fftwf_destroy_plan(workspace_cache[k].plan);
-            fftwf_free(workspace_cache[k].zf);
-            fftwf_free(workspace_cache[k].zt);
+            XLALDestroyCOMPLEX8FFTPlan(workspace_cache[k].plan);
+            XLALDestroyCOMPLEX8Vector(workspace_cache[k].zf);
+            XLALDestroyCOMPLEX8Vector(workspace_cache[k].zt);
         }
     }
     free(workspace_cache);
@@ -64,14 +65,16 @@ static WS *get_workspace(WS *workspace_cache, const size_t n) {
     }
 
     /* if n not in cache, ptr now points at first blank entry */
+    ptr->zf = XLALCreateCOMPLEX8Vector(n);
+    CHECK_OOM(ptr->zf->data, "unable to allocate workspace array zf\n");
+    memset(ptr->zf->data, 0, n * sizeof(COMPLEX8));
+
+    ptr->zt = XLALCreateCOMPLEX8Vector(n);
+    CHECK_OOM(ptr->zf->data, "unable to allocate workspace array zt\n");
+    memset(ptr->zt->data, 0, n * sizeof(COMPLEX8));
+
     ptr->n = n;
-    ptr->zf = fftwf_malloc(sizeof(fftwf_complex) * n);
-    CHECK_OOM(ptr->zf, "unable to allocate workspace array zf\n");
-    memset(ptr->zf, 0, n * sizeof(*(ptr->zf)));
-    ptr->zt = fftwf_malloc(sizeof(fftwf_complex) * n);
-    CHECK_OOM(ptr->zf, "unable to allocate workspace array zt\n");
-    memset(ptr->zt, 0, n * sizeof(*(ptr->zt)));
-    ptr->plan = fftwf_plan_dft_1d(n, ptr->zf, ptr->zt, FFTW_BACKWARD, FFTW_MEASURE);
+    ptr->plan = XLALCreateReverseCOMPLEX8FFTPlan(n, 1);
     CHECK_OOM(ptr->plan, "unable to allocate plan");
 
     return ptr;
@@ -122,11 +125,11 @@ REAL8 XLALInspiralSBankComputeMatch(const COMPLEX8FrequencySeries *inj, const CO
     /* compute complex SNR time-series in freq-domain, then time-domain */
     /* Note that findchirp paper eq 4.2 defines a positive-frequency integral,
        so we should only fill the positive frequencies (first half of zf). */
-    multiply_conjugate(ws->zf, inj->data->data, tmplt->data->data, min_len);
-    fftwf_execute(ws->plan); /* plan is reverse */
+    multiply_conjugate(ws->zf->data, inj->data->data, tmplt->data->data, min_len);
+    XLALCOMPLEX8VectorFFT(ws->zt, ws->zf, ws->plan); /* plan is reverse */
 
     /* maximize over |z(t)|^2 */
-    COMPLEX8 *zdata = ws->zt;
+    COMPLEX8 *zdata = ws->zt->data;
     size_t k = n;
     ssize_t argmax = -1;
     REAL8 max = 0.;

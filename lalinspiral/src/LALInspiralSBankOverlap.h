@@ -1,14 +1,14 @@
 #include <stdlib.h>
 #include <complex.h>
-#include <fftw3.h>
+#include <lal/ComplexFFT.h>
 #include <lal/FrequencySeries.h>
 #include <sys/types.h>
 
 typedef struct tagWS {
     size_t n;
-    fftwf_plan plan;
-    COMPLEX8 *zf;
-    COMPLEX8 *zt;
+    COMPLEX8FFTPlan *plan;
+    COMPLEX8Vector *zf;
+    COMPLEX8Vector *zt;
 } WS;
 
 WS *XLALCreateSBankWorkspaceCache(void);

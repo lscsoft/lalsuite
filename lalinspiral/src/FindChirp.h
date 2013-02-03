@@ -134,6 +134,7 @@ that implement the search.
 #define FINDCHIRPH_EPTFW 27	/**< Error generating PTF waveform */
 #define FINDCHIRPH_EIGEN 28	/**< Error computing eigenvalues */
 #define FINDCHIRPH_EIMRW 29	/**< Error computing IMR waveform */
+#define FINDCHIRPH_EFLOX 30     /**< Error computing variable flower */
 /*@}*/
 
 /** \cond DONT_DOXYGEN */
@@ -163,6 +164,7 @@ that implement the search.
 #define FINDCHIRPH_MSGEPTFW "Error generating PTF waveform"
 #define FINDCHIRPH_MSGEIGEN "Error computing eigenvalues"
 #define FINDCHIRPH_MSGEIMRW "Error computing IMR waveform"
+#define FINDCHIRPH_MSGEFLOX "Error calculating an appropriate value of f_low"
 /** \endcond */
 
 /** This structure provides the essential information for the
@@ -266,6 +268,10 @@ tagFindChirpTmpltParams
                                                          * \c REAL4 rather than \c REAL8; This must be set to the same value as \c dynRange in the \c FindChirpDataParams; For LIGO data a
                                                          * value of \f$d = 2^{69}\f$ is appropriate
                                                          */
+  UINT4                         invSpecTrunc;           /**< The length to which to truncate the inverse power spectral density of the data in the time domain; If set to zero, no
+                                                         * truncation is performed
+                                                         */
+
   REAL4Vector                  *xfacVec;		/**< For frequency domain templates, this is a
                                                          * vector of length \f$N/2+1\f$ which contains the quantity \f$k^{-1/3}\f$; For time
                                                          * domain templates, this is a workspace vector of length \f$N\f$ which contains the
@@ -297,6 +303,7 @@ tagFindChirpTmpltParams
   INT4                          reverseChirpBank;	/**< Switches a FindChirpSP template bank to be a reverse chirp template bank if true */
   INT4                          bandPassTmplt;		/**< UNDOCUMENTED */
   LALSimInspiralApplyTaper      taperTmplt;		/**< UNDOCUMENTED */
+  INT4                          dynamicTmpltFlow;       /**< Use longest template that will fit in pad length */
 }
 FindChirpTmpltParams;
 
