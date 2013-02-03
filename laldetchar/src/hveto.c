@@ -165,8 +165,7 @@ int main(int argc, char** argv){
 		 * FIXME: We can do this more efficiently by passing this to the scan
 		 * function, and only doing a single pass.
 		 */
-		char *winner;
-		winner = malloc( sizeof(char)*1024 );
+		char *winner = NULL;
 		double *sig = malloc(sizeof(double));
 		int nw = nwinds, nt = nthresh;
 		for( nt=nthresh; nt >= 0; nt-- ){
@@ -178,6 +177,7 @@ int main(int argc, char** argv){
 				printf( "Window: %d\n", nw );
 				wind = twins[nw];
 				printf( "wind: %f\n", wind );
+				winner = malloc( sizeof(char)*1024 );
 
 				// Create our channel coincidence histogram
 				// FIXME: Free memory?
@@ -410,6 +410,26 @@ void print_hash_table_float( GHashTable* tbl, const char* file ){
 			fprintf( outfile, "%s: %f\n", (char *)key, *(double*)val );
 		} else {
 			printf( "%s: %f\n", (char *)key, *(double*)val );
+		}
+	}
+	if( outfile ){
+		fclose( outfile );
+	}
+}
+
+void print_hash_table_string( GHashTable* tbl, const char* file ){
+    GHashTableIter iter;
+    gpointer key, val;
+	g_hash_table_iter_init( &iter, tbl );
+	FILE* outfile = NULL;
+	if( file ){
+		outfile = fopen( file, "w" );
+	}
+	while( g_hash_table_iter_next( &iter, &key, &val ) ){
+		if( file ){
+			fprintf( outfile, "%s: %f\n", (char *)key, (char*)val );
+		} else {
+			printf( "%s: %f\n", (char *)key, (char*)val );
 		}
 	}
 	if( outfile ){
