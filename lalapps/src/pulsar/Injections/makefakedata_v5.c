@@ -196,7 +196,6 @@ int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
 int XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar );
 int XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg );
 COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, const CHAR *fname );
-SFTVector *XLALExtractSFTBand ( const SFTVector *inSFTs, REAL8 f_min, REAL8 Band );
 int XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed );
 int XLALFreeMem ( ConfigVars_t *cfg );
 
@@ -373,7 +372,7 @@ main(int argc, char *argv[])
       if ( uvar.exactSignal )
         {
           SFTVector *outSFTs;
-          XLAL_CHECK ( (outSFTs = XLALExtractSFTBand ( SFTs, GV.fmin_eff, GV.fBand_eff )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK ( (outSFTs = XLALExtractBandFromSFTVector ( SFTs, GV.fmin_eff, GV.fBand_eff )) != NULL, XLAL_EFUNC );
           XLALDestroySFTVector ( SFTs );
           SFTs = outSFTs;
         }
@@ -1449,55 +1448,6 @@ XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, /**< overall scale
   return ret;
 
 } /* XLALLoadTransferFunctionFromActuation() */
-
-
-/** Return a vector of SFTs containg only the bins in [fmin, fmin+Band].
- */
-SFTVector *
-XLALExtractSFTBand ( const SFTVector *inSFTs, REAL8 f_min, REAL8 Band )
-{
-  XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input SFT vector 'inSFTs'\n");
-  XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input SFT vector 'inSFTs'\n");
-  XLAL_CHECK_NULL ( f_min >= 0, XLAL_EDOM, "Invalid negative frequency f_min = %g\n", f_min );
-  XLAL_CHECK_NULL ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
-
-  UINT4 numSFTs = inSFTs->length;
-  REAL8 SFTf0   = inSFTs->data[0].f0;
-  REAL8 df      = inSFTs->data[0].deltaF;
-  REAL8 SFTBand = df * inSFTs->data[0].data->length;
-
-  XLAL_CHECK_NULL ( (f_min >= SFTf0) && ( f_min + Band <= SFTf0 + SFTBand ), XLAL_EINVAL,
-                    "Requested frequency-band [%f,%f] Hz not contained SFTs [%f, %f] Hz.\n", f_min, f_min + Band, SFTf0, SFTf0 + SFTBand );
-
-  UINT4 firstBin = round ( f_min / df );
-  UINT4 numBins =  round ( Band / df ) + 1;
-
-  SFTVector *ret = XLALCreateSFTVector ( numSFTs, numBins );
-  XLAL_CHECK_NULL ( ret != NULL, XLAL_EFUNC, "XLALCreateSFTVector ( %d, %d ) failed.\n", numSFTs, numBins );
-
-  for ( UINT4 i = 0; i < numSFTs; i ++ )
-    {
-      SFTtype *dest = &(ret->data[i]);
-      SFTtype *src =  &(inSFTs->data[i]);
-      COMPLEX8Vector *ptr = dest->data;
-
-      /* copy complete header first */
-      memcpy ( dest, src, sizeof(*dest) );
-      /* restore data-pointer */
-      dest->data = ptr;
-      /* set correct f_min */
-      dest->f0 = firstBin * df ;
-
-      /* copy the relevant part of the data */
-      memcpy ( dest->data->data, src->data->data + firstBin, numBins * sizeof( dest->data->data[0] ) );
-
-    } /* for i < numSFTs */
-
-  /* return final SFT-vector */
-  return ret;
-
-} /* XLALExtractSFTBand() */
-
 
 /* determine if the given filepath is an existing directory or not */
 BOOLEAN

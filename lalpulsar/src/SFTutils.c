@@ -53,80 +53,6 @@ const MultiNoiseWeights empty_MultiNoiseWeights;
 #include "SFTutils-LAL.c"
 // ------------------------------
 
-/** Extract a frequency band from an SFTVector, returning a new SFTvector
- * Note: fMin < 0 implies to start from lowest frequency bin,
- *       fMax < 0 implies to include up to highest frequency bin
- *
- * if fMin, fMax > 0, the corresponding frequency MUST be contained in the
- * input SFT, otherwise an error is returned.
- *
- * We guarantee that both fMin and fMax will be *contained* in the returned SFT,
- * which means the actual min(f) can be < fMin, and max(f) > fMax is possible.
- *
- */
-SFTVector *
-XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
-{
-  REAL8 dFreq;
-  UINT4 iMin, iMax, i0, numSFTs, numBinsIn, numBinsOut, iSFT;
-  SFTVector *out;
-  REAL8 f0Out;
-  COMPLEX8Vector *sav;
-
-  if ( !sfts || !sfts->data || (sfts->length==0) || !sfts->data[0].data ) {
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
-
-  dFreq = sfts->data[0].deltaF;
-
-  i0 = floor ( sfts->data[0].f0 / dFreq + 0.5 );	/* round to nearest bin */
-  numBinsIn = sfts->data[0].data->length;
-
-  if ( fMin < 0 )
-    iMin = i0;
-  else
-    iMin = floor ( fMin / dFreq + 1e-6 );	/* round down */
-
-  if ( fMax < 0 )
-    iMax = i0 + numBinsIn - 1;
-  else
-    iMax = ceil ( fMax / dFreq - 1e-6 );	/* round up */
-
-  if ( iMax < iMin ) {
-    XLALPrintError ("Resulting SFT has no bins iMax (%d) < iMin (%d)!\n", iMax, iMin );
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
-
-  numSFTs = sfts->length;
-  f0Out = iMin * dFreq;
-  numBinsOut = iMax - iMin + 1;
-
-  if ( (out = XLALCreateSFTVector ( numSFTs, numBinsOut )) == NULL ) {
-    XLAL_ERROR_NULL( XLAL_ENOMEM );
-  }
-
-  /* now copy heads and all requested bins */
-  for ( iSFT = 0; iSFT < numSFTs; iSFT ++ )
-    {
-      /* first copy complete head (saving data-pointer first, which will be copied in the next step) */
-      sav = out->data[iSFT].data;
-      memcpy ( &(out->data[iSFT]), &(sfts->data[iSFT]), sizeof(sfts->data[0]) );
-      out->data[iSFT].data = sav;
-
-      /* fix new header information */
-      out->data[iSFT].f0 = f0Out;
-
-      /* copy data */
-      memcpy (out->data[iSFT].data->data, sfts->data[iSFT].data->data + iMin - i0, numBinsOut * sizeof (sfts->data[iSFT].data->data[0] ) );
-      out->data[iSFT].data->length = numBinsOut;
-
-    } /* for iSFT < numSFTs */
-
-  return ( out );
-
-} /* XLALExtractBandfromSFTs() */
-
-
 /** XLAL function to create one SFT-struct.
  *
  * Note: Allows for numBins == 0, in which case only the header is
@@ -913,10 +839,64 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
 
 } /* XLALReadSegmentsFromFile() */
 
-/* ============================================================
- * deprecated LAL interface API follow below
- * mostly these are now just LAL-wrappers to the corresponding
- * XLAL-inteface functions
- * ============================================================
+/** Return a vector of SFTs containing only the bins in [fmin, fmin+Band].
+ *
+ * Note: the output SFT is guaranteed to "cover" the input boundaries 'fmin'
+ * and 'fmin+Band', ie if necessary the output SFT contains one additional
+ * bin on either end of the interval.
+ *
+ * The 'fudge region' allowing for numerical noise is eps= 10*LAL_REAL8_EPS ~2e-15
+ * relative deviation: ie if the SFT contains a bin at 'fi', then we consider for example
+ * "fmin == fi" if  fabs(fi - fmin)/fi < eps.
  */
+SFTVector *
+XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
+{
+  XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input SFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input SFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( fmin >= 0, XLAL_EDOM, "Invalid negative frequency fmin = %g\n", fmin );
+  XLAL_CHECK_NULL ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  UINT4 numSFTs = inSFTs->length;
+  REAL8 SFTf0   = inSFTs->data[0].f0;
+  REAL8 df      = inSFTs->data[0].deltaF;
+  REAL8 SFTBand = df * inSFTs->data[0].data->length;
+
+  XLAL_CHECK_NULL ( (fmin >= SFTf0) && ( fmin + Band <= SFTf0 + SFTBand ), XLAL_EINVAL,
+                    "Requested frequency-band [%f,%f] Hz not contained SFTs [%f, %f] Hz.\n", fmin, fmin + Band, SFTf0, SFTf0 + SFTBand );
+
+  REAL8 eps = 10 * LAL_REAL8_EPS;	// about ~2e-15
+  REAL8 fudge_up = 1 + eps;
+  REAL8 fudge_down = 1 - eps;
+  UINT4 firstBin = floor ( fmin*fudge_up / df );	// round *down*, allowing for eps 'fudge'
+  REAL8 fmax = fmin + Band;
+  UINT4 lastBin  = ceil ( ( fmax*fudge_down) / df );	// round *up*, allowing for eps fudge
+
+  UINT4 numBins =  lastBin - firstBin + 1;
+
+  SFTVector *ret = XLALCreateSFTVector ( numSFTs, numBins );
+  XLAL_CHECK_NULL ( ret != NULL, XLAL_EFUNC, "XLALCreateSFTVector ( %d, %d ) failed.\n", numSFTs, numBins );
+
+  for ( UINT4 i = 0; i < numSFTs; i ++ )
+    {
+      SFTtype *dest = &(ret->data[i]);
+      SFTtype *src =  &(inSFTs->data[i]);
+      COMPLEX8Vector *ptr = dest->data;
+
+      /* copy complete header first */
+      memcpy ( dest, src, sizeof(*dest) );
+      /* restore data-pointer */
+      dest->data = ptr;
+      /* set correct fmin */
+      dest->f0 = firstBin * df ;
+
+      /* copy the relevant part of the data */
+      memcpy ( dest->data->data, src->data->data + firstBin, numBins * sizeof( dest->data->data[0] ) );
+
+    } /* for i < numSFTs */
+
+  /* return final SFT-vector */
+  return ret;
+
+} /* XLALExtractSFTBand() */
 
