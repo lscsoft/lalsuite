@@ -184,14 +184,11 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) join time_slide\
 		    on (time_slide.time_slide_id == coinc_event.time_slide_id and time_slide.instrument==sngl_inspiral.ifo)\
 		    join coinc_inspiral on (coinc_inspiral.coinc_event_id==coinc_event.coinc_event_id) where coinc_event.time_slide_id!='time_slide:time_slide_id:10049'"
+    joinstr = ' and '
 	if gpsstart is not None:
 		get_coincs=get_coincs+ ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
-		joinstr=' and '
-	else:
-		joinstr=' where '
 	if gpsend is not None:
 		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
-		joinstr=' and '
 	if max_cfar!=-1:
 		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
