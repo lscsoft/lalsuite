@@ -212,6 +212,11 @@ XLALSegListShift( LALSegList *seglist, const LIGOTimeGPS *shift );
 INT4
 XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end );
 
+
+int XLALSegListIsInitialized ( const LALSegList *seglist );
+int XLALSegListInitSimpleSegments ( LALSegList *seglist, LIGOTimeGPS startTime, UINT4 Nseg, REAL8 Tseg );
+char *XLALSegList2String ( const LALSegList *seglist );
+
 /*@}*/
 
 #if 0

@@ -1692,6 +1692,88 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
 } /* XLALrefineCOMPLEX8Vector() */
 
 
+/**
+ * Function to read a segment list from given filename, returns a *sorted* SegmentList
+ *
+ * The segment-list format parse here is consistent with Xavie's segment lists used previously
+ * and follows the format <repeated lines of form "startGPS endGPS duration[h] NumSFTs">,
+ * allowed comment-characters are '%' and '#'
+ *
+ * \note we (ab)use the integer 'id' field in LALSeg to carry the total number of SFTs
+ * contained in that segment. This can be used as a consistency check when loading SFTs for these segments.
+ *
+ */
+LALSegList *
+XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segment list */
+                           )
+{
+  LALSegList *segList = NULL;
+
+  /** check input consistency */
+  if ( !fname ) {
+    XLALPrintError ( "%s: NULL input 'fname'", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
+  }
+
+  /* read and parse segment-list file contents*/
+  LALParsedDataFile *flines = NULL;
+  if ( XLALParseDataFile ( &flines, fname ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
+
+  UINT4 numSegments = flines->lines->nTokens;
+  /* allocate and initialized segment list */
+  if ( (segList = XLALCalloc ( 1, sizeof(*segList) )) == NULL )
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  if ( XLALSegListInit ( segList ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
+
+
+  UINT4 iSeg;
+  for ( iSeg = 0; iSeg < numSegments; iSeg ++ )
+    {
+      REAL8 t0, t1, TspanHours;
+      INT4 NSFT;
+      LALSeg thisSeg;
+      int ret;
+      ret = sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d", &t0, &t1, &TspanHours, &NSFT );
+      if ( ret != 4 ) {
+        XLALPrintError ("%s: failed to parse data-line %d (%d) in segment-list %s: '%s'\n", __func__, iSeg, ret, fname, flines->lines->tokens[iSeg] );
+        XLALSegListClear ( segList );
+        XLALFree ( segList );
+        XLALDestroyParsedDataFile ( flines );
+        XLAL_ERROR_NULL ( XLAL_ESYS );
+      }
+      /* check internal consistency of these numbers */
+      REAL8 hours = 3600.0;
+      if ( fabs ( t1 - t0 - TspanHours * hours ) >= 1.0 ) {
+        XLALPrintError ("%s: Inconsistent segment list, in line %d: t0 = %f, t1 = %f, Tspan = %f != t1 - t0 (to within 1s)\n", __func__, iSeg, t0, t1, TspanHours );
+        XLAL_ERROR_NULL ( XLAL_EDOM );
+      }
+
+      LIGOTimeGPS start, end;
+      XLALGPSSetREAL8( &start, t0 );
+      XLALGPSSetREAL8( &end,   t1 );
+
+      /* we set number of SFTs as 'id' field, as we have no other use for it */
+      if ( XLALSegSet ( &thisSeg, &start, &end, NSFT ) != XLAL_SUCCESS )
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
+
+      if ( XLALSegListAppend ( segList, &thisSeg ) != XLAL_SUCCESS )
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
+
+    } /* for iSeg < numSegments */
+
+  /* sort final segment list in increasing GPS start-times */
+  if ( XLALSegListSort( segList ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
+
+  /* free parsed segment file contents */
+  XLALDestroyParsedDataFile ( flines );
+
+  return segList;
+
+} /* XLALReadSegmentsFromFile() */
+
 /* ============================================================
  * deprecated LAL interface API follow below
  * mostly these are now just LAL-wrappers to the corresponding

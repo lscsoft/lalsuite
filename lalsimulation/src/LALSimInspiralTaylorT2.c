@@ -750,7 +750,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	REAL8 f, fLso, VRef = 0.;
 	SimInspiralToffInput toffIn;
 	void *funcParams;
-	int errnum;
+	int UNUSED errnum;
 
 	expnFuncTaylorT2 expnfunc;
 	expnCoeffsTaylorT2 ak;
