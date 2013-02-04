@@ -422,7 +422,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi")){
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
-    LALInferenceAddProposalToCycle(runState, polarizationCorrPhaseJumpName, &LALInferenceCorrPolarizationPhaseJump, TINYWEIGHT);
   }
 
   if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam")) {
@@ -1495,12 +1494,13 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
     i=gsl_rng_uniform_int(runState->GSLrandom, nifo);
     j=gsl_rng_uniform_int(runState->GSLrandom, nifo);
   }
+
   for(l=0; l<3; l++)
   {
     IFO1[l]=gsl_matrix_get(IFO,i,l);
     IFO2[l]=gsl_matrix_get(IFO,j,l);
   }
-
+  
   /*
    detector axis
    */
@@ -1535,7 +1535,7 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   /*
    convert k' back to ra' and dec'
    */
-  newDec = 0.5*LAL_PI - acos(kp[2]/sqrt(kp[0]*kp[0] + kp[1]*kp[1] + kp[2]*kp[2]));
+  newDec = asin(kp[2]);
   newRA  = atan2(kp[1],kp[0]) + gmst;
   if(newRA < 0.0) newRA += LAL_TWOPI;
 
@@ -1560,7 +1560,7 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   /*
    draw new polarisation angle uniformally
    for now
-   MARK: Need to be smarter about psi & dL in sky-ring jump
+   MARK: Need to be smarter about psi in sky-ring jump
    */
   newPsi = LAL_PI*gsl_rng_uniform(runState->GSLrandom);
 
@@ -1593,7 +1593,13 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
   LALInferenceSetVariable(proposedParams, "declination",    &newDec);
   LALInferenceSetVariable(proposedParams, "time",           &newTime);
-  
+
+  REAL8 pForward, pReverse;
+  pForward = cos(newDec);
+  pReverse = cos(dec);
+
+  LALInferenceSetLogProposalRatio(runState, log(pReverse/pForward));
+
 }
 
 void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
