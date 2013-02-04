@@ -588,6 +588,7 @@ for tag in user_tags:
       cluster_coincs_node.set_category('cluster_coincs')
       cluster_coincs_node.set_tmp_space( tmp_space )
       cluster_coincs_node.set_input( result_db )
+      cluster_coincs_node.add_var_opt('time-column',time_column)
       # output database name has form:
       # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sqlite
       db_type = tag + '_CLUSTERED_CBC_RESULTS'
