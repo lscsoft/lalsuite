@@ -50,7 +50,7 @@
 
 //Global variables
 FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
-CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
+CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir_file = NULL;
 static const LALStatus empty_status;
 
 //prototypes
@@ -147,8 +147,8 @@ int main(int argc, char *argv[])
    }
 
    //Print input SFTs argument
-   fprintf(stderr, "Input SFTs: %s\n", sft_dir);
-   fprintf(LOG, "Input SFTs: %s\n", sft_dir);
+   fprintf(stderr, "Input SFTs: %s\n", sft_dir_file);
+   fprintf(LOG, "Input SFTs: %s\n", sft_dir_file);
    
    //Initialize ephemeris data structure
    EphemerisData *edat = XLALInitBarycenter(earth_ephemeris, sun_ephemeris);
@@ -842,7 +842,7 @@ int main(int argc, char *argv[])
    free_inputParams(inputParams);
    free_ihsMaxima(ihsmaxima);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
-   XLALFree((CHAR*)sft_dir);
+   XLALFree((CHAR*)sft_dir_file);
    XLALFree((CHAR*)earth_ephemeris);
    XLALFree((CHAR*)sun_ephemeris);
    XLALFree((CHAR*)sky);
@@ -1003,7 +1003,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    constraints.endTime = &end;
    
    //Find SFT files
-   LALSFTdataFind(&status, &catalog, sft_dir, &constraints);
+   LALSFTdataFind(&status, &catalog, sft_dir_file, &constraints);
    if (status.statusCode != 0) {
       fprintf(stderr,"%s: LALSFTdataFind() failed with code = %d.\n", __func__, status.statusCode);
       XLAL_ERROR_NULL(XLAL_EFUNC);
