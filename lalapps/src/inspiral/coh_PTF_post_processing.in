@@ -69,7 +69,7 @@ def init_job(exe, universe, tag, subdir, logdir, cp, memory=None):
 # =============================================================================
 
 def trig_combiner_setup(job, category, ifotag, usertag, grb, onoffcache,\
-                        grbdir, numtrials, outdir):
+                        grbdir, numtrials, outdir, timeSlides=False):
 
   # setup node
   node = pipeline.CondorDAGNode(job)
@@ -82,6 +82,8 @@ def trig_combiner_setup(job, category, ifotag, usertag, grb, onoffcache,\
   node.add_var_opt('cache', os.path.abspath(onoffcache))
   node.add_var_opt('num-trials', numtrials)
   node.add_var_opt('output-dir', os.path.abspath(outdir))
+  if timeSlides:
+    node.add_var_arg('--time-slides')
 
   return node
 
@@ -325,6 +327,9 @@ The default is to run the full post processing pipeline, various steps can be sk
   parser.add_option("-Z", "--skip-horizon-plot", action="store_true",\
                     default=False, help="skip horizon plot, default: %default")
 
+  parser.add_option("-t", "--time-slides", action="store_true",\
+                    default=False, help="Include time slides.")
+
   (opts, args) = parser.parse_args()
 
   if not opts.run_dir:
@@ -352,7 +357,7 @@ The default is to run the full post processing pipeline, various steps can be sk
 def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
          logdir=None, vetoDir=None,run_combiner=True, run_clustering=True,\
          run_injfind=True, run_sbvplotter=True, run_efficiency=True,\
-         run_injcombiner=True,run_horizon_dist_plot=True):
+         run_injcombiner=True,run_horizon_dist_plot=True,timeSlides=False):
 
   # load ini files
   if verbose:
@@ -424,11 +429,17 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   duration = dataduration-2*pad
 
   # ================
-  # find onoff cache
+  # find onoff and timeslides cache
   # ================
 
   onoffcache = '%s/onoff/' % grbdir
   onoffcache += '%s-INSPIRAL_HIPE_GRB%s_ZERO_LAG_CATEGORY_1-%s-%s.cache'\
+                % (ifotag, grb, datastart, dataduration)
+
+  if timeSlides:
+    timeSlidesCache = '%s/timeslides/' % grbdir
+    timeSlidesCache += \
+                '%s-INSPIRAL_HIPE_GRB%s_TIME_SLIDES_CATEGORY_1-%s-%s.cache'\
                 % (ifotag, grb, datastart, dataduration)
 
   # ==============
@@ -494,6 +505,11 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     node = trig_combiner_setup(job, tag, ifotag, usertag, grb, onoffcache,\
                                grbdir, numtrials, outdir)
     dag.add_node(node)
+
+    if timeSlides:
+      node = trig_combiner_setup(job, tag, ifotag, usertag, grb,\
+                    timeSlidesCache,grbdir, numtrials, outdir,timeSlides=True)
+      dag.add_node(node)
   
     # finalise DAG
     DAGManNode[tag] = finalise_DAG(dag)
@@ -812,4 +828,5 @@ if __name__=='__main__':
        run_sbvplotter=not opts.skip_sbv_plotter,\
        run_efficiency=not opts.skip_efficiency,\
        run_injcombiner=not opts.skip_injcombiner,\
-       run_horizon_dist_plot = not opts.skip_horizon_plot)
+       run_horizon_dist_plot = not opts.skip_horizon_plot,\
+       timeSlides = opts.time_slides)
