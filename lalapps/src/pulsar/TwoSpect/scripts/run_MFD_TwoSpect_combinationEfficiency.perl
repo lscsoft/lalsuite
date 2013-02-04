@@ -84,11 +84,11 @@ EOF
          if($best_dist<0.0) {
             $best_dist = $dist;
             $grid_alpha = $1;
-            $gird_delta = $2;
+            $grid_delta = $2;
          } elsif ($dist<$best_dist) {
             $best_dist = $dist;
             $grid_alpha = $1;
-            $gird_delta = $2;
+            $grid_delta = $2;
          }
       }
    }
@@ -184,11 +184,11 @@ EOF
          if($best_dist<0.0) {
             $best_dist = $dist;
             $grid_alpha = $1;
-            $gird_delta = $2;
+            $grid_delta = $2;
          } elsif ($dist<$best_dist) {
             $best_dist = $dist;
             $grid_alpha = $1;
-            $gird_delta = $2;
+            $grid_delta = $2;
          }
       }
    }
