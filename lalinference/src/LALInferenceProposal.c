@@ -1504,17 +1504,17 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   /*
    detector axis
    */
-  REAL8 norm;
+  REAL8 normalize;
   REAL8 n[3];
 
-  norm=0.0;
+  normalize=0.0;
   for(i=0; i<3; i++)
   {
     n[i]  = IFO1[i]-IFO2[i];
-    norm += n[i]*n[i];
+    normalize += n[i]*n[i];
   }
-  norm = 1./sqrt(norm);
-  for(i=0; i<3; i++) n[i] *= norm;
+  normalize = 1./sqrt(normalize);
+  for(i=0; i<3; i++) n[i] *= normalize;
 
   /*
    rotation angle
