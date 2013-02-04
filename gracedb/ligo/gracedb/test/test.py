@@ -233,6 +233,15 @@ class TestGracedb(unittest.TestCase):
         event_logs = gracedb.logs(graceid).read()
         self.assertTrue(message in event_logs)
 
+    def test_issue717(self):
+        # non-backwards-compatibility of cli.Client import.
+        # import and use should not cause an import error.
+        from ligo import gracedb
+        gracedb.Client
+        gracedb.ProxyHTTPConnection
+        gracedb.error
+        gracedb.ProxyHTTPSConnection
+
 if __name__ == "__main__":
 
     global gracedb, testdatadir, createdEvent, eventId
