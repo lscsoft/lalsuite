@@ -988,7 +988,8 @@ int XLALSimInspiralChooseTDWaveform(
  * The parameters passed must be in SI units.
  */
 int XLALSimInspiralChooseFDWaveform(
-    COMPLEX16FrequencySeries **htilde,          /**< FD waveform */
+    COMPLEX16FrequencySeries **hptilde,         /**< FD plus polarization */
+    COMPLEX16FrequencySeries **hctilde,         /**< FD cross polarization */
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
     REAL8 deltaF,                               /**< sampling interval (Hz) */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */

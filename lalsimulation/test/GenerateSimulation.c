@@ -261,15 +261,17 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     exit(1);
 }
 
-static int dump_FD(FILE *f, COMPLEX16FrequencySeries *htilde) {
+static int dump_FD(FILE *f, COMPLEX16FrequencySeries *hptilde,
+        COMPLEX16FrequencySeries *hctilde) {
     size_t i;
-    COMPLEX16 *dataPtr = htilde->data->data;
+    COMPLEX16 *dataPtr1 = hptilde->data->data;
+    COMPLEX16 *dataPtr2 = hctilde->data->data;
 
-    fprintf(f, "# f htilde.re htilde.im\n");
-    dataPtr = htilde->data->data;
-    for (i=0; i < htilde->data->length; i++)
-        fprintf(f, "%.16e %.16e %.16e\n", htilde->f0 + i * htilde->deltaF, 
-                dataPtr[i].re, dataPtr[i].im);
+    fprintf(f, "# f hptilde.re hptilde.im hctilde.re hctilde.im\n");
+    for (i=0; i < hptilde->data->length; i++)
+        fprintf(f, "%.16e %.16e %.16e %.16e %.16e\n",
+                hptilde->f0 + i * hptilde->deltaF,
+                dataPtr1[i].re, dataPtr1[i].im, dataPtr2[i].re, dataPtr2[i].im);
     return 0;
 }
 
@@ -297,7 +299,7 @@ int main (int argc , char **argv) {
     FILE *f;
     int status;
     int start_time;
-    COMPLEX16FrequencySeries *htilde = NULL;
+    COMPLEX16FrequencySeries *hptilde = NULL, *hctilde = NULL;
     REAL8TimeSeries *hplus = NULL;
     REAL8TimeSeries *hcross = NULL;
     GSParams *params;
@@ -313,7 +315,7 @@ int main (int argc , char **argv) {
     start_time = time(NULL);
     switch (params->domain) {
         case GSDomain_FD:
-            XLALSimInspiralChooseFDWaveform(&htilde, params->phiRef, 
+            XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, params->phiRef, 
                     params->deltaF, params->m1, params->m2, params->s1x, 
                     params->s1y, params->s1z, params->s2x, params->s2y, 
                     params->s2z, params->f_min, params->f_max, 
@@ -337,7 +339,7 @@ int main (int argc , char **argv) {
     if (params->verbose)
         XLALPrintInfo("Generation took %.0f seconds\n", 
                 difftime(time(NULL), start_time));
-    if (((params->domain == GSDomain_FD) && !htilde) ||
+    if (((params->domain == GSDomain_FD) && (!hptilde || !hctilde)) ||
         ((params->domain == GSDomain_TD) && (!hplus || !hcross))) {
         XLALPrintError("Error: waveform generation failed\n");
         goto fail;
@@ -346,7 +348,7 @@ int main (int argc , char **argv) {
     /* dump file */
     f = fopen(params->outname, "w");
     if (params->domain == GSDomain_FD)
-        status = dump_FD(f, htilde);
+        status = dump_FD(f, hptilde, hctilde);
     else
         status = dump_TD(f, hplus, hcross);
     fclose(f);
@@ -356,13 +358,15 @@ int main (int argc , char **argv) {
     XLALSimInspiralDestroyWaveformFlags(params->waveFlags);
     XLALSimInspiralDestroyTestGRParam(params->nonGRparams);
     XLALFree(params);
-    XLALDestroyCOMPLEX16FrequencySeries(htilde);
+    XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+    XLALDestroyCOMPLEX16FrequencySeries(hctilde);
     return 0;
 
     fail:
     XLALSimInspiralDestroyWaveformFlags(params->waveFlags);
     XLALSimInspiralDestroyTestGRParam(params->nonGRparams);
     XLALFree(params);
-    XLALDestroyCOMPLEX16FrequencySeries(htilde);
+    XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+    XLALDestroyCOMPLEX16FrequencySeries(hctilde);
     return 1;
 }

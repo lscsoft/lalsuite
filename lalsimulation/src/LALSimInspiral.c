@@ -29,6 +29,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
+#include <lal/FrequencySeries.h>
 #include <lal/Units.h>
 #include <lal/SphericalHarmonics.h>
 
@@ -1813,32 +1814,35 @@ int XLALSimInspiralChooseTDWaveform(
  * Returns the waveform in the frequency domain.
  */
 int XLALSimInspiralChooseFDWaveform(
-    COMPLEX16FrequencySeries **htilde,          /**< FD waveform */
-    REAL8 phiRef,                               /**< reference orbital phase (rad) */
-    REAL8 deltaF,                               /**< sampling interval (Hz) */
-    REAL8 m1,                                   /**< mass of companion 1 (kg) */
-    REAL8 m2,                                   /**< mass of companion 2 (kg) */
-    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
-    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
-    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
-    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
-    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
-    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< starting GW frequency (Hz) */
-    REAL8 f_max,                                /**< ending GW frequency (Hz) */
-    REAL8 r,                                    /**< distance of source (m) */
-    REAL8 i,                                    /**< inclination of source (rad) */
-    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
-    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
-    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
-    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
-    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
-    int phaseO,                                 /**< twice post-Newtonian order */
-    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    COMPLEX16FrequencySeries **hptilde,     /**< FD plus polarization */
+    COMPLEX16FrequencySeries **hctilde,     /**< FD cross polarization */
+    REAL8 phiRef,                           /**< reference orbital phase (rad) */
+    REAL8 deltaF,                           /**< sampling interval (Hz) */
+    REAL8 m1,                               /**< mass of companion 1 (kg) */
+    REAL8 m2,                               /**< mass of companion 2 (kg) */
+    REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                            /**< starting GW frequency (Hz) */
+    REAL8 f_max,                            /**< ending GW frequency (Hz) */
+    REAL8 r,                                /**< distance of source (m) */
+    REAL8 i,                                /**< inclination of source (rad) */
+    REAL8 lambda1,                          /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                          /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags, /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, /**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                         /**< twice post-Newtonian amplitude order */
+    int phaseO,                             /**< twice post-Newtonian order */
+    Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
     )
 {
     REAL8 LNhatx, LNhaty, LNhatz;
     int ret;
+    unsigned int j;
+    REAL8 pfac, cfac;
 
     /* General sanity checks that will abort */
     /*
@@ -1853,27 +1857,27 @@ int XLALSimInspiralChooseFDWaveform(
 
     /* General sanity check the input parameters - only give warnings! */
     if( deltaF > 1. )
-        XLALPrintWarning("XLAL Warning - %s: Large value of deltaF = %e requested.\nThis corresponds to a very short TD signal (with padding). Consider a smaller value.\n", __func__, deltaF);
+        XLALPrintWarning("XLAL Warning - %s: Large value of deltaF = %e requested...This corresponds to a very short TD signal (with padding). Consider a smaller value.\n", __func__, deltaF);
     if( deltaF < 1./4096. )
-        XLALPrintWarning("XLAL Warning - %s: Small value of deltaF = %e requested.\nThis corresponds to a very long TD signal. Consider a larger value.\n", __func__, deltaF);
+        XLALPrintWarning("XLAL Warning - %s: Small value of deltaF = %e requested...This corresponds to a very long TD signal. Consider a larger value.\n", __func__, deltaF);
     if( m1 < 0.09 * LAL_MSUN_SI )
-        XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
+        XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested...Perhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
     if( m2 < 0.09 * LAL_MSUN_SI )
-        XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
+        XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested...Perhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
     if( m1 + m2 > 1000. * LAL_MSUN_SI )
-        XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested.\nSignal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
+        XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested...Signal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
     if( S1x*S1x + S1y*S1y + S1z*S1z > 1.000001 )
-        XLALPrintWarning("XLAL Warning - %s: S1 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S1x, S1y, S1z);
+        XLALPrintWarning("XLAL Warning - %s: S1 = (%e,%e,%e) with norm > 1 requested...Are you sure you want to violate the Kerr bound?\n", __func__, S1x, S1y, S1z);
     if( S2x*S2x + S2y*S2y + S2z*S2z > 1.000001 )
-        XLALPrintWarning("XLAL Warning - %s: S2 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S2x, S2y, S2z);
+        XLALPrintWarning("XLAL Warning - %s: S2 = (%e,%e,%e) with norm > 1 requested...Are you sure you want to violate the Kerr bound?\n", __func__, S2x, S2y, S2z);
     if( f_min < 1. )
-        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested.\nCheck for errors, this could create a very long waveform.\n", __func__, f_min);
+        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested...Check for errors, this could create a very long waveform.\n", __func__, f_min);
     if( f_min > 40.000001 )
-        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested.\nCheck for errors, the signal will start in band.\n", __func__, f_min);
+        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested...Check for errors, the signal will start in band.\n", __func__, f_min);
 
     switch (approximant)
     {
-        /* non-spinning inspiral-only models */
+        /* inspiral-only models */
         case TaylorF2:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralFrameAxisIsDefault(
@@ -1882,16 +1886,27 @@ int XLALSimInspiralChooseFDWaveform(
             if( !XLALSimInspiralModesChoiceIsDefault(
                     XLALSimInspiralGetModesChoice(waveFlags) ) )
                 ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
-            if( !XLALSimInspiralSpinOrderIsDefault(
-                    XLALSimInspiralGetSpinOrder(waveFlags) ) )
-                ABORT_NONDEFAULT_SPIN_ORDER(waveFlags);
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralTaylorF2(htilde, phiRef, deltaF, m1, m2, S1z, S2z, f_min,
-                    r, lambda1, lambda2, XLALSimInspiralGetSpinOrder(waveFlags),
+            ret = XLALSimInspiralTaylorF2(hptilde, phiRef, deltaF, m1, m2,
+                    S1z, S2z, f_min, r, lambda1, lambda2,
+                    XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
+            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
+             * To get generic polarizations we multiply by incl. dependence
+             * and note hc(f) \propto I * hp(f)
+             */
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            cfac = cos(i);
+            pfac = 0.5 * (1. + cfac*cfac);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hptilde)->data->data[j] *= pfac;
+            }
             break;
 
         /* non-spinning inspiral-merger-ringdown models */
@@ -1904,8 +1919,21 @@ int XLALSimInspiralChooseFDWaveform(
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
             /* Call the waveform driver routine */
-            ret = XLALSimIMRPhenomAGenerateFD(htilde, phiRef, deltaF, m1, m2,
+            ret = XLALSimIMRPhenomAGenerateFD(hptilde, phiRef, deltaF, m1, m2,
                     f_min, f_max, r);
+            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
+             * To get generic polarizations we multiply by incl. dependence
+             * and note hc(f) \propto I * hp(f)
+             */
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            cfac = cos(i);
+            pfac = 0.5 * (1. + cfac*cfac);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hptilde)->data->data[j] *= pfac;
+            }
             break;
 
         /* spinning inspiral-only models */
@@ -1929,9 +1957,17 @@ int XLALSimInspiralChooseFDWaveform(
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER */;
             /* Call the waveform driver routine */
             // FIXME: Note the HACK to use lambda1 as polarization angle psi!!
-            ret = XLALSimInspiralSpinTaylorF2(htilde, lambda1, phiRef, deltaF,
+            ret = XLALSimInspiralSpinTaylorF2(hptilde, lambda1, phiRef, deltaF,
                     m1, m2, f_min, r, S1x, S1y, S1z,
                     LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
+            // FIXME: Andy, please make SF2 driver return h+, hx properly
+            // HACK: Return all zeros in hx, until above is fixed
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = 0.;
+            }
             break;
 
         /* FIXME: Comment out this case, as I don't have its source code */
@@ -1942,7 +1978,7 @@ int XLALSimInspiralChooseFDWaveform(
         //    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
         //        ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
         //    /* Call the waveform driver routine */
-        //    ret = XLALSimInspiralTaylorR2F4(htilde, phiRef, deltaF, m1, m2,
+        //    ret = XLALSimInspiralTaylorR2F4(hptilde, phiRef, deltaF, m1, m2,
         //            S1z, S2z, f_min, r, phaseO, amplitudeO);
         //    break;
 
@@ -1955,9 +1991,22 @@ int XLALSimInspiralChooseFDWaveform(
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralTaylorF2ReducedSpin(htilde, phiRef, deltaF,
+            ret = XLALSimInspiralTaylorF2ReducedSpin(hptilde, phiRef, deltaF,
                     m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     f_min, r, phaseO, amplitudeO);
+            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
+             * To get generic polarizations we multiply by incl. dependence
+             * and note hc(f) \propto I * hp(f)
+             */
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            cfac = cos(i);
+            pfac = 0.5 * (1. + cfac*cfac);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hptilde)->data->data[j] *= pfac;
+            }
             break;
 
         case TaylorF2RedSpinTidal:
@@ -1967,9 +2016,22 @@ int XLALSimInspiralChooseFDWaveform(
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralTaylorF2ReducedSpinTidal(htilde, phiRef, deltaF,
+            ret = XLALSimInspiralTaylorF2ReducedSpinTidal(hptilde, phiRef, deltaF,
                     m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     lambda1, lambda2, f_min, r, phaseO, amplitudeO);
+            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
+             * To get generic polarizations we multiply by incl. dependence
+             * and note hc(f) \propto I * hp(f)
+             */
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            cfac = cos(i);
+            pfac = 0.5 * (1. + cfac*cfac);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hptilde)->data->data[j] *= pfac;
+            }
             break;
 
         /* spinning inspiral-merger-ringdown models */
@@ -1982,12 +2044,24 @@ int XLALSimInspiralChooseFDWaveform(
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
             /* Call the waveform driver routine */
-            ret = XLALSimIMRPhenomBGenerateFD(htilde, phiRef, deltaF, m1, m2,
+            ret = XLALSimIMRPhenomBGenerateFD(hptilde, phiRef, deltaF, m1, m2,
                     XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     f_min, f_max, r);
+            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
+             * To get generic polarizations we multiply by incl. dependence
+             * and note hc(f) \propto I * hp(f)
+             */
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            cfac = cos(i);
+            pfac = 0.5 * (1. + cfac*cfac);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hptilde)->data->data[j] *= pfac;
+            }
             break;
 
-        /* spinning inspiral-merger-ringdown models */
         case IMRPhenomC:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
@@ -1997,9 +2071,22 @@ int XLALSimInspiralChooseFDWaveform(
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
             /* Call the waveform driver routine */
-            ret = XLALSimIMRPhenomCGenerateFD(htilde, phiRef, deltaF, m1, m2,
+            ret = XLALSimIMRPhenomCGenerateFD(hptilde, phiRef, deltaF, m1, m2,
                     XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     f_min, f_max, r);
+            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
+             * To get generic polarizations we multiply by incl. dependence
+             * and note hc(f) \propto I * hp(f)
+             */
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            cfac = cos(i);
+            pfac = 0.5 * (1. + cfac*cfac);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hptilde)->data->data[j] *= pfac;
+            }
             break;
 
         default:

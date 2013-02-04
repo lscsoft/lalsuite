@@ -1841,7 +1841,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   
   REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform [returned] */
   REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
-  COMPLEX16FrequencySeries *htilde=NULL;
+  COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
   
   REAL8 mc;
   REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, inclination;
@@ -1959,29 +1959,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     }
 
     deltaF = IFOdata->freqData->deltaF;
-    /* Currently (2013-01-13) the inclination parameter is unused in XLALSimInspiralChooseFDWaveform.
-     * If this ever changes, the following code needs to be updated to avoid
-     * applying iota corrections twice
-     */
-    double cosi = cos(inclination);
-    double plusCoef  = -0.5 * (1.0 + cosi*cosi);
-    double crossCoef = cosi;
     
-    /* Recalculate waveform only if parameters changed.
-     DOES NOT CHECK nonGRparams or waveFlags! */
-    if(previous_m1 != m1 || previous_m2 != m2 ||\
-      previous_spin1z != spin1z || previous_spin1y!=spin1y ||\
-      previous_spin1x != spin1x || previous_spin2z != spin2z ||\
-      previous_spin2y != spin2y || previous_spin2x != spin2x ||\
-      previous_phi0 != phi0 || previous_deltaF != deltaF ||\
-      previous_f_min != f_min || previous_f_max != f_max ||\
-      previous_distance != distance || previous_lambda1 != lambda1 ||\
-      previous_lambda2 != lambda2 || previous_order != order ||\
-      previous_amporder != amporder || previous_approximant!=approximant ){
-	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&htilde, phi0, deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
-						   spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, f_max, distance,
-						   inclination, lambda1, lambda2, waveFlags, nonGRparams,
-						   amporder, order, approximant), errnum);  
+	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, phi0,
+            deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
+            spin2x, spin2y, spin2z, f_min, f_max, distance, inclination,
+            lambda1, lambda2, waveFlags, nonGRparams, amporder, order,
+            approximant), errnum);
 	previous_m1 = m1;
 	previous_m2 = m2;
 	previous_spin1z = spin1z;
@@ -2000,56 +1983,43 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	previous_f_max = f_max;
 	previous_approximant = approximant;
 	previous_deltaF = deltaF;
+	previous_inclination = inclination;
 
-	if (htilde==NULL || htilde->data==NULL || htilde->data->data==NULL ) {
-	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'htilde'.\n");
+	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
+	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hptilde'.\n");
+	  XLAL_ERROR_VOID(XLAL_EFAULT);
+	}
+	if (hctilde==NULL || hctilde->data==NULL || hctilde->data->data==NULL ) {
+	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hctilde'.\n");
 	  XLAL_ERROR_VOID(XLAL_EFAULT);
 	}
       
-      COMPLEX16 *dataPtr = htilde->data->data;
+	COMPLEX16 *dataPtr = hptilde->data->data;
 
-      for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
-        dataPtr = htilde->data->data;
-        if(i < htilde->data->length){
-          IFOdata->freqModelhPlus->data->data[i] = dataPtr[i];
-        }else{
-          IFOdata->freqModelhPlus->data->data[i].re = 0.0; 
-          IFOdata->freqModelhPlus->data->data[i].im = 0.0;
-        }
+    for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
+      dataPtr = hptilde->data->data;
+      if(i < hptilde->data->length){
+        IFOdata->freqModelhPlus->data->data[i] = dataPtr[i];
+      }else{
+        IFOdata->freqModelhPlus->data->data[i].re = 0.0;
+        IFOdata->freqModelhPlus->data->data[i].im = 0.0;
       }
-      /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
-      //for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
-      //IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) IFOdata->timeData->data->length) * deltaT;
-      //IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) IFOdata->timeData->data->length) * deltaT;
-      //}
-
-      /*  cross waveform is "i x plus" :  */
-      for (i=0; i<IFOdata->freqModelhCross->data->length; ++i) {
-        IFOdata->freqModelhCross->data->data[i].re = -IFOdata->freqModelhPlus->data->data[i].im;
-        IFOdata->freqModelhCross->data->data[i].im = IFOdata->freqModelhPlus->data->data[i].re;
-        // consider inclination angle's effect:
-        IFOdata->freqModelhPlus->data->data[i].re  *= plusCoef;
-        IFOdata->freqModelhPlus->data->data[i].im  *= plusCoef;
-        IFOdata->freqModelhCross->data->data[i].re *= crossCoef;
-        IFOdata->freqModelhCross->data->data[i].im *= crossCoef;
-      }
-    }else{
-      /*do not recompute the waveform if only inclination has changed. The test assumes that deltaF, f_min and f_max did not change !*/
-      double previous_cosi = cos(previous_inclination);
-
-      plusCoef  /= (-0.5 * (1.0 + previous_cosi*previous_cosi));
-      crossCoef /= (previous_cosi);
-             
-      for (i=0; i<IFOdata->freqModelhCross->data->length; ++i) {
-        IFOdata->freqModelhPlus->data->data[i].re  *= plusCoef;
-        IFOdata->freqModelhPlus->data->data[i].im  *= plusCoef;
-        IFOdata->freqModelhCross->data->data[i].re *= crossCoef;
-        IFOdata->freqModelhCross->data->data[i].im *= crossCoef;
-      }
-      
     }
+    for (i=0; i<IFOdata->freqModelhCross->data->length; ++i) {
+      dataPtr = hctilde->data->data;
+      if(i < hctilde->data->length){
+        IFOdata->freqModelhCross->data->data[i] = dataPtr[i];
+      }else{
+        IFOdata->freqModelhCross->data->data[i].re = 0.0;
+        IFOdata->freqModelhCross->data->data[i].im = 0.0;
+      }
+    }
+    /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
+    //for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
+    //IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) IFOdata->timeData->data->length) * deltaT;
+    //IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) IFOdata->timeData->data->length) * deltaT;
+    //}
     
-    previous_inclination = inclination;
     
     /* Destroy the WF flags and the nonGr params */
     XLALSimInspiralDestroyWaveformFlags(waveFlags);
@@ -2196,7 +2166,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   }
   if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
   if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
-  if ( htilde ) XLALDestroyCOMPLEX16FrequencySeries(htilde);
+  if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+  if ( hctilde ) XLALDestroyCOMPLEX16FrequencySeries(hctilde);
   
   return;
 }
