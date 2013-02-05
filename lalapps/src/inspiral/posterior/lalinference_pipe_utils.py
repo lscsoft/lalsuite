@@ -192,18 +192,18 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	if max_cfar!=-1:
 		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
-        from pylal import SnglInspiralUtils
-        extra={}
+	from pylal import SnglInspiralUtils
+	extra={}
 	for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
-          coinc_id=int(coinc_id.split(":")[-1])
-	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
-	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
-	  if not coinc_id in output.keys():
-	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={},event_id=int(coinc_id))
-            extra[coinc_id]={}
-	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
-	  output[coinc_id].ifos.append(ifo)
-          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
+		coinc_id=int(coinc_id.split(":")[-1])
+		seg=filter(lambda seg:sngl_time in seg,seglist)[0]
+		slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
+		if not coinc_id in output.keys():
+			output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={},event_id=int(coinc_id))
+			extra[coinc_id]={}
+		output[coinc_id].timeslides[ifo]=slid_time-sngl_time
+		output[coinc_id].ifos.append(ifo)
+		extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
 	if dumpfile is not None:
 		fh=open(dumpfile,'w')
 		for co in output.keys():
