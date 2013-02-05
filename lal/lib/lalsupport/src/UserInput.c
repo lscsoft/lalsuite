@@ -23,6 +23,7 @@
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
+#include <lal/LALString.h>
 #include <lal/StringVector.h>
 
 extern INT4 lalDebugLevel;
@@ -365,7 +366,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  else	/* parse bool-argument: should be consistent with bool-parsing in ConfigFile!! */
 	    {
 	      /* get rid of case ambiguities */
-	      if ( XLALLowerCaseString (optarg) != XLAL_SUCCESS ) {
+	      if ( XLALStringToLowerCase (optarg) != XLAL_SUCCESS ) {
                 XLAL_ERROR ( XLAL_EFUNC );
               }
 

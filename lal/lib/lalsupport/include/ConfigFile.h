@@ -190,7 +190,6 @@ XLALReadConfigVariable (void *varp,
                        BOOLEAN *wasRead);
 
 int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictness strict);
-int XLALLowerCaseString (CHAR *string);
 
 /* ========== DEPRECATED LAL INTERFACE FUNCTIONS, which have been replaced by XLAL functions,
  * These functions are just wrappers around the XLAL functions
