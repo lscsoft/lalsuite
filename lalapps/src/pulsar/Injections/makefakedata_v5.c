@@ -79,11 +79,9 @@ typedef struct
 
   LIGOTimeGPSVector *timestamps;/**< a vector of timestamps to generate time-series/SFTs for */
 
-  REAL8 fmin_eff;		/**< 'effective' fmin: round down such that fmin*Tsft = integer! */
-  REAL8 fBand_eff;		/**< 'effective' frequency-band such that samples/SFT is integer */
   REAL8Vector *spindown;	/**< vector of frequency-derivatives of GW signal */
 
-  SFTVector *noiseSFTs;		/**< vector of noise-SFTs to be added to signal */
+  SFTCatalog *noise_catalog;	/**< catalog of noise-SFTs to be added to signal */
 
   REAL4Window *window;		/**< window function for the time series */
 
@@ -192,6 +190,9 @@ static const LALUnit empty_LALUnit;
 // ---------- local prototypes ----------
 int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
 int XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar );
+
+int XLALMakeFakeCWData ( SFTVector **SFTs, REAL4TimeSeries **Tseries, const UserVariables_t *uvar, const ConfigVars_t *cfg );
+
 int XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg );
 COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, const CHAR *fname );
 int XLALFreeMem ( ConfigVars_t *cfg );
@@ -208,7 +209,6 @@ main(int argc, char *argv[])
 {
   int ret, len;
   ConfigVars_t GV = empty_GV;
-  REAL4TimeSeries *Tseries = NULL;
   FILE *fpSingleSFT = NULL;
 
   UserVariables_t uvar = empty_UserVariables;
@@ -220,136 +220,10 @@ main(int argc, char *argv[])
 
   XLAL_CHECK ( XLALInitMakefakedata ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // ==================== START: collecting functions for new-API injection module ==============================
-
-  // ---------- for SFT output: calculate effective fmin and Band consistent with SFT bins
-
-  /* lowest and highest frequency boundaries have to fall on exact SFT bins, ie they must be
-   * exact integer multiples of 1/Tsft:
-   * ==> calculate "effective" fmin by rounding down from uvar->fmin to closest fmin_eff,
-   * such that fmin_eff * Tsft = integer
-   * and idem for fmax_eff, the effective Band is then fBand_eff = fmax_eff - fmin_eff
-   *
-   * 'exact' here means being within 10*LAL_REAL8_EPS ~2e-15 relative deviation, to
-   * avoid unneccessary increases in the created frequency-Band due to numerical noise alone
-   * (this is consistent with what XLALExtractBandFromSFTVector() does, for example)
-   */
-  volatile REAL8 dFreq = 1.0 / uvar.Tsft;
-  volatile REAL8 tmp;
-  // NOTE: don't "simplify" the above: we try to make sure
-  // the result of this will be guaranteed to be IEEE-compliant,
-  // and identical to other locations, such as in SFT-IO
-
-  REAL8 eps = 10 * LAL_REAL8_EPS;	// about ~2e-15
-  REAL8 fudge_up   = 1 + eps;
-  REAL8 fudge_down = 1 - eps;
-
-  REAL8 fMin = uvar.fmin;
-  tmp = fMin / dFreq;
-  UINT4 imin = (UINT4) floor( tmp * fudge_up );	// round *down*, allowing for eps 'fudge'
-  REAL8 fMin_eff = imin * dFreq;
-
-  REAL8 fMax = uvar.fmin + uvar.Band;
-  tmp = fMax / dFreq;
-  UINT4 imax = (UINT4) ceil ( tmp * fudge_down );  // round *up*, allowing for eps fudge
-  UINT4 numBins = (UINT4) (imax - imin + 1);
-  REAL8 fMax_eff = imax * dFreq;
-
-  GV.fmin_eff  = fMin_eff;
-  GV.fBand_eff = (numBins - 1) * dFreq;
-
-  XLALPrintWarning("Asked for Band [%.16g, %.16g] Hz, effective Band produced is [%.16g, %.16g] Hz (numSFTBins=%d)\n", fMin, fMax, fMin_eff, fMax_eff, numBins);
-
-  /*----------------------------------------
-   * fill the PulsarSignalParams struct
-   *----------------------------------------*/
-  PulsarSignalParams params = empty_PulsarSignalParams;
-  /* pulsar params */
-  params.pulsar.refTime            = GV.pulsar.Doppler.refTime;
-  params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
-  params.pulsar.position.longitude = GV.pulsar.Doppler.Alpha;
-  params.pulsar.position.latitude  = GV.pulsar.Doppler.Delta;
-  {
-    REAL8 h0   = GV.pulsar.Amp.h0;
-    REAL8 cosi = GV.pulsar.Amp.cosi;
-    params.pulsar.aPlus		   = 0.5 * h0 * ( 1.0 + SQ(cosi) );
-    params.pulsar.aCross	   = h0 * cosi;
-  }
-  params.pulsar.phi0		   = GV.pulsar.Amp.phi0;
-  params.pulsar.psi 		   = GV.pulsar.Amp.psi;
-
-  params.pulsar.f0		   = GV.pulsar.Doppler.fkdot[0];
-  params.pulsar.spindown           = GV.spindown;
-  params.orbit                     = GV.pulsar.Doppler.orbit;
-
-  /* detector params */
-
-  /* ---------- prepare detector ---------- */
-  LALDetector *site;
-  XLAL_CHECK ( XLALUserVarWasSet ( &uvar.IFO ), XLAL_EINVAL, "Need detector input --IFO!\n\n");
-  XLAL_CHECK ( (site = XLALGetSiteInfo ( uvar.IFO )) != NULL, XLAL_EFUNC , "XLALGetSiteInfo('%s') failed\n", uvar.IFO );
-
-  params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */
-  params.site = site;
-  params.ephemerides = GV.edat;
-
-  /* characterize the output time-series */
-  params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (=2*frequency-Band) */
-  params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
-
-  /* ----- figure out start-time and duration ----- */
-  LIGOTimeGPS firstGPS = GV.timestamps->data[0];
-  LIGOTimeGPS  lastGPS  = GV.timestamps->data[GV.timestamps->length - 1 ];
-  REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS ) + uvar.Tsft;
-
-  XLAL_CHECK ( duration >= uvar.Tsft, XLAL_EINVAL, "Requested duration=%d sec is less than Tsft =%.0f sec.\n\n", duration, uvar.Tsft);
-
-  params.duration     = (UINT4) ceil ( duration );
-  params.startTimeGPS = GV.timestamps->data[0];
-
-  /*----------------------------------------
-   * generate the signal time-series
-   *----------------------------------------*/
-  if ( uvar.lineFeature )
-    {
-      XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
-    }
-  else
-    {
-      XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
-    }
-
-  // ----- free temporary memory
-  XLALFree ( site );
-
-  XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, GV.transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  /* add Gaussian noise if requested */
-  if ( uvar.noiseSqrtSh > 0)
-    {
-      REAL8 noiseSigma = uvar.noiseSqrtSh * sqrt ( GV.fBand_eff );
-      XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, noiseSigma, uvar.randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-
-  /*----------------------------------------
-   * last step: turn this timeseries into SFTs
-   * and output them to disk
-   *----------------------------------------*/
   SFTVector *SFTs = NULL;
-  SFTParams sftParams = empty_SFTParams;
+  REAL4TimeSeries *Tseries = NULL;
 
-  sftParams.Tsft = uvar.Tsft;
-
-  sftParams.timestamps = GV.timestamps;
-  sftParams.noiseSFTs = GV.noiseSFTs;
-
-  /* Enter the window function into the SFTparams struct */
-  sftParams.window = GV.window;
-
-  /* get SFTs from timeseries */
-  XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
-
-  // ==================== END: collecting functions for new-API injection module ==============================
+  XLAL_CHECK ( XLALMakeFakeCWData ( &SFTs, &Tseries, &uvar, &GV ) != XLAL_SUCCESS, XLAL_EFUNC );
 
   /* if user requesting single concatenated SFT */
   if ( uvar.outSingleSFT )
@@ -742,13 +616,12 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	/* use detector-constraint */
 	constraints.detector = channelName ;
 
-	SFTCatalog *catalog = NULL;
-	XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
+	XLAL_CHECK ( (cfg->noise_catalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
 
         XLALFree ( channelName );
 
 	/* check if anything matched */
-	if ( catalog->length == 0 ) {
+	if ( cfg->noise_catalog->length == 0 ) {
           XLAL_ERROR ( XLAL_EFAILED, "No noise-SFTs matching the constraints (IFO, start+duration, timestamps) were found!\n" );
         }
 
@@ -1344,3 +1217,146 @@ is_directory ( const CHAR *fname )
     return 1;
 
 } /* is_directory() */
+
+/**
+ * Generate fake 'CW' data, returned either as SFTVector or REAL4Timeseries or both,
+ * for given CW-signal ("pulsar") parameters and output parameters (frequency band etc)
+ */
+int
+XLALMakeFakeCWData ( SFTVector **SFTs,			//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
+                     REAL4TimeSeries **Tseries,		//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
+                     const UserVariables_t *uvar,	//< [in] user-input vars [FIXME!]
+                     const ConfigVars_t *cfg		//< [in] config-vars	[FIXME!]
+                     )
+{
+  // ==================== START: collecting functions for new-API injection module ==============================
+  // ---------- for SFT output: calculate effective fmin and Band consistent with SFT bins
+
+  /* lowest and highest frequency boundaries have to fall on exact SFT bins, ie they must be
+   * exact integer multiples of 1/Tsft:
+   * ==> calculate "effective" fmin by rounding down from uvar->fmin to closest fmin_eff,
+   * such that fmin_eff * Tsft = integer
+   * and idem for fmax_eff, the effective Band is then fBand_eff = fmax_eff - fmin_eff
+   *
+   * 'exact' here means being within 10*LAL_REAL8_EPS ~2e-15 relative deviation, to
+   * avoid unneccessary increases in the created frequency-Band due to numerical noise alone
+   * (this is consistent with what XLALExtractBandFromSFTVector() does, for example)
+   */
+  volatile REAL8 dFreq = 1.0 / uvar->Tsft;
+  volatile REAL8 tmp;
+  // NOTE: don't "simplify" the above: we try to make sure
+  // the result of this will be guaranteed to be IEEE-compliant,
+  // and identical to other locations, such as in SFT-IO
+
+  REAL8 eps = 10 * LAL_REAL8_EPS;	// about ~2e-15
+  REAL8 fudge_up   = 1 + eps;
+  REAL8 fudge_down = 1 - eps;
+
+  REAL8 fMin = uvar->fmin;
+  tmp = fMin / dFreq;
+  UINT4 imin = (UINT4) floor( tmp * fudge_up );	// round *down*, allowing for eps 'fudge'
+  REAL8 fmin_eff = imin * dFreq;
+
+  REAL8 fMax = uvar->fmin + uvar->Band;
+  tmp = fMax / dFreq;
+  UINT4 imax = (UINT4) ceil ( tmp * fudge_down );  // round *up*, allowing for eps fudge
+  UINT4 numBins = (UINT4) (imax - imin + 1);
+  REAL8 fmax_eff = imax * dFreq;
+
+  REAL8 fBand_eff = (numBins - 1) * dFreq;
+
+  XLALPrintWarning("Asked for Band [%.16g, %.16g] Hz, effective Band produced is [%.16g, %.16g] Hz (numSFTBins=%d)\n", fMin, fMax, fmin_eff, fmax_eff, numBins);
+
+  /*----------------------------------------
+   * fill the PulsarSignalParams struct
+   *----------------------------------------*/
+  PulsarSignalParams params = empty_PulsarSignalParams;
+  /* pulsar params */
+  params.pulsar.refTime            = cfg->pulsar.Doppler.refTime;
+  params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
+  params.pulsar.position.longitude = cfg->pulsar.Doppler.Alpha;
+  params.pulsar.position.latitude  = cfg->pulsar.Doppler.Delta;
+  {
+    REAL8 h0   = cfg->pulsar.Amp.h0;
+    REAL8 cosi = cfg->pulsar.Amp.cosi;
+    params.pulsar.aPlus		   = 0.5 * h0 * ( 1.0 + SQ(cosi) );
+    params.pulsar.aCross	   = h0 * cosi;
+  }
+  params.pulsar.phi0		   = cfg->pulsar.Amp.phi0;
+  params.pulsar.psi 		   = cfg->pulsar.Amp.psi;
+
+  params.pulsar.f0		   = cfg->pulsar.Doppler.fkdot[0];
+  params.pulsar.spindown           = cfg->spindown;
+  params.orbit                     = cfg->pulsar.Doppler.orbit;
+
+  /* detector params */
+
+  /* ---------- prepare detector ---------- */
+  LALDetector *site;
+  XLAL_CHECK ( XLALUserVarWasSet ( &uvar->IFO ), XLAL_EINVAL, "Need detector input --IFO!\n\n");
+  XLAL_CHECK ( (site = XLALGetSiteInfo ( uvar->IFO )) != NULL, XLAL_EFUNC , "XLALGetSiteInfo('%s') failed\n", uvar->IFO );
+
+  params.transfer = cfg->transfer;	/* detector transfer function (NULL if not used) */
+  params.site = site;
+  params.ephemerides = cfg->edat;
+
+  /* characterize the output time-series */
+  params.samplingRate 	= 2.0 * fBand_eff;	/* sampling rate of time-series (=2*frequency-Band) */
+  params.fHeterodyne  	= fmin_eff;		/* heterodyning frequency for output time-series */
+
+  /* ----- figure out start-time and duration ----- */
+  LIGOTimeGPS firstGPS = cfg->timestamps->data[0];
+  LIGOTimeGPS  lastGPS  = cfg->timestamps->data[cfg->timestamps->length - 1 ];
+  REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS ) + uvar->Tsft;
+
+  XLAL_CHECK ( duration >= uvar->Tsft, XLAL_EINVAL, "Requested duration=%d sec is less than Tsft =%.0f sec.\n\n", duration, uvar->Tsft);
+
+  params.duration     = (UINT4) ceil ( duration );
+  params.startTimeGPS = cfg->timestamps->data[0];
+
+  /*----------------------------------------
+   * generate the signal time-series
+   *----------------------------------------*/
+  if ( uvar->lineFeature )
+    {
+      XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
+    }
+  else
+    {
+      XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
+    }
+
+  // ----- free temporary memory
+  XLALFree ( site );
+
+  XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, cfg->transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  /* add Gaussian noise if requested */
+  if ( uvar->noiseSqrtSh > 0)
+    {
+      REAL8 noiseSigma = uvar->noiseSqrtSh * sqrt ( fBand_eff );
+      XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, noiseSigma, uvar->randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+  /*----------------------------------------
+   * last step: turn this timeseries into SFTs
+   * and output them to disk
+   *----------------------------------------*/
+  SFTParams sftParams = empty_SFTParams;
+
+  sftParams.Tsft = uvar->Tsft;
+
+  sftParams.timestamps = cfg->timestamps;
+  sftParams.noiseSFTs = cfg->noiseSFTs;
+
+  /* Enter the window function into the SFTparams struct */
+  sftParams.window = cfg->window;
+
+  /* get SFTs from timeseries */
+  XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
+
+  // ==================== END: collecting functions for new-API injection module ==============================
+
+  return XLAL_SUCCESS;
+
+} // XLALMakeFakeCWData()
