@@ -31,6 +31,7 @@
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
 #include "sft_extra.h"
 
 /** \name Error codes */

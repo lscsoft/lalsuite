@@ -29,7 +29,7 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LISAspecifics.h>
 
-#include "SFTutils.h"
+#include <lal/SFTutils.h>
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
@@ -41,15 +41,9 @@
 
 /*---------- Global variables ----------*/
 /* empty struct initializers */
-const SFTtype empty_SFTtype;
-const SFTVector empty_SFTVector;
 const PSDVector empty_PSDVector;
-const MultiSFTVector empty_MultiSFTVector;
 const MultiPSDVector empty_MultiPSDVector;
 const MultiNoiseWeights empty_MultiNoiseWeights;
-const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
-const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
-const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 
 /*---------- internal prototypes ----------*/
 

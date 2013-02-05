@@ -20,6 +20,10 @@
 #ifndef _SFTFILEIO_H  	/* Double-include protection. */
 #define _SFTFILEIO_H
 
+#ifdef  __cplusplus   /* C++ protection. */
+extern "C" {
+#endif
+
 /* includes */
 #include <stdlib.h>
 #include <math.h>
@@ -30,11 +34,6 @@
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/PulsarDataTypes.h>
-
-#ifdef  __cplusplus   /* C++ protection. */
-extern "C" {
-#endif
 
 /**
  * \defgroup SFTfileIO_h Header SFTfileIO.h
@@ -217,6 +216,74 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 #define SFTFILEIO_MSGECRC64	"Invalid CRC64 checksum in SFT"
 /*@}*/
 
+// ---------- exported types ----------
+
+/** A vector of COMPLEX8FrequencySeries */
+typedef struct tagCOMPLEX8FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(COMPLEX8FrequencySeriesVector, COMPLEX8FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 			length;		/**< number of SFTs */
+  COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
+} COMPLEX8FrequencySeriesVector;
+
+
+/** A vector of REAL4FrequencySeries */
+typedef struct tagREAL4FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(REAL4FrequencySeriesVector, REAL4FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4                  length;
+  REAL4FrequencySeries   *data;
+} REAL4FrequencySeriesVector;
+
+/** A collection of (multi-IFO) time-series */
+typedef struct tagMultiREAL4TimeSeries {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiREAL4TimeSeries, REAL4TimeSeries*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length;			/**< number of ifos */
+  REAL4TimeSeries **data;	/**< vector of REAL4 timeseries */
+} MultiREAL4TimeSeries;
+
+
+/** A vector of 'timestamps' of type LIGOTimeGPS */
+typedef struct tagLIGOTimeGPSVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(LIGOTimeGPSVector, LIGOTimeGPS, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 	length;		/**< number of timestamps */
+  LIGOTimeGPS 	*data;		/**< array of timestamps */
+  REAL8		deltaT;		/**< 'length' of each timestamp (e.g. typically Tsft) */
+} LIGOTimeGPSVector;
+
+/** A vector of 'timestamps' of type LIGOTimeGPS */
+typedef struct tagMultiLIGOTimeGPSVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiLIGOTimeGPSVector, LIGOTimeGPSVector*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 	        length;	   /**< number of timestamps vectors or ifos */
+  LIGOTimeGPSVector 	**data;    /**< timestamps vector for each ifo */
+} MultiLIGOTimeGPSVector;
+
+
+/** A so-called 'SFT' (short-Fourier-transform) will be stored in a COMPLEX8FrequencySeries */
+typedef COMPLEX8FrequencySeries 	SFTtype;
+
+
+/** The corresponding vector-type to hold a vector of 'SFTs' */
+typedef COMPLEX8FrequencySeriesVector 	SFTVector;
+
+/** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
+typedef struct tagMultiSFTVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiSFTVector, SFTVector*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4      length;  	/**< number of ifos */
+  SFTVector  **data; 	/**< sftvector for each ifo */
+} MultiSFTVector;
+
+
 /** 'Constraints' for SFT-matching: which detector, within which time-stretch and which
  * timestamps exactly should be loaded ?
  * Any of the entries is optional, and they will be combined by logical AND.
@@ -256,6 +323,12 @@ typedef struct tagSFTCatalog
 /* empty init-structs for the types defined in here */
 extern const SFTConstraints empty_SFTConstraints;
 extern const SFTCatalog empty_SFTCatalog;
+extern const SFTtype empty_SFTtype;
+extern const SFTVector empty_SFTVector;
+extern const MultiSFTVector empty_MultiSFTVector;
+extern const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
+extern const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
+extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 
 /*
  * Functions Declarations (i.e., prototypes).

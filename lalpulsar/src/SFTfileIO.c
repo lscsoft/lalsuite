@@ -54,6 +54,8 @@
 #include <lal/StringVector.h>
 #include <lal/Sequence.h>
 #include <lal/ConfigFile.h>
+#include <lal/LogPrintf.h>
+#include <lal/SFTutils.h>
 
 /*---------- DEFINES ----------*/
 
@@ -125,6 +127,13 @@ typedef struct
 static LALStatus empty_status;
 const SFTConstraints empty_SFTConstraints;
 const SFTCatalog empty_SFTCatalog;
+const SFTtype empty_SFTtype;
+const SFTVector empty_SFTVector;
+const MultiSFTVector empty_MultiSFTVector;
+const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
+const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
+const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
+
 
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15

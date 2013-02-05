@@ -50,19 +50,11 @@ extern "C" {
 #include <lal/RngMedBias.h>
 #include <lal/LALRunningMedian.h>
 #include <lal/Segments.h>
+#include <lal/SFTfileIO.h>
 
 /*---------- DEFINES ----------*/
 
 /*---------- exported types ----------*/
-
-/** A vector of COMPLEX8FrequencySeries */
-typedef struct tagCOMPLEX8FrequencySeriesVector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(COMPLEX8FrequencySeriesVector, COMPLEX8FrequencySeries, data, UINT4, length));
-#endif /* SWIG */
-  UINT4 			length;		/**< number of SFTs */
-  COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
-} COMPLEX8FrequencySeriesVector;
 
 /** A vector of REAL8FrequencySeries */
 typedef struct tagREAL8FrequencySeriesVector {
@@ -73,35 +65,9 @@ typedef struct tagREAL8FrequencySeriesVector {
   REAL8FrequencySeries   *data;
 } REAL8FrequencySeriesVector;
 
-/** A vector of REAL4FrequencySeries */
-typedef struct tagREAL4FrequencySeriesVector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(REAL4FrequencySeriesVector, REAL4FrequencySeries, data, UINT4, length));
-#endif /* SWIG */
-  UINT4                  length;
-  REAL4FrequencySeries   *data;
-} REAL4FrequencySeriesVector;
-
-
-/** A so-called 'SFT' (short-Fourier-transform) will be stored in a COMPLEX8FrequencySeries */
-typedef COMPLEX8FrequencySeries 	SFTtype;
-
-
-/** The corresponding vector-type to hold a vector of 'SFTs' */
-typedef COMPLEX8FrequencySeriesVector 	SFTVector;
 
 /** Special type for holding a PSD vector (over several SFTs) */
 typedef REAL8FrequencySeriesVector PSDVector;
-
-/** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
-typedef struct tagMultiSFTVector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiSFTVector, SFTVector*, data, UINT4, length));
-#endif /* SWIG */
-  UINT4      length;  	/**< number of ifos */
-  SFTVector  **data; 	/**< sftvector for each ifo */
-} MultiSFTVector;
-
 
 /** A collection of PSD vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiPSDVector {
@@ -122,45 +88,12 @@ typedef struct tagMultiNoiseWeights {
   REAL8 Sinv_Tsft;	/**< normalization factor used: \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (using single-sided PSD!) */
 } MultiNoiseWeights;
 
-/** A collection of (multi-IFO) time-series */
-typedef struct tagMultiREAL4TimeSeries {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiREAL4TimeSeries, REAL4TimeSeries*, data, UINT4, length));
-#endif /* SWIG */
-  UINT4 length;			/**< number of ifos */
-  REAL4TimeSeries **data;	/**< vector of REAL4 timeseries */
-} MultiREAL4TimeSeries;
-
-/** A vector of 'timestamps' of type LIGOTimeGPS */
-typedef struct tagLIGOTimeGPSVector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(LIGOTimeGPSVector, LIGOTimeGPS, data, UINT4, length));
-#endif /* SWIG */
-  UINT4 	length;		/**< number of timestamps */
-  LIGOTimeGPS 	*data;		/**< array of timestamps */
-  REAL8		deltaT;		/**< 'length' of each timestamp (e.g. typically Tsft) */
-} LIGOTimeGPSVector;
-
-/** A vector of 'timestamps' of type LIGOTimeGPS */
-typedef struct tagMultiLIGOTimeGPSVector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiLIGOTimeGPSVector, LIGOTimeGPSVector*, data, UINT4, length));
-#endif /* SWIG */
-  UINT4 	        length;	   /**< number of timestamps vectors or ifos */
-  LIGOTimeGPSVector 	**data;    /**< timestamps vector for each ifo */
-} MultiLIGOTimeGPSVector;
-
 /*---------- Global variables ----------*/
 /* empty init-structs for the types defined in here */
-extern const SFTtype empty_SFTtype;
-extern const SFTVector empty_SFTVector;
 extern const PSDVector empty_PSDVector;
-extern const MultiSFTVector empty_MultiSFTVector;
 extern const MultiPSDVector empty_MultiPSDVector;
 extern const MultiNoiseWeights empty_MultiNoiseWeights;
-extern const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
-extern const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
-extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
+
 
 // ---------- obsolete LAL-API was moved into external file
 #include "SFTutils-LAL.h"
