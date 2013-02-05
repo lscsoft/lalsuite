@@ -81,9 +81,7 @@ typedef struct
 
   REAL8Vector *spindown;	/**< vector of frequency-derivatives of GW signal */
 
-  SFTCatalog *noise_catalog;	/**< catalog of noise-SFTs to be added to signal */
-
-  REAL4Window *window;		/**< window function for the time series */
+  SFTCatalog *noiseCatalog;/**< catalog of noise-SFTs to be added to signal */
 
   COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
 
@@ -125,8 +123,8 @@ typedef struct
   REAL8 noiseSqrtSh;		/**< ALTERNATIVE: single-sided sqrt(Sh) for Gaussian noise */
 
   /* Window function [OPTIONAL] */
-  CHAR *window;		/**< Windowing function for the time series */
-  REAL8 tukeyBeta;          /**< Hann fraction of Tukey window (0.0=rect; 1,0=han; 0.5=default */
+  CHAR *windowType;		/**< Windowing function for the time series */
+  REAL8 windowBeta;          	/**< 'beta' parameter required for certain window-types */
 
   /* Detector and ephemeris */
   CHAR *IFO;			/**< Detector: H1, L1, H2, V1, ... */
@@ -223,7 +221,22 @@ main(int argc, char *argv[])
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
 
-  XLAL_CHECK ( XLALMakeFakeCWData ( &SFTs, &Tseries, &uvar, &GV ) != XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALMakeFakeCWData ( &SFTs, &Tseries, &uvar, &GV ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+
+  // if noiseSFTs specified, load them and add them to the resulting SFT-vector
+  if ( GV.noiseCatalog )
+    {
+      /* load effective frequency-band from noise-SFTs */
+      UINT4 numBins = SFTs->data[0].data->length;
+      REAL8 dFreq   = SFTs->data[0].deltaF;
+      REAL8 fMin    = SFTs->data[0].f0;
+      REAL8 fMax    = fMin + ( numBins - 1 ) * dFreq;
+      SFTVector *noiseSFTs;
+      XLAL_CHECK ( (noiseSFTs = XLALLoadSFTs ( GV.noiseCatalog, fMin, fMax )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( XLALSFTVectorAdd ( SFTs, noiseSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLALDestroySFTVector ( noiseSFTs );
+    }
 
   /* if user requesting single concatenated SFT */
   if ( uvar.outSingleSFT )
@@ -577,6 +590,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
           XLAL_ERROR ( XLAL_EINVAL, "Got empty timestamps-list from file '%s'\n", uvar->timestampsFile );
         }
 
+        XLAL_CHECK ( uvar->noiseSFTs == NULL, XLAL_EINVAL, "--timestampsFile is incompatible with --noiseSFTs\n" );
+
       } /* if haveTimestampsFile */
 
     /* ----- if real noise-SFTs given: load them now using EITHER (start,start+duration) OR timestamps
@@ -584,10 +599,9 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
      */
     if ( uvar->noiseSFTs )
       {
-	REAL8 fMin, fMax;
 	SFTConstraints constraints = empty_SFTConstraints;
 	LIGOTimeGPS minStartTime, maxEndTime;
-        BOOLEAN have_window = XLALUserVarWasSet ( &uvar->window );
+        BOOLEAN have_window = XLALUserVarWasSet ( &uvar->windowType );
 
         /* user must specify the window function used for the noiseSFTs */
         if ( !have_window ) {
@@ -605,41 +619,18 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	    constraints.endTime = &maxEndTime;
             XLALPrintWarning ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
 	  } /* if start+duration given */
-	if ( cfg->timestamps )
-	  {
-	    constraints.timestamps = cfg->timestamps;
-            XLALPrintWarning ( "\nWARNING: only noise-SFTs corresponding to given timestamps '%s' will be used!\n", uvar->timestampsFile );
-	  } /* if we have timestamps already */
 
         CHAR *channelName = NULL;
         XLAL_CHECK ( (channelName = XLALGetChannelPrefix ( uvar->IFO )) != NULL, XLAL_EFUNC, "XLALGetChannelPrefix('%s') failed.\n", uvar->IFO );
 	/* use detector-constraint */
 	constraints.detector = channelName ;
 
-	XLAL_CHECK ( (cfg->noise_catalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
-
+	XLAL_CHECK ( (cfg->noiseCatalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
+	XLAL_CHECK ( cfg->noiseCatalog->length > 0, XLAL_EINVAL, "No noise-SFTs matching the constraints (IFO, start+duration, timestamps) were found!\n" );
         XLALFree ( channelName );
 
-	/* check if anything matched */
-	if ( cfg->noise_catalog->length == 0 ) {
-          XLAL_ERROR ( XLAL_EFAILED, "No noise-SFTs matching the constraints (IFO, start+duration, timestamps) were found!\n" );
-        }
-
-	/* load effective frequency-band from noise-SFTs */
-	fMin = cfg->fmin_eff;
-	fMax = fMin + cfg->fBand_eff;
-
-        cfg->noiseSFTs = XLALLoadSFTs ( catalog, fMin, fMax );
-        XLAL_CHECK ( cfg->noiseSFTs != NULL, XLAL_EFUNC, "XLALLoadSFTs() failed\n" );
-
-        XLALDestroySFTCatalog ( catalog );
-
-	/* get timestamps from the loaded noise SFTs */
-        if ( cfg->timestamps ) {
-          XLALDestroyTimestampVector ( cfg->timestamps );
-        }
-        cfg->timestamps = XLALExtractTimestampsFromSFTs ( cfg->noiseSFTs );
-	XLAL_CHECK ( cfg->timestamps != NULL, XLAL_EFUNC, "XLALExtractTimestampsFromSFTs() failed\n" );
+	/* extract timestamps from the SFT-catalog */
+        XLAL_CHECK ( (cfg->timestamps = XLALTimestampsFromSFTCatalog ( cfg->noiseCatalog )) != NULL, XLAL_EFUNC );
 
       } /* if uvar->noiseSFTs */
 
@@ -677,51 +668,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   } /* END: setup signal start + duration */
 
-  /*--------------------- Prepare windowing of time series ---------------------*/
-  cfg->window = NULL;
-
-  if ( uvar->window )
-    {
-      XLALLowerCaseString ( uvar->window );	// get rid of case
-
-      if ( XLALUserVarWasSet( &uvar->tukeyBeta ) && strcmp ( uvar->window, "tukey" ) ) {
-        XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified with window %s; only allowed for Tukey windowing.\n\n", uvar->tukeyBeta, uvar->window );
-      }
-
-      /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
-      UINT4 lengthOfTimeSeries = (UINT4)round(uvar->Tsft * 2 * cfg->fBand_eff);
-
-      if ( !strcmp ( uvar->window, "hann" ) || !strcmp ( uvar->window, "hanning" ) )
-        {
-          REAL4Window *win = XLALCreateHannREAL4Window( lengthOfTimeSeries );
-          cfg->window = win;
-        }
-      else if ( !strcmp ( uvar->window, "tukey" ) )
-	{
-	  if ( !XLALUserVarWasSet( &uvar->tukeyBeta ) )
-	    {
-	      uvar->tukeyBeta = 0.5;   /* If Tukey window specified, default transition fraction is 1/2 */
-	    }
-	  else if ( uvar->tukeyBeta < 0.0 || uvar->tukeyBeta > 1.0 ) {
-            XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified; must be between 0 and 1.\n\n", uvar->tukeyBeta );
-          }
-          cfg->window = XLALCreateTukeyREAL4Window( lengthOfTimeSeries, uvar->tukeyBeta );
-          XLAL_CHECK ( cfg->window != NULL, XLAL_EFUNC, "XLALCreateTukeyREAL4Window(%d, %g) failed\n", lengthOfTimeSeries, uvar->tukeyBeta );
-	}
-      else if ( !strcmp ( uvar->window, "none" ) || !strcmp ( uvar->window, "rectangular" ) || !strcmp ( uvar->window, "boxcar" ) || !strcmp ( uvar->window, "tophat" ) ) {
-        cfg->window = NULL;
-      }
-      else
-        {
-          XLAL_ERROR ( XLAL_EINVAL, "Invalid window function '%s', allowed are ['None', 'Hann', or 'Tukey'].\n\n", uvar->window );
-        }
-    }
-  else
-    {
-      if ( XLALUserVarWasSet( &uvar->tukeyBeta ) ) {
-        XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified; only relevant if Tukey windowing specified.\n\n", uvar->tukeyBeta );
-      }
-    } /* if uvar->window */
 
   /* -------------------- Prepare quantities for barycentering -------------------- */
   {
@@ -924,7 +870,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
 
   // ---------- set a few defaults ----------
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
   uvar->ephemYear = XLALCalloc ( 1, len = strlen(EPHEM_YEARS)+1 );
   XLAL_CHECK ( uvar->ephemYear != NULL, XLAL_ENOMEM, "XLALCalloc ( 1, %d ) failed.\n", len );
   strcpy ( uvar->ephemYear, EPHEM_YEARS );
@@ -974,8 +920,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* SFT properties */
   XLALregREALUserStruct (  Tsft,                 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
   XLALregREALUserStruct (  SFToverlap,           0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
-  XLALregSTRINGUserStruct (window,               0, UVAR_OPTIONAL, "Window function to be applied to the SFTs; required when using --noiseSFTs ('None', 'Hann', or 'Tukey'; when --noiseSFTs is not given, default is 'None')");
-  XLALregREALUserStruct (  tukeyBeta,            0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
+  XLALregSTRINGUserStruct( windowType,           0, UVAR_OPTIONAL, "Window function to be applied to the SFTs (required when using --noiseSFTs)");
+  XLALregREALUserStruct (  windowBeta,           0, UVAR_OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
   XLALregREALUserStruct (  refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (if 0: use startTime)");
@@ -1056,21 +1002,18 @@ XLALFreeMem ( ConfigVars_t *cfg )
   /* free timestamps if any */
   XLALDestroyTimestampVector ( cfg->timestamps );
 
-  /* free window if any */
-  XLALDestroyREAL4Window ( cfg->window );
-
   /* free spindown-vector (REAL8) */
   XLALDestroyREAL8Vector ( cfg->spindown );
 
   XLALFree ( cfg->pulsar.Doppler.orbit );
 
-  /* free noise-SFTs */
-  XLALDestroySFTVector( cfg->noiseSFTs );
-
   /* free transfer-function if we have one.. */
   XLALDestroyCOMPLEX8FrequencySeries ( cfg->transfer );
 
   XLALFree ( cfg->VCSInfoString );
+
+  // free noise-SFT catalog
+  XLALDestroySFTCatalog ( cfg->noiseCatalog );
 
   /* Clean up earth/sun Ephemeris tables */
   XLALDestroyEphemerisData ( cfg->edat );
@@ -1223,12 +1166,17 @@ is_directory ( const CHAR *fname )
  * for given CW-signal ("pulsar") parameters and output parameters (frequency band etc)
  */
 int
-XLALMakeFakeCWData ( SFTVector **SFTs,			//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
-                     REAL4TimeSeries **Tseries,		//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
+XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
+                     REAL4TimeSeries **outTseries,	//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
                      const UserVariables_t *uvar,	//< [in] user-input vars [FIXME!]
                      const ConfigVars_t *cfg		//< [in] config-vars	[FIXME!]
                      )
 {
+  XLAL_CHECK ( (outSFTs == NULL) || ((*outSFTs) == NULL ), XLAL_EINVAL );
+  XLAL_CHECK ( (outTseries == NULL) || ((*outTseries) == NULL ), XLAL_EINVAL );
+
+  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( cfg != NULL, XLAL_EINVAL );
   // ==================== START: collecting functions for new-API injection module ==============================
   // ---------- for SFT output: calculate effective fmin and Band consistent with SFT bins
 
@@ -1317,6 +1265,7 @@ XLALMakeFakeCWData ( SFTVector **SFTs,			//< [out] pointer to optional SFT-vecto
   /*----------------------------------------
    * generate the signal time-series
    *----------------------------------------*/
+  REAL4TimeSeries *Tseries = NULL;
   if ( uvar->lineFeature )
     {
       XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
@@ -1340,22 +1289,54 @@ XLALMakeFakeCWData ( SFTVector **SFTs,			//< [out] pointer to optional SFT-vecto
 
   /*----------------------------------------
    * last step: turn this timeseries into SFTs
-   * and output them to disk
    *----------------------------------------*/
   SFTParams sftParams = empty_SFTParams;
 
   sftParams.Tsft = uvar->Tsft;
 
   sftParams.timestamps = cfg->timestamps;
-  sftParams.noiseSFTs = cfg->noiseSFTs;
+  sftParams.noiseSFTs = NULL;	// not used here any more!
 
-  /* Enter the window function into the SFTparams struct */
-  sftParams.window = cfg->window;
+  /*--------------------- Prepare windowing of time series ---------------------*/
+
+  REAL4Window *window = NULL;
+  if ( uvar->windowType )
+    {
+      /* Determine SFT window */
+      REAL8 dt = Tseries->deltaT;
+      REAL8 REALnumTimesteps = uvar->Tsft / dt;
+      UINT4 numTimesteps = round ( REALnumTimesteps );	/* number of time-samples in an Tsft, round to closest int */
+
+      XLAL_CHECK ( (window = XLALCreateNamedREAL4Window ( uvar->windowType, uvar->windowBeta, numTimesteps )) != NULL, XLAL_EFUNC );
+
+    } // if uvar->windowType
+
+  sftParams.window = window;
 
   /* get SFTs from timeseries */
+  SFTVector *SFTs;
   XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
 
-  // ==================== END: collecting functions for new-API injection module ==============================
+  XLALDestroyREAL4Window ( window );
+
+  // return Timeseries if requested
+  if ( outTseries )
+    {
+      (*outTseries) = Tseries;
+    }
+  else
+    {
+      XLALDestroyREAL4TimeSeries ( Tseries );
+    }
+  // return SFTs if requested
+  if ( outSFTs )
+    {
+      (*outSFTs) = SFTs;
+    }
+  else
+    {
+      XLALDestroySFTVector ( SFTs );
+    }
 
   return XLAL_SUCCESS;
 
