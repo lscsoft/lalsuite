@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2013 Reinhard Prix
 *  Copyright (C) 2008, 2010 Karl Wette
 *  Copyright (C) 2008 Chris Messenger
 *  Copyright (C) 2007 Badri Krishnan, Reinhard Prix
@@ -31,7 +32,8 @@
  *
  * Authors: R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
  *
- * This code is a descendant of an earlier implementation 'makefakedata_v2.[ch]'
+ * This code is a descendant of an earlier implementation 'makefakedata_v4.c',
+ * which itself descended from 'makefakedata_v2.c'
  * by Badri Krishnan, Bruce Allen, Maria Alessandra Papa, Reinhard Prix, Xavier Siemens, Yousuke Itoh
  *
  *-----------------------------------------------------------------------
@@ -82,7 +84,6 @@ typedef struct
   REAL8Vector *spindown;	/**< vector of frequency-derivatives of GW signal */
 
   SFTVector *noiseSFTs;		/**< vector of noise-SFTs to be added to signal */
-  REAL8 noiseSigma;		/**< sigma for Gaussian noise to be added */
 
   REAL4Window *window;		/**< window function for the time series */
 
@@ -123,7 +124,6 @@ typedef struct
 
   /* noise to add [OPTIONAL] */
   CHAR *noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
-  REAL8 noiseSigma;		/**< Gaussian noise with standard-deviation sigma */
   REAL8 noiseSqrtSh;		/**< ALTERNATIVE: single-sided sqrt(Sh) for Gaussian noise */
 
   /* Window function [OPTIONAL] */
@@ -170,8 +170,6 @@ typedef struct
   REAL8 orbitPeriod;		/**< Orbital period (seconds) */
   REAL8 orbitArgp;	        /**< Argument of periapsis (radians) */
 
-  /* precision-level of signal-generation */
-  BOOLEAN exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
   BOOLEAN lineFeature;	/**< generate a monochromatic line instead of a pulsar-signal */
 
   BOOLEAN version;		/**< output version information */
@@ -196,7 +194,6 @@ int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
 int XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar );
 int XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg );
 COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, const CHAR *fname );
-int XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed );
 int XLALFreeMem ( ConfigVars_t *cfg );
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
@@ -211,7 +208,6 @@ main(int argc, char *argv[])
 {
   int ret, len;
   ConfigVars_t GV = empty_GV;
-  PulsarSignalParams params = empty_PulsarSignalParams;
   REAL4TimeSeries *Tseries = NULL;
   FILE *fpSingleSFT = NULL;
 
@@ -224,9 +220,50 @@ main(int argc, char *argv[])
 
   XLAL_CHECK ( XLALInitMakefakedata ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // ==================== START: collecting functions for new-API injection module ==============================
+
+  // ---------- for SFT output: calculate effective fmin and Band consistent with SFT bins
+
+  /* lowest and highest frequency boundaries have to fall on exact SFT bins, ie they must be
+   * exact integer multiples of 1/Tsft:
+   * ==> calculate "effective" fmin by rounding down from uvar->fmin to closest fmin_eff,
+   * such that fmin_eff * Tsft = integer
+   * and idem for fmax_eff, the effective Band is then fBand_eff = fmax_eff - fmin_eff
+   *
+   * 'exact' here means being within 10*LAL_REAL8_EPS ~2e-15 relative deviation, to
+   * avoid unneccessary increases in the created frequency-Band due to numerical noise alone
+   * (this is consistent with what XLALExtractBandFromSFTVector() does, for example)
+   */
+  volatile REAL8 dFreq = 1.0 / uvar.Tsft;
+  volatile REAL8 tmp;
+  // NOTE: don't "simplify" the above: we try to make sure
+  // the result of this will be guaranteed to be IEEE-compliant,
+  // and identical to other locations, such as in SFT-IO
+
+  REAL8 eps = 10 * LAL_REAL8_EPS;	// about ~2e-15
+  REAL8 fudge_up   = 1 + eps;
+  REAL8 fudge_down = 1 - eps;
+
+  REAL8 fMin = uvar.fmin;
+  tmp = fMin / dFreq;
+  UINT4 imin = (UINT4) floor( tmp * fudge_up );	// round *down*, allowing for eps 'fudge'
+  REAL8 fMin_eff = imin * dFreq;
+
+  REAL8 fMax = uvar.fmin + uvar.Band;
+  tmp = fMax / dFreq;
+  UINT4 imax = (UINT4) ceil ( tmp * fudge_down );  // round *up*, allowing for eps fudge
+  UINT4 numBins = (UINT4) (imax - imin + 1);
+  REAL8 fMax_eff = imax * dFreq;
+
+  GV.fmin_eff  = fMin_eff;
+  GV.fBand_eff = (numBins - 1) * dFreq;
+
+  XLALPrintWarning("Asked for Band [%.16g, %.16g] Hz, effective Band produced is [%.16g, %.16g] Hz (numSFTBins=%d)\n", fMin, fMax, fMin_eff, fMax_eff, numBins);
+
   /*----------------------------------------
    * fill the PulsarSignalParams struct
    *----------------------------------------*/
+  PulsarSignalParams params = empty_PulsarSignalParams;
   /* pulsar params */
   params.pulsar.refTime            = GV.pulsar.Doppler.refTime;
   params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
@@ -246,23 +283,73 @@ main(int argc, char *argv[])
   params.orbit                     = GV.pulsar.Doppler.orbit;
 
   /* detector params */
+
+  /* ---------- prepare detector ---------- */
+  LALDetector *site;
+  XLAL_CHECK ( XLALUserVarWasSet ( &uvar.IFO ), XLAL_EINVAL, "Need detector input --IFO!\n\n");
+  XLAL_CHECK ( (site = XLALGetSiteInfo ( uvar.IFO )) != NULL, XLAL_EFUNC , "XLALGetSiteInfo('%s') failed\n", uvar.IFO );
+
   params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */
-  params.site = &(GV.site);
+  params.site = site;
   params.ephemerides = GV.edat;
 
   /* characterize the output time-series */
-  if ( ! uvar.exactSignal )	/* GeneratePulsarSignal() uses 'idealized heterodyning' */
+  params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (=2*frequency-Band) */
+  params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
+
+  /* ----- figure out start-time and duration ----- */
+  LIGOTimeGPS firstGPS = GV.timestamps->data[0];
+  LIGOTimeGPS  lastGPS  = GV.timestamps->data[GV.timestamps->length - 1 ];
+  REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS ) + uvar.Tsft;
+
+  XLAL_CHECK ( duration >= uvar.Tsft, XLAL_EINVAL, "Requested duration=%d sec is less than Tsft =%.0f sec.\n\n", duration, uvar.Tsft);
+
+  params.duration     = (UINT4) ceil ( duration );
+  params.startTimeGPS = GV.timestamps->data[0];
+
+  /*----------------------------------------
+   * generate the signal time-series
+   *----------------------------------------*/
+  if ( uvar.lineFeature )
     {
-      params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (=2*frequency-Band) */
-      params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
+      XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
     }
-  else	/* in the exact-signal case: don't do heterodyning, sample at least twice highest frequency */
+  else
     {
-      params.samplingRate 	= fmax ( 2.0 * (params.pulsar.f0 + 2 ), 2*(GV.fmin_eff + GV.fBand_eff ) );
-      params.fHeterodyne 	= 0;
+      XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
     }
 
-  params.duration     = GV.duration;
+  // ----- free temporary memory
+  XLALFree ( site );
+
+  XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, GV.transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  /* add Gaussian noise if requested */
+  if ( uvar.noiseSqrtSh > 0)
+    {
+      REAL8 noiseSigma = uvar.noiseSqrtSh * sqrt ( GV.fBand_eff );
+      XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, noiseSigma, uvar.randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+  /*----------------------------------------
+   * last step: turn this timeseries into SFTs
+   * and output them to disk
+   *----------------------------------------*/
+  SFTVector *SFTs = NULL;
+  SFTParams sftParams = empty_SFTParams;
+
+  sftParams.Tsft = uvar.Tsft;
+
+  sftParams.timestamps = GV.timestamps;
+  sftParams.noiseSFTs = GV.noiseSFTs;
+
+  /* Enter the window function into the SFTparams struct */
+  sftParams.window = GV.window;
+
+  /* get SFTs from timeseries */
+  XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
+
+  // ==================== END: collecting functions for new-API injection module ==============================
 
   /* if user requesting single concatenated SFT */
   if ( uvar.outSingleSFT )
@@ -278,45 +365,6 @@ main(int argc, char *argv[])
       }
     } // if outSingleSFT
 
-  params.startTimeGPS = GV.timestamps->data[0];
-
-  /*----------------------------------------
-   * generate the signal time-series
-   *----------------------------------------*/
-  if ( uvar.exactSignal )
-    {
-      XLAL_CHECK ( (Tseries = XLALSimulateExactPulsarSignal ( &params )) != NULL, XLAL_EFUNC );
-    }
-  else if ( uvar.lineFeature )
-    {
-      XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
-    }
-  else
-    {
-      XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
-    }
-
-  XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, GV.transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  /* for HARDWARE-INJECTION:
-   * before the first chunk we send magic number and chunk-length to stdout
-   */
-  if ( uvar.hardwareTDD )
-    {
-      REAL4 magic = 1234.5;
-      UINT4 length = Tseries->data->length;
-      if ( (1 != fwrite ( &magic, sizeof(magic), 1, stdout )) || (1 != fwrite(&length, sizeof(INT4), 1, stdout)) )
-        {
-          perror ("Failed to write to stdout");
-          XLAL_ERROR ( XLAL_EIO );
-        }
-    } /* if hardware-injection and doing first chunk */
-
-
-      /* add Gaussian noise if requested */
-  if ( GV.noiseSigma > 0) {
-    XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, GV.noiseSigma, GV.randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
 
   /* output ASCII time-series if requested */
   if ( uvar.TDDfile )
@@ -333,10 +381,19 @@ main(int argc, char *argv[])
     } /* if outputting ASCII time-series */
 
 
-  /* if hardware injection: send timeseries in binary-format to stdout */
+  /* for HARDWARE-INJECTION:
+   * before the first chunk we send magic number and chunk-length to stdout
+   */
   if ( uvar.hardwareTDD )
     {
-      UINT4  length = Tseries->data->length;
+      REAL4 magic = 1234.5;
+      UINT4 length = Tseries->data->length;
+      if ( (1 != fwrite ( &magic, sizeof(magic), 1, stdout )) || (1 != fwrite(&length, sizeof(INT4), 1, stdout)) )
+        {
+          perror ("Failed to write to stdout");
+          XLAL_ERROR ( XLAL_EIO, "fwrite() failed\n");
+        }
+
       REAL4 *datap = Tseries->data->data;
 
       if ( length != fwrite (datap, sizeof(datap[0]), length, stdout) )
@@ -348,35 +405,9 @@ main(int argc, char *argv[])
 
     } /* if hardware injections */
 
-      /*----------------------------------------
-       * last step: turn this timeseries into SFTs
-       * and output them to disk
-       *----------------------------------------*/
-  SFTVector *SFTs = NULL;
+
   if (uvar.outSFTbname)
     {
-      SFTParams sftParams = empty_SFTParams;
-
-      sftParams.Tsft = uvar.Tsft;
-
-      sftParams.timestamps = GV.timestamps;
-      sftParams.noiseSFTs = GV.noiseSFTs;
-
-      /* Enter the window function into the SFTparams struct */
-      sftParams.window = GV.window;
-
-      /* get SFTs from timeseries */
-      XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
-
-      /* extract requested band if necessary (eg in the exact-signal case) */
-      if ( uvar.exactSignal )
-        {
-          SFTVector *outSFTs;
-          XLAL_CHECK ( (outSFTs = XLALExtractBandFromSFTVector ( SFTs, GV.fmin_eff, GV.fBand_eff )) != NULL, XLAL_EFUNC );
-          XLALDestroySFTVector ( SFTs );
-          SFTs = outSFTs;
-        }
-
       /* generate comment string */
       CHAR *logstr;
       XLAL_CHECK ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
@@ -462,7 +493,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       exit (0);
     }
 
-  BOOLEAN have_parfile = LALUserVarWasSet (&uvar->parfile);
+  BOOLEAN have_parfile = XLALUserVarWasSet (&uvar->parfile);
   BinaryPulsarParams pulparams;
 
   /* read in par file parameters if given */
@@ -480,15 +511,15 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   }
 
   { /* ========== translate user-input into 'PulsarParams' struct ========== */
-    BOOLEAN have_h0     = LALUserVarWasSet ( &uvar->h0 );
-    BOOLEAN have_cosi   = LALUserVarWasSet ( &uvar->cosi );
-    BOOLEAN have_aPlus  = LALUserVarWasSet ( &uvar->aPlus );
-    BOOLEAN have_aCross = LALUserVarWasSet ( &uvar->aCross );
-    BOOLEAN have_Freq   = LALUserVarWasSet ( &uvar->Freq );
-    BOOLEAN have_Alpha  = LALUserVarWasSet ( &uvar->Alpha );
-    BOOLEAN have_Delta  = LALUserVarWasSet ( &uvar->Delta );
-    BOOLEAN have_RA = LALUserVarWasSet ( &uvar->RA );
-    BOOLEAN have_Dec = LALUserVarWasSet ( &uvar->Dec );
+    BOOLEAN have_h0     = XLALUserVarWasSet ( &uvar->h0 );
+    BOOLEAN have_cosi   = XLALUserVarWasSet ( &uvar->cosi );
+    BOOLEAN have_aPlus  = XLALUserVarWasSet ( &uvar->aPlus );
+    BOOLEAN have_aCross = XLALUserVarWasSet ( &uvar->aCross );
+    BOOLEAN have_Freq   = XLALUserVarWasSet ( &uvar->Freq );
+    BOOLEAN have_Alpha  = XLALUserVarWasSet ( &uvar->Alpha );
+    BOOLEAN have_Delta  = XLALUserVarWasSet ( &uvar->Delta );
+    BOOLEAN have_RA = XLALUserVarWasSet ( &uvar->RA );
+    BOOLEAN have_Dec = XLALUserVarWasSet ( &uvar->Dec );
 
     /*check .par file for gw parameters*/
     if (have_parfile){
@@ -620,69 +651,18 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   } /* END: prepare spindown parameters */
 
-  /* ---------- prepare detector ---------- */
-  LALDetector *site;
-  CHAR *channelName = NULL;
-  XLAL_CHECK ( XLALUserVarWasSet ( &uvar->IFO ), XLAL_EINVAL, "Need detector input --IFO!\n\n");
-  XLAL_CHECK ( (site = XLALGetSiteInfo ( uvar->IFO )) != NULL, XLAL_EFUNC , "XLALGetSiteInfo('%s') failed\n", uvar->IFO );
-  XLAL_CHECK ( (channelName = XLALGetChannelPrefix ( uvar->IFO )) != NULL, XLAL_EFUNC, "XLALGetChannelPrefix('%s') failed.\n", uvar->IFO );
-  cfg->site = (*site);
-  XLALFree ( site );
 
    /* check for negative fmin and Band, which would break the fmin_eff, fBand_eff calculation below */
   XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fmin=%f!\n\n", uvar->fmin );
   XLAL_CHECK ( uvar->Band >= 0, XLAL_EDOM, "Invalid negative frequency band Band=%f!\n\n", uvar->Band );
-
-  /* ---------- for SFT output: calculate effective fmin and Band ---------- */
-  if ( XLALUserVarWasSet( &uvar->outSFTbname ) )
-    {
-      UINT4 imin, imax;
-      volatile REAL8 dFreq = 1.0 / uvar->Tsft;
-      volatile REAL8 tmp;
-      REAL8 fMax, fMin_eff;
-
-      /* calculate "effective" fmin from uvar->fmin: following makefakedata_v2, we
-       * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
-       * to a frequency-index of the non-heterodyned signal.
-       */
-      tmp = uvar->fmin / dFreq;	/* NOTE: don't "simplify" this: we try to make sure
-				 * the result of this will be guaranteed to be IEEE-compliant,
-				 * and identical to other locations, such as in SFT-IO
-				 */
-      imin = (UINT4) floor( tmp );
-      fMin_eff = (REAL8)imin * dFreq;
-
-      fMax = uvar->fmin + uvar->Band;
-      tmp = fMax / dFreq;
-      imax = (UINT4) ceil (tmp);
-
-      /* Increase Band correspondingly. */
-      cfg->fmin_eff = fMin_eff;
-      cfg->fBand_eff = 1.0 * (imax - imin) * dFreq;
-
-      if ( lalDebugLevel )
-	{
-	  if ( abs(cfg->fmin_eff - uvar->fmin)> LAL_REAL8_EPS
-	       || abs(cfg->fBand_eff - uvar->Band) > LAL_REAL8_EPS )
-	    printf("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to"
-		   " fmin_eff=%.20g and Band_eff=%.20g\n\n", cfg->fmin_eff, cfg->fBand_eff);
-	}
-
-    } /* END: SFT-specific corrections to fmin and Band */
-  else
-    { /* producing pure time-series output ==> no adjustments necessary */
-      cfg->fmin_eff = uvar->fmin;
-      cfg->fBand_eff = uvar->Band;
-    }
-
 
   /* ---------- determine timestamps to produce signal for  ---------- */
   {
     /* check input consistency: *uvar->timestampsFile, uvar->startTime, uvar->duration */
     BOOLEAN haveStart, haveDuration, haveTimestampsFile, haveOverlap;
 
-    haveStart = LALUserVarWasSet(&uvar->startTime);
-    haveDuration = LALUserVarWasSet(&uvar->duration);
+    haveStart = XLALUserVarWasSet(&uvar->startTime);
+    haveDuration = XLALUserVarWasSet(&uvar->duration);
     haveTimestampsFile = ( uvar->timestampsFile != NULL );
     haveOverlap = ( uvar->SFToverlap > 0 );
 
@@ -705,7 +685,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	if ( !haveStart || !haveDuration ) {
           XLAL_ERROR ( XLAL_EINVAL, "Hardware injection: need to specify --startTime and --duration!\n\n");
         }
-	if ( LALUserVarWasSet( &uvar->outSFTbname ) ) {
+	if ( XLALUserVarWasSet( &uvar->outSFTbname ) ) {
           XLAL_ERROR ( XLAL_EINVAL, "Hardware injection mode is incompatible with producing SFTs\n\n");
         }
       } /* if hardware-injection */
@@ -733,7 +713,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	REAL8 fMin, fMax;
 	SFTConstraints constraints = empty_SFTConstraints;
 	LIGOTimeGPS minStartTime, maxEndTime;
-        BOOLEAN have_window = LALUserVarWasSet ( &uvar->window );
+        BOOLEAN have_window = XLALUserVarWasSet ( &uvar->window );
 
         /* user must specify the window function used for the noiseSFTs */
         if ( !have_window ) {
@@ -757,11 +737,15 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
             XLALPrintWarning ( "\nWARNING: only noise-SFTs corresponding to given timestamps '%s' will be used!\n", uvar->timestampsFile );
 	  } /* if we have timestamps already */
 
+        CHAR *channelName = NULL;
+        XLAL_CHECK ( (channelName = XLALGetChannelPrefix ( uvar->IFO )) != NULL, XLAL_EFUNC, "XLALGetChannelPrefix('%s') failed.\n", uvar->IFO );
 	/* use detector-constraint */
 	constraints.detector = channelName ;
 
 	SFTCatalog *catalog = NULL;
 	XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
+
+        XLALFree ( channelName );
 
 	/* check if anything matched */
 	if ( catalog->length == 0 ) {
@@ -818,25 +802,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
       } /* if !cfg->timestamps */
 
-    /* ----- figure out start-time and duration ----- */
-    {
-      LIGOTimeGPS t1, t0;
-      REAL8 duration;
-
-      t0 = cfg->timestamps->data[0];
-      t1 = cfg->timestamps->data[cfg->timestamps->length - 1 ];
-
-      duration = XLALGPSDiff(&t1, &t0);
-      duration += uvar->Tsft;
-
-      cfg->startTimeGPS = cfg->timestamps->data[0];
-      cfg->duration = (UINT4)ceil ( duration );	/* round up to seconds */
-    }
-
-    if ( cfg->duration < uvar->Tsft ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Requested duration of %d sec is less than minimal chunk-size of Tsft =%.0f sec.\n\n", uvar->duration, uvar->Tsft);
-    }
-
   } /* END: setup signal start + duration */
 
   /*--------------------- Prepare windowing of time series ---------------------*/
@@ -846,7 +811,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     {
       XLALLowerCaseString ( uvar->window );	// get rid of case
 
-      if ( LALUserVarWasSet( &uvar->tukeyBeta ) && strcmp ( uvar->window, "tukey" ) ) {
+      if ( XLALUserVarWasSet( &uvar->tukeyBeta ) && strcmp ( uvar->window, "tukey" ) ) {
         XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified with window %s; only allowed for Tukey windowing.\n\n", uvar->tukeyBeta, uvar->window );
       }
 
@@ -860,7 +825,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
         }
       else if ( !strcmp ( uvar->window, "tukey" ) )
 	{
-	  if ( !LALUserVarWasSet( &uvar->tukeyBeta ) )
+	  if ( !XLALUserVarWasSet( &uvar->tukeyBeta ) )
 	    {
 	      uvar->tukeyBeta = 0.5;   /* If Tukey window specified, default transition fraction is 1/2 */
 	    }
@@ -880,7 +845,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     }
   else
     {
-      if ( LALUserVarWasSet( &uvar->tukeyBeta ) ) {
+      if ( XLALUserVarWasSet( &uvar->tukeyBeta ) ) {
         XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified; only relevant if Tukey windowing specified.\n\n", uvar->tukeyBeta );
       }
     } /* if uvar->window */
@@ -891,7 +856,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
     len = strlen(uvar->ephemYear) + 20;
 
-    if (LALUserVarWasSet(&uvar->ephemDir) )
+    if (XLALUserVarWasSet(&uvar->ephemDir) )
       len += strlen (uvar->ephemDir);
 
     if ( (earthdata = XLALCalloc(1, len)) == NULL) {
@@ -901,7 +866,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_ERROR ( XLAL_ENOMEM, "sundata = XLALCalloc(1, %d) failed.\n", len );
     }
 
-    if (LALUserVarWasSet(&uvar->ephemDir) )
+    if (XLALUserVarWasSet(&uvar->ephemDir) )
       {
 	sprintf ( earthdata, "%s/earth%s.dat", uvar->ephemDir, uvar->ephemYear);
 	sprintf ( sundata, "%s/sun%s.dat", uvar->ephemDir, uvar->ephemYear);
@@ -952,13 +917,13 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	uvar->orbitTpSSBnan = (UINT4)floor((pulparams.T0 - uvar->orbitTpSSBsec)*1e9);
       }
     }
-    BOOLEAN set1 = LALUserVarWasSet(&uvar->orbitasini);
-    BOOLEAN set2 = LALUserVarWasSet(&uvar->orbitEcc);
-    BOOLEAN set3 = LALUserVarWasSet(&uvar->orbitPeriod);
-    BOOLEAN set4 = LALUserVarWasSet(&uvar->orbitArgp);
-    BOOLEAN set5 = LALUserVarWasSet(&uvar->orbitTpSSBsec);
-    BOOLEAN set6 = LALUserVarWasSet(&uvar->orbitTpSSBnan);
-    BOOLEAN set7 = LALUserVarWasSet(&uvar->orbitTpSSBMJD);
+    BOOLEAN set1 = XLALUserVarWasSet(&uvar->orbitasini);
+    BOOLEAN set2 = XLALUserVarWasSet(&uvar->orbitEcc);
+    BOOLEAN set3 = XLALUserVarWasSet(&uvar->orbitPeriod);
+    BOOLEAN set4 = XLALUserVarWasSet(&uvar->orbitArgp);
+    BOOLEAN set5 = XLALUserVarWasSet(&uvar->orbitTpSSBsec);
+    BOOLEAN set6 = XLALUserVarWasSet(&uvar->orbitTpSSBnan);
+    BOOLEAN set7 = XLALUserVarWasSet(&uvar->orbitTpSSBMJD);
     BinaryOrbitParams *orbit = NULL;
 
     if (set1 || set2 || set3 || set4 || set5 || set6 || set7)
@@ -1001,65 +966,20 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       cfg->pulsar.Doppler.orbit = NULL;
   } /* END: binary orbital params */
 
-
-  /* -------------------- handle NOISE params -------------------- */
-  {
-    if ( LALUserVarWasSet ( &uvar->noiseSigma ) && LALUserVarWasSet ( &uvar->noiseSqrtSh ) )
-      {
-	XLAL_ERROR ( XLAL_EINVAL, "Use only one of '--noiseSigma' and '--noiseSqrtSh' to specify Gaussian noise!\n\n");
-      }
-    if ( LALUserVarWasSet ( &uvar->noiseSigma ) )
-      cfg->noiseSigma = uvar->noiseSigma;
-    else if ( LALUserVarWasSet ( &uvar->noiseSqrtSh ) )	/* convert Sh -> sigma */
-      cfg->noiseSigma = uvar->noiseSqrtSh * sqrt ( cfg->fBand_eff );
-    else
-      cfg->noiseSigma = 0;
-
-    /* set random-number generator seed: either taken from user or from /dev/urandom */
-    if ( LALUserVarWasSet ( &uvar->randSeed ) )
-      {
-        if ( uvar->randSeed == 0 ) {
-          XLALPrintError ("WARNING: setting randSeed==0 results in the system clock being used as a random seed!\n");
-        }
-        cfg->randSeed = uvar->randSeed;
-      }
-    else
-      {
-	/*
-	 * Modified so as to not create random number parameters with seed
-	 * drawn from clock.  Seconds don't change fast enough and sft's
-	 * look alike.  We open /dev/urandom and read a 4 byte integer from
-	 * it and use that as our seed.  Note: /dev/random is slow after the
-	 * first, few accesses.
-	 */
-	FILE *devrandom = fopen ( "/dev/urandom", "r" );
-        XLAL_CHECK ( devrandom != NULL, XLAL_EIO, "fopen() failed to open '/dev/urandom' for reading\n\n");
-
-	if ( fread( (void*)&(cfg->randSeed), sizeof(INT4), 1, devrandom) != 1 )
-	  {
-	    fclose ( devrandom );
-	    XLAL_ERROR ( XLAL_EIO, "Failed to read from '/dev/urandom'\n\n");
-	  }
-	fclose ( devrandom );
-      }
-
-  } /* END: Noise params */
-
-
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  if (LALUserVarWasSet (&uvar->parfile)) {
+  if (XLALUserVarWasSet (&uvar->parfile)) {
     uvar->refTime = pulparams.pepoch; /*XLALReadTEMPOParFile already converted pepoch to GPS*/
     XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),uvar->refTime);
   }
-  else if (LALUserVarWasSet(&uvar->refTime) && LALUserVarWasSet(&uvar->refTimeMJD))
+  else if (XLALUserVarWasSet(&uvar->refTime) && XLALUserVarWasSet(&uvar->refTimeMJD))
     {
       XLAL_ERROR ( XLAL_EINVAL, "\nUse only one of '--refTime' and '--refTimeMJD' to specify SSB reference time!\n\n");
     }
-  else if (LALUserVarWasSet(&uvar->refTime))
+  else if (XLALUserVarWasSet(&uvar->refTime))
     {
       XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime), uvar->refTime);
     }
-  else if (LALUserVarWasSet(&uvar->refTimeMJD))
+  else if (XLALUserVarWasSet(&uvar->refTimeMJD))
     {
 
       /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
@@ -1087,14 +1007,12 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
     } /* if uvar->actuation */
 
-  if ( !uvar->actuation && LALUserVarWasSet(&uvar->actuationScale) ) {
+  if ( !uvar->actuation && XLALUserVarWasSet(&uvar->actuationScale) ) {
     XLAL_ERROR ( XLAL_EINVAL, "Actuation-scale was specified without actuation-function file!\n\n");
   }
 
-  XLALFree ( channelName );
-
   /* ----- handle transient-signal window if given ----- */
-  if ( !LALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
+  if ( !XLALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
     cfg->transientWindow.type = TRANSIENT_NONE;                /* default: no transient signal window */
   else
     {
@@ -1220,7 +1138,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* noise */
   XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile)");
-  XLALregREALUserStruct (  noiseSigma,           0, UVAR_OPTIONAL,  "Gaussian noise with standard-deviation sigma");
   XLALregREALUserStruct (  noiseSqrtSh,          0, UVAR_OPTIONAL,  "ALTERNATIVE: Gaussian noise with single-sided PSD sqrt(Sh)");
 
   XLALregBOOLUserStruct (  lineFeature,          0, UVAR_OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
@@ -1238,8 +1155,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregBOOLUserStruct (  hardwareTDD,         'b', UVAR_DEVELOPER, "Hardware injection: output TDD in binary format");
   XLALregSTRINGUserStruct (actuation,            0,  UVAR_DEVELOPER, "Filname containing actuation function of this detector");
   XLALregREALUserStruct (  actuationScale,       0,  UVAR_DEVELOPER,  "(Signed) scale-factor to apply to the actuation-function.");
-
-  XLALregBOOLUserStruct (  exactSignal,          0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
   XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
 
   /* read cmdline & cfgfile  */
@@ -1290,41 +1205,6 @@ XLALFreeMem ( ConfigVars_t *cfg )
   return XLAL_SUCCESS;
 
 } /* XLALFreeMem() */
-
-/**
- * Generate Gaussian noise with standard-deviation sigma, add it to inSeries.
- *
- * NOTE2: if seed==0, then time(NULL) is used as random-seed!
- *
- */
-int
-XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed )
-{
-  XLAL_CHECK ( inSeries != NULL, XLAL_EINVAL );
-
-  UINT4 numPoints = inSeries->data->length;
-
-  REAL4Vector *v1;
-  XLAL_CHECK ( (v1 = XLALCreateREAL4Vector ( numPoints )) != NULL, XLAL_EFUNC );
-
-  RandomParams *randpar;
-  XLAL_CHECK ( (randpar = XLALCreateRandomParams ( seed )) != NULL, XLAL_EFUNC );
-
-  XLAL_CHECK ( XLALNormalDeviates ( v1, randpar) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  for (UINT4 i = 0; i < numPoints; i++ ) {
-    inSeries->data->data[i] += sigma * v1->data[i];
-  }
-
-  /* destroy randpar*/
-  XLALDestroyRandomParams ( randpar );
-
-  /*   destroy v1 */
-  XLALDestroyREAL4Vector ( v1 );
-
-  return XLAL_SUCCESS;
-
-} /* XLALAddGaussianNoise() */
 
 /** Log the all relevant parameters of this run into a log-file.
  * The name of the log-file used is uvar_logfile
