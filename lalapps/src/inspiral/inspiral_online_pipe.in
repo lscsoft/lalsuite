@@ -151,7 +151,7 @@ def get_valid_segments(segment_url, base_dir, ifo, science_flag, start_time, end
     result.coalesce()
 
     print "Result:"
-    for s in result:
+    for s in science:
        print s[0], s[1]
 
     print "done."
@@ -300,11 +300,9 @@ dag.set_dag_file(dag_file_name)
 
 # Build a set of jobs for each ifo
 for ifo in ifo_list:
-    if not cp.has_option('segments',ifo.lower() + '-analyze'):
-        continue
     
     # decide if we need to segment the data
-    available_segments = get_valid_segments(cp.get('segfind','segment-url'), '/archive/frames/ER3/hoft', ifo, cp.get('segments',ifo.lower() + '-analyze'), gps_start_time, gps_end_time)
+    available_segments = get_valid_segments(cp.get('segfind','segment-url'), '/online/frames/hoft', ifo, cp.get('segments',ifo.lower() + '-analyze'), gps_start_time, gps_end_time)
 
     if not available_segments:
         print "No available segments for %s, skipping" % ifo
@@ -557,10 +555,10 @@ out_f = open('daily.dag.fixed', 'w')
 
 for a in in_f:
     if a.find('macroobservatory="H"') != -1:
-        a = a.replace('macrotype="ER_C00_L1"','macrotype="H1_ER_C00_L1"')
+        a = a.replace('macrotype="LDAS_C02_L2"','macrotype="H1_LDAS_C02_L2"')
         a = a.replace('macrotype="DMT_C00_L2"','macrotype="H1_DMT_C00_L2"')
     elif a.find('macroobservatory="L"') != -1:
-        a = a.replace('macrotype="ER_C00_L1"','macrotype="L1_ER_C00_L1"')
+        a = a.replace('macrotype="LDAS_C02_L2"','macrotype="L1_LDAS_C02_L2"')
         a = a.replace('macrotype="DMT_C00_L2"','macrotype="L1_DMT_C00_L2"')
 
     print >>out_f, a,
