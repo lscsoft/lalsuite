@@ -20,6 +20,7 @@
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>
 
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_sort_double.h>
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
@@ -28,6 +29,8 @@
 #include <lal/FrequencySeries.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LISAspecifics.h>
+#include <lal/Date.h>
+#include <lal/Units.h>
 
 #include <lal/SFTutils.h>
 
@@ -899,4 +902,108 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
   return ret;
 
 } /* XLALExtractSFTBand() */
+
+
+/**
+ * Adds SFT-data from MultiSFTvector 'b' to elements of MultiSFTVector 'a'
+ *
+ * NOTE: the inputs 'a' and 'b' must have consistent number of IFO, number of SFTs,
+ * IFO-names, start-frequency, frequency-spacing, timestamps, units and number of bins.
+ *
+ * The 'name' field of input/output SFTs in 'a' is not modified!
+ */
+int
+XLALMultiSFTVectorAdd ( MultiSFTVector *a,	/**< [in/out] MultiSFTVector to be added to */
+                        const MultiSFTVector *b	/**< [in] MultiSFTVector data to be added */
+                        )
+{
+  XLAL_CHECK ( a != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( b != NULL, XLAL_EINVAL );
+
+  XLAL_CHECK ( a->length == b->length, XLAL_EINVAL );
+  UINT4 numIFOs = a->length;
+
+  for ( UINT4 X = 0; X < numIFOs; X ++ )
+    {
+      SFTVector *vect1 = a->data[X];
+      SFTVector *vect2 = b->data[X];
+
+      XLAL_CHECK ( XLALSFTVectorAdd ( vect1, vect2 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTVectorAdd() failed for SFTVector X = %d out of %d\n", X, numIFOs );
+
+    } // for X < numIFOs
+
+  return XLAL_SUCCESS;
+
+} /* XLALMultiSFTVectorAdd() */
+
+
+/**
+ * Adds SFT-data from SFTvector 'b' to elements of SFTVector 'a'
+ *
+ * NOTE: the inputs 'a' and 'b' must have consistent number of SFTs, IFO-names,
+ * start-frequency, frequency-spacing, timestamps, units and number of bins.
+ *
+ * The 'name' field of input/output SFTs in 'a' is not modified!
+ */
+int
+XLALSFTVectorAdd ( SFTVector *a,	/**< [in/out] SFTVector to be added to */
+                   const SFTVector *b	/**< [in] SFTVector data to be added */
+                   )
+{
+  XLAL_CHECK ( a != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( b != NULL, XLAL_EINVAL );
+
+  XLAL_CHECK ( a->length == b->length, XLAL_EINVAL );
+  UINT4 numSFTs = a->length;
+
+  for ( UINT4 k = 0; k < numSFTs; k ++ )
+    {
+      SFTtype *sft1 = &(a->data[k]);
+      SFTtype *sft2 = &(b->data[k]);
+
+      XLAL_CHECK ( XLALSFTAdd ( sft1, sft2 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTAdd() failed for SFTs k = %d out of %d SFTs\n", k, numSFTs );
+
+    } // for k < numSFTs
+
+  return XLAL_SUCCESS;
+} /* XLALSFTVectorAdd() */
+
+
+/**
+ * Adds SFT-data from SFT 'b' to SFT 'a'
+ *
+ * NOTE: the inputs 'a' and 'b' must have consistent IFO-names,
+ * start-frequency, frequency-spacing, timestamps, units and number of bins.
+ *
+ * The 'name' field of input/output SFTs in 'a' is not modified!
+ */
+int
+XLALSFTAdd ( SFTtype *a,		/**< [in/out] SFT to be added to */
+             const SFTtype *b	/**< [in] SFT data to be added */
+             )
+{
+  XLAL_CHECK ( a != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( b != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( a->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( b->data != NULL, XLAL_EINVAL );
+
+  XLAL_CHECK ( strncmp ( a->name, b->name, 2 ) == 0, XLAL_EINVAL, "SFT detectors differ '%c%c' != '%c%c'\n", a->name[0], a->name[1], b->name[0], b->name[1] );
+  XLAL_CHECK ( XLALGPSDiff ( &(a->epoch), &(b->epoch) ) == 0, XLAL_EINVAL, "SFT epochs differ %ld != %ld ns\n", XLALGPSToINT8NS ( &(a->epoch) ), XLALGPSToINT8NS ( &(b->epoch) ) );
+
+  REAL8 tol = 10 * LAL_REAL8_EPS;	// generously allow up to 10*eps tolerance
+  XLAL_CHECK ( gsl_fcmp ( a->f0, b->f0, tol ) == 0, XLAL_ETOL, "SFT frequencies relative deviation exceeds %g: %.16g != %.16g\n", tol, a->f0, b->f0 );
+  XLAL_CHECK ( gsl_fcmp ( a->deltaF, b->deltaF, tol ) == 0, XLAL_ETOL, "SFT frequency-steps relative deviation exceeds %g: %.16g != %.16g\n", tol, a->deltaF, b->deltaF );
+  XLAL_CHECK ( XLALUnitCompare ( &(a->sampleUnits), &(b->sampleUnits) ) != 0, XLAL_EINVAL, "SFT sample units differ\n" );
+  XLAL_CHECK ( a->data->length == b->data->length, XLAL_EINVAL, "SFT lengths differ: %d != %d\n", a->data->length, b->data->length );
+
+  UINT4 numBins = a->data->length;
+  for ( UINT4 k = 0; k < numBins; k ++ )
+    {
+      a->data->data[k].realf_FIXME += b->data->data[k].realf_FIXME;
+      a->data->data[k].imagf_FIXME += b->data->data[k].imagf_FIXME;
+    }
+
+  return XLAL_SUCCESS;
+
+} /* XLALSFTAdd() */
 

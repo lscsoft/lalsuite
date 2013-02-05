@@ -128,6 +128,14 @@ CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
 LALSegList *XLALReadSegmentsFromFile ( const char *fname );
+
+// adding SFTs
+int XLALMultiSFTVectorAdd ( MultiSFTVector *a, const MultiSFTVector *b );
+int XLALSFTVectorAdd ( SFTVector *a, const SFTVector *b );
+int XLALSFTAdd ( SFTtype *a, const SFTtype *b );
+
+
+// destructors
 void XLALDestroyPSDVector ( PSDVector *vect );
 void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );
 void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
