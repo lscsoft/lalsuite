@@ -1067,16 +1067,20 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
 
 
-/** Function to load a catalog of SFTs from possibly different detectors.
-    This is similar to LALLoadSFTs except that the input SFT catalog is
-    allowed to contain multiple ifos. The output is the structure
-    MultiSFTVector which is a vector of (pointers to) SFTVectors, one for
-    each ifo found in the catalog. As in LALLoadSFTs, fMin and fMax can be
-    set to -1 to get the full SFT from the lowest to the highest frequency
-    bin found in the SFT.
-    *
-    * output SFTvectors are sorted alphabetically by detector-name
-    *
+/**
+ * Function to load a catalog of SFTs from possibly different detectors.
+ * This is similar to LALLoadSFTs except that the input SFT catalog is
+ * allowed to contain multiple ifos. The output is the structure
+ * MultiSFTVector which is a vector of (pointers to) SFTVectors, one for
+ * each ifo found in the catalog. As in LALLoadSFTs, fMin and fMax can be
+ * set to -1 to get the full SFT from the lowest to the highest frequency
+ * bin found in the SFT.
+ *
+ * output SFTvectors are sorted alphabetically by detector-name
+ *
+ * NOTE: this is basically a backwards-compatible API wrapper to
+ * XLALLoadMultiSFTsFromView(), which takes a MultiSFTCatalogView as input instead.
+ *
  */
 MultiSFTVector *
 XLALLoadMultiSFTs (const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFTs to load */
@@ -1085,192 +1089,63 @@ XLALLoadMultiSFTs (const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFT
 		   )
 
 {
-  UINT4 k, j, i, length;
-  UINT4 numifo=0; /* number of ifos */
-  UINT4 numifoMax, numifoMaxNew; /* for memory allocation purposes */
-  CHAR  *name=NULL;
-  CHAR  **ifolist=NULL; /* list of ifo names */
-  UINT4  *numsfts=NULL; /* number of sfts for each ifo */
-  UINT4 **sftLocationInCatalog=NULL; /* location of sfts in catalog for each ifo */
-  SFTCatalog **catalog=NULL;
-  MultiSFTVector *multSFTVec=NULL;
+  XLAL_CHECK_NULL ( (inputCatalog != NULL) && (inputCatalog->length != 0), XLAL_EINVAL );
 
-  if(!inputCatalog || !(inputCatalog->length)) {
-    XLAL_ERROR_NULL(XLAL_EINVAL);
-  }
+  MultiSFTCatalogView *multiCatalogView;
+  XLAL_CHECK_NULL ( (multiCatalogView = XLALMultiSFTCatalogView ( inputCatalog )) != NULL, XLAL_EFUNC );
 
-  length = inputCatalog->length;
-  if ( (name = (CHAR *)XLALCalloc(3, sizeof(CHAR))) == NULL ) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-
-  /* the number of ifos can be at most equal to length */
-  /* each ifo name is 2 characters + \0 */
-
-  numifoMax = 3; /* should be sufficient -- realloc used later in case required */
-
-  if ( (ifolist = (CHAR **)XLALCalloc( 1, numifoMax * sizeof(CHAR *))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-  if ( (sftLocationInCatalog = (UINT4 **)XLALCalloc( 1, numifoMax * sizeof(UINT4 *))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-  if ( (numsfts = (UINT4 *)XLALCalloc( 1, numifoMax * sizeof(UINT4))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-
-  for ( k = 0; k < numifoMax; k++) {
-    if ( (ifolist[k] = (CHAR *)XLALCalloc( 1, 3*sizeof(CHAR))) == NULL) {
-      XLAL_ERROR_NULL(XLAL_ENOMEM);
-    }
-    if ( (sftLocationInCatalog[k] = (UINT4 *)XLALCalloc( 1, length*sizeof(UINT4))) == NULL) {
-      XLAL_ERROR_NULL(XLAL_ENOMEM);
-    }
-  }
-
-  /* loop over sfts in catalog and look at ifo names and
-     find number of different ifos and number of sfts for each ifo
-     Also find location of sft in catalog  */
-  for ( k = 0; k < length; k++)
-    {
-      strncpy( name, inputCatalog->data[k].header.name, 3 );
-
-      /* go through list of ifos till a match is found or list is exhausted */
-      for ( j = 0; ( j < numifo ) && strncmp( name, ifolist[j], 3); j++ )
-	;
-
-      if ( j < numifo )
-	{
-	  /* match found with jth existing ifo */
-	  sftLocationInCatalog[j][ numsfts[j] ] = k;
-	  numsfts[j]++;
-	}
-      else
-	{
-	  /* add ifo to list of ifos */
-
-	  /* first check if number of ifos is larger than numifomax */
-	  /* and realloc if necessary */
-	  if ( numifo >= numifoMax )
-	    {
-	      numifoMaxNew = numifoMax + 3;
-	      if ( (ifolist = (CHAR **)XLALRealloc( ifolist, numifoMaxNew * sizeof(CHAR *))) == NULL) {
-		XLAL_ERROR_NULL(XLAL_ENOMEM);
-	      }
-	      if ( (sftLocationInCatalog = (UINT4 **)XLALRealloc( sftLocationInCatalog, numifoMaxNew * sizeof(UINT4 *))) == NULL) {
-		XLAL_ERROR_NULL(XLAL_ENOMEM);
-	      }
-	      if ( (numsfts = (UINT4 *)XLALRealloc( numsfts, numifoMaxNew * sizeof(UINT4))) == NULL) {
-		XLAL_ERROR_NULL(XLAL_ENOMEM);
-	      }
-
-	      for ( i = numifoMax; i < numifoMaxNew; i++) {
-		if ( (ifolist[i] = (CHAR *)XLALCalloc( 1, 3*sizeof(CHAR))) == NULL) {
-		  XLAL_ERROR_NULL(XLAL_ENOMEM);
-		}
-		if ( (sftLocationInCatalog[i] = (UINT4 *)XLALCalloc( 1, length*sizeof(UINT4))) == NULL) {
-		  XLAL_ERROR_NULL(XLAL_ENOMEM);
-		}
-	      } /* loop from numifoMax to numifoMaxNew */
-
-	      /* reset numifoMax */
-	      numifoMax = numifoMaxNew;
-	    } /* if ( numifo >= numifoMax) -- end of realloc */
-
-	  strncpy( ifolist[numifo], name, 3);
-	  sftLocationInCatalog[j][0] = k;
-	  numsfts[numifo] = 1;
-	  numifo++;
-
-	} /* else part of if ( j < numifo ) */
-    } /*  for ( k = 0; k < length; k++) */
-
-  /* now we can create the catalogs */
-  if ( (catalog = (SFTCatalog **)XLALCalloc( numifo, sizeof(SFTCatalog *))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-
-  for ( j = 0; j < numifo; j++)
-    {
-      if ( (catalog[j] = (SFTCatalog *)XLALCalloc(1, sizeof(SFTCatalog))) == NULL) {
-	XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-      catalog[j]->length = numsfts[j];
-      if ( (catalog[j]->data = (SFTDescriptor *)XLALCalloc( numsfts[j], sizeof(SFTDescriptor))) == NULL) {
-	XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-
-      for ( k = 0; k < numsfts[j]; k++)
-	{
-	  UINT4 location = sftLocationInCatalog[j][k];
-	  catalog[j]->data[k] = inputCatalog->data[location];
-	}
-    }
-
-  /* create multi sft vector */
-  if ( (multSFTVec = (MultiSFTVector *)XLALCalloc(1, sizeof(MultiSFTVector))) == NULL){
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-  multSFTVec->length = numifo;
-
-  if ( (multSFTVec->data = (SFTVector **)XLALCalloc(numifo, sizeof(SFTVector *))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-  for ( j = 0; j < numifo; j++) {
-    if( ! ( multSFTVec->data[j] = XLALLoadSFTs ( catalog[j], fMin, fMax ) ) )
-    {
-      /* free sft vectors created previously in loop */
-      for ( i = 0; (INT4)i < (INT4)j-1; i++)
-	XLALDestroySFTVector(multSFTVec->data[i]);
-      XLALFree(multSFTVec->data);
-      XLALFree(multSFTVec);
-
-      /* also free catalog and other memory allocated earlier */
-      for ( i = 0; i < numifo; i++) {
-	XLALFree(catalog[i]->data);
-	XLALFree(catalog[i]);
-      }
-      XLALFree( catalog);
-
-      for ( i = 0; i < numifoMax; i++) {
-	XLALFree(ifolist[i]);
-	XLALFree(sftLocationInCatalog[i]);
-      }
-      XLALFree(ifolist);
-      XLALFree(sftLocationInCatalog);
-
-      XLALFree(numsfts);
-      XLALFree(name);
-
-      XLAL_ERROR_NULL ( XLAL_EFUNC );
-
-    }
-  }
-
-  /* sort final multi-SFT vector by detector-name */
-  qsort ( multSFTVec->data, multSFTVec->length, sizeof( multSFTVec->data[0] ), compareDetName );
+  MultiSFTVector *multiSFTs;
+  XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTsFromView ( multiCatalogView, fMin, fMax )) != NULL, XLAL_EFUNC );
 
   /* free memory and exit */
-  for ( j = 0; j < numifo; j++) {
-    XLALFree(catalog[j]->data);
-    XLALFree(catalog[j]);
-  }
-  XLALFree(catalog);
+  XLALDestroyMultiSFTCatalogView ( multiCatalogView );
 
-  for ( k = 0; k < numifoMax; k++) {
-    XLALFree(ifolist[k]);
-    XLALFree(sftLocationInCatalog[k]);
-  }
-  XLALFree(ifolist);
-  XLALFree(sftLocationInCatalog);
-
-  XLALFree(numsfts);
-  XLALFree(name);
-
-  return(multSFTVec);
+  return multiSFTs;
 
 } /* XLALLoadMultiSFTs() */
 
+/**
+ * This function loads a MultiSFTVector from a given input MultiSFTCatalogView,
+ * otherwise the documentation of XLALLoadMultiSFTs() applies.
+ *
+ * Note: this is basically the core-function of XLALLoadMultiSFTs() doing the
+ * actual work.
+ */
+MultiSFTVector *
+XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView,/**< The multi-SFT catalogue view of SFTs to load */
+                            REAL8 fMin,		             		/**< minumum requested frequency (-1 = read from lowest) */
+                            REAL8 fMax		             		/**< maximum requested frequency (-1 = read up to highest) */
+                            )
+{
+  XLAL_CHECK_NULL ( multiCatalogView != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( multiCatalogView->length != 0, XLAL_EINVAL );
+
+  UINT4 numIFOs = multiCatalogView->length;
+
+  /* create multi sft vector */
+  MultiSFTVector *multiSFTs;
+  XLAL_CHECK_NULL ( (multiSFTs = XLALCalloc(1, sizeof(*multiSFTs))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (multiSFTs->data = XLALCalloc ( numIFOs, sizeof(*multiSFTs->data))) != NULL, XLAL_ENOMEM );
+  multiSFTs->length = numIFOs;
+
+  for ( UINT4 X = 0; X < numIFOs; X++ )
+    {
+      if( ( multiSFTs->data[X] = XLALLoadSFTs ( &(multiCatalogView->data[X]), fMin, fMax ) ) == NULL )
+        {
+          /* free sft vectors created previously in loop */
+          XLALDestroyMultiSFTVector ( multiSFTs );
+          XLAL_ERROR_NULL ( XLAL_EFUNC, "Failed to XLALLoadSFTs() for IFO X = %d\n", X );
+        } // if XLALLoadSFTs() failed
+
+    } // for X < numIFOs
+
+  /* sort final multi-SFT vector by detector-name */
+  qsort ( multiSFTs->data, multiSFTs->length, sizeof( multiSFTs->data[0] ), compareDetName );
+
+  // return final multi-SFT vector
+  return multiSFTs;
+
+} // XLALLoadMultiSFTsFromView()
 
 
 /** Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the

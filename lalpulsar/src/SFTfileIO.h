@@ -362,7 +362,10 @@ int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, con
 LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
 
 SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+
 MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+MultiSFTVector *XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView, REAL8 fMin, REAL8 fMax );
+
 void XLALDestroySFTCatalog ( SFTCatalog *catalog );
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
