@@ -2652,7 +2652,163 @@ INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
 
   return numifo;
 
-}
+} // XLALCountIFOsInCatalog()
+
+
+/**
+ * Return a MultiSFTCatalogView generated from an input SFTCatalog.
+ *
+ * The input catalog can describe SFTs from several IFOs in one vector,
+ * while the returned multi-Catalog view contains an array of single-IFO SFTCatalogs.
+ *
+ * NOTE: remember that this is only a multi-IFO "view" of the existing SFTCatalog,
+ * various allocated memory of the original catalog is only pointed to, not duplicated!
+ * This means one must not free the original catalog while this multi-view is still in use!
+ *
+ */
+MultiSFTCatalogView *
+XLALMultiSFTCatalogView ( const SFTCatalog *catalog )
+{
+  XLAL_CHECK_NULL ( catalog != NULL, XLAL_EINVAL );
+
+  UINT4 numSFTsTotal = catalog->length;
+
+  /* the number of ifos can be at most equal to numSFTsTotal */
+  /* each ifo name is 2 characters + \0 */
+  UINT4 numIFOsMax = 3; /* should be sufficient -- realloc used later in case required */
+  UINT4 numIFOsMaxNew; /* for memory allocation purposes */
+
+  CHAR  **ifolist;	/* list of ifo names */
+  XLAL_CHECK_NULL ( (ifolist = XLALCalloc( 1, numIFOsMax * sizeof(*ifolist))) != NULL, XLAL_ENOMEM );
+
+  UINT4 **sftLocationInCatalog;	/* location of sfts in catalog for each ifo */
+  XLAL_CHECK_NULL ( (sftLocationInCatalog = XLALCalloc( 1, numIFOsMax * sizeof(*sftLocationInCatalog)) ) != NULL, XLAL_ENOMEM );
+
+  UINT4  *numSFTsPerIFO;	/* number of sfts for each ifo 'X' */
+  XLAL_CHECK_NULL ( (numSFTsPerIFO = XLALCalloc( 1, numIFOsMax * sizeof(*numSFTsPerIFO))) != NULL, XLAL_ENOMEM );
+
+  for ( UINT4 X = 0; X < numIFOsMax; X++ )
+    {
+      XLAL_CHECK_NULL ( (ifolist[X] = XLALCalloc( 1, 3 * sizeof(*ifolist[X]) )) != NULL, XLAL_ENOMEM );
+      XLAL_CHECK_NULL ( (sftLocationInCatalog[X] = XLALCalloc( 1, numSFTsTotal * sizeof(*sftLocationInCatalog[X]))) != NULL, XLAL_ENOMEM );
+    } // for k < numIFOsMax
+
+  UINT4 numIFOs = 0; /* number of ifos found so far */
+
+  /* loop over sfts in catalog and look at ifo names and
+   * find number of different ifos and number of sfts for each ifo
+   * Also find location of sft in catalog */
+  for ( UINT4 k = 0; k < numSFTsTotal; k++)
+    {
+      CHAR  name[3];
+      strncpy( name, catalog->data[k].header.name, 3 );
+
+      UINT4 X;
+      /* go through list of ifos till a match is found or list is exhausted */
+      for ( X = 0; ( X < numIFOs ) && strncmp( name, ifolist[X], 3); X++ )
+	;
+
+      if ( X < numIFOs )
+	{
+	  /* match found with X-th existing ifo */
+	  sftLocationInCatalog[X][ numSFTsPerIFO[X] ] = k;
+	  numSFTsPerIFO[X] ++;
+	}
+      else
+	{
+	  /* add ifo to list of ifos */
+
+	  /* first check if number of ifos is larger than numIFOsmax */
+	  /* and realloc if necessary */
+	  if ( numIFOs >= numIFOsMax )
+	    {
+	      numIFOsMaxNew = numIFOsMax + 3;
+	      XLAL_CHECK_NULL ( (ifolist = XLALRealloc( ifolist, numIFOsMaxNew * sizeof(*ifolist))) != NULL, XLAL_ENOMEM );
+
+	      XLAL_CHECK_NULL ( (sftLocationInCatalog = XLALRealloc( sftLocationInCatalog, numIFOsMaxNew * sizeof(*sftLocationInCatalog))) != NULL, XLAL_ENOMEM );
+
+	      XLAL_CHECK_NULL ( (numSFTsPerIFO = XLALRealloc( numSFTsPerIFO, numIFOsMaxNew * sizeof(*numSFTsPerIFO))) != NULL, XLAL_ENOMEM );
+
+	      for ( UINT4 Y = numIFOsMax; Y < numIFOsMaxNew; Y++ )
+                {
+                  XLAL_CHECK_NULL ( (ifolist[Y] = XLALCalloc( 1,  3 * sizeof(*ifolist[Y]))) != NULL, XLAL_ENOMEM );
+                  XLAL_CHECK_NULL ( (sftLocationInCatalog[Y] = XLALCalloc( 1, numSFTsTotal * sizeof(*sftLocationInCatalog[Y]))) != NULL, XLAL_ENOMEM );
+                } // endfor X=numIFOsMax < numIFOsMaxNew
+
+	      numIFOsMax = numIFOsMaxNew; // reset numIFOsMax
+
+	    } /* endif ( numIFOs >= numIFOsMax) -- end of realloc */
+
+	  strncpy( ifolist[numIFOs], name, 3);
+	  sftLocationInCatalog[X][0] = k;
+	  numSFTsPerIFO[numIFOs] = 1;
+	  numIFOs ++;
+
+	} /* else part of if ( X < numIFOs ) */
+
+    } /*  for ( k = 0; k < numSFTsTotal; k++) */
+
+  /* now we can create the return multi-SFT catalog view */
+  MultiSFTCatalogView *ret;
+
+  XLAL_CHECK_NULL ( (ret = XLALCalloc( 1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (ret->data = XLALCalloc( numIFOs, sizeof(*ret->data))) != NULL, XLAL_ENOMEM );
+  ret->length = numIFOs;
+
+  for ( UINT4 X = 0; X < numIFOs; X++ )
+    {
+      ret->data[X].length = numSFTsPerIFO[X];
+
+      XLAL_CHECK_NULL ( (ret->data[X].data = XLALCalloc( numSFTsPerIFO[X], sizeof(*(ret->data[X].data)) )) != NULL, XLAL_ENOMEM );
+
+      for ( UINT4 k = 0; k < numSFTsPerIFO[X]; k++ )
+	{
+	  UINT4 location = sftLocationInCatalog[X][k];
+	  ret->data[X].data[k] = catalog->data[location];	// struct copy, but keep all original pointers in struct!
+	} // for k < numSFTsPerIFO[X]
+
+    } // for X < numIFOs
+
+  ret->catalog = catalog;	// keep pointer to original catalog containing some allocated pointers we re-used
+
+  // free all temporary internal memory
+  for ( UINT4 X = 0; X < numIFOsMax; X ++)
+    {
+      XLALFree ( ifolist[X] );
+      XLALFree ( sftLocationInCatalog[X] );
+    }
+  XLALFree ( ifolist );
+  XLALFree ( sftLocationInCatalog );
+
+  XLALFree ( numSFTsPerIFO );
+
+  return ret;
+
+} // XLALMultiSFTCatalogFromSFTCatalog()
+
+/**
+ * Destroys a MultiSFTCatalogView, without freeing the original
+ * catalog that the 'view' was referring to, which
+ * must be destroyed separately using XLALDestroySFTCatalog().
+ */
+void
+XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView )
+{
+  if ( !multiView ) {
+    return;
+  }
+
+  for ( UINT4 X = 0; X < multiView->length; X ++ )
+    {
+      XLALFree ( multiView->data[X].data );
+    }
+
+  XLALFree ( multiView->data );
+  XLALFree ( multiView );
+
+  return;
+
+} // XLALDestroyMultiSFTCatalog()
 
 /*================================================================================
  * OBSOLETE and deprecated SFT-v1 API :

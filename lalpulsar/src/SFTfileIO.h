@@ -319,6 +319,22 @@ typedef struct tagSFTCatalog
   SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
 } SFTCatalog;
 
+/** A multi-SFT-catalogue "view": a multi-IFO vector of SFT-catalogs
+ *
+ * Note: this is only a multi-IFO "view" of an existing SFTCatalog,
+ * various allocated memory of the original catalog is only
+ * pointed to, not duplicated!
+ * This means one must not free the original catalog
+ * while this multi-view is still in use!
+ */
+typedef struct tagMultiSFTCatalogView
+{
+  UINT4 length;			/**< number of detectors */
+  SFTCatalog *data;		/**< array of SFT-catalog pointers */
+  const SFTCatalog *catalog;	/**< the actual SFTCatalog containing the data */
+} MultiSFTCatalogView;
+
+
 /*---------- Global variables ----------*/
 /* empty init-structs for the types defined in here */
 extern const SFTConstraints empty_SFTConstraints;
@@ -350,6 +366,9 @@ MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 
 void XLALDestroySFTCatalog ( SFTCatalog *catalog );
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
+
+void XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView );
+MultiSFTCatalogView *XLALMultiSFTCatalogView ( const SFTCatalog *catalog );
 
 /*================================================================================
  * DEPRECATED LAL-API [use XLAL-API whenever available]
