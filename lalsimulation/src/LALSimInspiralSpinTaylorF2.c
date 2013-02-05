@@ -285,7 +285,7 @@ sf2_spin_corr sf2_spin_corrections(
 int XLALSimInspiralSpinTaylorF2(
 	COMPLEX16FrequencySeries **htilde_out, /**< frequency-domain waveform */
 	REAL8 psi,                      /**< desired polarization */
-	REAL8 phic,                     /**< coalescence GW phase */
+	REAL8 phic,                     /**< orbital coalescence phase (rad) */
 	REAL8 deltaF,                   /**< sampling frequency (Hz) */
 	REAL8 m1_SI,                    /**< mass of companion 1 (kg) */
 	REAL8 m2_SI,                    /**< mass of companion 2 (kg) */
@@ -314,7 +314,7 @@ int XLALSimInspiralSpinTaylorF2(
     const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
     const REAL8 v0 = cbrt(piM * fStart);
-    REAL8 shft, phi0, amp0, f_max;
+    REAL8 shft, amp0, f_max;
     size_t i, n, iStart, iISCO;
     int mm;
     COMPLEX16 *data = NULL;
@@ -389,7 +389,6 @@ int XLALSimInspiralSpinTaylorF2(
     /* Perform some initial checks */
     if (!htilde_out) XLAL_ERROR(XLAL_EFAULT);
     if (*htilde_out) XLAL_ERROR(XLAL_EFAULT);
-    if (phic < 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
@@ -405,8 +404,7 @@ int XLALSimInspiralSpinTaylorF2(
     XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
 
     /* extrinsic parameters */
-    phi0 = phic;
-    amp0 = 4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L); /* Why was there a factor of deltaF in the lalinspiral version? */
+    amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);
     shft = -LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
 
     iStart = (size_t) ceil(fStart / deltaF);
@@ -495,10 +493,11 @@ int XLALSimInspiralSpinTaylorF2(
                 * ( cos( (mm-2.) * alpha) + sin( (mm-2.) * alpha)*1.0j );
         }
 
-        phasing += shft * f + phi0;
+        // Note the factor of 2 b/c phic is orbital phase
+        phasing += shft * f - 2.*phic;
         phasing += 2.*zeta;
         amp = amp0 * sqrt(-dEnergy/flux) * v;
-        data[i] = ((COMPLEX16)amp)*prec_fac*(cos(phasing + LAL_PI_4) - sin(phasing + LAL_PI_4) * 1.0j);
+        data[i] = ((COMPLEX16)amp)*prec_fac*(cos(phasing - LAL_PI_4) - sin(phasing - LAL_PI_4) * 1.0j);
     }
 
     *htilde_out = htilde;

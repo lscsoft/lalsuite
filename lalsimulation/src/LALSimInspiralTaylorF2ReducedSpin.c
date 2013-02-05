@@ -149,8 +149,8 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
 
     /* extrinsic parameters */
-    amp0 = pow(m_sec, 5./6.) * sqrt(5. * eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
-    shft = -LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
+    amp0 = -pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
+    shft = LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
     /* spin terms in the amplitude and phase (in terms of the reduced
      * spin parameter */
@@ -252,7 +252,8 @@ int XLALSimInspiralTaylorF2ReducedSpin(
             + (alpha6 + alpha6L * (LAL_GAMMA + log4 + logv)) * v6
             + alpha7 * v7);
 
-        data[i] = amp * cos(Psi + shft * f - 2.*phic + LAL_PI_4) - I * (amp * sin(Psi + shft * f - 2.*phic + LAL_PI_4));
+        data[i] = amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4)
+            - I * (amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
     }
 
     return XLAL_SUCCESS;

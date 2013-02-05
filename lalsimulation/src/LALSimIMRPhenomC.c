@@ -427,12 +427,12 @@ static size_t NextPow2(const size_t n) {
  */
 int XLALSimIMRPhenomCGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                  /**< initial phase */
-    const REAL8 deltaF,                /**< sampling interval */
+    const REAL8 phi0,                  /**< orbital phase at peak (rad) */
+    const REAL8 deltaF,                /**< sampling interval (Hz) */
     const REAL8 m1_SI,                 /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< mass of companion 2 (kg) */
     const REAL8 chi,                   /**< mass-weighted aligned-spin parameter */
-    const REAL8 f_min,                 /**< start frequency */
+    const REAL8 f_min,                 /**< starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance               /**< distance of source (m) */
 ) {
@@ -522,7 +522,7 @@ static REAL8 IMRPhenomCGeneratePhasePM(
 
 /***********************************************************************************/
 /* The following private function generates the complete amplitude and phase of    */
-/* PhenomC waveform, at a fiven frequency.                                         */
+/* PhenomC waveform, at a given frequency.                                         */
 /* Eq. (5.3), (5.9) of the Main paper.                                             */
 /***********************************************************************************/
 
@@ -624,7 +624,7 @@ static int IMRPhenomCGenerateAmpPhase(
   REAL8 wPlusf0 = wPlus( f, params->f0, params->d0, params );
   REAL8 wMinusf0 = wMinus( f, params->f0, params->d0, params );
    
-  *amplitude = aPM * wMinusf0 + aRD * wPlusf0;
+  *amplitude = - (aPM * wMinusf0 + aRD * wPlusf0);
 
   return XLAL_SUCCESS;
 }
@@ -682,7 +682,7 @@ static int IMRPhenomCGenerateFD(
     errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, f, eta, params );
     if( errcode != XLAL_SUCCESS )
       XLAL_ERROR(XLAL_EFUNC);
-    phPhenomC -= phi0;
+    phPhenomC -= 2.*phi0; // factor of 2 b/c phi0 is orbital phase
 
     /* generate the waveform */
     ((*htilde)->data->data)[i] = amp0 * aPhenomC * cos(phPhenomC);

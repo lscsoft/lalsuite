@@ -206,7 +206,6 @@ int XLALSimInspiralTaylorF2(
     /* Perform some initial checks */
     if (!htilde_out) XLAL_ERROR(XLAL_EFAULT);
     if (*htilde_out) XLAL_ERROR(XLAL_EFAULT);
-    if (phic < 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
@@ -222,8 +221,8 @@ int XLALSimInspiralTaylorF2(
     XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
 
     /* extrinsic parameters */
-    amp0 = 4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L); /* Why was there a factor of deltaF in the lalinspiral version? */
-    shft = -LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
+    amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);
+    shft = LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
 
     iStart = (size_t) ceil(fStart / deltaF);
     iISCO = (size_t) (fISCO / deltaF);
@@ -339,7 +338,7 @@ int XLALSimInspiralTaylorF2(
         // Note the factor of 2 b/c phic is orbital phase
         phasing += shft * f - 2.*phic;
         amp = amp0 * sqrt(-dEnergy/flux) * v;
-        data[i] = amp * cos(phasing + LAL_PI_4) - amp * sin(phasing + LAL_PI_4) * 1.0j;
+        data[i] = amp * cos(phasing - LAL_PI_4) - amp * sin(phasing - LAL_PI_4) * 1.0j;
     }
 
     *htilde_out = htilde;
