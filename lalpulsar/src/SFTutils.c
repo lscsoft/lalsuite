@@ -1006,4 +1006,3 @@ XLALSFTAdd ( SFTtype *a,		/**< [in/out] SFT to be added to */
   return XLAL_SUCCESS;
 
 } /* XLALSFTAdd() */
-
