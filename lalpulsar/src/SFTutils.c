@@ -419,7 +419,6 @@ XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vec
 
 } /* XLALExtractTimestampsFromSFTs() */
 
-
 /** Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
  * SFT timestamps
  */
@@ -462,6 +461,62 @@ XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
   return ret;
 
 } /* XLALExtractMultiTimestampsFromSFTs() */
+
+
+/** Extract timstamps-vector from the given SFTVector
+ */
+LIGOTimeGPSVector *
+XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog )		/**< [in] input SFT-catalog  */
+{
+  /* check input consistency */
+  XLAL_CHECK_NULL ( catalog != NULL, XLAL_EINVAL );
+
+  UINT4 numSFTs = catalog->length;
+
+  /* create output vector */
+  LIGOTimeGPSVector *ret;
+  XLAL_CHECK_NULL ( ( ret = XLALCreateTimestampVector ( numSFTs )) != NULL, XLAL_EINVAL, "Failed to XLALCreateTimestampVector ( %d )\n", numSFTs );
+
+  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
+  ret->deltaT = Tsft;
+
+  for ( UINT4 i = 0; i < numSFTs; i ++ ) {
+    ret->data[i] = catalog->data[i].header.epoch;
+  }
+
+  /* done: return Ts-vector */
+  return ret;
+
+} /* XLALTimestampsFromSFTCatalog() */
+
+
+/** Given a multi-SFTCatalogView, return a MultiLIGOTimeGPSVector holding the
+ * SFT timestamps
+ */
+MultiLIGOTimeGPSVector *
+XLALTimestampsFromMultiSFTCatalogView ( const MultiSFTCatalogView *multiView )
+{
+  /* check input consistency */
+  XLAL_CHECK_NULL ( multiView != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( multiView->length > 0, XLAL_EINVAL );
+
+  UINT4 numIFOs = multiView->length;
+
+  /* create output vector */
+  MultiLIGOTimeGPSVector *ret;
+  XLAL_CHECK_NULL ( (ret = XLALCalloc ( 1, sizeof(*ret) )) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (ret->data = XLALCalloc ( numIFOs, sizeof(*(ret->data)) )) != NULL, XLAL_ENOMEM );
+  ret->length = numIFOs;
+
+  /* now extract timestamps vector from each IFO's SFT-Catalog */
+  for ( UINT4 X=0; X < numIFOs; X ++ )
+    {
+      XLAL_CHECK_NULL ( (ret->data[X] = XLALTimestampsFromSFTCatalog ( &(multiView->data[X]) )) != NULL, XLAL_EFUNC );
+    } /* for X < numIFOs */
+
+  return ret;
+
+} /* XLALTimestampsFromMultiSFTCatalogView() */
 
 
 /** Destroy a MultiLIGOTimeGPSVector timestamps vector

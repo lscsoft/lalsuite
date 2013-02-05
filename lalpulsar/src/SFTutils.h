@@ -115,8 +115,12 @@ SFTVector* XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fM
 
 LIGOTimeGPSVector *XLALCreateTimestampVector (UINT4 len);
 LIGOTimeGPSVector *XLALMakeTimestamps ( LIGOTimeGPS tStart, REAL8 duration, REAL8 tStep );
+
 LIGOTimeGPSVector *XLALExtractTimestampsFromSFTs ( const SFTVector *sfts );
 MultiLIGOTimeGPSVector *XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs );
+
+LIGOTimeGPSVector *XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog );
+MultiLIGOTimeGPSVector *XLALTimestampsFromMultiSFTCatalogView ( const MultiSFTCatalogView *multiView );
 
 void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
 void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
