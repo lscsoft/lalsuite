@@ -37,6 +37,8 @@ void populate_trig_sequence_from_file( GSequence* trig_sequence, const char* fna
 void print_hash_table( GHashTable* tbl, const char* file );
 // print a hash table of string / float entries
 void print_hash_table_float( GHashTable* tbl, const char* file );
+// print a hash table of string / string entries
+void print_hash_table_string( GHashTable* tbl, const char* file );
 // Read a sequence of channels to ignore
 void get_ignore_list( const char* fname, GSequence* ignorelist );
 // retrieve live time
@@ -427,9 +429,9 @@ void print_hash_table_string( GHashTable* tbl, const char* file ){
 	}
 	while( g_hash_table_iter_next( &iter, &key, &val ) ){
 		if( file ){
-			fprintf( outfile, "%s: %f\n", (char *)key, (char*)val );
+			fprintf( outfile, "%s: %s\n", (char *)key, (char*)val );
 		} else {
-			printf( "%s: %f\n", (char *)key, (char*)val );
+			printf( "%s: %s\n", (char *)key, (char*)val );
 		}
 	}
 	if( outfile ){
