@@ -355,9 +355,7 @@ REAL8 LALInferenceInspiralNoiseOnlyPrior(LALInferenceRunState *runState, LALInfe
   (void)runState;
   LALInferenceVariableItem *item=params->head;
 	LALInferenceVariables *priorParams=runState->priorArgs;
-	REAL8 min, max;
   REAL8 component_max, component_min;
-	REAL8 norm=0.0;
 
 	/* Check boundaries */
 	for(;item;item=item->next)
@@ -366,11 +364,9 @@ REAL8 LALInferenceInspiralNoiseOnlyPrior(LALInferenceRunState *runState, LALInfe
     {
       UINT4 i;
       UINT4 j;
-      UINT4 dim = *(UINT4 *)LALInferenceGetVariable(priorParams,"psddim");
 
       REAL8 val;
       REAL8 var;
-      REAL8 uniform;
       REAL8 mean = 1.0;
       REAL8 prior= 0.0;
       UINT4 psdGaussianPrior;
@@ -381,13 +377,11 @@ REAL8 LALInferenceInspiralNoiseOnlyPrior(LALInferenceRunState *runState, LALInfe
       component_min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
       component_max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");
 
-      uniform = 1.0/(component_max-component_min);
-
       psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
 
-      for(i=0; i<(int)nparams->size1; i++)
+      for(i=0; i<(UINT4)nparams->size1; i++)
       {
-        for(j=0; j<(int)nparams->size2; j++)
+        for(j=0; j<(UINT4)nparams->size2; j++)
         {
           var = sigma->data[j]*sigma->data[j];
           val = gsl_matrix_get(nparams,i,j);
@@ -701,11 +695,9 @@ LALInferenceVariableItem *item=params->head;
         {
           UINT4 i;
           UINT4 j;
-          UINT4 dim = *(UINT4 *)LALInferenceGetVariable(priorParams,"psddim");
 
           //REAL8 val;
           REAL8 var;
-          REAL8 uniform;
           REAL8 mean = 1.0;
           REAL8 prior= 0.0;
           UINT4 psdGaussianPrior;
@@ -716,13 +708,11 @@ LALInferenceVariableItem *item=params->head;
           component_min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
           component_max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");
 
-          uniform = 1.0/(component_max-component_min);
-
           psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
 
-          for(i=0; i<(int)nparams->size1; i++)
+          for(i=0; i<(UINT4)nparams->size1; i++)
           {
-            for(j=0; j<(int)nparams->size2; j++)
+            for(j=0; j<(UINT4)nparams->size2; j++)
             {
               var = sigma->data[j]*sigma->data[j];
               val = gsl_matrix_get(nparams,i,j);

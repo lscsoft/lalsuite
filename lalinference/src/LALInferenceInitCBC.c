@@ -812,8 +812,6 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   /********************* TBL: Adding noise-fitting parameters  *********************/
   UINT4 nscale_block; //number of noise parameters per IFO (1 per frequency block)
   UINT4 nscale_bin;   //number of Fourier bins in each noise block
-  REAL8 nscale_min;   //minimum range
-  REAL8 nscale_max;   //maximum range
   REAL8 nscale_dflog; //logarithmic spacing for noise parameters
 
   UINT4 nscale_dim;   //total dimension of noise model (params X detectors)
@@ -835,9 +833,9 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   UINT4 nifo; //number of data channels
   UINT4 imin; //minimum Fourier bin for integration in IFO
   UINT4 imax; //maximum Fourier bin for integration in IFO
-  UINT4 fmin; //minimum Fourier bin for integration over network
-  UINT4 fmax; //maximum Fourier bin for integration over network
-  REAL8 df;   //frequency resolution
+  UINT4 fmin = 1; //minimum Fourier bin for integration over network
+  UINT4 fmax = 1; //maximum Fourier bin for integration over network
+  REAL8 df = 1.0; //frequency resolution
 
   //compute imin,imax for each IFO -- may be different
   nifo=0;

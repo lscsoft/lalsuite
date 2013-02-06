@@ -1290,9 +1290,9 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
       max=10.0;
       gsl_matrix *eta = *((gsl_matrix **)LALInferenceGetVariable(proposedParams, "psdscale"));
 
-      for(i=0;i<(int)eta->size1;i++)
+      for(i=0;i<(UINT8)eta->size1;i++)
       {
-        for(j=0;j<(int)eta->size2;j++)
+        for(j=0;j<(UINT8)eta->size2;j++)
         {
           x = min + gsl_rng_uniform(runState->GSLrandom)*(max - min);
           gsl_matrix_set(eta,i,j,x);
@@ -1738,17 +1738,9 @@ vectorToColatLong(const REAL8 v[3],
 
 void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
-  const char *propName = PSDFitJumpName;
   INT4 i,j;
   INT4 nifo;
   INT4 N;
-
-  LALInferenceVariables *args = runState->proposalArgs;
-
-  REAL8 T = 1.0;
-  if(LALInferenceCheckVariable(args,"temperature")) T=*(REAL8 *)LALInferenceGetVariable(args, "temperature");
-  REAL8 sqrtT = sqrt(T);
-
 
   REAL8 draw;
   //REAL8 var = *(REAL8 *)(LALInferenceGetVariable(runState->proposalArgs, "psdsigma"));
@@ -1768,7 +1760,7 @@ void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariable
   {
     for(j=0; j<N; j++)
     {
-      draw = gsl_matrix_get(nx,i,j) + gsl_ran_ugaussian(runState->GSLrandom)*var->data[j];//*sqrtT;
+      draw = gsl_matrix_get(nx,i,j) + gsl_ran_ugaussian(runState->GSLrandom)*var->data[j];
       gsl_matrix_set(ny,i,j,draw);
     }
   }
