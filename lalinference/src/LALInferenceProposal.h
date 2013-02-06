@@ -220,6 +220,8 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
 void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs);
 void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 /** Rotate each spin by random angles about L. */
 void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 

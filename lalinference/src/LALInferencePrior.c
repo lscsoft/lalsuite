@@ -348,20 +348,74 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
   return(logPrior);
 }
 
+REAL8 LALInferenceInspiralNoiseOnlyPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
+{
+  REAL8 logPrior=0.0;
+
+  (void)runState;
+  LALInferenceVariableItem *item=params->head;
+	LALInferenceVariables *priorParams=runState->priorArgs;
+	REAL8 min, max;
+  REAL8 component_max, component_min;
+	REAL8 norm=0.0;
+
+	/* Check boundaries */
+	for(;item;item=item->next)
+	{
+    if(!strcmp(item->name, "psdscale"))
+    {
+      UINT4 i;
+      UINT4 j;
+      UINT4 dim = *(UINT4 *)LALInferenceGetVariable(priorParams,"psddim");
+
+      REAL8 val;
+      REAL8 var;
+      REAL8 uniform;
+      REAL8 mean = 1.0;
+      REAL8 prior= 0.0;
+      UINT4 psdGaussianPrior;
+
+      REAL8Vector *sigma = *((REAL8Vector **)LALInferenceGetVariable(priorParams, "psdsigma"));
+      gsl_matrix *nparams = *((gsl_matrix **)item->value);
+
+      component_min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
+      component_max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");
+
+      uniform = 1.0/(component_max-component_min);
+
+      psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
+
+      for(i=0; i<(int)nparams->size1; i++)
+      {
+        for(j=0; j<(int)nparams->size2; j++)
+        {
+          var = sigma->data[j]*sigma->data[j];
+          val = gsl_matrix_get(nparams,i,j);
+
+          //reject prior
+          if(val < component_min || val > component_max) return -DBL_MAX;
+          else if(psdGaussianPrior)prior += -0.5*( (mean-val)*(mean-val)/var + log(2.0*LAL_PI*var) );
+        }
+      }
+      logPrior+=prior;
+    }
+  }
+  return(logPrior);
+}
 
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
   static int S6PEpriorWarning = 0;
   REAL8 logPrior=0.0;
-	
+  REAL8 val;
 (void)runState;
 LALInferenceVariableItem *item=params->head;
 	LALInferenceVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
 	REAL8 mc=0.0;
   REAL8 eta=0.0;
-	REAL8 m1,m2; 
+	REAL8 m1,m2;
 	REAL8 massRatioMin=0.0, massRatioMax=0.0; // min,max for q or eta
 	REAL8 MTotMax=0.0;
   REAL8 component_max, component_min;
@@ -387,10 +441,20 @@ LALInferenceVariableItem *item=params->head;
 		if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
 		else
 		{
-			LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
-			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
+			
+			val = 0;
+			min =-DBL_MAX;
+			max = DBL_MAX;
+			if(strcmp(item->name,"psdscale"))
+			{
+				LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
+				val = *(REAL8 *)item->value;
+			}
+
+			if(val<min || val>max) return -DBL_MAX;
 			else
 			{
+
 		        	if(!strcmp(item->name, "chirpmass") || !strcmp(item->name, "logmc")){
 			          if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
 			            && LALInferenceCheckVariable(priorParams,"MTotMax")
@@ -632,7 +696,44 @@ LALInferenceVariableItem *item=params->head;
 					logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))))+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
 				}
-				
+        //PSD priors are Gaussian
+				else if(!strcmp(item->name, "psdscale"))
+        {
+          UINT4 i;
+          UINT4 j;
+          UINT4 dim = *(UINT4 *)LALInferenceGetVariable(priorParams,"psddim");
+
+          //REAL8 val;
+          REAL8 var;
+          REAL8 uniform;
+          REAL8 mean = 1.0;
+          REAL8 prior= 0.0;
+          UINT4 psdGaussianPrior;
+
+          REAL8Vector *sigma = *((REAL8Vector **)LALInferenceGetVariable(priorParams, "psdsigma"));
+          gsl_matrix *nparams = *((gsl_matrix **)item->value);
+
+          component_min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
+          component_max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");
+
+          uniform = 1.0/(component_max-component_min);
+
+          psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
+
+          for(i=0; i<(int)nparams->size1; i++)
+          {
+            for(j=0; j<(int)nparams->size2; j++)
+            {
+              var = sigma->data[j]*sigma->data[j];
+              val = gsl_matrix_get(nparams,i,j);
+
+              //reject prior
+              if(val < component_min || val > component_max) return -DBL_MAX;
+              else if(psdGaussianPrior)prior += -0.5*( (mean-val)*(mean-val)/var + log(2.0*LAL_PI*var) );
+            }
+          }
+          logPrior+=prior;
+        }
 				else{
 					sprintf(normName,"%s_norm",item->name);
 					if(LALInferenceCheckVariable(priorParams,normName)) {

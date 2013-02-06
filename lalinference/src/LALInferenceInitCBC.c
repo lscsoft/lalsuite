@@ -447,11 +447,8 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     ppt_order=LALInferenceGetProcParamVal(commandLine,"--order");
     if(ppt_order) PhaseOrder = XLALGetOrderFromString(ppt_order->value);
     else PhaseOrder = XLALGetOrderFromString(ppt->value);
-    /* If not given as a separate argument or in the approx string, use maximum available */
-    if( (int) PhaseOrder == XLAL_FAILURE) {
-      fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
-      PhaseOrder=-1;
-    }
+    if( (int) PhaseOrder == XLAL_FAILURE)
+      ABORTXLAL(&status);
   }
   ppt=LALInferenceGetProcParamVal(commandLine,"--amporder");
   if(ppt) AmpOrder=atoi(ppt->value);
@@ -809,9 +806,204 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     newswitch=1;
     LALInferenceAddVariable(currentParams, "newswitch", &newswitch, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   }
+  
   /* Set up the variable parameters */
+
+  /********************* TBL: Adding noise-fitting parameters  *********************/
+  UINT4 nscale_block; //number of noise parameters per IFO (1 per frequency block)
+  UINT4 nscale_bin;   //number of Fourier bins in each noise block
+  REAL8 nscale_min;   //minimum range
+  REAL8 nscale_max;   //maximum range
+  REAL8 nscale_dflog; //logarithmic spacing for noise parameters
+
+  UINT4 nscale_dim;   //total dimension of noise model (params X detectors)
+  UINT4 nscale_flag;  //flag to tell likelihood function if psd fitting is in use
+
+  REAL8Vector *nscale_prior = NULL; //std. dev. of prior distribution
+  REAL8Vector *nscale_sigma = NULL; //std. dev. of prior distribution
+
+  //assume no noise fitting
+  nscale_flag=0;
+
+  //set Nblock to default unless specified at command line
+  ppt = LALInferenceGetProcParamVal(commandLine, "--psdNblock");
+  if(ppt) nscale_block = atoi(ppt->value);
+  else nscale_block = 8;
+
+
+  //First, figure out sizes of dataset to set up noise blocks
+  UINT4 nifo; //number of data channels
+  UINT4 imin; //minimum Fourier bin for integration in IFO
+  UINT4 imax; //maximum Fourier bin for integration in IFO
+  UINT4 fmin; //minimum Fourier bin for integration over network
+  UINT4 fmax; //maximum Fourier bin for integration over network
+  REAL8 df;   //frequency resolution
+
+  //compute imin,imax for each IFO -- may be different
+  nifo=0;
+  dataPtr = state->data;
+  while (dataPtr != NULL)
+  {
+    dt      = dataPtr->timeData->deltaT;
+    df      = 1.0 / (((double)dataPtr->timeData->data->length) * dt);
+    imin    = (UINT4)ceil( dataPtr->fLow  / df);
+    imax    = (UINT4)floor(dataPtr->fHigh / df);
+
+    if(nifo==0)
+    {
+      fmin=imin;
+      fmax=imax;
+    }
+    else
+    {
+      if(imin<fmin)
+      {
+        fprintf(stderr,"Warning: Different IFO's have different minimum frequencies -- bad for noise fitting\n");
+        fmin=imin;
+      }
+      if(imax>fmax)
+      {
+        fprintf(stderr,"Warning: Different IFO's have different minimum frequencies -- bad for noise fitting\n");
+        fmax=imax;
+      }
+    }
+
+    dataPtr = dataPtr->next;
+    nifo++;
+  }
+
+  ppt = LALInferenceGetProcParamVal(commandLine, "--psdFit");
+  if(ppt)//MARK: Here is where noise PSD parameters are being added to the model
+  {
+
+    nscale_bin   = (fmax+1-fmin)/nscale_block;
+    nscale_dflog = log( (double)(fmax+1)/(double)fmin )/(double)nscale_block;
+
+    //nscale_min   = 0.00;
+    //nscale_max   = 10.0;
+    nscale_dim   = nscale_block*nifo;
+    nscale_flag  = 1;
+
+    // Set noise parameter arrays.
+    nscale_prior = XLALCreateREAL8Vector(nscale_block);
+    nscale_sigma = XLALCreateREAL8Vector(nscale_block);
+    for(i=0; i<nscale_block; i++)
+    {
+      nscale_prior->data[i] = 1.0/sqrt( fmin*exp( (double)(i+1)*nscale_dflog ) );
+      nscale_sigma->data[i] = nscale_prior->data[i]/sqrt((double)(nifo*nscale_block));
+    }
+
+    gsl_matrix *nscale = gsl_matrix_alloc(nifo,nscale_block);
+    gsl_matrix *nstore = gsl_matrix_alloc(nifo,nscale_block);
+
+    gsl_matrix_set_all(nscale, 1.0);
+    gsl_matrix_set_all(nstore, 1.0);
+
+    LALInferenceAddVariable(currentParams, "psdscale", &nscale, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(currentParams, "psdstore", &nstore, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(currentParams, "logdeltaf", &nscale_dflog, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
+    //Set up noise priors
+    LALInferenceAddVariable(priorArgs,      "psddim",   &nscale_dim,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
+    //LALInferenceAddMinMaxPrior(priorArgs,   "psdscale", &nscale_min,  &nscale_max,   LALINFERENCE_REAL8_t);
+    LALInferenceAddVariable(priorArgs,      "psdsigma", &nscale_prior, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+
+    //Store meta data for noise model in proposal
+    LALInferenceAddVariable(state->proposalArgs, "psdblock", &nscale_block, LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(state->proposalArgs, "psdbin",   &nscale_bin,   LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(state->proposalArgs, "psdsigma", &nscale_sigma, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+
+  }//End of noise model initialization
+  LALInferenceAddVariable(currentParams, "psdScaleFlag", &nscale_flag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+  UINT4 psdGaussianPrior=1;
+  ppt = LALInferenceGetProcParamVal(commandLine, "--psdFlatPrior");
+  if(ppt)psdGaussianPrior=0;
+  LALInferenceAddVariable(priorArgs, "psdGaussianPrior", &psdGaussianPrior,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
+
+  /********************* TBL: Adding line-removal parameters  *********************/
+  UINT4 lines_flag  = 0;   //flag tells likelihood if line-removal is turned on
+  UINT4 lines_num   = 10;   //number of lines to remove
+
+  ppt = LALInferenceGetProcParamVal(commandLine, "--removeLines");
+  
+  if(ppt)//MARK: Here is where noise line removal parameters are being added to the model
+  {
+    lines_flag = 1;
+    dataPtr = state->data;
+    gsl_matrix *lines      = gsl_matrix_alloc(nifo,lines_num);
+    gsl_matrix *linewidth  = gsl_matrix_alloc(nifo,lines_num);
+    i=0;
+    while (dataPtr != NULL)
+    {
+      printf("ifo=%i  %s\n",i,dataPtr->name);fflush(stdout);
+      //top lines_num lines for each interferometer, and widths
+      if(!strcmp(dataPtr->name,"H1"))
+      {
+        gsl_matrix_set(lines,i,0,35.0/df);   gsl_matrix_set(linewidth,i,0,3.0/df);
+        gsl_matrix_set(lines,i,1,45.0/df);   gsl_matrix_set(linewidth,i,1,1.5/df);
+        gsl_matrix_set(lines,i,2,51.0/df);   gsl_matrix_set(linewidth,i,2,2.5/df);
+        gsl_matrix_set(lines,i,3,60.0/df);   gsl_matrix_set(linewidth,i,3,3.0/df);
+        gsl_matrix_set(lines,i,4,72.0/df);   gsl_matrix_set(linewidth,i,4,3.0/df);
+        gsl_matrix_set(lines,i,5,87.0/df);   gsl_matrix_set(linewidth,i,5,0.5/df);
+        gsl_matrix_set(lines,i,6,108.0/df);  gsl_matrix_set(linewidth,i,6,0.5/df);
+        gsl_matrix_set(lines,i,7,117.0/df);  gsl_matrix_set(linewidth,i,7,0.5/df);
+        gsl_matrix_set(lines,i,8,122.0/df);  gsl_matrix_set(linewidth,i,8,5.0/df);
+        gsl_matrix_set(lines,i,9,180.0/df);  gsl_matrix_set(linewidth,i,9,2.0/df);
+      }
+
+      if(!strcmp(dataPtr->name,"L1"))
+      {
+        gsl_matrix_set(lines,i,0,35.0/df);   gsl_matrix_set(linewidth,i,0,3.0/df);
+        gsl_matrix_set(lines,i,1,60.0/df);   gsl_matrix_set(linewidth,i,1,4.0/df);
+        gsl_matrix_set(lines,i,2,69.0/df);   gsl_matrix_set(linewidth,i,2,2.5/df);
+        gsl_matrix_set(lines,i,3,106.4/df);  gsl_matrix_set(linewidth,i,3,0.8/df);
+        gsl_matrix_set(lines,i,4,113.0/df);  gsl_matrix_set(linewidth,i,4,1.5/df);
+        gsl_matrix_set(lines,i,5,120.0/df);  gsl_matrix_set(linewidth,i,5,2.5/df);
+        gsl_matrix_set(lines,i,6,128.0/df);  gsl_matrix_set(linewidth,i,6,3.5/df);
+        gsl_matrix_set(lines,i,7,143.0/df);  gsl_matrix_set(linewidth,i,7,1.0/df);
+        gsl_matrix_set(lines,i,8,180.0/df);  gsl_matrix_set(linewidth,i,8,2.5/df);
+        gsl_matrix_set(lines,i,9,191.5/df);  gsl_matrix_set(linewidth,i,9,4.0/df);
+      }
+
+      if(!strcmp(dataPtr->name,"V1"))
+      {
+        gsl_matrix_set(lines,i,0,35.0/df);   gsl_matrix_set(linewidth,i,0,3.0/df);
+        gsl_matrix_set(lines,i,1,60.0/df);   gsl_matrix_set(linewidth,i,1,4.0/df);
+        gsl_matrix_set(lines,i,2,69.0/df);   gsl_matrix_set(linewidth,i,2,2.5/df);
+        gsl_matrix_set(lines,i,3,106.4/df);  gsl_matrix_set(linewidth,i,3,0.8/df);
+        gsl_matrix_set(lines,i,4,113.0/df);  gsl_matrix_set(linewidth,i,4,1.5/df);
+        gsl_matrix_set(lines,i,5,120.0/df);  gsl_matrix_set(linewidth,i,5,2.5/df);
+        gsl_matrix_set(lines,i,6,128.0/df);  gsl_matrix_set(linewidth,i,6,3.5/df);
+        gsl_matrix_set(lines,i,7,143.0/df);  gsl_matrix_set(linewidth,i,7,1.0/df);
+        gsl_matrix_set(lines,i,8,180.0/df);  gsl_matrix_set(linewidth,i,8,2.5/df);
+        gsl_matrix_set(lines,i,9,191.5/df);  gsl_matrix_set(linewidth,i,9,4.0/df);
+      }
+      dataPtr = dataPtr->next;
+      i++;
+    }
+
+    //Add line matrices to variable lists
+    LALInferenceAddVariable(currentParams, "line_center", &lines,     LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(currentParams, "line_width",  &linewidth, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+
+
+  }//End of line-removal initialization
+   
+  LALInferenceAddVariable(currentParams, "removeLinesFlag", &lines_flag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  /*********************************************************************************/
+
+  /* Set up start time. */
+  ppt=LALInferenceGetProcParamVal(commandLine, "--time");
+  if (ppt) {
+    /* User has specified start time. */
+    timeParam = atof(ppt->value);
+  } else {
+    timeParam = endtime+gsl_ran_gaussian(GSLrandom,0.01);
+  }
+
   /* Jump in component masses if anaytic test */
-  if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") || 
+  if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") ||
       LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood") ||
       LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood") ||
       LALInferenceGetProcParamVal(commandLine, "--analyticnullprior")) {
