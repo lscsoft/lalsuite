@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 58
+# serial 59
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -573,7 +573,7 @@ AC_DEFUN([LALSUITE_ENABLE_OSX_VERSION_CHECK],
 
 AC_DEFUN([LALSUITE_OSX_VERSION_CHECK],[
 LALSUITE_ENABLE_OSX_VERSION_CHECK
-AS_IF(["x${osx_version_check}" = "xtrue"],[
+AS_IF([test "x${osx_version_check}" = "xtrue"],[
   AS_IF([test "x$build_vendor" = "xapple"],[
     AC_CHECK_PROGS([SW_VERS],[sw_vers])
     AS_IF([test "x$SW_VERS" != "x"],[
