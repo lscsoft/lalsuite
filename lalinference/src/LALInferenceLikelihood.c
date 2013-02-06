@@ -161,8 +161,6 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
   LALInferenceIFOData *dataPtr;
   double chisquared;
   double deltaT, TwoDeltaToverN, deltaF;
-  double timeTmp;
-	double mc;
 
   //noise model meta parameters
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
