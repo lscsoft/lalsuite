@@ -166,14 +166,14 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
   gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
   gsl_matrix *nparams = NULL;//pointer to matrix holding noise parameters
-  double dflog;              //logarithmic spacing of psd parameters
+  double dflog;        //logarithmic spacing of psd parameters
 
   int Nblock = 1;            //number of frequency blocks per IFO
   int Nlines = 1;            //number of lines to be removed
   int psdFlag;               //flag for including psd fitting
   int lineFlag;              //flag for excluding lines from integration
-  int lineimin;
-  int lineimax;
+  int lineimin = 0;
+  int lineimax = 0;
   int lineSwitch;          //switch inside integration to exclude bins
 
   //line removal parameters
@@ -227,23 +227,34 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
     TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
 
     //Set up noise PSD meta parameters
-    if(psdFlag)
+    for(i=0; i<Nblock; i++)
     {
-      for(i=0; i<Nblock; i++)
+      if(psdFlag)
       {
         alpha[i]   = gsl_matrix_get(nparams,ifo,i);
         lnalpha[i] = log(alpha[i]);
       }
+      else
+      {
+        alpha[i]=1.0;
+        lnalpha[i]=0.0;
+      }
     }
 
     //Set up psd line arrays
-    if(lineFlag)
+    for(j=0;j<Nlines;j++)
     {
-      for(j=0;j<Nlines;j++)
+      if(lineFlag)
       {
+
         //find range of fourier fourier bins which are excluded from integration
         lines_array[j]  = (int)gsl_matrix_get(lines,ifo,j);//lineimin = (int)(gsl_matrix_get(lines,ifo,j) - gsl_matrix_get(widths,ifo,j));
         widths_array[j] = (int)gsl_matrix_get(widths,ifo,j);//lineimax = (int)(gsl_matrix_get(lines,ifo,j) + gsl_matrix_get(widths,ifo,j));
+      }
+      else
+      {
+        lines_array[j]=0;
+        widths_array[j]=0;
       }
     }
 
@@ -343,14 +354,14 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
   gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
   gsl_matrix *nparams = NULL;//pointer to matrix holding noise parameters
-  double dflog;              //logarithmic spacing of psd parameters
+  double dflog = 1.0;        //logarithmic spacing of psd parameters
   
   int Nblock = 1;            //number of frequency blocks per IFO
   int Nlines = 1;            //number of lines to be removed
   int psdFlag;               //flag for including psd fitting
   int lineFlag;              //flag for excluding lines from integration
-  int lineimin;
-  int lineimax;
+  int lineimin = 0;
+  int lineimax = 0;
   int lineSwitch;          //switch inside integration to exclude bins
 
   //line removal parameters
@@ -515,23 +526,34 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
     dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
 
     //Set up noise PSD meta parameters
-    if(psdFlag)
+    for(i=0; i<Nblock; i++)
     {
-      for(i=0; i<Nblock; i++)
+      if(psdFlag)
       {
         alpha[i]   = gsl_matrix_get(nparams,ifo,i);
         lnalpha[i] = log(alpha[i]);
       }
+      else
+      {
+        alpha[i]=1.0;
+        lnalpha[i]=0.0;
+      }
     }
 
     //Set up psd line arrays
-    if(lineFlag)
+    for(j=0;j<Nlines;j++)
     {
-      for(j=0;j<Nlines;j++)
+      if(lineFlag)
       {
+
         //find range of fourier fourier bins which are excluded from integration
         lines_array[j]  = (int)gsl_matrix_get(lines,ifo,j);//lineimin = (int)(gsl_matrix_get(lines,ifo,j) - gsl_matrix_get(widths,ifo,j));
         widths_array[j] = (int)gsl_matrix_get(widths,ifo,j);//lineimax = (int)(gsl_matrix_get(lines,ifo,j) + gsl_matrix_get(widths,ifo,j));
+      }
+      else
+      {
+        lines_array[j]=0;
+        widths_array[j]=0;
       }
     }
 
