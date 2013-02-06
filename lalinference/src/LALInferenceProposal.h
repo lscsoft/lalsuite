@@ -172,6 +172,9 @@ void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVa
 /** Polarization-phase exact degeneracy. */
 void LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Polarization-phase correlation jump */
+void LALInferenceCorrPolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 /** Choose a random covariance matrix eigenvector to jump along. */
 void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
@@ -210,6 +213,8 @@ void LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVar
     detectors.  Should only be used when there are exactly three
     different locations for detectors. */
 void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);;
 
 /* Nested sampling wrappers. */
 void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs);

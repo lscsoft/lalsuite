@@ -184,29 +184,26 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) join time_slide\
 		    on (time_slide.time_slide_id == coinc_event.time_slide_id and time_slide.instrument==sngl_inspiral.ifo)\
 		    join coinc_inspiral on (coinc_inspiral.coinc_event_id==coinc_event.coinc_event_id) where coinc_event.time_slide_id!='time_slide:time_slide_id:10049'"
+	joinstr = ' and '
 	if gpsstart is not None:
 		get_coincs=get_coincs+ ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
-		joinstr=' and '
-	else:
-		joinstr=' where '
 	if gpsend is not None:
 		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
-		joinstr=' and '
 	if max_cfar!=-1:
 		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
-        from pylal import SnglInspiralUtils
-        extra={}
+	from pylal import SnglInspiralUtils
+	extra={}
 	for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
-          coinc_id=int(coinc_id.split(":")[-1])
-	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
-	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
-	  if not coinc_id in output.keys():
-	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={},event_id=int(coinc_id))
-            extra[coinc_id]={}
-	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
-	  output[coinc_id].ifos.append(ifo)
-          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
+		coinc_id=int(coinc_id.split(":")[-1])
+		seg=filter(lambda seg:sngl_time in seg,seglist)[0]
+		slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
+		if not coinc_id in output.keys():
+			output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={},event_id=int(coinc_id))
+			extra[coinc_id]={}
+		output[coinc_id].timeslides[ifo]=slid_time-sngl_time
+		output[coinc_id].ifos.append(ifo)
+		extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
 	if dumpfile is not None:
 		fh=open(dumpfile,'w')
 		for co in output.keys():

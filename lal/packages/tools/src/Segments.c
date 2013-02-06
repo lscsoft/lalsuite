@@ -21,6 +21,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/Segments.h>
+#include <lal/LALString.h>
 
 /**
 \addtogroup Segments_h
@@ -965,3 +966,91 @@ XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeG
   /* done */
   return 0;
 }
+
+/**
+ * Simple method to check whether a LALSegList is in an initialized state.
+ *
+ * Avoid the user having to deal with LALSegList internal 'magic'.
+ */
+int
+XLALSegListIsInitialized ( const LALSegList *seglist )
+{
+  XLAL_CHECK ( seglist != NULL, XLAL_EINVAL, "Invalid NULL input 'seglist'\n");
+
+  return (seglist->initMagic == SEGMENTSH_INITMAGICVAL);
+
+}  /* XLALSegListIsInitialized() */
+
+/**
+ * (Re-)Initialize a segment list with Nseg 'simple' segments of length 'Tseg',
+ * starting at t0 = startTime, ie
+ * { [t0, t0+Tseg), [t0+Tseg, t0+2*Tseg), ... [t0+(N-1)*Tseg, t0+N*Tseg) }
+ *
+ * Note: accepts un-initialized segments list, as well as existing segment-lists.
+ * The latter will be properly cleared before re-use.
+ *
+ * The 'Id' field of segment k is set to 'k'
+ */
+int
+XLALSegListInitSimpleSegments ( LALSegList *seglist, LIGOTimeGPS startTime, UINT4 Nseg, REAL8 Tseg )
+{
+  XLAL_CHECK ( seglist != NULL, XLAL_EINVAL, "Invalid NULL input 'seglist'\n" );
+  XLAL_CHECK ( Tseg > 0, XLAL_EDOM, "Invalid non-positive input 'Tseg=%g'\n", Tseg );
+
+  if ( XLALSegListIsInitialized ( seglist ) )
+    XLALSegListClear ( seglist );
+  else
+    XLALSegListInit ( seglist );
+
+  for ( UINT4 k = 0; k < Nseg; k ++ )
+    {
+      LALSeg seg_k;
+
+      LIGOTimeGPS start_k = startTime;
+      XLALGPSAdd( &start_k, k * Tseg );		// t0_k = t0 + k * Tseg
+      LIGOTimeGPS end_k = startTime;
+      XLALGPSAdd( &end_k, (k+1) * Tseg );	// t1_k = t0 + (k+1) * Tseg
+
+      XLAL_CHECK ( XLALSegSet ( &seg_k, &start_k, &end_k, k ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      XLAL_CHECK ( XLALSegListAppend ( seglist, &seg_k ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    } // for k < Nseg
+
+  return XLAL_SUCCESS;
+
+} /* XLALSegListInitSimpleSegments() */
+
+
+/**
+ * Output an (octave) formatting of 'seglist' as a string
+ */
+char *
+XLALSegList2String ( const LALSegList *seglist )
+{
+  XLAL_CHECK_NULL ( seglist != NULL, XLAL_EINVAL, "Invalid NULL input 'seglist'\n" );
+  XLAL_CHECK_NULL ( XLALSegListIsInitialized ( seglist ), XLAL_EINVAL, "Got invalid un-initialized seglist\n" );
+
+  char *ret = NULL;
+  XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, "[ " )) != NULL, XLAL_ENOMEM, "Failed to ret=XLALStringAppend()\n" );
+
+  char segfmt[64];
+  sprintf ( segfmt, "%%.%df, %%.%df, %%d; ", seglist->dplaces, seglist->dplaces );	// seglist tells us output precision for GPS times to use
+
+  UINT4 Nseg = seglist->length;
+  for ( UINT4 k = 0; k < Nseg; k ++ )
+    {
+      char seg_buf[512];
+      REAL8 t0_k = XLALGPSGetREAL8 ( &(seglist->segs[k].start) );
+      REAL8 t1_k = XLALGPSGetREAL8 ( &(seglist->segs[k].end) );
+      sprintf ( seg_buf, segfmt, t0_k, t1_k, seglist->segs[k].id );
+
+      XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, seg_buf ) ) != NULL, XLAL_ENOMEM, "Failed to ret=XLALStringAppend() for segment %d/%d\n", k+1, Nseg );
+
+    } // for k < Nseg
+
+  XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, "]" ) ) != NULL, XLAL_ENOMEM, "Failed to ret=XLALStringAppend()" );
+
+  return ret;
+
+} /* XLALSegList2String() */

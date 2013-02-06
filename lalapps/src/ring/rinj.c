@@ -829,9 +829,6 @@ int main( int argc, char *argv[] )
     /* compute hrss at LLO */
     this_inj->hrss_l = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
 
-    /* increment the injection time */
-    XLALGPSAdd(&gpsStartTime, meanTimeStep);
-    
     /* virgo */
     time_diff = XLALTimeDelayFromEarthCenter( virgo.location, skyPos.longitude, skyPos.latitude, &(this_inj->geocent_start_time) );
     XLALGPSAdd(&(this_inj->l_start_time), time_diff);

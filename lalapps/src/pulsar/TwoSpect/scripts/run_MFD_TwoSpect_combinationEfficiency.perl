@@ -15,7 +15,7 @@ my @h0fact = (0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.9, 1.1, 1.5, 2.0);
 my $Tsft = 1800.0;
 my $dur = 40551300.0;
 my $skygrid = "/home/egoetz/TwoSpect/combinationEfficiency/skygrid.dat";
-my $skygrid2 = "/home/egoetz/TwoSpect/combinationEfficiency/skygrid_L1.dat";
+my $skygrid2 = "/home/egoetz/TwoSpect/combinationEfficiency/skygrid2.dat";
 for(my $ii=0; $ii<10; $ii++) {
    my $h0 = $h0ul*$h0fact[$ii];
    my $psi = sprintf("%.6f",0.5*pi*rand()-0.25*pi);
@@ -84,11 +84,11 @@ EOF
          if($best_dist<0.0) {
             $best_dist = $dist;
             $grid_alpha = $1;
-            $gird_delta = $2;
+            $grid_delta = $2;
          } elsif ($dist<$best_dist) {
             $best_dist = $dist;
             $grid_alpha = $1;
-            $gird_delta = $2;
+            $grid_delta = $2;
          }
       }
    }
@@ -184,11 +184,11 @@ EOF
          if($best_dist<0.0) {
             $best_dist = $dist;
             $grid_alpha = $1;
-            $gird_delta = $2;
+            $grid_delta = $2;
          } elsif ($dist<$best_dist) {
             $best_dist = $dist;
             $grid_alpha = $1;
-            $gird_delta = $2;
+            $grid_delta = $2;
          }
       }
    }

@@ -110,7 +110,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--approx)                      Specify a template approximant and phase order to use.\n\
                                                (default TaylorF2threePointFivePN). Available approximants:\n\
                                                default modeldomain=\"time\": GeneratePPN, TaylorT1, TaylorT2, TaylorT3, TaylorT4, \n\
-                                                                           EOB, EOBNR, EOBNRv2, EOBNRv2HM, SpinTaylor, \n\
+                                                                           EOB, EOBNR, EOBNRv2, EOBNRv2HM, SEOBNRv1, SpinTaylor, \n\
                                                                            SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4, \n\
                                                                            PhenSpinTaylorRD, NumRel.\n\
                                                default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin, \n\
@@ -471,6 +471,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     case EOBNR:
     case EOBNRv2:
     case EOBNRv2HM:
+    case SEOBNRv1:
     case SpinTaylor:
     case SpinTaylorT4:
     case SpinQuadTaylor:
@@ -1025,8 +1026,8 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     }
   }
 
-  /* Freq domain spinning templates */
-  if((approx==TaylorF2 || approx==TaylorF2RedSpin || approx==TaylorF2RedSpinTidal || approx==IMRPhenomB) && spinAligned){
+  /* Spin-aligned-only templates */
+  if((approx==TaylorF2 || approx==TaylorF2RedSpin || approx==TaylorF2RedSpinTidal || approx==IMRPhenomB || approx==SEOBNRv1) && spinAligned){
 
     a1min=-1.0;
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixA1");

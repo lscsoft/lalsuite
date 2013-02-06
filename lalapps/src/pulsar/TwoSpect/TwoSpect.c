@@ -2845,7 +2845,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
 
    //SFT input
-   if ((args_info.sftDir_given && args_info.sftFile_given) || !(args_info.sftDir_given && args_info.sftFile_given)) {
+   if ((args_info.sftDir_given && args_info.sftFile_given) || (!args_info.sftDir_given && !args_info.sftFile_given)) {
       fprintf(stderr, "%s: One of either sftDir or sftFile must be given but not both or neither.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    } else if (args_info.sftDir_given && !args_info.sftFile_given) {

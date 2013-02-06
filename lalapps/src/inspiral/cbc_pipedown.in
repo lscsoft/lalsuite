@@ -19,6 +19,7 @@ from glue.ligolw import utils
 from glue.ligolw.utils import process
 from glue import git_version
 import inspiral
+from lalapps import inspiralutils
 
 __prog__ = 'cbc_pipedown'
 __author__ = 'Collin Capano <cdcapano@physics.syr.edu>'
@@ -285,12 +286,33 @@ if cp.has_section('repop_coinc'):
       repopcp.set('repop_coinc', repopopt, repopval)
     repop_coinc_jobs.append( (repop_coinc_tag, inspiral.RepopCoincJob(repopcp)) )
 
+# ditto dbinjfind
+dbinjfind_jobs = []
+if cp.has_section('dbinjfind'):
+  for dbinjfind_tag in cp.options('dbinjfind'):
+    dbinjcp = copy.deepcopy(cp)
+    dbinjcp.remove_section('dbinjfind')
+    dbinjcp.add_section('dbinjfind')
+    for dbinjopt, dbinjval in cp.items(dbinjfind_tag):
+      dbinjcp.set('dbinjfind', dbinjopt, dbinjval)
+    dbinjfind_jobs.append( (dbinjfind_tag, inspiral.DBInjFindJob(dbinjcp)) )
+
+# ditto cluster_coincs
+cluster_coincs_jobs = []
+if cp.has_section('cluster_coincs'):
+  for cluster_coincs_tag in cp.options('cluster_coincs'):
+    clustercp = copy.deepcopy(cp)
+    clustercp.remove_section('cluster_coincs')
+    clustercp.add_section('cluster_coincs')
+    for clusteropt, clusterval in cp.items(cluster_coincs_tag):
+      clustercp.set('cluster_coincs', clusteropt, clusterval)
+    cluster_coincs_jobs.append( (cluster_coincs_tag, inspiral.ClusterCoincsJob(clustercp)) )
+
 # all other jobs: all the nodes share the same static options for these
 dbsimplify_job = inspiral.DBSimplifyJob(cp)
 dbaddinj_job = inspiral.DBAddInjJob(cp)
 injfind_job = inspiral.InjFindJob(cp)
 comp_durs_job = inspiral.ComputeDurationsJob(cp)
-cluster_job = inspiral.ClusterCoincsJob(cp)
 ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
 ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
 printlc_job = inspiral.LigolwCBCPrintJob(cp, 'printlc', ['cbc_print', 'printlc'])
@@ -298,11 +320,6 @@ plotifar_job = inspiral.PlotIfarJob(cp)
 search_volume_job = inspiral.SearchVolumeJob(cp)
 search_upper_limit_job = inspiral.SearchUpperLimitJob(cp)
 
-# MVSC jobs
-mvsc_get_doubles_job = inspiral.MvscGetDoublesJob(cp)
-mvsc_train_forest_job = inspiral.MvscTrainForestJob(cp)
-mvsc_use_forest_job = inspiral.MvscUseForestJob(cp)
-mvsc_update_sql_job = inspiral.MvscUpdateSqlJob(cp)
 
 # set submit file names
 t2c_job.set_sub_file( '.'.join([ basename, 'thinca_to_coinc', 'sub' ]) )
@@ -317,11 +334,10 @@ injfind_job.set_sub_file( '.'.join([ basename, 'injfind', 'sub' ]) )
 comp_durs_job.set_sub_file( '.'.join([ basename, 'compute_durations', 'sub' ]) )
 for repoptag, repopjob in repop_coinc_jobs:
   repopjob.set_sub_file( '.'.join([ basename, repoptag, 'repop_coinc', 'sub' ]) )
-cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', 'sub' ]) )
-mvsc_get_doubles_job.set_sub_file( '.'.join([ basename, 'mvsc_get_doubles', 'sub' ]) )
-mvsc_train_forest_job.set_sub_file( '.'.join([ basename, 'mvsc_train_forest', 'sub' ]) )
-mvsc_use_forest_job.set_sub_file( '.'.join([ basename, 'mvsc_use_forest', 'sub' ]) )
-mvsc_update_sql_job.set_sub_file( '.'.join([ basename, 'mvsc_update_sql', 'sub' ]) )
+for dbinjtag, dbinjjob in dbinjfind_jobs:
+  dbinjjob.set_sub_file( '.'.join([ basename, dbinjtag, 'dbinjfind', 'sub' ]) )
+for clustertag, clusterjob in cluster_coincs_jobs:
+  clusterjob.set_sub_file( '.'.join([ basename, clustertag, 'cluster_coincs', 'sub' ]) )
 ucfar_job.set_sub_file( '.'.join([ basename, 'uncombined', 'cfar', 'sub' ]) )
 ccfar_job.set_sub_file( '.'.join([ basename, 'combined', 'cfar', 'sub' ]) )
 printlc_job.set_sub_file( '.'.join([ basename, 'printlc', 'sub' ]) )
@@ -451,6 +467,7 @@ for tag in user_tags:
       if not simulation:
         slide_entry = lal.CacheEntry(re.sub(coinc_zero_lag_tag, coinc_slide_tag, str(entry)))
         this_cache.append(slide_entry)
+      
       # if n*20th entry or last remainder, write to cache
       if (entry_num + 1) % 20 == 0 or (entry_num + 1) == len(instrument_cache):
         # set duration to be end of this entry - start of first entry in cache
@@ -559,30 +576,37 @@ for tag in user_tags:
   #############################################################################
   # Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
   
-  print "\tsetting up cluster node to cluster coincs in the database..."
+  print "\tsetting up cluster nodes to cluster coincs in the database..."
   
   # set node options
-  cluster_node = inspiral.ClusterCoincsNode( cluster_job )
-  cluster_node.set_category('cluster_coincs')
-  cluster_node.set_tmp_space( tmp_space )
-  cluster_node.set_input( raw_result_db )
-  cluster_node.add_var_opt('time-column',time_column)
-  # output database name has form:
-  # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sqlite
-  db_type = tag + '_CLUSTERED_CBC_RESULTS'
-  result_db = '.'.join([
-    '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
-    'sqlite' ]) 
-  cluster_node.set_output(result_db)
+  # for the first clustering job, we want the input to be the raw_result_db,
+  # and in the odd case that someone doesn't want any clustering (bad idea!)
+  # the result_db is just the raw_result db
+  result_db = raw_result_db
+  for cluster_coincs_tag, cluster_coincs_job in cluster_coincs_jobs:
+      cluster_coincs_node = inspiral.ClusterCoincsNode( cluster_coincs_job )
+      cluster_coincs_node.set_category('cluster_coincs')
+      cluster_coincs_node.set_tmp_space( tmp_space )
+      cluster_coincs_node.set_input( result_db )
+      cluster_coincs_node.add_var_opt('time-column',time_column)
+      # output database name has form:
+      # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sqlite
+      db_type = tag + '_CLUSTERED_CBC_RESULTS'
+      result_db = '.'.join([
+        '-'.join([ distinct_ifos, db_type, experiment_start, experiment_duration ]),
+        'sqlite' ]) 
+      cluster_coincs_node.set_output(result_db)
   
-  # set parent node; this is the last repop coinc node (if there were any; 
-  # if not, the dbsimplify node)
-  cluster_node.add_parent( last_node )
-  
-  dag.add_node( cluster_node )
+      # set parent node; this is the last repop coinc node (if there were any; 
+      # if not, the dbsimplify node)
+      cluster_coincs_node.add_parent( last_node )
+
+      dag.add_node( cluster_coincs_node )
+      # update last node to be the last cluster_coincs node
+      last_node = cluster_coincs_node
 
   # add to list of parents for veto2sql nodes
-  cluster_nodes[tag] = cluster_node
+  cluster_nodes[tag] = last_node
   
   ############################################################################
   # Do additional jobs for injection tags
@@ -598,7 +622,7 @@ for tag in user_tags:
     dbaddinj_node.set_database( result_db )
     dbaddinj_node.set_injection_file( inj_file )
   
-    dbaddinj_node.add_parent( cluster_node )
+    dbaddinj_node.add_parent( last_node )
   
     dag.add_node( dbaddinj_node )
 
@@ -711,6 +735,27 @@ for result_db in result_dbs_cache:
     dbsimplify2_node.add_parent( sim2fulldb_node )
     dag.add_node( dbsimplify2_node )
 
+    print "\tsetting up dbinjfind node to add exact/nearby definitions..."
+
+    # set dbinjfind node options
+    last_node = dbsimplify2_node
+    for dbinjfind_tag, dbinjfind_job in dbinjfind_jobs:
+        dbinjfind_node = inspiral.DBInjFindNode( dbinjfind_job )
+        dbinjfind_node.set_category('dbinjfind')
+        dbinjfind_node.set_tmp_space( tmp_space )
+        dbinjfind_node.set_input( result_db.path() )
+        dbinjfind_node.set_output( result_db.path() )
+
+        # set parent node
+        dbinjfind_node.add_parent( last_node )
+
+        dag.add_node( dbinjfind_node )
+        # update last node to be the last dbinjfind node
+        last_node = dbinjfind_node
+
+  else:
+    last_node = cluster_nodes[tag]
+
   ############################################################################
   # Setup a LigolwSqliteNode for putting the veto-segments file into the
   # database 
@@ -723,9 +768,7 @@ for result_db in result_dbs_cache:
   veto2sql_node.set_database( result_db.path() )
   
   # set parent node
-  veto2sql_node.add_parent( cluster_nodes[tag] )
-  if 'FULL_DATA' in tag and veto_cat in sim_caches:
-    veto2sql_node.add_parent( dbsimplify2_node )
+  veto2sql_node.add_parent( last_node )
   
   dag.add_node( veto2sql_node )
   
@@ -749,72 +792,21 @@ for result_db in result_dbs_cache:
   # MVSC Calculation
 
   if 'FULL_DATA' in tag and veto_cat in sim_caches:
-    print "\tsetting up MVSC nodes..."
-    rank_nodes = []
-    zl_rank_nodes = []
-    info_pat_files = []
-    dat_files = []
-
-    # loop over pairs of detectors
-    for comb in list(iterutils.choices(list(instruments), 2)):
-      comb = ','.join(comb)
-
-      # mvsc_get_doubles_node
-      mvsc_get_doubles_node = inspiral.MvscGetDoublesNode( mvsc_get_doubles_job )
-      mvsc_get_doubles_node.set_instruments( comb )
-      mvsc_get_doubles_node.set_databases( [result_db.path()] )
-      mvsc_get_doubles_node.set_trainingstr( tag + "_training" )
-      mvsc_get_doubles_node.set_testingstr( tag + "_testing" )
-      mvsc_get_doubles_node.set_zerolagstr( tag + "_zerolag" )
-      mvsc_get_doubles_node.add_parent( comp_durs_node )
-      mvsc_get_doubles_node.finalize()
-      dag.add_node( mvsc_get_doubles_node )
-      for file in mvsc_get_doubles_node.get_output_files():
-        if file.endswith('_info.pat'): info_pat_files.append(file)
-
-      # loop over round robin
-      mvsc_train_forest_nodes = []
-      for i in range(mvsc_get_doubles_node.number):
-        file_for_this_set = mvsc_get_doubles_node.out_file_group[i]
-
-        # mvsc_train_forest_node
-        mvsc_train_forest_node = inspiral.MvscTrainForestNode( mvsc_train_forest_job )
-        mvsc_train_forest_node.add_training_file( file_for_this_set[0] )
-        mvsc_train_forest_node.add_parent( mvsc_get_doubles_node )
-        mvsc_train_forest_node.finalize()
-        dag.add_node( mvsc_train_forest_node )
-        mvsc_train_forest_nodes.append( mvsc_train_forest_node )
-
-        # mvsc_use_forest_node
-        rank_node = inspiral.MvscUseForestNode( mvsc_use_forest_job )
-        rank_node.set_trained_file( mvsc_train_forest_nodes[i].trainedforest )
-        rank_node.set_file_to_rank( file_for_this_set[1] )
-        rank_node.add_parent( mvsc_train_forest_node )
-        rank_node.finalize()
-        dag.add_node( rank_node )
-        rank_nodes.append( rank_node )
-
-        dat_files.extend( rank_node.get_output_files() )
-      # finish loop over round robin
-
-      # mvsc_use_forest_node for zerolag
-      zl_rank_node = inspiral.MvscUseForestNode( mvsc_use_forest_job )
-      zl_rank_node.set_trained_file( mvsc_train_forest_nodes[0].trainedforest )
-      zl_rank_node.set_file_to_rank( mvsc_get_doubles_node.zerolag_file[0] )
-      zl_rank_node.add_parent( mvsc_train_forest_nodes[0] )
-      zl_rank_node.finalize()
-      dag.add_node( zl_rank_node )
-      zl_rank_nodes.append( zl_rank_node )
-
-      dat_files.extend( zl_rank_node.get_output_files() )
-    # finish loop over pairs of detectors
-
-    mvsc_update_sql_node = inspiral.MvscUpdateSqlNode( mvsc_update_sql_job )
-    for inputfile in [result_db.path()] + info_pat_files + dat_files:
-      mvsc_update_sql_node.add_var_arg( inputfile )
-    for p_node in zl_rank_nodes + rank_nodes:
-      mvsc_update_sql_node.add_parent( p_node )
-    dag.add_node( mvsc_update_sql_node )
+    print "\tsetting up MVSC dag..."
+    mvsc_dag_name = options.config_file.replace('.ini','')+'_mvsc_'+tag+'_n'+cp.get("mvsc_dag","number-of-trees")+'_l'+cp.get("mvsc_dag","leaf-size")+'_s'+cp.get("mvsc_dag","sampled-parameters")+'_c'+cp.get("mvsc_dag","criterion-for-optimization")+'.dag'
+    mvsc_dag_generator_job = inspiral.MVSCDagGenerationJob(cp)
+    for key,val in cp.items("mvsc_dag"):
+      mvsc_dag_generator_job.add_opt(key,val)
+    mvsc_dag_generator_job.add_opt("ini-file", options.config_file)
+    mvsc_dag_generator_node = inspiral.MVSCDagGenerationNode(mvsc_dag_generator_job)
+    mvsc_dag_generator_node.set_user_tag(tag)
+    mvsc_dag_generator_node.set_database(result_db.path())
+    mvsc_dag_generator_node.add_parent(comp_durs_node)
+    dag.add_node(mvsc_dag_generator_node)
+    mvsc_dag_job = pipeline.CondorDAGManJob(mvsc_dag_name, os.getcwd(), None)
+    mvsc_dag_node = pipeline.CondorDAGManNode(mvsc_dag_job)
+    mvsc_dag_node.add_parent(mvsc_dag_generator_node)
+    dag.add_node(mvsc_dag_node)
 
   ############################################################################
   # Compute the uncombined false alarm rates
@@ -832,7 +824,7 @@ for result_db in result_dbs_cache:
   # set parent node
   ucfar_node.add_parent( comp_durs_node )
   if 'FULL_DATA' in tag and veto_cat in sim_caches:
-    ucfar_node.add_parent( mvsc_update_sql_node )
+    ucfar_node.add_parent( mvsc_dag_node )
   
   dag.add_node( ucfar_node )
   

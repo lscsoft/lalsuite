@@ -111,7 +111,7 @@ def get_sngl_burst(cwb_event, ifo,
         sb.search = u"waveburst"
 
     if "snr" in columns:
-        sb.snr = list(cwb_event.rho)[ifo_idx]
+        sb.snr = list(cwb_event.snr)[ifo_idx]**(1./2.)
     if "confidence" in columns:
         sb.confidence = cwb_event.likelihood
     

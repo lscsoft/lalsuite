@@ -2887,6 +2887,31 @@ class RepopCoincNode(pipeline.SqliteNode):
     pipeline.SqliteNode.__init__(self, job)
 
 
+class DBInjFindJob(pipeline.SqliteJob):
+  """
+  A dbinjfind job. The static options are read from the section
+  [dbinjfind] in the ini file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """  
+    exec_name = 'dbinjfind'
+    sections = ['dbinjfind']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+
+class DBInjFindNode(pipeline.SqliteNode):
+  """
+  A dbinjfind node.
+  """
+  def __init__(self, job):
+    """
+    @job: a DBInjFindJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+
+
 class ClusterCoincsJob(pipeline.SqliteJob):
   """
   A cluster coincs job. The static options are read from the section
@@ -3257,247 +3282,6 @@ class PlotFMNode(pipeline.SqliteNode):
     """
     return self.__sim_tag
 
-
-    
-#############################################################################
-class MvscGetDoublesJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
-  """
-  A mvsc_get_doubles job
-  """
-  def __init__(self, cp, dax = False):
-    """
-    cp: ConfigParser object from which options are read.
-    """
-    exec_name = "mvsc_get_doubles"
-    universe = "vanilla"
-    executable = cp.get('condor',exec_name)
-    pipeline.CondorDAGJob.__init__(self, universe, executable)
-    pipeline.AnalysisJob.__init__(self, cp, dax)
-    self.add_condor_cmd('getenv','True')
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
-    self.set_sub_file(exec_name + '.sub')
-
-class MvscGetDoublesNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
-  """
-  node for mvsc_get_doubles jobs
-  """
-  def __init__(self, job):
-    """
-    job: instance of MvscGetDoublesJob
-    """
-    pipeline.CondorDAGNode.__init__(self, job)
-    pipeline.AnalysisNode.__init__(self)
-    self.number = 10
-    self.instruments = None
-    self.trainingstr = "training"
-    self.testingstr = "testing"
-    self.zerolagstr = "zerolag"
-    self.databases = None
-    self.final = 0
-
-  def set_number(self, number):
-    """
-    number: number of round robins to perform
-    """
-    self.number = number
-
-  def set_instruments(self, instruments):
-    """
-    instruments: comma deliminated string of intruments to analyze
-    """
-    self.instruments = instruments
-
-  def set_trainingstr(self, trainingstr):
-    """
-    trainingstr: string to use in naming training files
-    """
-    self.trainingstr = trainingstr
-
-  def set_testingstr(self, testingstr):
-    """
-    testingstr: string to use in naming testing files
-    """
-    self.testingstr = testingstr
-
-  def set_zerolagstr(self, zerolagstr):
-    """
-    zerolagstr: string to use in naming zerolag files
-    """
-    self.zerolagstr = zerolagstr
-
-  def set_databases(self, databases):
-    """
-    databases: list of databases to work on
-    """
-    self.databases = databases
-
-  def finalize(self):
-    """
-    finalize the mvsc_get_doubles node
-    """
-    if self.final:
-      return
-    self.final = 1
-    self.add_var_opt("instruments", self.instruments)
-    self.add_var_opt("trainingstr", self.trainingstr)
-    self.add_var_opt("testingstr", self.testingstr)
-    self.add_var_opt("zerolagstr", self.zerolagstr)
-    for database in self.databases:
-      self.add_file_arg(database)
-    ifos = self.instruments.strip().split(',')
-    ifos.sort()
-    self.out_file_group = {}
-    for i in range(self.number):
-      trainingname = ''.join(ifos) + '_set' + str(i) + '_' + str(self.trainingstr) + '.pat'
-      testingname = ''.join(ifos) + '_set' + str(i) + '_' + str(self.testingstr) + '.pat'
-      infoname = ''.join(ifos) + '_set' + str(i) + '_' + str(self.testingstr) + '_info.pat'
-      sprname = trainingname.replace('_training.pat', '.spr')
-      self.out_file_group[i] = ((trainingname), (testingname))
-      self.add_output_file(trainingname)
-      self.add_output_file(testingname)
-      self.add_output_file(infoname)
-      self.add_output_file(sprname)
-    self.zerolag_file = [''.join(ifos) + '_' + str(self.zerolagstr) + '.pat']
-    self.add_output_file(''.join(ifos) + '_' + str(self.zerolagstr) + '.pat')
-    self.add_output_file(''.join(ifos) + '_' + str(self.zerolagstr) + '_info.pat')
-
-class MvscTrainForestJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
-  """
-  A mvsc_train_forest job
-  """
-  def __init__(self, cp, dax = False):
-    """
-    cp: ConfigParser object from which options are read.
-    """
-    exec_name = "mvsc_train_forest"
-    universe = "vanilla"
-    executable = cp.get('condor',exec_name)
-    pipeline.CondorDAGJob.__init__(self, universe, executable)
-    pipeline.AnalysisJob.__init__(self, cp, dax)
-    self.add_condor_cmd('getenv','True')
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
-    self.set_sub_file(exec_name + '.sub')
-
-class MvscTrainForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
-  """
-  node for MvscTrainForestJobs
-  """
-  def __init__(self, job):
-    """
-    job: instance of MvscTrainForestJob
-    """
-    pipeline.CondorDAGNode.__init__(self, job)
-    pipeline.AnalysisNode.__init__(self)
-    self.final = 0
-
-  def add_training_file(self, trainingfile):
-    """
-    trainingfile: take a single file to train with
-    """
-    self.trainingfile = trainingfile
-    self.add_input_file(self.trainingfile)
-
-  def finalize(self):
-    """
-    finalize the mvsc_train_forest node
-    """
-    if self.final:
-      return
-    self.final = 1
-    self.trainedforest = self.trainingfile.replace('_training.pat','.spr')
-    self.add_file_arg("-a 4 -n 500 -l 4 -s 4 -c 6 -g 1 -i -d 1 -f %s %s" % (self.trainedforest, self.trainingfile))
-    self.add_output_file(self.trainedforest)
-
-class MvscUseForestJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
-  """
-  a mvsc_use_forest job
-  """
-  def __init__(self, cp, dax = False):
-    """
-    cp: ConfigParser object from which options are read.
-    """
-    exec_name = "mvsc_use_forest"
-    universe = "vanilla"
-    executable = cp.get('condor',exec_name)
-    pipeline.CondorDAGJob.__init__(self, universe, executable)
-    pipeline.AnalysisJob.__init__(self, cp, dax)
-    self.add_condor_cmd('getenv','True')
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
-    self.set_sub_file(exec_name + '.sub')
-
-class MvscUseForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
-  """
-  node for MvscUseForestJobs
-  """
-  def __init__(self, job):
-    """
-    job: instance of MvscUseForestJob
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.final = 0
-
-  def set_trained_file(self, trainedforest):
-    """
-    trainedforest: the trained forest file
-    """
-    self.trainedforest = trainedforest
-    self.add_input_file(trainedforest)
-
-  def set_file_to_rank(self, file_to_rank):
-    """
-    file_to_rank: the file to rank using the trained forest file
-    """
-    self.file_to_rank = file_to_rank
-    self.add_input_file(file_to_rank)
-
-  def finalize(self):
-    """
-    finalize the MvscUseForestNode
-    """
-    if self.final:
-      return
-    self.final = 1
-    self.ranked_file = self.file_to_rank.replace('.pat','.dat')
-    self.add_file_arg("-A -a 4 %s %s %s" % (self.trainedforest, self.file_to_rank, self.ranked_file))
-    self.add_output_file(self.ranked_file)
-
-class MvscUpdateSqlJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
-  """
-  A mvsc_update_sql job
-  """
-  def __init__(self, cp, dax = False):
-    """
-    cp: ConfigParser object from which options are read.
-    """
-    exec_name = "mvsc_update_sql"
-    universe = "vanilla"
-    executable = cp.get('condor',exec_name)
-    pipeline.CondorDAGJob.__init__(self, universe, executable)
-    pipeline.AnalysisJob.__init__(self, cp, dax)
-    self.add_condor_cmd('getenv','True')
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
-    self.set_sub_file(exec_name + '.sub')
-
-class MvscUpdateSqlNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
-  """
-  node for MvscUpdateSqlJobs
-  """
-  def __init__(self, job):
-    """
-    job: instance of MvscUpdateSqlJob
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-
 ##############################################################################
 # some functions to make life easier later
 
@@ -3603,3 +3387,38 @@ class SearchUpperLimitNode(pipeline.SqliteNode):
       self.open_box = True
       self.add_var_arg("--open-box")
 
+class MVSCDagGenerationJob(InspiralAnalysisJob):
+  """
+  a job that generatest the mvsc_dag, which will be run as an external subdag
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = "mvsc_dag"
+    universe = "vanilla"
+    sections = "[mvsc_dag]"
+    executable = cp.get('condor',exec_name)
+    pipeline.CondorDAGJob.__init__(self, universe, executable)
+    pipeline.AnalysisJob.__init__(self, cp, dax)
+    self.add_condor_cmd('getenv','True')
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+    self.set_sub_file(exec_name + '.sub')
+
+class MVSCDagGenerationNode(InspiralAnalysisNode):
+  """
+  the node that runs the mvsc dag generation script
+  """
+  def __init__(self, job):
+    """
+    @job: A HWinjPageJob.
+    """
+    InspiralAnalysisNode.__init__(self, job)
+  def set_database(self, database):
+    """
+    Sets the extract-to-xml option.
+    """
+    self.add_var_arg(database)
+  def set_user_tag(self, tag):
+    self.add_var_opt("user-tag",tag)

@@ -49,7 +49,7 @@ extern "C" {
 #include <lal/SkyCoordinates.h>
 #include <lal/RngMedBias.h>
 #include <lal/LALRunningMedian.h>
-
+#include <lal/Segments.h>
 
 /*---------- DEFINES ----------*/
 
@@ -231,6 +231,7 @@ void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weight
 				   UINT4 blocksRngMed, UINT4 excludePercentile);
 void LALDestroyMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weights);
 
+LALSegList *XLALReadSegmentsFromFile ( const char *fname );
 
 /* ============================================================
  * ===== deprecated LAL interface API ==========
