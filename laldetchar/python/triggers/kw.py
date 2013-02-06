@@ -26,7 +26,7 @@ import re
 import bisect
 
 from socket import getfqdn
-from lal import (LIGOTimeGPS, lalStrainUnit)
+from lal.lal import (LIGOTimeGPS, lalStrainUnit)
 
 from glue import segments
 from glue.lal import (Cache, CacheEntry)
