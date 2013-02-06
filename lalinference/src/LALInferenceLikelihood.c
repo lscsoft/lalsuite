@@ -166,7 +166,7 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
   gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
   gsl_matrix *nparams = NULL;//pointer to matrix holding noise parameters
-  double dflog;        //logarithmic spacing of psd parameters
+  double dflog=1.0;        //logarithmic spacing of psd parameters
 
   int Nblock = 1;            //number of frequency blocks per IFO
   int Nlines = 1;            //number of lines to be removed
