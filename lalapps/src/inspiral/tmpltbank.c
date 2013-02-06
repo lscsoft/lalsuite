@@ -73,6 +73,7 @@
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALFrameL.h>
+#include <lal/LALSimNoise.h>
 
 #include <LALAppsVCSInfo.h>
 
@@ -101,8 +102,10 @@ enum
   specType_mean,
   specType_median,
   specType_gaussian,
-  specType_LIGO,
-  specType_AdvLIGO,
+  specType_iLIGO,
+  specType_eLIGO,
+  specType_oldAdvLIGO,
+  specType_aLIGOZDHP,
   specType_undefined
 } specType = specType_undefined;
 
@@ -114,7 +117,7 @@ enum
 
 
 /* debugging */
-extern int vrbflg;                      /* verbocity of lal function    */
+extern int vrbflg;                      /* verbosity of lal function    */
 
 /* parameters used to generate calibrated power spectrum */
 LIGOTimeGPS gpsStartTime = { 0, 0 };    /* input data GPS start time    */
@@ -181,7 +184,7 @@ GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
 int     polygonFit      = 1;            /* fit a polygon around BCV bank */
 
 /* generic simulation parameters */
-INT4  unitResponse      = 0;            /* set the response to unity    */
+INT4    simPSD          = 0;            /* using a simulated PSD        */
 
 /* standard candle parameters */
 INT4    computeCandle = 0;              /* should we compute a candle?  */
@@ -199,7 +202,7 @@ CHAR  *ifoTag           = NULL;
 int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeResponse    = 0;            /* write response function used */
 int    writeSpectrum    = 0;            /* write computed psd to file   */
-int    writeStrainSpec  = 0;            /* write computed stain spec    */
+int    writeStrainSpec  = 0;            /* write computed strain spec   */
 INT4   outCompress      = 0;
 
 /* other command line args */
@@ -531,7 +534,7 @@ int main ( int argc, char *argv[] )
     }
   }
 
-  /* determine the number of points to get and create storage forr the data */
+  /* determine the number of points to get and create storage for the data */
   inputLengthNS = (REAL8) ( LAL_INT8_C(1000000000) *
       ( gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds + 2 * padData ) );
   chan.deltaT *= 1.0e9;
@@ -733,9 +736,10 @@ int main ( int argc, char *argv[] )
       avgSpecParams.method = useMedian;
       if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
-    case specType_gaussian:
-    case specType_LIGO:
-    case specType_AdvLIGO:
+    case specType_iLIGO:
+    case specType_eLIGO:
+    case specType_oldAdvLIGO:
+    case specType_aLIGOZDHP:
       avgSpecParams.method = useUnity;
       if ( vrbflg ) fprintf( stdout, "computing constant psd with unit value" );
       break;
@@ -754,31 +758,50 @@ int main ( int argc, char *argv[] )
   XLALDestroyREAL4Window( avgSpecParams.window );
   LAL_CALL( LALDestroyRealFFTPlan( &status, &(avgSpecParams.plan) ), &status );
 
-  if ( specType == specType_LIGO )
+  if ( specType == specType_iLIGO )
   {
     /* replace the spectrum with the Initial LIGO design noise curve */
     for ( k = 0; k < spec.data->length; ++k )
     {
       REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      REAL8 sim_psd_value;
-      LALLIGOIPsd( NULL, &sim_psd_value, sim_psd_freq );
-      spec.data->data[k] = 9.0e-46 * sim_psd_value;
+      spec.data->data[k] = (REAL4) (dynRange * 
+                     dynRange * XLALSimNoisePSDiLIGOSRD( sim_psd_freq ));
     }
-
     if ( vrbflg ) fprintf( stdout, "set psd to Initial LIGO design\n" );
   }
-  else if ( specType == specType_AdvLIGO )
+  else if ( specType == specType_eLIGO )
   {
-    /* replace the spectrum with the Advanced LIGO design noise curve */
+    /* replace the spectrum with the enhanced LIGO model noise curve */
+    for ( k = 0; k < spec.data->length; ++k )
+    {
+      REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
+      spec.data->data[k] = (REAL4) (dynRange * 
+                     dynRange * XLALSimNoisePSDeLIGOModel( sim_psd_freq ));
+    }
+    if ( vrbflg ) fprintf( stdout, "set psd to enhanced LIGO model curve\n" );
+  }
+  else if ( specType == specType_aLIGOZDHP )
+  {
+    /* replace the spectrum with the enhanced LIGO model noise curve */
+    for ( k = 0; k < spec.data->length; ++k )
+    {
+      REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
+      spec.data->data[k] = (REAL4) (dynRange * 
+                     dynRange * XLALSimNoisePSDaLIGOZeroDetHighPower( sim_psd_freq ));
+    }
+    if ( vrbflg ) fprintf( stdout, "set psd to advanced LIGO ZDHP design\n" );
+  }
+  else if ( specType == specType_oldAdvLIGO )
+  {
+    /* replace the spectrum with Sathya's old Advanced LIGO fit noise curve */
     for ( k = 0; k < spec.data->length; ++k )
     {
       REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
       REAL8 sim_psd_value;
       LALAdvLIGOPsd( NULL, &sim_psd_value, sim_psd_freq );
-      spec.data->data[k] = 9.0e-46 * sim_psd_value;
+      spec.data->data[k] = (REAL4) (dynRange * dynRange * 1.0e-49 * sim_psd_value);
     }
-
-    if ( vrbflg ) fprintf( stdout, "set psd to Advanced LIGO design\n" );
+    if ( vrbflg ) fprintf( stdout, "set psd to old Advanced LIGO fit\n" );
   }
 
   /* write the spectrum data to a file */
@@ -794,9 +817,10 @@ int main ( int argc, char *argv[] )
   resp.f0 = spec.f0;
   resp.sampleUnits = strainPerCount;
 
-  if ( calData )
+  if ( calData || simPSD )
   {
-    /* if we are using calibrated data set the response to unity */
+    /* if we are using calibrated data or a design PSD set the response to unity */
+    /* i.e. 1 over the dynamic range scaling factor */
     if ( vrbflg ) fprintf( stdout, "generating unity response function\n" );
     for( k = 0; k < resp.data->length; ++k )
     {
@@ -866,20 +890,6 @@ int main ( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "Values of calibration coefficients \n"
         "alpha = %f, alpha_beta = %f\n",
         calfacts.alpha.re, calfacts.alphabeta.re );
-  }
-
-
-  if ( unitResponse )
-  {
-    /* replace the response function with unity if */
-    /* we are filtering gaussian noise             */
-    if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
-    for ( k = 0; k < resp.data->length; ++k )
-    {
-      resp.data->data[k].re = 1.0;
-      resp.data->data[k].im = 0;
-    }
-    if ( vrbflg ) fprintf( stdout, "done\n" );
   }
 
   /* write the calibration data to a file */
@@ -1329,7 +1339,8 @@ fprintf(a, "  --disable-high-pass          turn off the IIR highpass filter\n");
 fprintf(a, "  --enable-high-pass F         high pass data above F Hz using an IIR filter\n");\
 fprintf(a, "  --high-pass-order O          set the order of the high pass filter to O\n");\
 fprintf(a, "  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n");\
-fprintf(a, "  --spectrum-type TYPE         use PSD estimator TYPE (mean|median|LIGO|AdvLIGO)\n");\
+fprintf(a, "  --spectrum-type TYPE         use PSD estimator TYPE (mean|median|iLIGOModel|eLIGOModel|oldAdvLIGO|aLIGOZDHP)\n");\
+fprintf(a, "                                 {i,e}LIGOModel and aLIGOZDHP from LALSimNoise, oldAdvLIGO from LALNoiseModels\n");\
 fprintf(a, "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --segment-length N           set data segment length to N points\n");\
@@ -1761,23 +1772,39 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           specType = specType_gaussian;
           fprintf( stderr,
               "WARNING: replacing psd with white gaussian spectrum\n"
-               "WARNING: option not currently available\n" );
+              "ERROR: option not currently available, exiting...\n" );
                exit(0);
         }
-        else if ( ! strcmp( "LIGO", optarg ) )
+        else if ( ! strcmp( "iLIGOModel", optarg ) )
         {
-          specType = specType_LIGO;
-          unitResponse = 1;
+          specType = specType_iLIGO;
+          simPSD = 1;
           fprintf( stderr,
-              "WARNING: replacing psd with Initial LIGO design spectrum\n"
+              "WARNING: replacing psd with initial LIGO design spectrum\n"
               "WARNING: replacing response function with unity\n" );
         }
-        else if ( ! strcmp( "AdvLIGO", optarg ) )
+        else if ( ! strcmp( "eLIGOModel", optarg ) )
         {
-          specType = specType_AdvLIGO;
-          unitResponse = 1;
+          specType = specType_eLIGO;
+          simPSD = 1;
           fprintf( stderr,
-              "WARNING: replacing psd with Advanced LIGO design spectrum\n"
+              "WARNING: replacing psd with enhanced LIGO model spectrum\n"
+              "WARNING: replacing response function with unity\n" );
+        }
+        else if ( ! strcmp( "oldAdvLIGO", optarg ) )
+        {
+          specType = specType_oldAdvLIGO;
+          simPSD = 1;
+          fprintf( stderr,
+              "WARNING: replacing psd with Sathya's old Advanced LIGO fit spectrum\n"
+              "WARNING: replacing response function with unity\n" );
+        }
+        else if ( ! strcmp( "aLIGOZDHP", optarg ) )
+        {
+          specType = specType_aLIGOZDHP;
+          simPSD = 1;
+          fprintf( stderr,
+              "WARNING: replacing psd with advanced LIGO ZDHP model spectrum\n"
               "WARNING: replacing response function with unity\n" );
         }
         else
@@ -2816,6 +2843,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( specType == specType_undefined )
   {
     fprintf( stderr, "--spectrum-type must be specified\n" );
+    exit( 1 );
+  }
+
+  /* check for potential underflows in the simulated spectrum */
+  if ( simPSD == 1 && dynRangeExponent < 10 )
+  { 
+    fprintf( stderr, "If using a simulated PSD, a suitable dynamic \n" );
+    fprintf( stderr, "range exponent must be given, eg 69.0. Exiting...\n" );
     exit( 1 );
   }
 
