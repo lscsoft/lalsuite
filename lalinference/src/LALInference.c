@@ -651,21 +651,28 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
 int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params) {
   LALInferenceVariableItem *head = params->head;
 
-  int i;
+  int i,j;
   gsl_matrix *matrix = NULL;
 
   while (head != NULL) {
     if (head->vary != LALINFERENCE_PARAM_FIXED) {
       if(!strcmp(head->name,"psdscale"))
       {
+        /*
         fprintf(stdout,"\n");
         fprintf(stdout,"Skipping noise parameters in output files\n");
         fprintf(stdout,"   edit LALInferenceFprintParameterNonFixedHeaders()\n");
         fprintf(stdout,"   and LALInferencePrintSampleNonFixed() to modify\n");
-        /*
-        matrix = *((gsl_matrix **)head->value);
-        for(i=0; i<(int)matrix->size1; i++) fprintf(out, "%s%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i);
          */
+        
+        matrix = *((gsl_matrix **)head->value);
+        for(i=0; i<(int)matrix->size1; i++)
+        {
+          for(j=0; j<(int)matrix->size2; j++)
+          {
+            fprintf(out, "%s%i%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i,j);
+          }
+        }
       }
       else fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
     }
