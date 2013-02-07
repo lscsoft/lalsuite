@@ -45,41 +45,18 @@ extern "C" {
 #include <lal/AVFactories.h>
 #include <lal/LogPrintf.h>
 #include <lal/SFTutils.h>
-
+#include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
 
 /* ---------- exported API defines ---------- */
 
 #define DAY24 (24 * 3600)	/* standard 24h day = 86400 seconds ==> this is what's used in the definition of 'tauDays' */
 
-/** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
-typedef enum {
-  TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
-                                 * i.e. a simple rectangular window covering all the data => this should always reproduce the
-                                 * standard F-statistic computation.
-                                 */
-
-  TRANSIENT_RECTANGULAR = 1,	/**< standard rectangular window covering [t0, t0+tau] */
-
-  TRANSIENT_EXPONENTIAL,	/**< exponentially decaying window e^{-t0/tau} starting at t0.
-                                 * Note: we'll truncate this at some small (eg 3x) e-folding TRANSIENT_EXP_EFOLDING
-                                 */
-  TRANSIENT_LAST
-} transientWindowType_t;
-
 #define TRANSIENT_EXP_EFOLDING	3.0      /**< e-folding parameter for exponential window, after which we truncate
                                           * the window for efficiency. 3 e-foldings means we lose only
                                           * about e^(-2x3) ~1e-8 of signal power! */
 
 /* ---------- exported API types ---------- */
-
-/** Struct defining one transient window instance */
-typedef struct tagtransientWindow_t
-{
-  transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
-  UINT4 t0;			/**< GPS start-time 't0' */
-  UINT4 tau;			/**< transient timescale tau in seconds */
-} transientWindow_t;
 
 /** Struct defining a range of transient windows */
 typedef struct tagtransientWindowRange_t

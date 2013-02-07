@@ -103,10 +103,34 @@ typedef struct tagPulsarDopplerParams {
   UINT4 numFreqBins;	/**< if used for a frequency band: number of frequency bins */
 } PulsarDopplerParams;
 
-/** Type defining the parameters of a pulsar-source of Gravitational waves */
+// ---------- transient-CW related types ----------
+/** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
+typedef enum {
+  TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
+                                 * i.e. a simple rectangular window covering all the data => this should always reproduce the
+                                 * standard F-statistic computation. */
+  TRANSIENT_RECTANGULAR = 1,	/**< standard rectangular window covering [t0, t0+tau] */
+  TRANSIENT_EXPONENTIAL,	/**< exponentially decaying window e^{-t0/tau} starting at t0.
+                                 * Note: we'll truncate this at some small (eg 3x) e-folding TRANSIENT_EXP_EFOLDING */
+  TRANSIENT_LAST
+} transientWindowType_t;
+
+/** Struct defining one transient window instance */
+typedef struct tagtransientWindow_t
+{
+  transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
+  UINT4 t0;			/**< GPS start-time 't0' */
+  UINT4 tau;			/**< transient timescale tau in seconds */
+} transientWindow_t;
+
+
+// ---------- 'integrated' types describing a complete CW signal ----------
+
+/** Type defining the parameters of a pulsar-source of CW Gravitational waves */
 typedef struct tagPulsarParams {
-  PulsarAmplitudeParams Amp;	/**< 'Amplitude-parameters': h0, cosi, phi0, psi */
-  PulsarDopplerParams Doppler;	/**< 'Doppler-parameters': {skypos, fkdot, orbital params } */
+  PulsarAmplitudeParams Amp;		/**< 'Amplitude-parameters': h0, cosi, phi0, psi */
+  PulsarDopplerParams   Doppler;	/**< 'Doppler-parameters': {skypos, fkdot, orbital params } */
+  transientWindow_t     Transient;	/**< Transient window-parameters (start-time, duration, window-type) */
 } PulsarParams;
 
 /** Type containing a "candidate": parameter-space point with estimated errors and Fstat-value/significance */
