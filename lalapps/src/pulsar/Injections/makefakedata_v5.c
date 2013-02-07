@@ -71,6 +71,7 @@
 typedef struct
 {
   PulsarParams pulsar;		/**< pulsar signal-parameters (amplitude + doppler */
+
   EphemerisData *edat;		/**< ephemeris-data */
   LALDetector site;  		/**< detector-site info */
 
@@ -78,8 +79,6 @@ typedef struct
   UINT4 duration;		/**< total duration of observation in seconds */
 
   LIGOTimeGPSVector *timestamps;/**< a vector of timestamps to generate time-series/SFTs for */
-
-  REAL8Vector *spindown;	/**< vector of frequency-derivatives of GW signal */
 
   SFTCatalog *noiseCatalog;/**< catalog of noise-SFTs to be added to signal */
 
@@ -503,7 +502,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   /* ---------- prepare vector of spindown parameters ---------- */
   {
-    UINT4 msp = 0;	/* number of spindown-parameters */
     if ( have_parfile )
       {
 	uvar->f1dot = 2.*pulparams.f1;
@@ -513,31 +511,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     cfg->pulsar.Doppler.fkdot[1] = uvar->f1dot;
     cfg->pulsar.Doppler.fkdot[2] = uvar->f2dot;
     cfg->pulsar.Doppler.fkdot[3] = uvar->f3dot;
-
-    if (uvar->f3dot != 0) 	msp = 3;	/* counter number of spindowns */
-    else if (uvar->f2dot != 0)	msp = 2;
-    else if (uvar->f1dot != 0)	msp = 1;
-    else 			msp = 0;
-    if (msp)
-      {
-        /* memory not initialized, but ALL alloc'ed entries will be set below! */
-        cfg->spindown = XLALCreateREAL8Vector ( msp );
-        XLAL_CHECK ( cfg->spindown != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %d ) failed.\n", msp );
-      }
-    switch (msp)
-      {
-      case 3:
-	cfg->spindown->data[2] = uvar->f3dot;
-      case 2:
-	cfg->spindown->data[1] = uvar->f2dot;
-      case 1:
-	cfg->spindown->data[0] = uvar->f1dot;
-	break;
-      case 0:
-	break;
-      default:
-	XLAL_ERROR ( XLAL_EINVAL, "\nmsp = %d makes no sense to me...\n\n", msp);
-      } /* switch(msp) */
 
   } /* END: prepare spindown parameters */
 
@@ -1006,9 +979,6 @@ XLALFreeMem ( ConfigVars_t *cfg )
   /* free timestamps if any */
   XLALDestroyTimestampVector ( cfg->timestamps );
 
-  /* free spindown-vector (REAL8) */
-  XLALDestroyREAL8Vector ( cfg->spindown );
-
   XLALFree ( cfg->pulsar.Doppler.orbit );
 
   /* free transfer-function if we have one.. */
@@ -1218,7 +1188,9 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
 
   REAL8 fBand_eff = (numBins - 1) * dFreq;
 
-  XLALPrintWarning("Asked for Band [%.16g, %.16g] Hz, effective Band produced is [%.16g, %.16g] Hz (numSFTBins=%d)\n", fMin, fMax, fmin_eff, fmax_eff, numBins);
+  if ( fBand_eff != uvar->Band ) {
+    XLALPrintWarning("Asked for Band [%.16g, %.16g] Hz, effective Band produced is [%.16g, %.16g] Hz (numSFTBins=%d)\n", fMin, fMax, fmin_eff, fmax_eff, numBins);
+  }
 
   /*----------------------------------------
    * fill the PulsarSignalParams struct
@@ -1238,8 +1210,23 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
   params.pulsar.phi0		   = cfg->pulsar.Amp.phi0;
   params.pulsar.psi 		   = cfg->pulsar.Amp.psi;
 
+  // translate 'modern' fkdot into 'old-style' spindown-vector
+  UINT4 maxSpindownOrder = 0;
+  for ( UINT4 s = PULSAR_MAX_SPINS-1; s > 0; s -- ) {
+    if ( cfg->pulsar.Doppler.fkdot[s] != 0 )
+      {
+        maxSpindownOrder = s;
+        break;
+      }
+  } // for s = sMax ... 1
+  REAL8Vector *spindown = NULL;
+  XLAL_CHECK ( (spindown = XLALCreateREAL8Vector ( maxSpindownOrder )) != NULL, XLAL_EFUNC );
+  for ( UINT4 s = 0; s < maxSpindownOrder; s ++ )
+    {
+      spindown->data[s] = cfg->pulsar.Doppler.fkdot[s+1];
+    }
   params.pulsar.f0		   = cfg->pulsar.Doppler.fkdot[0];
-  params.pulsar.spindown           = cfg->spindown;
+  params.pulsar.spindown           = spindown;
   params.orbit                     = cfg->pulsar.Doppler.orbit;
 
   /* detector params */
@@ -1293,6 +1280,7 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
 
   // ----- free temporary memory
   XLALFree ( site );
+  XLALDestroyREAL8Vector ( spindown );
 
   XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, cfg->transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
 
