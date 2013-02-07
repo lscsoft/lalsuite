@@ -1215,15 +1215,17 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
   INT4 goodACL=0;
 
   for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
-    char tmpname[MAX_STRLEN]=""; 
+    if (item->vary != LALINFERENCE_PARAM_FIXED) {
+      char tmpname[MAX_STRLEN]="";
 
-    sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
-    REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
-    *accepted = 0; 
+      sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
+      REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
+      *accepted = 0;
 
-    sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
-    REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
-    *proposed = 0;
+      sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
+      REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
+      *proposed = 0;
+    }
   }
 
   LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
