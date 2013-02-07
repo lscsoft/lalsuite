@@ -248,7 +248,6 @@ if __name__ == "__main__":
   # print generation message
   if modified and len(am_v_gen) > 0:
     prefix = re.findall("[ ]*GEN[ ]*", am_v_gen)
-    dst_basename = os.path.basename(dst_file)
-    print '%s %s' % (prefix[0], dst_basename)
+    print '%s %s' % (prefix[0], dst_file)
 
 # vim: syntax=python tw=72 ts=2 et
