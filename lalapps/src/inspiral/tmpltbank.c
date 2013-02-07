@@ -189,8 +189,8 @@ INT4    simPSD          = 0;            /* using a simulated PSD        */
 /* standard candle parameters */
 INT4    computeCandle = 0;              /* should we compute a candle?  */
 REAL4   candleSnr     = -1;             /* candle signal to noise ratio */
-REAL4   candleMass1   = -1;             /* standard candle mass (solar) */
-REAL4   candleMass2   = -1;             /* standard candle mass (solar) */
+REAL4   candleMinMass = -1;             /* standard candle mass (solar) */
+REAL4   candleMaxMass = 50;             /* standard candle mass (solar) */
 
 /* TD follow up filenames */
 CHAR **tdFileNames = NULL;
@@ -960,24 +960,24 @@ int main ( int argc, char *argv[] )
     CHAR  candleComment[LIGOMETA_SUMMVALUE_COMM_MAX];
     REAL8 distance = 0;
 
-    while ( candleMass1 <= 50.0 )
+    while ( candleMinMass <= candleMaxMass )
     {
       if ( approximant == EOB || approximant == EOBNR || approximant == EOBNRv2 || approximant == IMRPhenomA || approximant == IMRPhenomB )
       {
-        distance = XLALCandleDistanceTD(approximant, candleMass1, candleMass2,
+        distance = XLALCandleDistanceTD(approximant, candleMinMass, candleMinMass,
             candleSnr, chan.deltaT, numPoints, &(bankIn.shf), cut);
       }
       else
       {
-        distance = compute_candle_distance(candleMass1, candleMass2,
+        distance = compute_candle_distance(candleMinMass, candleMinMass,
             candleSnr, chan.deltaT, numPoints, &(bankIn.shf), cut);
       }
      
       snprintf( candleComment, LIGOMETA_SUMMVALUE_COMM_MAX,
-          "%3.2f_%3.2f_%3.2f", candleMass1, candleMass2, candleSnr );
+          "%3.2f_%3.2f_%3.2f", candleMinMass, candleMinMass, candleSnr );
 
       if ( vrbflg ) fprintf( stdout, "maximum distance for (%3.2f,%3.2f) "
-          "at signal-to-noise %3.2f = ", candleMass1, candleMass2, candleSnr );
+          "at signal-to-noise %3.2f = ", candleMinMass, candleMinMass, candleSnr );
 
       this_summvalue =
         add_summvalue_table(this_summvalue, gpsStartTime, gpsEndTime,
@@ -986,7 +986,7 @@ int main ( int argc, char *argv[] )
 
       if ( vrbflg ) fprintf( stdout, "%e Mpc\n", (*this_summvalue)->value );
 
-      candleMass2 = candleMass1 = candleMass1 + 1.0;
+      candleMinMass = candleMinMass + 1.0;
       this_summvalue = &(*this_summvalue)->next;
     }
   }
@@ -1350,8 +1350,8 @@ fprintf(a, "  --td-follow-up FILE          follow up BCV events contained in FIL
 fprintf(a, "\n");\
 fprintf(a, "  --standard-candle            compute a standard candle from the PSD\n");\
 fprintf(a, "  --candle-snr SNR             signal-to-noise ratio of standard candle\n");\
-fprintf(a, "  --candle-mass1 M             lowest mass for first component in candle binary\n");\
-fprintf(a, "  --candle-mass2 M             lowest mass for second component in candle binary - usually equals mass1\n");\
+fprintf(a, "  --candle-minmass M           minimum component mass for (equal-mass) candle binary\n");\
+fprintf(a, "  --candle-maxmass M           maximum component mass for candle binary, default=50\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --low-frequency-cutoff F     do not filter below F Hz\n");\
 fprintf(a, "  --high-frequency-cutoff F    upper frequency cutoff in Hz\n");\
@@ -1485,8 +1485,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-compute-moments", no_argument,            &computeMoments,   0 },
     /* standard candle parameters */
     {"candle-snr",              required_argument, 0,                'k'},
-    {"candle-mass1",            required_argument, 0,                'l'},
-    {"candle-mass2",            required_argument, 0,                'm'},
+    {"candle-minmass",          required_argument, 0,                'l'},
+    {"candle-maxmass",          required_argument, 0,                'm'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-response",          no_argument,       &writeResponse,    1 },
@@ -2342,29 +2342,29 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'l':
-        candleMass1 = (REAL4) atof( optarg );
-        if ( candleMass1 <= 0 )
+        candleMinMass = (REAL4) atof( optarg );
+        if ( candleMinMass <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "standard candle first component mass must be > 0: "
+              "standard candle minimum component mass must be > 0: "
               "(%f specified)\n",
-              long_options[option_index].name, candleMass1 );
+              long_options[option_index].name, candleMinMass );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%e", candleMass1 );
+        ADD_PROCESS_PARAM( "float", "%e", candleMinMass );
         break;
 
       case 'm':
-        candleMass2 = (REAL4) atof( optarg );
-        if ( candleMass2 <= 0 )
+        candleMaxMass = (REAL4) atof( optarg );
+        if ( ( candleMaxMass <= 0 ) || ( candleMaxMass < candleMinMass ) )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "standard candle second component mass must be > 0: "
+              "standard candle maximum component mass must be > 0 and greater than min mass: "
               "(%f specified)\n",
-              long_options[option_index].name, candleMass2 );
+              long_options[option_index].name, candleMaxMass );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%e", candleMass2 );
+        ADD_PROCESS_PARAM( "float", "%e", candleMaxMass );
         break;
 
       case 'w':
@@ -2815,16 +2815,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           "--candle-snr must be specified if --standard-candle is given\n" );
       exit( 1 );
     }
-    if ( candleMass1 < 0 )
+    if ( candleMinMass < 0 )
     {
       fprintf( stderr,
-          "--candle-mass1 must be specified if --standard-candle is given\n" );
+          "--candle-minmass must be specified if --standard-candle is given\n" );
       exit( 1 );
     }
-    if ( candleMass2 < 0 )
+    if ( candleMaxMass < 0 )
     {
       fprintf( stderr,
-          "--candle-mass2 must be specified if --standard-candle is given\n" );
+          "--candle-maxmass must be specified if --standard-candle is given\n" );
       exit( 1 );
     }
   }
