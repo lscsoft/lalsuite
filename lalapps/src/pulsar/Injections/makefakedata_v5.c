@@ -185,11 +185,13 @@ static const UserVariables_t empty_UserVariables;
 static const ConfigVars_t empty_GV;
 static const LALUnit empty_LALUnit;
 
+// ---------- exportable API prototypes ----------
+int XLALFindSmallestValidSamplingRate ( REAL8 *fSamp, UINT4 n0, const LIGOTimeGPSVector *timestamps );
+int XLALMakeFakeCWData ( SFTVector **SFTs, REAL4TimeSeries **Tseries, const UserVariables_t *uvar, const ConfigVars_t *cfg );
+
 // ---------- local prototypes ----------
 int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
 int XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar );
-
-int XLALMakeFakeCWData ( SFTVector **SFTs, REAL4TimeSeries **Tseries, const UserVariables_t *uvar, const ConfigVars_t *cfg );
 
 int XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg );
 COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, const CHAR *fname );
@@ -198,6 +200,7 @@ int XLALFreeMem ( ConfigVars_t *cfg );
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 BOOLEAN is_directory ( const CHAR *fname );
+static UINT4 gcd (UINT4 numer, UINT4 denom);
 
 /*----------------------------------------------------------------------
  * main function
@@ -589,6 +592,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	if ( ( cfg->timestamps->length == 0 ) || ( cfg->timestamps->data == NULL ) ) {
           XLAL_ERROR ( XLAL_EINVAL, "Got empty timestamps-list from file '%s'\n", uvar->timestampsFile );
         }
+        cfg->timestamps->deltaT = uvar->Tsft;
 
         XLAL_CHECK ( uvar->noiseSFTs == NULL, XLAL_EINVAL, "--timestampsFile is incompatible with --noiseSFTs\n" );
 
@@ -1177,7 +1181,8 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
 
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
   XLAL_CHECK ( cfg != NULL, XLAL_EINVAL );
-  // ==================== START: collecting functions for new-API injection module ==============================
+
+
   // ---------- for SFT output: calculate effective fmin and Band consistent with SFT bins
 
   /* lowest and highest frequency boundaries have to fall on exact SFT bins, ie they must be
@@ -1249,7 +1254,18 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
   params.ephemerides = cfg->edat;
 
   /* characterize the output time-series */
-  params.samplingRate 	= 2.0 * fBand_eff;	/* sampling rate of time-series (=2*frequency-Band) */
+  REAL8 min_fSamp = 2.0 * fBand_eff;	/* minimal sampling rate, via Nyquist theorem */
+
+  // by construction, Tsft / min_fSamp = integer, but if there are gaps between SFTs,
+  // then we might have to sample at higher rates in order for all SFT-boundaries to
+  // lie on an exact timestep of the timeseries.
+  // ie we start from min_fsamp = Tsft / n0, and then try to find the smallest
+  // n >= n0, such that for fsamp = Tsft / n, for all gaps i: Dt_i * fsamp = int
+  UINT4 n0 = (UINT4) round ( uvar->Tsft * min_fSamp );
+  REAL8 fSamp;
+  XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &fSamp, n0, cfg->timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  params.samplingRate 	= fSamp;
   params.fHeterodyne  	= fmin_eff;		/* heterodyning frequency for output time-series */
 
   /* ----- figure out start-time and duration ----- */
@@ -1305,7 +1321,7 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
       /* Determine SFT window */
       REAL8 dt = Tseries->deltaT;
       REAL8 REALnumTimesteps = uvar->Tsft / dt;
-      UINT4 numTimesteps = round ( REALnumTimesteps );	/* number of time-samples in an Tsft, round to closest int */
+      UINT4 numTimesteps = round ( REALnumTimesteps );	/* number of time-samples in an Tsft (should be exact integer!) */
 
       XLAL_CHECK ( (window = XLALCreateNamedREAL4Window ( uvar->windowType, uvar->windowBeta, numTimesteps )) != NULL, XLAL_EFUNC );
 
@@ -1341,3 +1357,128 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
   return XLAL_SUCCESS;
 
 } // XLALMakeFakeCWData()
+
+
+  /**
+   * Find the smallest sampling rate of the form fsamp = n / Tsft, with n>=n0,
+   * such that all gap sizes Dt_i between SFTs of the given timestamps are also
+   * exactly resolved, ie. that Dt_i * fsamp = integer, for all i
+   *
+   * The smallest possible sampling rate is fsamp0 = n0 / Tsft, which is specified
+   * by the user. This sampling rate would be valid if there are no gaps between SFTs,
+   * so it's only in cases of gaps (which are not integer-multiples of Tsft) that we'll
+   * have to increase the sampling rate.
+   *
+   * NOTE: This approach replaces the old mfdv4 habit of 'nudging' noise SFTs start-times
+   * to fall on integer timesteps of the fsamp0 timeseries. The purpose of this function
+   * is to avoid this behaviour, by appropriately increasing the sampling rate
+   * as required.
+   *
+   * NOTE2: we only allow integer-second gaps, everything else will be
+   * rejected with an error-message.
+   *
+   * NOTE3: Tsft=timestamps->deltaT must be integer seconds, everything else is rejected
+   * with an error as well
+   */
+int
+XLALFindSmallestValidSamplingRate ( REAL8 *fSamp,			//< [out] minimal valid sampling rate
+                                    UINT4 n0, 				//< [in] minimal sampling rate n0/Tsft
+                                    const LIGOTimeGPSVector *timestamps	//< [in] start-timestamps and length Tsft of SFTs
+                                    )
+{
+  XLAL_CHECK ( fSamp != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( n0 > 0, XLAL_EINVAL );
+  XLAL_CHECK ( timestamps && (timestamps->length > 0), XLAL_EINVAL );
+  REAL8 TsftREAL = timestamps->deltaT;
+  XLAL_CHECK ( TsftREAL == round(TsftREAL), XLAL_EDOM, "Only exact integer-second Tsft allowed, got Tsft = %g s\n", TsftREAL );
+  UINT4 Tsft = (UINT4)TsftREAL;
+  XLAL_CHECK ( Tsft > 0, XLAL_EINVAL );
+
+  // NOTE: all 'valid' sampling rates are of the form  fSamp = n / Tsft, where n >= n0,
+  // therefore we label sampling rates by their index 'n'. The purpose is to find the
+  // smallest 'valid' n, which is the max of the required 'n' over all gaps
+  UINT4 nCur = n0;
+
+  // ----- We just step through the vector and figure out for each gap if we need to
+  // decrease the stepsize Tsft/n from the previous value
+  UINT4 numSFTs = timestamps->length;
+
+  for ( UINT4 i = 1; i < numSFTs; i ++ )
+    {
+      LIGOTimeGPS *t1 = &(timestamps->data[i]);
+      LIGOTimeGPS *t0 = &(timestamps->data[i-1]);
+
+      INT4 nsdiff = t1->gpsNanoSeconds - t0->gpsNanoSeconds;
+      XLAL_CHECK ( nsdiff == 0, XLAL_EDOM, "Only integer-second gaps allowed, found %d ns excess in gap between i=%d and i-1\n", nsdiff, i );
+
+      INT4 gap_i0 = t1->gpsSeconds - t0->gpsSeconds;
+      XLAL_CHECK ( gap_i0 > 0, XLAL_EDOM, "Timestamps must be sorted in increasing order, found negative gap %d s between i=%d and i-1\n", gap_i0, i );
+
+      // now reduce gap to remainder wrt Tsft
+      INT4 gap_i = gap_i0 % Tsft;
+
+      XLALPrintInfo ("gap_i = %d s, remainder wrt Tsft=%d s = %d s: ", gap_i0, Tsft, gap_i );
+      if ( (gap_i * nCur) % Tsft == 0 ) {
+        XLALPrintInfo ("Fits exactly with fSamp = %d / Tsft = %g\n", nCur, nCur / TsftREAL );
+        continue;
+      }
+
+      // otherwise:
+      // solve for required new smaller step-size 'dt = Tsft/nNew' to fit integer cycles
+      // both into Tsft (by construction) and into (gap_i mod Tsft), with nNew > nCur
+      //
+      // gap[i] == (t[i+1] - t[i]) mod Tsft
+      // such that 0 <= gap[i] < Tsft
+      // we want integers nNew, m , such that nNew > nCur, and m < nNew, with
+      // nNew * dtNew = Tsft   AND  m * dtNew = gap[i]
+      // ==> m / nNew = gap[i] / Tsft
+      // This could be solved easily by rounding nCur to next highest
+      // multiple of Tsft: nNew' = ceil(nCur/Tsft) * Tsft > nCur
+      // but this can be wasteful if the fraction simplifies: so we compute
+      // the greatest common divisor 'g'
+      // g = gcd(gap[i], Tsft), and then use
+      // nNew = ceil ( nCur  * g  / Tsft ) * Tsft / g > nCur
+
+      UINT4 g = gcd ( gap_i, Tsft );
+      REAL8 Tg = TsftREAL / g;
+      UINT4 nNew = (UINT4) ceil ( nCur / Tg ) * Tg;
+
+      XLAL_CHECK ( nNew > nCur, XLAL_ETOL, "This seems wrong: nNew = %d !> nCur = %d, but should be greater!\n", nNew, nCur );
+      XLALPrintInfo ("Need to increase to fSamp = %d / Tsft = %g\n", nNew, nNew / TsftREAL );
+
+      nCur = nNew;
+
+    } // for i < numSFTs
+
+
+  // our final minimal valid sampling rate is therefore
+  (*fSamp) = nCur / TsftREAL;
+
+  return XLAL_SUCCESS;
+
+} // XLALFindSmallestValidSamplingRate()
+
+
+/* Find greatest common divisor between two numbers,
+ * where numer <= denom
+ * this is an implementation of the Euclidean Algorithm,
+ * taken from John's UnitNormalize.c, and extended to UINT4's
+ *
+ * For reference, see also
+ * https://en.wikipedia.org/wiki/Euclidean_algorithm#Implementations
+ */
+static UINT4
+gcd (UINT4 numer, UINT4 denom)
+{
+  UINT4 next_numer, next_denom, remainder;
+
+  next_numer = numer;
+  next_denom = denom;
+  while ( next_denom != 0 )
+    {
+      remainder = next_numer % next_denom;
+      next_numer = next_denom;
+      next_denom = remainder;
+    }
+  return next_numer;
+} // gcd
