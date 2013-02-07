@@ -1,6 +1,9 @@
 # Common SWIG build makefile.
 # Author: Karl Wette, 2011, 2012
 
+# regenerate dependency files when Makefile is regenerated
+am__depfiles_maybe = depfiles
+
 # SWIG interface file
 swig_iface = @PACKAGE_NAME@swig.i
 
@@ -58,11 +61,6 @@ swig-iface-links :
 			fi; \
 		fi; \
 	done
-
-# rebuild SWIG interface dependencies file
-$(swig_iface_deps) :
-	@echo '#dummy' > $@
-	@touch $(srcdir)/Makefile.in
 
 # generate SWIG interface file
 ../$(swig_iface) : Makefile
