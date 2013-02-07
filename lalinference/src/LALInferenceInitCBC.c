@@ -447,8 +447,11 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     ppt_order=LALInferenceGetProcParamVal(commandLine,"--order");
     if(ppt_order) PhaseOrder = XLALGetOrderFromString(ppt_order->value);
     else PhaseOrder = XLALGetOrderFromString(ppt->value);
-    if( (int) PhaseOrder == XLAL_FAILURE)
-      ABORTXLAL(&status);
+    /* If not given as a separate argument or in the approx string, use maximum available */
+    if( (int) PhaseOrder == XLAL_FAILURE) {
+      fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
+      PhaseOrder=-1;
+    }
   }
   ppt=LALInferenceGetProcParamVal(commandLine,"--amporder");
   if(ppt) AmpOrder=atoi(ppt->value);
