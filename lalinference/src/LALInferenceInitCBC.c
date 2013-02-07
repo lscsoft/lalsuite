@@ -833,8 +833,8 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   UINT4 nifo; //number of data channels
   UINT4 imin; //minimum Fourier bin for integration in IFO
   UINT4 imax; //maximum Fourier bin for integration in IFO
-  UINT4 fmin = 1; //minimum Fourier bin for integration over network
-  UINT4 fmax = 1; //maximum Fourier bin for integration over network
+  UINT4 f_min = 1; //minimum Fourier bin for integration over network
+  UINT4 f_max = 1; //maximum Fourier bin for integration over network
   REAL8 df = 1.0; //frequency resolution
 
   //compute imin,imax for each IFO -- may be different
@@ -849,20 +849,20 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
 
     if(nifo==0)
     {
-      fmin=imin;
-      fmax=imax;
+      f_min=imin;
+      f_max=imax;
     }
     else
     {
-      if(imin<fmin)
+      if(imin<f_min)
       {
         fprintf(stderr,"Warning: Different IFO's have different minimum frequencies -- bad for noise fitting\n");
-        fmin=imin;
+        f_min=imin;
       }
-      if(imax>fmax)
+      if(imax>f_max)
       {
         fprintf(stderr,"Warning: Different IFO's have different minimum frequencies -- bad for noise fitting\n");
-        fmax=imax;
+        f_max=imax;
       }
     }
 
@@ -874,8 +874,8 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(ppt)//MARK: Here is where noise PSD parameters are being added to the model
   {
 
-    nscale_bin   = (fmax+1-fmin)/nscale_block;
-    nscale_dflog = log( (double)(fmax+1)/(double)fmin )/(double)nscale_block;
+    nscale_bin   = (f_max+1-f_min)/nscale_block;
+    nscale_dflog = log( (double)(f_max+1)/(double)f_min )/(double)nscale_block;
 
     //nscale_min   = 0.00;
     //nscale_max   = 10.0;
@@ -887,7 +887,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     nscale_sigma = XLALCreateREAL8Vector(nscale_block);
     for(i=0; i<nscale_block; i++)
     {
-      nscale_prior->data[i] = 1.0/sqrt( fmin*exp( (double)(i+1)*nscale_dflog ) );
+      nscale_prior->data[i] = 1.0/sqrt( f_min*exp( (double)(i+1)*nscale_dflog ) );
       nscale_sigma->data[i] = nscale_prior->data[i]/sqrt((double)(nifo*nscale_block));
     }
 
