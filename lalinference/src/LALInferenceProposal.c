@@ -61,6 +61,7 @@ const char *differentialEvolutionExtrinsicName = "DifferentialEvolutionExtrinsic
 const char *drawApproxPriorName = "DrawApproxPrior";
 const char *skyReflectDetPlaneName = "SkyReflectDetPlane";
 const char *skyRingProposalName = "SkyRingProposal";
+const char *PSDFitJumpName = "PSDFitJump";
 const char *rotateSpinsName = "RotateSpins";
 const char *polarizationPhaseJumpName = "PolarizationPhase";
 const char *polarizationCorrPhaseJumpName = "CorrPolarizationPhase";
@@ -452,6 +453,13 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   }
   */
 
+  //Add LALInferencePSDFitJump to the cycle
+  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--psdFit");
+  if(ppt)
+  {
+    LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
+  }
+
   if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
     LALInferenceAddProposalToCycle(runState, rotateSpinsName, &LALInferenceRotateSpins, SMALLWEIGHT);
   }
@@ -636,7 +644,7 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
   LALInferenceVariables *args = runState->proposalArgs;
   LALInferenceSetVariable(args, LALInferenceCurrentProposalName, &propName);
   ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--noAdapt");
-
+  gsl_matrix *m=NULL;
 
   if (ppt) {
     /* We are not adaptive, or for some reason don't have a sigma
@@ -659,28 +667,34 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
     dim = proposedParams->dimension;
 
     do {
-      varNr = 1+gsl_rng_uniform_int(rng, dim);
-      param = LALInferenceGetItemNr(proposedParams, varNr);
-    } while (param->vary == LALINFERENCE_PARAM_FIXED || param->vary == LALINFERENCE_PARAM_OUTPUT);
+    varNr = 1+gsl_rng_uniform_int(rng, dim);
+    param = LALInferenceGetItemNr(proposedParams, varNr);
+
+    } while (param->vary == LALINFERENCE_PARAM_FIXED || param->vary == LALINFERENCE_PARAM_OUTPUT || !strcmp(param->name, "psdscale"));
 
     for (dummyParam = proposedParams->head, i = 0; dummyParam != NULL; dummyParam = dummyParam->next) {
-      if (!strcmp(dummyParam->name, param->name)) {
-        /* Found it; i = index into sigma vector. */
-        break;
-      } else if (dummyParam->vary == LALINFERENCE_PARAM_FIXED || dummyParam->vary == LALINFERENCE_PARAM_OUTPUT) {
-        /* Don't increment i, since we're not dealing with a "real" parameter. */
-        continue;
-      } else {
-        i++;
-        continue;
-      }
+          if (!strcmp(dummyParam->name, param->name)) {
+            /* Found it; i = index into sigma vector. */
+            break;
+          } else if (dummyParam->vary == LALINFERENCE_PARAM_FIXED || dummyParam->vary == LALINFERENCE_PARAM_OUTPUT) {
+            /* Don't increment i, since we're not dealing with a "real" parameter. */
+            continue;
+          } else if (!strcmp(dummyParam->name, "psdscale"))
+          {
+            /*increment i by number of noise parameters, since they aren't included in adaptive jumps*/
+            m = *((gsl_matrix **)dummyParam->value);
+            i += (int)( m->size1*m->size2 );
+          } else {
+            i++;
+            continue;
+          }
     }
 
     if (param->type != LALINFERENCE_REAL8_t) {
       fprintf(stderr, "Attempting to set non-REAL8 parameter with numerical sigma (in %s, %d)\n",
               __FILE__, __LINE__);
       exit(1);
-    } 
+    }
 
     sprintf(tmpname,"%s_%s",param->name,ADAPTSUFFIX);
     if (!LALInferenceCheckVariable(runState->proposalArgs,tmpname))
@@ -696,7 +710,7 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
       char *nameBuffer=*(char **)LALInferenceGetVariable(args,"proposedVariableName");
       strncpy(nameBuffer, param->name, MAX_STRLEN-1);
     }
-    
+
     *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * *sigma * sqrtT;
 
     LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
@@ -736,7 +750,7 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
   do {
     varNr = 1+gsl_rng_uniform_int(GSLrandom, dim);
     param = LALInferenceGetItemNr(proposedParams, varNr);
-  } while (param->vary == LALINFERENCE_PARAM_FIXED || param->vary == LALINFERENCE_PARAM_OUTPUT);
+  } while (param->vary == LALINFERENCE_PARAM_FIXED || param->vary == LALINFERENCE_PARAM_OUTPUT || !strcmp(param->name,"psdscale"));
   
   for (dummyParam = proposedParams->head, i = 0; dummyParam != NULL; dummyParam = dummyParam->next) {
     if (!strcmp(dummyParam->name, param->name)) {
@@ -997,7 +1011,7 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
     LALInferenceVariableItem *item = runState->currentParams->head;
     i = 0;
     while (item != NULL) {
-      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
+      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && strcmp(item->name,"psdscale")) {
         names[i] = item->name;
         i++;
       }
@@ -1268,6 +1282,24 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
       REAL8 theta2 = draw_colatitude(runState, "theta_spin2");
       LALInferenceSetVariable(proposedParams, "theta_spin2", &theta2);
     }
+
+    if (LALInferenceCheckVariableNonFixed(proposedParams, "psdscale")) {
+      REAL8 x, min, max;
+      UINT4 i,j;
+      min=0.10;
+      max=10.0;
+      gsl_matrix *eta = *((gsl_matrix **)LALInferenceGetVariable(proposedParams, "psdscale"));
+
+      for(i=0;i<(UINT8)eta->size1;i++)
+      {
+        for(j=0;j<(UINT8)eta->size2;j++)
+        {
+          x = min + gsl_rng_uniform(runState->GSLrandom)*(max - min);
+          gsl_matrix_set(eta,i,j,x);
+        }
+      }
+      
+    }//end if(psdscale)
   }
 
   if (analyticTest) {
@@ -1565,7 +1597,7 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   newPsi = LAL_PI*gsl_rng_uniform(runState->GSLrandom);
 
   /*
-   compute new luminosity distance,
+   compute new luminosity distance, 
    maintaining F+^2 + Fx^2 across the network
    */
   REAL8 Fx,Fy;
@@ -1702,6 +1734,37 @@ vectorToColatLong(const REAL8 v[3],
   }
 
   *colat = acos(v[2] / sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]));
+}
+
+void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{
+  INT4 i,j;
+  INT4 nifo;
+  INT4 N;
+
+  REAL8 draw;
+  //REAL8 var = *(REAL8 *)(LALInferenceGetVariable(runState->proposalArgs, "psdsigma"));
+  REAL8Vector *var = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "psdsigma"));
+
+  //Get current state of chain into workable form
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  gsl_matrix *nx = *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdstore"));
+  gsl_matrix *ny = *((gsl_matrix **)LALInferenceGetVariable(proposedParams, "psdscale"));
+
+  //Get size of noise parameter array
+  nifo = (int)nx->size1;
+  N    = (int)nx->size2;
+
+  //perturb noise parameter
+  for(i=0; i<nifo; i++)
+  {
+    for(j=0; j<N; j++)
+    {
+      draw = gsl_matrix_get(nx,i,j) + gsl_ran_ugaussian(runState->GSLrandom)*var->data[j];
+      gsl_matrix_set(ny,i,j,draw);
+    }
+  }
+  
 }
 
 void 

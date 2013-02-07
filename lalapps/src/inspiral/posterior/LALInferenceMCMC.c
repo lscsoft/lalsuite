@@ -84,7 +84,6 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
   {
     return;
   }
-  
   LALInferenceVariables *currentParams=state->currentParams;
   LALInferenceVariables *priorArgs=state->priorArgs;
   ProcessParamsTable *commandLine=state->commandLine;
@@ -183,7 +182,7 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
     INT4 NCell = atoi(ppt->value);
     LALInferenceAddVariable(state->proposalArgs, "KDNCell", &NCell, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   }
-  
+
   /* KD Tree propsal. */
   ppt=LALInferenceGetProcParamVal(commandLine, "--kDTree");
   if (!ppt) {
@@ -341,6 +340,15 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--rosenbrockLikelihood)         Use analytic, Rosenbrock banana for Likelihood.\n\
                (--analyticnullprior)            Use analytic null prior.\n\
                (--nullprior)                    Use null prior in the sampled parameters.\n\
+               (--noiseonly)                    Use signal-free log likelihood (noise model only).\n\
+               \n\
+               ---------------------------------------------------------------------------------------------------\n\
+               --- Noise Model -----------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               (--psdFit)                       Run with PSD fitting\n\
+               (--psdNblock)                    Number of noise parameters per IFO channel (8)\n\
+               (--psdFlatPrior)                 Use flat prior on psd parameters (Gaussian)\n\
+               (--removeLines)                  Do include persistent PSD lines in fourier-domain integration\n\
                \n\
                ---------------------------------------------------------------------------------------------------\n\
                --- Proposals  ------------------------------------------------------------------------------------\n\
@@ -443,7 +451,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 //  if (LALInferenceGetProcParamVal(commandLine,"--tdlike")) {
 //    fprintf(stderr, "Computing likelihood in the time domain.\n");
 //    runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
-//  } else 
+//  } else
   if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
     /* Use zero log(L) */
     runState->likelihood=&LALInferenceZeroLogLikelihood;
@@ -456,6 +464,9 @@ void initializeMCMC(LALInferenceRunState *runState)
   } else if (LALInferenceGetProcParamVal(commandLine, "--studentTLikelihood")) {
     fprintf(stderr, "Using Student's T Likelihood.\n");
     runState->likelihood=&LALInferenceFreqDomainStudentTLogLikelihood;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--noiseonly")) {
+    fprintf(stderr, "Using noise-only likelihood.\n");
+    runState->likelihood=&LALInferenceNoiseOnlyLogLikelihood;
   } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
   }
@@ -469,6 +480,9 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->prior=&LALInferenceAnalyticNullPrior;
   } else if (LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
     runState->prior=&LALInferenceNullPrior;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--noiseonly")) {
+    fprintf(stderr, "Using noise-only prior.\n");fflush(stdout);
+    runState->prior=&LALInferenceInspiralNoiseOnlyPrior;
   } else {
     runState->prior=&LALInferenceInspiralPriorNormalised;
   }

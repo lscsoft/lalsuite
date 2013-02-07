@@ -338,6 +338,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 aclCheckCounter=1;
   INT4 iEff=0;
 
+  gsl_matrix *m = NULL; //for dealing with noise parameters
+  gsl_matrix *s = NULL; //for dealing with noise parameters
+  int j,k;
+
   ProcessParamsTable *ppt;
 
   MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
@@ -355,9 +359,26 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   p=0;
   while(ptr!=NULL) {
     if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-      parameters->data[p]=*(REAL8 *)ptr->value;
-      adjParameters->data[p]=*(REAL8 *)ptr->value;
-      p++;
+      //Generalized to allow for parameters stored in gsl_matrix
+      if(ptr->type == LALINFERENCE_gslMatrix_t)
+      {
+        m = *((gsl_matrix **)ptr->value);
+        for(j=0; j<m->size1; j++)
+        {
+          for(k=0; k<m->size2; k++)
+          {
+            parameters->data[p]=gsl_matrix_get(m,j,k);
+            adjParameters->data[p]=gsl_matrix_get(m,j,k);
+            p++;
+          }
+        }
+      }
+      else
+      {
+        parameters->data[p]=*(REAL8 *)ptr->value;
+        adjParameters->data[p]=*(REAL8 *)ptr->value;
+        p++;
+      }
     }
     ptr=ptr->next;
   }
@@ -465,7 +486,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 //    nullLikelihood = LALInferenceTimeDomainNullLogLikelihood(runState->data);
 //  } else 
   if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
-      runState->likelihood==&LALInferenceFreqDomainLogLikelihood) {
+      runState->likelihood==&LALInferenceFreqDomainLogLikelihood ||
+      runState->likelihood==&LALInferenceNoiseOnlyLogLikelihood){
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
   } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood) {
     REAL8 d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
@@ -652,6 +674,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     // Parallel tempering phase
     if (runPhase < 2) {
+
       //ACL calculation during parallel tempering
       if (i % (100*Nskip) == 0 && MPIrank == 0) {
         adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
@@ -857,10 +880,26 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           ptr=runState->currentParams->head;
           p=0;
           while(ptr!=NULL) {
-            if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-              parameters->data[p]=*(REAL8 *)ptr->value;
-
-              p++;
+            if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+            {
+              //Generalized to allow for parameters stored in gsl_matrix
+              if(ptr->type == LALINFERENCE_gslMatrix_t)
+              {
+                m = *((gsl_matrix **)ptr->value);
+                for(j=0; j<m->size1; j++)
+                {
+                  for(k=0; k<m->size2; k++)
+                  {
+                    parameters->data[p]=gsl_matrix_get(m,j,k);
+                    p++;
+                  }
+                }
+              }
+              else
+              {
+                parameters->data[p]=*(REAL8 *)ptr->value;
+                p++;
+              }
             }
             ptr=ptr->next;
           }
@@ -877,15 +916,37 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           ptr=runState->currentParams->head;
           p=0;
           while(ptr!=NULL) {
-            if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-              memcpy(ptr->value,&(adjParameters->data[p]),LALInferenceTypeSize[ptr->type]);
-              p++;
+            if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+            {
+              //Generalized to allow for parameters stored in gsl_matrix
+              if(ptr->type == LALINFERENCE_gslMatrix_t)
+              {
+                m = *((gsl_matrix **)ptr->value);
+                for(j=0; j<m->size1; j++)
+                {
+                  for(k=0; k<m->size2; k++)
+                  {
+                    gsl_matrix_set(m,j,k,adjParameters->data[p]);
+                    p++;
+                  }
+                }
+              }
+              else
+              {
+                memcpy(ptr->value,&(adjParameters->data[p]),LALInferenceTypeSize[ptr->type]);
+                p++;
+              }
             }
             ptr=ptr->next;
           }
+          /* update stored noise parameters */
+          if(LALInferenceCheckVariable(runState->currentParams,"psdscale"))
+          {
+            gsl_matrix_memcpy(*((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdstore")),
+                              *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdscale")));
+          }
         }
       }
-
       /* Check if next lower temperature is ready to swap */
       if (MPIrank > 0) {
         MPI_Iprobe(MPIrank-1, 0, MPI_COMM_WORLD, &readyToSwap, &MPIstatus);
@@ -897,17 +958,33 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           tempSwapAccepted = LALInferencePTswap(runState, adjCurrentLikelihood, runState->currentLikelihood, tempLadder[MPIrank-1], tempLadder[MPIrank], i, tempfile);
 
           MPI_Send(&tempSwapAccepted, 1, MPI_INT, MPIrank-1, 0, MPI_COMM_WORLD);
-          
+
           if (tempSwapAccepted) {
             MPI_Send(&(runState->currentLikelihood), 1, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD);
             runState->currentLikelihood=adjCurrentLikelihood;
             ptr=runState->currentParams->head;
             p=0;
             while(ptr!=NULL) {
-              if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-                parameters->data[p]=*(REAL8 *)ptr->value;
-
-                p++;
+              if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+              {
+                //Generalized to allow for parameters stored in gsl_matrix
+                if(ptr->type == LALINFERENCE_gslMatrix_t)
+                {
+                  m = *(gsl_matrix **)ptr->value;
+                  for(j=0;j<(int)m->size1;j++)
+                  {
+                    for(k=0;k<(int)m->size2;k++)
+                    {
+                      parameters->data[p]=gsl_matrix_get(m,j,k);
+                      p++;
+                    }
+                  }
+                }
+                else
+                {
+                  parameters->data[p]=*(REAL8 *)ptr->value;
+                  p++;
+                }
               }
               ptr=ptr->next;
             }
@@ -922,11 +999,34 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             ptr=runState->currentParams->head;
             p=0;
             while(ptr!=NULL) {
-              if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-                memcpy(ptr->value,&(adjParameters->data[p]),LALInferenceTypeSize[ptr->type]);
-                p++;
+              if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+              {
+                //Generalized to allow for parameters stored in gsl_matrix
+                if(ptr->type == LALINFERENCE_gslMatrix_t)
+                {
+                  m = *((gsl_matrix **)ptr->value);
+                  for(j=0; j<m->size1; j++)
+                  {
+                    for(k=0; k<m->size2; k++)
+                    {
+                      gsl_matrix_set(m,j,k,adjParameters->data[p]);
+                      p++;
+                    }
+                  }
+                }
+                else
+                {
+                  memcpy(ptr->value,&(adjParameters->data[p]),LALInferenceTypeSize[ptr->type]);
+                  p++;
+                }
               }
               ptr=ptr->next;
+            }
+            /* update stored noise parameters */
+            if(LALInferenceCheckVariable(runState->currentParams,"psdscale"))
+            {
+              gsl_matrix_memcpy(*((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdstore")),
+                                *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdscale")));
             }
           }
         }
@@ -989,6 +1089,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   // generate proposal:
   proposedParams.head = NULL;
   proposedParams.dimension = 0;
+
   runState->proposal(runState, &proposedParams);
   if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
     logProposalRatio = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logProposalRatio");
@@ -1024,6 +1125,16 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
     accepted = 1;
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount);
 
+  }
+
+  /* special (clumsy) treatment for noise parameters */
+  //???: Is there a better way to deal with accept/reject of noise parameters?
+  if(LALInferenceCheckVariable(runState->currentParams,"psdscale"))
+  {
+    gsl_matrix *nx = *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdstore"));
+    gsl_matrix *ny = *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdscale"));
+    if(accepted == 1) gsl_matrix_memcpy(nx,ny);
+    else              gsl_matrix_memcpy(ny,nx);
   }
 
   LALInferenceUpdateAdaptiveJumps(runState, accepted, targetAcceptance);
@@ -1104,15 +1215,17 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
   INT4 goodACL=0;
 
   for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
-    char tmpname[MAX_STRLEN]=""; 
+    if (item->vary != LALINFERENCE_PARAM_FIXED) {
+      char tmpname[MAX_STRLEN]="";
 
-    sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
-    REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
-    *accepted = 0; 
+      sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
+      REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
+      *accepted = 0;
 
-    sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
-    REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
-    *proposed = 0;
+      sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
+      REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
+      *proposed = 0;
+    }
   }
 
   LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
