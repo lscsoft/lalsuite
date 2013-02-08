@@ -69,7 +69,7 @@ def init_job(exe, universe, tag, subdir, logdir, cp, memory=None):
 # =============================================================================
 
 def trig_combiner_setup(job, category, ifotag, usertag, grb, onoffcache,\
-                        grbdir, numtrials, outdir, timeSlides=False):
+                        grbdir, numtrials, outdir, timeslidecache=None):
 
   # setup node
   node = pipeline.CondorDAGNode(job)
@@ -82,8 +82,8 @@ def trig_combiner_setup(job, category, ifotag, usertag, grb, onoffcache,\
   node.add_var_opt('cache', os.path.abspath(onoffcache))
   node.add_var_opt('num-trials', numtrials)
   node.add_var_opt('output-dir', os.path.abspath(outdir))
-  if timeSlides:
-    node.add_var_arg('--time-slides')
+  if timeslidecache:
+    node.add_var_opt('slide-cache',timeslidecache)
 
   return node
 
@@ -441,6 +441,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     timeSlidesCache += \
                 '%s-INSPIRAL_HIPE_GRB%s_TIME_SLIDES_CATEGORY_1-%s-%s.cache'\
                 % (ifotag, grb, datastart, dataduration)
+  else:
+    timeSlidesCache = None
 
   # ==============
   # set parameters
@@ -484,6 +486,9 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   timetags = [ 'ALL_TIMES', 'ONSOURCE', 'OFFSOURCE' ] +\
              [ 'OFFTRIAL_%d' % t for t in xrange(1,numtrials+1) ]
 
+  if timeSlides:
+    timeSlideTags = [ 'ALL_TIMES', 'OFFSOURCE' ]
+
   minmemory = 0
   if cp.has_option('pipeline', 'minimum-memory'):
     minmemory = cp.getfloat('pipeline', 'minimum-memory')
@@ -503,13 +508,9 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
 
     # setup single node
     node = trig_combiner_setup(job, tag, ifotag, usertag, grb, onoffcache,\
-                               grbdir, numtrials, outdir)
+                               grbdir, numtrials, outdir,\
+                               timeslidecache=timeSlidesCache)
     dag.add_node(node)
-
-    if timeSlides:
-      node = trig_combiner_setup(job, tag, ifotag, usertag, grb,\
-                    timeSlidesCache,grbdir, numtrials, outdir,timeSlides=True)
-      dag.add_node(node)
   
     # finalise DAG
     DAGManNode[tag] = finalise_DAG(dag)
@@ -527,6 +528,15 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     clstfile[timetype] = trigfile[timetype].replace(timetype,\
                                                      '%s_CLUSTERED' % timetype)
 
+  if timeSlides:
+    trigslidefile = {}
+    clstslidefile = {}
+    for timetype in timeSlideTags:
+      trigslidefile[timetype] = '%s-%s_TIMESLIDES_GRB%s_%s-%s-%s.xml.gz'\
+                               % (ifotag,usertag,grb,timetype,start,duration)
+      clstslidefile[timetype] = trigslidefile[timetype].replace(timetype,\
+                                                    '%s_CLUSTERED' % timetype)
+
   if run_clustering:
 
     tag = 'trig_cluster'
@@ -540,6 +550,11 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     for timetype in timetags:
       node = trig_cluster_setup(job, tag, trigfile[timetype], outdir)
       dag.add_node(node)
+
+    if timeSlides:
+      for timetype in timeSlideTags:
+        node = trig_cluster_setup(job, tag, trigslidefile[timetype], outdir)
+        dag.add_node(node)
 
     # finalise DAG
     parents = []
@@ -679,17 +694,39 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
                        vetodir=rundir)
       dag.add_node(node)
 
+    if timeSlides:
+      for timetype in timeSlideTags:
+        # setup SBV plotting job
+        sbvoutpath = '%s/%s/%s_slides/plots' % (outdir, plotdir, timetype)
+        node = sbv_setup(job, tag, trigslidefile[timetype], grb, sbvoutpath,\
+                         grbdir,vetodir=rundir)
+        dag.add_node(node)
+        # setup SBV clustered plotting job
+        sbvoutpath = '%s/%s/%s_slides/plots_clustered'\
+                     % (outdir, plotdir, timetype)
+        node = sbv_setup(job, tag, clstslidefile[timetype], grb, sbvoutpath,\
+                         grbdir, vetodir=rundir)
+        dag.add_node(node)
+
+    # Make the injection plot with whatever background is available
+    if timeSlides:
+      injtrigfile = trigslidefile['OFFSOURCE']
+      injclstfile = clstslidefile['OFFSOURCE']
+    else:
+      injtrigfile = trigfile['OFFSOURCE']
+      injclstfile = clstfile['OFFSOURCE']
+    
     for injrun in filteredInjRuns: 
       # setup SBV injection plots
       injfile = '%s/%s-INJECTION_GRB%s_%s_FOUND-%d-%d.xml'\
                 % (outdir, ifotag, grb, injrun, start, duration)
       sbvoutpath = '%s/%s/%s/plots' % (outdir, plotdir, injrun)
-      node = sbv_setup(job, tag, trigfile[timetype], grb, sbvoutpath, grbdir,\
+      node = sbv_setup(job, tag, injtrigfile, grb, sbvoutpath, grbdir,\
                        vetodir=rundir,injfile=injfile)
       dag.add_node(node)
       # setup SBV clusterd injection plots
       sbvoutpath = '%s/%s/%s/plots_clustered' % (outdir, plotdir, injrun)
-      node = sbv_setup(job, tag, clstfile[timetype], grb, sbvoutpath, grbdir,\
+      node = sbv_setup(job, tag, injclstfile, grb, sbvoutpath, grbdir,\
                        vetodir=rundir,injfile=injfile)
       dag.add_node(node)
 
