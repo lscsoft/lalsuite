@@ -25,7 +25,7 @@ rm -f aclocal.m4
 ## run autoreconf
 AUTORECONF=${AUTORECONF:-"autoreconf"}
 echo "00boot: running ${AUTORECONF}"
-LIBTOOLIZE=true ${AUTORECONF} --verbose || fail "${AUTORECONF} failed"
+LIBTOOLIZE=true ${AUTORECONF} || fail "${AUTORECONF} failed"
 
 echo "
 ==================================================
