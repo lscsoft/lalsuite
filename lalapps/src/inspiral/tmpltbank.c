@@ -96,16 +96,15 @@ enum
   real_8
 } calData = undefined;
 
-/* which type of PSD to use */
+/* 
+ * which type of PSD to use - 'simulated' refers to LALSimNoise PSD functions 
+ *
+ */
 enum
 {
   specType_mean,
   specType_median,
-  specType_gaussian,
-  specType_iLIGO,
-  specType_eLIGO,
-  specType_oldAdvLIGO,
-  specType_aLIGOZDHP,
+  specType_simulated,
   specType_undefined
 } specType = specType_undefined;
 
@@ -146,6 +145,7 @@ REAL4  dynRangeExponent = 0;            /* exponent of dynamic range    */
 REAL4  strainHighPassFreq = -1;         /* h(t) high pass frequency     */
 INT4   strainHighPassOrder = -1;        /* h(t) high pass filter order  */
 REAL4  strainHighPassAtten = -1;        /* h(t) high pass attenuation   */
+REAL8 (*specFunc)(REAL8) = NULL;        /* pointer to simPSD functions  */
 
 /* template bank generation parameters */
 REAL4   minMass         = -1;           /* minimum component mass       */
@@ -182,9 +182,6 @@ INT4    numFreqCut      = 0;            /* # of upper freq. cuts to use */
 
 GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
 int     polygonFit      = 1;            /* fit a polygon around BCV bank */
-
-/* generic simulation parameters */
-INT4    simPSD          = 0;            /* using a simulated PSD        */
 
 /* standard candle parameters */
 INT4    computeCandle = 0;              /* should we compute a candle?  */
@@ -402,267 +399,271 @@ int main ( int argc, char *argv[] )
     fprintf( stdout, "using dynamic range scaling %e\n", dynRange );
 
 
-  /*
-   *
-   * read in the input data channel
-   *
-   */
 
-
-  /* set the time series parameters of the input data and resample params */
-  memset( &resampleParams, 0, sizeof(ResampleTSParams) );
-  resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
-
-  /* set the params of the input data time series */
-  memset( &chan, 0, sizeof(REAL4TimeSeries) );
-  memset( &strainChan, 0, sizeof(REAL8TimeSeries) );
-  chan.epoch = gpsStartTime;
-  chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
-
-  /* copy the start time into the REAL8 h(t) time series */
-  strainChan.epoch = chan.epoch;
-
-  if ( globFrameData )
+  if ( (specType==specType_mean) || (specType==specType_median) )
   {
-    CHAR ifoRegExPattern[6];
 
-    if ( vrbflg ) fprintf( stdout, "globbing for *.gwf frame files from %c "
-        "of type %s in current directory\n", fqChanName[0], frInType );
+    /*
+     *
+     * read in the input data channel
+     *
+     */
 
-    frGlobCache = NULL;
+    /* set the time series parameters of the input data and resample params */
+    memset( &resampleParams, 0, sizeof(ResampleTSParams) );
+    resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
 
-    /* create a frame cache by globbing all *.gwf files in the pwd */
-    LAL_CALL( LALFrCacheGenerate( &status, &frGlobCache, NULL, NULL ),
-        &status );
+    /* set the params of the input data time series */
+    memset( &chan, 0, sizeof(REAL4TimeSeries) );
+    memset( &strainChan, 0, sizeof(REAL8TimeSeries) );
+    chan.epoch = gpsStartTime;
+    chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
 
-    /* check we globbed at least one frame file */
-    if ( ! frGlobCache->numFrameFiles )
+    /* copy the start time into the REAL8 h(t) time series */
+    strainChan.epoch = chan.epoch;
+
+    if ( globFrameData )
     {
-      fprintf( stderr, "error: no frame file files of type %s found\n",
-          frInType );
-      exit( 1 );
-    }
+      CHAR ifoRegExPattern[6];
 
-    /* sieve out the requested data type */
-    memset( &sieve, 0, sizeof(FrCacheSieve) );
-    snprintf( ifoRegExPattern,
-        sizeof(ifoRegExPattern) / sizeof(*ifoRegExPattern), ".*%c.*",
-        fqChanName[0] );
-    sieve.srcRegEx = ifoRegExPattern;
-    sieve.dscRegEx = frInType;
-    LAL_CALL( LALFrSieveCache( &status, &frInCache, frGlobCache, &sieve ),
-        &status );
+      if ( vrbflg ) fprintf( stdout, "globbing for *.gwf frame files from %c "
+          "of type %s in current directory\n", fqChanName[0], frInType );
 
-    /* check we got at least one frame file back after the sieve */
-    if ( ! frInCache->numFrameFiles )
-    {
-      fprintf( stderr, "error: no frame files of type %s globbed as input\n",
-          frInType );
-      exit( 1 );
-    }
+      frGlobCache = NULL;
 
-    LAL_CALL( LALDestroyFrCache( &status, &frGlobCache ), &status );
-  }
-  else
-  {
-    if ( vrbflg ) fprintf( stdout,
-        "reading frame file locations from cache file: %s\n", frInCacheName );
+      /* create a frame cache by globbing all *.gwf files in the pwd */
+      LAL_CALL( LALFrCacheGenerate( &status, &frGlobCache, NULL, NULL ),
+          &status );
 
-    /* read a frame cache from the specified file */
-    LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
-  }
-
-  /* open the input data frame stream from the frame cache */
-  LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
-
-  /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream->mode = LAL_FR_VERBOSE_MODE;
-
-  /* enable frame-file checksum checking */
-  XLALFrSetMode( frStream, frStream->mode | LAL_FR_CHECKSUM_MODE );
-
-  /* seek to required epoch and set chan name */
-  LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
-  frChan.name = fqChanName;
-
-  if ( calData == real_8 )
-  {
-    /* determine the sample rate of the raw data */
-    LAL_CALL( LALFrGetREAL8TimeSeries( &status, &strainChan, &frChan,
-        frStream ), &status );
-
-    /* copy the data paramaters from the h(t) channel to input data channel */
-    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
-    chan.epoch          = strainChan.epoch;
-    chan.deltaT         = strainChan.deltaT;
-    chan.f0             = strainChan.f0;
-    chan.sampleUnits    = strainChan.sampleUnits;
-  }
-  else
-  {
-    /* determine the sample rate of the raw data and allocate enough memory */
-    LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
-        &status );
-  }
-
-  /* store the input sample rate */
-  this_search_summvar = searchsummvars.searchSummvarsTable =
-    (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
-      "raw data sample rate" );
-  this_search_summvar->value = chan.deltaT;
-
-  /* determine if we need to resample the channel */
-  if ( vrbflg )
-  {
-    fprintf( stdout, "resampleParams.deltaT = %e\n", resampleParams.deltaT );
-    fprintf( stdout, "chan.deltaT = %e\n", chan.deltaT );
-  }
-  if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
-  {
-    resampleChan = 1;
-    if ( vrbflg )
-      fprintf( stdout, "input channel will be resampled\n" );
-
-    if ( resampFiltType == 0 )
-    {
-      resampleParams.filterType = LDASfirLP;
-    }
-    else if ( resampFiltType == 1 )
-    {
-      resampleParams.filterType = defaultButterworth;
-    }
-  }
-
-  /* determine the number of points to get and create storage for the data */
-  inputLengthNS = (REAL8) ( LAL_INT8_C(1000000000) *
-      ( gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds + 2 * padData ) );
-  chan.deltaT *= 1.0e9;
-  numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT + 0.5 );
-  if ( calData == real_8 )
-  {
-    /* create storage for the REAL8 h(t) input data */
-    LAL_CALL( LALDCreateVector( &status, &(strainChan.data), numInputPoints ),
-        &status );
-  }
-  LAL_CALL( LALSCreateVector( &status, &(chan.data), numInputPoints ),
-      &status );
-
-  if ( vrbflg ) fprintf( stdout, "input channel %s has sample interval "
-      "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName,
-      chan.deltaT / 1.0e9, numInputPoints );
-
-  if ( calData == real_8 )
-  {
-    /* read in the REAL8 h(t) data here */
-    PassBandParamStruc strainHighpassParam;
-
-    /* read the REAL8 h(t) data from the time series into strainChan      */
-    /* which already has the correct amount of memory allocated */
-    if ( vrbflg ) fprintf( stdout, "reading REAL8 h(t) data from frames... " );
-
-    LAL_CALL( LALFrGetREAL8TimeSeries( &status, &strainChan, &frChan,
-        frStream ), &status);
-
-    if ( vrbflg ) fprintf( stdout, "done\n" );
-
-    /* high pass the h(t) data using the parameters specified on the cmd line*/
-    strainHighpassParam.nMax = strainHighPassOrder;
-    strainHighpassParam.f1 = -1.0;
-    strainHighpassParam.f2 = (REAL8) strainHighPassFreq;
-    strainHighpassParam.a1 = -1.0;
-    strainHighpassParam.a2 = (REAL8)(1.0 - strainHighPassAtten);
-    if ( vrbflg ) fprintf( stdout,
-        "applying %d order high pass to REAL8 h(t) data: "
-        "%3.2f of signal passes at %4.2f Hz\n",
-        strainHighpassParam.nMax, strainHighpassParam.a2,
-        strainHighpassParam.f2 );
-
-    LAL_CALL( LALButterworthREAL8TimeSeries( &status, &strainChan,
-          &strainHighpassParam ), &status );
-
-    /* cast the REAL8 h(t) data to REAL4 in the chan time series       */
-    /* which already has the correct amount of memory allocated */
-    for ( j = 0 ; j < numInputPoints ; ++j )
-    {
-      chan.data->data[j] = (REAL4) ( strainChan.data->data[j] * dynRange );
-    }
-
-    /* re-copy the data paramaters from h(t) channel to input data channel */
-    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
-    chan.epoch          = strainChan.epoch;
-    chan.deltaT         = strainChan.deltaT;
-    chan.f0             = strainChan.f0;
-    chan.sampleUnits    = strainChan.sampleUnits;
-
-    /* free the REAL8 h(t) input data */
-    LAL_CALL( LALDDestroyVector( &status, &(strainChan.data) ), &status );
-    strainChan.data = NULL;
-  }
-  else
-  {
-    /* read the data channel time series from frames */
-    LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
-        &status );
-
-    if ( calData == real_4 )
-    {
-      /* multiply the input data by dynRange */
-      for ( j = 0 ; j < numInputPoints ; ++j )
+      /* check we globbed at least one frame file */
+      if ( ! frGlobCache->numFrameFiles )
       {
-        chan.data->data[j] *= dynRange;
+        fprintf( stderr, "error: no frame files of type %s found\n",
+            frInType );
+        exit( 1 );
+      }
+
+      /* sieve out the requested data type */
+      memset( &sieve, 0, sizeof(FrCacheSieve) );
+      snprintf( ifoRegExPattern,
+          sizeof(ifoRegExPattern) / sizeof(*ifoRegExPattern), ".*%c.*",
+          fqChanName[0] );
+      sieve.srcRegEx = ifoRegExPattern;
+      sieve.dscRegEx = frInType;
+      LAL_CALL( LALFrSieveCache( &status, &frInCache, frGlobCache, &sieve ),
+          &status );
+
+      /* check we got at least one frame file back after the sieve */
+      if ( ! frInCache->numFrameFiles )
+      {
+        fprintf( stderr, "error: no frame files of type %s globbed as input\n",
+            frInType );
+        exit( 1 );
+      }
+
+      LAL_CALL( LALDestroyFrCache( &status, &frGlobCache ), &status );
+    }
+    else
+    {
+      if ( vrbflg ) fprintf( stdout,
+          "reading frame file locations from cache file: %s\n", frInCacheName );
+
+      /* read a frame cache from the specified file */
+      LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
+    }
+
+    /* open the input data frame stream from the frame cache */
+    LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
+
+    /* set the mode of the frame stream to fail on gaps or time errors */
+    frStream->mode = LAL_FR_VERBOSE_MODE;
+
+    /* enable frame-file checksum checking */
+    XLALFrSetMode( frStream, frStream->mode | LAL_FR_CHECKSUM_MODE );
+
+    /* seek to required epoch and set chan name */
+    LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
+    frChan.name = fqChanName;
+
+    if ( calData == real_8 )
+    {
+      /* determine the sample rate of the raw data */
+      LAL_CALL( LALFrGetREAL8TimeSeries( &status, &strainChan, &frChan,
+          frStream ), &status );
+
+      /* copy the data parameters from the h(t) channel to input data channel */
+      snprintf( chan.name, LALNameLength, "%s", strainChan.name );
+      chan.epoch          = strainChan.epoch;
+      chan.deltaT         = strainChan.deltaT;
+      chan.f0             = strainChan.f0;
+      chan.sampleUnits    = strainChan.sampleUnits;
+    }
+    else
+    {
+      /* determine the sample rate of the raw data and allocate enough memory */
+      LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
+          &status );
+    }
+
+    /* store the input sample rate */
+    this_search_summvar = searchsummvars.searchSummvarsTable =
+      (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
+        "raw data sample rate" );
+    this_search_summvar->value = chan.deltaT;
+
+    /* determine if we need to resample the channel */
+    if ( vrbflg )
+    {
+      fprintf( stdout, "resampleParams.deltaT = %e\n", resampleParams.deltaT );
+      fprintf( stdout, "chan.deltaT = %e\n", chan.deltaT );
+    }
+    if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
+    {
+      resampleChan = 1;
+      if ( vrbflg )
+        fprintf( stdout, "input channel will be resampled\n" );
+
+      if ( resampFiltType == 0 )
+      {
+        resampleParams.filterType = LDASfirLP;
+      }
+      else if ( resampFiltType == 1 )
+      {
+        resampleParams.filterType = defaultButterworth;
       }
     }
-  }
-  memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
-  /* store the start and end time of the raw channel in the search summary */
-  /* FIXME:  loss of precision;  consider
-  searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = chan.epoch;
-  XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, chan.deltaT * (REAL8) chan.data->length);
-  */
-  searchsumm.searchSummaryTable->in_start_time = chan.epoch;
-  tsLength = XLALGPSGetREAL8(&(chan.epoch) );
-  tsLength += chan.deltaT * (REAL8) chan.data->length;
-  XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->in_end_time), tsLength );
-
-  /* close the frame file stream and destroy the cache */
-  LAL_CALL( LALFrClose( &status, &frStream ), &status );
-  LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
-
-  /* write the raw channel data as read in from the frame files */
-  if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
-      &chan, "ct", "RAW" );
-
-  if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
-      "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n",
-      chan.name, chan.data->length, chan.deltaT,
-      chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
-
-  /* resample the input data */
-  if ( resampleChan )
-  {
-    if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
-        chan.deltaT, resampleParams.deltaT );
-
-    LAL_CALL( LALResampleREAL4TimeSeries( &status, &chan, &resampleParams ),
+    /* determine the number of points to get and create storage for the data */
+    inputLengthNS = (REAL8) ( LAL_INT8_C(1000000000) *
+        ( gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds + 2 * padData ) );
+    chan.deltaT *= 1.0e9;
+    numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT + 0.5 );
+    if ( calData == real_8 )
+    {
+      /* create storage for the REAL8 h(t) input data */
+      LAL_CALL( LALDCreateVector( &status, &(strainChan.data), numInputPoints ),
+          &status );
+    }
+    LAL_CALL( LALSCreateVector( &status, &(chan.data), numInputPoints ),
         &status );
 
-    if ( vrbflg ) fprintf( stdout, "channel %s resampled:\n"
-        "%d points with deltaT %e\nstarting at GPS time %d sec %d ns\n",
+    if ( vrbflg ) fprintf( stdout, "input channel %s has sample interval "
+        "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName,
+        chan.deltaT / 1.0e9, numInputPoints );
+
+    if ( calData == real_8 )
+    {
+      /* read in the REAL8 h(t) data here */
+      PassBandParamStruc strainHighpassParam;
+
+      /* read the REAL8 h(t) data from the time series into strainChan      */
+      /* which already has the correct amount of memory allocated */
+      if ( vrbflg ) fprintf( stdout, "reading REAL8 h(t) data from frames... " );
+
+      LAL_CALL( LALFrGetREAL8TimeSeries( &status, &strainChan, &frChan,
+          frStream ), &status);
+
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+
+      /* high pass the h(t) data using the parameters specified on the cmd line*/
+      strainHighpassParam.nMax = strainHighPassOrder;
+      strainHighpassParam.f1 = -1.0;
+      strainHighpassParam.f2 = (REAL8) strainHighPassFreq;
+      strainHighpassParam.a1 = -1.0;
+      strainHighpassParam.a2 = (REAL8)(1.0 - strainHighPassAtten);
+      if ( vrbflg ) fprintf( stdout,
+          "applying %d order high pass to REAL8 h(t) data: "
+          "%3.2f of signal passes at %4.2f Hz\n",
+          strainHighpassParam.nMax, strainHighpassParam.a2,
+          strainHighpassParam.f2 );
+
+      LAL_CALL( LALButterworthREAL8TimeSeries( &status, &strainChan,
+            &strainHighpassParam ), &status );
+
+      /* cast the REAL8 h(t) data to REAL4 in the chan time series       */
+      /* which already has the correct amount of memory allocated */
+      for ( j = 0 ; j < numInputPoints ; ++j )
+      {
+        chan.data->data[j] = (REAL4) ( strainChan.data->data[j] * dynRange );
+      }
+
+      /* re-copy the data parameters from h(t) channel to input data channel */
+      snprintf( chan.name, LALNameLength, "%s", strainChan.name );
+      chan.epoch          = strainChan.epoch;
+      chan.deltaT         = strainChan.deltaT;
+      chan.f0             = strainChan.f0;
+      chan.sampleUnits    = strainChan.sampleUnits;
+
+      /* free the REAL8 h(t) input data */
+      LAL_CALL( LALDDestroyVector( &status, &(strainChan.data) ), &status );
+      strainChan.data = NULL;
+    }
+    else
+    {
+      /* read the data channel time series from frames */
+      LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
+          &status );
+
+      if ( calData == real_4 )
+      {
+        /* multiply the input data by dynRange */
+        for ( j = 0 ; j < numInputPoints ; ++j )
+        {
+          chan.data->data[j] *= dynRange;
+        }
+      }
+    }
+    memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
+
+    /* store the start and end time of the raw channel in the search summary */
+    /* FIXME:  loss of precision;  consider
+    searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = chan.epoch;
+    XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, chan.deltaT * (REAL8) chan.data->length);
+    */
+    searchsumm.searchSummaryTable->in_start_time = chan.epoch;
+    tsLength = XLALGPSGetREAL8(&(chan.epoch) );
+    tsLength += chan.deltaT * (REAL8) chan.data->length;
+    XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->in_end_time), tsLength );
+
+    /* close the frame file stream and destroy the cache */
+    LAL_CALL( LALFrClose( &status, &frStream ), &status );
+    LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+ 
+    /* write the raw channel data as read in from the frame files */
+    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
+        &chan, "ct", "RAW" );
+
+    if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
+        "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n",
         chan.name, chan.data->length, chan.deltaT,
         chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
 
-    /* write the resampled channel data as read in from the frame files */
-    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
-        &chan, "ct", "RAW_RESAMP" );
-  }
+    /* resample the input data */
+    if ( resampleChan )
+    {
+      if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
+          chan.deltaT, resampleParams.deltaT );
 
-  /* store the filter data sample rate */
-  this_search_summvar = this_search_summvar->next =
-    (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX, "filter data sample rate" );
-  this_search_summvar->value = chan.deltaT;
+      LAL_CALL( LALResampleREAL4TimeSeries( &status, &chan, &resampleParams ),
+          &status );
+
+      if ( vrbflg ) fprintf( stdout, "channel %s resampled:\n"
+          "%d points with deltaT %e\nstarting at GPS time %d sec %d ns\n",
+          chan.name, chan.data->length, chan.deltaT,
+          chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+
+      /* write the resampled channel data as read in from the frame files */
+      if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
+          &chan, "ct", "RAW_RESAMP" );
+    }
+
+    /* store the filter data sample rate */
+    this_search_summvar = this_search_summvar->next =
+      (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX, "filter data sample rate" );
+    this_search_summvar->value = chan.deltaT;
+  }
 
   /*
    *
@@ -679,131 +680,104 @@ int main ( int argc, char *argv[] )
       &status );
   resp.epoch = spec.epoch = gpsStartTime;
 
-  /* iir filter to remove low frequencies from data channel */
-  if ( highPass )
+  if ( (specType==specType_mean) || (specType==specType_median) )
   {
-    PassBandParamStruc highpassParam;
-    highpassParam.nMax = highPassOrder;
-    highpassParam.f1 = -1.0;
-    highpassParam.f2 = (REAL8) highPassFreq;
-    highpassParam.a1 = -1.0;
-    highpassParam.a2 = (REAL8)(1.0 - highPassAtten); /* a2 is not attenuation */
+    /* iir filter to remove low frequencies from data channel */
+    if ( highPass )
+    {
+      PassBandParamStruc highpassParam;
+      highpassParam.nMax = highPassOrder;
+      highpassParam.f1 = -1.0;
+      highpassParam.f2 = (REAL8) highPassFreq;
+      highpassParam.a1 = -1.0;
+      highpassParam.a2 = (REAL8)(1.0 - highPassAtten); /* a2 is not attenuation */
 
-    if ( vrbflg ) fprintf( stdout, "applying %d order high pass: "
-        "%3.2f of signal passes at %4.2f Hz\n",
-        highpassParam.nMax, highpassParam.a2, highpassParam.f2 );
+      if ( vrbflg ) fprintf( stdout, "applying %d order high pass: "
+          "%3.2f of signal passes at %4.2f Hz\n",
+          highpassParam.nMax, highpassParam.a2, highpassParam.f2 );
 
-    LAL_CALL( LALDButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
+      LAL_CALL( LALDButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
+          &status );
+    }
+
+    /* remove pad from requested data from start and end of time series */
+    memmove( chan.data->data, chan.data->data + padData * sampleRate,
+        (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
+    XLALRealloc( chan.data->data,
+        (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
+    chan.data->length -= 2 * padData * sampleRate;
+    chan.epoch.gpsSeconds += padData;
+
+    if ( vrbflg ) fprintf( stdout, "after removal of %d second padding at "
+        "start and end:\ndata channel sample interval (deltaT) = %e\n"
+        "data channel length = %d\nstarting at %d sec %d ns\n",
+        padData , chan.deltaT , chan.data->length,
+        chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+
+    /* store the start and end time of the filter channel in the search summ */
+    /* FIXME:  loss of precision;  consider
+    searchsumm.searchSummaryTable->out_start_time = chan.epoch;
+    XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, chan.deltaT * (REAL8) chan.data->length);
+    */
+    searchsumm.searchSummaryTable->out_start_time = chan.epoch;
+    tsLength = XLALGPSGetREAL8( &(chan.epoch) );
+    tsLength += chan.deltaT * (REAL8) chan.data->length;
+    XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_end_time), tsLength );
+
+    /* compute the windowed power spectrum for the data channel */
+    avgSpecParams.window = NULL;
+    avgSpecParams.plan = NULL;
+    LAL_CALL( LALCreateForwardRealFFTPlan( &status,
+          &(avgSpecParams.plan), numPoints, 0 ), &status );
+    switch ( specType )
+    {
+      case specType_mean:
+        avgSpecParams.method = useMean;
+        if ( vrbflg ) fprintf( stdout, "computing mean psd" );
+        break;
+      case specType_median:
+        avgSpecParams.method = useMedian;
+        if ( vrbflg ) fprintf( stdout, "computing median psd" );
+        break;
+      case specType_simulated:
+        avgSpecParams.method = useUnity;
+        fprintf( stderr, "This should never happen! Exiting..." );
+        exit( 1 );
+      default:
+        fprintf( stderr, "unknown spectrum type %d\n", specType );
+        exit( 1 );
+    }
+
+    avgSpecParams.overlap = numPoints / 2;
+    if ( vrbflg )
+      fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
+
+    avgSpecParams.window = XLALCreateHannREAL4Window(numPoints);
+    LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
         &status );
+    XLALDestroyREAL4Window( avgSpecParams.window );
+    LAL_CALL( LALDestroyRealFFTPlan( &status, &(avgSpecParams.plan) ), &status );
+    LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   }
 
-  /* remove pad from requested data from start and end of time series */
-  memmove( chan.data->data, chan.data->data + padData * sampleRate,
-      (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
-  XLALRealloc( chan.data->data,
-      (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
-  chan.data->length -= 2 * padData * sampleRate;
-  chan.epoch.gpsSeconds += padData;
-
-  if ( vrbflg ) fprintf( stdout, "after removal of %d second padding at "
-      "start and end:\ndata channel sample interval (deltaT) = %e\n"
-      "data channel length = %d\nstarting at %d sec %d ns\n",
-      padData , chan.deltaT , chan.data->length,
-      chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
-
-  /* store the start and end time of the filter channel in the search summ */
-  /* FIXME:  loss of precision;  consider
-  searchsumm.searchSummaryTable->out_start_time = chan.epoch;
-  XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, chan.deltaT * (REAL8) chan.data->length);
-  */
-  searchsumm.searchSummaryTable->out_start_time = chan.epoch;
-  tsLength = XLALGPSGetREAL8( &(chan.epoch) );
-  tsLength += chan.deltaT * (REAL8) chan.data->length;
-  XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_end_time), tsLength );
-
-  /* compute the windowed power spectrum for the data channel */
-  avgSpecParams.window = NULL;
-  avgSpecParams.plan = NULL;
-  LAL_CALL( LALCreateForwardRealFFTPlan( &status,
-        &(avgSpecParams.plan), numPoints, 0 ), &status );
-  switch ( specType )
+  if ( specType == specType_simulated )
+  /* initialize spectrum frequency bins */
   {
-    case specType_mean:
-      avgSpecParams.method = useMean;
-      if ( vrbflg ) fprintf( stdout, "computing mean psd" );
-      break;
-    case specType_median:
-      avgSpecParams.method = useMedian;
-      if ( vrbflg ) fprintf( stdout, "computing median psd" );
-      break;
-    case specType_iLIGO:
-    case specType_eLIGO:
-    case specType_oldAdvLIGO:
-    case specType_aLIGOZDHP:
-      avgSpecParams.method = useUnity;
-      if ( vrbflg ) fprintf( stdout, "computing constant psd with unit value" );
-      break;
-    default:
-      fprintf( stderr, "unknown spectrum type %d\n", specType );
-      exit( 1 );
-  }
+    spec.f0 = 0.0;
+    /* frequency bin (Hz) is 1/duration of segment */
+    /* = sample rate/number of points */
+    spec.deltaF = ( (REAL8) sampleRate ) / ( (REAL8) numPoints );
 
-  avgSpecParams.overlap = numPoints / 2;
-  if ( vrbflg )
-    fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
-
-  avgSpecParams.window = XLALCreateHannREAL4Window(numPoints);
-  LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
-      &status );
-  XLALDestroyREAL4Window( avgSpecParams.window );
-  LAL_CALL( LALDestroyRealFFTPlan( &status, &(avgSpecParams.plan) ), &status );
-
-  if ( specType == specType_iLIGO )
-  {
-    /* replace the spectrum with the Initial LIGO design noise curve */
+    /* evaluate the simulated PSD */
     for ( k = 0; k < spec.data->length; ++k )
     {
       REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      spec.data->data[k] = (REAL4) (dynRange *
-                     dynRange * XLALSimNoisePSDiLIGOSRD( sim_psd_freq ));
-    }
-    if ( vrbflg ) fprintf( stdout, "set psd to Initial LIGO design\n" );
-  }
-  else if ( specType == specType_eLIGO )
-  {
-    /* replace the spectrum with the enhanced LIGO model noise curve */
-    for ( k = 0; k < spec.data->length; ++k )
-    {
-      REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      spec.data->data[k] = (REAL4) (dynRange *
-                     dynRange * XLALSimNoisePSDeLIGOModel( sim_psd_freq ));
-    }
-    if ( vrbflg ) fprintf( stdout, "set psd to enhanced LIGO model curve\n" );
-  }
-  else if ( specType == specType_aLIGOZDHP )
-  {
-    /* replace the spectrum with the enhanced LIGO model noise curve */
-    for ( k = 0; k < spec.data->length; ++k )
-    {
-      REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      spec.data->data[k] = (REAL4) (dynRange *
-                     dynRange * XLALSimNoisePSDaLIGOZeroDetHighPower( sim_psd_freq ));
-    }
-    if ( vrbflg ) fprintf( stdout, "set psd to advanced LIGO ZDHP design\n" );
-  }
-  else if ( specType == specType_oldAdvLIGO )
-  {
-    /* replace the spectrum with Sathya's old Advanced LIGO fit noise curve */
-    for ( k = 0; k < spec.data->length; ++k )
-    {
-      REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      REAL8 sim_psd_value;
-      LALAdvLIGOPsd( NULL, &sim_psd_value, sim_psd_freq );
-      spec.data->data[k] = (REAL4) (dynRange * dynRange * 1.0e-49 * sim_psd_value);
-    }
-    if ( vrbflg ) fprintf( stdout, "set psd to old Advanced LIGO fit\n" );
-  }
 
+      /* PSD can be a very small number, rescale it before casting to REAL4 */
+      spec.data->data[k] = (REAL4) (dynRange * dynRange * specFunc( sim_psd_freq ));
+    }
+  }
+  
   /* write the spectrum data to a file */
   if ( writeSpectrum )
   {
@@ -817,7 +791,7 @@ int main ( int argc, char *argv[] )
   resp.f0 = spec.f0;
   resp.sampleUnits = strainPerCount;
 
-  if ( calData || simPSD )
+  if ( calData || (specType==specType_simulated) )
   {
     /* if we are using calibrated data or a design PSD set the response to unity */
     /* i.e. 1 over the dynamic range scaling factor */
@@ -954,25 +928,42 @@ int main ( int argc, char *argv[] )
    *
    */
 
-
   if ( computeCandle )
   {
     CHAR  candleComment[LIGOMETA_SUMMVALUE_COMM_MAX];
     REAL8 distance = 0;
+    REAL8 candleDeltaT = 1.0 / (REAL8) sampleRate;
+
+    /* store the sample rate used to compute the candle */
+    if ( specType == specType_simulated )
+    {
+      /* search summary value was not previously initialized */
+      this_search_summvar = searchsummvars.searchSummvarsTable =
+          (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+    }
+    else
+    {
+      this_search_summvar = this_search_summvar->next =
+          (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+    }
+    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX, 
+        "standard candle sample rate" );
+    this_search_summvar->value = candleDeltaT;
 
     while ( candleMinMass <= candleMaxMass )
     {
-      if ( approximant == EOB || approximant == EOBNR || approximant == EOBNRv2 || approximant == IMRPhenomA || approximant == IMRPhenomB )
+      if ( approximant == EOB || approximant == EOBNR || approximant == EOBNRv2 ||
+          approximant == IMRPhenomA || approximant == IMRPhenomB || approximant == IMRPhenomC )
       {
         distance = XLALCandleDistanceTD(approximant, candleMinMass, candleMinMass,
-            candleSnr, chan.deltaT, numPoints, &(bankIn.shf), cut);
+            candleSnr, candleDeltaT, numPoints, &(bankIn.shf), cut);
       }
       else
       {
         distance = compute_candle_distance(candleMinMass, candleMinMass,
-            candleSnr, chan.deltaT, numPoints, &(bankIn.shf), cut);
+            candleSnr, candleDeltaT, numPoints, &(bankIn.shf), cut);
       }
-
+ 
       snprintf( candleComment, LIGOMETA_SUMMVALUE_COMM_MAX,
           "%3.2f_%3.2f_%3.2f", candleMinMass, candleMinMass, candleSnr );
 
@@ -1114,14 +1105,13 @@ int main ( int argc, char *argv[] )
 
 
   LAL_CALL( LALDDestroyVector( &status, &(bankIn.shf.data) ), &status );
-  LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
   LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
 
 
   /*
    *
-   * write the result results to disk
+   * write the results to disk
    *
    */
 
@@ -1339,12 +1329,14 @@ fprintf(a, "  --disable-high-pass          turn off the IIR highpass filter\n");
 fprintf(a, "  --enable-high-pass F         high pass data above F Hz using an IIR filter\n");\
 fprintf(a, "  --high-pass-order O          set the order of the high pass filter to O\n");\
 fprintf(a, "  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n");\
-fprintf(a, "  --spectrum-type TYPE         use PSD estimator TYPE (mean|median|iLIGOModel|eLIGOModel|oldAdvLIGO|aLIGOZDHP)\n");\
-fprintf(a, "                                 {i,e}LIGOModel and aLIGOZDHP from LALSimNoise, oldAdvLIGO from LALNoiseModels\n");\
-fprintf(a, "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n");\
+fprintf(a, "  --spectrum-type TYPE         use PSD estimator TYPE \n");\
+fprintf(a, "                               (mean|median|iLIGOSRD|eLIGOModel|GEOModel|\n");\
+fprintf(a, "                               |aLIGONoSRMLoP|aLIGONoSRMHiP|aLIGOZDLoP|aLIGOZDHiP|\n");\
+fprintf(a, "                               |iVirgoModel|aVirgoModel|KAGRAModel)\n");\
+fprintf(a, "  --dynamic-range-exponent X   set dynamic range scaling to 2^X (eg X=69.0)\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --segment-length N           set data segment length to N points\n");\
-fprintf(a, "  --number-of-segments N       set number of data segments to N\n");\
+fprintf(a, "@ --number-of-segments N       set number of data segments to N\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --td-follow-up FILE          follow up BCV events contained in FILE\n");\
 fprintf(a, "\n");\
@@ -1767,51 +1759,41 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           specType = specType_median;
         }
-        else if ( ! strcmp( "gaussian", optarg ) )
-        {
-          specType = specType_gaussian;
-          fprintf( stderr,
-              "WARNING: replacing psd with white gaussian spectrum\n"
-              "ERROR: option not currently available, exiting...\n" );
-               exit(0);
-        }
-        else if ( ! strcmp( "iLIGOModel", optarg ) )
-        {
-          specType = specType_iLIGO;
-          simPSD = 1;
-          fprintf( stderr,
-              "WARNING: replacing psd with initial LIGO design spectrum\n"
-              "WARNING: replacing response function with unity\n" );
-        }
+        else if ( ! strcmp( "iLIGOSRD", optarg ) )
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDiLIGOSRD; }
         else if ( ! strcmp( "eLIGOModel", optarg ) )
-        {
-          specType = specType_eLIGO;
-          simPSD = 1;
-          fprintf( stderr,
-              "WARNING: replacing psd with enhanced LIGO model spectrum\n"
-              "WARNING: replacing response function with unity\n" );
-        }
-        else if ( ! strcmp( "oldAdvLIGO", optarg ) )
-        {
-          specType = specType_oldAdvLIGO;
-          simPSD = 1;
-          fprintf( stderr,
-              "WARNING: replacing psd with Sathya's old Advanced LIGO fit spectrum\n"
-              "WARNING: replacing response function with unity\n" );
-        }
-        else if ( ! strcmp( "aLIGOZDHP", optarg ) )
-        {
-          specType = specType_aLIGOZDHP;
-          simPSD = 1;
-          fprintf( stderr,
-              "WARNING: replacing psd with advanced LIGO ZDHP model spectrum\n"
-              "WARNING: replacing response function with unity\n" );
-        }
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDeLIGOModel; }
+        else if ( ! strcmp( "GEOModel", optarg ) )
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDGEO; }
+        else if ( ! strcmp( "aLIGONoSRMLoP", optarg ) )
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDaLIGONoSRMLowPower; }
+        else if ( ! strcmp( "aLIGONoSRMHiP", optarg ) )
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDaLIGONoSRMHighPower; }
+        else if ( ! strcmp( "aLIGOZDLoP", optarg ) )
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDaLIGOZeroDetLowPower; }
+        else if ( ! strcmp( "aLIGOZDHiP", optarg ) )
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDaLIGOZeroDetHighPower; }
+        else if ( ! strcmp( "iVirgoModel", optarg ) )
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDVirgo; }
+        else if ( ! strcmp( "aVirgoModel", optarg ) )
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDAdvVirgo; }
+        else if ( ! strcmp( "KAGRAModel", optarg ) )
+        { specType = specType_simulated;
+          specFunc = XLALSimNoisePSDKAGRA; }
+
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown power spectrum type: "
-              "%s (must be mean or median)\n",
+              "unknown power spectrum type: %s\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -2391,7 +2373,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'Y':
-        /* create storaged for the ifo-tag */
+        /* create storage for the ifo-tag */
         optarg_len = strlen( optarg ) + 1;
         ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( ifoTag, optarg, optarg_len );
@@ -2675,12 +2657,28 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
+
   /*
    *
    * check validity of arguments
    *
    */
 
+  /* if using a simulated PSD, use the first two characters of */
+  /* ifoTag as an ifo prefix */
+  if ( specType == specType_simulated )
+  {
+    if ( ! ifoTag ) 
+    {
+      fprintf( stderr, "--ifo-tag must be specified if using a simulated PSD\n" );
+      exit( 1 );
+    }
+    else
+    {
+      memset( ifo, 0, sizeof(ifo) );
+      memcpy( ifo, ifoTag, sizeof(ifo) - 1 );
+    }
+  }
 
   /* check validity of input data time */
   if ( ! gpsStartTime.gpsSeconds )
@@ -2707,9 +2705,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--segment-length must be specified\n" );
     exit( 1 );
   }
-  if ( numSegments < 0 )
+  if ( ( specType==specType_mean || specType==specType_median ) && numSegments < 0 )
   {
-    fprintf( stderr, "--number-of-segments must be specified\n" );
+    fprintf( stderr, "--number-of-segments must be specified if using frama data\n" );
     exit( 1 );
   }
 
@@ -2753,7 +2751,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  if ( calData == real_8 )
+  if ( ( specType==specType_mean || specType==specType_median ) && calData == real_8 )
   {
     /* check that strain high pass parameters have been specified */
     if ( strainHighPassFreq < 0 )
@@ -2777,23 +2775,26 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* check validity of input data length */
-  inputDataLength = numPoints * numSegments - ( numSegments - 1 ) *
-    (numPoints / 2);
+  if ( specType==specType_mean || specType==specType_median )
   {
-    UINT8 gpsChanIntervalNS = gpsEndTime.gpsSeconds * LAL_INT8_C(1000000000) -
-      gpsStartTime.gpsSeconds * LAL_INT8_C(1000000000);
-    UINT8 inputDataLengthNS = (UINT8) inputDataLength * LAL_INT8_C(1000000000)
-      / (UINT8) sampleRate;
-
-    if ( inputDataLengthNS != gpsChanIntervalNS )
+    inputDataLength = numPoints * numSegments - ( numSegments - 1 ) *
+      (numPoints / 2);
     {
-      fprintf( stderr, "length of input data and data chunk do not match\n" );
-      fprintf( stderr, "start time: %d, end time %d\n",
-          gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
-      fprintf( stderr, "gps channel time interval: %" LAL_UINT8_FORMAT " ns\n"
-          "computed input data length: %" LAL_UINT8_FORMAT " ns\n",
-          gpsChanIntervalNS, inputDataLengthNS );
-      exit( 1 );
+      UINT8 gpsChanIntervalNS = gpsEndTime.gpsSeconds * LAL_INT8_C(1000000000) -
+        gpsStartTime.gpsSeconds * LAL_INT8_C(1000000000);
+      UINT8 inputDataLengthNS = (UINT8) inputDataLength * LAL_INT8_C(1000000000)
+        / (UINT8) sampleRate;
+
+      if ( inputDataLengthNS != gpsChanIntervalNS )
+      {
+        fprintf( stderr, "length of input data and data chunk do not match\n" );
+        fprintf( stderr, "start time: %d, end time %d\n",
+            gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
+        fprintf( stderr, "gps channel time interval: %" LAL_UINT8_FORMAT " ns\n"
+            "computed input data length: %" LAL_UINT8_FORMAT " ns\n",
+            gpsChanIntervalNS, inputDataLengthNS );
+        exit( 1 );
+      }
     }
   }
 
@@ -2827,6 +2828,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           "--candle-maxmass must be specified if --standard-candle is given\n" );
       exit( 1 );
     }
+    if ( ( specType == specType_simulated ) && numPoints < 0 )
+    {
+      fprintf( stderr,
+          "--num-points must be specified if --standard-candle is given\n"
+          "when using a simulated PSD\n" );
+      exit( 1 ); 
+    }
   }
 
   /* check that the spectrum generation parameters have been given */
@@ -2835,9 +2843,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--low-frequency-cutoff must be specified\n" );
     exit( 1 );
   }
-  if ( resampFiltType < 0 )
+  if ( ( specType==specType_mean || specType==specType_median ) && resampFiltType < 0 )
   {
-    fprintf( stderr, "--resample-filter must be specified\n" );
+    fprintf( stderr, "--resample-filter must be specified for frame data\n" );
     exit( 1 );
   }
   if ( specType == specType_undefined )
@@ -2847,51 +2855,54 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* check for potential underflows in the simulated spectrum */
-  if ( simPSD == 1 && dynRangeExponent < 10 )
-  {
-    fprintf( stderr, "If using a simulated PSD, a suitable dynamic \n" );
-    fprintf( stderr, "range exponent must be given, eg 69.0. Exiting...\n" );
+  if ( ( specType == specType_simulated ) && dynRangeExponent < 10 )
+  { 
+    fprintf( stderr, "If using a simulated PSD, a suitable dynamic \n"
+        "range exponent must be given, eg 69.0. Exiting...\n" );
     exit( 1 );
   }
 
   /* check that a channel has been requested and fill the ifo */
-  if ( ! fqChanName )
+  if ( ( specType==specType_mean || specType==specType_median ) && ! fqChanName )
   {
-    fprintf( stderr, "--channel-name must be specified\n" );
+    fprintf( stderr, "--channel-name must be specified for frame data\n" );
     exit( 1 );
   }
 
   /* check that we can correctly obtain the input frame data */
-  if ( globFrameData )
+  if ( specType==specType_mean || specType==specType_median )
   {
-    if ( frInCacheName )
+    if ( globFrameData )
     {
-      fprintf( stderr,
-          "--frame-cache must not be specified when globbing frame data\n" );
-      exit( 1 );
-    }
+      if ( frInCacheName )
+      {
+        fprintf( stderr,
+            "--frame-cache must not be specified when globbing frame data\n" );
+        exit( 1 );
+      }
 
-    if ( ! frInType )
-    {
-      fprintf( stderr,
-          "--frame-type must be specified when globbing frame data\n" );
-      exit( 1 );
+      if ( ! frInType )
+      {
+        fprintf( stderr,
+            "--frame-type must be specified when globbing frame data\n" );
+        exit( 1 );
+      }
     }
-  }
-  else
-  {
-    if ( ! frInCacheName )
+    else
     {
-      fprintf( stderr,
-          "--frame-cache must be specified when not globbing frame data\n" );
-      exit( 1 );
-    }
+      if ( ! frInCacheName )
+      {
+        fprintf( stderr,
+            "--frame-cache must be specified when not globbing frame data\n" );
+        exit( 1 );
+      }
 
-    if ( frInType )
-    {
-      fprintf( stderr, "--frame-type must not be specified when obtaining "
-          "frame data from a cache file\n" );
-      exit( 1 );
+      if ( frInType )
+      {
+        fprintf( stderr, "--frame-type must not be specified when obtaining "
+            "frame data from a cache file\n" );
+        exit( 1 );
+      }
     }
   }
 
@@ -2922,7 +2933,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* check we can calibrate the data if it's not h(t) */
-  if ( ! calData )
+  if ( ( specType==specType_mean || specType==specType_median ) && ! calData )
   {
     if ( ! ( calCacheName || globCalData ) )
     {
@@ -2941,8 +2952,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     if ( calCacheName || globCalData )
     {
-      fprintf( stderr, "neither --calibration-cache nor "
-          "--glob-calibration-data\nshould be given for calibrated data\n" );
+      fprintf( stderr, "neither --calibration-cache nor --glob-calibration-data\n"
+          "should be given when using calibrated data or a simulated PSD\n" );
       exit( 1 );
     }
   }
@@ -3140,7 +3151,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           "Error: argument --min-eta must be given if --max-eta is given\n");
       exit(1);
     }
-
+ 
     if( etaMaxCutoff < etaMinCutoff )
     {
       fprintf( stderr,
