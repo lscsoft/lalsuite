@@ -224,6 +224,7 @@ src/pulsar/SFTReferenceLibrary/lalapps_splitSFTs
 src/pulsar/SideBand/lalapps_GenerateSideBandTemplate
 src/pulsar/SideBand/lalapps_GetTimeStamps
 src/pulsar/SideBand/lalapps_SideBandMCMC
+src/pulsar/TDS_isolated/lalapps_CrabTNHeterodyne
 src/pulsar/TDS_isolated/lalapps_create_pulsar_signal_frame
 src/pulsar/TDS_isolated/lalapps_heterodyne_pulsar
 src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation
