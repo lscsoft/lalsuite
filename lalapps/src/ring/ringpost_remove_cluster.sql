@@ -30,6 +30,13 @@ WHERE
                 )
         );
 
+-- delete coincs when H1/H2 snr ratio is less than or equal to 1.0
+
+DELETE FROM
+        coinc_ringdown
+WHERE
+        snr_ratio <= 1.0;
+
 -- remove unused rows from the coinc_event and coinc_ringdown tables
 
 DELETE FROM
