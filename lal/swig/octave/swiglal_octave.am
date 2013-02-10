@@ -36,6 +36,6 @@ TESTS_ENVIRONMENT = \
 
 # run Octave for interactive testing
 run-octave : $(octexec_LTLIBRARIES)
-	$(TESTS_ENVIRONMENT) $(OCTAVE) -q
+	$(TESTS_ENVIRONMENT) $(OCTAVE) -q -no-window-system
 
 endif # SWIG_BUILD_OCTAVE
