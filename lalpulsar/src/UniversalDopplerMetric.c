@@ -205,7 +205,6 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 const PosVel3D_t empty_PosVel3D_t;
 const DopplerMetricParams empty_DopplerMetricParams;
 const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
-const MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- Global variables ----------*/
 
@@ -1387,10 +1386,12 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   }
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
+  REAL8 sum_weights = 0;
   A = B = C = 0;
   for ( X = 0; X < numDet; X ++ )
     {
       REAL8 weight = metricParams->detInfo.detWeights[X];
+      sum_weights += weight;
       REAL8 av, relerr;
       intparams.site = &(metricParams->detInfo.sites[X]);
 
@@ -1422,6 +1423,12 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
       C += weight * av;
 
     } /* for X < numDetectors */
+
+  REAL8 norm_weight = 1.0 / sum_weights;
+
+  A *= norm_weight;
+  B *= norm_weight;
+  C *= norm_weight;
 
   ret->a_a = A;
   ret->b_b = B;
@@ -1532,19 +1539,19 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
 	    } /* for X < numDetectors */
 
-	  gsl_vector_set (ret->a_a_i, i, a_a_i);
-	  gsl_vector_set (ret->a_b_i, i, a_b_i);
-	  gsl_vector_set (ret->b_b_i, i, b_b_i);
+	  gsl_vector_set (ret->a_a_i, i, a_a_i * norm_weight );
+	  gsl_vector_set (ret->a_b_i, i, a_b_i * norm_weight );
+	  gsl_vector_set (ret->b_b_i, i, b_b_i * norm_weight );
 
 
-	  gsl_matrix_set (ret->a_a_i_j, i, j, a_a_i_j);
-	  gsl_matrix_set (ret->a_a_i_j, j, i, a_a_i_j);
+	  gsl_matrix_set (ret->a_a_i_j, i, j, a_a_i_j * norm_weight);
+	  gsl_matrix_set (ret->a_a_i_j, j, i, a_a_i_j * norm_weight);
 
-	  gsl_matrix_set (ret->a_b_i_j, i, j, a_b_i_j);
-	  gsl_matrix_set (ret->a_b_i_j, j, i, a_b_i_j);
+	  gsl_matrix_set (ret->a_b_i_j, i, j, a_b_i_j * norm_weight);
+	  gsl_matrix_set (ret->a_b_i_j, j, i, a_b_i_j * norm_weight);
 
-	  gsl_matrix_set (ret->b_b_i_j, i, j, b_b_i_j);
-	  gsl_matrix_set (ret->b_b_i_j, j, i, b_b_i_j);
+	  gsl_matrix_set (ret->b_b_i_j, i, j, b_b_i_j * norm_weight);
+	  gsl_matrix_set (ret->b_b_i_j, j, i, b_b_i_j * norm_weight);
 
 	} /* for j <= i */
 
@@ -1783,81 +1790,6 @@ XLALDopplerCoordinateHelpAll ( void )
   return ( helpstr );
 
 } /* XLALDopplerCoordinateHelpAll() */
-
-
-/** Parse string-vectors (typically input by user) of detector-names
- * and relative noise-weights, and return a MultiDetectorInfo struct.
- *
- * NOTE: you can pass detWeights == NULL, corresponding to equal-sensitivity detectors,
- * ie. all noise-weights equal.
- *
- * NOTE: the input noise-weights dont have to be normalized, but the
- * returned noise-weights will be properly normalized, i.e. \f$\sum_{i=1}^N w_i = 1\f$.
- *
- * Return  0 == OK, nonzero == ERROR
- */
-int
-XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/**< [out] parsed detector-info struct */
-			     const LALStringVector *detNames,	/**< [in] list of detector names */
-			     const LALStringVector *detWeights	/**< [in] list of (strings) with detector weights (NULL if all 1) */
-			     )
-{
-  UINT4 X, numDet;
-  REAL8 totalWeight;
-
-  if ( !detInfo || !detNames || (detNames->length == 0) ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer input\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-
-  numDet = detNames->length;
-  if ( detWeights && (detWeights->length != numDet ) ) {
-    XLALPrintError ("\n%s: Illegal input: number of noise-weights must agree with number of detectors\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-
-  /* initialize empty return struct */
-  memset ( detInfo, 0, sizeof(*detInfo) );
-
-  detInfo->length = numDet;
-
-  totalWeight = 0;
-  /* parse input strings and fill detInfo */
-  for ( X = 0; X < numDet; X ++ )
-    {
-      LALDetector *ifo;
-      /* first parse detector name */
-      if ( ( ifo = XLALGetSiteInfo ( detNames->data[X] ) ) == NULL ) {
-	XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, detNames->data[X] );
-	XLAL_ERROR ( XLAL_EINVAL );
-      }
-      detInfo->sites[X] = (*ifo);
-      XLALFree ( ifo );
-
-      /* parse noise weights if any */
-      if ( detWeights )
-	{
-	  if ( 1 != sscanf ( detWeights->data[X], "%lf", &(detInfo->detWeights[X]) ) )
-	    {
-	      XLALPrintError ("%s: Failed to parse noise-weight '%s' into float.\n", __func__, detWeights->data[X] );
-	      XLAL_ERROR ( XLAL_EINVAL );
-	    }
-	} /* if detWeights */
-      else
-	detInfo->detWeights[X] = 1;
-
-      totalWeight += detInfo->detWeights[X];
-
-    } /* for X < numDet */
-
-  /* normalized noise-weights to sum weights = 1 */
-  for ( X = 0; X < numDet; X ++ )
-    detInfo->detWeights[X] /= totalWeight;
-
-  return XLAL_SUCCESS;
-
-} /* XLALParseMultiDetectorInfo() */
-
 
 /** Free a FmetricAtoms_t structure, allowing any pointers to be NULL
  */
