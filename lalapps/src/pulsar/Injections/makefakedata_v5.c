@@ -117,19 +117,19 @@ typedef struct
   REAL8 Tsft;		/**< SFT time baseline Tsft */
   REAL8 SFToverlap;		/**< overlap SFTs by this many seconds */
 
+  LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
+
   /* noise to add [OPTIONAL] */
+  LALStringVector* sqrtSX; 	/**< Add Gaussian noise: list of respective detectors' noise-floors sqrt{Sn}" */
+
   CHAR *noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
-  REAL8 noiseSqrtSh;		/**< ALTERNATIVE: single-sided sqrt(Sh) for Gaussian noise */
 
   /* Window function [OPTIONAL] */
-  CHAR *windowType;		/**< Windowing function for the time series */
-  REAL8 windowBeta;          	/**< 'beta' parameter required for certain window-types */
-
-  /* Detector and ephemeris */
-  CHAR *IFO;			/**< Detector: H1, L1, H2, V1, ... */
+  CHAR *SFTWindowType;		/**< Windowing function to apply to the SFT time series */
+  REAL8 SFTWindowBeta;         	/**< 'beta' parameter required for certain window-types */
 
   CHAR *actuation;		/**< filename containg detector actuation function */
-  REAL8 actuationScale;	/**< Scale-factor to be applied to actuation-function */
+  REAL8 actuationScale;		/**< Scale-factor to be applied to actuation-function */
   CHAR *ephemDir;		/**< Directory path for ephemeris files (optional), use LAL_DATA_PATH if unset. */
   CHAR *ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
 
@@ -177,16 +177,36 @@ typedef struct
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
 } UserVariables_t;
 
+
+// ---------- exportable API types ----------
+/**
+ * Struct controlling all the aspects of the fake data (time-series + SFTs)
+ * to be produced by XLALMakeFakeCWData()
+ */
+typedef struct tagFakeDataParams
+{
+  COMPLEX8FrequencySeries *transferFunction;	//< detector transfer-function from strain --> counts: only used for HW-injections
+  LIGOTimeGPSVector *SFTtimestamps;		//< timestamps to generate SFTs for
+  REAL8 fmin;					//< smallest frequency guaranteed to be generated ["effective" fmin can be smaller]
+  REAL8 Band;					//< smallest frequency band guaranteed to be generated ["effective" band can be larger]
+  MultiDetectorInfo detInfo;			//< detectors and noise-floors (for Gaussian noise) to generate data for
+  UINT4 randSeed;				//< seed value for random-number generator
+  char *SFTWindowType;				//< window to apply to the SFT timeseries
+  REAL8 SFTWindowBeta;				//< 'beta' parameter required for *some* windows [otherwise must be 0]
+} FakeDataParams_t;
+
+
 // ----- global variables ----------
 
 // ----- empty structs for initializations
 static const UserVariables_t empty_UserVariables;
 static const ConfigVars_t empty_GV;
 static const LALUnit empty_LALUnit;
+static const FakeDataParams_t empty_FakeDataParams;
 
 // ---------- exportable API prototypes ----------
 int XLALFindSmallestValidSamplingRate ( REAL8 *fSamp, UINT4 n0, const LIGOTimeGPSVector *timestamps );
-int XLALMakeFakeCWData ( SFTVector **SFTs, REAL4TimeSeries **Tseries, const UserVariables_t *uvar, const ConfigVars_t *cfg );
+int XLALMakeFakeCWData ( SFTVector **outSFTs, REAL4TimeSeries **outTseries, const PulsarParams *sourceParams, const FakeDataParams_t *fakeDataParams, EphemerisData *edat );
 
 // ---------- local prototypes ----------
 int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
@@ -223,8 +243,20 @@ main(int argc, char *argv[])
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
 
-  XLAL_CHECK ( XLALMakeFakeCWData ( &SFTs, &Tseries, &uvar, &GV ) == XLAL_SUCCESS, XLAL_EFUNC );
+  MultiDetectorInfo detInfo;
+  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &detInfo, uvar.IFOs, uvar.sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  FakeDataParams_t DataParams = empty_FakeDataParams;
+  DataParams.SFTtimestamps    = GV.timestamps;
+  DataParams.transferFunction = GV.transfer;
+  DataParams.fmin = uvar.fmin;
+  DataParams.Band = uvar.Band;
+  DataParams.detInfo = detInfo;
+  DataParams.randSeed = uvar.randSeed;
+  DataParams.SFTWindowType = uvar.SFTWindowType;
+  DataParams.SFTWindowBeta = uvar.SFTWindowBeta;
+
+  XLAL_CHECK ( XLALMakeFakeCWData ( &SFTs, &Tseries, &GV.pulsar, &DataParams, GV.edat ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // if noiseSFTs specified, load them and add them to the resulting SFT-vector
   if ( GV.noiseCatalog )
@@ -571,40 +603,30 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
       } /* if haveTimestampsFile */
 
-    /* ----- if real noise-SFTs given: load them now using EITHER (start,start+duration) OR timestamps
-     * as constraints if given, otherwise load all of them. Also require window option to be given
+    /* ----- if real noise-SFTs given: load them now using optional (start,start+duration) as constraints,
+     * Require window option to be given to ensure consistency with noise-SFT's windowing
      */
     if ( uvar->noiseSFTs )
       {
-	SFTConstraints constraints = empty_SFTConstraints;
-	LIGOTimeGPS minStartTime, maxEndTime;
-        BOOLEAN have_window = XLALUserVarWasSet ( &uvar->windowType );
+        XLAL_CHECK ( XLALUserVarWasSet ( &uvar->SFTWindowType ), XLAL_EINVAL, "--SFTWindowType required when given noiseSFTs.\n" );
+        XLAL_CHECK ( !XLALUserVarWasSet ( &uvar->IFOs ), XLAL_EINVAL, "Specifying --IFOs not allowed with --noiseSFTs.\n" );
 
-        /* user must specify the window function used for the noiseSFTs */
-        if ( !have_window ) {
-          XLAL_ERROR ( XLAL_EINVAL, "Require window option to be given when specifying noiseSFTs.\n" );
-        }
-
-        XLALPrintWarning ( "\nWARNING: only SFTs corresponding to the noiseSFT-timestamps will be produced!\n" );
-
-	/* use all additional constraints user might have given */
+	/* use additional time-constraints from user input in noiseSFT loading */
+        SFTConstraints constraints = empty_SFTConstraints;
 	if ( haveStart && haveDuration )
 	  {
+            LIGOTimeGPS minStartTime, maxEndTime;
 	    XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
-	    constraints.startTime = &minStartTime;
 	    XLALGPSSetREAL8 ( &maxEndTime, uvar->startTime + uvar->duration );
-	    constraints.endTime = &maxEndTime;
-            XLALPrintWarning ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
+
+	    constraints.startTime = &minStartTime;
+	    constraints.endTime   = &maxEndTime;
+
+            XLALPrintWarning ( "Only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
 	  } /* if start+duration given */
 
-        CHAR *channelName = NULL;
-        XLAL_CHECK ( (channelName = XLALGetChannelPrefix ( uvar->IFO )) != NULL, XLAL_EFUNC, "XLALGetChannelPrefix('%s') failed.\n", uvar->IFO );
-	/* use detector-constraint */
-	constraints.detector = channelName ;
-
 	XLAL_CHECK ( (cfg->noiseCatalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
-	XLAL_CHECK ( cfg->noiseCatalog->length > 0, XLAL_EINVAL, "No noise-SFTs matching the constraints (IFO, start+duration, timestamps) were found!\n" );
-        XLALFree ( channelName );
+	XLAL_CHECK ( cfg->noiseCatalog->length > 0, XLAL_EINVAL, "No noise-SFTs matching (start+duration, timestamps) were found!\n" );
 
 	/* extract timestamps from the SFT-catalog */
         XLAL_CHECK ( (cfg->timestamps = XLALTimestampsFromSFTCatalog ( cfg->noiseCatalog )) != NULL, XLAL_EFUNC );
@@ -879,8 +901,9 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   XLALregSTRINGUserStruct ( logfile,            'l', UVAR_OPTIONAL, "Filename for log-output");
 
-  /* detector and ephemeris */
-  XLALregSTRINGUserStruct ( IFO,                'I', UVAR_OPTIONAL, "Detector: one of 'G1','L1','H1,'H2','V1', ...");
+  /* detectors and respective noise-floors */
+  XLALregLISTUserStruct ( IFOs,			'I', UVAR_OPTIONAL, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  XLALregLISTUserStruct ( sqrtSX,	 	 0,  UVAR_OPTIONAL, "Add Gaussian Noise: CSV list of detectors' noise-floors sqrt{Sn}");
 
   XLALregSTRINGUserStruct ( ephemDir,           'E', UVAR_OPTIONAL, "Directory path for ephemeris files (use LAL_DATA_PATH if unspecified)");
   XLALregSTRINGUserStruct ( ephemYear,          'y', UVAR_OPTIONAL, "Year-range string of ephemeris files to be used");
@@ -897,8 +920,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* SFT properties */
   XLALregREALUserStruct (  Tsft,                 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
   XLALregREALUserStruct (  SFToverlap,           0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
-  XLALregSTRINGUserStruct( windowType,           0, UVAR_OPTIONAL, "Window function to be applied to the SFTs (required when using --noiseSFTs)");
-  XLALregREALUserStruct (  windowBeta,           0, UVAR_OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
+  XLALregSTRINGUserStruct( SFTWindowType,        0, UVAR_OPTIONAL, "Window function to be applied to the SFTs (required when using --noiseSFTs)");
+  XLALregREALUserStruct (  SFTWindowBeta,        0, UVAR_OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
   XLALregREALUserStruct (  refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (if 0: use startTime)");
@@ -933,8 +956,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  orbitArgp,            0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
 
   /* noise */
-  XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile)");
-  XLALregREALUserStruct (  noiseSqrtSh,          0, UVAR_OPTIONAL,  "ALTERNATIVE: Gaussian noise with single-sided PSD sqrt(Sh)");
+  XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");
 
   XLALregBOOLUserStruct (  lineFeature,          0, UVAR_OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
 
@@ -1138,20 +1160,32 @@ is_directory ( const CHAR *fname )
 /**
  * Generate fake 'CW' data, returned either as SFTVector or REAL4Timeseries or both,
  * for given CW-signal ("pulsar") parameters and output parameters (frequency band etc)
+ *
+ * Currently used API inputs
+PulsarParams
+
+
  */
 int
-XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
-                     REAL4TimeSeries **outTseries,	//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
-                     const UserVariables_t *uvar,	//< [in] user-input vars [FIXME!]
-                     const ConfigVars_t *cfg		//< [in] config-vars	[FIXME!]
+XLALMakeFakeCWData ( SFTVector **outSFTs,			//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
+                     REAL4TimeSeries **outTseries,		//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
+                     const PulsarParams *sourceParams,		//< [in] CW source parameters (amplitude+phase+transient params)
+                     const FakeDataParams_t *dataParams,	//< [in] parameters specifying the type of data to generate
+                     EphemerisData *edat			//< [in] ephemeris data
                      )
 {
   XLAL_CHECK ( (outSFTs == NULL) || ((*outSFTs) == NULL ), XLAL_EINVAL );
   XLAL_CHECK ( (outTseries == NULL) || ((*outTseries) == NULL ), XLAL_EINVAL );
 
-  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( cfg != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sourceParams != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
 
+  LIGOTimeGPSVector *timestamps = dataParams->SFTtimestamps;
+  XLAL_CHECK ( timestamps != NULL, XLAL_EINVAL );
+
+  REAL8 Tsft = timestamps->deltaT;
+  XLAL_CHECK ( Tsft > 0, XLAL_EINVAL );
 
   // ---------- for SFT output: calculate effective fmin and Band consistent with SFT bins
 
@@ -1165,7 +1199,7 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
    * avoid unneccessary increases in the created frequency-Band due to numerical noise alone
    * (this is consistent with what XLALExtractBandFromSFTVector() does, for example)
    */
-  volatile REAL8 dFreq = 1.0 / uvar->Tsft;
+  volatile REAL8 dFreq = 1.0 / Tsft;
   volatile REAL8 tmp;
   // NOTE: don't "simplify" the above: we try to make sure
   // the result of this will be guaranteed to be IEEE-compliant,
@@ -1175,12 +1209,12 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
   REAL8 fudge_up   = 1 + eps;
   REAL8 fudge_down = 1 - eps;
 
-  REAL8 fMin = uvar->fmin;
+  REAL8 fMin = dataParams->fmin;
   tmp = fMin / dFreq;
   UINT4 imin = (UINT4) floor( tmp * fudge_up );	// round *down*, allowing for eps 'fudge'
   REAL8 fmin_eff = imin * dFreq;
 
-  REAL8 fMax = uvar->fmin + uvar->Band;
+  REAL8 fMax = dataParams->fmin + dataParams->Band;
   tmp = fMax / dFreq;
   UINT4 imax = (UINT4) ceil ( tmp * fudge_down );  // round *up*, allowing for eps fudge
   UINT4 numBins = (UINT4) (imax - imin + 1);
@@ -1188,32 +1222,30 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
 
   REAL8 fBand_eff = (numBins - 1) * dFreq;
 
-  if ( fBand_eff != uvar->Band ) {
+  if ( fBand_eff != dataParams->Band ) {
     XLALPrintWarning("Asked for Band [%.16g, %.16g] Hz, effective Band produced is [%.16g, %.16g] Hz (numSFTBins=%d)\n", fMin, fMax, fmin_eff, fmax_eff, numBins);
   }
 
   /*----------------------------------------
    * fill the PulsarSignalParams struct
    *----------------------------------------*/
-  PulsarSignalParams params = empty_PulsarSignalParams;
   /* pulsar params */
-  params.pulsar.refTime            = cfg->pulsar.Doppler.refTime;
+  PulsarSignalParams params = empty_PulsarSignalParams;
+  params.pulsar.refTime            = sourceParams->Doppler.refTime;
   params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
-  params.pulsar.position.longitude = cfg->pulsar.Doppler.Alpha;
-  params.pulsar.position.latitude  = cfg->pulsar.Doppler.Delta;
-  {
-    REAL8 h0   = cfg->pulsar.Amp.h0;
-    REAL8 cosi = cfg->pulsar.Amp.cosi;
-    params.pulsar.aPlus		   = 0.5 * h0 * ( 1.0 + SQ(cosi) );
-    params.pulsar.aCross	   = h0 * cosi;
-  }
-  params.pulsar.phi0		   = cfg->pulsar.Amp.phi0;
-  params.pulsar.psi 		   = cfg->pulsar.Amp.psi;
+  params.pulsar.position.longitude = sourceParams->Doppler.Alpha;
+  params.pulsar.position.latitude  = sourceParams->Doppler.Delta;
+  REAL8 h0   = sourceParams->Amp.h0;
+  REAL8 cosi = sourceParams->Amp.cosi;
+  params.pulsar.aPlus              = 0.5 * h0 * ( 1.0 + SQ(cosi) );
+  params.pulsar.aCross             = h0 * cosi;
+  params.pulsar.phi0               = sourceParams->Amp.phi0;
+  params.pulsar.psi                = sourceParams->Amp.psi;
 
   // translate 'modern' fkdot into 'old-style' spindown-vector
   UINT4 maxSpindownOrder = 0;
   for ( UINT4 s = PULSAR_MAX_SPINS-1; s > 0; s -- ) {
-    if ( cfg->pulsar.Doppler.fkdot[s] != 0 )
+    if ( sourceParams->Doppler.fkdot[s] != 0 )
       {
         maxSpindownOrder = s;
         break;
@@ -1223,22 +1255,21 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
   XLAL_CHECK ( (spindown = XLALCreateREAL8Vector ( maxSpindownOrder )) != NULL, XLAL_EFUNC );
   for ( UINT4 s = 0; s < maxSpindownOrder; s ++ )
     {
-      spindown->data[s] = cfg->pulsar.Doppler.fkdot[s+1];
+      spindown->data[s] = sourceParams->Doppler.fkdot[s+1];
     }
-  params.pulsar.f0		   = cfg->pulsar.Doppler.fkdot[0];
+  params.pulsar.f0		   = sourceParams->Doppler.fkdot[0];
   params.pulsar.spindown           = spindown;
-  params.orbit                     = cfg->pulsar.Doppler.orbit;
+  params.orbit                     = sourceParams->Doppler.orbit;
 
   /* detector params */
 
-  /* ---------- prepare detector ---------- */
-  LALDetector *site;
-  XLAL_CHECK ( XLALUserVarWasSet ( &uvar->IFO ), XLAL_EINVAL, "Need detector input --IFO!\n\n");
-  XLAL_CHECK ( (site = XLALGetSiteInfo ( uvar->IFO )) != NULL, XLAL_EFUNC , "XLALGetSiteInfo('%s') failed\n", uvar->IFO );
+  // check detector input
+  XLAL_CHECK ( dataParams->detInfo.length == 1, XLAL_EINVAL, "Only single-detector input allowed right now, got numDet=%d\n", dataParams->detInfo.length );
+  LALDetector site = dataParams->detInfo.sites[0];
+  params.site = &(site);
 
-  params.transfer = cfg->transfer;	/* detector transfer function (NULL if not used) */
-  params.site = site;
-  params.ephemerides = cfg->edat;
+  params.transfer = dataParams->transferFunction;	/* detector transfer function (NULL if not used) */
+  params.ephemerides = edat;
 
   /* characterize the output time-series */
   REAL8 min_fSamp = 2.0 * fBand_eff;	/* minimal sampling rate, via Nyquist theorem */
@@ -1248,47 +1279,45 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
   // lie on an exact timestep of the timeseries.
   // ie we start from min_fsamp = Tsft / n0, and then try to find the smallest
   // n >= n0, such that for fsamp = Tsft / n, for all gaps i: Dt_i * fsamp = int
-  UINT4 n0 = (UINT4) round ( uvar->Tsft * min_fSamp );
+  UINT4 n0 = (UINT4) round ( Tsft * min_fSamp );
   REAL8 fSamp;
-  XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &fSamp, n0, cfg->timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &fSamp, n0, dataParams->SFTtimestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   params.samplingRate 	= fSamp;
   params.fHeterodyne  	= fmin_eff;		/* heterodyning frequency for output time-series */
 
   /* ----- figure out start-time and duration ----- */
-  LIGOTimeGPS firstGPS = cfg->timestamps->data[0];
-  LIGOTimeGPS  lastGPS  = cfg->timestamps->data[cfg->timestamps->length - 1 ];
-  REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS ) + uvar->Tsft;
+  LIGOTimeGPS firstGPS = timestamps->data[0];
+  LIGOTimeGPS lastGPS  = timestamps->data [ timestamps->length - 1 ];
+  REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS ) + Tsft;
 
-  XLAL_CHECK ( duration >= uvar->Tsft, XLAL_EINVAL, "Requested duration=%d sec is less than Tsft =%.0f sec.\n\n", duration, uvar->Tsft);
+  XLAL_CHECK ( duration >= Tsft, XLAL_EINVAL, "Requested duration=%d sec is less than Tsft =%.0f sec.\n\n", duration, Tsft);
 
   params.duration     = (UINT4) ceil ( duration );
-  params.startTimeGPS = cfg->timestamps->data[0];
+  params.startTimeGPS = timestamps->data[0];
 
   /*----------------------------------------
    * generate the signal time-series
    *----------------------------------------*/
   REAL4TimeSeries *Tseries = NULL;
-  if ( uvar->lineFeature )
-    {
-      XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
-    }
-  else
-    {
-      XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
-    }
+  // FIXME: de-activated line-feature for now, need to extend 'sourceParams' input
+  // if ( uvar->lineFeature )
+  // XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
+
+  XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
 
   // ----- free temporary memory
-  XLALFree ( site );
   XLALDestroyREAL8Vector ( spindown );
 
-  XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, cfg->transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // ----- apply transient-CW window
+  XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, sourceParams->Transient ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* add Gaussian noise if requested */
-  if ( uvar->noiseSqrtSh > 0)
+  REAL8 sqrtSn = dataParams->detInfo.sqrtSn[0];
+  if ( sqrtSn > 0)
     {
-      REAL8 noiseSigma = uvar->noiseSqrtSh * sqrt ( fBand_eff );
-      XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, noiseSigma, uvar->randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
+      REAL8 noiseSigma = sqrtSn * sqrt ( fBand_eff );
+      XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, noiseSigma, dataParams->randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
   /*----------------------------------------
@@ -1296,24 +1325,22 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
    *----------------------------------------*/
   SFTParams sftParams = empty_SFTParams;
 
-  sftParams.Tsft = uvar->Tsft;
+  sftParams.Tsft = Tsft;
 
-  sftParams.timestamps = cfg->timestamps;
+  sftParams.timestamps = timestamps;
   sftParams.noiseSFTs = NULL;	// not used here any more!
 
   /*--------------------- Prepare windowing of time series ---------------------*/
 
   REAL4Window *window = NULL;
-  if ( uvar->windowType )
+  if ( dataParams->SFTWindowType )
     {
-      /* Determine SFT window */
       REAL8 dt = Tseries->deltaT;
-      REAL8 REALnumTimesteps = uvar->Tsft / dt;
-      UINT4 numTimesteps = round ( REALnumTimesteps );	/* number of time-samples in an Tsft (should be exact integer!) */
+      UINT4 numTimesteps = round ( Tsft / dt );	/* number of time-samples in an Tsft (should be exact integer!) */
 
-      XLAL_CHECK ( (window = XLALCreateNamedREAL4Window ( uvar->windowType, uvar->windowBeta, numTimesteps )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (window = XLALCreateNamedREAL4Window ( dataParams->SFTWindowType, dataParams->SFTWindowBeta, numTimesteps )) != NULL, XLAL_EFUNC );
 
-    } // if uvar->windowType
+    } // if uvar->SFTwindowName
 
   sftParams.window = window;
 
@@ -1347,27 +1374,27 @@ XLALMakeFakeCWData ( SFTVector **outSFTs,		//< [out] pointer to optional SFT-vec
 } // XLALMakeFakeCWData()
 
 
-  /**
-   * Find the smallest sampling rate of the form fsamp = n / Tsft, with n>=n0,
-   * such that all gap sizes Dt_i between SFTs of the given timestamps are also
-   * exactly resolved, ie. that Dt_i * fsamp = integer, for all i
-   *
-   * The smallest possible sampling rate is fsamp0 = n0 / Tsft, which is specified
-   * by the user. This sampling rate would be valid if there are no gaps between SFTs,
-   * so it's only in cases of gaps (which are not integer-multiples of Tsft) that we'll
-   * have to increase the sampling rate.
-   *
-   * NOTE: This approach replaces the old mfdv4 habit of 'nudging' noise SFTs start-times
-   * to fall on integer timesteps of the fsamp0 timeseries. The purpose of this function
-   * is to avoid this behaviour, by appropriately increasing the sampling rate
-   * as required.
-   *
-   * NOTE2: we only allow integer-second gaps, everything else will be
-   * rejected with an error-message.
-   *
-   * NOTE3: Tsft=timestamps->deltaT must be integer seconds, everything else is rejected
-   * with an error as well
-   */
+/**
+ * Find the smallest sampling rate of the form fsamp = n / Tsft, with n>=n0,
+ * such that all gap sizes Dt_i between SFTs of the given timestamps are also
+ * exactly resolved, ie. that Dt_i * fsamp = integer, for all i
+ *
+ * The smallest possible sampling rate is fsamp0 = n0 / Tsft, which is specified
+ * by the user. This sampling rate would be valid if there are no gaps between SFTs,
+ * so it's only in cases of gaps (which are not integer-multiples of Tsft) that we'll
+ * have to increase the sampling rate.
+ *
+ * NOTE: This approach replaces the old mfdv4 habit of 'nudging' noise SFTs start-times
+ * to fall on integer timesteps of the fsamp0 timeseries. The purpose of this function
+ * is to avoid this behaviour, by appropriately increasing the sampling rate
+ * as required.
+ *
+ * NOTE2: we only allow integer-second gaps, everything else will be
+ * rejected with an error-message.
+ *
+ * NOTE3: Tsft=timestamps->deltaT must be integer seconds, everything else is rejected
+ * with an error as well
+ */
 int
 XLALFindSmallestValidSamplingRate ( REAL8 *fSamp,			//< [out] minimal valid sampling rate
                                     UINT4 n0, 				//< [in] minimal sampling rate n0/Tsft

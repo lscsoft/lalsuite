@@ -93,7 +93,7 @@ echo
 echo "----- mfd_v5: producing SFTs:"
 echo
 
-mfdv5_CL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --noiseSqrtSh=${sqrtSn} --randSeed=1 -v${debug}"
+mfdv5_CL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --sqrtSX=${sqrtSn} --randSeed=1 -v${debug}"
 cmdline="$mfdv5_CODE $mfdv5_CL --outSingleSFT --outSFTbname=${sftsv5}";
 echo $cmdline;
 if ! eval $cmdline; then
