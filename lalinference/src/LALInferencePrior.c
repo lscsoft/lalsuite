@@ -269,6 +269,7 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
 REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
   REAL8 logPrior=0.0;
+  REAL8 val=0.0;
   static int SkyLocPriorWarning = 0;
   (void)runState;
   LALInferenceVariableItem *item=params->head;
@@ -289,10 +290,19 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
       continue;
     else
     {
-      LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
-      if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
+			val = 0.0;
+			min =-DBL_MAX;
+			max = DBL_MAX;
+			if(strcmp(item->name,"psdscale"))
+			{
+				LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
+				val = *(REAL8 *)item->value;
+			}
+
+			if(val<min || val>max) return -DBL_MAX;
     }
   }
+
   /*Use a uniform in log D distribution*/
   //if(LALInferenceCheckVariable(params,"logdistance"))
   //  logPrior+=3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
@@ -382,6 +392,40 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
   if(LALInferenceCheckVariable(priorParams,"MTotMin"))
     if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMin") > m1+m2)
       return -DBL_MAX;
+
+  //PSD priors are Gaussian
+  if(LALInferenceCheckVariable(params, "psdscale"))
+  {
+    UINT4 i;
+    UINT4 j;
+
+    //REAL8 val;
+    REAL8 var;
+    REAL8 mean = 1.0;
+    REAL8 prior= 0.0;
+    UINT4 psdGaussianPrior;
+
+    REAL8Vector *sigma = *((REAL8Vector **)LALInferenceGetVariable(priorParams, "psdsigma"));
+    gsl_matrix *nparams = *((gsl_matrix **)LALInferenceGetVariable(params,"psdscale"));
+
+    min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
+    max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");
+
+    psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
+
+    for(i=0; i<(UINT4)nparams->size1; i++)
+    {
+      for(j=0; j<(UINT4)nparams->size2; j++)
+      {
+        var = sigma->data[j]*sigma->data[j];
+        val = gsl_matrix_get(nparams,i,j);
+        //reject prior
+        if(val < min || val > max) return -DBL_MAX;
+        else if(psdGaussianPrior)prior += -0.5*( (mean-val)*(mean-val)/var + log(2.0*LAL_PI*var) );
+      }
+    }
+    logPrior+=prior;
+  }
 
   return(logPrior);
 }
