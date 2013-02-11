@@ -438,8 +438,22 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             XLAL_ERROR_NULL(XLAL_EFUNC);
         }
         procparam=LALInferenceGetProcParamVal(commandLine,"--event");
-        if(procparam) event=atoi(procparam->value);
-        while(q<event) {q++; injTable=injTable->next;}
+        if(procparam) {
+            event=atoi(procparam->value);
+            while(q<event) {q++; injTable=injTable->next;}
+        }
+        else if (procparam=LALInferenceGetProcParamVal(commandLine,"--simulation-id"))
+        {
+            while(injTable)
+            {
+                if(!strcmp(injTable->simulation_id,procparam->value)) break;
+                else injTable=injTable->next;
+            }
+            if(!injTable){
+                fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value)
+                exit(1);
+            }
+        }
     }
 
     procparam=LALInferenceGetProcParamVal(commandLine,"--psdstart");
