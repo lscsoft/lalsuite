@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
   lalapps_heterodyne_pulsar_pipe -- pipeline for creating Condor DAG to perform the known pulsar
                                     time domain analysis - coarse or fine heterodyne (with or
