@@ -442,15 +442,15 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             event=atoi(procparam->value);
             while(q<event) {q++; injTable=injTable->next;}
         }
-        else if (procparam=LALInferenceGetProcParamVal(commandLine,"--simulation-id"))
+        else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id")))
         {
             while(injTable)
             {
-                if(!strcmp(injTable->simulation_id,procparam->value)) break;
+                if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
                 else injTable=injTable->next;
             }
             if(!injTable){
-                fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value)
+                fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
                 exit(1);
             }
         }
