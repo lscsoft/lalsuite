@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011, 2012 Evan Goetz
+*  Copyright (C) 2010, 2011, 2012, 2013 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -158,8 +158,8 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_EFUNC);
    }
    
-   //Maximum orbital earth speed in units of c from start of S6 TwoSpect data for 104 weeks total time
-   REAL4 detectorVmax = CompDetectorVmax(931081500.0+inputParams->SFToverlap, inputParams->Tcoh, inputParams->SFToverlap, 62899200.0-inputParams->SFToverlap, inputParams->det[0], edat);
+   //Maximum detector velocity in units of c from start of observation time - Tcoh to end of observation + Tcoh
+   REAL4 detectorVmax = CompDetectorVmax(inputParams->searchstarttime-inputParams->Tcoh, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs+2.0*inputParams->Tcoh, inputParams->det[0], edat);
    if (xlalErrno!=0) {
       fprintf(stderr, "%s: CompDetectorVmax() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
