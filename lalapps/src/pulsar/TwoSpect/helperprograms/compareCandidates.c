@@ -125,9 +125,9 @@ int main(void) {
    gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
 
    double tobs = 40551300.0;
-   double fdiff_allowed = 0.5/1800.0;
+   double fdiff_allowed = 1.0/1800.0;
    double dfdiff_allowed = fdiff_allowed;
-   double skydiff_allowed = 0.02*200.0;
+   double skydiff_allowed = 0.04*200.0;
    //int firstmatch = 0, secondmatch = 0;
    for (ii=0; ii<h1count; ii++) {
 
@@ -152,8 +152,8 @@ int main(void) {
 
                if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
                   if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
-                     double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
-                     double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
+                     double Pdiff_allowed = 1.5*allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
+                     double Pdiff_allowed_2 = 1.5*alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
                      if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
                         double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
                         double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
