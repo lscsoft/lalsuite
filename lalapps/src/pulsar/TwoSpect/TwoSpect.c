@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
    configparams = cmdline_parser_params_create();  //initialize parameters structure
    configparams->check_required = 0;  //don't check for required values at the step
    if ( cmdline_parser_ext(argc, argv, &args_info, configparams) ) {
-       fprintf(stderr, "%s: cmdline_parser() failed.\n", __func__);
+       fprintf(stderr, "%s: cmdline_parser_ext() failed.\n", __func__);
        XLAL_ERROR(XLAL_FAILURE);
    }
    configparams->initialize = 0;  //don't reinitialize the parameters structure
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
    
    //Read TwoSpect input parameters
    if ( (readTwoSpectInputParams(inputParams, args_info)) != 0 ) {
-      fprintf(stderr, "%s: readTwoSepctInputParams() failed.\n", __func__);
+      fprintf(stderr, "%s: readTwoSpectInputParams() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
    
@@ -734,7 +734,7 @@ int main(int argc, char *argv[])
             }
          }
 
-         loadCandidateData(&(exactCandidates2->data[exactCandidates2->numofcandidates]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
+         loadCandidateData(&(exactCandidates2->data[exactCandidates2->numofcandidates]), args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
          exactCandidates2->numofcandidates++;
 
       } else if (args_info.templateTest_given && (!args_info.templateTestF_given || !args_info.templateTestP_given || !args_info.templateTestDf_given)) {
