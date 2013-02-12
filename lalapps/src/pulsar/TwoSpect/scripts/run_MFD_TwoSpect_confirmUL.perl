@@ -109,7 +109,7 @@ Pmin 7200
 Pmax 8110260
 dfmin 0.0002
 dfmax 0.1
-skyRegionFile /local/user/egoetz/$pidvalue/skygrid2.da
+skyRegionFile /local/user/egoetz/$pidvalue/skygrid2.dat
 t0 931081500
 blksize 101
 avesqrtSh 1.0e-23
