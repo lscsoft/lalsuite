@@ -36,9 +36,9 @@ double fdiff(double index, void *params) {
  
 int main(void) {
    FILE *H1CANDS, *L1CANDS;
-   H1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzH1candidates.dat","r");
+   H1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzH1candidates.dat","r");
    if (H1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzH1candidates.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzH1candidates.dat");
       exit(1);
    }
 
@@ -49,9 +49,9 @@ int main(void) {
       if (ch == '\n') h1count++;
    } while (ch != EOF);
 
-   L1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzL1candidates.dat","r");
+   L1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzL1candidates.dat","r");
    if (L1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzL1candidates.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzL1candidates.dat");
       exit(1);
    }
 
@@ -112,7 +112,7 @@ int main(void) {
    fclose(L1CANDS);
 
    //Open a file to save the output data
-   FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzCandidates.dat","w");
+   FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzCandidates.dat","w");
 
    //Setup and allocate the solver
    int status;
