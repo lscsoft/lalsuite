@@ -463,6 +463,10 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
       shutil.copy(executable, executable2)
     cp.set('condor', job, executable2)
 
+  for dir in ['trig_combiner','efficiency','injection-efficiency']:
+    cp.set(dir,'pad-data',cp.get('data','pad-data'))
+    cp.set(dir,'segment-length',cp.get('data','segment-length'))
+
   # ==========
   # write dags
   # ==========
@@ -753,12 +757,19 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     # construct arguments
     job.add_opt('segment-dir', grbdir)
 
+    # Select the appropriate offsource file
+    if timeSlides:
+      offfile = clstslidefile['OFFSOURCE']
+    else:
+      offfile = clstfile['OFFSOURCE']
+
+
     for timetype in timetags:
       if timetype in [ 'OFFSOURCE', 'ALL_TIMES' ]:  continue
       # setup onoff efficiency jobs
       effoutdir = '%s/%s/%s/efficiency' % (outdir, plotdir, timetype)
       node = onoff_efficiency_setup(job, tag, effoutdir, grbdir,\
-                                    clstfile['OFFSOURCE'], clstfile[timetype],\
+                                    offfile, clstfile[timetype],\
                                     vetodir=rundir)
       dag.add_node(node)
 
@@ -777,7 +788,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
         effoutdir = '%s/%s/%s/efficiency_%s' % \
                     (outdir, plotdir, injrun, timetype)
         node = injection_efficiency_setup(job, tag, effoutdir, grbdir,\
-                           clstfile['OFFSOURCE'],clstfile[timetype],\
+                           offfile,clstfile[timetype],\
                            filteredDistRuns[injrun], injcp,found, missed,\
                            vetodir=rundir)
         dag.add_node(node)
