@@ -779,7 +779,7 @@ int MAIN( int argc, char *argv[]) {
     if ( LALUserVarWasSet(&uvar_dFreq) ) {
       usefulParams.dFreqStack = uvar_dFreq;
     } else {
-      LALPrintError("--dFreq is required if --FreqBand is given\n");
+      XLALPrintError("--dFreq is required if --FreqBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   } else {
@@ -791,7 +791,7 @@ int MAIN( int argc, char *argv[]) {
     if ( LALUserVarWasSet(&uvar_df1dot) ) {
       usefulParams.df1dot = uvar_df1dot;
     } else {
-      LALPrintError("--df1dot is required if --f1dotBand is given\n");
+      XLALPrintError("--df1dot is required if --f1dotBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   } else {
@@ -804,7 +804,7 @@ int MAIN( int argc, char *argv[]) {
       usefulParams.df2dot = uvar_df2dot;
     }
     else {
-      LALPrintError("--df2dot is required if --f2dotBand is given\n");
+      XLALPrintError("--df2dot is required if --f2dotBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   }
