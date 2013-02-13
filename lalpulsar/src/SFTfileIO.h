@@ -355,10 +355,12 @@ extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
  *================================================================================*/
 SFTCatalog *XLALSFTdataFind ( const CHAR *file_pattern, const SFTConstraints *constraints );
 
-int  XLALWriteSFT2fp (const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
-int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
-int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
-int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment);
+int XLALWriteSFTVector2Dir  ( const SFTVector *sftVect, const CHAR *dirname, const CHAR *SFTcomment, const CHAR *Misc );
+int XLALWriteSFTVector2File ( const SFTVector *sftVect, const CHAR *dirname, const CHAR *SFTcomment, const CHAR *Misc );
+int XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment );
+int XLALWriteSFT2fp   ( const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
+int XLALWriteSFT2file ( const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
+
 LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
 MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFiles ( const LALStringVector *fnames );
 
@@ -373,6 +375,10 @@ const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
 
 void XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView );
 MultiSFTCatalogView *XLALMultiSFTCatalogView ( const SFTCatalog *catalog );
+
+char *XLALGetOfficialName4SFT ( const SFTtype *sft, const char *Misc );
+char *XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts, const char *Misc );
+char *XLALOfficialSFTFilename ( char site, char channel, UINT4 numSFTs, UINT4 Tsft, UINT4 GPS_start, UINT4 Tspan, const char *Misc );
 
 /*================================================================================
  * DEPRECATED LAL-API [use XLAL-API whenever available]

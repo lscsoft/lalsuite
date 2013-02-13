@@ -2069,90 +2069,36 @@ LALWriteSFT2file (LALStatus *status,			/**< pointer to LALStatus structure */
  * Output SFTs have naming convention following LIGO-T040164-01
  */
 int
-XLALWriteSFTVector2Dir(
-		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
-		       const CHAR *dirname,		/**< base filename (including directory path)*/
-		       const CHAR *SFTcomment,		/**< optional comment (for v2 only) */
-		       const CHAR *description)         /**< optional sft description to go in the filename */
+XLALWriteSFTVector2Dir ( const SFTVector *sftVect,	/**< SFT vector to write to disk */
+                         const CHAR *dirname,		/**< base filename (including directory path)*/
+                         const CHAR *SFTcomment,	/**< optional comment */
+                         const CHAR *Misc         	/**< optional 'Misc' field in SFT description (can be NULL) */
+                         )
 {
-  UINT4 length, k;
-  CHAR *filename = NULL;
-  CHAR filenumber[16];
-  SFTtype *sft;
-  UINT4 timeBase, duration;
-  UINT4 filenamelen;
-  LIGOTimeGPS time0;
+  XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->length > 0, XLAL_EINVAL );
+  XLAL_CHECK ( dirname != NULL, XLAL_EINVAL );
 
-  if (! (sftVect) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (sftVect->data) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (sftVect->length > 0) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (dirname) ) XLAL_ERROR ( XLAL_EINVAL );
+  UINT4 numSFTs = sftVect->length;
 
-  length = sftVect->length;
+  for ( UINT4 k = 0; k < numSFTs; k++ )
+    {
+      SFTtype *sft = &(sftVect->data[k]);
 
-  filenamelen = 128 + strlen(dirname);
-  if ( description )
-    filenamelen += strlen ( description );
+      CHAR *filename;
+      XLAL_CHECK ( (filename = XLALGetOfficialName4SFT ( sft, Misc )) != NULL, XLAL_EFUNC );
 
-  if ( (filename = (CHAR *)XLALCalloc(1, filenamelen )) == NULL) {
-    XLAL_ERROR ( XLAL_ENOMEM );
-  }
+      CHAR *path;
+      int len = strlen ( dirname ) + 1 + strlen ( filename ) + 1;
+      XLAL_CHECK ( (path = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
+      sprintf ( path, "%s/%s", dirname, filename );
+      XLAL_CHECK ( XLALWriteSFT2file( sft, path, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  /* will not be same as actual sft timebase if it is not
-     an integer number of seconds */
-  timeBase = floor(1.0/sftVect->data[0].deltaF + 0.5);
+      XLALFree ( path );
+      XLALFree ( filename );
 
-  for ( k = 0; k < length; k++) {
-
-    sft = sftVect->data + k;
-    if ( sft == NULL ) {
-      XLAL_ERROR ( XLAL_EFAULT );
-    }
-
-    if ( sft->name == NULL ) {
-      XLAL_ERROR ( XLAL_EFAULT );
-    }
-
-
-    time0 = sft->epoch;
-
-    /* calculate sft 'duration' -- may be different from timebase if nanosecond
-       of sft-epoch is non-zero */
-    duration = timeBase;
-    if ( time0.gpsNanoSeconds > 0) {
-      duration += 1;
-    }
-
-    /* create the k^th filename following naming convention
-       -- try to simplify this*/
-    strcpy( filename, dirname);
-    strcat( filename, "/");
-    strncat( filename, sft->name, 1);
-    strcat( filename, "-1_"); /* single (not merged) sft */
-    strncat( filename, sft->name, 2); /* full detector name */
-    strcat( filename, "_");
-    sprintf( filenumber, "%d", timeBase); /* sft timebase */
-    strcat( filename, filenumber);
-    strcat( filename, "SFT");
-    if ( description ) {
-      strcat( filename, "_");
-      strcat( filename, description);
-    }
-    strcat( filename, "-");
-    sprintf( filenumber, "%09d", sft->epoch.gpsSeconds);
-    strncat( filename, filenumber, 9);
-    strcat( filename, "-");
-    sprintf( filenumber, "%d", duration);
-    strcat( filename, filenumber);
-    strcat( filename, ".sft");
-
-    /* write the k^th sft */
-    if ( XLALWriteSFT2file( sft, filename, SFTcomment ) != XLAL_SUCCESS ) {
-      XLAL_ERROR ( xlalErrno );
-    }
-  }
-
-  XLALFree(filename);
+    } // for k < numSFTs
 
   return XLAL_SUCCESS;
 
@@ -2175,60 +2121,76 @@ LALWriteSFTVector2Dir (LALStatus *status,			/**< pointer to LALStatus structure 
   RETURN (status);
 }
 
+/** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
+ *  Add the comment to SFT if SFTcomment != NULL.
+ *
+ * NOTE: user specifies output directory, but the output SFT-filename follows the SFT-v2 naming convention,
+ * see XLALOfficialSFTFilename() for details.
+ */
+int
+XLALWriteSFTVector2File ( const SFTVector *sftVect,	//!< SFT vector to write to disk */
+                          const CHAR *dirname,		//!< base filename (including directory path)*/
+                          const CHAR *SFTcomment,	//!< optional comment (can be NULL) */
+                          const CHAR *Misc         	//!< optional 'Misc' field in SFT description (can be NULL) */
+                          )
+{
+  XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( dirname != NULL, XLAL_EINVAL );
+
+  char *filename;
+  XLAL_CHECK ( (filename = XLALGetOfficialName4MergedSFTs ( sftVect, Misc )) != NULL, XLAL_EFUNC );
+
+  CHAR *path;
+  int len = strlen ( dirname ) + 1 + strlen ( filename ) + 1;
+  XLAL_CHECK ( (path = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
+  sprintf ( path, "%s/%s", dirname, filename );
+
+  XLAL_CHECK ( XLALWriteSFTVector2NamedFile( sftVect, path, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALFree ( path );
+  XLALFree ( filename );
+
+  return XLAL_SUCCESS;
+
+} // XLALWriteSFTVector2File()
 
 
 /** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
  *  Add the comment to SFT if SFTcomment != NULL.
  *
- * NOTE: Currently this only supports writing v2-SFTs.
- * If you need to write a v1-SFT, you should use LALWriteSFTfile()
+ * Allows specifying a filename for the output merged-SFT file.
  */
 int
-XLALWriteSFTVector2File(
-		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
-		       const CHAR *filename,		/**< filename of concatenated SFT */
-		       const CHAR *SFTcomment)		/**< optional comment (for v2 only) */
+XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect,	/**< SFT vector to write to disk */
+                               const CHAR *filename,		/**< complete path+filename for concatenated SFT */
+                               const CHAR *SFTcomment 		/**< optional comment */
+                               )
 {
-  UINT4 length, k;
-  FILE *fp = NULL;
-  SFTtype *sft;
+  XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->length > 0, XLAL_EINVAL );
+  XLAL_CHECK ( filename != NULL, XLAL_EINVAL );
 
-  if (! (sftVect) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (sftVect->data) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (sftVect->length > 0) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (filename) ) XLAL_ERROR ( XLAL_EINVAL );
-
-  length = sftVect->length;
+  UINT4 numSFTs = sftVect->length;
 
   /* open SFT-file for writing */
-  if ( (fp = LALFopen ( filename, "wb" )) == NULL )
+  FILE *fp;
+  XLAL_CHECK ( (fp = LALFopen ( filename, "wb" )) != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s\n\n", filename, strerror(errno));
+
+  for ( UINT4 k = 0; k < numSFTs; k++ )
     {
-      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", filename, strerror(errno));
-      XLAL_ERROR ( XLAL_EIO );
-    }
+      SFTtype *sft = &( sftVect->data[k] );
 
-  for ( k = 0; k < length; k++) {
+      /* write the k^th sft */
+      XLAL_CHECK ( XLALWriteSFT2fp ( sft, fp, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    sft = sftVect->data + k;
-    if ( sft == NULL ) {
-      XLAL_ERROR ( XLAL_EFAULT );
-    }
-
-    if ( sft->name == NULL ) {
-      XLAL_ERROR ( XLAL_EFAULT );
-    }
-
-    /* write the k^th sft */
-    if ( XLALWriteSFT2fp ( sft, fp, SFTcomment ) != XLAL_SUCCESS ) {
-      XLAL_ERROR ( xlalErrno );
-    }
-  }
+    } // for k < numSFTs
 
   fclose(fp);
 
   return XLAL_SUCCESS;
 
-} /* XLALWriteSFTVector2File() */
+} /* XLALWriteSFTVector2NamedFile() */
 
 
 
@@ -2706,6 +2668,137 @@ XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView )
   return;
 
 } // XLALDestroyMultiSFTCatalog()
+
+
+/**
+ * Return the 'official' file name for a given SFT, folllowing the SFT-v2 naming convention
+ * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385,
+ * see also XLALOfficialSFTFilename() for details.
+ */
+char *
+XLALGetOfficialName4SFT ( const SFTtype *sft,	//!< [in] input SFT to generate name for
+                          const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
+                          )
+{
+  XLAL_CHECK_NULL ( sft != NULL, XLAL_EINVAL );
+
+
+  UINT4 Tsft = (UINT4) round ( 1.0 / sft->deltaF );
+
+  /* calculate sft 'duration' -- may be different from timebase if nanosecond of sft-epoch is non-zero */
+  UINT4 Tspan = Tsft;
+  if ( sft->epoch.gpsNanoSeconds > 0) {
+    Tspan += 1;
+  }
+
+  char *filename;
+  XLAL_CHECK_NULL ( (filename = XLALOfficialSFTFilename ( sft->name[0], sft->name[1], 1, Tsft, sft->epoch.gpsSeconds, Tspan, Misc )) != NULL, XLAL_EFUNC );
+
+  return filename;
+
+} // XLALGetOfficialName4SFT()
+
+/**
+ * Return the 'official' file name for a given SFT-vector written into a single "merged SFT-file",
+ * folllowing the SFT-v2 naming convention
+ * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385,
+ * see also XLALOfficialSFTFilename() for details.
+ */
+char *
+XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts,	//!< [in] input SFT vector to generate name for
+                                 const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
+                                 )
+{
+  XLAL_CHECK_NULL ( sfts != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( sfts->length > 0, XLAL_EINVAL );
+
+  UINT4 numSFTs = sfts->length;
+  SFTtype *sftStart       = &(sfts->data[0]);
+  SFTtype *sftEnd         = &(sfts->data[numSFTs-1]);
+  LIGOTimeGPS *epochStart = &(sftStart->epoch);
+  LIGOTimeGPS *epochEnd   = &(sftEnd->epoch);
+
+  const char *name = sftStart->name;
+  UINT4 Tsft = (UINT4) round ( 1.0 / sftStart->deltaF );
+
+  /* calculate time interval covered -- may be different from timebase if nanosecond of sft-epochs are non-zero */
+  UINT4 Tspan = epochEnd->gpsSeconds - epochStart->gpsSeconds + Tsft;
+  if ( epochStart->gpsNanoSeconds > 0) {
+    Tspan += 1;
+  }
+  if ( epochEnd->gpsNanoSeconds > 0) {
+    Tspan += 1;
+  }
+
+  char *filename;
+  XLAL_CHECK_NULL ( (filename = XLALOfficialSFTFilename ( name[0], name[1], numSFTs, Tsft, epochStart->gpsSeconds, Tspan, Misc )) != NULL, XLAL_EFUNC );
+
+  return filename;
+
+} // XLALGetOfficialName4MergedSFTs()
+
+
+/**
+ * Return the 'official' file name for a given SFT, folllowing the SFT-v2 naming convention
+ * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385, namely
+ *
+ * name = S-D-G-T.sft
+ * where
+ * S = Source: upper-case single letter site designation 'G', 'H', 'L', 'V', ...
+ * D = description: a free-form string of alphanumerics and {_, +, #}
+ * G = GPS start time of first SFT in seconds (9- or 10-digit number)
+ * T = total time interval covered by the data in this file
+ *
+ * furthermore, the v2-spec uses the following convention for the description field 'D':
+ * D = numSFTs_IFO_SFTtype[_Misc]
+ * where
+ * numSFTs : number of SFTs in the file
+ * IFO     : 2-character detector name, eg 'G1', 'H1', 'H2', 'L1', 'V1', ...
+ * SFTtype : SFT-timebase, in the form '[T]SFT', where [T] is the SFT-duration in seconds, eg "1800SFT"
+ * Misc    : optional string providing additional information
+ */
+char *
+XLALOfficialSFTFilename ( char site,		//!< site-character 'G', 'H', 'L', ...
+                          char channel,	//!< channel character '1', '2', ...
+                          UINT4 numSFTs,	//!< number of SFTs in SFT-file
+                          UINT4 Tsft,		//!< time-baseline in (integer) seconds
+                          UINT4 GPS_start,	//!< GPS seconds of first SFT start time
+                          UINT4 Tspan,		//!< total time-spanned by all SFTs in seconds
+                          const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
+                          )
+{
+  // ----- S
+  char S[2] = { site, 0 };
+
+  // ----- D
+  char D[512];
+  char IFO[2] = { site, channel };
+  size_t written = snprintf ( D, sizeof(D), "%d_%c%c_%dSFT%s%s", numSFTs, IFO[0], IFO[1], Tsft, Misc ? "_" : "", Misc ? Misc : "" );
+  XLAL_CHECK_NULL ( written < sizeof(D), XLAL_EINVAL, "Description field length of %d exceeds buffer length of %d characters\n", written, sizeof(D)-1 );
+
+  // ----- G
+  char G[11];
+  written = snprintf ( G, sizeof(G), "%09d", GPS_start );
+  XLAL_CHECK_NULL ( written < sizeof(G), XLAL_EINVAL, "GPS seconds %d exceed buffer length of %d characters\n", GPS_start, sizeof(G)-1 );
+
+  // ----- T
+  char T[10];
+  written = snprintf ( T, sizeof(T), "%d", Tspan );
+  XLAL_CHECK_NULL ( written < sizeof(T), XLAL_EINVAL, "Tspan=%d s exceed buffer length of %d characters\n", Tspan, sizeof(T)-1 );
+
+  // S-D-G-T.sft
+  size_t len = strlen(S) + 1 + strlen(D) + 1 + strlen(G) + 1 + strlen(T) + 4 + 1;
+  char *filename;
+  XLAL_CHECK_NULL ( (filename = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
+
+  written = snprintf ( filename, len, "%s-%s-%s-%s.sft", S, D, G, T );
+  XLAL_CHECK_NULL ( written < len, XLAL_EFAILED, "Miscounted string-length, expected %d characters but got %d\n", len - 1, written );
+
+  return filename;
+
+} // XLALGetOfficialName4SFT()
+
+
 
 /*================================================================================
  * OBSOLETE and deprecated SFT-v1 API :
