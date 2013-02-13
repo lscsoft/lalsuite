@@ -1583,6 +1583,8 @@ int XLALSimInspiralChooseTDWaveform(
                 ABORT_NONZERO_SPINS(waveFlags);
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorEtPNGenerator(hplus, hcross, phiRef, v0,
                     deltaT, m1, m2, f_min, r, i, amplitudeO, phaseO);
@@ -1661,6 +1663,8 @@ int XLALSimInspiralChooseTDWaveform(
                 ABORT_NONZERO_SPINS(waveFlags);
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
             // NB: f_max = 0 will generate up to the ringdown cut-off frequency
             ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, phiRef, deltaT,
@@ -1675,6 +1679,8 @@ int XLALSimInspiralChooseTDWaveform(
                 ABORT_NONZERO_SPINS(waveFlags);
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
             ret = XLALSimIMREOBNRv2AllModes(hplus, hcross, phiRef, deltaT,
@@ -1689,6 +1695,8 @@ int XLALSimInspiralChooseTDWaveform(
                 ABORT_NONZERO_SPINS(waveFlags);
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
             ret = XLALSimIMREOBNRv2DominantMode(hplus, hcross, phiRef, deltaT,
                     m1, m2, f_min, r, i);
@@ -1766,6 +1774,8 @@ int XLALSimInspiralChooseTDWaveform(
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
             // NB: f_max = 0 will generate up to the ringdown cut-off frequency
             ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phiRef, deltaT,
@@ -1778,6 +1788,8 @@ int XLALSimInspiralChooseTDWaveform(
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at the start.\n", __func__);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPSpinInspiralRDGenerator(hplus, hcross, phiRef,
                     deltaT, m1, m2, f_min, r, i, S1x, S1y, S1z, S2x, S2y, S2z,
@@ -1792,6 +1804,8 @@ int XLALSimInspiralChooseTDWaveform(
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef, 
                     deltaT, m1, m2, f_min, r, i, S1z, S2z);
