@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2012 Evan Goetz
+*  Copyright (C) 2010, 2012, 2013 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -164,6 +164,7 @@ REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDe
             fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", __func__, status.statusCode);
             XLAL_ERROR_REAL4(XLAL_EFUNC);
          }
+         Vmax = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
       } else {
          LALDetectorVel(&status, detvel, &gpstime, det, edat);
          if (status.statusCode!=0) {
