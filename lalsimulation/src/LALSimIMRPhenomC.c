@@ -682,7 +682,7 @@ static int IMRPhenomCGenerateFD(
     errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, f, eta, params );
     if( errcode != XLAL_SUCCESS )
       XLAL_ERROR(XLAL_EFUNC);
-    aPhenomC -= phi0;
+    phPhenomC -= phi0;
 
     /* generate the waveform */
     ((*htilde)->data->data)[i] = amp0 * aPhenomC * cos(phPhenomC);
