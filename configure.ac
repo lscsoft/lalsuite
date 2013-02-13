@@ -161,4 +161,5 @@ if test "$lalapps" = "true"; then
   AC_CONFIG_SUBDIRS([lalapps])
 fi
 
+AC_SUBST([ac_configure_args])
 AC_OUTPUT
