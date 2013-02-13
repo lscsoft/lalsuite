@@ -83,10 +83,8 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s: cmdline_parser_config_file() failed.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
-   configparams->override = 1;  //override values in the configuration file
-   configparams->check_required = 1;  //check for required values now
-   if ( cmdline_parser_ext(argc, argv, &args_info, configparams) ) {
-      fprintf(stderr, "%s: cmdline_parser_ext() failed.\n", __func__);
+   if ( cmdline_parser_required(&args_info, argv[0]) ) {
+      fprintf(stderr, "%s: cmdline_parser_required() failed.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
    
