@@ -1747,7 +1747,8 @@ LALCheckSFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* LALCheckSFTCatalog() */
 
-/** Load timestamps file into LIGOTimeGPSVector struct, allocated here.
+/**
+ * Load timestamps file 'fname' into LIGOTimeGPSVector struct, allocated here.
  *
  * The timestamps file is of the format: <repeated lines of the form "seconds nano-seconds">
  * allowing for '%#' as comments, which are ignored.
@@ -1756,44 +1757,35 @@ LALCheckSFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 LIGOTimeGPSVector *
 XLALReadTimestampsFile ( const CHAR *fname )
 {
-  LIGOTimeGPSVector *timestamps = NULL;
-
   /** check input consistency */
-  if ( !fname ) {
-    XLALPrintError ( "%s: NULL input 'fname'", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
+  XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL );
 
   /* read and parse timestamps-list file contents*/
   LALParsedDataFile *flines = NULL;
-  if ( XLALParseDataFile ( &flines, fname ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALParseDataFile ( &flines, fname ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   UINT4 numTS = flines->lines->nTokens;
-  /* allocate and initialized segment list */
-  if ( ( timestamps = XLALCreateTimestampVector ( numTS )) == NULL )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
 
-  UINT4 iTS;
-  for ( iTS = 0; iTS < numTS; iTS ++ )
+  /* allocate and initialized segment list */
+  LIGOTimeGPSVector *timestamps = NULL;
+  XLAL_CHECK_NULL ( ( timestamps = XLALCreateTimestampVector ( numTS )) != NULL, XLAL_EFUNC );
+
+  for ( UINT4 iTS = 0; iTS < numTS; iTS ++ )
     {
       INT4 secs, ns;
       if ( sscanf ( flines->lines->tokens[iTS], "%d %d\n", &secs, &ns ) != 2 ) {
-        XLALPrintError ("%s: failed to parse data-line %d: '%s' in timestamps-file '%s' (needs to be in format 'sec ns')\n", __func__, iTS + 1, flines->lines->tokens[iTS], fname );
         XLALDestroyTimestampVector ( timestamps );
         XLALDestroyParsedDataFile ( flines );
-        XLAL_ERROR_NULL ( XLAL_ESYS );
+        XLAL_ERROR_NULL ( XLAL_ESYS, "Failed to parse data-line %d: '%s' in timestamps-file '%s' (needs to be in format 'sec ns')\n",
+                          iTS + 1, flines->lines->tokens[iTS], fname );
       }
-      if ( ( secs < 0 ) || ( ns < 0 ) ) {
-	XLALPrintError ("%s: timestamps-file contains negative time-entry in line %d : s = %d, ns = %d\n", __func__, iTS, secs, ns );
-	XLAL_ERROR_NULL ( XLAL_EDOM );
-      }
-      if ( ns > 999999999 ) {
-        XLALPrintError ("%s: timestamps-file contains nano-seconds entry >= 1 billion ns in line %d: s = %d, ns = %d\n", __func__, iTS, secs, ns );
-	XLAL_ERROR_NULL ( XLAL_EDOM );
-      }
+      XLAL_CHECK_NULL ( ( secs >= 0 ) && ( ns >= 0 ), XLAL_EDOM,
+                        "Timestamps-file '%s' contains negative time-entry in line %d : s = %d, ns = %d\n", fname, iTS, secs, ns );
 
-      timestamps->data[iTS].gpsSeconds = secs;
+      XLAL_CHECK_NULL ( ns <= 999999999, XLAL_EDOM,
+                        "Timestamps-file '%s' contains nano-seconds entry >= 1 billion ns in line %d: s = %d, ns = %d\n", fname, iTS, secs, ns );
+
+      timestamps->data[iTS].gpsSeconds     = secs;
       timestamps->data[iTS].gpsNanoSeconds = ns;
 
     } /* for iTS < numTS */
@@ -1804,6 +1796,36 @@ XLALReadTimestampsFile ( const CHAR *fname )
   return timestamps;
 
 } /* XLALReadTimestampsFile() */
+
+
+/**
+ * Load several timestamps files, return a MultiLIGOTimeGPSVector struct, allocated here.
+ *
+ * The timestamps files are of the format: <repeated lines of the form "seconds nano-seconds">
+ * allowing for '%#' as comments, which are ignored.
+ *
+ */
+MultiLIGOTimeGPSVector *
+XLALReadMultiTimestampsFiles ( const LALStringVector *fnames )
+{
+  XLAL_CHECK_NULL ( fnames != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( fnames->length > 0, XLAL_EDOM );
+
+  UINT4 numDet = fnames->length;
+
+  // ----- prepare output container
+  MultiLIGOTimeGPSVector *multiTS;
+  XLAL_CHECK_NULL ( ( multiTS = XLALCalloc ( 1, sizeof(*multiTS) )) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (multiTS->data = XLALCalloc ( numDet, sizeof(multiTS->data[0]))) != NULL, XLAL_ENOMEM );
+
+  for ( UINT4 X=0; X < numDet; X ++ )
+    {
+      XLAL_CHECK_NULL ( ( multiTS->data[X] = XLALReadTimestampsFile ( fnames->data[X] )) != NULL, XLAL_EFUNC );
+    } // for X < numDet
+
+  return multiTS;
+
+} // XLALReadMultiTimestampsFiles()
 
 
 

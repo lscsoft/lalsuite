@@ -360,6 +360,7 @@ int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *SFTco
 int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
 int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment);
 LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
+MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFiles ( const LALStringVector *fnames );
 
 SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 
