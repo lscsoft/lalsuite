@@ -1,5 +1,11 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
+# Override automake's default rule for rebuilding ./configure, to ensure that
+# it is successfully recreated after certain build system changes which also
+# require other autotools (e.g. autoheader) to be run. See Redmine issue #728.
+$(top_srcdir)/configure: $(am__configure_deps)
+	$(am__cd) $(srcdir) && $(SHELL) ./00boot
+
 # Override automake's default rule for rebuilding ./config.status, to ensure that
 # all changes to the top-level configuration (especially to environment variables it
 # exports) are propagated to the library-level configurations. See Redmine issue #728.
