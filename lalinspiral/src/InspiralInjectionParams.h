@@ -37,19 +37,22 @@ typedef enum
 }
 lalinspiral_time_distribution;
 
-/** enum containing the different ways in which the distance to
+/** enum containing the different ways in which the loudness of
     injections can be distributed */
 typedef enum
 {
-  unknownDistanceDist,
+  unknownLoudnessDist,
   distFromSourceFile,
   uniformDistance,
   uniformDistanceSquared,
   uniformLogDistance,
   uniformVolume,
-  sfr
+  starFormationRate,
+  uniformSnr,
+  uniformLogSnr,
+  uniformVolumeSnr
 }
-DistanceDistribution;
+LoudnessDistribution;
 
 /** enum containing the different ways in which the sky location of
     injections can be distributed */
@@ -112,7 +115,7 @@ SimInspiralTable* XLALRandomInspiralTime( SimInspiralTable *inj,
 
 SimInspiralTable* XLALRandomInspiralDistance( SimInspiralTable *inj,
     RandomParams *randParams,
-    DistanceDistribution dDist,
+    LoudnessDistribution dDist,
     REAL4  distMin,
     REAL4  distMax );
 
