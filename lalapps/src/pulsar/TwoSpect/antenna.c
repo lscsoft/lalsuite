@@ -151,7 +151,6 @@ REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDe
    LALStatus status = empty_status;
    
    REAL8 detvel[3];
-   REAL8 detvel0[3];
    REAL4 Vmax = 0.0;
    for (ii=0; ii<numffts; ii++) {
       LIGOTimeGPS gpstime = {0,0};
@@ -159,7 +158,7 @@ REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDe
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
       
       if (ii==0) {
-         LALDetectorVel(&status, detvel0, &gpstime, det, edat);
+         LALDetectorVel(&status, detvel, &gpstime, det, edat);
          if (status.statusCode!=0) {
             fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", __func__, status.statusCode);
             XLAL_ERROR_REAL4(XLAL_EFUNC);
