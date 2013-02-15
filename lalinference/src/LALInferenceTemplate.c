@@ -1846,7 +1846,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   REAL8 mc;
   REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, inclination;
   
-  static REAL8 previous_m1;
+  /*static REAL8 previous_m1;
   static REAL8 previous_m2;
   static REAL8 previous_spin1z, previous_spin1y, previous_spin1x;
   static REAL8 previous_spin2z, previous_spin2y, previous_spin2x;
@@ -1855,7 +1855,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   static REAL8 previous_deltaF, previous_f_min, previous_f_max;
   static REAL8 previous_lambda1, previous_lambda2;
   static int previous_order, previous_amporder;
-  static Approximant previous_approximant;
+  static Approximant previous_approximant;*/
   REAL8 *m1_p,*m2_p;
   REAL8 deltaF, f_max;
   
@@ -1965,7 +1965,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
             spin2x, spin2y, spin2z, f_min, f_max, distance, inclination,
             lambda1, lambda2, waveFlags, nonGRparams, amporder, order,
             approximant), errnum);
-	previous_m1 = m1;
+	/*previous_m1 = m1;
 	previous_m2 = m2;
 	previous_spin1z = spin1z;
 	previous_spin1y = spin1y;
@@ -1983,7 +1983,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	previous_f_max = f_max;
 	previous_approximant = approximant;
 	previous_deltaF = deltaF;
-	previous_inclination = inclination;
+	previous_inclination = inclination;*/
 
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
 	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hptilde'.\n");
