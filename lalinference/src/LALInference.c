@@ -625,6 +625,10 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
     return "theta1";
   } else if (!strcmp(inName, "theta_spin2")) {
     return "theta2";
+  } else if (!strcmp(inName, "tilt_spin1")) {
+    return "tilt1";
+  } else if (!strcmp(inName, "tilt_spin2")) {
+    return "tilt2";
   } else if (!strcmp(inName, "chirpmass")) {
     return "mc";
   } else if (!strcmp(inName, "massratio")) {
