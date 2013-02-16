@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 59
+# serial 60
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -51,7 +51,7 @@ AC_DEFUN([LALSUITE_PROG_CC_CXX],[
 
   # check for clang
   AS_IF([test "x$GCC" = xyes],
-    [AS_IF([test "`$CC -v 2>&1 | grep -c 'clang version'`" != "0"],[CLANG_CC=1])],
+    [AS_IF([test "`$CC -v 2>&1 | grep -c 'clang'`" != "0"],[CLANG_CC=1])],
     [CLANG_CC=])
   AC_SUBST(CLANG_CC)
 
@@ -62,7 +62,7 @@ AC_DEFUN([LALSUITE_PROG_CC_CXX],[
 
     # check for clang++
     AS_IF([test "x$GXX" = xyes],
-      [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang version'`" != "0"],[CLANG_CXX=1])],
+      [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang'`" != "0"],[CLANG_CXX=1])],
       [CLANG_CXX=])
     AC_SUBST(CLANG_CXX)
   ],[
