@@ -564,7 +564,7 @@ GHashTable* get_channel_list( GSequence* triglist ){
 	GHashTable* channellist = g_hash_table_new( g_str_hash, g_str_equal );
 	while( !g_sequence_iter_is_end(itr) ){
 		SnglBurst *sb = (SnglBurst*)g_sequence_get(itr);
-		g_hash_table_add( channellist, g_strdup(sb->channel) );
+		g_hash_table_insert( channellist, g_strdup(sb->channel), g_strdup(sb->channel) );
 		itr = g_sequence_iter_next(itr);
 	}
 	return channellist;
