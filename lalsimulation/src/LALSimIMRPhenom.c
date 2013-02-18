@@ -200,8 +200,9 @@ int XLALSimIMRPhenomAGenerateTD(
       XLAL_ERROR(XLAL_EFUNC);
   }
 
-  /* generate hcross, which is hplus phase-shifted by pi/2 */
-  IMRPhenomAGenerateTD(hcross, LAL_PI_2, deltaT, m1, m2, f_min, f_max_prime, distance, params);
+  /* generate hcross, which is hplus w/ GW phase shifted by pi/2
+   * <==> orb. phase shifted by pi/4 */
+  IMRPhenomAGenerateTD(hcross, LAL_PI_4, deltaT, m1, m2, f_min, f_max_prime, distance, params);
   XLALFree(params);
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
@@ -307,8 +308,9 @@ int XLALSimIMRPhenomBGenerateTD(
       XLAL_ERROR(XLAL_EFUNC);
   }
 
-  /* generate cross, phase-shifted by pi/2 */
-  IMRPhenomBGenerateTD(hcross, LAL_PI_2, deltaT, m1, m2, chi, f_min, f_max_prime, distance, params);
+  /* generate hcross, which is hplus w/ GW phase shifted by pi/2
+   * <==> orb. phase shifted by pi/4 */
+  IMRPhenomBGenerateTD(hcross, LAL_PI_4, deltaT, m1, m2, chi, f_min, f_max_prime, distance, params);
   XLALFree(params);
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
