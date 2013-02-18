@@ -663,6 +663,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 class EngineJob(pipeline.CondorDAGJob):
   def __init__(self,cp,submitFile,logdir):
     self.engine=cp.get('analysis','engine')
+    basepath=cp.get('paths','basedir')
+    snrpath=os.path.join(basepath,'SNR')
     if self.engine=='lalinferencemcmc':
       exe=cp.get('condor','mpirun')
       self.binary=cp.get('condor',self.engine)
@@ -686,6 +688,7 @@ class EngineJob(pipeline.CondorDAGJob):
       self.add_condor_cmd('getenv','true')
       
     self.add_ini_opts(cp,self.engine)
+    self.add_opt('snrpath',snrpath)
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
   
