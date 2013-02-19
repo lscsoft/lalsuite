@@ -21,8 +21,10 @@ from __future__ import division
 
 import re
 import sys
+import numpy
 
-from glue.ligolw import (ligolw, lsctables, utils, table)
+from glue.ligolw import (ligolw, lsctables, utils as ligolw_utils,
+                         table as ligolw_table)
 
 from laldetchar import git_version
 
@@ -48,6 +50,8 @@ _re_etg_multi_insp = re.compile("\Acoh_PTF", re.I)
 
 _re_etg_ring = re.compile("ring", re.I)
 _re_etg_sngl_ring = re.compile("ring", re.I)
+
+_re_etg_sim_insp = re.compile("sim*inspiral", re.I)
 
 
 def new_ligolw_table(etg, columns=None):
@@ -86,12 +90,12 @@ def load_table_from_fileobj(fileobj, etg, columns=None, start=None,
     LIGOLw XML fileobj
     """
     out = new_ligolw_table(etg, columns=columns)
-    get_time = _get_time(out.tableName)
+    get_time = get_time_func(out.tableName)
     keep = lambda t: ((start and start <= float(get_time(t)) or True) &
                       (end and float(get_time(t)) < end or True))
-    xmldoc, digest = utils.load_fileobj(fileobj,
-                                        gz=fileobj.name.endswith("gz"))
-    out.extend(row for row in table.get_table(xmldoc, out.tableName) if
+    xmldoc, digest = ligolw_utils.load_fileobj(fileobj,
+                                               gz=fileobj.name.endswith("gz"))
+    out.extend(row for row in ligolw_table.get_table(xmldoc, out.tableName) if
                keep(row))
     xmldoc.unlink()
     return out
@@ -162,7 +166,7 @@ def load_table_from_lal_cache(cache, etg, columns=None, verbose=False,
                                      **load_args)
 
 
-def _get_time(table_name, ifo=None):
+def get_time_func(table_name, ifo=None):
     """@returns a function to return the 'time' of an event in any table
     with the given name.
 
@@ -183,3 +187,22 @@ def _get_time(table_name, ifo=None):
     else:
         raise ValueError("No known time method for table_name=\'%s\'"
                          % table_name)
+
+
+def get_time_column(table, ifo=None):
+    """@returns a numpy Array containing the 'time' of each row in the
+    given table.
+
+    @param table
+        a glue.table.Table object representing a LIGO_LW xml table
+    @param ifo
+        interferometer prefix if extracting single-detector time
+    """
+    table_name = table.tableName
+    if re.search("inspiral", table_name, re.I):
+        return numpy.asarray(table.get_end())
+    elif re.search("ringdown", table_name, re.I):
+        return numpy.asarray(table.get_start())
+    else:
+        get_time = get_time_func(table_name)
+        return numpy.asarray(map(get_time, table))

@@ -6,4 +6,5 @@ triggers_PYTHON = \
 	kw.py \
 	daily_ihope.py \
 	excesspower.py \
+	rate.py \
 	omega.py
