@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s: cmdline_parser_config_file() failed.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
+   //Check required
    if ( cmdline_parser_required(&args_info, argv[0]) ) {
       fprintf(stderr, "%s: cmdline_parser_required() failed.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
@@ -226,9 +227,8 @@ int main(int argc, char *argv[])
    if (strcmp(inputParams->det[0].frDetector.prefix, "H1")==0) IFOmultiplier = 1;            //H1 gets multiplier 1
    else if (strcmp(inputParams->det[0].frDetector.prefix, "L1")==0) IFOmultiplier = 2;       //L1 gets multiplier 2
    else IFOmultiplier = 3;                                                                   //V1 gets multiplier 3
-   if (args_info.randSeed_given && args_info.chooseSeed_given) inputParams->randSeed = args_info.randSeed_arg;
-   else if (!args_info.randSeed_given && args_info.chooseSeed_given) inputParams->randSeed = IFOmultiplier*(UINT8)fabs(round(inputParams->fmin + inputParams->fspan + inputParams->Pmin + inputParams->Pmax + inputParams->dfmin + inputParams->dfmax + dopplerpos.Alpha + dopplerpos.Delta));
-   else if (args_info.randSeed_given && !args_info.chooseSeed_given) inputParams->randSeed = args_info.randSeed_arg;
+   if (args_info.randSeed_given) inputParams->randSeed = args_info.randSeed_arg;
+   else if (args_info.chooseSeed_given) inputParams->randSeed = IFOmultiplier*(UINT8)fabs(round(inputParams->fmin + inputParams->fspan + inputParams->Pmin + inputParams->Pmax + inputParams->dfmin + inputParams->dfmax + dopplerpos.Alpha + dopplerpos.Delta));
    else inputParams->randSeed = 0;
    gsl_rng_set(inputParams->rng, inputParams->randSeed);     //Set the random number generator with the given seed
    
@@ -236,9 +236,8 @@ int main(int argc, char *argv[])
    //Basic units
    REAL4 tempfspan = inputParams->fspan + 2.0*inputParams->dfmax + (inputParams->blksize-1 + 12)/inputParams->Tcoh;     //= fspan+2*dfmax+extrabins + running median blocksize-1 (Hz)
    INT4 tempnumfbins = (INT4)round(tempfspan*inputParams->Tcoh)+1;                        //= number of bins in tempfspan
-   REAL8 templatefarthresh = args_info.tmplfar_arg;
-   fprintf(LOG, "FAR for templates = %g\n", templatefarthresh);
-   fprintf(stderr, "FAR for templates = %g\n", templatefarthresh);
+   fprintf(LOG, "FAR for templates = %g\n", params->templatefar);
+   fprintf(stderr, "FAR for templates = %g\n", params->templatefar);
    
    //Allocate memory for ffdata structure
    ffdataStruct *ffdata = new_ffdata(inputParams);
@@ -963,7 +962,7 @@ int main(int argc, char *argv[])
             }
             
             if (inputParams->calcRthreshold) {
-               numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
+               numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
@@ -984,7 +983,7 @@ int main(int argc, char *argv[])
                }
             }
             REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-            if ((!inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (inputParams->calcRthreshold && R>farval->far)) {
+            if ((!inputParams->calcRthreshold && prob<params->log10templatefar) || (inputParams->calcRthreshold && R>farval->far)) {
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) {
                   exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length);
                   if (exactCandidates1->data==NULL) {
