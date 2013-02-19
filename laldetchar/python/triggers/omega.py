@@ -291,7 +291,7 @@ def from_files(filelist, start=None, end=None, ifo=None, channel=None,
         sys.stdout.write("Extracting Omega triggers from %d files...     \r"
                          % len(filelist))
         sys.stdout.flush()
-        num = len(filelist)/100
+        num = len(filelist)
     out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
     extend = out.extend
     for i,fp in enumerate(filelist):
@@ -299,13 +299,13 @@ def from_files(filelist, start=None, end=None, ifo=None, channel=None,
             extend(from_file(f, start=start, end=end, columns=columns,\
                              ifo=ifo, channel=channel, virgo=virgo))
         if verbose:
-            progress = int((i+1)/num)
+            progress = int((i+1)/num*100)
             sys.stdout.write("Extracting Omega triggers from %d files... "
                              "%.2d%%\r" % (num, progress))
             sys.stdout.flush()
     if verbose:
         sys.stdout.write("Extracting Omega triggers from %d files... "
-                         "100%%\r" % (num))
+                         "100%%\n" % (num))
         sys.stdout.flush()
     return out
 
