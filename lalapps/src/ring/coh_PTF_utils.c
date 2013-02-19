@@ -1,6 +1,73 @@
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "coh_PTF.h"
 
+INT4 coh_PTF_data_condition(
+              struct coh_PTF_params *params,
+              REAL4TimeSeries          **channel,
+              REAL4FrequencySeries     **invspec,
+              RingDataSegments         **segments,
+              REAL4FFTPlan             *fwdplan,
+              REAL4FFTPlan             *psdplan,
+              REAL4FFTPlan             *revplan,
+              REAL4                    **timeSlideVectorsP,
+              struct timeval           startTime
+)
+{
+  REAL4 *timeSlideVectors;
+  timeSlideVectors=LALCalloc(1, (LAL_NUM_IFO+1)*
+                                params->numOverlapSegments*sizeof(REAL4));
+  memset(timeSlideVectors, 0,
+         (LAL_NUM_IFO+1) * params->numOverlapSegments * sizeof(REAL4));
+
+
+  UINT4 ifoNumber;
+  INT4 numSegments = -1;
+  /* loop over ifos */
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+
+    /* if ifo is on: */
+    if (params->haveTrig[ifoNumber])
+    {
+      /* Read in data from the various ifos */
+      channel[ifoNumber] = coh_PTF_get_data(params, params->channel[ifoNumber],
+                                            params->dataCache[ifoNumber],
+                                            ifoNumber);
+      coh_PTF_rescale_data(channel[ifoNumber], 1E20);
+
+      /* compute the spectrum */
+      invspec[ifoNumber] = coh_PTF_get_invspec(channel[ifoNumber], fwdplan,
+                                               revplan, psdplan, params);
+
+      /* create the segments */
+
+      segments[ifoNumber] = coh_PTF_get_segments(channel[ifoNumber],
+                                invspec[ifoNumber],fwdplan, ifoNumber,
+                                timeSlideVectors, params);
+
+      if (numSegments < 1)
+      {
+        numSegments = segments[ifoNumber]->numSgmnt;
+      }
+      else
+      {
+        if (numSegments != (INT4)segments[ifoNumber]->numSgmnt)
+        {
+          error("ERROR: Disagreement in number of segments in ifos.");
+        }
+      }
+
+      verbose("Created segments for one ifo %ld \n",
+               timeval_subtract(&startTime));
+    }
+  }
+  *timeSlideVectorsP = timeSlideVectors;
+  return numSegments;
+}
+
+
+
+
 /* gets the data, performs any injections, and conditions the data */
 REAL4TimeSeries *coh_PTF_get_data(
               struct coh_PTF_params *params,
@@ -88,13 +155,63 @@ REAL4TimeSeries *coh_PTF_get_data(
   return channel;
 }
 
+void coh_PTF_setup_null_stream(
+    struct coh_PTF_params   *params,
+    REAL4TimeSeries         **channel,
+    REAL4FrequencySeries    *invspec,
+    RingDataSegments        *segments,
+    REAL4                   *Fplustrig,
+    REAL4                   *Fcrosstrig,
+    REAL4                   *timeOffsets,
+    REAL4FFTPlan            *fwdplan,
+    REAL4FFTPlan            *revplan,
+    REAL4FFTPlan            *psdplan,
+    REAL4                   *timeSlideVectors,
+    struct timeval           startTime
+)
+{
+  /* FIXME: The null stream probably will be broken by the timesliding stuff */
+  /* It may be worth deprecating this entirely, but if not then a timeslid */
+  /* null stream construction should be implemented. */
+  /* My vote is to deprecate the null stream. */
 
+  UINT4 ui;
+
+  /* Read in data from the various ifos */
+  if (coh_PTF_get_null_stream(params, channel, Fplustrig, Fcrosstrig,
+                                timeOffsets))
+  {
+    error("Null stream construction failure\n");
+  }
+
+  /* compute the spectrum */
+  invspec = coh_PTF_get_invspec(channel[LAL_NUM_IFO], fwdplan,\
+                                            revplan, psdplan, params);
+  /* If white spectrum need to scale this. */
+  if (params->whiteSpectrum)
+  {
+    for(ui=0 ; ui < invspec->data->length; ui++)
+    {
+      /* FIXME: The factor here is hardcoded and wrong. */
+      /* Should be dynamically calculated. */
+      invspec->data->data[ui] *= pow(1./0.3403324,2);
+    }
+  }
+
+  /* create the segments */
+  segments = coh_PTF_get_segments(channel[LAL_NUM_IFO],invspec,fwdplan,
+                                             LAL_NUM_IFO, timeSlideVectors,
+                                             params);
+
+  verbose("Created segments for null stream at %ld \n",
+          timeval_subtract(&startTime));
+}
 
 /* This function is used to generate the null stream */
 /* Be aware this is separate from the null SNR! */
 int coh_PTF_get_null_stream(
     struct coh_PTF_params *params,
-    REAL4TimeSeries *channel[LAL_NUM_IFO + 1],
+    REAL4TimeSeries **channel,
     REAL4 *Fplus,
     REAL4 *Fcross,
     REAL4 *timeOffsets )
@@ -418,6 +535,264 @@ RingDataSegments *coh_PTF_get_segments(
   return segments;
 }
 
+void coh_PTF_create_time_slide_table(
+  struct coh_PTF_params   *params,
+  INT8                    *slideIDList,
+  TimeSlide               **time_slide_headP,
+  REAL4                   *timeSlideVectors,
+  INT4                    numSegments
+)
+{
+  TimeSlide *time_slide_head;
+  TimeSlideVectorList timeSlideList[numSegments];
+  CHAR ifoName[LIGOMETA_IFO_MAX];
+  UINT4 slideCount = 0;
+  INT4 i;
+  UINT4 ui,uj,ifoNumber;
+
+  for (i = 0 ; i < numSegments ; i++)
+  {
+    UINT4 slideDuplicate = 0;
+    if (slideCount)
+    {
+      for (uj = 0; uj < slideCount; uj++)
+      {
+        UINT4 slideChecking = 1;
+        for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          if (params->haveTrig[ifoNumber])
+          {
+            if (timeSlideVectors[ifoNumber*params->numOverlapSegments+i] != \
+                timeSlideList[uj].timeSlideVectors[ifoNumber])
+            {
+              slideChecking = 0;
+            }
+          }
+        }
+        if (slideChecking)
+        {
+          slideDuplicate = 1;
+          slideIDList[i] = timeSlideList[uj].timeSlideID;
+        }
+      }
+    }
+    if (! slideDuplicate)
+    {
+      for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          timeSlideList[slideCount].timeSlideVectors[ifoNumber] = \
+              timeSlideVectors[ifoNumber*params->numOverlapSegments+i];
+        }
+      }
+      timeSlideList[slideCount].timeSlideID = slideCount;
+      slideIDList[i] = timeSlideList[slideCount].timeSlideID;
+      slideCount++;
+    }
+  }
+
+  time_slide_head=NULL;
+  TimeSlide *curr_slide = NULL;
+
+  for (ui = 0 ; ui < slideCount; ui++)
+  {
+    for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if (params->haveTrig[ifoNumber])
+      {
+        if (! time_slide_head)
+        {
+          time_slide_head=XLALCreateTimeSlide();
+          curr_slide= time_slide_head;
+        }
+        else
+        {
+          curr_slide->next=XLALCreateTimeSlide();
+          curr_slide = curr_slide->next;
+        }
+        curr_slide->time_slide_id = timeSlideList[ui].timeSlideID;
+        /* FIXME */
+        XLALReturnIFO(ifoName,ifoNumber);
+        strncpy(curr_slide->instrument,ifoName,sizeof(curr_slide->instrument)-1);
+        curr_slide->offset = timeSlideList[ui].timeSlideVectors[ifoNumber];
+        curr_slide->process_id=0;
+      }
+    }
+  }
+  *time_slide_headP = time_slide_head;
+}
+
+void coh_PTF_calculate_det_stuff(
+  struct coh_PTF_params   *params,
+  LALDetector             **detectors,
+  REAL4                   *timeOffsets,
+  REAL4                   *Fplustrig,
+  REAL4                   *Fcrosstrig,
+  CohPTFSkyPositions      *skyPoints
+)
+{
+  UINT4 ifoNumber,ui;
+  REAL8 FplusTmp,FcrossTmp;
+  LIGOTimeGPS  segStartTime;
+  REAL8 detLoc[3];
+
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    detectors[ifoNumber] = LALCalloc(1, sizeof(*detectors[ifoNumber]));
+    XLALReturnDetector(detectors[ifoNumber], ifoNumber);
+    /* get location in three dimensions */
+    for (ui = 0; ui < 3; ui++)
+    {
+      detLoc[ui] = (double) detectors[ifoNumber]->location[ui];
+    }
+    /* set 'segStartTime' to trigger time */
+    segStartTime = params->trigTime;
+    /* calculate time offsets */
+    timeOffsets[ifoNumber] = (REAL4)
+        XLALTimeDelayFromEarthCenter(detLoc, skyPoints->data[0].longitude,
+                                     skyPoints->data[0].latitude,
+                                     &segStartTime);
+    /* calculate response functions for trigger */
+    XLALComputeDetAMResponse(&FplusTmp, &FcrossTmp,
+                             detectors[ifoNumber]->response,
+                             skyPoints->data[0].longitude,
+                             skyPoints->data[0].latitude, 0.,
+                             XLALGreenwichMeanSiderealTime(&segStartTime));
+    Fplustrig[ifoNumber] = (REAL4) FplusTmp;
+    Fcrosstrig[ifoNumber] = (REAL4) FcrossTmp;
+  }
+}
+
+void coh_PTF_initialize_structures(
+  struct coh_PTF_params    *params,
+  FindChirpInitParams      **fcInitParamsP,
+  FindChirpTemplate        **fcTmpltP,
+  FindChirpTmpltParams     **fcTmpltParamsP,
+  REAL8Array               **PTFM,
+  REAL8Array               **PTFN,
+  COMPLEX8VectorSequence   **PTFqVec,
+  REAL4FFTPlan             *fwdplan
+)
+{
+  UINT4 ifoNumber;
+
+  FindChirpInitParams *fcInitParams;
+  FindChirpTemplate *fcTmplt;
+  FindChirpTmpltParams *fcTmpltParams;
+
+  coh_PTF_set_null_input_REAL8Array(PTFM,LAL_NUM_IFO+1);
+  coh_PTF_set_null_input_REAL8Array(PTFN,LAL_NUM_IFO+1);
+  coh_PTF_set_null_input_COMPLEX8VectorSequence(PTFqVec,LAL_NUM_IFO+1);
+
+  /* finchirp parameters */
+  fcInitParams               = LALCalloc(1, sizeof(*fcInitParams));
+  fcTmplt                    = LALCalloc(1, sizeof(*fcTmplt));
+  fcTmpltParams              = LALCalloc(1, sizeof(*fcTmpltParams));
+  fcTmpltParams->approximant = params->approximant;
+  fcTmpltParams->order       = params->order;
+
+  /* Note that although non-spinning only uses Q1, the PTF
+ *   generator still generates Q1-5, thus size of these vectors */
+  if (params->approximant == FindChirpPTF)
+  {
+    fcTmplt->PTFQtilde          =
+        XLALCreateCOMPLEX8VectorSequence(5, params->numFreqPoints);
+    fcTmplt->PTFQ         = XLALCreateVectorSequence(5, params->numTimePoints);
+    fcTmpltParams->PTFphi = XLALCreateVector(params->numTimePoints);
+    fcTmpltParams->PTFomega_2_3 = XLALCreateVector(params->numTimePoints);
+    fcTmpltParams->PTFe1  = XLALCreateVectorSequence(3, params->numTimePoints);
+    fcTmpltParams->PTFe2  = XLALCreateVectorSequence(3, params->numTimePoints);
+  }
+  else if (params->approximant == FindChirpSP)
+  {
+    fcTmplt->PTFQtilde      =
+        XLALCreateCOMPLEX8VectorSequence(1, params->numFreqPoints);
+    fcTmplt->data           = XLALCreateCOMPLEX8Vector(params->numFreqPoints);
+    fcTmpltParams->xfacVec  = XLALCreateVector(params->numFreqPoints);
+    fcTmpltParams->PTFphi   = XLALCreateVector(params->numFreqPoints);
+    /* Set the values of xfacVec  This is k^(-1/3) 
+     * also PTFphi which is k^(-7/6). As these are expensive to compute it
+     * is cheaper to do it once rather than many times. */
+    const REAL4                   xfacExponent = -1.0/3.0;
+    REAL4                        *xfac = NULL;
+    UINT4 ui;
+    xfac = fcTmpltParams->xfacVec->data;
+    xfac[0] = 0;
+    fcTmpltParams->PTFphi->data[0] = 0;
+    for (ui = 1; ui < fcTmpltParams->xfacVec->length; ++ui)
+    {
+      xfac[ui] = pow((REAL4) ui, xfacExponent);
+      fcTmpltParams->PTFphi->data[ui] = pow((REAL4) ui, -7.0/6.0);
+    }
+  }
+  else
+  {
+    fcTmplt->PTFQtilde      =
+        XLALCreateCOMPLEX8VectorSequence(1, params->numFreqPoints);
+    fcTmplt->data           = XLALCreateCOMPLEX8Vector(params->numFreqPoints);
+    fcTmpltParams->xfacVec  = XLALCreateVector(params->numTimePoints);
+  }
+
+  fcTmpltParams->fwdPlan      = fwdplan;
+  fcTmpltParams->deltaT       = 1.0/params->sampleRate;
+  if (params->dynTempLength)
+  {
+    fcTmpltParams->dynamicTmpltFlow = 1;
+  }
+  else
+  {
+    fcTmpltParams->dynamicTmpltFlow = 0;
+    fcTmpltParams->fLow = params->lowTemplateFrequency;
+  }
+  /* This option holds 2x the length of data that is junk in each segment
+   * because of conditioning and the PSD.*/
+  fcTmpltParams->invSpecTrunc = params->truncateDuration;
+
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      if (params->approximant == FindChirpPTF)
+      {
+        PTFM[ifoNumber]    = XLALCreateREAL8ArrayL(2, 5, 5);
+        PTFN[ifoNumber]    = XLALCreateREAL8ArrayL(2, 5, 5);
+        PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence\
+                             (5, params->numTimePoints);
+      }
+      else
+      {
+        PTFM[ifoNumber]    = XLALCreateREAL8ArrayL(2, 1, 1);
+        PTFN[ifoNumber]    = XLALCreateREAL8ArrayL(2, 1, 1);
+        PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence\
+                             (1, params->numTimePoints);
+      }
+    }
+  }
+
+  if (params->doNullStream)
+  {
+    if (params->approximant == FindChirpPTF)
+    {
+      PTFM[LAL_NUM_IFO]    = XLALCreateREAL8ArrayL(2, 5, 5);
+      PTFN[LAL_NUM_IFO]    = XLALCreateREAL8ArrayL(2, 5, 5);
+      PTFqVec[LAL_NUM_IFO] = XLALCreateCOMPLEX8VectorSequence\
+                             (5, params->numTimePoints);
+    }
+    else
+    {
+      PTFM[LAL_NUM_IFO]    = XLALCreateREAL8ArrayL(2, 1, 1);
+      PTFN[LAL_NUM_IFO]    = XLALCreateREAL8ArrayL(2, 1, 1);
+      PTFqVec[LAL_NUM_IFO] = XLALCreateCOMPLEX8VectorSequence\
+                             (1, params->numTimePoints);
+    }
+  }  
+  /* Send the output back to the parent function */
+  *fcTmpltP = fcTmplt;
+  *fcInitParamsP = fcInitParams;
+  *fcTmpltParamsP = fcTmpltParams; 
+
+}
 
 void coh_PTF_calculate_bmatrix(
   struct coh_PTF_params   *params,
@@ -754,7 +1129,7 @@ REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params )
   if ( params->segmentDuration > 0.0 )
   {
     UINT4 segmentLength;
-    segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
+    segmentLength = params->numTimePoints;
     plan = XLALCreateForwardREAL4FFTPlan( segmentLength, params->fftLevel );
   }
   return plan;
@@ -781,11 +1156,25 @@ REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params )
   if ( params->segmentDuration > 0.0 )
   {
     UINT4 segmentLength;
-    segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
+    segmentLength = params->numTimePoints;
     plan = XLALCreateReverseREAL4FFTPlan( segmentLength, params->fftLevel );
   }
   return plan;
 }
+
+/* gets the inverse fft plan */
+COMPLEX8FFTPlan *coh_PTF_get_fft_invplan( struct coh_PTF_params *params )
+{
+  COMPLEX8FFTPlan *plan = NULL;
+  if ( params->segmentDuration > 0.0 )
+  {
+    UINT4 segmentLength;
+    segmentLength = params->numTimePoints;
+    plan = XLALCreateReverseCOMPLEX8FFTPlan( segmentLength, params->fftLevel );
+  }
+  return plan;
+}
+
 
 /* routine to see if integer i is in a list of integers to do */
 /* e.g., 2, 7, and 222 are in the list "1-3,5,7-" but 4 is not */
@@ -1849,3 +2238,77 @@ UINT4 checkInjectionMchirp(
   }
   return passMchirpCheck;
 }
+
+void coh_PTF_set_null_input_REAL4TimeSeries(
+  REAL4TimeSeries** timeSeries,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    timeSeries[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_REAL4FrequencySeries(
+  REAL4FrequencySeries** freqSeries,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    freqSeries[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_RingDataSegments(
+  RingDataSegments** segment,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    segment[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_REAL8Array(
+  REAL8Array** array,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    array[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_COMPLEX8VectorSequence(
+  COMPLEX8VectorSequence** vecSeq,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    vecSeq[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_REAL4(
+  REAL4** array,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    array[i] = NULL;
+  }
+}
+
+

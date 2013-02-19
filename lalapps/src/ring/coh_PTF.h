@@ -134,6 +134,8 @@ struct coh_PTF_params {
   REAL8        strideDuration;
   REAL8        psdStrideDuration;
   REAL8        truncateDuration;
+  UINT4        numTimePoints;
+  UINT4        numFreqPoints;
   UINT4        numOverlapSegments;
   REAL4        dynRangeFac;
   REAL4        lowTemplateFrequency;
@@ -173,8 +175,10 @@ struct coh_PTF_params {
   UINT4        numChiSquareBins;
   REAL4        chiSquareCalcThreshold;
   char         outputFile[256];
-  const char  *spinBank;
-  const char  *noSpinBank;
+  UINT4        spinBank;
+  char         spinBankName[256];
+  UINT4        noSpinBank;
+  char         noSpinBankName[256];
   char         userTag[256];
   char         ifoTag[256];
   UINT4        slideSegments[LAL_NUM_IFO+1];
@@ -354,11 +358,38 @@ int coh_PTF_spin_checker(
 
 /* Function declarations for coh_PTF_utils */
 
+INT4 coh_PTF_data_condition(
+              struct coh_PTF_params *params,
+              REAL4TimeSeries          **channel,
+              REAL4FrequencySeries     **invspec,
+              RingDataSegments         **segments,
+              REAL4FFTPlan             *fwdplan,
+              REAL4FFTPlan             *psdplan,
+              REAL4FFTPlan             *revplan,
+              REAL4                    **timeSlideVectors,
+              struct timeval           startTime
+);
+
 REAL4TimeSeries *coh_PTF_get_data( 
     struct coh_PTF_params *params,
     const char *ifoChannel,
     const char *dataCache,
     UINT4 ifoNumber
+);
+
+void coh_PTF_setup_null_stream(
+    struct coh_PTF_params   *params,
+    REAL4TimeSeries         **channel,
+    REAL4FrequencySeries    *invspec,
+    RingDataSegments        *segments,
+    REAL4                   *Fplustrig,
+    REAL4                   *Fcrosstrig,
+    REAL4                   *timeOffsets,
+    REAL4FFTPlan            *fwdplan,
+    REAL4FFTPlan            *revplan,
+    REAL4FFTPlan            *psdplan,
+    REAL4                   *timeSlideVectors,
+    struct timeval           startTime
 );
 
 int coh_PTF_get_null_stream(
@@ -389,6 +420,52 @@ RingDataSegments *coh_PTF_get_segments(
     InterferometerNumber     NumberIFO,
     REAL4                   *timeSlideVectors,
     struct coh_PTF_params   *params
+);
+
+void coh_PTF_create_time_slide_table(
+  struct coh_PTF_params   *params,
+  INT8                    *slideIDList,
+  TimeSlide               **time_slide_headP,
+  REAL4                   *timeSlideVectors,
+  INT4                    numSegments
+);
+
+void coh_PTF_initialize_structures(
+  struct coh_PTF_params    *params,
+  FindChirpInitParams      **fcInitParamsP,
+  FindChirpTemplate        **fcTmpltP,
+  FindChirpTmpltParams     **fcTmpltParamsP,
+  REAL8Array               **PTFM,
+  REAL8Array               **PTFN,
+  COMPLEX8VectorSequence   **PTFqVec,
+  REAL4FFTPlan             *fwdplan
+);
+
+UINT4 coh_PTF_initialize_bank_veto(
+  struct coh_PTF_params   *params,
+  struct bankTemplateOverlaps **bankNormOverlapsP,
+  struct bankComplexTemplateOverlaps **bankOverlapsP,
+  struct bankDataOverlaps **dataOverlapsP,
+  FindChirpTemplate        **bankFcTmpltsP,
+  FindChirpTemplate        *fcTmplt,
+  FindChirpTmpltParams     *fcTmpltParams,
+  REAL4FrequencySeries     **invspec,
+  struct timeval           startTime
+);
+
+UINT4 coh_PTF_initialize_auto_veto(
+  struct coh_PTF_params   *params,
+  struct bankComplexTemplateOverlaps **autoTempOverlapsP,
+  struct timeval           startTime
+);
+
+void coh_PTF_calculate_det_stuff(
+  struct coh_PTF_params   *params,
+  LALDetector             **detectors,
+  REAL4                   *timeOffsets,
+  REAL4                   *Fplustrig,
+  REAL4                   *Fcrosstrig,
+  CohPTFSkyPositions      *skyPoints
 );
 
 void coh_PTF_calculate_bmatrix(
@@ -450,6 +527,8 @@ REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
 REAL4FFTPlan *coh_PTF_get_fft_psdplan( struct coh_PTF_params *params );
 
 REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params );
+
+COMPLEX8FFTPlan *coh_PTF_get_fft_invplan( struct coh_PTF_params *params );
 
 int is_in_list( int i, const char *list );
 
@@ -586,7 +665,6 @@ REAL4 coh_PTF_calculate_auto_veto(
 
 void coh_PTF_free_bank_veto_memory(
     struct bankTemplateOverlaps *bankNormOverlaps,
-    InspiralTemplate        *PTFBankTemplates,
     FindChirpTemplate       *bankFcTmplts,
     UINT4 subBankSize,
     struct bankComplexTemplateOverlaps *bankOverlaps,
@@ -800,4 +878,34 @@ UINT4 checkInjectionMchirp(
     struct coh_PTF_params *params,
     InspiralTemplate *tmplt,
     LIGOTimeGPS *epoch
+);
+
+void coh_PTF_set_null_input_REAL4TimeSeries(
+  REAL4TimeSeries** timeSeries,
+  UINT4 length
+);
+
+void coh_PTF_set_null_input_REAL4FrequencySeries(
+  REAL4FrequencySeries** freqSeries,
+  UINT4 length
+);
+
+void coh_PTF_set_null_input_RingDataSegments(
+  RingDataSegments** segment,
+  UINT4 length
+);
+
+void coh_PTF_set_null_input_REAL8Array(
+  REAL8Array** array,
+  UINT4 length
+);
+
+void coh_PTF_set_null_input_COMPLEX8VectorSequence(
+  COMPLEX8VectorSequence** vecSeq,
+  UINT4 length
+);
+
+void coh_PTF_set_null_input_REAL4(
+  REAL4** array,
+  UINT4 length
 );

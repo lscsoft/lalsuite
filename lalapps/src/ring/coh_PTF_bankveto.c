@@ -7,6 +7,137 @@
 #define UNUSED
 #endif
 
+UINT4 coh_PTF_initialize_bank_veto(
+  struct coh_PTF_params   *params,
+  struct bankTemplateOverlaps **bankNormOverlapsP,
+  struct bankComplexTemplateOverlaps **bankOverlapsP,
+  struct bankDataOverlaps **dataOverlapsP,
+  FindChirpTemplate        **bankFcTmpltsP,
+  FindChirpTemplate        *fcTmplt,
+  FindChirpTmpltParams     *fcTmpltParams,
+  REAL4FrequencySeries     **invspec,
+  struct timeval           startTime
+)
+{
+  UINT4 ui,uj,ifoNumber,subBankSize;
+  InspiralTemplate *PTFBankTemplates = NULL;
+  InspiralTemplate *PTFBankvetoHead = NULL;
+
+  struct bankTemplateOverlaps *bankNormOverlaps;
+  struct bankComplexTemplateOverlaps *bankOverlaps;
+  struct bankDataOverlaps *dataOverlaps;
+  FindChirpTemplate *bankFcTmplts;
+
+  verbose("Initializing bank veto filters at %ld \n", timeval_subtract(&startTime));
+  /* Reads in and initializes the bank veto sub bank */
+  subBankSize = coh_PTF_read_sub_bank(params,&PTFBankTemplates);
+  params->BVsubBankSize = subBankSize;
+  bankNormOverlaps = LALCalloc(subBankSize,sizeof(*bankNormOverlaps));
+  bankOverlaps = LALCalloc(subBankSize,sizeof(*bankOverlaps));
+  dataOverlaps = LALCalloc(subBankSize,sizeof(*dataOverlaps));
+  bankFcTmplts = LALCalloc(subBankSize, sizeof(*bankFcTmplts));
+  /* Create necessary structure to hold Q(f) */
+  for (ui =0 ; ui < subBankSize; ui++)
+  {
+    bankFcTmplts[ui].PTFQtilde =
+        XLALCreateCOMPLEX8VectorSequence(1, params->numFreqPoints);
+  }
+  PTFBankvetoHead = PTFBankTemplates;
+
+  for (ui=0 ; ui < subBankSize ; ui++)
+  {
+    coh_PTF_template(fcTmplt,PTFBankTemplates,
+        fcTmpltParams);
+    PTFBankTemplates = PTFBankTemplates->next;
+    /* Only store Q1. Structures used in fcTmpltParams will be overwritten */
+    for (uj = 0 ; uj < params->numFreqPoints ; uj++)
+    {
+      if (params->approximant == FindChirpPTF)
+        bankFcTmplts[ui].PTFQtilde->data[uj] = fcTmplt->PTFQtilde->data[uj];
+      else
+        bankFcTmplts[ui].PTFQtilde->data[uj] = fcTmplt->data->data[uj];
+    }
+  }
+  /* Calculate the overlap between templates for bank veto */
+  for (ui = 0 ; ui < subBankSize; ui++)
+  {
+    for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if (params->haveTrig[ifoNumber])
+      {
+        bankNormOverlaps[ui].PTFM[ifoNumber]=
+            XLALCreateREAL8ArrayL(2, 1, 1);
+        memset(bankNormOverlaps[ui].PTFM[ifoNumber]->data,
+            0, 1 * sizeof(REAL8));
+        /* This function calculates the overlaps between templates */
+        /* This returns a REAL4 as the overlap between identical templates*/
+        /* must be real. */
+        coh_PTF_template_overlaps(params,&(bankFcTmplts[ui]),
+            &(bankFcTmplts[ui]),invspec[ifoNumber],0,
+            bankNormOverlaps[ui].PTFM[ifoNumber]);
+      }
+    }
+  }
+
+  while (PTFBankvetoHead)
+  {
+    InspiralTemplate *thisTmplt;
+    thisTmplt = PTFBankvetoHead;
+    PTFBankvetoHead = PTFBankvetoHead->next;
+    if (thisTmplt->event_id)
+    {
+      LALFree(thisTmplt->event_id);
+    }
+    LALFree(thisTmplt);
+  }
+
+  verbose("Generated bank veto filters at %ld \n", timeval_subtract(&startTime));
+  /* Return pointers to parent function */
+  *bankNormOverlapsP = bankNormOverlaps;
+  *bankOverlapsP = bankOverlaps;
+  *dataOverlapsP = dataOverlaps;
+  *bankFcTmpltsP = bankFcTmplts;
+
+  return subBankSize;
+}
+
+UINT4 coh_PTF_initialize_auto_veto(
+  struct coh_PTF_params   *params,
+  struct bankComplexTemplateOverlaps **autoTempOverlapsP,
+  struct timeval           startTime
+)
+{
+  struct bankComplexTemplateOverlaps *autoTempOverlaps;
+  UINT4 uj,ifoNumber,timeStepPoints;
+  verbose("Initializing auto veto filters at %ld \n",
+          timeval_subtract(&startTime));
+  /* Initializations */
+  autoTempOverlaps = LALCalloc(params->numAutoPoints,
+      sizeof(*autoTempOverlaps));
+  timeStepPoints = params->autoVetoTimeStep*params->sampleRate;
+  for (uj = 0; uj < params->numAutoPoints; uj++)
+  {
+    for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if (params->haveTrig[ifoNumber])
+      {
+        /* If it will be used initialize and zero out the overlap structure*/
+        autoTempOverlaps[uj].PTFM[ifoNumber] = XLALCreateCOMPLEX8ArrayL(2, 1,
+                                                                        1);
+        memset(autoTempOverlaps[uj].PTFM[ifoNumber]->data, 0,
+               1*sizeof(COMPLEX8));
+      }
+      else
+        autoTempOverlaps[uj].PTFM[ifoNumber] = NULL;
+    }
+  }
+  verbose("Generated auto veto filters at %ld \n",
+          timeval_subtract(&startTime));
+  
+  *autoTempOverlapsP = autoTempOverlaps;
+  return timeStepPoints;
+}
+
 UINT4 coh_PTF_read_sub_bank(
 struct coh_PTF_params   *params,
 InspiralTemplate        **PTFBankTemplates)
@@ -420,7 +551,6 @@ UINT4       vecLengthTwo
 
 void coh_PTF_free_bank_veto_memory(
   struct bankTemplateOverlaps *bankNormOverlaps,
-  InspiralTemplate        *PTFBankTemplates,
   FindChirpTemplate       *bankFcTmplts,
   UINT4 subBankSize,
   struct bankComplexTemplateOverlaps *bankOverlaps,
@@ -442,9 +572,6 @@ void coh_PTF_free_bank_veto_memory(
     }
     LALFree(bankNormOverlaps);
   }
-
-  if ( PTFBankTemplates )
-    LALFree( PTFBankTemplates);
 
   if ( bankFcTmplts )
   {
