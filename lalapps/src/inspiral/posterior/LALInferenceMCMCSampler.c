@@ -466,6 +466,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 targetHotLike       = 15;               // Targeted max 'experienced' log(likelihood) of hottest chain
   INT4  hotThreshold        = nChain/2-1;       // If MPIrank > hotThreshold, use proposals with higher acceptance rates for hot chains
 
+  /*  If running hot chains for Thermodynamic Integration make all draw from prior */
+  if(tempMin>0.0) hotThreshold=-1;
+
   /* Set maximum temperature (command line value take precidence) */
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")) {
     if(MPIrank==0)
@@ -583,9 +586,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         tempLadder[t]=1.0/(REAL8)(1.0/tempMin-t*tempDelta);
       }
     } else {                                                                        //Geometric spacing
-      tempDelta=pow(tempMax-tempMin+1,1.0/(REAL8)(nChain-1));
+      tempDelta=pow(tempMax/tempMin,1.0/(REAL8)(nChain-1));
       for (t=0;t<nChain; ++t) {
-        tempLadder[t]=tempMin + pow(tempDelta,t) - 1.0;
+        tempLadder[t]=tempMin*pow(tempDelta,t);
       }
     }
   } else {                                                                          //single chain
