@@ -837,8 +837,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(LALInferenceGetProcParamVal(commandLine,"--ampOrder")) 
     LALInferenceAddVariable(currentParams, "LAL_AMPORDER",     &AmpOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
-  if (LALInferenceGetProcParamVal(commandLine, "--fref"))
-    LALInferenceAddVariable(currentParams, "fRef", &fRef, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(currentParams, "fRef", &fRef, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--taper");
   if(ppt){

@@ -1914,6 +1914,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 
   phi0		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase"); /* START phase as per lalsimulation convention*/
 
+  f_min = IFOdata->fLow /** 0.9 */;
+  f_max = IFOdata->fHigh;
+  
   if(frame==LALINFERENCE_FRAME_RADIATION){
     inclination	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
     REAL8 theta_spin1	= inclination; //default to spin aligned case if no angles are provided for the spins. 
@@ -1960,9 +1963,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   
   distance	= LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
 	
-  f_min = IFOdata->fLow /** 0.9 */;
-  f_max = IFOdata->fHigh;
-  
   
   REAL8 lambda1 = 0.;
   if(LALInferenceCheckVariable(IFOdata->modelParams, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "lambda1");
