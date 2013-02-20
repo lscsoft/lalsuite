@@ -50,7 +50,7 @@ def rate(table, stride, start=None, end=None):
     rate = CreateREAL8TimeSeries("Rate (Hz)", LIGOTimeGPS(start), 0,
                                  stride, lalHertzUnit, bins.size-1)
     hist,_ = numpy.histogram(tarray, bins=bins)
-    rate.data.data = (hist / stride).astype(numpy.float64)
+    rate.data.data = hist.astype(numpy.float64)/stride
     return rate
 
 
