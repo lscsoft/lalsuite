@@ -794,6 +794,132 @@ void coh_PTF_initialize_structures(
 
 }
 
+void coh_PTF_initialize_time_series(
+  struct coh_PTF_params    *params,
+  LIGOTimeGPS              segStartTime,
+  REAL8                    fLower,
+  REAL4TimeSeries          **cohSNRP,
+  REAL4TimeSeries          **nullSNRP,
+  REAL4TimeSeries          **traceSNRP,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  REAL4TimeSeries          **chiSquare
+)
+{
+  UINT4 ifoNumber;
+  REAL4TimeSeries *cohSNR,*nullSNR,*traceSNR;
+  char name[LALNameLength];
+  CHAR ifoName[LIGOMETA_IFO_MAX];
+  cohSNR = NULL;
+  nullSNR = NULL;
+  traceSNR = NULL;
+
+  /* Generate the various time series as needed*/
+  /* We only want to store data from middle half of segment */
+  cohSNR = XLALCreateREAL4TimeSeries("cohSNR", &segStartTime,\
+                                     fLower,(1.0/params->sampleRate),\
+                                     &lalDimensionlessUnit,\
+                                     params->numAnalPoints);
+
+  if (params->doNullStream)
+    nullSNR = XLALCreateREAL4TimeSeries("nullSNR", &segStartTime,\
+                                        fLower,(1.0/params->sampleRate),\
+                                        &lalDimensionlessUnit,\
+                                        params->numAnalPoints);
+
+  if (params->doTraceSNR)
+    traceSNR = XLALCreateREAL4TimeSeries("traceSNR", &segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+
+  if (params->doBankVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      bankVeto[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("bank_veto",\
+                                         &segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+    }
+    if (params->doSnglChiSquared)
+    {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          XLALReturnIFO(ifoName,ifoNumber);
+          snprintf( name, sizeof( name ), "%s_bank_veto",ifoName);
+          bankVeto[ifoNumber] = XLALCreateREAL4TimeSeries(name,&segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+        }
+      }
+    }
+  } 
+
+  if (params->doAutoVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      autoVeto[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("auto_veto",\
+                                         &segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+    }
+    if (params->doSnglChiSquared)
+    {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          XLALReturnIFO(ifoName,ifoNumber);
+          snprintf( name, sizeof( name ), "%s_auto_veto",ifoName);
+          autoVeto[ifoNumber] = XLALCreateREAL4TimeSeries(name,&segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+        }
+      }
+    }
+  }
+
+  if (params->doChiSquare)
+  {
+    if (params->numIFO != 1)
+    {
+      chiSquare[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("chi_square",\
+                                         &segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+    }
+    if (params->doSnglChiSquared)
+    {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          XLALReturnIFO(ifoName,ifoNumber);
+          snprintf( name, sizeof( name ), "%s_chi_square",ifoName);
+          chiSquare[ifoNumber] = XLALCreateREAL4TimeSeries(name,&segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+        }
+      }
+    }
+  }
+
+  *cohSNRP = cohSNR;
+  *nullSNRP = nullSNR;
+  *traceSNRP = traceSNR;
+
+}
+
 void coh_PTF_calculate_bmatrix(
   struct coh_PTF_params   *params,
   gsl_matrix *eigenvecs,

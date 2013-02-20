@@ -540,6 +540,18 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
           localparams.segmentDuration * localparams.sampleRate + 0.5);
   /* Set the number of points in the frequency arrays */
   localparams.numFreqPoints = localparams.numTimePoints / 2 + 1;
+  /* FIXME: Hardcoded ... also needs some sanity checking */
+  localparams.numBufferPoints = 5000;
+  localparams.analStartPoint = localparams.numTimePoints/4;
+  localparams.analEndPoint = (3*localparams.numTimePoints)/4;
+  localparams.analStartPointBuf = localparams.numTimePoints/4\
+                                  - localparams.numBufferPoints;
+  localparams.analEndPointBuf = (3*localparams.numTimePoints)/4\
+                               + localparams.numBufferPoints;
+  localparams.numAnalPoints = localparams.analEndPoint\
+                             - localparams.analStartPoint;
+  localparams.numAnalPointsBuf = localparams.analEndPointBuf\
+                                - localparams.analStartPointBuf;
 
   *params = localparams;
 

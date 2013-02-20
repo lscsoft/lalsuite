@@ -136,6 +136,13 @@ struct coh_PTF_params {
   REAL8        truncateDuration;
   UINT4        numTimePoints;
   UINT4        numFreqPoints;
+  UINT4        analStartPoint;
+  UINT4        analEndPoint;
+  UINT4        analStartPointBuf;
+  UINT4        analEndPointBuf;
+  UINT4        numAnalPoints;
+  UINT4        numAnalPointsBuf;
+  UINT4        numBufferPoints;
   UINT4        numOverlapSegments;
   REAL4        dynRangeFac;
   REAL4        lowTemplateFrequency;
@@ -441,6 +448,18 @@ void coh_PTF_initialize_structures(
   REAL4FFTPlan             *fwdplan
 );
 
+void coh_PTF_initialize_time_series(
+  struct coh_PTF_params    *params,
+  LIGOTimeGPS              segStartTime,
+  REAL8                    fLower,
+  REAL4TimeSeries          **cohSNRP,
+  REAL4TimeSeries          **nullSNRP,
+  REAL4TimeSeries          **traceSNRP,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  REAL4TimeSeries          **chiSquare
+);
+
 UINT4 coh_PTF_initialize_bank_veto(
   struct coh_PTF_params   *params,
   struct bankTemplateOverlaps **bankNormOverlapsP,
@@ -450,6 +469,17 @@ UINT4 coh_PTF_initialize_bank_veto(
   FindChirpTemplate        *fcTmplt,
   FindChirpTmpltParams     *fcTmpltParams,
   REAL4FrequencySeries     **invspec,
+  struct timeval           startTime
+);
+
+void coh_PTF_bank_veto_segment_setup(
+  struct coh_PTF_params   *params,
+  struct bankDataOverlaps *dataOverlaps,
+  FindChirpTemplate       *bankFcTmplts,
+  RingDataSegments        **segments,
+  COMPLEX8VectorSequence  **PTFqVec,
+  COMPLEX8FFTPlan         *invplan,
+  INT4                    segmentNum,
   struct timeval           startTime
 );
 

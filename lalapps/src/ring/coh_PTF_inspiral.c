@@ -33,8 +33,6 @@ int main(int argc, char **argv)
   /* Declarations of parameters */
   INT4  i,j,k;
   UINT4 ui,uj,sp;
-  char name[LALNameLength];
-  CHAR ifoName[LIGOMETA_IFO_MAX];
 
   /* process structures */
   struct coh_PTF_params    *params                  = NULL;
@@ -290,6 +288,8 @@ int main(int argc, char **argv)
     }
     PTFtemplate = PTFNoSpinTemplate;
   }
+  PTFbankhead = PTFtemplate;
+
 
   /*------------------------------------------------------------------------*
    * Initialise bank veto - This function does the following:
@@ -321,54 +321,36 @@ int main(int argc, char **argv)
 
   UINT4 numPoints = params->numTimePoints;
 
-  PTFbankhead = PTFtemplate;
-
-  /* loop over segments */
+  /* This is the primary loop over segments */
   for (j = 0; j < numSegments; ++j)
   {
-    if (params->doBankVeto)
-    {
-      /* Calculate overlap between bank templates and data for bank veto */
-      /* loop over bank veto templates */
-      for (ui = 0 ; ui < subBankSize ; ui++)
-      {
-        for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-        {
-          if (params->haveTrig[ifoNumber])
-          {
-            dataOverlaps[ui].PTFqVec[ifoNumber] =
-                XLALCreateCOMPLEX8VectorSequence(1, 3*numPoints/4-numPoints/4+
-                                                    10000);
-            bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,1,1);
-            /* This function calculates the overlap */
-            coh_PTF_bank_filters(params, &(bankFcTmplts[ui]), 0,
-                                 &segments[ifoNumber]->sgmnt[j], invplan,
-                                 PTFqVec[ifoNumber],
-                                 dataOverlaps[ui].PTFqVec[ifoNumber], 0, 0);
-          }
-        }
-      }
-      verbose("Generated bank veto filters for segment %d at %ld \n", j,
-              timeval_subtract(&startTime));
-    }
+    /* Reset the template list to the first one */
     PTFtemplate = PTFbankhead;
 
-    /* Loop over templates in the bank */
+    /* Determine the epoch of this segment */
+    for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if (params->haveTrig[ifoNumber])
+      {
+        segStartTime = segments[ifoNumber]->sgmnt[j].epoch;
+        break;
+      }
+    }
+    /* We only analyse middle half so add duration/4 to epoch */
+    XLALGPSAdd(&segStartTime, params->segmentDuration/4.0);
+
+    if (params->doBankVeto)
+    {
+      /* For every segment we need to calculate the overlap between bank veto
+       * templates and the data for use in bank veto calculation */
+      coh_PTF_bank_veto_segment_setup(params,dataOverlaps,bankFcTmplts,\
+                                      segments,PTFqVec,invplan,j,startTime);
+    }
+
+    /* This is the primary loop over templates in the bank */
     for (i = 0; (i < numTmplts); PTFtemplate = PTFtemplate->next, i++)
     {
-      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-      {
-        if (params->haveTrig[ifoNumber])
-        {
-          segStartTime = segments[ifoNumber]->sgmnt[j].epoch;
-          break;
-        }
-      }
-
-      /* We only analyse middle half so add duration/4 to epoch */
-      XLALGPSAdd(&segStartTime, params->segmentDuration/4.0);
-
-      /* If running injections, check whether to analyse */
+      /* If running injections, check whether to analyse this template*/
       if ( params->injectFile && params->injMchirpWindow )
       {
         if (! checkInjectionMchirp(params,PTFtemplate,&segStartTime))
@@ -387,13 +369,10 @@ int main(int argc, char **argv)
       /* This value is used for template generation */
       PTFtemplate->fLower = params->lowTemplateFrequency;
 
-      /* Generate the template */
-      /* PTF generator called here. For non spin Q1-5 is generated and stored
-         only Q1 will be used. This would need some alteration if we planned to
-         use other templates. */
-       
+      /* This function generates the template */
       coh_PTF_template(fcTmplt,PTFtemplate,fcTmpltParams);
 
+      /* Put the template in the array used by the coh_PTF filtering */
       if (params->approximant != FindChirpPTF)
       {
         for (uj = 0 ; uj < (numPoints/2 +1) ; uj++)
@@ -409,105 +388,10 @@ int main(int argc, char **argv)
         verbose("Generated no spin template %d at %ld \n", i,
                 timeval_subtract(&startTime));
 
-      /* Generate the various time series as needed*/
-      /* Need to zero these out */
-      /* We only want to store data from middle half of segment */
-      cohSNR = XLALCreateREAL4TimeSeries("cohSNR", &segStartTime,
-                                         PTFtemplate->fLower,
-                                         (1.0/params->sampleRate),
-                                         &lalDimensionlessUnit,
-                                         3*numPoints/4 - numPoints/4);
-      if (params->doNullStream)
-        nullSNR = XLALCreateREAL4TimeSeries("nullSNR", &segStartTime,
-                                            PTFtemplate->fLower,
-                                            (1.0/params->sampleRate),
-                                            &lalDimensionlessUnit,
-                                            3*numPoints/4 - numPoints/4);
-      if (params->doTraceSNR)
-        traceSNR = XLALCreateREAL4TimeSeries("traceSNR", &segStartTime,
-                                             PTFtemplate->fLower,
-                                             (1.0/params->sampleRate),
-                                             &lalDimensionlessUnit,
-                                             3*numPoints/4 - numPoints/4);
-      if (params->doBankVeto)
-      {
-        if (params->numIFO != 1)
-        {
-          bankVeto[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("bank_veto",
-                                             &segStartTime,
-                                             PTFtemplate->fLower,
-                                             (1.0/params->sampleRate),
-                                             &lalDimensionlessUnit,
-                                             3*numPoints/4 - numPoints/4);
-        }
-        if (params->doSnglChiSquared)
-        {
-          for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-          {
-            if (params->haveTrig[ifoNumber])
-            {
-              XLALReturnIFO(ifoName,ifoNumber);
-              snprintf( name, sizeof( name ), "%s_bank_veto",ifoName);
-              bankVeto[ifoNumber] = XLALCreateREAL4TimeSeries(name,
-                  &segStartTime,PTFtemplate->fLower,(1.0/params->sampleRate),
-                  &lalDimensionlessUnit,3*numPoints/4 - numPoints/4);
-            }
-          }
-        }
-      }
-      if (params->doAutoVeto)
-      {
-        if (params->numIFO != 1)
-        {
-          autoVeto[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("auto_veto",
-                                             &segStartTime,
-                                             PTFtemplate->fLower,
-                                             (1.0/params->sampleRate),
-                                             &lalDimensionlessUnit,
-                                             3*numPoints/4 - numPoints/4);
-        }
-        if (params->doSnglChiSquared)
-        {
-          for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-          {
-            if (params->haveTrig[ifoNumber])
-            {
-              XLALReturnIFO(ifoName,ifoNumber);
-              snprintf( name, sizeof( name ), "%s_auto_veto",ifoName);
-              autoVeto[ifoNumber] = XLALCreateREAL4TimeSeries(name,
-                  &segStartTime,PTFtemplate->fLower,(1.0/params->sampleRate),
-                  &lalDimensionlessUnit,3*numPoints/4 - numPoints/4);
-            }
-          }
-        }
-
-      }
-      if (params->doChiSquare)
-      {
-        if (params->numIFO != 1)
-        {
-          chiSquare[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("chi_square",
-                                                &segStartTime,
-                                                PTFtemplate->fLower,
-                                                (1.0/params->sampleRate),
-                                                &lalDimensionlessUnit,
-                                                3*numPoints/4 - numPoints/4);
-        }
-        if (params->doSnglChiSquared)
-        {
-          for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-          {
-            if (params->haveTrig[ifoNumber])
-            {
-              XLALReturnIFO(ifoName,ifoNumber);
-              snprintf( name, sizeof( name ), "%s_chi_square",ifoName);
-              chiSquare[ifoNumber] = XLALCreateREAL4TimeSeries(name,
-                  &segStartTime,PTFtemplate->fLower,(1.0/params->sampleRate),
-                  &lalDimensionlessUnit,3*numPoints/4 - numPoints/4);
-            }
-          }
-        }
-      }
+      /* FIXME: Initialize these objects outside of loops, but reset the *
+       * epoch here and possible memset to 0 all entries */
+      coh_PTF_initialize_time_series(params,segStartTime,PTFtemplate->fLower,\
+              &cohSNR,&nullSNR,&traceSNR,bankVeto,autoVeto,chiSquare);
 
       /* Loop over ifos */
       for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
@@ -790,20 +674,22 @@ int main(int argc, char **argv)
         }
       }
     }
-    if (params->doBankVeto)
+  } // Main loop is ended here
+
+  if (params->doBankVeto)
+  {
+    for (ui = 0 ; ui < subBankSize ; ui++)
     {
-      for (ui = 0 ; ui < subBankSize ; ui++)
+      for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
-        for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-        {
-          if (dataOverlaps[ui].PTFqVec[ifoNumber])
-            XLALDestroyCOMPLEX8VectorSequence(dataOverlaps[ui].PTFqVec[ifoNumber]);
-          if (bankOverlaps[ui].PTFM[ifoNumber])
-            XLALDestroyCOMPLEX8Array(bankOverlaps[ui].PTFM[ifoNumber]);
-        }
+        if (dataOverlaps[ui].PTFqVec[ifoNumber])
+          XLALDestroyCOMPLEX8VectorSequence(dataOverlaps[ui].PTFqVec[ifoNumber]);
+        if (bankOverlaps[ui].PTFM[ifoNumber])
+          XLALDestroyCOMPLEX8Array(bankOverlaps[ui].PTFM[ifoNumber]);
       }
     }
-  } // Main loop is ended here
+  }
+
   /* calulate number of events */
   params->numEvents = XLALCountMultiInspiral(eventList);
   fprintf(stderr,"There are %d total triggers before cluster.\n", params->numEvents);

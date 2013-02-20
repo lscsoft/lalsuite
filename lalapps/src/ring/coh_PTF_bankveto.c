@@ -69,6 +69,9 @@ UINT4 coh_PTF_initialize_bank_veto(
             XLALCreateREAL8ArrayL(2, 1, 1);
         memset(bankNormOverlaps[ui].PTFM[ifoNumber]->data,
             0, 1 * sizeof(REAL8));
+        bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,1,1);
+        dataOverlaps[ui].PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence(\
+                1, params->numAnalPointsBuf);
         /* This function calculates the overlaps between templates */
         /* This returns a REAL4 as the overlap between identical templates*/
         /* must be real. */
@@ -99,6 +102,36 @@ UINT4 coh_PTF_initialize_bank_veto(
   *bankFcTmpltsP = bankFcTmplts;
 
   return subBankSize;
+}
+
+void coh_PTF_bank_veto_segment_setup(
+  struct coh_PTF_params   *params,
+  struct bankDataOverlaps *dataOverlaps,
+  FindChirpTemplate       *bankFcTmplts,
+  RingDataSegments        **segments,
+  COMPLEX8VectorSequence  **PTFqVec,
+  COMPLEX8FFTPlan         *invplan,
+  INT4                    segmentNum,
+  struct timeval           startTime
+)
+{
+  UINT4 ifoNumber,ui;
+  for (ui = 0 ; ui < params->BVsubBankSize ; ui++)
+  {
+    for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if (params->haveTrig[ifoNumber])
+      {
+        /* This function calculates the overlap */
+        coh_PTF_bank_filters(params, &(bankFcTmplts[ui]), 0,
+                             &segments[ifoNumber]->sgmnt[segmentNum], invplan,
+                             PTFqVec[ifoNumber],
+                             dataOverlaps[ui].PTFqVec[ifoNumber], 0, 0);
+      }
+    }
+  }
+  verbose("Generated bank veto filters for segment %d at %ld \n", segmentNum,
+          timeval_subtract(&startTime));
 }
 
 UINT4 coh_PTF_initialize_auto_veto(
