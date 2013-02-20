@@ -36,9 +36,9 @@ double fdiff(double index, void *params) {
  
 int main(void) {
    FILE *H1CANDS, *L1CANDS;
-   H1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzH1candidates.dat","r");
+   H1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-270HzH1candidates.dat","r");
    if (H1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzH1candidates.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-270HzH1candidates.dat");
       exit(1);
    }
 
@@ -49,9 +49,9 @@ int main(void) {
       if (ch == '\n') h1count++;
    } while (ch != EOF);
 
-   L1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzL1candidates.dat","r");
+   L1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-270HzL1candidates.dat","r");
    if (L1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzL1candidates.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-270HzL1candidates.dat");
       exit(1);
    }
 
@@ -98,6 +98,7 @@ int main(void) {
    sorted_index = (size_t*)malloc(sizeof(size_t)*l1count);
    double *alll1cands_sorted = (double*)malloc(sizeof(double)*l1count*9);
    int *alll1cands_job_sorted = (int*)malloc(sizeof(int)*l1count);
+   int *l1cands_used = (int*)malloc(sizeof(int)*l1count);
    gsl_sort_index(sorted_index, alll1cands, 9, l1count);
    for (ii=0; ii<l1count; ii++) {
       memcpy(&(alll1cands_sorted[ii*9]), &(alll1cands[sorted_index[ii]*9]), sizeof(double)*9);
@@ -107,12 +108,15 @@ int main(void) {
    free(sorted_index);
    free(alll1cands_job);
 
+   //set the l1cands_used array to zeros
+   memset(l1cands_used, 0, sizeof(int)*l1count);
+
    //Close the streams
    fclose(H1CANDS);
    fclose(L1CANDS);
 
    //Open a file to save the output data
-   FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-250HzCandidates.dat","w");
+   FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-270HzCandidates.dat","w");
 
    //Setup and allocate the solver
    int status;
@@ -140,15 +144,15 @@ int main(void) {
             iter++;
             status = gsl_root_fsolver_iterate(s);
             foundIndex = gsl_root_fsolver_root(s);
-            status = gsl_root_test_residual(fdiff(foundIndex, &params), 3.0*fdiff_allowed);
+            status = gsl_root_test_residual(fdiff(foundIndex, &params), 1.1*fdiff_allowed);
          } while (status == GSL_CONTINUE && iter < max_iter);
 
          if (status == GSL_SUCCESS && iter < max_iter) {
             jj = (int)round(foundIndex);
-            while (jj>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.2*fdiff_allowed) jj--;
+            while (jj>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.1*fdiff_allowed) jj--;
 
             for (/* jj value */; jj<l1count; jj++) {
-               if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.2*fdiff_allowed) break;
+               if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.1*fdiff_allowed) break;
 
                if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
                   if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
@@ -217,6 +221,7 @@ int main(void) {
    gsl_root_fsolver_free(s);
    free(allh1cands_sorted);
    free(alll1cands_sorted);
+   free(l1cands_used);
    free(allh1cands_job_sorted);
    free(alll1cands_job_sorted);
 
