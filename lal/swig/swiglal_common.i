@@ -992,8 +992,6 @@ if (swiglal_release_parent(PTR)) {
 // arguments by default, by globally applying the SWIG OUTPUT typemaps. The INOUT
 // typemaps can be supplied as needed using the SWIGLAL(INOUT_SCALARS(TYPE, ...)) macro.
 %apply int* OUTPUT { enum SWIGTYPE* };
-%apply signed char* OUTPUT { INT2* };
-%apply unsigned char* OUTPUT { UINT2* };
 %apply short* OUTPUT { short* };
 %apply unsigned short* OUTPUT { unsigned short* };
 %apply int* OUTPUT { int* };
@@ -1004,6 +1002,14 @@ if (swiglal_release_parent(PTR)) {
 %apply unsigned long long* OUTPUT { unsigned long long* };
 %apply float* OUTPUT { float* };
 %apply double* OUTPUT { double* };
+%apply int8_t* OUTPUT { int8_t* };
+%apply uint8_t* OUTPUT { uint8_t* };
+%apply int16_t* OUTPUT { int16_t* };
+%apply uint16_t* OUTPUT { uint16_t* };
+%apply int32_t* OUTPUT { int32_t* };
+%apply uint32_t* OUTPUT { uint32_t* };
+%apply int64_t* OUTPUT { int64_t* };
+%apply uint64_t* OUTPUT { uint64_t* };
 %apply gsl_complex_float* OUTPUT { gsl_complex_float* };
 %apply gsl_complex* OUTPUT { gsl_complex* };
 %apply COMPLEX8* OUTPUT { COMPLEX8* };
