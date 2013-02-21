@@ -30,6 +30,7 @@ import sys
 import math
 import os
 import numpy as np
+import struct
 
 import matplotlib
 #matplotlib.use("Agg")
@@ -81,14 +82,22 @@ paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
              'PSI': '$\psi$ (rad)', 'PHI0': '$\phi_0$ (rad)', \
              'RA': '$\\alpha$ (rad)', 'DEC': '$\delta$ (rad)', \
              'F0': '$f_0$ (Hz)', 'F1': '$\dot{f}$ (Hz/s)', 'F2':
-             '$\\ddot{f}$ (Hz/s$^2$)', 'LOGL': '$\log{L}$', \
+             '$\\ddot{f}$ (Hz/s$^2$)', \
+             'F3': '$f_3$ (Hz/s$^3$)', \
+             'F4': '$f_4$ (Hz/s$^4$)', \
+             'F5': '$f_5$ (Hz/s$^5$)', 'LOGL': '$\log{L}$', \
              'PMRA': 'proper motion $\\alpha$ (rad/s)', \
              'PMDEC': 'proper motion $\delta$ (rad/s)', \
              'PMDC': 'proper motion $\delta$ (rad/s)', \
              'X': '$a \sin{i}$ (lt s)', 'PB': 'Period (days)', \
              'T0': '$T_0$ (s)', 'TASC': '$T_{\\textrm{asc}}$ (s)', \
              'OM': '$\omega_0$ (deg)', 'PBDT': '$\dot{P}$ (s/s)', \
-             'E': 'eccentricity'}
+             'PBDOT': '$\dot{P}$ (s/s)', \
+             'GAMMA': '$\gamma$', \
+             'E': 'eccentricity', \
+             'ELL': '$\\varepsilon$', 'H95': '$h_0^{95\%}$', \
+             'Q22': '$Q_{22}$\,(kg\,m$^2$)', \
+             'SDRAT': 'spin-down ratio'}
 
 # some angle conversion functions taken from psr_utils.py in PRESTO
 def rad_to_dms(rad):
@@ -435,6 +444,7 @@ class psr_prior:
       
     return out
 
+
 # Function to return a pulsar's strain spin-down limit given its spin frequency
 #(Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
 # inertia of 1e38 kg m^2 is used
@@ -442,13 +452,22 @@ def spin_down_limit(freq, fdot, dist):
   hsd = math.sqrt((5./2.)*(G/C**3)*I38*math.fabs(fdot)/freq)/(dist*KPC)
   
   return hsd
-  
+
+
 # Function to convert a pulsar stain into ellipticity assuming the canonical
 # moment of inertia
 def h0_to_ellipticity(h0, freq, dist):
-  ell = h0*C**4*dist*KPC/(16.*math.pi**2*G*I38*freq**2)
+  ell = h0*C**4.*dist*KPC/(16.*math.pi**2*G*I38*freq**2)
   
   return ell
+
+
+# Function to convert a pulsar strain into a mass quadrupole moment
+def h0_to_quadrupole(h0, freq, dist):
+  q22 = math.sqrt(15./(8.*math.pi))*h0*C**4.*dist*KPC/(16.*math.pi**2*G*freq**2)
+  
+  return q22
+
 
 # function to convert the psi' and phi0' coordinates used in nested sampling
 # into the standard psi and phi0 coordinates (using vectors of those parameters
@@ -487,7 +506,8 @@ def phipsiconvert(phipchain, psipchain):
     psichain.append(psi)
 
   return phichain, psichain
- 
+
+
 # function to create histogram plot of the 1D posterior (potentially for
 # multiple IFOs) for a parameter (param). If an upper limit is given then
 # that will be output
@@ -508,7 +528,7 @@ def plot_posterior_hist(poslist, param, ifos,
       'text.usetex': True, # use LaTeX for all text
       'axes.linewidth': 0.5, # set axes linewidths to 0.5
       'axes.grid': True, # add a grid
-      'grid.linwidth': 0.5,
+      'grid.linewidth': 0.5,
       'font.family': 'serif',
       'font.size': 12 }
   
@@ -597,6 +617,7 @@ def plot_posterior_hist(poslist, param, ifos,
   
   return myfigs, ulvals
 
+  
 # function to plot a posterior chain (be it MCMC chains or nested samples)
 # the input should be a list of posteriors for each IFO, and the parameter
 # required, the list of IFO. grr is a list of dictionaries giving
@@ -616,7 +637,7 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
       'text.usetex': True, # use LaTeX for all text
       'axes.linewidth': 0.5, # set axes linewidths to 0.5
       'axes.grid': True, # add a grid
-      'grid.linwidth': 0.5,
+      'grid.linewidth': 0.5,
       'font.family': 'serif',
       'font.size': 14 }
   
@@ -714,7 +735,193 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
     ax1.legend(legendvals, title='Gelman-Rubins test')
   
   return myfig
+
+
+# function to read in and plot a 2D histogram from a binary file, where the files
+# structure is of the form:
+#   a header of six doubles with:
+#     - minimum of N-dim
+#     - the step size in N-dim
+#     - N - number of N-dim values
+#     - minimum of M-dim
+#     - the step size in M-dim
+#     - M - number of M-dim values
+#   followed by an NxM double array of values.
+# The information returned are two lists of the x and y-axis bin centres, along
+# with a numpy array containing the histogram values.
+def read_hist_from_file(histfile):
+  # read in 2D binary file
+  try:
+    fp = open(histfile, 'rb')
+  except:
+    print >> sys.stderr, "Could not open prior file %s" % histfile
+    return None, None, None
+      
+  try:
+    pd = fp.read() # read in all the data
+  except:
+    print >> sys.stderr, "Could not read in data from prior file %s" % histfile
+    return None, None, None
   
+  fp.close()
+  
+  # read in the header (6 doubles)
+  #try:
+  header = struct.unpack("d"*6, pd[:6*8])
+  # except:
+  #  print >> sys.stderr, "Could not read in header data from prior file %s" % histfile
+  #  return None, None, None
+  
+  # read in histogram grid (NxM doubles)
+  #try:
+  grid = struct.unpack("d"*int(header[2])*int(header[5]), pd[6*8:])
+  #except:
+  #  print >> sys.stderr, "Could not read in header data from prior file %s" % histfile
+  #  return None, None, None
+  
+  header = list(header)
+  
+  # convert grid into numpy array
+  g = list(grid) # convert to list
+  histarr = np.array([g[:int(header[5])]], ndmin=2)
+  for i in range(int(header[2])-1):
+    histarr = np.append(histarr, [g[(i+1)*int(header[5]):(i+2)*int(header[5])]], axis=0)
+  
+  xbins = np.linspace(header[0], header[0]+header[1]*(header[2]-1), int(header[2]))
+  ybins = np.linspace(header[3], header[3]+header[4]*(header[5]-1), int(header[5]))
+  
+  return xbins, ybins, histarr
+
+
+# Function to plot a 2D histogram of from a binary file containing it.
+# Also supply the label names for the n-dimension (x-axis) and m-dimension
+# (y-axis). If margpars is true marginalised plots of both dimensions will
+# also be returned.
+def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
+                          mplparams=False):
+  # read in 2D h0 vs cos(iota) binary prior file
+  xbins, ybins, histarr = read_hist_from_file(histfile)
+  
+  if not xbins.any():
+    print >> sys.stderr, "Could not read binary histogram file"
+    return None
+  
+  figs = []
+  
+  # set some matplotlib defaults for amplitude spectral density
+  if not mplparams:
+    mplparams = { \
+      'backend': 'Agg',
+      'text.usetex': True, # use LaTeX for all text
+      'axes.linewidth': 0.5, # set axes linewidths to 0.5
+      'axes.grid': True, # add a grid
+      'grid.linewidth': 0.5,
+      'font.family': 'serif',
+      'font.size': 12 }
+  
+  matplotlib.rcParams.update(mplparams)
+  
+  fig = plt.figure(figsize=(4,4),dpi=200)
+  
+  # param name for axis label
+  try:
+    parxaxis = paramdict[ndimlabel.upper()]
+  except:
+    parxaxis = ndimlabel
+    
+  try:
+    paryaxis = paramdict[mdimlabel.upper()]
+  except:
+    paryaxis = mdimlabel
+  
+  plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+  plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100, rotation=270)
+  
+  dx = xbins[1]-xbins[0]
+  dy = ybins[1]-ybins[0]
+  
+  extent = [xbins[0]-dx/2., xbins[-1]+dx/2., ybins[-1]+dy/2., ybins[0]-dy/2.]
+  
+  plt.imshow(np.transpose(histarr), aspect='auto', extent=extent, \
+             interpolation='bicubic', cmap='gray_r')
+  
+  fig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+  
+  figs.append(fig)
+  
+  if margpars:
+    # marginalise over y-axes and produce plots
+    xmarg = []
+    for i in range(len(xbins)):
+      xmarg.append(np.trapz(histarr[:][i], x=ybins))
+    
+    # normalise
+    xarea = np.trapz(xmarg, x=xbins)
+    xmarg = map(lambda x: x/xarea, xmarg)  
+    
+    ymarg = []
+    for i in range(len(ybins)):
+      ymarg.append(np.trapz(np.transpose(histarr)[:][i], x=xbins))
+
+    # normalise
+    yarea = np.trapz(ymarg, x=ybins)
+    ymarg = map(lambda x: x/yarea, ymarg)
+      
+    # plot x histogram
+    figx = plt.figure(figsize=(4,4),dpi=200)
+    plt.step(xbins, xmarg, color='k')
+    plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+    plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
+    figx.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+    ax = plt.gca()
+    ax.set_axis_bgcolor("#F2F1F0")
+    
+    # plot y histogram
+    figy = plt.figure(figsize=(4,4),dpi=200)
+    plt.step(ybins, ymarg, color='k')
+    plt.xlabel(r''+paryaxis, fontsize=14, fontweight=100)
+    plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
+    figy.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+    ax = plt.gca()
+    ax.set_axis_bgcolor("#F2F1F0")
+    
+    figs.append(figx)
+    figs.append(figy)
+
+  return figs
+
+
+# using a binary file containing a histogram oh h0 vs cos(iota) calculate the
+# upper limit on h0
+def h0ul_from_prior_file(priorfile, ulval=0.95):
+  # read in 2D h0 vs cos(iota) binary prior file
+  h0bins, cibins, histarr = read_hist_from_file(priorfile)
+  
+  if not h0bins.any():
+    print >> sys.stderr, "Could not read binary histogram file"
+    return None
+  
+  # marginalise over cos(iota)
+  h0marg = []
+  for i in range(len(h0bins)):
+    h0marg.append(np.trapz(histarr[:][i], x=cibins))
+  
+  # normalise h0 posterior
+  h0area = np.trapz(h0marg, x=h0bins)
+  h0margnorm = map(lambda x: x/h0area, h0marg)
+
+  # get cumulative probability
+  ct = cumtrapz(h0margnorm, h0bins)
+      
+  # prepend a zero to ct
+  ct = np.insert(ct, 0, 0)
+      
+  # use spline interpolation to find the value at 'upper limit'
+  ctu, ui = np.unique(ct, return_index=True)
+  intf = interp1d(ctu, h0bins[ui], kind='linear')
+  return intf(float(ulval))
+  
+
 # function to create a histogram plot of the 2D posterior
 def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
                           parfile=None, mplparams=False):
@@ -729,7 +936,7 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
       'text.usetex': True, # use LaTeX for all text
       'axes.linewidth': 0.5, # set axes linewidths to 0.5
       'axes.grid': True, # add a grid
-      'grid.linwidth': 0.5,
+      'grid.linewidth': 0.5,
       'font.family': 'serif',
       'font.size': 12 }
   
@@ -792,7 +999,8 @@ interpolation='bicubic', cmap='gray_r')
     myfigs.append(myfig)
     
   return myfigs
-  
+
+
 # a function that creates and normalises a histograms of samples, with nbins
 # between an upper and lower bound a upper and lower bound. The values at the
 # bin points (with length nbins+2) will be returned as numpy arrays
@@ -861,6 +1069,7 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
   
   return ns, bincentres
 
+
 # create a Tukey window of length N
 def tukey_window(N, alpha=0.5):
   # if alpha >= 1 just return a Hanning window
@@ -883,9 +1092,10 @@ def tukey_window(N, alpha=0.5):
   
   return win
 
+
 # create a function for plotting the absolute value of Bk data (read in from
-# data files) and an averaged 1 day amplitude spectral density spectrogram for
-# each IFO
+# data files) and an averaged 1 day "two-sided" amplitude spectral density
+# spectrogram for each IFO
 def plot_Bks_ASDs( Bkdata, ifos, delt=86400, plotpsds=True,
                    plotfscan=False, removeoutlier=None, mplparams=False ):
   # create list of figures
@@ -901,7 +1111,7 @@ def plot_Bks_ASDs( Bkdata, ifos, delt=86400, plotpsds=True,
       'text.usetex': True, # use LaTeX for all text
       'axes.linewidth': 0.5, # set axes linewidths to 0.5
       'axes.grid': True, # add a grid
-      'grid.linwidth': 0.5,
+      'grid.linewidth': 0.5,
       'font.family': 'serif',
       'font.size': 12 } 
       #'text.latex.preamble': \usepackage{xfrac} }
@@ -982,8 +1192,6 @@ Bk[:,2])))), 50)
       npsds = 0
       totalpsd = np.zeros(math.floor(delt/60)) # add sum of PSDs
       
-      asdlist.append(totalpsd)
-      
       # zero pad the data and bin each point in the nearest 60s bin
       datazeropad = np.zeros(math.ceil(totlen/60.)+1, dtype=complex)
       
@@ -1012,7 +1220,8 @@ Fs=Fs, window=win)
       
         # average the PSD and convert to amplitude spectral density
         totalpsd = map(lambda x: math.sqrt(x/npsds), totalpsd)
-    
+        asdlist.append(totalpsd)
+        
         # plot PSD
         psdfig = plt.figure(figsize=(4,3.5), dpi=200)
         psdfig.subplots_adjust(left=0.18, bottom=0.15)
@@ -1072,6 +1281,140 @@ Fs=Fs, window=win)
       
   return Bkfigs, psdfigs, fscanfigs, asdlist
 
+
+# a function to create a histogram of log10(results) for a list of a given parameter
+# (if a list with previous value is given they will be plotted as well)
+#  - lims is a dictionary of lists for each IFO
+def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, mplparams=False):
+  if not mplparams:
+    mplparams = { \
+      'backend': 'Agg',
+      'text.usetex': True, # use LaTeX for all text
+      'axes.linewidth': 0.5, # set axes linewidths to 0.5
+      'axes.grid': True, # add a grid
+      'grid.linewidth': 0.5,
+      'font.family': 'serif',
+      'font.size': 12 } 
+  
+  matplotlib.rcParams.update(mplparams)
+  
+  myfigs = []
+  
+  # ifos line colour specs
+  coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint':'k'}
+  
+  try:
+    parxaxis = paramdict[param.upper()]
+  except:
+    parxaxis = param
+  
+  paryaxis = 'Number of Pulsars'
+  
+  # get log10 of previous results
+  logprevlims = None
+  if prevlims is not None:
+    logprevlims = np.log10(prevlims)
+  
+  for ifo in ifos:
+    # get log10 of results
+    loglims = np.log10(lims[ifo])
+    
+    myfig = plt.figure(figsize=(4,4),dpi=200)
+  
+    plt.hist(loglims, bins, facecolor=coldict[ifo], edgecolor=coldict[ifo])
+    
+    if logprevlims is not None:
+      plt.hold(True)
+      
+      n, binedges = np.histogram( logprevlims, bins )
+      n = np.append(n, 0)
+      
+      plt.step(binedges, n, c='k', lw=2, alpha=0.5)
+      plt.hold(False)
+  
+    # set xlabels to 10^x
+    ax = plt.gca()
+    tls = map(lambda x: '$10^{%d}$' % int(x), ax.get_xticks())
+    ax.set_xticklabels(tls)
+  
+    plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
+    plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+    
+    myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+    
+    myfigs.append(myfig)
+    
+  return myfigs
+
+  
+# a function plot upper limits verses GW frequency in log-log space. If upper and
+# lower estimates for the upper limit are supplied these will also be plotted as a
+# band. If previous limits are supplied these will be plotted as well.
+# h0lims is a dictionary of lists of h0 upper limits for each of the IFOs given in
+# the list of ifos
+# ulesttop and ulestbot are the upper and lower ranges of the estimates limit given
+# as a dictionary if list for each ifo.
+# prevlim is a list of previous upper limits at the frequencies prevlimf0gw
+# xlims is the frequency range for the plot
+def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None, 
+                 ulestbot=None, prevlim=None, prevlimf0gw=None, mplparams=False):
+  if not mplparams:
+    mplparams = { \
+      'backend': 'Agg',
+      'text.usetex': True, # use LaTeX for all text
+      'axes.linewidth': 0.5, # set axes linewidths to 0.5
+      'axes.grid': True, # add a grid
+      'grid.linewidth': 0.5,
+      'font.family': 'serif',
+      'font.size': 12 }
+  
+  matplotlib.rcParams.update(mplparams)
+  
+  myfigs = []
+  
+  # ifos line colour specs
+  coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint':'k'}
+  
+  parxaxis = 'Frequency (Hz)'  
+  paryaxis = '$h_0$'
+  
+  for ifo in ifos:
+    h0lim = h0lims[ifo]
+    
+    if len(h0lim) != len(f0gw):
+      return None # exit if lengths aren't correct
+    
+    myfig = plt.figure(figsize=(7,5.5),dpi=200)
+    
+    plt.hold(True)
+    if ulesttop is not None and ulestbot is not None:
+      ult = ulesttop[ifo]
+      ulb = ulestbot[ifo]
+      
+      if len(ult) == len(ulb) and len(ult) == len(f0gw):
+        for i in range(len(ult)):
+          plt.loglog([f0gw[i], f0gw[i]], [ulb[i], ult[i]], ls='-', lw=3, c='grey')
+    
+    if prevlim is not None and prevlimf0gw is not None and len(prevlim) == len(prevlimf0gw):
+      plt.loglog(prevlimf0gw, prevlim, marker='*', ms=8, alpha=0.7, mfc='None', mec='k', ls='None') 
+     
+    # plot current limits
+    plt.loglog(f0gw, h0lim, marker='*', ms=10, mfc=coldict[ifo], mec=coldict[ifo], ls='None')
+     
+    plt.hold(False)
+  
+    plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
+    plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+    
+    myfig.subplots_adjust(left=0.12, bottom=0.10) # adjust size
+    
+    plt.xlim(xlims[0], xlims[1])
+    
+    myfigs.append(myfig)
+    
+  return myfigs
+  
+  
 # a function to create the signal model for a heterodyned triaxial pulsar given
 # a signal GPS start time, signal duration (in seconds), sample interval
 # (seconds), detector, and the parameters h0, cos(iota), psi (rads), initial
@@ -1112,6 +1455,7 @@ def heterodyned_triaxial_pulsar(starttime, duration, dt, detector, pardict):
     i = i+1;
   
   return ts, sr, si
+
 
 # a function to create the signal model for a heterodyned pinned superfluid
 # model pulsar a signal GPS start time, signal duration (in seconds),
@@ -1199,7 +1543,8 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
   si = np.vstack([si1, si2])
     
   return ts, sr, si
-  
+
+
 # function to get the antenna response for a given detector. This is based on
 # the response function in pylal/antenna.py. It takes in a GPS time, right
 # ascension (rads), declination (rads), polarisation angle (rads) and a
@@ -1231,6 +1576,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
                                                     psi, gmst_rad)
   
   return fp, fc
+
 
 # a function to inject a heterodyned triaxial pulsar signal into noise of a
 # given level for detectors. it will return the signal + noise and the optimal
