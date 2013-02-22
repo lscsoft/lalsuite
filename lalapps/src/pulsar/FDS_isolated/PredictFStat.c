@@ -131,9 +131,9 @@ typedef struct {
   INT4 minStartTime;	/**< limit start-time of input SFTs to use */
   INT4 maxEndTime;	/**< limit end-time of input SFTs to use */
 
-  CHAR *transient_Name;	/**< name of transient window ('rect', 'exp',...) */
-  REAL8 transient_t0;	/**< GPS start-time of transient window */
-  REAL8 transient_tau;	/**< time-scale of transient window */
+  CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
+  REAL8 transientStartTime;	/**< GPS start-time of transient window */
+  REAL8 transientTauDays;	/**< time-scale in days of transient window */
 
   REAL8 cosiota;	/* DEPRECATED in favor of cosi */
 
@@ -300,8 +300,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->phi0 = 0;
 
 #define DEFAULT_TRANSIENT "none"
-  uvar->transient_Name = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
-  strcpy ( uvar->transient_Name, DEFAULT_TRANSIENT );
+  uvar->transientWindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
 
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
@@ -336,9 +336,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER, "[DEPRECATED] Use --cosi instead!");
 
   /* transient signal window properties (name, start, duration) */
-  LALregSTRINGUserStruct(status, transient_Name,  0, UVAR_OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
-  LALregREALUserStruct(status,   transient_t0,    0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
-  LALregREALUserStruct(status,   transient_tau,   0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
+  LALregSTRINGUserStruct(status, transientWindowType,  0, UVAR_OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
+  LALregREALUserStruct(status,   transientStartTime,    0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
+  LALregREALUserStruct(status,   transientTauDays,   0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -543,27 +543,27 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
 
   /* ----- handle transient-signal window if given ----- */
-  if ( LALUserVarWasSet ( &uvar->transient_Name ) && strcmp ( uvar->transient_Name, "none") )
+  if ( LALUserVarWasSet ( &uvar->transientWindowType ) && strcmp ( uvar->transientWindowType, "none") )
     {
       transientWindow_t transientWindow;	/**< properties of transient-signal window */
       MultiLIGOTimeGPSVector *mTS;
 
-      if ( !strcmp ( uvar->transient_Name, "rect" ) )
+      if ( !strcmp ( uvar->transientWindowType, "rect" ) )
         transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-      else if ( !strcmp ( uvar->transient_Name, "exp" ) )
+      else if ( !strcmp ( uvar->transientWindowType, "exp" ) )
         transientWindow.type = TRANSIENT_EXPONENTIAL;		/* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
       else
 	{
-	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transient_Name);
+	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transientWindowType);
           ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
 	}
 
-      if ( LALUserVarWasSet ( &uvar->transient_t0 ) )
-        transientWindow.t0 = uvar->transient_t0;
+      if ( LALUserVarWasSet ( &uvar->transientStartTime ) )
+        transientWindow.t0 = uvar->transientStartTime;
       else
         transientWindow.t0 = XLALGPSGetREAL8( &startTime ); /* if not set, default window startTime == startTime here */
 
-      transientWindow.tau  = uvar->transient_tau;
+      transientWindow.tau  = uvar->transientTauDays;
 
       if ( (mTS = XLALExtractMultiTimestampsFromSFTs ( multiSFTs )) == NULL ) {
         XLALPrintError ("%s: failed to XLALExtractMultiTimestampsFromSFTs() from SFTs. xlalErrno = %d.\n", fn, xlalErrno );
