@@ -1539,7 +1539,14 @@ int XLALSimInspiralChooseTDWaveform(
 {
     REAL8 LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
     int ret;
-    REAL8 v0 = 1.;
+    /* N.B. the quadrupole of a spinning compact body labeled by A is 
+     * Q_A = - quadparam_A chi_A^2 m_A^3 (see gr-qc/9709032)
+     * where quadparam = 1 for BH ~= 4-8 for NS.
+     * This affects the quadrupole-monopole interaction.
+     * For now, hardcode quadparam1,2 = 1.
+     * Will later add ability to set via LALSimInspiralTestGRParam
+     */
+    REAL8 v0 = 1., quadparam1 = 1., quadparam2 = 1.;
 
     /* General sanity checks that will abort */
     /*
@@ -1726,6 +1733,7 @@ int XLALSimInspiralChooseTDWaveform(
             ret = XLALSimInspiralSpinTaylorT2(hplus, hcross, phiRef, v0, deltaT,
                     m1, m2, f_min, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z,
                     LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2,
+                    quadparam1, quadparam2,
                     XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
@@ -1760,6 +1768,7 @@ int XLALSimInspiralChooseTDWaveform(
             ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phiRef, v0, deltaT,
                     m1, m2, f_min, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z,
                     LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2,
+                    quadparam1, quadparam2,
                     XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);

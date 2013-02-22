@@ -61,6 +61,7 @@ typedef enum {
    EOB,			/**< Effective one-body waveform; Outputs a time-domain wave. */
    BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri [\ref BCV03]; Outputs a frequency-domain wave. */
    BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects [\ref BCV03b]; Outputs a frequency-domain wave. */
+   SpinTaylorT1,	/**< Spinning case T1 models */
    SpinTaylorT2,	/**< Spinning case T2 models */
    SpinTaylorT3,	/**< Spinning case T3 models */
    SpinTaylorT4,	/**< Spinning case T4 models (lalsimulation's equivalent of SpinTaylorFrameless) */
@@ -1756,7 +1757,7 @@ int XLALSimInspiralSpinTaylorF2(
 
 /**
  * This function evolves the orbital equations for a precessing binary using 
- * the \"TaylorT4\" approximant for solving the orbital dynamics 
+ * the \"TaylorT1/T2/T4\" approximant for solving the orbital dynamics
  * (see arXiv:0907.0700 for a review of the various PN approximants).
  *
  * It returns time series of the \"orbital velocity\", orbital phase, 
@@ -1777,7 +1778,7 @@ int XLALSimInspiralSpinTaylorF2(
  * You must give the initial values in this frame, and the time series of the
  * vector components will also be returned in this frame
  */
-int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
+int XLALSimInspiralSpinTaylorPNEvolveOrbit(
 	REAL8TimeSeries **V,      /**< post-Newtonian parameter [returned]*/
 	REAL8TimeSeries **Phi,    /**< orbital phase            [returned]*/
 	REAL8TimeSeries **S1x,    /**< Spin1 vector x component [returned]*/
@@ -1811,48 +1812,12 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8 e1z,                /**< initial value of E1z */
 	REAL8 lambda1,            /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
 	REAL8 lambda2,            /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
+	REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
 	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
 	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
-	INT4 phaseO               /**< twice post-Newtonian order */
-	);
-
-int XLALSimInspiralPNEvolveOrbitSpinTaylorT2(
-	REAL8TimeSeries **V,          /**< post-Newtonian parameter [returned]*/
-	REAL8TimeSeries **Phi,        /**< orbital phase            [returned]*/
-	REAL8TimeSeries **S1x,	      /**< Spin1 vector x component [returned]*/
-	REAL8TimeSeries **S1y,	      /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S1z,	      /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **S2x,	      /**< Spin2 vector x component [returned]*/
-	REAL8TimeSeries **S2y,	      /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S2z,	      /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **LNhatx,     /**< unit orbital ang. mom. x [returned]*/
-	REAL8TimeSeries **LNhaty,     /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **LNhatz,     /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **E1x,	      /**< orb. plane basis vector x[returned]*/
-	REAL8TimeSeries **E1y,	      /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **E1z,	      /**< "    "    "  z component [returned]*/
-	REAL8 deltaT,          	      /**< sampling interval (s) */
-	REAL8 m1,              	      /**< mass of companion 1 (kg) */
-	REAL8 m2,              	      /**< mass of companion 2 (kg) */
-	REAL8 fStart,                 /**< starting GW frequency */
-	REAL8 fEnd,                   /**< ending GW frequency, fEnd=0 means integrate as far forward as possible */
-	REAL8 s1x,                    /**< initial value of S1x */
-	REAL8 s1y,                    /**< initial value of S1y */
-	REAL8 s1z,                    /**< initial value of S1z */
-	REAL8 s2x,                    /**< initial value of S2x */
-	REAL8 s2y,                    /**< initial value of S2y */
-	REAL8 s2z,                    /**< initial value of S2z */
-	REAL8 lnhatx,                 /**< initial value of LNhatx */
-	REAL8 lnhaty,                 /**< initial value of LNhaty */
-	REAL8 lnhatz,                 /**< initial value of LNhatz */
-	REAL8 e1x,                    /**< initial value of E1x */
-	REAL8 e1y,                    /**< initial value of E1y */
-	REAL8 e1z,                    /**< initial value of E1z */
-	REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-	REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
-	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
-	INT4 phaseO                   /**< twice post-Newtonian order */
+	INT4 phaseO,              /**< twice post-Newtonian order */
+	Approximant approx        /**< PN approximant (SpinTaylorT1/T2/T4) */
 	);
 
 /**
@@ -1906,6 +1871,8 @@ int XLALSimInspiralSpinTaylorT4(
 	REAL8 e1z,                      /**< initial value of E1z */
 	REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
 	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
+	REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
 	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
 	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
 	int phaseO,                     /**< twice PN phase order */
@@ -1937,6 +1904,8 @@ int XLALSimInspiralSpinTaylorT2(
 	REAL8 e1z,                      /**< initial value of E1z */
 	REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
 	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
+	REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
 	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
 	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
 	int phaseO,                     /**< twice PN phase order */
