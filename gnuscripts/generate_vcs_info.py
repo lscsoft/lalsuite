@@ -2,8 +2,8 @@
 #
 # Based on generateGitID.sh by Reinhard Prix
 #
-# Copyright (C) 2012, Karl Wette <karl.wette@ligo.org>
-# Copyright (C) 2009-2012, Adam Mercer <adam.mercer@ligo.org>
+# Copyright (C) 2012-2013 Karl Wette <karl.wette@ligo.org>
+# Copyright (C) 2009-2013, Adam Mercer <adam.mercer@ligo.org>
 # Copyright (C) 2009,2010, Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>
 # Copyright (C) 2008,2009, John T. Whelan <john.whelan@ligo.org>
 # Copyright (C) 2008, Reinhard Prix <reinhard.ligo.org>
