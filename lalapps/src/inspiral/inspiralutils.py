@@ -257,6 +257,11 @@ def convert_veto_cat_xml_to_txt(config, veto_cat_file, output_file):
   @param veto_cat_file: name (and loction) of veto_cat_file to convert
   @param output_file: name (and location) of output txt file to save to
   """
+  
+  if not (os.path.isfile(veto_cat_file) and os.access(veto_cat_file,os.R_OK) ):
+      print 'Veto file not found or unreadble, skipping %s'%(veto_cat_file)
+      return False
+
   print "Converting veto-category xml file %s to txt file %s" \
 	%(veto_cat_file, output_file)
   sys.stdout.flush()
@@ -265,8 +270,10 @@ def convert_veto_cat_xml_to_txt(config, veto_cat_file, output_file):
 
   convertCall = ' '.join([ xml_to_txt_converter,
 	"-t segment -c start_time -c end_time", veto_cat_file ])
-  tempfile = os.popen(convertCall)
-  
+  #tempfile = os.popen(convertCall)
+  import subprocess
+  tempfile = subprocess.Popen(convertCall, shell=True, stdout=subprocess.PIPE).stdout
+
   # get times from tempfile
   times = tempfile.readlines()
 
@@ -488,8 +495,10 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
     print "done"
 
     # remove cat 1 veto times
-    vetoSegs = segmentsUtils.fromsegwizard(open(vetoFiles[1])).coalesce()
-    sciSegs = sciSegs.__and__(vetoSegs.__invert__())
+    if os.path.exists(vetoFiles[1]):
+      with open(vetoFiles[1]) as f:
+        vetoSegs = segmentsUtils.fromsegwizard(f).coalesce()
+        sciSegs = sciSegs.__and__(vetoSegs.__invert__())
 
     if use_available_data:
       dfSegs = datafind_segments(ifo, config)
