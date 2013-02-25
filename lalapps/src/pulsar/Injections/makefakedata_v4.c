@@ -57,6 +57,10 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
 
+/* #include <lal/FrameStream.h> */
+#include <lal/LALFrameIO.h>
+/* #include <lal/FrameCache.h> */
+
 #include <lal/TransientCW_utils.h>
 
 #include <lalapps.h>
@@ -162,6 +166,8 @@ BOOLEAN uvar_outSFTv1;		/**< use v1-spec for output-SFTs */
 BOOLEAN uvar_outSingleSFT;	/**< use to output a single concatenated SFT */
 
 CHAR *uvar_TDDfile;		/**< Filename for ASCII output time-series */
+CHAR *uvar_TDDframedir;		/**< directory for frame file output time-series */
+CHAR *uvar_outframebname;       /**< the basname of the output frames */
 BOOLEAN uvar_hardwareTDD;	/**< Binary output timeseries in chunks of Tsft for hardware injections. */
 
 CHAR *uvar_logfile;		/**< name of logfile */
@@ -432,6 +438,39 @@ main(int argc, char *argv[])
 	  fclose(fp);
 	  LALFree (fname);
 	} /* if outputting ASCII time-series */
+
+      /* output time-series to frames if requested */
+      if ( uvar_TDDframedir )
+	{
+	  	  
+	  /* use standard frame output filename format */
+	  CHAR *fname = LALCalloc (1, strlen(uvar_TDDframedir) + strlen(uvar_outframebname) + 100 );
+	  sprintf (fname, "%s/%s-%s-%d-%d.gwf",
+		   uvar_TDDframedir,uvar_IFO,uvar_outframebname,params.startTimeGPS.gpsSeconds,(int)params.duration);
+	 
+	  /* define the output frame */
+	  struct FrameH *outFrame;
+	  XLAL_CHECK ( (outFrame = XLALFrameNew( &(params.startTimeGPS), params.duration, uvar_outframebname, 1, 0, 0 )) != NULL, XLAL_EFUNC );
+
+	  /* add timeseries to the frame */
+	  XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData(outFrame,Tseries) == 0 ) , XLAL_EFUNC );
+
+	  /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
+	  char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
+          FrHistoryAdd(outFrame,hist);
+	  
+	  /* then we add the version string */
+	  FrHistoryAdd(outFrame,GV.VCSInfoString);
+
+	  /* output the frame to file - compression level 1 (higher values make no difference) */
+	  XLAL_CHECK ( (XLALFrameWrite(outFrame, fname,1) == 0) , XLAL_EFUNC );
+
+	  /* free the frame, frame file name and history memory */
+	  FrameFree(outFrame);
+	  LALFree(fname);
+          LALFree(hist);
+
+	} /* if outputting time-series to frames */
 
 
       /* if hardware injection: send timeseries in binary-format to stdout */
@@ -1470,6 +1509,8 @@ InitUserVars (LALStatus *status)
   uvar_cosi = 0;
 
   uvar_TDDfile = NULL;
+  uvar_TDDframedir = NULL;
+  uvar_outframebname = NULL;
 
   uvar_logfile = NULL;
 
@@ -1502,6 +1543,8 @@ InitUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, outSFTbname,	'n', UVAR_OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
 
   LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Filename to output time-series into");
+  LALregSTRINGUserVar(status, TDDframedir,	'F', UVAR_OPTIONAL, "Directory to output frame time-series into");
+  LALregSTRINGUserVar(status, outframebname,	'B', UVAR_OPTIONAL, "basename for output frames");
 
   LALregSTRINGUserVar(status, logfile,		'l', UVAR_OPTIONAL, "Filename for log-output");
 
