@@ -1722,6 +1722,7 @@ int XLALSimInspiralTaylorF2(
 		const REAL8 S1z,                /**<   z component of the spin of companion 1 */
 		const REAL8 S2z,                /**<   z component of the spin of companion 2  */
 		const REAL8 fStart,             /**< start GW frequency (Hz) */
+		const REAL8 fEnd,               /**< highest GW frequency (Hz) of output array - if 0, zero pad up to next power of 2 above ISCO */
 		const REAL8 r,                  /**< distance of source (m) */
 		const REAL8 lambda1,            /**< (tidal deformation of body 1)/(mass of body 1)^5 */
 		const REAL8 lambda2,            /**< (tidal deformation of body 2)/(mass of body 2)^5 */
@@ -2039,6 +2040,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 		const REAL8 m2_SI,       /**< mass of companion 2 (kg) */
 		const REAL8 chi,         /**< dimensionless aligned-spin param */
 		const REAL8 fStart,      /**< start GW frequency (Hz) */
+		const REAL8 fEnd,        /**< highest GW frequency (Hz) of output array - if 0, zero pad up to next power of 2 above ISCO */
 		const REAL8 r,           /**< distance of source (m) */
 		const INT4 phaseO,       /**< twice PN phase order */
 		const INT4 ampO          /**< twice PN amplitude order */
@@ -2059,6 +2061,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
 		const REAL8 lam1,        /**< dimensionless deformability of 1 */
 		const REAL8 lam2,        /**< dimensionless deformability of 2 */
 		const REAL8 fStart,      /**< start GW frequency (Hz) */
+		const REAL8 fEnd,        /**< highest GW frequency (Hz) of output array - if 0, zero pad up to next power of 2 above ISCO */
 		const REAL8 r,           /**< distance of source (m) */
 		const INT4 phaseO,       /**< twice PN phase order */
 		const INT4 ampO          /**< twice PN amplitude order */

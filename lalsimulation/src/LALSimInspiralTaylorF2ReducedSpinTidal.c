@@ -47,6 +47,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     const REAL8 lam1,                /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
     const REAL8 lam2,                /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
+    const REAL8 fEnd,                /**< highest GW frequency (Hz) of output array - if 0, zero pad up to next power of 2 above ISCO */
     const REAL8 r,                   /**< distance of source (m) */
     const INT4 phaseO,               /**< twice PN phase order */
     const INT4 ampO                  /**< twice PN amplitude order */
@@ -82,7 +83,10 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     if (phaseO > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
 
     /* allocate htilde */
-    f_max = NextPow2(fISCO);
+    if ( fEnd == 0. )
+        f_max = NextPow2(fISCO);
+    else
+        f_max = fEnd;
     n = f_max / deltaF + 1;
     XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
     *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tStart, 0.0, deltaF, &lalStrainUnit, n);
@@ -176,9 +180,10 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
             break;
     }
 
+    /* Fill with non-zero vals from fStart to lesser of fEnd, fISCO */
     iStart = (size_t) ceil(fStart / deltaF);
     iISCO = (size_t) (fISCO / deltaF);
-    iISCO = (iISCO < n) ? iISCO : n;  /* overflow protection; should we warn? */
+    iISCO = (iISCO < n) ? iISCO : n;
     data = (*htilde)->data->data;
     for (i = iStart; i < iISCO; i++) {
         /* fourier frequency corresponding to this bin */

@@ -1913,7 +1913,7 @@ int XLALSimInspiralChooseFDWaveform(
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorF2(hptilde, phiRef, deltaF, m1, m2,
-                    S1z, S2z, f_min, r, lambda1, lambda2,
+                    S1z, S2z, f_min, f_max, r, lambda1, lambda2,
                     XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
@@ -2016,7 +2016,7 @@ int XLALSimInspiralChooseFDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorF2ReducedSpin(hptilde, phiRef, deltaF,
                     m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
-                    f_min, r, phaseO, amplitudeO);
+                    f_min, f_max, r, phaseO, amplitudeO);
             /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
              * To get generic polarizations we multiply by incl. dependence
              * and note hc(f) \propto I * hp(f)
@@ -2039,9 +2039,9 @@ int XLALSimInspiralChooseFDWaveform(
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralTaylorF2ReducedSpinTidal(hptilde, phiRef, deltaF,
+            ret = XLALSimInspiralTaylorF2ReducedSpinTidal(hptilde,phiRef,deltaF,
                     m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
-                    lambda1, lambda2, f_min, r, phaseO, amplitudeO);
+                    lambda1, lambda2, f_min, f_max, r, phaseO, amplitudeO);
             /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
              * To get generic polarizations we multiply by incl. dependence
              * and note hc(f) \propto I * hp(f)
