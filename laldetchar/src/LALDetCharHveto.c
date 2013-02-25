@@ -271,7 +271,8 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
 		 * the pointer to account for it
 		 */
 		if( pos > 0 && i < onsource->length ){
-			onseg = onsource->segs[i++];
+			i++;
+			onseg = onsource->segs[i];
 			continue;
 		/*
 		 * We're beyond the extent of the onsource list
@@ -303,7 +304,7 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
 		 * where the snr threshold is raised, but we don't want to remove the
 		 * trigger. See warnings and disclaimers at the top of the file.
 		 */
-		if( sb->confidence < snr_thresh && !isrefchan ){
+		if( sb->snr < snr_thresh && !isrefchan ){
 			sb->next = TRIG_MASKED;
 		} else {
 			sb->next = TRIG_NOT_MASKED;
@@ -345,6 +346,7 @@ GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, 
 		}
 
 		// Is it the channel to veto on?
+		// TODO: Implement correct thresholding
 		if( !strstr( sb->channel, vchan ) ){
 			trigp = g_sequence_iter_next(trigp);
 			continue; // no, move on
@@ -466,8 +468,68 @@ void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, c
  * function given the expected number of triggers.
  */
 double XLALDetCharHvetoSignificance( double mu, int k ){
-	if( k == 0 ){
-		return 0.0;
+	double sig = gsl_sf_gamma_inc_P(k, mu);
+	if( sig != 0.0 ){
+		return -log10(sig);
+	} else {
+		return -k*log10(mu) + mu*log10(exp(1)) + gsl_sf_lngamma(k+1)/log(10);
 	}
-	return -log10( gsl_sf_gamma_inc_P(k, mu) );
 }
+
+#if 0
+GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, GSequence* ignore_list ){
+    SnglBurst* tbl = XLALSnglBurstTableFromLIGOLw( fname );
+    SnglBurst *begin = NULL, *deleteme = NULL;
+    if( !tbl ) return;
+
+    //#pragma omp parallel
+    //{
+    //#pragma omp single
+    //{
+    //for( ; tbl; tbl=tbl->next ){
+    do {
+        //#pragma omp task
+        //{
+        gboolean ignore = FALSE;
+        GSequenceIter* igitr;
+        // FIXME: Support ignorelist == NULL
+        igitr = ignore_list ? g_sequence_get_begin_iter(ignore_list) : NULL;
+        while( (igitr != NULL) & !g_sequence_iter_is_end(igitr) ){
+            /*
+             * Note this will cause incorrect behavior if the same channel name
+             * with different interferometers is included in the same run as
+             * the SB channel names do not include ifo by default.
+             */
+            ignore = (strstr(g_sequence_get(igitr), tbl->channel) != NULL);
+            if( !ignore ) {
+                igitr = g_sequence_iter_next(igitr);
+            } else {
+                break;
+            }
+        }
+        if( tbl->snr > min_snr && !ignore ){
+            //printf( "Adding event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
+            g_sequence_insert_sorted( trig_sequence, tbl, (GCompareDataFunc)compare, NULL );
+            tbl=tbl->next;
+        } else {
+            //printf( "Ignoring event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
+            if( !deleteme ){
+                begin = deleteme = tbl;
+            } else {
+                deleteme->next = tbl;
+                deleteme = deleteme->next;
+            }
+            tbl=tbl->next;
+        }
+        //} // end pragma task
+    //}
+    } while( tbl );
+    //} // end pragma single
+    //} // end pragma parallel
+    printf( "Deleting %d unused events.\n", XLALSnglBurstTableLength(begin) );
+    deleteme->next = NULL; // Detach this from its sucessor in case that's used
+    deleteme = NULL;
+    XLALDestroySnglBurstTable(begin);
+    printf( "Done.\n" );
+}
+#endif
