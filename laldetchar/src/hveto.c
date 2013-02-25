@@ -77,7 +77,6 @@ int main(int argc, char** argv){
 	 */
 	double sig_thresh = 3.0;
 	// TODO: Significance or SNR option
-	// Example 1
 	/*
 	 * Minimum threshold for the reference channel SNR and minimum threshold
 	 * for the auxilary channel SNR. Treated differently since the reference
@@ -86,19 +85,22 @@ int main(int argc, char** argv){
 	 * These thresholds are applied at the time the triggers are read, so no
 	 * triggers below these SNRs are even seen.
 	 */
+	// Example 2
+	double min_de_snr = 8, min_aux_snr = 10;
+	int nthresh = 7, nwinds = 5;
+	//int nthresh = 1, nwinds = 1;
+	double aux_snr_thresh[7] = {300.0, 100.0, 40.0, 20.0, 15.0, 12.0, 10.0};
+	//double aux_snr_thresh[7] = {10.0};
+	double twins[5] = {0.1, 0.2, 0.4, 0.8, 1.0};
+	//double twins[5] = {0.2};
+
+	// Example 1
+	/*
 	double min_de_snr = 30, min_aux_snr = 50;
 	int nthresh = 8;
 	double aux_snr_thresh[8] = {3200.0, 1600.0, 800.0, 600.0, 400.0, 200.0, 100.0, 50.0};
 	int nwinds = 5;
 	double twins[5] = {0.1, 0.2, 0.4, 0.8, 1.0};
-
-	// Example 2
-	//double min_de_snr = 8, min_aux_snr = 10;
-	/*
-	int nthresh = 7, nwinds = 5;
-	double aux_snr_thresh[7] = {300.0, 100.0, 40.0, 20.0, 15.0, 12.0, 10.0};
-	double twins[5] = {0.1, 0.2, 0.4, 0.8, 1.0};
-	//double twins[1] = {0.4};
 	*/
 
 	GSequence* trig_sequence = g_sequence_new((GDestroyNotify)XLALDestroySnglBurst);
@@ -143,14 +145,18 @@ int main(int argc, char** argv){
 		size_t i;
 		for( i=0; i<live.length; i++ ){
 			LALSeg s = live.segs[i];
+			printf( "Segment #%lu: (%d.%d %d.%d)\n",
+				i, s.start.gpsSeconds, s.start.gpsNanoSeconds, 
+				s.end.gpsSeconds, s.end.gpsNanoSeconds );
 			livetime += XLALGPSDiff( &s.end, &s.start );
 		}
+		printf( "Livetime: %f\n", livetime );
+
 		XLALSegListSort( &live );
-		printf( "len: %d\n", g_sequence_get_length( trig_sequence ) );
+		printf( "Before prune, length: %d\n", g_sequence_get_length( trig_sequence ) );
 		XLALDetCharPruneTrigs( trig_sequence, &live, min_de_snr, NULL );
-		printf( "len: %d\n", g_sequence_get_length( trig_sequence ) );
+		printf( "After prune, length: %d\n", g_sequence_get_length( trig_sequence ) );
 	}
-	printf( "Livetime: %f\n", livetime );
 
 	LALSegList vetoes;
 	XLALSegListInit( &vetoes );
@@ -329,6 +335,7 @@ int main(int argc, char** argv){
 			*/
 		}
 		rnd++;
+		//break;
 	} while( rnd_sig > sig_thresh && (size_t)rnd < nchans );
 	printf( "Last round did not pass significance threshold or all channels have been vetoed. Ending run.\n" );
 
@@ -375,10 +382,12 @@ void populate_trig_sequence_from_file( GSequence* trig_sequence, const char* fna
 				break;
 			}
 		}
-		if( tbl->confidence > min_snr && !ignore ){
+		if( tbl->snr > min_snr && !ignore ){
+			//printf( "Adding event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
 			g_sequence_insert_sorted( trig_sequence, tbl, (GCompareDataFunc)compare, NULL );
 			tbl=tbl->next;
 		} else {
+			//printf( "Ignoring event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
 			if( !deleteme ){
 				begin = deleteme = tbl;
 			} else {
@@ -393,6 +402,7 @@ void populate_trig_sequence_from_file( GSequence* trig_sequence, const char* fna
 	//} // end pragma single
 	//} // end pragma parallel
 	printf( "Deleting %d unused events.\n", XLALSnglBurstTableLength(begin) );
+	deleteme->next = NULL; // Detach this from its sucessor in case that's used
 	deleteme = NULL;
 	XLALDestroySnglBurstTable(begin);
 	printf( "Done.\n" );
