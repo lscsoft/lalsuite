@@ -79,7 +79,7 @@ def _check_call_out(work_dir, command):
 
   # throw exception if process failed
   if returncode != 0:
-    raise CalledProcessError(returncode, command)
+    raise subprocess.CalledProcessError(returncode, command)
 
   return out.strip()
 
