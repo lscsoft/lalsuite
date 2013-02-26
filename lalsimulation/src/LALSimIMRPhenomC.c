@@ -663,7 +663,7 @@ static int IMRPhenomCGenerateFD(
   REAL8 aPhenomC = 0.0;
 
   /* compute the amplitude pre-factor */
-  REAL8 amp0 = M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
+  REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
   /* allocate htilde */
   size_t n = NextPow2(f_max / deltaF) + 1;
