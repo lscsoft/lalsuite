@@ -385,7 +385,7 @@ paramtextdisp = {'RAJ': '&alpha;', 'DECJ': '&delta;', \
                  'PMDC': 'p.m. &delta; (rad/s)', \
                  'PMDEC': 'p.m. &delta; (rad/s)'}
 
-                 
+
 # a class containing function to output parameter vales in the appropriate
 # format
 class paramdisp:
@@ -422,14 +422,14 @@ class paramdisp2:
   def F1(f): return exp_str(float(f), 2)
   def F2(f): return exp_str(float(f), 2)
   def PEPOCH(f): return '%d' % int(float(f)) # return epoch as an integer
-  def A1(f): return '%.2f' % float(f)
-  def E(f): return '%.2f' % float(f)
+  def A1(f): return dec_or_exp(f)
+  def E(f): return dec_or_exp(f)
   def EPS1(f): return exp_str(float(f), 2)
   def EPS2(f): return exp_str(float(f), 2)
-  def T0(f): return '%.2f' % float(f)
-  def TASC(f): return '%.2f' % float(f)
-  def OM(f): return '%.2f' % float(f)
-  def PB(f): return '%.2f' % float(f)
+  def T0(f): return dec_or_exp(f)
+  def TASC(f): return dec_or_exp(f)
+  def OM(f): return dec_or_exp(f)
+  def PB(f): return dec_or_exp(f)
   def H0(f): return exp_str(float(f), 2)
   def COSIOTA(f): return '%.2f' % float(f)
   def PHI0(f): return '%.2f' % float(f)
@@ -437,6 +437,16 @@ class paramdisp2:
   def PMRA(f): return exp_str(float(f), 2)
   def PMDC(f): return exp_str(float(f), 2)
   def DEFAULT(f): return '%.2f' % float(f)
+
+
+# function will return a string with the number (input as a string) to two decimal
+# places if it is greater than 0.01, or the number in exponent for to one decimal
+# place it it is smaller
+def dec_or_exp(f):
+  if float(f) > 0.01:
+    return '%.2f' % float(f)
+  else
+    return exp_str(float(f), 1)
 
 
 # concatenate a list of strings (default to a new line between each)
@@ -483,7 +493,7 @@ An example of usage for a case when three nested sampling runs have been
 performed for two interferometers (H1 and L1):
   %s --ifo H1 --Bkfiles /home/me/hetdata/H1 --ifo L1 --Bkfiles
 /home/me/hetdata/L1 --parfile /home/me/pardir/pulsar.par --priorfile priors.txt
---histbins 50 --mcmcdirs /home/me/MCMCchains/pdfs1 
+--histbins 50 --mcmcdirs /home/me/MCMCchains/pdfs1
 --mcmcdirs /home/me/MCMCchains/pdfs2 --outpath /home/me/public_html/results
 """ % os.path.basename(sys.argv[0])
   usage = "Usage: %prog [options]"
@@ -524,7 +534,7 @@ performed for two interferometers (H1 and L1):
   parser.add_option("-r", "--priordir", dest="priorfile", help="A directory "
                     "containing the 2D prior files, on h0 and cos(iota), used "
                     "in the analysis.", default=None)
-                    
+
   # get list of the detectors used (same order as Bk files)
   parser.add_option("-i", "--ifo", dest="ifos", help="The individual "
                     "interferometers from which analysis output, and data "
@@ -592,7 +602,7 @@ performed for two interferometers (H1 and L1):
     sys.exit(0)
   else:
     Bkfiles = opts.Bkfiles
-    
+
   if opts.epsout:
     ftypes = ['png', 'eps']
   else:
@@ -602,7 +612,7 @@ performed for two interferometers (H1 and L1):
   if opts.priorfile:
     if os.path.isdir(opts.priorfile):
       priordir = opts.priorfile
-    
+
   swinj = opts.swinj
   hwinj = opts.hwinj
 
@@ -625,7 +635,7 @@ performed for two interferometers (H1 and L1):
   ifosNew = list(ifos)
   if nifos > 1:
     ifosNew.append('Joint')
-    
+
   # split MCMC directories
   mcmcdirs = opts.mcmcdirs
 
@@ -643,7 +653,7 @@ performed for two interferometers (H1 and L1):
   # for the IFOs
   asds = []
   sdlist = []
-  
+
   # read data from par file
   try:
     par = pppu.psr_par(parfile)
@@ -654,7 +664,7 @@ performed for two interferometers (H1 and L1):
   pname = par['PSRJ']
   if not pname:
     print >> sys.stderr, "No PSRJ value in par file %s" % parfile
-    
+
     pname = par['PSR']
     if not pname:
       print >> sys.stderr, "No PSR value in par file %s" % parfile
@@ -692,7 +702,7 @@ performed for two interferometers (H1 and L1):
     sys.exit(0)
 
   print 'Results for pulsar ' + pname
-  
+
   # create output directory for pulsar
   puldir = os.path.join(outpath, pname)
   if not os.path.isdir(puldir):
@@ -704,10 +714,10 @@ performed for two interferometers (H1 and L1):
   except:
     print >> sys.stderr, "Can't open shelf database!"
     sys.exit(1)
-  
+
   psrshelf['par'] = par
   psrshelf['ifos'] = ifosNew
-  
+
   # create CSS
   cssname = 'psr.css'
   try:
@@ -719,7 +729,7 @@ performed for two interferometers (H1 and L1):
 
   css.write(csstext);
   css.close()
-      
+
   # attempt to get pulsar distance, proper motion corrected age and any
   # association (e.g. GC) from the ATNF catalogue
   ages = None
@@ -729,7 +739,7 @@ performed for two interferometers (H1 and L1):
   age_i = None
   intrinsicsd = False
   agebasedsd = False
-  
+
   if not swinj and not hwinj:
     try:
       atnfurl = \
@@ -796,7 +806,7 @@ linear&y_axis=&y_scale=linear&state=query'
         print >> sys.stderr, "%s: Age is not a number!" % pname
         age_i = None
         f1sd = None
-        
+
       f1sd = -f0/(2*age_i*365.25*86400)
     else:
       age_i = None
@@ -824,7 +834,7 @@ linear&y_axis=&y_scale=linear&state=query'
   psrshelf['age_i'] = age_i
   psrshelf['intrinsicsd'] = intrinsicsd
   psrshelf['agebasedsd'] = agebasedsd
-  
+
   # first try getting a distance from a par file
   dist = par['DIST']
 
@@ -847,7 +857,7 @@ linear&y_axis=&y_scale=linear&state=query'
         dist = None
 
   psrshelf['dist'] = dist
-        
+
   # create html page
   htmlppage = os.path.join(puldir, 'index.html')
   try:
@@ -936,15 +946,15 @@ query'
 
   psrshelf['ra'] = par['RAJ']
   psrshelf['dec'] = par['DECJ']
-  
+
   # get spin-down upper limit
   if not swinj and not hwinj and f1sd and dist:
     sdlim = pppu.spin_down_limit(f0, f1sd, dist)
   else:
     sdlim = None
-  
+
   psrshelf['sdlim'] = sdlim
-  
+
   # get time series and PSD plots
   Bkdata = []
   plotpsds = True
@@ -955,11 +965,11 @@ query'
   asdtime = 14400 # set time over which to produce the asds
 
   Bkfigs, psdfigs, fscanfigs, asdlist = pppu.plot_Bks_ASDs( Bkdata, ifos, \
-asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
+asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
 
   if asdlist:
     psrshelf['ASD'] = dict(zip(ifos, asdlist)) # convert into dictionary
-    
+
   # output plots of time series and psd
   Bkfigname = None
   psdfigname = None
@@ -968,7 +978,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
   Bkfigname = []
   psdfigname = []
   fscanfigname = []
-  
+
   for i, ifo in enumerate(ifos):
     figname = output_fig(Bkfigs[i], puldir, 'Bk_'+ifo, ftypes)
     Bkfigname.append(figname)
@@ -1182,9 +1192,9 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
   sdpowrat = []
   q22 = []
   h0last = ulvals[-1]
-  
+
   psrshelf['h95'] = dict(zip(ifosNew, ulvals)) # convert to dictionary
-  
+
   limittable = []
 
   sdtext = ''
@@ -1195,7 +1205,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
   elif agebasedsd:
     sdtext = '<sup>&Dagger;</sup>' # double dagger
     sdouttext = '<p>%sThe spin-down limit was calculated using a characteristic age of 10<sup>9</sup> years</p>' % sdtext
-  
+
   if sdlim == None:
     sdlimtxt = ''
   else:
@@ -1251,11 +1261,11 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
 
   limittable.append('</table>')
 
-  psrshelf['ell'] = dict(zip(ifosNew, ell)) 
+  psrshelf['ell'] = dict(zip(ifosNew, ell))
   psrshelf['q22'] = dict(zip(ifosNew, q22))
   psrshelf['sdrat'] = dict(zip(ifosNew, sdrat))
   psrshelf['sdpowrat'] = dict(zip(ifosNew, sdpowrat))
-  
+
   # phi0
   phi0Fig = None
   bounds = [0, 2*math.pi]
@@ -1293,8 +1303,8 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
   phi0psiFig = pppu.plot_posterior_hist2D([poslist[-1]], ['phi0', 'psi'], \
 [ifosNew[-1]], bounds=[[0, 2.*math.pi], [math.pi/4., -math.pi/4]], \
 nbins=[30, 30], parfile=parinj)
-  phi0psifigname = output_fig(phi0psiFig[0], puldir, 'phi0psipost', ftypes)    
-  
+  phi0psifigname = output_fig(phi0psiFig[0], puldir, 'phi0psipost', ftypes)
+
   # produce output table of posterior plots
   posttabletext = []
   posttabletext.append( \
@@ -1326,13 +1336,13 @@ psifigname['png'], psifigname['png'] ))
 
     if os.path.isfile(priorfile):
       figprior = pppu.plot_2Dhist_from_file(priorfile, 'h0', 'cosiota')
-    
+
       # get the previous h0 upper limit from that prior file
       h0prior = pppu.h0ul_from_prior_file(priorfile, ulval=0.95)
       print h0prior
     else:
       figprior = h0prior = None
-      
+
     if not figprior or not h0prior:
       print >> sys.stderr, "Could not create prior file figures"
       priorfile = None
@@ -1340,9 +1350,9 @@ psifigname['png'], psifigname['png'] ))
     else:
       # output plots
       priorh0cifigname = output_fig(figprior[0], puldir, 'h0ciprior', ftypes)
-      priorh0figname = output_fig(figprior[0], puldir, 'h0prior', ftypes)
-      priorcifigname = output_fig(figprior[0], puldir, 'ciprior', ftypes)
-      
+      priorh0figname = output_fig(figprior[1], puldir, 'h0prior', ftypes)
+      priorcifigname = output_fig(figprior[2], puldir, 'ciprior', ftypes)
+
       priortabletext.append('<h2>Prior data</h2>')
       priortabletext.append('<p>h<sub>0</sub><sup>95%%</sup> prior upper limit: %s</p>' % exp_str(h0prior))
       priortabletext.append( \
@@ -1367,11 +1377,11 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
   analysisstatstext.append('<h2>Analysis statistics</h2>')
 
   analysisstatstext.append('<table>')
-  
+
   ulestimatetop = [] # list to contain upper limit estimates based on ASDs and data spans
   ulestimatebot = []
   lt = [] # length of the data for an IFO
-  
+
   for i, ifo in enumerate(ifos):
     # get the start time, end time and length from the heterodyned data file
     st = et = None
@@ -1382,12 +1392,12 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
     # duty cycle
     dc = 100.*(60.*float(lt[i]))/(float(et)-float(st))
 
-    # get UL estimate based on h95 ~ 7-20 *sqrt(2) * ASD / sqrt(T) - the sqrt(2) is because 
+    # get UL estimate based on h95 ~ 7-20 *sqrt(2) * ASD / sqrt(T) - the sqrt(2) is because
     # the ASD is calulated from a two-sided PSD
     if asdlist:
       ulestimatebot.append(7.*math.sqrt(2.)*np.median(asdlist[i])/math.sqrt(lt[i]))
       ulestimatetop.append((20./7.)*ulestimatebot[i])
-    
+
     analysisstatstext.append( \
 """
   <tr>
@@ -1436,14 +1446,14 @@ fscanfigname[i]['png']) )
       uli = []
       for i, asdv in enumerate(asdlist):
         uli.append(lt[i]/np.median(asdv)**2)
-     
-      ulesttmp = math.sqrt(2.)*math.sqrt(1./sum(uli)) 
+
+      ulesttmp = math.sqrt(2.)*math.sqrt(1./sum(uli))
       ulestimatebot.append(7.*ulesttmp)
       ulestimatetop.append(20.*ulesttmp)
-  
+
   psrshelf['ulestimatebot'] = dict(zip(ifosNew, ulestimatebot))
   psrshelf['ulestimatetop'] = dict(zip(ifosNew, ulestimatetop))
-  
+
   # output MCMC chains and statistics
   mcmctabletext = None
   mcmctabletext = []
@@ -1460,7 +1470,7 @@ fscanfigname[i]['png']) )
     <th>mean effective sample size</th>
   </tr>
 """ )
-  
+
   for i, ifo in enumerate(ifosNew):
     mcmctabletext.append( \
 """
@@ -1577,7 +1587,7 @@ Command lines used:<br>
   htmlptext.append(cattext(limittable))
   htmlptext.append('</tr>\n</table>\n</div>')
   htmlptext.append(sdouttext)
-  
+
   # output the posterior plots in an element
   htmlptext.append('<div class="wrapper">')
   htmlptext.append(cattext(posttabletext))
@@ -1588,7 +1598,7 @@ Command lines used:<br>
     htmlptext.append('<div class="wrapper">')
     htmlptext.append(cattext(priortabletext))
     htmlptext.append('</div>')
-  
+
   # output the analysis stats
   htmlptext.append('<div class="wrapper">')
   htmlptext.append(cattext(analysisstatstext))
