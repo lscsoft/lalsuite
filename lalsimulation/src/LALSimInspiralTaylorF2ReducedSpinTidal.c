@@ -28,10 +28,6 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 
-static size_t NextPow2(const size_t n) {
-  return 1 << (size_t) ceil(log2(n));
-}
-
 /**
 Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
 Add the tidal phase terms from http://arxiv.org/abs/1101.1673 (Eqs. 3.9, 3.10)
@@ -47,7 +43,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     const REAL8 lam1,                /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
     const REAL8 lam2,                /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
-    const REAL8 fEnd,                /**< highest GW frequency (Hz) of output array - if 0, zero pad up to next power of 2 above ISCO */
+    const REAL8 fEnd,                /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
     const REAL8 r,                   /**< distance of source (m) */
     const INT4 phaseO,               /**< twice PN phase order */
     const INT4 ampO                  /**< twice PN amplitude order */
@@ -68,7 +64,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     REAL8 shft, amp0, f_max;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S, psi10T1, psi10T2, psi10, psi12T1, psi12T2, psi12;
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;
-    size_t i, n, iStart, iISCO;
+    size_t i, n, iStart;
     COMPLEX16 *data = NULL;
     LIGOTimeGPS tStart = {0, 0};
 
@@ -83,11 +79,11 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     if (phaseO > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
 
     /* allocate htilde */
-    if ( fEnd == 0. )
-        f_max = NextPow2(fISCO);
-    else
+    if ( fEnd == 0. ) // End at ISCO
+        f_max = fISCO;
+    else // End at user-specified freq.
         f_max = fEnd;
-    n = f_max / deltaF + 1;
+    n = (size_t) (f_max / deltaF + 1);
     XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
     *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tStart, 0.0, deltaF, &lalStrainUnit, n);
     if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
@@ -182,10 +178,8 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
 
     /* Fill with non-zero vals from fStart to lesser of fEnd, fISCO */
     iStart = (size_t) ceil(fStart / deltaF);
-    iISCO = (size_t) (fISCO / deltaF);
-    iISCO = (iISCO < n) ? iISCO : n;
     data = (*htilde)->data->data;
-    for (i = iStart; i < iISCO; i++) {
+    for (i = iStart; i < n; i++) {
         /* fourier frequency corresponding to this bin */
         const REAL8 f = i * deltaF;
         const REAL8 v3 = piM*f;

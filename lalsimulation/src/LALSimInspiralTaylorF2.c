@@ -35,22 +35,6 @@
 #include "LALSimInspiralPNCoefficients.c"
 
 /**
- * Find the least nonnegative integer power of 2 that is
- * greater than or equal to n.  Inspired by similar routine
- * in gstlal.
- */
-static size_t CeilPow2(double n) {
-    double signif;
-    int exponent;
-    signif = frexp(n, &exponent);
-    if (signif < 0)
-        return 1;
-    if (signif == 0.5)
-        exponent -= 1;
-    return ((size_t) 1) << exponent;
-}
-
-/**
  * Computes the stationary phase approximation to the Fourier transform of
  * a chirp waveform with phase given by Eq.\eqref{eq_InspiralFourierPhase_f2}
  * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
@@ -68,7 +52,7 @@ int XLALSimInspiralTaylorF2(
         const REAL8 S1z,                       /**<  z component of the spin of companion 1 */
         const REAL8 S2z,                       /**<  z component of the spin of companion 2  */
         const REAL8 fStart,                    /**< start GW frequency (Hz) */
-        const REAL8 fEnd,                      /**< highest GW frequency (Hz) of output array - if 0, zero pad up to next power of 2 above ISCO */
+        const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
         const REAL8 r,                         /**< distance of source (m) */
         const REAL8 lambda1,                   /**< (tidal deformation of body 1)/(mass of body 1)^5 */
         const REAL8 lambda2,                   /**< (tidal deformation of body 2)/(mass of body 2)^5 */
@@ -96,7 +80,7 @@ int XLALSimInspiralTaylorF2(
     const REAL8 lam1 = lambda1;
     const REAL8 lam2 = lambda2;
     REAL8 shft, amp0, f_max;
-    size_t i, n, iStart, iISCO;
+    size_t i, n, iStart;
     COMPLEX16 *data = NULL;
     LIGOTimeGPS tC = {0, 0};
 
@@ -213,11 +197,11 @@ int XLALSimInspiralTaylorF2(
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
 
     /* allocate htilde */
-    if ( fEnd == 0. )
-        f_max = CeilPow2(fISCO);
-    else
+    if ( fEnd == 0. ) // End at ISCO
+        f_max = fISCO;
+    else // End at user-specified freq.
         f_max = fEnd;
-    n = f_max / deltaF + 1;
+    n = (size_t) (f_max / deltaF + 1);
     XLALGPSAdd(&tC, -1 / deltaF);  /* coalesce at t=0 */
     htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
     if (!htilde) XLAL_ERROR(XLAL_EFUNC);
@@ -228,12 +212,10 @@ int XLALSimInspiralTaylorF2(
     amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);
     shft = LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
 
-    /* Fill with non-zero vals from fStart to lesser of fEnd, fISCO */
+    /* Fill with non-zero vals from fStart to f_max */
     iStart = (size_t) ceil(fStart / deltaF);
-    iISCO = (size_t) (fISCO / deltaF);
-    iISCO = (iISCO < n) ? iISCO : n;
     data = htilde->data->data;
-    for (i = iStart; i < iISCO; i++) {
+    for (i = iStart; i < n; i++) {
         const REAL8 f = i * deltaF;
         const REAL8 v = cbrt(piM*f);
         const REAL8 v2 = v * v;
