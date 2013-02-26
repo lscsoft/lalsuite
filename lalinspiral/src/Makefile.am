@@ -5,6 +5,7 @@ lalinspiralinclude_HEADERS = \
 	BBHPhenomCoeffs.h \
 	Chisq_CPU.h \
 	Chisq_GPU.h \
+	LALInspiralPyCBCTemplate.h \
 	CoherentInspiral.h \
 	CoincInspiralEllipsoid.h \
 	FindChirp.h \
@@ -53,6 +54,7 @@ lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
 	Chisq_CPU.c \
+    LALInspiralPyCBCTemplate.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
 	CoincInspiralEllipsoid.c \
