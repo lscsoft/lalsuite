@@ -5,7 +5,6 @@ if LALXML
 XMLTEST = LALPulsarXMLTest
 endif
 
-if LALSUPPORT
 check_PROGRAMS = \
 	ExtrapolatePulsarSpinsTest \
 	FitToPulsarTest \
@@ -43,10 +42,6 @@ check_PROGRAMS = \
 
 TESTS = $(check_PROGRAMS)
 EXTRA_PROGRAMS = XLALLoadSFTsTest
-else
-check_PROGRAMS =
-TESTS =
-endif
 
 AM_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
