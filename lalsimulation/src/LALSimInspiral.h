@@ -55,7 +55,7 @@ typedef enum {
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave. */
    TaylorR2F4,		/**< A frequency domain model closely related to TaylorT4 */
    TaylorF2RedSpin,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec]*/
-   TaylorF2RedSpinTidal,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec] plus tidal terms (http://arxiv.org/abs/1101.1673) */
+   TaylorF2RedSpinTidal,	/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec] plus tidal terms (http://arxiv.org/abs/1101.1673) */
    PadeT1,		/**< Time-domain P-approximant; Outputs a time-domain wave. */
    PadeF1,		/**< Frequency-domain P-approximant (not yet implemented). */
    EOB,			/**< Effective one-body waveform; Outputs a time-domain wave. */
@@ -119,6 +119,12 @@ typedef enum
   LAL_SIM_INSPIRAL_TAPER_NUM_OPTS	/**< Number of elements in enum, useful for checking bounds */
 }  LALSimInspiralApplyTaper;
 
+/** Enumeration to specify time or frequency domain */
+typedef enum {
+  LAL_SIM_DOMAIN_TIME,
+  LAL_SIM_DOMAIN_FREQUENCY
+ } LALSimulationDomain;
+
 
 /**
  * Tapers a REAL4 inspiral waveform in the time domain.
@@ -137,7 +143,7 @@ int XLALSimInspiralREAL8WaveTaper(
 		);
 
 /* 
- * Structyure to carry a collectio of spherical harmonic modes in COMPLEX16 
+ * Structure to carry a collection of spherical harmonic modes in COMPLEX16 
  * time series. Contains convenience getter and setter functions, as well as
  * a convienence "maximum l mode" function. Implemented as a singly forward
  * linked list.

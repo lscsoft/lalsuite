@@ -31,15 +31,11 @@
 #include <lal/XLALError.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 
-typedef enum tagGSDomain {
-    GSDomain_TD,
-    GSDomain_FD
-} GSDomain;
 
 /* internal storage is in SI units! */
 typedef struct tagGSParams {
     Approximant approximant;  /**< waveform family or "approximant" */
-    GSDomain domain;          /**< flag for time or frequency domain waveform */
+    LALSimulationDomain domain; /**< flag for time or frequency domain waveform */
     int phaseO;               /**< twice PN order of the phase */
     int ampO;                 /**< twice PN order of the amplitude */
     REAL8 phiRef;             /**< phase at fRef */
@@ -150,7 +146,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     params->waveFlags = XLALSimInspiralCreateWaveformFlags();
     params->nonGRparams = NULL;
     params->approximant = TaylorT1;
-    params->domain = GSDomain_TD;
+    params->domain = LAL_SIM_DOMAIN_TIME;
     params->phaseO = 7;
     params->ampO = 0;
     params->phiRef = 0.;
@@ -190,9 +186,9 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--domain") == 0) {
             i++;
             if (strcmp(argv[i], "TD") == 0)
-                params->domain = GSDomain_TD;
+                params->domain = LAL_SIM_DOMAIN_TIME;
             else if (strcmp(argv[i], "FD") == 0)
-                params->domain = GSDomain_FD;
+                params->domain = LAL_SIM_DOMAIN_FREQUENCY;
             else {
                 XLALPrintError("Error: Unknown domain\n");
                 goto fail;
@@ -412,7 +408,7 @@ int main (int argc , char **argv) {
     /* generate waveform */
     start_time = time(NULL);
     switch (params->domain) {
-        case GSDomain_FD:
+        case LAL_SIM_DOMAIN_FREQUENCY:
             XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, params->phiRef, 
                     params->deltaF, params->m1, params->m2, params->s1x, 
                     params->s1y, params->s1z, params->s2x, params->s2y, 
@@ -421,7 +417,7 @@ int main (int argc , char **argv) {
                     params->lambda2, params->waveFlags, params->nonGRparams,
                     params->ampO, params->phaseO, params->approximant);
             break;
-        case GSDomain_TD:
+        case LAL_SIM_DOMAIN_TIME:
             XLALSimInspiralChooseTDWaveform(&hplus, &hcross, params->phiRef, 
                     params->deltaT, params->m1, params->m2, params->s1x, 
                     params->s1y, params->s1z, params->s2x, params->s2y, 
@@ -437,15 +433,15 @@ int main (int argc , char **argv) {
     if (params->verbose)
         XLALPrintInfo("Generation took %.0f seconds\n", 
                 difftime(time(NULL), start_time));
-    if (((params->domain == GSDomain_FD) && (!hptilde || !hctilde)) ||
-        ((params->domain == GSDomain_TD) && (!hplus || !hcross))) {
+    if (((params->domain == LAL_SIM_DOMAIN_FREQUENCY) && (!hptilde || !hctilde)) ||
+        ((params->domain == LAL_SIM_DOMAIN_TIME) && (!hplus || !hcross))) {
         XLALPrintError("Error: waveform generation failed\n");
         goto fail;
     }
 
     /* dump file */
     f = fopen(params->outname, "w");
-    if (params->domain == GSDomain_FD)
+    if (params->domain == LAL_SIM_DOMAIN_FREQUENCY)
         if (params->ampPhase == 1)
             status = dump_FD2(f, hptilde, hctilde);
         else

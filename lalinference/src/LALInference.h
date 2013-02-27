@@ -35,29 +35,30 @@
  * handling routines, MCMC and Nested Sampling algorithms and a template generation
  * interface to the LALInspiral package.
  *
- * This file contains the basic structures for the algorithm state, inteferometer
+ * This file contains the basic structures for the algorithm state, interferometer
  * data, manipulation of variables and type declarations for the standard function types.
  *
  *
  */
 /*@{*/
 
-# include <math.h>
-# include <stdio.h>
-# include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define VARNAME_MAX 128
 #define VARVALSTRINGSIZE_MAX 128
 
-# include <lal/LALStdlib.h>
-# include <lal/LALConstants.h>
-# include <lal/SimulateCoherentGW.h>
-# include <lal/GeneratePPNInspiral.h>
-# include <lal/LIGOMetadataTables.h>
-# include <lal/LALDatatypes.h>
-# include <lal/FindChirp.h>
-# include <lal/Window.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/GeneratePPNInspiral.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LALDatatypes.h>
+#include <lal/FindChirp.h>
+#include <lal/Window.h>
 #include <lal/LALString.h>
+#include <lal/LALSimInspiral.h>
 
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
@@ -106,19 +107,12 @@ typedef enum {
   LALINFERENCE_void_ptr_t
 } LALInferenceVariableType;
 
-/** An enumerated type for denoting time or frequency domain
-*/
-typedef enum {
-  LALINFERENCE_DOMAIN_TIME, 
-  LALINFERENCE_DOMAIN_FREQUENCY
-} LALInferenceDomain;
-
-/** An enumerated type for denoting the topolology of a parameter.
+/** An enumerated type for denoting the topology of a parameter.
  * This information is used by the sampling routines when deciding
  * what to vary in a proposal, etc.
 */
 typedef enum {
-	LALINFERENCE_PARAM_LINEAR, /** A parameter that simply has a maximum and a minimum */
+	LALINFERENCE_PARAM_LINEAR,   /** A parameter that simply has a maximum and a minimum */
 	LALINFERENCE_PARAM_CIRCULAR, /** A parameter that is cyclic, such as an angle between 0 and 2pi */
 	LALINFERENCE_PARAM_FIXED,    /** A parameter that never changes, functions should respect this */
 	LALINFERENCE_PARAM_OUTPUT    /** A parameter changed by an inner code and passed out */
@@ -382,13 +376,13 @@ tagLALInferenceIFOData
                             *freqModelhPlus, *freqModelhCross, /** Buffers for frequency domain models */
                             *whiteFreqData; /* Over-white. */
   COMPLEX16TimeSeries       *compTimeData, *compModelData; /** Complex time series data buffers */
-  LIGOTimeGPSVector         *dataTimes;                    /** Vector of time stamps for time domain data */
-  LALInferenceVariables              *modelParams;         /** Parameters used when filling the buffers - template functions should copy to here */
-  LALInferenceVariables		    *dataParams; /* Optional data parameters */
-  LALInferenceDomain                 modelDomain;         /** Domain of model */
+  LIGOTimeGPSVector         *dataTimes;     /** Vector of time stamps for time domain data */
+  LALInferenceVariables     *modelParams;   /** Parameters used when filling the buffers - template functions should copy to here */
+  LALInferenceVariables     *dataParams;    /* Optional data parameters */
+  LALSimulationDomain        modelDomain;   /** Domain of model */
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;  /** one-sided Noise Power Spectrum */
 //  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
-  REAL8Window               *window;                 /** A window */
+  REAL8Window               *window;        /** A window */
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
   REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */
   LALDetector               *detector;          /** LALDetector structure for where this data came from */

@@ -460,7 +460,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
           return(-DBL_MAX);
 
-      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
 	/* TD --> FD. */
 	LALInferenceExecuteFT(dataPtr);
       }
@@ -748,7 +748,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
 
-      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
 	/* TD --> FD. */
 	LALInferenceExecuteFT(dataPtr);
       }
@@ -1195,7 +1195,7 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
 
-      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
 	/* TD --> FD. */
 	LALInferenceExecuteFT(dataPtr);
       }

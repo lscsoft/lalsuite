@@ -1952,7 +1952,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     if(LALInferenceGetProcParamVal(commandLine,"--lalinspiralinjection")){
       LALInferenceTemplateLAL(tmpdata);
     }else{
-      tmpdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+      tmpdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
       LALInferenceTemplateXLALSimInspiralChooseWaveform(tmpdata);
     }
 
@@ -2015,7 +2015,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
   
   while (dataPtr != NULL) {
      
-      if (IFOdata->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      if (IFOdata->modelDomain == LAL_SIM_DOMAIN_TIME) {
 	  printf("There is a problem. You seem to be using a time domain model into the frequency domain injection function!. Exiting....\n"); 
       exit(1);
     }

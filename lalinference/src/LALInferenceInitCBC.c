@@ -229,7 +229,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   LALInferenceFrame frame = LALINFERENCE_FRAME_RADIATION;
   UINT4 analytic=0;
   LALInferenceIFOData *dataPtr;
-  LALInferenceDomain modelDomain;
+  LALSimulationDomain modelDomain;
   UINT4 event=0;
   UINT4 i=0;
   REAL8 m1=0;
@@ -490,7 +490,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     case SpinTaylorFrameless:
     case PhenSpinTaylorRD:
     case NumRel:
-      modelDomain=LALINFERENCE_DOMAIN_TIME;
+      modelDomain=LAL_SIM_DOMAIN_TIME;
       break;
     case TaylorF1:
     case TaylorF2:
@@ -498,7 +498,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     case TaylorF2RedSpinTidal:
     case IMRPhenomA:
     case IMRPhenomB:
-      modelDomain=LALINFERENCE_DOMAIN_FREQUENCY;
+      modelDomain=LAL_SIM_DOMAIN_FREQUENCY;
       break;
     default:
       fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
@@ -514,11 +514,11 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(ppt){
     if ( ! strcmp( "time", ppt->value ) )
     {
-      modelDomain = LALINFERENCE_DOMAIN_TIME;
+      modelDomain = LAL_SIM_DOMAIN_TIME;
     }
     else if ( ! strcmp( "frequency", ppt->value ) )
     {
-      modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+      modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
     }
     else
     {
