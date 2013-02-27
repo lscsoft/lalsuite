@@ -1915,7 +1915,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   phi0		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase"); /* START phase as per lalsimulation convention*/
 
   f_min = IFOdata->fLow /** 0.9 */;
-  f_max = IFOdata->fHigh;
+  f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using IFOdata->fHigh causes NaNs in waveform (see redmine issue #750)*/
   
   if(frame==LALINFERENCE_FRAME_RADIATION){
     inclination	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
