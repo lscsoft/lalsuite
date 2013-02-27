@@ -27,7 +27,7 @@ import lal
 from glue.lal import (Cache, CacheEntry)
 from glue.segments import segment as Segment
 
-from laldetchar import git_version
+from laldetchar import (git_version, triggers)
 
 __author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
@@ -103,3 +103,60 @@ def find_daily_cache(start, end, ifo, clustering=None, check_files=False,
 
     out.sort(key=lambda e: e.path())
     return out
+
+def from_file(fileobj, start=None, end=None, columns=None):
+    """@returns a SnglInspiralTable of events from the given fileobj
+
+    @param start
+        GPS start time after which to restrict returned events
+    @param end
+        GPS end time before which to restrict returned
+    @param columns
+        set of valid SnglInspiral columns to read from data
+    """
+    return triggers.load_table_from_fileobj(fileobj, "daily_ihope",
+                                            start=start, end=end,
+                                            columns=columns)
+
+
+def from_lal_cache(cache, start=None, end=None, columns=None, verbose=False):
+    """Read a SnglInspiralTable from a Cache of daily ihope XML files
+
+    @param cache
+        glue.lal.Cache of filepaths from which to read the data
+    @param start
+        GPS start time after which to restrict returned events
+    @param end
+        GPS end time before which to restrict returned
+    @param columns
+        set of valid SnglInspiral columns to read from data
+    @param verbose
+        print verbose progress, default False
+
+    @returns a glue.lsctables.SnglBurstTable object representing the data
+    """
+    return triggers.load_table_from_lal_cache(cache, etg="daily_ihope",
+                                              columns=columns,
+                                              verbose=verbose,
+                                              start=start, end=end)
+
+
+def from_files(filelist, start=None, end=None, columns=None, verbose=False):
+    """Read a SnglInspiralTable from a list of daily ihope XML files
+
+    @param filelist
+        glue.lal.Cache of filepaths from which to read the data
+    @param start
+        GPS start time after which to restrict returned events
+    @param end
+        GPS end time before which to restrict returned
+    @param columns
+        set of valid SnglInspiral columns to read from data
+    @param verbose
+        print verbose progress, default False
+
+    @returns a glue.lsctables.SnglBurstTable object representing the data
+    """
+    return triggers.load_table_from_files(filelist, etg="daily_ihope",
+                                          columns=columns, verbose=verbose,
+                                          start=start, end=end)
