@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 61
+# serial 62
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -169,7 +169,6 @@ if test "$lowercase" = "true"; then
 else
   AC_MSG_ERROR([could not find the $1 library])
 fi
-LALSUITE_ENABLE_MODULE(uppercase,lowercase)
 m4_if(lowercase,[lalsupport],[],[
   AC_ARG_VAR(uppercase[]_DATADIR, [data directory for ]uppercase[, overriding pkg-config])
 ])
