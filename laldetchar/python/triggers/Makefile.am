@@ -7,4 +7,5 @@ triggers_PYTHON = \
 	daily_ihope.py \
 	excesspower.py \
 	rate.py \
+	omicron.py \
 	omega.py
