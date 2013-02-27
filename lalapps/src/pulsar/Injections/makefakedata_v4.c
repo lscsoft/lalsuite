@@ -452,7 +452,8 @@ main(int argc, char *argv[])
 	  struct FrameH *outFrame;
 	  XLAL_CHECK ( (outFrame = XLALFrameNew( &(params.startTimeGPS), params.duration, uvar_outframebname, 1, 0, 0 )) != NULL, XLAL_EFUNC );
 
-	  /* add timeseries to the frame */
+	  /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
+	  snprintf(Tseries->name,LALNameLength,"%s:%s",Tseries->name,uvar_outframebname);
 	  XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData(outFrame,Tseries) == 0 ) , XLAL_EFUNC );
 
 	  /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
