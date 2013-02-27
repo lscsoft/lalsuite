@@ -169,7 +169,7 @@ BUILT_SOURCES += LALPulsarVCSInfo.h
 MOSTLYCLEANFILES += LALPulsarVCSInfo.h
 LALPulsarVCSInfo.h .PHONY : gen-LALPulsarVCSInfo.h
 gen-LALPulsarVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALPulsarVCSInfo.h $(srcdir)/LALPulsarVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALPulsarVCSInfo.h $(srcdir)/LALPulsarVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

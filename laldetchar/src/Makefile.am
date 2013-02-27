@@ -58,7 +58,7 @@ BUILT_SOURCES += LALDetCharVCSInfo.h
 MOSTLYCLEANFILES += LALDetCharVCSInfo.h
 LALDetCharVCSInfo.h .PHONY : gen-LALDetCharVCSInfo.h
 gen-LALDetCharVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALDetCharVCSInfo.h $(srcdir)/LALDetCharVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALDetCharVCSInfo.h $(srcdir)/LALDetCharVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

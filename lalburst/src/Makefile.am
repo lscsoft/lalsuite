@@ -81,7 +81,7 @@ BUILT_SOURCES += LALBurstVCSInfo.h
 MOSTLYCLEANFILES += LALBurstVCSInfo.h
 LALBurstVCSInfo.h .PHONY : gen-LALBurstVCSInfo.h
 gen-LALBurstVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALBurstVCSInfo.h $(srcdir)/LALBurstVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALBurstVCSInfo.h $(srcdir)/LALBurstVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

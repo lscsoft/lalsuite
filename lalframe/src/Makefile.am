@@ -95,7 +95,7 @@ BUILT_SOURCES += LALFrameVCSInfo.h
 MOSTLYCLEANFILES += LALFrameVCSInfo.h
 LALFrameVCSInfo.h .PHONY : gen-LALFrameVCSInfo.h
 gen-LALFrameVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALFrameVCSInfo.h $(srcdir)/LALFrameVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALFrameVCSInfo.h $(srcdir)/LALFrameVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

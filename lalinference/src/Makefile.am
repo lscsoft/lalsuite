@@ -71,7 +71,7 @@ BUILT_SOURCES += LALInferenceVCSInfo.h
 MOSTLYCLEANFILES += LALInferenceVCSInfo.h
 LALInferenceVCSInfo.h .PHONY : gen-LALInferenceVCSInfo.h
 gen-LALInferenceVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALInferenceVCSInfo.h $(srcdir)/LALInferenceVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALInferenceVCSInfo.h $(srcdir)/LALInferenceVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

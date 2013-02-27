@@ -62,7 +62,7 @@ BUILT_SOURCES += LALStochasticVCSInfo.h
 MOSTLYCLEANFILES += LALStochasticVCSInfo.h
 LALStochasticVCSInfo.h .PHONY : gen-LALStochasticVCSInfo.h
 gen-LALStochasticVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALStochasticVCSInfo.h $(srcdir)/LALStochasticVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALStochasticVCSInfo.h $(srcdir)/LALStochasticVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

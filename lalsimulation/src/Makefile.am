@@ -136,7 +136,7 @@ BUILT_SOURCES += LALSimulationVCSInfo.h
 MOSTLYCLEANFILES += LALSimulationVCSInfo.h
 LALSimulationVCSInfo.h .PHONY : gen-LALSimulationVCSInfo.h
 gen-LALSimulationVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALSimulationVCSInfo.h $(srcdir)/LALSimulationVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALSimulationVCSInfo.h $(srcdir)/LALSimulationVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

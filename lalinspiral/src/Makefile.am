@@ -268,7 +268,7 @@ BUILT_SOURCES += LALInspiralVCSInfo.h
 MOSTLYCLEANFILES += LALInspiralVCSInfo.h
 LALInspiralVCSInfo.h .PHONY : gen-LALInspiralVCSInfo.h
 gen-LALInspiralVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALInspiralVCSInfo.h $(srcdir)/LALInspiralVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALInspiralVCSInfo.h $(srcdir)/LALInspiralVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

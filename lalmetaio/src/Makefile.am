@@ -57,7 +57,7 @@ BUILT_SOURCES += LALMetaIOVCSInfo.h
 MOSTLYCLEANFILES += LALMetaIOVCSInfo.h
 LALMetaIOVCSInfo.h .PHONY : gen-LALMetaIOVCSInfo.h
 gen-LALMetaIOVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALMetaIOVCSInfo.h $(srcdir)/LALMetaIOVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALMetaIOVCSInfo.h $(srcdir)/LALMetaIOVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@
