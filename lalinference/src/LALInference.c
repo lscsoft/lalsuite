@@ -491,13 +491,13 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
   while(ptr!=NULL) {
     switch (ptr->type) {
       case LALINFERENCE_INT4_t:
-        fprintf(fp, "%d", *(INT4 *) ptr->value);
+        fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
         break;
       case LALINFERENCE_INT8_t:
         fprintf(fp, "%"LAL_INT8_FORMAT , *(INT8 *) ptr->value);
         break;
       case LALINFERENCE_UINT4_t:
-        fprintf(fp, "%ud", *(UINT4 *) ptr->value);
+        fprintf(fp, "%"LAL_UINT4_FORMAT , *(UINT4 *) ptr->value);
         break;
       case LALINFERENCE_REAL4_t:
         fprintf(fp, "%9.20e", *(REAL4 *) ptr->value);
@@ -539,13 +539,13 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 		if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
 			switch (ptr->type) {
 				case LALINFERENCE_INT4_t:
-					fprintf(fp, "%d", *(INT4 *) ptr->value);
+					fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
 					break;
 				case LALINFERENCE_INT8_t:
 					fprintf(fp, "%"LAL_INT8_FORMAT, *(INT8 *) ptr->value);
 					break;
 				case LALINFERENCE_UINT4_t:
-					fprintf(fp, "%ud", *(UINT4 *) ptr->value);
+					fprintf(fp, "%"LAL_UINT4_FORMAT, *(UINT4 *) ptr->value);
 					break;
 				case LALINFERENCE_REAL4_t:
 					fprintf(fp, "%11.7f", *(REAL4 *) ptr->value);
