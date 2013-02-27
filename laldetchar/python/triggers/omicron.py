@@ -19,6 +19,7 @@
 
 from __future__ import division
 
+import os
 import re
 
 from ROOT import TChain
