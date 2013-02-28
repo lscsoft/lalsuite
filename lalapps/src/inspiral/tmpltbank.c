@@ -764,7 +764,7 @@ int main ( int argc, char *argv[] )
     for ( k = 0; k < spec.data->length; ++k )
     {
       REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      spec.data->data[k] = (REAL4) (dynRange * 
+      spec.data->data[k] = (REAL4) (dynRange *
                      dynRange * XLALSimNoisePSDiLIGOSRD( sim_psd_freq ));
     }
     if ( vrbflg ) fprintf( stdout, "set psd to Initial LIGO design\n" );
@@ -775,7 +775,7 @@ int main ( int argc, char *argv[] )
     for ( k = 0; k < spec.data->length; ++k )
     {
       REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      spec.data->data[k] = (REAL4) (dynRange * 
+      spec.data->data[k] = (REAL4) (dynRange *
                      dynRange * XLALSimNoisePSDeLIGOModel( sim_psd_freq ));
     }
     if ( vrbflg ) fprintf( stdout, "set psd to enhanced LIGO model curve\n" );
@@ -786,7 +786,7 @@ int main ( int argc, char *argv[] )
     for ( k = 0; k < spec.data->length; ++k )
     {
       REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
-      spec.data->data[k] = (REAL4) (dynRange * 
+      spec.data->data[k] = (REAL4) (dynRange *
                      dynRange * XLALSimNoisePSDaLIGOZeroDetHighPower( sim_psd_freq ));
     }
     if ( vrbflg ) fprintf( stdout, "set psd to advanced LIGO ZDHP design\n" );
@@ -972,7 +972,7 @@ int main ( int argc, char *argv[] )
         distance = compute_candle_distance(candleMinMass, candleMinMass,
             candleSnr, chan.deltaT, numPoints, &(bankIn.shf), cut);
       }
-     
+
       snprintf( candleComment, LIGOMETA_SUMMVALUE_COMM_MAX,
           "%3.2f_%3.2f_%3.2f", candleMinMass, candleMinMass, candleSnr );
 
@@ -2848,7 +2848,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   /* check for potential underflows in the simulated spectrum */
   if ( simPSD == 1 && dynRangeExponent < 10 )
-  { 
+  {
     fprintf( stderr, "If using a simulated PSD, a suitable dynamic \n" );
     fprintf( stderr, "range exponent must be given, eg 69.0. Exiting...\n" );
     exit( 1 );
@@ -3140,7 +3140,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           "Error: argument --min-eta must be given if --max-eta is given\n");
       exit(1);
     }
-    
+
     if( etaMaxCutoff < etaMinCutoff )
     {
       fprintf( stderr,
