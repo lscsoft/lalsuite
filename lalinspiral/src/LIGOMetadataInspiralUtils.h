@@ -671,6 +671,12 @@ XLALCompareCoincInspiralByEffectiveSnr (
     const void *b
     );
 
+int
+XLALCompareCoincInspiralByStat (
+    const void *a,
+    const void *b
+    );
+
 CoincInspiralTable *
 XLALSortCoincInspiral (
     CoincInspiralTable  *eventHead,

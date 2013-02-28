@@ -17,7 +17,8 @@ SUBDIRS = \
 	gnuscripts \
 	debian \
 	include \
-	src
+	src \
+	swig
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalmetaio.pc
