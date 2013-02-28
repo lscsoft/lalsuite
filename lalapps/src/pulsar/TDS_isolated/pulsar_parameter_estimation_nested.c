@@ -958,7 +958,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
   
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
     ifodata->modelParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-    ifodata->modelDomain = LALINFERENCE_DOMAIN_TIME;
+    ifodata->modelDomain = LAL_SIM_DOMAIN_TIME;
     ifodata->next = NULL;
     ifodata->dataParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
     
