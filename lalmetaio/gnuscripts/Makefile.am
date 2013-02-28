@@ -14,4 +14,5 @@ EXTRA_DIST = \
 	ltversion.m4 \
 	lt~obsolete.m4 \
 	missing \
-	py-compile
+	py-compile \
+	test-driver
