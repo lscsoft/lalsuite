@@ -485,7 +485,8 @@ void coh_PTF_destroy_time_series(
   REAL4TimeSeries          **autoVeto,
   REAL4TimeSeries          **chiSquare,
   REAL4TimeSeries          **pValues,
-  REAL4TimeSeries          **gammaBeta
+  REAL4TimeSeries          **gammaBeta,
+  REAL4TimeSeries          **snrComps
 );
 
 void coh_PTF_calculate_single_detector_filters(

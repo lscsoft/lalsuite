@@ -599,7 +599,7 @@ int main(int argc, char **argv)
   /* Everything that follows is memory cleanup */
 
   coh_PTF_destroy_time_series(cohSNR,nullSNR,traceSNR,bankVeto,autoVeto,\
-          chiSquare,pValues,gammaBeta);
+          chiSquare,pValues,gammaBeta,snrComps);
 
   if (skyPoints->data)
     LALFree(skyPoints->data);

@@ -1106,7 +1106,8 @@ void coh_PTF_destroy_time_series(
   REAL4TimeSeries          **autoVeto,
   REAL4TimeSeries          **chiSquare,
   REAL4TimeSeries          **pValues,
-  REAL4TimeSeries          **gammaBeta
+  REAL4TimeSeries          **gammaBeta,
+  REAL4TimeSeries          **snrComps
 )
 {
   UINT4 k;
@@ -1144,14 +1145,14 @@ void coh_PTF_destroy_time_series(
     }
   }
   /* FIXME: snrComps to be moved here */
-/*for (k = 0; k < LAL_NUM_IFO; k++)
+  for (k = 0; k < LAL_NUM_IFO; k++)
   {
     if (snrComps[k])
     {
       XLALDestroyREAL4TimeSeries(snrComps[k]);
       snrComps[k] = NULL;
     }
-  } */
+  }
   for (k = 0; k < 2; k++)
   {
     if (gammaBeta[k])
