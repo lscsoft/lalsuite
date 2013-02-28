@@ -171,9 +171,60 @@ UINT4 coh_PTF_initialize_auto_veto(
   return timeStepPoints;
 }
 
+
+void coh_PTF_calculate_bank_veto_template_filters(
+    struct coh_PTF_params   *params,
+    FindChirpTemplate       *bankFcTmplts,
+    FindChirpTemplate       *fcTmplt,
+    REAL4FrequencySeries    **invspec,
+    struct bankComplexTemplateOverlaps *bankOverlaps
+)
+{
+  UINT4 ifoNumber,ui;
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      for (ui = 0 ; ui < params->BVsubBankSize ; ui++)
+      {
+        memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,1*sizeof(COMPLEX8));
+        /* This function calculates the overlap between template and the
+         * bank veto template */  
+        coh_PTF_complex_template_overlaps(params, &(bankFcTmplts[ui]),
+                                          fcTmplt, invspec[ifoNumber], 0,
+                                          bankOverlaps[ui].PTFM[ifoNumber]);
+      }
+    }
+  }
+}
+
+
+void coh_PTF_calculate_auto_veto_template_filters(
+    struct coh_PTF_params   *params,
+    FindChirpTemplate       *fcTmplt,
+    struct bankComplexTemplateOverlaps *autoTempOverlaps,
+    REAL4FrequencySeries    **invspec,
+    COMPLEX8FFTPlan         *invplan,
+    UINT4                   timeStepPoints
+)
+{
+  UINT4 ifoNumber;
+
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      coh_PTF_auto_veto_overlaps(params,fcTmplt,autoTempOverlaps,
+          invspec[ifoNumber],invplan,0,params->numAutoPoints,
+          timeStepPoints,ifoNumber);
+    }
+  }
+}
+
+
 UINT4 coh_PTF_read_sub_bank(
-struct coh_PTF_params   *params,
-InspiralTemplate        **PTFBankTemplates)
+    struct coh_PTF_params   *params,
+    InspiralTemplate        **PTFBankTemplates)
 {
   UINT4 i,numTemplates;
   InspiralTemplate *bankTemplate;

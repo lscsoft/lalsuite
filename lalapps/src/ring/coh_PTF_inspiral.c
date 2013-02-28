@@ -79,6 +79,8 @@ int main(int argc, char **argv)
 
   /* triggered sky position and sensitivity structures */
   LIGOTimeGPS              segStartTime;
+  segStartTime.gpsSeconds = 0;
+  segStartTime.gpsNanoSeconds = 0;
   struct timeval           startTime;
   LALDetector              *detectors[LAL_NUM_IFO+1];
   REAL4                    *timeOffsets;
@@ -86,9 +88,6 @@ int main(int argc, char **argv)
   REAL4                    *Fcross;
   REAL4                    *Fplustrig;
   REAL4                    *Fcrosstrig;
-  REAL8                    FplusTmp;
-  REAL8                    FcrossTmp;
-  REAL8                    detLoc[3];
   REAL4                    *timeSlideVectors;
 
   /* coherent statistic structures */
@@ -160,6 +159,7 @@ int main(int argc, char **argv)
   coh_PTF_set_null_input_REAL4TimeSeries(gammaBeta,2);
   coh_PTF_set_null_input_REAL4(frequencyRangesPlus,LAL_NUM_IFO+1);
   coh_PTF_set_null_input_REAL4(frequencyRangesCross,LAL_NUM_IFO+1);
+  coh_PTF_set_null_input_LALDetector(detectors,LAL_NUM_IFO+1);
 
   /* allocate memory for time offsets and detector responses */
   timeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
@@ -214,7 +214,7 @@ int main(int argc, char **argv)
        (params->skyLooping != TWO_DET_ALL_SKY))
   {
     coh_PTF_calculate_det_stuff(params,detectors,timeOffsets,Fplustrig,\
-                                Fcrosstrig,skyPoints);
+                                Fcrosstrig,skyPoints,0);
   }
 
   /*------------------------------------------------------------------------*
@@ -289,6 +289,15 @@ int main(int argc, char **argv)
     PTFtemplate = PTFNoSpinTemplate;
   }
   PTFbankhead = PTFtemplate;
+
+  /*------------------------------------------------------------------------*
+   * Allocate RAM for the various time series that get calculated           *
+   *------------------------------------------------------------------------*/
+
+  coh_PTF_initialize_time_series(params,segStartTime,\
+          params->lowTemplateFrequency,&cohSNR,&nullSNR,&traceSNR,bankVeto,\
+          autoVeto,chiSquare,pValues,gammaBeta,numSpinTmplts);
+  verbose("Initialized storage arrays at %ld\n",timeval_subtract(&startTime));
 
 
   /*------------------------------------------------------------------------*
@@ -382,254 +391,135 @@ int main(int argc, char **argv)
       }
 
       if (spinTemplate)
-        verbose("Generated spin template %d at %ld \n", i,
-                timeval_subtract(&startTime));
+        verbose("Generated spin template %d at %ld\n",\
+                i,timeval_subtract(&startTime));
       else
-        verbose("Generated no spin template %d at %ld \n", i,
-                timeval_subtract(&startTime));
+        verbose("Generated nospin template %d at %ld\n",\
+                i,timeval_subtract(&startTime));
 
-      /* FIXME: Initialize these objects outside of loops, but reset the *
-       * epoch here and possible memset to 0 all entries */
-      coh_PTF_initialize_time_series(params,segStartTime,PTFtemplate->fLower,\
-              &cohSNR,&nullSNR,&traceSNR,bankVeto,autoVeto,chiSquare);
+      /* Reset the epoch here and memset to 0 all entries */
+      coh_PTF_reset_time_series(params,segStartTime,\
+          cohSNR,nullSNR,traceSNR,bankVeto,\
+          autoVeto,chiSquare,pValues,gammaBeta,numSpinTmplts);
+      verbose("Initialized storage arrays for segment %d at %ld\n",\
+          j, timeval_subtract(&startTime));     
 
-      /* Loop over ifos */
-      for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      /* Calculate single detector filters */
+      /* FIXME: Also calculate single detector SNR here */
+      coh_PTF_calculate_single_detector_filters(params,fcTmplt,invspec,PTFM,\
+              PTFqVec,segments,invplan,spinTemplate,j);
+      verbose("Calculated sngl filters for segment %d template %d at %ld\n",\
+          j, i, timeval_subtract(&startTime));
+
+      /* Calculate single detector bank veto filters for this template */
+      if (params->doBankVeto)
       {
-        if (params->haveTrig[ifoNumber])
-        {
-          /* Zero the storage vectors for the PTF filters */
-          if (params->approximant == FindChirpPTF)
-          {
-            memset(PTFM[ifoNumber]->data, 0, 25 * sizeof(REAL8));
-            memset(PTFqVec[ifoNumber]->data, 0, 
-                  5 * numPoints * sizeof(COMPLEX8));
-          }
-          else
-          {
-            memset(PTFM[ifoNumber]->data, 0, 1 * sizeof(REAL8));
-            memset(PTFqVec[ifoNumber]->data, 0,
-                  1 * numPoints * sizeof(COMPLEX8));
-          }
-
-          /* Here (h|s) and (h|h) are calculated */
-          coh_PTF_normalize(params, fcTmplt, invspec[ifoNumber],
-                            PTFM[ifoNumber], NULL, PTFqVec[ifoNumber],
-                            &segments[ifoNumber]->sgmnt[j], invplan,
-                            spinTemplate);
-
-          // In this subroutine the overlap between template h and the 
-          // bank veto template is calculated
-          if (params->doBankVeto)
-          {
-          for (ui = 0 ; ui < subBankSize ; ui++)
-          {
-            memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,1*sizeof(COMPLEX8));
-            coh_PTF_complex_template_overlaps(params, &(bankFcTmplts[ui]),
-                                              fcTmplt, invspec[ifoNumber], 0,
-                                              bankOverlaps[ui].PTFM[ifoNumber]);
-          }
-          }
-          // And if necessary the overlap between h(deltaT) and h
-          if (params->doAutoVeto)
-          {
-            coh_PTF_auto_veto_overlaps(params,fcTmplt,autoTempOverlaps,
-                invspec[ifoNumber],invplan,0,params->numAutoPoints,
-                timeStepPoints,ifoNumber);
-          }
-
-          verbose("Made filters for ifo %d,segment %d, template %d at %ld \n", 
-                   ifoNumber, j, i, timeval_subtract(&startTime));
-        }
+        coh_PTF_calculate_bank_veto_template_filters(params,bankFcTmplts,\
+                fcTmplt,invspec,bankOverlaps);
+        verbose("Calculated bank-veto filters for template %d at %ld\n",\
+            i, timeval_subtract(&startTime));
       }
-      /* If necessary calculate the null stream filters */
+
+      /* Calculate single detector auto veto filters */
+      if (params->doAutoVeto)
+      {
+        coh_PTF_calculate_auto_veto_template_filters(params,fcTmplt,\
+                autoTempOverlaps,invspec,invplan,timeStepPoints);
+        verbose("Calculated auto-veto filters for template %d at %ld\n",\
+            i, timeval_subtract(&startTime));
+      }
+
+      /* Calculate null stream filters */
       if (params->doNullStream)
       {
-        if (params-> approximant == FindChirpPTF)
-        {
-          memset(PTFM[LAL_NUM_IFO]->data, 0, 25*sizeof(REAL8));
-          memset(PTFqVec[LAL_NUM_IFO]->data, 0, 5*numPoints*sizeof(COMPLEX8));
-        }
-        else
-        {
-          memset(PTFM[LAL_NUM_IFO]->data, 0, 1*sizeof(REAL8));
-          memset(PTFqVec[LAL_NUM_IFO]->data, 0, 1*numPoints*sizeof(COMPLEX8));
-        }
-        coh_PTF_normalize(params, fcTmplt, invspec[LAL_NUM_IFO],
-                          PTFM[LAL_NUM_IFO], NULL, PTFqVec[LAL_NUM_IFO],
-                          &segments[LAL_NUM_IFO]->sgmnt[j], invplan,
-                          spinTemplate);
-        verbose("Made filters for NULL stream,segmen %d, template %d at %ld\n",
-                j, i, timeval_subtract(&startTime));
+        coh_PTF_calculate_null_stream_filters(params,fcTmplt,invspec,PTFM,\
+              PTFqVec,segments,invplan,spinTemplate,j);
+        verbose(\
+          "Calculated null stream filters for segment %d template %d at %ld\n",\
+          j, i, timeval_subtract(&startTime));
       }
       
-      switch(params->skyLooping)
+      verbose("Begin loop over sky points at %ld \n",
+              timeval_subtract(&startTime));
+
+      /* Primary loop over sky points */
+      for (sp = 0; sp < numSkyPoints ; sp++)
       {
-        case SINGLE_SKY_POINT:
-        case TWO_DET_SKY_PATCH:
-        case SKY_PATCH:
-          verbose("Begin loop over sky points at %ld \n",
+        /* Calculate offsets and responses for this sky point */
+        coh_PTF_calculate_det_stuff(params,detectors,timeOffsets,Fplus,\
+                            Fcross,skyPoints,sp);
+
+        /* FIXME: This is a hack when doing faceOn+faceAway analysis */
+        if (params->faceAwayAnalysis && params->faceOnAnalysis)
+        {
+          params->faceOnStatistic = 1;
+        }
+
+        // This function calculates the cohSNR time series and all of the
+        // signal based vetoes as appropriate
+        coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
+                         timeOffsets, Fplus, Fcross,
+                         j, pValues, gammaBeta, snrComps, nullSNR,
+                         traceSNR, bankVeto, autoVeto,
+                         chiSquare, subBankSize, bankOverlaps, 
+                         bankNormOverlaps, dataOverlaps, autoTempOverlaps,
+                         fcTmplt, invspec, segments, invplan, 
+                         &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
+                         frequencyRangesCross, startTime);
+     
+        verbose("Made coherent statistic for segment %d, template %d, "
+                "sky point %d at %ld \n", j, i, sp,
+                timeval_subtract(&startTime));      
+
+        /* This function construct triggers from loud events */
+        eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
+                                       cohSNR, *PTFtemplate, eventId,
+                                       spinTemplate,
+                                       pValues, gammaBeta, snrComps,
+                                       nullSNR, traceSNR, bankVeto,
+                                       autoVeto, chiSquare, PTFM,
+                                       skyPoints->data[sp].longitude,
+                                       skyPoints->data[sp].latitude,
+                                       slideIDList[j], timeOffsets);
+
+        /* FIXME: Also part of the faceAway + faceOn hack */
+        if (params->faceAwayAnalysis && params->faceOnAnalysis)
+        {
+          params->faceOnStatistic = 2; 
+
+          coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
+                         timeOffsets, Fplus, Fcross,
+                         j, pValues, gammaBeta, snrComps, nullSNR,
+                         traceSNR, bankVeto, autoVeto,
+                         chiSquare, subBankSize, bankOverlaps,
+                         bankNormOverlaps, dataOverlaps, autoTempOverlaps,
+                         fcTmplt, invspec, segments, invplan,
+                         &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
+                         frequencyRangesCross, startTime);
+
+          verbose("Made coherent statistic for segment %d, template %d, "
+                  "sky point %d at %ld \n", j, i, sp,
                   timeval_subtract(&startTime));
 
-          /* set 'segStartTime' to trigger time */
-          segStartTime = params->trigTime;
-
-          /* loop over sky points */
-          for (sp = 0; sp < numSkyPoints ; sp++)
-          {
-            for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-            {
-              /* get location in three dimensions */
-              for (ui = 0; ui < 3; ui++)
-              {
-                 detLoc[ui] = (double) detectors[ifoNumber]->location[ui];
-              }
-              /* calculate time offsets */
-              timeOffsets[ifoNumber] = (REAL4)
-                  XLALTimeDelayFromEarthCenter(detLoc,
-                                               skyPoints->data[sp].longitude,
-                                               skyPoints->data[sp].latitude,
-                                               &segStartTime);
-              /* calculate response functions */
-              XLALComputeDetAMResponse(&FplusTmp, &FcrossTmp,
-                                       detectors[ifoNumber]->response,
+          eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
+                                       cohSNR, *PTFtemplate, eventId,
+                                       spinTemplate,
+                                       pValues, gammaBeta, snrComps,
+                                       nullSNR, traceSNR, bankVeto,
+                                       autoVeto, chiSquare, PTFM,
                                        skyPoints->data[sp].longitude,
-                                       skyPoints->data[sp].latitude,0.,
-                                       XLALGreenwichMeanSiderealTime(
-                                           &segStartTime));
-              Fplus[ifoNumber] = (REAL4) FplusTmp;
-              Fcross[ifoNumber] = (REAL4) FcrossTmp;
-            }
-            if (params->faceAwayAnalysis && params->faceOnAnalysis)
-            {
-              params->faceOnStatistic = 1;
-            }
-
-            // This function calculates the cohSNR time series and all of the
-            // signal based vetoes as appropriate
-            coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
-                              timeOffsets, Fplus, Fcross,
-                              j, pValues, gammaBeta, snrComps, nullSNR,
-                              traceSNR, bankVeto, autoVeto,
-                              chiSquare, subBankSize, bankOverlaps, 
-                              bankNormOverlaps, dataOverlaps, autoTempOverlaps,
-                              fcTmplt, invspec, segments, invplan, 
-                              &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
-                              frequencyRangesCross, startTime);
-     
-            verbose("Made coherent statistic for segment %d, template %d, "
-                    "sky point %d at %ld \n", j, i, sp,
-                    timeval_subtract(&startTime));      
-
-            /* This function construct triggers from loud events */
-            eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
-                                           cohSNR, *PTFtemplate, eventId,
-                                           spinTemplate,
-                                           pValues, gammaBeta, snrComps,
-                                           nullSNR, traceSNR, bankVeto,
-                                           autoVeto, chiSquare, PTFM,
-                                           skyPoints->data[sp].longitude,
-                                           skyPoints->data[sp].latitude,
-                                           slideIDList[j], timeOffsets);
-
-            if (params->faceAwayAnalysis && params->faceOnAnalysis)
-            {
-              params->faceOnStatistic = 2; 
-
-              coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
-                              timeOffsets, Fplus, Fcross,
-                              j, pValues, gammaBeta, snrComps, nullSNR,
-                              traceSNR, bankVeto, autoVeto,
-                              chiSquare, subBankSize, bankOverlaps,
-                              bankNormOverlaps, dataOverlaps, autoTempOverlaps,
-                              fcTmplt, invspec, segments, invplan,
-                              &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
-                              frequencyRangesCross, startTime);
-
-              verbose("Made coherent statistic for segment %d, template %d, "
-                      "sky point %d at %ld \n", j, i, sp,
-                      timeval_subtract(&startTime));
-
-              eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
-                                           cohSNR, *PTFtemplate, eventId,
-                                           spinTemplate,
-                                           pValues, gammaBeta, snrComps,
-                                           nullSNR, traceSNR, bankVeto,
-                                           autoVeto, chiSquare, PTFM,
-                                           skyPoints->data[sp].longitude,
-                                           skyPoints->data[sp].latitude,
-                                           slideIDList[j], timeOffsets);
-            }
-
-            params->numEvents = XLALCountMultiInspiral(eventList);
-            verbose("There are currently %d triggers.\n", params->numEvents);
-            verbose("Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime));
-
-
-          }
-          break;
-        case ALL_SKY:
-        case TWO_DET_ALL_SKY:
-          error("All sky code not implemented yet\n"); 
-          break;
-        default:
-          error("Oops. No sky type set, Ian done broke the code.\n");
-          break;
-
-      } 
-
-      /* cluster triggers */
-      /* XLALClusterMultiInspiralTable(); */
-      /* verbose("Clustered triggers for segment %d, template %d at %ld \n",
-               j, i, time(NULL)-startTime); */
-
-      /* Then we get a bunch of memory freeing statements */
-      for (k = 0 ; k < 10 ; k++)
-      {
-        if (pValues[k])
-        {
-            XLALDestroyREAL4TimeSeries(pValues[k]);
-            pValues[k] = NULL;
+                                       skyPoints->data[sp].latitude,
+                                       slideIDList[j], timeOffsets);
         }
+
+        params->numEvents = XLALCountMultiInspiral(eventList);
+        verbose("There are currently %d triggers.\n", params->numEvents);
+        verbose("Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime));
+
       }
-      for (k = 0; k < LAL_NUM_IFO; k++)
-      {
-        if (snrComps[k])
-        {
-          XLALDestroyREAL4TimeSeries(snrComps[k]);
-          snrComps[k] = NULL;
-        }
-      }
-      for (k = 0; k < 2; k++)
-      {
-        if (gammaBeta[k])
-        {
-          XLALDestroyREAL4TimeSeries(gammaBeta[k]);
-          gammaBeta[k] = NULL;
-        }
-      }
-      if (nullSNR) XLALDestroyREAL4TimeSeries(nullSNR);
-      if (traceSNR) XLALDestroyREAL4TimeSeries(traceSNR);
-      if (cohSNR) XLALDestroyREAL4TimeSeries(cohSNR);
 
-      for (k = 0; k < LAL_NUM_IFO+1; k++)
-      {
-        if (bankVeto[k])
-        {
-          XLALDestroyREAL4TimeSeries(bankVeto[k]);
-          bankVeto[k]=NULL;
-        }
-        if (autoVeto[k])
-        {
-          XLALDestroyREAL4TimeSeries(autoVeto[k]);
-          autoVeto[k]=NULL;
-        }
-        if (chiSquare[k])
-        {
-          XLALDestroyREAL4TimeSeries(chiSquare[k]);
-          chiSquare[k]=NULL;
-        }
-      }
+      /* Free memory for temporary chisq products */
+
       if (chisqOverlaps)
       {
         for(uj = 0; uj < 2*params->numChiSquareBins; uj++)
@@ -673,8 +563,10 @@ int main(int argc, char **argv)
           frequencyRangesCross[ifoNumber] = NULL;
         }
       }
-    }
-  } // Main loop is ended here
+
+    } /* End of loop over templates */
+
+  } /* End of loop over segments */
 
   if (params->doBankVeto)
   {
@@ -690,7 +582,7 @@ int main(int argc, char **argv)
     }
   }
 
-  /* calulate number of events */
+  /* calulate number of events and cluster if needed */
   params->numEvents = XLALCountMultiInspiral(eventList);
   fprintf(stderr,"There are %d total triggers before cluster.\n", params->numEvents);
   if ( params->clusterFlag )
@@ -700,15 +592,20 @@ int main(int argc, char **argv)
     fprintf(stderr,"There are %d total triggers after cluster.\n", params->numEvents);
   }
 
+  /* Output events to xml */
   coh_PTF_output_events_xml(params->outputFile, eventList, params->injectList,\
                             procpar, time_slide_head, params);
+
+  /* Everything that follows is memory cleanup */
+
+  coh_PTF_destroy_time_series(cohSNR,nullSNR,traceSNR,bankVeto,autoVeto,\
+          chiSquare,pValues,gammaBeta);
 
   if (skyPoints->data)
     LALFree(skyPoints->data);
   if (skyPoints)
     LALFree(skyPoints);
 
-  // This function cleans up memory usage
   XLALDestroyTimeSlideTable(time_slide_head);
   LALFree(timeSlideVectors);
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invplan,channel,
@@ -792,7 +689,7 @@ void coh_PTF_statistic(
   UINT4  i, j, k, m, ifoNumber, vecLength, vecLengthTwo;
   INT4   l, timeOffsetPoints[LAL_NUM_IFO];
   REAL4  deltaT    = cohSNR->deltaT;
-  UINT4  numPoints = floor(params->segmentDuration*params->sampleRate+0.5);
+  UINT4  numPoints = params->numTimePoints;
 
   struct bankDataOverlaps *chisqOverlaps = *chisqOverlapsP;
   struct bankDataOverlaps *chisqSnglOverlaps = *chisqSnglOverlapsP;
@@ -816,52 +713,6 @@ void coh_PTF_statistic(
   if (params->numIFO == 1 || params->singlePolFlag || params->faceOnStatistic)
     csVecLengthTwo = 1;
 
-  /* These arrays are used to store the maximized quantities
-   * For non spin these are the 4 F-stat parameters (only 2 for one detector)
-   * For spin these are the P values */
-  for (i = 0 ; i < vecLengthTwo ; i++)
-  {
-    if (!pValues[i])
-    {
-      pValues[i] = XLALCreateREAL4TimeSeries("Pvalue", &cohSNR->epoch, 
-                                             cohSNR->f0, cohSNR->deltaT,
-                                             &lalDimensionlessUnit,
-                                             cohSNR->data->length);
-    }
-  }
-  if (! spinTemplate)
-  {
-    for (i = vecLengthTwo ; i < 2*vecLengthTwo ; i++)
-    {
-      if (!pValues[i])
-      {
-        pValues[i] = XLALCreateREAL4TimeSeries("Pvalue", &cohSNR->epoch,
-                                               cohSNR->f0, cohSNR->deltaT,
-                                               &lalDimensionlessUnit,
-                                               cohSNR->data->length);
-      }
-    }
-  }
-  if (spinTemplate)
-  {
-    if (!gammaBeta[0])
-    {
-      /* These store a amplitude and phase information for PTF search */
-      gammaBeta[0] = XLALCreateREAL4TimeSeries("Gamma", &cohSNR->epoch,
-                                               cohSNR->f0, cohSNR->deltaT,
-                                               &lalDimensionlessUnit,
-                                               cohSNR->data->length);
-    }
-    if (!gammaBeta[1])
-    {
-      gammaBeta[1] = XLALCreateREAL4TimeSeries("Beta", &cohSNR->epoch,
-                                               cohSNR->f0, cohSNR->deltaT,
-                                               &lalDimensionlessUnit,
-                                               cohSNR->data->length);
-    }
-  }
-
-  /* FIXME: All the time series should be outputtable */
   REAL4 u1[vecLengthTwo], u2[vecLengthTwo], v1[vecLengthTwo], v2[vecLengthTwo];
   REAL4 *v1p,*v2p,*snglv1p,*snglv2p;
   REAL4 u1N[vecLength], u2N[vecLength], v1N[vecLength], v2N[vecLength];

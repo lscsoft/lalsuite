@@ -457,7 +457,59 @@ void coh_PTF_initialize_time_series(
   REAL4TimeSeries          **traceSNRP,
   REAL4TimeSeries          **bankVeto,
   REAL4TimeSeries          **autoVeto,
-  REAL4TimeSeries          **chiSquare
+  REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **pValues,
+  REAL4TimeSeries          **gammaBeta,
+  UINT4                    spinTemplates
+);
+
+void coh_PTF_reset_time_series(
+  struct coh_PTF_params    *params,
+  LIGOTimeGPS              segStartTime,
+  REAL4TimeSeries          *cohSNR,
+  REAL4TimeSeries          *nullSNR,
+  REAL4TimeSeries          *traceSNR,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **pValues,
+  REAL4TimeSeries          **gammaBeta,
+  UINT4                    spinTemplates
+);
+
+void coh_PTF_destroy_time_series(
+  REAL4TimeSeries          *cohSNR,
+  REAL4TimeSeries          *nullSNR,
+  REAL4TimeSeries          *traceSNR,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **pValues,
+  REAL4TimeSeries          **gammaBeta
+);
+
+void coh_PTF_calculate_single_detector_filters(
+  struct coh_PTF_params      *params,
+  FindChirpTemplate          *fcTmplt,
+  REAL4FrequencySeries       **invspec,
+  REAL8Array                 **PTFM,
+  COMPLEX8VectorSequence     **PTFqVec,
+  RingDataSegments           **segments,
+  COMPLEX8FFTPlan            *invPlan,
+  UINT4                      spinTemplate,
+  UINT4                      segNum
+);
+
+void coh_PTF_calculate_null_stream_filters(
+  struct coh_PTF_params      *params,
+  FindChirpTemplate          *fcTmplt,
+  REAL4FrequencySeries       **invspec,
+  REAL8Array                 **PTFM,
+  COMPLEX8VectorSequence     **PTFqVec,
+  RingDataSegments           **segments,
+  COMPLEX8FFTPlan            *invPlan,
+  UINT4                      spinTemplate,
+  UINT4                      segNum
 );
 
 UINT4 coh_PTF_initialize_bank_veto(
@@ -489,13 +541,31 @@ UINT4 coh_PTF_initialize_auto_veto(
   struct timeval           startTime
 );
 
+void coh_PTF_calculate_bank_veto_template_filters(
+    struct coh_PTF_params   *params,
+    FindChirpTemplate       *bankFcTmplts,
+    FindChirpTemplate       *fcTmplt,
+    REAL4FrequencySeries    **invspec,
+    struct bankComplexTemplateOverlaps *bankOverlaps
+);
+
+void coh_PTF_calculate_auto_veto_template_filters(
+    struct coh_PTF_params   *params,
+    FindChirpTemplate       *fcTmplt,
+    struct bankComplexTemplateOverlaps *autoTempOverlaps,
+    REAL4FrequencySeries    **invspec,
+    COMPLEX8FFTPlan         *invplan,
+    UINT4                   timeStepPoints
+);
+
 void coh_PTF_calculate_det_stuff(
   struct coh_PTF_params   *params,
   LALDetector             **detectors,
   REAL4                   *timeOffsets,
   REAL4                   *Fplustrig,
   REAL4                   *Fcrosstrig,
-  CohPTFSkyPositions      *skyPoints
+  CohPTFSkyPositions      *skyPoints,
+  UINT4                   skyPointNum
 );
 
 void coh_PTF_calculate_bmatrix(
@@ -937,5 +1007,10 @@ void coh_PTF_set_null_input_COMPLEX8VectorSequence(
 
 void coh_PTF_set_null_input_REAL4(
   REAL4** array,
+  UINT4 length
+);
+
+void coh_PTF_set_null_input_LALDetector(
+  LALDetector** detector,
   UINT4 length
 );
