@@ -405,7 +405,7 @@ defined!\n");
       if ( stdh0 < stdh0min ) stdh0min = stdh0;
 
       /* set the MCMC h0 proposal step size at stdh0*scalefac */
-      if( inputs.mcmc.doMCMC == 1 ){
+      if( inputs.mcmc.doMCMC == 1  && inputs.mcmc.sigmas.h0 == 0. ){
         inputs.mcmc.sigmas.h0 = stdh0*inputs.mcmc.h0scale;
 
         if( inputs.mesh.maxVals.h0 == 0 )
@@ -1476,6 +1476,13 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
 
         grad = (pdfhigh-pdflow)/(h0high-h0low);
         pri += log( pdflow + grad*(prior.vars.h0 - h0low) );
+      }
+      else if( ( prior.vars.h0 > prior.h0vals->data[0] - dh0/2 ) && ( prior.vars.h0 < prior.h0vals->data[0] ) ){
+        /* if in the corners just use the corner bin value */
+        if ( ( prior.vars.ci > prior.civals->data[0] - dci/2. ) && ( prior.vars.ci < prior.civals->data[0] ) )
+          pri += log(prior.h0cipdf[0][0]);
+        else if ( ( prior.vars.ci < prior.civals->data[prior.civals->length-1] + dci/2. ) && ( prior.vars.ci > prior.civals->data[prior.civals->length-1] ) )
+          pri += log(prior.h0cipdf[0][prior.civals->length-1]);
       }
       else{
         /* if h0 is outside the h0 range then make small (but non-zero) prior fall
@@ -3584,14 +3591,31 @@ reading any correlation data!");
     }
 
     /* if there is an ellipticity that is close to 0 and Om and T0 are being
-     * searched over, then set there correlation to (almost) 1 */
-    if ( params.e > 0. && params.e < 0.001 && params.T0Err != 0. && params.w0Err != 0. ){
+     * searched over, then set their correlation to (almost) 1.
+     * Also do the same for omdot and period */
+    if ( params.e > 0. && params.e < 0.001 ){
       /* set the T0 and w0 parameters to be the first and second values in the
        * correlation matrix respectively */
-      j = 2;
+      INT4 numpar1 = 0, numpar2 = 0;
+      j = 0;
+      if( params.T0Err != 0. && params.w0Err != 0. ){
+        numpar1 = 1;
+        j += 2;
+      }
+      if( params.PbErr != 0. && params.wdotErr != 0. ){
+        j += 2;
+        numpar2 = 1;
+      }
+
       for( i = 0; i < MAXPARAMS; i++ ){
-        if ( !strcmp(paramData[i].name, "T0") ) paramData[i].matPos = 1;
-        else if ( !strcmp(paramData[i].name, "Om") ) paramData[i].matPos = 2;
+        if ( !strcmp(paramData[i].name, "T0") && numpar1 )
+          paramData[i].matPos = 1;
+        else if ( !strcmp(paramData[i].name, "Om") && numpar1 )
+          paramData[i].matPos = 2;
+        else if ( !strcmp(paramData[i].name, "Pb") && numpar2 )
+          paramData[i].matPos = 1 + numpar1*2;
+        else if ( !strcmp(paramData[i].name, "Omdt") && numpar2 )
+          paramData[i].matPos = 2 + numpar1*2;
         else if ( paramData[i].sigma != 0. ){
           j++;
           paramData[i].matPos = j;
@@ -3599,8 +3623,15 @@ reading any correlation data!");
       }
 
       /* set the strong correlation */
-      corMat->data[1] = 0.9999999;
-      corMat->data[corMat->dimLength->data[0]] = 0.9999999;
+      if ( numpar1 || numpar2 ){
+        corMat->data[1] = 0.9999999;
+        corMat->data[corMat->dimLength->data[0]] = 0.9999999;
+
+        if ( numpar1 && numpar2 ){
+          corMat->data[2*corMat->dimLength->data[0] + 3] = 0.9999999;
+          corMat->data[3*corMat->dimLength->data[0] + 2] = 0.9999999;
+        }
+      }
     }
 
     /* print out correlation matrix */
