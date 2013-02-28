@@ -162,17 +162,6 @@ typedef struct tagDopplerCoordinateSystem
   DopplerCoordinateID coordIDs[DOPPLERMETRIC_MAX_DIM];	/**< coordinate 'names' */
 } DopplerCoordinateSystem;
 
-#define DOPPLERMETRIC_MAX_DETECTORS 60	/**< should be way large enough forever */
-/** type describing a set of detectors and their relative noise-weights
- * This is only used for full multi-IFO Fstatistic-metrics
- */
-typedef struct tagMultiDetectorInfo
-{
-  UINT4 length;						/**< number N of detectors */
-  LALDetector sites[DOPPLERMETRIC_MAX_DETECTORS]; 	/**< array of N detectors */
-  REAL8 detWeights[DOPPLERMETRIC_MAX_DETECTORS];	/**< array of N detector noise-weights: must satisfy \f$\sum_{i=1}^N w_i = 1\f$ */
-} MultiDetectorInfo;
-
 /** meta-info specifying a Doppler-metric
  */
 typedef struct tagDopplerMetricParams
@@ -299,7 +288,6 @@ const CHAR *XLALDetectorMotionName ( DetectorMotionType detType );
 const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );
 const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
-int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *detWeights );
 
 gsl_matrix* XLALNaturalizeMetric( const gsl_matrix* g_ij, const DopplerMetricParams *metricParams );
 

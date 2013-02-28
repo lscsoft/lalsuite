@@ -119,12 +119,12 @@ test_XLALDopplerFstatMetric ( void )
   REAL8 Freq  = 100;
   REAL8 f1dot = 0;// -1e-8;
 
-  LALStringVector *detNames   = XLALCreateStringVector ( "H1", "L1", "V1",  NULL );
-  LALStringVector *detWeights = XLALCreateStringVector ( "1.0", "0.5", "1.5", NULL );
+  LALStringVector *detNames = XLALCreateStringVector ( "H1", "L1", "V1",  NULL );
+  LALStringVector *sqrtSX   = XLALCreateStringVector ( "1.0", "0.5", "1.5", NULL );
   MultiDetectorInfo detInfo;
-  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &detInfo, detNames, detWeights ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &detInfo, detNames, sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyStringVector ( detNames );
-  XLALDestroyStringVector ( detWeights );
+  XLALDestroyStringVector ( sqrtSX );
 
   // prepare metric parameters for modern XLALDopplerFstatMetric() and mid-old XLALOldDopplerFstatMetric()
   DopplerCoordinateSystem coordSys = { 4, { DOPPLERCOORD_FREQ, DOPPLERCOORD_ALPHA, DOPPLERCOORD_DELTA, DOPPLERCOORD_F1DOT } };

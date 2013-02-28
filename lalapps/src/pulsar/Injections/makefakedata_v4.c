@@ -48,6 +48,7 @@
 #include <lal/Random.h>
 #include <gsl/gsl_math.h>
 
+#include <lal/LALString.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/GeneratePulsarSignal.h>
@@ -1124,7 +1125,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   if ( uvar_window )
     {
-      XLALLowerCaseString ( uvar_window );	// get rid of case
+      XLALStringToLowerCase ( uvar_window );	// get rid of case
 
       if ( LALUserVarWasSet( &uvar_tukeyBeta ) && strcmp ( uvar_window, "tukey" ) )
 	{

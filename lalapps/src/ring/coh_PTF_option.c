@@ -525,11 +525,11 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   /* Set the faceOn-faceAway flag */
   if (localparams.faceOnAnalysis)
   {
-    params->faceOnStatistic = 1;
+    localparams.faceOnStatistic = 1;
   }
   else if (localparams.faceAwayAnalysis)
   {
-    params->faceOnStatistic = 2;
+    localparams.faceOnStatistic = 2;
   }
   // Otherwise it takes default value of 0
 
