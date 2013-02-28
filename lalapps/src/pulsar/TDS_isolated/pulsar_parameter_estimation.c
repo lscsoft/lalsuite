@@ -2542,7 +2542,7 @@ paramData ) ) == NULL ){
     /* if( ( varsNew.h0 < 0. || below0 == 1 || nege == 1 ) && i > 0 ){ */
     if( ( varsNew.h0 < 0. || nege == 1 ) && i > 0 ){
       if( fmod(i, input.mcmc.outputRate) == 0. && i >= burnInLength ){
-        fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
+        fprintf(fp, "%.12le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
 
         for( j = 0 ; j < nGlitches ; j++ )
@@ -2856,7 +2856,7 @@ paramData ) ) == NULL ){
 
     /* printf out chains */
     if( fmod(i, input.mcmc.outputRate) == 0. && i >= burnInLength ){
-      fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
+      fprintf(fp, "%.12le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
 
       for( j = 0 ; j < nGlitches ; j++ )

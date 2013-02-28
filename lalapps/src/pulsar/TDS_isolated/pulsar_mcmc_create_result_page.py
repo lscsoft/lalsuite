@@ -445,7 +445,7 @@ class paramdisp2:
 def dec_or_exp(f):
   if float(f) > 0.01:
     return '%.2f' % float(f)
-  else
+  else:
     return exp_str(float(f), 1)
 
 

@@ -870,6 +870,7 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
     # plot x histogram
     figx = plt.figure(figsize=(4,4),dpi=200)
     plt.step(xbins, xmarg, color='k')
+    plt.ylim(0, xmarg.max()+0.1*xmarg.max())
     plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
     plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
     figx.subplots_adjust(left=0.18, bottom=0.15) # adjust size
@@ -879,6 +880,7 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
     # plot y histogram
     figy = plt.figure(figsize=(4,4),dpi=200)
     plt.step(ybins, ymarg, color='k')
+    plt.ylim(0, ymarg.max()+0.1*ymarg.max())
     plt.xlabel(r''+paryaxis, fontsize=14, fontweight=100)
     plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
     figy.subplots_adjust(left=0.18, bottom=0.15) # adjust size
