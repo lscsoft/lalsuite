@@ -269,7 +269,7 @@ for function_name in functions:
     functions[function_name]['feature_ignore'] = '1'
 
 # determine whether return value of functions should be ignored
-func_arg_types_regexp = re.compile('^f\((.*)\)\.(p\.)?$')
+func_arg_types_regexp = re.compile('^f\((.*)\)\.(p\.)*$')
 for function_name in functions:
 
     # get function argument and return types
