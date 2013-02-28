@@ -15,6 +15,9 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   python/Makefile \
   python/__init__.py \
+  swig/Makefile \
+  swig/octave/Makefile \
+  swig/python/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
@@ -54,6 +57,9 @@ LALSUITE_ENABLE_DEBUG
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
+
+# enable SWIG wrapping modules
+LALSUITE_ENABLE_SWIG
 
 # put version/configure info in config header
 lalburst_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -131,6 +137,10 @@ LALSUITE_CHECK_LIB([LALSupport],[6.9.0],[LALOpenDataFile],[lal/FileIO.h])
 LALSUITE_CHECK_LIB([LALMetaIO],[1.0.5],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_LIB([LALSimulation],[0.6.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 
+# configure SWIG wrapping modules
+LALSUITE_USE_SWIG([XLAL LAL])
+LALSUITE_SWIG_DEPENDS([lal],[true])
+
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
@@ -146,7 +156,11 @@ AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
 ==================================================
-LALBurst has now been successfully configured
+LALBurst has now been successfully configured:
+
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+
 and will be installed under the directory:
 
 ${prefix}

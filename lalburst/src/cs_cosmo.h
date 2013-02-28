@@ -27,7 +27,14 @@
 
 #ifndef CS_COSMO_H
 #define CS_COSMO_H
+
 #include <stdlib.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 typedef struct cs_cosmo_functions {
 	double *phit;
@@ -39,10 +46,14 @@ typedef struct cs_cosmo_functions {
 	size_t  n;
 } cs_cosmo_functions_t;
 
-extern const char * cosmoname;
-extern double zeq;
-extern double H0;
 cs_cosmo_functions_t XLALCSCosmoFunctions( double *z, size_t n );
 cs_cosmo_functions_t XLALCSCosmoFunctionsAlloc( double zmin, double dlnz, size_t n );
 void XLALCSCosmoFunctionsFree(cs_cosmo_functions_t);
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
+
 #endif /* CS_COSMO_H */

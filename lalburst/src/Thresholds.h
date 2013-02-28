@@ -61,13 +61,6 @@ REAL8 XLALNoncChisqCdf (
 );
 
 
-REAL8 XLALNoncChisqCdf (
-	REAL8 chi2,
-	REAL8 dof,
-	REAL8 nonCentral
-);
-
-
 REAL8 XLALChi2Threshold(
 	REAL8 dof,
 	REAL8 falseAlarm
