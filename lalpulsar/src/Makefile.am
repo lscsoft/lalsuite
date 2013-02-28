@@ -50,7 +50,6 @@ lalpulsarinclude_HEADERS = \
 	SFTfileIO.h \
 	SFTutils.h \
 	SFTutils-LAL.h \
-	SFTutils-LAL.c	\
 	StackMetric.h \
 	Statistics.h \
 	SynthesizeCWDraws.h \
@@ -133,6 +132,9 @@ liblalpulsar_la_SOURCES = \
 	UniversalDopplerMetric.c \
 	Velocity.c \
 	$(XMLSRC)
+
+EXTRA_liblalpulsar_la_SOURCES = \
+	SFTutils-LAL.c
 
 liblalpulsar_la_LDFLAGS = -version-info $(LIBVERSION)
 
