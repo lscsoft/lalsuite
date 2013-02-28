@@ -57,7 +57,8 @@ lalpulsarinclude_HEADERS = \
 	TwoDMesh.h \
 	UniversalDopplerMetric.h \
 	Velocity.h \
-	$(XMLHDR)
+	$(XMLHDR) \
+	lalpulsarswig_test.i
 
 lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \

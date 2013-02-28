@@ -37,7 +37,8 @@ lalframeinclude_HEADERS = \
 	LALFrameLibVCSInfo.h \
 	LALFrameU.h \
 	LALFrameVCSInfo.h \
-	LowLatencyData.h
+	LowLatencyData.h \
+	lalframeswig_test.i
 
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \

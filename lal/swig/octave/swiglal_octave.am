@@ -17,9 +17,6 @@ swig_modl_src = @PACKAGE_NAME@swig_octave.cpp
 # set SWIG Octave wrapping module extension
 swig_lt_ldflags += -shrext .oct
 
-# SWIG Octave interfaces to install
-swiginclude_HEADERS += $(SWIG_OCTAVE_IFACES)
-
 # extra Octave distribution files
 EXTRA_DIST += $(swig_modl_check).m
 

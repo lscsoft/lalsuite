@@ -48,7 +48,8 @@ lalinspiralinclude_HEADERS = \
 	RingUtils.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
-	TrigScanEThincaCommon.h
+	TrigScanEThincaCommon.h \
+	lalinspiralswig_test.i
 
 lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \

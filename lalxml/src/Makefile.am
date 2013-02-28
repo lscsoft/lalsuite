@@ -7,7 +7,8 @@ lalxmlinclude_HEADERS = \
 	LALXMLLibVCSInfo.h \
 	LALXMLVCSInfo.h \
 	LALXMLVOTableCommon.h \
-	LALXMLVOTableSerializers.h
+	LALXMLVOTableSerializers.h \
+	lalxmlswig_test.i
 
 lib_LTLIBRARIES = liblalxml.la
 liblalxml_la_SOURCES = \

@@ -45,23 +45,6 @@ if SWIG_BUILD
 # delete failed targets
 rm_targets = { rm -f $@; exit 1; }
 
-# create links to SWIG interfaces
-.PHONY : swig-iface-links
-swig-iface-links :
-	@for file in $(nodist_swiginclude_HEADERS) $(swiginclude_HEADERS); do \
-		srcdir=$(abs_srcdir); \
-		builddir=$(abs_builddir); \
-		incldir=$(abs_top_builddir)/include/lal; \
-		if test ! -r $${incldir}/$${file}; then \
-			rm -f $${incldir}/$${file}; \
-			if test -f $${srcdir}/$${file}; then \
-				$(LN_S) $${srcdir}/$${file} $${incldir}; \
-			elif test -f $${builddir}/$${file}; then \
-				$(LN_S) $${builddir}/$${file} $${incldir}; \
-			fi; \
-		fi; \
-	done
-
 # generate SWIG interface file
 ../$(swig_iface) : Makefile
 	@cd .. && $(MAKE) $(swig_iface)
@@ -71,7 +54,6 @@ swig-iface-links :
 
 # generate SWIG wrapping module source
 $(swig_modl_src) : ../$(swig_iface)
-	@$(MAKE) swig-iface-links
 	@$(MKDIR_P) $(SWIG_OUTDIR)
 	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)
 

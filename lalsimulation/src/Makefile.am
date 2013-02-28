@@ -31,7 +31,8 @@ lalsimulationinclude_HEADERS = \
 	LALSimSGWB.h \
 	LALSimulationConfig.h \
 	LALSimulationLibVCSInfo.h \
-	LALSimulationVCSInfo.h
+	LALSimulationVCSInfo.h \
+	lalsimulationswig_test.i
 
 noinst_HEADERS = \
 	LALSimIMREOBFactorizedWaveform.c \

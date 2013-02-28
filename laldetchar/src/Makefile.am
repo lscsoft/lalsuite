@@ -9,7 +9,8 @@ laldetcharinclude_HEADERS = \
 	LALDetCharLibVCSInfo.h \
 	LALDetCharRange.h \
 	LALDetCharHveto.h \
-	LALDetCharVCSInfo.h
+	LALDetCharVCSInfo.h \
+	laldetcharswig_test.i
 
 lib_LTLIBRARIES = liblaldetchar.la
 liblaldetchar_la_SOURCES = \
