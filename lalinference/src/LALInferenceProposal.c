@@ -1630,10 +1630,10 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
    */
   newDec = asin(kp[2]);
   newRA  = atan2(kp[1],kp[0]) + gmst;
-  if(newRA < 0.0)        newRA += LAL_TWOPI;
-  if(newRA >= LAL_TWOPI) newRA -= LAL_TWOPI;
-
-
+  if (newRA < 0.0)
+    newRA += LAL_TWOPI;
+  else if (newRA >= LAL_TWOPI)
+    newRA -= LAL_TWOPI;
   /*
    compute new geocenter time using
    fixed arrival time at IFO1 (arbitrary)
