@@ -18,6 +18,7 @@ lalinferenceinclude_HEADERS = \
 	LALInferenceLibVCSInfo.h \
 	LALInferenceInit.h \
 	LALInferenceVCSInfo.h \
+	lalinferenceswig_test.i \
 	$(XMLHDR)
 
 lib_LTLIBRARIES = liblalinference.la
@@ -54,7 +55,9 @@ lalinference-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@printf "$(SWIG_USER_ENV)" >>$@
 
 lalinference-user-env.csh lalinference-user-env.sh: lalinference-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
@@ -75,3 +78,6 @@ gen-LALInferenceVCSInfo.h :
 endif
 
 @LAL_HEADER_LINK@
+
+swig_headers = $(lalinferenceinclude_HEADERS)
+include $(top_srcdir)/swig/swiglal_header.am

@@ -13,6 +13,9 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  swig/Makefile \
+  swig/octave/Makefile \
+  swig/python/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
@@ -59,6 +62,9 @@ LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALXML
+
+# enable SWIG wrapping modules
+LALSUITE_ENABLE_SWIG
 
 # put version/configure info in config header
 lalinference_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -150,6 +156,10 @@ LALSUITE_CHECK_LIB([LALPulsar],[1.6.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
+# configure SWIG wrapping modules
+LALSUITE_USE_SWIG([XLALInference LALInference XLAL LAL])
+LALSUITE_SWIG_DEPENDS([lal],[true])
+
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
@@ -163,6 +173,8 @@ echo "
 LALInference has now been successfully configured:
 
 * LALXML library support is $LALXML_ENABLE_VAL
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
 and will be installed under the directory:
 

@@ -41,35 +41,35 @@
 
 #include <lal/LALStdlib.h>
 
-const char *cycleArrayName = "Proposal Cycle";
-const char *cycleArrayLengthName = "Proposal Cycle Length";
-const char *cycleArrayCounterName = "Proposal Cycle Counter";
+const char *const cycleArrayName = "Proposal Cycle";
+const char *const cycleArrayLengthName = "Proposal Cycle Length";
+const char *const cycleArrayCounterName = "Proposal Cycle Counter";
 
-const char *LALInferenceCurrentProposalName = "Current Proposal";
+const char *const LALInferenceCurrentProposalName = "Current Proposal";
 
 /* Proposal Names */
-const char *singleAdaptProposalName = "Single";
-const char *singleProposalName = "Single";
-const char *orbitalPhaseJumpName = "OrbitalPhase";
-const char *inclinationDistanceName = "InclinationDistance";
-const char *covarianceEigenvectorJumpName = "CovarianceEigenvector";
-const char *skyLocWanderJumpName = "SkyLocWander";
-const char *differentialEvolutionFullName = "DifferentialEvolutionFull";
-const char *differentialEvolutionMassesName = "DifferentialEvolutionMasses";
-const char *differentialEvolutionSpinsName = "DifferentialEvolutionSpins";
-const char *differentialEvolutionPhysicalSpinsName = "DifferentialEvolutionPhysicalSpins";
-const char *differentialEvolutionExtrinsicName = "DifferentialEvolutionExtrinsic";
-const char *drawApproxPriorName = "DrawApproxPrior";
-const char *skyReflectDetPlaneName = "SkyReflectDetPlane";
-const char *skyRingProposalName = "SkyRingProposal";
-const char *PSDFitJumpName = "PSDFitJump";
-const char *rotateSpinsName = "RotateSpins";
-const char *polarizationPhaseJumpName = "PolarizationPhase";
-const char *polarizationCorrPhaseJumpName = "CorrPolarizationPhase";
-const char *distanceQuasiGibbsProposalName = "DistanceQuasiGibbs";
-const char *orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
-const char *extrinsicParamProposalName = "ExtrinsicParamProposal";
-const char *KDNeighborhoodProposalName = "KDNeighborhood";
+const char *const singleAdaptProposalName = "Single";
+const char *const singleProposalName = "Single";
+const char *const orbitalPhaseJumpName = "OrbitalPhase";
+const char *const inclinationDistanceName = "InclinationDistance";
+const char *const covarianceEigenvectorJumpName = "CovarianceEigenvector";
+const char *const skyLocWanderJumpName = "SkyLocWander";
+const char *const differentialEvolutionFullName = "DifferentialEvolutionFull";
+const char *const differentialEvolutionMassesName = "DifferentialEvolutionMasses";
+const char *const differentialEvolutionSpinsName = "DifferentialEvolutionSpins";
+const char *const differentialEvolutionPhysicalSpinsName = "DifferentialEvolutionPhysicalSpins";
+const char *const differentialEvolutionExtrinsicName = "DifferentialEvolutionExtrinsic";
+const char *const drawApproxPriorName = "DrawApproxPrior";
+const char *const skyReflectDetPlaneName = "SkyReflectDetPlane";
+const char *const skyRingProposalName = "SkyRingProposal";
+const char *const PSDFitJumpName = "PSDFitJump";
+const char *const rotateSpinsName = "RotateSpins";
+const char *const polarizationPhaseJumpName = "PolarizationPhase";
+const char *const polarizationCorrPhaseJumpName = "CorrPolarizationPhase";
+const char *const distanceQuasiGibbsProposalName = "DistanceQuasiGibbs";
+const char *const orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
+const char *const extrinsicParamProposalName = "ExtrinsicParamProposal";
+const char *const KDNeighborhoodProposalName = "KDNeighborhood";
 
 /* Mode hopping fraction for the differential evoultion proposals. */
 static const REAL8 modeHoppingFrac = 1.0;
