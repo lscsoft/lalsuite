@@ -312,7 +312,7 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
 }
 
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                              LALInferenceTemplateFunction template)
+                              LALInferenceTemplateFunction templt)
 /***************************************************************/
 /* (log-) likelihood function.                                 */
 /* Returns the non-normalised logarithmic likelihood.          */
@@ -458,7 +458,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      template(dataPtr);
+      templt(dataPtr);
       if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
           return(-DBL_MAX);
 
@@ -658,7 +658,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 /***************************************************************/
 
 REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
-                                      LALInferenceTemplateFunction template)
+                                      LALInferenceTemplateFunction templt)
 {
   //static int timeDomainWarning = 0;
   double Fplus, Fcross;
@@ -748,7 +748,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      template(dataPtr);
+      templt(dataPtr);
 
       if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
 	/* TD --> FD. */
@@ -867,7 +867,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
 
 
 REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                              LALInferenceTemplateFunction template)
+                              LALInferenceTemplateFunction templt)
 /***************************************************************/
 /* (log-) likelihood function.                                 */
 /* Returns the non-normalised logarithmic likelihood.          */
@@ -895,7 +895,7 @@ REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, 
 	else
 		freqModelResponse= XLALResizeCOMPLEX16Vector(freqModelResponse, ifoPtr->freqData->data->length);
 	/*compute the response*/
-	LALInferenceComputeFreqDomainResponse(currentParams, ifoPtr, template, freqModelResponse);
+	LALInferenceComputeFreqDomainResponse(currentParams, ifoPtr, templt, freqModelResponse);
 	/*if(residual==NULL)
 		residual=XLALCreateCOMPLEX16Vector(ifoPtr->freqData->data->length);
 	else
@@ -917,7 +917,7 @@ REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, 
   return(loglikeli);
 }
 
-REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferenceIFOData * data, LALInferenceTemplateFunction template)
+REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferenceIFOData * data, LALInferenceTemplateFunction templt)
 /***************************************************************/
 /* Chi-Square function.                                        */
 /* Returns the chi square of a template:                       */
@@ -951,7 +951,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
     else
       freqModelResponse= XLALResizeCOMPLEX16Vector(freqModelResponse, ifoPtr->freqData->data->length);
     /*compute the response*/
-    LALInferenceComputeFreqDomainResponse(currentParams, ifoPtr, template, freqModelResponse);
+    LALInferenceComputeFreqDomainResponse(currentParams, ifoPtr, templt, freqModelResponse);
 
     deltaT = ifoPtr->timeData->deltaT;
     deltaF = 1.0 / (((REAL8)ifoPtr->timeData->data->length) * deltaT);
@@ -1038,7 +1038,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
 }
 
 //REAL8 LALInferenceTimeDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-//                              LALInferenceTemplateFunction template)
+//                              LALInferenceTemplateFunction templt)
 ///***************************************************************/
 ///* Time domain (log-) likelihood function.                     */
 ///* Returns the non-normalised logarithmic likelihood.          */
@@ -1093,7 +1093,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
 //}
 
 void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData * dataPtr, 
-                              LALInferenceTemplateFunction template, COMPLEX16Vector *freqWaveform)
+                              LALInferenceTemplateFunction templt, COMPLEX16Vector *freqWaveform)
 /***************************************************************/
 /* Frequency-domain single-IFO response computation.           */
 /* Computes response for a given template.                     */
@@ -1195,7 +1195,7 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      template(dataPtr);
+      templt(dataPtr);
 
       if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
 	/* TD --> FD. */

@@ -304,11 +304,11 @@ typedef REAL8 (*LALInferencePriorFunction) (struct tagLALInferenceRunState *runS
 //only once if possible, unless necessary because different IFOs 
 //have different data lengths or sampling rates 
 /** Type declaration for likelihood function
- * Computes p(\param data | \param currentParams, \param template)
- * \param template is a LALInferenceTemplateFunction defined below
+ * Computes p(\param data | \param currentParams, \param templt)
+ * \param templt is a LALInferenceTemplateFunction defined below
  */
 typedef REAL8 (*LALInferenceLikelihoodFunction) (LALInferenceVariables *currentParams,
-        struct tagLALInferenceIFOData * data, LALInferenceTemplateFunction template);
+        struct tagLALInferenceIFOData * data, LALInferenceTemplateFunction templt);
 
 /** Perform one step of an algorithm, replaces \param runState ->currentParams */
 typedef void (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
@@ -334,7 +334,7 @@ tagLALInferenceRunState
   LALInferencePriorFunction          prior; /** The prior for the parameters */
   LALInferenceLikelihoodFunction     likelihood; /** The likelihood function */
   LALInferenceProposalFunction       proposal; /** The proposal function */
-  LALInferenceTemplateFunction       template; /** The template generation function */
+  LALInferenceTemplateFunction       templt; /** The template generation function */
   LALInferenceLogFunction            logsample; /** Log sample, i.e. to disk */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
   LALInferenceVariables              *currentParams, /** The current parameters */
@@ -558,15 +558,15 @@ double LALInferenceKDLogCellEigenVolume(LALInferenceKDTree *cell);
 
 /** Fills in the given REAL8 array with the parameter values from
     params; the ordering of the variables is taken from the order of
-    the non-fixed variables in template.  It is an error if pt does
+    the non-fixed variables in \param templt.  It is an error if pt does
     not point to enough storage to store all the non-fixed parameters
-    from template and params. */
-void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template);
+    from \param templt and params. */
+void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *templt);
 
 /** Fills in the non-fixed variables in params from the given REAL8
     array.  The ordering of variables is given by the order of the
-    non-fixed variables in template. */
-void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template);
+    non-fixed variables in \param templt. */
+void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *templt);
 
 /** Draws a \c pt uniformly from a randomly chosen cell of \c
     tree. The chosen cell will be chosen to have (as nearly as

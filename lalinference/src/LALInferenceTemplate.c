@@ -2264,7 +2264,7 @@ static void destroyCoherentGW( CoherentGW *waveform )
 
 
 void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-					LALInferenceTemplateFunction template, const char *filename)
+					LALInferenceTemplateFunction templt, const char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
 /* File contains real & imaginary parts of plus & cross components.      */
 /* Template amplitude is scaled to 1Mpc distance.                        */
@@ -2277,7 +2277,7 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
   LALInferenceCopyVariables(currentParams, data->modelParams);
   dataPtr = data;
   while (dataPtr != NULL) { /* this loop actually does nothing (yet) here. */
-    template(data);
+    templt(data);
     if (data->modelDomain == LAL_SIM_DOMAIN_TIME)
       LALInferenceExecuteFT(data);
 
@@ -2304,7 +2304,7 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
 
 
 void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-					LALInferenceTemplateFunction template, const char *filename)
+					LALInferenceTemplateFunction templt, const char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
 /* File contains real & imaginary parts of plus & cross components.      */
 /* Template amplitude is scaled to 1Mpc distance.                        */
@@ -2317,7 +2317,7 @@ void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LA
   LALInferenceCopyVariables(currentParams, data->modelParams);
   dataPtr = data;
   while (dataPtr != NULL) { /* this loop actually does nothing (yet) here. */
-    template(data);
+    templt(data);
     if (data->modelDomain == LAL_SIM_DOMAIN_FREQUENCY)
       LALInferenceExecuteInvFT(data);
 

@@ -2004,7 +2004,7 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
     REAL8 logD2 = log(d2);
     LALInferenceSetVariable(proposedParams, "logdistance", &logD2);
   }
-  REAL8 L12 = runState->likelihood(proposedParams, runState->data, runState->template);
+  REAL8 L12 = runState->likelihood(proposedParams, runState->data, runState->templt);
 
   REAL8 u2 = u0*2.0;
   REAL8 d12 = 1.0/u2;
@@ -2014,7 +2014,7 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
     REAL8 logD12 = log(d12);
     LALInferenceSetVariable(proposedParams, "logdistance", &logD12);
   }
-  REAL8 L2 = runState->likelihood(proposedParams, runState->data, runState->template);
+  REAL8 L2 = runState->likelihood(proposedParams, runState->data, runState->templt);
   
   /* Coefficients of quadratic L(u) = A + B*u + C*u^2 */
   REAL8 B = -(L2 + 4.0*L12 - 5.0*L0)/u0;
@@ -2068,7 +2068,7 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
     LALInferenceSetVariable(proposedParams, "logdistance", &logDNew);
   }
 
-  REAL8 LNew = runState->likelihood(proposedParams, runState->data, runState->template);
+  REAL8 LNew = runState->likelihood(proposedParams, runState->data, runState->templt);
 
   /* Store our new sample and set jump probability. */
   if (distParam == USES_DISTANCE_VARIABLE) {
@@ -2111,12 +2111,12 @@ void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, 
   dPhi1 = 2.0*M_PI/3.0;
   phi1 = fmod(phi0 + dPhi1, 2.0*M_PI);
   LALInferenceSetVariable(proposedParams, "phase", &phi1);
-  L1 = runState->likelihood(proposedParams, runState->data, runState->template);
+  L1 = runState->likelihood(proposedParams, runState->data, runState->templt);
 
   dPhi2 = 4.0*M_PI/3.0;
   phi2 = fmod(phi0 + dPhi2, 2.0*M_PI);
   LALInferenceSetVariable(proposedParams, "phase", &phi2);
-  L2 = runState->likelihood(proposedParams, runState->data, runState->template);
+  L2 = runState->likelihood(proposedParams, runState->data, runState->templt);
 
   /* log(L) = A + C*cos(dPhi) + S*sin(dPhi) */
   REAL8 c0 = cos(dPhi0), c1 = cos(dPhi1), c2 = cos(dPhi2);
@@ -2180,7 +2180,7 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
   }
   
   LALInferenceKDTree *tree = *(LALInferenceKDTree **)LALInferenceGetVariable(proposalArgs, "kDTree");
-  LALInferenceVariables *template = *(LALInferenceVariables **)LALInferenceGetVariable(proposalArgs, "kDTreeVariableTemplate");
+  LALInferenceVariables *templt = *(LALInferenceVariables **)LALInferenceGetVariable(proposalArgs, "kDTreeVariableTemplate");
   /* If tree has zero points, bail. */
   if (tree->npts == 0) {
     LALInferenceSetLogProposalRatio(runState, 0.0);
@@ -2191,11 +2191,11 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
   REAL8 *proposedPt = XLALCalloc(tree->dim, sizeof(REAL8));
 
   /* Get the coordinates of the current point. */
-  LALInferenceKDVariablesToREAL8(runState->currentParams, currentPt, template);
+  LALInferenceKDVariablesToREAL8(runState->currentParams, currentPt, templt);
 
   /* A randomly-chosen point from those in the tree. */
   LALInferenceKDDrawEigenFrame(runState->GSLrandom, tree, proposedPt, NCell);
-  LALInferenceKDREAL8ToVariables(proposedParams, proposedPt, template);
+  LALInferenceKDREAL8ToVariables(proposedParams, proposedPt, templt);
 
   REAL8 logPropRatio = LALInferenceKDLogProposalRatio(tree, currentPt, proposedPt, NCell);
 

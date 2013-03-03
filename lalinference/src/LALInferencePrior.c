@@ -1175,7 +1175,7 @@ void LALInferenceDrawFromPrior( LALInferenceVariables *output,
       *(LALInferenceKDTree **)LALInferenceGetVariable(priorArgs, "kDTreePrior");
     
     /* get parameter template */
-    LALInferenceVariables *template = 
+    LALInferenceVariables *templt = 
       *(LALInferenceVariables **)LALInferenceGetVariable(priorArgs,
                                                          "kDTreePriorTemplate");
     
@@ -1191,7 +1191,7 @@ void LALInferenceDrawFromPrior( LALInferenceVariables *output,
     /* A randomly-chosen point from those in the tree. */
     //LALInferenceKDDrawFromBox(rdm, tree, proposedPt, Ncell);
     LALInferenceKDDrawEigenFrame(rdm, tree, proposedPt, Ncell);
-    LALInferenceKDREAL8ToVariables(output, proposedPt, template);
+    LALInferenceKDREAL8ToVariables(output, proposedPt, templt);
   }
   else{
     for(;item;item=item->next){

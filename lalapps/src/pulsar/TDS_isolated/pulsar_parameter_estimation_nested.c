@@ -334,7 +334,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   runState.prior = &priorFunction;
   
   /* set signal model/template */
-  runState.template = get_pulsar_model;
+  runState.templt = get_pulsar_model;
  
   /* set output style (change this when the code if fixed for using XML) */
   runState.logsample = LALInferenceLogSampleToFile;
@@ -3769,7 +3769,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   /* make sure that the signal model in runState->data is that of the loudest 
    * signal */
   REAL8 logLnew = runState->likelihood( loudestParams, runState->data, 
-                                        runState->template);
+                                        runState->templt);
   
   if ( logLnew != *(REAL8 *)LALInferenceGetVariable( 
     runState->livePoints[Nlive-1], "logL" ) ){

@@ -1832,8 +1832,8 @@ double LALInferenceKDLogCellEigenVolume(LALInferenceKDTree *cell) {
   return logVol;
 }
 
-void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template) {
-  LALInferenceVariableItem *templateItem = template->head;
+void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *templt) {
+  LALInferenceVariableItem *templateItem = templt->head;
   size_t i = 0;
   while (templateItem != NULL) {
     if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 
@@ -1845,8 +1845,8 @@ void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LA
   }
 }
 
-void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template) {
-  LALInferenceVariableItem *templateItem = template->head;
+void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *templt) {
+  LALInferenceVariableItem *templateItem = templt->head;
   size_t i = 0;
   while (templateItem != NULL) {
     if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 
