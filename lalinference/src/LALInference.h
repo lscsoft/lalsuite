@@ -266,7 +266,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
 //typedef void (LALTemplateFunction) (LALInferenceVariables *currentParams, struct tagLALInferenceIFOData *data); //Parameter Set is modelParams of LALInferenceIFOData
 /** Type declaration for template function, which operates on
  a LALInferenceIFOData structure \param *data */
-typedef void (LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *data);
+typedef void (*LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *data);
 
 
 /** Jump proposal distribution
@@ -278,7 +278,7 @@ typedef void (LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *data
  * distribution functions with various probabilities to allow for multiple
  * jump proposal distributions
  */
-typedef void (LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
+typedef void (*LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
 	LALInferenceVariables *proposedParams);
 
 /** Jump proposal statistics
@@ -296,7 +296,7 @@ tagLALInferenceProposalStatistics
 /** Type declaration for prior function which returns p(\param params)
   * Can depend on \param runState ->priorArgs
   */
-typedef REAL8 (LALInferencePriorFunction) (struct tagLALInferenceRunState *runState,
+typedef REAL8 (*LALInferencePriorFunction) (struct tagLALInferenceRunState *runState,
 	LALInferenceVariables *params);
 
 //Likelihood calculator 
@@ -307,20 +307,20 @@ typedef REAL8 (LALInferencePriorFunction) (struct tagLALInferenceRunState *runSt
  * Computes p(\param data | \param currentParams, \param template)
  * \param template is a LALInferenceTemplateFunction defined below
  */
-typedef REAL8 (LALInferenceLikelihoodFunction) (LALInferenceVariables *currentParams,
-        struct tagLALInferenceIFOData * data, LALInferenceTemplateFunction *template);
+typedef REAL8 (*LALInferenceLikelihoodFunction) (LALInferenceVariables *currentParams,
+        struct tagLALInferenceIFOData * data, LALInferenceTemplateFunction template);
 
 /** Perform one step of an algorithm, replaces \param runState ->currentParams */
-typedef void (LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
+typedef void (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
 
 /** Type declaration for an algorithm function which is called by the driver code
  * The user must initialise runState before use. The Algorithm manipulates
  * \param runState to do its work
  */
-typedef void (LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState);
+typedef void (*LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState);
 
 /** Type declaration for output logging function, can be user-declared */
-typedef void (LALInferenceLogFunction) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
+typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
 
 /** Structure containing inference run state
  * This includes pointers to the function types required to run
@@ -329,13 +329,13 @@ typedef struct
 tagLALInferenceRunState
 {
   ProcessParamsTable        *commandLine; /** A ProcessParamsTable with command line arguments */
-  LALInferenceAlgorithm              *algorithm; /** The algorithm function */
-  LALInferenceEvolveOneStepFunction  *evolve; /** The algorithm's single iteration function */
-  LALInferencePriorFunction          *prior; /** The prior for the parameters */
-  LALInferenceLikelihoodFunction     *likelihood; /** The likelihood function */
-  LALInferenceProposalFunction       *proposal; /** The proposal function */
-  LALInferenceTemplateFunction       *template; /** The template generation function */
-  LALInferenceLogFunction	     *logsample; /** Log sample, i.e. to disk */
+  LALInferenceAlgorithm              algorithm; /** The algorithm function */
+  LALInferenceEvolveOneStepFunction  evolve; /** The algorithm's single iteration function */
+  LALInferencePriorFunction          prior; /** The prior for the parameters */
+  LALInferenceLikelihoodFunction     likelihood; /** The likelihood function */
+  LALInferenceProposalFunction       proposal; /** The proposal function */
+  LALInferenceTemplateFunction       template; /** The template generation function */
+  LALInferenceLogFunction            logsample; /** Log sample, i.e. to disk */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
   LALInferenceVariables              *currentParams, /** The current parameters */
     *priorArgs,                                      /** Any special arguments for the prior function */

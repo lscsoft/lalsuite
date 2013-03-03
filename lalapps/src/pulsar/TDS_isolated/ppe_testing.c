@@ -178,7 +178,7 @@ void gridOutput( LALInferenceRunState *runState ){
 REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
                                     LALInferenceIFOData *data,
                                     LALInferenceTemplateFunction UNUSED
-                                      *get_model ){
+                                      get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
   
   REAL8 like_mean = 0.5;

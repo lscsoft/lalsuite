@@ -728,7 +728,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 /* Calculate the autocorrelation function of the sampler (runState->evolve) for each parameter
  * Evolves the sample starting with the value passed in temp, with a maximum of max_iterations steps.
  Return the ACL for each parameter as a LALInferenceVariables */
-LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction *evolve)
+LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction evolve)
 {
   ProcessParamsTable *ppt=NULL;
   char chainfilename[128]="";
@@ -888,9 +888,9 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 UINT4 checkForSingleAdapt(LALInferenceRunState *runState)
 {
   UINT4 i = 0;
-  LALInferenceProposalFunction **cycle = NULL;
+  LALInferenceProposalFunction *cycle = NULL;
   LALInferenceVariables *propArgs = runState->proposalArgs;
-  cycle = *((LALInferenceProposalFunction ***)LALInferenceGetVariable(propArgs, cycleArrayName));
+  cycle = *((LALInferenceProposalFunction **)LALInferenceGetVariable(propArgs, cycleArrayName));
   
   /* If there is not a proposal counter, put one into the variables, initialized to zero. */
   if (!LALInferenceCheckVariable(propArgs, cycleArrayCounterName)) {

@@ -56,7 +56,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState);
 
 /** Compute the autocorrelation length from the sampler at the current global iteration */
-LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction *evolve);
+LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction evolve);
 
 /** Perform one MCMC iteration on runState->currentParams. Return 1 if accepted or 0 if not */
 UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState);

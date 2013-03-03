@@ -2264,7 +2264,7 @@ static void destroyCoherentGW( CoherentGW *waveform )
 
 
 void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-					LALInferenceTemplateFunction *template, const char *filename)
+					LALInferenceTemplateFunction template, const char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
 /* File contains real & imaginary parts of plus & cross components.      */
 /* Template amplitude is scaled to 1Mpc distance.                        */
@@ -2304,7 +2304,7 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
 
 
 void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-					LALInferenceTemplateFunction *template, const char *filename)
+					LALInferenceTemplateFunction template, const char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
 /* File contains real & imaginary parts of plus & cross components.      */
 /* Template amplitude is scaled to 1Mpc distance.                        */

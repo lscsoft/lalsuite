@@ -140,11 +140,11 @@
 
 /** For testing purposes (for instance sampling the prior), likelihood that returns 0.0 = log(1) every
  time.  Activated with the --zeroLogLike command flag. */
-REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables UNUSED *currentParams, LALInferenceIFOData UNUSED *data, LALInferenceTemplateFunction UNUSED *template) {
+REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables UNUSED *currentParams, LALInferenceIFOData UNUSED *data, LALInferenceTemplateFunction UNUSED template) {
   return 0.0;
 }
 
-REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction UNUSED *template)
+REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction UNUSED template)
 /***************************************************************/
 /* (log-) likelihood function.                                 */
 /* Returns the non-normalised logarithmic likelihood           */
@@ -312,7 +312,7 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
 }
 
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                              LALInferenceTemplateFunction *template)
+                              LALInferenceTemplateFunction template)
 /***************************************************************/
 /* (log-) likelihood function.                                 */
 /* Returns the non-normalised logarithmic likelihood.          */
@@ -658,7 +658,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 /***************************************************************/
 
 REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
-                                      LALInferenceTemplateFunction *template)
+                                      LALInferenceTemplateFunction template)
 {
   //static int timeDomainWarning = 0;
   double Fplus, Fcross;
@@ -867,7 +867,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
 
 
 REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                              LALInferenceTemplateFunction *template)
+                              LALInferenceTemplateFunction template)
 /***************************************************************/
 /* (log-) likelihood function.                                 */
 /* Returns the non-normalised logarithmic likelihood.          */
@@ -917,7 +917,7 @@ REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, 
   return(loglikeli);
 }
 
-REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferenceIFOData * data, LALInferenceTemplateFunction *template)
+REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferenceIFOData * data, LALInferenceTemplateFunction template)
 /***************************************************************/
 /* Chi-Square function.                                        */
 /* Returns the chi square of a template:                       */
@@ -1038,7 +1038,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
 }
 
 //REAL8 LALInferenceTimeDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-//                              LALInferenceTemplateFunction *template)
+//                              LALInferenceTemplateFunction template)
 ///***************************************************************/
 ///* Time domain (log-) likelihood function.                     */
 ///* Returns the non-normalised logarithmic likelihood.          */
@@ -1093,7 +1093,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
 //}
 
 void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData * dataPtr, 
-                              LALInferenceTemplateFunction *template, COMPLEX16Vector *freqWaveform)
+                              LALInferenceTemplateFunction template, COMPLEX16Vector *freqWaveform)
 /***************************************************************/
 /* Frequency-domain single-IFO response computation.           */
 /* Computes response for a given template.                     */
@@ -1734,7 +1734,7 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
 
 REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams, 
                                                   LALInferenceIFOData UNUSED *data, 
-                                                  LALInferenceTemplateFunction UNUSED *template) {
+                                                  LALInferenceTemplateFunction UNUSED template) {
   const INT4 DIM = 15;
   static gsl_matrix *LUCM = NULL;
   static gsl_permutation *LUCMPerm = NULL;
@@ -1775,7 +1775,7 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
 
 REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
                                                   LALInferenceIFOData UNUSED *data,
-                                                  LALInferenceTemplateFunction UNUSED *template) {
+                                                  LALInferenceTemplateFunction UNUSED template) {
   const INT4 DIM = 15;
   const INT4 MODES = 2;
   INT4 i, mode;
@@ -1834,7 +1834,7 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
 
 REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
                                           LALInferenceIFOData UNUSED *data,
-                                          LALInferenceTemplateFunction UNUSED *template) {
+                                          LALInferenceTemplateFunction UNUSED template) {
   const INT4 DIM = 15;
   REAL8 x[DIM];
 

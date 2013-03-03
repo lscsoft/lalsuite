@@ -128,11 +128,11 @@ LALInferenceSetLogProposalRatio(LALInferenceRunState *runState, REAL8 logP) {
 }
 
 void
-LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction *prop, UINT4 weight) {
+LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction prop, UINT4 weight) {
   const char *fname = "LALInferenceAddProposalToCycle";
 
   UINT4 length = 0;
-  LALInferenceProposalFunction **cycle = NULL;
+  LALInferenceProposalFunction *cycle = NULL;
   LALInferenceVariables *propArgs = runState->proposalArgs;
   LALInferenceVariables *propStats = runState->proposalStats;
 
@@ -146,9 +146,9 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propN
     UINT4 i;
 
     length = *((UINT4 *)LALInferenceGetVariable(propArgs, cycleArrayLengthName));
-    cycle = *((LALInferenceProposalFunction ***)LALInferenceGetVariable(propArgs, cycleArrayName));
+    cycle = *((LALInferenceProposalFunction **)LALInferenceGetVariable(propArgs, cycleArrayName));
 
-    cycle = XLALRealloc(cycle, (length+weight)*sizeof(LALInferenceProposalFunction *));
+    cycle = XLALRealloc(cycle, (length+weight)*sizeof(LALInferenceProposalFunction));
     if (cycle == NULL) {
       XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
       exit(1);
@@ -168,7 +168,7 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propN
     
     length = weight;
 
-    cycle = XLALMalloc(length*sizeof(LALInferenceProposalFunction *));
+    cycle = XLALMalloc(length*sizeof(LALInferenceProposalFunction));
     if (cycle == NULL) {
       XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
       exit(1);
@@ -200,7 +200,7 @@ void
 LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState) {
   const char *fname = "LALInferenceRandomizeProposalCycle";
   UINT4 length = 0;
-  LALInferenceProposalFunction **cycle = NULL;
+  LALInferenceProposalFunction *cycle = NULL;
   LALInferenceVariables *propArgs = runState->proposalArgs;
 
   UINT4 i;
@@ -210,13 +210,13 @@ LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState) {
     exit(1);
   }
 
-  cycle = *((LALInferenceProposalFunction ***)LALInferenceGetVariable(propArgs, cycleArrayName));
+  cycle = *((LALInferenceProposalFunction **)LALInferenceGetVariable(propArgs, cycleArrayName));
   length = *((UINT4 *)LALInferenceGetVariable(propArgs, cycleArrayLengthName));
 
   for (i = length - 1; i > 0; i--) {
     /* Fill in array from right to left, chosen randomly from remaining proposals. */
     UINT4 j;
-    LALInferenceProposalFunction *prop;
+    LALInferenceProposalFunction prop;
 
     j = gsl_rng_uniform_int(runState->GSLrandom, i+1);
     prop = cycle[j];
@@ -261,7 +261,7 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
   const char *fname = "LALInferenceCyclicProposal";
   UINT4 length = 0;
   UINT4 i = 0;
-  LALInferenceProposalFunction **cycle = NULL;
+  LALInferenceProposalFunction *cycle = NULL;
   LALInferenceVariables *propArgs = runState->proposalArgs;
 
   /* Must have cycle array and cycle array length in propArgs. */
@@ -271,7 +271,7 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
   }
 
   length = *((UINT4 *)LALInferenceGetVariable(propArgs, cycleArrayLengthName));
-  cycle = *((LALInferenceProposalFunction ***)LALInferenceGetVariable(propArgs, cycleArrayName));
+  cycle = *((LALInferenceProposalFunction **)LALInferenceGetVariable(propArgs, cycleArrayName));
 
   /* If there is not a proposal counter, put one into the variables, initialized to zero. */
   if (!LALInferenceCheckVariable(propArgs, cycleArrayCounterName)) {
@@ -299,7 +299,7 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState) {
   LALInferenceVariables *propArgs = runState->proposalArgs;
   
   if (LALInferenceCheckVariable(propArgs, cycleArrayName)) {
-    LALInferenceProposalFunction **cycle = *((LALInferenceProposalFunction ***)LALInferenceGetVariable(propArgs, cycleArrayName));
+    LALInferenceProposalFunction *cycle = *((LALInferenceProposalFunction **)LALInferenceGetVariable(propArgs, cycleArrayName));
     XLALFree(cycle);
     LALInferenceRemoveVariable(propArgs, cycleArrayName);
   }

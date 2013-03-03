@@ -124,7 +124,7 @@ extern const char *LALInferenceCurrentProposalName;
     LALInferenceRandomizeProposalCycle() to randomize the order of
     sub-proposal application. */
 void
-LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction *prop, UINT4 weight);
+LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction prop, UINT4 weight);
 
 /** Randomizes the order of the proposals in the proposal cycle. */
 void 
