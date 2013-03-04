@@ -1053,6 +1053,31 @@ XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed )
 } /* XLALAddGaussianNoise() */
 
 
+
+/**
+ * Destroy a MultiREAL4TimeSeries, NULL-robust
+ */
+void
+XLALDestroyMultiREAL4TimeSeries ( MultiREAL4TimeSeries *multiTS )
+{
+  if ( !multiTS ) {
+    return;
+  }
+
+  UINT4 numDet = multiTS->length;
+  for ( UINT4 X=0; X < numDet; X ++ )
+    {
+      XLALDestroyREAL4TimeSeries ( multiTS->data[X] );
+    }
+
+  XLALFree ( multiTS->data );
+  XLALFree ( multiTS );
+
+  return;
+
+} // XLALDestroyMultiREAL4TimeSeries()
+
+
 /* ***********************************************************************
  * the following are INTERNAL FUNCTIONS not to be called outside of this
  * module
