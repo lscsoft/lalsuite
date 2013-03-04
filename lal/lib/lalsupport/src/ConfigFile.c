@@ -745,6 +745,10 @@ cleanConfig (CHARSequence *text)
           len = strlen (ptr+2);
           memmove(ptr, ptr+2, len+1);	/* move the whole rest (add +1 for '\0') */
         }
+      else
+        {
+          ptr ++;
+        }
     } /* while '\' found in text */
 
   /*----------------------------------------------------------------------
