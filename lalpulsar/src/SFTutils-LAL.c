@@ -535,7 +535,7 @@ LALMakeTimestamps ( LALStatus *status,			/**< pointer to LALStatus structure */
   ASSERT (*timestamps == NULL,status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL);
 
   LIGOTimeGPSVector *ts;
-  ts = XLALMakeTimestamps ( tStart, duration, tStep );
+  ts = XLALMakeTimestamps ( tStart, duration, tStep, 0 );
   if ( ts == NULL )
     {
       XLALPrintError ("XLALMakeTimestamps() failed with xlalErrno = %d\n", xlalErrno );

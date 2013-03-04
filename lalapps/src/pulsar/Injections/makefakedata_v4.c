@@ -972,9 +972,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     /* have we got our timestamps yet?: If not, we must get them from (start, duration) user-input */
     if ( ! cfg->timestamps )
       {
-	REAL8 tStep = uvar->Tsft - uvar->SFToverlap;
-	LIGOTimeGPS tStart;
-	REAL8 t0, tLast;
 	if ( !haveStart || !haveDuration ) {
           XLAL_ERROR ( XLAL_EINVAL, "Need to have either --timestampsFile OR (--startTime,--duration) OR --noiseSFTs\n\n");
         }
@@ -982,22 +979,10 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
           XLAL_ERROR ( XLAL_EINVAL, "--SFToverlap cannot be larger than --Tsft!\n\n");
         }
 
+	LIGOTimeGPS tStart;
 	/* internally always use timestamps, so we generate them  */
 	XLALGPSSetREAL8 ( &tStart, uvar->startTime );
-
-        cfg->timestamps = XLALMakeTimestamps ( tStart, uvar->duration, tStep );
-        XLAL_CHECK ( cfg->timestamps != NULL, XLAL_EFUNC );
-
-	/* "prune" last timestamp(s) if the one before-last also covers the end
-	 * (this happens for overlapping SFTs with LALMakeTimestamps() as used above
-	 */
-	t0 = XLALGPSGetREAL8( &(cfg->timestamps->data[0]) );
-	tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
-	while ( tLast - t0  + uvar->Tsft > uvar->duration + 1e-6)
-	  {
-	    cfg->timestamps->length --;
-	    tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
-	  }
+        XLAL_CHECK ( ( cfg->timestamps = XLALMakeTimestamps ( tStart, uvar->duration, uvar->Tsft, uvar->SFToverlap )) != NULL, XLAL_EFUNC );
 
       } /* if !cfg->timestamps */
 

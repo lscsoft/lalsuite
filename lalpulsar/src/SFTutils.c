@@ -43,6 +43,9 @@
 /*---------- internal types ----------*/
 
 /*---------- Global variables ----------*/
+static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
+static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
+
 /* empty struct initializers */
 const PSDVector empty_PSDVector;
 const MultiPSDVector empty_MultiPSDVector;
@@ -277,45 +280,84 @@ XLALDestroyTimestampVector ( LIGOTimeGPSVector *vect)
 } /* XLALDestroyTimestampVector() */
 
 
-/** Given a start-time, duration and 'stepsize' tStep, returns a list of timestamps
- * covering this time-stretch.
+/** Given a start-time, Tspan, Tsft and Toverlap, returns a list of timestamps
+ *  covering this time-stretch (allowing for overlapping SFT timestamps).
  *
  * NOTE: boundary-handling: the returned list of timestamps are guaranteed to *cover* the
- * interval [tStart, tStart+duration], assuming a each timestamp covers a length of 'tStep'
- * This implies that the actual timestamps-coverage can extend up to 'tStep' beyond 'tStart+duration'.
+ * interval [tStart, tStart+duration], assuming a each timestamp covers a length of 'Tsft'
+ * This implies that the actual timestamps-coverage can extend up to 'Tsft' beyond 'tStart+duration'.
  */
 LIGOTimeGPSVector *
-XLALMakeTimestamps ( LIGOTimeGPS tStart,		/**< GPS start-time */
-                     REAL8 duration, 			/**< duration in seconds */
-                     REAL8 tStep			/**< length of one (SFT) timestretch in seconds */
+XLALMakeTimestamps ( LIGOTimeGPS tStart,	/**< GPS start-time */
+                     REAL8 Tspan, 		/**< total duration to cover, in seconds */
+                     REAL8 Tsft,		/**< Tsft: SFT length of each timestamp, in seconds */
+                     REAL8 Toverlap		/**< time to overlap successive SFTs by, in seconds */
                      )
 {
-  XLAL_CHECK_NULL ( tStep > 0, XLAL_EDOM, "Invalid non-positive input 'tStart = %g'\n", tStep );
-  XLAL_CHECK_NULL ( duration > 0, XLAL_EDOM, "Invalid non-positive input 'duration = %g'\n", duration );
+  XLAL_CHECK_NULL ( Tspan > 0, XLAL_EDOM );
+  XLAL_CHECK_NULL ( Tsft  > 0, XLAL_EDOM );
+  XLAL_CHECK_NULL ( Toverlap  >= 0, XLAL_EDOM );
+  XLAL_CHECK_NULL ( Toverlap < Tsft, XLAL_EDOM );	// we must actually advance
 
-  UINT4 numSFTs = ceil( duration / tStep );			/* >= 1 !*/
+  REAL8 Tstep = Tsft - Toverlap;	// guaranteed > 0
+  UINT4 numSFTsMax = ceil ( Tspan * fudge_down / Tstep );			/* >= 1 !*/
+  // now we might be covering the end-time several times, if using overlapping SFTs, so
+  // let's trim this back down so that end-time is covered exactly once
+  UINT4 numSFTs = numSFTsMax;
+  while ( (numSFTs >= 2) && ( (numSFTs - 2) * Tstep + Tsft > Tspan) ) {
+    numSFTs --;
+  }
 
-  LIGOTimeGPSVector *ts;
-  XLAL_CHECK_NULL ( (ts = XLALCreateTimestampVector ( numSFTs )) != NULL, XLAL_EFUNC );
+  LIGOTimeGPSVector *ret;
+  XLAL_CHECK_NULL ( (ret = XLALCreateTimestampVector ( numSFTs )) != NULL, XLAL_EFUNC );
 
-  ts->deltaT = tStep;
+  ret->deltaT = Tsft;
 
   LIGOTimeGPS tt = tStart;	/* initialize to start-time */
-  for (UINT4 i = 0; i < numSFTs; i++)
+  for ( UINT4 i = 0; i < numSFTs; i++ )
     {
-      ts->data[i] = tt;
+      ret->data[i] = tt;
       /* get next time-stamp */
       /* NOTE: we add the interval tStep successively (rounded correctly to ns each time!)
        * instead of using iSFT*Tsft, in order to avoid possible ns-rounding problems
        * with REAL8 intervals, which becomes critial from about 100days on...
        */
-      XLAL_CHECK_NULL ( XLALGPSAdd ( &tt, tStep ) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( XLALGPSAdd ( &tt, Tstep ) != NULL, XLAL_EFUNC );
 
     } /* for i < numSFTs */
 
-  return ts;
+  return ret;
 
 } /* XLALMakeTimestamps() */
+
+
+/**
+ * Same as XLALMakeTimestamps() just for several detectors,
+ * additionally specify the number of detectors.
+ */
+MultiLIGOTimeGPSVector *
+XLALMakeMultiTimestamps ( LIGOTimeGPS tStart,	/**< GPS start-time */
+                          REAL8 Tspan, 		/**< total duration to cover, in seconds */
+                          REAL8 Tsft,		/**< Tsft: SFT length of each timestamp, in seconds */
+                          REAL8 Toverlap,	/**< time to overlap successive SFTs by, in seconds */
+                          UINT4 numDet		/**< number of timestamps-vectors to generate */
+                          )
+{
+  XLAL_CHECK_NULL ( numDet >= 1, XLAL_EINVAL );
+
+  MultiLIGOTimeGPSVector *ret;
+  XLAL_CHECK_NULL ( ( ret = XLALCalloc ( 1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( ( ret->data = XLALCalloc ( numDet, sizeof(ret->data[0]) )) != NULL, XLAL_ENOMEM );
+  ret->length = numDet;
+
+  for ( UINT4 X=0; X < numDet; X ++ )
+    {
+      XLAL_CHECK_NULL ( (ret->data[X] = XLALMakeTimestamps ( tStart, Tspan, Tsft, Toverlap ) ) != NULL, XLAL_EFUNC );
+    } // for X < numDet
+
+  return ret;
+
+} /* XLALMakeMultiTimestamps() */
 
 
 /** Extract timstamps-vector from the given SFTVector
@@ -868,9 +910,6 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
   XLAL_CHECK_NULL ( (fmin >= SFTf0) && ( fmin + Band <= SFTf0 + SFTBand ), XLAL_EINVAL,
                     "Requested frequency-band [%f,%f] Hz not contained SFTs [%f, %f] Hz.\n", fmin, fmin + Band, SFTf0, SFTf0 + SFTBand );
 
-  REAL8 eps = 10 * LAL_REAL8_EPS;	// about ~2e-15
-  REAL8 fudge_up = 1 + eps;
-  REAL8 fudge_down = 1 - eps;
   UINT4 firstBin = floor ( fmin*fudge_up / df );	// round *down*, allowing for eps 'fudge'
   REAL8 fmax = fmin + Band;
   UINT4 lastBin  = ceil ( ( fmax*fudge_down) / df );	// round *up*, allowing for eps fudge

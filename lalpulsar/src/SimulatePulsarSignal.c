@@ -140,8 +140,8 @@ XLALSimulateExactPulsarSignal ( const PulsarSignalParams *params )
 
   /* get timestamps of timeseries plus detector-states */
   REAL8 dt = 1.0 / params->samplingRate;
-  LIGOTimeGPSVector *timestamps = XLALMakeTimestamps ( params->startTimeGPS, params->duration, dt );
-  XLAL_CHECK_NULL ( timestamps != NULL, XLAL_EFUNC, "XLALMakeTimestamps() failed.\n");
+  LIGOTimeGPSVector *timestamps;
+  XLAL_CHECK_NULL ( (timestamps = XLALMakeTimestamps ( params->startTimeGPS, params->duration, dt, 0 )) != NULL, XLAL_EFUNC );
 
   UINT4 numSteps = timestamps->length;
 

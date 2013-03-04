@@ -636,32 +636,16 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     /* have we got our timestamps yet?: If not, we must get them from (start, duration) user-input */
     if ( ! cfg->timestamps )
       {
-	REAL8 tStep = uvar->Tsft - uvar->SFToverlap;
 	LIGOTimeGPS tStart;
-	REAL8 t0, tLast;
 	if ( !haveStart || !haveDuration ) {
           XLAL_ERROR ( XLAL_EINVAL, "Need to have either --timestampsFile OR (--startTime,--duration) OR --noiseSFTs\n\n");
-        }
-	if ( uvar->SFToverlap > uvar->Tsft ) {
-          XLAL_ERROR ( XLAL_EINVAL, "--SFToverlap cannot be larger than --Tsft!\n\n");
         }
 
 	/* internally always use timestamps, so we generate them  */
 	XLALGPSSetREAL8 ( &tStart, uvar->startTime );
 
-        cfg->timestamps = XLALMakeTimestamps ( tStart, uvar->duration, tStep );
+        cfg->timestamps = XLALMakeTimestamps ( tStart, uvar->duration, uvar->Tsft, uvar->SFToverlap );
         XLAL_CHECK ( cfg->timestamps != NULL, XLAL_EFUNC );
-
-	/* "prune" last timestamp(s) if the one before-last also covers the end
-	 * (this happens for overlapping SFTs with LALMakeTimestamps() as used above
-	 */
-	t0 = XLALGPSGetREAL8( &(cfg->timestamps->data[0]) );
-	tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
-	while ( tLast - t0  + uvar->Tsft > uvar->duration + 1e-6)
-	  {
-	    cfg->timestamps->length --;
-	    tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
-	  }
 
       } /* if !cfg->timestamps */
 
@@ -759,7 +743,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTTMJDtoGPS(uvar->orbitTpSSBMJD);
+	  GPSfloat = XLALTTMJDtoGPS(uvar->orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbit->tp),GPSfloat);
 	}
       else if ((set5 && set6) && !set7)
@@ -802,7 +786,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
       /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
-      GPSfloat = LALTTMJDtoGPS(uvar->refTimeMJD);
+      GPSfloat = XLALTTMJDtoGPS(uvar->refTimeMJD);
       XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),GPSfloat);
     }
   else

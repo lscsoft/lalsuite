@@ -149,7 +149,7 @@ main ( int argc, char *argv[] )
 
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
-      multiTS->data[X] = XLALMakeTimestamps ( startTime, duration, Tsft );
+      multiTS->data[X] = XLALMakeTimestamps ( startTime, duration, Tsft, 0 );
       XLAL_CHECK ( multiTS->data[X] != NULL, XLAL_EFUNC, "XLALMakeTimestamps() failed.\n");
     } /* for X < numIFOs */
 

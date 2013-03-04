@@ -299,8 +299,8 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
   LIGOTimeGPSVector *timestamps;
   if ( params->timestamps == NULL )
     {
-      timestamps = XLALMakeTimestamps ( tStart, duration, params->Tsft );
-      XLAL_CHECK_NULL ( timestamps != NULL, XLAL_EFUNC );
+      REAL8 Toverlap = 0;
+      XLAL_CHECK_NULL ( ( timestamps = XLALMakeTimestamps ( tStart, duration, params->Tsft, Toverlap )) != NULL, XLAL_EFUNC );
       /* see if the last timestamp is valid (can fit a full SFT in?), if not, drop it */
       LIGOTimeGPS lastTs = timestamps->data[timestamps->length-1];
       if ( XLALGPSDiff ( &lastTs, &tLast ) > 0 )	// if lastTs > tLast
