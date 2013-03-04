@@ -1305,30 +1305,32 @@ fprintf(a, "  --ifo-tag STRING             set the ifotag to STRING - for file n
 fprintf(a, "  --comment STRING             set the process table comment to STRING\n");\
 fprintf(a, "  --write-compress             write a compressed xml file\n");\
 fprintf(a, "\n");\
+fprintf(a, "  NOTE: Data-related options not required when using a simulated PSD are labelled @\n");\
+fprintf(a, "\n");\
 fprintf(a, "  --gps-start-time SEC         GPS second of data start time\n");\
 fprintf(a, "  --gps-end-time SEC           GPS second of data end time\n");\
-fprintf(a, "  --pad-data T                 pad the data start and end time by T seconds\n");\
+fprintf(a, "@ --pad-data T                 pad the data start and end time by T seconds\n");\
 fprintf(a, "\n");\
-fprintf(a, "  --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n");\
-fprintf(a, "  --frame-type TAG             input data is contained in frames of type TAG\n");\
-fprintf(a, "  --frame-cache                obtain frame data from LAL frame cache FILE\n");\
-fprintf(a, "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n");\
-fprintf(a, "  --glob-calibration-data      obtain calibration by globbing in working dir\n");\
+fprintf(a, "@ --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n");\
+fprintf(a, "@ --frame-type TAG             input data is contained in frames of type TAG\n");\
+fprintf(a, "@ --frame-cache                obtain frame data from LAL frame cache FILE\n");\
+fprintf(a, "@ --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n");\
+fprintf(a, "@ --glob-calibration-data      obtain calibration by globbing in working dir\n");\
 fprintf(a, "\n");\
-fprintf(a, "  --channel-name CHAN          read data from interferometer channel CHAN\n");\
-fprintf(a, "  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n");\
-fprintf(a, "  --strain-high-pass-freq F    high pass REAL8 h(t) data above F Hz\n");\
-fprintf(a, "  --strain-high-pass-order O   set the order of the h(t) high pass filter to O\n");\
-fprintf(a, "  --strain-high-pass-atten A   set the attenuation of the high pass filter to A\n");\
-fprintf(a, "  --point-calibration          use the first point in the chunk to calibrate\n");\
+fprintf(a, "@ --channel-name CHAN          read data from interferometer channel CHAN\n");\
+fprintf(a, "@ --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n");\
+fprintf(a, "@ --strain-high-pass-freq F    high pass REAL8 h(t) data above F Hz\n");\
+fprintf(a, "@ --strain-high-pass-order O   set the order of the h(t) high pass filter to O\n");\
+fprintf(a, "@ --strain-high-pass-atten A   set the attenuation of the high pass filter to A\n");\
+fprintf(a, "@ --point-calibration          use the first point in the chunk to calibrate\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --sample-rate F              filter data at F Hz, downsampling if necessary\n");\
-fprintf(a, "  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]\n");\
+fprintf(a, "@ --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --disable-high-pass          turn off the IIR highpass filter\n");\
-fprintf(a, "  --enable-high-pass F         high pass data above F Hz using an IIR filter\n");\
-fprintf(a, "  --high-pass-order O          set the order of the high pass filter to O\n");\
-fprintf(a, "  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n");\
+fprintf(a, "@ --enable-high-pass F         high pass data above F Hz using an IIR filter\n");\
+fprintf(a, "@ --high-pass-order O          set the order of the high pass filter to O\n");\
+fprintf(a, "@ --high-pass-attenuation A    set the attenuation of the high pass filter to A\n");\
 fprintf(a, "  --spectrum-type TYPE         use PSD estimator TYPE \n");\
 fprintf(a, "                               (mean|median|iLIGOSRD|eLIGOModel|GEOModel|\n");\
 fprintf(a, "                               |aLIGONoSRMLoP|aLIGONoSRMHiP|aLIGOZDLoP|aLIGOZDHiP|\n");\
@@ -1382,11 +1384,11 @@ fprintf(a, "                                 twoPN|twoPointFive|threePN|threePoi
 fprintf(a, "  --approximant APPROX         set approximant of the waveform to APPROX\n");\
 fprintf(a, "                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|\n");\
 fprintf(a, "                                 PadeT1|PadeT2|EOB|EOBNR|BCV|SpinTaylorT3|BCVSpin)\n");\
-fprintf(a, " --num-freq-cutoffs Ncut       create a template bank with Ncut different upper \n");\
+fprintf(a, "  --num-freq-cutoffs Ncut       create a template bank with Ncut different upper \n");\
 fprintf(a, "                                 frequency cutoffs (must be a positive integer) \n");\
-fprintf(a, " --max-high-freq-cutoff MAX    formula to compute the largest high freq. cutoff\n");\
+fprintf(a, "  --max-high-freq-cutoff MAX    formula to compute the largest high freq. cutoff\n");\
 fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|LightRing|FRD|ERD|LRD)\n");\
-fprintf(a, " --min-high-freq-cutoff MIN    formula to compute the smallest high freq. cutoff\n");\
+fprintf(a, "  --min-high-freq-cutoff MIN    formula to compute the smallest high freq. cutoff\n");\
 fprintf(a, "                                 possible choices in ascending order: (SchwarzISCO|BKLISCO|LightRing|FRD|ERD|LRD)\n");\
 fprintf(a, "  --space SPACE                grid up template bank with mass parameters SPACE\n");\
 fprintf(a, "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n");\
