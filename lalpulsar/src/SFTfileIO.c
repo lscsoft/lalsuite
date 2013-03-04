@@ -1775,12 +1775,16 @@ XLALReadTimestampsFile ( const CHAR *fname )
   for ( UINT4 iTS = 0; iTS < numTS; iTS ++ )
     {
       INT4 secs, ns;
-      if ( sscanf ( flines->lines->tokens[iTS], "%d %d\n", &secs, &ns ) != 2 ) {
+      char junk[11] = "";
+      if ( sscanf ( flines->lines->tokens[iTS], "%d %d%10s\n", &secs, &ns, junk ) != 2 ) {
+        if ( junk[0] != 0 ) { XLALPrintError ("Found junk '%s' after timestamp in line %d/%d\n", junk, iTS+1, numTS ); }
+        XLALPrintError ( "Failed to parse data-line %d: '%s' in timestamps-file '%s' (needs to be in format 'sec ns')\n",
+                         iTS + 1, flines->lines->tokens[iTS], fname );
         XLALDestroyTimestampVector ( timestamps );
         XLALDestroyParsedDataFile ( flines );
-        XLAL_ERROR_NULL ( XLAL_ESYS, "Failed to parse data-line %d: '%s' in timestamps-file '%s' (needs to be in format 'sec ns')\n",
-                          iTS + 1, flines->lines->tokens[iTS], fname );
+        XLAL_ERROR_NULL ( XLAL_ESYS );
       }
+
       XLAL_CHECK_NULL ( ( secs >= 0 ) && ( ns >= 0 ), XLAL_EDOM,
                         "Timestamps-file '%s' contains negative time-entry in line %d : s = %d, ns = %d\n", fname, iTS, secs, ns );
 
