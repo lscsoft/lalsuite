@@ -331,7 +331,6 @@ typedef struct tagMultiSFTCatalogView
 {
   UINT4 length;			/**< number of detectors */
   SFTCatalog *data;		/**< array of SFT-catalog pointers */
-  const SFTCatalog *catalog;	/**< the actual SFTCatalog containing the data */
 } MultiSFTCatalogView;
 
 

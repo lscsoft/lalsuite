@@ -1809,6 +1809,7 @@ MultiLIGOTimeGPSVector *
 XLALReadMultiTimestampsFiles ( const LALStringVector *fnames )
 {
   XLAL_CHECK_NULL ( fnames != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( fnames->data != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( fnames->length > 0, XLAL_EDOM );
 
   UINT4 numDet = fnames->length;
@@ -1816,10 +1817,12 @@ XLALReadMultiTimestampsFiles ( const LALStringVector *fnames )
   // ----- prepare output container
   MultiLIGOTimeGPSVector *multiTS;
   XLAL_CHECK_NULL ( ( multiTS = XLALCalloc ( 1, sizeof(*multiTS) )) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK_NULL ( (multiTS->data = XLALCalloc ( numDet, sizeof(multiTS->data[0]))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( ( multiTS->data = XLALCalloc ( numDet, sizeof(multiTS->data[0]))) != NULL, XLAL_ENOMEM );
+  multiTS->length = numDet;
 
   for ( UINT4 X=0; X < numDet; X ++ )
     {
+      XLAL_CHECK_NULL ( fnames->data[X] != NULL, XLAL_EINVAL );
       XLAL_CHECK_NULL ( ( multiTS->data[X] = XLALReadTimestampsFile ( fnames->data[X] )) != NULL, XLAL_EFUNC );
     } // for X < numDet
 
@@ -2627,8 +2630,6 @@ XLALMultiSFTCatalogView ( const SFTCatalog *catalog )
 	} // for k < numSFTsPerIFO[X]
 
     } // for X < numIFOs
-
-  ret->catalog = catalog;	// keep pointer to original catalog containing some allocated pointers we re-used
 
   // free all temporary internal memory
   for ( UINT4 X = 0; X < numIFOsMax; X ++)
