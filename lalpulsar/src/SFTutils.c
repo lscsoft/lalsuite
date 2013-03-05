@@ -910,11 +910,17 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
   XLAL_CHECK_NULL ( (fmin >= SFTf0) && ( fmin + Band <= SFTf0 + SFTBand ), XLAL_EINVAL,
                     "Requested frequency-band [%f,%f] Hz not contained SFTs [%f, %f] Hz.\n", fmin, fmin + Band, SFTf0, SFTf0 + SFTBand );
 
-  UINT4 firstBin = floor ( fmin*fudge_up / df );	// round *down*, allowing for eps 'fudge'
-  REAL8 fmax = fmin + Band;
-  UINT4 lastBin  = ceil ( ( fmax*fudge_down) / df );	// round *up*, allowing for eps fudge
+  UINT4 firstBin    = floor ( fmin*fudge_up / df );	// round *down*, allowing for eps 'fudge'
+  UINT4 firstBinSFT = floor ( SFTf0*fudge_up / df );	// round *down*, allowing for eps 'fudge'
+  XLAL_CHECK_NULL ( firstBin >= firstBinSFT, XLAL_EERR ); // paranoia check
 
+  REAL8 fmax = fmin + Band;
+  UINT4 lastBin    = ceil ( ( fmax*fudge_down) / df );	// round *up*, allowing for eps fudge
   UINT4 numBins =  lastBin - firstBin + 1;
+
+  REAL8 fmaxSFT = SFTf0 + SFTBand;
+  UINT4 lastBinSFT = ceil ( ( fmaxSFT*fudge_down) / df ); // round *up*, allowing for eps fudge
+  XLAL_CHECK_NULL ( lastBinSFT >= lastBin, XLAL_EERR );	//paranoia check
 
   SFTVector *ret = XLALCreateSFTVector ( numSFTs, numBins );
   XLAL_CHECK_NULL ( ret != NULL, XLAL_EFUNC, "XLALCreateSFTVector ( %d, %d ) failed.\n", numSFTs, numBins );
@@ -933,7 +939,8 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
       dest->f0 = firstBin * df ;
 
       /* copy the relevant part of the data */
-      memcpy ( dest->data->data, src->data->data + firstBin, numBins * sizeof( dest->data->data[0] ) );
+      INT4 firstBinOffset = firstBin - firstBinSFT;
+      memcpy ( dest->data->data, src->data->data + firstBinOffset, numBins * sizeof( dest->data->data[0] ) );
 
     } /* for i < numSFTs */
 
