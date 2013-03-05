@@ -67,10 +67,25 @@
 #define SQ(x) ( (x) * (x) )
 
 /*----------------------------------------------------------------------*/
+
+/**
+ * Lists of CW signal params and "line-feature" sinusoid params to generate
+ * data for
+ */
+typedef struct tagInjectionSources
+{
+  UINT4 numPulsars;		/**< number of pulsar-signals to inject */
+  PulsarParams *pulsarParams;	/**< array of pulsar-signal parameters to inject */
+
+  /* ... */
+  /* may be extended to carry further injection sources, eg 'lines' here */
+} InjectionSources;
+
+
 /** configuration-variables derived from user-variables */
 typedef struct
 {
-  PulsarParams pulsar;		/**< pulsar signal-parameters (amplitude + doppler */
+  InjectionSources *injectionSources;		/**< list of injection source parameters */
 
   EphemerisData *edat;		/**< ephemeris-data */
   MultiLIGOTimeGPSVector *multiTimestamps;/**< a vector of timestamps to generate time-series/SFTs for */
@@ -193,7 +208,8 @@ static const CWDataParams empty_CWDataParams;
 
 // ---------- exportable API prototypes ----------
 int XLALFindSmallestValidSamplingRate ( UINT4 *n1, UINT4 n0, const LIGOTimeGPSVector *timestamps );
-int XLALMakeFakeCWData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries, const PulsarParams *sourceParams, const CWDataParams *dataParams,	EphemerisData *edat );
+int XLALMakeFakeCWData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries, const InjectionSources *injectionSources, const CWDataParams *dataParams, EphemerisData *edat );
+void XLALDestroyInjectionSources ( InjectionSources *sources );
 
 // ---------- local prototypes ----------
 int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
@@ -236,7 +252,7 @@ main(int argc, char *argv[])
   DataParams.SFTWindowType      = uvar.SFTWindowType;
   DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
 
-  XLAL_CHECK ( XLALMakeFakeCWData ( &mSFTs, &mTseries, &GV.pulsar, &DataParams, GV.edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALMakeFakeCWData ( &mSFTs, &mTseries, GV.injectionSources, &DataParams, GV.edat ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // if noiseSFTs specified, load them and add them to the resulting SFT-vector
   if ( GV.multiNoiseCatalogView )
@@ -330,6 +346,13 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     XLAL_CHECK ( XLALWriteMFDlog ( uvar->logfile, cfg ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteMFDlog() failed with xlalErrno = %d\n", xlalErrno );
   }
 
+  // FIXME: hardcoded to 1 CW signal injection right now
+  UINT4 numPulsars = 1;
+  XLAL_CHECK ( ( cfg->injectionSources = XLALCalloc ( 1, sizeof(*cfg->injectionSources) )) != NULL, XLAL_ENOMEM );
+  cfg->injectionSources->numPulsars = numPulsars;
+  XLAL_CHECK ( ( cfg->injectionSources->pulsarParams = XLALCalloc ( numPulsars, sizeof(*cfg->injectionSources->pulsarParams) )) != NULL, XLAL_ENOMEM );
+  PulsarParams *pulsarParams = &( cfg->injectionSources->pulsarParams[0] );
+
   { /* ========== translate user-input into 'PulsarParams' struct ========== */
     BOOLEAN have_h0     = XLALUserVarWasSet ( &uvar->h0 );
     BOOLEAN have_cosi   = XLALUserVarWasSet ( &uvar->cosi );
@@ -377,10 +400,11 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     if ( (have_aPlus ^ have_aCross) ) {
       XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --aPlus and --aCross !\n\n");
     }
+
     if ( have_h0 && have_cosi )
       {
-	cfg->pulsar.Amp.h0 = uvar->h0;
-	cfg->pulsar.Amp.cosi = uvar->cosi;
+	pulsarParams->Amp.h0 = uvar->h0;
+	pulsarParams->Amp.cosi = uvar->cosi;
       }
     else if ( have_aPlus && have_aCross )
       {  /* translate A_{+,x} into {h_0, cosi} */
@@ -389,24 +413,24 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
           XLAL_ERROR ( XLAL_EINVAL, "Invalid input parameters: |aCross| = %g must be <= than aPlus = %g.\n", fabs(uvar->aCross), uvar->aPlus );
         }
 	disc = sqrt ( SQ(uvar->aPlus) - SQ(uvar->aCross) );
-	cfg->pulsar.Amp.h0   = uvar->aPlus + disc;
-        if ( cfg->pulsar.Amp.h0 > 0 )
-          cfg->pulsar.Amp.cosi = uvar->aCross / cfg->pulsar.Amp.h0;	// avoid division by 0!
+	pulsarParams->Amp.h0   = uvar->aPlus + disc;
+        if ( pulsarParams->Amp.h0 > 0 )
+          pulsarParams->Amp.cosi = uvar->aCross / pulsarParams->Amp.h0;	// avoid division by 0!
         else
-          cfg->pulsar.Amp.cosi = 0;
+          pulsarParams->Amp.cosi = 0;
       }
     else {
-      cfg->pulsar.Amp.h0 = 0.0;
-      cfg->pulsar.Amp.cosi = 0.0;
+      pulsarParams->Amp.h0 = 0.0;
+      pulsarParams->Amp.cosi = 0.0;
     }
-    cfg->pulsar.Amp.phi0 = uvar->phi0;
-    cfg->pulsar.Amp.psi  = uvar->psi;
+    pulsarParams->Amp.phi0 = uvar->phi0;
+    pulsarParams->Amp.psi  = uvar->psi;
 
     /* ----- signal Frequency ----- */
     if ( have_Freq )
-      cfg->pulsar.Doppler.fkdot[0] = uvar->Freq;
+      pulsarParams->Doppler.fkdot[0] = uvar->Freq;
     else
-      cfg->pulsar.Doppler.fkdot[0] = 0.0;
+      pulsarParams->Doppler.fkdot[0] = 0.0;
 
     /* ----- skypos ----- */
     if ( (have_Alpha || have_Delta) && (have_RA || have_Dec) ) {
@@ -420,13 +444,13 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     }
     if ( have_Alpha )
       {
-	cfg->pulsar.Doppler.Alpha = uvar->Alpha;
-	cfg->pulsar.Doppler.Delta = uvar->Delta;
+	pulsarParams->Doppler.Alpha = uvar->Alpha;
+	pulsarParams->Doppler.Delta = uvar->Delta;
       }
     else if ( have_RA )
       {
-	cfg->pulsar.Doppler.Alpha = LALDegsToRads(uvar->RA,"alpha");
-	cfg->pulsar.Doppler.Delta = LALDegsToRads(uvar->Dec,"delta");
+	pulsarParams->Doppler.Alpha = LALDegsToRads(uvar->RA,"alpha");
+	pulsarParams->Doppler.Delta = LALDegsToRads(uvar->Dec,"delta");
       }
 
   } /* Pulsar signal parameters */
@@ -439,9 +463,9 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	uvar->f2dot = 2.*pulparams.f2;
 	uvar->f3dot = 2.*pulparams.f3;
       }
-    cfg->pulsar.Doppler.fkdot[1] = uvar->f1dot;
-    cfg->pulsar.Doppler.fkdot[2] = uvar->f2dot;
-    cfg->pulsar.Doppler.fkdot[3] = uvar->f3dot;
+    pulsarParams->Doppler.fkdot[1] = uvar->f1dot;
+    pulsarParams->Doppler.fkdot[2] = uvar->f2dot;
+    pulsarParams->Doppler.fkdot[3] = uvar->f3dot;
 
   } /* END: prepare spindown parameters */
 
@@ -648,16 +672,16 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       orbit->argp = uvar->orbitArgp;
       orbit->ecc = uvar->orbitEcc;
 
-      cfg->pulsar.Doppler.orbit = orbit;     /* struct copy */
+      pulsarParams->Doppler.orbit = orbit;     /* struct copy */
     } /* if one or more orbital parameters were set */
     else
-      cfg->pulsar.Doppler.orbit = NULL;
+      pulsarParams->Doppler.orbit = NULL;
   } /* END: binary orbital params */
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
   if (XLALUserVarWasSet (&uvar->parfile)) {
     uvar->refTime = pulparams.pepoch; /*XLALReadTEMPOParFile already converted pepoch to GPS*/
-    XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),uvar->refTime);
+    XLALGPSSetREAL8(&(pulsarParams->Doppler.refTime),uvar->refTime);
   }
   else if (XLALUserVarWasSet(&uvar->refTime) && XLALUserVarWasSet(&uvar->refTimeMJD))
     {
@@ -665,7 +689,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     }
   else if (XLALUserVarWasSet(&uvar->refTime))
     {
-      XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime), uvar->refTime);
+      XLALGPSSetREAL8(&(pulsarParams->Doppler.refTime), uvar->refTime);
     }
   else if (XLALUserVarWasSet(&uvar->refTimeMJD))
     {
@@ -846,7 +870,7 @@ XLALFreeMem ( ConfigVars_t *cfg )
   /* free timestamps if any */
   XLALDestroyMultiTimestamps ( cfg->multiTimestamps );
 
-  XLALFree ( cfg->pulsar.Doppler.orbit );
+  XLALDestroyInjectionSources ( cfg->injectionSources );
 
   XLALFree ( cfg->VCSInfoString );
 
@@ -931,7 +955,7 @@ is_directory ( const CHAR *fname )
 int
 XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
                      MultiREAL4TimeSeries **multiTseries,	//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
-                     const PulsarParams *sourceParams,		//< [in] CW source parameters (amplitude+phase+transient params)
+                     const InjectionSources *injectionSources,	//< [in] array of sources inject
                      const CWDataParams *dataParams,		//< [in] parameters specifying the type of data to generate
                      EphemerisData *edat			//< [in] ephemeris data
                      )
@@ -940,7 +964,7 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
   XLAL_CHECK ( (multiTseries == NULL) || ((*multiTseries) == NULL ), XLAL_EINVAL );
   XLAL_CHECK ( (multiSFTs != NULL) || (multiTseries != NULL), XLAL_EINVAL );
 
-  XLAL_CHECK ( sourceParams != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( injectionSources != NULL, XLAL_EINVAL );
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
 
@@ -1014,26 +1038,6 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
     XLALPrintWarning("Asked for Band [%.16g, %.16g] Hz, effective Band produced is [%.16g, %.16g] Hz (numSFTBins=%d)\n", fMin, fMax, fmin_eff, fmax_eff, numBins);
   }
 
-  // translate amplitude params
-  REAL8 h0     = sourceParams->Amp.h0;
-  REAL8 cosi   = sourceParams->Amp.cosi;
-  REAL8 aPlus  = 0.5 * h0 * ( 1.0 + SQ(cosi) );
-  REAL8 aCross = h0 * cosi;
-  // translate 'modern' fkdot into 'old-style' spindown-vector
-  UINT4 maxSpindownOrder = 0;
-  for ( UINT4 s = PULSAR_MAX_SPINS-1; s > 0; s -- ) {
-    if ( sourceParams->Doppler.fkdot[s] != 0 )
-      {
-        maxSpindownOrder = s;
-        break;
-      }
-  } // for s = sMax ... 1
-  REAL8Vector *spindown = NULL;
-  XLAL_CHECK ( (spindown = XLALCreateREAL8Vector ( maxSpindownOrder )) != NULL, XLAL_EFUNC );
-  for ( UINT4 s = 0; s < maxSpindownOrder; s ++ ) {
-    spindown->data[s] = sourceParams->Doppler.fkdot[s+1];
-  }
-
   /* characterize the output time-series */
   REAL8 min_fSamp = 2.0 * fBand_eff;	/* minimal sampling rate, via Nyquist theorem */
   UINT4 n0_fSamp = (UINT4) round ( Tsft * min_fSamp );
@@ -1061,43 +1065,82 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
       /* detector params */
       LALDetector site = dataParams->detInfo.sites[X];
 
-      /*----------------------------------------
-       * fill the PulsarSignalParams struct
-       *----------------------------------------*/
-      PulsarSignalParams params = empty_PulsarSignalParams;
-      params.pulsar.refTime            = sourceParams->Doppler.refTime;
-      params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
-      params.pulsar.position.longitude = sourceParams->Doppler.Alpha;
-      params.pulsar.position.latitude  = sourceParams->Doppler.Delta;
-      params.pulsar.aPlus              = aPlus;
-      params.pulsar.aCross             = aCross;
-      params.pulsar.phi0               = sourceParams->Amp.phi0;
-      params.pulsar.psi                = sourceParams->Amp.psi;
-      params.pulsar.f0                 = sourceParams->Doppler.fkdot[0];
-      params.pulsar.spindown           = spindown;
-      params.orbit                     = sourceParams->Doppler.orbit;
-      params.transfer                  = NULL;
-      params.ephemerides               = edat;
-      params.fHeterodyne               = fmin_eff;
-
-      // detector-specific settings
-      params.startTimeGPS              = firstGPS;
-      params.duration                  = (UINT4) ceil ( duration );
-      params.samplingRate              = fSamp;
-      params.site                      = &(site);
-
-      /*----------------------------------------
-       * generate the signal time-series
-       *----------------------------------------*/
       REAL4TimeSeries *Tseries = NULL;
-      // FIXME: de-activated line-feature for now, need to extend 'sourceParams' input
-      // if ( uvar->lineFeature )
-      // XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
+      for ( UINT4 iInj = 0; iInj < injectionSources->numPulsars; iInj ++ )
+        {
+          PulsarParams *sourceParams = &(injectionSources->pulsarParams[iInj]);
 
-      XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
+          // translate amplitude params
+          REAL8 h0     = sourceParams->Amp.h0;
+          REAL8 cosi   = sourceParams->Amp.cosi;
+          REAL8 aPlus  = 0.5 * h0 * ( 1.0 + SQ(cosi) );
+          REAL8 aCross = h0 * cosi;
+          // translate 'modern' fkdot into 'old-style' spindown-vector
+          UINT4 maxSpindownOrder = 0;
+          for ( UINT4 s = PULSAR_MAX_SPINS-1; s > 0; s -- ) {
+            if ( sourceParams->Doppler.fkdot[s] != 0 )
+              {
+                maxSpindownOrder = s;
+                break;
+              }
+          } // for s = sMax ... 1
+          REAL8Vector *spindown = NULL;
+          XLAL_CHECK ( (spindown = XLALCreateREAL8Vector ( maxSpindownOrder )) != NULL, XLAL_EFUNC );
+          for ( UINT4 s = 0; s < maxSpindownOrder; s ++ ) {
+            spindown->data[s] = sourceParams->Doppler.fkdot[s+1];
+          }
 
-      // ----- apply transient-CW window
-      XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, sourceParams->Transient ) == XLAL_SUCCESS, XLAL_EFUNC );
+          /*----------------------------------------
+           * fill the PulsarSignalParams struct
+           *----------------------------------------*/
+          PulsarSignalParams params = empty_PulsarSignalParams;
+          params.pulsar.refTime            = sourceParams->Doppler.refTime;
+          params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
+          params.pulsar.position.longitude = sourceParams->Doppler.Alpha;
+          params.pulsar.position.latitude  = sourceParams->Doppler.Delta;
+          params.pulsar.aPlus              = aPlus;
+          params.pulsar.aCross             = aCross;
+          params.pulsar.phi0               = sourceParams->Amp.phi0;
+          params.pulsar.psi                = sourceParams->Amp.psi;
+          params.pulsar.f0                 = sourceParams->Doppler.fkdot[0];
+          params.pulsar.spindown           = spindown;
+          params.orbit                     = sourceParams->Doppler.orbit;
+          params.transfer                  = NULL;
+          params.ephemerides               = edat;
+          params.fHeterodyne               = fmin_eff;
+
+          // detector-specific settings
+          params.startTimeGPS              = firstGPS;
+          params.duration                  = (UINT4) ceil ( duration );
+          params.samplingRate              = fSamp;
+          params.site                      = &(site);
+
+          /*----------------------------------------
+           * generate the signal time-series
+           *----------------------------------------*/
+          // FIXME: de-activated line-feature for now, need to extend 'sourceParams' input
+          // if ( uvar->lineFeature )
+          // XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
+          REAL4TimeSeries *Tseries_i = NULL;
+          XLAL_CHECK ( (Tseries_i = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
+
+          // ----- free internal memory
+          XLALDestroyREAL8Vector ( spindown );
+
+          // ----- apply transient-CW window
+          XLAL_CHECK ( XLALApplyTransientWindow ( Tseries_i, sourceParams->Transient ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+          if ( Tseries == NULL )
+            {
+              Tseries = Tseries_i;
+            }
+          else
+            {
+              XLAL_CHECK ( (Tseries = XLALAddREAL4TimeSeries ( Tseries, Tseries_i )) != NULL, XLAL_EFUNC );
+              XLALDestroyREAL4TimeSeries ( Tseries_i );
+            }
+
+        } // for iInj < numSources
 
       /* add Gaussian noise if requested */
       REAL8 sqrtSn = dataParams->detInfo.sqrtSn[X];
@@ -1155,9 +1198,6 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
       }
 
     } // for X < numDet
-
-  // ----- free internal memory
-  XLALDestroyREAL8Vector ( spindown );
 
   // return multi-Timeseries if requested
   if ( multiTseries ) {
@@ -1297,3 +1337,30 @@ gcd (UINT4 numer, UINT4 denom)
     }
   return next_numer;
 } // gcd
+
+/**
+ * Simple destructor for an 'InjectionSources' object.
+ */
+void
+XLALDestroyInjectionSources ( InjectionSources *sources )
+{
+  if ( sources == NULL ) {
+    return;
+  }
+  if ( sources->pulsarParams != NULL )
+    {
+      for ( UINT4 i = 0 ; i < sources->numPulsars; i ++ )
+        {
+          BinaryOrbitParams *orbit = sources->pulsarParams[i].Doppler.orbit;
+          if ( orbit != NULL ) {
+            XLALFree ( orbit );
+          }
+        } // for i < numPulsars
+      XLALFree ( sources->pulsarParams );
+    }
+
+  XLALFree ( sources );
+
+  return;
+
+} /* XLALDestroyInjectionSources() */
