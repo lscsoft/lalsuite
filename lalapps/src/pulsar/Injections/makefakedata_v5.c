@@ -188,7 +188,7 @@ typedef struct tagFakeDataParams
   REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
   UINT4 randSeed;				//!< seed value for random-number generator
   COMPLEX8FrequencySeries *transferFunction;	//!< detector transfer-function from strain --> counts: only used for HW-injections
-} FakeDataParams_t;
+} CWDataParams;
 
 
 // ----- global variables ----------
@@ -197,11 +197,11 @@ typedef struct tagFakeDataParams
 static const UserVariables_t empty_UserVariables;
 static const ConfigVars_t empty_GV;
 static const LALUnit empty_LALUnit;
-static const FakeDataParams_t empty_FakeDataParams;
+static const CWDataParams empty_CWDataParams;
 
 // ---------- exportable API prototypes ----------
 int XLALFindSmallestValidSamplingRate ( UINT4 *n1, UINT4 n0, const LIGOTimeGPSVector *timestamps );
-int XLALMakeFakeCWData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries, const PulsarParams *sourceParams, const FakeDataParams_t *dataParams,	EphemerisData *edat );
+int XLALMakeFakeCWData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries, const PulsarParams *sourceParams, const CWDataParams *dataParams,	EphemerisData *edat );
 
 // ---------- local prototypes ----------
 int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
@@ -236,7 +236,7 @@ main(int argc, char *argv[])
   MultiSFTVector *mSFTs = NULL;
   MultiREAL4TimeSeries *mTseries = NULL;
 
-  FakeDataParams_t DataParams   = empty_FakeDataParams;
+  CWDataParams DataParams   = empty_CWDataParams;
   DataParams.transferFunction   = GV.transfer;
   DataParams.fmin               = uvar.fmin;
   DataParams.Band               = uvar.Band;
@@ -1066,7 +1066,7 @@ int
 XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
                      MultiREAL4TimeSeries **multiTseries,	//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
                      const PulsarParams *sourceParams,		//< [in] CW source parameters (amplitude+phase+transient params)
-                     const FakeDataParams_t *dataParams,	//< [in] parameters specifying the type of data to generate
+                     const CWDataParams *dataParams,	//< [in] parameters specifying the type of data to generate
                      EphemerisData *edat			//< [in] ephemeris data
                      )
 {
@@ -1170,7 +1170,7 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
 
   /* characterize the output time-series */
   REAL8 min_fSamp = 2.0 * fBand_eff;	/* minimal sampling rate, via Nyquist theorem */
-  UINT4 n0 = (UINT4) round ( Tsft * min_fSamp );
+  UINT4 n0_fSamp = (UINT4) round ( Tsft * min_fSamp );
 
   for ( UINT4 X=0; X < numDet; X ++ )
     {
@@ -1179,11 +1179,11 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
       // by construction, Tsft / min_fSamp = integer, but if there are gaps between SFTs,
       // then we might have to sample at higher rates in order for all SFT-boundaries to
       // lie on an exact timestep of the timeseries.
-      // ie we start from min_fsamp = Tsft / n0, and then try to find the smallest
-      // n >= n0, such that for fsamp = Tsft / n, for all gaps i: Dt_i * fsamp = int
-      UINT4 n1;
-      XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &n1, n0, timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
-      REAL8 fSamp = n1 / Tsft;
+      // ie we start from min_fsamp = Tsft / n0_fSamp, and then try to find the smallest
+      // n >= n0_fSamp, such that for fsamp = Tsft / n, for all gaps i: Dt_i * fsamp = int
+      UINT4 n1_fSamp;
+      XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &n1_fSamp, n0_fSamp, timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
+      REAL8 fSamp = n1_fSamp / Tsft;
 
       /* ----- start-time and duration ----- */
       LIGOTimeGPS firstGPS = timestamps->data[0];
@@ -1263,7 +1263,19 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
           sftParams.window = window;
 
           /* compute SFTs from timeseries */
-          XLAL_CHECK ( (outMSFTs->data[X] = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
+          SFTVector *sftVect;
+          XLAL_CHECK ( (sftVect = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
+
+          // extract effective band from this, if neccessary (ie if faster-sampled output SFTs)
+          if ( n1_fSamp != n0_fSamp )
+            {
+              XLAL_CHECK ( (outMSFTs->data[X] = XLALExtractBandFromSFTVector ( sftVect, fmin_eff, fBand_eff )) != NULL, XLAL_EFUNC );
+              XLALDestroySFTVector ( sftVect );
+            }
+          else
+            {
+              outMSFTs->data[X] = sftVect;
+            }
 
           XLALDestroyREAL4Window ( window );
 
