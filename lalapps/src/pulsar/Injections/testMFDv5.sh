@@ -38,7 +38,7 @@ rm -rf ${testDIR} || true
 mkdir -p $testDIR
 
 
-tol=1e-10;	## tolerance on relative difference between SFTs in comparison
+tol=1e-3;	## tolerance on relative difference between SFTs in comparison
 # input parameters
 ## ---------- data parameters ----------
 Tsft=1800
@@ -48,14 +48,14 @@ refTime=701210229
 
 ## excercise non-integer cycle gaps in heterodyned timeseries
 fmin=299.1001
-Band=9.9998
+Band=0.12345
 fmax=$(echo $fmin $Band | LC_ALL=C awk '{printf "%.7g", $1 + $2}');
 
 IFO1=H1
 IFO2=L1
 IFOs=${IFO1},${IFO2}
 
-sqrtSn1=1;
+sqrtSn1=0;
 sqrtSn2=0;	## for comparison with 2 calls to mfdv4 and fixed see, the 2nd IFO noise must be 0
 sqrtSnX=${sqrtSn1},${sqrtSn2}
 
@@ -73,12 +73,12 @@ h0=0.73
 cosi=0.1
 psi=0.5
 phi0=0.9
-Freq=300.2
+Freq=299.12
 alpha=1.7
 delta=0.9
 
-f1dot=-1.e-9
-f2dot=1e-14
+f1dot=0
+f2dot=0
 
 ## ---------- output parameters ----------
 sftsv4_1=${testDIR}/${IFO1}-sftsv4.sft
@@ -91,10 +91,10 @@ echo " SIGNAL-ONLY - compare SFTs between mfd_v4 and mfd_v5"
 echo "------------------------------------------------------------"
 
 echo
-echo "----- mfd_v4: producing SFTs via (generationMode=0 [ALL_AT_ONCE] ):"
+echo "----- mfd_v4: producing SFTs via (generationMode=1 [PER_SFT] ):"
 echo
 ##----- first IFO
-mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO1 --timestampsFile=$timestamps1 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 --noiseSqrtSh=${sqrtSn1} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_1}"
+mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO1 --timestampsFile=$timestamps1 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 --noiseSqrtSh=${sqrtSn1} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_1}"
 echo $mfdv4_CL;
 if ! eval $mfdv4_CL; then
     echo "Error.. something failed when running '$mfdv4_CODE' ..."
@@ -103,7 +103,7 @@ fi
 echo "ok."
 
 ##----- second IFO
-mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO2 --timestampsFile=$timestamps2 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 --noiseSqrtSh=${sqrtSn2} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_2}"
+mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO2 --timestampsFile=$timestamps2 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 --noiseSqrtSh=${sqrtSn2} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_2}"
 echo $mfdv4_CL;
 if ! eval $mfdv4_CL; then
     echo "Error.. something failed when running '$mfdv4_CODE' ..."
