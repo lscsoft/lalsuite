@@ -1054,7 +1054,10 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
       UINT4 n1_fSamp;
       XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &n1_fSamp, n0_fSamp, timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
       REAL8 fSamp = n1_fSamp / Tsft;
-
+      if ( n1_fSamp != n0_fSamp ) {
+        XLALPrintWarning ( "SFT sampling frequency fSamp= %d/%.0f = %g had to be increased to fSampEff = %d/%.0f = %g\n",
+                           n0_fSamp, Tsft, min_fSamp, n1_fSamp, Tsft, fSamp );
+      }
       /* ----- start-time and duration ----- */
       LIGOTimeGPS firstGPS = timestamps->data[0];
       LIGOTimeGPS lastGPS  = timestamps->data [ timestamps->length - 1 ];
@@ -1085,10 +1088,13 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
               }
           } // for s = sMax ... 1
           REAL8Vector *spindown = NULL;
-          XLAL_CHECK ( (spindown = XLALCreateREAL8Vector ( maxSpindownOrder )) != NULL, XLAL_EFUNC );
-          for ( UINT4 s = 0; s < maxSpindownOrder; s ++ ) {
-            spindown->data[s] = sourceParams->Doppler.fkdot[s+1];
-          }
+          if ( maxSpindownOrder > 0 )
+            {
+              XLAL_CHECK ( (spindown = XLALCreateREAL8Vector ( maxSpindownOrder )) != NULL, XLAL_EFUNC );
+              for ( UINT4 s = 0; s < maxSpindownOrder; s ++ ) {
+                spindown->data[s] = sourceParams->Doppler.fkdot[s+1];
+              }
+            }
 
           /*----------------------------------------
            * fill the PulsarSignalParams struct
