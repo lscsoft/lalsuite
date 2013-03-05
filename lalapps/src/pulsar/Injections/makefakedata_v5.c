@@ -1000,43 +1000,19 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
     } // if multiTseries
 
   // ---------- for SFT output: calculate effective fmin and Band consistent with SFT bins
+  UINT4 firstBinEff, numBinsEff;
+  XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinEff, &numBinsEff, dataParams->fmin, dataParams->Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  /* lowest and highest frequency boundaries have to fall on exact SFT bins, ie they must be
-   * exact integer multiples of 1/Tsft:
-   * ==> calculate "effective" fmin by rounding down from uvar->fmin to closest fmin_eff,
-   * such that fmin_eff * Tsft = integer
-   * and idem for fmax_eff, the effective Band is then fBand_eff = fmax_eff - fmin_eff
-   *
-   * 'exact' here means being within 10*LAL_REAL8_EPS ~2e-15 relative deviation, to
-   * avoid unneccessary increases in the created frequency-Band due to numerical noise alone
-   * (this is consistent with what XLALExtractBandFromSFTVector() does, for example)
-   */
-  volatile REAL8 dFreq = 1.0 / Tsft;
-  volatile REAL8 tmp;
-  // NOTE: don't "simplify" the above: we try to make sure
-  // the result of this will be guaranteed to be IEEE-compliant,
-  // and identical to other locations, such as in SFT-IO
-
-  REAL8 eps = 10 * LAL_REAL8_EPS;	// about ~2e-15
-  REAL8 fudge_up   = 1 + eps;
-  REAL8 fudge_down = 1 - eps;
-
-  REAL8 fMin = dataParams->fmin;
-  tmp = fMin / dFreq;
-  UINT4 imin = (UINT4) floor( tmp * fudge_up );	// round *down*, allowing for eps 'fudge'
-  REAL8 fmin_eff = imin * dFreq;
-
-  REAL8 fMax = dataParams->fmin + dataParams->Band;
-  tmp = fMax / dFreq;
-  UINT4 imax = (UINT4) ceil ( tmp * fudge_down );  // round *up*, allowing for eps fudge
-  UINT4 numBins = (UINT4) (imax - imin + 1);
-  REAL8 fmax_eff = imax * dFreq;
-
-  REAL8 fBand_eff = (numBins - 1) * dFreq;
-
-  if ( fBand_eff != dataParams->Band ) {
-    XLALPrintWarning("Asked for Band [%.16g, %.16g] Hz, effective Band produced is [%.16g, %.16g] Hz (numSFTBins=%d)\n", fMin, fMax, fmin_eff, fmax_eff, numBins);
-  }
+  REAL8 fmin_eff  = firstBinEff / Tsft;
+  REAL8 fBand_eff = (numBinsEff - 1.0) / Tsft;
+  UINT4 numBinsAsked = round ( dataParams->Band * Tsft );
+  if ( numBinsEff != numBinsAsked )
+    {
+      REAL8 fmin = dataParams->fmin;
+      REAL8 fmax = fmin + dataParams->Band;
+      REAL8 fmax_eff = fmin_eff + fBand_eff;
+      XLALPrintWarning("Asked for Band [%.16g, %.16g] Hz, effective Band produced is [%.16g, %.16g] Hz\n", fmin, fmax, fmin_eff, fmax_eff );
+    }
 
   /* characterize the output time-series */
   REAL8 min_fSamp = 2.0 * fBand_eff;	/* minimal sampling rate, via Nyquist theorem */
