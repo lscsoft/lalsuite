@@ -45,8 +45,7 @@ int XLALSimInspiralPrecessionRotateModes(
 );
 
 int XLALSimInspiralConstantPrecessionConeWaveformModes(
-				COMPLEX16TimeSeries** h_2_2,
-				COMPLEX16TimeSeries** h_22,
+				SphHarmTimeSeries* h_lm,
 				double precess_freq,
 				double a,
 				double phi_precess,
@@ -57,8 +56,7 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 int XLALSimInspiralConstantPrecessionConeWaveform(
 				REAL8TimeSeries** hp,
 				REAL8TimeSeries** hx,
-				COMPLEX16TimeSeries* h_2_2,
-				COMPLEX16TimeSeries* h_22,
+				SphHarmTimeSeries* h_lm,
 				double precess_freq,
 				double a,
 				double phi_precess,
