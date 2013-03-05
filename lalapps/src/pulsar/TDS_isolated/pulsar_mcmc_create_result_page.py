@@ -299,67 +299,6 @@ def corrcoef(pos):
   return cc, header_string
 
 
-# a function that attempt to load an MCMC chain file: first it tries using
-# numpy.loadtxt; if it fails it tries reading line by line and checking
-# for consistent line numbers, skipping lines that are inconsistent; if this
-# fails it returns None
-def readmcmcfile(cf):
-  cfdata = None
-
-  # first try reading in with loadtxt (skipping lines starting with %)
-  try:
-    cfdata = np.loadtxt(cf, comments='%')
-  except:
-    try:
-      fc = open(cf, 'r')
-
-      # read in header lines and count how many values each line should have
-      headers = fc.readline()
-      headers = fc.readline() # column names are on the second line
-      fc.close()
-      # remove % from start
-      headers = re.sub('%', '', headers)
-      # remove rads
-      headers = re.sub('rads', '', headers)
-      # remove other brackets e.g. around (iota)
-      headers = re.sub('[()]', '', headers)
-
-      lh = len(headers.split())
-
-      cfdata = np.array([])
-
-      lines = cf.readlines()
-
-      for i, line in enumerate(lines):
-        if '%' in line: # skip lines containing %
-          continue
-
-        lvals = line.split()
-
-        # skip line if number of values isn't consistent with header
-        if len(lvals) != lh:
-          continue
-
-        # convert values to floats
-        try:
-          lvalsf = map(float, lvals)
-        except:
-          continue
-
-        # add values to array
-        if i==0:
-          cfdata = np.array(lvalsf)
-        else:
-          cfdata = np.vstack((cfdata, lvalsf))
-
-      if cfdata.size == 0:
-        cfdata = None
-    except:
-      cfdata = None
-
-  return cfdata
-
-
 # list of parameters to display (in this order)
 paramdisplist = ['RAJ', 'DECJ', 'F0', 'F1', 'F2', 'PEPOCH', 'X' 'E' \
 'EPS1', 'EPS2', 'OM', 'T0', 'TASC', 'PB']
@@ -992,11 +931,6 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
         fscanfigname.append(figname)
 
   # loop over detectors
-  poslist = None
-  mcmcgr = None
-  nefflist = None
-  chainlens = None
-
   poslist = []
   mcmcgr = [] # list of Gelman-Rubins stats for detector
   nefflist = [] # effective sample size for each combined chain
@@ -1011,135 +945,31 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
   corrcoefs = []
   corrcoefsheader = []
 
-  erridx = False
-
   for i, ifo in enumerate(ifosNew):
-    mcmc = None
-
     # read in MCMC chains
-    mcmc = []
-    neffs = [] # number of effective samples for each chain
-    cl = []
-    grr = {}
+    chainfiles = []
     for chaindir in mcmcdirs:
-      cfile = chaindir + '/' + 'MCMCchain_' + pname + '_' + ifo
+      chainfiles.append(chaindir + '/' + 'MCMCchain_' + pname + '_' + ifo)
 
-      if os.path.isfile(cfile):
-        # load MCMC chain
-        mcmcChain = None
-        mcmcChain = readmcmcfile(cfile)
+    pos, neffs, grr, cl = pppu.pulsar_mcmc_to_posterior(chainfiles)
 
-        # if no chain was returned write out an error message and skip this
-        # pulsar
-        if mcmcChain == None:
-          outerrfile = os.path.join(outpath, 'mcmc_chain_errors.txt')
-          errfile = open(outerrfile, 'a') # append to file
-          errfile.write('MCMC file %s could not be read in\n' % cfile)
-          errfile.close()
-          erridx = True
-          break
+    if pos == None or neffs == None or grr == None or cl == None:
+      outerrfile = os.path.join(outpath, 'mcmc_chain_errors.txt')
+      errfile = open(outerrfile, 'a') # append to file
+      errfile.write('MCMC files for %s and %s could not be read in\n' % (pname, ifo))
+      errfile.close()
+      print >> sys.stderr, "Error in MCMC chain reading!"
 
-        # find number of effective samples for the chain
-        neffstmp = []
-        for j in range(1, mcmcChain.shape[1]):
-          neff, acl, acf = bppu.effectiveSampleSize(mcmcChain[:,j])
-          neffstmp.append(neff)
+      try:
+        shutil.rmtree(puldir)
+      except:
+        os.system('rm -rf %s' % puldir)
 
-        # get the minimum effective sample size
-        #neffs.append(min(neffstmp))
-        # get the mean effective sample size
-        neffs.append(math.floor(np.mean(neffstmp)))
-
-        #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
-        nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
-
-        # output every nskip (independent) value
-        mcmc.append(mcmcChain[::nskip,:])
-        cl.append(mcmcChain.shape[0])
-      else:
-        print >> sys.stderr, "File %s does not exist!" % cfile
-        sys.exit(0)
-
-    if erridx:
-      break
+      sys.exit(0)
 
     nefflist.append(math.fsum(neffs))
     chainlens.append(np.mean(cl))
-
-    # output data to common results format
-    # get first line of MCMC chain file for header names
-    cf = open(cfile, 'r')
-    headers = cf.readline()
-    headers = cf.readline() # column names are on the second line
-    # remove % from start
-    headers = re.sub('%', '', headers)
-    # remove rads
-    headers = re.sub('rads', '', headers)
-    # remove other brackets e.g. around (iota)
-    headers = re.sub('[()]', '', headers)
-    cf.close()
-
-    # get Gelman-Rubins stat for each parameter
-    for idx, parv in enumerate(headers.split()):
-      lgr = []
-      if parv != 'logL':
-        for j in range(0, len(mcmc)):
-          achain = mcmc[j]
-          singlechain = achain[:,idx]
-          lgr.append(singlechain)
-        grr[parv.lower()] = pppu.gelman_rubins(lgr)
-
     mcmcgr.append(grr)
-
-    # logL in chain is actually log posterior, so also output the posterior
-    # values (can be used to estimate the evidence)
-    headers = headers.replace('\n', '\tpost\n')
-
-    # output full data to common format
-    comfile = os.path.join(puldir, 'common_tmp.dat')
-    try:
-      cf = open(comfile, 'w')
-    except:
-      print >> sys.stderr, "Can't open commom posterior file!"
-      sys.exit(0)
-
-    cf.write(headers)
-    for narr in mcmc:
-      for j in range(0, narr.shape[0]):
-        mline = narr[j,:]
-        # add on posterior
-        mline = np.append(mline, np.exp(mline[0]))
-
-        strmline = " ".join(str(x) for x in mline) + '\n'
-        cf.write(strmline)
-    cf.close()
-
-    # read in as common object
-    peparser = None
-    peparser = bppu.PEOutputParser('common')
-    cf = open(comfile, 'r')
-    commonResultsObj = None
-    commonResultsObj = peparser.parse(cf)
-    cf.close()
-
-    # remove temporary file
-    os.remove(comfile)
-
-    # create posterior class
-    pos = None
-    pos = bppu.Posterior( commonResultsObj, SimInspiralTableEntry=None, \
-                          votfile=None )
-
-    # convert iota back to cos(iota)
-    # create 1D posterior class of cos(iota) values
-    cipos = None
-    cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(pos['iota'].samples))
-
-    # add it back to posterior
-    pos.append(cipos)
-
-    # remove iota samples
-    pos.pop('iota')
 
     # get from info about the posteriors
     mP, mL = pos.maxL # maximum likelihood/posterior point
@@ -1157,17 +987,6 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
     medvals.append(md)
     corrcoefs.append(cc)
     corrcoefsheader.append(hn)
-
-  # if error occurred in reading in MCMC chains then move to next pulsar
-  if erridx:
-    # remove directory for that pulsar
-    try:
-      shutil.rmtree(puldir)
-    except:
-      os.system('rm -rf %s' % puldir)
-
-    print >> sys.stderr, "Error in MCMC chain reading!"
-    sys.exit(0)
 
   # set whether to attempt to output injection parameter on plot
   parinj = None

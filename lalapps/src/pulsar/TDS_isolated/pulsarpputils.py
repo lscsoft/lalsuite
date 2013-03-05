@@ -31,6 +31,7 @@ import math
 import os
 import numpy as np
 import struct
+import re
 
 import matplotlib
 #matplotlib.use("Agg")
@@ -46,6 +47,7 @@ from pylal import date
 from pylal.xlal import inject
 from pylal.xlal import tools
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+from pylal import bayespputils as bppu
 
 from types import StringType, FloatType
 
@@ -97,7 +99,8 @@ paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
              'E': 'eccentricity', \
              'ELL': '$\\varepsilon$', 'H95': '$h_0^{95\%}$', \
              'Q22': '$Q_{22}$\,(kg\,m$^2$)', \
-             'SDRAT': 'spin-down ratio'}
+             'SDRAT': 'spin-down ratio', \
+             'OMDT': '$\dot{\omega}$'}
 
 # some angle conversion functions taken from psr_utils.py in PRESTO
 def rad_to_dms(rad):
@@ -1797,3 +1800,180 @@ def gelman_rubins(chains):
   R = VHat/W
 
   return R
+
+
+# function to convert MCMC files output from pulsar_parameter_estimation into
+# a posterior class object - also outputting:
+#  - the mean effective sample size of each parameter chain
+#  - the Gelman-Rubins statistic for each parameter (a dictionary)
+#  - the original length of each chain
+# Th input is a list of MCMC chain files
+def pulsar_mcmc_to_posterior(chainfiles):
+  cl = []
+  neffs = []
+  grr = {}
+
+  mcmc = []
+
+  for cfile in chainfiles:
+    if os.path.isfile(cfile):
+      # load MCMC chain
+      mcmcChain = read_pulsar_mcmc_file(cfile)
+
+      # if no chain found then exit with None's
+      if mcmcChain == None:
+        return None, None, None, None
+
+      # find number of effective samples for the chain
+      neffstmp = []
+      for j in range(1, mcmcChain.shape[1]):
+        neff, acl, acf = bppu.effectiveSampleSize(mcmcChain[:,j])
+        neffstmp.append(neff)
+
+        # get the minimum effective sample size
+        #neffs.append(min(neffstmp))
+        # get the mean effective sample size
+        neffs.append(math.floor(np.mean(neffstmp)))
+
+        #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
+        nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
+
+        # output every nskip (independent) value
+        mcmc.append(mcmcChain[::nskip,:])
+        cl.append(mcmcChain.shape[0])
+    else:
+      print >> sys.stderr, "File %s does not exist!" % cfile
+      return None, None, None, None
+
+  # output data to common results format
+  # get first line of MCMC chain file for header names
+  cf = open(chainfiles[0], 'r')
+  headers = cf.readline()
+  headers = cf.readline() # column names are on the second line
+  # remove % from start
+  headers = re.sub('%', '', headers)
+  # remove rads
+  headers = re.sub('rads', '', headers)
+  # remove other brackets e.g. around (iota)
+  headers = re.sub('[()]', '', headers)
+  cf.close()
+
+  # get Gelman-Rubins stat for each parameter
+  for idx, parv in enumerate(headers.split()):
+    lgr = []
+    if parv != 'logL':
+      for j in range(0, len(mcmc)):
+        achain = mcmc[j]
+        singlechain = achain[:,idx]
+        lgr.append(singlechain)
+      grr[parv.lower()] = gelman_rubins(lgr)
+
+  # logL in chain is actually log posterior, so also output the posterior
+  # values (can be used to estimate the evidence)
+  headers = headers.replace('\n', '\tpost\n')
+
+  # output full data to common format
+  comfile = chainfiles[0] + '_common_tmp.dat'
+  try:
+    cf = open(comfile, 'w')
+  except:
+    print >> sys.stderr, "Can't open common posterior file!"
+    sys.exit(0)
+
+  cf.write(headers)
+  for narr in mcmc:
+    for j in range(0, narr.shape[0]):
+      mline = narr[j,:]
+      # add on posterior
+      mline = np.append(mline, np.exp(mline[0]))
+
+      strmline = " ".join(str(x) for x in mline) + '\n'
+      cf.write(strmline)
+  cf.close()
+
+  # read in as common object
+  peparser = bppu.PEOutputParser('common')
+  cf = open(comfile, 'r')
+  commonResultsObj = peparser.parse(cf)
+  cf.close()
+
+  # remove temporary file
+  os.remove(comfile)
+
+  # create posterior class
+  pos = bppu.Posterior( commonResultsObj, SimInspiralTableEntry=None, \
+                        votfile=None )
+
+  # convert iota back to cos(iota)
+  # create 1D posterior class of cos(iota) values
+  cipos = None
+  cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(pos['iota'].samples))
+
+  # add it back to posterior
+  pos.append(cipos)
+
+  # remove iota samples
+  pos.pop('iota')
+
+  return pos, neffs, grr, cl
+
+
+# a function that attempt to load an pulsar MCMC chain file: first it tries using
+# numpy.loadtxt; if it fails it tries reading line by line and checking
+# for consistent line numbers, skipping lines that are inconsistent; if this
+# fails it returns None
+def read_pulsar_mcmc_file(cf):
+  cfdata = None
+
+  # first try reading in with loadtxt (skipping lines starting with %)
+  try:
+    cfdata = np.loadtxt(cf, comments='%')
+  except:
+    try:
+      fc = open(cf, 'r')
+
+      # read in header lines and count how many values each line should have
+      headers = fc.readline()
+      headers = fc.readline() # column names are on the second line
+      fc.close()
+      # remove % from start
+      headers = re.sub('%', '', headers)
+      # remove rads
+      headers = re.sub('rads', '', headers)
+      # remove other brackets e.g. around (iota)
+      headers = re.sub('[()]', '', headers)
+
+      lh = len(headers.split())
+
+      cfdata = np.array([])
+
+      lines = cf.readlines()
+
+      for i, line in enumerate(lines):
+        if '%' in line: # skip lines containing %
+          continue
+
+        lvals = line.split()
+
+        # skip line if number of values isn't consistent with header
+        if len(lvals) != lh:
+          continue
+
+        # convert values to floats
+        try:
+          lvalsf = map(float, lvals)
+        except:
+          continue
+
+        # add values to array
+        if i==0:
+          cfdata = np.array(lvalsf)
+        else:
+          cfdata = np.vstack((cfdata, lvalsf))
+
+      if cfdata.size == 0:
+        cfdata = None
+    except:
+      cfdata = None
+
+  return cfdata
