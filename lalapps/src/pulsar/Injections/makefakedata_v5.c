@@ -79,8 +79,6 @@ typedef struct
   SFTCatalog *noiseCatalog; 			/**< catalog of noise-SFTs */
   MultiSFTCatalogView *multiNoiseCatalogView; 	/**< multi-IFO 'view' of noise-SFT catalogs */
 
-  COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
-
   transientWindow_t transientWindow;	/**< properties of transient-signal window */
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 } ConfigVars_t;
@@ -95,8 +93,6 @@ typedef struct
   BOOLEAN outSingleSFT;	        /**< use to output a single concatenated SFT */
 
   CHAR *TDDfile;		/**< Filename for ASCII output time-series */
-  BOOLEAN hardwareTDD;	        /**< Binary output timeseries in chunks of Tsft for hardware injections. */
-
   CHAR *logfile;		/**< name of logfile */
 
   /* specify start + duration */
@@ -123,8 +119,6 @@ typedef struct
   CHAR *SFTWindowType;		/**< Windowing function to apply to the SFT time series */
   REAL8 SFTWindowBeta;         	/**< 'beta' parameter required for certain window-types */
 
-  CHAR *actuation;		/**< filename containg detector actuation function */
-  REAL8 actuationScale;		/**< Scale-factor to be applied to actuation-function */
   CHAR *ephemDir;		/**< Directory path for ephemeris files (optional), use LAL_DATA_PATH if unset. */
   CHAR *ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
 
@@ -187,9 +181,7 @@ typedef struct tagFakeDataParams
   char *SFTWindowType;				//!< window to apply to the SFT timeseries
   REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
   UINT4 randSeed;				//!< seed value for random-number generator
-  COMPLEX8FrequencySeries *transferFunction;	//!< detector transfer-function from strain --> counts: only used for HW-injections
 } CWDataParams;
-
 
 // ----- global variables ----------
 
@@ -208,7 +200,6 @@ int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
 int XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar );
 
 int XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg );
-COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, const CHAR *fname );
 int XLALFreeMem ( ConfigVars_t *cfg );
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
@@ -237,7 +228,6 @@ main(int argc, char *argv[])
   MultiREAL4TimeSeries *mTseries = NULL;
 
   CWDataParams DataParams   = empty_CWDataParams;
-  DataParams.transferFunction   = GV.transfer;
   DataParams.fmin               = uvar.fmin;
   DataParams.Band               = uvar.Band;
   DataParams.detInfo            = GV.detInfo;
@@ -481,21 +471,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_ERROR ( XLAL_EINVAL, "I can't combine --SFToverlap with --noiseSFTs or --timestampsFiles, only use with (--startTime, --duration)!\n\n");
     }
 
-    /*-------------------- check special case: Hardware injection ---------- */
-    /* don't allow timestamps-file, noise-SFTs or SFT-output */
-    if ( uvar->hardwareTDD )
-      {
-	if (haveTimestampsFiles || uvar->noiseSFTs ) {
-          XLAL_ERROR ( XLAL_EINVAL, "\nHardware injection: don't specify --timestampsFiles or --noiseSFTs\n\n");
-        }
-	if ( !haveStart || !haveDuration ) {
-          XLAL_ERROR ( XLAL_EINVAL, "Hardware injection: need to specify --startTime and --duration!\n\n");
-        }
-	if ( XLALUserVarWasSet( &uvar->outSFTdir ) ) {
-          XLAL_ERROR ( XLAL_EINVAL, "Hardware injection mode is incompatible with producing SFTs\n\n");
-        }
-      } /* if hardware-injection */
-
     /* ----- load timestamps from file if given  */
     if ( haveTimestampsFiles )
       {
@@ -704,26 +679,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     XLAL_ERROR ( XLAL_EINVAL, "Must specify explicit reference time (--refTime or --refTimeMJD)!\n");
   }
 
-  /* ---------- has the user specified an actuation-function file ? ---------- */
-  if ( uvar->actuation )
-    {
-      /* currently we only allow using a transfer-function for hardware-injections */
-      if (!uvar->hardwareTDD )
-	{
-	  XLAL_ERROR ( XLAL_EINVAL, "Error: use of an actuation/transfer function restricted to hardare-injections\n\n");
-	}
-      else
-        {
-          cfg->transfer = XLALLoadTransferFunctionFromActuation( uvar->actuationScale, uvar->actuation );
-          XLAL_CHECK ( cfg->transfer != NULL, XLAL_EFUNC );
-        }
-
-    } /* if uvar->actuation */
-
-  if ( !uvar->actuation && XLALUserVarWasSet(&uvar->actuationScale) ) {
-    XLAL_ERROR ( XLAL_EINVAL, "Actuation-scale was specified without actuation-function file!\n\n");
-  }
-
   /* ----- handle transient-signal window if given ----- */
   if ( !XLALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
     cfg->transientWindow.type = TRANSIENT_NONE;                /* default: no transient signal window */
@@ -777,8 +732,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   uvar->Tsft = 1800;
   uvar->fmin = 0;	/* no heterodyning by default */
   uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
-
-  uvar->actuationScale = - 1.0;	/* seems to be the LIGO-default */
 
 #define DEFAULT_TRANSIENT "none"
   uvar->transientWindowType = XLALCalloc ( 1, len = strlen(DEFAULT_TRANSIENT)+1 );
@@ -865,9 +818,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  transientTauDays,     0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in days.");
 
   /* ----- 'expert-user/developer' options ----- */
-  XLALregBOOLUserStruct (  hardwareTDD,         'b', UVAR_DEVELOPER, "Hardware injection: output TDD in binary format");
-  XLALregSTRINGUserStruct (actuation,            0,  UVAR_DEVELOPER, "Filname containing actuation function of this detector");
-  XLALregREALUserStruct (  actuationScale,       0,  UVAR_DEVELOPER,  "(Signed) scale-factor to apply to the actuation-function.");
   XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
 
   /* read cmdline & cfgfile  */
@@ -897,9 +847,6 @@ XLALFreeMem ( ConfigVars_t *cfg )
   XLALDestroyMultiTimestamps ( cfg->multiTimestamps );
 
   XLALFree ( cfg->pulsar.Doppler.orbit );
-
-  /* free transfer-function if we have one.. */
-  XLALDestroyCOMPLEX8FrequencySeries ( cfg->transfer );
 
   XLALFree ( cfg->VCSInfoString );
 
@@ -956,87 +903,6 @@ XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg )
 
 } /* XLALWriteMFDLog() */
 
-/**
- * Reads an actuation-function in format (r,phi) from file 'fname',
- * and returns the associated transfer-function as a COMPLEX8FrequencySeries (Re,Im)
- * The transfer-function T is simply the inverse of the actuation A, so T=A^-1.
- */
-COMPLEX8FrequencySeries *
-XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, /**< overall scale-factor to actuation */
-                                        const CHAR *fname     /**< file containing actuation-function */
-                                        )
-{
-  int len;
-
-  XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL, "Invalid NULL input 'fname'\n" );
-
-  LALParsedDataFile *fileContents = NULL;
-  XLAL_CHECK_NULL ( XLALParseDataFile ( &fileContents, fname ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-
-  /* skip first line if containing NaN's ... */
-  UINT4 startline = 0;
-  if ( strstr ( fileContents->lines->tokens[startline], "NaN" ) != NULL ) {
-    startline ++;
-  }
-
-  UINT4 numLines = fileContents->lines->nTokens - startline;
-  COMPLEX8Vector *data = XLALCreateCOMPLEX8Vector ( numLines );
-  XLAL_CHECK_NULL ( data != NULL, XLAL_EFUNC, "XLALCreateCOMPLEX8Vector(%d) failed\n", numLines );
-
-  COMPLEX8FrequencySeries *ret = XLALCalloc (1, len = sizeof(*ret) );
-  XLAL_CHECK_NULL ( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc (1, %d)\n", len );
-
-  snprintf ( ret->name, LALNameLength-1, "Transfer-function from: %s", fname );
-  ret->name[LALNameLength-1]=0;
-
-  /* initialize loop */
-  REAL8 f0 = 0;
-  REAL8 f1 = 0;
-
-  const CHAR *readfmt = "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT;
-
-  for ( UINT4 i = startline; i < fileContents->lines->nTokens; i++ )
-    {
-      CHAR *thisline = fileContents->lines->tokens[i];
-      REAL8 amp, phi;
-
-      f0 = f1;
-      if ( 3 != sscanf (thisline, readfmt, &f1, &amp, &phi) ) {
-        XLAL_ERROR_NULL ( XLAL_EIO, "Failed to read 3 floats from line %d of file %s\n\n", i, fname );
-      }
-
-      if ( !gsl_finite ( amp ) || !gsl_finite ( phi ) ) {
-        XLAL_ERROR_NULL ( XLAL_EINVAL, "ERROR: non-finite number encountered in actuation-function at f!=0. Line=%d\n\n", i);
-      }
-
-      /* first line: set f0 */
-      if ( i == startline )
-	ret->f0 = f1;
-
-      /* second line: set deltaF */
-      if ( i == startline + 1 )
-	ret->deltaF = f1 - ret->f0;
-
-      /* check constancy of frequency-step */
-      if ( (f1 - f0 != ret->deltaF) && (i > startline) ) {
-        XLAL_ERROR_NULL ( XLAL_EINVAL, "Illegal frequency-step %f != %f in line %d of file %s\n\n", (f1-f0), ret->deltaF, i, fname );
-      }
-
-      /* now convert into transfer-function and (Re,Im): T = A^-1 */
-      data->data[i-startline].re =  cos(phi) / ( amp * actuationScale );
-      data->data[i-startline].im = -sin(phi) / ( amp * actuationScale );
-
-    } /* for i < numlines */
-
-  XLALDestroyParsedDataFile ( fileContents);
-
-  ret->data = data;
-
-  return ret;
-
-} /* XLALLoadTransferFunctionFromActuation() */
-
 /* determine if the given filepath is an existing directory or not */
 BOOLEAN
 is_directory ( const CHAR *fname )
@@ -1053,20 +919,20 @@ is_directory ( const CHAR *fname )
 
 } /* is_directory() */
 
+
+// ----------------------------------------------------------------------------------------------------
+// ---------- from here: will be exported into lalpulsar module --------------------
+// ----------------------------------------------------------------------------------------------------
+
 /**
  * Generate fake 'CW' data, returned either as SFTVector or REAL4Timeseries or both,
  * for given CW-signal ("pulsar") parameters and output parameters (frequency band etc)
- *
- * Currently used API inputs
-PulsarParams
-
-
  */
 int
 XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
                      MultiREAL4TimeSeries **multiTseries,	//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
                      const PulsarParams *sourceParams,		//< [in] CW source parameters (amplitude+phase+transient params)
-                     const CWDataParams *dataParams,	//< [in] parameters specifying the type of data to generate
+                     const CWDataParams *dataParams,		//< [in] parameters specifying the type of data to generate
                      EphemerisData *edat			//< [in] ephemeris data
                      )
 {
@@ -1210,7 +1076,7 @@ XLALMakeFakeCWData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional 
       params.pulsar.f0                 = sourceParams->Doppler.fkdot[0];
       params.pulsar.spindown           = spindown;
       params.orbit                     = sourceParams->Doppler.orbit;
-      params.transfer                  = dataParams->transferFunction;
+      params.transfer                  = NULL;
       params.ephemerides               = edat;
       params.fHeterodyne               = fmin_eff;
 
