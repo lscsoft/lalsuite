@@ -20,6 +20,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 /* LAL headers */
 #include <lal/LALStdlib.h>
@@ -130,6 +131,7 @@ typedef struct tagPriorVals{
   CHAR *priorFile; /* a file containing the h0xci prior distribution */
   REAL8Vector *h0vals, *civals;
   REAL8 **h0cipdf;
+  REAL8 minh0ci, maxh0ci; /* minimum and maximum prior values */
   
   IntrinsicPulsarVariables vars;
 
