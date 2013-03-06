@@ -175,7 +175,6 @@ typedef struct
 
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
-  CHAR *parfile;                /**< option .par file path */
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
@@ -329,18 +328,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       exit (0);
     }
 
-  BOOLEAN have_parfile = XLALUserVarWasSet (&uvar->parfile);
-  BinaryPulsarParams pulparams;
-
-  /* read in par file parameters if given */
-   if (have_parfile)
-     {
-       XLALReadTEMPOParFile( &pulparams, uvar->parfile);
-       XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALReadTEMPOParFile() failed for parfile = '%s', xlalErrno = %d\n", uvar->parfile, xlalErrno );
-       XLAL_CHECK ( pulparams.f0 > 0, XLAL_EINVAL, "Invalid .par file values, need f0 > 0!\n" );
-       XLAL_CHECK ( (pulparams.pepoch > 0) || (pulparams.posepoch > 0), XLAL_EINVAL, "Invalid .par file values, need PEPOCH or POSEPOCH!\n");
-     }
-
   /* if requested, log all user-input and code-versions */
   if ( uvar->logfile ) {
     XLAL_CHECK ( XLALWriteMFDlog ( uvar->logfile, cfg ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteMFDlog() failed with xlalErrno = %d\n", xlalErrno );
@@ -363,32 +350,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     BOOLEAN have_Delta  = XLALUserVarWasSet ( &uvar->Delta );
     BOOLEAN have_RA = XLALUserVarWasSet ( &uvar->RA );
     BOOLEAN have_Dec = XLALUserVarWasSet ( &uvar->Dec );
-
-    /*check .par file for gw parameters*/
-    if (have_parfile){
-      if (pulparams.h0 != 0){
-	uvar->h0 = pulparams.h0;
-	uvar->cosi = pulparams.cosiota;
-	uvar->phi0 = pulparams.phi0;
-	uvar->psi = pulparams.psi;
-	have_h0 = 1; /*Set to TRUE as uvar->h0 not declared on command line -- same for rest*/
-	have_cosi = 1;
-      }
-      else{
-	uvar->aPlus = pulparams.Aplus;
-	uvar->aCross = pulparams.Across;
-	uvar->phi0 = pulparams.phi0;
-	uvar->psi = pulparams.psi;
-	have_aPlus = 1;
-	have_aCross = 1;
-      }
-      uvar->Freq = 2.*pulparams.f0;
-      uvar->Alpha = pulparams.ra;
-      uvar->Delta = pulparams.dec;
-      have_Freq = 1;
-      have_Alpha = 1;
-      have_Delta = 1;
-    }
 
     /* ----- {h0,cosi} or {aPlus,aCross} ----- */
     if ( (have_aPlus || have_aCross) && ( have_h0 || have_cosi ) ) {
@@ -457,12 +418,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   /* ---------- prepare vector of spindown parameters ---------- */
   {
-    if ( have_parfile )
-      {
-	uvar->f1dot = 2.*pulparams.f1;
-	uvar->f2dot = 2.*pulparams.f2;
-	uvar->f3dot = 2.*pulparams.f3;
-      }
     pulsarParams->Doppler.fkdot[1] = uvar->f1dot;
     pulsarParams->Doppler.fkdot[2] = uvar->f2dot;
     pulsarParams->Doppler.fkdot[3] = uvar->f3dot;
@@ -601,34 +556,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   /* Consistency check: if any orbital parameters specified, we need all of them (except for nano-seconds)! */
   {
-    if (have_parfile){
-      if (pulparams.model != NULL) {
-	uvar->orbitasini = pulparams.x;
-	uvar->orbitPeriod = pulparams.Pb*86400;
-	if (strstr(pulparams.model,"ELL1") != NULL) {
-	  REAL8 w,e,eps1,eps2;
-	  eps1 = pulparams.eps1;
-	  eps2 = pulparams.eps2;
-	  w = atan2(eps1,eps2);
-	  e = sqrt(eps1*eps1+eps2*eps2);
-	  uvar->orbitArgp = w;
-	  uvar->orbitEcc = e;
-	}
-	else {
-	  uvar->orbitArgp = pulparams.w0;
-	  uvar->orbitEcc = pulparams.e;
-	}
-	if (strstr(pulparams.model,"ELL1") != NULL) {
-	  REAL8 fe, uasc,Dt;
-	  fe = sqrt((1.0-uvar->orbitEcc)/(1.0+uvar->orbitEcc));
-	  uasc = 2.0*atan(fe*tan(uvar->orbitArgp/2.0));
-	  Dt = (uvar->orbitPeriod/LAL_TWOPI)*(uasc-uvar->orbitEcc*sin(uasc));
-	  pulparams.T0 = pulparams.Tasc + Dt;
-	}
-	uvar->orbitTpSSBsec = (UINT4)floor(pulparams.T0);
-	uvar->orbitTpSSBnan = (UINT4)floor((pulparams.T0 - uvar->orbitTpSSBsec)*1e9);
-      }
-    }
     BOOLEAN set1 = XLALUserVarWasSet(&uvar->orbitasini);
     BOOLEAN set2 = XLALUserVarWasSet(&uvar->orbitEcc);
     BOOLEAN set3 = XLALUserVarWasSet(&uvar->orbitPeriod);
@@ -679,11 +606,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   } /* END: binary orbital params */
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  if (XLALUserVarWasSet (&uvar->parfile)) {
-    uvar->refTime = pulparams.pepoch; /*XLALReadTEMPOParFile already converted pepoch to GPS*/
-    XLALGPSSetREAL8(&(pulsarParams->Doppler.refTime),uvar->refTime);
-  }
-  else if (XLALUserVarWasSet(&uvar->refTime) && XLALUserVarWasSet(&uvar->refTimeMJD))
+  if (XLALUserVarWasSet(&uvar->refTime) && XLALUserVarWasSet(&uvar->refTimeMJD))
     {
       XLAL_ERROR ( XLAL_EINVAL, "\nUse only one of '--refTime' and '--refTimeMJD' to specify SSB reference time!\n\n");
     }
@@ -833,8 +756,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregBOOLUserStruct (  lineFeature,          0, UVAR_OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
 
   XLALregBOOLUserStruct (  version,             'V', UVAR_SPECIAL, "Output version information");
-
-  XLALregSTRINGUserStruct (parfile,             'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   /* transient signal window properties (name, start, duration) */
   XLALregSTRINGUserStruct (transientWindowType,  0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
