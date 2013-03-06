@@ -57,9 +57,9 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
 
-/* #include <lal/FrameStream.h> */
+#ifdef HAVE_LIBLALFRAME
 #include <lal/LALFrameIO.h>
-/* #include <lal/FrameCache.h> */
+#endif
 
 #include <lal/TransientCW_utils.h>
 
@@ -151,6 +151,7 @@ void LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, cons
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 BOOLEAN is_directory ( const CHAR *fname );
+int XLALIsValidDescriptionField ( const char *desc );
 
 /*----------------------------------------------------------------------*/
 static const ConfigVars_t empty_GV;
@@ -167,7 +168,7 @@ BOOLEAN uvar_outSingleSFT;	/**< use to output a single concatenated SFT */
 
 CHAR *uvar_TDDfile;		/**< Filename for ASCII output time-series */
 CHAR *uvar_TDDframedir;		/**< directory for frame file output time-series */
-CHAR *uvar_outframebname;       /**< the basname of the output frames */
+CHAR *uvar_frameDesc;           /**< description field entry in the frame filename */
 BOOLEAN uvar_hardwareTDD;	/**< Binary output timeseries in chunks of Tsft for hardware injections. */
 
 CHAR *uvar_logfile;		/**< name of logfile */
@@ -442,35 +443,46 @@ main(int argc, char *argv[])
       /* output time-series to frames if requested */
       if ( uvar_TDDframedir )
 	{
-	  	  
+#ifndef HAVE_LIBLALFRAME
+          XLAL_ERROR ( XLAL_EINVAL, "--TDDframedir option not supported, code has to be compiled with lalframe\n" );
+#else
 	  /* use standard frame output filename format */
-	  CHAR *fname = LALCalloc (1, strlen(uvar_TDDframedir) + strlen(uvar_outframebname) + 100 );
-	  sprintf (fname, "%s/%s-%s-%d-%d.gwf",
-		   uvar_TDDframedir,uvar_IFO,uvar_outframebname,params.startTimeGPS.gpsSeconds,(int)params.duration);
-	 
+          XLAL_CHECK ( XLALIsValidDescriptionField ( uvar_frameDesc ) == XLAL_SUCCESS, XLAL_EFUNC );
+          size_t len = strlen(uvar_TDDframedir) + strlen(uvar_frameDesc) + 100;
+	  char *fname;
+          char IFO[2] = { Tseries->name[0], Tseries->name[1] };
+          XLAL_CHECK ( (fname = LALCalloc (1, len )) != NULL, XLAL_ENOMEM );
+          size_t written = snprintf ( fname, len, "%s/%c-%c%c_%s-%d-%d.gwf",
+                                      uvar_TDDframedir, IFO[0], IFO[0], IFO[1], uvar_frameDesc, params.startTimeGPS.gpsSeconds, (int)params.duration );
+          XLAL_CHECK ( written < len, XLAL_ESIZE, "Frame-filename exceeds expected maximal length (%d): '%s'\n", len, fname );
+
 	  /* define the output frame */
 	  struct FrameH *outFrame;
-	  XLAL_CHECK ( (outFrame = XLALFrameNew( &(params.startTimeGPS), params.duration, uvar_outframebname, 1, 0, 0 )) != NULL, XLAL_EFUNC );
+	  XLAL_CHECK ( (outFrame = XLALFrameNew( &(params.startTimeGPS), params.duration, uvar_frameDesc, 1, 0, 0 )) != NULL, XLAL_EFUNC );
 
 	  /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
-	  snprintf(Tseries->name,LALNameLength,"%s:%s",Tseries->name,uvar_outframebname);
-	  XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData(outFrame,Tseries) == 0 ) , XLAL_EFUNC );
+          char buffer[LALNameLength];
+	  written = snprintf ( buffer, LALNameLength, "%s:%s", Tseries->name, uvar_frameDesc );
+          XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Updated frame name exceeds max length (%d): '%s'\n", LALNameLength, buffer );
+          strcpy ( Tseries->name, buffer );
+
+	  XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
 
 	  /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
 	  char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
-          FrHistoryAdd(outFrame,hist);
-	  
+          FrHistoryAdd ( outFrame, hist );
+
 	  /* then we add the version string */
-	  FrHistoryAdd(outFrame,GV.VCSInfoString);
+	  FrHistoryAdd ( outFrame, GV.VCSInfoString );
 
 	  /* output the frame to file - compression level 1 (higher values make no difference) */
 	  XLAL_CHECK ( (XLALFrameWrite(outFrame, fname,1) == 0) , XLAL_EFUNC );
 
 	  /* free the frame, frame file name and history memory */
-	  FrameFree(outFrame);
-	  LALFree(fname);
-          LALFree(hist);
-
+	  FrameFree ( outFrame );
+	  LALFree ( fname );
+          LALFree ( hist );
+#endif
 	} /* if outputting time-series to frames */
 
 
@@ -1511,7 +1523,9 @@ InitUserVars (LALStatus *status)
 
   uvar_TDDfile = NULL;
   uvar_TDDframedir = NULL;
-  uvar_outframebname = NULL;
+#define DEFAULT_FRAME_DESC "mfdv4"
+  uvar_frameDesc = XLALCalloc ( 1, strlen(DEFAULT_FRAME_DESC) + 1 );
+  strcpy ( uvar_frameDesc, DEFAULT_FRAME_DESC );
 
   uvar_logfile = NULL;
 
@@ -1543,9 +1557,9 @@ InitUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   outSingleSFT, 	's', UVAR_OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
   LALregSTRINGUserVar(status, outSFTbname,	'n', UVAR_OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
 
-  LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Filename to output time-series into");
+  LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Basename for output of ASCII time-series");
   LALregSTRINGUserVar(status, TDDframedir,	'F', UVAR_OPTIONAL, "Directory to output frame time-series into");
-  LALregSTRINGUserVar(status, outframebname,	'B', UVAR_OPTIONAL, "basename for output frames");
+  LALregSTRINGUserVar(status, frameDesc,	 0, UVAR_OPTIONAL,  "Description-field entry in frame filename");
 
   LALregSTRINGUserVar(status, logfile,		'l', UVAR_OPTIONAL, "Filename for log-output");
 
@@ -2072,3 +2086,35 @@ LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const Pul
   RETURN ( status );
 
 } /* LALGenerateLineFeature() */
+
+
+/**
+ * Check whether given string qualifies as a valid 'description' field of a FRAME (or SFT)
+ * filename, according to  LIGO-T010150-00-E "Naming Convention for Frame Files which are to be Processed by LDAS",
+ * LIGO-T040164-01 at https://dcc.ligo.org/LIGO-T040164-x0/public
+ *
+ * NOTE: this function will be moved into SFTutils.c later
+ */
+#include <ctype.h>
+int
+XLALIsValidDescriptionField ( const char *desc )
+{
+  XLAL_CHECK ( desc != NULL, XLAL_EINVAL );
+
+  size_t len = strlen ( desc );
+
+  if ( len == 1 && isupper(desc[0]) ) {
+    XLAL_ERROR ( XLAL_EINVAL, "Single uppercase description reserved for class-1 raw frames!\n" );
+  }
+
+  for ( UINT4 i=0; i < len; i ++ )
+    {
+      int c = desc[i];
+      if ( !isalnum(c) && (c!='_') && (c!='+') && (c!='#') ) {	// all the valid characters allowed
+        XLAL_ERROR ( XLAL_EINVAL, "Invalid chacter '%c' found, only alphanumeric and ['_', '+', '#'] are allowed\n", c );
+      }
+    } // for i < len
+
+  return XLAL_SUCCESS;
+
+} // XLALIsValidDescriptionField()
