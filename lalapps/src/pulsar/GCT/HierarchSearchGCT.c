@@ -336,13 +336,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
 
   /* checkpoint filename */
-  // BOINC Apps always checkpoint, so set a default here
-#ifdef EAH_BOINC
-  CHAR *uvar_fnameChkPoint="checkpoint.cpt";
-#else
-  CHAR *uvar_fnameChkPoint=NULL;
-#endif
-
+  CHAR *uvar_fnameChkPoint = NULL;
 
   /* user variables */
   BOOLEAN uvar_help = FALSE;    /* true if -h option is given */
@@ -618,6 +612,19 @@ int MAIN( int argc, char *argv[]) {
       XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, uvar_SortToplist),
                    XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
     }
+
+#ifdef EAH_BOINC
+  // BOINC Apps always checkpoint, so set a default filename here
+  if (uvar_fnameChkPoint == NULL) {
+    CHAR*fname = "checkpoint.cpt";
+    uvar_fnameChkPoint = XLALMalloc(strlen(fname)+1);
+    if (uvar_fnameChkPoint == NULL) {
+      fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+      return(HIERARCHICALSEARCH_EMEM);
+    }
+    strcpy(uvar_fnameChkPoint, fname);
+  }
+#endif
 
   /* write the log file */
   if ( uvar_log )
