@@ -223,8 +223,8 @@ int main(int argc, char **argv)
 
   if (params->doNullStream)
   {
-    coh_PTF_setup_null_stream(params,channel,invspec[LAL_NUM_IFO],\
-            segments[LAL_NUM_IFO],Fplustrig,Fcrosstrig,timeOffsets,\
+    coh_PTF_setup_null_stream(params,channel,invspec,\
+            segments,Fplustrig,Fcrosstrig,timeOffsets,\
             fwdplan,revplan,psdplan,timeSlideVectors,startTime);
   }
 

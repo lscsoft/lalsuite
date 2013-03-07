@@ -387,8 +387,8 @@ REAL4TimeSeries *coh_PTF_get_data(
 void coh_PTF_setup_null_stream(
     struct coh_PTF_params   *params,
     REAL4TimeSeries         **channel,
-    REAL4FrequencySeries    *invspec,
-    RingDataSegments        *segments,
+    REAL4FrequencySeries    **invspec,
+    RingDataSegments        **segments,
     REAL4                   *Fplustrig,
     REAL4                   *Fcrosstrig,
     REAL4                   *timeOffsets,

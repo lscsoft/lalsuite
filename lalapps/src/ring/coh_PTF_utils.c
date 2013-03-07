@@ -158,8 +158,8 @@ REAL4TimeSeries *coh_PTF_get_data(
 void coh_PTF_setup_null_stream(
     struct coh_PTF_params   *params,
     REAL4TimeSeries         **channel,
-    REAL4FrequencySeries    *invspec,
-    RingDataSegments        *segments,
+    REAL4FrequencySeries    **invspec,
+    RingDataSegments        **segments,
     REAL4                   *Fplustrig,
     REAL4                   *Fcrosstrig,
     REAL4                   *timeOffsets,
@@ -185,23 +185,23 @@ void coh_PTF_setup_null_stream(
   }
 
   /* compute the spectrum */
-  invspec = coh_PTF_get_invspec(channel[LAL_NUM_IFO], fwdplan,\
+  invspec[LAL_NUM_IFO] = coh_PTF_get_invspec(channel[LAL_NUM_IFO], fwdplan,\
                                             revplan, psdplan, params);
   /* If white spectrum need to scale this. */
   if (params->whiteSpectrum)
   {
-    for(ui=0 ; ui < invspec->data->length; ui++)
+    for(ui=0 ; ui < invspec[LAL_NUM_IFO]->data->length; ui++)
     {
       /* FIXME: The factor here is hardcoded and wrong. */
       /* Should be dynamically calculated. */
-      invspec->data->data[ui] *= pow(1./0.3403324,2);
+      invspec[LAL_NUM_IFO]->data->data[ui] *= pow(1./0.3403324,2);
     }
   }
 
   /* create the segments */
-  segments = coh_PTF_get_segments(channel[LAL_NUM_IFO],invspec,fwdplan,
-                                             LAL_NUM_IFO, timeSlideVectors,
-                                             params);
+  segments[LAL_NUM_IFO] = coh_PTF_get_segments(channel[LAL_NUM_IFO],\
+                                        invspec[LAL_NUM_IFO],fwdplan,\
+                                        LAL_NUM_IFO,timeSlideVectors, params);
 
   verbose("Created segments for null stream at %ld \n",
           timeval_subtract(&startTime));
