@@ -247,7 +247,7 @@ int main ( int argc, char *argv[] )
   MetadataTable         searchsummvars;
   MetadataTable         candle;
   SummValueTable      **this_summvalue = &(candle.summValueTable);
-  SearchSummvarsTable  *this_search_summvar;
+  SearchSummvarsTable  *this_search_summvar = NULL;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
 
