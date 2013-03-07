@@ -96,8 +96,8 @@ enum
   real_8
 } calData = undefined;
 
-/* 
- * which type of PSD to use - 'simulated' refers to LALSimNoise PSD functions 
+/*
+ * which type of PSD to use - 'simulated' refers to LALSimNoise PSD functions
  *
  */
 enum
@@ -629,7 +629,7 @@ int main ( int argc, char *argv[] )
     /* close the frame file stream and destroy the cache */
     LAL_CALL( LALFrClose( &status, &frStream ), &status );
     LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
- 
+
     /* write the raw channel data as read in from the frame files */
     if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
         &chan, "ct", "RAW" );
@@ -777,7 +777,7 @@ int main ( int argc, char *argv[] )
       spec.data->data[k] = (REAL4) (dynRange * dynRange * specFunc( sim_psd_freq ));
     }
   }
-  
+
   /* write the spectrum data to a file */
   if ( writeSpectrum )
   {
@@ -946,7 +946,7 @@ int main ( int argc, char *argv[] )
       this_search_summvar = this_search_summvar->next =
           (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
     }
-    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX, 
+    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
         "standard candle sample rate" );
     this_search_summvar->value = candleDeltaT;
 
@@ -963,7 +963,7 @@ int main ( int argc, char *argv[] )
         distance = compute_candle_distance(candleMinMass, candleMinMass,
             candleSnr, candleDeltaT, numPoints, &(bankIn.shf), cut);
       }
- 
+
       snprintf( candleComment, LIGOMETA_SUMMVALUE_COMM_MAX,
           "%3.2f_%3.2f_%3.2f", candleMinMass, candleMinMass, candleSnr );
 
@@ -2670,7 +2670,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   /* ifoTag as an ifo prefix */
   if ( specType == specType_simulated )
   {
-    if ( ! ifoTag ) 
+    if ( ! ifoTag )
     {
       fprintf( stderr, "--ifo-tag must be specified if using a simulated PSD\n" );
       exit( 1 );
@@ -2835,7 +2835,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       fprintf( stderr,
           "--num-points must be specified if --standard-candle is given\n"
           "when using a simulated PSD\n" );
-      exit( 1 ); 
+      exit( 1 );
     }
   }
 
@@ -2858,7 +2858,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   /* check for potential underflows in the simulated spectrum */
   if ( ( specType == specType_simulated ) && dynRangeExponent < 10 )
-  { 
+  {
     fprintf( stderr, "If using a simulated PSD, a suitable dynamic \n"
         "range exponent must be given, eg 69.0. Exiting...\n" );
     exit( 1 );
@@ -3153,7 +3153,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           "Error: argument --min-eta must be given if --max-eta is given\n");
       exit(1);
     }
- 
+
     if( etaMaxCutoff < etaMinCutoff )
     {
       fprintf( stderr,
