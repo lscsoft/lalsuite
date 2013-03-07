@@ -99,7 +99,7 @@ LALSource   src_0_45_c;
                                    REAL4Vector * pB,
                                    REAL4Vector *pAminusB); */
 /*static REAL4 REAL4VectorRMS(REAL4Vector *pVector); */
-static void PrintLALDetector(LALDetector * const detector);
+static void PrintLALDetector(const LALDetector * detector);
 static void PrintDetResponse(const LALDetAMResponse * const response,
                              const char * const title);
 
@@ -1822,7 +1822,7 @@ static REAL4 REAL4VectorRMS(REAL4Vector *pVector)
 
 
 static void
-PrintLALDetector(LALDetector * const detector)
+PrintLALDetector(const LALDetector * detector)
 {
   printf( "Detector  = \n");
   printf("{\n");

@@ -58,7 +58,7 @@ void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
       
-      XLALComputeDetAMResponse(&fplus, &fcross, det.response, ra, dec, polAngle, gmst);
+      XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])det.response, ra, dec, polAngle, gmst);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: XLALComputeDetAMResponse() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);

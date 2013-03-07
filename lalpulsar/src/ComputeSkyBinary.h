@@ -196,7 +196,7 @@ tagCSBParams
   BarycenterInput *baryinput;	/**< TO BE DOCUMENTED */
   EmissionTime  *emit;		/**< TO BE DOCUMENTED */
   EarthState    *earth;		/**< TO BE DOCUMENTED */
-  EphemerisData *edat;		/**< TO BE DOCUMENTED */
+  const EphemerisData *edat;	/**< ephemeris data */
 }
 CSBParams;
 

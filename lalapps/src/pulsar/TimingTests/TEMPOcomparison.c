@@ -523,11 +523,13 @@ main(int argc, char *argv[]){
   if (lalDebugLevel) fprintf(stdout,"STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
 
   /* fill in required pulsar params structure for Barycentering */
-  pulsarparams.site = NULL;
-  pulsarparams.site = (LALDetector *)LALMalloc(sizeof(LALDetector));
-  pulsarparams.site->location[0] = baryinput.site.location[0];
-  pulsarparams.site->location[1] = baryinput.site.location[1];
-  pulsarparams.site->location[2] = baryinput.site.location[2];
+  LALDetector *site = NULL;
+  site = (LALDetector *)LALMalloc(sizeof(LALDetector));
+  site->location[0] = baryinput.site.location[0];
+  site->location[1] = baryinput.site.location[1];
+  site->location[2] = baryinput.site.location[2];
+  pulsarparams.site = site;
+
   pulsarparams.pulsar.position.longitude = alpha;
   pulsarparams.pulsar.position.latitude = delta;
   pulsarparams.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
@@ -735,7 +737,7 @@ main(int argc, char *argv[]){
   /* free memory */
   LALFree(TSSB);
   LALFree(TOA);
-  LALFree(pulsarparams.site);
+  LALFree(site);
   LALFree(edat->ephemS);
   LALFree(edat->ephemE);
   LALFree(edat);

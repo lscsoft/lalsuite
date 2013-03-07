@@ -85,7 +85,7 @@ static double site_time(LALDetector* site, double direction[3])
 // Plus and cross polarization response of a detector for signals from a
 // given direction
 
-static void site_response(double f[2], LALDetector* site, double direction[3])
+static void site_response(double f[2], const LALDetector* site, double direction[3])
 {
     double thetaphi[2];
     XLALSkymapSphericalFromCartesian(thetaphi, direction);

@@ -22,7 +22,7 @@ static double point_source_average(struct detectors detectors, double ra, double
 
 		for(j = 0; j < detectors.n; j++) {
 			double fp, fc;
-			XLALComputeDetAMResponse(&fp, &fc, detectors.detector[j].response, ra, dec, 0, gmst);
+			XLALComputeDetAMResponse(&fp, &fc, (const REAL4(*)[3])detectors.detector[j].response, ra, dec, 0, gmst);
 			fsquared *= fp * fp + fc * fc;
 		}
 
@@ -46,7 +46,7 @@ static double all_sky_average(struct detectors detectors)
 
 			for(k = 0; k < detectors.n; k++) {
 				double fp, fc;
-				XLALComputeDetAMResponse(&fp, &fc, detectors.detector[k].response, ra, dec, 0, 0);
+				XLALComputeDetAMResponse(&fp, &fc, (const REAL4(*)[3]) detectors.detector[k].response, ra, dec, 0, 0);
 				fsquared *= fp * fp + fc * fc;
 			}
 

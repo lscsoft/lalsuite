@@ -279,11 +279,11 @@ typedef struct tagPulsarCoherentGW {
  * of a detector to a gravitational waveform.
  */
 typedef struct tagPulsarDetectorResponse {
-  COMPLEX8FrequencySeries *transfer;    /**< The frequency-dependent transfer function of the interferometer, in ADC counts per unit strain amplitude at any given frequency;
+  const COMPLEX8FrequencySeries *transfer;    /**< The frequency-dependent transfer function of the interferometer, in ADC counts per unit strain amplitude at any given frequency;
                                          * if absent, the response will be given in raw strain rather than ADC output */
-  LALDetector *site;                    /**< A structure storing site and polarization information, used to compute the polarization response and the propagation delay;
+  const LALDetector *site;                    /**< A structure storing site and polarization information, used to compute the polarization response and the propagation delay;
                                          * if absent, the response will be computed to the plus mode waveform with no time delay */
-  EphemerisData *ephemerides;           /**< A structure storing the positions, velocities, and accelerations of the Earth and Sun centres of mass, used to compute
+  const EphemerisData *ephemerides;           /**< A structure storing the positions, velocities, and accelerations of the Earth and Sun centres of mass, used to compute
                                          * the propagation delay to the solar system barycentre;
                                          * if absent, the propagation delay will be computed to the Earth centre (rather than a true barycentre) */
   LIGOTimeGPS heterodyneEpoch;          /**< A reference time for heterodyned detector output time series, where the phase of the mixing signal is zero.

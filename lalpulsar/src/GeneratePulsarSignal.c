@@ -296,15 +296,18 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
 
   /* for simplicity we _always_ work with timestamps.
    * Therefore, we have to generate them now if none have been provided by the user. */
-  LIGOTimeGPSVector *timestamps;
+  const LIGOTimeGPSVector *timestamps;
+  LIGOTimeGPSVector *localTimestamps = NULL;
   if ( params->timestamps == NULL )
     {
       REAL8 Toverlap = 0;
-      XLAL_CHECK_NULL ( ( timestamps = XLALMakeTimestamps ( tStart, duration, params->Tsft, Toverlap )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( ( localTimestamps = XLALMakeTimestamps ( tStart, duration, params->Tsft, Toverlap )) != NULL, XLAL_EFUNC );
       /* see if the last timestamp is valid (can fit a full SFT in?), if not, drop it */
-      LIGOTimeGPS lastTs = timestamps->data[timestamps->length-1];
-      if ( XLALGPSDiff ( &lastTs, &tLast ) > 0 )	// if lastTs > tLast
-	timestamps->length --;
+      LIGOTimeGPS lastTs = localTimestamps->data [ localTimestamps->length - 1 ];
+      if ( XLALGPSDiff ( &lastTs, &tLast ) > 0 ) {	// if lastTs > tLast
+	localTimestamps->length --;
+      }
+      timestamps = localTimestamps;
     }
   else	/* if given, use those, and check they are valid */
     {
@@ -439,8 +442,8 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
   XLALDestroyREAL4Vector ( timeStretchCopy );
 
   /* did we create timestamps ourselves? */
-  if (params->timestamps == NULL) {
-    XLALDestroyTimestampVector ( timestamps );	// if yes, free them
+  if ( localTimestamps != NULL) {
+    XLALDestroyTimestampVector ( localTimestamps );	// if yes, free them
   }
 
   return sftvect;

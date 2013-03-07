@@ -449,6 +449,7 @@ main(int argc, char **argv)
     SUB( ParseEpoch( &stat, &(node.fepoch), "JD2449550.0" ), &stat ); */
   }
 
+  LALDetector *lsite = NULL;
   /* If the detector was specified, set up the detector position. */
   if ( site ) {
     UINT4 i; /* site index */
@@ -471,13 +472,13 @@ main(int argc, char **argv)
 	XLALPrintError( "%s", site );
       return PULSARCATTESTC_EVAL;
     }
-    detectorTime.p_detector =
-      (LALDetector *)LALMalloc( sizeof(LALDetector) );
-    if ( !(detectorTime.p_detector) ) {
+    lsite = (LALDetector *)LALMalloc( sizeof(LALDetector) );
+    if ( !(lsite) ) {
       ERROR( PULSARCATTESTC_EMEM, PULSARCATTESTC_MSGEMEM, 0 );
       return PULSARCATTESTC_EMEM;
     }
-    *(detectorTime.p_detector) = lalCachedDetectors[i];
+    *(lsite) = lalCachedDetectors[i];
+    detectorTime.p_detector = lsite;
 
     /* Read ephemerides. */
     edat = (EphemerisData *)LALMalloc( sizeof(EphemerisData) );
@@ -706,8 +707,8 @@ main(int argc, char **argv)
       LALFree( edat->ephemS );
     LALFree( edat );
   }
-  if ( detectorTime.p_detector )
-    LALFree( detectorTime.p_detector );
+  if ( lsite )
+    LALFree( lsite );
 
   /* Done! */
   LALCheckMemoryLeaks();

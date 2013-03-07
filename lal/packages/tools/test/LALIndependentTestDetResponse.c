@@ -106,7 +106,7 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 /* void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec, REAL8Vector *fPlus, REAL8Vector *fCross); */ /* 10/14/04 gam */
 void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, REAL8 inputXArmAzimuthRadians, REAL8 inputVertexLatitudeRadians, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec,  REAL8Vector *fPlus, REAL8Vector *fCross);
 
-void PrintLALDetector(LALDetector *detector);
+void PrintLALDetector(const LALDetector *detector);
 
 void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 sampleRate, LIGOTimeGPS *gps, LALDetAMResponseSeries  *am_response_series_ptr);
 
@@ -824,7 +824,7 @@ void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, REAL8 inputXArmAzimuthRa
   return;
 }
 
-void PrintLALDetector(LALDetector *detector)
+void PrintLALDetector(const LALDetector *detector)
 {
   /* REAL8 lal_gamma = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
   /* REAL8 lal_gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */

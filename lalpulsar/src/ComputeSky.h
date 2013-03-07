@@ -131,7 +131,7 @@ tagCSParams
   BarycenterInput 	*baryinput;	/**< A switch which turns modulation on/off */
   EmissionTime 		*emit;		/**< TO BE DOCUMENTED */
   EarthState 		*earth;		/**< TO BE DOCUMENTED */
-  EphemerisData 	*edat;		/**< TO BE DOCUMENTED */
+  const EphemerisData 	*edat;		/**< ephemeris data */
 }
 CSParams;
 

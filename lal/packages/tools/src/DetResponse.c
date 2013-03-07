@@ -44,7 +44,7 @@
 void XLALComputeDetAMResponse(
 	double *fplus,		/**< Returned value of F+ */
 	double *fcross,		/**< Returned value of Fx */
-	REAL4 D[3][3],		/**< Detector response 3x3 matrix */
+	const REAL4 D[3][3],	/**< Detector response 3x3 matrix */
 	const double ra,	/**< Right ascention of source (radians) */
 	const double dec,	/**< Declination of source (radians) */
 	const double psi,	/**< Polarization angle of source (radians) */
@@ -213,7 +213,7 @@ void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, c
 /** Computes REAL4TimeSeries containing time series of response amplitudes.
  * \see XLALComputeDetAMResponse() for more details.
  */
-int XLALComputeDetAMResponseSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** fcross, REAL4 D[3][3], const double ra, const double dec, const double psi, const LIGOTimeGPS * start, const double deltaT, const int n)
+int XLALComputeDetAMResponseSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** fcross, const REAL4 D[3][3], const double ra, const double dec, const double psi, const LIGOTimeGPS * start, const double deltaT, const int n)
 {
 	LIGOTimeGPS t;
 	double gmst;

@@ -445,16 +445,16 @@ main(int argc, char **argv)
 
   /* Set up detector structure. */
   memset( &detector, 0, sizeof(PulsarDetectorResponse) );
-  detector.transfer = (COMPLEX8FrequencySeries *)
+  COMPLEX8FrequencySeries * transfer = (COMPLEX8FrequencySeries *)
     LALMalloc( sizeof(COMPLEX8FrequencySeries) );
-  if ( !(detector.transfer) ) {
+  if ( !(transfer) ) {
     ERROR( SIMULATETAYLORCWTESTC_EMEM,
 	   SIMULATETAYLORCWTESTC_MSGEMEM, 0 );
     return SIMULATETAYLORCWTESTC_EMEM;
   }
   detector.heterodyneEpoch.gpsSeconds = hsec;
   detector.heterodyneEpoch.gpsNanoSeconds = hnsec;
-  memset( detector.transfer, 0, sizeof(COMPLEX8FrequencySeries) );
+  memset( transfer, 0, sizeof(COMPLEX8FrequencySeries) );
   if ( respfile ) {
     REAL4VectorSequence *resp = NULL; /* response as vector sequence */
     COMPLEX8Vector *response = NULL;  /* response as complex vector */
@@ -468,11 +468,11 @@ main(int argc, char **argv)
 
     /* Read header. */
     ok &= ( fscanf( fp, "# epoch = %" LAL_INT8_FORMAT "\n", &epoch ) == 1 );
-    I8ToLIGOTimeGPS( &( detector.transfer->epoch ), epoch );
-    ok &= ( fscanf( fp, "# f0 = %lf\n", &( detector.transfer->f0 ) )
+    I8ToLIGOTimeGPS( &( transfer->epoch ), epoch );
+    ok &= ( fscanf( fp, "# f0 = %lf\n", &( transfer->f0 ) )
             == 1 );
     ok &= ( fscanf( fp, "# deltaF = %lf\n",
-                    &( detector.transfer->deltaF ) ) == 1 );
+                    &( transfer->deltaF ) ) == 1 );
     if ( !ok ) {
       ERROR( SIMULATETAYLORCWTESTC_EINPUT,
 	     SIMULATETAYLORCWTESTC_MSGEINPUT, respfile );
@@ -497,25 +497,27 @@ main(int argc, char **argv)
       unity->data[i].realf_FIXME = 1.0;
       unity->data[i].imagf_FIXME = 0.0;
     }
-    SUB( LALCCreateVector( &stat, &( detector.transfer->data ),
+    SUB( LALCCreateVector( &stat, &( transfer->data ),
                            response->length ), &stat );
-    SUB( LALCCVectorDivide( &stat, detector.transfer->data, unity,
+    SUB( LALCCVectorDivide( &stat, transfer->data, unity,
                             response ), &stat );
     SUB( LALCDestroyVector( &stat, &response ), &stat );
     SUB( LALCDestroyVector( &stat, &unity ), &stat );
   }
   /* No response file, so generate a unit response. */
   else {
-    I8ToLIGOTimeGPS( &( detector.transfer->epoch ), EPOCH );
-    detector.transfer->f0 = 0.0;
-    detector.transfer->deltaF = FSTOP;
-    SUB( LALCCreateVector( &stat, &( detector.transfer->data ), 2 ),
+    I8ToLIGOTimeGPS( &( transfer->epoch ), EPOCH );
+    transfer->f0 = 0.0;
+    transfer->deltaF = FSTOP;
+    SUB( LALCCreateVector( &stat, &( transfer->data ), 2 ),
          &stat );
-    detector.transfer->data->data[0].realf_FIXME = 1.0;
-    detector.transfer->data->data[1].realf_FIXME = 1.0;
-    detector.transfer->data->data[0].imagf_FIXME = 0.0;
-    detector.transfer->data->data[1].imagf_FIXME = 0.0;
+    transfer->data->data[0].realf_FIXME = 1.0;
+    transfer->data->data[1].realf_FIXME = 1.0;
+    transfer->data->data[0].imagf_FIXME = 0.0;
+    transfer->data->data[1].imagf_FIXME = 0.0;
   }
+  LALDetector *lsite = NULL;
+  EphemerisData *lephem = NULL;
   if ( site ) {
     /* Set detector location. */
     if ( !strcmp( site, "LHO" ) )
@@ -537,25 +539,25 @@ main(int argc, char **argv)
 	XLALPrintError( "%s", site );
       return SIMULATETAYLORCWTESTC_EVAL;
     }
-    detector.site = (LALDetector *)LALMalloc( sizeof(LALDetector) );
-    if ( !(detector.site) ) {
+    lsite = (LALDetector *)LALMalloc( sizeof(LALDetector) );
+    if ( !(lsite) ) {
       ERROR( SIMULATETAYLORCWTESTC_EMEM,
 	     SIMULATETAYLORCWTESTC_MSGEMEM, 0 );
       return SIMULATETAYLORCWTESTC_EMEM;
     }
-    *(detector.site) = lalCachedDetectors[i];
+    *(lsite) = lalCachedDetectors[i];
 
     /* Read ephemerides. */
-    detector.ephemerides = (EphemerisData *)
+    lephem = (EphemerisData *)
       LALMalloc( sizeof(EphemerisData) );
-    if ( !(detector.ephemerides) ) {
+    if ( !(lephem) ) {
       ERROR( SIMULATETAYLORCWTESTC_EMEM,
 	     SIMULATETAYLORCWTESTC_MSGEMEM, 0 );
       return SIMULATETAYLORCWTESTC_EMEM;
     }
-    detector.ephemerides->ephiles.earthEphemeris = earthfile;
-    detector.ephemerides->ephiles.sunEphemeris = sunfile;
-    SUB( LALInitBarycenter( &stat, detector.ephemerides ), &stat );
+    lephem->ephiles.earthEphemeris = earthfile;
+    lephem->ephiles.sunEphemeris = sunfile;
+    SUB( LALInitBarycenter( &stat, lephem ), &stat );
   }
 
 
@@ -570,10 +572,13 @@ main(int argc, char **argv)
     SUB( LALUnitRaise( &stat, &unit, pair.unitTwo,
                        &negOne ), &stat );
     pair.unitTwo = &unit;
-    SUB( LALUnitMultiply( &stat, &(detector.transfer->sampleUnits),
+    SUB( LALUnitMultiply( &stat, &(transfer->sampleUnits),
                           &pair ), &stat );
   }
 
+  detector.transfer = transfer;
+  detector.site = lsite;
+  detector.ephemerides = lephem;
 
   /*******************************************************************
    * OUTPUT GENERATION                                               *
@@ -755,14 +760,14 @@ main(int argc, char **argv)
 
   /* Destroy remaining memory. */
   SUB( LALSDestroyVector( &stat, &( output.data ) ), &stat );
-  SUB( LALCDestroyVector( &stat, &( detector.transfer->data ) ),
+  SUB( LALCDestroyVector( &stat, &( transfer->data ) ),
        &stat );
-  LALFree( detector.transfer );
+  LALFree( transfer );
   if ( site ) {
-    LALFree( detector.ephemerides->ephemE );
-    LALFree( detector.ephemerides->ephemS );
-    LALFree( detector.ephemerides );
-    LALFree( detector.site );
+    LALFree( lephem->ephemE );
+    LALFree( lephem->ephemS );
+    LALFree( lephem );
+    LALFree( lsite );
   }
 
   /* Done! */

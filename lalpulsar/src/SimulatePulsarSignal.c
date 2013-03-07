@@ -155,7 +155,7 @@ XLALSimulateExactPulsarSignal ( const PulsarSignalParams *params )
   XLAL_CHECK_NULL ( amcoe != NULL, XLAL_EFUNC, "XLALComputeAMCoeffs() failed.\n");
 
   /* create output timeseries (FIXME: should really know *detector* here, not just site!!) */
-  LALFrDetector *site = &(params->site->frDetector);
+  const LALFrDetector *site = &(params->site->frDetector);
   CHAR *channel = XLALGetChannelPrefix ( site->name );
   XLAL_CHECK_NULL ( channel != NULL, XLAL_EFUNC, "XLALGetChannelPrefix( %s ) failed.\n", site->name );
 

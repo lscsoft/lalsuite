@@ -119,7 +119,7 @@ LALSource;
 typedef struct
 tagLALDetAndSource
 {
-  LALDetector  *pDetector;	/**< Pointer to ::LALDetector object containing information about the detector */
+  const LALDetector  *pDetector;/**< Pointer to ::LALDetector object containing information about the detector */
   LALSource    *pSource;	/**< Pointer to ::LALSource object containing information about the source */
 }
 LALDetAndSource;
@@ -175,7 +175,7 @@ LALComputeDetAMResponse( LALStatus             *status,
 void XLALComputeDetAMResponse(
 	double *fplus,
 	double *fcross,
-	REAL4 D[3][3],
+	const REAL4 D[3][3],
 	const double ra,
 	const double dec,
 	const double psi,
@@ -210,7 +210,7 @@ LALComputeDetAMResponseSeries( LALStatus                      *status,
 int XLALComputeDetAMResponseSeries(
 	REAL4TimeSeries **fplus,
 	REAL4TimeSeries **fcross,
-	REAL4 D[3][3],
+	const REAL4 D[3][3],
 	const double ra,
 	const double dec,
 	const double psi,

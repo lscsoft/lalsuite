@@ -95,7 +95,7 @@ information.  The various time systems are discussed in [\ref esaa1992].
 typedef struct
 tagLALPlaceAndGPS
 {
-    LALDetector *p_detector;   /**< pointer to a detector */
+  const LALDetector *p_detector;   /**< pointer to a detector */
     LIGOTimeGPS *p_gps;        /**< Pointer to a GPS time structure */
 }
 LALPlaceAndGPS;
