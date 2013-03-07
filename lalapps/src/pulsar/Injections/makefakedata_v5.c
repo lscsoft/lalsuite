@@ -222,12 +222,12 @@ static const CWMultiDataParams empty_CWMultiDataParams;
 int XLALFindSmallestValidSamplingRate ( UINT4 *n1, UINT4 n0, const LIGOTimeGPSVector *timestamps );
 int
 XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries,
-                          const InjectionSources *injectionSources, const CWMultiDataParams *multiDataParams, EphemerisData *edat );
+                          const InjectionSources *injectionSources, const CWMultiDataParams *multiDataParams, const EphemerisData *edat );
 int
 XLALCWMakeFakeData ( SFTVector **SFTVect, REAL4TimeSeries **Tseries,
-                     const InjectionSources *injectionSources, const CWDataParams *dataParams, EphemerisData *edat );
+                     const InjectionSources *injectionSources, const CWDataParams *dataParams, const EphemerisData *edat );
 REAL4TimeSeries *
-XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, EphemerisData *edat );
+XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat );
 
 
 void XLALDestroyInjectionSources ( InjectionSources *sources );
@@ -922,7 +922,7 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,		//< [out] pointer to opti
                           MultiREAL4TimeSeries **multiTseries,	//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
                           const InjectionSources *injectionSources,	//< [in] array of sources inject
                           const CWMultiDataParams *dataParams,		//< [in] parameters specifying the type of data to generate
-                          EphemerisData *edat			//< [in] ephemeris data
+                          const EphemerisData *edat			//< [in] ephemeris data
                           )
 {
   XLAL_CHECK ( (multiSFTs == NULL) || ((*multiSFTs) == NULL ), XLAL_EINVAL );
@@ -1007,7 +1007,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
                      REAL4TimeSeries **Tseries,
                      const InjectionSources *injectionSources,
                      const CWDataParams *dataParams,
-                     EphemerisData *edat
+                     const EphemerisData *edat
                      )
 {
   XLAL_CHECK ( (SFTvect == NULL) || ((*SFTvect) == NULL ), XLAL_EINVAL );
@@ -1168,7 +1168,7 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
                          REAL8 duration,
                          REAL8 fSamp,
                          REAL8 fHet,
-                         EphemerisData *edat
+                         const EphemerisData *edat
                          )
 {
   XLAL_CHECK_NULL ( pulsarParams != NULL, XLAL_EINVAL );
