@@ -296,7 +296,7 @@ int main(int argc, char **argv)
 
   coh_PTF_initialize_time_series(params,segStartTime,\
           params->lowTemplateFrequency,&cohSNR,&nullSNR,&traceSNR,bankVeto,\
-          autoVeto,chiSquare,pValues,gammaBeta,numSpinTmplts);
+          autoVeto,chiSquare,snrComps,pValues,gammaBeta,numSpinTmplts);
   verbose("Initialized storage arrays at %ld\n",timeval_subtract(&startTime));
 
 
@@ -400,14 +400,14 @@ int main(int argc, char **argv)
       /* Reset the epoch here and memset to 0 all entries */
       coh_PTF_reset_time_series(params,segStartTime,\
           cohSNR,nullSNR,traceSNR,bankVeto,\
-          autoVeto,chiSquare,pValues,gammaBeta,numSpinTmplts);
+          autoVeto,chiSquare,snrComps,pValues,gammaBeta,numSpinTmplts);
       verbose("Initialized storage arrays for segment %d at %ld\n",\
           j, timeval_subtract(&startTime));     
 
       /* Calculate single detector filters */
       /* FIXME: Also calculate single detector SNR here */
       coh_PTF_calculate_single_detector_filters(params,fcTmplt,invspec,PTFM,\
-              PTFqVec,segments,invplan,spinTemplate,j);
+              PTFqVec,snrComps,segments,invplan,spinTemplate,j);
       verbose("Calculated sngl filters for segment %d template %d at %ld\n",\
           j, i, timeval_subtract(&startTime));
 
@@ -683,18 +683,29 @@ void coh_PTF_statistic(
   /* This function generates the SNR for every point in time and, where
    * appropriate calculates the desired signal based vetoes. */
 
-  CHAR ifoName[LIGOMETA_IFO_MAX];
-  char name[LALNameLength];
-  UINT4  check;
-  UINT4  i, j, k, m, ifoNumber, vecLength, vecLengthTwo;
-  INT4   l, timeOffsetPoints[LAL_NUM_IFO];
-  REAL4  deltaT    = cohSNR->deltaT;
+  /* Begin with all the declarations */
+  UINT4  check, segStartPoint, segEndPoint,csVecLength,csVecLengthTwo;
+  UINT4  i, j, k, m, ifoNumber, vecLength, vecLengthTwo,ifoNum1,ifoNum2;
+  INT4   l, timeOffsetPoints[LAL_NUM_IFO],tOffset1,tOffset2;
+  REAL4 *v1p,*v2p,coincSNR,snglSNRthresh;
+  REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
+  REAL4 recSNR, traceSNRsq;
+  REAL4 dAlpha, dBeta, dCee;
+  REAL4 betaGammaTemp[2];
   UINT4  numPoints = params->numTimePoints;
+  gsl_matrix *eigenvecs,*eigenvecsNull,*Autoeigenvecs;
+  gsl_vector *eigenvals,*eigenvalsNull,*Autoeigenvals;
+  /* FIXME: the 50s below seem to hardcode a limit on the number of templates
+   * this should not be hardcoded. Note that this value is hardcoded in some
+   * function declarations as well as here! Double pointers will fix this*/
+  gsl_matrix *Bankeigenvecs[50];
+  gsl_vector *Bankeigenvals[50];
 
   struct bankDataOverlaps *chisqOverlaps = *chisqOverlapsP;
   struct bankDataOverlaps *chisqSnglOverlaps = *chisqSnglOverlapsP;
 
   /* Code works slightly differently if spin/non spin and single/coherent */
+  /* First we set the various vector lengths */
   if (spinTemplate)
     vecLength = 5;
   else
@@ -704,97 +715,64 @@ void coh_PTF_statistic(
   else
     vecLengthTwo = 2* vecLength;
 
-  REAL4 cohSNRThreshold = params->threshold;
-  if (spinTemplate)
-    cohSNRThreshold = params->spinThreshold;
-
-  UINT4 csVecLength = 1;
-  UINT4 csVecLengthTwo = 2;
+  csVecLength = 1;
+  csVecLengthTwo = 2;
   if (params->numIFO == 1 || params->singlePolFlag || params->faceOnStatistic)
     csVecLengthTwo = 1;
 
+  /* Declarations that need vecLengths */
   REAL4 u1[vecLengthTwo], u2[vecLengthTwo], v1[vecLengthTwo], v2[vecLengthTwo];
-  REAL4 *v1p,*v2p,*snglv1p,*snglv2p;
   REAL4 u1N[vecLength], u2N[vecLength], v1N[vecLength], v2N[vecLength];
-  REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
-  REAL4 recSNR, traceSNRsq;
-  REAL4 dAlpha, dBeta, dCee;
   REAL4 pValsTemp[vecLengthTwo];
-  REAL4 betaGammaTemp[2];
 
-  gsl_matrix *B2Null = gsl_matrix_alloc(vecLength, vecLength);
-  /* FIXME: the 50s below seem to hardcode a limit on the number of templates
-     this should not be hardcoded. Note that this value is hardcoded in some
-     function declarations as well as here! Double pointers will fix this*/
-  gsl_matrix *Bankeigenvecs[50];
-  gsl_vector *Bankeigenvals[50];
-  gsl_matrix *Autoeigenvecs = NULL;
-  gsl_vector *Autoeigenvals = NULL;
+  /* Initialize pointers, some initialize to NULL */
+  Autoeigenvecs = NULL;
+  Autoeigenvals = NULL;
   for (i = 0; i < 50; i++)
   {
     Bankeigenvecs[i] = NULL;
-    Bankeigenvals[i] = NULL;  
+    Bankeigenvals[i] = NULL;
   }
-
-  gsl_eigen_symmv_workspace *matTempNull = gsl_eigen_symmv_alloc(vecLength);
-  gsl_matrix                *eigenvecs   = gsl_matrix_alloc(vecLengthTwo,
-                                                             vecLengthTwo);
-  gsl_vector                *eigenvals   = gsl_vector_alloc(vecLengthTwo);
-  gsl_matrix                *eigenvecsNull = gsl_matrix_alloc(vecLength,
-                                                              vecLength);
-  gsl_vector                *eigenvalsNull = gsl_vector_alloc(vecLength);
-  gsl_matrix                *eigenvecsSngl = gsl_matrix_alloc(vecLength,
-                                                              vecLength);
-  gsl_vector                *eigenvalsSngl = gsl_vector_alloc(vecLength);
-
-  // This function takes the (Q_i|Q_j) matrices, combines it across the ifos
-  // and returns the eigenvalues and eigenvectors of this new matrix.
-  // We later rotate and rescale the (Q_i|s) values such that in the new basis
-  // this matrix will be the identity matrix.
-  // For non-spin this describes the rotation into the dominant polarization
-  coh_PTF_calculate_bmatrix(params,eigenvecs,eigenvals,Fplus,Fcross,PTFM,vecLength,vecLengthTwo,vecLength);
-
-  // If required also calculate these eigenvalues/vectors for the null stream 
-  if (params->doNullStream)
-  {
-    for (i = 0; i < vecLength; i++)
-    {
-      for (j = 0; j < vecLength; j++)
-      {
-        gsl_matrix_set(B2Null, i, j, PTFM[LAL_NUM_IFO]->data[i*5+j]);
-      }
-    }
-    gsl_eigen_symmv(B2Null, eigenvalsNull, eigenvecsNull, matTempNull); 
-  }
-
-  /* This loop takes the time offset in seconds and converts to time offset
-  * in data points (rounded) */
-  verbose("Time offsets (s): ");
-  for (i = 0; i < LAL_NUM_IFO; i++)
-    if (params->haveTrig[i])
-      verbose("%f ", timeOffsets[i]);
-  verbose("\n");
-  verbose("Time offsets (points): ");
-  for (i = 0; i < LAL_NUM_IFO; i++)
-  {
-    timeOffsetPoints[i] = (int) floor(timeOffsets[i]/deltaT + 0.5);
-    if (params->haveTrig[i])
-      verbose("%d " , timeOffsetPoints[i]);
-  }
-  verbose("\n");
-
+  eigenvecs   = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
+  eigenvals   = gsl_vector_alloc(vecLengthTwo);
+  eigenvecsNull = gsl_matrix_alloc(vecLength,vecLength);
+  eigenvalsNull = gsl_vector_alloc(vecLength);
   v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
   v2p = LALCalloc(vecLengthTwo , sizeof(REAL4));
-  snglv1p = LALCalloc(vecLength , sizeof(REAL4));
-  snglv2p = LALCalloc(vecLength , sizeof(REAL4));
+
+  /* Pick the relevant SNR threshold */
+  REAL4 cohSNRThreshold = params->threshold;
+  if (spinTemplate)
+    cohSNRThreshold = params->spinThreshold;
+  snglSNRthresh = params->snglSNRThreshold;
+
+  /* This function takes the (Q_i|Q_j) matrices, combines it across the ifos
+   * and returns the eigenvalues and eigenvectors of this new matrix.
+   * We later rotate and rescale the (Q_i|s) values such that in the new basis
+   * this matrix will be the identity matrix.
+   * For non-spin this describes the rotation into the dominant polarization
+   */
+  coh_PTF_calculate_bmatrix(params,eigenvecs,eigenvals,Fplus,Fcross,PTFM,\
+                            vecLength,vecLengthTwo,vecLength);
+
+  /* If required also calculate these eigenvalues/vectors for the null stream*/
+  if (params->doNullStream)
+  {
+    coh_PTF_calculate_null_stream_norms(vecLength,eigenvecsNull,eigenvalsNull,\
+                                        PTFM);
+  }
+
+  /* This function takes the time offset in seconds and converts to time offset
+   * in data points (rounded) */
+  coh_PTF_convert_time_offsets_to_points(params,timeOffsets,timeOffsetPoints);
 
   /* If we have injections we only want to analyse the time around the
    * injection. Here we figure out what that time should be. No injections
    * equates to analyse the whole segment.
    */
 
-  UINT4 segStartPoint = 0;
-  UINT4 segEndPoint = 0;
+  segStartPoint = 0;
+  segEndPoint = 0;
 
   if ( params->injectFile )
   {
@@ -803,115 +781,32 @@ void coh_PTF_statistic(
 
   if (! segStartPoint)
   {
-    segStartPoint = numPoints/4;
-    segEndPoint = 3*numPoints/4;
+    segStartPoint = params->analStartPoint;
+    segEndPoint = params->analEndPoint;
   }
 
-  /* First, calculate the single detector SNR time series. Only do this for
-     the first sky point. */
-  /* NOT CORRECT FOR SPINNING FIXME! */
-
-  REAL4 reSNRcomp,imSNRcomp;
-  UINT4 ifoNum1,ifoNum2;
-
-  ifoNum1 = 0;
-  ifoNum2 = 0;
-
-  /* FIXME: For >2 detectors this should choose the 2 most sensitive ifos */
-  /* NOTE: This is only used in two det case where the 2 most sensitive ifos
-     is obvious! */
-  for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  /* If only two detectors & standard analysis identify the 2 detectors
+   * up front for speed
+   */ 
+  ifoNum1 = ifoNum2 = tOffset1 = tOffset2 = 0;
+  if (params->numIFO == 2 && (! params->singlePolFlag) &&\
+      (!params->faceOnStatistic) )
   {
-    if (params->haveTrig[ifoNumber])
+    for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
     {
-      if (ifoNum1 == 0)
-        ifoNum1 = ifoNumber;
-      else if (ifoNum2 == 0)
-        ifoNum2 = ifoNumber;
-    }
-  }
-
-  for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
-  {
-    if (params->haveTrig[ifoNumber] && (! snrComps[ifoNumber]))
-    {
-      verbose("Calculating single detector SNR for ifo %d at %ld.\n",
-              ifoNumber, timeval_subtract(&startTime));
-      XLALReturnIFO(ifoName,ifoNumber);
-      snprintf( name, sizeof( name ), "%s_snr",ifoName);
-      snrComps[ifoNumber] = XLALCreateREAL4TimeSeries(name,
-                                                      &cohSNR->epoch,
-                                                      cohSNR->f0,
-                                                      cohSNR->deltaT,
-                                                      &lalDimensionlessUnit,
-                                                      3*numPoints/4
-                                                          -numPoints/4+10000);
-
-      if (spinTemplate)
+      if (params->haveTrig[ifoNumber])
       {
-        /* convert PTFM to gsl_matrix */
-        gsl_matrix_view PTFmatrix;
-        PTFmatrix = gsl_matrix_view_array(PTFM[ifoNumber]->data,\
-                                          PTFM[ifoNumber]->dimLength->data[0],
-                                          PTFM[ifoNumber]->dimLength->data[1]);
-        /* calculate eigenvectors and eigenvalues of (h|h)*/
-        gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc(5);
-        gsl_eigen_symmv(&(PTFmatrix.matrix), eigenvalsSngl, eigenvecsSngl,
-                        matTemp);
-        gsl_eigen_symmv_free(matTemp);
-        for (i = segStartPoint-5000; i < segEndPoint+5000; ++i)
-        {  /* loop over time */ 
-          // This function combines the various (Q_i | s) and rotates them into
-          // the basis as discussed above.
-          coh_PTF_calculate_rotated_vectors(params,PTFqVec,snglv1p,snglv2p,Fplus,Fcross,
-            timeOffsetPoints,eigenvecsSngl,eigenvalsSngl,
-            numPoints,i,vecLength,vecLength,ifoNumber);
-
-          /* Compute the dot products */
-          v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
-          for (j = 0; j < vecLength; j++)
-          {
-            v1_dot_u1 += snglv1p[j] * snglv1p[j];
-            v1_dot_u2 += snglv1p[j] * snglv2p[j];
-            v2_dot_u2 += snglv2p[j] * snglv2p[j];
-          }
-          // And SNR is calculated
-          // For spin this follows Diego's notation
-          max_eigen =0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2)
-              * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
-          snrComps[ifoNumber]->data->data[i-((numPoints/4)-5000)] =
-              sqrt(max_eigen);
-        }
-      }
-      else
-      {
-        for (i = segStartPoint-5000; i < segEndPoint+5000; ++i)
-        {  /* loop over time */
-          reSNRcomp = PTFqVec[ifoNumber]->data[i].re;
-          imSNRcomp = PTFqVec[ifoNumber]->data[i].im;
-          snrComps[ifoNumber]->data->data[i - ((numPoints/4)-5000)] =
-              sqrt((reSNRcomp*reSNRcomp + imSNRcomp*imSNRcomp)/
-                   PTFM[ifoNumber]->data[0]);
-        }
+        if (ifoNum1 == 0)
+          ifoNum1 = ifoNumber;
+        else if (ifoNum2 == 0)
+          ifoNum2 = ifoNumber;
       }
     }
+    tOffset1 = timeOffsetPoints[ifoNum1] - params->analStartPointBuf;
+    tOffset2 = timeOffsetPoints[ifoNum2] - params->analStartPointBuf;
   }
 
-
-  verbose("Begin loop over time at %ld \n",timeval_subtract(&startTime));
-
-  /* These are declared to optimize what comes below */
-  REAL4 coincSNR;
-  INT4  tOffset0 = 5000 - numPoints/4;
-  INT4  tOffset1 = tOffset0 + timeOffsetPoints[ifoNum1];
-  INT4  tOffset2 = tOffset0 + timeOffsetPoints[ifoNum2];
-  INT4  sOffset  = numPoints/4;
-  REAL4 SNRthresh = params->snglSNRThreshold;
-
-  for (i = numPoints/4; i < 3*numPoints/4; ++i) /* Main loop over time */
-  {
-    cohSNR->data->data[i-sOffset] = 0;
-  }
+  verbose("-->Begin loop over time at %ld \n",timeval_subtract(&startTime));
 
   for (i = segStartPoint; i < segEndPoint; ++i) /* Main loop over time */
   {
@@ -922,7 +817,8 @@ void coh_PTF_statistic(
       if (params->haveTrig[ifoNumber])
       {
         if (snrComps[ifoNumber]->data->
-                data[i+tOffset0+timeOffsetPoints[ifoNumber]] > SNRthresh)
+                data[i-params->analStartPointBuf+timeOffsetPoints[ifoNumber]]
+                 > snglSNRthresh)
         {
           break;
         }
@@ -930,38 +826,36 @@ void coh_PTF_statistic(
     }
     if (ifoNumber == LAL_NUM_IFO)
     {
-      cohSNR->data->data[i-sOffset] = 0;
+      cohSNR->data->data[i-params->analStartPoint] = 0;
       continue;
     }
 
-    if (params->numIFO == 2 && (! params->singlePolFlag) && (!params->faceOnStatistic) )
-    {
-      cohSNR->data->data[i-sOffset] = sqrt(snrComps[ifoNum1]->data->
-                                               data[i+tOffset1] *
-                                           snrComps[ifoNum1]->data->
-                                               data[i+tOffset1] +
-                                           snrComps[ifoNum2]->data->
-                                               data[i+tOffset2] *
-                                           snrComps[ifoNum2]->data->
-                                               data[i+tOffset2]);
+    if (params->numIFO == 2 && (! params->singlePolFlag) &&\
+        (!params->faceOnStatistic) )
+    { /*If only 2 detectors cohSNR = coincident SNR. SO just use that */
+      cohSNR->data->data[i-params->analStartPoint] = sqrt(\
+                          snrComps[ifoNum1]->data->data[i+tOffset1] *
+                          snrComps[ifoNum1]->data->data[i+tOffset1] +
+                          snrComps[ifoNum2]->data->data[i+tOffset2] *
+                          snrComps[ifoNum2]->data->data[i+tOffset2]);
     }
     else
     {
       coincSNR = 0;
-      // We do not need to calculate coherent SNR if coinc SNR < threshold
+      /* Do not need to calculate coherent SNR if coinc SNR < threshold */
       for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
         if (params->haveTrig[ifoNumber])
         {
           coincSNR += snrComps[ifoNumber]->data->data[\
-              i + tOffset0 + timeOffsetPoints[ifoNumber]]
+              i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]]
               * snrComps[ifoNumber]->data->data[\
-              i + tOffset0 + timeOffsetPoints[ifoNumber]];
+              i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]];
         }
       }
       if (coincSNR < cohSNRThreshold)
       {
-        cohSNR->data->data[i-sOffset] = 0;
+        cohSNR->data->data[i-params->analStartPoint] = 0;
         continue;
       }
 
@@ -998,7 +892,15 @@ void coh_PTF_statistic(
         max_eigen = 0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2)
             * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
       }
-      cohSNR->data->data[i-sOffset] = sqrt(max_eigen);
+      cohSNR->data->data[i-params->analStartPoint] = sqrt(max_eigen);
+      fprintf(stderr,"%d %e %e %e %e %e %e %e %e %e %e\n",i,gsl_vector_get(eigenvals,0),gsl_vector_get(eigenvals,1),gsl_vector_get(eigenvals,2),gsl_vector_get(eigenvals,3),gsl_vector_get(eigenvals,4),gsl_vector_get(eigenvals,5),gsl_vector_get(eigenvals,6),gsl_vector_get(eigenvals,7),gsl_vector_get(eigenvals,8),gsl_vector_get(eigenvals,9));
+/*      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[1],v1p[2],v2p[1],v2p[2]);
+      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[3],v1p[4],v2p[3],v2p[4]);
+      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[0],v1p[5],v2p[0],v2p[5]);
+      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[6],v1p[7],v2p[6],v2p[7]);
+      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[8],v1p[9],v2p[8],v2p[9]);
+      fprintf(stderr,"%d %e %e %e\n",i,v1_dot_u1,v2_dot_u2,v1_dot_u2);
+      fprintf(stderr,"%d %e %e\n",i,max_eigen,cohSNR->data->data[i-params->analStartPoint]); */
     }
   }
 
@@ -1373,8 +1275,6 @@ void coh_PTF_statistic(
   chi square */
   LALFree(v1p);
   LALFree(v2p);
-  LALFree(snglv1p);
-  LALFree(snglv2p);
 
   verbose("Calculated most vetoes at %ld \n",timeval_subtract(&startTime));
 
@@ -1699,12 +1599,8 @@ void coh_PTF_statistic(
       XLALDestroyCOMPLEX8VectorSequence(tempqVec);
   }
 
-  gsl_matrix_free(B2Null);
-  gsl_eigen_symmv_free(matTempNull);
   gsl_matrix_free(eigenvecs);
   gsl_vector_free(eigenvals);
-  gsl_matrix_free(eigenvecsSngl);
-  gsl_vector_free(eigenvalsSngl);
   gsl_matrix_free(eigenvecsNull);
   gsl_vector_free(eigenvalsNull);
 

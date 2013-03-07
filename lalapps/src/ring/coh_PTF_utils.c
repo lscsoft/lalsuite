@@ -806,6 +806,7 @@ void coh_PTF_initialize_time_series(
   REAL4TimeSeries          **bankVeto,
   REAL4TimeSeries          **autoVeto,
   REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **snrComps,
   REAL4TimeSeries          **pValues,
   REAL4TimeSeries          **gammaBeta,
   UINT4                    spinTemplates
@@ -837,6 +838,18 @@ void coh_PTF_initialize_time_series(
                                          fLower,(1.0/params->sampleRate),\
                                          &lalDimensionlessUnit,\
                                          params->numAnalPoints);
+
+  for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      XLALReturnIFO(ifoName,ifoNumber);
+      snprintf( name, sizeof( name ), "%s_snr",ifoName);
+      snrComps[ifoNumber] = XLALCreateREAL4TimeSeries(name,
+                            &segStartTime,fLower,(1.0/params->sampleRate),
+                            &lalDimensionlessUnit,params->numAnalPointsBuf);
+    }
+  }
 
   if (params->doBankVeto)
   {
@@ -963,6 +976,7 @@ void coh_PTF_reset_time_series(
   REAL4TimeSeries          **bankVeto,
   REAL4TimeSeries          **autoVeto,
   REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **snrComps,
   REAL4TimeSeries          **pValues,
   REAL4TimeSeries          **gammaBeta,
   UINT4                    spinTemplates
@@ -975,6 +989,19 @@ void coh_PTF_reset_time_series(
   cohSNR->epoch.gpsNanoSeconds = segStartTime.gpsNanoSeconds;
   /* And memset to 0 all values */
   memset(cohSNR->data->data, 0, params->numAnalPoints * sizeof(REAL4));
+
+  for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      snrComps[ifoNumber]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+      snrComps[ifoNumber]->epoch.gpsNanoSeconds = \
+              segStartTime.gpsNanoSeconds;
+      memset(snrComps[ifoNumber]->data->data, 0,\
+              params->numAnalPointsBuf * sizeof(REAL4));
+    }
+  }
+
 
   if (params->doNullStream)
   {
@@ -1169,13 +1196,15 @@ void coh_PTF_calculate_single_detector_filters(
   REAL4FrequencySeries       **invspec,
   REAL8Array                 **PTFM,
   COMPLEX8VectorSequence     **PTFqVec,
+  REAL4TimeSeries            **snrComps,
   RingDataSegments           **segments,
   COMPLEX8FFTPlan            *invPlan,
   UINT4                      spinTemplate,
   UINT4                      segNum
 )
 {
-  UINT4 ifoNumber;
+  UINT4 ifoNumber,ui,uj;
+  REAL4 reSNRcomp,imSNRcomp;
 
   for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -1200,9 +1229,80 @@ void coh_PTF_calculate_single_detector_filters(
                         PTFM[ifoNumber], NULL, PTFqVec[ifoNumber],
                         &segments[ifoNumber]->sgmnt[segNum], invPlan,
                         spinTemplate);
+
+      /* Here we calculate the single detector SNR */
+      if (spinTemplate)
+      {
+        coh_PTF_calculate_single_det_spin_snr(params,PTFM,PTFqVec,snrComps,\
+                                              ifoNumber);
+      }
+      else
+      {
+        for (ui = params->analStartPointBuf; ui < params->analEndPointBuf; ++ui)
+        { /* Loop over time */
+          uj = ui - params->analStartPointBuf;
+          reSNRcomp = PTFqVec[ifoNumber]->data[ui].re;
+          imSNRcomp = PTFqVec[ifoNumber]->data[ui].im;
+          snrComps[ifoNumber]->data->data[uj] =
+              sqrt((reSNRcomp*reSNRcomp + imSNRcomp*imSNRcomp)/
+                   PTFM[ifoNumber]->data[0]);
+        }
+      }
       
     }
   }
+}
+
+void coh_PTF_calculate_single_det_spin_snr(
+  struct coh_PTF_params      *params,
+  REAL8Array                 **PTFM,
+  COMPLEX8VectorSequence     **PTFqVec,
+  REAL4TimeSeries            **snrComps,
+  UINT4                      ifoNumber
+)
+{
+  UINT4 ui,uj;
+  gsl_matrix_view PTFmatrix;
+  gsl_vector *eigenvalsSngl;
+  gsl_matrix *eigenvecsSngl;
+  gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc(5);
+  REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
+  REAL4 *snglv1p,*snglv2p;
+  eigenvecsSngl = gsl_matrix_alloc(5,5);
+  eigenvalsSngl = gsl_vector_alloc(5);
+  snglv1p = LALCalloc(5 , sizeof(REAL4));
+  snglv2p = LALCalloc(5 , sizeof(REAL4));
+
+  /* convert PTFM to gsl_matrix */
+  PTFmatrix = gsl_matrix_view_array(PTFM[ifoNumber]->data,\
+                                    PTFM[ifoNumber]->dimLength->data[0],
+                                    PTFM[ifoNumber]->dimLength->data[1]);
+
+  /* calculate eigenvectors and eigenvalues of (h|h)*/
+  gsl_eigen_symmv(&(PTFmatrix.matrix), eigenvalsSngl, eigenvecsSngl,
+                  matTemp);
+  gsl_eigen_symmv_free(matTemp);
+  for (ui = params->analStartPointBuf; ui < params->analEndPointBuf; ++ui)
+  {  /* loop over time */
+    coh_PTF_calculate_rotated_vectors(params,PTFqVec,snglv1p,snglv2p,NULL,\
+            NULL,NULL,eigenvecsSngl,eigenvalsSngl,\
+            params->numTimePoints,ui,5,5,ifoNumber);
+
+    /* Compute the dot products */
+    v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
+    for (uj = 0; uj < 5; uj++)
+    {
+      v1_dot_u1 += snglv1p[uj] * snglv1p[uj];
+      v1_dot_u2 += snglv1p[uj] * snglv2p[uj];
+      v2_dot_u2 += snglv2p[uj] * snglv2p[uj];
+    }
+    max_eigen =0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2) * \
+        (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
+    snrComps[ifoNumber]->data->data[ui-params->analStartPointBuf] =\
+        sqrt(max_eigen);
+  }
+  LALFree(snglv1p);
+  LALFree(snglv2p);
 }
 
 void coh_PTF_calculate_null_stream_filters(
@@ -1233,6 +1333,76 @@ void coh_PTF_calculate_null_stream_filters(
                     PTFM[LAL_NUM_IFO], NULL, PTFqVec[LAL_NUM_IFO],
                     &segments[LAL_NUM_IFO]->sgmnt[segNum], invPlan,
                     spinTemplate);
+}
+
+void coh_PTF_calculate_null_stream_norms(
+  UINT4 vecLength,
+  gsl_matrix *eigenvecsNull,
+  gsl_vector *eigenvalsNull,
+  REAL8Array *PTFM[LAL_NUM_IFO+1]
+)
+{
+  /* This function calculates the eigenvectors/values needed to orthonormalize
+   * the filters when using the null stream
+   */
+
+  /* For non-spinning case this is trivial */
+  if (vecLength == 1)
+  {
+    gsl_matrix_set(eigenvecsNull, 0 , 0, 1);
+    gsl_vector_set(eigenvalsNull, 0, PTFM[LAL_NUM_IFO]->data[0]);
+  }
+  /* For spinning case there is more to this */
+  else
+  {
+    UINT4 i,j;
+    gsl_eigen_symmv_workspace *matTempNull = gsl_eigen_symmv_alloc(vecLength);
+    gsl_matrix *B2Null = gsl_matrix_alloc(vecLength, vecLength);
+    for (i = 0; i < vecLength; i++)
+    {
+      for (j = 0; j < vecLength; j++)
+      {
+        gsl_matrix_set(B2Null, i, j, PTFM[LAL_NUM_IFO]->data[i*5+j]);
+      }
+    }
+    gsl_eigen_symmv(B2Null, eigenvalsNull, eigenvecsNull, matTempNull);
+  }
+}
+
+void coh_PTF_convert_time_offsets_to_points(
+  struct coh_PTF_params   *params,
+  REAL4                   *timeOffsets,
+  INT4                    *timeOffsetPoints
+)
+{
+  UINT4 i;
+  REAL4 deltaT =  (1.0/params->sampleRate);
+  for (i = 0; i < LAL_NUM_IFO; i++)
+  {
+    timeOffsetPoints[i] = (int) floor(timeOffsets[i]/deltaT + 0.5);
+  }
+  /* The following is useful for debugging */
+
+  /*
+  verbose("Time offsets (s): ");
+  for (i = 0; i < LAL_NUM_IFO; i++)
+  {
+    if (params->haveTrig[i])
+    {
+      verbose("%f ", timeOffsets[i]);
+    }
+  }
+  verbose("\n");
+  verbose("Time offsets (points): ");
+  for (i = 0; i < LAL_NUM_IFO; i++)
+  {
+    if (params->haveTrig[i])
+    {
+      verbose("%d " , timeOffsetPoints[i]);
+    }
+  }
+  verbose("\n");
+  */
 }
 
 void coh_PTF_calculate_bmatrix(
@@ -1322,12 +1492,12 @@ void coh_PTF_calculate_bmatrix(
 
 void coh_PTF_calculate_rotated_vectors(
     struct coh_PTF_params   *params,
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    COMPLEX8VectorSequence  **PTFqVec,
     REAL4 *u1,
     REAL4 *u2,
-    REAL4 Fplus[LAL_NUM_IFO],
-    REAL4 Fcross[LAL_NUM_IFO],
-    INT4  timeOffsetPoints[LAL_NUM_IFO],
+    REAL4 *Fplus,
+    REAL4 *Fcross,
+    INT4  *timeOffsetPoints,
     gsl_matrix *eigenvecs,
     gsl_vector *eigenvals,
     UINT4 numPoints,

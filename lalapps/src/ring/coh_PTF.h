@@ -458,6 +458,7 @@ void coh_PTF_initialize_time_series(
   REAL4TimeSeries          **bankVeto,
   REAL4TimeSeries          **autoVeto,
   REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **snrComps,
   REAL4TimeSeries          **pValues,
   REAL4TimeSeries          **gammaBeta,
   UINT4                    spinTemplates
@@ -472,6 +473,7 @@ void coh_PTF_reset_time_series(
   REAL4TimeSeries          **bankVeto,
   REAL4TimeSeries          **autoVeto,
   REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **snrComps,
   REAL4TimeSeries          **pValues,
   REAL4TimeSeries          **gammaBeta,
   UINT4                    spinTemplates
@@ -495,10 +497,19 @@ void coh_PTF_calculate_single_detector_filters(
   REAL4FrequencySeries       **invspec,
   REAL8Array                 **PTFM,
   COMPLEX8VectorSequence     **PTFqVec,
+  REAL4TimeSeries            **snrComps,
   RingDataSegments           **segments,
   COMPLEX8FFTPlan            *invPlan,
   UINT4                      spinTemplate,
   UINT4                      segNum
+);
+
+void coh_PTF_calculate_single_det_spin_snr(
+  struct coh_PTF_params      *params,
+  REAL8Array                 **PTFM,
+  COMPLEX8VectorSequence     **PTFqVec,
+  REAL4TimeSeries            **snrComps,
+  UINT4                      ifoNumber
 );
 
 void coh_PTF_calculate_null_stream_filters(
@@ -511,6 +522,13 @@ void coh_PTF_calculate_null_stream_filters(
   COMPLEX8FFTPlan            *invPlan,
   UINT4                      spinTemplate,
   UINT4                      segNum
+);
+
+void coh_PTF_calculate_null_stream_norms(
+  UINT4 vecLength,
+  gsl_matrix *eigenvecsNull,
+  gsl_vector *eigenvalsNull,
+  REAL8Array *PTFM[LAL_NUM_IFO+1]
 );
 
 UINT4 coh_PTF_initialize_bank_veto(
@@ -569,6 +587,12 @@ void coh_PTF_calculate_det_stuff(
   UINT4                   skyPointNum
 );
 
+void coh_PTF_convert_time_offsets_to_points(
+  struct coh_PTF_params   *params,
+  REAL4                   *timeOffsets,
+  INT4                    *timeOffsetPoints
+);
+
 void coh_PTF_calculate_bmatrix(
   struct coh_PTF_params   *params,
   gsl_matrix *eigenvecs,
@@ -583,12 +607,12 @@ void coh_PTF_calculate_bmatrix(
 
 void coh_PTF_calculate_rotated_vectors(
     struct coh_PTF_params   *params,
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    COMPLEX8VectorSequence  **PTFqVec,
     REAL4 *u1,
     REAL4 *u2,
-    REAL4 Fplus[LAL_NUM_IFO],
-    REAL4 Fcross[LAL_NUM_IFO],
-    INT4  timeOffsetPoints[LAL_NUM_IFO],
+    REAL4 *Fplus,
+    REAL4 *Fcross,
+    INT4  *timeOffsetPoints,
     gsl_matrix *eigenvecs,
     gsl_vector *eigenvals,
     UINT4 numPoints,
