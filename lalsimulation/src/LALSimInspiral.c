@@ -2413,9 +2413,9 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomA:
         case IMRPhenomB:
         case IMRPhenomC:
-        case TaylorR2F4:
+        //case TaylorR2F4:
         case TaylorF2:
-        case SpinTaylorF2:
+        //case SpinTaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
             return 1;
