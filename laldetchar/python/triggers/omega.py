@@ -99,6 +99,7 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
         clusters = True
     elif len(dat)==5:
         (peak, freq, duration, band, amplitude) = dat
+        peak = LIGOTimeGPS(peak)
         start    = LIGOTimeGPS(peak-duration/2)
         stop     = LIGOTimeGPS(peak+duration/2)
         av_freq  = freq
@@ -171,7 +172,7 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
         t.ms_snr = snr
     if 'amplitude' in columns:
         t.amplitude = amplitude
-     
+
     # set other params
     if 'cluster_size' in columns or 'param_one_value' in columns:
         t.param_one_name = 'cluster_size'
@@ -225,6 +226,9 @@ def from_file(fobj, start=None, end=None, ifo=None, channel=None,
         usercolumns = True
     columns = set(columns)
 
+    if channel and not ifo and re.match("[A-Z]\d:", channel):
+       ifo = channel[:2]
+
     if start or end:
         if start is None:
             start = -numpy.inf
@@ -257,6 +261,9 @@ def from_file(fobj, start=None, end=None, ifo=None, channel=None,
         if _comment.match(line):
             continue
         t = trigger(line, columns=columns, virgo=virgo)
+        t.ifo = ifo
+        t.channel = channel
+        t.search = u"Omega"
         if not check_time or (check_time and float(t.get_peak()) in span):
             append(t)
 
