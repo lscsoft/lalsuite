@@ -184,27 +184,15 @@ typedef struct
 // ---------- exportable API types ----------
 /**
  * Struct controlling all the aspects of the fake data (time-series + SFTs)
- * to be produced by XLALMakeFakeCWData()
+ * to be produced by XLALCWMakeFakeData() and XLALCWMakeFakeMultiData()
  */
-typedef struct tagCWMultiDataParams
+typedef struct tagCWDataParams
 {
   REAL8 fMin;					//!< smallest frequency guaranteed to be generated ["effective" fMin can be smaller]
   REAL8 Band;					//!< smallest frequency band guaranteed to be generated ["effective" band can be larger]
   MultiDetectorInfo detInfo;			//!< detectors and noise-floors (for Gaussian noise) to generate data for
-  MultiLIGOTimeGPSVector *multiTimestamps;	//!< timestamps to generate SFTs for
+  MultiLIGOTimeGPSVector multiTimestamps;	//!< timestamps to generate SFTs for
   const char *SFTWindowType;			//!< window to apply to the SFT timeseries
-  REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
-  UINT4 randSeed;				//!< seed value for random-number generator
-} CWMultiDataParams;
-
-typedef struct tagDataParams
-{
-  REAL8 fMin;					//!< smallest frequency guaranteed to be generated ["effective" fMin can be smaller]
-  REAL8 Band;					//!< smallest frequency band guaranteed to be generated ["effective" band can be larger]
-  LALDetector site;
-  REAL8 sqrtSn;
-  LIGOTimeGPSVector *timestamps;		//!< timestamps to generate SFTs for
-  const char *SFTWindowType;			//!< window type ('rectangular', 'hann', ...) to apply to the SFT timeseries
   REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
   UINT4 randSeed;				//!< seed value for random-number generator
 } CWDataParams;
@@ -216,16 +204,16 @@ static const UserVariables_t empty_UserVariables;
 static const ConfigVars_t empty_GV;
 static const LALUnit empty_LALUnit;
 static const CWDataParams empty_CWDataParams;
-static const CWMultiDataParams empty_CWMultiDataParams;
 
 // ---------- exportable API prototypes ----------
 int XLALFindSmallestValidSamplingRate ( UINT4 *n1, UINT4 n0, const LIGOTimeGPSVector *timestamps );
 int
 XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries,
-                          const InjectionSources *injectionSources, const CWMultiDataParams *multiDataParams, const EphemerisData *edat );
+                          const InjectionSources *injectionSources, const CWDataParams *dataParams, const EphemerisData *edat );
 int
 XLALCWMakeFakeData ( SFTVector **SFTVect, REAL4TimeSeries **Tseries,
                      const InjectionSources *injectionSources, const CWDataParams *dataParams, const EphemerisData *edat );
+
 REAL4TimeSeries *
 XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat );
 
@@ -263,11 +251,11 @@ main(int argc, char *argv[])
   MultiSFTVector *mSFTs = NULL;
   MultiREAL4TimeSeries *mTseries = NULL;
 
-  CWMultiDataParams DataParams   = empty_CWMultiDataParams;
+  CWDataParams DataParams   = empty_CWDataParams;
   DataParams.fMin               = uvar.fmin;
   DataParams.Band               = uvar.Band;
   DataParams.detInfo            = GV.detInfo;
-  DataParams.multiTimestamps 	= GV.multiTimestamps;
+  DataParams.multiTimestamps 	= (*GV.multiTimestamps);
   DataParams.randSeed           = uvar.randSeed;
   DataParams.SFTWindowType      = uvar.SFTWindowType;
   DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
@@ -921,7 +909,7 @@ int
 XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
                           MultiREAL4TimeSeries **multiTseries,	//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
                           const InjectionSources *injectionSources,	//< [in] array of sources inject
-                          const CWMultiDataParams *dataParams,		//< [in] parameters specifying the type of data to generate
+                          const CWDataParams *dataParams,		//< [in] parameters specifying the type of data to generate
                           const EphemerisData *edat			//< [in] ephemeris data
                           )
 {
@@ -933,8 +921,7 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,		//< [out] pointer to opti
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
 
-  XLAL_CHECK ( dataParams->multiTimestamps != NULL, XLAL_EINVAL );
-  MultiLIGOTimeGPSVector *multiTimestamps = dataParams->multiTimestamps;
+  const MultiLIGOTimeGPSVector *multiTimestamps = &(dataParams->multiTimestamps);
 
   // check multi-detector input
   XLAL_CHECK ( dataParams->detInfo.length >= 1, XLAL_EINVAL );
@@ -967,14 +954,14 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,		//< [out] pointer to opti
   for ( UINT4 X=0; X < numDet; X ++ )
     {
       /* detector params */
-      CWDataParams dataParamsX = empty_CWDataParams;
-      dataParamsX.fMin = dataParams->fMin;
-      dataParamsX.Band = dataParams->Band;
-      dataParamsX.site = dataParams->detInfo.sites[X];
-      dataParamsX.sqrtSn=dataParams->detInfo.sqrtSn[X];
-      dataParamsX.timestamps = dataParams->multiTimestamps->data[X];
-      dataParamsX.SFTWindowType = dataParams->SFTWindowType;
-      dataParamsX.SFTWindowBeta = dataParams->SFTWindowBeta;
+      CWDataParams dataParamsX = (*dataParams); // struct-copy
+      dataParamsX.detInfo.length = 1;
+      dataParamsX.detInfo.sites[0] = dataParams->detInfo.sites[X];
+      dataParamsX.detInfo.sqrtSn[0] = dataParams->detInfo.sqrtSn[X];
+      MultiLIGOTimeGPSVector mTimestamps = empty_MultiLIGOTimeGPSVector;
+      mTimestamps.length = 1;
+      mTimestamps.data = &(multiTimestamps->data[X]); // such that pointer mTimestamps.data[0] = multiTimestamps->data[X]
+      dataParamsX.multiTimestamps = mTimestamps;
       dataParamsX.randSeed = dataParams->randSeed + X;	// increase seed in deterministic way: allows comparison w mfd_v4 !!
 
       SFTVector **svp = NULL;
@@ -1002,6 +989,11 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,		//< [out] pointer to opti
 
 } // XLALCWMakeFakeMultiData()
 
+/**
+ * Single-IFO version of XLALCWMakeFakeMultiData(), handling the actual
+ * work, but same input API. The input detector-arrays must all contain
+ * only a single detector, otherwise an error is returned.
+ */
 int
 XLALCWMakeFakeData ( SFTVector **SFTvect,
                      REAL4TimeSeries **Tseries,
@@ -1017,14 +1009,18 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   XLAL_CHECK ( injectionSources != NULL, XLAL_EINVAL );
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( dataParams->timestamps != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( dataParams->detInfo.length ==1, XLAL_EINVAL );
+  XLAL_CHECK ( dataParams->multiTimestamps.length == 1, XLAL_EINVAL );
+  XLAL_CHECK ( dataParams->multiTimestamps.data[0] != NULL, XLAL_EINVAL );
 
   // initial default values fMin, sampling rate from caller input
-  REAL8 fMin   = dataParams->fMin;
+  REAL8 fMin  = dataParams->fMin;
   REAL8 fBand = dataParams->Band;
   REAL8 fSamp = 2.0 * fBand;
 
-  REAL8 Tsft = dataParams->timestamps->deltaT;
+  const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[0];
+  const LALDetector *site = &dataParams->detInfo.sites[0];
+  REAL8 Tsft = timestamps->deltaT;
 
   // if SFT output requested: need *effective* fMin and Band consistent with SFT bins
   if ( SFTvect )
@@ -1054,7 +1050,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   // ie we start from fsamp0 = n0_fSamp/Tsft, and then try to find the smallest
   // n1_fSamp >= n0_fSamp, such that for fsamp1 = n1_fSamp/Tsft, for all gaps i: Dt_i * fsamp1 = int
   UINT4 n1_fSamp;
-  XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &n1_fSamp, n0_fSamp, dataParams->timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &n1_fSamp, n0_fSamp, timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( n1_fSamp != n0_fSamp )
     {
@@ -1065,8 +1061,8 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
     } // if higher effective sampling rate required
 
    /* ----- start-time and duration ----- */
-  LIGOTimeGPS firstGPS = dataParams->timestamps->data[0];
-  LIGOTimeGPS lastGPS  = dataParams->timestamps->data [ dataParams->timestamps->length - 1 ];
+  LIGOTimeGPS firstGPS = timestamps->data[0];
+  LIGOTimeGPS lastGPS  = timestamps->data [ timestamps->length - 1 ];
   REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS ) + Tsft;
   XLAL_CHECK ( duration >= Tsft, XLAL_EINVAL, "Requested duration=%.0f sec is less than Tsft =%.0f sec.\n\n", duration, Tsft);
 
@@ -1076,7 +1072,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       const PulsarParams *sourceParams = &( injectionSources->pulsarParams[iInj] );
 
       REAL4TimeSeries *Tseries_i = NULL;
-      XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( sourceParams, &(dataParams->site), firstGPS, duration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( sourceParams, site, firstGPS, duration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
 
       if ( Tseries_sum == NULL )
         {
@@ -1091,7 +1087,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
     } // for iInj < numSources
 
   /* add Gaussian noise if requested */
-  REAL8 sqrtSn = dataParams->sqrtSn;
+  REAL8 sqrtSn = dataParams->detInfo.sqrtSn[0];
   if ( sqrtSn > 0)
     {
       REAL8 noiseSigma = sqrtSn * sqrt ( fBand );
@@ -1115,7 +1111,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
 
       SFTParams sftParams = empty_SFTParams;
       sftParams.Tsft = Tsft;
-      sftParams.timestamps = dataParams->timestamps;
+      sftParams.timestamps = timestamps;
       sftParams.noiseSFTs = NULL;	// not used here any more!
       sftParams.window = window;
 
