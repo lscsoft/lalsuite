@@ -9,7 +9,7 @@ SUBDIRS = OptimizedCFS ResamplingFstat
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
-	lalapps_monteint lalapps_zellepolka		\
+	lalapps_zellepolka		\
 	lalapps_PredictFStat  lalapps_ComputeFStatistic_v2 \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
 	lalapps_synthesizeBstatMC lalapps_synthesizeTransientStats \
@@ -31,7 +31,6 @@ LVsrc = ../GCT
 OPTsrc = ./OptimizedCFS
 
 lalapps_zellepolka_SOURCES = zellepolka.c
-lalapps_monteint_SOURCES = monteint.c
 
 CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
