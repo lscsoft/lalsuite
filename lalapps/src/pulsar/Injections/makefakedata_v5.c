@@ -139,7 +139,6 @@ typedef struct
 
   /* pulsar parameters [REQUIRED] */
   REAL8 refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTime converted to SSB) */
-  REAL8 refTimeMJD;             /**< Pulsar reference time tRef in MJD ('0' means: use startTime converted to SSB) */
 
   REAL8 h0;			/**< overall signal amplitude h0 */
   REAL8 cosi;		/**< cos(iota) of inclination angle iota */
@@ -150,9 +149,6 @@ typedef struct
 
   REAL8 Alpha;		/**< Right ascension [radians] alpha of pulsar */
   REAL8 Delta;		/**< Declination [radians] delta of pulsar */
-  CHAR *RA;		/**< Right ascension [hh:mm:ss.ssss] alpha of pulsar */
-  CHAR *Dec;	        /**< Declination [dd:mm:ss.ssss] delta of pulsar */
-
   REAL8 Freq;
 
   REAL8 f1dot;		/**< First spindown parameter f' */
@@ -365,105 +361,11 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     XLAL_CHECK ( XLALWriteMFDlog ( uvar->logfile, cfg ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteMFDlog() failed with xlalErrno = %d\n", xlalErrno );
   }
 
-  // FIXME: hardcoded to 1 CW signal injection right now
-  UINT4 numPulsars = 1;
-  XLAL_CHECK ( ( cfg->injectionSources = XLALCalloc ( 1, sizeof(*cfg->injectionSources) )) != NULL, XLAL_ENOMEM );
-  cfg->injectionSources->numPulsars = numPulsars;
-  XLAL_CHECK ( ( cfg->injectionSources->pulsarParams = XLALCalloc ( numPulsars, sizeof(*cfg->injectionSources->pulsarParams) )) != NULL, XLAL_ENOMEM );
-  PulsarParams *pulsarParams = &( cfg->injectionSources->pulsarParams[0] );
-
-  { /* ========== translate user-input into 'PulsarParams' struct ========== */
-    BOOLEAN have_h0     = XLALUserVarWasSet ( &uvar->h0 );
-    BOOLEAN have_cosi   = XLALUserVarWasSet ( &uvar->cosi );
-    BOOLEAN have_aPlus  = XLALUserVarWasSet ( &uvar->aPlus );
-    BOOLEAN have_aCross = XLALUserVarWasSet ( &uvar->aCross );
-    BOOLEAN have_Freq   = XLALUserVarWasSet ( &uvar->Freq );
-    BOOLEAN have_Alpha  = XLALUserVarWasSet ( &uvar->Alpha );
-    BOOLEAN have_Delta  = XLALUserVarWasSet ( &uvar->Delta );
-    BOOLEAN have_RA = XLALUserVarWasSet ( &uvar->RA );
-    BOOLEAN have_Dec = XLALUserVarWasSet ( &uvar->Dec );
-
-    /* ----- {h0,cosi} or {aPlus,aCross} ----- */
-    if ( (have_aPlus || have_aCross) && ( have_h0 || have_cosi ) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Need to specify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
-    }
-    if ( (have_h0 ^ have_cosi) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --h0 and --cosi!\n\n");
-    }
-    if ( (have_aPlus ^ have_aCross) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --aPlus and --aCross !\n\n");
-    }
-
-    if ( have_h0 && have_cosi )
-      {
-	pulsarParams->Amp.h0 = uvar->h0;
-	pulsarParams->Amp.cosi = uvar->cosi;
-      }
-    else if ( have_aPlus && have_aCross )
-      {  /* translate A_{+,x} into {h_0, cosi} */
-	REAL8 disc;
-	if ( fabs(uvar->aCross) > uvar->aPlus ) {
-          XLAL_ERROR ( XLAL_EINVAL, "Invalid input parameters: |aCross| = %g must be <= than aPlus = %g.\n", fabs(uvar->aCross), uvar->aPlus );
-        }
-	disc = sqrt ( SQ(uvar->aPlus) - SQ(uvar->aCross) );
-	pulsarParams->Amp.h0   = uvar->aPlus + disc;
-        if ( pulsarParams->Amp.h0 > 0 )
-          pulsarParams->Amp.cosi = uvar->aCross / pulsarParams->Amp.h0;	// avoid division by 0!
-        else
-          pulsarParams->Amp.cosi = 0;
-      }
-    else {
-      pulsarParams->Amp.h0 = 0.0;
-      pulsarParams->Amp.cosi = 0.0;
-    }
-    pulsarParams->Amp.phi0 = uvar->phi0;
-    pulsarParams->Amp.psi  = uvar->psi;
-
-    /* ----- signal Frequency ----- */
-    if ( have_Freq )
-      pulsarParams->Doppler.fkdot[0] = uvar->Freq;
-    else
-      pulsarParams->Doppler.fkdot[0] = 0.0;
-
-    /* ----- skypos ----- */
-    if ( (have_Alpha || have_Delta) && (have_RA || have_Dec) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Use EITHER {Alpha, Delta} OR {RA, Dec}\n\n");
-    }
-    if ( (have_Alpha && !have_Delta) || ( !have_Alpha && have_Delta ) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "\nSpecify skyposition: need BOTH --Alpha and --Delta!\n\n");
-    }
-    if ( (have_RA && !have_Dec) || ( !have_RA && have_Dec ) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "\nSpecify skyposition: need BOTH --RA and --Dec!\n\n");
-    }
-    if ( have_Alpha )
-      {
-	pulsarParams->Doppler.Alpha = uvar->Alpha;
-	pulsarParams->Doppler.Delta = uvar->Delta;
-      }
-    else if ( have_RA )
-      {
-	pulsarParams->Doppler.Alpha = LALDegsToRads(uvar->RA,"alpha");
-	pulsarParams->Doppler.Delta = LALDegsToRads(uvar->Dec,"delta");
-      }
-
-  } /* Pulsar signal parameters */
-
-  /* ---------- prepare vector of spindown parameters ---------- */
-  {
-    pulsarParams->Doppler.fkdot[1] = uvar->f1dot;
-    pulsarParams->Doppler.fkdot[2] = uvar->f2dot;
-    pulsarParams->Doppler.fkdot[3] = uvar->f3dot;
-
-  } /* END: prepare spindown parameters */
-
-
    /* check for negative fMin and Band, which would break the fMin_eff, fBand_eff calculation below */
   XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fMin=%f!\n\n", uvar->fmin );
   XLAL_CHECK ( uvar->Band >= 0, XLAL_EDOM, "Invalid negative frequency band Band=%f!\n\n", uvar->Band );
 
-
   XLAL_CHECK ( XLALParseMultiDetectorInfo ( &(cfg->detInfo), uvar->IFOs, uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
-
 
   /* ---------- determine timestamps to produce signal for  ---------- */
   {
@@ -554,35 +456,98 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     CHAR *earthdata, *sundata;
 
     len = strlen(uvar->ephemYear) + 20;
-
-    if (XLALUserVarWasSet(&uvar->ephemDir) )
-      len += strlen (uvar->ephemDir);
-
-    if ( (earthdata = XLALCalloc(1, len)) == NULL) {
-      XLAL_ERROR ( XLAL_ENOMEM, "earthdata = XLALCalloc(1, %d) failed.\n", len );
+    if ( uvar->ephemDir ) {
+      len += strlen ( uvar->ephemDir );
     }
-    if ( (sundata = XLALCalloc(1, len)) == NULL) {
-      XLAL_ERROR ( XLAL_ENOMEM, "sundata = XLALCalloc(1, %d) failed.\n", len );
-    }
-
-    if (XLALUserVarWasSet(&uvar->ephemDir) )
-      {
-	sprintf ( earthdata, "%s/earth%s.dat", uvar->ephemDir, uvar->ephemYear);
-	sprintf ( sundata, "%s/sun%s.dat", uvar->ephemDir, uvar->ephemYear);
-      }
-    else
-      {
-	sprintf ( earthdata, "earth%s.dat", uvar->ephemYear);
-	sprintf ( sundata, "sun%s.dat",  uvar->ephemYear);
-      }
+    XLAL_CHECK ( (earthdata = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
+    XLAL_CHECK ( (sundata   = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
+    const char *sep = uvar->ephemDir ? "/" : "";
+    const char *ephemDir = uvar->ephemDir ? uvar->ephemDir : "";
+    sprintf ( earthdata, "%s%searth%s.dat", ephemDir, sep, uvar->ephemYear);
+    sprintf ( sundata,   "%s%ssun%s.dat",   ephemDir, sep, uvar->ephemYear);
 
     /* Init ephemerides */
-    cfg->edat = XLALInitBarycenter ( earthdata, sundata );
-    XLAL_CHECK ( cfg->edat != NULL, XLAL_EFUNC, "XLALInitBarycenter() failed.\n" );
+    XLAL_CHECK ( ( cfg->edat = XLALInitBarycenter ( earthdata, sundata ) ) != NULL, XLAL_EFUNC );
     XLALFree(earthdata);
     XLALFree(sundata);
 
   } /* END: prepare barycentering routines */
+
+  // --------------------------------------------------------------------------------
+  // CHECK signal input parameters
+  // --------------------------------------------------------------------------------
+
+  // FIXME: hardcoded to 1 CW signal injection right now
+  UINT4 numPulsars = 1;
+  XLAL_CHECK ( ( cfg->injectionSources = XLALCalloc ( 1, sizeof(*cfg->injectionSources) )) != NULL, XLAL_ENOMEM );
+  cfg->injectionSources->numPulsars = numPulsars;
+  XLAL_CHECK ( ( cfg->injectionSources->pulsarParams = XLALCalloc ( numPulsars, sizeof(*cfg->injectionSources->pulsarParams) )) != NULL, XLAL_ENOMEM );
+  PulsarParams *pulsarParams = &( cfg->injectionSources->pulsarParams[0] );
+
+  { /* ========== translate user-input into 'PulsarParams' struct ========== */
+    BOOLEAN have_h0     = XLALUserVarWasSet ( &uvar->h0 );
+    BOOLEAN have_cosi   = XLALUserVarWasSet ( &uvar->cosi );
+    BOOLEAN have_aPlus  = XLALUserVarWasSet ( &uvar->aPlus );
+    BOOLEAN have_aCross = XLALUserVarWasSet ( &uvar->aCross );
+    BOOLEAN have_Freq   = XLALUserVarWasSet ( &uvar->Freq );
+    BOOLEAN have_Alpha  = XLALUserVarWasSet ( &uvar->Alpha );
+    BOOLEAN have_Delta  = XLALUserVarWasSet ( &uvar->Delta );
+
+    /* ----- {h0,cosi} or {aPlus,aCross} ----- */
+    if ( (have_aPlus || have_aCross) && ( have_h0 || have_cosi ) ) {
+      XLAL_ERROR ( XLAL_EINVAL, "Need to specify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
+    }
+    if ( (have_h0 ^ have_cosi) ) {
+      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --h0 and --cosi!\n\n");
+    }
+    if ( (have_aPlus ^ have_aCross) ) {
+      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --aPlus and --aCross !\n\n");
+    }
+
+    if ( have_h0 && have_cosi )
+      {
+	pulsarParams->Amp.h0 = uvar->h0;
+	pulsarParams->Amp.cosi = uvar->cosi;
+      }
+    else if ( have_aPlus && have_aCross )
+      {  /* translate A_{+,x} into {h_0, cosi} */
+	REAL8 disc;
+	if ( fabs(uvar->aCross) > uvar->aPlus ) {
+          XLAL_ERROR ( XLAL_EINVAL, "Invalid input parameters: |aCross| = %g must be <= than aPlus = %g.\n", fabs(uvar->aCross), uvar->aPlus );
+        }
+	disc = sqrt ( SQ(uvar->aPlus) - SQ(uvar->aCross) );
+	pulsarParams->Amp.h0   = uvar->aPlus + disc;
+        if ( pulsarParams->Amp.h0 > 0 )
+          pulsarParams->Amp.cosi = uvar->aCross / pulsarParams->Amp.h0;	// avoid division by 0!
+        else
+          pulsarParams->Amp.cosi = 0;
+      }
+    else {
+      pulsarParams->Amp.h0 = 0.0;
+      pulsarParams->Amp.cosi = 0.0;
+    }
+    pulsarParams->Amp.phi0 = uvar->phi0;
+    pulsarParams->Amp.psi  = uvar->psi;
+
+    /* ----- signal Frequency ----- */
+    if ( have_Freq )
+      pulsarParams->Doppler.fkdot[0] = uvar->Freq;
+    else
+      pulsarParams->Doppler.fkdot[0] = 0.0;
+
+    /* ----- skypos ----- */
+    if ( (have_Alpha && !have_Delta) || ( !have_Alpha && have_Delta ) ) {
+      XLAL_ERROR ( XLAL_EINVAL, "\nSpecify skyposition: need BOTH --Alpha and --Delta!\n\n");
+    }
+    pulsarParams->Doppler.Alpha = uvar->Alpha;
+    pulsarParams->Doppler.Delta = uvar->Delta;
+
+  } /* Pulsar signal parameters */
+
+  /* ---------- prepare vector of spindown parameters ---------- */
+  pulsarParams->Doppler.fkdot[1] = uvar->f1dot;
+  pulsarParams->Doppler.fkdot[2] = uvar->f2dot;
+  pulsarParams->Doppler.fkdot[3] = uvar->f3dot;
 
   /* -------------------- handle binary orbital params if given -------------------- */
 
@@ -638,24 +603,12 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   } /* END: binary orbital params */
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  if (XLALUserVarWasSet(&uvar->refTime) && XLALUserVarWasSet(&uvar->refTimeMJD))
+  if (XLALUserVarWasSet(&uvar->refTime))
     {
-      XLAL_ERROR ( XLAL_EINVAL, "\nUse only one of '--refTime' and '--refTimeMJD' to specify SSB reference time!\n\n");
-    }
-  else if (XLALUserVarWasSet(&uvar->refTime))
-    {
-      XLALGPSSetREAL8(&(pulsarParams->Doppler.refTime), uvar->refTime);
-    }
-  else if (XLALUserVarWasSet(&uvar->refTimeMJD))
-    {
-
-      /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
-      REAL8 GPSfloat;
-      GPSfloat = XLALTTMJDtoGPS(uvar->refTimeMJD);
-      XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),GPSfloat);
+      XLALGPSSetREAL8 ( &(pulsarParams->Doppler.refTime), uvar->refTime );
     }
   else {
-    XLAL_ERROR ( XLAL_EINVAL, "Must specify explicit reference time (--refTime or --refTimeMJD)!\n");
+    XLAL_ERROR ( XLAL_EINVAL, "Must specify explicit reference time --refTime!\n");
   }
 
   /* ----- handle transient-signal window if given ----- */
@@ -703,11 +656,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLAL_CHECK ( uvar->ephemYear != NULL, XLAL_ENOMEM, "XLALCalloc ( 1, %d ) failed.\n", len );
   strcpy ( uvar->ephemYear, EPHEM_YEARS );
 
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar->ephemDir = XLALCalloc ( 1, len = strlen(DEFAULT_EPHEMDIR)+1 );
-  XLAL_CHECK ( uvar->ephemDir != NULL, XLAL_ENOMEM, "XLALCalloc ( 1, %d ) failed.\n", len );
-  strcpy (uvar->ephemDir, DEFAULT_EPHEMDIR );
-
+  uvar->ephemDir = NULL;
   uvar->Tsft = 1800;
   uvar->fmin = 0;	/* no heterodyning by default */
   uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
@@ -752,13 +701,9 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* pulsar params */
   XLALregREALUserStruct (  refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (if 0: use startTime)");
-  XLALregREALUserStruct (  refTimeMJD,           0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD (if 0: use startTime)");
 
   XLALregREALUserStruct (  Alpha,                0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
-  XLALregSTRINGUserStruct (RA,                   0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
-
   XLALregREALUserStruct (  Delta,                0, UVAR_OPTIONAL, "Declination/latitude of pulsar in radians");
-  XLALregSTRINGUserStruct (Dec,                  0, UVAR_OPTIONAL, "ALTERNATIVE: Declination/latitude of pulsar in DMS 'dd:mm:ss.ssss'");
 
   XLALregREALUserStruct (  h0,                   0, UVAR_OPTIONAL, "Overall signal-amplitude h0");
   XLALregREALUserStruct (  cosi,                 0, UVAR_OPTIONAL, "cos(iota) of inclination-angle iota");
@@ -776,8 +721,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* binary-system orbital parameters */
   XLALregREALUserStruct (  orbitasini,           0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
   XLALregREALUserStruct (  orbitEcc,             0, UVAR_OPTIONAL, "Orbital eccentricity");
-  XLALregINTUserStruct (   orbitTpSSBsec,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Seconds.");
-  XLALregINTUserStruct (   orbitTpSSBnan,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Nanoseconds.");
+  XLALregINTUserStruct  (  orbitTpSSBsec,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Seconds.");
+  XLALregINTUserStruct  (  orbitTpSSBnan,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Nanoseconds.");
   XLALregREALUserStruct (  orbitTpSSBMJD,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. MJD.");
   XLALregREALUserStruct (  orbitPeriod,          0, UVAR_OPTIONAL, "Orbital period (seconds)");
   XLALregREALUserStruct (  orbitArgp,            0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
@@ -801,8 +746,9 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   ret = XLALUserVarReadAllInput ( argc, argv );
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse user-input\n");
 
-  if ( uvar->help ) 	/* if help was requested, we're done */
+  if ( uvar->help ) {	/* if help was requested, we're done */
     exit (0);
+  }
 
   return XLAL_SUCCESS;
 
