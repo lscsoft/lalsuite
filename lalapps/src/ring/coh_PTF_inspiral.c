@@ -405,7 +405,6 @@ int main(int argc, char **argv)
           j, timeval_subtract(&startTime));     
 
       /* Calculate single detector filters */
-      /* FIXME: Also calculate single detector SNR here */
       coh_PTF_calculate_single_detector_filters(params,fcTmplt,invspec,PTFM,\
               PTFqVec,snrComps,segments,invplan,spinTemplate,j);
       verbose("Calculated sngl filters for segment %d template %d at %ld\n",\
@@ -893,14 +892,6 @@ void coh_PTF_statistic(
             * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
       }
       cohSNR->data->data[i-params->analStartPoint] = sqrt(max_eigen);
-      fprintf(stderr,"%d %e %e %e %e %e %e %e %e %e %e\n",i,gsl_vector_get(eigenvals,0),gsl_vector_get(eigenvals,1),gsl_vector_get(eigenvals,2),gsl_vector_get(eigenvals,3),gsl_vector_get(eigenvals,4),gsl_vector_get(eigenvals,5),gsl_vector_get(eigenvals,6),gsl_vector_get(eigenvals,7),gsl_vector_get(eigenvals,8),gsl_vector_get(eigenvals,9));
-/*      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[1],v1p[2],v2p[1],v2p[2]);
-      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[3],v1p[4],v2p[3],v2p[4]);
-      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[0],v1p[5],v2p[0],v2p[5]);
-      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[6],v1p[7],v2p[6],v2p[7]);
-      fprintf(stderr,"%d %e %e %e %e\n",i,v1p[8],v1p[9],v2p[8],v2p[9]);
-      fprintf(stderr,"%d %e %e %e\n",i,v1_dot_u1,v2_dot_u2,v1_dot_u2);
-      fprintf(stderr,"%d %e %e\n",i,max_eigen,cohSNR->data->data[i-params->analStartPoint]); */
     }
   }
 

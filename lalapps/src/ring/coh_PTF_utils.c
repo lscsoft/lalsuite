@@ -1262,7 +1262,7 @@ void coh_PTF_calculate_single_det_spin_snr(
 )
 {
   UINT4 ui,uj;
-  gsl_matrix_view PTFmatrix;
+  gsl_matrix *PTFmatrix;
   gsl_vector *eigenvalsSngl;
   gsl_matrix *eigenvecsSngl;
   gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc(5);
@@ -1274,14 +1274,19 @@ void coh_PTF_calculate_single_det_spin_snr(
   snglv2p = LALCalloc(5 , sizeof(REAL4));
 
   /* convert PTFM to gsl_matrix */
-  PTFmatrix = gsl_matrix_view_array(PTFM[ifoNumber]->data,\
-                                    PTFM[ifoNumber]->dimLength->data[0],
-                                    PTFM[ifoNumber]->dimLength->data[1]);
+  PTFmatrix = gsl_matrix_alloc(5,5);
+  for (ui = 0; ui < 5; ui++ )
+  {
+    for (uj = 0; uj < 5; uj++ )
+    {
+      gsl_matrix_set(PTFmatrix, ui, uj, PTFM[ifoNumber]->data[ui*5+uj]);
+    }
+  }
 
   /* calculate eigenvectors and eigenvalues of (h|h)*/
-  gsl_eigen_symmv(&(PTFmatrix.matrix), eigenvalsSngl, eigenvecsSngl,
-                  matTemp);
+  gsl_eigen_symmv(PTFmatrix, eigenvalsSngl, eigenvecsSngl,matTemp);
   gsl_eigen_symmv_free(matTemp);
+  gsl_matrix_free(PTFmatrix);
   for (ui = params->analStartPointBuf; ui < params->analEndPointBuf; ++ui)
   {  /* loop over time */
     coh_PTF_calculate_rotated_vectors(params,PTFqVec,snglv1p,snglv2p,NULL,\
