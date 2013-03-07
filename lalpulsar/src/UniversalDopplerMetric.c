@@ -117,6 +117,7 @@ const struct {
 
   [DOPPLERCOORD_N3OX_ECL] = {"n3ox_ecl",SCALE_R/LAL_C_SI, "X orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
   [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OZ_ECL] = {"n3oz_ecl",SCALE_R/LAL_C_SI, "Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
 
 };
 
@@ -592,6 +593,9 @@ CWPhaseDeriv_i ( double tt, void *params )
       break;
     case DOPPLERCOORD_N3OY_ECL:	/**< Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
       ret = LAL_TWOPI * Freq * ecl_orbit_pos[1];
+      break;
+    case DOPPLERCOORD_N3OZ_ECL:	/**< Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_orbit_pos[2];
       break;
 
     default:

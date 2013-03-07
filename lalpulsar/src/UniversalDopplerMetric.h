@@ -148,6 +148,7 @@ typedef enum {
 
   DOPPLERCOORD_N3OX_ECL,	/**< X orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
   DOPPLERCOORD_N3OY_ECL,	/**< Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+  DOPPLERCOORD_N3OZ_ECL,	/**< Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
