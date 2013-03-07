@@ -286,6 +286,8 @@ typedef struct tagSpinOrbitCWParamStruc {
 
 
 /* ---------- Function prototypes. ---------- */
+int XLALGenerateSpinOrbitCW ( CoherentGW *sourceSignal, SpinOrbitCWParamStruc *sourceParams );
+
 void
 LALGenerateSpinOrbitCW( LALStatus             *,
 			CoherentGW            *output,

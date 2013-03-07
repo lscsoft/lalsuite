@@ -42,6 +42,40 @@
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
 
+static LALStatus empty_LALStatus;
+
+/**
+ * FIXME: Temporary XLAL-wapper to LAL-function LALSimulateCoherentGW()
+ *
+ * NOTE: This violates the current version of the XLAL-spec, but is unavoidable at this time,
+ * as LALSimulateCoherentGW() hasn't been properly XLALified yet, and doing this would be beyond
+ * the scope of this patch.
+ * However, doing it here in this way is better than calling LALxxx() from various
+ * far-flung XLAL-functions, as in this way the "violation" is localized in one place, and serves
+ * as a reminder for future XLAL-ification at the same time.
+ */
+int
+XLALSimulateCoherentGW ( REAL4TimeSeries  *output,	///< [in/out] output timeseries
+                         CoherentGW       *CWsignal,	///< [in] internal signal representation
+                         DetectorResponse *detector	///< [in] detector response
+                         )
+{
+  XLAL_CHECK ( output   != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( CWsignal != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( detector != NULL, XLAL_EINVAL );
+
+  LALStatus status = empty_LALStatus;
+
+  LALSimulateCoherentGW ( &status, output, CWsignal, detector );
+
+  XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALSimulateCoherentGW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
+
+  return XLAL_SUCCESS;
+
+} // XLALSimulateCoherentGW()
+
+
+
 /* A macro that takes a detector time (in units of output->deltaT from
    output->epoch) and adds the propagation time interpolated from the
    delays tabulated in delayData.  The following parameters are
@@ -58,6 +92,7 @@
     time + indexFrac*delayData[intIndex+1]                              \
     + (1.0-indexFrac)*delayData[intIndex]                               \
     )
+
 
 /**
    \author Creighton, T. D.

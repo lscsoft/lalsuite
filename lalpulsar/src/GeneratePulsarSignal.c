@@ -60,7 +60,6 @@ const PulsarSignalParams empty_PulsarSignalParams;
 const SFTParams empty_SFTParams;
 const SFTandSignalParams empty_SFTandSignalParams;
 static LALUnit emptyUnit;
-static LALStatus empty_LALStatus;
 
 /** Generate a time-series at the detector for a given pulsar.
  */
@@ -168,9 +167,8 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
 
   /* finally, call the function to generate the source waveform */
   CoherentGW sourceSignal = emptySignal;
-  LALStatus status = empty_LALStatus;
-  LALGenerateSpinOrbitCW ( &status, &sourceSignal, &sourceParams);
-  XLAL_CHECK_NULL ( status.statusCode == 0, XLAL_EFAILED, "LALGenerateSpinOrbitCW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
+
+  XLAL_CHECK_NULL ( XLALGenerateSpinOrbitCW ( &sourceSignal, &sourceParams ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* free spindown-vector right away, so we don't forget */
   if (sourceParams.f) {
@@ -212,8 +210,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
   sourceSignal.dtDelayBy2 = params->dtDelayBy2;
   sourceSignal.dtPolBy2   = params->dtPolBy2;
 
-  LALSimulateCoherentGW ( &status, output, &sourceSignal, &detector );
-  XLAL_CHECK_NULL ( status.statusCode == 0, XLAL_EFAILED, "LALSimulateCoherentGW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
+  XLAL_CHECK_NULL ( XLALSimulateCoherentGW ( output, &sourceSignal, &detector ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
   CHAR *name = XLALGetChannelPrefix ( params->site->frDetector.name );
