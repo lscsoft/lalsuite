@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- 
+
 """Read and manipulate Omicron events from ROOT files
 """
 
@@ -33,9 +33,14 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
 __date__ = git_version.date
 
+OMICRON_COLUMNS = ["process_id", "search", "channel", "ifo",
+                   "peak_time", "peak_time_ns", "start_time", "start_time_ns",
+                   "stop_time", "stop_time_ns", "duration",
+                   "central_freq", "flow", "fhigh", "bandwidth",
+                   "snr", "amplitude", "confidence"]
 
-def get_sngl_burst(root_event,
-                   columns=lsctables.SnglBurstTable.validcolumns.keys()):
+
+def get_sngl_burst(root_event, columns=OMICRON_COLUMNS):
     """@returns a LIGO_LW SnglBurst event with attributes seeded from
     the given Omicron ROOT tree event
     """
@@ -74,15 +79,16 @@ def get_sngl_burst(root_event,
 
     if "snr" in columns:
         sb.snr = root_event.snr
-    if "q" in columns or "param_one_value" in columns:
-        sb.param_one_name = "q"
-        sb.param_one_value = root_event.q
+    if "amplitude" in columns:
+        sb.amplitude = root_event.snr**2 / 2.
+    if "confidence" in columns:
+        sb.confidence = root_event.snr
 
     return sb
 
 
 def from_root_file(filename, start=None, end=None, ifo=None, channel=None,
-                   columns=None):
+                   columns=OMICRON_COLUMNS):
     """Read a SnglBurstTable from an Omicron ROOT file
 
     @param filename
@@ -122,6 +128,13 @@ def from_root_file(filename, start=None, end=None, ifo=None, channel=None,
     else:
         check_time = False
 
+    # read file and generate triggers
+    root_tree = TChain("triggers")
+    root_tree.Add(filename)
+
+    out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
+    append = out.append
+
     # generate table
     if usercolumns:
         for c in out.columnnames:
@@ -130,13 +143,7 @@ def from_root_file(filename, start=None, end=None, ifo=None, channel=None,
                 out.columnnames.pop(idx)
                 out.columntypes.pop(idx)
 
-    # read file and generate triggers
-    root_tree = TChain("triggers")
-    root_tree.Add(filename)
-    
-    out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
-    append = out.append
-
+    # read table
     nevents = root_tree.GetEntries()
     for i in range(nevents):
         root_tree.GetEntry(i)
@@ -153,7 +160,7 @@ def from_root_file(filename, start=None, end=None, ifo=None, channel=None,
 
 
 def from_file(filename, start=None, end=None, ifo=None, channel=None,
-              columns=None):
+              columns=OMICRON_COLUMNS):
     """Read a SnglBurstTable from an Omicron ROOT or ASCII file
 
     @param filename
@@ -181,7 +188,7 @@ def from_file(filename, start=None, end=None, ifo=None, channel=None,
 
 
 def from_files(filelist, start=None, end=None, ifo=None, channel=None,
-               columns=None, verbose=False):
+               columns=OMICRON_COLUMNS, verbose=False):
     """Read a BurstTable from a list of Omicron-format ROOT or ASCII files
 
     @param filelist
@@ -228,9 +235,9 @@ def from_files(filelist, start=None, end=None, ifo=None, channel=None,
 
 
 def from_lal_cache(cache, start=None, end=None, ifo=None, channel=None,
-                   columns=None, verbose=False):
+                   columns=OMICRON_COLUMNS, verbose=False):
     """Read a SnglBurstTable from a Cache of Omicron ROOT files
-    
+
     @param cache
         glue.lal.Cache of filepaths from which to read the data
     @param start
