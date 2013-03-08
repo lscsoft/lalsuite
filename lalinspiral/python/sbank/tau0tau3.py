@@ -117,20 +117,19 @@ def set_default_constraints(constraints):
 
     # mtotal can be given or inferred from component mass limits
     mtotal_min, mtotal_max = constraints.setdefault('mtotal', (None, None))
-    if mtotal_min is None:
+    if mtotal_min is None or mtotal_min < mass1_min + mass2_min:
         mtotal_min = mass1_min + mass2_min
-    if mtotal_max is None:
+    if mtotal_max is None or mass1_max + mass2_max < mtotal_max:
         mtotal_max = mass1_max + mass2_max
-    constraints['mtotal'] = (mtotal_min, mtotal_max)
 
     # mratio can be given or inferred from component mass limits
     qmin, qmax = constraints.setdefault('mratio', (None, None))
-    if qmin is None:
-        qmin = 1 # q = m1/m2 > 1 by convention
+    if qmin is None or qmin < mass1_min/mass2_min:
+        qmin = mass1_min/mass2_min # q = m1/m2 > 1 by convention
     if qmin < 1:
         raise ValueError("We use the convention that q = m1/m2 > 1.")
-    if qmax is None:
-        qmax = mass1_max / mass2_min # q = m1/m2 by convention
+    if qmax is None or (mtotal_max - mass2_min) / mass2_min < qmax:
+        qmax = (mtotal_max - mass2_min) / mass2_min # q = m1/m2 by convention
     constraints['mratio'] = (qmin, qmax)
 
     # mchirp can be given or inferred from component mass limits
@@ -140,6 +139,16 @@ def set_default_constraints(constraints):
     if mcmax is None:
         mcmax = max(m1m2_to_mchirp(m1, m2) for m1 in (mass1_min, mass1_max) for m2 in (mass2_min, mass2_max))
     constraints['mchirp'] = (mcmin, mcmax)
+
+    # update mtotal constraints based on mchirp cuts one can show that
+    # for fixed mchirp, dM/dq > 0 provided q>1 so just set q=qmin. on
+    # the other hand, mchirp constraints do not influence bounds on q
+    if mtotal_min < mcmin * ((1+qmin)**2/qmin)**(3./5):
+        mtotal_min = mcmin * ((1+qmin)**2/qmin)**(3./5)
+    if mtotal_max > mcmax * ((1+qmax)**2/qmax)**(3./5):
+        mtotal_max = mcmax * ((1+qmax)**2/qmax)**(3./5)
+    constraints['mtotal'] = (mtotal_min, mtotal_max)
+
 
     return constraints
 
