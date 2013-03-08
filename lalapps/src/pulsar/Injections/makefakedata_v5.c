@@ -1221,8 +1221,7 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
   params.startTimeGPS              = startTime;
   params.duration                  = ceil ( duration );
   params.samplingRate              = fSamp;
-  LALDetector site0 = (*site);	// FIXME: avoid const warning
-  params.site                      = &site0;
+  params.site                      = site;
 
   /*----------------------------------------
    * generate the signal time-series
