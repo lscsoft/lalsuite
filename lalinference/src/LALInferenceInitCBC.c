@@ -462,7 +462,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(ppt){
     approx = XLALGetApproximantFromString(ppt->value);
     XLAL_TRY(PhaseOrder = XLALGetOrderFromString(ppt->value),errnum);
-    if( (int) PhaseOrder == XLAL_FAILURE) {
+    if( (int) PhaseOrder == XLAL_FAILURE || errnum) {
       fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
       PhaseOrder=-1;
     }
