@@ -213,6 +213,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
 
   LALStatus status;
   memset(&status,0,sizeof(status));
+  int errnum;
   SimInspiralTable *injTable=NULL;
   LALInferenceVariables *priorArgs=state->priorArgs;
   state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
@@ -450,7 +451,6 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   
   
   /* Over-ride approximant if user specifies */
-  
   ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
   if(ppt){
     approx = XLALGetApproximantFromString(ppt->value);
@@ -461,24 +461,12 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
   if(ppt){
     approx = XLALGetApproximantFromString(ppt->value);
-    PhaseOrder = XLALGetOrderFromString(ppt->value);
+    XLAL_TRY(PhaseOrder = XLALGetOrderFromString(ppt->value),errnum);
+    if( (int) PhaseOrder == XLAL_FAILURE) {
+      fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
+      PhaseOrder=-1;
+    }
   }
-  
-//  ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
-//  if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--approximant"); //FIXME
-//  if(ppt){
-//    approx = XLALGetApproximantFromString(ppt->value);
-//    if( (int) approx == XLAL_FAILURE)
-//      ABORTXLAL(&status);
-//    ppt_order=LALInferenceGetProcParamVal(commandLine,"--order");
-//    if(ppt_order) PhaseOrder = XLALGetOrderFromString(ppt_order->value);
-//    else PhaseOrder = XLALGetOrderFromString(ppt->value);
-//    /* If not given as a separate argument or in the approx string, use maximum available */
-//    if( (int) PhaseOrder == XLAL_FAILURE) {
-//      fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
-//      PhaseOrder=-1;
-//    }
-//  }
   
   ppt=LALInferenceGetProcParamVal(commandLine,"--amporder");
   if(ppt) AmpOrder=atoi(ppt->value);
