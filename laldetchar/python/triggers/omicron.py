@@ -25,6 +25,7 @@ import re
 from ROOT import TChain
 
 from glue.ligolw import ilwd,lsctables,table,utils
+from glue.segments import segment as Segment
 
 from lal import LIGOTimeGPS
 from laldetchar import git_version
@@ -122,7 +123,7 @@ def from_root_file(filename, start=None, end=None, ifo=None, channel=None,
             start = -numpy.inf
         if end is None:
             end = numpy.inf
-        span = segments.segment(start, end)
+        span = Segment(start, end)
         columns.update(["peak_time", "peak_time_ns"])
         check_time = True
     else:
