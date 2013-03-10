@@ -2070,7 +2070,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     /* glitch times are seperated by commas so count them up */
     for( i = 0 ; i < nGlitches ; i++ ){
       if( nGlitches == 1 )
-        glitchTimes[i] = LALTTMJDtoGPS(atof(input.mcmc.glitchTimes));
+        glitchTimes[i] = XLALTTMJDtoGPS(atof(input.mcmc.glitchTimes));
       else{
         if( i == 0 )
           pos1 = input.mcmc.glitchTimes;/*string starts "*/
@@ -2094,7 +2094,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           exit(0);
         }
 
-        glitchTimes[i] = LALTTMJDtoGPS(atof(gtimestr)); /* convert to GPS */
+        glitchTimes[i] = XLALTTMJDtoGPS(atof(gtimestr)); /* convert to GPS */
 
         XLALFree(gtimestr);
       }

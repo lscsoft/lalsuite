@@ -542,7 +542,7 @@ int main(int argc,char *argv[])
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTTMJDtoGPS(uvar.orbitTpSSBMJD);
+	  GPSfloat = XLALTTMJDtoGPS(uvar.orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbitalParams->tp),GPSfloat);
 	}
       else
@@ -1500,7 +1500,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     {
       /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
-      GPSfloat = LALTDBMJDtoGPS(uvar->refTimeMJD);
+      GPSfloat = XLALTDBMJDtoGPS(uvar->refTimeMJD);
       XLALGPSSetREAL8 ( &refTime, GPSfloat );
     }
   else
@@ -1510,13 +1510,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   if (LALUserVarWasSet(&uvar->RA))
     {
       /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Alpha = LALDegsToRads(uvar->RA, "alpha");
+      cfg->Alpha = XLALhmsToRads(uvar->RA);
     }
   else cfg->Alpha = uvar->Alpha;
   if (LALUserVarWasSet(&uvar->Dec))
     {
       /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Delta = LALDegsToRads(uvar->Dec, "delta");
+      cfg->Delta = XLALdmsToRads(uvar->Dec);
     }
   else cfg->Delta = uvar->Delta;
 

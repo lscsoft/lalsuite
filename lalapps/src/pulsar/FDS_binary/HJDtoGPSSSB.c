@@ -142,9 +142,9 @@ int main( int argc, char *argv[] )
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
  
   /* if coordinates input in hh:mm:ss.s format then convert to radians */
-  if (XLALUserVarWasSet(&(uvar.ra))) alpha = LALDegsToRads(uvar.ra,"ra");
+  if (XLALUserVarWasSet(&(uvar.ra))) alpha = XLALhmsToRads(uvar.ra);
   else alpha = uvar.ra_rads;
-  if (XLALUserVarWasSet(&(uvar.dec))) delta = LALDegsToRads(uvar.dec,"dec");
+  if (XLALUserVarWasSet(&(uvar.dec))) delta = XLALdmsToRads(uvar.dec);
   else delta = uvar.dec_rads;
 
   {
@@ -156,11 +156,11 @@ int main( int argc, char *argv[] )
 
   /* convert MJD to TT GPS time */
   if (strstr(uvar.HJDconv,"TT")) {
-    helio_gps = LALTTMJDtoGPS(uvar.HJD-2400000.5);
+    helio_gps = XLALTTMJDtoGPS(uvar.HJD-2400000.5);
     LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TT) %6.12f\n",__func__,uvar.HJD,helio_gps);
   }
   else if (strstr(uvar.HJDconv,"TDB")) {
-    helio_gps = LALTDBMJDtoGPS(uvar.HJD-2400000.5);
+    helio_gps = XLALTDBMJDtoGPS(uvar.HJD-2400000.5);
     LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TDB) %6.12f\n",__func__,uvar.HJD,helio_gps);
   }
   else if (strstr(uvar.HJDconv,"UTC")) {

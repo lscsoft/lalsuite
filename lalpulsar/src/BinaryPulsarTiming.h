@@ -409,6 +409,29 @@ F0   -0.007 0.124  1.000
  */
 LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
 
+
+/** \brief Convert a string containing an angle in "hours:minutes:seconds" format into radians
+ *
+ * This function will covert a string containing an angle given in "hours:minutes:seconds"
+ * format (e.g. a right ascension) into radians. It requires that the hours value is positive
+ * and the minutes and seconds values are between 0 to 60. An example would be:
+ *
+ * rads = XLALhmsToRads( "12:05:07.765" );
+ */
+REAL8 XLALhmsToRads( CHAR *hms );
+
+
+/** \brief Convert a string containing an angle in "degrees:minutes:seconds" format into radians
+ *
+ * This function will covert a string containing an angle given in "degrees:minutes:seconds"
+ * format (e.g. a declination) into radians. It requires that the minutes and seconds values
+ * are between 0 to 60. An example would be:
+ *
+ * rads = XLALdmsToRads( "-06:52:16.875" );
+ */
+REAL8 XLALdmsToRads( CHAR *dms );
+
+
 /** A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
  * number of degrees as a float degs is the string containing the
  * dd/hh:mm:ss.sss coords is either ra/RA or dec/DEC.
@@ -425,13 +448,13 @@ LALDegsToRads(CHAR *degs, const CHAR *coords);
  * time at UTC 01/01/1980.
  */
 REAL8
-LALTTMJDtoGPS(REAL8 MJD);
+XLALTTMJDtoGPS(REAL8 MJD);
 
 REAL8
-LALTDBMJDtoGPS(REAL8 MJD);
+XLALTDBMJDtoGPS(REAL8 MJD);
 
 REAL8
-LALTCBMJDtoGPS(REAL8 MJD);
+XLALTCBMJDtoGPS(REAL8 MJD);
 
 /** function to print out all the pulsar parameters read in from a par file
  */

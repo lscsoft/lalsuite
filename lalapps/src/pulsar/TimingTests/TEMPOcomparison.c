@@ -320,8 +320,8 @@ main(int argc, char *argv[]){
     if (lalDebugLevel) fprintf(stdout,"STATUS : Randomly generate a sky position - alpha = %s delta = %s (hms)\n",RA,DEC);
 
     /* convert back to rads to test conversion */
-    alphatest = LALDegsToRads(RA, "alpha");
-    deltatest = LALDegsToRads(DEC, "delta");
+    alphatest = XLALhmsToRads(RA);
+    deltatest = XLALdmsToRads(DEC);
     if (lalDebugLevel) fprintf(stdout,"STATUS : Converted back to rads for testing - alpha = %6.12f delta = %6.12f (rads)\n",alphatest,deltatest);
     
     /* free memory */
@@ -332,8 +332,8 @@ main(int argc, char *argv[]){
   /* if a user has defined a sky position */
   else if ((LALUserVarWasSet(uvar.RAJ))&&(LALUserVarWasSet(uvar.DECJ))) {
     if (lalDebugLevel) fprintf(stdout,"STATUS : User defined sky position - alpha = %s delta = %s (hms)\n",uvar.RAJ,uvar.DECJ);
-    alpha = LALDegsToRads(uvar.RAJ, "alpha");
-    delta = LALDegsToRads(uvar.DECJ, "delta");
+    alpha = XLALhmsToRads(uvar.RAJ);
+    delta = XLALdmsToRads(uvar.DECJ);
     if (lalDebugLevel) fprintf(stdout,"STATUS : Converted user defined sky position to - alpha = %6.12f delta = %6.12f (rads)\n",alpha,delta);
   }
   else {

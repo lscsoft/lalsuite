@@ -759,8 +759,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       }
     else if ( have_RA )
       {
-	cfg->pulsar.Doppler.Alpha = LALDegsToRads(uvar_RA,"alpha");
-	cfg->pulsar.Doppler.Delta = LALDegsToRads(uvar_Dec,"delta");
+	cfg->pulsar.Doppler.Alpha = XLALhmsToRads(uvar_RA);
+	cfg->pulsar.Doppler.Delta = XLALdmsToRads(uvar_Dec);
       }
     else
       {
@@ -1275,7 +1275,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTTMJDtoGPS(uvar_orbitTpSSBMJD);
+	  GPSfloat = XLALTTMJDtoGPS(uvar_orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbit->tp),GPSfloat);
 	}
       else if ((set5 && set6) && !set7)
@@ -1370,7 +1370,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
       /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
-      GPSfloat = LALTTMJDtoGPS(uvar_refTimeMJD);
+      GPSfloat = XLALTTMJDtoGPS(uvar_refTimeMJD);
       XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),GPSfloat);
     }
   else
