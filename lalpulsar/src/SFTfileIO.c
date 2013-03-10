@@ -4055,7 +4055,7 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
  *
  *----------------------------------------------------------------------*/
 static LALStringVector *
-find_files (const CHAR *globdir)
+find_files (const CHAR *globstring)
 {
 #ifndef _MSC_VER
   DIR *dir;
@@ -4077,11 +4077,11 @@ find_files (const CHAR *globdir)
   CHAR *thisFname = NULL;
 
 #define FILE_SEPARATOR ';'
-  if ( (ptr2 = strchr (globdir, FILE_SEPARATOR)) )
-    { /* globdir is multi-pattern ("pattern1;pattern2;pattern3") */
-      /* call find_files() with every pattern found in globdir */
+  if ( (ptr2 = strchr (globstring, FILE_SEPARATOR)) )
+    { /* globstring is multi-pattern ("pattern1;pattern2;pattern3") */
+      /* call find_files() with every pattern found in globstring */
 
-      ptr1 = (const CHAR*)globdir;
+      ptr1 = (const CHAR*)globstring;
       while ( (ptr2 = strchr (ptr1, FILE_SEPARATOR)) )
 	{
 	  /* ptr1 points to the beginning of a pattern, ptr2 to the end */
@@ -4151,16 +4151,16 @@ find_files (const CHAR *globdir)
 
   /* read list of file names from a "list file" */
 #define LIST_PREFIX "list:"
-  else if (strncmp(globdir, LIST_PREFIX, strlen(LIST_PREFIX)) == 0) {
+  else if (strncmp(globstring, LIST_PREFIX, strlen(LIST_PREFIX)) == 0) {
     LALParsedDataFile *list = NULL;
     CHAR* listfname = NULL;
 
     /* create list file name
        prefix with "./" if not an absolute file name (see LALOpenDataFile()) */
-    if ((listfname = LALCalloc(1, strlen(globdir) + 3)) == NULL) {
+    if ((listfname = LALCalloc(1, strlen(globstring) + 3)) == NULL) {
       return NULL;
     }
-    ptr1 = globdir + strlen(LIST_PREFIX);
+    ptr1 = globstring + strlen(LIST_PREFIX);
     if (*ptr1 == '/')
       *listfname = '\0';
     else
@@ -4226,11 +4226,11 @@ find_files (const CHAR *globdir)
 
   } /* if list file */
 
-  else if (is_pattern(globdir))
+  else if (is_pattern(globstring))
 
-    { /* globdir is a single glob-style pattern */
+    { /* globstring is a single glob-style pattern */
 
-      /* First we separate the globdir into directory-path and file-pattern */
+      /* First we separate the globstring into directory-path and file-pattern */
 
 #ifndef _WIN32
 #define DIR_SEPARATOR '/'
@@ -4239,13 +4239,13 @@ find_files (const CHAR *globdir)
 #endif
 
       /* any path specified or not ? */
-      ptr1 = strrchr (globdir, DIR_SEPARATOR);
+      ptr1 = strrchr (globstring, DIR_SEPARATOR);
       if (ptr1)
 	{ /* yes, copy directory-path */
-	  dirlen = (size_t)(ptr1 - globdir) + 1;
+	  dirlen = (size_t)(ptr1 - globstring) + 1;
 	  if ( (dname = LALCalloc (1, dirlen)) == NULL)
 	    return (NULL);
-	  strncpy (dname, globdir, dirlen);
+	  strncpy (dname, globstring, dirlen);
 	  dname[dirlen-1] = '\0';
 
 	  ptr1 ++; /* skip dir-separator */
@@ -4264,12 +4264,12 @@ find_files (const CHAR *globdir)
 	    return (NULL);
 	  strcpy (dname, ".");
 
-	  if ( (fpattern = LALCalloc(1, strlen(globdir)+1)) == NULL)
+	  if ( (fpattern = LALCalloc(1, strlen(globstring)+1)) == NULL)
 	    {
 	      LALFree (dname);
 	      return (NULL);
 	    }
-	  strcpy (fpattern, globdir);	/* just file-pattern given */
+	  strcpy (fpattern, globstring);	/* just file-pattern given */
 	} /* if !ptr */
 
 
@@ -4351,19 +4351,19 @@ find_files (const CHAR *globdir)
 
   else
 
-    { /* globdir is a single simple filename */
+    { /* globstring is a single simple filename */
       /* add it to the list of filenames as it is */
 
       numFiles++;
       if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
 	return (NULL);
       }
-      namelen = strlen(globdir) + 1;
+      namelen = strlen(globstring) + 1;
       if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
 	LALFree (filelist);
 	return (NULL);
       }
-      strcpy(filelist[numFiles-1], globdir );
+      strcpy(filelist[numFiles-1], globstring );
     }
 
   /* ok, did we find anything? */
