@@ -37,7 +37,8 @@ __date__ = git_version.date
 OMICRON_COLUMNS = ["process_id", "search", "channel", "ifo",
                    "peak_time", "peak_time_ns", "start_time", "start_time_ns",
                    "stop_time", "stop_time_ns", "duration",
-                   "central_freq", "flow", "fhigh", "bandwidth",
+                   "central_freq", "peak_frequency",
+                   "flow", "fhigh", "bandwidth",
                    "snr", "amplitude", "confidence"]
 
 
@@ -59,6 +60,8 @@ def get_sngl_burst(root_event, columns=OMICRON_COLUMNS):
         sb.bandwidth = fhigh-flow
     if "central_freq" in columns:
         sb.central_freq = root_event.frequency
+    if "peak_frequency" in columns:
+        sb.peak_frequency = root_event.frequency
 
     peak_time = LIGOTimeGPS(root_event.time)
     if "time" in columns or "peak_time" in columns:
