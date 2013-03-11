@@ -102,7 +102,7 @@ def read_ascii_trigger(ascii_line, columns=OMICRON_COLUMNS):
     return sb
 
 
-def get_sngl_burst(root_event, columns=OMICRON_COLUMNS):
+def read_root_trigger(root_event, columns=OMICRON_COLUMNS):
     """@returns a LIGO_LW SnglBurst event with attributes seeded from
     the given Omicron ROOT tree event
     """
@@ -279,7 +279,7 @@ def from_root_file(filename, start=None, end=None, ifo=None, channel=None,
     nevents = root_tree.GetEntries()
     for i in range(nevents):
         root_tree.GetEntry(i)
-        t = get_sngl_burst(root_tree, columns=columns)
+        t = read_root_trigger(root_tree, columns=columns)
         if check_time and (float(t.get_peak()) not in span):
             continue
         if "ifo" in columns:
