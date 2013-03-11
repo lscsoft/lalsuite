@@ -2124,7 +2124,7 @@ XLALhmsToRads( const CHAR *hms )
   int numitems = sscanf(hms, "%d:%d:%lf", &h, &m, &s);
 
   XLAL_CHECK_REAL8( numitems == 3, XLAL_EINVAL, "Angle string not in format 'hours:mins:secs'" );
-  XLAL_CHECK_REAL8( h >= 0, XLAL_EDOM, "Hours value must be positive" );
+  XLAL_CHECK_REAL8( h >= 0 && h < 24, XLAL_EDOM, "Hours value must be within [0, 24)" );
   XLAL_CHECK_REAL8( m >= 0 && m < 60, XLAL_EDOM, "Minutes is out of the 0 to 59 mins range" );
   XLAL_CHECK_REAL8( s >= 0. && s < 60., XLAL_EDOM, "Seconds is out of the 0 to 60 secs range" );
 
