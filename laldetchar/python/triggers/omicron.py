@@ -70,9 +70,9 @@ def read_ascii_trigger(ascii_line, columns=OMICRON_COLUMNS):
         sb.start_time = start.gpsSeconds
     if 'start_time_ns' in columns:
         sb.start_time_ns = start.gpsNanoSeconds
-    if 'peak_time' in columns:
+    if "time" in columns or 'peak_time' in columns:
         sb.peak_time = peak.gpsSeconds
-    if 'peak_time_ns' in columns:
+    if "time" in columns or 'peak_time_ns' in columns:
         sb.peak_time_ns = peak.gpsNanoSeconds
     if 'stop_time' in columns:
         sb.stop_time = stop.gpsSeconds
