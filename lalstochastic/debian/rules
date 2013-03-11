@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 %:
-	dh $@
+	dh $@ --with=python2
 
 override_dh_auto_configure:
 	PKG_CONFIG_PATH="" \
@@ -8,6 +8,7 @@ override_dh_auto_configure:
 	    --prefix=/usr \
 	    --sysconfdir=/etc \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
+	    --enable-swig \
 	    --disable-gcc-flags
 
 override_dh_auto_build:
