@@ -358,14 +358,15 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   
   int Nblock = 1;            //number of frequency blocks per IFO
   int Nlines = 1;            //number of lines to be removed
-  int psdFlag;               //flag for including psd fitting
-  int lineFlag;              //flag for excluding lines from integration
+  int psdFlag = 0;           //flag for including psd fitting
+  int lineFlag = 0;          //flag for excluding lines from integration
   int lineimin = 0;
   int lineimax = 0;
   int lineSwitch;          //switch inside integration to exclude bins
 
   //line removal parameters
-  lineFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "removeLinesFlag"));
+  if(LALInferenceCheckVariable(currentParams, "removeLinesFlag"))
+    lineFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "removeLinesFlag"));
   if(lineFlag)
   {
     //Add line matrices to variable lists
@@ -377,7 +378,8 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   int widths_array[Nlines];
 
   //check if psd parameters are included in the model
-  psdFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "psdScaleFlag"));
+  if(LALInferenceCheckVariable(currentParams, "psdScaleFlag"))
+    psdFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "psdScaleFlag"));
   if(psdFlag)
   {
     //if so, store current noise parameters in easily accessible matrix
