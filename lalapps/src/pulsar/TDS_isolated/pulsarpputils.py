@@ -1835,17 +1835,17 @@ def pulsar_mcmc_to_posterior(chainfiles):
         neff, acl, acf = bppu.effectiveSampleSize(mcmcChain[:,j])
         neffstmp.append(neff)
 
-        # get the minimum effective sample size
-        #neffs.append(min(neffstmp))
-        # get the mean effective sample size
-        neffs.append(math.floor(np.mean(neffstmp)))
+      # get the minimum effective sample size
+      #neffs.append(min(neffstmp))
+      # get the mean effective sample size
+      neffs.append(math.floor(np.mean(neffstmp)))
 
-        #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
-        nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
+      #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
+      nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
 
-        # output every nskip (independent) value
-        mcmc.append(mcmcChain[::nskip,:])
-        cl.append(mcmcChain.shape[0])
+      # output every nskip (independent) value
+      mcmc.append(mcmcChain[::nskip,:])
+      cl.append(mcmcChain.shape[0])
     else:
       print >> sys.stderr, "File %s does not exist!" % cfile
       return None, None, None, None
