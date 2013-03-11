@@ -142,7 +142,7 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.9.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[6.10.0],[LALVersion],[lal/LALStdio.h])
 
 # check that lal has been buil with boinc support, for boinc build
 if test "${boinc}" = "true" ; then
@@ -150,7 +150,7 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSupport],[6.9.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.10.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
