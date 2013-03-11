@@ -1609,7 +1609,7 @@ def get_data_options(cp,ifo_name):
     data_opts = 'virgo-data'
     try:
       type = cp.get('input','virgo-type')
-      if ('NINJA' in type):
+      if ('NINJA' in type) or ('T1300121_' in type):
         type = ifo_name + '_' + type
     except: type = None
     channel = cp.get('input','virgo-channel')
@@ -1617,7 +1617,7 @@ def get_data_options(cp,ifo_name):
     data_opts = 'ligo-data'
     try:
       type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type) or ('ER_' in type):
+      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type) or ('ER_' in type) or ('T1200307_' in type) or ('T0900288_' in type):
         type = ifo_name + '_' + type
       if ("DMT_ERHOFT" in type):
         if (ifo_name == 'L1'): type = ifo_name + '_' + type
