@@ -100,7 +100,8 @@ paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
              'ELL': '$\\varepsilon$', 'H95': '$h_0^{95\%}$', \
              'Q22': '$Q_{22}$\,(kg\,m$^2$)', \
              'SDRAT': 'spin-down ratio', \
-             'OMDT': '$\dot{\omega}$'}
+             'OMDT': '$\dot{\omega}$', \
+             'EPS1': '$\\epsilon_1$', 'EPS2': '$\\epsilon_2$'}
 
 # some angle conversion functions taken from psr_utils.py in PRESTO
 def rad_to_dms(rad):
@@ -616,6 +617,7 @@ def plot_posterior_hist(poslist, param, ifos,
     #plt.legend(ifos)
     ax = plt.gca()
     ax.set_axis_bgcolor("#F2F1F0")
+    plt.hold(False)
     myfigs.append(myfig)
 
   return myfigs, ulvals
@@ -849,6 +851,7 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
              interpolation='bicubic', cmap='gray_r')
 
   fig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+  fax = (fig.get_axes())[0].axis()
 
   figs.append(fig)
 
@@ -873,7 +876,8 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
     # plot x histogram
     figx = plt.figure(figsize=(4,4),dpi=200)
     plt.step(xbins, xmarg, color='k')
-    plt.ylim(0, xmarg.max()+0.1*xmarg.max())
+    plt.ylim(0, max(xmarg)+0.1*max(xmarg))
+    plt.xlim(fax[0], fax[1])
     plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
     plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
     figx.subplots_adjust(left=0.18, bottom=0.15) # adjust size
@@ -883,7 +887,8 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
     # plot y histogram
     figy = plt.figure(figsize=(4,4),dpi=200)
     plt.step(ybins, ymarg, color='k')
-    plt.ylim(0, ymarg.max()+0.1*ymarg.max())
+    plt.ylim(0, max(ymarg)+0.1*max(ymarg))
+    plt.xlim(fax[3], fax[2])
     plt.xlabel(r''+paryaxis, fontsize=14, fontweight=100)
     plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
     figy.subplots_adjust(left=0.18, bottom=0.15) # adjust size

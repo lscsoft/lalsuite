@@ -413,9 +413,6 @@ def output_fig(myfig, outpath, fname, ftypes):
       print >> sys.stderr, "Error outputting figure %s" % plotpath
       sys.exit(1)
 
-    myfig.clf()
-    matplotlib.pyplot.close(myfig)
-
   return fnameret
 
 
@@ -904,7 +901,7 @@ query'
   asdtime = 14400 # set time over which to produce the asds
 
   Bkfigs, psdfigs, fscanfigs, asdlist = pppu.plot_Bks_ASDs( Bkdata, ifos, \
-asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
+asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
 
   if asdlist:
     psrshelf['ASD'] = dict(zip(ifos, asdlist)) # convert into dictionary
@@ -995,7 +992,6 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
 
   # output the MAIN posterior plots
   # h0
-  h0Fig = None
   bounds = [0, float("inf")]
   ul = 0.95
   histbins = 30
@@ -1086,7 +1082,6 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
   psrshelf['sdpowrat'] = dict(zip(ifosNew, sdpowrat))
 
   # phi0
-  phi0Fig = None
   bounds = [0, 2*math.pi]
   phi0Fig, ulvals = pppu.plot_posterior_hist( poslist, 'phi0', ifosNew, \
                                         bounds, histbins, \
@@ -1094,7 +1089,6 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
   phi0figname = output_fig(phi0Fig[0], puldir, 'phi0post', ftypes)
 
   # cos(iota)
-  cifig = None
   bounds = [-1, 1]
   ciFig, ulvals = pppu.plot_posterior_hist( poslist, 'cosiota', ifosNew, \
                                       bounds, histbins, \
@@ -1102,7 +1096,6 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
   cifigname = output_fig(ciFig[0], puldir, 'cipost', ftypes)
 
   # psi
-  psiFig = None
   bounds = [-math.pi/4, math.pi/4]
   psiFig, ulvals = pppu.plot_posterior_hist( poslist, 'psi', ifosNew, \
                                        bounds, histbins, \
@@ -1111,17 +1104,26 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=None )
 
   # get h0 vs cos(iota) 2D posterior histrogram (if single detector of for
   # joint posterior)
-  #bounds = [[0, 3*h0last], [-1, 1]]
-  h0ciFig = None
+  # get bounds from h0 and cos(iota) plots
+  ax = h0Fig[0].get_axes()
+  gh0 = ax[-1].axis()
+  ax = ciFig[0].get_axes()
+  gci = ax[-1].axis()
+  h0cibounds = [[gh0[0], gh0[1]], [gci[0], gci[1]]]
+
   h0ciFig = pppu.plot_posterior_hist2D([poslist[-1]], ['h0', 'cosiota'], \
-[ifosNew[-1]], bounds=None, nbins=[30, 30], parfile=parinj)
+[ifosNew[-1]], bounds=h0cibounds, nbins=[30, 30], parfile=parinj)
   h0cifigname = output_fig(h0ciFig[0], puldir, 'h0cipost', ftypes)
 
   # get phi0 vs psi 2D posterior histogram
-  phi0psiFig = None
+  ax = phi0Fig[0].get_axes()
+  gphi0 = ax[-1].axis()
+  ax = psiFig[0].get_axes()
+  gpsi = ax[-1].axis()
+  phi0psibounds = [[gphi0[0], gphi0[1]], [gpsi[0], gpsi[1]]]
+
   phi0psiFig = pppu.plot_posterior_hist2D([poslist[-1]], ['phi0', 'psi'], \
-[ifosNew[-1]], bounds=[[0, 2.*math.pi], [math.pi/4., -math.pi/4]], \
-nbins=[30, 30], parfile=parinj)
+[ifosNew[-1]], bounds=phi0psibounds, nbins=[30, 30], parfile=parinj)
   phi0psifigname = output_fig(phi0psiFig[0], puldir, 'phi0psipost', ftypes)
 
   # produce output table of posterior plots
