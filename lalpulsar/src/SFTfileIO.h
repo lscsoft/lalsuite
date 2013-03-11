@@ -373,7 +373,7 @@ INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
 
 void XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView );
-MultiSFTCatalogView *XLALMultiSFTCatalogView ( const SFTCatalog *catalog );
+MultiSFTCatalogView *XLALGetMultiSFTCatalogView ( const SFTCatalog *catalog );
 
 char *XLALGetOfficialName4SFT ( const SFTtype *sft, const char *Misc );
 char *XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts, const char *Misc );

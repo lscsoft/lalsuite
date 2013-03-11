@@ -1092,7 +1092,7 @@ XLALLoadMultiSFTs (const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFT
   XLAL_CHECK_NULL ( (inputCatalog != NULL) && (inputCatalog->length != 0), XLAL_EINVAL );
 
   MultiSFTCatalogView *multiCatalogView;
-  XLAL_CHECK_NULL ( (multiCatalogView = XLALMultiSFTCatalogView ( inputCatalog )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (multiCatalogView = XLALGetMultiSFTCatalogView ( inputCatalog )) != NULL, XLAL_EFUNC );
 
   MultiSFTVector *multiSFTs;
   XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTsFromView ( multiCatalogView, fMin, fMax )) != NULL, XLAL_EFUNC );
@@ -2529,7 +2529,7 @@ INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
  *
  */
 MultiSFTCatalogView *
-XLALMultiSFTCatalogView ( const SFTCatalog *catalog )
+XLALGetMultiSFTCatalogView ( const SFTCatalog *catalog )
 {
   XLAL_CHECK_NULL ( catalog != NULL, XLAL_EINVAL );
 
@@ -2644,7 +2644,7 @@ XLALMultiSFTCatalogView ( const SFTCatalog *catalog )
 
   return ret;
 
-} // XLALMultiSFTCatalogFromSFTCatalog()
+} // XLALGetMultiSFTCatalogView()
 
 /**
  * Destroys a MultiSFTCatalogView, without freeing the original
