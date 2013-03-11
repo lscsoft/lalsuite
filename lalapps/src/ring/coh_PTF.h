@@ -218,6 +218,7 @@ struct coh_PTF_params {
   int          faceOnAnalysis;
   int          faceAwayAnalysis;
   int          dynTempLength;
+  int          storeAmpParams;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
@@ -512,6 +513,17 @@ void coh_PTF_calculate_single_det_spin_snr(
   UINT4                      ifoNumber
 );
 
+REAL4 coh_PTF_get_spin_SNR(
+  REAL4 *v1p,
+  REAL4 *v2p,
+  UINT4 vecLengthTwo
+);
+
+void coh_PTF_template_time_series_cluster(
+  REAL4TimeSeries *cohSNR,
+  INT4 numPointCheck
+);
+
 void coh_PTF_calculate_null_stream_filters(
   struct coh_PTF_params      *params,
   FindChirpTemplate          *fcTmplt,
@@ -529,6 +541,34 @@ void coh_PTF_calculate_null_stream_norms(
   gsl_matrix *eigenvecsNull,
   gsl_vector *eigenvalsNull,
   REAL8Array *PTFM[LAL_NUM_IFO+1]
+);
+
+void coh_PTF_calculate_null_stream_snr(
+  struct coh_PTF_params   *params,
+  REAL4TimeSeries         *nullSNR,
+  COMPLEX8VectorSequence  **PTFqVec,
+  gsl_matrix              *eigenvecsNull,
+  gsl_vector              *eigenvalsNull,
+  UINT4                   spinTemplate,
+  UINT4                   vecLength,
+  UINT4                   vecLoc,
+  UINT4                   snrLoc
+);
+
+void coh_PTF_calculate_trace_snr(
+  struct coh_PTF_params   *params,
+  REAL4TimeSeries         *traceSNR,
+  COMPLEX8VectorSequence  **PTFqVec,
+  gsl_matrix              *eigenvecs,
+  gsl_vector              *eigenvals,
+  REAL4                   *Fplus,
+  REAL4                   *Fcross,
+  INT4                    *timeOffsetPoints,
+  UINT4                   spinTemplate,
+  UINT4                   vecLength,
+  UINT4                   vecLengthTwo,
+  UINT4                   vecLoc,
+  UINT4                   snrLoc
 );
 
 UINT4 coh_PTF_initialize_bank_veto(

@@ -1310,6 +1310,161 @@ void coh_PTF_calculate_single_det_spin_snr(
   LALFree(snglv2p);
 }
 
+REAL4 coh_PTF_get_spin_SNR(
+  REAL4 *v1p,
+  REAL4 *v2p,
+  UINT4 vecLengthTwo
+)
+{
+  UINT4 ui;
+  REAL4 v1_dot_u1,v1_dot_u2,v2_dot_u2,max_eigen;
+  v1_dot_u1 = v1_dot_u2 = v2_dot_u2 = 0.0;
+  for (ui =0; ui < vecLengthTwo; ui++)
+  {
+    v1_dot_u1 += v1p[ui] * v1p[ui];
+    v2_dot_u2 += v2p[ui] * v2p[ui];
+    v1_dot_u2 += v1p[ui] * v2p[ui];
+  }
+  max_eigen = 0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2)
+            * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
+  return sqrt(max_eigen);
+}
+
+/* THIS FUNCTION IS COMMENTED OUT SO IT CAN BE VERIFIED AND FIXED*/
+/* void coh_PTF_get_spin_amp_terms(
+XXXXX
+)
+  coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,Fplus,Fcross,timeOffsetPoints,
+        eigenvecs,eigenvals,numPoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
+  v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = 0;
+  for (j = 0; j < vecLengthTwo; j++)
+  {
+    u1[j] = v1p[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+    u2[j] = v2p[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+    v1[j] = u1[j] * gsl_vector_get(eigenvals,j);
+    v2[j] = u2[j] * gsl_vector_get(eigenvals,j);
+    v1_dot_u1 += v1[j]*u1[j];
+    v1_dot_u2 += v1[j]*u2[j];
+    v2_dot_u2 += v2[j]*u2[j];
+  }
+  dCee = (max_eigen - v1_dot_u1) / v1_dot_u2;
+  dAlpha = 1./(v1_dot_u1 + dCee * 2 * v1_dot_u2 + dCee*dCee*v2_dot_u2);
+  dAlpha = pow(dAlpha,0.5);
+  dBeta = dCee*dAlpha;
+  // The p Values are calculated in the rotated frame
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];
+    pValues[j]->data->data[i - numPoints/4] = 0.;
+  }
+  // This loop can be used to verify that the SNR obtained is as before
+  recSNR = 0;
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    for (k = 0 ; k < vecLengthTwo ; k++)
+    {
+      recSNR += pValsTemp[j]*pValsTemp[k] * (v1[j]*v1[k]+v2[j]*v2[k]);
+    }
+  }
+  // Then we calculate the two phase/amplitude terms beta and gamma
+  // These are explained in Diego's thesis
+  betaGammaTemp[0] = 0;
+  betaGammaTemp[1] = 0;
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    betaGammaTemp[0] += pValsTemp[j]*v1[j];
+    betaGammaTemp[1] += pValsTemp[j]*v2[j];
+  }
+  gammaBeta[0]->data->data[i - numPoints/4] = betaGammaTemp[0];
+  gammaBeta[1]->data->data[i - numPoints/4] = betaGammaTemp[1];
+
+  // The p Values need to be rotated back into the original frame.
+  // Currently we are recording values in rotated frame
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    for (k = 0 ; k < vecLengthTwo ; k++)
+    {
+      pValues[j]->data->data[i-numPoints/4]+=gsl_matrix_get(eigenvecs,j,k)*pValsTemp[k];
+    }
+  }
+
+  // And we check that this still gives the expected SNR in the
+  // unrotated basis.
+  for (j = 0; j < vecLengthTwo ; j++) // Construct the vi vectors
+  {
+    v1[j] = 0.;
+    v2[j] = 0.;
+    for(k = 0; k < LAL_NUM_IFO; k++)
+    {
+      if (params->haveTrig[k])
+      {
+        if (j < vecLength)
+        {
+          v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
+          v2[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
+        }
+        else
+        {
+          v1[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
+          v2[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
+        }
+      }
+    }
+  }
+  recSNR = 0;
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    for (k = 0 ; k < vecLengthTwo ; k++)
+    {
+      recSNR += pValues[j]->data->data[i-numPoints/4]*pValues[k]->data->data[i-numPoints/4] * (v1[j]*v1[k]+v2[j]*v2[k]);
+    }
+  }
+}
+*/
+
+void coh_PTF_template_time_series_cluster(
+  REAL4TimeSeries *cohSNR,
+  INT4 numPointCheck
+)
+{
+  UINT4 ui,check;
+  UINT4 logicArray[cohSNR->data->length];
+  INT4 j,tempPoint;
+  INT4 dataLen = (INT4) cohSNR->data->length;
+  for (ui = 0; ui < cohSNR->data->length; ui++)
+  {
+    logicArray[ui] = 0;
+    if (cohSNR->data->data[ui])
+    {
+      check = 1;
+      for (j = -numPointCheck; j < numPointCheck; j++)
+      {
+        tempPoint = ui + j;
+        if (tempPoint < 0)
+        {
+          continue;
+        }
+        if (tempPoint >= dataLen)
+        {
+          continue;
+        }
+        if (cohSNR->data->data[tempPoint] > cohSNR->data->data[ui])
+        {
+          logicArray[ui] = 1;
+          break;
+        }
+      }
+    }
+  }
+  for (ui = 0; ui < cohSNR->data->length; ui++)
+  {
+    if (logicArray[ui])
+    {
+      cohSNR->data->data[ui] = 0.;
+    }
+  }
+}
+
 void coh_PTF_calculate_null_stream_filters(
   struct coh_PTF_params      *params,
   FindChirpTemplate          *fcTmplt,
@@ -1372,6 +1527,140 @@ void coh_PTF_calculate_null_stream_norms(
     }
     gsl_eigen_symmv(B2Null, eigenvalsNull, eigenvecsNull, matTempNull);
   }
+}
+
+void coh_PTF_calculate_null_stream_snr(
+  struct coh_PTF_params   *params,
+  REAL4TimeSeries         *nullSNR,
+  COMPLEX8VectorSequence  **PTFqVec,
+  gsl_matrix              *eigenvecsNull,
+  gsl_vector              *eigenvalsNull,
+  UINT4                   spinTemplate,
+  UINT4                   vecLength,
+  UINT4                   vecLoc,
+  UINT4                   snrLoc
+)
+{
+  UINT4 j,k;
+  REAL4 v1_dot_u1,v1_dot_u2,v2_dot_u2,max_eigen;
+  REAL4 v1N[vecLength],v2N[vecLength],u1N[vecLength],u2N[vecLength];
+  /* Begin by rotating to the preferred vector */
+  /* NOTE: For non-spin vecLength=1 and some of this is trivial */
+  /* NOTE: This code could be optimized, but is rarely used so has not been */
+  for (j = 0; j < vecLength; j++)
+  {
+    v1N[j] = PTFqVec[LAL_NUM_IFO]->data[j*params->numTimePoints+vecLoc].re;
+    v2N[j] = PTFqVec[LAL_NUM_IFO]->data[j*params->numTimePoints+vecLoc].im;
+  }
+
+  for (j = 0 ; j < vecLength ; j++)
+  {
+    u1N[j] = 0.;
+    u2N[j] = 0.;
+    for (k = 0 ; k < vecLength ; k++)
+    {
+      u1N[j] += gsl_matrix_get(eigenvecsNull,k,j)*v1N[k];
+      u2N[j] += gsl_matrix_get(eigenvecsNull,k,j)*v2N[k];
+    }
+    u1N[j] = u1N[j] / (pow(gsl_vector_get(eigenvalsNull,j),0.5));
+    u2N[j] = u2N[j] / (pow(gsl_vector_get(eigenvalsNull,j),0.5));
+  }
+  /* Compute the dot products */
+  v1_dot_u1 = v1_dot_u2 = v2_dot_u2 = 0.0;
+  for (j = 0; j < vecLength; j++)
+  {
+    v1_dot_u1 += u1N[j] * u1N[j];
+    v1_dot_u2 += u1N[j] * u2N[j];
+    v2_dot_u2 += u2N[j] * u2N[j];
+  }
+  if (spinTemplate == 0)
+  {
+    max_eigen = 0.5 * (v1_dot_u1 + v2_dot_u2);
+  }
+  else
+  {
+    max_eigen = 0.5*(v1_dot_u1+v2_dot_u2+sqrt((v1_dot_u1-v2_dot_u2)
+        * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
+  }
+  nullSNR->data->data[snrLoc] = sqrt(max_eigen);
+}      
+
+void coh_PTF_calculate_trace_snr(
+  struct coh_PTF_params   *params,
+  REAL4TimeSeries         *traceSNR,
+  COMPLEX8VectorSequence  **PTFqVec,
+  gsl_matrix              *eigenvecs,
+  gsl_vector              *eigenvals,
+  REAL4                   *Fplus,
+  REAL4                   *Fcross,
+  INT4                    *timeOffsetPoints,
+  UINT4                   spinTemplate,
+  UINT4                   vecLength,
+  UINT4                   vecLengthTwo,
+  UINT4                   vecLoc,
+  UINT4                   snrLoc
+)
+{
+  UINT4 j,k,m;
+  REAL4 v1_dot_u1,v1_dot_u2,v2_dot_u2,max_eigen,traceSNRsq;
+  REAL4 v1[vecLength],v2[vecLength],u1[vecLength],u2[vecLength];
+
+  /* Trace SNR is the coherent SNR with no cross-detector terms */
+  traceSNRsq = 0;
+  for(k = 0; k < LAL_NUM_IFO; k++)
+  {
+    if (params->haveTrig[k])
+    {
+      for (j = 0; j < vecLengthTwo ; j++)
+      {
+        if (j < vecLength)
+        {
+          v1[j] = Fplus[k] * PTFqVec[k]->data[\
+                         j*params->numTimePoints+vecLoc+timeOffsetPoints[k]].re;
+          v2[j] = Fplus[k] * PTFqVec[k]->data[\
+                         j*params->numTimePoints+vecLoc+timeOffsetPoints[k]].im;
+        }
+        else
+        {
+          v1[j] = Fcross[k] * PTFqVec[k]->data[ (j-vecLength) * \
+                           params->numTimePoints+vecLoc+timeOffsetPoints[k]].re;
+          v2[j] = Fcross[k] * PTFqVec[k]->data[ (j-vecLength) * \
+                           params->numTimePoints+vecLoc+timeOffsetPoints[k]].im;
+        }
+      }
+      for (j = 0 ; j < vecLengthTwo ; j++)
+      {
+        u1[j] = 0.;
+        u2[j] = 0.;
+        for (m = 0 ; m < vecLengthTwo ; m++)
+        {
+          u1[j] += gsl_matrix_get(eigenvecs,m,j)*v1[m];
+          u2[j] += gsl_matrix_get(eigenvecs,m,j)*v2[m];
+        }
+        u1[j] = u1[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+        u2[j] = u2[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+      }
+      /* Compute the dot products */
+      v1_dot_u1 = v1_dot_u2 = v2_dot_u2 = max_eigen = 0.0;
+      for (j = 0; j < vecLengthTwo; j++)
+      {
+        v1_dot_u1 += u1[j] * u1[j];
+        v1_dot_u2 += u1[j] * u2[j];
+        v2_dot_u2 += u2[j] * u2[j];
+      }
+      if (spinTemplate == 0)
+      {
+        max_eigen = (v1_dot_u1 + v2_dot_u2);
+      }
+      else
+      {
+        max_eigen = 0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2)
+            * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
+      }
+      traceSNRsq += max_eigen;
+    }
+  }
+  traceSNR->data->data[snrLoc] = sqrt(traceSNRsq);
 }
 
 void coh_PTF_convert_time_offsets_to_points(
@@ -1917,7 +2206,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
   /* if two-detectors, remove time-delay degeneracy */
   if (params->skyLooping == TWO_DET_SKY_PATCH)
   {
-    verbose("Generated necessary sky grid with %d points, ",
+    verbose("Generated full sky grid with %d points, ",
             skyPoints->numPoints);
     verbose("parsing for time-delay degeneracy\n");
     CohPTFSkyPositions *parsedSkyPoints = NULL; 
@@ -1926,12 +2215,11 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
       LALFree(skyPoints->data);
     if (skyPoints)
       LALFree(skyPoints);
-    return parsedSkyPoints;
+    skyPoints = parsedSkyPoints;
   }
-  else
-  {
-    return skyPoints;
-  }
+  verbose("Generated final sky grid with %d points, ",
+          skyPoints->numPoints);
+  return skyPoints;
 }
 
 /*
