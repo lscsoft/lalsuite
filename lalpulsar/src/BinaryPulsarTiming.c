@@ -216,7 +216,7 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
     else if( params->Tasc != 0. ) tt0 = in->tb - params->Tasc;
     else{
       XLALPrintError("%s: Neither T0 or Tasc is defined!\n", __func__);
-      XLAL_ERROR_VOID( XLAL_EFUNC );
+      XLAL_ERROR_VOID( XLAL_EINVAL );
     }
 
     kop->DK031 = x * tt0 / sini*params->pmra*sin_omega;
@@ -1982,7 +1982,7 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile )
   /* check the file exists */
   if( access(corfile, F_OK) != 0 ){
     XLALPrintError("Error... correlation matrix file does not exist!\n");
-    XLAL_ERROR_NULL(XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EIO);
   }
 
   /* open file */
@@ -2080,23 +2080,22 @@ Parameters not in consistent order!\n");
 
 /* function to convert a string containing an angular coordinate in the format
  * degrees:minutues:seconds into radians */
-REAL8 XLALdmsToRads( CHAR *dms ){
-  REAL8 radians = 0., s = 0.;
-  INT4 d = 0, m = 0, numitems = 0, negbutzero = 0;
-
+REAL8
+XLALdmsToRads( const CHAR *dms )
+{
   XLAL_CHECK_REAL8( dms != NULL, XLAL_EIO, "Angle string is NULL" );
 
-  numitems = sscanf(dms, "%d:%d:%lf", &d, &m, &s);
+  REAL8 s;
+  INT4 d, m;
+  int negbutzero = 0;
+  int numitems = sscanf(dms, "%d:%d:%lf", &d, &m, &s);
 
-  XLAL_CHECK_REAL8( numitems == 3, XLAL_EFUNC, "Angle string not in format 'degs:mins:secs'" );
-  XLAL_CHECK_REAL8( m >= 0 && m < 60, XLAL_EFUNC, "Minutes is out of the 0 to 59 mins range" );
-  XLAL_CHECK_REAL8( s >= 0. && s < 60., XLAL_EFUNC, "Seconds is out of the 0 to 60 secs range" );
+  XLAL_CHECK_REAL8( numitems == 3, XLAL_EINVAL, "Angle string not in format 'degs:mins:secs'" );
+  XLAL_CHECK_REAL8( m >= 0 && m < 60, XLAL_EDOM, "Minutes is out of the 0 to 59 mins range" );
+  XLAL_CHECK_REAL8( s >= 0. && s < 60., XLAL_EDOM, "Seconds is out of the 0 to 60 secs range" );
 
   /* check if the string is negative in the case when the degrees value is zero */
-  if( dms[0] == '-' && d == 0 ) negbutzero = 1;
-
-  /* convert from dd:mm:ss to radians */
-  radians = LAL_PI_180 * (REAL8)d;
+  if( dms[0] == '-' && d == 0 ) { negbutzero = 1; }
 
   /* if dec is negative convert mins and secs to -ve numbers */
   if( d < 0 || negbutzero == 1 ){
@@ -2104,39 +2103,45 @@ REAL8 XLALdmsToRads( CHAR *dms ){
     s = -s;
   }
 
-  radians += LAL_PI_180 * (REAL8)m / 60.;
-  radians += LAL_PI_180 * s / 3600.;
+  /* convert from dd:mm:ss to radians */
+  const REAL8 deg2rad = LAL_PI_180;
+  REAL8 radians =  deg2rad * ( d + (m / 60.0) + (s / 3600.0) );
 
   return radians;
-}
+
+} // XLALdmsToRads()
 
 
 /* function to convert a string containing an angular coordinate in the format
  * hours:minutues:seconds into radians */
-REAL8 XLALhmsToRads( CHAR *hms ){
-  REAL8 radians = 0., s = 0.;
-  INT4 h = 0, m = 0, numitems = 0;
-
-  REAL8 degsInHour = 360./24.;
-
+REAL8
+XLALhmsToRads( const CHAR *hms )
+{
   XLAL_CHECK_REAL8( hms != NULL, XLAL_EIO, "Angle string is NULL" );
 
-  numitems = sscanf(hms, "%d:%d:%lf", &h, &m, &s);
+  REAL8 s;
+  INT4 h, m;
+  int numitems = sscanf(hms, "%d:%d:%lf", &h, &m, &s);
 
-  XLAL_CHECK_REAL8( numitems == 3, XLAL_EFUNC, "Angle string not in format 'hours:mins:secs'" );
-  XLAL_CHECK_REAL8( h >= 0, XLAL_EFUNC, "Hours value must be positive" );
-  XLAL_CHECK_REAL8( m >= 0 && m < 60, XLAL_EFUNC, "Minutes is out of the 0 to 59 mins range" );
-  XLAL_CHECK_REAL8( s >= 0. && s < 60., XLAL_EFUNC, "Seconds is out of the 0 to 60 secs range" );
+  XLAL_CHECK_REAL8( numitems == 3, XLAL_EINVAL, "Angle string not in format 'hours:mins:secs'" );
+  XLAL_CHECK_REAL8( h >= 0, XLAL_EDOM, "Hours value must be positive" );
+  XLAL_CHECK_REAL8( m >= 0 && m < 60, XLAL_EDOM, "Minutes is out of the 0 to 59 mins range" );
+  XLAL_CHECK_REAL8( s >= 0. && s < 60., XLAL_EDOM, "Seconds is out of the 0 to 60 secs range" );
 
-  radians = LAL_PI_180 * (REAL8)h * degsInHour;
-  radians += LAL_PI_180 * ( (REAL8)m / 60.0 ) * degsInHour;
-  radians += LAL_PI_180 * ( s / 3600. ) * degsInHour;
+  /* convert from hh:mm:ss to radians */
+  const REAL8 hour2deg = 360./24.;
+  const REAL8 deg2rad  = LAL_PI_180;
+  const REAL8 hour2rad = hour2deg * deg2rad;
+
+  REAL8 radians = hour2rad * ( h + (m / 60.0) + (s / 3600.0) );
 
   return radians;
-}
+
+} // XLALhmsToRads()
 
 
-/* function converts dec or ra from format dd/hh:mm:ss.sss or format
+/* DEPREACTED: Use XLALhmsToRads() or XLALdmsToRads()
+   function converts dec or ra from format dd/hh:mm:ss.sss or format
    dd/hhmmss.ss to radians */
 REAL8 LALDegsToRads(CHAR *degs, const CHAR *coord){
   REAL8 radians=0.;

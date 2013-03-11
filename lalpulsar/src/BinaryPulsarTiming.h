@@ -418,7 +418,7 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
  *
  * rads = XLALhmsToRads( "12:05:07.765" );
  */
-REAL8 XLALhmsToRads( CHAR *hms );
+REAL8 XLALhmsToRads( const CHAR *hms );
 
 
 /** \brief Convert a string containing an angle in "degrees:minutes:seconds" format into radians
@@ -429,10 +429,12 @@ REAL8 XLALhmsToRads( CHAR *hms );
  *
  * rads = XLALdmsToRads( "-06:52:16.875" );
  */
-REAL8 XLALdmsToRads( CHAR *dms );
+REAL8 XLALdmsToRads( const CHAR *dms );
 
 
-/** A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
+/** \deprecated Use XLALdmsToRads() or XLALhmsToRads() instead.
+ *
+ * A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
  * number of degrees as a float degs is the string containing the
  * dd/hh:mm:ss.sss coords is either ra/RA or dec/DEC.
  */
@@ -447,6 +449,7 @@ LALDegsToRads(CHAR *degs, const CHAR *coords);
  * seonds added between the TAI and UTC up to the point of definition of GPS
  * time at UTC 01/01/1980.
  */
+/*@{*/
 REAL8
 XLALTTMJDtoGPS(REAL8 MJD);
 
@@ -455,6 +458,7 @@ XLALTDBMJDtoGPS(REAL8 MJD);
 
 REAL8
 XLALTCBMJDtoGPS(REAL8 MJD);
+/*@}*/
 
 /** function to print out all the pulsar parameters read in from a par file
  */
