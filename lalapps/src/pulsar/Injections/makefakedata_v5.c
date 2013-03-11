@@ -65,27 +65,22 @@
 
 /***************************************************/
 #define SQ(x) ( (x) * (x) )
-
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 /*----------------------------------------------------------------------*/
 
 /**
- * Lists of CW signal params and "line-feature" sinusoid params to generate
- * data for
+ * Straightforward vector type of N PulsarParams structs
  */
-typedef struct tagInjectionSources
+typedef struct tagPulsarParamsVector
 {
-  UINT4 numPulsars;		/**< number of pulsar-signals to inject */
-  PulsarParams *pulsarParams;	/**< array of pulsar-signal parameters to inject */
-
-  /* ... */
-  /* may be extended to carry further injection sources, eg 'lines' here */
-} InjectionSources;
-
+  UINT4 length;		/**< number of pulsar-signals */
+  PulsarParams *data;	/**< array of pulsar-signal parameters */
+} PulsarParamsVector;
 
 /** configuration-variables derived from user-variables */
 typedef struct
 {
-  InjectionSources *injectionSources;		/**< list of injection source parameters */
+  PulsarParamsVector *injectionSources;		/**< list of injection source parameters */
 
   EphemerisData *edat;		/**< ephemeris-data */
   MultiLIGOTimeGPSVector *multiTimestamps;/**< a vector of timestamps to generate time-series/SFTs for */
@@ -138,42 +133,12 @@ typedef struct
   CHAR *ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
 
   /* pulsar parameters [REQUIRED] */
-  REAL8 refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTime converted to SSB) */
-
-  REAL8 h0;			/**< overall signal amplitude h0 */
-  REAL8 cosi;		/**< cos(iota) of inclination angle iota */
-  REAL8 aPlus;		/**< ALTERNATIVE to {h0,cosi}: Plus polarization amplitude aPlus */
-  REAL8 aCross;		/**< ALTERNATIVE to {h0,cosi}: Cross polarization amplitude aCross */
-  REAL8 psi;			/**< Polarization angle psi */
-  REAL8 phi0;		/**< Initial phase phi */
-
-  REAL8 Alpha;		/**< Right ascension [radians] alpha of pulsar */
-  REAL8 Delta;		/**< Declination [radians] delta of pulsar */
-  REAL8 Freq;
-
-  REAL8 f1dot;		/**< First spindown parameter f' */
-  REAL8 f2dot;		/**< Second spindown parameter f'' */
-  REAL8 f3dot;		/**< Third spindown parameter f''' */
-
-  /* orbital parameters [OPTIONAL] */
-
-  REAL8 orbitasini;	        /**< Projected orbital semi-major axis in seconds (a/c) */
-  REAL8 orbitEcc;	        /**< Orbital eccentricity */
-  INT4  orbitTpSSBsec;	        /**< 'observed' (SSB) time of periapsis passage. Seconds. */
-  INT4  orbitTpSSBnan;	        /**< 'observed' (SSB) time of periapsis passage. Nanoseconds. */
-  REAL8 orbitTpSSBMJD;          /**< 'observed' (SSB) time of periapsis passage. MJD. */
-  REAL8 orbitPeriod;		/**< Orbital period (seconds) */
-  REAL8 orbitArgp;	        /**< Argument of periapsis (radians) */
-
-  BOOLEAN lineFeature;	        /**< generate a monochromatic line instead of a pulsar-signal */
+  CHAR *injectionSources;	///< either a file-specification ("@file-pattern") or a config-string defining the sources to inject
 
   BOOLEAN version;		/**< output version information */
 
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
-  CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
-  REAL8 transientStartTime;	/**< GPS start-time of transient window */
-  REAL8 transientTauDays;	/**< time-scale in days of transient window */
 } UserVariables_t;
 
 
@@ -205,16 +170,23 @@ static const CWDataParams empty_CWDataParams;
 int XLALFindSmallestValidSamplingRate ( UINT4 *n1, UINT4 n0, const LIGOTimeGPSVector *timestamps );
 int
 XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries,
-                          const InjectionSources *injectionSources, const CWDataParams *dataParams, const EphemerisData *edat );
+                          const PulsarParamsVector *injectionSources, const CWDataParams *dataParams, const EphemerisData *edat );
 int
 XLALCWMakeFakeData ( SFTVector **SFTVect, REAL4TimeSeries **Tseries,
-                     const InjectionSources *injectionSources, const CWDataParams *dataParams, const EphemerisData *edat );
+                     const PulsarParamsVector *injectionSources, const CWDataParams *dataParams, const EphemerisData *edat );
 
 REAL4TimeSeries *
 XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat );
 
 
-void XLALDestroyInjectionSources ( InjectionSources *sources );
+int XLALReadPulsarParams ( PulsarParams *pulsarParams, const LALParsedDataFile *cfgdata, const CHAR *secName );
+PulsarParamsVector *XLALPulsarParamsFromFile ( const char *fname );
+PulsarParamsVector *XLALPulsarParamsFromUserInput ( const char *UserInput );
+
+PulsarParamsVector *XLALCreatePulsarParamsVector ( UINT4 numPulsars );
+void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
+
+
 int XLALWriteREAL4TimeSeries2fp ( FILE *fp, const REAL4TimeSeries *TS );
 
 // ---------- local prototypes ----------
@@ -474,165 +446,9 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   } /* END: prepare barycentering routines */
 
   // --------------------------------------------------------------------------------
-  // CHECK signal input parameters
+  // handle signal input parameters
   // --------------------------------------------------------------------------------
-
-  // FIXME: hardcoded to 1 CW signal injection right now
-  UINT4 numPulsars = 1;
-  XLAL_CHECK ( ( cfg->injectionSources = XLALCalloc ( 1, sizeof(*cfg->injectionSources) )) != NULL, XLAL_ENOMEM );
-  cfg->injectionSources->numPulsars = numPulsars;
-  XLAL_CHECK ( ( cfg->injectionSources->pulsarParams = XLALCalloc ( numPulsars, sizeof(*cfg->injectionSources->pulsarParams) )) != NULL, XLAL_ENOMEM );
-  PulsarParams *pulsarParams = &( cfg->injectionSources->pulsarParams[0] );
-
-  { /* ========== translate user-input into 'PulsarParams' struct ========== */
-    BOOLEAN have_h0     = XLALUserVarWasSet ( &uvar->h0 );
-    BOOLEAN have_cosi   = XLALUserVarWasSet ( &uvar->cosi );
-    BOOLEAN have_aPlus  = XLALUserVarWasSet ( &uvar->aPlus );
-    BOOLEAN have_aCross = XLALUserVarWasSet ( &uvar->aCross );
-    BOOLEAN have_Freq   = XLALUserVarWasSet ( &uvar->Freq );
-    BOOLEAN have_Alpha  = XLALUserVarWasSet ( &uvar->Alpha );
-    BOOLEAN have_Delta  = XLALUserVarWasSet ( &uvar->Delta );
-
-    /* ----- {h0,cosi} or {aPlus,aCross} ----- */
-    if ( (have_aPlus || have_aCross) && ( have_h0 || have_cosi ) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Need to specify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
-    }
-    if ( (have_h0 ^ have_cosi) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --h0 and --cosi!\n\n");
-    }
-    if ( (have_aPlus ^ have_aCross) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --aPlus and --aCross !\n\n");
-    }
-
-    if ( have_h0 && have_cosi )
-      {
-	pulsarParams->Amp.h0 = uvar->h0;
-	pulsarParams->Amp.cosi = uvar->cosi;
-      }
-    else if ( have_aPlus && have_aCross )
-      {  /* translate A_{+,x} into {h_0, cosi} */
-	REAL8 disc;
-	if ( fabs(uvar->aCross) > uvar->aPlus ) {
-          XLAL_ERROR ( XLAL_EINVAL, "Invalid input parameters: |aCross| = %g must be <= than aPlus = %g.\n", fabs(uvar->aCross), uvar->aPlus );
-        }
-	disc = sqrt ( SQ(uvar->aPlus) - SQ(uvar->aCross) );
-	pulsarParams->Amp.h0   = uvar->aPlus + disc;
-        if ( pulsarParams->Amp.h0 > 0 )
-          pulsarParams->Amp.cosi = uvar->aCross / pulsarParams->Amp.h0;	// avoid division by 0!
-        else
-          pulsarParams->Amp.cosi = 0;
-      }
-    else {
-      pulsarParams->Amp.h0 = 0.0;
-      pulsarParams->Amp.cosi = 0.0;
-    }
-    pulsarParams->Amp.phi0 = uvar->phi0;
-    pulsarParams->Amp.psi  = uvar->psi;
-
-    /* ----- signal Frequency ----- */
-    if ( have_Freq )
-      pulsarParams->Doppler.fkdot[0] = uvar->Freq;
-    else
-      pulsarParams->Doppler.fkdot[0] = 0.0;
-
-    /* ----- skypos ----- */
-    if ( (have_Alpha && !have_Delta) || ( !have_Alpha && have_Delta ) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "\nSpecify skyposition: need BOTH --Alpha and --Delta!\n\n");
-    }
-    pulsarParams->Doppler.Alpha = uvar->Alpha;
-    pulsarParams->Doppler.Delta = uvar->Delta;
-
-  } /* Pulsar signal parameters */
-
-  /* ---------- prepare vector of spindown parameters ---------- */
-  pulsarParams->Doppler.fkdot[1] = uvar->f1dot;
-  pulsarParams->Doppler.fkdot[2] = uvar->f2dot;
-  pulsarParams->Doppler.fkdot[3] = uvar->f3dot;
-
-  /* -------------------- handle binary orbital params if given -------------------- */
-
-  /* Consistency check: if any orbital parameters specified, we need all of them (except for nano-seconds)! */
-  {
-    BOOLEAN set1 = XLALUserVarWasSet(&uvar->orbitasini);
-    BOOLEAN set2 = XLALUserVarWasSet(&uvar->orbitEcc);
-    BOOLEAN set3 = XLALUserVarWasSet(&uvar->orbitPeriod);
-    BOOLEAN set4 = XLALUserVarWasSet(&uvar->orbitArgp);
-    BOOLEAN set5 = XLALUserVarWasSet(&uvar->orbitTpSSBsec);
-    BOOLEAN set6 = XLALUserVarWasSet(&uvar->orbitTpSSBnan);
-    BOOLEAN set7 = XLALUserVarWasSet(&uvar->orbitTpSSBMJD);
-    BinaryOrbitParams *orbit = NULL;
-
-    if (set1 || set2 || set3 || set4 || set5 || set6 || set7)
-    {
-      if ( (uvar->orbitasini > 0) && !(set1 && set2 && set3 && set4 && (set5 || set7)) ) {
-        XLAL_ERROR ( XLAL_EINVAL, "\nPlease either specify  ALL orbital parameters or NONE!\n\n");
-      }
-      if ( (uvar->orbitEcc < 0) || (uvar->orbitEcc > 1) ) {
-        XLAL_ERROR ( XLAL_EINVAL, "\nEccentricity = %g has to lie within [0, 1]\n\n", uvar->orbitEcc );
-      }
-      orbit = XLALCalloc ( 1, len = sizeof(BinaryOrbitParams) );
-      XLAL_CHECK ( orbit != NULL, XLAL_ENOMEM, "XLALCalloc (1, %d) failed.\n", len );
-
-      if ( set7 && (!set5 && !set6) )
-	{
-	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
-	  REAL8 GPSfloat;
-	  GPSfloat = XLALTTMJDtoGPS(uvar->orbitTpSSBMJD);
-	  XLALGPSSetREAL8(&(orbit->tp),GPSfloat);
-	}
-      else if ((set5 && set6) && !set7)
-	{
-	  orbit->tp.gpsSeconds = uvar->orbitTpSSBsec;
-	  orbit->tp.gpsNanoSeconds = uvar->orbitTpSSBnan;
-	}
-      else if ((set7 && set5) || (set7 && set6))
-	{
-	  XLAL_ERROR ( XLAL_EINVAL, "\nPlease either specify time of periapse in GPS OR MJD, not both!\n\n");
-	}
-
-      /* fill in orbital parameter structure */
-      orbit->period = uvar->orbitPeriod;
-      orbit->asini = uvar->orbitasini;
-      orbit->argp = uvar->orbitArgp;
-      orbit->ecc = uvar->orbitEcc;
-
-      pulsarParams->Doppler.orbit = orbit;     /* struct copy */
-    } /* if one or more orbital parameters were set */
-    else
-      pulsarParams->Doppler.orbit = NULL;
-  } /* END: binary orbital params */
-
-  /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  if (XLALUserVarWasSet(&uvar->refTime))
-    {
-      XLALGPSSetREAL8 ( &(pulsarParams->Doppler.refTime), uvar->refTime );
-    }
-  else {
-    XLAL_ERROR ( XLAL_EINVAL, "Must specify explicit reference time --refTime!\n");
-  }
-
-  /* ----- handle transient-signal window if given ----- */
-  if ( !XLALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
-    cfg->transientWindow.type = TRANSIENT_NONE;                /* default: no transient signal window */
-  else
-    {
-      if ( !strcmp ( uvar->transientWindowType, "rect" ) )
-       {
-         cfg->transientWindow.type = TRANSIENT_RECTANGULAR;              /* rectangular window [t0, t0+tau] */
-       }
-      else if ( !strcmp ( uvar->transientWindowType, "exp" ) )
-        {
-          cfg->transientWindow.type = TRANSIENT_EXPONENTIAL;            /* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
-        }
-      else
-        {
-          XLAL_ERROR ( XLAL_EINVAL, "Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transientWindowType );
-        }
-
-      cfg->transientWindow.t0   = uvar->transientStartTime;
-      cfg->transientWindow.tau  = uvar->transientTauDays * LAL_DAYSID_SI;
-
-    } /* if transient window != none */
+  XLAL_CHECK ( ( cfg->injectionSources = XLALPulsarParamsFromUserInput ( uvar->injectionSources ) ) != NULL, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -660,11 +476,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   uvar->Tsft = 1800;
   uvar->fmin = 0;	/* no heterodyning by default */
   uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
-
-#define DEFAULT_TRANSIENT "none"
-  uvar->transientWindowType = XLALCalloc ( 1, len = strlen(DEFAULT_TRANSIENT)+1 );
-  XLAL_CHECK ( uvar->transientWindowType != NULL, XLAL_ENOMEM, "XLALCalloc ( 1, %d ) failed.\n", len );
-  strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
 
   // ---------- register all our user-variable ----------
   XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
@@ -700,44 +511,12 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  SFTWindowBeta,        0, UVAR_OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
-  XLALregREALUserStruct (  refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (if 0: use startTime)");
-
-  XLALregREALUserStruct (  Alpha,                0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
-  XLALregREALUserStruct (  Delta,                0, UVAR_OPTIONAL, "Declination/latitude of pulsar in radians");
-
-  XLALregREALUserStruct (  h0,                   0, UVAR_OPTIONAL, "Overall signal-amplitude h0");
-  XLALregREALUserStruct (  cosi,                 0, UVAR_OPTIONAL, "cos(iota) of inclination-angle iota");
-  XLALregREALUserStruct (  aPlus,                0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_+ amplitude");
-  XLALregREALUserStruct (  aCross,               0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_x amplitude");
-
-  XLALregREALUserStruct (  psi,                  0, UVAR_OPTIONAL, "Polarization angle psi");
-  XLALregREALUserStruct (  phi0,                 0, UVAR_OPTIONAL, "Initial GW phase phi");
-  XLALregREALUserStruct (  Freq,                 0, UVAR_OPTIONAL, "Intrinsic GW-frequency at refTime");
-
-  XLALregREALUserStruct (  f1dot,                0, UVAR_OPTIONAL, "First spindown parameter f' at refTime");
-  XLALregREALUserStruct (  f2dot,                0, UVAR_OPTIONAL, "Second spindown parameter f'' at refTime");
-  XLALregREALUserStruct (  f3dot,                0, UVAR_OPTIONAL, "Third spindown parameter f''' at refTime");
-
-  /* binary-system orbital parameters */
-  XLALregREALUserStruct (  orbitasini,           0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
-  XLALregREALUserStruct (  orbitEcc,             0, UVAR_OPTIONAL, "Orbital eccentricity");
-  XLALregINTUserStruct  (  orbitTpSSBsec,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Seconds.");
-  XLALregINTUserStruct  (  orbitTpSSBnan,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Nanoseconds.");
-  XLALregREALUserStruct (  orbitTpSSBMJD,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. MJD.");
-  XLALregREALUserStruct (  orbitPeriod,          0, UVAR_OPTIONAL, "Orbital period (seconds)");
-  XLALregREALUserStruct (  orbitArgp,            0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
+  XLALregSTRINGUserStruct( injectionSources,     0, UVAR_REQUIRED, "Either a file-specification (\"@file-pattern\") or a config-string defining the sources to inject" );
 
   /* noise */
   XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");
 
-  XLALregBOOLUserStruct (  lineFeature,          0, UVAR_OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
-
   XLALregBOOLUserStruct (  version,             'V', UVAR_SPECIAL, "Output version information");
-
-  /* transient signal window properties (name, start, duration) */
-  XLALregSTRINGUserStruct (transientWindowType,  0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
-  XLALregREALUserStruct (  transientStartTime,   0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
-  XLALregREALUserStruct (  transientTauDays,     0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in days.");
 
   /* ----- 'expert-user/developer' options ----- */
   XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
@@ -769,7 +548,7 @@ XLALFreeMem ( ConfigVars_t *cfg )
   /* free timestamps if any */
   XLALDestroyMultiTimestamps ( cfg->multiTimestamps );
 
-  XLALDestroyInjectionSources ( cfg->injectionSources );
+  XLALDestroyPulsarParamsVector ( cfg->injectionSources );
 
   XLALFree ( cfg->VCSInfoString );
 
@@ -854,7 +633,7 @@ is_directory ( const CHAR *fname )
 int
 XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
                           MultiREAL4TimeSeries **multiTseries,	//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
-                          const InjectionSources *injectionSources,	//< [in] array of sources inject
+                          const PulsarParamsVector *injectionSources,	//< [in] array of sources inject
                           const CWDataParams *dataParams,		//< [in] parameters specifying the type of data to generate
                           const EphemerisData *edat			//< [in] ephemeris data
                           )
@@ -943,7 +722,7 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,		//< [out] pointer to opti
 int
 XLALCWMakeFakeData ( SFTVector **SFTvect,
                      REAL4TimeSeries **Tseries,
-                     const InjectionSources *injectionSources,
+                     const PulsarParamsVector *injectionSources,
                      const CWDataParams *dataParams,
                      const EphemerisData *edat
                      )
@@ -1013,12 +792,13 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   XLAL_CHECK ( duration >= Tsft, XLAL_EINVAL, "Requested duration=%.0f sec is less than Tsft =%.0f sec.\n\n", duration, Tsft);
 
   REAL4TimeSeries *Tseries_sum = NULL;
-  for ( UINT4 iInj = 0; iInj < injectionSources->numPulsars; iInj ++ )
+  UINT4 numPulsars = injectionSources->length;
+  for ( UINT4 iInj = 0; iInj < numPulsars; iInj ++ )
     {
-      const PulsarParams *sourceParams = &( injectionSources->pulsarParams[iInj] );
+      const PulsarParams *pulsarParams = &( injectionSources->data[iInj] );
 
       REAL4TimeSeries *Tseries_i = NULL;
-      XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( sourceParams, site, firstGPS, duration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( pulsarParams, site, firstGPS, duration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
 
       if ( Tseries_sum == NULL )
         {
@@ -1307,31 +1087,51 @@ gcd (UINT4 numer, UINT4 denom)
 } // gcd
 
 /**
- * Simple destructor for an 'InjectionSources' object.
+ * Create PulsarParamsVector for numPulsars
+ */
+PulsarParamsVector *
+XLALCreatePulsarParamsVector ( UINT4 numPulsars )
+{
+  PulsarParamsVector *ret;
+  XLAL_CHECK_NULL ( ( ret = XLALCalloc ( 1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+
+  ret->length = numPulsars;
+  if ( numPulsars > 0 ) {
+    XLAL_CHECK_NULL ( (ret->data = XLALCalloc ( numPulsars, sizeof(ret->data[0]))) != NULL, XLAL_ENOMEM );
+  }
+
+  return ret;
+
+} // XLALCreatePulsarParamsVector()
+
+/**
+ * Destructor for PulsarParamsVector type
  */
 void
-XLALDestroyInjectionSources ( InjectionSources *sources )
+XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect )
 {
-  if ( sources == NULL ) {
+  if ( ppvect == NULL ) {
     return;
   }
-  if ( sources->pulsarParams != NULL )
+
+  UINT4 numPulsars = ppvect->length;
+  if ( ppvect->data != NULL )
     {
-      for ( UINT4 i = 0 ; i < sources->numPulsars; i ++ )
+      for ( UINT4 i = 0 ; i < numPulsars; i ++ )
         {
-          BinaryOrbitParams *orbit = sources->pulsarParams[i].Doppler.orbit;
+          BinaryOrbitParams *orbit = ppvect->data[i].Doppler.orbit;
           if ( orbit != NULL ) {
             XLALFree ( orbit );
           }
         } // for i < numPulsars
-      XLALFree ( sources->pulsarParams );
+      XLALFree ( ppvect->data );
     }
 
-  XLALFree ( sources );
+  XLALFree ( ppvect );
 
   return;
+} // XLALDestroyPulsarParamsVector()
 
-} /* XLALDestroyInjectionSources() */
 
 /**
  * Write a REAL4TimeSeries in a 2-column ASCII format (lines of "GPS_i  data_i")
@@ -1357,3 +1157,312 @@ XLALWriteREAL4TimeSeries2fp ( FILE *fp, const REAL4TimeSeries *TS )
 
 } /* XLALWriteREAL4TimeSeries2fp() */
 
+
+// ------------------------------------------------------------
+// the following will eventually get exported into a lalpulsar
+// module 'SourceParamsIO' or sth similar
+// kept in here for now for the sake of faster development
+// ------------------------------------------------------------
+
+/**
+ * Function to parse a config-file-type string (or section thereof)
+ * into a PulsarParams struct.
+ *
+ * NOTE: The section-name is optional, and can be given as NULL,
+ * in which case the top of the file (ie the "default section")
+ * is used.
+ *
+ * NOTE2: eventually ATNF/TEMPO2-style 'par-file' variables will also
+ * be understood by this function, but we start out with a simpler version
+ * that just deals with our 'CW-style' input variable for now
+ *
+ * NOTE3: The config-file must be of a special "SourceParamsIO" form,
+ * defining the following required and optional parameters:
+ *
+ * REQUIRED:
+ *  Alpha, Delta, Freq, refTime
+ *
+ * OPTIONAL:
+ *  f1dot, f2dot, f3dot, f4dot, f5dot, f6dot
+ *  {h0, cosi} or {aPlus, aCross}, psi, phi0
+ *  transientWindowType, transientStartTime, transientTauDays
+ *
+ * Other config-variables found in the file will ... ?? error or accept?
+ */
+int
+XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters to fill in from config string
+                       const LALParsedDataFile *cfgdata,///< [in] pre-parsed "SourceParamsIO" config-file contents
+                       const CHAR *secName		///< [in] section-name to use from config-file string (can be NULL)
+                       )
+{
+  XLAL_CHECK ( pulsarParams != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( pulsarParams->Doppler.orbit == NULL, XLAL_EINVAL );
+  XLAL_CHECK ( cfgdata != NULL, XLAL_EINVAL );
+
+  INIT_MEM ( (*pulsarParams) );	// wipe input struct clean
+
+  // ---------- PulsarAmplitudeParams ----------
+  // ----- h0, cosi
+  REAL8 h0 = 0; BOOLEAN have_h0;
+  REAL8 cosi = 0; BOOLEAN have_cosi;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &h0, cfgdata, secName, "h0", &have_h0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &cosi, cfgdata, secName, "cosi", &have_cosi ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // ----- ALTERNATIVE: aPlus, aCross
+  REAL8 aPlus; BOOLEAN have_aPlus;
+  REAL8 aCross; BOOLEAN have_aCross;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &aPlus, cfgdata, secName, "aPlus", &have_aPlus ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &aCross, cfgdata, secName, "aCross", &have_aCross ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // if h0 then also need cosi, and vice-versa
+  XLAL_CHECK ( (have_h0 && have_cosi) || ( !have_h0 && !have_cosi ), XLAL_EINVAL );
+  // if aPlus then also need aCross, and vice-versa
+  XLAL_CHECK ( (have_aPlus && have_aCross) || ( !have_aPlus && !have_aCross ), XLAL_EINVAL );
+  // {h0,cosi} or {aPlus, aCross} mutually exclusive sets
+  XLAL_CHECK ( ! ( have_h0 && have_aPlus ), XLAL_EINVAL );
+
+  if ( have_aPlus )	/* translate A_{+,x} into {h_0, cosi} */
+    {
+      XLAL_CHECK ( fabs ( aCross ) <= aPlus, XLAL_EDOM, "ERROR: |aCross| (= %g) must be <= aPlus (= %g).\n", fabs(aCross), aPlus );
+      REAL8 disc = sqrt ( SQ(aPlus) - SQ(aCross) );
+      h0 = aPlus + disc;
+      if ( h0 > 0 ) {
+        cosi = aCross / h0;	// avoid division by 0!
+      }
+    } //if {aPlus, aCross}
+
+  XLAL_CHECK ( h0 >= 0, XLAL_EDOM );
+  pulsarParams->Amp.h0 	= h0;
+
+  XLAL_CHECK ( (cosi >= -1) && (cosi <= 1), XLAL_EDOM );
+  pulsarParams->Amp.cosi= cosi;
+
+  // ----- psi
+  REAL8 psi = 0; BOOLEAN have_psi;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &psi, cfgdata, secName, "psi", &have_psi ) == XLAL_SUCCESS, XLAL_EFUNC );
+  pulsarParams->Amp.psi = psi;
+
+  // ----- phi0
+  REAL8 phi0 = 0; BOOLEAN have_phi0;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &phi0, cfgdata, secName, "phi0", &have_phi0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  pulsarParams->Amp.phi0 = phi0;
+
+  // ---------- PulsarDopplerParams ----------
+
+  // ----- refTime
+  REAL8 refTime_GPS; BOOLEAN have_refTime;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &refTime_GPS, cfgdata, secName, "refTime", &have_refTime ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( have_refTime, XLAL_EINVAL );
+
+  XLAL_CHECK ( XLALGPSSetREAL8 ( & pulsarParams->Doppler.refTime, refTime_GPS ) != NULL, XLAL_EFUNC );
+
+  // ----- Alpha
+  REAL8 Alpha_Rad; BOOLEAN have_Alpha;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &Alpha_Rad, cfgdata, secName, "Alpha", &have_Alpha ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( have_Alpha, XLAL_EINVAL );
+
+  XLAL_CHECK ( (Alpha_Rad >= 0) && (Alpha_Rad < LAL_TWOPI), XLAL_EDOM );
+  pulsarParams->Doppler.Alpha = Alpha_Rad;
+
+  // ----- Delta
+  REAL8 Delta_Rad; BOOLEAN have_Delta;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &Delta_Rad, cfgdata, secName, "Delta", &have_Delta ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( have_Delta, XLAL_EINVAL );
+
+  XLAL_CHECK ( (Delta_Rad >= -LAL_PI_2) && (Delta_Rad <= LAL_PI_2), XLAL_EDOM );
+  pulsarParams->Doppler.Delta = Delta_Rad;
+
+  // ----- fkdot
+  // Freq
+  REAL8 Freq; BOOLEAN have_Freq;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &Freq, cfgdata, secName, "Freq", &have_Freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( have_Freq, XLAL_EINVAL );
+
+  XLAL_CHECK ( Freq > 0, XLAL_EDOM );
+  pulsarParams->Doppler.fkdot[0] = Freq;
+
+  // f1dot
+  REAL8 f1dot; BOOLEAN have_f1dot;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f1dot, cfgdata, secName, "f1dot", &have_f1dot ) == XLAL_SUCCESS, XLAL_EFUNC );
+  pulsarParams->Doppler.fkdot[1] = f1dot;
+  // f2dot
+  REAL8 f2dot; BOOLEAN have_f2dot;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f2dot, cfgdata, secName, "f2dot", &have_f2dot ) == XLAL_SUCCESS, XLAL_EFUNC );
+  pulsarParams->Doppler.fkdot[2] = f2dot;
+  // f3dot
+  REAL8 f3dot; BOOLEAN have_f3dot;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f3dot, cfgdata, secName, "f3dot", &have_f3dot ) == XLAL_SUCCESS, XLAL_EFUNC );
+  pulsarParams->Doppler.fkdot[3] = f3dot;
+  // f4dot
+  REAL8 f4dot; BOOLEAN have_f4dot;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f4dot, cfgdata, secName, "f4dot", &have_f4dot ) == XLAL_SUCCESS, XLAL_EFUNC );
+  pulsarParams->Doppler.fkdot[4] = f4dot;
+  // f5dot
+  REAL8 f5dot; BOOLEAN have_f5dot;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f5dot, cfgdata, secName, "f5dot", &have_f5dot ) == XLAL_SUCCESS, XLAL_EFUNC );
+  pulsarParams->Doppler.fkdot[5] = f5dot;
+  // f6dot
+  REAL8 f6dot; BOOLEAN have_f6dot;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f6dot, cfgdata, secName, "f6dot", &have_f6dot ) == XLAL_SUCCESS, XLAL_EFUNC );
+  pulsarParams->Doppler.fkdot[6] = f6dot;
+
+  // ----- orbit
+  REAL8 orbitTpSSB; 	BOOLEAN have_orbitTpSSB;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitTpSSB, cfgdata, secName, "orbitTpSSB", &have_orbitTpSSB ) == XLAL_SUCCESS, XLAL_EFUNC );
+  REAL8 orbitArgp;     	BOOLEAN have_orbitArgp;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitArgp, cfgdata, secName, "orbitArgp", &have_orbitArgp ) == XLAL_SUCCESS, XLAL_EFUNC );
+  REAL8 orbitasini; 	BOOLEAN have_orbitasini;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitasini, cfgdata, secName, "orbitasini", &have_orbitasini ) == XLAL_SUCCESS, XLAL_EFUNC );
+  REAL8 orbitEcc;   	BOOLEAN have_orbitEcc;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitEcc, cfgdata, secName, "orbitEcc", &have_orbitEcc ) == XLAL_SUCCESS, XLAL_EFUNC );
+  REAL8 orbitPeriod;	BOOLEAN have_orbitPeriod;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitPeriod, cfgdata, secName, "orbitPeriod", &have_orbitPeriod ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if ( have_orbitasini || have_orbitEcc || have_orbitPeriod || have_orbitArgp || have_orbitTpSSB )
+    {
+      XLAL_CHECK ( orbitasini >= 0, XLAL_EDOM );
+      XLAL_CHECK ( (orbitasini == 0) || ( have_orbitEcc && have_orbitPeriod && have_orbitArgp && have_orbitTpSSB ), XLAL_EINVAL );
+      XLAL_CHECK ( (orbitEcc >= 0) && (orbitEcc <= 1), XLAL_EDOM );
+
+      BinaryOrbitParams *orbit;
+      XLAL_CHECK ( ( orbit = XLALCalloc ( 1, sizeof(BinaryOrbitParams))) != NULL, XLAL_ENOMEM );
+
+      /* fill in orbital parameter structure */
+      XLAL_CHECK ( XLALGPSSetREAL8 ( &(orbit->tp), orbitTpSSB ) != NULL, XLAL_EFUNC );
+      orbit->argp 	= orbitArgp;
+      orbit->asini 	= orbitasini;
+      orbit->ecc 	= orbitEcc;
+      orbit->period 	= orbitPeriod;
+
+      pulsarParams->Doppler.orbit = orbit;
+    } // if have non-trivial orbit
+
+  // ---------- transientWindow_t ----------
+
+  // ----- type
+  char *transientWindowType = NULL; BOOLEAN have_transientWindowType;
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &transientWindowType, cfgdata, secName, "transientWindowType", &have_transientWindowType ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // ----- t0
+  REAL8 transientStartTime; BOOLEAN have_transientStartTime;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &transientStartTime, cfgdata, secName, "transientStartTime", &have_transientStartTime ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // ----- tau
+  REAL8 transientTauDays; BOOLEAN have_transientTauDays;
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &transientTauDays, cfgdata, secName, "transientTauDays", &have_transientTauDays ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  transientWindowType_t type = TRANSIENT_NONE;	/* default: no transient signal window */
+  if ( ! have_transientWindowType || !strcmp ( transientWindowType, "none") )
+    {
+      XLAL_CHECK ( (type == TRANSIENT_NONE) && !have_transientStartTime && !have_transientTauDays, XLAL_EINVAL );
+      pulsarParams->Transient.type = type;
+    }
+  else
+    {
+      if ( !strcmp ( transientWindowType, "rect" ) ) {
+        pulsarParams->Transient.type = TRANSIENT_RECTANGULAR;              /* rectangular window [t0, t0+tau] */
+      }
+      else if ( !strcmp ( transientWindowType, "exp" ) ) {
+        pulsarParams->Transient.type = TRANSIENT_EXPONENTIAL;            /* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
+      }
+      else {
+        XLAL_ERROR ( XLAL_EINVAL, "Illegal transient window '%s' specified: valid are {'none', 'rect' or 'exp'}\n", transientWindowType );
+      }
+      XLAL_CHECK ( (type != TRANSIENT_NONE) && (have_transientStartTime && have_transientTauDays), XLAL_EINVAL );
+
+      XLAL_CHECK ( transientStartTime >= 0, XLAL_EDOM );
+      XLAL_CHECK ( transientTauDays > 0, XLAL_EDOM );
+
+      pulsarParams->Transient.t0   = (UINT4) transientStartTime;
+      pulsarParams->Transient.tau  = (UINT4) ( transientTauDays * LAL_DAYSID_SI );
+    } /* if transient window != none */
+
+  if ( have_transientWindowType ) {
+    XLALFree ( transientWindowType );
+  }
+
+  return XLAL_SUCCESS;
+} // XLALParsePulsarParams()
+
+
+/**
+ * Parse a given 'CWsources' config file for PulsarParams, return vector
+ * of all pulsar definitions found [using sections]
+ */
+PulsarParamsVector *
+XLALPulsarParamsFromFile ( const char *fname 		///< [in] 'CWsources' config file name
+                           )
+{
+  XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL );
+
+  LALParsedDataFile *cfgdata = NULL;
+  XLAL_CHECK_NULL ( XLALParseDataFile ( &cfgdata, fname ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  UINT4 numPulsars = 1;	// currently only single-section defs supported! FIXME
+
+  PulsarParamsVector *sources;
+  XLAL_CHECK_NULL ( (sources = XLALCreatePulsarParamsVector ( numPulsars )) != NULL, XLAL_EFUNC );
+
+  for ( UINT4 i = 0; i < numPulsars; i ++ )
+    {
+      const char *sec_i = NULL;	// proper sections not yet supported! FIXME
+      XLAL_CHECK_NULL ( XLALReadPulsarParams ( &sources->data[i], cfgdata, sec_i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    } // for i < numPulsars
+
+  XLALDestroyParsedDataFile ( cfgdata );
+
+  return sources;
+
+} // XLALPulsarParamsFromFile()
+
+/**
+ * Function to determine the PulsarParamsVector input from a user-input defining CW sources.
+ *
+ * This option supports a dual-type feature: if the input starts with a '@', then
+ * it determines a list of input config-files to be parsed by XLALFindFiles(),
+ * otherwise the input will be interpreted as a config-file string directly (with
+ * options separated by ';' and/or newlines)
+ */
+PulsarParamsVector *
+XLALPulsarParamsFromUserInput ( const char *UserInput		///< [in] user-input string defining 'CW sources'
+                                )
+{
+  XLAL_CHECK_NULL ( UserInput, XLAL_EINVAL );
+
+  PulsarParamsVector *sources = NULL;
+
+  if ( UserInput[0] == '@' )
+    {
+      LALStringVector *file_list;
+      XLAL_CHECK_NULL ( ( file_list = XLALFindFiles ( &UserInput[1] )) != NULL, XLAL_EFUNC );
+      UINT4 numFiles = file_list->length;
+      for ( UINT4 i = 0; i < numFiles; i ++ )
+        {
+          PulsarParamsVector *sources_i;
+          XLAL_CHECK_NULL ( (sources_i = XLALPulsarParamsFromFile ( file_list->data[i] )) != NULL, XLAL_EFUNC );
+
+          if ( sources == NULL )
+            {
+              sources = sources_i;
+            }
+          else
+            {
+              UINT4 oldlen = sources->length;
+              UINT4 addlen = sources_i->length;
+              UINT4 newlen = oldlen + addlen;
+              sources->length = newlen;
+              sources->data = XLALRealloc ( sources->data, newlen * sizeof(sources->data[0]) );
+              memcpy ( sources->data + oldlen, sources_i->data, addlen * sizeof(sources->data[0]) );
+              XLALFree ( sources_i->data );
+              XLALFree ( sources_i );
+            }
+        } // for i < numFiles
+
+      XLALDestroyStringVector ( file_list );
+
+    } // if file-name spec given
+  else
+    {
+      XLAL_ERROR_NULL ( XLAL_EINVAL, "Sorry, non-file PulsarParamsVector input currently not yet supported!\n" );
+    } // if direct config-string given
+
+  return sources;
+
+} // XLALPulsarParamsFromUserInput()

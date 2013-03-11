@@ -44,7 +44,6 @@ tol=1e-3;	## tolerance on relative difference between SFTs in comparison
 Tsft=1800
 nTsft=20
 timestamps=${srcdir}/testT8_1800
-refTime=701210229
 
 ## excercise non-integer cycle gaps in heterodyned timeseries
 fmin=299.1001
@@ -73,12 +72,26 @@ h0=0.73
 cosi=0.1
 psi=0.5
 phi0=0.9
-Freq=299.12
-alpha=1.7
-delta=0.9
 
+refTime=701210229
+Alpha=1.7
+Delta=0.9
+Freq=299.12
 f1dot=0
 f2dot=0
+
+injFile=${testDIR}/injectionSources.dat
+echo "Alpha = ${Alpha}" > ${injFile}
+echo "Delta = ${Delta}" >> ${injFile}
+echo "refTime = ${refTime}" >> ${injFile}
+echo "Freq = ${Freq}" >> ${injFile}
+echo "f1dot = ${f1dot}" >> ${injFile}
+echo "f2dot = ${f2dot}" >> ${injFile}
+
+echo "h0 = ${h0}" >> ${injFile}
+echo "cosi = ${cosi}" >> ${injFile}
+echo "psi = ${psi}" >> ${injFile}
+echo "phi0 = ${phi0}" >> ${injFile}
 
 ## ---------- output parameters ----------
 sftsv4_1=${testDIR}/${IFO1}-sftsv4.sft
@@ -94,7 +107,7 @@ echo
 echo "----- mfd_v4: producing SFTs via (generationMode=1 [PER_SFT] ):"
 echo
 ##----- first IFO
-mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO1 --timestampsFile=$timestamps1 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 --noiseSqrtSh=${sqrtSn1} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_1}"
+mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$Alpha --Delta=$Delta --IFO=$IFO1 --timestampsFile=$timestamps1 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 --noiseSqrtSh=${sqrtSn1} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_1}"
 echo $mfdv4_CL;
 if ! eval $mfdv4_CL; then
     echo "Error.. something failed when running '$mfdv4_CODE' ..."
@@ -103,7 +116,7 @@ fi
 echo "ok."
 
 ##----- second IFO
-mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFO=$IFO2 --timestampsFile=$timestamps2 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 --noiseSqrtSh=${sqrtSn2} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_2}"
+mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$Alpha --Delta=$Delta --IFO=$IFO2 --timestampsFile=$timestamps2 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 --noiseSqrtSh=${sqrtSn2} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_2}"
 echo $mfdv4_CL;
 if ! eval $mfdv4_CL; then
     echo "Error.. something failed when running '$mfdv4_CODE' ..."
@@ -116,7 +129,7 @@ echo
 echo "----- mfd_v5: producing SFTs:"
 echo
 ## ----- multi-IFO call
-mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$alpha --Delta=$delta --IFOs=${IFOs} --timestampsFiles=${timestampsFiles} --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --sqrtSX=${sqrtSnX} --randSeed=1 -v${debug}"
+mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --Tsft=$Tsft --fmin=$fmin --Band=$Band --IFOs=${IFOs} --timestampsFiles=${timestampsFiles} --sqrtSX=${sqrtSnX} --randSeed=1 --injectionSources=@${injFile} -v${debug}"
 cmdline=" $mfdv5_CL "
 echo $cmdline;
 if ! eval $cmdline; then
