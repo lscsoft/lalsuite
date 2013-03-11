@@ -8,6 +8,7 @@ Build-Depends: debhelper (>= 7), python-all-dev, pkg-config,
   lal-dev (>= 6.10.0), lal-python (>= 6.10.0), lal-octave (>= 6.10.0),
   lalframe-dev (>= 1.0.10), lalframe-python (>= 1.0.10),
   lalframe-octave (>= 1.0.10), lalmetaio-dev (>= 1.1.0),
+  lalmetaio-python (>= 1.1.0), lalmetaio-octave (>= 1.1.0),
   lalsimulation-dev (>= 0.7.0), lalsimulation-python (>= 0.7.0),
   lalsimulation-octave (>= 0.7.0)
 X-Python-Version: >= 2.6
@@ -39,12 +40,14 @@ Package: lalinspiral-python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalinspiral (= ${binary:Version}), lal-python (>= 6.10.0),
-  lalframe-python (>= 1.0.10), lalsimulation-python (>= 0.7.0)
+  lalframe-python (>= 1.0.10), lalmetaio-python (>= 1.1.0),
+  lalsimulation-python (>= 0.7.0)
 Description: Python bindings for LALInspiral
 
 Package: lalinspiral-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalinspiral (= ${binary:Version}), lal-octave (>= 6.10.0),
-  lalframe-octave (>= 1.0.10), lalsimulation-octave (>= 0.7.0)
+  lalframe-octave (>= 1.0.10), lalmetaio-octave (>= 1.1.0),
+  lalsimulation-octave (>= 0.7.0)
 Description: Octave bindings for LALInspiral
