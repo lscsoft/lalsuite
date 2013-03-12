@@ -1421,13 +1421,13 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
 
     /* if outside prior set the prior to be very small, but steeply exponentially sloped away the prior */
     if ( prior.vars.h0 < prior.h0vals->data[0] - dh0/2. )
-      pri += log(prior.minh0ci) - 25.*(prior.h0vals->data[0] - dh0/2. - prior.vars.h0)/dhtot;
+      pri += log(prior.minh0ci) - 250.*(prior.h0vals->data[0] - dh0/2. - prior.vars.h0)/dhtot;
     else if( prior.vars.h0 > prior.h0vals->data[prior.h0vals->length-1] + dh0/2. )
-      pri += log(prior.minh0ci) - 25.*(prior.vars.h0 - (prior.h0vals->data[prior.h0vals->length-1] + dh0/2.))/dhtot;
+      pri += log(prior.minh0ci) - 250.*(prior.vars.h0 - (prior.h0vals->data[prior.h0vals->length-1] + dh0/2.))/dhtot;
     else if( prior.vars.ci < prior.civals->data[0] - dci/2. )
-      pri += log(prior.minh0ci) - 25.*(prior.civals->data[0] - dci/2. - prior.vars.ci)/dcitot;
+      pri += log(prior.minh0ci) - 250.*(prior.civals->data[0] - dci/2. - prior.vars.ci)/dcitot;
     else if( prior.vars.ci > prior.civals->data[prior.civals->length-1] + dci/2. )
-      pri += log(prior.minh0ci) - 25.*(prior.vars.ci - (prior.civals->data[prior.civals->length-1] + dci/2.))/dcitot;
+      pri += log(prior.minh0ci) - 250.*(prior.vars.ci - (prior.civals->data[prior.civals->length-1] + dci/2.))/dcitot;
     else{
       /* get the prior bin */
       for ( i = 0; i < prior.h0vals->length; i++ )
