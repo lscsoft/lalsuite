@@ -524,6 +524,15 @@ void coh_PTF_template_time_series_cluster(
   INT4 numPointCheck
 );
 
+UINT4 coh_PTF_test_veto_vals(
+  struct coh_PTF_params    *params,
+  REAL4TimeSeries          *cohSNR,
+  REAL4TimeSeries          *nullSNR,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  UINT4                    currPointLoc
+);
+
 void coh_PTF_calculate_null_stream_filters(
   struct coh_PTF_params      *params,
   FindChirpTemplate          *fcTmplt,
@@ -594,6 +603,21 @@ void coh_PTF_bank_veto_segment_setup(
   struct timeval           startTime
 );
 
+void coh_PTF_bank_veto_coh_setup(
+  struct coh_PTF_params   *params,
+  gsl_matrix              **Bankeigenvecs,
+  gsl_vector              **Bankeigenvals,
+  struct bankCohTemplateOverlaps **bankCohOverlapsP,
+  struct bankComplexTemplateOverlaps *bankOverlaps,
+  REAL4                   *Fplus,
+  REAL4                   *Fcross,
+  REAL8Array              **PTFM,
+  struct bankTemplateOverlaps *bankNormOverlaps,
+  UINT4                   csVecLength,
+  UINT4                   csVecLengthTwo,
+  UINT4                   vecLength
+);
+
 UINT4 coh_PTF_initialize_auto_veto(
   struct coh_PTF_params   *params,
   struct bankComplexTemplateOverlaps **autoTempOverlapsP,
@@ -615,6 +639,57 @@ void coh_PTF_calculate_auto_veto_template_filters(
     REAL4FrequencySeries    **invspec,
     COMPLEX8FFTPlan         *invplan,
     UINT4                   timeStepPoints
+);
+
+void coh_PTF_auto_veto_coh_setup(
+  struct coh_PTF_params   *params,
+  gsl_matrix              **AutoeigenvecsP,
+  gsl_vector              **AutoeigenvalsP,
+  struct bankCohTemplateOverlaps **autoCohOverlapsP,
+  struct bankComplexTemplateOverlaps *autoTempOverlaps,
+  REAL4                   *Fplus,
+  REAL4                   *Fcross,
+  REAL8Array              **PTFM,
+  UINT4                   csVecLength,
+  UINT4                   csVecLengthTwo,
+  UINT4                   vecLength
+);
+
+void coh_PTF_chi_square_coh_setup(
+  struct coh_PTF_params   *params,
+  gsl_matrix              **AutoeigenvecsP,
+  gsl_vector              **AutoeigenvalsP,
+  REAL4                   **frequencyRangesPlus,
+  REAL4                   **frequencyRangesCross,
+  REAL4                   **powerBinsPlus,
+  REAL4                   **powerBinsCross,
+  struct bankDataOverlaps **chisqOverlapsP,
+  FindChirpTemplate       *fcTmplt,
+  REAL4FrequencySeries    **invspec,
+  RingDataSegments        **segments,
+  REAL4                   *Fplus,
+  REAL4                   *Fcross,
+  REAL8Array              **PTFM,
+  COMPLEX8FFTPlan         *invPlan,
+  INT4                    segmentNumber,
+  UINT4                   csVecLength,
+  UINT4                   csVecLengthTwo,
+  UINT4                   vecLength
+);
+
+void coh_PTF_chi_square_sngl_setup(
+  struct coh_PTF_params   *params,
+  REAL4                   **frequencyRangesPlus,
+  REAL4                   **frequencyRangesCross,
+  REAL4                   **powerBinsPlus,
+  REAL4                   **powerBinsCross,
+  struct bankDataOverlaps **chisqSnglOverlapsP,
+  FindChirpTemplate       *fcTmplt,
+  REAL4FrequencySeries    **invspec,
+  RingDataSegments        **segments,
+  REAL8Array              **PTFM,
+  COMPLEX8FFTPlan         *invPlan,
+  INT4                    segmentNumber
 );
 
 void coh_PTF_calculate_det_stuff(
@@ -662,6 +737,28 @@ void coh_PTF_calculate_rotated_vectors(
     UINT4 detectorNum
 );
 
+MultiInspiralTable* coh_PTF_create_multi_event(
+    struct coh_PTF_params   *params,
+    REAL4TimeSeries         *cohSNR,
+    InspiralTemplate        PTFTemplate,
+    UINT8                   *eventId,
+    UINT4                   spinTrigger,
+    REAL4TimeSeries         **pValues,
+    REAL4TimeSeries         **gammaBeta,
+    REAL4TimeSeries         **snrComps,
+    REAL4TimeSeries         *nullSNR,
+    REAL4TimeSeries         *traceSNR,
+    REAL4TimeSeries         **bankVeto,
+    REAL4TimeSeries         **autoVeto,
+    REAL4TimeSeries         **chiSquare,
+    REAL8Array              **PTFM,
+    REAL4                   rightAscension,
+    REAL4                   declination,
+    INT8                    slideId,
+    INT4                   *timeOffsetPoints,
+    UINT4                   currPos
+);
+
 void coh_PTF_cleanup(
     struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
@@ -669,22 +766,27 @@ void coh_PTF_cleanup(
     REAL4FFTPlan            *psdplan,
     REAL4FFTPlan            *revplan,
     COMPLEX8FFTPlan         *invPlan,
-    REAL4TimeSeries         *channel[LAL_NUM_IFO+1],
-    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
-    RingDataSegments        *segments[LAL_NUM_IFO+1],
+    REAL4TimeSeries         **channel,
+    REAL4FrequencySeries    **invspec,
+    RingDataSegments        **segments,
     MultiInspiralTable      *events,
     InspiralTemplate        *PTFbankhead,
     FindChirpTemplate       *fcTmplt,
     FindChirpTmpltParams    *fcTmpltParams,
     FindChirpInitParams     *fcInitParams,
-    REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL8Array              *PTFN[LAL_NUM_IFO+1],
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    REAL8Array              **PTFM,
+    REAL8Array              **PTFN,
+    COMPLEX8VectorSequence  **PTFqVec,
     REAL4                   *timeOffsets,
     REAL4                   *Fplus,
     REAL4                   *Fcross,
     REAL4                   *Fplustrig,
-    REAL4                   *Fcrosstrig
+    REAL4                   *Fcrosstrig,
+    CohPTFSkyPositions      *skyPoints,
+    TimeSlide               *time_slide_head,
+    REAL4                   *timeSlideVectors,
+    LALDetector             **detectors,
+    INT8                    *slideIDList
 );
 
 REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
@@ -828,12 +930,13 @@ REAL4 coh_PTF_calculate_auto_veto(
     UINT4       vecLengthTwo
 );
 
-void coh_PTF_free_bank_veto_memory(
-    struct bankTemplateOverlaps *bankNormOverlaps,
-    FindChirpTemplate       *bankFcTmplts,
-    UINT4 subBankSize,
-    struct bankComplexTemplateOverlaps *bankOverlaps,
-    struct bankDataOverlaps *dataOverlaps
+void coh_PTF_free_veto_memory(
+  struct coh_PTF_params   *params,
+  struct bankTemplateOverlaps *bankNormOverlaps,
+  FindChirpTemplate       *bankFcTmplts,
+  struct bankComplexTemplateOverlaps *bankOverlaps,
+  struct bankDataOverlaps *dataOverlaps,
+  struct bankComplexTemplateOverlaps *autoTempOverlaps
 );
 
 void coh_PTF_calculate_coherent_bank_overlaps(
@@ -882,7 +985,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 
 REAL4 coh_PTF_calculate_chi_square(
     struct coh_PTF_params   *params,
-    UINT4           numPoints,
     UINT4           position,
     struct bankDataOverlaps *chisqOverlaps,
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],

@@ -15,9 +15,9 @@ INT4 coh_PTF_data_condition(
 {
   REAL4 *timeSlideVectors;
   timeSlideVectors=LALCalloc(1, (LAL_NUM_IFO+1)*
-                                params->numOverlapSegments*sizeof(REAL4));
+      params->numOverlapSegments*sizeof(REAL4));
   memset(timeSlideVectors, 0,
-         (LAL_NUM_IFO+1) * params->numOverlapSegments * sizeof(REAL4));
+      (LAL_NUM_IFO+1) * params->numOverlapSegments * sizeof(REAL4));
 
 
   UINT4 ifoNumber;
@@ -245,10 +245,7 @@ int coh_PTF_get_null_stream(
 
   /* Determine time offset as number of data poitns */
   deltaT = channel[n[0]]->deltaT;
-  for (i = 0; i < LAL_NUM_IFO; i++ )
-  {
-    timeOffsetPoints[i]=(int)(timeOffsets[i]/deltaT);
-  }
+  coh_PTF_convert_time_offsets_to_points(params,timeOffsets,timeOffsetPoints);
 
   /* Initialise the null stream structures */
   series = LALCalloc( 1, sizeof( *series ) );
@@ -345,11 +342,9 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
           params->segmentDuration,params->simDataType, 1E-20);
   
       /* Need to convert to a REAL4 FrequencySeries */
-      UINT4 segmentLength = floor( params->segmentDuration/channel->deltaT\
-                                    + 0.5 );
       invspec = XLALCreateREAL4FrequencySeries("TEMP",&(channel->epoch),0,
           1.0/params->segmentDuration,&lalDimensionlessUnit,
-          segmentLength/2 + 1);
+          params->numFreqPoints);
       snprintf( invspec->name, sizeof( invspec->name),
           "%s_SPEC", channel->name);
       for ( k = 0; k < spectrum->data->length; ++k )
@@ -1465,6 +1460,84 @@ void coh_PTF_template_time_series_cluster(
   }
 }
 
+UINT4 coh_PTF_test_veto_vals(
+  struct coh_PTF_params    *params,
+  REAL4TimeSeries          *cohSNR,
+  REAL4TimeSeries          *nullSNR,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  UINT4                    currPointLoc
+)
+{
+  /* This function checks whether chisq needs to be calculated. It does this
+   * by checking if the trigger will fail the bank/auto/null vetoes */ 
+
+  /* NOTE: The code currently uses the null stream SNR. It should instead/also
+   * use the nullSNR calculated from coincSNR - cohSNR */ 
+
+  UINT4 numDOF;
+  REAL4 bestNR,currSNR;
+
+  numDOF = 4.;
+  if (params->singlePolFlag || params->faceOnStatistic || params->numIFO == 1)
+    numDOF = 2.;
+
+  currSNR = cohSNR->data->data[currPointLoc];
+
+  /* IS the null stream too large? */
+  if (params->doNullStream)
+  {
+    if (nullSNR->data->data[currPointLoc] > params->nullStatThreshold \
+        && currSNR < params->nullStatGradOn)
+    {
+      return 1;
+    }
+    if (currSNR > params->nullStatGradOn)
+    {
+      if (nullSNR->data->data[currPointLoc] > (params->nullStatThreshold \
+           + (currSNR - params->nullStatGradOn)*params->nullStatGradient))
+      {
+        return 1;
+      }
+    }
+  }
+
+  /* Is bank new SNR too large? */
+  if (params->doBankVeto)
+  {
+    if (bankVeto[LAL_NUM_IFO]->data->data[currPointLoc] > \
+        params->BVsubBankSize*numDOF)
+    {
+      bestNR = currSNR / pow( ( 1. + pow( \
+          bankVeto[LAL_NUM_IFO]->data->data[currPointLoc] / \
+          ((REAL4)params->BVsubBankSize*numDOF ) , \
+          params->bankVetoq/params->bankVeton) )/2. , 1./params->bankVetoq);
+      if (bestNR < params->chiSquareCalcThreshold)
+      {
+        return 1;
+      }
+    }
+  }
+
+  /* Is auto new SNR too large */
+  if (params->doAutoVeto)
+  {
+    if (autoVeto[LAL_NUM_IFO]->data->data[currPointLoc] > \
+        params->numAutoPoints*numDOF)
+    {
+      bestNR = currSNR / pow( ( 1. + pow( \
+          autoVeto[LAL_NUM_IFO]->data->data[currPointLoc] / \
+          ((REAL4)params->numAutoPoints*numDOF ) , \
+          params->autoVetoq/params->autoVeton) )/2. , 1./params->autoVetoq);
+      if (bestNR < params->chiSquareCalcThreshold)
+      {
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 void coh_PTF_calculate_null_stream_filters(
   struct coh_PTF_params      *params,
   FindChirpTemplate          *fcTmplt,
@@ -1878,6 +1951,279 @@ void coh_PTF_calculate_rotated_vectors(
 
 }
 
+MultiInspiralTable* coh_PTF_create_multi_event(
+    struct coh_PTF_params   *params,
+    REAL4TimeSeries         *cohSNR,
+    InspiralTemplate        PTFTemplate,
+    UINT8                   *eventId,
+    UINT4                   spinTrigger,
+    REAL4TimeSeries         **pValues,
+    REAL4TimeSeries         **gammaBeta,
+    REAL4TimeSeries         **snrComps,
+    REAL4TimeSeries         *nullSNR,
+    REAL4TimeSeries         *traceSNR,
+    REAL4TimeSeries         **bankVeto,
+    REAL4TimeSeries         **autoVeto,
+    REAL4TimeSeries         **chiSquare,
+    REAL8Array              **PTFM,
+    REAL4                   rightAscension,
+    REAL4                   declination,
+    INT8                    slideId,
+    INT4                   *timeOffsetPoints,
+    UINT4                   currPos
+)
+{
+  LIGOTimeGPS trigTime;
+  UINT4 numDOF = 4;
+  if ( params->singlePolFlag || params->faceOnStatistic )
+    numDOF = 2;
+
+  MultiInspiralTable *currEvent;
+  currEvent = (MultiInspiralTable *)
+      LALCalloc(1, sizeof(MultiInspiralTable));
+  currEvent->event_id = (EventIDColumn *)
+      LALCalloc(1, sizeof(EventIDColumn));
+  currEvent->event_id->id=*eventId;
+  currEvent->time_slide_id = (EventIDColumn *)
+      LALCalloc(1, sizeof(EventIDColumn));
+  currEvent->time_slide_id->id=slideId;
+  (*eventId)++;
+  trigTime = cohSNR->epoch;
+  XLALGPSAdd(&trigTime,currPos*cohSNR->deltaT);
+  currEvent->snr = cohSNR->data->data[currPos];
+  currEvent->mass1 = PTFTemplate.mass1;
+  currEvent->mass2 = PTFTemplate.mass2;
+  currEvent->chi = PTFTemplate.chi;
+  currEvent->kappa = PTFTemplate.kappa;
+  currEvent->mchirp = PTFTemplate.totalMass*pow(PTFTemplate.eta,3.0/5.0);
+  currEvent->eta = PTFTemplate.eta;
+  /* FIXME: Add spins to MultiInspiralTable */
+  currEvent->chi = PTFTemplate.spin1[2];
+  currEvent->kappa = PTFTemplate.spin2[2];
+  currEvent->end_time = trigTime;
+  /* add sky position, but need to track back to sky fixed sky position */
+  currEvent->ra = rightAscension -
+                  XLALGreenwichMeanSiderealTime(&params->trigTime) +
+                  XLALGreenwichMeanSiderealTime(&currEvent->end_time);
+  currEvent->dec = declination;
+  if (params->doNullStream)
+    currEvent->null_statistic = nullSNR->data->data[currPos];
+  if (params->doTraceSNR)
+    currEvent->trace_snr = traceSNR->data->data[currPos];
+  if (params->doBankVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      currEvent->bank_chisq = bankVeto[LAL_NUM_IFO]->data->data[currPos];
+      currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
+    }
+    if (params->doSnglChiSquared)
+    {
+      if (bankVeto[LAL_IFO_G1])
+      {
+        currEvent->bank_chisq_g = bankVeto[LAL_IFO_G1]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_H1])
+      {
+        currEvent->bank_chisq_h1 = bankVeto[LAL_IFO_H1]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_H2])
+      {
+        currEvent->bank_chisq_h2 = bankVeto[LAL_IFO_H2]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_L1])
+      {
+        currEvent->bank_chisq_l = bankVeto[LAL_IFO_L1]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_T1])
+      {
+        currEvent->bank_chisq_t = bankVeto[LAL_IFO_T1]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_V1])
+      {
+        currEvent->bank_chisq_v = bankVeto[LAL_IFO_V1]->data->data[currPos];
+      }
+    }
+  }
+  if (params->doAutoVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      currEvent->cont_chisq = autoVeto[LAL_NUM_IFO]->data->data[currPos];
+      currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
+    }
+    if (params->doSnglChiSquared)
+    {
+      if (autoVeto[LAL_IFO_G1])
+      {
+        currEvent->cont_chisq_g = autoVeto[LAL_IFO_G1]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_H1])
+      {
+        currEvent->cont_chisq_h1 = autoVeto[LAL_IFO_H1]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_H2])
+      {
+        currEvent->cont_chisq_h2 = autoVeto[LAL_IFO_H2]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_L1])
+      {
+        currEvent->cont_chisq_l = autoVeto[LAL_IFO_L1]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_T1])
+      {
+        currEvent->cont_chisq_t = autoVeto[LAL_IFO_T1]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_V1])
+      {
+        currEvent->cont_chisq_v = autoVeto[LAL_IFO_V1]->data->data[currPos];
+      }
+    }
+  }
+  if (params->doChiSquare)
+  {
+    if (params->numIFO != 1)
+    {
+      currEvent->chisq = chiSquare[LAL_NUM_IFO]->data->data[currPos];
+      currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+    }
+    if (params->doSnglChiSquared)
+    {
+      if (chiSquare[LAL_IFO_G1])
+      {
+        currEvent->chisq_g = chiSquare[LAL_IFO_G1]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_H1])
+      {
+        currEvent->chisq_h1 = chiSquare[LAL_IFO_H1]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_H2])
+      {
+        currEvent->chisq_h2 = chiSquare[LAL_IFO_H2]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_L1])
+      {
+        currEvent->chisq_l = chiSquare[LAL_IFO_L1]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_T1])
+      {
+        currEvent->chisq_t = chiSquare[LAL_IFO_T1]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_V1])
+      {
+        currEvent->chisq_v = chiSquare[LAL_IFO_V1]->data->data[currPos];
+      }
+    }
+  }
+  if (pValues[0])
+    currEvent->amp_term_1 = pValues[0]->data->data[currPos];
+  if (pValues[1])
+    currEvent->amp_term_2 = pValues[1]->data->data[currPos];
+  if (pValues[2])
+    currEvent->amp_term_3 = pValues[2]->data->data[currPos];
+  if (pValues[3])
+    currEvent->amp_term_4 = pValues[3]->data->data[currPos];
+  if (pValues[4])
+    currEvent->amp_term_5 = pValues[4]->data->data[currPos];
+  if (pValues[5])
+    currEvent->amp_term_6 = pValues[5]->data->data[currPos];
+  if (pValues[6])
+    currEvent->amp_term_7 = pValues[6]->data->data[currPos];
+  if (pValues[7])
+    currEvent->amp_term_8 = pValues[7]->data->data[currPos];
+  if (pValues[8])
+    currEvent->amp_term_9 = pValues[8]->data->data[currPos];
+  if (pValues[9])
+    currEvent->amp_term_10 = pValues[9]->data->data[currPos];
+  /* Note that these two terms are only used for debugging
+   * at the moment. When they are used properly they will be
+   * moved into sane columns! For spin they give Amp*cos(Phi_0) and
+   * Amp*sin(Phi_0). For non spinning the second is 0 and the
+   * first is some arbitrary amplitude. */
+  if (gammaBeta[0])
+  {
+    currEvent->g1quad.re = gammaBeta[0]->data->data[currPos];
+    currEvent->g1quad.im = gammaBeta[1]->data->data[currPos];
+  }
+
+  if (snrComps[LAL_IFO_G1])
+  {
+    currEvent->snr_g = snrComps[LAL_IFO_G1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_G1]];
+    currEvent->sigmasq_g = PTFM[LAL_IFO_G1]->data[0];
+  }
+  if (snrComps[LAL_IFO_H1])
+  {
+    currEvent->snr_h1 = snrComps[LAL_IFO_H1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_H1]];
+    currEvent->sigmasq_h1 = PTFM[LAL_IFO_H1]->data[0];
+  }
+  if (snrComps[LAL_IFO_H2])
+  {
+    currEvent->snr_h2 = snrComps[LAL_IFO_H2]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_H2]];
+    currEvent->sigmasq_h2 = PTFM[LAL_IFO_H2]->data[0];
+  }
+  if (snrComps[LAL_IFO_L1])
+  {
+    currEvent->snr_l = snrComps[LAL_IFO_L1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_L1]];
+    currEvent->sigmasq_l = PTFM[LAL_IFO_L1]->data[0];
+  }
+  if (snrComps[LAL_IFO_T1])
+  {
+    currEvent->snr_t = snrComps[LAL_IFO_T1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_T1]];
+    currEvent->sigmasq_t = PTFM[LAL_IFO_T1]->data[0];
+  }
+  if (snrComps[LAL_IFO_V1])
+  {
+    currEvent->snr_v = snrComps[LAL_IFO_V1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_V1]];
+    currEvent->sigmasq_v = PTFM[LAL_IFO_V1]->data[0];
+  }
+  if (spinTrigger == 1)
+  {
+    if (params->numIFO == 1)
+      currEvent->snr_dof = 6;
+    else
+      currEvent->snr_dof = 12;
+  }
+  else
+  {
+    currEvent->snr_dof = numDOF;
+  }
+
+  /* store ifos */
+  if (params->numIFO == 1)
+  {
+    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX,\
+              "%s", params->ifoName[0]);
+  }
+  else if(params->numIFO == 2)
+  {
+    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s",
+             params->ifoName[0], params->ifoName[1]);
+  }
+  else if (params->numIFO == 3)
+  {
+    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s%s",
+             params->ifoName[0], params->ifoName[1], params->ifoName[2]);
+  }
+  else if (params->numIFO == 4)
+  {
+    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s%s%s",
+             params->ifoName[0], params->ifoName[1], params->ifoName[2],
+             params->ifoName[3]);
+  }
+  if (params->faceOnStatistic == 2)
+  {
+    currEvent->inclination = LAL_PI/2.;
+  }
+
+  return currEvent;
+}
+
 void coh_PTF_cleanup(
     struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
@@ -1885,23 +2231,28 @@ void coh_PTF_cleanup(
     REAL4FFTPlan            *psdplan,
     REAL4FFTPlan            *revplan,
     COMPLEX8FFTPlan         *invPlan,
-    REAL4TimeSeries         *channel[LAL_NUM_IFO+1],
-    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
-    RingDataSegments        *segments[LAL_NUM_IFO+1],
+    REAL4TimeSeries         **channel,
+    REAL4FrequencySeries    **invspec,
+    RingDataSegments        **segments,
     MultiInspiralTable      *events,
     InspiralTemplate        *PTFbankhead,
     FindChirpTemplate       *fcTmplt,
     FindChirpTmpltParams    *fcTmpltParams,
     FindChirpInitParams     *fcInitParams,
-    REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL8Array              *PTFN[LAL_NUM_IFO+1],
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    REAL8Array              **PTFM,
+    REAL8Array              **PTFN,
+    COMPLEX8VectorSequence  **PTFqVec,
     REAL4                   *timeOffsets,
     REAL4                   *Fplus,
     REAL4                   *Fcross,
     REAL4                   *Fplustrig,
-    REAL4                   *Fcrosstrig
-    )
+    REAL4                   *Fcrosstrig,
+    CohPTFSkyPositions      *skyPoints,
+    TimeSlide               *time_slide_head,
+    REAL4                   *timeSlideVectors,
+    LALDetector             **detectors,
+    INT8                    *slideIDList
+)
 {
   if ( params->injectList )
   {
@@ -2024,6 +2375,27 @@ void coh_PTF_cleanup(
     LALFree( Fplustrig );
   if ( Fcrosstrig )
     LALFree( Fcrosstrig );
+
+  if (skyPoints)
+  {
+    if (skyPoints->data)
+      LALFree(skyPoints->data);
+    LALFree(skyPoints);
+  }
+  if (time_slide_head)
+    XLALDestroyTimeSlideTable(time_slide_head);
+  if (timeSlideVectors)
+    LALFree(timeSlideVectors);
+
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (detectors[ifoNumber])
+      LALFree(detectors[ifoNumber]);
+  }
+
+  if (slideIDList)
+    LALFree(slideIDList);
+
 }
 
 
