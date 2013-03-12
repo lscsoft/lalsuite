@@ -20,16 +20,14 @@
 #include <lal/LALDatatypes.h>
 #include <lal/XLALError.h>
 #include <math.h>
-#include <stdio.h>
 
 #include <lal/LALInspiralPyCBCTemplate.h>
 
 void XLALInspiralPyCBCTemplatePhase (COMPLEX8Vector* htilde, REAL4Vector* sincos_look,
                     REAL4Vector* f13, REAL4Vector* logv_look,
-                    int kmin, int  phase_order,
-                    float delta_f, float piM, float pfaN,
+                    int kmin, int  phase_order, float piM, float pfaN,
                     float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
-                    float pfa6, float pfl6, float pfa7, float tC, float v0){
+                    float pfa6, float pfl6, float pfa7, float v0){
 
     float dp = LAL_TWOPI / (sincos_look->length);
     float piM13 = cbrtf(piM);
@@ -42,12 +40,10 @@ void XLALInspiralPyCBCTemplatePhase (COMPLEX8Vector* htilde, REAL4Vector* sincos
 
     for (unsigned int i=0; i< htilde->length; i++){
         int index = i + kmin;
-        const float f = index * delta_f;
         const float v =  piM13 * f13->data[index];
         const float logv = logv_look->data[index] * 1.0/3.0 + logpiM13;
         const float v5 = v * v * v * v * v;
-        float phasing = 0.;
-        float shft = -LAL_TWOPI * tC;
+        float phasing = 0;
 
         switch (phase_order)
         {
@@ -72,7 +68,7 @@ void XLALInspiralPyCBCTemplatePhase (COMPLEX8Vector* htilde, REAL4Vector* sincos
         }
 
         phasing *= pfaN / v5;
-        phasing += shft * f + LAL_PI_4;
+        phasing -= LAL_PI_4;
 
         float sphase = phasing - (int) (phasing / LAL_TWOPI) * LAL_TWOPI;
         float cphase = (phasing + LAL_PI_2) - (int) ((phasing + LAL_PI_2 ) / LAL_TWOPI) * LAL_TWOPI;
@@ -82,6 +78,7 @@ void XLALInspiralPyCBCTemplatePhase (COMPLEX8Vector* htilde, REAL4Vector* sincos
 
         float pcos = sincos_look->data[cindex];
         float psin = sincos_look->data[sindex];
+
         htilde->data[i] = (pcos - psin*I);
     }
 }
