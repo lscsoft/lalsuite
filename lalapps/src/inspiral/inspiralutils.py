@@ -135,7 +135,7 @@ def symlink_tmpltbank(tmpltbank_cache, user_tag):
   file_tag = user_tag.upper()
 
   for entry in tmpltbank_cache:
-    old_file = os.path.basename(entry.path())
+    old_file = os.path.basename(entry.path)
     new_file = old_file.replace("DATAFIND",file_tag)
     try: # Remove file if it already exists
       os.remove(new_file)
