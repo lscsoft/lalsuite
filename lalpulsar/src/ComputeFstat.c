@@ -45,7 +45,7 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_linalg.h>
-
+#include <gsl/gsl_roots.h>
 
 #include <lal/AVFactories.h>
 #include "ComputeFstat.h"
@@ -78,8 +78,6 @@
 #define NUM_FACT 7
 static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
-static void EccentricAnomoly(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0);
-
 /* empty initializers  */
 const SSBtimes empty_SSBtimes;
 const MultiSSBtimes empty_MultiSSBtimes;
@@ -88,9 +86,27 @@ const Fcomponents empty_Fcomponents;
 const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
 
-static REAL8 p,q,r;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
-
 /*---------- internal prototypes ----------*/
+
+static double gsl_E_solver ( double E, void *p );
+
+struct E_solver_params {
+  double p, q, r, fracOrb;
+};
+
+static double gsl_E_solver ( REAL8 E, void *par )
+{
+  struct E_solver_params *params = (struct E_solver_params*) par;
+  double p = params->p;
+  double q = params->q;
+  double r = params->r;
+  double x0 = params->fracOrb * LAL_TWOPI;
+
+  /* this is the function relating the observed time since periapse in the SSB to the true eccentric anomoly E */
+  double diff = - x0 + ( E + p * sin(E) + q * ( cos(E) - 1.0 ) + r );
+
+  return diff;
+} // gsl_E_solver()
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -1282,9 +1298,9 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			/**< [out] SSB timings tSSBIn with bi
   REAL8 refTimeREAL8 = XLALGPSGetREAL8 ( &tSSBIn->refTime );
 
   /* compute (global) p, q and r coeeficients for root-finder */
-  p = (LAL_TWOPI/Porb)*cosw*asini*sqrt(1.0-e*e);
-  q = (LAL_TWOPI/Porb)*sinw*asini;
-  r = (LAL_TWOPI/Porb)*sinw*asini*ome;
+  REAL8 p = (LAL_TWOPI/Porb)*cosw*asini*sqrt(1.0-e*e);
+  REAL8 q = (LAL_TWOPI/Porb)*sinw*asini;
+  REAL8 r = (LAL_TWOPI/Porb)*sinw*asini*ome;
 
   /* Calculate the required accuracy for the root finding procedure in the main loop */
   REAL8 acc = LAL_TWOPI*(REAL8)EA_ACC/Porb;   /* EA_ACC is defined above and represents the required timing precision in seconds (roughly) */
@@ -1301,24 +1317,40 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			/**< [out] SSB timings tSSBIn with bi
       REAL8 fracorb = temp - floor(temp);	        /* the fraction of orbits completed since current SSB time */
 
       // ---------- FIXME: can we use GSL for this root-finding?
-      /* compute eccentric anomaly using a root finding procedure */
-      DFindRootIn input;
-      input.function = EccentricAnomoly;     /* This is the name of the function we must solve to find E */
-      input.xmin = 0.0;                      /* We know that E will be found between 0 and 2PI */
-      input.xmax = LAL_TWOPI;
-      input.xacc = acc;                      /* The accuracy of the root finding procedure */
-
-      LALStatus status;
-      INIT_MEM ( status );
-      /* expand domain until a root is bracketed */
-      LALDBracketRoot( &status, &input, &fracorb );
-      XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALDBracketRoot() failed with statusCode = %d\n", status.statusCode );
-
       REAL8 E;              /* the eccentric anomoly */
-      /* bisect domain to find eccentric anomoly E corresponding to the SSB time of the midpoint of this SFT */
-      LALDBisectionFindRoot ( &status, &E, &input, &fracorb);
-      XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALDBisectionFindRoot() failed with statusCode = %d\n", status.statusCode );
-      // ---------- FIXME: can we use GSL for this root-finding?
+      {
+        const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
+        gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
+        REAL8 E_lo = 0, E_hi = LAL_TWOPI;
+        gsl_function F;
+        struct E_solver_params pars = {p, q, r, fracorb};
+        F.function = &gsl_E_solver;
+        F.params = &pars;
+
+        XLAL_CHECK ( gsl_root_fsolver_set(s, &F, E_lo, E_hi) == 0, XLAL_EFAILED );
+
+        XLALPrintInfo ("%5s [%9s, %9s] %9s %10s %9s\n", "iter", "lower", "upper", "root", "abstol", "err(est)");
+        int max_iter = 100;
+        int iter = 0;
+        int status;
+        do
+          {
+            iter++;
+            status = gsl_root_fsolver_iterate(s);
+            XLAL_CHECK ( (status == GSL_SUCCESS) || (status == GSL_CONTINUE), XLAL_EFAILED );
+            E = gsl_root_fsolver_root(s);
+            E_lo = gsl_root_fsolver_x_lower (s);
+            E_hi = gsl_root_fsolver_x_upper (s);
+            status = gsl_root_test_interval ( E_lo, E_hi, acc, 0 );
+
+            if (status == GSL_SUCCESS) { XLALPrintInfo ("Converged:\n"); }
+            XLALPrintInfo ("%5d [%.7f, %.7f] %.7f %+10.7g %10.7g\n", iter, E_lo, E_hi, E, acc, E_hi - E_lo);
+
+          } while ( (status == GSL_CONTINUE) && (iter < max_iter) );
+
+        XLAL_CHECK ( status == GSL_SUCCESS, XLAL_EMAXITER, "Eccentric anomaly: failed to converge within %d iterations\n", max_iter );
+        gsl_root_fsolver_free(s);
+      }
 
       /* use our value of E to compute the additional binary time delay */
       binaryTimes->DeltaT->data[i] += - ( asini*sinw*(cos(E)-e) + asini*cosw*sqrt(1.0-e*e)*sin(E) );
@@ -1334,24 +1366,6 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			/**< [out] SSB timings tSSBIn with bi
   return XLAL_SUCCESS;
 
 } /* XLALAddBinaryTimes() */
-
-/** For a given set of binary parameters we solve the following function for
- *  the eccentric anomoly E
- */
-static void EccentricAnomoly(LALStatus *status,
-			     REAL8 *tr,
-			     REAL8 lE,
-			     void *tr0
-			     )
-{
-  INITSTATUS(status);
-  ASSERT(tr0,status, 1, "Null pointer");
-
-  /* this is the function relating the observed time since periapse in the SSB to the true eccentric anomoly E */
-  *tr = *(REAL8 *)tr0*(-1.0) + (lE + (p*sin(lE)) + q*(cos(lE) - 1.0) + r)/(REAL8)LAL_TWOPI;
-
-  RETURN(status);
-}
 
 /**
  * Multi-IFO version of XLALAddBinaryTimes().
