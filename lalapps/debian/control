@@ -8,7 +8,8 @@ Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   lalframe-dev (>= 1.0.10), lalmetaio-dev (>= 1.1.0),
   lalsimulation-dev (>= 0.7.0), lalburst-dev (>= 1.2.0),
   lalinspiral-dev (>= 1.5.0), lalpulsar-dev (>= 1.7.0),
-  lalstochastic-dev (>= 1.1.4), lalinference-dev (>= 1.1.0)
+  lalstochastic-dev (>= 1.1.4), lalinference-dev (>= 1.1.0),
+  bc
 X-Python-Version: >= 2.6
 Standards-Version: 3.8.6
 
