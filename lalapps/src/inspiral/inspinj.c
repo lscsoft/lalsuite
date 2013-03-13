@@ -3107,19 +3107,20 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( spinInjections==1 && !strncmp(waveform, "IMRPhenom", 10) && spinAligned==-1 )
+  if ( spinInjections==1 && spinAligned==-1 && 
+      ( !strncmp(waveform, "IMRPhenomB", 10) || !strncmp(waveform, "IMRPhenomC", 10) ) )
   {
     fprintf( stderr,
-        "Spinning IMRPhenom injections must have the --aligned option.\n" );
+        "Spinning IMRPhenomB or -C injections must have the --aligned option.\n" );
     exit( 1 );
   }
 
-  if ( spinInjections==1 && spinAligned==1 && strncmp(waveform, "IMRPhenom", 10)
-    && strncmp(waveform, "SpinTaylor", 10) )
+  if ( spinInjections==1 && spinAligned==1 && strncmp(waveform, "IMRPhenomB", 10)
+    && strncmp(waveform, "IMRPhenomC", 10) && strncmp(waveform, "SpinTaylor", 10) )
   {
     fprintf( stderr,
         "Sorry, I only know to make spin aligned injections for \n"
-        "IMRPhenom, SpinTaylor and SpinTaylorFrameless waveforms.\n" );
+        "IMRPhenomB/C, SpinTaylor and SpinTaylorFrameless waveforms.\n" );
     exit( 1 );
   }
 
@@ -3479,9 +3480,9 @@ int main( int argc, char *argv[] )
     {
       if (spinAligned==1)
       {
-        if (strncmp(waveform, "IMRPhenom", 10)==0)
+        if ( !strncmp(waveform, "IMRPhenomB", 10) || !strncmp(waveform, "IMRPhenomC", 10) )
           alignInj = alongzAxis;
-        else if (strncmp(waveform, "SpinTaylor", 10)==0)
+        else if ( !strncmp(waveform, "SpinTaylor", 10) )
           alignInj = inxzPlane;
         else
         {
