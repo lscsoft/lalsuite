@@ -613,15 +613,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       if (LALInferenceGetProcParamVal(runState->commandLine, "--bottomUp") && nPar != 1)
         tempDelta=(nPar+1.)/(nPar-1.);
       else
-        tempDelta=pow(ladderMax-ladderMin+1,1.0/(REAL8)(nChain-1));
+        tempDelta=pow(ladderMax/ladderMin,1.0/(REAL8)(nChain-1));
       for (t=0;t<nChain; ++t) {
-        ladder[t]=ladderMin + pow(tempDelta,t) - 1.0;
+        ladder[t]=ladderMin*pow(tempDelta,t);
       }
     }
-  } else {                                                                        //Geometric spacing
-    tempDelta=pow(ladderMax/ladderMin,1.0/(REAL8)(nChain-1));
-    for (t=0;t<nChain; ++t) {
-      ladder[t]=ladderMin*pow(tempDelta,t);
+  } else {
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")){   //assume --tempMax specified intentionally
+      ladder[0]=ladderMax;
+    }else{
+      ladder[0]=1.0;
+      ladderMax=1.0;
     }
   }
   temp=ladder[MPIrank];
