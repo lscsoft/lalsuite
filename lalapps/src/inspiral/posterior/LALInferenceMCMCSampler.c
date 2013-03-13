@@ -41,6 +41,7 @@
 #include <lal/LALInferenceProposal.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
+#include <sys/time.h>
 
 #include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>
@@ -410,6 +411,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 aclCheckCounter=1;
   INT4 iEff=0;
   REAL8 ladderMin,ladderMax;
+  REAL8 timestamp,timestamp_epoch;
+  struct timeval tv;
 
   //
   /* Command line flags (avoid repeated checks of runState->commandLine) */
@@ -448,6 +451,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     propVerbose = 1;
   }
 
+  UINT4 benchmark = 0; // Print timestamps to chain outputs
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--benchmark")) {
+    benchmark = 1;
+  }
 
   ProcessParamsTable *ppt;
 
@@ -496,7 +503,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 hotThreshold        = nChain/2-1;       // If MPIrank > hotThreshold, use different proposal set
 
   /*  If running hot chains for Thermodynamic Integration make all draw from prior */
-  if(ladderMin>1.0) hotThreshold=-1;
+  if(ladderMin>0.0) hotThreshold=-1;
 
   /* Set maximum temperature (command line value take precidence) */
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")) {
@@ -603,17 +610,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         ladder[t]=1.0/(REAL8)(1.0/ladderMin-t*tempDelta);
       }
     } else {                                                                        //Geometric spacing
-      tempDelta=pow(ladderMax/ladderMin,1.0/(REAL8)(nChain-1));
+      if (LALInferenceGetProcParamVal(runState->commandLine, "--bottomUp") && nPar != 1)
+        tempDelta=(nPar+1.)/(nPar-1.);
+      else
+        tempDelta=pow(ladderMax-ladderMin+1,1.0/(REAL8)(nChain-1));
       for (t=0;t<nChain; ++t) {
-        ladder[t]=ladderMin*pow(tempDelta,t);
+        ladder[t]=ladderMin + pow(tempDelta,t) - 1.0;
       }
     }
-  } else {                                                                          //single chain
-    if(LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")){             //assume --tempMax specified intentionally
-      ladder[0]=ladderMax;
-    }else{
-      ladder[0]=1.0;
-      ladderMax=1.0;
+  } else {                                                                        //Geometric spacing
+    tempDelta=pow(ladderMax/ladderMin,1.0/(REAL8)(nChain-1));
+    for (t=0;t<nChain; ++t) {
+      ladder[t]=ladderMin*pow(tempDelta,t);
     }
   }
   temp=ladder[MPIrank];
@@ -681,6 +689,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (MPIrank == 0) {
     LALInferencePrintPTMCMCInjectionSample(runState);
   }
+
+  if (benchmark)
+    timestamp_epoch = *((REAL8 *)LALInferenceGetVariable(runState->algorithmParams, "timestamp_epoch"));
 
   /* Print run details */
   if (MPIrank == 0) {
@@ -894,6 +905,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         headIFO = headIFO->next;
       }
 
+      if (benchmark) {
+        gettimeofday(&tv, NULL);
+        timestamp = tv.tv_sec + tv.tv_usec/1E6 - timestamp_epoch;
+        fprintf(chainoutput, "%f\t", timestamp);
+      }
       fprintf(chainoutput,"\n");
       fflush(chainoutput);
 
@@ -1472,6 +1488,8 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
   REAL8 SampleRate=4096.0; //default value of the sample rate from LALInferenceReadData()
   UINT4 nIFO=0;
   LALInferenceIFOData *ifodata1=runState->data;
+  REAL8 timestamp;
+  struct timeval tv;
 
   REAL8 fRef= 0.0;
   if(LALInferenceCheckVariable(runState->currentParams,"fRef")) fRef = *(REAL8*)LALInferenceGetVariable(runState->currentParams, "fRef");
@@ -1499,6 +1517,8 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value);
 
+  UINT4 benchmark=0;
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--benchmark")) benchmark=1;
 
     fprintf(chainoutput, "  LALInference version:%s,%s,%s,%s,%s\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
     fprintf(chainoutput,"  %s\n",str);
@@ -1528,8 +1548,10 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
       fprintf(chainoutput, "\t");
       headIFO = headIFO->next;
     }
+    if (benchmark)
+      fprintf(chainoutput, "timestamp\t");
     fprintf(chainoutput,"\n");
-    fprintf(chainoutput, "%d\t%f\t%f\t", 0,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior, runState->currentPrior);
+    fprintf(chainoutput, "%d\t%f\t%f\t", 0, (runState->currentLikelihood - nullLikelihood)+runState->currentPrior, runState->currentPrior);
     LALInferencePrintSampleNonFixed(chainoutput,runState->currentParams);
     fprintf(chainoutput,"%f\t",runState->currentLikelihood - nullLikelihood);
     headIFO = runState->data;
@@ -1537,7 +1559,12 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
       fprintf(chainoutput, "%f\t", headIFO->acceptedloglikelihood - headIFO->nullloglikelihood);
       headIFO = headIFO->next;
     }
-
+    if(benchmark) {
+      gettimeofday(&tv, NULL);
+      timestamp = tv.tv_sec + tv.tv_usec/1E6;
+      LALInferenceAddVariable(runState->algorithmParams, "timestamp_epoch", &timestamp,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      fprintf(chainoutput, "%f\t", 0.0);
+    }
     fprintf(chainoutput,"\n");
 }
 
