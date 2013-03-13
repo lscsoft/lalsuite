@@ -105,6 +105,12 @@ LALInferenceParamVaryType LALInferenceGetVariableVaryType(LALInferenceVariables 
   return (LALInferenceGetItem(vars,name)->vary);
 }
 
+void LALInferenceSetParamVaryType(LALInferenceVariables *vars, const char *name, LALInferenceParamVaryType vary)
+{
+  LALInferenceVariableItem *item = LALInferenceGetItem(vars,name);
+  item->vary = vary;
+  return;
+}
 
 void *LALInferenceGetVariable(const LALInferenceVariables * vars,const char * name)
 /* Return the value of variable name from the vars structure by walking the list */

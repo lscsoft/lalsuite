@@ -207,6 +207,11 @@ LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables
  */
 LALInferenceParamVaryType LALInferenceGetVariableVaryType(LALInferenceVariables *vars, const char *name);
 
+/** Set the LALInferenceParamVaryType of the parameter named \param name in \param vars
+ * see the declaration of LALInferenceParamVaryType for possibilities
+ */
+void LALInferenceSetParamVaryType(LALInferenceVariables *vars, const char *name, LALInferenceParamVaryType vary);
+
 /** Get the name of the idx-th variable
  * Indexing starts at 1
  */
