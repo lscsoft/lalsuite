@@ -569,7 +569,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     REAL8 bigD = 1.0 / 0.0;
 
     LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
-    nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
     LALInferenceSetVariable(runState->currentParams, "distance", &d);
   } else if (runState->likelihood==&LALInferenceZeroLogLikelihood) {
     nullLikelihood = 0.0;
@@ -586,7 +586,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   // initialize starting likelihood value:
-  runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+  runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
   LALInferenceIFOData *headData = runState->data;
   while (headData != NULL) {
     headData->acceptedloglikelihood = headData->loglikelihood;
@@ -1025,7 +1025,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   // compute prior & likelihood:
   logPriorProposed = runState->prior(runState, &proposedParams);
   if (logPriorProposed > -DBL_MAX)
-    logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->template);
+    logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->templt);
   else
     logLikelihoodProposed = -DBL_MAX;
 
@@ -1219,7 +1219,7 @@ void LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 
     CopyArrayToLALInferenceVariables(adjParameters, adjCurrentParams);
 
     /* Calculate likelihood at adjacent parameters and send */
-    lowLikeHighParams = runState->likelihood(adjCurrentParams, runState->data, runState->template);
+    lowLikeHighParams = runState->likelihood(adjCurrentParams, runState->data, runState->templt);
     MPI_Send(&lowLikeHighParams, 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD);
 
     /* Determine if swap was accepted */
@@ -1283,7 +1283,7 @@ void LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 
       CopyArrayToLALInferenceVariables(adjParameters, adjCurrentParams);
 
       /* Calculate likelihood at adjacent parameters */
-      highLikeLowParams = runState->likelihood(adjCurrentParams, runState->data, runState->template);
+      highLikeLowParams = runState->likelihood(adjCurrentParams, runState->data, runState->templt);
 
       /* Recieve likelihood from adjacent chain */
       MPI_Recv(&lowLikeHighParams, 1, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD, &MPIstatus);
@@ -1711,14 +1711,14 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
       LALInferenceSetVariable(runState->currentParams, "phi_spin2", &phi_spin2);
     }
 
-    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
     runState->currentPrior = runState->prior(runState, runState->currentParams);
     setIFOAcceptedLikelihoods(runState);
     LALInferencePrintPTMCMCHeaderFile(runState, out);
     fclose(out);
     
     LALInferenceCopyVariables(saveParams, runState->currentParams);
-    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
     runState->currentPrior = runState->prior(runState, runState->currentParams);
     setIFOAcceptedLikelihoods(runState);    
 
