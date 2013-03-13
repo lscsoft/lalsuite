@@ -365,7 +365,6 @@ void initializeMCMC(LALInferenceRunState *runState)
                ---------------------------------------------------------------------------------------------------\n\
                (--inverseLadder)                Space temperature uniform in 1/T, rather than geometric.\n\
                (--tempSkip N)                   Number of iterations between temperature swap proposals (100).\n\
-               (--tempSwaps N)                  Number of random swaps proposed every <tempSkip> iterations ((nTemps-1)nTemps/2).\n\
                (--tempKill N)                   Iteration number to stop temperature swapping (Niter).\n\
                (--tempMin T)                    Lowest temperature for parallel tempering (1.0).\n\
                (--tempMax T)                    Highest temperature for parallel tempering (50.0).\n\
@@ -525,7 +524,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   }
   LALInferenceAddVariable(runState->algorithmParams,"trigSNR",&trigSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
- printf("set lowest temperature.\n");
+  printf("set lowest temperature.\n");
   /* Minimum temperature of the temperature ladder */
   ppt=LALInferenceGetProcParamVal(commandLine,"--tempMin");
   if(ppt){
