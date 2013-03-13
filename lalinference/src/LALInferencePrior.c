@@ -61,6 +61,9 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
       if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
     }
   }
+  if(LALInferenceCheckVariable(params,"fLow"))
+    logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"fLow"));
+
   if(LALInferenceCheckVariable(params,"logdistance"))
     logPrior+=3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
   else if(LALInferenceCheckVariable(params,"distance"))
@@ -306,6 +309,10 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
   /*Use a uniform in log D distribution*/
   //if(LALInferenceCheckVariable(params,"logdistance"))
   //  logPrior+=3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
+
+  if(LALInferenceCheckVariable(params,"fLow"))
+    logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"fLow"));
+
   if(LALInferenceCheckVariable(params,"distance"))
     logPrior-=log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
   if(LALInferenceCheckVariable(params,"inclination"))
@@ -708,6 +715,19 @@ LALInferenceVariableItem *item=params->head;
 					logPrior += 3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance")+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
 				}
+				else if(!strcmp(item->name, "fLow")){
+					if(LALInferenceCheckVariable(priorParams,"fLow_norm")) {
+						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"fLow_norm");
+					}
+					else
+					{
+						norm = 0.69314718056-log(pow(max,2.)-pow(min,2.));
+						LALInferenceAddVariable(priorParams, "fLow_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+					}
+          logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"fLow"));
+        }
+
+
 				else if(!strcmp(item->name, "inclination")){
 					if(LALInferenceCheckVariable(priorParams,"inclination_norm")) {
 						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"inclination_norm");

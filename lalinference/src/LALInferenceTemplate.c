@@ -103,7 +103,11 @@ void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata){
   params.epoch.gpsSeconds = IFOdata->timeData->epoch.gpsSeconds;
   params.epoch.gpsNanoSeconds = IFOdata->timeData->epoch.gpsNanoSeconds;
 	
-  params.fStartIn = IFOdata->fLow; 
+  /* Check if fLow is a model parameter, otherwise use data structure definition */
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "fLow"))
+    params.fStartIn = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "fLow");
+  else
+    params.fStartIn = IFOdata->fLow; 
   params.fStopIn = IFOdata->fHigh;			/* start and stop frequencies */
   params.deltaT = IFOdata->timeData->deltaT;				/* waveform-generation data-sampling interval */
   params.lengthIn = 0;
@@ -281,6 +285,7 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
   double tc   = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
   
   double eta; 
+  double fLow;
   if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
     double q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
     q2eta(q, &eta);
@@ -330,7 +335,13 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
               + log(15293365.0/508032.0 + ((27145.0/504.0) + (3085.0/72.0)*eta)*eta));
   a[4] =  exp(log(LAL_PI/128.0)-log_eta+log(38645.0/252.0+5.0*eta));
   NDeltaT = ((double) IFOdata->timeData->data->length) * IFOdata->timeData->deltaT;
-  lower = ceil(IFOdata->fLow * NDeltaT);
+
+  /* Check if fLow is a model parameter, otherwise use data structure definition */
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "fLow"))
+    fLow = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "fLow");
+  else
+    fLow = IFOdata->fLow; 
+  lower = ceil(fLow * NDeltaT);
   upper = floor(IFOdata->fHigh * NDeltaT);
   /* loop over frequency bins: */
   for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i){
@@ -563,7 +574,6 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
   template.totalMass = mtot;
   template.eta = eta;
   template.massChoice = totalMassAndEta;
-  template.fLower = IFOdata->fLow;	
   template.tSampling = 1./IFOdata->timeData->deltaT;
   template.fCutoff = 0.5/IFOdata->timeData->deltaT-1.0;
   template.nStartPad = 0;
@@ -584,6 +594,12 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
     }
   }
 	
+  /* Check if fLow is a model parameter, otherwise use data structure definition */
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "fLow"))
+    template.fLower = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "fLow");
+  else
+    template.fLower = IFOdata->fLow;	
+
   template.next = NULL;
   template.fine = NULL;
   int UNUSED errnum;
@@ -725,6 +741,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   double instant;
   int forceTimeLocation;
   double twopit, f, deltaF, re, im, templateReal, templateImag;
+  double fLow;
 
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
     approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
@@ -758,6 +775,11 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   }
   deltaT = IFOdata->timeData->deltaT;
 
+  /* Check if fLow is a model parameter, otherwise use data structure definition */
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "fLow"))
+    fLow = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "fLow");
+  else
+    fLow = IFOdata->fLow;	
   
   params.OmegaS      = 0.0;     /* (?) */
   params.Theta       = 0.0;     /* (?) */
@@ -768,7 +790,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   params.massChoice  = m1Andm2;
   params.approximant = (Approximant) approximant;  /*  TaylorT1, ...   */
   params.order       = (LALPNOrder) order;        /*  Newtonian, ...  */
-  params.fLower      = IFOdata->fLow * 0.9;
+  params.fLower      = fLow * 0.9;
   params.fCutoff     = (IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
   params.tSampling   = 1.0 / deltaT;
   params.startTime   = 0.0;
@@ -954,8 +976,8 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 	b     =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "ppelowerb");
       
 	for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
-	  ppE_amp = 1.0+alpha*pow(4.0*eta,A)*pow(LAL_PI*mc*(IFOdata->fLow*0.9 + ((REAL8) i)*IFOdata->freqData->deltaF),a);
-	  ppE_phase = beta*pow(4.0*eta,B)*pow(LAL_PI*mc*(IFOdata->fLow*0.9 + ((REAL8) i)*IFOdata->freqData->deltaF),b);
+	  ppE_amp = 1.0+alpha*pow(4.0*eta,A)*pow(LAL_PI*mc*(fLow*0.9 + ((REAL8) i)*IFOdata->freqData->deltaF),a);
+	  ppE_phase = beta*pow(4.0*eta,B)*pow(LAL_PI*mc*(fLow*0.9 + ((REAL8) i)*IFOdata->freqData->deltaF),b);
 	  cos_ppE_phase = cos(ppE_phase);
 	  sin_ppE_phase = sin(ppE_phase);
       
@@ -1610,7 +1632,11 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
   double deltaT = IFOdata->timeData->deltaT;
 
   //injParams.f_final = IFOdata->fHigh; //(IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
-  injParams.f_lower = IFOdata->fLow; // IFOdata->fLow * 0.9;
+  /* Check if fLow is a model parameter, otherwise use data structure definition */
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "fLow"))
+    injParams.f_lower = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "fLow");
+  else
+    injParams.f_lower = IFOdata->fLow;	
   //ppnParams.fStartIn = IFOdata->fLow;
   //ppnParams.lengthIn = 0;
   //ppnParams.ppn      = NULL;
@@ -1914,7 +1940,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 
   phi0		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase"); /* START phase as per lalsimulation convention*/
 
-  f_min = IFOdata->fLow /** 0.9 */;
+  /* Check if fLow is a model parameter, otherwise use data structure definition */
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "fLow"))
+    f_min = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "fLow");
+  else
+    f_min = IFOdata->fLow /** 0.9 */;
   f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using IFOdata->fHigh causes NaNs in waveform (see redmine issue #750)*/
   
   if(frame==LALINFERENCE_FRAME_RADIATION){
@@ -1963,7 +1993,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   
   distance	= LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
 	
-  
   REAL8 lambda1 = 0.;
   if(LALInferenceCheckVariable(IFOdata->modelParams, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "lambda1");
   REAL8 lambda2 = 0.;

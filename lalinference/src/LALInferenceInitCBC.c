@@ -193,6 +193,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--fixTime)                     Do not allow coalescence time to vary.\n\
                (--fixLambda1)                  Do not allow lambda1 to vary.\n\
                (--fixLambda2)                  Do not allow lambda2 to vary.\n\
+               (--varyFlow)                    Allow the lower frequency bound of integration to vary.\n\
                (--pinparams)                   List of parameters to set to injected values [mchirp,asym_massratio,etc].\n";
 
 
@@ -841,6 +842,31 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(currentParams, "LAL_AMPORDER",     &AmpOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
   LALInferenceAddVariable(currentParams, "fRef", &fRef, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
+  REAL8 fLow = state->data->fLow;
+  ppt=LALInferenceGetProcParamVal(commandLine,"--varyFlow");
+  if(ppt){
+    LALInferenceAddVariable(currentParams, "fLow", &fLow,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    REAL8 fLow_min = fLow;
+    REAL8 fLow_max = 200.0;
+    ppt=LALInferenceGetProcParamVal(commandLine,"--flowMin");
+    if(ppt){
+      fLow_min=strtod(ppt->value,(char **)NULL);
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--flowMax");
+    if(ppt){
+      fLow_max=strtod(ppt->value,(char **)NULL);
+    }
+    if(LALInferenceCheckVariable(currentParams,"fRef"))
+      fRef = *(REAL8*)LALInferenceGetVariable(currentParams, "fRef");
+      if (fRef > 0.0 && fLow_max > fRef) {
+        fprintf(stdout,"WARNING: fLow can't go higher than the reference frequency.  Setting fLow_max to %f\n",fRef);
+        fLow_max = fRef;
+      }
+    LALInferenceAddMinMaxPrior(state->priorArgs, "fLow", &fLow_min,  &fLow_max, LALINFERENCE_REAL8_t);
+  } else {
+    LALInferenceAddVariable(currentParams, "fLow", &fLow,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  }
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--taper");
   if(ppt){
