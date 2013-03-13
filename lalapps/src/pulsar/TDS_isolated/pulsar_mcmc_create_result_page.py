@@ -1211,7 +1211,7 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
     lt.append(float((sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0])*60)
 
     # duty cycle
-    dc = 100.*(60.*float(lt[i]))/(float(et)-float(st))
+    dc = 100.*lt[i]/(float(et)-float(st))
 
     # get UL estimate based on h95 ~ 7-20 *sqrt(2) * ASD / sqrt(T) - the sqrt(2) is because
     # the ASD is calulated from a two-sided PSD
