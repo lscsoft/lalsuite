@@ -1109,7 +1109,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   gh0 = ax[-1].axis()
   ax = ciFig[0].get_axes()
   gci = ax[-1].axis()
-  h0cibounds = [[gh0[0], gh0[1]], [gci[0], gci[1]]]
+  h0cibounds = [[gh0[0], gh0[1]], [gci[1], gci[0]]]
 
   h0ciFig = pppu.plot_posterior_hist2D([poslist[-1]], ['h0', 'cosiota'], \
 [ifosNew[-1]], bounds=h0cibounds, nbins=[30, 30], parfile=parinj)
@@ -1120,7 +1120,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   gphi0 = ax[-1].axis()
   ax = psiFig[0].get_axes()
   gpsi = ax[-1].axis()
-  phi0psibounds = [[gphi0[0], gphi0[1]], [gpsi[0], gpsi[1]]]
+  phi0psibounds = [[gphi0[0], gphi0[1]], [gpsi[1], gpsi[0]]]
 
   phi0psiFig = pppu.plot_posterior_hist2D([poslist[-1]], ['phi0', 'psi'], \
 [ifosNew[-1]], bounds=phi0psibounds, nbins=[30, 30], parfile=parinj)
