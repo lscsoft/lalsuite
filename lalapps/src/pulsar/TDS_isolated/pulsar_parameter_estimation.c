@@ -414,7 +414,7 @@ defined!\n");
       }
 
       /* set h0 max value for the grid at 5 times the expected ul */
-      if( !h0maxSet || inputs.mcmc.doMCMC == 0 ){
+      if( !h0maxSet || ( !h0maxSet && inputs.mcmc.doMCMC == 0 ) ){
         inputs.mesh.maxVals.h0 = 5.*stdh0;
         inputs.mesh.delta.h0 = (inputs.mesh.maxVals.h0 -
           inputs.mesh.minVals.h0)/(REAL8)(inputs.mesh.h0Steps - 1.);
