@@ -364,6 +364,7 @@ void initializeMCMC(LALInferenceRunState *runState)
                --- Parallel Tempering Algorithm Parameters -------------------------------------------------------\n\
                ---------------------------------------------------------------------------------------------------\n\
                (--inverseLadder)                Space temperature uniform in 1/T, rather than geometric.\n\
+               (--tempLadderBottomUp)           Construct the a geometric temperature ladder with tempDelta=1+sqrt(2/nPar).\n\
                (--tempSkip N)                   Number of iterations between temperature swap proposals (100).\n\
                (--tempKill N)                   Iteration number to stop temperature swapping (Niter).\n\
                (--tempMin T)                    Lowest temperature for parallel tempering (1.0).\n\

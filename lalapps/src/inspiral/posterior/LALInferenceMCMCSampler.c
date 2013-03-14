@@ -610,8 +610,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         ladder[t]=1.0/(REAL8)(1.0/ladderMin-t*tempDelta);
       }
     } else {                                                                        //Geometric spacing
-      if (LALInferenceGetProcParamVal(runState->commandLine, "--bottomUp") && nPar != 1)
-        tempDelta=(nPar+1.)/(nPar-1.);
+      if (LALInferenceGetProcParamVal(runState->commandLine, "--tempLadderBottomUp") && nPar != 1)
+        tempDelta=1.+sqrt(2./(REAL8)nPar);
       else
         tempDelta=pow(ladderMax/ladderMin,1.0/(REAL8)(nChain-1));
       for (t=0;t<nChain; ++t) {
