@@ -31,6 +31,7 @@
 #include <lal/VectorOps.h>
 
 #include <gsl/gsl_math.h>
+#include <gsl/gsl_cdf.h>
 
 #include "../antenna.h"
 #include "../TwoSpect.h"
@@ -45,8 +46,7 @@ static const LALStatus empty_status;
 int main(int argc, char *argv[])
 {
    
-   INT4 ii, jj;               //counter variables
-   LALStatus status = empty_status;  //LALStatus structure
+   INT4 ii;               //counter variables
    
    //Turn off gsl error handler
    gsl_set_error_handler_off();
@@ -73,21 +73,6 @@ int main(int argc, char *argv[])
    
    //Set lalDebugLevel to user input or 0 if no input
    lalDebugLevel = args_info.laldebug_arg;
-   
-   //Print out the inputs and outputs
-   if (args_info.config_given) {
-      fprintf(stderr, "Input parameters file: %s\n", args_info.config_arg);
-      fprintf(LOG, "Input parameters file: %s\n", args_info.config_arg);
-   }
-   if (args_info.sftDir_given) {
-      fprintf(stderr, "Input SFTs: %s/%s\n", args_info.sftDir_arg, "*.sft");
-      fprintf(LOG, "Input SFTs: %s/%s\n", args_info.sftDir_arg, "*.sft");
-   } else if (args_info.sftFile_given) {
-      fprintf(stderr, "Input SFT file: %s\n", args_info.sftFile_arg);
-      fprintf(LOG, "Input SFT file: %s\n", args_info.sftFile_arg);
-   }
-   fprintf(stderr, "Output directory: %s\n", args_info.outdirectory_arg);
-   fprintf(LOG, "Output directory: %s\n", args_info.outdirectory_arg);
    
    //Allocate input parameters structure memory
    inputParamsStruct *inputParams = new_inputParams(args_info.IFO_given);
@@ -116,10 +101,6 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_EFUNC);
    }
    
-   //Basic units
-   REAL4 tempfspan = inputParams->fspan + 2.0*inputParams->dfmax + (inputParams->blksize-1 + 12)/inputParams->Tcoh;     //= fspan+2*dfmax+extrabins + running median blocksize-1 (Hz)
-   INT4 tempnumfbins = (INT4)round(tempfspan*inputParams->Tcoh)+1;                        //= number of bins in tempfspan
-   
    //Allocate memory for ffdata structure
    ffdataStruct *ffdata = new_ffdata(inputParams);
    if (ffdata==NULL) {
@@ -127,15 +108,10 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_EFUNC);
    }
    
-   //Maximum number of IHS values to sum = twice the maximum modulation depth
-   //Minimum number of IHS values to sum = twice the minimum modulation depth
-   INT4 maxrows = (INT4)round(2.0*inputParams->dfmax*inputParams->Tcoh)+1;
-   
    //Assume maximum bin shift possible
    inputParams->maxbinshift = (INT4)round(detectorVmax * (inputParams->fmin+0.5*inputParams->fspan) * inputParams->Tcoh)+1;
 
    //Read in the T-F data from SFTs
-   fprintf(LOG, "Loading in SFTs... ");
    fprintf(stderr, "Loading in SFTs... ");
    ffdata->tfnormalization = 2.0/inputParams->Tcoh/(args_info.avesqrtSh_arg*args_info.avesqrtSh_arg);
    REAL4Vector *tfdata = readInSFTs(inputParams, &(ffdata->tfnormalization));
@@ -143,7 +119,6 @@ int main(int argc, char *argv[])
       fprintf(stderr, "\n%s: readInSFTs() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
-   fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
    
    //Removing bad SFTs using K-S test and Kuiper's test
@@ -154,13 +129,13 @@ int main(int argc, char *argv[])
       INT4Vector *removeTheseSFTs = XLALCreateINT4Vector(numffts);
       if (removeTheseSFTs==NULL) {
          fprintf(stderr, "%s: XLALCreateINT4Vector(%d) failed.\n", __func__, numffts);
-         XLAL_ERROR_NULL(XLAL_EFUNC);
+         XLAL_ERROR(XLAL_EFUNC);
       }
-      memset(output->data, 0, sizeof(INT4)*output->length);
+      memset(removeTheseSFTs->data, 0, sizeof(INT4)*removeTheseSFTs->length);
       REAL4Vector *tempvect = XLALCreateREAL4Vector(numfbins);
       if (tempvect==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins);
-         XLAL_ERROR_NULL(XLAL_EFUNC);
+         XLAL_ERROR(XLAL_EFUNC);
       }
       REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
       REAL8 kuiperthreshold = 1.747/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));
@@ -173,7 +148,7 @@ int main(int argc, char *argv[])
             REAL8 kstest = ks_test_exp(tempvect);
             if (XLAL_IS_REAL8_FAIL_NAN(kstest)) {
                fprintf(stderr,"%s: ks_test_exp() failed.\n", __func__);
-               XLAL_ERROR_NULL(XLAL_EFUNC);
+               XLAL_ERROR(XLAL_EFUNC);
             }
 
             qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
@@ -203,7 +178,7 @@ int main(int argc, char *argv[])
 
             fprintf(OUTPUT, "%g %g %g\n", kstest, kuiperval1, kuiperval);
 
-            if (kstest>ksthreshold || kuipertest>kuiperthreshold) {
+            if (kstest>ksthreshold || kuiperval>kuiperthreshold) {
                removeTheseSFTs->data[ii] = 1;
                badsfts++;
             }
