@@ -17,10 +17,8 @@ skygridsetup_SOURCES = helperprograms/skygridsetup.c helperprograms/cmdline_skyg
 
 compareCandidates_SOURCES = helperprograms/compareCandidates.c
 
-KSKtests_SOURCES = cmdline.c statistics.c fastchisqinv.c IHS.c candidates.c templates.c antenna.c \
-                   vectormath.c cdfwchisq.c upperlimits.c helperprograms/KSKtests.c \
-		   cmdline.h TwoSpectTypes.h statistics.h fastchisqinv.h IHS.h candidates.h templates.h \
-                   antenna.h vectormath.h cdfwchisq.h upperlimits.h TwoSpect.h
+KSKtests_SOURCES = cmdline.c antenna.c helperprograms/KSKtests.c \
+		   cmdline.h TwoSpectTypes.h antenna.h
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
