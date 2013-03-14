@@ -227,10 +227,8 @@ def tau0tau3_bound(flow, **constraints):
     # only need the corners here because these constraints
     # are also lines in tau0-tau3 space
     for val in constraints['mtotal']:
-        m1m2_points += [(m1min, val-m1min),
-                        (m1max, val-m1max),
-                        (val-m2min, m2min),
-                        (val-m2max, m2max)]
+        m1m2_points += [(m1, val-m1) for m1 in numpy.linspace(m1min, m1max, npts)]
+        m1m2_points += [(val-m2, m2) for m2 in numpy.linspace(m2min, m2max, npts)]
 
     # draw constant mratio lines
     for val in constraints['mratio']:
