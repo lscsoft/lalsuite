@@ -83,20 +83,17 @@ typedef struct tagPosVel3D_t {
 } PosVel3D_t;
 
 
-/** Different types of detector-motion to use in order to compute the Doppler-metric,
- * the most 'realistic' obviously being DETMOTION_EPHEMORBIT_SPIN, which includes
- * both orbital and spin motion, and uses the Earth-ephemeris.
- */
+/** Different types of detector-motion to use in order to compute the Doppler-metric */
 typedef enum {
-  DETMOTION_SPIN_ORBIT,		/**< full ephemeris-based detector motion (orbit+spin) */
-  DETMOTION_ORBIT,		/**< ephemeris-based, purely orbital detector-motion, no Earth spin */
-  DETMOTION_SPIN,		/**< purely Earth-spin detector motion (no orbit) */
+  DETMOTION_SPIN_ORBIT,		/**< full detector motion: spin + ephemeris-based orbital motion */
+  DETMOTION_ORBIT,		/**< pure ephemeris-based orbital motion, no spin motion */
+  DETMOTION_SPIN,		/**< pure spin motion, no orbital motion */
 
-  DETMOTION_SPIN_PTOLEORBIT,	/**< ptole-orbital motion (on a circle) + Earth spin */
-  DETMOTION_PTOLEORBIT,		/**< pure "Ptolemaic" orbital motion, no Earth spin */
+  DETMOTION_SPIN_PTOLEORBIT,	/**< spin motion + Ptolemaic (circular) orbital motion */
+  DETMOTION_PTOLEORBIT,		/**< pure Ptolemaic (circular) orbital motion, no spin motion */
 
-  DETMOTION_ORBIT_SPINZ,	/**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
-  DETMOTION_ORBIT_SPINXY,	/**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
+  DETMOTION_SPINZ_ORBIT,	/**< *only* ecliptic-Z component of spin motion + ephemeris-based orbital motion*/
+  DETMOTION_SPINXY_ORBIT,	/**< *only* ecliptic-X+Y components of spin motion + ephemeris-based orbital motion */
 
   DETMOTION_LAST
 } DetectorMotionType;

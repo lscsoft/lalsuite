@@ -73,8 +73,8 @@ static const CHAR *const DetectorMotionNames[DETMOTION_LAST] = {
   [DETMOTION_SPIN_PTOLEORBIT] = "spin+ptoleorbit",
   [DETMOTION_PTOLEORBIT] = "ptoleorbit",
 
-  [DETMOTION_ORBIT_SPINZ] = "orbit+spin_Z",
-  [DETMOTION_ORBIT_SPINXY] = "orbit+spin_XY",
+  [DETMOTION_SPINZ_ORBIT] = "spinz+orbit",
+  [DETMOTION_SPINXY_ORBIT] = "spinxy+orbit",
 };
 
 /** Array of descriptor structs for each Doppler coordinate name
@@ -690,8 +690,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   /* ----- return the requested type of detector motion */
   switch ( special )
     {
-      /* full detector-motion: ephemeris-orbital + Earth-spin */
-    case DETMOTION_SPIN_ORBIT:
+    case DETMOTION_SPIN_ORBIT:		/**< full detector motion: spin + ephemeris-based orbital motion */
       if ( spin_posvel ) {
         COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
         COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
@@ -703,8 +702,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       }
       break;
 
-      /* full ephemeris orbital detector-motion, neglecting Earth-spin */
-    case DETMOTION_ORBIT:
+    case DETMOTION_ORBIT:		/**< pure ephemeris-based orbital motion, no spin motion */
       if ( spin_posvel ) {
         ZERO_VECT(spin_posvel->pos);
         ZERO_VECT(spin_posvel->vel);
@@ -716,8 +714,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       }
       break;
 
-      /* detector-motion including only Earth-spin, no orbital motion */
-    case DETMOTION_SPIN:
+    case DETMOTION_SPIN:		/**< pure spin motion, no orbital motion */
       if ( spin_posvel ) {
         COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
         COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
@@ -729,8 +726,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       }
       break;
 
-      /* pure orbital detector motion, using "Ptolemaic" (ie. circular) approximation */
-    case DETMOTION_PTOLEORBIT:
+    case DETMOTION_PTOLEORBIT:		/**< pure Ptolemaic (circular) orbital motion, no spin motion */
       if ( spin_posvel ) {
         ZERO_VECT(spin_posvel->pos);
         ZERO_VECT(spin_posvel->vel);
@@ -742,8 +738,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       }
       break;
 
-      /* Ptolemaic-orbital motion, plus Earth spin */
-    case DETMOTION_SPIN_PTOLEORBIT:
+    case DETMOTION_SPIN_PTOLEORBIT:	/**< spin motion + Ptolemaic (circular) orbital motion */
       if ( spin_posvel ) {
         COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
         COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
@@ -760,8 +755,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       */
       break;
 
-      /**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
-    case DETMOTION_ORBIT_SPINZ:
+    case DETMOTION_SPINZ_ORBIT:		/**< *only* ecliptic-Z component of spin motion + ephemeris-based orbital motion*/
       if ( spin_posvel ) {
         COPY_VECT ( spin_posvel->pos, Spin_z.pos );
         COPY_VECT ( spin_posvel->vel, Spin_z.vel );
@@ -774,8 +768,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
 
       break;
 
-      /**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
-    case DETMOTION_ORBIT_SPINXY:
+    case DETMOTION_SPINXY_ORBIT:	/**< *only* ecliptic-X+Y components of spin motion + ephemeris-based orbital motion */
       if ( spin_posvel ) {
         COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
         COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
