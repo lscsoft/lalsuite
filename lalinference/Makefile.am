@@ -18,6 +18,7 @@ SUBDIRS = \
 	debian \
 	include \
 	src \
+	python \
 	swig \
 	test
 
