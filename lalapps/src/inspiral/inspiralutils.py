@@ -1594,7 +1594,7 @@ def create_pegasus_cache_file(framename):
 		# removes the localhost/ from the beginning of the file name
 		kpline = line2 # creates a better variable name for line2
 		formline = kpline.split("/") # splits the line on slashes to pull out filename
-		cac.write(formline[8]+" "+kpline+ " "+ 'pool="local"' + "\n") # .cache formatter
+		cac.write(formline[-1]+" "+kpline+ " "+ 'pool="local"' + "\n") # .cache formatter
 	rep.close()
 	cac.close()
 	return cachename
