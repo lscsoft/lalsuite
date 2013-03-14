@@ -110,6 +110,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --ULoff                   Turn off upper limits computation  \n                                  (default=off)",
   "      --printSFTtimes           Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of input SFTs  (default=off)",
   "      --printUsedSFTtimes       Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of the SFTs passing tests  \n                                  (default=off)",
+  "      --printData               Print to ASCII files the data values  \n                                  (default=off)",
   "      --randSeed=INT            Random seed value",
   "      --chooseSeed              The random seed value is chosen based on the \n                                  input search parameters  (default=off)",
     0
@@ -307,6 +308,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->ULoff_given = 0 ;
   args_info->printSFTtimes_given = 0 ;
   args_info->printUsedSFTtimes_given = 0 ;
+  args_info->printData_given = 0 ;
   args_info->randSeed_given = 0 ;
   args_info->chooseSeed_given = 0 ;
 }
@@ -405,6 +407,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ULoff_flag = 0;
   args_info->printSFTtimes_flag = 0;
   args_info->printUsedSFTtimes_flag = 0;
+  args_info->printData_flag = 0;
   args_info->randSeed_orig = NULL;
   args_info->chooseSeed_flag = 0;
   
@@ -487,8 +490,9 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->ULoff_help = gengetopt_args_info_full_help[75] ;
   args_info->printSFTtimes_help = gengetopt_args_info_full_help[76] ;
   args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[77] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[78] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[79] ;
+  args_info->printData_help = gengetopt_args_info_full_help[78] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[79] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[80] ;
   
 }
 
@@ -905,6 +909,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "printSFTtimes", 0, 0 );
   if (args_info->printUsedSFTtimes_given)
     write_into_file(outfile, "printUsedSFTtimes", 0, 0 );
+  if (args_info->printData_given)
+    write_into_file(outfile, "printData", 0, 0 );
   if (args_info->randSeed_given)
     write_into_file(outfile, "randSeed", args_info->randSeed_orig, 0);
   if (args_info->chooseSeed_given)
@@ -1649,6 +1655,7 @@ cmdline_parser_internal (
         { "ULoff",	0, NULL, 0 },
         { "printSFTtimes",	0, NULL, 0 },
         { "printUsedSFTtimes",	0, NULL, 0 },
+        { "printData",	0, NULL, 0 },
         { "randSeed",	1, NULL, 0 },
         { "chooseSeed",	0, NULL, 0 },
         { 0,  0, 0, 0 }
@@ -2571,6 +2578,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->printUsedSFTtimes_flag), 0, &(args_info->printUsedSFTtimes_given),
                 &(local_args_info.printUsedSFTtimes_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "printUsedSFTtimes", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Print to ASCII files the data values.  */
+          else if (strcmp (long_options[option_index].name, "printData") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->printData_flag), 0, &(args_info->printData_given),
+                &(local_args_info.printData_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "printData", '-',
                 additional_error))
               goto failure;
           
