@@ -39,6 +39,7 @@ lalpulsarinclude_HEADERS = \
 	LISAspecifics.h \
 	LUT.h \
 	LatticeCovering.h \
+	CWMakeFakeData.h \
 	NormalizeSFTRngMed.h \
 	PHMD.h \
 	ProbabilityDensity.h \
@@ -101,6 +102,7 @@ liblalpulsar_la_SOURCES = \
 	LALXMGRInterface.c \
 	LISAspecifics.c \
 	LatticeCovering.c \
+	CWMakeFakeData.c \
 	NDParamPLUT.c \
 	NormalizeSFTRngMed.c \
 	ParamPLUT.c \
