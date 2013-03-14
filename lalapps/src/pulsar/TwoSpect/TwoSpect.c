@@ -1370,7 +1370,6 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
 {
    
    INT4 ii, jj;
-   LALStatus status = empty_status;
    SFTCatalog *catalog = NULL;
    
    //Set the start and end times in the LIGO GPS format
@@ -1396,9 +1395,9 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    constraints.endTime = &end;
    
    //Find SFT files
-   LALSFTdataFind(&status, &catalog, sft_dir_file, &constraints);
-   if (status.statusCode != 0) {
-      fprintf(stderr,"%s: LALSFTdataFind() failed with code = %d.\n", __func__, status.statusCode);
+   catalog = XLALSFTdataFind(sft_dir_file, &constraints);
+   if (catalog==NULL) {
+      fprintf(stderr,"%s: XLALSFTdataFind() failed.\n", __func__);
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
