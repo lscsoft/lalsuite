@@ -147,16 +147,16 @@ typedef struct
  * Struct controlling all the aspects of the fake data (time-series + SFTs)
  * to be produced by XLALCWMakeFakeData() and XLALCWMakeFakeMultiData()
  */
-typedef struct tagCWDataParams
+typedef struct tagCWMFDataParams
 {
-  REAL8 fMin;					//!< smallest frequency guaranteed to be generated ["effective" fMin can be smaller]
-  REAL8 Band;					//!< smallest frequency band guaranteed to be generated ["effective" band can be larger]
+  REAL8 fMin;					//!< smallest frequency guaranteed to be generated [returned fMin can be smaller]
+  REAL8 Band;					//!< smallest frequency band guaranteed to be generated [returned Band can be larger]
   MultiDetectorInfo detInfo;			//!< detectors and noise-floors (for Gaussian noise) to generate data for
   MultiLIGOTimeGPSVector multiTimestamps;	//!< timestamps to generate SFTs for
   const char *SFTWindowType;			//!< window to apply to the SFT timeseries
   REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
   UINT4 randSeed;				//!< seed value for random-number generator
-} CWDataParams;
+} CWMFDataParams;
 
 // ----- global variables ----------
 
@@ -164,16 +164,16 @@ typedef struct tagCWDataParams
 static const UserVariables_t empty_UserVariables;
 static const ConfigVars_t empty_GV;
 static const LALUnit empty_LALUnit;
-static const CWDataParams empty_CWDataParams;
+static const CWMFDataParams empty_CWMFDataParams;
 
 // ---------- exportable API prototypes ----------
 int XLALFindSmallestValidSamplingRate ( UINT4 *n1, UINT4 n0, const LIGOTimeGPSVector *timestamps );
 int
 XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries,
-                          const PulsarParamsVector *injectionSources, const CWDataParams *dataParams, const EphemerisData *edat );
+                          const PulsarParamsVector *injectionSources, const CWMFDataParams *dataParams, const EphemerisData *edat );
 int
 XLALCWMakeFakeData ( SFTVector **SFTVect, REAL4TimeSeries **Tseries,
-                     const PulsarParamsVector *injectionSources, const CWDataParams *dataParams, const EphemerisData *edat );
+                     const PulsarParamsVector *injectionSources, const CWMFDataParams *dataParams, const EphemerisData *edat );
 
 REAL4TimeSeries *
 XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat );
@@ -219,7 +219,7 @@ main(int argc, char *argv[])
   MultiSFTVector *mSFTs = NULL;
   MultiREAL4TimeSeries *mTseries = NULL;
 
-  CWDataParams DataParams   = empty_CWDataParams;
+  CWMFDataParams DataParams   = empty_CWMFDataParams;
   DataParams.fMin               = uvar.fmin;
   DataParams.Band               = uvar.Band;
   DataParams.detInfo            = GV.detInfo;
@@ -631,11 +631,11 @@ is_directory ( const CHAR *fname )
  * for given CW-signal ("pulsar") parameters and output parameters (frequency band etc)
  */
 int
-XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,		//< [out] pointer to optional SFT-vector for output [FIXME! Multi-]
-                          MultiREAL4TimeSeries **multiTseries,	//< [out] pointer to optional timeseries-vector for output [FIXME! Multi-]
-                          const PulsarParamsVector *injectionSources,	//< [in] array of sources inject
-                          const CWDataParams *dataParams,		//< [in] parameters specifying the type of data to generate
-                          const EphemerisData *edat			//< [in] ephemeris data
+XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to optional SFT-vector for output
+                          MultiREAL4TimeSeries **multiTseries,		///< [out] pointer to optional timeseries-vector for output
+                          const PulsarParamsVector *injectionSources,	///< [in] array of sources inject
+                          const CWMFDataParams *dataParams,		///< [in] parameters specifying the type of data to generate
+                          const EphemerisData *edat			///< [in] ephemeris data
                           )
 {
   XLAL_CHECK ( (multiSFTs == NULL) || ((*multiSFTs) == NULL ), XLAL_EINVAL );
@@ -679,7 +679,7 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,		//< [out] pointer to opti
   for ( UINT4 X=0; X < numDet; X ++ )
     {
       /* detector params */
-      CWDataParams dataParamsX = (*dataParams); // struct-copy
+      CWMFDataParams dataParamsX = (*dataParams); // struct-copy
       dataParamsX.detInfo.length = 1;
       dataParamsX.detInfo.sites[0] = dataParams->detInfo.sites[X];
       dataParamsX.detInfo.sqrtSn[0] = dataParams->detInfo.sqrtSn[X];
@@ -723,7 +723,7 @@ int
 XLALCWMakeFakeData ( SFTVector **SFTvect,
                      REAL4TimeSeries **Tseries,
                      const PulsarParamsVector *injectionSources,
-                     const CWDataParams *dataParams,
+                     const CWMFDataParams *dataParams,
                      const EphemerisData *edat
                      )
 {
