@@ -847,13 +847,13 @@ REAL8 kuipers_test_exp(REAL4Vector *vector)
    //Now the Kuiper's test calculation is made
    REAL8 loval = 0.0, hival = 0.0;
    REAL8 oneoverlength = 1.0/tempvect->length;
-   for (ii=0; ii<(INT4)tempvect->length; ii++) {
+   /* for (ii=0; ii<(INT4)tempvect->length; ii++) {
       REAL8 testval1 = (1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
       REAL8 testval2 = ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
       if (hival<testval1) hival = testval1;
       if (loval<testval2) loval = testval2;
    }
-   REAL8 kuiperval1 = hival + loval;
+   REAL8 kuiperval1 = hival + loval; */
 
    loval = -1.0, hival = -1.0;
    for (ii=0; ii<(INT4)tempvect->length; ii++) {
