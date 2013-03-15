@@ -109,7 +109,7 @@ int main(int argc, char *argv[]){
   CHAR *string2b = NULL;
   CHAR *string3 = NULL;
   INT4 someint;
-  REAL8 somefloat;
+  REAL8 float1, float2;
   BOOLEAN wasRead = FALSE;
 
   if ( argc > 1 )
@@ -117,7 +117,8 @@ int main(int argc, char *argv[]){
 
   SUB (LALParseDataFile (&status, &cfgdata, DATADIR "ConfigFileSample.cfg"), &status);
 
-  SUB (LALReadConfigREAL8Variable  (&status, &somefloat, cfgdata, "float1", &wasRead), &status);
+  SUB (LALReadConfigREAL8Variable  (&status, &float1, cfgdata, "float1", &wasRead), &status);
+  SUB (LALReadConfigREAL8Variable  (&status, &float2, cfgdata, "float2", &wasRead), &status);
   SUB (LALReadConfigSTRINGVariable (&status, &string1,   cfgdata, "string1", &wasRead), &status);
 
   SUB (LALReadConfigINT4Variable   (&status, &someint,   cfgdata, "int1", &wasRead), &status);
@@ -134,10 +135,15 @@ int main(int argc, char *argv[]){
   SUB (LALDestroyParsedDataFile (&status, &cfgdata), &status);
 
   /* now check the stuff got read-in correctly */
-  if (somefloat != 1.0) {
+  if (float1 != 1.0) {
     ERROR (CONFIGFILETESTC_EFLOAT, CONFIGFILETESTC_MSGEFLOAT, 0);
     return (CONFIGFILETESTC_EFLOAT);
   }
+  if (float2 != 2.0) {
+    ERROR (CONFIGFILETESTC_EFLOAT, CONFIGFILETESTC_MSGEFLOAT, 0);
+    return (CONFIGFILETESTC_EFLOAT);
+  }
+
   if ( strcmp (string1, "some text. You can also use line-continuation") ) {
     XLALPrintError ("read-in: '%s'\n", string1);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);

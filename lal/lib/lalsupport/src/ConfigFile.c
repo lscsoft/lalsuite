@@ -59,7 +59,7 @@ static void cleanConfig (CHARSequence *text);
 
 /** Parse an ASCII data-file into a pre-cleaned array of lines.
  *
- * The cleaning gets rid of comments ('\#', ';'), empty lines,
+ * The cleaning gets rid of comments ('\#', '\%'), empty lines,
  * and performs line-continuation if '\\' is found at EOL
  *
  * NOTE: This function can transparently detect and read gzip-compressed
@@ -719,12 +719,17 @@ cleanConfig (CHARSequence *text)
       if ( (*ptr) == '\"' )
         inQuotes = !inQuotes;	/* flip state */
 
-      if ( ((*ptr) == '#') || ( (*ptr) == ';') || ( (*ptr) == '%') )
+      if ( ((*ptr) == '#') || ( (*ptr) == '%') )
         if ( !inQuotes )	/* only consider as comments if not quoted */
           {
             len = strcspn (ptr, "\n");
             memset ( (void*)ptr, '\n', len);
           }
+
+      // replace ';' by '\n' to allow semi-colons to separate assignments
+      if ( (*ptr) == ';') {
+        (*ptr) = '\n';
+      }
 
       ptr ++;
 
