@@ -303,12 +303,12 @@ def corrcoef(pos):
 def get_atnf_info(par):
   try:
     # set possible pulsar names to try consecutively
-    trynames = [par['PSRJ'], par['PSRB'], par['PSR'], 'J'+par['PSR'], 'B'+par['PSR'], par['NAME']]
+    trynames = [par['PSRJ'], par['PSRB'], par['PSR'], par['NAME']]
 
     for psrname in trynames:
       badurl = False
 
-      if psrname not None:
+      if psrname != None:
         psrname = re.sub('\+', '%2B', psrname) # switch + for unicode character
 
         atnfurl = \
@@ -340,7 +340,7 @@ linear&y_axis=&y_scale=linear&state=query'
         if badurl:
           continue
         else:
-          return (pdat, atnfurl)
+          return (pdat, psrname)
 
     if badurl:
       return None
@@ -727,9 +727,9 @@ performed for two interferometers (H1 and L1):
   if not swinj and not hwinj:
     atnfinfo = get_atnf_info(par)
 
-    if not atnfinfo:
-      pdat = atnfinto[0]
-      atnfurl = atnfinfo[1]
+    if atnfinfo != None:
+      pdat = atnfinfo[0]
+      pnameurl = atnfinfo[1]
 
       for line in pdat:
         vals = line.split('\n') # split at any new lines
@@ -863,7 +863,8 @@ function toggle(id) {
   elif hwinj:
     psrnameprefix = 'HWINJ'
 
-  if not swinj and not hwinj and not atnfurl:
+  if not swinj and not hwinj and not notinatnf:
+    atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?startUserDefined=true&pulsar_names=' + pnameurl + '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
     pheadertext.append('<h1><a href="%s">%s %s</a></h1>\n' %
 (atnfurl, psrnameprefix, pname))
   else:

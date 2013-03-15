@@ -1265,7 +1265,7 @@ Fs=Fs, window=win)
         fscanfig.subplots_adjust(bottom=0.15, left=0.09, right=0.94)
 
         extent = [tms[0], tms[-1], freqs[0], freqs[-1]]
-        plt.imshow(np.sqrt(fscan), aspect='auto', extent=extent,
+        plt.imshow(np.sqrt(np.flipud(fscan)), aspect='auto', extent=extent,
           interpolation=None, cmap=colmapdic[ifo], norm=colors.Normalize())
         plt.ylabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
         plt.xlabel(r'GPS - %d' % int(gpstime[0]), fontsize=14, fontweight=100)
