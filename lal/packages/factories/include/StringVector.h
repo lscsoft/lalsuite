@@ -65,6 +65,8 @@ int XLALSortStringVector (LALStringVector *strings);
 LALStringVector *XLALParseCSV2StringVector ( const CHAR *CSVlist );
 INT4 XLALFindStringInVector ( const char *needle, const LALStringVector *haystack );
 
+char *XLALDeblankString ( const char *start, UINT4 len );
+
 /*@}*/
 
 #ifdef  __cplusplus

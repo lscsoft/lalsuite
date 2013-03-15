@@ -28,8 +28,6 @@
 
 /*---------- DEFINES ----------*/
 /*---------- internal types ----------*/
-static CHAR *deblank_string ( const CHAR *start, UINT4 len );
-
 /*---------- empty initializers ---------- */
 const LALStringVector empty_LALStringVector;
 
@@ -254,7 +252,7 @@ XLALParseCSV2StringVector ( const CHAR *CSVlist )
 	len = strlen ( start );
 
       /* allocate space for that value in string-array */
-      if ( (data[counter] = deblank_string ( start, len ) ) == NULL ) {
+      if ( (data[counter] = XLALDeblankString ( start, len ) ) == NULL ) {
         XLALDestroyStringVector ( ret );
         XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
@@ -279,46 +277,38 @@ XLALParseCSV2StringVector ( const CHAR *CSVlist )
 /** Copy (and allocate) string from 'start' with length 'len', removing
  * all starting- and trailing blanks!
  */
-CHAR *
-deblank_string ( const CHAR *start, UINT4 len )
+char *
+XLALDeblankString ( const CHAR *start, UINT4 len )
 {
-  const CHAR *blank_chars = " \t\n";
-  const CHAR *pos0, *pos1;
-  UINT4 newlen;
-  CHAR *ret;
+  XLAL_CHECK_NULL ( start != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( len > 0, XLAL_EDOM );
 
-  if ( !start || !len ) {
-    XLALPrintError ("%s: invalid NULL input 'start' or len=0\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
+  const CHAR *blank_chars = " \t\n";
 
   /* clip from beginning */
-  pos0 = start;
-  pos1 = start + len - 1;
-  while ( (pos0 < pos1) && strchr ( blank_chars, *pos0 ) )
+  const char *pos0 = start;
+  const char *pos1 = start + len - 1;
+  while ( (pos0 < pos1) && strchr ( blank_chars, (*pos0) ) ) {
     pos0 ++;
+  }
 
   /* clip backwards from end */
-  while ( (pos1 >= pos0) && strchr ( blank_chars, *pos1 ) )
+  while ( (pos1 >= pos0) && strchr ( blank_chars, (*pos1) ) ) {
     pos1 --;
-
-  newlen = pos1 - pos0 + 1;
-  if ( !newlen ) {
-    XLALPrintError ("%s: something went wrong here .. probably a coding mistake.\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EFAILED );
   }
 
-  if ( (ret = XLALCalloc(1, newlen + 1)) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(1, %d )\n", __func__, newlen + 1 );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
+  UINT4 newlen = pos1 - pos0 + 1;
+  XLAL_CHECK_NULL ( newlen > 0, XLAL_EFAILED, "newlen==0: Something went wrong here .. probably a coding mistake.\n" );
+
+  CHAR *ret;
+  XLAL_CHECK_NULL ( (ret = XLALCalloc(1, newlen + 1)) != NULL, XLAL_ENOMEM );
 
   strncpy ( ret, pos0, newlen );
   ret[ newlen ] = 0;
 
   return ret;
 
-} /* deblank_string() */
+} /* XLALDeblankString() */
 
 /** Search for string 'needle' in string-vector 'haystack', return index to
  * first matching vector element if found, -1 outherwise.
