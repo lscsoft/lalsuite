@@ -1327,7 +1327,14 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, mplparams=False)
 
   for ifo in ifos:
     # get log10 of results
-    loglims = np.log10(lims[ifo])
+    theselims = lims[ifo]
+
+    # remove any None's or '*'s from the list
+    for i, val in enumerate(theselims):
+      if val is None or '*' in val:
+        del theselims[i]
+
+    loglims = np.log10(theselims)
 
     myfig = plt.figure(figsize=(4,4),dpi=200)
 
@@ -1732,6 +1739,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 
   return tss, srs, sis, snrtot
 
+
 # function to create a time domain PSD from theoretical
 # detector noise curves. It takes in the detector name and the frequency at
 # which to generate the noise.
@@ -1776,6 +1784,7 @@ def detector_noise( det, f ):
   else:
     raise ValueError, "%s is not a recognised detector" % (det)
 
+
 # function to calculate the optimal SNR of a heterodyned pulsar signal - it
 # takes in a complex signal model and noise standard deviation
 def get_optimal_snr( sr, si, sig ):
@@ -1785,6 +1794,7 @@ def get_optimal_snr( sr, si, sig ):
     ss = ss + sr[i]*sr[i] + si[i]*si[i]
 
   return np.sqrt( ss / (sig*sig) )
+
 
 # use the Gelman-Rubins convergence test for MCMC chains, where chains is a list
 # of MCMC numpy chain arrays - this copies the gelman_rubins function in

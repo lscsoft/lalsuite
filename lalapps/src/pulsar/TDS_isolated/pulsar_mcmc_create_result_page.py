@@ -299,6 +299,54 @@ def corrcoef(pos):
   return cc, header_string
 
 
+# return the ATNF information on a given pulsar
+def get_atnf_info(par):
+  try:
+    # set possible pulsar names to try consecutively
+    trynames = [par['PSRJ'], par['PSRB'], par['PSR'], 'J'+par['PSR'], 'B'+par['PSR'], par['NAME']]
+
+    for psrname in trynames:
+      badurl = False
+
+      if psrname not None:
+        psrname = re.sub('\+', '%2B', psrname) # switch + for unicode character
+
+        atnfurl = \
+'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?Dist=Dist&Assoc=\
+Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
+sort_attr=&sort_order=asc&condition=&pulsar_names=' + psrname + \
+'&ephemeris=selected&submit_ephemeris=\
+Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
+&coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
+linear&y_axis=&y_scale=linear&state=query'
+
+        soup = None
+        pdat = None
+
+        soup = bs(urllib2.urlopen(atnfurl).read())
+        pdat = soup.pre # data exists in the pre html environment
+
+        for line in pdat:
+          vals = line.split('\n') # split at any new lines
+
+          for row in vals:
+            if 'WARNING' in row or 'not in catalogue' in row:
+              badurl = True
+              break
+
+          if badurl:
+            break
+
+        if badurl:
+          continue
+        else:
+          return (pdat, atnfurl)
+
+    if badurl:
+      return None
+  except:
+    return None
+
 # list of parameters to display (in this order)
 paramdisplist = ['RAJ', 'DECJ', 'F0', 'F1', 'F2', 'PEPOCH', 'X' 'E' \
 'EPS1', 'EPS2', 'OM', 'T0', 'TASC', 'PB']
@@ -677,50 +725,16 @@ performed for two interferometers (H1 and L1):
   agebasedsd = False
 
   if not swinj and not hwinj:
-    try:
-      atnfurl = \
-'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?Dist=Dist&Assoc=\
-Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
-sort_attr=&sort_order=asc&condition=&pulsar_names=' + \
-re.sub('\+', '%2B',pname) + '&ephemeris=selected&submit_ephemeris=\
-Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
-&coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
-linear&y_axis=&y_scale=linear&state=query'
+    atnfinfo = get_atnf_info(par)
 
-      soup = None
-      pdat = None
-
-      soup = bs(urllib2.urlopen(atnfurl).read())
-      pdat = soup.pre # data exists in the pre html environment
+    if not atnfinfo:
+      pdat = atnfinto[0]
+      atnfurl = atnfinfo[1]
 
       for line in pdat:
         vals = line.split('\n') # split at any new lines
 
         for row in vals:
-          if 'WARNING' in row or 'not in catalogue' in row:
-            # try instead with PSR name 'J' removed
-            atnfurl = \
-'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?Dist=Dist&Assoc=\
-Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
-sort_attr=&sort_order=asc&condition=&pulsar_names=' + \
-re.sub('J', '', re.sub('\+', '%2B',pname)) + '&ephemeris=selected&submit_ephemeris=\
-Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
-&coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
-linear&y_axis=&y_scale=linear&state=query'
-
-            soup = bs(urllib2.urlopen(atnfurl).read())
-            pdat = soup.pre
-
-            break
-
-      for line in pdat:
-        vals = line.split('\n') # split at any new lines
-
-        for row in vals:
-          if 'WARNING' in row or 'not in catalogue' in row and notinatnf == False:
-            notinatnf = True
-            break
-
           if 'DIST' in row:
             dists = row.split() # split row at whitespace
 
@@ -729,8 +743,9 @@ linear&y_axis=&y_scale=linear&state=query'
 
           if 'ASSOC' in row:
             assoc = row.split()
-
-    except:
+    else:
+      notinatnf = True
+      atnfurl = None
       print >> sys.stderr, 'Problem accessing ATNF for %s!' % pname
 
   if ages:
@@ -840,15 +855,6 @@ function toggle(id) {
   # print out pulsar name to file
   pheadertext = None
   pheadertext = []
-  if not swinj and not hwinj:
-    pulsaratnflink = \
-'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?startUserDefined=\
-true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&\
-pulsar_names=' + re.sub('\+', '%2B', pname) + \
-'&ephemeris=long&submit_ephemeris=Get+Ephemeris&\
-coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2=&style=Long+with+last+digit+\
-error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=\
-query'
 
   # set title prefix depending is injection or not
   psrnameprefix = 'PSR'
@@ -857,9 +863,9 @@ query'
   elif hwinj:
     psrnameprefix = 'HWINJ'
 
-  if not swinj and not hwinj:
+  if not swinj and not hwinj and not atnfurl:
     pheadertext.append('<h1><a href="%s">%s %s</a></h1>\n' %
-(pulsaratnflink, psrnameprefix, pname))
+(atnfurl, psrnameprefix, pname))
   else:
     pheadertext.append('<h1>%s %s</h1>\n' % (psrnameprefix, pname))
 
