@@ -1329,29 +1329,37 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, mplparams=False)
     # get log10 of results
     theselims = lims[ifo]
 
-    # remove any None's or '*'s from the list
+    # remove any None's
     for i, val in enumerate(theselims):
-      if val is None or '*' in val:
+      if val == None:
         del theselims[i]
 
     loglims = np.log10(theselims)
 
     myfig = plt.figure(figsize=(4,4),dpi=200)
 
-    plt.hist(loglims, bins, facecolor=coldict[ifo], edgecolor=coldict[ifo], alpha=0.75)
+    plt.hist(loglims, bins, histtype='step', fill=True, edgecolor=coldict[ifo], facecolor=coldict[ifo], alpha=0.75)
+
+    maxlims = np.max(loglims)
+    minlims = np.min(loglims)
 
     if logprevlims is not None:
       plt.hold(True)
 
-      n, binedges = np.histogram( logprevlims, bins )
-      n = np.append(n, 0)
-
-      plt.step(binedges, n, c=coldict[ifo], lw=2)
+      plt.hist(logprevlims, bins, edgecolor=coldict[ifo], lw=2, histtype='step', fill=False)
       plt.hold(False)
+
+      maxlims = max([maxlims, max(logprevlims)])
+      minlims = min([minlims, min(logprevlims)])
 
     # set xlabels to 10^x
     ax = plt.gca()
-    tls = map(lambda x: '$10^{%d}$' % int(x), ax.get_xticks())
+    
+    # work out how many ticks to set
+    tickvals = range(int(math.ceil(maxlims) - math.floor(minlims)))
+    tickvals = map(lambda x: x + int(math.floor(minlims)), tickvals)
+    ax.set_xticks(tickvals)
+    tls = map(lambda x: '$10^{%d}$' % x, tickvals)
     ax.set_xticklabels(tls)
 
     plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)

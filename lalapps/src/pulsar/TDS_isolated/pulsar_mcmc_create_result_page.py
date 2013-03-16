@@ -168,6 +168,7 @@ a:hover{
 /* set defaults for table data and table headers */
 table{
   border: 0px;
+  border-collapse: collapse;
 }
 
 td{
