@@ -39,9 +39,10 @@ extern "C" {
 void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chantable, GSequence* trig_sequence, const char* chan, double twind, int coinctype );
 double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio );
 void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource, double snr_thresh, const char* refchan );
-GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan );
+GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan, double snr_thresh );
 void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, const LALSeg veto, const char* vchan );
 double XLALDetCharHvetoSignificance( double mu, int k );
+//GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, char* ignore_list );
 
 #ifdef  __cplusplus
 }

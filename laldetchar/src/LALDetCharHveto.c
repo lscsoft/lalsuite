@@ -19,6 +19,15 @@
 #define TRIG_NOT_MASKED (SnglBurst*)0x0
 
 /*
+static gint compare(gconstpointer a, gconstpointer b) {
+        const SnglBurst *_a = a;
+        const SnglBurst *_b = b;
+
+        return XLALCompareSnglBurstByPeakTimeAndSNR(&_a, &_b);
+}
+*/
+
+/*
  * Scan through a list of triggers and count the instances of each trigger type
  * and count its coincidences with the target channel. The hash tables for the
  * channel count and coincidence count must already be initialized. The
@@ -320,7 +329,7 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
  * TODO: Merge vetolist creation here
  * TODO: Can we also decrement the count / coincidences efficiently here?
  */
-GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan ){
+GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan, double snr_thresh ){
 
 	char refchan[] = "LSC-DARM_ERR";
 	size_t vetoed_events = 0;
@@ -346,8 +355,7 @@ GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, 
 		}
 
 		// Is it the channel to veto on?
-		// TODO: Implement correct thresholding
-		if( !strstr( sb->channel, vchan ) ){
+		if( (sb->snr < snr_thresh) | !strstr( sb->channel, vchan ) ){
 			trigp = g_sequence_iter_next(trigp);
 			continue; // no, move on
 		}
@@ -477,23 +485,33 @@ double XLALDetCharHvetoSignificance( double mu, int k ){
 }
 
 #if 0
-GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, GSequence* ignore_list ){
+GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, char* ignore_list ){
+	GSequence* trig_sequence = g_sequence_new(NULL);
+	GSequence* ignorel = g_sequence_new(g_free);
+
     SnglBurst* tbl = XLALSnglBurstTableFromLIGOLw( fname );
     SnglBurst *begin = NULL, *deleteme = NULL;
-    if( !tbl ) return;
+    if( !tbl ) {
+		return trig_sequence;
+	}
 
-    //#pragma omp parallel
-    //{
-    //#pragma omp single
-    //{
-    //for( ; tbl; tbl=tbl->next ){
+    int cnt = 0;
+    char* tmp;
+    tmp = malloc( sizeof(char)*512 );
+    FILE* lfile = fopen( ignore_list, "r" );
+    while(!feof(lfile)){
+        cnt = fscanf( lfile, "%s", tmp );
+        if( cnt == EOF ) break;
+        g_sequence_append( ignorel, g_strdup(tmp) );
+    }
+    free(tmp);
+    fclose(lfile);
+
     do {
-        //#pragma omp task
-        //{
         gboolean ignore = FALSE;
         GSequenceIter* igitr;
         // FIXME: Support ignorelist == NULL
-        igitr = ignore_list ? g_sequence_get_begin_iter(ignore_list) : NULL;
+        igitr = ignorel ? g_sequence_get_begin_iter(ignorel) : NULL;
         while( (igitr != NULL) & !g_sequence_iter_is_end(igitr) ){
             /*
              * Note this will cause incorrect behavior if the same channel name
@@ -507,7 +525,7 @@ GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, 
                 break;
             }
         }
-        if( tbl->snr > min_snr && !ignore ){
+        if( tbl->snr >= min_snr && !ignore ){
             //printf( "Adding event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
             g_sequence_insert_sorted( trig_sequence, tbl, (GCompareDataFunc)compare, NULL );
             tbl=tbl->next;
@@ -531,5 +549,9 @@ GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, 
     deleteme = NULL;
     XLALDestroySnglBurstTable(begin);
     printf( "Done.\n" );
+
+	g_sequence_free( ignorel );
+
+	return trig_sequence;
 }
 #endif
