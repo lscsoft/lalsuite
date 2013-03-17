@@ -20,12 +20,14 @@
 #include <lal/LALDetCharHveto.h>
 #include <lal/LIGOLwXML.h>
 
+/*
 static gint compare(gconstpointer a, gconstpointer b) {
         const SnglBurst *_a = a;
         const SnglBurst *_b = b;
 
         return XLALCompareSnglBurstByPeakTimeAndSNR(&_a, &_b);
 }
+*/
 
 // Program level functions, mostly utility
 
@@ -75,7 +77,7 @@ int main(int argc, char** argv){
 	/*
 	 * Round parameters
 	 */
-	double sig_thresh = 3.0;
+	double sig_thresh = 15.0;
 	// TODO: Significance or SNR option
 	/*
 	 * Minimum threshold for the reference channel SNR and minimum threshold
@@ -137,7 +139,7 @@ int main(int argc, char** argv){
 
 	LALSegList live;
 	XLALSegListInit( &live );
-	double livetime = 100;
+	double livetime = 0;
 	if( argc > 3 ){
 		const char* livefname = argv[3];
 		printf( "Livetime filename: %s\n", livefname );
@@ -145,10 +147,11 @@ int main(int argc, char** argv){
 		size_t i;
 		for( i=0; i<live.length; i++ ){
 			LALSeg s = live.segs[i];
-			printf( "Segment #%lu: (%d.%d %d.%d)\n",
-				i, s.start.gpsSeconds, s.start.gpsNanoSeconds, 
-				s.end.gpsSeconds, s.end.gpsNanoSeconds );
 			livetime += XLALGPSDiff( &s.end, &s.start );
+			printf( "Segment #%lu:\t(%d.%d %d.%d)\t%f\t%f\n",
+				i, s.start.gpsSeconds, s.start.gpsNanoSeconds, 
+				s.end.gpsSeconds, s.end.gpsNanoSeconds, 
+				XLALGPSDiff( &s.end, &s.start ), livetime );
 		}
 		printf( "Livetime: %f\n", livetime );
 
@@ -177,6 +180,8 @@ int main(int argc, char** argv){
 
 	GList *channames = g_hash_table_get_keys( chancount );
 	size_t nchans = g_list_length( channames ) - 1;
+	nwinds--;
+	nthresh--;
 
 	/*
 	 * Veto round loop.
@@ -192,8 +197,6 @@ int main(int argc, char** argv){
 		// Clear the winners of the previous subrounds
 		// FIXME: Free memory?
 		g_hash_table_remove_all( subround_winners );
-		nwinds--;
-		nthresh--;
 
 		/*
 		 * FIXME: We can do this more efficiently by passing this to the scan
@@ -306,7 +309,7 @@ int main(int argc, char** argv){
 			XLALGPSSetREAL8( &stop, wind/2.0 );
 			XLALSegSet( &veto, &start, &stop, 0 );
 			// Remove the triggers veoted from the main list
-			GSequence *vetoed_trigs = XLALDetCharRemoveTrigs( trig_sequence, veto, winner );
+			GSequence *vetoed_trigs = XLALDetCharRemoveTrigs( trig_sequence, veto, winner, min_aux_snr );
 			sprintf( outpath, "%s/round_%d_vetoed_triggers.xml", bdir, rnd );
 			// Write them for later use
 			if( g_sequence_get_length(vetoed_trigs) > 0 ){
@@ -335,7 +338,7 @@ int main(int argc, char** argv){
 			*/
 		}
 		rnd++;
-		//break;
+		//if( rnd == 3 ) break;
 	} while( rnd_sig > sig_thresh && (size_t)rnd < nchans );
 	printf( "Last round did not pass significance threshold or all channels have been vetoed. Ending run.\n" );
 
@@ -382,7 +385,7 @@ void populate_trig_sequence_from_file( GSequence* trig_sequence, const char* fna
 				break;
 			}
 		}
-		if( tbl->snr > min_snr && !ignore ){
+		if( tbl->snr >= min_snr && !ignore ){
 			//printf( "Adding event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
 			g_sequence_insert_sorted( trig_sequence, tbl, (GCompareDataFunc)compare, NULL );
 			tbl=tbl->next;
