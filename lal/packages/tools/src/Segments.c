@@ -72,6 +72,7 @@ to differentiate between failure and non-failure.
 
 */
 
+
 /*---------------------------------------------------------------------------*/
 /** This function sets the start time, the end time, and the \a id of a segment.
  * The \a id can be any integer and is
@@ -1054,3 +1055,20 @@ XLALSegList2String ( const LALSegList *seglist )
   return ret;
 
 } /* XLALSegList2String() */
+
+/*---------------------------------------------------------------------------*/
+/** Get a copy of the segment at indx in the internal array. If the segment is 
+ * beyond the bounds of the array, return NULL.
+ */
+LALSeg *
+XLALSegListGet( LALSegList *seglist, UINT4 indx )
+
+{
+	if( indx >= seglist->length ){
+		return NULL;
+	}
+	LALSeg* tmp = LALMalloc(sizeof(LALSeg));
+	memcpy(tmp, &seglist->segs[indx], sizeof(LALSeg));
+	return tmp;
+
+}  /* XLALSegListGet() */
