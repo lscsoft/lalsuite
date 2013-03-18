@@ -1295,7 +1295,7 @@ Fs=Fs, window=win)
 # a function to create a histogram of log10(results) for a list of a given parameter
 # (if a list with previous value is given they will be plotted as well)
 #  - lims is a dictionary of lists for each IFO
-def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, mplparams=False):
+def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, mplparams=False):
   if not mplparams:
     mplparams = { \
       'backend': 'Agg',
@@ -1325,7 +1325,7 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, mplparams=False)
   if prevlims is not None:
     logprevlims = np.log10(prevlims)
 
-  for ifo in ifos:
+  for j, ifo in enumerate(ifos):
     # get log10 of results
     theselims = lims[ifo]
 
@@ -1336,38 +1336,58 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, mplparams=False)
 
     loglims = np.log10(theselims)
 
-    myfig = plt.figure(figsize=(4,4),dpi=200)
+    if not overplot or (overplot and j == 0):
+      myfig = plt.figure(figsize=(4,4),dpi=200)
+
+      if overplot:
+        plt.hold(True)
+        maxlims = []
+        minlims = []
 
     plt.hist(loglims, bins, histtype='step', fill=True, edgecolor=coldict[ifo], facecolor=coldict[ifo], alpha=0.75)
 
-    maxlims = np.max(loglims)
-    minlims = np.min(loglims)
+    if overplot:
+      maxlims.append(np.max(loglims))
+      minlims.append(np.min(loglims))
+    else:
+      maxlim = np.max(loglims)
+      minlim = np.min(loglims)
 
     if logprevlims is not None:
-      plt.hold(True)
+      if overplot:
+        if j == len(ifos)-1:
+          plt.hist(logprevlims, bins, edgecolor=coldict[ifo], lw=2, histtype='step', fill=False)
 
-      plt.hist(logprevlims, bins, edgecolor=coldict[ifo], lw=2, histtype='step', fill=False)
-      plt.hold(False)
+        maxlims.append(max(logprevlims))
+        minlims.append(min(logprevlims))
 
-      maxlims = max([maxlims, max(logprevlims)])
-      minlims = min([minlims, min(logprevlims)])
+        maxlim = max(maxlims)
+        minlim = min(minlims)
+      else:
+        plt.hold(True)
+        plt.hist(logprevlims, bins, edgecolor=coldict[ifo], lw=2, histtype='step', fill=False)
+        plt.hold(False)
 
-    # set xlabels to 10^x
-    ax = plt.gca()
-    
-    # work out how many ticks to set
-    tickvals = range(int(math.ceil(maxlims) - math.floor(minlims)))
-    tickvals = map(lambda x: x + int(math.floor(minlims)), tickvals)
-    ax.set_xticks(tickvals)
-    tls = map(lambda x: '$10^{%d}$' % x, tickvals)
-    ax.set_xticklabels(tls)
+        maxlim = max([maxlim, max(logprevlims)])
+        minlim = min([minlim, min(logprevlims)])
 
-    plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
-    plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+    if not overplot or (overplot and j == len(ifos)-1)
+      # set xlabels to 10^x
+      ax = plt.gca()
 
-    myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+      # work out how many ticks to set
+      tickvals = range(int(math.ceil(maxlim) - math.floor(minlim)))
+      tickvals = map(lambda x: x + int(math.floor(minlim)), tickvals)
+      ax.set_xticks(tickvals)
+      tls = map(lambda x: '$10^{%d}$' % x, tickvals)
+      ax.set_xticklabels(tls)
 
-    myfigs.append(myfig)
+      plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
+      plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+
+      myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+
+      myfigs.append(myfig)
 
   return myfigs
 
@@ -1381,8 +1401,9 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, mplparams=False)
 # as a dictionary if list for each ifo.
 # prevlim is a list of previous upper limits at the frequencies prevlimf0gw
 # xlims is the frequency range for the plot
+# overplot - set to true to plot different IFOs on same plot
 def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
-                 ulestbot=None, prevlim=None, prevlimf0gw=None, mplparams=False):
+                 ulestbot=None, prevlim=None, prevlimf0gw=None, overplot=False, mplparams=False):
   if not mplparams:
     mplparams = { \
       'backend': 'Agg',
@@ -1403,13 +1424,14 @@ def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
   parxaxis = 'Frequency (Hz)'
   paryaxis = '$h_0$'
 
-  for ifo in ifos:
+  for j, ifo in enumerate(ifos):
     h0lim = h0lims[ifo]
 
     if len(h0lim) != len(f0gw):
       return None # exit if lengths aren't correct
 
-    myfig = plt.figure(figsize=(7,5.5),dpi=200)
+    if not overplot or (overplot and j == 0):
+      myfig = plt.figure(figsize=(7,5.5),dpi=200)
 
     plt.hold(True)
     if ulesttop is not None and ulestbot is not None:
@@ -1421,21 +1443,23 @@ def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
           plt.loglog([f0gw[i], f0gw[i]], [ulb[i], ult[i]], ls='-', lw=3, c='lightgrey')
 
     if prevlim is not None and prevlimf0gw is not None and len(prevlim) == len(prevlimf0gw):
-      plt.loglog(prevlimf0gw, prevlim, marker='*', ms=10, alpha=0.7, mfc='None', mec='k', ls='None')
+      if not overplot or (overplot and j == len(ifos)-1)
+        plt.loglog(prevlimf0gw, prevlim, marker='*', ms=10, alpha=0.7, mfc='None', mec='k', ls='None')
 
     # plot current limits
     plt.loglog(f0gw, h0lim, marker='*', ms=10, mfc=coldict[ifo], mec=coldict[ifo], ls='None')
 
-    plt.hold(False)
+    if not overplot:
+      plt.hold(False)
 
     plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
     plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
 
-    myfig.subplots_adjust(left=0.12, bottom=0.10) # adjust size
-
     plt.xlim(xlims[0], xlims[1])
 
-    myfigs.append(myfig)
+    if not overplot or (overplot and j == len(ifos)-1):
+      myfig.subplots_adjust(left=0.12, bottom=0.10) # adjust size
+      myfigs.append(myfig)
 
   return myfigs
 
