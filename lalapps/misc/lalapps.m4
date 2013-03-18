@@ -1,16 +1,13 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 9
+# serial 10
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
   [extra_cppflags],
   AC_HELP_STRING([--with-extra-cppflags=CPPFLAGS],[additional C preprocessor flags]),
-  [ if test -n "${with_extra_cppflags}"
-    then
-      CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}";
-    fi
-  ],)
+  AS_IF([test -n "${with_extra_cppflags}"],[CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}"])
+  ,)
 ])
 
 AC_DEFUN([LALAPPS_WITH_LAL_PREFIX],

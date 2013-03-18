@@ -458,7 +458,7 @@ int main(int argc, char *argv[]) {
 	/* Set a prior function */
 	state->algorithm=NULL;
 	state->evolve=NULL; /* Use MCMC for this? */
-	state->template=NULL;
+	state->templt=NULL;
     /* Log the samples to an array for later use */
 	state->logsample=&LALInferenceLogSampleToArray;
 	state->priorArgs=calloc(1,sizeof(LALInferenceVariables));

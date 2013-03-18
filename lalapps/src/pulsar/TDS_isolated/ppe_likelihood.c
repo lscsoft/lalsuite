@@ -53,7 +53,7 @@
  */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
                              LALInferenceIFOData *data,
-                             LALInferenceTemplateFunction *get_model){
+                             LALInferenceTemplateFunction get_model){
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
   CHAR *modeltype = NULL; /*need to check model type in this function*/

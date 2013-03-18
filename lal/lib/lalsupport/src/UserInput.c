@@ -23,6 +23,7 @@
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
+#include <lal/LALString.h>
 #include <lal/StringVector.h>
 
 extern INT4 lalDebugLevel;
@@ -70,7 +71,7 @@ CHAR *XLALUvarValue2String (LALUserVariable *uvar);
 
 CHAR *XLALUvarType2String (LALUserVariable *uvar);
 
-CHAR *copy_string_unquoted ( const CHAR *in );
+CHAR *XLAL_copy_string_unquoted ( const CHAR *in );
 void check_and_mark_as_set ( LALUserVariable *varp );
 
 
@@ -365,7 +366,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  else	/* parse bool-argument: should be consistent with bool-parsing in ConfigFile!! */
 	    {
 	      /* get rid of case ambiguities */
-	      if ( XLALLowerCaseString (optarg) != XLAL_SUCCESS ) {
+	      if ( XLALStringToLowerCase (optarg) != XLAL_SUCCESS ) {
                 XLAL_ERROR ( XLAL_EFUNC );
               }
 
@@ -415,8 +416,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  strp = *(CHAR**)(ptr->varp);
 	  if ( strp != NULL) 	 /* something allocated here before? */
 	    XLALFree ( strp );
-	  if ( (strp = copy_string_unquoted ( optarg )) == NULL ) {
-            XLALPrintError ("%s: copy_string_unquoted() failed.\n", __func__ );
+	  if ( (strp = XLAL_copy_string_unquoted ( optarg )) == NULL ) {
+            XLALPrintError ("%s: XLAL_copy_string_unquoted() failed.\n", __func__ );
             XLAL_ERROR ( XLAL_EFUNC );
 	  }
 	  /* return value */
@@ -1231,30 +1232,26 @@ XLALUvarValue2String ( LALUserVariable *uvar )
  * quote at the end of string, otherwise an error is printed and return=NULL
  */
 CHAR *
-copy_string_unquoted ( const CHAR *in )
+XLAL_copy_string_unquoted ( const CHAR *in )
 {
   const CHAR *tmp;
   CHAR *out;
   CHAR opening_quote = 0;
   CHAR closing_quote = 0;
-  UINT4 inlen, outlen;
+  UINT4 outlen;
 
-  if ( !in )
-    return NULL;
+  XLAL_CHECK_NULL ( in != NULL, XLAL_EINVAL );
+  UINT4 inlen = strlen ( in );
 
-  inlen = strlen ( in );
-
-  if ( (in[0] == '\'') || (in[0] == '\"') )
+  if ( (in[0] == '\'') || (in[0] == '\"') ) {
     opening_quote = in[0];
-  if ( (in[inlen-1] == '\'') || (in[inlen-1] == '\"') )
+  }
+  if ( (inlen >= 2) && ( (in[inlen-1] == '\'') || (in[inlen-1] == '\"') ) ) {
     closing_quote = in[inlen-1];
+  }
 
   /* check matching quotes */
-  if ( opening_quote != closing_quote )
-    {
-      LogPrintf (LOG_CRITICAL, "Unmatched quotes in string [%s]\n", in );
-      return NULL;
-    }
+  XLAL_CHECK_NULL ( opening_quote == closing_quote, XLAL_EINVAL, "Unmatched quotes in string [%s]\n", in );
 
   if ( opening_quote )
     {
@@ -1267,16 +1264,14 @@ copy_string_unquoted ( const CHAR *in )
       outlen = inlen;
     }
 
-  if ( (out = LALCalloc (1, outlen + 1)) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "Out of memory!\n");
-    return NULL;
-  }
+  XLAL_CHECK_NULL ( (out = LALCalloc (1, outlen + 1)) != NULL, XLAL_ENOMEM );
 
   strncpy ( out, tmp, outlen);
   out[outlen] = 0;
+
   return out;
 
-} /* copy_string_unquoted() */
+} /* XLAL_copy_string_unquoted() */
 
 /** Mark the user-variable as set, check if it has been
  * set previously and issue a warning if set more than once ...

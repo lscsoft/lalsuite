@@ -504,7 +504,7 @@ double XLALSimNoisePSDTAMA(double f /**< frequency (Hz) */)
 
 
 /**
- * Provides the thermal noise (suspension + coating) power spectrum for iLIGO.
+ * Provides the thermal noise (suspension + coating) power spectrum for aLIGO.
  *
  * Note: this is a phenomenological fit to the broadband component.
  */

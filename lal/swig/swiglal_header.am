@@ -9,20 +9,29 @@ swig_iface_headers = $(top_builddir)/swig/@PACKAGE_NAME@swig_headers.list
 # generate SWIG interface header list
 all install .PHONY : swig-iface-headers
 swig-iface-headers :
-	@if test -f $(swig_iface_headers); then \
+	@modified=false; \
+	if test -f $(swig_iface_headers); then \
 		patt=`echo '^$(subdir):' | $(SED) 's|\.|\\.|g'`; \
 		match=`$(SED) -n "\\|$$patt|p" $(swig_iface_headers)`; \
 		if test "x$$match" = x; then \
 			echo '$(subdir): $(swig_headers)' >> $(swig_iface_headers); \
+			modified=true; \
 		else \
 			patt=`echo '^$(subdir): $(swig_headers)$$' | $(SED) 's|\.|\\.|g'`; \
 			match=`$(SED) -n "\\|$$patt|p" $(swig_iface_headers)`; \
 			if test "x$$match" = x; then \
 				$(SED) -i 's|^$(subdir):.*$$|$(subdir): $(swig_headers)|' $(swig_iface_headers); \
+				modified=true; \
 			fi; \
 		fi; \
 	else \
 		echo '$(subdir): $(swig_headers)' > $(swig_iface_headers); \
+		modified=true; \
+	fi; \
+	if test "x$$modified" = xtrue; then \
+		for file in `find $(top_builddir)/swig -type f -name '*swig*.deps'`; do \
+			echo '#erased' > $$file; \
+		done; \
 	fi
 
 endif # SWIG_BUILD

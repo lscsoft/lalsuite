@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 58
+# serial 62
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -22,10 +22,9 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # command line for version information generation script
   AM_COND_IF(HAVE_GIT_REPO,[
     m4_pattern_allow([AM_V_GEN])
-    m4_pattern_allow([AM_V_at])
     AC_SUBST([genvcsinfo_],["\$(genvcsinfo_\$(AM_DEFAULT_VERBOSITY))"])
     AC_SUBST([genvcsinfo_0],["--am-v-gen='\$(AM_V_GEN)'"])
-    GENERATE_VCS_INFO="\$(AM_V_at)\$(PYTHON) \$(top_srcdir)/../gnuscripts/generate_vcs_info.py --git-path='\$(GIT)' \$(genvcsinfo_\$(V))"
+    GENERATE_VCS_INFO="\$(PYTHON) \$(top_srcdir)/../gnuscripts/generate_vcs_info.py --git-path='\$(GIT)' \$(genvcsinfo_\$(V))"
   ],[GENERATE_VCS_INFO=false])
   AC_SUBST(GENERATE_VCS_INFO)
 ])
@@ -51,7 +50,7 @@ AC_DEFUN([LALSUITE_PROG_CC_CXX],[
 
   # check for clang
   AS_IF([test "x$GCC" = xyes],
-    [AS_IF([test "`$CC -v 2>&1 | grep -c 'clang version'`" != "0"],[CLANG_CC=1])],
+    [AS_IF([test "`$CC -v 2>&1 | grep -c 'clang'`" != "0"],[CLANG_CC=1])],
     [CLANG_CC=])
   AC_SUBST(CLANG_CC)
 
@@ -62,7 +61,7 @@ AC_DEFUN([LALSUITE_PROG_CC_CXX],[
 
     # check for clang++
     AS_IF([test "x$GXX" = xyes],
-      [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang version'`" != "0"],[CLANG_CXX=1])],
+      [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang'`" != "0"],[CLANG_CXX=1])],
       [CLANG_CXX=])
     AC_SUBST(CLANG_CXX)
   ],[
@@ -170,7 +169,6 @@ if test "$lowercase" = "true"; then
 else
   AC_MSG_ERROR([could not find the $1 library])
 fi
-LALSUITE_ENABLE_MODULE(uppercase,lowercase)
 m4_if(lowercase,[lalsupport],[],[
   AC_ARG_VAR(uppercase[]_DATADIR, [data directory for ]uppercase[, overriding pkg-config])
 ])
@@ -573,7 +571,7 @@ AC_DEFUN([LALSUITE_ENABLE_OSX_VERSION_CHECK],
 
 AC_DEFUN([LALSUITE_OSX_VERSION_CHECK],[
 LALSUITE_ENABLE_OSX_VERSION_CHECK
-AS_IF(["x${osx_version_check}" = "xtrue"],[
+AS_IF([test "x${osx_version_check}" = "xtrue"],[
   AS_IF([test "x$build_vendor" = "xapple"],[
     AC_CHECK_PROGS([SW_VERS],[sw_vers])
     AS_IF([test "x$SW_VERS" != "x"],[

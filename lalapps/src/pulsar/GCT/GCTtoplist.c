@@ -555,6 +555,12 @@ int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 
   UINT4 checksum = 0;
   static UINT4 sync_fail_counter = 0;
 
+  /* do nothing with an empty filename */
+  if (!filename) {
+    LogPrintf(LOG_DETAIL, "%s(): checkpoint filename NULL\n", __func__);
+    return(0);
+  }
+
   /* construct temporary filename */
   len = strlen(filename)+strlen(TMP_EXT)+1;
   tmpfilename=LALCalloc(len,sizeof(char));
@@ -726,6 +732,12 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*c
 
   /* counter should be 0 if we couldn't read a checkpoint */
   *counter = 0;
+
+  /* do nothing with an empty filename */
+  if (!filename) {
+    LogPrintf(LOG_DETAIL, "%s(): checkpoint filename NULL\n", __func__);
+    return(0);
+  }
 
   /* try to open file */
   fp = LALFopen(filename, "rb");
@@ -904,6 +916,13 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*c
 */
 int clear_gct_checkpoint(const char*filename) {
   FILE*fp=NULL; /* referenced in LOGIOERROR */
+
+  /* do nothing with an empty filename */
+  if (!filename) {
+    LogPrintf(LOG_DETAIL, "%s(): checkpoint filename NULL\n", __func__);
+    return(0);
+  }
+
   if (unlink(filename)) {
     LOGIOERROR("Couldn't delete checkpoint",filename);
     return (errno);

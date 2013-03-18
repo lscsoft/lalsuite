@@ -565,7 +565,7 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
   // compute prior & likelihood:
   logPriorProposed = runState->prior(runState, &proposedParams);
   if (logPriorProposed > -HUGE_VAL)
-    logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->template);
+    logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->templt);
   else
     logLikelihoodProposed = -HUGE_VAL;
 
@@ -595,7 +595,7 @@ void MCMCAlgorithm(struct tagLALInferenceRunState *runState)
   printf(" MCMCAlgorithm(); starting parameter values:\n");
   LALInferencePrintVariables(runState->currentParams);
   // initialize starting likelihood value:
-  runState->currentLikelihood = runState->likelihood(runstate->currentParams, runState->data, runState->template);
+  runState->currentLikelihood = runState->likelihood(runstate->currentParams, runState->data, runState->templt);
   // iterate:
   for(i=0; i<100; i++) {
     printf(" MCMC iteration: %d\n", i+1);
@@ -624,7 +624,7 @@ void NelderMeadEval(struct tagLALInferenceRunState *runState,
   // evaluate prior & likelihood:
   *logprior = runstate->prior(runstate, runstate->currentParams);
   if (*logprior > -HUGE_VAL)
-    *loglikelihood = runState->likelihood(runstate->currentParams, runState->data, runState->template);
+    *loglikelihood = runState->likelihood(runstate->currentParams, runState->data, runState->templt);
   else
     *loglikelihood = -HUGE_VAL;
   runState->currentLikelihood = *loglikelihood;
@@ -845,7 +845,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
   // copy optimized value over to "runState->currentParams":
   for (j=0; j<nmDim; ++j)
     LALInferenceSetVariable(runState->currentParams, nameVec[j], &simplex[maxi*nmDim+j]);
-  runState->currentLikelihood = ML ? val_simplex[maxi] : runState->likelihood(runstate->currentParams, runState->data, runState->template);
+  runState->currentLikelihood = ML ? val_simplex[maxi] : runState->likelihood(runstate->currentParams, runState->data, runState->templt);
 
   printf(" NelderMeadAlgorithm(); done.\n");
   LALInferencePrintVariables(runState->currentParams);
@@ -1146,8 +1146,8 @@ void SingleIFOLikelihoodTest(void)
         //runstate->proposalArgs->head=NULL;
         //runstate->proposalArgs->dimension=0;
 	//runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
-	////runstate->template=templateLAL;
-	//runstate->template=LALInferenceTemplateStatPhase;
+	////runstate->templt=templateLAL;
+	//runstate->templt=LALInferenceTemplateStatPhase;
 	//runstate->currentParams=&currentParams;
 	//MCMCAlgorithm(runstate);
 	//fprintf(stdout, "End of MCMC basic Sampler test\n");
@@ -1269,7 +1269,7 @@ void PTMCMCTest(void)
 	runstate->proposalArgs->dimension=0;
 	runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
 	//runstate->likelihood=GaussianLikelihood;
-	runstate->template=LALInferenceTemplateLAL;
+	runstate->templt=LALInferenceTemplateLAL;
 	
 	
 	SimInspiralTable *injTable=NULL;

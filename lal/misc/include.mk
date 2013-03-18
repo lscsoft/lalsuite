@@ -1,6 +1,6 @@
 ## This file gets automatically appended to the end of the Makefile
 include-link:
-	@for file in $(pkginclude_HEADERS) ; do \
+	@for file in $(pkginclude_HEADERS) $(swiginclude_HEADERS) ; do \
 		sourcedir=$(abs_srcdir); \
 		targetdir=$(abs_top_builddir)/include/lal; \
 		if test ! -r $$targetdir/$$file ; then \

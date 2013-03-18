@@ -120,6 +120,7 @@ LALCreateTwoIFORingdownCoincList(
   INT4                          numEvents = 0;
   INT4                          ifoNumber;
   INT8                          maxTimeDiff = 0;
+  REAL8                         ds2;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
@@ -160,7 +161,7 @@ LALCreateTwoIFORingdownCoincList(
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
     {
       /* check that triggers pass coincidence test */
-      LALCompareRingdowns( status->statusPtr, currentTrigger[0],
+      ds2 = XLALCompareRingdowns( currentTrigger[0],
           currentTrigger[1], accuracyParams );
 
       /* test whether we have coincidence */
@@ -177,6 +178,48 @@ LALCreateTwoIFORingdownCoincList(
         {
           thisCoinc = thisCoinc->next = (CoincRingdownTable *)
             LALCalloc( 1, sizeof(CoincRingdownTable) );
+        }
+
+        /* Store the appropriate ds2 columns in the coinc table */
+        if ( (strcmp(currentTrigger[0]->ifo,"H1")==0 && strcmp(currentTrigger[1]->ifo,"H2")==0)
+             ||(strcmp(currentTrigger[0]->ifo,"H2")==0 && strcmp(currentTrigger[1]->ifo,"H1")==0) )
+        {
+          thisCoinc->ds2_H1H2 = ds2;
+        }
+
+        else if ( (strcmp(currentTrigger[0]->ifo,"H1")==0 && strcmp(currentTrigger[1]->ifo,"L1")==0)
+             ||(strcmp(currentTrigger[0]->ifo,"L1")==0 && strcmp(currentTrigger[1]->ifo,"H1")==0) )
+        {
+          thisCoinc->ds2_H1L1 = ds2;
+        }
+
+        else if ( (strcmp(currentTrigger[0]->ifo,"H1")==0 && strcmp(currentTrigger[1]->ifo,"V1")==0)
+             ||(strcmp(currentTrigger[0]->ifo,"V1")==0 && strcmp(currentTrigger[1]->ifo,"H1")==0) )
+        {
+          thisCoinc->ds2_H1V1 = ds2;
+        }
+
+        else if ( (strcmp(currentTrigger[0]->ifo,"H2")==0 && strcmp(currentTrigger[1]->ifo,"L1")==0)
+             ||(strcmp(currentTrigger[0]->ifo,"L1")==0 && strcmp(currentTrigger[1]->ifo,"H2")==0) )
+        {
+          thisCoinc->ds2_H2L1 = ds2;
+        }
+
+        else if ( (strcmp(currentTrigger[0]->ifo,"H2")==0 && strcmp(currentTrigger[1]->ifo,"V1")==0)
+             ||(strcmp(currentTrigger[0]->ifo,"V1")==0 && strcmp(currentTrigger[1]->ifo,"H2")==0) )
+        {
+          thisCoinc->ds2_H2V1 = ds2;
+        }
+
+        else if ( (strcmp(currentTrigger[0]->ifo,"L1")==0 && strcmp(currentTrigger[1]->ifo,"V1")==0)
+             ||(strcmp(currentTrigger[0]->ifo,"V1")==0 && strcmp(currentTrigger[1]->ifo,"L1")==0) )
+        {
+          thisCoinc->ds2_L1V1 = ds2;
+        }
+
+        else
+        {
+          LALInfo( status, "Unknown pair of ifo's");
         }
 
         /* Add the two triggers to the coinc */
@@ -223,6 +266,7 @@ LALCreateNIFORingdownCoincList(
     )
 
 {
+  REAL8                         ds2        = 0;
   INT4                          numEvents  = 0;
   InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
   InterferometerNumber          ifoNum     = LAL_UNKNOWN_IFO;
@@ -277,8 +321,8 @@ LALCreateNIFORingdownCoincList(
 
             if ( otherCoinc->snglRingdown[ifoNumber] )
             {
-              LALSnglRingdownCoincTest( status->statusPtr, thisCoinc,
-                  otherCoinc->snglRingdown[ifoNumber], accuracyParams );
+              ds2 = XLALSnglRingdownCoincTest( thisCoinc, 
+                otherCoinc->snglRingdown[ifoNumber], accuracyParams );
             }
 
             if ( accuracyParams->match )
@@ -296,6 +340,48 @@ LALCreateNIFORingdownCoincList(
               {
                 thisNIfoCoinc = thisNIfoCoinc->next = (CoincRingdownTable *)
                   LALCalloc( 1, sizeof(CoincRingdownTable) );
+              }
+
+              /* Store the appropriate ds2 columns in the coinc table */
+              if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"H1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"H2")==0)
+                ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"H2")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"H1")==0) )
+              {
+                thisNIfoCoinc->ds2_H1H2 = ds2;
+              }
+
+              else if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"H1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"L1")==0)
+                ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"L1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"H1")==0) )
+              {
+                thisNIfoCoinc->ds2_H1L1 = ds2;
+              }
+
+              else if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"H1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"V1")==0)
+                ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"V1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"H1")==0) )
+              {
+                thisNIfoCoinc->ds2_H1V1 = ds2;
+              }
+
+              else if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"H2")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"L1")==0)
+                ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"L1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"H2")==0) )
+              {
+                thisNIfoCoinc->ds2_H2L1 = ds2;
+              }
+
+              else if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"H2")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"V1")==0)
+                ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"V1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"H2")==0) )
+              {
+                thisNIfoCoinc->ds2_H2V1 = ds2;
+              }
+
+              else if ( (strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"L1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"V1")==0)
+                ||(strcmp(otherCoinc->snglRingdown[ifoNumber]->ifo,"V1")==0 && strcmp(thisCoinc->snglRingdown[firstEntry]->ifo,"L1")==0) )
+              {
+                thisNIfoCoinc->ds2_L1V1 = ds2;
+              }
+
+              else
+              {
+                LALInfo( status, "Unknown pair of ifo's");
               }
 
               /* add the single to the new N coinc */
@@ -636,9 +722,8 @@ XLALAddSnglRingdownToCoinc(
  * coincident with the single, the <tt>accuracyParams.match</tt> is set to 1,
  * otherwise to 0.
  */
-void
-LALSnglRingdownCoincTest(
-    LALStatus                  *status,
+REAL8
+XLALSnglRingdownCoincTest(
     CoincRingdownTable         *coincRingdown,
     SnglRingdownTable          *snglRingdown,
     RingdownAccuracyList       *accuracyParams
@@ -648,9 +733,7 @@ LALSnglRingdownCoincTest(
   SnglRingdownTable    *thisCoincEntry;
   INT4                  match = 1;
   INT4                  ifoNumber = 0;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
+  REAL8                 ds2 = 0;
 
 
   /* Loop over sngl_ringdowns contained in coinc_ringdown */
@@ -663,13 +746,13 @@ LALSnglRingdownCoincTest(
       /* snglRingdown entry exists for this IFO, perform coincidence test */
       if ( ifoNumber == XLALIFONumber(snglRingdown->ifo) )
       {
-        LALInfo( status, "We already have a coinc from this IFO" );
+        XLALPrintInfo( "We already have a coinc from this IFO" );
         accuracyParams->match = 0;
       }
 
       else
       {
-        LALCompareRingdowns ( status->statusPtr, snglRingdown,
+        ds2 = XLALCompareRingdowns ( snglRingdown,
             thisCoincEntry, accuracyParams );
       }
       /* set match to zero if no match.  Keep same if match */
@@ -679,13 +762,12 @@ LALSnglRingdownCoincTest(
   /* returm errorParams->match to be 1 if we match, zero otherwise */
   accuracyParams->match = match;
   if ( accuracyParams->match == 0 )
-    LALInfo( status, "Coincidence test failed" );
+    XLALPrintInfo( "Coincidence test failed" );
   if ( accuracyParams->match == 1 )
-    LALInfo( status, "Coincidence test passed" );
+    XLALPrintInfo( "Coincidence test passed" );
 
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return ds2;
 }
 
 
@@ -772,8 +854,8 @@ XLALExtractSnglRingdownFromCoinc(
         }
 
         /* copy thisCoincEntry into our list */
-        memcpy( thisSngl, thisCoincEntry, sizeof(SnglRingdownTable) );                        thisSngl->next = NULL;
-
+        memcpy( thisSngl, thisCoincEntry, sizeof(SnglRingdownTable) );
+        thisSngl->next = NULL;
 
         /* create an eventId and populate the id */
         eventId = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
@@ -810,6 +892,14 @@ XLALExtractSnglRingdownFromCoinc(
         }
         thisSngl->event_id = eventId;
         eventId->snglRingdownTable = thisSngl;
+
+        /* copy the ds2 values from the coinc_table */
+        thisSngl->ds2_H1H2 = thisCoinc->ds2_H1H2;
+        thisSngl->ds2_H1L1 = thisCoinc->ds2_H1L1;
+        thisSngl->ds2_H1V1 = thisCoinc->ds2_H1V1;
+        thisSngl->ds2_H2L1 = thisCoinc->ds2_H2L1;
+        thisSngl->ds2_H2V1 = thisCoinc->ds2_H2V1;
+        thisSngl->ds2_L1V1 = thisCoinc->ds2_L1V1;
       }
     }
   }

@@ -28,7 +28,7 @@ for(my $ii=0; $ii<$numberBands; $ii++) {
    my $fmin = sprintf("%.3f", $fstart+$ii*$fstep);
    my $outfile = "$outputPathBase/$band\_$ifo/skygrid-${fmin}\-${fstep}HzBand.dat";
    
-   system("../helperprograms/skygridsetup --fmin=$fmin --fspan=$fstep --Tcoh=$Tcoh --IFO=$ifo --ephemDir=$ephemdir --ephemYear=$ephemyear --skyRegion=$sky --SFToverlap=$sftoverlap --outfilename=$outfile");
+   system("../skygridsetup --fmin=$fmin --fspan=$fstep --Tcoh=$Tcoh --IFO=$ifo --ephemDir=$ephemdir --ephemYear=$ephemyear --skyRegion=$sky --SFToverlap=$sftoverlap --outfilename=$outfile");
    die "skygridsetup failed: $?" if $?;
 }
 

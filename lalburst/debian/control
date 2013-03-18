@@ -4,8 +4,11 @@ Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   zlib1g-dev, libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2),
-  lal-dev (>= 6.9.0), lalmetaio-dev (>= 1.0.5),
-  lalsimulation-dev (>= 0.6.0)
+  swig (>= 2.0.7), octave3.2-headers, lal-dev (>= 6.10.0),
+  lal-python (>= 6.10.0), lal-octave (>= 6.10.0),
+  lalmetaio-dev (>= 1.1.0), lalmetaio-python (>= 1.1.0),
+  lalmetaio-octave (>= 1.1.0), lalsimulation-dev (>= 0.7.0),
+  lalsimulation-python (>= 0.7.0), lalsimulation-octave (>= 0.7.0)
 X-Python-Version: >= 2.6
 Standards-Version: 3.8.6
 
@@ -13,7 +16,7 @@ Package: lalburst
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libmetaio1 (>= 8.2),
-  lal (>= 6.9.0), lalmetaio (>= 1.0.5), lalsimulation (>= 0.6.0)
+  lal (>= 6.10.0), lalmetaio (>= 1.1.0), lalsimulation (>= 0.7.0)
 Description: LSC Algorithm Library Burst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -22,8 +25,8 @@ Description: LSC Algorithm Library Burst
 Package: lalburst-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
-  libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.9.0),
-  lalmetaio-dev (>= 1.0.5), lalsimulation (>= 0.6.0),
+  libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.10.0),
+  lalmetaio-dev (>= 1.1.0), lalsimulation (>= 0.7.0),
   lalburst (= ${binary:Version})
 Description: LSC Algorithm Library Burst Developers
  The LSC Algorithm Burst Library for gravitational wave data analysis.
@@ -32,6 +35,15 @@ Description: LSC Algorithm Library Burst Developers
 
 Package: lalburst-python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python,
-  lalburst (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
+  lalburst (= ${binary:Version}), lal-python (>= 6.10.0),
+  lalmetaio-python (>= 1.1.0), lalsimulation-python (>= 0.7.0)
 Description: Python bindings for LALBurst
+
+Package: lalburst-octave
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
+  lalburst (= ${binary:Version}), lal-octave (>= 6.10.0),
+  lalmetaio-octave (>= 1.1.0), lalsimulation-octave (>= 0.7.0)
+Description: Octave bindings for LALBurst
+

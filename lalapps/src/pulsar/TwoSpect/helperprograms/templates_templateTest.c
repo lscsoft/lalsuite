@@ -1276,11 +1276,11 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
          //20% mismatch parameter
          trialp->data[midposition] = input.period;
          for (kk=0; kk<midposition; kk++) {
-            //REAL8 nnp = 0.2*trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
-            REAL8 nnp = 0.1*trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/4.442/params->Tobs)/4.442/params->Tobs;
+            REAL8 nnp = 0.2*trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            //REAL8 nnp = 0.1*trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/4.442/params->Tobs)/4.442/params->Tobs;
             trialp->data[midposition+(kk+1)] = trialp->data[midposition+kk] + nnp;
-            //nnp = 0.2*trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
-            nnp = 0.1*trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/4.442/params->Tobs)/4.442/params->Tobs;
+            nnp = 0.2*trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            //nnp = 0.1*trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/4.442/params->Tobs)/4.442/params->Tobs;
             trialp->data[midposition-(kk+1)] = trialp->data[midposition-kk] - nnp;
          }
          

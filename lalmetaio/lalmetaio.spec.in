@@ -12,7 +12,7 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: python
+BuildRequires: swig python-devel octave-devel
 Requires: libmetaio lal
 Prefix: %{_prefix}
 
@@ -31,11 +31,29 @@ The LSC Algorithm MetaIO Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL MetaIO
 library.
 
+%package python
+Summary: Python Bindings for LALMetaIO
+Group: LAL
+Requires: %{name} = %{version}
+Requires: python numpy lal-python
+%description python
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Python bindings for LALMetaIO.
+
+%package octave
+Summary: Octave Bindings for LALMetaIO
+Group: LAL
+Requires: %{name} = %{version}
+Requires: octave lal-octave
+%description octave
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Octave bindings for LALMetaIO.
+
 %prep
 %setup -q
 
 %build
-%configure --disable-gcc-flags
+%configure --disable-gcc-flags --enable-swig
 %{__make} V=1
 
 %install
@@ -62,3 +80,17 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/*.a
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal
+
+%files python
+%defattr(-,root,root)
+%{_libdir}/python*/site-packages/lalmetaio/*.py
+%{_libdir}/python*/site-packages/lalmetaio/*.pyc
+%{_libdir}/python*/site-packages/lalmetaio/_lalmetaio.so*
+%exclude %{_libdir}/python*/site-packages/lalmetaio/*.pyo
+%exclude %{_libdir}/python*/site-packages/lalmetaio/*.la
+
+%files octave
+%defattr(-,root,root)
+%{_libexecdir}/octave/*/site/oct/*/lalmetaio.oct*
+%exclude %{_libexecdir}/octave/*/site/oct/*/lalmetaio.la
+

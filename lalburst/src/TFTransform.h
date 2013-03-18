@@ -128,6 +128,15 @@ Eq. \eqref{standarddft}.
 /**
  * A time-frequency plane
  */
+typedef struct tagREAL8TimeFrequencyPlaneTiles {
+  unsigned max_length;
+  unsigned min_channels;
+  unsigned max_channels;
+  unsigned tiling_start;
+  unsigned tiling_end;
+  unsigned inv_fractional_stride;
+  double dof_per_pixel;
+} REAL8TimeFrequencyPlaneTiles;
 typedef struct tagREAL8TimeFrequencyPlane {
   CHAR name[LALNameLength];	/**< name of data from which this was computed */
   LIGOTimeGPS epoch;		/**< epoch of data from which this was computed */
@@ -147,16 +156,7 @@ typedef struct tagREAL8TimeFrequencyPlane {
 
   REAL8Sequence *channel_buffer;/**< re-usable holding area for the data for a single channel */
   REAL8Sequence *unwhitened_channel_buffer;	/**< UNDOCUMENTED */
-
-	struct TFTiling {
-		unsigned max_length;
-		unsigned min_channels;
-		unsigned max_channels;
-		unsigned tiling_start;
-		unsigned tiling_end;
-		unsigned inv_fractional_stride;
-		double dof_per_pixel;
-	} tiles;	  	/**< time-frequency plane's tiling information */
+  REAL8TimeFrequencyPlaneTiles tiles;	  	/**< time-frequency plane's tiling information */
 
 	REAL8Window *window;	/**< time-domain window applied to input time series for tapering edges to 0 */
 	INT4 window_shift;	/**< by how many samples a window's start should be shifted from the start of the window preceding it */
@@ -164,12 +164,13 @@ typedef struct tagREAL8TimeFrequencyPlane {
 } REAL8TimeFrequencyPlane;
 
 /** UNDOCUMENTED */
+typedef struct tagExcessPowerFilter {
+  COMPLEX16FrequencySeries *fseries;
+  REAL8 unwhitened_rms;			/**< root mean square of the unwhitened time series corresponding to this filter */
+} ExcessPowerFilter;
 typedef struct tagLALExcessPowerFilterBank {
   int n_filters;
-  struct ExcessPowerFilter {
-    COMPLEX16FrequencySeries *fseries;
-    REAL8 unwhitened_rms;			/**< root mean square of the unwhitened time series corresponding to this filter */
-  } *basis_filters;
+  ExcessPowerFilter *basis_filters;
 
   REAL8Sequence *twice_channel_overlap;	  /**< twice the inner product of filters for neighbouring channels;
                                            * twice_channel_overlap[0] is twice the inner product of the

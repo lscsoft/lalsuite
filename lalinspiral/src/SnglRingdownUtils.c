@@ -301,23 +301,18 @@ LALCompareSnglRingdownByTime (
   }
 }
 
-
-
 /** Compare theparameters of two ringdown triggers according to
  * the specified coincidence test.
  */
 
-void
-LALCompareRingdowns (
-    LALStatus                *status,
+REAL8
+XLALCompareRingdowns (
     SnglRingdownTable        *aPtr,
     SnglRingdownTable        *bPtr,
     RingdownAccuracyList     *params
     )
 
 {
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
   SnglRingdownAccuracy aAcc, bAcc;
   InterferometerNumber ifoaNum,  ifobNum;
 
@@ -340,12 +335,12 @@ LALCompareRingdowns (
   /* check that triggers come from different IFOs */
   if( strcmp(aPtr->ifo, bPtr->ifo) )
   {
-    LALInfo( status, "Triggers from different IFOs");
+    XLALPrintInfo( "Triggers from different IFOs");
     params->match = 1;
   }
   else
   {
-    LALInfo( status, "Triggers from same IFO");
+    XLALPrintInfo( "Triggers from same IFO");
     params->match = 0;
     goto exit;
   }
@@ -362,6 +357,7 @@ LALCompareRingdowns (
      else
      {
        params->match = 0;
+       ds2 = 1.0 / 0.0;
        goto exit;
      }
   }
@@ -377,6 +373,7 @@ LALCompareRingdowns (
     else
     {
       params->match = 0;
+      ds2 = 1.0 / 0.0;
     }
   }
   else if ( params->test == LALRINGDOWN_DS_SQ )
@@ -405,15 +402,13 @@ LALCompareRingdowns (
   }
   else
   {
-    LALInfo( status, "error: unknown test\n" );
-    params->match = 0;
-    goto exit;
+    /* Invalid Coincidence Test */
+    XLALPrintError( "error: unknown coincidence test\n" );
+    XLAL_ERROR(XLAL_EIO);
   }
   exit:
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return ds2;
 }
-
 
 /** Two dimensional (frequency and quality) coincidence test */
 REAL8
@@ -978,6 +973,11 @@ XLALMaxSnglRingdownOverIntervals(
   SnglRingdownTable    *nextEvent = NULL;
   SnglRingdownTable    *prevEvent = NULL;
   INT4 count = 1;
+
+  /* deltaT is the maximizationInterval that must be specified in nanoseconds.
+   * In rinca.c, we specify maximizationInterval in milliseconds but
+   * a conversion to nanoseconds is performed before XLALMaxSnglRingdownOverIntervals
+   * is called. */
 
   /* if there are no events, then no-op */
   if ( ! *eventHead )

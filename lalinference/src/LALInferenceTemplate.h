@@ -57,7 +57,7 @@
  *  Template amplitude is (usually) scaled to 1 Mpc luminosity distance.                        
  */
 void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                            LALInferenceTemplateFunction *template, const char *filename);
+                            LALInferenceTemplateFunction templt, const char *filename);
 
 
 /** De-bugging function writing a (time-domain) signal template to a CSV file.
@@ -65,7 +65,7 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
  *  Template amplitude is (usually) scaled to 1 Mpc luminosity distance.                        
  */
 void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                            LALInferenceTemplateFunction *template, const char *filename);
+                            LALInferenceTemplateFunction templt, const char *filename);
 
 
 /** Template function to generate LAL's "parametrized post-Newtonian" (PPN) inspiral waveform.

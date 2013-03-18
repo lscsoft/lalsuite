@@ -438,8 +438,22 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             XLAL_ERROR_NULL(XLAL_EFUNC);
         }
         procparam=LALInferenceGetProcParamVal(commandLine,"--event");
-        if(procparam) event=atoi(procparam->value);
-        while(q<event) {q++; injTable=injTable->next;}
+        if(procparam) {
+            event=atoi(procparam->value);
+            while(q<event) {q++; injTable=injTable->next;}
+        }
+        else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id")))
+        {
+            while(injTable)
+            {
+                if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+                else injTable=injTable->next;
+            }
+            if(!injTable){
+                fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
+                exit(1);
+            }
+        }
     }
 
     procparam=LALInferenceGetProcParamVal(commandLine,"--psdstart");
@@ -1938,7 +1952,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     if(LALInferenceGetProcParamVal(commandLine,"--lalinspiralinjection")){
       LALInferenceTemplateLAL(tmpdata);
     }else{
-      tmpdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+      tmpdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
       LALInferenceTemplateXLALSimInspiralChooseWaveform(tmpdata);
     }
 
@@ -2001,7 +2015,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
   
   while (dataPtr != NULL) {
      
-      if (IFOdata->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      if (IFOdata->modelDomain == LAL_SIM_DOMAIN_TIME) {
 	  printf("There is a problem. You seem to be using a time domain model into the frequency domain injection function!. Exiting....\n"); 
       exit(1);
     }
@@ -2247,7 +2261,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     }
     REAL8 injPrior = runState->prior(runState,runState->currentParams);
     LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    REAL8 injL = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    REAL8 injL = runState->likelihood(runState->currentParams, runState->data, runState->templt);
     LALInferenceAddVariable(runState->currentParams,"logL",(void *)&injL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
         REAL8 tmp=injL-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
@@ -2274,7 +2288,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     
     /* Set things back the way they were */    
     //LALInferenceCopyVariables(&backup,runState->currentParams);
-    //if(runState->currentParams && runState->currentParams->head) runState->likelihood(runState->currentParams,runState->data,runState->template);
+    //if(runState->currentParams && runState->currentParams->head) runState->likelihood(runState->currentParams,runState->data,runState->templt);
     return;
 }
 

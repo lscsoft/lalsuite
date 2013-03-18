@@ -215,7 +215,7 @@ class TaylorF2RedSpinTemplate(Template):
 
         df, PSD = get_neighborhood_PSD([self], self.bank.flow, self.bank.noise_model)
 
-        if df not in self.bank._moments or len(PSD) > self.bank._moments[df][0].length:
+        if df not in self.bank._moments or len(PSD) - self.bank.flow // df > self.bank._moments[df][0].length:
             real8vector_psd = CreateREAL8Vector(len(PSD))
             real8vector_psd.data[:] = PSD
             self.bank._moments[df] = create_moments(df, self.bank.flow, len(PSD))

@@ -66,7 +66,7 @@ SimInspiralTable* XLALRandomInspiralTime(
 SimInspiralTable* XLALRandomInspiralDistance(
     SimInspiralTable *inj,     /**< injection for which distance will be set */
     RandomParams *randParams,  /**< random parameter details*/
-    DistanceDistribution dDist,/**< requested distance distribution */
+    LoudnessDistribution dDist,/**< requested distance distribution */
     REAL4  distMin,            /**< minimum distance (Mpc) */
     REAL4  distMax             /**< maximum distance (Mpc) */
     )
@@ -87,7 +87,7 @@ SimInspiralTable* XLALRandomInspiralDistance(
     exponent = lmin + deltaL * XLALUniformDeviate( randParams );
     inj->distance = pow(10.0,(REAL4) exponent);
   }
-  else if (dDist == uniformVolume )
+  else if ( dDist == uniformVolume )
   {
     /* uniform volume distribution */
     REAL4 d3min = distMin * distMin * distMin;
@@ -97,7 +97,7 @@ SimInspiralTable* XLALRandomInspiralDistance(
     d3 = d3min + deltad3 * XLALUniformDeviate( randParams );
     inj->distance = cbrt( d3 );
   }
-  else if (dDist == uniformDistanceSquared)
+  else if ( dDist == uniformDistanceSquared )
   {
     /* uniform distance^2 distribution */
     REAL4 d2min = distMin * distMin ;
@@ -107,6 +107,7 @@ SimInspiralTable* XLALRandomInspiralDistance(
     d2 = d2min + deltad2 * XLALUniformDeviate( randParams );
     inj->distance = sqrt( d2 );
   }
+
   return ( inj );
 }
 
@@ -120,6 +121,7 @@ SimInspiralTable* XLALRandomInspiralSkyLocation(
 {
   inj->latitude = asin( 2.0 * XLALUniformDeviate( randParams ) - 1.0 ) ;
   inj->longitude = LAL_TWOPI * XLALUniformDeviate( randParams ) ;
+
   return ( inj );
 }
 
@@ -170,7 +172,6 @@ void XLALRandomInspiralMilkywayLocation(
   *declination    = equatorialPos.latitude;
   *rightAscension = equatorialPos.longitude;
   *distance       = dist/1000.0; /* convert to Mpc */
-
 }
 
 /** Generates a random orientation (polarization, inclination, coa_phase)
@@ -447,7 +448,12 @@ SimInspiralTable* XLALRandomInspiralSpins(
     REAL4  kappa1Max,		/**< maximum value of spin1 . L_N */
     REAL4  abskappa1Min,	/**< minimum absolute value of spin1 . L_N */
     REAL4  abskappa1Max,	/**< maximum absolute value of spin1 . L_N */
-    AlignmentType alignInj	/**< choice of convention for aligned spins */
+    AlignmentType alignInj,	/**< choice of convention for aligned spins */
+    SpinDistribution distribution,	/**< the spin magnitude distribution to use */
+    REAL4  spin1Mean,		/**< mean value for |spin1| gaussian */
+    REAL4  spin1Std,		/**< standard deviation for |spin1| */
+    REAL4  spin2Mean,		/**< mean value for |spin2| gaussian */
+    REAL4  spin2Std 		/**< standard deviation for |spin2| */
     )
 {
   REAL4 spin1Mag;
@@ -471,8 +477,20 @@ SimInspiralTable* XLALRandomInspiralSpins(
   kappa    = -2.0;
 
   /* spin1Mag */
-  spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) *
-    (spin1Max - spin1Min);
+  switch (distribution)
+  {
+	case uniformSpinDist:  spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) *(spin1Max - spin1Min);
+	break;
+	case gaussianSpinDist:  
+	  do spin1Mag = spin1Mean + spin1Std*XLALNormalDeviate(randParams);
+      while ( spin1Mag > spin1Max || spin1Mag < spin1Min );
+    break;
+    default: {
+      fprintf( stderr,"Spin magnitude distribution not known.\n" );
+      XLAL_ERROR_NULL(XLAL_EDOM);
+    }
+
+  }
 
   /* Check if initial spin orientation is specified by user */
   if ( (kappa1Min > -1.0) || (kappa1Max < 1.0) )
@@ -546,8 +564,20 @@ SimInspiralTable* XLALRandomInspiralSpins(
   }
 
   /* spin2Mag */
-  spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) *
-	  (spin2Max - spin2Min);
+  switch (distribution)
+  {
+	case uniformSpinDist:  spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) *(spin2Max - spin2Min);
+	break;
+	case gaussianSpinDist:  
+	  do spin2Mag = spin2Mean + spin2Std*XLALNormalDeviate(randParams);
+      while ( spin2Mag > spin2Max || spin2Mag < spin2Min );
+    break;
+    default: {
+      fprintf( stderr,"Spin magnitude distribution not known.\n" );
+      XLAL_ERROR_NULL(XLAL_EDOM);
+    }
+
+  }
 
   /* aligned case */
   if (alignInj==inxzPlane)
@@ -583,6 +613,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
 
   return ( inj );
 }
+
 
 /** Generates random masses for an inspiral injection. */
 SimInspiralTable* XLALRandomNRInjectTotalMass(
@@ -621,7 +652,6 @@ SimInspiralTable* XLALRandomNRInjectTotalMass(
   return ( inj );
 }
 
-
 /** Set end time and effective distance of an injection for a detector */
 SimInspiralTable *XLALInspiralSiteTimeAndDist(
     SimInspiralTable  *inj, /**< the injection details */
@@ -630,7 +660,6 @@ SimInspiralTable *XLALInspiralSiteTimeAndDist(
     REAL4             *effDist   /**< the effective distance to populate */
     )
 {
-
   REAL8                 tDelay, fplus, fcross;
   REAL4                 splus, scross, cosiota;
 
@@ -645,7 +674,6 @@ SimInspiralTable *XLALInspiralSiteTimeAndDist(
   cosiota = cos( inj->inclination );
   splus = -( 1.0 + cosiota * cosiota );
   scross = -2.0 * cosiota;
-
 
   /* calculate the detector response */
   XLALComputeDetAMResponse(&fplus, &fcross, detector->response, inj->longitude,
@@ -699,7 +727,6 @@ SimInspiralTable *XLALPopulateSimInspiralSiteInfo(
   inj = XLALInspiralSiteTimeAndDist(inj, &detector, end_time, eff_dist);
 
   return ( inj );
-
 }
 
 /** Populate a frequency series with the actuation response.  Here, we just use
@@ -739,5 +766,4 @@ COMPLEX8FrequencySeries *generateActuation(
   XLALDestroyCOMPLEX8Vector( num );
   XLALDestroyCOMPLEX8Vector( denom );
   return( resp );
-
 }

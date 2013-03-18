@@ -142,7 +142,7 @@ bool XLALSimInspiralSpinOrderIsDefault(
 void XLALSimInspiralSetTidalOrder(
         LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose flag will be set */
 
-        LALSimInspiralSpinOrder tideO /**< value to set flag to */
+        LALSimInspiralTidalOrder tideO /**< value to set flag to */
         )
 {
     waveFlags->tideO = tideO;

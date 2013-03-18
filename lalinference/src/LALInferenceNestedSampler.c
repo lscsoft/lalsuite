@@ -488,7 +488,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	  runState->currentParams=runState->livePoints[i];
 	  LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  runState->evolve(runState);
-	  logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
+	  logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
@@ -728,7 +728,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 /* Calculate the autocorrelation function of the sampler (runState->evolve) for each parameter
  * Evolves the sample starting with the value passed in temp, with a maximum of max_iterations steps.
  Return the ACL for each parameter as a LALInferenceVariables */
-LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction *evolve)
+LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction evolve)
 {
   ProcessParamsTable *ppt=NULL;
   char chainfilename[128]="";
@@ -888,9 +888,9 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 UINT4 checkForSingleAdapt(LALInferenceRunState *runState)
 {
   UINT4 i = 0;
-  LALInferenceProposalFunction **cycle = NULL;
+  LALInferenceProposalFunction *cycle = NULL;
   LALInferenceVariables *propArgs = runState->proposalArgs;
-  cycle = *((LALInferenceProposalFunction ***)LALInferenceGetVariable(propArgs, cycleArrayName));
+  cycle = *((LALInferenceProposalFunction **)LALInferenceGetVariable(propArgs, cycleArrayName));
   
   /* If there is not a proposal counter, put one into the variables, initialized to zero. */
   if (!LALInferenceCheckVariable(propArgs, cycleArrayCounterName)) {
@@ -925,7 +925,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     
     if(adaptProp)
     {
-      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->template);
+      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->templt);
       if (logLmin<thislogL) outOfBounds=0;
     }
     
@@ -947,7 +947,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     
     if((!outOfBounds)&&adaptProp)
     {
-      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->template);
+      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->templt);
       if(logLmin<thislogL) LALInferenceUpdateAdaptiveJumps(runState, accepted, 0.35);
       else LALInferenceUpdateAdaptiveJumps(runState, 0, 0.35);
 
@@ -1051,7 +1051,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         tries=0;
         mcmc_iter++;
     	sub_iter+=subchain_length;
-        if(logLmin!=-DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+        if(logLmin!=-DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->templt);
         if(logLnew>logLmin || logLmin==-DBL_MAX) /* Accept */
         {
             Naccepted++;
@@ -1080,7 +1080,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     }while((mcmc_iter<testnumber||runState->currentLikelihood<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
     /* Make sure likelihood is filled in if it wasn't done during sampling */
     if(logLnew==0.0){
-            logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+            logLnew=runState->likelihood(runState->currentParams,runState->data,runState->templt);
             runState->currentLikelihood=logLnew;
             LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
@@ -1160,7 +1160,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 			logPrior=runState->prior(runState,runState->livePoints[i]);
 		}while(logPrior==-DBL_MAX || isnan(logPrior));
 		/* Populate log likelihood */
-		logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
+		logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
         LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
@@ -1176,7 +1176,7 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
   LALInferenceVariableItem *currentItem;
   UINT4 cnt = 0;
   REAL8 *pt = NULL;
-  LALInferenceVariables *template =
+  LALInferenceVariables *templt =
     XLALCalloc(1,sizeof(LALInferenceVariables));
   UINT4 Nlive = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams,
                                                    "Nlive" );
@@ -1235,11 +1235,11 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
   
   /* set up tree */
   tree = LALInferenceKDEmpty( low, high, ndim );
-  LALInferenceCopyVariables( runState->currentParams, template );
+  LALInferenceCopyVariables( runState->currentParams, templt );
                     
   /* add points to tree */
   for( cnt = 0; cnt < Nlive; cnt++ ){
-    LALInferenceKDVariablesToREAL8( runState->livePoints[cnt], pt, template );
+    LALInferenceKDVariablesToREAL8( runState->livePoints[cnt], pt, templt );
     
     LALInferenceKDAddPoint( tree, pt );
   }
@@ -1252,7 +1252,7 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
   if ( !LALInferenceCheckVariable( runState->proposalArgs,
                                    "kDTreeVariableTemplate" ) ){
     LALInferenceAddVariable( runState->proposalArgs, "kDTreeVariableTemplate",
-                             &template, LALINFERENCE_void_ptr_t,
+                             &templt, LALINFERENCE_void_ptr_t,
                              LALINFERENCE_PARAM_FIXED );
   }
   

@@ -42,7 +42,7 @@ BUILT_SOURCES += LALVCSInfo.h
 MOSTLYCLEANFILES += LALVCSInfo.h
 LALVCSInfo.h .PHONY : gen-LALVCSInfo.h
 gen-LALVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALVCSInfo.h $(srcdir)/LALVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALVCSInfo.h $(srcdir)/LALVCSInfo.h.git
 endif
 
 all-local: include-link

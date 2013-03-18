@@ -69,7 +69,7 @@ def init_job(exe, universe, tag, subdir, logdir, cp, memory=None):
 # =============================================================================
 
 def trig_combiner_setup(job, category, ifotag, usertag, grb, onoffcache,\
-                        grbdir, numtrials, outdir):
+                        grbdir, numtrials, outdir, timeslidecache=None):
 
   # setup node
   node = pipeline.CondorDAGNode(job)
@@ -82,6 +82,8 @@ def trig_combiner_setup(job, category, ifotag, usertag, grb, onoffcache,\
   node.add_var_opt('cache', os.path.abspath(onoffcache))
   node.add_var_opt('num-trials', numtrials)
   node.add_var_opt('output-dir', os.path.abspath(outdir))
+  if timeslidecache:
+    node.add_var_opt('slide-cache',timeslidecache)
 
   return node
 
@@ -200,6 +202,24 @@ def injection_efficiency_setup(job, category, outdir, segdir, offsource,\
   return node
 
 # =============================================================================
+# Setup for horizon distance plot
+# =============================================================================
+
+def horizon_distance_setup(job, category, ifotag, grb, onoffcache,\
+                        grbdir, outdir):
+
+  # setup node
+  node = pipeline.CondorDAGNode(job)
+  node.set_category(category)
+
+  node.add_var_opt('ifo-tag', ifotag)
+  node.add_var_opt('grb-xml', "%s/grb%s.xml" %(os.path.abspath(grbdir),grb))
+  node.add_var_opt('cache', os.path.abspath(onoffcache))
+  node.add_var_opt('output-dir', os.path.abspath(outdir))
+
+  return node
+
+# =============================================================================
 # Finalise DAG object
 # =============================================================================
 
@@ -304,6 +324,12 @@ The default is to run the full post processing pipeline, various steps can be sk
   parser.add_option("-E", "--skip-efficiency", action="store_true",\
                     default=False, help="skip efficiency, default: %default") 
 
+  parser.add_option("-Z", "--skip-horizon-plot", action="store_true",\
+                    default=False, help="skip horizon plot, default: %default")
+
+  parser.add_option("-t", "--time-slides", action="store_true",\
+                    default=False, help="Include time slides.")
+
   (opts, args) = parser.parse_args()
 
   if not opts.run_dir:
@@ -331,7 +357,7 @@ The default is to run the full post processing pipeline, various steps can be sk
 def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
          logdir=None, vetoDir=None,run_combiner=True, run_clustering=True,\
          run_injfind=True, run_sbvplotter=True, run_efficiency=True,\
-         run_injcombiner=True):
+         run_injcombiner=True,run_horizon_dist_plot=True,timeSlides=False):
 
   # load ini files
   if verbose:
@@ -403,12 +429,20 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   duration = dataduration-2*pad
 
   # ================
-  # find onoff cache
+  # find onoff and timeslides cache
   # ================
 
   onoffcache = '%s/onoff/' % grbdir
   onoffcache += '%s-INSPIRAL_HIPE_GRB%s_ZERO_LAG_CATEGORY_1-%s-%s.cache'\
                 % (ifotag, grb, datastart, dataduration)
+
+  if timeSlides:
+    timeSlidesCache = '%s/timeslides/' % grbdir
+    timeSlidesCache += \
+                '%s-INSPIRAL_HIPE_GRB%s_TIME_SLIDES_CATEGORY_1-%s-%s.cache'\
+                % (ifotag, grb, datastart, dataduration)
+  else:
+    timeSlidesCache = None
 
   # ==============
   # set parameters
@@ -428,6 +462,10 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
        not os.path.samefile(executable, executable2):
       shutil.copy(executable, executable2)
     cp.set('condor', job, executable2)
+
+  for dir in ['trig_combiner','efficiency','injection-efficiency']:
+    cp.set(dir,'pad-data',cp.get('data','pad-data'))
+    cp.set(dir,'segment-length',cp.get('data','segment-length'))
 
   # ==========
   # write dags
@@ -452,6 +490,9 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   timetags = [ 'ALL_TIMES', 'ONSOURCE', 'OFFSOURCE' ] +\
              [ 'OFFTRIAL_%d' % t for t in xrange(1,numtrials+1) ]
 
+  if timeSlides:
+    timeSlideTags = [ 'ALL_TIMES', 'OFFSOURCE' ]
+
   minmemory = 0
   if cp.has_option('pipeline', 'minimum-memory'):
     minmemory = cp.getfloat('pipeline', 'minimum-memory')
@@ -471,7 +512,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
 
     # setup single node
     node = trig_combiner_setup(job, tag, ifotag, usertag, grb, onoffcache,\
-                               grbdir, numtrials, outdir)
+                               grbdir, numtrials, outdir,\
+                               timeslidecache=timeSlidesCache)
     dag.add_node(node)
   
     # finalise DAG
@@ -490,6 +532,15 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     clstfile[timetype] = trigfile[timetype].replace(timetype,\
                                                      '%s_CLUSTERED' % timetype)
 
+  if timeSlides:
+    trigslidefile = {}
+    clstslidefile = {}
+    for timetype in timeSlideTags:
+      trigslidefile[timetype] = '%s-%s_TIMESLIDES_GRB%s_%s-%s-%s.xml.gz'\
+                               % (ifotag,usertag,grb,timetype,start,duration)
+      clstslidefile[timetype] = trigslidefile[timetype].replace(timetype,\
+                                                    '%s_CLUSTERED' % timetype)
+
   if run_clustering:
 
     tag = 'trig_cluster'
@@ -503,6 +554,11 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     for timetype in timetags:
       node = trig_cluster_setup(job, tag, trigfile[timetype], outdir)
       dag.add_node(node)
+
+    if timeSlides:
+      for timetype in timeSlideTags:
+        node = trig_cluster_setup(job, tag, trigslidefile[timetype], outdir)
+        dag.add_node(node)
 
     # finalise DAG
     parents = []
@@ -642,17 +698,39 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
                        vetodir=rundir)
       dag.add_node(node)
 
+    if timeSlides:
+      for timetype in timeSlideTags:
+        # setup SBV plotting job
+        sbvoutpath = '%s/%s/%s_slides/plots' % (outdir, plotdir, timetype)
+        node = sbv_setup(job, tag, trigslidefile[timetype], grb, sbvoutpath,\
+                         grbdir,vetodir=rundir)
+        dag.add_node(node)
+        # setup SBV clustered plotting job
+        sbvoutpath = '%s/%s/%s_slides/plots_clustered'\
+                     % (outdir, plotdir, timetype)
+        node = sbv_setup(job, tag, clstslidefile[timetype], grb, sbvoutpath,\
+                         grbdir, vetodir=rundir)
+        dag.add_node(node)
+
+    # Make the injection plot with whatever background is available
+    if timeSlides:
+      injtrigfile = trigslidefile['OFFSOURCE']
+      injclstfile = clstslidefile['OFFSOURCE']
+    else:
+      injtrigfile = trigfile['OFFSOURCE']
+      injclstfile = clstfile['OFFSOURCE']
+    
     for injrun in filteredInjRuns: 
       # setup SBV injection plots
       injfile = '%s/%s-INJECTION_GRB%s_%s_FOUND-%d-%d.xml'\
                 % (outdir, ifotag, grb, injrun, start, duration)
       sbvoutpath = '%s/%s/%s/plots' % (outdir, plotdir, injrun)
-      node = sbv_setup(job, tag, trigfile[timetype], grb, sbvoutpath, grbdir,\
+      node = sbv_setup(job, tag, injtrigfile, grb, sbvoutpath, grbdir,\
                        vetodir=rundir,injfile=injfile)
       dag.add_node(node)
       # setup SBV clusterd injection plots
       sbvoutpath = '%s/%s/%s/plots_clustered' % (outdir, plotdir, injrun)
-      node = sbv_setup(job, tag, clstfile[timetype], grb, sbvoutpath, grbdir,\
+      node = sbv_setup(job, tag, injclstfile, grb, sbvoutpath, grbdir,\
                        vetodir=rundir,injfile=injfile)
       dag.add_node(node)
 
@@ -679,12 +757,19 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     # construct arguments
     job.add_opt('segment-dir', grbdir)
 
+    # Select the appropriate offsource file
+    if timeSlides:
+      offfile = clstslidefile['OFFSOURCE']
+    else:
+      offfile = clstfile['OFFSOURCE']
+
+
     for timetype in timetags:
       if timetype in [ 'OFFSOURCE', 'ALL_TIMES' ]:  continue
       # setup onoff efficiency jobs
       effoutdir = '%s/%s/%s/efficiency' % (outdir, plotdir, timetype)
       node = onoff_efficiency_setup(job, tag, effoutdir, grbdir,\
-                                    clstfile['OFFSOURCE'], clstfile[timetype],\
+                                    offfile, clstfile[timetype],\
                                     vetodir=rundir)
       dag.add_node(node)
 
@@ -703,7 +788,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
         effoutdir = '%s/%s/%s/efficiency_%s' % \
                     (outdir, plotdir, injrun, timetype)
         node = injection_efficiency_setup(job, tag, effoutdir, grbdir,\
-                           clstfile['OFFSOURCE'],clstfile[timetype],\
+                           offfile,clstfile[timetype],\
                            filteredDistRuns[injrun], injcp,found, missed,\
                            vetodir=rundir)
         dag.add_node(node)
@@ -715,6 +800,30 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     DAGManNode[tag] = finalise_DAG(dag, parents)
     uberdag.add_node(DAGManNode[tag])
 
+  # =================
+  # Horizon dist plot
+  # =================
+
+  if run_horizon_dist_plot:
+
+    tag    = 'horizon_dist'
+    exe    = cp.get('condor', tag)
+
+    # generate job
+    dag = init_subDAG(tag, outdir, logdir, cp)         
+    job = init_job(exe, universe, tag, outdir, logdir, cp, minmemory)
+
+    # setup single node
+    node = horizon_distance_setup(job, tag, ifotag, grb, onoffcache,\
+                               rundir, '%s/%s' %(outdir,plotdir))
+    dag.add_node(node)
+
+    # finalise DAG
+    parents = []
+    if run_combiner: parents.append(DAGManNode['trig_combiner'])
+    DAGManNode[tag] = finalise_DAG(dag,parents=parents)
+    uberdag.add_node(DAGManNode[tag])
+    
   # =============
   # write uberdag
   # =============
@@ -766,4 +875,6 @@ if __name__=='__main__':
        run_injfind=not opts.skip_injfind,\
        run_sbvplotter=not opts.skip_sbv_plotter,\
        run_efficiency=not opts.skip_efficiency,\
-       run_injcombiner=not opts.skip_injcombiner)
+       run_injcombiner=not opts.skip_injcombiner,\
+       run_horizon_dist_plot = not opts.skip_horizon_plot,\
+       timeSlides = opts.time_slides)

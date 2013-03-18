@@ -23,6 +23,7 @@ lalpulsarinclude_HEADERS = \
 	FlatPulsarMetric.h \
 	FoldAmplitudes.h \
 	GeneratePulsarSignal.h \
+	SimulatePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
 	HoughMap.h \
@@ -49,6 +50,7 @@ lalpulsarinclude_HEADERS = \
 	SFTClean.h \
 	SFTfileIO.h \
 	SFTutils.h \
+	SFTutils-LAL.h \
 	StackMetric.h \
 	Statistics.h \
 	SynthesizeCWDraws.h \
@@ -56,7 +58,8 @@ lalpulsarinclude_HEADERS = \
 	TwoDMesh.h \
 	UniversalDopplerMetric.h \
 	Velocity.h \
-	$(XMLHDR)
+	$(XMLHDR) \
+	lalpulsarswig_test.i
 
 lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \
@@ -132,6 +135,9 @@ liblalpulsar_la_SOURCES = \
 	Velocity.c \
 	$(XMLSRC)
 
+EXTRA_liblalpulsar_la_SOURCES = \
+	SFTutils-LAL.c
+
 liblalpulsar_la_LDFLAGS = -version-info $(LIBVERSION)
 
 MOSTLYCLEANFILES = \
@@ -169,7 +175,7 @@ BUILT_SOURCES += LALPulsarVCSInfo.h
 MOSTLYCLEANFILES += LALPulsarVCSInfo.h
 LALPulsarVCSInfo.h .PHONY : gen-LALPulsarVCSInfo.h
 gen-LALPulsarVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALPulsarVCSInfo.h $(srcdir)/LALPulsarVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALPulsarVCSInfo.h $(srcdir)/LALPulsarVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

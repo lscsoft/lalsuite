@@ -12,7 +12,7 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: python
+BuildRequires: swig python-devel octave-devel
 Requires: gsl libmetaio lal lalmetaio lalsimulation
 Prefix: %{_prefix}
 
@@ -32,18 +32,28 @@ package contains files needed build applications that use the LAL Burst
 library.
 
 %package python
-Summary: Python bindings for LALBurst
+Summary: Python Bindings for LALBurst
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python
+Requires: python numpy lal-python lalmetaio-python lalsimulation-python
 %description python
-This package provides the Python bindings for LALBurst
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Python bindings for LALBurst.
+
+%package octave
+Summary: Octave Bindings for LALBurst
+Group: LAL
+Requires: %{name} = %{version}
+Requires: octave lal-octave lalmetaio-octave lalsimulation-octave
+%description octave
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Octave bindings for LALBurst.
 
 %prep
 %setup -q
 
 %build
-%configure --disable-gcc-flags
+%configure --disable-gcc-flags --enable-swig
 %{__make} V=1
 
 %install
@@ -76,4 +86,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %defattr(-,root,root)
 %{_libdir}/python*/site-packages/lalburst/*.py
 %{_libdir}/python*/site-packages/lalburst/*.pyc
+%{_libdir}/python*/site-packages/lalburst/_lalburst.so*
 %exclude %{_libdir}/python*/site-packages/lalburst/*.pyo
+%exclude %{_libdir}/python*/site-packages/lalburst/*.la
+
+%files octave
+%defattr(-,root,root)
+%{_libexecdir}/octave/*/site/oct/*/lalburst.oct*
+%exclude %{_libexecdir}/octave/*/site/oct/*/lalburst.la
+

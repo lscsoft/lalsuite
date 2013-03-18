@@ -200,6 +200,7 @@ a Papoulis window).
 */
 /*@{*/
 
+
 /** Structure for storing REAL4 window function data, providing storage for a sequence of samples
  * as well as metadata about the window such as the sum-of-squarse of the samples
  */
@@ -254,6 +255,9 @@ REAL4Sequence *XLALUnitaryWindowREAL4Sequence(REAL4Sequence *sequence, const REA
 COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, const REAL4Window *window);
 REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REAL8Window *window);
 COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequence, const REAL8Window *window);
+
+REAL8Window *XLALCreateNamedREAL8Window ( const char *windowName, REAL8 beta, UINT4 length );
+REAL4Window *XLALCreateNamedREAL4Window ( const char *windowName, REAL8 beta, UINT4 length );
 
 /*@}*/
 

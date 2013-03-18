@@ -233,6 +233,46 @@ class TestGracedb(unittest.TestCase):
         event_logs = gracedb.logs(graceid).read()
         self.assertTrue(message in event_logs)
 
+    def test_issue717(self):
+        # non-backwards-compatibility of cli.Client import.
+        # import and use should not cause an import error.
+        from ligo import gracedb
+        gracedb.Client
+        gracedb.ProxyHTTPConnection
+        gracedb.error
+        gracedb.ProxyHTTPSConnection
+
+    def test_gittag(self):
+        # try to make sure GIT_TAG is set properly.
+        import errno
+        version = "1.11"
+        try:
+            # If we are in the source dir (setup.py is available)
+            # make sure the version above agrees.
+            setup_file = open("setup.py", 'r')
+            v = ""
+            for line in setup_file:
+                if line.startswith("version"):
+                    v = line.split('"')[1]
+                    break
+            self.assertEqual(v, version)
+        except IOError, e:
+            if e.errno != errno.ENOENT:
+                raise
+
+        # GIT_TAG should look like "gracedb-VERSION-PKG"
+        # and VERSION should == version from above.
+
+        from ligo.gracedb import GIT_TAG as package_tag
+        package_tag = package_tag.split('-')[1]
+        self.assertTrue(package_tag.startswith(v))
+
+        from ligo.gracedb.cli import GIT_TAG as cli_tag
+        cli_tag = cli_tag.split('-')[1]
+        self.assertTrue(cli_tag.startswith(v))
+
+        self.assertEqual(cli_tag, package_tag)
+
 if __name__ == "__main__":
 
     global gracedb, testdatadir, createdEvent, eventId

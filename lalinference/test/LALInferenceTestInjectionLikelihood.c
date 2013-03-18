@@ -149,7 +149,7 @@ void initializeTemplate(LALInferenceRunState *runState)
 		return;
 	}
 	/* This is the LAL template generator for inspiral signals */
-	runState->template=&LALInferenceTemplateLAL;
+	runState->templt=&LALInferenceTemplateLAL;
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
 	if(ppt) {
 		if(!strcmp("LALSTPN",ppt->value)){
@@ -157,15 +157,15 @@ void initializeTemplate(LALInferenceRunState *runState)
 			exit(1);
 		}
 		else if(!strcmp("PhenSpin",ppt->value))
-			runState->template=&LALInferenceTemplatePSTRD;
+			runState->templt=&LALInferenceTemplatePSTRD;
 		else if(!strcmp("LALGenerateInspiral",ppt->value))
-			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+			runState->templt=&LALInferenceTemplateLALGenerateInspiral;
 		else if(!strcmp("SpinTaylor",ppt->value))
-			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+			runState->templt=&LALInferenceTemplateLALGenerateInspiral;
 		else if(!strcmp("LAL",ppt->value))
-			runState->template=&LALInferenceTemplateLAL;
+			runState->templt=&LALInferenceTemplateLAL;
         else if(!strcmp("LALSim",ppt->value))
-            runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
+            runState->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
 		else {
 			XLALPrintError("Error: unknown template %s\n",ppt->value);
 			XLALPrintError(help);

@@ -99,6 +99,7 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
         clusters = True
     elif len(dat)==5:
         (peak, freq, duration, band, amplitude) = dat
+        peak = LIGOTimeGPS(peak)
         start    = LIGOTimeGPS(peak-duration/2)
         stop     = LIGOTimeGPS(peak+duration/2)
         av_freq  = freq
@@ -171,7 +172,7 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
         t.ms_snr = snr
     if 'amplitude' in columns:
         t.amplitude = amplitude
-     
+
     # set other params
     if 'cluster_size' in columns or 'param_one_value' in columns:
         t.param_one_name = 'cluster_size'
@@ -225,6 +226,9 @@ def from_file(fobj, start=None, end=None, ifo=None, channel=None,
         usercolumns = True
     columns = set(columns)
 
+    if channel and not ifo and re.match("[A-Z]\d:", channel):
+       ifo = channel[:2]
+
     if start or end:
         if start is None:
             start = -numpy.inf
@@ -257,6 +261,9 @@ def from_file(fobj, start=None, end=None, ifo=None, channel=None,
         if _comment.match(line):
             continue
         t = trigger(line, columns=columns, virgo=virgo)
+        t.ifo = ifo
+        t.channel = channel
+        t.search = u"Omega"
         if not check_time or (check_time and float(t.get_peak()) in span):
             append(t)
 
@@ -291,7 +298,7 @@ def from_files(filelist, start=None, end=None, ifo=None, channel=None,
         sys.stdout.write("Extracting Omega triggers from %d files...     \r"
                          % len(filelist))
         sys.stdout.flush()
-        num = len(filelist)/100
+        num = len(filelist)
     out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
     extend = out.extend
     for i,fp in enumerate(filelist):
@@ -299,13 +306,13 @@ def from_files(filelist, start=None, end=None, ifo=None, channel=None,
             extend(from_file(f, start=start, end=end, columns=columns,\
                              ifo=ifo, channel=channel, virgo=virgo))
         if verbose:
-            progress = int((i+1)/num)
+            progress = int((i+1)/num*100)
             sys.stdout.write("Extracting Omega triggers from %d files... "
                              "%.2d%%\r" % (num, progress))
             sys.stdout.flush()
     if verbose:
         sys.stdout.write("Extracting Omega triggers from %d files... "
-                         "100%%\r" % (num))
+                         "100%%\n" % (num))
         sys.stdout.flush()
     return out
 

@@ -11,7 +11,8 @@ lalmetaioinclude_HEADERS = \
 	LIGOLwXMLInspiralHeaders.h \
 	LIGOLwXMLRead.h \
 	LIGOMetadataTables.h \
-	LIGOMetadataUtils.h
+	LIGOMetadataUtils.h \
+	lalmetaioswig_test.i
 
 lib_LTLIBRARIES = liblalmetaio.la
 liblalmetaio_la_SOURCES = \
@@ -48,6 +49,8 @@ lalmetaio-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend MANPATH $(mandir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
+	@printf "$(SWIG_USER_ENV)" >>$@
 
 lalmetaio-user-env.csh lalmetaio-user-env.sh: lalmetaio-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
@@ -57,7 +60,10 @@ BUILT_SOURCES += LALMetaIOVCSInfo.h
 MOSTLYCLEANFILES += LALMetaIOVCSInfo.h
 LALMetaIOVCSInfo.h .PHONY : gen-LALMetaIOVCSInfo.h
 gen-LALMetaIOVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALMetaIOVCSInfo.h $(srcdir)/LALMetaIOVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALMetaIOVCSInfo.h $(srcdir)/LALMetaIOVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@
+
+swig_headers = $(lalmetaioinclude_HEADERS)
+include $(top_srcdir)/swig/swiglal_header.am

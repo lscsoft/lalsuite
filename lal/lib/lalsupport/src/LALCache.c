@@ -25,13 +25,6 @@
 #include <config.h>
 
 #ifdef HAVE_REGEX_H
-/* hack to get around problem in regex.h */
-#ifdef __GLIBC__
-#ifdef __restrict_arr
-#undef __restrict_arr
-#endif
-#define __restrict_arr
-#endif
 #include <regex.h>
 #endif
 

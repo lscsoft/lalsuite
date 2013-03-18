@@ -245,7 +245,7 @@ extern "C" {
 /*@}*/
 
 #ifdef  __cplusplus
-
+}
 #endif  /* C++ protection. */
 
 #endif

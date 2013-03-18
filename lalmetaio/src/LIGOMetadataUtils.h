@@ -174,23 +174,8 @@ LALPlaygroundInSearchSummary (
     LIGOTimeGPS        *outPlayTime
     );
 
-
-void
-LALTimeCheckSearchSummary (
-    LALStatus          *status,
-    SearchSummaryTable *ssTable,
-    LIGOTimeGPS        *startTime,
-    LIGOTimeGPS        *endTime
-    );
-
 int
 LALCompareSearchSummaryByInTime (
-    const void *a,
-    const void *b
-    );
-
-int
-XLALCompareCoincInspiralByStat (
     const void *a,
     const void *b
     );

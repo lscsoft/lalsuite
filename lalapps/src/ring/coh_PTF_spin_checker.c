@@ -72,8 +72,6 @@ int main( int argc, char **argv )
   UINT4                   numDetectors = 0;
   UINT4                   singleDetector = 0;
   char                    bankFileName[256];
-  char                    spinFileName[256];
-  char                    noSpinFileName[256];
   
   startTime = time(NULL);
 
@@ -129,10 +127,6 @@ int main( int argc, char **argv )
   /* Convert the file names */
   if ( params->bankFile )
     strncpy(bankFileName,params->bankFile,sizeof(bankFileName)-1);
-  if ( params->spinBank )
-    strncpy(spinFileName,params->spinBank,sizeof(spinFileName)-1);
-  if ( params->noSpinBank )
-    strncpy(noSpinFileName,params->noSpinBank,sizeof(noSpinFileName)-1);
 
   REAL4                    *timeSlideVectors;
   timeSlideVectors=LALCalloc(1, (LAL_NUM_IFO+1)*
@@ -322,8 +316,8 @@ int main( int argc, char **argv )
     }
   }
 
-  coh_PTF_output_tmpltbank(spinFileName,PTFSpinTmpltHead,procpar,params);
-  coh_PTF_output_tmpltbank(noSpinFileName,PTFNoSpinTmpltHead,procpar,params);
+  coh_PTF_output_tmpltbank(params->spinBankName,PTFSpinTmpltHead,procpar,params);
+  coh_PTF_output_tmpltbank(params->noSpinBankName,PTFNoSpinTmpltHead,procpar,params);
 
   verbose("Generated output xml files, cleaning up and exiting at %ld \n",
       time(NULL)-startTime);
@@ -331,7 +325,8 @@ int main( int argc, char **argv )
   LALFree(timeSlideVectors);
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
-      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,NULL,NULL);
+      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,NULL,NULL,NULL,
+      NULL,NULL,NULL,NULL);
   while ( PTFSpinTmpltHead )
   {
     PTFSpinTmplt = PTFSpinTmpltHead;

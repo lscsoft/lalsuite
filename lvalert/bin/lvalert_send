@@ -1,21 +1,17 @@
 #!/usr/bin/python
 import sys
-import os
 import datetime
-import time
-import select
 import logging
 import libxml2
-from optparse import *
+from optparse import OptionParser
 from M2Crypto.SSL import Context
 
 # pubsub import must come first because it overloads part of the
 # StanzaProcessor class
 from ligo.lvalert import pubsub
 
-from pyxmpp.all import JID,Iq,Presence,Message,StreamError,TLSSettings
+from pyxmpp.all import JID,TLSSettings
 from pyxmpp.jabber.all import Client
-from pyxmpp.jabber.simple import send_message
 
 """
 A tool to send an event to a pubsub node 
@@ -26,7 +22,6 @@ __date__ = "$Date$"
 __name__ = "lvalert_send"
 __Id__ = "$Id$"
 __title__ = "LIGO-Virgo Alert Sender"
-
 
 #################################################################
 # help message
@@ -47,7 +42,7 @@ usage = """\
   You can send information containted in the file stuff.xml by
   doing:
 
-  %prog --username albert.einstein --password secret --node small_steps --file stuff.xml
+  %prog --username albert.einstein --password secret --node small_steps --file stuff.xml --max_attempts N
 
   When an stuff.xml is sent to a node by a publisher, it will be sent
   to all subscribers who are logged in.
@@ -56,6 +51,9 @@ usage = """\
   publish information to the node. The owner can also add other
   publishers to the node. Configuration and management of nodes is
   handled with lvalert_admin. 
+
+  If the server is busy, the connection is allowed to timeout N
+  times before failing.
   
   Others can subscribe any existing node. Run 
 
@@ -85,7 +83,6 @@ def parse_command_line():
   parser.add_option("-r","--resource",action="store",type="string",\
       default="sender", help="resource to use in JID" )
 
-
   # access information about root nodes
   parser.add_option("-n","--node",action="store",type="string",\
       default=None, help="name of the node on the pubsub server" )
@@ -97,7 +94,11 @@ def parse_command_line():
       default=False, help="be verbose as you process the request" )
   parser.add_option("-g","--debug",action="store_true",\
       default=False, help="should  print out lots of information" )
-  
+
+  # timeout attempts
+  parser.add_option("-m","--max_attempts",action="store_true",\
+      default=10, help="max number of timeouts allowed" )
+
   (options,args) = parser.parse_args()
 
   if not options.username:
@@ -109,19 +110,41 @@ def parse_command_line():
   if not options.file:
     raise ValueError, "--file is required"
 
-
-
   return options, sys.argv[1:]
   
 # ============================================================================
 # -- get command line arguments
 opts, args = parse_command_line()
 
+# add a logger so that we can see what's going
+logger=logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
+if opts.debug:
+    logger.setLevel(logging.DEBUG)
+elif opts.verbose:
+    logger.setLevel(logging.INFO)
+else:
+    logger.setLevel(logging.ERROR)
+
+def onStart(client):
+    node = opts.node
+
+    if opts.file == '-':
+        eventfile = sys.stdin
+    else:
+        eventfile = open(opts.file)
+    voevent = eventfile.read()
+    eventfile.close()
+
+    recpt=JID("pubsub."+opts.server)
+
+    client.sendMessage(node, voevent, recpt)
+
 class MyClient(Client):
-    def __init__(self, jid, password):
-        # if bare JID is provided add a resource -- it is required
-        if not jid.resource:
-            jid=JID(jid.node, jid.domain, "sender")
+    def __init__(self,jid,password,max_attempts,onStart):
+        self.jid = jid
+        self.max_attempts = max_attempts
+        self.onStart = onStart
 
         # we require a TLS connection
         #  Specify sslv3 to get around Sun Java SSL bug handling session ticket
@@ -131,80 +154,81 @@ class MyClient(Client):
 
         # setup client with provided connection information
         # and identity data
-        Client.__init__(self, jid, password, \
+        Client.__init__(self, self.jid, password, \
             auth_methods=["sasl:GSSAPI","sasl:PLAIN"], tls_settings=t)
+
+        # A counter for the idle function, below.
+        self.counter = 0
 
     def stream_state_changed(self,state,arg):
         """This one is called when the state of stream connecting the component
         to a server changes. This will usually be used to let the user
         know what is going on."""
-        if opts.verbose:
-            print "*** State changed: %s %r ***" % (state,arg)
-        else:
-            pass
+        logger.info("*** State changed: %s %r ***" % (state,arg))
 
     def session_started(self):
-        if opts.file:
-            self.stream.set_response_handlers(pspl, \
-                pspl.generic_result,pspl.create_error,\
-                pspl.create_timeout)
-        print datetime.datetime.now().ctime()
-        self.stream.send(pspl)
+        logger.info(datetime.datetime.now().ctime())
+        self.onStart(self)
 
-    def idle(self):
-        if self.stream and self.session_established:
-            print "disconnecting"
+    def sendMessage(self,node,msg,recpt):
+        ps = pubsub.PubSub(from_jid = self.jid, to_jid = recpt, stream = self.stream,
+                           stanza_type = "get")
+        ps.publish(msg,node)
+        self.stream.set_response_handlers(ps, 
+                self.onSuccess, 
+                self.onError,
+                lambda stanza: self.onTimeout(stanza,node,msg,recpt))
+        self.stream.send(ps)
+       
+    def onSuccess(self,stanza):
+        logger.info("operation successful.")
+        self.disconnect()
+        return True
+
+    def onError(self,stanza):
+        errorNode = stanza.get_error()
+        logger.error("error type = %s" % errorNode.get_type())
+        logger.error("error message = %s" % errorNode.get_message())
+        logger.info("disconnecting")
+        self.disconnect()
+        sys.exit(1)
+        return True
+
+    def onTimeout(self,stanza,node,msg,recpt):
+        logger.info("operation timed out.  Trying again...")
+        if self.counter < self.max_attempts:
+            self.counter = self.counter + 1
+            self.sendMessage(node,msg,recpt)
+        else:
+            print "Reached max_attempts. Disconnecting..."
             self.disconnect()
-        if opts.verbose:
-            print "idle"
-        time.sleep(4)
+            sys.exit(1)
+        return True
 
-    def post_disconnect(self):
-        print "Disconnected"
-        raise Disconnected
+# Check for file
+if not opts.file:
+   print "You must supply a file to send"
+   sys.exit(1)
 
-# add a logger so that we can see what's going
-if opts.debug:
-    logger=logging.getLogger()
-    logger.addHandler(logging.StreamHandler())
-    logger.setLevel(logging.DEBUG)
-
-# debug the memore
+# Debug the memory
 libxml2.debugMemory(1)
 
-# set up the stream
-myjid=JID(opts.username+"@"+opts.server+"/"+opts.resource)
-s=MyClient(jid=myjid,password=opts.password)
+# Instantiate the client
+jid=JID(opts.username+"@"+opts.server+"/"+opts.resource)
+# if bare JID is provided add a resource -- it is required
+if not jid.resource:
+    jid=JID(jid.node, jid.domain, "sender")
 
-if opts.verbose:
-    print "connecting..."
-s.connect()
+client = MyClient(jid,opts.password,opts.max_attempts,onStart)
 
+# Connect
+logger.info("connecting...")
+client.connect()
 
-if opts.file:
-    if opts.verbose:
-        print "build pubsub stanza..."
-    if opts.file == '-':
-        eventfile = sys.stdin
-    else:
-        eventfile = open(opts.file)
-    voevent = eventfile.read()
-    eventfile.close()
-else:
-    print "You must supply a file to send"
-    sys.exit(0)
-
-recpt=JID("pubsub."+opts.server)
-pspl=pubsub.PubSub(from_jid = myjid, to_jid = recpt, stream = s,\
-stanza_type="get")
-pspl.publish(voevent,opts.node)
-
-if opts.verbose:
-    print "sending message..."
 try:
-    s.loop(1)
+    client.loop(1)
 except KeyboardInterrupt:
     print u"disconnecting..."
-    s.disconnect()
+    client.disconnect()
 
 # vi: sts=4 et sw=4

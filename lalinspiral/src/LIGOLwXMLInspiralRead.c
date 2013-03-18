@@ -543,6 +543,12 @@ LALSnglInspiralTableFromLIGOLw (
     {"Gamma9",                  -1, 54},
     {"kappa",                   -1, 55},
     {"chi",                     -1, 56},
+    {"spin1x",                  -1, 57},
+    {"spin1y",                  -1, 58},
+    {"spin1z",                  -1, 59},
+    {"spin2x",                  -1, 60},
+    {"spin2y",                  -1, 61},
+    {"spin2z",                  -1, 62},
     {NULL,                       0, 0}
   };
 
@@ -897,6 +903,30 @@ LALSnglInspiralTableFromLIGOLw (
         {
           thisEvent->chi = r4colData;
         }
+        else if ( tableDir[j].idx == 57 )
+        {
+          thisEvent->spin1x = r4colData;
+        }
+        else if ( tableDir[j].idx == 58 )
+        {
+          thisEvent->spin1y = r4colData;
+        }
+        else if ( tableDir[j].idx == 59 )
+        {
+          thisEvent->spin1z = r4colData;
+        }
+        else if ( tableDir[j].idx == 60 )
+        {
+          thisEvent->spin2x = r4colData;
+        }
+        else if ( tableDir[j].idx == 61 )
+        {
+          thisEvent->spin2y = r4colData;
+        }
+        else if ( tableDir[j].idx == 62 )
+        {
+          thisEvent->spin2z = r4colData;
+        }
         else
         {
           CLOBBER_EVENTS;
@@ -984,6 +1014,12 @@ InspiralTmpltBankFromLIGOLw (
     {"Gamma9", -1, 27},
     {"kappa", -1, 28},
     {"chi", -1, 29},
+    {"spin1x", -1, 30},
+    {"spin1y", -1, 31},
+    {"spin1z", -1, 32},
+    {"spin2x", -1, 33},
+    {"spin2y", -1, 34},
+    {"spin2z", -1, 35},
     {NULL,      0, 0}
   };
 
@@ -1249,6 +1285,30 @@ InspiralTmpltBankFromLIGOLw (
         else if ( tableDir[j].idx == 29 )
         {
           thisTmplt->chi = colData;
+        }
+        else if ( tableDir[j].idx == 30 )
+        {
+          thisTmplt->spin1[0] = colData;
+        }
+        else if ( tableDir[j].idx == 31 )
+        {
+          thisTmplt->spin1[1] = colData;
+        }
+        else if ( tableDir[j].idx == 32 )
+        {
+          thisTmplt->spin1[2] = colData;
+        }
+        else if ( tableDir[j].idx == 33 )
+        {
+          thisTmplt->spin2[0] = colData;
+        }
+        else if ( tableDir[j].idx == 34 )
+        {
+          thisTmplt->spin2[1] = colData;
+        }
+        else if ( tableDir[j].idx == 35 )
+        {
+          thisTmplt->spin2[2] = colData;
         }
         else
         {

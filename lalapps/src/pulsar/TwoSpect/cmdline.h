@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.24_1"
+#define CMDLINE_PARSER_VERSION "1.1.25"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -186,6 +186,17 @@ struct gengetopt_args_info
   const char *followUpOutsideULrange_help; /**< @brief Follow up outliers outside the range of the UL values help description.  */
   int signalOnly_flag;	/**< @brief SFTs contain only signal, no noise (default=off).  */
   const char *signalOnly_help; /**< @brief SFTs contain only signal, no noise help description.  */
+  int templateTest_flag;	/**< @brief Test the doubly-Fourier transformed data against a single, exact template (default=off).  */
+  const char *templateTest_help; /**< @brief Test the doubly-Fourier transformed data against a single, exact template help description.  */
+  double templateTestF_arg;	/**< @brief The template test frequency; templateTest flag is required.  */
+  char * templateTestF_orig;	/**< @brief The template test frequency; templateTest flag is required original value given at command line.  */
+  const char *templateTestF_help; /**< @brief The template test frequency; templateTest flag is required help description.  */
+  double templateTestP_arg;	/**< @brief The template test period; templateTest flag is required.  */
+  char * templateTestP_orig;	/**< @brief The template test period; templateTest flag is required original value given at command line.  */
+  const char *templateTestP_help; /**< @brief The template test period; templateTest flag is required help description.  */
+  double templateTestDf_arg;	/**< @brief The template test modulation depth; templateTest flag is required.  */
+  char * templateTestDf_orig;	/**< @brief The template test modulation depth; templateTest flag is required original value given at command line.  */
+  const char *templateTestDf_help; /**< @brief The template test modulation depth; templateTest flag is required help description.  */
   int ULsolver_arg;	/**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver (default='0').  */
   char * ULsolver_orig;	/**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver original value given at command line.  */
   const char *ULsolver_help; /**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver help description.  */
@@ -273,6 +284,10 @@ struct gengetopt_args_info
   unsigned int useSSE_given ;	/**< @brief Whether useSSE was given.  */
   unsigned int followUpOutsideULrange_given ;	/**< @brief Whether followUpOutsideULrange was given.  */
   unsigned int signalOnly_given ;	/**< @brief Whether signalOnly was given.  */
+  unsigned int templateTest_given ;	/**< @brief Whether templateTest was given.  */
+  unsigned int templateTestF_given ;	/**< @brief Whether templateTestF was given.  */
+  unsigned int templateTestP_given ;	/**< @brief Whether templateTestP was given.  */
+  unsigned int templateTestDf_given ;	/**< @brief Whether templateTestDf was given.  */
   unsigned int ULsolver_given ;	/**< @brief Whether ULsolver was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int IHSonly_given ;	/**< @brief Whether IHSonly was given.  */

@@ -138,9 +138,9 @@ def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpse
 		WHERE coinc_event.time_slide_id=='time_slide:time_slide_id:10049'\
 		"
 	if gpsstart is not None:
-		get_coincs=get_coincs+' and sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1.0e-9 > %f'%(gpsstart)
+		get_coincs=get_coincs+' and coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1.0e-9 > %f'%(gpsstart)
 	if gpsend is not None:
-		get_coincs=get_coincs+' and sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1.0e-9 < %f'%(gpsend)
+		get_coincs=get_coincs+' and coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1.0e-9 < %f'%(gpsend)
 	if max_cfar !=-1:
 		get_coincs=get_coincs+' and coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
@@ -184,29 +184,26 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) join time_slide\
 		    on (time_slide.time_slide_id == coinc_event.time_slide_id and time_slide.instrument==sngl_inspiral.ifo)\
 		    join coinc_inspiral on (coinc_inspiral.coinc_event_id==coinc_event.coinc_event_id) where coinc_event.time_slide_id!='time_slide:time_slide_id:10049'"
+	joinstr = ' and '
 	if gpsstart is not None:
-		get_coincs=get_coincs+ ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
-		joinstr=' and '
-	else:
-		joinstr=' where '
+		get_coincs=get_coincs+ joinstr + ' coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
 	if gpsend is not None:
-		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
-		joinstr=' and '
+		get_coincs=get_coincs+ joinstr+' coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1e-9 <%f'%(gpsend)
 	if max_cfar!=-1:
 		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
-        from pylal import SnglInspiralUtils
-        extra={}
+	from pylal import SnglInspiralUtils
+	extra={}
 	for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
-          coinc_id=int(coinc_id.split(":")[-1])
-	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
-	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
-	  if not coinc_id in output.keys():
-	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={},event_id=int(coinc_id))
-            extra[coinc_id]={}
-	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
-	  output[coinc_id].ifos.append(ifo)
-          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
+		coinc_id=int(coinc_id.split(":")[-1])
+		seg=filter(lambda seg:sngl_time in seg,seglist)[0]
+		slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
+		if not coinc_id in output.keys():
+			output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={},event_id=int(coinc_id))
+			extra[coinc_id]={}
+		output[coinc_id].timeslides[ifo]=slid_time-sngl_time
+		output[coinc_id].ifos.append(ifo)
+		extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
 	if dumpfile is not None:
 		fh=open(dumpfile,'w')
 		for co in output.keys():
@@ -666,6 +663,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 class EngineJob(pipeline.CondorDAGJob):
   def __init__(self,cp,submitFile,logdir):
     self.engine=cp.get('analysis','engine')
+    basepath=cp.get('paths','basedir')
+    snrpath=os.path.join(basepath,'SNR')
+    mkdirs(snrpath)
     if self.engine=='lalinferencemcmc':
       exe=cp.get('condor','mpirun')
       self.binary=cp.get('condor',self.engine)
@@ -689,6 +689,7 @@ class EngineJob(pipeline.CondorDAGJob):
       self.add_condor_cmd('getenv','true')
       
     self.add_ini_opts(cp,self.engine)
+    self.add_opt('snrpath',snrpath)
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
   

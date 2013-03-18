@@ -190,7 +190,6 @@ int compareCoarseGridUindex( const void *a, const void *b );
 int compareFineGridNC( const void *a,const void *b );
 int compareFineGridsumTwoF( const void *a,const void *b );
 
-LALSegList * XLALReadSegmentsFromFile ( const char *fname );
 SFTCatalogSequence *XLALSetUpStacksFromSegmentList ( const SFTCatalog *SFTCatalog, const LALSegList *segList );
 
 int XLALComputeFStatFreqBand (  MultiFstatFrequencySeries **fstatSeries,
@@ -337,7 +336,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
 
   /* checkpoint filename */
-  CHAR *fnameChkPoint=NULL;
+  CHAR *uvar_fnameChkPoint = NULL;
 
   /* user variables */
   BOOLEAN uvar_help = FALSE;    /* true if -h option is given */
@@ -478,6 +477,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "gammaRefine", 'g', UVAR_OPTIONAL, "Refinement of fine grid (default: use segment times)", &uvar_gammaRefine), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gamma2Refine",'G', UVAR_OPTIONAL, "Refinement of f2dot fine grid (default: use segment times, -1=use gammaRefine)", &uvar_gamma2Refine), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameout), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameChkPoint",0,  UVAR_OPTIONAL, "Checkpoint filename", &uvar_fnameChkPoint), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",      'n', UVAR_OPTIONAL, "No. of candidates to output", &uvar_nCand1), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
@@ -613,15 +613,17 @@ int MAIN( int argc, char *argv[]) {
                    XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
     }
 
-  /* checkpoint filename */
-  // in BOINC App don't derive the checkpoint name from the output filename,
-  // or else the checkpoint file will end up in the project- rather than the slot-directory
 #ifdef EAH_BOINC
-  fnameChkPoint="checkpoint.cpt";
-#else
-  fnameChkPoint = LALCalloc( strlen(uvar_fnameout) + 1 + 4, sizeof(CHAR) );
-  strcpy(fnameChkPoint, uvar_fnameout);
-  strcat(fnameChkPoint, ".cpt");
+  // BOINC Apps always checkpoint, so set a default filename here
+  if (uvar_fnameChkPoint == NULL) {
+    CHAR*fname = "checkpoint.cpt";
+    uvar_fnameChkPoint = XLALMalloc(strlen(fname)+1);
+    if (uvar_fnameChkPoint == NULL) {
+      fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+      return(HIERARCHICALSEARCH_EMEM);
+    }
+    strcpy(uvar_fnameChkPoint, fname);
+  }
 #endif
 
   /* write the log file */
@@ -784,7 +786,7 @@ int MAIN( int argc, char *argv[]) {
     if ( LALUserVarWasSet(&uvar_dFreq) ) {
       usefulParams.dFreqStack = uvar_dFreq;
     } else {
-      LALPrintError("--dFreq is required if --FreqBand is given\n");
+      XLALPrintError("--dFreq is required if --FreqBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   } else {
@@ -796,7 +798,7 @@ int MAIN( int argc, char *argv[]) {
     if ( LALUserVarWasSet(&uvar_df1dot) ) {
       usefulParams.df1dot = uvar_df1dot;
     } else {
-      LALPrintError("--df1dot is required if --f1dotBand is given\n");
+      XLALPrintError("--df1dot is required if --f1dotBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   } else {
@@ -809,7 +811,7 @@ int MAIN( int argc, char *argv[]) {
       usefulParams.df2dot = uvar_df2dot;
     }
     else {
-      LALPrintError("--df2dot is required if --f2dotBand is given\n");
+      XLALPrintError("--df2dot is required if --f2dotBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   }
@@ -1179,7 +1181,7 @@ int MAIN( int argc, char *argv[]) {
     UINT4 count = 0; /* The first checkpoint should have value 1 */
     UINT4 skycount = 0;
 
-    GET_GCT_CHECKPOINT (fnameChkPoint, semiCohToplist, semiCohToplist2, &count);
+    GET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, &count);
 
     if (count) {
       f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
@@ -1770,7 +1772,7 @@ int MAIN( int argc, char *argv[]) {
                       skyGridCounter * nf1dot + ifdot,
                       thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
-        SET_GCT_CHECKPOINT (fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*nf1dot+ifdot, TRUE);
+        SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*nf1dot+ifdot, TRUE);
 
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
@@ -1895,8 +1897,7 @@ int MAIN( int argc, char *argv[]) {
 
   // in BOINC App the checkpoint is left behind to be cleaned up by the Core Client
 #ifndef EAH_BOINC
-  clear_gct_checkpoint (fnameChkPoint);
-  LALFree (fnameChkPoint);
+  clear_gct_checkpoint (uvar_fnameChkPoint);
 #endif
 
   /*------------ free all remaining memory -----------*/
@@ -2730,89 +2731,6 @@ void ComputeU2idx( REAL8 freq_event,
   return;
 
 } /* ComputeU2idx */
-
-/** Function to read a segment list from given filename, returns a *sorted* SegmentList
- *
- * The segment-list format parse here is consistent with Xavie's segment lists used previously
- * and follows the format <repeated lines of form "startGPS endGPS duration[h] NumSFTs">,
- * allowed comment-characters are '%' and '#'
- *
- * \note we (ab)use the integer 'id' field in LALSeg to carry the total number of SFTs
- * contained in that segment. This will be used as a consistency check in
- * XLALSetUpStacksFromSegmentList().
- *
- */
-LALSegList *
-XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segment list */
-                           )
-{
-  LALSegList *segList = NULL;
-
-  /** check input consistency */
-  if ( !fname ) {
-    XLALPrintError ( "%s: NULL input 'fname'", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  /* read and parse segment-list file contents*/
-  LALParsedDataFile *flines = NULL;
-  if ( XLALParseDataFile ( &flines, fname ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-
-  UINT4 numSegments = flines->lines->nTokens;
-  /* allocate and initialized segment list */
-  if ( (segList = XLALCalloc ( 1, sizeof(*segList) )) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  if ( XLALSegListInit ( segList ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-
-
-  UINT4 iSeg;
-  for ( iSeg = 0; iSeg < numSegments; iSeg ++ )
-    {
-      REAL8 t0, t1, TspanHours;
-      INT4 NSFT;
-      LALSeg thisSeg;
-      int ret;
-      ret = sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d", &t0, &t1, &TspanHours, &NSFT );
-      if ( ret != 4 ) {
-        XLALPrintError ("%s: failed to parse data-line %d (%d) in segment-list %s: '%s'\n", __func__, iSeg, ret, fname, flines->lines->tokens[iSeg] );
-        XLALSegListClear ( segList );
-        XLALFree ( segList );
-        XLALDestroyParsedDataFile ( flines );
-        XLAL_ERROR_NULL ( XLAL_ESYS );
-      }
-      /* check internal consistency of these numbers */
-      REAL8 hours = 3600.0;
-      if ( fabs ( t1 - t0 - TspanHours * hours ) >= 1.0 ) {
-        XLALPrintError ("%s: Inconsistent segment list, in line %d: t0 = %f, t1 = %f, Tspan = %f != t1 - t0 (to within 1s)\n", __func__, iSeg, t0, t1, TspanHours );
-        XLAL_ERROR_NULL ( XLAL_EDOM );
-      }
-
-      LIGOTimeGPS start, end;
-      XLALGPSSetREAL8( &start, t0 );
-      XLALGPSSetREAL8( &end,   t1 );
-
-      /* we set number of SFTs as 'id' field, as we have no other use for it */
-      if ( XLALSegSet ( &thisSeg, &start, &end, NSFT ) != XLAL_SUCCESS )
-        XLAL_ERROR_NULL ( XLAL_EFUNC );
-
-      if ( XLALSegListAppend ( segList, &thisSeg ) != XLAL_SUCCESS )
-        XLAL_ERROR_NULL ( XLAL_EFUNC );
-
-    } /* for iSeg < numSegments */
-
-  /* sort final segment list in increasing GPS start-times */
-  if ( XLALSegListSort( segList ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-
-  /* free parsed segment file contents */
-  XLALDestroyParsedDataFile ( flines );
-
-  return segList;
-
-} /* XLALReadSegmentsFromFile() */
-
 
 /** Set up 'segmented' SFT-catalogs for given list of segments and a total SFT-catalog.
  *

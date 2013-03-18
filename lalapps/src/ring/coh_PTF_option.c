@@ -356,10 +356,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         localparams.spinSNR2threshold = atof(optarg);
         break;
       case 'm': /* spin bank */
-        localparams.spinBank = optarg;
+        localparams.spinBank = 1;
+        strncpy( localparams.spinBankName, optarg, sizeof( localparams.spinBankName ) - 1 );
         break;
       case 'M': /* non spin bank */
-        localparams.noSpinBank = optarg;
+        localparams.noSpinBank = 1;
+        strncpy( localparams.noSpinBankName, optarg, sizeof( localparams.noSpinBankName ) - 1 );
         break;
       case 'n': /* only-segment-numbers */
         localparams.segmentsToDoList = optarg;
@@ -523,15 +525,33 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     }
   }
   /* Set the faceOn-faceAway flag */
+  /* Otherwise it takes default value of 0 */
   if (localparams.faceOnAnalysis)
   {
-    params->faceOnStatistic = 1;
+    localparams.faceOnStatistic = 1;
   }
   else if (localparams.faceAwayAnalysis)
   {
-    params->faceOnStatistic = 2;
+    localparams.faceOnStatistic = 2;
   }
-  // Otherwise it takes default value of 0
+
+  /* Set the number of points in the time arrays */
+  localparams.numTimePoints = floor(\
+          localparams.segmentDuration * localparams.sampleRate + 0.5);
+  /* Set the number of points in the frequency arrays */
+  localparams.numFreqPoints = localparams.numTimePoints / 2 + 1;
+  /* FIXME: Hardcoded ... also needs some sanity checking */
+  localparams.numBufferPoints = 5000;
+  localparams.analStartPoint = localparams.numTimePoints/4;
+  localparams.analEndPoint = (3*localparams.numTimePoints)/4;
+  localparams.analStartPointBuf = localparams.numTimePoints/4\
+                                  - localparams.numBufferPoints;
+  localparams.analEndPointBuf = (3*localparams.numTimePoints)/4\
+                               + localparams.numBufferPoints;
+  localparams.numAnalPoints = localparams.analEndPoint\
+                             - localparams.analStartPoint;
+  localparams.numAnalPointsBuf = localparams.analEndPointBuf\
+                                - localparams.analStartPointBuf;
 
   *params = localparams;
 
@@ -774,6 +794,18 @@ int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
   sanity_check(params->spinBank || params->noSpinBank);
   if ( params->clusterFlag)
     sanity_check( params->clusterWindow);
+
+  if (params->numIFO == 0)
+  {
+    fprintf(stderr, "You have not specified any detectors to analyse");
+    return 1;
+  }
+  else if (params->numIFO == 1)
+  {
+    fprintf(stdout, "You have only specified one detector, "
+                    "why are you using the coherent code? \n");
+  }
+
 
   return 0;
 }

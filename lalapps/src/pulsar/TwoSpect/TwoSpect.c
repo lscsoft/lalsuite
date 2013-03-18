@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011, 2012 Evan Goetz
+*  Copyright (C) 2010, 2011, 2012, 2013 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@
 
 //Global variables
 FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
-CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
+CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir_file = NULL;
 static const LALStatus empty_status;
 
 //Main program
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
    configparams = cmdline_parser_params_create();  //initialize parameters structure
    configparams->check_required = 0;  //don't check for required values at the step
    if ( cmdline_parser_ext(argc, argv, &args_info, configparams) ) {
-       fprintf(stderr, "%s: cmdline_parser() failed.\n", __func__);
+       fprintf(stderr, "%s: cmdline_parser_ext() failed.\n", __func__);
        XLAL_ERROR(XLAL_FAILURE);
    }
    configparams->initialize = 0;  //don't reinitialize the parameters structure
@@ -83,10 +83,9 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s: cmdline_parser_config_file() failed.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
-   configparams->override = 1;  //override values in the configuration file
-   configparams->check_required = 1;  //check for required values now
-   if ( cmdline_parser_ext(argc, argv, &args_info, configparams) ) {
-      fprintf(stderr, "%s: cmdline_parser_ext() failed.\n", __func__);
+   //Check required
+   if ( cmdline_parser_required(&args_info, argv[0]) ) {
+      fprintf(stderr, "%s: cmdline_parser_required() failed.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
    
@@ -147,7 +146,7 @@ int main(int argc, char *argv[])
    
    //Read TwoSpect input parameters
    if ( (readTwoSpectInputParams(inputParams, args_info)) != 0 ) {
-      fprintf(stderr, "%s: readTwoSepctInputParams() failed.\n", __func__);
+      fprintf(stderr, "%s: readTwoSpectInputParams() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
    
@@ -158,8 +157,8 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_EFUNC);
    }
    
-   //Maximum orbital earth speed in units of c from start of S6 TwoSpect data for 104 weeks total time
-   REAL4 detectorVmax = CompDetectorVmax(931081500.0+inputParams->SFToverlap, inputParams->Tcoh, inputParams->SFToverlap, 62899200.0-inputParams->SFToverlap, inputParams->det[0], edat);
+   //Maximum detector velocity in units of c from start of observation time - Tcoh to end of observation + Tcoh
+   REAL4 detectorVmax = CompDetectorVmax(inputParams->searchstarttime-inputParams->Tcoh, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs+2.0*inputParams->Tcoh, inputParams->det[0], edat);
    if (xlalErrno!=0) {
       fprintf(stderr, "%s: CompDetectorVmax() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
@@ -228,9 +227,8 @@ int main(int argc, char *argv[])
    if (strcmp(inputParams->det[0].frDetector.prefix, "H1")==0) IFOmultiplier = 1;            //H1 gets multiplier 1
    else if (strcmp(inputParams->det[0].frDetector.prefix, "L1")==0) IFOmultiplier = 2;       //L1 gets multiplier 2
    else IFOmultiplier = 3;                                                                   //V1 gets multiplier 3
-   if (args_info.randSeed_given && args_info.chooseSeed_given) inputParams->randSeed = args_info.randSeed_arg;
-   else if (!args_info.randSeed_given && args_info.chooseSeed_given) inputParams->randSeed = IFOmultiplier*(UINT8)fabs(round(inputParams->fmin + inputParams->fspan + inputParams->Pmin + inputParams->Pmax + inputParams->dfmin + inputParams->dfmax + dopplerpos.Alpha + dopplerpos.Delta));
-   else if (args_info.randSeed_given && !args_info.chooseSeed_given) inputParams->randSeed = args_info.randSeed_arg;
+   if (args_info.randSeed_given) inputParams->randSeed = args_info.randSeed_arg;
+   else if (args_info.chooseSeed_given) inputParams->randSeed = IFOmultiplier*(UINT8)fabs(round(inputParams->fmin + inputParams->fspan + inputParams->Pmin + inputParams->Pmax + inputParams->dfmin + inputParams->dfmax + dopplerpos.Alpha + dopplerpos.Delta));
    else inputParams->randSeed = 0;
    gsl_rng_set(inputParams->rng, inputParams->randSeed);     //Set the random number generator with the given seed
    
@@ -238,9 +236,8 @@ int main(int argc, char *argv[])
    //Basic units
    REAL4 tempfspan = inputParams->fspan + 2.0*inputParams->dfmax + (inputParams->blksize-1 + 12)/inputParams->Tcoh;     //= fspan+2*dfmax+extrabins + running median blocksize-1 (Hz)
    INT4 tempnumfbins = (INT4)round(tempfspan*inputParams->Tcoh)+1;                        //= number of bins in tempfspan
-   REAL8 templatefarthresh = args_info.tmplfar_arg;
-   fprintf(LOG, "FAR for templates = %g\n", templatefarthresh);
-   fprintf(stderr, "FAR for templates = %g\n", templatefarthresh);
+   fprintf(LOG, "FAR for templates = %g\n", inputParams->templatefar);
+   fprintf(stderr, "FAR for templates = %g\n", inputParams->templatefar);
    
    //Allocate memory for ffdata structure
    ffdataStruct *ffdata = new_ffdata(inputParams);
@@ -629,7 +626,6 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       XLALDestroyREAL4Vector(TFdata_slided);
-      //XLALDestroyREAL4Vector(background_slided);
       XLALDestroyREAL4Vector(antweights);
       /* FILE *TFDATA = fopen("./output/tfdata.dat","w");
       for (jj=0; jj<(INT4)TFdata_weighted->length; jj++) fprintf(TFDATA,"%.6f\n",TFdata_weighted->data[jj]);
@@ -694,58 +690,113 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_FAILURE);
       }
 
+      //If the user wants to test a single, exact template, then we do that here
+      if (args_info.templateTest_given && args_info.templateTestF_given && args_info.templateTestP_given && args_info.templateTestDf_given) {
+         fprintf(stderr, "Testing template f=%f, P=%f, Df=%f\n", args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg);
+         fprintf(LOG, "Testing template f=%f, P=%f, Df=%f\n", args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg);
+         loadCandidateData(&(exactCandidates1->data[0]), args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0);
+
+         templateStruct *template = new_templateStruct(inputParams->maxtemplatelength);
+         if (template==NULL) {
+            fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, inputParams->maxtemplatelength);
+            XLAL_ERROR(XLAL_EFUNC); 
+         }
+         resetTemplateStruct(template);
+         makeTemplate(template, exactCandidates1->data[0], inputParams, sftexist, secondFFTplan);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+            fprintf(stderr,"%s: calculateR() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         REAL8 prob = 0.0;
+         REAL8 h0 = 0.0;
+         if ( R > 0.0 ) {
+            prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+            if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+               fprintf(stderr,"%s: probR() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
+         }
+
+         if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
+            exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
+            if (exactCandidates2->data==NULL) {
+               fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", __func__, 2*exactCandidates2->length);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+         }
+
+         loadCandidateData(&(exactCandidates2->data[exactCandidates2->numofcandidates]), args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
+         exactCandidates2->numofcandidates++;
+
+      } else if (args_info.templateTest_given && (!args_info.templateTestF_given || !args_info.templateTestP_given || !args_info.templateTestDf_given)) {
+         fprintf(stderr, "%s: the template test values must be given: --templateTestF, --templateTestP, and --templateTestDf\n", __func__);
+         XLAL_ERROR(XLAL_FAILURE);
+      } else if (!args_info.templateTest_given && args_info.templateTestF_given && args_info.templateTestP_given && args_info.templateTestDf_given) {
+         fprintf(stderr, "%s: the template test values have been given but --templateTest was not specified\n", __func__);
+         XLAL_ERROR(XLAL_FAILURE);
+      }
+
       if (inputParams->signalOnly!=0) return 0;
       
 ////////Start of the IHS step!
-      //Find the FAR of IHS sum
-      if (ihsfarstruct->ihsfar->data[0]==0.0) {
-         fprintf(stderr, "Determining IHS FAR values... ");
-         fprintf(LOG, "Determining IHS FAR values... ");
-         genIhsFar(ihsfarstruct, inputParams, maxrows, aveNoise);
-         if (xlalErrno!=0) {
-            fprintf(stderr,"\n%s: genIhsFar() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         fprintf(stderr, "done.\n");
-         fprintf(LOG, "done.\n");
-      }
-      
-      //Run the IHS algorithm on the data
-      runIHS(ihsmaxima, ffdata, ihsfarstruct, inputParams, maxrows, aveTFnoisePerFbinRatio);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: runIHS() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-      
-      //Find any IHS candidates
-      findIHScandidates(ihsCandidates, ihsfarstruct, inputParams, ffdata, ihsmaxima, aveTFnoisePerFbinRatio, trackedlines);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: findIHScandidates() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-      fprintf(LOG, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
-      fprintf(stderr, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
-      //for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].prob);  //comment this
-      
-      //If requested, keep only the most significant IHS candidates
       candidateVector *ihsCandidates_reduced = NULL;
-      if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) {
-         fprintf(stderr, "Reducing total number of IHS candidates %d to user input %d\n", ihsCandidates->numofcandidates, args_info.keepOnlyTopNumIHS_arg);
-         fprintf(LOG, "Reducing total number of IHS candidates %d to user input %d\n", ihsCandidates->numofcandidates, args_info.keepOnlyTopNumIHS_arg);
-         ihsCandidates_reduced = keepMostSignificantCandidates(ihsCandidates, inputParams);
-         if (ihsCandidates_reduced==NULL) {
-            fprintf(stderr,"%s: keepMostSignificantCandidates() failed.\n", __func__);
+      //Find the FAR of IHS sum -- only if the templateTest has not been given
+      if (!args_info.templateTest_given) {
+         if (ihsfarstruct->ihsfar->data[0]==0.0) {
+            fprintf(stderr, "Determining IHS FAR values... ");
+            fprintf(LOG, "Determining IHS FAR values... ");
+            genIhsFar(ihsfarstruct, inputParams, maxrows, aveNoise);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"\n%s: genIhsFar() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            fprintf(stderr, "done.\n");
+            fprintf(LOG, "done.\n");
+         }
+      
+         //Run the IHS algorithm on the data
+         runIHS(ihsmaxima, ffdata, ihsfarstruct, inputParams, maxrows, aveTFnoisePerFbinRatio);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: runIHS() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-         //for (ii=0; ii<(INT4)ihsCandidates_reduced->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, ihsCandidates_reduced->data[ii].prob);  //comment this
-      }
       
+         //Find any IHS candidates
+         findIHScandidates(ihsCandidates, ihsfarstruct, inputParams, ffdata, ihsmaxima, aveTFnoisePerFbinRatio, trackedlines);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: findIHScandidates() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         fprintf(LOG, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
+         fprintf(stderr, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
+         //for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].prob);  //comment this
+      
+         //If requested, keep only the most significant IHS candidates
+         if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) {
+            fprintf(stderr, "Reducing total number of IHS candidates %d to user input %d\n", ihsCandidates->numofcandidates, args_info.keepOnlyTopNumIHS_arg);
+            fprintf(LOG, "Reducing total number of IHS candidates %d to user input %d\n", ihsCandidates->numofcandidates, args_info.keepOnlyTopNumIHS_arg);
+            ihsCandidates_reduced = keepMostSignificantCandidates(ihsCandidates, inputParams);
+            if (ihsCandidates_reduced==NULL) {
+               fprintf(stderr,"%s: keepMostSignificantCandidates() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            //for (ii=0; ii<(INT4)ihsCandidates_reduced->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, ihsCandidates_reduced->data[ii].prob);  //comment this
+         }
+      }
 ////////End of the IHS step
       
 ////////Start of the Gaussian template search!
-      if (args_info.IHSonly_given) {
-         
-         if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) {
+      //First check to see if the IHSonly or templateTest was given
+      if (args_info.IHSonly_given && !args_info.templateTest_given) {
+         //If we keep only the top X IHS candidates and the number of candidates is greater than X, we need to use the pruned list (ihsCandidates_reduced)
+         if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates > args_info.keepOnlyTopNumIHS_arg) {
+            //If the exactCandidates2 vector is not large enough for the number of new candidates to put in, we have to resize the vector
             if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates_reduced->numofcandidates) {
                exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates_reduced->numofcandidates);
                if (exactCandidates2->data==NULL) {
@@ -754,6 +805,7 @@ int main(int argc, char *argv[])
                }
             }
             
+            //Use the reduced list
             INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
             for (ii=0; ii<(INT4)ihsCandidates_reduced->numofcandidates; ii++) {
                loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates_reduced->data[ii].stat, ihsCandidates_reduced->data[ii].h0, ihsCandidates_reduced->data[ii].prob, 0, ihsCandidates_reduced->data[ii].normalization);
@@ -762,6 +814,8 @@ int main(int argc, char *argv[])
             }
             
          } else {
+            //We don't need to use the pruned list
+            //Check the length of the exactCandidates2 vector is large enough and resize if necessary
             if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) {
                exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates);
                if (exactCandidates2->data==NULL) {
@@ -769,7 +823,8 @@ int main(int argc, char *argv[])
                   XLAL_ERROR(XLAL_EFUNC);
                }
             }
-            
+
+            //Use the typical list
             INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
             for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
                loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, ihsCandidates->data[ii].prob, 0, ihsCandidates->data[ii].normalization);
@@ -779,7 +834,7 @@ int main(int argc, char *argv[])
             
          }
          
-      } else if ((!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion))) {
+      } else if (!args_info.templateTest_given && (!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<args_info.simpleBandRejection_arg))) {
          
          if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) {
             //Test the IHS candidates against Gaussian templates in this function
@@ -799,17 +854,16 @@ int main(int argc, char *argv[])
          fprintf(stderr,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
          
          for (ii=0; ii<(INT4)gaussCandidates1->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates1->data[ii].fsig, gaussCandidates1->data[ii].period, gaussCandidates1->data[ii].moddepth);
-      } /* if IHSonly is not given */
+      } /* if IHSonly is not given && templateTest not given */
       
-      if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) free_candidateVector(ihsCandidates_reduced);
+      if (!args_info.templateTest_given && args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) free_candidateVector(ihsCandidates_reduced);
       
 ////////End of the Gaussian template search
 
       //Reset IHS candidates, but keep length the same (doesn't reset actual values in the vector)
       ihsCandidates->numofcandidates = 0;
       
-      //Search the IHS templates further if user has not specified IHSonly flag
-      //if (!args_info.IHSonly_given && ( !args_info.simpleBandRejection_given || ( args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion ) ) && ( !args_info.lineDetection_given || (args_info.lineDetection_given && lines==NULL) )) {
+      //Search the candidates further if the number of candidates passing the first Gaussian template test is greater than 0
       if (gaussCandidates1->numofcandidates>0) {
 ////////Start clustering! Note that the clustering algorithm takes care of the period range of parameter space
          clusterCandidates(gaussCandidates2, gaussCandidates1, ffdata, inputParams, aveNoise, aveTFnoisePerFbinRatio, sftexist, 0);
@@ -908,7 +962,7 @@ int main(int argc, char *argv[])
             }
             
             if (inputParams->calcRthreshold) {
-               numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
+               numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
@@ -929,7 +983,7 @@ int main(int argc, char *argv[])
                }
             }
             REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-            if ((!inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (inputParams->calcRthreshold && R>farval->far)) {
+            if ((!inputParams->calcRthreshold && prob<inputParams->log10templatefar) || (inputParams->calcRthreshold && R>farval->far)) {
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) {
                   exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length);
                   if (exactCandidates1->data==NULL) {
@@ -1013,10 +1067,10 @@ int main(int argc, char *argv[])
          fprintf(LOG,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
          fprintf(stderr,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
          
-      } /* if IHSonly is not given */
+      } /* if gaussCandidates1->numofcandidates > 0 */
       
       //Determine upper limits, if the ULoff has not been set
-      if (!args_info.ULoff_given) {
+      if (!args_info.ULoff_given && !args_info.templateTest_given) {
          upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
          upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
          upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
@@ -1080,7 +1134,7 @@ int main(int argc, char *argv[])
    free_inputParams(inputParams);
    free_ihsMaxima(ihsmaxima);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
-   XLALFree((CHAR*)sft_dir);
+   XLALFree((CHAR*)sft_dir_file);
    XLALFree((CHAR*)earth_ephemeris);
    XLALFree((CHAR*)sun_ephemeris);
    XLALFree((CHAR*)sky);
@@ -1228,7 +1282,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    constraints.endTime = &end;
    
    //Find SFT files
-   LALSFTdataFind(&status, &catalog, sft_dir, &constraints);
+   LALSFTdataFind(&status, &catalog, sft_dir_file, &constraints);
    if (status.statusCode != 0) {
       fprintf(stderr,"%s: LALSFTdataFind() failed with code = %d.\n", __func__, status.statusCode);
       XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -1330,7 +1384,7 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
    constraints.endTime = &end;
    
    //Find SFT files
-   LALSFTdataFind(&status, &catalog, sft_dir, &constraints);
+   LALSFTdataFind(&status, &catalog, sft_dir_file, &constraints);
    if (status.statusCode != 0) {
       fprintf(stderr,"%s: LALSFTdataFind() failed with code = %d.\n", __func__, status.statusCode);
       XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -2519,92 +2573,89 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->harmonicNumToSearch = args_info.harmonicNumToSearch_arg;              //Search the number of harmonics specified by the Pmin-->Pmax range (default = 1 meaning search only the range of Pmin-->Pmax)
    params->ULsolver = args_info.ULsolver_arg;                                    //Solver function for UL calculation (default = 0)
    params->signalOnly = args_info.signalOnly_given;                              //SFTs contain only signal, no noise (default = 0)
+
+   //Parameters without default arguments but are required
+   //gengetopt has already checked to see they are present and would have failed
+   params->Tobs = args_info.Tobs_arg;
+   params->Tcoh = args_info.Tcoh_arg;
+   params->SFToverlap = args_info.SFToverlap_arg;
+   params->searchstarttime = args_info.t0_arg;
+   params->fmin = args_info.fmin_arg;
+   params->fspan = args_info.fspan_arg;
+   params->Pmin = args_info.Pmin_arg;
+   params->Pmax = args_info.Pmax_arg;
+   params->dfmin = args_info.dfmin_arg;
+   params->dfmax = args_info.dfmax_arg;
    
-   //Non-default arguments
-   if (args_info.Tcoh_given) params->Tcoh = args_info.Tcoh_arg;                  //SFT coherence time (s)
-   else {
-      fprintf(stderr, "%s: a SFT coherence time must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.SFToverlap_given) params->SFToverlap = args_info.SFToverlap_arg; //SFT overlap (s)
-   else {
-      fprintf(stderr, "%s: the SFT overlap time must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;                  //Total observation time (s)
-   else {
-      fprintf(stderr, "%s: an observation time must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.fmin_given) params->fmin = args_info.fmin_arg;                  //Minimum frequency to search (Hz)
-   else {
-      fprintf(stderr, "%s: a minimum frequency to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.fspan_given) params->fspan = args_info.fspan_arg;               //Maximum frequency to search (Hz)
-   else {
-      fprintf(stderr, "%s: a frequency span must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.t0_given) params->searchstarttime = args_info.t0_arg;           //GPS start time of the search (s)
-   else {
-      fprintf(stderr, "%s: a search start time must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.Pmin_given) params->Pmin = args_info.Pmin_arg;                  //Minimum period to search (s)
-   else {
-      fprintf(stderr, "%s: a minimum period to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.Pmax_given) params->Pmax = args_info.Pmax_arg;                  //Maximum period to search (s)
-   else {
-      fprintf(stderr, "%s: a maximum period to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.dfmin_given) params->dfmin = args_info.dfmin_arg;               //Minimum modulation depth to search (Hz)
-   else {
-      fprintf(stderr, "%s: a minimum modulation depth to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.dfmax_given) params->dfmax = args_info.dfmax_arg;               //Maximum modulation depth to search (Hz)
-   else {
-      fprintf(stderr, "%s: a maximum modulation depth to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
+   //Non-default arguments (but nonetheless required in certain circumstances)
    if (args_info.ihsfar_given) params->ihsfar = args_info.ihsfar_arg;            //Incoherent harmonic sum false alarm rate
-   else {
+   else if (!args_info.ihsfar_given && !args_info.templateTest_given) {
       fprintf(stderr, "%s: the IHS FAR must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
    if (args_info.tmplfar_given) params->templatefar = args_info.tmplfar_arg;     //Template false alarm rate
-   else {
+   else if (!args_info.tmplfar_given && args_info.templateTest_given) {
       fprintf(stderr, "%s: the template FAR must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
-   
+
+   //Arguments that might not be given, but we should just set them to an invalid value if they are not given
    if (args_info.keepOnlyTopNumIHS_given) params->keepOnlyTopNumIHS = args_info.keepOnlyTopNumIHS_arg;         //Keep only top X IHS candidates
    else params->keepOnlyTopNumIHS = -1;
-   if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;  //Simple band rejection (default off)
    if (args_info.lineDetection_given) params->lineDetection = args_info.lineDetection_arg;                     //Line detection
-   
-   
-   params->log10templatefar = log10(params->templatefar);                        //log_10(template FAR)
-   
+   else params->lineDetection = -1.0;
+
    //Settings for IHS FOM
-   //Exit with error if neither is chosen
+   //Exit with error if both or neither is chosen unless we are only doing the template test
+   //When the parameters are not given, set them to zero
+   if (!args_info.templateTest_given && ((args_info.ihsfomfar_given && args_info.ihsfom_given) || (!args_info.ihsfomfar_given && !args_info.ihsfom_given))) {
+      fprintf(stderr, "%s: You must choose only one of the IHS FOM FAR argument or the IHS FOM argument.\n", __func__);
+      XLAL_ERROR(XLAL_EINVAL);
+   }
    if (args_info.ihsfomfar_given) params->ihsfomfar = args_info.ihsfomfar_arg;   //IHS figure of merit false alarm rate
    else params->ihsfomfar = 0.0;
    if (args_info.ihsfom_given) params->ihsfom = args_info.ihsfom_arg;            //IHS figure of merit threshold value
    else params->ihsfom = 0.0;
-   if ((params->ihsfom!=0.0 && params->ihsfomfar!=0.0) || (params->ihsfom==0.0 && params->ihsfomfar==0.0)) {
-      fprintf(stderr, "%s: You must choose either the IHS FOM FAR argument or the IHS FOM argument.\n", __func__);
-      XLAL_ERROR(XLAL_EINVAL);
-   }
+   
+   //log10(template FAR)
+   params->log10templatefar = log10(params->templatefar);
    
    //Blocksize should be an odd number
    if (params->blksize % 2 != 1) params->blksize += 1;
    
    // Warnings when using hidden flags
+   if (args_info.signalOnly_given) {
+      fprintf(LOG,"WARNING: --signalOnly argument has been specified\n");
+      fprintf(stderr,"WARNING: --signalOnly argument has been specified\n");
+   }
+   if (args_info.templateTest_given) {
+      fprintf(LOG,"WARNING: --templateTest argument has been specified\n");
+      fprintf(stderr,"WARNING: --templateTest argument has been specified\n");
+   }
+   if (args_info.ULsolver_arg!=0) {
+      fprintf(LOG,"WARNING: --ULsolver = %d instead of the default value of 0\n", args_info.ULsolver_arg);
+      fprintf(stderr,"WARNING: --ULsolver = %d instead of the default value of 0\n", args_info.ULsolver_arg);
+   }
+   if (args_info.dopplerMultiplier_given) {
+      fprintf(LOG,"WARNING: --dopplerMultiplier = %g instead of the default value of 1.0\n", args_info.dopplerMultiplier_arg);
+      fprintf(stderr,"WARNING: --dopplerMultiplier = %g instead of the default value of 1.0\n", args_info.dopplerMultiplier_arg);
+   }
+   if (args_info.IHSonly_given) {
+      fprintf(LOG,"WARNING: Only IHS stage is being used\n");
+      fprintf(stderr,"WARNING: Only IHS stage is being used\n");
+   }
+   if (args_info.noNotchHarmonics_given) {
+      fprintf(LOG,"WARNING: Daily and sidereal period harmonics are not being notched out\n");
+      fprintf(stderr,"WARNING: Daily and sidereal period harmonics are not being notched out\n");
+   }
+   if (args_info.calcRthreshold_given) {
+      fprintf(LOG,"WARNING: R threshold values for templates is being calculated with Monte Carlo simulations\n");
+      fprintf(stderr,"WARNING: R threshold values for templates is being calculated with Monte Carlo simulations\n");
+   }
+   if (args_info.BrentsMethod_given) {
+      fprintf(LOG,"WARNING: Using Brent's method for root finding instead of Newton's method.\n");
+      fprintf(stderr,"WARNING: Using Brent's method for root finding instead of Newton's method.\n");
+   }
    if (args_info.antennaOff_given) {
       fprintf(LOG,"WARNING: Antenna pattern weights are all being set to 1.0\n");
       fprintf(stderr,"WARNING: Antenna pattern weights are all being set to 1.0\n");
@@ -2617,10 +2668,32 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(LOG,"WARNING: Only Gaussian templates will be used\n");
       fprintf(stderr,"WARNING: Only Gaussian templates will be used\n");
    }
-   if (args_info.IHSonly_given) {
-      fprintf(LOG,"WARNING: Only IHS stage is being used\n");
-      fprintf(stderr,"WARNING: Only IHS stage is being used\n");
+   if (args_info.validateSSE_given) {
+      fprintf(LOG,"WARNING: SSE computations will be validated\n");
+      fprintf(stderr,"WARNING: SSE computations will be validated\n");
    }
+   if (args_info.ULoff_given) {
+      fprintf(LOG,"WARNING: --ULoff has been specifed; no upper limits will be produced\n");
+      fprintf(stderr,"WARNING: --ULoff has been specifed; no upper limits will be produced\n");
+   }
+   if (args_info.printSFTtimes_given) {
+      fprintf(LOG,"WARNING: input SFT start times are being saved\n");
+      fprintf(stderr,"WARNING: input SFT start times are being saved\n");
+   }
+   if (args_info.printUsedSFTtimes_given) {
+      fprintf(LOG,"WARNING: used SFT start times are being saved\n");
+      fprintf(stderr,"WARNING: used SFT start times are being saved\n");
+   }
+   if (args_info.randSeed_given) {
+      fprintf(LOG,"NOTE: random seed value %d is being used\n", args_info.randSeed_arg);
+      fprintf(stderr,"NOTE: random seed value %d is being used\n", args_info.randSeed_arg);
+   }
+   if (args_info.chooseSeed_given) {
+      fprintf(LOG,"NOTE: random seed valueis being chosen based on the input search parameters\n");
+      fprintf(stderr,"NOTE: random seed valueis being chosen based on the input search parameters\n");
+   }
+
+   //Extra warning that bad SFTs are being marked and removed
    if (args_info.markBadSFTs_given) {
       fprintf(LOG,"WARNING: Marking bad SFTs\n");
       fprintf(stderr,"WARNING: Marking bad SFTs\n");
@@ -2666,7 +2739,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->dfmin = 0.5*round(2.0*params->dfmin*params->Tcoh)/params->Tcoh;
    params->dfmax = 0.5*round(2.0*params->dfmax*params->Tcoh)/params->Tcoh;
    
-   //Upper limit settings
+   //Upper limit settings take span of search values unless specified
    if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;            //Upper limit minimum frequency (Hz)
    else params->ULfmin = params->fmin;
    if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;         //Upper limit maximum frequency (Hz)
@@ -2690,15 +2763,6 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    fprintf(stderr,"FFT plan flag = %d\n", params->FFTplanFlag);
    if (args_info.ihsfomfar_given) fprintf(stderr,"IHS FOM FAR = %f\n", params->ihsfomfar);
    else fprintf(stderr,"IHS FOM = %f\n", params->ihsfom);
-
-   //Root finding method
-   if (args_info.BrentsMethod_given == 0) {
-      fprintf(LOG,"Using Newton's method for root finding.\n");
-      fprintf(stderr,"Using Newton's method for root finding.\n");
-   } else {
-      fprintf(LOG,"Using Brent's method for root finding.\n");
-      fprintf(stderr,"Using Brent's method for root finding.\n");
-   }
    
    //SFT type standard or vladimir (Vladimir's SFT generation program has a different normalization factor than standard v2)
    params->sftType = XLALCalloc(strlen(args_info.sftType_arg)+1, sizeof(*(params->sftType)));
@@ -2756,7 +2820,6 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       XLALFree((CHAR*)IFO);
    }
    
-   
    //Read in file names for ephemeris files
    if (!args_info.ephemDir_given) {
       fprintf(stderr, "%s: An ephemeris directory path must be specified.\n", __func__);
@@ -2766,8 +2829,8 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr, "%s: An ephemeris year/type suffix must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
-   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*earth_ephemeris));
-   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*sun_ephemeris));
+   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*earth_ephemeris));
+   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*sun_ephemeris));
    if (earth_ephemeris==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*earth_ephemeris));
       XLAL_ERROR(XLAL_ENOMEM);
@@ -2779,23 +2842,23 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
 
    //SFT input
-   if (args_info.sftDir_given && !args_info.sftFile_given) {
-      sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
-      if (sft_dir==NULL) {
-	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir));
-	 XLAL_ERROR(XLAL_ENOMEM);
-      }
-      sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
-   } else if (!args_info.sftDir_given && args_info.sftFile_given) {
-      sft_dir = XLALCalloc(strlen(args_info.sftFile_arg)+2, sizeof(*sft_dir));
-      if (sft_dir==NULL) {
-	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir));
-	 XLAL_ERROR(XLAL_ENOMEM);
-      }
-      sprintf(sft_dir, "%s", args_info.sftFile_arg);
-   } else if ((args_info.sftDir_given && args_info.sftFile_given) || !(args_info.sftDir_given && args_info.sftFile_given)) {
+   if ((args_info.sftDir_given && args_info.sftFile_given) || (!args_info.sftDir_given && !args_info.sftFile_given)) {
       fprintf(stderr, "%s: One of either sftDir or sftFile must be given but not both or neither.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
+   } else if (args_info.sftDir_given && !args_info.sftFile_given) {
+      sft_dir_file = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir_file));
+      if (sft_dir_file==NULL) {
+	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir_file));
+	 XLAL_ERROR(XLAL_ENOMEM);
+      }
+      sprintf(sft_dir_file, "%s/*.sft", args_info.sftDir_arg);
+   } else if (!args_info.sftDir_given && args_info.sftFile_given) {
+      sft_dir_file = XLALCalloc(strlen(args_info.sftFile_arg)+2, sizeof(*sft_dir_file));
+      if (sft_dir_file==NULL) {
+	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir_file));
+	 XLAL_ERROR(XLAL_ENOMEM);
+      }
+      sprintf(sft_dir_file, "%s", args_info.sftFile_arg);
    }
    
    return 0;

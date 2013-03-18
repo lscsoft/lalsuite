@@ -169,18 +169,6 @@ LALDestroyTSDataSegmentVector (
 			       );
 
 /**
- * This routine will handle a great deal of data conditioning
- * Whitening and calibration will occur in this function
- */
-void TrackSearchPrep(
-		     LALStatus                      *status,
-		     REAL4TimeSeries                *TSSearchData,
-		     COMPLEX8Vector                 *TSSearchResponse,
-		     REAL8FrequencySeries           *TSSearchSpectrum,
-		     TSSegmentVector                *PreparedData,
-		     TSSearchParams                  params
-		     );
-/**
  * This is a less functional version of TrackSearchPrep which is
  * greatly simplified in light of analysis pipeline design
  */

@@ -256,8 +256,8 @@ tagInspiralTemplate
   REAL8 inclination;		/**< Inclination of the orbit  (currently not in use) */
   REAL8 orbitTheta0;		/**< Initial co-latitute of the orbit */
   REAL8 orbitPhi0;		/**< Initial azimuth angle of the orbit */
-  REAL8 spin1[3];		/**< Spin vector of the primary (currently not in use) */
-  REAL8 spin2[3];		/**< Spin vector of the secondary (currently not in use) */
+  REAL8 spin1[3];		/**< Spin vector of the primary */
+  REAL8 spin2[3];		/**< Spin vector of the secondary */
   REAL8 sourceTheta;		/**< Co-latitute in the direction to the source */
   REAL8 sourcePhi;		/**< Azimuth angle in the direction to the source */
   REAL8 polarisationAngle;
