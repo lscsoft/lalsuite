@@ -2763,7 +2763,7 @@ title = opts.title+ ": from "+str(opts.gps_start_time)\
   +" to "+str(opts.gps_end_time) 
 script = {}
 script['toggle.js'] = 'javascript'
-script['http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js']\
+script['//ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js']\
     = 'javascript'
 create_toggle()
 # Finally, we create the html document 
