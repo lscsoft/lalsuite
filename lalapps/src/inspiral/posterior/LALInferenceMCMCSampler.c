@@ -647,7 +647,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   /* Add parallel swaps to proposal tracking structure */
-  if (MPIrank < nChain-1) {
+  if (propStats && MPIrank < nChain-1) {
     if(!LALInferenceCheckVariable(propStats, parallelSwapProposalName)) {
         LALInferenceProposalStatistics newPropStat = {
         .weight = 0,
