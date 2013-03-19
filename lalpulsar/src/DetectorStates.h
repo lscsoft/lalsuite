@@ -178,6 +178,7 @@ MultiDetectorStateSeries*
 XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, const MultiLALDetector *multiIFO, const EphemerisData *edat, REAL8 tOffset );
 
 int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *sqrtSX );
+int XLALMultiDetectorInfoFromMultiSFTCatalogView ( MultiDetectorInfo *multiDetInfo, const MultiSFTCatalogView *multiView );
 
 int XLALAddSymmTensor3s ( SymmTensor3 *sum, const SymmTensor3 *aT, const SymmTensor3 *bT );
 int XLALSubtractSymmTensor3s ( SymmTensor3 *diff, const SymmTensor3 *aT, const SymmTensor3 *bT );

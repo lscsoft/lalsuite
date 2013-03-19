@@ -910,3 +910,34 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,        /**< [out] parse
   return XLAL_SUCCESS;
 
 } /* XLALParseMultiDetectorInfo() */
+
+/**
+ * Extract multi detector-info from a given multi SFTCatalog view,
+ * only number of IFOs and LALDetector site information is filled in.
+ * (ie no noise sqrtSX, or weights)
+ */
+int
+XLALMultiDetectorInfoFromMultiSFTCatalogView ( MultiDetectorInfo *multiDetInfo,		//!< [out] list of detectors found in catalog
+                                               const MultiSFTCatalogView *multiView	//!< [in] multi-IFO view of SFT catalog
+                                               )
+{
+  // check input consistency
+  XLAL_CHECK ( multiDetInfo != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiView != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiView->length > 0, XLAL_EINVAL );
+
+  UINT4 numIFOs = multiView->length;
+
+  multiDetInfo->length = numIFOs;
+  for ( UINT4 X=0; X < numIFOs; X ++ )
+    {
+      LALDetector *site;
+      XLAL_CHECK ( (site = XLALGetSiteInfo ( multiView->data[X].data->header.name )) != NULL, XLAL_EFUNC );
+      multiDetInfo->sites[X] = (*site);	 // struct-copy
+      XLALFree ( site );
+    } /* for X < numIFOs */
+
+  return XLAL_SUCCESS;
+
+} /* XLALMultiDetectorInfoFromMultiSFTCatalogView() */
+
