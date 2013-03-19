@@ -43,7 +43,7 @@
 #include <lal/FileIO.h>
 #include <lal/StreamInput.h>
 #include <lal/AVFactories.h>
-#include <lal/LogPrintf.h>
+#include <lal/StringVector.h>
 
 #include <lal/ConfigFile.h>
 
@@ -208,6 +208,53 @@ XLALConfigSectionExists ( const LALParsedDataFile *cfgdata,     /**< [in] pre-pa
   return FALSE;
 
 } /* XLALConfigSectionExists() */
+
+/**
+ * Function to find all sections in given config-file contents cfgdata.
+ *
+ * A section start is defined by a string "[ section-name ]" found at the beginning of a line
+ * The first non-section part of a config-file is referred to as the "default" section,
+ * which is included in the returned list of section-names provided it is not empty.
+ *
+ */
+LALStringVector *
+XLALListConfigFileSections ( const LALParsedDataFile *cfgdata )    /**< [in] pre-parsed config-data */
+{
+  XLAL_CHECK_NULL ( (cfgdata != NULL) && ( cfgdata->lines != NULL), XLAL_EINVAL );
+
+  const TokenList *lines = cfgdata->lines;
+
+  LALStringVector *sections;
+  XLAL_CHECK_NULL ( (sections = XLALCalloc ( 1, sizeof(*sections) ) ) != NULL, XLAL_ENOMEM );	// empty string vector
+
+  if ( lines->tokens[0][0] != '[' ) // there is a non-empty 'default' section
+    {
+      XLAL_CHECK_NULL ( (sections = XLALAppendString2Vector ( sections, "default" )) != NULL, XLAL_EFUNC );
+    } // if non-empty default section
+
+  for ( UINT4 i = 0; i < lines->nTokens; i++ )
+    {
+      const CHAR *thisLine = lines->tokens[i];
+      XLAL_CHECK_NULL ( thisLine != NULL, XLAL_EINVAL );
+      /* Is this the start of a new section? */
+      if ( thisLine[0] == '[' )
+        {
+          UINT4 len = strlen ( thisLine );
+          XLAL_CHECK_NULL ( thisLine[len-1] == ']', XLAL_EINVAL, "Invalid section start '%s'\n", thisLine );
+
+          const char *secName0 = thisLine + 1;	// skip '['
+          char *secName;
+          XLAL_CHECK_NULL ( (secName = XLALDeblankString ( secName0, len - 2 )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK_NULL ( (sections = XLALAppendString2Vector ( sections, secName )) != NULL, XLAL_EFUNC );
+          XLALFree ( secName );
+        } // if section found
+
+    } // for i < numLines
+
+  return sections;
+
+} // XLALListConfigFileSections()
+
 
 
 /** Parser for config-file: can read config-variables of the form

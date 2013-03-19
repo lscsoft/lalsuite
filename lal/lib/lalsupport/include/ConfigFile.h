@@ -150,6 +150,7 @@ int XLALParseDataFileContent (LALParsedDataFile **cfgdata, const CHAR *string );
 void XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata);
 
 int XLALConfigSectionExists(const LALParsedDataFile *, const CHAR *);
+LALStringVector *XLALListConfigFileSections ( const LALParsedDataFile *cfgdata );
 
 int
 XLALReadConfigBOOLVariable (BOOLEAN *varp,
