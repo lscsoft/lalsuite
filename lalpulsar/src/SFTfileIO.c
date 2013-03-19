@@ -161,6 +161,8 @@ static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, 
 static int compareSFTdesc(const void *ptr1, const void *ptr2);
 static int compareSFTloc(const void *ptr1, const void *ptr2);
 static int compareDetName(const void *ptr1, const void *ptr2);
+static int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
+
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 
@@ -1092,6 +1094,7 @@ XLALLoadMultiSFTs (const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFT
   XLAL_CHECK_NULL ( (inputCatalog != NULL) && (inputCatalog->length != 0), XLAL_EINVAL );
 
   MultiSFTCatalogView *multiCatalogView;
+  // get the (alphabetically-sorted!) multiSFTCatalogView
   XLAL_CHECK_NULL ( (multiCatalogView = XLALGetMultiSFTCatalogView ( inputCatalog )) != NULL, XLAL_EFUNC );
 
   MultiSFTVector *multiSFTs;
@@ -1110,6 +1113,8 @@ XLALLoadMultiSFTs (const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFT
  *
  * Note: this is basically the core-function of XLALLoadMultiSFTs() doing the
  * actual work.
+ *
+ * Note2: we keep the IFO sort-order of the input multiCatalogView
  */
 MultiSFTVector *
 XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView,/**< The multi-SFT catalogue view of SFTs to load */
@@ -1138,9 +1143,6 @@ XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView,/**< The
         } // if XLALLoadSFTs() failed
 
     } // for X < numIFOs
-
-  /* sort final multi-SFT vector by detector-name */
-  qsort ( multiSFTs->data, multiSFTs->length, sizeof( multiSFTs->data[0] ), compareDetName );
 
   // return final multi-SFT vector
   return multiSFTs;
@@ -2527,6 +2529,8 @@ INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
  * various allocated memory of the original catalog is only pointed to, not duplicated!
  * This means one must not free the original catalog while this multi-view is still in use!
  *
+ * NOTE2: the returned multi-IFO catalog is sorted alphabetically by detector-name
+ *
  */
 MultiSFTCatalogView *
 XLALGetMultiSFTCatalogView ( const SFTCatalog *catalog )
@@ -2639,8 +2643,10 @@ XLALGetMultiSFTCatalogView ( const SFTCatalog *catalog )
     }
   XLALFree ( ifolist );
   XLALFree ( sftLocationInCatalog );
-
   XLALFree ( numSFTsPerIFO );
+
+  // sort final multi-catalog view alphabetically by detector name
+  qsort ( ret->data, ret->length, sizeof( ret->data[0] ), compareDetNameCatalogs );
 
   return ret;
 
@@ -4692,6 +4698,28 @@ compareDetName(const void *ptr1, const void *ptr2)
     return 0;
 
 } /* compareDetName() */
+
+/* compare two SFT-catalog by detector name in alphabetic order */
+static int
+compareDetNameCatalogs ( const void *ptr1, const void *ptr2 )
+{
+  SFTCatalog const* cat1 = (SFTCatalog const*)ptr1;
+  SFTCatalog const* cat2 = (SFTCatalog const*)ptr2;
+  const char *name1 = cat1->data[0].header.name;
+  const char *name2 = cat2->data[0].header.name;
+
+  if ( name1[0] < name2[0] )
+    return -1;
+  else if ( name1[0] > name2[0] )
+    return 1;
+  else if ( name1[1] < name2[1] )
+    return -1;
+  else if ( name1[1] > name2[1] )
+    return 1;
+  else
+    return 0;
+
+} /* compareDetNameCatalogs() */
 
 
 
