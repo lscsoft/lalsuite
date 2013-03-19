@@ -149,7 +149,7 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
                 max=(INT4) *(REAL8 *)this->value;
             }
         }
-        LALInferenceDestroyVariables(acls);
+        LALInferenceClearVariables(acls);
         free(acls);
         if(max>maxMCMC){
             fprintf(stderr,"Warning: Estimated chain length %i exceeds maximum %i!\n",max,maxMCMC);
@@ -823,7 +823,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   /* Not ideal, should be measuring something like the det(autocorrelation-crosscorrelation matrix) */
   for (i=0;i<max_iterations;i++){
     for(j=0;j<nPar;j++) data_array[j][i]=*(REAL8 *)LALInferenceGetVariable(&variables_array[i],param_names[j]);
-    LALInferenceDestroyVariables(&variables_array[i]);
+    LALInferenceClearVariables(&variables_array[i]);
   }
   free(variables_array);
   this=myCurrentParams.head;
@@ -875,8 +875,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   /* Clean up */
   for(i=0;i<(UINT4)nPar;i++) {free(data_array[i]); free(acf_array[i]);}
   free(data_array); free(acf_array);
-  LALInferenceDestroyVariables(&myAlgParams);
-  LALInferenceDestroyVariables(&myCurrentParams);
+  LALInferenceClearVariables(&myAlgParams);
+  LALInferenceClearVariables(&myCurrentParams);
   runState->currentParams=oldCurrentParams;
   runState->algorithmParams=oldAlgParams;
   if(chainfile) fclose(chainfile);
@@ -943,7 +943,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 	LALInferenceCopyVariables(&proposedParams,runState->currentParams);
         LALInferenceSetVariable(runState->currentParams,"logPrior",&logPriorNew);
     }
-    LALInferenceDestroyVariables(&proposedParams);
+    LALInferenceClearVariables(&proposedParams);
     
     if((!outOfBounds)&&adaptProp)
     {
@@ -1111,7 +1111,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
 	LALInferenceSetVariable(runState->algorithmParams,"sloppyfraction",&sloppyfraction);
     }
     /* Cleanup */
-    LALInferenceDestroyVariables(&oldParams);
+    LALInferenceClearVariables(&oldParams);
 }
 
 

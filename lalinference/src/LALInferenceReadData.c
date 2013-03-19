@@ -2082,7 +2082,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
 // fclose(outInj);
   }
 
-    LALInferenceDestroyVariables(&intrinsicParams);
+    LALInferenceClearVariables(&intrinsicParams);
     printf("injected Network SNR %.1f \n",sqrt(NetSNR)); 
     
     if (!(SNRpath==NULL)){ /* If the user provided a path with --snrpath store a file with injected SNRs */
@@ -2135,7 +2135,7 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
 	}
     UINT4 spinCheck=LALInferenceCheckVariableNonFixed(vars,"a_spin1");
     /* Destroy existing parameters */
-    if(vars->head!=NULL) LALInferenceDestroyVariables(vars);
+    if(vars->head!=NULL) LALInferenceClearVariables(vars);
     REAL8 q = theEventTable->mass2 / theEventTable->mass1;
     if (q > 1.0) q = 1.0/q;
 

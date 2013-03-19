@@ -249,7 +249,7 @@ int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *n
 /** Delete the variables in this structure.
  *  Does not free the LALInferenceVariables itself
  *  \param vars will have its dimension set to 0 */
-void LALInferenceDestroyVariables(LALInferenceVariables *vars);
+void LALInferenceClearVariables(LALInferenceVariables *vars);
 
 /** Deep copy the variables from one to another LALInferenceVariables structure */
 void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariables *target);

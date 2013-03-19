@@ -3777,7 +3777,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     exit(0);
   }
   
-  LALInferenceDestroyVariables( loudestParams );
+  LALInferenceClearVariables( loudestParams );
   
   /* setup output file */
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );

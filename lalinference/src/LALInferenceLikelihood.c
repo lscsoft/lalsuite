@@ -622,7 +622,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
  //fclose(testout);
   }
   loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
-  LALInferenceDestroyVariables(&intrinsicParams);
+  LALInferenceClearVariables(&intrinsicParams);
   return(loglikeli);
 }
 
@@ -860,7 +860,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     dataPtr = dataPtr->next;
   }
   loglikeli = -1.0 * chisquared; /* note (again): the log-likelihood is unnormalised! */
-  LALInferenceDestroyVariables(&intrinsicParams);  
+  LALInferenceClearVariables(&intrinsicParams);  
   return(loglikeli);
 }
 
@@ -1284,7 +1284,7 @@ FILE* file=fopen("TempSignal.dat", "w");
 #ifdef DEBUG
 fclose(file);
 #endif
-	LALInferenceDestroyVariables(&intrinsicParams);
+	LALInferenceClearVariables(&intrinsicParams);
 }
 
 REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * dataPtr,

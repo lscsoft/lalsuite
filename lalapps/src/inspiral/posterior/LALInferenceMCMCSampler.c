@@ -1072,7 +1072,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   }
 
   LALInferenceUpdateAdaptiveJumps(runState, accepted, targetAcceptance);
-  LALInferenceDestroyVariables(&proposedParams);
+  LALInferenceClearVariables(&proposedParams);
 }
 
 
@@ -1353,7 +1353,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
   if (swapProposed && swapAccepted)
     swapProposed++;
 
-  LALInferenceDestroyVariables(adjCurrentParams);
+  LALInferenceClearVariables(adjCurrentParams);
   XLALFree(adjCurrentParams);
   return swapProposed;
 }
@@ -1699,7 +1699,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
       /* Restore state, cleanup, and throw error */
       LALInferenceCopyVariables(saveParams, runState->currentParams);
       XLALFree(fname);
-      LALInferenceDestroyVariables(saveParams);
+      LALInferenceClearVariables(saveParams);
       XLALFree(saveParams);
       XLAL_ERROR_VOID(XLAL_EINVAL, "unknown mass ratio parameter name (allowed are 'massratio' or 'asym_massratio')");
     }
@@ -1741,7 +1741,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     setIFOAcceptedLikelihoods(runState);    
 
     XLALFree(fname);
-    LALInferenceDestroyVariables(saveParams);
+    LALInferenceClearVariables(saveParams);
     XLALFree(saveParams);
   }
 }
