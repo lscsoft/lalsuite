@@ -37,6 +37,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/TransientCW_utils.h>
+#include <lal/LALString.h>
 #include <lal/StringVector.h>
 
 // ---------- local defines
@@ -111,7 +112,7 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
   for ( UINT4 X=0; X < numDet; X ++ )
     {
       /* detector params */
-      CWMFDataParams dataParamsX = (*dataParams); // struct-copy
+      CWMFDataParams dataParamsX = (*dataParams); // struct-copy for general settings
       dataParamsX.detInfo.length = 1;
       dataParamsX.detInfo.sites[0] = dataParams->detInfo.sites[X];
       dataParamsX.detInfo.sqrtSn[0] = dataParams->detInfo.sqrtSn[X];
@@ -552,9 +553,8 @@ XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect )
       for ( UINT4 i = 0 ; i < numPulsars; i ++ )
         {
           BinaryOrbitParams *orbit = ppvect->data[i].Doppler.orbit;
-          if ( orbit != NULL ) {
-            XLALFree ( orbit );
-          }
+          XLALFree ( orbit );
+          XLALFree ( ppvect->data[i].name );
         } // for i < numPulsars
       XLALFree ( ppvect->data );
     }
@@ -563,6 +563,23 @@ XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect )
 
   return;
 } // XLALDestroyPulsarParamsVector()
+
+/**
+ * Destructor for PulsarParams types
+ */
+void
+XLALDestroyPulsarParams ( PulsarParams *params )
+{
+  if ( params == NULL ) {
+    return;
+  }
+  XLALFree ( params->name );
+  XLALFree ( params->Doppler.orbit );
+  XLALFree ( params );
+
+  return;
+
+} // XLALDestroyPulsarParams()
 
 
 /**
@@ -609,8 +626,8 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &h0, cfgdata, secName, "h0", &have_h0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &cosi, cfgdata, secName, "cosi", &have_cosi ) == XLAL_SUCCESS, XLAL_EFUNC );
   // ----- ALTERNATIVE: aPlus, aCross
-  REAL8 aPlus; BOOLEAN have_aPlus;
-  REAL8 aCross; BOOLEAN have_aCross;
+  REAL8 aPlus = 0; BOOLEAN have_aPlus;
+  REAL8 aCross = 0; BOOLEAN have_aCross;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &aPlus, cfgdata, secName, "aPlus", &have_aPlus ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &aCross, cfgdata, secName, "aCross", &have_aCross ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -650,14 +667,14 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   // ---------- PulsarDopplerParams ----------
 
   // ----- refTime
-  REAL8 refTime_GPS; BOOLEAN have_refTime;
+  REAL8 refTime_GPS = 0; BOOLEAN have_refTime;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &refTime_GPS, cfgdata, secName, "refTime", &have_refTime ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( have_refTime, XLAL_EINVAL );
 
   XLAL_CHECK ( XLALGPSSetREAL8 ( & pulsarParams->Doppler.refTime, refTime_GPS ) != NULL, XLAL_EFUNC );
 
   // ----- Alpha
-  REAL8 Alpha_Rad; BOOLEAN have_Alpha;
+  REAL8 Alpha_Rad = 0; BOOLEAN have_Alpha;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &Alpha_Rad, cfgdata, secName, "Alpha", &have_Alpha ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( have_Alpha, XLAL_EINVAL );
 
@@ -665,7 +682,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   pulsarParams->Doppler.Alpha = Alpha_Rad;
 
   // ----- Delta
-  REAL8 Delta_Rad; BOOLEAN have_Delta;
+  REAL8 Delta_Rad = 0; BOOLEAN have_Delta;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &Delta_Rad, cfgdata, secName, "Delta", &have_Delta ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( have_Delta, XLAL_EINVAL );
 
@@ -674,7 +691,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
 
   // ----- fkdot
   // Freq
-  REAL8 Freq; BOOLEAN have_Freq;
+  REAL8 Freq = 0; BOOLEAN have_Freq;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &Freq, cfgdata, secName, "Freq", &have_Freq ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( have_Freq, XLAL_EINVAL );
 
@@ -682,40 +699,40 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   pulsarParams->Doppler.fkdot[0] = Freq;
 
   // f1dot
-  REAL8 f1dot; BOOLEAN have_f1dot;
+  REAL8 f1dot = 0; BOOLEAN have_f1dot;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f1dot, cfgdata, secName, "f1dot", &have_f1dot ) == XLAL_SUCCESS, XLAL_EFUNC );
   pulsarParams->Doppler.fkdot[1] = f1dot;
   // f2dot
-  REAL8 f2dot; BOOLEAN have_f2dot;
+  REAL8 f2dot = 0; BOOLEAN have_f2dot;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f2dot, cfgdata, secName, "f2dot", &have_f2dot ) == XLAL_SUCCESS, XLAL_EFUNC );
   pulsarParams->Doppler.fkdot[2] = f2dot;
   // f3dot
-  REAL8 f3dot; BOOLEAN have_f3dot;
+  REAL8 f3dot = 0; BOOLEAN have_f3dot;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f3dot, cfgdata, secName, "f3dot", &have_f3dot ) == XLAL_SUCCESS, XLAL_EFUNC );
   pulsarParams->Doppler.fkdot[3] = f3dot;
   // f4dot
-  REAL8 f4dot; BOOLEAN have_f4dot;
+  REAL8 f4dot = 0; BOOLEAN have_f4dot;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f4dot, cfgdata, secName, "f4dot", &have_f4dot ) == XLAL_SUCCESS, XLAL_EFUNC );
   pulsarParams->Doppler.fkdot[4] = f4dot;
   // f5dot
-  REAL8 f5dot; BOOLEAN have_f5dot;
+  REAL8 f5dot = 0; BOOLEAN have_f5dot;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f5dot, cfgdata, secName, "f5dot", &have_f5dot ) == XLAL_SUCCESS, XLAL_EFUNC );
   pulsarParams->Doppler.fkdot[5] = f5dot;
   // f6dot
-  REAL8 f6dot; BOOLEAN have_f6dot;
+  REAL8 f6dot = 0; BOOLEAN have_f6dot;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &f6dot, cfgdata, secName, "f6dot", &have_f6dot ) == XLAL_SUCCESS, XLAL_EFUNC );
   pulsarParams->Doppler.fkdot[6] = f6dot;
 
   // ----- orbit
-  REAL8 orbitTpSSB; 	BOOLEAN have_orbitTpSSB;
+  REAL8 orbitTpSSB = 0;	BOOLEAN have_orbitTpSSB;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitTpSSB, cfgdata, secName, "orbitTpSSB", &have_orbitTpSSB ) == XLAL_SUCCESS, XLAL_EFUNC );
-  REAL8 orbitArgp;     	BOOLEAN have_orbitArgp;
+  REAL8 orbitArgp = 0; 	BOOLEAN have_orbitArgp;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitArgp, cfgdata, secName, "orbitArgp", &have_orbitArgp ) == XLAL_SUCCESS, XLAL_EFUNC );
-  REAL8 orbitasini; 	BOOLEAN have_orbitasini;
+  REAL8 orbitasini = 0; BOOLEAN have_orbitasini;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitasini, cfgdata, secName, "orbitasini", &have_orbitasini ) == XLAL_SUCCESS, XLAL_EFUNC );
-  REAL8 orbitEcc;   	BOOLEAN have_orbitEcc;
+  REAL8 orbitEcc = 0;  	BOOLEAN have_orbitEcc;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitEcc, cfgdata, secName, "orbitEcc", &have_orbitEcc ) == XLAL_SUCCESS, XLAL_EFUNC );
-  REAL8 orbitPeriod;	BOOLEAN have_orbitPeriod;
+  REAL8 orbitPeriod = 0;BOOLEAN have_orbitPeriod;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitPeriod, cfgdata, secName, "orbitPeriod", &have_orbitPeriod ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( have_orbitasini || have_orbitEcc || have_orbitPeriod || have_orbitArgp || have_orbitTpSSB )
@@ -743,10 +760,10 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   char *transientWindowType = NULL; BOOLEAN have_transientWindowType;
   XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &transientWindowType, cfgdata, secName, "transientWindowType", &have_transientWindowType ) == XLAL_SUCCESS, XLAL_EFUNC );
   // ----- t0
-  REAL8 transientStartTime; BOOLEAN have_transientStartTime;
+  REAL8 transientStartTime = 0; BOOLEAN have_transientStartTime;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &transientStartTime, cfgdata, secName, "transientStartTime", &have_transientStartTime ) == XLAL_SUCCESS, XLAL_EFUNC );
   // ----- tau
-  REAL8 transientTauDays; BOOLEAN have_transientTauDays;
+  REAL8 transientTauDays = 0; BOOLEAN have_transientTauDays;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &transientTauDays, cfgdata, secName, "transientTauDays", &have_transientTauDays ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   transientWindowType_t type = TRANSIENT_NONE;	/* default: no transient signal window */
@@ -812,6 +829,14 @@ XLALPulsarParamsFromFile ( const char *fname 		///< [in] 'CWsources' config file
         sec_i = NULL;
       }
       XLAL_CHECK_NULL ( XLALReadPulsarParams ( &sources->data[i], cfgdata, sec_i ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // ----- source naming convention: 'filename:section'
+      char *name;
+      size_t len = strlen(fname) + strlen(sections->data[i]) + 2;
+      XLAL_CHECK_NULL ( (name = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
+      sprintf ( name, "%s:%s", fname, sections->data[i] );
+      sources->data[i].name = name;
+
     } // for i < numPulsars
 
   XLALDestroyStringVector ( sections );
@@ -875,7 +900,7 @@ XLALPulsarParamsFromUserInput ( const char *UserInput		///< [in] user-input stri
       XLAL_CHECK_NULL ( (sources = XLALCreatePulsarParamsVector ( 1 )) != NULL, XLAL_EFUNC );
 
       XLAL_CHECK_NULL ( XLALReadPulsarParams ( &sources->data[0], cfgdata, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-
+      XLAL_CHECK_NULL ( (sources->data[0].name = XLALStringDuplicate ( "from-commandline" )) != NULL, XLAL_EFUNC );
       XLALDestroyParsedDataFile ( cfgdata );
 
     } // if direct config-string given

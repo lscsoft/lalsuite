@@ -92,7 +92,9 @@ PulsarParamsVector *XLALPulsarParamsFromFile ( const char *fname );
 PulsarParamsVector *XLALPulsarParamsFromUserInput ( const char *UserInput );
 
 PulsarParamsVector *XLALCreatePulsarParamsVector ( UINT4 numPulsars );
+
 void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
+void XLALDestroyPulsarParams ( PulsarParams *params );
 
 
 /*@}*/

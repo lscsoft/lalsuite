@@ -128,6 +128,7 @@ typedef struct tagtransientWindow_t
 
 /** Type defining the parameters of a pulsar-source of CW Gravitational waves */
 typedef struct tagPulsarParams {
+  char *name;				/**< 'name' for this sources, can be NULL */
   PulsarAmplitudeParams Amp;		/**< 'Amplitude-parameters': h0, cosi, phi0, psi */
   PulsarDopplerParams   Doppler;	/**< 'Phase-evolution parameters': {skypos, fkdot, orbital params } */
   transientWindow_t     Transient;	/**< Transient window-parameters (start-time, duration, window-type) */
