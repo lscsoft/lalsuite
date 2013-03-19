@@ -46,21 +46,17 @@ nTsft=20
 timestamps=${srcdir}/testT8_1800
 
 ## excercise non-integer cycle gaps in heterodyned timeseries
-fmin=299.1001
-Band=0.12345
+fmin=299.0
+Band=10
 fmax=$(echo $fmin $Band | LC_ALL=C awk '{printf "%.7g", $1 + $2}');
 
 IFO1=H1
 IFO2=L1
-IFOs=${IFO1},${IFO2}
-
-sqrtSn1=0;
-sqrtSn2=0;	## for comparison with 2 calls to mfdv4 and fixed see, the 2nd IFO noise must be 0
-sqrtSnX=${sqrtSn1},${sqrtSn2}
+sqrtSn1=0.5;
+sqrtSn2=1.2;	## for comparison with 2 calls to mfdv4 and fixed see, the 2nd IFO noise must be 0
 
 timestamps1="${testDIR}/H1-timestamps.dat"
 timestamps2="${testDIR}/L1-timestamps.dat"
-timestampsFiles=${timestamps1},${timestamps2}
 
 cp ${timestamps} ${timestamps1}
 echo "701210229 0" > ${timestamps2}
@@ -68,30 +64,84 @@ echo "701230229 0" >> ${timestamps2}
 echo "701240229 0" >> ${timestamps2}
 
 ## ---------- signal parameters ----------
-h0=0.73
-cosi=0.1
-psi=0.5
-phi0=0.9
+## ----- signal 1
+s1_h0=0.73
+s1_cosi=0.1
+s1_psi=0.5
+s1_phi0=0.9
+s1_refTime=701210229
+s1_Alpha=1.7
+s1_Delta=0.9
+s1_Freq=299.12
+s1_f1dot=0
+s1_f2dot=0
+## ----- signal 2
+s2_h0=2.5
+s2_cosi=-0.5
+s2_psi=1.2
+s2_phi0=1.5
+s2_refTime=711210229
+s2_Alpha=3.7
+s2_Delta=-0.5
+s2_Freq=300.12
+s2_f1dot=-1e-10
+s2_f2dot=0
+## ----- signal 3
+s3_h0=3.1
+s3_cosi=0.5
+s3_psi=-1.2
+s3_phi0=2.5
+s3_refTime=721210229
+s3_Alpha=0.5
+s3_Delta=1.2
+s3_Freq=300.00
+s3_f1dot=-1e-9
+s3_f2dot=-2e-19
+# --------------------
 
-refTime=701210229
-Alpha=1.7
-Delta=0.9
-Freq=299.12
-f1dot=0
-f2dot=0
+injString="Alpha=${s1_Alpha};Delta=${s1_Delta};refTime=${s1_refTime};Freq=${s1_Freq};f1dot=${s1_f1dot};f2dot=${s1_f2dot};h0=${s1_h0};cosi=${s1_cosi};psi=${s1_psi};phi0=${s1_phi0};"
 
-injFile=${testDIR}/injectionSources.dat
-echo "Alpha = ${Alpha}" > ${injFile}
-echo "Delta = ${Delta}" >> ${injFile}
-echo "refTime = ${refTime}" >> ${injFile}
-echo "Freq = ${Freq}" >> ${injFile}
-echo "f1dot = ${f1dot}" >> ${injFile}
-echo "f2dot = ${f2dot}" >> ${injFile}
+## ---------- signal file 1 ----------
+injFile1=${testDIR}/injectionS1.dat
+echo "[Pulsar 1]" >> ${injFile1}
+echo "Alpha = ${s1_Alpha}" >> ${injFile1}
+echo "Delta = ${s1_Delta}" >> ${injFile1}
+echo "refTime = ${s1_refTime}" >> ${injFile1}
+echo "Freq = ${s1_Freq}" >> ${injFile1}
+echo "f1dot = ${s1_f1dot}" >> ${injFile1}
+echo "f2dot = ${s1_f2dot}" >> ${injFile1}
+echo "h0 = ${s1_h0}" >> ${injFile1}
+echo "cosi = ${s1_cosi}" >> ${injFile1}
+echo "psi = ${s1_psi}" >> ${injFile1}
+echo "phi0 = ${s1_phi0}" >> ${injFile1}
+echo >> ${injFile1}
+## ---------- signal file 2 ----------
+injFile2=${testDIR}/injectionS2.dat
+echo "Alpha = ${s2_Alpha}" >> ${injFile2}
+echo "Delta = ${s2_Delta}" >> ${injFile2}
+echo "refTime = ${s2_refTime}" >> ${injFile2}
+echo "Freq = ${s2_Freq}" >> ${injFile2}
+echo "f1dot = ${s2_f1dot}" >> ${injFile2}
+echo "f2dot = ${s2_f2dot}" >> ${injFile2}
+echo "h0 = ${s2_h0}" >> ${injFile2}
+echo "cosi = ${s2_cosi}" >> ${injFile2}
+echo "psi = ${s2_psi}" >> ${injFile2}
+echo "phi0 = ${s2_phi0}" >> ${injFile2}
+echo >> ${injFile2}
+## ---------- add section for Pulsar 3 into signal-file 2 ----------
+echo "[Pulsar 3]" >> ${injFile2}
+echo "Alpha = ${s3_Alpha}" >> ${injFile2}
+echo "Delta = ${s3_Delta}" >> ${injFile2}
+echo "refTime = ${s3_refTime}" >> ${injFile2}
+echo "Freq = ${s3_Freq}" >> ${injFile2}
+echo "f1dot = ${s3_f1dot}" >> ${injFile2}
+echo "f2dot = ${s3_f2dot}" >> ${injFile2}
+echo "h0 = ${s3_h0}" >> ${injFile2}
+echo "cosi = ${s3_cosi}" >> ${injFile2}
+echo "psi = ${s3_psi}" >> ${injFile2}
+echo "phi0 = ${s3_phi0}" >> ${injFile2}
+echo >> ${injFile2}
 
-echo "h0 = ${h0}" >> ${injFile}
-echo "cosi = ${cosi}" >> ${injFile}
-echo "psi = ${psi}" >> ${injFile}
-echo "phi0 = ${phi0}" >> ${injFile}
 
 ## ---------- output parameters ----------
 sftsv4_1=${testDIR}/${IFO1}-sftsv4.sft
@@ -99,44 +149,94 @@ sftsv4_2=${testDIR}/${IFO2}-sftsv4.sft
 sftsv5_1=${testDIR}/H-*_mfdv5*.sft
 sftsv5_2=${testDIR}/L-*_mfdv5*.sft
 
-echo "------------------------------------------------------------"
-echo " SIGNAL-ONLY - compare SFTs between mfd_v4 and mfd_v5"
-echo "------------------------------------------------------------"
+## ----------
+## produce SFTs for 2 detectors, containing Gaussian noise + N signals, compare between mfdv4 and mfdv5
+## ----------
 
 echo
-echo "----- mfd_v4: producing SFTs via (generationMode=1 [PER_SFT] ):"
+echo "========== MFDv4 =========="
 echo
+mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --fmin=$fmin --Band=$Band --generationMode=0  -v${debug} --outSingleSFT"
+echo "---------- mfdv4: inject first signal ----------"
+sig1="--refTime=${s1_refTime} --h0=${s1_h0} --cosi=${s1_cosi} --psi=${s1_psi} --phi0=${s1_phi0} --Freq=${s1_Freq} --Alpha=${s1_Alpha} --Delta=${s1_Delta} --f1dot=${s1_f1dot} --f2dot=${s1_f2dot}"
 ##----- first IFO
-mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$Alpha --Delta=$Delta --IFO=$IFO1 --timestampsFile=$timestamps1 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 --noiseSqrtSh=${sqrtSn1} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_1}"
-echo $mfdv4_CL;
-if ! eval $mfdv4_CL; then
+out_IFO1="--IFO=${IFO1} --timestampsFile=${timestamps1}  --outSFTbname=${sftsv4_1} --noiseSqrtSh=${sqrtSn1} --randSeed=1"
+cmdline="$mfdv4_CL ${sig1} ${out_IFO1}"
+echo $cmdline
+if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdv4_CODE' ..."
     exit 1
 fi
-echo "ok."
-
 ##----- second IFO
-mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --Tsft=$Tsft --fmin=$fmin --Band=$Band --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=${Freq} --Alpha=$Alpha --Delta=$Delta --IFO=$IFO2 --timestampsFile=$timestamps2 --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 --noiseSqrtSh=${sqrtSn2} --randSeed=1 -v${debug} --outSingleSFT --outSFTbname=${sftsv4_2}"
-echo $mfdv4_CL;
-if ! eval $mfdv4_CL; then
+out_IFO2="--IFO=${IFO2} --timestampsFile=${timestamps2}  --outSFTbname=${sftsv4_2} --noiseSqrtSh=${sqrtSn2} --randSeed=2"
+cmdline="$mfdv4_CL  ${sig1} ${out_IFO2}"
+echo $cmdline
+if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdv4_CODE' ..."
     exit 1
 fi
-echo "ok."
+echo "---------- mfdv4: inject second signal on top ----------"
+sig2="--refTime=${s2_refTime} --h0=${s2_h0} --cosi=${s2_cosi} --psi=${s2_psi} --phi0=${s2_phi0} --Freq=${s2_Freq} --Alpha=${s2_Alpha} --Delta=${s2_Delta} --f1dot=${s2_f1dot} --f2dot=${s2_f2dot}"
+##----- first IFO
+out_IFO1="--IFO=${IFO1} --noiseSFTs=${sftsv4_1} --window=None --outSFTbname=${sftsv4_1}"
+cmdline="$mfdv4_CL ${sig2} ${out_IFO1}"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfdv4_CODE' ..."
+    exit 1
+fi
+##----- second IFO
+out_IFO2="--IFO=${IFO2} --noiseSFTs=${sftsv4_2} --window=None --outSFTbname=${sftsv4_2}"
+cmdline="$mfdv4_CL ${sig2} ${out_IFO2}"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfdv4_CODE' ..."
+    exit 1
+fi
+echo "---------- mfdv4: inject third signal on top ----------"
+sig2="--refTime=${s3_refTime} --h0=${s3_h0} --cosi=${s3_cosi} --psi=${s3_psi} --phi0=${s3_phi0} --Freq=${s3_Freq} --Alpha=${s3_Alpha} --Delta=${s3_Delta} --f1dot=${s3_f1dot} --f2dot=${s3_f2dot}"
+##----- first IFO
+out_IFO1="--IFO=${IFO1} --noiseSFTs=${sftsv4_1} --window=None --outSFTbname=${sftsv4_1}"
+cmdline="$mfdv4_CL ${sig2} ${out_IFO1}"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfdv4_CODE' ..."
+    exit 1
+fi
+##----- second IFO
+out_IFO2="--IFO=${IFO2} --noiseSFTs=${sftsv4_2} --window=None --outSFTbname=${sftsv4_2}"
+cmdline="$mfdv4_CL ${sig2} ${out_IFO2}"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfdv4_CODE' ..."
+    exit 1
+fi
 
 
 echo
-echo "----- mfd_v5: producing SFTs:"
+echo "========== MFDv5 =========="
 echo
-## ----- multi-IFO call
-mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --Tsft=$Tsft --fmin=$fmin --Band=$Band --IFOs=${IFOs} --timestampsFiles=${timestampsFiles} --sqrtSX=${sqrtSnX} --randSeed=1 --injectionSources=@${injFile} -v${debug}"
-cmdline=" $mfdv5_CL "
+mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --fmin=$fmin --Band=$Band -v${debug}"
+
+echo "----- single multi-IFO, multi-signal call"
+outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
+sig13="--injectionSources='@${injFile1};${injFile2}'"
+cmdline="$mfdv5_CL ${outIFOs} ${sig13}"
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
     exit 1
 fi
-echo "ok."
+
+echo "----- and again the same, using different input methods"
+sig1="--injectionSources='${injString}'"
+cmdline="$mfdv5_CL ${outIFOs} ${sig1} --outMiscField='mfdv5_try2'"
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfdv5_CODE' ..."
+    exit 1
+fi
+
 
 echo
 echo "--------------------------------------------------"
