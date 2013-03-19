@@ -726,8 +726,8 @@ cleanConfig (CHARSequence *text)
             memset ( (void*)ptr, '\n', len);
           }
 
-      // replace ';' by '\n' to allow semi-colons to separate assignments
-      if ( (*ptr) == ';') {
+      // replace un-quoted ';' by '\n' to allow semi-colons to separate assignments
+      if ( (!inQuotes) && ((*ptr) == ';') ) {
         (*ptr) = '\n';
       }
 

@@ -118,7 +118,7 @@ int main(int argc, char *argv[]){
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
-  if ( strcmp(string2b, "this is also possible, and # here does nothing ")) {
+  if ( strcmp(string2b, "this is also possible, and # here does nothing; and neither does semi-colon ")) {
     XLALPrintError ("read-in: '%s'\n", string2b);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]){
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
-  if ( strcmp(string2b, "this is also possible, and # here does nothing ")) {
+  if ( strcmp(string2b, "this is also possible, and # here does nothing; and neither does semi-colon ")) {
     XLALPrintError ("read-in: '%s'\n", string2b);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
