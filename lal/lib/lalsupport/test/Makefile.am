@@ -5,7 +5,6 @@ LDADD = \
 
 check_PROGRAMS = \
 	ConfigFileTest \
-	ConfigFileTest2 \
 	LALMath3DPlotTest \
 	LALMathNDPlotTest \
 	PrintFTSeriesTest \
