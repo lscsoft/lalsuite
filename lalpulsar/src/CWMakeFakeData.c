@@ -796,17 +796,25 @@ XLALPulsarParamsFromFile ( const char *fname 		///< [in] 'CWsources' config file
   LALParsedDataFile *cfgdata = NULL;
   XLAL_CHECK_NULL ( XLALParseDataFile ( &cfgdata, fname ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  UINT4 numPulsars = 1;	// currently only single-section defs supported! FIXME
+  LALStringVector *sections;
+  XLAL_CHECK_NULL ( (sections = XLALListConfigFileSections ( cfgdata )) != NULL, XLAL_EFUNC );
+
+  UINT4 numPulsars = sections->length;	// currently only single-section defs supported! FIXME
 
   PulsarParamsVector *sources;
   XLAL_CHECK_NULL ( (sources = XLALCreatePulsarParamsVector ( numPulsars )) != NULL, XLAL_EFUNC );
 
   for ( UINT4 i = 0; i < numPulsars; i ++ )
     {
-      const char *sec_i = NULL;	// proper sections not yet supported! FIXME
+      const char *sec_i = sections->data[i];
+
+      if ( strcmp ( sec_i, "default" ) == 0 ) {	// special handling of 'default' section
+        sec_i = NULL;
+      }
       XLAL_CHECK_NULL ( XLALReadPulsarParams ( &sources->data[i], cfgdata, sec_i ) == XLAL_SUCCESS, XLAL_EFUNC );
     } // for i < numPulsars
 
+  XLALDestroyStringVector ( sections );
   XLALDestroyParsedDataFile ( cfgdata );
 
   return sources;
@@ -849,7 +857,7 @@ XLALPulsarParamsFromUserInput ( const char *UserInput		///< [in] user-input stri
               UINT4 addlen = sources_i->length;
               UINT4 newlen = oldlen + addlen;
               sources->length = newlen;
-              sources->data = XLALRealloc ( sources->data, newlen * sizeof(sources->data[0]) );
+              XLAL_CHECK_NULL ( (sources->data = XLALRealloc ( sources->data, newlen * sizeof(sources->data[0]) )) != NULL, XLAL_ENOMEM );
               memcpy ( sources->data + oldlen, sources_i->data, addlen * sizeof(sources->data[0]) );
               XLALFree ( sources_i->data );
               XLALFree ( sources_i );
@@ -861,7 +869,15 @@ XLALPulsarParamsFromUserInput ( const char *UserInput		///< [in] user-input stri
     } // if file-name spec given
   else
     {
-      XLAL_ERROR_NULL ( XLAL_EINVAL, "Sorry, non-file PulsarParamsVector input currently not yet supported!\n" );
+      LALParsedDataFile *cfgdata = NULL;
+      XLAL_CHECK_NULL ( XLALParseDataFileContent ( &cfgdata, UserInput ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      XLAL_CHECK_NULL ( (sources = XLALCreatePulsarParamsVector ( 1 )) != NULL, XLAL_EFUNC );
+
+      XLAL_CHECK_NULL ( XLALReadPulsarParams ( &sources->data[0], cfgdata, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      XLALDestroyParsedDataFile ( cfgdata );
+
     } // if direct config-string given
 
   return sources;
