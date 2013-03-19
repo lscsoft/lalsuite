@@ -58,6 +58,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
+#include <lal/LALString.h>
 
 #include <lal/TransientCW_utils.h>
 #include <lal/CWMakeFakeData.h>
@@ -72,8 +73,6 @@
 /** configuration-variables derived from user-variables */
 typedef struct
 {
-  PulsarParamsVector *injectionSources;		/**< list of injection source parameters */
-
   EphemerisData *edat;		/**< ephemeris-data */
   MultiLIGOTimeGPSVector *multiTimestamps;/**< a vector of timestamps to generate time-series/SFTs for */
   MultiDetectorInfo detInfo;	//!< detectors and noise-floors (for Gaussian noise) to generate data for
@@ -176,6 +175,9 @@ main(int argc, char *argv[])
   MultiSFTVector *mSFTs = NULL;
   MultiREAL4TimeSeries *mTseries = NULL;
 
+  PulsarParamsVector *injectionSources;
+  XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources ) ) != NULL, XLAL_EFUNC );
+
   CWMFDataParams DataParams   = empty_CWMFDataParams;
   DataParams.fMin               = uvar.fmin;
   DataParams.Band               = uvar.Band;
@@ -185,7 +187,10 @@ main(int argc, char *argv[])
   DataParams.SFTWindowType      = uvar.SFTWindowType;
   DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
 
-  XLAL_CHECK ( XLALCWMakeFakeMultiData ( &mSFTs, &mTseries, GV.injectionSources, &DataParams, GV.edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALCWMakeFakeMultiData ( &mSFTs, &mTseries, injectionSources, &DataParams, GV.edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALDestroyPulsarParamsVector ( injectionSources );
+  injectionSources = NULL;
 
   // if noiseSFTs specified, load them and add them to the resulting SFT-vector
   if ( GV.multiNoiseCatalogView )
@@ -291,120 +296,99 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
    /* check for negative fMin and Band, which would break the fMin_eff, fBand_eff calculation below */
   XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fMin=%f!\n\n", uvar->fmin );
-  XLAL_CHECK ( uvar->Band >= 0, XLAL_EDOM, "Invalid negative frequency band Band=%f!\n\n", uvar->Band );
+  XLAL_CHECK ( uvar->Band > 0, XLAL_EDOM, "Invalid non-positive frequency band Band=%f!\n\n", uvar->Band );
 
-  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &(cfg->detInfo), uvar->IFOs, uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // ----- check user-input consistency:
+  // IFOs : either from --IFOs user-input, or from --noiseSFTs
+  BOOLEAN have_IFOs = (uvar->IFOs != NULL);
+  BOOLEAN have_noiseSFTs = (uvar->noiseSFTs != NULL);
+  XLAL_CHECK ( have_IFOs || have_noiseSFTs, XLAL_EINVAL, "Need one of --IFOs input or --noiseSFTs to determine detectors\n" );
+  XLAL_CHECK ( ! ( have_IFOs && have_noiseSFTs ), XLAL_EINVAL, "Allow only *one* of --IFOs or --noiseSFTs to determine detectors\n");
 
-  /* ---------- determine timestamps to produce signal for  ---------- */
-  {
-    /* check input consistency: *uvar->timestampsFiles, uvar->startTime, uvar->duration */
-    BOOLEAN haveStart = XLALUserVarWasSet ( &uvar->startTime );
-    BOOLEAN haveDuration = XLALUserVarWasSet ( &uvar->duration );
-    BOOLEAN haveOverlap = ( uvar->SFToverlap > 0 );
-    BOOLEAN haveTimestampsFiles = ( uvar->timestampsFiles != NULL );
+  if ( have_IFOs ) {
+    XLAL_CHECK ( XLALParseMultiDetectorInfo ( &(cfg->detInfo), uvar->IFOs, uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
-    if ( ( haveDuration && !haveStart) || ( !haveDuration && haveStart ) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --startTime AND --duration if you give one of them !\n\n");
-    }
+  // TIMESTAMPS: either from --timestampsFiles, --startTime+duration, or --noiseSFTs
+  BOOLEAN have_startTime = XLALUserVarWasSet ( &uvar->startTime );
+  BOOLEAN have_duration = XLALUserVarWasSet ( &uvar->duration );
+  BOOLEAN have_timestampsFiles = ( uvar->timestampsFiles != NULL );
+  // need BOTH startTime+duration or none
+  XLAL_CHECK ( ( have_duration && have_startTime) || !( have_duration || have_startTime ), XLAL_EINVAL, "Need BOTH {--startTime,--duration} or NONE\n");
+  // at least one of {startTime,timestamps,noiseSFTs} required
+  XLAL_CHECK ( have_timestampsFiles || have_startTime || have_noiseSFTs, XLAL_EINVAL, "Need one of {--timestampsFiles, --startTime+duration, --noiseSFTs}\n" );
+  // don't allow timestamps + {startTime+duration OR noiseSFTs}
+  XLAL_CHECK ( !have_timestampsFiles || !(have_startTime||have_noiseSFTs), XLAL_EINVAL, "--timestampsFiles incompatible with {--noiseSFTs or --startTime+duration}\n");
+  // note, however, that we DO allow --noiseSFTs and --startTime+duration, which will act as a constraint
+  // on the noise-SFTs to load in
 
-    /* don't allow using --SFToverlap with anything other than pure (--startTime,--duration) */
-    if ( haveOverlap && ( uvar->noiseSFTs || haveTimestampsFiles ) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "I can't combine --SFToverlap with --noiseSFTs or --timestampsFiles, only use with (--startTime, --duration)!\n\n");
-    }
+  // don't allow --SFToverlap with either --noiseSFTs OR --timestampsFiles
+  XLAL_CHECK ( uvar->SFToverlap >= 0, XLAL_EDOM );
+  BOOLEAN haveOverlap = ( uvar->SFToverlap > 0 );
+  XLAL_CHECK ( !haveOverlap || !( have_noiseSFTs || have_timestampsFiles ), XLAL_EINVAL, "--SFToverlap incompatible with {--noiseSFTs or --timestampsFiles}\n" );
 
-    /* ----- load timestamps from file if given  */
-    if ( haveTimestampsFiles )
-      {
-	if ( haveStart || haveDuration || haveOverlap ) {
-          XLAL_ERROR ( XLAL_EINVAL, "Using --timestampsFiles is incompatible with either of --startTime, --duration or --SFToverlap\n\n");
-        }
-	XLAL_CHECK ( (cfg->multiTimestamps = XLALReadMultiTimestampsFiles ( uvar->timestampsFiles )) != NULL, XLAL_EFUNC );
+  // now handle the 3 mutually-exclusive cases: have_noiseSFTs || have_timestampsFiles || have_startTime (only)
+  if ( have_noiseSFTs )
+    {
+      SFTConstraints constraints = empty_SFTConstraints;
+      if ( have_startTime && have_duration )	 // use optional (startTime+duration) as constraints,
+        {
+          LIGOTimeGPS minStartTime, maxEndTime;
+          XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
+          XLALGPSSetREAL8 ( &maxEndTime, uvar->startTime + uvar->duration );
+          constraints.startTime = &minStartTime;
+          constraints.endTime   = &maxEndTime;
+          XLALPrintWarning ( "Only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
+        } /* if start+duration given */
+      XLAL_CHECK ( (cfg->noiseCatalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK (  cfg->noiseCatalog->length > 0, XLAL_EINVAL, "No noise-SFTs matching (start+duration, timestamps) were found!\n" );
+      XLAL_CHECK ( (cfg->multiNoiseCatalogView = XLALGetMultiSFTCatalogView ( cfg->noiseCatalog )) != NULL, XLAL_EFUNC );
 
-	if ( ( cfg->multiTimestamps->length == 0 ) || ( cfg->multiTimestamps->data == NULL ) ) {
-          XLAL_ERROR ( XLAL_EINVAL, "Got empty timestamps-list from file '%s'\n", uvar->timestampsFiles );
-        }
-        for ( UINT4 X=0; X < cfg->multiTimestamps->length; X ++ ) {
-          cfg->multiTimestamps->data[X]->deltaT = uvar->Tsft;
-        }
+      // extract multi-timestamps from the multi-SFT-catalog view
+      XLAL_CHECK ( (cfg->multiTimestamps = XLALTimestampsFromMultiSFTCatalogView ( cfg->multiNoiseCatalogView )) != NULL, XLAL_EFUNC );
+      // extract IFOs from multi-SFT catalog
+      XLAL_CHECK ( XLALMultiDetectorInfoFromMultiSFTCatalogView ( &(cfg->detInfo), cfg->multiNoiseCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-        XLAL_CHECK ( uvar->noiseSFTs == NULL, XLAL_EINVAL, "--timestampsFiles is incompatible with --noiseSFTs\n" );
+    } // endif have_noiseSFTs
+  else if ( have_timestampsFiles )
+    {
+      XLAL_CHECK ( (cfg->multiTimestamps = XLALReadMultiTimestampsFiles ( uvar->timestampsFiles )) != NULL, XLAL_EFUNC );
 
-      } /* if haveTimestampsFile */
+      XLAL_CHECK ( (cfg->multiTimestamps->length > 0) && (cfg->multiTimestamps->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from '%s'\n", uvar->timestampsFiles );
 
-    /* ----- if real noise-SFTs given: load them now using optional (start,start+duration) as constraints,
-     * Require window option to be given to ensure consistency with noise-SFT's windowing
-     */
-    if ( uvar->noiseSFTs )
-      {
-        XLAL_CHECK ( XLALUserVarWasSet ( &uvar->SFTWindowType ), XLAL_EINVAL, "--SFTWindowType required when given noiseSFTs.\n" );
-        XLAL_CHECK ( !XLALUserVarWasSet ( &uvar->IFOs ), XLAL_EINVAL, "Specifying --IFOs not allowed with --noiseSFTs.\n" );
+      XLAL_CHECK ( have_IFOs, XLAL_EINVAL, "Need --IFOs with --timestampsFiles\n" );	// paranoia check
 
-	/* use additional time-constraints from user input in noiseSFT loading */
-        SFTConstraints constraints = empty_SFTConstraints;
-	if ( haveStart && haveDuration )
-	  {
-            LIGOTimeGPS minStartTime, maxEndTime;
-	    XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
-	    XLALGPSSetREAL8 ( &maxEndTime, uvar->startTime + uvar->duration );
-
-	    constraints.startTime = &minStartTime;
-	    constraints.endTime   = &maxEndTime;
-
-            XLALPrintWarning ( "Only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
-	  } /* if start+duration given */
-
-        XLAL_CHECK ( (cfg->noiseCatalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
-	XLAL_CHECK (  cfg->noiseCatalog->length > 0, XLAL_EINVAL, "No noise-SFTs matching (start+duration, timestamps) were found!\n" );
-	XLAL_CHECK ( (cfg->multiNoiseCatalogView = XLALMultiSFTCatalogView ( cfg->noiseCatalog )) != NULL, XLAL_EFUNC );
-
-	/* extract multi-timestamps from the multi-SFT-catalog view */
-        XLAL_CHECK ( (cfg->multiTimestamps = XLALTimestampsFromMultiSFTCatalogView ( cfg->multiNoiseCatalogView )) != NULL, XLAL_EFUNC );
-
-      } /* if uvar->noiseSFTs */
-
-    /* have we got our timestamps yet?: If not, we must get them from (start, duration) user-input */
-    if ( cfg->multiTimestamps == NULL )
-      {
-	if ( !haveStart || !haveDuration ) {
-          XLAL_ERROR ( XLAL_EINVAL, "Need to have either --timestampsFiles OR (--startTime,--duration) OR --noiseSFTs\n\n");
-        }
-
-	/* internally always use timestamps, so we generate them  */
-	LIGOTimeGPS tStart;
-	XLALGPSSetREAL8 ( &tStart, uvar->startTime );
-        XLAL_CHECK ( ( cfg->multiTimestamps = XLALMakeMultiTimestamps ( tStart, uvar->duration, uvar->Tsft, uvar->SFToverlap, cfg->detInfo.length )) != NULL, XLAL_EFUNC );
-
-      } /* if !cfg->multiTimestamps */
-
-  } /* END: setup signal start + duration */
-
+      for ( UINT4 X=0; X < cfg->multiTimestamps->length; X ++ ) {
+        cfg->multiTimestamps->data[X]->deltaT = uvar->Tsft;	// Tsft information not given by timestamps-file
+      }
+    } // endif have_timestampsFiles
+  else if ( have_startTime && have_duration )
+    {
+      LIGOTimeGPS tStart;
+      XLALGPSSetREAL8 ( &tStart, uvar->startTime );
+      XLAL_CHECK ( ( cfg->multiTimestamps = XLALMakeMultiTimestamps ( tStart, uvar->duration, uvar->Tsft, uvar->SFToverlap, cfg->detInfo.length )) != NULL, XLAL_EFUNC );
+    } // endif have_startTime
+  else {
+    XLAL_ERROR (XLAL_EFAILED, "Something went wrong with my internal logic ..\n");
+  }
 
   /* -------------------- Prepare quantities for barycentering -------------------- */
-  {
-    CHAR *earthdata, *sundata;
+  CHAR *earthdata, *sundata;
 
-    len = strlen(uvar->ephemYear) + 20;
-    if ( uvar->ephemDir ) {
-      len += strlen ( uvar->ephemDir );
-    }
-    XLAL_CHECK ( (earthdata = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
-    XLAL_CHECK ( (sundata   = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
-    const char *sep = uvar->ephemDir ? "/" : "";
-    const char *ephemDir = uvar->ephemDir ? uvar->ephemDir : "";
-    sprintf ( earthdata, "%s%searth%s.dat", ephemDir, sep, uvar->ephemYear);
-    sprintf ( sundata,   "%s%ssun%s.dat",   ephemDir, sep, uvar->ephemYear);
+  len = strlen(uvar->ephemYear) + 20;
+  if ( uvar->ephemDir ) {
+    len += strlen ( uvar->ephemDir );
+  }
+  XLAL_CHECK ( (earthdata = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK ( (sundata   = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
+  const char *sep = uvar->ephemDir ? "/" : "";
+  const char *ephemDir = uvar->ephemDir ? uvar->ephemDir : "";
+  sprintf ( earthdata, "%s%searth%s.dat", ephemDir, sep, uvar->ephemYear);
+  sprintf ( sundata,   "%s%ssun%s.dat",   ephemDir, sep, uvar->ephemYear);
 
-    /* Init ephemerides */
-    XLAL_CHECK ( ( cfg->edat = XLALInitBarycenter ( earthdata, sundata ) ) != NULL, XLAL_EFUNC );
-    XLALFree(earthdata);
-    XLALFree(sundata);
-
-  } /* END: prepare barycentering routines */
-
-  // --------------------------------------------------------------------------------
-  // handle signal input parameters
-  // --------------------------------------------------------------------------------
-  XLAL_CHECK ( ( cfg->injectionSources = XLALPulsarParamsFromUserInput ( uvar->injectionSources ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( ( cfg->edat = XLALInitBarycenter ( earthdata, sundata ) ) != NULL, XLAL_EFUNC );
+  XLALFree(earthdata);
+  XLALFree(sundata);
 
   return XLAL_SUCCESS;
 
@@ -417,16 +401,14 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 int
 XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 {
-  int ret, len;
+  int ret;
 
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
 
   // ---------- set a few defaults ----------
 #define EPHEM_YEARS  "00-19-DE405"
-  uvar->ephemYear = XLALCalloc ( 1, len = strlen(EPHEM_YEARS)+1 );
-  XLAL_CHECK ( uvar->ephemYear != NULL, XLAL_ENOMEM, "XLALCalloc ( 1, %d ) failed.\n", len );
-  strcpy ( uvar->ephemYear, EPHEM_YEARS );
+  XLAL_CHECK ( (uvar->ephemYear = XLALStringDuplicate ( EPHEM_YEARS )) != NULL, XLAL_EFUNC );
 
   uvar->ephemDir = NULL;
   uvar->Tsft = 1800;
@@ -434,8 +416,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
 
 #define MISC_DEFAULT "mfdv5"
-  XLAL_CHECK ( (uvar->outMiscField = XLALCalloc ( 1, strlen(MISC_DEFAULT)+1 ) ) != NULL, XLAL_ENOMEM );
-  strcpy ( uvar->outMiscField, MISC_DEFAULT );
+  XLAL_CHECK ( (uvar->outMiscField = XLALStringDuplicate ( MISC_DEFAULT ))  != NULL, XLAL_EFUNC );
 
   // ---------- register all our user-variable ----------
   XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
@@ -467,7 +448,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* SFT properties */
   XLALregREALUserStruct (  Tsft,                 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
-  XLALregREALUserStruct (  SFToverlap,           0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
+  XLALregREALUserStruct (  SFToverlap,           0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFiles)");
   XLALregSTRINGUserStruct( SFTWindowType,        0, UVAR_OPTIONAL, "Window function to be applied to the SFTs (required when using --noiseSFTs)");
   XLALregREALUserStruct (  SFTWindowBeta,        0, UVAR_OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
@@ -508,8 +489,6 @@ XLALFreeMem ( ConfigVars_t *cfg )
 
   /* free timestamps if any */
   XLALDestroyMultiTimestamps ( cfg->multiTimestamps );
-
-  XLALDestroyPulsarParamsVector ( cfg->injectionSources );
 
   XLALFree ( cfg->VCSInfoString );
 
