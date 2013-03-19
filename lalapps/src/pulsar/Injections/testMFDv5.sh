@@ -146,8 +146,12 @@ echo >> ${injFile2}
 ## ---------- output parameters ----------
 sftsv4_1=${testDIR}/${IFO1}-sftsv4.sft
 sftsv4_2=${testDIR}/${IFO2}-sftsv4.sft
-sftsv5_1=${testDIR}/H-*_mfdv5*.sft
-sftsv5_2=${testDIR}/L-*_mfdv5*.sft
+sftsv5_1_meth1=${testDIR}/H-*_mfdv5-*.sft
+sftsv5_2_meth1=${testDIR}/L-*_mfdv5-*.sft
+
+sftsv5_1_meth2=${testDIR}/H-*_mfdv5_meth2-*.sft
+sftsv5_2_meth2=${testDIR}/L-*_mfdv5_meth2-*.sft
+sftsv5_meth2=${testDIR}/*_mfdv5_meth2-*.sft
 
 ## ----------
 ## produce SFTs for 2 detectors, containing Gaussian noise + N signals, compare between mfdv4 and mfdv5
@@ -218,7 +222,7 @@ echo "========== MFDv5 =========="
 echo
 mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --fmin=$fmin --Band=$Band -v${debug}"
 
-echo "----- single multi-IFO, multi-signal call"
+echo "----- Method 1: single multi-IFO, multi-signal call"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig13="--injectionSources='@${injFile1};${injFile2}'"
 cmdline="$mfdv5_CL ${outIFOs} ${sig13}"
@@ -228,11 +232,20 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-echo "----- and again the same, using different input methods"
+echo
+echo "----- Method 2: and again the same, using different input methods"
+outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig1="--injectionSources='${injString}'"
-cmdline="$mfdv5_CL ${outIFOs} ${sig1} --outMiscField='mfdv5_try2'"
-echo $cmdline;
-if ! eval $cmdline; then
+sig23="--injectionSources='@${injFile2}'"
+cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outMiscField='mfdv5_meth2'"
+echo $cmdline1;
+if ! eval $cmdline1; then
+    echo "Error.. something failed when running '$mfdv5_CODE' ..."
+    exit 1
+fi
+cmdline2="$mfdv5_CL ${sig23} --noiseSFTs='${sftsv5_meth2}' --outMiscField='mfdv5_meth2'"
+echo $cmdline2;
+if ! eval $cmdline2; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
     exit 1
 fi
@@ -243,7 +256,8 @@ echo "--------------------------------------------------"
 echo "Comparison of resulting (concatenated) SFTs:"
 echo "--------------------------------------------------"
 
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1}' -d${debug}"
+echo "---------- compare mfdv5 Method 1 SFTs ----------"
+cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth1}' -d${debug}"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
@@ -252,7 +266,7 @@ else
     echo "OK."
 fi
 
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2}' -d${debug}"
+cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth1}' -d${debug}"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
@@ -260,6 +274,27 @@ if ! eval $cmdline; then
 else
     echo "OK."
 fi
+
+echo
+echo "---------- compare mfdv5 Method 2  SFTs ----------"
+cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth2}' -d${debug}"
+echo ${cmdline}
+if ! eval $cmdline; then
+    echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
+    exit 2
+else
+    echo "OK."
+fi
+
+cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth2}' -d${debug}"
+echo ${cmdline}
+if ! eval $cmdline; then
+    echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
+    exit 2
+else
+    echo "OK."
+fi
+
 
 ## clean up files [allow turning off via 'NOCLEANUP' environment variable
 if [ -z "$NOCLEANUP" ]; then
