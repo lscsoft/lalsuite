@@ -20,6 +20,7 @@
 
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
+#include <lal/StringVector.h>
 
 /* Default parameters. */
 
@@ -44,6 +45,14 @@ int main ( int argc, char *argv[])
 
   XLAL_CHECK ( XLALParseDataFile ( &cfgdata, cfgname ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse config-file '%s'", cfgname );
 
+  // check section-listing function
+  LALStringVector *sections;
+  XLAL_CHECK ( (sections = XLALListConfigFileSections ( cfgdata )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK  ( sections->length == 1, XLAL_EFAILED, "%s: Found %d sections instead of 1\n", cfgname, sections->length );
+  XLAL_CHECK ( strcmp ( sections->data[0], "default" ) == 0, XLAL_EFAILED, "%s: found section '%s' instead of 'default'\n", cfgname, sections->data[0] );
+  XLALDestroyStringVector ( sections );
+
+  // check config-variable reading
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &float1, cfgdata, 0, "float1", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &float2, cfgdata, 0, "float2", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string1, cfgdata, 0, "string1", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -92,11 +101,19 @@ int main ( int argc, char *argv[])
   cfgname = TEST_DATA_DIR "ConfigFileSample2.cfg";
   XLAL_CHECK ( XLALParseDataFile ( &cfgdata, cfgname ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse config-file '%s'", cfgname );
 
-  /* Check for a section we have and one we don't */
+  // check section-listing function
+  XLAL_CHECK ( (sections = XLALListConfigFileSections ( cfgdata )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK  ( sections->length == 3, XLAL_EFAILED, "%s: found %d sections instead of 3\n", cfgname, sections->length );
+  XLAL_CHECK ( strcmp ( sections->data[0], "section1" ) == 0, XLAL_EFAILED, "%s: 1st section found is '%s' instead of 'section1'\n", cfgname, sections->data[0] );
+  XLAL_CHECK ( strcmp ( sections->data[1], "section2" ) == 0, XLAL_EFAILED, "%s: 2nd section found is '%s' instead of 'section2'\n", cfgname, sections->data[1] );
+  XLAL_CHECK ( strcmp ( sections->data[2], "section3" ) == 0, XLAL_EFAILED, "%s: 3rd section found is '%s' instead of 'section3'\n", cfgname, sections->data[2] );
+  XLALDestroyStringVector ( sections );
+
+  // Check for a section we have and one we don't
   XLAL_CHECK ( XLALConfigSectionExists ( cfgdata, "section1" ), XLAL_EFAILED );
   XLAL_CHECK ( !XLALConfigSectionExists ( cfgdata, "section5" ), XLAL_EFAILED );
 
-
+  // check config-variable reading
   XLAL_CHECK ( XLALReadConfigREAL8Variable  (&float1, cfgdata, "section1", "float1", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigSTRINGVariable (&string1,   cfgdata, "section1", "string1", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
