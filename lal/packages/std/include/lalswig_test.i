@@ -32,3 +32,8 @@ REAL8 lalswig_test_REAL8_vector[3];
 REAL8 lalswig_test_REAL8_matrix[2][3];
 COMPLEX8 lalswig_test_COMPLEX8_vector[3];
 COMPLEX8 lalswig_test_COMPLEX8_matrix[2][3];
+
+// Test LIGOTimeGPS operations.
+typedef struct taglalswig_test_gps {
+  LIGOTimeGPS t;
+} lalswig_test_gps;

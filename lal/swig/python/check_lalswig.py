@@ -228,7 +228,10 @@ assert(LIGOTimeGPS(repr(t1)) == t1)
 assert(long(t1) == 812345678)
 assert(lal.GPSToINT8NS(t1) == 812345678250000000L)
 assert(hash(t1) == 1049484238)
-del t0, t1, t2, t3
+t4struct = lal.lalswig_test_gps()
+t4struct.t = 1234.5
+assert(t4struct.t == 1234.5)
+del t0, t1, t2, t3, t4struct
 lal.CheckMemoryLeaks()
 print("passed LIGOTimeGPS operations")
 
