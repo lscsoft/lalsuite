@@ -293,15 +293,18 @@ paramlatextitledisp = {'RAJ': '$\\alpha$', 'RA': '$\\alpha$', \
                   'H95': '$h_0^{95\%}$', \
                   'SDRAT': 'ratio', \
                   'SDLIM': 'spin-down limit', \
-                  'F0ROT': '$\\nu_{\\rm rot}$ (Hz)', \
-                  'F0GW': '$\\nu_{\\rm GW}$ (Hz)', \
-                  'F1ROT': '$\dot{\\nu}_{\\rm rot}$ (Hz/s)', \
-                  'F1GW': '$\dot{\\nu}_{\\rm GW}$ (Hz/s)', \
+                  'F0ROT': '$f_{\\rm rot}$ (Hz)', \
+                  'F0GW': '$f_{\\rm gw}$ (Hz)', \
+                  'F1ROT': '$\dot{f}_{\\rm rot}$ (Hz/s)', \
+                  'F1GW': '$\dot{f}_{\\rm gw}$ (Hz/s)', \
                   'SDPOWRAT': 'power ratio (\%)', \
                   'Q22': '$Q_{22}$ (kg\,m$^2$)', \
                   'H0PRIOR': '$h_0^{95\%}$ prior'}
 
-                  
+# function to return a float number to a given number of significant figures              
+def sigfig(x, sf):
+  return round(x, -int(math.floor(math.log10(abs(x))) - (sf - 1)))
+
 # a class containing function to output parameter vales in the appropriate
 # format
 class paramhtmlvaldisp:
@@ -329,7 +332,14 @@ class paramhtmlvaldisp:
   def H95(f): return exp_str(float(f), 1)
   def H0PRIOR(f): return exp_str(float(f), 1)
   def SDLIM(f): return exp_str(float(f), 1)
-  def SDRAT(f): return '%.2f' % float(f)
+  def SDRAT(f):
+    fsf = sigfig(float(f), 2) # get value rounded to 2 significant figure
+    if fsf < 1.: # if spin-down ratio is less than 1
+      return '%.2f' % fsf
+    elif fsf < 10.: # if spin-down ratio is less than 10
+      return '%.1f' % fsf
+    else: # otherwise round to the nearest integer
+      return '%d' % fsf
   def DIST(f): return '%.1f' % float(f)
   def SDPOWRAT(f): return '%d' % int(f)
   def Q22(f): return exp_str(float(f), 1) # quadrupole moment
@@ -346,7 +356,14 @@ class paramlatexvaldisp:
   def H95(f): return exp_latex_str(float(f), 1)
   def H0PRIOR(f): return exp_latex_str(float(f), 1)
   def SDLIM(f): return exp_latex_str(float(f), 1)
-  def SDRAT(f): return '%.2f' % float(f)
+  def SDRAT(f):
+    fsf = sigfig(float(f), 2) # get value rounded to 2 significant figure
+    if fsf < 1.: # if spin-down ratio is less than 1
+      return '%.2f' % fsf
+    elif fsf < 10.: # if spin-down ratio is less than 10
+      return '%.1f' % fsf
+    else: # otherwise round to the nearest integer
+      return '%d' % fsf
   def RAJ(f): return ra_latexstr(f) # RA in string format
   def DECJ(f): return dec_latexstr(f) # dec in string format
   def RA(f): return ra_latexstr(f) # RA in string format
@@ -643,7 +660,7 @@ table."""
     sdrat = {}
     ulestbot = {}
     ulesttop = {}
-    f0gw = []
+    f0gw = {}
     hifos = []
   
   if withprior:
@@ -761,8 +778,8 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, numlims, ifo))
           if ifo not in ifosprev:
             print >> sys.stderr, "An IFOs for pulsar %s is not the same as for the previous pulsar. Skip." % names[idx]
             psrshelf.close()
-            continue
-    
+            continue   
+ 
     ifosprev = list(ifolist)
     nifoprev = nifos
     
@@ -849,11 +866,10 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, numlims, ifo))
           ulb = ult = h95s = f0 = ells = sdrats = q22s = None
  
         if ulb and ult and h95s and f0 and ells and q22s and sdrats:
-          f0gw.append(2.*f0)
-
           # create dictionary of lists
           if not h95:
             for ifo in hifos:
+              f0gw[ifo] = [2.*f0]
               h95[ifo] = [h95s[ifo]]
               ell[ifo] = [ells[ifo]]
               q22[ifo] = [q22s[ifo]]
@@ -862,6 +878,7 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, numlims, ifo))
               ulesttop[ifo] = [ult[ifo]]
           else:
             for ifo in hifos:
+              f0gw[ifo].append(2.*f0)
               h95[ifo].append(h95s[ifo])
               ell[ifo].append(ells[ifo])
               q22[ifo].append(q22s[ifo])
@@ -887,6 +904,9 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, numlims, ifo))
           sdratprior.append(h0p/sdlim)
       
       # add pulsar to table
+      htmlptext.append('</tr>')
+      latexptext.append('\\\\') # new table row
+
       htmltext.append(cattext(htmlptext))
       latextext.append(cattext(latexptext))
 
@@ -924,9 +944,9 @@ Command lines used:<br>
   htmlout.close()
 
   latextext.append('\\enddata')
-  latextext.append("\\tablenotetext{\dagger}{The pulsar's spin-down is \
+  latextext.append("\\tablenotetext{$^\dagger$}{The pulsar's spin-down is \
 corrected for proper motion effects.}")
-  latextext.append("\\tablenotetext{\ddagger}{The pulsar's spin-down is \
+  latextext.append("\\tablenotetext{$^\ddagger$}{The pulsar's spin-down is \
 calculated using a characteristic spin-down ago of $10^9$ years.}")
   latextext.append('\\end{deluxetable}')
   latextext.append('\clearpage')
@@ -981,7 +1001,10 @@ calculated using a characteristic spin-down ago of $10^9$ years.}")
       prevlims = h0prior
       prevf0 = f0gwprior
     
-    freqrange = [10, 1500]
+    if len(hifos) == 1:
+      f0gw = f0gw[hifos[0]]
+
+    freqrange = [20, 1500]
     hulfigs = pppu.plot_h0_lims(h95, f0gw, hifos, freqrange, ulesttop, ulestbot, prevlims, prevf0)
     
     # output the plots

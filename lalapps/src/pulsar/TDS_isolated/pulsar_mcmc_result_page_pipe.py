@@ -174,7 +174,7 @@ if __name__=='__main__':
     priordir = cp.get('resultspages', 'priordir')
   except:
     priordir = None
-    
+
   try:
     # number of histogram bins
     histbins = cp.get('resultspages', 'histbins')
