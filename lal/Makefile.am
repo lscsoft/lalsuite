@@ -1,4 +1,4 @@
-ACLOCAL_AMFLAGS = -I misc
+ACLOCAL_AMFLAGS = -I gnuscripts
 
 # Override automake's default rule for rebuilding aclocal.m4, to ensure that
 # ./configure is successfully recreated after certain build system changes which
@@ -19,7 +19,7 @@ EXTRA_DIST = \
 
 SUBDIRS = \
 	debian \
-	misc \
+	gnuscripts \
 	include \
 	packages \
 	lib \
