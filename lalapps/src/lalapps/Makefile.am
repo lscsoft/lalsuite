@@ -72,6 +72,7 @@ EXTRA_DIST = \
 	__init__.py \
 	fftw_wisdom.c \
 	fftwf_wisdom.c \
+	generate_user_env.awk \
 	lalappsfrutils.c \
 	lalappsfrutils.h \
 	processtable.c \
@@ -80,7 +81,35 @@ EXTRA_DIST = \
 
 MOSTLYCLEANFILES =
 
-BUILT_SOURCES =
+CLEANFILES = \
+	lalapps-user-env.shell \
+	lalapps-user-env.sh \
+	lalapps-user-env.csh
+
+sysconf_DATA = \
+	lalapps-user-env.sh \
+	lalapps-user-env.csh
+
+BUILT_SOURCES = \
+	lalapps-user-env.sh \
+	lalapps-user-env.csh
+
+if HAVE_PYTHON
+lalapps_pythonpath = $(pyexecdir) $(pythondir)
+else
+lalapps_pythonpath =
+endif
+
+lalapps-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
+	@echo "# generic user environment script" >$@
+	@echo "prepend PATH $(bindir)" >>$@
+	@echo "prepend MANPATH $(mandir)" >>$@
+	@echo "prepend PYTHONPATH $(lalapps_pythonpath)" >>$@
+	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+
+lalapps-user-env.csh lalapps-user-env.sh: lalapps-user-env.shell $(srcdir)/generate_user_env.awk
+	@echo "creating $@"
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALAppsVCSInfo.h
