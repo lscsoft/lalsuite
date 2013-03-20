@@ -287,8 +287,8 @@ int LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name)
   else return 0;
 }
 
-void LALInferenceDestroyVariables(LALInferenceVariables *vars)
-/* Free the entire structure */
+void LALInferenceClearVariables(LALInferenceVariables *vars)
+/* Free all variables inside the linked list, leaving only the head struct */
 {
   LALInferenceVariableItem *this,*next;
   if(!vars) return;
@@ -322,7 +322,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   /* Make sure the structure is initialised */
   if(!target) XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to copy to uninitialised LALInferenceVariables structure.");
   /* first dispose contents of "target" (if any): */
-  LALInferenceDestroyVariables(target);
+  LALInferenceClearVariables(target);
 
   /* get the number of elements in origin */
   dims = LALInferenceGetVariableDimension( origin );
@@ -610,7 +610,7 @@ void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats){
   while(ptr!=NULL) {
     accepted = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).accepted;
     proposed = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).proposed;
-    acceptanceRate = accepted/proposed;
+    acceptanceRate = accepted/(proposed==0 ? 1.0 : proposed);
     fprintf(fp, "%9.5f\t", acceptanceRate);
     ptr=ptr->next;
   }

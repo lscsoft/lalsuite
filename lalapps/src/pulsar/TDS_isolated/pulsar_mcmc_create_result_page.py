@@ -349,7 +349,7 @@ linear&y_axis=&y_scale=linear&state=query'
     return None
 
 # list of parameters to display (in this order)
-paramdisplist = ['RAJ', 'DECJ', 'F0', 'F1', 'F2', 'PEPOCH', 'X' 'E' \
+paramdisplist = ['RAJ', 'DECJ', 'F0', 'F1', 'F2', 'PEPOCH', 'X', 'E', \
 'EPS1', 'EPS2', 'OM', 'T0', 'TASC', 'PB']
 
 # html text to display for different parameter names
@@ -363,6 +363,7 @@ paramtextdisp = {'RAJ': '&alpha;', 'DECJ': '&delta;', \
                  'PEPOCH': 'epoch (MJD)', 'A1': 'a sin<it>i</i> (lt s)', \
                  'E': '<it>e</it>', 'EPS1': '&epsilon;<sub>1</sub>', \
                  'EPS2': '&epsilon;<sub>2</sub>', \
+                 'EPS1': '&epsilon;<sub>1</sub>', \
                  'T0': 'T<sub>0</sub> (MJD)', \
                  'TASC': 'T<sub>asc</sub> (MJD)', \
                  'OM': '&omega;<sub>0</sub> (deg)',

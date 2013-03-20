@@ -421,6 +421,23 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   LALInferenceRemoveVariable(&intrinsicParams, "declination");
   LALInferenceRemoveVariable(&intrinsicParams, "polarisation");
   LALInferenceRemoveVariable(&intrinsicParams, "time");
+  
+  /* Remove likelihood and prior params from intrinsicParams before equality with currentParams is done */
+   if (LALInferenceCheckVariable(&intrinsicParams,"deltalogL"))
+  LALInferenceRemoveVariable(&intrinsicParams, "deltalogL");
+    if (LALInferenceCheckVariable(&intrinsicParams,"logL"))
+  LALInferenceRemoveVariable(&intrinsicParams, "logL");
+    if (LALInferenceCheckVariable(&intrinsicParams,"deltaloglV1"))
+  LALInferenceRemoveVariable(&intrinsicParams, "deltaloglV1");
+    if (LALInferenceCheckVariable(&intrinsicParams,"deltaloglL1"))
+  LALInferenceRemoveVariable(&intrinsicParams, "deltaloglL1");
+    if (LALInferenceCheckVariable(&intrinsicParams,"deltaloglH1"))
+  LALInferenceRemoveVariable(&intrinsicParams, "deltaloglH1");
+      if (LALInferenceCheckVariable(&intrinsicParams,"logw"))
+  LALInferenceRemoveVariable(&intrinsicParams, "logw");
+        if (LALInferenceCheckVariable(&intrinsicParams,"logPrior"))
+  LALInferenceRemoveVariable(&intrinsicParams, "logPrior");
+  
 	if(logDistFlag)
 			LALInferenceRemoveVariable(&intrinsicParams, "logdistance");
 	else
@@ -622,7 +639,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
  //fclose(testout);
   }
   loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
-  LALInferenceDestroyVariables(&intrinsicParams);
+  LALInferenceClearVariables(&intrinsicParams);
   return(loglikeli);
 }
 
@@ -860,7 +877,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     dataPtr = dataPtr->next;
   }
   loglikeli = -1.0 * chisquared; /* note (again): the log-likelihood is unnormalised! */
-  LALInferenceDestroyVariables(&intrinsicParams);  
+  LALInferenceClearVariables(&intrinsicParams);  
   return(loglikeli);
 }
 
@@ -1284,7 +1301,7 @@ FILE* file=fopen("TempSignal.dat", "w");
 #ifdef DEBUG
 fclose(file);
 #endif
-	LALInferenceDestroyVariables(&intrinsicParams);
+	LALInferenceClearVariables(&intrinsicParams);
 }
 
 REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * dataPtr,

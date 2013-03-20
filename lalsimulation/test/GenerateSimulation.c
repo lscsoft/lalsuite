@@ -415,7 +415,7 @@ int main (int argc , char **argv) {
                     params->s2z, params->f_min, params->f_max, 
                     params->distance, params->inclination, params->lambda1, 
                     params->lambda2, params->waveFlags, params->nonGRparams,
-                    params->ampO, params->phaseO, params->approximant);
+		    params->ampO, params->phaseO, params->approximant, NULL);
             break;
         case LAL_SIM_DOMAIN_TIME:
             XLALSimInspiralChooseTDWaveform(&hplus, &hcross, params->phiRef, 
@@ -425,7 +425,7 @@ int main (int argc , char **argv) {
                     params->distance, params->inclination, params->lambda1, 
                     params->lambda2, params->waveFlags,
                     params->nonGRparams, params->ampO, params->phaseO,
-                    params->approximant);
+		    params->approximant, NULL);
             break;
         default:
             XLALPrintError("Error: domain must be either TD or FD\n");

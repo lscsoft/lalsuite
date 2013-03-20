@@ -68,7 +68,8 @@ int main(void){
 			waveFlags,
 			NULL, // non-GR params
 			amplitudeOrder, phaseOrder,
-			approximant
+			approximant,
+			NULL
 		);
         if( ret != XLAL_SUCCESS )
             XLAL_ERROR( XLAL_EFUNC );
@@ -107,7 +108,8 @@ int main(void){
 			waveFlags,
 			NULL, // non-GR params
 			amplitudeOrder, phaseOrder,
-			approximant
+			approximant,
+			NULL
 		);
         if( ret != XLAL_SUCCESS )
             XLAL_ERROR( XLAL_EFUNC );

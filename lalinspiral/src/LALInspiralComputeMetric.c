@@ -17,6 +17,66 @@
 *  MA  02111-1307  USA
 */
 
+/*
+	Created: 7.9.96.
+	Author: B.S.Sathyaprakash, Caltech, Cardiff University.
+	Purpose: To compute the metric and the template bank
+              parameters, corresponding to 2PN chirps.
+	Revision History: Updates 15.7.97; 31.8.97.; 18.3.99; 25.05.02
+        First C version October 2000.
+        Major revision in May 2002: Direct computation in (tau0, tau3)
+        space avoid (m, eta) space. This means the code won't create
+        template parameters in (tau0, tau2) space. An interface to the
+        old code will have to be provided, if that is necessary.
+
+	Dependencies: moments.f, inverse.f transform.f (not needed in the version of 02/05)
+	Outputs:
+	    g00:
+	    g11:
+	  theta: Angle which the t0-axis makes with semi-major (dx0) axis.
+         srate: The minimal sampling rate required (computed but not outputted.
+	Notes: Owen and Sathyaprakash (Caltech collaboration notes).
+              Also Sathyaprakash, note from October 2000, May 24/25, 2002.
+*/
+
+#include <stdlib.h>
+#include <lal/LALInspiralBank.h>
+#include <lal/LALNoiseModels.h>
+
+#define METRIC_DIMENSION 2
+#define METRIC_ORDER 5
+
+static void
+InspiralComputeMetricGetPsiCoefficients (
+    REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER],
+    InspiralMomentsEtc *moments,
+    REAL8 fLower,
+    REAL8 t0,
+    REAL8 t3
+    );
+
+/** \ingroup LALInspiralBank_h
+ * \deprecated Use XLALInspiralComputeMetric() instead.
+ */
+void
+LALInspiralComputeMetric (
+    LALStatus          *status,		/**< LAL status pointer */
+    InspiralMetric     *metric,		/**< [out] the metric at the lattice point defined by \c params */
+    InspiralTemplate   *params,		/**< [in] the parameters where metric must be computed */
+    InspiralMomentsEtc *moments		/**< [in] moments \f$J(1), \ldots, J(17),\f$ of the PSD and other constants needed in the computation of the metric */
+    )
+{
+  INITSTATUS(status);
+
+  XLALPrintDeprecationWarning("LALInspiralComputeMetric", "XLALInspiralComputeMetric");
+
+  if (XLALInspiralComputeMetric(metric, moments, params->fLower, params->order, params->t0, params->t3) == XLAL_FAILURE){
+    ABORTXLAL( status );
+  };
+
+  RETURN( status );
+}
+
 
 /** \ingroup LALInspiralBank_h
  * \brief Function to compute the components of the metric which is used to describe distances on the signal manifold.
@@ -284,64 +344,6 @@ g_{mn}  & = & \frac{1}{2}\sum_{k,l=0}^N \Psi_{mk} \Psi_{nl}
 \f}
 where \f$J\f$'s are the moments introduced earlier.
 */
-
-/*
-	Created: 7.9.96.
-	Author: B.S.Sathyaprakash, Caltech, Cardiff University.
-	Purpose: To compute the metric and the template bank
-              parameters, corresponding to 2PN chirps.
-	Revision History: Updates 15.7.97; 31.8.97.; 18.3.99; 25.05.02
-        First C version October 2000.
-        Major revision in May 2002: Direct computation in (tau0, tau3)
-        space avoid (m, eta) space. This means the code won't create
-        template parameters in (tau0, tau2) space. An interface to the
-        old code will have to be provided, if that is necessary.
-
-	Dependencies: moments.f, inverse.f transform.f (not needed in the version of 02/05)
-	Outputs:
-	    g00:
-	    g11:
-	  theta: Angle which the t0-axis makes with semi-major (dx0) axis.
-         srate: The minimal sampling rate required (computed but not outputted.
-	Notes: Owen and Sathyaprakash (Caltech collaboration notes).
-              Also Sathyaprakash, note from October 2000, May 24/25, 2002.
-*/
-
-#include <stdlib.h>
-#include <lal/LALInspiralBank.h>
-#include <lal/LALNoiseModels.h>
-
-#define METRIC_DIMENSION 2
-#define METRIC_ORDER 5
-
-static void
-InspiralComputeMetricGetPsiCoefficients (
-    REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER],
-    InspiralMomentsEtc *moments,
-    REAL8 fLower,
-    REAL8 t0,
-    REAL8 t3
-    );
-
-void
-LALInspiralComputeMetric (
-    LALStatus          *status,		/**< LAL status pointer */
-    InspiralMetric     *metric,		/**< [out] the metric at the lattice point defined by \c params */
-    InspiralTemplate   *params,		/**< [in] the parameters where metric must be computed */
-    InspiralMomentsEtc *moments		/**< [in] moments \f$J(1), \ldots, J(17),\f$ of the PSD and other constants needed in the computation of the metric */
-    )
-{
-  INITSTATUS(status);
-
-  XLALPrintDeprecationWarning("LALInspiralComputeMetric", "XLALInspiralComputeMetric");
-
-  if (XLALInspiralComputeMetric(metric, moments, params->fLower, params->order, params->t0, params->t3) == XLAL_FAILURE){
-    ABORTXLAL( status );
-  };
-
-  RETURN( status );
-}
-
 int
 XLALInspiralComputeMetric (
     InspiralMetric     *metric,

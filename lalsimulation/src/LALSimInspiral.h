@@ -119,19 +119,16 @@ typedef enum
   LAL_SIM_INSPIRAL_TAPER_NUM_OPTS	/**< Number of elements in enum, useful for checking bounds */
 }  LALSimInspiralApplyTaper;
 
-<<<<<<< HEAD
 /** Stores previously-computed waveforms and parameters to take
     advantage of approximant- and parameter-specific opportunities for
     accelerating waveform computation. */
 typedef struct tagLALSimInspiralWaveformCache LALSimInspiralWaveformCache;
-=======
+
 /** Enumeration to specify time or frequency domain */
 typedef enum {
   LAL_SIM_DOMAIN_TIME,
   LAL_SIM_DOMAIN_FREQUENCY
  } LALSimulationDomain;
-
->>>>>>> 33006b718d5639f73352c7ed0292cf3ea3f1eb4f
 
 /**
  * Tapers a REAL4 inspiral waveform in the time domain.

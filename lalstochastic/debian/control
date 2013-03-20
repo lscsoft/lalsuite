@@ -40,6 +40,6 @@ Description: Python bindings for LALStochastiv
 Package: lalstochastic-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
-  lalstochastiv (= ${binary:Version}), lal-octave (>= 6.10.0),
+  lalstochastic (= ${binary:Version}), lal-octave (>= 6.10.0),
   lalmetaio-octave (>= 1.1.0)
 Description: Octave bindings for LALStochastic

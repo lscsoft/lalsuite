@@ -121,7 +121,8 @@ static int ChooseTDWaveformFromCache(
 				     );
 
 static int ChooseFDWaveformFromCache(
-    COMPLEX16FrequencySeries **htilde,          /**< FD waveform */
+    COMPLEX16FrequencySeries **hptilde,          /**< FD waveform */
+    COMPLEX16FrequencySeries **hctilde,
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
     REAL8 deltaF,                               /**< sampling interval (Hz) */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
@@ -1927,31 +1928,6 @@ int XLALSimInspiralChooseTDWaveform(
  * Returns the waveform in the frequency domain.
  */
 int XLALSimInspiralChooseFDWaveform(
-<<<<<<< HEAD
-    COMPLEX16FrequencySeries **htilde,          /**< FD waveform */
-    REAL8 phiRef,                               /**< reference orbital phase (rad) */
-    REAL8 deltaF,                               /**< sampling interval (Hz) */
-    REAL8 m1,                                   /**< mass of companion 1 (kg) */
-    REAL8 m2,                                   /**< mass of companion 2 (kg) */
-    UNUSED REAL8 S1x,                           /**< x-component of the dimensionless spin of object 1 */
-    UNUSED REAL8 S1y,                           /**< y-component of the dimensionless spin of object 1 */
-    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
-    UNUSED REAL8 S2x,                           /**< x-component of the dimensionless spin of object 2 */
-    UNUSED REAL8 S2y,                           /**< y-component of the dimensionless spin of object 2 */
-    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< starting GW frequency (Hz) */
-    REAL8 f_max,                                /**< ending GW frequency (Hz) */
-    REAL8 r,                                    /**< distance of source (m) */
-    UNUSED REAL8 i,                             /**< inclination of source (rad) */
-    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
-    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
-    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
-    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
-    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
-    int phaseO,                                 /**< twice post-Newtonian order */
-    Approximant approximant,                    /**< post-Newtonian approximant to use for waveform production */
-    LALSimInspiralWaveformCache *cache          /**< waveform cache structure; use NULL for no caching */
-=======
     COMPLEX16FrequencySeries **hptilde,     /**< FD plus polarization */
     COMPLEX16FrequencySeries **hctilde,     /**< FD cross polarization */
     REAL8 phiRef,                           /**< reference orbital phase (rad) */
@@ -1974,8 +1950,8 @@ int XLALSimInspiralChooseFDWaveform(
     LALSimInspiralTestGRParam *nonGRparams, /**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                         /**< twice post-Newtonian amplitude order */
     int phaseO,                             /**< twice post-Newtonian order */
-    Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
->>>>>>> 33006b718d5639f73352c7ed0292cf3ea3f1eb4f
+    Approximant approximant,                 /**< post-Newtonian approximant to use for waveform production */
+    LALSimInspiralWaveformCache *cache          /**< waveform cache structure; use NULL for no caching */
     )
 {
     REAL8 LNhatx, LNhaty, LNhatz;
@@ -2016,7 +1992,7 @@ int XLALSimInspiralChooseFDWaveform(
 
     if (cache != NULL) {
       /* Try to make waveform from cache to accelerate computation. */
-      return ChooseFDWaveformFromCache(htilde, phiRef, deltaF, 
+      return ChooseFDWaveformFromCache(hptilde, hctilde, phiRef, deltaF, 
 				       m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, 
 				       f_min, f_max, r, i, lambda1, lambda2, 
 				       waveFlags, nonGRparams, 
@@ -3040,7 +3016,8 @@ static int ChooseTDWaveformFromCache(
 }
 
 static int ChooseFDWaveformFromCache(
-    COMPLEX16FrequencySeries **htilde,          /**< FD waveform */
+    COMPLEX16FrequencySeries **hptilde,          /**< FD waveform */
+    COMPLEX16FrequencySeries **hctilde,
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
     REAL8 deltaF,                               /**< sampling interval (Hz) */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
@@ -3066,7 +3043,7 @@ static int ChooseFDWaveformFromCache(
 				     ) {
 
   /* For now, no caching---just call ChooseWaveform with NULL cache. */
-  return XLALSimInspiralChooseFDWaveform(htilde, phiRef, deltaF, 
+  return XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF, 
 					 m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, 
 					 f_min, f_max, r, i, lambda1, lambda2, 
 					 waveFlags, nonGRparams, 

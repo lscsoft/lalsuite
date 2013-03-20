@@ -1325,6 +1325,38 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, 
   if prevlims is not None:
     logprevlims = np.log10(prevlims)
 
+  # get the limits of the histogram range
+  hrange = None
+  stacked = False
+  if overplot:
+    highbins = []
+    lowbins = []
+
+    # combine dataset to plot as stacked
+    stackdata = []
+    stacked = True
+
+    for j, ifo in enumerate(ifos):
+      theselims = lims[ifo]
+
+      # remove any None's
+      for i, val in enumerate(theselims):
+        if val == None:
+          del theselims[i]
+
+      loglims = np.log10(theselims)
+
+      stackdata.append(loglims)
+
+      highbins.append(np.max(loglims))
+      lowbins.append(np.min(loglims))
+
+    if logprevlims is not None:
+      highbins.append(max(logprevlims))
+      lowbins.append(min(logprevlims))
+
+    hrange = (min(lowbins), max(highbins))
+
   for j, ifo in enumerate(ifos):
     # get log10 of results
     theselims = lims[ifo]
@@ -1336,58 +1368,74 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, 
 
     loglims = np.log10(theselims)
 
-    if not overplot or (overplot and j == 0):
-      myfig = plt.figure(figsize=(4,4),dpi=200)
+    if not overplot:
+      stackdata = loglims
 
-      if overplot:
-        plt.hold(True)
-        maxlims = []
-        minlims = []
-
-    plt.hist(loglims, bins, histtype='step', fill=True, edgecolor=coldict[ifo], facecolor=coldict[ifo], alpha=0.75)
+    #if not overplot or (overplot and j == 0):
+    myfig = plt.figure(figsize=(4,4),dpi=200)
+    maxlims = []
+    minlims = []
 
     if overplot:
+      edgecolor = []
+      facecolor = []
+      for ifoname in ifos:
+        edgecolor.append(coldict[ifoname])
+        facecolor.append(coldict[ifoname])
+    else:
+      edgecolor = [coldict[ifo]]
+      facecolor = [coldict[ifo]]
+
+    #plt.hist(loglims, bins, range=hrange, histtype='step', fill=True, edgecolor=coldict[ifo], facecolor=coldict[ifo], alpha=0.6)
+    n, bins, patches = plt.hist(stackdata, bins, range=hrange, histtype='step', stacked=stacked, fill=True, color=edgecolor, alpha=0.6)
+    for i, patch in enumerate(patches):
+      plt.setp(patch, 'facecolor', facecolor[i])
+
+    if not overplot:
       maxlims.append(np.max(loglims))
       minlims.append(np.min(loglims))
-    else:
-      maxlim = np.max(loglims)
-      minlim = np.min(loglims)
 
     if logprevlims is not None:
-      if overplot:
-        if j == len(ifos)-1:
-          plt.hist(logprevlims, bins, edgecolor=coldict[ifo], lw=2, histtype='step', fill=False)
-
+      if not overplot:
         maxlims.append(max(logprevlims))
         minlims.append(min(logprevlims))
 
         maxlim = max(maxlims)
         minlim = min(minlims)
       else:
-        plt.hold(True)
-        plt.hist(logprevlims, bins, edgecolor=coldict[ifo], lw=2, histtype='step', fill=False)
-        plt.hold(False)
+        maxlim = hrange[1]
+        minlim = hrange[0]      
 
-        maxlim = max([maxlim, max(logprevlims)])
-        minlim = min([minlim, min(logprevlims)])
+      plt.hold(True)
+      plt.hist(logprevlims, bins, range=hrange, edgecolor='k', lw=2, histtype='step', fill=False)
+      plt.hold(False)
+    else:
+      if not overplot:
+        maxlim = max(maxlims)
+        minlim = min(minlims)
+      else:
+        maxlim = hrange[1]
+        minlim = hrange[0]
 
-    if not overplot or (overplot and j == len(ifos)-1)
-      # set xlabels to 10^x
-      ax = plt.gca()
+    # set xlabels to 10^x
+    ax = plt.gca()
 
-      # work out how many ticks to set
-      tickvals = range(int(math.ceil(maxlim) - math.floor(minlim)))
-      tickvals = map(lambda x: x + int(math.floor(minlim)), tickvals)
-      ax.set_xticks(tickvals)
-      tls = map(lambda x: '$10^{%d}$' % x, tickvals)
-      ax.set_xticklabels(tls)
+    # work out how many ticks to set
+    tickvals = range(int(math.ceil(maxlim) - math.floor(minlim)))
+    tickvals = map(lambda x: x + int(math.floor(minlim)), tickvals)
+    ax.set_xticks(tickvals)
+    tls = map(lambda x: '$10^{%d}$' % x, tickvals)
+    ax.set_xticklabels(tls)
 
-      plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
-      plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+    plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
+    plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
 
-      myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+    myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
 
-      myfigs.append(myfig)
+    myfigs.append(myfig)
+
+    if overplot:
+      break
 
   return myfigs
 
@@ -1443,14 +1491,11 @@ def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
           plt.loglog([f0gw[i], f0gw[i]], [ulb[i], ult[i]], ls='-', lw=3, c='lightgrey')
 
     if prevlim is not None and prevlimf0gw is not None and len(prevlim) == len(prevlimf0gw):
-      if not overplot or (overplot and j == len(ifos)-1)
+      if not overplot or (overplot and j == len(ifos)-1):
         plt.loglog(prevlimf0gw, prevlim, marker='*', ms=10, alpha=0.7, mfc='None', mec='k', ls='None')
 
     # plot current limits
     plt.loglog(f0gw, h0lim, marker='*', ms=10, mfc=coldict[ifo], mec=coldict[ifo], ls='None')
-
-    if not overplot:
-      plt.hold(False)
 
     plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
     plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
@@ -1458,6 +1503,7 @@ def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
     plt.xlim(xlims[0], xlims[1])
 
     if not overplot or (overplot and j == len(ifos)-1):
+      plt.hold(False)
       myfig.subplots_adjust(left=0.12, bottom=0.10) # adjust size
       myfigs.append(myfig)
 

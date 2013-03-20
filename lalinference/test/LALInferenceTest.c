@@ -581,7 +581,7 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
     runState->currentLikelihood = logLikelihoodProposed;
   }
 
-  LALInferenceDestroyVariables(&proposedParams);	
+  LALInferenceClearVariables(&proposedParams);	
 }
 
 
@@ -850,8 +850,8 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
   printf(" NelderMeadAlgorithm(); done.\n");
   LALInferencePrintVariables(runState->currentParams);
 
-  LALInferenceDestroyVariables(&startval);
-  LALInferenceDestroyVariables(&param);
+  LALInferenceClearVariables(&startval);
+  LALInferenceClearVariables(&param);
   free(R8Vec);
   for (i=0; i<nmDim; ++i) free(nameVec[i]);
   free(nameVec);
@@ -911,8 +911,8 @@ void LALVariablesTest(void)
   
   fprintf(stdout,"LALInferenceCompareVariables?: %i\n",
           LALInferenceCompareVariables(&variables,&variables2));
-  LALInferenceDestroyVariables(&variables);
-  LALInferenceDestroyVariables(&variables2);
+  LALInferenceClearVariables(&variables);
+  LALInferenceClearVariables(&variables2);
   LALInferencePrintVariables(&variables2);
 
   fprintf(stdout," ----------\n");
@@ -1057,7 +1057,7 @@ void TemplateStatPhaseTest(void)
     printf("TCOAL: %f\n",tcoal);
 	REAL8 tc=*((REAL8 *) LALInferenceGetVariable(runstate->data->modelParams,"time"));
 	printf("t_c: %f\n", tc);
-    LALInferenceDestroyVariables(runstate->data->modelParams);
+    LALInferenceClearVariables(runstate->data->modelParams);
     LALInferenceAddVariable(runstate->data->modelParams, "chirpmass",   &mc,    LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(runstate->data->modelParams, "massratio",   &eta,   LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(runstate->data->modelParams, "inclination", &iota,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
@@ -1251,7 +1251,7 @@ void TemplateDumpTest(void)
     LALInferenceAddVariable(&currentParams, "tau", &numberR8, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateDampedSinusoid, "test_TTemplateDampedSinus.csv");
 
-    LALInferenceDestroyVariables(&currentParams);
+    LALInferenceClearVariables(&currentParams);
     fprintf(stdout," ----------\n");
 }
 
