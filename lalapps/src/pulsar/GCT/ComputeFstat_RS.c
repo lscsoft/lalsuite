@@ -119,20 +119,23 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiCOMPLEX8TimeSeries *multiTimeseries = NULL;
-  REAL8 Ad, Bd, Cd, Dd_inv;
+  REAL8 Ad, Bd, Cd, Dd_inv, AdX, BdX, CdX, DdX_inv;
   SkyPosition skypos;
   UINT4 i,j,k;
   MultiCOMPLEX8TimeSeries *multiFa_resampled = NULL;
   MultiCOMPLEX8TimeSeries *multiFb_resampled = NULL;
   COMPLEX8Vector *Faf_resampled = NULL;
   COMPLEX8Vector *Fbf_resampled = NULL;
-  UINT4 numSamples;
+  UINT4 numSamples, kmax;
   REAL8 f0_shifted;
+  REAL8 f0_shifted_single;
   REAL8 dt;
   REAL8 df_out;
   ComplexFFTPlan *pfwd = NULL;  /* this will store the FFT plan */
   COMPLEX8Vector *outa = NULL;  /* this will contain the FFT output of Fa for this detector */
   COMPLEX8Vector *outb = NULL;  /* this will contain the FFT output of Fb for this detector */
+  COMPLEX8Vector *outaSingle = NULL; /* this will contain Faf_resampled for a single IFO */
+  COMPLEX8Vector *outbSingle = NULL; /* this will contain Fbf_resampled for a single IFO */
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -375,6 +378,12 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
     ABORT ( status, xlalErrno, "XLALCreateCOMPLEX8Vector() failed!\n");
   if ( (outb = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
     ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
+  if ( params->returnSingleF ) {
+    if ( (outaSingle = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
+      ABORT ( status, xlalErrno, "XLALCreateCOMPLEX8Vector() failed!\n");
+    if ( (outbSingle = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
+      ABORT ( status, xlalErrno, "XLALCreateCOMPLEX8Vector() failed!\n");
+  }
 
   /* initialise output vectors to zero since it will be added to */
   memset(Faf_resampled->data,0,numSamples*sizeof(COMPLEX8));
@@ -393,6 +402,10 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
     /* initialise output vectors to zero for safety */
     memset(outa->data,0,numSamples*sizeof(COMPLEX8));
     memset(outb->data,0,numSamples*sizeof(COMPLEX8));
+    if ( params->returnSingleF ) {
+      memset(outaSingle->data,0,numSamples*sizeof(COMPLEX8));
+      memset(outbSingle->data,0,numSamples*sizeof(COMPLEX8));
+    }
 
     /* Fourier transform the resampled Fa(t) and Fb(t) */
     if (XLALCOMPLEX8VectorFFT(outa,ina,pfwd)!= XLAL_SUCCESS)
@@ -407,6 +420,55 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
       Fbf_resampled->data[j].realf_FIXME += crealf(outb->data[j])*dt;
       Fbf_resampled->data[j].imagf_FIXME += cimagf(outb->data[j])*dt;
     }
+
+    /* compute single-IFO F-stats, if requested */
+    if ( params->returnSingleF )
+      {
+       if (params->buffer == NULL ) {
+         AdX = multiAMcoef->data[i]->A;
+         BdX = multiAMcoef->data[i]->B;
+         CdX = multiAMcoef->data[i]->C;
+         DdX_inv = 1.0 / multiAMcoef->data[i]->D;
+       } else {
+         AdX = cfBuffer->multiAMcoef->data[i]->A;
+         BdX = cfBuffer->multiAMcoef->data[i]->B;
+         CdX = cfBuffer->multiAMcoef->data[i]->C;
+         DdX_inv = 1.0 / cfBuffer->multiAMcoef->data[i]->D;
+       }
+
+       /* normalize by dt */
+       for (UINT4 l=0; l < numSamples; l++) {
+         outaSingle->data[l].realf_FIXME = outa->data[l].realf_FIXME*dt;
+         outaSingle->data[l].imagf_FIXME = outa->data[l].imagf_FIXME*dt;
+         outbSingle->data[l].realf_FIXME = outb->data[l].realf_FIXME*dt;
+         outbSingle->data[l].imagf_FIXME = outb->data[l].imagf_FIXME*dt;
+       }
+
+       /* the complex FFT output is shifted such that the heterodyne frequency is at DC */
+       /* we need to shift the negative frequencies to before the positive ones */
+       if ( XLALFFTShiftCOMPLEX8Vector(&outaSingle) != XLAL_SUCCESS )
+         ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
+       if ( XLALFFTShiftCOMPLEX8Vector(&outbSingle) != XLAL_SUCCESS )
+         ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
+
+       /* define new initial frequency of the frequency domain representations of Fa and Fb */
+       /* before the shift the zero bin was the heterodyne frequency */
+       /* now we've shifted it by N - NhalfPosDC(N) bins */
+       f0_shifted_single = multiFa_spin->data[i]->f0 - NhalfNeg(numSamples) * df_out;
+
+       /* define number of bins offset from the internal start frequency bin to the user requested bin */
+       UINT4 offset_single = floor(0.5 + (doppler->fkdot[0] - f0_shifted_single)/fstatVector->deltaF);
+
+       /* compute final single-IFO F-stat */
+       UINT4 numFreqBins = (fstatVector->data->length)/(numDetectors + 1);
+       for (UINT4 m = 0; m < numFreqBins; m++) {
+         UINT4 idy = m + offset_single;
+         fstatVector->data->data[((i+1)*numFreqBins) + m] = DdX_inv * (  BdX * (SQ(outaSingle->data[idy].realf_FIXME) + SQ(outaSingle->data[idy].imagf_FIXME) )
+                                  + AdX * ( SQ(outbSingle->data[idy].realf_FIXME) + SQ(outbSingle->data[idy].imagf_FIXME) )
+                                  - 2.0 * CdX *( outaSingle->data[idy].realf_FIXME * outbSingle->data[idy].realf_FIXME + outaSingle->data[idy].imagf_FIXME * outbSingle->data[idy].imagf_FIXME )
+                                   );
+       } /* end loop over samples */
+    } /* if returnSingleF */
 
   } /* end loop over detectors */
 
@@ -427,7 +489,12 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
 
     /* define number of bins offset from the internal start frequency bin to the user requested bin */
     UINT4 offset = floor(0.5 + (doppler->fkdot[0] - f0_shifted)/fstatVector->deltaF);
-    for (k=0;k<fstatVector->data->length;k++) {
+    if ( params->returnSingleF ) {
+      kmax = (fstatVector->data->length)/(numDetectors + 1);
+    } else {
+      kmax = fstatVector->data->length;
+    }
+    for (k=0; k < kmax; k++) {
 
       UINT4 idx = k + offset;
       /* ----- compute final Fstatistic-value ----- */
@@ -450,6 +517,10 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   XLALDestroyCOMPLEX8Vector( Fbf_resampled );
   XLALDestroyCOMPLEX8Vector( outa );
   XLALDestroyCOMPLEX8Vector( outb );
+  if ( params->returnSingleF ) {
+    XLALDestroyCOMPLEX8Vector ( outaSingle );
+    XLALDestroyCOMPLEX8Vector ( outbSingle );
+  }
   XLALDestroyCOMPLEX8FFTPlan ( pfwd );
 
   XLALDestroyMultiCOMPLEX8TimeSeries ( multiFa_spin );

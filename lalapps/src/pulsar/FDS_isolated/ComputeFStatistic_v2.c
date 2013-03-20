@@ -294,6 +294,7 @@ typedef struct {
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
+  BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
   BOOLEAN computeLV;		/**< get single-IFO F-stats and compute Line Veto stat */
   CHAR *RankingStatistic;	/**< rank candidates according to F or LV */
   BOOLEAN LVuseAllTerms;	/**< Use only leading term or all terms in Line Veto computation */
@@ -582,8 +583,13 @@ int main(int argc,char *argv[])
       numFreqBins_FBand = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / dFreqResamp ) );
       if ( ( fstatVector = XLALCalloc ( 1, sizeof ( *fstatVector ) )) == NULL )
         XLAL_ERROR ( XLAL_EFAILED, "Failed to XLALCalloc ( 1, %d )\n", sizeof ( *fstatVector ) );
-      if ( (fstatVector->data = XLALCreateREAL4Vector ( numFreqBins_FBand )) == NULL )
-        XLAL_ERROR ( XLAL_EFAILED, "XLALCreateREAL4Vector(%d) failed.\n", numFreqBins_FBand );
+      if (GV.CFparams.returnSingleF) { // for outputsingleFstats we need data from multiple detectors
+        if ( (fstatVector->data = XLALCreateREAL4Vector ( (GV.multiSFTs->length + 1)*numFreqBins_FBand )) == NULL )
+          XLAL_ERROR ( XLAL_EFAILED, "XLALCreateREAL4Vector(%d) failed.\n", (GV.multiSFTs->length + 1)*numFreqBins_FBand );
+      } else { //just one data set
+        if ( (fstatVector->data = XLALCreateREAL4Vector ( numFreqBins_FBand )) == NULL )
+          XLAL_ERROR ( XLAL_EFAILED, "XLALCreateREAL4Vector(%d) failed.\n", numFreqBins_FBand );
+      }
     }
 
   /* skip search if user supplied --countTemplates */
@@ -652,8 +658,15 @@ int main(int argc,char *argv[])
       // in the non-resampling case, this loop iterates only once, so nothing is changed ...
       for ( UINT4 iFreq = 0; iFreq < numFreqBins_FBand; iFreq ++ )
       {
-        if ( uvar.useResamp )
+        if ( uvar.useResamp ) {
           Fstat.F = fstatVector->data->data[iFreq];
+          Fstat.numDetectors = GV.multiSFTs->length;
+          if (GV.CFparams.returnSingleF) {
+            for (UINT4 ND = 0; ND < Fstat.numDetectors; ND ++ ) {
+              Fstat.FX[ND] = fstatVector->data->data[(ND+1)*numFreqBins_FBand + iFreq];
+            }
+          }
+        }
 
       /* sanity check on the result */
       if ( !finite(Fstat.F) )
@@ -1225,6 +1238,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->GPUready = 0;
   uvar->useResamp = FALSE;
 
+  uvar->outputSingleFstats = FALSE;
   uvar->computeLV = FALSE;
   #define DEFAULT_RANKINGSTATISTIC "F"
   uvar->RankingStatistic = LALCalloc (1, strlen(DEFAULT_RANKINGSTATISTIC)+1);
@@ -1306,6 +1320,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
+  LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
   LALregBOOLUserStruct(status,  computeLV,	0,  UVAR_OPTIONAL, "Get single-detector F-stats and compute Line Veto statistic.");
   LALregSTRINGUserStruct(status,RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'LV' statistic");
   LALregREALUserStruct(status,  LVrho,		0,  UVAR_OPTIONAL, "LineVeto: Prior rho_max_line, must be >=0");
@@ -1865,6 +1880,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
 
   /* return single-IFO Fstat values for Line-veto statistic */
+  if ( uvar->outputSingleFstats ) {
+    cfg->CFparams.returnSingleF = TRUE;
+  }
+
   if ( uvar->computeLV )
     {
       cfg->CFparams.returnSingleF = TRUE;
