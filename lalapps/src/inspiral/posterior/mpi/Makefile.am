@@ -19,4 +19,4 @@ lalinference_mcmc_SOURCES = \
 bin_PROGRAMS = $(mpi_progs)
 
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

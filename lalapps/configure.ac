@@ -2,15 +2,15 @@ AC_PREREQ([2.63])
 AC_INIT([lalapps],[6.12.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
-AC_CONFIG_AUX_DIR([misc])
-AC_CONFIG_MACRO_DIR([misc])
+AC_CONFIG_AUX_DIR([gnuscripts])
+AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([\
   Makefile \
   lalapps.spec \
   debian/Makefile \
   doc/Makefile \
+  gnuscripts/Makefile \
   man/Makefile \
-  misc/Makefile \
   src/Makefile \
   src/lalapps/Makefile \
   src/calibration/Makefile \

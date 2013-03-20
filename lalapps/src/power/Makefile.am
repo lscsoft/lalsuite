@@ -32,4 +32,4 @@ EXTRA_DIST = lalapps_power_pipe lalapps_power_online_pipe \
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common
