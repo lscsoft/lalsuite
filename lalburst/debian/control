@@ -26,7 +26,7 @@ Package: lalburst-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.10.0),
-  lalmetaio-dev (>= 1.1.0), lalsimulation (>= 0.7.0),
+  lalmetaio-dev (>= 1.1.0), lalsimulation-dev (>= 0.7.0),
   lalburst (= ${binary:Version})
 Description: LSC Algorithm Library Burst Developers
  The LSC Algorithm Burst Library for gravitational wave data analysis.
