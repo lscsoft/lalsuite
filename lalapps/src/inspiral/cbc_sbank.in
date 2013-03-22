@@ -73,7 +73,7 @@ def parse_command_line():
     parser.add_option("--spin-min", help="Set minimum allowed value for the spin parameter chi", type="float")
     parser.add_option("--spin-max", help="Set maximum allowed value for the spin parameter chi", type="float")
     parser.add_option("--aligned-spin", action="store_true", default=False, help="Only generate templates whose spins are parallel to the orbital angular momentum.")
-    parser.add_option("--user-tag", default="sbank", help="base for output filename")
+    parser.add_option("--user-tag", default=None, help="base for output filename")
     parser.add_option("--verbose", default=False,action="store_true", help="Be verbose and write diagnostic information out to file.")
 
     opts, args = parser.parse_args()
@@ -223,4 +223,11 @@ for template in bank:
 
 # write out the document
 ligolw_process.set_process_end_time(process)
-utils.write_filename(xmldoc, "%s.xml" % opts.user_tag)
+
+# FIXME output naming conventions to match IHOPE/tmpltbank break sbank_pipe
+if opts.user_tag:
+    fout = "%s-SBANK_%s-%d-%d.xml.gz" % (opts.instrument, opts.user_tag, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
+else:
+    fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
+
+utils.write_filename(xmldoc, fout)
