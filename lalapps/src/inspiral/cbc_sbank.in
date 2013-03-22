@@ -68,7 +68,7 @@ def parse_command_line():
     parser.add_option("--mtotal-max", help="Set maximum total mass of the system",  type="float")
     parser.add_option("--mchirp-min", help="Set minimum chirp-mass of the system (in solar masses)", type="float")
     parser.add_option("--mchirp-max", help="Set maximum chirp-mass of the system (in solar masses)", type="float")
-    parser.add_option("--mratio-min", dest="qmin", help="Set minimum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float")
+    parser.add_option("--mratio-min", dest="qmin", help="Set minimum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float", default=1.0)
     parser.add_option("--mratio-max", dest="qmax", help="Set maximum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float")
     parser.add_option("--spin-min", help="Set minimum allowed value for the spin parameter chi", type="float")
     parser.add_option("--spin-max", help="Set maximum allowed value for the spin parameter chi", type="float")
