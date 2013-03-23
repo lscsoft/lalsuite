@@ -139,8 +139,8 @@
 %typemaps_primitive(%checkcode(CPLXDBL), gsl_complex);
 
 // SWIG conversion fragments and typemaps for LAL complex numbers.
-%swig_cplxflt_convn(COMPLEX8, CX8rect, CX8re, CX8im);
-%swig_cplxdbl_convn(COMPLEX16, CX16rect, CX16re, CX16im);
+%swig_cplxflt_convn(COMPLEX8, CX8rect, crealf, cimagf);
+%swig_cplxdbl_convn(COMPLEX16, CX16rect, creal, cimag);
 %typemaps_primitive(%checkcode(CPLXFLT), COMPLEX8);
 %typemaps_primitive(%checkcode(CPLXDBL), COMPLEX16);
 

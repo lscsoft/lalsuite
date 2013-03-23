@@ -121,32 +121,6 @@ typedef double complex COMPLEX16;   /**< Double-precision floating-point complex
 #define CX16polar(r, th) ( (r) * cexp(  CX16rect( 0, th ) ) )   /**< Construct a COMPLEX16 from polar modulus and argument */
 #endif
 
-/* Real and imaginary part accessors */
-#if defined(__cplusplus)
-#define CX8re( z) std::real(z)
-#define CX16re(z) std::real(z)
-#define CX8im( z) std::imag(z)
-#define CX16im(z) std::imag(z)
-#else
-#define CX8re( z) crealf(z)   /**< Get the real part of a COMPLEX8 */
-#define CX16re(z) creal( z)   /**< Get the real part of a COMPLEX16 */
-#define CX8im( z) cimagf(z)   /**< Get the imaginary part of a COMPLEX8 */
-#define CX16im(z) cimag( z)   /**< Get the imaginary part of a COMPLEX16 */
-#endif
-
-/* Real and imaginary part assignment */
-#if !defined(__cplusplus) && defined(__GNUC__)
-#define setCX8re( z, re) ( __real__(z) = (re) )
-#define setCX16re(z, re) ( __real__(z) = (re) )
-#define setCX8im( z, im) ( __imag__(z) = (im) )
-#define setCX16im(z, im) ( __imag__(z) = (im) )
-#else
-#define setCX8re( z, re) ( (z) = CX8rect(  re, CX8im( z) ) )   /**< Set the real part of a COMPLEX8 */
-#define setCX16re(z, re) ( (z) = CX16rect( re, CX16im(z) ) )   /**< Set the real part of a COMPLEX16 */
-#define setCX8im( z, im) ( (z) = CX8rect(  CX8re( z), im ) )   /**< Set the imaginary part of a COMPLEX8 */
-#define setCX16im(z, im) ( (z) = CX16rect( CX16re(z), im ) )   /**< Set the imaginary part of a COMPLEX16 */
-#endif
-
 #else /* LAL_USE_OLD_COMPLEX_STRUCTS */
 
 /** \cond DONT_DOXYGEN */
