@@ -37,11 +37,13 @@ src/lalsimulation-user-env.shell
 src/stamp-h2
 test/GRFlagsTest
 test/GenerateSimulation
+test/ST2-dynamics.dat
 test/ST4-dynamics.dat
 test/TestEOBNRv2
 test/TestPrecessWaveform
 test/TestSphHarmTS
 test/TestSpinTaylorT4Dynamics
+test/WaveformFlagsTest
 test/eobHPlusCross.dat
 test/h_ref.txt
 test/h_rot.txt
