@@ -416,7 +416,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
     XLAL_ERROR_VAL(0, XLAL_EINVAL);
   }
   if (m)
-    ans = CX16polar(1.0, m*phi) * fac;
+    ans = cpolar(1.0, m*phi) * fac;
   else
     ans = fac;
   return ans;
@@ -456,7 +456,7 @@ XLALScalarSphericalHarmonic(
   }
 
   /* Compute the values for the spherical harmonic */
-  *y = CX16polar(pLm.val, m * phi);
+  *y = cpolar(pLm.val, m * phi);
 
   /* If m is negative, perform some jiggery-pokery */
   if ( m < 0 && absM % 2  == 1 )

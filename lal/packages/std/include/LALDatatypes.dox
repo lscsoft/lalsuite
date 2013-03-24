@@ -129,7 +129,7 @@ because they conceptually represent a single number.  Furthermore,
 atomic and complex datatypes are treated equivalently by LAL aggregate
 and structured datatypes. The two complex datatypes are ::COMPLEX8 and ::COMPLEX16.
 Macros are provided for constructing ::COMPLEX8 and ::COMPLEX16 values
-from rectangular (::CX8rect, ::CX16rect) and polar (::CX8polar, ::C16polar) coordinates.
+from rectangular (::crectf, ::crect) and polar (::cpolarf, ::cpolar) coordinates.
 
 
 \section ss_Atomic_datatype_codes Atomic datatypes codes

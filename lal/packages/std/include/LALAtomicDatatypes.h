@@ -109,16 +109,11 @@ typedef double complex COMPLEX16;   /**< Double-precision floating-point complex
 #endif
 
 /* Complex type constructors */
-#if defined(__cplusplus)
-#define CX8rect( re, im) COMPLEX8(  re, im )
-#define CX16rect(re, im) COMPLEX16( re, im )
-#define CX8polar( r, th) ( (r) * std::exp( CX8rect(  0, th ) ) )
-#define CX16polar(r, th) ( (r) * std::exp( CX16rect( 0, th ) ) )
-#else
-#define CX8rect( re, im) ( (re) + _Complex_I * (im) )           /**< Construct a COMPLEX8 from real and imaginary parts */
-#define CX16rect(re, im) ( (re) + _Complex_I * (im) )           /**< Construct a COMPLEX16 from real and imaginary parts */
-#define CX8polar( r, th) ( (r) * cexpf( CX8rect(  0, th ) ) )   /**< Construct a COMPLEX8 from polar modulus and argument */
-#define CX16polar(r, th) ( (r) * cexp(  CX16rect( 0, th ) ) )   /**< Construct a COMPLEX16 from polar modulus and argument */
+#if !defined(__cplusplus)
+#define crectf(re, im) (((COMPLEX8)(re))  + _Complex_I*((COMPLEX8)(im)))	/**< Construct a COMPLEX8 from real and imaginary parts */
+#define crect(re, im)  (((COMPLEX16)(re)) + _Complex_I*((COMPLEX16)(im)))	/**< Construct a COMPLEX16 from real and imaginary parts */
+#define cpolarf(r, th) (((COMPLEX8)(r)) * cexpf(crectf(0, th)))			/**< Construct a COMPLEX8 from polar modulus and argument */
+#define cpolar(r, th)  (((COMPLEX16)(r)) * cexp(crect(0, th)))			/**< Construct a COMPLEX16 from polar modulus and argument */
 #endif
 
 #else /* LAL_USE_OLD_COMPLEX_STRUCTS */
