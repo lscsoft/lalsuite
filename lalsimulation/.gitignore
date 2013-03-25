@@ -43,6 +43,7 @@ test/TestEOBNRv2
 test/TestPrecessWaveform
 test/TestSphHarmTS
 test/TestSpinTaylorT4Dynamics
+test/TestWaveformFromCache
 test/WaveformFlagsTest
 test/eobHPlusCross.dat
 test/h_ref.txt

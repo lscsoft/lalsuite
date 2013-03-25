@@ -8,6 +8,7 @@ check_PROGRAMS = \
 	GRFlagsTest \
 	WaveformFlagsTest \
 	TestSphHarmTS \
+	TestWaveformFromCache \
 	TestPrecessWaveform
 TESTS = $(check_PROGRAMS)
 
