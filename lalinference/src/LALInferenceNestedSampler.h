@@ -73,7 +73,9 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState);
 /* REAL8 mean(REAL8 *array,int N); */
 REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
 
-/** Setup the live points */
+/** Setup the live points by calling runState->initVariables on each of them
+ if it is specified. Otherwise clones runState->currentParams (legacy)
+ */
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);
 
 /** Setup a k-D tree from the current set of nested sampling live points for use

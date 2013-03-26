@@ -325,7 +325,7 @@ typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runStat
 /** Type declaration for variables init function, can be user-declared.
  * The function returns a pointer to a new LALInferenceVariables instance
  * Reads \param runState->commandLine to get user config */
-typedef void (*LALInferenceInitVariablesFunction) (struct tagLALInferenceRunState *runState);
+typedef LALInferenceVariables * (*LALInferenceInitVariablesFunction) (struct tagLALInferenceRunState *runState);
 
 /** Structure containing inference run state
  * This includes pointers to the function types required to run

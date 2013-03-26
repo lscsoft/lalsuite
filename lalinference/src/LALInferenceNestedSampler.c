@@ -1147,23 +1147,28 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 
 	LALInferenceAddVariable(runState->algorithmParams,"logLikelihoods",&logLs,LALINFERENCE_REAL8Vector_t,LALINFERENCE_PARAM_FIXED);
 	fprintf(stdout,"Sprinkling %i live points, may take some time\n",Nlive);
+	LALInferenceVariables *curParsBackup=runState->currentParams;
 	for(i=0;i<Nlive;i++)
 	{
-		runState->livePoints[i]=calloc(1,sizeof(LALInferenceVariables));
-		
-		/* Copy the param structure */
-		LALInferenceCopyVariables(runState->currentParams,runState->livePoints[i]);
-		
-		/* Sprinkle the varying points among prior */
-		do{
-			LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
-			logPrior=runState->prior(runState,runState->livePoints[i]);
-		}while(logPrior==-DBL_MAX || isnan(logPrior));
-		/* Populate log likelihood */
-		logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
-        LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-	LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	  /* If there is an initialisation function, use it */
+	  if(runState->initVariables) runState->livePoints[i]=runState->initVariables(runState);
+	  else{ /* Otherwise clone the currentParams */
+	    runState->livePoints[i]=calloc(1,sizeof(LALInferenceVariables));
+	    /* Copy the param structure */
+	    LALInferenceCopyVariables(runState->currentParams,runState->livePoints[i]);
+	  }
+	  /* Sprinkle the varying points among prior */
+	  do{
+	    LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
+	    logPrior=runState->prior(runState,runState->livePoints[i]);
+	  }while(logPrior==-DBL_MAX || isnan(logPrior));
+	  /* Populate log likelihood */
+	  logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
+	  LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
+	runState->currentParams=curParsBackup;
+	if(!runState->currentParams) runState->currentParams=calloc(1,sizeof(LALInferenceVariables));
 	
 }
 
