@@ -575,20 +575,21 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     if(strstr(ppt->value,"SMOOTH")) bookends=LALINFERENCE_SMOOTH;
   }
 
+  /* Read time parameter from injection file */
+  if(injTable)
+  {
+    endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+    fprintf(stdout,"Using end time from injection file: %lf\n", endtime);
+  }
   /* Over-ride end time if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
   if(ppt && !analytic){
     endtime=atof(ppt->value);
-    timeMin=endtime-dt; timeMax=endtime+dt;
     printf("Read end time %f\n",endtime);
   }
-  else if(injTable && !analytic)
-  {
-    endtime=injTable->geocent_end_time.gpsSeconds + 1.e-9*injTable->geocent_end_time.gpsNanoSeconds;
-    fprintf(stdout,"Using end time from injection file: %lf\n", endtime);
-  }
-  else fprintf(stdout,"WARNING: No end time specified, will default to 0\n");
-
+  /* Adjust prior accordingly */
+  timeMin=endtime-dt; timeMax=endtime+dt;
+  
   /* Over-ride chirp mass if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--mc");
   if(ppt){
