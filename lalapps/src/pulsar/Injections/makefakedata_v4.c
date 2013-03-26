@@ -387,7 +387,7 @@ main(int argc, char *argv[])
           XLAL_ERROR ( XLAL_EINVAL, "--TDDframedir option not supported, code has to be compiled with lalframe\n" );
 #else
 	  /* use standard frame output filename format */
-          XLAL_CHECK ( XLALIsValidDescriptionField ( uvar.frameDesc ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALCheckValidDescriptionField ( uvar.frameDesc ) == XLAL_SUCCESS, XLAL_EFUNC );
           len = strlen(uvar.TDDframedir) + strlen(uvar.frameDesc) + 100;
 	  char *fname;
           char IFO[2] = { Tseries->name[0], Tseries->name[1] };
@@ -1635,34 +1635,3 @@ is_directory ( const CHAR *fname )
     return 1;
 
 } /* is_directory() */
-
-/**
- * Check whether given string qualifies as a valid 'description' field of a FRAME (or SFT)
- * filename, according to  LIGO-T010150-00-E "Naming Convention for Frame Files which are to be Processed by LDAS",
- * LIGO-T040164-01 at https://dcc.ligo.org/LIGO-T040164-x0/public
- *
- * NOTE: this function will be moved into SFTutils.c later
- */
-#include <ctype.h>
-int
-XLALIsValidDescriptionField ( const char *desc )
-{
-  XLAL_CHECK ( desc != NULL, XLAL_EINVAL );
-
-  size_t len = strlen ( desc );
-
-  if ( len == 1 && isupper(desc[0]) ) {
-    XLAL_ERROR ( XLAL_EINVAL, "Single uppercase description reserved for class-1 raw frames!\n" );
-  }
-
-  for ( UINT4 i=0; i < len; i ++ )
-    {
-      int c = desc[i];
-      if ( !isalnum(c) && (c!='_') && (c!='+') && (c!='#') ) {	// all the valid characters allowed
-        XLAL_ERROR ( XLAL_EINVAL, "Invalid chacter '%c' found, only alphanumeric and ['_', '+', '#'] are allowed\n", c );
-      }
-    } // for i < len
-
-  return XLAL_SUCCESS;
-
-} // XLALIsValidDescriptionField()

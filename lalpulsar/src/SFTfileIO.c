@@ -40,6 +40,7 @@
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
+#include <ctype.h>
 
 #ifndef _MSC_VER
 #include <dirent.h>
@@ -2778,6 +2779,10 @@ XLALOfficialSFTFilename ( char site,		//!< site-character 'G', 'H', 'L', ...
                           const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
                           )
 {
+  if ( Misc != NULL ) {
+    XLAL_CHECK_NULL ( XLALCheckValidDescriptionField ( Misc ) == XLAL_SUCCESS, XLAL_EINVAL );
+  }
+
   // ----- S
   char S[2] = { site, 0 };
 
@@ -2809,6 +2814,34 @@ XLALOfficialSFTFilename ( char site,		//!< site-character 'G', 'H', 'L', ...
 
 } // XLALGetOfficialName4SFT()
 
+/**
+ * Check whether given string qualifies as a valid 'description' field of a FRAME (or SFT)
+ * filename, according to  LIGO-T010150-00-E "Naming Convention for Frame Files which are to be Processed by LDAS",
+ * LIGO-T040164-01 at https://dcc.ligo.org/LIGO-T040164-x0/public
+ *
+ */
+int
+XLALCheckValidDescriptionField ( const char *desc )
+{
+  XLAL_CHECK ( desc != NULL, XLAL_EINVAL );
+
+  size_t len = strlen ( desc );
+
+  if ( len == 1 && isupper(desc[0]) ) {
+    XLAL_ERROR ( XLAL_EINVAL, "Single uppercase description reserved for class-1 raw frames!\n" );
+  }
+
+  for ( UINT4 i=0; i < len; i ++ )
+    {
+      int c = desc[i];
+      if ( !isalnum(c) && (c!='_') && (c!='+') && (c!='#') ) {	// all the valid characters allowed
+        XLAL_ERROR ( XLAL_EINVAL, "Invalid chacter '%c' found, only alphanumeric and ['_', '+', '#'] are allowed\n", c );
+      }
+    } // for i < len
+
+  return XLAL_SUCCESS;
+
+} // XLALCheckValidDescriptionField()
 
 
 /*================================================================================

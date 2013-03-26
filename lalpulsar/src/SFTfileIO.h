@@ -378,6 +378,7 @@ MultiSFTCatalogView *XLALGetMultiSFTCatalogView ( const SFTCatalog *catalog );
 char *XLALGetOfficialName4SFT ( const SFTtype *sft, const char *Misc );
 char *XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts, const char *Misc );
 char *XLALOfficialSFTFilename ( char site, char channel, UINT4 numSFTs, UINT4 Tsft, UINT4 GPS_start, UINT4 Tspan, const char *Misc );
+int XLALCheckValidDescriptionField ( const char *desc );
 
 /*================================================================================
  * DEPRECATED LAL-API [use XLAL-API whenever available]
