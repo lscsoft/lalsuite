@@ -322,6 +322,11 @@ typedef void (*LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState)
 /** Type declaration for output logging function, can be user-declared */
 typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
 
+/** Type declaration for variables init function, can be user-declared.
+ * The function returns a pointer to a new LALInferenceVariables instance
+ * Reads \param runState->commandLine to get user config */
+typedef void (*LALInferenceInitVariablesFunction) (struct tagLALInferenceRunState *runState);
+
 /** Structure containing inference run state
  * This includes pointers to the function types required to run
  * the algorithm, and data structures as required */
@@ -329,6 +334,7 @@ typedef struct
 tagLALInferenceRunState
 {
   ProcessParamsTable        *commandLine; /** A ProcessParamsTable with command line arguments */
+  LALInferenceInitVariablesFunction  initVariables; /** A function that returns a new set of variables for the model */
   LALInferenceAlgorithm              algorithm; /** The algorithm function */
   LALInferenceEvolveOneStepFunction  evolve; /** The algorithm's single iteration function */
   LALInferencePriorFunction          prior; /** The prior for the parameters */

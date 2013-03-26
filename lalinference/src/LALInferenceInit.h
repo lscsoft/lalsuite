@@ -36,7 +36,7 @@
 Initialise state variables needed for LALInferenceNest or LALInferenceMCMC to run
 on a CBC signal. Reads the command line to get user-specified options
 */
-void LALInferenceInitCBCVariables(LALInferenceRunState *state);
+LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state);
 
 /**
 Initialise the template for a standard CBC signal
@@ -47,8 +47,8 @@ void LALInferenceInitCBCTemplate(LALInferenceRunState *runState);
  * 
  * */
 
-void LALInferenceInitVariablesReviewEvidence(LALInferenceRunState *state);
-void LALInferenceInitVariablesReviewEvidence_bimod(LALInferenceRunState *state);
-void LALInferenceInitVariablesReviewEvidence_banana(LALInferenceRunState *state);
+LALInferenceVariables *LALInferenceInitVariablesReviewEvidence(LALInferenceRunState *state);
+LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_bimod(LALInferenceRunState *state);
+LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferenceRunState *state);
 
 #endif

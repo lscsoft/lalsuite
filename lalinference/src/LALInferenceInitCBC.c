@@ -36,6 +36,9 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
 
+/* Setup the template generation */
+/* Defaults to using LALSimulation */
+
 void LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
 {
   char help[]="(--template [LAL,PhenSpin,LALGenerateInspiral,LALSim]\tSpecify template (default LAL)\n";
@@ -87,10 +90,11 @@ void LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
 }
 
 
-/* Setup the variables to control template generation */
-/* Includes specification of prior ranges */
+/* Setup the variables to control template generation for the CBC model */
+/* Includes specification of prior ranges. Sets runState->currentParams and
+ returns address of new LALInferenceVariables */
 
-void LALInferenceInitCBCVariables(LALInferenceRunState *state)
+LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
 {
 
   char help[]="\
@@ -201,14 +205,14 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(state==NULL)
     {
       fprintf(stdout,"%s",help);
-      return;
+      return(NULL);
     }
 
   /* Print command line arguments if help requested */
   if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
     {
       fprintf(stdout,"%s",help);
-      return;
+      return(NULL);
     }
 
 
@@ -270,7 +274,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   REAL8 lambda2Min=0.0;
   REAL8 lambda2Max=3000.0;  
   REAL8 tmpMin,tmpMax;//,tmpVal;
-  gsl_rng * GSLrandom=state->GSLrandom;
+  gsl_rng *GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
   REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
   //REAL8 start_mc			=4.82+gsl_ran_gaussian(GSLrandom,0.025);
@@ -1393,7 +1397,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
 
     } else {
       XLALPrintError("Error: unknown frame %i\n",frame);
-      XLAL_ERROR_VOID(XLAL_EINVAL);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
     }
   }
 
@@ -1556,7 +1560,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(currentParams, "tideO", &tideO,
         LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   }
- 
+  return(currentParams);
 }
 
 
@@ -1564,7 +1568,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
 /* Setup the variable for the evidence calculation test for review */
 /* 5-sigma ranges for analytic likeliood function */
 /* https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/LALInferenceReviewAnalyticGaussianLikelihood */
-void LALInferenceInitVariablesReviewEvidence(LALInferenceRunState *state)
+LALInferenceVariables *LALInferenceInitVariablesReviewEvidence(LALInferenceRunState *state)
 {
     ProcessParamsTable *commandLine=state->commandLine;
     ProcessParamsTable *ppt=NULL;
@@ -1613,11 +1617,11 @@ void LALInferenceInitVariablesReviewEvidence(LALInferenceRunState *state)
 	    LALInferenceAddMinMaxPrior(priorArgs, setup[i].name,    &(setup[i].min),    &(setup[i].max),    LALINFERENCE_REAL8_t);
 		i++;
 	}
-	return;
+	return(currentParams);
 }
 
 
-void LALInferenceInitVariablesReviewEvidence_bimod(LALInferenceRunState *state)
+LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_bimod(LALInferenceRunState *state)
 {
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
@@ -1666,10 +1670,10 @@ void LALInferenceInitVariablesReviewEvidence_bimod(LALInferenceRunState *state)
     LALInferenceAddMinMaxPrior(priorArgs, setup[i].name,    &(setup[i].min),    &(setup[i].max),    LALINFERENCE_REAL8_t);
     i++;
   }
-  return;
+  return(currentParams);
 }
 
-void LALInferenceInitVariablesReviewEvidence_banana(LALInferenceRunState *state)
+LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferenceRunState *state)
 {
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
@@ -1718,7 +1722,7 @@ void LALInferenceInitVariablesReviewEvidence_banana(LALInferenceRunState *state)
     LALInferenceAddMinMaxPrior(priorArgs, setup[i].name,    &(setup[i].min),    &(setup[i].max),    LALINFERENCE_REAL8_t);
     i++;
   }
-  return;
+  return(currentParams);
 }
 
 

@@ -423,11 +423,13 @@ Arguments for each section follow:\n\n";
 	/* And allocating memory */
 	state = initialize(procParams);
 	
-	/* Set template function */
-	LALInferenceInitCBCTemplate(state);
+
 	
 	/* Set up structures for nested sampling */
 	initializeNS(state);
+	
+	/* Set template function */
+	LALInferenceInitCBCTemplate(state);
 
 	/* Set up currentParams with variables to be used */
 	/* Review task needs special priors */
