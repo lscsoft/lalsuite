@@ -801,8 +801,9 @@ REAL8 ks_test_exp(REAL4Vector *vector)
    REAL8 ksvalue = 0.0, testval1, testval2, testval;
    REAL8 oneoverlength = 1.0/tempvect->length;
    for (ii=0; ii<(INT4)tempvect->length; ii++) {
-      testval1 = fabs((1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean));
-      testval2 = fabs(ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean));
+      REAL8 pval = gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      testval1 = fabs((1.0+ii)*oneoverlength - pval);
+      testval2 = fabs(ii*oneoverlength - pval);
       testval = fmax(testval1, testval2);
       if (testval>ksvalue) ksvalue = testval;
    }
@@ -857,8 +858,9 @@ REAL8 kuipers_test_exp(REAL4Vector *vector)
 
    loval = -1.0, hival = -1.0;
    for (ii=0; ii<(INT4)tempvect->length; ii++) {
-      REAL8 testval1 = (1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
-      REAL8 testval2 = ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      REAL8 pval = gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      REAL8 testval1 = (1.0+ii)*oneoverlength - pval;
+      REAL8 testval2 = ii*oneoverlength - pval;
       if (hival<testval1) hival = testval1;
       if (hival<testval2) hival = testval2;
       if (loval<-testval1) loval = -testval1;
