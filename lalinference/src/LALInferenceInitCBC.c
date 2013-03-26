@@ -222,10 +222,9 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
   ProcessParamsTable *ppt_order=NULL;
-  //INT4 AmpOrder=0;
   LALPNOrder PhaseOrder=-1;
   LALPNOrder AmpOrder=-1;
-  Approximant approx=TaylorF2;
+  Approximant approx=NumApproximants;
   REAL8 fRef = 0.0;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   LALInferenceFrame frame = LALINFERENCE_FRAME_RADIATION;
@@ -444,6 +443,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     while(N>0){
       N--;
       char *name=strings[N];
+      fprintf(stdout,"Pinning parameter %s\n",node->name);
       node=LALInferenceGetItem(&tempParams,name);
       if(node) LALInferenceAddVariable(currentParams,node->name,node->value,node->type,node->vary);
       else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",node->name);}
@@ -473,8 +473,20 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(ppt) AmpOrder=atoi(ppt->value);
   ppt=LALInferenceGetProcParamVal(commandLine,"--ampOrder");
   if(ppt) AmpOrder = XLALGetOrderFromString(ppt->value);
-  fprintf(stdout,"Templates will run using Approximant %i, phase order %i, amp order %i\n",approx,PhaseOrder,AmpOrder);
   
+  
+  
+  if(approx==NumApproximants && injTable){ /* Read aproximant from injection file */
+    approx=XLALGetApproximantFromString(injTable->waveform);
+    if(PhaseOrder!=(LALPNOrder)XLALGetOrderFromString(injTable->waveform))
+      fprintf(stdout,"WARNING! Injection specified phase order %i, you are using %i\n",\
+      XLALGetOrderFromString(injTable->waveform),PhaseOrder);
+    if(AmpOrder!=(LALPNOrder)injTable->amp_order)
+      fprintf(stdout,"WARNING! Injection specified amplitude order %i, you are using %i\n",
+	      injTable->amp_order,AmpOrder);
+  }
+  if(approx==NumApproximants) approx=TaylorF2; /* Defaults to TF2 */
+    
   /* Set the modeldomain appropriately */
   switch(approx)
   {
@@ -509,7 +521,7 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
       exit(1);
       break;
   }
-  
+  fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,modelDomain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
   
   ppt=LALInferenceGetProcParamVal(commandLine, "--fref");
   if (ppt) fRef = atof(ppt->value);
@@ -565,8 +577,13 @@ void LALInferenceInitCBCVariables(LALInferenceRunState *state)
     endtime=atof(ppt->value);
     timeMin=endtime-dt; timeMax=endtime+dt;
     printf("Read end time %f\n",endtime);
-
   }
+  else if(injTable && !analytic)
+  {
+    endtime=injTable->geocent_end_time.gpsSeconds + 1.e-9*injTable->geocent_end_time.gpsNanoSeconds;
+    fprintf(stdout,"Using end time from injection file: %lf\n", endtime);
+  }
+  else fprintf(stdout,"WARNING: No end time specified, will default to 0\n");
 
   /* Over-ride chirp mass if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--mc");
