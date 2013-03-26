@@ -63,6 +63,10 @@
 #include <lal/TransientCW_utils.h>
 #include <lal/CWMakeFakeData.h>
 
+#ifdef HAVE_LIBLALFRAME
+#include <lal/LALFrameIO.h>
+#endif
+
 #include <lalapps.h>
 
 /***************************************************/
@@ -91,11 +95,12 @@ typedef struct
 
   /* output */
   CHAR *outSFTdir;		/**< Output directory for SFTs */
-  CHAR *outMiscField;		/**< 'misc' field entry in the SFT-filename (part of 'description' field) */
+  CHAR *outLabel;		/**< 'misc' entry in SFT-filenames, description entry of frame filenames */
 
   BOOLEAN outSingleSFT;	        /**< use to output a single concatenated SFT */
 
   CHAR *TDDfile;		/**< Filename for ASCII output time-series */
+  CHAR *TDDframedir;		/**< directory for frame file output time-series */
   CHAR *logfile;		/**< name of logfile */
 
   /* specify start + duration */
@@ -223,9 +228,9 @@ main(int argc, char *argv[])
           SFTVector *sfts = mSFTs->data[X];
           /* either write whole SFT-vector to single concatenated file */
           if ( uvar.outSingleSFT ) {
-            XLAL_CHECK ( XLALWriteSFTVector2File( sfts, uvar.outSFTdir, comment, uvar.outMiscField ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK ( XLALWriteSFTVector2File( sfts, uvar.outSFTdir, comment, uvar.outLabel ) == XLAL_SUCCESS, XLAL_EFUNC );
           } else {	// or as individual SFT-files
-            XLAL_CHECK ( XLALWriteSFTVector2Dir( sfts, uvar.outSFTdir, comment, uvar.outMiscField ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK ( XLALWriteSFTVector2Dir( sfts, uvar.outSFTdir, comment, uvar.outLabel ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
         } // for X < numIFOs
 
@@ -256,6 +261,56 @@ main(int argc, char *argv[])
 
       XLALFree (fname);
     } /* if outputting ASCII time-series */
+
+  /* output time-series to frames if requested */
+  if ( uvar.TDDframedir )
+    {
+      REAL4TimeSeries *Tseries = mTseries->data[0];
+#ifndef HAVE_LIBLALFRAME
+      XLAL_ERROR ( XLAL_EINVAL, "--TDDframedir option not supported, code has to be compiled with lalframe\n" );
+#else
+      /* use standard frame output filename format */
+      XLAL_CHECK ( XLALCheckValidDescriptionField ( uvar.outLabel ) == XLAL_SUCCESS, XLAL_EFUNC );
+      len = strlen(uvar.TDDframedir) + strlen(uvar.outLabel) + 100;
+      char *fname;
+      char IFO[2] = { Tseries->name[0], Tseries->name[1] };
+      LIGOTimeGPS startTimeGPS = Tseries->epoch;
+      REAL8 duration = Tseries->data->length * Tseries->deltaT;
+      XLAL_CHECK ( (fname = LALCalloc (1, len )) != NULL, XLAL_ENOMEM );
+      size_t written = snprintf ( fname, len, "%s/%c-%c%c_%s-%d-%d.gwf",
+                                      uvar.TDDframedir, IFO[0], IFO[0], IFO[1], uvar.outLabel, startTimeGPS.gpsSeconds, (int)duration );
+      XLAL_CHECK ( written < len, XLAL_ESIZE, "Frame-filename exceeds expected maximal length (%d): '%s'\n", len, fname );
+
+      /* define the output frame */
+      struct FrameH *outFrame;
+      XLAL_CHECK ( (outFrame = XLALFrameNew ( &startTimeGPS, duration, uvar.outLabel, 1, 0, 0 )) != NULL, XLAL_EFUNC );
+
+      /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
+      char buffer[LALNameLength];
+      written = snprintf ( buffer, LALNameLength, "%s:%s", Tseries->name, uvar.outLabel );
+      XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Updated frame name exceeds max length (%d): '%s'\n", LALNameLength, buffer );
+      strcpy ( Tseries->name, buffer );
+
+      XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
+
+      /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
+      char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
+      FrHistoryAdd ( outFrame, hist );
+
+      /* then we add the version string */
+      FrHistoryAdd ( outFrame, GV.VCSInfoString );
+
+      /* output the frame to file - compression level 1 (higher values make no difference) */
+      XLAL_CHECK ( (XLALFrameWrite(outFrame, fname,1) == 0) , XLAL_EFUNC );
+
+      /* free the frame, frame file name and history memory */
+      FrameFree ( outFrame );
+      LALFree ( fname );
+      LALFree ( hist );
+#endif
+    } /* if outputting time-series to frames */
+
+
 
   /* ---------- free memory ---------- */
   XLALDestroyMultiREAL4TimeSeries ( mTseries );
@@ -416,7 +471,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
 
 #define MISC_DEFAULT "mfdv5"
-  XLAL_CHECK ( (uvar->outMiscField = XLALStringDuplicate ( MISC_DEFAULT ))  != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (uvar->outLabel = XLALStringDuplicate ( MISC_DEFAULT ))  != NULL, XLAL_EFUNC );
 
   // ---------- register all our user-variable ----------
   XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
@@ -424,7 +479,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* output options */
   XLALregBOOLUserStruct (   outSingleSFT,       's', UVAR_OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
   XLALregSTRINGUserStruct ( outSFTdir,          'n', UVAR_OPTIONAL, "Output SFTs:  Output directory for SFTs");
-  XLALregSTRINGUserStruct(  outMiscField,	  0, UVAR_OPTIONAL, "'misc' field entry in the SFT-filename (part of 'description' field)");
+  XLALregSTRINGUserStruct(  outLabel,	         0, UVAR_OPTIONAL, "'misc' entry in SFT-filenames or 'description' entry of frame filenames" );
 
   XLALregSTRINGUserStruct ( TDDfile,            't', UVAR_OPTIONAL, "Filename to output time-series into");
 

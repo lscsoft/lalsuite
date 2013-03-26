@@ -237,13 +237,13 @@ echo "----- Method 2: and again the same, using different input methods"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig1="--injectionSources='${injString}'"
 sig23="--injectionSources='@${injFile2}'"
-cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outMiscField='mfdv5_meth2'"
+cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outLabel='mfdv5_meth2'"
 echo $cmdline1;
 if ! eval $cmdline1; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
     exit 1
 fi
-cmdline2="$mfdv5_CL ${sig23} --noiseSFTs='${sftsv5_meth2}' --outMiscField='mfdv5_meth2'"
+cmdline2="$mfdv5_CL ${sig23} --noiseSFTs='${sftsv5_meth2}' --outLabel='mfdv5_meth2'"
 echo $cmdline2;
 if ! eval $cmdline2; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
