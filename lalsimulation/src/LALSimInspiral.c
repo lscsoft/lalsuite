@@ -45,7 +45,7 @@
  * (Twice) the highest known PN order of amplitude correction for
  * non-precessing binaries.
  */
-#define MAX_NONPRECESSING_AMP_PN_ORDER 5
+#define MAX_NONPRECESSING_AMP_PN_ORDER 6
 
 /**
  * (Twice) the highest known PN order of amplitude correction for
@@ -650,7 +650,8 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
  * \"The third post-Newtonian gravitational wave polarisations
  * and associated spherical harmonic modes for inspiralling compact binaries
  * in quasi-circular orbits\", Class. Quant. Grav. 25 165003 (2008);
- * arXiv:0802.1249
+ * arXiv:0802.1249.
+ * NB: Be sure to check arXiv:0802.1249v3, which corrects a typo!
  *
  * Note however, that we do not include the constant \"memory\" terms
  */
@@ -667,7 +668,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
 	int ampO                  /**< twice PN order of the amplitude */
 	)
 {
-  REAL8 M, eta, eta2, eta3, dm, dist, ampfac, phi, phiShift, v, v2, v3;
+    REAL8 M, eta, eta2, eta3, dm, dist, ampfac, phi, phiShift, v, v2, v3;
     REAL8 hp0, hp05, hp1, hp15, hp2, hp25, hp3;
     REAL8 hc0, hc05, hc1, hc15, hc2, hc25, hc3;
     REAL8 ci, si, ci2, ci4, ci6, ci8, si2, si3, si4, si5, si6;
@@ -748,8 +749,8 @@ int XLALSimInspiralPNPolarizationWaveforms(
             case -1: // Highest known PN order - move if higher terms added!
             /* case LAL_PNORDER_THREE: */
             case 6:
-		/* FIXME: These 3PN terms are known to be incorrect and the
-		 * authors are producing an errata to fix them. */
+		/* The reference had a typo in the 3PN terms and needed an errata.
+		 * These should match arXiv:0802.1249v3, which has the fix. */
                 hp3 = LAL_PI*dm*si*cos(phi)*(19./64. + ci2*5./16. - ci4/192.
                         + eta*(-19./96. + ci2*3./16. + ci4/96.)) + cos(2.*phi)
                         * (-465497./11025. + (LAL_GAMMA*856./105. 
@@ -778,7 +779,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + cos(8.*phi)*(-1024./315.*si6*(1. + ci2)*(1. - 7.*eta 
                         + 14.*eta2 - 7.*eta3)) + dm*si*sin(phi)*(-2159./40320.
                         - log(2.)*19./32. + (-95./224. - log(2.)*5./8.)*ci2
-                        + (181./13440. + log(2.)/96.)*ci4 + eta*(81127./10080.
+                        + (181./13440. + log(2.)/96.)*ci4 + eta*(1369./160.
                         + log(2.)*19./48. + (-41./48. - log(2.)*3./8.)*ci2
                         + (-313./480. - log(2.)/48.)*ci4)) + sin(2.*phi)
                         * (-428.*LAL_PI/105.*(1. + ci2)) + dm*si*sin(3.*phi)
@@ -793,7 +794,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + eta*(17639./320. - log(5./2.)*3125./96.));
                 hc3 = dm*si*ci*cos(phi)*(11617./20160. + log(2.)*21./16.
                         + (-251./2240. - log(2.)*5./48.)*ci2 
-                        + eta*(-48239./5040. - log(2.)*5./24. 
+                        + eta*(-2419./240. - log(2.)*5./24.
                         + (727./240. + log(2.)*5./24.)*ci2)) + ci*cos(2.*phi)
                         * (LAL_PI*856./105.) + dm*si*ci*cos(3.*phi)
                         * (-36801./896. + log(3./2.)*1809./32.
