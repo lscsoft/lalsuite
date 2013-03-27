@@ -24,6 +24,7 @@ __version__ = '$Revision$'
 # 01/09/06 gam; Add -Z option; write SFT to .*.tmp file, then move to final file name.
 # 01/14/07 gam; Add -u option to specify frame struct and type; add -i option to specify IFO name.
 # 07/24/07 gam; Add in -q option to read in list of nodes on which to output SFTs, -Q option to give node path, and -R option for number of jobs per node.
+# 04/XX/13 eag; Add -y option to synchronize the start times of SFTs.
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -59,6 +60,7 @@ Usage: MakeSFTDAG [options]
   -d, --input-data-type      input data type for use with the LSCdataFind --type option
   -x, --extra-datafind-time  (optional) extra time to subtract/add from/to start/end time arguments of LSCdataFind (default is 0)
   -M, --datafind-match       (optional) string to use with the LSCdataFind --match option
+  -y, --synchronize-start    (optional) synchronize the start times of the SFTs so that the start times are synchronized when there are gaps in the data (0 or 1, default is 0)
   -k, --filter-knee-freq     high pass filter knee frequency used on time domain data before generating SFTs
   -T, --time-baseline        time baseline of SFTs  (e.g., 60 or 1800 seconds)
   -p, --output-sft-path      path to output SFTs
@@ -129,7 +131,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
 
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:x:M:k:T:p:C:O:o:N:i:w:P:u:v:c:F:B:D:X:m:L:g:q:Q:R:l:hSHZ"
+shortop = "s:e:a:b:f:t:G:d:x:M:y:k:T:p:C:O:o:N:i:w:P:u:v:c:F:B:D:X:m:L:g:q:Q:R:l:hSHZ"
 longop = [
   "help",
   "gps-start-time=",
@@ -142,6 +144,7 @@ longop = [
   "input-data-type=",
   "extra-datafind-time=",
   "datafind-match=",
+  "synchronize-start=",
   "filter-knee-freq=",
   "time-baseline=",
   "output-sft-path=",
@@ -188,6 +191,7 @@ tagString = None
 inputDataType = None
 extraDatafindTime = 0L
 datafindMatch = None
+synchronizeStart = 0
 filterKneeFreq = -1
 timeBaseline = None
 outputSFTPath = None
@@ -243,6 +247,8 @@ for o, a in opts:
     extraDatafindTime = long(a)
   elif o in ("-M", "--datafind-match"):
     datafindMatch = a
+  elif o in ("-y", "--synchronize-start"):
+    synchronizeStart = a
   elif o in ("-k", "--filter-knee-freq"):
     filterKneeFreq = int(a)
   elif o in ("-T", "--time-baseline"):
@@ -319,6 +325,11 @@ if not inputDataType:
 
 if extraDatafindTime < 0L:
   print >> sys.stderr, "Invalid extra datafind time specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if synchronizeStart<0 or synchronizeStart>1:
+  print >> sys.stderr, "Invalid use of synchronize-start."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
   
@@ -536,11 +547,12 @@ MakeSFTsFID.close
 dagFID = file(dagFileName,'w')
 
 startTimeAllNodes = None
+firstSFTstartTime = 0
 for seg in segList:
     # Each segment in the segList runs on one or more nodes; initialize the number SFTs produced by the current node:
     numThisNode = 0L
     numThisSeg = 0L
-    if (adjustSegExtraTime):
+    if (adjustSegExtraTime and synchronizeStart==0):
        segStartTime = seg[0]
        segEndTime = seg[1]
        segExtraTime = (segEndTime - segStartTime) % timeBaseline
@@ -558,6 +570,14 @@ for seg in segList:
        analysisStartTime = segStartTime + segExtraStart
        if analysisStartTime > segEndTime: analysisStartTime = segEndTime
        analysisEndTime = segEndTime - segExtraEnd
+       if analysisEndTime < segStartTime: analysisEndTime = segStartTime
+    elif (synchronizeStart):
+       segStartTime = seg[0]
+       segEndTime = seg[1]
+       if firstSFTstartTime == 0: firstSFTstartTime = segStartTime
+       analysisStartTime = long(round(math.ceil((segStartTime - firstSFTstartTime)/((1.0 - overlapFraction)*timeBaseline))*(1.0 - overlapFraction)*timeBaseline)) + firstSFTstartTime
+       if analysisStartTime > segEndTime: analysisStartTime = segEndTime
+       analysisEndTime = long(round(math.floor((segEndTime - analysisStartTime - timeBaseline)/((1.0 - overlapFraction)*timeBaseline))*(1.0 - overlapFraction)*timeBaseline)) + timeBaseline + analysisStartTime
        if analysisEndTime < segStartTime: analysisEndTime = segStartTime
     else:
        analysisStartTime = seg[0]
