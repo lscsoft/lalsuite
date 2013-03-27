@@ -53,7 +53,7 @@ static const LALStatus empty_status;
 int main(int argc, char *argv[])
 {
    
-   INT4 ii;               //counter variables
+  INT4 ii, jj;               //counter variables
    
    //Turn off gsl error handler
    gsl_set_error_handler_off();
@@ -147,26 +147,26 @@ int main(int argc, char *argv[])
 
             REAL8 ksvalue = 0.0, testval1, testval2, testval;
             REAL8 oneoverlength = 1.0/tempvect->length;
-            for (ii=0; ii<(INT4)tempvect->length; ii++) {
-               testval1 = fabs((1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean));
-               testval2 = fabs(ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean));
+            for (jj=0; jj<(INT4)tempvect->length; jj++) {
+               testval1 = fabs((1.0+jj)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[jj], vector_mean));
+               testval2 = fabs(jj*oneoverlength - gsl_cdf_exponential_P(tempvect->data[jj], vector_mean));
                testval = fmax(testval1, testval2);
                if (testval>ksvalue) ksvalue = testval;
             }
 
             REAL8 loval = 0.0, hival = 0.0;
-            for (ii=0; ii<(INT4)tempvect->length; ii++) {
-              testval1 = (1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
-              testval2 = ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+            for (jj=0; jj<(INT4)tempvect->length; jj++) {
+              testval1 = (1.0+jj)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[jj], vector_mean);
+              testval2 = jj*oneoverlength - gsl_cdf_exponential_P(tempvect->data[jj], vector_mean);
               if (hival<testval1) hival = testval1;
               if (loval<testval2) loval = testval2;
             }
             REAL8 kuiperval1 = hival + loval;
 
             loval = -1.0, hival = -1.0;
-            for (ii=0; ii<(INT4)tempvect->length; ii++) {
-              testval1 = (1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
-              testval2 = ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+            for (jj=0; jj<(INT4)tempvect->length; jj++) {
+              testval1 = (1.0+jj)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[jj], vector_mean);
+              testval2 = jj*oneoverlength - gsl_cdf_exponential_P(tempvect->data[jj], vector_mean);
               if (hival<testval1) hival = testval1;
               if (hival<testval2) hival = testval2;
               if (loval<-testval1) loval = -testval1;
