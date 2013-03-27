@@ -5,9 +5,10 @@ A message from the librarian:
 When developing a package for LAL, please test the code with gcc using
 the following compiler flags:
 
-  -g3 -O4 -Wall -W -Wmissing-prototypes -Wstrict-prototypes
-  -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings
+  -g3 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow
+  -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings
   -fno-common -Wnested-externs -Wno-format-zero-length
+  -fno-strict-aliasing
 
 These flags provide a useful way to detect potential bugs. (Add -Werror
 to enforce this.)
