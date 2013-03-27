@@ -80,7 +80,7 @@ if __name__=='__main__':
       print >> sys.stderr, "Python version is < 2.7, so make sure configuration\
  file has un-needed values left out."
     else:
-      cp = ConfigParser.ConfigParser(allow_no_value=True)
+      cp = ConfigParser.ConfigParser()#allow_no_value=True)
     cp.read(inifile)
   except:
     print >> sys.stderr, "Cannot read configuration file %s" % inifile

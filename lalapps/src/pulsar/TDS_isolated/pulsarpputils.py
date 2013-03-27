@@ -41,6 +41,7 @@ from matplotlib import colors
 from matplotlib.mlab import specgram, find, psd
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
+from scipy.stats import hmean
 
 # pylal stuff
 from pylal import date
@@ -1199,8 +1200,6 @@ Bk[:,2])))), 50)
         exit(-1)
 
       count = 0
-      npsds = 0
-      totalasd = np.zeros(math.floor(delt/60)) # add sum of ASDs
 
       # zero pad the data and bin each point in the nearest 60s bin
       datazeropad = np.zeros(math.ceil(totlen/60.)+1, dtype=complex)
@@ -1209,7 +1208,7 @@ Bk[:,2])))), 50)
       for i in range(0, len(idx)):
         datazeropad[idx[i]] = complex(Bk[i,1], Bk[i,2])
 
-      win = tukey_window(math.floor(delt/60), alpha=0.25)
+      win = tukey_window(math.floor(delt/60), alpha=0.1)
 
       Fs = 1./60. # sample rate in Hz
 
@@ -1219,18 +1218,18 @@ Fs=Fs, window=win)
       if plotpsds:
         fshape = fscan.shape
 
-        for i in range(0, fshape[1]):
-          # add to total asd if the psd does not contain zero
-          if fscan[0,i] != 0.:
-            scanasd = np.sqrt(fscan[:,i])
-            # add asd onto total value
-            totalasd = map(lambda x, y: x+y, totalasd, scanasd)
+        totalasd = np.zeros(fshape[0])
 
-            # count number of asds
-            npsds = npsds+1
+        for i in range(0, fshape[0]):
+          scanasd = np.sqrt(fscan[i,:])
+          nonzasd = np.nonzero(scanasd)
+          scanasd = scanasd[nonzasd]
+
+          # median amplitude spectral density
+          #totalasd[i] = hmean(scanasd)
+          totalasd[i] = np.median(scanasd)
 
         # average amplitude spectral density 
-        totalasd = np.divide(totalasd, float(npsds))
         asdlist.append(totalasd)
 
         # plot PSD

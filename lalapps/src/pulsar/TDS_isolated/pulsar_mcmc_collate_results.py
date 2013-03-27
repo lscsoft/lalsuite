@@ -291,15 +291,15 @@ paramlatextitledisp = {'RAJ': '$\\alpha$', 'RA': '$\\alpha$', \
                   'DIST': 'distance (kpc)', \
                   'ELL': '$\\varepsilon$', \
                   'H95': '$h_0^{95\%}$', \
-                  'SDRAT': 'ratio', \
-                  'SDLIM': 'spin-down limit', \
+                  'SDRAT': '$h_0^{95\%}$/h_0^{\\rm sd}$', \
+                  'SDLIM': '$h_0^{\\rm sd}$', \
                   'F0ROT': '$f_{\\rm rot}$ (Hz)', \
                   'F0GW': '$f_{\\rm gw}$ (Hz)', \
                   'F1ROT': '$\dot{f}_{\\rm rot}$ (Hz/s)', \
                   'F1GW': '$\dot{f}_{\\rm gw}$ (Hz/s)', \
                   'SDPOWRAT': 'power ratio (\%)', \
                   'Q22': '$Q_{22}$ (kg\,m$^2$)', \
-                  'H0PRIOR': '$h_0^{95\%}$ prior'}
+                  'H0PRIOR': 'prior $h_0^{95\%}$'}
 
 # function to return a float number to a given number of significant figures              
 def sigfig(x, sf):
@@ -796,10 +796,10 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, numlims, ifo))
       if 'sdlim' in prepar:
         if sintrinsicsd:
           htmlsdtag = '<sup>&dagger;</sup>'
-          latexsdtag = '$^{\dagger}$'
+          latexsdtag = '$\dagger$'
         elif sagebasedsd:
           htmlsdtag = '<sup>&Dagger;</sup>'
-          latexsdtag = '$^{\ddagger}$'
+          latexsdtag = '$\ddagger$'
       
       try:
         preval = psrshelf[prepar]
@@ -944,10 +944,10 @@ Command lines used:<br>
   htmlout.close()
 
   latextext.append('\\enddata')
-  latextext.append("\\tablenotetext{$^\dagger$}{The pulsar's spin-down is \
+  latextext.append("\\tablenotetext{$\dagger$}{The pulsar's spin-down is \
 corrected for proper motion effects.}")
-  latextext.append("\\tablenotetext{$^\ddagger$}{The pulsar's spin-down is \
-calculated using a characteristic spin-down ago of $10^9$ years.}")
+  latextext.append("\\tablenotetext{$\ddagger$}{The pulsar's spin-down is \
+calculated using a characteristic spin-down age of $10^9$ years.}")
   latextext.append('\\end{deluxetable}')
   latextext.append('\clearpage')
   latextext.append('\\end{landscape}')
