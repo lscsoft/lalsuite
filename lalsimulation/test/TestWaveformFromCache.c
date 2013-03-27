@@ -42,7 +42,7 @@ int main(void) {
     REAL8TimeSeries *hcrossC = NULL;
     REAL8 m1 = 10. * LAL_MSUN_SI, m2 = 1.4 * LAL_MSUN_SI;
     REAL8 s1x = 0., s1y = 0., s1z = 0., s2x = 0., s2y = 0., s2z = 0.;
-    REAL8 fmin = 40., fref = 0., lambda1 = 0., lambda2 = 0.;
+    REAL8 f_min = 40., f_ref = 0., lambda1 = 0., lambda2 = 0.;
     REAL8 phiref = 0., dt = 1./16384.;
     int ret, phaseO = 7, ampO = 0;
     Approximant approx = SEOBNRv1;
@@ -51,14 +51,14 @@ int main(void) {
 
     // Generate waveform via usual ChooseWaveform path
     ret = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phiref, dt, m1, m2,
-        s1x, s1y, s1z, s2x, s2y, s2z, fmin, fref, dist1, inc1, lambda1, lambda2,
-        NULL, NULL, ampO, phaseO, approx);
+        s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_ref, dist1, inc1,
+        lambda1, lambda2, NULL, NULL, ampO, phaseO, approx);
     if( ret != XLAL_SUCCESS )
         XLAL_ERROR(XLAL_EFUNC);
 
     // Generate waveform via FromCache - will call ChooseWaveform this 1st time
     ret = XLALSimInspiralChooseTDWaveformFromCache(&hplusC, &hcrossC, phiref,
-        dt, m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, fmin, fref, dist1, inc1,
+        dt, m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_ref, dist1, inc1,
         lambda1, lambda2, NULL, NULL, ampO, phaseO, approx, cache);
     if( ret != XLAL_SUCCESS )
         XLAL_ERROR(XLAL_EFUNC);
@@ -79,14 +79,14 @@ int main(void) {
 
     // Generate another waveform via ChooseWaveform path
     ret = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phiref, dt, m1, m2,
-        s1x, s1y, s1z, s2x, s2y, s2z, fmin, fref, dist2, inc2, lambda1, lambda2,
-        NULL, NULL, ampO, phaseO, approx);
+        s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_ref, dist2, inc2,
+        lambda1, lambda2, NULL, NULL, ampO, phaseO, approx);
     if( ret != XLAL_SUCCESS )
         XLAL_ERROR(XLAL_EFUNC);
 
     // Generate waveform via FromCache - will transform previous waveform
     ret = XLALSimInspiralChooseTDWaveformFromCache(&hplusC, &hcrossC, phiref,
-        dt, m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, fmin, fref, dist2, inc2,
+        dt, m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_ref, dist2, inc2,
         lambda1, lambda2, NULL, NULL, ampO, phaseO, approx, cache);
     if( ret != XLAL_SUCCESS )
         XLAL_ERROR(XLAL_EFUNC);
