@@ -232,7 +232,7 @@ class TaylorF2RedSpinTemplate(Template):
     def _compute_waveform(self, df, f_final):
         return lalsim.SimInspiralTaylorF2ReducedSpin(
             0, df, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self.chi,
-            self.bank.flow, 1000000 * LAL_PC_SI, 7, 3)
+            self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 3)
 
     def metric_match(self, other, df, **kwargs):
         g00, g01, g02, g11, g12, g22 = self._metric
