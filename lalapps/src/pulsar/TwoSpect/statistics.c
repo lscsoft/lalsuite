@@ -849,8 +849,9 @@ REAL8 kuipers_test_exp(REAL4Vector *vector)
    REAL8 loval = 0.0, hival = 0.0;
    REAL8 oneoverlength = 1.0/tempvect->length;
    /* for (ii=0; ii<(INT4)tempvect->length; ii++) {
-      REAL8 testval1 = (1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
-      REAL8 testval2 = ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      REAL8 pval = gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      REAL8 testval1 = (1.0+ii)*oneoverlength - pval;
+      REAL8 testval2 = ii*oneoverlength - pval;
       if (hival<testval1) hival = testval1;
       if (loval<testval2) loval = testval2;
    }
