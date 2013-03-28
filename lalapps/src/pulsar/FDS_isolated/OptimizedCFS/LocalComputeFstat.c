@@ -301,8 +301,8 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
   if ( params->returnSingleF )
     {
       retF.numDetectors = numDetectors;
-      if ( numDetectors > CFS_MAX_IFOS ) {
-        XLALPrintError ("%s: numDetectors = %d exceeds currently allowed upper limit of detectors (%d) for returnSingleF=TRUE\n", __func__, numDetectors, CFS_MAX_IFOS );
+      if ( numDetectors > PULSAR_MAX_DETECTORS ) {
+        XLALPrintError ("%s: numDetectors = %d exceeds currently allowed upper limit of detectors (%d) for returnSingleF=TRUE\n", __func__, numDetectors, PULSAR_MAX_DETECTORS );
         ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
       }
     }

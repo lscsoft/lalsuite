@@ -108,11 +108,10 @@ typedef struct tagMultiFstatAtomVector {
   FstatAtomVector **data;	/**< array of FstatAtom (pointers), one for each detector X */
 } MultiFstatAtomVector;
 
-#define CFS_MAX_IFOS 10
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct tagFcomponents {
   REAL8 F;				/**< F-statistic value */
-  REAL8 FX[CFS_MAX_IFOS];		/**< vector of single-detector F-statistic values (array of fixed size) */
+  REAL8 FX[PULSAR_MAX_DETECTORS];		/**< vector of single-detector F-statistic values (array of fixed size) */
   UINT4 numDetectors;			/**< number of detectors = effective vector length. numDetectors=0 should make all code ignore the FX field. */
   LIGOTimeGPS refTime;			/**< 'internal' refTime used to compute the F-statistic: only relevant for phase of complex amplitudes {Fa,Fb} */
   COMPLEX16 Fa;				/**< complex amplitude Fa */

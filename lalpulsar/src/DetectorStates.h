@@ -102,7 +102,6 @@ typedef struct tagMultiLALDetector
 } MultiLALDetector;
 
 
-#define CW_MAX_DETECTORS 20	/**< should be large enough for now */
 /**
  * Struct describing a set of detectors with their PSDs and derived noise-weights
  *
@@ -110,9 +109,9 @@ typedef struct tagMultiLALDetector
 typedef struct tagMultiDetectorInfo
 {
   UINT4 length;                         //!< number of detectors \f$N\f$
-  LALDetector sites[CW_MAX_DETECTORS];  //!< array of site information
-  REAL8 sqrtSn[CW_MAX_DETECTORS];       //!< per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$
-  REAL8 detWeights[CW_MAX_DETECTORS];   //!< (derived) noise-weights, defined as \f$w_X = \frac{S_X^{-1}}{\mathcal{S}^{-1}}\f$
+  LALDetector sites[PULSAR_MAX_DETECTORS];  //!< array of site information
+  REAL8 sqrtSn[PULSAR_MAX_DETECTORS];       //!< per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$
+  REAL8 detWeights[PULSAR_MAX_DETECTORS];   //!< (derived) noise-weights, defined as \f$w_X = \frac{S_X^{-1}}{\mathcal{S}^{-1}}\f$
   REAL8 calS;                           //!< noise normalization constant \f$\mathcal{S}^{-1}= \frac{1}{N}\sum_{X=1}^{N} S_X^{-1}\f$
                                         //!< such that \f$\sum_{X=1}^N w_X = N\f$
 } MultiDetectorInfo;

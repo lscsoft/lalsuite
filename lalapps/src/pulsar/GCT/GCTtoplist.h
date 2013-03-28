@@ -22,6 +22,7 @@
 
 #include "HeapToplist.h"
 #include <lal/LALDatatypes.h>
+#include <lal/PulsarDataTypes.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,9 +33,6 @@ extern int global_argc;
 }
 #endif
 
-#ifndef GCTTOP_MAX_IFOS
-#define GCTTOP_MAX_IFOS 10
-#endif
 /** Type to hold the fields that will be kept in a "toplist"  */
 typedef struct {
   REAL8 Freq;  /**< frequency */
@@ -46,9 +44,9 @@ typedef struct {
   UINT4 nc;       /**< number count */
   REAL4 LV;       /**< Line Veto statistic */
   UINT4 numDetectors; /**< number of detectors for optional sumTwoFX arrays */
-  REAL4 sumTwoFX[GCTTOP_MAX_IFOS]; /**< fixed-size array of single-detector 2F-values */
+  REAL4 sumTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector 2F-values */
   REAL4 sumTwoFrecalc;  /**< sum of 2F-values as recomputed by recalcToplistStats */
-  REAL4 sumTwoFXrecalc[GCTTOP_MAX_IFOS];  /**< fixed-size array of single-detector 2F-values as recomputed by recalcToplistStats */
+  REAL4 sumTwoFXrecalc[PULSAR_MAX_DETECTORS];  /**< fixed-size array of single-detector 2F-values as recomputed by recalcToplistStats */
 } GCTtopOutputEntry;
 
 /// enumerate all toplist-sorting options: by F (0), number-count (1), LV-stat (2), "dual" toplists F + LV (3)

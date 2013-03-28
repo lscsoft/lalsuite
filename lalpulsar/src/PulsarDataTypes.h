@@ -53,6 +53,11 @@ extern "C" {
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7
 
+/** maximal number of detectors we can handle (for static arrays of detector quantities) */
+#ifndef PULSAR_MAX_DETECTORS	// allow this value to be overridden for e.g. E@H apps
+#define PULSAR_MAX_DETECTORS	10
+#endif
+
 /** Type defining the orbital parameters of a binary pulsar */
 typedef struct tagBinaryOrbitParams {
   LIGOTimeGPS tp;         /**< time of observed periapsis passage (in SSB) */

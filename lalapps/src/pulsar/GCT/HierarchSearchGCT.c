@@ -2501,7 +2501,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.nc = in->nc[ifreq_fg];
     line.sumTwoF = in->sumTwoF[ifreq_fg]; /* here it's still the summed 2F value over segments, not the average */
     line.numDetectors = in->numDetectors;
-    for (UINT4 X = 0; X < GCTTOP_MAX_IFOS; X++) { /* initialise single-IFO F-stat arrays to zero */
+    for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) { /* initialise single-IFO F-stat arrays to zero */
       line.sumTwoFX[X] = 0.0;
       line.sumTwoFXrecalc[X] = 0.0;
     }
