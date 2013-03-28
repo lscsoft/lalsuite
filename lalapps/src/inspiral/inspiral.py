@@ -453,7 +453,7 @@ class ThincaToCoincJob(InspiralAnalysisJob):
     """
     Adds the simulation argument to the job.
     """
-    self.add_opt('simulation', '')
+    self.add_opt('simulation', None)
 
 class HWinjPageJob(InspiralAnalysisJob):
   """
@@ -2643,7 +2643,7 @@ class MiniFollowupsJob(InspiralPlottingJob):
     """
     Turns on the --time-slides argument.
     """
-    self.add_opt('time-slides', '')
+    self.add_opt('time-slides', None)
 
 
 class MiniFollowupsNode(InspiralPlottingNode):
@@ -3164,7 +3164,7 @@ class PlotSlidesJob(pipeline.SqliteJob):
     """
     Sets plot-playground-only option. This causes job to only plot playground.
     """
-    self.add_opt('plot-playground-only', '')
+    self.add_var_opt('plot-playground-only')
 
 
 class PlotSlidesNode(pipeline.SqliteNode):
@@ -3195,7 +3195,7 @@ class PlotCumhistJob(pipeline.SqliteJob):
     """
     Sets plot-playground-only option. This causes job to only plot playground.
     """
-    self.add_opt('plot-playground-only','')
+    self.add_var_opt('plot-playground-only')
 
 
 class PlotCumhistNode(pipeline.SqliteNode):
