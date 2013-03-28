@@ -266,9 +266,10 @@ SearchSummaryTable *coh_PTF_create_search_summary( struct coh_PTF_params *params
 
   /* compute the start and end times of data analyzed */
   outStartTimeNS  = epoch_to_ns( &params->startTime ) 
-    + sec_to_ns( 0.5 * params->strideDuration );
-  outEndTimeNS    = outStartTimeNS 
-    + sec_to_ns( params->strideDuration * params->numOverlapSegments );
+    + sec_to_ns( params->analStartPoint / (REAL4)params->sampleRate );
+  outEndTimeNS    = epoch_to_ns( &params->endTime )
+    - sec_to_ns( (params->numTimePoints - params->analEndPoint)
+                 / (REAL4)params->sampleRate );
   if( params->trigStartTimeNS && (params->trigStartTimeNS > outStartTimeNS))
     outStartTimeNS = (outEndTimeNS < params->trigStartTimeNS) ?
       outEndTimeNS : params->trigStartTimeNS;

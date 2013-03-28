@@ -370,7 +370,7 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
 }
 
 /* Function to rescale the data to avoid floating point errors*/
-void coh_PTF_rescale_data (REAL4TimeSeries *channel,REAL8 rescaleFactor)
+void coh_PTF_rescale_data (REAL4TimeSeries *channel, REAL8 rescaleFactor)
 {
   UINT4 k;
   for ( k = 0; k < channel->data->length; ++k )
@@ -398,12 +398,13 @@ RingDataSegments *coh_PTF_get_segments(
 
   if ( params->analyzeInjSegsOnly )
   {
+    /* Figure out which segments the injections are in. If an injection is
+     * within 1s of a segment boundary, analyse both segments. */ 
     for ( i = 0 ; i < params->numOverlapSegments; i++)
       segListToDo[i] = 0;
     SimInspiralTable        *injectList = NULL;
     REAL8 deltaTime,segBoundDiff;
-    INT4 segNumber, UNUSED segLoc, UNUSED ninj;
-    segLoc = 0;
+    INT4 segNumber, UNUSED ninj;
     if (! params->injectList)
     {
       ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
@@ -415,16 +416,23 @@ RingDataSegments *coh_PTF_get_segments(
     }
     while (injectList)
     {
+      /* Calculate the epoch of the injection relative to the gps-start */
       deltaTime = injectList->geocent_end_time.gpsSeconds;
       deltaTime += injectList->geocent_end_time.gpsNanoSeconds * 1E-9;
       deltaTime -= params->startTime.gpsSeconds;
       deltaTime -= params->startTime.gpsNanoSeconds * 1E-9;
-      segNumber = floor(2*(deltaTime/params->segmentDuration) - 0.5);
+
+      /* Adjust to the epoch relative to the analysis start */
+      deltaTime -= params->analStartPoint / (REAL4) params->sampleRate;
+    
+      /* And figure out the segment number */
+      segNumber = floor( deltaTime / params->strideDuration);
+
       segListToDo[segNumber] = 1;
       /* Check if injection is near a segment boundary */
       for ( j = 0 ; j < params->numOverlapSegments; j++)
       {
-        segBoundDiff = deltaTime - (j+0.5) * params->segmentDuration/2;
+        segBoundDiff = deltaTime - j * params->strideDuration/2;
         if (segBoundDiff > 0 && segBoundDiff < params->injSearchWindow)
         {
           if (j != 0)
@@ -511,7 +519,7 @@ RingDataSegments *coh_PTF_get_segments(
         {
           slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
           timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] =
-              ((INT4)slidSegNum-(INT4)sgmnt)*params->segmentDuration/2.;
+              ((INT4)slidSegNum-(INT4)sgmnt)*params->strideDuration;
           compute_data_segment( &segments->sgmnt[count++], slidSegNum, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
             fwdplan );
@@ -745,6 +753,7 @@ void coh_PTF_initialize_structures(
   /* This option holds 2x the length of data that is junk in each segment
    * because of conditioning and the PSD.*/
   fcTmpltParams->invSpecTrunc = params->truncateDuration;
+  fcTmpltParams->maxTempLength = params->maxTempLength;
 
   for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -1166,7 +1175,7 @@ void coh_PTF_destroy_time_series(
         pValues[k] = NULL;
     }
   }
-  /* FIXME: snrComps to be moved here */
+
   for (k = 0; k < LAL_NUM_IFO; k++)
   {
     if (snrComps[k])
@@ -1873,6 +1882,9 @@ void coh_PTF_calculate_rotated_vectors(
     UINT4 vecLengthTwo,
     UINT4 detectorNum)
 {
+  /* IMPORTANT!!! This function is probably the dominant computational cost
+   * when running in lots-of-sky-points mode. Optimizing this is important! */ 
+
   // This function calculates the coherent time series and rotates them into
   // the basis where the B matrix is the identity.
   // This is the dominant polarization frame with some normalization
@@ -3399,7 +3411,7 @@ void findInjectionSegment(
 {
     /* define variables */
     LIGOTimeGPS injTime, segmentStart, segmentEnd;
-    UINT4 injSamplePoint, injWindow, numPoints;
+    UINT4 injSamplePoint, injWindow;
     REAL8 injDiff;
     INT8 startDiff, endDiff;
     SimInspiralTable *thisInject = NULL;
@@ -3407,9 +3419,8 @@ void findInjectionSegment(
     /* set variables */
     segmentStart = *epoch;
     segmentEnd   = *epoch;
-    XLALGPSAdd(&segmentEnd, params->segmentDuration/2.0);
+    XLALGPSAdd(&segmentEnd, params->strideDuration);
     thisInject = params->injectList;
-    numPoints = floor(params->segmentDuration * params->sampleRate + 0.5);
 
     /* loop over injections */
     while (thisInject)
@@ -3425,23 +3436,23 @@ void findInjectionSegment(
             if (*start)
             {
                 verbose("warning: multiple injections in this segment.\n");
-                *start = numPoints/4;
-                *end = 3 * numPoints/4;
+                *start = params->analStartPoint;
+                *end = params->analEndPoint;
             }
             else
             {
                 injDiff = (REAL8) ((XLALGPSToINT8NS(&injTime) - \
                                     XLALGPSToINT8NS(&segmentStart)) / 1E9);
                 injSamplePoint = floor(injDiff * params->sampleRate + 0.5);
-                injSamplePoint += numPoints/4;
+                injSamplePoint += params->analStartPoint;
                 injWindow = floor(params->injSearchWindow * params->sampleRate
                                   + 1);
                 *start = injSamplePoint - injWindow;
-                if (*start < numPoints/4)
-                    *start = numPoints/4;
+                if (*start < params->analStartPoint)
+                    *start = params->analStartPoint;
                 *end = injSamplePoint + injWindow + 1;
-                if (*end > 3*numPoints/4)
-                    *end = 3*numPoints/4;
+                if (*end > params->analEndPoint)
+                    *end = params->analEndPoint;
                 verbose("Found analysis segment at [%d,%d).\n", *start, *end);
             }
         }
@@ -3465,7 +3476,7 @@ UINT4 checkInjectionMchirp(
   /* set variables */
   segmentStart = *epoch;
   segmentEnd   = *epoch;
-  XLALGPSAdd(&segmentEnd, params->segmentDuration/2.0);
+  XLALGPSAdd(&segmentEnd, params->strideDuration);
   passMchirpCheck = 2;
   thisInject = params->injectList;
   

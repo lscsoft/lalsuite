@@ -634,7 +634,6 @@ UINT4                    numPoints)
   }
 }
 
-/* FIXME length of bankeigen* is hardcoded. Limits to 50 bank templates */
 REAL4 coh_PTF_calculate_bank_veto(
 UINT4           numPoints,
 UINT4           position,
@@ -649,8 +648,8 @@ struct bankTemplateOverlaps *bankNormOverlaps,
 COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
 REAL8Array      *PTFM[LAL_NUM_IFO+1],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
-gsl_matrix *Bankeigenvecs[50],
-gsl_vector *Bankeigenvals[50],
+gsl_matrix **Bankeigenvecs,
+gsl_vector **Bankeigenvals,
 UINT4       detectorNum,
 UINT4       vecLength,
 UINT4       vecLengthTwo
@@ -658,8 +657,7 @@ UINT4       vecLengthTwo
 {
   /* WARNING: THIS FUNCTION IS NON-SPIN ONLY. DO NOT ATTEMPT TO RUN WITH
      PTF TEMPLATES IN SPIN MODE! */
-  UINT4 ui,uj,uk,ifoNumber,halfNumPoints;
-  INT4 calTimeOffsetPoints[LAL_NUM_IFO];
+  UINT4 ui,uj,uk,halfNumPoints;
   gsl_matrix *rotReOverlaps;
   gsl_matrix *rotImOverlaps;
   UINT4 snglDetMode = 1;
@@ -678,26 +676,6 @@ UINT4       vecLengthTwo
   TjwithS1 = LALCalloc(vecLengthTwo,sizeof(REAL4));
   TjwithS2 = LALCalloc(vecLengthTwo,sizeof(REAL4));
 
-  /* Ensure that the time sliding doesn't push into data points that don't exist */
-  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ifoNumber++ )
-  {
-    if ( params->haveTrig[ifoNumber] )
-    {
-      if ( position+timeOffsetPoints[ifoNumber] >= 3*numPoints/4 +5000)
-      {
-        calTimeOffsetPoints[ifoNumber] = 3*numPoints/4 +4999 - position;
-        fprintf(stderr,"Overflow occured in time shifting in bank veto\n");
-      }
-      else if  ( position+timeOffsetPoints[ifoNumber] < numPoints/4 - 5000)
-      {
-        calTimeOffsetPoints[ifoNumber] = numPoints/4 - 4999 - position;
-        fprintf(stderr,"Overflow occured in time shifting in bank veto\n");
-      }
-      else
-        calTimeOffsetPoints[ifoNumber]=timeOffsetPoints[ifoNumber];
-    }
-  }
-
   /* Begin by calculating the components of the SNR */
   if (snglDetMode)
   {
@@ -714,18 +692,18 @@ UINT4       vecLengthTwo
   }
   
   /* The normalization factors are already calculated, they are the eigenvalues*/
-  halfNumPoints = 3*numPoints/4 - numPoints/4 + 10000;
+  halfNumPoints = params->numAnalPoints;
 
   for ( ui = 0 ; ui < subBankSize ; ui++ )
   {
     if (snglDetMode)
     {
       TjwithS1[0] = dataOverlaps[ui].PTFqVec[detectorNum]->data[position \
-          -numPoints/4+5000 + calTimeOffsetPoints[detectorNum]].re;
+          - params->analStartPointBuf + timeOffsetPoints[detectorNum]].re;
       TjwithS1[0] = TjwithS1[0] / \
           pow(bankNormOverlaps[ui].PTFM[detectorNum]->data[0],0.5);
       TjwithS2[0] = dataOverlaps[ui].PTFqVec[detectorNum]->data[position \
-          -numPoints/4+5000 + calTimeOffsetPoints[detectorNum]].im;
+          - params->analStartPointBuf + timeOffsetPoints[detectorNum]].im;
       TjwithS2[0] = TjwithS2[0] / \
           pow(bankNormOverlaps[ui].PTFM[detectorNum]->data[0],0.5);
       overlapNorm = PTFM[detectorNum]->data[0];
@@ -778,8 +756,8 @@ UINT4       vecLengthTwo
       /* Calculate the components of subBank template with data */
 
       coh_PTF_calculate_rotated_vectors(params,dataOverlaps[ui].PTFqVec,
-          TjwithS1,TjwithS2,Fplus,Fcross,calTimeOffsetPoints,Bankeigenvecs[ui],
-          Bankeigenvals[ui],halfNumPoints,position-numPoints/4+5000,
+          TjwithS1,TjwithS2,Fplus,Fcross,timeOffsetPoints,Bankeigenvecs[ui],
+          Bankeigenvals[ui],halfNumPoints,position-params->analStartPointBuf,
           vecLength,vecLengthTwo,LAL_NUM_IFO);
       for (uj = 0; uj < 2*vecLengthTwo; uj++)
       {
@@ -829,7 +807,7 @@ UINT4       vecLengthTwo
   return BankVeto;
 }
  
-// FIXME: Consider merging function with bank_veto calculation??
+/* FIXME: Consider merging function with bank_veto calculation?? */
 REAL4 coh_PTF_calculate_auto_veto(
 UINT4           numPoints,
 UINT4           position,
@@ -1280,7 +1258,6 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       {
         v1 += a2[k]*a2[k]*PTFM[k]->data[0];
         v2 += b2[k]*b2[k]*PTFM[k]->data[0];
-//        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
       }
     }
   }
@@ -1403,7 +1380,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 
   numFreqBins = params->numChiSquareBins;
 
-  // NOTE: v3 is calculated for verification. It should = 0.
   v1 = 0;
   v2 = 0;
   if (detectorNum == LAL_NUM_IFO)
@@ -1434,7 +1410,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     else
     {
       for( k = 0; k < LAL_NUM_IFO; k++)
-      {         if ( params->haveTrig[k] )
+      {
+        if ( params->haveTrig[k] )
         {       
           a2[k] = Fplus[k]*gsl_matrix_get(eigenvecs,0,0) + Fcross[k]*gsl_matrix_get(eigenvecs,1,0);
           b2[k] = Fplus[k]*gsl_matrix_get(eigenvecs,0,1) + Fcross[k]*gsl_matrix_get(eigenvecs,1,1);
@@ -1447,7 +1424,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
       {
         v1 += a2[k]*a2[k]*PTFM[k]->data[0];
         v2 += b2[k]*b2[k]*PTFM[k]->data[0];
-//        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
       }
     }
   }
@@ -1604,13 +1580,15 @@ UINT4 vecLengthTwo
     {
       /* calculate SNR in this frequency bin */
       coh_PTF_calculate_rotated_vectors(params,chisqOverlaps[i].PTFqVec,v1Plus,
-          v2Plus,Fplus,Fcross,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
-          position-numPoints/4+5000,vecLength,vecLengthTwo,LAL_NUM_IFO);
+          v2Plus,Fplus,Fcross,timeOffsetPoints,eigenvecs,eigenvals,
+          halfNumPoints,position-params->analStartPointBuf,vecLength,
+          vecLengthTwo,LAL_NUM_IFO);
 
       coh_PTF_calculate_rotated_vectors(params,
           chisqOverlaps[i+numChiSquareBins].PTFqVec,v1Cross,
-          v2Cross,Fplus,Fcross,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
-          position-numPoints/4+5000,vecLength,vecLengthTwo,LAL_NUM_IFO);
+          v2Cross,Fplus,Fcross,timeOffsetPoints,eigenvecs,eigenvals,
+          halfNumPoints,position-params->analStartPointBuf,vecLength,
+          vecLengthTwo,LAL_NUM_IFO);
 
       SNRtemp= pow((v1Plus[0] - v1full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
       SNRtemp+= pow((v2Plus[0] - v2full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
@@ -1623,9 +1601,9 @@ UINT4 vecLengthTwo
     }
     else
     {
-      v1Plus[0] = chisqOverlaps[i].PTFqVec[detectorNum]->data[position-numPoints/4+5000+timeOffsetPoints[detectorNum]].re;
+      v1Plus[0] = chisqOverlaps[i].PTFqVec[detectorNum]->data[position-params->analStartPointBuf+timeOffsetPoints[detectorNum]].re;
       v1Plus[0] = v1Plus[0]/pow(PTFM[detectorNum]->data[0],0.5);
-      v2Plus[0] = chisqOverlaps[i].PTFqVec[detectorNum]->data[position-numPoints/4+5000+timeOffsetPoints[detectorNum]].im;
+      v2Plus[0] = chisqOverlaps[i].PTFqVec[detectorNum]->data[position-params->analStartPointBuf+timeOffsetPoints[detectorNum]].im;
       v2Plus[0] = v2Plus[0]/pow(PTFM[detectorNum]->data[0],0.5);
       SNRtemp = pow((v1Plus[0] - v1full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
       SNRtemp += pow((v2Plus[0] - v2full[0]*powerBinsCross[i]),2)/powerBinsCross[i];

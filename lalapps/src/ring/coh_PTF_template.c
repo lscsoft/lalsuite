@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Diego Fazi, Duncan Brown
+*  Copyright (C) 2007 Ian Harry, Diego Fazi, Duncan Brown
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -141,12 +141,9 @@ coh_PTF_template_PTF (
                                       params->deltaT);
   sanity_check( errcode == XLAL_SUCCESS );
 
-  /* FIXME: This should not be hardcoded below. 60 Should be duration/4
-     minus about 4 seconds */
-
-  if (InspTmplt->tC > 60 )
+  if (InspTmplt->tC > params->maxTempLength )
   {
-    fprintf(stderr,"Template generated is longer than 60s. Template must not ");
+    fprintf(stderr,"Template generated is longer than max. Template must not ");
     fprintf(stderr,"be longer than this as it causes wrapping issues in the ");
     fprintf(stderr,"FFT. Template length is %lf \n",InspTmplt->tC);
     exit(1);
@@ -471,7 +468,7 @@ void coh_PTF_bank_filters(
     REAL8                      fFinal)
 {
   /* This function calculates (Q|s) for the bank veto. It only returns the 
- *    * middle half of the time series with some buffer to allow for time shifts */
+   * middle half of the time series with some buffer to allow for time shifts */
 
   /* FIXME: Can this function be merged with normalize?? */
 
@@ -565,9 +562,9 @@ void coh_PTF_auto_veto_overlaps(
   COMPLEX8Vector *qtildeVec,*qVec;
   COMPLEX8       *PTFQtilde   = NULL;
 
-  len         = invspec->data->length;
+  len         = params->numFreqPoints;
   PTFQtilde = fcTmplt->PTFQtilde->data;
-  numPoints   = len*2 -2;
+  numPoints   = params->numTimePoints;
   deltaF      = invspec->deltaF;
 //  deltaT    = 1.0 / ( deltaF * (REAL4) len);
 

@@ -552,6 +552,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
                              - localparams.analStartPoint;
   localparams.numAnalPointsBuf = localparams.analEndPointBuf\
                                 - localparams.analStartPointBuf;
+  localparams.maxTempLength = (localparams.analStartPoint / (REAL4) localparams.sampleRate) + localparams.truncateDuration;
 
   *params = localparams;
 
