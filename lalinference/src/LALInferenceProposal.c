@@ -1314,7 +1314,7 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
       LALInferenceSetVariable(proposedParams, "tilt_spin2", &tilt2);
     }
 
-   if (LALInferenceCheckVariableNonFixed(proposedParams, "a_spin1")) {
+    if (LALInferenceCheckVariableNonFixed(proposedParams, "a_spin1")) {
       REAL8 a1 = draw_flat(runState, "a_spin1");
       LALInferenceSetVariable(proposedParams, "a_spin1", &a1);
     }
@@ -1322,6 +1322,16 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
     if (LALInferenceCheckVariableNonFixed(proposedParams, "a_spin2")) {
       REAL8 a2 = draw_flat(runState, "a_spin2");
       LALInferenceSetVariable(proposedParams, "a_spin2", &a2);
+    }
+
+    if (LALInferenceCheckVariableNonFixed(proposedParams, "spin1")) {
+      REAL8 a1 = draw_flat(runState, "spin1");
+      LALInferenceSetVariable(proposedParams, "spin1", &a1);
+    }
+
+    if (LALInferenceCheckVariableNonFixed(proposedParams, "spin2")) {
+      REAL8 a2 = draw_flat(runState, "spin2");
+      LALInferenceSetVariable(proposedParams, "spin2", &a2);
     }
 
     if (LALInferenceCheckVariableNonFixed(proposedParams, "phi_spin1")) {
