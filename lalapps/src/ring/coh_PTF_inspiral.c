@@ -346,7 +346,7 @@ int main(int argc, char **argv)
       }
     }
     /* We only analyse middle half so add duration/4 to epoch */
-    XLALGPSAdd(&segStartTime, params->segmentDuration/4.0);
+    XLALGPSAdd(&segStartTime, params->analStartTime);
 
     if (params->doBankVeto)
     {

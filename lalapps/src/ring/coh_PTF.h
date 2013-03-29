@@ -137,6 +137,7 @@ struct coh_PTF_params {
   UINT4        numTimePoints;
   UINT4        numFreqPoints;
   UINT4        analStartPoint;
+  REAL8        analStartTime;
   UINT4        analEndPoint;
   UINT4        analStartPointBuf;
   UINT4        analEndPointBuf;

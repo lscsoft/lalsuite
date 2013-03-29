@@ -45,13 +45,27 @@ INT4 coh_PTF_data_condition(
                                 invspec[ifoNumber],fwdplan, ifoNumber,
                                 timeSlideVectors, params);
 
-      if (numSegments < 1)
+      if (numSegments < 0)
       {
-        numSegments = segments[ifoNumber]->numSgmnt;
+        if (segments[ifoNumber])
+        {
+          numSegments = segments[ifoNumber]->numSgmnt;
+        }
+        else
+        {
+          numSegments = 0;
+        }
       }
       else
       {
-        if (numSegments != (INT4)segments[ifoNumber]->numSgmnt)
+        if ( (! segments[ifoNumber]) )
+        {
+          if (numSegments != 0)
+          {
+            error("ERROR: Disagreement in number of segments in ifos.");
+          }
+        }
+        else if (numSegments != (INT4)segments[ifoNumber]->numSgmnt)
         {
           error("ERROR: Disagreement in number of segments in ifos.");
         }
@@ -423,12 +437,24 @@ RingDataSegments *coh_PTF_get_segments(
       deltaTime -= params->startTime.gpsNanoSeconds * 1E-9;
 
       /* Adjust to the epoch relative to the analysis start */
-      deltaTime -= params->analStartPoint / (REAL4) params->sampleRate;
+      deltaTime -= params->analStartTime;
     
       /* And figure out the segment number */
       segNumber = floor( deltaTime / params->strideDuration);
-
-      segListToDo[segNumber] = 1;
+      if (segNumber >= (INT4) params->numOverlapSegments)
+      {
+        verbose("Injection at %" LAL_INT8_FORMAT " after analysis window.\n",\
+                injectList->geocent_end_time.gpsSeconds);
+      }
+      else if (segNumber < 0)
+      {
+        verbose("Injection at %" LAL_INT8_FORMAT " before analysis window.\n",\
+                injectList->geocent_end_time.gpsSeconds);
+      }
+      else
+      {
+        segListToDo[segNumber] = 1;
+      }
       /* Check if injection is near a segment boundary */
       for ( j = 0 ; j < params->numOverlapSegments; j++)
       {
@@ -497,7 +523,10 @@ RingDataSegments *coh_PTF_get_segments(
       }
 
     if ( ! count ) /* no segments to do */
+    {
+      LALFree(segments);
       return NULL;
+    }
 
     segments->numSgmnt = count;
     segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );

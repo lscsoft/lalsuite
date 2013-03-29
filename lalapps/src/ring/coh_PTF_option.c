@@ -542,17 +542,18 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   localparams.numFreqPoints = localparams.numTimePoints / 2 + 1;
   /* FIXME: Hardcoded ... also needs some sanity checking */
   localparams.numBufferPoints = 5000;
-  localparams.analStartPoint = localparams.numTimePoints/4;
+  localparams.analStartPoint = 1*localparams.numTimePoints/4;
+  localparams.analStartTime = localparams.analStartPoint / localparams.sampleRate;
   localparams.analEndPoint = (3*localparams.numTimePoints)/4;
-  localparams.analStartPointBuf = localparams.numTimePoints/4\
+  localparams.analStartPointBuf = localparams.analStartPoint\
                                   - localparams.numBufferPoints;
-  localparams.analEndPointBuf = (3*localparams.numTimePoints)/4\
+  localparams.analEndPointBuf = localparams.analEndPoint\
                                + localparams.numBufferPoints;
   localparams.numAnalPoints = localparams.analEndPoint\
                              - localparams.analStartPoint;
   localparams.numAnalPointsBuf = localparams.analEndPointBuf\
                                 - localparams.analStartPointBuf;
-  localparams.maxTempLength = (localparams.analStartPoint / (REAL4) localparams.sampleRate) + localparams.truncateDuration;
+  localparams.maxTempLength = localparams.analStartTime;
 
   *params = localparams;
 
