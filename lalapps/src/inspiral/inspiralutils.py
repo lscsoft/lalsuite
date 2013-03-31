@@ -893,15 +893,12 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
       "plotinspiral", "plotinspiral-meta", \
       "plotthinca", "plotthinca-meta", \
       "plotnumtemplates", "plotnumtemplates-meta", \
-      "plotinjnum", "plotinjnum-meta", \
       "plotethinca", "plotethinca-meta", \
       "plotinspmissed", "plotinspmissed-meta", \
       "plotinspinj", "plotinspinj-meta", \
       "plotsnrchi", "plotsnrchi-meta", \
-      "plotinspfound", \
       "plotinspiralrange", "plotinspiralrange-meta", \
-      "ploteffdistcut", "ploteffdistcut-meta", \
-      "plotinspfound", "plotcoincmissed"]
+      "ploteffdistcut", "ploteffdistcut-meta"]
 
   for seg in plotcp.sections():
     if not seg in plotSections: plotcp.remove_section(seg)
@@ -943,8 +940,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
         inspmissedVetoDir + "/" + ifo + "-COMBINED_CAT_" + str(cat) + 
         "_VETO_SEGS-" + analysisstart + "-" + str(analysisduration) + ".txt")
 
-  # Adding followup option to plotinspfound and plotinspmissed
-  plotcp.set("plotinspfound","followup-tag",injdirType)
+  # Adding followup option to plotinspmissed
   plotcp.set("plotinspmissed","followup-tag",injdirType)
 
   # Remove options if no slide or zero lag files are available.
@@ -1184,7 +1180,6 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   plotcp = copy.deepcopy(config)
   plotcp.add_section("plot-arguments")
   plotcp.set("plot-arguments","plotinspinj","")
-  plotcp.set("plot-arguments","plotinjnum","")
   plotcp.set("plot-arguments","plotinspmissed","")
   plotcp.set("plot-arguments","ploteffdistcut","")
   plotcp.set("plot-arguments","write-script","")
@@ -1207,10 +1202,7 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
     plotcp.set("plot-arguments","plotinspinj","")
     plotcp.set("plot-arguments","plotsnrchi","")
     plotcp.set("plot-arguments","plotethinca","")
-    plotcp.set("plot-arguments","plotinjnum","")
     plotcp.set("plot-arguments","plotinspmissed","")
-    plotcp.set("plot-arguments","plotinspfound","")
-    plotcp.set("plot-arguments","plotcoincmissed","")
     plotcp.set("plot-arguments","ploteffdistcut","")
     plotcp.set("plot-arguments","write-script","")
     injPlotVetoNode = plot_setup( plotDir, \

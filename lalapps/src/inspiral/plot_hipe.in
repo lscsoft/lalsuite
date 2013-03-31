@@ -214,7 +214,6 @@ if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
   sys.exit(1)
 
 # Checks for consistency when running ploteffdistcut
-
 if not opts.h1_data and not opts.h2_data and opts.ploteffdistcut:
   print >> sys.stderr, "How can I plot effdistcut when H1 and H2 are not"
   print >> sys.stderr, "being analysed??? I will not run ploteffdistcut."
