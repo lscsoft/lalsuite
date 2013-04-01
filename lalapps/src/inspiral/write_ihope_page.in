@@ -1573,32 +1573,6 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   configs[section] = 'plotinspinj'
   images_dirs[section] = images_dir
 
-  section = 'inspfound'
-  sections.append(section)
-  titles[section] = "Found injections with SNR loss through pipeline."
-  tags[section] = '*plotinspfound*CAT_3*'
-  imagetags[section] = ['no image']
-  captions[section] = 'Found injections with SNR loss through pipeline'
-  comments[section] = "<span style=\"color:red\">plotinspfound does not produce\
-         plots!</span>. \
-         To see the followup of found injections, click on the link in the \
-         caption below"
-  configs[section] = 'plotinspfound'
-  images_dirs[section] = images_dir
-
-  section = 'coincmissed'
-  sections.append(section)
-  titles[section] = "Coincident found injections at SIRE but missed by COIRE (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
-  tags[section] = '*plotcoincmissed*CAT_4*'
-  imagetags[section] = ['no image']
-  captions[section] = 'Coincident found injections at SIRE but missed by COIRE'
-  comments[section] = "<span style=\"color:red\">plotcoincmissed does not \
-         produce plots!</span>. \
-         To see the followup of injections found in more than one ifo at SIRE \
-         but missed by COIRE, click on the link in the caption below"
-  configs[section] = 'plotcoincmissed'
-  images_dirs[section] = images_dir
-
   section = 'ethinca'
   sections.append(section)
   titles[section] = "The Ethinca Parameter (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
@@ -1613,10 +1587,10 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   sections.append(section)
   titles[section] = "The chisq parameter (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)" 
   tags[section] = '*plotsnrchi*CAT_4*'
-  imagetags[section] = ['chisq_inj_const_lines','rsq']
+  imagetags[section] = ['chisq_inj_newsnr_lines','rsq']
   captions[section] = "chi-square versus SNR and rsq versus SNR"
-  comments[section] = "Chi-squared vs SNR with contours of constant effSNR, \
-    the second plot includes contours of slide density."
+  comments[section] = "Chi-squared vs SNR with contours of constant newSNR, \
+    the second plot shows the rsq veto."
   configs[section] = 'plotsnrchi'
   images_dirs[section] = images_dir
 
@@ -1679,13 +1653,6 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
-
-  try:
-    make_cache(images_dir, "plotinspfound")
-    make_cache(images_dir, "plotcoincmissed")
-  except:
-    logText(logfile, "Problem while copying files", "error")
-    pass
 
   page = create_sections(page,opts,sections,tags,captions,imagetags,\
                     images_dirs,titles,comments,configs,htmltags,htmlOnly,\
