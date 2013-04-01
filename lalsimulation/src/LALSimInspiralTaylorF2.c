@@ -42,6 +42,7 @@
  *
  * See arXiv:0810.5336 and arXiv:astro-ph/0504538 for spin corrections
  * to the phasing.
+ * See arXiv:1303.7412 for spin-orbit phasing corrections at 3 and 3.5PN order
  */
 int XLALSimInspiralTaylorF2(
         COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
@@ -106,6 +107,7 @@ int XLALSimInspiralTaylorF2(
     REAL8 pn_beta = 0;
     REAL8 pn_sigma = 0;
     REAL8 pn_gamma = 0;
+    REAL8 psiSO3 = 0., psiSO35 = 0.; // 3PN and 3.5PN spin-orbit phasing terms
 
     REAL8 d = (m1 - m2) / (m1 + m2);
     REAL8 xs = .5 * (S1z + S2z);
@@ -117,6 +119,16 @@ int XLALSimInspiralTaylorF2(
     switch( spinO )
     {
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
+            psiSO35 = (chi1 * (-8980424995./762048. + 6586595.*eta/756.
+                    - 305.*eta*eta/36.) + d * (170978035./48384.
+                    - 2876425.*eta/672. - 4735.*eta*eta/144.) ) * chi1 * S1z
+                    + (chi2 * (-8980424995./762048. + 6586595.*eta/756.
+                    - 305.*eta*eta/36.) - d * (170978035./48384.
+                    - 2876425.*eta/672. - 4735.*eta*eta/144.) ) * chi2 * S2z;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+            psiSO3 = LAL_PI * ( (3760.*chi1/3. - 1490./3.) * chi1 * S1z
+                    + (3760.*chi2/3. + 1490./3.) * chi2 * S2z);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             /* Compute 2.5PN SO correction */
             // See Eq. (6.25) in arXiv:0810.5336
@@ -285,6 +297,10 @@ int XLALSimInspiralTaylorF2(
         switch( spinO )
         {
             case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
+                phasing += psiSO35 * v7;
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+                phasing += psiSO3 * v6;
             case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
                 phasing += -pn_gamma * (1 + 3*log(v/v0)) * v5;
             case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
