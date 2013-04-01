@@ -81,6 +81,8 @@ typedef struct tagXLALSimInspiralSpinTaylorT4Coeffs
 	REAL8 wdotSSselfS2; ///< non-dynamical S2^2 2PN self-spin correction
 	REAL8 wdotSSselfS2L; ///< non-dynamical (S2.L)^2 self-spin correction
 	REAL8 wdotSO25s1, wdotSO25s2; ///< non-dynamical 2.5PN SO corrections
+	REAL8 wdotSO3s1, wdotSO3s2; ///< non-dynamical 3PN SO corrections
+	REAL8 wdotSO35s1, wdotSO35s2; ///< non-dynamical 3.5PN SO corrections
 	REAL8 ESO15s1, ESO15s2; ///< non-dynamical 1.5PN SO corrections
 	REAL8 ESS2; ///< non-dynamical 2PN SS correction
 	REAL8 EQM2S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
@@ -88,6 +90,7 @@ typedef struct tagXLALSimInspiralSpinTaylorT4Coeffs
 	REAL8 EQM2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
 	REAL8 EQM2S2L;///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
 	REAL8 ESO25s1, ESO25s2; ///< non-dynamical 2.5PN SO corrections 
+	REAL8 ESO35s1, ESO35s2; ///< non-dynamical 3.5PN SO corrections 
 	REAL8 LNhatSO15s1, LNhatSO15s2; ///< non-dynamical 1.5PN SO corrections
 	REAL8 LNhatSS2; ///< non-dynamical 2PN SS correction 
 	REAL8 wdottidal5pn;	///< leading order tidal correction 
@@ -121,6 +124,8 @@ typedef struct tagXLALSimInspiralSpinTaylorT2Coeffs
 	REAL8 wdotQM2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
 	REAL8 wdotQM2S2L; ///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
 	REAL8 wdotSO25s1, wdotSO25s2; ///< non-dynamical 2.5PN SO corrections
+	REAL8 wdotSO3s1, wdotSO3s2; ///< non-dynamical 3PN SO corrections
+	REAL8 wdotSO35s1, wdotSO35s2; ///< non-dynamical 3.5PN SO corrections
 	REAL8 ESO15s1, ESO15s2; 	// non-dynamical 1.5PN SO corrections
 	REAL8 ESS2; 			// non-dynamical 2PN SS correction
 	REAL8 EQM2S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
@@ -128,6 +133,7 @@ typedef struct tagXLALSimInspiralSpinTaylorT2Coeffs
 	REAL8 EQM2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
 	REAL8 EQM2S2L;///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
 	REAL8 ESO25s1, ESO25s2; 	// non-dynamical 2.5PN SO corrections
+	REAL8 ESO35s1, ESO35s2; ///< non-dynamical 3.5PN SO corrections 
 	REAL8 LNhatSO15s1, LNhatSO15s2; // non-dynamical 1.5PN SO corrections
 	REAL8 LNhatSS2; 		// non-dynamical 2PN SS correction
 	REAL8 wdottidal5pn;		// leading order tidal correction
@@ -281,7 +287,20 @@ static int XLALSimInspiralSpinTaylorT2Setup(
     switch( spinO )
     {
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
+            params->wdotSO35s1 = 1796084999./3048192. - 1317319.*eta/3024.
+                    + 61.*eta*eta/144. + (dm/m1M) * (-34195607./193536.
+                    + 575285.*eta/2688. + 947.*eta*eta/576.);
+            params->wdotSO35s2 = 1796084999./3048192. - 1317319.*eta/3024.
+                    + 61.*eta*eta/144. - (dm/m2M) * (-34195607./193536.
+                    + 575285.*eta/2688. + 947.*eta*eta/576.);
+            params->ESO35s1 = 135./4. - 367.*eta/4. + 29.*eta*eta/12.
+                    + (dm/m1M) * (-27./4. + 39.*eta - 5.*eta*eta/4.);
+            params->ESO35s2 = 135./4. - 367.*eta/4. + 29.*eta*eta/12.
+                    - (dm/m2M) * (-27./4. + 39.*eta - 5.*eta*eta/4.);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+            params->wdotSO3s1 = LAL_PI*(-188./3. + (dm/m1M)*149./6.);
+            params->wdotSO3s1 = LAL_PI*(-188./3. - (dm/m2M)*149./6.);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             params->wdotSO25s1 = 110869./1008. + 11.*eta/4. + (dm/m1M) * (-8349./224. + 3.*eta/4.);
             params->wdotSO25s2 = 110869./1008. + 11.*eta/4. + (dm/m2M) * (8349./224. - 3.*eta/4.);
@@ -485,10 +504,29 @@ static int XLALSimInspiralSpinTaylorT4Setup(
     params->wdotSO25s2 	    = 0.;
     params->ESO25s1         = 0.;
     params->ESO25s2         = 0.;
+    params->wdotSO3s1 	    = 0.;
+    params->wdotSO3s2 	    = 0.;
+    params->wdotSO35s1 	    = 0.;
+    params->wdotSO35s2 	    = 0.;
+    params->ESO35s1         = 0.;
+    params->ESO35s2         = 0.;
     switch( spinO )
     {
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
+            params->wdotSO35s1 = -4323559./18144. + 436705.*eta/672.
+                    - 5575.*eta*eta/27. + (dm/m1M) * (1195759./18144.
+                    - 257023.*eta/1008. + 2903.*eta*eta/32.);
+            params->wdotSO35s2 = -4323559./18144. + 436705.*eta/672.
+                    - 5575.*eta*eta/27. - (dm/m2M) * (1195759./18144.
+                    - 257023.*eta/1008. + 2903.*eta*eta/32.);
+            params->ESO35s1 = 135./4. - 367.*eta/4. + 29.*eta*eta/12.
+                    + (dm/m1M) * (-27./4. + 39.*eta - 5.*eta*eta/4.);
+            params->ESO35s2 = 135./4. - 367.*eta/4. + 29.*eta*eta/12.
+                    - (dm/m2M) * (-27./4. + 39.*eta - 5.*eta*eta/4.);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+            params->wdotSO3s1 = LAL_PI*(-188./3. + (dm/m1M)*151./6.);
+            params->wdotSO3s2 = LAL_PI*(-188./3. - (dm/m2M)*151./6.);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             params->wdotSO25s1 = -5861./144. + 1001.*eta/12. 
                     + (dm/m1M) * (809./84. - 281.*eta/8.);
@@ -940,7 +978,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
     XLALSimInspiralSpinTaylorT4Coeffs *params 
             = (XLALSimInspiralSpinTaylorT4Coeffs*) mparams;
     /* Spin-corrections to energy (including dynamical terms) */
-    REAL8 Espin15 = 0., Espin2 = 0., Espin25 = 0.;
+    REAL8 Espin15 = 0., Espin2 = 0., Espin25 = 0., Espin35 = 0.;
 
     UNUSED(t);
 
@@ -995,6 +1033,13 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
             // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
             Espin25 += params->ESO25s1 * LNdotS1 + params->ESO25s2 * LNdotS2;
         }
+        if( params->ESO35s1 != 0. || params->wdotSO35s2 != 0. )
+        {   /* Compute 3.5PN SO correction to energy */
+            // See Eq. 3.15 of arXiv:1303.7412
+            // Note that S_l/M^2 = (m1/M)^2 chi1 + (m2/M)^2 chi2
+            // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
+            Espin35 += params->ESO35s1 * LNdotS1 + params->ESO35s2 * LNdotS2;
+        }
     }
 
     /* We are testing if the orbital energy increases with \f$\omega\f$.
@@ -1009,7 +1054,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
             + v * ( 6. * (params->Ecoeff[4] + Espin2)
             + v * ( 7. * (params->Ecoeff[5] + Espin25)
             + v * ( 8. *  params->Ecoeff[6]
-            + v * ( 9. *  params->Ecoeff[7]
+            + v * ( 9. * (params->Ecoeff[7] + Espin35)
 			+ v * v * v * ( 12. * params->Etidal5pn
 			+ v * v * ( 14. * params->Etidal6pn ) ) ) ) ) ) ) );
     if( omegaEnd != 0. && omegaEnd > omegaStart && omega > omegaEnd) /* freq. above bound */
@@ -1055,7 +1100,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     REAL8 v5etaLNhatSO15s1, v5etaLNhatSO15s2;
     REAL8 OmegaLx, OmegaLy, OmegaLz, OmegaLdotLN;
     REAL8 OmegaEx, OmegaEy, OmegaEz, OmegaSx, OmegaSy, OmegaSz;
-    REAL8 wspin15 = 0., wspin2 = 0., wspin25 = 0.;
+    REAL8 wspin15 = 0., wspin2 = 0., wspin25 = 0., wspin3 = 0., wspin35 = 0.;
 
     XLALSimInspiralSpinTaylorT4Coeffs *params 
             = (XLALSimInspiralSpinTaylorT4Coeffs*) mparams;
@@ -1126,15 +1171,30 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
         // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
         wspin25 = params->wdotSO25s1 * LNdotS1 + params->wdotSO25s2 * LNdotS2;
     }
+    if( params->wdotSO3s1 != 0. || params->wdotSO3s2 != 0. )
+    {	/* Compute 3PN SO correction to omega derivative */
+        // See Eq. 13 of arXiv:1210.0764 and/or Eq. 3.16 of arXiv:1303.7412
+        // Note that S_l/M^2 = (m1/M)^2 chi1 + (m2/M)^2 chi2
+        // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
+        wspin3 = params->wdotSO3s1 * LNdotS1 + params->wdotSO3s2 * LNdotS2;
+    }
+    if( params->wdotSO35s1 != 0. || params->wdotSO35s2 != 0. )
+    {	/* Compute 3.5PN SO correction to omega derivative */
+        // See Eq. 3.16 of arXiv:1303.7412
+        // Note that S_l/M^2 = (m1/M)^2 chi1 + (m2/M)^2 chi2
+        // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
+        wspin35 = params->wdotSO35s1 * LNdotS1 + params->wdotSO35s2 * LNdotS2;
+    }
 
-    domega  = params->wdotnewt * v11 * ( params->wdotcoeff[0] 
-            + v * ( params->wdotcoeff[1] 
+    domega  = params->wdotnewt * v11 * ( params->wdotcoeff[0]
+            + v * ( params->wdotcoeff[1]
             + v * ( params->wdotcoeff[2]
-            + v * ( params->wdotcoeff[3] + wspin15 
-            + v * ( params->wdotcoeff[4] + wspin2 
-            + v * ( params->wdotcoeff[5] + wspin25 
-            + v * ( params->wdotcoeff[6] + params->wdotlogcoeff * log(omega)
-            + v * ( params->wdotcoeff[7] 
+            + v * ( params->wdotcoeff[3] + wspin15
+            + v * ( params->wdotcoeff[4] + wspin2
+            + v * ( params->wdotcoeff[5] + wspin25
+            + v * ( params->wdotcoeff[6] + wspin3
+                    + params->wdotlogcoeff * log(omega)
+            + v * ( params->wdotcoeff[7] + wspin35
             + v3 * ( params->wdottidal5pn
             + v2 * ( params->wdottidal6pn ) ) ) ) ) ) ) ) ) );
 
@@ -1262,7 +1322,7 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
     REAL8 v5etaLNhatSO15s1, v5etaLNhatSO15s2;
     REAL8 OmegaLx, OmegaLy, OmegaLz, OmegaLdotLN;
     REAL8 OmegaEx, OmegaEy, OmegaEz, OmegaSx, OmegaSy, OmegaSz;
-    REAL8 wspin15 = 0., wspin2 = 0., wspin25 = 0.;
+    REAL8 wspin15 = 0., wspin2 = 0., wspin25 = 0., wspin3 = 0., wspin35 = 0.;
 
     XLALSimInspiralSpinTaylorT2Coeffs *params
             = (XLALSimInspiralSpinTaylorT2Coeffs*) mparams;
@@ -1330,6 +1390,20 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
         // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
         wspin25 = params->wdotSO25s1 * LNdotS1 + params->wdotSO25s2 * LNdotS2;
     }
+    if( params->wdotSO3s1 != 0. || params->wdotSO3s2 != 0. )
+    {	/* Compute 3PN SO correction to omega derivative */
+        // Derived from Eq. 3.16 of arXiv:1303.7412
+        // Note that S_l/M^2 = (m1/M)^2 chi1 + (m2/M)^2 chi2
+        // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
+        wspin3 = params->wdotSO3s1 * LNdotS1 + params->wdotSO3s2 * LNdotS2;
+    }
+    if( params->wdotSO35s1 != 0. || params->wdotSO35s2 != 0. )
+    {	/* Compute 3.5PN SO correction to omega derivative */
+        // Derived from Eq. 3.16 of arXiv:1303.7412
+        // Note that S_l/M^2 = (m1/M)^2 chi1 + (m2/M)^2 chi2
+        // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
+        wspin35 = params->wdotSO35s1 * LNdotS1 + params->wdotSO35s2 * LNdotS2;
+    }
 
     domega  = params->wdotnewt * v11 / ( params->wdotcoeff[0]
             + v * ( params->wdotcoeff[1]
@@ -1337,8 +1411,9 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
             + v * ( params->wdotcoeff[3] + wspin15
             + v * ( params->wdotcoeff[4] + wspin2
             + v * ( params->wdotcoeff[5] + wspin25
-            + v * ( params->wdotcoeff[6] + params->wdotlogcoeff * log(omega)
-            + v * ( params->wdotcoeff[7]
+            + v * ( params->wdotcoeff[6] + wspin3
+                    + params->wdotlogcoeff * log(omega)
+            + v * ( params->wdotcoeff[7] + wspin35
             + v3 * ( params->wdottidal5pn
             + v2 * ( params->wdottidal6pn ) ) ) ) ) ) ) ) ) );
 
