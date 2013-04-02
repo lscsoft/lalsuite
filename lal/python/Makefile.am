@@ -1,8 +1,10 @@
 pkgpython_PYTHON = \
 	__init__.py \
+	gpstime.py \
 	git_version.py
 
 EXTRA_DIST = \
+	gpstime.py \
 	git_version.py
 
 BUILT_SOURCES =
