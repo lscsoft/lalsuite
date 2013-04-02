@@ -124,12 +124,12 @@ def set_default_constraints(constraints):
 
     # mratio can be given or inferred from component mass limits
     qmin, qmax = constraints.setdefault('mratio', (None, None))
-    if qmin is None or qmin < mass1_min/mass2_min:
-        qmin = mass1_min/mass2_min # q = m1/m2 > 1 by convention
+    if qmin is None or qmin < mass1_min/mass2_max:
+        qmin = max(mass1_min/mass2_max, 1) # q = m1/m2 > 1 by convention
     if qmin < 1:
         raise ValueError("We use the convention that q = m1/m2 > 1.")
-    if qmax is None or (mtotal_max - mass2_min) / mass2_min < qmax:
-        qmax = (mtotal_max - mass2_min) / mass2_min # q = m1/m2 by convention
+    if qmax is None or min(mass1_max, mtotal_max - mass2_min) / mass2_min < qmax:
+        qmax = min(mass1_max, mtotal_max - mass2_min) / mass2_min # q = m1/m2 by convention
     constraints['mratio'] = (qmin, qmax)
 
     # mchirp can be given or inferred from component mass limits
