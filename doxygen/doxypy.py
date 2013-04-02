@@ -294,6 +294,7 @@ class Doxypy(object):
 			# remove comment delimiter from begin of the line
 			activeCommentDelim = match.group(1)
 			line = self.fsm.current_input
+			self.common_indent = " "*line.find(activeCommentDelim)
 			self.comment.append(line[line.find(activeCommentDelim)+len(activeCommentDelim):])
 		# multiline end
 		elif to_state == "DEFCLASS_BODY" or to_state == "FILEHEAD":
@@ -307,7 +308,8 @@ class Doxypy(object):
 		# in multiline comment
 		else:
 			# just append the comment line
-			self.comment.append(self.fsm.current_input)
+			line = self.fsm.current_input[len(self.common_indent):]
+			self.comment.append(line)
 	
 	def appendNormalLine(self, match):
 		"""Appends a line to the output."""
