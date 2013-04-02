@@ -15,18 +15,18 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 ## \addtogroup GPSTime_py
-# \tableofcontents
 """Utilties for calculating and modifying GPS times using the LAL date
 package
-
-\heading{Synopsis}
-~~~
-from lal import gpstime
-~~~
-This module wraps the LAL \ref Date_h module into Python providing functions to convert from the `datetime.datetime` objects from the Python standard library into LIGOTimeGPS numbers, and vice-versa. See in particular ::gps_to_utc and ::utc_to_gps.
-
-This module also provides a Python implementation of the `tconvert' module, allowing conversion from strings of dates and times into LIGOTimeGPS, and vice-versa. See in particular ::gps_to_str and ::str_to_gps.
 """
+#
+#\heading{Synopsis}
+#~~~
+#from lal import gpstime
+#~~~
+#This module wraps the LAL \ref Date_h module into Python providing functions to convert from the `datetime.datetime` objects from the Python standard library into LIGOTimeGPS numbers, and vice-versa. See in particular ::gps_to_utc and ::utc_to_gps.
+#
+#This module also provides a Python implementation of the `tconvert' module, allowing conversion from strings of dates and times into LIGOTimeGPS, and vice-versa. See in particular ::gps_to_str and ::str_to_gps.
+#
 # \author Duncan Macleod <duncan.macleod@ligo.org>
 #@{
 
