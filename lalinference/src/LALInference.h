@@ -462,6 +462,16 @@ void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariabl
 /** Sorts the variable structure by name */
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
 
+/** LALInferenceVariable buffer to array and vica versa */
+INT4 LALInferenceBufferToArray(LALInferenceRunState *state, INT4 startCycle, INT4 endCycle, REAL8 **array);
+
+void LALInferenceArrayToBuffer(LALInferenceRunState *state, REAL8 **array);
+
+/** LALInference variables to an array, and vica versa */
+REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin);
+
+void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables *target);
+
 /** Append the sample to a file. file pointer is stored in state->algorithmParams as a
  * LALInferenceVariable called "outfile", as a void ptr.
  * Caller is responsible for opening and closing file.

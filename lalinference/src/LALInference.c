@@ -747,7 +747,145 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
   return(result);
 }
 
+INT4 LALInferenceBufferToArray(LALInferenceRunState *state, INT4 startCycle, INT4 endCycle, REAL8** DEarray) {
+  LALInferenceVariableItem *ptr;
+  INT4 i=0,p=0;
 
+  INT4 Nskip = *(INT4*) LALInferenceGetVariable(state->algorithmParams, "Nskip");
+  INT4 totalPoints = state->differentialPointsLength;
+  INT4 start = (INT4)ceil((REAL8)startCycle/(REAL8)Nskip);
+  INT4 end = (INT4)floor((REAL8)endCycle/(REAL8)Nskip);
+  /* Include last point */
+  if (end > totalPoints-1)
+    end = totalPoints-1;
+
+  for (i = start; i <= end; i++) {
+    ptr=state->differentialPoints[i]->head;
+    p=0;
+    while(ptr!=NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        DEarray[i-start][p]=*(REAL8 *)ptr->value;
+        p++;
+      }
+      ptr=ptr->next;
+    }
+  }
+  return end-start+1;
+}
+
+void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray) {
+  LALInferenceVariableItem *ptr;
+  UINT4 i=0,p=0;
+  UINT4 nPoints = sizeof(DEarray) / sizeof(REAL8*);
+
+  /* Save last LALInferenceVariables item from buffer to keep fixed params consistent for chain */
+  LALInferenceVariables templateParamSet;
+  LALInferenceCopyVariables(runState->differentialPoints[runState->differentialPointsLength-1], &templateParamSet);
+
+  /* Free old DE buffer */
+  XLALFree(runState->differentialPoints);
+
+  /* Expand DE buffer */
+  size_t newSize = runState->differentialPointsSize;
+  while (nPoints > newSize) {
+    newSize = newSize*2;
+  }
+
+  runState->differentialPoints = XLALCalloc(newSize, sizeof(LALInferenceVariables *));
+  runState->differentialPointsLength = nPoints;
+  runState->differentialPointsSize = newSize;
+
+  for (i=0; i<nPoints; i++) {
+    runState->differentialPoints[i] = XLALCalloc(1, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(&templateParamSet, runState->differentialPoints[i]);
+    ptr = runState->differentialPoints[i]->head;
+    while(ptr!=NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        *((REAL8 *)ptr->value) = (REAL8)DEarray[i][p];
+        p++;
+      }
+      ptr=ptr->next;
+    }
+  }
+}
+
+
+REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
+  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(origin);
+  REAL8Vector * parameters = NULL;
+  gsl_matrix *m = NULL; //for dealing with noise parameters
+  UINT4 j,k;
+
+  parameters = XLALCreateREAL8Vector(nPar);
+
+  LALInferenceVariableItem *ptr=origin->head;
+  INT4 p=0;
+  while(ptr!=NULL) {
+    if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+      //Generalized to allow for parameters stored in gsl_matrix
+      if(ptr->type == LALINFERENCE_gslMatrix_t)
+      {
+        m = *((gsl_matrix **)ptr->value);
+        for(j=0; j<m->size1; j++)
+        {
+          for(k=0; k<m->size2; k++)
+          {
+            parameters->data[p]=gsl_matrix_get(m,j,k);
+            p++;
+          }
+        }
+      }
+      else
+      {
+        parameters->data[p]=*(REAL8 *)ptr->value;
+        p++;
+      }
+    }
+    ptr=ptr->next;
+  }
+
+  return parameters;
+}
+
+void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables *target) {
+  gsl_matrix *m = NULL; //for dealing with noise parameters
+  UINT4 j,k;
+
+  LALInferenceVariableItem *ptr = target->head;
+  INT4 p=0;
+  while(ptr!=NULL) {
+    if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+    {
+      //Generalized to allow for parameters stored in gsl_matrix
+      if(ptr->type == LALINFERENCE_gslMatrix_t)
+      {
+        m = *((gsl_matrix **)ptr->value);
+        for(j=0; j<m->size1; j++)
+        {
+          for(k=0; k<m->size2; k++)
+          {
+            gsl_matrix_set(m,j,k,origin->data[p]);
+            p++;
+          }
+        }
+      }
+      else
+      {
+        memcpy(ptr->value,&(origin->data[p]),LALInferenceTypeSize[ptr->type]);
+        p++;
+      }
+    }
+    ptr=ptr->next;
+  }
+
+  /* update stored noise parameters */
+  if(LALInferenceCheckVariable(target,"psdscale"))
+  {
+    gsl_matrix_memcpy(*((gsl_matrix **)LALInferenceGetVariable(target, "psdstore")),
+                      *((gsl_matrix **)LALInferenceGetVariable(target, "psdscale")));
+  }
+  return;
+}
 
 /* ============ Command line parsing functions etc.: ========== */
 
