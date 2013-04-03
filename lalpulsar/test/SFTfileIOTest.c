@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
     int concat = 0, single = 0;
 
     xlalErrno = 0;
-    if (XLAL_SUCCESS != XLALWriteSFTVector2File ( multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test-concat" )) {
+    if (XLAL_SUCCESS != XLALWriteSFTVector2File ( multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test_concat" )) {
       LALPrintError ( "\n XLALWriteSFTVector2File failed to write multi-SFT vector to file!\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
     };
     printf("*** Comparing single and concatenated SFTs ***\n");
     /* try to open concatenated SFT */
-    const CHAR *concatSFT = "H-3_H1_60SFT_test-concat-000012345-302.sft";
+    const CHAR *concatSFT = "H-3_H1_60SFT_test_concat-000012345-302.sft";
     if ( ( fpConcat = fopen(concatSFT, "rb" ) ) == NULL ) {
       LALPrintError ( "\n Cound not open SFT '%s'!\n\n", concatSFT);
       return SFTFILEIOTESTC_ESUB;
