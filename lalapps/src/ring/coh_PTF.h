@@ -221,6 +221,7 @@ struct coh_PTF_params {
   int          faceAwayAnalysis;
   int          dynTempLength;
   int          storeAmpParams;
+  int          analSegmentEnd;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;

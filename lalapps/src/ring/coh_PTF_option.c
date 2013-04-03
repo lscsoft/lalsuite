@@ -55,6 +55,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     {"face-on-analysis",    no_argument, &(localparams.faceOnAnalysis),1},
     {"face-away-analysis",    no_argument, &(localparams.faceAwayAnalysis),1},
     {"dynamic-template-length",no_argument, &(localparams.dynTempLength),1},
+    {"store-amplitude-params",no_argument, &(localparams.storeAmpParams),1},
+    {"analyse-segment-end", no_argument, &(localparams.analSegmentEnd),1},
     { "help",               no_argument, 0, 'h' },
     { "version",            no_argument, 0, 'V' },
     { "simulated-data",          required_argument, 0, '6' },
@@ -124,9 +126,10 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "inj-mchirp-window",       required_argument, 0, '5' },
     { "ligo-calibrated-data",    required_argument, 0, '7' }, 
     { "virgo-calibrated-data",   required_argument, 0, '8' }, 
+    { "spectrum-truncation-length", required_argument, 0, '@' },       
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:5:6:7:8:<:>:!:&:(:):#:|";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:5:6:7:8:9:<:>:!:&:(:):#:|:@";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -406,7 +409,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         localparams.bankVetoBankName = optarg;
         break;
       case 'T': /* inverse-spec-length */
-        localparams.invSpecLen = atof( optarg );
+        localparams.truncateDuration = atof( optarg );
         break;
       case 'u': /* trig-start-time */
         localparams.trigStartTimeNS = (INT8) atol( optarg ) * LAL_INT8_C(1000000000);
@@ -484,9 +487,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
                   long_options[option_index].name, optarg);
         }
         break;
-     case '?':
+      case '?':
         error( "unknown error while parsing options\n" );
-     default:
+      default:
         error( "unknown error while parsing options\n" );
     }
   }
@@ -540,11 +543,35 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
           localparams.segmentDuration * localparams.sampleRate + 0.5);
   /* Set the number of points in the frequency arrays */
   localparams.numFreqPoints = localparams.numTimePoints / 2 + 1;
-  /* FIXME: Hardcoded ... also needs some sanity checking */
-  localparams.numBufferPoints = 5000;
-  localparams.analStartPoint = 1*localparams.numTimePoints/4;
-  localparams.analStartTime = localparams.analStartPoint / localparams.sampleRate;
-  localparams.analEndPoint = (3*localparams.numTimePoints)/4;
+
+  /* For now we stick to only analysing half of each segment */
+  localparams.strideDuration = 0.5 * localparams.segmentDuration;
+
+  /* FIXME: Hardcoded to 1s */
+  localparams.numBufferPoints = floor(localparams.sampleRate + 0.5);
+
+  /* Choose the start and end point of each segment for analysis */
+  if (localparams.analSegmentEnd)
+  { /* Want to analyse from the end of the segment */
+    /* Start from the end */
+    localparams.analEndPoint = localparams.numTimePoints;
+    /* Remove the spectrum truncation */
+    localparams.analEndPoint -= floor(\
+        0.5 * localparams.truncateDuration * localparams.sampleRate + 0.5); 
+    /* Remove the buffer points */
+    localparams.analEndPoint -= localparams.numBufferPoints;
+    /* And set the start point */
+    localparams.analStartPoint = localparams.analEndPoint - \
+        0.5*localparams.numTimePoints;
+  }
+  else
+  { /* DEFAULT: Analyse the middle of the segment */
+    localparams.analStartPoint = 1*localparams.numTimePoints/4;
+    localparams.analEndPoint = (3*localparams.numTimePoints)/4;
+  }
+
+  localparams.analStartTime = localparams.analStartPoint / \
+                                localparams.sampleRate;
   localparams.analStartPointBuf = localparams.analStartPoint\
                                   - localparams.numBufferPoints;
   localparams.analEndPointBuf = localparams.analEndPoint\
@@ -553,7 +580,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
                              - localparams.analStartPoint;
   localparams.numAnalPointsBuf = localparams.analEndPointBuf\
                                 - localparams.analStartPointBuf;
+  /* Max template length is start length minus PSD truncation */
   localparams.maxTempLength = localparams.analStartTime;
+  localparams.maxTempLength -= localparams.truncateDuration/2.;
 
   *params = localparams;
 
@@ -668,26 +697,35 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   if ( params->getSpectrum )
   {
     /* checks on size of data segments and stride */
-    sanity_check( params->segmentDuration > 0 );
-    segmentLength = floor(params->segmentDuration * params->sampleRate + 0.5);
+    sanity_check( params->psdSegmentDuration > 0 );
+    segmentLength = floor(params->psdSegmentDuration*params->sampleRate + 0.5);
     sanity_check( recordLength / segmentLength > 0 );
-    params->strideDuration = 0.5 * params->segmentDuration;
-    segmentStride = floor(params->strideDuration * params->sampleRate + 0.5);
+    params->psdStrideDuration = 0.5 * params->psdSegmentDuration;
+    segmentStride = floor(params->psdStrideDuration * params->sampleRate + 0.5);
     sanity_check( segmentStride > 0 );
-    params->truncateDuration = 0.25 * params->strideDuration;
+    sanity_check( params->truncateDuration > 0);
     truncateLength = floor(params->truncateDuration * params->sampleRate + 0.5);
     sanity_check( truncateLength > 0 );
-    /* record length, segment length and stride need to be commensurate */
-    sanity_check( !( (recordLength - segmentLength) % segmentStride ) );
-    params->numOverlapSegments = 1 + (recordLength - segmentLength)/segmentStride;
-//    sanity_check( ! (params->numOverlapSegments % 2) ); /* required to be even for median-mean method */
-    sanity_check( params->psdSegmentDuration > 0 );
-    params->psdStrideDuration = 0.5 * params->psdSegmentDuration;
 
     /* checks on data input information */
     /*sanity_check( params->channel );*/
     sanity_check( params->dynRangeFac > 0.0 );
   }
+
+  /* Sanity checks on data stuff */
+  sanity_check( params->segmentDuration > 0 );
+  segmentLength = floor(params->segmentDuration * params->sampleRate + 0.5);
+  sanity_check( recordLength / segmentLength > 0 );
+  segmentStride = floor(params->strideDuration * params->sampleRate + 0.5);
+  sanity_check( segmentStride > 0 );
+  sanity_check( !( (recordLength - segmentLength) % segmentStride ) );
+  params->numOverlapSegments = 1 + (recordLength - segmentLength)/segmentStride;
+  sanity_check( params->numTimePoints > 0);
+  sanity_check( params->numFreqPoints > 0);
+  sanity_check( (params->analStartPoint < segmentLength) );
+  sanity_check( (params->analEndPoint < segmentLength) );
+  sanity_check( (params->analEndPoint - params->analStartPoint) \
+                 == segmentStride);
 
   /* sky localisation params */
   if ( params->rightAscension != -1000. && params->declination != -1000. )
@@ -896,6 +934,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--face-on-analysis  Run with templates demanding inclination=0\n" );
   fprintf( stderr, "--face-away-analysis  Run with templates demanding inclination=pi/2\n" );
   fprintf( stderr, "--dynamic-template-length Run with templates whose length is dynamically set to be close to the maximum possible.\n");
+  fprintf( stderr, "--analyse-segment-end Rather than analyse the middle half of analysis segments (1/4 to 3/4 of length), which is the default behaviour. Analyse from (1/2 - truncDuration to 1 - truncDuration of length) where truncDuration is the spectrum truncation which cannot be analysed. This is the closest to the end of the segment it is possible to analyse \n");
 
   fprintf( stderr, "\nsky location options:\n" );
   fprintf( stderr, "--right-ascension=ra       right ascension of external trigger in degrees\n" );
@@ -926,6 +965,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--auto-veto-time-step Seperation between points for auto veto \n");
   fprintf( stderr, "--num-chi-square-bins Number of bins to use to calculate chi square \n");
   fprintf (stderr, "--chi-square-threshold Only calculate chi square if detection statistic is above this threshold \n");
+  fprintf (stderr, "--store-amplitude-params Calculate and store the amplitude params in the multi_inspiral table \n");
 
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
