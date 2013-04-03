@@ -284,7 +284,7 @@ XLALDestroyTimestampVector ( LIGOTimeGPSVector *vect)
  *  covering this time-stretch (allowing for overlapping SFT timestamps).
  *
  * NOTE: boundary-handling: the returned list of timestamps are guaranteed to *cover* the
- * interval [tStart, tStart+duration], assuming a each timestamp covers a length of 'Tsft'
+ * interval [tStart, tStart+duration), assuming a each timestamp covers a length of 'Tsft'
  * This implies that the actual timestamps-coverage can extend up to 'Tsft' beyond 'tStart+duration'.
  */
 LIGOTimeGPSVector *
@@ -304,7 +304,7 @@ XLALMakeTimestamps ( LIGOTimeGPS tStart,	/**< GPS start-time */
   // now we might be covering the end-time several times, if using overlapping SFTs, so
   // let's trim this back down so that end-time is covered exactly once
   UINT4 numSFTs = numSFTsMax;
-  while ( (numSFTs >= 2) && ( (numSFTs - 2) * Tstep + Tsft > Tspan) ) {
+  while ( (numSFTs >= 2) && ( (numSFTs - 1) * Tstep + Tsft > Tspan) ) {
     numSFTs --;
   }
 
