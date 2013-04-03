@@ -11,7 +11,6 @@
 #include <float.h>
 #include <lal/TimeDelay.h>
 #include <lal/LALInferenceConfig.h>
-
 #include <lal/LALStdlib.h>
 
 #ifdef HAVE_LIBLALXML

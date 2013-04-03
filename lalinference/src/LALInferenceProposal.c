@@ -392,6 +392,14 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     }
   }
 
+  //Add LALInferencePSDFitJump to the cycle
+  if(LALInferenceGetProcParamVal(runState->commandLine, "--psdFit"))
+  {
+    LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
+  }
+
+  
+  
   /********** TURNED OFF - very small acceptance with nested sampling, slows everything down ****************/
   /*
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kdtree")) {
@@ -1033,7 +1041,7 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
     LALInferenceVariableItem *item = runState->currentParams->head;
     i = 0;
     while (item != NULL) {
-      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && strcmp(item->name,"psdscale")) {
+      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
         names[i] = item->name;
         i++;
       }

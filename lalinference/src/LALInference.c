@@ -295,6 +295,8 @@ void LALInferenceClearVariables(LALInferenceVariables *vars)
   this=vars->head;
   if(this) next=this->next;
   while(this){
+    if(this->type==LALINFERENCE_gslMatrix_t) gsl_matrix_free(*(gsl_matrix **)this->value);
+    if(this->type==LALINFERENCE_REAL8Vector_t) XLALDestroyREAL8Vector(*(REAL8Vector **)this->value);
     XLALFree(this->value);
     XLALFree(this);
     this=next;
@@ -346,9 +348,24 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
       if(!ptr->value || !ptr->name){
         XLAL_ERROR_VOID(XLAL_EFAULT, "Badly formed LALInferenceVariableItem structure!");
       }
-
-      LALInferenceAddVariable(target, ptr->name, ptr->value, ptr->type,
-                              ptr->vary);
+      /* Deep copy matrix and vector types */
+      if(ptr->type==LALINFERENCE_gslMatrix_t)
+      {
+        gsl_matrix *old=*(gsl_matrix **)ptr->value;
+        gsl_matrix *new=gsl_matrix_alloc(old->size1,old->size2);
+        gsl_matrix_memcpy(new,old);
+        LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
+      }
+      if(ptr->type==LALINFERENCE_REAL8Vector_t)
+      {
+        REAL8Vector *old=*(REAL8Vector **)ptr->value;
+        REAL8Vector *new=XLALCreateREAL8Vector(old->length);
+        if(new) memcpy(new->data,old->data,new->length);
+        else XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to copy vector!\n");
+      }
+      else /* Just memcpy */
+        LALInferenceAddVariable(target, ptr->name, ptr->value, ptr->type,
+                                ptr->vary);
     }
   }
 
@@ -524,10 +541,10 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
         fprintf(fp, "%s", *((CHAR **)ptr->value));
         break;
       case LALINFERENCE_gslMatrix_t:
-        fprintf(stdout, "<can't print matrix>");
+        XLALPrintWarning("<can't print matrix>");
         break;
       default:
-        fprintf(stdout, "<can't print>");
+        XLALPrintWarning("<can't print>");
       }
 
   fprintf(fp,"\t");

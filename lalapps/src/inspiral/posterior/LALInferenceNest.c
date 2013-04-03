@@ -243,7 +243,15 @@ Nested sampling arguments:\n\
 (--prior_distr )\t Set the prior to use (for the moment the only possible choice is SkyLoc which will use the sky localization project prior. All other values or skipping this option select LALInferenceInspiralPriorNormalised)\n\
 (--correlatedgaussianlikelihood)\tUse analytic, correlated Gaussian for Likelihood.\n\
 (--bimodalgaussianlikelihood)\tUse analytic, bimodal correlated Gaussian for Likelihood.\n\
-(--rosenbrocklikelihood \tUse analytic, Rosenbrock banana for Likelihood.\n";
+(--rosenbrocklikelihood \tUse analytic, Rosenbrock banana for Likelihood.\n\
+  ---------------------------------------------------------------------------------------------------\n\
+  --- Noise Model -----------------------------------------------------------------------------------\n\
+  ---------------------------------------------------------------------------------------------------\n\
+  (--psdFit)                       Run with PSD fitting\n\
+  (--psdNblock)                    Number of noise parameters per IFO channel (8)\n\
+  (--psdFlatPrior)                 Use flat prior on psd parameters (Gaussian)\n\
+  (--removeLines)                  Do include persistent PSD lines in fourier-domain integration\n\
+  \n";
 //(--tdlike)\tUse time domain likelihood.\n";
 
 	ProcessParamsTable *ppt=NULL;
