@@ -166,7 +166,7 @@ BOOLEAN is_directory ( const CHAR *fname );
 int
 main(int argc, char *argv[])
 {
-  int len;
+  size_t len;
   ConfigVars_t GV = empty_GV;
   UserVariables_t uvar = empty_UserVariables;
 
