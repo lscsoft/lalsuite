@@ -2147,11 +2147,11 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj
     will over-write and destroy any existing parameters. Param vary type will be fixed */
 void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars)
 {
+    UINT4 spinCheck=0;
     if(!vars) {
 	XLALPrintError("Encountered NULL variables pointer");
    	XLAL_ERROR_VOID(XLAL_EINVAL);
 	}
-    UINT4 spinCheck=LALInferenceCheckVariableNonFixed(vars,"a_spin1");
     /* Destroy existing parameters */
     if(vars->head!=NULL) LALInferenceClearVariables(vars);
     REAL8 q = theEventTable->mass2 / theEventTable->mass1;
@@ -2186,6 +2186,9 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
       phi_spin2 = atan2(sy, sx);
       if (phi_spin2 < 0.0) phi_spin2 += 2.0*M_PI;
     }
+
+    /* Check for presence of spin in the injection */
+    if(a_spin1!=0.0 || a_spin2!=0.0) spinCheck=1;
 
     REAL8 psi = theEventTable->polarization;
     if (psi>=M_PI) psi -= M_PI;
