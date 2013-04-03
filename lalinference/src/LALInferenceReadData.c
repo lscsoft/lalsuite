@@ -1943,6 +1943,24 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
         LALInferenceAddVariable(tmpdata->modelParams, "lambda2",&lambda2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       }
       
+      
+    LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
+
+    if(LALInferenceGetProcParamVal(commandLine, "--spinOrder")) {
+        spinO = atoi(LALInferenceGetProcParamVal(commandLine, "--spinOrder")->value);
+        LALInferenceAddVariable(tmpdata->modelParams, "spinO", &spinO,   LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+    }
+    else
+        fprintf(stdout,"No --spinOrder option given. Injecting the highest spin order for this waveform!\n");
+    LALSimInspiralTidalOrder tideO = LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL;
+
+    if(LALInferenceGetProcParamVal(commandLine, "--tidalOrder")) {
+        tideO = atoi(LALInferenceGetProcParamVal(commandLine, "--tidalOrder")->value);
+        LALInferenceAddVariable(tmpdata->modelParams, "tideO", &tideO,   LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+    }
+    else
+        fprintf(stdout,"No --tidalOrder option given. Injecting the highest tidal order for this waveform!\n");
+
     COMPLEX16FrequencySeries *freqModelhCross=NULL;
    freqModelhCross=XLALCreateCOMPLEX16FrequencySeries("freqDatahC",&(tmpdata->timeData->epoch),0.0,tmpdata->freqData->deltaF,&lalDimensionlessUnit,tmpdata->freqData->data->length);
     COMPLEX16FrequencySeries *freqModelhPlus=NULL;
