@@ -272,7 +272,7 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
 
 #define USAGE "\
  --ifo IFO1 [--ifo IFO2 ...]    IFOs can be H1,L1,V1\n\
- --IFO1-cache cache1 [--IFO2-cache2 cache2 ...]    LAL cache files (LALLIGO, LALAdLIGO, LALVirgo to simulate these detectors)\n\
+ --IFO1-cache cache1 [--IFO2-cache2 cache2 ...]    cache files (LALLIGO, LALAdLIGO, LALVirgo to simulate these detectors using lal; LALSimLIGO, LALSimAdLIGO, LALSimVirgo, LALSimAdVirgo to use lalsimuation)\n\
  --psdstart GPStime             GPS start time of PSD estimation data\n\
  --psdlength length             length of PSD estimation data in seconds\n\
  --seglen length                length of segments for PSD estimation and analysis in seconds\n\
