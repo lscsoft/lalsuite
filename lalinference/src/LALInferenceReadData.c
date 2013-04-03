@@ -1055,11 +1055,11 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	LALStatus status;
 	memset(&status,0,sizeof(status));
 	SimInspiralTable *injTable=NULL;
-  SimInspiralTable *injEvent=NULL;
+    SimInspiralTable *injEvent=NULL;
 	UINT4 Ninj=0;
 	UINT4 event=0;
 	UINT4 i=0,j=0;
-  REAL8 responseScale=1.0;
+    REAL8 responseScale=1.0;
 	//CoherentGW InjectGW;
 	//PPNParamStruc InjParams;
 	LIGOTimeGPS injstart;
@@ -1885,7 +1885,8 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     memset(&status,0,sizeof(LALStatus));
     REAL8 mc=0.0;
     Approximant injapprox;
-    LALPNOrder phase_order;
+    LALPNOrder phase_order=-1;
+    LALPNOrder amp_order=-1;
     injapprox = XLALGetApproximantFromString(inj_table->waveform);
     if( (int) injapprox == XLAL_FAILURE)
         ABORTXLAL(&status);
@@ -1917,7 +1918,8 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     latitude=inj_table->latitude;
     polarization=inj_table->polarization;
     injtime=(REAL8) inj_table->geocent_end_time.gpsSeconds + (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9;
-    
+    amp_order=(LALPNOrder) inj_table->amp_order;
+
     LALInferenceAddVariable(tmpdata->modelParams, "chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(tmpdata->modelParams, "phase",&startPhase,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);  
     LALInferenceAddVariable(tmpdata->modelParams, "rightascension",&longitude,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);  
@@ -1929,7 +1931,8 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     LALInferenceAddVariable(tmpdata->modelParams, "distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(tmpdata->modelParams, "LAL_APPROXIMANT",&injapprox,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(tmpdata->modelParams, "LAL_PNORDER",&phase_order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-      
+    LALInferenceAddVariable(tmpdata->modelParams, "LAL_AMPORDER",&amp_order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+
       REAL8 lambda1 = 0.;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
         lambda1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")->value);
@@ -1960,7 +1963,8 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     }
     else
         fprintf(stdout,"No --tidalOrder option given. Injecting the highest tidal order for this waveform!\n");
-
+    fprintf(stdout,"injectTaylorF2 will run using Approximant %i (%s), phase order %i, amp order %i, spinOrder %i TidalOrder %i in the Frequency domain.\n",injapprox,XLALGetStringFromApproximant(injapprox),phase_order,amp_order,(int) spinO,(int) tideO);
+    
     COMPLEX16FrequencySeries *freqModelhCross=NULL;
    freqModelhCross=XLALCreateCOMPLEX16FrequencySeries("freqDatahC",&(tmpdata->timeData->epoch),0.0,tmpdata->freqData->deltaF,&lalDimensionlessUnit,tmpdata->freqData->data->length);
     COMPLEX16FrequencySeries *freqModelhPlus=NULL;
