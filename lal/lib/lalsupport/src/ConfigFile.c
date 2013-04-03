@@ -730,6 +730,10 @@ cleanConfig (CHARSequence *text)
       if ( (!inQuotes) && ((*ptr) == ';') ) {
         (*ptr) = '\n';
       }
+      // replace DOS-style '\r' EOL characters by '\n'
+      if ( (*ptr) == '\r' ) {
+        (*ptr) = '\n';
+      }
 
       ptr ++;
 
