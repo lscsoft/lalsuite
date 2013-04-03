@@ -334,9 +334,18 @@ LALFindChirpSPTemplate (
     /* Dynamic lower cutoff
      * Work out longest length for template
      * Keep a few extra sample points for safety */
-    REAL4 currTime;
-    REAL4 maxT = ((REAL4) params->deltaT * (REAL4) (numPoints-12))/4.;
-    maxT -= 0.5 * (REAL4) params->invSpecTrunc * (REAL4) params->deltaT;
+    REAL4 currTime,maxT;
+    if (params->maxTempLength > 0)
+    {
+      /* If the maximum length is given use that */
+      maxT = params->maxTempLength;
+    }
+    else
+    {
+      /* If not work it out assuming middle of segment is analysed */
+      maxT = ((REAL4) params->deltaT * (REAL4) (numPoints-12))/4.;
+      maxT -= 0.5 * (REAL4) params->invSpecTrunc * (REAL4) params->deltaT;
+    }
     fLow = -1;
     for (f=1; f < 100; f++)
     {
