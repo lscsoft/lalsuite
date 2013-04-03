@@ -1946,23 +1946,22 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
         LALInferenceAddVariable(tmpdata->modelParams, "lambda2",&lambda2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       }
       
-      
     LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
 
-    if(LALInferenceGetProcParamVal(commandLine, "--spinOrder")) {
-        spinO = atoi(LALInferenceGetProcParamVal(commandLine, "--spinOrder")->value);
+    if(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")) {
+        spinO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")->value);
         LALInferenceAddVariable(tmpdata->modelParams, "spinO", &spinO,   LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     }
     else
-        fprintf(stdout,"No --spinOrder option given. Injecting the highest spin order for this waveform!\n");
+        fprintf(stdout,"No --inj-spinOrder option given. Injecting the highest spin order for this waveform!\n");
     LALSimInspiralTidalOrder tideO = LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL;
 
-    if(LALInferenceGetProcParamVal(commandLine, "--tidalOrder")) {
-        tideO = atoi(LALInferenceGetProcParamVal(commandLine, "--tidalOrder")->value);
+    if(LALInferenceGetProcParamVal(commandLine, "--inj-tidalOrder")) {
+        tideO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-tidalOrder")->value);
         LALInferenceAddVariable(tmpdata->modelParams, "tideO", &tideO,   LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     }
     else
-        fprintf(stdout,"No --tidalOrder option given. Injecting the highest tidal order for this waveform!\n");
+        fprintf(stdout,"No --inj-tidalOrder option given. Injecting the highest tidal order for this waveform!\n");
     fprintf(stdout,"injectTaylorF2 will run using Approximant %i (%s), phase order %i, amp order %i, spinOrder %i TidalOrder %i in the Frequency domain.\n",injapprox,XLALGetStringFromApproximant(injapprox),phase_order,amp_order,(int) spinO,(int) tideO);
     
     COMPLEX16FrequencySeries *freqModelhCross=NULL;
