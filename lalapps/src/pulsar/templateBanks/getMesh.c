@@ -317,7 +317,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
   uvar->ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);
 
