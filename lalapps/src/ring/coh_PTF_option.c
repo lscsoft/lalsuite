@@ -57,6 +57,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     {"dynamic-template-length",no_argument, &(localparams.dynTempLength),1},
     {"store-amplitude-params",no_argument, &(localparams.storeAmpParams),1},
     {"analyse-segment-end", no_argument, &(localparams.analSegmentEnd),1},
+    {"do-short-slides", no_argument, &(localparams.doShortSlides),1},
     { "help",               no_argument, 0, 'h' },
     { "version",            no_argument, 0, 'V' },
     { "simulated-data",          required_argument, 0, '6' },
@@ -126,7 +127,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "inj-mchirp-window",       required_argument, 0, '5' },
     { "ligo-calibrated-data",    required_argument, 0, '7' }, 
     { "virgo-calibrated-data",   required_argument, 0, '8' }, 
-    { "spectrum-truncation-length", required_argument, 0, '@' },       
+    { "short-slide-offset",      required_argument, 0, '@' },
     { 0, 0, 0, 0 }
   };
   char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:5:6:7:8:9:<:>:!:&:(:):#:|:@";
@@ -435,6 +436,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case ')': /* v1-slide-segments */
         localparams.slideSegments[LAL_IFO_V1] = atoi( optarg );
         break;
+      case '@': /* Short slide offset time */
+        localparams.shortSlideOffset = atoi( optarg );
+        break;
       case 'V': /* version */
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
@@ -583,6 +587,18 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   /* Max template length is start length minus PSD truncation */
   localparams.maxTempLength = localparams.analStartTime;
   localparams.maxTempLength -= localparams.truncateDuration/2.;
+
+  /* Determine the number of short slides */
+  if (localparams.doShortSlides)
+  {
+    localparams.numShortSlides = (int) floor( \
+        (localparams.shortSlideOffset * localparams.numIFO) / \
+        localparams.strideDuration );
+  }
+  else
+  {
+    localparams.numShortSlides = 1;
+  }
 
   *params = localparams;
 
@@ -916,6 +932,8 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--h2-slide-segment=amount    amount to be slid H2\n" );
   fprintf( stderr, "--l1-slide-segment=amount    amount to be slid L1\n" );
   fprintf( stderr, "--v1-slide-segment=amount    amount to be slid V1\n" );
+  fprintf( stderr, "--do-short-slides  Enabling sliding within the analysis segments. \n");
+  fprintf( stderr, "--short-slide-offset Sets the slide amount between ifos when doing short slides.\n");
 
   fprintf( stderr, "\npower spectrum options:\n" );
   fprintf( stderr, "--theoretical-spectrum      take the PSD as the PSD used to generate the simulated data\n" );

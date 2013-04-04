@@ -326,7 +326,7 @@ int main( int argc, char **argv )
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,NULL,NULL,NULL,
-      NULL,NULL,NULL,NULL);
+      NULL,NULL,NULL,NULL,NULL,NULL);
   while ( PTFSpinTmpltHead )
   {
     PTFSpinTmplt = PTFSpinTmpltHead;
