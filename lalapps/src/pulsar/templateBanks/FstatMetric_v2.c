@@ -201,7 +201,7 @@ main(int argc, char *argv[])
   UserVariables_t uvar = empty_UserVariables;
   DopplerMetricParams metricParams = empty_DopplerMetricParams;
 
-  lalDebugLevel = 0;
+  lalDebugLevel = 1;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -317,7 +317,7 @@ initUserVars (UserVariables_t *uvar)
   /* set a few defaults */
   uvar->help = FALSE;
 
-#define EPHEM_YEAR  "00-04"
+#define EPHEM_YEAR  "00-19-DE405"
   uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1);
   strcpy (uvar->ephemYear, EPHEM_YEAR);
 
@@ -417,7 +417,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   }
   LIGOTimeGPS startTimeGPS;
   REAL8 duration;
-  if ( manualSegments )
+  if ( uvar->segmentList == NULL )
     {
       XLAL_CHECK ( uvar->Nseg >= 1, XLAL_EDOM, "Invalid input --Nseg=%d: number of segments must be >= 1\n", uvar->Nseg );
       XLAL_CHECK ( uvar->duration >= 1, XLAL_EDOM, "Invalid input --duration=%f: duration must be >= 1 s\n", uvar->duration );
