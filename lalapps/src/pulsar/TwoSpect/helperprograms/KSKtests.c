@@ -133,8 +133,9 @@ int main(int argc, char *argv[])
       }
       REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
       REAL8 kuiperthreshold = 1.747/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));
-      INT4 badsfts = 0, totalsfts = 0;
-      FILE *OUTPUT = fopen("./output/kskoutput.dat","w");
+      //fprintf(stderr, "%f %f\n", ksthreshold, kuiperthreshold);
+      INT4 badsfts = 0, badsfts0 = 0, totalsfts = 0;
+      FILE *OUTPUT = fopen("./output/kskoutput.dat","a");
       for (ii=0; ii<numffts; ii++) {
          if (tfdata->data[ii*numfbins]!=0.0) {
             totalsfts++;
@@ -174,13 +175,14 @@ int main(int argc, char *argv[])
             }
             REAL8 kuiperval = hival + loval;
 
-            fprintf(OUTPUT, "%g %g %g\n", ksvalue, kuiperval1, kuiperval);
+            //fprintf(OUTPUT, "%g %g %g\n", ksvalue, kuiperval1, kuiperval);
 
-            if (ksvalue>ksthreshold || kuiperval>kuiperthreshold) {
-               badsfts++;
-            }
+            if (ksvalue>ksthreshold || kuiperval1>kuiperthreshold) badsfts0++;
+            if (ksvalue>ksthreshold || kuiperval>kuiperthreshold) badsfts++;
+
          }
       }
+      fprintf(OUTPUT, "%f %d %d\n", inputParams->fmin, badsfts0, badsfts);
       fclose(OUTPUT);
       fprintf(stderr, "Fraction excluded in K-S and Kuiper's tests = %f\n", (REAL4)badsfts/(REAL4)totalsfts);
       XLALDestroyREAL4Vector(tempvect);
