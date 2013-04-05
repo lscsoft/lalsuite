@@ -243,6 +243,10 @@ static int XLALSimInspiralSpinTaylorT2Setup(
         case 6:
             params->wdotcoeff[6] = 22.065 + 165.416*eta
                     - 2.20067*eta*eta + 4.93152*eta*eta*eta;
+            /*params->wdotcoeff[6] = -10817850546611./93884313600.
+                    + 1712.*LAL_GAMMA/105. + 32.*LAL_PI*LAL_PI/3.
+                    + (3147553127./12192768. - 451.*LAL_PI*LAL_PI/48.)*eta
+                    - 15211.*eta*eta/6912. + 25565.*eta*eta*eta/5184.;*/
             params->wdotlogcoeff = 1712./315.;
             params->Ecoeff[6] = - 675./64. + ( 34445./576.
                     - 205./96. * LAL_PI * LAL_PI ) * eta
