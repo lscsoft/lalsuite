@@ -658,6 +658,46 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
   }
 }
 
+void LALInferenceTranslateExternalToInternalParamName(char *outName, const char *inName) {
+  if (!strcmp(inName, "a1")) {
+    strcpy(outName, "a_spin1");
+  } else if (!strcmp(inName, "a2")) {
+    strcpy(outName, "a_spin2");
+  } else if (!strcmp(inName, "phi1")) {
+    strcpy(outName, "phi_spin1");
+  } else if (!strcmp(inName, "phi2")) {
+    strcpy(outName, "phi_spin2");
+  } else if (!strcmp(inName, "theta1")) {
+    strcpy(outName, "theta_spin1");
+  } else if (!strcmp(inName, "theta2")) {
+    strcpy(outName, "theta_spin2");
+  } else if (!strcmp(inName, "tilt1")) {
+    strcpy(outName, "tilt_spin1");
+  } else if (!strcmp(inName, "tilt2")) {
+    strcpy(outName, "tilt_spin2");
+  } else if (!strcmp(inName, "mc")) {
+    strcpy(outName, "chirpmass");
+  } else if (!strcmp(inName, "eta")) {
+    strcpy(outName, "massratio");
+  } else if (!strcmp(inName, "q")) {
+    strcpy(outName, "asym_massratio");
+  } else if (!strcmp(inName, "ra")) {
+    strcpy(outName, "rightascension");
+  } else if (!strcmp(inName, "dec")) {
+    strcpy(outName, "declination");
+  } else if (!strcmp(inName, "phi_orb")) {
+    strcpy(outName, "phase");
+  } else if (!strcmp(inName, "psi")) {
+    strcpy(outName, "polarisation");
+  } else if (!strcmp(inName, "iota")) {
+    strcpy(outName, "inclination");
+  } else if (!strcmp(inName, "dist")) {
+    strcpy(outName, "distance");
+  } else {
+    strcpy(outName, inName);
+  }
+}
+
 int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params) {
   LALInferenceVariableItem *head = params->head;
 
