@@ -2217,23 +2217,6 @@ def symlink_plot_directory(dataDir,webDir):
     print >> sys.stdout, '... Done'
 
     
-
-def make_cache(dir, plotcode):
-  '''
-  This function creates a .cache file with the location of the html file so
-  that fom() can find it
-  '''
-  command = 'ls ' + opts.physdir + dir + '/*' + plotcode + '* > '\
-            + opts.physdir + dir + '/temp.cache'
-  make_external_call(command, opts.debug, opts.debug, True)
-  file = open(opts.physdir + dir + '/temp.cache','r')
-  file2 = open(opts.physdir + dir + '/' + plotcode + '.cache','w')
-  for line in file:
-    line.replace('\n','')
-    file2.write(os.path.basename(line))
-    
-
-
 # ***************************************************************************
 def fom(page, opts, cachefile_tag=None, caption="fix me",\
 	 image_tag=None,directory="playground_summary_plots",all_ifos=False):
