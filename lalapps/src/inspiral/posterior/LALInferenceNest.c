@@ -68,6 +68,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
 	char help[]="\
 Initialisation arguments:\n\
+(--verbose [N])\tOutput more info. N=1: errors, N=2 (default): warnings, N=3: info \n\
 (--randomseed seed           Random seed for Nested Sampling)\n\n";
 	LALInferenceRunState *irs=NULL;
 	LALInferenceIFOData *ifoPtr, *ifoListStart;
@@ -80,6 +81,43 @@ Initialisation arguments:\n\
 	/* read data from files: */
 	fprintf(stdout, " readData(): started.\n");
 	irs->commandLine=commandLine;
+	
+	/* Initialise parameters structure */
+	irs->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+	irs->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+	irs->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+	
+	INT4 verbose=0;
+	INT4 x=0;
+	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
+	if(ppt) {
+	  if(ppt->value){
+	    x=atoi(ppt->value);
+	    switch(x){
+	     case 0:
+	       verbose=LALNDEBUG; /* Nothing */
+	       break;
+	     case 1:
+	       verbose=LALMSGLVL1; /* Only errors */
+	       break;
+	     case 2:
+	       verbose=LALMSGLVL2; /* Errors and warnings */
+	       break;
+	     case 3:
+	       verbose=LALMSGLVL3; /* Errors, warnings and info */
+	       break;
+	     default:
+	       verbose=LALMSGLVL2;
+	       break;
+	   }
+	  }
+	  else verbose=LALMSGLVL2; /* Errors and warnings */
+	  LALInferenceAddVariable(irs->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
+				  LALINFERENCE_PARAM_FIXED);		
+	}
+	if(verbose) lalDebugLevel=verbose;
+	else set_debug_level("NDEBUG");
+	
 	irs->data = LALInferenceReadData(commandLine);
 	/* (this will already initialise each LALIFOData's following elements:  */
         ppt=LALInferenceGetProcParamVal(commandLine,"--help");
@@ -199,7 +237,6 @@ Nested sampling arguments:\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
-(--verbose)\tProduce progress information\n\
 (--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
 (--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
 (--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
@@ -219,13 +256,10 @@ Nested sampling arguments:\n\
 		return;
 	}
 
-	INT4 verbose=0,tmpi=0,randomseed=0;
+	INT4 tmpi=0,randomseed=0;
 	REAL8 tmp=0;
 	
-	/* Initialise parameters structure */
-	runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-	runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
-	runState->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+
 	
 	/* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
@@ -273,14 +307,7 @@ Nested sampling arguments:\n\
 	runState->logsample=LogNSSampleAsMCMCSampleToFile;
 	#endif
 	
-	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
-	if(ppt) {
-		verbose=1;
-		LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
-					LALINFERENCE_PARAM_FIXED);		
-	}
-	if(verbose) set_debug_level("ERROR|INFO");
-	else set_debug_level("NDEBUG");
+	
 		
 	printf("set number of live points.\n");
 	/* Number of live points */
