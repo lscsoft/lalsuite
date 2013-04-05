@@ -71,6 +71,7 @@ static INT4 readSquareMatrix(gsl_matrix *m, UINT4 N, FILE *inp) {
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeMCMC(LALInferenceRunState *runState);
+REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *infilename, UINT4 burnin);
 
 
 /* This contains code chopped from LALInferenceInitCBC that wasn't
@@ -604,6 +605,141 @@ void initializeMCMC(LALInferenceRunState *runState)
   
   return;
 
+}
+
+REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *infileName, UINT4 burnin) {
+    char str[999];
+    char header[999];
+    char *word;
+    UINT4 nread;
+    UINT4 i=0, j=0, nCols=0, nPar=0, par=0, col=0;
+    UINT4 cycle=0;
+    REAL8 val=0;
+
+    const char *non_params[] = {"cycle","logpost","logprior","logl","loglH1","loglL1","loglV1","",NULL};
+
+    FILE *infile = fopen(infileName,"r");
+
+    fgets(str, 999, infile);
+    strcpy(header, str);
+    word = strtok(header, " \t");
+    // Find column headers
+    while (strcmp(word,"cycle") && str != NULL) {
+        fgets(str, 999, infile);
+        strcpy(header, str);
+        word = strtok(header, " \t");
+    }
+
+    if (str == NULL) {
+        fprintf(stderr, "Couldn't find column headers in file %s\n",infileName);
+        exit(1);
+    }
+
+    // Read in column names and check if they are parameters
+    strcpy(header, str);
+    word = strtok(header, " \t");
+    while (word != NULL) {
+        nCols++;
+        word = strtok(NULL, " \t");
+    }
+    // FIXME Remove a false column due to trailing whitespace
+    nCols--;
+
+    UINT4 is_param[nCols];
+
+    strcpy(header, str);
+    word = strtok(header, " \t");
+    for (i=0; i<nCols; i++) {
+        j=0;
+        is_param[i] = 1;
+        nPar++;
+        while (non_params[j] != NULL) {
+            if (!strcmp(non_params[j],word)) {
+                is_param[i] = 0;
+                nPar--;
+                break;
+            }
+            j++;
+        }
+        word = strtok(NULL, " \t");
+    }
+
+    char** in_params = XLALMalloc((nPar)*sizeof(char *));
+
+    word = strtok(str, " \t");
+    // Already assumed cycle is the first column, so skip it
+    par=0;
+    for (i=1; i<nCols; i++) {
+        char *param_name = strtok(NULL, " \t");
+        if (is_param[i]) {
+            in_params[par] = param_name;
+            par++;
+        }
+    }
+
+    printf("Reading the following params from %s:\n", infileName);
+    for (par=0; par<nPar; par++)
+        printf("\t%s\n",in_params[par]);
+
+    // Move past burnin
+    INT4 ch;
+    if (burnin > 0) {
+        while (cycle <= burnin) {
+            fscanf(infile, "%i", &cycle);
+            for (j=1;j<nCols;j++)
+                fscanf(infile, "%lg", &val);
+        }
+
+        // Make sure at end of line
+        ch = getc(infile);
+        while (ch != '\n') ch = getc(infile);
+    }
+
+    // Determine number of samples after burnin
+    unsigned long startPostBurnin = ftell(infile);
+    UINT4 nSamples=0;
+
+    while ( (ch = getc(infile)) != EOF) {
+        if (ch=='\n')
+            ++nSamples;
+    }
+    fseek(infile,startPostBurnin,SEEK_SET);
+    printf("%i samples read from %s.\n", nSamples, infileName);
+
+    // Read in samples
+    REAL8 **sampleArray;
+    sampleArray = (REAL8**) XLALMalloc(nSamples * sizeof(REAL8*));
+    
+    for (i = 0; i < nSamples; i++) {
+        sampleArray[i] = XLALMalloc(nPar * sizeof(REAL8));
+
+        nread = fscanf(infile, "%i", &cycle);
+        if (nread != 1) {
+            fprintf(stderr, "Cannot read sample from file (in %s, line %d)\n",
+            __FILE__, __LINE__);
+            exit(1);
+        }
+
+        par=0;
+        for (col = 1; col < nCols; col++) {
+            nread = fscanf(infile, "%lg", &val);
+            if (nread != 1) {
+                fprintf(stderr, "Cannot read sample from file (in %s, line %d)\n",
+                __FILE__, __LINE__);
+                exit(1);
+            }
+
+            if (is_param[col]) {
+                sampleArray[i][par] = val;
+                par++;
+            }
+        }
+    }
+
+    *params = in_params;
+    *nInPar = nPar;
+    *nInSamps = nSamples;
+    return sampleArray;
 }
 
 
