@@ -3233,7 +3233,7 @@ LALMultiInspiralTableFromLIGOLw (
             i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
           else
           {
-            i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "multi_inspiral", "time_slide_id");
+            i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "time_slide", "time_slide_id");
             if ( i8colData < 0 )
               return -1;
           }
