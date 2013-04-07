@@ -12,5 +12,4 @@ TESTS = \
 
 EXTRA_DIST = \
 	CheckStatus.c \
-	CheckStatus.h \
-	InjectTest.c
+	CheckStatus.h
