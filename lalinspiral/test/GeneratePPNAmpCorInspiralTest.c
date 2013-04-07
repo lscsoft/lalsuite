@@ -68,7 +68,6 @@ GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f f_min f
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/TimeDelay.h>
-#include <lal/LALBarycenter.h>
 #include <lal/VectorOps.h>
 #include <lal/SkyCoordinates.h>
 

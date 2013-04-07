@@ -37,7 +37,6 @@
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/TimeDelay.h>
-#include <lal/LALBarycenter.h>
 #include <lal/VectorOps.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
@@ -472,54 +471,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
   TRY( LALDCreateVector( stat->statusPtr, &delay, nMax ), stat );
   delayData = delay->data;
 
-  /* Compute delay from solar system barycentre. */
-  if ( detector->site && detector->ephemerides ) {
-    LIGOTimeGPS gpsTime;   /* detector time when we compute delay */
-    EarthState state;      /* Earth position info at that time */
-    BarycenterInput input; /* input structure to LALBarycenter() */
-    EmissionTime emit;     /* output structure from LALBarycenter() */
-
-    /* Arrange nested pointers, and set initial values. */
-    gpsTime = input.tgps = output->epoch;
-    gpsTime.gpsSeconds -= dtDelayBy2;
-    input.tgps.gpsSeconds -= dtDelayBy2;
-    input.site = *(detector->site);
-    for ( i = 0; i < 3; i++ )
-      input.site.location[i] /= LAL_C_SI;
-    input.alpha = source.longitude;
-    input.delta = source.latitude;
-    input.dInv = 0.0;
-    delayMin = delayMax = 1.1*LAL_AU_SI/( LAL_C_SI*output->deltaT );
-    delayMax *= -1;
-
-    /* Compute table. */
-    for ( i = 0; i < nMax; i++ ) {
-      REAL8 tDelay; /* propagation time */
-      LALBarycenterEarth( stat->statusPtr, &state, &gpsTime,
-                          detector->ephemerides );
-      BEGINFAIL( stat )
-        TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      ENDFAIL( stat );
-      LALBarycenter( stat->statusPtr, &emit, &input, &state );
-      BEGINFAIL( stat )
-        TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      ENDFAIL( stat );
-      delayData[i] = tDelay = emit.deltaT/output->deltaT;
-      if ( tDelay < delayMin )
-        delayMin = tDelay;
-      if ( tDelay > delayMax )
-        delayMax = tDelay;
-      gpsTime.gpsSeconds += 2*dtDelayBy2;
-      input.tgps.gpsSeconds += 2*dtDelayBy2;
-    }
-  }
-
   /* Compute delay from Earth centre. */
-  else if ( detector->site ) {
+  if ( detector->site ) {
     LIGOTimeGPS gpsTime;     /* detector time when we compute delay */
-
-    LALInfo( stat, "Ephemeris field absent; computing propagation"
-             " delays from Earth centre" );
 
     /* Arrange nested pointers, and set initial values. */
     gpsTime = output->epoch;

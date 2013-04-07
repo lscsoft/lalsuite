@@ -17,6 +17,8 @@
 *  MA  02111-1307  USA
 */
 
+#include <math.h>
+
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>

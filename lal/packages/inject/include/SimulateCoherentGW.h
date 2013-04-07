@@ -23,7 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
 #include <lal/SkyCoordinates.h>
-#include <lal/LALBarycenter.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -283,9 +282,6 @@ typedef struct tagDetectorResponse {
                                          * if absent, the response will be given in raw strain rather than ADC output */
   LALDetector *site;                    /**< A structure storing site and polarization information, used to compute the polarization response and the propagation delay;
                                          * if absent, the response will be computed to the plus mode waveform with no time delay */
-  EphemerisData *ephemerides;           /**< A structure storing the positions, velocities, and accelerations of the Earth and Sun centres of mass, used to compute
-                                         * the propagation delay to the solar system barycentre;
-                                         * if absent, the propagation delay will be computed to the Earth centre (rather than a true barycentre) */
   LIGOTimeGPS heterodyneEpoch;          /**< A reference time for heterodyned detector output time series, where the phase of the mixing signal is zero.
                                          * This parameter is only used when generating detector output time series with nonzero heterodyne frequency \c f0.
                                          * (Note: This should really be a parameter stored in the \c TimeSeries structure along with \c f0, but it isnt, so we
