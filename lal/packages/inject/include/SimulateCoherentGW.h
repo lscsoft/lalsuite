@@ -247,25 +247,6 @@ extern "C" {
 */
 /*@{*/
 
-/** \name Error Codes */
-/*@{*/
-#define SIMULATECOHERENTGWH_ENUL  1	/**< Unexpected null pointer in arguments */
-#define SIMULATECOHERENTGWH_EBAD  2	/**< A sampling interval is (effectively) zero */
-#define SIMULATECOHERENTGWH_ESIG  3	/**< Input signal must specify amplitude and phase functions */
-#define SIMULATECOHERENTGWH_EDIM  4	/**< Amplitude must be a 2-dimensional vector */
-#define SIMULATECOHERENTGWH_EMEM  5	/**< Memory allocation error */
-#define SIMULATECOHERENTGWH_EUNIT 6	/**< Bad input units */
-/*@} */
-
-/** \cond DONT_DOXYGEN */
-#define SIMULATECOHERENTGWH_MSGENUL  "Unexpected null pointer in arguments"
-#define SIMULATECOHERENTGWH_MSGEBAD  "A sampling interval is (effectively) zero"
-#define SIMULATECOHERENTGWH_MSGESIG  "Input signal must specify amplitude and phase functions"
-#define SIMULATECOHERENTGWH_MSGEDIM  "Amplitude must be a 2-dimensional vector"
-#define SIMULATECOHERENTGWH_MSGEMEM  "Memory allocation error"
-#define SIMULATECOHERENTGWH_MSGEUNIT "Bad input units"
-/** \endcond */
-
 /** This structure stores a representation of a plane
  * gravitational wave propagating from a particular point on the sky.
  * Several alternate representations are permitted to allow a more
