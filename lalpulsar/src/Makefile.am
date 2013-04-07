@@ -45,6 +45,7 @@ lalpulsarinclude_HEADERS = \
 	PulsarCrossCorr.h \
 	PulsarCrossCorr_v2.h \
 	PulsarDataTypes.h \
+	PulsarSimulateCoherentGW.h \
 	PulsarTimes.h \
 	Resample.h \
 	SFTClean.h \
@@ -114,6 +115,7 @@ liblalpulsar_la_SOURCES = \
 	PulsarCrossCorr.c \
 	PulsarCrossCorr_v2.c \
 	PulsarDataTypes.c \
+	PulsarSimulateCoherentGW.c \
 	RulesToTimingDifference.c \
 	SFTClean.c \
 	SFTfileIO.c \
