@@ -92,7 +92,7 @@ struct fvec *interpFromFile(char *filename){
 	UINT4 minLength=100; /* size of initial file buffer, and also size of increment */
 	FILE *interpfile=NULL;
 	struct fvec *interp=NULL;
-	interp=calloc(minLength,sizeof(struct fvec)); /* Initialise array */
+	interp=XLALCalloc(minLength,sizeof(struct fvec)); /* Initialise array */
 	if(!interp) {printf("Unable to allocate memory buffer for reading interpolation file\n");}
 	fileLength=minLength;
 	REAL8 f=0.0,x=0.0;
@@ -105,13 +105,13 @@ struct fvec *interpFromFile(char *filename){
 		interp[i].f=f; interp[i].x=x*x;
 		i++;
 		if(i>fileLength-1){ /* Grow the array */
-			interp=realloc(interp,(fileLength+minLength)*sizeof(struct fvec));
+			interp=XLALRealloc(interp,(fileLength+minLength)*sizeof(struct fvec));
 			fileLength+=minLength;
 		}
 	}
 	interp[i].f=0; interp[i].x=0;
 	fileLength=i+1;
-	interp=realloc(interp,fileLength*sizeof(struct fvec)); /* Resize array */
+	interp=XLALRealloc(interp,fileLength*sizeof(struct fvec)); /* Resize array */
 	fclose(interpfile);
 	printf("Read %i records from %s\n",fileLength-1,filename);
 	return interp;
@@ -229,15 +229,15 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
         if(!strcmp(this->param,"--ifo")||!strcmp(this->param,"--IFO"))
         {
             (*N)++;
-            *ifos=realloc(*ifos,*N*sizeof(char *));
-            (*ifos)[*N-1]=strdup(this->value);
+            *ifos=XLALRealloc(*ifos,*N*sizeof(char *));
+            (*ifos)[*N-1]=XLALStringDuplicate(this->value);
         }
     }
-    *caches=calloc(*N,sizeof(char *));
-    *channels=calloc(*N,sizeof(char *));
-    *flows=calloc(*N,sizeof(REAL8));
-    *fhighs=calloc(*N,sizeof(REAL8));
-    *timeslides=calloc(*N,sizeof(REAL8));
+    *caches=XLALCalloc(*N,sizeof(char *));
+    *channels=XLALCalloc(*N,sizeof(char *));
+    *flows=XLALCalloc(*N,sizeof(REAL8));
+    *fhighs=XLALCalloc(*N,sizeof(REAL8));
+    *timeslides=XLALCalloc(*N,sizeof(REAL8));
     /* For each IFO, fetch the other options if available */
     for(i=0;i<*N;i++)
     {
@@ -245,27 +245,27 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
         sprintf(tmp,"--%s-cache",(*ifos)[i]);
         this=LALInferenceGetProcParamVal(commandLine,tmp);
         if(!this){fprintf(stderr,"ERROR: Must specify a cache file for %s with --%s-cache\n",(*ifos)[i],(*ifos)[i]); exit(1);}
-        (*caches)[i]=strdup(this->value);
+        (*caches)[i]=XLALStringDuplicate(this->value);
         
         /* Channel */
         sprintf(tmp,"--%s-channel",(*ifos)[i]);
         this=LALInferenceGetProcParamVal(commandLine,tmp);
-        (*channels)[i]=strdup(this?this->value:"Unknown channel");
+        (*channels)[i]=XLALStringDuplicate(this?this->value:"Unknown channel");
 
         /* flow */
         sprintf(tmp,"--%s-flow",(*ifos)[i]);
         this=LALInferenceGetProcParamVal(commandLine,tmp);
-        (*flows)[i]=strdup(this?this->value:LALINFERENCE_DEFAULT_FLOW);
+        (*flows)[i]=XLALStringDuplicate(this?this->value:LALINFERENCE_DEFAULT_FLOW);
         
         /* fhigh */
         sprintf(tmp,"--%s-fhigh",(*ifos)[i]);
         this=LALInferenceGetProcParamVal(commandLine,tmp);
-        (*fhighs)[i]=this?strdup(this->value):NULL;
+        (*fhighs)[i]=this?XLALStringDuplicate(this->value):NULL;
 
         /* timeslides */
         sprintf(tmp,"--%s-timeslide",(*ifos)[i]);
         this=LALInferenceGetProcParamVal(commandLine,tmp);
-        (*timeslides)[i]=strdup(this?this->value:"0.0");
+        (*timeslides)[i]=XLALStringDuplicate(this?this->value:"0.0");
     }
     return(1);
 }
@@ -423,7 +423,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         dataseed=atoi(procparam->value);
     }
 
-    IFOdata=headIFO=calloc(sizeof(LALInferenceIFOData),Nifo);
+    IFOdata=headIFO=XLALCalloc(sizeof(LALInferenceIFOData),Nifo);
     if(!IFOdata) XLAL_ERROR_NULL(XLAL_ENOMEM);
 
     if(LALInferenceGetProcParamVal(commandLine,"--injXML"))
@@ -492,10 +492,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     }
 
     /* Only allocate this array if there weren't channels read in from the command line */
-    if(!dataOpts && !Nchannel) channels=calloc(Nifo,sizeof(char *));
+    if(!dataOpts && !Nchannel) channels=XLALCalloc(Nifo,sizeof(char *));
     for(i=0;i<Nifo;i++) {
-        if(!dataOpts && !Nchannel) channels[i]=malloc(VARNAME_MAX);
-        IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+        if(!dataOpts && !Nchannel) channels[i]=XLALMalloc(VARNAME_MAX);
+        IFOdata[i].detector=XLALCalloc(1,sizeof(LALDetector));
 
         if(!strcmp(IFOnames[i],"H1")) {			
             memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
@@ -538,7 +538,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             ETHomestakeFr.yArmAltitudeRadians=0.0;
             ETHomestakeFr.yArmAzimuthRadians=0.0;
             ETHomestakeFr.xArmMidpoint = ETHomestakeFr.yArmMidpoint = sqrt(2.0)*7.5/2.0;
-            IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+            IFOdata[i].detector=XLALCalloc(1,sizeof(LALDetector));
             XLALCreateDetector(IFOdata[i].detector,&ETHomestakeFr,LALDETECTORTYPE_IFODIFF);
             printf("Created Homestake Mine ET detector, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
             printf("detector tensor:\n");
@@ -563,7 +563,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             ETHomestakeFr.yArmAltitudeRadians=0.0;
             ETHomestakeFr.yArmAzimuthRadians=LAL_PI/4.0;
             ETHomestakeFr.xArmMidpoint = ETHomestakeFr.yArmMidpoint = sqrt(2.0)*7500./2.0;
-            IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+            IFOdata[i].detector=XLALCalloc(1,sizeof(LALDetector));
             XLALCreateDetector(IFOdata[i].detector,&ETHomestakeFr,LALDETECTORTYPE_IFODIFF);
             printf("Created Homestake Mine ET detector, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
             printf("detector tensor:\n");
@@ -584,7 +584,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             ETmic1.xArmAzimuthRadians = LAL_PI/2.0;
             ETmic1.yArmAzimuthRadians = 0.0;
             ETmic1.xArmMidpoint = ETmic1.yArmMidpoint = sqrt(2.0)*7500./2.;
-            IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+            IFOdata[i].detector=XLALCalloc(1,sizeof(LALDetector));
             XLALCreateDetector(IFOdata[i].detector,&ETmic1,LALDETECTORTYPE_IFODIFF);
             printf("Created ET L-detector 1 (N/E) arms, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
             printf("detector tensor:\n");
@@ -605,7 +605,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             ETmic2.xArmAzimuthRadians = 3.0*LAL_PI/4.0;
             ETmic2.yArmAzimuthRadians = LAL_PI/4.0;
             ETmic2.xArmMidpoint = ETmic2.yArmMidpoint = sqrt(2.0)*7500./2.;
-            IFOdata[i].detector=calloc(1,sizeof(LALDetector));
+            IFOdata[i].detector=XLALCalloc(1,sizeof(LALDetector));
             XLALCreateDetector(IFOdata[i].detector,&ETmic2,LALDETECTORTYPE_IFODIFF);
             printf("Created ET L-detector 2 (NE/SE) arms, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
             printf("detector tensor:\n");
@@ -631,7 +631,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             LIGOIndiaFr.xArmMidpoint = 2000.;
             LIGOIndiaFr.xArmAzimuthRadians = LAL_PI/2.;
             LIGOIndiaFr.yArmAzimuthRadians = 0.;
-            IFOdata[i].detector=malloc(sizeof(LALDetector));
+            IFOdata[i].detector=XLALMalloc(sizeof(LALDetector));
             memset(IFOdata[i].detector,0,sizeof(LALDetector));
             XLALCreateDetector(IFOdata[i].detector,&LIGOIndiaFr,LALDETECTORTYPE_IFODIFF);
             printf("Created LIGO India Detector, location %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
@@ -658,7 +658,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             LIGOSouthFr.yArmAzimuthRadians=AIGOang;
             LIGOSouthFr.xArmMidpoint=2000.;
             LIGOSouthFr.yArmMidpoint=2000.;
-            IFOdata[i].detector=malloc(sizeof(LALDetector));
+            IFOdata[i].detector=XLALMalloc(sizeof(LALDetector));
             memset(IFOdata[i].detector,0,sizeof(LALDetector));
             XLALCreateDetector(IFOdata[i].detector,&LIGOSouthFr,LALDETECTORTYPE_IFODIFF);
             printf("Created LIGO South detector, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
@@ -684,7 +684,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             LCGTFr.yArmAzimuthRadians=LCGTangle;
             LCGTFr.xArmMidpoint=1500.;
             LCGTFr.yArmMidpoint=1500.;
-            IFOdata[i].detector=malloc(sizeof(LALDetector));
+            IFOdata[i].detector=XLALMalloc(sizeof(LALDetector));
             memset(IFOdata[i].detector,0,sizeof(LALDetector));
             XLALCreateDetector(IFOdata[i].detector,&LCGTFr,LALDETECTORTYPE_IFODIFF);
             printf("Created LCGT telescope, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
@@ -898,8 +898,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
             // REAL8 *tempPSD = NULL;
             // REAL8 *tempfreq = NULL;
-            // tempPSD=calloc(sizeof(REAL8),templen+1);
-            // tempfreq=calloc(sizeof(REAL8),templen+1);
+            // tempPSD=XLALCalloc(sizeof(REAL8),templen+1);
+            // tempfreq=XLALCalloc(sizeof(REAL8),templen+1);
 
             rewind(in);
             IFOdata[i].oneSidedNoisePowerSpectrum->data->data[0] = 1.0;
@@ -970,17 +970,17 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     for (i=0;i<Nifo-1;i++) IFOdata[i].next=&(IFOdata[i+1]);
 
     for(i=0;i<Nifo;i++) {
-        if(channels) if(channels[i]) free(channels[i]);
-        if(caches) if(caches[i]) free(caches[i]);
-        if(IFOnames) if(IFOnames[i]) free(IFOnames[i]);
-        if(fLows) if(fLows[i]) free(fLows[i]);
-        if(fHighs) if(fHighs[i]) free(fHighs[i]);
+        if(channels) if(channels[i]) XLALFree(channels[i]);
+        if(caches) if(caches[i]) XLALFree(caches[i]);
+        if(IFOnames) if(IFOnames[i]) XLALFree(IFOnames[i]);
+        if(fLows) if(fLows[i]) XLALFree(fLows[i]);
+        if(fHighs) if(fHighs[i]) XLALFree(fHighs[i]);
     }
-    if(channels) free(channels);
-    if(caches) free(caches);
-    if(IFOnames) free(IFOnames);
-    if(fLows) free(fLows);
-    if(fHighs) free(fHighs);
+    if(channels) XLALFree(channels);
+    if(caches) XLALFree(caches);
+    if(IFOnames) XLALFree(IFOnames);
+    if(fLows) XLALFree(fLows);
+    if(fHighs) XLALFree(fHighs);
 
     return headIFO;
 }
@@ -1107,7 +1107,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	}
         if(LALInferenceGetProcParamVal(commandLine,"--snrpath")){
                 ppt = LALInferenceGetProcParamVal(commandLine,"--snrpath");
-		SNRpath = calloc(strlen(ppt->value)+1,sizeof(char));
+		SNRpath = XLALCalloc(strlen(ppt->value)+1,sizeof(char));
 		memcpy(SNRpath,ppt->value,strlen(ppt->value)+1);
                 fprintf(stdout,"Writing SNRs in %s\n",SNRpath)     ;
 

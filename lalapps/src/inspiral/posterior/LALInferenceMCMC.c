@@ -237,7 +237,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
-  irs = calloc(1, sizeof(LALInferenceRunState));
+  irs = XLALCalloc(1, sizeof(LALInferenceRunState));
   /* read data from files: */
   fprintf(stdout, " ==== LALInferenceReadData(): started. ====\n");
   irs->commandLine=commandLine;
@@ -298,7 +298,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
                                                                      ifoPtr->freqData->deltaF,
                                                                      &lalDimensionlessUnit,
                                                                      ifoPtr->freqData->data->length);
-        ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
+        ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
       }
       ifoPtr = ifoPtr->next;
     }
@@ -754,7 +754,7 @@ int main(int argc, char *argv[]){
   ProcessParamsTable *procParams=NULL;
   ProcessParamsTable *ppt=NULL;
   char *infileName;
-  infileName = (char*)calloc(99,sizeof(char*));
+  infileName = (char*)XLALCalloc(99,sizeof(char*));
   char str [999];
   FILE * infile;
   int n;
@@ -772,7 +772,7 @@ int main(int argc, char *argv[]){
     infile = fopen(infileName,"r");
     if (infile==NULL) {fprintf(stderr,"Cannot read %s/n",infileName); exit (1);}
     n=sprintf(buffer,"lalinference_mcmcmpi_from_file_%s",infileName);
-    fileargv[0] = (char*)calloc((n+1),sizeof(char*));
+    fileargv[0] = (char*)XLALCalloc((n+1),sizeof(char*));
     fileargv[0] = buffer;
     fgets(str, 999, infile);
     fgets(str, 999, infile);
@@ -783,7 +783,7 @@ int main(int argc, char *argv[]){
         if(strcmp(pch,"Command")!=0 && strcmp(pch,"line:")!=0)
           {
             n = strlen(pch);
-            fileargv[fileargc] = (char*)calloc((n+1),sizeof(char*));
+            fileargv[fileargc] = (char*)XLALCalloc((n+1),sizeof(char*));
             fileargv[fileargc] = pch;
             fileargc++;
             if(fileargc>=99) {fprintf(stderr,"Too many arguments in file %s\n",infileName); exit (1);}

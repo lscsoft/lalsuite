@@ -958,8 +958,8 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
   //COMPLEX16Vector *segmentFreqModelResponse-NULL;
 
   /* Allocate memory for local pointers */
-  segnorm=malloc(sizeof(REAL8) * ifoPtr->freqData->data->length);
-  chisqBin=malloc(sizeof(INT4) * (numBins + 1));
+  segnorm=XLALMalloc(sizeof(REAL8) * ifoPtr->freqData->data->length);
+  chisqBin=XLALMalloc(sizeof(INT4) * (numBins + 1));
 
   /* loop over data (different interferometers): */
   while (ifoPtr != NULL) {
@@ -1049,8 +1049,8 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
     
     ifoPtr = ifoPtr->next;
   }
-  free(chisqBin);
-  free(segnorm);
+  XLALFree(chisqBin);
+  XLALFree(segnorm);
   return(ChiSquared);
 }
 
@@ -1085,7 +1085,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
 //				  &lalDimensionlessUnit,
 //				  ifoPtr->timeData->data->length);
 //    } else if (timeModelResponse->data->length != ifoPtr->timeData->data->length) {
-//      /* Cannot resize *up* a time series, so just dealloc and reallocate it. */
+//      /* Cannot resize *up* a time series, so just dealloc and XLALReallocate it. */
 //      XLALDestroyREAL8TimeSeries(timeModelResponse);
 //      timeModelResponse =                   
 //	XLALCreateREAL8TimeSeries("time detector response", &(ifoPtr->timeData->epoch), 

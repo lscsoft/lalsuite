@@ -851,8 +851,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
   }
 
-  free(ladder);
-  free(annealDecay);
+  XLALFree(ladder);
+  XLALFree(annealDecay);
 }
 
 

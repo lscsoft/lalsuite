@@ -975,7 +975,7 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
   if (j!=2) XLAL_ERROR_VOID(XLAL_EINVAL, "Argument vector \"%s\" is not well-formed!", input);
   /* now allocate memory for results: */
   *strings  = (char**)  XLALMalloc(sizeof(char*) * (*n));
-  for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
+  for (i=0; i<(*n); ++i) (*strings)[i] = (char*) XLALMalloc(sizeof(char)*512);
   i=0; j=0;
   k=0; /* string counter    */
   l=0; /* character counter */
@@ -1012,7 +1012,7 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
   int dbldash;
   ProcessParamsTable *head, *ptr=NULL;
   /* always (even for argc==1, i.e. no arguments) put one element in list: */
-  head = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
+  head = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
   XLALStringCopy(head->program, argv[0], sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
   ptr = head;
   i=1;
@@ -1034,7 +1034,7 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
     }
     else if (state==2) { /* ('state 2' means last entry was a parameter starting with "--") */
       if (dbldash) {
-        ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
+        ptr->next = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
         XLALStringCopy(ptr->program, argv[0],
 sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
@@ -1048,7 +1048,7 @@ sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
     }
     else if (state==3) { /* ('state 3' means last entry was a value) */
       if (dbldash) {
-        ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
+        ptr->next = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
         XLALStringCopy(ptr->program, argv[0],
                        sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
@@ -1079,7 +1079,7 @@ char* LALInferencePrintCommandLine(ProcessParamsTable *procparams)
     len+=2;
     this=this->next;
   }// Now we know how long the buffer has to be.
-  char * str = (char*) calloc(len+1,sizeof(char));
+  char * str = (char*) XLALCalloc(len+1,sizeof(char));
   if (str==NULL) {
     XLALPrintError("Calloc error, str is NULL (in %s, line %d)\n",__FILE__, __LINE__);
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
@@ -1263,7 +1263,7 @@ void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariabl
 char **LALInferenceGetHeaderLine(FILE *inp) {
   const size_t MAXSIZE=1024;
   const char *delimiters = " \n\t";
-  char *header = malloc(MAXSIZE*sizeof(char));
+  char *header = XLALMalloc(MAXSIZE*sizeof(char));
   char **colNames = NULL;  /* Will be filled in with the column names,
                               terminated by NULL. */
   size_t colNamesLen=0, colNamesMaxLen=0;
@@ -1279,7 +1279,7 @@ char **LALInferenceGetHeaderLine(FILE *inp) {
 
   /* Sure hope we read the whole line. */
   colNamesMaxLen=2;
-  colNames=(char **)malloc(2*sizeof(char *));
+  colNames=(char **)XLALMalloc(2*sizeof(char *));
 
   if (!colNames) {
     XLAL_ERROR_NULL(XLAL_ENOMEM, "Failed to allocate memory for colNames.");
@@ -1298,16 +1298,16 @@ char **LALInferenceGetHeaderLine(FILE *inp) {
     /* Expand if necessary. */
     if (colNamesLen >= colNamesMaxLen) {
       colNamesMaxLen *= 2;
-      colNames=realloc(colNames, colNamesMaxLen*sizeof(char *));
+      colNames=XLALRealloc(colNames, colNamesMaxLen*sizeof(char *));
       if (!colNames) {
-        XLAL_ERROR_NULL(XLAL_ENOMEM, "Failed to reallocate memory for colNames.");
+        XLAL_ERROR_NULL(XLAL_ENOMEM, "Failed to XLALReallocate memory for colNames.");
       }
     }
 
   } while (colName != NULL);
 
   /* Trim down to size. */
-  colNames=realloc(colNames, colNamesLen*sizeof(char *));
+  colNames=XLALRealloc(colNames, colNamesLen*sizeof(char *));
 
   return colNames;
 }
@@ -1387,7 +1387,7 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
   tmp.head=NULL;
   tmp.dimension=0;
   LALInferenceVariableItem *thisitem,*ptr;
-  LALInferenceVariables *new=calloc(1,sizeof(*new));
+  LALInferenceVariables *new=XLALCalloc(1,sizeof(*new));
   if(!vars){
     XLAL_ERROR_VOID(XLAL_EFAULT, "Received null input pointer.");
   }
@@ -1448,7 +1448,7 @@ void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVaria
     LALInferenceAddVariable(state->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
   /* Expand the array for new sample */
-  output_array=realloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
+  output_array=XLALRealloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
   if(!output_array){
     XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to allocate array for samples.");
   }

@@ -445,7 +445,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	struct timeval tv;
 	FILE *devrandom;
 	
-	irs = calloc(1, sizeof(LALInferenceRunState));
+	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
 	/* read data from files: */
 	fprintf(stdout, " LALInferenceReadData(): started.\n");
 	irs->data = LALInferenceReadData(commandLine);
@@ -504,7 +504,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 																			 ifoPtr->freqData->deltaF,
 																			 &lalDimensionlessUnit,
 																			 ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
+				ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
 			}
 			ifoPtr = ifoPtr->next;
 		}
@@ -714,19 +714,19 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
 
   // Figure out parameter space dimension, names, &c.:
   nmDim   = LALInferenceGetVariableDimension(&param);
-  R8Vec   = (REAL8*) malloc(sizeof(REAL8) * nmDim);
-  nameVec = (char**) malloc(sizeof(char*) * nmDim);
+  R8Vec   = (REAL8*) XLALMalloc(sizeof(REAL8) * nmDim);
+  nameVec = (char**) XLALMalloc(sizeof(char*) * nmDim);
   for (i=0; i<nmDim; ++i) {
-    nameVec[i] = (char*) malloc(sizeof(char) * VARNAME_MAX);
+    nameVec[i] = (char*) XLALMalloc(sizeof(char) * VARNAME_MAX);
     strcpy(nameVec[i], LALInferenceGetVariableName(&param, i+1));
     R8Vec[i] = *(REAL8*) LALInferenceGetVariable(&param, nameVec[i]);
   }
-  simplex       = (REAL8*) malloc(sizeof(REAL8) * nmDim * (nmDim+1));
-  val_simplex   = (REAL8*) malloc(sizeof(REAL8) * (nmDim+1));
-  centroid   = (REAL8*) malloc(sizeof(REAL8) * nmDim);
-  reflected  = (REAL8*) malloc(sizeof(REAL8) * nmDim);
-  expanded   = (REAL8*) malloc(sizeof(REAL8) * nmDim);
-  contracted = (REAL8*) malloc(sizeof(REAL8) * nmDim);
+  simplex       = (REAL8*) XLALMalloc(sizeof(REAL8) * nmDim * (nmDim+1));
+  val_simplex   = (REAL8*) XLALMalloc(sizeof(REAL8) * (nmDim+1));
+  centroid   = (REAL8*) XLALMalloc(sizeof(REAL8) * nmDim);
+  reflected  = (REAL8*) XLALMalloc(sizeof(REAL8) * nmDim);
+  expanded   = (REAL8*) XLALMalloc(sizeof(REAL8) * nmDim);
+  contracted = (REAL8*) XLALMalloc(sizeof(REAL8) * nmDim);
 
   // populate simplex;
   // first corner is starting value:
@@ -852,15 +852,15 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
 
   LALInferenceClearVariables(&startval);
   LALInferenceClearVariables(&param);
-  free(R8Vec);
-  for (i=0; i<nmDim; ++i) free(nameVec[i]);
-  free(nameVec);
-  free(simplex);
-  free(val_simplex);
-  free(centroid);
-  free(reflected);
-  free(expanded);
-  free(contracted);
+  XLALFree(R8Vec);
+  for (i=0; i<nmDim; ++i) XLALFree(nameVec[i]);
+  XLALFree(nameVec);
+  XLALFree(simplex);
+  XLALFree(val_simplex);
+  XLALFree(centroid);
+  XLALFree(reflected);
+  XLALFree(expanded);
+  XLALFree(contracted);
 }
 
 
@@ -1142,7 +1142,7 @@ void SingleIFOLikelihoodTest(void)
 	//runstate->evolve=BasicMCMCOneStep;
 	//runstate->prior=BasicUniformLALPrior;
 	//runstate->proposal=BasicMCMCLALProposal;
-        //runstate->proposalArgs = malloc(sizeof(LALInferenceVariables));
+        //runstate->proposalArgs = XLALMalloc(sizeof(LALInferenceVariables));
         //runstate->proposalArgs->head=NULL;
         //runstate->proposalArgs->dimension=0;
 	//runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
@@ -1264,7 +1264,7 @@ void PTMCMCTest(void)
 	//runstate->prior=PTUniformGaussianPrior;
 	//runstate->proposal=PTMCMCLALProposal;
 	//runstate->proposal=PTMCMCGaussianProposal;
-	runstate->proposalArgs = malloc(sizeof(LALInferenceVariables));
+	runstate->proposalArgs = XLALMalloc(sizeof(LALInferenceVariables));
 	runstate->proposalArgs->head=NULL;
 	runstate->proposalArgs->dimension=0;
 	runstate->likelihood=LALInferenceFreqDomainLogLikelihood;

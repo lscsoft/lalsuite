@@ -30,7 +30,7 @@ Initialisation arguments:\n\
 	struct timeval tv;
 	FILE *devrandom;
 	
-	irs = calloc(1, sizeof(LALInferenceRunState));
+	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
 	/* read data from files: */
 	fprintf(stdout, " readData(): started.\n");
 	irs->commandLine=commandLine;
@@ -97,7 +97,7 @@ Initialisation arguments:\n\
 																			 ifoPtr->freqData->deltaF,
 																			 &lalDimensionlessUnit,
 																			 ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
+				ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
 			}
 			ifoPtr = ifoPtr->next;
 		}
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 		exit(0);
         }
  initializeTemplate(state);
- state->currentParams=calloc(1,sizeof(LALInferenceVariables));
+ state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
  state->prior=&LALInferenceAnalyticNullPrior;
  state->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
  LALInferencePrintInjectionSample(state);

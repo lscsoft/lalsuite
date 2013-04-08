@@ -150,7 +150,7 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
             }
         }
         LALInferenceClearVariables(acls);
-        free(acls);
+        XLALFree(acls);
         if(max>maxMCMC){
             fprintf(stderr,"Warning: Estimated chain length %i exceeds maximum %i!\n",max,maxMCMC);
             max=maxMCMC;
@@ -188,9 +188,9 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 	for(i=0;i<(*cvm)->size1;i++) for(j=0;j<(*cvm)->size2;j++) gsl_matrix_set(*cvm,i,j,0.0);
 
 	/* Find the means */
-	if(NULL==(means = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
-	if(NULL==(ms = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
-	if(NULL==(mc = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	if(NULL==(means = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	if(NULL==(ms = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	if(NULL==(mc = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
 	for(i=0;i<ND;i++){ 
           means[i]=0.0;
           ms[i] = 0.;
@@ -239,8 +239,8 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
           }
         }
         
-        free(ms);
-        free(mc);
+        XLALFree(ms);
+        XLALFree(mc);
         
 	/* Find the (co)-variances */
 	for(i=0;i<Nlive;i++){
@@ -276,7 +276,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 
 	/* Normalise */
 	for(i=0;i<ND;i++) for(j=0;j<ND;j++) gsl_matrix_set(*cvm,i,j,gsl_matrix_get(*cvm,i,j)/((REAL8) Nlive));
-	free(means);
+	XLALFree(means);
         
 	/* Fill in variances for circular parameters */
 	/*for(item=Live[0]->head,j=0;item;item=item->next) {
@@ -318,7 +318,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;//deltaZ - set but not used
   LALInferenceVariables *temp;
   FILE *fpout=NULL;
-  gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
+  gsl_matrix **cvm=XLALCalloc(1,sizeof(gsl_matrix *));
   REAL8 dblmax=-DBL_MAX;
   REAL8 zero=0.0;
   REAL8 *logLikelihoods=NULL;
@@ -326,7 +326,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   REAL8 sloppyfrac;
   UINT4 displayprogress=0;
   LALInferenceVariableItem *param_ptr;
-  LALInferenceVariables *currentVars=calloc(1,sizeof(LALInferenceVariables));
+  LALInferenceVariables *currentVars=XLALCalloc(1,sizeof(LALInferenceVariables));
   REAL8 kdupdate=0.;
   
   /* Default sample logging functions with and without XML */
@@ -415,13 +415,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
    fprintf(fpout,"%s\t",param_ptr->name);
     }	
     fprintf(fpout,"logL\n");*/
-  logZarray = calloc(Nruns,sizeof(REAL8));
-  oldZarray = calloc(Nruns,sizeof(REAL8));
-  Harray = calloc(Nruns,sizeof(REAL8));
-  logwarray = calloc(Nruns,sizeof(REAL8));
-  logtarray=calloc(Nruns,sizeof(REAL8));
-  logt2array=calloc(Nruns,sizeof(REAL8));
-  Wtarray = calloc(Nruns,sizeof(REAL8));
+  logZarray = XLALCalloc(Nruns,sizeof(REAL8));
+  oldZarray = XLALCalloc(Nruns,sizeof(REAL8));
+  Harray = XLALCalloc(Nruns,sizeof(REAL8));
+  logwarray = XLALCalloc(Nruns,sizeof(REAL8));
+  logtarray=XLALCalloc(Nruns,sizeof(REAL8));
+  logt2array=XLALCalloc(Nruns,sizeof(REAL8));
+  Wtarray = XLALCalloc(Nruns,sizeof(REAL8));
   if(logZarray==NULL || Harray==NULL || oldZarray==NULL || logwarray==NULL || Wtarray==NULL)
   {fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
   
@@ -718,11 +718,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       
       
     }
-    if(output_array) free(output_array);
+    if(output_array) XLALFree(output_array);
 		      
 		      #endif
     
-    free(logtarray); free(logwarray); free(logZarray);
+    XLALFree(logtarray); XLALFree(logwarray); XLALFree(logZarray);
 }
 
 /* Calculate the autocorrelation function of the sampler (runState->evolve) for each parameter
@@ -744,11 +744,11 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   max_iterations/=thinning;
   /* Find the number and names of variables */
   for(this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) nPar++;
-  char **param_names=calloc(nPar,sizeof(char *));
+  char **param_names=XLALCalloc(nPar,sizeof(char *));
   for(i=0,this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) param_names[i++]=this->name;
 
   REAL8 ACF,ACL,max=0;
-  LALInferenceVariables *acls=calloc(1,sizeof(LALInferenceVariables));
+  LALInferenceVariables *acls=XLALCalloc(1,sizeof(LALInferenceVariables));
 
   /* Back up the algorithm state and replace with a clean version for logSampletoarray */
   LALInferenceVariables myAlgParams,*oldAlgParams=runState->algorithmParams;
@@ -756,8 +756,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   memset(&myAlgParams,0,sizeof(LALInferenceVariables));
   memset(&myCurrentParams,0,sizeof(LALInferenceVariables));
   LALInferenceCopyVariables(oldAlgParams,&myAlgParams);
-  LALInferenceRemoveVariable(&myAlgParams,"outputarray");
-  LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
+  if(LALInferenceCheckVariable(&myAlgParams,"outputarray")) LALInferenceRemoveVariable(&myAlgParams,"outputarray");
+  if(LALInferenceCheckVariable(&myAlgParams,"N_outputarray")) LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
   LALInferenceRemoveVariable(&myAlgParams,"outfile");
   LALInferenceRemoveVariable(&myAlgParams,"Nmcmc");
   LALInferenceAddVariable(&myAlgParams,"Nmcmc",&thinning,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
@@ -813,11 +813,11 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceVariables *variables_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
 
   /* Convert to a 2D array for ACF calculation */
-  data_array=calloc(nPar,sizeof(REAL8 *));
-  acf_array=calloc(nPar,sizeof(REAL8 *));
+  data_array=XLALCalloc(nPar,sizeof(REAL8 *));
+  acf_array=XLALCalloc(nPar,sizeof(REAL8 *));
   for (i=0;i<(UINT4)nPar;i++){
-    data_array[i]=calloc(max_iterations,sizeof(REAL8));
-    acf_array[i]=calloc(max_iterations/2,sizeof(REAL8));
+    data_array[i]=XLALCalloc(max_iterations,sizeof(REAL8));
+    acf_array[i]=XLALCalloc(max_iterations/2,sizeof(REAL8));
   }
   /* Measure autocorrelation in each dimension */
   /* Not ideal, should be measuring something like the det(autocorrelation-crosscorrelation matrix) */
@@ -825,7 +825,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     for(j=0;j<nPar;j++) data_array[j][i]=*(REAL8 *)LALInferenceGetVariable(&variables_array[i],param_names[j]);
     LALInferenceClearVariables(&variables_array[i]);
   }
-  free(variables_array);
+  XLALFree(variables_array);
   this=myCurrentParams.head;
   for(i=0;i<(UINT4)nPar;i++){
    /* Subtract the mean */
@@ -873,15 +873,15 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   fclose(aclfile);
 */  
   /* Clean up */
-  for(i=0;i<(UINT4)nPar;i++) {free(data_array[i]); free(acf_array[i]);}
-  free(data_array); free(acf_array);
+  for(i=0;i<(UINT4)nPar;i++) {XLALFree(data_array[i]); XLALFree(acf_array[i]);}
+  XLALFree(data_array); XLALFree(acf_array);
   LALInferenceClearVariables(&myAlgParams);
   LALInferenceClearVariables(&myCurrentParams);
   runState->currentParams=oldCurrentParams;
   runState->algorithmParams=oldAlgParams;
   if(chainfile) fclose(chainfile);
   if(acffile) fclose(acffile);
-  free(param_names);
+  XLALFree(param_names);
   return(acls);
 }
 
@@ -1135,7 +1135,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 
 	/* Allocate the array */
 	/* runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *)); */
-	runState->livePoints=calloc(Nlive,sizeof(LALInferenceVariables *));
+	runState->livePoints=XLALCalloc(Nlive,sizeof(LALInferenceVariables *));
 	if(runState->livePoints==NULL)
 	{
 		fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
@@ -1153,7 +1153,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	  /* If there is an initialisation function, use it */
 	  if(runState->initVariables) runState->livePoints[i]=runState->initVariables(runState);
 	  else{ /* Otherwise clone the currentParams */
-	    runState->livePoints[i]=calloc(1,sizeof(LALInferenceVariables));
+	    runState->livePoints[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
 	    /* Copy the param structure */
 	    LALInferenceCopyVariables(runState->currentParams,runState->livePoints[i]);
 	  }
@@ -1168,7 +1168,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	  LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 	runState->currentParams=curParsBackup;
-	if(!runState->currentParams) runState->currentParams=calloc(1,sizeof(LALInferenceVariables));
+	if(!runState->currentParams) runState->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	
 }
 
