@@ -1150,13 +1150,11 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	LALInferenceVariables *curParsBackup=runState->currentParams;
 	for(i=0;i<Nlive;i++)
 	{
-	  /* If there is an initialisation function, use it */
-	  if(runState->initVariables) runState->livePoints[i]=runState->initVariables(runState);
-	  else{ /* Otherwise clone the currentParams */
+	   /* Clone the currentParams into LivePoints[i] */
 	    runState->livePoints[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
 	    /* Copy the param structure */
 	    LALInferenceCopyVariables(runState->currentParams,runState->livePoints[i]);
-	  }
+	  
 	  /* Sprinkle the varying points among prior */
 	  do{
 	    LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
