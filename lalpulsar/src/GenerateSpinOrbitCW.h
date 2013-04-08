@@ -21,7 +21,7 @@
 #define _GENERATESPINORBITCW_H
 
 #include <lal/LALStdlib.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
 
 #if defined(__cplusplus)
@@ -246,7 +246,7 @@ parabolic orbits, and negative (unbounded) for hyperbolic orbits.
  * waveform with both a Taylor-polynomial intrinsic frequency and phase,
  * and a binary-orbit modulation.  As with the ::PPNParamStruc type
  * in \ref GeneratePPNInspiral_h, we divide the fields into passed
- * fields (which are supplied to the final CoherentGW structure
+ * fields (which are supplied to the final PulsarCoherentGW structure
  * but not used in any calculations), input fields (that are used by the
  * waveform generator), and output fields (that are set by the waveform
  * generator).
@@ -286,26 +286,26 @@ typedef struct tagSpinOrbitCWParamStruc {
 
 
 /* ---------- Function prototypes. ---------- */
-int XLALGenerateSpinOrbitCW ( CoherentGW *sourceSignal, SpinOrbitCWParamStruc *sourceParams );
+int XLALGenerateSpinOrbitCW ( PulsarCoherentGW *sourceSignal, SpinOrbitCWParamStruc *sourceParams );
 
 void
 LALGenerateSpinOrbitCW( LALStatus             *,
-			CoherentGW            *output,
+			PulsarCoherentGW            *output,
 			SpinOrbitCWParamStruc *params );
 
 void
 LALGenerateEllipticSpinOrbitCW( LALStatus             *,
-				CoherentGW            *output,
+				PulsarCoherentGW            *output,
 				SpinOrbitCWParamStruc *params );
 
 void
 LALGenerateParabolicSpinOrbitCW( LALStatus             *,
-				 CoherentGW            *output,
+				 PulsarCoherentGW            *output,
 				 SpinOrbitCWParamStruc *params );
 
 void
 LALGenerateHyperbolicSpinOrbitCW( LALStatus             *,
-				  CoherentGW            *output,
+				  PulsarCoherentGW            *output,
 				  SpinOrbitCWParamStruc *params );
 
 /*@}*/

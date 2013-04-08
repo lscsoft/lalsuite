@@ -103,7 +103,7 @@ SFT files that are specified in the code.
 \heading{Uses}
 \code
 LALGenerateTaylorCW()
-LALSimulateCoherentGW()
+LALPulsarSimulateCoherentGW()
 LALMalloc()
 LALSCreateVector()
 LALSDestroyVector()
@@ -155,7 +155,7 @@ LALCheckMemoryLeaks()
 #include <lal/LALConstants.h>
 #include <lal/DetResponse.h>
 #include <lal/DetectorSite.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALBarycenter.h>
@@ -271,8 +271,8 @@ REAL4TimeSeries *timeSeries = NULL;
 
 /* Signal parameters to generate signal at source */
 SpinOrbitCWParamStruc genTayParams;
-CoherentGW cgwOutput;
-DetectorResponse cwDetector;
+PulsarCoherentGW cgwOutput;
+PulsarDetectorResponse cwDetector;
 
 /*This will hold the SFT*/
 COMPLEX8Vector *fvec = NULL;
@@ -408,7 +408,7 @@ int main(int argc,char *argv[]) {
 
 
 
-  memset(&cgwOutput, 0, sizeof(CoherentGW));
+  memset(&cgwOutput, 0, sizeof(PulsarCoherentGW));
 
   /* complete filling-in the "input fields" of genTayparams */
   if (SetupSigGenParams())
@@ -437,7 +437,7 @@ int main(int argc,char *argv[]) {
     /* This matters a lot */
     timeSeries->epoch=timestamps[iSFT];
 
-    SUB( LALSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
+    SUB( LALPulsarSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
 
     /* lets calculate the power in the signal */
     /* if (compute_power()) */
@@ -675,7 +675,7 @@ int prepare_baryinput(LALStatus* status){
 /* prepares cwDetector */
 int prepare_cwDetector(LALStatus* status){
 
-  memset(&cwDetector, 0, sizeof(DetectorResponse));
+  memset(&cwDetector, 0, sizeof(PulsarDetectorResponse));
   /* The ephemerides */
   cwDetector.ephemerides = edat;
   /* Specifying the detector site (set above) */

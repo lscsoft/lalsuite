@@ -54,7 +54,7 @@ static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining
 /*---------- Global variables ----------*/
 /* empty init-structs for the types defined in here */
 static SpinOrbitCWParamStruc emptyCWParams;
-static CoherentGW emptySignal;
+static PulsarCoherentGW emptySignal;
 
 const PulsarSignalParams empty_PulsarSignalParams;
 const SFTParams empty_SFTParams;
@@ -166,7 +166,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
     } // if pulsar.spindown
 
   /* finally, call the function to generate the source waveform */
-  CoherentGW sourceSignal = emptySignal;
+  PulsarCoherentGW sourceSignal = emptySignal;
 
   XLAL_CHECK_NULL ( XLALGenerateSpinOrbitCW ( &sourceSignal, &sourceParams ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -185,7 +185,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
    *
    *----------------------------------------------------------------------*/
   /* first set up the detector-response */
-  DetectorResponse detector;
+  PulsarDetectorResponse detector;
   detector.transfer = params->transfer;
   detector.site = params->site;
   detector.ephemerides = params->ephemerides;
@@ -206,11 +206,11 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
   REAL4TimeSeries *output = XLALCreateREAL4TimeSeries ( "", &(params->startTimeGPS), fHet, dt, &emptyUnit, numSteps );
   XLAL_CHECK_NULL ( output != NULL, XLAL_EFUNC, "XLALCreateREAL4TimeSeries() failed with xlalErrno = %d\n", xlalErrno );
 
-  // internal interpolation parameters for LALSimulateCoherentGW()
+  // internal interpolation parameters for LALPulsarSimulateCoherentGW()
   sourceSignal.dtDelayBy2 = params->dtDelayBy2;
   sourceSignal.dtPolBy2   = params->dtPolBy2;
 
-  XLAL_CHECK_NULL ( XLALSimulateCoherentGW ( output, &sourceSignal, &detector ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALPulsarSimulateCoherentGW ( output, &sourceSignal, &detector ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
   CHAR *name = XLALGetChannelPrefix ( params->site->frDetector.name );

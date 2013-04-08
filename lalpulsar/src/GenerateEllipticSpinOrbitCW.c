@@ -24,7 +24,7 @@
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 #include <gsl/gsl_roots.h>
 
@@ -167,7 +167,7 @@ be non-monotonic functions of one another.
 */
 void
 LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
-				CoherentGW            *output,
+				PulsarCoherentGW            *output,
 				SpinOrbitCWParamStruc *params )
 {
   UINT4 n, i;              /* number of and index over samples */

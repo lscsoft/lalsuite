@@ -111,7 +111,7 @@ from SFT files that are specified in the code.
 \heading{Uses}
 \code
 LALGenerateTaylorCW()
-LALSimulateCoherentGW()
+LALPulsarSimulateCoherentGW()
 LALMalloc()
 LALSCreateVector()
 LALSDestroyVector()
@@ -165,7 +165,7 @@ LALCheckMemoryLeaks()
 #include <lal/LALConstants.h>
 #include <lal/DetResponse.h>
 #include <lal/DetectorSite.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALBarycenter.h>
@@ -299,8 +299,8 @@ REAL4TimeSeries *timeSeries = NULL;
 
 /* Signal parameters to generate signal at source */
 TaylorCWParamStruc genTayParams;
-CoherentGW cgwOutput;
-DetectorResponse cwDetector;
+PulsarCoherentGW cgwOutput;
+PulsarDetectorResponse cwDetector;
 
 /*This will hold the SFT*/
 COMPLEX8Vector *fvec = NULL;
@@ -466,7 +466,7 @@ int main(int argc,char *argv[]) {
   SSBfirst        == SSB time corresponding to first output sample
   */
 
-  memset(&cgwOutput, 0, sizeof(CoherentGW));
+  memset(&cgwOutput, 0, sizeof(PulsarCoherentGW));
   memset(&spinorbit, 0, sizeof(spinorbit));
 
   /* The GENERATE routines work entirely in Barycentric Time. This is
@@ -564,7 +564,7 @@ int main(int argc,char *argv[]) {
     printclock("Starting simulate coherent");
 
     /* produce a time series simulation of a CW signal */
-    SUB( LALSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
+    SUB( LALPulsarSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
 
     if (lalDebugLevel >= 3)
       {
@@ -887,7 +887,7 @@ int prepare_baryinput(LALStatus* status){
 /* prepares cwDetector */
 int prepare_cwDetector(LALStatus* status){
 
-  memset(&cwDetector, 0, sizeof(DetectorResponse));
+  memset(&cwDetector, 0, sizeof(PulsarDetectorResponse));
   /* The ephemerides */
   cwDetector.ephemerides = edat;
   /* Specifying the detector site (set above) */

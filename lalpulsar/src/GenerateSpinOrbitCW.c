@@ -23,7 +23,7 @@
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
@@ -41,7 +41,7 @@ static LALStatus empty_LALStatus;
  * as a reminder for future XLAL-ification at the same time.
  */
 int
-XLALGenerateSpinOrbitCW ( CoherentGW *sourceSignal,		///< [out] output signal
+XLALGenerateSpinOrbitCW ( PulsarCoherentGW *sourceSignal,		///< [out] output signal
                           SpinOrbitCWParamStruc *sourceParams	///< [in] input parameters
                           )
 {
@@ -135,7 +135,7 @@ same functional dependence on \f$t\f$ for either \f$i=1\f$ or~2.
 */
 void
 LALGenerateSpinOrbitCW( LALStatus             *stat,
-			CoherentGW            *output,
+			PulsarCoherentGW            *output,
 			SpinOrbitCWParamStruc *params )
 {
 

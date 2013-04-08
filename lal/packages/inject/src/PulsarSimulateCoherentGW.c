@@ -513,42 +513,9 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     }
   }
 
-  /* Compute delay from Earth centre. */
-  else if ( detector->site ) {
-    LIGOTimeGPS gpsTime;     /* detector time when we compute delay */
-
-    LALInfo( stat, "Ephemeris field absent; computing propagation"
-             " delays from Earth centre" );
-
-    /* Arrange nested pointers, and set initial values. */
-    gpsTime = output->epoch;
-    gpsTime.gpsSeconds -= dtDelayBy2;
-    delayMin = delayMax = LAL_REARTH_SI / ( LAL_C_SI*output->deltaT );
-    delayMin *= -1;
-
-    /* Compute table. */
-    for ( i = 0; i < nMax; i++ ) {
-      REAL8 tDelay; /* propagation time */
-      tDelay = XLALTimeDelayFromEarthCenter( detector->site->location, source.longitude, source.latitude, &gpsTime );
-      BEGINFAIL( stat )
-        TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      ENDFAIL( stat );
-      /* TimeDelayFromEarthCenter() measures propagation delay from
-         geocentre to detector, which is the opposite of what we want.
-         We also want it normalized. */
-      tDelay /= -output->deltaT;
-      delayData[i] = tDelay;
-      if ( tDelay < delayMin )
-        delayMin = tDelay;
-      if ( tDelay > delayMax )
-        delayMax = tDelay;
-      gpsTime.gpsSeconds += 2*dtDelayBy2;
-    }
-  }
-
   /* No information from which to compute delays. */
   else {
-    LALInfo( stat, "Detector site absent; simulating hplus with no"
+    LALInfo( stat, "Detector site and ephemerides absent; simulating hplus with no"
              " propagation delays" );
     memset( delayData, 0, nMax*sizeof(REAL8) );
     delayMin = delayMax = 0.0;

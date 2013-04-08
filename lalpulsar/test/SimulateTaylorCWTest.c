@@ -132,7 +132,7 @@ interpolation of the waveforms will give phases accurate to well
 within a radian.
 
 The output from <tt>LALGenerateTaylorCW()</tt> is then passed to
-<tt>LALSimulateCoherentGW()</tt> to generate an output time series.  If
+<tt>LALPulsarSimulateCoherentGW()</tt> to generate an output time series.  If
 there are multiple lines in \c sourcefile, the procedure is
 repeated and the new waveforms added into the output.  A warning is
 generated if the wave frequency exceeds the Nyquist rate for the
@@ -175,7 +175,7 @@ output time series.
 #include <lal/VectorOps.h>
 #include <lal/DetectorSite.h>
 #include <lal/Units.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
@@ -304,7 +304,7 @@ main(int argc, char **argv)
   /* Other variables. */
   UINT4 i, j;                /* generic indecies */
   INT8 tStart, tStop;        /* start and stop times for waveform */
-  DetectorResponse detector; /* the detector in question */
+  PulsarDetectorResponse detector; /* the detector in question */
   REAL4TimeSeries output;    /* detector output */
 
   lalDebugLevel = 0;
@@ -447,7 +447,7 @@ main(int argc, char **argv)
 
 
   /* Set up detector structure. */
-  memset( &detector, 0, sizeof(DetectorResponse) );
+  memset( &detector, 0, sizeof(PulsarDetectorResponse) );
   detector.transfer = (COMPLEX8FrequencySeries *)
     LALMalloc( sizeof(COMPLEX8FrequencySeries) );
   if ( !(detector.transfer) ) {
@@ -594,12 +594,12 @@ main(int argc, char **argv)
   /* For each line in the sourcefile... */
   while ( ok ) {
     TaylorCWParamStruc params; /* wave generation parameters */
-    CoherentGW waveform;       /* amplitude and phase structure */
+    PulsarCoherentGW waveform;       /* amplitude and phase structure */
     REAL4TimeSeries signalvec;    /* GW signal */
     CHAR message[MSGLEN];      /* warning/info messages */
 
     /* Initialize output structures. */
-    memset( &waveform, 0, sizeof(CoherentGW) );
+    memset( &waveform, 0, sizeof(PulsarCoherentGW) );
     signalvec = output;
     signalvec.data = NULL;
 
@@ -702,7 +702,7 @@ main(int argc, char **argv)
         WARNING( message );
       }
       SUB( LALSCreateVector( &stat, &(signalvec.data), npt ), &stat );
-      SUB( LALSimulateCoherentGW( &stat, &signalvec, &waveform,
+      SUB( LALPulsarSimulateCoherentGW( &stat, &signalvec, &waveform,
 				  &detector ), &stat );
       if ( params.f )
 	SUB( LALDDestroyVector( &stat, &(params.f) ), &stat );

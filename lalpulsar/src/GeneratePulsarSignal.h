@@ -77,7 +77,7 @@ extern "C" {
  *
  * LALGeneratePulsarSignal() is basically a wrapper for the two
  * LAL-functions GenerateSpinOrbitCW() to produce the source-signal,
- * and LALSimulateCoherentGW() to turn it into a time-series at the detector.
+ * and LALPulsarSimulateCoherentGW() to turn it into a time-series at the detector.
  *
  * LALSignalToSFTs() uses LALForwardRealFFT() appropriately on the input-timeseries to
  * produce the required output-SFTs ( v2-normalization! ).
@@ -295,8 +295,8 @@ typedef struct tagPulsarSignalParams {
   UINT4 duration;           	/**< length of time series in seconds */
   REAL8 samplingRate;		/**< sampling rate of time-series (= 2 * frequency-Band) */
   REAL8 fHeterodyne;		/**< heterodyning frequency for output time-series */
-  UINT4 dtDelayBy2; 		/**< half-interval for the Doppler delay look-up table for LALSimulateCoherentGW() */
-  UINT4 dtPolBy2; 		/**< half-interval for the polarisation response look-up table for LALSimulateCoherentGW() */
+  UINT4 dtDelayBy2; 		/**< half-interval for the Doppler delay look-up table for LALPulsarSimulateCoherentGW() */
+  UINT4 dtPolBy2; 		/**< half-interval for the polarisation response look-up table for LALPulsarSimulateCoherentGW() */
 } PulsarSignalParams;
 
 /** Parameters defining the SFTs to be returned from LALSignalToSFTs().
