@@ -1585,8 +1585,8 @@ InitUserVars (LALStatus *status)
   LALregREALUserVar(status,   tukeyBeta,	 0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
 
   /* pulsar params */
-  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (if 0: use startTime)");
-  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD (if 0: use startTime)");
+  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (default: use startTime)");
+  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD (default: use startTime)");
 
   LALregREALUserVar(status,   Alpha,	 	 0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
   LALregSTRINGUserVar(status, RA,	 	 0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
