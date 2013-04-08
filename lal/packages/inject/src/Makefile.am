@@ -7,5 +7,6 @@ libinject_la_SOURCES = \
 	InjectTimeSeries.c \
 	InjectVector.c \
 	SimulateCoherentGW.c \
+	PulsarSimulateCoherentGW.c \
 	SkyCoordinates.c \
 	TerrestrialCoordinates.c

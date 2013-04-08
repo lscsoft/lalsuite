@@ -1,6 +1,7 @@
 pkginclude_HEADERS = \
 	Inject.h \
 	SimulateCoherentGW.h \
+	PulsarSimulateCoherentGW.h \
 	SkyCoordinates.h
 
 all-local: include-link
