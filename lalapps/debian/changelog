@@ -1,3 +1,9 @@
+lalapps (6.12.0-2) unstable; urgency=low
+
+  * LALApps 6.12.0 rebuild with debian/dirs and debian/install
+
+ -- Steffen Grunewald <steffen.grunewald@ligo.org>  Tue, 09 Apr 2013 14:45:00 +0200
+
 lalapps (6.12.0-1) unstable; urgency=low
 
   * LALApps 6.12.0
