@@ -871,9 +871,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     LALInferenceRemoveLinesKS(IFOdata[i].oneSidedNoisePowerSpectrum,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan,pvalues);
                     printf("completed!\n");
 
-                    int reclen = PSDtimeSeries->data->length;
-                    float numseg = 1 + (reclen - seglen)/seglen;
-
                     const UINT4 nameLength=256;
                     char filename[nameLength];
                     FILE *out;
