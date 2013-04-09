@@ -941,7 +941,6 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(ppt) nscale_block = atoi(ppt->value);
   else nscale_block = 8;
 
-
   //First, figure out sizes of dataset to set up noise blocks
   UINT4 nifo; //number of data channels
   UINT4 imin; //minimum Fourier bin for integration in IFO
@@ -983,6 +982,115 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     nifo++;
   }
 
+
+  int j;
+  UINT4 nscale_block_temp   = 10000;
+  gsl_matrix *bands_min_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
+  gsl_matrix *bands_max_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
+
+  for (i = 0; i < nifo; i ++) {
+     for (j = 0; j < nscale_block_temp; j++)
+        {
+          gsl_matrix_set(bands_min_temp,i,j,-1.0);
+          gsl_matrix_set(bands_max_temp,i,j,-1.0);
+        }
+  }
+
+
+  ppt = LALInferenceGetProcParamVal(commandLine, "--psdFitText");
+  if(ppt)  // Load in values from file if requested
+  {
+
+      char line [ 128 ];
+      char *bands_tempfile = ppt->value;
+      printf("Reading bands_temp from %s\n",bands_tempfile);
+
+      UINT4 nscale_block = 0;
+      char * pch;
+      UINT4 band_min, band_max;
+      j = 0;
+
+      FILE *file = fopen ( bands_tempfile, "r" );
+      if ( file != NULL )
+      {
+          while ( fgets ( line, sizeof line, file ) != NULL )
+          {
+              pch = strtok (line," ");
+              int count = 0;
+              while (pch != NULL)
+              {
+                  if (count==0) {band_min = atoi(pch);}
+                  if (count==1) {band_max = atoi(pch);}
+                  pch = strtok (NULL, " ");
+                  count++;
+              }
+
+              for (i = 0; i < nifo; i ++) {
+
+                gsl_matrix_set(bands_min_temp,i,j,band_min/df);
+                gsl_matrix_set(bands_max_temp,i,j,band_max/df);
+
+              }
+ 
+              nscale_block++;
+              j++;
+
+          }
+      fclose ( file );
+      }
+
+      else
+      {
+          perror ( bands_tempfile ); /* why didn't the file open? */
+      }
+
+
+  }
+  else // Otherwise use defaults
+  {
+
+    nscale_bin   = (f_max+1-f_min)/nscale_block;
+    nscale_dflog = log( (double)(f_max+1)/(double)f_min )/(double)nscale_block;
+
+    //nscale_bin   = (f_max+1)/nscale_block;
+    //nscale_dflog = log( (double)(f_max+1) )/(double)nscale_block;
+
+    int freq_min, freq_max;
+
+    for (i = 0; i < nifo; i++)
+    {
+      for (j = 0; j < nscale_block; j++)
+      {
+
+        freq_min = (int) exp(log((double)f_min ) + nscale_dflog*(j-1));
+        freq_max = (int) exp(log((double)f_min ) + nscale_dflog*j);
+
+        //freq_min = (int) exp(1 + nscale_dflog*(j-1));
+        //freq_max = (int) exp(1 + nscale_dflog*j);
+        
+        gsl_matrix_set(bands_min_temp,i,j,freq_min);
+        gsl_matrix_set(bands_max_temp,i,j,freq_max);
+      }
+    }
+
+  }
+
+    gsl_matrix *bands_min      = gsl_matrix_alloc(nifo,nscale_block);
+    gsl_matrix *bands_max      = gsl_matrix_alloc(nifo,nscale_block);
+
+    for (i = 0; i < nifo; i++)
+    {
+      for (j = 0; j < nscale_block; j++)
+      {
+        gsl_matrix_set(bands_min,i,j,gsl_matrix_get(bands_min_temp,i,j));
+        gsl_matrix_set(bands_max,i,j,gsl_matrix_get(bands_max_temp,i,j));
+
+        //printf("%f %f\n",gsl_matrix_get(bands_min_temp,i,j),gsl_matrix_get(bands_max_temp,i,j));
+
+      }
+    }
+
+
   ppt = LALInferenceGetProcParamVal(commandLine, "--psdFit");
   if(ppt)//MARK: Here is where noise PSD parameters are being added to the model
   {
@@ -1002,6 +1110,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     {
       nscale_prior->data[i] = 1.0/sqrt( f_min*exp( (double)(i+1)*nscale_dflog ) );
       nscale_sigma->data[i] = nscale_prior->data[i]/sqrt((double)(nifo*nscale_block));
+
     }
 
     gsl_matrix *nscale = gsl_matrix_alloc(nifo,nscale_block);
@@ -1012,7 +1121,11 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
 
     LALInferenceAddVariable(currentParams, "psdscale", &nscale, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(currentParams, "psdstore", &nstore, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+
     LALInferenceAddVariable(currentParams, "logdeltaf", &nscale_dflog, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
+    LALInferenceAddVariable(currentParams, "psdBandsMin", &bands_min, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(currentParams, "psdBandsMax", &bands_max, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
 
     //Set up noise priors
     LALInferenceAddVariable(priorArgs,      "psddim",   &nscale_dim,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
@@ -1024,6 +1137,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(state->proposalArgs, "psdbin",   &nscale_bin,   LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(state->proposalArgs, "psdsigma", &nscale_sigma, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
+
   }//End of noise model initialization
   LALInferenceAddVariable(currentParams, "psdScaleFlag", &nscale_flag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
@@ -1034,67 +1148,142 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
 
   /********************* TBL: Adding line-removal parameters  *********************/
   UINT4 lines_flag  = 0;   //flag tells likelihood if line-removal is turned on
-  UINT4 lines_num   = 10;   //number of lines to remove
 
+  #define max(x, y) (((x) > (y)) ? (x) : (y))
   ppt = LALInferenceGetProcParamVal(commandLine, "--removeLines");
-  
+
   if(ppt)//MARK: Here is where noise line removal parameters are being added to the model
   {
     lines_flag = 1;
     dataPtr = state->data;
-    gsl_matrix *lines      = gsl_matrix_alloc(nifo,lines_num);
-    gsl_matrix *linewidth  = gsl_matrix_alloc(nifo,lines_num);
+    UINT4 lines_num_temp   = 10000;
+    UINT4 lines_num_ifo;
+    UINT4 lines_num = 0;
+    gsl_matrix *lines_temp      = gsl_matrix_alloc(nifo,lines_num_temp);
+    gsl_matrix *linewidth_temp  = gsl_matrix_alloc(nifo,lines_num_temp);
+
+    int j;
     i=0;
     while (dataPtr != NULL)
     {
+
+      for (j = 0; j < lines_num_temp; j++)
+      {
+        gsl_matrix_set(lines_temp,i,j,-1.0);
+        gsl_matrix_set(linewidth_temp,i,j,1.0);
+      }
+
       printf("ifo=%i  %s\n",i,dataPtr->name);fflush(stdout);
-      //top lines_num lines for each interferometer, and widths
-      if(!strcmp(dataPtr->name,"H1"))
+
+      char ifoRemoveLines[500];
+      snprintf (ifoRemoveLines,500, "--%s-removeLines",dataPtr->name);
+
+      ppt = LALInferenceGetProcParamVal(commandLine,ifoRemoveLines);
+      if(ppt || LALInferenceGetProcParamVal(commandLine, "--chisquaredlines") || LALInferenceGetProcParamVal(commandLine, "--KSlines"))
+      /* Load in values from file if requested */
       {
-        gsl_matrix_set(lines,i,0,35.0/df);   gsl_matrix_set(linewidth,i,0,3.0/df);
-        gsl_matrix_set(lines,i,1,45.0/df);   gsl_matrix_set(linewidth,i,1,1.5/df);
-        gsl_matrix_set(lines,i,2,51.0/df);   gsl_matrix_set(linewidth,i,2,2.5/df);
-        gsl_matrix_set(lines,i,3,60.0/df);   gsl_matrix_set(linewidth,i,3,3.0/df);
-        gsl_matrix_set(lines,i,4,72.0/df);   gsl_matrix_set(linewidth,i,4,3.0/df);
-        gsl_matrix_set(lines,i,5,87.0/df);   gsl_matrix_set(linewidth,i,5,0.5/df);
-        gsl_matrix_set(lines,i,6,108.0/df);  gsl_matrix_set(linewidth,i,6,0.5/df);
-        gsl_matrix_set(lines,i,7,117.0/df);  gsl_matrix_set(linewidth,i,7,0.5/df);
-        gsl_matrix_set(lines,i,8,122.0/df);  gsl_matrix_set(linewidth,i,8,5.0/df);
-        gsl_matrix_set(lines,i,9,180.0/df);  gsl_matrix_set(linewidth,i,9,2.0/df);
+        char line [ 128 ];
+        char lines_tempfile[500];
+
+        if (LALInferenceGetProcParamVal(commandLine, "--chisquaredlines")) {
+             snprintf (lines_tempfile,500, "%s-ChiSquaredLines.dat",dataPtr->name);
+        }
+        else if (LALInferenceGetProcParamVal(commandLine, "--KSlines")) {
+             snprintf (lines_tempfile,500, "%s-KSLines.dat",dataPtr->name);
+        }
+        else {
+             char *lines_tempfile_temp = ppt->value;
+             strcpy( lines_tempfile, lines_tempfile_temp );
+        }
+        printf("Reading lines_temp from %s\n",lines_tempfile);
+
+        j = 0;
+        double freqline;
+        lines_num_ifo = 0;
+        FILE *file = fopen ( lines_tempfile, "r" );
+        if ( file != NULL )
+        {
+          while ( fgets ( line, sizeof line, file ) != NULL )
+          {
+
+            freqline = atof(line);
+            gsl_matrix_set(lines_temp,i,j,freqline/df);
+            gsl_matrix_set(linewidth_temp,i,j,1.0);
+            j++;
+            lines_num_ifo++;
+          }
+          fclose ( file );
+        }
+
       }
 
-      if(!strcmp(dataPtr->name,"L1"))
-      {
-        gsl_matrix_set(lines,i,0,35.0/df);   gsl_matrix_set(linewidth,i,0,3.0/df);
-        gsl_matrix_set(lines,i,1,60.0/df);   gsl_matrix_set(linewidth,i,1,4.0/df);
-        gsl_matrix_set(lines,i,2,69.0/df);   gsl_matrix_set(linewidth,i,2,2.5/df);
-        gsl_matrix_set(lines,i,3,106.4/df);  gsl_matrix_set(linewidth,i,3,0.8/df);
-        gsl_matrix_set(lines,i,4,113.0/df);  gsl_matrix_set(linewidth,i,4,1.5/df);
-        gsl_matrix_set(lines,i,5,120.0/df);  gsl_matrix_set(linewidth,i,5,2.5/df);
-        gsl_matrix_set(lines,i,6,128.0/df);  gsl_matrix_set(linewidth,i,6,3.5/df);
-        gsl_matrix_set(lines,i,7,143.0/df);  gsl_matrix_set(linewidth,i,7,1.0/df);
-        gsl_matrix_set(lines,i,8,180.0/df);  gsl_matrix_set(linewidth,i,8,2.5/df);
-        gsl_matrix_set(lines,i,9,191.5/df);  gsl_matrix_set(linewidth,i,9,4.0/df);
-      }
 
-      if(!strcmp(dataPtr->name,"V1"))
+      else // Otherwise use defaults
       {
-        gsl_matrix_set(lines,i,0,35.0/df);   gsl_matrix_set(linewidth,i,0,3.0/df);
-        gsl_matrix_set(lines,i,1,60.0/df);   gsl_matrix_set(linewidth,i,1,4.0/df);
-        gsl_matrix_set(lines,i,2,69.0/df);   gsl_matrix_set(linewidth,i,2,2.5/df);
-        gsl_matrix_set(lines,i,3,106.4/df);  gsl_matrix_set(linewidth,i,3,0.8/df);
-        gsl_matrix_set(lines,i,4,113.0/df);  gsl_matrix_set(linewidth,i,4,1.5/df);
-        gsl_matrix_set(lines,i,5,120.0/df);  gsl_matrix_set(linewidth,i,5,2.5/df);
-        gsl_matrix_set(lines,i,6,128.0/df);  gsl_matrix_set(linewidth,i,6,3.5/df);
-        gsl_matrix_set(lines,i,7,143.0/df);  gsl_matrix_set(linewidth,i,7,1.0/df);
-        gsl_matrix_set(lines,i,8,180.0/df);  gsl_matrix_set(linewidth,i,8,2.5/df);
-        gsl_matrix_set(lines,i,9,191.5/df);  gsl_matrix_set(linewidth,i,9,4.0/df);
+        lines_num_ifo = 10;
+        /* top lines_temp_num lines_temp for each interferometer, and widths */
+        if(!strcmp(dataPtr->name,"H1"))
+        {
+          gsl_matrix_set(lines_temp,i,0,35.0/df);   gsl_matrix_set(linewidth_temp,i,0,3.0/df);
+          gsl_matrix_set(lines_temp,i,1,45.0/df);   gsl_matrix_set(linewidth_temp,i,1,1.5/df);
+          gsl_matrix_set(lines_temp,i,2,51.0/df);   gsl_matrix_set(linewidth_temp,i,2,2.5/df);
+          gsl_matrix_set(lines_temp,i,3,60.0/df);   gsl_matrix_set(linewidth_temp,i,3,3.0/df);
+          gsl_matrix_set(lines_temp,i,4,72.0/df);   gsl_matrix_set(linewidth_temp,i,4,3.0/df);
+          gsl_matrix_set(lines_temp,i,5,87.0/df);   gsl_matrix_set(linewidth_temp,i,5,0.5/df);
+          gsl_matrix_set(lines_temp,i,6,108.0/df);  gsl_matrix_set(linewidth_temp,i,6,0.5/df);
+          gsl_matrix_set(lines_temp,i,7,117.0/df);  gsl_matrix_set(linewidth_temp,i,7,0.5/df);
+          gsl_matrix_set(lines_temp,i,8,122.0/df);  gsl_matrix_set(linewidth_temp,i,8,5.0/df);
+          gsl_matrix_set(lines_temp,i,9,180.0/df);  gsl_matrix_set(linewidth_temp,i,9,2.0/df);
+        }
+
+        if(!strcmp(dataPtr->name,"L1"))
+        {
+          gsl_matrix_set(lines_temp,i,0,35.0/df);   gsl_matrix_set(linewidth_temp,i,0,3.0/df);
+          gsl_matrix_set(lines_temp,i,1,60.0/df);   gsl_matrix_set(linewidth_temp,i,1,4.0/df);
+          gsl_matrix_set(lines_temp,i,2,69.0/df);   gsl_matrix_set(linewidth_temp,i,2,2.5/df);
+          gsl_matrix_set(lines_temp,i,3,106.4/df);  gsl_matrix_set(linewidth_temp,i,3,0.8/df);
+          gsl_matrix_set(lines_temp,i,4,113.0/df);  gsl_matrix_set(linewidth_temp,i,4,1.5/df);
+          gsl_matrix_set(lines_temp,i,5,120.0/df);  gsl_matrix_set(linewidth_temp,i,5,2.5/df);
+          gsl_matrix_set(lines_temp,i,6,128.0/df);  gsl_matrix_set(linewidth_temp,i,6,3.5/df);
+          gsl_matrix_set(lines_temp,i,7,143.0/df);  gsl_matrix_set(linewidth_temp,i,7,1.0/df);
+          gsl_matrix_set(lines_temp,i,8,180.0/df);  gsl_matrix_set(linewidth_temp,i,8,2.5/df);
+          gsl_matrix_set(lines_temp,i,9,191.5/df);  gsl_matrix_set(linewidth_temp,i,9,4.0/df);
+        }
+
+        if(!strcmp(dataPtr->name,"V1"))
+        {
+          gsl_matrix_set(lines_temp,i,0,35.0/df);   gsl_matrix_set(linewidth_temp,i,0,3.0/df);
+          gsl_matrix_set(lines_temp,i,1,60.0/df);   gsl_matrix_set(linewidth_temp,i,1,4.0/df);
+          gsl_matrix_set(lines_temp,i,2,69.0/df);   gsl_matrix_set(linewidth_temp,i,2,2.5/df);
+          gsl_matrix_set(lines_temp,i,3,106.4/df);  gsl_matrix_set(linewidth_temp,i,3,0.8/df);
+          gsl_matrix_set(lines_temp,i,4,113.0/df);  gsl_matrix_set(linewidth_temp,i,4,1.5/df);
+          gsl_matrix_set(lines_temp,i,5,120.0/df);  gsl_matrix_set(linewidth_temp,i,5,2.5/df);
+          gsl_matrix_set(lines_temp,i,6,128.0/df);  gsl_matrix_set(linewidth_temp,i,6,3.5/df);
+          gsl_matrix_set(lines_temp,i,7,143.0/df);  gsl_matrix_set(linewidth_temp,i,7,1.0/df);
+          gsl_matrix_set(lines_temp,i,8,180.0/df);  gsl_matrix_set(linewidth_temp,i,8,2.5/df);
+          gsl_matrix_set(lines_temp,i,9,191.5/df);  gsl_matrix_set(linewidth_temp,i,9,4.0/df);
+        }
       }
       dataPtr = dataPtr->next;
       i++;
+
+      lines_num = max(lines_num,lines_num_ifo);
+
     }
 
-    //Add line matrices to variable lists
+    gsl_matrix *lines      = gsl_matrix_alloc(nifo,lines_num);
+    gsl_matrix *linewidth  = gsl_matrix_alloc(nifo,lines_num);
+
+    for (i = 0; i < nifo; i++)
+    {
+      for (j = 0; j < lines_num; j++)
+      {
+        gsl_matrix_set(lines,i,j,gsl_matrix_get(lines_temp,i,j));
+        gsl_matrix_set(linewidth,i,j,gsl_matrix_get(linewidth_temp,i,j));
+      }
+    }
+
+    /* Add line matrices to variable lists */
     LALInferenceAddVariable(currentParams, "line_center", &lines,     LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(currentParams, "line_width",  &linewidth, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
 

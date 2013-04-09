@@ -75,6 +75,8 @@
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALSimNoise.h>
+#include <LALInferenceRemoveLines.h>
+
 struct fvec {
 	REAL8 f;
 	REAL8 x;
@@ -822,6 +824,77 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);
                 else
                     XLALREAL8AverageSpectrumMedian(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
+
+                if (LALInferenceGetProcParamVal(commandLine, "--chisquaredlines")){
+
+                    double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
+                    int lengthF = IFOdata[i].oneSidedNoisePowerSpectrum->data->length;
+
+                    REAL8 *pvalues;
+                    pvalues = XLALMalloc( lengthF * sizeof( *pvalues ) );
+
+                    printf("Running chi-squared tests... ");
+                    LALInferenceRemoveLinesChiSquared(IFOdata[i].oneSidedNoisePowerSpectrum,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan,pvalues);
+                    printf("completed!\n");
+
+                    const UINT4 nameLength=256;
+                    char filename[nameLength];
+                    FILE *out;
+
+                    snprintf(filename, nameLength, "%s-ChiSquaredLines.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        if (pvalues[k] < 0.05) {
+                            fprintf(out,"%g\n",((double) k) * deltaF);
+                        }
+                    }
+                    fclose(out);
+
+                    snprintf(filename, nameLength, "%s-ChiSquaredLines-pvalues.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        fprintf(out,"%g %g\n",((double) k) * deltaF,pvalues[k]);
+                    }
+                    fclose(out);
+
+                }
+
+                if (LALInferenceGetProcParamVal(commandLine, "--KSlines")){
+
+                    double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
+                    int lengthF = IFOdata[i].oneSidedNoisePowerSpectrum->data->length;
+
+                    REAL8 *pvalues;
+                    pvalues = XLALMalloc( lengthF * sizeof( *pvalues ) );
+
+                    printf("Running KS tests... ");
+                    LALInferenceRemoveLinesKS(IFOdata[i].oneSidedNoisePowerSpectrum,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan,pvalues);
+                    printf("completed!\n");
+
+                    int reclen = PSDtimeSeries->data->length;
+                    float numseg = 1 + (reclen - seglen)/seglen;
+
+                    const UINT4 nameLength=256;
+                    char filename[nameLength];
+                    FILE *out;
+
+                    snprintf(filename, nameLength, "%s-KSLines.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        if (pvalues[k] < 0.05) {
+                            fprintf(out,"%g\n",((double) k) * deltaF);
+                        }
+                    }
+                    fclose(out);
+
+                    snprintf(filename, nameLength, "%s-KSLines-pvalues.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        fprintf(out,"%g %g\n",((double) k) * deltaF,pvalues[k]);
+                    }
+                    fclose(out);
+
+                }
 
                 XLALDestroyREAL8TimeSeries(PSDtimeSeries);
             }

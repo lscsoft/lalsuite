@@ -166,6 +166,10 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
   gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
   gsl_matrix *nparams = NULL;//pointer to matrix holding noise parameters
+
+  gsl_matrix *psdBandsMin  = NULL;//pointer to matrix holding min frequencies for psd model
+  gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
+
   double dflog=1.0;        //logarithmic spacing of psd parameters
 
   int Nblock = 1;            //number of frequency blocks per IFO
@@ -197,10 +201,18 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
     Nblock = (int)nparams->size2;
 
     dflog = *(REAL8*) LALInferenceGetVariable(currentParams, "logdeltaf");
+
+    psdBandsMin = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMin"));
+    psdBandsMax = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMax"));
+
   }
   double alpha[Nblock];
   double lnalpha[Nblock];
 
+  double psdBandsMin_array[Nblock];
+  double psdBandsMax_array[Nblock];
+
+  double psdBandsMin_array_val, psdBandsMax_array_val;
 
   chisquared = 0.0;
   /* loop over data (different interferometers): */
@@ -233,6 +245,10 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
       {
         alpha[i]   = gsl_matrix_get(nparams,ifo,i);
         lnalpha[i] = log(alpha[i]);
+
+        psdBandsMin_array[i] = gsl_matrix_get(psdBandsMin,ifo,i);
+        psdBandsMax_array[i] = gsl_matrix_get(psdBandsMax,ifo,i);
+
       }
       else
       {
@@ -274,9 +290,14 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
       /* Add noise PSD parameters to the model */
       if(psdFlag)
       {
-        n = (int)( log( (double)i/(double)lower )/dflog );
-        temp  /= alpha[n];
-        temp  += lnalpha[n];
+        for(j=0; j<Nblock; j++)
+        {
+            if (i >= psdBandsMin_array[j] && i <= psdBandsMax_array[j])
+            {
+                temp  /= alpha[j];
+                temp  += lnalpha[j];
+            }
+        }
       }
 
       /* Remove lines from model */
@@ -354,6 +375,10 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
   gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
   gsl_matrix *nparams = NULL;//pointer to matrix holding noise parameters
+
+  gsl_matrix *psdBandsMin  = NULL;//pointer to matrix holding min frequencies for psd model
+  gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
+
   double dflog = 1.0;        //logarithmic spacing of psd parameters
   
   int Nblock = 1;            //number of frequency blocks per IFO
@@ -387,9 +412,18 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
     Nblock = (int)nparams->size2;
 
     dflog = *(REAL8*) LALInferenceGetVariable(currentParams, "logdeltaf");
+
+    psdBandsMin = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMin"));
+    psdBandsMax = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMax"));
+
   }
   double alpha[Nblock];
   double lnalpha[Nblock];
+
+  double psdBandsMin_array[Nblock];
+  double psdBandsMax_array[Nblock];
+
+  double psdBandsMin_array_val, psdBandsMax_array_val;
 
   logDistFlag=LALInferenceCheckVariable(currentParams, "logdistance");
   if(LALInferenceCheckVariable(currentParams,"logmc")){
@@ -551,6 +585,10 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       {
         alpha[i]   = gsl_matrix_get(nparams,ifo,i);
         lnalpha[i] = log(alpha[i]);
+
+        psdBandsMin_array[i] = gsl_matrix_get(psdBandsMin,ifo,i);
+        psdBandsMax_array[i] = gsl_matrix_get(psdBandsMax,ifo,i);
+
       }
       else
       {
@@ -599,9 +637,14 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       /* Add noise PSD parameters to the model */
       if(psdFlag)
       {
-        n = (int)( log( (double)i/(double)lower )/dflog );
-        temp  /= alpha[n];
-        temp  += lnalpha[n];
+        for(j=0; j<Nblock; j++)
+        {
+            if (i >= psdBandsMin_array[j] && i <= psdBandsMax_array[j])
+            {
+                temp  /= alpha[j];
+                temp  += lnalpha[j];
+            }
+        }
       }
 
       /* Remove lines from model */
