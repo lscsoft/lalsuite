@@ -5,6 +5,14 @@ PRAGMA temp_store = MEMORY;
 -- PRAGMA temp_store_directory = '/tmp';
 
 --
+-- Get rid of segment tables cause we will add them back later
+--
+
+DROP TABLE IF EXISTS segment;
+DROP TABLE IF EXISTS segment_definer;
+DROP TABLE IF EXISTS segment_summary;
+
+--
 -- coinc_definer clean up
 --
 
