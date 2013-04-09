@@ -75,7 +75,6 @@ file.
 #include <string.h>
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/GenerateInspiral.h>
 #include <lal/VectorOps.h>
 #include <lal/SeqFactories.h>
@@ -193,8 +192,7 @@ int main(int UNUSED argc, char **argv)
 
   /* --- the psd is flat for simplicity --- */
   for( k = 0 ; k< numPoints/2; k++){
-    fs.data->data[k].re = 1;
-    fs.data->data[k].im = 0.;
+    fs.data->data[k] = 1;
   }
   /* --- and time series is zero --- */
   for( k = 0 ; k< numPoints; k++){
