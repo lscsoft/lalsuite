@@ -19,7 +19,6 @@
  *  MA  02111-1307  USA
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALInference.h>
@@ -881,9 +880,9 @@ void LALVariablesTest(void)
   LALInferenceAddVariable(&variables, "small", &numberI4, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
   numberI8 = 256*256*256*64;
   LALInferenceAddVariable(&variables, "large", &numberI8, LALINFERENCE_INT8_t,LALINFERENCE_PARAM_FIXED);
-  numberC8.re = 2.0;  numberC8.im = 3.0;
+  numberC8 = crectf( 2.0, 3.0 );
   LALInferenceAddVariable(&variables, "complex1", &numberC8, LALINFERENCE_COMPLEX8_t,LALINFERENCE_PARAM_FIXED);
-  numberC16.re = 1.23;  numberC16.im = -3.45;
+  numberC16 = crect( 1.23, -3.45 );
   LALInferenceAddVariable(&variables, "complex2", &numberC16, LALINFERENCE_COMPLEX16_t,LALINFERENCE_PARAM_FIXED);
 
   number=*(REAL4 *)LALInferenceGetVariable(&variables,"number");
@@ -897,11 +896,11 @@ void LALVariablesTest(void)
   LALInferencePrintVariables(&variables2);
   fprintf(stdout,"LALInferenceCompareVariables?: %i\n",
           LALInferenceCompareVariables(&variables,&variables2));
-  numberC16.im = 4.56;
+  numberC16 = crect( creal(numberC16), 4.56 );
   LALInferenceSetVariable(&variables2,"complex2",&numberC16);
   fprintf(stdout,"LALInferenceCompareVariables?: %i\n",
           LALInferenceCompareVariables(&variables,&variables2));
-  numberC16.im = -3.45;
+  numberC16 = crect( creal(numberC16), -3.45 );
   LALInferenceSetVariable(&variables2,"complex2",&numberC16);
   fprintf(stdout,"LALInferenceCompareVariables?: %i\n",
           LALInferenceCompareVariables(&variables,&variables2));
@@ -1112,7 +1111,7 @@ void SingleIFOLikelihoodTest(void)
 	for(i=0; i<(int)runstate->data->freqData->data->length; i++){
 		fprintf(freqModelFile, "%g\t %g\t %g\t %g\t %g\t %g\n", 
 		((double)i)*1.0/ (((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT),
-		freqModel1->data[i].re, freqModel1->data[i].im, freqModel2->data[i].re, freqModel2->data[i].im,
+		creal(freqModel1->data[i]), cimag(freqModel1->data[i]), creal(freqModel2->data[i]), cimag(freqModel2->data[i]),
 		runstate->data->oneSidedNoisePowerSpectrum->data->data[i]);
 	}
 	fprintf(stdout, "overlap=%g\n", 
