@@ -157,7 +157,7 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
   double diffRe, diffIm, diffSquared;
   double dataReal, dataImag;
   REAL8 loglikeli;
-  int i, j, lower, upper, ifo, n;
+  int i, j, lower, upper, ifo;
   LALInferenceIFOData *dataPtr;
   double chisquared;
   double deltaT, TwoDeltaToverN, deltaF;
@@ -211,8 +211,6 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
 
   double psdBandsMin_array[Nblock];
   double psdBandsMax_array[Nblock];
-
-  double psdBandsMin_array_val, psdBandsMax_array_val;
 
   chisquared = 0.0;
   /* loop over data (different interferometers): */
@@ -354,7 +352,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   REAL8 loglikeli;
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal, templateImag;
-  int i, j, lower, upper, ifo, n;
+  int i, j, lower, upper, ifo;
   LALInferenceIFOData *dataPtr;
   double ra, dec, psi, distMpc, gmst;
   double GPSdouble;
@@ -422,8 +420,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
   double psdBandsMin_array[Nblock];
   double psdBandsMax_array[Nblock];
-
-  double psdBandsMin_array_val, psdBandsMax_array_val;
 
   logDistFlag=LALInferenceCheckVariable(currentParams, "logdistance");
   if(LALInferenceCheckVariable(currentParams,"logmc")){
