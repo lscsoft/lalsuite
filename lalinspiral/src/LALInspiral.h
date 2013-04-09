@@ -34,7 +34,6 @@
 # include <lal/GeneratePPNInspiral.h>
 # include <lal/LIGOMetadataTables.h>
 # include <lal/LALDatatypes.h>
-# include <lal/LALComplex.h>
 # include <lal/LALSimInspiral.h>
 
 #ifdef  __cplusplus
