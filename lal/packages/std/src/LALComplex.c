@@ -1,3 +1,4 @@
+/** \cond DONT_DOXYGEN */
 /*
  *
  * NOTE: THIS CODE WAS AUTOMATICALLY GENERATED FROM GSL CODE
@@ -1941,3 +1942,4 @@ XLALCOMPLEX8Arccoth (COMPLEX8 a)
   return XLALCOMPLEX8Arctanh (t);
 }
 
+/** \endcond */
