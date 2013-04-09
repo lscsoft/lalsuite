@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 
@@ -777,15 +776,17 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             int j_Lo = (int) IFOdata[i].fLow/IFOdata[i].freqData->deltaF;
             if(LALInferenceGetProcParamVal(commandLine,"--0noise")){
                 for(j=j_Lo;j<IFOdata[i].freqData->data->length;j++){
-                    IFOdata[i].freqData->data->data[j].re=IFOdata[i].freqData->data->data[j].im=0.0;
+                    IFOdata[i].freqData->data->data[j] = 0.0;
                 }
             } else {
                 for(j=j_Lo;j<IFOdata[i].freqData->data->length;j++){
-                    IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF));
-                    IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF));
+                    IFOdata[i].freqData->data->data[j] = crect(
+                      XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF)),
+                      XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF))
+                      );
                 }
             }
-            IFOdata[i].freqData->data->data[0].re=0; 			IFOdata[i].freqData->data->data[0].im=0;
+            IFOdata[i].freqData->data->data[0] = 0;
             const char timename[]="timeData";
             IFOdata[i].timeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries(timename,&segStart,0.0,(REAL8)1.0/SampleRate,&lalDimensionlessUnit,(size_t)seglen);
             if(!IFOdata[i].timeData) XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -929,8 +930,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             XLALREAL8TimeFreqFFT(IFOdata[i].freqData,IFOdata[i].windowedTimeData,IFOdata[i].timeToFreqFFTPlan);
 
             for(j=0;j<IFOdata[i].freqData->data->length;j++){
-                IFOdata[i].freqData->data->data[j].re/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
-                IFOdata[i].freqData->data->data[j].im/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
+                IFOdata[i].freqData->data->data[j] /= sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
                 IFOdata[i].windowedTimeData->data->data[j] /= sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
             }
         } /* End of data reading process */
@@ -1024,8 +1024,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             out = fopen(filename, "w");
             for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
                 REAL8 f = IFOdata[i].freqData->deltaF * j;
-                REAL8 dre = IFOdata[i].freqData->data->data[j].re;
-                REAL8 dim = IFOdata[i].freqData->data->data[j].im;
+                REAL8 dre = creal(IFOdata[i].freqData->data->data[j]);
+                REAL8 dim = cimag(IFOdata[i].freqData->data->data[j]);
 
                 fprintf(out, "%g %g %g\n", f, dre, dim);
             }
@@ -1085,21 +1085,18 @@ static void makeWhiteData(LALInferenceIFOData *IFOdata) {
   UINT4 i;
 
   for (i = 0; i < IFOdata->freqData->data->length; i++) {
-    IFOdata->whiteFreqData->data->data[i].re = IFOdata->freqData->data->data[i].re / IFOdata->oneSidedNoisePowerSpectrum->data->data[i];
-    IFOdata->whiteFreqData->data->data[i].im = IFOdata->freqData->data->data[i].im / IFOdata->oneSidedNoisePowerSpectrum->data->data[i];
+    IFOdata->whiteFreqData->data->data[i] = IFOdata->freqData->data->data[i] / IFOdata->oneSidedNoisePowerSpectrum->data->data[i];
 		
     if (i == 0) {
       /* Cut off the average trend in the data. */
-      IFOdata->whiteFreqData->data->data[i].re = 0.0;
-      IFOdata->whiteFreqData->data->data[i].im = 0.0;
+      IFOdata->whiteFreqData->data->data[i] = 0.0;
     }
     if (i <= iLow) {
       /* Need to taper to implement the fLow cutoff.  Tukey window
 			 that starts at zero, and reaches 100% at fLow. */
       REAL8 weight = 0.5*(1.0 + cos(M_PI*(i-iLow)/iLow)); /* Starts at -Pi, runs to zero at iLow. */
 			
-      IFOdata->whiteFreqData->data->data[i].re *= weight;
-      IFOdata->whiteFreqData->data->data[i].im *= weight;
+      IFOdata->whiteFreqData->data->data[i] *= weight;
 			
       windowSquareSum += weight*weight;
     } else if (i >= iHigh) {
@@ -1110,8 +1107,7 @@ static void makeWhiteData(LALInferenceIFOData *IFOdata) {
       REAL8 NWind = IFOdata->whiteFreqData->data->length - iHigh;
       REAL8 weight = 0.5*(1.0 + cos(M_PI*(i-iHigh)/NWind)); /* Starts at 0, runs to Pi at i = length */
 			
-      IFOdata->whiteFreqData->data->data[i].re *= weight;
-      IFOdata->whiteFreqData->data->data[i].im *= weight;
+      IFOdata->whiteFreqData->data->data[i] *= weight;
 			
       windowSquareSum += weight*weight;
     } else {
@@ -1121,8 +1117,7 @@ static void makeWhiteData(LALInferenceIFOData *IFOdata) {
 	
   REAL8 norm = sqrt(IFOdata->whiteFreqData->data->length / windowSquareSum);
   for (i = 0; i < IFOdata->whiteFreqData->data->length; i++) {
-    IFOdata->whiteFreqData->data->data[i].re *= norm;
-    IFOdata->whiteFreqData->data->data[i].im *= norm;
+    IFOdata->whiteFreqData->data->data[i] *= norm;
   }
 	
   XLALREAL8FreqTimeFFT(IFOdata->whiteTimeData, IFOdata->whiteFreqData, IFOdata->freqToTimeFFTPlan);
@@ -1227,7 +1222,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 																		  &strainPerCount,
 																		  thisData->freqData->data->length);
 		
-		for(i=0;i<resp->data->length;i++) {resp->data->data[i].re=(REAL4)1.0; resp->data->data[i].im=0.0;}
+		for(i=0;i<resp->data->length;i++) {resp->data->data[i] = 1.0;}
 		/* Originally created for injecting into DARM-ERR, so transfer function was needed.  
 		But since we are injecting into h(t), the transfer function from h(t) to h(t) is 1.*/
 
@@ -1408,8 +1403,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     /*for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
     if(thisData->oneSidedNoisePowerSpectrum){
 	for(SNR=0.0,j=thisData->fLow/injF->deltaF;j<thisData->fHigh/injF->deltaF;j++){
-	  SNR+=pow(injF->data->data[j].re,2.0)/thisData->oneSidedNoisePowerSpectrum->data->data[j];
-	  SNR+=pow(injF->data->data[j].im,2.0)/thisData->oneSidedNoisePowerSpectrum->data->data[j];
+	  SNR += pow(creal(injF->data->data[j]), 2.0)/thisData->oneSidedNoisePowerSpectrum->data->data[j];
+	  SNR += pow(cimag(injF->data->data[j]), 2.0)/thisData->oneSidedNoisePowerSpectrum->data->data[j];
 	}
         SNR*=4.0*injF->deltaF;
     }
@@ -1432,9 +1427,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       sprintf(filename,"%s_freqInjection.dat",thisData->name);
       file=fopen(filename, "w");
       for(j=0;j<injF->data->length;j++){   
-	thisData->freqData->data->data[j].re+=injF->data->data[j].re/WinNorm;
-	thisData->freqData->data->data[j].im+=injF->data->data[j].im/WinNorm;
-	fprintf(file, "%lg %lg \t %lg\n", thisData->freqData->deltaF*j, injF->data->data[j].re, injF->data->data[j].im);
+	thisData->freqData->data->data[j] += injF->data->data[j] / WinNorm;
+	fprintf(file, "%lg %lg \t %lg\n", thisData->freqData->deltaF*j, creal(injF->data->data[j]), cimag(injF->data->data[j]));
       }
       fclose(file);
     
@@ -1584,8 +1578,7 @@ LALInferenceLALFindChirpInjectSignals (
   CHECKSTATUSPTR( status );
   for ( k = 0; k < resp->data->length; ++k )
   {
-    unity->data[k].re = 1.0;
-    unity->data[k].im = 0.0;
+    unity->data[k] = 1.0;
   }
 
   LALCCVectorDivide( status->statusPtr, detector.transfer->data, unity,
@@ -2151,10 +2144,10 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
      chisquared = 0.0;
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-      plainTemplateReal = FplusScaled * IFOdata->freqModelhPlus->data->data[i].re  
-                          +  FcrossScaled * IFOdata->freqModelhCross->data->data[i].re;
-      plainTemplateImag = FplusScaled * IFOdata->freqModelhPlus->data->data[i].im  
-                          +  FcrossScaled * IFOdata->freqModelhCross->data->data[i].im;
+      plainTemplateReal = FplusScaled * creal(IFOdata->freqModelhPlus->data->data[i])
+                          +  FcrossScaled * creal(IFOdata->freqModelhCross->data->data[i]);
+      plainTemplateImag = FplusScaled * cimag(IFOdata->freqModelhPlus->data->data[i])
+                          +  FcrossScaled * cimag(IFOdata->freqModelhCross->data->data[i]);
 
       /* do time-shifting...             */
       /* (also un-do 1/deltaT scaling): */
@@ -2167,8 +2160,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
   
   
        //  fprintf(outInj,"%lf %e %e %e %e %e\n",i*deltaF ,dataPtr->freqData->data->data[i].re,dataPtr->freqData->data->data[i].im,templateReal,templateImag,1.0/dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-      dataPtr->freqData->data->data[i].re+=templateReal;
-      dataPtr->freqData->data->data[i].im+=templateImag;
+      dataPtr->freqData->data->data[i] += crect( templateReal, templateImag );
    
       temp = ((2.0/( deltaT*(double) dataPtr->timeData->data->length) * (templateReal*templateReal+templateImag*templateImag)) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
       chisquared  += temp;
