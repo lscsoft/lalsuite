@@ -110,10 +110,10 @@ typedef double complex COMPLEX16;   /**< Double-precision floating-point complex
 
 /* Complex type constructors */
 #if !defined(__cplusplus)
-#define crectf(re, im) (((COMPLEX8)(re))  + _Complex_I*((COMPLEX8)(im)))	/**< Construct a COMPLEX8 from real and imaginary parts */
-#define crect(re, im)  (((COMPLEX16)(re)) + _Complex_I*((COMPLEX16)(im)))	/**< Construct a COMPLEX16 from real and imaginary parts */
-#define cpolarf(r, th) (((COMPLEX8)(r)) * cexpf(crectf(0, th)))			/**< Construct a COMPLEX8 from polar modulus and argument */
-#define cpolar(r, th)  (((COMPLEX16)(r)) * cexp(crect(0, th)))			/**< Construct a COMPLEX16 from polar modulus and argument */
+#define crectf(re, im) (((REAL4)(re)) + _Complex_I*((REAL4)(im)))	/**< Construct a COMPLEX8 from real and imaginary parts */
+#define crect(re, im)  (((REAL8)(re)) + _Complex_I*((REAL8)(im)))	/**< Construct a COMPLEX16 from real and imaginary parts */
+#define cpolarf(r, th) (((REAL4)(r)) * cexpf(crectf(0, th)))		/**< Construct a COMPLEX8 from polar modulus and argument */
+#define cpolar(r, th)  (((REAL8)(r)) * cexp(crect(0, th)))		/**< Construct a COMPLEX16 from polar modulus and argument */
 #endif
 
 #else /* LAL_USE_OLD_COMPLEX_STRUCTS */
