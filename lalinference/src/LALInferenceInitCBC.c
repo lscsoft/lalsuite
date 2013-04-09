@@ -982,11 +982,11 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     nifo++;
   }
 
-
-  int j;
   UINT4 nscale_block_temp   = 10000;
   gsl_matrix *bands_min_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
   gsl_matrix *bands_max_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
+
+  UINT4 j;
 
   for (i = 0; i < nifo; i ++) {
      for (j = 0; j < nscale_block_temp; j++)
@@ -996,7 +996,6 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
         }
   }
 
-
   ppt = LALInferenceGetProcParamVal(commandLine, "--psdFitText");
   if(ppt)  // Load in values from file if requested
   {
@@ -1005,9 +1004,10 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       char *bands_tempfile = ppt->value;
       printf("Reading bands_temp from %s\n",bands_tempfile);
 
-      UINT4 nscale_block = 0;
+      UINT4 band_min = 0, band_max = 0;
+
+      nscale_block = 0;
       char * pch;
-      UINT4 band_min, band_max;
       j = 0;
 
       FILE *file = fopen ( bands_tempfile, "r" );
@@ -1162,7 +1162,6 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     gsl_matrix *lines_temp      = gsl_matrix_alloc(nifo,lines_num_temp);
     gsl_matrix *linewidth_temp  = gsl_matrix_alloc(nifo,lines_num_temp);
 
-    int j;
     i=0;
     while (dataPtr != NULL)
     {

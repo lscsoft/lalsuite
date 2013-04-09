@@ -56,6 +56,8 @@
 
 #define max(a,b) (((a)>(b))?(a):(b))
 
+static void median_cleanup_REAL8( REAL8FrequencySeries *work, UINT4 n );
+
 int LALInferenceRemoveLinesChiSquared(
     REAL8FrequencySeries        *spectrum,
     const REAL8TimeSeries       *tseries,
@@ -138,9 +140,9 @@ int LALInferenceRemoveLinesChiSquared(
     XLAL_ERROR( XLAL_ENOMEM );
   }
 
-  double meanVal, normVal, chisqrVal;
+  double meanVal = 0, normVal = 0;
 
-  int numBins = 100;
+  UINT4 numBins = 100;
   int binIndex;
   float Observed[numBins];
   float Expected[numBins];
@@ -224,13 +226,6 @@ static void median_cleanup_REAL8( REAL8FrequencySeries *work, UINT4 n )
   return;
 }
 
-static int compare_REAL8( const void *p1, const void *p2 )
-{
-  REAL8 x1 = *(const REAL8 *)p1;
-  REAL8 x2 = *(const REAL8 *)p2;
-  return (x1 > x2) - (x1 < x2);
-}
-
 double chisqr(int Dof, double Cv)
 {
     if(Cv < 0 || Dof < 1)
@@ -257,8 +252,7 @@ double chisqr(int Dof, double Cv)
     return (1.0 - PValue);
 }
 
-
-static double igf(double S, double Z)
+double igf(double S, double Z)
 {
     if(Z < 0.0)
     {
@@ -364,9 +358,9 @@ int LALInferenceRemoveLinesKS(
     XLAL_ERROR( XLAL_ENOMEM );
   }
 
-  double meanVal, normVal, chisqrVal;
+  double meanVal = 0, normVal = 0;
 
-  int numBins = 100;
+  UINT4 numBins = 100;
   int binIndex;
   float Observed[numBins];
   float Expected[numBins];

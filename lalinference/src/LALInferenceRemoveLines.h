@@ -10,10 +10,8 @@ int LALInferenceRemoveLinesChiSquared(
     REAL8                       *pvalues
     );
 
-static void median_cleanup_REAL8( REAL8FrequencySeries *work, UINT4 n );
-static int compare_REAL8( const void *p1, const void *p2 );
 double chisqr(int Dof, double Cv);
-static double igf(double S, double Z);
+double igf(double S, double Z);
 double gamma(double N);
 
 int LALInferenceRemoveLinesKS(
