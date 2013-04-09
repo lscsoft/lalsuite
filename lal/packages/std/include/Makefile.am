@@ -7,7 +7,6 @@ EXTRA_DIST = LALConfig.dox \
 pkginclude_HEADERS = \
 	Grid.h \
 	LALAtomicDatatypes.h \
-	LALComplex.h \
 	LALConstants.h \
 	LALDatatypes.h \
 	LALErrno.h \

@@ -3,7 +3,6 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
 noinst_LTLIBRARIES = libstd.la
 libstd_la_SOURCES = \
 	Grid.c \
-	LALComplex.c \
 	LALError.c \
 	LALGSL.c \
 	LALMalloc.c \
