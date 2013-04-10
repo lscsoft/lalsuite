@@ -200,6 +200,7 @@ SERIESTYPE *MSERIES (
 		{
 			arg1->data->data[i] = 0.0;
 		}
+		/* now i = min(start, arg1->data->length) */
 
 		j = 0;
 	} else {
@@ -211,7 +212,7 @@ SERIESTYPE *MSERIES (
 
 	for(; i < arg1->data->length && j < arg2->data->length; i++, j++)
 	{
-		arg1->data->data[i] *= arg2->data->data[i] * unit_ratio;
+		arg1->data->data[i] *= arg2->data->data[j] * unit_ratio;
 	}
 
 	/* zero the last part of arg1 */
