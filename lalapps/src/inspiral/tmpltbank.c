@@ -39,7 +39,6 @@
 #include <regex.h>
 #include <time.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -798,8 +797,7 @@ int main ( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "generating unity response function\n" );
     for( k = 0; k < resp.data->length; ++k )
     {
-      resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-      resp.data->data[k].im = 0.0;
+      resp.data->data[k] = (REAL4) (1.0 / dynRange);
     }
   }
   else
@@ -863,7 +861,7 @@ int main ( int argc, char *argv[] )
 
     if ( vrbflg ) fprintf( stdout, "Values of calibration coefficients \n"
         "alpha = %f, alpha_beta = %f\n",
-        calfacts.alpha.re, calfacts.alphabeta.re );
+        crealf(calfacts.alpha), crealf(calfacts.alphabeta) );
   }
 
   /* write the calibration data to a file */
@@ -893,16 +891,16 @@ int main ( int argc, char *argv[] )
       bankIn.shf.data->length * sizeof(REAL8) );
 
   shf = spec.data->data[cut] *
-    ( resp.data->data[cut].re * resp.data->data[cut].re +
-      resp.data->data[cut].im * resp.data->data[cut].im );
+    ( crealf(resp.data->data[cut]) * crealf(resp.data->data[cut]) +
+      cimagf(resp.data->data[cut]) * cimagf(resp.data->data[cut]) );
   for ( k = 1; k < cut ; ++k )
   {
     bankIn.shf.data->data[k] = shf;
   }
   for ( k = cut; k < bankIn.shf.data->length; ++k )
   {
-    respRe = (REAL8) resp.data->data[k].re;
-    respIm = (REAL8) resp.data->data[k].im;
+    respRe = (REAL8) crealf(resp.data->data[k]);
+    respIm = (REAL8) cimagf(resp.data->data[k]);
     bankIn.shf.data->data[k] = (REAL8) spec.data->data[k] *
       ( respRe * respRe + respIm * respIm );
   }
