@@ -439,9 +439,9 @@ void print_hash_table( GHashTable* tbl, const char* file ){
 	}
 	while( g_hash_table_iter_next( &iter, &key, &val ) ){
 		if( file ){
-			fprintf( outfile, "%s: %lu\n", (char *)key, *(size_t*)val );
+			fprintf( outfile, "%s: %zu\n", (char *)key, *(size_t*)val );
 		} else {
-			printf( "%s: %lu\n", (char *)key, *(size_t*)val );
+			printf( "%s: %zu\n", (char *)key, *(size_t*)val );
 		}
 	}
 	if( outfile ){

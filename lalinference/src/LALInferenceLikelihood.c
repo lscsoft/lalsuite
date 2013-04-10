@@ -170,7 +170,7 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
   gsl_matrix *psdBandsMin  = NULL;//pointer to matrix holding min frequencies for psd model
   gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
 
-  double dflog=1.0;        //logarithmic spacing of psd parameters
+  //double dflog=1.0;        //logarithmic spacing of psd parameters
 
   int Nblock = 1;            //number of frequency blocks per IFO
   int Nlines = 1;            //number of lines to be removed
@@ -200,7 +200,7 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
     nparams = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdscale"));
     Nblock = (int)nparams->size2;
 
-    dflog = *(REAL8*) LALInferenceGetVariable(currentParams, "logdeltaf");
+    //dflog = *(REAL8*) LALInferenceGetVariable(currentParams, "logdeltaf");
 
     psdBandsMin = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMin"));
     psdBandsMax = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMax"));
@@ -377,7 +377,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   gsl_matrix *psdBandsMin  = NULL;//pointer to matrix holding min frequencies for psd model
   gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
 
-  double dflog = 1.0;        //logarithmic spacing of psd parameters
+  //double dflog = 1.0;        //logarithmic spacing of psd parameters
   
   int Nblock = 1;            //number of frequency blocks per IFO
   int Nlines = 1;            //number of lines to be removed
@@ -409,7 +409,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
     nparams = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdscale"));
     Nblock = (int)nparams->size2;
 
-    dflog = *(REAL8*) LALInferenceGetVariable(currentParams, "logdeltaf");
+    //dflog = *(REAL8*) LALInferenceGetVariable(currentParams, "logdeltaf");
 
     psdBandsMin = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMin"));
     psdBandsMax = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMax"));

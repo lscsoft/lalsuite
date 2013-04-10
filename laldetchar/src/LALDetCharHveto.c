@@ -235,7 +235,7 @@ double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* ch
 
 		k = (size_t *)val;
 
-		printf( "Total coincidences for channel %s: %lu\n", (char *)key, *k );
+		printf( "Total coincidences for channel %s: %zu\n", (char *)key, *k );
 		printf( "Mu for channel %s: %g\n", (char *)key, mu );
 		sig = XLALDetCharHvetoSignificance( mu, *k );
 		printf( "Significance for this channel: %g\n", sig );
