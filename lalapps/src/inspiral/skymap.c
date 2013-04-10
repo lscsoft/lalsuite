@@ -8,7 +8,6 @@
 #include <png.h>
 #endif
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>
 
@@ -447,8 +446,8 @@ void load_data(NetworkProperties* network , int slot )
 
       for (i = 0; i != samples; ++i)
         {
-	  network->x[slot              ][i] = H1series.data->data[i].re;
-	  network->x[slot + network->N ][i] = H1series.data->data[i].im;
+	  network->x[slot              ][i] = crealf(H1series.data->data[i]);
+	  network->x[slot + network->N ][i] = cimagf(H1series.data->data[i]);
         }// end i for
     }// end file if
 }// end load_data
