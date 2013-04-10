@@ -18,7 +18,6 @@
 */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "coh_PTF.h"
 
 void coh_PTF_template (
@@ -46,8 +45,7 @@ void coh_PTF_template (
       LALFindChirpSPTemplate( &status,fcTmplt,InspTmplt,params );
       for (i=0 ; i < params->xfacVec->length ; i++ )
       {
-        fcTmplt->data->data[i].re = fcTmplt->data->data[i].re * params->PTFphi->data[i];
-        fcTmplt->data->data[i].im = fcTmplt->data->data[i].im * params->PTFphi->data[i];
+        fcTmplt->data->data[i] = fcTmplt->data->data[i] * params->PTFphi->data[i];
       }
       break;
     case FindChirpPTF:
@@ -281,10 +279,10 @@ void coh_PTF_normalize(
     {
       for ( k = kmin; k < kmax ; ++k )
       {
-        PTFM->data[5 * i + j] += (PTFQtilde[k + i * len].re *
-                            PTFQtilde[k + j * len].re +
-                            PTFQtilde[k + i * len].im *
-                            PTFQtilde[k + j * len].im )
+        PTFM->data[5 * i + j] += (crealf(PTFQtilde[k + i * len]) *
+                            crealf(PTFQtilde[k + j * len]) +
+                            cimagf(PTFQtilde[k + i * len]) *
+                            cimagf(PTFQtilde[k + j * len]) )
                             * invspec->data->data[k] ;
       }
       PTFM->data[5 * i + j] *= 4.0 * deltaF ;
@@ -302,10 +300,10 @@ void coh_PTF_normalize(
       {
         for ( k = kmin; k < kmax ; ++k )
         {
-          PTFN->data[5 * i + j] += (PTFQtilde[k + i * len].re *
-                              PTFQtilde[k + j * len].im -
-                              PTFQtilde[k + i * len].im *
-                              PTFQtilde[k + j * len].re )
+          PTFN->data[5 * i + j] += (crealf(PTFQtilde[k + i * len]) *
+                              cimagf(PTFQtilde[k + j * len]) -
+                              cimagf(PTFQtilde[k + i * len]) *
+                              crealf(PTFQtilde[k + j * len]) )
                               * invspec->data->data[k] ;
         }
         PTFN->data[5 * i + j] *= 4.0 * deltaF ;
@@ -326,13 +324,12 @@ void coh_PTF_normalize(
     /* qtilde positive frequency, not DC or nyquist */
     for ( k = kmin; k < kmax ; ++k )
     {
-      r = inputData[k].re;
-      s = inputData[k].im;
-      x = PTFQtilde[i * (numPoints / 2 + 1) + k].re;
-      y = 0 - PTFQtilde[i * (numPoints / 2 + 1) + k].im; /* cplx conj */
+      r = crealf(inputData[k]);
+      s = cimagf(inputData[k]);
+      x = crealf(PTFQtilde[i * (numPoints / 2 + 1) + k]);
+      y = 0 - cimagf(PTFQtilde[i * (numPoints / 2 + 1) + k]); /* cplx conj */
 
-      qtilde[k].re = 4. * (r*x - s*y)*deltaF;
-      qtilde[k].im = 4. * (r*y + s*x)*deltaF;
+      qtilde[k] = crectf( 4. * (r*x - s*y)*deltaF, 4. * (r*y + s*x)*deltaF );
     }
 
     qVec.data = PTFqVec->data + (i * numPoints);
@@ -386,10 +383,10 @@ void coh_PTF_template_overlaps(
     {
       for ( k = kmin; k < kmax ; ++k )
       {
-        PTFM->data[vecLen * i + j] += (PTFQtilde1[k + i * len].re *
-                            PTFQtilde2[k + j * len].re +
-                            PTFQtilde1[k + i * len].im *
-                            PTFQtilde2[k + j * len].im )
+        PTFM->data[vecLen * i + j] += (crealf(PTFQtilde1[k + i * len]) *
+                            crealf(PTFQtilde2[k + j * len]) +
+                            cimagf(PTFQtilde1[k + i * len]) *
+                            cimagf(PTFQtilde2[k + j * len]) )
                             * invspec->data->data[k] ;
       
       }
@@ -438,19 +435,19 @@ void coh_PTF_complex_template_overlaps(
     {
       for ( k = kmin; k < kmax ; ++k )
       {
-        PTFM->data[vecLen * i + j].re += (PTFQtilde1[k + i * len].re *
-                            PTFQtilde2[k + j * len].re +
-                            PTFQtilde1[k + i * len].im *
-                            PTFQtilde2[k + j * len].im )
-                            * invspec->data->data[k] ;
-        PTFM->data[vecLen * i + j].im += (-PTFQtilde1[k + i * len].re *
-                            PTFQtilde2[k + j * len].im +
-                            PTFQtilde1[k + i * len].im *
-                            PTFQtilde2[k + j * len].re )
-                            * invspec->data->data[k] ;
+        PTFM->data[vecLen * i + j] += crectf(
+                          ( crealf(PTFQtilde1[k + i * len]) *
+                            crealf(PTFQtilde2[k + j * len]) +
+                            cimagf(PTFQtilde1[k + i * len]) *
+                            cimagf(PTFQtilde2[k + j * len]) )
+                            * invspec->data->data[k] ,
+                         ( -crealf(PTFQtilde1[k + i * len]) *
+                            cimagf(PTFQtilde2[k + j * len]) +
+                            cimagf(PTFQtilde1[k + i * len]) *
+                            crealf(PTFQtilde2[k + j * len]) )
+                            * invspec->data->data[k] );
       }
-      PTFM->data[vecLen * i + j].re *= 4.0 * deltaF ;
-      PTFM->data[vecLen * i + j].im *= 4.0 * deltaF ;
+      PTFM->data[vecLen * i + j] *= 4.0 * deltaF ;
     }
   }
 
@@ -515,13 +512,12 @@ void coh_PTF_bank_filters(
     /* qtilde positive frequency, not DC or nyquist */
     for ( k = kmin; k < kmax ; ++k )
     {
-      r = inputData[k].re;
-      s = inputData[k].im;
-      x = PTFQtilde[i * (params->numFreqPoints) + k].re;
-      y = 0 - PTFQtilde[i * (params->numFreqPoints) + k].im; /* cplx conj */
+      r = crealf(inputData[k]);
+      s = cimagf(inputData[k]);
+      x = crealf(PTFQtilde[i * (params->numFreqPoints) + k]);
+      y = 0 - cimagf(PTFQtilde[i * (params->numFreqPoints) + k]); /* cplx conj */
 
-      qtilde[k].re = 4. * (r*x - s*y)*deltaF;
-      qtilde[k].im = 4. * (r*y + s*x)*deltaF;
+      qtilde[k] = crectf( 4. * (r*x - s*y)*deltaF, 4. * (r*y + s*x)*deltaF );
     }
 
     qVec.data = PTFqVec->data + (i * params->numTimePoints);
@@ -590,13 +586,15 @@ void coh_PTF_auto_veto_overlaps(
       /* qtilde positive frequency, not DC or nyquist */
       for ( k = kmin; k < kmax ; ++k )
       {
-        r = PTFQtilde[i * (len ) + k].re;
-        s = PTFQtilde[i * (len ) + k].im;
-        x = PTFQtilde[j * (len ) + k].re;
-        y = 0 - PTFQtilde[j * (len ) + k].im; /* cplx conj */
+        r = crealf(PTFQtilde[i * (len ) + k]);
+        s = cimagf(PTFQtilde[i * (len ) + k]);
+        x = crealf(PTFQtilde[j * (len ) + k]);
+        y = 0 - cimagf(PTFQtilde[j * (len ) + k]); /* cplx conj */
 
-        qtilde[k].re = 4. * (r*x - s*y)*deltaF * invspec->data->data[k];
-        qtilde[k].im = 4. * (r*y + s*x)*deltaF * invspec->data->data[k];
+        qtilde[k] = crectf(
+                           4. * (r*x - s*y)*deltaF * invspec->data->data[k],
+                           4. * (r*y + s*x)*deltaF * invspec->data->data[k]
+                          );
       }
 
       /* inverse fft to get q */
