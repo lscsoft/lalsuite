@@ -37,7 +37,6 @@
 #include <unistd.h>
 #endif
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALFrameIO.h>
 #include <lal/TimeSeries.h>
 #include <lal/TimeDelay.h>
@@ -803,30 +802,28 @@ int main( int argc, char *argv[] )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
                 if( vrbflg )
-                  fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                  fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
 
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[1]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[1]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[1]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[1]->data->data + abs(timeptDiff[0]), tempSnippet.data->data, (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
                 if( vrbflg )
-                  fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].im);
+                  fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])]), cimagf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])]), crealf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1]), cimagf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1]));
                 cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
               }
             else if( timeptDiff[0] > 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[abs(timeptDiff[0])].re,tempSnippet.data->data[abs(timeptDiff[0])].im,tempSnippet.data->data[abs(timeptDiff[0])+1].re,tempSnippet.data->data[abs(timeptDiff[0])+1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[abs(timeptDiff[0])]),cimagf(tempSnippet.data->data[abs(timeptDiff[0])]),crealf(tempSnippet.data->data[abs(timeptDiff[0])+1]),cimagf(tempSnippet.data->data[abs(timeptDiff[0])+1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[1]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[1]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[1]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[1]->data->data, tempSnippet.data->data + abs( timeptDiff[0] ), (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[0].re, cohInspCVec->cData[1]->data->data[0].im, cohInspCVec->cData[1]->data->data[1].re, cohInspCVec->cData[1]->data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[1]->data->data[0]), cimagf(cohInspCVec->cData[1]->data->data[0]), crealf(cohInspCVec->cData[1]->data->data[1]), cimagf(cohInspCVec->cData[1]->data->data[1]));
                 cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
               }
@@ -839,14 +836,13 @@ int main( int argc, char *argv[] )
 	    /* Facility for testing effect of incoherent injections in 3-ifo case*/
 	    if ( incohInj ) {
               if( vrbflg )
-                fprintf(stdout,"c-data in first ifo: %f %f %f %f\n",cohInspCVec->cData[0]->data->data[0].re,cohInspCVec->cData[0]->data->data[0].im,cohInspCVec->cData[0]->data->data[1].re,cohInspCVec->cData[0]->data->data[1].im);
+                fprintf(stdout,"c-data in first ifo: %f %f %f %f\n",crealf(cohInspCVec->cData[0]->data->data[0]),cimagf(cohInspCVec->cData[0]->data->data[0]),crealf(cohInspCVec->cData[0]->data->data[1]),cimagf(cohInspCVec->cData[0]->data->data[1]));
 
 	      memcpy( tempSnippet.data->data, cohInspCVec->cData[0]->data->data, numPoints * sizeof(COMPLEX8) );
 
 	      for(j=0;j<numPoints;j++)
                 {
-                  cohInspCVec->cData[0]->data->data[j].re = -tempSnippet.data->data[j].re;
-                  cohInspCVec->cData[0]->data->data[j].im = -tempSnippet.data->data[j].im;
+                  cohInspCVec->cData[0]->data->data[j] = -tempSnippet.data->data[j];
                 }
 
 
@@ -854,8 +850,7 @@ int main( int argc, char *argv[] )
 
 	      for(j=0;j<numPoints;j++)
                 {
-                  cohInspCVec->cData[1]->data->data[j].re = -tempSnippet.data->data[j].re;
-                  cohInspCVec->cData[1]->data->data[j].im = -tempSnippet.data->data[j].im;
+                  cohInspCVec->cData[1]->data->data[j] = -tempSnippet.data->data[j];
                 }
 
 
@@ -863,39 +858,36 @@ int main( int argc, char *argv[] )
 
 	      for(j=0;j<numPoints;j++)
                 {
-                  cohInspCVec->cData[2]->data->data[j].re = tempSnippet.data->data[j].re;
-                  cohInspCVec->cData[2]->data->data[j].im = tempSnippet.data->data[j].im;
+                  cohInspCVec->cData[2]->data->data[j] = tempSnippet.data->data[j];
                 }
 
 	      if( vrbflg )
-		fprintf(stdout,"c-data after -ve phase: %f %f %f %f\n",cohInspCVec->cData[0]->data->data[0].re,cohInspCVec->cData[0]->data->data[0].im,cohInspCVec->cData[0]->data->data[1].re,cohInspCVec->cData[0]->data->data[1].im);
+		fprintf(stdout,"c-data after -ve phase: %f %f %f %f\n",crealf(cohInspCVec->cData[0]->data->data[0]),cimagf(cohInspCVec->cData[0]->data->data[0]),crealf(cohInspCVec->cData[0]->data->data[1]),cimagf(cohInspCVec->cData[0]->data->data[1]));
             }
 
             if( timeptDiff[0] < 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[1]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[1]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[1]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[1]->data->data + abs(timeptDiff[0]), tempSnippet.data->data, (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])]), cimagf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])]), crealf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1]), cimagf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1]));
                 cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
               }
             else if( timeptDiff[0] > 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[1]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[1]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[1]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[1]->data->data, tempSnippet.data->data + abs( timeptDiff[0] ), (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])]), cimagf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])]), crealf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1]), cimagf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1]));
                 cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
               }
             else
@@ -906,31 +898,29 @@ int main( int argc, char *argv[] )
             if( timeptDiff[1] < 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[2]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[2]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[2]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[2]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[2]->data->data + abs(timeptDiff[1]), tempSnippet.data->data, (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]));
                 cohInspCVec->cData[2]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[2]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
               }
             else if( timeptDiff[1] > 0 )
               {
-                if( vrbflg ) fprintf(stdout,"Some 3rd IFO frame data: %f %f %f %f\n",cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].im);
-                if( vrbflg ) fprintf(stdout,"3rd IFO tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"Some 3rd IFO frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]));
+                if( vrbflg ) fprintf(stdout,"3rd IFO tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
 
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[2]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[2]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[2]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[2]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[2]->data->data, tempSnippet.data->data + abs( timeptDiff[1] ), (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
-                if( vrbflg )fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].im);
+                if( vrbflg )fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]));
 
                 cohInspCVec->cData[2]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[2]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
@@ -944,28 +934,26 @@ int main( int argc, char *argv[] )
             if( timeptDiff[0] < 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[1]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[1]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[1]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[1]->data->data + abs(timeptDiff[0]), tempSnippet.data->data, (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])]), cimagf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])]), crealf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1]), cimagf(cohInspCVec->cData[1]->data->data[abs(timeptDiff[0])+1]));
                 cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
               }
             else if( timeptDiff[0] > 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[1]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[abs(timeptDiff[0])].re,tempSnippet.data->data[abs(timeptDiff[0])].im,tempSnippet.data->data[abs(timeptDiff[0])+1].re,tempSnippet.data->data[abs(timeptDiff[0])+1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[abs(timeptDiff[0])]),cimagf(tempSnippet.data->data[abs(timeptDiff[0])]),crealf(tempSnippet.data->data[abs(timeptDiff[0])+1]),cimagf(tempSnippet.data->data[abs(timeptDiff[0])+1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[1]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[1]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[1]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[1]->data->data, tempSnippet.data->data + abs( timeptDiff[0] ), (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1]->data->data[0].re, cohInspCVec->cData[1]->data->data[0].im, cohInspCVec->cData[1]->data->data[1].re, cohInspCVec->cData[1]->data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[1]->data->data[0]), cimagf(cohInspCVec->cData[1]->data->data[0]), crealf(cohInspCVec->cData[1]->data->data[1]), cimagf(cohInspCVec->cData[1]->data->data[1]));
                 cohInspCVec->cData[1]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[1]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
               }
@@ -978,28 +966,26 @@ int main( int argc, char *argv[] )
             if( timeptDiff[1] < 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[2]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[2]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[2]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[2]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[2]->data->data + abs(timeptDiff[1]), tempSnippet.data->data, (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]));
                 cohInspCVec->cData[2]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[2]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
               }
             else if( timeptDiff[1] > 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[2]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[2]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[2]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[2]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[2]->data->data, tempSnippet.data->data + abs( timeptDiff[1] ), (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])]), crealf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]), cimagf(cohInspCVec->cData[2]->data->data[abs(timeptDiff[1])+1]));
                 cohInspCVec->cData[2]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[2]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
               }
@@ -1011,28 +997,26 @@ int main( int argc, char *argv[] )
             if( timeptDiff[2] < 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[3]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[3]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[3]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[3]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[3]->data->data + abs(timeptDiff[2]), tempSnippet.data->data, (numPoints - abs(timeptDiff[2])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])].re, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])].im, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1].re, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])]), cimagf(cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])]), crealf(cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1]), cimagf(cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1]));
                 cohInspCVec->cData[3]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[3]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
               }
             else if( timeptDiff[2] > 0 )
               {
                 memcpy( tempSnippet.data->data, cohInspCVec->cData[3]->data->data, numPoints * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+                if( vrbflg ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",crealf(tempSnippet.data->data[0]),cimagf(tempSnippet.data->data[0]),crealf(tempSnippet.data->data[1]),cimagf(tempSnippet.data->data[1]));
                 for(j=0;j<numPoints;j++)
                   {
-                    cohInspCVec->cData[3]->data->data[j].re = 0.0;
-                    cohInspCVec->cData[3]->data->data[j].im = 0.0;
+                    cohInspCVec->cData[3]->data->data[j] = 0.0;
                   }
                 memcpy( cohInspCVec->cData[3]->data->data, tempSnippet.data->data + abs( timeptDiff[2] ), (numPoints - abs(timeptDiff[2])) * sizeof(COMPLEX8) );
-                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])].re, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])].im, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1].re, cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1].im);
+                if( vrbflg ) fprintf(stdout,"Some frame data: %f %f %f %f\n",crealf(cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])]), cimagf(cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])]), crealf(cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1]), cimagf(cohInspCVec->cData[3]->data->data[abs(timeptDiff[2])+1]));
 
                 cohInspCVec->cData[3]->epoch.gpsSeconds = cohInspCVec->cData[0]->epoch.gpsSeconds;
                 cohInspCVec->cData[3]->epoch.gpsNanoSeconds = cohInspCVec->cData[0]->epoch.gpsNanoSeconds;
