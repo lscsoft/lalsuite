@@ -132,9 +132,8 @@ int main(int argc, char **argv){
   LALStatus status = empty_LALStatus;
 
   EphemerisData *edat;
-  if ( (edat = InitEphemeris ( inputs.ephemYr, inputs.ephemDir)) == NULL ){
-    XLALPrintError ( "%s: Failed to init ephemeris data for year-span \
-'%s'\n", fn, inputs.ephemYr );
+  if ( (edat = InitEphemeris ( inputs.ephemType, inputs.ephemDir)) == NULL ){
+    XLALPrintError ( "%s: Failed to init ephemeris data\n", fn );
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
