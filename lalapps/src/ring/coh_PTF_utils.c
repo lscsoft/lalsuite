@@ -1,4 +1,3 @@
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "coh_PTF.h"
 
 INT4 coh_PTF_data_condition(
@@ -1274,8 +1273,8 @@ void coh_PTF_calculate_single_detector_filters(
         for (ui = params->analStartPointBuf; ui < params->analEndPointBuf; ++ui)
         { /* Loop over time */
           uj = ui - params->analStartPointBuf;
-          reSNRcomp = PTFqVec[ifoNumber]->data[ui].re;
-          imSNRcomp = PTFqVec[ifoNumber]->data[ui].im;
+          reSNRcomp = crealf(PTFqVec[ifoNumber]->data[ui]);
+          imSNRcomp = cimagf(PTFqVec[ifoNumber]->data[ui]);
           snrComps[ifoNumber]->data->data[uj] =
               sqrt((reSNRcomp*reSNRcomp + imSNRcomp*imSNRcomp)/
                    PTFM[ifoNumber]->data[0]);
@@ -1433,13 +1432,13 @@ XXXXX
       {
         if (j < vecLength)
         {
-          v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
-          v2[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
+          v1[j] += Fplus[k] * crealf(PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]]);
+          v2[j] += Fplus[k] * cimagf(PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]]);
         }
         else
         {
-          v1[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
-          v2[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
+          v1[j] += Fcross[k] * crealf(PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]]);
+          v2[j] += Fcross[k] * cimagf(PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]]);
         }
       }
     }
@@ -1660,8 +1659,8 @@ void coh_PTF_calculate_null_stream_snr(
   /* NOTE: This code could be optimized, but is rarely used so has not been */
   for (j = 0; j < vecLength; j++)
   {
-    v1N[j] = PTFqVec[LAL_NUM_IFO]->data[j*params->numTimePoints+vecLoc].re;
-    v2N[j] = PTFqVec[LAL_NUM_IFO]->data[j*params->numTimePoints+vecLoc].im;
+    v1N[j] = crealf(PTFqVec[LAL_NUM_IFO]->data[j*params->numTimePoints+vecLoc]);
+    v2N[j] = cimagf(PTFqVec[LAL_NUM_IFO]->data[j*params->numTimePoints+vecLoc]);
   }
 
   for (j = 0 ; j < vecLength ; j++)
@@ -1726,17 +1725,17 @@ void coh_PTF_calculate_trace_snr(
       {
         if (j < vecLength)
         {
-          v1[j] = Fplus[k] * PTFqVec[k]->data[\
-                         j*params->numTimePoints+vecLoc+timeOffsetPoints[k]].re;
-          v2[j] = Fplus[k] * PTFqVec[k]->data[\
-                         j*params->numTimePoints+vecLoc+timeOffsetPoints[k]].im;
+          v1[j] = Fplus[k] * crealf(PTFqVec[k]->data[\
+                         j*params->numTimePoints+vecLoc+timeOffsetPoints[k]]);
+          v2[j] = Fplus[k] * cimagf(PTFqVec[k]->data[\
+                         j*params->numTimePoints+vecLoc+timeOffsetPoints[k]]);
         }
         else
         {
-          v1[j] = Fcross[k] * PTFqVec[k]->data[ (j-vecLength) * \
-                           params->numTimePoints+vecLoc+timeOffsetPoints[k]].re;
-          v2[j] = Fcross[k] * PTFqVec[k]->data[ (j-vecLength) * \
-                           params->numTimePoints+vecLoc+timeOffsetPoints[k]].im;
+          v1[j] = Fcross[k] * crealf(PTFqVec[k]->data[ (j-vecLength) * \
+                           params->numTimePoints+vecLoc+timeOffsetPoints[k]]);
+          v2[j] = Fcross[k] * cimagf(PTFqVec[k]->data[ (j-vecLength) * \
+                           params->numTimePoints+vecLoc+timeOffsetPoints[k]]);
         }
       }
       for (j = 0 ; j < vecLengthTwo ; j++)
@@ -1936,17 +1935,17 @@ void coh_PTF_calculate_rotated_vectors(
             /* Currently non-spin only! */
             if (params->faceOnStatistic == 1)
             {
-              v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-              v1[j] += Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
-              v2[j] += Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-              v2[j] -= Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+              v1[j] += Fplus[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v1[j] += Fcross[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v2[j] += Fcross[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v2[j] -= Fplus[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
             }
             else if (params->faceOnStatistic == 2)
             {
-              v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-              v1[j] -= Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
-              v2[j] += Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-              v2[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+              v1[j] += Fplus[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v1[j] -= Fcross[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v2[j] += Fcross[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v2[j] += Fplus[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
             }
             else
             {
@@ -1955,21 +1954,21 @@ void coh_PTF_calculate_rotated_vectors(
           }
           else if (j < vecLength)
           {
-            v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-            v2[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+            v1[j] += Fplus[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+            v2[j] += Fplus[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
           }
           else
           {
-            v1[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].re;
-            v2[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].im;
+            v1[j] += Fcross[k] * crealf(PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]]);
+            v2[j] += Fcross[k] * cimagf(PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]]);
           }
         }
       }
     }
     else
     {
-      v1[j] += PTFqVec[detectorNum]->data[j*numPoints+position].re;
-      v2[j] += PTFqVec[detectorNum]->data[j*numPoints+position].im;
+      v1[j] += crealf(PTFqVec[detectorNum]->data[j*numPoints+position]);
+      v2[j] += cimagf(PTFqVec[detectorNum]->data[j*numPoints+position]);
     }
   }
 
@@ -2183,8 +2182,7 @@ MultiInspiralTable* coh_PTF_create_multi_event(
    * first is some arbitrary amplitude. */
   if (gammaBeta[0])
   {
-    currEvent->g1quad.re = gammaBeta[0]->data->data[currPos];
-    currEvent->g1quad.im = gammaBeta[1]->data->data[currPos];
+    currEvent->g1quad = crectf( gammaBeta[0]->data->data[currPos], gammaBeta[1]->data->data[currPos] );
   }
 
   if (snrComps[LAL_IFO_G1])
