@@ -92,7 +92,7 @@ typedef struct{
 UserInput_t uvar_struct;
 
 /* ---------- local function prototypes ---------- */
-EphemerisData * XLALInitEphemeris(const CHAR *ephemDir ); /*function to read ephemeris files*/
+EphemerisData * XLALInitEphemeris( const CHAR *ephemDir ); /*function to read ephemeris files*/
 
 int InitUserVars ( UserInput_t *uvar, int argc, char **argv ); /*Initiates user variables*/
 
@@ -156,8 +156,8 @@ int main(int argc, char **argv)
 
   /*init ephemeris-data */
   EphemerisData *edat;
-  if ( (edat = XLALInitEphemeris ( uvar->ephemYear, uvar->ephemDir )) == NULL ) {
-    XLALPrintError ( "%s: Failed to init ephemeris data for year-span '%s'\n", fn, uvar->ephemYear );
+  if ( (edat = XLALInitEphemeris ( uvar->ephemDir )) == NULL ) {
+    XLALPrintError ( "%s: Failed to init ephemeris data\n", fn );
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
@@ -622,10 +622,10 @@ int main(int argc, char **argv)
 /** Function to register and read all user input
  */
 int
-InitUserVars ( UserInput_t *uvar,	/**< [out] UserInput structure to be filled */
-	       int argc,		/**< [in] number of argv element */
-	       char **argv		/**< [in] array of input arguments */
-	       )
+InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be filled */
+               int argc,               /**< [in] number of argv element */
+               char **argv             /**< [in] array of input arguments */
+             )
 {
   const char *fn = __func__;
 
@@ -670,15 +670,10 @@ XLALInitEphemeris (const CHAR *ephemDir)
 {
   const char *fn = __func__;
 #define FNAME_LENGTH 1024
-  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
+  CHAR EphemEarth[FNAME_LENGTH]; /* filename of earth-ephemeris data */
+  CHAR EphemSun[FNAME_LENGTH]; /* filename of sun-ephemeris data */
 
-  /* check input consistency */
-  if ( !ephemYear ) {
-    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-  }
-
+  /* default to using the new DE405 ephemeris files */
   snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-19-DE405.dat.gz", ephemDir);
   snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-19-DE405.dat.gz", ephemDir);
 
