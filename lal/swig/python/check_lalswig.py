@@ -162,6 +162,9 @@ cm = lal.CreateCOMPLEX8VectorSequence(4, 6)
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength)
 del iv, rv, cm
+rv1 = lal.CreateREAL8Vector(1)
+rv1.data[0] = 1
+del rv1
 lal.CheckMemoryLeaks()
 print("passed dynamic vector/matrix conversions (LAL)")
 # check GSL vectors and matrices
@@ -171,6 +174,9 @@ cm = lal.gsl_matrix_complex_float(4, 6)
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2)
 del iv, rv, cm
+rv1 = lal.gsl_vector(1)
+rv1.data[0] = 1
+del rv1
 print("passed dynamic vector/matrix conversions (GSL)")
 
 # check 'tm' struct conversions

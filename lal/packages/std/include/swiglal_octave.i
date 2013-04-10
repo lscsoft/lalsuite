@@ -377,7 +377,7 @@
         // 2-dimensional, so need to check that one of those dimensions is singular.
         dim_vector objdims = obj.dims();
         if (sloav_ndims == 1) {
-          if (objdims.length() > 2 || objdims.num_ones() > 1 || objdims.numel() != sloav_dims(0)) {
+          if (objdims.length() > 2 || objdims.num_ones() == 0 || objdims.numel() != sloav_dims(0)) {
             return SWIG_ValueError;
           }
         }

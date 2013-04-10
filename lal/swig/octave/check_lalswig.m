@@ -148,6 +148,9 @@ cm = CreateCOMPLEX8VectorSequence(4, 6);
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength);
 clear iv rv cm;
+rv1 = CreateREAL8Vector(1);
+rv1.data(1) = 1;
+clear rv1;
 CheckMemoryLeaks();
 disp("passed dynamic vector/matrix conversions (LAL)");
 ## check GSL vectors and matrices
@@ -157,6 +160,9 @@ cm = new_gsl_matrix_complex_float(4, 6);
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2);
 clear iv rv cm;
+rv1 = new_gsl_vector(1);
+rv1.data(1) = 1;
+clear rv1;
 disp("passed dynamic vector/matrix conversions (GSL)");
 
 ## check 'tm' struct conversions
