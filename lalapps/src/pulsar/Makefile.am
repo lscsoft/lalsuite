@@ -68,8 +68,6 @@ psd_ref.dat
 
 TESTS = testComputePSD.sh
 
-CLEANFILES = psd1.dat
-
 TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 ## make sure lalapps.la is rebuilt when appropriate
