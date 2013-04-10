@@ -61,18 +61,18 @@
 
 /* create a detector at the GEO centre based on Virgo's arms */
 //LALFrDetector FrGEOcentre = {
-//  "C1", // the detector name 
-//  "C1", // detector prefix 
-//  0.0, // the vertex longitude (rads) 
-//  LAL_PI_2, // the vertex latitude (rads) 
-//  -LAL_BWGS84_SI, // the vertex elevation (m) - set to Earth centre 
-//  0.0, // the x-arm altitude (rads) 
-//  0.33916285222, // the x-arm azimuth (rads) - same as Virgo 
-//  0.0, // y-arm altitude (rads) 
-//  5.05155183261, // y-arm azimuth (rads) - same as Virgo 
+//  "C1", // the detector name
+//  "C1", // detector prefix
+//  0.0, // the vertex longitude (rads)
+//  LAL_PI_2, // the vertex latitude (rads)
+//  -LAL_BWGS84_SI, // the vertex elevation (m) - set to Earth centre
+//  0.0, // the x-arm altitude (rads)
+//  0.33916285222, // the x-arm azimuth (rads) - same as Virgo
+//  0.0, // y-arm altitude (rads)
+//  5.05155183261, // y-arm azimuth (rads) - same as Virgo
 //  1500.0, // x-arm midpoint (m)
 //  1500.0}; // y-arm midpoint (m)
-  
+
 #define USAGE \
 "Usage: %s [options]\n\n"\
 " --help, -h        display this message\n"\
@@ -86,18 +86,18 @@
 " --output-dir, -o  the directory in which to output the frame\n"\
 " --output-str, -s  a string to start the frame file name\n"\
 " --ephem-dir, -m   the directory containing ephemeris files\n"\
-" --ephem-year, -y  the year(s) of the ephemeris files to use (e.g. 10-13)\n"\
+" --ephem-type, -y  the ephemeris file type to use (e.g. DE405 [default])\n"\
 " --dbg-lvl, -l     (int) the code debug level\n"\
 "\n"
 
 /*function to read ephemeris files*/
-EphemerisData * InitEphemeris (const CHAR *ephemYear, const CHAR *ephemDir );
+EphemerisData * InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir );
 
 LALStatus empty_LALStatus;
 
 typedef struct tagInputParams{
   CHAR *ephemDir; /* ephemeris directory */
-  CHAR *ephemYr; /* ephemeric year */
+  CHAR *ephemType; /* ephemeric year */
 
   CHAR *pulsarDir; /* directory containing par files */
 
@@ -110,16 +110,13 @@ typedef struct tagInputParams{
 
   UINT4 frDur; /* duration of a frame */
   UINT4 epoch; /* start epoch of a frame */
-  
+
   UINT4 geocentre; /* a flag to set the detector to the geocentre */
 } InputParams;
 
 const InputParams empty_InputParams;
 
 void ReadInput(InputParams *inputParams, int argc, char *argv[]);
-
-/*function to read ephemeris files*/
-EphemerisData * InitEphemeris (const CHAR *ephemYear, const CHAR *ephemDir);
 
 /*--------------main function---------------*/
 int main(int argc, char **argv){
@@ -154,7 +151,7 @@ int main(int argc, char **argv){
     site->location[1] = 0.0;
     site->location[2] = 0.0;
   }
-  
+
   struct dirent **pulsars;
   INT4 n=scandir(inputs.pulsarDir, &pulsars, 0, alphasort);
   if ( n < 0){
@@ -230,7 +227,7 @@ int main(int argc, char **argv){
 
       /* set signal generation barycenter delay look-up table step size */
       params.dtDelayBy2 = 10.; /* generate table every 10 seconds */
-      
+
       if (( params.pulsar.spindown = XLALCreateREAL8Vector(1)) == NULL ){
         XLALPrintError("Out of memory");
         XLAL_ERROR ( XLAL_EFUNC );
@@ -298,20 +295,20 @@ int main(int argc, char **argv){
   return 0;
 }
 
-EphemerisData *InitEphemeris (const CHAR *ephemYear, const CHAR *ephemDir){
+EphemerisData *InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir){
   const CHAR *fn = __func__;
 #define FNAME_LENGTH 1024
   CHAR EphemEarth[FNAME_LENGTH];  /* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];    /* filename of sun-ephemeris data */
 
   /* check input consistency */
-  if ( !ephemYear ) {
-    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", fn );
+  if ( !ephemType ) {
+    XLALPrintError ("%s: invalid NULL input for 'ephemType'\n", fn );
     XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
-  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
-  snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
+  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-19-%s.dat.gz", ephemDir, ephemType);
+  snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-19-%s.dat.gz", ephemDir, ephemType);
 
   EphemEarth[FNAME_LENGTH-1]=0;
   EphemSun[FNAME_LENGTH-1]=0;
@@ -339,7 +336,7 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
     { "output-dir",               required_argument,  0, 'o' },
     { "output-str",               required_argument,  0, 's' },
     { "ephem-dir",                required_argument,  0, 'm' },
-    { "ephem-year",               required_argument,  0, 'y' },
+    { "ephem-type",               required_argument,  0, 'y' },
     { "dbg-lvl",                  required_argument,  0, 'l' },
     { 0, 0, 0, 0 }
   };
@@ -353,7 +350,10 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
 
   /* default to no set the detector to the geocentre */
   inputParams->geocentre = 0;
-  
+
+  /* default ephemeris to use DE405 */
+  inputParams->ephemType = XLALStringDuplicate( "DE405" );
+
   /* get input arguments */
   while(1){
     INT4 option_index = 0;
@@ -404,7 +404,7 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
         inputParams->ephemDir = XLALStringDuplicate( optarg );
         break;
       case 'y': /* ephemeris file year */
-        inputParams->ephemYr = XLALStringDuplicate( optarg );
+        inputParams->ephemType = XLALStringDuplicate( optarg );
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
