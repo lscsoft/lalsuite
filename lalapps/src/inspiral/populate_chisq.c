@@ -42,7 +42,6 @@
 #include <time.h>
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -888,8 +887,7 @@ int main(int argc, char *argv[])
     if (calData) {
         /* if we are using calibrated data set the response to unity */
         for (k = 0; k < resp.data->length; ++k) {
-            resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-            resp.data->data[k].im = 0.0;
+            resp.data->data[k] = (REAL4) (1.0 / dynRange);
         }
         if (writeResponse)
             outFrame =
@@ -936,8 +934,8 @@ int main(int argc, char *argv[])
         LAL_CALL(LALExtractFrameResponse(&status, &resp, calCache,
                                          &calfacts), &status);
         LAL_CALL(LALDestroyFrCache(&status, &calCache), &status);
-        alpha = (REAL4) calfacts.alpha.re;
-        alphabeta = (REAL4) calfacts.alphabeta.re;
+        alpha = (REAL4) crealf(calfacts.alpha);
+        alphabeta = (REAL4) crealf(calfacts.alphabeta);
         if (vrbflg)
             fprintf(stdout,
                     "for calibration of data, alpha = %f and alphabeta = %f\n",
@@ -955,8 +953,7 @@ int main(int argc, char *argv[])
         if (vrbflg)
             fprintf(stdout, "setting response to unity... ");
         for (k = 0; k < resp.data->length; ++k) {
-            resp.data->data[k].re = 1.0;
-            resp.data->data[k].im = 0;
+            resp.data->data[k] = 1.0;
         }
         if (vrbflg)
             fprintf(stdout, "done\n");
@@ -973,8 +970,7 @@ int main(int argc, char *argv[])
         if (vrbflg)
             fprintf(stdout, "setting response to inverse dynRange... ");
         for (k = 0; k < resp.data->length; ++k) {
-            resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-            resp.data->data[k].im = 0.0;
+            resp.data->data[k] = (REAL4) (1.0 / dynRange);
         }
         if (vrbflg)
             fprintf(stdout, "done\n");
