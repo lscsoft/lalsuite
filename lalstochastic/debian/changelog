@@ -1,3 +1,15 @@
+lalstochastic (1.1.8-2) unstable; urgency=low
+
+  * LALStochastic 1.1.8, typo fix in deps of -octave subpackage
+
+ -- Steffen Grunewald <steffen.grunewald@ligo.org>  Wed, 20 Mar 2013 10:51:00 +0100
+
+lalstochastic (1.1.8-1) unstable; urgency=low
+
+  * LALStochastic 1.1.8
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 11 Mar 2013 15:29:58 -0500
+
 lalstochastic (1.1.7-1) unstable; urgency=low
 
   * LALStochastic 1.1.7

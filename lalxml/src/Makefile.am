@@ -7,7 +7,8 @@ lalxmlinclude_HEADERS = \
 	LALXMLLibVCSInfo.h \
 	LALXMLVCSInfo.h \
 	LALXMLVOTableCommon.h \
-	LALXMLVOTableSerializers.h
+	LALXMLVOTableSerializers.h \
+	lalxmlswig_test.i
 
 lib_LTLIBRARIES = liblalxml.la
 liblalxml_la_SOURCES = \
@@ -52,7 +53,7 @@ BUILT_SOURCES += LALXMLVCSInfo.h
 MOSTLYCLEANFILES += LALXMLVCSInfo.h
 LALXMLVCSInfo.h .PHONY : gen-LALXMLVCSInfo.h
 gen-LALXMLVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALXMLVCSInfo.h $(srcdir)/LALXMLVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALXMLVCSInfo.h $(srcdir)/LALXMLVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

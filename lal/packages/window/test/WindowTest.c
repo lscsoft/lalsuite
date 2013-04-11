@@ -25,12 +25,15 @@
 #include <math.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Window.h>
+#include <lal/XLALError.h>
+#include <lal/LALMalloc.h>
 
 #define NWINDOWS 11
 
+int lalDebugLevel = 0;
 
 const char *names[] = {
-	"rectangle",
+	"rectangular",
 	"Hann",
 	"Welch",
 	"Bartlett",
@@ -43,21 +46,32 @@ const char *names[] = {
 	"Gauss"
 };
 
-
-static void create_single_windows(REAL4Window **windows, int length, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
+static int create_single_windows(REAL4Window **windows, int length, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
 {
-	windows[0] = XLALCreateRectangularREAL4Window(length);
-	windows[1] = XLALCreateHannREAL4Window(length);
-	windows[2] = XLALCreateWelchREAL4Window(length);
-	windows[3] = XLALCreateBartlettREAL4Window(length);
-	windows[4] = XLALCreateParzenREAL4Window(length);
-	windows[5] = XLALCreatePapoulisREAL4Window(length);
-	windows[6] = XLALCreateHammingREAL4Window(length);
-	windows[7] = XLALCreateKaiserREAL4Window(length, kaiser_beta);
-	windows[8] = XLALCreateCreightonREAL4Window(length, creighton_beta);
-	windows[9] = XLALCreateTukeyREAL4Window(length, tukey_beta);
-	windows[10] = XLALCreateGaussREAL4Window(length, gauss_beta);
-}
+
+  for ( UINT4 i = 0; i < NWINDOWS; i ++ )
+    {
+      REAL8 beta;
+
+      if ( !strcmp ( names[i], "Kaiser" ) ) {
+        beta = kaiser_beta;
+      } else if ( !strcmp ( names[i], "Creighton" ) ) {
+        beta = creighton_beta;
+      } else if ( !strcmp ( names[i], "Tukey" ) ) {
+        beta = tukey_beta;
+      } else if ( !strcmp ( names[i], "Gauss" ) ) {
+        beta = gauss_beta;
+      } else {
+        beta = 0;
+      }
+
+      XLAL_CHECK ( (windows[i] = XLALCreateNamedREAL4Window ( names[i], beta, length )) != NULL, XLAL_EFUNC );
+
+    } // for i < NWINDOWS
+
+  return XLAL_SUCCESS;
+
+} // create_single_windows()
 
 
 static void free_single_windows(REAL4Window **windows)
@@ -68,20 +82,32 @@ static void free_single_windows(REAL4Window **windows)
 }
 
 
-static void create_double_windows(REAL8Window **windows, int length, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
+static int create_double_windows(REAL8Window **windows, int length, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
 {
-	windows[0] = XLALCreateRectangularREAL8Window(length);
-	windows[1] = XLALCreateHannREAL8Window(length);
-	windows[2] = XLALCreateWelchREAL8Window(length);
-	windows[3] = XLALCreateBartlettREAL8Window(length);
-	windows[4] = XLALCreateParzenREAL8Window(length);
-	windows[5] = XLALCreatePapoulisREAL8Window(length);
-	windows[6] = XLALCreateHammingREAL8Window(length);
-	windows[7] = XLALCreateKaiserREAL8Window(length, kaiser_beta);
-	windows[8] = XLALCreateCreightonREAL8Window(length, creighton_beta);
-	windows[9] = XLALCreateTukeyREAL8Window(length, tukey_beta);
-	windows[10] = XLALCreateGaussREAL8Window(length, gauss_beta);
-}
+
+  for ( UINT4 i = 0; i < NWINDOWS; i ++ )
+    {
+      REAL8 beta;
+
+      if ( !strcmp ( names[i], "Kaiser" ) ) {
+        beta = kaiser_beta;
+      } else if ( !strcmp ( names[i], "Creighton" ) ) {
+        beta = creighton_beta;
+      } else if ( !strcmp ( names[i], "Tukey" ) ) {
+        beta = tukey_beta;
+      } else if ( !strcmp ( names[i], "Gauss" ) ) {
+        beta = gauss_beta;
+      } else {
+        beta = 0;
+      }
+
+      XLAL_CHECK ( (windows[i] = XLALCreateNamedREAL8Window ( names[i], beta, length )) != NULL, XLAL_EFUNC );
+
+    } // for i < NWINDOWS
+
+  return XLAL_SUCCESS;
+
+} // create_double_windows()
 
 
 static void free_double_windows(REAL8Window **windows)
@@ -115,28 +141,28 @@ static int _test_sum_of_squares(const double *correct, int length, double kaiser
 	const double max_error = 1e-12;
 	REAL4Window *windows1[NWINDOWS];
 	REAL8Window *windows2[NWINDOWS];
-	int fail = 0;
 	int i;
 
-	create_single_windows(windows1, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta);
-	create_double_windows(windows2, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta);
+	XLAL_CHECK ( create_single_windows(windows1, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta) == XLAL_SUCCESS, XLAL_EFUNC );
+
+	XLAL_CHECK ( create_double_windows(windows2, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta) == XLAL_SUCCESS, XLAL_EFUNC );
 
 	for(i = 0; i < NWINDOWS; i++) {
 		if(fractional_difference(windows1[i]->sumofsquares, correct[i]) > max_error) {
-			fprintf(stderr, "error: single-precision %d-sample %s window fails sum-of-squares test:  expected %.17g, got %.17g\n", length, names[i], correct[i], windows1[i]->sumofsquares);
-			fail = 1;
+                  XLAL_ERROR (XLAL_EFAILED, "error: single-precision %d-sample %s window fails sum-of-squares test:  expected %.17g, got %.17g\n",
+                              length, names[i], correct[i], windows1[i]->sumofsquares);
 		}
 		if(fractional_difference(windows2[i]->sumofsquares, correct[i]) > max_error) {
-			fprintf(stderr, "error: double-precision %d-sample %s window fails sum-of-squares test:  expected %.17g, got %.17g\n", length, names[i], correct[i], windows1[i]->sumofsquares);
-			fail = 1;
+                  XLAL_ERROR (XLAL_EFAILED, "error: double-precision %d-sample %s window fails sum-of-squares test:  expected %.17g, got %.17g\n", length, names[i], correct[i], windows1[i]->sumofsquares);
 		}
 	}
 
 	free_single_windows(windows1);
 	free_double_windows(windows2);
 
-	return fail;
-}
+	return XLAL_SUCCESS;
+
+} // _test_sum_of_squares()
 
 
 static int test_sum_of_squares(void)
@@ -167,15 +193,14 @@ static int test_sum_of_squares(void)
 		704,			/* Tukey */
 		451.64394001239367	/* Gauss */
 	};
-	int fail = 0;
 
-	if(_test_sum_of_squares(correct_1024, 1024, 6, 2, 0.5, 2))
-		fail = 1;
-	if(_test_sum_of_squares(correct_1025, 1025, 6, 2, 0.5, 2))
-		fail = 1;
+	XLAL_CHECK ( _test_sum_of_squares(correct_1024, 1024, 6, 2, 0.5, 2) == XLAL_SUCCESS, XLAL_EFUNC );
 
-	return fail;
-}
+	XLAL_CHECK ( _test_sum_of_squares(correct_1025, 1025, 6, 2, 0.5, 2) == XLAL_SUCCESS, XLAL_EFUNC );
+
+	return XLAL_SUCCESS;
+
+} // test_sum_of_squares()
 
 
 /*
@@ -214,7 +239,6 @@ static int _test_end_and_midpoints(int length, double kaiser_beta, double creigh
 	};
 	REAL4Window *windows1[NWINDOWS];
 	REAL8Window *windows2[NWINDOWS];
-	int fail = 0;
 	int i;
 
 	/* set end value of Kaiser window */
@@ -229,38 +253,32 @@ static int _test_end_and_midpoints(int length, double kaiser_beta, double creigh
 	/* set end value of Gauss window */
 	correct_end[10] = exp(-0.5 * gauss_beta * gauss_beta);
 
-	create_single_windows(windows1, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta);
-	create_double_windows(windows2, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta);
+	XLAL_CHECK ( create_single_windows(windows1, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta) == XLAL_SUCCESS, XLAL_EFUNC );
+	XLAL_CHECK ( create_double_windows(windows2, length, kaiser_beta, creighton_beta, tukey_beta, gauss_beta) == XLAL_SUCCESS, XLAL_EFUNC );
 
 	for(i = 0; i < NWINDOWS; i++) {
 		/* if length < 2, then there are no end samples */
 		if(length >= 2) {
 			if(fabs(windows1[i]->data->data[0] - (float) correct_end[i]) > max_error) {
-				fprintf(stderr, "error: single-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows1[i]->data->data[0]);
-				fail = 1;
+                          XLAL_ERROR ( XLAL_EFAILED, "error: single-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows1[i]->data->data[0]);
 			}
 			if(fabs(windows2[i]->data->data[0] - correct_end[i]) > max_error) {
-				fprintf(stderr, "error: double-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows2[i]->data->data[0]);
-				fail = 1;
+                          XLAL_ERROR ( XLAL_EFAILED, "error: double-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows2[i]->data->data[0]);
 			}
 			if(fabs(windows1[i]->data->data[length - 1] - (float) correct_end[i]) > max_error) {
-				fprintf(stderr, "error: single-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows1[i]->data->data[length - 1]);
-				fail = 1;
+                          XLAL_ERROR ( XLAL_EFAILED, "error: single-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows1[i]->data->data[length - 1]);
 			}
 			if(fabs(windows2[i]->data->data[length - 1] - correct_end[i]) > max_error) {
-				fprintf(stderr, "error: double-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows2[i]->data->data[length - 1]);
-				fail = 1;
+                          XLAL_ERROR ( XLAL_EFAILED, "error: double-precision %d-sample %s window fails end-point test:  expected %.17g, got %.17g\n", length, names[i], correct_end[i], windows2[i]->data->data[length - 1]);
 			}
 		}
 		/* even-lengthed windows have no middle sample */
 		if(length & 1) {
 			if(windows1[i]->data->data[length / 2] != (float) correct_mid[i]) {
-				fprintf(stderr, "error: single-precision %d-sample %s window fails mid-point test:  expected %.17g, got %.17g\n", length, names[i], correct_mid[i], windows1[i]->data->data[length / 2]);
-				fail = 1;
+                          XLAL_ERROR ( XLAL_EFAILED, "error: single-precision %d-sample %s window fails mid-point test:  expected %.17g, got %.17g\n", length, names[i], correct_mid[i], windows1[i]->data->data[length / 2]);
 			}
 			if(windows2[i]->data->data[length / 2] != correct_mid[i]) {
-				fprintf(stderr, "error: double-precision %d-sample %s window fails mid-point test:  expected %.17g, got %.17g\n", length, names[i], correct_mid[i], windows1[i]->data->data[length / 2]);
-				fail = 1;
+                          XLAL_ERROR ( XLAL_EFAILED,  "error: double-precision %d-sample %s window fails mid-point test:  expected %.17g, got %.17g\n", length, names[i], correct_mid[i], windows1[i]->data->data[length / 2]);
 			}
 		}
 	}
@@ -268,7 +286,7 @@ static int _test_end_and_midpoints(int length, double kaiser_beta, double creigh
 	free_single_windows(windows1);
 	free_double_windows(windows2);
 
-	return fail;
+	return XLAL_SUCCESS;
 }
 
 
@@ -503,6 +521,8 @@ int main(void)
 	/* Verbosity */
 
 	display();
+
+        LALCheckMemoryLeaks();
 
 	return fail;
 }

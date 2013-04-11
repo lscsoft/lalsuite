@@ -138,14 +138,28 @@ LALFindChirpSPTemplate (
   REAL4         m          = 0.0;
   REAL4         eta        = 0.0;
   REAL4         mu         = 0.0;
+  REAL4         S1z        = 0.0;
+  REAL4         S2z        = 0.0;
+  REAL4         mass_delta = 0.0;
+  REAL4         chis       = 0.0;
+  REAL4         chia       = 0.0;
+  REAL4         chi1       = 0.0;
+  REAL4         chi2       = 0.0;
+  REAL4         qm_def1    = 0.0;
+  REAL4         qm_def2    = 0.0;
+  REAL4         pn_beta    = 0.0;
+  REAL4         pn_sigma   = 0.0;
+  REAL4         pn_gamma   = 0.0;
   COMPLEX8     *expPsi     = NULL;
   REAL4        *xfac       = NULL;
   REAL4         x1         = 0.0;
   REAL4         psi        = 0.0;
   REAL4         psi0       = 0.0;
   INT4          k          = 0;
+  INT4          f          = 0;
   INT4          kmin       = 0;
   INT4          kmax       = 0;
+  REAL4         fLow       = -1;
   CHAR          infomsg[512];
 
   REAL4         distNorm;
@@ -231,6 +245,30 @@ LALFindChirpSPTemplate (
   m      = (REAL4) tmplt->totalMass;
   eta    = (REAL4) tmplt->eta;
   mu     = (REAL4) tmplt->mu;
+  S1z    = tmplt->spin1[2];
+  S2z    = tmplt->spin2[2];
+  mass_delta = (tmplt->mass1 - tmplt->mass2) / (m);
+  chis   = 0.5 * (tmplt->spin1[2] + tmplt->spin2[2]);
+  chia   = 0.5 * (tmplt->spin1[2] - tmplt->spin2[2]);
+  chi1 = tmplt->mass1 / m;
+  chi2 = tmplt->mass2 / m;
+  qm_def1 = 1; /* The QM deformability parameters */
+  qm_def2 = 1; /* This is 1 for black holes and larger for neutron stars */
+
+  /* Eq. (6.23) in arXiv:0810.5336 */
+  pn_beta = (113./12.- 19./3. * eta) * chis + 113./12. * mass_delta * chia;
+  
+  /* See Eq. (6.24) in arXiv:0810.5336 */
+  /* 9b,c,d in arXiv:astro-ph/0504538 */
+  pn_sigma = eta * (721./48. *S1z*S2z-247./48.*S1z*S2z);
+  pn_sigma += (720*qm_def1 - 1)/96.0 * (chi1*chi1*S1z*S1z);
+  pn_sigma += (720*qm_def2 - 1)/96.0 * (chi2*chi2*S2z*S2z);
+  pn_sigma -= (240*qm_def1 - 7)/96.0 * (chi1*chi1*S1z*S1z);
+  pn_sigma -= (240*qm_def2 - 7)/96.0 * (chi2*chi2*S2z*S2z);
+
+  /* See Eq. (6.25) in arXiv:0810.5336 */
+  pn_gamma = (732985./2268. - 24260./81. * eta - 340./9. * eta * eta ) * chis;
+  pn_gamma += (732985./2268. +140./9.0 * eta) * chia * mass_delta;
 
   if ( m <= 0 || eta <= 0 || mu <= 0 )
   {
@@ -273,11 +311,12 @@ LALFindChirpSPTemplate (
             - eta*eta*eta*127825.0/1296.0 - 6848.0*log(4.0)/21.0;
       c30Log = -6848.0/21.0;
     case LAL_PNORDER_TWO_POINT_FIVE:
-      c25 = LAL_PI*38645.0/756.0 - LAL_PI*eta*65.0/9.0;
+      c25 = LAL_PI*38645.0/756.0 - LAL_PI*eta*65.0/9.0 - pn_gamma;
       c25Log = 3*c25;
     case LAL_PNORDER_TWO:
       c20 = 15293365.0/508032.0 + eta*(27145.0/504.0 + eta*3085.0/72.0);
-      c15 = -16*LAL_PI;
+      c20 -= 10. * pn_sigma;
+      c15 = -16*LAL_PI + 4.*pn_beta;
       c10 = 3715.0/756.0 + eta*55.0/9.0;
       c0  = 3.0/(eta*128.0);
       break;
@@ -290,7 +329,48 @@ LALFindChirpSPTemplate (
   x1 = pow( LAL_PI * m * LAL_MTSUN_SI * deltaF, -1.0/3.0 );
 
   /* frequency cutoffs */
-  kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
+  if (params->dynamicTmpltFlow)
+  {
+    /* Dynamic lower cutoff
+     * Work out longest length for template
+     * Keep a few extra sample points for safety */
+    REAL4 currTime,maxT;
+    if (params->maxTempLength > 0)
+    {
+      /* If the maximum length is given use that */
+      maxT = params->maxTempLength;
+    }
+    else
+    {
+      /* If not work it out assuming middle of segment is analysed */
+      maxT = ((REAL4) params->deltaT * (REAL4) (numPoints-12))/4.;
+      maxT -= 0.5 * (REAL4) params->invSpecTrunc * (REAL4) params->deltaT;
+    }
+    fLow = -1;
+    for (f=1; f < 100; f++)
+    {
+      currTime = XLALFindChirpChirpTime( tmplt->mass1,
+                                        tmplt->mass2,
+                                        (double) f,
+                                        params->order);
+      if (currTime < maxT)
+      {
+        fLow = (REAL4) f;
+        break;
+      }
+    }   
+    /* If nothing passed then fail */
+    if ( fLow < 0)
+    {
+      ABORT( status, FINDCHIRPH_EFLOX, FINDCHIRPH_MSGEFLOX );
+    }
+  }
+  else
+  {
+    fLow = params->fLow;
+  }
+
+  kmin = fLow / deltaF > 1 ? fLow / deltaF : 1;
   kmax = tmplt->fFinal / deltaF < numPoints/2 ?
     tmplt->fFinal / deltaF : numPoints/2;
 
@@ -379,7 +459,7 @@ LALFindChirpSPTemplate (
 
     tmplt->tC = XLALFindChirpChirpTime( tmplt->mass1,
 					tmplt->mass2,
-					params->fLow,
+					fLow,
 					params->order);
 
   /* copy the template parameters to the findchirp template structure */

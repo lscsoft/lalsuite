@@ -31,7 +31,6 @@
 #include <lal/Inject.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
-#include <lal/LALComplex.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/SkyCoordinates.h>

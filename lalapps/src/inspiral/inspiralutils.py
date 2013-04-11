@@ -135,7 +135,7 @@ def symlink_tmpltbank(tmpltbank_cache, user_tag):
   file_tag = user_tag.upper()
 
   for entry in tmpltbank_cache:
-    old_file = os.path.basename(entry.path())
+    old_file = os.path.basename(entry.path)
     new_file = old_file.replace("DATAFIND",file_tag)
     try: # Remove file if it already exists
       os.remove(new_file)
@@ -257,6 +257,11 @@ def convert_veto_cat_xml_to_txt(config, veto_cat_file, output_file):
   @param veto_cat_file: name (and loction) of veto_cat_file to convert
   @param output_file: name (and location) of output txt file to save to
   """
+  
+  if not (os.path.isfile(veto_cat_file) and os.access(veto_cat_file,os.R_OK) ):
+      print 'Veto file not found or unreadble, skipping %s'%(veto_cat_file)
+      return False
+
   print "Converting veto-category xml file %s to txt file %s" \
 	%(veto_cat_file, output_file)
   sys.stdout.flush()
@@ -265,8 +270,10 @@ def convert_veto_cat_xml_to_txt(config, veto_cat_file, output_file):
 
   convertCall = ' '.join([ xml_to_txt_converter,
 	"-t segment -c start_time -c end_time", veto_cat_file ])
-  tempfile = os.popen(convertCall)
-  
+  #tempfile = os.popen(convertCall)
+  import subprocess
+  tempfile = subprocess.Popen(convertCall, shell=True, stdout=subprocess.PIPE).stdout
+
   # get times from tempfile
   times = tempfile.readlines()
 
@@ -488,8 +495,10 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
     print "done"
 
     # remove cat 1 veto times
-    vetoSegs = segmentsUtils.fromsegwizard(open(vetoFiles[1])).coalesce()
-    sciSegs = sciSegs.__and__(vetoSegs.__invert__())
+    if os.path.exists(vetoFiles[1]):
+      with open(vetoFiles[1]) as f:
+        vetoSegs = segmentsUtils.fromsegwizard(f).coalesce()
+        sciSegs = sciSegs.__and__(vetoSegs.__invert__())
 
     if use_available_data:
       dfSegs = datafind_segments(ifo, config)
@@ -735,10 +744,10 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   if dataFind or tmpltBank:
     if dataFind:
-      for hipe_arg in ["datafind","ringdown"]:
+      for hipe_arg in ["datafind","ringdown","write-script"]:
         hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
     if tmpltBank:
-      for hipe_arg in ["template-bank","ringdown"]:
+      for hipe_arg in ["template-bank","ringdown","write-script"]:
         hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   elif vetoCat:
     if config.has_option("hipe-arguments","ringdown"):
@@ -884,15 +893,12 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
       "plotinspiral", "plotinspiral-meta", \
       "plotthinca", "plotthinca-meta", \
       "plotnumtemplates", "plotnumtemplates-meta", \
-      "plotinjnum", "plotinjnum-meta", \
       "plotethinca", "plotethinca-meta", \
       "plotinspmissed", "plotinspmissed-meta", \
       "plotinspinj", "plotinspinj-meta", \
       "plotsnrchi", "plotsnrchi-meta", \
-      "plotinspfound", \
       "plotinspiralrange", "plotinspiralrange-meta", \
-      "ploteffdistcut", "ploteffdistcut-meta", \
-      "plotinspfound", "plotcoincmissed"]
+      "ploteffdistcut", "ploteffdistcut-meta"]
 
   for seg in plotcp.sections():
     if not seg in plotSections: plotcp.remove_section(seg)
@@ -934,8 +940,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
         inspmissedVetoDir + "/" + ifo + "-COMBINED_CAT_" + str(cat) + 
         "_VETO_SEGS-" + analysisstart + "-" + str(analysisduration) + ".txt")
 
-  # Adding followup option to plotinspfound and plotinspmissed
-  plotcp.set("plotinspfound","followup-tag",injdirType)
+  # Adding followup option to plotinspmissed
   plotcp.set("plotinspmissed","followup-tag",injdirType)
 
   # Remove options if no slide or zero lag files are available.
@@ -1175,7 +1180,6 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   plotcp = copy.deepcopy(config)
   plotcp.add_section("plot-arguments")
   plotcp.set("plot-arguments","plotinspinj","")
-  plotcp.set("plot-arguments","plotinjnum","")
   plotcp.set("plot-arguments","plotinspmissed","")
   plotcp.set("plot-arguments","ploteffdistcut","")
   plotcp.set("plot-arguments","write-script","")
@@ -1198,10 +1202,7 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
     plotcp.set("plot-arguments","plotinspinj","")
     plotcp.set("plot-arguments","plotsnrchi","")
     plotcp.set("plot-arguments","plotethinca","")
-    plotcp.set("plot-arguments","plotinjnum","")
     plotcp.set("plot-arguments","plotinspmissed","")
-    plotcp.set("plot-arguments","plotinspfound","")
-    plotcp.set("plot-arguments","plotcoincmissed","")
     plotcp.set("plot-arguments","ploteffdistcut","")
     plotcp.set("plot-arguments","write-script","")
     injPlotVetoNode = plot_setup( plotDir, \
@@ -1585,7 +1586,7 @@ def create_pegasus_cache_file(framename):
 		# removes the localhost/ from the beginning of the file name
 		kpline = line2 # creates a better variable name for line2
 		formline = kpline.split("/") # splits the line on slashes to pull out filename
-		cac.write(formline[8]+" "+kpline+ " "+ 'pool="local"' + "\n") # .cache formatter
+		cac.write(formline[-1]+" "+kpline+ " "+ 'pool="local"' + "\n") # .cache formatter
 	rep.close()
 	cac.close()
 	return cachename
@@ -1600,7 +1601,7 @@ def get_data_options(cp,ifo_name):
     data_opts = 'virgo-data'
     try:
       type = cp.get('input','virgo-type')
-      if ('NINJA' in type):
+      if ('NINJA' in type) or ('T1300121_' in type):
         type = ifo_name + '_' + type
     except: type = None
     channel = cp.get('input','virgo-channel')
@@ -1608,7 +1609,7 @@ def get_data_options(cp,ifo_name):
     data_opts = 'ligo-data'
     try:
       type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type) or ('ER_' in type):
+      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type) or ('ER_' in type) or ('T1200307_' in type) or ('T0900288_' in type):
         type = ifo_name + '_' + type
       if ("DMT_ERHOFT" in type):
         if (ifo_name == 'L1'): type = ifo_name + '_' + type

@@ -55,8 +55,8 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 );
 
 int XLALSimInspiralConstantPrecessionConeWaveform(
-				REAL8TimeSeries* hp,
-				REAL8TimeSeries* hx,
+				REAL8TimeSeries** hp,
+				REAL8TimeSeries** hx,
 				COMPLEX16TimeSeries* h_2_2,
 				COMPLEX16TimeSeries* h_22,
 				double precess_freq,

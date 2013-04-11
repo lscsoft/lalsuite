@@ -49,4 +49,4 @@ CLEANFILES = \
 	lalapps_InspiralOverlap
 
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

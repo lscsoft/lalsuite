@@ -68,10 +68,10 @@ while [ $j -lt $top ] ; do
 	cosiota=`echo $allangles | awk '{print $4}'`
 	psi=`echo $allangles | awk '{print $5}'`
 	# if we want cosiota random
-	./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c $cosiota -M $mismatch >> $outfile
+	./HoughValidateAM -E ./earth00-19-DE405.dat -S ./sun00-19-DE405.dat -D $sftdir -r $alpha -l $delta -m $h0 -c $cosiota -M $mismatch >> $outfile
 
 	# if we want cosiota at a fixed value
-	#./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c 0.5 -p $psi -M $mismatch >> $outfile
+	#./HoughValidateAM -E ./earth00-19-DE405.dat -S ./sun00-19-DE405.dat -D $sftdir -r $alpha -l $delta -m $h0 -c 0.5 -p $psi -M $mismatch >> $outfile
 
 	#sleep 30
         let j+=1

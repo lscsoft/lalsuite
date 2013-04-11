@@ -561,6 +561,12 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.snglInspiralTable->Gamma[7],
 	      tablePtr.snglInspiralTable->Gamma[8],
 	      tablePtr.snglInspiralTable->Gamma[9],
+              tablePtr.snglInspiralTable->spin1x,
+              tablePtr.snglInspiralTable->spin1y,
+              tablePtr.snglInspiralTable->spin1z,
+              tablePtr.snglInspiralTable->spin2x,
+              tablePtr.snglInspiralTable->spin2y,
+              tablePtr.snglInspiralTable->spin2z,
               id );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
         ++(xml->rowCount);
@@ -659,7 +665,10 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglRingdownTable->num_clust_trigs,
               tablePtr.snglRingdownTable->ds2_H1H2,
               tablePtr.snglRingdownTable->ds2_H1L1,
+              tablePtr.snglRingdownTable->ds2_H1V1,
               tablePtr.snglRingdownTable->ds2_H2L1,
+              tablePtr.snglRingdownTable->ds2_H2V1,
+              tablePtr.snglRingdownTable->ds2_L1V1,
               tablePtr.snglRingdownTable->amplitude,
               tablePtr.snglRingdownTable->snr,
               tablePtr.snglRingdownTable->eff_dist,
@@ -1414,6 +1423,12 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma7\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma8\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma9\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin1x\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin1y\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin1z\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin2x\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin2y\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin2z\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:event_id\" Type=\"ilwd:char\"/>\n", xml->fp);
 	fputs("\t\t<Stream Name=\"sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
@@ -1422,7 +1437,7 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 	/* rows */
 
 	for(; sngl_inspiral; sngl_inspiral = sngl_inspiral->next) {
-		if( fprintf(xml->fp,"%s\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:0\"",
+		if( fprintf(xml->fp,"%s\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:0\"",
 			   row_head,
 			   sngl_inspiral->ifo,
 			   sngl_inspiral->search,
@@ -1479,7 +1494,13 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 			   sngl_inspiral->Gamma[6],
 			   sngl_inspiral->Gamma[7],
 			   sngl_inspiral->Gamma[8],
-			   sngl_inspiral->Gamma[9]  )  < 0)
+			   sngl_inspiral->Gamma[9],
+			   sngl_inspiral->spin1x,  
+			   sngl_inspiral->spin1y,
+			   sngl_inspiral->spin1z,
+			   sngl_inspiral->spin2x,
+			   sngl_inspiral->spin2y,
+			   sngl_inspiral->spin2z  ) < 0)
 			XLAL_ERROR(XLAL_EFUNC);
 		row_head = ",\n\t\t\t";
 	}

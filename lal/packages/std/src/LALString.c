@@ -102,3 +102,37 @@ size_t XLALStringConcatenate( char *dst, const char *src, size_t size )
   strncat( dst, src, size - dstlen - 1 );
   return srclen + dstlen;
 }
+
+
+/**
+ * Helper function:  turn a string in-place into lowercase without
+ * using locale-dependent functions.
+ */
+int
+XLALStringToLowerCase ( CHAR *string )	/**< [in/out] string to convert */
+{
+  XLAL_CHECK ( string != NULL, XLAL_EINVAL );
+
+  /* ctype replacements w/o locale */
+  const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
+
+  for ( UINT4 i=0; i < strlen (string); i++ )
+    {
+      int c = string[i];
+      if (c)
+        {
+          char *p = strchr ( upper_chars, c );
+          if (p)
+            {
+              int offset = p - upper_chars;
+              c = lower_chars[offset];
+            }
+        }
+      string[i] = c;
+
+    } // for i < len(string)
+
+  return XLAL_SUCCESS;
+
+} /* XLALStringToLowerCase() */

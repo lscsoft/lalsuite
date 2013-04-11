@@ -168,7 +168,7 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
   uvar->help = FALSE;
   uvar->IFO = NULL;
 
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
   uvar->ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);
 

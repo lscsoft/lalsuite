@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Diego Fazi, Duncan Brown
+*  Copyright (C) 2007 Ian Harry, Diego Fazi, Duncan Brown
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -141,12 +141,9 @@ coh_PTF_template_PTF (
                                       params->deltaT);
   sanity_check( errcode == XLAL_SUCCESS );
 
-  /* FIXME: This should not be hardcoded below. 60 Should be duration/4
-     minus about 4 seconds */
-
-  if (InspTmplt->tC > 60 )
+  if (InspTmplt->tC > params->maxTempLength )
   {
-    fprintf(stderr,"Template generated is longer than 60s. Template must not ");
+    fprintf(stderr,"Template generated is longer than max. Template must not ");
     fprintf(stderr,"be longer than this as it causes wrapping issues in the ");
     fprintf(stderr,"FFT. Template length is %lf \n",InspTmplt->tC);
     exit(1);
@@ -470,23 +467,21 @@ void coh_PTF_bank_filters(
     REAL8                      f_min,
     REAL8                      fFinal)
 {
-  // This function calculates (Q|s) for the bank veto. It only returns the 
-  // middle half of the time series with some buffer to allow for time shifts
+  /* This function calculates (Q|s) for the bank veto. It only returns the 
+   * middle half of the time series with some buffer to allow for time shifts */
 
   /* FIXME: Can this function be merged with normalize?? */
 
-  UINT4          i, j, k, kmin, len, kmax,numPoints,vecLen,halfNumPoints;
-  REAL8          deltaF, r, s, x, y, UNUSED length;
+  UINT4          i, j, k, kmin, len, kmax,vecLen;
+  REAL8          deltaF, r, s, x, y;
   COMPLEX8       *inputData,*qtilde;
   COMPLEX8Vector *qtildeVec,qVec;
-  COMPLEX8       *PTFQtilde   = NULL;  
+  COMPLEX8       *PTFQtilde   = NULL;
 
-  numPoints   = PTFqVec->vectorLength;
-  halfNumPoints = 3*numPoints/4 - numPoints/4;
   len       = sgmnt->data->length;
   PTFQtilde = fcTmplt->PTFQtilde->data;
   deltaF    = sgmnt->deltaF;
-//  deltaT    = 1.0 / ( deltaF * (REAL4) numPoints);
+/*  deltaT    = 1.0 / ( deltaF * (REAL4) numPoints); */
 
   /* F_min and F_max are used to do the chisquared limited filters */
   if (! f_min)
@@ -499,8 +494,8 @@ void coh_PTF_bank_filters(
     fFinal    = params->highFilterFrequency;
   }
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
-  qVec.length = numPoints;
-  qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
+  qVec.length = params->numTimePoints;
+  qtildeVec    = XLALCreateCOMPLEX8Vector( params->numTimePoints );
   qtilde = qtildeVec->data;
 
   if (! spinBank )
@@ -512,7 +507,6 @@ void coh_PTF_bank_filters(
 
   /* Data params */
   inputData   = sgmnt->data->data;
-  length      = sgmnt->data->length;
 
   for ( i = 0; i < vecLen; ++i )
   {
@@ -523,14 +517,14 @@ void coh_PTF_bank_filters(
     {
       r = inputData[k].re;
       s = inputData[k].im;
-      x = PTFQtilde[i * (numPoints / 2 + 1) + k].re;
-      y = 0 - PTFQtilde[i * (numPoints / 2 + 1) + k].im; /* cplx conj */
+      x = PTFQtilde[i * (params->numFreqPoints) + k].re;
+      y = 0 - PTFQtilde[i * (params->numFreqPoints) + k].im; /* cplx conj */
 
       qtilde[k].re = 4. * (r*x - s*y)*deltaF;
       qtilde[k].im = 4. * (r*y + s*x)*deltaF;
     }
 
-    qVec.data = PTFqVec->data + (i * numPoints);
+    qVec.data = PTFqVec->data + (i * params->numTimePoints);
 
     /* inverse fft to get q */
     XLALCOMPLEX8VectorFFT( &qVec, qtildeVec, invBankPlan );
@@ -539,9 +533,11 @@ void coh_PTF_bank_filters(
 
   for ( i = 0; i < vecLen ; i++ )
   {
-    for ( j = numPoints/4 - 5000; j < 3*numPoints/4 + 5000; ++j )
+    for ( j = params->analStartPointBuf; j < params->analEndPointBuf; ++j )
     {
-      PTFBankqVec->data[i*(halfNumPoints+10000) + (j-numPoints/4+5000)] = PTFqVec->data[i*numPoints + j];
+      PTFBankqVec->data[i*(params->numAnalPointsBuf) + \
+                        (j-params->analStartPointBuf)]\
+               = PTFqVec->data[i*params->numTimePoints + j];
     }
   }
 }
@@ -566,9 +562,9 @@ void coh_PTF_auto_veto_overlaps(
   COMPLEX8Vector *qtildeVec,*qVec;
   COMPLEX8       *PTFQtilde   = NULL;
 
-  len         = invspec->data->length;
+  len         = params->numFreqPoints;
   PTFQtilde = fcTmplt->PTFQtilde->data;
-  numPoints   = len*2 -2;
+  numPoints   = params->numTimePoints;
   deltaF      = invspec->deltaF;
 //  deltaT    = 1.0 / ( deltaF * (REAL4) len);
 

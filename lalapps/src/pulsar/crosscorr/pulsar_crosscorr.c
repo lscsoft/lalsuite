@@ -84,7 +84,7 @@ CHAR     *uvar_filenameOut=NULL;
 CHAR 	 *uvar_debugOut=NULL;
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-#define EPHEM_YEARS "05-09"
+#define EPHEM_YEARS "00-19-DE405"
 
 #define F0 100
 #define FBAND 1

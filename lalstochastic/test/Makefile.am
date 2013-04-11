@@ -1,7 +1,6 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS)
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalstochastic.la
 
-if LALSUPPORT
 check_PROGRAMS = \
 	StochasticCrossCorrelationStatisticTest \
 	StochasticHeterodynedCrossCorrelationStatisticTest \
@@ -17,10 +16,6 @@ check_PROGRAMS = \
 	SimulateSBTest \
 	SimulatePopcornTest
 TESTS = $(check_PROGRAMS)
-else
-check_PROGRAMS =
-TESTS =
-endif
 
 StochasticCrossCorrelationStatisticTest_SOURCES = \
   StochasticCrossCorrelationStatisticTest.c CheckStatus.c

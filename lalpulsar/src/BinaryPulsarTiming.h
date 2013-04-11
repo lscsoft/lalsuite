@@ -85,7 +85,7 @@ not be in the binary timing routine"
 #define TDT_TAI 32.184
 /* the difference between TDT/TT and the GPS epoch */
 #define GPS_TDT (TDT_TAI + XLAL_EPOCH_GPS_TAI_UTC)
-                        
+
 /*@}*/
 
 /** A structure to contain all pulsar parameters and associated errors.
@@ -98,7 +98,7 @@ tagBinaryPulsarParams
   CHAR *name;   /**< pulsar name */
   CHAR *jname;  /**< pulsar J name */
   CHAR *bname;  /**< pulsar B name */
-  
+
   CHAR *model;  /**< TEMPO binary model e.g. BT, DD, ELL1 */
 
   REAL8 f0;     /**< spin frequency (Hz) */
@@ -111,7 +111,7 @@ tagBinaryPulsarParams
   REAL8 f7;     /**< frequency seventh derivative (Hz/s^7) */
   REAL8 f8;     /**< frequency eighth derivative (Hz/s^8) */
   REAL8 f9;     /**< frequency ninth derivative (Hz/s^9) */
-  
+
   REAL8 ra;     /**< right ascension (rads) */
   REAL8 dec;    /**< declination (rads) */
   REAL8 pmra;   /**< proper motion in RA (rads/s) */
@@ -119,7 +119,7 @@ tagBinaryPulsarParams
 
   REAL8 posepoch; /**< position epoch */
   REAL8 pepoch;   /**< period/frequency epoch */
-  
+
   /* all parameters will be in the same units as used in TEMPO */
 
   /* Keplerian parameters */
@@ -128,7 +128,7 @@ tagBinaryPulsarParams
   REAL8 w0;     /**< logitude of periastron (deg) */
   REAL8 x;      /**< projected semi-major axis/speed of light (light secs) */
   REAL8 T0;     /**< time of orbital perisastron as measured in TDB (MJD) */
-  
+
   /* add extra parameters for the BT1P and BT2P models which contain two and
      three orbits respectively (only the first one can be relativistic, so the
      others only have the Keplerian parameters) */
@@ -161,7 +161,7 @@ tagBinaryPulsarParams
   /* for Epstein-Haugan (EH) model */
   REAL8 s; /**< Shapiro 'shape' parameter sin i */
   CHAR *sstr;
-  
+
   /* for Damour-Deruelle (DD) model */
   /*REAL8 r; Shapiro 'range' parameter - defined internally as Gm2/c^3 */
   REAL8 dr;
@@ -175,7 +175,7 @@ tagBinaryPulsarParams
 
   /* for the DDS model we need the shapmax parameter */
   REAL8 shapmax;
-  
+
   /* orbital frequency coefficients for BTX model (only for one orbit at the
      moment i.e. a two body system) */
   REAL8 *fb; /**< orbital frequency coefficients for BTX model */
@@ -193,7 +193,7 @@ tagBinaryPulsarParams
   REAL8 wave_om;  /**< fundamental frequency timing noise terms */
   REAL8 waveepoch;
   INT4 nwaves;
-  
+
   /* gravitational wave parameters */
   REAL8 h0;     /**< gravitational wave amplitude */
   REAL8 cosiota;/**< cosine of the pulsars orientation angle */
@@ -201,7 +201,7 @@ tagBinaryPulsarParams
   REAL8 phi0;   /**< initial phase */
   REAL8 Aplus;  /**< 0.5*h0*(1+cos^2iota) */
   REAL8 Across; /**< h0*cosiota */
-  
+
   /* pinned superfluid gw parameters*/
   REAL8 I21;    /**< parameter for pinsf model.**/
   REAL8 I31;    /**< parameter for pinsf model.**/
@@ -209,7 +209,7 @@ tagBinaryPulsarParams
   REAL8 lambda; /**< this is a longitude like angle between pinning axis and
                      line of sight */
   REAL8 costheta;  /**< angle between rotation axis and pinning axis */
-  
+
   /* parameters for Kopeikin terms */
   REAL8 daop;   /**< parameter for the Kopeikin annual orbital parallax */
   INT4 daopset; /**< set if daop is set from the par file */
@@ -217,7 +217,7 @@ tagBinaryPulsarParams
   INT4 kinset;
   REAL8 kom;
   INT4 komset;
-  
+
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
   REAL8 f1Err;
@@ -229,7 +229,7 @@ tagBinaryPulsarParams
   REAL8 f7Err;
   REAL8 f8Err;
   REAL8 f9Err;
-  
+
   REAL8 pepochErr;
   REAL8 posepochErr;
 
@@ -260,7 +260,7 @@ tagBinaryPulsarParams
 
   REAL8 sErr;
   REAL8 shapmaxErr;
-  
+
   /*REAL8 rErr; Shapiro 'range' parameter - defined internally as Gm2/c^3 */
   REAL8 drErr;
   REAL8 dthErr;
@@ -289,10 +289,10 @@ tagBinaryPulsarParams
   REAL8 rErr;
   REAL8 lambdaErr;
   REAL8 costhetaErr;
-  
+
   /* timing noise fitting parameters */
   REAL8 wave_omErr;
-  
+
   CHAR *units; /**< The time system used e.g. TDB */
   CHAR *ephem; /**< The JPL solar system ephemeris used e.g. DE405 */
 }BinaryPulsarParams;
@@ -305,17 +305,17 @@ tagKopeikinTerms
   REAL8 DK012;
   REAL8 DK013;
   REAL8 DK014;
-  
+
   REAL8 DK021;
   REAL8 DK022;
   REAL8 DK023;
   REAL8 DK024;
-  
+
   REAL8 DK031;
   REAL8 DK032;
   REAL8 DK033;
   REAL8 DK034;
-  
+
   REAL8 DK041;
   REAL8 DK042;
   REAL8 DK043;
@@ -327,8 +327,8 @@ typedef struct
 tagBinaryPulsarInput
 {
   REAL8 tb;    /**< Time of arrival (TOA) at the SSB */
-  
-  EarthState earth; /**< The current Earth state (for e.g. calculating 
+
+  EarthState earth; /**< The current Earth state (for e.g. calculating
                          Kopeikin terms) */
 }BinaryPulsarInput;
 
@@ -342,17 +342,17 @@ tagBinaryPulsarOutput
 /**** DEFINE FUNCTIONS ****/
 /** \brief This function will iteratively calculate the eccentric anomaly from
   * Kelper's equation
-  * 
+  *
   * The equation is solved using a Newton-Raphson technique and the S9
   * starting value in Odell & Gooding  1986 CeMec 38 307. This is taken from the
-  * TEMPO2 code T2model.C 
+  * TEMPO2 code T2model.C
   */
 void
 XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u);
 
 /** \brief This function will compute the effect of binary parameters on the
   * pulsar parallax
-  * 
+  *
   * This function is based on the terms given in Kopeikin, Ap. J. Lett, 439,
   * 1995. The computation is copied from the KopeikinTerms function in the
   * T2model.C file of TEMPO2.
@@ -409,7 +409,34 @@ F0   -0.007 0.124  1.000
  */
 LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
 
-/** A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
+
+/** \brief Convert a string containing an angle in "hours:minutes:seconds" format into radians
+ *
+ * This function will covert a string containing an angle given in "hours:minutes:seconds"
+ * format (e.g. a right ascension) into radians. It requires that the hours value is positive
+ * and the minutes and seconds values are between 0 to 60. Hours are limited to be between
+ * 0 and 24 hours. An example would be:
+ *
+ * rads = XLALhmsToRads( "12:05:07.765" );
+ */
+REAL8 XLALhmsToRads( const CHAR *hms );
+
+
+/** \brief Convert a string containing an angle in "degrees:minutes:seconds" format into radians
+ *
+ * This function will covert a string containing an angle given in "degrees:minutes:seconds"
+ * format (e.g. a declination) into radians. It requires that the minutes and seconds values
+ * are between 0 to 60. Degrees are allowed to be any positive of negative integer. An
+ * example would be:
+ *
+ * rads = XLALdmsToRads( "-06:52:16.875" );
+ */
+REAL8 XLALdmsToRads( const CHAR *dms );
+
+
+/** \deprecated Use XLALdmsToRads() or XLALhmsToRads() instead.
+ *
+ * A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
  * number of degrees as a float degs is the string containing the
  * dd/hh:mm:ss.sss coords is either ra/RA or dec/DEC.
  */
@@ -424,14 +451,16 @@ LALDegsToRads(CHAR *degs, const CHAR *coords);
  * seonds added between the TAI and UTC up to the point of definition of GPS
  * time at UTC 01/01/1980.
  */
+/*@{*/
 REAL8
-LALTTMJDtoGPS(REAL8 MJD);
+XLALTTMJDtoGPS(REAL8 MJD);
 
 REAL8
-LALTDBMJDtoGPS(REAL8 MJD);
+XLALTDBMJDtoGPS(REAL8 MJD);
 
 REAL8
-LALTCBMJDtoGPS(REAL8 MJD);
+XLALTCBMJDtoGPS(REAL8 MJD);
+/*@}*/
 
 /** function to print out all the pulsar parameters read in from a par file
  */

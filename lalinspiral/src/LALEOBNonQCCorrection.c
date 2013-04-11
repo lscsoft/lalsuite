@@ -29,10 +29,6 @@
  * 
  */
 
-#include <complex.h>
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALComplex.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>
 
@@ -385,8 +381,7 @@ int  XLALEOBNonQCCorrection(
 
   phase = coeffs->b1 * p / rOmega + coeffs->b2 * p*p*p/rOmega;
 
-  nqc->re = mag * cos(phase);
-  nqc->im = mag * sin(phase);
+  *nqc = crect( mag * cos(phase), mag * sin(phase) );
 
   return XLAL_SUCCESS;
 

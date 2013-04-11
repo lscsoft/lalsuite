@@ -67,7 +67,7 @@ int main(int argc, char *argv[]){
   CHAR psrInput[256]; /* pulsar input file containing params f0, f1 etc. */
   
   UINT4 i=0, j; /* counter */
-  REAL8Vector *time=NULL;
+  REAL8Vector *times=NULL;
   COMPLEX16Vector *B=NULL;
   
   /* vars for Crab */
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]){
   LALComputeFreqDerivatives ( &status, &crabOutput, &crabEphemerisData );
   
   /* allocate mem for input data */
-  time = XLALCreateREAL8Vector(MAXLENGTH);
+  times = XLALCreateREAL8Vector(MAXLENGTH);
   B = XLALCreateCOMPLEX16Vector(MAXLENGTH);
   
   /* read in input data */
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]){
     
     REAL8 tmpr, tmpi;
     
-    fscanf(fpin, "%lf%lf%lf", &time->data[i], &tmpr, &tmpi);
+    fscanf(fpin, "%lf%lf%lf", &times->data[i], &tmpr, &tmpi);
     B->data[i] = tmpr + I*tmpi;
     i++;
   }
@@ -202,9 +202,9 @@ TNInput.f1, TNInput.f2, TNInput.t0);
 
   /* perform timing noise heterodyne */
   for(j=0;j<i-1;j++){
-    REAL8 dtpos = time->data[j] - TNInput.t0;
+    REAL8 dtpos = times->data[j] - TNInput.t0;
 
-    dataEpoch.gpsSeconds = (INT8)floor(time->data[j]);
+    dataEpoch.gpsSeconds = (INT8)floor(times->data[j]);
     dataEpoch.gpsNanoSeconds = 0;
     
     TNInput.epoch.gpsSeconds = dataEpoch.gpsSeconds;
@@ -226,7 +226,7 @@ TNInput.f1, TNInput.f2, TNInput.t0);
     if(j==0)
     {
       REAL8 dt;
-      dt = time->data[j]-hetParams.epoch;
+      dt = times->data[j]-hetParams.epoch;
       fprintf(stderr, "f0 = %f,\nf1 = %e,\nf2 = %e,\nf3 = %e,\nf4 = %e.\n", 
       hetParams.f0, hetParams.f1, hetParams.f2, hetParams.f3, hetParams.f4);
       fprintf(stderr, "dt = %f, \n(1/120)*f4*dt^5 = %e.\n", dt, 
@@ -236,10 +236,10 @@ TNInput.f1, TNInput.f2, TNInput.t0);
     XLALBarycenterEarthNew(&earth, &baryinput.tgps, edat, tdat, TIMECORRECTION_TDB);
 
     /* perform TN heterodyne */
-    LALTimingNoiseHeterodyne( &status, &TNOutput, &TNInput, &hetParams, edat,
+    LALTimingNoiseHeterodyne( &status, &TNOutput, &TNInput, &hetParams,
       baryinput, earth );
     
-    fprintf(fpout, "%lf\t%e\t%e\n", time->data[j], creal(TNOutput.Vh),
+    fprintf(fpout, "%lf\t%e\t%e\n", times->data[j], creal(TNOutput.Vh),
             cimag(TNOutput.Vh));
 
     fprintf(phifp, "%f\t%f\t%f\n", TNOutput.phi0, TNOutput.phi1, TNOutput.Dphase);
@@ -250,7 +250,7 @@ TNInput.f1, TNInput.f2, TNInput.t0);
 
   /* destroy vectors */
   XLALDestroyCOMPLEX16Vector( B );
-  XLALDestroyREAL8Vector( time );
+  XLALDestroyREAL8Vector( times );
   XLALDestroyREAL8Vector(crabEphemerisData.f1);
   XLALDestroyREAL8Vector(crabEphemerisData.f0);
   XLALDestroyREAL8Vector(crabEphemerisData.tArr);

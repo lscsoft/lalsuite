@@ -320,8 +320,8 @@ main(int argc, char *argv[]){
     if (lalDebugLevel) fprintf(stdout,"STATUS : Randomly generate a sky position - alpha = %s delta = %s (hms)\n",RA,DEC);
 
     /* convert back to rads to test conversion */
-    alphatest = LALDegsToRads(RA, "alpha");
-    deltatest = LALDegsToRads(DEC, "delta");
+    alphatest = XLALhmsToRads(RA);
+    deltatest = XLALdmsToRads(DEC);
     if (lalDebugLevel) fprintf(stdout,"STATUS : Converted back to rads for testing - alpha = %6.12f delta = %6.12f (rads)\n",alphatest,deltatest);
     
     /* free memory */
@@ -332,8 +332,8 @@ main(int argc, char *argv[]){
   /* if a user has defined a sky position */
   else if ((LALUserVarWasSet(uvar.RAJ))&&(LALUserVarWasSet(uvar.DECJ))) {
     if (lalDebugLevel) fprintf(stdout,"STATUS : User defined sky position - alpha = %s delta = %s (hms)\n",uvar.RAJ,uvar.DECJ);
-    alpha = LALDegsToRads(uvar.RAJ, "alpha");
-    delta = LALDegsToRads(uvar.DECJ, "delta");
+    alpha = XLALhmsToRads(uvar.RAJ);
+    delta = XLALdmsToRads(uvar.DECJ);
     if (lalDebugLevel) fprintf(stdout,"STATUS : Converted user defined sky position to - alpha = %6.12f delta = %6.12f (rads)\n",alpha,delta);
   }
   else {
@@ -769,7 +769,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   uvar->DurationMJD = 1800;
 
   uvar->ephemyear = (CHAR*)LALMalloc(512);
-  sprintf(uvar->ephemyear,"05-09");
+  sprintf(uvar->ephemyear,"00-19-DE405");
 
   uvar->f0 = 1.0;
   uvar->fdot = 0.0;
@@ -788,7 +788,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   LALregSTRINGUserStruct ( status, 	RAJ, 	        'r', UVAR_OPTIONAL, 	"Right ascension hh:mm.ss.ssss [Default = 00:00.00.0000]");
   LALregSTRINGUserStruct ( status, 	DECJ, 	        'j', UVAR_OPTIONAL, 	"Declination dd:mm.ss.ssss [Default = 00:00.00.0000]");
   LALregSTRINGUserStruct ( status,      ephemdir,       'e', UVAR_REQUIRED, 	"Name of ephemeris directory");
-  LALregSTRINGUserStruct ( status,      ephemyear,      'y', UVAR_OPTIONAL, 	"Ephemeris year [Default = 05-09]");
+  LALregSTRINGUserStruct ( status,      ephemyear,      'y', UVAR_OPTIONAL, 	"Ephemeris year [Default = 00-19-DE405]");
   LALregREALUserStruct ( status, 	f0,     	'f', UVAR_OPTIONAL, 	"The signal frequency in Hz at SSB at the reference time [Default = 1.0]");
   LALregREALUserStruct ( status, 	fdot,     	'p', UVAR_OPTIONAL, 	"The signal frequency derivitive in Hz at SSB at the reference time [Default = 0.0]");
   LALregREALUserStruct ( status, 	TrefTDBMJD, 	'R', UVAR_OPTIONAL, 	"Reference time at the SSB in TDB in MJD [Default = 53400 ~ Jan 2005]");

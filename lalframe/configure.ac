@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalframe],[1.0.8.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalframe],[1.0.10.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -41,7 +41,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[5])
+AC_SUBST([LIBCURRENT],[6])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -149,8 +149,8 @@ AS_IF([test "${framel}" = "true"],[
        FRAME_LIBRARY="FrameL"])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.9.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.9.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[6.10.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.10.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # check for inotify
 if test "${inotify}" = "true"; then

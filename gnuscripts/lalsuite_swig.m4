@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 26
+# serial 30
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -106,11 +106,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     lalswig=false
   ])
 
-  # common SWIG interfaces (with LAL only)
-  AS_IF([test ${lalswig} = true],[
-    AC_SUBST([SWIG_IFACES],["swiglal_common.i"])
-  ])
-
   # if any language was configured
   AM_CONDITIONAL(SWIG_BUILD,[test "${swig_build_any}" = true])
   AM_COND_IF(SWIG_BUILD,[
@@ -150,12 +145,24 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -outdir \$(SWIG_OUTDIR)"
 
     # flags for generating/compiling SWIG wrapping module sources
-    AC_SUBST(SWIG_CPPFLAGS,["${swig_save_CPPFLAGS}"])
+    AC_SUBST(SWIG_CPPFLAGS,[])
+    for flag in ${swig_save_CPPFLAGS}; do
+      AS_CASE([${flag}],
+        [-I*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag} `echo ${flag} | ${SED} 's|/include$|/swig|'`"],
+        [*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag}"]
+      )
+    done
 
     # are we (not) in debugging mode?
     AS_IF([test "x${enable_debug}" = xno],[
       SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DNDEBUG"
       SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DNDEBUG"
+    ])
+
+    # is GSL available?
+    AS_IF([test "x${GSL_LIBS}" != x],[
+      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DHAVE_LIBGSL"
+      SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DHAVE_LIBGSL"
     ])
 
     # look here for interfaces and LAL headers (but not for preprocessing)
@@ -186,6 +193,25 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG_CFLAGS="${SWIG_CFLAGS} -O0"
       SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -O0"
     ])
+
+    # check for additional compiler flags
+    extra_flags="-Wno-uninitialized -Wno-unused-variable -fno-strict-aliasing"
+    for flag in ${extra_flags}; do
+      AC_MSG_CHECKING([if ${flag} is supported])
+      CFLAGS=${flag}
+      AC_LANG_PUSH([C])
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[])
+      ],[
+        AC_MSG_RESULT([yes])
+        SWIG_CFLAGS="${SWIG_CFLAGS} ${flag}"
+        SWIG_CXXFLAGS="${SWIG_CXXFLAGS} ${flag}"
+      ],[
+        AC_MSG_RESULT([no])
+      ])
+      CFLAGS=
+      AC_LANG_POP([C])
+    done
 
     # flags for linking SWIG wrapping modules
     AC_SUBST(SWIG_LDFLAGS,[])
@@ -254,12 +280,6 @@ AC_DEFUN([LALSUITE_SWIG_DEPENDS],[
 AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
   m4_pushdef([uppercase],translit([$1],[a-z],[A-Z]))
   m4_pushdef([lowercase],translit([$1],[A-Z],[a-z]))
-
-  # common and language-specific SWIG interfaces (with LAL only)
-  AS_IF([test ${lalswig} = true],[
-    SWIG_]uppercase[_IFACES="swiglal_]lowercase[.i"
-    AC_SUBST(SWIG_]uppercase[_IFACES)
-  ])
 
   # check whether to configure $1
   AM_CONDITIONAL(SWIG_BUILD_[]uppercase,[test ${swig_build_]lowercase[} = true])

@@ -51,9 +51,9 @@ def parse_command_line():
     parser.add_option("--bank-seed",help="Initialize the bank with specified template bank.", metavar="FILE")
     parser.add_option("--mchirp-boundaries-file", metavar="FILE", help="file containing chirp mass bin boundaries")
     parser.add_option("--mchirp-boundaries-index", metavar="INDEX", type="int", help="integer index into --mchirp-boundaries-file line number such that boundaries[INDEX] is taken as --mchirp-min and boundaries[INDEX + 1] is taken as --mchirp-max")
-    parser.add_option("--approximant", choices=waveforms.keys(), default="IMRPhenomB", help="Set the approximant to use for waveform generation.")
+    parser.add_option("--approximant", choices=waveforms.keys(), metavar='|'.join(waveforms.keys()), default="IMRPhenomB", help="Set the approximant to use for waveform generation.")
     parser.add_option("--use-metric", action="store_true", default=False, help="Use analytic approximation to the numerical match calculation (if available).")
-    parser.add_option("--noise-model", choices=noise_models.keys(), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model")
+    parser.add_option("--noise-model", choices=noise_models.keys(), metavar='|'.join(noise_models.keys()), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model")
     parser.add_option("--reference-psd", help="Read PSD from xml instead of using analytical noise model.")
     parser.add_option("--instrument", metavar="IFO", help="Specify the instrument for which to generate a template bank.")
     parser.add_option("--flow", type="float", help="Set the low-frequency cutoff to use for the match caluclation.")
@@ -68,12 +68,12 @@ def parse_command_line():
     parser.add_option("--mtotal-max", help="Set maximum total mass of the system",  type="float")
     parser.add_option("--mchirp-min", help="Set minimum chirp-mass of the system (in solar masses)", type="float")
     parser.add_option("--mchirp-max", help="Set maximum chirp-mass of the system (in solar masses)", type="float")
-    parser.add_option("--mratio-min", dest="qmin", help="Set minimum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float")
+    parser.add_option("--mratio-min", dest="qmin", help="Set minimum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float", default=1.0)
     parser.add_option("--mratio-max", dest="qmax", help="Set maximum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float")
     parser.add_option("--spin-min", help="Set minimum allowed value for the spin parameter chi", type="float")
     parser.add_option("--spin-max", help="Set maximum allowed value for the spin parameter chi", type="float")
     parser.add_option("--aligned-spin", action="store_true", default=False, help="Only generate templates whose spins are parallel to the orbital angular momentum.")
-    parser.add_option("--user-tag", default="sbank", help="base for output filename")
+    parser.add_option("--user-tag", default=None, help="base for output filename")
     parser.add_option("--verbose", default=False,action="store_true", help="Be verbose and write diagnostic information out to file.")
 
     opts, args = parser.parse_args()
@@ -88,6 +88,9 @@ def parse_command_line():
     #
     # check for argument consistency
     #
+    if opts.qmin < 1:
+        parser.error("Mass ratio is assumed to be >= 1.")
+
     if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","SEOBNRv1"] and not opts.aligned_spin:
         parser.error("--aligned-spin is required for the %s approximant" % opts.approximant)
 
@@ -220,4 +223,11 @@ for template in bank:
 
 # write out the document
 ligolw_process.set_process_end_time(process)
-utils.write_filename(xmldoc, "%s.xml" % opts.user_tag)
+
+# FIXME output naming conventions to match IHOPE/tmpltbank break sbank_pipe
+if opts.user_tag:
+    fout = "%s-SBANK_%s-%d-%d.xml.gz" % (opts.instrument, opts.user_tag, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
+else:
+    fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
+
+utils.write_filename(xmldoc, fout)

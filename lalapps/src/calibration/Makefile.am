@@ -51,4 +51,4 @@ lalapps_noise_comp_pipe: $(srcdir)/noise_comp_pipe.in python_config.sed
 	@chmod +x lalapps_noise_comp_pipe
 
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

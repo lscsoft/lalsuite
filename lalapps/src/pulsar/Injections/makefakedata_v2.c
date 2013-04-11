@@ -174,8 +174,8 @@ LALCheckMemoryLeaks()
 #include <lal/GenerateSpinOrbitCW.h>
 
 /* Locations of the earth and sun ephemeris data */
-#define EARTHDATA "earth00-04.dat"
-#define SUNDATA "sun00-04.dat"
+#define EARTHDATA "earth00-19-DE405.dat.gz"
+#define SUNDATA   "sun00-19-DE405.dat.gz"
 
 int mycalls=0;
 int myclears=0;

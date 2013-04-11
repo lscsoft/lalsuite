@@ -18,14 +18,30 @@ for(my $ii=0; $ii<$numberofjobs; $ii++) {
       die "cat failed: $?" if $?;
       
       open(LOGFILE, "$directory/$analysisdate/output/$ii/logfile.txt") or die "Cannot open $directory/$analysisdate/output/$ii/logfile.txt $!";
-      my @lines = reverse <LOGFILE>;
-      my $jj = 1;
-      while ($lines[$jj] =~ /^fsig = (\d+.\d+), period = (\d+.\d+), df = (\d+.\d+), RA = (\d+.\d+), DEC = (-?\d+.\d+), R = (\d+.\d+), h0 = (\d+.\d+e-\d+), Prob = (-\d+.\d+), TF norm = (\d+.\d+e\+\d+)/) {
-         print CANDIDATES "$1 $2 $3 $4 $5 $6 $7 $8 $9 $ii\n";
-         $jj++
+      if (-z "$directory/$analysisdate/output/$ii/logfile.txt") {
+         print STDERR "Missing $ii!\n";
+         system("echo JOB A$ii $directory/$analysisdate/condor >> $directory/$analysisdate/dag4missing");
+         die "echo failed: $?" if $?;
+         system("echo VARS A$ii PID=\\\"$ii\\\" >> $directory/$analysisdate/dag4missing");
+         die "echo failed: $?" if $?;
+      } else {
+         my @lines = reverse <LOGFILE>;
+         if ( $lines[0] !~ /^Program finished/ ) {
+            print STDERR "Missing $ii!\n";
+            system("echo JOB A$ii $directory/$analysisdate/condor >> $directory/$analysisdate/dag4missing");
+            die "echo failed: $?" if $?;
+            system("echo VARS A$ii PID=\\\"$ii\\\" >> $directory/$analysisdate/dag4missing");
+            die "echo failed: $?" if $?;
+         } else {
+            my $jj = 1;
+            while ($lines[$jj] =~ /^fsig = (\d+.\d+), period = (\d+.\d+), df = (\d+.\d+), RA = (\d+.\d+), DEC = (-?\d+.\d+), R = (\d+.\d+), h0 = (\d+.\d+e-\d+), Prob = (-\d+.\d+), TF norm = (\d+.\d+e\+\d+)/) {
+               print CANDIDATES "$1 $2 $3 $4 $5 $6 $7 $8 $9 $ii\n";
+               $jj++
+            }
+         }
       }
       close(LOGFILE);
-      
+
    } else {
       open(CONFIG, "$directory/$analysisdate/output/$ii/input_values.conf") or die "Cannot open $directory/$analysisdate/output/$ii/input_values.conf $!";
       my $ulfmin = 0.0;

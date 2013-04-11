@@ -1259,11 +1259,8 @@ print >> pegprop_fh, """
 pegasus.catalog.replica=File
 pegasus.catalog.replica.file=%s
 
-pegasus.catalog.site=XML3
-
 pegasus.transfer.force=true
 pegasus.transfer.links=true
-pegasus.transfer.refiner=Bundle
 
 dagman.retry=3
 dagman.maxpre=1
@@ -1280,18 +1277,12 @@ pegasus.dir.submit.logs=%s
 pegasus.catalog.site.file=%s/site-local.xml
 """ % (os.path.join(os.getcwd(),peg_frame_cache),opts.log_path,os.getcwd())
 
-if opts.dax:
+if opts.data_checkpoint:
   print >> pegprop_fh, """\
 
-# pegasus 4.x variables
+# pegasus 4.x variable for data checkpointing
 pegasus.data.configuration=condorio
 """
-else:
-  print >> pegprop_fh, """\
-
-# pegasus 3.x variables
-pegasus.gridstart.kickstart.stat=false
-pegasus.transfer.symlink.impl=Symlink"""
 
 pegprop_fh.close()
 

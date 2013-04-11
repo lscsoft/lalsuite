@@ -29,7 +29,6 @@ TestLowLatencyData3_LDADD = $(PTHREAD_LIBS) $(LDADD)
 TestLowLatencyData3_CFLAGS = $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 endif
 
-if LALSUPPORT
 check_PROGRAMS = \
 	AggregationTest \
 	FrameCacheTest \
@@ -44,7 +43,6 @@ TESTS = \
 	FrameCacheTest.sh \
 	FrameStreamTest \
 	$(PTHREADPRGS)
-endif
 
 TESTS_ENVIRONMENT = LAL_FRAME_PATH=$(srcdir)
 

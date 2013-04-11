@@ -82,7 +82,7 @@ int finite(double);
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
-#define EPHEM_YEARS  "00-04"	/**< default range: override with --ephemYear */
+#define EPHEM_YEARS  "00-19-DE405"	/**< default range: override with --ephemYear */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -188,8 +188,8 @@ typedef struct {
   CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
   CHAR *logstring;                          /**< log containing max-info on the whole search setup */
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
-  REAL4 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
-  REAL4Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
+  REAL8 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
+  REAL8Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
   RankingStat_t RankingStatistic;           /**< rank candidates according to F or LV */
 } ConfigVariables;
 
@@ -542,7 +542,7 @@ int main(int argc,char *argv[])
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTTMJDtoGPS(uvar.orbitTpSSBMJD);
+	  GPSfloat = XLALTTMJDtoGPS(uvar.orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbitalParams->tp),GPSfloat);
 	}
       else
@@ -747,7 +747,7 @@ int main(int argc,char *argv[])
           REAL4 TwoFX[Fstat.numDetectors];
           for ( UINT4 X=0; X < Fstat.numDetectors; X++ )
             TwoFX[X] = 2.0*Fstat.FX[X];
-          REAL4* LVlogLX = NULL;
+          REAL8* LVlogLX = NULL;
           if ( GV.LVloglX ) LVlogLX = GV.LVloglX->data;
           thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, GV.LVlogRhoTerm, LVlogLX, uvar.LVuseAllTerms );
           if ( xlalErrno ) {
@@ -1500,7 +1500,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     {
       /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
-      GPSfloat = LALTDBMJDtoGPS(uvar->refTimeMJD);
+      GPSfloat = XLALTDBMJDtoGPS(uvar->refTimeMJD);
       XLALGPSSetREAL8 ( &refTime, GPSfloat );
     }
   else
@@ -1510,13 +1510,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   if (LALUserVarWasSet(&uvar->RA))
     {
       /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Alpha = LALDegsToRads(uvar->RA, "alpha");
+      cfg->Alpha = XLALhmsToRads(uvar->RA);
     }
   else cfg->Alpha = uvar->Alpha;
   if (LALUserVarWasSet(&uvar->Dec))
     {
       /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Delta = LALDegsToRads(uvar->Dec, "delta");
+      cfg->Delta = XLALdmsToRads(uvar->Dec);
     }
   else cfg->Delta = uvar->Delta;
 
@@ -1884,7 +1884,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   else if ( uvar->LVrho > 0.0 )
     cfg->LVlogRhoTerm = 4.0 * log(uvar->LVrho) - log(70.0);
   else /* if uvar.LVrho == 0.0, logRhoTerm should become irrelevant in summation */
-    cfg->LVlogRhoTerm = - LAL_REAL4_MAX;
+    cfg->LVlogRhoTerm = - LAL_REAL8_MAX;
   UINT4 numDetectors = cfg->multiSFTs->length;
 
   if ( uvar->computeLV && uvar->LVlX )
@@ -1893,8 +1893,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
         XLALPrintError( "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
-      if ( (cfg->LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("Failed to XLALCreateREAL4Vector ( %d )\n", numDetectors );
+      if ( (cfg->LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("Failed to XLALCreateREAL8Vector ( %d )\n", numDetectors );
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
       for (UINT4 X = 0; X < numDetectors; X++)
@@ -1911,7 +1911,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
           else if ( LVlX > 0.0 )
             cfg->LVloglX->data[X] = log ( LVlX );
           else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-            cfg->LVloglX->data[X] = - LAL_REAL4_MAX;
+            cfg->LVloglX->data[X] = - LAL_REAL8_MAX;
         } /* for X < numDetectors */
     } /* if ( uvar.computeLV && uvar.LVlX ) */
 
@@ -2085,7 +2085,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
     LALFree ( cfg->logstring );
 
   if ( cfg->LVloglX )
-    XLALDestroyREAL4Vector ( cfg->LVloglX );
+    XLALDestroyREAL8Vector ( cfg->LVloglX );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

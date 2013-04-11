@@ -276,7 +276,7 @@ LALGetCrabEphemeris	( LALStatus			*status,
 
   /* convert time in MJD to secs in TDB */
   for(i=0;i<j;i++){
-    GPStemp = LALTTMJDtoGPS(MJDVec[i]);
+    GPStemp = XLALTTMJDtoGPS(MJDVec[i]);
 
     MJDVec[i] = GPStemp + tArrVec[i];
 
@@ -424,7 +424,6 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
           TNHeterodyneOutput  *output,
           TNHeterodyneInput *input,
           ParamsForHeterodyne *params,
-          EphemerisData *edat,
           BarycenterInput baryinput,
           EarthState earth )
 {

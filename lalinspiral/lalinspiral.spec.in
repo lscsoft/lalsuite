@@ -35,7 +35,7 @@ library.
 Summary: Python bindings for LALInspiral
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python numpy lal-python lalframe-python lalsimulation-python
+Requires: python numpy lal-python lalframe-python lalmetaio-python lalsimulation-python
 %description python
 This package provides the Python bindings for LALInspiral.
 
@@ -43,7 +43,7 @@ This package provides the Python bindings for LALInspiral.
 Summary: Octave bindings for LALInspiral
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave lal-octave lalframe-octave lalsimulation-octave
+Requires: octave lal-octave lalframe-octave lalmetaio-octave lalsimulation-octave
 %description octave
 This package provides the Octave bindings for LALInspiral.
 

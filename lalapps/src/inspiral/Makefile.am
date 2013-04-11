@@ -418,4 +418,4 @@ MOSTLYCLEANFILES = \
 	*TMPLTBANK*.xml
 
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

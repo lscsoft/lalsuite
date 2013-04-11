@@ -27,9 +27,6 @@ doc/lalapps.toc
 lalapps-*.tar.gz
 lalapps.spec
 libtool
-misc/lalapps-user-env.csh
-misc/lalapps-user-env.sh
-misc/lalapps-user-env.shell
 src/*/python_config.sed
 src/calibration/lalapps_ComputeFactors
 src/calibration/lalapps_ComputeStrainDriver
@@ -139,6 +136,9 @@ src/inspiral/posterior/lalinference_pipe
 src/inspiral/posterior/python_config.sed
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/git_version.py
+src/lalapps/lalapps-user-env.csh
+src/lalapps/lalapps-user-env.sh
+src/lalapps/lalapps-user-env.shell
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_fftw*_wisdom
 src/lalapps/lalapps_tconvert
@@ -224,6 +224,7 @@ src/pulsar/SFTReferenceLibrary/lalapps_splitSFTs
 src/pulsar/SideBand/lalapps_GenerateSideBandTemplate
 src/pulsar/SideBand/lalapps_GetTimeStamps
 src/pulsar/SideBand/lalapps_SideBandMCMC
+src/pulsar/TDS_isolated/lalapps_CrabTNHeterodyne
 src/pulsar/TDS_isolated/lalapps_create_pulsar_signal_frame
 src/pulsar/TDS_isolated/lalapps_heterodyne_pulsar
 src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation

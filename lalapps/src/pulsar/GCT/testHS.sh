@@ -35,11 +35,7 @@ else
 fi
 
 if [ -n "${LALPULSAR_DATADIR}" ]; then
-    EEPHEM="${LALPULSAR_DATADIR}/earth05-09.dat"
-    SEPHEM="${LALPULSAR_DATADIR}/sun05-09.dat"
-    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR} -y 05-09"
-    cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR} -y 05-09"
-    gct_code="${gct_code} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
+    export LAL_DATA_PATH=${LAL_DATA_PATH}:${LALPULSAR_DATADIR}
 else
     echo
     echo "Need environment-variable LALPULSAR_DATADIR to be set to"

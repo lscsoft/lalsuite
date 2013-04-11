@@ -25,9 +25,26 @@
 /*                         UWM/Caltech - September 2006                          */
 /*********************************************************************************/
 
-#include "lal/cs_cosmo.h"
+#ifndef CS_LAMBDA_COSMO_H
+#define CS_LAMBDA_COSMO_H
+
+#include <lal/cs_cosmo.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 #define LAMBDA_Z_EQ 5440.0		/* redshift of matter-radiation equilib: 10^3.94 */
 #define LAMBDA_H_0 2.27e-18		/* Hubble constant (s^-1) */
 #define LAMBDA_OMEGA_M 0.279
 #define LAMBDA_OMEGA_R 8.5e-5
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
+
+#endif /* CS_LAMBDA_COSMO_H */

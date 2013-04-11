@@ -127,11 +127,17 @@ fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma6\" Type=\"re
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma7\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma8\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma9\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin1x\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin1y\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin1z\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin2x\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin2y\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:spin2z\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:event_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Stream Name=\"sngl_inspiralgroup:sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_INSPIRAL_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%22.16e,%e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,\"sngl_inspiral:event_id:%" LAL_INT8_FORMAT "\""
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%22.16e,%e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,\"sngl_inspiral:event_id:%" LAL_INT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL_BNS(fp) ( \
 fputs( "   <Table Name=\"sngl_inspiralgroup:sngl_inspiral:table\">\n", fp ) == EOF || \
@@ -318,7 +324,7 @@ fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:time_slide_id\" 
 fputs( "      <Stream Name=\"multi_inspiralgroup:multi_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define MULTI_INSPIRAL_ROW \
-  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%e,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"multi_inspiral:event_id:%" LAL_INT8_FORMAT "\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"multi_inspiral:time_slide_id:%" LAL_INT8_FORMAT "\""
+  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%e,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"multi_inspiral:event_id:%" LAL_INT8_FORMAT "\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"time_slide:time_slide_id:%" LAL_INT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SIM_INSPIRAL(fp) ( \
 fputs( "   <Table Name=\"sim_inspiralgroup:sim_inspiral:table\">\n" , fp ) == EOF || \

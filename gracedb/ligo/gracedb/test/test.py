@@ -138,6 +138,15 @@ class TestGracedb(unittest.TestCase):
         label = r.json()
         self.assertEqual("DQV", label['name'])
 
+    def test_slot_event(self):
+        """Create a slot"""
+        r = gracedb.createSlot(eventId, "newslot", "event.log")
+        self.assertEqual(r.status, 201) # CREATED
+        r = gracedb.slot(eventId, "newslot")
+        self.assertEqual(r.status, 200)
+        slotname = r.json()['value']
+        self.assertTrue(slotname.endswith("event.log"))
+
     def test_create_cwb(self):
         """Create a CWB event"""
         """burst-cwb.txt"""
@@ -147,7 +156,7 @@ class TestGracedb(unittest.TestCase):
         cwb_event = r.json()
         self.assertEqual(cwb_event['group'], "Test")
         self.assertEqual(cwb_event['analysisType'], "CWB")
-        self.assertEqual(cwb_event['gpstime'], 1012125588)
+        self.assertEqual(cwb_event['gpstime'], 1042312876)
 
     def test_create_lowmass(self):
         """Create a Low Mass event"""
@@ -194,6 +203,16 @@ class TestGracedb(unittest.TestCase):
         r = gracedb.writeFile(eventId, uploadFile)
         self.assertEqual(r.status, 201) # CREATED
 
+    def test_unicode_param(self):
+        """
+        Test workaround for Python bug
+        http://bugs.python.org/issue11898
+        Raises exception if workaround fails.
+        """
+        uploadFile = os.path.join(testdatadir, "upload.data.gz")
+        r = gracedb.writeFile(eventId, uploadFile)
+        self.assertEqual(r.status, 201) # CREATED
+
     def test_logger(self):
         import logging
         import ligo.gracedb.rest
@@ -213,6 +232,46 @@ class TestGracedb(unittest.TestCase):
 
         event_logs = gracedb.logs(graceid).read()
         self.assertTrue(message in event_logs)
+
+    def test_issue717(self):
+        # non-backwards-compatibility of cli.Client import.
+        # import and use should not cause an import error.
+        from ligo import gracedb
+        gracedb.Client
+        gracedb.ProxyHTTPConnection
+        gracedb.error
+        gracedb.ProxyHTTPSConnection
+
+    def test_gittag(self):
+        # try to make sure GIT_TAG is set properly.
+        import errno
+        version = "1.11"
+        try:
+            # If we are in the source dir (setup.py is available)
+            # make sure the version above agrees.
+            setup_file = open("setup.py", 'r')
+            v = ""
+            for line in setup_file:
+                if line.startswith("version"):
+                    v = line.split('"')[1]
+                    break
+            self.assertEqual(v, version)
+        except IOError, e:
+            if e.errno != errno.ENOENT:
+                raise
+
+        # GIT_TAG should look like "gracedb-VERSION-PKG"
+        # and VERSION should == version from above.
+
+        from ligo.gracedb import GIT_TAG as package_tag
+        package_tag = package_tag.split('-')[1]
+        self.assertTrue(package_tag.startswith(v))
+
+        from ligo.gracedb.cli import GIT_TAG as cli_tag
+        cli_tag = cli_tag.split('-')[1]
+        self.assertTrue(cli_tag.startswith(v))
+
+        self.assertEqual(cli_tag, package_tag)
 
 if __name__ == "__main__":
 

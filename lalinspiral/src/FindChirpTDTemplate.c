@@ -140,6 +140,7 @@ LALFindChirpTDTemplate (
     case FindChirpPTF:
     case EOBNRv2:
     case IMRPhenomB:
+    case IMRPhenomC:
       break;
 
     default:
@@ -247,11 +248,13 @@ LALFindChirpTDTemplate (
     tmplt->tSampling       = sampleRate;
     tmplt->fLower          = params->fLow;
     tmplt->fCutoff         = sampleRate / 2.0 - deltaF;
+    /* signalAmplitude was (ab)used to set distance */
     tmplt->signalAmplitude = 1.0;
-    if (params->approximant == IMRPhenomB)
+    /* 1Mpc standard distance for templates */
+    tmplt->distance        = 1.0;
+    if ( (params->approximant==IMRPhenomB) || (params->approximant==IMRPhenomC) )
     {
       tmplt->spin1[2] = 2 * tmplt->chi/(1. + sqrt(1.-4.*tmplt->eta));
-      tmplt->distance = 1.;
     }
 
     /* compute the tau parameters from the input template */
@@ -348,8 +351,8 @@ LALFindChirpTDTemplate (
       ABORTXLAL( status );
     }
 
-    if ( params->approximant == EOBNR 
-         || params->approximant == EOBNRv2 || params->approximant == IMRPhenomB)
+    if ( params->approximant == EOBNR || params->approximant == EOBNRv2
+        || params->approximant == IMRPhenomB || params->approximant == IMRPhenomC )
     {
       /* We need to do something slightly different for EOBNR */
       UINT4 endIndx = (UINT4) (tmplt->tC * sampleRate);
@@ -374,8 +377,8 @@ LALFindChirpTDTemplate (
     XLALDestroyREAL4Vector( tmpxfac );
     tmpxfac = NULL;
   }
-  else if ( params->approximant == EOBNR 
-            || params->approximant == EOBNRv2|| params->approximant == IMRPhenomB)
+  else if ( params->approximant == EOBNR || params->approximant == EOBNRv2
+      || params->approximant == IMRPhenomB || params->approximant == IMRPhenomC )
   {
     /* For EOBNR we shift so that tC is at the end of the vector */
     if ( ( tmpxfac = XLALCreateREAL4Vector( numPoints ) ) == NULL )
@@ -472,6 +475,7 @@ LALFindChirpTDNormalize(
     case FindChirpPTF:
     case EOBNRv2:
     case IMRPhenomB:
+    case IMRPhenomC:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );

@@ -43,18 +43,18 @@
 #define UNUSED
 #endif
 
-size_t LALInferenceTypeSize[] = {sizeof(INT4),
-                                 sizeof(INT8),
-                                 sizeof(UINT4),
-                                 sizeof(REAL4),
-                                 sizeof(REAL8),
-                                 sizeof(COMPLEX8),
-                                 sizeof(COMPLEX16),
-                                 sizeof(gsl_matrix *),
-                                 sizeof(REAL8Vector *),
-                                 sizeof(UINT4Vector *),
-                                 sizeof(CHAR *),
-                                 sizeof(void *)
+size_t LALInferenceTypeSize[12] = {sizeof(INT4),
+                                   sizeof(INT8),
+                                   sizeof(UINT4),
+                                   sizeof(REAL4),
+                                   sizeof(REAL8),
+                                   sizeof(COMPLEX8),
+                                   sizeof(COMPLEX16),
+                                   sizeof(gsl_matrix *),
+                                   sizeof(REAL8Vector *),
+                                   sizeof(UINT4Vector *),
+                                   sizeof(CHAR *),
+                                   sizeof(void *)
 };
 
 
@@ -105,6 +105,12 @@ LALInferenceParamVaryType LALInferenceGetVariableVaryType(LALInferenceVariables 
   return (LALInferenceGetItem(vars,name)->vary);
 }
 
+void LALInferenceSetParamVaryType(LALInferenceVariables *vars, const char *name, LALInferenceParamVaryType vary)
+{
+  LALInferenceVariableItem *item = LALInferenceGetItem(vars,name);
+  item->vary = vary;
+  return;
+}
 
 void *LALInferenceGetVariable(const LALInferenceVariables * vars,const char * name)
 /* Return the value of variable name from the vars structure by walking the list */
@@ -127,13 +133,24 @@ INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars)
 INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
 {
   INT4 count=0;
+  gsl_matrix *m=NULL;
   LALInferenceVariableItem *ptr = vars->head;
   if (ptr==NULL) return count;
   else {
     /* loop over entries: */
     while (ptr != NULL) {
       /* print name: */
-      if (ptr->vary != LALINFERENCE_PARAM_FIXED) ++count;
+      //TBL: LALInferenceGetVariableDimensionNonFixed had to be modified for noise-parameters, which are stored in a gsl_matrix
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+      {
+        //if the current parameters are for psd fitting..
+        if(ptr->type == LALINFERENCE_gslMatrix_t)
+        {
+          m = *((gsl_matrix **)ptr->value);
+          count += (int)( (m->size1)*(m->size2) );
+        }
+        else count++;
+      }
       ptr = ptr->next;
     }
   }
@@ -270,8 +287,8 @@ int LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name)
   else return 0;
 }
 
-void LALInferenceDestroyVariables(LALInferenceVariables *vars)
-/* Free the entire structure */
+void LALInferenceClearVariables(LALInferenceVariables *vars)
+/* Free all variables inside the linked list, leaving only the head struct */
 {
   LALInferenceVariableItem *this,*next;
   if(!vars) return;
@@ -305,7 +322,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   /* Make sure the structure is initialised */
   if(!target) XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to copy to uninitialised LALInferenceVariables structure.");
   /* first dispose contents of "target" (if any): */
-  LALInferenceDestroyVariables(target);
+  LALInferenceClearVariables(target);
 
   /* get the number of elements in origin */
   dims = LALInferenceGetVariableDimension( origin );
@@ -384,6 +401,7 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
 /** output contents of a 'LALInferenceVariables' structure * /
 / * (by now only prints names and types, but no values) */
 {
+  int i,j;
   LALInferenceVariableItem *ptr = var->head;
   fprintf(stdout, "LALInferenceVariables:\n");
   if (ptr==NULL) fprintf(stdout, "  <empty>\n");
@@ -449,7 +467,18 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
                  (REAL8) ((COMPLEX16 *) ptr->value)->re, (REAL8) ((COMPLEX16 *) ptr->value)->im);
           break;
         case LALINFERENCE_gslMatrix_t:
-          fprintf(stdout, "<can't print matrix>");
+          fprintf(stdout,"[");
+          gsl_matrix *matrix = *((gsl_matrix **)ptr->value);
+          for(i=0; i<(int)( matrix->size1 ); i++)
+          {
+            for(j=0;j<(int)( matrix->size2 );j++)
+            {
+              fprintf(stdout,"%.2g",gsl_matrix_get(matrix, i, j));
+              if(j<(int)( matrix->size2 )-1)fprintf(stdout,",");
+            }
+            if(i<(int)( matrix->size1 )-1)fprintf(stdout,"; ");
+          }
+          fprintf(stdout,"]");
           break;
         default:
           fprintf(stdout, "<can't print>");
@@ -468,13 +497,13 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
   while(ptr!=NULL) {
     switch (ptr->type) {
       case LALINFERENCE_INT4_t:
-        fprintf(fp, "%d", *(INT4 *) ptr->value);
+        fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
         break;
       case LALINFERENCE_INT8_t:
         fprintf(fp, "%"LAL_INT8_FORMAT , *(INT8 *) ptr->value);
         break;
       case LALINFERENCE_UINT4_t:
-        fprintf(fp, "%ud", *(UINT4 *) ptr->value);
+        fprintf(fp, "%"LAL_UINT4_FORMAT , *(UINT4 *) ptr->value);
         break;
       case LALINFERENCE_REAL4_t:
         fprintf(fp, "%9.20e", *(REAL4 *) ptr->value);
@@ -507,7 +536,8 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
 }
 
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
-
+  int i,j;
+  gsl_matrix *m=NULL;
 	if(sample==NULL) return;
 	LALInferenceVariableItem *ptr=sample->head;
 	if(fp==NULL) return;
@@ -515,13 +545,13 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 		if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
 			switch (ptr->type) {
 				case LALINFERENCE_INT4_t:
-					fprintf(fp, "%d", *(INT4 *) ptr->value);
+					fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
 					break;
 				case LALINFERENCE_INT8_t:
 					fprintf(fp, "%"LAL_INT8_FORMAT, *(INT8 *) ptr->value);
 					break;
 				case LALINFERENCE_UINT4_t:
-					fprintf(fp, "%ud", *(UINT4 *) ptr->value);
+					fprintf(fp, "%"LAL_UINT4_FORMAT, *(UINT4 *) ptr->value);
 					break;
 				case LALINFERENCE_REAL4_t:
 					fprintf(fp, "%11.7f", *(REAL4 *) ptr->value);
@@ -538,7 +568,17 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 							(REAL8) ((COMPLEX16 *) ptr->value)->re, (REAL8) ((COMPLEX16 *) ptr->value)->im);
 					break;
 				case LALINFERENCE_gslMatrix_t:
-					fprintf(stdout, "<can't print matrix>");
+          
+          m = *((gsl_matrix **)ptr->value);
+          for(i=0; i<(int)( m->size1 ); i++)
+          {
+            for(j=0; j<(int)( m->size2); j++)
+            {
+              fprintf(fp,"%11.7f",gsl_matrix_get(m, i, j));
+              if(i<(int)( m->size1 )-1 && j<(int)( m->size2)-1) fprintf(fp,"\t");
+            }
+          }
+           
 					break;
 				default:
 					fprintf(stdout, "<can't print>");
@@ -570,7 +610,7 @@ void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats){
   while(ptr!=NULL) {
     accepted = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).accepted;
     proposed = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).proposed;
-    acceptanceRate = accepted/proposed;
+    acceptanceRate = accepted/(proposed==0 ? 1.0 : proposed);
     fprintf(fp, "%9.5f\t", acceptanceRate);
     ptr=ptr->next;
   }
@@ -591,6 +631,10 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
     return "theta1";
   } else if (!strcmp(inName, "theta_spin2")) {
     return "theta2";
+  } else if (!strcmp(inName, "tilt_spin1")) {
+    return "tilt1";
+  } else if (!strcmp(inName, "tilt_spin2")) {
+    return "tilt2";
   } else if (!strcmp(inName, "chirpmass")) {
     return "mc";
   } else if (!strcmp(inName, "massratio")) {
@@ -614,12 +658,73 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
   }
 }
 
+void LALInferenceTranslateExternalToInternalParamName(char *outName, const char *inName) {
+  if (!strcmp(inName, "a1")) {
+    strcpy(outName, "a_spin1");
+  } else if (!strcmp(inName, "a2")) {
+    strcpy(outName, "a_spin2");
+  } else if (!strcmp(inName, "phi1")) {
+    strcpy(outName, "phi_spin1");
+  } else if (!strcmp(inName, "phi2")) {
+    strcpy(outName, "phi_spin2");
+  } else if (!strcmp(inName, "theta1")) {
+    strcpy(outName, "theta_spin1");
+  } else if (!strcmp(inName, "theta2")) {
+    strcpy(outName, "theta_spin2");
+  } else if (!strcmp(inName, "tilt1")) {
+    strcpy(outName, "tilt_spin1");
+  } else if (!strcmp(inName, "tilt2")) {
+    strcpy(outName, "tilt_spin2");
+  } else if (!strcmp(inName, "mc")) {
+    strcpy(outName, "chirpmass");
+  } else if (!strcmp(inName, "eta")) {
+    strcpy(outName, "massratio");
+  } else if (!strcmp(inName, "q")) {
+    strcpy(outName, "asym_massratio");
+  } else if (!strcmp(inName, "ra")) {
+    strcpy(outName, "rightascension");
+  } else if (!strcmp(inName, "dec")) {
+    strcpy(outName, "declination");
+  } else if (!strcmp(inName, "phi_orb")) {
+    strcpy(outName, "phase");
+  } else if (!strcmp(inName, "psi")) {
+    strcpy(outName, "polarisation");
+  } else if (!strcmp(inName, "iota")) {
+    strcpy(outName, "inclination");
+  } else if (!strcmp(inName, "dist")) {
+    strcpy(outName, "distance");
+  } else {
+    strcpy(outName, inName);
+  }
+}
+
 int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params) {
   LALInferenceVariableItem *head = params->head;
 
+  int i,j;
+  gsl_matrix *matrix = NULL;
+
   while (head != NULL) {
     if (head->vary != LALINFERENCE_PARAM_FIXED) {
-      fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
+      if(!strcmp(head->name,"psdscale"))
+      {
+        /*
+        fprintf(stdout,"\n");
+        fprintf(stdout,"Skipping noise parameters in output files\n");
+        fprintf(stdout,"   edit LALInferenceFprintParameterNonFixedHeaders()\n");
+        fprintf(stdout,"   and LALInferencePrintSampleNonFixed() to modify\n");
+         */
+        
+        matrix = *((gsl_matrix **)head->value);
+        for(i=0; i<(int)matrix->size1; i++)
+        {
+          for(j=0; j<(int)matrix->size2; j++)
+          {
+            fprintf(out, "%s%i%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i,j);
+          }
+        }
+      }
+      else fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
     }
     head = head->next;
   }
@@ -682,7 +787,145 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
   return(result);
 }
 
+INT4 LALInferenceBufferToArray(LALInferenceRunState *state, INT4 startCycle, INT4 endCycle, REAL8** DEarray) {
+  LALInferenceVariableItem *ptr;
+  INT4 i=0,p=0;
 
+  INT4 Nskip = *(INT4*) LALInferenceGetVariable(state->algorithmParams, "Nskip");
+  INT4 totalPoints = state->differentialPointsLength;
+  INT4 start = (INT4)ceil((REAL8)startCycle/(REAL8)Nskip);
+  INT4 end = (INT4)floor((REAL8)endCycle/(REAL8)Nskip);
+  /* Include last point */
+  if (end > totalPoints-1)
+    end = totalPoints-1;
+
+  for (i = start; i <= end; i++) {
+    ptr=state->differentialPoints[i]->head;
+    p=0;
+    while(ptr!=NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        DEarray[i-start][p]=*(REAL8 *)ptr->value;
+        p++;
+      }
+      ptr=ptr->next;
+    }
+  }
+  return end-start+1;
+}
+
+void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray) {
+  LALInferenceVariableItem *ptr;
+  UINT4 i=0,p=0;
+  UINT4 nPoints = sizeof(DEarray) / sizeof(REAL8*);
+
+  /* Save last LALInferenceVariables item from buffer to keep fixed params consistent for chain */
+  LALInferenceVariables templateParamSet;
+  LALInferenceCopyVariables(runState->differentialPoints[runState->differentialPointsLength-1], &templateParamSet);
+
+  /* Free old DE buffer */
+  XLALFree(runState->differentialPoints);
+
+  /* Expand DE buffer */
+  size_t newSize = runState->differentialPointsSize;
+  while (nPoints > newSize) {
+    newSize = newSize*2;
+  }
+
+  runState->differentialPoints = XLALCalloc(newSize, sizeof(LALInferenceVariables *));
+  runState->differentialPointsLength = nPoints;
+  runState->differentialPointsSize = newSize;
+
+  for (i=0; i<nPoints; i++) {
+    runState->differentialPoints[i] = XLALCalloc(1, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(&templateParamSet, runState->differentialPoints[i]);
+    ptr = runState->differentialPoints[i]->head;
+    while(ptr!=NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        *((REAL8 *)ptr->value) = (REAL8)DEarray[i][p];
+        p++;
+      }
+      ptr=ptr->next;
+    }
+  }
+}
+
+
+REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
+  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(origin);
+  REAL8Vector * parameters = NULL;
+  gsl_matrix *m = NULL; //for dealing with noise parameters
+  UINT4 j,k;
+
+  parameters = XLALCreateREAL8Vector(nPar);
+
+  LALInferenceVariableItem *ptr=origin->head;
+  INT4 p=0;
+  while(ptr!=NULL) {
+    if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+      //Generalized to allow for parameters stored in gsl_matrix
+      if(ptr->type == LALINFERENCE_gslMatrix_t)
+      {
+        m = *((gsl_matrix **)ptr->value);
+        for(j=0; j<m->size1; j++)
+        {
+          for(k=0; k<m->size2; k++)
+          {
+            parameters->data[p]=gsl_matrix_get(m,j,k);
+            p++;
+          }
+        }
+      }
+      else
+      {
+        parameters->data[p]=*(REAL8 *)ptr->value;
+        p++;
+      }
+    }
+    ptr=ptr->next;
+  }
+
+  return parameters;
+}
+
+void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables *target) {
+  gsl_matrix *m = NULL; //for dealing with noise parameters
+  UINT4 j,k;
+
+  LALInferenceVariableItem *ptr = target->head;
+  INT4 p=0;
+  while(ptr!=NULL) {
+    if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+    {
+      //Generalized to allow for parameters stored in gsl_matrix
+      if(ptr->type == LALINFERENCE_gslMatrix_t)
+      {
+        m = *((gsl_matrix **)ptr->value);
+        for(j=0; j<m->size1; j++)
+        {
+          for(k=0; k<m->size2; k++)
+          {
+            gsl_matrix_set(m,j,k,origin->data[p]);
+            p++;
+          }
+        }
+      }
+      else
+      {
+        memcpy(ptr->value,&(origin->data[p]),LALInferenceTypeSize[ptr->type]);
+        p++;
+      }
+    }
+    ptr=ptr->next;
+  }
+
+  /* update stored noise parameters */
+  if(LALInferenceCheckVariable(target,"psdscale"))
+  {
+    gsl_matrix_memcpy(*((gsl_matrix **)LALInferenceGetVariable(target, "psdstore")),
+                      *((gsl_matrix **)LALInferenceGetVariable(target, "psdscale")));
+  }
+  return;
+}
 
 /* ============ Command line parsing functions etc.: ========== */
 
@@ -732,7 +975,7 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
   if (j!=2) XLAL_ERROR_VOID(XLAL_EINVAL, "Argument vector \"%s\" is not well-formed!", input);
   /* now allocate memory for results: */
   *strings  = (char**)  XLALMalloc(sizeof(char*) * (*n));
-  for (i=0; i<(*n); ++i) (*strings)[i] = (char*) malloc(sizeof(char)*512);
+  for (i=0; i<(*n); ++i) (*strings)[i] = (char*) XLALMalloc(sizeof(char)*512);
   i=0; j=0;
   k=0; /* string counter    */
   l=0; /* character counter */
@@ -769,7 +1012,7 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
   int dbldash;
   ProcessParamsTable *head, *ptr=NULL;
   /* always (even for argc==1, i.e. no arguments) put one element in list: */
-  head = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
+  head = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
   XLALStringCopy(head->program, argv[0], sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
   ptr = head;
   i=1;
@@ -791,7 +1034,7 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
     }
     else if (state==2) { /* ('state 2' means last entry was a parameter starting with "--") */
       if (dbldash) {
-        ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
+        ptr->next = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
         XLALStringCopy(ptr->program, argv[0],
 sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
@@ -805,7 +1048,7 @@ sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
     }
     else if (state==3) { /* ('state 3' means last entry was a value) */
       if (dbldash) {
-        ptr->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
+        ptr->next = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
         ptr = ptr->next;
         XLALStringCopy(ptr->program, argv[0],
                        sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
@@ -836,7 +1079,7 @@ char* LALInferencePrintCommandLine(ProcessParamsTable *procparams)
     len+=2;
     this=this->next;
   }// Now we know how long the buffer has to be.
-  char * str = (char*) calloc(len+1,sizeof(char));
+  char * str = (char*) XLALCalloc(len+1,sizeof(char));
   if (str==NULL) {
     XLALPrintError("Calloc error, str is NULL (in %s, line %d)\n",__FILE__, __LINE__);
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
@@ -1020,7 +1263,7 @@ void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariabl
 char **LALInferenceGetHeaderLine(FILE *inp) {
   const size_t MAXSIZE=1024;
   const char *delimiters = " \n\t";
-  char *header = malloc(MAXSIZE*sizeof(char));
+  char *header = XLALMalloc(MAXSIZE*sizeof(char));
   char **colNames = NULL;  /* Will be filled in with the column names,
                               terminated by NULL. */
   size_t colNamesLen=0, colNamesMaxLen=0;
@@ -1036,7 +1279,7 @@ char **LALInferenceGetHeaderLine(FILE *inp) {
 
   /* Sure hope we read the whole line. */
   colNamesMaxLen=2;
-  colNames=(char **)malloc(2*sizeof(char *));
+  colNames=(char **)XLALMalloc(2*sizeof(char *));
 
   if (!colNames) {
     XLAL_ERROR_NULL(XLAL_ENOMEM, "Failed to allocate memory for colNames.");
@@ -1055,16 +1298,16 @@ char **LALInferenceGetHeaderLine(FILE *inp) {
     /* Expand if necessary. */
     if (colNamesLen >= colNamesMaxLen) {
       colNamesMaxLen *= 2;
-      colNames=realloc(colNames, colNamesMaxLen*sizeof(char *));
+      colNames=XLALRealloc(colNames, colNamesMaxLen*sizeof(char *));
       if (!colNames) {
-        XLAL_ERROR_NULL(XLAL_ENOMEM, "Failed to reallocate memory for colNames.");
+        XLAL_ERROR_NULL(XLAL_ENOMEM, "Failed to XLALReallocate memory for colNames.");
       }
     }
 
   } while (colName != NULL);
 
   /* Trim down to size. */
-  colNames=realloc(colNames, colNamesLen*sizeof(char *));
+  colNames=XLALRealloc(colNames, colNamesLen*sizeof(char *));
 
   return colNames;
 }
@@ -1144,7 +1387,7 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
   tmp.head=NULL;
   tmp.dimension=0;
   LALInferenceVariableItem *thisitem,*ptr;
-  LALInferenceVariables *new=calloc(1,sizeof(*new));
+  LALInferenceVariables *new=XLALCalloc(1,sizeof(*new));
   if(!vars){
     XLAL_ERROR_VOID(XLAL_EFAULT, "Received null input pointer.");
   }
@@ -1205,7 +1448,7 @@ void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVaria
     LALInferenceAddVariable(state->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
   /* Expand the array for new sample */
-  output_array=realloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
+  output_array=XLALRealloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
   if(!output_array){
     XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to allocate array for samples.");
   }
@@ -1767,8 +2010,8 @@ double LALInferenceKDLogCellEigenVolume(LALInferenceKDTree *cell) {
   return logVol;
 }
 
-void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template) {
-  LALInferenceVariableItem *templateItem = template->head;
+void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *templt) {
+  LALInferenceVariableItem *templateItem = templt->head;
   size_t i = 0;
   while (templateItem != NULL) {
     if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 
@@ -1780,8 +2023,8 @@ void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LA
   }
 }
 
-void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template) {
-  LALInferenceVariableItem *templateItem = template->head;
+void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *templt) {
+  LALInferenceVariableItem *templateItem = templt->head;
   size_t i = 0;
   while (templateItem != NULL) {
     if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 

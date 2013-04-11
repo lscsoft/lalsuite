@@ -8,7 +8,7 @@ X-Python-Version: >=2.6
 
 Package: python-ligo-gracedb
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-m2crypto, python-cjson
+Depends: ${misc:Depends}, ${python:Depends}, python-m2crypto, python-cjson, python-ligo-common
 XB-Python-Version: ${python:Versions}
 Provides: ${python:Provides}
 Description: Gravity Wave Candidate Event Database

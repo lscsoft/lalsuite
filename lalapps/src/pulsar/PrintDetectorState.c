@@ -85,7 +85,7 @@ static AMCoeffsParams empty_AMCoeffsParams;
 extern int vrbflg;
 
 /* ---------- local prototypes ---------- */
-void initUserVars (LALStatus *status, UserVariables_t *uvar);
+int XLALInitUserVars ( UserVariables_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name);
 
 EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear );
@@ -100,25 +100,23 @@ int
 main(int argc, char *argv[])
 {
   LALStatus status = blank_status;
+
   ConfigVariables config = empty_ConfigVariables;
   UserVariables_t uvar = empty_UserVariables;
 
-  lalDebugLevel = 0;
-  vrbflg = 1;	/* verbose error-messages */
-
-  /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;
+  lalDebugLevel = 1;
 
   /* register user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
+  XLAL_CHECK ( XLALGetDebugLevel ( argc, argv, 'v') == XLAL_SUCCESS, XLAL_EFUNC );
 
-  LAL_CALL (initUserVars (&status, &uvar), &status);
+  XLAL_CHECK ( XLALInitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);
+  XLAL_CHECK ( XLALUserVarReadAllInput ( argc,argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  if (uvar.help) 	/* help requested: we're done */
+  if (uvar.help) { 	/* help requested: we're done */
     exit(0);
+  }
 
   if ( uvar.version )
     {
@@ -127,10 +125,7 @@ main(int argc, char *argv[])
     }
 
   /* basic setup and initializations */
-  if ( XLALInitCode( &config, &uvar, argv[0] ) != XLAL_SUCCESS ) {
-    XLALPrintError("%s: XInitCode() failed with xlalErrno = %d.\n\n", __func__, xlalErrno );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
+  XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- allocate memory for AM-coeffs ----- */
   AMCoeffs AMold, AMnew1, AMnew2;	/**< containers holding AM-coefs computed by 3 different AM functions */
@@ -141,14 +136,11 @@ main(int argc, char *argv[])
   AMnew2.a = XLALCreateREAL4Vector ( 1 );
   AMnew2.b = XLALCreateREAL4Vector ( 1 );
 
-  if ( !AMold.a || !AMold.b || !AMnew1.a || !AMnew1.b || !AMnew2.a || !AMnew2.a ) {
-    XLALPrintError ("Failed to XLALCreateREAL4Vector ( 1 )!\n");
-    XLAL_ERROR ( XLAL_ENOMEM );
-  }
+  XLAL_CHECK ( AMold.a && AMold.b && AMnew1.a && AMnew1.b && AMnew2.a && AMnew2.a, XLAL_ENOMEM, "Failed to XLALCreateREAL4Vector ( 1 )\n" );
 
   /* ----- get detector-state series ----- */
   DetectorStateSeries *detStates = NULL;
-  LAL_CALL ( LALGetDetectorStates (&status, &detStates, config.timestamps, config.det, config.edat, 0 ), &status);
+  XLAL_CHECK ( (detStates = XLALGetDetectorStates ( config.timestamps, config.det, config.edat, 0 )) != NULL, XLAL_EFUNC );
 
   /* ----- compute associated SSB timing info ----- */
   SSBtimes *tSSB = NULL;
@@ -249,10 +241,8 @@ main(int argc, char *argv[])
 
 
   /* ----- done: free all memory */
-  if ( XLALDestroyConfig( &config ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLADestroyConfig() failed, xlalErrno = %d.\n\n", __func__, xlalErrno );
-    exit(1);
-  }
+  XLAL_CHECK ( XLALDestroyConfig( &config ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   XLALDestroyDetectorStateSeries ( detStates );
 
   XLALDestroyREAL4Vector ( AMold.a );
@@ -273,40 +263,38 @@ main(int argc, char *argv[])
 
 
 /** register all "user-variables" */
-void
-initUserVars (LALStatus *status, UserVariables_t *uvar)
+int
+XLALInitUserVars ( UserVariables_t *uvar )
 {
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
   uvar->help = 0;
 
-#define EPHEM_YEAR  "00-04"
-  uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1);
+#define EPHEM_YEAR  "00-19-DE405"
+  XLAL_CHECK ( (uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1)) != NULL, XLAL_ENOMEM );
   strcpy (uvar->ephemYear, EPHEM_YEAR);
 
   uvar->timeGPS = 714180733;
 
 
   /* register all user-variables */
-  LALregBOOLUserStruct(status,	help,		'h', UVAR_HELP,		"Print this help/usage message");
-  LALregSTRINGUserStruct(status, detector,	'I', UVAR_REQUIRED, 	"Detector name (eg. H1,H2,L1,G1,etc).");
+  XLALregBOOLUserStruct(	help,		'h', UVAR_HELP,		"Print this help/usage message");
+  XLALregSTRINGUserStruct( 	detector,	'I', UVAR_REQUIRED, 	"Detector name (eg. H1,H2,L1,G1,etc).");
 
-  LALregREALUserStruct(status,	Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
-  LALregREALUserStruct(status,	Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
+  XLALregREALUserStruct(	Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
+  XLALregREALUserStruct(	Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
 
-  LALregREALUserStruct(status, 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector state");
+  XLALregREALUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector state");
 
-  LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
-  LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
+  XLALregSTRINGUserStruct(	ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
+  XLALregSTRINGUserStruct(	ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
 
-  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,      "Output code version");
+  XLALregBOOLUserStruct(	version,        'V', UVAR_SPECIAL,      "Output code version");
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* initUserVars() */
+} /* XLALInitUserVars() */
 
 
 /** basic initializations: deal with user input and return standardized 'ConfigVariables'
@@ -371,24 +359,13 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 int
 XLALDestroyConfig ( ConfigVariables *cfg )
 {
-  LALStatus status = blank_status;
+  XLAL_CHECK ( cfg != NULL, XLAL_EINVAL );
 
-  if ( !cfg ) {
-    XLALPrintError ("%s: invalid NULL input!\n\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-
-  LALDestroyUserVars ( &status );
-  if ( status.statusCode ) {
-    XLALPrintError ("%s: call to LALDestroyUserVars() failed, status = %d\n\n", __func__, status.statusCode );
-    XLAL_ERROR (  status.statusCode & XLAL_EFUNC );
-  }
+  XLALDestroyUserVars ();
 
   XLALDestroyTimestampVector ( cfg->timestamps );
 
-  LALFree ( cfg->edat->ephemE );
-  LALFree ( cfg->edat->ephemS );
-  LALFree ( cfg->edat );
+  XLALDestroyEphemerisData ( cfg->edat );
 
   XLALFree ( cfg->det );
 
@@ -405,15 +382,11 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
 	       )
 {
 #define FNAME_LENGTH 1024
-  LALStatus status = blank_status;
   EphemerisData *edat;
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
-  if ( !ephemYear ) {
-    XLALPrintError ("\n%s: NULL pointer passed as ephemeris year range!\n", __func__);
-    return NULL;
-  }
+  XLAL_CHECK_NULL ( ephemYear != NULL, XLAL_EINVAL );
 
   if ( ephemDir )
     {
@@ -429,24 +402,7 @@ InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
   EphemEarth[FNAME_LENGTH-1] = 0;
   EphemSun[FNAME_LENGTH-1] = 0;
 
-  /* allocate memory for ephemeris-data to be returned */
-  if ( (edat = XLALCalloc ( 1, sizeof(*edat))) == NULL ) {
-    XLALPrintError("%s: XLALCalloc(1, %d) failed.\n", __func__, sizeof(*edat) );
-    return NULL;
-  }
-
-  /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
-   * why we can use local variables (EphemEarth, EphemSun) to initialize them.
-   */
-  edat->ephiles.earthEphemeris = EphemEarth;
-  edat->ephiles.sunEphemeris = EphemSun;
-
-  LALInitBarycenter(&status, edat);
-
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: LALInitBarycenter() failed! code = %d, msg = '%s'", __func__, status.statusCode, status.statusDescription );
-    return NULL;
-  }
+  XLAL_CHECK_NULL ( ( edat = XLALInitBarycenter ( EphemEarth, EphemSun )) != NULL, XLAL_EFUNC );
 
   return edat;
 

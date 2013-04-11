@@ -31,7 +31,8 @@ lalsimulationinclude_HEADERS = \
 	LALSimSGWB.h \
 	LALSimulationConfig.h \
 	LALSimulationLibVCSInfo.h \
-	LALSimulationVCSInfo.h
+	LALSimulationVCSInfo.h \
+	lalsimulationswig_test.i
 
 noinst_HEADERS = \
 	LALSimIMREOBFactorizedWaveform.c \
@@ -59,13 +60,15 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMREOBNRv2.c \
 	LALSimIMRSpinAlignedEOB.c \
 	LALSimIMRPhenom.c \
+	LALSimIMRPhenomC.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimInspiralWaveformFlags.c \
 	LALSimInspiralTestGRParams.c \
 	LALSimInspiralPrecess.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
-	LALSimInspiralSpinTaylorT4.c \
+	LALSimInspiralSpinTaylor.c \
+	LALSimInspiralSpinTaylorF2.c \
 	LALSimInspiralTaylorEt.c \
 	LALSimInspiralTaylorF2.c \
 	LALSimInspiralTaylorF2ReducedSpin.c \
@@ -134,7 +137,7 @@ BUILT_SOURCES += LALSimulationVCSInfo.h
 MOSTLYCLEANFILES += LALSimulationVCSInfo.h
 LALSimulationVCSInfo.h .PHONY : gen-LALSimulationVCSInfo.h
 gen-LALSimulationVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALSimulationVCSInfo.h $(srcdir)/LALSimulationVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALSimulationVCSInfo.h $(srcdir)/LALSimulationVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

@@ -334,6 +334,12 @@ tagSnglInspiralTable
   REAL8         sigmasq;
   REAL4         rsqveto_duration;
   REAL4         Gamma[10];    /* metric co-efficients */
+  REAL4         spin1x;
+  REAL4         spin1y;
+  REAL4         spin1z;
+  REAL4         spin2x;
+  REAL4         spin2y;
+  REAL4         spin2z;
   EventIDColumn *event_id;
 }
 SnglInspiralTable;
@@ -388,10 +394,13 @@ tagSnglRingdownTable
   REAL4         mass;
   REAL4         spin;
   REAL4         epsilon;
-  INT4		num_clust_trigs;
-  REAL4 	ds2_H1H2;
+  INT4          num_clust_trigs;
+  REAL4         ds2_H1H2;
   REAL4         ds2_H1L1;
+  REAL4         ds2_H1V1;
   REAL4         ds2_H2L1;
+  REAL4         ds2_H2V1;
+  REAL4         ds2_L1V1;
   REAL4         amplitude;
   REAL4         snr;
   REAL4         eff_dist;
@@ -738,6 +747,12 @@ tagCoincRingdownTable
   INT4                numIfos;
   SnglRingdownTable  *snglRingdown[LAL_NUM_IFO];
   SimRingdownTable   *simRingdown;
+  REAL4              ds2_H1H2;
+  REAL4              ds2_H1L1;
+  REAL4              ds2_H1V1;
+  REAL4              ds2_H2L1;
+  REAL4              ds2_H2V1;
+  REAL4              ds2_L1V1;
 }
 CoincRingdownTable;
 

@@ -120,8 +120,9 @@ LALOpenDataFile( const char *fname )
   char  fdata[265];
   int   n;
 
-  if ( ! fname )
+  if ( (fname==NULL) || ( strlen(fname)==0) ) {
     return NULL;
+  }
 
   if ( *fname == '/' ) /* absolute path is given */
   {

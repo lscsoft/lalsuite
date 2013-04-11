@@ -346,7 +346,7 @@ extern "C" {
 /*----------------------------------------------------------------------*/
 /* some local defines */
 
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
 #define SFT_BNAME  "SFT"
 
 #ifndef TRUE 

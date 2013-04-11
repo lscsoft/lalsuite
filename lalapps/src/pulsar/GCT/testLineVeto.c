@@ -40,8 +40,8 @@
 int
 XLALCompareLVComputations ( const REAL4 TwoF,
                             const REAL4Vector *TwoFX,
-                            const REAL4 rhomaxline,
-                            const REAL4Vector *lX,
+                            const REAL8 rhomaxline,
+                            const REAL8Vector *lX,
                             const REAL4 tolerance_allterms,
                             const REAL4 tolerance_leadterm );
 
@@ -67,8 +67,8 @@ int main( int argc, char *argv[]) {
   }
   TwoFX->data[0] = 4.0;
   TwoFX->data[1] = 12.0;
-  REAL4 rhomaxline = 0.0; /* prior from LV-stat derivation, 0 means pure line veto, +inf means pure multi-Fstat */
-  REAL4Vector *lX = NULL; /* per-IFO prior odds ratio for line vs. Gaussian noise, NULL is interpreted as l[X]=1 for all X */
+  REAL8 rhomaxline = 0.0; /* prior from LV-stat derivation, 0 means pure line veto, +inf means pure multi-Fstat */
+  REAL8Vector *lX = NULL; /* per-IFO prior odds ratio for line vs. Gaussian noise, NULL is interpreted as l[X]=1 for all X */
 
   /* maximum allowed difference between recalculated and XLAL result */
   REAL4 tolerance_allterms = 2e-04;
@@ -83,8 +83,8 @@ int main( int argc, char *argv[]) {
 
   /* change the priors to catch more possible problems */
   rhomaxline = 5.0;
-  if ( (lX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-    XLAL_ERROR ( XLAL_EFUNC, "failed to XLALCreateREAL4Vector( %d )\n", numDetectors );
+  if ( (lX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+    XLAL_ERROR ( XLAL_EFUNC, "failed to XLALCreateREAL8Vector( %d )\n", numDetectors );
     return XLAL_EFAILED;
   }
   lX->data[0] = 0.5;
@@ -99,7 +99,7 @@ int main( int argc, char *argv[]) {
 
   /* free memory */
   XLALDestroyREAL4Vector(TwoFX);
-  XLALDestroyREAL4Vector(lX);
+  XLALDestroyREAL8Vector(lX);
 
   LALCheckMemoryLeaks();
 
@@ -113,8 +113,8 @@ int main( int argc, char *argv[]) {
 int
 XLALCompareLVComputations ( const REAL4 TwoF,          /**< multi-detector  Fstat */
                             const REAL4Vector *TwoFX,  /**< vector of single-detector Fstats */
-                            const REAL4 rhomaxline,    /**< amplitude prior normalization for lines */
-                            const REAL4Vector *lX,     /**< vector of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
+                            const REAL8 rhomaxline,    /**< amplitude prior normalization for lines */
+                            const REAL8Vector *lX,     /**< vector of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
                             const REAL4 tolerance_allterms, /**< tolerance for useAllTerms=TRUE */
                             const REAL4 tolerance_leadterm  /**< tolerance for useAllTerms=FALSE (usually higher) */
                           )

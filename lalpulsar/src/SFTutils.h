@@ -32,9 +32,9 @@ extern "C" {
  * \brief Utility functions for handling of SFTtype and SFTVectors
  *
  *
- *  The helper functions LALCreateSFTtype(), LALDestroySFTtype(), LALCreateSFTVector()
- * and LALDestroySFTVector() respectively allocate and free SFT-structs and SFT-vectors.
- * Similarly, LALCreateTimestampVector() and LALDestroyTimestampVector() allocate and free
+ * The helper functions XLALCreateSFT(), XLALDestroySFT(), XLALCreateSFTVector()
+ * and XLALDestroySFTVector() respectively allocate and free SFT-structs and SFT-vectors.
+ * Similarly, XLALCreateTimestampVector() and XLALDestroyTimestampVector() allocate and free
  * a bunch of GPS-timestamps.
  *
  */
@@ -49,24 +49,9 @@ extern "C" {
 #include <lal/SkyCoordinates.h>
 #include <lal/RngMedBias.h>
 #include <lal/LALRunningMedian.h>
-
+#include <lal/Segments.h>
 
 /*---------- DEFINES ----------*/
-
-/** \name Error codes */
-/*@{*/
-#define SFTUTILS_ENULL 		1
-#define SFTUTILS_ENONULL	2
-#define SFTUTILS_EMEM		3
-#define SFTUTILS_EINPUT		4
-#define SFTUTILS_EFUNC		6
-
-#define SFTUTILS_MSGENULL 	"Arguments contained an unexpected null pointer"
-#define SFTUTILS_MSGENONULL	"Output pointer is not NULL"
-#define SFTUTILS_MSGEMEM	"Out of memory"
-#define SFTUTILS_MSGEINPUT	"Invald input parameter"
-#define SFTUTILS_MSGEFUNC	"Sub-routine failed"
-/*@}*/
 
 /*---------- exported types ----------*/
 
@@ -177,67 +162,40 @@ extern const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
 extern const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
 extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 
+// ---------- obsolete LAL-API was moved into external file
+#include "SFTutils-LAL.h"
+// ------------------------------
+
 /*---------- exported prototypes [API] ----------*/
 /* ----------------------------------------------------------------------
  *  some prototypes for general functions handling these data-types
  *----------------------------------------------------------------------*/
-void LALCreateSFTtype (LALStatus *status, SFTtype **sft, UINT4 SFTlen);
-void LALCreateSFTVector (LALStatus *status, SFTVector **sftvect, UINT4 numSFTs, UINT4 SFTlen);
-void LALCreateMultiSFTVector ( LALStatus *status, MultiSFTVector **out, UINT4 length, UINT4Vector *numsft );
-
-SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
 SFTtype* XLALCreateSFT ( UINT4 numBins );
+SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
 
-void XLALDestroySFTVector (SFTVector *vect);
 void XLALDestroySFT (SFTtype *sft);
-
+void XLALDestroySFTVector (SFTVector *vect);
 
 COMPLEX8Vector *XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in, UINT4 refineby, UINT4 Dterms);
-void upsampleMultiSFTVector (LALStatus *, MultiSFTVector *inout, UINT4 upsample, UINT4 Dterms);
-void upsampleSFTVector (LALStatus *, SFTVector *inout, UINT4 upsample, UINT4 Dterms);
-
-void LALDestroySFTtype (LALStatus *status, SFTtype **sft);
-void LALDestroySFTVector (LALStatus *status, SFTVector **sftvect);
-void LALDestroyPSDVector (LALStatus *status, PSDVector **vect);
-
-void LALDestroyMultiSFTVector (LALStatus *status, MultiSFTVector **multvect);
-void LALDestroyMultiPSDVector (LALStatus *status, MultiPSDVector **multvect);
 
 SFTVector* XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax );
-void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
-
-void LALSubtractSFTVectors (LALStatus *, SFTVector **outVect, const SFTVector *inVect1, const SFTVector *inVect2 );
-void LALLinearlyCombineSFTVectors (LALStatus *, SFTVector **outVect, SFTVector **inVects, const COMPLEX16Vector *weights, const CHAR *outName);
-void LALAppendSFT2Vector (LALStatus *, SFTVector *vect, const SFTtype *sft );
 
 LIGOTimeGPSVector *XLALCreateTimestampVector (UINT4 len);
-void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
-
-void LALCreateTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect, UINT4 len);
-void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
-
-void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
-
+LIGOTimeGPSVector *XLALMakeTimestamps ( LIGOTimeGPS tStart, REAL8 duration, REAL8 tStep );
 LIGOTimeGPSVector *XLALExtractTimestampsFromSFTs ( const SFTVector *sfts );
 MultiLIGOTimeGPSVector *XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs );
+
+void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
 void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
 
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
-void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, const SFTVector *sftVect,
-			      INT4 blkSize, UINT4 excludePercentile);
-void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weightsV, const MultiPSDVector *multipsd,
-				   UINT4 blocksRngMed, UINT4 excludePercentile);
-void LALDestroyMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weights);
-
-
-/* ============================================================
- * ===== deprecated LAL interface API ==========
- * ============================================================
- */
-
-void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTVector *sfts );
+LALSegList *XLALReadSegmentsFromFile ( const char *fname );
+void XLALDestroyPSDVector ( PSDVector *vect );
+void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );
+void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
+void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
 
 /*@}*/
 

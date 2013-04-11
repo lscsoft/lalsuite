@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 John Whelan, Shane Larson and Badri Krishnan
+ *  Copyright (C) 2012, 2013 John Whelan, Shane Larson and Badri Krishnan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,6 +70,33 @@ extern "C" {
  *  Structure, enum, union, etc., typdefs.
  */
 
+/** Index to refer to an SFT given a set of SFTs from several different detectors */
+  typedef struct tagSFTIndex {
+    UINT4 detInd; /**< index of detector in list */
+    UINT4 sftInd; /**< index of SFT in list for this detector */
+  } SFTIndex;
+
+/** List of SFT indices */
+  typedef struct tagSFTIndexList {
+    UINT4    length; /**< number of SFTs */
+    SFTIndex *data; /**< array of SFT indices */
+  } SFTIndexList;
+
+/** Index to refer to a pair of SFTs */
+  typedef struct tagSFTPairIndex {
+#if 0
+    SFTIndex sftInd1; /**< index of 1st SFT in pair */
+    SFTIndex sftInd2; /**< index of 2nd SFT in pair */
+#endif
+    UINT4 sftNum[2]; /**< ordinal numbers of first and second SFTs */
+  } SFTPairIndex;
+
+/** List of SFT pair indices */
+  typedef struct tagSFTPairIndexList {
+    UINT4    length; /**< number of SFT Pairs */
+    SFTPairIndex *data; /**< array of SFT Pair indices */
+  } SFTPairIndexList;
+
 /*
  *  Functions Declarations (i.e., prototypes).
  */
@@ -81,8 +108,9 @@ int XLALGetDopplerShiftedFrequencyInfo
    REAL8Vector         *kappaValues,
    UINT4               numBins,
    PulsarDopplerParams *dopp,
-   LIGOTimeGPSVector   *timestamps,
-   REAL8VectorSequence *vByC
+   SFTIndexList        *sfts,
+   MultiSSBtimes       *multiTimes,
+   REAL8               Tsft
   )
 ;
 

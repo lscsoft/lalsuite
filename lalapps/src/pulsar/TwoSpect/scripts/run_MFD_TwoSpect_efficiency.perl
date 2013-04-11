@@ -96,7 +96,7 @@ sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
 outdirectory /home/egoetz/TwoSpect/efficiency/$jobnum
-sftType MFD
+sftType standard
 IFO H1
 FFTplanFlag 1
 fastchisqinv

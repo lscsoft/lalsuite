@@ -39,6 +39,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALStdio.h>
+#include <lal/LALString.h>
 #include <lal/FileIO.h>
 #include <lal/StreamInput.h>
 #include <lal/LogPrintf.h>
@@ -55,18 +56,14 @@ extern INT4 lalDebugLevel;
 
 /* local prototypes */
 static void cleanConfig (CHARSequence *text);
-CHAR my_tolower (CHAR in);
-/* ctype replacements w/o locale */
-static int TOLOWER(int c);
-static const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-static const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
-
-
 
 /** Parse an ASCII data-file into a pre-cleaned array of lines.
  *
  * The cleaning gets rid of comments ('\#', ';'), empty lines,
  * and performs line-continuation if '\\' is found at EOL
+ *
+ * NOTE: This function can transparently detect and read gzip-compressed
+ * data-files, independently of filename-extension
  */
 int
 XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file lines */
@@ -91,7 +88,7 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
     XLAL_ERROR ( XLAL_ESYS );
   }
 
-  err = XLALCHARReadSequence (&rawdata, fp);
+  err = XLALCHARReadSequence (&rawdata, fp);	// this function can read gzip-compressed files
   fclose (fp);
   if (err)
     return err;
@@ -420,7 +417,7 @@ XLALReadConfigBOOLVariable (BOOLEAN *varp,                 /**< [out] variable t
   if (*wasRead && tmp)		/* if we read anything at all... */
     {
       /* get rid of case ambiguities */
-      ret2 = XLALLowerCaseString (tmp);
+      ret2 = XLALStringToLowerCase (tmp);
 
       if (ret2)
         return ret2;
@@ -696,42 +693,6 @@ XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata,  /**< [in] config
 } /* XLALCheckConfigReadComplete() */
 
 
-/** Helper function:  turn a string into lowercase without using locale-functions.
- */
-int
-XLALLowerCaseString (CHAR *string)	/**< [in/out] string to convert */
-{
-  UINT4 i;
-
-  if (string == NULL)
-    {
-      XLALPrintError ( "%s:" CONFIGFILEH_MSGENULL, __func__ );
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-
-  for (i=0; i < strlen (string); i++)
-    string[i] = TOLOWER( string[i] );
-
-  return XLAL_SUCCESS;
-
-} /* XLALLowerCaseString() */
-
-/*----------------------------------------------------------------------
- * tolower() replacement w/o locale
- *----------------------------------------------------------------------*/
-static int
-TOLOWER(int c)
-{
-  if (c) {
-    char *p = strchr(upper_chars, c);
-
-    if (p) {
-      c = lower_chars[p - upper_chars];
-    }
-  }
-  return c;
-} /* TOLOWER() */
-
 /*----------------------------------------------------------------------*/
 
 
@@ -783,6 +744,10 @@ cleanConfig (CHARSequence *text)
            */
           len = strlen (ptr+2);
           memmove(ptr, ptr+2, len+1);	/* move the whole rest (add +1 for '\0') */
+        }
+      else
+        {
+          ptr ++;
         }
     } /* while '\' found in text */
 

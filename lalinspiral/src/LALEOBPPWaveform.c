@@ -49,7 +49,6 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 </ul>
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>
@@ -57,7 +56,6 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
 #include <lal/NRWaveInject.h>
-#include <lal/LALComplex.h>
 
 #include <gsl/gsl_sf_gamma.h>
 
@@ -260,9 +258,9 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	  XLALPrintError("Error in GSL function\n" );
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
-	Tlm = XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( lnr1.val + LAL_PI * hathatk,
+	Tlm = cexp( crect( lnr1.val + LAL_PI * hathatk,
 				arg1.val + 2.0 * hathatk * log(4.0*k/sqrt(LAL_E)) ) );
-        Tlm = XLALCOMPLEX16DivReal( Tlm, z2.val );
+        Tlm = Tlm / z2.val;
 
         /* Calculate the residue phase and amplitude terms */
 	switch( l )
@@ -527,9 +525,8 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
           rholmPwrl *= rholm;
         }
 
-	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ),
-				     Slm*rholmPwrl );
-        *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
+	*hlm = Tlm * cpolar( 1.0, deltalm) * Slm*rholmPwrl;
+        *hlm = *hlm * hNewton;
 
 	return XLAL_SUCCESS;
 }
@@ -1678,7 +1675,7 @@ XLALEOBPPWaveformEngine (
 
    /* If Nyquist freq. <  220 QNM freq., exit */
    /* Note that we cancelled a factor of 2 occuring on both sides */
-   if ( params->tSampling < modefreqs->data[0].re / LAL_PI )
+   if ( params->tSampling < crealf(modefreqs->data[0]) / LAL_PI )
    {
      XLALDestroyCOMPLEX8Vector( modefreqs );
      XLALPrintError( "Ringdown freq greater than Nyquist freq. "
@@ -1742,7 +1739,7 @@ XLALEOBPPWaveformEngine (
 
    /* The length of the vectors at the higher sample rate will be */
    /* the step back time plus the ringdown */
-   lengthHiSR = ( nStepBack + (UINT4)(20.0 / modefreqs->data[0].im / dt) ) * resampFac;
+   lengthHiSR = ( nStepBack + (UINT4)(20.0 / cimagf(modefreqs->data[0]) / dt) ) * resampFac;
 
    /* Double it for good measure */
    lengthHiSR *= 2;
@@ -1985,10 +1982,10 @@ XLALEOBPPWaveformEngine (
 
        xlalStatus = XLALGetFactorizedWaveform( &hLM, values, v, modeL, modeM, &eobParams );
 
-       ampNQC->data[i] = XLALCOMPLEX16Abs( hLM );
-       sig1Hi->data[i] = (REAL4) ampl0 * hLM.re;
-       sig2Hi->data[i] = (REAL4) ampl0 * hLM.im;
-       phseHi->data[i] = XLALCOMPLEX16Arg( hLM ) + phaseCounter * LAL_TWOPI;
+       ampNQC->data[i] = cabs( hLM );
+       sig1Hi->data[i] = (REAL4) ampl0 * creal(hLM);
+       sig2Hi->data[i] = (REAL4) ampl0 * cimag(hLM);
+       phseHi->data[i] = carg( hLM ) + phaseCounter * LAL_TWOPI;
        if ( i && phseHi->data[i] > phseHi->data[i-1] )
        {
          phaseCounter--;
@@ -2101,10 +2098,10 @@ XLALEOBPPWaveformEngine (
        xlalStatus = XLALGetFactorizedWaveform( &hLM, values, v, modeL, modeM, &eobParams );
 
        xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
-       hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+       hLM = hNQC * hLM;
 
-       sig1->data[count] = (REAL4) ampl0 * hLM.re;
-       sig2->data[count] = (REAL4) ampl0 * hLM.im;
+       sig1->data[count] = (REAL4) ampl0 * creal(hLM);
+       sig2->data[count] = (REAL4) ampl0 * cimag(hLM);
 
        count++;
        i++;
@@ -2123,12 +2120,11 @@ XLALEOBPPWaveformEngine (
 
       xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
 
-      hLM.re = sig1Hi->data[i];
-      hLM.im = sig2Hi->data[i];
+      hLM = crect( sig1Hi->data[i], sig2Hi->data[i] );
 
-      hLM = XLALCOMPLEX16Mul( hNQC, hLM );
-      sig1Hi->data[i] = (REAL4) hLM.re;
-      sig2Hi->data[i] = (REAL4) hLM.im;
+      hLM = hNQC * hLM;
+      sig1Hi->data[i] = (REAL4) creal(hLM);
+      sig2Hi->data[i] = (REAL4) cimag(hLM);
     }
 
 
@@ -2227,13 +2223,12 @@ XLALEOBPPWaveformEngine (
 
      if ( modeL % 2 ) /* odd modeL gives a minus sign to negative m modes */ 
      {
-       MultSphHarmM.re = - MultSphHarmM.re;
-       MultSphHarmM.im = - MultSphHarmM.im;
+       MultSphHarmM = - MultSphHarmM;
      }
-     y_1 =   MultSphHarmP.re + MultSphHarmM.re;
-     y_2 =   MultSphHarmM.im - MultSphHarmP.im;
-     z_1 = - MultSphHarmM.im - MultSphHarmP.im;
-     z_2 =   MultSphHarmM.re - MultSphHarmP.re;
+     y_1 =   creal(MultSphHarmP) + creal(MultSphHarmM);
+     y_2 =   cimag(MultSphHarmM) - cimag(MultSphHarmP);
+     z_1 = - cimag(MultSphHarmM) - cimag(MultSphHarmP);
+     z_2 =   creal(MultSphHarmM) - creal(MultSphHarmP);
 
      /* Next, compute h+ and hx from hLM, hLM*, YLM, YL-M */
      for ( i = 0; i < sig1->length; i++)

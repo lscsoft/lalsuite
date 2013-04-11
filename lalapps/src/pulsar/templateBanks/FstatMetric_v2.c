@@ -117,7 +117,7 @@ typedef struct
 typedef struct
 {
   EphemerisData *edat;			/**< ephemeris data (from XLALInitBarycenter()) */
-  LIGOTimeGPS startTime;		/**< start time of observation */
+  LALSegList segmentList;		/**< segment list contains start- and end-times of all segments */
   PulsarParams signalParams;		/**< GW signal parameters: Amplitudes + doppler */
   MultiDetectorInfo detInfo;		/**< (multi-)detector info */
   DopplerCoordinateSystem coordSys; 	/**< array of enums describing Doppler-coordinates to compute metric in */
@@ -129,8 +129,8 @@ typedef struct
 {
   BOOLEAN help;
 
-  LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
-  LALStringVector* IFOweights; /**< list of relative detector-weights "w1, w2, w3, .." */
+  LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
+  LALStringVector *sqrtSX; 	/**< (string-) list of per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$ */
 
   REAL8 Freq;		/**< target-frequency */
   REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
@@ -142,9 +142,12 @@ typedef struct
   CHAR *ephemDir;	/**< directory to look for ephemeris files */
   CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
 
-  REAL8 startTime;	/**< GPS start time of observation */
   REAL8 refTime;	/**< GPS reference time of Doppler parameters */
+
+  REAL8 startTime;	/**< GPS start time of observation */
   REAL8 duration;	/**< length of observation in seconds */
+  INT4 Nseg;		/**< number of segments to split duration into */
+  CHAR *segmentList;	/**< ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>" */
 
   REAL8 h0;		/**< GW amplitude h_0 */
   REAL8 cosi;		/**< cos(iota) */
@@ -196,10 +199,9 @@ main(int argc, char *argv[])
 {
   ConfigVariables config = empty_ConfigVariables;
   UserVariables_t uvar = empty_UserVariables;
-  DopplerMetric *metric;
   DopplerMetricParams metricParams = empty_DopplerMetricParams;
 
-  lalDebugLevel = 0;
+  lalDebugLevel = 1;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -254,24 +256,21 @@ main(int argc, char *argv[])
     } /* if coordsHelp */
 
   /* basic setup and initializations */
-  if ( XLALInitCode( &config, &uvar, argv[0] ) != XLAL_SUCCESS ) {
-    LogPrintf (LOG_CRITICAL, "%s: XInitCode() failed with xlalErrno = %d.\n\n", __func__, xlalErrno );
-    return FSTATMETRIC_EXLAL;
-  }
+  XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALInitCode() failed with xlalErrno = %d\n\n", xlalErrno );
   config.history->VCSInfoString = VCSInfoString;
 
-
+  metricParams.segmentList   = config.segmentList;
   metricParams.coordSys      = config.coordSys;
   metricParams.detMotionType = uvar.detMotionType;
   metricParams.metricType    = uvar.metricType;
-  metricParams.startTime     = config.startTime;
-  metricParams.Tspan         = uvar.duration;
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
   metricParams.projectCoord  = uvar.projection - 1;	/* user-input counts from 1, but interally we count 0=1st coord. (-1==no projection) */
   metricParams.approxPhase   = uvar.approxPhase;
 
+
   /* ----- compute metric full metric + Fisher matrix ---------- */
+  DopplerMetric *metric;
   if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerFstatMetric(). xlalErrno = %d\n\n", xlalErrno);
     return -1;
@@ -318,7 +317,7 @@ initUserVars (UserVariables_t *uvar)
   /* set a few defaults */
   uvar->help = FALSE;
 
-#define EPHEM_YEAR  "00-04"
+#define EPHEM_YEAR  "00-19-DE405"
   uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1);
   strcpy (uvar->ephemYear, EPHEM_YEAR);
 
@@ -331,6 +330,9 @@ initUserVars (UserVariables_t *uvar)
 
   uvar->startTime = 714180733;
   uvar->duration = 10 * 3600;
+  uvar->Nseg = 1;
+  uvar->segmentList = NULL;
+
   uvar->refTime = -1;	/* default: use mid-time */
 
   uvar->projection = 0;
@@ -339,7 +341,7 @@ initUserVars (UserVariables_t *uvar)
     XLAL_ERROR ( XLAL_ENOMEM );
   }
 
-  uvar->IFOweights = NULL;
+  uvar->sqrtSX = NULL;
 
   uvar->detMotionType = DETMOTION_SPIN_ORBIT;
   uvar->metricType = 0;	/* by default: compute only phase metric */
@@ -354,17 +356,19 @@ initUserVars (UserVariables_t *uvar)
   /* register all our user-variables */
 
   XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
-  XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-  XLALregLISTUserStruct(IFOweights,	 0,  UVAR_OPTIONAL, 	"Comma-separated list of relative noise-weights, eg. \"w1,w2,w3,..\" ");
-  XLALregREALUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
-  XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
+  XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  XLALregLISTUserStruct(sqrtSX,	 	 0,  UVAR_OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
+  XLALregREALUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"Equatorial Right-ascension (RA) Alpha in radians");
+  XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"Equatorial Declination (DEC) Delta in radians");
   XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
   XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");
   XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"third spindown-value d3f/dt3");
-  XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   XLALregREALUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
+  XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Duration of observation in seconds");
+  XLALregINTUserStruct(Nseg,		'N', UVAR_OPTIONAL, 	"Compute semi-coherent metric for this number of segments within 'duration'" );
+  XLALregSTRINGUserStruct(segmentList,   0,  UVAR_OPTIONAL,     "ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>");
   XLALregSTRINGUserStruct(ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
   XLALregSTRINGUserStruct(ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
 
@@ -400,26 +404,57 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     XLAL_ERROR (XLAL_EINVAL );
   }
 
-  /* ----- determine start-time from user-input */
-  XLALGPSSetREAL8( &(cfg->startTime), uvar->startTime );
-
+  // ----- load ephemeris files
   if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) == NULL ) {
     LogPrintf (LOG_CRITICAL, "%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", __func__);
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
+  // ----- figure out which segments to use
+  BOOLEAN manualSegments = XLALUserVarWasSet(&uvar->duration) || XLALUserVarWasSet(&uvar->startTime) || XLALUserVarWasSet(&uvar->Nseg);
+  if ( manualSegments && uvar->segmentList ) {
+    XLAL_ERROR ( XLAL_EDOM, "Can specify EITHER {--startTime, --duration, --Nseg} OR --segmentList\n");
+  }
+  LIGOTimeGPS startTimeGPS;
+  REAL8 duration;
+  if ( uvar->segmentList == NULL )
+    {
+      XLAL_CHECK ( uvar->Nseg >= 1, XLAL_EDOM, "Invalid input --Nseg=%d: number of segments must be >= 1\n", uvar->Nseg );
+      XLAL_CHECK ( uvar->duration >= 1, XLAL_EDOM, "Invalid input --duration=%f: duration must be >= 1 s\n", uvar->duration );
+      XLAL_CHECK ( XLALGPSSetREAL8( &startTimeGPS, uvar->startTime ) != NULL, XLAL_EFUNC, "XLALGPSSetREAL8(%f) failed with xlalErrno = %d\n", uvar->startTime, xlalErrno );
+      int ret = XLALSegListInitSimpleSegments ( &cfg->segmentList, startTimeGPS, uvar->Nseg, uvar->duration / uvar->Nseg );
+      XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
+      duration = uvar->duration;
+    }
+  else
+    {
+      LALSegList *segList = XLALReadSegmentsFromFile ( uvar->segmentList );
+      XLAL_CHECK ( segList != NULL, XLAL_EIO, "XLALReadSegmentsFromFile() failed to load segment list from file '%s', xlalErrno = %d\n", uvar->segmentList, xlalErrno );
+      cfg->segmentList = (*segList);	// copy *contents*
+      XLALFree ( segList );
+      startTimeGPS = cfg->segmentList.segs[0].start;
+      UINT4 Nseg = cfg->segmentList.length;
+      LIGOTimeGPS endTimeGPS = cfg->segmentList.segs[Nseg-1].end;
+      duration = XLALGPSDiff( &endTimeGPS, &startTimeGPS );
+    }
+
   /* ----- figure out reference time */
-  REAL8 refTime;
   LIGOTimeGPS refTimeGPS;
+
   /* treat special values first */
   if ( uvar->refTime == 0 )		/* 0 = use startTime */
-    refTime = uvar->startTime;
+    {
+      refTimeGPS = startTimeGPS;
+    }
   else if ( uvar->refTime == -1 )	/* -1 = use mid-time of observation */
-    refTime = uvar->startTime + 0.5 * uvar->duration;
+    {
+      refTimeGPS = startTimeGPS;
+      XLALGPSAdd( &refTimeGPS, duration / 2.0 );
+    }
   else
-    refTime = uvar->refTime;
-
-  XLALGPSSetREAL8( &refTimeGPS, refTime );
+    {
+      XLALGPSSetREAL8( &refTimeGPS, uvar->refTime );
+    }
 
   /* ----- get parameter-space point from user-input) */
   cfg->signalParams.Amp.h0 = uvar->h0;
@@ -441,28 +476,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   }
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
-  {
-    UINT4 numDet = uvar->IFOs->length;
-
-    if ( numDet > DOPPLERMETRIC_MAX_DETECTORS ) {
-      LogPrintf (LOG_CRITICAL, "%s: More detectors (%d) specified than allowed (%d)\n", __func__, numDet, DOPPLERMETRIC_MAX_DETECTORS );
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-    if ( uvar->IFOweights && (uvar->IFOweights->length != numDet ) )
-      {
-	LogPrintf (LOG_CRITICAL, "%s: number of IFOweights (%d) must agree with the number of IFOs (%d)!\n\n",
-		   __func__, uvar->IFOweights->length, numDet );
-	XLAL_ERROR ( XLAL_EINVAL );
-      }
-
-    cfg->detInfo = empty_MultiDetectorInfo;
-    if ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->IFOweights ) != XLAL_SUCCESS ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALParseMultiDetectorInfo() failed to parse detector names and/or weights. errno = %d.\n\n", __func__, xlalErrno);
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
-
-  } /* handle detector input */
-
+  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- translate coordinate system into internal representation ---------- */
   if ( XLALDopplerCoordinateNames2System ( &cfg->coordSys, uvar->coords ) ) {
@@ -517,6 +531,7 @@ XLALDestroyConfig ( ConfigVariables *cfg )
 
   XLALDestroyEphemerisData ( cfg->edat );
 
+  XLALSegListClear ( &(cfg->segmentList) );
   return XLAL_SUCCESS;
 
 } /* XLALDestroyConfig() */
@@ -571,10 +586,14 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   const PulsarDopplerParams *doppler;
   const PulsarAmplitudeParams *Amp;
 
+  // ----- input sanity checks
   if ( !fp || !metric ) {
     LogPrintf (LOG_CRITICAL, "%s: illegal NULL input.\n\n", __func__ );
     XLAL_ERROR ( XLAL_EINVAL );
   }
+  XLAL_CHECK ( XLALSegListIsInitialized ( &(metric->meta.segmentList) ), XLAL_EINVAL, "Got un-initialized segment list in 'metric->meta.segmentList'\n" );
+  UINT4 Nseg = metric->meta.segmentList.length;
+  XLAL_CHECK ( Nseg >= 1, XLAL_EDOM, "Got invalid zero-length segment list 'metric->meta.segmentList'\n" );
 
   /* useful shortcuts */
   meta = &(metric->meta);
@@ -589,13 +608,13 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
       if ( history->VCSInfoString ) fprintf (fp, "%%%% Code Version: %s\n", history->VCSInfoString );
     }
 
-  fprintf ( fp, "%%%% DopplerCoordinates = [ " );
+  fprintf ( fp, "DopplerCoordinates = { " );
   for ( i=0; i < meta->coordSys.dim; i ++ )
     {
       if ( i > 0 ) fprintf ( fp, ", " );
-      fprintf ( fp, "%s", XLALDopplerCoordinateName(meta->coordSys.coordIDs[i]));
+      fprintf ( fp, "\"%s\"", XLALDopplerCoordinateName(meta->coordSys.coordIDs[i]));
     }
-  fprintf ( fp, "];\n");
+  fprintf ( fp, "};\n");
 
   { /* output projection info */
     const char *pname;
@@ -608,13 +627,11 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   }
 
   fprintf ( fp, "%%%% DetectorMotionType = '%s'\n", XLALDetectorMotionName(meta->detMotionType) );
-  fprintf ( fp, "%%%% h0 = %g; cosi = %g; psi = %g; phi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
+  fprintf ( fp, "h0 = %g;\ncosi = %g;\npsi = %g;\nphi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
   fprintf ( fp, "%%%% DopplerPoint = {\n");
-  fprintf ( fp, "%%%% 	refTime = {%d, %d}\n",
-	    doppler->refTime.gpsSeconds, doppler->refTime.gpsNanoSeconds );
-  fprintf ( fp, "%%%% 	Alpha = %f rad; Delta = %f rad\n", doppler->Alpha, doppler->Delta );
-  fprintf ( fp, "%%%% 	fkdot = [%f, %g, %g, %g ]\n",
-	    doppler->fkdot[0], doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3] );
+  fprintf ( fp, "refTime = %.1f;\n", XLALGPSGetREAL8 ( &doppler->refTime ) );
+  fprintf ( fp, "Alpha   = %f;\nDelta = %f;\n", doppler->Alpha, doppler->Delta );
+  fprintf ( fp, "fkdot   = [%f, %g, %g, %g ];\n", doppler->fkdot[0], doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3] );
   if ( doppler->orbit )
     {
       const BinaryOrbitParams *orbit = doppler->orbit;
@@ -628,16 +645,20 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
     } /* if doppler->orbit */
   fprintf ( fp, "%%%% }\n");
 
-  fprintf ( fp, "%%%% startTime = {%d, %d}\n", meta->startTime.gpsSeconds, meta->startTime.gpsNanoSeconds );
-  fprintf ( fp, "%%%% duration  = %f\n", meta->Tspan );
-  fprintf ( fp, "%%%% detectors = [");
+  LIGOTimeGPS *tStart = &(meta->segmentList.segs[0].start);
+  LIGOTimeGPS *tEnd   = &(meta->segmentList.segs[Nseg-1].end);
+  REAL8 Tspan = XLALGPSDiff ( tEnd, tStart );
+  fprintf ( fp, "startTime = %.1f;\n", XLALGPSGetREAL8 ( tStart ) );
+  fprintf ( fp, "Tspan     = %.1f;\n", Tspan );
+  fprintf ( fp, "Nseg      = %d;\n", Nseg );
+  fprintf ( fp, "detectors = {");
   for ( i=0; i < meta->detInfo.length; i ++ )
     {
       if ( i > 0 ) fprintf ( fp, ", ");
-      fprintf ( fp, "%s", meta->detInfo.sites[i].frDetector.name );
+      fprintf ( fp, "\"%s\"", meta->detInfo.sites[i].frDetector.name );
     }
-  fprintf ( fp, "];\n");
-  fprintf ( fp, "%%%% detectorWeights = [");
+  fprintf ( fp, "};\n");
+  fprintf ( fp, "detectorWeights = [");
   for ( i=0; i < meta->detInfo.length; i ++ )
     {
       if ( i > 0 ) fprintf ( fp, ", ");
@@ -693,6 +714,13 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
 
       fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->Fisher_ab );
     }
+
+  // ---------- output segment list at the end, as this can potentially become quite long and distracting
+  char *seglist_octave;
+  XLAL_CHECK ( (seglist_octave = XLALSegList2String ( &(meta->segmentList) )) != NULL, XLAL_EFUNC, "XLALSegList2String() with xlalErrno = %d\n", xlalErrno );
+  fprintf ( fp, "\n\nsegmentList = %s;\n", seglist_octave );
+  XLALFree ( seglist_octave );
+
 
   return XLAL_SUCCESS;
 

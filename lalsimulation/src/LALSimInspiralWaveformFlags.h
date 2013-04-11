@@ -24,9 +24,47 @@
 #include <lal/LALError.h>
 
 /** Default values for all enumerated flags */ 
+#define LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT LAL_SIM_INSPIRAL_SPIN_ORDER_ALL
+#define LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL
 #define LAL_SIM_INSPIRAL_INTERACTION_DEFAULT LAL_SIM_INSPIRAL_INTERACTION_ALL
 #define LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
 #define LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED
+
+/**
+ * Enumeration of allowed PN orders of spin effects. All effects up to and
+ * including the given order will be included in waveforms.
+ * They can be specified by integers equal to twice the PN order,
+ * so e.g. LAL_SIM_INSPIRAL_SPIN_ORDER_25PN = 5
+ * In addition, LAL_SIM_INSPIRAL_SPIN_ORDER_ALL = -1
+ * is a flag to include all available spin effects
+ */
+typedef enum {
+    LAL_SIM_INSPIRAL_SPIN_ORDER_0PN  = 0,
+    LAL_SIM_INSPIRAL_SPIN_ORDER_05PN = 1,
+    LAL_SIM_INSPIRAL_SPIN_ORDER_1PN  = 2,
+    LAL_SIM_INSPIRAL_SPIN_ORDER_15PN = 3,
+    LAL_SIM_INSPIRAL_SPIN_ORDER_2PN  = 4,
+    LAL_SIM_INSPIRAL_SPIN_ORDER_25PN = 5,
+    LAL_SIM_INSPIRAL_SPIN_ORDER_3PN  = 6,
+    LAL_SIM_INSPIRAL_SPIN_ORDER_35PN = 7,
+    LAL_SIM_INSPIRAL_SPIN_ORDER_ALL  = -1
+} LALSimInspiralSpinOrder;
+
+/**
+ * Enumeration of allowed PN orders of tidal effects. All effects up to and
+ * including the given order will be included in waveforms.
+ * Numerically, they are equal to twice the PN order, so e.g.
+ * LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN = 10
+ * In addition, LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL = -1
+ * is a flag to include all available tidal effects
+ */
+typedef enum {
+    LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN =  0,
+    LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN = 10,
+    LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN = 12,
+    LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL = -1
+} LALSimInspiralTidalOrder;
+
 
 /** 
  * Enumeration to specify which interaction will be used in the waveform
@@ -106,27 +144,53 @@ bool XLALSimInspiralWaveformFlagsIsDefault(
         );
 
 /**
- * Set the LALSimInspiralInteraction within a LALSimInspiralWaveformFlags struct
+ * Set the LALSimInspiralSpinOrder within a LALSimInspiralWaveformFlags struct
  */
-void XLALSimInspiralSetInteraction(
+void XLALSimInspiralSetSpinOrder(
         LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose flag will be set */
-        LALSimInspiralInteraction interactionChoice /**< value to set flag to */
+
+        LALSimInspiralSpinOrder spinO /**< value to set flag to */
         );
 
 /**
- * Get the LALSimInspiralInteraction within a LALSimInspiralWaveformFlags struct,
- * or LAL_SIM_INSPIRAL_INTERACTION_DEFAULT if waveFlags is NULL
+ * Get the LALSimInspiralSpinOrder within a LALSimInspiralWaveformFlags struct,
+ * or LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT if waveFlags is NULL
  */
-LALSimInspiralInteraction XLALSimInspiralGetInteraction(
+LALSimInspiralSpinOrder XLALSimInspiralGetSpinOrder(
         LALSimInspiralWaveformFlags *waveFlags
         );
 
 /**
- * Returns true if LALSimInspiralInteraction has default value
- * reutrns false otherwise
+ * Returns true if LALSimInspiralSpinOrder has default value
+ * returns false otherwise
  */
-bool XLALSimInspiralInteractionIsDefault(
-        LALSimInspiralInteraction interactionChoice
+bool XLALSimInspiralSpinOrderIsDefault(
+        LALSimInspiralSpinOrder spinO
+        );
+
+/**
+ * Set the LALSimInspiralTidalOrder within a LALSimInspiralWaveformFlags struct
+ */
+void XLALSimInspiralSetTidalOrder(
+        LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose flag will be set */
+
+        LALSimInspiralTidalOrder tideO /**< value to set flag to */
+        );
+
+/**
+ * Get the LALSimInspiralTidalOrder within a LALSimInspiralWaveformFlags struct,
+ * or LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT if waveFlags is NULL
+ */
+LALSimInspiralTidalOrder XLALSimInspiralGetTidalOrder(
+        LALSimInspiralWaveformFlags *waveFlags
+        );
+
+/**
+ * Returns true if LALSimInspiralTidalOrder has default value
+ * returns false otherwise
+ */
+bool XLALSimInspiralTidalOrderIsDefault(
+        LALSimInspiralTidalOrder tideO
         );
 
 /**

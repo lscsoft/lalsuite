@@ -6,6 +6,8 @@ EXTRA_DIST = \
 	docs \
 	lalstochastic-dev.dirs \
 	lalstochastic-dev.install \
+	lalstochastic-octave.install \
+	lalstochastic-python.install \
 	lalstochastic.dirs \
 	lalstochastic.install \
 	rules \

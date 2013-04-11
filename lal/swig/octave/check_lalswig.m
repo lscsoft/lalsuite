@@ -148,6 +148,9 @@ cm = CreateCOMPLEX8VectorSequence(4, 6);
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength);
 clear iv rv cm;
+rv1 = CreateREAL8Vector(1);
+rv1.data(1) = 1;
+clear rv1;
 CheckMemoryLeaks();
 disp("passed dynamic vector/matrix conversions (LAL)");
 ## check GSL vectors and matrices
@@ -157,6 +160,9 @@ cm = new_gsl_matrix_complex_float(4, 6);
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2);
 clear iv rv cm;
+rv1 = new_gsl_vector(1);
+rv1.data(1) = 1;
+clear rv1;
 disp("passed dynamic vector/matrix conversions (GSL)");
 
 ## check 'tm' struct conversions
@@ -210,7 +216,10 @@ t1 += 812345667.75;
 assert(strcmp(t1.__str__(), "812345678.250000000"));
 assert(new_LIGOTimeGPS(t1.__repr__()) == t1);
 assert(GPSToINT8NS(t1) == 812345678250000000);
-clear t0 t1 t2 t3;
+t4struct = new_lalswig_test_gps;
+t4struct.t = 1234.5;
+assert(t4struct.t == 1234.5);
+clear t0 t1 t2 t3 t4struct;
 CheckMemoryLeaks();
 disp("passed LIGOTimeGPS operations");
 

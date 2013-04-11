@@ -23,9 +23,9 @@ code_HS="${builddir}/lalapps_HierarchicalSearch"
 code_RC="${builddir}/lalapps_RecalcHSCandidates"
 
 if [ -n "${LALPULSAR_DATADIR}" ]; then
-    EEPHEM="${LALPULSAR_DATADIR}/earth05-09.dat"
-    SEPHEM="${LALPULSAR_DATADIR}/sun05-09.dat"
-    code_MFD="${code_MFD} -E ${LALPULSAR_DATADIR} -y 05-09"
+    EEPHEM="${LALPULSAR_DATADIR}/earth00-19-DE405.dat"
+    SEPHEM="${LALPULSAR_DATADIR}/sun00-19-DE405.dat"
+    code_MFD="${code_MFD} -E ${LALPULSAR_DATADIR}"
     code_HS="${code_HS} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
     code_RC="${code_RC} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
 else

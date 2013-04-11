@@ -48,12 +48,18 @@
 #include <lal/Random.h>
 #include <gsl/gsl_math.h>
 
+#include <lal/LALString.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/GeneratePulsarSignal.h>
+#include <lal/SimulatePulsarSignal.h>
 #include <lal/TimeSeries.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
+
+#ifdef HAVE_LIBLALFRAME
+#include <lal/LALFrameIO.h>
+#endif
 
 #include <lal/TransientCW_utils.h>
 
@@ -122,13 +128,13 @@ typedef struct
 
 
 /** Default year-span of ephemeris-files to be used */
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
 
 /* ---------- local prototypes ---------- */
 void FreeMem (LALStatus *, ConfigVars_t *cfg);
 void InitUserVars (LALStatus *);
 void InitMakefakedata (LALStatus *, ConfigVars_t *cfg, int argc, char *argv[]);
-void AddGaussianNoise (LALStatus *, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed);
+void AddGaussianNoise (LALStatus *, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed);
 /* void GetOrbitalParams (LALStatus *, BinaryOrbitParams *orbit); */
 void WriteMFDlog (LALStatus *, const char *logfile, const ConfigVars_t *cfg);
 
@@ -145,6 +151,7 @@ void LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, cons
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 BOOLEAN is_directory ( const CHAR *fname );
+int XLALIsValidDescriptionField ( const char *desc );
 
 /*----------------------------------------------------------------------*/
 static const ConfigVars_t empty_GV;
@@ -160,6 +167,8 @@ BOOLEAN uvar_outSFTv1;		/**< use v1-spec for output-SFTs */
 BOOLEAN uvar_outSingleSFT;	/**< use to output a single concatenated SFT */
 
 CHAR *uvar_TDDfile;		/**< Filename for ASCII output time-series */
+CHAR *uvar_TDDframedir;		/**< directory for frame file output time-series */
+CHAR *uvar_frameDesc;           /**< description field entry in the frame filename */
 BOOLEAN uvar_hardwareTDD;	/**< Binary output timeseries in chunks of Tsft for hardware injections. */
 
 CHAR *uvar_logfile;		/**< name of logfile */
@@ -372,7 +381,8 @@ main(int argc, char *argv[])
        *----------------------------------------*/
       if ( uvar_exactSignal )
 	{
-	  LAL_CALL ( LALSimulateExactPulsarSignal (&status, &Tseries, &params), &status );
+          Tseries = XLALSimulateExactPulsarSignal ( &params );
+          XLAL_CHECK ( Tseries != NULL, XLAL_EFUNC, "XLALSimulateExactPulsarSignal() failed.\n");
 	}
       else if ( uvar_lineFeature )
 	{
@@ -408,7 +418,7 @@ main(int argc, char *argv[])
 
       /* add Gaussian noise if requested */
       if ( GV.noiseSigma > 0) {
-	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)(GV.noiseSigma), GV.randSeed + i_chunk ), &status);
+	LAL_CALL ( AddGaussianNoise(&status, Tseries, (REAL4)(GV.noiseSigma), GV.randSeed + i_chunk ), &status);
       }
 
       /* output ASCII time-series if requested */
@@ -429,6 +439,51 @@ main(int argc, char *argv[])
 	  fclose(fp);
 	  LALFree (fname);
 	} /* if outputting ASCII time-series */
+
+      /* output time-series to frames if requested */
+      if ( uvar_TDDframedir )
+	{
+#ifndef HAVE_LIBLALFRAME
+          XLAL_ERROR ( XLAL_EINVAL, "--TDDframedir option not supported, code has to be compiled with lalframe\n" );
+#else
+	  /* use standard frame output filename format */
+          XLAL_CHECK ( XLALIsValidDescriptionField ( uvar_frameDesc ) == XLAL_SUCCESS, XLAL_EFUNC );
+          size_t len = strlen(uvar_TDDframedir) + strlen(uvar_frameDesc) + 100;
+	  char *fname;
+          char IFO[2] = { Tseries->name[0], Tseries->name[1] };
+          XLAL_CHECK ( (fname = LALCalloc (1, len )) != NULL, XLAL_ENOMEM );
+          size_t written = snprintf ( fname, len, "%s/%c-%c%c_%s-%d-%d.gwf",
+                                      uvar_TDDframedir, IFO[0], IFO[0], IFO[1], uvar_frameDesc, params.startTimeGPS.gpsSeconds, (int)params.duration );
+          XLAL_CHECK ( written < len, XLAL_ESIZE, "Frame-filename exceeds expected maximal length (%d): '%s'\n", len, fname );
+
+	  /* define the output frame */
+	  struct FrameH *outFrame;
+	  XLAL_CHECK ( (outFrame = XLALFrameNew( &(params.startTimeGPS), params.duration, uvar_frameDesc, 1, 0, 0 )) != NULL, XLAL_EFUNC );
+
+	  /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
+          char buffer[LALNameLength];
+	  written = snprintf ( buffer, LALNameLength, "%s:%s", Tseries->name, uvar_frameDesc );
+          XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Updated frame name exceeds max length (%d): '%s'\n", LALNameLength, buffer );
+          strcpy ( Tseries->name, buffer );
+
+	  XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
+
+	  /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
+	  char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
+          FrHistoryAdd ( outFrame, hist );
+
+	  /* then we add the version string */
+	  FrHistoryAdd ( outFrame, GV.VCSInfoString );
+
+	  /* output the frame to file - compression level 1 (higher values make no difference) */
+	  XLAL_CHECK ( (XLALFrameWrite(outFrame, fname,1) == 0) , XLAL_EFUNC );
+
+	  /* free the frame, frame file name and history memory */
+	  FrameFree ( outFrame );
+	  LALFree ( fname );
+          LALFree ( hist );
+#endif
+	} /* if outputting time-series to frames */
 
 
       /* if hardware injection: send timeseries in binary-format to stdout */
@@ -756,8 +811,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       }
     else if ( have_RA )
       {
-	cfg->pulsar.Doppler.Alpha = LALDegsToRads(uvar_RA,"alpha");
-	cfg->pulsar.Doppler.Delta = LALDegsToRads(uvar_Dec,"delta");
+	cfg->pulsar.Doppler.Alpha = XLALhmsToRads(uvar_RA);
+	cfg->pulsar.Doppler.Delta = XLALdmsToRads(uvar_Dec);
       }
     else
       {
@@ -1124,7 +1179,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   if ( uvar_window )
     {
-      XLALLowerCaseString ( uvar_window );	// get rid of case
+      XLALStringToLowerCase ( uvar_window );	// get rid of case
 
       if ( LALUserVarWasSet( &uvar_tukeyBeta ) && strcmp ( uvar_window, "tukey" ) )
 	{
@@ -1272,7 +1327,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTTMJDtoGPS(uvar_orbitTpSSBMJD);
+	  GPSfloat = XLALTTMJDtoGPS(uvar_orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbit->tp),GPSfloat);
 	}
       else if ((set5 && set6) && !set7)
@@ -1367,7 +1422,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
       /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
-      GPSfloat = LALTTMJDtoGPS(uvar_refTimeMJD);
+      GPSfloat = XLALTTMJDtoGPS(uvar_refTimeMJD);
       XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),GPSfloat);
     }
   else
@@ -1467,6 +1522,10 @@ InitUserVars (LALStatus *status)
   uvar_cosi = 0;
 
   uvar_TDDfile = NULL;
+  uvar_TDDframedir = NULL;
+#define DEFAULT_FRAME_DESC "mfdv4"
+  uvar_frameDesc = XLALCalloc ( 1, strlen(DEFAULT_FRAME_DESC) + 1 );
+  strcpy ( uvar_frameDesc, DEFAULT_FRAME_DESC );
 
   uvar_logfile = NULL;
 
@@ -1498,7 +1557,9 @@ InitUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   outSingleSFT, 	's', UVAR_OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
   LALregSTRINGUserVar(status, outSFTbname,	'n', UVAR_OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
 
-  LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Filename to output time-series into");
+  LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Basename for output of ASCII time-series");
+  LALregSTRINGUserVar(status, TDDframedir,	'F', UVAR_OPTIONAL, "Directory to output frame time-series into");
+  LALregSTRINGUserVar(status, frameDesc,	 0, UVAR_OPTIONAL,  "Description-field entry in frame filename");
 
   LALregSTRINGUserVar(status, logfile,		'l', UVAR_OPTIONAL, "Filename for log-output");
 
@@ -1524,8 +1585,8 @@ InitUserVars (LALStatus *status)
   LALregREALUserVar(status,   tukeyBeta,	 0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
 
   /* pulsar params */
-  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (if 0: use startTime)");
-  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD (if 0: use startTime)");
+  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (default: use startTime)");
+  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD (default: use startTime)");
 
   LALregREALUserVar(status,   Alpha,	 	 0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
   LALregSTRINGUserVar(status, RA,	 	 0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
@@ -1649,29 +1710,22 @@ void FreeMem (LALStatus* status, ConfigVars_t *cfg)
 
 /**
  * Generate Gaussian noise with standard-deviation sigma, add it to inSeries.
- * returns outSeries
- *
- * NOTE: inSeries is allowed to be identical to outSeries!
  *
  * NOTE2: if seed==0, then time(NULL) is used as random-seed!
  *
  */
 void
-AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed)
+AddGaussianNoise (LALStatus* status, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed)
 {
 
   REAL4Vector    *v1 = NULL;
   RandomParams   *randpar = NULL;
   UINT4          numPoints, i;
-  REAL4Vector *bak;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-
-  ASSERT ( outSeries, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
   ASSERT ( inSeries, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-  ASSERT ( outSeries->data->length == inSeries->data->length, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 
   numPoints = inSeries->data->length;
 
@@ -1682,13 +1736,7 @@ AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries
   TRY (LALNormalDeviates(status->statusPtr, v1, randpar), status);
 
   for (i = 0; i < numPoints; i++)
-    outSeries->data->data[i] = inSeries->data->data[i] + sigma * v1->data[i];
-
-  /* copy the rest of the time-series structure */
-  bak = outSeries->data;
-  outSeries = inSeries;		/* copy all struct-entries */
-  outSeries->data = bak;	/* restore data-pointer */
-
+    inSeries->data->data[i] += sigma * v1->data[i];
 
   /* destroy randpar*/
   TRY (LALDestroyRandomParams(status->statusPtr, &randpar), status);
@@ -2038,3 +2086,35 @@ LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const Pul
   RETURN ( status );
 
 } /* LALGenerateLineFeature() */
+
+
+/**
+ * Check whether given string qualifies as a valid 'description' field of a FRAME (or SFT)
+ * filename, according to  LIGO-T010150-00-E "Naming Convention for Frame Files which are to be Processed by LDAS",
+ * LIGO-T040164-01 at https://dcc.ligo.org/LIGO-T040164-x0/public
+ *
+ * NOTE: this function will be moved into SFTutils.c later
+ */
+#include <ctype.h>
+int
+XLALIsValidDescriptionField ( const char *desc )
+{
+  XLAL_CHECK ( desc != NULL, XLAL_EINVAL );
+
+  size_t len = strlen ( desc );
+
+  if ( len == 1 && isupper(desc[0]) ) {
+    XLAL_ERROR ( XLAL_EINVAL, "Single uppercase description reserved for class-1 raw frames!\n" );
+  }
+
+  for ( UINT4 i=0; i < len; i ++ )
+    {
+      int c = desc[i];
+      if ( !isalnum(c) && (c!='_') && (c!='+') && (c!='#') ) {	// all the valid characters allowed
+        XLAL_ERROR ( XLAL_EINVAL, "Invalid chacter '%c' found, only alphanumeric and ['_', '+', '#'] are allowed\n", c );
+      }
+    } // for i < len
+
+  return XLAL_SUCCESS;
+
+} // XLALIsValidDescriptionField()

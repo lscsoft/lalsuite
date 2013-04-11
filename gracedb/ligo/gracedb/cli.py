@@ -23,7 +23,7 @@ import json
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.8-1'
+GIT_TAG = 'gracedb-1.11-1'
 
 #-----------------------------------------------------------------
 # Util routines
@@ -151,10 +151,12 @@ def encode_multipart_formdata(fields, files):
         L.append('--' + BOUNDARY)
         L.append('Content-Disposition: form-data; name="%s"' % key)
         L.append('')
-        L.append(value)
+        # str(value) in case it is unicode
+        L.append(str(value))
     for (key, filename, value) in files:
         L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+        # str(filename) in case it is unicode
+        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, str(filename)))
         L.append('Content-Type: %s' % get_content_type(filename))
         L.append('')
         L.append(value)
@@ -299,8 +301,8 @@ class Client:
         return host is not None
 
     def rest(self, resource, method="GET", **kw):
-        headers = {'connection' : 'keep-alive'}
-        headers = {}
+        headers = kw.pop('headers', {})
+        headers['connection'] = 'keep-alive'
 #       If absolute URL, use, otherwise pre-append the REST service URL.
         if self._is_absolute_url(resource):
             url = resource
@@ -383,17 +385,12 @@ class Client:
         return self._upload('create', fields, files)
 
     def replace(self, graceid, filename, filecontents=None):
-        if filecontents is None:
-            if filename == '-':
-                filename = 'initial.data'
-                filecontents = sys.stdin.read()
-            else:
-                filecontents = open(filename, 'r').read()
-        fields = []
-        files = [('eventFile', filename, filecontents)]
-#       XXX URL should be discovered, not assumed.  OK - this cli is deprecated.
-        url = "%s/events/%s" % (self.rest_url, graceid)
-        response = self._upload(url, fields, files, http_method="PUT", rawresponse=True)
+        from ligo.gracedb.rest import GraceDb
+        url = self.rest_url
+        if url[-1] != '/':
+            url += '/'
+        server = GraceDb(url)
+        response = server.replaceEvent(graceid, filename, filecontents)
         if response.status == 202:  # Accepted
             return "%s updated" % graceid
         else:
@@ -403,8 +400,10 @@ class Client:
     def upload(self, graceid, filename, filecontents=None, comment="", alert=False):
         if filecontents is None:
             if filename == '-':
+                filename = 'stdin'
                 filecontents = sys.stdin.read()
-            filecontents = open(filename, 'r').read()
+            else:
+                filecontents = open(filename, 'r').read()
         fields = [
             ('graceid', graceid),
             ('comment', comment),
@@ -474,6 +473,9 @@ def main():
 
 %%prog [options] label GRACEID LABEL
     Label event with GRACEDID with LABEL.  LABEL must already exist.
+
+%%prog [options] slot GRACEID slotname [filename]
+    Tag an uploaded file with a name or view value of slotname.
 
 %%prog [options] search SEARCH PARAMS
     Search paramaters are a list of requirements to be satisfied.  They
@@ -565,7 +567,7 @@ Longer strings will be truncated.""" % {
             # get/print listing.
             response = client.listfiles(graceid)
             if response and response.status == 200:
-                for fname in json.decode(response.read()):
+                for fname in json.loads(response.read()):
                     print(fname)
                 exit(0)
             print(response.reason)
@@ -607,6 +609,25 @@ Longer strings will be truncated.""" % {
         graceid = args[1]
         filename = args[2]
         response = client.replace(graceid, filename)
+    elif args[0] == 'slot':
+        if len(args) in [3,4]:
+            url = '/events/%s/slot/%s' % (args[1], args[2])
+            if len(args) == 3:
+                response = client.rest(url, method='GET')
+            else:
+                headers = {'content-type' : "application/x-www-form-urlencoded" }
+                response = client.rest(url,
+                        method='PUT',
+                        headers=headers,
+                        filename=args[3])
+            if response and response.status in [200, 201]:
+                print( json.loads(response.read()) ) 
+                exit(0)
+            else:
+                print(response.reason)
+                exit(1)
+        else:
+            op.error("wrong number of args for slot")
     elif len(args) == 3:
         group = args[0]
         type = args[1]

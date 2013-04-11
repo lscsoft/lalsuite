@@ -162,6 +162,9 @@ cm = lal.CreateCOMPLEX8VectorSequence(4, 6)
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength)
 del iv, rv, cm
+rv1 = lal.CreateREAL8Vector(1)
+rv1.data[0] = 1
+del rv1
 lal.CheckMemoryLeaks()
 print("passed dynamic vector/matrix conversions (LAL)")
 # check GSL vectors and matrices
@@ -171,6 +174,9 @@ cm = lal.gsl_matrix_complex_float(4, 6)
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2)
 del iv, rv, cm
+rv1 = lal.gsl_vector(1)
+rv1.data[0] = 1
+del rv1
 print("passed dynamic vector/matrix conversions (GSL)")
 
 # check 'tm' struct conversions
@@ -228,7 +234,10 @@ assert(LIGOTimeGPS(repr(t1)) == t1)
 assert(long(t1) == 812345678)
 assert(lal.GPSToINT8NS(t1) == 812345678250000000L)
 assert(hash(t1) == 1049484238)
-del t0, t1, t2, t3
+t4struct = lal.lalswig_test_gps()
+t4struct.t = 1234.5
+assert(t4struct.t == 1234.5)
+del t0, t1, t2, t3, t4struct
 lal.CheckMemoryLeaks()
 print("passed LIGOTimeGPS operations")
 

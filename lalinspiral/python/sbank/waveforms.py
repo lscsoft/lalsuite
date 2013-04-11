@@ -215,7 +215,7 @@ class TaylorF2RedSpinTemplate(Template):
 
         df, PSD = get_neighborhood_PSD([self], self.bank.flow, self.bank.noise_model)
 
-        if df not in self.bank._moments or len(PSD) > self.bank._moments[df][0].length:
+        if df not in self.bank._moments or len(PSD) - self.bank.flow // df > self.bank._moments[df][0].length:
             real8vector_psd = CreateREAL8Vector(len(PSD))
             real8vector_psd.data[:] = PSD
             self.bank._moments[df] = create_moments(df, self.bank.flow, len(PSD))
@@ -232,7 +232,7 @@ class TaylorF2RedSpinTemplate(Template):
     def _compute_waveform(self, df, f_final):
         return lalsim.SimInspiralTaylorF2ReducedSpin(
             0, df, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self.chi,
-            self.bank.flow, 1000000 * LAL_PC_SI, 7, 3)
+            self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 3)
 
     def metric_match(self, other, df, **kwargs):
         g00, g01, g02, g11, g12, g22 = self._metric

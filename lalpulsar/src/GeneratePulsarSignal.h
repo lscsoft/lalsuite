@@ -295,6 +295,8 @@ typedef struct tagPulsarSignalParams {
   UINT4 duration;           	/**< length of time series in seconds */
   REAL8 samplingRate;		/**< sampling rate of time-series (= 2 * frequency-Band) */
   REAL8 fHeterodyne;		/**< heterodyning frequency for output time-series */
+  UINT4 dtDelayBy2; 		/**< half-interval for the Doppler delay look-up table for LALSimulateCoherentGW() */
+  UINT4 dtPolBy2; 		/**< half-interval for the polarisation response look-up table for LALSimulateCoherentGW() */
 } PulsarSignalParams;
 
 /** Parameters defining the SFTs to be returned from LALSignalToSFTs().
@@ -341,8 +343,6 @@ extern const SFTandSignalParams empty_SFTandSignalParams;
 
 /* ---------- Function prototypes ---------- */
 void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signalvec, const PulsarSignalParams *params);
-void LALSimulateExactPulsarSignal (LALStatus *, REAL4TimeSeries **timeSeries, const PulsarSignalParams *params);
-
 void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signalvec, const SFTParams *params);
 
 void LALComputeSkyAndZeroPsiAMResponse (LALStatus *, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);

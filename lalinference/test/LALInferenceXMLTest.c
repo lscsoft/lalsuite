@@ -63,7 +63,7 @@ int testLALInferenceVariables(void){
     /* Convert array of variables into table */
     printf( "--> Serializing array of variables into XML Table ... ");
 
-    vars=calloc(3,sizeof(LALInferenceVariables));
+    vars=XLALCalloc(3,sizeof(LALInferenceVariables));
     int i;
     for(i=0;i<3;i++)
     {

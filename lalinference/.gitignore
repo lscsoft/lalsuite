@@ -21,6 +21,8 @@ lalinference-*.tar.gz
 lalinference.pc
 lalinference.spec
 libtool
+python/__init__.py
+python/git_version.py
 src/LALInferenceConfig.h
 src/LALInferenceVCSInfo.h
 src/git_version

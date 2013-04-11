@@ -25,8 +25,6 @@
  * model. Flux function given by Phys.Rev.D79:064004,2009.
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALComplex.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>
 
@@ -85,9 +83,9 @@ REAL8 XLALInspiralFactorizedFlux(
     XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
   /* For the 2,2 mode, we apply NQC correction to the flux */
-  hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+  hLM = hNQC * hLM;
 
-  flux = (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+  flux = (REAL8)(m * m) * omegaSq * cabs( hLM ) * cabs( hLM );
 
   /* (2,1) */
   l = 2;
@@ -99,7 +97,7 @@ REAL8 XLALInspiralFactorizedFlux(
     XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
 
-  flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+  flux += (REAL8)(m * m) * omegaSq * cabs( hLM ) * cabs( hLM );
 
   /* All other modes */
   for ( l = 3; l <= lMax; l++ )
@@ -117,7 +115,7 @@ REAL8 XLALInspiralFactorizedFlux(
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
 
-      flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+      flux += (REAL8)(m * m) * omegaSq * cabs( hLM ) * cabs( hLM );
     }
   }
 

@@ -1,3 +1,4 @@
 usr/bin/lalsim*
 etc/*
 usr/lib/*.so*
+usr/share/lalsimulation/LIGO-T0900288*

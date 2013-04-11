@@ -334,7 +334,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   runState.prior = &priorFunction;
   
   /* set signal model/template */
-  runState.template = get_pulsar_model;
+  runState.templt = get_pulsar_model;
  
   /* set output style (change this when the code if fixed for using XML) */
   runState.logsample = LALInferenceLogSampleToFile;
@@ -958,7 +958,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
   
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
     ifodata->modelParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-    ifodata->modelDomain = LALINFERENCE_DOMAIN_TIME;
+    ifodata->modelDomain = LAL_SIM_DOMAIN_TIME;
     ifodata->next = NULL;
     ifodata->dataParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
     
@@ -3769,7 +3769,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   /* make sure that the signal model in runState->data is that of the loudest 
    * signal */
   REAL8 logLnew = runState->likelihood( loudestParams, runState->data, 
-                                        runState->template);
+                                        runState->templt);
   
   if ( logLnew != *(REAL8 *)LALInferenceGetVariable( 
     runState->livePoints[Nlive-1], "logL" ) ){
@@ -3777,7 +3777,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     exit(0);
   }
   
-  LALInferenceDestroyVariables( loudestParams );
+  LALInferenceClearVariables( loudestParams );
   
   /* setup output file */
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );

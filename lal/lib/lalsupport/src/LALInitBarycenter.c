@@ -354,22 +354,47 @@ XLALDestroyEphemerisVector ( EphemerisVector *ephemV )
 
 /** XLAL function to read ephemeris-data from one file, returning a EphemerisVector.
  * This is a helper-function to XLALInitBarycenter().
+ *
+ * NOTE: This function tries to read ephemeris from "<fname>" first, if that fails it also tries
+ * to read "<fname>.gz" instead. This allows us to handle gzip-compressed ephemeris-files without having
+ * to worry about the detailed filename extension used in the case of compression.
+ *
  */
 EphemerisVector *
 XLALReadEphemerisFile ( const CHAR *fname )
 {
-  UINT4 j = 0, numLines = 0;
-  LALParsedDataFile *flines = NULL;
-
   /* check input consistency */
-  if ( !fname )
-    XLAL_ERROR_NULL ( XLAL_EINVAL, "Invalid NULL input for 'fname'\n" );
+  XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL );
+
+  // check if either "<fname>" or "<fname>.gz" can be opened for reading
+  int len = strlen(fname) + strlen(".gz") + 1;
+  char *fname_open = XLALMalloc ( len );
+  XLAL_CHECK_NULL ( fname_open != NULL, XLAL_ENOMEM, "XLALMalloc(%d) failed.\n", len );
+
+  sprintf ( fname_open, "%s", fname );
+  FILE *fp;
+  INT4 lalDebugLevel_bak = lalDebugLevel;
+  lalDebugLevel = 0;	// avoid spurious error-message ouput by stupid LALOpenDataFile()
+  if ( (fp = LALOpenDataFile (fname_open)) == NULL )
+    {
+      sprintf ( fname_open, "%s.gz", fname );
+      if ( (fp = LALOpenDataFile (fname_open)) == NULL )
+        {
+          lalDebugLevel = lalDebugLevel_bak;
+          XLALPrintError ( "Failed to open either '%s' or '%s.gz' for reading\n", fname, fname_open );
+          XLALFree ( fname_open );
+          XLAL_ERROR_NULL ( XLAL_EIO );
+        } // if fopen(fname.gz) failed
+    } // if fopen(fname) failed
+  fclose ( fp );
+  lalDebugLevel = lalDebugLevel_bak;
 
   /* read in file with XLALParseDataFile to ignore comment header lines */
-  if ( XLALParseDataFile ( &flines, fname ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  LALParsedDataFile *flines = NULL;
+  XLAL_CHECK_NULL ( XLALParseDataFile ( &flines, fname_open ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALFree ( fname_open );
 
-  numLines = flines->lines->nTokens;
+  UINT4 numLines = flines->lines->nTokens;
 
   INT4 gpsYr; /* gpsYr + leap is the time on the GPS clock
                * at first instant of new year, UTC; equivalently
@@ -414,7 +439,7 @@ XLALReadEphemerisFile ( const CHAR *fname )
    ***************************************************************************/
 
   /* read the remaining lines */
-  for (j=0; j < nEntries; j++)
+  for ( UINT4 j = 0; j < nEntries; j++ )
     {
       UINT4 i_line;
       int ret;
