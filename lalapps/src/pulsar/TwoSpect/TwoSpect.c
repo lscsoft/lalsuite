@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "\n%s: existingSFTs() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
-   INT4 totalincludedsftnumber = 0.0;
+   INT4 totalincludedsftnumber = 0;
    for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber++;
    REAL4 frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
    fprintf(stderr, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
