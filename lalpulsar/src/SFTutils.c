@@ -884,10 +884,10 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
 
 } /* XLALReadSegmentsFromFile() */
 
-/** Return a vector of SFTs containing only the bins in [fmin, fmin+Band].
+/** Return a vector of SFTs containing only the bins in [fMin, fMin+Band].
  *
- * Note: the output SFT is guaranteed to "cover" the input boundaries 'fmin'
- * and 'fmin+Band', ie if necessary the output SFT contains one additional
+ * Note: the output SFT is guaranteed to "cover" the input boundaries 'fMin'
+ * and 'fMin+Band', ie if necessary the output SFT contains one additional
  * bin on either end of the interval.
  *
  * This uses the conventions in XLALFindCoveringSFTBins() to determine
@@ -895,11 +895,11 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
  *
  */
 SFTVector *
-XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
+XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band )
 {
   XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input SFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input SFT vector 'inSFTs'\n");
-  XLAL_CHECK_NULL ( fmin >= 0, XLAL_EDOM, "Invalid negative frequency fmin = %g\n", fmin );
+  XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
   XLAL_CHECK_NULL ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
 
   UINT4 numSFTs = inSFTs->length;
@@ -907,20 +907,20 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
   REAL8 df      = inSFTs->data[0].deltaF;
   REAL8 Tsft    = 1.0 / df;
 
-  REAL8 fminSFT    = inSFTs->data[0].f0;
+  REAL8 fMinSFT    = inSFTs->data[0].f0;
   UINT4 numBinsSFT = inSFTs->data[0].data->length;
   REAL8 BandSFT    = df * numBinsSFT;
-  UINT4 firstBinSFT= round ( fminSFT / df );	// round to closest bin
+  UINT4 firstBinSFT= round ( fMinSFT / df );	// round to closest bin
   UINT4 lastBinSFT = firstBinSFT + ( numBinsSFT - 1 );
 
   // find 'covering' SFT-band to extract
   UINT4 firstBinExt, numBinsExt;
-  XLAL_CHECK_NULL ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, fmin, Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, fMin, Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
   UINT4 lastBinExt = firstBinExt + ( numBinsExt - 1 );
 
   XLAL_CHECK_NULL ( firstBinExt >= firstBinSFT && (lastBinExt <= lastBinSFT), XLAL_EINVAL,
                     "Requested frequency-bins [%f,%f]Hz = [%d, %d] not contained within SFT's [%f, %f]Hz = [%d,%d].\n",
-                    fmin, fmin + Band, firstBinExt, lastBinExt, fminSFT, fminSFT + BandSFT, firstBinSFT, lastBinSFT );
+                    fMin, fMin + Band, firstBinExt, lastBinExt, fMinSFT, fMinSFT + BandSFT, firstBinSFT, lastBinSFT );
 
   INT4 firstBinOffset = firstBinExt - firstBinSFT;
 
@@ -937,7 +937,7 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
       memcpy ( dest, src, sizeof(*dest) );
       /* restore data-pointer */
       dest->data = ptr;
-      /* set correct fmin */
+      /* set correct fMin */
       dest->f0 = firstBinExt * df ;
 
       /* copy the relevant part of the data */
@@ -1064,7 +1064,7 @@ XLALSFTAdd ( SFTtype *a,		/**< [in/out] SFT to be added to */
  *
  * The 'fudge region' allowing for numerical noise is eps= 10*LAL_REAL8_EPS ~2e-15
  * relative deviation: ie if the SFT contains a bin at 'fi', then we consider for example
- * "fmin == fi" if  fabs(fi - fmin)/fi < eps.
+ * "fMin == fi" if  fabs(fi - fMin)/fi < eps.
  */
 int
 XLALFindCoveringSFTBins ( UINT4 *firstBin,	///< [out] effective lower frequency-bin fMinEff = firstBin/Tsft

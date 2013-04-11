@@ -506,15 +506,15 @@ XLALFindSmallestValidSamplingRate ( UINT4 *n1,				//< [out] minimal valid sampli
 static UINT4
 gcd (UINT4 numer, UINT4 denom)
 {
-  UINT4 next_numer, next_denom, remainder;
+  UINT4 next_numer, next_denom, rmdr;
 
   next_numer = numer;
   next_denom = denom;
   while ( next_denom != 0 )
     {
-      remainder = next_numer % next_denom;
+      rmdr = next_numer % next_denom;
       next_numer = next_denom;
-      next_denom = remainder;
+      next_denom = rmdr;
     }
   return next_numer;
 } // gcd
