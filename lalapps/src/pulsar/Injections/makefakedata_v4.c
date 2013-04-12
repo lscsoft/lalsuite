@@ -1764,6 +1764,8 @@ XLALGenerateLineFeature ( const PulsarSignalParams *params )
   REAL4TimeSeries *ret = XLALCreateREAL4TimeSeries (name, &(params->startTimeGPS), params->fHeterodyne, deltaT, &units, length);
   XLAL_CHECK_NULL ( ret != NULL, XLAL_EFUNC, "XLALCreateREAL4TimeSeries() failed.\n");
 
+  XLALFree( name );
+
   REAL8 h0 = params->pulsar.aPlus + sqrt ( pow(params->pulsar.aPlus,2) - pow(params->pulsar.aCross,2) );
   REAL8 omH = LAL_TWOPI * ( params->pulsar.f0 - params->fHeterodyne );
 
