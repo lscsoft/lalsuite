@@ -523,7 +523,7 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
  * Note: this is a single-precision version aimed for GPU parallelization.
  *
  */
-void
+int
 XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for this parameter-space point */
                        const SFTVector *sfts,		/**< [in] single-IFO input data ("SFTs") */
                        const PulsarSpinsREAL4 *fkdot4,	/**< [in] frequency (and derivatives) in REAL4-safe format */
@@ -555,18 +555,18 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
     XLALPrintError ("%s: Output-pointer is NULL !\n", __func__);
-    XLAL_ERROR_VOID ( XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( !sfts || !sfts->data ) {
     XLALPrintError ("%s: Input SFTs are NULL!\n", __func__);
-    XLAL_ERROR_VOID ( XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( !fkdot4 || !tSSB || !tSSB->DeltaT_int || !tSSB->DeltaT_rem || !tSSB->TdotM1 || !amcoe || !amcoe->a || !amcoe->b )
     {
       XLALPrintError ("%s: Illegal NULL in input !\n", __func__);
-      XLAL_ERROR_VOID ( XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL );
     }
 #endif
 
@@ -673,7 +673,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	  {
 	    XLALPrintError ("%s: Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
                             __func__, k0, k1, freqIndex0, freqIndex1 );
-	    XLAL_ERROR_VOID( XLAL_EDOM);
+	    XLAL_ERROR ( XLAL_EDOM );
 	  }
 
       } /* compute kappa_star, lambda_alpha */
@@ -826,7 +826,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
   FaFb->Fb.realf_FIXME = norm * crealf(Fb);
   FaFb->Fb.imagf_FIXME = norm * cimagf(Fb);
 
-  return;
+  return XLAL_SUCCESS;
 
 } /* XLALComputeFaFbREAL4() */
 
