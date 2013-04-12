@@ -144,8 +144,8 @@ extern "C" {
 #define LAL_BWGS84_SI 6.356752314e6   /**< Semiminor axis of WGS-84 Reference Ellipsoid, m */
 #define LAL_MEARTH_SI 5.97370e24      /**< Earth mass, kg */
 #define LAL_IEARTH    0.409092804     /**< Earth inclination (2000), radians */
-#define LAL_COSIEARTH 0.91748206215761919815	/**< Cosine of Earth inclination (2000) */
-#define LAL_SINIEARTH 0.39777715572793088957	/**< Sine of Earth inclination (2000) */
+#define LAL_COSIEARTH 0.91748206215761919815    /**< Cosine of Earth inclination (2000) */
+#define LAL_SINIEARTH 0.39777715572793088957    /**< Sine of Earth inclination (2000) */
 #define LAL_EEARTH    0.0167          /**< Earth orbital eccentricity */
 #define LAL_RSUN_SI   6.960e8         /**< Solar equatorial radius, m */
 #define LAL_MSUN_SI   1.98892e30      /**< Solar mass, kg */
@@ -190,5 +190,4 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
-
 #endif /* _LALCONSTANTS_H */

@@ -25,17 +25,19 @@
 
 #ifdef  __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
-/** \addtogroup LALMalloc_h */ /*@{*/
-void *XLALMalloc( size_t n );
-void *XLALMallocLong( size_t n, const char *file, int line );
-void *XLALCalloc( size_t m, size_t n );
-void *XLALCallocLong( size_t m, size_t n, const char *file, int line );
-void *XLALRealloc( void *p, size_t n );
-void *XLALReallocLong( void *p, size_t n, const char *file, int line );
-void  XLALFree( void *p );
-#ifndef SWIG /* exclude from SWIG interface */
+/** \addtogroup LALMalloc_h *//*@{ */
+void *XLALMalloc(size_t n);
+void *XLALMallocLong(size_t n, const char *file, int line);
+void *XLALCalloc(size_t m, size_t n);
+void *XLALCallocLong(size_t m, size_t n, const char *file, int line);
+void *XLALRealloc(void *p, size_t n);
+void *XLALReallocLong(void *p, size_t n, const char *file, int line);
+void XLALFree(void *p);
+#ifndef SWIG    /* exclude from SWIG interface */
 #define XLALMalloc( n )        XLALMallocLong( n, __FILE__, __LINE__ )
 #define XLALCalloc( m, n )     XLALCallocLong( m, n, __FILE__, __LINE__ )
 #define XLALRealloc( p, n )    XLALReallocLong( p, n, __FILE__, __LINE__ )
@@ -45,7 +47,7 @@ void  XLALFree( void *p );
 
 #if defined NDEBUG || defined LAL_NDEBUG
 
-#ifndef SWIG /* exclude from SWIG interface */
+#ifndef SWIG    /* exclude from SWIG interface */
 #define LALMalloc                          malloc
 #define LALMallocShort                     malloc
 #define LALMallocLong( n, file, line )     malloc( n )
@@ -61,7 +63,7 @@ void  XLALFree( void *p );
 
 #else
 
-#ifndef SWIG /* exclude from SWIG interface */
+#ifndef SWIG    /* exclude from SWIG interface */
 #define LALMalloc( n )        LALMallocLong( n, __FILE__, __LINE__ )
 #define LALCalloc( m, n )     LALCallocLong( m, n, __FILE__, __LINE__ )
 #define LALRealloc( p, n )    LALReallocLong( p, n, __FILE__, __LINE__ )
@@ -69,35 +71,35 @@ void  XLALFree( void *p );
 
 /* global variables to assist in memory debugging */
 /* watch the value of these variables to find a particular alloc/free */
-#ifndef SWIG /* exclude from SWIG interface */
-extern char  *lalMemDbgArgPtr;   /* set to ptr arg in free or realloc */
-extern char  *lalMemDbgRetPtr;   /* set to ptr returned in alloc functions */
-extern char  *lalMemDbgPtr;      /* set in both cases */
-extern char  *lalMemDbgUsrPtr;   /* avaliable global memory pointer for user */
-extern void **lalMemDbgUsrHndl;  /* avaliable global memory handle for user */
-extern int    lalIsMemDbgArgPtr; /* ( lalMemDbgUsrPtr == lalMemDbgArgPtr ) */
-extern int    lalIsMemDbgRetPtr; /* ( lalMemDbgUsrPtr == lalMemDbgRetPtr ) */
-extern int    lalIsMemDbgPtr;    /* ( lalMemDbgUsrPtr == lalMemDbgPtr ) */
+#ifndef SWIG    /* exclude from SWIG interface */
+extern char *lalMemDbgArgPtr;   /* set to ptr arg in free or realloc */
+extern char *lalMemDbgRetPtr;   /* set to ptr returned in alloc functions */
+extern char *lalMemDbgPtr;      /* set in both cases */
+extern char *lalMemDbgUsrPtr;   /* avaliable global memory pointer for user */
+extern void **lalMemDbgUsrHndl; /* avaliable global memory handle for user */
+extern int lalIsMemDbgArgPtr;   /* ( lalMemDbgUsrPtr == lalMemDbgArgPtr ) */
+extern int lalIsMemDbgRetPtr;   /* ( lalMemDbgUsrPtr == lalMemDbgRetPtr ) */
+extern int lalIsMemDbgPtr;      /* ( lalMemDbgUsrPtr == lalMemDbgPtr ) */
 #endif /* SWIG */
 
 
-// ----- Prototypes
-/** \addtogroup LALMalloc_h */ /*@{*/
-void *LALMallocShort( size_t n );
-void *LALMallocLong( size_t n, const char *file, int line );
-void *LALCallocShort( size_t m, size_t n );
-void LALFree( void *p );
-void *LALCallocLong( size_t m, size_t n, const char *file, int line );
-void *LALReallocShort( void *p, size_t n );
-void *LALReallocLong( void *p, size_t n, const char *file, int line );
+/** \addtogroup LALMalloc_h *//*@{ */
+void *LALMallocShort(size_t n);
+void *LALMallocLong(size_t n, const char *file, int line);
+void *LALCallocShort(size_t m, size_t n);
+void LALFree(void *p);
+void *LALCallocLong(size_t m, size_t n, const char *file, int line);
+void *LALReallocShort(void *p, size_t n);
+void *LALReallocLong(void *p, size_t n, const char *file, int line);
 /*@}*/
 
 #endif /* NDEBUG || LAL_NDEBUG */
 
-void (LALCheckMemoryLeaks)( void );
+void (LALCheckMemoryLeaks) (void);
 
-#ifdef  __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
-
 #endif /* _LALMALLOC_H */

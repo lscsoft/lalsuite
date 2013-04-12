@@ -26,7 +26,7 @@
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
-} /* so that editors will match preceding brace */
+}       /* so that editors will match preceding brace */
 #endif
 
 
@@ -114,10 +114,10 @@ type-dependent length modifiers.
 */
 /*@{*/
 
-/** \name Error Codes */ /*@{*/
-#define STRINGINPUTH_ENUL 1	/**< Unexpected null pointer in arguments */
-#define STRINGINPUTH_EOUT 2	/**< Output handle points to a non-null pointer */
-#define STRINGINPUTH_EMEM 3	/**< Memory allocation error */
+                         /** \name Error Codes *//*@{ */
+#define STRINGINPUTH_ENUL 1     /**< Unexpected null pointer in arguments */
+#define STRINGINPUTH_EOUT 2     /**< Output handle points to a non-null pointer */
+#define STRINGINPUTH_EMEM 3     /**< Memory allocation error */
 /*@}*/
 /** \cond DONT_DOXYGEN */
 #define STRINGINPUTH_MSGENUL "Unexpected null pointer in arguments"
@@ -131,12 +131,13 @@ type-dependent length modifiers.
  * and individual tokens are pointed to by a <tt>CHAR *[]</tt> handle.
  */
 typedef struct tagTokenList {
-  UINT4 nTokens;    /**< The number of tokens in the list */
-  CHAR **tokens;    /**< A list of pointers to the individual tokens;
+    UINT4 nTokens;  /**< The number of tokens in the list */
+    CHAR **tokens;  /**< A list of pointers to the individual tokens;
                      * the elements <tt>tokens[0..nTokens-1]</tt> point to tokens, and
                      * the element <tt>tokens[nTokens]</tt> is explicitly \c NULL (as is
                      the convention for an \c argv argument list */
-  CHARVector *list; /**< The flattened list of tokens, separated by (and terminated with) <tt>'\0'</tt> characters */
+    CHARVector *list;
+                    /**< The flattened list of tokens, separated by (and terminated with) <tt>'\0'</tt> characters */
 } TokenList;
 
 /*@}*/
@@ -144,59 +145,65 @@ typedef struct tagTokenList {
 /* Function prototypes. */
 
 void
-LALCreateTokenList( LALStatus  *status,
-		    TokenList  **list,
-		    const CHAR *string,
-		    const CHAR *delimiters );
+LALCreateTokenList(LALStatus * status,
+                   TokenList ** list,
+                   const CHAR * string, const CHAR * delimiters);
 
-void
-LALDestroyTokenList( LALStatus *status,
-		     TokenList **list );
+void LALDestroyTokenList(LALStatus * status, TokenList ** list);
 
 
 int
-XLALCreateTokenList( TokenList  **list,
-		     const CHAR *string,
-		     const CHAR *delimiters );
+XLALCreateTokenList(TokenList ** list,
+                    const CHAR * string, const CHAR * delimiters);
+
+void XLALDestroyTokenList(TokenList * list);
 
 void
-XLALDestroyTokenList( TokenList *list );
+LALStringToU2(LALStatus * status, UINT2 * value, const CHAR * string,
+              CHAR ** endptr);
 
 void
-LALStringToU2( LALStatus *status, UINT2 *value, const CHAR *string, CHAR **endptr );
+LALStringToU4(LALStatus * status, UINT4 * value, const CHAR * string,
+              CHAR ** endptr);
 
 void
-LALStringToU4( LALStatus *status, UINT4 *value, const CHAR *string, CHAR **endptr );
+LALStringToU8(LALStatus * status, UINT8 * value, const CHAR * string,
+              CHAR ** endptr);
 
 void
-LALStringToU8( LALStatus *status, UINT8 *value, const CHAR *string, CHAR **endptr );
+LALStringToI2(LALStatus * status, INT2 * value, const CHAR * string,
+              CHAR ** endptr);
 
 void
-LALStringToI2( LALStatus *status, INT2 *value, const CHAR *string, CHAR **endptr );
+LALStringToI4(LALStatus * status, INT4 * value, const CHAR * string,
+              CHAR ** endptr);
 
 void
-LALStringToI4( LALStatus *status, INT4 *value, const CHAR *string, CHAR **endptr );
+LALStringToI8(LALStatus * status, INT8 * value, const CHAR * string,
+              CHAR ** endptr);
 
 void
-LALStringToI8( LALStatus *status, INT8 *value, const CHAR *string, CHAR **endptr );
+LALStringToS(LALStatus * status, REAL4 * value, const CHAR * string,
+             CHAR ** endptr);
 
 void
-LALStringToS( LALStatus *status, REAL4 *value, const CHAR *string, CHAR **endptr );
+LALStringToD(LALStatus * status, REAL8 * value, const CHAR * string,
+             CHAR ** endptr);
 
 void
-LALStringToD( LALStatus *status, REAL8 *value, const CHAR *string, CHAR **endptr );
+LALStringToC(LALStatus * status, COMPLEX8 * value, const CHAR * string,
+             CHAR ** endptr);
 
 void
-LALStringToC( LALStatus *status, COMPLEX8 *value, const CHAR *string, CHAR **endptr );
+LALStringToZ(LALStatus * status, COMPLEX16 * value, const CHAR * string,
+             CHAR ** endptr);
 
 void
-LALStringToZ( LALStatus *status, COMPLEX16 *value, const CHAR *string, CHAR **endptr );
-
-void
-LALStringToGPS( LALStatus *status, LIGOTimeGPS *value, const CHAR *string, CHAR **endptr );
+LALStringToGPS(LALStatus * status, LIGOTimeGPS * value,
+               const CHAR * string, CHAR ** endptr);
 
 #if 0
-{ /* so that editors will match succeeding brace */
+{       /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
 }
 #endif

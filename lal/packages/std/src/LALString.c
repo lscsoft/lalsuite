@@ -29,27 +29,27 @@
 #include <lal/LALString.h>
 
 /** Like strcat but dynamically reallocates string with LALRealloc. */
-char * XLALStringAppend( char *s, const char *append )
+char *XLALStringAppend(char *s, const char *append)
 {
-  size_t curlen;
-  size_t newlen;
-  if ( ! append )
+    size_t curlen;
+    size_t newlen;
+    if (!append)
+        return s;
+    curlen = s ? strlen(s) : 0;
+    newlen = curlen + strlen(append);
+    s = LALRealloc(s, newlen + 1);
+    if (!s)
+        XLAL_ERROR_NULL(XLAL_ENOMEM);
+    strcpy(s + curlen, append);
     return s;
-  curlen = s ? strlen( s ) : 0;
-  newlen = curlen + strlen( append );
-  s = LALRealloc( s, newlen + 1 );
-  if ( ! s )
-    XLAL_ERROR_NULL( XLAL_ENOMEM );
-  strcpy( s + curlen, append );
-  return s;
 }
 
 /** Like strdup but uses LAL allocation routines (free with LALFree). */
-char * XLALStringDuplicate( const char *s )
+char *XLALStringDuplicate(const char *s)
 {
-  char *dup;
-  dup = XLALStringAppend( NULL, s );
-  return dup;
+    char *dup;
+    dup = XLALStringAppend(NULL, s);
+    return dup;
 }
 
 /** Copy sources string src to destination string dst.
@@ -58,22 +58,21 @@ char * XLALStringDuplicate( const char *s )
  * Return value is the length of source string src.  If this is greater than
  * or equal to the size of the destination string buffer, size, then truncation
  * has occurred. Should be nearly equivalent to strlcpy. */
-size_t XLALStringCopy( char *dst, const char *src, size_t size )
+size_t XLALStringCopy(char *dst, const char *src, size_t size)
 {
-  size_t srclen;
-  if ( ! src )
-    src = "";
-  srclen = strlen( src );
-  if ( ! dst || size < 1 ) /* no copy */
+    size_t srclen;
+    if (!src)
+        src = "";
+    srclen = strlen(src);
+    if (!dst || size < 1)       /* no copy */
+        return srclen;
+    if (size == 1) {    /* NUL terminate and exit */
+        dst[0] = 0;
+        return srclen;
+    }
+    strncpy(dst, src, size - 1);
+    dst[size - 1] = 0;
     return srclen;
-  if ( size == 1 ) /* NUL terminate and exit */
-  {
-    dst[0] = 0;
-    return srclen;
-  }
-  strncpy( dst, src, size - 1 );
-  dst[size-1] = 0;
-  return srclen;
 }
 
 /** Concatenate sources string src to the end of destination string dst.
@@ -84,23 +83,22 @@ size_t XLALStringCopy( char *dst, const char *src, size_t size )
  * length of source string src.  If this is greater than
  * or equal to the size of the destination string buffer, size, then truncation
  * has occurred. Should be nearly equivalent to strlcat. */
-size_t XLALStringConcatenate( char *dst, const char *src, size_t size )
+size_t XLALStringConcatenate(char *dst, const char *src, size_t size)
 {
-  size_t srclen;
-  size_t dstlen;
-  if ( ! src )
-    src = "";
-  srclen = strlen( src );
-  if ( ! dst || size < 1 ) /* no copy */
-    return srclen;
-  if ( size == 1 ) /* NUL terminate and exit */
-  {
-    dst[0] = 0;
-    return srclen;
-  }
-  dstlen = strlen( dst );
-  strncat( dst, src, size - dstlen - 1 );
-  return srclen + dstlen;
+    size_t srclen;
+    size_t dstlen;
+    if (!src)
+        src = "";
+    srclen = strlen(src);
+    if (!dst || size < 1)       /* no copy */
+        return srclen;
+    if (size == 1) {    /* NUL terminate and exit */
+        dst[0] = 0;
+        return srclen;
+    }
+    dstlen = strlen(dst);
+    strncat(dst, src, size - dstlen - 1);
+    return srclen + dstlen;
 }
 
 
@@ -108,31 +106,28 @@ size_t XLALStringConcatenate( char *dst, const char *src, size_t size )
  * Helper function:  turn a string in-place into lowercase without
  * using locale-dependent functions.
  */
-int
-XLALStringToLowerCase ( CHAR *string )	/**< [in/out] string to convert */
+int XLALStringToLowerCase(CHAR * string)
 {
-  XLAL_CHECK ( string != NULL, XLAL_EINVAL );
+/**< [in/out] string to convert */
+    XLAL_CHECK(string != NULL, XLAL_EINVAL);
 
-  /* ctype replacements w/o locale */
-  const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
+    /* ctype replacements w/o locale */
+    const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
 
-  for ( UINT4 i=0; i < strlen (string); i++ )
-    {
-      int c = string[i];
-      if (c)
-        {
-          char *p = strchr ( upper_chars, c );
-          if (p)
-            {
-              int offset = p - upper_chars;
-              c = lower_chars[offset];
+    for (UINT4 i = 0; i < strlen(string); i++) {
+        int c = string[i];
+        if (c) {
+            char *p = strchr(upper_chars, c);
+            if (p) {
+                int offset = p - upper_chars;
+                c = lower_chars[offset];
             }
         }
-      string[i] = c;
+        string[i] = c;
 
-    } // for i < len(string)
+    }   // for i < len(string)
 
-  return XLAL_SUCCESS;
+    return XLAL_SUCCESS;
 
-} /* XLALStringToLowerCase() */
+}       /* XLALStringToLowerCase() */

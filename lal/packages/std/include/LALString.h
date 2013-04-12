@@ -22,18 +22,21 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
+#ifdef  __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
-char * XLALStringAppend( char *s, const char *append );
-char * XLALStringDuplicate( const char *s );
-size_t XLALStringCopy( char *dst, const char *src, size_t size );
-size_t XLALStringConcatenate( char *dst, const char *src, size_t size );
-int XLALStringToLowerCase ( CHAR *string );
+char *XLALStringAppend(char *s, const char *append);
+char *XLALStringDuplicate(const char *s);
+size_t XLALStringCopy(char *dst, const char *src, size_t size);
+size_t XLALStringConcatenate(char *dst, const char *src, size_t size);
+int XLALStringToLowerCase(CHAR * string);
 
-#ifdef __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
-
 #endif /* _LALSTRING_H */

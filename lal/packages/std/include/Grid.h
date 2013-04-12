@@ -24,6 +24,8 @@
 
 #ifdef __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
 /**
@@ -138,10 +140,10 @@ routines corresponding to all the numerical atomic datatypes
 */
 /*@{*/
 
-/** \name Error Codes */ /*@{*/
-#define GRIDH_ENUL 1	/**< Unexpected null pointer in arguments */
-#define GRIDH_EOUT 2	/**< Output handle points to a non-null pointer */
-#define GRIDH_EMEM 3	/**< Memory allocation error */
+                            /** \name Error Codes *//*@{ */
+#define GRIDH_ENUL 1    /**< Unexpected null pointer in arguments */
+#define GRIDH_EOUT 2    /**< Output handle points to a non-null pointer */
+#define GRIDH_EMEM 3    /**< Memory allocation error */
 /*@}*/
 /*@}*/
 
@@ -152,93 +154,93 @@ routines corresponding to all the numerical atomic datatypes
 /** \endcond */
 
 typedef struct tagINT2Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  INT2Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    INT2Array *data;
 } INT2Grid;
 
 typedef struct tagINT4Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  INT4Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    INT4Array *data;
 } INT4Grid;
 
 typedef struct tagINT8Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  INT8Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    INT8Array *data;
 } INT8Grid;
 
 typedef struct tagUINT2Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  UINT2Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    UINT2Array *data;
 } UINT2Grid;
 
 typedef struct tagUINT4Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  UINT4Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    UINT4Array *data;
 } UINT4Grid;
 
 typedef struct tagUINT8Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  UINT8Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    UINT8Array *data;
 } UINT8Grid;
 
 typedef struct tagREAL4Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  REAL4Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    REAL4Array *data;
 } REAL4Grid;
 
 typedef struct tagREAL8Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  REAL8Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    REAL8Array *data;
 } REAL8Grid;
 
 typedef struct tagCOMPLEX8Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  COMPLEX8Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    COMPLEX8Array *data;
 } COMPLEX8Grid;
 
 typedef struct tagCOMPLEX16Grid {
-  CHAR name[LALNameLength];
-  LALUnit sampleUnits;
-  LALUnit *dimUnits;
-  REAL8Vector *offset;
-  REAL8Vector *interval;
-  COMPLEX16Array *data;
+    CHAR name[LALNameLength];
+    LALUnit sampleUnits;
+    LALUnit *dimUnits;
+    REAL8Vector *offset;
+    REAL8Vector *interval;
+    COMPLEX16Array *data;
 } COMPLEX16Grid;
 
 
@@ -249,67 +251,69 @@ typedef struct tagCOMPLEX16Grid {
 /* Function prototypes. */
 
 void
-LALI2CreateGrid( LALStatus *status, INT2Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALI2CreateGrid(LALStatus * status, INT2Grid ** grid,
+                UINT4Vector * dimLength, UINT4 dimension);
 
 void
-LALI4CreateGrid( LALStatus *status, INT4Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALI4CreateGrid(LALStatus * status, INT4Grid ** grid,
+                UINT4Vector * dimLength, UINT4 dimension);
 
 void
-LALI8CreateGrid( LALStatus *status, INT8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALI8CreateGrid(LALStatus * status, INT8Grid ** grid,
+                UINT4Vector * dimLength, UINT4 dimension);
 
 void
-LALU2CreateGrid( LALStatus *status, UINT2Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALU2CreateGrid(LALStatus * status, UINT2Grid ** grid,
+                UINT4Vector * dimLength, UINT4 dimension);
 
 void
-LALU4CreateGrid( LALStatus *status, UINT4Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALU4CreateGrid(LALStatus * status, UINT4Grid ** grid,
+                UINT4Vector * dimLength, UINT4 dimension);
 
 void
-LALU8CreateGrid( LALStatus *status, UINT8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALU8CreateGrid(LALStatus * status, UINT8Grid ** grid,
+                UINT4Vector * dimLength, UINT4 dimension);
 
 void
-LALSCreateGrid( LALStatus *status, REAL4Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALSCreateGrid(LALStatus * status, REAL4Grid ** grid,
+               UINT4Vector * dimLength, UINT4 dimension);
 
 void
-LALDCreateGrid( LALStatus *status, REAL8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALDCreateGrid(LALStatus * status, REAL8Grid ** grid,
+               UINT4Vector * dimLength, UINT4 dimension);
 
 void
-LALCCreateGrid( LALStatus *status, COMPLEX8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALCCreateGrid(LALStatus * status, COMPLEX8Grid ** grid,
+               UINT4Vector * dimLength, UINT4 dimension);
 
 void
-LALZCreateGrid( LALStatus *status, COMPLEX16Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALZCreateGrid(LALStatus * status, COMPLEX16Grid ** grid,
+               UINT4Vector * dimLength, UINT4 dimension);
 
 
-void
-LALI2DestroyGrid( LALStatus *status, INT2Grid **grid );
+void LALI2DestroyGrid(LALStatus * status, INT2Grid ** grid);
 
-void
-LALI4DestroyGrid( LALStatus *status, INT4Grid **grid );
+void LALI4DestroyGrid(LALStatus * status, INT4Grid ** grid);
 
-void
-LALI8DestroyGrid( LALStatus *status, INT8Grid **grid );
+void LALI8DestroyGrid(LALStatus * status, INT8Grid ** grid);
 
-void
-LALU2DestroyGrid( LALStatus *status, UINT2Grid **grid );
+void LALU2DestroyGrid(LALStatus * status, UINT2Grid ** grid);
 
-void
-LALU4DestroyGrid( LALStatus *status, UINT4Grid **grid );
+void LALU4DestroyGrid(LALStatus * status, UINT4Grid ** grid);
 
-void
-LALU8DestroyGrid( LALStatus *status, UINT8Grid **grid );
+void LALU8DestroyGrid(LALStatus * status, UINT8Grid ** grid);
 
-void
-LALSDestroyGrid( LALStatus *status, REAL4Grid **grid );
+void LALSDestroyGrid(LALStatus * status, REAL4Grid ** grid);
 
-void
-LALDDestroyGrid( LALStatus *status, REAL8Grid **grid );
+void LALDDestroyGrid(LALStatus * status, REAL8Grid ** grid);
 
-void
-LALCDestroyGrid( LALStatus *status, COMPLEX8Grid **grid );
+void LALCDestroyGrid(LALStatus * status, COMPLEX8Grid ** grid);
 
-void
-LALZDestroyGrid( LALStatus *status, COMPLEX16Grid **grid );
+void LALZDestroyGrid(LALStatus * status, COMPLEX16Grid ** grid);
 
-#ifdef __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

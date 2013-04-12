@@ -12,84 +12,88 @@
 #define DFUNCARRAY FUNC(DestroyArray)
 
 void
-CFUNCGRID ( LALStatus *stat, GTYPE **grid, UINT4Vector *dimLength, UINT4 dimension )
+CFUNCGRID(LALStatus * stat, GTYPE ** grid, UINT4Vector * dimLength,
+          UINT4 dimension)
 {
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR( stat );
+    INITSTATUS(stat);
+    ATTATCHSTATUSPTR(stat);
 
-  /* Check for valid input arguments. */
-  ASSERT( dimLength, stat, GRIDH_ENUL, GRIDH_MSGENUL );
-  ASSERT( dimLength->data, stat, GRIDH_ENUL, GRIDH_MSGENUL );
-  ASSERT( grid, stat, GRIDH_ENUL, GRIDH_MSGENUL );
-  ASSERT( !*grid, stat, GRIDH_EOUT, GRIDH_MSGEOUT );
-  ASSERT( dimension <= dimLength->length, stat, GRIDH_ENUL,
-	  GRIDH_MSGENUL );
+    /* Check for valid input arguments. */
+    ASSERT(dimLength, stat, GRIDH_ENUL, GRIDH_MSGENUL);
+    ASSERT(dimLength->data, stat, GRIDH_ENUL, GRIDH_MSGENUL);
+    ASSERT(grid, stat, GRIDH_ENUL, GRIDH_MSGENUL);
+    ASSERT(!*grid, stat, GRIDH_EOUT, GRIDH_MSGEOUT);
+    ASSERT(dimension <= dimLength->length, stat, GRIDH_ENUL,
+           GRIDH_MSGENUL);
 
-  /* Allocate the grid. */
-  if ( !( *grid = ( GTYPE *)LALMalloc( sizeof( GTYPE ) ) ) ) {
-    ABORT( stat, GRIDH_EMEM, GRIDH_MSGEMEM );
-  }
-  memset( *grid, 0, sizeof( GTYPE ) );
+    /* Allocate the grid. */
+    if (!(*grid = (GTYPE *) LALMalloc(sizeof(GTYPE)))) {
+        ABORT(stat, GRIDH_EMEM, GRIDH_MSGEMEM);
+    }
+    memset(*grid, 0, sizeof(GTYPE));
 
-  /* Allocate the dimension units array. */
-  if ( !( (*grid)->dimUnits = (LALUnit *)
-	  LALMalloc( dimension*sizeof(LALUnit) ) ) ) {
-    LALFree( *grid );
-    *grid = NULL;
-    ABORT( stat, GRIDH_EMEM, GRIDH_MSGEMEM );
-  }
-  memset( (*grid)->dimUnits, 0, dimension*sizeof(LALUnit) );
+    /* Allocate the dimension units array. */
+    if (!((*grid)->dimUnits = (LALUnit *)
+          LALMalloc(dimension * sizeof(LALUnit)))) {
+        LALFree(*grid);
+        *grid = NULL;
+        ABORT(stat, GRIDH_EMEM, GRIDH_MSGEMEM);
+    }
+    memset((*grid)->dimUnits, 0, dimension * sizeof(LALUnit));
 
-  /* Allocate the offset and interval vectors. */
-  LALDCreateVector( stat->statusPtr, &((*grid)->offset), dimension );
-  BEGINFAIL( stat ) {
-    LALFree( (*grid)->dimUnits );
-    LALFree( *grid );
-    *grid = NULL;
-  } ENDFAIL( stat );
-  LALDCreateVector( stat->statusPtr, &((*grid)->interval), dimension );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &((*grid)->offset) ), stat );
-    LALFree( (*grid)->dimUnits );
-    LALFree( *grid );
-    *grid = NULL;
-  } ENDFAIL( stat );
+    /* Allocate the offset and interval vectors. */
+    LALDCreateVector(stat->statusPtr, &((*grid)->offset), dimension);
+    BEGINFAIL(stat) {
+        LALFree((*grid)->dimUnits);
+        LALFree(*grid);
+        *grid = NULL;
+    }
+    ENDFAIL(stat);
+    LALDCreateVector(stat->statusPtr, &((*grid)->interval), dimension);
+    BEGINFAIL(stat) {
+        TRY(LALDDestroyVector(stat->statusPtr, &((*grid)->offset)), stat);
+        LALFree((*grid)->dimUnits);
+        LALFree(*grid);
+        *grid = NULL;
+    }
+    ENDFAIL(stat);
 
-  /* Allocate the data array. */
-  CFUNCARRAY ( stat->statusPtr, &((*grid)->data), dimLength );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &((*grid)->interval) ), stat );
-    TRY( LALDDestroyVector( stat->statusPtr, &((*grid)->offset) ), stat );
-    LALFree( (*grid)->dimUnits );
-    LALFree( *grid );
-    *grid = NULL;
-  } ENDFAIL( stat );
+    /* Allocate the data array. */
+    CFUNCARRAY(stat->statusPtr, &((*grid)->data), dimLength);
+    BEGINFAIL(stat) {
+        TRY(LALDDestroyVector(stat->statusPtr, &((*grid)->interval)),
+            stat);
+        TRY(LALDDestroyVector(stat->statusPtr, &((*grid)->offset)), stat);
+        LALFree((*grid)->dimUnits);
+        LALFree(*grid);
+        *grid = NULL;
+    }
+    ENDFAIL(stat);
 
-  /* Done. */
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
+    /* Done. */
+    DETATCHSTATUSPTR(stat);
+    RETURN(stat);
 }
 
 
-void
-DFUNCGRID ( LALStatus *stat, GTYPE **grid )
+void DFUNCGRID(LALStatus * stat, GTYPE ** grid)
 {
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR( stat );
+    INITSTATUS(stat);
+    ATTATCHSTATUSPTR(stat);
 
-  /* Check for valid input argument. */
-  ASSERT( grid, stat, GRIDH_ENUL, GRIDH_MSGENUL );
-  ASSERT( *grid, stat, GRIDH_ENUL, GRIDH_MSGENUL );
+    /* Check for valid input argument. */
+    ASSERT(grid, stat, GRIDH_ENUL, GRIDH_MSGENUL);
+    ASSERT(*grid, stat, GRIDH_ENUL, GRIDH_MSGENUL);
 
-  /* Destroy the internal arrays and vectors. */
-  TRY( DFUNCARRAY ( stat->statusPtr, &((*grid)->data) ), stat );
-  TRY( LALDDestroyVector( stat->statusPtr, &((*grid)->interval) ), stat );
-  TRY( LALDDestroyVector( stat->statusPtr, &((*grid)->offset) ), stat );
-  LALFree( (*grid)->dimUnits );
+    /* Destroy the internal arrays and vectors. */
+    TRY(DFUNCARRAY(stat->statusPtr, &((*grid)->data)), stat);
+    TRY(LALDDestroyVector(stat->statusPtr, &((*grid)->interval)), stat);
+    TRY(LALDDestroyVector(stat->statusPtr, &((*grid)->offset)), stat);
+    LALFree((*grid)->dimUnits);
 
-  /* Destroy the structure itself, and exit. */
-  LALFree( *grid );
-  *grid = NULL;
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
+    /* Destroy the structure itself, and exit. */
+    LALFree(*grid);
+    *grid = NULL;
+    DETATCHSTATUSPTR(stat);
+    RETURN(stat);
 }

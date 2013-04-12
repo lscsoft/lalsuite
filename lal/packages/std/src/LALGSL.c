@@ -21,7 +21,7 @@
 #include <lal/LALGSL.h>
 #include <gsl/gsl_errno.h>
 
-LALStatus * lalGSLGlobalStatusPtr = NULL;
+LALStatus *lalGSLGlobalStatusPtr = NULL;
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
 pthread_mutex_t lalGSLPthreadMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -61,26 +61,22 @@ any non-LAL GSL function calls from other threads or else they may be called
 with the LAL GSL error handler in effect.
 */
 void
-LALGSLErrorHandler(
-    const char *reason,
-    const char *file,
-    int line,
-    int my_gsl_error
-    )
+LALGSLErrorHandler(const char *reason,
+                   const char *file, int line, int my_gsl_error)
 {
-  if ( ! lalGSLGlobalStatusPtr )
-  {
-    lalAbortHook( "Abort: function LALGSLErrorHandler, file %s, line %d, %s\n"
-                  "       Null global status pointer\n",
-                  __FILE__, __LINE__, "$Id$" );
-  }
-  lalGSLGlobalStatusPtr->statusPtr = NULL;
-  INITSTATUS(lalGSLGlobalStatusPtr);
-  lalGSLGlobalStatusPtr->statusDescription = gsl_strerror( my_gsl_error );
-  lalGSLGlobalStatusPtr->statusCode        = my_gsl_error;
-  lalGSLGlobalStatusPtr->file              = file;
-  lalGSLGlobalStatusPtr->line              = line;
-  LALError( lalGSLGlobalStatusPtr, reason );
-  LALTrace( lalGSLGlobalStatusPtr, 1 );
-  return;
+    if (!lalGSLGlobalStatusPtr) {
+        lalAbortHook
+            ("Abort: function LALGSLErrorHandler, file %s, line %d, %s\n"
+             "       Null global status pointer\n", __FILE__, __LINE__,
+             "$Id$");
+    }
+    lalGSLGlobalStatusPtr->statusPtr = NULL;
+    INITSTATUS(lalGSLGlobalStatusPtr);
+    lalGSLGlobalStatusPtr->statusDescription = gsl_strerror(my_gsl_error);
+    lalGSLGlobalStatusPtr->statusCode = my_gsl_error;
+    lalGSLGlobalStatusPtr->file = file;
+    lalGSLGlobalStatusPtr->line = line;
+    LALError(lalGSLGlobalStatusPtr, reason);
+    LALTrace(lalGSLGlobalStatusPtr, 1);
+    return;
 }
