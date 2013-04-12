@@ -1,4 +1,3 @@
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "coh_PTF.h"
 
 #ifdef __GNUC__
@@ -679,9 +678,9 @@ UINT4       vecLengthTwo
   /* Begin by calculating the components of the SNR */
   if (snglDetMode)
   {
-    SNRu1[0] = PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]].re;
+    SNRu1[0] = crealf(PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]]);
     SNRu1[0] = SNRu1[0] / pow(PTFM[detectorNum]->data[0],0.5);
-    SNRu2[0] = PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]].im;
+    SNRu2[0] = cimagf(PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]]);
     SNRu2[0] = SNRu2[0] / pow(PTFM[detectorNum]->data[0],0.5);
   }
   else
@@ -698,19 +697,19 @@ UINT4       vecLengthTwo
   {
     if (snglDetMode)
     {
-      TjwithS1[0] = dataOverlaps[ui].PTFqVec[detectorNum]->data[position \
-          - params->analStartPointBuf + timeOffsetPoints[detectorNum]].re;
+      TjwithS1[0] = crealf(dataOverlaps[ui].PTFqVec[detectorNum]->data[position \
+          - params->analStartPointBuf + timeOffsetPoints[detectorNum]]);
       TjwithS1[0] = TjwithS1[0] / \
           pow(bankNormOverlaps[ui].PTFM[detectorNum]->data[0],0.5);
-      TjwithS2[0] = dataOverlaps[ui].PTFqVec[detectorNum]->data[position \
-          - params->analStartPointBuf + timeOffsetPoints[detectorNum]].im;
+      TjwithS2[0] = cimagf(dataOverlaps[ui].PTFqVec[detectorNum]->data[position \
+          - params->analStartPointBuf + timeOffsetPoints[detectorNum]]);
       TjwithS2[0] = TjwithS2[0] / \
           pow(bankNormOverlaps[ui].PTFM[detectorNum]->data[0],0.5);
       overlapNorm = PTFM[detectorNum]->data[0];
       overlapNorm *= bankNormOverlaps[ui].PTFM[detectorNum]->data[0];
       overlapNorm = pow(overlapNorm,0.5);
-      bankOverRe = bankOverlaps[ui].PTFM[detectorNum]->data[0].re;
-      bankOverIm = bankOverlaps[ui].PTFM[detectorNum]->data[0].im;
+      bankOverRe = crealf(bankOverlaps[ui].PTFM[detectorNum]->data[0]);
+      bankOverIm = cimagf(bankOverlaps[ui].PTFM[detectorNum]->data[0]);
       bankOverRe = bankOverRe/overlapNorm;
       bankOverIm = bankOverIm/overlapNorm;
       for (uj = 0; uj < 2 * vecLengthTwo; uj++)
@@ -853,9 +852,9 @@ UINT4       vecLengthTwo
   /* Begin by calculating the components of the SNR */
   if (snglDetMode)
   {
-    SNRu1[0] = PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]].re;
+    SNRu1[0] = crealf(PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]]);
     SNRu1[0] = SNRu1[0] / pow(PTFM[detectorNum]->data[0],0.5);
-    SNRu2[0] = PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]].im;
+    SNRu2[0] = cimagf(PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]]);
     SNRu2[0] = SNRu2[0] / pow(PTFM[detectorNum]->data[0],0.5);
   }
   else
@@ -869,14 +868,14 @@ UINT4       vecLengthTwo
   {
     if (snglDetMode)
     {
-      TjwithS1[0] = PTFqVec[detectorNum]->data[position \
-          - ((ui+1) * timeStepPoints)+timeOffsetPoints[detectorNum]].re;
+      TjwithS1[0] = crealf(PTFqVec[detectorNum]->data[position \
+          - ((ui+1) * timeStepPoints)+timeOffsetPoints[detectorNum]]);
       TjwithS1[0] = TjwithS1[0] / pow(PTFM[detectorNum]->data[0],0.5);
-      TjwithS2[0] = PTFqVec[detectorNum]->data[position \
-          - ((ui+1) * timeStepPoints)+timeOffsetPoints[detectorNum]].im;
+      TjwithS2[0] = cimagf(PTFqVec[detectorNum]->data[position \
+          - ((ui+1) * timeStepPoints)+timeOffsetPoints[detectorNum]]);
       TjwithS2[0] = TjwithS2[0] / pow(PTFM[detectorNum]->data[0],0.5);
-      autoOverRe = autoTempOverlaps[ui].PTFM[detectorNum]->data[0].re;
-      autoOverIm = autoTempOverlaps[ui].PTFM[detectorNum]->data[0].im;
+      autoOverRe = crealf(autoTempOverlaps[ui].PTFM[detectorNum]->data[0]);
+      autoOverIm = cimagf(autoTempOverlaps[ui].PTFM[detectorNum]->data[0]);
       autoOverRe = autoOverRe / PTFM[detectorNum]->data[0];
       autoOverIm = autoOverIm / PTFM[detectorNum]->data[0];
       for (uj = 0; uj < 2*vecLengthTwo; uj++)
@@ -1102,14 +1101,14 @@ void coh_PTF_calculate_coherent_bank_overlaps(
           for (uk = 0 ; uk < vecLengthTwo; uk++)
           {
             /* For face-on vecLengthTwo = 1 and this is a bit of a silly loop*/
-            reOverlapsA[uj*vecLengthTwo + uk] += (Fplus[ul]*Fplus[ul] + Fcross[ul] * Fcross[ul])*bankOverlaps.PTFM[ul]->data[0].re;
+            reOverlapsA[uj*vecLengthTwo + uk] += (Fplus[ul]*Fplus[ul] + Fcross[ul] * Fcross[ul])*crealf(bankOverlaps.PTFM[ul]->data[0]);
             if (params->faceOnStatistic == 1)
             {
-              imOverlapsA[uj*vecLengthTwo + uk] += -(Fplus[ul]*Fplus[ul] + Fcross[ul] * Fcross[ul])*bankOverlaps.PTFM[ul]->data[0].im;
+              imOverlapsA[uj*vecLengthTwo + uk] += -(Fplus[ul]*Fplus[ul] + Fcross[ul] * Fcross[ul])*cimagf(bankOverlaps.PTFM[ul]->data[0]);
             }
             else if (params->faceOnStatistic == 2)
             {
-              imOverlapsA[uj*vecLengthTwo + uk] += (Fplus[ul]*Fplus[ul] + Fcross[ul] * Fcross[ul])*bankOverlaps.PTFM[ul]->data[0].im;
+              imOverlapsA[uj*vecLengthTwo + uk] += (Fplus[ul]*Fplus[ul] + Fcross[ul] * Fcross[ul])*cimagf(bankOverlaps.PTFM[ul]->data[0]);
             }
             else
             {
@@ -1130,9 +1129,9 @@ void coh_PTF_calculate_coherent_bank_overlaps(
             else
               ftwo = Fcross[ul];
             reOverlapsA[uj*vecLengthTwo + uk] +=
-                fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].re;
+                fone * ftwo *  crealf(bankOverlaps.PTFM[ul]->data[0]);
             imOverlapsA[uj*vecLengthTwo + uk] +=
-                fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].im;
+                fone * ftwo *  cimagf(bankOverlaps.PTFM[ul]->data[0]);
           }
         }
       }
@@ -1289,8 +1288,8 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       {
         if ( params->haveTrig[k] )
         {
-          overlapCont = (PTFQtilde[i].re * PTFQtilde[i].re +
-                 PTFQtilde[i].im * PTFQtilde[i].im )* invspec[k]->data->data[i] ;
+          overlapCont = (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
+                 cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) )* invspec[k]->data->data[i] ;
           v1 += a2[k] * a2[k] * overlapCont * 4 * deltaF;
           v2 += b2[k] * b2[k] * overlapCont * 4 * deltaF;
         }
@@ -1298,8 +1297,8 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
     }
     else
     {
-      overlapCont = ( PTFQtilde[i].re * PTFQtilde[i].re +
-                      PTFQtilde[i].im * PTFQtilde[i].im ) * 
+      overlapCont = ( crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
+                      cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) ) * 
                       invspec[detectorNum]->data->data[i] ;
       v1 += overlapCont * 4 * deltaF;
       v2 = v1;
@@ -1456,8 +1455,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
       {
         if ( params->haveTrig[k] )
         {
-          overlapCont = (PTFQtilde[i].re * PTFQtilde[i].re +
-                 PTFQtilde[i].im * PTFQtilde[i].im )* invspec[k]->data->data[i] ;
+          overlapCont = (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
+                 cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) )* invspec[k]->data->data[i] ;
           v1 += a2[k] * a2[k] * overlapCont * 4 * deltaF;
           v2 += b2[k] * b2[k] * overlapCont * 4 * deltaF;
         }
@@ -1465,8 +1464,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     }
     else
     {
-      overlapCont = (PTFQtilde[i].re * PTFQtilde[i].re +
-             PTFQtilde[i].im * PTFQtilde[i].im )* invspec[detectorNum]->data->data[i] ;
+      overlapCont = (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
+             cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) )* invspec[detectorNum]->data->data[i] ;
       v1 += overlapCont * 4 * deltaF;
       v2 = v1;
     }
@@ -1561,9 +1560,9 @@ UINT4 vecLengthTwo
   }
   else
   {
-    v1full[0] = PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]].re;
+    v1full[0] = crealf(PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]]);
     v1full[0] = v1full[0]/pow(PTFM[detectorNum]->data[0],0.5);
-    v2full[0] = PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]].im;
+    v2full[0] = cimagf(PTFqVec[detectorNum]->data[position+timeOffsetPoints[detectorNum]]);
     v2full[0] = v2full[0]/pow(PTFM[detectorNum]->data[0],0.5);
   }
 
@@ -1601,9 +1600,9 @@ UINT4 vecLengthTwo
     }
     else
     {
-      v1Plus[0] = chisqOverlaps[i].PTFqVec[detectorNum]->data[position-params->analStartPointBuf+timeOffsetPoints[detectorNum]].re;
+      v1Plus[0] = crealf(chisqOverlaps[i].PTFqVec[detectorNum]->data[position-params->analStartPointBuf+timeOffsetPoints[detectorNum]]);
       v1Plus[0] = v1Plus[0]/pow(PTFM[detectorNum]->data[0],0.5);
-      v2Plus[0] = chisqOverlaps[i].PTFqVec[detectorNum]->data[position-params->analStartPointBuf+timeOffsetPoints[detectorNum]].im;
+      v2Plus[0] = cimagf(chisqOverlaps[i].PTFqVec[detectorNum]->data[position-params->analStartPointBuf+timeOffsetPoints[detectorNum]]);
       v2Plus[0] = v2Plus[0]/pow(PTFM[detectorNum]->data[0],0.5);
       SNRtemp = pow((v1Plus[0] - v1full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
       SNRtemp += pow((v2Plus[0] - v2full[0]*powerBinsCross[i]),2)/powerBinsCross[i];

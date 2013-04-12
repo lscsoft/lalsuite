@@ -24,7 +24,6 @@
 #include <getopt.h>
 #include <string.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
@@ -322,7 +321,7 @@ int main(int argc, char *argv[])
       TimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
       for(i=0;i<Nsamples;i++) TimeSeries->data->data[i]=0.0;
       resp = XLALCreateCOMPLEX8FrequencySeries("response",&inj_epoch,0.0,1.0/injLength,&strainPerCount,(size_t)Nsamples/2+1);
-      for(i=0;i<resp->data->length;i++) {resp->data->data[i].re=(REAL4)1.0/dynRange; resp->data->data[i].im=0.0;}
+      for(i=0;i<resp->data->length;i++) {resp->data->data[i] = (REAL4)1.0/dynRange;}
 
       /* Create h(t) time series for this detector */
       LAL_CALL( LALFindChirpInjectSignals(&status,TimeSeries,&this_injection,resp) , &status);
@@ -342,7 +341,7 @@ int main(int argc, char *argv[])
       switch(injectionResponse){
       case unityResponse:
         sprintf(injtype,"STRAIN");
-        for(i=0;i<actuationResp->data->length;i++){actuationResp->data->data[i].re=1.0; actuationResp->data->data[i].im=0.0;}
+        for(i=0;i<actuationResp->data->length;i++){actuationResp->data->data[i] = 1.0;}
         break;
       case actuationX:
         sprintf(injtype,"ETMX");
@@ -363,7 +362,7 @@ int main(int argc, char *argv[])
         actuationTimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
         unity = XLALCreateCOMPLEX8Vector(actuationResp->data->length);
         transfer = XLALCreateCOMPLEX8FrequencySeries("transfer",&inj_epoch,0.0,1.0/(2.0*injLength),&countPerStrain,(size_t)Nsamples/2+1);
-        for(i=0;i<unity->length;i++) {unity->data[i].re=1.0; unity->data[i].im=0.0;}
+        for(i=0;i<unity->length;i++) {unity->data[i] = 1.0;}
         XLALCCVectorDivide(transfer->data,unity,actuationResp->data);
         for(i=0;i<Nsamples;i++) actuationTimeSeries->data->data[i]=TimeSeries->data->data[i];
         actuationTimeSeries = XLALRespFilt(actuationTimeSeries,transfer);
@@ -405,9 +404,9 @@ int main(int argc, char *argv[])
         REAL8 sim_psd_value=0;
         freq = fftData->deltaF * i;
         PSD( &status, &sim_psd_value, freq );
-        mySNRsq += fftData->data->data[i].re * fftData->data->data[i].re /
+        mySNRsq += crealf(fftData->data->data[i]) * crealf(fftData->data->data[i]) /
           (sim_psd_value*PSDscale);
-        mySNRsq += fftData->data->data[i].im * fftData->data->data[i].im /
+        mySNRsq += cimagf(fftData->data->data[i]) * cimagf(fftData->data->data[i]) /
           (sim_psd_value*PSDscale);
       }
       mySNRsq *= 4.0*fftData->deltaF;

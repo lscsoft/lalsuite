@@ -40,7 +40,6 @@
 #include <time.h>
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -533,15 +532,13 @@ int main( int argc, char *argv[] )
   unity = XLALCreateCOMPLEX8Vector( resp->data->length );
   for ( k = 0; k < unity->length; ++k )
      {
-        unity->data[k].re = 1.0;
-        unity->data[k].im = 0.0;
+        unity->data[k] = 1.0;
      }
 
   /* set response */
   for ( k = 0; k < resp->data->length; ++k )
   {
-      resp->data->data[k].re = 1.0;
-      resp->data->data[k].im = 0.0;
+      resp->data->data[k] = 1.0;
   }
 
   XLALCCVectorDivide( detTransDummy->data, unity, resp->data );
@@ -730,21 +727,21 @@ int main( int argc, char *argv[] )
            freq = fftData->deltaF * k;
            LALLIGOIPsd( NULL, &sim_psd_value, freq ); 
 
-           thisSnrsq += ((fftData->data->data[k].re * dynRange) * 
-                      (fftData->data->data[k].re * dynRange)) / sim_psd_value;
-           thisSnrsq += ((fftData->data->data[k].im * dynRange) * 
-                      (fftData->data->data[k].im * dynRange)) / sim_psd_value;
+           thisSnrsq += ((crealf(fftData->data->data[k]) * dynRange) * 
+                      (crealf(fftData->data->data[k]) * dynRange)) / sim_psd_value;
+           thisSnrsq += ((cimagf(fftData->data->data[k]) * dynRange) * 
+                      (cimagf(fftData->data->data[k]) * dynRange)) / sim_psd_value;
            }
        }
        else {
           if (vrbflg) fprintf( stdout, "using input spectra \n");
           for ( k = kLow; k < kHi; k++ )
           {
-           thisSnrsq += ((fftData->data->data[k].re * dynRange) * 
-              (fftData->data->data[k].re * dynRange))  /
+           thisSnrsq += ((crealf(fftData->data->data[k]) * dynRange) * 
+              (crealf(fftData->data->data[k]) * dynRange))  /
               (thisSpec->data->data[k] * dynRange * dynRange);
-           thisSnrsq += ((fftData->data->data[k].im * dynRange) * 
-              (fftData->data->data[k].im * dynRange)) /
+           thisSnrsq += ((cimagf(fftData->data->data[k]) * dynRange) * 
+              (cimagf(fftData->data->data[k]) * dynRange)) /
               (thisSpec->data->data[k] * dynRange * dynRange);
         } 
       }

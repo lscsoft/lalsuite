@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 
 #include <lal/LALConfig.h>
@@ -722,8 +721,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
           1, &strainPerCount, (sampleRate * (gpsEndSec - gpsStartSec))/2 + 1);
       for ( i = 0; i < (INT4)response->data->length; i++)
       {
-        response->data->data[i].re = 1.0;
-        response->data->data[i].im = 0;
+        response->data->data[i] = 1.0;
       }
     }
 
@@ -1315,11 +1313,12 @@ static void add_colored_noise(LALStatus *status,
   /* Color white noise with given psd */
   for ( k=0; k < ntilde->length; k++ )
   {
-    ntilde->data[k].re = ntilde_re->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] );
-    ntilde->data[k].im = ntilde_im->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] );
+    ntilde->data[k] = crectf( ntilde_re->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] ),
+                              ntilde_im->data[k] * sqrt( 0.25 * tObs * spectrum->data[k] ) );
   }
   /* setting d.c. and Nyquist to zero */
-  ntilde->data[0].im = ntilde->data[length / 2].im = 0.0;
+  ntilde->data[0] = crealf(ntilde->data[0]);
+  ntilde->data[length / 2] = crealf(ntilde->data[length / 2]);
 
 
   /*   fp = fopen("ntilde.dat", "w"); */

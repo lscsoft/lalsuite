@@ -304,7 +304,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 		want_this_block = FALSE;
               }
 
-	      if ( constraints->endTime && ( GPS2REAL8(this_header.epoch) > GPS2REAL8( *constraints->endTime ) ) ) {
+	      if ( constraints->endTime && ( GPS2REAL8(this_header.epoch) >= GPS2REAL8( *constraints->endTime ) ) ) {
 		want_this_block = FALSE;
               }
 

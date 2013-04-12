@@ -7,7 +7,6 @@
 #include <getopt.h>
 #include <sys/stat.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FrameCache.h>
@@ -872,8 +871,10 @@ int main( int argc, char *argv[])
 			/* Create the fake data */
 			for(j=0;j<inputMCMC.invspec[i]->data->length;j++){
 				inputMCMC.invspec[i]->data->data[j]=1.0/(scalefactor*inputMCMC.invspec[i]->data->data[j]);
-				inputMCMC.stilde[i]->data->data[j].re=XLALNormalDeviate(datarandparam)/(2.0*sqrt(inputMCMC.invspec[i]->data->data[j]*inputMCMC.deltaF));
-				inputMCMC.stilde[i]->data->data[j].im=XLALNormalDeviate(datarandparam)/(2.0*sqrt(inputMCMC.invspec[i]->data->data[j]*inputMCMC.deltaF));
+				inputMCMC.stilde[i]->data->data[j] = crect(
+					XLALNormalDeviate(datarandparam)/(2.0*sqrt(inputMCMC.invspec[i]->data->data[j]*inputMCMC.deltaF)),
+					XLALNormalDeviate(datarandparam)/(2.0*sqrt(inputMCMC.invspec[i]->data->data[j]*inputMCMC.deltaF))
+					);
 			}
 		}
 		else FakeFlag=0;
@@ -989,8 +990,7 @@ int main( int argc, char *argv[])
 			XLALDDVectorMultiply(inputMCMC.segment[i]->data,inputMCMC.segment[i]->data,windowplan->data);
 			check=XLALREAL8TimeFreqFFT(inputMCMC.stilde[i],inputMCMC.segment[i],fwdplan); /* XLALREAL8TimeFreqFFT multiplies by deltaT */
 			for(j=0;j<inputMCMC.stilde[i]->data->length;j++) {
-				inputMCMC.stilde[i]->data->data[j].re/=sqrt(windowplan->sumofsquares / windowplan->data->length);
-				inputMCMC.stilde[i]->data->data[j].im/=sqrt(windowplan->sumofsquares / windowplan->data->length);
+				inputMCMC.stilde[i]->data->data[j] /= sqrt(windowplan->sumofsquares / windowplan->data->length);
 			}
 		} /* End if(!FakeFlag) */
 
@@ -1020,7 +1020,7 @@ int main( int argc, char *argv[])
 			for (j=0;j<injWave->data->length;j++) injWave->data->data[j]=0.0;
 //			LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);
 			COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&bufferstart,0.0,inputMCMC.deltaF,(const LALUnit *)&strainPerCount,seglen);
-			for(j=0;j<resp->data->length;j++) {resp->data->data[j].re=(REAL4)1.0; resp->data->data[j].im=0.0;}
+			for(j=0;j<resp->data->length;j++) {resp->data->data[j] = 1.0;}
 			SimInspiralTable this_injection;
 			memcpy(&this_injection,injTable,sizeof(SimInspiralTable));
 			this_injection.next=NULL;
@@ -1054,8 +1054,8 @@ int main( int argc, char *argv[])
 			REPORTSTATUS(&status);
 			if(estimatenoise){
 				for(j=(UINT4) (inputMCMC.fLow/inputMCMC.invspec[i]->deltaF),SNR=0.0;j<inputMCMC.invspec[i]->data->length;j++){
-					SNR+=((REAL8)injF->data->data[j].re)*((REAL8)injF->data->data[j].re)*inputMCMC.invspec[i]->data->data[j];
-					SNR+=((REAL8)injF->data->data[j].im)*((REAL8)injF->data->data[j].im)*inputMCMC.invspec[i]->data->data[j];}
+					SNR += creal(injF->data->data[j]) * creal(injF->data->data[j])*inputMCMC.invspec[i]->data->data[j];
+					SNR += cimag(injF->data->data[j]) * cimag(injF->data->data[j])*inputMCMC.invspec[i]->data->data[j];}
 				SNR*=4.0*inputMCMC.invspec[i]->deltaF; /* Get units correct - factor of 4 for 1-sided */
 			}
 			LALDestroyREAL4FFTPlan(&status,&inj_plan);
@@ -1067,18 +1067,16 @@ int main( int argc, char *argv[])
 			/* Actually inject the waveform */
 			if(!FakeFlag) for(j=0;j<inj8Wave->data->length;j++) inputMCMC.segment[i]->data->data[j]+=(REAL8)inj8Wave->data->data[j];
 			for(j=0;j<injF->data->length;j++) {
-				inputMCMC_N.stilde[i]->data->data[j].re=inputMCMC.stilde[i]->data->data[j].re;
-			  	inputMCMC_N.stilde[i]->data->data[j].im=inputMCMC.stilde[i]->data->data[j].im;
+				inputMCMC_N.stilde[i]->data->data[j] = inputMCMC.stilde[i]->data->data[j];
 			  	inputMCMC_N.invspec[i]->data->data[j]=inputMCMC.invspec[i]->data->data[j];			
-				inputMCMC.stilde[i]->data->data[j].re+=(REAL8)injF->data->data[j].re;
-				inputMCMC.stilde[i]->data->data[j].im+=(REAL8)injF->data->data[j].im;
+				inputMCMC.stilde[i]->data->data[j] += injF->data->data[j];
 			}
 #if DEBUG
 			FILE *waveout;
 			char wavename[100];
 			sprintf(wavename,"wave_%s.dat",IFOnames[i]);
 			waveout=fopen(wavename,"w");
-			for(j=0;j<injF->data->length;j++) fprintf(waveout,"%10.10lf %10.10e %10.10e\n",j*inputMCMC.deltaF,injF->data->data[j].re,injF->data->data[j].im);
+			for(j=0;j<injF->data->length;j++) fprintf(waveout,"%10.10lf %10.10e %10.10e\n",j*inputMCMC.deltaF,creal(injF->data->data[j]),cimag(injF->data->data[j]));
 			fclose(waveout);
 #endif
 			XLALDestroyCOMPLEX16FrequencySeries(injF);
@@ -1107,11 +1105,11 @@ int main( int argc, char *argv[])
 			FILE *outinit=fopen(filename,"w");
 			for(i=0;i<inputMCMC.stilde[j]->data->length;i++) fprintf(outinit,"%e %e %e %e %e %e\n",
 						 inputMCMC.stilde[j]->f0 + i*inputMCMC.stilde[0]->deltaF,
-						 inputMCMC.stilde[j]->data->data[i].re,
-				 		 inputMCMC.stilde[j]->data->data[i].im,
+						 creal(inputMCMC.stilde[j]->data->data[i]),
+				 		 cimag(inputMCMC.stilde[j]->data->data[i]),
 						 1./inputMCMC.invspec[j]->data->data[i],
-						 inputMCMC_N.stilde[j]->data->data[i].re,
-				 		 inputMCMC_N.stilde[j]->data->data[i].im);	
+						 creal(inputMCMC_N.stilde[j]->data->data[i]),
+				 		 cimag(inputMCMC_N.stilde[j]->data->data[i]));	
 			fclose(outinit);
 		}
 	}
@@ -1339,7 +1337,7 @@ doneinit:
 	/* zeta^2 = N/(4deltaT) * S(f_k)  (S(f_k) dimensionful one-sided) */
 
 	if(estimatenoise){
-		for (i=(int)fLow/inputMCMC.invspec[0]->deltaF;i<inputMCMC.stilde[0]->data->length;i++) ReducedChiSq+=(pow(inputMCMC.stilde[0]->data->data[i].re,2.0)+pow(inputMCMC.stilde[0]->data->data[i].im,2.0))*inputMCMC.invspec[0]->data->data[i];
+		for (i=(int)fLow/inputMCMC.invspec[0]->deltaF;i<inputMCMC.stilde[0]->data->length;i++) ReducedChiSq += (pow(creal(inputMCMC.stilde[0]->data->data[i]),2.0) + pow(cimag(inputMCMC.stilde[0]->data->data[i]),2.0)) * inputMCMC.invspec[0]->data->data[i];
 		ReducedChiSq *= 2.0*inputMCMC.invspec[0]->deltaF/(inputMCMC.stilde[0]->data->length-(fLow/inputMCMC.invspec[0]->deltaF)); /* should be N */
 	}
 	fprintf(stdout,"reduced chi squared = %e\n",ReducedChiSq);
@@ -1355,9 +1353,9 @@ doneinit:
 			for(i=0;i<inputMCMC.stilde[j]->data->length;i++)
 			{
 				if(estimatenoise)
-					fprintf(dataoutfile,"%12.5e  %14.8e  %14.8e  %14.8e  %14.8e  %14.8e\n",(REAL8)i*inputMCMC.invspec[j]->deltaF,1./inputMCMC.invspec[j]->data->data[i],inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im,inputMCMC_N.stilde[j]->data->data[i].re,inputMCMC_N.stilde[j]->data->data[i].im);
+					fprintf(dataoutfile,"%12.5e  %14.8e  %14.8e  %14.8e  %14.8e  %14.8e\n",(REAL8)i*inputMCMC.invspec[j]->deltaF,1./inputMCMC.invspec[j]->data->data[i],creal(inputMCMC.stilde[j]->data->data[i]),cimag(inputMCMC.stilde[j]->data->data[i]),creal(inputMCMC_N.stilde[j]->data->data[i]),cimag(inputMCMC_N.stilde[j]->data->data[i]));
 				else
-					fprintf(dataoutfile,"%12.5e  %14.8e  %14.8e  %14.8e  %14.8e\n",(REAL8)i*inputMCMC.stilde[j]->deltaF,inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im,inputMCMC_N.stilde[j]->data->data[i].re,inputMCMC_N.stilde[j]->data->data[i].im);
+					fprintf(dataoutfile,"%12.5e  %14.8e  %14.8e  %14.8e  %14.8e\n",(REAL8)i*inputMCMC.stilde[j]->deltaF,creal(inputMCMC.stilde[j]->data->data[i]),cimag(inputMCMC.stilde[j]->data->data[i]),creal(inputMCMC_N.stilde[j]->data->data[i]),cimag(inputMCMC_N.stilde[j]->data->data[i]));
 			}
 			fclose(dataoutfile);
 		}

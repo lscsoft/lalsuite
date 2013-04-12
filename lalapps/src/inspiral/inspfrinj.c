@@ -40,7 +40,6 @@
 #include <time.h>
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -491,8 +490,8 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
               &inj_calfacts ), &status );
         LAL_CALL( LALDestroyFrCache( &status, &calCache ), &status );
-        inj_alpha = (REAL4) inj_calfacts.alpha.re;
-        inj_alphabeta = (REAL4) inj_calfacts.alphabeta.re;
+        inj_alpha = (REAL4) crealf(inj_calfacts.alpha);
+        inj_alphabeta = (REAL4) crealf(inj_calfacts.alphabeta);
         if ( vrbflg ) fprintf( stdout, 
             "for injections, alpha = %f and alphabeta = %f\n",
             inj_alpha, inj_alphabeta);
@@ -504,8 +503,7 @@ int main( int argc, char *argv[] )
         injResp.sampleUnits = strainPerCount;
         for ( k = 0; k < injResp.data->length; ++k )
         {
-          injResp.data->data[k].re = 1.0;
-          injResp.data->data[k].im = 0;
+          injResp.data->data[k] = 1.0;
         }
         if ( vrbflg ) fprintf( stdout, "done.\n" );
 

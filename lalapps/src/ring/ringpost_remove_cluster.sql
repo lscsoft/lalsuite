@@ -73,7 +73,7 @@ PRAGMA temp_store = MEMORY;
 DELETE FROM
         coinc_event
 WHERE
-        instruments == "H1,H2";
+        instruments == ("H1,H2" OR "H1,L1" OR "H2,L1");
 
 -- remove coincs when H1+H2 are the only participants or when H2+L1 are the
 -- only participants when H1+H2+L1 are on
@@ -83,7 +83,7 @@ DELETE FROM
 WHERE
         ifos == "H1,H2"
         OR (
-                ifos == "H2,L1"
+                ifos == ("H2,L1" OR "H1,L1")
                 AND coinc_event_id IN (
                         SELECT
                                 coinc_event_id
@@ -172,7 +172,7 @@ CREATE TEMPORARY TABLE _cluster_info_ AS
                 coinc_event.coinc_event_id AS coinc_event_id,
                 (coinc_event.time_slide_id || ";" || coinc_event.instruments || ";" || is_playground.is_playground) AS category,
                 (coinc_ringdown.start_time - (SELECT MIN(start_time) FROM coinc_ringdown)) + 1e-9 * coinc_ringdown.start_time_ns AS start_time,
-                coinc_ringdown.snr AS snr
+                coinc_ringdown.snr_sq AS snr_sq
         FROM
                 coinc_event
                 JOIN is_playground ON (
@@ -184,7 +184,7 @@ CREATE TEMPORARY TABLE _cluster_info_ AS
 DROP INDEX tmpindex1;
 DROP TABLE is_playground;
 CREATE INDEX tmpindex1 ON _cluster_info_ (coinc_event_id);
-CREATE INDEX tmpindex2 ON _cluster_info_ (category, start_time, snr);
+CREATE INDEX tmpindex2 ON _cluster_info_ (category, start_time, snr_sq);
 
 --
 -- delete coincs that are within 10 s of coincs with higher SNR in the same
@@ -201,8 +201,8 @@ WHERE
                         _cluster_info_ AS _cluster_info_a_
                         JOIN _cluster_info_ AS _cluster_info_b_ ON (
                                 _cluster_info_b_.category == _cluster_info_a_.category
-                                AND (_cluster_info_b_.start_time BETWEEN _cluster_info_a_.start_time - 10.0 AND _cluster_info_a_.start_time + 10.0)
-                                AND _cluster_info_b_.snr > _cluster_info_a_.snr
+                                AND (_cluster_info_b_.start_time BETWEEN _cluster_info_a_.start_time - 1.0 AND _cluster_info_a_.start_time + 1.0)
+                                AND _cluster_info_b_.snr_sq > _cluster_info_a_.snr_sq
                         )
                 WHERE
                         _cluster_info_a_.coinc_event_id == coinc_event.coinc_event_id

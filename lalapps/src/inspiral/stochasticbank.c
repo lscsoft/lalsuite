@@ -40,7 +40,6 @@
 #include <time.h>
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -467,8 +466,7 @@ int main ( int argc, char *argv[] )
 
     for (i=0; i< realWaveform->data->length; i++)
     {
-      waveform->data->data[i].re = realWaveform->data->data[i];
-      waveform->data->data[i].im = imagWaveform->data->data[i];
+      waveform->data->data[i] = crectf( realWaveform->data->data[i], imagWaveform->data->data[i] );
     }
 
     // FFT complex waveform
@@ -494,8 +492,7 @@ int main ( int argc, char *argv[] )
 
     for (i = 0; i < waveformf1->data->length; i++)
     {
-      waveformf1->data->data[i].re /= norm;
-      waveformf1->data->data[i].im /= norm;
+      waveformf1->data->data[i] /= norm;
     }
 
     // compute overlap with previous tmplts

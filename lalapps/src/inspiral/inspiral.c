@@ -42,7 +42,6 @@
 #include <math.h>
 #include <fftw3.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -1045,13 +1044,16 @@ int main( int argc, char *argv[] )
     /* Color white noise with given psd */
     for ( k=0; k < ntilde->length; k++ )
     {
-      ntilde->data[k].re = ntilde_re->data[k] * sqrt(( (REAL4) length * 0.25 /
-                           (REAL4) deltaT ) * (REAL4) spectrum->data[k] );
-      ntilde->data[k].im = ntilde_im->data[k] * sqrt(( (REAL4) length * 0.25 /
-                           (REAL4) deltaT ) * (REAL4) spectrum->data[k] );
+      ntilde->data[k] = crectf(
+                               ntilde_re->data[k] * sqrt(( (REAL4) length * 0.25 /
+                               (REAL4) deltaT ) * (REAL4) spectrum->data[k] ),
+                               ntilde_im->data[k] * sqrt(( (REAL4) length * 0.25 /
+                               (REAL4) deltaT ) * (REAL4) spectrum->data[k] )
+                              );
     }
     /* setting d.c. and Nyquist to zero */
-    ntilde->data[0].im = ntilde->data[length / 2].im = 0.0;
+    ntilde->data[0] = crealf(ntilde->data[0]);
+    ntilde->data[length / 2] = crealf(ntilde->data[length / 2]);
 
     /* Fourier transform back in the time domain */
     LAL_CALL( LALCreateReverseRealFFTPlan( &status, &invPlan, length, 1 ),
@@ -1121,8 +1123,7 @@ int main( int argc, char *argv[] )
     /* if we are using calibrated data set the response to unity */
     for( k = 0; k < resp.data->length; ++k )
     {
-      resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-      resp.data->data[k].im = 0.0;
+      resp.data->data[k] = (REAL4) (1.0 / dynRange);
     }
     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries(
         outFrame, &resp, "strain/ct", "RESPONSE_h(t)" );
@@ -1164,8 +1165,8 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALExtractFrameResponse( &status, &resp, calCache,
           &calfacts), &status );
     LAL_CALL( LALDestroyFrCache( &status, &calCache), &status );
-    alpha = (REAL4) calfacts.alpha.re;
-    alphabeta = (REAL4) calfacts.alphabeta.re;
+    alpha = (REAL4) crealf(calfacts.alpha);
+    alphabeta = (REAL4) crealf(calfacts.alphabeta);
     if ( vrbflg ) fprintf( stdout,
         "for calibration of data, alpha = %f and alphabeta = %f\n",
         alpha, alphabeta);
@@ -1182,8 +1183,7 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
     for ( k = 0; k < resp.data->length; ++k )
     {
-      resp.data->data[k].re = 1.0;
-      resp.data->data[k].im = 0;
+      resp.data->data[k] = 1.0;
     }
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
@@ -1197,8 +1197,7 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "setting response to inverse dynRange... " );
     for( k = 0; k < resp.data->length; ++k )
     {
-      resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-      resp.data->data[k].im = 0.0;
+      resp.data->data[k] = (REAL4) (1.0 / dynRange);
     }
     if ( vrbflg ) fprintf( stdout, "done\n" );
     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries(
@@ -1305,8 +1304,7 @@ int main( int argc, char *argv[] )
               "setting injection response to inverse dynRange..." );
           for ( k = 0; k < injResp.data->length; ++k )
           {
-            injResp.data->data[k].re = (REAL4)(1.0/dynRange);
-            injResp.data->data[k].im = 0.0;
+            injResp.data->data[k] = (REAL4)(1.0/dynRange);
           }
           injRespPtr = &injResp;
           if ( vrbflg ) fprintf( stdout, "done\n" );
@@ -1366,8 +1364,8 @@ int main( int argc, char *argv[] )
                 &inj_calfacts ), &status );
           LAL_CALL( LALDestroyFrCache( &status, &calCache), &status );
 
-          inj_alpha = (REAL4) calfacts.alpha.re;
-          inj_alphabeta = (REAL4) calfacts.alphabeta.re;
+          inj_alpha = (REAL4) crealf(calfacts.alpha);
+          inj_alphabeta = (REAL4) crealf(calfacts.alphabeta);
           if ( vrbflg ) fprintf( stdout,
               "for injections, alpha = %f and alphabeta = %f\n",
               inj_alpha, inj_alphabeta);
@@ -1386,8 +1384,7 @@ int main( int argc, char *argv[] )
           if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
           for ( k = 0; k < injResp.data->length; ++k )
           {
-            injResp.data->data[k].re = 1.0;
-            injResp.data->data[k].im = 0;
+            injResp.data->data[k] = 1.0;
           }
           if ( vrbflg ) fprintf( stdout, "done\n" );
 
@@ -2344,13 +2341,11 @@ int main( int argc, char *argv[] )
             {
             if (1 || (((i * deltaF) > fLow) && (i < kmax)))
               {
-              templateFFTDataVector->data[i].re = fcFilterInput->fcTmplt->data->data[i].re * fcTmpltParams->xfacVec->data[i];
-              templateFFTDataVector->data[i].im = fcFilterInput->fcTmplt->data->data[i].im * fcTmpltParams->xfacVec->data[i];
+              templateFFTDataVector->data[i] = fcFilterInput->fcTmplt->data->data[i] * fcTmpltParams->xfacVec->data[i];
               }
             else
               {
-              templateFFTDataVector->data[i].re = 0;
-              templateFFTDataVector->data[i].im = 0;
+              templateFFTDataVector->data[i] = 0;
               }
             }
           plan = XLALCreateReverseREAL4FFTPlan( num_points, 1);
