@@ -495,14 +495,14 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
 
       jref=fref*length;
 
-      Href=sqrt(Hvec[0]->data[jref].re*Hvec[0]->data[jref].re
+      Href=sqrt(crealf(Hvec[0]->data[jref])*crealf(Hvec[0]->data[jref])
                +Hvec[0]->data[jref].im*Hvec[0]->data[jref].im);
       norm=(4.E-19*ho*sqrt(length)/sqrt(fref*fref*fref))/Href;
       }
 
      for (detect=0;detect<2;detect++)
        for (j=0;j<Nfreq;j++) {
-        Hvec[detect]->data[j].re= Hvec[detect]->data[j].re*norm;
+        Hvec[detect]->data[j].realf_FIXME= crealf(Hvec[detect]->data[j])*norm;
         Hvec[detect]->data[j].im= Hvec[detect]->data[j].im*norm;}
 
      /*model the relative orientation of the detectors*/
@@ -523,8 +523,8 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
        for (j=0;j<Nfreq;j++)
         {
          mygamma=overlap.data->data[j];
-         Hvec[1]->data[j].re=(Hvec[0]->data[j].re*mygamma
-                     +sqrt(1-mygamma*mygamma)*Hvec[1]->data[j].re);
+         Hvec[1]->data[j].realf_FIXME=(crealf(Hvec[0]->data[j])*mygamma
+                     +sqrt(1-mygamma*mygamma)*crealf(Hvec[1]->data[j]));
 
          Hvec[1]->data[j].im=(Hvec[1]->data[j].im*mygamma
                      +sqrt(1-mygamma*mygamma)*Hvec[1]->data[j].im);
@@ -534,14 +534,14 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
     else {
      for (j=0;j<Nfreq;j++)
       {
-       Hvec[1]->data[j].re=Hvec[0]->data[j].re;
+       Hvec[1]->data[j].realf_FIXME=crealf(Hvec[0]->data[j]);
        Hvec[1]->data[j].im=Hvec[0]->data[j].im;
       }}
 
    /*compute the spectrum of omega*/
    for (detect=0;detect<2;detect++){
     for (j=0;j<Nfreq;j++) {
-      omegavec[detect]->data[j]=6.26E36*(Hvec[detect]->data[j].re*Hvec[detect]->data[j].re+Hvec[detect]->data[j].im*Hvec[detect]->data[j].im)*(j*deltaf)*(j*deltaf)*(j*deltaf)/(ho*ho*length);}}
+      omegavec[detect]->data[j]=6.26E36*(crealf(Hvec[detect]->data[j])*crealf(Hvec[detect]->data[j])+Hvec[detect]->data[j].im*Hvec[detect]->data[j].im)*(j*deltaf)*(j*deltaf)*(j*deltaf)/(ho*ho*length);}}
 
 
     /*whithening*/
@@ -549,9 +549,9 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
     {
       resp0 = input->wfilter0->data->data[j];
       resp1 = input->wfilter1->data->data[j];
-      Hvec[0]->data[j].re=Hvec[0]->data[j].re*resp0.re;
+      Hvec[0]->data[j].realf_FIXME=crealf(Hvec[0]->data[j])*crealf(resp0);
       Hvec[0]->data[j].im=Hvec[0]->data[j].im*resp0.im;
-      Hvec[1]->data[j].re=Hvec[1]->data[j].re*resp1.re;
+      Hvec[1]->data[j].realf_FIXME=crealf(Hvec[1]->data[j])*crealf(resp1);
       Hvec[1]->data[j].im=Hvec[1]->data[j].im*resp1.im;
     }
 

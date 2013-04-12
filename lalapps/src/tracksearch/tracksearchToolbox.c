@@ -1034,7 +1034,7 @@ void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, const char *f
 
   if(fp) {
     for(i = 0; i < fseries->data->length; i++)
-      fprintf(fp, "%f\t%g\n", i * fseries->deltaF, sqrt(fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im));
+      fprintf(fp, "%f\t%g\n", i * fseries->deltaF, sqrt(crealf(fseries->data->data[i]) * crealf(fseries->data->data[i]) + fseries->data->data[i].im * fseries->data->data[i].im));
     fclose(fp);
   }
 #endif
@@ -1052,7 +1052,7 @@ void print_complex8_RandC_fseries(const COMPLEX8FrequencySeries *fseries, const 
   if(fp) {
     for(i = 0; i < fseries->data->length; i++)
       fprintf(fp, "%f\t%g\t%g\n", i * fseries->deltaF, 
-	      fseries->data->data[i].re,
+	      crealf(fseries->data->data[i]),
 	      fseries->data->data[i].im);
     fclose(fp);
   }

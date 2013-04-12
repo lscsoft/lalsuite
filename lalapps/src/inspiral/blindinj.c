@@ -339,7 +339,7 @@ static REAL4TimeSeries *injectWaveform(
       /* set the response function to unity */
       for ( k = 0; k < resp->data->length; ++k )
       {
-        resp->data->data[k].re = (REAL4) (1.0 /dynRange);
+        resp->data->data[k].realf_FIXME = (REAL4) (1.0 /dynRange);
         resp->data->data[k].im = 0.0;
       }
       break;
@@ -351,7 +351,7 @@ static REAL4TimeSeries *injectWaveform(
         REAL8 sim_psd_freq = (REAL8) k * resp->deltaF;
         REAL8 sim_psd_value;
         LALLIGOIPsd( NULL, &sim_psd_value, sim_psd_freq );
-        resp->data->data[k].re = (REAL4) pow( sim_psd_value, 0.5 ) / dynRange;
+        resp->data->data[k].realf_FIXME = (REAL4) pow( sim_psd_value, 0.5 ) / dynRange;
         resp->data->data[k].im = 0.0;
       }
       break;
@@ -389,7 +389,7 @@ static REAL4TimeSeries *injectWaveform(
   unity = XLALCreateCOMPLEX8Vector( resp->data->length );  
   for ( k = 0; k < unity->length; ++k ) 
   {
-    unity->data[k].re = 1.0;
+    unity->data[k].realf_FIXME = 1.0;
     unity->data[k].im = 0.0;
   }
 
@@ -815,7 +815,7 @@ int main( int argc, char *argv[] )
           REAL8 sim_psd_value;
           freq = fftData->deltaF * k;
           LALLIGOIPsd( NULL, &sim_psd_value, freq );
-          thisSnrsq += fftData->data->data[k].re * fftData->data->data[k].re /
+          thisSnrsq += crealf(fftData->data->data[k]) * crealf(fftData->data->data[k]) /
             sim_psd_value;
           thisSnrsq += fftData->data->data[k].im * fftData->data->data[k].im /
             sim_psd_value;

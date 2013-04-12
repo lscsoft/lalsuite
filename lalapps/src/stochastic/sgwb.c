@@ -310,7 +310,7 @@ COMPLEX8FrequencySeries *unity_response(LIGOTimeGPS epoch,
   /* get unity response function */
   for (i = 0; i < length; i++)
   {
-    response->data->data[i].re = 1;
+    response->data->data[i].realf_FIXME = 1;
     response->data->data[i].im = 0;
   }
 
@@ -534,7 +534,7 @@ REAL8 cc_statistic(COMPLEX8FrequencySeries *cc_spectra)
   /* sum up frequencies */
   for (i = 0; i < cc_spectra->data->length; i++)
   {
-    cc_stat += cc_spectra->data->data[i].re;
+    cc_stat += crealf(cc_spectra->data->data[i]);
   }
 
   /* normalise */

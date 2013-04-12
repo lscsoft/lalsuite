@@ -289,12 +289,12 @@ LALFindChirpBCVSpinData (
   	/* compute strain */
   	for ( k = 0; k < fcSeg->data->data->length; ++k )
   	{
-    		REAL4 p = outputData[k].re;
+    		REAL4 p = crealf(outputData[k]);
    	 	REAL4 q = outputData[k].im;
-   	 	REAL4 x = resp[k].re * params->dynRange;
+   	 	REAL4 x = crealf(resp[k]) * params->dynRange;
     		REAL4 y = resp[k].im * params->dynRange;
 
-    		outputData[k].re =  (p*x) - (q*y);
+    		outputData[k].realf_FIXME =  (p*x) - (q*y);
     		outputData[k].im =  (p*y) + (q*x);
   	}
 
@@ -342,7 +342,7 @@ LALFindChirpBCVSpinData (
 		FINDCHIRPBCVSPINH_MSGEDIVZ );
       		}
 
-		wtilde[k].re = 1.0 / spec[k];
+		wtilde[k].realf_FIXME = 1.0 / spec[k];
     	}
 
     	/*
@@ -358,12 +358,12 @@ LALFindChirpBCVSpinData (
 
       		for ( k = cut; k < params->wtildeVec->length; ++k )
       		{
-        	wtilde[k].re = sqrt( wtilde[k].re );
+        	wtilde[k].realf_FIXME = sqrt( crealf(wtilde[k]) );
       		}
 
       		/* set nyquist and dc to zero */
-      		wtilde[params->wtildeVec->length - 1].re = 0.0;
-      		wtilde[0].re                             = 0.0;
+      		wtilde[params->wtildeVec->length - 1].realf_FIXME = 0.0;
+      		wtilde[0].realf_FIXME                             = 0.0;
 
       		/* transform to time domain */
       		LALReverseRealFFT( status->statusPtr,
@@ -387,15 +387,15 @@ LALFindChirpBCVSpinData (
         		REAL4 norm = 1.0 / (REAL4) params->wVec->length;
         		for ( k = cut; k < params->wtildeVec->length; ++k )
         		{
-          		wtilde[k].re *= norm;
-          		wtilde[k].re *= wtilde[k].re;
+          		wtilde[k].realf_FIXME *= norm;
+          		wtilde[k].realf_FIXME *= crealf(wtilde[k]);
           		wtilde[k].im = 0.0;
         		}
       		}
 
       		/* set nyquist and dc to zero */
-      		wtilde[params->wtildeVec->length - 1].re = 0.0;
-      		wtilde[0].re                             = 0.0;
+      		wtilde[params->wtildeVec->length - 1].realf_FIXME = 0.0;
+      		wtilde[0].realf_FIXME                             = 0.0;
  	}
 
     	/* set inverse power spectrum below cut to zero */
@@ -404,7 +404,7 @@ LALFindChirpBCVSpinData (
     	/* convert from S_v to S_h */
     	for ( k = cut; k < params->wtildeVec->length; ++k )
     	{
-      		REAL4 respRe = resp[k].re * params->dynRange;
+      		REAL4 respRe = crealf(resp[k]) * params->dynRange;
       		REAL4 respIm = resp[k].im * params->dynRange;
       		REAL4 modsqResp = (respRe * respRe + respIm * respIm);
       		REAL4 invmodsqResp;
@@ -416,7 +416,7 @@ LALFindChirpBCVSpinData (
       		}
       		invmodsqResp = 1.0 / modsqResp;
 
-      		wtilde[k].re *= invmodsqResp;
+      		wtilde[k].realf_FIXME *= invmodsqResp;
     	}
 
 	/* REMOVE THIS */

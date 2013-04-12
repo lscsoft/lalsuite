@@ -262,8 +262,8 @@ main(int argc, char *argv[])
 
 	      /* multiply SFT-data h_f by "transfer function" R_f */
 	      h_f = sft->data->data[fidx];	/* copy original value */
-	      sft->data->data[fidx].re = h_f.re * R_f.re - h_f.im * R_f.im;	/*(a+ib)(c+id)=(ac-bd)+i(ad+bc)*/
-	      sft->data->data[fidx].im = h_f.re * R_f.im + h_f.im * R_f.re;
+	      sft->data->data[fidx].realf_FIXME = crealf(h_f) * crealf(R_f) - h_f.im * R_f.im;	/*(a+ib)(c+id)=(ac-bd)+i(ad+bc)*/
+	      sft->data->data[fidx].im = crealf(h_f) * R_f.im + h_f.im * crealf(R_f);
 
 	    } /* for fidx < sft->data->length */
 
@@ -698,12 +698,12 @@ compute_R_f ( COMPLEX8 *R_f, REAL8 Freq, BOOLEAN useRAA, BOOLEAN isLISAsim )
     {
       if ( isLISAsim ) 	/* RAA && LISAsim */
 	{
-	  R_f->re = - 0.5 * sin(fourpifL) / sin(twopifL);
+	  R_f->realf_FIXME = - 0.5 * sin(fourpifL) / sin(twopifL);
 	  R_f->im =   0.5 * cos(fourpifL) / sin(twopifL);
 	}
       else 		/* RAA && synthLISA */
 	{
-	  R_f->re = (0.5 / fourpifL) * cos(fourpifL) / sin(twopifL);
+	  R_f->realf_FIXME = (0.5 / fourpifL) * cos(fourpifL) / sin(twopifL);
 	  R_f->im = (0.5 / fourpifL) * sin(fourpifL) / sin(twopifL);
 	}
     } /* if useRAA */
@@ -711,12 +711,12 @@ compute_R_f ( COMPLEX8 *R_f, REAL8 Freq, BOOLEAN useRAA, BOOLEAN isLISAsim )
     {
       if ( isLISAsim )	/* LWL && LISAsim */
 	{
-	  R_f->re = 0;
+	  R_f->realf_FIXME = 0;
 	  R_f->im = 1.0 / fourpifL;
 	}
       else 		/* LWL && synthLISA */
 	{
-	  R_f->re = 1.0 / ( fourpifL * fourpifL );
+	  R_f->realf_FIXME = 1.0 / ( fourpifL * fourpifL );
 	  R_f->im = 0;
 	}
     } /* if LWL */

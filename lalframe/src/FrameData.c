@@ -746,7 +746,7 @@ LALGetFrameDataResponse (
   factor /= -4*LAL_PI*LAL_PI;  /* from two time derivatives */
 
   /* demand DC is zero */
-  response->data->data[0].re = response->data->data[0].im = 0;
+  response->data->data[0].realf_FIXME = response->data->data[0].im = 0;
 
   /* other components (including possible Nyquist) */
   for (i = 1; i < response->data->length; ++i)
@@ -758,7 +758,7 @@ LALGetFrameDataResponse (
     REAL4 ssmod = ssre*ssre + ssim*ssim;
     REAL4 fac   = factor/(fsq*ssmod);
 
-    response->data->data[i].re = fac*ssre;
+    response->data->data[i].realf_FIXME = fac*ssre;
     response->data->data[i].im = fac*ssim;
   }
 

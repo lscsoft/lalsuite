@@ -2043,7 +2043,7 @@ int ReadSFTData(void)
       if (reverse_endian) {
         unsigned int cnt;
         for (cnt=0; cnt<ndeltaf; cnt++) {
-          swap4((char *)&(SFTData[filenum]->fft->data->data[cnt].re));
+          swap4((char *)&(crealf(SFTData[filenum]->fft->data->data[cnt])));
           swap4((char *)&(SFTData[filenum]->fft->data->data[cnt].im));
         }
       }
@@ -2153,20 +2153,20 @@ int UpsampleSFTData(void)
 
 	      if (SFTIndex < 0 || SFTIndex > ndeltaf-1)
 		{
-		  Xalpha_k.re= Xalpha_k.im=0.0;
+		  Xalpha_k.realf_FIXME= Xalpha_k.im=0.0;
 		}else{
 		Xalpha_k=SFTData[filenum]->fft->data->data[SFTIndex];
 	      }
 
 	      /* these four lines compute P*xtilde */
-	      realXP += Xalpha_k.re*realP;
+	      realXP += crealf(Xalpha_k)*realP;
 	      realXP -= Xalpha_k.im*imagP;
-	      imagXP += Xalpha_k.re*imagP;
+	      imagXP += crealf(Xalpha_k)*imagP;
 	      imagXP += Xalpha_k.im*realP;
 	    }
      
 	  /* fill in the data here */
-	  UpSFTData[filenum]->fft->data->data[i].re= realXP;
+	  UpSFTData[filenum]->fft->data->data[i].realf_FIXME= realXP;
 	  UpSFTData[filenum]->fft->data->data[i].im= imagXP;
 	  
 /*  	  fprintf(stdout,"%d %d %e %e\n", i, filenum, realXP, imagXP); */
@@ -3536,7 +3536,7 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
       
       /* loop over SFT data to estimate noise */
       for (j=0;j<nbins;j++){
-        xre=SFTData[i]->fft->data->data[j].re;
+        xre=crealf(SFTData[i]->fft->data->data[j]);
         xim=SFTData[i]->fft->data->data[j].im;
         Sp->data[j]=((REAL8)xre)*((REAL8)xre)+((REAL8)xim)*((REAL8)xim);
       }
@@ -3576,11 +3576,11 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
       for (j=0;j<nbins;j++){
-        xre=SFTData[i]->fft->data->data[j].re;
+        xre=crealf(SFTData[i]->fft->data->data[j]);
         xim=SFTData[i]->fft->data->data[j].im;
         xreNorm=N[j]*xre; 
         ximNorm=N[j]*xim; 
-        SFTData[i]->fft->data->data[j].re = xreNorm;    
+        SFTData[i]->fft->data->data[j].realf_FIXME = xreNorm;    
         SFTData[i]->fft->data->data[j].im = ximNorm;
         Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }

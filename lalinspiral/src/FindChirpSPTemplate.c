@@ -424,7 +424,7 @@ LALFindChirpSPTemplate (
         psi2 = psi1 * psi1;
         /* XXX minus sign added because of new sign convention for fft */
         expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
-        expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+        expPsi[k].realf_FIXME = -1 - psi2 * ( c2 + psi2 * c4 );
       }
       else if ( psi1 > LAL_PI/2 )
       {
@@ -432,14 +432,14 @@ LALFindChirpSPTemplate (
         psi2 = psi1 * psi1;
         /* XXX minus sign added because of new sign convention for fft */
         expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
-        expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
+        expPsi[k].realf_FIXME = -1 - psi2 * ( c2 + psi2 * c4 );
       }
       else
       {
         psi2 = psi1 * psi1;
         /* XXX minus sign added because of new sign convention for fft */
         expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
-        expPsi[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
+        expPsi[k].realf_FIXME = 1 + psi2 * ( c2 + psi2 * c4 );
       }
 
       /* if reverse chirp bank option selected, switch sign of imag. part */

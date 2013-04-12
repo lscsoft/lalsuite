@@ -695,8 +695,8 @@ int prepare_cwDetector(LALStatus* status){
   LALCCreateVector(status, &(cwDetector.transfer->data), 2);
 
   /* unit response function */
-  cwDetector.transfer->data->data[0].re = 1.0;
-  cwDetector.transfer->data->data[1].re = 1.0;
+  cwDetector.transfer->data->data[0].realf_FIXME = 1.0;
+  cwDetector.transfer->data->data[1].realf_FIXME = 1.0;
   cwDetector.transfer->data->data[0].im = 0.0;
   cwDetector.transfer->data->data[1].im = 0.0;
 
@@ -1009,7 +1009,7 @@ int read_noise(LALStatus* status, int iSFT) {
   norm=((REAL4)(fvec->length-1)*1.0/((REAL4)header.nsamples));
 
   for (i = 0; i < fvec->length; ++i) {
-    fvec->data[i].re += scale*fvecn->data[i].re*norm;
+    fvec->data[i].realf_FIXME += scale*crealf(fvecn->data[i])*norm;
     fvec->data[i].im += scale*fvecn->data[i].im*norm;
   }
 
@@ -1068,7 +1068,7 @@ int write_SFTS(int iSFT){
 
   for (i=0;i<fvec->length-1;i++){
 
-    rpw=fvec->data[i].re;
+    rpw=crealf(fvec->data[i]);
     ipw=fvec->data[i].im;
 
     errorcode=fwrite((void*)&rpw, sizeof(REAL4),1,fp);

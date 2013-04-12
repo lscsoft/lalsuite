@@ -294,7 +294,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 /* If x is small we need correct x->0 limit of Dirichlet kernel */
                 if( fabs(x) <  SMALL) 
                   {
-                    realXP += Xalpha_k.re;
+                    realXP += crealf(Xalpha_k);
                     imagXP += Xalpha_k.im;
                   }      
                 else
@@ -302,9 +302,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                     realP = tsin / x;
                     imagP = tcos / x;
                     /* these four lines compute P*xtilde */
-                    realXP += Xalpha_k.re * realP;
+                    realXP += crealf(Xalpha_k) * realP;
                     realXP -= Xalpha_k.im * imagP;
-                    imagXP += Xalpha_k.re * imagP;
+                    imagXP += crealf(Xalpha_k) * imagP;
                     imagXP += Xalpha_k.im * realP;
                   }
                 
@@ -350,8 +350,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 realP = tsin * xinv;
                 imagP = tcos * xinv;
                 /* these lines compute P*xtilde */
-                realXP += Xa.re * realP - Xa.im * imagP;
-                imagXP += Xa.re * imagP + Xa.im * realP;
+                realXP += crealf(Xa) * realP - Xa.im * imagP;
+                imagXP += crealf(Xa) * imagP + Xa.im * realP;
 
               } /* for k < klim */
 

@@ -497,7 +497,7 @@ main(int argc, char **argv)
     /* Convert response function to a transfer function. */
     SUB( LALCCreateVector( &stat, &unity, response->length ), &stat );
     for ( i = 0; i < response->length; i++ ) {
-      unity->data[i].re = 1.0;
+      unity->data[i].realf_FIXME = 1.0;
       unity->data[i].im = 0.0;
     }
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ),
@@ -514,8 +514,8 @@ main(int argc, char **argv)
     detector.transfer->deltaF = FSTOP;
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ), 2 ),
          &stat );
-    detector.transfer->data->data[0].re = 1.0;
-    detector.transfer->data->data[1].re = 1.0;
+    detector.transfer->data->data[0].realf_FIXME = 1.0;
+    detector.transfer->data->data[1].realf_FIXME = 1.0;
     detector.transfer->data->data[0].im = 0.0;
     detector.transfer->data->data[1].im = 0.0;
   }

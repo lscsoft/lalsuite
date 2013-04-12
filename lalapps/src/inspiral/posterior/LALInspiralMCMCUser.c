@@ -642,10 +642,10 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 
 			/* Negative signs on sins: see comment above for definition of ang */
 			REAL4 plus_re,plus_im,cross_re,cross_im;
-			plus_re = H_p_t->data->data[idx].re*cos(ang) + H_p_t->data->data[idx].im*sin(ang);
-			plus_im = H_p_t->data->data[idx].im*cos(ang) - H_p_t->data->data[idx].re*sin(ang);
-			cross_re = H_c_t->data->data[idx].re*cos(ang) + H_c_t->data->data[idx].im*sin(ang);
-			cross_im = H_c_t->data->data[idx].im*cos(ang) - H_c_t->data->data[idx].re*sin(ang);
+			plus_re = crealf(H_p_t->data->data[idx])*cos(ang) + H_p_t->data->data[idx].im*sin(ang);
+			plus_im = H_p_t->data->data[idx].im*cos(ang) - crealf(H_p_t->data->data[idx])*sin(ang);
+			cross_re = crealf(H_c_t->data->data[idx])*cos(ang) + H_c_t->data->data[idx].im*sin(ang);
+			cross_im = H_c_t->data->data[idx].im*cos(ang) - crealf(H_c_t->data->data[idx])*sin(ang);
 
 			/* Compute total real and imaginary responses */
 			resp_r = (REAL8)( plus_re*det_resp.plus + cross_re*det_resp.cross );
@@ -1730,7 +1730,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	modefreqs = XLALCreateCOMPLEX8Vector( 3 );
 	XLALGenerateQNMFreq( modefreqs, template, 2, 2, 3 );
 
-	qnm223freq = modefreqs->data[0].re / LAL_PI + 50.;
+	qnm223freq = crealf(modefreqs->data[0]) / LAL_PI + 50.;
 
 	/*Determine if sampling frequency is suitable for EOBNR template. If qnm223 freq. is greater than nyquist use EOB*/
 

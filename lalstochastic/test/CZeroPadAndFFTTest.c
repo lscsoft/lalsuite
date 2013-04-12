@@ -257,7 +257,7 @@ main( int argc, char *argv[] )
 
    for (i=0; i<CZEROPADANDFFTTESTC_FULLLENGTH; ++i)
    {
-     expectedOutputDataData[i].re *= CZEROPADANDFFTTESTC_DELTAT;
+     expectedOutputDataData[i].realf_FIXME *= CZEROPADANDFFTTESTC_DELTAT;
      expectedOutputDataData[i].im *= CZEROPADANDFFTTESTC_DELTAT;
    }
 
@@ -645,10 +645,10 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n",
-              f, goodOutput.data->data[i].re, goodOutput.data->data[i].im,
-              expectedOutputDataData[i].re, expectedOutputDataData[i].im);
+              f, crealf(goodOutput.data->data[i]), goodOutput.data->data[i].im,
+              crealf(expectedOutputDataData[i]), expectedOutputDataData[i].im);
      }
-     if (fabs(goodOutput.data->data[i].re - expectedOutputDataData[i].re)
+     if (fabs(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> CZEROPADANDFFTTESTC_TOL
          || fabs(goodOutput.data->data[i].im - expectedOutputDataData[i].im)
          /* / expectedOutputDataData[0].re */> CZEROPADANDFFTTESTC_TOL)

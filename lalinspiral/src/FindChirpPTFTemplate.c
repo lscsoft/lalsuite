@@ -274,11 +274,11 @@ LALFindChirpPTFNormalize(
     {
       for ( k = kmin; k < kmax ; ++k )
       {
-        PTFB[5 * i + j] += (PTFQtilde[k + i * len].re *
-                            PTFQtilde[k + j * len].re +
+        PTFB[5 * i + j] += (crealf(PTFQtilde[k + i * len]) *
+                            crealf(PTFQtilde[k + j * len]) +
                             PTFQtilde[k + i * len].im *
                             PTFQtilde[k + j * len].im )
-                            * wtilde[k].re ;
+                            * crealf(wtilde[k]) ;
       }
       PTFB[5 * i + j] *= 4.0 * deltaF ;
       /* Use the symmetry of B */

@@ -756,9 +756,9 @@ COMPLEX8FrequencySeries *generateActuation(
   for ( k = 0; k < resp->data->length; k++ )
   {
     fNorm = k * resp->deltaF / pendF;
-    denom->data[k].re = ( 1 - fNorm * fNorm );
+    denom->data[k].realf_FIXME = ( 1 - fNorm * fNorm );
     denom->data[k].im = - fNorm / pendQ;
-    num->data[k].re = -1.0 * ETMcal;
+    num->data[k].realf_FIXME = -1.0 * ETMcal;
     num->data[k].im = 0.0;
   }
 

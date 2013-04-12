@@ -144,7 +144,7 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
   /* do the fft */
   if( plan->size == 1 )
   {
-    output->data[0].re = input->data[0].re;
+    output->data[0].realf_FIXME = crealf(input->data[0]);
     output->data[0].im = input->data[0].im;
   }
   else

@@ -2767,7 +2767,7 @@ static int XLALPSpinInspiralRDEngine(
 	XLAL_ERROR(XLAL_EFAILED);
       }
 
-      omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
+      omegaRD = crealf(modefreqs->data[0]) * unitHz / LAL_PI / 2.;
       frOmRD = fracRD(phenPars.LNhS1,phenPars.LNhS2,phenPars.S1S1,phenPars.S1S2,phenPars.S2S2)*omegaRD;
 
       v     = cbrt(om);

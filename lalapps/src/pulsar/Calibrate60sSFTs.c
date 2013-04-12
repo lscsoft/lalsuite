@@ -294,31 +294,31 @@ int CalibrateSfts(struct CommandLineArgsTag CLA)
 	   int jre=2*j;
 	   int jim=jre+1;
  
-	   R.re=Ro.re[j];
+	   R.realf_FIXME=Ro.re[j];
 	   R.im=Ro.im[j];
 	   
-	   C.re=So.re[j];
+	   C.realf_FIXME=So.re[j];
 	   C.im=So.im[j];
        
 	   /* compute the reference open loop function H0 */
 	   H = cmul(C, R);
-	   H.re -= 1.0;
+	   H.realf_FIXME -= 1.0;
        
 	   /* update the open loop function */
-	   H.re *= alpha_beta;
+	   H.realf_FIXME *= alpha_beta;
 	   H.im *= alpha_beta;
        
 	   /* update the sensing function */
-	   C.re *= alpha;
+	   C.realf_FIXME *= alpha;
 	   C.im *= alpha;
        
 	   /* compute the updated response function */
-	   H.re += 1.0;
+	   H.realf_FIXME += 1.0;
 	   R = cdiv( H, C );
 
 	   /* the jth elements of p and pC are th real parts and the (j+1)th the imaginary part */
-	   pC[jre]=R.re*p[jre]-R.im*p[jim];
-	   pC[jim]=R.re*p[jim]+R.im*p[jre];
+	   pC[jre]=crealf(R)*p[jre]-R.im*p[jim];
+	   pC[jim]=crealf(R)*p[jim]+R.im*p[jre];
        }
 
      errorcode=fwrite((void*)pC,2*header.nsamples*sizeof(REAL4),1,fpo);  

@@ -203,19 +203,19 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 
       for (row = 0; row < (tfr->fRow/2+1); row++)
 	{
-	  modulus = vtmpH->data[row].re * vtmpH->data[row].re +
+	  modulus = crealf(vtmpH->data[row]) * crealf(vtmpH->data[row]) +
 	    vtmpH->data[row].im * vtmpH->data[row].im;
 	  if  (modulus > eps)
 	    {
 
-	      hatt =  vtmpT->data[row].re * vtmpH->data[row].re +
+	      hatt =  crealf(vtmpT->data[row]) * crealf(vtmpH->data[row]) +
 		      vtmpT->data[row].im * vtmpH->data[row].im;
  	      hatt = hatt / modulus / stepTime;
               indext = time + ROUND(hatt);
 	      indext = MAX(indext,0);
 	      indext = MIN(indext,tfr->tCol - 1);
-	      hatf = vtmpD->data[row].re * vtmpH->data[row].im -
-		vtmpD->data[row].im * vtmpH->data[row].re;
+	      hatf = crealf(vtmpD->data[row]) * vtmpH->data[row].im -
+		vtmpD->data[row].im * crealf(vtmpH->data[row]);
 	      hatf = hatf / modulus * normhatf;
 	      indexf = row - ROUND(hatf);
  	      indexf = ((indexf)%(tfr->fRow)+ tfr->fRow)%(tfr->fRow);

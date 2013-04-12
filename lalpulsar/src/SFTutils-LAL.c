@@ -306,7 +306,7 @@ LALSubtractSFTVectors (LALStatus *status,	/**< pointer to LALStatus structure */
 
       for (j=0; j < numBins1; j++)
 	{
-	  ret->data[i].data->data[j].re = inVect1->data[i].data->data[j].re - inVect2->data[i].data->data[j].re;
+	  ret->data[i].data->data[j].realf_FIXME = crealf(inVect1->data[i].data->data[j]) - crealf(inVect2->data[i].data->data[j]);
 	  ret->data[i].data->data[j].im = inVect1->data[i].data->data[j].im - inVect2->data[i].data->data[j].im;
 	}  /* for j < numBins1 */
 
@@ -384,12 +384,12 @@ LALLinearlyCombineSFTVectors
 
       for (k=0; k < numBins1; k++)
 	{
-	  ret->data[i].data->data[k].re
-	    = weights->data[0].re * inVects[0]->data[i].data->data[k].re
+	  ret->data[i].data->data[k].realf_FIXME
+	    = weights->data[0].re * crealf(inVects[0]->data[i].data->data[k])
 	    - weights->data[0].im * inVects[0]->data[i].data->data[k].im;
 	  ret->data[i].data->data[k].im
 	    = weights->data[0].re * inVects[0]->data[i].data->data[k].im
-	    + weights->data[0].im * inVects[0]->data[i].data->data[k].re;
+	    + weights->data[0].im * crealf(inVects[0]->data[i].data->data[k]);
 	}  /* for k < numBins1 */
 
       /* add in the other SFTs one-by-one */
@@ -420,12 +420,12 @@ LALLinearlyCombineSFTVectors
 
 	  for (k=0; k < numBins1; k++)
 	    {
-	      ret->data[i].data->data[k].re
-		+= weights->data[j].re * inVects[j]->data[i].data->data[k].re
+	      ret->data[i].data->data[k].realf_FIXME
+		+= weights->data[j].re * crealf(inVects[j]->data[i].data->data[k])
 		- weights->data[j].im * inVects[j]->data[i].data->data[k].im;
 	      ret->data[i].data->data[k].im
 		+= weights->data[j].re * inVects[j]->data[i].data->data[k].im
-		+ weights->data[j].im * inVects[j]->data[i].data->data[k].re;
+		+ weights->data[j].im * crealf(inVects[j]->data[i].data->data[k]);
 	    }  /* for k < numBins1 */
 
 	} /* for j < numSFTVects */

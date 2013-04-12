@@ -348,16 +348,16 @@ LALFindChirpBCVCFilterSegment (
   /* qtilde positive frequency, not DC or nyquist */
   for ( k = 1; k < numPoints/2; ++k )
   {
-    REAL4 r    = a1 * inputData[k].re;
+    REAL4 r    = a1 * crealf(inputData[k]);
     REAL4 s    = a1 * inputData[k].im;
-    REAL4 rBCV = b1 * inputData[k].re + b2 * inputDataBCV[k].re;
+    REAL4 rBCV = b1 * crealf(inputData[k]) + b2 * crealf(inputDataBCV[k]);
     REAL4 sBCV = b1 * inputData[k].im + b2 * inputDataBCV[k].im;
-    REAL4 x = tmpltSignal[k].re;
+    REAL4 x = crealf(tmpltSignal[k]);
     REAL4 y = 0.0 - tmpltSignal[k].im; /* note complex conjugate */
 
-    qtilde[k].re = r * x - s * y ;
+    qtilde[k].realf_FIXME = r * x - s * y ;
     qtilde[k].im = r * y + s * x ;
-    qtildeBCV[k].re = rBCV * x - sBCV * y ;
+    qtildeBCV[k].realf_FIXME = rBCV * x - sBCV * y ;
     qtildeBCV[k].im = rBCV * y + sBCV * x ;
   }
 
@@ -429,9 +429,9 @@ LALFindChirpBCVCFilterSegment (
 
     for ( j = 0; j < numPoints; ++j )
     {
-      REAL4 modqsqSP  = q[j].re * q[j].re + q[j].im * q[j].im ;
-      REAL4 modqsqBCV = qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im ;
-      REAL4 ImProd = 2.0 * ( - q[j].re * qBCV[j].im + qBCV[j].re * q[j].im ) ;
+      REAL4 modqsqSP  = crealf(q[j]) * crealf(q[j]) + q[j].im * q[j].im ;
+      REAL4 modqsqBCV = crealf(qBCV[j]) * crealf(qBCV[j]) + qBCV[j].im * qBCV[j].im ;
+      REAL4 ImProd = 2.0 * ( - crealf(q[j]) * qBCV[j].im + crealf(qBCV[j]) * q[j].im ) ;
 
       REAL4 newmodqsq = ( 0.5 * sqrt( modqsqSP + modqsqBCV + ImProd ) +
           0.5 * sqrt( modqsqSP + modqsqBCV - ImProd ) ) *
@@ -628,17 +628,17 @@ LALFindChirpBCVCFilterSegment (
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
     /* First, we compute the quantities V0, V1 and V2 */
-    V0 = q[j].re * q[j].re
-      + qBCV[j].re * qBCV[j].re
+    V0 = crealf(q[j]) * crealf(q[j])
+      + crealf(qBCV[j]) * crealf(qBCV[j])
       + q[j].im * q[j].im
       + qBCV[j].im * qBCV[j].im ;
 
-    V1 = q[j].re * q[j].re
+    V1 = crealf(q[j]) * crealf(q[j])
       + q[j].im * q[j].im
       - qBCV[j].im * qBCV[j].im
-      -  qBCV[j].re * qBCV[j].re;
+      -  crealf(qBCV[j]) * crealf(qBCV[j]);
 
-    V2 =  2 * ( q[j].re * qBCV[j].re + qBCV [j].im * q[j].im);
+    V2 =  2 * ( crealf(q[j]) * crealf(qBCV[j]) + qBCV [j].im * q[j].im);
 
     /* and finally the unconstraint SNR which is equivalent to
      * the unconstrained BCV situation */

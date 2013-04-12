@@ -286,9 +286,9 @@ getMaxErrSFT (const SFTtype *sft1, const SFTtype *sft2)
     {
       REAL8 diff, A1, A2, Ampl;
       REAL8 re1, re2, im1, im2;
-      re1 = sft1->data->data[i].re;
+      re1 = crealf(sft1->data->data[i]);
       im1 = sft1->data->data[i].im;
-      re2 = sft2->data->data[i].re;
+      re2 = crealf(sft2->data->data[i]);
       im2 = sft2->data->data[i].im;
 
       diff = (re1 - re2)*(re1 - re2) + (im1 - im2)*(im1 - im2);
@@ -350,9 +350,9 @@ scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFT
   for (i=0; i < sft1->data->length; i++)
     {
       REAL8 xre, xim, yre, yim;
-      xre = (REAL8)sft1->data->data[i].re;
+      xre = (REAL8)crealf(sft1->data->data[i]);
       xim = (REAL8)sft1->data->data[i].im;
-      yre = (REAL8)sft2->data->data[i].re;
+      yre = (REAL8)crealf(sft2->data->data[i]);
       yim = (REAL8)sft2->data->data[i].im;
 
       prod +=  xre * yre + xim * yim;
@@ -432,7 +432,7 @@ subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftvect1,
     {
       for (j=0; j < N; j++)
 	{
-	  vect->data[alpha].data->data[j].re = sftvect1->data[alpha].data->data[j].re - sftvect2->data[alpha].data->data[j].re;
+	  vect->data[alpha].data->data[j].realf_FIXME = crealf(sftvect1->data[alpha].data->data[j]) - crealf(sftvect2->data[alpha].data->data[j]);
 	  vect->data[alpha].data->data[j].im = sftvect1->data[alpha].data->data[j].im - sftvect2->data[alpha].data->data[j].im;
 	} /* for j < N */
 

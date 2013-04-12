@@ -608,7 +608,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	      ind0 = DTERMS - 1;
 	    else
 	      ind0 = DTERMS;
-	    realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
+	    realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
 	    imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
 
 	  } /* if |remainder| <= LD_SMALL4 */

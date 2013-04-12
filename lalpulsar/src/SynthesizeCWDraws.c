@@ -277,9 +277,9 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
 
       /* add this to Fstat-atom */
       /* relation Fa,Fb <--> x_mu: see Eq.(72) in CFSv2-LIGO-T0900149-v2.pdf */
-      atoms->data[alpha].Fa_alpha.re +=   x1;
+      atoms->data[alpha].Fa_alpha.realf_FIXME +=   x1;
       atoms->data[alpha].Fa_alpha.im += - x3;
-      atoms->data[alpha].Fb_alpha.re +=   x2;
+      atoms->data[alpha].Fb_alpha.realf_FIXME +=   x2;
       atoms->data[alpha].Fb_alpha.im += - x4;
 
     } /* for i < numAtoms */
@@ -434,9 +434,9 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       s3 = sh_mu[2];
       s4 = sh_mu[3];
 
-      atoms->data[alpha].Fa_alpha.re +=   s1;
+      atoms->data[alpha].Fa_alpha.realf_FIXME +=   s1;
       atoms->data[alpha].Fa_alpha.im += - s3;
-      atoms->data[alpha].Fb_alpha.re +=   s2;
+      atoms->data[alpha].Fb_alpha.realf_FIXME +=   s2;
       atoms->data[alpha].Fb_alpha.im += - s4;
 
     } /* for alpha < numAtoms */
@@ -700,10 +700,10 @@ XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	/**< [in/out
         {
           FstatAtom *thisAtom = &atoms->data[i];
 
-          thisAtom->Fa_alpha.re *= rescale;
+          thisAtom->Fa_alpha.realf_FIXME *= rescale;
           thisAtom->Fa_alpha.im *= rescale;
 
-          thisAtom->Fb_alpha.re *= rescale;
+          thisAtom->Fb_alpha.realf_FIXME *= rescale;
           thisAtom->Fb_alpha.im *= rescale;
 
         } /* for i < numAtoms */

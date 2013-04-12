@@ -1649,7 +1649,7 @@ XLALEOBWaveformEngine (
 
      /* If 220 QNM freq. > Nyquist freq., print warning but continue */
      /* Note that we cancelled a factor of 2 occuring on both sides */
-     if ( params->tSampling < modefreqs->data[0].re / LAL_PI )
+     if ( params->tSampling < crealf(modefreqs->data[0]) / LAL_PI )
      {
        XLALPrintWarning( "Ringdown freq. greater than Nyquist freq. "
              "Beware of aliasing! Consider increasing the sample rate.\n" );

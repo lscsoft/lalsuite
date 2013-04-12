@@ -112,22 +112,22 @@ REAL4 tmpx, tmpy;
 
 #define cmul( a, b ) \
 ( tmpa = (a), tmpb = (b), \
-  tmpc.re = tmpa.re * tmpb.re - tmpa.im * tmpb.im, \
-  tmpc.im = tmpa.re * tmpb.im + tmpa.im * tmpb.re, \
+  tmpc.realf_FIXME = crealf(tmpa) * crealf(tmpb) - tmpa.im * tmpb.im, \
+  tmpc.im = crealf(tmpa) * tmpb.im + tmpa.im * crealf(tmpb), \
   tmpc )
 
 #define cdiv( a, b ) \
 ( tmpa = (a), tmpb = (b), \
-  fabs( tmpb.re ) >= fabs( tmpb.im ) ? \
-    ( tmpx = tmpb.im / tmpb.re, \
-      tmpy = tmpb.re + tmpx * tmpb.im, \
-      tmpc.re = ( tmpa.re + tmpx * tmpa.im ) / tmpy, \
-      tmpc.im = ( tmpa.im - tmpx * tmpa.re ) / tmpy, \
+  fabs( crealf(tmpb) ) >= fabs( tmpb.im ) ? \
+    ( tmpx = tmpb.im / crealf(tmpb), \
+      tmpy = crealf(tmpb) + tmpx * tmpb.im, \
+      tmpc.realf_FIXME = ( crealf(tmpa) + tmpx * tmpa.im ) / tmpy, \
+      tmpc.im = ( tmpa.im - tmpx * crealf(tmpa) ) / tmpy, \
       tmpc ) : \
-    ( tmpx = tmpb.re / tmpb.im, \
-      tmpy = tmpb.im + tmpx * tmpb.re, \
-      tmpc.re = ( tmpa.re * tmpx + tmpa.im ) / tmpy, \
-      tmpc.im = ( tmpa.im * tmpx - tmpa.re ) / tmpy, \
+    ( tmpx = crealf(tmpb) / tmpb.im, \
+      tmpy = tmpb.im + tmpx * crealf(tmpb), \
+      tmpc.realf_FIXME = ( crealf(tmpa) * tmpx + tmpa.im ) / tmpy, \
+      tmpc.im = ( tmpa.im * tmpx - crealf(tmpa) ) / tmpy, \
       tmpc ) )
 
 
@@ -348,31 +348,31 @@ int CalibrateSfts(struct CommandLineArgsTag CLA)
 	      int jre=2*j;
 	      int jim=jre+1;
 	      
-	      R.re=Ro.re[j];
+	      R.realf_FIXME=Ro.re[j];
 	      R.im=Ro.im[j];
 	   
-	      C.re=So.re[j];
+	      C.realf_FIXME=So.re[j];
 	      C.im=So.im[j];
        
 	      /* compute the reference open loop function H0 */
 	      H = cmul(C, R);
-	      H.re -= 1.0;
+	      H.realf_FIXME -= 1.0;
        
 	      /* update the open loop function */
-	      H.re *= alpha_beta;
+	      H.realf_FIXME *= alpha_beta;
 	      H.im *= alpha_beta;
        
 	      /* update the sensing function */
-	      C.re *= alpha;
+	      C.realf_FIXME *= alpha;
 	      C.im *= alpha;
        
 	      /* compute the updated response function */
-	      H.re += 1.0;
+	      H.realf_FIXME += 1.0;
 	      R = cdiv( H, C );
 
 	      /* the jth elements of p and pC are th real parts and the (j+1)th the imaginary part */
-	      pC[jre]=R.re*p[jre]-R.im*p[jim];
-	      pC[jim]=R.re*p[jim]+R.im*p[jre];
+	      pC[jre]=crealf(R)*p[jre]-R.im*p[jim];
+	      pC[jim]=crealf(R)*p[jim]+R.im*p[jre];
 	    }
 
 	  errorcode=fwrite((void*)pC,2*header.nsamples*sizeof(REAL4),1,fpo);  

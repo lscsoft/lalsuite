@@ -66,7 +66,7 @@ void LALTruncateInvSpectrum(
      */
     for (i=0; i<Hvec->length; i++){
         if (inputVec->data[i] > 0.0) {
-            Hvec->data[i].re = (REAL4) (1./sqrt(inputVec->data[i]));
+            Hvec->data[i].realf_FIXME = (REAL4) (1./sqrt(inputVec->data[i]));
             Hvec->data[i].im = 0.0;
         } else{
             ABORT( status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE );
@@ -83,15 +83,15 @@ void LALTruncateInvSpectrum(
         for (i=0; i<Hvec->length; i++){
             fprintf (out, "%e %e\n",
                     params->df*i,
-                    Hvec->data[i].re);
+                    crealf(Hvec->data[i]));
         }
         fclose(out);
     }
 
     /* Set Nyquist and zero frequency components of the input spectrum to zero
      */
-    Hvec->data[Hvec->length - 1].re = 0.0;
-    Hvec->data[0].re                = 0.0;
+    Hvec->data[Hvec->length - 1].realf_FIXME = 0.0;
+    Hvec->data[0].realf_FIXME                = 0.0;
 
     /* Inverse Fourier Transform to time domain
      */
@@ -144,8 +144,8 @@ void LALTruncateInvSpectrum(
     norm = 1.0 / (REAL4) (n);
     for ( i = 0; i < Hvec->length; i++ )
     {
-        Hvec->data[i].re *= norm;
-        Hvec->data[i].re *= Hvec->data[i].re;
+        Hvec->data[i].realf_FIXME *= norm;
+        Hvec->data[i].realf_FIXME *= crealf(Hvec->data[i]);
         Hvec->data[i].im  = 0.0;
     }
 
@@ -158,7 +158,7 @@ void LALTruncateInvSpectrum(
         for (i=0; i<Hvec->length; i++){
             fprintf (out, "%e %e\n",
                     params->df*i,
-                    sqrt(Hvec->data[i].re));
+                    sqrt(crealf(Hvec->data[i])));
         }
         fclose(out);
     }
@@ -167,8 +167,8 @@ void LALTruncateInvSpectrum(
      *
      */
     for (i=0; i<Hvec->length; i++){
-        if (Hvec->data[i].re > 0.0)
-              inputVec->data[i] = (REAL8) (1./Hvec->data[i].re);
+        if (crealf(Hvec->data[i]) > 0.0)
+              inputVec->data[i] = (REAL8) (1./crealf(Hvec->data[i]));
     }
 
     /* Clear work space

@@ -173,7 +173,7 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
       return(-1);
     }
     for(bin=0; bin < sft1.data->length; bin++) {
-      if((sft1.data->data[bin].re != sft2.data->data[bin].re) ||
+      if((crealf(sft1.data->data[bin]) != crealf(sft2.data->data[bin])) ||
 	 (sft1.data->data[bin].im != sft2.data->data[bin].im)) {
 	XLALPrintError ( "CompareSFTVectors(): bins %u of SFT#%u differ!\n", sft, bin);
 	return(-1);

@@ -200,8 +200,8 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	realQ = cosVal[myindex];
 	imagQ = sinVal[myindex];
 
-	realQXP = Xalpha_k.re*realQ-Xalpha_k.im*imagQ;
-	imagQXP = Xalpha_k.re*imagQ+Xalpha_k.im*realQ;
+	realQXP = crealf(Xalpha_k)*realQ-Xalpha_k.im*imagQ;
+	imagQXP = crealf(Xalpha_k)*imagQ+Xalpha_k.im*realQ;
 
 	/* amplitude demodulation */
 	Fa.re += a*realQXP;

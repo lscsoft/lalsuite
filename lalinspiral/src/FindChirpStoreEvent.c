@@ -127,7 +127,7 @@ LALFindChirpStoreEvent (
 
   /* record the coalescence phase of the chirp */
   thisEvent->coa_phase = (REAL4)
-      atan2( q[timeIndex].im, q[timeIndex].re );
+      atan2( q[timeIndex].im, crealf(q[timeIndex]) );
 
   /* copy the template into the event */
   thisEvent->mass1   = (REAL4) input->fcTmplt->tmplt.mass1;

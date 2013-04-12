@@ -654,20 +654,20 @@ int main( int argc, char *argv[] )
 
   goodData1.f0 = goodData2.f0 = goodFilter.f0 = 0.0;
 
-  goodData1.data->data[0].re = goodData1.data->data[0].im
-    = goodData2.data->data[0].re = goodData2.data->data[0].im
-    = goodFilter.data->data[0].re = goodFilter.data->data[0].im
+  goodData1.data->data[0].realf_FIXME = goodData1.data->data[0].im
+    = goodData2.data->data[0].realf_FIXME = goodData2.data->data[0].im
+    = goodFilter.data->data[0].realf_FIXME = goodFilter.data->data[0].im
     = 0.0;
 
   for (i=1; i<STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH; ++i)
   {
     f = i * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
     x = f / (STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM / 2.0);
-    goodData1.data->data[i].re = x*x;
+    goodData1.data->data[i].realf_FIXME = x*x;
     goodData1.data->data[i].im = x;
-    goodData2.data->data[i].re = 1.0/goodData1.data->data[i].re;
+    goodData2.data->data[i].realf_FIXME = 1.0/crealf(goodData1.data->data[i]);
     goodData2.data->data[i].im = -1.0/goodData1.data->data[i].im;
-    goodFilter.data->data[i].re = x * (2-x);
+    goodFilter.data->data[i].realf_FIXME = x * (2-x);
     goodFilter.data->data[i].im = 0.0;
   }
 
@@ -684,9 +684,9 @@ int main( int argc, char *argv[] )
   if (optVerbose)
   {
     printf("Y(0)=%g + %g i, should be 0\n",
-           goodOutput.data->data[0].re, goodOutput.data->data[0].im);
+           crealf(goodOutput.data->data[0]), goodOutput.data->data[0].im);
   }
-  if ( ( fabs(goodOutput.data->data[0].re)
+  if ( ( fabs(crealf(goodOutput.data->data[0]))
          > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
        || ( fabs(goodOutput.data->data[0].im)
             > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL ) )
@@ -708,10 +708,10 @@ int main( int argc, char *argv[] )
     if (optVerbose)
     {
       printf("Y(%f Hz)=%g + %g i, should be %g i\n",
-             f, goodOutput.data->data[i].re, goodOutput.data->data[i].im,
+             f, crealf(goodOutput.data->data[i]), goodOutput.data->data[i].im,
              expIm);
      }
-     if ( fabs(goodOutput.data->data[i].re)
+     if ( fabs(crealf(goodOutput.data->data[i]))
           > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL
           || fabs(goodOutput.data->data[i].im - expIm)
           > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )

@@ -245,7 +245,7 @@ int main( int argc, char *argv[] )
             LALForwardRealFFT( &status, Hvec, &hvec, pfwd );
 
             for( j=0 ; j<numPoints/2+1; j++){
-                re = Hvec->data[j].re;
+                re = crealf(Hvec->data[j]);
                 im = Hvec->data[j].im;
                 spectrum->data[j] += 2.0*(re*re+im*im)/((REAL4)navg);
             }

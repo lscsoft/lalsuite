@@ -298,7 +298,7 @@ int calibrate_spectrum(
     {
       for ( k = cut; k < spectrum->data->length; ++k )
       {
-        REAL4 re = response->data->data[k].re;
+        REAL4 re = crealf(response->data->data[k]);
         REAL4 im = response->data->data[k].im;
         spectrum->data->data[k] /= (re*re + im*im );
       }
@@ -309,7 +309,7 @@ int calibrate_spectrum(
     {
       for ( k = cut; k < spectrum->data->length; ++k )
       {
-        REAL4 re = response->data->data[k].re;
+        REAL4 re = crealf(response->data->data[k]);
         REAL4 im = response->data->data[k].im;
         spectrum->data->data[k] *= (re*re + im*im );
       }

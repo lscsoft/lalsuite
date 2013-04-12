@@ -177,7 +177,7 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
    */
   if( plan->size == 1 )
   {
-    output->data[0].re = input->data[0];
+    output->data[0].realf_FIXME = input->data[0];
     output->data[0].im = 0.0;
   }
   else
@@ -220,7 +220,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
    */
   if( plan->size == 1 )
   {
-    output->data[0] = input->data[0].re;
+    output->data[0] = crealf(input->data[0]);
   }
   else
     cudafft_execute_c2r( plan->plan,
@@ -262,33 +262,33 @@ int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
       cudafft_execute_r2c( plan->plan,
 	  (cufftComplex *)tmp, (cufftReal *)(input->data),
 	  (cufftComplex *)plan->d_complex, (cufftReal *)plan->d_real, plan->size );
-      output->data[0] = tmp[0].re;
+      output->data[0] = crealf(tmp[0]);
 
       for( k = 1; k < (plan->size + 1)/2; k++ )
       {
-	output->data[k] = tmp[k].re;
+	output->data[k] = crealf(tmp[k]);
 	output->data[plan->size - k] = tmp[k].im;
       }
 
       if( plan->size % 2 == 0 )
       {
-	output->data[plan->size/2] = tmp[plan->size/2].re;
+	output->data[plan->size/2] = crealf(tmp[plan->size/2]);
       }
     }
     else
     {
-      tmp[0].re = input->data[0];
+      tmp[0].realf_FIXME = input->data[0];
       tmp[0].im = 0.0;
 
       for( k = 1; k < (plan->size + 1)/2; k++ )
       {
-	tmp[k].re = input->data[k];
+	tmp[k].realf_FIXME = input->data[k];
 	tmp[k].im = input->data[plan->size - k];
       }
 
       if( plan->size%2 == 0 )
       {
-	tmp[plan->size/2].re = input->data[plan->size/2];
+	tmp[plan->size/2].realf_FIXME = input->data[plan->size/2];
 	tmp[plan->size/2].im = 0.0;
       }
 
@@ -328,7 +328,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
 
   /* Check for size 1 to avoid the CUDA bug */
   if( plan->size == 1 )
-    tmp[0].re = data->data[0];
+    tmp[0].realf_FIXME = data->data[0];
   /* transform the data */
   else
     cudafft_execute_r2c( plan->plan,
@@ -338,12 +338,12 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
   /* now reconstruct the spectrum from the temporary storage */
 
   /* dc component */
-  spec->data[0] = tmp[0].re * tmp[0].re;
+  spec->data[0] = crealf(tmp[0]) * crealf(tmp[0]);
 
   /* other components */
   for (k = 1; k < (plan->size + 1)/2; ++k) /* k < size/2 rounded up */
   {
-    REAL4 re = tmp[k].re;
+    REAL4 re = crealf(tmp[k]);
     REAL4 im = tmp[k].im;
     spec->data[k]  = re * re + im * im;
     spec->data[k] *= 2.0; /* accounts for negative frequency part */
@@ -351,7 +351,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
 
   /* Nyquist frequency */
   if ( plan->size%2 == 0 ) /* size is even */
-    spec->data[k] = tmp[k].re * tmp[k].re;
+    spec->data[k] = crealf(tmp[k]) * crealf(tmp[k]);
 
   /* clenup and exit */
   XLALFree( tmp );

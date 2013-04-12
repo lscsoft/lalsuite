@@ -471,7 +471,7 @@ int testTable ( void )
   printf ("IndexIn = ");
   for ( j=0; j < IN_ROWS; j ++ ) printf ("%d%s", IndexIn[j], j<IN_ROWS-1? ", " : "\n" );
   printf ("FaIn    = ");
-  for ( j=0; j < IN_ROWS; j ++ ) printf ("%f %f%s", FaIn[j].re, FaIn[j].im, j<IN_ROWS-1? ", " : "\n" );
+  for ( j=0; j < IN_ROWS; j ++ ) printf ("%f %f%s", crealf(FaIn[j]), FaIn[j].im, j<IN_ROWS-1? ", " : "\n" );
 
 
   /* ---------- create FIELDS */
@@ -672,7 +672,7 @@ int testTable ( void )
   printf ("IndexOut = ");
   for ( j=0; j < numRows; j ++ ) printf ("%d%s", IndexOut[j], j<numRows-1? ", " : "\n" );
   printf ("FaOut    = ");
-  for ( j=0; j < numRows; j ++ ) printf ("%f %f%s", FaOut[j].re, FaOut[j].im, j<numRows-1? ", " : "\n" );
+  for ( j=0; j < numRows; j ++ ) printf ("%f %f%s", crealf(FaOut[j]), FaOut[j].im, j<numRows-1? ", " : "\n" );
 
   /* compare input- and output-values */
   printf ("--> Comparing input values and those parsed back ... ");
@@ -698,9 +698,9 @@ int testTable ( void )
         XLALPrintError ("Input Index '%d' differs from parsed '%d' in row %d\n", IndexIn[j], IndexOut[j], j );
         return LALXMLC_EFUN;
       }
-      if ( gsl_fcmp (FaIn[j].re, FaOut[j].re, REAL4TOL ) || gsl_fcmp (FaIn[j].im, FaOut[j].im, REAL4TOL ) ) {
+      if ( gsl_fcmp (crealf(FaIn[j]), crealf(FaOut[j]), REAL4TOL ) || gsl_fcmp (FaIn[j].im, FaOut[j].im, REAL4TOL ) ) {
         XLALPrintError ("Input Fa {%.6f,%.6f} and parsed {%.6f,%.6f} in row %d differ by more than eps=%g\n",
-                        FaIn[j].re, FaIn[j].im, FaOut[j].re, FaOut[j].im, j, REAL4TOL);
+                        crealf(FaIn[j]), FaIn[j].im, crealf(FaOut[j]), FaOut[j].im, j, REAL4TOL);
         return LALXMLC_EFUN;
       }
 

@@ -1664,7 +1664,7 @@ XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, /**< overall scale
       }
 
       /* now convert into transfer-function and (Re,Im): T = A^-1 */
-      data->data[i-startline].re =  cos(phi) / ( amp * actuationScale );
+      data->data[i-startline].realf_FIXME =  cos(phi) / ( amp * actuationScale );
       data->data[i-startline].im = -sin(phi) / ( amp * actuationScale );
 
     } /* for i < numlines */

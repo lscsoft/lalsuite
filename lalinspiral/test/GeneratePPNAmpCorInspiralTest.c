@@ -499,7 +499,7 @@ main(int argc, char **argv)
       fourier = fopen("fftout", "w");
 
     for(i = 0; i < waveform.h->data->length/ 2 + 1; i++, f+=Hf.deltaF)
-      fprintf(fourier," %f %1.6e %1.6e\n", f, Hf.data->data[i].re, Hf.data->data[i].im);
+      fprintf(fourier," %f %1.6e %1.6e\n", f, crealf(Hf.data->data[i]), Hf.data->data[i].im);
     fclose(fourier);
 
 		LALDestroyRealFFTPlan( &stat, &fwdRealPlan );

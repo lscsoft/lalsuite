@@ -398,9 +398,9 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
 
     /*  add to summed Faf and Fbf and normalise by dt */
     for (j=0;j<numSamples;j++) {
-      Faf_resampled->data[j].re += outa->data[j].re*dt;
+      Faf_resampled->data[j].realf_FIXME += crealf(outa->data[j])*dt;
       Faf_resampled->data[j].im += outa->data[j].im*dt;
-      Fbf_resampled->data[j].re += outb->data[j].re*dt;
+      Fbf_resampled->data[j].realf_FIXME += crealf(outb->data[j])*dt;
       Fbf_resampled->data[j].im += outb->data[j].im*dt;
     }
 
@@ -433,9 +433,9 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
        * where based on the single-sided PSD.
        */
       fstatVector->data->data[k] = Dd_inv * (
-                   Bd * (SQ(Faf_resampled->data[idx].re) + SQ(Faf_resampled->data[idx].im))
-					       + Ad * (SQ(Fbf_resampled->data[idx].re) + SQ(Fbf_resampled->data[idx].im))
-					       - 2.0 * Cd *( Faf_resampled->data[idx].re * Fbf_resampled->data[idx].re +
+                   Bd * (SQ(crealf(Faf_resampled->data[idx])) + SQ(Faf_resampled->data[idx].im))
+					       + Ad * (SQ(crealf(Fbf_resampled->data[idx])) + SQ(Fbf_resampled->data[idx].im))
+					       - 2.0 * Cd *( crealf(Faf_resampled->data[idx]) * crealf(Fbf_resampled->data[idx]) +
 							                 Faf_resampled->data[idx].im * Fbf_resampled->data[idx].im )
 					       );
     }
@@ -699,9 +699,9 @@ int XLALAntennaWeightCOMPLEX8TimeSeries (
       UINT4 time_index = start_index + k;
 
       /* weight the complex timeseries by the antenna patterns */
-      (*Faoft)->data->data[time_index].re = a*timeseries->data->data[time_index].re;
+      (*Faoft)->data->data[time_index].realf_FIXME = a*crealf(timeseries->data->data[time_index]);
       (*Faoft)->data->data[time_index].im = a*timeseries->data->data[time_index].im;
-      (*Fboft)->data->data[time_index].re = b*timeseries->data->data[time_index].re;
+      (*Fboft)->data->data[time_index].realf_FIXME = b*crealf(timeseries->data->data[time_index]);
       (*Fboft)->data->data[time_index].im = b*timeseries->data->data[time_index].im;
 
       }
@@ -1006,9 +1006,9 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
   /* this is annoying because the data is currently stored in a COMPLEX8 format so we can't just point to it */
   for (j=0;j<numTimeSamples_DET;j++) {
     t_DET->data[j] = start_DET + j*deltaT_DET;              /* fill in the uniform detector time vector */
-    FaFb[0]->data[j] = Faoft->data->data[j].re;
+    FaFb[0]->data[j] = crealf(Faoft->data->data[j]);
     FaFb[1]->data[j] = Faoft->data->data[j].im;
-    FaFb[2]->data[j] = Fboft->data->data[j].re;
+    FaFb[2]->data[j] = crealf(Fboft->data->data[j]);
     FaFb[3]->data[j] = Fboft->data->data[j].im;
   }
 
@@ -1095,9 +1095,9 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
       sin_cos_2PI_LUT ( &sinphase, &cosphase, -cycles );
 
       /* printf("j = %d t = %6.12f tb = %6.12f tDiff = %6.12f\n",j,detectortimes->data[k],start_SSB + idx*deltaT_SSB,tDiff); */
-      (*Faoft_RS)->data->data[idx].re = out_FaFb[0]->data[k]*cosphase - out_FaFb[1]->data[k]*sinphase;
+      (*Faoft_RS)->data->data[idx].realf_FIXME = out_FaFb[0]->data[k]*cosphase - out_FaFb[1]->data[k]*sinphase;
       (*Faoft_RS)->data->data[idx].im = out_FaFb[1]->data[k]*cosphase + out_FaFb[0]->data[k]*sinphase;
-      (*Fboft_RS)->data->data[idx].re = out_FaFb[2]->data[k]*cosphase - out_FaFb[3]->data[k]*sinphase;
+      (*Fboft_RS)->data->data[idx].realf_FIXME = out_FaFb[2]->data[k]*cosphase - out_FaFb[3]->data[k]*sinphase;
       (*Fboft_RS)->data->data[idx].im = out_FaFb[3]->data[k]*cosphase + out_FaFb[2]->data[k]*sinphase;
 
     }
@@ -1412,9 +1412,9 @@ XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	        /**< [in/
       sin_cos_2PI_LUT ( &fact_im, &fact_re, shiftCycles );
 
       /* apply the phase shift */
-      yRe = fact_re * (*x)->data->data[k].re - fact_im * (*x)->data->data[k].im;
-      yIm = fact_re * (*x)->data->data[k].im + fact_im * (*x)->data->data[k].re;
-      (*x)->data->data[k].re = yRe;
+      yRe = fact_re * crealf((*x)->data->data[k]) - fact_im * (*x)->data->data[k].im;
+      yIm = fact_re * (*x)->data->data[k].im + fact_im * crealf((*x)->data->data[k]);
+      (*x)->data->data[k].realf_FIXME = yRe;
       (*x)->data->data[k].im = yIm;
 
     } /* for k < numBins */
@@ -1511,14 +1511,14 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	                
       for (i=0;i<numDetectors;i++) {
 
 	/* apply phase correction to Fa and Fb */
-	REAL8 Fare = (*Fa)->data[i]->data->data[k].re*cosphase - (*Fa)->data[i]->data->data[k].im*sinphase;
-	REAL8 Faim = (*Fa)->data[i]->data->data[k].im*cosphase + (*Fa)->data[i]->data->data[k].re*sinphase;
-	REAL8 Fbre = (*Fb)->data[i]->data->data[k].re*cosphase - (*Fb)->data[i]->data->data[k].im*sinphase;
-	REAL8 Fbim = (*Fb)->data[i]->data->data[k].im*cosphase + (*Fb)->data[i]->data->data[k].re*sinphase;
+	REAL8 Fare = crealf((*Fa)->data[i]->data->data[k])*cosphase - (*Fa)->data[i]->data->data[k].im*sinphase;
+	REAL8 Faim = (*Fa)->data[i]->data->data[k].im*cosphase + crealf((*Fa)->data[i]->data->data[k])*sinphase;
+	REAL8 Fbre = crealf((*Fb)->data[i]->data->data[k])*cosphase - (*Fb)->data[i]->data->data[k].im*sinphase;
+	REAL8 Fbim = (*Fb)->data[i]->data->data[k].im*cosphase + crealf((*Fb)->data[i]->data->data[k])*sinphase;
 
-	(*Fa)->data[i]->data->data[k].re = Fare;
+	(*Fa)->data[i]->data->data[k].realf_FIXME = Fare;
 	(*Fa)->data[i]->data->data[k].im = Faim;
-	(*Fb)->data[i]->data->data[k].re = Fbre;
+	(*Fb)->data[i]->data->data[k].realf_FIXME = Fbre;
 	(*Fb)->data[i]->data->data[k].im = Fbim;
 
       } /* (i<numDetectors) */

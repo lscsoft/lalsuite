@@ -108,7 +108,7 @@ void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
     /* if bin zero is included should be treated properly because of factor 2 */
     
     while (n-- >0){
-      re = in1->re;
+      re = crealf(*in1);
       im = in1->im;
       *out = (re*re + im*im) *factor; /* factor 2 still missing if one-sided*/
       ++out;
@@ -175,7 +175,7 @@ void SFT2Periodogram (LALStatus  *status,
     /* if bin zero is included should be treated properly because of factor 2 */
     
     while (n-- >0){
-      re = in1->re;
+      re = crealf(*in1);
       im = in1->im;
       *out = (re*re + im*im) *factor; /* factor 2 still missing if one-sided*/
       ++out;

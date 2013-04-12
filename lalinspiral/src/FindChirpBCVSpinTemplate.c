@@ -304,7 +304,7 @@ LALFindChirpBCVSpinTemplate (
        * because the data is conjugated instead of the template in the
        * BCV code */
       expPsi[k].im =   -sin(psi1);
-      expPsi[k].re =   cos(psi1);
+      expPsi[k].realf_FIXME =   cos(psi1);
 
     }
 
@@ -316,14 +316,14 @@ LALFindChirpBCVSpinTemplate (
 
   for ( k = kmin; k < kmax; ++k )
   {
-          I += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re ;
-          J += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re *
+          I += ampBCVSpin1[k] * ampBCVSpin1[k] * crealf(wtilde[k]) ;
+          J += ampBCVSpin1[k] * ampBCVSpin1[k] * crealf(wtilde[k]) *
                   cos(beta * ampBCVSpin2[k] * deltaTto2by3);
-          K += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re *
+          K += ampBCVSpin1[k] * ampBCVSpin1[k] * crealf(wtilde[k]) *
                   sin(beta * ampBCVSpin2[k] * deltaTto2by3);
-          L += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re *
+          L += ampBCVSpin1[k] * ampBCVSpin1[k] * crealf(wtilde[k]) *
                   sin(2 * beta * ampBCVSpin2[k] * deltaTto2by3);
-          M += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re *
+          M += ampBCVSpin1[k] * ampBCVSpin1[k] * crealf(wtilde[k]) *
                   cos(2 * beta * ampBCVSpin2[k] * deltaTto2by3);
   }
 

@@ -3445,7 +3445,7 @@ void LALappsTracksearchRemoveHarmonics(
 
 	      for (i=0;i<referenceSignal->length;i++)
 		{
-		  referenceSignal->data[i].re=0;
+		  referenceSignal->data[i].realf_FIXME=0;
 		  referenceSignal->data[i].im=0;
 		}
 	      harmonicIndex=XLALCreateINT4Vector(tmpHarmonicCount);

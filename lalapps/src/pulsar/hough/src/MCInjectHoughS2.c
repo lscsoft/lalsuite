@@ -787,7 +787,7 @@ int main(int argc, char *argv[]){
 	for (i=0; (UINT4)i < sftlength; i++)  {
 	  /* sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re; */
 	  /* sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im; */
-	  sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re;
+	  sumSFT->realf_FIXME = crealf(*noise1SFT) + h0scale *crealf(*signal1SFT);
 	  sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im;
 	  ++noise1SFT;
 	  ++signal1SFT;

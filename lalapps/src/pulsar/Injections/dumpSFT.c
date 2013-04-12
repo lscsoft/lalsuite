@@ -144,7 +144,7 @@ main(int argc, char *argv[])
 	  SFTtype *sft = &(sfts->data[i]);;
 	  if ( ! uvar_noHeader ) printf (" Frequency_Hz     Real           Imaginary \n");
 	  for ( k=0; k < sft->data->length; k ++ )
-	    printf ( "%.9f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, sft->data->data[k].re, sft->data->data[k].im );
+	    printf ( "%.9f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, crealf(sft->data->data[k]), sft->data->data[k].im );
 	  
 	  printf ("\n");
 	  

@@ -156,7 +156,7 @@ int main( void )
   }
   for ( i=1, cData=cSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, cData++ )
   {
-    cData->re = i;
+    cData->realf_FIXME = i;
     cData->im = i+1;
     }
 
@@ -250,10 +250,10 @@ int main( void )
 
   for (j = 0; j < cSequenceIn->length;j++)
   {
-    if ((cSequenceIn->data[j].re ?
-	 fabs((cSequenceIn->data[j].re - cSequenceOut->data[j].re)
-	      /cSequenceIn->data[j].re)
-	 :fabs(cSequenceIn->data[j].re - cSequenceOut->data[j].re)) >
+    if ((crealf(cSequenceIn->data[j]) ?
+	 fabs((crealf(cSequenceIn->data[j]) - crealf(cSequenceOut->data[j]))
+	      /crealf(cSequenceIn->data[j]))
+	 :fabs(crealf(cSequenceIn->data[j]) - crealf(cSequenceOut->data[j]))) >
 	 READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",
@@ -1362,7 +1362,7 @@ int main( void )
 
   for ( i=1, cData=cSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, cData++ )
   {
-    cData->re = 0.005;
+    cData->realf_FIXME = 0.005;
     cData->im = 1;
   }
   strncpy(cTimeSeries.name,"Complex8 Time series",LALNameLength);
@@ -1451,10 +1451,10 @@ int main( void )
 
   for (j = 0; j < cSequenceIn->length;j++)
   {
-    if ((cSequenceIn->data[j].re ?
-	 fabs((cSequenceIn->data[j].re - cSequenceOut->data[j].re)
-	      /cSequenceIn->data[j].re)
-	 :fabs(cSequenceIn->data[j].re - cSequenceOut->data[j].re)) >
+    if ((crealf(cSequenceIn->data[j]) ?
+	 fabs((crealf(cSequenceIn->data[j]) - crealf(cSequenceOut->data[j]))
+	      /crealf(cSequenceIn->data[j]))
+	 :fabs(crealf(cSequenceIn->data[j]) - crealf(cSequenceOut->data[j]))) >
 	 READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",

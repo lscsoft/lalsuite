@@ -732,9 +732,9 @@ int main(int argc,char *argv[])
 		  FstatAtomVector *thisAtomList = Fstat.multiFstatAtoms->data[X];
 		  for ( alpha=0; alpha < thisAtomList->length; alpha ++ )
 		    {
-		      thisAtomList->data[alpha].Fa_alpha.re *= norm;
+		      thisAtomList->data[alpha].Fa_alpha.realf_FIXME *= norm;
 		      thisAtomList->data[alpha].Fa_alpha.im *= norm;
-		      thisAtomList->data[alpha].Fb_alpha.re *= norm;
+		      thisAtomList->data[alpha].Fb_alpha.realf_FIXME *= norm;
 		      thisAtomList->data[alpha].Fb_alpha.im *= norm;
 		    } /* for alpha < numSFTs */
 		} /* for X < numDet */

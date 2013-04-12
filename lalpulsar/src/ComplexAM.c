@@ -114,10 +114,10 @@ LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
 	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );
       }
 
-      ai.re = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->ePlus) );
+      ai.realf_FIXME = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->ePlus) );
       ai.im = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->ePlus) );
 
-      bi.re = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->eCross) );
+      bi.realf_FIXME = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->eCross) );
       bi.im = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->eCross) );
 
       coeffs->a->data[i] = ai;
@@ -325,15 +325,15 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
-	      ahat.re = Sqwi * amcoeX->a->data[alpha].re;
+	      ahat.re = Sqwi * crealf(amcoeX->a->data[alpha]);
 	      ahat.im = Sqwi * amcoeX->a->data[alpha].im;
-	      bhat.re= Sqwi * amcoeX->b->data[alpha].re;
+	      bhat.re= Sqwi * crealf(amcoeX->b->data[alpha]);
 	      bhat.im= Sqwi * amcoeX->b->data[alpha].im;
 
 	      /* *replace* original a(t), b(t) by noise-weighed version! */
-	      amcoeX->a->data[alpha].re = ahat.re;
+	      amcoeX->a->data[alpha].realf_FIXME = ahat.re;
 	      amcoeX->a->data[alpha].im = ahat.im;
-	      amcoeX->b->data[alpha].re = bhat.re;
+	      amcoeX->b->data[alpha].realf_FIXME = bhat.re;
 	      amcoeX->b->data[alpha].im = bhat.im;
 
 	      /* sum A, B, C, E on the fly */
@@ -356,9 +356,9 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	    {
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
-	      ahat.re = amcoeX->a->data[alpha].re;
+	      ahat.re = crealf(amcoeX->a->data[alpha]);
 	      ahat.im = amcoeX->a->data[alpha].im;
-	      bhat.re = amcoeX->b->data[alpha].re;
+	      bhat.re = crealf(amcoeX->b->data[alpha]);
 	      bhat.im = amcoeX->b->data[alpha].im;
 
 	      /* sum A, B, C, E on the fly */

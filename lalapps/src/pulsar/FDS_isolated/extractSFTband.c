@@ -299,7 +299,7 @@ int read_noise(LALStatus* status, int iSFT) {
 
   for (i=0;i<len2;i++){
 
-    fvec->data[i].re=norm*fvec->data[i].re;
+    fvec->data[i].realf_FIXME=norm*crealf(fvec->data[i]);
     fvec->data[i].im=norm*fvec->data[i].im;    
   }
 
@@ -358,7 +358,7 @@ int write_SFTS(LALStatus* status, int iSFT){
 
   for (i=0;i<fvec->length;i++){
 
-    rpw=fvec->data[i].re;
+    rpw=crealf(fvec->data[i]);
     ipw=fvec->data[i].im;
 
     errorcode=fwrite((void*)&rpw, sizeof(REAL4),1,fp);  

@@ -655,7 +655,7 @@ int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, 
       XLALDestroyREAL8VectorSequence( data );
       XLAL_ERROR( XLAL_EDATA );
     }
-    (*series)->data->data[row].re = mod * cos( arg );
+    (*series)->data->data[row].realf_FIXME = mod * cos( arg );
     (*series)->data->data[row].im = mod * sin( arg );
   }
 

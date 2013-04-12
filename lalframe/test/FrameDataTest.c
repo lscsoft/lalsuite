@@ -161,7 +161,7 @@ main (int argc, char *argv[])
 
         for (i = 0; i < response.data->length; ++i)
         {
-          fprintf (fp, "%d\t%e\t%e\n", i, response.data->data[i].re,
+          fprintf (fp, "%d\t%e\t%e\n", i, crealf(response.data->data[i]),
                    response.data->data[i].im);
         }
 

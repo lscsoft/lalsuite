@@ -222,12 +222,12 @@ LALFindChirpPTFFilterSegment (
     /* qtilde positive frequency, not DC or nyquist */
     for ( k = kmin; k < kmax ; ++k )
     {
-      r = inputData[k].re;
+      r = crealf(inputData[k]);
       s = inputData[k].im;
-      x = PTFQtilde[i * (numPoints / 2 + 1) + k].re;
+      x = crealf(PTFQtilde[i * (numPoints / 2 + 1) + k]);
       y = 0 - PTFQtilde[i * (numPoints / 2 + 1) + k].im; /* cplx conj */
 
-      qtilde[k].re = 2 * (r*x - s*y);
+      qtilde[k].realf_FIXME = 2 * (r*x - s*y);
       qtilde[k].im = 2 * (r*y + s*x);
     }
 
@@ -245,7 +245,7 @@ LALFindChirpPTFFilterSegment (
   {
     for (i = 0; i < 5; i++)
     {
-      v1[i] = PTFq[i * numPoints + j].re;
+      v1[i] = crealf(PTFq[i * numPoints + j]);
       v2[i] = PTFq[i * numPoints + j].im;
     }
     /* construct the vectors u[i] = B^(-1) v[i] */
@@ -271,7 +271,7 @@ LALFindChirpPTFFilterSegment (
     }
     max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
           * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
-    pft_snr[j].re = 2.0 * sqrt(max_eigen) / N;
+    pft_snr[j].realf_FIXME = 2.0 * sqrt(max_eigen) / N;
   } /* End of main loop over time */
 
 
@@ -297,7 +297,7 @@ LALFindChirpPTFFilterSegment (
 
     for ( j = 0; j < numPoints; ++j )
     {
-      params->rhosqVec->data->data[j] =  pft_snr[j].re * pft_snr[j].re;
+      params->rhosqVec->data->data[j] =  crealf(pft_snr[j]) * crealf(pft_snr[j]);
     }
   }
 

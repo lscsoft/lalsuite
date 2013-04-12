@@ -264,7 +264,7 @@ main( int argc, char *argv[] )
 
    for (i=0; i<SZEROPADANDFFTTESTC_LENGTH; ++i)
    {
-     expectedOutputDataData[i].re *= SZEROPADANDFFTTESTC_DELTAT;
+     expectedOutputDataData[i].realf_FIXME *= SZEROPADANDFFTTESTC_DELTAT;
      expectedOutputDataData[i].im *= SZEROPADANDFFTTESTC_DELTAT;
    }
 
@@ -673,10 +673,10 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("hBarTilde(0)=%g + %g i, should be %g\n",
-            goodOutput.data->data[0].re, goodOutput.data->data[0].im,
-            expectedOutputDataData[0].re);
+            crealf(goodOutput.data->data[0]), goodOutput.data->data[0].im,
+            crealf(expectedOutputDataData[0]));
    }
-   if ( fabs(goodOutput.data->data[0].re - expectedOutputDataData[0].re)
+   if ( fabs(crealf(goodOutput.data->data[0]) - crealf(expectedOutputDataData[0]))
         /* / expectedOutputDataData[0].re */> SZEROPADANDFFTTESTC_TOL
         || fabs(goodOutput.data->data[0].im) > SZEROPADANDFFTTESTC_TOL )
    {
@@ -694,10 +694,10 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n",
-              f, goodOutput.data->data[i].re, goodOutput.data->data[i].im,
-              expectedOutputDataData[i].re, expectedOutputDataData[i].im);
+              f, crealf(goodOutput.data->data[i]), goodOutput.data->data[i].im,
+              crealf(expectedOutputDataData[i]), expectedOutputDataData[i].im);
      }
-     if (fabs(goodOutput.data->data[i].re - expectedOutputDataData[i].re)
+     if (fabs(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> SZEROPADANDFFTTESTC_TOL
          || fabs(goodOutput.data->data[i].im - expectedOutputDataData[i].im)
          /* / expectedOutputDataData[0].re */> SZEROPADANDFFTTESTC_TOL)

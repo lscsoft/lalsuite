@@ -613,9 +613,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
           jFastMaxMod = -1;
           /* Since doppler shifts can move the signal by an unknown number of bins search the whole band for max modulus: */
           for(j=0;j<nBinsSFT;j++) {
-               sftMod = renorm*renorm*outputSFTs->data[i].data->data[j].re*outputSFTs->data[i].data->data[j].re + renorm*renorm*outputSFTs->data[i].data->data[j].im*outputSFTs->data[i].data->data[j].im;
+               sftMod = renorm*renorm*crealf(outputSFTs->data[i].data->data[j])*crealf(outputSFTs->data[i].data->data[j]) + renorm*renorm*outputSFTs->data[i].data->data[j].im*outputSFTs->data[i].data->data[j].im;
                sftMod = sqrt(sftMod);
-               fastSFTMod = fastOutputSFTs->data[i].data->data[j].re*fastOutputSFTs->data[i].data->data[j].re + fastOutputSFTs->data[i].data->data[j].im*fastOutputSFTs->data[i].data->data[j].im;
+               fastSFTMod = crealf(fastOutputSFTs->data[i].data->data[j])*crealf(fastOutputSFTs->data[i].data->data[j]) + fastOutputSFTs->data[i].data->data[j].im*fastOutputSFTs->data[i].data->data[j].im;
                fastSFTMod = sqrt(fastSFTMod);
                if (fabs(sftMod) > smallMod) {
                    tmpDiffSFTMod = fabs((sftMod - fastSFTMod)/sftMod);
@@ -682,7 +682,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
        /* 09/07/05 gam; Initialize fastOutputSFTs since only 2*Dterms bins are changed by LALFastGeneratePulsarSFTs */
        for (i = 0; i < numSFTs; i++) {
           for(j=0;j<nBinsSFT;j++) {
-             fastOutputSFTs->data[i].data->data[j].re = 0.0;
+             fastOutputSFTs->data[i].data->data[j].realf_FIXME = 0.0;
              fastOutputSFTs->data[i].data->data[j].im = 0.0;
           }
        }

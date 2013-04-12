@@ -1379,7 +1379,7 @@ int NormaliseSFTData(void)
       for (j=0;j<nbins;j++)               
 	  {
 	    SFTsqav=SFTsqav+
-	      SFTData[k]->fft->data->data[j].re * SFTData[k]->fft->data->data[j].re+
+	      crealf(SFTData[k]->fft->data->data[j]) * crealf(SFTData[k]->fft->data->data[j])+
 	      SFTData[k]->fft->data->data[j].im * SFTData[k]->fft->data->data[j].im;
 	  }
       SFTsqav=SFTsqav/(1.0*nbins);              /* Actual average of Square of SFT */
@@ -1398,7 +1398,7 @@ int NormaliseSFTData(void)
       /* loop over SFT data to Normalise it*/
       for (j=0;j<nbins;j++)               
 	{
-	  SFTData[k]->fft->data->data[j].re = N*SFTData[k]->fft->data->data[j].re; 
+	  SFTData[k]->fft->data->data[j].realf_FIXME = N*crealf(SFTData[k]->fft->data->data[j]); 
 	  SFTData[k]->fft->data->data[j].im = N*SFTData[k]->fft->data->data[j].im;
 	}
     } 
@@ -2267,7 +2267,7 @@ INT4 EstimatePSDLines(LALStatus *status)
     
     /* loop over SFT data to estimate noise */
     for (j=0;j<nbins;j++){
-      xre=SFTData[i]->fft->data->data[j].re;
+      xre=crealf(SFTData[i]->fft->data->data[j]);
       xim=SFTData[i]->fft->data->data[j].im;
       Sp->data[j]=Sp->data[j]+(REAL8)(xre*xre+xim*xim);
     }
@@ -2757,7 +2757,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       
       /* loop over SFT data to estimate noise */
       for (j=0;j<nbins;j++){
-	xre=SFTData[i]->fft->data->data[j].re;
+	xre=crealf(SFTData[i]->fft->data->data[j]);
 	xim=SFTData[i]->fft->data->data[j].im;
 	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
       }
@@ -2798,11 +2798,11 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
       for (j=0;j<nbins;j++){
-	xre=SFTData[i]->fft->data->data[j].re;
+	xre=crealf(SFTData[i]->fft->data->data[j]);
 	xim=SFTData[i]->fft->data->data[j].im;
 	xreNorm=N[j]*xre; 
 	ximNorm=N[j]*xim; 
-	SFTData[i]->fft->data->data[j].re = xreNorm;    
+	SFTData[i]->fft->data->data[j].realf_FIXME = xreNorm;    
 	SFTData[i]->fft->data->data[j].im = ximNorm;
 	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }

@@ -801,8 +801,8 @@ int correct_phase(void) {
   sinx=sin(x);
   for (i = 0; i < fvec->length; ++i){
     fvec1=fvec->data[i];
-    fvec->data[i].re=fvec1.re*cosx-fvec1.im*sinx;
-    fvec->data[i].im=fvec1.im*cosx+fvec1.re*sinx;
+    fvec->data[i].realf_FIXME=crealf(fvec1)*cosx-fvec1.im*sinx;
+    fvec->data[i].im=fvec1.im*cosx+crealf(fvec1)*sinx;
   }
 
   return 0;
@@ -907,8 +907,8 @@ int prepare_cwDetector(LALStatus* status){
   LALCCreateVector(status, &(cwDetector.transfer->data), 2);
 
   /* unit response function */
-  cwDetector.transfer->data->data[0].re = 1.0;
-  cwDetector.transfer->data->data[1].re = 1.0;
+  cwDetector.transfer->data->data[0].realf_FIXME = 1.0;
+  cwDetector.transfer->data->data[1].realf_FIXME = 1.0;
   cwDetector.transfer->data->data[0].im = 0.0;
   cwDetector.transfer->data->data[1].im = 0.0;
 
@@ -1271,7 +1271,7 @@ int read_and_add_freq_domain_noise(LALStatus* status, UINT4 iSFT) {
   norm=((REAL4)(fvec->length)/((REAL4)header.nsamples));
 
   for (i = 0; i < fvec->length; ++i) {
-    fvec->data[i].re += norm * fvecn->data[i].re;
+    fvec->data[i].realf_FIXME += norm * crealf(fvecn->data[i]);
     fvec->data[i].im += norm * fvecn->data[i].im;
   }
 
@@ -1359,7 +1359,7 @@ int write_SFTS(UINT4 iSFT){
 
   for (i=0;i<fvec->length;i++){
 
-    rpw = fvec->data[i].re;
+    rpw = crealf(fvec->data[i]);
     ipw = fvec->data[i].im;
 
     errorcode=fwrite((void*)&rpw, sizeof(REAL4),1,fp);

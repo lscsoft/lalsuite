@@ -196,9 +196,9 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 
 	    /* these four lines compute P*xtilde */
 	    Xalpha_k=Xalpha[sftIndex];
-	    realXP += Xalpha_k.re*realP;
+	    realXP += crealf(Xalpha_k)*realP;
 	    realXP -= Xalpha_k.im*imagP;
-	    imagXP += Xalpha_k.re*imagP;
+	    imagXP += crealf(Xalpha_k)*imagP;
 	    imagXP += Xalpha_k.im*realP;
 	  }
 

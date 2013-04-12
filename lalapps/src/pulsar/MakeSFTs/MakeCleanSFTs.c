@@ -2719,7 +2719,7 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     for (k=0; k<header.nsamples; k++)
     {
       rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].re;
+	* crealf(fftDataSingle->data[k+firstbin]);
       ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
 	* fftDataSingle->data[k+firstbin].im;
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
@@ -2858,11 +2858,11 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     singleDeltaT = ((REAL4)dataSingle.deltaT); /* 01/05/06 gam; and normalize SFTs using this below */
     for (k=0; k<nBins; k++)
     {
-      oneSFT->data->data[k].re = singleDeltaT*fftDataSingle->data[k+firstbin].re;
+      oneSFT->data->data[k].realf_FIXME = singleDeltaT*crealf(fftDataSingle->data[k+firstbin]);
       oneSFT->data->data[k].im = singleDeltaT*fftDataSingle->data[k+firstbin].im;
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(oneSFT->data->data[k].re) || !finite(oneSFT->data->data[k].im)) {
+        if (!finite(crealf(oneSFT->data->data[k])) || !finite(oneSFT->data->data[k].im)) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
@@ -2882,13 +2882,13 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     sureim=0;
     for (k=0; k<nBins; k++)
     {
-      oneSFT->data->data[k].re = doubleDeltaT*fftDataDouble->data[k+firstbin].re;
+      oneSFT->data->data[k].realf_FIXME = doubleDeltaT*fftDataDouble->data[k+firstbin].re;
       oneSFT->data->data[k].im = doubleDeltaT*fftDataDouble->data[k+firstbin].im;
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-      sureim+=(oneSFT->data->data[k].re)*(oneSFT->data->data[k].re)+(oneSFT->data->data[k].im)*(oneSFT->data->data[k].im); 
+      sureim+=(crealf(oneSFT->data->data[k]))*(crealf(oneSFT->data->data[k]))+(oneSFT->data->data[k].im)*(oneSFT->data->data[k].im); 
       
       #if CHECKFORINFINITEANDNANS
-        if (!finite(oneSFT->data->data[k].re) || !finite(oneSFT->data->data[k].im)) {
+        if (!finite(crealf(oneSFT->data->data[k])) || !finite(oneSFT->data->data[k].im)) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }

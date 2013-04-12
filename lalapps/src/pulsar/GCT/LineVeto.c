@@ -462,9 +462,9 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
   REAL8 mmatrixA = 0.0, mmatrixB = 0.0, mmatrixC = 0.0;
   REAL8 F = 0.0;
   COMPLEX8 Fa, Fb;
-  Fa.re = 0.0;
+  Fa.realf_FIXME = 0.0;
   Fa.im = 0.0;
-  Fb.re = 0.0;
+  Fb.realf_FIXME = 0.0;
   Fb.im = 0.0;
 
   for (Y = Ystart; Y <= Yend; Y++) {  /* loop through detectors */
@@ -482,9 +482,9 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
       mmatrixA += thisAtom->a2_alpha;
       mmatrixB += thisAtom->b2_alpha;
       mmatrixC += thisAtom->ab_alpha;
-      Fa.re    += thisAtom->Fa_alpha.re;
+      Fa.realf_FIXME    += crealf(thisAtom->Fa_alpha);
       Fa.im    += thisAtom->Fa_alpha.im;
-      Fb.re    += thisAtom->Fb_alpha.re;
+      Fb.realf_FIXME    += crealf(thisAtom->Fb_alpha);
       Fb.im    += thisAtom->Fb_alpha.im;
     } /* loop through SFTs */
 
@@ -492,7 +492,7 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 
   /* compute determinant and final Fstat (not twoF!) */
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQUARE(mmatrixC) );
-  F = Dinv * ( mmatrixB * ( SQUARE(Fa.re) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(Fb.re) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (Fa.re*Fb.re + Fa.im*Fb.im) );
+  F = Dinv * ( mmatrixB * ( SQUARE(crealf(Fa)) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(crealf(Fb)) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (crealf(Fa)*crealf(Fb) + Fa.im*Fb.im) );
 
   return(F);
 

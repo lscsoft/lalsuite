@@ -179,7 +179,7 @@ static REAL8 compute_template_variance(
   var = 0;
   for ( k = 0; k < stilde->data->length; ++k )
   {
-    REAL8 re = stilde->data->data[k].re;
+    REAL8 re = crealf(stilde->data->data[k]);
     REAL8 im = stilde->data->data[k].im;
     var += invspec->data->data[k] * (re*re + im*im);
   }

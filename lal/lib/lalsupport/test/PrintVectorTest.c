@@ -118,8 +118,8 @@ int main( void )
 
   LALCCreateVector( &status, &cVector, 8 );
   for ( n=cVector->length, c=cVector->data; n > 0 ; --n, ++c ) {
-    c->re = sinh(9.0*(4-n));
-    c->im = - 1 / (1e-30 + c->re);
+    c->realf_FIXME = sinh(9.0*(4-n));
+    c->im = - 1 / (1e-30 + crealf(*c));
   }
   LALCPrintVector(cVector);
 

@@ -974,13 +974,13 @@ int main(int argc,char *argv[]){
 	int errorcode1,errorcode2;
 
 	if (doubledata){
-	  REAL8 rpw=fvec->data[k+firstbin].re;
+	  REAL8 rpw=crealf(fvec->data[k+firstbin]);
 	  REAL8 ipw=fvec->data[k+firstbin].im;
 	  errorcode1=fwrite((void*)&rpw, sizeof(REAL8),1,fpsft);
 	  errorcode2=fwrite((void*)&ipw, sizeof(REAL8),1,fpsft);
 	}
 	else {
-	  REAL4 rpw=fvec->data[k+firstbin].re;
+	  REAL4 rpw=crealf(fvec->data[k+firstbin]);
 	  REAL4 ipw=fvec->data[k+firstbin].im;
 	  errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
 	  errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
