@@ -1557,7 +1557,7 @@ int WindowData(struct CommandLineArgsTag CLA)
         printf("\nExample dataDouble values after windowing data in WindowData:\n"); printExampleDataDouble();
     #endif  
 
-   if(testpao=1){
+   if(testpao==1){
      OUTpao=fopen("windowT.dat","w");
      for(k =0; k < N; k++)fprintf(OUTpao,"%23.16e\n",dataDouble.data->data[k]);
      fclose(OUTpao);
