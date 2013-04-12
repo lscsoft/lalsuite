@@ -2745,7 +2745,7 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     for (k=0; k<header.nsamples; k++)
     {
       rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].re;
+	* creal(fftDataDouble->data[k+firstbin]);
       ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
 	* fftDataDouble->data[k+firstbin].im;
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
@@ -2882,7 +2882,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     sureim=0;
     for (k=0; k<nBins; k++)
     {
-      oneSFT->data->data[k].realf_FIXME = doubleDeltaT*fftDataDouble->data[k+firstbin].re;
+      oneSFT->data->data[k].realf_FIXME = doubleDeltaT*creal(fftDataDouble->data[k+firstbin]);
       oneSFT->data->data[k].imagf_FIXME = doubleDeltaT*fftDataDouble->data[k+firstbin].im;
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       sureim+=(crealf(oneSFT->data->data[k]))*(crealf(oneSFT->data->data[k]))+(cimagf(oneSFT->data->data[k]))*(cimagf(oneSFT->data->data[k])); 

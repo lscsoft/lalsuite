@@ -293,7 +293,7 @@ int main( void )
 
   for ( i=1, zData=zSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, zData++ )
   {
-    zData->re = i/4.0;
+    zData->real_FIXME = i/4.0;
     zData->im = (i+1)/5.0;
   }
   zFrequencySeries.sampleUnits = lalDimensionlessUnit;
@@ -384,10 +384,10 @@ int main( void )
 
   for (j = 0; j < zSequenceIn->length;j++)
   {
-    if ((zSequenceIn->data[j].re ?
-	fabs((zSequenceIn->data[j].re - zSequenceOut->data[j].re)
-	     /zSequenceIn->data[j].re) :
-	fabs(zSequenceIn->data[j].re - zSequenceOut->data[j].re)) >
+    if ((creal(zSequenceIn->data[j]) ?
+	fabs((creal(zSequenceIn->data[j]) - creal(zSequenceOut->data[j]))
+	     /creal(zSequenceIn->data[j])) :
+	fabs(creal(zSequenceIn->data[j]) - creal(zSequenceOut->data[j]))) >
 	READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",
@@ -1025,7 +1025,7 @@ int main( void )
 
   for ( i=1, zData=zSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, zData++ )
   {
-    zData->re = 0.005;
+    zData->real_FIXME = 0.005;
     zData->im = 1;
   }
   strncpy(zTimeSeries.name,"Complex16 Time series",LALNameLength);
@@ -1119,10 +1119,10 @@ int main( void )
 
   for (j = 0; j < zSequenceIn->length;j++)
   {
-    if ((zSequenceIn->data[j].re ?
-	 fabs((zSequenceIn->data[j].re - zSequenceOut->data[j].re)
-	      /zSequenceIn->data[j].re)
-	 :fabs(zSequenceIn->data[j].re - zSequenceOut->data[j].re)) >
+    if ((creal(zSequenceIn->data[j]) ?
+	 fabs((creal(zSequenceIn->data[j]) - creal(zSequenceOut->data[j]))
+	      /creal(zSequenceIn->data[j]))
+	 :fabs(creal(zSequenceIn->data[j]) - creal(zSequenceOut->data[j]))) >
 	 READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",

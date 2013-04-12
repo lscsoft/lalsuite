@@ -109,8 +109,8 @@ int main( void )
 
   LALZCreateVector( &status, &zVector, 8 );
   for ( n=zVector->length, z=zVector->data; n > 0 ; --n, ++z ) {
-    z->re = sinh(90.0*(4-n));
-    z->im = - 1 / (1e-300 + z->re);
+    z->real_FIXME = sinh(90.0*(4-n));
+    z->im = - 1 / (1e-300 + creal(*z));
   }
   LALZPrintVector(zVector);
 

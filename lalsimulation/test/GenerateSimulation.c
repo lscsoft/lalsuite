@@ -298,7 +298,7 @@ static int dump_FD(FILE *f, COMPLEX16FrequencySeries *hptilde,
     for (i=0; i < hptilde->data->length; i++)
         fprintf(f, "%.16e %.16e %.16e %.16e %.16e\n",
                 hptilde->f0 + i * hptilde->deltaF,
-                dataPtr1[i].re, dataPtr1[i].im, dataPtr2[i].re, dataPtr2[i].im);
+                creal(dataPtr1[i]), dataPtr1[i].im, creal(dataPtr2[i]), dataPtr2[i].im);
     return 0;
 }
 
@@ -320,12 +320,12 @@ static int dump_FD2(FILE *f, COMPLEX16FrequencySeries *hptilde,
     REAL8 phaseUW1[hptilde->data->length], phaseUW2[hptilde->data->length];
     for (i=0; i < hptilde->data->length; i++)
     {
-        amp1[i] = sqrt(dataPtr1[i].re*dataPtr1[i].re
+        amp1[i] = sqrt(creal(dataPtr1[i])*creal(dataPtr1[i])
                 + dataPtr1[i].im*dataPtr1[i].im);
-        phase1[i] = atan2(dataPtr1[i].im, dataPtr1[i].re);
-        amp2[i] = sqrt(dataPtr2[i].re*dataPtr2[i].re
+        phase1[i] = atan2(dataPtr1[i].im, creal(dataPtr1[i]));
+        amp2[i] = sqrt(creal(dataPtr2[i])*creal(dataPtr2[i])
                 + dataPtr2[i].im*dataPtr2[i].im);
-        phase2[i] = atan2(dataPtr2[i].im, dataPtr2[i].re);
+        phase2[i] = atan2(dataPtr2[i].im, creal(dataPtr2[i]));
     }
     unwind_phase(phaseUW1, phase1, hptilde->data->length, threshold);
     unwind_phase(phaseUW2, phase2, hptilde->data->length, threshold);

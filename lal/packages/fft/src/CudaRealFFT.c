@@ -502,20 +502,20 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
   /* now unpack the results into the output vector */
 
   /* dc component */
-  output->data[0].re = tmp[0];
+  output->data[0].real_FIXME = tmp[0];
   output->data[0].im = 0.0;
 
   /* other components */
   for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size/2 rounded up */
   {
-    output->data[k].re = tmp[k];
+    output->data[k].real_FIXME = tmp[k];
     output->data[k].im = tmp[plan->size - k];
   }
 
   /* Nyquist frequency */
   if ( plan->size%2 == 0 ) /* n is even */
   {
-    output->data[plan->size/2].re = tmp[plan->size/2];
+    output->data[plan->size/2].real_FIXME = tmp[plan->size/2];
     output->data[plan->size/2].im = 0.0;
   }
 
@@ -554,18 +554,18 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
   /* unpack input into temporary array */
 
   /* dc component */
-  tmp[0] = input->data[0].re;
+  tmp[0] = creal(input->data[0]);
 
   /* other components */
   for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size / 2 rounded up */
   {
-    tmp[k]              = input->data[k].re;
+    tmp[k]              = creal(input->data[k]);
     tmp[plan->size - k] = input->data[k].im;
   }
 
   /* Nyquist component */
   if ( plan->size%2 == 0 ) /* n is even */
-    tmp[plan->size/2] = input->data[plan->size/2].re;
+    tmp[plan->size/2] = creal(input->data[plan->size/2]);
 
   /* perform the fft */
   fftw_execute_r2r( plan->plan, tmp, output->data );

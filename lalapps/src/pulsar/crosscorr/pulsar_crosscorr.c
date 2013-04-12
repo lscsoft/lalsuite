@@ -929,9 +929,9 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 
 		  for (i=0; i < (INT4)ualpha->length; i++) {
 		    	
-		    galphasq->data[counter] += SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im);
+		    galphasq->data[counter] += SQUARE(sigmasq->data[i] * creal(ualpha->data[i])) + SQUARE(sigmasq->data[i] * ualpha->data[i].im);
 
-		    galphare->data[counter] += (sigmasq->data[i] * ualpha->data[i].re);
+		    galphare->data[counter] += (sigmasq->data[i] * creal(ualpha->data[i]));
 		    galphaim->data[counter] += -(sigmasq->data[i] * ualpha->data[i].im);
 
 		  }
@@ -943,8 +943,8 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 	
 		  for (i=0; i < (INT4)ualpha->length; i++) {
 
- 		    galphasq->data[counter] += (SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im));
-		    galphare->data[counter] += (sigmasq->data[i] * ualpha->data[i].re);
+ 		    galphasq->data[counter] += (SQUARE(sigmasq->data[i] * creal(ualpha->data[i])) + SQUARE(sigmasq->data[i] * ualpha->data[i].im));
+		    galphare->data[counter] += (sigmasq->data[i] * creal(ualpha->data[i]));
 		    galphaim->data[counter] += -(sigmasq->data[i] * ualpha->data[i].im);
 
                   }

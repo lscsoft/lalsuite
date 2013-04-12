@@ -275,7 +275,7 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
     for (i=lower; i<=upper; ++i)
     {
 
-      dataReal     = dataPtr->freqData->data->data[i].re / deltaT;
+      dataReal     = creal(dataPtr->freqData->data->data[i]) / deltaT;
       dataImag     = dataPtr->freqData->data->data[i].im / deltaT;
       
       /* compute squared difference & 'chi-squared': */
@@ -613,8 +613,8 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-      plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
-                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].re;
+      plainTemplateReal = FplusScaled * creal(dataPtr->freqModelhPlus->data->data[i])  
+                          +  FcrossScaled * creal(dataPtr->freqModelhCross->data->data[i]);
       plainTemplateImag = FplusScaled * dataPtr->freqModelhPlus->data->data[i].im  
                           +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].im;
 
@@ -622,7 +622,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       /* (also un-do 1/deltaT scaling): */
       templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
       templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
-      dataReal     = dataPtr->freqData->data->data[i].re / deltaT;
+      dataReal     = creal(dataPtr->freqData->data->data[i]) / deltaT;
       dataImag     = dataPtr->freqData->data->data[i].im / deltaT;
       /* compute squared difference & 'chi-squared': */
       diffRe       = dataReal - templateReal;         // Difference in real parts...
@@ -887,8 +887,8 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       nu = degreesOfFreedom;
       /* (for now constant across frequencies)                                  */
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-      plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
-                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].re;
+      plainTemplateReal = FplusScaled * creal(dataPtr->freqModelhPlus->data->data[i])  
+                          +  FcrossScaled * creal(dataPtr->freqModelhCross->data->data[i]);
       plainTemplateImag = FplusScaled * dataPtr->freqModelhPlus->data->data[i].im  
                           +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].im;
 
@@ -896,7 +896,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       /* (also un-do 1/deltaT scaling): */
       templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
       templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
-      dataReal     = dataPtr->freqData->data->data[i].re / deltaT;
+      dataReal     = creal(dataPtr->freqData->data->data[i]) / deltaT;
       dataImag     = dataPtr->freqData->data->data[i].im / deltaT;
       /* compute squared difference & 'chi-squared': */
       diffRe       = dataReal - templateReal;         /* Difference in real parts...                     */
@@ -1026,7 +1026,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
     norm = 0.0;
     
     for (i=1; i < imax; ++i){  	  	  
-      norm += ((4.0 * deltaF * (freqModelResponse->data[i].re*freqModelResponse->data[i].re
+      norm += ((4.0 * deltaF * (creal(freqModelResponse->data[i])*creal(freqModelResponse->data[i])
               +freqModelResponse->data[i].im*freqModelResponse->data[i].im)) 
               / ifoPtr->oneSidedNoisePowerSpectrum->data->data[i]);
       segnorm[i] = norm;
@@ -1319,13 +1319,13 @@ FILE* file=fopen("TempSignal.dat", "w");
 
 	for(i=0; i<freqWaveform->length; i++){
 		/* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-		plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
-                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].re;
+		plainTemplateReal = FplusScaled * creal(dataPtr->freqModelhPlus->data->data[i])  
+                          +  FcrossScaled * creal(dataPtr->freqModelhCross->data->data[i]);
 		plainTemplateImag = FplusScaled * dataPtr->freqModelhPlus->data->data[i].im  
                           +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].im;
 
 		/* do time-shifting...             */
-		freqWaveform->data[i].re= (plainTemplateReal*re - plainTemplateImag*im);
+		freqWaveform->data[i].real_FIXME= (plainTemplateReal*re - plainTemplateImag*im);
 		freqWaveform->data[i].im= (plainTemplateReal*im + plainTemplateImag*re);		
 #ifdef DEBUG
 		fprintf(file, "%lg %lg \t %lg\n", f, freqWaveform->data[i].re, freqWaveform->data[i].im);
@@ -1363,7 +1363,7 @@ REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * dataPtr,
   upper = floor(dataPtr->fHigh / deltaF);
 	
   for (i=lower; i<=upper; ++i){  	  	  
-    overlap  += ((4.0*deltaF*(freqData1->data[i].re*freqData2->data[i].re+freqData1->data[i].im*freqData2->data[i].im)) 
+    overlap  += ((4.0*deltaF*(creal(freqData1->data[i])*creal(freqData2->data[i])+freqData1->data[i].im*freqData2->data[i].im)) 
                  / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
   }
 

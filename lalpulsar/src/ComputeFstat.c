@@ -413,9 +413,9 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 	}
 
 #ifndef LAL_NDEBUG
-      if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
+      if ( !finite(creal(FcX.Fa)) || !finite(FcX.Fa.im) || !finite(creal(FcX.Fb)) || !finite(FcX.Fb.im) ) {
 	XLALPrintError("XLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n",
-		      FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im );
+		      creal(FcX.Fa), FcX.Fa.im, creal(FcX.Fb), FcX.Fb.im );
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
 #endif
@@ -429,18 +429,18 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
          REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
 
 	 /* compute final single-IFO F-stat */
-	 retF.FX[X] = DdX_inv * (  BdX * (SQ(FcX.Fa.re) + SQ(FcX.Fa.im) )
-	                           + AdX * ( SQ(FcX.Fb.re) + SQ(FcX.Fb.im) )
-		                   - 2.0 * CdX *( FcX.Fa.re * FcX.Fb.re + FcX.Fa.im * FcX.Fb.im )
+	 retF.FX[X] = DdX_inv * (  BdX * (SQ(creal(FcX.Fa)) + SQ(FcX.Fa.im) )
+	                           + AdX * ( SQ(creal(FcX.Fb)) + SQ(FcX.Fb.im) )
+		                   - 2.0 * CdX *( creal(FcX.Fa) * creal(FcX.Fb) + FcX.Fa.im * FcX.Fb.im )
 		                   );
         } /* if returnSingleF */
 
       /* Fa = sum_X Fa_X */
-      retF.Fa.re += FcX.Fa.re;
+      retF.Fa.real_FIXME += creal(FcX.Fa);
       retF.Fa.im += FcX.Fa.im;
 
       /* Fb = sum_X Fb_X */
-      retF.Fb.re += FcX.Fb.re;
+      retF.Fb.real_FIXME += creal(FcX.Fb);
       retF.Fb.im += FcX.Fb.im;
 
     } /* for  X < numDetectors */
@@ -451,13 +451,13 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
    * therefore there is a factor of 2 difference with respect to the equations in JKS, which
    * where based on the single-sided PSD.
    */
-  retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) )
-		       + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
-		       - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
+  retF.F = Dd_inv * (  Bd * (SQ(creal(retF.Fa)) + SQ(retF.Fa.im) )
+		       + Ad * ( SQ(creal(retF.Fb)) + SQ(retF.Fb.im) )
+		       - 2.0 * Cd *( creal(retF.Fa) * creal(retF.Fb) + retF.Fa.im * retF.Fb.im )
 		       );
 
   if ( Ed != 0 ) /* extra term in RAA case */
-    retF.F += - 2.0 * Dd_inv * Ed *( - retF.Fa.re * retF.Fb.im + retF.Fa.im * retF.Fb.re ); /* -2 E Im(Fa Fb^* ) / D */
+    retF.F += - 2.0 * Dd_inv * Ed *( - creal(retF.Fa) * retF.Fb.im + retF.Fa.im * creal(retF.Fb) ); /* -2 E Im(Fa Fb^* ) / D */
 
   /* set correct F-stat reference time (taken from template 'doppler') [relevant only for phase of {Fa,Fb}] */
   retF.refTime = doppler->refTime;
@@ -574,9 +574,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
     if ( fkdot[spdnOrder] )
       break;
 
-  Fa.re = 0.0f;
+  Fa.real_FIXME = 0.0f;
   Fa.im = 0.0f;
-  Fb.re = 0.0f;
+  Fb.real_FIXME = 0.0f;
   Fb.im = 0.0f;
 
   a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
@@ -729,12 +729,12 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 
       Fa_alpha.realf_FIXME = a_alpha * realQXP;
       Fa_alpha.imagf_FIXME = a_alpha * imagQXP;
-      Fa.re += crealf(Fa_alpha);
+      Fa.real_FIXME += crealf(Fa_alpha);
       Fa.im += cimagf(Fa_alpha);
 
       Fb_alpha.realf_FIXME = b_alpha * realQXP;
       Fb_alpha.imagf_FIXME = b_alpha * imagQXP;
-      Fb.re += crealf(Fb_alpha);
+      Fb.real_FIXME += crealf(Fb_alpha);
       Fb.im += cimagf(Fb_alpha);
 
       /* store per-SFT F-stat 'atoms' for transient-CW search */
@@ -760,9 +760,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.re = norm * Fa.re;
+  FaFb->Fa.real_FIXME = norm * creal(Fa);
   FaFb->Fa.im = norm * Fa.im;
-  FaFb->Fb.re = norm * Fb.re;
+  FaFb->Fb.real_FIXME = norm * creal(Fb);
   FaFb->Fb.im = norm * Fb.im;
 
   return XLAL_SUCCESS;
@@ -848,9 +848,9 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
     if ( fkdot[spdnOrder] )
       break;
 
-  Fa.re = 0.0f;
+  Fa.real_FIXME = 0.0f;
   Fa.im = 0.0f;
-  Fb.re = 0.0f;
+  Fb.real_FIXME = 0.0f;
   Fb.im = 0.0f;
 
   a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
@@ -1001,11 +1001,11 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
       b_alpha = (*b_al);
 
       /* Fa contains complex conjugate of a */
-      Fa.re += crealf(a_alpha) * realQXP + cimagf(a_alpha) * imagQXP;
+      Fa.real_FIXME += crealf(a_alpha) * realQXP + cimagf(a_alpha) * imagQXP;
       Fa.im += crealf(a_alpha) * imagQXP - cimagf(a_alpha) * realQXP;
 
       /* Fb contains complex conjugate of b */
-      Fb.re += crealf(b_alpha) * realQXP + cimagf(b_alpha) * imagQXP;
+      Fb.real_FIXME += crealf(b_alpha) * realQXP + cimagf(b_alpha) * imagQXP;
       Fb.im += crealf(b_alpha) * imagQXP - cimagf(b_alpha) * realQXP;
 
       /* advance pointers over alpha */
@@ -1018,9 +1018,9 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.re = norm * Fa.re;
+  FaFb->Fa.real_FIXME = norm * creal(Fa);
   FaFb->Fa.im = norm * Fa.im;
-  FaFb->Fb.re = norm * Fb.re;
+  FaFb->Fb.real_FIXME = norm * creal(Fb);
   FaFb->Fb.im = norm * Fb.im;
 
   return XLAL_SUCCESS;
@@ -1103,9 +1103,9 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
     if ( fkdot[spdnOrder] )
       break;
 
-  Fa.re = 0.0f;
+  Fa.real_FIXME = 0.0f;
   Fa.im = 0.0f;
-  Fb.re = 0.0f;
+  Fb.real_FIXME = 0.0f;
   Fb.im = 0.0f;
 
   a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
@@ -1194,9 +1194,9 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      Fa.re += a_alpha * realQXP;
+      Fa.real_FIXME += a_alpha * realQXP;
       Fa.im += a_alpha * imagQXP;
-      Fb.re += b_alpha * realQXP;
+      Fb.real_FIXME += b_alpha * realQXP;
       Fb.im += b_alpha * imagQXP;
 
       /* advance pointers over alpha */
@@ -1209,9 +1209,9 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.re = Fa.re;
+  FaFb->Fa.real_FIXME = creal(Fa);
   FaFb->Fa.im = Fa.im;
-  FaFb->Fb.re = Fb.re;
+  FaFb->Fb.real_FIXME = creal(Fb);
   FaFb->Fb.im = Fb.im;
 
   return XLAL_SUCCESS;
@@ -1848,8 +1848,8 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
   }
 
   /* ----- fill vector x_mu */
-  gsl_vector_set (x_mu, 0,   Fstat->Fa.re );	/* x_1 */
-  gsl_vector_set (x_mu, 1,   Fstat->Fb.re ); 	/* x_2 */
+  gsl_vector_set (x_mu, 0,   creal(Fstat->Fa) );	/* x_1 */
+  gsl_vector_set (x_mu, 1,   creal(Fstat->Fb) ); 	/* x_2 */
   gsl_vector_set (x_mu, 2, - Fstat->Fa.im );	/* x_3 */
   gsl_vector_set (x_mu, 3, - Fstat->Fb.im );	/* x_4 */
 

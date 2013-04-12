@@ -2233,10 +2233,10 @@ XLALEOBWaveformEngine (
      XLAL_ERROR( XLAL_EFUNC );
    }
 
-   y_1 =   MultSphHarmP.re + MultSphHarmM.re;
+   y_1 =   creal(MultSphHarmP) + creal(MultSphHarmM);
    y_2 =   MultSphHarmM.im - MultSphHarmP.im;
    z1 = - MultSphHarmM.im - MultSphHarmP.im;
-   z2 =   MultSphHarmM.re - MultSphHarmP.re;
+   z2 =   creal(MultSphHarmM) - creal(MultSphHarmP);
 
 #if 0
    sprintf(message, "MultSphHarm2,+2 re=%10.5e im=%10.5e\n", MultSphHarmP.re, MultSphHarmP.im);

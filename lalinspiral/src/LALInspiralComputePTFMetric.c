@@ -297,25 +297,25 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
 
   for (k = 0; k < N / 2 + 1; ++k)
   {
-    fsig0->data[k].re = 0.0;
+    fsig0->data[k].real_FIXME = 0.0;
     fsig0->data[k].im = 0.0;
-    fsig1->data[k].re = 0.0;
+    fsig1->data[k].real_FIXME = 0.0;
     fsig1->data[k].im = 0.0;
     for (i = 0; i < 5; ++i)
     {
-      fsig0->data[k].re += P[i] * Qtilde[i].data[k].re;
+      fsig0->data[k].real_FIXME += P[i] * creal(Qtilde[i].data[k]);
       fsig0->data[k].im += P[i] * Qtilde[i].data[k].im;
     }
-    fsig1->data[k].re =   fsig0->data[k].im;
-    fsig1->data[k].im = - fsig0->data[k].re;
+    fsig1->data[k].real_FIXME =   fsig0->data[k].im;
+    fsig1->data[k].im = - creal(fsig0->data[k]);
   }
-  fsig1->data[0].re		= fsig0->data[0].re;
+  fsig1->data[0].real_FIXME		= creal(fsig0->data[0]);
   fsig1->data[0].im		= fsig0->data[0].im;
-  fsig1->data[N / 2].re = fsig0->data[N / 2].re;
+  fsig1->data[N / 2].real_FIXME = creal(fsig0->data[N / 2]);
   fsig1->data[N / 2].im = fsig0->data[N / 2].im;
   for (k = 0; k < N / 2 + 1; ++k)
   {
-    fsig->data[k].re = cos(phi0) * fsig0->data[k].re + sin(phi0) * fsig1->data[k].re;
+    fsig->data[k].real_FIXME = cos(phi0) * creal(fsig0->data[k]) + sin(phi0) * creal(fsig1->data[k]);
     fsig->data[k].im = cos(phi0) * fsig0->data[k].im + sin(phi0) * fsig1->data[k].im;
   }
 
@@ -327,33 +327,33 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   for (k = 0; k < N / 2 + 1; ++k)
   {
     /* t0 */
-    derivs->data[k].re = - LAL_TWOPI * deltaF * k * fsig->data[k].im;
-    derivs->data[k].im =   LAL_TWOPI * deltaF * k * fsig->data[k].re;
+    derivs->data[k].real_FIXME = - LAL_TWOPI * deltaF * k * fsig->data[k].im;
+    derivs->data[k].im =   LAL_TWOPI * deltaF * k * creal(fsig->data[k]);
     /* phi0 */
-    derivs->data[N / 2 + 1 + k].re = - sin(phi0) * fsig0->data[k].re + cos(phi0) * fsig1->data[k].re;
+    derivs->data[N / 2 + 1 + k].real_FIXME = - sin(phi0) * creal(fsig0->data[k]) + cos(phi0) * creal(fsig1->data[k]);
     derivs->data[N / 2 + 1 + k].im = - sin(phi0) * fsig0->data[k].im + cos(phi0) * fsig1->data[k].im;
     /* Theta */
-    derivs->data[N + 2 + k].re = 0.0;
+    derivs->data[N + 2 + k].real_FIXME = 0.0;
     derivs->data[N + 2 + k].im = 0.0;
     for (i = 0; i < 5; ++i)
     {
-      derivs->data[N + 2 + k].re += PdTh[i] * Qtilde[i].data[k].re;
+      derivs->data[N + 2 + k].real_FIXME += PdTh[i] * creal(Qtilde[i].data[k]);
       derivs->data[N + 2 + k].im += PdTh[i] * Qtilde[i].data[k].im;
     }
     /* Phi */
-    derivs->data[3 * N / 2 + 3 + k].re = 0.0;
+    derivs->data[3 * N / 2 + 3 + k].real_FIXME = 0.0;
     derivs->data[3 * N / 2 + 3 + k].im = 0.0;
     for (i = 0; i < 5; ++i)
     {
-      derivs->data[3 * N / 2 + 3 + k].re += PdPh[i] * Qtilde[i].data[k].re;
+      derivs->data[3 * N / 2 + 3 + k].real_FIXME += PdPh[i] * creal(Qtilde[i].data[k]);
       derivs->data[3 * N / 2 + 3 + k].im += PdPh[i] * Qtilde[i].data[k].im;
     }
     /* Psi */
-    derivs->data[2 * N + 4 + k].re = 0.0;
+    derivs->data[2 * N + 4 + k].real_FIXME = 0.0;
     derivs->data[2 * N + 4 + k].im = 0.0;
     for (i = 0; i < 5; ++i)
     {
-      derivs->data[2 * N + 4 + k].re += PdPs[i] * Qtilde[i].data[k].re;
+      derivs->data[2 * N + 4 + k].real_FIXME += PdPs[i] * creal(Qtilde[i].data[k]);
       derivs->data[2 * N + 4 + k].im += PdPs[i] * Qtilde[i].data[k].im;
     }
   }
@@ -369,14 +369,14 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     }
     for (k = 0; k < N / 2 + 1; ++k)
     {
-      derivs->data[i * (N / 2 + 1) + k].re = cos(phi0) * intrinsicderiv->data[k].re
+      derivs->data[i * (N / 2 + 1) + k].real_FIXME = cos(phi0) * creal(intrinsicderiv->data[k])
         + sin(phi0) * intrinsicderiv->data[k].im;
       derivs->data[i * (N / 2 + 1) + k].im = cos(phi0) * intrinsicderiv->data[k].im
-        - sin(phi0) * intrinsicderiv->data[k].re;
+        - sin(phi0) * creal(intrinsicderiv->data[k]);
     }
-    derivs->data[i * (N / 2 + 1)].re = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[0].re;
+    derivs->data[i * (N / 2 + 1)].real_FIXME = (cos(phi0) + sin(phi0)) * creal(intrinsicderiv->data[0]);
     derivs->data[i * (N / 2 + 1)].im = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[0].im;
-    derivs->data[i * (N / 2 + 1) + N / 2].re = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[N / 2].re;
+    derivs->data[i * (N / 2 + 1) + N / 2].real_FIXME = (cos(phi0) + sin(phi0)) * creal(intrinsicderiv->data[N / 2]);
     derivs->data[i * (N / 2 + 1) + N / 2].im = (cos(phi0) + sin(phi0)) * intrinsicderiv->data[N / 2].im;
   }
 
@@ -388,15 +388,15 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     for (j = 0; j < N / 2 + 1; ++j)
     {
       fprintf( derivsfile, "%f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f   %f\n",
-          derivs->data[j].re, derivs->data[j].im,
-          derivs->data[(N / 2 + 1) + j].re, derivs->data[(N / 2 + 1) + j].im,
-          derivs->data[2 * (N / 2 + 1) + j].re, derivs->data[2 * (N / 2 + 1) + j].im,
-          derivs->data[3 * (N / 2 + 1) + j].re, derivs->data[3 * (N / 2 + 1) + j].im,
-          derivs->data[4 * (N / 2 + 1) + j].re, derivs->data[4 * (N / 2 + 1) + j].im,
-          derivs->data[5 * (N / 2 + 1) + j].re, derivs->data[5 * (N / 2 + 1) + j].im,
-          derivs->data[6 * (N / 2 + 1) + j].re, derivs->data[6 * (N / 2 + 1) + j].im,
-          derivs->data[7 * (N / 2 + 1) + j].re, derivs->data[7 * (N / 2 + 1) + j].im,
-          derivs->data[8 * (N / 2 + 1) + j].re, derivs->data[8 * (N / 2 + 1) + j].im);
+          creal(derivs->data[j]), derivs->data[j].im,
+          creal(derivs->data[(N / 2 + 1) + j]), derivs->data[(N / 2 + 1) + j].im,
+          creal(derivs->data[2 * (N / 2 + 1) + j]), derivs->data[2 * (N / 2 + 1) + j].im,
+          creal(derivs->data[3 * (N / 2 + 1) + j]), derivs->data[3 * (N / 2 + 1) + j].im,
+          creal(derivs->data[4 * (N / 2 + 1) + j]), derivs->data[4 * (N / 2 + 1) + j].im,
+          creal(derivs->data[5 * (N / 2 + 1) + j]), derivs->data[5 * (N / 2 + 1) + j].im,
+          creal(derivs->data[6 * (N / 2 + 1) + j]), derivs->data[6 * (N / 2 + 1) + j].im,
+          creal(derivs->data[7 * (N / 2 + 1) + j]), derivs->data[7 * (N / 2 + 1) + j].im,
+          creal(derivs->data[8 * (N / 2 + 1) + j]), derivs->data[8 * (N / 2 + 1) + j].im);
     }
   }
   fclose(derivsfile);
@@ -420,13 +420,13 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     {
       for (k = 0; k < N / 2 + 1; ++k)
       {
-        tempnormtilde->data[k].re =
-          ( derivs->data[i * (N/2+1) + k].re * derivs->data[j * (N/2+1) + k].re
+        tempnormtilde->data[k].real_FIXME =
+          ( creal(derivs->data[i * (N/2+1) + k]) * creal(derivs->data[j * (N/2+1) + k])
             + derivs->data[i * (N/2+1) + k].im * derivs->data[j * (N/2+1) + k].im)
           * invpsd->data[k];
         tempnormtilde->data[k].im =
-          ( derivs->data[i * (N/2+1) + k].im * derivs->data[j * (N/2+1) + k].re
-            - derivs->data[i * (N/2+1) + k].re * derivs->data[j * (N/2+1) + k].im)
+          ( derivs->data[i * (N/2+1) + k].im * creal(derivs->data[j * (N/2+1) + k])
+            - creal(derivs->data[i * (N/2+1) + k]) * derivs->data[j * (N/2+1) + k].im)
           * invpsd->data[k];
       }
       /* Inverse Fourier of tempnorm */
@@ -938,12 +938,12 @@ INT4 XLALInspiralComputePTFWDeriv (
 	    invpsd = 0.;
 	  else
 		invpsd = 1.0 / psd->data->data[k];
-	  derivpowertilde->data[k].re =
-				(derivtilde->data[k].re * derivtilde->data[k].re
+	  derivpowertilde->data[k].real_FIXME =
+				(creal(derivtilde->data[k]) * creal(derivtilde->data[k])
 				+derivtilde->data[k].im * derivtilde->data[k].im) * invpsd;
 	  derivpowertilde->data[k].im = 0;
-	  derivdiffpowertilde->data[k].re =
-				(derivdifftilde->data[k].re * derivdifftilde->data[k].re
+	  derivdiffpowertilde->data[k].real_FIXME =
+				(creal(derivdifftilde->data[k]) * creal(derivdifftilde->data[k])
 				+derivdifftilde->data[k].im * derivdifftilde->data[k].im) * invpsd;
 	  derivdiffpowertilde->data[k].im = 0;
 	}
@@ -961,7 +961,7 @@ INT4 XLALInspiralComputePTFWDeriv (
 	{
 	  for (k = 0; k < N / 2 + 1; ++k)
 	  {
-	    Wderiv->data[k].re = derivtilde->data[k].re;
+	    Wderiv->data[k].real_FIXME = creal(derivtilde->data[k]);
 		Wderiv->data[k].im = derivtilde->data[k].im;
 	  }
 	  break;

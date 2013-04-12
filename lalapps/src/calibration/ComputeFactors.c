@@ -345,28 +345,28 @@ FILE *fpAlpha=NULL;
       params.asQ = &asq;
       params.exc = &exc;
       params.lineFrequency = CLA.f;
-      params.openloop.re =  CLA.G0Re;
+      params.openloop.real_FIXME =  CLA.G0Re;
       params.openloop.im =  CLA.G0Im;
-      params.digital.re = CLA.D0Re;
+      params.digital.real_FIXME = CLA.D0Re;
       params.digital.im = CLA.D0Im;
-      params.whitener.re = CLA.W0Re;
+      params.whitener.real_FIXME = CLA.W0Re;
       params.whitener.im = CLA.W0Im;
 
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
 
       fprintf(fpAlpha,"%18.9Lf %f %f %f %f %f %f %f %f %f %f %f %f \n",gtime,
-	      factors.alpha.re,factors.alpha.im,
-	      factors.beta.re,factors.beta.im,
-	      factors.alphabeta.re,factors.alphabeta.im,
-	      factors.asq.re*2/CLA.t,factors.asq.im*2/CLA.t,
-	      factors.darm.re*2/CLA.t,factors.darm.im*2/CLA.t,
-	      factors.exc.re*2/CLA.t,factors.exc.im*2/CLA.t);
+	      creal(factors.alpha),factors.alpha.im,
+	      creal(factors.beta),factors.beta.im,
+	      creal(factors.alphabeta),factors.alphabeta.im,
+	      creal(factors.asq)*2/CLA.t,factors.asq.im*2/CLA.t,
+	      creal(factors.darm)*2/CLA.t,factors.darm.im*2/CLA.t,
+	      creal(factors.exc)*2/CLA.t,factors.exc.im*2/CLA.t);
 
       /* put factors into series for frame output */
-      a.data[2*m]    = factors.alpha.re;
+      a.data[2*m]    = creal(factors.alpha);
       a.data[2*m+1]  = factors.alpha.im;
-      ab.data[2*m]   = factors.alphabeta.re;
+      ab.data[2*m]   = creal(factors.alphabeta);
       ab.data[2*m+1] = factors.alphabeta.im;
 
       gtime += CLA.t;

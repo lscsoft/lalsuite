@@ -379,9 +379,9 @@ main(int argc, char *argv[])
     SFTvect = NULL;
 
     LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
-    weights->data[0].re = (  2.0 / 3.0 );
-    weights->data[1].re = ( -1.0 / 3.0 );
-    weights->data[2].re = ( -1.0 / 3.0 );
+    weights->data[0].real_FIXME = (  2.0 / 3.0 );
+    weights->data[1].real_FIXME = ( -1.0 / 3.0 );
+    weights->data[2].real_FIXME = ( -1.0 / 3.0 );
     weights->data[0].im = 0.0;
     weights->data[1].im = 0.0;
     weights->data[2].im = 0.0;
@@ -420,9 +420,9 @@ main(int argc, char *argv[])
     SFTvect = NULL;
 
     LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
-    weights->data[0].re = 0;
-    weights->data[1].re = (-1.0 * LAL_SQRT1_3);
-    weights->data[2].re =         LAL_SQRT1_3;
+    weights->data[0].real_FIXME = 0;
+    weights->data[1].real_FIXME = (-1.0 * LAL_SQRT1_3);
+    weights->data[2].real_FIXME =         LAL_SQRT1_3;
     weights->data[0].im = 0.0;
     weights->data[1].im = 0.0;
     weights->data[2].im = 0.0;
@@ -461,9 +461,9 @@ main(int argc, char *argv[])
     SFTvect = NULL;
 
     LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
-    weights->data[0].re = ( LAL_SQRT2 / 3.0 );
-    weights->data[1].re = ( LAL_SQRT2 / 3.0 );
-    weights->data[2].re = ( LAL_SQRT2 / 3.0 );
+    weights->data[0].real_FIXME = ( LAL_SQRT2 / 3.0 );
+    weights->data[1].real_FIXME = ( LAL_SQRT2 / 3.0 );
+    weights->data[2].real_FIXME = ( LAL_SQRT2 / 3.0 );
     weights->data[0].im = 0.0;
     weights->data[1].im = 0.0;
     weights->data[2].im = 0.0;

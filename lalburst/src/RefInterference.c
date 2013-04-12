@@ -255,13 +255,13 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
   ampB = pow(mod2,inv2k);
   phB  = phaseI*invk;
 
-  b1t->data[0].re = ampB * cos(phB);
+  b1t->data[0].real_FIXME = ampB * cos(phB);
   b1t->data[0].im = ampB * sin(phB);
 
   invarb->data[0] = px*mod2;
   sden->data[0]   = invarb->data[0];
 
-  snum->data[0].realf_FIXME = b1t->data[0].re * invarb->data[0];
+  snum->data[0].realf_FIXME = creal(b1t->data[0]) * invarb->data[0];
   snum->data[0].imagf_FIXME = b1t->data[0].im * invarb->data[0];
 
 
@@ -288,13 +288,13 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
     ampB = pow(mod2,inv2k);
 
-    b1t->data[i].re = ampB * cos(phB);
+    b1t->data[i].real_FIXME = ampB * cos(phB);
     b1t->data[i].im = ampB * sin(phB);
 
     invarb->data[i] = px*mod2;
     sden->data[i] = invarb->data[i];
 
-    snum->data[i].realf_FIXME = b1t->data[i].re * invarb->data[i];
+    snum->data[i].realf_FIXME = creal(b1t->data[i]) * invarb->data[i];
     snum->data[i].imagf_FIXME = b1t->data[i].im * invarb->data[i];
   }
 
@@ -370,16 +370,16 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     ampB = pow(mod2,inv2k);
     phB = phaseI*invk;
 
-    bt->data[0].re = ampB * cos(phB);
+    bt->data[0].real_FIXME = ampB * cos(phB);
     bt->data[0].im = ampB * sin(phB);
 
     /* initialize calculation of Lambda_k */
-    br =  bt->data[0].re;
+    br =  creal(bt->data[0]);
     bi =  bt->data[0].im;
-    dr =  b1t->data[0].re;
+    dr =  creal(b1t->data[0]);
     di =  b1t->data[0].im;
 
-    lambdan.re =  br*dr + bi*di;
+    lambdan.real_FIXME =  br*dr + bi*di;
     lambdan.im = -dr*bi + br*di;
     lambdad    =  br*br + bi*bi;
 
@@ -408,16 +408,16 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
       ampB = pow(mod2,inv2k);
 
-      bt->data[i].re = ampB * cos(phB);
+      bt->data[i].real_FIXME = ampB * cos(phB);
       bt->data[i].im = ampB * sin(phB);
 
       /* for the calculation of Lambda_k */
-      br =  bt->data[i].re;
+      br =  creal(bt->data[i]);
       bi =  bt->data[i].im;
-      dr =  b1t->data[i].re;
+      dr =  creal(b1t->data[i]);
       di =  b1t->data[i].im;
 
-      lambdan.re +=  br*dr + bi*di;
+      lambdan.real_FIXME +=  br*dr + bi*di;
       lambdan.im += -dr*bi + br*di;
       lambdad    +=  br*br + bi*bi;
 
@@ -426,14 +426,14 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     }
 
     /* update  sden and snum */
-    lambda.re = lambdan.re/lambdad;
+    lambda.real_FIXME = creal(lambdan)/lambdad;
     lambda.im = lambdan.im/lambdad;
 
     for(i=0; i< n; ++i) {
-      br =  bt->data[i].re;
+      br =  creal(bt->data[i]);
       bi =  bt->data[i].im;
-      snum->data[i].realf_FIXME += (br*lambda.re - bi*lambda.im) * invarb->data[i];
-      snum->data[i].imagf_FIXME += (br*lambda.im + bi*lambda.re) * invarb->data[i];
+      snum->data[i].realf_FIXME += (br*creal(lambda) - bi*lambda.im) * invarb->data[i];
+      snum->data[i].imagf_FIXME += (br*lambda.im + bi*creal(lambda)) * invarb->data[i];
       sden->data[i]    += invarb->data[i];
     }
 

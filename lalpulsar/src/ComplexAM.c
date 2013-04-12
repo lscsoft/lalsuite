@@ -325,22 +325,22 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
-	      ahat.re = Sqwi * crealf(amcoeX->a->data[alpha]);
+	      ahat.real_FIXME = Sqwi * crealf(amcoeX->a->data[alpha]);
 	      ahat.im = Sqwi * cimagf(amcoeX->a->data[alpha]);
-	      bhat.re= Sqwi * crealf(amcoeX->b->data[alpha]);
+	      bhat.real_FIXME= Sqwi * crealf(amcoeX->b->data[alpha]);
 	      bhat.im= Sqwi * cimagf(amcoeX->b->data[alpha]);
 
 	      /* *replace* original a(t), b(t) by noise-weighed version! */
-	      amcoeX->a->data[alpha].realf_FIXME = ahat.re;
+	      amcoeX->a->data[alpha].realf_FIXME = creal(ahat);
 	      amcoeX->a->data[alpha].imagf_FIXME = ahat.im;
-	      amcoeX->b->data[alpha].realf_FIXME = bhat.re;
+	      amcoeX->b->data[alpha].realf_FIXME = creal(bhat);
 	      amcoeX->b->data[alpha].imagf_FIXME = bhat.im;
 
 	      /* sum A, B, C, E on the fly */
-	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;
-	      Bd += bhat.re * bhat.re + bhat.im * bhat.im;
-	      Cd += ahat.re * bhat.re + ahat.im * bhat.im;
-	      Ed += ahat.re * bhat.im - ahat.im * bhat.re;
+	      Ad += creal(ahat) * creal(ahat) + ahat.im * ahat.im;
+	      Bd += creal(bhat) * creal(bhat) + bhat.im * bhat.im;
+	      Cd += creal(ahat) * creal(bhat) + ahat.im * bhat.im;
+	      Ed += creal(ahat) * bhat.im - ahat.im * creal(bhat);
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
       multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
@@ -356,16 +356,16 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	    {
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
-	      ahat.re = crealf(amcoeX->a->data[alpha]);
+	      ahat.real_FIXME = crealf(amcoeX->a->data[alpha]);
 	      ahat.im = cimagf(amcoeX->a->data[alpha]);
-	      bhat.re = crealf(amcoeX->b->data[alpha]);
+	      bhat.real_FIXME = crealf(amcoeX->b->data[alpha]);
 	      bhat.im = cimagf(amcoeX->b->data[alpha]);
 
 	      /* sum A, B, C, E on the fly */
-	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;
-	      Bd += bhat.re * bhat.re + bhat.im * bhat.im;
-	      Cd += ahat.re * bhat.re + ahat.im * bhat.im;
-	      Ed += ahat.re * bhat.im - ahat.im * bhat.re;
+	      Ad += creal(ahat) * creal(ahat) + ahat.im * ahat.im;
+	      Bd += creal(bhat) * creal(bhat) + bhat.im * bhat.im;
+	      Cd += creal(ahat) * creal(bhat) + ahat.im * bhat.im;
+	      Ed += creal(ahat) * bhat.im - ahat.im * creal(bhat);
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
 

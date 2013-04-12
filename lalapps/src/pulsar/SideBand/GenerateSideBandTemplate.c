@@ -320,7 +320,7 @@ int main(int argc,char *argv[])
   for (i=0;i<(INT4)Nbins;i++) {
     fprintf(fp,"%16.12f %6.9f %6.9f\n",
 	    TParams->freqsamples->data[i],
-	    Template->fourier->data[i].re,
+	    creal(Template->fourier->data[i]),
 	    Template->fourier->data[i].im);
   }
   fclose(fp);

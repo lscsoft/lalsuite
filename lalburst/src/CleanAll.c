@@ -159,7 +159,7 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
   /*     Removing the fundamental harmonic         */
   /* -------------------------------------------   */
 
-  rhon.re = 0.0;
+  rhon.real_FIXME = 0.0;
   rhon.im = 0.0;
   rhod    = 0.0;
 
@@ -167,16 +167,16 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
     mr = crealf(m[i]);
     mi = cimagf(m[i]);
 
-    rhon.re +=  x[i]*mr;
+    rhon.real_FIXME +=  x[i]*mr;
     rhon.im += -x[i]*mi;
     rhod    +=  mr*mr + mi*mi;
   }
 
-  rho.re = rhon.re / rhod;
+  rho.real_FIXME = creal(rhon) / rhod;
   rho.im = rhon.im / rhod;
 
   for (i=0; i<n; ++i) {
-    xc[i] = x[i] - 2.0*(rho.re * crealf(m[i]) - rho.im * cimagf(m[i]) );
+    xc[i] = x[i] - 2.0*(creal(rho) * crealf(m[i]) - rho.im * cimagf(m[i]) );
   }
 
 
@@ -209,7 +209,7 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
     }
 
     for(j=2; j<= maxH; ++j) {
-      rhon.re = 0.0;
+      rhon.real_FIXME = 0.0;
       rhon.im = 0.0;
       rhod    = 0.0;
 
@@ -217,21 +217,21 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
 	/* calculation of m^j(t) for a fixed t */
 	amj = pow( ampM2->data[i], 0.5*j);
 	phj = j * phaM->data[i];
-	mj->data[i].re = amj * cos(phj);
-	mr =  mj->data[i].re;
+	mj->data[i].real_FIXME = amj * cos(phj);
+	mr =  creal(mj->data[i]);
 	mj->data[i].im = amj * sin(phj);
 	mi =  mj->data[i].im;
 
-	rhon.re +=  xc[i]*mr;
+	rhon.real_FIXME +=  xc[i]*mr;
 	rhon.im += -xc[i]*mi;
 	rhod    +=  mr*mr + mi*mi;
       }
 
-      rho.re = rhon.re / rhod;
+      rho.real_FIXME = creal(rhon) / rhod;
       rho.im = rhon.im / rhod;
 
      for (i=0; i<n; ++i) {
-       xc[i] += - 2.0*(rho.re * mj->data[i].re - rho.im * mj->data[i].im );
+       xc[i] += - 2.0*(creal(rho) * creal(mj->data[i]) - rho.im * mj->data[i].im );
      }
 
     } /* closes for all harmonics */

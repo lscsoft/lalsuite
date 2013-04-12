@@ -1000,9 +1000,9 @@ ReadData( LALStatus *status, /*!< LAL status pointer */
     if( ( ptr = fgets(buff,sizeof(buff),fpobsv) ) == NULL ) break;
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqObsv->data[irec]),
-		   &(FaFbPair->FaFbObsv->Fa[irec].re),
+		   &(creal(FaFbPair->FaFbObsv->Fa[irec])),
 		   &(FaFbPair->FaFbObsv->Fa[irec].im),
-		   &(FaFbPair->FaFbObsv->Fb[irec].re),
+		   &(creal(FaFbPair->FaFbObsv->Fb[irec])),
 		   &(FaFbPair->FaFbObsv->Fb[irec].im),
 		   &(FaFbPair->FaFbObsv->F[irec])
 		   );
@@ -1021,9 +1021,9 @@ ReadData( LALStatus *status, /*!< LAL status pointer */
     if( ( ptr = fgets(buff,sizeof(buff),fptest) ) == NULL ) break;
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqTest->data[irec]),
-		   &(FaFbPair->FaFbTest->Fa[irec].re),
+		   &(creal(FaFbPair->FaFbTest->Fa[irec])),
 		   &(FaFbPair->FaFbTest->Fa[irec].im),
-		   &(FaFbPair->FaFbTest->Fb[irec].re),
+		   &(creal(FaFbPair->FaFbTest->Fb[irec])),
 		   &(FaFbPair->FaFbTest->Fb[irec].im),
 		   &(FaFbPair->FaFbTest->F[irec])
 		   );
@@ -1118,9 +1118,9 @@ ComputeVetoStatisticCore( LALStatus *status, /*!< LAL status pointer */
       jindO = irec * indexStepO;
       jindT = irec * indexStepT + indexOffset;
 
-      RFa = FaFbPair->FaFbObsv->Fa[jindO].re - FaFbPair->FaFbTest->Fa[jindT].re;
+      RFa = creal(FaFbPair->FaFbObsv->Fa[jindO]) - creal(FaFbPair->FaFbTest->Fa[jindT]);
       IFa = FaFbPair->FaFbObsv->Fa[jindO].im - FaFbPair->FaFbTest->Fa[jindT].im;
-      RFb = FaFbPair->FaFbObsv->Fb[jindO].re - FaFbPair->FaFbTest->Fb[jindT].re;
+      RFb = creal(FaFbPair->FaFbObsv->Fb[jindO]) - creal(FaFbPair->FaFbTest->Fb[jindT]);
       IFb = FaFbPair->FaFbObsv->Fb[jindO].im - FaFbPair->FaFbTest->Fb[jindT].im;
 
       FaSq  = RFa*RFa + IFa*IFa;
@@ -1138,9 +1138,9 @@ ComputeVetoStatisticCore( LALStatus *status, /*!< LAL status pointer */
       jindO = irec * indexStepO - indexOffset;
       jindT = irec * indexStepT; 
 
-      RFa = FaFbPair->FaFbObsv->Fa[jindO].re - FaFbPair->FaFbTest->Fa[jindT].re;
+      RFa = creal(FaFbPair->FaFbObsv->Fa[jindO]) - creal(FaFbPair->FaFbTest->Fa[jindT]);
       IFa = FaFbPair->FaFbObsv->Fa[jindO].im - FaFbPair->FaFbTest->Fa[jindT].im;
-      RFb = FaFbPair->FaFbObsv->Fb[jindO].re - FaFbPair->FaFbTest->Fb[jindT].re;
+      RFb = creal(FaFbPair->FaFbObsv->Fb[jindO]) - creal(FaFbPair->FaFbTest->Fb[jindT]);
       IFb = FaFbPair->FaFbObsv->Fb[jindO].im - FaFbPair->FaFbTest->Fb[jindT].im;
 
       FaSq  = RFa*RFa + IFa*IFa;

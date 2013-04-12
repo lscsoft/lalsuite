@@ -123,8 +123,8 @@ typedef double complex COMPLEX16;   /**< Double-precision floating-point complex
 typedef struct tagCOMPLEX8 { REAL4 realf_FIXME; REAL4 imagf_FIXME; } COMPLEX8;
 #define crealf(z) ((z).realf_FIXME)
 #define cimagf(z) ((z).imagf_FIXME)
-typedef struct tagCOMPLEX16 { REAL8 re; REAL8 im; } COMPLEX16;
-#define creal(z) ((z).re)
+typedef struct tagCOMPLEX16 { REAL8 real_FIXME; REAL8 im; } COMPLEX16;
+#define creal(z) ((z).real_FIXME)
 #define cimag(z) ((z).im)
 /** \endcond */
 

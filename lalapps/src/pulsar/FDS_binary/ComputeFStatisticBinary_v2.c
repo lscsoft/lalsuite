@@ -740,8 +740,8 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
       irec=maxIndex[jrec];
 
-      A1 =  2.0*( B * Fstat.Fa[irec].re - C * Fstat.Fb[irec].re) / D;
-      A2 =  2.0*( A * Fstat.Fb[irec].re - C * Fstat.Fa[irec].re) / D;
+      A1 =  2.0*( B * creal(Fstat.Fa[irec]) - C * creal(Fstat.Fb[irec])) / D;
+      A2 =  2.0*( A * creal(Fstat.Fb[irec]) - C * creal(Fstat.Fa[irec])) / D;
       A3 = - 2.0*( B * Fstat.Fa[irec].im - C * Fstat.Fb[irec].im) / D;
       A4 = - 2.0*( A * Fstat.Fb[irec].im - C * Fstat.Fa[irec].im) / D;
 
@@ -1027,9 +1027,9 @@ int writeFaFb(INT4 *maxIndex)
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
 	      uvar_Freq+ind*GV.dFreq,
-	      Fstat.Fa[ind].re/sqrt(GV.SFTno)*bias,
+	      creal(Fstat.Fa[ind])/sqrt(GV.SFTno)*bias,
 	      Fstat.Fa[ind].im/sqrt(GV.SFTno)*bias,
-	      Fstat.Fb[ind].re/sqrt(GV.SFTno)*bias,
+	      creal(Fstat.Fb[ind])/sqrt(GV.SFTno)*bias,
 	      Fstat.Fb[ind].im/sqrt(GV.SFTno)*bias,
 	      Fstat.F[ind]*bias*bias);
 #endif
