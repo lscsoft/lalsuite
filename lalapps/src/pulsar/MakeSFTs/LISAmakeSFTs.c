@@ -382,9 +382,9 @@ main(int argc, char *argv[])
     weights->data[0].real_FIXME = (  2.0 / 3.0 );
     weights->data[1].real_FIXME = ( -1.0 / 3.0 );
     weights->data[2].real_FIXME = ( -1.0 / 3.0 );
-    weights->data[0].im = 0.0;
-    weights->data[1].im = 0.0;
-    weights->data[2].im = 0.0;
+    weights->data[0].imag_FIXME = 0.0;
+    weights->data[1].imag_FIXME = 0.0;
+    weights->data[2].imag_FIXME = 0.0;
 
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
 					     SFTVectList, weights, comboname),
@@ -423,9 +423,9 @@ main(int argc, char *argv[])
     weights->data[0].real_FIXME = 0;
     weights->data[1].real_FIXME = (-1.0 * LAL_SQRT1_3);
     weights->data[2].real_FIXME =         LAL_SQRT1_3;
-    weights->data[0].im = 0.0;
-    weights->data[1].im = 0.0;
-    weights->data[2].im = 0.0;
+    weights->data[0].imag_FIXME = 0.0;
+    weights->data[1].imag_FIXME = 0.0;
+    weights->data[2].imag_FIXME = 0.0;
 
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
 					     SFTVectList, weights, comboname),
@@ -464,9 +464,9 @@ main(int argc, char *argv[])
     weights->data[0].real_FIXME = ( LAL_SQRT2 / 3.0 );
     weights->data[1].real_FIXME = ( LAL_SQRT2 / 3.0 );
     weights->data[2].real_FIXME = ( LAL_SQRT2 / 3.0 );
-    weights->data[0].im = 0.0;
-    weights->data[1].im = 0.0;
-    weights->data[2].im = 0.0;
+    weights->data[0].imag_FIXME = 0.0;
+    weights->data[1].imag_FIXME = 0.0;
+    weights->data[2].imag_FIXME = 0.0;
 
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
 					     SFTVectList, weights, comboname),

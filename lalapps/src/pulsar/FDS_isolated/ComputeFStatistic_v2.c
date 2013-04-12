@@ -661,7 +661,7 @@ int main(int argc,char *argv[])
       if ( !finite(Fstat.F) )
 	{
 	  LogPrintf(LOG_CRITICAL, "non-finite F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n",
-		    Fstat.F, creal(Fstat.Fa), Fstat.Fa.im, creal(Fstat.Fb), Fstat.Fb.im );
+		    Fstat.F, creal(Fstat.Fa), cimag(Fstat.Fa), creal(Fstat.Fb), cimag(Fstat.Fb) );
 	  LogPrintf (LOG_CRITICAL, "[Alpha,Delta] = [%.16g,%.16g],\nfkdot=[%.16g,%.16g,%.16g,%16.g]\n",
 		     dopplerpos.Alpha, dopplerpos.Delta,
 		     dopplerpos.fkdot[0], dopplerpos.fkdot[1], dopplerpos.fkdot[2], dopplerpos.fkdot[3] );
@@ -712,8 +712,8 @@ int main(int argc,char *argv[])
       if ( uvar.SignalOnly )
 	{
 	  REAL8 norm = 1.0 / sqrt( 0.5 * GV.Tsft );
-	  Fstat.Fa.real_FIXME *= norm;  Fstat.Fa.im *= norm;
-	  Fstat.Fb.real_FIXME *= norm;  Fstat.Fb.im *= norm;
+	  Fstat.Fa.real_FIXME *= norm;  Fstat.Fa.imag_FIXME *= norm;
+	  Fstat.Fb.real_FIXME *= norm;  Fstat.Fb.imag_FIXME *= norm;
 	  Fstat.F *= norm * norm;
 	  Fstat.F += 2;		/* compute E[2F]:= 4 + SNR^2 */
 	  UINT4 X, numDet = Fstat.numDetectors;
@@ -2397,8 +2397,8 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "\n");
 
   /* Fstat-values */
-  fprintf (fp, "Fa       = % .6g  %+.6gi;\n", creal(Fcand->Fstat.Fa), Fcand->Fstat.Fa.im );
-  fprintf (fp, "Fb       = % .6g  %+.6gi;\n", creal(Fcand->Fstat.Fb), Fcand->Fstat.Fb.im );
+  fprintf (fp, "Fa       = % .6g  %+.6gi;\n", creal(Fcand->Fstat.Fa), cimag(Fcand->Fstat.Fa) );
+  fprintf (fp, "Fb       = % .6g  %+.6gi;\n", creal(Fcand->Fstat.Fb), cimag(Fcand->Fstat.Fb) );
   fprintf (fp, "twoF     = % .6g;\n", 2.0 * Fcand->Fstat.F );
   /* single-IFO Fstat-values, if present */
   UINT4 X, numDet = Fcand->Fstat.numDetectors;

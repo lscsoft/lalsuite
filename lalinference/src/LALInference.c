@@ -386,7 +386,7 @@ void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr)
           break;
         case LALINFERENCE_COMPLEX16_t:
           sprintf(out, "%e + i*%e",
-                 (REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) ((COMPLEX16 *) ptr->value)->im);
+                 (REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
           break;
         case LALINFERENCE_gslMatrix_t:
           sprintf(out, "<can't print matrix>");
@@ -464,7 +464,7 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
           break;
         case LALINFERENCE_COMPLEX16_t:
           fprintf(stdout, "%e + i*%e",
-                 (REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) ((COMPLEX16 *) ptr->value)->im);
+                 (REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
           break;
         case LALINFERENCE_gslMatrix_t:
           fprintf(stdout,"[");
@@ -517,7 +517,7 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
         break;
       case LALINFERENCE_COMPLEX16_t:
         fprintf(fp, "%e + i*%e",
-            (REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) ((COMPLEX16 *) ptr->value)->im);
+            (REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
         break;
       case LALINFERENCE_string_t:
         fprintf(fp, "%s", *((CHAR **)ptr->value));
@@ -565,7 +565,7 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 					break;
 				case LALINFERENCE_COMPLEX16_t:
 					fprintf(fp, "%e + i*%e",
-							(REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) ((COMPLEX16 *) ptr->value)->im);
+							(REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
 					break;
 				case LALINFERENCE_gslMatrix_t:
           
@@ -769,7 +769,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
             break;
           case LALINFERENCE_COMPLEX16_t:
             result = (((REAL8) creal(*(COMPLEX16 *) ptr2->value) != (REAL8) creal(*(COMPLEX16 *) ptr1->value))
-                      || ((REAL8) ((COMPLEX16 *) ptr2->value)->im != (REAL8) ((COMPLEX16 *) ptr1->value)->im));
+                      || ((REAL8) cimag(*(COMPLEX16 *) ptr2->value) != (REAL8) cimag(*(COMPLEX16 *) ptr1->value)));
             break;
           case LALINFERENCE_gslMatrix_t:
             XLAL_PRINT_WARNING("Cannot yet compare \"gslMatrix\" entries (entry: \"%s\"). For now, entries are by default assumed different.", ptr1->name);
@@ -1200,9 +1200,9 @@ once on a given timeModel!
     
     for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
       IFOdata->freqModelhPlus->data->data[i].real_FIXME*=norm;
-      IFOdata->freqModelhPlus->data->data[i].im*=norm;
+      IFOdata->freqModelhPlus->data->data[i].imag_FIXME*=norm;
       IFOdata->freqModelhCross->data->data[i].real_FIXME*=norm;
-      IFOdata->freqModelhCross->data->data[i].im*=norm;
+      IFOdata->freqModelhCross->data->data[i].imag_FIXME*=norm;
     }
   }
 }
@@ -2428,7 +2428,7 @@ static INT4 checkCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *series)
       if(!series->data->data) fprintf(stderr,"NULL REAL8[] in COMPLEX16Sequence\n");
       else {
        for(i=0;i<series->data->length;i++) {if(checkREAL8Value(creal(series->data->data[i]))) {if(!retcode) fprintf(stderr,"Found real value %lf at index %i\n",creal(series->data->data[i]),i); retcode+=1;}
-					if(checkREAL8Value(series->data->data[i].im)) {if(!retcode) fprintf(stderr,"Found imag value %lf at index %i\n",series->data->data[i].im,i); retcode+=1;} }
+					if(checkREAL8Value(cimag(series->data->data[i]))) {if(!retcode) fprintf(stderr,"Found imag value %lf at index %i\n",cimag(series->data->data[i]),i); retcode+=1;} }
       }
     }
   }
@@ -2469,7 +2469,7 @@ void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefile
             dumpfile=fopen(filename,"w");
             REAL8 fLow=data->freqModelhPlus->f0;
             REAL8 df=data->freqModelhPlus->deltaF;
-            for(i=0;i<data->freqModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e %10.20e %10.20e\n",fLow+i*df,creal(data->freqModelhPlus->data->data[i]), data->freqModelhPlus->data->data[i].im,creal(data->freqModelhCross->data->data[i]), data->freqModelhCross->data->data[i].im);
+            for(i=0;i<data->freqModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e %10.20e %10.20e\n",fLow+i*df,creal(data->freqModelhPlus->data->data[i]), cimag(data->freqModelhPlus->data->data[i]),creal(data->freqModelhCross->data->data[i]), cimag(data->freqModelhCross->data->data[i]));
             fclose(dumpfile);
             fprintf(stdout,"Dumped file %s\n",filename);
         }

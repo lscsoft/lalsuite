@@ -417,7 +417,7 @@ heterodyne.\n");  }
       /* put data into COMPLEX16 vector and set imaginary parts to zero */
       for( i=0;i<inputParams.samplerate * duration;i++ ){
         data->data->data[i].real_FIXME = (REAL8)datareal->data->data[i];
-        data->data->data[i].im = 0.;
+        data->data->data[i].imag_FIXME = 0.;
       }
 
       XLALDestroyREAL8TimeSeries( datareal );
@@ -452,13 +452,13 @@ heterodyne.\n");  }
           size_t rc;
           rc = fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
           rc = fread((void*)&data->data->data[i].real_FIXME, sizeof(REAL8), 1, fpin);
-          rc = fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
+          rc = fread((void*)&data->data->data[i].imag_FIXME, sizeof(REAL8), 1, fpin);
 
           if( feof(fpin) || rc == 0 ) break;
 
           if(inputParams.scaleFac > 1.0){
             data->data->data[i].real_FIXME *= inputParams.scaleFac;
-            data->data->data[i].im *= inputParams.scaleFac;
+            data->data->data[i].imag_FIXME *= inputParams.scaleFac;
           }
 
           /* make sure data doesn't overlap previous data */
@@ -488,10 +488,10 @@ heterodyne.\n");  }
         INT4 memcount=1;
 
         while( fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].real_FIXME,
-            &data->data->data[i].im) != EOF ){
+            &data->data->data[i].imag_FIXME) != EOF ){
           if( inputParams.scaleFac > 1.0 ){
             data->data->data[i].real_FIXME *= inputParams.scaleFac;
-            data->data->data[i].im *= inputParams.scaleFac;
+            data->data->data[i].imag_FIXME *= inputParams.scaleFac;
           }
 
           /* make sure data doesn't overlap previous data */
@@ -622,7 +622,7 @@ sigma for 2nd time.\n",
           REAL8 tempreal, tempimag;
 
           tempreal = creal(resampData->data->data[i])/inputParams.scaleFac;
-          tempimag = resampData->data->data[i].im/inputParams.scaleFac;
+          tempimag = cimag(resampData->data->data[i])/inputParams.scaleFac;
 
           rc = fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
           rc = fwrite(&tempreal, sizeof(REAL8), 1, fpout);
@@ -631,7 +631,7 @@ sigma for 2nd time.\n",
         else{
           rc = fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
           rc = fwrite(&resampData->data->data[i].real_FIXME, sizeof(REAL8), 1, fpout);
-          rc = fwrite(&resampData->data->data[i].im, sizeof(REAL8), 1, fpout);
+          rc = fwrite(&resampData->data->data[i].imag_FIXME, sizeof(REAL8), 1, fpout);
         }
 
         if( ferror(fpout) || !rc ){
@@ -644,11 +644,11 @@ file!\n");
         if( inputParams.scaleFac > 1.0 ){
           fprintf(fpout, "%lf\t%le\t%le\n", times->data[i],
                   creal(resampData->data->data[i])/inputParams.scaleFac,
-                  resampData->data->data[i].im/inputParams.scaleFac);
+                  cimag(resampData->data->data[i])/inputParams.scaleFac);
         }
         else{
           fprintf(fpout, "%lf\t%le\t%le\n", times->data[i],
-            creal(resampData->data->data[i]), resampData->data->data[i].im);
+            creal(resampData->data->data[i]), cimag(resampData->data->data[i]));
         }
       }
 
@@ -1291,7 +1291,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     /* perform heterodyne */
     if(hetParams.heterodyneflag == 0  || hetParams.heterodyneflag == 3 ){
       deltaphase = 2.*LAL_PI*fmod(phaseCoarse, 1.);
-      dataTemp.im = 0.; /* make sure imaginary part is zero */
+      dataTemp.imag_FIXME = 0.; /* make sure imaginary part is zero */
     }
     if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2 ||
       hetParams.heterodyneflag == 4){
@@ -1316,16 +1316,16 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         dataTemp2 = dataTemp;
 
         dataTemp.real_FIXME = (1./resp)*(creal(dataTemp2)*cos(filtphase) -
-          dataTemp2.im*sin(filtphase));
-        dataTemp.im = (1./resp)*(creal(dataTemp2)*sin(filtphase) +
-          dataTemp2.im*cos(filtphase));
+          cimag(dataTemp2)*sin(filtphase));
+        dataTemp.imag_FIXME = (1./resp)*(creal(dataTemp2)*sin(filtphase) +
+          cimag(dataTemp2)*cos(filtphase));
       }
     }
 
     data->data->data[i].real_FIXME = creal(dataTemp)*cos(-deltaphase) -
-      dataTemp.im*sin(-deltaphase);
-    data->data->data[i].im = creal(dataTemp)*sin(-deltaphase) +
-      dataTemp.im*cos(-deltaphase);
+      cimag(dataTemp)*sin(-deltaphase);
+    data->data->data[i].imag_FIXME = creal(dataTemp)*sin(-deltaphase) +
+      cimag(dataTemp)*cos(-deltaphase);
   }
 
   if(hetParams.heterodyneflag > 0){
@@ -1460,13 +1460,13 @@ void set_filters(Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate){
   wc = tan(LAL_PI * filterKnee/samplerate);
   LAL_CALL( LALCreateCOMPLEX16ZPGFilter(&status, &zpg, 0, 3), &status );
   zpg->poles->data[0].real_FIXME = wc*sqrt(3.)/2.;
-  zpg->poles->data[0].im = wc*0.5;
+  zpg->poles->data[0].imag_FIXME = wc*0.5;
   zpg->poles->data[1].real_FIXME = 0.0;
-  zpg->poles->data[1].im = wc;
+  zpg->poles->data[1].imag_FIXME = wc;
   zpg->poles->data[2].real_FIXME = -wc*sqrt(3.)/2.;
-  zpg->poles->data[2].im = wc*0.5;
+  zpg->poles->data[2].imag_FIXME = wc*0.5;
   zpg->gain.real_FIXME = 0.0;
-  zpg->gain.im = wc*wc*wc;
+  zpg->gain.imag_FIXME = wc*wc*wc;
   LAL_CALL( LALWToZCOMPLEX16ZPGFilter( &status, zpg ), &status );
 
   /* create IIR filters */
@@ -1503,19 +1503,19 @@ void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters){
 
   for(i=0;i<(INT4)data->data->length;i++){
     tempData.real_FIXME = 0.;
-    tempData.im = 0.;
+    tempData.imag_FIXME = 0.;
 
     tempData.real_FIXME = LALDIIRFilter(creal(data->data->data[i]), iirFilters->filter1Re);
-    tempData.im = LALDIIRFilter(data->data->data[i].im, iirFilters->filter1Im);
+    tempData.imag_FIXME = LALDIIRFilter(cimag(data->data->data[i]), iirFilters->filter1Im);
 
     data->data->data[i].real_FIXME = LALDIIRFilter(creal(tempData), iirFilters->filter2Re);
-    data->data->data[i].im = LALDIIRFilter(tempData.im, iirFilters->filter2Im);
+    data->data->data[i].imag_FIXME = LALDIIRFilter(cimag(tempData), iirFilters->filter2Im);
 
     tempData.real_FIXME = LALDIIRFilter(creal(data->data->data[i]), iirFilters->filter3Re);
-    tempData.im = LALDIIRFilter(data->data->data[i].im, iirFilters->filter3Im);
+    tempData.imag_FIXME = LALDIIRFilter(cimag(data->data->data[i]), iirFilters->filter3Im);
 
     data->data->data[i].real_FIXME = creal(tempData);
-    data->data->data[i].im = tempData.im;
+    data->data->data[i].imag_FIXME = cimag(tempData);
   }
 
 }
@@ -1549,17 +1549,17 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
   if( hetflag == 0 || hetflag == 3 ){ /* coarse heterodyne */
     for(i=0;i<(INT4)data->data->length-size+1;i+=size){
       tempData.real_FIXME = 0.;
-      tempData.im = 0.;
+      tempData.imag_FIXME = 0.;
 
       /* sum data */
       for(j=0;j<size;j++){
         tempData.real_FIXME += creal(data->data->data[i+j]);
-        tempData.im += data->data->data[i+j].im;
+        tempData.imag_FIXME += cimag(data->data->data[i+j]);
       }
 
       /* get average */
       series->data->data[count].real_FIXME = creal(tempData)/(REAL8)size;
-      series->data->data[count].im = tempData.im/(REAL8)size;
+      series->data->data[count].imag_FIXME = cimag(tempData)/(REAL8)size;
 
       /* take the middle point - if just resampling rather than averaging */
       /*series->data->data[count].re = data->data->data[i + size/2].re;
@@ -1664,15 +1664,15 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       for( j=prevdur+frombeg;j<prevdur + (INT4)ROUND(duration*sampleRate)
           -fromend-1 ; j+=size ){
         tempData.real_FIXME = 0.;
-        tempData.im = 0.;
+        tempData.imag_FIXME = 0.;
 
         for( k=0;k<size;k++ ){
           tempData.real_FIXME += creal(data->data->data[j+k]);
-          tempData.im += data->data->data[j+k].im;
+          tempData.imag_FIXME += cimag(data->data->data[j+k]);
         }
 
         series->data->data[count].real_FIXME = creal(tempData)/(REAL8)size;
-        series->data->data[count].im = tempData.im/(REAL8)size;
+        series->data->data[count].imag_FIXME = cimag(tempData)/(REAL8)size;
 
         if( sampleRate != resampleRate )
           times->data[count] = times->data[j+size/2] - (1./sampleRate)/2.;
@@ -1859,9 +1859,9 @@ Assume calibration coefficients are 1 and use the response function.\n");
     for(i=0;i<(INT4)series->data->length;i++){
       tempData = series->data->data[i];
       series->data->data[i].real_FIXME =
-        Rfunc*(creal(tempData)*cos(Rphase)-tempData.im*sin(Rphase));
-      series->data->data[i].im =
-        Rfunc*(creal(tempData)*sin(Rphase)+tempData.im*cos(Rphase));
+        Rfunc*(creal(tempData)*cos(Rphase)-cimag(tempData)*sin(Rphase));
+      series->data->data[i].imag_FIXME =
+        Rfunc*(creal(tempData)*sin(Rphase)+cimag(tempData)*cos(Rphase));
     }
   }
   else{ /* open the open loop gain and sensing function files to use for
@@ -1963,7 +1963,7 @@ Assume calibration coefficients are 1 and use the response function.\n",
           if(strcmp(channel, "LSC-DARM_ERR") == 0){
             Resp.real_FIXME = (cos(Cphase) + ggamma[k]*G*cos(Gphase -
               Cphase))/(ggamma[k]*C);
-            Resp.im = (-sin(Cphase) + ggamma[k]*G*sin(Gphase -
+            Resp.imag_FIXME = (-sin(Cphase) + ggamma[k]*G*sin(Gphase -
               Cphase))/(ggamma[k]*C);
           }
           /* response function for AS_Q is
@@ -1971,7 +1971,7 @@ Assume calibration coefficients are 1 and use the response function.\n",
           else if(strcmp(channel, "LSC-AS_Q") == 0){
             Resp.real_FIXME = (cos(Cphase) + ggamma[k]*G*cos(Gphase -
               Cphase))/(alpha[k]*C);
-            Resp.im = (-sin(Cphase) + ggamma[k]*G*sin(Gphase -
+            Resp.imag_FIXME = (-sin(Cphase) + ggamma[k]*G*sin(Gphase -
               Cphase))/(alpha[k]*C);
           }
           else{
@@ -1982,9 +1982,9 @@ Assume calibration coefficients are 1 and use the response function.\n",
 
           tempData = series->data->data[j];
           series->data->data[counter].real_FIXME = creal(tempData)*creal(Resp) -
-            tempData.im*Resp.im;
-          series->data->data[counter].im = creal(tempData)*Resp.im +
-            tempData.im*creal(Resp);
+            cimag(tempData)*cimag(Resp);
+          series->data->data[counter].imag_FIXME = creal(tempData)*cimag(Resp) +
+            cimag(tempData)*creal(Resp);
           datatimes->data[counter] = datatimes->data[j];
 
           counter++;
@@ -2061,7 +2061,7 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
   /* calculate mean - could in reality just assume to be zero */
   mean.real_FIXME = 0.;
-  mean.im = 0.;
+  mean.imag_FIXME = 0.;
   /*for(i=0;i<data->data->length;i++){
     mean.re += data->data->data[i].re;
     mean.im += data->data->data[i].im;
@@ -2074,24 +2074,24 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
   /* calculate standard deviation */
   stddev.real_FIXME = 0.;
-  stddev.im = 0.;
+  stddev.imag_FIXME = 0.;
   for(i=0;i<(INT4)data->data->length;i++){
     stddev.real_FIXME += (creal(data->data->data[i]) - creal(mean))*(creal(data->data->data[i]) -
       creal(mean));
-    stddev.im += (data->data->data[i].im - mean.im)*(data->data->data[i].im -
-      mean.im);
+    stddev.imag_FIXME += (cimag(data->data->data[i]) - cimag(mean))*(cimag(data->data->data[i]) -
+      cimag(mean));
   }
 
   stddev.real_FIXME = sqrt(creal(stddev)/(REAL8)(data->data->length - 1));
-  stddev.im = sqrt(stddev.im/(REAL8)(data->data->length - 1));
+  stddev.imag_FIXME = sqrt(cimag(stddev)/(REAL8)(data->data->length - 1));
 
   /* exclude those points who's absolute value is greater than our
      stddevthreshold */
   for(i=0;i<(INT4)data->data->length;i++){
     if(fabs(creal(data->data->data[i])) < creal(stddev)*stddevthresh &&
-      fabs(data->data->data[i].im) < stddev.im*stddevthresh){
+      fabs(cimag(data->data->data[i])) < cimag(stddev)*stddevthresh){
       data->data->data[j].real_FIXME = creal(data->data->data[i]);
-      data->data->data[j].im = data->data->data[i].im;
+      data->data->data[j].imag_FIXME = cimag(data->data->data[i]);
       times->data[j] = times->data[i];
       j++;
     }
@@ -2144,20 +2144,20 @@ FilterResponse *create_filter_response( REAL8 filterKnee ){
   for (i = 0;i<srate*ttime; i++){
     if(i==0){
       data->data[i].real_FIXME = 1.;
-      data->data[i].im = 1.;
+      data->data[i].imag_FIXME = 1.;
     }
     else{
       data->data[i].real_FIXME = 0.;
-      data->data[i].im = 0.;
+      data->data[i].imag_FIXME = 0.;
     }
 
     data->data[i].real_FIXME = LALDIIRFilter( creal(data->data[i]), testFilters.filter1Re );
     data->data[i].real_FIXME = LALDIIRFilter( creal(data->data[i]), testFilters.filter2Re );
     data->data[i].real_FIXME = LALDIIRFilter( creal(data->data[i]), testFilters.filter3Re );
 
-    data->data[i].im = LALDIIRFilter( data->data[i].im, testFilters.filter1Im );
-    data->data[i].im = LALDIIRFilter( data->data[i].im, testFilters.filter2Im );
-    data->data[i].im = LALDIIRFilter( data->data[i].im, testFilters.filter3Im );
+    data->data[i].imag_FIXME = LALDIIRFilter( cimag(data->data[i]), testFilters.filter1Im );
+    data->data[i].imag_FIXME = LALDIIRFilter( cimag(data->data[i]), testFilters.filter2Im );
+    data->data[i].imag_FIXME = LALDIIRFilter( cimag(data->data[i]), testFilters.filter3Im );
   }
 
   /* FFT the data */
@@ -2172,13 +2172,13 @@ FilterResponse *create_filter_response( REAL8 filterKnee ){
     COMPLEX16 tempdata;
 
     tempdata.real_FIXME = creal(fftdata->data[i]);
-    tempdata.im = fftdata->data[i].im;
+    tempdata.imag_FIXME = cimag(fftdata->data[i]);
 
     fftdata->data[i].real_FIXME = creal(fftdata->data[i+srate*ttime/2]);
     fftdata->data[i+srate*ttime/2].real_FIXME = creal(tempdata);
 
-    fftdata->data[i].im = fftdata->data[i+srate*ttime/2].im;
-    fftdata->data[i+srate*ttime/2].im = tempdata.im;
+    fftdata->data[i].imag_FIXME = cimag(fftdata->data[i+srate*ttime/2]);
+    fftdata->data[i+srate*ttime/2].imag_FIXME = cimag(tempdata);
   }
 
   filtresp->srate = (REAL8)srate;
@@ -2190,9 +2190,9 @@ FilterResponse *create_filter_response( REAL8 filterKnee ){
   /* output the frequency and phase response */
   for(i=0;i<srate*ttime;i++){
     filtresp->freqResp->data[i] = sqrt(creal(fftdata->data[i])*creal(fftdata->data[i]) +
-      fftdata->data[i].im*fftdata->data[i].im)/sqrt(2.);
+      cimag(fftdata->data[i])*cimag(fftdata->data[i]))/sqrt(2.);
 
-    phase = atan2(creal(fftdata->data[i]), fftdata->data[i].im);
+    phase = atan2(creal(fftdata->data[i]), cimag(fftdata->data[i]));
 
     if(i==0){
       filtresp->phaseResp->data[i] = phase;

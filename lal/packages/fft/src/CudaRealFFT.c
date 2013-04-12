@@ -503,20 +503,20 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
 
   /* dc component */
   output->data[0].real_FIXME = tmp[0];
-  output->data[0].im = 0.0;
+  output->data[0].imag_FIXME = 0.0;
 
   /* other components */
   for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size/2 rounded up */
   {
     output->data[k].real_FIXME = tmp[k];
-    output->data[k].im = tmp[plan->size - k];
+    output->data[k].imag_FIXME = tmp[plan->size - k];
   }
 
   /* Nyquist frequency */
   if ( plan->size%2 == 0 ) /* n is even */
   {
     output->data[plan->size/2].real_FIXME = tmp[plan->size/2];
-    output->data[plan->size/2].im = 0.0;
+    output->data[plan->size/2].imag_FIXME = 0.0;
   }
 
   XLALFree( tmp );
@@ -541,9 +541,9 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
     XLAL_ERROR( XLAL_EINVAL );
   if ( output->length != plan->size || input->length != plan->size/2 + 1 )
     XLAL_ERROR( XLAL_EBADLEN );
-  if ( input->data[0].im != 0.0 )
+  if ( cimag(input->data[0]) != 0.0 )
     XLAL_ERROR( XLAL_EDOM );  /* imaginary part of DC must be zero */
-  if ( ! plan->size % 2 && input->data[plan->size/2].im != 0.0 )
+  if ( ! plan->size % 2 && cimag(input->data[plan->size/2]) != 0.0 )
     XLAL_ERROR( XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* create temporary storage space */
@@ -560,7 +560,7 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
   for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size / 2 rounded up */
   {
     tmp[k]              = creal(input->data[k]);
-    tmp[plan->size - k] = input->data[k].im;
+    tmp[plan->size - k] = cimag(input->data[k]);
   }
 
   /* Nyquist component */
@@ -1224,8 +1224,8 @@ LALReverseREAL8FFT(
   ASSERT( output->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
   ASSERT( input->length == n / 2 + 1, status,
       REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-  ASSERT( input->data[0].im == 0, status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
-  ASSERT( n % 2 || input->data[n / 2].im == 0, status,
+  ASSERT( cimag(input->data[0]) == 0, status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
+  ASSERT( n % 2 || cimag(input->data[n / 2]) == 0, status,
       REALFFTH_EDATA, REALFFTH_MSGEDATA );
 
   ASSERT( plan->sign == 1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );

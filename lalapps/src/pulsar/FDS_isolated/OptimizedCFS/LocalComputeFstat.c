@@ -340,9 +340,9 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 	}
 
 #ifndef LAL_NDEBUG
-      if ( !finite(creal(FcX.Fa)) || !finite(FcX.Fa.im) || !finite(creal(FcX.Fb)) || !finite(FcX.Fb.im) ) {
+      if ( !finite(creal(FcX.Fa)) || !finite(cimag(FcX.Fa)) || !finite(creal(FcX.Fb)) || !finite(cimag(FcX.Fb)) ) {
 	XLALPrintError("LocalXLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
-		      creal(FcX.Fa), FcX.Fa.im, creal(FcX.Fb), FcX.Fb.im );
+		      creal(FcX.Fa), cimag(FcX.Fa), creal(FcX.Fb), cimag(FcX.Fb) );
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
 #endif
@@ -356,19 +356,19 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
          REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
 
          /* compute final single-IFO F-stat */
-	 retF.FX[X] = DdX_inv * (  BdX * (SQ(creal(FcX.Fa)) + SQ(FcX.Fa.im) )
-	                           + AdX * ( SQ(creal(FcX.Fb)) + SQ(FcX.Fb.im) )
-		                   - 2.0 * CdX *( creal(FcX.Fa) * creal(FcX.Fb) + FcX.Fa.im * FcX.Fb.im )
+	 retF.FX[X] = DdX_inv * (  BdX * (SQ(creal(FcX.Fa)) + SQ(cimag(FcX.Fa)) )
+	                           + AdX * ( SQ(creal(FcX.Fb)) + SQ(cimag(FcX.Fb)) )
+		                   - 2.0 * CdX *( creal(FcX.Fa) * creal(FcX.Fb) + cimag(FcX.Fa) * cimag(FcX.Fb) )
 		                   );
         } /* if returnSingleF */
 
       /* Fa = sum_X Fa_X */
       retF.Fa.real_FIXME += creal(FcX.Fa);
-      retF.Fa.im += FcX.Fa.im;
+      retF.Fa.imag_FIXME += cimag(FcX.Fa);
 
       /* Fb = sum_X Fb_X */ 		  
       retF.Fb.real_FIXME += creal(FcX.Fb);
-      retF.Fb.im += FcX.Fb.im;
+      retF.Fb.imag_FIXME += cimag(FcX.Fb);
   		  
     } /* for  X < numDetectors */
  
@@ -379,9 +379,9 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
    * where based on the single-sided PSD.
    */ 
  		       
-  retF.F = Dd_inv * (  Bd * (SQ(creal(retF.Fa)) + SQ(retF.Fa.im) ) 
-                     + Ad * ( SQ(creal(retF.Fb)) + SQ(retF.Fb.im) )
-                     - 2.0 * Cd *( creal(retF.Fa) * creal(retF.Fb) + retF.Fa.im * retF.Fb.im )  
+  retF.F = Dd_inv * (  Bd * (SQ(creal(retF.Fa)) + SQ(cimag(retF.Fa)) ) 
+                     + Ad * ( SQ(creal(retF.Fb)) + SQ(cimag(retF.Fb)) )
+                     - 2.0 * Cd *( creal(retF.Fa) * creal(retF.Fb) + cimag(retF.Fa) * cimag(retF.Fb) )  
 		   );
 
   (*Fstat) = retF;
@@ -463,9 +463,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       break;
 
   Fa.real_FIXME = 0.0f;
-  Fa.im = 0.0f;
+  Fa.imag_FIXME = 0.0f;
   Fb.real_FIXME = 0.0f;
-  Fb.im = 0.0f;
+  Fb.imag_FIXME = 0.0f;
 
   a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
@@ -626,10 +626,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       b_alpha = (*b_al);
 
       Fa.real_FIXME += a_alpha * realQXP;
-      Fa.im += a_alpha * imagQXP;
+      Fa.imag_FIXME += a_alpha * imagQXP;
       
       Fb.real_FIXME += b_alpha * realQXP;
-      Fb.im += b_alpha * imagQXP;
+      Fb.imag_FIXME += b_alpha * imagQXP;
 
 
       /* advance pointers over alpha */
@@ -643,9 +643,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
   /* return result */
   FaFb->Fa.real_FIXME = norm * creal(Fa);
-  FaFb->Fa.im = norm * Fa.im;
+  FaFb->Fa.imag_FIXME = norm * cimag(Fa);
   FaFb->Fb.real_FIXME = norm * creal(Fb);
-  FaFb->Fb.im = norm * Fb.im;
+  FaFb->Fb.imag_FIXME = norm * cimag(Fb);
 
   return XLAL_SUCCESS;
 

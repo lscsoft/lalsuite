@@ -1798,7 +1798,7 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
       }
       break;
     case VOT_COMPLEX16:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, creal(((COMPLEX16*)arrayPtr)[arrayIndex]), ((COMPLEX16*)arrayPtr)[arrayIndex].im ) < 0) {
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, creal(((COMPLEX16*)arrayPtr)[arrayIndex]), cimag(((COMPLEX16*)arrayPtr)[arrayIndex]) ) < 0) {
         XLALPrintError("%s: failed to convert COMPLEX16 element (arrayIndex=%d) to string using fmt '%s'.\n", __func__, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( XLAL_EFAILED );
       }
@@ -1921,7 +1921,7 @@ XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of e
       break;
 
     case VOT_COMPLEX16:
-      if ( sscanf( instring, "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &( creal(((COMPLEX16*)arrayPtr)[arrayIndex]) ), &( ((COMPLEX16*)arrayPtr)[arrayIndex].im ) ) != 2 ) {
+      if ( sscanf( instring, "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &( creal(((COMPLEX16*)arrayPtr)[arrayIndex]) ), &( cimag(((COMPLEX16*)arrayPtr)[arrayIndex]) ) ) != 2 ) {
         XLALPrintError("%s: failed to parse COMPLEX16 element '%s' at arrayIndex=%d.\n", __func__, instring, arrayIndex );
         XLAL_ERROR ( XLAL_EFAILED );
       }

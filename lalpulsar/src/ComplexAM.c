@@ -326,21 +326,21 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
 	      ahat.real_FIXME = Sqwi * crealf(amcoeX->a->data[alpha]);
-	      ahat.im = Sqwi * cimagf(amcoeX->a->data[alpha]);
+	      ahat.imag_FIXME = Sqwi * cimagf(amcoeX->a->data[alpha]);
 	      bhat.real_FIXME= Sqwi * crealf(amcoeX->b->data[alpha]);
-	      bhat.im= Sqwi * cimagf(amcoeX->b->data[alpha]);
+	      bhat.imag_FIXME= Sqwi * cimagf(amcoeX->b->data[alpha]);
 
 	      /* *replace* original a(t), b(t) by noise-weighed version! */
 	      amcoeX->a->data[alpha].realf_FIXME = creal(ahat);
-	      amcoeX->a->data[alpha].imagf_FIXME = ahat.im;
+	      amcoeX->a->data[alpha].imagf_FIXME = cimag(ahat);
 	      amcoeX->b->data[alpha].realf_FIXME = creal(bhat);
-	      amcoeX->b->data[alpha].imagf_FIXME = bhat.im;
+	      amcoeX->b->data[alpha].imagf_FIXME = cimag(bhat);
 
 	      /* sum A, B, C, E on the fly */
-	      Ad += creal(ahat) * creal(ahat) + ahat.im * ahat.im;
-	      Bd += creal(bhat) * creal(bhat) + bhat.im * bhat.im;
-	      Cd += creal(ahat) * creal(bhat) + ahat.im * bhat.im;
-	      Ed += creal(ahat) * bhat.im - ahat.im * creal(bhat);
+	      Ad += creal(ahat) * creal(ahat) + cimag(ahat) * cimag(ahat);
+	      Bd += creal(bhat) * creal(bhat) + cimag(bhat) * cimag(bhat);
+	      Cd += creal(ahat) * creal(bhat) + cimag(ahat) * cimag(bhat);
+	      Ed += creal(ahat) * cimag(bhat) - cimag(ahat) * creal(bhat);
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
       multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
@@ -357,15 +357,15 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
 	      ahat.real_FIXME = crealf(amcoeX->a->data[alpha]);
-	      ahat.im = cimagf(amcoeX->a->data[alpha]);
+	      ahat.imag_FIXME = cimagf(amcoeX->a->data[alpha]);
 	      bhat.real_FIXME = crealf(amcoeX->b->data[alpha]);
-	      bhat.im = cimagf(amcoeX->b->data[alpha]);
+	      bhat.imag_FIXME = cimagf(amcoeX->b->data[alpha]);
 
 	      /* sum A, B, C, E on the fly */
-	      Ad += creal(ahat) * creal(ahat) + ahat.im * ahat.im;
-	      Bd += creal(bhat) * creal(bhat) + bhat.im * bhat.im;
-	      Cd += creal(ahat) * creal(bhat) + ahat.im * bhat.im;
-	      Ed += creal(ahat) * bhat.im - ahat.im * creal(bhat);
+	      Ad += creal(ahat) * creal(ahat) + cimag(ahat) * cimag(ahat);
+	      Bd += creal(bhat) * creal(bhat) + cimag(bhat) * cimag(bhat);
+	      Cd += creal(ahat) * creal(bhat) + cimag(ahat) * cimag(bhat);
+	      Ed += creal(ahat) * cimag(bhat) - cimag(ahat) * creal(bhat);
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
 

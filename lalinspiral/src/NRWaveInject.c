@@ -118,11 +118,11 @@ XLALOrientNRWave(
 
     strain->data->data[k] =
       (tmp1 * creal(MultSphHarm)) +
-      (tmp2 * MultSphHarm.im);
+      (tmp2 * cimag(MultSphHarm));
 
     strain->data->data[vecLength + k] =
       (tmp2 * creal(MultSphHarm)) -
-      (tmp1 * MultSphHarm.im);
+      (tmp1 * cimag(MultSphHarm));
   }
 
   return 0;
@@ -158,11 +158,11 @@ XLALOrientNRWaveTimeSeriesREAL8(
 
     plus->data->data[k] =
       (tmp1 * creal(MultSphHarm)) +
-      (tmp2 * MultSphHarm.im);
+      (tmp2 * cimag(MultSphHarm));
 
     cross->data->data[k] =
       (tmp2 * creal(MultSphHarm)) -
-      (tmp1 * MultSphHarm.im);
+      (tmp1 * cimag(MultSphHarm));
   }
 
   return;
@@ -197,11 +197,11 @@ XLALOrientNRWaveREAL8(
 
     strain->data->data[k] =
       (tmp1 * creal(MultSphHarm)) +
-      (tmp2 * MultSphHarm.im);
+      (tmp2 * cimag(MultSphHarm));
 
     strain->data->data[vecLength + k] =
       (tmp2 * creal(MultSphHarm)) -
-      (tmp1 * MultSphHarm.im);
+      (tmp1 * cimag(MultSphHarm));
   }
   return( strain );
 }

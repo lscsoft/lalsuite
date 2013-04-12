@@ -172,9 +172,9 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     INT4 *tempInt1ptr = tempInt1;
 
     Fa.real_FIXME = 0.0;
-    Fa.im = 0.0;
+    Fa.imag_FIXME = 0.0;
     Fb.real_FIXME = 0.0;
-    Fb.im = 0.0;
+    Fb.imag_FIXME = 0.0;
 
     f = params->f0 + i*df;
 
@@ -205,9 +205,9 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 
 	/* amplitude demodulation */
 	Fa.real_FIXME += a*realQXP;
-	Fa.im += a*imagQXP;
+	Fa.imag_FIXME += a*imagQXP;
 	Fb.real_FIXME += b*realQXP;
-	Fb.im += b*imagQXP;
+	Fb.imag_FIXME += b*imagQXP;
 
 	/* advance pointers that are functions of alpha: a, b,
 	   tempInt1, xSum, ySum, input */
@@ -219,9 +219,9 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	tempInt1ptr++;
       }
 
-    FaSq = creal(Fa)*creal(Fa)+Fa.im*Fa.im;
-    FbSq = creal(Fb)*creal(Fb)+Fb.im*Fb.im;
-    FaFb = creal(Fa)*creal(Fb)+Fa.im*Fb.im;
+    FaSq = creal(Fa)*creal(Fa)+cimag(Fa)*cimag(Fa);
+    FbSq = creal(Fb)*creal(Fb)+cimag(Fb)*cimag(Fb);
+    FaFb = creal(Fa)*creal(Fb)+cimag(Fa)*cimag(Fb);
 
     Fstat->F[i] = N*(B*FaSq + A*FbSq - TwoC*FaFb);
     if (params->returnFaFb)

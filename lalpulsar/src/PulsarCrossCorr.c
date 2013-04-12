@@ -187,7 +187,7 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   im2 = cimagf(sft2->data->data[bin2]);
 
   out->real_FIXME = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*re2 + im1*im2);
-  out->im = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
+  out->imag_FIXME = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
 
 /*
 printf("psd1 psd2 %1.15g %1.15g\n", psd1->data->data[bin1], psd2->data->data[bin2]);
@@ -367,7 +367,7 @@ void LALCalculateAveUalpha(LALStatus *status,
 
   /*calculate Ualpha*/
   out->real_FIXME = re/(sigmasq);
-  out->im = -im/(sigmasq);
+  out->imag_FIXME = -im/(sigmasq);
 
   DETATCHSTATUSPTR (status);
 
@@ -424,10 +424,10 @@ void LALCalculateUalpha(LALStatus *status,
 
   /*calculate estimators*/
   gplus->real_FIXME = 0.25*cos(deltaPhi)*FplusI*FplusJ;
-  gplus->im = 0.25*(-sin(deltaPhi))*FplusI*FplusJ;
+  gplus->imag_FIXME = 0.25*(-sin(deltaPhi))*FplusI*FplusJ;
 
   gcross->real_FIXME = 0.25*cos(deltaPhi)*FcrossI*FcrossJ;
-  gcross->im = 0.25*(-sin(deltaPhi))*FcrossI*FcrossJ;
+  gcross->imag_FIXME = 0.25*(-sin(deltaPhi))*FcrossI*FcrossJ;
 
 
   }
@@ -452,7 +452,7 @@ void LALCalculateUalpha(LALStatus *status,
 
   /*calculate Ualpha*/
   out->real_FIXME = re/(sigmasq);
-  out->im = -im/(sigmasq);
+  out->imag_FIXME = -im/(sigmasq);
 
 
 
@@ -484,7 +484,7 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
 
   for (i=0; i < (INT4)yalpha->length; i++) {
 
-  *out += 2.0 * ((creal(yalpha->data[i]) * creal(ualpha->data[i])) - (yalpha->data[i].im * ualpha->data[i].im));
+  *out += 2.0 * ((creal(yalpha->data[i]) * creal(ualpha->data[i])) - (cimag(yalpha->data[i]) * cimag(ualpha->data[i])));
 
   }
 
@@ -514,7 +514,7 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
 
 
   for (i=0; i < (INT4)ualpha->length; i++) {
-	variance += (SQUARE(creal(ualpha->data[i])) + SQUARE(ualpha->data[i].im)) * sigmaAlphasq->data[i];
+	variance += (SQUARE(creal(ualpha->data[i])) + SQUARE(cimag(ualpha->data[i]))) * sigmaAlphasq->data[i];
 
   }
 
@@ -552,10 +552,10 @@ void LALCalculateEstimators(LALStatus    *status,
 
 
   for (i=0; i < (INT4)yalpha->length; i++) {
-	ap1 += 2.0*(SQUARE(creal(gplus->data[i])) + SQUARE(gplus->data[i].im))/sigmaAlphasq->data[i];
-	ac1 += 2.0*(SQUARE(creal(gcross->data[i])) + SQUARE(gcross->data[i].im))/sigmaAlphasq->data[i];
-	ap2 += 2.0*((creal(yalpha->data[i]) * creal(gplus->data[i])) + (yalpha->data[i].im * gplus->data[i].im))/sigmaAlphasq->data[i];
-	ac2 += 2.0*((creal(yalpha->data[i]) * creal(gcross->data[i])) + (yalpha->data[i].im * gcross->data[i].im))/sigmaAlphasq->data[i];
+	ap1 += 2.0*(SQUARE(creal(gplus->data[i])) + SQUARE(cimag(gplus->data[i])))/sigmaAlphasq->data[i];
+	ac1 += 2.0*(SQUARE(creal(gcross->data[i])) + SQUARE(cimag(gcross->data[i])))/sigmaAlphasq->data[i];
+	ap2 += 2.0*((creal(yalpha->data[i]) * creal(gplus->data[i])) + (cimag(yalpha->data[i]) * cimag(gplus->data[i])))/sigmaAlphasq->data[i];
+	ac2 += 2.0*((creal(yalpha->data[i]) * creal(gcross->data[i])) + (cimag(yalpha->data[i]) * cimag(gcross->data[i])))/sigmaAlphasq->data[i];
   }
 
   *aplussq1 = ap1;

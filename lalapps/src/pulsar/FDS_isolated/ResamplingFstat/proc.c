@@ -159,7 +159,7 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
   for(m = 0 ; m <= number*(if1-if0)  ; m++ )
   {
     llSFT.real_FIXME =0.0;
-    llSFT.im =0.0;
+    llSFT.imag_FIXME =0.0;
 
     f=if0*deltaF+m*deltaF/number;
 
@@ -228,13 +228,13 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
 	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
 	  llSFT.real_FIXME += realQXP;
-	  llSFT.im += imagQXP;
+	  llSFT.imag_FIXME += imagQXP;
 	}
       }      
 
 
     L[m][0] = creal(llSFT); 
-    L[m][1] = llSFT.im; 
+    L[m][1] = cimag(llSFT); 
     
     
   }

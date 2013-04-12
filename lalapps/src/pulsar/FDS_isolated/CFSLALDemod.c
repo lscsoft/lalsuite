@@ -154,9 +154,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   for(i=0 ; i< params->imax  ; i++ )
   {
     Fa.real_FIXME =0.0;
-    Fa.im =0.0;
+    Fa.imag_FIXME =0.0;
     Fb.real_FIXME =0.0;
-    Fb.im =0.0;
+    Fb.imag_FIXME =0.0;
 
     f=params->f0+i*params->df;
 
@@ -371,15 +371,15 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           REAL8 realQXP = realXP*realQ-imagXP*imagQ;
           REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
           Fa.real_FIXME += a*realQXP;
-          Fa.im += a*imagQXP;
+          Fa.imag_FIXME += a*imagQXP;
           Fb.real_FIXME += b*realQXP;
-          Fb.im += b*imagQXP;
+          Fb.imag_FIXME += b*imagQXP;
         }
       }      
 
-    FaSq = creal(Fa)*creal(Fa)+Fa.im*Fa.im;
-    FbSq = creal(Fb)*creal(Fb)+Fb.im*Fb.im;
-    FaFb = creal(Fa)*creal(Fb)+Fa.im*Fb.im;
+    FaSq = creal(Fa)*creal(Fa)+cimag(Fa)*cimag(Fa);
+    FbSq = creal(Fb)*creal(Fb)+cimag(Fb)*cimag(Fb);
+    FaFb = creal(Fa)*creal(Fb)+cimag(Fa)*cimag(Fb);
                         
     Fs->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
     if (params->returnFaFb)

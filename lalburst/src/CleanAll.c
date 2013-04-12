@@ -160,7 +160,7 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
   /* -------------------------------------------   */
 
   rhon.real_FIXME = 0.0;
-  rhon.im = 0.0;
+  rhon.imag_FIXME = 0.0;
   rhod    = 0.0;
 
   for (i=0; i<n; ++i) {
@@ -168,15 +168,15 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
     mi = cimagf(m[i]);
 
     rhon.real_FIXME +=  x[i]*mr;
-    rhon.im += -x[i]*mi;
+    rhon.imag_FIXME += -x[i]*mi;
     rhod    +=  mr*mr + mi*mi;
   }
 
   rho.real_FIXME = creal(rhon) / rhod;
-  rho.im = rhon.im / rhod;
+  rho.imag_FIXME = cimag(rhon) / rhod;
 
   for (i=0; i<n; ++i) {
-    xc[i] = x[i] - 2.0*(creal(rho) * crealf(m[i]) - rho.im * cimagf(m[i]) );
+    xc[i] = x[i] - 2.0*(creal(rho) * crealf(m[i]) - cimag(rho) * cimagf(m[i]) );
   }
 
 
@@ -210,7 +210,7 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
 
     for(j=2; j<= maxH; ++j) {
       rhon.real_FIXME = 0.0;
-      rhon.im = 0.0;
+      rhon.imag_FIXME = 0.0;
       rhod    = 0.0;
 
       for (i=0; i<n; ++i) {
@@ -219,19 +219,19 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
 	phj = j * phaM->data[i];
 	mj->data[i].real_FIXME = amj * cos(phj);
 	mr =  creal(mj->data[i]);
-	mj->data[i].im = amj * sin(phj);
-	mi =  mj->data[i].im;
+	mj->data[i].imag_FIXME = amj * sin(phj);
+	mi =  cimag(mj->data[i]);
 
 	rhon.real_FIXME +=  xc[i]*mr;
-	rhon.im += -xc[i]*mi;
+	rhon.imag_FIXME += -xc[i]*mi;
 	rhod    +=  mr*mr + mi*mi;
       }
 
       rho.real_FIXME = creal(rhon) / rhod;
-      rho.im = rhon.im / rhod;
+      rho.imag_FIXME = cimag(rhon) / rhod;
 
      for (i=0; i<n; ++i) {
-       xc[i] += - 2.0*(creal(rho) * creal(mj->data[i]) - rho.im * mj->data[i].im );
+       xc[i] += - 2.0*(creal(rho) * creal(mj->data[i]) - cimag(rho) * cimag(mj->data[i]) );
      }
 
     } /* closes for all harmonics */

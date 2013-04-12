@@ -195,9 +195,9 @@ void ComputeSideBandWindow(LALStatus *status,
       
     /* initialise */
     (*TParams)->wa->data[j].real_FIXME = 0.0;
-    (*TParams)->wa->data[j].im = 0.0;
+    (*TParams)->wa->data[j].imag_FIXME = 0.0;
     (*TParams)->wb->data[j].real_FIXME = 0.0;
-    (*TParams)->wb->data[j].im = 0.0;
+    (*TParams)->wb->data[j].imag_FIXME = 0.0;
     
     /* define frequency */
     x = (-1.0)*LAL_TWOPI*(REAL8)(*TParams)->windowrange*(*TParams)->dfwindow + LAL_TWOPI*(REAL8)j*(*TParams)->dfwindow;
@@ -215,20 +215,20 @@ void ComputeSideBandWindow(LALStatus *status,
 	  
 	  ae.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*et)-x*et)+ABCco->aco[k]*sin(k*(w0-W*et)-x*et))
 	    -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*et)+x*et)+ABCco->aco[k]*sin(k*(w0-W*et)+x*et));
-	  ae.im = -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*et)-x*et)-ABCco->apco[k]*sin(k*(w0-W*et)-x*et))
+	  ae.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*et)-x*et)-ABCco->apco[k]*sin(k*(w0-W*et)-x*et))
 	    -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*et)+x*et)+ABCco->apco[k]*sin(k*(w0-W*et)+x*et));	    
 	  as.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*st)-x*st)+ABCco->aco[k]*sin(k*(w0-W*st)-x*st))
 	    -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*st)+x*st)+ABCco->aco[k]*sin(k*(w0-W*st)+x*st));
-	  as.im =-0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*st)-x*st)-ABCco->apco[k]*sin(k*(w0-W*st)-x*st))
+	  as.imag_FIXME =-0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*st)-x*st)-ABCco->apco[k]*sin(k*(w0-W*st)-x*st))
 	    -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*st)+x*st)+ABCco->apco[k]*sin(k*(w0-W*st)+x*st));
 	  
 	  be.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)-x*et)+ABCco->bco[k]*sin(k*(w0-W*et)-x*et))
 	    -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bco[k]*sin(k*(w0-W*et)+x*et));
-	  be.im = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*et)-x*et)-ABCco->bpco[k]*sin(k*(w0-W*et)-x*et))
+	  be.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*et)-x*et)-ABCco->bpco[k]*sin(k*(w0-W*et)-x*et))
 	    -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bpco[k]*sin(k*(w0-W*et)+x*et));	    
 	  bs.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)-x*st)+ABCco->bco[k]*sin(k*(w0-W*st)-x*st))
 	    -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bco[k]*sin(k*(w0-W*st)+x*st));
-	  bs.im = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*st)-x*st)-ABCco->bpco[k]*sin(k*(w0-W*st)-x*st))
+	  bs.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*st)-x*st)-ABCco->bpco[k]*sin(k*(w0-W*st)-x*st))
 	    -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bpco[k]*sin(k*(w0-W*st)+x*st));
 	  
 	}
@@ -237,20 +237,20 @@ void ComputeSideBandWindow(LALStatus *status,
 	  
 	  ae.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*et)-x*et)+ABCco->aco[k]*sin(k*(w0-W*et)-x*et))
 	    -0.5*et*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0));
-	  ae.im = -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*et)-x*et)-ABCco->apco[k]*sin(k*(w0-W*et)-x*et))
+	  ae.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*et)-x*et)-ABCco->apco[k]*sin(k*(w0-W*et)-x*et))
 	    -0.5*et*(ABCco->aco[k]*sin(k*w0)-ABCco->apco[k]*cos(k*w0));
 	  as.real_FIXME =-0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*st)-x*st)+ABCco->aco[k]*sin(k*(w0-W*st)-x*st))
 	    -0.5*st*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0));
-	  as.im = -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*st)-x*st)-ABCco->apco[k]*sin(k*(w0-W*st)-x*st))
+	  as.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*st)-x*st)-ABCco->apco[k]*sin(k*(w0-W*st)-x*st))
 	    -0.5*st*(ABCco->aco[k]*sin(k*w0)-ABCco->apco[k]*cos(k*w0));
 	  
 	  be.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)-x*et)+ABCco->bco[k]*sin(k*(w0-W*et)-x*et))
 	    -0.5*et*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0));
-	  be.im = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*et)-x*et)-ABCco->bpco[k]*sin(k*(w0-W*et)-x*et))
+	  be.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*et)-x*et)-ABCco->bpco[k]*sin(k*(w0-W*et)-x*et))
 	    -0.5*et*(ABCco->bco[k]*sin(k*w0)-ABCco->bpco[k]*cos(k*w0));
 	  bs.real_FIXME =-0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)-x*st)+ABCco->bco[k]*sin(k*(w0-W*st)-x*st))
 	    -0.5*st*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0));
-	  bs.im = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*st)-x*st)-ABCco->bpco[k]*sin(k*(w0-W*st)-x*st))
+	  bs.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*st)-x*st)-ABCco->bpco[k]*sin(k*(w0-W*st)-x*st))
 	    -0.5*st*(ABCco->bco[k]*sin(k*w0)-ABCco->bpco[k]*cos(k*w0));
 	  
 	}
@@ -259,47 +259,47 @@ void ComputeSideBandWindow(LALStatus *status,
 	  
 	  ae.real_FIXME = -0.5*et*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0))
 	    -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*et)+x*et)+ABCco->aco[k]*sin(k*(w0-W*et)+x*et));
-	  ae.im = -0.5*et*(-ABCco->aco[k]*sin(k*w0)+ABCco->apco[k]*cos(k*w0))
+	  ae.imag_FIXME = -0.5*et*(-ABCco->aco[k]*sin(k*w0)+ABCco->apco[k]*cos(k*w0))
 	    -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*et)+x*et)+ABCco->apco[k]*sin(k*(w0-W*et)+x*et));	    
 	  as.real_FIXME = -0.5*st*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0))
 	    -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*st)+x*st)+ABCco->aco[k]*sin(k*(w0-W*st)+x*st));
-	  as.im = -0.5*st*(-ABCco->aco[k]*sin(k*w0)+ABCco->apco[k]*cos(k*w0))
+	  as.imag_FIXME = -0.5*st*(-ABCco->aco[k]*sin(k*w0)+ABCco->apco[k]*cos(k*w0))
 	    -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*st)+x*st)+ABCco->apco[k]*sin(k*(w0-W*st)+x*st));
 	  
 	  be.real_FIXME = -0.5*et*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0))
 	    -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bco[k]*sin(k*(w0-W*et)+x*et));
-	  be.im = -0.5*et*(-ABCco->bco[k]*sin(k*w0)+ABCco->bpco[k]*cos(k*w0))
+	  be.imag_FIXME = -0.5*et*(-ABCco->bco[k]*sin(k*w0)+ABCco->bpco[k]*cos(k*w0))
 	    -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bpco[k]*sin(k*(w0-W*et)+x*et));	    
 	  bs.real_FIXME = -0.5*st*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0))
 	    -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bco[k]*sin(k*(w0-W*st)+x*st));
-	  bs.im = -0.5*st*(-ABCco->bco[k]*sin(k*w0)+ABCco->bpco[k]*cos(k*w0))
+	  bs.imag_FIXME = -0.5*st*(-ABCco->bco[k]*sin(k*w0)+ABCco->bpco[k]*cos(k*w0))
 	    -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bpco[k]*sin(k*(w0-W*st)+x*st));
 	  
 	}
 	else {
 		  
 	  ae.real_FIXME = -et*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0));
-	  ae.im = 0.0;
+	  ae.imag_FIXME = 0.0;
 	  as.real_FIXME = -st*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0));
-	  as.im = 0.0;
+	  as.imag_FIXME = 0.0;
 	  
 	  be.real_FIXME = -et*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0));
-	  be.im = 0.0;
+	  be.imag_FIXME = 0.0;
 	  bs.real_FIXME = -st*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0));
-	  bs.im = 0.0;
+	  bs.imag_FIXME = 0.0;
 	  
 	}	  
 	
 	(*TParams)->wa->data[j].real_FIXME += creal(ae) - creal(as);
-	(*TParams)->wa->data[j].im += ae.im - as.im;
+	(*TParams)->wa->data[j].imag_FIXME += cimag(ae) - cimag(as);
 	(*TParams)->wb->data[j].real_FIXME += creal(be) - creal(bs);
-	(*TParams)->wb->data[j].im += be.im - bs.im;
+	(*TParams)->wb->data[j].imag_FIXME += cimag(be) - cimag(bs);
 	
       }
       
     }
     
-    fprintf(fp,"%6.12f %6.12f %6.12f %6.12f %6.12f\n",x,creal((*TParams)->wa->data[j]),(*TParams)->wa->data[j].im,creal((*TParams)->wb->data[j]),(*TParams)->wb->data[j].im);
+    fprintf(fp,"%6.12f %6.12f %6.12f %6.12f %6.12f\n",x,creal((*TParams)->wa->data[j]),cimag((*TParams)->wa->data[j]),creal((*TParams)->wb->data[j]),cimag((*TParams)->wb->data[j]));
     
     
   }
@@ -370,7 +370,7 @@ void ComputeSideBandLikelihood(LALStatus *status,
 
     /* compute log likelihood for real and inaginary parts of h(f) */
     Lr = Lr + (-0.5)*((creal(Data->fourier->data[i])-creal((*Template)->fourier->data[i]))*(creal(Data->fourier->data[i])-creal((*Template)->fourier->data[i])));
-    Li = Li + (-0.5)*((Data->fourier->data[i].im-(*Template)->fourier->data[i].im)*(Data->fourier->data[i].im-(*Template)->fourier->data[i].im));
+    Li = Li + (-0.5)*((cimag(Data->fourier->data[i])-cimag((*Template)->fourier->data[i]))*(cimag(Data->fourier->data[i])-cimag((*Template)->fourier->data[i])));
    
   } 
  
@@ -670,7 +670,7 @@ void SelectSideBandFrequencies (LALStatus * status,
     if ((f>minrange)&&(f<=maxrange)) { 
       
       x = creal((*fulldata)->fourier->data[j]);
-      y = (*fulldata)->fourier->data[j].im;
+      y = cimag((*fulldata)->fourier->data[j]);
       
       /* loop over the ranges */
       for (i=0;i<(INT4)(nam*M);i++) {
@@ -679,7 +679,7 @@ void SelectSideBandFrequencies (LALStatus * status,
 	if ((f>sfparams->minf->data[i])&&(f<=sfparams->maxf->data[i])) {
 	  (*reddata)->freq->data[k] = (*fulldata)->freq->data[j];
 	  (*reddata)->fourier->data[k].real_FIXME = x;
-	  (*reddata)->fourier->data[k].im = y;
+	  (*reddata)->fourier->data[k].imag_FIXME = y;
 
 	  printf("found %6.12f between %6.12f -> %6.12f\n",(*reddata)->freq->data[k],sfparams->minf->data[i],sfparams->maxf->data[i]);
 
@@ -817,7 +817,7 @@ void ReadSideBandData (LALStatus * status,
 
 	/* normalise data by the input sqrt noise spectral density */
 	(*fulldata)->fourier->data[i].real_FIXME = fre*norm;
-	(*fulldata)->fourier->data[i].im = fim*norm;
+	(*fulldata)->fourier->data[i].imag_FIXME = fim*norm;
 	/* printf("Reading data : %6.12e %6.12e\n",(*fulldata)->fourier->data[i].re,(*fulldata)->fourier->data[i].im); */
 	sum += (fre*fre+fim*fim)*norm*norm;
 	i++;
@@ -875,7 +875,7 @@ void EstimateSideBandNoise (LALStatus * status,
       }
 
       if (flag==0) {
-	sum += creal((*fulldata)->fourier->data[i])*creal((*fulldata)->fourier->data[i]) + (*fulldata)->fourier->data[i].im*(*fulldata)->fourier->data[i].im;
+	sum += creal((*fulldata)->fourier->data[i])*creal((*fulldata)->fourier->data[i]) + cimag((*fulldata)->fourier->data[i])*cimag((*fulldata)->fourier->data[i]);
 	k++;
       }
 	
@@ -1050,7 +1050,7 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   /* initialise the results vectors */
   for (i=0;i<(INT4)(*Template)->fourier->length;i++) {
     (*Template)->fourier->data[i].real_FIXME = 0.0;
-    (*Template)->fourier->data[i].im = 0.0;
+    (*Template)->fourier->data[i].imag_FIXME = 0.0;
   }
   
   if (lalDebugLevel) printf ("\nInitialised results vectors in BinaryFDTemplate.\n");
@@ -1117,14 +1117,14 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
 	if ((winindex<2*TParams->windowrange)&&(winindex>=0)) {
 	  (*Template)->fourier->data[i].real_FIXME = creal((*Template)->fourier->data[i]) 
 	    + 0.5*b*(creal(TParams->wa->data[winindex])*(A1*cosy + A3*siny) 
-		     + TParams->wa->data[winindex].im*(A3*cosy - A1*siny)
+		     + cimag(TParams->wa->data[winindex])*(A3*cosy - A1*siny)
 		     + creal(TParams->wb->data[winindex])*(A2*cosy + A4*siny) 
-		     + TParams->wb->data[winindex].im*(A4*cosy - A2*siny));
-	  (*Template)->fourier->data[i].im = (*Template)->fourier->data[i].im 
+		     + cimag(TParams->wb->data[winindex])*(A4*cosy - A2*siny));
+	  (*Template)->fourier->data[i].imag_FIXME = cimag((*Template)->fourier->data[i]) 
 	    + 0.5*b*(creal(TParams->wa->data[winindex])*(A1*siny - A3*cosy) 
-		     + TParams->wa->data[winindex].im*(A1*cosy + A3*siny)
+		     + cimag(TParams->wa->data[winindex])*(A1*cosy + A3*siny)
 		     + creal(TParams->wb->data[winindex])*(A2*siny - A4*cosy) 
-		     + TParams->wb->data[winindex].im*(A2*cosy + A4*siny));
+		     + cimag(TParams->wb->data[winindex])*(A2*cosy + A4*siny));
 	}	
 	
       } /* end loop over first order eccentricity terms */

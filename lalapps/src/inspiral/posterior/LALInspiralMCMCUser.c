@@ -651,7 +651,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 			resp_r = (REAL8)( plus_re*det_resp.plus + cross_re*det_resp.cross );
 			resp_i = (REAL8)( plus_im*det_resp.plus + cross_im*det_resp.cross );
 			real=creal(inputMCMC->stilde[det_i]->data->data[idx]) - resp_r;
-			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i;
+			imag=cimag(inputMCMC->stilde[det_i]->data->data[idx]) - resp_i;
 
 			/* Gaussian version */
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
@@ -855,7 +855,7 @@ in the frequency domain */
 			resp_i = det_resp.plus*model_im_prime + det_resp.cross*model_re_prime;
 
 			real=creal(inputMCMC->stilde[det_i]->data->data[idx]) - resp_r/deltaF;
-			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
+			imag=cimag(inputMCMC->stilde[det_i]->data->data[idx]) - resp_i/deltaF;
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
 
 		} /* End loop over frequency */
@@ -876,8 +876,8 @@ in the frequency domain */
 
 				fprintf(modelout,"%4.3e %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e\n",
 						idx*deltaF, inputMCMC->invspec[det_i]->data->data[idx],
-						creal(inputMCMC->stilde[det_i]->data->data[idx]), inputMCMC->stilde[det_i]->data->data[idx].im,
-						resp_r, resp_i, 2.0*deltaF*(creal(inputMCMC->stilde[det_i]->data->data[idx])-resp_r), 2.0*deltaF*(inputMCMC->stilde[det_i]->data->data[idx].im-resp_i));
+						creal(inputMCMC->stilde[det_i]->data->data[idx]), cimag(inputMCMC->stilde[det_i]->data->data[idx]),
+						resp_r, resp_i, 2.0*deltaF*(creal(inputMCMC->stilde[det_i]->data->data[idx])-resp_r), 2.0*deltaF*(cimag(inputMCMC->stilde[det_i]->data->data[idx])-resp_i));
 			}
 			fclose(modelout);
 		}
@@ -1228,7 +1228,7 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 			resp_r = (REAL8)( plus_re*det_resp.plus + cross_re*det_resp.cross );
 			resp_i = (REAL8)( plus_im*det_resp.plus + cross_im*det_resp.cross );
 			real=creal(inputMCMC->stilde[det_i]->data->data[idx]) - resp_r;
-			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i;
+			imag=cimag(inputMCMC->stilde[det_i]->data->data[idx]) - resp_i;
 
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
 
@@ -1402,7 +1402,7 @@ in the frequency domain */
 			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
 			real=creal(inputMCMC->stilde[det_i]->data->data[i]) - resp_r/deltaF;
-			imag=inputMCMC->stilde[det_i]->data->data[i].im - resp_i/deltaF;
+			imag=cimag(inputMCMC->stilde[det_i]->data->data[i]) - resp_i/deltaF;
 
 
 /* Gaussian version */

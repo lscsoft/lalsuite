@@ -123,7 +123,7 @@ void Inject2PN(LALMCMCParameter *parameter, LALMCMCInput *inputMCMC, double SNR)
 	/* Inject the wave */
 	for(chisq=0.0,i=lowBin;i<Nmodel/2;i++){
 		inputMCMC->stilde[0]->data->data[i].real_FIXME+=mul_factor*(REAL8) model->data[i];
-		inputMCMC->stilde[0]->data->data[i].im+=mul_factor*(REAL8) model->data[Nmodel-i];
+		inputMCMC->stilde[0]->data->data[i].imag_FIXME+=mul_factor*(REAL8) model->data[Nmodel-i];
 		real=model->data[i]; imag=model->data[Nmodel-i];
 		chisq+=mul_factor*mul_factor*(real*real + imag*imag)*inputMCMC->invspec[0]->data->data[i];
 	}
@@ -143,9 +143,9 @@ REAL8 computeZ(LALMCMCInput *MCMCinput)
   topdown_sum=calloc((size_t)MCMCinput->numberDataStreams,sizeof(REAL8Vector *));
   for (i=0;i<MCMCinput->numberDataStreams;i++) {
     topdown_sum[i]=XLALCreateREAL8Vector(MCMCinput->stilde[i]->data->length);
-    topdown_sum[i]->data[topdown_sum[i]->length-1] = (pow(creal(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1]),2.0)+pow(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1].im,2.0))*MCMCinput->invspec[i]->data->data[topdown_sum[i]->length-1];
+    topdown_sum[i]->data[topdown_sum[i]->length-1] = (pow(creal(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1]),2.0)+pow(cimag(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1]),2.0))*MCMCinput->invspec[i]->data->data[topdown_sum[i]->length-1];
     for(j=topdown_sum[i]->length-2;j>0;j--) {
-      topdown_sum[i]->data[j]=topdown_sum[i]->data[j+1]+(pow(creal(MCMCinput->stilde[i]->data->data[j]),2.0)+pow(MCMCinput->stilde[i]->data->data[j].im,2.0))*MCMCinput->invspec[i]->data->data[j];
+      topdown_sum[i]->data[j]=topdown_sum[i]->data[j+1]+(pow(creal(MCMCinput->stilde[i]->data->data[j]),2.0)+pow(cimag(MCMCinput->stilde[i]->data->data[j]),2.0))*MCMCinput->invspec[i]->data->data[j];
     }
   }
 
@@ -200,8 +200,8 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	for (i=0;i<MCMCinput->numberDataStreams;i++){
 		topdown_sum[i]=XLALCreateREAL8Vector(MCMCinput->stilde[i]->data->length);
 		topdown_sum[i]->data[topdown_sum[i]->length-1]=
-		(pow(creal(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1]),2.0)+pow(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1].im,2.0))*MCMCinput->invspec[i]->data->data[topdown_sum[i]->length-1];
-		for(j=topdown_sum[i]->length-2;j>0;j--) topdown_sum[i]->data[j]=topdown_sum[i]->data[j+1]+(pow(creal(MCMCinput->stilde[i]->data->data[j]),2.0)+pow(MCMCinput->stilde[i]->data->data[j].im,2.0))*MCMCinput->invspec[i]->data->data[j];
+		(pow(creal(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1]),2.0)+pow(cimag(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1]),2.0))*MCMCinput->invspec[i]->data->data[topdown_sum[i]->length-1];
+		for(j=topdown_sum[i]->length-2;j>0;j--) topdown_sum[i]->data[j]=topdown_sum[i]->data[j+1]+(pow(creal(MCMCinput->stilde[i]->data->data[j]),2.0)+pow(cimag(MCMCinput->stilde[i]->data->data[j]),2.0))*MCMCinput->invspec[i]->data->data[j];
 	}
 	
 	if(MCMCinput->injectionTable!=NULL) MCMCinput->funcInit(temp,(void *)MCMCinput->injectionTable);

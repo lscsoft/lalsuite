@@ -385,9 +385,9 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   for (i=0; i < (int)OutputData.alpha.data->length; i++)
     {
       alphare->data->data[i]=creal(OutputData.alpha.data->data[i]);
-      alphaim->data->data[i]=OutputData.alpha.data->data[i].im;
+      alphaim->data->data[i]=cimag(OutputData.alpha.data->data[i]);
       gammare->data->data[i]=creal(OutputData.alphabeta.data->data[i]);
-      gammaim->data->data[i]=OutputData.alphabeta.data->data[i].im;
+      gammaim->data->data[i]=cimag(OutputData.alphabeta.data->data[i]);
     }
 
   XLALFrameAddCalFac( frame, alphare, atoi(&CLA.frametype[9]) );

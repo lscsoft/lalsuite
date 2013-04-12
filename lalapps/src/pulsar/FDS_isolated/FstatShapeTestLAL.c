@@ -1001,9 +1001,9 @@ ReadData( LALStatus *status, /*!< LAL status pointer */
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqObsv->data[irec]),
 		   &(creal(FaFbPair->FaFbObsv->Fa[irec])),
-		   &(FaFbPair->FaFbObsv->Fa[irec].im),
+		   &(cimag(FaFbPair->FaFbObsv->Fa[irec])),
 		   &(creal(FaFbPair->FaFbObsv->Fb[irec])),
-		   &(FaFbPair->FaFbObsv->Fb[irec].im),
+		   &(cimag(FaFbPair->FaFbObsv->Fb[irec])),
 		   &(FaFbPair->FaFbObsv->F[irec])
 		   );
     if ( (count != 6) || (count == EOF) ) break;
@@ -1022,9 +1022,9 @@ ReadData( LALStatus *status, /*!< LAL status pointer */
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqTest->data[irec]),
 		   &(creal(FaFbPair->FaFbTest->Fa[irec])),
-		   &(FaFbPair->FaFbTest->Fa[irec].im),
+		   &(cimag(FaFbPair->FaFbTest->Fa[irec])),
 		   &(creal(FaFbPair->FaFbTest->Fb[irec])),
-		   &(FaFbPair->FaFbTest->Fb[irec].im),
+		   &(cimag(FaFbPair->FaFbTest->Fb[irec])),
 		   &(FaFbPair->FaFbTest->F[irec])
 		   );
     if ( (count != 6) || (count == EOF) ) break;
@@ -1119,9 +1119,9 @@ ComputeVetoStatisticCore( LALStatus *status, /*!< LAL status pointer */
       jindT = irec * indexStepT + indexOffset;
 
       RFa = creal(FaFbPair->FaFbObsv->Fa[jindO]) - creal(FaFbPair->FaFbTest->Fa[jindT]);
-      IFa = FaFbPair->FaFbObsv->Fa[jindO].im - FaFbPair->FaFbTest->Fa[jindT].im;
+      IFa = cimag(FaFbPair->FaFbObsv->Fa[jindO]) - cimag(FaFbPair->FaFbTest->Fa[jindT]);
       RFb = creal(FaFbPair->FaFbObsv->Fb[jindO]) - creal(FaFbPair->FaFbTest->Fb[jindT]);
-      IFb = FaFbPair->FaFbObsv->Fb[jindO].im - FaFbPair->FaFbTest->Fb[jindT].im;
+      IFb = cimag(FaFbPair->FaFbObsv->Fb[jindO]) - cimag(FaFbPair->FaFbTest->Fb[jindT]);
 
       FaSq  = RFa*RFa + IFa*IFa;
       FbSq  = RFb*RFb + IFb*IFb;
@@ -1139,9 +1139,9 @@ ComputeVetoStatisticCore( LALStatus *status, /*!< LAL status pointer */
       jindT = irec * indexStepT; 
 
       RFa = creal(FaFbPair->FaFbObsv->Fa[jindO]) - creal(FaFbPair->FaFbTest->Fa[jindT]);
-      IFa = FaFbPair->FaFbObsv->Fa[jindO].im - FaFbPair->FaFbTest->Fa[jindT].im;
+      IFa = cimag(FaFbPair->FaFbObsv->Fa[jindO]) - cimag(FaFbPair->FaFbTest->Fa[jindT]);
       RFb = creal(FaFbPair->FaFbObsv->Fb[jindO]) - creal(FaFbPair->FaFbTest->Fb[jindT]);
-      IFb = FaFbPair->FaFbObsv->Fb[jindO].im - FaFbPair->FaFbTest->Fb[jindT].im;
+      IFb = cimag(FaFbPair->FaFbObsv->Fb[jindO]) - cimag(FaFbPair->FaFbTest->Fb[jindT]);
 
       FaSq  = RFa*RFa + IFa*IFa;
       FbSq  = RFb*RFb + IFb*IFb;

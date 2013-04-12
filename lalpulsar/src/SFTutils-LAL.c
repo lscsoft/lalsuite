@@ -386,10 +386,10 @@ LALLinearlyCombineSFTVectors
 	{
 	  ret->data[i].data->data[k].realf_FIXME
 	    = creal(weights->data[0]) * crealf(inVects[0]->data[i].data->data[k])
-	    - weights->data[0].im * cimagf(inVects[0]->data[i].data->data[k]);
+	    - cimag(weights->data[0]) * cimagf(inVects[0]->data[i].data->data[k]);
 	  ret->data[i].data->data[k].imagf_FIXME
 	    = creal(weights->data[0]) * cimagf(inVects[0]->data[i].data->data[k])
-	    + weights->data[0].im * crealf(inVects[0]->data[i].data->data[k]);
+	    + cimag(weights->data[0]) * crealf(inVects[0]->data[i].data->data[k]);
 	}  /* for k < numBins1 */
 
       /* add in the other SFTs one-by-one */
@@ -422,10 +422,10 @@ LALLinearlyCombineSFTVectors
 	    {
 	      ret->data[i].data->data[k].realf_FIXME
 		+= creal(weights->data[j]) * crealf(inVects[j]->data[i].data->data[k])
-		- weights->data[j].im * cimagf(inVects[j]->data[i].data->data[k]);
+		- cimag(weights->data[j]) * cimagf(inVects[j]->data[i].data->data[k]);
 	      ret->data[i].data->data[k].imagf_FIXME
 		+= creal(weights->data[j]) * cimagf(inVects[j]->data[i].data->data[k])
-		+ weights->data[j].im * crealf(inVects[j]->data[i].data->data[k]);
+		+ cimag(weights->data[j]) * crealf(inVects[j]->data[i].data->data[k]);
 	    }  /* for k < numBins1 */
 
 	} /* for j < numSFTVects */

@@ -256,13 +256,13 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
   phB  = phaseI*invk;
 
   b1t->data[0].real_FIXME = ampB * cos(phB);
-  b1t->data[0].im = ampB * sin(phB);
+  b1t->data[0].imag_FIXME = ampB * sin(phB);
 
   invarb->data[0] = px*mod2;
   sden->data[0]   = invarb->data[0];
 
   snum->data[0].realf_FIXME = creal(b1t->data[0]) * invarb->data[0];
-  snum->data[0].imagf_FIXME = b1t->data[0].im * invarb->data[0];
+  snum->data[0].imagf_FIXME = cimag(b1t->data[0]) * invarb->data[0];
 
 
   for (i=1; i< n; ++i) {
@@ -289,13 +289,13 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     ampB = pow(mod2,inv2k);
 
     b1t->data[i].real_FIXME = ampB * cos(phB);
-    b1t->data[i].im = ampB * sin(phB);
+    b1t->data[i].imag_FIXME = ampB * sin(phB);
 
     invarb->data[i] = px*mod2;
     sden->data[i] = invarb->data[i];
 
     snum->data[i].realf_FIXME = creal(b1t->data[i]) * invarb->data[i];
-    snum->data[i].imagf_FIXME = b1t->data[i].im * invarb->data[i];
+    snum->data[i].imagf_FIXME = cimag(b1t->data[i]) * invarb->data[i];
   }
 
   /* ----------------------------------------------   */
@@ -371,16 +371,16 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     phB = phaseI*invk;
 
     bt->data[0].real_FIXME = ampB * cos(phB);
-    bt->data[0].im = ampB * sin(phB);
+    bt->data[0].imag_FIXME = ampB * sin(phB);
 
     /* initialize calculation of Lambda_k */
     br =  creal(bt->data[0]);
-    bi =  bt->data[0].im;
+    bi =  cimag(bt->data[0]);
     dr =  creal(b1t->data[0]);
-    di =  b1t->data[0].im;
+    di =  cimag(b1t->data[0]);
 
     lambdan.real_FIXME =  br*dr + bi*di;
-    lambdan.im = -dr*bi + br*di;
+    lambdan.imag_FIXME = -dr*bi + br*di;
     lambdad    =  br*br + bi*bi;
 
     /* inverse of the variance of beta */
@@ -409,16 +409,16 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
       ampB = pow(mod2,inv2k);
 
       bt->data[i].real_FIXME = ampB * cos(phB);
-      bt->data[i].im = ampB * sin(phB);
+      bt->data[i].imag_FIXME = ampB * sin(phB);
 
       /* for the calculation of Lambda_k */
       br =  creal(bt->data[i]);
-      bi =  bt->data[i].im;
+      bi =  cimag(bt->data[i]);
       dr =  creal(b1t->data[i]);
-      di =  b1t->data[i].im;
+      di =  cimag(b1t->data[i]);
 
       lambdan.real_FIXME +=  br*dr + bi*di;
-      lambdan.im += -dr*bi + br*di;
+      lambdan.imag_FIXME += -dr*bi + br*di;
       lambdad    +=  br*br + bi*bi;
 
       /* inverse of the variance of beta */
@@ -427,13 +427,13 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
     /* update  sden and snum */
     lambda.real_FIXME = creal(lambdan)/lambdad;
-    lambda.im = lambdan.im/lambdad;
+    lambda.imag_FIXME = cimag(lambdan)/lambdad;
 
     for(i=0; i< n; ++i) {
       br =  creal(bt->data[i]);
-      bi =  bt->data[i].im;
-      snum->data[i].realf_FIXME += (br*creal(lambda) - bi*lambda.im) * invarb->data[i];
-      snum->data[i].imagf_FIXME += (br*lambda.im + bi*creal(lambda)) * invarb->data[i];
+      bi =  cimag(bt->data[i]);
+      snum->data[i].realf_FIXME += (br*creal(lambda) - bi*cimag(lambda)) * invarb->data[i];
+      snum->data[i].imagf_FIXME += (br*cimag(lambda) + bi*creal(lambda)) * invarb->data[i];
       sden->data[i]    += invarb->data[i];
     }
 

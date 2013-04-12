@@ -321,7 +321,7 @@ int main(int argc,char *argv[])
     fprintf(fp,"%16.12f %6.9f %6.9f\n",
 	    TParams->freqsamples->data[i],
 	    creal(Template->fourier->data[i]),
-	    Template->fourier->data[i].im);
+	    cimag(Template->fourier->data[i]));
   }
   fclose(fp);
     

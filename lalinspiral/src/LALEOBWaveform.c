@@ -2234,8 +2234,8 @@ XLALEOBWaveformEngine (
    }
 
    y_1 =   creal(MultSphHarmP) + creal(MultSphHarmM);
-   y_2 =   MultSphHarmM.im - MultSphHarmP.im;
-   z1 = - MultSphHarmM.im - MultSphHarmP.im;
+   y_2 =   cimag(MultSphHarmM) - cimag(MultSphHarmP);
+   z1 = - cimag(MultSphHarmM) - cimag(MultSphHarmP);
    z2 =   creal(MultSphHarmM) - creal(MultSphHarmP);
 
 #if 0

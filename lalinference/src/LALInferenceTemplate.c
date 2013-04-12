@@ -368,9 +368,9 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
     }
     /* copy f'domain waveform over to IFOdata: */
     IFOdata->freqModelhPlus->data->data[i].real_FIXME  = plusRe;
-    IFOdata->freqModelhPlus->data->data[i].im  = plusIm;
+    IFOdata->freqModelhPlus->data->data[i].imag_FIXME  = plusIm;
     IFOdata->freqModelhCross->data->data[i].real_FIXME = crossRe;
-    IFOdata->freqModelhCross->data->data[i].im = crossIm;
+    IFOdata->freqModelhCross->data->data[i].imag_FIXME = crossIm;
   }
   IFOdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
   return;
@@ -391,9 +391,9 @@ void LALInferenceTemplateNullFreqdomain(LALInferenceIFOData *IFOdata)
   }
   for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i){
     IFOdata->freqModelhPlus->data->data[i].real_FIXME  = 0.0;
-    IFOdata->freqModelhPlus->data->data[i].im  = 0.0;
+    IFOdata->freqModelhPlus->data->data[i].imag_FIXME  = 0.0;
     IFOdata->freqModelhCross->data->data[i].real_FIXME = 0.0;
-    IFOdata->freqModelhCross->data->data[i].im = 0.0;
+    IFOdata->freqModelhCross->data->data[i].imag_FIXME = 0.0;
   }
   IFOdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
   return;
@@ -941,7 +941,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     REAL8 WinNorm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
     for(i=0;i<IFOdata->freqModelhPlus->data->length;i++) {
       IFOdata->freqModelhPlus->data->data[i].real_FIXME/=WinNorm;
-      IFOdata->freqModelhPlus->data->data[i].im/=WinNorm;
+      IFOdata->freqModelhPlus->data->data[i].imag_FIXME/=WinNorm;
     }
   }  
   else
@@ -950,18 +950,18 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 
       /* copy over: */
       IFOdata->freqModelhPlus->data->data[0].real_FIXME = ((REAL8) LALSignal->data[0]);
-      IFOdata->freqModelhPlus->data->data[0].im = 0.0;
+      IFOdata->freqModelhPlus->data->data[0].imag_FIXME = 0.0;
       for (i=1; i<IFOdata->freqModelhPlus->data->length-1; ++i) {
 	IFOdata->freqModelhPlus->data->data[i].real_FIXME = ((REAL8) LALSignal->data[i]);
-	IFOdata->freqModelhPlus->data->data[i].im = ((REAL8) LALSignal->data[n-i]);
+	IFOdata->freqModelhPlus->data->data[i].imag_FIXME = ((REAL8) LALSignal->data[n-i]);
       }
       IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].real_FIXME = LALSignal->data[IFOdata->freqModelhPlus->data->length-1];
-      IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
+      IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].imag_FIXME = 0.0;
       LALDestroyVector(&status, &LALSignal);
       /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
       for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
 	IFOdata->freqModelhPlus->data->data[i].real_FIXME *= ((REAL8) n) * deltaT;
-	IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) n) * deltaT;
+	IFOdata->freqModelhPlus->data->data[i].imag_FIXME *= ((REAL8) n) * deltaT;
       }
       if(LALInferenceCheckVariable(IFOdata->modelParams, "ppealpha") && LALInferenceCheckVariable(IFOdata->modelParams, "ppeuppera") &&
 	 LALInferenceCheckVariable(IFOdata->modelParams, "ppelowera") && LALInferenceCheckVariable(IFOdata->modelParams, "ppebeta") &&
@@ -981,8 +981,8 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 	  cos_ppE_phase = cos(ppE_phase);
 	  sin_ppE_phase = sin(ppE_phase);
       
-	  IFOdata->freqModelhPlus->data->data[i].real_FIXME = (ppE_amp)*(creal(IFOdata->freqModelhPlus->data->data[i])*cos_ppE_phase-IFOdata->freqModelhPlus->data->data[i].im*sin_ppE_phase);
-	  IFOdata->freqModelhPlus->data->data[i].im = (ppE_amp)*(creal(IFOdata->freqModelhPlus->data->data[i])*sin_ppE_phase+IFOdata->freqModelhPlus->data->data[i].im*cos_ppE_phase);
+	  IFOdata->freqModelhPlus->data->data[i].real_FIXME = (ppE_amp)*(creal(IFOdata->freqModelhPlus->data->data[i])*cos_ppE_phase-cimag(IFOdata->freqModelhPlus->data->data[i])*sin_ppE_phase);
+	  IFOdata->freqModelhPlus->data->data[i].imag_FIXME = (ppE_amp)*(creal(IFOdata->freqModelhPlus->data->data[i])*sin_ppE_phase+cimag(IFOdata->freqModelhPlus->data->data[i])*cos_ppE_phase);
 	}
       }
     }
@@ -991,13 +991,13 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 
   /*  cross waveform is "i x plus" :  */
   for (i=1; i<IFOdata->freqModelhCross->data->length-1; ++i) {
-    IFOdata->freqModelhCross->data->data[i].real_FIXME = -IFOdata->freqModelhPlus->data->data[i].im;
-    IFOdata->freqModelhCross->data->data[i].im = creal(IFOdata->freqModelhPlus->data->data[i]);
+    IFOdata->freqModelhCross->data->data[i].real_FIXME = -cimag(IFOdata->freqModelhPlus->data->data[i]);
+    IFOdata->freqModelhCross->data->data[i].imag_FIXME = creal(IFOdata->freqModelhPlus->data->data[i]);
     // consider inclination angle's effect:
     IFOdata->freqModelhPlus->data->data[i].real_FIXME  *= plusCoef;
-    IFOdata->freqModelhPlus->data->data[i].im  *= plusCoef;
+    IFOdata->freqModelhPlus->data->data[i].imag_FIXME  *= plusCoef;
     IFOdata->freqModelhCross->data->data[i].real_FIXME *= crossCoef;
-    IFOdata->freqModelhCross->data->data[i].im *= crossCoef;
+    IFOdata->freqModelhCross->data->data[i].imag_FIXME *= crossCoef;
   }
 
   /*
@@ -1081,13 +1081,13 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
         re = cos(twopit * f);
         im = - sin(twopit * f);
         templateReal = creal(IFOdata->freqModelhPlus->data->data[i]);
-        templateImag = IFOdata->freqModelhPlus->data->data[i].im;
+        templateImag = cimag(IFOdata->freqModelhPlus->data->data[i]);
         IFOdata->freqModelhPlus->data->data[i].real_FIXME = templateReal*re - templateImag*im;
-        IFOdata->freqModelhPlus->data->data[i].im = templateReal*im + templateImag*re;
+        IFOdata->freqModelhPlus->data->data[i].imag_FIXME = templateReal*im + templateImag*re;
         templateReal = creal(IFOdata->freqModelhCross->data->data[i]);
-        templateImag = IFOdata->freqModelhCross->data->data[i].im;
+        templateImag = cimag(IFOdata->freqModelhCross->data->data[i]);
         IFOdata->freqModelhCross->data->data[i].real_FIXME = templateReal*re - templateImag*im;
-        IFOdata->freqModelhCross->data->data[i].im = templateReal*im + templateImag*re;
+        IFOdata->freqModelhCross->data->data[i].imag_FIXME = templateReal*im + templateImag*re;
       }
     }
     else {
@@ -2040,7 +2040,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
         IFOdata->freqModelhPlus->data->data[i] = dataPtr[i];
       }else{
         IFOdata->freqModelhPlus->data->data[i].real_FIXME = 0.0;
-        IFOdata->freqModelhPlus->data->data[i].im = 0.0;
+        IFOdata->freqModelhPlus->data->data[i].imag_FIXME = 0.0;
       }
     }
     for (i=0; i<IFOdata->freqModelhCross->data->length; ++i) {
@@ -2049,7 +2049,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
         IFOdata->freqModelhCross->data->data[i] = dataPtr[i];
       }else{
         IFOdata->freqModelhCross->data->data[i].real_FIXME = 0.0;
-        IFOdata->freqModelhCross->data->data[i].im = 0.0;
+        IFOdata->freqModelhCross->data->data[i].imag_FIXME = 0.0;
       }
     }
     /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
@@ -2274,9 +2274,9 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
               f, data->oneSidedNoisePowerSpectrum->data->data[i],
               /*data->freqData->data->data[i].re, data->freqData->data->data[i].im,*/
               creal(data->freqModelhPlus->data->data[i]),
-              data->freqModelhPlus->data->data[i].im,
+              cimag(data->freqModelhPlus->data->data[i]),
               creal(data->freqModelhCross->data->data[i]),
-              data->freqModelhCross->data->data[i].im);
+              cimag(data->freqModelhCross->data->data[i]));
     }
     fclose(outfile);
     dataPtr = NULL;

@@ -1388,8 +1388,8 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
       A1 =  2.0*( B * creal(Fstat.Fa[irec]) - C * creal(Fstat.Fb[irec])) / D;
       A2 =  2.0*( A * creal(Fstat.Fb[irec]) - C * creal(Fstat.Fa[irec])) / D;
-      A3 = - 2.0*( B * Fstat.Fa[irec].im - C * Fstat.Fb[irec].im) / D;
-      A4 = - 2.0*( A * Fstat.Fb[irec].im - C * Fstat.Fa[irec].im) / D;
+      A3 = - 2.0*( B * cimag(Fstat.Fa[irec]) - C * cimag(Fstat.Fb[irec])) / D;
+      A4 = - 2.0*( A * cimag(Fstat.Fb[irec]) - C * cimag(Fstat.Fa[irec])) / D;
 
 
 
@@ -1676,9 +1676,9 @@ int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
               GV.spinRange.fkdot[0] + ind* DemodParams->df,
               creal(Fstat.Fa[ind])/sqrt(GV.SFTno)*bias,
-              Fstat.Fa[ind].im/sqrt(GV.SFTno)*bias,
+              cimag(Fstat.Fa[ind])/sqrt(GV.SFTno)*bias,
               creal(Fstat.Fb[ind])/sqrt(GV.SFTno)*bias,
-              Fstat.Fb[ind].im/sqrt(GV.SFTno)*bias,
+              cimag(Fstat.Fb[ind])/sqrt(GV.SFTno)*bias,
               Fstat.F[ind]*bias*bias);
 #endif
 
