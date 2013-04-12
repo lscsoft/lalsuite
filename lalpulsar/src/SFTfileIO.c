@@ -175,7 +175,7 @@ int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
  *
  * Note that the constraints are combined by 'AND' and the resulting full constraint
  * MUST be satisfied (in particular: if 'timestamps' is given, all timestamps within
- * [startTime, endTime] MUST be found!.
+ * [startTime, endTime) MUST be found!.
  *
  * The returned SFTs in the catalogue are sorted by increasing GPS-epochs !
  *
@@ -405,17 +405,16 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 
   /* ----- final consistency-checks: ----- */
 
-  /* did we find exactly the timestamps that lie within [startTime, endTime]? */
+  /* did we find all timestamps that lie within [startTime, endTime)? */
   if ( constraints && constraints->timestamps )
     {
       LIGOTimeGPSVector *ts = constraints->timestamps;
-      UINT4 numRequested = 0;
       REAL8 t0, t1;
       if ( constraints->startTime ) {
 	t0 = GPS2REAL8 ( (*constraints->startTime) );
       }
       else {
-	t0 = -1;
+	t0 = 0;
       }
       if ( constraints->endTime ) {
 	t1 = GPS2REAL8 ( (*constraints->endTime) );
@@ -426,15 +425,21 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 
       for ( UINT4 i = 0; i < ts->length; i ++ )
 	{
-	  REAL8 ti = GPS2REAL8(ts->data[i]);
-	  if ( (t0 <= ti) && ( ti <= t1 ) ) {
-	    numRequested ++;
-          }
+          const LIGOTimeGPS *ts_i = &(ts->data[i]);
+	  REAL8 ti = GPS2REAL8((*ts_i));
+	  if ( (t0 <= ti) && ( ti < t1 ) )
+            {
+              UINT4 j;
+              for ( j = 0; j < ret->length; j ++ )
+                {
+                  const LIGOTimeGPS *sft_i = &(ret->data[j].header.epoch);
+                  if ( (ts_i->gpsSeconds == sft_i->gpsSeconds) && ( ts_i->gpsNanoSeconds == sft_i->gpsNanoSeconds ) ) {
+                    break;
+                  }
+                }
+              XLAL_CHECK_NULL ( j < ret->length, XLAL_EFAILED, "Timestamp %d : [%d, %d] did not find a matching SFT\n\n", (i+1), ts_i->gpsSeconds, ts_i->gpsNanoSeconds );
+            } // if timestamp ti within startTime/endTime constraint
 	} // for i < ts->length
-
-      XLAL_CHECK_NULL ( numRequested == ret->length, XLAL_EFAILED,
-                        "Found %s SFTs (%d) than given timestamps within [%f, %f] (%d)\n\n",
-                        (ret->length < numRequested )?"fewer":"more", ret->length, t0, t1, numRequested );
 
     } /* if constraints->timestamps */
 

@@ -314,6 +314,8 @@ typedef struct tagDetectorResponse {
 
 /* Function prototypes. */
 
+int XLALSimulateCoherentGW ( REAL4TimeSeries  *output, CoherentGW *CWsignal, DetectorResponse *detector );
+
 void
 LALSimulateCoherentGW( LALStatus        *status,
                        REAL4TimeSeries  *output,
