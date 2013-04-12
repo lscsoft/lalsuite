@@ -213,11 +213,11 @@ LALExtractFrameResponse(
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
   ASSERT( crealf(calfacts->alpha) == 0, status,
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
-  ASSERT( calfacts->alpha.im == 0, status,
+  ASSERT( cimagf(calfacts->alpha) == 0, status,
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
   ASSERT( crealf(calfacts->alphabeta) == 0, status,
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
-  ASSERT( calfacts->alphabeta.im == 0, status,
+  ASSERT( cimagf(calfacts->alphabeta) == 0, status,
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
 
 
@@ -402,7 +402,7 @@ LALExtractFrameResponse(
       for ( i = 0; i < length; ++i )
       {
 	a.data->data[i].realf_FIXME = (REAL4) sensemonTS.data->data[i];
-	a.data->data[i].im = 0;
+	a.data->data[i].imagf_FIXME = 0;
       }
       a.epoch  = sensemonTS.epoch;
       a.deltaT = sensemonTS.deltaT;
@@ -451,7 +451,7 @@ LALExtractFrameResponse(
       for ( i = 0; i < length; ++i )
       {
 	ab.data->data[i].realf_FIXME = (REAL4) sensemonTS.data->data[i];
-	ab.data->data[i].im = 0;
+	ab.data->data[i].imagf_FIXME = 0;
       }
       ab.epoch  = sensemonTS.epoch;
       ab.deltaT = sensemonTS.deltaT;

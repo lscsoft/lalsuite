@@ -240,7 +240,7 @@ LALFindChirpInjectSignals (
   for ( k = 0; k < resp->data->length; ++k )
   {
     unity->data[k].realf_FIXME = 1.0;
-    unity->data[k].im = 0.0;
+    unity->data[k].imagf_FIXME = 0.0;
   }
 
   LALCCVectorDivide( status->statusPtr, detector.transfer->data, unity,
@@ -1123,7 +1123,7 @@ XLALFindChirpBankSimInitialize (
 
   psdMin = spec->data->data[cut] *
     ( ( crealf(resp->data->data[cut]) * crealf(resp->data->data[cut]) +
-        resp->data->data[cut].im * resp->data->data[cut].im ) / psdScaleFac );
+        cimagf(resp->data->data[cut]) * cimagf(resp->data->data[cut]) ) / psdScaleFac );
 
   /* calibrate the input power spectrum, scale to the */
   /* range of REAL4 and store the as S_v(f)           */
@@ -1134,7 +1134,7 @@ XLALFindChirpBankSimInitialize (
   for ( k = cut; k < spec->data->length; ++k )
   {
     REAL4 respRe = crealf(resp->data->data[k]);
-    REAL4 respIm = resp->data->data[k].im;
+    REAL4 respIm = cimagf(resp->data->data[k]);
     spec->data->data[k] = spec->data->data[k] *
       ( ( respRe * respRe + respIm * respIm ) / psdScaleFac );
   }
@@ -1144,7 +1144,7 @@ XLALFindChirpBankSimInitialize (
   for ( k = 0; k < resp->data->length; ++k )
   {
     resp->data->data[k].realf_FIXME = sqrt( psdScaleFac );
-    resp->data->data[k].im = 0;
+    resp->data->data[k].imagf_FIXME = 0;
   }
 
   return cut;
@@ -1387,7 +1387,7 @@ XLALFindChirpBankSimSignalNorm(
       for ( k = cut; k < fcDataParams->tmpltPowerVec->length; ++k )
       {
         if ( tmpltPower[k] ) matchNorm += ( crealf(fcData[k]) * crealf(fcData[k]) +
-            fcData[k].im * fcData[k].im ) / tmpltPower[k];
+            cimagf(fcData[k]) * cimagf(fcData[k]) ) / tmpltPower[k];
       }
       break;
 
@@ -1403,7 +1403,7 @@ XLALFindChirpBankSimSignalNorm(
       for ( k = cut; k < fcDataParams->wtildeVec->length; ++k )
       {
         if ( crealf(wtilde[k]) ) matchNorm += ( crealf(fcData[k]) * crealf(fcData[k]) +
-            fcData[k].im * fcData[k].im ) / crealf(wtilde[k]);
+            cimagf(fcData[k]) * cimagf(fcData[k]) ) / crealf(wtilde[k]);
       }
       break;
 

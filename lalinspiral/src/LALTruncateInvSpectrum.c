@@ -67,7 +67,7 @@ void LALTruncateInvSpectrum(
     for (i=0; i<Hvec->length; i++){
         if (inputVec->data[i] > 0.0) {
             Hvec->data[i].realf_FIXME = (REAL4) (1./sqrt(inputVec->data[i]));
-            Hvec->data[i].im = 0.0;
+            Hvec->data[i].imagf_FIXME = 0.0;
         } else{
             ABORT( status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE );
         }
@@ -146,7 +146,7 @@ void LALTruncateInvSpectrum(
     {
         Hvec->data[i].realf_FIXME *= norm;
         Hvec->data[i].realf_FIXME *= crealf(Hvec->data[i]);
-        Hvec->data[i].im  = 0.0;
+        Hvec->data[i].imagf_FIXME  = 0.0;
     }
 
     /* ---- If debugging print the inv sqrt spectrum in Fourier domain

@@ -642,10 +642,10 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 
 			/* Negative signs on sins: see comment above for definition of ang */
 			REAL4 plus_re,plus_im,cross_re,cross_im;
-			plus_re = crealf(H_p_t->data->data[idx])*cos(ang) + H_p_t->data->data[idx].im*sin(ang);
-			plus_im = H_p_t->data->data[idx].im*cos(ang) - crealf(H_p_t->data->data[idx])*sin(ang);
-			cross_re = crealf(H_c_t->data->data[idx])*cos(ang) + H_c_t->data->data[idx].im*sin(ang);
-			cross_im = H_c_t->data->data[idx].im*cos(ang) - crealf(H_c_t->data->data[idx])*sin(ang);
+			plus_re = crealf(H_p_t->data->data[idx])*cos(ang) + cimagf(H_p_t->data->data[idx])*sin(ang);
+			plus_im = cimagf(H_p_t->data->data[idx])*cos(ang) - crealf(H_p_t->data->data[idx])*sin(ang);
+			cross_re = crealf(H_c_t->data->data[idx])*cos(ang) + cimagf(H_c_t->data->data[idx])*sin(ang);
+			cross_im = cimagf(H_c_t->data->data[idx])*cos(ang) - crealf(H_c_t->data->data[idx])*sin(ang);
 
 			/* Compute total real and imaginary responses */
 			resp_r = (REAL8)( plus_re*det_resp.plus + cross_re*det_resp.cross );

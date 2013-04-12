@@ -210,9 +210,9 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 	    Xalpha_k = Xalpha[sftIndex];
 	    /*fprintf(stderr,"%d\n",sftIndex); */
 	    realXP += crealf(Xalpha_k)*realP;
-	    realXP -= Xalpha_k.im*imagP;
+	    realXP -= cimagf(Xalpha_k)*imagP;
 	    imagXP += crealf(Xalpha_k)*imagP;
-	    imagXP += Xalpha_k.im*realP;
+	    imagXP += cimagf(Xalpha_k)*realP;
 	  }
 	/* double time = GPS2REAL(sft_vect->data[alpha+startindex].epoch) - t0; */
 	/* y = -LAL_TWOPI*(time/sTsft)*(if0+(REAL8)m/(REAL8)number); */
@@ -496,7 +496,7 @@ int main(int argc, char **argv)
 	  for(j=0;j<N;j++)
 	    {
 	      L[j][0] = crealf(sft_vect->data[i].data->data[j+Dterms]);
-	      L[j][1] = sft_vect->data[i].data->data[j+Dterms].im;
+	      L[j][1] = cimagf(sft_vect->data[i].data->data[j+Dterms]);
 	    }
 	  
 	}

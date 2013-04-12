@@ -675,14 +675,14 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	else
 	  inData = sft->data->data + length - 1;
 
-	tempDataPow[k] = (crealf(*inData))*(crealf(*inData)) + (inData->im)*(inData->im);
+	tempDataPow[k] = (crealf(*inData))*(crealf(*inData)) + (cimagf(*inData))*(cimagf(*inData));
 
 	if (lineBin - minBin -leftWingBins - k > 0)
 	  inData = sft->data->data + lineBin - minBin - leftWingBins - k - 1;
 	else
 	  inData = sft->data->data;
 
-	tempDataPow[k+window] = (crealf(*inData))*(crealf(*inData)) + (inData->im)*(inData->im);
+	tempDataPow[k+window] = (crealf(*inData))*(crealf(*inData)) + (cimagf(*inData))*(cimagf(*inData));
       }
 
       gsl_sort( tempDataPow, 1, 2*window);
@@ -697,7 +697,7 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
       tempk++;
 
       randVal = ranVector->data + tempk;
-      inData->im = stdPow * (*randVal);
+      inData->imagf_FIXME = stdPow * (*randVal);
       tempk++;
 
       /* now go left and set the left wing to noise */
@@ -713,7 +713,7 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	    tempk++;
 
 	    randVal = ranVector->data + tempk;
-	    inData->im = stdPow * (*randVal);
+	    inData->imagf_FIXME = stdPow * (*randVal);
 	    tempk++;
 	  }
 	}
@@ -730,7 +730,7 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
             tempk++;
 
 	    randVal = ranVector->data + tempk;
-	    inData->im = stdPow * (*randVal);
+	    inData->imagf_FIXME = stdPow * (*randVal);
 	    tempk++;
 	  }
 	}

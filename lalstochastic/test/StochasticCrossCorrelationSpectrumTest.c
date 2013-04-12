@@ -654,9 +654,9 @@ int main( int argc, char *argv[] )
 
   goodData1.f0 = goodData2.f0 = goodFilter.f0 = 0.0;
 
-  goodData1.data->data[0].realf_FIXME = goodData1.data->data[0].im
-    = goodData2.data->data[0].realf_FIXME = goodData2.data->data[0].im
-    = goodFilter.data->data[0].realf_FIXME = goodFilter.data->data[0].im
+  goodData1.data->data[0].realf_FIXME = goodData1.data->data[0].imagf_FIXME
+    = goodData2.data->data[0].realf_FIXME = goodData2.data->data[0].imagf_FIXME
+    = goodFilter.data->data[0].realf_FIXME = goodFilter.data->data[0].imagf_FIXME
     = 0.0;
 
   for (i=1; i<STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH; ++i)
@@ -664,11 +664,11 @@ int main( int argc, char *argv[] )
     f = i * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
     x = f / (STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM / 2.0);
     goodData1.data->data[i].realf_FIXME = x*x;
-    goodData1.data->data[i].im = x;
+    goodData1.data->data[i].imagf_FIXME = x;
     goodData2.data->data[i].realf_FIXME = 1.0/crealf(goodData1.data->data[i]);
-    goodData2.data->data[i].im = -1.0/goodData1.data->data[i].im;
+    goodData2.data->data[i].imagf_FIXME = -1.0/cimagf(goodData1.data->data[i]);
     goodFilter.data->data[i].realf_FIXME = x * (2-x);
-    goodFilter.data->data[i].im = 0.0;
+    goodFilter.data->data[i].imagf_FIXME = 0.0;
   }
 
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -684,11 +684,11 @@ int main( int argc, char *argv[] )
   if (optVerbose)
   {
     printf("Y(0)=%g + %g i, should be 0\n",
-           crealf(goodOutput.data->data[0]), goodOutput.data->data[0].im);
+           crealf(goodOutput.data->data[0]), cimagf(goodOutput.data->data[0]));
   }
   if ( ( fabs(crealf(goodOutput.data->data[0]))
          > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
-       || ( fabs(goodOutput.data->data[0].im)
+       || ( fabs(cimagf(goodOutput.data->data[0]))
             > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL ) )
   {
     printf("  FAIL: Valid data test\n");
@@ -708,12 +708,12 @@ int main( int argc, char *argv[] )
     if (optVerbose)
     {
       printf("Y(%f Hz)=%g + %g i, should be %g i\n",
-             f, crealf(goodOutput.data->data[i]), goodOutput.data->data[i].im,
+             f, crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
              expIm);
      }
      if ( fabs(crealf(goodOutput.data->data[i]))
           > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL
-          || fabs(goodOutput.data->data[i].im - expIm)
+          || fabs(cimagf(goodOutput.data->data[i]) - expIm)
           > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
      {
        printf("  FAIL: Valid data test\n");

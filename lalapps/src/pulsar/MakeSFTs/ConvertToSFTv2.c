@@ -319,7 +319,7 @@ applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor )
       for ( k=0; k < numBins; k ++ )
 	{
 	  thisSFT->data->data[k].realf_FIXME *= factor;
-	  thisSFT->data->data[k].im *= factor;
+	  thisSFT->data->data[k].imagf_FIXME *= factor;
 	} /* for k < numBins */
 
     } /* for i < numSFTs */

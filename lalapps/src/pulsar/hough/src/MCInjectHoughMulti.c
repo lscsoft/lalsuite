@@ -742,7 +742,7 @@ int main(int argc, char *argv[]){
          for ( iSFT = 0; iSFT < numsft; iSFT++){	   
 	   for (j=0; j < binsSFT; j++) {
 	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].realf_FIXME = 0.0;
-	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].im = 0.0;	    
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].imagf_FIXME = 0.0;	    
 	   }	 
          }
      	  	 
@@ -856,7 +856,7 @@ int main(int argc, char *argv[]){
 	  	  
 	  for (j=0; j < binsSFT; j++) {
 	    sumSFT->realf_FIXME = crealf(*noiseSFT) + h0scale *crealf(*signalSFT);
-	    sumSFT->im = noiseSFT->im + h0scale *signalSFT->im;
+	    sumSFT->imagf_FIXME = cimagf(*noiseSFT) + h0scale *cimagf(*signalSFT);
 	    ++noiseSFT;
 	    ++signalSFT;
 	    ++sumSFT;

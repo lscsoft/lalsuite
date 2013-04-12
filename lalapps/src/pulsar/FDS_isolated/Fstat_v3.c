@@ -239,11 +239,11 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 	{
 	  REAL8 binReal, binImag;
 
-	  binReal = fact_re * crealf(thisSFT->data->data[k]) - fact_im * thisSFT->data->data[k].im;
-	  binImag = fact_re * thisSFT->data->data[k].im + fact_im * crealf(thisSFT->data->data[k]);
+	  binReal = fact_re * crealf(thisSFT->data->data[k]) - fact_im * cimagf(thisSFT->data->data[k]);
+	  binImag = fact_re * cimagf(thisSFT->data->data[k]) + fact_im * crealf(thisSFT->data->data[k]);
 
 	  thisSFT->data->data[k].realf_FIXME = binReal;
-	  thisSFT->data->data[k].im = binImag;
+	  thisSFT->data->data[k].imagf_FIXME = binImag;
 	} /* k < numBins */
 
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
@@ -464,7 +464,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
       offsetEff = 1e-9 * (floor)( offsetEff * 1e9 + 0.5 );	/* round to closest integer multiple of nanoseconds */
       hetCycles = fmod ( fHet * offsetEff, 1);			/* required heterodyning phase-correction for this SFT */
     
-      sin_cos_2PI_LUT (&hetCorrection.im, &hetCorrection.realf_FIXME, -hetCycles );
+      sin_cos_2PI_LUT (&hetCorrection.imagf_FIXME, &hetCorrection.realf_FIXME, -hetCycles );
      
       /* Note: we also bundle the overall normalization of 'df' into the het-correction.
        * This ensures that the resulting timeseries will have the correct normalization, according to
@@ -476,7 +476,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
        *
        */
       hetCorrection.realf_FIXME *= dfSFT;
-      hetCorrection.im *= dfSFT;
+      hetCorrection.imagf_FIXME *= dfSFT;
 
       /* FIXME: check how time-critical this step is, using proper profiling! */
       if ( XLALMultiplySFTbyCOMPLEX8 ( thisSFT, hetCorrection ) != XLAL_SUCCESS )
@@ -486,7 +486,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
 	}
 
       XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n",
-                     n, offset0, offsetEff, hetCycles, crealf(hetCorrection), hetCorrection.im );
+                     n, offset0, offsetEff, hetCycles, crealf(hetCorrection), cimagf(hetCorrection) );
 
       /* FIXME: check if required */
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
@@ -637,11 +637,11 @@ XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft,	/**< [in/out] SFT */
     {
       REAL4 yRe, yIm;
 
-      yRe = crealf(factor) * crealf(sft->data->data[k]) - factor.im * sft->data->data[k].im;
-      yIm = crealf(factor) * sft->data->data[k].im + factor.im * crealf(sft->data->data[k]);
+      yRe = crealf(factor) * crealf(sft->data->data[k]) - cimagf(factor) * cimagf(sft->data->data[k]);
+      yIm = crealf(factor) * cimagf(sft->data->data[k]) + cimagf(factor) * crealf(sft->data->data[k]);
 
       sft->data->data[k].realf_FIXME = yRe;
-      sft->data->data[k].im = yIm;
+      sft->data->data[k].imagf_FIXME = yIm;
 
     } /* for k < numBins */
 
@@ -677,11 +677,11 @@ XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
 
       sin_cos_2PI_LUT ( &fact_im, &fact_re, shiftCyles );
 
-      yRe = fact_re * crealf(sft->data->data[k]) - fact_im * sft->data->data[k].im;
-      yIm = fact_re * sft->data->data[k].im + fact_im * crealf(sft->data->data[k]);
+      yRe = fact_re * crealf(sft->data->data[k]) - fact_im * cimagf(sft->data->data[k]);
+      yIm = fact_re * cimagf(sft->data->data[k]) + fact_im * crealf(sft->data->data[k]);
 
       sft->data->data[k].realf_FIXME = yRe;
-      sft->data->data[k].im = yIm;
+      sft->data->data[k].imagf_FIXME = yIm;
 
     } /* for k < numBins */
 

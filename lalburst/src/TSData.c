@@ -548,7 +548,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
 	factor=2*sqrt(signalFFT->deltaF/signalPSD->data->data[i]);
 
       signalFFT->data->data[i].realf_FIXME = crealf(signalFFT->data->data[i]) * factor;
-      signalFFT->data->data[i].im = signalFFT->data->data[i].im * factor;
+      signalFFT->data->data[i].imagf_FIXME = cimagf(signalFFT->data->data[i]) * factor;
     }
   /*
    * Manipulate the LALUnits structure to reflect above operation
@@ -657,7 +657,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 	factor=2*sqrt(fSeries->deltaF/PSD->data->data[i]);
 
       fSeries->data->data[i].realf_FIXME = crealf(fSeries->data->data[i]) * factor;
-      fSeries->data->data[i].im = fSeries->data->data[i].im * factor;
+      fSeries->data->data[i].imagf_FIXME = cimagf(fSeries->data->data[i]) * factor;
     }
  /*
   * LALUnits manipulation
@@ -735,8 +735,8 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
     {
       signalFFT->data->data[i].realf_FIXME=
 	crealf(response->data->data[i])*crealf(signalFFT->data->data[i]);
-      signalFFT->data->data[i].im=
-	response->data->data[i].im*signalFFT->data->data[i].im;
+      signalFFT->data->data[i].imagf_FIXME=
+	cimagf(response->data->data[i])*cimagf(signalFFT->data->data[i]);
     }
   /*
    * Bring this back to the time domain
@@ -810,12 +810,12 @@ LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
   for(i=0;i<fSeries->data->length;i++)
     {
       a=crealf(fSeries->data->data[i]);
-      b=fSeries->data->data[i].im;
+      b=cimagf(fSeries->data->data[i]);
       c=crealf(response->data->data[i]);
-      d=response->data->data[i].im;
+      d=cimagf(response->data->data[i]);
       /*(a+bi)*(c+di)*/
       fSeries->data->data[i].realf_FIXME=(a*c - b*d);
-      fSeries->data->data[i].im=(a*d + b*c);
+      fSeries->data->data[i].imagf_FIXME=(a*d + b*c);
     }
   /*
    * Unit manipulation

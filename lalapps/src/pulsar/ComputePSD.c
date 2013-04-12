@@ -328,7 +328,7 @@ main(int argc, char *argv[])
 	/* compute SFT power */
 	for (alpha = 0; alpha < numSFTs; ++alpha) {
 	  COMPLEX8 bin = inputSFTs->data[X]->data[alpha].data->data[k];
-	  overSFTs->data[alpha] = crealf(bin)*crealf(bin) + bin.im*bin.im;
+	  overSFTs->data[alpha] = crealf(bin)*crealf(bin) + cimagf(bin)*cimagf(bin);
 	}
 
 	/* compute math. operation over SFTs for this IFO */

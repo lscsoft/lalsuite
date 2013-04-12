@@ -382,7 +382,7 @@ void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr)
           break;
         case LALINFERENCE_COMPLEX8_t:
           sprintf(out, "%e + i*%e",
-                 (REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) ((COMPLEX8 *) ptr->value)->im);
+                 (REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) cimagf(*(COMPLEX8 *) ptr->value));
           break;
         case LALINFERENCE_COMPLEX16_t:
           sprintf(out, "%e + i*%e",
@@ -460,7 +460,7 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
           break;
         case LALINFERENCE_COMPLEX8_t:
           fprintf(stdout, "%e + i*%e",
-                 (REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) ((COMPLEX8 *) ptr->value)->im);
+                 (REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) cimagf(*(COMPLEX8 *) ptr->value));
           break;
         case LALINFERENCE_COMPLEX16_t:
           fprintf(stdout, "%e + i*%e",
@@ -513,7 +513,7 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
         break;
       case LALINFERENCE_COMPLEX8_t:
         fprintf(fp, "%e + i*%e",
-            (REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) ((COMPLEX8 *) ptr->value)->im);
+            (REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) cimagf(*(COMPLEX8 *) ptr->value));
         break;
       case LALINFERENCE_COMPLEX16_t:
         fprintf(fp, "%e + i*%e",
@@ -561,7 +561,7 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 					break;
 				case LALINFERENCE_COMPLEX8_t:
 					fprintf(fp, "%e + i*%e",
-							(REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) ((COMPLEX8 *) ptr->value)->im);
+							(REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) cimagf(*(COMPLEX8 *) ptr->value));
 					break;
 				case LALINFERENCE_COMPLEX16_t:
 					fprintf(fp, "%e + i*%e",
@@ -765,7 +765,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
             break;
           case LALINFERENCE_COMPLEX8_t:
             result = (((REAL4) crealf(*(COMPLEX8 *) ptr2->value) != (REAL4) crealf(*(COMPLEX8 *) ptr1->value))
-                      || ((REAL4) ((COMPLEX8 *) ptr2->value)->im != (REAL4) ((COMPLEX8 *) ptr1->value)->im));
+                      || ((REAL4) cimagf(*(COMPLEX8 *) ptr2->value) != (REAL4) cimagf(*(COMPLEX8 *) ptr1->value)));
             break;
           case LALINFERENCE_COMPLEX16_t:
             result = (((REAL8) ((COMPLEX16 *) ptr2->value)->re != (REAL8) ((COMPLEX16 *) ptr1->value)->re)

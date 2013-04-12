@@ -753,7 +753,7 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
 	      REAL8 Plk_re, Plk_im;
 
 	      Xd_re = crealf(in->data[k]);
-	      Xd_im = in->data[k].im;
+	      Xd_im = cimagf(in->data[k]);
 
 	      kappa_l_k = kstarREAL - k;
 
@@ -768,12 +768,12 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
       else	/* kappa -> 0: Plk = 2pi delta(k, l) */
 	{
 	  Yk_re = LAL_TWOPI * crealf(in->data[kstar]);
-	  Yk_im = LAL_TWOPI * in->data[kstar].im;
+	  Yk_im = LAL_TWOPI * cimagf(in->data[kstar]);
 	}
 
       const REAL8 OOTWOPI = (1.0 / LAL_TWOPI );
       ret->data[l].realf_FIXME = OOTWOPI* Yk_re;
-      ret->data[l].im = OOTWOPI * Yk_im;
+      ret->data[l].imagf_FIXME = OOTWOPI * Yk_im;
 
     }  /* for l < newlen */
 

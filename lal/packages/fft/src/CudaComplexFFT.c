@@ -145,7 +145,7 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
   if( plan->size == 1 )
   {
     output->data[0].realf_FIXME = crealf(input->data[0]);
-    output->data[0].im = input->data[0].im;
+    output->data[0].imagf_FIXME = cimagf(input->data[0]);
   }
   else
     cudafft_execute_c2c( plan->plan,

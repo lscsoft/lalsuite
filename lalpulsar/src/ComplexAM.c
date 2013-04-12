@@ -115,10 +115,10 @@ LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
       }
 
       ai.realf_FIXME = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->ePlus) );
-      ai.im = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->ePlus) );
+      ai.imagf_FIXME = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->ePlus) );
 
       bi.realf_FIXME = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->eCross) );
-      bi.im = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->eCross) );
+      bi.imagf_FIXME = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->eCross) );
 
       coeffs->a->data[i] = ai;
       coeffs->b->data[i] = bi;
@@ -326,15 +326,15 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
 	      ahat.re = Sqwi * crealf(amcoeX->a->data[alpha]);
-	      ahat.im = Sqwi * amcoeX->a->data[alpha].im;
+	      ahat.im = Sqwi * cimagf(amcoeX->a->data[alpha]);
 	      bhat.re= Sqwi * crealf(amcoeX->b->data[alpha]);
-	      bhat.im= Sqwi * amcoeX->b->data[alpha].im;
+	      bhat.im= Sqwi * cimagf(amcoeX->b->data[alpha]);
 
 	      /* *replace* original a(t), b(t) by noise-weighed version! */
 	      amcoeX->a->data[alpha].realf_FIXME = ahat.re;
-	      amcoeX->a->data[alpha].im = ahat.im;
+	      amcoeX->a->data[alpha].imagf_FIXME = ahat.im;
 	      amcoeX->b->data[alpha].realf_FIXME = bhat.re;
-	      amcoeX->b->data[alpha].im = bhat.im;
+	      amcoeX->b->data[alpha].imagf_FIXME = bhat.im;
 
 	      /* sum A, B, C, E on the fly */
 	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;
@@ -357,9 +357,9 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
 	      ahat.re = crealf(amcoeX->a->data[alpha]);
-	      ahat.im = amcoeX->a->data[alpha].im;
+	      ahat.im = cimagf(amcoeX->a->data[alpha]);
 	      bhat.re = crealf(amcoeX->b->data[alpha]);
-	      bhat.im = amcoeX->b->data[alpha].im;
+	      bhat.im = cimagf(amcoeX->b->data[alpha]);
 
 	      /* sum A, B, C, E on the fly */
 	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;

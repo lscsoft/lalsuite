@@ -96,7 +96,7 @@ XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed
       REAL8 norm = 1.0 / sqrt(Tsft_Sn_b2);
       /* frequency domain normalization */
       sft->data->data[j].realf_FIXME *= norm;
-      sft->data->data[j].im *= norm;
+      sft->data->data[j].imagf_FIXME *= norm;
     } // for j < length
 
   return XLAL_SUCCESS;
@@ -278,7 +278,7 @@ XLALSFTtoPeriodogram ( REAL8FrequencySeries    *periodo,	/**< [out] mod squares 
       /* extra-paranoia: make absolutely sure that the calculation below is in REAL8
        * in order to avoid underflow-problems (data 'in' can be of order ~ 1e-20 )
        */
-      *out = ((REAL8)crealf(*in))*((REAL8)crealf(*in)) + ((REAL8)in->im)*((REAL8)in->im);
+      *out = ((REAL8)crealf(*in))*((REAL8)crealf(*in)) + ((REAL8)cimagf(*in))*((REAL8)cimagf(*in));
       ++out;
       ++in;
     } // for j<length
@@ -391,7 +391,7 @@ XLALSFTstoCrossPeriodogram ( REAL8FrequencySeries *periodo,		/**< [out] modulus 
       /* extra-paranoia: make absolutely sure that the calculation below is in REAL8
        * in order to avoid underflow-problems (data 'in' can be of order ~ 1e-20 )
        */
-      *out = ((REAL8)crealf(*in1))*((REAL8)crealf(*in2)) + ((REAL8)in1->im)*((REAL8)in2->im);
+      *out = ((REAL8)crealf(*in1))*((REAL8)crealf(*in2)) + ((REAL8)cimagf(*in1))*((REAL8)cimagf(*in2));
       ++out;
       ++in1;
       ++in2;

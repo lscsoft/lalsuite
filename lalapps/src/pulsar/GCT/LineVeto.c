@@ -463,9 +463,9 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
   REAL8 F = 0.0;
   COMPLEX8 Fa, Fb;
   Fa.realf_FIXME = 0.0;
-  Fa.im = 0.0;
+  Fa.imagf_FIXME = 0.0;
   Fb.realf_FIXME = 0.0;
-  Fb.im = 0.0;
+  Fb.imagf_FIXME = 0.0;
 
   for (Y = Ystart; Y <= Yend; Y++) {  /* loop through detectors */
 
@@ -483,16 +483,16 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
       mmatrixB += thisAtom->b2_alpha;
       mmatrixC += thisAtom->ab_alpha;
       Fa.realf_FIXME    += crealf(thisAtom->Fa_alpha);
-      Fa.im    += thisAtom->Fa_alpha.im;
+      Fa.imagf_FIXME    += cimagf(thisAtom->Fa_alpha);
       Fb.realf_FIXME    += crealf(thisAtom->Fb_alpha);
-      Fb.im    += thisAtom->Fb_alpha.im;
+      Fb.imagf_FIXME    += cimagf(thisAtom->Fb_alpha);
     } /* loop through SFTs */
 
   } /* loop through detectors */
 
   /* compute determinant and final Fstat (not twoF!) */
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQUARE(mmatrixC) );
-  F = Dinv * ( mmatrixB * ( SQUARE(crealf(Fa)) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(crealf(Fb)) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (crealf(Fa)*crealf(Fb) + Fa.im*Fb.im) );
+  F = Dinv * ( mmatrixB * ( SQUARE(crealf(Fa)) + SQUARE(cimagf(Fa)) ) + mmatrixA * ( SQUARE(crealf(Fb)) + SQUARE(cimagf(Fb)) ) - 2.0 * mmatrixC * (crealf(Fa)*crealf(Fb) + cimagf(Fa)*cimagf(Fb)) );
 
   return(F);
 

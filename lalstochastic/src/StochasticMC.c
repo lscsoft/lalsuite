@@ -578,11 +578,11 @@ void LALStochasticMCDso (LALStatus *status,
 
     /* force DC to be 0 and nyquist to be real */
     response[0]->data[0].realf_FIXME = 0.0;
-    response[0]->data[0].im = 0.0;
+    response[0]->data[0].imagf_FIXME = 0.0;
     response[1]->data[0].realf_FIXME = 0.0;
-    response[1]->data[0].im = 0.0;
-    response[0]->data[freqlen-1].im = 0;
-    response[1]->data[freqlen-1].im = 0;
+    response[1]->data[0].imagf_FIXME = 0.0;
+    response[0]->data[freqlen-1].imagf_FIXME = 0;
+    response[1]->data[freqlen-1].imagf_FIXME = 0;
 
 
     /* define SSSimStochBGInput */
@@ -951,11 +951,11 @@ void LALStochasticMCDsoSplice (LALStatus *status,
 
     /* force DC to be 0 and nyquist to be real */
     response[0]->data[0].realf_FIXME = 0.0;
-    response[0]->data[0].im = 0.0;
+    response[0]->data[0].imagf_FIXME = 0.0;
     response[1]->data[0].realf_FIXME = 0.0;
-    response[1]->data[0].im = 0.0;
-    response[0]->data[freqlen-1].im = 0;
-    response[1]->data[freqlen-1].im = 0;
+    response[1]->data[0].imagf_FIXME = 0.0;
+    response[0]->data[freqlen-1].imagf_FIXME = 0;
+    response[1]->data[freqlen-1].imagf_FIXME = 0;
 
 
     /* define SSSimStochBGInput */

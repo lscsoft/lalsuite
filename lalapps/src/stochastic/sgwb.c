@@ -311,7 +311,7 @@ COMPLEX8FrequencySeries *unity_response(LIGOTimeGPS epoch,
   for (i = 0; i < length; i++)
   {
     response->data->data[i].realf_FIXME = 1;
-    response->data->data[i].im = 0;
+    response->data->data[i].imagf_FIXME = 0;
   }
 
   return(response);

@@ -1961,9 +1961,9 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
 	    Xalpha_k = Xalpha[sftIndex];
 
 	    realXP += crealf(Xalpha_k)*realP;
-	    realXP -= Xalpha_k.im*imagP;
+	    realXP -= cimagf(Xalpha_k)*imagP;
 	    imagXP += crealf(Xalpha_k)*imagP;
-	    imagXP += Xalpha_k.im*realP;
+	    imagXP += cimagf(Xalpha_k)*realP;
 	  }
 	y = -LAL_TWOPI*alpha*(if0+(REAL8)m/(REAL8)number);
 
@@ -2030,14 +2030,14 @@ void Reshuffle(COMPLEX16Vector *X)
   for(i=0;i<length;i++)
     {
       Temp[i].realf_FIXME = X->data[i].re; /* Real */
-      Temp[i].im = X->data[i].im; /* Imag */
+      Temp[i].imagf_FIXME = X->data[i].im; /* Imag */
     }
   
   /* Copy first half */
   for(i=M;i<length;i++)
     {
       X->data[k].re = crealf(Temp[i]);
-      X->data[k].im = Temp[i].im;
+      X->data[k].im = cimagf(Temp[i]);
       k++;
     }
 
@@ -2045,7 +2045,7 @@ void Reshuffle(COMPLEX16Vector *X)
   for(i=0;i<M;i++)
     {
       X->data[k].re = crealf(Temp[i]);
-      X->data[k].im = Temp[i].im;
+      X->data[k].im = cimagf(Temp[i]);
       k++;
     }
 
@@ -2318,7 +2318,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	      for(p=0;p<N;p++)
 		{
 		  L->data[p].re = crealf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]);
-		  L->data[p].im = SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms].im;
+		  L->data[p].im = cimagf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]);
 		}
 	    }
 	 	  

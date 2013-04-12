@@ -165,7 +165,7 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
 
   for (i=0; i<n; ++i) {
     mr = crealf(m[i]);
-    mi = m[i].im;
+    mi = cimagf(m[i]);
 
     rhon.re +=  x[i]*mr;
     rhon.im += -x[i]*mi;
@@ -176,7 +176,7 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
   rho.im = rhon.im / rhod;
 
   for (i=0; i<n; ++i) {
-    xc[i] = x[i] - 2.0*(rho.re * crealf(m[i]) - rho.im * m[i].im );
+    xc[i] = x[i] - 2.0*(rho.re * crealf(m[i]) - rho.im * cimagf(m[i]) );
   }
 
 
@@ -198,7 +198,7 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
     for (i=0; i<n; ++i) {
       /* calculation of amplitude^2 and phase of m(t)  */
       mr = crealf(m[i]);
-      mi = m[i].im;
+      mi = cimagf(m[i]);
 
       ampM2->data[i] = mr*mr+ mi*mi;
 

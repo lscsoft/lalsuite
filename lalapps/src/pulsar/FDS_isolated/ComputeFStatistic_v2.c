@@ -733,9 +733,9 @@ int main(int argc,char *argv[])
 		  for ( alpha=0; alpha < thisAtomList->length; alpha ++ )
 		    {
 		      thisAtomList->data[alpha].Fa_alpha.realf_FIXME *= norm;
-		      thisAtomList->data[alpha].Fa_alpha.im *= norm;
+		      thisAtomList->data[alpha].Fa_alpha.imagf_FIXME *= norm;
 		      thisAtomList->data[alpha].Fb_alpha.realf_FIXME *= norm;
-		      thisAtomList->data[alpha].Fb_alpha.im *= norm;
+		      thisAtomList->data[alpha].Fb_alpha.imagf_FIXME *= norm;
 		    } /* for alpha < numSFTs */
 		} /* for X < numDet */
 	    } /* if outputFstatAtoms */

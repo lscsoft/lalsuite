@@ -292,12 +292,12 @@ LALFindChirpFilterSegment (
   for ( k = 1; k < kmax; ++k )
   {
     REAL4 r = crealf(inputData[k]);
-    REAL4 s = inputData[k].im;
+    REAL4 s = cimagf(inputData[k]);
     REAL4 x = crealf(tmpltSignal[k]);
-    REAL4 y = 0 - tmpltSignal[k].im;       /* note complex conjugate */
+    REAL4 y = 0 - cimagf(tmpltSignal[k]);       /* note complex conjugate */
 
     qtilde[k].realf_FIXME = r*x - s*y;
-    qtilde[k].im = r*y + s*x;
+    qtilde[k].imagf_FIXME = r*y + s*x;
   }
 
 
@@ -339,7 +339,7 @@ LALFindChirpFilterSegment (
 
     for ( j = 0; j < numPoints; ++j )
     {
-      REAL4 modqsq = crealf(q[j]) * crealf(q[j]) + q[j].im * q[j].im;
+      REAL4 modqsq = crealf(q[j]) * crealf(q[j]) + cimagf(q[j]) * cimagf(q[j]);
       params->rhosqVec->data->data[j] = norm * modqsq;
     }
   }
@@ -355,7 +355,7 @@ LALFindChirpFilterSegment (
     for ( j = 0; j < numPoints; ++j )
     {
       params->cVec->data->data[j].realf_FIXME = sqrt(norm) * crealf(q[j]);
-      params->cVec->data->data[j].im = sqrt(norm) * q[j].im;
+      params->cVec->data->data[j].imagf_FIXME = sqrt(norm) * cimagf(q[j]);
     }
   }
 

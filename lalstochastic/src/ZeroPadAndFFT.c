@@ -450,7 +450,7 @@ LALCZeroPadAndFFT(
         ++cPtr, ++hBarPtr, ++windowPtr )
     {
       hBarPtr->realf_FIXME = crealf(*cPtr) * *(windowPtr);
-      hBarPtr->im = cPtr->im * *(windowPtr);
+      hBarPtr->imagf_FIXME = cimagf(*cPtr) * *(windowPtr);
     }
   }
 

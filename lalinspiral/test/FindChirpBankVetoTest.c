@@ -131,7 +131,7 @@ static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *a
     for (sampleIndex = 0; sampleIndex < templateLength; sampleIndex++)
     {
 	bankVetoData->resp->data[sampleIndex].realf_FIXME = 1;
-	bankVetoData->resp->data[sampleIndex].im = 0;
+	bankVetoData->resp->data[sampleIndex].imagf_FIXME = 0;
 	bankVetoData->spec->data[sampleIndex] = 1;
 	ampVec->data[sampleIndex] = 1;
     }
@@ -176,7 +176,7 @@ static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4
 	    phase = 2*LAL_PI*( (REAL4) (templateIndex*sampleIndex) ) / ( (REAL4) templateLength );
 	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].realf_FIXME =
 	      cos(phase);
-	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].im =
+	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].imagf_FIXME =
 	      sin(phase);
 	}
 	bankVetoData->fcInputArray[templateIndex]->fcTmplt->tmplt.fFinal =
@@ -249,7 +249,7 @@ static int checkCCmatForErrors(COMPLEX8Vector *ccMat,REAL4Vector *timeshift,REAL
 		return 1;
 
 	    /* imaginary part should always be zero */
-	    if ( fabs( ccMat->data[row*timeshift->length+col].im) > tolerance)
+	    if ( fabs( cimagf(ccMat->data[row*timeshift->length+col])) > tolerance)
 	      return 1;
 
 	}
@@ -285,7 +285,7 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFile
     {
 	for ( col = 0; col < subBankSize; col++ )
 	{
-	    fprintf(fdOut,"%.8f\t",ccmat->data[row*subBankSize+col].im);
+	    fprintf(fdOut,"%.8f\t",cimagf(ccmat->data[row*subBankSize+col]));
 	}
 	fprintf(fdOut,"\n");
     }

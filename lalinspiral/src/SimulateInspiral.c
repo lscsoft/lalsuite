@@ -231,7 +231,7 @@ LALSimulateInspiral( LALStatus                  *stat,
     tData = transfer->data->data;
     i = transfer->data->length;
     while ( i-- ) {
-      REAL4 xfer = fabs( crealf(*tData) ) + fabs( tData->im );
+      REAL4 xfer = fabs( crealf(*tData) ) + fabs( cimagf(*tData) );
       if ( xfer > xferMax )
 	xferMax = xfer;
       tData++;
@@ -239,7 +239,7 @@ LALSimulateInspiral( LALStatus                  *stat,
     xferMax *= SIMULATEINSPIRALC_CUTOFF;
     tData = transfer->data->data;
     i = 0;
-    while ( fabs( crealf(*tData) ) + fabs( tData->im ) < xferMax ) {
+    while ( fabs( crealf(*tData) ) + fabs( cimagf(*tData) ) < xferMax ) {
       tData++;
       i++;
     }
@@ -293,7 +293,7 @@ LALSimulateInspiral( LALStatus                  *stat,
 	UINT4 k = (UINT4)( y );
 	REAL8 x = y - k;
 	REAL4 tRe = x*crealf(tData[k+1]) + ( 1.0 - x )*crealf(tData[k]);
-	REAL4 tIm = x*tData[k+1].im + ( 1.0 - x )*tData[k].im;
+	REAL4 tIm = x*cimagf(tData[k+1]) + ( 1.0 - x )*cimagf(tData[k]);
 	*fData = *aData*( tRe*cos( *phiData ) - tIm*sin( *phiData ) );
 	amp2 += (*fData)*(*fData);
       }

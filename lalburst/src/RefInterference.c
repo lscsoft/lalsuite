@@ -206,10 +206,10 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
   px= 0.0;
 
   for (i=10; i > 0; --i) {
-    px += crealf(x[binini-i])*crealf(x[binini-i]) + x[binini-i].im*x[binini-i].im;
+    px += crealf(x[binini-i])*crealf(x[binini-i]) + cimagf(x[binini-i])*cimagf(x[binini-i]);
   }
   for (i=1; i < 11; ++i) {
-    px += crealf(x[binfin+i])*crealf(x[binfin+i]) + x[binfin+i].im*x[binfin+i].im;
+    px += crealf(x[binfin+i])*crealf(x[binfin+i]) + cimagf(x[binfin+i])*cimagf(x[binfin+i]);
   }
 
   px = px *(binfin-binini);        /* proportional to the width */
@@ -217,15 +217,15 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
   /* Build z_k(nu) */
   for (i=0; i< binini; ++i) {
     zf->data[i].realf_FIXME = 0.0;
-    zf->data[i].im = 0.0;
+    zf->data[i].imagf_FIXME = 0.0;
   }
   for (i=binini; i< binfin+1; ++i) {
     zf->data[i].realf_FIXME = crealf(x[i]);
-    zf->data[i].im = x[i].im;
+    zf->data[i].imagf_FIXME = cimagf(x[i]);
   }
   for (i=binfin+1; i< n; ++i) {
     zf->data[i].realf_FIXME = 0.0;
-    zf->data[i].im = 0.0;
+    zf->data[i].imagf_FIXME = 0.0;
   }
 
   /* Calculate z_k(t) by performing FFTs */
@@ -242,7 +242,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
   countPI = 0;
 
   dr = crealf(zt->data[0]) * invN;
-  di = zt->data[0].im * invN;
+  di = cimagf(zt->data[0]) * invN;
 
   mod2 = dr*dr+di*di;
 
@@ -262,12 +262,12 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
   sden->data[0]   = invarb->data[0];
 
   snum->data[0].realf_FIXME = b1t->data[0].re * invarb->data[0];
-  snum->data[0].im = b1t->data[0].im * invarb->data[0];
+  snum->data[0].imagf_FIXME = b1t->data[0].im * invarb->data[0];
 
 
   for (i=1; i< n; ++i) {
     dr = crealf(zt->data[i]) * invN;
-    di = zt->data[i].im * invN;
+    di = cimagf(zt->data[i]) * invN;
     /* calculation of modulus^2 and phase, and unwrap phase */
     mod2 = dr*dr+di*di;
 
@@ -295,7 +295,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     sden->data[i] = invarb->data[i];
 
     snum->data[i].realf_FIXME = b1t->data[i].re * invarb->data[i];
-    snum->data[i].im = b1t->data[i].im * invarb->data[i];
+    snum->data[i].imagf_FIXME = b1t->data[i].im * invarb->data[i];
   }
 
   /* ----------------------------------------------   */
@@ -321,11 +321,11 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
     for (i=10; i > 0; --i)
       {
-	px += crealf(x[binini-i])*crealf(x[binini-i]) + x[binini-i].im*x[binini-i].im;
+	px += crealf(x[binini-i])*crealf(x[binini-i]) + cimagf(x[binini-i])*cimagf(x[binini-i]);
       }
     for (i=1; i < 11; ++i)
       {
-	px += crealf(x[binfin+i])*crealf(x[binfin+i]) + x[binfin+i].im*x[binfin+i].im;
+	px += crealf(x[binfin+i])*crealf(x[binfin+i]) + cimagf(x[binfin+i])*cimagf(x[binfin+i]);
       }
 
     px = px *(binfin-binini);        /* proportional to the width */
@@ -333,15 +333,15 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     /* Build z_k(nu) */
     for (i=0; i< binini; ++i) {
       zf->data[i].realf_FIXME = 0.0;
-      zf->data[i].im = 0.0;
+      zf->data[i].imagf_FIXME = 0.0;
     }
     for (i=binini; i< binfin+1; ++i) {
       zf->data[i].realf_FIXME = crealf(x[i]);
-      zf->data[i].im = x[i].im;
+      zf->data[i].imagf_FIXME = cimagf(x[i]);
     }
     for (i=binfin+1; i< n; ++i) {
       zf->data[i].realf_FIXME = 0.0;
-      zf->data[i].im = 0.0;
+      zf->data[i].imagf_FIXME = 0.0;
     }
 
     /* Calculate z_k(t) by performing FFTs */
@@ -357,7 +357,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     /* cumsum = 0.0; */
     countPI = 0;
     dr = crealf(zt->data[0]) * invN;
-    di = zt->data[0].im * invN;
+    di = cimagf(zt->data[0]) * invN;
 
     mod2 = dr*dr+di*di;
 
@@ -388,7 +388,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
     for (i=1; i< n; ++i) {
       dr = crealf(zt->data[i]) * invN;
-      di = zt->data[i].im * invN;
+      di = cimagf(zt->data[i]) * invN;
       /* calculation of modulus^2 and phase, and unwrap phase */
       mod2 = dr*dr+di*di;
 
@@ -433,7 +433,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
       br =  bt->data[i].re;
       bi =  bt->data[i].im;
       snum->data[i].realf_FIXME += (br*lambda.re - bi*lambda.im) * invarb->data[i];
-      snum->data[i].im += (br*lambda.im + bi*lambda.re) * invarb->data[i];
+      snum->data[i].imagf_FIXME += (br*lambda.im + bi*lambda.re) * invarb->data[i];
       sden->data[i]    += invarb->data[i];
     }
 
@@ -445,7 +445,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
   for(i=0; i< n; ++i){
     m[i].realf_FIXME = crealf(snum->data[i]) / sden->data[i] ;
-    m[i].im = snum->data[i].im / sden->data[i] ;
+    m[i].imagf_FIXME = cimagf(snum->data[i]) / sden->data[i] ;
   }
   /* -------------------------------------------   */
 

@@ -871,9 +871,9 @@ int main(int argc, char *argv[])
   invNoise1.data->data[0] = 0;
   invNoise2.data->data[0] = 0;
   hcInvNoise1.data->data[0].realf_FIXME = 0;
-  hcInvNoise1.data->data[0].im = 0;
+  hcInvNoise1.data->data[0].imagf_FIXME = 0;
   hcInvNoise2.data->data[0].realf_FIXME = 0;
-  hcInvNoise2.data->data[0].im = 0;
+  hcInvNoise2.data->data[0].imagf_FIXME = 0;
 
   /** Test 1 **/
   for (i=1; i < STOCHASTICOPTIMALFILTERTESTC_LENGTH; i++)
@@ -885,9 +885,9 @@ int main(int argc, char *argv[])
     invNoise1.data->data[i] = 1;
     invNoise2.data->data[i] = 1;
     hcInvNoise1.data->data[i].realf_FIXME = 1;
-    hcInvNoise1.data->data[i].im = 0;
+    hcInvNoise1.data->data[i].imagf_FIXME = 0;
     hcInvNoise2.data->data[i].realf_FIXME = 1;
-    hcInvNoise2.data->data[i].im = 0;
+    hcInvNoise2.data->data[i].imagf_FIXME = 0;
   }
 
   /* fill normalization output */
@@ -1035,10 +1035,10 @@ int main(int argc, char *argv[])
   if (optVerbose)
   {
     printf("Q(0)=%g + %g i, should be 0\n",
-           crealf(optimal.data->data[0]), optimal.data->data[0].im);
+           crealf(optimal.data->data[0]), cimagf(optimal.data->data[0]));
   }
   if ( fabs(crealf(optimal.data->data[0])) > STOCHASTICOPTIMALFILTERTESTC_TOL
-       || fabs(optimal.data->data[0].im)
+       || fabs(cimagf(optimal.data->data[0]))
        > STOCHASTICOPTIMALFILTERTESTC_TOL )
   {
     printf("  FAIL: Valid data test #1\n");
@@ -1061,13 +1061,13 @@ int main(int argc, char *argv[])
       printf("Q(%g Hz)/Re(Q(%g Hz))=%g + %g i, should be %g\n",
              f, STOCHASTICOPTIMALFILTERTESTC_DELTAF,
              crealf(optimal.data->data[i])/crealf(optimal.data->data[1]),
-             optimal.data->data[i].im/crealf(optimal.data->data[1]),
+             cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]),
              testNum);
     }
     if (fabs(crealf(optimal.data->data[i])/crealf(optimal.data->data[1])
              - testNum)/testNum
         > STOCHASTICOPTIMALFILTERTESTC_TOL
-        || fabs(optimal.data->data[i].im/crealf(optimal.data->data[1]))
+        || fabs(cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]))
         > STOCHASTICOPTIMALFILTERTESTC_TOL)
     {
       printf("  FAIL: Valid data test #1\n");
@@ -1105,9 +1105,9 @@ int main(int argc, char *argv[])
     invNoise1.data->data[i] = 1;
     invNoise2.data->data[i] = 1;
     hcInvNoise1.data->data[i].realf_FIXME = 1;
-    hcInvNoise1.data->data[i].im = 0;
+    hcInvNoise1.data->data[i].imagf_FIXME = 0;
     hcInvNoise2.data->data[i].realf_FIXME = 1;
-    hcInvNoise2.data->data[i].im = 0;
+    hcInvNoise2.data->data[i].imagf_FIXME = 0;
   }
 
   /* fill normalization output */
@@ -1252,10 +1252,10 @@ int main(int argc, char *argv[])
   if (optVerbose)
   {
     printf("Q(0)=%g + %g i, should be 0\n",
-           crealf(optimal.data->data[0]), optimal.data->data[0].im);
+           crealf(optimal.data->data[0]), cimagf(optimal.data->data[0]));
   }
   if ( fabs(crealf(optimal.data->data[0])) > STOCHASTICOPTIMALFILTERTESTC_TOL
-       || fabs(optimal.data->data[0].im)
+       || fabs(cimagf(optimal.data->data[0]))
        > STOCHASTICOPTIMALFILTERTESTC_TOL )
   {
     printf("  FAIL: Valid data test #2\n");
@@ -1275,13 +1275,13 @@ int main(int argc, char *argv[])
       printf("Q(%g Hz)/Re(Q(%g Hz))=%g + %g i, should be %g\n",
              f, STOCHASTICOPTIMALFILTERTESTC_DELTAF,
              crealf(optimal.data->data[i])/crealf(optimal.data->data[1]),
-             optimal.data->data[i].im/crealf(optimal.data->data[1]),
+             cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]),
              testNum);
     }
     if (fabs(crealf(optimal.data->data[i])/crealf(optimal.data->data[1])
              - testNum)/testNum
         > STOCHASTICOPTIMALFILTERTESTC_TOL
-        || fabs(optimal.data->data[i].im/crealf(optimal.data->data[1]))
+        || fabs(cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]))
         > STOCHASTICOPTIMALFILTERTESTC_TOL)
     {
       printf("  FAIL: Valid data test #2\n");

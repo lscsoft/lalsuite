@@ -681,7 +681,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
 	  REAL4 Sn = crealf(*Xalpha_l);
-	  REAL4 Tn = (*Xalpha_l).im;
+	  REAL4 Tn = cimagf(*Xalpha_l);
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
@@ -694,7 +694,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 
 	      pn = pn - 1.0f; 			/* p_(n+1) */
 	      Sn = pn * Sn + qn * crealf(*Xalpha_l);	/* S_(n+1) */
-	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
+	      Tn = pn * Tn + qn * cimagf(*Xalpha_l);	/* T_(n+1) */
 	      qn *= pn;				/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
 
@@ -717,7 +717,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
   	  if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
   	  else ind0 = Dterms;
 	  realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
-	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
+	  imagXP = TWOPI_FLOAT * cimagf(Xalpha_l[ind0]);
 	} /* if |remainder| <= LD_SMALL4 */
 
       realQXP = realQ * realXP - imagQ * imagXP;
@@ -728,14 +728,14 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
       b_alpha = (*b_al);
 
       Fa_alpha.realf_FIXME = a_alpha * realQXP;
-      Fa_alpha.im = a_alpha * imagQXP;
+      Fa_alpha.imagf_FIXME = a_alpha * imagQXP;
       Fa.re += crealf(Fa_alpha);
-      Fa.im += Fa_alpha.im;
+      Fa.im += cimagf(Fa_alpha);
 
       Fb_alpha.realf_FIXME = b_alpha * realQXP;
-      Fb_alpha.im = b_alpha * imagQXP;
+      Fb_alpha.imagf_FIXME = b_alpha * imagQXP;
       Fb.re += crealf(Fb_alpha);
-      Fb.im += Fb_alpha.im;
+      Fb.im += cimagf(Fb_alpha);
 
       /* store per-SFT F-stat 'atoms' for transient-CW search */
       if ( params->returnAtoms )
@@ -745,9 +745,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].ab_alpha   = a_alpha * b_alpha;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha.realf_FIXME   = norm * crealf(Fa_alpha);
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha.im   = norm * Fa_alpha.im;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha.imagf_FIXME   = norm * cimagf(Fa_alpha);
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha.realf_FIXME   = norm * crealf(Fb_alpha);
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha.im   = norm * Fb_alpha.im;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha.imagf_FIXME   = norm * cimagf(Fb_alpha);
 	}
 
       /* advance pointers over alpha */
@@ -954,7 +954,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
 	  REAL4 Sn = crealf(*Xalpha_l);
-	  REAL4 Tn = (*Xalpha_l).im;
+	  REAL4 Tn = cimagf(*Xalpha_l);
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
@@ -967,7 +967,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 
 	      pn = pn - 1.0f; 			/* p_(n+1) */
 	      Sn = pn * Sn + qn * crealf(*Xalpha_l);	/* S_(n+1) */
-	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
+	      Tn = pn * Tn + qn * cimagf(*Xalpha_l);	/* T_(n+1) */
 	      qn *= pn;				/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
 
@@ -990,7 +990,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
   	  if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
   	  else ind0 = Dterms;
 	  realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
-	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
+	  imagXP = TWOPI_FLOAT * cimagf(Xalpha_l[ind0]);
 	} /* if |remainder| <= LD_SMALL4 */
 
       realQXP = realQ * realXP - imagQ * imagXP;
@@ -1001,12 +1001,12 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
       b_alpha = (*b_al);
 
       /* Fa contains complex conjugate of a */
-      Fa.re += crealf(a_alpha) * realQXP + a_alpha.im * imagQXP;
-      Fa.im += crealf(a_alpha) * imagQXP - a_alpha.im * realQXP;
+      Fa.re += crealf(a_alpha) * realQXP + cimagf(a_alpha) * imagQXP;
+      Fa.im += crealf(a_alpha) * imagQXP - cimagf(a_alpha) * realQXP;
 
       /* Fb contains complex conjugate of b */
-      Fb.re += crealf(b_alpha) * realQXP + b_alpha.im * imagQXP;
-      Fb.im += crealf(b_alpha) * imagQXP - b_alpha.im * realQXP;
+      Fb.re += crealf(b_alpha) * realQXP + cimagf(b_alpha) * imagQXP;
+      Fb.im += crealf(b_alpha) * imagQXP - cimagf(b_alpha) * realQXP;
 
       /* advance pointers over alpha */
       a_al ++;
@@ -1187,8 +1187,8 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
       /* lim_{kappa_star->0}P_alpha,k  = 2pi delta_{k,kstar} */
 
       /* combine with e^-i 2pi lambda_alpha */
-      realQXP = realQ * crealf(Xalpha_l) - imagQ * Xalpha_l.im;
-      imagQXP = realQ * Xalpha_l.im + imagQ * crealf(Xalpha_l);
+      realQXP = realQ * crealf(Xalpha_l) - imagQ * cimagf(Xalpha_l);
+      imagQXP = realQ * cimagf(Xalpha_l) + imagQ * crealf(Xalpha_l);
 
       /* we're done: ==> combine these into Fa and Fb */
       a_alpha = (*a_al);

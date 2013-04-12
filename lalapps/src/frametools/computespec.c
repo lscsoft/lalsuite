@@ -246,7 +246,7 @@ int main( int argc, char *argv[] )
 
             for( j=0 ; j<numPoints/2+1; j++){
                 re = crealf(Hvec->data[j]);
-                im = Hvec->data[j].im;
+                im = cimagf(Hvec->data[j]);
                 spectrum->data[j] += 2.0*(re*re+im*im)/((REAL4)navg);
             }
         }

@@ -1380,7 +1380,7 @@ int NormaliseSFTData(void)
 	  {
 	    SFTsqav=SFTsqav+
 	      crealf(SFTData[k]->fft->data->data[j]) * crealf(SFTData[k]->fft->data->data[j])+
-	      SFTData[k]->fft->data->data[j].im * SFTData[k]->fft->data->data[j].im;
+	      cimagf(SFTData[k]->fft->data->data[j]) * cimagf(SFTData[k]->fft->data->data[j]);
 	  }
       SFTsqav=SFTsqav/(1.0*nbins);              /* Actual average of Square of SFT */
       MeanOneOverSh=2.0*GV.nsamples*GV.nsamples/(SFTsqav*GV.tsft)+MeanOneOverSh;      
@@ -1399,7 +1399,7 @@ int NormaliseSFTData(void)
       for (j=0;j<nbins;j++)               
 	{
 	  SFTData[k]->fft->data->data[j].realf_FIXME = N*crealf(SFTData[k]->fft->data->data[j]); 
-	  SFTData[k]->fft->data->data[j].im = N*SFTData[k]->fft->data->data[j].im;
+	  SFTData[k]->fft->data->data[j].imagf_FIXME = N*cimagf(SFTData[k]->fft->data->data[j]);
 	}
     } 
 	
@@ -2268,7 +2268,7 @@ INT4 EstimatePSDLines(LALStatus *status)
     /* loop over SFT data to estimate noise */
     for (j=0;j<nbins;j++){
       xre=crealf(SFTData[i]->fft->data->data[j]);
-      xim=SFTData[i]->fft->data->data[j].im;
+      xim=cimagf(SFTData[i]->fft->data->data[j]);
       Sp->data[j]=Sp->data[j]+(REAL8)(xre*xre+xim*xim);
     }
   }/*end loop over SFTs*/
@@ -2758,7 +2758,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       /* loop over SFT data to estimate noise */
       for (j=0;j<nbins;j++){
 	xre=crealf(SFTData[i]->fft->data->data[j]);
-	xim=SFTData[i]->fft->data->data[j].im;
+	xim=cimagf(SFTData[i]->fft->data->data[j]);
 	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
       }
 
@@ -2799,11 +2799,11 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       /*  and the sum of the PSD in the band, SpSum */
       for (j=0;j<nbins;j++){
 	xre=crealf(SFTData[i]->fft->data->data[j]);
-	xim=SFTData[i]->fft->data->data[j].im;
+	xim=cimagf(SFTData[i]->fft->data->data[j]);
 	xreNorm=N[j]*xre; 
 	ximNorm=N[j]*xim; 
 	SFTData[i]->fft->data->data[j].realf_FIXME = xreNorm;    
-	SFTData[i]->fft->data->data[j].im = ximNorm;
+	SFTData[i]->fft->data->data[j].imagf_FIXME = ximNorm;
 	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       

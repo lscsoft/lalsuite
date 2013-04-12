@@ -109,7 +109,7 @@ void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
     
     while (n-- >0){
       re = crealf(*in1);
-      im = in1->im;
+      im = cimagf(*in1);
       *out = (re*re + im*im) *factor; /* factor 2 still missing if one-sided*/
       ++out;
       ++in1;
@@ -176,7 +176,7 @@ void SFT2Periodogram (LALStatus  *status,
     
     while (n-- >0){
       re = crealf(*in1);
-      im = in1->im;
+      im = cimagf(*in1);
       *out = (re*re + im*im) *factor; /* factor 2 still missing if one-sided*/
       ++out;
       ++in1;

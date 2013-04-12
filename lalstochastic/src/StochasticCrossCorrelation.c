@@ -763,7 +763,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
 
-  output->value.realf_FIXME = output->value.im = 0.0;
+  output->value.realf_FIXME = output->value.imagf_FIXME = 0.0;
 
   /* initialize pointers */
   cPtr = ccSpec.data->data;
@@ -774,12 +774,12 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
   for (; cPtr < cStopPtr; ++cPtr)
   {
     output->value.realf_FIXME += crealf(*cPtr);
-    output->value.im += cPtr->im;
+    output->value.imagf_FIXME += cimagf(*cPtr);
   }
 
   /* normalize */
   output->value.realf_FIXME *= ccSpec.deltaF;
-  output->value.im *= ccSpec.deltaF;
+  output->value.imagf_FIXME *= ccSpec.deltaF;
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
@@ -1555,7 +1555,7 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
 
-  output->value.realf_FIXME = output->value.im = 0.0;
+  output->value.realf_FIXME = output->value.imagf_FIXME = 0.0;
 
   /* initialize pointers */
   cPtr = ccSpec.data->data;
@@ -1565,12 +1565,12 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   for (; cPtr < cStopPtr; ++cPtr)
   {
     output->value.realf_FIXME += crealf(*cPtr);
-    output->value.im += cPtr->im;
+    output->value.imagf_FIXME += cimagf(*cPtr);
   }
 
   /* normalize */
   output->value.realf_FIXME *= ccSpec.deltaF;
-  output->value.im *= ccSpec.deltaF;
+  output->value.imagf_FIXME *= ccSpec.deltaF;
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
@@ -2220,7 +2220,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
 
-  output->value.realf_FIXME = output->value.im = 0.0;
+  output->value.realf_FIXME = output->value.imagf_FIXME = 0.0;
 
   /* initialize pointers */
   cPtr = ccSpec.data->data;
@@ -2230,12 +2230,12 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
   for (; cPtr < cStopPtr; ++cPtr)
   {
     output->value.realf_FIXME += crealf(*cPtr);
-    output->value.im += cPtr->im;
+    output->value.imagf_FIXME += cimagf(*cPtr);
   }
 
   /* normalize */
   output->value.realf_FIXME *= ccSpec.deltaF;
-  output->value.im *= ccSpec.deltaF;
+  output->value.imagf_FIXME *= ccSpec.deltaF;
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 

@@ -303,7 +303,7 @@ LALFindChirpBCVSpinTemplate (
       /* XXX The sign of this is different than the SP filtering
        * because the data is conjugated instead of the template in the
        * BCV code */
-      expPsi[k].im =   -sin(psi1);
+      expPsi[k].imagf_FIXME =   -sin(psi1);
       expPsi[k].realf_FIXME =   cos(psi1);
 
     }

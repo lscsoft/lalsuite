@@ -223,12 +223,12 @@ LALFindChirpPTFFilterSegment (
     for ( k = kmin; k < kmax ; ++k )
     {
       r = crealf(inputData[k]);
-      s = inputData[k].im;
+      s = cimagf(inputData[k]);
       x = crealf(PTFQtilde[i * (numPoints / 2 + 1) + k]);
-      y = 0 - PTFQtilde[i * (numPoints / 2 + 1) + k].im; /* cplx conj */
+      y = 0 - cimagf(PTFQtilde[i * (numPoints / 2 + 1) + k]); /* cplx conj */
 
       qtilde[k].realf_FIXME = 2 * (r*x - s*y);
-      qtilde[k].im = 2 * (r*y + s*x);
+      qtilde[k].imagf_FIXME = 2 * (r*y + s*x);
     }
 
     qVec.data = params->PTFqVec->data + (i * numPoints);
@@ -246,7 +246,7 @@ LALFindChirpPTFFilterSegment (
     for (i = 0; i < 5; i++)
     {
       v1[i] = crealf(PTFq[i * numPoints + j]);
-      v2[i] = PTFq[i * numPoints + j].im;
+      v2[i] = cimagf(PTFq[i * numPoints + j]);
     }
     /* construct the vectors u[i] = B^(-1) v[i] */
     for (i = 0; i < 5; i++)

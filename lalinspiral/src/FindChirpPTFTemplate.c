@@ -276,8 +276,8 @@ LALFindChirpPTFNormalize(
       {
         PTFB[5 * i + j] += (crealf(PTFQtilde[k + i * len]) *
                             crealf(PTFQtilde[k + j * len]) +
-                            PTFQtilde[k + i * len].im *
-                            PTFQtilde[k + j * len].im )
+                            cimagf(PTFQtilde[k + i * len]) *
+                            cimagf(PTFQtilde[k + j * len]) )
                             * crealf(wtilde[k]) ;
       }
       PTFB[5 * i + j] *= 4.0 * deltaF ;

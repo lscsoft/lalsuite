@@ -757,9 +757,9 @@ COMPLEX8FrequencySeries *generateActuation(
   {
     fNorm = k * resp->deltaF / pendF;
     denom->data[k].realf_FIXME = ( 1 - fNorm * fNorm );
-    denom->data[k].im = - fNorm / pendQ;
+    denom->data[k].imagf_FIXME = - fNorm / pendQ;
     num->data[k].realf_FIXME = -1.0 * ETMcal;
-    num->data[k].im = 0.0;
+    num->data[k].imagf_FIXME = 0.0;
   }
 
   XLALCCVectorDivide( resp->data, num, denom);

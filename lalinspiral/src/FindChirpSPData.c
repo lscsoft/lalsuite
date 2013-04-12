@@ -383,12 +383,12 @@ LALFindChirpSPData (
     for ( k = 0; k < fcSeg->data->data->length; ++k )
     {
       REAL4 p = crealf(outputData[k]);
-      REAL4 q = outputData[k].im;
+      REAL4 q = cimagf(outputData[k]);
       REAL4 x = crealf(resp[k]) * params->dynRange;
-      REAL4 y = resp[k].im * params->dynRange;
+      REAL4 y = cimagf(resp[k]) * params->dynRange;
 
       outputData[k].realf_FIXME =  p*x - q*y;
-      outputData[k].im =  p*y + q*x;
+      outputData[k].imagf_FIXME =  p*y + q*x;
     }
 
 
@@ -460,7 +460,7 @@ LALFindChirpSPData (
         {
           wtilde[k].realf_FIXME *= norm;
           wtilde[k].realf_FIXME *= crealf(wtilde[k]);
-          wtilde[k].im = 0.0;
+          wtilde[k].imagf_FIXME = 0.0;
         }
       }
 
@@ -476,7 +476,7 @@ LALFindChirpSPData (
     for ( k = cut; k < params->wtildeVec->length; ++k )
     {
       REAL4 respRe = crealf(resp[k]) * params->dynRange;
-      REAL4 respIm = resp[k].im * params->dynRange;
+      REAL4 respIm = cimagf(resp[k]) * params->dynRange;
       REAL4 modsqResp = (respRe * respRe + respIm * respIm);
       REAL4 invmodsqResp;
       if ( modsqResp == 0 )
@@ -499,13 +499,13 @@ LALFindChirpSPData (
     for ( k = 0; k < cut; ++k )
     {
       outputData[k].realf_FIXME = 0.0;
-      outputData[k].im = 0.0;
+      outputData[k].imagf_FIXME = 0.0;
     }
 
     for ( k = 0; k < cut; ++k )
     {
       fftVec->data[k].realf_FIXME = 0.0;
-      fftVec->data[k].im = 0.0;
+      fftVec->data[k].imagf_FIXME = 0.0;
     }
 
 
@@ -526,7 +526,7 @@ LALFindChirpSPData (
     for ( k = 0; k < fcSeg->data->data->length; ++k )
     {
       fftVec->data[k].realf_FIXME  = crealf(outputData[k]) * sqrt( crealf(wtilde[k]) );
-      fftVec->data[k].im  = outputData[k].im * sqrt( crealf(wtilde[k]) );
+      fftVec->data[k].imagf_FIXME  = cimagf(outputData[k]) * sqrt( crealf(wtilde[k]) );
     }
 
     /* get the whitened time series */
@@ -552,7 +552,7 @@ LALFindChirpSPData (
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
       outputData[k].realf_FIXME  *= crealf(wtilde[k]) * amp[k];
-      outputData[k].im  *= crealf(wtilde[k]) * amp[k];
+      outputData[k].imagf_FIXME  *= crealf(wtilde[k]) * amp[k];
     }
 
     /* set output frequency series parameters */

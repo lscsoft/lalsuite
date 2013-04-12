@@ -97,7 +97,7 @@ COMPLEX8FrequencySeries * get_impulse_response(
   for ( k = 0; k < response->data->length; ++k )
   {
     response->data->data[k].realf_FIXME = responseScale;
-    response->data->data[k].im = 0.0;
+    response->data->data[k].imagf_FIXME = 0.0;
   }
 
   return response;
@@ -184,7 +184,7 @@ COMPLEX8FrequencySeries * get_frame_response(
   for ( k = 0; k < response->data->length; ++k )
   {
     response->data->data[k].realf_FIXME *= responseScale;
-    response->data->data[k].im *= responseScale;
+    response->data->data[k].imagf_FIXME *= responseScale;
   }
 
   /* cleanup memory in reference functions */

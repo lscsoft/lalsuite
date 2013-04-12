@@ -295,7 +295,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 if( fabs(x) <  SMALL) 
                   {
                     realXP += crealf(Xalpha_k);
-                    imagXP += Xalpha_k.im;
+                    imagXP += cimagf(Xalpha_k);
                   }      
                 else
                   {
@@ -303,9 +303,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                     imagP = tcos / x;
                     /* these four lines compute P*xtilde */
                     realXP += crealf(Xalpha_k) * realP;
-                    realXP -= Xalpha_k.im * imagP;
+                    realXP -= cimagf(Xalpha_k) * imagP;
                     imagXP += crealf(Xalpha_k) * imagP;
-                    imagXP += Xalpha_k.im * realP;
+                    imagXP += cimagf(Xalpha_k) * realP;
                   }
                 
                 tempFreq1 --;
@@ -350,8 +350,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 realP = tsin * xinv;
                 imagP = tcos * xinv;
                 /* these lines compute P*xtilde */
-                realXP += crealf(Xa) * realP - Xa.im * imagP;
-                imagXP += crealf(Xa) * imagP + Xa.im * realP;
+                realXP += crealf(Xa) * realP - cimagf(Xa) * imagP;
+                imagXP += crealf(Xa) * imagP + cimagf(Xa) * realP;
 
               } /* for k < klim */
 

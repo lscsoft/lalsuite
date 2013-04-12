@@ -182,9 +182,9 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   bin2 = (INT4)ceil( ((freq2 - sft2->f0)/ (deltaF)) - 0.5);
 
   re1 = crealf(sft1->data->data[bin1]);
-  im1 = sft1->data->data[bin1].im;
+  im1 = cimagf(sft1->data->data[bin1]);
   re2 = crealf(sft2->data->data[bin2]);
-  im2 = sft2->data->data[bin2].im;
+  im2 = cimagf(sft2->data->data[bin2]);
 
   out->re = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*re2 + im1*im2);
   out->im = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);

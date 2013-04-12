@@ -91,21 +91,21 @@ REAL4 tmpx, tmpy;
 
 #define cmul( a, b ) \
 ( tmpa = (a), tmpb = (b), \
-  tmpc.realf_FIXME = crealf(tmpa) * crealf(tmpb) - tmpa.im * tmpb.im, \
-  tmpc.im = crealf(tmpa) * tmpb.im + tmpa.im * crealf(tmpb), \
+  tmpc.realf_FIXME = crealf(tmpa) * crealf(tmpb) - cimagf(tmpa) * cimagf(tmpb), \
+  tmpc.imagf_FIXME = crealf(tmpa) * cimagf(tmpb) + cimagf(tmpa) * crealf(tmpb), \
   tmpc )
 
 #define cdiv( a, b ) \
 ( tmpa = (a), tmpb = (b), \
-  fabs( crealf(tmpb) ) >= fabs( tmpb.im ) ? \
-    ( tmpx = tmpb.im / crealf(tmpb), \
-      tmpy = crealf(tmpb) + tmpx * tmpb.im, \
-      tmpc.realf_FIXME = ( crealf(tmpa) + tmpx * tmpa.im ) / tmpy, \
-      tmpc.im = ( tmpa.im - tmpx * crealf(tmpa) ) / tmpy, \
+  fabs( crealf(tmpb) ) >= fabs( cimagf(tmpb) ) ? \
+    ( tmpx = cimagf(tmpb) / crealf(tmpb), \
+      tmpy = crealf(tmpb) + tmpx * cimagf(tmpb), \
+      tmpc.realf_FIXME = ( crealf(tmpa) + tmpx * cimagf(tmpa) ) / tmpy, \
+      tmpc.imagf_FIXME = ( cimagf(tmpa) - tmpx * crealf(tmpa) ) / tmpy, \
       tmpc ) : \
-    ( tmpx = crealf(tmpb) / tmpb.im, \
-      tmpy = tmpb.im + tmpx * crealf(tmpb), \
-      tmpc.realf_FIXME = ( crealf(tmpa) * tmpx + tmpa.im ) / tmpy, \
-      tmpc.im = ( tmpa.im * tmpx - crealf(tmpa) ) / tmpy, \
+    ( tmpx = crealf(tmpb) / cimagf(tmpb), \
+      tmpy = cimagf(tmpb) + tmpx * crealf(tmpb), \
+      tmpc.realf_FIXME = ( crealf(tmpa) * tmpx + cimagf(tmpa) ) / tmpy, \
+      tmpc.imagf_FIXME = ( cimagf(tmpa) * tmpx - crealf(tmpa) ) / tmpy, \
       tmpc ) )
 

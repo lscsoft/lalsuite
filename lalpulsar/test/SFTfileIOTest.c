@@ -172,7 +172,7 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
     }
     for(bin=0; bin < sft1.data->length; bin++) {
       if((crealf(sft1.data->data[bin]) != crealf(sft2.data->data[bin])) ||
-	 (sft1.data->data[bin].im != sft2.data->data[bin].im)) {
+	 (cimagf(sft1.data->data[bin]) != cimagf(sft2.data->data[bin]))) {
 	XLALPrintError ( "CompareSFTVectors(): bins %u of SFT#%u differ!\n", sft, bin);
 	return(-1);
       }
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
 	COMPLEX8 *data1 = &(sft_vect->data[0].data->data[i]);
 	COMPLEX8 *data2 = &(sft_vect->data[1].data->data[i]);
 
-	if ( (crealf(*data1) != crealf(*data2)) || (data1->im != data2->im) )
+	if ( (crealf(*data1) != crealf(*data2)) || (cimagf(*data1) != cimagf(*data2)) )
 	  {
 	    XLALPrintError ("\nv1- and v2- SFT differ after writing/reading\n\n");
 	    return SFTFILEIOTESTC_ESFTDIFF;

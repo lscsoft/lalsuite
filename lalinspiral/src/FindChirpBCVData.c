@@ -297,16 +297,16 @@ LALFindChirpBCVData (
     for ( k = 0; k < fcSeg->data->data->length; ++k )
     {
       REAL4 p = crealf(outputData[k]);
-      REAL4 q = outputData[k].im;
+      REAL4 q = cimagf(outputData[k]);
       REAL4 pBCV = crealf(outputDataBCV[k]);
-      REAL4 qBCV = outputDataBCV[k].im;
+      REAL4 qBCV = cimagf(outputDataBCV[k]);
       REAL4 x = crealf(resp[k]) * params->dynRange;
-      REAL4 y = resp[k].im * params->dynRange;
+      REAL4 y = cimagf(resp[k]) * params->dynRange;
 
       outputData[k].realf_FIXME =  p*x - q*y;
-      outputData[k].im =  p*y + q*x;
+      outputData[k].imagf_FIXME =  p*y + q*x;
       outputDataBCV[k].realf_FIXME =  pBCV*x - qBCV*y;
-      outputDataBCV[k].im =  pBCV*y + qBCV*x;
+      outputDataBCV[k].imagf_FIXME =  pBCV*y + qBCV*x;
     }
 
 
@@ -377,7 +377,7 @@ LALFindChirpBCVData (
         {
           wtilde[k].realf_FIXME *= norm;
           wtilde[k].realf_FIXME *= crealf(wtilde[k]);
-          wtilde[k].im = 0.0;
+          wtilde[k].imagf_FIXME = 0.0;
         }
       }
 
@@ -393,7 +393,7 @@ LALFindChirpBCVData (
     for ( k = cut; k < params->wtildeVec->length; ++k )
     {
       REAL4 respRe = crealf(resp[k]) * params->dynRange;
-      REAL4 respIm = resp[k].im * params->dynRange;
+      REAL4 respIm = cimagf(resp[k]) * params->dynRange;
       REAL4 modsqResp = (respRe * respRe + respIm * respIm);
       REAL4 invmodsqResp;
       if ( modsqResp == 0 )
@@ -425,9 +425,9 @@ LALFindChirpBCVData (
     for ( k = 0; k < cut; ++k )
     {
       outputData[k].realf_FIXME = 0.0;
-      outputData[k].im = 0.0;
+      outputData[k].imagf_FIXME = 0.0;
       outputDataBCV[k].realf_FIXME = 0.0;
-      outputDataBCV[k].im = 0.0;
+      outputDataBCV[k].imagf_FIXME = 0.0;
     }
 
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
@@ -478,9 +478,9 @@ LALFindChirpBCVData (
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
       outputData[k].realf_FIXME  *= 4.0 * amp[k] * crealf(wtilde[k]) ;
-      outputData[k].im  *= 4.0 * amp[k] * crealf(wtilde[k]) ;
+      outputData[k].imagf_FIXME  *= 4.0 * amp[k] * crealf(wtilde[k]) ;
       outputDataBCV[k].realf_FIXME *= 4.0 * ampBCV[k] * crealf(wtilde[k]) ;
-      outputDataBCV[k].im *= 4.0 * ampBCV[k] * crealf(wtilde[k]) ;
+      outputDataBCV[k].imagf_FIXME *= 4.0 * ampBCV[k] * crealf(wtilde[k]) ;
     }
 
     /* set output frequency series parameters */

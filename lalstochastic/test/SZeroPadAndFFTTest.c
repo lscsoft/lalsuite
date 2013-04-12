@@ -265,7 +265,7 @@ main( int argc, char *argv[] )
    for (i=0; i<SZEROPADANDFFTTESTC_LENGTH; ++i)
    {
      expectedOutputDataData[i].realf_FIXME *= SZEROPADANDFFTTESTC_DELTAT;
-     expectedOutputDataData[i].im *= SZEROPADANDFFTTESTC_DELTAT;
+     expectedOutputDataData[i].imagf_FIXME *= SZEROPADANDFFTTESTC_DELTAT;
    }
 
    ParseOptions( argc, argv );
@@ -673,12 +673,12 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("hBarTilde(0)=%g + %g i, should be %g\n",
-            crealf(goodOutput.data->data[0]), goodOutput.data->data[0].im,
+            crealf(goodOutput.data->data[0]), cimagf(goodOutput.data->data[0]),
             crealf(expectedOutputDataData[0]));
    }
    if ( fabs(crealf(goodOutput.data->data[0]) - crealf(expectedOutputDataData[0]))
         /* / expectedOutputDataData[0].re */> SZEROPADANDFFTTESTC_TOL
-        || fabs(goodOutput.data->data[0].im) > SZEROPADANDFFTTESTC_TOL )
+        || fabs(cimagf(goodOutput.data->data[0])) > SZEROPADANDFFTTESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
      if (optVerbose)
@@ -694,12 +694,12 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n",
-              f, crealf(goodOutput.data->data[i]), goodOutput.data->data[i].im,
-              crealf(expectedOutputDataData[i]), expectedOutputDataData[i].im);
+              f, crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
+              crealf(expectedOutputDataData[i]), cimagf(expectedOutputDataData[i]));
      }
      if (fabs(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> SZEROPADANDFFTTESTC_TOL
-         || fabs(goodOutput.data->data[i].im - expectedOutputDataData[i].im)
+         || fabs(cimagf(goodOutput.data->data[i]) - cimagf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> SZEROPADANDFFTTESTC_TOL)
      {
        printf("  FAIL: Valid data test\n");

@@ -258,7 +258,7 @@ main( int argc, char *argv[] )
    for (i=0; i<CZEROPADANDFFTTESTC_FULLLENGTH; ++i)
    {
      expectedOutputDataData[i].realf_FIXME *= CZEROPADANDFFTTESTC_DELTAT;
-     expectedOutputDataData[i].im *= CZEROPADANDFFTTESTC_DELTAT;
+     expectedOutputDataData[i].imagf_FIXME *= CZEROPADANDFFTTESTC_DELTAT;
    }
 
    ParseOptions( argc, argv );
@@ -645,12 +645,12 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%g + %g i, should be %g + %g i\n",
-              f, crealf(goodOutput.data->data[i]), goodOutput.data->data[i].im,
-              crealf(expectedOutputDataData[i]), expectedOutputDataData[i].im);
+              f, crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
+              crealf(expectedOutputDataData[i]), cimagf(expectedOutputDataData[i]));
      }
      if (fabs(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> CZEROPADANDFFTTESTC_TOL
-         || fabs(goodOutput.data->data[i].im - expectedOutputDataData[i].im)
+         || fabs(cimagf(goodOutput.data->data[i]) - cimagf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> CZEROPADANDFFTTESTC_TOL)
      {
        printf("  FAIL: Valid data test\n");

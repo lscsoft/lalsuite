@@ -345,7 +345,7 @@ LALFindChirpBCVSpinFilterSegment (
   	for (k = 0; k < (numPoints/2)+1; ++k )
   	{
   		normData += ((crealf(inputData1[k]) * crealf(inputData1[k]))
- 		 	+ (inputData1[k].im * inputData1[k].im))
+ 		 	+ (cimagf(inputData1[k]) * cimagf(inputData1[k])))
              	 	* crealf(wtilde[k]);
   	}
 
@@ -383,13 +383,13 @@ LALFindChirpBCVSpinFilterSegment (
   for ( k = 1; k < numPoints/2; ++k )
   {
   	REAL4 r        =   crealf(inputData1[k]);
-    	REAL4 s        =   inputData1[k].im;
+    	REAL4 s        =   cimagf(inputData1[k]);
 
     	REAL4 x =  crealf(tmpltSignal[k]);
-    	REAL4 y =  0. - tmpltSignal[k].im;
+    	REAL4 y =  0. - cimagf(tmpltSignal[k]);
 
     	qtilde[k].realf_FIXME        = r * x - s * y ;
-    	qtilde[k].im        = s * x + r * y ;
+    	qtilde[k].imagf_FIXME        = s * x + r * y ;
 
 /*      	qtilde[k].re *= wtilde[k].re;
       	qtilde[k].im *= wtilde[k].re; */
@@ -405,9 +405,9 @@ LALFindChirpBCVSpinFilterSegment (
 
     	/* imaginary parts */
 
-     	qtilde[k].im         *= A1Vec[k];
-     	qtildeBCVSpin1[k].im *= A2Vec[k];
-     	qtildeBCVSpin2[k].im *= A3Vec[k];
+     	qtilde[k].imagf_FIXME         *= A1Vec[k];
+     	qtildeBCVSpin1[k].imagf_FIXME *= A2Vec[k];
+     	qtildeBCVSpin2[k].imagf_FIXME *= A3Vec[k];
   }
 
 
@@ -454,11 +454,11 @@ LALFindChirpBCVSpinFilterSegment (
 	{
 
 		REAL4 	rhoSq =
-			( ( crealf(q[j]) * crealf(q[j]) + q[j].im * q[j].im ) +
+			( ( crealf(q[j]) * crealf(q[j]) + cimagf(q[j]) * cimagf(q[j]) ) +
    	                ( crealf(qBCVSpin1[j]) * crealf(qBCVSpin1[j])
-			+ qBCVSpin1[j].im * qBCVSpin1[j].im ) +
+			+ cimagf(qBCVSpin1[j]) * cimagf(qBCVSpin1[j]) ) +
    	                ( crealf(qBCVSpin2[j]) * crealf(qBCVSpin2[j])
-			+ qBCVSpin2[j].im * qBCVSpin2[j].im ) )
+			+ cimagf(qBCVSpin2[j]) * cimagf(qBCVSpin2[j]) ) )
                         * normFacSq;
 
 		params->rhosqVec->data->data[j] = rhoSq;
@@ -531,11 +531,11 @@ LALFindChirpBCVSpinFilterSegment (
   {
          REAL4 rhoSq = (
 		  ( crealf(q[j]) * crealf(q[j]) ) +
-		  ( q[j].im * q[j].im ) +
+		  ( cimagf(q[j]) * cimagf(q[j]) ) +
                   ( crealf(qBCVSpin1[j]) * crealf(qBCVSpin1[j]) ) +
-		  ( qBCVSpin1[j].im * qBCVSpin1[j].im ) +
+		  ( cimagf(qBCVSpin1[j]) * cimagf(qBCVSpin1[j]) ) +
                   ( crealf(qBCVSpin2[j]) * crealf(qBCVSpin2[j]) ) +
-		  ( qBCVSpin2[j].im * qBCVSpin2[j].im ) )
+		  ( cimagf(qBCVSpin2[j]) * cimagf(qBCVSpin2[j]) ) )
                   * normFacSq;
 
 	rho    = pow(rhoSq, 0.5);
@@ -581,11 +581,11 @@ LALFindChirpBCVSpinFilterSegment (
           		thisEvent->snr = rho;
 
 			alpha1hat = crealf(q[j]) * invRho * normFac;
- 	 	 	alpha4hat = q[j].im * invRho * normFac;
+ 	 	 	alpha4hat = cimagf(q[j]) * invRho * normFac;
 			alpha2hat = crealf(qBCVSpin1[j]) * invRho * normFac;
-			alpha5hat = qBCVSpin1[j].im * invRho * normFac;
+			alpha5hat = cimagf(qBCVSpin1[j]) * invRho * normFac;
 			alpha3hat = crealf(qBCVSpin2[j]) * invRho * normFac;
-			alpha6hat = qBCVSpin2[j].im * invRho * normFac;
+			alpha6hat = cimagf(qBCVSpin2[j]) * invRho * normFac;
 		/*													                           		     fprintf (stdout, "alpha1hat = %e\n", alpha1hat);
 		        fprintf (stdout, "alpha2hat = %e\n", alpha2hat);
 			fprintf (stdout, "alpha3hat = %e\n", alpha3hat);
@@ -614,11 +614,11 @@ LALFindChirpBCVSpinFilterSegment (
           		thisEvent->snr = rho;
 
                          alpha1hat = crealf(q[j]) * invRho * normFac;
-			 alpha4hat = q[j].im * invRho * normFac;
+			 alpha4hat = cimagf(q[j]) * invRho * normFac;
 			 alpha2hat = crealf(qBCVSpin1[j]) * invRho * normFac;
-			 alpha5hat = qBCVSpin1[j].im * invRho * normFac;
+			 alpha5hat = cimagf(qBCVSpin1[j]) * invRho * normFac;
 			 alpha3hat = crealf(qBCVSpin2[j]) * invRho * normFac;
-			 alpha6hat = qBCVSpin2[j].im * invRho * normFac;
+			 alpha6hat = cimagf(qBCVSpin2[j]) * invRho * normFac;
 			                                                                                                                                          /*    fprintf (stdout, "alpha1hat = %e\n", alpha1hat);
 			 fprintf (stdout, "alpha2hat = %e\n", alpha2hat);
 			 fprintf (stdout, "alpha3hat = %e\n", alpha3hat);
@@ -715,11 +715,11 @@ LALFindChirpBCVSpinFilterSegment (
           		thisEvent->snr = rho;
 
   			alpha1hat = crealf(q[j]) * invRho * normFac;
-                        alpha4hat = q[j].im * invRho * normFac;
+                        alpha4hat = cimagf(q[j]) * invRho * normFac;
 			alpha2hat = crealf(qBCVSpin1[j]) * invRho * normFac;
-			alpha5hat = qBCVSpin1[j].im * invRho * normFac;
+			alpha5hat = cimagf(qBCVSpin1[j]) * invRho * normFac;
 			alpha3hat = crealf(qBCVSpin2[j]) * invRho * normFac;
-			alpha6hat = qBCVSpin2[j].im * invRho * normFac;
+			alpha6hat = cimagf(qBCVSpin2[j]) * invRho * normFac;
 															                  /*                         fprintf (stdout, "alpha1hat = %e\n", alpha1hat);
 			fprintf (stdout, "alpha2hat = %e\n", alpha2hat);
 			fprintf (stdout, "alpha3hat = %e\n", alpha3hat);

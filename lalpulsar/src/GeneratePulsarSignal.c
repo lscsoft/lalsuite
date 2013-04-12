@@ -402,7 +402,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       for ( UINT4 i = 0; i < numBins ; i ++ )
 	{
 	  data->realf_FIXME *= dt;
-	  data->im *= dt;
+	  data->imagf_FIXME *= dt;
 	  data ++;
 	} /* for i < numBins */
 
@@ -425,7 +425,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
 	  for ( UINT4 j=0; j < numBins; j++ )
 	    {
 	      data->realf_FIXME += crealf(*noise);
-	      data->im += noise->im;
+	      data->imagf_FIXME += cimagf(*noise);
 	      data++;
 	      noise++;
 	    } /* for j < numBins */
@@ -803,7 +803,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
       if (setToZero) {
         for (j=0; j<jStart; j++) {
           thisSFT->data->data[j].realf_FIXME = 0.0;
-          thisSFT->data->data[j].im = 0.0;
+          thisSFT->data->data[j].imagf_FIXME = 0.0;
         }
       }
       /* This is the same as the inner most loop over k in LALDemod */
@@ -823,12 +823,12 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
           realTmp = realQcc*realPcc - imagQcc*imagPcc;
           imagTmp = realQcc*imagPcc + imagQcc*realPcc;
           thisSFT->data->data[j].realf_FIXME = (REAL4)(realTmp*realA - imagTmp*imagA);
-          thisSFT->data->data[j].im = (REAL4)(realTmp*imagA + imagTmp*realA);
+          thisSFT->data->data[j].imagf_FIXME = (REAL4)(realTmp*imagA + imagTmp*realA);
       } /* END for (j=jStart; j<jEnd; j++) */
       if (setToZero) {
         for (j=jEnd; j<SFTlen; j++) {
           thisSFT->data->data[j].realf_FIXME = 0.0;
-          thisSFT->data->data[j].im = 0.0;
+          thisSFT->data->data[j].imagf_FIXME = 0.0;
         }
       }
       /* fill in SFT metadata */
@@ -843,7 +843,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         for (j=0; j < SFTlen; j++)
         {
            thisSFT->data->data[j].realf_FIXME += crealf(thisNoiseSFT->data->data[index0n + j]);
-           thisSFT->data->data[j].im += thisNoiseSFT->data->data[index0n + j].im;
+           thisSFT->data->data[j].imagf_FIXME += cimagf(thisNoiseSFT->data->data[index0n + j]);
         } /* for j < SFTlen */
       }
   } /* for iSFT < numSFTs */
@@ -1089,8 +1089,8 @@ XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne )
       for (UINT4 i = 0; i < sft->data->length; i++ )
 	{
 	  COMPLEX8 fvec1 = sft->data->data[i];
-	  sft->data->data[i].realf_FIXME = crealf(fvec1) * cosx - fvec1.im * sinx;
-	  sft->data->data[i].im = fvec1.im * cosx + crealf(fvec1) * sinx;
+	  sft->data->data[i].realf_FIXME = crealf(fvec1) * cosx - cimagf(fvec1) * sinx;
+	  sft->data->data[i].imagf_FIXME = cimagf(fvec1) * cosx + crealf(fvec1) * sinx;
 	} /* for i < length */
 
     } /* if deltaFT not integer */

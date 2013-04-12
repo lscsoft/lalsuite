@@ -494,7 +494,7 @@ LALFindChirpTDNormalize(
   for ( k = 1; k < fcTmplt->data->length; ++k )
   {
     REAL4 re = crealf(fcTmplt->data->data[k]);
-    REAL4 im = fcTmplt->data->data[k].im;
+    REAL4 im = cimagf(fcTmplt->data->data[k]);
     REAL4 power = re * re + im * im;
     tmpltPower[k] = power * crealf(wtilde[k]);
     segNormSum += tmpltPower[k];

@@ -699,11 +699,11 @@ int main( int argc, char *argv[] )
       / (STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM / 2.0);
     /* printf ("%f\n",x); */
     goodData1.data->data[i].realf_FIXME = x*x;
-    goodData1.data->data[i].im = x;
+    goodData1.data->data[i].imagf_FIXME = x;
     goodData2.data->data[i].realf_FIXME = 1.0/crealf(goodData1.data->data[i]);
-    goodData2.data->data[i].im = -1.0/goodData1.data->data[i].im;
+    goodData2.data->data[i].imagf_FIXME = -1.0/cimagf(goodData1.data->data[i]);
     goodFilter.data->data[i].realf_FIXME = x * (2-x);
-    goodFilter.data->data[i].im = 0.0;
+    goodFilter.data->data[i].imagf_FIXME = 0.0;
     /*    printf ("%f + %f i    %f + %f i    %f + %f i\n",
 	    goodData1.data->data[i].re, goodData1.data->data[i].im,
 	    goodData2.data->data[i].re, goodData2.data->data[i].im,
@@ -722,12 +722,12 @@ int main( int argc, char *argv[] )
   if (optVerbose)
   {
     printf("Y=%g + %g i, should be %g i\n", crealf(output.value),
-	   output.value.im,
+	   cimagf(output.value),
 	   STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1);
   }
   if ( ( fabs(crealf(output.value)/STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1)
 	 > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL )
-       || ( fabs((output.value.im - STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1)
+       || ( fabs((cimagf(output.value) - STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1)
 		 / STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP1)
 	    > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL )
        )
@@ -831,8 +831,8 @@ int main( int argc, char *argv[] )
     {
       goodFilter.data->data[i].realf_FIXME = 0.0;
     }
-    goodData1.data->data[i].im = goodData2.data->data[i].im
-      = goodFilter.data->data[i].im = 0.0;
+    goodData1.data->data[i].imagf_FIXME = goodData2.data->data[i].imagf_FIXME
+      = goodFilter.data->data[i].imagf_FIXME = 0.0;
   }
 
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);
@@ -845,13 +845,13 @@ int main( int argc, char *argv[] )
 
   if (optVerbose)
   {
-    printf("Y = %g + %g i, should be %g\n", crealf(output.value), output.value.im,
+    printf("Y = %g + %g i, should be %g\n", crealf(output.value), cimagf(output.value),
            STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2);
   }
   if ( ( fabs(crealf(output.value)-STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2)
          / STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2
          > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL )
-       || ( fabs(output.value.im)
+       || ( fabs(cimagf(output.value))
             / STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_EXP2
             > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TOL )
        )
@@ -1035,7 +1035,7 @@ int main( int argc, char *argv[] )
     }
 
     printf("=========== Cross-Correlation Statistic for User-Specified Data Is =======\n");
-    printf("     %g + %g i %s\n", crealf(output.value), output.value.im,
+    printf("     %g + %g i %s\n", crealf(output.value), cimagf(output.value),
            unitString->data);
 
     /* Deallocate Memory */

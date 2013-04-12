@@ -695,7 +695,7 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 	  REAL4 *rep, *imp;
 
 	  rep = &(crealf(ret->data->data[i]));
-	  imp = &(ret->data->data[i].im);
+	  imp = &(cimagf(ret->data->data[i]));
 
 	  if ( swapEndian )
 	    {
@@ -2367,7 +2367,7 @@ LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structu
   for ( i=0; i < numBins; i ++ )
     {
       v1SFT.data->data[i].realf_FIXME = (REAL4) ( (REAL8)crealf(v1SFT.data->data[i]) / dt );
-      v1SFT.data->data[i].im = (REAL4) ( (REAL8)v1SFT.data->data[i].im / dt );
+      v1SFT.data->data[i].imagf_FIXME = (REAL4) ( (REAL8)cimagf(v1SFT.data->data[i]) / dt );
     }
 
   TRY ( LALWriteSFTfile (status->statusPtr, &v1SFT, fname ), status );
@@ -2449,7 +2449,7 @@ LALWriteSFTfile (LALStatus  *status,			/**< pointer to LALStatus structure */
   for ( i = 0; i < header.length; i++)
     {
       rawdata[2 * i]     = crealf(inData[i]);
-      rawdata[2 * i + 1] = inData[i].im;
+      rawdata[2 * i + 1] = cimagf(inData[i]);
     } /* for i < length */
 
 
@@ -2836,7 +2836,7 @@ LALReadSFTfile (LALStatus *status,			/**< pointer to LALStatus structure */
     for (i=0; i < readlen; i++)
       {
 	outputSFT->data->data[i].realf_FIXME *= renorm;
-	outputSFT->data->data[i].im *= renorm;
+	outputSFT->data->data[i].imagf_FIXME *= renorm;
       }
 
   /* that's it: return */
@@ -3322,7 +3322,7 @@ LALReadSFTdata(LALStatus *status,			/**< pointer to LALStatus structure */
       if (swapEndian)
 	endian_swap((CHAR*)&rawdata[2*i], sizeof(REAL4), 2);
       sft->data->data[i].realf_FIXME = rawdata[2 * i];
-      sft->data->data[i].im = rawdata[2 * i + 1];
+      sft->data->data[i].imagf_FIXME = rawdata[2 * i + 1];
     }
 
   LALFree (rawdata);
@@ -3533,7 +3533,7 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
 	  REAL4 *rep, *imp;
 
 	  rep = &(crealf(ret->data->data[i]));
-	  imp = &(ret->data->data[i].im);
+	  imp = &(cimagf(ret->data->data[i]));
 
 	  if ( swapEndian )
 	    {

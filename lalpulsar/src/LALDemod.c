@@ -197,9 +197,9 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 	    /* these four lines compute P*xtilde */
 	    Xalpha_k=Xalpha[sftIndex];
 	    realXP += crealf(Xalpha_k)*realP;
-	    realXP -= Xalpha_k.im*imagP;
+	    realXP -= cimagf(Xalpha_k)*imagP;
 	    imagXP += crealf(Xalpha_k)*imagP;
-	    imagXP += Xalpha_k.im*realP;
+	    imagXP += cimagf(Xalpha_k)*realP;
 	  }
 
 	y=-LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);

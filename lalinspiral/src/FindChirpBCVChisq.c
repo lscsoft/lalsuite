@@ -240,12 +240,12 @@ LALFindChirpBCVChisqVeto (
     for ( l = 0; l < numChisqBins; ++l )
     {
       REAL4 X1 = crealf(params->qBinVecPtr[l]->data[j]);
-      REAL4 Y1 = params->qBinVecPtr[l]->data[j].im;
+      REAL4 Y1 = cimagf(params->qBinVecPtr[l]->data[j]);
 
       REAL4 mod1 = ( ( X1 - crealf(q[j]) / (REAL4) (numChisqBins) ) *
           ( X1 - crealf(q[j]) / (REAL4) (numChisqBins) ) +
-          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) *
-          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) );
+          ( Y1 - cimagf(q[j]) / (REAL4) (numChisqBins) ) *
+          ( Y1 - cimagf(q[j]) / (REAL4) (numChisqBins) ) );
 
       chisq[j] += chisqNorm * mod1 ;
     }
@@ -257,12 +257,12 @@ LALFindChirpBCVChisqVeto (
     {
 
       REAL4 X2 = crealf(params->qBinVecPtrBCV[l]->data[j]);
-      REAL4 Y2 = params->qBinVecPtrBCV[l]->data[j].im;
+      REAL4 Y2 = cimagf(params->qBinVecPtrBCV[l]->data[j]);
 
       REAL4 mod2 = ( ( X2 - crealf(qBCV[j]) / (REAL4) (numChisqBins) ) *
           ( X2 - crealf(qBCV[j]) / (REAL4) (numChisqBins) ) +
-          ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) *
-          ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) );
+          ( Y2 - cimagf(qBCV[j]) / (REAL4) (numChisqBins) ) *
+          ( Y2 - cimagf(qBCV[j]) / (REAL4) (numChisqBins) ) );
 
       chisq[j] += chisqNorm * mod2;
 

@@ -746,7 +746,7 @@ LALGetFrameDataResponse (
   factor /= -4*LAL_PI*LAL_PI;  /* from two time derivatives */
 
   /* demand DC is zero */
-  response->data->data[0].realf_FIXME = response->data->data[0].im = 0;
+  response->data->data[0].realf_FIXME = response->data->data[0].imagf_FIXME = 0;
 
   /* other components (including possible Nyquist) */
   for (i = 1; i < response->data->length; ++i)
@@ -759,7 +759,7 @@ LALGetFrameDataResponse (
     REAL4 fac   = factor/(fsq*ssmod);
 
     response->data->data[i].realf_FIXME = fac*ssre;
-    response->data->data[i].im = fac*ssim;
+    response->data->data[i].imagf_FIXME = fac*ssim;
   }
 
   response->epoch  = frameData->calibrationTime;

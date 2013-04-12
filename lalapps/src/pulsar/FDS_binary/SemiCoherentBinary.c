@@ -1094,7 +1094,7 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
 	
 	REAL8 phase = phi0 + LAL_TWOPI*((t-tref)*(nu-fhet) - nu*a*sin(omega*(t-tasc))) - LAL_PI/2.0;
 	xt->data[j].realf_FIXME = 0.5*inject_amplitude*cos(phase)*deltat;
-	xt->data[j].im = 0.5*inject_amplitude*sin(phase)*deltat;
+	xt->data[j].imagf_FIXME = 0.5*inject_amplitude*sin(phase)*deltat;
       }
       
       /* perform fft */
@@ -1107,11 +1107,11 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
       /* now add directly to the input sft - making sure to flip negative frequencies */
       for (j=0;j<(UINT4)floor((numBins+1)/2);j++) {
 	(*sftvec)->data[i].data->data[j].realf_FIXME += crealf(xf->data[j+(UINT4)floor((numBins)/2)]);
-	(*sftvec)->data[i].data->data[j].im += xf->data[j+(UINT4)floor((numBins)/2)].im;
+	(*sftvec)->data[i].data->data[j].imagf_FIXME += cimagf(xf->data[j+(UINT4)floor((numBins)/2)]);
       }
       for (j=(UINT4)floor((numBins+1)/2);j<numBins;j++) {
 	(*sftvec)->data[i].data->data[j].realf_FIXME += crealf(xf->data[j-(UINT4)floor((numBins+1)/2)]);
-	(*sftvec)->data[i].data->data[j].im += xf->data[j-(UINT4)floor((numBins+1)/2)].im;
+	(*sftvec)->data[i].data->data[j].imagf_FIXME += cimagf(xf->data[j-(UINT4)floor((numBins+1)/2)]);
       }
       
       /* TESTING */
@@ -1910,8 +1910,8 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
       xi = sin(arg);
     
       /* multiply data by phase correction - leave the zero-padding */
-      temp_input->data[j].realf_FIXME = crealf(dsdata->data->data[j])*xr - dsdata->data->data[j].im*xi;
-      temp_input->data[j].im = crealf(dsdata->data->data[j])*xi + dsdata->data->data[j].im*xr;
+      temp_input->data[j].realf_FIXME = crealf(dsdata->data->data[j])*xr - cimagf(dsdata->data->data[j])*xi;
+      temp_input->data[j].imagf_FIXME = crealf(dsdata->data->data[j])*xi + cimagf(dsdata->data->data[j])*xr;
 				     
     }  
 
@@ -1931,7 +1931,7 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
     /* fill in the actual output making sure that the frequency bins of interest are used and the result is normalised */
     for (j=0;j<gridparams->grid[0].length;j++) {
       k = j + binoffset;
-      (*power)->data->data[cnt] = norm*(crealf(temp_output->data[k])*crealf(temp_output->data[k]) + temp_output->data[k].im*temp_output->data[k].im); 
+      (*power)->data->data[cnt] = norm*(crealf(temp_output->data[k])*crealf(temp_output->data[k]) + cimagf(temp_output->data[k])*cimagf(temp_output->data[k])); 
       cnt++;
     }
     
@@ -2006,7 +2006,7 @@ int XLALEstimateBackgroundFlux(REAL8Vector **background,     /**< [out] the back
     }
 
     /* loop over each element in the SFT and record the power */
-    for (j=0;j<sft->length;j++) P[j] = (crealf(sft->data[j])*crealf(sft->data[j]) + sft->data[j].im*sft->data[j].im);
+    for (j=0;j<sft->length;j++) P[j] = (crealf(sft->data[j])*crealf(sft->data[j]) + cimagf(sft->data[j])*cimagf(sft->data[j]));
 
     /* sort the data */
     gsl_sort(P,1,sft->length);

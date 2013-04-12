@@ -290,12 +290,12 @@ LALFindChirpBCVSpinData (
   	for ( k = 0; k < fcSeg->data->data->length; ++k )
   	{
     		REAL4 p = crealf(outputData[k]);
-   	 	REAL4 q = outputData[k].im;
+   	 	REAL4 q = cimagf(outputData[k]);
    	 	REAL4 x = crealf(resp[k]) * params->dynRange;
-    		REAL4 y = resp[k].im * params->dynRange;
+    		REAL4 y = cimagf(resp[k]) * params->dynRange;
 
     		outputData[k].realf_FIXME =  (p*x) - (q*y);
-    		outputData[k].im =  (p*y) + (q*x);
+    		outputData[k].imagf_FIXME =  (p*y) + (q*x);
   	}
 
 
@@ -389,7 +389,7 @@ LALFindChirpBCVSpinData (
         		{
           		wtilde[k].realf_FIXME *= norm;
           		wtilde[k].realf_FIXME *= crealf(wtilde[k]);
-          		wtilde[k].im = 0.0;
+          		wtilde[k].imagf_FIXME = 0.0;
         		}
       		}
 
@@ -405,7 +405,7 @@ LALFindChirpBCVSpinData (
     	for ( k = cut; k < params->wtildeVec->length; ++k )
     	{
       		REAL4 respRe = crealf(resp[k]) * params->dynRange;
-      		REAL4 respIm = resp[k].im * params->dynRange;
+      		REAL4 respIm = cimagf(resp[k]) * params->dynRange;
       		REAL4 modsqResp = (respRe * respRe + respIm * respIm);
       		REAL4 invmodsqResp;
 

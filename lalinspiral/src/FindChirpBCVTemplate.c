@@ -223,7 +223,7 @@ LALFindChirpBCVTemplate (
       }
 
       /* compute sine and cosine of psi1 */
-      expPsi[k].im =   -sin(psi1);
+      expPsi[k].imagf_FIXME =   -sin(psi1);
       expPsi[k].realf_FIXME =   cos(psi1);
       /* very expensive computation method */
     }

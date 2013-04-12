@@ -121,7 +121,7 @@ void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
   {
     ff = f0 + i*df;
     valre = crealf(sft->data->data[i]);
-    valim = sft->data->data[i].im;
+    valim = cimagf(sft->data->data[i]);
     if ( (i==0) && (i == nsamples-1) )
       P_k = sqrt(valre*valre + valim*valim);
     else
