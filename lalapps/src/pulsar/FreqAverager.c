@@ -27,12 +27,48 @@
 /*********************************************************************************/
 /*                                 Noise vs. Time Code                           */
 /*                                                                               */
-/*			               X. Siemens                                */
+/*                                     X. Siemens                                */
 /*                                                                               */
 /*                                UWM - December 2002                            */
 /*********************************************************************************/
 
-#include "FreqAverager.h"
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <glob.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALBarycenter.h>
+#include <lal/LALInitBarycenter.h>
+#include <lal/LALDemod.h>
+
+#define MAXFILES 60000         /* Maximum # of files in a directory  */
+#define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
+
+struct CommandLineArgsTag
+{
+  char *directory;
+  char *outputfile;
+  REAL8  b;
+  REAL8  f0;
+  REAL8  s;
+} CommandLineArgs;
+
+struct headertag
+{
+  REAL8 endian;
+  INT4  gps_sec;
+  INT4  gps_nsec;
+  REAL8 tbase;
+  INT4  firstfreqindex;
+  INT4  nsamples;
+} header;
+
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
+int ReadSFTDirectory(struct CommandLineArgsTag CLA);
+int ComputePSD(struct CommandLineArgsTag CLA);
+
 INT4 SFTno,RealSFTno;                /* Global variables that keep track of no of SFTs */
 INT4 lalDebugLevel=3;
 INT4 ifmin,band;
@@ -47,27 +83,27 @@ extern int optind, opterr, optopt;
 int Freemem(void);
 
 
-int main(int argc,char *argv[]) 
+int main(int argc,char *argv[])
 {
 
-  /* Reads command line arguments into the CommandLineArgs struct. 
+  /* Reads command line arguments into the CommandLineArgs struct.
      In the absence of command line arguments it sets some defaults */
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 
   /* Reads in SFT directory for filenames and total number of files */
-  fprintf(stderr,"\n");  
+  fprintf(stderr,"\n");
   fprintf(stderr,"Reading SFT directory:                ");
   if (ReadSFTDirectory(CommandLineArgs)) return 2;
-  fprintf(stderr," Done\n");  
+  fprintf(stderr," Done\n");
 
   fprintf(stderr,"Computing power spectral density:    ");
   if (ComputePSD(CommandLineArgs)) return 2;
-  fprintf(stderr," Done\n");  
+  fprintf(stderr," Done\n");
 
   /* Free memory*/
-  fprintf(stderr,"Freeing allocated memory:             ");  
+  fprintf(stderr,"Freeing allocated memory:             ");
   if (Freemem()) return 8;
-  fprintf(stderr," Done\n \n");  
+  fprintf(stderr," Done\n \n");
 
   return 0;
 
@@ -85,7 +121,7 @@ int ComputePSD(struct CommandLineArgsTag CLA)
 
   strcpy(filename,CLA.outputfile);
   fpo=fopen(filename,"w");
-  if (fpo==NULL) 
+  if (fpo==NULL)
     {
       fprintf(stderr,"Could not open %s!\n",filename);
       return 1;
@@ -97,65 +133,65 @@ int ComputePSD(struct CommandLineArgsTag CLA)
       fprintf(stderr,"In file %d of %d\n",i,SFTno);
 
       fp=fopen(filelist[i],"r");
-      if (fp==NULL) 
-	{
-	  fprintf(stderr,"Weird... %s doesn't exist!\n",filelist[i]);
-	  return 1;
-	}
+      if (fp==NULL)
+        {
+          fprintf(stderr,"Weird... %s doesn't exist!\n",filelist[i]);
+          return 1;
+        }
       /* Read in the header from the file */
       errorcode=fread((void*)&header,sizeof(header),1,fp);
-      if (errorcode!=1) 
-	{
-	  fprintf(stderr,"No header in data file %s\n",filelist[i]);
-	  return 1;
-	}
-      
+      if (errorcode!=1)
+        {
+          fprintf(stderr,"No header in data file %s\n",filelist[i]);
+          return 1;
+        }
+
       /* Check that data is correct endian order */
       if (header.endian!=1.0)
-	{
-	  fprintf(stderr,"First object in file %s is not (double)1.0!\n",filelist[i]);
-	  fprintf(stderr,"It could be a file format error (big/little\n");
-	  fprintf(stderr,"endian) or the file might be corrupted\n\n");
-	  return 2;
-	}
-    
+        {
+          fprintf(stderr,"First object in file %s is not (double)1.0!\n",filelist[i]);
+          fprintf(stderr,"It could be a file format error (big/little\n");
+          fprintf(stderr,"endian) or the file might be corrupted\n\n");
+          return 2;
+        }
+
       /* Check that the time base is positive */
       if (header.tbase<=0.0)
-	{
-	  fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
-		  header.tbase,filelist[i]);
-	  return 3;
-	}
-      
+        {
+          fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
+                  header.tbase,filelist[i]);
+          return 3;
+        }
+
       offset=(ifmin-header.firstfreqindex)*2*sizeof(REAL4);
       errorcode=fseek(fp,offset,SEEK_CUR);
       ndeltaf=band+1;
 
-      errorcode=fread((void*)p,2*ndeltaf*sizeof(REAL4),1,fp);  
+      errorcode=fread((void*)p,2*ndeltaf*sizeof(REAL4),1,fp);
       if (errorcode!=1)
-	{
-	  printf("Dang! Error reading data in SFT file %s!\n",filelist[i]);
-	  return 1;
-	}
+        {
+          printf("Dang! Error reading data in SFT file %s!\n",filelist[i]);
+          return 1;
+        }
       fclose(fp);
 
       /*Loop over frequency bins in each SFT      */
       for (j=0;j<ndeltaf;j++)
-	 {
-	   int jre=2*j;
-	   int jim=jre+1;
+         {
+           int jre=2*j;
+           int jim=jre+1;
 
-	   po[i]=po[i]+(p[jre]*p[jre]+p[jim]*p[jim])/((REAL4) ndeltaf);
-	 }
+           po[i]=po[i]+(p[jre]*p[jre]+p[jim]*p[jim])/((REAL4) ndeltaf);
+         }
       Sh=2.0*deltaT/N * po[i];
       fprintf(fpo,"%d  %d  %d  %20.19e\n",i,header.gps_sec,header.gps_nsec,sqrt(Sh));
     }
 
   /* write output file */
-      
+
   fclose(fpo);
-  
-  
+
+
   return 0;
 
 }
@@ -178,15 +214,15 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   glob(command, GLOB_ERR|GLOB_MARK, NULL, &globbuf);
 
   /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-  while (filenum < (int)globbuf.gl_pathc) 
+  while (filenum < (int)globbuf.gl_pathc)
     {
       strcpy(filelist[filenum],globbuf.gl_pathv[filenum]);
       filenum++;
       if (filenum > MAXFILES)
-	{
-	  fprintf(stderr,"Too many files in directory! Exiting... \n");
-	  return 1;
-	}
+        {
+          fprintf(stderr,"Too many files in directory! Exiting... \n");
+          return 1;
+        }
     }
   globfree(&globbuf);
 
@@ -196,14 +232,14 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   /* open FIRST file and get info from it*/
 
   fp=fopen(filelist[0],"r");
-  if (fp==NULL) 
+  if (fp==NULL)
     {
       fprintf(stderr,"Weird... %s doesn't exist!\n",filelist[0]);
       return 1;
     }
   /* Read in the header from the file */
   errorcode=fread((void*)&header,sizeof(header),1,fp);
-  if (errorcode!=1) 
+  if (errorcode!=1)
     {
       fprintf(stderr,"No header in data file %s\n",filelist[0]);
       return 1;
@@ -217,12 +253,12 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
       fprintf(stderr,"endian) or the file might be corrupted\n\n");
       return 2;
     }
-    
+
   /* Check that the time base is positive */
   if (header.tbase<=0.0)
     {
       fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
-	      header.tbase,filelist[0]);
+              header.tbase,filelist[0]);
       return 3;
     }
   fclose(fp);
@@ -233,9 +269,9 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
 
   for (j=0;j<SFTno;j++)
     {
-      po[j]=0.0;   
+      po[j]=0.0;
     }
- 
+
  deltaT=1.0/CLA.s;  /* deltaT is the time resolution of the original data */
  N=header.tbase*CLA.s; /* the number of time data points in one sft  */
 
@@ -251,14 +287,14 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   ifmin=floor(CLA.f0*header.tbase);
   band=ceil(CLA.b*header.tbase);
 
-      if (ifmin<header.firstfreqindex || 
-	  ifmin+band > header.firstfreqindex+header.nsamples) 
-	{
-	  fprintf(stderr,"Freq index range %d->%d not in %d to %d\n",
-		ifmin,ifmin+band,header.firstfreqindex,
-		  header.firstfreqindex+header.nsamples);
-	  return 4;
-	}
+      if (ifmin<header.firstfreqindex ||
+          ifmin+band > header.firstfreqindex+header.nsamples)
+        {
+          fprintf(stderr,"Freq index range %d->%d not in %d to %d\n",
+                ifmin,ifmin+band,header.firstfreqindex,
+                  header.firstfreqindex+header.nsamples);
+          return 4;
+        }
 
   return 0;
 }
@@ -266,11 +302,11 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 c, errflg = 0;
   optarg = NULL;
-  
+
   /* Initialize default values */
   CLA->directory=NULL;
   CLA->outputfile=NULL;
@@ -325,19 +361,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No frequency band specified; input band with -b option.\n");
       fprintf(stderr,"For help type ./psd -h \n");
       return 1;
-    }      
+    }
   if(CLA->directory == NULL)
     {
       fprintf(stderr,"No directory specified; input directory with -D option.\n");
       fprintf(stderr,"For help type ./psd -h \n");
       return 1;
-    }      
+    }
   if(CLA->outputfile == NULL)
     {
       fprintf(stderr,"No output directory specified; input directory with -o option.\n");
       fprintf(stderr,"For help type ./psd -h \n");
       return 1;
-    }      
+    }
   return errflg;
 }
 
@@ -352,6 +388,6 @@ int Freemem(void)
   LALFree(p);
 
   LALCheckMemoryLeaks();
-  
+
   return 0;
 }
