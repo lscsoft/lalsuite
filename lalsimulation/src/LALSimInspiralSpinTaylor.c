@@ -1022,9 +1022,9 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
             + v * ( 9. * (params->Ecoeff[7] + Espin35)
 			+ v * v * v * ( 12. * params->Etidal5pn
 			+ v * v * ( 14. * params->Etidal6pn ) ) ) ) ) ) ) );
-    if( omegaEnd != 0. && omegaEnd > omegaStart && omega > omegaEnd) /* freq. above bound */
+    if( abs(omegaEnd) > LAL_REAL4_EPS && omegaEnd > omegaStart && omega > omegaEnd) /* freq. above bound */
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
-    else if( omegaEnd != 0. && omegaEnd < omegaStart && omega < omegaEnd) /* freq. below bound */
+    else if( abs(omegaEnd) > LAL_REAL4_EPS && omegaEnd < omegaStart && omega < omegaEnd) /* freq. below bound */
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
     else if (test < 0.0) /* energy test fails! */
         return LALSIMINSPIRAL_ST_TEST_ENERGY;
