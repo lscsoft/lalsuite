@@ -34,6 +34,7 @@ AC_CONFIG_FILES([\
   src/pulsar/TimingTests/Makefile \
   src/pulsar/TDS_isolated/Makefile \
   src/inspiral/Makefile \
+  src/inspiral/bayestar/Makefile \
   src/inspiral/posterior/Makefile \
   src/inspiral/posterior/SPINspiral/Makefile \
   src/inspiral/posterior/mpi/Makefile \

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = posterior
+SUBDIRS = bayestar posterior
 
 INSPIRALSRC = inspiral.c inspiralutils.c inspiral.h
 TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
