@@ -295,7 +295,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   UINT4 adapting = 0;
 
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--flowSearch")) {
+  if (LALInferenceGetProcParamVal(runState->commandLine,"--varyFlow")) {
     /* Metropolis-coupled MCMC Swap (assumes likelihood function differs between chains).*/
     parallelSwap = &LALInferenceMCMCMCswap;
   } else {
@@ -1041,7 +1041,6 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 
 UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile)
 {
-  REAL8 nullLikelihood = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "nullLikelihood");
   INT4 MPIrank;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
   MPI_Status MPIstatus;
@@ -1161,18 +1160,11 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
       MPI_Recv(&lowLikeHighParams, 1, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD, &MPIstatus);
 
       /* Propose swap */
-      if(MPIrank==1){
-        REAL8 flow = *(REAL8*) LALInferenceGetVariable(runState->currentParams, "fLow");
-        fprintf(stdout,"%i:%f\n",MPIrank,flow);
-        fprintf(stdout,"ll: %f\nlh: %f\nhl %f\nhh:%f\n",lowLikeLowParams-nullLikelihood,lowLikeHighParams-nullLikelihood,highLikeLowParams-nullLikelihood,highLikeHighParams-nullLikelihood);
-      }
       logChainSwap = (1./ladder[MPIrank-1])*(lowLikeHighParams-lowLikeLowParams)+(1./ladder[MPIrank])*(highLikeLowParams-highLikeHighParams);
 
       if ((logChainSwap > 0) || (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) {
-        if(MPIrank==1) fprintf(stdout,"accepted\n\n");
         swapAccepted = 1;
       } else 
-        if(MPIrank==1) fprintf(stdout,"rejected\n\n");
       MPI_Send(&swapAccepted, 1, MPI_INT, MPIrank-1, 0, MPI_COMM_WORLD);
 
       if (swapAccepted) {
