@@ -102,7 +102,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALPSpinInspiralRD.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 

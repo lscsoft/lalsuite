@@ -104,7 +104,6 @@ at the last stable orbit. It is recommended that a rather generous
 <tt>params->nEndPad</tt> be used to prevent the code from crashing.
 
 */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>

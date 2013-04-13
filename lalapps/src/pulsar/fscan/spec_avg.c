@@ -22,7 +22,6 @@
  * \ingroup pulsarApps
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 
 /*temporary rubbish bin for headers*/
 /*These are included in HeterodyneCrabPulsar files

@@ -115,7 +115,6 @@ list of all the files which must be updated.
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

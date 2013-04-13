@@ -51,7 +51,6 @@ Unless the <tt>-f</tt> option is used, the environment variable
 */
 #include <config.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

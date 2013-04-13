@@ -19,7 +19,6 @@
 /*
  * Author: Torres Cristina (LLO)
  */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "tracksearch.h"
 #include "tracksearchToolbox.h"
 #include <unistd.h>

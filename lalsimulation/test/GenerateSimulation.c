@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Date.h>

@@ -55,7 +55,6 @@ LALHO()
 \endcode
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./SFTbin.h"
 
 /*

@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <math.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>

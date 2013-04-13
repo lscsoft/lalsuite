@@ -16,7 +16,6 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>

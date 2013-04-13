@@ -51,7 +51,6 @@ GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f f_min f
 
 #define BUFFSIZE 1024     /* Number of timesteps buffered */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdio.h>

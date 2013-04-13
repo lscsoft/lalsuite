@@ -25,7 +25,6 @@
  * \brief Compute power spectral densities
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <glob.h>
 #include <stdlib.h>
 #include <math.h>

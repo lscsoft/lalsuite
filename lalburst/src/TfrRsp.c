@@ -50,7 +50,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/TimeFreq.h>
 
 /* well, better macros than these one are welcome! */
