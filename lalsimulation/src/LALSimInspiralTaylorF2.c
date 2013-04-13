@@ -127,8 +127,8 @@ int XLALSimInspiralTaylorF2(
                     - 305.*eta*eta/36.) - d * (170978035./48384.
                     - 2876425.*eta/672. - 4735.*eta*eta/144.) ) * chi2 * S2z;
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
-            psiSO3 = LAL_PI * ( (3760.*chi1/3. - 1490./3.) * chi1 * S1z
-                    + (3760.*chi2/3. + 1490./3.) * chi2 * S2z);
+            psiSO3 = LAL_PI * ( (260.*chi1 + 1490./3.) * chi1 * S1z
+                    + (260.*chi2 + 1490./3.) * chi2 * S2z);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             /* Compute 2.5PN SO correction */
             // See Eq. (6.25) in arXiv:0810.5336
