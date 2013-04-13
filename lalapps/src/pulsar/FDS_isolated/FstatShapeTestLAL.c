@@ -61,7 +61,6 @@
 #include <math.h>
 #include <float.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
@@ -998,15 +997,18 @@ ReadData( LALStatus *status, /*!< LAL status pointer */
   /* data input begin */
   for( irec = 0; irec < FaFbPair->freqObsv->length; irec++ ) {
     if( ( ptr = fgets(buff,sizeof(buff),fpobsv) ) == NULL ) break;
+    REAL8 Fa_real, Fa_imag, Fb_real, Fb_imag;
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqObsv->data[irec]),
-		   &(creal(FaFbPair->FaFbObsv->Fa[irec])),
-		   &(cimag(FaFbPair->FaFbObsv->Fa[irec])),
-		   &(creal(FaFbPair->FaFbObsv->Fb[irec])),
-		   &(cimag(FaFbPair->FaFbObsv->Fb[irec])),
+		   &Fa_real,
+		   &Fa_imag,
+		   &Fb_real,
+		   &Fb_imag,
 		   &(FaFbPair->FaFbObsv->F[irec])
 		   );
     if ( (count != 6) || (count == EOF) ) break;
+    FaFbPair->FaFbObsv->Fa[irec] = crect(Fa_real, Fa_imag);
+    FaFbPair->FaFbObsv->Fb[irec] = crect(Fb_real, Fb_imag);
   }
 
   if( irec != FaFbPair->freqObsv->length ) {
@@ -1019,15 +1021,18 @@ ReadData( LALStatus *status, /*!< LAL status pointer */
 
   for( irec = 0; irec < FaFbPair->freqTest->length; irec++ ) {
     if( ( ptr = fgets(buff,sizeof(buff),fptest) ) == NULL ) break;
+    REAL8 Fa_real, Fa_imag, Fb_real, Fb_imag;
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqTest->data[irec]),
-		   &(creal(FaFbPair->FaFbTest->Fa[irec])),
-		   &(cimag(FaFbPair->FaFbTest->Fa[irec])),
-		   &(creal(FaFbPair->FaFbTest->Fb[irec])),
-		   &(cimag(FaFbPair->FaFbTest->Fb[irec])),
+		   &Fa_real,
+		   &Fa_imag,
+		   &Fb_real,
+		   &Fb_imag,
 		   &(FaFbPair->FaFbTest->F[irec])
 		   );
     if ( (count != 6) || (count == EOF) ) break;
+    FaFbPair->FaFbTest->Fa[irec] = crect(Fa_real, Fa_imag);
+    FaFbPair->FaFbTest->Fb[irec] = crect(Fb_real, Fb_imag);
   }
   if( irec != FaFbPair->freqTest->length ) {
     fprintf(stderr,"Data read error: The length of the data is not consistent with that of the readable test data. \n");
