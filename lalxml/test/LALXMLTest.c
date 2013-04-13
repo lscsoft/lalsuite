@@ -29,7 +29,6 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALXML.h>
@@ -457,7 +456,7 @@ int testTable ( void )
   REAL4 DeltaIn[IN_ROWS]  = { -1.234, -0.5, 1.234 };
   const CHAR *NameIn[IN_ROWS]   = { "Pulsar 1", "another pulsar", "PSR J0537-6910" };
   INT4  IndexIn[IN_ROWS]  = { 5, 7, 99 };
-  COMPLEX8 FaIn[IN_ROWS]  = { { 1, 2 }, {3, 4}, {5, 6} };
+  COMPLEX8 FaIn[IN_ROWS]  = { crectf(1, 2), crectf(3, 4), crectf(5, 6) };
 
   printf ("--> Input table values ... \n");
   printf ("FreqIn  = ");
