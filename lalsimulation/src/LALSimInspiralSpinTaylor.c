@@ -259,7 +259,7 @@ static int XLALSimInspiralSpinTaylorT2Setup(
                     - (dm/m2M) * (-27./4. + 39.*eta - 5.*eta*eta/4.);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
             params->wdotSO3s1 = LAL_PI*(-188./3. + (dm/m1M)*149./6.);
-            params->wdotSO3s1 = LAL_PI*(-188./3. - (dm/m2M)*149./6.);
+            params->wdotSO3s2 = LAL_PI*(-188./3. - (dm/m2M)*149./6.);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             params->wdotSO25s1 = 110869./1008. + 11.*eta/4. + (dm/m1M) * (-8349./224. + 3.*eta/4.);
             params->wdotSO25s2 = 110869./1008. + 11.*eta/4. + (dm/m2M) * (8349./224. - 3.*eta/4.);
