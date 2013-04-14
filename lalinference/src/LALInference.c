@@ -442,6 +442,7 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
       }
       fprintf(stdout, ")  ");
       /* print value: */
+      gsl_matrix *matrix = NULL;
       switch (ptr->type) {
         case LALINFERENCE_INT4_t:
           fprintf(stdout, "%d", *(INT4 *) ptr->value);
@@ -468,7 +469,7 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
           break;
         case LALINFERENCE_gslMatrix_t:
           fprintf(stdout,"[");
-          gsl_matrix *matrix = *((gsl_matrix **)ptr->value);
+          matrix = *((gsl_matrix **)ptr->value);
           for(i=0; i<(int)( matrix->size1 ); i++)
           {
             for(j=0;j<(int)( matrix->size2 );j++)
