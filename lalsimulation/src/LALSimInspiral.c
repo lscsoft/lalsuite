@@ -2086,17 +2086,12 @@ int XLALSimInspiralChooseFDWaveform(
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER */;
             /* Call the waveform driver routine */
             // FIXME: Note the HACK to use lambda1 as polarization angle psi!!
-            ret = XLALSimInspiralSpinTaylorF2(hptilde, lambda1, phiRef, deltaF,
+            ret = XLALSimInspiralSpinTaylorF2(hptilde, 0., phiRef, deltaF,
                     m1, m2, f_min, r, S1x, S1y, S1z,
                     LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
-            // FIXME: Andy, please make SF2 driver return h+, hx properly
-            // HACK: Return all zeros in hx, until above is fixed
-            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
-                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
-                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-            for(j = 0; j < (*hptilde)->data->length; j++) {
-                (*hctilde)->data->data[j] = 0.;
-            }
+            ret = XLALSimInspiralSpinTaylorF2(hctilde, LAL_PI/4.,phiRef, deltaF,
+                    m1, m2, f_min, r, S1x, S1y, S1z,
+                    LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
             break;
 
         /* FIXME: Comment out this case, as I don't have its source code */
