@@ -606,10 +606,8 @@ if (swiglal_release_parent(PTR)) {
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 
-// Get the correct descriptor for a dynamic array element:
-// always return a pointer-description, even for non-pointer types
+// Get the correct descriptor for a dynamic array element.
 %typemap(swiglal_dynarr_pdesc) SWIGTYPE  "$&descriptor";
-%typemap(swiglal_dynarr_pdesc) SWIGTYPE* "$descriptor";
 
 // The %swiglal_array_dynamic_<n>D() macros create typemaps which convert
 // <n>-D dynamically-allocated arrays in structs. The macros must be
