@@ -205,6 +205,7 @@ liblalinspiral_la_SOURCES = \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \
+	Playground.c \
 	RingUtils.c \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \

@@ -26,8 +26,8 @@
  *-----------------------------------------------------------------------
  */
 
+#include <lal/LALInspiral.h>
 #include <lal/Date.h>
-#include <lal/XLALError.h>
 
 
 /** \ingroup Date_h
