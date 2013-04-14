@@ -821,9 +821,9 @@
                                 %arg(swiglal_from_SWIGTYPE(parent, elemptr, tinfo, tflags)));
 
 // Array conversion fragments for arrays of LAL strings.
-%swiglal_py_array_objview_frags(LALCHAR, "SWIG_AsNewLALCHARPtr", "SWIG_FromLALCHARPtr",
-                                %arg(SWIG_AsNewLALCHARPtr(objelem, %reinterpret_cast(elemptr, CHAR**))),
-                                %arg(SWIG_FromLALCHARPtr(*%reinterpret_cast(elemptr, CHAR**))));
+%swiglal_py_array_objview_frags(LALchar, "SWIG_AsNewLALcharPtr", "SWIG_FromLALcharPtr",
+                                %arg(SWIG_AsNewLALcharPtr(objelem, %reinterpret_cast(elemptr, char**))),
+                                %arg(SWIG_FromLALcharPtr(*%reinterpret_cast(elemptr, char**))));
 
 // Macro which generates array conversion function fragments to/from Python
 // arrays for real/fragment TYPEs which use SWIG_AsVal/From fragments.

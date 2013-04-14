@@ -908,9 +908,9 @@
                          octave_cell, Cell, cell_value);
 
 // Array conversion fragments for arrays of LAL strings.
-%swiglal_oct_array_frags(LALCHAR, "SWIG_AsNewLALCHARPtr", "SWIG_FromLALCHARPtr",
-                         %arg(SWIG_AsNewLALCHARPtr(objelem, %reinterpret_cast(elemptr, CHAR**))),
-                         %arg(SWIG_FromLALCHARPtr(*%reinterpret_cast(elemptr, CHAR**))),
+%swiglal_oct_array_frags(LALchar, "SWIG_AsNewLALcharPtr", "SWIG_FromLALcharPtr",
+                         %arg(SWIG_AsNewLALcharPtr(objelem, %reinterpret_cast(elemptr, char**))),
+                         %arg(SWIG_FromLALcharPtr(*%reinterpret_cast(elemptr, char**))),
                          octave_cell, Cell, cell_value);
 
 // Macro which generates array conversion function fragments to/from Octave
