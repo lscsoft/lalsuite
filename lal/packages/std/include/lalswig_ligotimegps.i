@@ -244,6 +244,11 @@
   %lalswig_LIGOTimeGPS_comparison_operator(gt, > );
   %lalswig_LIGOTimeGPS_comparison_operator(ge, >=);
 
+  // Return the number of nanoseconds in a LIGOTimeGPS
+  INT8 ns() {
+    return XLALGPSToINT8NS($self);
+  }
+
 } // %extend tagLIGOTimeGPS
 
 #endif // SWIG

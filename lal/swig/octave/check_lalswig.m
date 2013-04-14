@@ -225,7 +225,7 @@ assert(LIGOTimeGPS(666666666,666666667) == LIGOTimeGPS(2000000000) / 3)
 t1 += 812345667.75;
 assert(strcmp(t1.__str__(), "812345678.250000000"));
 assert(new_LIGOTimeGPS(t1.__repr__()) == t1);
-assert(GPSToINT8NS(t1) == 812345678250000000);
+assert(t1.ns() == 812345678250000000);
 t4struct = new_lalswig_test_gps;
 t4struct.t = 1234.5;
 assert(t4struct.t == 1234.5);
