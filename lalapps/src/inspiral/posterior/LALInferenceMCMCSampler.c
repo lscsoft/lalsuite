@@ -1094,10 +1094,6 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
     MPI_Send(&lowLikeHighParams, 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD);
 
     /* Determine if swap was accepted */
-    if(MPIrank==0){
-      REAL8 flow = *(REAL8*) LALInferenceGetVariable(runState->currentParams, "fLow");
-      fprintf(stdout,"%i:%f\n",MPIrank,flow);
-    }
     MPI_Recv(&swapAccepted, 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD, &MPIstatus);
 
     if (swapAccepted) {
