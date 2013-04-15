@@ -120,7 +120,6 @@ real or simulated gravitational wave detector data.
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
 \option{--confidence-threshold}~\parm{threshold} \newline \hspace*{0.5in}
-[\option{--debug-level}~\option{info|warn|error|off}] \newline \hspace*{0.5in}
 [\option{--dump-diagnostics~\parm{XML filename}}] \newline \hspace*{0.5in}
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
@@ -227,11 +226,6 @@ Gaussian white noise})\), so an event with a confidence of 30 has a
 probability of \(\ee^{-30}\) of having been found in stationary Gaussian
 white noise.  For the LIGO instruments, a practical treshold is typically
 around 10.
-
-\item[\option{--debug-level} \option{info|warn|error|off}]
-Sets the level of verbosity:  \option{info} = print all messages,
-\option{warn} = print only warnings and errors, \option{error} = print only
-errors, and \option{off} = be silent.  The default value is \option{error}.
 
 \item[\option{--dump-diagnostics \parm{XML filename}}]
 Dump diagnostic snapshots of internal time and frequency series data to a
@@ -388,7 +382,6 @@ To run the program, type:
 lalapps_power \
 --bandwidth 2048 \
 --channel-name "H1:LSC-STRAIN" \
---debug-level info \
 --filter-corruption 4096 \
 --frame-cache H-754008315-754008371.cache \
 --gps-end-time 754008363 \
