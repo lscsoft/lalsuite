@@ -302,6 +302,7 @@
       const size_t sloav_ndims;
       const dim_vector sloav_dims;
       const dim_vector sloav_strides;
+      const bool sloav_isptr;
       swig_type_info *const sloav_tinfo;
       const int sloav_tflags;
 
@@ -346,7 +347,7 @@
         : octave_base_value(), sloav_parent(),
           sloav_ptr(0), sloav_esize(0), sloav_ndims(0),
           sloav_dims(), sloav_strides(),
-          sloav_tinfo(0), sloav_tflags(0)
+          sloav_isptr(false), sloav_tinfo(0), sloav_tflags(0)
       { }
 
       swiglal_oct_array_view(const octave_value& parent,
@@ -355,13 +356,14 @@
                              const size_t ndims,
                              const size_t dims[],
                              const size_t strides[],
+                             const bool isptr,
                              swig_type_info* tinfo,
                              const int tflags)
         : octave_base_value(), sloav_parent(parent),
           sloav_ptr(ptr), sloav_esize(esize), sloav_ndims(ndims),
           sloav_dims(sloav_make_dim_vector(ndims, dims)),
           sloav_strides(sloav_make_dim_vector(ndims, strides)),
-          sloav_tinfo(tinfo), sloav_tflags(tflags)
+          sloav_isptr(isptr), sloav_tinfo(tinfo), sloav_tflags(tflags)
       { }
 
       // Copy the Octave array obj to the C array.
@@ -395,7 +397,7 @@
           octave_value objelem = obj.subsref(obj.is_cell() ? "{" : "(", objidx);
 
           // Copy the Octave array element to the C array.
-          int ecode = HELPER::incall(sloav_parent, objelem, sloav_get_element_ptr(idx), sloav_esize, sloav_tinfo, sloav_tflags);
+          int ecode = HELPER::incall(sloav_parent, objelem, sloav_get_element_ptr(idx), sloav_esize, sloav_isptr, sloav_tinfo, sloav_tflags);
           if (!SWIG_IsOK(ecode)) {
             return ecode;
           }
@@ -431,7 +433,7 @@
           objidx.front()(0) = get_scalar_idx(idx, objdims) + 1;
 
           // Copy the C array element to the Octave array.
-          octave_value objelem = HELPER::outcall(sloav_parent, sloav_get_element_ptr(idx), sloav_tinfo, sloav_tflags);
+          octave_value objelem = HELPER::outcall(sloav_parent, sloav_get_element_ptr(idx), sloav_isptr, sloav_tinfo, sloav_tflags);
           obj = obj.subsasgn(obj.is_cell() ? "{" : "(", objidx, objelem);
 
           // Increment the Octave array index.
@@ -783,7 +785,8 @@
         }
 
         // Convert the octave_value objelem to an array element stored at elemptr.
-        static int incall(const octave_value& parent, octave_value& objelem, void *elemptr, const size_t esize, swig_type_info *const tinfo, const int tflags) {
+        static int incall(const octave_value& parent, octave_value& objelem, void *elemptr, const size_t esize, const bool isptr, swig_type_info *const tinfo, const int tflags)
+        {
           int ecode = INCALL;
           if (!SWIG_IsOK(ecode)) {
             return ecode;
@@ -792,7 +795,7 @@
         }
 
         // Convert the array element stored at elemptr to an octave_value.
-        static octave_value outcall(const octave_value& parent, void *elemptr, swig_type_info *const tinfo, const int tflags) {
+        static octave_value outcall(const octave_value& parent, void *elemptr, const bool isptr, swig_type_info *const tinfo, const int tflags) {
           return OUTCALL;
         }
 
@@ -821,9 +824,10 @@
                                                const size_t ndims,
                                                const size_t dims[],
                                                const size_t strides[],
+                                               const bool isptr,
                                                swig_type_info* tinfo,
                                                const int tflags)
-          : %swiglal_oct_array_view_tmpl(ACFTYPE)(parent, ptr, esize, ndims, dims, strides, tinfo, tflags)
+          : %swiglal_oct_array_view_tmpl(ACFTYPE)(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags)
         { }
 
       };
@@ -849,12 +853,13 @@
                                                        const size_t ndims,
                                                        const size_t dims[],
                                                        const size_t strides[],
+                                                       const bool isptr,
                                                        swig_type_info *tinfo,
                                                        const int tflags)
     {
       // Create a local array view, then use its sloav_array_in()
       // member to copy the input Octave array to the viewed C array.
-      %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, tinfo, tflags);
+      %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
       return arrview.sloav_array_in(obj);
     }
   }
@@ -869,12 +874,13 @@
                                                                  const size_t ndims,
                                                                  const size_t dims[],
                                                                  const size_t strides[],
+                                                                 const bool isptr,
                                                                  swig_type_info *tinfo,
                                                                  const int tflags)
     {
       // Create a local array view, then use its sloav_array_out()
       // member to copy the viewed C array to the output Octave array.
-      %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, tinfo, tflags);
+      %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
       return arrview.sloav_array_out();
     }
   }
@@ -889,12 +895,13 @@
                                                                  const size_t ndims,
                                                                  const size_t dims[],
                                                                  const size_t strides[],
+                                                                 const bool isptr,
                                                                  swig_type_info *tinfo,
                                                                  const int tflags)
     {
       // Return an Octave array view of the C array.
       octave_base_value *objval =
-        new %swiglal_oct_array_view_class(ACFTYPE)(parent, ptr, esize, ndims, dims, strides, tinfo, tflags);
+        new %swiglal_oct_array_view_class(ACFTYPE)(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
       return octave_value(objval);
     }
   }
@@ -903,8 +910,8 @@
 
 // Array conversion fragments for generic arrays, e.g. SWIG-wrapped types.
 %swiglal_oct_array_frags(SWIGTYPE, "swiglal_as_SWIGTYPE", "swiglal_from_SWIGTYPE",
-                         %arg(swiglal_as_SWIGTYPE(parent, objelem, elemptr, esize, tinfo, tflags)),
-                         %arg(swiglal_from_SWIGTYPE(parent, elemptr, tinfo, tflags)),
+                         %arg(swiglal_as_SWIGTYPE(parent, objelem, elemptr, esize, isptr, tinfo, tflags)),
+                         %arg(swiglal_from_SWIGTYPE(parent, elemptr, isptr, tinfo, tflags)),
                          octave_cell, Cell, cell_value);
 
 // Array conversion fragments for arrays of LAL strings.

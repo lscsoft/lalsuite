@@ -175,6 +175,19 @@ rv1.data(1) = 1;
 clear rv1;
 disp("passed dynamic vector/matrix conversions (GSL)");
 
+## check dynamic array of pointers access
+ap = lalswig_test_Create_arrayofptrs(3);
+assert(ap.length == 3);
+for i = 1:ap.length
+  assert(ap.data{i}.length == 6);
+  for j = 1:ap.data{i}.length
+    assert(ap.data{i}.data(j) == 42*ap.length*(i-1) + (j-1));
+  endfor
+endfor
+clear ap;
+CheckMemoryLeaks();
+disp("passed dynamic array of pointers access");
+
 ## check 'tm' struct conversions
 gps = 989168284;
 utc = [2011, 5, 11, 16, 57, 49, 4, 131, 0];

@@ -180,6 +180,17 @@ rv1.data[0] = 1
 del rv1
 print("passed dynamic vector/matrix conversions (GSL)")
 
+## check dynamic array of pointers access
+ap = lal.lalswig_test_Create_arrayofptrs(3)
+assert(ap.length == 3)
+for i in range(0, ap.length):
+    assert(ap.data[i].length == 6)
+    for j in range(0, ap.data[i].length):
+        assert(ap.data[i].data[j] == 42*ap.length*i + j)
+del ap
+lal.CheckMemoryLeaks()
+print("passed dynamic array of pointers access")
+
 # check 'tm' struct conversions
 gps = 989168284
 utc = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
