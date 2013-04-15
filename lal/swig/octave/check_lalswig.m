@@ -1,6 +1,8 @@
 ## Check SWIG Octave module wrapping lal
 ## Author: Karl Wette, 2011, 2012
 
+expected_exception = 0;
+
 ## check module load
 lal;
 assert(exist("lal", "var"));
@@ -17,8 +19,9 @@ mem4 = CreateREAL4TimeSeries("test", LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimens
 disp("*** below should be an error message from CheckMemoryLeaks() ***");
 try
   CheckMemoryLeaks();
-  error("expected exception");
+  expected_exception = 1;
 end_try_catch
+assert(!expected_exception);
 disp("*** above should be an error message from CheckMemoryLeaks() ***");
 clear mem1 mem2 mem3 mem4;
 CheckMemoryLeaks();
@@ -61,8 +64,9 @@ assert(all(sts.vec == [3; 2; 1]));
 sts.mat = [4, 5, 6; 9, 8, 7];
 try
   sts.mat = [1.1, 2.3, 4.5; 6.5, 4.3, 2.1];
-  error("expected exception");
+  expected_exception = 1;
 end_try_catch
+assert(!expected_exception);
 assert(all(all(sts.mat == [4, 5, 6; 9, 8, 7])));
 for i = 1:3
   sts.evec(i) = 2*i + 3;
@@ -89,8 +93,9 @@ assert(all(lalcvar.lalswig_test_INT4_matrix == [[1, 2, 4]; [2, 4, 8]]));
 assert(lalcvar.lalswig_test_INT4_const_matrix(2, 3) == 8);
 try
   lalcvar.lalswig_test_INT4_const_vector(20);
-  error("expected exception");
+  expected_exception = 1;
 end_try_catch
+assert(!expected_exception);
 lalcvar.lalswig_test_REAL8_vector(1) = 3.4;
 assert(lalcvar.lalswig_test_REAL8_vector(1) == 3.4);
 lalcvar.lalswig_test_REAL8_matrix(1, 1) = 5.6;
@@ -103,6 +108,7 @@ disp("passed static vector/matrix conversions");
 
 ## check dynamic vector/matrix conversions
 function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
+  expected_exception = 0;
   assert(ivl == 5);
   iv.data = [1; 3; 2; 4; 3];
   assert(all(iv.data == [1; 3; 2; 4; 3]));
@@ -114,13 +120,15 @@ function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   rv.data(rvl) = 7.5;
   assert(rv.data(rvl) == 7.5);
   try
-    rv.data_setel(rvl, 99.9);
-    error("expected exception");
+    rv.data(rvl + 1) = 99.9;
+    expected_exception = 1;
   end_try_catch
+  assert(!expected_exception);
   try
     iv.data = rv.data;
-    error("expected exception");
+    expected_exception = 1;
   end_try_catch
+  assert(!expected_exception);
   rv.data = iv.data;
   assert(all(rv.data == iv.data));
   assert(cms1 == 4);
@@ -133,13 +141,15 @@ function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   assert(cm.data(2, 3) == complex(0.5, 1.5));
   assert(cm.data(3, 2) == complex(0.75, 1.0));
   try
-    iv.data_setel(0, cm.data_getel(2, 3));
-    error("expected exception");
+    iv.data(0) = cm.data(2, 3);
+    expected_exception = 1;
   end_try_catch
+  assert(!expected_exception);
   try
-    rv.data_setel(0, cm.data_getel(3, 2));
-    error("expected exception");
+    rv.data(0) = cm.data(3, 2);
+    expected_exception = 1;
   end_try_catch
+  assert(!expected_exception);
 endfunction
 ## check LAL vector and matrix datatypes
 iv = CreateINT4Vector(5);

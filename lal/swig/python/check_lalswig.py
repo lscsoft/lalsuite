@@ -3,6 +3,7 @@
 
 import datetime
 import numpy
+expected_exception = False
 
 # check module load
 import lal
@@ -19,9 +20,10 @@ mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lalcvar.l
 print("*** below should be an error message from CheckMemoryLeaks() ***")
 try:
     lal.CheckMemoryLeaks()
-    raise Exception("expected exception")
+    expected_exception = True
 except:
     pass
+assert(not expected_exception)
 print("*** above should be an error message from CheckMemoryLeaks() ***")
 del mem1, mem2, mem3, mem4
 lal.CheckMemoryLeaks()
@@ -63,9 +65,10 @@ assert((sts.vec == [3, 2, 1]).all())
 sts.mat = [[4, 5, 6], (9, 8, 7)]
 try:
     sts.mat = [[1.1, 2.3, 4.5], [6.5, 4.3, 2.1]]
-    raise Exception("expected exception")
+    expected_exception = True
 except:
     pass
+assert(not expected_exception)
 assert((sts.mat == [[4, 5, 6], [9, 8, 7]]).all())
 for i in range(0, 3):
     sts.evec[i] = 2*i + 3
@@ -91,9 +94,10 @@ assert((lalcvar.lalswig_test_INT4_matrix == [[1, 2, 4], [2, 4, 8]]).all())
 assert(lalcvar.lalswig_test_INT4_const_matrix[1, 2] == 8)
 try:
     lalcvar.lalswig_test_INT4_const_vector(20)
-    raise Exception("expected exception")
+    expected_exception = True
 except:
     pass
+assert(not expected_exception)
 lalcvar.lalswig_test_REAL8_vector[0] = 3.4
 assert(lalcvar.lalswig_test_REAL8_vector[0] == 3.4)
 lalcvar.lalswig_test_REAL8_matrix[0, 0] = 5.6
@@ -106,6 +110,7 @@ print("passed static vector/matrix conversions")
 
 # check dynamic vector/matrix conversions
 def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
+    expected_exception = False
     assert(ivl == 5)
     iv.data = [1, 3, 2, 4, 3]
     assert((iv.data == [1, 3, 2, 4, 3]).all())
@@ -117,15 +122,17 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     rv.data[rvl - 1] = 7.5
     assert(rv.data[rvl - 1] == 7.5)
     try:
-        rv.data_setel(rvl, 99.9)
-        raise Exception("expected exception")
+        rv.data[rvl] = 99.9
+        expected_exception = True
     except:
         pass
+    assert(not expected_exception)
     try:
         iv.data = rv.data
-        raise Exception("expected exception")
+        expected_exception = True
     except:
         pass
+    assert(not expected_exception)
     rv.data = iv.data
     assert((rv.data == iv.data).all())
     assert(cms1 == 4)
@@ -136,25 +143,19 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     assert(cm.data[2, 3] == complex(0.5, 1.5))
     assert(cm.data[3, 2] == complex(0.75, 1.0))
     try:
-        iv.data_setel(0, cm.data_getel(2, 3))
-        raise Exception("expected exception")
-    except:
-        pass
-    try:
         iv.data[0] = cm.data[2, 3]
-        raise Exception("expected exception")
+        raise Exception("NumPy does not raise an exception when downcasting complex to integer values!")
+        expected_exception = True
     except:
         pass
-    try:
-        rv.data_setel(0, cm.data_getel(3, 2))
-        raise Exception("expected exception")
-    except:
-        pass
+    assert(not expected_exception)
     try:
         rv.data[0] = cm.data[3, 2]
-        raise Exception("expected exception")
+        raise Exception("NumPy does not raise an exception when downcasting complex to real values!")
+        expected_exception = True
     except:
         pass
+    assert(not expected_exception)
 # check LAL vector and matrix datatypes
 iv = lal.CreateINT4Vector(5)
 rv = lal.CreateREAL8Vector(5)
