@@ -238,7 +238,21 @@ assert(hash(t1) == 1049484238)
 t4struct = lal.lalswig_test_gps()
 t4struct.t = 1234.5
 assert(t4struct.t == 1234.5)
-del t0, t1, t2, t3, t4struct
+t5 = LIGOTimeGPS("1000")
+assert(t5 == 1000)
+try:
+    t5 = LIGOTimeGPS("abc1000")
+    expected_exception = True
+except:
+    pass
+assert(not expected_exception)
+try:
+    t5 = LIGOTimeGPS("1000abc")
+    expected_exception = True
+except:
+    pass
+assert(not expected_exception)
+del t0, t1, t2, t3, t4struct, t5
 lal.CheckMemoryLeaks()
 print("passed LIGOTimeGPS operations")
 

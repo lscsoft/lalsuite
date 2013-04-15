@@ -229,7 +229,19 @@ assert(GPSToINT8NS(t1) == 812345678250000000);
 t4struct = new_lalswig_test_gps;
 t4struct.t = 1234.5;
 assert(t4struct.t == 1234.5);
-clear t0 t1 t2 t3 t4struct;
+t5 = LIGOTimeGPS("1000");
+assert(t5 == 1000);
+try
+  t5 = LIGOTimeGPS("abc1000");
+  expected_exception = 1;
+end_try_catch
+assert(!expected_exception);
+try
+  t5 = LIGOTimeGPS("1000abc");
+  expected_exception = 1;
+end_try_catch
+assert(!expected_exception);
+clear t0 t1 t2 t3 t4struct t5;
 CheckMemoryLeaks();
 disp("passed LIGOTimeGPS operations");
 

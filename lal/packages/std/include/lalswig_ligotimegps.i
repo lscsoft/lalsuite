@@ -44,12 +44,12 @@
   }
 
   // Construct a new LIGOTimeGPS from a string
-  tagLIGOTimeGPS(const char* str) {
+  tagLIGOTimeGPS(const char *str) {
     LIGOTimeGPS *gps = %lalswig_new_LIGOTimeGPS();
     char *end = NULL;
-    if (XLALStrToGPS(gps, str, &end) < 0 || end == str) {
+    if (XLALStrToGPS(gps, str, &end) < 0 || *end != '\0') {
       XLALFree(gps);
-      return NULL;
+      XLAL_ERROR_NULL(XLAL_EFUNC);
     }
     return gps;
   }
