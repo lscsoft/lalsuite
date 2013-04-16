@@ -179,27 +179,36 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     /* Fill with non-zero vals from fStart to lesser of fEnd, fISCO */
     iStart = (size_t) ceil(fStart / deltaF);
     data = (*htilde)->data->data;
+    const REAL8 logv0=log(v0);
+    const REAL8 log4=log(4.0);
+    
     for (i = iStart; i < n; i++) {
         /* fourier frequency corresponding to this bin */
         const REAL8 f = i * deltaF;
         const REAL8 v3 = piM*f;
 
         /* PN expansion parameter */
-        REAL8 v, v2, v4, v5, v6, v7, v10, v12, Psi, amp;
-        v = cbrt(v3);
-        v2 = v*v; v4 = v3*v; v5 = v4*v; v6 = v3*v3; v7 = v6*v;
-        v10 = v5*v5; v12 = v6*v6;
+        REAL8 Psi, amp;
+        const REAL8 v = cbrt(v3);
+	const REAL8 logv=log(v);
+        const REAL8 v2 = v*v;
+	const REAL8 v4 = v3*v;
+	const REAL8 v5 = v4*v;
+	const REAL8 v6 = v3*v3;
+	const REAL8 v7 = v6*v;
+        const REAL8 v10 = v5*v5;
+	const REAL8 v12 = v6*v6;
 
         /* compute the phase and amplitude */
         Psi = psiNewt / v5 * (1.
             + psi2 * v2 + psi3 * v3 + psi4 * v4
-            + psi5 * v5 * (1. + 3. * log(v / v0))
-            + (psi6 + psi6L * log(4. * v)) * v6 + psi7 * v7)
+            + psi5 * v5 * (1. + 3. * (logv - logv0))
+            + (psi6 + psi6L * (log4 + logv)) * v6 + psi7 * v7)
             + psi10 * v10 + psi12 * v12;
 
         amp = amp0 * pow(f, mSevenBySix) * (1.
             + alpha2 * v2 + alpha3 * v3 + alpha4 * v4 + alpha5 * v5
-            + (alpha6 + alpha6L * (LAL_GAMMA + log(4. * v))) * v6
+            + (alpha6 + alpha6L * (LAL_GAMMA + (log4 + logv))) * v6
             + alpha7 * v7);
 
         data[i] = amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4) - I * (amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
