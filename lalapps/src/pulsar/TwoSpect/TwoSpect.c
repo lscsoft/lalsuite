@@ -38,6 +38,8 @@
 
 #include <gsl/gsl_math.h>
 
+#include <lalapps.h>
+
 #include "IHS.h"
 #include "candidates.h"
 #include "antenna.h"
@@ -121,6 +123,16 @@ int main(int argc, char *argv[])
    //print start time
    fprintf(stderr, "Program %s %s executed on %s", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
    fprintf(LOG, "Program %s %s executed on %s", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
+
+   //print VCS info
+   CHAR *VCSInfoString;
+   if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+      fprintf(stderr, "%s: XLALGetVersionString(0) failed\n", __func__);
+      XLAL_ERROR(XLAL_EFUNC);
+   }
+   fprintf(LOG, "%s\n", VCSInfoString);
+   fprintf(stderr, "%s\n", VCSInfoString);
+   XLALFree(VCSInfoString);
    
    //Print out the inputs and outputs
    if (args_info.config_given) {
