@@ -1,4 +1,4 @@
-/* 
+/*
  *  LALInferenceTemplate.c: Bayesian Followup, template calls to LAL
  *  template functions. Temporary GeneratePPN
  *
@@ -1834,25 +1834,72 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 
 
 void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOdata)
-/********************************************************************************************/
-/* XLALSimInspiralChooseWaveform wrapper.																*/
-/*  Required (`IFOdata->modelParams') parameters are:										*/
-/*   - "m1"				(mass of object 1; REAL8, solar mass)								*/
-/*   - "m2"				(mass of object 1; REAL8, solar mass)								*/
-/*   - "inclination"	(inclination angle; REAL8, radians)                                 */
-/*   - "coa_phase"      (phase angle; REAL8, radians)                                       */
-/*   - "spin1x"			(x component of the spin of object 1; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin1y"			(y component of the spin of object 1; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin1z"			(z component of the spin of object 1; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin2x"			(x component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin2y"			(y component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin2z"			(z component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
-/*	 - "shift0"			(shift offset; REAL8, radians)			                            */
-/*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
-/*	 - "PNorder"		(Phase PN order)												*/
-/*   - "Amporder"   (Amplitude PN order) */
-/*   - "fRef"            (Optional; frequency at which the above parameters are defined (useful for fixing values 'in the bucket'). Defaults to 0.)                                                 */
-/********************************************************************************************/
+/*************************************************************************************************************************/
+/* Wrapper for LALSimulation waveforms:						                                                                       */
+/* XLALSimInspiralChooseFDWaveform() and XLALSimInspiralChooseTDWaveform().                                              */
+/*                                                                                                                       */
+/*  IFOdata->modelParams parameters are:										                                                             */
+/*  - "name" description; type OPTIONAL (default value)										                                               */
+/*										                                                                                                   */
+/*   MODEL PARAMETERS										                                                                                 */
+/*   - "LAL_APPROXIMANT"	  Approximant;        Approximant                                                              */
+/*   - "LAL_PNORDER"        Phase PN order;     INT4                                                                     */
+/*   - "LAL_AMPORDER"       Amplitude PN order; INT4 OPTIONAL (-1)                                                       */
+/*   - "LALINFERENCE_FRAME" reference frame;    LALInferenceFrame OPTIONAL (LALINFERENCE_FRAME_RADIATION)                */
+/*   - "spinO"              Spin order;         LALSimInspiralSpinOrder OPTIONAL (LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT)   */
+/*   - "tideO"              Tidal order;        LALSimInspiralTidalOrder OPTIONAL (LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT) */
+/*   - "fRef"               frequency at which the (frequency dependent) parameters are defined; REAL8 OPTIONAL (0.0)    */
+/*   - "fLow"               lower frequency bound; REAL8 OPTIONAL (IFOdata->fLow)                                        */
+/*                                                                                                                       */
+/*   MASS PARAMETERS; either:                                                                                            */
+/*      - "mass1"           mass of object 1 in solar mass; REAL8								                                         */
+/*      - "mass2"		        mass of object 1 in solar mass; REAL8								                                         */
+/*      OR                                                                                                               */
+/*      - "chirpmass"       chirpmass in solar mass; REAL8                                                               */
+/*      - "asym_massratio"  asymmetric mass ration m2/m1, 0<asym_massratio<1; REAL8                                      */
+/*      OR                                                                                                               */
+/*      - "chirpmass"       chirpmass in solar mass; REAL8                                                               */
+/*      - "massratio"       symmetric mass ratio (m1*m2)/(m1+m2)^2; REAL8                                                */
+/*                                                                                                                       */
+/*   ORIENTATION AND SPIN PARAMETERS                                                                                     */
+/*   - "phi0"               reference phase as per LALSimulation convention; REAL8                                       */
+/*   - if LALINFERENCE_FRAME == LALINFERENCE_FRAME_RADIATION (default)                                                   */
+/*      - "inclination"	    inclination angle L.N in radians;                            REAL8                           */
+/*      - "theta_spin1"     polar angle of spin 1, default to the spin aligned case;     REAL8 OPTIONAL (inclination)    */
+/*      - "phi_spin1"       azimuthal angle of spin 1, default to the spin aligned case; REAL8  OPTIONAL (0.0)           */
+/*      - "theta_spin2"     polar angle of spin 2, default to the spin aligned case;     REAL8 OPTIONAL (inclination)    */
+/*      - "phi_spin2"       azimuthal angle of spin 1, default to the spin aligned case; REAL8  OPTIONAL (0.0)           */
+/*   - else if LALINFERENCE_FRAME == LALINFERENCE_FRAME_SYSTEM                                                           */
+/*      - "theta_JN");      zenith angle between J and N in radians;            REAL8                                    */
+/*      - "phi_JL");        azimuthal angle of L_N on its cone about J radians; REAL8                                    */
+/*      - "tilt_spin1");    zenith angle between S1 and LNhat in radians;       REAL8                                    */
+/*      - "tilt_spin2");    zenith angle between S2 and LNhat in radians;       REAL8                                    */
+/*      - "phi12");         difference in azimuthal angle between S1, S2 in radians;   REAL8                             */
+/*   - "a_spin1"            magnitude of spin 1 in general configuration, 0<a_spin1<1; REAL8 OPTIONAL (0.0)              */
+/*   - "a_spin2"            magnitude of spin 2 in general configuration, 0<a_spin1<1; REAL8 OPTIONAL (0.0)              */
+/*   - "spin1"              magnitude of spin 1 in aligned configuration, -1<spin1<1;  REAL8 OPTIONAL (0.0)              */
+/*   - "spin2"              magnitude of spin 2 in aligned configuration, -1<spin1<1;  REAL8 OPTIONAL (0.0)              */
+/*                                                                                                                       */
+/*   OTHER PARAMETERS                                                                                                    */
+/*   - "lambda1"            tidal parameter of object 1; REAL8  OPTIONAL (0.0)                                           */
+/*   - "lambda2"            tidal parameter of object 1; REAL8  OPTIONAL (0.0)                                           */
+/*                                                                                                                       */
+/*   - "time"               used as an OUTPUT only; REAL8								                                                 */
+/*                                                                                                                       */
+/*                                                                                                                       */
+/*   IFOdata needs to also contain:                                                                                      */
+/*   - IFOdata->fLow Unless  - "fLow" OPTIONAL                                                                           */
+/*   - IFOdata->timeData                                                                                                 */
+/*      - IFOdata->timeData->deltaT                                                                                      */
+/*   - if IFOdata->modelDomain == LAL_SIM_DOMAIN_FREQUENCY                                                               */
+/*      - IFOdata->freqData                                                                                              */
+/*          - IFOdata->freqData->deltaF                                                                                  */
+/*      - IFOdata->freqModelhCross                                                                                       */
+/*      - IFOdata->freqModelhPlus                                                                                        */
+/*   - else                                                                                                              */
+/*      - IFOdata->timeModelhPlus                                                                                        */
+/*      - IFOdata->timeModelhCross                                                                                       */
+/*************************************************************************************************************************/
 {
 	
   Approximant approximant = (Approximant) 0;
