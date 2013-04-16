@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 30
+# serial 31
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -136,6 +136,11 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
     # flags for generating SWIG wrapping module sources
     AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror"])
+
+    # add -MP option if SWIG is greater than version 2.0.9
+    AS_VERSION_COMPARE([${swig_version}],[2.0.9],[],[],[
+      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -MP"
+    ])
 
     # look here for interfaces and LAL headers
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -I\$(abs_top_builddir)/include"
