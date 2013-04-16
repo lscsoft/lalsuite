@@ -205,10 +205,14 @@ tagBinaryPulsarParams
   /* pinned superfluid gw parameters*/
   REAL8 I21;    /**< parameter for pinsf model.**/
   REAL8 I31;    /**< parameter for pinsf model.**/
-  REAL8 r;      /**< parameter for pinsf model.**/
-  REAL8 lambda; /**< this is a longitude like angle between pinning axis and
-                     line of sight */
+  REAL8 lambda; /**< this is a longitude like angle between pinning axis and line of sight */
   REAL8 costheta;  /**< angle between rotation axis and pinning axis */
+
+  /* complex amplitude and phase parameters for l=2, m=1 and 2 harmonics */
+  REAL8 C22;
+  REAL8 C21;
+  REAL8 phi22;
+  REAL8 phi21;
 
   /* parameters for Kopeikin terms */
   REAL8 daop;   /**< parameter for the Kopeikin annual orbital parallax */
@@ -286,9 +290,12 @@ tagBinaryPulsarParams
   REAL8 AcrossErr;
   REAL8 I21Err;
   REAL8 I31Err;
-  REAL8 rErr;
   REAL8 lambdaErr;
   REAL8 costhetaErr;
+  REAL8 C22Err;
+  REAL8 C21Err;
+  REAL8 phi22Err;
+  REAL8 phi21Err;
 
   /* timing noise fitting parameters */
   REAL8 wave_omErr;
