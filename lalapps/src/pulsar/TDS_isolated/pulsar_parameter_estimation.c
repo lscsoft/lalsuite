@@ -32,7 +32,6 @@
 
 *******************************************************************************/
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "pulsar_parameter_estimation.h"
 
 /* global variable */
@@ -155,7 +154,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
   DataStructure *data=NULL;
   REAL8 times=0.;
-  COMPLEX16 dataVals;
+  REAL8 dataValsRe, dataValsIm;
   REAL8 stdh0=0.;       /* approximate h0 limit from data */
   REAL8 stdh0min=INFINITY;
   REAL8 h0sigmaSet=0., h0maxSet=0.;
@@ -322,7 +321,7 @@ defined!\n");
     data[k].chunkMax = inputs.chunkMax;
 
     /* read in data */
-    while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.real_FIXME, &dataVals.imag_FIXME) != EOF){
+    while(fscanf(fp, "%lf%lf%lf", &times, &dataValsRe, &dataValsIm) != EOF){
       /* check that size of data file is not to large */
       if( j == MAXLENGTH ){
         fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
@@ -334,7 +333,7 @@ defined!\n");
          the original S5 analysis) */
       /* if( fabs(dataVals.re) > 1.e-28 && fabs(dataVals.im) > 1.e-28 ){ */
         data[k].times->data[j] = times;
-        data[k].data->data[j] = dataVals;
+        data[k].data->data[j] = dataValsRe + I * dataValsIm;
 
         j++;
       /*}*/
@@ -1208,8 +1207,7 @@ void sum_data(DataStructure data){
     data.sumData->data[count] = 0.;
 
     for( j = i ; j < i + chunkLength ; j++){
-      B.real_FIXME = creal(data.data->data[j]);
-      B.imag_FIXME = cimag(data.data->data[j]);
+      B = data.data->data[j];
 
       /* sum up the data */
       data.sumData->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B));
@@ -1289,8 +1287,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       plus = data.lookupTable->lookupTable[psibin][timebin].plus;
       cross = data.lookupTable->lookupTable[psibin][timebin].cross;
 
-      B.real_FIXME = creal(data.data->data[j]);
-      B.imag_FIXME = cimag(data.data->data[j]);
+      B = data.data->data[j];
 
       /*********************************************************/
       /* stuff for phase offset due to parameter uncertainties - MCMC only */
@@ -1300,16 +1297,16 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
         /* create the signal model */
         sin_cos_2PI_LUT( &sphi, &cphi, -dphi->data[j] );
 
-        model.real_FIXME = (plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
-                 (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi;
-        model.imag_FIXME = (plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2)*cphi +
-                 (cross*vars.Xcsinphi_2 + plus*vars.Xpcosphi_2)*sphi;
+        model = ((plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
+          (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi) +
+          I * ((plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2)*cphi +
+          (cross*vars.Xcsinphi_2 + plus*vars.Xpcosphi_2)*sphi);
       }
       /*********************************************************/
       else{
         /* create the signal model */
-        model.real_FIXME = plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2;
-        model.imag_FIXME = plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2;
+        model = (plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2) +
+          I * (plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2);
       }
 
       /* sum over the model */
