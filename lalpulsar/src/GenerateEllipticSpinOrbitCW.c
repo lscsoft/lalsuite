@@ -29,13 +29,13 @@
 #include <gsl/gsl_roots.h>
 
 
-REAL8 gsl_E_solver(REAL8 e, void *p);
+static REAL8 gsl_E_solver(REAL8 e, void *p);
 
 struct E_solver_params {
    REAL8 a, b, x;
 };
 
-REAL8 gsl_E_solver(REAL8 e, void *p) {
+static REAL8 gsl_E_solver(REAL8 e, void *p) {
    struct E_solver_params *params = (struct E_solver_params*)p;
    return e + params->a*sin(e) + params->b*(cos(e) - 1.0) - params->x;
 }

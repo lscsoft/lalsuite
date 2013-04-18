@@ -1365,14 +1365,16 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }
   LALInferenceAddMinMaxPrior(priorArgs, "time",     &timeMin, &timeMax,   LALINFERENCE_REAL8_t);
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--fixPhi");
-  if(ppt){
-    LALInferenceAddVariable(currentParams, "phase",           &start_phase,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    if(lalDebugLevel>0) fprintf(stdout,"phase fixed and set to %f\n",start_phase);
-  }else{
-    LALInferenceAddVariable(currentParams, "phase",           &start_phase,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+  if(!LALInferenceGetProcParamVal(commandLine,"--margphi")){
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixPhi");
+    if(ppt){
+        LALInferenceAddVariable(currentParams, "phase",           &start_phase,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        if(lalDebugLevel>0) fprintf(stdout,"phase fixed and set to %f\n",start_phase);
+    }else{
+        LALInferenceAddVariable(currentParams, "phase",           &start_phase,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+    }
+    LALInferenceAddMinMaxPrior(priorArgs, "phase",     &phiMin, &phiMax,   LALINFERENCE_REAL8_t);
   }
-  LALInferenceAddMinMaxPrior(priorArgs, "phase",     &phiMin, &phiMax,   LALINFERENCE_REAL8_t);
 
   /* Jump in log distance if requested, otherwise use distance */
   if(LALInferenceGetProcParamVal(commandLine,"--logdistance"))

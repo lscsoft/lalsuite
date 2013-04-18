@@ -468,6 +468,9 @@ void initializeMCMC(LALInferenceRunState *runState)
   } else if (LALInferenceGetProcParamVal(commandLine, "--noiseonly")) {
     fprintf(stderr, "Using noise-only likelihood.\n");
     runState->likelihood=&LALInferenceNoiseOnlyLogLikelihood;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--margphi")) {
+    fprintf(stderr, "Using marginalised phase likelihood.\n");
+    runState->likelihood=&LALInferenceMarginalisedPhaseLogLikelihood;
   } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
   }

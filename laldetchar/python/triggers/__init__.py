@@ -13,9 +13,16 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-"""A collesction of modules for manipulating the output of LIGO-Virgo
+## \addtogroup pkg_py_laldetchar_triggers
+"""A collestion of modules for manipulating the output of LIGO-Virgo
 event trigger generators (ETGs)
 """
+#
+#\heading{Synopsis}
+#~~~
+#from laldetchar import triggers
+#~~~
+#\author Duncan Macleod (<duncan.macleod@ligo.org>)
 
 from __future__ import division
 
@@ -54,6 +61,8 @@ _re_etg_sngl_ring = re.compile("ring", re.I)
 
 _re_etg_sim_insp = re.compile("sim*inspiral", re.I)
 
+# open doxygen
+#@{
 
 def which_table(etg):
     """@returns the name of the LIGO_LW table appropriate for triggers
@@ -229,3 +238,6 @@ def get_time_column(table, ifo=None):
     else:
         get_time = get_time_func(table_name)
         return numpy.asarray(map(get_time, table))
+
+# close doxygen
+#@}

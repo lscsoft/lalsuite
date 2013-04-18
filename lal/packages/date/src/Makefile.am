@@ -5,7 +5,6 @@ noinst_LTLIBRARIES = libdate.la
 libdate_la_SOURCES = \
 	TimeDelay.c \
 	GPSTimeNow.c \
-	Playground.c \
 	StrToGPS.c \
 	XLALTime.c \
 	XLALCivilTime.c \

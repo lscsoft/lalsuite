@@ -2761,7 +2761,12 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
-      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
+      if ( (multiSSB = XLALGetMultiSSBtimes ( multiDetStates, skypos, doppler->refTime, params->SSBprec )) == NULL )
+        {
+          XLALPrintError("XLALGetMultiSSBtimes() failed with error = %d\n\n", xlalErrno );
+          ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+        }
+
       if ( Buffer )
 	{
 	  XLALDestroyMultiSSBtimes ( Buffer->multiSSB );
@@ -2784,7 +2789,11 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       else
 	{
 	  /* compute binary time corrections to the SSB time delays and SSB time derivitive */
-	  TRY ( LALGetMultiBinarytimes ( status->statusPtr, &multiBinary, multiSSB, multiDetStates, doppler->orbit, doppler->refTime ), status );
+	  if ( (XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, doppler->orbit )) != XLAL_SUCCESS )
+            {
+              XLALPrintError("XLALAddMultiBinaryTimes() failed with xlalErrno = %d\n\n", xlalErrno );
+              ABORTXLAL( status );
+            }
 
 	  /* store these in buffer if available */
 	  if ( Buffer )
@@ -2809,7 +2818,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 	XLALPrintError("\nXLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
- 
+
      /* store these in buffer if available */
       if ( Buffer )
 	{

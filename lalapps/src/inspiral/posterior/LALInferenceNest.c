@@ -295,7 +295,11 @@ Nested sampling arguments:\n\
                 runState->likelihood=&LALInferenceRosenbrockLogLikelihood;
                 runState->prior=LALInferenceAnalyticNullPrior;
         }
-
+    /* Marginalise over phase */
+    if(LALInferenceGetProcParamVal(commandLine,"--margphi")){
+      printf("Using Marginalise Phase Likelihood\n");
+      runState->likelihood=&LALInferenceMarginalisedPhaseLogLikelihood;
+    }
 //	if(LALInferenceGetProcParamVal(commandLine,"--tdlike")){
 //		fprintf(stderr, "Computing likelihood in the time domain.\n");
 //		runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
