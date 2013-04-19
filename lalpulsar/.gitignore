@@ -46,6 +46,7 @@ test/H-1_H1_60SFT_test-000012765-61.sft
 test/H-1_H1_60SFT_test-000012825-61.sft
 test/H-1_H1_60SFT_test-concat.sft
 test/HeterodynePulsarTest
+test/LALBarycenterTest
 test/LALPulsarXMLTest
 test/NewGetAMCoeffsTest
 test/NormalizeSFTRngMedTest

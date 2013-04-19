@@ -27,9 +27,11 @@ lalpulsarinclude_HEADERS = \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
 	HoughMap.h \
+	LALBarycenter.h \
 	LALComputeAM.h \
 	LALDemod.h \
 	LALHough.h \
+	LALInitBarycenter.h \
 	LALPulsarConfig.h \
 	LALPulsarLibVCSInfo.h \
 	LALPulsarVCSInfo.h \
@@ -94,9 +96,11 @@ liblalpulsar_la_SOURCES = \
 	GenerateTaylorCW.c \
 	GetEarthTimes.c \
 	HoughMap.c \
+	LALBarycenter.c \
 	LALComputeAM.c \
 	LALDemod.c \
 	LALDemodFAST.c \
+	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
 	LISAspecifics.c \

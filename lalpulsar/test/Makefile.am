@@ -6,6 +6,7 @@ XMLTEST = LALPulsarXMLTest
 endif
 
 check_PROGRAMS = \
+	LALBarycenterTest \
 	BinarySSBTimesTest \
 	ExtrapolatePulsarSpinsTest \
 	FitToPulsarTest \
@@ -74,6 +75,8 @@ noinst_DATA = \
 	SFT-test7 \
 	inputsft.0 \
 	inputsft.1 \
+	earth98.dat \
+	sun98.dat \
 	testTimestamps.dat
 
 MOSTLYCLEANFILES = \
