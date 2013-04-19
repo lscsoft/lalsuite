@@ -381,7 +381,7 @@ XLALReadEphemerisFile ( const CHAR *fname )
       if ( (fp = LALOpenDataFile (fname_open)) == NULL )
         {
           lalDebugLevel = lalDebugLevel_bak;
-          XLALPrintError ( "Failed to open either '%s' or '%s.gz' for reading\n", fname, fname_open );
+          XLALPrintError ( "Failed to open either '%s' or '%s' for reading\n", fname, fname_open );
           XLALFree ( fname_open );
           XLAL_ERROR_NULL ( XLAL_EIO );
         } // if fopen(fname.gz) failed
