@@ -40,7 +40,7 @@ def combo2str(combo):
 def set_common_options(cp, this_section):
   """
   """
-  common_options = ["cache-file", "gps-start-time", "gps-end-time", "enable-output", "output-path", "verbose", "user-tag"]
+  common_options = ["cache-file", "gps-start-time", "gps-end-time", "enable-output", "output-path"]
   for common_option in common_options:
     try:
       cp.set(this_section, common_option,  string.strip(cp.get('common',common_option)))
@@ -48,7 +48,7 @@ def set_common_options(cp, this_section):
       print "warning:", common_option, "is strongly recommended in the [common] section of your ini file"
       pass
 
-  return cp 
+  return cp
 
 def addVetoFileForPlotinspiral( job, veto_file ):
    """
@@ -110,10 +110,10 @@ parser.add_option("-T", "--three-ifo",action="store_true",default=False,\
     help="analyze three interferometer data")
 
 parser.add_option("-Q", "--four-ifo",action="store_true",default=False,\
-    help="analyze four intereferometer data")
+    help="analyze four interferometer data")
   
 parser.add_option("-R", "--five-ifo",action="store_true",default=False,\
-    help="analyze five intereferometer data")
+    help="analyze five interferometer data")
 
 parser.add_option("-a", "--analyze-all",action="store_true",default=False,\
     help="analyze all combinations of IFOs (overrides --n-ifo options)")
@@ -122,25 +122,16 @@ parser.add_option("-i", "--plotinspiral" ,action="store_true",default=False,\
     help="run plotinspiral to summarize filtering output")
 
 parser.add_option("-t", "--plotthinca" ,action="store_true",default=False,\
-    help="run plotthina to summarize coincidence")
+    help="run plotthinca to summarize coincidence")
 
 parser.add_option("-n", "--plotnumtemplates" ,action="store_true",default=False,\
     help="run plotnumtemplates to plot trigbanks and templtbanks")
-
-parser.add_option("-r", "--plotinjnum" ,action="store_true",default=False,\
-    help="run plotinj")
 
 parser.add_option("-e", "--plotethinca" ,action="store_true",default=False,\
     help="run plotethinca parameter for a pair of ifo combos")
 
 parser.add_option("-M", "--plotinspmissed" ,action="store_true",default=False,\
     help="run plotinspmissed to plot missed triggers")
-
-parser.add_option("-F", "--plotinspfound" ,action="store_true",default=False,\
-    help="run plotinpfound to check found triggers")
-
-parser.add_option("-C", "--plotcoincmissed" ,action="store_true",default=False,\
-    help="run plotcoincmissed to check coincident but later missed triggers")
 
 parser.add_option("-j", "--plotinspinj" ,action="store_true",default=False,\
     help="run plotinspinj to plot inspiral injections.")
@@ -181,7 +172,7 @@ command_line = sys.argv[1:]
 
 #################################
 #ALPHABETS USED IN THIS CODE.
-# a, b, e, f, g, i, I, j, l, M, n, p ,P , s, t, u, v, A, D, R, S, T, Q
+# a, e, f, i, j, n, p, s, t, u, v, w, z; B, D, G, H, L, M, P, Q, R, S, T, V
 
 #################################
 # if --version flagged
@@ -210,24 +201,22 @@ if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
     not opts.l1_data and not opts.v1_data:
   print >> sys.stderr, "No ifos specified.  Please specify at least one of"
   print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data, --v1-data"
-  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  print >> sys.stderr, "or use --analyze-all to analyze all ifos"
   sys.exit(1)
 
-# Checks for consistency when running ploteffdistcut
-if not opts.h1_data and not opts.h2_data and opts.ploteffdistcut:
+# Checks for H1 and H2 data when running ploteffdistcut
+if opts.ploteffdistcut and not (opts.h1_data and opts.h2_data):
   print >> sys.stderr, "How can I plot effdistcut when H1 and H2 are not"
   print >> sys.stderr, "being analysed??? I will not run ploteffdistcut."
   opts.ploteffdistcut = False
 
 # Checks for plots which require more than two ifos
 if ((opts.plotthinca or opts.plotethinca or opts.plotinspmissed or \
-     opts.plotinjnum or opts.plotinspinj \
-     or opts.plotsnrchi or opts.ploteffdistcut ) and \
-     not (opts.two_ifo or opts.three_ifo or opts.four_ifo \
-          or opts.analyze_all)):
-  print >> sys.stderr, "No number of ifos given. Please specify at least two"
+    opts.plotinspinj or opts.plotsnrchi or opts.ploteffdistcut) and \
+    not (opts.two_ifo or opts.three_ifo or opts.four_ifo or opts.analyze_all)):
+  print >> sys.stderr, "No number of ifos given. Please specify at least one of"
   print >> sys.stderr, "--two-ifo, --three-ifo, --four-ifo"
-  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  print >> sys.stderr, "or use --analyze-all to analyze all ifos"
   sys.exit(1)
 
 ##############################################################################
@@ -449,59 +438,6 @@ if opts.plotnumtemplates:
   all_jobs.append(plotnumtemplates_jobs)
 
 
-#plotinjnum
-if opts.plotinjnum:
-  """ Plotinjnum is now looped over all ifo times. Hence the figure names
-      are for times but they can be interchanged with coinc type because 
-      plotinjnum now has an option ( ifoexactmatch=True ) which can separate 
-      out COIRE files, according to double coincs in  double times, or triple 
-      coincs in triple times.
-
-      Example: sieve(ifos="H1H2",description="FOUND").sieve(ifoexactmatch=True)
-      will return files of type: H1H2-COIRE_INJECTIONS_1_FOUND_H1H2-866088014-2592000.xml etc.
-      and similarly sieve(ifos="H1H2L1",description="FOUND").sieve(ifoexactmatch=True) 
-      will return file: H1H2L1-COIRE_INJECTIONS_1_FOUND_H1H2L1-866088014-2592000.xml
-
-  """
-  plotinjnum_jobs = {}
-  this_section = "plotinjnum"
-  cp = set_common_options(cp, this_section)
-  this_user_tag = input_user_tag
-  if this_user_tag is None: this_user_tag="" 
-  for ifos in  ifo_combo:
-    combostring = combo2str(ifos)
-    if opts.first_stage:
-      prog_tag = cp.get('plotinjnum-meta','inj-program-tag')
-      suffix = cp.get('pipeline','inj-suffix')
-      suffix = suffix.replace("CAT_4","")
-      suffix = suffix.replace("CAT_2","")
-      suffix = suffix.replace("CAT_3","")
-      plotinjnum_jobs[combostring + "FIRST"] = inspiral.PlotInjnumJob(cp)
-      plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-type",combostring)
-      plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-times",combostring)
-      plotinjnum_jobs[combostring + "FIRST"].add_opt("inj-found-pattern", str(prog_tag) + "_*_FOUND_FIRST_" + \
-         this_user_tag + str(suffix))
-      plotinjnum_jobs[combostring + "FIRST"].add_opt("inj-missed-pattern", str(prog_tag) + "_*_MISSED_FIRST_" + \
-         this_user_tag + str(suffix))
-      plotinjnum_jobs[combostring + "FIRST"].add_opt("ifo-tag", "FIRST") 
-      plotinjnum_jobs[combostring + "FIRST"].set_sub_file( basename + '.plotinjnum_FIRST_' +  combostring + subsuffix )
-    if opts.second_stage:
-      prog_tag = cp.get('plotinjnum-meta','inj-program-tag')
-      suffix = cp.get('pipeline','inj-suffix')
-      plotinjnum_jobs[combostring + "SECOND"] = inspiral.PlotInjnumJob(cp)
-      plotinjnum_jobs[combostring + "SECOND"].add_opt("ifo-type",combostring)
-      plotinjnum_jobs[combostring + "SECOND"].add_opt("ifo-times",combostring)
-      plotinjnum_jobs[combostring + "SECOND"].add_opt("inj-found-pattern", str(prog_tag) + "_*_FOUND_SECOND_" + \
-      combostring + '_' + this_user_tag + str(suffix))
-      plotinjnum_jobs[combostring + "SECOND"].add_opt("inj-missed-pattern", str(prog_tag) + "_*_MISSED_SECOND_" + \
-      combostring + '_' + this_user_tag + str(suffix))
-      plotinjnum_jobs[combostring + "SECOND"].add_opt("ifo-tag", "SECOND_" + combostring)
-      plotinjnum_jobs[combostring + "SECOND"].set_sub_file( basename + '.plotinjnum_SECOND_' +  combostring + subsuffix )
-
-  
-  all_jobs.extend(plotinjnum_jobs.values())  
-
-
 # plotethinca
 if opts.plotethinca:
 
@@ -573,63 +509,6 @@ if opts.plotinspmissed:
       plotinspmissed_jobs[combostring +"SECOND"].set_sub_file( basename + '.plotinspmissed_SECOND_' + combostring + subsuffix )
 
   all_jobs.extend(plotinspmissed_jobs.values())
-
-#plotinspfound
-if opts.plotinspfound:
-
-  plotinspfound_jobs = {}
-  this_section = "plotinspfound"
-  cp = set_common_options(cp, this_section)
-
-  if opts.first_stage:
-    print >>sys.stderr, "warning: plotinspfound runs with second stage inputs.  Skipping..."
-  if opts.second_stage:
-    if cp.get("pipeline","inj-suffix") == '*INJ_CAT_3_VETO':
-      print >>sys.stderr, "warning: plotinspfound does not work with '*INJ_CAT_3_VETO'. Skipping..."
-    else:
-      plotinspfound_jobs['plotinspfound'] = inspiral.PlotInspfoundJob(cp)
-
-      plotinspfound_jobs['plotinspfound'].add_opt( "inj-suffixes",
-                                             cp.get("pipeline","inj-suffix") )
-      for ifo in ifolist:
-        plotinspfound_jobs['plotinspfound'].add_opt(
-                                             "%s-triggers" % ifo.lower(), "" )
-      plotinspfound_jobs['plotinspfound'].set_sub_file( basename
-                                               + '.plotinspfound' + subsuffix )
-
-  all_jobs.extend(plotinspfound_jobs.values())
-
-
-#plotcoincmissed
-if opts.plotcoincmissed:
-
-  plotcoincmissed_jobs = {}
-  this_section = "plotcoincmissed"
-  cp = set_common_options(cp, this_section)
-
-  if opts.first_stage:
-    print >>sys.stderr, "warning: plotcoincmissed runs with second stage inputs.  Skipping..."
-  if opts.second_stage:
-    if cp.get("pipeline","inj-suffix") == '*INJ_CAT_3_VETO':
-      print >>sys.stderr, "warning: plotcoincmissed does not work with '*INJ_CAT_3_VETO'. Skipping..."
-    else:
-      plotcoincmissed_jobs['plotcoincmissed'] = inspiral.PlotCoincmissedJob(cp)
-
-      this_suffix = cp.get( "pipeline", "inj-suffix" )
-      short_suffix = this_suffix.rstrip( "_CAT_3_VETO" )
-
-      plotcoincmissed_jobs['plotcoincmissed']. add_opt( "found-pattern",
-                    "SIRE_INJECTIONS_*_" + short_suffix + \
-                    "_FOUND_SUMMARY_FIRST_" + short_suffix )
-      plotcoincmissed_jobs['plotcoincmissed']. add_opt( "missed-pattern",
-                     short_suffix + "_MISSED_SUMMARY_SECOND_*_" + short_suffix )
-      plotcoincmissed_jobs['plotcoincmissed']. add_opt( "inj-string",
-                     short_suffix )
-
-      plotcoincmissed_jobs['plotcoincmissed'].set_sub_file( basename 
-                                             + '.plotcoincmissed' + subsuffix )
-
-  all_jobs.extend(plotcoincmissed_jobs.values())
 
 
 #ploteffdistcut
@@ -795,13 +674,11 @@ if opts.plotinspiral:
     # add an plotinspiral job
       plotinspiral_node=inspiral.PlotInspiralNode(plotinspiral_jobs[ifo + "SECOND"])
       dag.add_node(plotinspiral_node)
- 
 
 if opts.plotnumtemplates:
   # add an plotnumtemplates job
   plotnumtemplates_node=inspiral.PlotNumtemplatesNode(plotnumtemplates_jobs)
   dag.add_node(plotnumtemplates_node)
-
 
 if opts.plotthinca:
   # add an plotthinca job
@@ -815,22 +692,6 @@ if opts.plotthinca:
       combostring = combo2str(ifos)
       plotthinca_node=inspiral.PlotThincaNode(plotthinca_jobs[combostring + "SECOND"])
       dag.add_node(plotthinca_node)
-   
-
-
-if opts.plotinjnum:
-  if opts.first_stage:
-    for ifos in ifo_combo:
-      combostring = combo2str(ifos)
-      plotinjnum_node=inspiral.PlotInjnumNode(plotinjnum_jobs[combostring + "FIRST"])
-      dag.add_node(plotinjnum_node)
-  if opts.second_stage:
-    for ifos in ifo_combo:
-      combostring = combo2str(ifos)
-      plotinjnum_node=inspiral.PlotInjnumNode(plotinjnum_jobs[combostring + "SECOND"])
-      dag.add_node(plotinjnum_node)
-
-
 
 if opts.plotethinca:
   if opts.first_stage:
@@ -844,7 +705,6 @@ if opts.plotethinca:
       plotethinca_node =inspiral.PlotEthincaNode(plotethinca_jobs[combostring + "SECOND"])
       dag.add_node(plotethinca_node)
 
-
 if opts.plotinspmissed:
   if opts.first_stage:
     for ifos in ifo_combo:
@@ -856,19 +716,6 @@ if opts.plotinspmissed:
       combostring = combo2str(ifos)
       plotinspmissed_node =inspiral.PlotInspmissedNode(plotinspmissed_jobs[combostring + "SECOND"])
       dag.add_node(plotinspmissed_node)
-
-if opts.plotinspfound:
-  if len( plotinspfound_jobs ) != 0:
-    # add a plotinspfound job
-    plotinspfound_node =inspiral.PlotInspfoundNode(plotinspfound_jobs['plotinspfound'])
-    dag.add_node(plotinspfound_node)
-
-
-if opts.plotcoincmissed:
-  if len( plotcoincmissed_jobs ) != 0:
-    # add a plotcoincmissed job
-    plotcoincmissed_node =inspiral.PlotCoincmissedNode(plotcoincmissed_jobs['plotcoincmissed'])
-    dag.add_node(plotcoincmissed_node)
 
 if opts.ploteffdistcut:
   if opts.first_stage:
@@ -902,7 +749,7 @@ if opts.plotsnrchi:
 
 if opts.plotinspiralrange:
   # add an plotnumtemplates job
- # if opts.first_stage:
+  # if opts.first_stage:
   plotinspiralrange_node=inspiral.PlotInspiralrangeNode(plotinspiralrange_jobs["FIRST"])
   dag.add_node(plotinspiralrange_node)
   #if opts.second_stage:
@@ -913,6 +760,7 @@ if opts.plotgrbtimeslidestats:
   # add an pylal_grbtimeslide_stats job
   plotgrbtimeslides_node=inspiral.PlotGRBtimeslideStatsNode(plotgrbtimeslidestats_job)
   dag.add_node(plotgrbtimeslides_node)
+
 
 # Add number of retries to plotting jobs as specified by ihope.ini
 if cp.has_option("pipeline", "retry-plot-jobs"):
