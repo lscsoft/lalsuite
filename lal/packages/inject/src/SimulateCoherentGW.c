@@ -17,6 +17,8 @@
  *  MA  02111-1307  USA
  */
 
+/** \cond DONT_DOXYGEN */
+
 /* Use more efficient trig routines for solaris, if available and
    requested. */
 #include <config.h>
@@ -41,56 +43,21 @@
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
 
-/** \name Error Codes */
-/*@{*/
-#define SIMULATECOHERENTGWH_ENUL  1	/**< Unexpected null pointer in arguments */
-#define SIMULATECOHERENTGWH_EBAD  2	/**< A sampling interval is (effectively) zero */
-#define SIMULATECOHERENTGWH_ESIG  3	/**< Input signal must specify amplitude and phase functions */
-#define SIMULATECOHERENTGWH_EDIM  4	/**< Amplitude must be a 2-dimensional vector */
-#define SIMULATECOHERENTGWH_EMEM  5	/**< Memory allocation error */
-#define SIMULATECOHERENTGWH_EUNIT 6	/**< Bad input units */
-/*@} */
+/* \name Error Codes */
+#define SIMULATECOHERENTGWH_ENUL  1	/*< Unexpected null pointer in arguments */
+#define SIMULATECOHERENTGWH_EBAD  2	/*< A sampling interval is (effectively) zero */
+#define SIMULATECOHERENTGWH_ESIG  3	/*< Input signal must specify amplitude and phase functions */
+#define SIMULATECOHERENTGWH_EDIM  4	/*< Amplitude must be a 2-dimensional vector */
+#define SIMULATECOHERENTGWH_EMEM  5	/*< Memory allocation error */
+#define SIMULATECOHERENTGWH_EUNIT 6	/*< Bad input units */
 
-/** \cond DONT_DOXYGEN */
 #define SIMULATECOHERENTGWH_MSGENUL  "Unexpected null pointer in arguments"
 #define SIMULATECOHERENTGWH_MSGEBAD  "A sampling interval is (effectively) zero"
 #define SIMULATECOHERENTGWH_MSGESIG  "Input signal must specify amplitude and phase functions"
 #define SIMULATECOHERENTGWH_MSGEDIM  "Amplitude must be a 2-dimensional vector"
 #define SIMULATECOHERENTGWH_MSGEMEM  "Memory allocation error"
 #define SIMULATECOHERENTGWH_MSGEUNIT "Bad input units"
-/** \endcond */
 
-static LALStatus empty_LALStatus;
-
-/**
- * FIXME: Temporary XLAL-wapper to LAL-function LALSimulateCoherentGW()
- *
- * NOTE: This violates the current version of the XLAL-spec, but is unavoidable at this time,
- * as LALSimulateCoherentGW() hasn't been properly XLALified yet, and doing this would be beyond
- * the scope of this patch.
- * However, doing it here in this way is better than calling LALxxx() from various
- * far-flung XLAL-functions, as in this way the "violation" is localized in one place, and serves
- * as a reminder for future XLAL-ification at the same time.
- */
-int
-XLALSimulateCoherentGW ( REAL4TimeSeries  *output,	///< [in/out] output timeseries
-                         CoherentGW       *CWsignal,	///< [in] internal signal representation
-                         DetectorResponse *detector	///< [in] detector response
-                         )
-{
-  XLAL_CHECK ( output   != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( CWsignal != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( detector != NULL, XLAL_EINVAL );
-
-  LALStatus status = empty_LALStatus;
-
-  LALSimulateCoherentGW ( &status, output, CWsignal, detector );
-
-  XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALSimulateCoherentGW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
-
-  return XLAL_SUCCESS;
-
-} // XLALSimulateCoherentGW()
 
 
 
@@ -112,7 +79,7 @@ XLALSimulateCoherentGW ( REAL4TimeSeries  *output,	///< [in/out] output timeseri
     )
 
 
-/**
+/*
    \author Creighton, T. D.
 
    \brief Computes the response of a detector to a coherent gravitational wave.
@@ -976,3 +943,5 @@ LALSimulateCoherentGW( LALStatus        *stat,
   RETURN( stat );
 
 } /* LALSimulateCoherentGW() */
+
+/** \endcond */
