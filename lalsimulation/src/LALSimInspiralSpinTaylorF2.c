@@ -102,6 +102,7 @@ void XLALSimInspiralSF2CalculateCoeffs(
     LALSimInspiralSF2Coeffs *coeffs,
     REAL8 m1, REAL8 m2, REAL8 chi, REAL8 kappa )
 {
+    const REAL8 quadparam = 1.;
     coeffs->m1 = m1;
     coeffs->m2 = m2;
     const REAL8 mtot = m1+m2;
@@ -112,14 +113,17 @@ void XLALSimInspiralSF2CalculateCoeffs(
     coeffs->gamma0 = m1*chi/m2;
 
     coeffs->pn_beta = (113.*m1/(12.*mtot) - 19.*eta/6.)*chi*kappa;
-    coeffs->pn_sigma = 0.; // Add these in later
-    coeffs->pn_gamma = 0.;    
+    coeffs->pn_sigma = (  (5.*quadparam*(3.*kappa*kappa-1.)/2.)
+                           + (7. - kappa*kappa)/96.  )
+                       * (m1*m1*chi*chi/mtot/mtot);
+    coeffs->pn_gamma = (5.*(146597. + 7056.*eta)*m1/(2268.*mtot)
+                        - 10.*eta*(1276. + 153.*eta)/81.)*chi*kappa;
 
     coeffs->prec_fac = 5.*(4. + 3.*m2/m1)/64.;
     coeffs->dtdv2 = 743./336. + 11.*eta/4.;
     coeffs->dtdv3 = -4.*LAL_PI + coeffs->pn_beta;
-    coeffs->dtdv4 = 3058673./1016064. + 5429.*eta/1008. + 617.*eta*eta/144.;
-    coeffs->dtdv5 = (-7729./672.+13.*eta/8.)*LAL_PI;
+    coeffs->dtdv4 = 3058673./1016064. + 5429.*eta/1008. + 617.*eta*eta/144. - coeffs->pn_sigma;
+    coeffs->dtdv5 = (-7729./672.+13.*eta/8.)*LAL_PI + 9.*coeffs->pn_gamma/40.;
 }
 
 REAL8 XLALSimInspiralSF2Alpha(
@@ -350,8 +354,8 @@ int XLALSimInspiralSpinTaylorF2(
     }
 
     const REAL8 pn_beta = coeffs.pn_beta;
-    const REAL8 pn_sigma = 0.;
-    const REAL8 pn_gamma = 0.; /* FIXME: will add higher PN later */
+    const REAL8 pn_sigma = coeffs.pn_sigma;
+    const REAL8 pn_gamma = coeffs.pn_gamma;
 
     /* phasing coefficients */
     const REAL8 pfaN = 3.L/(128.L * eta);
