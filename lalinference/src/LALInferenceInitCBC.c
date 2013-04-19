@@ -1,7 +1,7 @@
 /*
  *  LALInferenceCBCInit.c:  Bayesian Followup initialisation routines.
  *
- *  Copyright (C) 2012 Vivien Raymond and John Veitch
+ *  Copyright (C) 2012 Vivien Raymond, John Veitch, Salvatore Vitale
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,9 +36,11 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
 
+
+static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline);
+
 /* Setup the template generation */
 /* Defaults to using LALSimulation */
-
 void LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
 {
   char help[]="(--template [LAL,PhenSpin,LALGenerateInspiral,LALSim]\tSpecify template (default LAL)\n";
@@ -463,14 +465,12 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     approx = XLALGetApproximantFromString(ppt->value);
     ppt_order=LALInferenceGetProcParamVal(commandLine,"--order");
     if(ppt_order) PhaseOrder = XLALGetOrderFromString(ppt_order->value);
-    else fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
   }
   ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
   if(ppt){
     approx = XLALGetApproximantFromString(ppt->value);
     XLAL_TRY(PhaseOrder = XLALGetOrderFromString(ppt->value),errnum);
     if( (int) PhaseOrder == XLAL_FAILURE || errnum) {
-      fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
       PhaseOrder=-1;
     }
   }
@@ -484,14 +484,12 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   
   if(approx==NumApproximants && injTable){ /* Read aproximant from injection file */
     approx=XLALGetApproximantFromString(injTable->waveform);
-    if(PhaseOrder!=(LALPNOrder)XLALGetOrderFromString(injTable->waveform))
-      fprintf(stdout,"WARNING! Injection specified phase order %i, you are using %i\n",\
-      XLALGetOrderFromString(injTable->waveform),PhaseOrder);
-    if(AmpOrder!=(LALPNOrder)injTable->amp_order)
-      fprintf(stdout,"WARNING! Injection specified amplitude order %i, you are using %i\n",
-	      injTable->amp_order,AmpOrder);
   }
-  if(approx==NumApproximants) approx=TaylorF2; /* Defaults to TF2 */
+  if(approx==NumApproximants){
+      
+       approx=TaylorF2; /* Defaults to TF2 */
+       XLALPrintWarning("You did not provide an approximant for the templates. Using default %s, which might now be what you want!\n",XLALGetStringFromApproximant(approx));
+  }
     
   /* Set the modeldomain appropriately */
   switch(approx)
@@ -527,7 +525,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       exit(1);
       break;
   }
-  fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,modelDomain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
+  //fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,modelDomain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
   
   ppt=LALInferenceGetProcParamVal(commandLine, "--fref");
   if (ppt) fRef = atof(ppt->value);
@@ -1765,6 +1763,13 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(currentParams, "tideO", &tideO,
         LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   }
+  if (injTable)
+     print_flags_orders_warning(injTable,commandLine); 
+         
+     /* Print info about orders and waveflags used for templates */
+     fprintf(stdout,"\n\n---\t\t ---\n");
+     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i, in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, modelDomain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
+     fprintf(stdout,"---\t\t ---\n\n");
   return(currentParams);
 }
 
@@ -1930,4 +1935,86 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferen
   return(currentParams);
 }
 
+static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline){
 
+    /* If lalDebugLevel > 0, print information about:
+     * 
+     * - Eventual injection/template mismatch on phase and amplitude orders, as well as on waveFlags
+     * - Those fiels being set only for injection or template
+     * 
+     **/
+    XLALPrintWarning("\n");
+    LALPNOrder PhaseOrder=-1;
+    LALPNOrder AmpOrder=-1;
+    LALSimInspiralSpinOrder default_spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
+    LALSimInspiralTidalOrder default_tideO = LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL;
+    Approximant approx=NumApproximants;
+    ProcessParamsTable *ppt=NULL;
+    ProcessParamsTable *ppt_order=NULL;
+    int errnum;
+    ppt=LALInferenceGetProcParamVal(commline,"--approximant");
+    if(ppt){
+        approx=XLALGetApproximantFromString(ppt->value);
+        ppt=LALInferenceGetProcParamVal(commline,"--order");
+        if(ppt) PhaseOrder = XLALGetOrderFromString(ppt->value);
+    }
+    ppt=LALInferenceGetProcParamVal(commline,"--approx");
+    if(ppt){
+       approx=XLALGetApproximantFromString(ppt->value);
+       XLAL_TRY(PhaseOrder = XLALGetOrderFromString(ppt->value),errnum);
+       if( (int) PhaseOrder == XLAL_FAILURE || errnum) {
+          XLALPrintWarning("WARNING: No phase order given.  Using maximum available order for the template.\n");
+          PhaseOrder=-1;
+        }
+     }
+     /* check approximant is given */
+    if (approx==NumApproximants){
+        approx=XLALGetApproximantFromString(injt->waveform);
+        XLALPrintWarning("WARNING: You did not provide an approximant for the templates. Using value in injtable (%s), which might not what you want!\n",XLALGetStringFromApproximant(approx));
+     }
+    
+    /* check inj/rec amporder */
+    ppt=LALInferenceGetProcParamVal(commline,"--amporder");
+    if(ppt) AmpOrder=atoi(ppt->value);
+    ppt=LALInferenceGetProcParamVal(commline,"--ampOrder");
+    if(ppt) AmpOrder = XLALGetOrderFromString(ppt->value);
+    if(AmpOrder!=(LALPNOrder)injt->amp_order)
+       XLALPrintWarning("WARNING: Injection specified amplitude order %i. Template will use  %i\n",
+               injt->amp_order,AmpOrder);
+
+    /* check inj/rec phase order */
+    if(PhaseOrder!=(LALPNOrder)XLALGetOrderFromString(injt->waveform))
+        XLALPrintWarning("WARNING: Injection specified phase order %i. Template will use %i\n",\
+             XLALGetOrderFromString(injt->waveform),PhaseOrder);
+
+    /* check inj/rec spinflag */
+    ppt=LALInferenceGetProcParamVal(commline, "--spinOrder");
+    ppt_order=LALInferenceGetProcParamVal(commline, "--inj-spinOrder");
+    if (ppt && ppt_order){
+       if (!(atoi(ppt->value)== atoi(ppt_order->value)))
+            XLALPrintWarning("WARNING: Set different spin orders for injection (%i ) and template (%i) \n",atoi(ppt_order->value),atoi(ppt->value));       
+    }
+    else if (ppt || ppt_order){
+        if (ppt)
+            XLALPrintWarning("WARNING: You set the spin order only for the template (%i). Injection will use default value (%i). You can change that with --inj-spinOrder. \n",atoi(ppt->value),default_spinO);   
+        else 
+            XLALPrintWarning("WARNING: You set the spin order only for the injection (%i). Template will use default value (%i). You can change that with --spinOrder. \n",atoi(ppt_order->value),default_spinO);     }
+    else
+        XLALPrintWarning("WARNING: You did not set the spin order. Injection and template will use default values (%i). You change that using --inj-spinOrder (set injection value) and --spinOrder (set template value).\n",default_spinO);    
+    /* check inj/rec tidal flag */
+    ppt=LALInferenceGetProcParamVal(commline, "--tidalOrder");
+    ppt_order=LALInferenceGetProcParamVal(commline, "--inj-tidalOrder");
+    if (ppt && ppt_order){
+        if (!(atoi(ppt->value)==atoi( ppt_order->value)))
+            XLALPrintWarning("WARNING: Set different tidal orders for injection (%i ) and template (%i) \n",atoi(ppt_order->value),atoi(ppt->value));   
+    }
+    else if (ppt || ppt_order){
+        if (ppt)
+            XLALPrintWarning("WARNING: You set the tidal order only for the template (%d). Injection will use default value (%i). You can change that with --inj-tidalOrder. \n",atoi(ppt->value),default_tideO);        
+        else 
+            XLALPrintWarning("WARNING: You set the tidal order only for the injection (%i). Template will use default value (%i). You can  change that with --tidalOrder\n",atoi(ppt_order->value),default_tideO);
+        }
+    else
+       XLALPrintWarning("WARNING: You did not set the tidal order. Injection and template will use default values (%i). You change that using --inj-tidalOrder (set injection value) and --tidalOrder (set template value).\n",default_tideO); 
+    return;    
+}
