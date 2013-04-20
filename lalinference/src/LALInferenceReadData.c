@@ -842,11 +842,16 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     char filename[nameLength];
                     FILE *out;
 
+                    double lines_width;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--chisquaredlinesWidth");
+                    if(ppt) lines_width = atoi(ppt->value);
+                    else lines_width = deltaF;
+
                     snprintf(filename, nameLength, "%s-ChiSquaredLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
                         if (pvalues[k] < 0.05) {
-                            fprintf(out,"%g\n",((double) k) * deltaF);
+                            fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
                     fclose(out);
@@ -876,11 +881,16 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     char filename[nameLength];
                     FILE *out;
 
+                    double lines_width;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--KSlinesWidth");
+                    if(ppt) lines_width = atoi(ppt->value);
+                    else lines_width = deltaF;
+
                     snprintf(filename, nameLength, "%s-KSLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
                         if (pvalues[k] < 0.05) {
-                            fprintf(out,"%g\n",((double) k) * deltaF);
+                            fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
                     fclose(out);

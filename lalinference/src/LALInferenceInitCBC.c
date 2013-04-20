@@ -1194,8 +1194,9 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
         }
         printf("Reading lines_temp from %s\n",lines_tempfile);
 
+        char * pch;
         j = 0;
-        double freqline;
+        double freqline = 0, freqlinewidth = 0;
         lines_num_ifo = 0;
         FILE *file = fopen ( lines_tempfile, "r" );
         if ( file != NULL )
@@ -1203,9 +1204,18 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
           while ( fgets ( line, sizeof line, file ) != NULL )
           {
 
-            freqline = atof(line);
+            pch = strtok (line," ");
+            int count = 0;
+            while (pch != NULL)
+            {
+                if (count==0) {freqline = atoi(pch);}
+                if (count==1) {freqlinewidth = atoi(pch);}
+                pch = strtok (NULL, " ");
+                count++;
+            }
+
             gsl_matrix_set(lines_temp,i,j,freqline/df);
-            gsl_matrix_set(linewidth_temp,i,j,1.0);
+            gsl_matrix_set(linewidth_temp,i,j,freqlinewidth/df);
             j++;
             lines_num_ifo++;
           }
