@@ -3,7 +3,6 @@ LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalsimulation.la
 
 check_PROGRAMS = \
 	GenerateSimulation \
-	TestSpinTaylorT4Dynamics \
 	TestEOBNRv2 \
 	GRFlagsTest \
 	WaveformFlagsTest \
@@ -11,6 +10,9 @@ check_PROGRAMS = \
 	TestWaveformFromCache \
 	TestPrecessWaveform
 TESTS = $(check_PROGRAMS)
+
+# disable test programs
+# TestSpinTaylorT4Dynamics - memory issues?
 
 EXTRA_DIST =
 
