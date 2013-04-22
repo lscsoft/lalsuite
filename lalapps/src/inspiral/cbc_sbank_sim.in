@@ -151,6 +151,15 @@ xmldoc2 = utils.load_filename(inj_file)
 ligolw_copy_process(xmldoc2, fake_xmldoc)
 sims = table.get_table(xmldoc2, lsctables.SimInspiralTable.tableName)
 
+#
+# sort sims by mchirp before writing back to disk Bank.from_sims()
+# sorts the waveforms by mchirp so we need to also sort here to get
+# the injection --> best match mapping correct later
+#
+newtbl = lsctables.SimInspiralTable()
+[newtbl.append(s) for s in sorted(sims, key=lambda g: g.mchirp)]
+sims = newtbl
+
 # FIXME inspinj is a terrible person
 for s in sims:
     s.polarization = np.random.uniform(0, 2*np.pi)

@@ -759,7 +759,7 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 )
 {
 	LALExcessPowerFilterBank *new;
-	struct ExcessPowerFilter *basis_filters;
+	ExcessPowerFilter *basis_filters;
 	REAL8Sequence *twice_channel_overlap;
 	REAL8Sequence *unwhitened_cross;
 	int i;

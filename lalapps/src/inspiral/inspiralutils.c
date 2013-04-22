@@ -40,7 +40,6 @@
 #include <time.h>
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -175,12 +174,12 @@ REAL4 XLALCandleDistanceTD(
   sigmaSq = 0.0;
   for ( i = cut; i < waveFFT->length; i++ )
   {
-    sigmaSq += ( waveFFT->data[i].re * waveFFT->data[i].re
-            + waveFFT->data[i].im * waveFFT->data[i].im )
+    sigmaSq += ( crealf(waveFFT->data[i]) * crealf(waveFFT->data[i])
+            + cimagf(waveFFT->data[i]) * cimagf(waveFFT->data[i]) )
             / spec->data->data[i];
   }
 
-  sigmaSq *= 4.0 * chanDeltaT / nPoints;
+  sigmaSq *= 4.0 * chanDeltaT / (REAL8)nPoints;
 
   /* Now calculate the distance */
   distance = sqrt( sigmaSq ) / (REAL8)candlesnr;
@@ -759,10 +758,9 @@ REAL8 calculate_ligo_snr_from_strain_real8(  REAL8TimeSeries *strain,
           LALLIGOIPsd( NULL, &psdValue, freq );
         }
 
-      fftData->data->data[k].re /= 3e-23;
-      fftData->data->data[k].im /= 3e-23;
-      snrSq += fftData->data->data[k].re * fftData->data->data[k].re / psdValue;
-      snrSq += fftData->data->data[k].im * fftData->data->data[k].im / psdValue;
+      fftData->data->data[k] /= 3e-23;
+      snrSq += creal(fftData->data->data[k]) * creal(fftData->data->data[k]) / psdValue;
+      snrSq += cimag(fftData->data->data[k]) * cimag(fftData->data->data[k]) / psdValue;
     }
   snrSq *= 4*fftData->deltaF;
 
@@ -831,11 +829,10 @@ REAL8 calculate_snr_from_strain_and_psd_real8(  REAL8TimeSeries *strain,
           LALLIGOIPsd( NULL, &psdValue, freq );
         }
 
-      fftData->data->data[k].re /= 3e-23;
-      fftData->data->data[k].im /= 3e-23;
+      fftData->data->data[k] /= 3e-23;
 
-      snrSq += fftData->data->data[k].re * fftData->data->data[k].re / psdValue;
-      snrSq += fftData->data->data[k].im * fftData->data->data[k].im / psdValue;
+      snrSq += creal(fftData->data->data[k]) * creal(fftData->data->data[k]) / psdValue;
+      snrSq += cimag(fftData->data->data[k]) * cimag(fftData->data->data[k]) / psdValue;
     }
 
   snrSq *= 4*fftData->deltaF;
@@ -898,10 +895,9 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
           LALLIGOIPsd( NULL, &psdValue, freq );
         }
 
-      fftData->data->data[k].re /= 3e-23;
-      fftData->data->data[k].im /= 3e-23;
-      snrSq += fftData->data->data[k].re * fftData->data->data[k].re / psdValue;
-      snrSq += fftData->data->data[k].im * fftData->data->data[k].im / psdValue;
+      fftData->data->data[k] /= 3e-23;
+      snrSq += crealf(fftData->data->data[k]) * crealf(fftData->data->data[k]) / psdValue;
+      snrSq += cimagf(fftData->data->data[k]) * cimagf(fftData->data->data[k]) / psdValue;
     }
   snrSq *= 4*fftData->deltaF;
 

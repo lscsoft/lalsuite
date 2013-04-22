@@ -1,17 +1,18 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS)
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalsimulation.la
 
-if LALSUPPORT
 check_PROGRAMS = \
 	GenerateSimulation \
-	TestSpinTaylorT4Dynamics \
 	TestEOBNRv2 \
 	GRFlagsTest \
 	WaveformFlagsTest \
 	TestSphHarmTS \
+	TestWaveformFromCache \
 	TestPrecessWaveform
 TESTS = $(check_PROGRAMS)
-endif
+
+# disable test programs
+# TestSpinTaylorT4Dynamics - memory issues?
 
 EXTRA_DIST =
 

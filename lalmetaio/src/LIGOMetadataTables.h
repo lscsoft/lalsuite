@@ -334,6 +334,12 @@ tagSnglInspiralTable
   REAL8         sigmasq;
   REAL4         rsqveto_duration;
   REAL4         Gamma[10];    /* metric co-efficients */
+  REAL4         spin1x;
+  REAL4         spin1y;
+  REAL4         spin1z;
+  REAL4         spin2x;
+  REAL4         spin2y;
+  REAL4         spin2z;
   EventIDColumn *event_id;
 }
 SnglInspiralTable;

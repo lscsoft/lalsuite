@@ -1,9 +1,12 @@
 ## Process this file with automake to produce Makefile.in
 pkginclude_HEADERS = LALConfig.h
 EXTRA_DIST = LALConfig.h.in
-DISTCLEANFILES = *.h
+DISTCLEANFILES = *.h *.i
 all-local:
-	@set fnord $(MAKEFLAGS); amf=$$2; \
+	@for file in *.h *.i; do \
+		test -r $$file || rm -f $$file; \
+	done; \
+	set fnord $(MAKEFLAGS); amf=$$2; \
 		d=$(top_builddir)/packages; \
 		(cd $$d && $(MAKE) $(AM_MAKEFLAGS) include-links) \
 			|| case "$$amf" in *=*) exit1;; *k*) fail=yes;; *) exit 1;; esac; \

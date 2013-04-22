@@ -54,7 +54,6 @@ LALDestroyVector()
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -140,6 +139,7 @@ LALFindChirpTDTemplate (
     case FindChirpPTF:
     case EOBNRv2:
     case IMRPhenomB:
+    case IMRPhenomC:
       break;
 
     default:
@@ -247,11 +247,13 @@ LALFindChirpTDTemplate (
     tmplt->tSampling       = sampleRate;
     tmplt->fLower          = params->fLow;
     tmplt->fCutoff         = sampleRate / 2.0 - deltaF;
+    /* signalAmplitude was (ab)used to set distance */
     tmplt->signalAmplitude = 1.0;
-    if (params->approximant == IMRPhenomB)
+    /* 1Mpc standard distance for templates */
+    tmplt->distance        = 1.0;
+    if ( (params->approximant==IMRPhenomB) || (params->approximant==IMRPhenomC) )
     {
       tmplt->spin1[2] = 2 * tmplt->chi/(1. + sqrt(1.-4.*tmplt->eta));
-      tmplt->distance = 1.;
     }
 
     /* compute the tau parameters from the input template */
@@ -348,8 +350,8 @@ LALFindChirpTDTemplate (
       ABORTXLAL( status );
     }
 
-    if ( params->approximant == EOBNR 
-         || params->approximant == EOBNRv2 || params->approximant == IMRPhenomB)
+    if ( params->approximant == EOBNR || params->approximant == EOBNRv2
+        || params->approximant == IMRPhenomB || params->approximant == IMRPhenomC )
     {
       /* We need to do something slightly different for EOBNR */
       UINT4 endIndx = (UINT4) (tmplt->tC * sampleRate);
@@ -374,8 +376,8 @@ LALFindChirpTDTemplate (
     XLALDestroyREAL4Vector( tmpxfac );
     tmpxfac = NULL;
   }
-  else if ( params->approximant == EOBNR 
-            || params->approximant == EOBNRv2|| params->approximant == IMRPhenomB)
+  else if ( params->approximant == EOBNR || params->approximant == EOBNRv2
+      || params->approximant == IMRPhenomB || params->approximant == IMRPhenomC )
   {
     /* For EOBNR we shift so that tC is at the end of the vector */
     if ( ( tmpxfac = XLALCreateREAL4Vector( numPoints ) ) == NULL )
@@ -472,6 +474,7 @@ LALFindChirpTDNormalize(
     case FindChirpPTF:
     case EOBNRv2:
     case IMRPhenomB:
+    case IMRPhenomC:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
@@ -489,10 +492,10 @@ LALFindChirpTDNormalize(
   segNormSum = 0;
   for ( k = 1; k < fcTmplt->data->length; ++k )
   {
-    REAL4 re = fcTmplt->data->data[k].re;
-    REAL4 im = fcTmplt->data->data[k].im;
+    REAL4 re = crealf(fcTmplt->data->data[k]);
+    REAL4 im = cimagf(fcTmplt->data->data[k]);
     REAL4 power = re * re + im * im;
-    tmpltPower[k] = power * wtilde[k].re;
+    tmpltPower[k] = power * crealf(wtilde[k]);
     segNormSum += tmpltPower[k];
     segNorm[k] = segNormSum;
   }

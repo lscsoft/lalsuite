@@ -152,7 +152,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	struct timeval tv;
 	FILE *devrandom;
 	
-	irs = calloc(1, sizeof(LALInferenceRunState));
+	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
 	irs->commandLine=commandLine;
 
 	/* set up GSL random number generator: */
@@ -182,8 +182,8 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	gsl_rng_set(irs->GSLrandom, randomseed);
 	
 	/* Add a site for the inclination-distance jump */
-	ifoPtr=calloc(1,sizeof(LALInferenceIFOData));
-	ifoPtr->detector=calloc(1,sizeof(LALDetector));
+	ifoPtr=XLALCalloc(1,sizeof(LALInferenceIFOData));
+	ifoPtr->detector=XLALCalloc(1,sizeof(LALDetector));
 	memcpy(ifoPtr->detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
 	irs->data=ifoPtr;
 	return(irs);
@@ -458,26 +458,26 @@ int main(int argc, char *argv[]) {
 	/* Set a prior function */
 	state->algorithm=NULL;
 	state->evolve=NULL; /* Use MCMC for this? */
-	state->template=NULL;
+	state->templt=NULL;
     /* Log the samples to an array for later use */
 	state->logsample=&LALInferenceLogSampleToArray;
-	state->priorArgs=calloc(1,sizeof(LALInferenceVariables));
-	state->proposalArgs=calloc(1,sizeof(LALInferenceVariables));
-	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
+	state->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+	state->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+	state->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	//state->prior=LALInferenceInspiralPriorNormalised;
 	state->prior=LALInferenceInspiralPrior;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
 	state->proposal=&NSWrapMCMCLALProposal;
-	state->proposalStats = calloc(1,sizeof(LALInferenceVariables));
+	state->proposalStats = XLALCalloc(1,sizeof(LALInferenceVariables));
 	
 	/* Set up a sample to evolve */
-    LALInferenceVariables **samples=calloc(sizeof(LALInferenceVariables *),NCOV);
+    LALInferenceVariables **samples=XLALCalloc(sizeof(LALInferenceVariables *),NCOV);
     state->livePoints=samples;
     LALInferenceAddVariable(state->algorithmParams,"Nlive",&NCOV,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
     //LALInferenceVariables *backup=state->currentParams;
     initVariables(state);
     for(i=0;i<NCOV;i++){
-        samples[i]=calloc(1,sizeof(LALInferenceVariables));
+        samples[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
         LALInferenceCopyVariables(state->currentParams,samples[i]);
         LALInferenceDrawFromPrior(samples[i], state->priorArgs, state->GSLrandom );
         /* scatter points for CVM calculation */
@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
 	LALInferenceSetVariable(samples[i],"logPrior",&prior);
     }
     state->currentParams=samples[0];
-    gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
+    gsl_matrix **cvm=XLALCalloc(1,sizeof(gsl_matrix *));
     /* Add the covariance matrix for proposal distribution */
 	LALInferenceNScalcCVM(cvm,state->livePoints,NCOV);
 	state->differentialPoints=state->livePoints;

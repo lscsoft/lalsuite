@@ -113,5 +113,5 @@ CLEANFILES = \
 	python_config.sed
 
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common
 

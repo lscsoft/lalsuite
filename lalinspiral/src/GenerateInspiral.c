@@ -19,6 +19,7 @@
 
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/SeqFactories.h>

@@ -113,8 +113,8 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 		}
 		varitem=varitem->next;
 	}
-  valuearrays=calloc(Nfields,sizeof(void *));
-  VOTABLE_DATATYPE *dataTypes=calloc(Nfields,sizeof(VOTABLE_DATATYPE));
+  valuearrays=XLALCalloc(Nfields,sizeof(void *));
+  VOTABLE_DATATYPE *dataTypes=XLALCalloc(Nfields,sizeof(VOTABLE_DATATYPE));
   /* Build array of DATA for fields */
 	for(j=0,varitem=varsArray[0].head; varitem; varitem=varitem->next)
 	{
@@ -124,7 +124,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 			case LALINFERENCE_PARAM_OUTPUT:
 			{
 				UINT4 typesize = LALInferenceTypeSize[LALInferenceGetVariableType(&varsArray[0],varitem->name)];
-				valuearrays[j]=calloc(N,typesize);
+				valuearrays[j]=XLALCalloc(N,typesize);
 				dataTypes[j]=LALInferenceVariableType2VOT(varitem->type);
 				for(i=0;i<N;i++)
 					memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(&varsArray[i],varitem->name),typesize);

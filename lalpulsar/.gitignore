@@ -30,6 +30,7 @@ src/lalpulsar-user-env.csh
 src/lalpulsar-user-env.sh
 src/lalpulsar-user-env.shell
 src/stamp-h2
+test/BinarySSBTimesTest
 test/ExtrapolatePulsarSpinsTest
 test/FitToPulsarTest
 test/FlatMeshTest

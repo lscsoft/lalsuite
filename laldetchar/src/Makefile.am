@@ -9,7 +9,8 @@ laldetcharinclude_HEADERS = \
 	LALDetCharLibVCSInfo.h \
 	LALDetCharRange.h \
 	LALDetCharHveto.h \
-	LALDetCharVCSInfo.h
+	LALDetCharVCSInfo.h \
+	laldetcharswig_test.i
 
 lib_LTLIBRARIES = liblaldetchar.la
 liblaldetchar_la_SOURCES = \
@@ -45,6 +46,7 @@ laldetchar-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend PYTHONDIR $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@printf "$(SWIG_USER_ENV)" >>$@
 
 laldetchar-user-env.csh laldetchar-user-env.sh: laldetchar-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
@@ -58,7 +60,7 @@ BUILT_SOURCES += LALDetCharVCSInfo.h
 MOSTLYCLEANFILES += LALDetCharVCSInfo.h
 LALDetCharVCSInfo.h .PHONY : gen-LALDetCharVCSInfo.h
 gen-LALDetCharVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALDetCharVCSInfo.h $(srcdir)/LALDetCharVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALDetCharVCSInfo.h $(srcdir)/LALDetCharVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

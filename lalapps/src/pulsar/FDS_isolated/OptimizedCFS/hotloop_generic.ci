@@ -11,8 +11,8 @@
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
 	  REAL4 kappa_max = kappa_star + 1.0f * DTERMS - 1.0f;
-	  REAL4 Sn = (*Xalpha_l).re;
-	  REAL4 Tn = (*Xalpha_l).im;
+	  REAL4 Sn = crealf(*Xalpha_l);
+	  REAL4 Tn = cimagf(*Xalpha_l);
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
@@ -22,8 +22,8 @@
 	  for ( l = 1; l < 2*DTERMS; l ++ ) {
 	      Xalpha_l ++;	      
 	      pn = pn - 1.0f;   		  /* p_(n+1) */
-	      Sn = pn * Sn + qn * (*Xalpha_l).re; /* S_(n+1) */
-	      Tn = pn * Tn + qn * (*Xalpha_l).im; /* T_(n+1) */
+	      Sn = pn * Sn + qn * crealf(*Xalpha_l); /* S_(n+1) */
+	      Tn = pn * Tn + qn * cimagf(*Xalpha_l); /* T_(n+1) */
 	      qn *= pn; 			  /* q_(n+1) */
 	    } /* for l < 2*DTERMS */
 

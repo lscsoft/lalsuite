@@ -48,6 +48,9 @@ lib/lal/LALBuildDate.c
 lib/lal/LALVCSInfo.h
 lib/lal/git_info.sed
 lib/lal/git_version
+lib/lal/lal-user-env.csh
+lib/lal/lal-user-env.sh
+lib/lal/lal-user-env.shell
 lib/lal/lal-version
 lib/lalsupport/test/*PrintVector.*
 lib/lalsupport/test/?FS*.dat
@@ -70,10 +73,6 @@ lib/lalsupport/test/StreamInputTest
 lib/lalsupport/test/StreamSeriesInputTest
 lib/lalsupport/test/UserInputTest
 libtool
-misc/lal-user-env.csh
-misc/lal-user-env.sh
-misc/lal-user-env.shell
-misc/uninstall-lal.sh
 packages/*/doc/main.pdf
 packages/*/include/*.tex
 packages/*/src/*.tex

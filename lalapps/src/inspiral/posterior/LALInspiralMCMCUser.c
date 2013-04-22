@@ -16,7 +16,6 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
@@ -642,16 +641,16 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 
 			/* Negative signs on sins: see comment above for definition of ang */
 			REAL4 plus_re,plus_im,cross_re,cross_im;
-			plus_re = H_p_t->data->data[idx].re*cos(ang) + H_p_t->data->data[idx].im*sin(ang);
-			plus_im = H_p_t->data->data[idx].im*cos(ang) - H_p_t->data->data[idx].re*sin(ang);
-			cross_re = H_c_t->data->data[idx].re*cos(ang) + H_c_t->data->data[idx].im*sin(ang);
-			cross_im = H_c_t->data->data[idx].im*cos(ang) - H_c_t->data->data[idx].re*sin(ang);
+			plus_re = crealf(H_p_t->data->data[idx])*cos(ang) + cimagf(H_p_t->data->data[idx])*sin(ang);
+			plus_im = cimagf(H_p_t->data->data[idx])*cos(ang) - crealf(H_p_t->data->data[idx])*sin(ang);
+			cross_re = crealf(H_c_t->data->data[idx])*cos(ang) + cimagf(H_c_t->data->data[idx])*sin(ang);
+			cross_im = cimagf(H_c_t->data->data[idx])*cos(ang) - crealf(H_c_t->data->data[idx])*sin(ang);
 
 			/* Compute total real and imaginary responses */
 			resp_r = (REAL8)( plus_re*det_resp.plus + cross_re*det_resp.cross );
 			resp_i = (REAL8)( plus_im*det_resp.plus + cross_im*det_resp.cross );
-			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r;
-			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i;
+			real=creal(inputMCMC->stilde[det_i]->data->data[idx]) - resp_r;
+			imag=cimag(inputMCMC->stilde[det_i]->data->data[idx]) - resp_i;
 
 			/* Gaussian version */
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
@@ -854,8 +853,8 @@ in the frequency domain */
 			resp_r = det_resp.plus*model_re_prime - det_resp.cross*model_im_prime;
 			resp_i = det_resp.plus*model_im_prime + det_resp.cross*model_re_prime;
 
-			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
-			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
+			real=creal(inputMCMC->stilde[det_i]->data->data[idx]) - resp_r/deltaF;
+			imag=cimag(inputMCMC->stilde[det_i]->data->data[idx]) - resp_i/deltaF;
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
 
 		} /* End loop over frequency */
@@ -876,8 +875,8 @@ in the frequency domain */
 
 				fprintf(modelout,"%4.3e %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e\n",
 						idx*deltaF, inputMCMC->invspec[det_i]->data->data[idx],
-						inputMCMC->stilde[det_i]->data->data[idx].re, inputMCMC->stilde[det_i]->data->data[idx].im,
-						resp_r, resp_i, 2.0*deltaF*(inputMCMC->stilde[det_i]->data->data[idx].re-resp_r), 2.0*deltaF*(inputMCMC->stilde[det_i]->data->data[idx].im-resp_i));
+						creal(inputMCMC->stilde[det_i]->data->data[idx]), cimag(inputMCMC->stilde[det_i]->data->data[idx]),
+						resp_r, resp_i, 2.0*deltaF*(creal(inputMCMC->stilde[det_i]->data->data[idx])-resp_r), 2.0*deltaF*(cimag(inputMCMC->stilde[det_i]->data->data[idx])-resp_i));
 			}
 			fclose(modelout);
 		}
@@ -1227,8 +1226,8 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 			cross_im = inputMCMC->Fwfc->data[NtimeDomain - idx]*time_cos - inputMCMC->Fwfc->data[idx]*time_sin;
 			resp_r = (REAL8)( plus_re*det_resp.plus + cross_re*det_resp.cross );
 			resp_i = (REAL8)( plus_im*det_resp.plus + cross_im*det_resp.cross );
-			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r;
-			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i;
+			real=creal(inputMCMC->stilde[det_i]->data->data[idx]) - resp_r;
+			imag=cimag(inputMCMC->stilde[det_i]->data->data[idx]) - resp_i;
 
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
 
@@ -1401,8 +1400,8 @@ in the frequency domain */
 			resp_r = det_resp.plus * hc - det_resp.cross * hs;
 			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
-			real=inputMCMC->stilde[det_i]->data->data[i].re - resp_r/deltaF;
-			imag=inputMCMC->stilde[det_i]->data->data[i].im - resp_i/deltaF;
+			real=creal(inputMCMC->stilde[det_i]->data->data[i]) - resp_r/deltaF;
+			imag=cimag(inputMCMC->stilde[det_i]->data->data[i]) - resp_i/deltaF;
 
 
 /* Gaussian version */
@@ -1730,7 +1729,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	modefreqs = XLALCreateCOMPLEX8Vector( 3 );
 	XLALGenerateQNMFreq( modefreqs, template, 2, 2, 3 );
 
-	qnm223freq = modefreqs->data[0].re / LAL_PI + 50.;
+	qnm223freq = crealf(modefreqs->data[0]) / LAL_PI + 50.;
 
 	/*Determine if sampling frequency is suitable for EOBNR template. If qnm223 freq. is greater than nyquist use EOB*/
 

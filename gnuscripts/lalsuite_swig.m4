@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 29
+# serial 31
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -106,11 +106,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     lalswig=false
   ])
 
-  # common SWIG interfaces (with LAL only)
-  AS_IF([test ${lalswig} = true],[
-    AC_SUBST([SWIG_IFACES],["swiglal_common.i"])
-  ])
-
   # if any language was configured
   AM_CONDITIONAL(SWIG_BUILD,[test "${swig_build_any}" = true])
   AM_COND_IF(SWIG_BUILD,[
@@ -142,6 +137,11 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # flags for generating SWIG wrapping module sources
     AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror"])
 
+    # add -MP option if SWIG is greater than version 2.0.9
+    AS_VERSION_COMPARE([${swig_version}],[2.0.9],[],[],[
+      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -MP"
+    ])
+
     # look here for interfaces and LAL headers
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -I\$(abs_top_builddir)/include"
 
@@ -150,7 +150,13 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -outdir \$(SWIG_OUTDIR)"
 
     # flags for generating/compiling SWIG wrapping module sources
-    AC_SUBST(SWIG_CPPFLAGS,["${swig_save_CPPFLAGS}"])
+    AC_SUBST(SWIG_CPPFLAGS,[])
+    for flag in ${swig_save_CPPFLAGS}; do
+      AS_CASE([${flag}],
+        [-I*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag} `echo ${flag} | ${SED} 's|/include$|/swig|'`"],
+        [*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag}"]
+      )
+    done
 
     # are we (not) in debugging mode?
     AS_IF([test "x${enable_debug}" = xno],[
@@ -279,12 +285,6 @@ AC_DEFUN([LALSUITE_SWIG_DEPENDS],[
 AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
   m4_pushdef([uppercase],translit([$1],[a-z],[A-Z]))
   m4_pushdef([lowercase],translit([$1],[A-Z],[a-z]))
-
-  # common and language-specific SWIG interfaces (with LAL only)
-  AS_IF([test ${lalswig} = true],[
-    SWIG_]uppercase[_IFACES="swiglal_]lowercase[.i"
-    AC_SUBST(SWIG_]uppercase[_IFACES)
-  ])
 
   # check whether to configure $1
   AM_CONDITIONAL(SWIG_BUILD_[]uppercase,[test ${swig_build_]lowercase[} = true])

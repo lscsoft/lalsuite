@@ -3165,8 +3165,8 @@ void LALappsTrackSearchCalibrate( REAL4TimeSeries    *dataSet,
    */
   fprintf(stderr,"Hack on Response function...Don't forget\n");
   fprintf(stderr,"Will cause memory leak for some reason?\n");
-  dataSetFFT->data->data[dataSetFFT->data->length-1].im=0;
-  dataSetFFT->data->data[dataSetFFT->data->length].im=0;
+  dataSetFFT->data->data[dataSetFFT->data->length-1].imagf_FIXME=0;
+  dataSetFFT->data->data[dataSetFFT->data->length].imagf_FIXME=0;
       
   dataSetPlan=XLALCreateReverseREAL4FFTPlan(dataSet->data->length,0);
 
@@ -3445,8 +3445,8 @@ void LALappsTracksearchRemoveHarmonics(
 
 	      for (i=0;i<referenceSignal->length;i++)
 		{
-		  referenceSignal->data[i].re=0;
-		  referenceSignal->data[i].im=0;
+		  referenceSignal->data[i].realf_FIXME=0;
+		  referenceSignal->data[i].imagf_FIXME=0;
 		}
 	      harmonicIndex=XLALCreateINT4Vector(tmpHarmonicCount);
 	      if  (harmonicIndex == NULL)

@@ -740,10 +740,10 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
       irec=maxIndex[jrec];
 
-      A1 =  2.0*( B * Fstat.Fa[irec].re - C * Fstat.Fb[irec].re) / D;
-      A2 =  2.0*( A * Fstat.Fb[irec].re - C * Fstat.Fa[irec].re) / D;
-      A3 = - 2.0*( B * Fstat.Fa[irec].im - C * Fstat.Fb[irec].im) / D;
-      A4 = - 2.0*( A * Fstat.Fb[irec].im - C * Fstat.Fa[irec].im) / D;
+      A1 =  2.0*( B * creal(Fstat.Fa[irec]) - C * creal(Fstat.Fb[irec])) / D;
+      A2 =  2.0*( A * creal(Fstat.Fb[irec]) - C * creal(Fstat.Fa[irec])) / D;
+      A3 = - 2.0*( B * cimag(Fstat.Fa[irec]) - C * cimag(Fstat.Fb[irec])) / D;
+      A4 = - 2.0*( A * cimag(Fstat.Fb[irec]) - C * cimag(Fstat.Fa[irec])) / D;
 
 
 
@@ -1027,10 +1027,10 @@ int writeFaFb(INT4 *maxIndex)
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
 	      uvar_Freq+ind*GV.dFreq,
-	      Fstat.Fa[ind].re/sqrt(GV.SFTno)*bias,
-	      Fstat.Fa[ind].im/sqrt(GV.SFTno)*bias,
-	      Fstat.Fb[ind].re/sqrt(GV.SFTno)*bias,
-	      Fstat.Fb[ind].im/sqrt(GV.SFTno)*bias,
+	      creal(Fstat.Fa[ind])/sqrt(GV.SFTno)*bias,
+	      cimag(Fstat.Fa[ind])/sqrt(GV.SFTno)*bias,
+	      creal(Fstat.Fb[ind])/sqrt(GV.SFTno)*bias,
+	      cimag(Fstat.Fb[ind])/sqrt(GV.SFTno)*bias,
 	      Fstat.F[ind]*bias*bias);
 #endif
 
@@ -1379,8 +1379,8 @@ int NormaliseSFTData(void)
       for (j=0;j<nbins;j++)               
 	  {
 	    SFTsqav=SFTsqav+
-	      SFTData[k]->fft->data->data[j].re * SFTData[k]->fft->data->data[j].re+
-	      SFTData[k]->fft->data->data[j].im * SFTData[k]->fft->data->data[j].im;
+	      crealf(SFTData[k]->fft->data->data[j]) * crealf(SFTData[k]->fft->data->data[j])+
+	      cimagf(SFTData[k]->fft->data->data[j]) * cimagf(SFTData[k]->fft->data->data[j]);
 	  }
       SFTsqav=SFTsqav/(1.0*nbins);              /* Actual average of Square of SFT */
       MeanOneOverSh=2.0*GV.nsamples*GV.nsamples/(SFTsqav*GV.tsft)+MeanOneOverSh;      
@@ -1398,8 +1398,8 @@ int NormaliseSFTData(void)
       /* loop over SFT data to Normalise it*/
       for (j=0;j<nbins;j++)               
 	{
-	  SFTData[k]->fft->data->data[j].re = N*SFTData[k]->fft->data->data[j].re; 
-	  SFTData[k]->fft->data->data[j].im = N*SFTData[k]->fft->data->data[j].im;
+	  SFTData[k]->fft->data->data[j].realf_FIXME = N*crealf(SFTData[k]->fft->data->data[j]); 
+	  SFTData[k]->fft->data->data[j].imagf_FIXME = N*cimagf(SFTData[k]->fft->data->data[j]);
 	}
     } 
 	
@@ -2267,8 +2267,8 @@ INT4 EstimatePSDLines(LALStatus *status)
     
     /* loop over SFT data to estimate noise */
     for (j=0;j<nbins;j++){
-      xre=SFTData[i]->fft->data->data[j].re;
-      xim=SFTData[i]->fft->data->data[j].im;
+      xre=crealf(SFTData[i]->fft->data->data[j]);
+      xim=cimagf(SFTData[i]->fft->data->data[j]);
       Sp->data[j]=Sp->data[j]+(REAL8)(xre*xre+xim*xim);
     }
   }/*end loop over SFTs*/
@@ -2757,8 +2757,8 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       
       /* loop over SFT data to estimate noise */
       for (j=0;j<nbins;j++){
-	xre=SFTData[i]->fft->data->data[j].re;
-	xim=SFTData[i]->fft->data->data[j].im;
+	xre=crealf(SFTData[i]->fft->data->data[j]);
+	xim=cimagf(SFTData[i]->fft->data->data[j]);
 	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
       }
 
@@ -2798,12 +2798,12 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
       for (j=0;j<nbins;j++){
-	xre=SFTData[i]->fft->data->data[j].re;
-	xim=SFTData[i]->fft->data->data[j].im;
+	xre=crealf(SFTData[i]->fft->data->data[j]);
+	xim=cimagf(SFTData[i]->fft->data->data[j]);
 	xreNorm=N[j]*xre; 
 	ximNorm=N[j]*xim; 
-	SFTData[i]->fft->data->data[j].re = xreNorm;    
-	SFTData[i]->fft->data->data[j].im = ximNorm;
+	SFTData[i]->fft->data->data[j].realf_FIXME = xreNorm;    
+	SFTData[i]->fft->data->data[j].imagf_FIXME = ximNorm;
 	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       

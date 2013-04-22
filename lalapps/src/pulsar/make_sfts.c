@@ -39,7 +39,6 @@
 #include <sys/stat.h>
 
 /* LAL stuff */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
@@ -974,14 +973,14 @@ int main(int argc,char *argv[]){
 	int errorcode1,errorcode2;
 
 	if (doubledata){
-	  REAL8 rpw=fvec->data[k+firstbin].re;
-	  REAL8 ipw=fvec->data[k+firstbin].im;
+	  REAL8 rpw=crealf(fvec->data[k+firstbin]);
+	  REAL8 ipw=cimagf(fvec->data[k+firstbin]);
 	  errorcode1=fwrite((void*)&rpw, sizeof(REAL8),1,fpsft);
 	  errorcode2=fwrite((void*)&ipw, sizeof(REAL8),1,fpsft);
 	}
 	else {
-	  REAL4 rpw=fvec->data[k+firstbin].re;
-	  REAL4 ipw=fvec->data[k+firstbin].im;
+	  REAL4 rpw=crealf(fvec->data[k+firstbin]);
+	  REAL4 ipw=cimagf(fvec->data[k+firstbin]);
 	  errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
 	  errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
 	}

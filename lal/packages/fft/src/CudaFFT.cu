@@ -1,4 +1,3 @@
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include "CudaFunctions.h"
 

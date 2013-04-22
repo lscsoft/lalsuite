@@ -36,9 +36,9 @@ double fdiff(double index, void *params) {
  
 int main(void) {
    FILE *H1CANDS, *L1CANDS;
-   H1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzH1candidates.dat","r");
+   H1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-330HzH1candidates.dat","r");
    if (H1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzH1candidates.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-330HzH1candidates.dat");
       exit(1);
    }
 
@@ -49,9 +49,9 @@ int main(void) {
       if (ch == '\n') h1count++;
    } while (ch != EOF);
 
-   L1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzL1candidates.dat","r");
+   L1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-330HzL1candidates.dat","r");
    if (L1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzL1candidates.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-330HzL1candidates.dat");
       exit(1);
    }
 
@@ -98,6 +98,7 @@ int main(void) {
    sorted_index = (size_t*)malloc(sizeof(size_t)*l1count);
    double *alll1cands_sorted = (double*)malloc(sizeof(double)*l1count*9);
    int *alll1cands_job_sorted = (int*)malloc(sizeof(int)*l1count);
+   int *l1cands_used = (int*)malloc(sizeof(int)*l1count);
    gsl_sort_index(sorted_index, alll1cands, 9, l1count);
    for (ii=0; ii<l1count; ii++) {
       memcpy(&(alll1cands_sorted[ii*9]), &(alll1cands[sorted_index[ii]*9]), sizeof(double)*9);
@@ -107,12 +108,15 @@ int main(void) {
    free(sorted_index);
    free(alll1cands_job);
 
+   //set the l1cands_used array to zeros
+   memset(l1cands_used, 0, sizeof(int)*l1count);
+
    //Close the streams
    fclose(H1CANDS);
    fclose(L1CANDS);
 
    //Open a file to save the output data
-   FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-220HzCandidates.dat","w");
+   FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-330HzCandidates.dat","w");
 
    //Setup and allocate the solver
    int status;
@@ -121,13 +125,13 @@ int main(void) {
    double foundIndex = 0.0;
    gsl_function F;
    F.function = &fdiff;
-   const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
+   const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
    gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
 
    double tobs = 40551300.0;
-   double fdiff_allowed = 0.5/1800.0;
+   double fdiff_allowed = 1.0/1800.0;
    double dfdiff_allowed = fdiff_allowed;
-   double skydiff_allowed = 0.02*200.0;
+   double skydiff_allowed = 0.04*200.0;
    //int firstmatch = 0, secondmatch = 0;
    for (ii=0; ii<h1count; ii++) {
 
@@ -140,20 +144,20 @@ int main(void) {
             iter++;
             status = gsl_root_fsolver_iterate(s);
             foundIndex = gsl_root_fsolver_root(s);
-            status = gsl_root_test_residual(fdiff(foundIndex, &params), 3.0*fdiff_allowed);
+            status = gsl_root_test_residual(fdiff(foundIndex, &params), 1.05*fdiff_allowed);
          } while (status == GSL_CONTINUE && iter < max_iter);
 
          if (status == GSL_SUCCESS && iter < max_iter) {
             jj = (int)round(foundIndex);
-            while (jj>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.2*fdiff_allowed) jj--;
+            while (jj>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
 
             for (/* jj value */; jj<l1count; jj++) {
-               if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.2*fdiff_allowed) break;
+               if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.05*fdiff_allowed) break;
 
                if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
                   if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
-                     double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
-                     double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
+                     double Pdiff_allowed = 1.5*allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
+                     double Pdiff_allowed_2 = 1.5*alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
                      if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
                         double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
                         double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
@@ -167,9 +171,9 @@ int main(void) {
                }
             }
          }
-      } else if ((alll1cands_sorted[0]-allh1cands_sorted[ii*9])<=fdiff_allowed) {
+      } else if ((alll1cands_sorted[0]-allh1cands_sorted[ii*9])<=fdiff_allowed && (alll1cands_sorted[0]-allh1cands_sorted[ii*9])>=0.0) {
          for (jj=0; jj<l1count; jj++) {
-            if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.2*fdiff_allowed) break;
+            if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.05*fdiff_allowed) break;
 
             if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
                if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
@@ -187,12 +191,12 @@ int main(void) {
                }
             }
          }
-      } else if ((allh1cands_sorted[ii*9]-alll1cands_sorted[l1count-1])<=fdiff_allowed) {
+      } else if ((allh1cands_sorted[ii*9]-alll1cands_sorted[(l1count-1)*9])<=fdiff_allowed && (allh1cands_sorted[ii*9]-alll1cands_sorted[(l1count-1)*9])>=0.0) {
          jj = l1count-1;
-         while (l1count>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.2*fdiff_allowed) jj--;
+         while (l1count>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
 
          for (/* jj value */; jj<l1count; jj++) {
-            if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.2*fdiff_allowed) break;
+            if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.05*fdiff_allowed) break;
 
             if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
                if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
@@ -217,6 +221,7 @@ int main(void) {
    gsl_root_fsolver_free(s);
    free(allh1cands_sorted);
    free(alll1cands_sorted);
+   free(l1cands_used);
    free(allh1cands_job_sorted);
    free(alll1cands_job_sorted);
 

@@ -462,10 +462,10 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
   REAL8 mmatrixA = 0.0, mmatrixB = 0.0, mmatrixC = 0.0;
   REAL8 F = 0.0;
   COMPLEX8 Fa, Fb;
-  Fa.re = 0.0;
-  Fa.im = 0.0;
-  Fb.re = 0.0;
-  Fb.im = 0.0;
+  Fa.realf_FIXME = 0.0;
+  Fa.imagf_FIXME = 0.0;
+  Fb.realf_FIXME = 0.0;
+  Fb.imagf_FIXME = 0.0;
 
   for (Y = Ystart; Y <= Yend; Y++) {  /* loop through detectors */
 
@@ -482,17 +482,17 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
       mmatrixA += thisAtom->a2_alpha;
       mmatrixB += thisAtom->b2_alpha;
       mmatrixC += thisAtom->ab_alpha;
-      Fa.re    += thisAtom->Fa_alpha.re;
-      Fa.im    += thisAtom->Fa_alpha.im;
-      Fb.re    += thisAtom->Fb_alpha.re;
-      Fb.im    += thisAtom->Fb_alpha.im;
+      Fa.realf_FIXME    += crealf(thisAtom->Fa_alpha);
+      Fa.imagf_FIXME    += cimagf(thisAtom->Fa_alpha);
+      Fb.realf_FIXME    += crealf(thisAtom->Fb_alpha);
+      Fb.imagf_FIXME    += cimagf(thisAtom->Fb_alpha);
     } /* loop through SFTs */
 
   } /* loop through detectors */
 
   /* compute determinant and final Fstat (not twoF!) */
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQUARE(mmatrixC) );
-  F = Dinv * ( mmatrixB * ( SQUARE(Fa.re) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(Fb.re) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (Fa.re*Fb.re + Fa.im*Fb.im) );
+  F = Dinv * ( mmatrixB * ( SQUARE(crealf(Fa)) + SQUARE(cimagf(Fa)) ) + mmatrixA * ( SQUARE(crealf(Fb)) + SQUARE(cimagf(Fb)) ) - 2.0 * mmatrixC * (crealf(Fa)*crealf(Fb) + cimagf(Fa)*cimagf(Fb)) );
 
   return(F);
 
@@ -508,8 +508,8 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 */
 REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fstat */
                             const REAL4Vector *TwoFXvec,  /**< vector of single-detector Fstats */
-                            const REAL4 rhomaxline,    /**< amplitude prior normalization for lines */
-                            const REAL4Vector *lXvec, /**< vector of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
+                            const REAL8 rhomaxline,    /**< amplitude prior normalization for lines */
+                            const REAL8Vector *lXvec, /**< vector of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
                             const BOOLEAN useAllTerms  /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
                           )
 {
@@ -524,20 +524,20 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
 
   if ( rhomaxline < 0 )
     XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative prior range 'rhomaxline' = %g! Must be >= 0!\n", rhomaxline );
-  REAL4 logRhoTerm = 0.0;
+  REAL8 logRhoTerm = 0.0;
   if ( rhomaxline > 0.0 )
    logRhoTerm = 4.0 * log(rhomaxline) - log(70.0);
   else /* if rhomaxline == 0.0, logRhoTerm should become irrelevant in summation */
-    logRhoTerm = - LAL_REAL4_MAX;
+    logRhoTerm = - LAL_REAL8_MAX;
 
-  REAL4 *loglX = NULL;
-  REAL4 loglXtemp[numDetectors];
+  REAL8 *loglX = NULL;
+  REAL8 loglXtemp[numDetectors];
   if ( lXvec ) {
     for (UINT4 X = 0; X < numDetectors; X++) {
       if ( lXvec->data[X] > 0 )
         loglXtemp[X] = log(lXvec->data[X]);
       else if ( lXvec->data[X] == 0 ) /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-        loglXtemp[X] = - LAL_REAL4_MAX;
+        loglXtemp[X] = - LAL_REAL8_MAX;
       else /* negative prior ratio is a mistake! */
        XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative input prior-ratio for detector X=%d: lX[X]=%g\n", X, lXvec->data[X] );
     }
@@ -565,8 +565,8 @@ REAL4
 XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
                            const UINT4 numDetectors, /**< number of detectors */
                            const REAL4 *TwoFX,       /**< array of single-detector Fstats */
-                           const REAL4 logRhoTerm,   /**< extra term coming from prior normalization: log(rho_max_line^4/70) */
-                           const REAL4 *loglX,       /**< array of logs of single-detector prior line odds ratios, default to loglX=log(1)=0 for all X if NULL */
+                           const REAL8 logRhoTerm,   /**< extra term coming from prior normalization: log(rho_max_line^4/70) */
+                           const REAL8 *loglX,       /**< array of logs of single-detector prior line odds ratios, default to loglX=log(1)=0 for all X if NULL */
                            const BOOLEAN useAllTerms /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
                            )
 {

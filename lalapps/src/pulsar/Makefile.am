@@ -20,9 +20,9 @@ if LALFRAME
 lalapps_make_sfts_SOURCES = make_sfts.c
 endif
 
-lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c Calibrate60sSFTs.h
-lalapps_Calibrate1800SFTs_SOURCES = Calibrate1800SFTs.c Calibrate1800SFTs.h
-lalapps_FreqAverager_SOURCES = FreqAverager.c FreqAverager.h
+lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c
+lalapps_Calibrate1800SFTs_SOURCES = Calibrate1800SFTs.c
+lalapps_FreqAverager_SOURCES = FreqAverager.c
 lalapps_psd_SOURCES = psd.c psd.h
 lalapps_ComputePSD_SOURCES = ComputePSD.c
 lalapps_FreqAverager_v2_SOURCES =  FreqAverager_v2.c
@@ -38,11 +38,8 @@ make_cluster_data_list \
 make_job_input_data.c \
 make_sfts.c \
 Calibrate60sSFTs.c \
-Calibrate60sSFTs.h \
 Calibrate1800SFTs.c \
-Calibrate1800SFTs.h \
 FreqAverager.c \
-FreqAverager.h \
 psd.c \
 psd.h \
 README \
@@ -68,10 +65,8 @@ psd_ref.dat
 
 TESTS = testComputePSD.sh
 
-CLEANFILES = psd1.dat
-
 TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

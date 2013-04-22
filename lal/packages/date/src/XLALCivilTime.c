@@ -26,9 +26,6 @@
 
 #include "XLALLeapSeconds.h" /* contains the leap second table */
 
-/* in case this is not prototyped ... */
-struct tm * gmtime_r(const time_t *, struct tm *);
-
 /** \defgroup XLALCivilTime_c CivilTime
  * \ingroup Date_h
  * \author Chin, D. W. and Creighton, J. D. E.

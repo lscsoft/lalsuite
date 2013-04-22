@@ -159,24 +159,24 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
   /*     Removing the fundamental harmonic         */
   /* -------------------------------------------   */
 
-  rhon.re = 0.0;
-  rhon.im = 0.0;
+  rhon.real_FIXME = 0.0;
+  rhon.imag_FIXME = 0.0;
   rhod    = 0.0;
 
   for (i=0; i<n; ++i) {
-    mr = m[i].re;
-    mi = m[i].im;
+    mr = crealf(m[i]);
+    mi = cimagf(m[i]);
 
-    rhon.re +=  x[i]*mr;
-    rhon.im += -x[i]*mi;
+    rhon.real_FIXME +=  x[i]*mr;
+    rhon.imag_FIXME += -x[i]*mi;
     rhod    +=  mr*mr + mi*mi;
   }
 
-  rho.re = rhon.re / rhod;
-  rho.im = rhon.im / rhod;
+  rho.real_FIXME = creal(rhon) / rhod;
+  rho.imag_FIXME = cimag(rhon) / rhod;
 
   for (i=0; i<n; ++i) {
-    xc[i] = x[i] - 2.0*(rho.re * m[i].re - rho.im * m[i].im );
+    xc[i] = x[i] - 2.0*(creal(rho) * crealf(m[i]) - cimag(rho) * cimagf(m[i]) );
   }
 
 
@@ -197,8 +197,8 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
 
     for (i=0; i<n; ++i) {
       /* calculation of amplitude^2 and phase of m(t)  */
-      mr = m[i].re;
-      mi = m[i].im;
+      mr = crealf(m[i]);
+      mi = cimagf(m[i]);
 
       ampM2->data[i] = mr*mr+ mi*mi;
 
@@ -209,29 +209,29 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
     }
 
     for(j=2; j<= maxH; ++j) {
-      rhon.re = 0.0;
-      rhon.im = 0.0;
+      rhon.real_FIXME = 0.0;
+      rhon.imag_FIXME = 0.0;
       rhod    = 0.0;
 
       for (i=0; i<n; ++i) {
 	/* calculation of m^j(t) for a fixed t */
 	amj = pow( ampM2->data[i], 0.5*j);
 	phj = j * phaM->data[i];
-	mj->data[i].re = amj * cos(phj);
-	mr =  mj->data[i].re;
-	mj->data[i].im = amj * sin(phj);
-	mi =  mj->data[i].im;
+	mj->data[i].real_FIXME = amj * cos(phj);
+	mr =  creal(mj->data[i]);
+	mj->data[i].imag_FIXME = amj * sin(phj);
+	mi =  cimag(mj->data[i]);
 
-	rhon.re +=  xc[i]*mr;
-	rhon.im += -xc[i]*mi;
+	rhon.real_FIXME +=  xc[i]*mr;
+	rhon.imag_FIXME += -xc[i]*mi;
 	rhod    +=  mr*mr + mi*mi;
       }
 
-      rho.re = rhon.re / rhod;
-      rho.im = rhon.im / rhod;
+      rho.real_FIXME = creal(rhon) / rhod;
+      rho.imag_FIXME = cimag(rhon) / rhod;
 
      for (i=0; i<n; ++i) {
-       xc[i] += - 2.0*(rho.re * mj->data[i].re - rho.im * mj->data[i].im );
+       xc[i] += - 2.0*(creal(rho) * creal(mj->data[i]) - cimag(rho) * cimag(mj->data[i]) );
      }
 
     } /* closes for all harmonics */

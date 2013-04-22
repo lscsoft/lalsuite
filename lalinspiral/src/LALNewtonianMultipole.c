@@ -29,10 +29,8 @@
  * for calculating the standard scalar spherical harmonics Ylm.
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>
-#include <lal/LALComplex.h>
 
 #include <gsl/gsl_sf_gamma.h>
 
@@ -96,7 +94,7 @@ XLALCalculateNewtonianMultipole(
 
    INT4 epsilon = (l + m) % 2;
 
-   y.re = y.im = 0.0;
+   y = 0.0;
 
   /* Calculate the necessary Ylm */
   xlalStatus = XLALScalarSphHarmThetaPiBy2( &y, l - epsilon, - m, phi );
@@ -108,13 +106,13 @@ XLALCalculateNewtonianMultipole(
 
   if ( (l == 4 && m == 4) || ( l == 2 && m == 1 ) )
   {
-    *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0 - 1.0)/r );
+    *multipole = params->prefixes->values[l][m] * (pow( x, (REAL8)(l+epsilon)/2.0 - 1.0)/r);
   }
   else
   {
-    *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
+    *multipole = params->prefixes->values[l][m] * (pow( x, (REAL8)(l+epsilon)/2.0));
   }
-  *multipole = XLALCOMPLEX16Mul( *multipole, y );
+  *multipole = *multipole * y;
 
   return XLAL_SUCCESS;
 }
@@ -150,14 +148,12 @@ XLALScalarSphHarmThetaPiBy2(COMPLEX16 *y,
   }
 
   /* Compute the values for the spherical harmonic */
-  y->re = legendre * cos(m * phi);
-  y->im = legendre * sin(m * phi);
+  *y = crect( legendre * cos(m * phi), legendre * sin(m * phi) );
 
   /* If m is negative, perform some jiggery-pokery */
   if ( m < 0 && absM % 2  == 1 )
   {
-    y->re = - y->re;
-    y->im = - y->im;
+    *y = - (*y);
   }
 
   return XLAL_SUCCESS;
@@ -386,7 +382,7 @@ CalculateThisMultipolePrefix(
    INT4 sign; /* To give the sign of some additive terms */
 
 
-   n.re = n.im = 0.0;
+   n = 0.0;
 
    totalMass = m1 + m2;
  
@@ -412,23 +408,22 @@ CalculateThisMultipolePrefix(
    if ( epsilon == 0 )
    {
   
-     n.im = m;
-     n = XLALCOMPLEX16PowReal( n, (REAL8)l );
+     n = crect( 0, m );
+     n = cpow( n, (REAL8)l );
   
      mult1 = 8.0 * LAL_PI / gsl_sf_doublefact(2u*l + 1u);
      mult2 = (REAL8)((l+1) * (l+2)) / (REAL8)(l * ((INT4)l - 1));
      mult2 = sqrt(mult2);
 
-     n = XLALCOMPLEX16MulReal( n, mult1 );
-     n = XLALCOMPLEX16MulReal( n, mult2 );
+     n = n * mult1;
+     n = n * mult2;
   }
   else if ( epsilon == 1 )
   {
   
-     n.im = m;
-     n = XLALCOMPLEX16PowReal( n, (REAL8)l );
-     n.re = -n.re;
-     n.im = -n.im;
+     n = crect( 0, m );
+     n = cpow( n, (REAL8)l );
+     n = -n;
 
      mult1 = 16.*LAL_PI / gsl_sf_doublefact( 2u*l + 1u );
 
@@ -436,8 +431,8 @@ CalculateThisMultipolePrefix(
      mult2 /= (REAL8)( (2*l - 1) * (l+1) * l * (l-1) );
      mult2  = sqrt(mult2);
 
-     n = XLALCOMPLEX16MulImag( n, mult1 );
-     n = XLALCOMPLEX16MulReal( n, mult2 );
+     n = n * crect( 0, mult1 );
+     n = n * mult2;
   }
   else
   {
@@ -445,7 +440,7 @@ CalculateThisMultipolePrefix(
     XLAL_ERROR( XLAL_EINVAL );
   }
 
-  *prefix = XLALCOMPLEX16MulReal( n, eta * c );
+  *prefix = n * ( eta * c );
 
   return XLAL_SUCCESS;
 }

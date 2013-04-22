@@ -5,6 +5,7 @@ lalinspiralinclude_HEADERS = \
 	BBHPhenomCoeffs.h \
 	Chisq_CPU.h \
 	Chisq_GPU.h \
+	LALInspiralPyCBCTemplate.h \
 	CoherentInspiral.h \
 	CoincInspiralEllipsoid.h \
 	FindChirp.h \
@@ -47,12 +48,14 @@ lalinspiralinclude_HEADERS = \
 	RingUtils.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
-	TrigScanEThincaCommon.h
+	TrigScanEThincaCommon.h \
+	lalinspiralswig_test.i
 
 lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
 	Chisq_CPU.c \
+    LALInspiralPyCBCTemplate.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
 	CoincInspiralEllipsoid.c \
@@ -202,6 +205,7 @@ liblalinspiral_la_SOURCES = \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \
+	Playground.c \
 	RingUtils.c \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \
@@ -266,7 +270,7 @@ BUILT_SOURCES += LALInspiralVCSInfo.h
 MOSTLYCLEANFILES += LALInspiralVCSInfo.h
 LALInspiralVCSInfo.h .PHONY : gen-LALInspiralVCSInfo.h
 gen-LALInspiralVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALInspiralVCSInfo.h $(srcdir)/LALInspiralVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALInspiralVCSInfo.h $(srcdir)/LALInspiralVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

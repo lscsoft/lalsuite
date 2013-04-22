@@ -66,4 +66,4 @@ EXTRA_DIST = \
 CLEANFILES = CudaFFT.cpp
 
 # cuda build rules
-include $(top_srcdir)/misc/cuda.common
+include $(top_srcdir)/gnuscripts/cuda.common

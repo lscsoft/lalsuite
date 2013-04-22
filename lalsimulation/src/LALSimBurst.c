@@ -581,7 +581,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
  * get multiplied by the Gaussian envelope.
  *
  * hrss:  the root-sum-squares strain of the waveform (summed over both
- * polarizations).
+ * polarizations).  See K. Riles, LIGO-T040055-00.pdf.
  *
  * eccentricity:  0 --> circularly polarized, 1 --> linearly polarized.
  *

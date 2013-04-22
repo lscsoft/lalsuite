@@ -114,7 +114,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode22(
                 + re6log*logv + re6logsq*logv_v0*logv_v0)))));
         im = v*v2*(im3log*logv_v0 + v2*(im5 + im5log*logv_v0
                 + v*(im6 + im6log*logv_v0)));
-        ans = CX16polar(1.0, -2.0*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -2.0*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*m/r)*v2);
     }
     return hlm;
@@ -187,7 +187,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode21(
         phi = Phi->data->data[j];
         re = re1 + v2 * (re3 + v * (re4 + v * re5));
         im = v*v2 * (im4 + im4log * log(v/v0));
-        ans = CX16polar(1.0, -phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v2*v);
     }
     return hlm;
@@ -230,7 +230,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode20(
     for (j=0; j < V->data->length; j++) {
         v = V->data->data[j];
         v2 = v*v;
-        ans = CX16rect(1., 0.);
+        ans = crect(1., 0.);
         hlm->data->data[j] = ans * ((fac*mu/r)*v2);
     }
     return hlm;
@@ -304,7 +304,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode33(
         phi = Phi->data->data[j];
         re = re1 + v2 * (re3 + v * (re4 + v * re5));
         im = v*v2 * (im4 + im4log * log(v/v0));
-        ans = CX16polar(1.0, -3.0*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -3.0*phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v2*v);
     }
     return hlm;
@@ -378,7 +378,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode32(
         phi = Phi->data->data[j];
         re = re2 + v2 * (re4 + v * re5);
         im = v*v2 * (im5 + im5log * log(v/v0));
-        ans = CX16polar(1.0, -2.0*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -2.0*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*m/r)*v2*v2);
     }
     return hlm;
@@ -452,7 +452,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode31(
         phi = Phi->data->data[j];
         re = re1 + v2 * (re3 + v * (re4 + v * re5));
         im = v*v2 * (im4 + im4log * log(v/v0));
-        ans = CX16polar(1.0, -phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v2*v);
     }
     return hlm;
@@ -515,7 +515,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode30(
     for (j=0; j < V->data->length; j++) {
         v = V->data->data[j];
         v7 = v*v*v*v*v*v*v;
-        ans = CX16rect(re, im);
+        ans = crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*m*nu2/r)*v7);
     }
     return hlm;
@@ -589,7 +589,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode44(
         phi = Phi->data->data[j];
         re = re2 + v2 * (re4 + v * (re5 + v * re6));
         im = v*v2 * (im5 + im5log * log(v/v0));
-        ans = CX16polar(1.0, -4.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -4.*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*m/r)*v2*v2);
     }
     return hlm;
@@ -657,7 +657,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode43(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re3 + v2 * re5;
-        ans = CX16polar(1.0, -3.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -3.*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*dm/r)*v*v2*v2);
     }
     return hlm;
@@ -731,7 +731,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode42(
         phi = Phi->data->data[j];
         re = re2 + v2 * (re4 + v * (re5 + v * re6));
         im = v*v2 * (im5 + im5log * log(v/v0));
-        ans = CX16polar(1.0, -2.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -2.*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*m/r)*v2*v2);
     }
     return hlm;
@@ -799,7 +799,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode41(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re3 + v2 * re5;
-        ans = CX16polar(1.0, -phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v*v2*v2);
     }
     return hlm;
@@ -842,7 +842,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode40(
     for (j=0; j < V->data->length; j++) {
         v = V->data->data[j];
         v2 = v*v;
-        ans = CX16rect(1., 0.);
+        ans = crect(1., 0.);
         hlm->data->data[j] = ans * ((fac*mu/r)*v2);
     }
     return hlm;
@@ -910,7 +910,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode55(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re3 + v2 * re5;
-        ans = CX16polar(1.0, -5.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -5.*phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v*v2*v2);
     }
     return hlm;
@@ -978,7 +978,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode54(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re4 + v2 * re6;
-        ans = CX16polar(1.0, -4.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -4.*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*m/r)*v2*v2*v2);
     }
     return hlm;
@@ -1046,7 +1046,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode53(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re3 + v2 * re5;
-        ans = CX16polar(1.0, -3.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -3.*phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v*v2*v2);
     }
     return hlm;
@@ -1114,7 +1114,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode52(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re4 + v2 * re6;
-        ans = CX16polar(1.0, -2.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -2.*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*m/r)*v2*v2*v2);
     }
     return hlm;
@@ -1182,7 +1182,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode51(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re3 + v2 * re5;
-        ans = CX16polar(1.0, -1.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -1.*phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v*v2*v2);
     }
     return hlm;
@@ -1218,7 +1218,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode50(
     UINT4 j;
     /* Loop over time samples, compute hlm(t) */
     for (j=0; j < V->data->length; j++) {
-        hlm->data->data[j] = CX16rect(1., 0.);
+        hlm->data->data[j] = crect(1., 0.);
     }
     return hlm;
 }
@@ -1285,7 +1285,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode66(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re4 + v2 * re6;
-        ans = CX16polar(1.0, -6.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -6.*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*m/r)*v2*v2*v2);
     }
     return hlm;
@@ -1352,7 +1352,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode65(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re5;
-        ans = CX16polar(1.0, -5.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -5.*phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v*v2*v2*v2);
     }
     return hlm;
@@ -1420,7 +1420,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode64(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re4 + v2 * re6;
-        ans = CX16polar(1.0, -4.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -4.*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*m/r)*v2*v2*v2);
     }
     return hlm;
@@ -1487,7 +1487,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode63(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re5;
-        ans = CX16polar(1.0, -3.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -3.*phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v*v2*v2*v2);
     }
     return hlm;
@@ -1555,7 +1555,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode62(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re4 + v2 * re6;
-        ans = CX16polar(1.0, -2.*phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -2.*phi) * crect(re, im);
         hlm->data->data[j] = ans * ((fac*nu*m/r)*v2*v2*v2);
     }
     return hlm;
@@ -1622,7 +1622,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode61(
         v2 = v*v;
         phi = Phi->data->data[j];
         re = re5;
-        ans = CX16polar(1.0, -phi) * CX16rect(re, im);
+        ans = cpolar(1.0, -phi) * crect(re, im);
         hlm->data->data[j] = ans * I * ((fac*nu*dm/r)*v*v2*v2*v2);
     }
     return hlm;
@@ -1658,7 +1658,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode60(
     UINT4 j;
     /* Loop over time samples, compute hlm(t) */
     for (j=0; j < V->data->length; j++) {
-        hlm->data->data[j] = CX16rect(1., 0.);
+        hlm->data->data[j] = crect(1., 0.);
     }
     return hlm;
 }

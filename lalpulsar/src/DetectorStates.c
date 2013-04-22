@@ -18,14 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/** \author R. Prix, John T. Whelan
- * \file
- * \brief
- * functions to handle DetectorStatesSeries: positions, velocities, detector-tensors
- * of detector as function of time.
- *
- */
-
 /*---------- INCLUDES ----------*/
 #define __USE_ISOC99 1
 #include <math.h>
@@ -44,6 +36,7 @@
 
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
+#define SQUARE(x) ((x) * (x))
 
 /*----- SWITCHES -----*/
 
@@ -51,6 +44,7 @@
 
 /*---------- empty initializers ---------- */
 static const LALStatus empty_LALStatus;
+const MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- Global variables ----------*/
 
@@ -60,7 +54,7 @@ int XLALFillDetectorTensor (DetectorState *detState, const LALDetector *detector
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
-/** Deprecated LAL wrapper to XLALGetDetectorStates()
+/** \deprecated Use XLALGetDetectorStates() instead
  */
 void
 LALGetDetectorStates (LALStatus *status,			/**< pointer to LALStatus structure */
@@ -834,3 +828,85 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
 } /* XLALGetMultiDetectorStates() */
 
 
+/**
+ * Parse string-vectors (typically input by user) of N detector-names
+ * and N noise-power \f$\sqrt{S_X}\f$ for detectors \f$X=1\ldots N\f$,
+ * returns a MultiDetectorInfo struct with normalized detector "weights".
+ *
+ * NOTE: you can pass sqrtSX == NULL, corresponding to zero-noise, equal-sensitivity detectors,
+ * ie. this is interpreted as \f$S_X=0\f$, and all noise-weights will be equal: \f$w_X=1\f$
+ *
+ * NOTE2: the derived noise-weights 'detWeights' are defined according to the conventions in
+ * CFSv2_Notes.pdf [LIGO-T0900149-v3] at https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=1665, namely
+ * \f$w_X \equiv \frac{S_X^{-1}}{\mathcal{S}^{-1}}\f$, where
+ * the normalization constant \f$\mathcal{S}\f$ is defined as the harmonic mean
+ * \f$\mathcal{S}^{-1} \equiv \frac{1}{N}\sum_{X=1}^{N} S_X^{-1}\f$,
+ * such that \f$\sum_{X=1}^N w_X = N\f$.
+ *
+ */
+int
+XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,        /**< [out] parsed detector-info struct */
+                             const LALStringVector *detNames,   /**< [in] list of detector names */
+                             const LALStringVector *sqrtSX      /**< [in] string-list of \f$\sqrt{S_X}\f$ for detectors \f$X\f$ (can be NULL) */
+                             )
+{
+  XLAL_CHECK ( detInfo != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( detNames != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( detNames->length > 0, XLAL_EINVAL );
+  UINT4 numDet = detNames->length;
+
+  XLAL_CHECK ( (sqrtSX == NULL) || (sqrtSX->length == numDet ), XLAL_EINVAL,
+               "Number of noise-floors sqrtSX (if given) must agree with number of detectors, %d != %d\n", sqrtSX->length, numDet );
+
+  /* initialize empty return struct */
+  (*detInfo) = empty_MultiDetectorInfo;
+  detInfo->length = numDet;
+
+  REAL8 calSinv = 0;	// normalization constant \mathcal{S}^{-1}
+  /* parse input strings and fill detInfo */
+  for ( UINT4 X = 0; X < numDet; X ++ )
+    {
+      LALDetector *ifo;
+      /* first parse detector name */
+      XLAL_CHECK ( (ifo = XLALGetSiteInfo ( detNames->data[X] ) ) != NULL, XLAL_EINVAL, "Failed to parse detector-name '%s'\n", detNames->data[X] );
+      detInfo->sites[X] = (*ifo);	// struct copy
+      XLALFree ( ifo );
+
+      /* parse noise PSDs if given */
+      if ( sqrtSX )
+	{
+          const char *sqrtSnStr = sqrtSX->data[X];
+          REAL8 sqrtSn;
+	  XLAL_CHECK ( sscanf ( sqrtSnStr , "%lf", &sqrtSn ) == 1, XLAL_EINVAL, "Failed to parse '%s' into REAL8\n", sqrtSnStr );
+          XLAL_CHECK ( sqrtSn >= 0, XLAL_EDOM );
+          detInfo->sqrtSn[X] = sqrtSn;
+          if ( sqrtSn > 0 )
+            {
+              detInfo->sqrtSn[X] = sqrtSn;
+              detInfo->detWeights[X] = 1.0 / SQUARE( sqrtSn );
+              calSinv += detInfo->detWeights[X];
+            }
+	} /* if sqrtSX given */
+      else
+        {
+          detInfo->sqrtSn[X] = 0;
+          detInfo->detWeights[X] = 1;
+        }
+
+    } /* for X < numDet */
+
+  calSinv /= numDet;	// =harmonic *mean* of noise-PSDs
+
+  /* normalize noise-weights by caS^{-1}, such that weights sum to  N */
+  if ( calSinv > 0 )
+    {
+      detInfo->calS = 1.0 / calSinv;
+      for ( UINT4 X = 0; X < numDet; X ++ )
+        {
+          detInfo->detWeights[X] /= calSinv;
+        } // for X < numDet
+    } // if calSinv > 0
+
+  return XLAL_SUCCESS;
+
+} /* XLALParseMultiDetectorInfo() */

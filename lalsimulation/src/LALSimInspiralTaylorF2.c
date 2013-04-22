@@ -35,22 +35,6 @@
 #include "LALSimInspiralPNCoefficients.c"
 
 /**
- * Find the least nonnegative integer power of 2 that is
- * greater than or equal to n.  Inspired by similar routine
- * in gstlal.
- */
-static size_t CeilPow2(double n) {
-    double signif;
-    int exponent;
-    signif = frexp(n, &exponent);
-    if (signif < 0)
-        return 1;
-    if (signif == 0.5)
-        exponent -= 1;
-    return ((size_t) 1) << exponent;
-}
-
-/**
  * Computes the stationary phase approximation to the Fourier transform of
  * a chirp waveform with phase given by Eq.\eqref{eq_InspiralFourierPhase_f2}
  * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
@@ -58,6 +42,7 @@ static size_t CeilPow2(double n) {
  *
  * See arXiv:0810.5336 and arXiv:astro-ph/0504538 for spin corrections
  * to the phasing.
+ * See arXiv:1303.7412 for spin-orbit phasing corrections at 3 and 3.5PN order
  */
 int XLALSimInspiralTaylorF2(
         COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
@@ -68,6 +53,7 @@ int XLALSimInspiralTaylorF2(
         const REAL8 S1z,                       /**<  z component of the spin of companion 1 */
         const REAL8 S2z,                       /**<  z component of the spin of companion 2  */
         const REAL8 fStart,                    /**< start GW frequency (Hz) */
+        const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
         const REAL8 r,                         /**< distance of source (m) */
         const REAL8 lambda1,                   /**< (tidal deformation of body 1)/(mass of body 1)^5 */
         const REAL8 lambda2,                   /**< (tidal deformation of body 2)/(mass of body 2)^5 */
@@ -95,7 +81,7 @@ int XLALSimInspiralTaylorF2(
     const REAL8 lam1 = lambda1;
     const REAL8 lam2 = lambda2;
     REAL8 shft, amp0, f_max;
-    size_t i, n, iStart, iISCO;
+    size_t i, n, iStart;
     COMPLEX16 *data = NULL;
     LIGOTimeGPS tC = {0, 0};
 
@@ -121,6 +107,7 @@ int XLALSimInspiralTaylorF2(
     REAL8 pn_beta = 0;
     REAL8 pn_sigma = 0;
     REAL8 pn_gamma = 0;
+    REAL8 psiSO3 = 0., psiSO35 = 0.; // 3PN and 3.5PN spin-orbit phasing terms
 
     REAL8 d = (m1 - m2) / (m1 + m2);
     REAL8 xs = .5 * (S1z + S2z);
@@ -132,6 +119,16 @@ int XLALSimInspiralTaylorF2(
     switch( spinO )
     {
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
+            psiSO35 = (chi1 * (-8980424995./762048. + 6586595.*eta/756.
+                    - 305.*eta*eta/36.) + d * (170978035./48384.
+                    - 2876425.*eta/672. - 4735.*eta*eta/144.) ) * chi1 * S1z
+                    + (chi2 * (-8980424995./762048. + 6586595.*eta/756.
+                    - 305.*eta*eta/36.) - d * (170978035./48384.
+                    - 2876425.*eta/672. - 4735.*eta*eta/144.) ) * chi2 * S2z;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+            psiSO3 = LAL_PI * ( (260.*chi1 + 1490./3.) * chi1 * S1z
+                    + (260.*chi2 + 1490./3.) * chi2 * S2z);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             /* Compute 2.5PN SO correction */
             // See Eq. (6.25) in arXiv:0810.5336
@@ -206,15 +203,17 @@ int XLALSimInspiralTaylorF2(
     /* Perform some initial checks */
     if (!htilde_out) XLAL_ERROR(XLAL_EFAULT);
     if (*htilde_out) XLAL_ERROR(XLAL_EFAULT);
-    if (phic < 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
 
     /* allocate htilde */
-    f_max = CeilPow2(fISCO);
-    n = f_max / deltaF + 1;
+    if ( fEnd == 0. ) // End at ISCO
+        f_max = fISCO;
+    else // End at user-specified freq.
+        f_max = fEnd;
+    n = (size_t) (f_max / deltaF + 1);
     XLALGPSAdd(&tC, -1 / deltaF);  /* coalesce at t=0 */
     htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
     if (!htilde) XLAL_ERROR(XLAL_EFUNC);
@@ -222,15 +221,13 @@ int XLALSimInspiralTaylorF2(
     XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
 
     /* extrinsic parameters */
-    amp0 = 4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L); /* Why was there a factor of deltaF in the lalinspiral version? */
-    shft = -LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
+    amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);
+    shft = LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
 
+    /* Fill with non-zero vals from fStart to f_max */
     iStart = (size_t) ceil(fStart / deltaF);
-    iISCO = (size_t) (fISCO / deltaF);
-    iISCO = (iISCO < n) ? iISCO : n;  /* overflow protection; should we warn? */
     data = htilde->data->data;
-
-    for (i = iStart; i < iISCO; i++) {
+    for (i = iStart; i < n; i++) {
         const REAL8 f = i * deltaF;
         const REAL8 v = cbrt(piM*f);
         const REAL8 v2 = v * v;
@@ -300,6 +297,10 @@ int XLALSimInspiralTaylorF2(
         switch( spinO )
         {
             case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
+                phasing += psiSO35 * v7;
+            case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+                phasing += psiSO3 * v6;
             case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
                 phasing += -pn_gamma * (1 + 3*log(v/v0)) * v5;
             case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
@@ -339,7 +340,8 @@ int XLALSimInspiralTaylorF2(
         // Note the factor of 2 b/c phic is orbital phase
         phasing += shft * f - 2.*phic;
         amp = amp0 * sqrt(-dEnergy/flux) * v;
-        data[i] = amp * cos(phasing + LAL_PI_4) - amp * sin(phasing + LAL_PI_4) * 1.0j;
+        data[i] = amp * cos(phasing - LAL_PI_4)
+                - amp * sin(phasing - LAL_PI_4) * 1.0j;
     }
 
     *htilde_out = htilde;

@@ -1145,7 +1145,6 @@ void templateLALPhenSpinTaylorRD(struct parSet *par, struct interferometer *ifo[
 	
 	//detector.site = &site;
 //	detector.transfer = NULL;
-//	detector.ephemerides = NULL;
 	
 	switch ( ifonr )
 	{
@@ -1608,7 +1607,6 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   //detector.site = &site;
   detector.transfer = NULL;
-  detector.ephemerides = NULL;
   
   /* set up units for the transfer function */
   /*    RAT4 negOne = { -1, 0 };
@@ -1622,7 +1620,6 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   //detector.transfer = NULL;
-  //detector.ephemerides = NULL;
   
   
   /* invert the response function to get the transfer function */

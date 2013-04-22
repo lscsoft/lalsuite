@@ -38,7 +38,6 @@
 #include <gsl/gsl_vector_int.h>
 #include <gsl/gsl_matrix.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/GSLSupport.h>
@@ -692,20 +691,20 @@ REAL8 d_pdf_ncx2_4(REAL8 lambda, REAL8 x) {
   const REAL8 z = sqrt(x * lambda);
 
   int i;
-  gsl_sf_result I[3];
+  gsl_sf_result In[3];
   gsl_error_handler_t *h = NULL;
 
   /* Compute the Bessel functions */
   h = gsl_set_error_handler_off();
   for (i = 0; i < 3; ++i)
-    if (gsl_sf_bessel_In_e(i, z, &I[i]) != GSL_SUCCESS) {
+    if (gsl_sf_bessel_In_e(i, z, &In[i]) != GSL_SUCCESS) {
       gsl_set_error_handler(h);
       return GSL_NAN;
     }
   gsl_set_error_handler(h);
   
   /* Compute the derivative of the PDF */
-  return 0.25 * exp(-0.5 * (x + lambda)) * (0.5 * x / lambda * (I[0].val + I[2].val) - sqrt(x / lambda) * (1 + 1 / lambda) * I[1].val);
+  return 0.25 * exp(-0.5 * (x + lambda)) * (0.5 * x / lambda * (In[0].val + In[2].val) - sqrt(x / lambda) * (1 + 1 / lambda) * In[1].val);
   
 }
 

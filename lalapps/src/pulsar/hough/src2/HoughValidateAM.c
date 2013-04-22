@@ -33,8 +33,8 @@
 extern INT4 lalDebugLevel;
 
 /* defaults */
-#define EARTHEPHEMERIS "../src/earth00-04.dat"
-#define SUNEPHEMERIS "../src/sun00-04.dat"
+#define EARTHEPHEMERIS ".earth00-19-DE405.dat"
+#define SUNEPHEMERIS "sun00-19-DE405.dat"
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
 #define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */

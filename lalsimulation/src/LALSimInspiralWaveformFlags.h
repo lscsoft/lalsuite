@@ -46,6 +46,7 @@ typedef enum {
     LAL_SIM_INSPIRAL_SPIN_ORDER_2PN  = 4,
     LAL_SIM_INSPIRAL_SPIN_ORDER_25PN = 5,
     LAL_SIM_INSPIRAL_SPIN_ORDER_3PN  = 6,
+    LAL_SIM_INSPIRAL_SPIN_ORDER_35PN = 7,
     LAL_SIM_INSPIRAL_SPIN_ORDER_ALL  = -1
 } LALSimInspiralSpinOrder;
 
@@ -173,7 +174,7 @@ bool XLALSimInspiralSpinOrderIsDefault(
 void XLALSimInspiralSetTidalOrder(
         LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose flag will be set */
 
-        LALSimInspiralSpinOrder tideO /**< value to set flag to */
+        LALSimInspiralTidalOrder tideO /**< value to set flag to */
         );
 
 /**

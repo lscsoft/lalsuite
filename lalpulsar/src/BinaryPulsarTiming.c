@@ -112,8 +112,8 @@ void XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u){
 }
 
 /** XLAL function to compute Kopeikin terms that include the effect of
-  * binary orbital parameters of parallax */ 
-void XLALComputeKopeikinTerms( KopeikinTerms *kop, 
+  * binary orbital parameters of parallax */
+void XLALComputeKopeikinTerms( KopeikinTerms *kop,
                                BinaryPulsarParams *params,
                                BinaryPulsarInput *in ){
   REAL8 sini, cosi, tani;
@@ -126,14 +126,14 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
   REAL8 tt0;
   REAL8 dpara; /* parallax */
   REAL8 x;
-  
+
   sini = sin(params->kin);
   cosi = cos(params->kin);
   tani = sini / cosi;
-  
+
   sin_omega = sin(params->kom);
   cos_omega = cos(params->kom);
- 
+
   /* ki_dot is set in tempo2 function, but not used */
   /* ki_dot = -params.pmra * sin_omega + params.pmdec*cos_omega; */
   /* Equation 8 in Kopeikin 1996 */
@@ -141,8 +141,8 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
   /* Equation 9 in Kopeikin 1996 */
   //(*omz) += (pmra*cos_omega+pmdec*sin_omega)/sini*tt0;
 
-  /* Now modify x and omega due to the annual-orbital parallax term 
-   * as described in Kopeikin 1995 
+  /* Now modify x and omega due to the annual-orbital parallax term
+   * as described in Kopeikin 1995
    *
    * Require knowledge of the barycentric earth position vector - earth_ssb
    */
@@ -152,25 +152,25 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
   sa = sin(params->ra);
   cd = cos(params->dec);
   sd = sin(params->dec);
-      
+
   posPulsar[0] = ca*cd;
   posPulsar[1] = sa*cd;
   posPulsar[2] = sd;
-     
+
   velPulsar[0] = -params->pmra/cos(params->dec)*sa*cd - params->pmdec*ca*sd;
   velPulsar[1] = params->pmra/cos(params->dec)*ca*cd - params->pmdec*sa*sd;
   velPulsar[2] = params->pmdec*cd;
-  
+
   delt = in->tb - params->posepoch;
   /* add proper motion onto the pulsar position */
   for( UINT4 i = 0; i < 3; i++ ) psrPos[i] = posPulsar[i] + delt*velPulsar[i];
-  
+
   /* Obtain vector pointing at the pulsar */
   sin_delta = psrPos[2];
   cos_delta = cos(asin(sin_delta));
   sin_alpha = psrPos[1] / cos_delta;
   cos_alpha = psrPos[0] / cos_delta;
-  
+
   /* Equation 15 in Kopeikin 1995 */
   delta_i0 = -in->earth.posNow[0]/AULTSC*sin_alpha +
     in->earth.posNow[1]/AULTSC*cos_alpha;
@@ -178,23 +178,23 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
   delta_j0 = -in->earth.posNow[0]/AULTSC * sin_delta*cos_alpha -
     in->earth.posNow[1]/AULTSC * sin_delta*sin_alpha +
     in->earth.posNow[2]/AULTSC * cos_delta;
- 
+
   dpara = params->px;
   x = params->x;
-  
+
   /* xpr and ypr are set in tempo2 function, but not used */
   /* xpr = delta_i0*sin_omega - delta_j0*cos_omega;
   ypr = delta_i0*cos_omega + delta_j0*sin_omega; */
-  
+
   /* Equations 18 and 19 in Kopeikin 1995 */
-  if( params->daopset ){    
+  if( params->daopset ){
     REAL8 daop = params->daop;
-    
+
     kop->DK011 = - x / daop / sini*delta_i0*sin_omega;
     kop->DK012 = - x / daop / sini*delta_j0*cos_omega;
     kop->DK013 = - x / daop / sini*delta_i0*cos_omega;
     kop->DK014 = x / daop / sini*delta_j0*sin_omega;
-      
+
     kop->DK021 = x / daop / tani*delta_i0*cos_omega;
     kop->DK022 = -x / daop / tani*delta_j0*sin_omega;
     kop->DK023 = x / daop / tani*delta_i0*sin_omega;
@@ -205,20 +205,20 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
     kop->DK012 = -x * dpara / sini*delta_j0*cos_omega;
     kop->DK013 = -x * dpara / sini*delta_i0*cos_omega;
     kop->DK014 = x * dpara / sini*delta_j0*sin_omega;
- 
+
     kop->DK021 = x * dpara / tani*delta_i0*cos_omega;
     kop->DK022 = -x * dpara / tani*delta_j0*sin_omega;
     kop->DK023 = x * dpara / tani*delta_i0*sin_omega;
     kop->DK024 = x * dpara / tani*delta_j0*cos_omega;
-  }  
-    
+  }
+
     if( params->T0 != 0. ) tt0 = in->tb - params->T0;
     else if( params->Tasc != 0. ) tt0 = in->tb - params->Tasc;
     else{
       XLALPrintError("%s: Neither T0 or Tasc is defined!\n", __func__);
-      XLAL_ERROR_VOID( XLAL_EFUNC );
+      XLAL_ERROR_VOID( XLAL_EINVAL );
     }
-    
+
     kop->DK031 = x * tt0 / sini*params->pmra*sin_omega;
     kop->DK032 = x * tt0 / sini*params->pmdec*cos_omega;
     kop->DK033 = x * tt0 / sini*params->pmra*cos_omega;
@@ -351,7 +351,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   dr = params->dr;
   dth = params->dth;
   shapmax = params->shapmax;
-  
+
   a0 = params->a0;
   b0 = params->b0;
 
@@ -448,10 +448,10 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       if(orbits < 0.) norbits--;
 
       phase = LAL_TWOPI*(orbits - (REAL8)norbits); /* called phase in TEMPO */
-      
+
       /* compute eccentric anomaly */
       XLALComputeEccentricAnomaly( phase, e, &u );
-     
+
       su = sin(u);
       cu = cos(u);
 
@@ -512,10 +512,10 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     REAL8 DS, DA; /* Shapiro delay and Abberation delay terms */
     REAL8 Dbb;
     REAL8 DAOP, DSR; /* Kopeikin delay terms */
-    
+
     KopeikinTerms kt;
     REAL8 Ck, Sk;
-    
+
     REAL8 sp = 0., cp = 0., s2p = 0., c2p = 0.;
 
     /* fprintf(stderr, "You are using the ELL1 low eccentricity orbit model.\n");*/
@@ -535,10 +535,10 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
       /* rearrange from what's in tasc2t0.f */
       Tasc = T0 - Dt;
-    }     
-    
+    }
+
     tt0 = tb - Tasc;
-    
+
     orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
     norbits = (INT4)orbits;
     if(orbits < 0.0) norbits--;
@@ -557,7 +557,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       ecc += edot*tt0;
       w_int = atan2(eps1, eps2);
       w_int = w_int + wdot*tt0;
-      
+
       e1 = ecc*sin(w_int);
       e2 = ecc*cos(w_int);
     }
@@ -568,7 +568,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     cp = cos(phase);
     s2p = sin(2.*phase);
     c2p = cos(2.*phase);
-    
+
     /* this timing delay (Roemer + Einstein) should be most important in most cases */
     /* DRE = x*(sin(phase)-0.5*(e1*cos(2.0*phase)-e2*sin(2.0*phase)));
     DREp = x*cos(phase);
@@ -586,10 +586,10 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     if( params->kinset && params->komset && ( params->pmra != 0. ||
         params->pmdec != 0. ) ){
       XLALComputeKopeikinTerms( &kt, params, input );
-    
+
       Ck = sp - 0.5*(e1*c2p - e2*s2p);
       Sk = cp + 0.5*(e2*c2p + e1*s2p);
-    
+
       DAOP = (kt.DK011 + kt.DK012)*Ck - (kt.DK021 + kt.DK022)*Sk;
       DSR = (kt.DK031 + kt.DK032)*Ck + (kt.DK041 + kt.DK042)*Sk;
     }
@@ -597,7 +597,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       DAOP = 0.;
       DSR = 0.;
     }
-    
+
     Dbb = DRE*(1.0-nb*DREp+(nb*DREp)*(nb*DREp) + 0.5*nb*nb*DRE*DREpp) + DS + DA
       + DAOP + DSR;
 
@@ -610,7 +610,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 different than DD model - TEMPO bnrymss.f */
   /* also DDS model and (partial) T2 model (if EPS params not set) from TEMPO2
 T2model.C */
-  if( !strcmp(model, "DD") || !strcmp(model, "MSS") || !strcmp(model, "DDS") || 
+  if( !strcmp(model, "DD") || !strcmp(model, "MSS") || !strcmp(model, "DDS") ||
       (!strcmp(model, "T2") && eps1 == 0.) ){
     REAL8 u;        /* new eccentric anomaly */
     REAL8 Ae;       /* eccentricity parameter */
@@ -619,7 +619,7 @@ T2model.C */
     REAL8 DS;       /* Shapiro delay */
     REAL8 DA;       /* aberation caused by pulsar rotation delay */
     REAL8 DAOP, DSR; /* Kopeikin term delays */
-    
+
     REAL8 tt0;
     /* various variable use during calculation */
     REAL8 er, eth, an, k;
@@ -632,13 +632,13 @@ T2model.C */
 
     REAL8 xi; /* parameter for MSS model - the only other one needed */
     REAL8 sdds = 0.; /* parameter for DDS model */
-    
+
     REAL8 su = 0., cu = 0.;
     REAL8 sw = 0., cw = 0.;
-    
+
     KopeikinTerms kt;
     REAL8 Ck, Sk;
-    
+
     /* fprintf(stderr, "You are using the Damour-Deruelle (DD) binary model.\n");*/
 
     /* part of code adapted from TEMPO bnrydd.f */
@@ -718,10 +718,10 @@ this isn't defined for either of the two pulsars currently using this model */
     if( params->kinset && params->komset && ( params->pmra != 0. ||
         params->pmdec != 0. ) ){
       XLALComputeKopeikinTerms( &kt, params, input );
-    
+
       Ck = cw*(cu-er) - sqrt(1.-eth*eth)*sw*su;
       Sk = sw*(cu-er) + sqrt(1.-eth*eth)*cw*su;
-    
+
       DAOP = (kt.DK011 + kt.DK012)*Ck - (kt.DK021 + kt.DK022)*Sk;
       DSR = (kt.DK031 + kt.DK032)*Ck + (kt.DK041 + kt.DK042)*Sk;
     }
@@ -729,7 +729,7 @@ this isn't defined for either of the two pulsars currently using this model */
       DAOP = 0.;
       DSR = 0.;
     }
-    
+
     /* timing difference */
     Dbb = DRE*(1.0 - anhat*DREp+anhat*anhat*DREp*DREp + 0.5*anhat*anhat*DRE*DREpp -
           0.5*e*su*anhat*anhat*DRE*DREp/onemecu) + DS + DA + DAOP + DSR;
@@ -784,7 +784,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->name = NULL;
   output->jname = NULL;
   output->bname = NULL;
-  
+
   output->model = NULL; /* set binary model to null - in case not a binary */
 
   /* set all output params to zero*/
@@ -826,9 +826,9 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
   output->s=0.0;      /* Shapiro 'shape' parameter sin i */
   output->sstr=NULL;
-  
+
   output->shapmax=0.;
-  
+
   /*output.r=0.0; Shapiro 'range' parameter */
   output->dr=0.0;
   output->dth=0.0;    /* (10^-6) */
@@ -848,13 +848,13 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->f7=0.0;
   output->f8=0.0;
   output->f9=0.0;
-  
+
   output->waveSin = NULL;
-  output->waveCos = NULL;  
+  output->waveCos = NULL;
   output->wave_om = 0.0;
   output->waveepoch = 0.0;
   output->nwaves = 0;
-  
+
   output->ra=0.0;
   output->dec=0.0;
   output->pmra=0.0;
@@ -872,7 +872,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->kinset=0;
   output->kom=0.;
   output->komset=0;
-  
+
   /* set all errors on params to zero */
   output->raErr=0.0;
   output->decErr=0.0;
@@ -901,7 +901,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
   output->sErr=0.0;     /* Shapiro 'shape' parameter sin i */
   output->shapmaxErr=0.;
-  
+
   /*output->rErr=0.0;  Shapiro 'range' parameter */
   output->drErr=0.0;
   output->dthErr=0.0;   /* (10^-6) */
@@ -921,7 +921,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->f7Err=0.0;
   output->f8Err=0.0;
   output->f9Err=0.0;
-  
+
   output->eErr =0.0;
   output->w0Err=0.0;
   output->PbErr=0.0;
@@ -954,9 +954,12 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->Across=0.;
   output->I21=0.;
   output->I31=0.;
-  output->r=0.;
   output->lambda=0.;
   output->costheta=0.;
+  output->C22=0.;
+  output->C21=0.;
+  output->phi22=0.;
+  output->phi21=0.;
 
   output->h0Err=0.;
   output->cosiotaErr=0.;
@@ -966,15 +969,18 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->AcrossErr=0.;
   output->I21Err=0.;
   output->I31Err=0.;
-  output->rErr=0.;
   output->lambdaErr=0.;
   output->costhetaErr=0.;
-  
+  output->C22Err=0.;
+  output->C21Err=0.;
+  output->phi22Err=0.;
+  output->phi21Err=0.;
+
   output->wave_omErr = 0.0;
-  
+
   output->units = NULL;
   output->ephem = NULL;
-  
+
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLALPrintError("Error... Cannot open .par file %s\n", pulsarAndPath);
     XLAL_ERROR_VOID( XLAL_EIO );
@@ -986,7 +992,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     sprintf(val[i], "%s", "");
 
     c = fscanf(fp, "%s", val[i]);
-    
+
     /* if line starts with a '#' then skip to end of line */
     if( val[i][0] == '#' ){
        /* skip to the end of the line */
@@ -994,7 +1000,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       if ( feof(fp) ) break;
       continue;
     }
-    
+
     i++;
   }
 
@@ -1024,7 +1030,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if(!strcmp(val[i],"ra") || !strcmp(val[i],"RA") || !strcmp(val[i],"RAJ")){
       /* this can be in form hh:mm:ss.ss or hhmmss.ss */
-      output->ra = LALDegsToRads(val[i+1], "RA");
+      output->ra = XLALhmsToRads(val[i+1]);
       j++;
 
       /* only try to get error if one exists */
@@ -1035,7 +1041,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if(!strcmp(val[i],"dec") || !strcmp(val[i],"DEC") || !strcmp(val[i],"DECJ")) {
-      output->dec = LALDegsToRads(val[i+1], "DEC");
+      output->dec = XLALdmsToRads(val[i+1]);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1066,13 +1072,13 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if(!strcmp(val[i],"pepoch") || !strcmp(val[i],"PEPOCH")) {
-      output->pepoch = LALTTMJDtoGPS(atof(val[i+1])); /* convert all epochs to
+      output->pepoch = XLALTTMJDtoGPS(atof(val[i+1])); /* convert all epochs to
         from MJD to GPS seconds in TDB */
       j++;
 
     }
     else if( !strcmp(val[i],"posepoch") || !strcmp(val[i],"POSEPOCH")){
-      output->posepoch = LALTTMJDtoGPS(atof(val[i+1]));
+      output->posepoch = XLALTTMJDtoGPS(atof(val[i+1]));
       j++;
       /* position epoch in GPS seconds TDB */
     }
@@ -1307,33 +1313,33 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     else if( !strcmp(val[i],"WAVE_OM") || !strcmp(val[i],"wave_om") ) {
       output->wave_om = atof(val[i+1]);
       j++;
-      
+
       if(atoi(val[i+2])==1 && i+2<k){
         output->wave_omErr = atof(val[i+3]);
         j+=2;
       }
     }
     else if( !strcmp(val[i], "WAVEEPOCH") || !strcmp(val[i], "waveepoch") ){
-      output->waveepoch = LALTTMJDtoGPS( atof(val[i+1]) );
+      output->waveepoch = XLALTTMJDtoGPS( atof(val[i+1]) );
       j++;
     }
     else if( strstr(val[i],"WAVE") != NULL || strstr(val[i],"wave") != NULL ) {
       INT4 wnum = 0;
-      
+
       if( sscanf(val[i]+4, "%d", &wnum) != 1 ){
         fprintf(stderr, "Error reading WAVE number from par file\n");
         exit(1);
       }
-      
+
       if ( wnum > output->nwaves ){
         output->nwaves = wnum;
         output->waveSin = XLALRealloc(output->waveSin, wnum*sizeof(REAL8));
         output->waveCos = XLALRealloc(output->waveCos, wnum*sizeof(REAL8));
       }
-      
+
       output->waveSin[wnum-1] = atof(val[i+1]);
       output->waveCos[wnum-1] = atof(val[i+2]);
-      
+
       j++;
     }
     else if( !strcmp(val[i],"binary") || !strcmp(val[i],"BINARY")) {
@@ -1386,7 +1392,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if( !strcmp(val[i], "T0")){
-      output->T0 = LALTTMJDtoGPS(atof(val[i+1]));
+      output->T0 = XLALTTMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1395,7 +1401,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if( !strcmp(val[i], "Tasc") || !strcmp(val[i], "TASC")){
-      output->Tasc = LALTTMJDtoGPS(atof(val[i+1]));
+      output->Tasc = XLALTTMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1580,7 +1586,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     else if( !strcmp(val[i], "shapmax") || !strcmp(val[i], "SHAPMAX") ){
       output->shapmax = atof(val[i+1]);
       j++;
-      
+
       if(atoi(val[i+2])==1 && i+2<k){
         output->shapmaxErr = atof(val[i+3]);
         j+=2;
@@ -1604,7 +1610,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       output->komset = 1;
       j++;
     }
-    
+
     /* parameters for distance */
     else if( !strcmp(val[i],"px") || !strcmp(val[i],"PX") ) { /* parallax */
       /* convert from mas to rads (factor from T2model.C in TEMPO2) */
@@ -1685,7 +1691,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if( !strcmp(val[i], "T0_2")){
-      output->T02 = LALTTMJDtoGPS(atof(val[i+1]));
+      output->T02 = XLALTTMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1731,7 +1737,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if( !strcmp(val[i], "T0_3")){
-      output->T03 = LALTTMJDtoGPS(atof(val[i+1]));
+      output->T03 = XLALTTMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1744,22 +1750,22 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     else if( val[i][0] == 'F' && val[i][1] == 'B' ){
       INT4 fbnum = 0;
       CHAR *loc;
-      
+
       if (strlen(val[i])==2) fbnum = 0; /* only one coefficient */
-      else{ 
+      else{
         if( sscanf(val[i]+2,"%d",&fbnum) != 1 ){
           fprintf(stderr, "Error reading FB value from par file\n");
           exit(1);
         }
       }
-        
+
       /* add to number of coefficients */
       if ( output->nfb < fbnum+1 ){
         output->fb = XLALRealloc(output->fb, (fbnum+1)*sizeof(REAL8));
         output->fbErr = XLALRealloc(output->fbErr, (fbnum+1)*sizeof(REAL8));
-        output->nfb = fbnum+1; 
+        output->nfb = fbnum+1;
       }
-        
+
       /* check if exponent contains e/E or d/D or neither */
       if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
         output->fb[fbnum] = atof(val[i+1])*pow(10, atof(loc+1));
@@ -1854,15 +1860,6 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"r") || !strcmp(val[i],"R") ) {
-      output->r = atof(val[i+1]);
-      j++;
-
-      if(atoi(val[i+2])==1 && i+2<k){
-        output->rErr = atof(val[i+3]);
-        j+=2;
-      }
-    }
     else if( !strcmp(val[i],"lambda") || !strcmp(val[i],"LAMBDA") ) {
       output->lambda = atof(val[i+1]);
       j++;
@@ -1881,6 +1878,42 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
+    else if( !strcmp(val[i],"c22") || !strcmp(val[i],"C22") ) {
+      output->C22 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->C22Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"c21") || !strcmp(val[i],"C21") ) {
+      output->C21 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->C21Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"phi22") || !strcmp(val[i],"PHI22") ) {
+      output->phi22 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->phi22Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"phi21") || !strcmp(val[i],"phi21") ) {
+      output->phi21 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->phi21Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
 
     if(j==i){
       i++;
@@ -1895,10 +1928,10 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
   /*fprintf(stderr, "Have I got to the end of LALReadPARFile.\n");*/
   fclose(fp);
-  
+
   /* check linked parameters */
   if( output->sstr != NULL ){
-    if( !strcmp(output->sstr, "KIN") || !strcmp(output->sstr, "kin") ){    
+    if( !strcmp(output->sstr, "KIN") || !strcmp(output->sstr, "kin") ){
       if ( output->kinset ) output->s = sin(output->kin);
       else{
         XLALPrintError("Error... KIN not set in .par file %s\n", pulsarAndPath);
@@ -1906,7 +1939,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else output->s = atof(output->sstr);
-  }   
+  }
 }
 
 /* function to print out to screen all the pulsar parameters and there associated errors */
@@ -1969,7 +2002,7 @@ params.gammaErr);*/
 }
 
 LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile )
-/*void XLALReadTEMPOCorFile( REAL8Array *cormat, LALStringVector *params, 
+/*void XLALReadTEMPOCorFile( REAL8Array *cormat, LALStringVector *params,
                            CHAR *corfile )*/{
   FILE *fp = NULL;
   CHAR *firstline = XLALStringDuplicate( "" );
@@ -1978,25 +2011,25 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile )
   LALStringVector *tmpparams = NULL; /* temporary parameter names */
   LALStringVector *params = NULL;
   UINT4Vector *dims = NULL;
-  
+
   /* check the file exists */
   if( access(corfile, F_OK) != 0 ){
     XLALPrintError("Error... correlation matrix file does not exist!\n");
-    XLAL_ERROR_NULL(XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EIO);
   }
-  
+
   /* open file */
   if( (fp = fopen(corfile, "r")) == NULL ){
     XLALPrintError("Error... cannot open correlation matrix file!\n");
     XLAL_ERROR_NULL(XLAL_EIO);
   }
-  
+
   /* read in first line of the file */
   while( !strchr( fgets(onechar, 2, fp), '\n' ) )
     firstline = XLALStringAppend( firstline, onechar );
 
   sl = strlen(firstline);
-  
+
   /* count the number of parameters */
   for ( i = 0; i < sl; i++ ){
     /* use isspace as delimiters could be unknown generic whitespace */
@@ -2008,20 +2041,20 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile )
     }else
       c = 1;
   }
-  
+
   /* parse the line and put into the params vector */
   rewind(fp); /* rewind to start of the file */
   for ( i = 0; i < numPars; i++ ){
     CHAR tmpStr[128];
-    
+
     if( fscanf(fp, "%s", tmpStr) == EOF ){
       XLALPrintError("Error... Problem reading first line of correlation\
  matrix!\n");
       XLAL_ERROR_NULL(XLAL_EIO);
     }
-    
+
     tmpparams = XLALAppendString2Vector( tmpparams, tmpStr );
-    
+
     /* convert some parameter names to a more common convention */
     if ( !strcasecmp(tmpStr, "RAJ") ) /* convert RAJ to ra */
       params = XLALAppendString2Vector( params, "ra" );
@@ -2030,55 +2063,118 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile )
     else
       params = XLALAppendString2Vector( params, tmpStr );
   }
-  
+
   dims = XLALCreateUINT4Vector( 2 );
   dims->data[0] = numPars;
   dims->data[1] = numPars;
-  
+
   /* set the correlation matrix to the correct size */
   cormat = XLALResizeREAL8Array( cormat, dims );
-  
+
   /* read through covariance values */
   for ( i = 0; i < numPars; i++ ){
     CHAR tmpStr[128];
     INT4 j = 0;
-    
+
     if( fscanf(fp, "%s", tmpStr) == EOF ){
       XLALPrintError("Error... problem reading in correlation matrix!\n");
       XLAL_ERROR_NULL(XLAL_EIO);
     }
-    
+
     if ( strcmp(tmpStr, tmpparams->data[i]) ){
       XLALPrintError("Error... problem reading in correlation matrix. \
 Parameters not in consistent order!\n");
       XLAL_ERROR_NULL(XLAL_EIO);
     }
-    
+
     for( j = 0; j < i+1; j++ ){
       REAL8 tmpval = 0.;
-      
+
       if( fscanf(fp, "%lf", &tmpval) == EOF ){
         XLALPrintError("Error... problem reading in correlation matrix!\n");
         XLAL_ERROR_NULL(XLAL_EIO);
       }
-      
+
       /* if off diagonal values are +/-1 set to +/- 0.99999 */
       if ( j != i && abs(tmpval) == 1. )
         tmpval *= 0.99999;
-      
+
       cormat->data[i*numPars + j] = tmpval;
-      
+
       /* set opposite elements */
       if( j != i )
         cormat->data[j*numPars + i] = tmpval;
     }
   }
-  
+
   return params;
 }
 
 
-/* function converts dec or ra from format dd/hh:mm:ss.sss or format
+/* function to convert a string containing an angular coordinate in the format
+ * degrees:minutues:seconds into radians */
+REAL8
+XLALdmsToRads( const CHAR *dms )
+{
+  XLAL_CHECK_REAL8( dms != NULL, XLAL_EIO, "Angle string is NULL" );
+
+  REAL8 s;
+  INT4 d, m;
+  int negbutzero = 0;
+  int numitems = sscanf(dms, "%d:%d:%lf", &d, &m, &s);
+
+  XLAL_CHECK_REAL8( numitems == 3, XLAL_EINVAL, "Angle string not in format 'degs:mins:secs'" );
+  XLAL_CHECK_REAL8( m >= 0 && m < 60, XLAL_EDOM, "Minutes is out of the 0 to 59 mins range" );
+  XLAL_CHECK_REAL8( s >= 0. && s < 60., XLAL_EDOM, "Seconds is out of the 0 to 60 secs range" );
+
+  /* check if the string is negative in the case when the degrees value is zero */
+  if( dms[0] == '-' && d == 0 ) { negbutzero = 1; }
+
+  /* if dec is negative convert mins and secs to -ve numbers */
+  if( d < 0 || negbutzero == 1 ){
+    m = -m;
+    s = -s;
+  }
+
+  /* convert from dd:mm:ss to radians */
+  const REAL8 deg2rad = LAL_PI_180;
+  REAL8 radians =  deg2rad * ( d + (m / 60.0) + (s / 3600.0) );
+
+  return radians;
+
+} // XLALdmsToRads()
+
+
+/* function to convert a string containing an angular coordinate in the format
+ * hours:minutues:seconds into radians */
+REAL8
+XLALhmsToRads( const CHAR *hms )
+{
+  XLAL_CHECK_REAL8( hms != NULL, XLAL_EIO, "Angle string is NULL" );
+
+  REAL8 s;
+  INT4 h, m;
+  int numitems = sscanf(hms, "%d:%d:%lf", &h, &m, &s);
+
+  XLAL_CHECK_REAL8( numitems == 3, XLAL_EINVAL, "Angle string not in format 'hours:mins:secs'" );
+  XLAL_CHECK_REAL8( h >= 0 && h < 24, XLAL_EDOM, "Hours value must be within [0, 24)" );
+  XLAL_CHECK_REAL8( m >= 0 && m < 60, XLAL_EDOM, "Minutes is out of the 0 to 59 mins range" );
+  XLAL_CHECK_REAL8( s >= 0. && s < 60., XLAL_EDOM, "Seconds is out of the 0 to 60 secs range" );
+
+  /* convert from hh:mm:ss to radians */
+  const REAL8 hour2deg = 360./24.;
+  const REAL8 deg2rad  = LAL_PI_180;
+  const REAL8 hour2rad = hour2deg * deg2rad;
+
+  REAL8 radians = hour2rad * ( h + (m / 60.0) + (s / 3600.0) );
+
+  return radians;
+
+} // XLALhmsToRads()
+
+
+/* DEPREACTED: Use XLALhmsToRads() or XLALdmsToRads()
+   function converts dec or ra from format dd/hh:mm:ss.sss or format
    dd/hhmmss.ss to radians */
 REAL8 LALDegsToRads(CHAR *degs, const CHAR *coord){
   REAL8 radians=0.;
@@ -2179,13 +2275,13 @@ and why they are necessary can be found in Seidelmann and Fukushima, A&A 265
 
 /* This function converts a MJD format time corrected to Terrestrial Time (TT)
  * into an equivalent GPS time */
-REAL8 LALTTMJDtoGPS(REAL8 MJD){
+REAL8 XLALTTMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
 
   /* Check not before the start of GPS time (MJD 44244) */
   XLAL_CHECK_REAL8 ( MJD >= GPS0MJD, XLAL_EDOM, "Input MJD time %.1f is not in\
  range, must be > %.1f.\n", MJD, GPS0MJD);
-  
+
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
    * start of GPS time */
   GPS = (MJD - GPS0MJD)*86400. - GPS_TDT;
@@ -2202,9 +2298,9 @@ REAL8 LALTTMJDtoGPS(REAL8 MJD){
  * Einstein delay) when correcting a GPS time on the Earth to TDB. Also, for
  * TEMPO produced pulsar epochs given in MJD these are already in the TDB
  * system and an equivalent GPS time in the TDB can be calculated just using
- * LALTTMJDtoGPS.
+ * XLALTTMJDtoGPS.
  */
-REAL8 LALTDBMJDtoGPS(REAL8 MJD){
+REAL8 XLALTDBMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
   REAL8 T, TDBtoTT;
 
@@ -2239,14 +2335,14 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   return GPS;
 }
 
-/* If you have an MJD arrival time on the Earth then this will convert it to 
- * the equivalent GPS time in TCB (see Table 1 of Seidelmann and Fukushima, 
+/* If you have an MJD arrival time on the Earth then this will convert it to
+ * the equivalent GPS time in TCB (see Table 1 of Seidelmann and Fukushima,
  * Astronomy & Astrophysics, 265, 833-838, 1992).
- * 
+ *
  * Note that for default TEMPO2 produced pulsar epochs given in MJD these are
  * already in the TCB system and an equivalent GPS time in the TCB can be
- * calculated just using LALTTMJDtoGPS. */
-REAL8 LALTCBMJDtoGPS(REAL8 MJD){
+ * calculated just using XLALTTMJDtoGPS. */
+REAL8 XLALTCBMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
   REAL8 Tdiff;
   REAL8 TCBtoTDB;
@@ -2262,7 +2358,7 @@ REAL8 LALTCBMJDtoGPS(REAL8 MJD){
   TCBtoTDB = 1.550506e-8 * Tdiff;
 
   /* convert from TDB to GPS */
-  GPS = LALTDBMJDtoGPS(MJD);
+  GPS = XLALTDBMJDtoGPS(MJD);
 
   /* add extra factor as the MJD was really in TCB not TDB) */
   GPS -= TCBtoTDB;

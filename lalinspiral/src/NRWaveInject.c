@@ -17,7 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
@@ -31,7 +30,6 @@
 #include <lal/Inject.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
-#include <lal/LALComplex.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/SkyCoordinates.h>
@@ -118,12 +116,12 @@ XLALOrientNRWave(
     tmp2 = strain->data->data[vecLength + k];
 
     strain->data->data[k] =
-      (tmp1 * MultSphHarm.re) +
-      (tmp2 * MultSphHarm.im);
+      (tmp1 * creal(MultSphHarm)) +
+      (tmp2 * cimag(MultSphHarm));
 
     strain->data->data[vecLength + k] =
-      (tmp2 * MultSphHarm.re) -
-      (tmp1 * MultSphHarm.im);
+      (tmp2 * creal(MultSphHarm)) -
+      (tmp1 * cimag(MultSphHarm));
   }
 
   return 0;
@@ -158,12 +156,12 @@ XLALOrientNRWaveTimeSeriesREAL8(
     tmp2 = cross->data->data[k];
 
     plus->data->data[k] =
-      (tmp1 * MultSphHarm.re) +
-      (tmp2 * MultSphHarm.im);
+      (tmp1 * creal(MultSphHarm)) +
+      (tmp2 * cimag(MultSphHarm));
 
     cross->data->data[k] =
-      (tmp2 * MultSphHarm.re) -
-      (tmp1 * MultSphHarm.im);
+      (tmp2 * creal(MultSphHarm)) -
+      (tmp1 * cimag(MultSphHarm));
   }
 
   return;
@@ -197,12 +195,12 @@ XLALOrientNRWaveREAL8(
     tmp2 = strain->data->data[vecLength + k];
 
     strain->data->data[k] =
-      (tmp1 * MultSphHarm.re) +
-      (tmp2 * MultSphHarm.im);
+      (tmp1 * creal(MultSphHarm)) +
+      (tmp2 * cimag(MultSphHarm));
 
     strain->data->data[vecLength + k] =
-      (tmp2 * MultSphHarm.re) -
-      (tmp1 * MultSphHarm.im);
+      (tmp2 * creal(MultSphHarm)) -
+      (tmp1 * cimag(MultSphHarm));
   }
   return( strain );
 }

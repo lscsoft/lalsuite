@@ -156,7 +156,8 @@ int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Find the list of SFTs matching the \a file_pattern and satisfying the given \a constraints,
+/**
+ * Find the list of SFTs matching the \a file_pattern and satisfying the given \a constraints,
  * return an \c SFTCatalog of the matching SFTs.
  *
  * The optional \a constraints that can be specified are (type SFTConstraints)
@@ -165,8 +166,8 @@ int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
  * - 'timestamps':    	list of GPS start-times
  *
  *
- * ==> The returned SFTCatalog can be used directly as input to LALLoadSFTs()
- * to load a single-IFO SFTVector, or LALLoadMultiSFTs() to load a
+ * ==> The returned SFTCatalog can be used directly as input to XLALLoadSFTs()
+ * to load a single-IFO SFTVector, or XLALLoadMultiSFTs() to load a
  * multi-IFO vector of SFTVectors
  *
  * Except for the 'file_pattern' input, all the other constraints are optional
@@ -174,59 +175,41 @@ int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
  *
  * Note that the constraints are combined by 'AND' and the resulting full constraint
  * MUST be satisfied (in particular: if 'timestamps' is given, all timestamps within
- * [startTime, endTime] MUST be found!.
+ * [startTime, endTime) MUST be found!.
  *
  * The returned SFTs in the catalogue are sorted by increasing GPS-epochs !
  *
  */
-void
-LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
-		SFTCatalog **catalog,		/**< [out] SFT-catalogue of matching SFTs */
-		const CHAR *file_pattern,	/**< which SFT-files */
-		SFTConstraints *constraints	/**< additional constraints for SFT-selection */
-		)
+SFTCatalog *
+XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
+                  const SFTConstraints *constraints	/**< additional constraints for SFT-selection */
+                  )
 {
-  LALStringVector *fnames;
-  UINT4 i, numFiles, numSFTs;
-  SFTCatalog *ret = NULL;
-  SFTtype first_header = empty_SFTtype;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
   /* ----- check input */
-  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
-  ASSERT ( (*catalog) == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
-
-  ASSERT ( file_pattern, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  XLAL_CHECK_NULL ( file_pattern != NULL, XLAL_EINVAL );
 
   if ( constraints && constraints->detector )
-    if ( strncmp(constraints->detector, "??", 2) && !is_valid_detector(constraints->detector) )
-      {
-	XLALPrintError( "\nInvalid detector-constraint '%s'\n\n", constraints->detector );
-	ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
-      }
+    {
+      if ( (strncmp(constraints->detector, "??", 2) != 0) && !is_valid_detector ( constraints->detector ) )
+        {
+          XLAL_ERROR_NULL ( XLAL_EDOM, "Invalid detector-constraint '%s'\n\n", constraints->detector );
+        }
+    }
 
   /* prepare return-catalog */
-  if ( (ret = LALCalloc ( 1, sizeof ( SFTCatalog ))) == NULL ) {
-    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-  }
+  SFTCatalog *ret;
+  XLAL_CHECK_NULL ( (ret = LALCalloc ( 1, sizeof (*ret) )) != NULL, XLAL_ENOMEM );
 
   /* find matching filenames */
-  if ( (fnames = find_files (file_pattern)) == NULL) {
-    XLALPrintError ("\nFailed to get filelist for pattern '%s'.\n\n", file_pattern);
-    ABORT (status, SFTFILEIO_EGLOB, SFTFILEIO_MSGEGLOB);
-  }
-  numFiles = fnames->length;
+  LALStringVector *fnames;
+  XLAL_CHECK_NULL ( (fnames = find_files (file_pattern)) != NULL, XLAL_EIO, "Failed to find filelist matching pattern '%s'.\n\n", file_pattern );
+  UINT4 numFiles = fnames->length;
 
-  numSFTs = 0;
+  UINT4 numSFTs = 0;
   /* ----- main loop: parse all matching files */
-  for ( i = 0; i < numFiles; i ++ )
+  for ( UINT4 i = 0; i < numFiles; i ++ )
     {
-      CHAR *fname = fnames->data[i];
-
-      FILE *fp;
-      long file_len;
+      const CHAR *fname = fnames->data[i];
 
       /* merged SFTs need to satisfy stronger consistency-constraints (-> see spec) */
       BOOLEAN mfirst_block = TRUE;
@@ -234,22 +217,25 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
       SFTtype mprev_header;
       REAL8   mprev_nsamples = 0;
 
-
+      FILE *fp;
       if ( ( fp = LALFopen( fname, "rb" ) ) == NULL )
 	{
-	  XLALPrintError ( "\nFailed to open matched file '%s'\n\n", fname );
+          XLALPrintError ("ERROR: Failed to open matched file '%s'\n\n", fname );
 	  XLALDestroyStringVector ( fnames );
-	  LALDestroySFTCatalog ( status->statusPtr, &ret );
-	  ABORT( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	  XLALDestroySFTCatalog ( ret );
+	  XLAL_ERROR_NULL ( XLAL_EIO );
 	}
+
+      long file_len;
       if ( (file_len = get_file_len(fp)) == 0 )
 	{
-	  XLALPrintError ( "\nGot file-len == 0 for '%s'\n\n", fname );
+          XLALPrintError ("ERROR: got file-len == 0 for '%s'\n\n", fname );
 	  XLALDestroyStringVector ( fnames );
-	  LALDestroySFTCatalog ( status->statusPtr, &ret );
+	  XLALDestroySFTCatalog ( ret );
 	  fclose(fp);
-	  ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	  XLAL_ERROR_NULL ( XLAL_EIO );
 	}
+
       /* go through SFT-blocks in fp */
       while ( ftell(fp) < file_len )
 	{
@@ -264,36 +250,34 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
 	  long this_filepos;
 	  if ( (this_filepos = ftell(fp)) == -1 )
 	    {
-	      XLALPrintError ("\nftell() failed for '%s'\n\n", fname );
+              XLALPrintError ("ERROR: ftell() failed for '%s'\n\n", fname );
 	      XLALDestroyStringVector ( fnames );
-	      LALDestroySFTCatalog ( status->statusPtr, &ret );
+	      XLALDestroySFTCatalog ( ret );
 	      fclose (fp);
-	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	      XLAL_ERROR_NULL ( XLAL_EIO );
 	    }
 
-	  if ( read_sft_header_from_fp (fp, &this_header, &this_version, &this_crc,
-					&endian, &this_comment, &this_nsamples ) != 0 )
+	  if ( read_sft_header_from_fp (fp, &this_header, &this_version, &this_crc, &endian, &this_comment, &this_nsamples ) != 0 )
 	    {
-	      XLALPrintError ("\nERROR:File-block '%s:%ld' is not a valid SFT!\n\n", fname, ftell(fp));
+              XLALPrintError ("ERROR: File-block '%s:%ld' is not a valid SFT!\n\n", fname, ftell(fp));
 	      XLALDestroyStringVector ( fnames );
-	      if ( this_comment ) LALFree ( this_comment );
-	      LALDestroySFTCatalog ( status->statusPtr, &ret );
+	      XLALFree ( this_comment );
+	      XLALDestroySFTCatalog ( ret );
 	      fclose(fp);
-	      ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER );
+	      XLAL_ERROR_NULL ( XLAL_EDATA );
 	    }
 
 	  /* if merged-SFT: check consistency constraints */
 	  if ( !mfirst_block )
 	    {
-	      if ( ! consistent_mSFT_header ( mprev_header, mprev_version, mprev_nsamples,
-					      this_header, this_version, this_nsamples ) )
+	      if ( ! consistent_mSFT_header ( mprev_header, mprev_version, mprev_nsamples, this_header, this_version, this_nsamples ) )
 		{
-		  XLALPrintError ("merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
-		  if ( this_comment ) LALFree ( this_comment );
+                  XLALPrintError ( "ERROR: merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
+		  XLALFree ( this_comment );
 		  XLALDestroyStringVector ( fnames );
-		  LALDestroySFTCatalog ( status->statusPtr, &ret );
+		  XLALDestroySFTCatalog ( ret );
 		  fclose(fp);
-		  ABORT ( status, SFTFILEIO_EMERGEDSFT, SFTFILEIO_MSGEMERGEDSFT );
+		  XLAL_ERROR_NULL ( XLAL_EDATA );
 		}
 	    } /* if !mfirst_block */
 
@@ -308,65 +292,70 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
 	      if ( constraints->detector && strncmp(constraints->detector, "??", 2) )
 		{
 		  /* v1-SFTs have '??' as detector-name */
-		  if ( ! strncmp (this_header.name, "??", 2 ) )
+		  if ( ! strncmp (this_header.name, "??", 2 ) ) {
 		    strncpy ( this_header.name, constraints->detector, 2 );	/* SET to constraint! */
-		  else if ( strncmp( constraints->detector, this_header.name, 2) )
+                  }
+		  else if ( strncmp( constraints->detector, this_header.name, 2) ) {
 		    want_this_block = FALSE;
+                  }
 		}
 
-	      if ( constraints->startTime && ( GPS2REAL8(this_header.epoch) < GPS2REAL8( *constraints->startTime)))
+	      if ( constraints->startTime && ( GPS2REAL8(this_header.epoch) < GPS2REAL8( *constraints->startTime))) {
 		want_this_block = FALSE;
+              }
 
-	      if ( constraints->endTime && ( GPS2REAL8(this_header.epoch) > GPS2REAL8( *constraints->endTime ) ) )
+	      if ( constraints->endTime && ( GPS2REAL8(this_header.epoch) >= GPS2REAL8( *constraints->endTime ) ) ) {
 		want_this_block = FALSE;
+              }
 
-	      if ( constraints->timestamps && !timestamp_in_list(this_header.epoch, constraints->timestamps) )
+	      if ( constraints->timestamps && !timestamp_in_list(this_header.epoch, constraints->timestamps) ) {
 		want_this_block = FALSE;
+              }
 
 	    } /* if constraints */
 
 	  if ( want_this_block )
 	    {
-	      SFTDescriptor *desc;
-
 	      numSFTs ++;
 
 	      /* do we need to alloc more memory for the SFTs? */
 	      if (  numSFTs > ret->length )
 		{
-		  UINT4 j;
 		  /* we realloc SFT-memory blockwise in order to
 		   * improve speed in debug-mode (using LALMalloc/LALFree)
 		   */
-		  ret->data = LALRealloc ( ret->data, (ret->length + SFTFILEIO_REALLOC_BLOCKSIZE) * sizeof( *(ret->data) ) );
-		  if ( ret->data == NULL )
+                  int len = (ret->length + SFTFILEIO_REALLOC_BLOCKSIZE) * sizeof( *(ret->data) );
+                  if ( (ret->data = LALRealloc ( ret->data, len )) == NULL )
 		    {
-		      XLALPrintError("Memeory reallocation for SFTs failed: nSFT:%d, length:%d, add:%d\n",
-				     numSFTs, ret->length, SFTFILEIO_REALLOC_BLOCKSIZE);
+                      XLALPrintError ("ERROR: SFT memory reallocation failed: nSFT:%d, len = %d\n", numSFTs, len );
 		      XLALDestroyStringVector ( fnames );
-		      LALDestroySFTCatalog ( status->statusPtr, &ret );
-		      if ( this_comment ) LALFree ( this_comment );
+		      XLALDestroySFTCatalog ( ret );
+		      XLALFree ( this_comment );
 		      fclose(fp);
-		      ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+		      XLAL_ERROR_NULL ( XLAL_ENOMEM );
 		    }
+
 		  /* properly initialize data-fields pointers to NULL to avoid SegV when Freeing */
-		  for ( j=0; j < SFTFILEIO_REALLOC_BLOCKSIZE; j ++ )
+		  for ( UINT4 j=0; j < SFTFILEIO_REALLOC_BLOCKSIZE; j ++ ) {
 		    memset ( &(ret->data[ret->length + j]), 0, sizeof( ret->data[0] ) );
+                  }
 
 		  ret->length += SFTFILEIO_REALLOC_BLOCKSIZE;
-		}
+		} // if numSFTs > ret->length
 
-	      desc = &(ret->data[numSFTs - 1]);
+	      SFTDescriptor *desc = &(ret->data[numSFTs - 1]);
 
-	      desc->locator = LALCalloc ( 1, sizeof ( *(desc->locator) ) );
-	      if ( desc->locator )
-		desc->locator->fname = LALCalloc( 1, strlen(fname) + 1 );
+	      desc->locator = XLALCalloc ( 1, sizeof ( *(desc->locator) ) );
+	      if ( desc->locator ) {
+		desc->locator->fname = XLALCalloc( 1, strlen(fname) + 1 );
+              }
 	      if ( (desc->locator == NULL) || (desc->locator->fname == NULL ) )
 		{
+                  XLALPrintError ("ERROR: XLALCalloc() failed\n" );
 		  XLALDestroyStringVector ( fnames );
-		  LALDestroySFTCatalog ( status->statusPtr, &ret );
+		  XLALDestroySFTCatalog ( ret );
 		  fclose(fp);
-		  ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+		  XLAL_ERROR_NULL ( XLAL_ENOMEM );
 		}
 	      strcpy ( desc->locator->fname, fname );
 	      desc->locator->offset = this_filepos;
@@ -380,18 +369,18 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
 	    } /* if want_this_block */
 	  else
 	    {
-	      if ( this_comment ) LALFree ( this_comment );
+	      XLALFree ( this_comment );
 	    }
 
 	  /* seek to end of SFT data-entries in file  */
 	  if ( fseek ( fp, this_nsamples * 8 , SEEK_CUR ) == -1 )
 	    {
-	      XLALPrintError ( "\nFailed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
-	      if ( this_comment ) LALFree ( this_comment );
+              XLALPrintError ("ERROR: Failed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
+	      XLALFree ( this_comment );
 	      XLALDestroyStringVector ( fnames );
-	      LALDestroySFTCatalog ( status->statusPtr, &ret );
+	      XLALDestroySFTCatalog ( ret );
 	      fclose(fp);
-	      ABORT ( status, SFTFILEIO_ESFTFORMAT, SFTFILEIO_MSGESFTFORMAT);
+	      XLAL_ERROR_NULL ( XLAL_EIO );
 	    }
 
 	  mfirst_block = FALSE;
@@ -406,71 +395,79 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
   XLALDestroyStringVector ( fnames );
 
   /* now realloc SFT-vector (alloc'ed blockwise) to its *actual size* */
-  if ( (ret->data = LALRealloc ( ret->data, numSFTs * sizeof( *(ret->data) ) )) == NULL )
+  int len;
+  if ( (ret->data = XLALRealloc ( ret->data, len = numSFTs * sizeof( *(ret->data) ))) == NULL )
     {
-      LALDestroySFTCatalog ( status->statusPtr, &ret );
-      ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+      XLALDestroySFTCatalog ( ret );
+      XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALRecalloc ( %d ) failed.\n", len );
     }
   ret->length = numSFTs;
 
   /* ----- final consistency-checks: ----- */
 
-  /* did we find exactly the timestamps that lie within [startTime, endTime]? */
+  /* did we find all timestamps that lie within [startTime, endTime)? */
   if ( constraints && constraints->timestamps )
     {
       LIGOTimeGPSVector *ts = constraints->timestamps;
-      UINT4 numRequested = 0;
       REAL8 t0, t1;
-      if ( constraints->startTime )
+      if ( constraints->startTime ) {
 	t0 = GPS2REAL8 ( (*constraints->startTime) );
-      else
-	t0 = -1;
-      if ( constraints->endTime )
+      }
+      else {
+	t0 = 0;
+      }
+      if ( constraints->endTime ) {
 	t1 = GPS2REAL8 ( (*constraints->endTime) );
-      else
+      }
+      else {
 	t1 = LAL_REAL4_MAX;	/* large enough */
+      }
 
-      for (i=0; i < ts->length; i ++ )
+      for ( UINT4 i = 0; i < ts->length; i ++ )
 	{
-	  REAL8 ti = GPS2REAL8(ts->data[i]);
-	  if ( (t0 <= ti) && ( ti <= t1 ) )
-	    numRequested ++;
-	}
-      if ( numRequested != ret->length )
-	{
-	  XLALPrintError ("\nERROR: found %s SFTs (%d) than given timestamps within [%f, %f] (%d)\n\n",
-			  (ret->length < numRequested )?"fewer":"more",
-			  ret->length, t0, t1, numRequested );
-	  ABORT ( status, SFTFILEIO_ECONSTRAINTS, SFTFILEIO_MSGECONSTRAINTS );
-	}
+          const LIGOTimeGPS *ts_i = &(ts->data[i]);
+	  REAL8 ti = GPS2REAL8((*ts_i));
+	  if ( (t0 <= ti) && ( ti < t1 ) )
+            {
+              UINT4 j;
+              for ( j = 0; j < ret->length; j ++ )
+                {
+                  const LIGOTimeGPS *sft_i = &(ret->data[j].header.epoch);
+                  if ( (ts_i->gpsSeconds == sft_i->gpsSeconds) && ( ts_i->gpsNanoSeconds == sft_i->gpsNanoSeconds ) ) {
+                    break;
+                  }
+                }
+              XLAL_CHECK_NULL ( j < ret->length, XLAL_EFAILED, "Timestamp %d : [%d, %d] did not find a matching SFT\n\n", (i+1), ts_i->gpsSeconds, ts_i->gpsNanoSeconds );
+            } // if timestamp ti within startTime/endTime constraint
+	} // for i < ts->length
+
     } /* if constraints->timestamps */
 
+  SFTtype first_header = empty_SFTtype;
   /* have all matched SFTs identical dFreq values ? */
-  for ( i = 0; i < ret->length; i ++ )
+  for ( UINT4 i = 0; i < ret->length; i ++ )
     {
       SFTtype this_header = ret->data[i].header;
 
-      if ( i == 0 )
+      if ( i == 0 ) {
 	first_header = this_header;
+      }
 
       /* dont give out v1-SFTs without detector-entry, except if constraint->detector="??" ! */
       if ( !constraints || !constraints->detector || strncmp(constraints->detector, "??", 2) )
 	{
 	  if ( !strncmp ( this_header.name, "??", 2 ) )
 	    {
-	      LALDestroySFTCatalog ( status->statusPtr, &ret );
-	      XLALPrintError ("\nERROR: '%s' matched v1-SFTs but no detector-constraint given!\n\n",
-			      file_pattern);
-	      ABORT ( status, SFTFILEIO_EDETECTOR, SFTFILEIO_MSGEDETECTOR );
+	      XLALDestroySFTCatalog ( ret );
+	      XLAL_ERROR_NULL ( XLAL_EINVAL, "Pattern '%s' matched v1-SFTs but no detector-constraint given!\n\n", file_pattern);
 	    }
 	} /* if detector-constraint was not '??' */
 
       if ( this_header.deltaF != first_header.deltaF )
 	{
-	  LALDestroySFTCatalog ( status->statusPtr, &ret );
-	  XLALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent deltaF: %.18g != %.18g!\n\n",
-                         file_pattern, this_header.deltaF, first_header.deltaF );
-	  ABORT ( status, SFTFILEIO_EDIFFTSFT, SFTFILEIO_MSGEDIFFTSFT );
+	  XLALDestroySFTCatalog ( ret );
+	  XLAL_ERROR_NULL ( XLAL_EDATA, "Pattern '%s' matched SFTs with inconsistent deltaF: %.18g != %.18g!\n\n",
+                            file_pattern, this_header.deltaF, first_header.deltaF );
 	}
 
     } /* for i < numSFTs */
@@ -481,13 +478,36 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
 
 
   /* return result catalog (=sft-vect and locator-vect) */
+  return ret;
+
+} /* XLALSFTdataFind() */
+
+
+/**
+ * \deprecated Use XLALSFTdataFind() instead.
+ */
+void
+LALSFTdataFind ( LALStatus *status,			/**< pointer to LALStatus structure */
+                 SFTCatalog **catalog,		/**< [out] SFT-catalogue of matching SFTs */
+                 const CHAR *file_pattern,	/**< which SFT-files */
+                 SFTConstraints *constraints	/**< additional constraints for SFT-selection */
+                 )
+{
+  INITSTATUS(status);
+
+  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( (*catalog) == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
+
+  SFTCatalog *ret = XLALSFTdataFind ( file_pattern, constraints );
+  if ( ret == NULL ) {
+    XLALPrintError ("XLALSFTdataFind() failed with xlalErrno = %d\n", xlalErrno );
+    ABORTXLAL(status);
+  }
+
   (*catalog) = ret;
 
-  DETATCHSTATUSPTR (status);
   RETURN(status);
-
 } /* LALSFTdataFind() */
-
 
 /** Extract a timstamps-vector from the given SFTCatalog.
  *
@@ -674,8 +694,8 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 	{
 	  REAL4 *rep, *imp;
 
-	  rep = &(ret->data->data[i].re);
-	  imp = &(ret->data->data[i].im);
+	  rep = &(crealf(ret->data->data[i]));
+	  imp = &(cimagf(ret->data->data[i]));
 
 	  if ( swapEndian )
 	    {
@@ -2346,8 +2366,8 @@ LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structu
 
   for ( i=0; i < numBins; i ++ )
     {
-      v1SFT.data->data[i].re = (REAL4) ( (REAL8)v1SFT.data->data[i].re / dt );
-      v1SFT.data->data[i].im = (REAL4) ( (REAL8)v1SFT.data->data[i].im / dt );
+      v1SFT.data->data[i].realf_FIXME = (REAL4) ( (REAL8)crealf(v1SFT.data->data[i]) / dt );
+      v1SFT.data->data[i].imagf_FIXME = (REAL4) ( (REAL8)cimagf(v1SFT.data->data[i]) / dt );
     }
 
   TRY ( LALWriteSFTfile (status->statusPtr, &v1SFT, fname ), status );
@@ -2428,8 +2448,8 @@ LALWriteSFTfile (LALStatus  *status,			/**< pointer to LALStatus structure */
   inData = sft->data->data;
   for ( i = 0; i < header.length; i++)
     {
-      rawdata[2 * i]     = inData[i].re;
-      rawdata[2 * i + 1] = inData[i].im;
+      rawdata[2 * i]     = crealf(inData[i]);
+      rawdata[2 * i + 1] = cimagf(inData[i]);
     } /* for i < length */
 
 
@@ -2815,8 +2835,8 @@ LALReadSFTfile (LALStatus *status,			/**< pointer to LALStatus structure */
   if (renorm != 1)
     for (i=0; i < readlen; i++)
       {
-	outputSFT->data->data[i].re *= renorm;
-	outputSFT->data->data[i].im *= renorm;
+	outputSFT->data->data[i].realf_FIXME *= renorm;
+	outputSFT->data->data[i].imagf_FIXME *= renorm;
       }
 
   /* that's it: return */
@@ -3301,8 +3321,8 @@ LALReadSFTdata(LALStatus *status,			/**< pointer to LALStatus structure */
     {
       if (swapEndian)
 	endian_swap((CHAR*)&rawdata[2*i], sizeof(REAL4), 2);
-      sft->data->data[i].re = rawdata[2 * i];
-      sft->data->data[i].im = rawdata[2 * i + 1];
+      sft->data->data[i].realf_FIXME = rawdata[2 * i];
+      sft->data->data[i].imagf_FIXME = rawdata[2 * i + 1];
     }
 
   LALFree (rawdata);
@@ -3512,8 +3532,8 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
 	{
 	  REAL4 *rep, *imp;
 
-	  rep = &(ret->data->data[i].re);
-	  imp = &(ret->data->data[i].im);
+	  rep = &(crealf(ret->data->data[i]));
+	  imp = &(cimagf(ret->data->data[i]));
 
 	  if ( swapEndian )
 	    {

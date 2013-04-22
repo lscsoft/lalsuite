@@ -73,8 +73,8 @@ static const CHAR *const DetectorMotionNames[DETMOTION_LAST] = {
   [DETMOTION_SPIN_PTOLEORBIT] = "spin+ptoleorbit",
   [DETMOTION_PTOLEORBIT] = "ptoleorbit",
 
-  [DETMOTION_ORBIT_SPINZ] = "orbit+spin_Z",
-  [DETMOTION_ORBIT_SPINXY] = "orbit+spin_XY",
+  [DETMOTION_SPINZ_ORBIT] = "spinz+orbit",
+  [DETMOTION_SPINXY_ORBIT] = "spinxy+orbit",
 };
 
 /** Array of descriptor structs for each Doppler coordinate name
@@ -115,8 +115,9 @@ const struct {
   [DOPPLERCOORD_N3SX_EQU] = {"n3sx_equ",SCALE_R/LAL_C_SI, "X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
   [DOPPLERCOORD_N3SY_EQU] = {"n3sy_equ",SCALE_R/LAL_C_SI, "Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
 
-  [DOPPLERCOORD_N3OX_ECL] = {"n3ox_ecl",SCALE_R/LAL_C_SI, "X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
-  [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OX_ECL] = {"n3ox_ecl",SCALE_R/LAL_C_SI, "X orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OZ_ECL] = {"n3oz_ecl",SCALE_R/LAL_C_SI, "Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
 
 };
 
@@ -205,7 +206,6 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 const PosVel3D_t empty_PosVel3D_t;
 const DopplerMetricParams empty_DopplerMetricParams;
 const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
-const MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- Global variables ----------*/
 
@@ -588,11 +588,14 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = LAL_TWOPI * Freq * spin_posvel.pos[1];
       break;
 
-    case DOPPLERCOORD_N3OX_ECL:	/**< X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+    case DOPPLERCOORD_N3OX_ECL:	/**< X orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
       ret = LAL_TWOPI * Freq * ecl_orbit_pos[0];
       break;
-    case DOPPLERCOORD_N3OY_ECL:	/**< Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+    case DOPPLERCOORD_N3OY_ECL:	/**< Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
       ret = LAL_TWOPI * Freq * ecl_orbit_pos[1];
+      break;
+    case DOPPLERCOORD_N3OZ_ECL:	/**< Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_orbit_pos[2];
       break;
 
     default:
@@ -687,8 +690,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   /* ----- return the requested type of detector motion */
   switch ( special )
     {
-      /* full detector-motion: ephemeris-orbital + Earth-spin */
-    case DETMOTION_SPIN_ORBIT:
+    case DETMOTION_SPIN_ORBIT:		/**< full detector motion: spin + ephemeris-based orbital motion */
       if ( spin_posvel ) {
         COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
         COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
@@ -700,8 +702,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       }
       break;
 
-      /* full ephemeris orbital detector-motion, neglecting Earth-spin */
-    case DETMOTION_ORBIT:
+    case DETMOTION_ORBIT:		/**< pure ephemeris-based orbital motion, no spin motion */
       if ( spin_posvel ) {
         ZERO_VECT(spin_posvel->pos);
         ZERO_VECT(spin_posvel->vel);
@@ -713,8 +714,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       }
       break;
 
-      /* detector-motion including only Earth-spin, no orbital motion */
-    case DETMOTION_SPIN:
+    case DETMOTION_SPIN:		/**< pure spin motion, no orbital motion */
       if ( spin_posvel ) {
         COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
         COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
@@ -726,8 +726,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       }
       break;
 
-      /* pure orbital detector motion, using "Ptolemaic" (ie. circular) approximation */
-    case DETMOTION_PTOLEORBIT:
+    case DETMOTION_PTOLEORBIT:		/**< pure Ptolemaic (circular) orbital motion, no spin motion */
       if ( spin_posvel ) {
         ZERO_VECT(spin_posvel->pos);
         ZERO_VECT(spin_posvel->vel);
@@ -739,8 +738,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       }
       break;
 
-      /* Ptolemaic-orbital motion, plus Earth spin */
-    case DETMOTION_SPIN_PTOLEORBIT:
+    case DETMOTION_SPIN_PTOLEORBIT:	/**< spin motion + Ptolemaic (circular) orbital motion */
       if ( spin_posvel ) {
         COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
         COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
@@ -757,8 +755,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
       */
       break;
 
-      /**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
-    case DETMOTION_ORBIT_SPINZ:
+    case DETMOTION_SPINZ_ORBIT:		/**< *only* ecliptic-Z component of spin motion + ephemeris-based orbital motion*/
       if ( spin_posvel ) {
         COPY_VECT ( spin_posvel->pos, Spin_z.pos );
         COPY_VECT ( spin_posvel->vel, Spin_z.vel );
@@ -771,8 +768,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
 
       break;
 
-      /**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
-    case DETMOTION_ORBIT_SPINXY:
+    case DETMOTION_SPINXY_ORBIT:	/**< *only* ecliptic-X+Y components of spin motion + ephemeris-based orbital motion */
       if ( spin_posvel ) {
         COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
         COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
@@ -1387,10 +1383,12 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   }
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
+  REAL8 sum_weights = 0;
   A = B = C = 0;
   for ( X = 0; X < numDet; X ++ )
     {
       REAL8 weight = metricParams->detInfo.detWeights[X];
+      sum_weights += weight;
       REAL8 av, relerr;
       intparams.site = &(metricParams->detInfo.sites[X]);
 
@@ -1422,6 +1420,12 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
       C += weight * av;
 
     } /* for X < numDetectors */
+
+  REAL8 norm_weight = 1.0 / sum_weights;
+
+  A *= norm_weight;
+  B *= norm_weight;
+  C *= norm_weight;
 
   ret->a_a = A;
   ret->b_b = B;
@@ -1532,19 +1536,19 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
 	    } /* for X < numDetectors */
 
-	  gsl_vector_set (ret->a_a_i, i, a_a_i);
-	  gsl_vector_set (ret->a_b_i, i, a_b_i);
-	  gsl_vector_set (ret->b_b_i, i, b_b_i);
+	  gsl_vector_set (ret->a_a_i, i, a_a_i * norm_weight );
+	  gsl_vector_set (ret->a_b_i, i, a_b_i * norm_weight );
+	  gsl_vector_set (ret->b_b_i, i, b_b_i * norm_weight );
 
 
-	  gsl_matrix_set (ret->a_a_i_j, i, j, a_a_i_j);
-	  gsl_matrix_set (ret->a_a_i_j, j, i, a_a_i_j);
+	  gsl_matrix_set (ret->a_a_i_j, i, j, a_a_i_j * norm_weight);
+	  gsl_matrix_set (ret->a_a_i_j, j, i, a_a_i_j * norm_weight);
 
-	  gsl_matrix_set (ret->a_b_i_j, i, j, a_b_i_j);
-	  gsl_matrix_set (ret->a_b_i_j, j, i, a_b_i_j);
+	  gsl_matrix_set (ret->a_b_i_j, i, j, a_b_i_j * norm_weight);
+	  gsl_matrix_set (ret->a_b_i_j, j, i, a_b_i_j * norm_weight);
 
-	  gsl_matrix_set (ret->b_b_i_j, i, j, b_b_i_j);
-	  gsl_matrix_set (ret->b_b_i_j, j, i, b_b_i_j);
+	  gsl_matrix_set (ret->b_b_i_j, i, j, b_b_i_j * norm_weight);
+	  gsl_matrix_set (ret->b_b_i_j, j, i, b_b_i_j * norm_weight);
 
 	} /* for j <= i */
 
@@ -1783,81 +1787,6 @@ XLALDopplerCoordinateHelpAll ( void )
   return ( helpstr );
 
 } /* XLALDopplerCoordinateHelpAll() */
-
-
-/** Parse string-vectors (typically input by user) of detector-names
- * and relative noise-weights, and return a MultiDetectorInfo struct.
- *
- * NOTE: you can pass detWeights == NULL, corresponding to equal-sensitivity detectors,
- * ie. all noise-weights equal.
- *
- * NOTE: the input noise-weights dont have to be normalized, but the
- * returned noise-weights will be properly normalized, i.e. \f$\sum_{i=1}^N w_i = 1\f$.
- *
- * Return  0 == OK, nonzero == ERROR
- */
-int
-XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/**< [out] parsed detector-info struct */
-			     const LALStringVector *detNames,	/**< [in] list of detector names */
-			     const LALStringVector *detWeights	/**< [in] list of (strings) with detector weights (NULL if all 1) */
-			     )
-{
-  UINT4 X, numDet;
-  REAL8 totalWeight;
-
-  if ( !detInfo || !detNames || (detNames->length == 0) ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer input\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-
-  numDet = detNames->length;
-  if ( detWeights && (detWeights->length != numDet ) ) {
-    XLALPrintError ("\n%s: Illegal input: number of noise-weights must agree with number of detectors\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-
-  /* initialize empty return struct */
-  memset ( detInfo, 0, sizeof(*detInfo) );
-
-  detInfo->length = numDet;
-
-  totalWeight = 0;
-  /* parse input strings and fill detInfo */
-  for ( X = 0; X < numDet; X ++ )
-    {
-      LALDetector *ifo;
-      /* first parse detector name */
-      if ( ( ifo = XLALGetSiteInfo ( detNames->data[X] ) ) == NULL ) {
-	XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, detNames->data[X] );
-	XLAL_ERROR ( XLAL_EINVAL );
-      }
-      detInfo->sites[X] = (*ifo);
-      XLALFree ( ifo );
-
-      /* parse noise weights if any */
-      if ( detWeights )
-	{
-	  if ( 1 != sscanf ( detWeights->data[X], "%lf", &(detInfo->detWeights[X]) ) )
-	    {
-	      XLALPrintError ("%s: Failed to parse noise-weight '%s' into float.\n", __func__, detWeights->data[X] );
-	      XLAL_ERROR ( XLAL_EINVAL );
-	    }
-	} /* if detWeights */
-      else
-	detInfo->detWeights[X] = 1;
-
-      totalWeight += detInfo->detWeights[X];
-
-    } /* for X < numDet */
-
-  /* normalized noise-weights to sum weights = 1 */
-  for ( X = 0; X < numDet; X ++ )
-    detInfo->detWeights[X] /= totalWeight;
-
-  return XLAL_SUCCESS;
-
-} /* XLALParseMultiDetectorInfo() */
-
 
 /** Free a FmetricAtoms_t structure, allowing any pointers to be NULL
  */

@@ -21,7 +21,7 @@
 #define _GENERATETAYLORCW_H
 
 #include <lal/LALStdlib.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
 
 #if defined(__cplusplus)
@@ -69,10 +69,10 @@ discussions, \f$f\f$ and \f$\phi\f$ refer to the frequency and phase of the
 gravitational wave, which are typically some constant multiple of
 (often twice) the frequency and phase of the rotating source.
 
-The \c CoherentGW structure allows for a very general
+The \c PulsarCoherentGW structure allows for a very general
 description of waveforms with modulations in the amplitudes or
 relative phases of the wave polarizations, as described in
-\ref SimulateCoherentGW_h.  However, in this simplest model of
+\ref PulsarSimulateCoherentGW_h.  However, in this simplest model of
 quasiperiodic waveforms, we neglect such phenomena as precession that
 would produce these effects.  Thus for any given source one can choose
 a polarization basis (described by some polarization angle \f$\psi\f$) in
@@ -103,7 +103,7 @@ h_\times(t) & = & A_\times \sin\phi(t) \;.
  * waveform with a Taylor-polynomial frequency and phase.  As with the
  * \c PPNParamStruc type in \ref GeneratePPNInspiral_h, we divide
  * the fields into passed fields (which are supplied to the final
- * \c CoherentGW structure but not used in any calculations), input
+ * \c PulsarCoherentGW structure but not used in any calculations), input
  * fields (that are used by the waveform generator), and output fields
  * (that are set by the waveform generator).
  */
@@ -135,7 +135,7 @@ typedef struct tagTaylorCWParamStruc {
 /* ---------- Function prototypes. ---------- */
 void
 LALGenerateTaylorCW( LALStatus          *,
-		     CoherentGW         *output,
+		     PulsarCoherentGW         *output,
 		     TaylorCWParamStruc *params );
 
 /*@}*/

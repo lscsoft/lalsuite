@@ -100,8 +100,8 @@ char**global_argv;
 int global_argc;
 #endif /* EAH_BOINC */
 
-#define EARTHEPHEMERIS  "earth05-09.dat"
-#define SUNEPHEMERIS    "sun05-09.dat"
+#define EARTHEPHEMERIS  "earth00-19-DE405.dat"
+#define SUNEPHEMERIS    "sun00-19-DE405.dat"
 #define BLOCKSRNGMED    101     /**< Default running median window size */
 #define FSTART          100.0	/**< Default Start search frequency */
 #define FBAND           0.0  /**< Default search band */
@@ -162,8 +162,8 @@ typedef struct {
   UINT4 nStacks;                   /**< number of stacks */
   LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
   BOOLEAN LVuseAllTerms;           /**< which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms */
-  REAL4 LVlogRhoTerm;              /**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
-  REAL4Vector *LVloglX;            /**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
+  REAL8 LVlogRhoTerm;              /**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
+  REAL8Vector *LVloglX;            /**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
   REAL8 dFreqStack;                /**< frequency resolution of Fstat calculation */
   REAL8 df1dot;                    /**< coarse grid resolution in spindown */
   REAL8 df2dot;                    /**< coarse grid resolution in 2nd spindown */
@@ -336,7 +336,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
 
   /* checkpoint filename */
-  CHAR *fnameChkPoint=NULL;
+  CHAR *uvar_fnameChkPoint = NULL;
 
   /* user variables */
   BOOLEAN uvar_help = FALSE;    /* true if -h option is given */
@@ -477,6 +477,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "gammaRefine", 'g', UVAR_OPTIONAL, "Refinement of fine grid (default: use segment times)", &uvar_gammaRefine), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gamma2Refine",'G', UVAR_OPTIONAL, "Refinement of f2dot fine grid (default: use segment times, -1=use gammaRefine)", &uvar_gamma2Refine), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameout), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameChkPoint",0,  UVAR_OPTIONAL, "Checkpoint filename", &uvar_fnameChkPoint), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",      'n', UVAR_OPTIONAL, "No. of candidates to output", &uvar_nCand1), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
@@ -593,7 +594,7 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
   else if ( uvar_LVrho > 0.0 )
-    usefulParams.LVlogRhoTerm = 4.0 * log((REAL4)uvar_LVrho) - log(70.0);
+    usefulParams.LVlogRhoTerm = 4.0 * log(uvar_LVrho) - log(70.0);
   else /* if uvar_LVrho == 0.0, logRhoTerm should become irrelevant in summation */
     usefulParams.LVlogRhoTerm = - LAL_REAL4_MAX;
 
@@ -612,15 +613,17 @@ int MAIN( int argc, char *argv[]) {
                    XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
     }
 
-  /* checkpoint filename */
-  // in BOINC App don't derive the checkpoint name from the output filename,
-  // or else the checkpoint file will end up in the project- rather than the slot-directory
 #ifdef EAH_BOINC
-  fnameChkPoint="checkpoint.cpt";
-#else
-  fnameChkPoint = LALCalloc( strlen(uvar_fnameout) + 1 + 4, sizeof(CHAR) );
-  strcpy(fnameChkPoint, uvar_fnameout);
-  strcat(fnameChkPoint, ".cpt");
+  // BOINC Apps always checkpoint, so set a default filename here
+  if (uvar_fnameChkPoint == NULL) {
+    CHAR*fname = "checkpoint.cpt";
+    uvar_fnameChkPoint = XLALMalloc(strlen(fname)+1);
+    if (uvar_fnameChkPoint == NULL) {
+      fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+      return(HIERARCHICALSEARCH_EMEM);
+    }
+    strcpy(uvar_fnameChkPoint, fname);
+  }
 #endif
 
   /* write the log file */
@@ -783,7 +786,7 @@ int MAIN( int argc, char *argv[]) {
     if ( LALUserVarWasSet(&uvar_dFreq) ) {
       usefulParams.dFreqStack = uvar_dFreq;
     } else {
-      LALPrintError("--dFreq is required if --FreqBand is given\n");
+      XLALPrintError("--dFreq is required if --FreqBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   } else {
@@ -795,7 +798,7 @@ int MAIN( int argc, char *argv[]) {
     if ( LALUserVarWasSet(&uvar_df1dot) ) {
       usefulParams.df1dot = uvar_df1dot;
     } else {
-      LALPrintError("--df1dot is required if --f1dotBand is given\n");
+      XLALPrintError("--df1dot is required if --f1dotBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   } else {
@@ -808,7 +811,7 @@ int MAIN( int argc, char *argv[]) {
       usefulParams.df2dot = uvar_df2dot;
     }
     else {
-      LALPrintError("--df2dot is required if --f2dotBand is given\n");
+      XLALPrintError("--df2dot is required if --f2dotBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   }
@@ -1117,13 +1120,13 @@ int MAIN( int argc, char *argv[]) {
       fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
       return( HIERARCHICALSEARCH_EBAD );
     }
-    if ( (usefulParams.LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-      fprintf(stderr, "Failed call to XLALCreateREAL4Vector( %d )\n", numDetectors );
+    if ( (usefulParams.LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+      fprintf(stderr, "Failed call to XLALCreateREAL8Vector( %d )\n", numDetectors );
       return( HIERARCHICALSEARCH_EXLAL );
     }
     for (UINT4 X = 0; X < numDetectors; X++) {
-      if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, &usefulParams.LVloglX->data[X] ) ) {
-        fprintf(stderr, "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
+      if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL8_FORMAT, &usefulParams.LVloglX->data[X] ) ) {
+        fprintf(stderr, "Illegal REAL8 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
         return ( HIERARCHICALSEARCH_EBAD );
       }
       if ( usefulParams.LVloglX->data[X] < 0.0 ) {
@@ -1133,7 +1136,7 @@ int MAIN( int argc, char *argv[]) {
       else if ( usefulParams.LVloglX->data[X] > 0.0 )
         usefulParams.LVloglX->data[X] = log(usefulParams.LVloglX->data[X]);
       else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-        usefulParams.LVloglX->data[X] = - LAL_REAL4_MAX;
+        usefulParams.LVloglX->data[X] = - LAL_REAL8_MAX;
     } /* for X < numDetectors */
   } /* if ( computeLV && uvar_LVlX ) */
 
@@ -1178,7 +1181,7 @@ int MAIN( int argc, char *argv[]) {
     UINT4 count = 0; /* The first checkpoint should have value 1 */
     UINT4 skycount = 0;
 
-    GET_GCT_CHECKPOINT (fnameChkPoint, semiCohToplist, semiCohToplist2, &count);
+    GET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, &count);
 
     if (count) {
       f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
@@ -1769,7 +1772,7 @@ int MAIN( int argc, char *argv[]) {
                       skyGridCounter * nf1dot + ifdot,
                       thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
-        SET_GCT_CHECKPOINT (fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*nf1dot+ifdot, TRUE);
+        SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*nf1dot+ifdot, TRUE);
 
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
@@ -1894,8 +1897,7 @@ int MAIN( int argc, char *argv[]) {
 
   // in BOINC App the checkpoint is left behind to be cleaned up by the Core Client
 #ifndef EAH_BOINC
-  clear_gct_checkpoint (fnameChkPoint);
-  LALFree (fnameChkPoint);
+  clear_gct_checkpoint (uvar_fnameChkPoint);
 #endif
 
   /*------------ free all remaining memory -----------*/
@@ -1986,7 +1988,7 @@ int MAIN( int argc, char *argv[]) {
   free_gctFStat_toplist ( &semiCohToplist );
   if ( semiCohToplist2 ) free_gctFStat_toplist ( &semiCohToplist2 );
 
-  XLALDestroyREAL4Vector ( usefulParams.LVloglX );
+  XLALDestroyREAL8Vector ( usefulParams.LVloglX );
 
   XLALDestroyExpLUT(); /* lookup table for fast exponential function, used in computeLV case */
   XLALDestroyLogLUT(); /* lookup table for fast logarithm function, used in computeLV case */
@@ -2520,7 +2522,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]; /* here it's still the summed 2F value over segments, not the average */
       xlalErrno = 0;
 
-      REAL4 *loglX = NULL;
+      REAL8 *loglX = NULL;
       if ( usefulparams->LVloglX )
         loglX = usefulparams->LVloglX->data;
 

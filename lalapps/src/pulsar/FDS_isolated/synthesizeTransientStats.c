@@ -68,7 +68,7 @@
 #include <lalapps.h>
 
 /*---------- DEFINES ----------*/
-#define EPHEM_YEARS  "05-09"	/**< default range, covering S5: override with --ephemYear */
+#define EPHEM_YEARS  "00-19-DE405"	/**< default range, covering S5: override with --ephemYear */
 #define SQ(x) ((x)*(x))
 #define CUBE(x) ((x)*(x)*(x))
 #define QUAD(x) ((x)*(x)*(x)*(x))

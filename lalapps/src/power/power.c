@@ -313,7 +313,6 @@ static void print_usage(const char *program)
 "	[--calibration-cache <cache file name>]\n" \
 "	 --channel-name <name>\n" \
 "	 --confidence-threshold <confidence>\n" \
-"	[--debug-level info|warn|error|off]\n" \
 "	[--dump-diagnostics <XML file name>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file name>\n" \
@@ -464,62 +463,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 
 
 /*
- * Parse the --debug-level command line argument.
- */
-
-
-static int parse_command_line_debug(int argc, char *argv[])
-{
-	char msg[240];
-	int args_are_bad = 0;
-	int c;
-	int option_index;
-	struct option long_options[] = {
-		{"debug-level", required_argument, NULL, 'D'},
-		{NULL, 0, NULL, 0}
-	};
-
-	/*
-	 * Default == print only error messages.
-	 */
-
-	lalDebugLevel = LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-
-	/*
-	 * Find and parse only the debug level command line options.  Must
-	 * jump through this hoop because we cannot edit lalDebugLevel
-	 * after any calls to XLALMalloc() and friends.
-	 */
-
-	opterr = 0;		/* silence error messages */
-	optind = 0;		/* start scanning from argv[0] */
-	do switch(c = getopt_long(argc, argv, "-", long_options, &option_index)) {
-	case 'D':
-		if(!strcmp(optarg, "info"))
-			lalDebugLevel = LALINFO | LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-		else if(!strcmp(optarg, "warn"))
-			lalDebugLevel = LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-		else if(!strcmp(optarg, "error"))
-			lalDebugLevel = LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-		else if(!strcmp(optarg, "off"))
-			lalDebugLevel = LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-		else {
-			sprintf(msg, "must be one of \"info\", \"warn\", \"error\", or \"off\"");
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = 1;
-		}
-		break;
-
-	default:
-		break;
-	} while(c != -1);
-
-	return args_are_bad ? -1 : 0;
-}
-
-
-/*
- * Parse all the other command line arguments.
+ * Parse the command line arguments.
  */
 
 
@@ -536,7 +480,6 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		{"calibration-cache", required_argument, NULL, 'B'},
 		{"channel-name", required_argument, NULL, 'C'},
 		{"confidence-threshold", required_argument, NULL, 'g'},
-		{"debug-level", required_argument, NULL, 'D'},
 		{"dump-diagnostics", required_argument, NULL, 'X'},
 		{"filter-corruption", required_argument, NULL, 'j'},
 		{"frame-cache", required_argument, NULL, 'G'},
@@ -595,11 +538,6 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	case 'C':
 		options->channel_name = optarg;
 		memcpy(options->ifo, optarg, sizeof(options->ifo) - 1);
-		ADD_PROCESS_PARAM(process, "string");
-		break;
-
-	case 'D':
-		/* only add --debug-level to params table in this pass */
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
@@ -1532,8 +1470,6 @@ int main(int argc, char *argv[])
 	 */
 
 	lal_errhandler = LAL_ERR_EXIT;
-	if(parse_command_line_debug(argc, argv) < 0)
-		exit(1);
 
 	/*
 	 * Create the process and process params tables.

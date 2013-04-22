@@ -177,8 +177,8 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
    */
   if( plan->size == 1 )
   {
-    output->data[0].re = input->data[0];
-    output->data[0].im = 0.0;
+    output->data[0].realf_FIXME = input->data[0];
+    output->data[0].imagf_FIXME = 0.0;
   }
   else
     cudafft_execute_r2c( plan->plan,
@@ -188,7 +188,7 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
   /* Nyquist frequency */
   if( plan->size%2 == 0 )
   {
-    output->data[plan->size/2].im = 0.0;
+    output->data[plan->size/2].imagf_FIXME = 0.0;
   }
 
   return 0;
@@ -209,9 +209,9 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
     XLAL_ERROR( XLAL_EINVAL );
   if ( output->length != plan->size || input->length != plan->size/2 + 1 )
     XLAL_ERROR( XLAL_EBADLEN );
-  if ( input->data[0].im != 0.0 )
+  if ( cimagf(input->data[0]) != 0.0 )
     XLAL_ERROR( XLAL_EDOM );  /* imaginary part of DC must be zero */
-  if ( ! plan->size % 2 && input->data[plan->size/2].im != 0.0 )
+  if ( ! plan->size % 2 && cimagf(input->data[plan->size/2]) != 0.0 )
     XLAL_ERROR( XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* perform the fft */
@@ -220,7 +220,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
    */
   if( plan->size == 1 )
   {
-    output->data[0] = input->data[0].re;
+    output->data[0] = crealf(input->data[0]);
   }
   else
     cudafft_execute_c2r( plan->plan,
@@ -262,34 +262,34 @@ int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
       cudafft_execute_r2c( plan->plan,
 	  (cufftComplex *)tmp, (cufftReal *)(input->data),
 	  (cufftComplex *)plan->d_complex, (cufftReal *)plan->d_real, plan->size );
-      output->data[0] = tmp[0].re;
+      output->data[0] = crealf(tmp[0]);
 
       for( k = 1; k < (plan->size + 1)/2; k++ )
       {
-	output->data[k] = tmp[k].re;
-	output->data[plan->size - k] = tmp[k].im;
+	output->data[k] = crealf(tmp[k]);
+	output->data[plan->size - k] = cimagf(tmp[k]);
       }
 
       if( plan->size % 2 == 0 )
       {
-	output->data[plan->size/2] = tmp[plan->size/2].re;
+	output->data[plan->size/2] = crealf(tmp[plan->size/2]);
       }
     }
     else
     {
-      tmp[0].re = input->data[0];
-      tmp[0].im = 0.0;
+      tmp[0].realf_FIXME = input->data[0];
+      tmp[0].imagf_FIXME = 0.0;
 
       for( k = 1; k < (plan->size + 1)/2; k++ )
       {
-	tmp[k].re = input->data[k];
-	tmp[k].im = input->data[plan->size - k];
+	tmp[k].realf_FIXME = input->data[k];
+	tmp[k].imagf_FIXME = input->data[plan->size - k];
       }
 
       if( plan->size%2 == 0 )
       {
-	tmp[plan->size/2].re = input->data[plan->size/2];
-	tmp[plan->size/2].im = 0.0;
+	tmp[plan->size/2].realf_FIXME = input->data[plan->size/2];
+	tmp[plan->size/2].imagf_FIXME = 0.0;
       }
 
       cudafft_execute_c2r( plan->plan,
@@ -328,7 +328,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
 
   /* Check for size 1 to avoid the CUDA bug */
   if( plan->size == 1 )
-    tmp[0].re = data->data[0];
+    tmp[0].realf_FIXME = data->data[0];
   /* transform the data */
   else
     cudafft_execute_r2c( plan->plan,
@@ -338,20 +338,20 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
   /* now reconstruct the spectrum from the temporary storage */
 
   /* dc component */
-  spec->data[0] = tmp[0].re * tmp[0].re;
+  spec->data[0] = crealf(tmp[0]) * crealf(tmp[0]);
 
   /* other components */
   for (k = 1; k < (plan->size + 1)/2; ++k) /* k < size/2 rounded up */
   {
-    REAL4 re = tmp[k].re;
-    REAL4 im = tmp[k].im;
+    REAL4 re = crealf(tmp[k]);
+    REAL4 im = cimagf(tmp[k]);
     spec->data[k]  = re * re + im * im;
     spec->data[k] *= 2.0; /* accounts for negative frequency part */
   }
 
   /* Nyquist frequency */
   if ( plan->size%2 == 0 ) /* size is even */
-    spec->data[k] = tmp[k].re * tmp[k].re;
+    spec->data[k] = crealf(tmp[k]) * crealf(tmp[k]);
 
   /* clenup and exit */
   XLALFree( tmp );
@@ -502,21 +502,21 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
   /* now unpack the results into the output vector */
 
   /* dc component */
-  output->data[0].re = tmp[0];
-  output->data[0].im = 0.0;
+  output->data[0].real_FIXME = tmp[0];
+  output->data[0].imag_FIXME = 0.0;
 
   /* other components */
   for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size/2 rounded up */
   {
-    output->data[k].re = tmp[k];
-    output->data[k].im = tmp[plan->size - k];
+    output->data[k].real_FIXME = tmp[k];
+    output->data[k].imag_FIXME = tmp[plan->size - k];
   }
 
   /* Nyquist frequency */
   if ( plan->size%2 == 0 ) /* n is even */
   {
-    output->data[plan->size/2].re = tmp[plan->size/2];
-    output->data[plan->size/2].im = 0.0;
+    output->data[plan->size/2].real_FIXME = tmp[plan->size/2];
+    output->data[plan->size/2].imag_FIXME = 0.0;
   }
 
   XLALFree( tmp );
@@ -541,9 +541,9 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
     XLAL_ERROR( XLAL_EINVAL );
   if ( output->length != plan->size || input->length != plan->size/2 + 1 )
     XLAL_ERROR( XLAL_EBADLEN );
-  if ( input->data[0].im != 0.0 )
+  if ( cimag(input->data[0]) != 0.0 )
     XLAL_ERROR( XLAL_EDOM );  /* imaginary part of DC must be zero */
-  if ( ! plan->size % 2 && input->data[plan->size/2].im != 0.0 )
+  if ( ! plan->size % 2 && cimag(input->data[plan->size/2]) != 0.0 )
     XLAL_ERROR( XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* create temporary storage space */
@@ -554,18 +554,18 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
   /* unpack input into temporary array */
 
   /* dc component */
-  tmp[0] = input->data[0].re;
+  tmp[0] = creal(input->data[0]);
 
   /* other components */
   for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size / 2 rounded up */
   {
-    tmp[k]              = input->data[k].re;
-    tmp[plan->size - k] = input->data[k].im;
+    tmp[k]              = creal(input->data[k]);
+    tmp[plan->size - k] = cimag(input->data[k]);
   }
 
   /* Nyquist component */
   if ( plan->size%2 == 0 ) /* n is even */
-    tmp[plan->size/2] = input->data[plan->size/2].re;
+    tmp[plan->size/2] = creal(input->data[plan->size/2]);
 
   /* perform the fft */
   fftw_execute_r2r( plan->plan, tmp, output->data );
@@ -857,8 +857,8 @@ LALReverseREAL4FFT(
   ASSERT( output->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
   ASSERT( input->length == n / 2 + 1, status,
       REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-  ASSERT( input->data[0].im == 0, status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
-  ASSERT( n % 2 || input->data[n / 2].im == 0, status,
+  ASSERT( cimagf(input->data[0]) == 0, status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
+  ASSERT( n % 2 || cimagf(input->data[n / 2]) == 0, status,
       REALFFTH_EDATA, REALFFTH_MSGEDATA );
 
   ASSERT( plan->sign == 1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
@@ -1224,8 +1224,8 @@ LALReverseREAL8FFT(
   ASSERT( output->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
   ASSERT( input->length == n / 2 + 1, status,
       REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-  ASSERT( input->data[0].im == 0, status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
-  ASSERT( n % 2 || input->data[n / 2].im == 0, status,
+  ASSERT( cimag(input->data[0]) == 0, status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
+  ASSERT( n % 2 || cimag(input->data[n / 2]) == 0, status,
       REALFFTH_EDATA, REALFFTH_MSGEDATA );
 
   ASSERT( plan->sign == 1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );

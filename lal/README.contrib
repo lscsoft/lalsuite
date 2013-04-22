@@ -5,9 +5,10 @@ A message from the librarian:
 When developing a package for LAL, please test the code with gcc using
 the following compiler flags:
 
-  -g3 -O4 -Wall -W -Wmissing-prototypes -Wstrict-prototypes
-  -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings
+  -g3 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow
+  -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings
   -fno-common -Wnested-externs -Wno-format-zero-length
+  -fno-strict-aliasing
 
 These flags provide a useful way to detect potential bugs. (Add -Werror
 to enforce this.)
@@ -39,8 +40,8 @@ involves adding directories). Once a package has been added, you can
 modify the code in it and add additional contents withing the package as
 normal via Git.
 
-Contact the LAL librarian, Jolien Creighton
-<jolien@gravity.phys.uwm.edu> prior to add the package to Git. You
+Contact the LAL librarian, Adam Mercer
+<ram@gravity.phys.uwm.edu> prior to add the package to Git. You
 should send the librarian a tar file of the package you wish to add.
 
 This file tells you how to develop a new package for submission. It is

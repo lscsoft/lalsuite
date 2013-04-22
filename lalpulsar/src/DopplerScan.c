@@ -32,6 +32,7 @@
 #include <lal/StackMetric.h>
 #include <lal/AVFactories.h>
 #include <lal/LALError.h>
+#include <lal/LALString.h>
 #include <lal/StringInput.h>
 #include <lal/ConfigFile.h>
 #include <lal/Velocity.h>
@@ -1324,7 +1325,7 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
     {
       strncpy (buf, input, 99);
       buf[99] = 0;
-      if ( XLALLowerCaseString (buf) != XLAL_SUCCESS ) {
+      if ( XLALStringToLowerCase (buf) != XLAL_SUCCESS ) {
         ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
       }
       /* check if "allsky" was given: replace input by allsky-skyRegion */

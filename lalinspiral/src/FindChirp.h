@@ -304,6 +304,7 @@ tagFindChirpTmpltParams
   INT4                          bandPassTmplt;		/**< UNDOCUMENTED */
   LALSimInspiralApplyTaper      taperTmplt;		/**< UNDOCUMENTED */
   INT4                          dynamicTmpltFlow;       /**< Use longest template that will fit in pad length */
+  REAL4                         maxTempLength;                   /**< This can be used to store the maximum allowed template length, given the pad length and spectrum truncation */
 }
 FindChirpTmpltParams;
 

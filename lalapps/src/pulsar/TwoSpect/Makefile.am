@@ -10,18 +10,16 @@ lalapps_TwoSpect_SOURCES = cmdline.c statistics.c fastchisqinv.c IHS.c candidate
 			   cmdline.h TwoSpectTypes.h statistics.h fastchisqinv.h IHS.h candidates.h templates.h \
                            antenna.h vectormath.h cdfwchisq.h upperlimits.h TwoSpect.h
 
-EXTRA_PROGRAMS = TwoSpect_templateTest skygridsetup compareCandidates
-
-TwoSpect_templateTest_SOURCES = cmdline.c statistics.c fastchisqinv.c IHS.c candidates.c helperprograms/templates_templateTest.c \
-                           antenna.c vectormath.c cdfwchisq.c upperlimits.c helperprograms/TwoSpect_templateTest.c \
-                           cmdline.h TwoSpectTypes.h statistics.h fastchisqinv.h IHS.h candidates.h templates.h \
-                           antenna.h vectormath.h cdfwchisq.h upperlimits.h TwoSpect.h
+EXTRA_PROGRAMS = skygridsetup compareCandidates KSKtests
 
 skygridsetup_SOURCES = helperprograms/skygridsetup.c helperprograms/cmdline_skygridsetup.c antenna.c \
                        helperprograms/cmdline_skygridsetup.h antenna.h
 
 compareCandidates_SOURCES = helperprograms/compareCandidates.c
 
+KSKtests_SOURCES = cmdline.c antenna.c helperprograms/KSKtests.c \
+		   cmdline.h TwoSpectTypes.h antenna.h
+
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

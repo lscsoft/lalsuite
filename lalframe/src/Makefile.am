@@ -37,7 +37,8 @@ lalframeinclude_HEADERS = \
 	LALFrameLibVCSInfo.h \
 	LALFrameU.h \
 	LALFrameVCSInfo.h \
-	LowLatencyData.h
+	LowLatencyData.h \
+	lalframeswig_test.i
 
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \
@@ -95,7 +96,7 @@ BUILT_SOURCES += LALFrameVCSInfo.h
 MOSTLYCLEANFILES += LALFrameVCSInfo.h
 LALFrameVCSInfo.h .PHONY : gen-LALFrameVCSInfo.h
 gen-LALFrameVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALFrameVCSInfo.h $(srcdir)/LALFrameVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALFrameVCSInfo.h $(srcdir)/LALFrameVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@

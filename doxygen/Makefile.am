@@ -19,6 +19,7 @@ SUBDIRS = src
 DOXYINPUT = \
 	lal \
 	lalburst \
+	laldetchar \
 	lalframe \
 	lalinference \
 	lalinspiral \

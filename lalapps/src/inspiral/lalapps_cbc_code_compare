@@ -7,6 +7,12 @@
 #   cbc_code_compare master:ca000577f498a0638dc41512db9ae0205aefdc36 \
 #                    s6_20090722:60d8943667e1088027a26d138127382a9453ff0b
 
+# print (unexpanded) shell input lines as they are read
+set -v
+# print (expanded) commands before they're executed
+set -x
+
+
 if [ "x$LSCSOFT_SRCDIR" == "x" ]; then
     echo "error: \$LSCSOFT_SRCDIR must be defined in your environment"
     echo
@@ -78,8 +84,8 @@ cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/builds
 #./genbuild.sh $_NMI_GIT_ID_B $_NMI_GIT_BRANCH_B $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.b.out
 
 LATEST_MASTER_ID=$(git ls-remote $_NMI_GIT_URL heads/master | awk '{print $1}')
-./genbuild.py --harness-git-id=$LATEST_MASTER_ID --harness-git-branch=master --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_A --git-branch=$_NMI_GIT_BRANCH_A | tee $SUBMIT_DIR/genbuild.a.out
-./genbuild.py --harness-git-id=$LATEST_MASTER_ID --harness-git-branch=master --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_B --git-branch=$_NMI_GIT_BRANCH_B | tee $SUBMIT_DIR/genbuild.b.out
+./genbuild.py --harness-git-id=$LATEST_MASTER_ID --harness-git-branch=master --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_A --git-branch=$_NMI_GIT_BRANCH_A --template-dir=. | tee $SUBMIT_DIR/genbuild.a.out
+./genbuild.py --harness-git-id=$LATEST_MASTER_ID --harness-git-branch=master --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_B --git-branch=$_NMI_GIT_BRANCH_B --template-dir=. | tee $SUBMIT_DIR/genbuild.b.out
 
 # needed by subsequent tests
 export BUILD_A_GID=$(awk '/Global ID:/{print $3}' $SUBMIT_DIR/genbuild.a.out)

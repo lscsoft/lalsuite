@@ -614,8 +614,8 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   eta = pifL_c * (1.0f + kdotnA);
   sinc_eta = safe_sinc ( eta );
 
-  coeffAA.re = 0.25f * cospha * sinc_eta;
-  coeffAA.im = 0.25f * sinpha * sinc_eta;
+  coeffAA.realf_FIXME = 0.25f * cospha * sinc_eta;
+  coeffAA.imagf_FIXME = 0.25f * sinpha * sinc_eta;
 
   /* second term */
   sin_cos_LUT (&sinpha, &cospha, pifL_3c * ( - 3.0f - (kdotnA + 2.0f * kdotnB) ) );
@@ -623,8 +623,8 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   eta = pifL_c * (1.0f - kdotnA);
   sinc_eta = safe_sinc ( eta );
 
-  coeffAA.re += 0.25f * cospha * sinc_eta;
-  coeffAA.im += 0.25f * sinpha * sinc_eta;
+  coeffAA.realf_FIXME += 0.25f * cospha * sinc_eta;
+  coeffAA.imagf_FIXME += 0.25f * sinpha * sinc_eta;
 
   /* ----- calculate coefficient in front of (1/2)*(nB x nB) */
 
@@ -634,8 +634,8 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   eta = pifL_c * (1.0f - kdotnB);
   sinc_eta = safe_sinc ( eta );
 
-  coeffBB.re = 0.25f * cospha * sinc_eta;
-  coeffBB.im = 0.25f * sinpha * sinc_eta;
+  coeffBB.realf_FIXME = 0.25f * cospha * sinc_eta;
+  coeffBB.imagf_FIXME = 0.25f * sinpha * sinc_eta;
 
   /* second term */
   sin_cos_LUT (&sinpha, &cospha, pifL_3c * ( - 3.0f + (2.0f * kdotnA + kdotnB) ) );
@@ -643,20 +643,20 @@ XLALgetLISAtwoArmRAAIFO ( CmplxDetectorTensor *detT, 	/**< [out]: two-arm IFO de
   eta = pifL_c * (1.0f + kdotnB);
   sinc_eta = safe_sinc ( eta );
 
-  coeffBB.re += 0.25f * cospha * sinc_eta;
-  coeffBB.im += 0.25f * sinpha * sinc_eta;
+  coeffBB.realf_FIXME += 0.25f * cospha * sinc_eta;
+  coeffBB.imagf_FIXME += 0.25f * sinpha * sinc_eta;
 
   /* now we can express the detector tensor in the rigid adiabatic approximation (RAA):
    * detT = coeffAA * basisA - coeffBB * basisB
    */
   {
     SymmTensor3 tmpA, tmpB;
-    XLALScaleSymmTensor3 ( &tmpA, &detArmA->basisT, coeffAA.re );
-    XLALScaleSymmTensor3 ( &tmpB, &detArmB->basisT, coeffBB.re );
+    XLALScaleSymmTensor3 ( &tmpA, &detArmA->basisT, crealf(coeffAA) );
+    XLALScaleSymmTensor3 ( &tmpB, &detArmB->basisT, crealf(coeffBB) );
     XLALSubtractSymmTensor3s( &detT->re, &tmpA, &tmpB );
 
-    XLALScaleSymmTensor3 ( &tmpA, &detArmA->basisT, coeffAA.im );
-    XLALScaleSymmTensor3 ( &tmpB, &detArmB->basisT, coeffBB.im );
+    XLALScaleSymmTensor3 ( &tmpA, &detArmA->basisT, cimagf(coeffAA) );
+    XLALScaleSymmTensor3 ( &tmpB, &detArmB->basisT, cimagf(coeffBB) );
     XLALSubtractSymmTensor3s( &detT->im, &tmpA, &tmpB );
   }
 

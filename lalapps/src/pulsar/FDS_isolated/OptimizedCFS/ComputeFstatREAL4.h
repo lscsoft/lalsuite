@@ -177,7 +177,7 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,
                   );
 
 
-void
+int
 XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,
                        const SFTVector *sfts,
                        const PulsarSpinsREAL4 *fkdot4,

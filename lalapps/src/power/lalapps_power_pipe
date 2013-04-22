@@ -44,8 +44,8 @@ from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
 from glue.lal import CacheEntry
+from pylal import ligolw_cafe
 from pylal import ligolw_tisi
-from pylal import llwapp
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from lalapps import power
 
@@ -150,14 +150,14 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, 
 	if not full_segments:
 		# cull too-short single-instrument segments from the input
 		# segmentlist dictionary;  this can significantly increase
-		# the speed of the llwapp.get_coincident_segmentlistdict()
+		# the speed of the get_coincident_segmentlistdict()
 		# function when the input segmentlists have had many data
 		# quality holes poked out of them
 		power.remove_too_short_segments(seglistdict, timing_params)
 
 		# extract the segments that are coincident under the time
 		# slides
-		new = llwapp.get_coincident_segmentlistdict(seglistdict, time_slides)
+		new = ligolw_cafe.get_coincident_segmentlistdict(seglistdict, time_slides)
 
 		# adjust surviving segment lengths up to the next integer
 		# number of PSDs

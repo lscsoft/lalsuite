@@ -46,7 +46,7 @@ UserInput_t empty_UserInput_t;
 const char *cfgfile_content = \
 "## Some 'tough' tests for config-file reading routines\n"
 "# comment line\n"
-"float1 = 1.0    ; you can also comment using semi-colons\n"
+"float1 = 1.0    ; ## semi-colon ignored\n"
 "\n"
 "string1 = some text.\\\n"
 "	You can also use\\\n"

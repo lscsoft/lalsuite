@@ -138,9 +138,9 @@ def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpse
 		WHERE coinc_event.time_slide_id=='time_slide:time_slide_id:10049'\
 		"
 	if gpsstart is not None:
-		get_coincs=get_coincs+' and sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1.0e-9 > %f'%(gpsstart)
+		get_coincs=get_coincs+' and coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1.0e-9 > %f'%(gpsstart)
 	if gpsend is not None:
-		get_coincs=get_coincs+' and sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1.0e-9 < %f'%(gpsend)
+		get_coincs=get_coincs+' and coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1.0e-9 < %f'%(gpsend)
 	if max_cfar !=-1:
 		get_coincs=get_coincs+' and coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
@@ -186,9 +186,9 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 		    join coinc_inspiral on (coinc_inspiral.coinc_event_id==coinc_event.coinc_event_id) where coinc_event.time_slide_id!='time_slide:time_slide_id:10049'"
 	joinstr = ' and '
 	if gpsstart is not None:
-		get_coincs=get_coincs+ ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
+		get_coincs=get_coincs+ joinstr + ' coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
 	if gpsend is not None:
-		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
+		get_coincs=get_coincs+ joinstr+' coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1e-9 <%f'%(gpsend)
 	if max_cfar!=-1:
 		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
@@ -663,6 +663,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 class EngineJob(pipeline.CondorDAGJob):
   def __init__(self,cp,submitFile,logdir):
     self.engine=cp.get('analysis','engine')
+    basepath=cp.get('paths','basedir')
+    snrpath=os.path.join(basepath,'SNR')
+    mkdirs(snrpath)
     if self.engine=='lalinferencemcmc':
       exe=cp.get('condor','mpirun')
       self.binary=cp.get('condor',self.engine)
@@ -686,6 +689,7 @@ class EngineJob(pipeline.CondorDAGJob):
       self.add_condor_cmd('getenv','true')
       
     self.add_ini_opts(cp,self.engine)
+    self.add_opt('snrpath',snrpath)
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
   

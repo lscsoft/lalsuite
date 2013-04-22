@@ -13,11 +13,11 @@ check_PROGRAMS = testLineVeto
 EXTRA_PROGRAMS = eah_HierarchSearchGCT lalapps_HierarchSearchGCT_cuda lalapps_HierarchSearchGCT_VFStat \
 	         lalapps_HierarchSearchGCT_SSE2 lalapps_HierarchSearchGCT_SSE2_NONC
 
-EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp $(OPTsrc)/LocalComputeFstat.c
+EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp
 HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
                           GCTtoplist.c GCTtoplist.h \
                           $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
-                          $(CFSsrc)/ComputeFStatistic.h $(CFSsrc)/Fstat_v3.c \
+                          $(CFSsrc)/ComputeFStatistic.h $(OPTsrc)/LocalComputeFstat.c $(CFSsrc)/Fstat_v3.c \
 			  ComputeFstat_RS.c ComputeFstat_RS.h \
 			  LineVeto.c LineVeto.h
 
@@ -31,14 +31,14 @@ lalapps_HierarchSearchGCT_cuda_SOURCES = $(HSGCTSources) $(OPTsrc)/ComputeFstatR
 lalapps_HierarchSearchGCT_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_HierarchSearchGCT_cuda_LDADD = $(LDADD) -lcudart
 
-lalapps_HierarchSearchGCT_VFStat_SOURCES = $(HSGCTSources) $(OPTsrc)/LocalComputeFstat.c
+lalapps_HierarchSearchGCT_VFStat_SOURCES = $(HSGCTSources)
 lalapps_HierarchSearchGCT_VFStat_CPPFLAGS = $(AM_CPPFLAGS) -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
 
-lalapps_HierarchSearchGCT_SSE2_SOURCES = $(HSGCTSources) $(OPTsrc)/LocalComputeFstat.c
+lalapps_HierarchSearchGCT_SSE2_SOURCES = $(HSGCTSources)
 lalapps_HierarchSearchGCT_SSE2_CPPFLAGS = $(AM_CPPFLAGS) -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT -DGC_SSE2_OPT
 lalapps_HierarchSearchGCT_SSE2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
 
-lalapps_HierarchSearchGCT_SSE2_NONC_SOURCES = $(HSGCTSources) $(OPTsrc)/LocalComputeFstat.c
+lalapps_HierarchSearchGCT_SSE2_NONC_SOURCES = $(HSGCTSources)
 lalapps_HierarchSearchGCT_SSE2_NONC_CPPFLAGS = $(AM_CPPFLAGS) -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT -DGC_SSE2_OPT -DEXP_NO_NUM_COUNT
 lalapps_HierarchSearchGCT_SSE2_NONC_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
 
@@ -64,7 +64,7 @@ erp_execinfo_plus.o: $(EAHsrc)/erp_execinfo_plus.c
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common
 
 # how to compile CUDA files (.cu)
 NVCC ?= nvcc

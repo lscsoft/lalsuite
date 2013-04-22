@@ -37,6 +37,8 @@ void populate_trig_sequence_from_file( GSequence* trig_sequence, const char* fna
 void print_hash_table( GHashTable* tbl, const char* file );
 // print a hash table of string / float entries
 void print_hash_table_float( GHashTable* tbl, const char* file );
+// print a hash table of string / string entries
+void print_hash_table_string( GHashTable* tbl, const char* file );
 // Read a sequence of channels to ignore
 void get_ignore_list( const char* fname, GSequence* ignorelist );
 // retrieve live time
@@ -48,11 +50,23 @@ void write_triggers( GSequence* trig_sequence, const char* fname );
 void encode_rnd_str(char* winner, double wind, double thresh);
 void decode_rnd_str(char* winner_str, char* chan, double* wind, double* thresh);
 
+// Get a listing of the channels included
+GHashTable* get_channel_list( GSequence* triglist );
+
 extern int lalDebugLevel;
 
 //int main(int argc, char** argv){
 int main(int argc, char** argv){
 
+	/*
+    * WHich channels should we ignore?
+    *
+    * This list will be applied to the triggers as they are read in so as to
+    * avoid unnecessary cutting and/or masking later.
+    *
+    * TODO: Since we mask triggers anyway, maybe the ignore list can be turned
+    * into a safety study before the full algorithm kicks in.
+    */
 	GSequence* ignorelist = g_sequence_new(free);
 	if( argc > 4 ){
 		get_ignore_list( argv[4], ignorelist );
@@ -61,9 +75,20 @@ int main(int argc, char** argv){
 	//lalDebugLevel = 1 | 2 | 4 | 32;
 	lalDebugLevel = 0;
 
+	/*
+	 * Round parameters
+	 */
 	double sig_thresh = 3.0;
 	// TODO: Significance or SNR option
 	// Example 1
+	/*
+	 * Minimum threshold for the reference channel SNR and minimum threshold
+	 * for the auxilary channel SNR. Treated differently since the reference
+	 * channel might be mixed in with the other channels.
+	 *
+	 * These thresholds are applied at the time the triggers are read, so no
+	 * triggers below these SNRs are even seen.
+	 */
 	double min_de_snr = 30, min_aux_snr = 50;
 	int nthresh = 8;
 	double aux_snr_thresh[8] = {3200.0, 1600.0, 800.0, 600.0, 400.0, 200.0, 100.0, 50.0};
@@ -79,10 +104,11 @@ int main(int argc, char** argv){
 	//double twins[1] = {0.4};
 	*/
 
-	printf( "Name: %s\n", argv[1] );
-
 	GSequence* trig_sequence = g_sequence_new((GDestroyNotify)XLALDestroySnglBurst);
+	// Do hveto on *all* channel pairs, not just reference channel
+	gboolean all_chans = FALSE;
 
+	// Read in our triggers
 	char refchan[1024];
 	if( argc > 2 ){
 		strcpy(refchan, "LSC-DARM_ERR");
@@ -95,6 +121,11 @@ int main(int argc, char** argv){
 		strcpy(refchan, "CHAN1");
 		populate_trig_sequence( trig_sequence );
 	}
+
+	// Get the channel list
+	GHashTable* chanlist = get_channel_list( trig_sequence );
+	print_hash_table_string( chanlist, NULL );
+
 	printf( "list Length: %d\n", g_sequence_get_length( trig_sequence ) );
 	printf( "Reference channel: %s\n", refchan );
 
@@ -165,39 +196,52 @@ int main(int argc, char** argv){
 		 * FIXME: We can do this more efficiently by passing this to the scan
 		 * function, and only doing a single pass.
 		 */
-		char *winner;
-		winner = malloc( sizeof(char)*1024 );
+		char *winner = NULL;
 		double *sig = malloc(sizeof(double));
 		int nw = nwinds, nt = nthresh;
 		for( nt=nthresh; nt >= 0; nt-- ){
 			min_aux_snr = aux_snr_thresh[nt];
-			printf( "len: %d\n", g_sequence_get_length( trig_sequence ) );
 			XLALDetCharPruneTrigs( trig_sequence, &live, min_aux_snr, refchan );
-			printf( "len: %d\n", g_sequence_get_length( trig_sequence ) );
+			printf( "SNR threshold (#%d) %f, triggers remaining: %d\n", nt, min_aux_snr, g_sequence_get_length( trig_sequence ) );
 			for( nw=nwinds; nw >= 0; nw-- ){
-				printf( "Window: %d\n", nw );
 				wind = twins[nw];
-				printf( "wind: %f\n", wind );
+				printf( "Window (#%d) %f\n", nw, wind );
+				winner = malloc( sizeof(char)*1024 );
 
-				// Create our channel coincidence histogram
-				// FIXME: Free memory?
-				printf( "Clearing coincidence table\n" );
-				g_hash_table_remove_all( chanhist );
-				// Create our channel count histogram
-				// FIXME: Free memory?
-				printf( "Clearing count table\n" );
-				g_hash_table_remove_all( chancount );
+				GHashTableIter chanit;
+				g_hash_table_iter_init( &chanit, chanlist );
+				gpointer chan1, chan2;
+				while( g_hash_table_iter_next( &chanit, &chan1, &chan2 ) ){
+					// Are we doing all channels or just the reference?
+					if( !(strstr( refchan, chan1 ) || all_chans) ){
+							continue;
+					}
 
-				// TODO: Is there a way to avoid a rescan every round?
-				XLALDetCharScanTrigs( chancount, chanhist, trig_sequence, refchan, wind, coinc_type );
-				printf( "Trigger count:\n" );
-				print_hash_table( chancount, NULL );
-				sprintf( outpath, "%s/round_%d_count.txt", bdir, rnd );
-				print_hash_table( chancount, outpath );
-				printf( "Trigger coincidences with %s, window (%g):\n", refchan, wind );
-				print_hash_table( chanhist, NULL );
-				sprintf( outpath, "%s/round_%d_coinc.txt", bdir, rnd );
-				print_hash_table( chanhist, outpath );
+					// Set up the output path for this round / channel
+					sprintf( bdir, "round_%d/%s/", rnd, (char *)chan1 );
+					sprintf( cmd, "mkdir -p %s", bdir );
+					system( cmd );
+
+					// Create our channel coincidence histogram
+					// FIXME: Free memory?
+					printf( "Clearing coincidence table\n" );
+					g_hash_table_remove_all( chanhist );
+					// Create our channel count histogram
+					// FIXME: Free memory?
+					printf( "Clearing count table\n" );
+					g_hash_table_remove_all( chancount );
+
+					// TODO: Is there a way to avoid a rescan every round?
+					XLALDetCharScanTrigs( chancount, chanhist, trig_sequence, (char*)chan1, wind, coinc_type );
+					printf( "Trigger count:\n" );
+					print_hash_table( chancount, NULL );
+					sprintf( outpath, "%s/%s_%d_%d_count.txt", bdir, (char *)chan1, nt, nw );
+					print_hash_table( chancount, outpath );
+					printf( "Trigger coincidences with %s, window (%g):\n", (char*)chan1, wind );
+					print_hash_table( chanhist, NULL );
+					sprintf( outpath, "%s/%s_%d_%d_coinc.txt", bdir, (char *)chan1, nt, nw );
+					print_hash_table( chanhist, outpath );
+				}
 
 				strcpy( winner, "" );
 				/* 
@@ -208,10 +252,13 @@ int main(int argc, char** argv){
 				if( !g_hash_table_lookup(chancount, refchan) ){
 					fprintf( stderr, "No triggers in target channel.\n" );
 					break;
+				} else if( g_hash_table_size(chanhist) == 0 ){
+					fprintf( stderr, "No coincidences with target channel.\n" );
+					free( winner );
+					continue;
 				} else {
 					rnd_sig = XLALDetCharVetoRound( winner, chancount, chanhist, refchan, t_ratio );
 				}
-				printf( "Sub-round winner, window %2.2f, thresh %f: %s sig %g\n",  wind, min_aux_snr, winner, rnd_sig );
 
 				sig = malloc(sizeof(double));
 				*sig = rnd_sig;
@@ -220,6 +267,10 @@ int main(int argc, char** argv){
 				g_hash_table_insert( subround_winners, winner, sig );
 
 			}
+		}
+		if( g_hash_table_size( subround_winners ) == 0 ){
+			// no subround winners, just bail
+			break;
 		}
 		print_hash_table_float( subround_winners, NULL );
 
@@ -281,7 +332,6 @@ int main(int argc, char** argv){
 			*/
 		}
 		rnd++;
-		//if( rnd > 1 ) break;
 	} while( rnd_sig > sig_thresh && (size_t)rnd < nchans );
 	printf( "Last round did not pass significance threshold or all channels have been vetoed. Ending run.\n" );
 
@@ -290,6 +340,7 @@ int main(int argc, char** argv){
 	g_hash_table_destroy( chancount );
 
 	g_sequence_free( trig_sequence );
+	g_hash_table_destroy( chanlist );
 
 	XLALSegListClear( &live );
 	XLALSegListClear( &vetoes );
@@ -388,9 +439,9 @@ void print_hash_table( GHashTable* tbl, const char* file ){
 	}
 	while( g_hash_table_iter_next( &iter, &key, &val ) ){
 		if( file ){
-			fprintf( outfile, "%s: %lu\n", (char *)key, *(size_t*)val );
+			fprintf( outfile, "%s: %zu\n", (char *)key, *(size_t*)val );
 		} else {
-			printf( "%s: %lu\n", (char *)key, *(size_t*)val );
+			printf( "%s: %zu\n", (char *)key, *(size_t*)val );
 		}
 	}
 	if( outfile ){
@@ -417,6 +468,26 @@ void print_hash_table_float( GHashTable* tbl, const char* file ){
 	}
 }
 
+void print_hash_table_string( GHashTable* tbl, const char* file ){
+    GHashTableIter iter;
+    gpointer key, val;
+	g_hash_table_iter_init( &iter, tbl );
+	FILE* outfile = NULL;
+	if( file ){
+		outfile = fopen( file, "w" );
+	}
+	while( g_hash_table_iter_next( &iter, &key, &val ) ){
+		if( file ){
+			fprintf( outfile, "%s: %s\n", (char *)key, (char*)val );
+		} else {
+			printf( "%s: %s\n", (char *)key, (char*)val );
+		}
+	}
+	if( outfile ){
+		fclose( outfile );
+	}
+}
+
 void get_ignore_list( const char* fname, GSequence* ignorel ){
 
 	int cnt = 0;
@@ -428,6 +499,7 @@ void get_ignore_list( const char* fname, GSequence* ignorel ){
 		if( cnt == EOF ) break;
 		g_sequence_append( ignorel, g_strdup(tmp) );
 	}
+	free(tmp);
 	fclose(lfile);
 }
 
@@ -484,4 +556,16 @@ void encode_rnd_str(char* winner, double wind, double thresh){
 }
 void decode_rnd_str(char* winner_str, char* chan, double* wind, double* thresh){
 	sscanf( winner_str, "%s %lf %lf", chan, wind, thresh );
+}
+
+GHashTable* get_channel_list( GSequence* triglist ){
+	GSequenceIter* itr = g_sequence_get_begin_iter(triglist);
+
+	GHashTable* channellist = g_hash_table_new( g_str_hash, g_str_equal );
+	while( !g_sequence_iter_is_end(itr) ){
+		SnglBurst *sb = (SnglBurst*)g_sequence_get(itr);
+		g_hash_table_insert( channellist, g_strdup(sb->channel), g_strdup(sb->channel) );
+		itr = g_sequence_iter_next(itr);
+	}
+	return channellist;
 }

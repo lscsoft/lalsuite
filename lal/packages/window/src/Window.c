@@ -33,6 +33,7 @@
 #include <gsl/gsl_sf_bessel.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALString.h>
 #include <lal/Sequence.h>
 #include <lal/Window.h>
 #include <lal/XLALError.h>
@@ -343,7 +344,6 @@ COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, 
  *
  * ============================================================================
  */
-
 
 
 REAL8Window *XLALCreateRectangularREAL8Window(UINT4 length)
@@ -684,8 +684,6 @@ void XLALDestroyREAL8Window(REAL8Window * window)
  * ============================================================================
  */
 
-
-
 REAL4Window *XLALCreateRectangularREAL4Window(UINT4 length)
 
 {
@@ -780,4 +778,146 @@ void XLALDestroyREAL4Window(REAL4Window * window)
 	if(window)
 		XLALDestroyREAL4Sequence(window->data);
 	XLALFree(window);
+}
+
+
+// ---------- some generic window-handling functions to simplify using the above window-functions ----------
+
+typedef enum tagLALWindowType
+  {
+    LAL_WINDOWTYPE_RECTANGULAR = 0,
+    LAL_WINDOWTYPE_HANN,
+    LAL_WINDOWTYPE_WELCH,
+    LAL_WINDOWTYPE_BARTLETT,
+    LAL_WINDOWTYPE_PARZEN,
+    LAL_WINDOWTYPE_PAPOULIS,
+    LAL_WINDOWTYPE_HAMMING,
+    LAL_WINDOWTYPE_KAISER,
+    LAL_WINDOWTYPE_CREIGHTON,
+    LAL_WINDOWTYPE_TUKEY,
+    LAL_WINDOWTYPE_GAUSS,
+    LAL_WINDOWTYPE_LAST
+  } LALWindowType;
+
+const struct {
+  const char *const name;	/**< window name */
+  const BOOLEAN hasBeta;	/**< does this window need a 'beta' parameter? */
+} AllowedWindows[LAL_WINDOWTYPE_LAST] = {
+
+  [LAL_WINDOWTYPE_RECTANGULAR] 	= { "rectangular",  	0 },
+  [LAL_WINDOWTYPE_HANN]		= { "hann",		0 },
+  [LAL_WINDOWTYPE_WELCH]	= { "welch",		0 },
+  [LAL_WINDOWTYPE_BARTLETT]	= { "bartlett",		0 },
+  [LAL_WINDOWTYPE_PARZEN]	= { "parzen",		0 },
+  [LAL_WINDOWTYPE_PAPOULIS]	= { "papoulis",		0 },
+  [LAL_WINDOWTYPE_HAMMING]	= { "hamming",		1 },
+  [LAL_WINDOWTYPE_KAISER]	= { "kaiser",		1 },
+  [LAL_WINDOWTYPE_CREIGHTON]	= { "creighton",	1 },
+  [LAL_WINDOWTYPE_TUKEY]	= { "tukey",		1 },
+  [LAL_WINDOWTYPE_GAUSS]	= { "gauss",		1 },
+};
+
+/**
+ * Parse window-name string (case-insensitive) into an internal
+ * window-type index (>=0, returned), and also check if the user-input 'beta'
+ * is valid for given window. Window-types that don't take a beta
+ * input parameter need to have beta==0.
+ *
+ * Returns XLAL_FAILURE=-1 on error
+ */
+static int
+XLALParseWindowNameAndCheckBeta ( const char *windowName,	//< [in] window-name to parse
+                                  REAL8 beta			//< [in] beta user-input, checked for validity
+                                  )
+{
+  XLAL_CHECK ( windowName != NULL, XLAL_EINVAL );
+
+  // convert input window-name into lower-case first
+  char windowNameLC [ strlen(windowName) + 1 ];
+  strcpy ( windowNameLC, windowName );
+  XLALStringToLowerCase ( windowNameLC );
+
+  for ( UINT4 i = 0; i < LAL_WINDOWTYPE_LAST; i ++ )
+    {
+      if ( strcmp ( windowNameLC, AllowedWindows[i].name ) == 0 )
+        {
+          XLAL_CHECK ( AllowedWindows[i].hasBeta || (beta == 0 ), XLAL_EINVAL, "Invalid non-zero input beta=%g for window '%s'\n", beta, windowName );
+          return i;
+        }
+    } // for i < LAL_WINDOWTYPE_LAST
+
+  // we only come here if no window-name matched
+  XLALPrintError ("Invalid Window-name '%s', allowed are (case-insensitive):\n[%s", windowName, AllowedWindows[0].name );
+  for ( UINT4 j = 1; j < LAL_WINDOWTYPE_LAST; j++ ) {
+    XLALPrintError (", %s", AllowedWindows[j].name );
+  }
+  XLALPrintError ("]\n");
+
+  XLAL_ERROR ( XLAL_EINVAL );
+
+} // XLALParseWindowNameAndCheckBeta()
+
+/** Generic window-function wrapper, allowing to select a window by its name.
+ * windowBeta must be set to '0' for windows without parameter.
+ */
+REAL8Window *
+XLALCreateNamedREAL8Window ( const char *windowName, REAL8 beta, UINT4 length )
+{
+  XLAL_CHECK_NULL ( length > 0, XLAL_EINVAL );
+
+  int wintype;
+  XLAL_CHECK_NULL ( (wintype = XLALParseWindowNameAndCheckBeta ( windowName, beta )) >= 0, XLAL_EFUNC );
+
+  REAL8Window *win = NULL;
+  switch ( wintype )
+    {
+    case LAL_WINDOWTYPE_RECTANGULAR:
+      win = XLALCreateRectangularREAL8Window ( length );
+      break;
+    case LAL_WINDOWTYPE_HANN:
+      win = XLALCreateHannREAL8Window ( length );
+      break;
+    case LAL_WINDOWTYPE_WELCH:
+      win = XLALCreateWelchREAL8Window ( length );
+      break;
+    case LAL_WINDOWTYPE_BARTLETT:
+      win = XLALCreateBartlettREAL8Window ( length );
+      break;
+    case LAL_WINDOWTYPE_PARZEN:
+      win = XLALCreateParzenREAL8Window ( length );
+      break;
+    case LAL_WINDOWTYPE_PAPOULIS:
+      win = XLALCreatePapoulisREAL8Window ( length );
+      break;
+    case LAL_WINDOWTYPE_HAMMING:
+      win = XLALCreateHammingREAL8Window ( length );
+      break;
+    case LAL_WINDOWTYPE_KAISER:
+      win = XLALCreateKaiserREAL8Window ( length, beta );
+      break;
+    case LAL_WINDOWTYPE_CREIGHTON:
+      win = XLALCreateCreightonREAL8Window ( length, beta );
+      break;
+    case LAL_WINDOWTYPE_TUKEY:
+      win = XLALCreateTukeyREAL8Window ( length, beta );
+      break;
+    case LAL_WINDOWTYPE_GAUSS:
+      win = XLALCreateGaussREAL8Window ( length, beta );
+      break;
+    default:
+      XLAL_ERROR_NULL ( XLAL_EERR, "Internal ERROR: Invalid window-type '%d', must be within [0, %d]\n", wintype, LAL_WINDOWTYPE_LAST - 1 );
+      break;
+    } // switch(wintype)
+
+  XLAL_CHECK_NULL (win != NULL, XLAL_EFUNC );
+
+  return win;
+
+} /* XLALCreateNamedREAL8Window() */
+
+
+REAL4Window *
+XLALCreateNamedREAL4Window ( const char *windowName, REAL8 beta, UINT4 length )
+{
+  return XLALREAL4Window_from_REAL8Window ( XLALCreateNamedREAL8Window ( windowName, beta, length ) );
 }

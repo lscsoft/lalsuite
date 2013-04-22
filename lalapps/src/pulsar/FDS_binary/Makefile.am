@@ -48,4 +48,4 @@ lalapps_ComputeUL_SOURCES = ComputeUL_v1.c ReadWriteBinaryHeader_v1.c ComputeUL_
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

@@ -686,21 +686,21 @@ int main( int argc, char *argv[] )
 
   goodData1.f0 = goodData2.f0 = goodFilter.f0 = 0.0;
 
-  goodData1.data->data[0].re = goodData1.data->data[0].im
-    = goodData2.data->data[0].re = goodData2.data->data[0].im
-    = goodFilter.data->data[0].re = goodFilter.data->data[0].im
+  goodData1.data->data[0].realf_FIXME = goodData1.data->data[0].imagf_FIXME
+    = goodData2.data->data[0].realf_FIXME = goodData2.data->data[0].imagf_FIXME
+    = goodFilter.data->data[0].realf_FIXME = goodFilter.data->data[0].imagf_FIXME
     = 0.0;
 
   for (i=1; i<STOCHASTICCROSSCORRELATIONSTATISTICTESTC_LENGTH; ++i)
   {
     f = i * STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF;
     x = f / (STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM / 2.0);
-    goodData1.data->data[i].re = x*x;
-    goodData1.data->data[i].im = x;
-    goodData2.data->data[i].re = 1.0/goodData1.data->data[i].re;
-    goodData2.data->data[i].im = -1.0/goodData1.data->data[i].im;
-    goodFilter.data->data[i].re = x * (2-x);
-    goodFilter.data->data[i].im = 0.0;
+    goodData1.data->data[i].realf_FIXME = x*x;
+    goodData1.data->data[i].imagf_FIXME = x;
+    goodData2.data->data[i].realf_FIXME = 1.0/crealf(goodData1.data->data[i]);
+    goodData2.data->data[i].imagf_FIXME = -1.0/cimagf(goodData1.data->data[i]);
+    goodFilter.data->data[i].realf_FIXME = x * (2-x);
+    goodFilter.data->data[i].imagf_FIXME = 0.0;
   }
 
   LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);
@@ -803,19 +803,19 @@ int main( int argc, char *argv[] )
   {
     f = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_F0
       + i * STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF;
-    goodData1.data->data[i].re = f/STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM;
-    goodData2.data->data[i].re = 1 - goodData1.data->data[i].re;
+    goodData1.data->data[i].realf_FIXME = f/STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FLIM;
+    goodData2.data->data[i].realf_FIXME = 1 - crealf(goodData1.data->data[i]);
     if ( f > STOCHASTICCROSSCORRELATIONSTATISTICTESTC_WINMIN
          && f < STOCHASTICCROSSCORRELATIONSTATISTICTESTC_WINMAX )
     {
-      goodFilter.data->data[i].re = 1.0;
+      goodFilter.data->data[i].realf_FIXME = 1.0;
     }
     else
     {
-      goodFilter.data->data[i].re = 0.0;
+      goodFilter.data->data[i].realf_FIXME = 0.0;
     }
-    goodData1.data->data[i].im = goodData2.data->data[i].im
-      = goodFilter.data->data[i].im = 0.0;
+    goodData1.data->data[i].imagf_FIXME = goodData2.data->data[i].imagf_FIXME
+      = goodFilter.data->data[i].imagf_FIXME = 0.0;
   }
 
   LALStochasticCrossCorrelationStatistic(&status, &output, &input, STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE);

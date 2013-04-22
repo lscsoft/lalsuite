@@ -54,7 +54,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	//ProcessParamsTable *ppt=NULL;
 
 	
-	irs = calloc(1, sizeof(LALInferenceRunState));
+	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
 	/* read data from files: */
 	fprintf(stdout, " readData(): started.\n");
 	irs->commandLine=commandLine;
@@ -115,7 +115,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 																			 ifoPtr->freqData->deltaF,
 																			 &lalDimensionlessUnit,
 																			 ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
+				ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
 			}
 			ifoPtr = ifoPtr->next;
 		}

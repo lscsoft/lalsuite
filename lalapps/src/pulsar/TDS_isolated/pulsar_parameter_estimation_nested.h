@@ -114,12 +114,11 @@ extern "C" {
  * \f$ \psi \f$ antenna pattern lookup table. */
 #define TIMEBINS 2880
 
-/** The total number of 'amplitude' parameters that can define a signal e.g.
- * gravitational wave amplitude from a triaxial star \f$ h_0 \f$, initial phase
- * of the signal \f$ \phi_0 \f$, polarisation angle \f$ psi \f$, and cosine of
- * the inclination angle \f$ \cos{\iota} \f$.  For the pinSf model, extra pars include
- \f$ I_{31}, I_{21}\f$ the equivalents of \f$ h_0 \f$, and the extra orientation parameters
- \f$ \cos(\theta) \f$ and \f$ \lambda \f$.
+/** The total number of 'amplitude' parameters that can define a signal e.g. gravitational wave amplitude from a
+ * triaxial star emitting from the \f$l=m=2\f$ mode we have \f$ h_0 \f$, initial phase of the signal \f$ \phi_0 \f$,
+ * polarisation angle \f$ psi \f$, and cosine of the inclination angle \f$ \cos{\iota} \f$. Or, more generally for
+ * emission from \f$l=2\f$ and \f$m=1,2\f$ instead of \f$ h_0 \f$ and \f$ \phi_0 \f$ there can be complex amplitude and
+ * phase parameters \f$C_{22}\f$, \f$C_{21}\f$, \f$\phi_{22}\f$ and \f$\phi_{21}\f$.
  *
  * Note: These should be increased if additional model parameters are added.
  */
@@ -142,7 +141,7 @@ extern "C" {
 /** A list of the amplitude parameters. The names given here are those that are
  * recognised within the code. */
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi",
-"cosiota", "I31", "I21", "lambda", "costheta" };
+"cosiota", "C22", "C21", "phi22", "phi21" };
 
 /** A list of the frequency parameters. The names given here are those that are
  * recognised within the code. */
@@ -187,21 +186,15 @@ void setupFromParFile( LALInferenceRunState *runState );
 
 void setupLookupTables(LALInferenceRunState *runState, LALSource *source);
 
-void add_initial_variables( LALInferenceVariables *ini, 
-                            LALInferenceVariables *scaleFac,
-                            LALInferenceVariables *priorArgs, 
-                            BinaryPulsarParams pars ); 
-  
-void add_variable_scale_prior( LALInferenceVariables *var, 
-                               LALInferenceVariables *scale, 
-                               LALInferenceVariables *prior, const char *name, 
-                               REAL8 value, REAL8 sigma );
+void add_initial_variables( LALInferenceVariables *ini, LALInferenceVariables *scaleFac, BinaryPulsarParams pars );
+
+void add_variable_scale( LALInferenceVariables *var, LALInferenceVariables *scale, const char *name, REAL8 value );
 
 void initialisePrior( LALInferenceRunState *runState );
 
 void initialiseProposal( LALInferenceRunState *runState );
 
-void add_correlation_matrix( LALInferenceVariables *ini, 
+void add_correlation_matrix( LALInferenceVariables *ini,
                              LALInferenceVariables *priors, REAL8Array *corMat,
                              LALStringVector *parMat );
 
@@ -211,8 +204,7 @@ void injectSignal( LALInferenceRunState *runState );
 /* helper functions */
 UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax );
 
-UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, 
-                           INT4 chunkMax );
+UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkMax );
 
 COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data );
 
@@ -244,12 +236,6 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
                                               CHAR *tfile,
                                               BinaryPulsarParams pulsar,
                                               INT4 gpsstart, INT4 gpsend );
-
-void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime,
-                         REAL8 *psiprime );
-
-void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime,
-                                 REAL8 *phi0, REAL8 *psi );
 
 void samples_prior( LALInferenceRunState *runState );
 

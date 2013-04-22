@@ -215,7 +215,7 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
     }
   if ( (metricType == METRIC_TYPE_PHASE) || (metricType == METRIC_TYPE_ALL) )
     {
-      if ( metricParams->detMotionType == DETMOTION_ORBIT_SPINXY )
+      if ( metricParams->detMotionType == DETMOTION_SPINXY_ORBIT )
         {
           XLAL_CHECK_NULL ( XLALFlatMetricCW ( metric->g_ij, config.refTime, config.startTime, duration, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
@@ -757,8 +757,8 @@ InitCode ( ConfigVariables *cfg,
       break;
 
     case DETMOTION_PTOLEORBIT:
-    case DETMOTION_ORBIT_SPINZ:
-    case DETMOTION_ORBIT_SPINXY:
+    case DETMOTION_SPINZ_ORBIT:
+    case DETMOTION_SPINXY_ORBIT:
       XLAL_ERROR ( XLAL_EDOM, "Can't deal with detMotionType = %d, not analog exists for XLALOldDopplerFstatMetric()\n", metricParams->detMotionType );
       break;
 

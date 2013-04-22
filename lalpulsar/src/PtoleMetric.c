@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdlib.h>
 #include <gsl/gsl_matrix.h>
@@ -114,7 +113,7 @@ void LALPtoleMetric( LALStatus *status,
   REAL8 cos_d, sin_d, sin_2d;  /* Trig fns for source declination */
   REAL8 A[22];     /* Array of intermediate quantities */
   REAL8 B[10];     /* Array of intermediate quantities */
-  REAL8 I[5];      /* Array of integrals needed for spindown.*/
+  REAL8 Is[5];      /* Array of integrals needed for spindown.*/
   UINT2 dim;         /* Dimension of parameter space */
   PulsarTimesParamStruc zero_phases; /* Needed to calculate phases of spin*/
   /* and orbit at t_gps =0             */
@@ -409,17 +408,17 @@ void LALPtoleMetric( LALStatus *status,
 
   /* orbital t^2 cos */
 
-  I[1] = (2*sin(phi_o_i) + 2*omega_o*T*cos_p_o + (-2 + pow(omega_o*T,2))*sin_p_o)/pow(omega_o*T,3);
+  Is[1] = (2*sin(phi_o_i) + 2*omega_o*T*cos_p_o + (-2 + pow(omega_o*T,2))*sin_p_o)/pow(omega_o*T,3);
 
   /* spin t^2 cos */
-  I[2] = (2*sin(phi_s_i) + 2*omega_s*T*cos_p_s + (-2 + pow(omega_s*T,2))*sin_p_s)/pow(omega_s*T,3);
+  Is[2] = (2*sin(phi_s_i) + 2*omega_s*T*cos_p_s + (-2 + pow(omega_s*T,2))*sin_p_s)/pow(omega_s*T,3);
 
   /* orbital t^2 sin */
-  I[3] = (-2*cos(phi_o_i) + 2*omega_o*T*sin_p_o - (-2 + pow(omega_o*T,2))*cos_p_o)/pow(omega_o*T,3);
+  Is[3] = (-2*cos(phi_o_i) + 2*omega_o*T*sin_p_o - (-2 + pow(omega_o*T,2))*cos_p_o)/pow(omega_o*T,3);
 
   /*spin t^2 sin */
 
-  I[4] = (-2*cos(phi_s_i) + 2*omega_s*T*sin_p_s - (-2 + pow(omega_s*T,2))*cos_p_s)/pow(omega_s*T,3);
+  Is[4] = (-2*cos(phi_s_i) + 2*omega_s*T*sin_p_s - (-2 + pow(omega_s*T,2))*cos_p_s)/pow(omega_s*T,3);
 
 
 
@@ -479,10 +478,10 @@ void LALPtoleMetric( LALStatus *status,
       T*pow(LAL_PI*T,2)*f/2;
 
     /* g_a1 = */
-    big_metric->data[12] = T*2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*I[1] + R_s*cos_l*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));
+    big_metric->data[12] = T*2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*Is[1] + R_s*cos_l*Is[2])+ cos_d*cos_a*(R_o*cos_i*Is[3] + R_s*cos_l*Is[4]));
 
     /* g_d1 = */
-    big_metric->data[13] = T*2*pow(LAL_PI*f,2)*T*(-sin_d*cos_a*(R_o*I[1] + R_s*cos_l*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l/3));
+    big_metric->data[13] = T*2*pow(LAL_PI*f,2)*T*(-sin_d*cos_a*(R_o*Is[1] + R_s*cos_l*Is[2])- sin_d*sin_a*(R_o*cos_i*Is[3] + R_s*cos_l*Is[4]) + cos_d*(R_o*sin_i*Is[3] + R_s*sin_l/3));
 
     /* g_11 = */
     big_metric->data[14] = T*T*pow(LAL_PI*f*T,2)/5;

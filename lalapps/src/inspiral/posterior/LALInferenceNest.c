@@ -68,6 +68,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
 	char help[]="\
 Initialisation arguments:\n\
+(--verbose [N])\tOutput more info. N=1: errors, N=2 (default): warnings, N=3: info \n\
 (--randomseed seed           Random seed for Nested Sampling)\n\n";
 	LALInferenceRunState *irs=NULL;
 	LALInferenceIFOData *ifoPtr, *ifoListStart;
@@ -76,10 +77,47 @@ Initialisation arguments:\n\
 	struct timeval tv;
 	FILE *devrandom;
 	
-	irs = calloc(1, sizeof(LALInferenceRunState));
+	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
 	/* read data from files: */
 	fprintf(stdout, " readData(): started.\n");
 	irs->commandLine=commandLine;
+	
+	/* Initialise parameters structure */
+	irs->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+	irs->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+	irs->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+	
+	INT4 verbose=0;
+	INT4 x=0;
+	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
+	if(ppt) {
+	  if(ppt->value){
+	    x=atoi(ppt->value);
+	    switch(x){
+	     case 0:
+	       verbose=LALNDEBUG; /* Nothing */
+	       break;
+	     case 1:
+	       verbose=LALMSGLVL1; /* Only errors */
+	       break;
+	     case 2:
+	       verbose=LALMSGLVL2; /* Errors and warnings */
+	       break;
+	     case 3:
+	       verbose=LALMSGLVL3; /* Errors, warnings and info */
+	       break;
+	     default:
+	       verbose=LALMSGLVL2;
+	       break;
+	   }
+	  }
+	  else verbose=LALMSGLVL2; /* Errors and warnings */
+	  LALInferenceAddVariable(irs->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
+				  LALINFERENCE_PARAM_FIXED);		
+	}
+	if(verbose) lalDebugLevel=verbose;
+	else set_debug_level("NDEBUG");
+	
 	irs->data = LALInferenceReadData(commandLine);
 	/* (this will already initialise each LALIFOData's following elements:  */
         ppt=LALInferenceGetProcParamVal(commandLine,"--help");
@@ -143,7 +181,7 @@ Initialisation arguments:\n\
 																			 ifoPtr->freqData->deltaF,
 																			 &lalDimensionlessUnit,
 																			 ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
+				ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
 			}
 			ifoPtr = ifoPtr->next;
 		}
@@ -199,7 +237,6 @@ Nested sampling arguments:\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
-(--verbose)\tProduce progress information\n\
 (--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
 (--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
 (--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
@@ -219,13 +256,10 @@ Nested sampling arguments:\n\
 		return;
 	}
 
-	INT4 verbose=0,tmpi=0,randomseed=0;
+	INT4 tmpi=0,randomseed=0;
 	REAL8 tmp=0;
 	
-	/* Initialise parameters structure */
-	runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-	runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
-	runState->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+
 	
 	/* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
@@ -261,7 +295,11 @@ Nested sampling arguments:\n\
                 runState->likelihood=&LALInferenceRosenbrockLogLikelihood;
                 runState->prior=LALInferenceAnalyticNullPrior;
         }
-
+    /* Marginalise over phase */
+    if(LALInferenceGetProcParamVal(commandLine,"--margphi")){
+      printf("Using Marginalise Phase Likelihood\n");
+      runState->likelihood=&LALInferenceMarginalisedPhaseLogLikelihood;
+    }
 //	if(LALInferenceGetProcParamVal(commandLine,"--tdlike")){
 //		fprintf(stderr, "Computing likelihood in the time domain.\n");
 //		runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
@@ -273,14 +311,7 @@ Nested sampling arguments:\n\
 	runState->logsample=LogNSSampleAsMCMCSampleToFile;
 	#endif
 	
-	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
-	if(ppt) {
-		verbose=1;
-		LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
-					LALINFERENCE_PARAM_FIXED);		
-	}
-	if(verbose) set_debug_level("ERROR|INFO");
-	else set_debug_level("NDEBUG");
+	
 		
 	printf("set number of live points.\n");
 	/* Number of live points */
@@ -423,23 +454,25 @@ Arguments for each section follow:\n\n";
 	/* And allocating memory */
 	state = initialize(procParams);
 	
-	/* Set template function */
-	LALInferenceInitCBCTemplate(state);
-	
 	/* Set up structures for nested sampling */
 	initializeNS(state);
+	
+	/* Set template function */
+	LALInferenceInitCBCTemplate(state);
 
 	/* Set up currentParams with variables to be used */
 	/* Review task needs special priors */
+	LALInferenceInitVariablesFunction initVarsFunc=NULL;
 	if(LALInferenceGetProcParamVal(procParams,"--correlatedgaussianlikelihood"))
-		LALInferenceInitVariablesReviewEvidence(state);
+		initVarsFunc=&LALInferenceInitVariablesReviewEvidence;
         else if(LALInferenceGetProcParamVal(procParams,"--bimodalgaussianlikelihood"))
-                LALInferenceInitVariablesReviewEvidence_bimod(state);
+                initVarsFunc=&LALInferenceInitVariablesReviewEvidence_bimod;
         else if(LALInferenceGetProcParamVal(procParams,"--rosenbrocklikelihood"))
-                LALInferenceInitVariablesReviewEvidence_banana(state);
+                initVarsFunc=&LALInferenceInitVariablesReviewEvidence_banana;
 	else
-		LALInferenceInitCBCVariables(state);
-	
+		initVarsFunc=&LALInferenceInitCBCVariables;
+	state->initVariables=initVarsFunc;
+	initVarsFunc(state);
 	/* Check for student-t and apply */
 	initStudentt(state);
     
@@ -455,12 +488,13 @@ Arguments for each section follow:\n\n";
 
 	LALInferenceSetupDefaultNSProposal(state,state->currentParams);
 	
+	/* write injection with noise evidence information from algorithm */
+	LALInferencePrintInjectionSample(state);
 	
 	/* Call nested sampling algorithm */
 	state->algorithm(state);
 
-	/* write injection with noise evidence information from algorithm */
-    LALInferencePrintInjectionSample(state);
+	
 
 	/* end */
 	return(0);

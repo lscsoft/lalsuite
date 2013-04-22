@@ -88,34 +88,34 @@
 #define ACCEPTSUFFIX "accepted"
 #define PROPOSEDSUFFIX "proposed"
 
-extern const char *cycleArrayName;
-extern const char *cycleArrayLengthName;
-extern const char *cycleArrayCounterName;
+extern const char *const cycleArrayName;
+extern const char *const cycleArrayLengthName;
+extern const char *const cycleArrayCounterName;
 
 
 /* Proposal Names */
-extern const char *singleAdaptProposalName;
-extern const char *singleProposalName;
-extern const char *orbitalPhaseJumpName;
-extern const char *inclinationDistanceName;
-extern const char *covarianceEigenvectorJumpName;
-extern const char *skyLocWanderJumpName;
-extern const char *differentialEvolutionFullName;
-extern const char *differentialEvolutionMassesName;
-extern const char *differentialEvolutionSpinsName;
-extern const char *differentialEvolutionExtrinsicName;
-extern const char *drawApproxPriorName;
-extern const char *skyReflectDetPlaneName;
-extern const char *rotateSpinsName;
-extern const char *polarizationPhaseJumpName;
-extern const char *distanceQuasiGibbsProposalName;
-extern const char *orbitalPhaseQuasiGibbsProposalName;
-extern const char *extrinsicParamProposalName;
-extern const char *KDNeighborhoodProposalName;
+extern const char *const singleAdaptProposalName;
+extern const char *const singleProposalName;
+extern const char *const orbitalPhaseJumpName;
+extern const char *const inclinationDistanceName;
+extern const char *const covarianceEigenvectorJumpName;
+extern const char *const skyLocWanderJumpName;
+extern const char *const differentialEvolutionFullName;
+extern const char *const differentialEvolutionMassesName;
+extern const char *const differentialEvolutionSpinsName;
+extern const char *const differentialEvolutionExtrinsicName;
+extern const char *const drawApproxPriorName;
+extern const char *const skyReflectDetPlaneName;
+extern const char *const rotateSpinsName;
+extern const char *const polarizationPhaseJumpName;
+extern const char *const distanceQuasiGibbsProposalName;
+extern const char *const orbitalPhaseQuasiGibbsProposalName;
+extern const char *const extrinsicParamProposalName;
+extern const char *const KDNeighborhoodProposalName;
 
 /** The name of the variable that will store the name of the current
     proposal function. */
-extern const char *LALInferenceCurrentProposalName;
+extern const char *const LALInferenceCurrentProposalName;
 
 /** Adds \a weight copies of the proposal \a prop to the end of the
     proposal cycle. 
@@ -124,7 +124,7 @@ extern const char *LALInferenceCurrentProposalName;
     LALInferenceRandomizeProposalCycle() to randomize the order of
     sub-proposal application. */
 void
-LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction *prop, UINT4 weight);
+LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction prop, UINT4 weight);
 
 /** Randomizes the order of the proposals in the proposal cycle. */
 void 
@@ -141,7 +141,7 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState);
 /** A reasonable default proposal.  Uses adaptation if the --adapt
     command-line flag active. */
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-void LALInferencetempProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+/* void LALInferencetempProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
 
 /** Proposal for rapid sky localization.  Used when --rapidSkyLoc
     is specified. */
@@ -181,8 +181,8 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
 /** Jump around by 0.01 radians in angle on the sky */
 void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-void LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-void LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+/* void LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
+/* void LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
 
 /** Differential evolution, on all non-fixed, non-output parameters. */
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
@@ -202,6 +202,7 @@ void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LAL
 
 /** Perform a differential evolution step on only the spin variables. */
 void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+void LALInferenceDifferentialEvolutionPhysicalSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /** Draws from an approximation to the true prior.  Flat in all
     variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
@@ -219,6 +220,8 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
 /* Nested sampling wrappers. */
 void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs);
 void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Rotate each spin by random angles about L. */
 void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);

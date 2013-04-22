@@ -18,7 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 /*---------- INCLUDES ----------*/
 #include <config.h>
 #include <lal/SFTfileIO.h>
@@ -88,28 +87,27 @@ do {                                                                 \
 
 #define SHOULD_FAIL( func, statusptr )							\
 do { 											\
-  xlalErrno = 0;							                \
   if ( func, ! (statusptr)->statusCode ) {						\
     ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
           "Function call '" #func "' should have failed for this SFT but didn't!\n");	\
     return SFTFILEIOTESTC_ESUB;   			                               	\
    }											\
+  else   xlalErrno = 0;							                \
 } while(0)
 
 #define SHOULD_FAIL_WITH_CODE( func, statusptr, code )					\
 do { 											\
-  xlalErrno = 0;							                \
   if ( func, (statusptr)->statusCode != code) {						\
     XLALPrintError( "Function call '" #func "' should have failed with code " #code ", but returned %d instead.\n",	\
 		   (statusptr)->statusCode );						\
     return SFTFILEIOTESTC_ESUB;   			                               	\
    }											\
+  else   xlalErrno = 0;							                \
 } while(0)
 
 
 #define SHOULD_WORK( func, statusptr )							\
 do { 											\
-  xlalErrno = 0;							                \
   if ( func, (statusptr)->statusCode ) {						\
     ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
           "Function call '" #func "' failed but should have worked for this SFT!");	\
@@ -172,8 +170,8 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
       return(-1);
     }
     for(bin=0; bin < sft1.data->length; bin++) {
-      if((sft1.data->data[bin].re != sft2.data->data[bin].re) ||
-	 (sft1.data->data[bin].im != sft2.data->data[bin].im)) {
+      if((crealf(sft1.data->data[bin]) != crealf(sft2.data->data[bin])) ||
+	 (cimagf(sft1.data->data[bin]) != cimagf(sft2.data->data[bin]))) {
 	XLALPrintError ( "CompareSFTVectors(): bins %u of SFT#%u differ!\n", sft, bin);
 	return(-1);
       }
@@ -200,31 +198,31 @@ int main(int argc, char *argv[])
   REAL8 fMin = 1008.5;
   REAL8 fMax = 1009.1;
 
-  lalDebugLevel = 0;
+  lalDebugLevel = 3;
 
   if ( argc == 1)	/* avoid warning */
     argc = 1;
 
   /* check that mal-formated SFTs are properly detected */
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad1", NULL ), &status, SFTFILEIO_EMERGEDSFT );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad2", NULL ), &status, SFTFILEIO_EMERGEDSFT );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad3", NULL ), &status, SFTFILEIO_EMERGEDSFT );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad4", NULL ), &status, SFTFILEIO_EMERGEDSFT );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad5", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad1", NULL ), &status);
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad2", NULL ), &status);
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad3", NULL ), &status);
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad4", NULL ), &status);
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad5", NULL ), &status);
 
   /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is
    * not checked in LALSFTdataFind, so it should succeed! */
   SHOULD_WORK( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad6", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad7", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad8", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad9", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad10", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad11", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad12", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad13", NULL ), &status, SFTFILEIO_EHEADER );
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad14", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad7", NULL ), &status);
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad8", NULL ), &status);
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad9", NULL ), &status);
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad10", NULL ), &status );
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad11", NULL ), &status );
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad12", NULL ), &status );
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad13", NULL ), &status );
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-bad14", NULL ), &status );
 
   /* now check some crc-checksums */
   SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, DATADIR "SFT-test1", NULL ), &status );
@@ -257,7 +255,7 @@ int main(int argc, char *argv[])
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* now completely read-in a v2 merged-SFT */
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test*", NULL ), &status,  SFTFILEIO_EDIFFTSFT );
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test*", NULL ), &status );
   /* skip sft nr 4 with has Tsft=50 instead of Tsft=60 */
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, DATADIR "SFT-test[123567]*", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
@@ -396,7 +394,7 @@ int main(int argc, char *argv[])
   SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect2 ), &status );
 
   /* ----- read the previous two SFTs back */
-  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status, SFTFILEIO_EDETECTOR );
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status );
   /* need to set proper detector! */
   constraints.detector = detector;
   SUB ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", &constraints ), &status);
@@ -430,7 +428,7 @@ int main(int argc, char *argv[])
 	COMPLEX8 *data1 = &(sft_vect->data[0].data->data[i]);
 	COMPLEX8 *data2 = &(sft_vect->data[1].data->data[i]);
 
-	if ( (data1->re != data2->re) || (data1->im != data2->im) )
+	if ( (crealf(*data1) != crealf(*data2)) || (cimagf(*data1) != cimagf(*data2)) )
 	  {
 	    XLALPrintError ("\nv1- and v2- SFT differ after writing/reading\n\n");
 	    return SFTFILEIOTESTC_ESFTDIFF;

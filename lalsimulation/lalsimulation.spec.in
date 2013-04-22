@@ -73,6 +73,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/*.so*
 %{_sysconfdir}/*
 %{_bindir}/lalsim*
+%{_datarootdir}/lalsimulation/LIGO-T0900288-v3*
 
 %files devel
 %defattr(-,root,root)

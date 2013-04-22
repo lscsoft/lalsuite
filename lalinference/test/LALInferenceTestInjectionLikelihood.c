@@ -30,7 +30,7 @@ Initialisation arguments:\n\
 	struct timeval tv;
 	FILE *devrandom;
 	
-	irs = calloc(1, sizeof(LALInferenceRunState));
+	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
 	/* read data from files: */
 	fprintf(stdout, " readData(): started.\n");
 	irs->commandLine=commandLine;
@@ -97,7 +97,7 @@ Initialisation arguments:\n\
 																			 ifoPtr->freqData->deltaF,
 																			 &lalDimensionlessUnit,
 																			 ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
+				ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
 			}
 			ifoPtr = ifoPtr->next;
 		}
@@ -149,7 +149,7 @@ void initializeTemplate(LALInferenceRunState *runState)
 		return;
 	}
 	/* This is the LAL template generator for inspiral signals */
-	runState->template=&LALInferenceTemplateLAL;
+	runState->templt=&LALInferenceTemplateLAL;
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
 	if(ppt) {
 		if(!strcmp("LALSTPN",ppt->value)){
@@ -157,15 +157,15 @@ void initializeTemplate(LALInferenceRunState *runState)
 			exit(1);
 		}
 		else if(!strcmp("PhenSpin",ppt->value))
-			runState->template=&LALInferenceTemplatePSTRD;
+			runState->templt=&LALInferenceTemplatePSTRD;
 		else if(!strcmp("LALGenerateInspiral",ppt->value))
-			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+			runState->templt=&LALInferenceTemplateLALGenerateInspiral;
 		else if(!strcmp("SpinTaylor",ppt->value))
-			runState->template=&LALInferenceTemplateLALGenerateInspiral;
+			runState->templt=&LALInferenceTemplateLALGenerateInspiral;
 		else if(!strcmp("LAL",ppt->value))
-			runState->template=&LALInferenceTemplateLAL;
+			runState->templt=&LALInferenceTemplateLAL;
         else if(!strcmp("LALSim",ppt->value))
-            runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
+            runState->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
 		else {
 			XLALPrintError("Error: unknown template %s\n",ppt->value);
 			XLALPrintError(help);
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 		exit(0);
         }
  initializeTemplate(state);
- state->currentParams=calloc(1,sizeof(LALInferenceVariables));
+ state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
  state->prior=&LALInferenceAnalyticNullPrior;
  state->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
  LALInferencePrintInjectionSample(state);

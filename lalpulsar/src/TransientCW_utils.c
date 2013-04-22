@@ -738,11 +738,11 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
                   Bd += thisAtom_i->b2_alpha;
                   Cd += thisAtom_i->ab_alpha;
 
-                  Fa_re += thisAtom_i->Fa_alpha.re;
-                  Fa_im += thisAtom_i->Fa_alpha.im;
+                  Fa_re += crealf(thisAtom_i->Fa_alpha);
+                  Fa_im += cimagf(thisAtom_i->Fa_alpha);
 
-                  Fb_re += thisAtom_i->Fb_alpha.re;
-                  Fb_im += thisAtom_i->Fb_alpha.im;
+                  Fb_re += crealf(thisAtom_i->Fb_alpha);
+                  Fb_im += cimagf(thisAtom_i->Fb_alpha);
 
                 } /* for i = i_t1_last : i_t1 */
 
@@ -768,11 +768,11 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
                   Bd += thisAtom_i->b2_alpha * win2_i;
                   Cd += thisAtom_i->ab_alpha * win2_i;
 
-                  Fa_re += thisAtom_i->Fa_alpha.re * win_i;
-                  Fa_im += thisAtom_i->Fa_alpha.im * win_i;
+                  Fa_re += crealf(thisAtom_i->Fa_alpha) * win_i;
+                  Fa_im += cimagf(thisAtom_i->Fa_alpha) * win_i;
 
-                  Fb_re += thisAtom_i->Fb_alpha.re * win_i;
-                  Fb_im += thisAtom_i->Fb_alpha.im * win_i;
+                  Fb_re += crealf(thisAtom_i->Fb_alpha) * win_i;
+                  Fb_im += cimagf(thisAtom_i->Fb_alpha) * win_i;
 
                 } /* for i in [i_t0, i_t1] */
               break;
@@ -900,10 +900,10 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
           destAtom->a2_alpha += atom_X_i->a2_alpha;
           destAtom->b2_alpha += atom_X_i->b2_alpha;
           destAtom->ab_alpha += atom_X_i->ab_alpha;
-          destAtom->Fa_alpha.re += atom_X_i->Fa_alpha.re;
-          destAtom->Fa_alpha.im += atom_X_i->Fa_alpha.im;
-          destAtom->Fb_alpha.re += atom_X_i->Fb_alpha.re;
-          destAtom->Fb_alpha.im += atom_X_i->Fb_alpha.im;
+          destAtom->Fa_alpha.realf_FIXME += crealf(atom_X_i->Fa_alpha);
+          destAtom->Fa_alpha.imagf_FIXME += cimagf(atom_X_i->Fa_alpha);
+          destAtom->Fb_alpha.realf_FIXME += crealf(atom_X_i->Fb_alpha);
+          destAtom->Fb_alpha.imagf_FIXME += cimagf(atom_X_i->Fb_alpha);
 
         } /* for i < numAtomsX */
     } /* for X < numDet */
@@ -983,8 +983,8 @@ write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
 		    thisAtom->a2_alpha,
 		    thisAtom->b2_alpha,
 		    thisAtom->ab_alpha,
-		    thisAtom->Fa_alpha.re, thisAtom->Fa_alpha.im,
-		    thisAtom->Fb_alpha.re, thisAtom->Fb_alpha.im
+		    crealf(thisAtom->Fa_alpha), cimagf(thisAtom->Fa_alpha),
+		    crealf(thisAtom->Fb_alpha), cimagf(thisAtom->Fb_alpha)
 		    );
 	} /* for alpha < numSFTs */
     } /* for X < numDet */

@@ -130,8 +130,8 @@ static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *a
     bankVetoData->spec = XLALCreateREAL4Vector(templateLength);
     for (sampleIndex = 0; sampleIndex < templateLength; sampleIndex++)
     {
-	bankVetoData->resp->data[sampleIndex].re = 1;
-	bankVetoData->resp->data[sampleIndex].im = 0;
+	bankVetoData->resp->data[sampleIndex].realf_FIXME = 1;
+	bankVetoData->resp->data[sampleIndex].imagf_FIXME = 0;
 	bankVetoData->spec->data[sampleIndex] = 1;
 	ampVec->data[sampleIndex] = 1;
     }
@@ -174,9 +174,9 @@ static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4
 	for (sampleIndex = 0; sampleIndex < templateLength; sampleIndex++)
 	{
 	    phase = 2*LAL_PI*( (REAL4) (templateIndex*sampleIndex) ) / ( (REAL4) templateLength );
-	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].re =
+	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].realf_FIXME =
 	      cos(phase);
-	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].im =
+	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].imagf_FIXME =
 	      sin(phase);
 	}
 	bankVetoData->fcInputArray[templateIndex]->fcTmplt->tmplt.fFinal =
@@ -245,11 +245,11 @@ static int checkCCmatForErrors(COMPLEX8Vector *ccMat,REAL4Vector *timeshift,REAL
 				      : 0.0 );
 
 	    /* real part will be 1 or 0 */
-	    if ( fabs(expectedValue - ccMat->data[row*timeshift->length+col].re) > tolerance)
+	    if ( fabs(expectedValue - crealf(ccMat->data[row*timeshift->length+col])) > tolerance)
 		return 1;
 
 	    /* imaginary part should always be zero */
-	    if ( fabs( ccMat->data[row*timeshift->length+col].im) > tolerance)
+	    if ( fabs( cimagf(ccMat->data[row*timeshift->length+col])) > tolerance)
 	      return 1;
 
 	}
@@ -274,7 +274,7 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFile
     {
 	for ( col = 0; col < subBankSize; col++ )
 	{
-	    fprintf(fdOut,"%.8f\t",ccmat->data[row*subBankSize+col].re);
+	    fprintf(fdOut,"%.8f\t",crealf(ccmat->data[row*subBankSize+col]));
 	}
 	fprintf(fdOut,"\n");
     }
@@ -285,7 +285,7 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFile
     {
 	for ( col = 0; col < subBankSize; col++ )
 	{
-	    fprintf(fdOut,"%.8f\t",ccmat->data[row*subBankSize+col].im);
+	    fprintf(fdOut,"%.8f\t",cimagf(ccmat->data[row*subBankSize+col]));
 	}
 	fprintf(fdOut,"\n");
     }

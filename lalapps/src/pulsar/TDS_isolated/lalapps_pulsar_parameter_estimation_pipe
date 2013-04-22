@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
   lalapps_pulsar_parameter_estimation -- pipeline for creating Condor DAG to
                                          perform pulsar parameter estimation

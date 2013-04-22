@@ -129,8 +129,8 @@ typedef struct
 {
   BOOLEAN help;
 
-  LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
-  LALStringVector* IFOweights; /**< list of relative detector-weights "w1, w2, w3, .." */
+  LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
+  LALStringVector *sqrtSX; 	/**< (string-) list of per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$ */
 
   REAL8 Freq;		/**< target-frequency */
   REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
@@ -201,7 +201,7 @@ main(int argc, char *argv[])
   UserVariables_t uvar = empty_UserVariables;
   DopplerMetricParams metricParams = empty_DopplerMetricParams;
 
-  lalDebugLevel = 0;
+  lalDebugLevel = 1;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -317,7 +317,7 @@ initUserVars (UserVariables_t *uvar)
   /* set a few defaults */
   uvar->help = FALSE;
 
-#define EPHEM_YEAR  "00-04"
+#define EPHEM_YEAR  "00-19-DE405"
   uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1);
   strcpy (uvar->ephemYear, EPHEM_YEAR);
 
@@ -341,7 +341,7 @@ initUserVars (UserVariables_t *uvar)
     XLAL_ERROR ( XLAL_ENOMEM );
   }
 
-  uvar->IFOweights = NULL;
+  uvar->sqrtSX = NULL;
 
   uvar->detMotionType = DETMOTION_SPIN_ORBIT;
   uvar->metricType = 0;	/* by default: compute only phase metric */
@@ -356,10 +356,10 @@ initUserVars (UserVariables_t *uvar)
   /* register all our user-variables */
 
   XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
-  XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-  XLALregLISTUserStruct(IFOweights,	 0,  UVAR_OPTIONAL, 	"Comma-separated list of relative noise-weights, eg. \"w1,w2,w3,..\" ");
-  XLALregREALUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
-  XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
+  XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  XLALregLISTUserStruct(sqrtSX,	 	 0,  UVAR_OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
+  XLALregREALUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"Equatorial Right-ascension (RA) Alpha in radians");
+  XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"Equatorial Declination (DEC) Delta in radians");
   XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
   XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");
@@ -417,7 +417,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   }
   LIGOTimeGPS startTimeGPS;
   REAL8 duration;
-  if ( manualSegments )
+  if ( uvar->segmentList == NULL )
     {
       XLAL_CHECK ( uvar->Nseg >= 1, XLAL_EDOM, "Invalid input --Nseg=%d: number of segments must be >= 1\n", uvar->Nseg );
       XLAL_CHECK ( uvar->duration >= 1, XLAL_EDOM, "Invalid input --duration=%f: duration must be >= 1 s\n", uvar->duration );
@@ -476,28 +476,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   }
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
-  {
-    UINT4 numDet = uvar->IFOs->length;
-
-    if ( numDet > DOPPLERMETRIC_MAX_DETECTORS ) {
-      LogPrintf (LOG_CRITICAL, "%s: More detectors (%d) specified than allowed (%d)\n", __func__, numDet, DOPPLERMETRIC_MAX_DETECTORS );
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-    if ( uvar->IFOweights && (uvar->IFOweights->length != numDet ) )
-      {
-	LogPrintf (LOG_CRITICAL, "%s: number of IFOweights (%d) must agree with the number of IFOs (%d)!\n\n",
-		   __func__, uvar->IFOweights->length, numDet );
-	XLAL_ERROR ( XLAL_EINVAL );
-      }
-
-    cfg->detInfo = empty_MultiDetectorInfo;
-    if ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->IFOweights ) != XLAL_SUCCESS ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALParseMultiDetectorInfo() failed to parse detector names and/or weights. errno = %d.\n\n", __func__, xlalErrno);
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
-
-  } /* handle detector input */
-
+  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- translate coordinate system into internal representation ---------- */
   if ( XLALDopplerCoordinateNames2System ( &cfg->coordSys, uvar->coords ) ) {

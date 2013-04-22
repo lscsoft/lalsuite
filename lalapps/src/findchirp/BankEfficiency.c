@@ -3753,6 +3753,12 @@ void BankEfficiencyAscii2Xml(void)
           inputData->Gamma[7],
           inputData->Gamma[8],
           inputData->Gamma[9],
+          inputData->spin1x,
+          inputData->spin1y,
+          inputData->spin1z,
+          inputData->spin2x,
+          inputData->spin2y,
+          inputData->spin2z,
           id);
       inputData = inputData->next;
       fprintf(output, "\n");

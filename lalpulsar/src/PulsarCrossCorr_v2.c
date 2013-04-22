@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 John Whelan, Shane Larson and Badri Krishnan
+ *  Copyright (C) 2012, 2013 John Whelan, Shane Larson and Badri Krishnan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,27 +30,23 @@ int XLALGetDopplerShiftedFrequencyInfo
    REAL8Vector         *kappaValues,  /**< Output list of bin offsets */
    UINT4               numBins,       /**< Number of frequency bins to use */
    PulsarDopplerParams *dopp,         /**< Doppler parameters for signal */
-   LIGOTimeGPSVector   *timestamps,   /**< List of SFT timestamps */
-   REAL8VectorSequence *vByC          /**< List of dimensionless detector velocities*/
+   SFTIndexList        *sfts,         /**< List of indices for SFTs */
+   MultiSSBtimes       *multiTimes,   /**< SSB or Binary times */
+   REAL8               Tsft           /**< SFT duration */
   )
 {
   UINT8 numSFTs;
   UINT8 indI;
-  REAL8 khat[3];
   UINT4 k;
   REAL8 timeDiff, factor, fhat;
+  SFTIndex sftInd;
+  SSBtimes *times;
 
-  numSFTs = timestamps->length;
+  numSFTs = sfts->length;
   if ( shiftedFreqs->length !=numSFTs
        || lowestBins->length !=numSFTs
-       || kappaValues->length !=numSFTs
-       || vByC->length !=numSFTs ) {
+       || kappaValues->length !=numSFTs ) {
     XLALPrintError("Lengths of SFT-indexed lists don't match!");
-    XLAL_ERROR(XLAL_EBADLEN );
-  }
-
-  if ( vByC->vectorLength != 3 ) {
-    XLALPrintError("Velocity vector must be three-dimensional!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
 
@@ -59,38 +55,26 @@ int XLALGetDopplerShiftedFrequencyInfo
     XLAL_ERROR(XLAL_EBADLEN );
   }
 
-  if ( dopp->orbit ) {
-    XLALPrintError("Doppler shifting for binary orbit not yet implemented!");
-    XLAL_ERROR(XLAL_EINVAL);
-   
-  }
-
-  /* unit vector along wave propagation direction */
-  khat[0] = - cos(dopp->Delta) * cos(dopp->Alpha);
-  khat[1] = - cos(dopp->Delta) * sin(dopp->Alpha);
-  khat[2] = - sin(dopp->Delta);
-
   /* now calculate the intrinsic signal frequency in the SFT */
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
 
   /* this is the sft reference time  - the pulsar reference time */
   for (indI=0; indI < numSFTs; indI++) {
-    timeDiff = XLALGPSDiff( &(timestamps->data[indI]), &(dopp->refTime));
+    sftInd = sfts->data[indI];
+    times = multiTimes->data[sftInd.detInd];
+    timeDiff = times->DeltaT->data[sftInd.sftInd]
+      + XLALGPSDiff( &(times->refTime), &(dopp->refTime));
     fhat = dopp->fkdot[0]; /* initialization */
     factor = 1.0;
     for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
       factor *= timeDiff / k;
       fhat += dopp->fkdot[k] * factor;
     }
-    factor = 1.;
-    for (k = 0; k < 3; k++) {
-      factor += khat[k] * vByC->data[indI*3+k];
-    }
-    shiftedFreqs->data[indI] = factor * fhat;
+    shiftedFreqs->data[indI] = fhat * times->Tdot->data[sftInd.sftInd];
     lowestBins->data[indI]
-      = ceil(shiftedFreqs->data[indI] * timestamps->deltaT - 0.5*numBins);
+      = ceil(shiftedFreqs->data[indI] * Tsft - 0.5*numBins);
     kappaValues->data[indI] = lowestBins->data[indI]
-      - shiftedFreqs->data[indI] * timestamps->deltaT;
+      - shiftedFreqs->data[indI] * Tsft;
   }
 
   return XLAL_SUCCESS;

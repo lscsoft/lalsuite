@@ -1,5 +1,85 @@
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "coh_PTF.h"
+
+INT4 coh_PTF_data_condition(
+              struct coh_PTF_params *params,
+              REAL4TimeSeries          **channel,
+              REAL4FrequencySeries     **invspec,
+              RingDataSegments         **segments,
+              REAL4FFTPlan             *fwdplan,
+              REAL4FFTPlan             *psdplan,
+              REAL4FFTPlan             *revplan,
+              REAL4                    **timeSlideVectorsP,
+              struct timeval           startTime
+)
+{
+  REAL4 *timeSlideVectors;
+  timeSlideVectors=LALCalloc(1, (LAL_NUM_IFO+1)*
+      params->numOverlapSegments*sizeof(REAL4));
+  memset(timeSlideVectors, 0,
+      (LAL_NUM_IFO+1) * params->numOverlapSegments * sizeof(REAL4));
+
+
+  UINT4 ifoNumber;
+  INT4 numSegments = -1;
+  /* loop over ifos */
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+
+    /* if ifo is on: */
+    if (params->haveTrig[ifoNumber])
+    {
+      /* Read in data from the various ifos */
+      channel[ifoNumber] = coh_PTF_get_data(params, params->channel[ifoNumber],
+                                            params->dataCache[ifoNumber],
+                                            ifoNumber);
+      coh_PTF_rescale_data(channel[ifoNumber], 1E20);
+
+      /* compute the spectrum */
+      invspec[ifoNumber] = coh_PTF_get_invspec(channel[ifoNumber], fwdplan,
+                                               revplan, psdplan, params);
+
+      /* create the segments */
+
+      segments[ifoNumber] = coh_PTF_get_segments(channel[ifoNumber],
+                                invspec[ifoNumber],fwdplan, ifoNumber,
+                                timeSlideVectors, params);
+
+      if (numSegments < 0)
+      {
+        if (segments[ifoNumber])
+        {
+          numSegments = segments[ifoNumber]->numSgmnt;
+        }
+        else
+        {
+          numSegments = 0;
+        }
+      }
+      else
+      {
+        if ( (! segments[ifoNumber]) )
+        {
+          if (numSegments != 0)
+          {
+            error("ERROR: Disagreement in number of segments in ifos.");
+          }
+        }
+        else if (numSegments != (INT4)segments[ifoNumber]->numSgmnt)
+        {
+          error("ERROR: Disagreement in number of segments in ifos.");
+        }
+      }
+
+      verbose("Created segments for one ifo %ld \n",
+               timeval_subtract(&startTime));
+    }
+  }
+  *timeSlideVectorsP = timeSlideVectors;
+  return numSegments;
+}
+
+
+
 
 /* gets the data, performs any injections, and conditions the data */
 REAL4TimeSeries *coh_PTF_get_data(
@@ -88,13 +168,63 @@ REAL4TimeSeries *coh_PTF_get_data(
   return channel;
 }
 
+void coh_PTF_setup_null_stream(
+    struct coh_PTF_params   *params,
+    REAL4TimeSeries         **channel,
+    REAL4FrequencySeries    **invspec,
+    RingDataSegments        **segments,
+    REAL4                   *Fplustrig,
+    REAL4                   *Fcrosstrig,
+    REAL4                   *timeOffsets,
+    REAL4FFTPlan            *fwdplan,
+    REAL4FFTPlan            *revplan,
+    REAL4FFTPlan            *psdplan,
+    REAL4                   *timeSlideVectors,
+    struct timeval           startTime
+)
+{
+  /* FIXME: The null stream probably will be broken by the timesliding stuff */
+  /* It may be worth deprecating this entirely, but if not then a timeslid */
+  /* null stream construction should be implemented. */
+  /* My vote is to deprecate the null stream. */
 
+  UINT4 ui;
+
+  /* Read in data from the various ifos */
+  if (coh_PTF_get_null_stream(params, channel, Fplustrig, Fcrosstrig,
+                                timeOffsets))
+  {
+    error("Null stream construction failure\n");
+  }
+
+  /* compute the spectrum */
+  invspec[LAL_NUM_IFO] = coh_PTF_get_invspec(channel[LAL_NUM_IFO], fwdplan,\
+                                            revplan, psdplan, params);
+  /* If white spectrum need to scale this. */
+  if (params->whiteSpectrum)
+  {
+    for(ui=0 ; ui < invspec[LAL_NUM_IFO]->data->length; ui++)
+    {
+      /* FIXME: The factor here is hardcoded and wrong. */
+      /* Should be dynamically calculated. */
+      invspec[LAL_NUM_IFO]->data->data[ui] *= pow(1./0.3403324,2);
+    }
+  }
+
+  /* create the segments */
+  segments[LAL_NUM_IFO] = coh_PTF_get_segments(channel[LAL_NUM_IFO],\
+                                        invspec[LAL_NUM_IFO],fwdplan,\
+                                        LAL_NUM_IFO,timeSlideVectors, params);
+
+  verbose("Created segments for null stream at %ld \n",
+          timeval_subtract(&startTime));
+}
 
 /* This function is used to generate the null stream */
 /* Be aware this is separate from the null SNR! */
 int coh_PTF_get_null_stream(
     struct coh_PTF_params *params,
-    REAL4TimeSeries *channel[LAL_NUM_IFO + 1],
+    REAL4TimeSeries **channel,
     REAL4 *Fplus,
     REAL4 *Fcross,
     REAL4 *timeOffsets )
@@ -128,10 +258,7 @@ int coh_PTF_get_null_stream(
 
   /* Determine time offset as number of data poitns */
   deltaT = channel[n[0]]->deltaT;
-  for (i = 0; i < LAL_NUM_IFO; i++ )
-  {
-    timeOffsetPoints[i]=(int)(timeOffsets[i]/deltaT);
-  }
+  coh_PTF_convert_time_offsets_to_points(params,timeOffsets,timeOffsetPoints);
 
   /* Initialise the null stream structures */
   series = LALCalloc( 1, sizeof( *series ) );
@@ -228,11 +355,9 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
           params->segmentDuration,params->simDataType, 1E-20);
   
       /* Need to convert to a REAL4 FrequencySeries */
-      UINT4 segmentLength = floor( params->segmentDuration/channel->deltaT\
-                                    + 0.5 );
       invspec = XLALCreateREAL4FrequencySeries("TEMP",&(channel->epoch),0,
           1.0/params->segmentDuration,&lalDimensionlessUnit,
-          segmentLength/2 + 1);
+          params->numFreqPoints);
       snprintf( invspec->name, sizeof( invspec->name),
           "%s_SPEC", channel->name);
       for ( k = 0; k < spectrum->data->length; ++k )
@@ -258,7 +383,7 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
 }
 
 /* Function to rescale the data to avoid floating point errors*/
-void coh_PTF_rescale_data (REAL4TimeSeries *channel,REAL8 rescaleFactor)
+void coh_PTF_rescale_data (REAL4TimeSeries *channel, REAL8 rescaleFactor)
 {
   UINT4 k;
   for ( k = 0; k < channel->data->length; ++k )
@@ -286,12 +411,13 @@ RingDataSegments *coh_PTF_get_segments(
 
   if ( params->analyzeInjSegsOnly )
   {
+    /* Figure out which segments the injections are in. If an injection is
+     * within 1s of a segment boundary, analyse both segments. */ 
     for ( i = 0 ; i < params->numOverlapSegments; i++)
       segListToDo[i] = 0;
     SimInspiralTable        *injectList = NULL;
     REAL8 deltaTime,segBoundDiff;
-    INT4 segNumber, UNUSED segLoc, UNUSED ninj;
-    segLoc = 0;
+    INT4 segNumber, UNUSED ninj;
     if (! params->injectList)
     {
       ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
@@ -303,16 +429,35 @@ RingDataSegments *coh_PTF_get_segments(
     }
     while (injectList)
     {
+      /* Calculate the epoch of the injection relative to the gps-start */
       deltaTime = injectList->geocent_end_time.gpsSeconds;
       deltaTime += injectList->geocent_end_time.gpsNanoSeconds * 1E-9;
       deltaTime -= params->startTime.gpsSeconds;
       deltaTime -= params->startTime.gpsNanoSeconds * 1E-9;
-      segNumber = floor(2*(deltaTime/params->segmentDuration) - 0.5);
-      segListToDo[segNumber] = 1;
+
+      /* Adjust to the epoch relative to the analysis start */
+      deltaTime -= params->analStartTime;
+    
+      /* And figure out the segment number */
+      segNumber = floor( deltaTime / params->strideDuration);
+      if (segNumber >= (INT4) params->numOverlapSegments)
+      {
+        verbose("Injection at %" LAL_INT8_FORMAT " after analysis window.\n",\
+                injectList->geocent_end_time.gpsSeconds);
+      }
+      else if (segNumber < 0)
+      {
+        verbose("Injection at %" LAL_INT8_FORMAT " before analysis window.\n",\
+                injectList->geocent_end_time.gpsSeconds);
+      }
+      else
+      {
+        segListToDo[segNumber] = 1;
+      }
       /* Check if injection is near a segment boundary */
       for ( j = 0 ; j < params->numOverlapSegments; j++)
       {
-        segBoundDiff = deltaTime - (j+0.5) * params->segmentDuration/2;
+        segBoundDiff = deltaTime - j * params->strideDuration/2;
         if (segBoundDiff > 0 && segBoundDiff < params->injSearchWindow)
         {
           if (j != 0)
@@ -377,7 +522,10 @@ RingDataSegments *coh_PTF_get_segments(
       }
 
     if ( ! count ) /* no segments to do */
+    {
+      LALFree(segments);
       return NULL;
+    }
 
     segments->numSgmnt = count;
     segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
@@ -399,7 +547,7 @@ RingDataSegments *coh_PTF_get_segments(
         {
           slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
           timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] =
-              ((INT4)slidSegNum-(INT4)sgmnt)*params->segmentDuration/2.;
+              ((INT4)slidSegNum-(INT4)sgmnt)*params->strideDuration;
           compute_data_segment( &segments->sgmnt[count++], slidSegNum, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
             fwdplan );
@@ -418,6 +566,1248 @@ RingDataSegments *coh_PTF_get_segments(
   return segments;
 }
 
+void coh_PTF_create_time_slide_table(
+  struct coh_PTF_params   *params,
+  INT8                    *slideIDList,
+  TimeSlide               **time_slide_headP,
+  REAL4                   *timeSlideVectors,
+  INT4                    numSegments
+)
+{
+  TimeSlide *time_slide_head;
+  TimeSlideVectorList timeSlideList[numSegments];
+  CHAR ifoName[LIGOMETA_IFO_MAX];
+  UINT4 slideCount = 0;
+  INT4 i;
+  UINT4 ui,uj,ifoNumber;
+
+  for (i = 0 ; i < numSegments ; i++)
+  {
+    UINT4 slideDuplicate = 0;
+    if (slideCount)
+    {
+      for (uj = 0; uj < slideCount; uj++)
+      {
+        UINT4 slideChecking = 1;
+        for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          if (params->haveTrig[ifoNumber])
+          {
+            if (timeSlideVectors[ifoNumber*params->numOverlapSegments+i] != \
+                timeSlideList[uj].timeSlideVectors[ifoNumber])
+            {
+              slideChecking = 0;
+            }
+          }
+        }
+        if (slideChecking)
+        {
+          slideDuplicate = 1;
+          slideIDList[i] = timeSlideList[uj].timeSlideID;
+        }
+      }
+    }
+    if (! slideDuplicate)
+    {
+      for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          timeSlideList[slideCount].timeSlideVectors[ifoNumber] = \
+              timeSlideVectors[ifoNumber*params->numOverlapSegments+i];
+        }
+      }
+      timeSlideList[slideCount].timeSlideID = slideCount;
+      slideIDList[i] = timeSlideList[slideCount].timeSlideID;
+      slideCount++;
+    }
+  }
+
+  time_slide_head=NULL;
+  TimeSlide *curr_slide = NULL;
+
+  for (ui = 0 ; ui < slideCount; ui++)
+  {
+    for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if (params->haveTrig[ifoNumber])
+      {
+        if (! time_slide_head)
+        {
+          time_slide_head=XLALCreateTimeSlide();
+          curr_slide= time_slide_head;
+        }
+        else
+        {
+          curr_slide->next=XLALCreateTimeSlide();
+          curr_slide = curr_slide->next;
+        }
+        curr_slide->time_slide_id = timeSlideList[ui].timeSlideID;
+        /* FIXME */
+        XLALReturnIFO(ifoName,ifoNumber);
+        strncpy(curr_slide->instrument,ifoName,sizeof(curr_slide->instrument)-1);
+        curr_slide->offset = timeSlideList[ui].timeSlideVectors[ifoNumber];
+        curr_slide->process_id=0;
+      }
+    }
+  }
+  *time_slide_headP = time_slide_head;
+}
+
+void coh_PTF_calculate_det_stuff(
+  struct coh_PTF_params   *params,
+  LALDetector             **detectors,
+  REAL4                   *timeOffsets,
+  REAL4                   *Fplustrig,
+  REAL4                   *Fcrosstrig,
+  CohPTFSkyPositions      *skyPoints,
+  UINT4                   skyPointNum
+)
+{
+  UINT4 ifoNumber,ui;
+  REAL8 FplusTmp,FcrossTmp;
+  REAL8 detLoc[3];
+
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (! detectors[ifoNumber])
+    {
+      detectors[ifoNumber] = LALCalloc(1, sizeof(*detectors[ifoNumber]));
+      XLALReturnDetector(detectors[ifoNumber], ifoNumber);
+    }
+    /* get location in three dimensions */
+    for (ui = 0; ui < 3; ui++)
+    {
+      detLoc[ui] = (double) detectors[ifoNumber]->location[ui];
+    }
+    /* calculate time offsets */
+    timeOffsets[ifoNumber] = (REAL4)
+        XLALTimeDelayFromEarthCenter(detLoc,\
+                                     skyPoints->data[skyPointNum].longitude,
+                                     skyPoints->data[skyPointNum].latitude,
+                                     &(params->trigTime));
+    /* calculate response functions for trigger */
+    XLALComputeDetAMResponse(&FplusTmp, &FcrossTmp,
+                            detectors[ifoNumber]->response,
+                            skyPoints->data[skyPointNum].longitude,
+                            skyPoints->data[skyPointNum].latitude, 0.,
+                            XLALGreenwichMeanSiderealTime(&(params->trigTime)));
+    Fplustrig[ifoNumber] = (REAL4) FplusTmp;
+    Fcrosstrig[ifoNumber] = (REAL4) FcrossTmp;
+  }
+}
+
+void coh_PTF_initialize_structures(
+  struct coh_PTF_params    *params,
+  FindChirpInitParams      **fcInitParamsP,
+  FindChirpTemplate        **fcTmpltP,
+  FindChirpTmpltParams     **fcTmpltParamsP,
+  REAL8Array               **PTFM,
+  REAL8Array               **PTFN,
+  COMPLEX8VectorSequence   **PTFqVec,
+  REAL4FFTPlan             *fwdplan
+)
+{
+  UINT4 ifoNumber;
+
+  FindChirpInitParams *fcInitParams;
+  FindChirpTemplate *fcTmplt;
+  FindChirpTmpltParams *fcTmpltParams;
+
+  coh_PTF_set_null_input_REAL8Array(PTFM,LAL_NUM_IFO+1);
+  coh_PTF_set_null_input_REAL8Array(PTFN,LAL_NUM_IFO+1);
+  coh_PTF_set_null_input_COMPLEX8VectorSequence(PTFqVec,LAL_NUM_IFO+1);
+
+  /* finchirp parameters */
+  fcInitParams               = LALCalloc(1, sizeof(*fcInitParams));
+  fcTmplt                    = LALCalloc(1, sizeof(*fcTmplt));
+  fcTmpltParams              = LALCalloc(1, sizeof(*fcTmpltParams));
+  fcTmpltParams->approximant = params->approximant;
+  fcTmpltParams->order       = params->order;
+
+  /* Note that although non-spinning only uses Q1, the PTF
+ *   generator still generates Q1-5, thus size of these vectors */
+  if (params->approximant == FindChirpPTF)
+  {
+    fcTmplt->PTFQtilde          =
+        XLALCreateCOMPLEX8VectorSequence(5, params->numFreqPoints);
+    fcTmplt->PTFQ         = XLALCreateVectorSequence(5, params->numTimePoints);
+    fcTmpltParams->PTFphi = XLALCreateVector(params->numTimePoints);
+    fcTmpltParams->PTFomega_2_3 = XLALCreateVector(params->numTimePoints);
+    fcTmpltParams->PTFe1  = XLALCreateVectorSequence(3, params->numTimePoints);
+    fcTmpltParams->PTFe2  = XLALCreateVectorSequence(3, params->numTimePoints);
+  }
+  else if (params->approximant == FindChirpSP)
+  {
+    fcTmplt->PTFQtilde      =
+        XLALCreateCOMPLEX8VectorSequence(1, params->numFreqPoints);
+    fcTmplt->data           = XLALCreateCOMPLEX8Vector(params->numFreqPoints);
+    fcTmpltParams->xfacVec  = XLALCreateVector(params->numFreqPoints);
+    fcTmpltParams->PTFphi   = XLALCreateVector(params->numFreqPoints);
+    /* Set the values of xfacVec  This is k^(-1/3) 
+     * also PTFphi which is k^(-7/6). As these are expensive to compute it
+     * is cheaper to do it once rather than many times. */
+    const REAL4                   xfacExponent = -1.0/3.0;
+    REAL4                        *xfac = NULL;
+    UINT4 ui;
+    xfac = fcTmpltParams->xfacVec->data;
+    xfac[0] = 0;
+    fcTmpltParams->PTFphi->data[0] = 0;
+    for (ui = 1; ui < fcTmpltParams->xfacVec->length; ++ui)
+    {
+      xfac[ui] = pow((REAL4) ui, xfacExponent);
+      fcTmpltParams->PTFphi->data[ui] = pow((REAL4) ui, -7.0/6.0);
+    }
+  }
+  else
+  {
+    fcTmplt->PTFQtilde      =
+        XLALCreateCOMPLEX8VectorSequence(1, params->numFreqPoints);
+    fcTmplt->data           = XLALCreateCOMPLEX8Vector(params->numFreqPoints);
+    fcTmpltParams->xfacVec  = XLALCreateVector(params->numTimePoints);
+  }
+
+  fcTmpltParams->fwdPlan      = fwdplan;
+  fcTmpltParams->deltaT       = 1.0/params->sampleRate;
+  if (params->dynTempLength)
+  {
+    fcTmpltParams->dynamicTmpltFlow = 1;
+  }
+  else
+  {
+    fcTmpltParams->dynamicTmpltFlow = 0;
+    fcTmpltParams->fLow = params->lowTemplateFrequency;
+  }
+  /* This option holds 2x the length of data that is junk in each segment
+   * because of conditioning and the PSD.*/
+  fcTmpltParams->invSpecTrunc = params->truncateDuration;
+  fcTmpltParams->maxTempLength = params->maxTempLength;
+
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      if (params->approximant == FindChirpPTF)
+      {
+        PTFM[ifoNumber]    = XLALCreateREAL8ArrayL(2, 5, 5);
+        PTFN[ifoNumber]    = XLALCreateREAL8ArrayL(2, 5, 5);
+        PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence\
+                             (5, params->numTimePoints);
+      }
+      else
+      {
+        PTFM[ifoNumber]    = XLALCreateREAL8ArrayL(2, 1, 1);
+        PTFN[ifoNumber]    = XLALCreateREAL8ArrayL(2, 1, 1);
+        PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence\
+                             (1, params->numTimePoints);
+      }
+    }
+  }
+
+  if (params->doNullStream)
+  {
+    if (params->approximant == FindChirpPTF)
+    {
+      PTFM[LAL_NUM_IFO]    = XLALCreateREAL8ArrayL(2, 5, 5);
+      PTFN[LAL_NUM_IFO]    = XLALCreateREAL8ArrayL(2, 5, 5);
+      PTFqVec[LAL_NUM_IFO] = XLALCreateCOMPLEX8VectorSequence\
+                             (5, params->numTimePoints);
+    }
+    else
+    {
+      PTFM[LAL_NUM_IFO]    = XLALCreateREAL8ArrayL(2, 1, 1);
+      PTFN[LAL_NUM_IFO]    = XLALCreateREAL8ArrayL(2, 1, 1);
+      PTFqVec[LAL_NUM_IFO] = XLALCreateCOMPLEX8VectorSequence\
+                             (1, params->numTimePoints);
+    }
+  }  
+  /* Send the output back to the parent function */
+  *fcTmpltP = fcTmplt;
+  *fcInitParamsP = fcInitParams;
+  *fcTmpltParamsP = fcTmpltParams; 
+
+}
+
+void coh_PTF_initialize_time_series(
+  struct coh_PTF_params    *params,
+  LIGOTimeGPS              segStartTime,
+  REAL8                    fLower,
+  REAL4TimeSeries          **cohSNRP,
+  REAL4TimeSeries          **nullSNRP,
+  REAL4TimeSeries          **traceSNRP,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **snrComps,
+  REAL4TimeSeries          **pValues,
+  REAL4TimeSeries          **gammaBeta,
+  UINT4                    spinTemplates
+)
+{
+  UINT4 ifoNumber,vecLength,vecLengthTwo,ui;
+  REAL4TimeSeries *cohSNR,*nullSNR,*traceSNR;
+  char name[LALNameLength];
+  CHAR ifoName[LIGOMETA_IFO_MAX];
+  cohSNR = NULL;
+  nullSNR = NULL;
+  traceSNR = NULL;
+
+  /* Generate the various time series as needed*/
+  /* We only want to store data from middle half of segment */
+  cohSNR = XLALCreateREAL4TimeSeries("cohSNR", &segStartTime,\
+                                     fLower,(1.0/params->sampleRate),\
+                                     &lalDimensionlessUnit,\
+                                     params->numAnalPoints);
+
+  if (params->doNullStream)
+    nullSNR = XLALCreateREAL4TimeSeries("nullSNR", &segStartTime,\
+                                        fLower,(1.0/params->sampleRate),\
+                                        &lalDimensionlessUnit,\
+                                        params->numAnalPoints);
+
+  if (params->doTraceSNR)
+    traceSNR = XLALCreateREAL4TimeSeries("traceSNR", &segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+
+  for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      XLALReturnIFO(ifoName,ifoNumber);
+      snprintf( name, sizeof( name ), "%s_snr",ifoName);
+      snrComps[ifoNumber] = XLALCreateREAL4TimeSeries(name,
+                            &segStartTime,fLower,(1.0/params->sampleRate),
+                            &lalDimensionlessUnit,params->numAnalPointsBuf);
+    }
+  }
+
+  if (params->doBankVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      bankVeto[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("bank_veto",\
+                                         &segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+    }
+    if (params->doSnglChiSquared)
+    {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          XLALReturnIFO(ifoName,ifoNumber);
+          snprintf( name, sizeof( name ), "%s_bank_veto",ifoName);
+          bankVeto[ifoNumber] = XLALCreateREAL4TimeSeries(name,&segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+        }
+      }
+    }
+  } 
+
+  if (params->doAutoVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      autoVeto[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("auto_veto",\
+                                         &segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+    }
+    if (params->doSnglChiSquared)
+    {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          XLALReturnIFO(ifoName,ifoNumber);
+          snprintf( name, sizeof( name ), "%s_auto_veto",ifoName);
+          autoVeto[ifoNumber] = XLALCreateREAL4TimeSeries(name,&segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+        }
+      }
+    }
+  }
+
+  if (params->doChiSquare)
+  {
+    if (params->numIFO != 1)
+    {
+      chiSquare[LAL_NUM_IFO] = XLALCreateREAL4TimeSeries("chi_square",\
+                                         &segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+    }
+    if (params->doSnglChiSquared)
+    {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          XLALReturnIFO(ifoName,ifoNumber);
+          snprintf( name, sizeof( name ), "%s_chi_square",ifoName);
+          chiSquare[ifoNumber] = XLALCreateREAL4TimeSeries(name,&segStartTime,\
+                                         fLower,(1.0/params->sampleRate),\
+                                         &lalDimensionlessUnit,\
+                                         params->numAnalPoints);
+        }
+      }
+    }
+  }
+
+  /* Work out how many pValue arrays are needed */
+  if (spinTemplates)
+    vecLength = 5;
+  else
+    vecLength = 2;
+  if (params->numIFO == 1 || params->singlePolFlag || params->faceOnStatistic)
+    vecLengthTwo = vecLength;
+  else
+    vecLengthTwo = 2* vecLength;
+
+  for (ui = 0 ; ui < vecLengthTwo ; ui++)
+  {
+    pValues[ui] = XLALCreateREAL4TimeSeries("Pvalue", &segStartTime,\
+                                             fLower, (1.0/params->sampleRate),\
+                                             &lalDimensionlessUnit,\
+                                             params->numAnalPoints);
+  }
+
+  if (spinTemplates)
+  {
+    for (ui = 0 ; ui < 2 ; ui++)
+    {
+      gammaBeta[ui] = XLALCreateREAL4TimeSeries("Pvalue", &segStartTime,\
+                                             fLower, (1.0/params->sampleRate),\
+                                             &lalDimensionlessUnit,\
+                                             params->numAnalPoints);
+    }
+  }
+
+  *cohSNRP = cohSNR;
+  *nullSNRP = nullSNR;
+  *traceSNRP = traceSNR;
+
+}
+
+void coh_PTF_reset_time_series(
+  struct coh_PTF_params    *params,
+  LIGOTimeGPS              segStartTime,
+  REAL4TimeSeries          *cohSNR,
+  REAL4TimeSeries          *nullSNR,
+  REAL4TimeSeries          *traceSNR,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **snrComps,
+  REAL4TimeSeries          **pValues,
+  REAL4TimeSeries          **gammaBeta,
+  UINT4                    spinTemplates
+)
+{
+  UINT4 ifoNumber,vecLength,vecLengthTwo,ui;
+
+  /* For each of the time series we reset the epoch*/
+  cohSNR->epoch.gpsSeconds = segStartTime.gpsSeconds;
+  cohSNR->epoch.gpsNanoSeconds = segStartTime.gpsNanoSeconds;
+  /* And memset to 0 all values */
+  memset(cohSNR->data->data, 0, params->numAnalPoints * sizeof(REAL4));
+
+  for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      snrComps[ifoNumber]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+      snrComps[ifoNumber]->epoch.gpsNanoSeconds = \
+              segStartTime.gpsNanoSeconds;
+      memset(snrComps[ifoNumber]->data->data, 0,\
+              params->numAnalPointsBuf * sizeof(REAL4));
+    }
+  }
+
+
+  if (params->doNullStream)
+  {
+    nullSNR->epoch.gpsSeconds = segStartTime.gpsSeconds;
+    nullSNR->epoch.gpsNanoSeconds = segStartTime.gpsNanoSeconds;
+    memset(nullSNR->data->data, 0, params->numAnalPoints * sizeof(REAL4));
+  }
+
+  if (params->doTraceSNR)
+  {
+    traceSNR->epoch.gpsSeconds = segStartTime.gpsSeconds;
+    traceSNR->epoch.gpsNanoSeconds = segStartTime.gpsNanoSeconds;
+    memset(traceSNR->data->data, 0, params->numAnalPoints * sizeof(REAL4));
+  }
+
+  if (params->doBankVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      bankVeto[LAL_NUM_IFO]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+      bankVeto[LAL_NUM_IFO]->epoch.gpsNanoSeconds = segStartTime.gpsNanoSeconds;
+      memset(bankVeto[LAL_NUM_IFO]->data->data, 0,\
+          params->numAnalPoints * sizeof(REAL4));
+    }
+    if (params->doSnglChiSquared)
+    {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          bankVeto[ifoNumber]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+          bankVeto[ifoNumber]->epoch.gpsNanoSeconds = \
+              segStartTime.gpsNanoSeconds;
+          memset(bankVeto[ifoNumber]->data->data, 0,\
+              params->numAnalPoints * sizeof(REAL4));
+        }
+      }
+    }
+  }
+
+  if (params->doAutoVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      autoVeto[LAL_NUM_IFO]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+      autoVeto[LAL_NUM_IFO]->epoch.gpsNanoSeconds = segStartTime.gpsNanoSeconds;
+      memset(autoVeto[LAL_NUM_IFO]->data->data, 0,\
+          params->numAnalPoints * sizeof(REAL4));
+    }
+    if (params->doSnglChiSquared)
+    {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          autoVeto[ifoNumber]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+          autoVeto[ifoNumber]->epoch.gpsNanoSeconds = \
+              segStartTime.gpsNanoSeconds;
+          memset(autoVeto[ifoNumber]->data->data, 0,\
+              params->numAnalPoints * sizeof(REAL4));
+        }
+      }
+    }
+  }
+
+  if (params->doChiSquare)
+  {
+    if (params->numIFO != 1)
+    {
+      chiSquare[LAL_NUM_IFO]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+      chiSquare[LAL_NUM_IFO]->epoch.gpsNanoSeconds = \
+          segStartTime.gpsNanoSeconds;
+      memset(chiSquare[LAL_NUM_IFO]->data->data, 0,\
+          params->numAnalPoints * sizeof(REAL4));
+    }
+    if (params->doSnglChiSquared)
+    {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          chiSquare[ifoNumber]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+          chiSquare[ifoNumber]->epoch.gpsNanoSeconds = \
+              segStartTime.gpsNanoSeconds;
+          memset(chiSquare[ifoNumber]->data->data, 0,\
+              params->numAnalPoints * sizeof(REAL4));
+        }
+      }
+    }
+  }
+
+  /* Work out how many pValue arrays are needed */
+  if (spinTemplates)
+    vecLength = 5;
+  else
+    vecLength = 2;
+  if (params->numIFO == 1 || params->singlePolFlag || params->faceOnStatistic)
+    vecLengthTwo = vecLength;
+  else
+    vecLengthTwo = 2* vecLength;
+
+  for (ui = 0 ; ui < vecLengthTwo ; ui++)
+  {
+    pValues[ui]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+    pValues[ui]->epoch.gpsNanoSeconds = segStartTime.gpsNanoSeconds;
+    memset(pValues[ui]->data->data, 0,\
+        params->numAnalPoints * sizeof(REAL4));
+  }
+
+  if (spinTemplates)
+  {
+    for (ui = 0 ; ui < 2 ; ui++)
+    {
+      gammaBeta[ui]->epoch.gpsSeconds = segStartTime.gpsSeconds;
+      gammaBeta[ui]->epoch.gpsNanoSeconds = segStartTime.gpsNanoSeconds;
+      memset(gammaBeta[ui]->data->data,0 ,\
+          params->numAnalPoints * sizeof(REAL4));
+    }
+  }
+
+}
+
+
+void coh_PTF_destroy_time_series(
+  REAL4TimeSeries          *cohSNR,
+  REAL4TimeSeries          *nullSNR,
+  REAL4TimeSeries          *traceSNR,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  REAL4TimeSeries          **chiSquare,
+  REAL4TimeSeries          **pValues,
+  REAL4TimeSeries          **gammaBeta,
+  REAL4TimeSeries          **snrComps
+)
+{
+  UINT4 k;
+
+  if (cohSNR) XLALDestroyREAL4TimeSeries(cohSNR);
+  if (nullSNR) XLALDestroyREAL4TimeSeries(nullSNR);
+  if (traceSNR) XLALDestroyREAL4TimeSeries(traceSNR);
+
+  for (k = 0; k < LAL_NUM_IFO+1; k++)
+  {
+    if (bankVeto[k])
+    {
+      XLALDestroyREAL4TimeSeries(bankVeto[k]);
+      bankVeto[k]=NULL;
+    }
+    if (autoVeto[k])
+    {
+      XLALDestroyREAL4TimeSeries(autoVeto[k]);
+      autoVeto[k]=NULL;
+    }
+    if (chiSquare[k])
+    {
+      XLALDestroyREAL4TimeSeries(chiSquare[k]);
+      chiSquare[k]=NULL;
+    }
+  }
+
+
+  for (k = 0 ; k < 10 ; k++)
+  {
+    if (pValues[k])
+    {
+        XLALDestroyREAL4TimeSeries(pValues[k]);
+        pValues[k] = NULL;
+    }
+  }
+
+  for (k = 0; k < LAL_NUM_IFO; k++)
+  {
+    if (snrComps[k])
+    {
+      XLALDestroyREAL4TimeSeries(snrComps[k]);
+      snrComps[k] = NULL;
+    }
+  }
+  for (k = 0; k < 2; k++)
+  {
+    if (gammaBeta[k])
+    {
+      XLALDestroyREAL4TimeSeries(gammaBeta[k]);
+      gammaBeta[k] = NULL;
+    }
+  }
+}
+
+void coh_PTF_calculate_single_detector_filters(
+  struct coh_PTF_params      *params,
+  FindChirpTemplate          *fcTmplt,
+  REAL4FrequencySeries       **invspec,
+  REAL8Array                 **PTFM,
+  COMPLEX8VectorSequence     **PTFqVec,
+  REAL4TimeSeries            **snrComps,
+  RingDataSegments           **segments,
+  COMPLEX8FFTPlan            *invPlan,
+  UINT4                      spinTemplate,
+  UINT4                      segNum
+)
+{
+  UINT4 ifoNumber,ui,uj;
+  REAL4 reSNRcomp,imSNRcomp;
+
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      /* Zero the storage vectors for the PTF filters */
+      if (params->approximant == FindChirpPTF)
+      {
+        memset(PTFM[ifoNumber]->data, 0, 25 * sizeof(REAL8));
+        memset(PTFqVec[ifoNumber]->data, 0,
+              5 * params->numTimePoints * sizeof(COMPLEX8));
+      }
+      else
+      {
+        memset(PTFM[ifoNumber]->data, 0, 1 * sizeof(REAL8));
+        memset(PTFqVec[ifoNumber]->data, 0,
+              1 * params->numTimePoints * sizeof(COMPLEX8));
+      }
+
+      /* Here (h|s) and (h|h) are calculated */
+      coh_PTF_normalize(params, fcTmplt, invspec[ifoNumber],
+                        PTFM[ifoNumber], NULL, PTFqVec[ifoNumber],
+                        &segments[ifoNumber]->sgmnt[segNum], invPlan,
+                        spinTemplate);
+
+      /* Here we calculate the single detector SNR */
+      if (spinTemplate)
+      {
+        coh_PTF_calculate_single_det_spin_snr(params,PTFM,PTFqVec,snrComps,\
+                                              ifoNumber);
+      }
+      else
+      {
+        for (ui = params->analStartPointBuf; ui < params->analEndPointBuf; ++ui)
+        { /* Loop over time */
+          uj = ui - params->analStartPointBuf;
+          reSNRcomp = crealf(PTFqVec[ifoNumber]->data[ui]);
+          imSNRcomp = cimagf(PTFqVec[ifoNumber]->data[ui]);
+          snrComps[ifoNumber]->data->data[uj] =
+              sqrt((reSNRcomp*reSNRcomp + imSNRcomp*imSNRcomp)/
+                   PTFM[ifoNumber]->data[0]);
+        }
+      }
+      
+    }
+  }
+}
+
+void coh_PTF_calculate_single_det_spin_snr(
+  struct coh_PTF_params      *params,
+  REAL8Array                 **PTFM,
+  COMPLEX8VectorSequence     **PTFqVec,
+  REAL4TimeSeries            **snrComps,
+  UINT4                      ifoNumber
+)
+{
+  UINT4 ui,uj;
+  gsl_matrix *PTFmatrix;
+  gsl_vector *eigenvalsSngl;
+  gsl_matrix *eigenvecsSngl;
+  gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc(5);
+  REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
+  REAL4 *snglv1p,*snglv2p;
+  eigenvecsSngl = gsl_matrix_alloc(5,5);
+  eigenvalsSngl = gsl_vector_alloc(5);
+  snglv1p = LALCalloc(5 , sizeof(REAL4));
+  snglv2p = LALCalloc(5 , sizeof(REAL4));
+
+  /* convert PTFM to gsl_matrix */
+  PTFmatrix = gsl_matrix_alloc(5,5);
+  for (ui = 0; ui < 5; ui++ )
+  {
+    for (uj = 0; uj < 5; uj++ )
+    {
+      gsl_matrix_set(PTFmatrix, ui, uj, PTFM[ifoNumber]->data[ui*5+uj]);
+    }
+  }
+
+  /* calculate eigenvectors and eigenvalues of (h|h)*/
+  gsl_eigen_symmv(PTFmatrix, eigenvalsSngl, eigenvecsSngl,matTemp);
+  gsl_eigen_symmv_free(matTemp);
+  gsl_matrix_free(PTFmatrix);
+  for (ui = params->analStartPointBuf; ui < params->analEndPointBuf; ++ui)
+  {  /* loop over time */
+    coh_PTF_calculate_rotated_vectors(params,PTFqVec,snglv1p,snglv2p,NULL,\
+            NULL,NULL,eigenvecsSngl,eigenvalsSngl,\
+            params->numTimePoints,ui,5,5,ifoNumber);
+
+    /* Compute the dot products */
+    v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
+    for (uj = 0; uj < 5; uj++)
+    {
+      v1_dot_u1 += snglv1p[uj] * snglv1p[uj];
+      v1_dot_u2 += snglv1p[uj] * snglv2p[uj];
+      v2_dot_u2 += snglv2p[uj] * snglv2p[uj];
+    }
+    max_eigen =0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2) * \
+        (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
+    snrComps[ifoNumber]->data->data[ui-params->analStartPointBuf] =\
+        sqrt(max_eigen);
+  }
+  LALFree(snglv1p);
+  LALFree(snglv2p);
+}
+
+REAL4 coh_PTF_get_spin_SNR(
+  REAL4 *v1p,
+  REAL4 *v2p,
+  UINT4 vecLengthTwo
+)
+{
+  UINT4 ui;
+  REAL4 v1_dot_u1,v1_dot_u2,v2_dot_u2,max_eigen;
+  v1_dot_u1 = v1_dot_u2 = v2_dot_u2 = 0.0;
+  for (ui =0; ui < vecLengthTwo; ui++)
+  {
+    v1_dot_u1 += v1p[ui] * v1p[ui];
+    v2_dot_u2 += v2p[ui] * v2p[ui];
+    v1_dot_u2 += v1p[ui] * v2p[ui];
+  }
+  max_eigen = 0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2)
+            * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
+  return sqrt(max_eigen);
+}
+
+/* THIS FUNCTION IS COMMENTED OUT SO IT CAN BE VERIFIED AND FIXED*/
+/* void coh_PTF_get_spin_amp_terms(
+XXXXX
+)
+  coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,Fplus,Fcross,timeOffsetPoints,
+        eigenvecs,eigenvals,numPoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
+  v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = 0;
+  for (j = 0; j < vecLengthTwo; j++)
+  {
+    u1[j] = v1p[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+    u2[j] = v2p[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+    v1[j] = u1[j] * gsl_vector_get(eigenvals,j);
+    v2[j] = u2[j] * gsl_vector_get(eigenvals,j);
+    v1_dot_u1 += v1[j]*u1[j];
+    v1_dot_u2 += v1[j]*u2[j];
+    v2_dot_u2 += v2[j]*u2[j];
+  }
+  dCee = (max_eigen - v1_dot_u1) / v1_dot_u2;
+  dAlpha = 1./(v1_dot_u1 + dCee * 2 * v1_dot_u2 + dCee*dCee*v2_dot_u2);
+  dAlpha = pow(dAlpha,0.5);
+  dBeta = dCee*dAlpha;
+  // The p Values are calculated in the rotated frame
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];
+    pValues[j]->data->data[i - numPoints/4] = 0.;
+  }
+  // This loop can be used to verify that the SNR obtained is as before
+  recSNR = 0;
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    for (k = 0 ; k < vecLengthTwo ; k++)
+    {
+      recSNR += pValsTemp[j]*pValsTemp[k] * (v1[j]*v1[k]+v2[j]*v2[k]);
+    }
+  }
+  // Then we calculate the two phase/amplitude terms beta and gamma
+  // These are explained in Diego's thesis
+  betaGammaTemp[0] = 0;
+  betaGammaTemp[1] = 0;
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    betaGammaTemp[0] += pValsTemp[j]*v1[j];
+    betaGammaTemp[1] += pValsTemp[j]*v2[j];
+  }
+  gammaBeta[0]->data->data[i - numPoints/4] = betaGammaTemp[0];
+  gammaBeta[1]->data->data[i - numPoints/4] = betaGammaTemp[1];
+
+  // The p Values need to be rotated back into the original frame.
+  // Currently we are recording values in rotated frame
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    for (k = 0 ; k < vecLengthTwo ; k++)
+    {
+      pValues[j]->data->data[i-numPoints/4]+=gsl_matrix_get(eigenvecs,j,k)*pValsTemp[k];
+    }
+  }
+
+  // And we check that this still gives the expected SNR in the
+  // unrotated basis.
+  for (j = 0; j < vecLengthTwo ; j++) // Construct the vi vectors
+  {
+    v1[j] = 0.;
+    v2[j] = 0.;
+    for(k = 0; k < LAL_NUM_IFO; k++)
+    {
+      if (params->haveTrig[k])
+      {
+        if (j < vecLength)
+        {
+          v1[j] += Fplus[k] * crealf(PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]]);
+          v2[j] += Fplus[k] * cimagf(PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]]);
+        }
+        else
+        {
+          v1[j] += Fcross[k] * crealf(PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]]);
+          v2[j] += Fcross[k] * cimagf(PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]]);
+        }
+      }
+    }
+  }
+  recSNR = 0;
+  for (j = 0 ; j < vecLengthTwo ; j++)
+  {
+    for (k = 0 ; k < vecLengthTwo ; k++)
+    {
+      recSNR += pValues[j]->data->data[i-numPoints/4]*pValues[k]->data->data[i-numPoints/4] * (v1[j]*v1[k]+v2[j]*v2[k]);
+    }
+  }
+}
+*/
+
+void coh_PTF_template_time_series_cluster(
+  REAL4TimeSeries *cohSNR,
+  INT4 numPointCheck
+)
+{
+  UINT4 ui,check;
+  UINT4 logicArray[cohSNR->data->length];
+  INT4 j,tempPoint;
+  INT4 dataLen = (INT4) cohSNR->data->length;
+  for (ui = 0; ui < cohSNR->data->length; ui++)
+  {
+    logicArray[ui] = 0;
+    if (cohSNR->data->data[ui])
+    {
+      check = 1;
+      for (j = -numPointCheck; j < numPointCheck; j++)
+      {
+        tempPoint = ui + j;
+        if (tempPoint < 0)
+        {
+          continue;
+        }
+        if (tempPoint >= dataLen)
+        {
+          continue;
+        }
+        if (cohSNR->data->data[tempPoint] > cohSNR->data->data[ui])
+        {
+          logicArray[ui] = 1;
+          break;
+        }
+      }
+    }
+  }
+  for (ui = 0; ui < cohSNR->data->length; ui++)
+  {
+    if (logicArray[ui])
+    {
+      cohSNR->data->data[ui] = 0.;
+    }
+  }
+}
+
+UINT4 coh_PTF_test_veto_vals(
+  struct coh_PTF_params    *params,
+  REAL4TimeSeries          *cohSNR,
+  REAL4TimeSeries          *nullSNR,
+  REAL4TimeSeries          **bankVeto,
+  REAL4TimeSeries          **autoVeto,
+  UINT4                    currPointLoc
+)
+{
+  /* This function checks whether chisq needs to be calculated. It does this
+   * by checking if the trigger will fail the bank/auto/null vetoes */ 
+
+  /* NOTE: The code currently uses the null stream SNR. It should instead/also
+   * use the nullSNR calculated from coincSNR - cohSNR */ 
+
+  UINT4 numDOF;
+  REAL4 bestNR,currSNR;
+
+  numDOF = 4.;
+  if (params->singlePolFlag || params->faceOnStatistic || params->numIFO == 1)
+    numDOF = 2.;
+
+  currSNR = cohSNR->data->data[currPointLoc];
+
+  /* IS the null stream too large? */
+  if (params->doNullStream)
+  {
+    if (nullSNR->data->data[currPointLoc] > params->nullStatThreshold \
+        && currSNR < params->nullStatGradOn)
+    {
+      return 1;
+    }
+    if (currSNR > params->nullStatGradOn)
+    {
+      if (nullSNR->data->data[currPointLoc] > (params->nullStatThreshold \
+           + (currSNR - params->nullStatGradOn)*params->nullStatGradient))
+      {
+        return 1;
+      }
+    }
+  }
+
+  /* Is bank new SNR too large? */
+  if (params->doBankVeto)
+  {
+    if (bankVeto[LAL_NUM_IFO]->data->data[currPointLoc] > \
+        params->BVsubBankSize*numDOF)
+    {
+      bestNR = currSNR / pow( ( 1. + pow( \
+          bankVeto[LAL_NUM_IFO]->data->data[currPointLoc] / \
+          ((REAL4)params->BVsubBankSize*numDOF ) , \
+          params->bankVetoq/params->bankVeton) )/2. , 1./params->bankVetoq);
+      if (bestNR < params->chiSquareCalcThreshold)
+      {
+        return 1;
+      }
+    }
+  }
+
+  /* Is auto new SNR too large */
+  if (params->doAutoVeto)
+  {
+    if (autoVeto[LAL_NUM_IFO]->data->data[currPointLoc] > \
+        params->numAutoPoints*numDOF)
+    {
+      bestNR = currSNR / pow( ( 1. + pow( \
+          autoVeto[LAL_NUM_IFO]->data->data[currPointLoc] / \
+          ((REAL4)params->numAutoPoints*numDOF ) , \
+          params->autoVetoq/params->autoVeton) )/2. , 1./params->autoVetoq);
+      if (bestNR < params->chiSquareCalcThreshold)
+      {
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+void coh_PTF_calculate_null_stream_filters(
+  struct coh_PTF_params      *params,
+  FindChirpTemplate          *fcTmplt,
+  REAL4FrequencySeries       **invspec,
+  REAL8Array                 **PTFM,
+  COMPLEX8VectorSequence     **PTFqVec,
+  RingDataSegments           **segments,
+  COMPLEX8FFTPlan            *invPlan,
+  UINT4                      spinTemplate,
+  UINT4                      segNum
+)
+{
+  if (params-> approximant == FindChirpPTF)
+  {
+    memset(PTFM[LAL_NUM_IFO]->data, 0, 25*sizeof(REAL8));
+    memset(PTFqVec[LAL_NUM_IFO]->data, 0,\
+            5*params->numTimePoints*sizeof(COMPLEX8));
+  }
+  else
+  {
+    memset(PTFM[LAL_NUM_IFO]->data, 0, 1*sizeof(REAL8));
+    memset(PTFqVec[LAL_NUM_IFO]->data, 0,\
+            1*params->numTimePoints*sizeof(COMPLEX8));
+  }
+  coh_PTF_normalize(params, fcTmplt, invspec[LAL_NUM_IFO],
+                    PTFM[LAL_NUM_IFO], NULL, PTFqVec[LAL_NUM_IFO],
+                    &segments[LAL_NUM_IFO]->sgmnt[segNum], invPlan,
+                    spinTemplate);
+}
+
+void coh_PTF_calculate_null_stream_norms(
+  UINT4 vecLength,
+  gsl_matrix *eigenvecsNull,
+  gsl_vector *eigenvalsNull,
+  REAL8Array *PTFM[LAL_NUM_IFO+1]
+)
+{
+  /* This function calculates the eigenvectors/values needed to orthonormalize
+   * the filters when using the null stream
+   */
+
+  /* For non-spinning case this is trivial */
+  if (vecLength == 1)
+  {
+    gsl_matrix_set(eigenvecsNull, 0 , 0, 1);
+    gsl_vector_set(eigenvalsNull, 0, PTFM[LAL_NUM_IFO]->data[0]);
+  }
+  /* For spinning case there is more to this */
+  else
+  {
+    UINT4 i,j;
+    gsl_eigen_symmv_workspace *matTempNull = gsl_eigen_symmv_alloc(vecLength);
+    gsl_matrix *B2Null = gsl_matrix_alloc(vecLength, vecLength);
+    for (i = 0; i < vecLength; i++)
+    {
+      for (j = 0; j < vecLength; j++)
+      {
+        gsl_matrix_set(B2Null, i, j, PTFM[LAL_NUM_IFO]->data[i*5+j]);
+      }
+    }
+    gsl_eigen_symmv(B2Null, eigenvalsNull, eigenvecsNull, matTempNull);
+  }
+}
+
+void coh_PTF_calculate_null_stream_snr(
+  struct coh_PTF_params   *params,
+  REAL4TimeSeries         *nullSNR,
+  COMPLEX8VectorSequence  **PTFqVec,
+  gsl_matrix              *eigenvecsNull,
+  gsl_vector              *eigenvalsNull,
+  UINT4                   spinTemplate,
+  UINT4                   vecLength,
+  UINT4                   vecLoc,
+  UINT4                   snrLoc
+)
+{
+  UINT4 j,k;
+  REAL4 v1_dot_u1,v1_dot_u2,v2_dot_u2,max_eigen;
+  REAL4 v1N[vecLength],v2N[vecLength],u1N[vecLength],u2N[vecLength];
+  /* Begin by rotating to the preferred vector */
+  /* NOTE: For non-spin vecLength=1 and some of this is trivial */
+  /* NOTE: This code could be optimized, but is rarely used so has not been */
+  for (j = 0; j < vecLength; j++)
+  {
+    v1N[j] = crealf(PTFqVec[LAL_NUM_IFO]->data[j*params->numTimePoints+vecLoc]);
+    v2N[j] = cimagf(PTFqVec[LAL_NUM_IFO]->data[j*params->numTimePoints+vecLoc]);
+  }
+
+  for (j = 0 ; j < vecLength ; j++)
+  {
+    u1N[j] = 0.;
+    u2N[j] = 0.;
+    for (k = 0 ; k < vecLength ; k++)
+    {
+      u1N[j] += gsl_matrix_get(eigenvecsNull,k,j)*v1N[k];
+      u2N[j] += gsl_matrix_get(eigenvecsNull,k,j)*v2N[k];
+    }
+    u1N[j] = u1N[j] / (pow(gsl_vector_get(eigenvalsNull,j),0.5));
+    u2N[j] = u2N[j] / (pow(gsl_vector_get(eigenvalsNull,j),0.5));
+  }
+  /* Compute the dot products */
+  v1_dot_u1 = v1_dot_u2 = v2_dot_u2 = 0.0;
+  for (j = 0; j < vecLength; j++)
+  {
+    v1_dot_u1 += u1N[j] * u1N[j];
+    v1_dot_u2 += u1N[j] * u2N[j];
+    v2_dot_u2 += u2N[j] * u2N[j];
+  }
+  if (spinTemplate == 0)
+  {
+    max_eigen = 0.5 * (v1_dot_u1 + v2_dot_u2);
+  }
+  else
+  {
+    max_eigen = 0.5*(v1_dot_u1+v2_dot_u2+sqrt((v1_dot_u1-v2_dot_u2)
+        * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
+  }
+  nullSNR->data->data[snrLoc] = sqrt(max_eigen);
+}      
+
+void coh_PTF_calculate_trace_snr(
+  struct coh_PTF_params   *params,
+  REAL4TimeSeries         *traceSNR,
+  COMPLEX8VectorSequence  **PTFqVec,
+  gsl_matrix              *eigenvecs,
+  gsl_vector              *eigenvals,
+  REAL4                   *Fplus,
+  REAL4                   *Fcross,
+  INT4                    *timeOffsetPoints,
+  UINT4                   spinTemplate,
+  UINT4                   vecLength,
+  UINT4                   vecLengthTwo,
+  UINT4                   vecLoc,
+  UINT4                   snrLoc
+)
+{
+  UINT4 j,k,m;
+  REAL4 v1_dot_u1,v1_dot_u2,v2_dot_u2,max_eigen,traceSNRsq;
+  REAL4 v1[vecLength],v2[vecLength],u1[vecLength],u2[vecLength];
+
+  /* Trace SNR is the coherent SNR with no cross-detector terms */
+  traceSNRsq = 0;
+  for(k = 0; k < LAL_NUM_IFO; k++)
+  {
+    if (params->haveTrig[k])
+    {
+      for (j = 0; j < vecLengthTwo ; j++)
+      {
+        if (j < vecLength)
+        {
+          v1[j] = Fplus[k] * crealf(PTFqVec[k]->data[\
+                         j*params->numTimePoints+vecLoc+timeOffsetPoints[k]]);
+          v2[j] = Fplus[k] * cimagf(PTFqVec[k]->data[\
+                         j*params->numTimePoints+vecLoc+timeOffsetPoints[k]]);
+        }
+        else
+        {
+          v1[j] = Fcross[k] * crealf(PTFqVec[k]->data[ (j-vecLength) * \
+                           params->numTimePoints+vecLoc+timeOffsetPoints[k]]);
+          v2[j] = Fcross[k] * cimagf(PTFqVec[k]->data[ (j-vecLength) * \
+                           params->numTimePoints+vecLoc+timeOffsetPoints[k]]);
+        }
+      }
+      for (j = 0 ; j < vecLengthTwo ; j++)
+      {
+        u1[j] = 0.;
+        u2[j] = 0.;
+        for (m = 0 ; m < vecLengthTwo ; m++)
+        {
+          u1[j] += gsl_matrix_get(eigenvecs,m,j)*v1[m];
+          u2[j] += gsl_matrix_get(eigenvecs,m,j)*v2[m];
+        }
+        u1[j] = u1[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+        u2[j] = u2[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+      }
+      /* Compute the dot products */
+      v1_dot_u1 = v1_dot_u2 = v2_dot_u2 = max_eigen = 0.0;
+      for (j = 0; j < vecLengthTwo; j++)
+      {
+        v1_dot_u1 += u1[j] * u1[j];
+        v1_dot_u2 += u1[j] * u2[j];
+        v2_dot_u2 += u2[j] * u2[j];
+      }
+      if (spinTemplate == 0)
+      {
+        max_eigen = (v1_dot_u1 + v2_dot_u2);
+      }
+      else
+      {
+        max_eigen = 0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2)
+            * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
+      }
+      traceSNRsq += max_eigen;
+    }
+  }
+  traceSNR->data->data[snrLoc] = sqrt(traceSNRsq);
+}
+
+void coh_PTF_convert_time_offsets_to_points(
+  struct coh_PTF_params   *params,
+  REAL4                   *timeOffsets,
+  INT4                    *timeOffsetPoints
+)
+{
+  UINT4 i;
+  REAL4 deltaT =  (1.0/params->sampleRate);
+  for (i = 0; i < LAL_NUM_IFO; i++)
+  {
+    timeOffsetPoints[i] = (int) floor(timeOffsets[i]/deltaT + 0.5);
+  }
+  /* The following is useful for debugging */
+
+  /*
+  verbose("Time offsets (s): ");
+  for (i = 0; i < LAL_NUM_IFO; i++)
+  {
+    if (params->haveTrig[i])
+    {
+      verbose("%f ", timeOffsets[i]);
+    }
+  }
+  verbose("\n");
+  verbose("Time offsets (points): ");
+  for (i = 0; i < LAL_NUM_IFO; i++)
+  {
+    if (params->haveTrig[i])
+    {
+      verbose("%d " , timeOffsetPoints[i]);
+    }
+  }
+  verbose("\n");
+  */
+}
 
 void coh_PTF_calculate_bmatrix(
   struct coh_PTF_params   *params,
@@ -506,12 +1896,12 @@ void coh_PTF_calculate_bmatrix(
 
 void coh_PTF_calculate_rotated_vectors(
     struct coh_PTF_params   *params,
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    COMPLEX8VectorSequence  **PTFqVec,
     REAL4 *u1,
     REAL4 *u2,
-    REAL4 Fplus[LAL_NUM_IFO],
-    REAL4 Fcross[LAL_NUM_IFO],
-    INT4  timeOffsetPoints[LAL_NUM_IFO],
+    REAL4 *Fplus,
+    REAL4 *Fcross,
+    INT4  *timeOffsetPoints,
     gsl_matrix *eigenvecs,
     gsl_vector *eigenvals,
     UINT4 numPoints,
@@ -520,6 +1910,9 @@ void coh_PTF_calculate_rotated_vectors(
     UINT4 vecLengthTwo,
     UINT4 detectorNum)
 {
+  /* IMPORTANT!!! This function is probably the dominant computational cost
+   * when running in lots-of-sky-points mode. Optimizing this is important! */ 
+
   // This function calculates the coherent time series and rotates them into
   // the basis where the B matrix is the identity.
   // This is the dominant polarization frame with some normalization
@@ -540,17 +1933,19 @@ void coh_PTF_calculate_rotated_vectors(
           if ( params->faceOnStatistic)
           {
             /* Currently non-spin only! */
-            v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-            v1[j] += Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
             if (params->faceOnStatistic == 1)
             {
-              v2[j] += Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-              v2[j] -= Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+              v1[j] += Fplus[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v1[j] += Fcross[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v2[j] += Fcross[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v2[j] -= Fplus[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
             }
             else if (params->faceOnStatistic == 2)
             {
-              v2[j] -= Fcross[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-              v2[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+              v1[j] += Fplus[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v1[j] -= Fcross[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v2[j] += Fcross[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+              v2[j] += Fplus[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
             }
             else
             {
@@ -559,21 +1954,21 @@ void coh_PTF_calculate_rotated_vectors(
           }
           else if (j < vecLength)
           {
-            v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-            v2[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+            v1[j] += Fplus[k] * crealf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
+            v2[j] += Fplus[k] * cimagf(PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]]);
           }
           else
           {
-            v1[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].re;
-            v2[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].im;
+            v1[j] += Fcross[k] * crealf(PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]]);
+            v2[j] += Fcross[k] * cimagf(PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]]);
           }
         }
       }
     }
     else
     {
-      v1[j] += PTFqVec[detectorNum]->data[j*numPoints+position].re;
-      v2[j] += PTFqVec[detectorNum]->data[j*numPoints+position].im;
+      v1[j] += crealf(PTFqVec[detectorNum]->data[j*numPoints+position]);
+      v2[j] += cimagf(PTFqVec[detectorNum]->data[j*numPoints+position]);
     }
   }
 
@@ -596,6 +1991,278 @@ void coh_PTF_calculate_rotated_vectors(
 
 }
 
+MultiInspiralTable* coh_PTF_create_multi_event(
+    struct coh_PTF_params   *params,
+    REAL4TimeSeries         *cohSNR,
+    InspiralTemplate        PTFTemplate,
+    UINT8                   *eventId,
+    UINT4                   spinTrigger,
+    REAL4TimeSeries         **pValues,
+    REAL4TimeSeries         **gammaBeta,
+    REAL4TimeSeries         **snrComps,
+    REAL4TimeSeries         *nullSNR,
+    REAL4TimeSeries         *traceSNR,
+    REAL4TimeSeries         **bankVeto,
+    REAL4TimeSeries         **autoVeto,
+    REAL4TimeSeries         **chiSquare,
+    REAL8Array              **PTFM,
+    REAL4                   rightAscension,
+    REAL4                   declination,
+    INT8                    slideId,
+    INT4                   *timeOffsetPoints,
+    UINT4                   currPos
+)
+{
+  LIGOTimeGPS trigTime;
+  UINT4 numDOF = 4;
+  if ( params->singlePolFlag || params->faceOnStatistic )
+    numDOF = 2;
+
+  MultiInspiralTable *currEvent;
+  currEvent = (MultiInspiralTable *)
+      LALCalloc(1, sizeof(MultiInspiralTable));
+  currEvent->event_id = (EventIDColumn *)
+      LALCalloc(1, sizeof(EventIDColumn));
+  currEvent->event_id->id=*eventId;
+  currEvent->time_slide_id = (EventIDColumn *)
+      LALCalloc(1, sizeof(EventIDColumn));
+  currEvent->time_slide_id->id=slideId;
+  (*eventId)++;
+  trigTime = cohSNR->epoch;
+  XLALGPSAdd(&trigTime,currPos*cohSNR->deltaT);
+  currEvent->snr = cohSNR->data->data[currPos];
+  currEvent->mass1 = PTFTemplate.mass1;
+  currEvent->mass2 = PTFTemplate.mass2;
+  currEvent->chi = PTFTemplate.chi;
+  currEvent->kappa = PTFTemplate.kappa;
+  currEvent->mchirp = PTFTemplate.totalMass*pow(PTFTemplate.eta,3.0/5.0);
+  currEvent->eta = PTFTemplate.eta;
+  /* FIXME: Add spins to MultiInspiralTable */
+  currEvent->chi = PTFTemplate.spin1[2];
+  currEvent->kappa = PTFTemplate.spin2[2];
+  currEvent->end_time = trigTime;
+  /* add sky position, but need to track back to sky fixed sky position */
+  currEvent->ra = rightAscension -
+                  XLALGreenwichMeanSiderealTime(&params->trigTime) +
+                  XLALGreenwichMeanSiderealTime(&currEvent->end_time);
+  currEvent->dec = declination;
+  if (params->doNullStream)
+    currEvent->null_statistic = nullSNR->data->data[currPos];
+  if (params->doTraceSNR)
+    currEvent->trace_snr = traceSNR->data->data[currPos];
+  if (params->doBankVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      currEvent->bank_chisq = bankVeto[LAL_NUM_IFO]->data->data[currPos];
+      currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
+    }
+    if (params->doSnglChiSquared)
+    {
+      if (bankVeto[LAL_IFO_G1])
+      {
+        currEvent->bank_chisq_g = bankVeto[LAL_IFO_G1]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_H1])
+      {
+        currEvent->bank_chisq_h1 = bankVeto[LAL_IFO_H1]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_H2])
+      {
+        currEvent->bank_chisq_h2 = bankVeto[LAL_IFO_H2]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_L1])
+      {
+        currEvent->bank_chisq_l = bankVeto[LAL_IFO_L1]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_T1])
+      {
+        currEvent->bank_chisq_t = bankVeto[LAL_IFO_T1]->data->data[currPos];
+      }
+      if (bankVeto[LAL_IFO_V1])
+      {
+        currEvent->bank_chisq_v = bankVeto[LAL_IFO_V1]->data->data[currPos];
+      }
+    }
+  }
+  if (params->doAutoVeto)
+  {
+    if (params->numIFO != 1)
+    {
+      currEvent->cont_chisq = autoVeto[LAL_NUM_IFO]->data->data[currPos];
+      currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
+    }
+    if (params->doSnglChiSquared)
+    {
+      if (autoVeto[LAL_IFO_G1])
+      {
+        currEvent->cont_chisq_g = autoVeto[LAL_IFO_G1]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_H1])
+      {
+        currEvent->cont_chisq_h1 = autoVeto[LAL_IFO_H1]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_H2])
+      {
+        currEvent->cont_chisq_h2 = autoVeto[LAL_IFO_H2]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_L1])
+      {
+        currEvent->cont_chisq_l = autoVeto[LAL_IFO_L1]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_T1])
+      {
+        currEvent->cont_chisq_t = autoVeto[LAL_IFO_T1]->data->data[currPos];
+      }
+      if (autoVeto[LAL_IFO_V1])
+      {
+        currEvent->cont_chisq_v = autoVeto[LAL_IFO_V1]->data->data[currPos];
+      }
+    }
+  }
+  if (params->doChiSquare)
+  {
+    if (params->numIFO != 1)
+    {
+      currEvent->chisq = chiSquare[LAL_NUM_IFO]->data->data[currPos];
+      currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+    }
+    if (params->doSnglChiSquared)
+    {
+      if (chiSquare[LAL_IFO_G1])
+      {
+        currEvent->chisq_g = chiSquare[LAL_IFO_G1]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_H1])
+      {
+        currEvent->chisq_h1 = chiSquare[LAL_IFO_H1]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_H2])
+      {
+        currEvent->chisq_h2 = chiSquare[LAL_IFO_H2]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_L1])
+      {
+        currEvent->chisq_l = chiSquare[LAL_IFO_L1]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_T1])
+      {
+        currEvent->chisq_t = chiSquare[LAL_IFO_T1]->data->data[currPos];
+      }
+      if (chiSquare[LAL_IFO_V1])
+      {
+        currEvent->chisq_v = chiSquare[LAL_IFO_V1]->data->data[currPos];
+      }
+    }
+  }
+  if (pValues[0])
+    currEvent->amp_term_1 = pValues[0]->data->data[currPos];
+  if (pValues[1])
+    currEvent->amp_term_2 = pValues[1]->data->data[currPos];
+  if (pValues[2])
+    currEvent->amp_term_3 = pValues[2]->data->data[currPos];
+  if (pValues[3])
+    currEvent->amp_term_4 = pValues[3]->data->data[currPos];
+  if (pValues[4])
+    currEvent->amp_term_5 = pValues[4]->data->data[currPos];
+  if (pValues[5])
+    currEvent->amp_term_6 = pValues[5]->data->data[currPos];
+  if (pValues[6])
+    currEvent->amp_term_7 = pValues[6]->data->data[currPos];
+  if (pValues[7])
+    currEvent->amp_term_8 = pValues[7]->data->data[currPos];
+  if (pValues[8])
+    currEvent->amp_term_9 = pValues[8]->data->data[currPos];
+  if (pValues[9])
+    currEvent->amp_term_10 = pValues[9]->data->data[currPos];
+  /* Note that these two terms are only used for debugging
+   * at the moment. When they are used properly they will be
+   * moved into sane columns! For spin they give Amp*cos(Phi_0) and
+   * Amp*sin(Phi_0). For non spinning the second is 0 and the
+   * first is some arbitrary amplitude. */
+  if (gammaBeta[0])
+  {
+    currEvent->g1quad = crectf( gammaBeta[0]->data->data[currPos], gammaBeta[1]->data->data[currPos] );
+  }
+
+  if (snrComps[LAL_IFO_G1])
+  {
+    currEvent->snr_g = snrComps[LAL_IFO_G1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_G1]];
+    currEvent->sigmasq_g = PTFM[LAL_IFO_G1]->data[0];
+  }
+  if (snrComps[LAL_IFO_H1])
+  {
+    currEvent->snr_h1 = snrComps[LAL_IFO_H1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_H1]];
+    currEvent->sigmasq_h1 = PTFM[LAL_IFO_H1]->data[0];
+  }
+  if (snrComps[LAL_IFO_H2])
+  {
+    currEvent->snr_h2 = snrComps[LAL_IFO_H2]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_H2]];
+    currEvent->sigmasq_h2 = PTFM[LAL_IFO_H2]->data[0];
+  }
+  if (snrComps[LAL_IFO_L1])
+  {
+    currEvent->snr_l = snrComps[LAL_IFO_L1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_L1]];
+    currEvent->sigmasq_l = PTFM[LAL_IFO_L1]->data[0];
+  }
+  if (snrComps[LAL_IFO_T1])
+  {
+    currEvent->snr_t = snrComps[LAL_IFO_T1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_T1]];
+    currEvent->sigmasq_t = PTFM[LAL_IFO_T1]->data[0];
+  }
+  if (snrComps[LAL_IFO_V1])
+  {
+    currEvent->snr_v = snrComps[LAL_IFO_V1]->data->
+        data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_V1]];
+    currEvent->sigmasq_v = PTFM[LAL_IFO_V1]->data[0];
+  }
+  if (spinTrigger == 1)
+  {
+    if (params->numIFO == 1)
+      currEvent->snr_dof = 6;
+    else
+      currEvent->snr_dof = 12;
+  }
+  else
+  {
+    currEvent->snr_dof = numDOF;
+  }
+
+  /* store ifos */
+  if (params->numIFO == 1)
+  {
+    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX,\
+              "%s", params->ifoName[0]);
+  }
+  else if(params->numIFO == 2)
+  {
+    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s",
+             params->ifoName[0], params->ifoName[1]);
+  }
+  else if (params->numIFO == 3)
+  {
+    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s%s",
+             params->ifoName[0], params->ifoName[1], params->ifoName[2]);
+  }
+  else if (params->numIFO == 4)
+  {
+    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s%s%s",
+             params->ifoName[0], params->ifoName[1], params->ifoName[2],
+             params->ifoName[3]);
+  }
+  if (params->faceOnStatistic == 2)
+  {
+    currEvent->inclination = LAL_PI/2.;
+  }
+
+  return currEvent;
+}
+
 void coh_PTF_cleanup(
     struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
@@ -603,23 +2270,28 @@ void coh_PTF_cleanup(
     REAL4FFTPlan            *psdplan,
     REAL4FFTPlan            *revplan,
     COMPLEX8FFTPlan         *invPlan,
-    REAL4TimeSeries         *channel[LAL_NUM_IFO+1],
-    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
-    RingDataSegments        *segments[LAL_NUM_IFO+1],
+    REAL4TimeSeries         **channel,
+    REAL4FrequencySeries    **invspec,
+    RingDataSegments        **segments,
     MultiInspiralTable      *events,
     InspiralTemplate        *PTFbankhead,
     FindChirpTemplate       *fcTmplt,
     FindChirpTmpltParams    *fcTmpltParams,
     FindChirpInitParams     *fcInitParams,
-    REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL8Array              *PTFN[LAL_NUM_IFO+1],
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    REAL8Array              **PTFM,
+    REAL8Array              **PTFN,
+    COMPLEX8VectorSequence  **PTFqVec,
     REAL4                   *timeOffsets,
     REAL4                   *Fplus,
     REAL4                   *Fcross,
     REAL4                   *Fplustrig,
-    REAL4                   *Fcrosstrig
-    )
+    REAL4                   *Fcrosstrig,
+    CohPTFSkyPositions      *skyPoints,
+    TimeSlide               *time_slide_head,
+    REAL4                   *timeSlideVectors,
+    LALDetector             **detectors,
+    INT8                    *slideIDList
+)
 {
   if ( params->injectList )
   {
@@ -708,8 +2380,6 @@ void coh_PTF_cleanup(
   }
   if (fcTmpltParams)
   {
-    if ( fcTmpltParams->fwdPlan )
-      XLALDestroyREAL4FFTPlan( fcTmpltParams->fwdPlan );
     if ( fcTmpltParams->PTFe1 )
       XLALDestroyVectorSequence( fcTmpltParams->PTFe1 );
     if ( fcTmpltParams->PTFe2 )
@@ -744,6 +2414,27 @@ void coh_PTF_cleanup(
     LALFree( Fplustrig );
   if ( Fcrosstrig )
     LALFree( Fcrosstrig );
+
+  if (skyPoints)
+  {
+    if (skyPoints->data)
+      LALFree(skyPoints->data);
+    LALFree(skyPoints);
+  }
+  if (time_slide_head)
+    XLALDestroyTimeSlideTable(time_slide_head);
+  if (timeSlideVectors)
+    LALFree(timeSlideVectors);
+
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (detectors[ifoNumber])
+      LALFree(detectors[ifoNumber]);
+  }
+
+  if (slideIDList)
+    LALFree(slideIDList);
+
 }
 
 
@@ -754,7 +2445,7 @@ REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params )
   if ( params->segmentDuration > 0.0 )
   {
     UINT4 segmentLength;
-    segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
+    segmentLength = params->numTimePoints;
     plan = XLALCreateForwardREAL4FFTPlan( segmentLength, params->fftLevel );
   }
   return plan;
@@ -781,11 +2472,25 @@ REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params )
   if ( params->segmentDuration > 0.0 )
   {
     UINT4 segmentLength;
-    segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
+    segmentLength = params->numTimePoints;
     plan = XLALCreateReverseREAL4FFTPlan( segmentLength, params->fftLevel );
   }
   return plan;
 }
+
+/* gets the inverse fft plan */
+COMPLEX8FFTPlan *coh_PTF_get_fft_invplan( struct coh_PTF_params *params )
+{
+  COMPLEX8FFTPlan *plan = NULL;
+  if ( params->segmentDuration > 0.0 )
+  {
+    UINT4 segmentLength;
+    segmentLength = params->numTimePoints;
+    plan = XLALCreateReverseCOMPLEX8FFTPlan( segmentLength, params->fftLevel );
+  }
+  return plan;
+}
+
 
 /* routine to see if integer i is in a list of integers to do */
 /* e.g., 2, 7, and 222 are in the list "1-3,5,7-" but 4 is not */
@@ -912,7 +2617,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
   /* if two-detectors, remove time-delay degeneracy */
   if (params->skyLooping == TWO_DET_SKY_PATCH)
   {
-    verbose("Generated necessary sky grid with %d points, ",
+    verbose("Generated full sky grid with %d points, ",
             skyPoints->numPoints);
     verbose("parsing for time-delay degeneracy\n");
     CohPTFSkyPositions *parsedSkyPoints = NULL; 
@@ -921,12 +2626,11 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
       LALFree(skyPoints->data);
     if (skyPoints)
       LALFree(skyPoints);
-    return parsedSkyPoints;
+    skyPoints = parsedSkyPoints;
   }
-  else
-  {
-    return skyPoints;
-  }
+  verbose("Generated final sky grid with %d points, ",
+          skyPoints->numPoints);
+  return skyPoints;
 }
 
 /*
@@ -1734,7 +3438,7 @@ void findInjectionSegment(
 {
     /* define variables */
     LIGOTimeGPS injTime, segmentStart, segmentEnd;
-    UINT4 injSamplePoint, injWindow, numPoints;
+    UINT4 injSamplePoint, injWindow;
     REAL8 injDiff;
     INT8 startDiff, endDiff;
     SimInspiralTable *thisInject = NULL;
@@ -1742,9 +3446,8 @@ void findInjectionSegment(
     /* set variables */
     segmentStart = *epoch;
     segmentEnd   = *epoch;
-    XLALGPSAdd(&segmentEnd, params->segmentDuration/2.0);
+    XLALGPSAdd(&segmentEnd, params->strideDuration);
     thisInject = params->injectList;
-    numPoints = floor(params->segmentDuration * params->sampleRate + 0.5);
 
     /* loop over injections */
     while (thisInject)
@@ -1760,23 +3463,23 @@ void findInjectionSegment(
             if (*start)
             {
                 verbose("warning: multiple injections in this segment.\n");
-                *start = numPoints/4;
-                *end = 3 * numPoints/4;
+                *start = params->analStartPoint;
+                *end = params->analEndPoint;
             }
             else
             {
                 injDiff = (REAL8) ((XLALGPSToINT8NS(&injTime) - \
                                     XLALGPSToINT8NS(&segmentStart)) / 1E9);
                 injSamplePoint = floor(injDiff * params->sampleRate + 0.5);
-                injSamplePoint += numPoints/4;
+                injSamplePoint += params->analStartPoint;
                 injWindow = floor(params->injSearchWindow * params->sampleRate
                                   + 1);
                 *start = injSamplePoint - injWindow;
-                if (*start < numPoints/4)
-                    *start = numPoints/4;
+                if (*start < params->analStartPoint)
+                    *start = params->analStartPoint;
                 *end = injSamplePoint + injWindow + 1;
-                if (*end > 3*numPoints/4)
-                    *end = 3*numPoints/4;
+                if (*end > params->analEndPoint)
+                    *end = params->analEndPoint;
                 verbose("Found analysis segment at [%d,%d).\n", *start, *end);
             }
         }
@@ -1800,7 +3503,7 @@ UINT4 checkInjectionMchirp(
   /* set variables */
   segmentStart = *epoch;
   segmentEnd   = *epoch;
-  XLALGPSAdd(&segmentEnd, params->segmentDuration/2.0);
+  XLALGPSAdd(&segmentEnd, params->strideDuration);
   passMchirpCheck = 2;
   thisInject = params->injectList;
   
@@ -1849,3 +3552,88 @@ UINT4 checkInjectionMchirp(
   }
   return passMchirpCheck;
 }
+
+void coh_PTF_set_null_input_REAL4TimeSeries(
+  REAL4TimeSeries** timeSeries,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    timeSeries[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_REAL4FrequencySeries(
+  REAL4FrequencySeries** freqSeries,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    freqSeries[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_RingDataSegments(
+  RingDataSegments** segment,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    segment[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_REAL8Array(
+  REAL8Array** array,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    array[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_COMPLEX8VectorSequence(
+  COMPLEX8VectorSequence** vecSeq,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    vecSeq[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_REAL4(
+  REAL4** array,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    array[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_LALDetector(
+  LALDetector** detector,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    detector[i] = NULL;
+  }
+}
+

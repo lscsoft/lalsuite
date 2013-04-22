@@ -21,11 +21,11 @@ for(my $ii=0; $ii<100; $ii++) {
       chomp($injection);
       
       open(ULFILE, "/home/egoetz/TwoSpect/confirmUL/$ii/uls_$jj.dat") or die "Cannot open /home/egoetz/TwoSpect/confirmUL/$ii/uls_$jj.dat $!";
-      my $ul = <ULFILE>;
-      chomp($ul);
-      
-      print RESULTS "$injection $ul\n";
-      
+      while(my $line = <ULFILE>) {
+         chomp($line);
+         print RESULTS "$injection $line\n";
+      }
+     
       close(ULFILE);
       $jj++;
    }

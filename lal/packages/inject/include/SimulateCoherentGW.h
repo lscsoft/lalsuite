@@ -23,7 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
 #include <lal/SkyCoordinates.h>
-#include <lal/LALBarycenter.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -34,7 +33,9 @@ extern "C" {
 /**
    \addtogroup SimulateCoherentGW_h
    \author Creighton, T. D.
-
+   \deprecated This module is deprecated, please see LALSimulation for a replacement.
+*/
+/*
    \brief Provides routines to simulate generic gravitational waveforms
    originating from a particular source.
 
@@ -245,28 +246,8 @@ extern "C" {
    f/\dot{f}\f$ (provided \f$\tau\gg1/f\f$, as we have assumed).
 
 */
-/*@{*/
 
-/** \name Error Codes */
-/*@{*/
-#define SIMULATECOHERENTGWH_ENUL  1	/**< Unexpected null pointer in arguments */
-#define SIMULATECOHERENTGWH_EBAD  2	/**< A sampling interval is (effectively) zero */
-#define SIMULATECOHERENTGWH_ESIG  3	/**< Input signal must specify amplitude and phase functions */
-#define SIMULATECOHERENTGWH_EDIM  4	/**< Amplitude must be a 2-dimensional vector */
-#define SIMULATECOHERENTGWH_EMEM  5	/**< Memory allocation error */
-#define SIMULATECOHERENTGWH_EUNIT 6	/**< Bad input units */
-/*@} */
-
-/** \cond DONT_DOXYGEN */
-#define SIMULATECOHERENTGWH_MSGENUL  "Unexpected null pointer in arguments"
-#define SIMULATECOHERENTGWH_MSGEBAD  "A sampling interval is (effectively) zero"
-#define SIMULATECOHERENTGWH_MSGESIG  "Input signal must specify amplitude and phase functions"
-#define SIMULATECOHERENTGWH_MSGEDIM  "Amplitude must be a 2-dimensional vector"
-#define SIMULATECOHERENTGWH_MSGEMEM  "Memory allocation error"
-#define SIMULATECOHERENTGWH_MSGEUNIT "Bad input units"
-/** \endcond */
-
-/** This structure stores a representation of a plane
+/* This structure stores a representation of a plane
  * gravitational wave propagating from a particular point on the sky.
  * Several alternate representations are permitted to allow a more
  * natural characterization of quasiperiodic waveforms.
@@ -283,29 +264,26 @@ extern "C" {
  *
  */
 typedef struct tagCoherentGW {
-  SkyPosition position;     /**< The location of the source in the sky; this should be in equatorial celestial coordinates, but routines may be able to do the conversion */
-  REAL4 psi;                /**< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of [\ref Anderson_W2000] */
-  REAL4TimeVectorSeries *h; /**< A time-sampled two-dimensional vector storing the waveforms \f$h_+(t)\f$ and \f$h_\times(t)\f$, in dimensionless strain */
-  REAL4TimeVectorSeries *a; /**< A time-sampled two-dimensional vector storing the amplitudes \f$A_1(t)\f$ and \f$A_2(t)\f$, in dimensionless strain */
-  REAL4TimeSeries *f;       /**< A time-sampled sequence storing the instantaneous frequency \f$f(t)\f$, in Hz. */
-  REAL8TimeSeries *phi;     /**< A time-sampled sequence storing the phase function \f$\phi(t)\f$, in radians */
-  REAL4TimeSeries *shift;   /**< A time-sampled sequence storing the polarization shift \f$\Phi(t)\f$, in radians */
-  UINT4 dtDelayBy2;         /**< A user specified half-interval time step for the Doppler delay look-up table (will default to 400s if set to 0) */
-  UINT4 dtPolBy2;           /**< A user defined half-interval time step for the polarisation response look-up table (will default to 300s if set to 0) */
+  SkyPosition position;     /*< The location of the source in the sky; this should be in equatorial celestial coordinates, but routines may be able to do the conversion */
+  REAL4 psi;                /*< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of [\ref Anderson_W2000] */
+  REAL4TimeVectorSeries *h; /*< A time-sampled two-dimensional vector storing the waveforms \f$h_+(t)\f$ and \f$h_\times(t)\f$, in dimensionless strain */
+  REAL4TimeVectorSeries *a; /*< A time-sampled two-dimensional vector storing the amplitudes \f$A_1(t)\f$ and \f$A_2(t)\f$, in dimensionless strain */
+  REAL4TimeSeries *f;       /*< A time-sampled sequence storing the instantaneous frequency \f$f(t)\f$, in Hz. */
+  REAL8TimeSeries *phi;     /*< A time-sampled sequence storing the phase function \f$\phi(t)\f$, in radians */
+  REAL4TimeSeries *shift;   /*< A time-sampled sequence storing the polarization shift \f$\Phi(t)\f$, in radians */
+  UINT4 dtDelayBy2;         /*< A user specified half-interval time step for the Doppler delay look-up table (will default to 400s if set to 0) */
+  UINT4 dtPolBy2;           /*< A user defined half-interval time step for the polarisation response look-up table (will default to 300s if set to 0) */
 } CoherentGW;
 
-/** This structure contains information required to determine the response
+/* This structure contains information required to determine the response
  * of a detector to a gravitational waveform.
  */
 typedef struct tagDetectorResponse {
-  COMPLEX8FrequencySeries *transfer;    /**< The frequency-dependent transfer function of the interferometer, in ADC counts per unit strain amplitude at any given frequency;
+  COMPLEX8FrequencySeries *transfer;    /*< The frequency-dependent transfer function of the interferometer, in ADC counts per unit strain amplitude at any given frequency;
                                          * if absent, the response will be given in raw strain rather than ADC output */
-  LALDetector *site;                    /**< A structure storing site and polarization information, used to compute the polarization response and the propagation delay;
+  LALDetector *site;                    /*< A structure storing site and polarization information, used to compute the polarization response and the propagation delay;
                                          * if absent, the response will be computed to the plus mode waveform with no time delay */
-  EphemerisData *ephemerides;           /**< A structure storing the positions, velocities, and accelerations of the Earth and Sun centres of mass, used to compute
-                                         * the propagation delay to the solar system barycentre;
-                                         * if absent, the propagation delay will be computed to the Earth centre (rather than a true barycentre) */
-  LIGOTimeGPS heterodyneEpoch;          /**< A reference time for heterodyned detector output time series, where the phase of the mixing signal is zero.
+  LIGOTimeGPS heterodyneEpoch;          /*< A reference time for heterodyned detector output time series, where the phase of the mixing signal is zero.
                                          * This parameter is only used when generating detector output time series with nonzero heterodyne frequency \c f0.
                                          * (Note: This should really be a parameter stored in the \c TimeSeries structure along with \c f0, but it isnt, so we
                                          * have to add it here.)
@@ -314,13 +292,13 @@ typedef struct tagDetectorResponse {
 
 /* Function prototypes. */
 
+/** \deprecated This function is deprecated, please see LALSimulation for a replacement. */
 void
 LALSimulateCoherentGW( LALStatus        *status,
                        REAL4TimeSeries  *output,
                        CoherentGW       *input,
                        DetectorResponse *detector );
 
-/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

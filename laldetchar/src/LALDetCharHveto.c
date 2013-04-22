@@ -235,11 +235,11 @@ double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* ch
 
 		k = (size_t *)val;
 
-		printf( "Total coincidences for channel %s: %lu\n", (char *)key, *k );
+		printf( "Total coincidences for channel %s: %zu\n", (char *)key, *k );
 		printf( "Mu for channel %s: %g\n", (char *)key, mu );
 		sig = XLALDetCharHvetoSignificance( mu, *k );
 		printf( "Significance for this channel: %g\n", sig );
-		if( sig > max_sig ){
+		if( sig > max_sig && !strstr(chan, (char*)key) ){
 				max_sig = sig;
 				strcpy( winner, (char *)key );
 		}
@@ -462,14 +462,12 @@ void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, c
 }
 
 /*
- * Calculate the signifiance of a set of triggers from the Poisson survival
+ * Calculate the significance of a set of triggers from the Poisson survival
  * function given the expected number of triggers.
  */
 double XLALDetCharHvetoSignificance( double mu, int k ){
-	//double sig = -log10( gsl_sf_gamma_inc_P(k, mu) );
-	// FIXME: Arbitrary
-	//if( sig < 1e-15 ){
-		return -k*log10(mu) + mu*log10(exp(1)) + gsl_sf_lngamma(k+1)/log(10);
-	//}
-	//return sig;
+	if( k == 0 ){
+		return 0.0;
+	}
+	return -log10( gsl_sf_gamma_inc_P(k, mu) );
 }

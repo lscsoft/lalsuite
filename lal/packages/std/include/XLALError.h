@@ -740,7 +740,7 @@ void XLALError(
  * </ul>
  */
 #define XLAL_CHECK_REAL8(assertion, ...) \
-	XLAL_CHECK_VAL(XLAL_REAL4_FAIL_NAN, assertion, __VA_ARGS__)
+	XLAL_CHECK_VAL(XLAL_REAL8_FAIL_NAN, assertion, __VA_ARGS__)
 
 
 /*@}*/

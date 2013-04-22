@@ -1557,7 +1557,7 @@ int WindowData(struct CommandLineArgsTag CLA)
         printf("\nExample dataDouble values after windowing data in WindowData:\n"); printExampleDataDouble();
     #endif  
 
-   if(testpao=1){
+   if(testpao==1){
      OUTpao=fopen("windowT.dat","w");
      for(k =0; k < N; k++)fprintf(OUTpao,"%23.16e\n",dataDouble.data->data[k]);
      fclose(OUTpao);
@@ -2719,9 +2719,9 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     for (k=0; k<header.nsamples; k++)
     {
       rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].re;
+	* crealf(fftDataSingle->data[k+firstbin]);
       ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].im;
+	* cimagf(fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
         if (!finite(rpw) || !finite(ipw)) {
@@ -2745,9 +2745,9 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     for (k=0; k<header.nsamples; k++)
     {
       rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].re;
+	* creal(fftDataDouble->data[k+firstbin]);
       ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].im;
+	* cimag(fftDataDouble->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
         if (!finite(rpw) || !finite(ipw)) {
@@ -2858,11 +2858,11 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     singleDeltaT = ((REAL4)dataSingle.deltaT); /* 01/05/06 gam; and normalize SFTs using this below */
     for (k=0; k<nBins; k++)
     {
-      oneSFT->data->data[k].re = singleDeltaT*fftDataSingle->data[k+firstbin].re;
-      oneSFT->data->data[k].im = singleDeltaT*fftDataSingle->data[k+firstbin].im;
+      oneSFT->data->data[k].realf_FIXME = singleDeltaT*crealf(fftDataSingle->data[k+firstbin]);
+      oneSFT->data->data[k].imagf_FIXME = singleDeltaT*cimagf(fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(oneSFT->data->data[k].re) || !finite(oneSFT->data->data[k].im)) {
+        if (!finite(crealf(oneSFT->data->data[k])) || !finite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
@@ -2882,13 +2882,13 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     sureim=0;
     for (k=0; k<nBins; k++)
     {
-      oneSFT->data->data[k].re = doubleDeltaT*fftDataDouble->data[k+firstbin].re;
-      oneSFT->data->data[k].im = doubleDeltaT*fftDataDouble->data[k+firstbin].im;
+      oneSFT->data->data[k].realf_FIXME = doubleDeltaT*creal(fftDataDouble->data[k+firstbin]);
+      oneSFT->data->data[k].imagf_FIXME = doubleDeltaT*cimag(fftDataDouble->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-      sureim+=(oneSFT->data->data[k].re)*(oneSFT->data->data[k].re)+(oneSFT->data->data[k].im)*(oneSFT->data->data[k].im); 
+      sureim+=(crealf(oneSFT->data->data[k]))*(crealf(oneSFT->data->data[k]))+(cimagf(oneSFT->data->data[k]))*(cimagf(oneSFT->data->data[k])); 
       
       #if CHECKFORINFINITEANDNANS
-        if (!finite(oneSFT->data->data[k].re) || !finite(oneSFT->data->data[k].im)) {
+        if (!finite(crealf(oneSFT->data->data[k])) || !finite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }

@@ -23,7 +23,7 @@
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 
 /**
@@ -58,12 +58,12 @@ that are accurate to small fractions of a cycle over many years.
 
 Since the waveform does not include any effects such as precession,
 the amplitudes \f$A_+\f$, \f$A_\times\f$ and the shift angle \f$\Phi\f$, as
-defined in \ref SimulateCoherentGW_h, are constant.  This is dealt
+defined in \ref PulsarSimulateCoherentGW_h, are constant.  This is dealt
 with by setting <tt>output->a</tt> to be a
 \c REAL4TimeVectorSequence of two identical vectors
 \f$(A_+,A_\times)\f$ spanning the requested time of the waveform, under
 the assumption that any routine using this output data (such as the
-routines in \ref SimulateCoherentGW_h) will interpolate these two
+routines in \ref PulsarSimulateCoherentGW_h) will interpolate these two
 endpoints to get the instantaneous values of \f$A_+\f$, \f$A_\times\f$.  The
 field <tt>output->shift</tt> is left as \c NULL, so the constant
 value of \f$\Phi\f$ must be subsumed into the polarization angle \f$\psi\f$.
@@ -92,7 +92,7 @@ encountered during the integration.
 */
 void
 LALGenerateTaylorCW( LALStatus          *stat,
-		     CoherentGW         *output,
+		     PulsarCoherentGW         *output,
 		     TaylorCWParamStruc *params )
 {
   UINT4 n, i;          /* number of and index over samples */

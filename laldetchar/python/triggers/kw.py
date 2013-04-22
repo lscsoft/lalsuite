@@ -26,7 +26,7 @@ import re
 import bisect
 
 from socket import getfqdn
-from lal import (LIGOTimeGPS, lalStrainUnit)
+from lal.lal import LIGOTimeGPS
 
 from glue import segments
 from glue.lal import (Cache, CacheEntry)
@@ -449,16 +449,18 @@ def find_dmt_cache(start, end, ifo, format="xml", check_files=False, **kwargs):
     known_epochs = [1026263104]
 
     # get parameters
-    dt = kwargs.pop("duration", 64)
+    dt = int(kwargs.pop("duration", 64))
     epoch = kwargs.pop("epoch", known_epochs)
+    filetag = kwargs.pop("filetag", "KW_TRIGGERS")
+    dirtag = filetag.endswith("_TRENDS") and filetag[:-7] or filetag
     try:
         iter(epoch)
     except TypeError:
-        epoch = [epoch]
-    overlap = kwargs.pop("overlap", 0)
+        epoch = [int(epoch)]
+    overlap = int(kwargs.pop("overlap", 0))
     directory = kwargs.pop("duration",
-                           "/gds-%s/dmt/triggers/%s-KW_TRIGGERS"
-                           % (ifo.lower(), ifo[0].upper()))
+                           "/gds-%s/dmt/triggers/%s-%s"
+                           % (ifo.lower(), ifo[0].upper(), dirtag))
 
     # optimise
     append = out.append
@@ -474,15 +476,15 @@ def find_dmt_cache(start, end, ifo, format="xml", check_files=False, **kwargs):
     start_time = int(start-numpy.mod(start-epoch[epoch_idx], dt-overlap))
     t = start_time
 
-    def _omega_file(gps, ifo):
-        return ("%s/%s-KW_TRIGGERS-%.5s/"
-                "%s-KW_TRIGGERS-%.10d-%d.%s"
-                % (directory, ifo.upper()[0], gps, ifo.upper()[0], gps, dt,
-                   format))
+    def _kw_file(gps, ifo):
+        return ("%s/%s-%s-%.5s/"
+                "%s-%s-%.10d-%d.%s"
+                % (directory, ifo.upper()[0], dirtag, gps,
+                   ifo.upper()[0], filetag, gps, dt, format))
 
     # loop over time segments constructing file paths
     while t<end:
-        fp = _omega_file(t, ifo)
+        fp = _kw_file(t, ifo)
         if (intersects(segment(t, t+dt)) and
                (not check_files or isfile(fp))):
             append(from_T050017(fp))

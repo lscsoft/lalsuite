@@ -1,6 +1,9 @@
-DISTCLEANFILES = *.h
+DISTCLEANFILES = *.h *.i
 all-local:
-	@set fnord $(MAKEFLAGS); amf=$$2; \
+	@for file in *.h *.i; do \
+		test -r $$file || rm -f $$file; \
+	done; \
+	set fnord $(MAKEFLAGS); amf=$$2; \
 	d=$(top_builddir)/src; \
 	echo "Making header-links in $$d"; \
 	(cd $$d && $(MAKE) $(AM_MAKEFLAGS) header-links) \

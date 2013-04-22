@@ -18,7 +18,6 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/FrequencySeries.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/Units.h>
@@ -46,11 +45,11 @@ int main ( void )
 
   /* init data array */
   COMPLEX8 vals[] = {
-    { -1.249241e-21,   1.194085e-21 },
-    {  2.207420e-21,   2.472366e-22 },
-    {  1.497939e-21,   6.593609e-22 },
-    {  3.544089e-20,  -9.365807e-21 },
-    {  1.292773e-21,  -1.402466e-21 }
+    crectf( -1.249241e-21,   1.194085e-21 ),
+    crectf(  2.207420e-21,   2.472366e-22 ),
+    crectf(  1.497939e-21,   6.593609e-22 ),
+    crectf(  3.544089e-20,  -9.365807e-21 ),
+    crectf(  1.292773e-21,  -1.402466e-21 )
   };
   UINT4 numBins = sizeof ( vals ) / sizeof(vals[0] );
 

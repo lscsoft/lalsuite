@@ -149,8 +149,8 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
                 max=(INT4) *(REAL8 *)this->value;
             }
         }
-        LALInferenceDestroyVariables(acls);
-        free(acls);
+        LALInferenceClearVariables(acls);
+        XLALFree(acls);
         if(max>maxMCMC){
             fprintf(stderr,"Warning: Estimated chain length %i exceeds maximum %i!\n",max,maxMCMC);
             max=maxMCMC;
@@ -188,9 +188,9 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 	for(i=0;i<(*cvm)->size1;i++) for(j=0;j<(*cvm)->size2;j++) gsl_matrix_set(*cvm,i,j,0.0);
 
 	/* Find the means */
-	if(NULL==(means = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
-	if(NULL==(ms = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
-	if(NULL==(mc = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	if(NULL==(means = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	if(NULL==(ms = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	if(NULL==(mc = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
 	for(i=0;i<ND;i++){ 
           means[i]=0.0;
           ms[i] = 0.;
@@ -239,8 +239,8 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
           }
         }
         
-        free(ms);
-        free(mc);
+        XLALFree(ms);
+        XLALFree(mc);
         
 	/* Find the (co)-variances */
 	for(i=0;i<Nlive;i++){
@@ -276,7 +276,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 
 	/* Normalise */
 	for(i=0;i<ND;i++) for(j=0;j<ND;j++) gsl_matrix_set(*cvm,i,j,gsl_matrix_get(*cvm,i,j)/((REAL8) Nlive));
-	free(means);
+	XLALFree(means);
         
 	/* Fill in variances for circular parameters */
 	/*for(item=Live[0]->head,j=0;item;item=item->next) {
@@ -310,425 +310,425 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
-	UINT4 iter=0,i,j,minpos;
-	UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-	UINT4 Nruns=100;
-	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray,*logtarray,*logt2array;
-	REAL8 TOLERANCE=0.1;
-	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;//deltaZ - set but not used
-	LALInferenceVariables *temp;
-	FILE *fpout=NULL;
-	gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
-	REAL8 dblmax=-DBL_MAX;
-	REAL8 zero=0.0;
-	REAL8 *logLikelihoods=NULL;
-	UINT4 verbose=0;
-    REAL8 sloppyfrac;
-	UINT4 displayprogress=0;
-	LALInferenceVariableItem *param_ptr;
-	LALInferenceVariables *currentVars=calloc(1,sizeof(LALInferenceVariables));
-	REAL8 kdupdate=0.;
-
-	/* Default sample logging functions with and without XML */
-#ifdef HAVE_LIBLALXML
-  	char *outVOTable=NULL;
-	if(!runState->logsample) runState->logsample=LALInferenceLogSampleToArray;
-#else
-	if(!runState->logsample) runState->logsample=LALInferenceLogSampleToFile;
-#endif
-	
-        if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
-          /*if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )*/
-            logZnoise=LALInferenceNullLogLikelihood(runState->data);
-	
-          LALInferenceAddVariable(runState->algorithmParams,"logZnoise",&logZnoise,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-        }
-        else{
-          logZnoise = 
-            *(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
-        }
-        
-        logLikelihoods=(REAL8 *)(*(REAL8Vector **)LALInferenceGetVariable(runState->algorithmParams,"logLikelihoods"))->data;
-
-	verbose=LALInferenceCheckVariable(runState->algorithmParams,"verbose");
-    displayprogress=verbose;
-	
-	/* Operate on parallel runs if requested */
-	if(LALInferenceCheckVariable(runState->algorithmParams,"Nruns"))
-		Nruns = *(UINT4 *) LALInferenceGetVariable(runState->algorithmParams,"Nruns");
-
-	if(LALInferenceCheckVariable(runState->algorithmParams,"tolerance"))
-		TOLERANCE = *(REAL8 *) LALInferenceGetVariable(runState->algorithmParams,"tolerance");
-
-	/* Check that necessary parameters are created */
-	if(!LALInferenceCheckVariable(runState->algorithmParams,"logLmin"))
-		LALInferenceAddVariable(runState->algorithmParams,"logLmin",&dblmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-
-	if(!LALInferenceCheckVariable(runState->algorithmParams,"accept_rate"))
-		LALInferenceAddVariable(runState->algorithmParams,"accept_rate",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    if(!LALInferenceCheckVariable(runState->algorithmParams,"sub_accept_rate"))
-        LALInferenceAddVariable(runState->algorithmParams,"sub_accept_rate",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    if(!LALInferenceCheckVariable(runState->algorithmParams,"sloppyfraction"))
-        LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-
-	/* Set up the proposal scale factor, for use in the multi-student jump step */
-	REAL8 propScale = 0.1;
-	LALInferenceAddVariable(runState->proposalArgs,"proposal_scale",&propScale,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-
-	/* Open output file */
-        ProcessParamsTable *ppt = NULL; 
-	ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
-	if(!ppt){
-		fprintf(stderr,"Must specify --outfile <filename.dat>\n");
-		exit(1);
-	}
-	char *outfile=ppt->value;
-       
-    if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
-        displayprogress=1;
-
-#ifdef HAVE_LIBLALXML
-	ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outxml");
-	if(!ppt){
-		ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
-	}
-	if(!ppt){
-		fprintf(stderr,"Can specify --outXML <filename.dat> for VOTable output\n");
-	}
-	else{
-		outVOTable=ppt->value;
-	}
-#endif	
-	fpout=fopen(outfile,"w");
-
-	if(fpout==NULL) {fprintf(stderr,"Unable to open output file %s!\n",outfile); exit(1);}
-	else{
-		if(setvbuf(fpout,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
-			fprintf(stderr,"Warning: Unable to set output file buffer!");
-		LALInferenceAddVariable(runState->algorithmParams,"outfile",&fpout,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
-	}
-	//fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n");	
-	/* Set up arrays for parallel runs */
-	minpos=0;
-	        /*   for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
-   {
-        fprintf(fpout,"%s\t",param_ptr->name);
-    }	
-	fprintf(fpout,"logL\n");*/
-	logZarray = calloc(Nruns,sizeof(REAL8));
-	oldZarray = calloc(Nruns,sizeof(REAL8));
-	Harray = calloc(Nruns,sizeof(REAL8));
-	logwarray = calloc(Nruns,sizeof(REAL8));
-	logtarray=calloc(Nruns,sizeof(REAL8));
-    logt2array=calloc(Nruns,sizeof(REAL8));
-	Wtarray = calloc(Nruns,sizeof(REAL8));
-	if(logZarray==NULL || Harray==NULL || oldZarray==NULL || logwarray==NULL || Wtarray==NULL)
-		{fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
-
-	logw=log(1.0-exp(-1.0/Nlive));
-	for(i=0;i<Nruns;i++)  {logwarray[i]=logw; logZarray[i]=-DBL_MAX; oldZarray[i]=-DBL_MAX; Harray[i]=0.0;logtarray[i]=-1.0/Nlive; logt2array[i]=-1.0/Nlive; }
-	i=0;
-	/* Find maximum likelihood and sanity check */
-	for(i=0;i<Nlive;i++)
-	{
-		logLtmp=logLikelihoods[i];
-		logLmax=logLtmp>logLmax? logLtmp : logLmax;
-                if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
-                   fprintf(stderr,"Detected logL[%i]=%lf! Sanity checking...\n",i,logLikelihoods[i]);
-                   if(LALInferenceSanityCheck(runState))
-                     exit(1);
-		}
-	}
-	/* Add the covariance matrix for proposal distribution */
-	LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
-	runState->differentialPoints=runState->livePoints;
-	runState->differentialPointsLength=(size_t) Nlive;
-	/* Set up eigenvectors and eigenvalues. */
-	UINT4 N=(*cvm)->size1;
-	gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
-	gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
-	gsl_vector *eValues = gsl_vector_alloc(N);
-	REAL8Vector *eigenValues = XLALCreateREAL8Vector(N);
-	gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(N);
-	int gsl_status;
-	gsl_matrix_memcpy(covCopy, *cvm);
-	
-	if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
-	  XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
-	  XLAL_ERROR_VOID(XLAL_EFAILED);
-	}
-	
-	for (i = 0; i < N; i++) {
-	  eigenValues->data[i] = gsl_vector_get(eValues,i);
-	}
-	
-	/* If there is not a proposal counter, put one into the variables, initialized to zero. */
-	if (!LALInferenceCheckVariable(runState->proposalArgs, cycleArrayCounterName)) {
-	  i = 0;
-	  LALInferenceAddVariable(runState->proposalArgs, cycleArrayCounterName, &i, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_CIRCULAR);
-	}
-	
-	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
-	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-	LALInferenceAddVariable(runState->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
+  UINT4 iter=0,i,j,minpos;
+  UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+  UINT4 Nruns=100;
+  REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray,*logtarray,*logt2array;
+  REAL8 TOLERANCE=0.1;
+  REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;//deltaZ - set but not used
+  LALInferenceVariables *temp;
+  FILE *fpout=NULL;
+  gsl_matrix **cvm=XLALCalloc(1,sizeof(gsl_matrix *));
+  REAL8 dblmax=-DBL_MAX;
+  REAL8 zero=0.0;
+  REAL8 *logLikelihoods=NULL;
+  UINT4 verbose=0;
+  REAL8 sloppyfrac;
+  UINT4 displayprogress=0;
+  LALInferenceVariableItem *param_ptr;
+  LALInferenceVariables *currentVars=XLALCalloc(1,sizeof(LALInferenceVariables));
+  REAL8 kdupdate=0.;
+  
+  /* Default sample logging functions with and without XML */
+  #ifdef HAVE_LIBLALXML
+  char *outVOTable=NULL;
+  if(!runState->logsample) runState->logsample=LALInferenceLogSampleToArray;
+  #else
+  if(!runState->logsample) runState->logsample=LALInferenceLogSampleToFile;
+  #endif
+  
+  if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
+    /*if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )*/
+    logZnoise=LALInferenceNullLogLikelihood(runState->data);
     
-	/* set up k-D tree if required and not already set */
-	if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
-	  LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
-	  !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
-	  LALInferenceSetupkDTreeNSLivePoints( runState );
-	
-	if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
-	  INT4 tmp=200;
-	  LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmp,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-	}
-	/* Sprinkle points */
-	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
-	for(i=0;i<Nlive;i++) {
-	  runState->currentParams=runState->livePoints[i];
-	  LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-	  runState->evolve(runState);
-	  logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
-	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
-	}
-	
-	/* re-calculate the k-D tree from the new points if required */
-	if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
-          LALInferenceSetupkDTreeNSLivePoints( runState );
-          
-          /* get k-d tree update rate (this is how often the tree gets updated
-           * as a factor the number of live points - default is 4 */
-          if( LALInferenceGetProcParamVal( runState->commandLine, 
-                                           "--kDTreeUpdateFactor") ){
-            kdupdate = atof( LALInferenceGetProcParamVal( runState->commandLine,
-                             "--kDTreeUpdateFactor")->value );
-          }else
-            kdupdate = 4.;
-        }
-        
-        /* Reset proposal stats before starting */
-        resetProposalStats(runState);
-	
-	/* Set the number of MCMC points */
-	UpdateNMCMC(runState);
-    /* Output some information */
-    if(verbose){
-        LALInferencePrintProposalStatsHeader(stdout,runState->proposalStats);
-        LALInferencePrintProposalStats(stdout,runState->proposalStats);
-        resetProposalStats(runState);
-        printAdaptiveJumpSizes(stdout, runState);
+    LALInferenceAddVariable(runState->algorithmParams,"logZnoise",&logZnoise,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+  }
+  else{
+    logZnoise = 
+      *(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
+  }
+
+  logLikelihoods=(REAL8 *)(*(REAL8Vector **)LALInferenceGetVariable(runState->algorithmParams,"logLikelihoods"))->data;
+  
+  verbose=LALInferenceCheckVariable(runState->algorithmParams,"verbose");
+  displayprogress=verbose;
+  
+  /* Operate on parallel runs if requested */
+  if(LALInferenceCheckVariable(runState->algorithmParams,"Nruns"))
+    Nruns = *(UINT4 *) LALInferenceGetVariable(runState->algorithmParams,"Nruns");
+  
+  if(LALInferenceCheckVariable(runState->algorithmParams,"tolerance"))
+    TOLERANCE = *(REAL8 *) LALInferenceGetVariable(runState->algorithmParams,"tolerance");
+  
+  /* Check that necessary parameters are created */
+  if(!LALInferenceCheckVariable(runState->algorithmParams,"logLmin"))
+    LALInferenceAddVariable(runState->algorithmParams,"logLmin",&dblmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  
+  if(!LALInferenceCheckVariable(runState->algorithmParams,"accept_rate"))
+    LALInferenceAddVariable(runState->algorithmParams,"accept_rate",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  if(!LALInferenceCheckVariable(runState->algorithmParams,"sub_accept_rate"))
+    LALInferenceAddVariable(runState->algorithmParams,"sub_accept_rate",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  if(!LALInferenceCheckVariable(runState->algorithmParams,"sloppyfraction"))
+    LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  
+  /* Set up the proposal scale factor, for use in the multi-student jump step */
+  REAL8 propScale = 0.1;
+  LALInferenceAddVariable(runState->proposalArgs,"proposal_scale",&propScale,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+  
+  /* Open output file */
+  ProcessParamsTable *ppt = NULL; 
+  ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
+  if(!ppt){
+    fprintf(stderr,"Must specify --outfile <filename.dat>\n");
+    exit(1);
+  }
+  char *outfile=ppt->value;
+  
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
+    displayprogress=1;
+  
+  #ifdef HAVE_LIBLALXML
+  ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outxml");
+  if(!ppt){
+    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
+  }
+  if(!ppt){
+    fprintf(stderr,"Can specify --outXML <filename.dat> for VOTable output\n");
+  }
+  else{
+    outVOTable=ppt->value;
+  }
+  #endif	
+  fpout=fopen(outfile,"w");
+  
+  if(fpout==NULL) {fprintf(stderr,"Unable to open output file %s!\n",outfile); exit(1);}
+  else{
+    if(setvbuf(fpout,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
+      fprintf(stderr,"Warning: Unable to set output file buffer!");
+    LALInferenceAddVariable(runState->algorithmParams,"outfile",&fpout,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
+  }
+  //fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n");	
+  /* Set up arrays for parallel runs */
+  minpos=0;
+  /*   for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
+   {    *
+   fprintf(fpout,"%s\t",param_ptr->name);
+    }	
+    fprintf(fpout,"logL\n");*/
+  logZarray = XLALCalloc(Nruns,sizeof(REAL8));
+  oldZarray = XLALCalloc(Nruns,sizeof(REAL8));
+  Harray = XLALCalloc(Nruns,sizeof(REAL8));
+  logwarray = XLALCalloc(Nruns,sizeof(REAL8));
+  logtarray=XLALCalloc(Nruns,sizeof(REAL8));
+  logt2array=XLALCalloc(Nruns,sizeof(REAL8));
+  Wtarray = XLALCalloc(Nruns,sizeof(REAL8));
+  if(logZarray==NULL || Harray==NULL || oldZarray==NULL || logwarray==NULL || Wtarray==NULL)
+  {fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
+  
+  logw=log(1.0-exp(-1.0/Nlive));
+  for(i=0;i<Nruns;i++)  {logwarray[i]=logw; logZarray[i]=-DBL_MAX; oldZarray[i]=-DBL_MAX; Harray[i]=0.0;logtarray[i]=-1.0/Nlive; logt2array[i]=-1.0/Nlive; }
+  i=0;
+  /* Find maximum likelihood and sanity check */
+  for(i=0;i<Nlive;i++)
+  {
+    logLtmp=logLikelihoods[i];
+    logLmax=logLtmp>logLmax? logLtmp : logLmax;
+    if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
+      fprintf(stderr,"Detected logL[%i]=%lf! Sanity checking...\n",i,logLikelihoods[i]);
+      if(LALInferenceSanityCheck(runState))
+	exit(1);
     }
-
-	runState->currentParams=currentVars;
-	fprintf(stdout,"Starting nested sampling loop!\n");
-	/* Iterate until termination condition is met */
-	do {
-                /* Find minimum likelihood sample to replace */
-		minpos=0;
-                for(i=1;i<Nlive;i++){
-			if(logLikelihoods[i]<logLikelihoods[minpos])
-				minpos=i;
-		}
-		logLmin=logLikelihoods[minpos];
-	
-	
-		/* Update evidence array */
-		for(j=0;j<Nruns;j++){
-			Wtarray[j]=logwarray[j]+logLikelihoods[minpos]+logadd(0,logt2array[j]*logtarray[j])-log(2.0);
-			logZarray[j]=logadd(logZarray[j],Wtarray[j]);
-			Harray[j]= exp(Wtarray[j]-logZarray[j])*logLikelihoods[minpos]
-			+ exp(oldZarray[j]-logZarray[j])*(Harray[j]+oldZarray[j])-logZarray[j];
-		}
-		logZnew=mean(logZarray,Nruns);
-		//deltaZ=logZnew-logZ; - set but not used
-		H=mean(Harray,Nruns);
-		logZ=logZnew;
-		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
-               
-		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
-		
-		UINT4 itercounter=0;
-		
-		/* Generate a new live point */
-		do{ /* This loop is here in case it is necessary to find a different sample */
-			/* Clone an old live point and evolve it */
-                        while((j=gsl_rng_uniform_int(runState->GSLrandom,Nlive))==minpos){};
-			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
-			runState->currentLikelihood = logLikelihoods[j];
-			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
-                        runState->evolve(runState);
-                        itercounter++;
-		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
-
-                LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
-                logLikelihoods[minpos]=runState->currentLikelihood;
-     
-    //            for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
-   // {
-      //  fprintf(fpout,"%s\t",param_ptr->name);
-    //}        
-	//fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n"); 
-		if (runState->currentLikelihood>logLmax)
-			logLmax=runState->currentLikelihood;
-		for(j=0;j<Nruns;j++) {
-          REAL8 *tmp=logtarray;
-          logtarray=logt2array;
-          logt2array=tmp;
-		  logtarray[j]=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
-		  logwarray[j]+=logtarray[j];
-		}
-		logw=mean(logwarray,Nruns);
-		LALInferenceAddVariable(runState->livePoints[minpos],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
-		sloppyfrac=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"sloppyfraction");
-		if(displayprogress) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f Nmcmc: %i sub_accpt: %1.3f slpy: %2.1f%% H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",\
-		  iter,\
-		  100.0*((REAL8)iter)/(((REAL8) Nlive)*H),\
-		  *(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter,\
-		  *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"),\
-		  *(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"sub_accept_rate"),\
-		  100.0*sloppyfrac,\
-		  H,\
-		  H/LAL_LN2,\
-		  logLmin,\
-		  runState->currentLikelihood,\
-		  logZ,\
-		  dZ,\
-		  10.0*LAL_LOG10E*( logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
-		iter++;
-		/* Update the proposal */
-		if(!(iter%(Nlive/4))) {
-            /* Update the covariance matrix */
-            if ( LALInferenceCheckVariable( runState->proposalArgs,"covarianceMatrix" ) ){
-		        LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
-		        gsl_matrix_memcpy(covCopy, *cvm);
-		        if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
-		            XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
-		            XLAL_ERROR_VOID(XLAL_EFAILED);
-		        }
-		        for (i = 0; i < N; i++) {
-		            eigenValues->data[i] = gsl_vector_get(eValues,i);
-		        }
-		        LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
-		        LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-		        LALInferenceSetVariable(runState->proposalArgs,"covarianceMatrix",(void *)cvm);
-            }
-
-	    /* Update NMCMC from ACF */
-	    UpdateNMCMC(runState);
-	
-    /* Output some information */
-    if(verbose){
-        LALInferencePrintProposalStatsHeader(stdout,runState->proposalStats);
-        LALInferencePrintProposalStats(stdout,runState->proposalStats);
-        resetProposalStats(runState);
-        printAdaptiveJumpSizes(stdout, runState);
+  }
+  /* Add the covariance matrix for proposal distribution */
+  LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
+  runState->differentialPoints=runState->livePoints;
+  runState->differentialPointsLength=(size_t) Nlive;
+  /* Set up eigenvectors and eigenvalues. */
+  UINT4 N=(*cvm)->size1;
+  gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
+  gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
+  gsl_vector *eValues = gsl_vector_alloc(N);
+  REAL8Vector *eigenValues = XLALCreateREAL8Vector(N);
+  gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(N);
+  int gsl_status;
+  gsl_matrix_memcpy(covCopy, *cvm);
+  
+  if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+    XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+    XLAL_ERROR_VOID(XLAL_EFAILED);
+  }
+  
+  for (i = 0; i < N; i++) {
+    eigenValues->data[i] = gsl_vector_get(eValues,i);
+  }
+  
+  /* If there is not a proposal counter, put one into the variables, initialized to zero. */
+  if (!LALInferenceCheckVariable(runState->proposalArgs, cycleArrayCounterName)) {
+    i = 0;
+    LALInferenceAddVariable(runState->proposalArgs, cycleArrayCounterName, &i, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_CIRCULAR);
+  }
+  
+  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
+  
+  /* set up k-D tree if required and not already set */
+  if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
+    LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
+    !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
+    LALInferenceSetupkDTreeNSLivePoints( runState );
+  
+  if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
+    INT4 tmp=200;
+    LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmp,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  /* Sprinkle points */
+  LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
+  for(i=0;i<Nlive;i++) {
+    runState->currentParams=runState->livePoints[i];
+    LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    runState->evolve(runState);
+    logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
+    if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
+  }
+  
+  /* re-calculate the k-D tree from the new points if required */
+  if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
+    LALInferenceSetupkDTreeNSLivePoints( runState );
+    
+    /* get k-d tree update rate (this is how often the tree gets updated
+     * as a factor the number of live points - default is 4 */
+    if( LALInferenceGetProcParamVal( runState->commandLine, 
+      "--kDTreeUpdateFactor") ){
+      kdupdate = atof( LALInferenceGetProcParamVal( runState->commandLine,
+						    "--kDTreeUpdateFactor")->value );
+      }else
+	kdupdate = 4.;
+  }
+  
+  /* Reset proposal stats before starting */
+  resetProposalStats(runState);
+  
+  /* Set the number of MCMC points */
+  UpdateNMCMC(runState);
+  /* Output some information */
+  if(verbose){
+    LALInferencePrintProposalStatsHeader(stdout,runState->proposalStats);
+    LALInferencePrintProposalStats(stdout,runState->proposalStats);
+    resetProposalStats(runState);
+    printAdaptiveJumpSizes(stdout, runState);
+  }
+  /* Write out names of parameters */
+  FILE *lout=NULL;
+  char param_list[FILENAME_MAX];
+  sprintf(param_list,"%s_params.txt",outfile);
+  lout=fopen(param_list,"w");
+  minpos=0;
+  LALInferenceSortVariablesByName(runState->livePoints[0]);
+  for(param_ptr=runState->livePoints[0]->head;param_ptr;param_ptr=param_ptr->next)
+  {
+    fprintf(lout,"%s\t",param_ptr->name);
+  }
+  fclose(lout);
+  runState->currentParams=currentVars;
+  fprintf(stdout,"Starting nested sampling loop!\n");
+  /* Iterate until termination condition is met */
+  do {
+    /* Find minimum likelihood sample to replace */
+    minpos=0;
+    for(i=1;i<Nlive;i++){
+      if(logLikelihoods[i]<logLikelihoods[minpos])
+	minpos=i;
     }
-	      }
-	    
-	    if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" )){
-	      /* update k-d tree */
-              if(!(iter%((int)floor((REAL8)Nlive * kdupdate))))
-                LALInferenceSetupkDTreeNSLivePoints( runState ); 
-            }
+    logLmin=logLikelihoods[minpos];
+    
+    
+    /* Update evidence array */
+    for(j=0;j<Nruns;j++){
+      Wtarray[j]=logwarray[j]+logLikelihoods[minpos]+logadd(0,logt2array[j]*logtarray[j])-log(2.0);
+      logZarray[j]=logadd(logZarray[j],Wtarray[j]);
+      Harray[j]= exp(Wtarray[j]-logZarray[j])*logLikelihoods[minpos]
+      + exp(oldZarray[j]-logZarray[j])*(Harray[j]+oldZarray[j])-logZarray[j];
+    }
+    logZnew=mean(logZarray,Nruns);
+    //deltaZ=logZnew-logZ; - set but not used
+    H=mean(Harray,Nruns);
+    logZ=logZnew;
+    for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
+						   
+						   if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
+						   
+						   UINT4 itercounter=0;
+    
+    /* Generate a new live point */
+    do{ /* This loop is here in case it is necessary to find a different sample */
+      /* Clone an old live point and evolve it */
+      while((j=gsl_rng_uniform_int(runState->GSLrandom,Nlive))==minpos){};
+						   LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
+						   runState->currentLikelihood = logLikelihoods[j];
+						   LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
+						   runState->evolve(runState);
+						   itercounter++;
+  }while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
+  
+  LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
+  logLikelihoods[minpos]=runState->currentLikelihood;
+  
+  //            for(param_ptr=runState->livePoints[minpos]->head;param_ptr;param_ptr=param_ptr->next)
+  // {
+    //  fprintf(fpout,"%s\t",param_ptr->name);
+  //}        
+  //fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n"); 
+  if (runState->currentLikelihood>logLmax)
+    logLmax=runState->currentLikelihood;
+  for(j=0;j<Nruns;j++) {
+    REAL8 *tmp=logtarray;
+    logtarray=logt2array;
+    logt2array=tmp;
+    logtarray[j]=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
+    logwarray[j]+=logtarray[j];
+  }
+  logw=mean(logwarray,Nruns);
+  LALInferenceAddVariable(runState->livePoints[minpos],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
+  sloppyfrac=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"sloppyfraction");
+  if(displayprogress) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f Nmcmc: %i sub_accpt: %1.3f slpy: %2.1f%% H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",\
+    iter,\
+    100.0*((REAL8)iter)/(((REAL8) Nlive)*H),\
+    *(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter,\
+    *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"),\
+    *(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"sub_accept_rate"),\
+    100.0*sloppyfrac,\
+    H,\
+    H/LAL_LN2,\
+    logLmin,\
+    runState->currentLikelihood,\
+    logZ,\
+    dZ,\
+    10.0*LAL_LOG10E*( logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
+  iter++;
+  /* Update the proposal */
+  if(!(iter%(Nlive/4))) {
+    /* Update the covariance matrix */
+    if ( LALInferenceCheckVariable( runState->proposalArgs,"covarianceMatrix" ) ){
+      LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
+      gsl_matrix_memcpy(covCopy, *cvm);
+      if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+	XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+	XLAL_ERROR_VOID(XLAL_EFAILED);
+      }
+      for (i = 0; i < N; i++) {
+	eigenValues->data[i] = gsl_vector_get(eValues,i);
+      }
+      LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceSetVariable(runState->proposalArgs,"covarianceMatrix",(void *)cvm);
+  }
+  
+  /* Update NMCMC from ACF */
+  UpdateNMCMC(runState);
+  
+  /* Output some information */
+  if(verbose){
+    LALInferencePrintProposalStatsHeader(stdout,runState->proposalStats);
+    LALInferencePrintProposalStats(stdout,runState->proposalStats);
+    resetProposalStats(runState);
+    printAdaptiveJumpSizes(stdout, runState);
+  }
+  }
+  
+  if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" )){
+    /* update k-d tree */
+    if(!(iter%((int)floor((REAL8)Nlive * kdupdate))))
+      LALInferenceSetupkDTreeNSLivePoints( runState ); 
+  }
+  }
+  while( iter <= Nlive ||  dZ> TOLERANCE ); /* End of NS loop! */
+    
+    /* Sort the remaining points (not essential, just nice)*/
+    for(i=0;i<Nlive-1;i++){
+      minpos=i;
+      logLmin=logLikelihoods[i];
+      for(j=i+1;j<Nlive;j++){
+	if(logLikelihoods[j]<logLmin)
+	{
+	  minpos=j;
+	  logLmin=logLikelihoods[j];
 	}
-	while( iter <= Nlive ||  dZ> TOLERANCE ); /* End of NS loop! */
-
-	/* Sort the remaining points (not essential, just nice)*/
-		for(i=0;i<Nlive-1;i++){
-			minpos=i;
-			logLmin=logLikelihoods[i];
-			for(j=i+1;j<Nlive;j++){
-				if(logLikelihoods[j]<logLmin)
-					{
-						minpos=j;
-						logLmin=logLikelihoods[j];
-					}
-			}
-			temp=runState->livePoints[minpos]; /* Put the minimum remaining point in the current position */
-			runState->livePoints[minpos]=runState->livePoints[i];
-			runState->livePoints[i]=temp;
-			logLikelihoods[minpos]=logLikelihoods[i];
-			logLikelihoods[i]=logLmin;
-		}
-	/* final corrections */
-        for(i=0;i<Nlive;i++){
-		logZ=logadd(logZ,logLikelihoods[i]+logw);
-		for(j=0;j<Nruns;j++){
-			//logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
-			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]-log(Nlive));
-		}
-
-		if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
-
-	}
-
-	/* Write out the evidence */
-	fclose(fpout);
-	char bayesfile[FILENAME_MAX];
-	sprintf(bayesfile,"%s_B.txt",outfile);
-	fpout=fopen(bayesfile,"w");
-	fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
-	fclose(fpout);
-	double logB=logZ-logZnoise;
-	/* Pass output back through algorithmparams */
-	LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-	LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-	LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-
-#ifdef HAVE_LIBLALXML	
-	/* Write out the XML if requested */
+      }
+      temp=runState->livePoints[minpos]; /* Put the minimum remaining point in the current position */
+      runState->livePoints[minpos]=runState->livePoints[i];
+      runState->livePoints[i]=temp;
+      logLikelihoods[minpos]=logLikelihoods[i];
+      logLikelihoods[i]=logLmin;
+    }
+    /* final corrections */
+    for(i=0;i<Nlive;i++){
+      logZ=logadd(logZ,logLikelihoods[i]+logw);
+      for(j=0;j<Nruns;j++){
+	//logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
+	logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]-log(Nlive));
+      }
+      
+      if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
+      
+    }
+    
+    /* Write out the evidence */
+    fclose(fpout);
+    char bayesfile[FILENAME_MAX];
+    sprintf(bayesfile,"%s_B.txt",outfile);
+    fpout=fopen(bayesfile,"w");
+    fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
+    fclose(fpout);
+    double logB=logZ-logZnoise;
+    /* Pass output back through algorithmparams */
+    LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    
+    #ifdef HAVE_LIBLALXML	
+    /* Write out the XML if requested */
     LALInferenceVariables *output_array=NULL;
     UINT4 N_output_array=0;
-	if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
-	  &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
-	{
-	  output_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-	  N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
-	}
-	if(output_array && outVOTable && N_output_array>0){
-		xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
-		xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:results:nestedsamples"));
-		
-		xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
-		
-		xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:results","Nested sampling run",votable);
-		
-		if(stateResource)
-			xmlAddChild(nestResource,stateResource);
-		
-
-		char *xmlString = XLALCreateVOTStringFromTree ( nestResource );
-		
-		/* Write to disk */
-		fpout=fopen(outVOTable,"w");
-		fprintf(fpout,"%s",xmlString);
-		fclose(fpout);
-		
-		
-	}
-	if(output_array) free(output_array);
-
-#endif
-	/* Write out names of parameters */
-	FILE *lout=NULL;
-	char param_list[FILENAME_MAX];
-	sprintf(param_list,"%s_params.txt",outfile);
-	lout=fopen(param_list,"w");
-	minpos=0;
-	LALInferenceSortVariablesByName(runState->livePoints[0]);
-	for(param_ptr=runState->livePoints[0]->head;param_ptr;param_ptr=param_ptr->next)
-	{
-	  fprintf(lout,"%s\t",param_ptr->name);
-	}
-	fclose(lout);
-	free(logtarray); free(logwarray); free(logZarray);
+    if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
+      &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
+    {
+      output_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+      N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
+    }
+    if(output_array && outVOTable && N_output_array>0){
+      xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
+      xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:results:nestedsamples"));
+    
+    xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
+    
+    xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:results","Nested sampling run",votable);
+      
+      if(stateResource)
+	xmlAddChild(nestResource,stateResource);
+      
+      
+      char *xmlString = XLALCreateVOTStringFromTree ( nestResource );
+      
+      /* Write to disk */
+      fpout=fopen(outVOTable,"w");
+      fprintf(fpout,"%s",xmlString);
+      fclose(fpout);
+      
+      
+    }
+    if(output_array) XLALFree(output_array);
+		      
+		      #endif
+    
+    XLALFree(logtarray); XLALFree(logwarray); XLALFree(logZarray);
 }
 
 /* Calculate the autocorrelation function of the sampler (runState->evolve) for each parameter
  * Evolves the sample starting with the value passed in temp, with a maximum of max_iterations steps.
  Return the ACL for each parameter as a LALInferenceVariables */
-LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction *evolve)
+LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction evolve)
 {
   ProcessParamsTable *ppt=NULL;
   char chainfilename[128]="";
@@ -744,11 +744,11 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   max_iterations/=thinning;
   /* Find the number and names of variables */
   for(this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) nPar++;
-  char **param_names=calloc(nPar,sizeof(char *));
+  char **param_names=XLALCalloc(nPar,sizeof(char *));
   for(i=0,this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) param_names[i++]=this->name;
 
   REAL8 ACF,ACL,max=0;
-  LALInferenceVariables *acls=calloc(1,sizeof(LALInferenceVariables));
+  LALInferenceVariables *acls=XLALCalloc(1,sizeof(LALInferenceVariables));
 
   /* Back up the algorithm state and replace with a clean version for logSampletoarray */
   LALInferenceVariables myAlgParams,*oldAlgParams=runState->algorithmParams;
@@ -756,8 +756,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   memset(&myAlgParams,0,sizeof(LALInferenceVariables));
   memset(&myCurrentParams,0,sizeof(LALInferenceVariables));
   LALInferenceCopyVariables(oldAlgParams,&myAlgParams);
-  LALInferenceRemoveVariable(&myAlgParams,"outputarray");
-  LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
+  if(LALInferenceCheckVariable(&myAlgParams,"outputarray")) LALInferenceRemoveVariable(&myAlgParams,"outputarray");
+  if(LALInferenceCheckVariable(&myAlgParams,"N_outputarray")) LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
   LALInferenceRemoveVariable(&myAlgParams,"outfile");
   LALInferenceRemoveVariable(&myAlgParams,"Nmcmc");
   LALInferenceAddVariable(&myAlgParams,"Nmcmc",&thinning,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
@@ -813,19 +813,19 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceVariables *variables_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
 
   /* Convert to a 2D array for ACF calculation */
-  data_array=calloc(nPar,sizeof(REAL8 *));
-  acf_array=calloc(nPar,sizeof(REAL8 *));
+  data_array=XLALCalloc(nPar,sizeof(REAL8 *));
+  acf_array=XLALCalloc(nPar,sizeof(REAL8 *));
   for (i=0;i<(UINT4)nPar;i++){
-    data_array[i]=calloc(max_iterations,sizeof(REAL8));
-    acf_array[i]=calloc(max_iterations/2,sizeof(REAL8));
+    data_array[i]=XLALCalloc(max_iterations,sizeof(REAL8));
+    acf_array[i]=XLALCalloc(max_iterations/2,sizeof(REAL8));
   }
   /* Measure autocorrelation in each dimension */
   /* Not ideal, should be measuring something like the det(autocorrelation-crosscorrelation matrix) */
   for (i=0;i<max_iterations;i++){
     for(j=0;j<nPar;j++) data_array[j][i]=*(REAL8 *)LALInferenceGetVariable(&variables_array[i],param_names[j]);
-    LALInferenceDestroyVariables(&variables_array[i]);
+    LALInferenceClearVariables(&variables_array[i]);
   }
-  free(variables_array);
+  XLALFree(variables_array);
   this=myCurrentParams.head;
   for(i=0;i<(UINT4)nPar;i++){
    /* Subtract the mean */
@@ -873,24 +873,24 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   fclose(aclfile);
 */  
   /* Clean up */
-  for(i=0;i<(UINT4)nPar;i++) {free(data_array[i]); free(acf_array[i]);}
-  free(data_array); free(acf_array);
-  LALInferenceDestroyVariables(&myAlgParams);
-  LALInferenceDestroyVariables(&myCurrentParams);
+  for(i=0;i<(UINT4)nPar;i++) {XLALFree(data_array[i]); XLALFree(acf_array[i]);}
+  XLALFree(data_array); XLALFree(acf_array);
+  LALInferenceClearVariables(&myAlgParams);
+  LALInferenceClearVariables(&myCurrentParams);
   runState->currentParams=oldCurrentParams;
   runState->algorithmParams=oldAlgParams;
   if(chainfile) fclose(chainfile);
   if(acffile) fclose(acffile);
-  free(param_names);
+  XLALFree(param_names);
   return(acls);
 }
 
 UINT4 checkForSingleAdapt(LALInferenceRunState *runState)
 {
   UINT4 i = 0;
-  LALInferenceProposalFunction **cycle = NULL;
+  LALInferenceProposalFunction *cycle = NULL;
   LALInferenceVariables *propArgs = runState->proposalArgs;
-  cycle = *((LALInferenceProposalFunction ***)LALInferenceGetVariable(propArgs, cycleArrayName));
+  cycle = *((LALInferenceProposalFunction **)LALInferenceGetVariable(propArgs, cycleArrayName));
   
   /* If there is not a proposal counter, put one into the variables, initialized to zero. */
   if (!LALInferenceCheckVariable(propArgs, cycleArrayCounterName)) {
@@ -925,7 +925,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     
     if(adaptProp)
     {
-      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->template);
+      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->templt);
       if (logLmin<thislogL) outOfBounds=0;
     }
     
@@ -943,11 +943,11 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 	LALInferenceCopyVariables(&proposedParams,runState->currentParams);
         LALInferenceSetVariable(runState->currentParams,"logPrior",&logPriorNew);
     }
-    LALInferenceDestroyVariables(&proposedParams);
+    LALInferenceClearVariables(&proposedParams);
     
     if((!outOfBounds)&&adaptProp)
     {
-      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->template);
+      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->templt);
       if(logLmin<thislogL) LALInferenceUpdateAdaptiveJumps(runState, accepted, 0.35);
       else LALInferenceUpdateAdaptiveJumps(runState, 0, 0.35);
 
@@ -1051,7 +1051,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         tries=0;
         mcmc_iter++;
     	sub_iter+=subchain_length;
-        if(logLmin!=-DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+        if(logLmin!=-DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->templt);
         if(logLnew>logLmin || logLmin==-DBL_MAX) /* Accept */
         {
             Naccepted++;
@@ -1080,7 +1080,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     }while((mcmc_iter<testnumber||runState->currentLikelihood<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
     /* Make sure likelihood is filled in if it wasn't done during sampling */
     if(logLnew==0.0){
-            logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+            logLnew=runState->likelihood(runState->currentParams,runState->data,runState->templt);
             runState->currentLikelihood=logLnew;
             LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
@@ -1111,7 +1111,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
 	LALInferenceSetVariable(runState->algorithmParams,"sloppyfraction",&sloppyfraction);
     }
     /* Cleanup */
-    LALInferenceDestroyVariables(&oldParams);
+    LALInferenceClearVariables(&oldParams);
 }
 
 
@@ -1135,7 +1135,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 
 	/* Allocate the array */
 	/* runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *)); */
-	runState->livePoints=calloc(Nlive,sizeof(LALInferenceVariables *));
+	runState->livePoints=XLALCalloc(Nlive,sizeof(LALInferenceVariables *));
 	if(runState->livePoints==NULL)
 	{
 		fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
@@ -1147,23 +1147,26 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 
 	LALInferenceAddVariable(runState->algorithmParams,"logLikelihoods",&logLs,LALINFERENCE_REAL8Vector_t,LALINFERENCE_PARAM_FIXED);
 	fprintf(stdout,"Sprinkling %i live points, may take some time\n",Nlive);
+	LALInferenceVariables *curParsBackup=runState->currentParams;
 	for(i=0;i<Nlive;i++)
 	{
-		runState->livePoints[i]=calloc(1,sizeof(LALInferenceVariables));
-		
-		/* Copy the param structure */
-		LALInferenceCopyVariables(runState->currentParams,runState->livePoints[i]);
-		
-		/* Sprinkle the varying points among prior */
-		do{
-			LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
-			logPrior=runState->prior(runState,runState->livePoints[i]);
-		}while(logPrior==-DBL_MAX || isnan(logPrior));
-		/* Populate log likelihood */
-		logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
-        LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-	LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	   /* Clone the currentParams into LivePoints[i] */
+	    runState->livePoints[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
+	    /* Copy the param structure */
+	    LALInferenceCopyVariables(runState->currentParams,runState->livePoints[i]);
+	  
+	  /* Sprinkle the varying points among prior */
+	  do{
+	    LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
+	    logPrior=runState->prior(runState,runState->livePoints[i]);
+	  }while(logPrior==-DBL_MAX || isnan(logPrior));
+	  /* Populate log likelihood */
+	  logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
+	  LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	  LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
+	runState->currentParams=curParsBackup;
+	if(!runState->currentParams) runState->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	
 }
 
@@ -1176,7 +1179,7 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
   LALInferenceVariableItem *currentItem;
   UINT4 cnt = 0;
   REAL8 *pt = NULL;
-  LALInferenceVariables *template =
+  LALInferenceVariables *templt =
     XLALCalloc(1,sizeof(LALInferenceVariables));
   UINT4 Nlive = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams,
                                                    "Nlive" );
@@ -1235,11 +1238,11 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
   
   /* set up tree */
   tree = LALInferenceKDEmpty( low, high, ndim );
-  LALInferenceCopyVariables( runState->currentParams, template );
+  LALInferenceCopyVariables( runState->currentParams, templt );
                     
   /* add points to tree */
   for( cnt = 0; cnt < Nlive; cnt++ ){
-    LALInferenceKDVariablesToREAL8( runState->livePoints[cnt], pt, template );
+    LALInferenceKDVariablesToREAL8( runState->livePoints[cnt], pt, templt );
     
     LALInferenceKDAddPoint( tree, pt );
   }
@@ -1252,7 +1255,7 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
   if ( !LALInferenceCheckVariable( runState->proposalArgs,
                                    "kDTreeVariableTemplate" ) ){
     LALInferenceAddVariable( runState->proposalArgs, "kDTreeVariableTemplate",
-                             &template, LALINFERENCE_void_ptr_t,
+                             &templt, LALINFERENCE_void_ptr_t,
                              LALINFERENCE_PARAM_FIXED );
   }
   

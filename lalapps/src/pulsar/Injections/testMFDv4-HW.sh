@@ -79,7 +79,7 @@ v4_cfg=In.data-v4
 v4_log=v4.log
 
 v2_CL="-i $v2_cfg -I $IFO -S $refTime -G $startTime -b"
-v4_CL="-I $IFO @${v4_cfg} --Tsft=$Tsft --startTime=$startTime --duration=$duration -y 00-04 -l $v4_log --generationMode=1 -b -v${debug}"
+v4_CL="-I $IFO @${v4_cfg} --Tsft=$Tsft --startTime=$startTime --duration=$duration -l $v4_log --generationMode=1 -b -v${debug}"
 
 ## produce In.data-v2 file for makefakedata_v2
 echo "

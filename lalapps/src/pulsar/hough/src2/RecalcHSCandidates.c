@@ -239,8 +239,8 @@ void RCComputeFstatHoughMap (LALStatus *status,
 
 
 /* default values for input variables */
-#define EARTHEPHEMERIS 		"earth05-09.dat"
-#define SUNEPHEMERIS 		"sun05-09.dat"
+#define EARTHEPHEMERIS 		"earth00-19-DE405.dat"
+#define SUNEPHEMERIS 		"sun00-19-DE405.dat"
 
 #define BLOCKSRNGMED 		101 	/**< Default running median window size */
 

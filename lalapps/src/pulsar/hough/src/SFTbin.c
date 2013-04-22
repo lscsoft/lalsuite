@@ -55,7 +55,6 @@ LALHO()
 \endcode
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./SFTbin.h"
 
 /*
@@ -108,8 +107,8 @@ void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
     /* if bin zero is included should be treated properly because of factor 2 */
     
     while (n-- >0){
-      re = in1->re;
-      im = in1->im;
+      re = crealf(*in1);
+      im = cimagf(*in1);
       *out = (re*re + im*im) *factor; /* factor 2 still missing if one-sided*/
       ++out;
       ++in1;
@@ -175,8 +174,8 @@ void SFT2Periodogram (LALStatus  *status,
     /* if bin zero is included should be treated properly because of factor 2 */
     
     while (n-- >0){
-      re = in1->re;
-      im = in1->im;
+      re = crealf(*in1);
+      im = cimagf(*in1);
       *out = (re*re + im*im) *factor; /* factor 2 still missing if one-sided*/
       ++out;
       ++in1;

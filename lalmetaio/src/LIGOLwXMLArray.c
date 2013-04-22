@@ -67,7 +67,6 @@
  */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdarg.h>
 #include <stdio.h>
 #include <lal/Date.h>
@@ -227,8 +226,8 @@ static int WriteLIGOLwXMLArrayCOMPLEX8Stream(
 	error |= fprintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
 	if(length) {
 		for(i = 0; i < length - 1; i++)
-			error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g,\n", indent, i * delta, (double) data[i].re, (double) data[i].im) < 0;
-		error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g\n", indent, i * delta, (double) data[i].re, (double) data[i].im) < 0;
+			error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g,\n", indent, i * delta, (double) crealf(data[i]), (double) cimagf(data[i])) < 0;
+		error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g\n", indent, i * delta, (double) crealf(data[i]), (double) cimagf(data[i])) < 0;
 	}
 	error |= fprintf(stream, "%s</Stream>\n", indent) < 0;
 
@@ -250,8 +249,8 @@ static int WriteLIGOLwXMLArrayCOMPLEX16Stream(
 	error |= fprintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
 	if(length) {
 		for(i = 0; i < length - 1; i++)
-			error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g,\n", indent, i * delta, data[i].re, data[i].im) < 0;
-		error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g\n", indent, i * delta, data[i].re, data[i].im) < 0;
+			error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g,\n", indent, i * delta, creal(data[i]), cimag(data[i])) < 0;
+		error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g\n", indent, i * delta, creal(data[i]), cimag(data[i])) < 0;
 	}
 	error |= fprintf(stream, "%s</Stream>\n", indent) < 0;
 

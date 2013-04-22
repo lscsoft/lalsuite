@@ -104,7 +104,6 @@ at the last stable orbit. It is recommended that a rather generous
 <tt>params->nEndPad</tt> be used to prevent the code from crashing.
 
 */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
@@ -1649,7 +1648,7 @@ XLALEOBWaveformEngine (
 
      /* If 220 QNM freq. > Nyquist freq., print warning but continue */
      /* Note that we cancelled a factor of 2 occuring on both sides */
-     if ( params->tSampling < modefreqs->data[0].re / LAL_PI )
+     if ( params->tSampling < crealf(modefreqs->data[0]) / LAL_PI )
      {
        XLALPrintWarning( "Ringdown freq. greater than Nyquist freq. "
              "Beware of aliasing! Consider increasing the sample rate.\n" );
@@ -2233,10 +2232,10 @@ XLALEOBWaveformEngine (
      XLAL_ERROR( XLAL_EFUNC );
    }
 
-   y_1 =   MultSphHarmP.re + MultSphHarmM.re;
-   y_2 =   MultSphHarmM.im - MultSphHarmP.im;
-   z1 = - MultSphHarmM.im - MultSphHarmP.im;
-   z2 =   MultSphHarmM.re - MultSphHarmP.re;
+   y_1 =   creal(MultSphHarmP) + creal(MultSphHarmM);
+   y_2 =   cimag(MultSphHarmM) - cimag(MultSphHarmP);
+   z1 = - cimag(MultSphHarmM) - cimag(MultSphHarmP);
+   z2 =   creal(MultSphHarmM) - creal(MultSphHarmP);
 
 #if 0
    sprintf(message, "MultSphHarm2,+2 re=%10.5e im=%10.5e\n", MultSphHarmP.re, MultSphHarmP.im);

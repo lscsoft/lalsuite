@@ -34,7 +34,6 @@
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -217,7 +216,7 @@ LALFindChirpClusterEvents (
   /* look for an events in the filter output */
   for ( j = lowerIndex; j < upperIndex; ++j )
   {
-    REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
+    REAL4 modqsq = crealf(q[j]) * crealf(q[j]) + cimagf(q[j]) * cimagf(q[j]);
 
     /* if snrsq exceeds threshold at any point */
     if ( modqsq > modqsqThresh )

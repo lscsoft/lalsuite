@@ -719,7 +719,7 @@ for result_db in result_dbs_cache:
     sim2fulldb_node = pipeline.LigolwSqliteNode( sql_fromcache_job )
     sim2fulldb_node.set_category('ligolw_sqlite')
     sim2fulldb_node.set_input_cache( sim_caches[veto_cat] )
-    sim2fulldb_node.set_database( result_db.path() )
+    sim2fulldb_node.set_database( result_db.path )
     sim2fulldb_node.set_tmp_space( tmp_space )
     
     sim2fulldb_node.add_parent( injfind_nodes[veto_cat] )
@@ -730,7 +730,7 @@ for result_db in result_dbs_cache:
     dbsimplify2_node = inspiral.DBSimplifyNode( dbsimplify_job )
     dbsimplify2_node.set_category('dbsimplify')
     dbsimplify2_node.set_tmp_space( tmp_space )
-    dbsimplify2_node.set_database( result_db.path() )
+    dbsimplify2_node.set_database( result_db.path )
 
     dbsimplify2_node.add_parent( sim2fulldb_node )
     dag.add_node( dbsimplify2_node )
@@ -743,8 +743,8 @@ for result_db in result_dbs_cache:
         dbinjfind_node = inspiral.DBInjFindNode( dbinjfind_job )
         dbinjfind_node.set_category('dbinjfind')
         dbinjfind_node.set_tmp_space( tmp_space )
-        dbinjfind_node.set_input( result_db.path() )
-        dbinjfind_node.set_output( result_db.path() )
+        dbinjfind_node.set_input( result_db.path )
+        dbinjfind_node.set_output( result_db.path )
 
         # set parent node
         dbinjfind_node.add_parent( last_node )
@@ -765,7 +765,7 @@ for result_db in result_dbs_cache:
   veto2sql_node.set_category('ligolw_sqlite')
   veto2sql_node.add_file_arg( veto_files[veto_cat] )
   veto2sql_node.set_tmp_space( tmp_space )
-  veto2sql_node.set_database( result_db.path() )
+  veto2sql_node.set_database( result_db.path )
   
   # set parent node
   veto2sql_node.add_parent( last_node )
@@ -781,7 +781,7 @@ for result_db in result_dbs_cache:
   comp_durs_node = inspiral.ComputeDurationsNode( comp_durs_job)
   comp_durs_node.set_category('compute_durations')
   comp_durs_node.set_tmp_space( tmp_space )
-  comp_durs_node.set_database( result_db.path() )
+  comp_durs_node.set_database( result_db.path )
 
   # set parent node
   comp_durs_node.add_parent( veto2sql_node )
@@ -800,7 +800,7 @@ for result_db in result_dbs_cache:
     mvsc_dag_generator_job.add_opt("ini-file", options.config_file)
     mvsc_dag_generator_node = inspiral.MVSCDagGenerationNode(mvsc_dag_generator_job)
     mvsc_dag_generator_node.set_user_tag(tag)
-    mvsc_dag_generator_node.set_database(result_db.path())
+    mvsc_dag_generator_node.set_database(result_db.path)
     mvsc_dag_generator_node.add_parent(comp_durs_node)
     dag.add_node(mvsc_dag_generator_node)
     mvsc_dag_job = pipeline.CondorDAGManJob(mvsc_dag_name, os.getcwd(), None)
@@ -818,8 +818,8 @@ for result_db in result_dbs_cache:
   ucfar_node = inspiral.CFarNode( ucfar_job )
   ucfar_node.set_category('cfar')
   ucfar_node.set_tmp_space( tmp_space )
-  ucfar_node.set_input( result_db.path() )
-  ucfar_node.set_output( result_db.path() )
+  ucfar_node.set_input( result_db.path )
+  ucfar_node.set_output( result_db.path )
   
   # set parent node
   ucfar_node.add_parent( comp_durs_node )
@@ -837,8 +837,8 @@ for result_db in result_dbs_cache:
   ccfar_node = inspiral.CFarNode( ccfar_job )
   ccfar_node.set_category('cfar')
   ccfar_node.set_tmp_space( tmp_space )
-  ccfar_node.set_input( result_db.path() )
-  ccfar_node.set_output( result_db.path() )
+  ccfar_node.set_input( result_db.path )
+  ccfar_node.set_output( result_db.path )
   
   # set parent node
   ccfar_node.add_parent( ucfar_node )
@@ -855,7 +855,7 @@ for result_db in result_dbs_cache:
     output_cache_name = ''.join(sorted(instruments)) + "-SEARCH_VOLUME_" + tag + ".cache"
     search_volume_node = inspiral.SearchVolumeNode( search_volume_job )
     search_volume_node.set_open_box()
-    search_volume_node.add_database( result_db.path() )
+    search_volume_node.add_database( result_db.path )
     search_volume_node.set_user_tag( tag )
     search_volume_node.set_output_cache( output_cache_name )
     search_volume_node.set_veto_segments_name( "VETO_CAT"+str(get_veto_cat_from_tag(tag))+"_CUMULATIVE" )
@@ -873,7 +873,7 @@ for result_db in result_dbs_cache:
     playtag = tag.replace("FULL_DATA","PLAYGROUND")
     search_volume_node = inspiral.SearchVolumeNode( search_volume_job )
     output_cache_name = output_cache_name.replace("FULL_DATA","PLAYGROUND")
-    search_volume_node.add_database( result_db.path() )
+    search_volume_node.add_database( result_db.path )
     search_volume_node.set_user_tag( playtag )
     search_volume_node.set_output_cache( output_cache_name )
     search_volume_node.set_veto_segments_name( "VETO_CAT"+str(get_veto_cat_from_tag(tag))+"_CUMULATIVE" )
@@ -920,7 +920,7 @@ for result_db in result_dbs_cache:
       printlc_node = inspiral.PrintLCNode( printlc_job )
       printlc_node.set_category('printlc')
       printlc_node.set_tmp_space( tmp_space )
-      printlc_node.set_input( result_db.path() )
+      printlc_node.set_input( result_db.path )
       printlc_node.set_output( summary_filename )
       printlc_node.set_extract_to_xml( '.'.join([ full_filename, 'xml' ]) )
       printlc_node.set_extract_to_database( '.'.join([ full_filename, 'sqlite' ]) )
@@ -1009,7 +1009,7 @@ for result_db in result_dbs_cache:
             printsims_node = inspiral.PrintSimsNode( printsims_job )
           printsims_node.set_category('printsims')
           printsims_node.set_tmp_space( tmp_space )
-          printsims_node.set_input( result_db.path() )
+          printsims_node.set_input( result_db.path )
           printsims_node.set_output( summary_filename )
           printsims_node.set_extract_to_xml( '.'.join([ full_filename, 'xml' ]) )
           printsims_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
@@ -1089,7 +1089,7 @@ for result_db in result_dbs_cache:
           printmissed_node = inspiral.PrintMissedNode( printmissed_job )
         printmissed_node.set_category('printmissed')
         printmissed_node.set_tmp_space( tmp_space )
-        printmissed_node.set_input( result_db.path() )
+        printmissed_node.set_input( result_db.path )
         printmissed_node.set_output( summary_filename )
         printmissed_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
         printmissed_node.set_sim_tag( sim_tag )
@@ -1124,7 +1124,7 @@ for result_db in result_dbs_cache:
           plotfm_node = inspiral.PlotFMNode( plotfm_job )
           plotfm_node.set_category('plotfm')
           plotfm_node.set_tmp_space( tmp_space )
-          plotfm_node.add_file_arg( result_db.path() )
+          plotfm_node.add_file_arg( result_db.path )
           plotfm_node.set_sim_tag( sim_tag )
           plotfm_node.set_user_tag( '_'.join([ plotfm_tag, sim_tag, veto_cat ]) )
             
@@ -1147,7 +1147,7 @@ for result_db in result_dbs_cache:
 
   plotslides_node.set_category('plotslides')
   plotslides_node.set_tmp_space( tmp_space )
-  plotslides_node.set_input( result_db.path() )
+  plotslides_node.set_input( result_db.path )
   plotslides_node.set_user_tag( tag )
 
   plotslides_node.add_parent( ccfar_node )
@@ -1161,7 +1161,7 @@ for result_db in result_dbs_cache:
     plotcumhist_node = inspiral.PlotCumhistNode( plotcumhist_job )
 
   plotcumhist_node.set_tmp_space( tmp_space )
-  plotcumhist_node.set_input( result_db.path() )
+  plotcumhist_node.set_input( result_db.path )
   plotcumhist_node.set_user_tag( tag )
 
   plotcumhist_node.add_parent( ccfar_node )
@@ -1178,7 +1178,7 @@ for result_db in result_dbs_cache:
     plotifar_node = inspiral.PlotIfarNode( plotifar_job )
     plotifar_node.set_category('plotifar')
     plotifar_node.set_tmp_space( tmp_space )
-    plotifar_node.set_input( result_db.path() )
+    plotifar_node.set_input( result_db.path )
     plotifar_node.set_datatype( datatype )
     plotifar_node.set_user_tag( tag )
     

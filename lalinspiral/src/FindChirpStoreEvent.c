@@ -34,7 +34,6 @@
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>
@@ -127,7 +126,7 @@ LALFindChirpStoreEvent (
 
   /* record the coalescence phase of the chirp */
   thisEvent->coa_phase = (REAL4)
-      atan2( q[timeIndex].im, q[timeIndex].re );
+      atan2( cimagf(q[timeIndex]), crealf(q[timeIndex]) );
 
   /* copy the template into the event */
   thisEvent->mass1   = (REAL4) input->fcTmplt->tmplt.mass1;
@@ -144,6 +143,8 @@ LALFindChirpStoreEvent (
   thisEvent->tau5    = (REAL4) input->fcTmplt->tmplt.t5;
   thisEvent->ttotal  = (REAL4) input->fcTmplt->tmplt.tC;
   thisEvent->f_final = (REAL4) input->fcTmplt->tmplt.fFinal;
+  thisEvent->spin1z  = (REAL4) input->fcTmplt->tmplt.spin1[2];
+  thisEvent->spin2z  = (REAL4) input->fcTmplt->tmplt.spin2[2];
 
   /* We can now memcpy the 10 metric co-efficients */
   memcpy (thisEvent->Gamma, input->fcTmplt->tmplt.Gamma, 10*sizeof(REAL4));

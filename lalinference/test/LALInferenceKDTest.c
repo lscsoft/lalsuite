@@ -109,11 +109,6 @@ static int checkFindCell(LALInferenceKDTree *tree, gsl_rng *rng) {
       return 0;
     }
 
-    if (nCell > 1 && theCell->npts >= nCell) {
-      fprintf(stderr, "Random point's cell is non-leaf and contains too many points for requested nCell.\n");
-      return 0;
-    }
-
     if (!inBounds(pt, theCell->lowerLeft, theCell->upperRight)) {
       fprintf(stderr, "Random point not contained in bounds of cell returned by findCell.\n");
       return 0;

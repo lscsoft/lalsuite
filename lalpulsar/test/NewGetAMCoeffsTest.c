@@ -134,8 +134,9 @@ int main(int argc, char *argv[])
   UINT4 pickedSite;
   BOOLEAN ignoreErrors = 0; /* Don't fail if tolerance exceeded */
   UINT4 numChecks = 1; /* Number of times to check */
-  char earthEphem[] = DATADIR "earth00-04.dat";
-  char sunEphem[] = DATADIR "sun00-04.dat";
+
+  char earthEphem[] = DATADIR "earth00-19-DE405.dat.gz";
+  char sunEphem[]   = DATADIR "sun00-19-DE405.dat.gz";
 
   /* ----- old testing code to use 9 degree earth rotations ----- */
   /* startTime.gpsSeconds = 714275242;

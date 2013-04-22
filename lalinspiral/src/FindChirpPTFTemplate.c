@@ -46,7 +46,6 @@ Blah.
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
@@ -274,11 +273,11 @@ LALFindChirpPTFNormalize(
     {
       for ( k = kmin; k < kmax ; ++k )
       {
-        PTFB[5 * i + j] += (PTFQtilde[k + i * len].re *
-                            PTFQtilde[k + j * len].re +
-                            PTFQtilde[k + i * len].im *
-                            PTFQtilde[k + j * len].im )
-                            * wtilde[k].re ;
+        PTFB[5 * i + j] += (crealf(PTFQtilde[k + i * len]) *
+                            crealf(PTFQtilde[k + j * len]) +
+                            cimagf(PTFQtilde[k + i * len]) *
+                            cimagf(PTFQtilde[k + j * len]) )
+                            * crealf(wtilde[k]) ;
       }
       PTFB[5 * i + j] *= 4.0 * deltaF ;
       /* Use the symmetry of B */

@@ -30,7 +30,6 @@
 
 
 / lalapps includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <pulsar_crosscorr.h>
 #include <lal/PulsarCrossCorr.h>
@@ -84,7 +83,7 @@ CHAR     *uvar_filenameOut=NULL;
 CHAR 	 *uvar_debugOut=NULL;
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-#define EPHEM_YEARS "05-09"
+#define EPHEM_YEARS "00-19-DE405"
 
 #define F0 100
 #define FBAND 1
@@ -929,10 +928,10 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 
 		  for (i=0; i < (INT4)ualpha->length; i++) {
 		    	
-		    galphasq->data[counter] += SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im);
+		    galphasq->data[counter] += SQUARE(sigmasq->data[i] * creal(ualpha->data[i])) + SQUARE(sigmasq->data[i] * cimag(ualpha->data[i]));
 
-		    galphare->data[counter] += (sigmasq->data[i] * ualpha->data[i].re);
-		    galphaim->data[counter] += -(sigmasq->data[i] * ualpha->data[i].im);
+		    galphare->data[counter] += (sigmasq->data[i] * creal(ualpha->data[i]));
+		    galphaim->data[counter] += -(sigmasq->data[i] * cimag(ualpha->data[i]));
 
 		  }
 		   
@@ -943,9 +942,9 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 	
 		  for (i=0; i < (INT4)ualpha->length; i++) {
 
- 		    galphasq->data[counter] += (SQUARE(sigmasq->data[i] * ualpha->data[i].re) + SQUARE(sigmasq->data[i] * ualpha->data[i].im));
-		    galphare->data[counter] += (sigmasq->data[i] * ualpha->data[i].re);
-		    galphaim->data[counter] += -(sigmasq->data[i] * ualpha->data[i].im);
+ 		    galphasq->data[counter] += (SQUARE(sigmasq->data[i] * creal(ualpha->data[i])) + SQUARE(sigmasq->data[i] * cimag(ualpha->data[i])));
+		    galphare->data[counter] += (sigmasq->data[i] * creal(ualpha->data[i]));
+		    galphaim->data[counter] += -(sigmasq->data[i] * cimag(ualpha->data[i]));
 
                   }
 	  }

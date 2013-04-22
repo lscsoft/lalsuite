@@ -96,8 +96,8 @@ COMPLEX8FrequencySeries * get_impulse_response(
   /* uniform response function */
   for ( k = 0; k < response->data->length; ++k )
   {
-    response->data->data[k].re = responseScale;
-    response->data->data[k].im = 0.0;
+    response->data->data[k].realf_FIXME = responseScale;
+    response->data->data[k].imagf_FIXME = 0.0;
   }
 
   return response;
@@ -174,8 +174,8 @@ COMPLEX8FrequencySeries * get_frame_response(
   LAL_CALL( LALUpdateCalibration( &status, &calfuncs, &calfuncs, &calfacts ),
       &status );
   /* these are the values of alpha and alphabeta that were used */
-  verbose( "calibrating with alpha=%g and alphabeta=%g\n", calfacts.alpha.re,
-      calfacts.alphabeta.re );
+  verbose( "calibrating with alpha=%g and alphabeta=%g\n", crealf(calfacts.alpha),
+      crealf(calfacts.alphabeta) );
 
   /* convert response so that it has the correct resolution */
   LAL_CALL( LALResponseConvert( &status, response, refResponse ), &status );
@@ -183,8 +183,8 @@ COMPLEX8FrequencySeries * get_frame_response(
   /* scale response function */
   for ( k = 0; k < response->data->length; ++k )
   {
-    response->data->data[k].re *= responseScale;
-    response->data->data[k].im *= responseScale;
+    response->data->data[k].realf_FIXME *= responseScale;
+    response->data->data[k].imagf_FIXME *= responseScale;
   }
 
   /* cleanup memory in reference functions */

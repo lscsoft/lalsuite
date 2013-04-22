@@ -22,4 +22,4 @@ EXTRA_DIST = cosmicstring.py $(DATA) lalapps_cosmicstring_pipe
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

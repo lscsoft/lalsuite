@@ -346,7 +346,7 @@ extern "C" {
 /*----------------------------------------------------------------------*/
 /* some local defines */
 
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
 #define SFT_BNAME  "SFT"
 
 #ifndef TRUE 
@@ -1386,10 +1386,10 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
       irec=maxIndex[jrec];
 
-      A1 =  2.0*( B * Fstat.Fa[irec].re - C * Fstat.Fb[irec].re) / D;
-      A2 =  2.0*( A * Fstat.Fb[irec].re - C * Fstat.Fa[irec].re) / D;
-      A3 = - 2.0*( B * Fstat.Fa[irec].im - C * Fstat.Fb[irec].im) / D;
-      A4 = - 2.0*( A * Fstat.Fb[irec].im - C * Fstat.Fa[irec].im) / D;
+      A1 =  2.0*( B * creal(Fstat.Fa[irec]) - C * creal(Fstat.Fb[irec])) / D;
+      A2 =  2.0*( A * creal(Fstat.Fb[irec]) - C * creal(Fstat.Fa[irec])) / D;
+      A3 = - 2.0*( B * cimag(Fstat.Fa[irec]) - C * cimag(Fstat.Fb[irec])) / D;
+      A4 = - 2.0*( A * cimag(Fstat.Fb[irec]) - C * cimag(Fstat.Fa[irec])) / D;
 
 
 
@@ -1675,10 +1675,10 @@ int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
               GV.spinRange.fkdot[0] + ind* DemodParams->df,
-              Fstat.Fa[ind].re/sqrt(GV.SFTno)*bias,
-              Fstat.Fa[ind].im/sqrt(GV.SFTno)*bias,
-              Fstat.Fb[ind].re/sqrt(GV.SFTno)*bias,
-              Fstat.Fb[ind].im/sqrt(GV.SFTno)*bias,
+              creal(Fstat.Fa[ind])/sqrt(GV.SFTno)*bias,
+              cimag(Fstat.Fa[ind])/sqrt(GV.SFTno)*bias,
+              creal(Fstat.Fb[ind])/sqrt(GV.SFTno)*bias,
+              cimag(Fstat.Fb[ind])/sqrt(GV.SFTno)*bias,
               Fstat.F[ind]*bias*bias);
 #endif
 
@@ -2043,8 +2043,8 @@ int ReadSFTData(void)
       if (reverse_endian) {
         unsigned int cnt;
         for (cnt=0; cnt<ndeltaf; cnt++) {
-          swap4((char *)&(SFTData[filenum]->fft->data->data[cnt].re));
-          swap4((char *)&(SFTData[filenum]->fft->data->data[cnt].im));
+          swap4((char *)&(crealf(SFTData[filenum]->fft->data->data[cnt])));
+          swap4((char *)&(cimagf(SFTData[filenum]->fft->data->data[cnt])));
         }
       }
       
@@ -2153,21 +2153,21 @@ int UpsampleSFTData(void)
 
 	      if (SFTIndex < 0 || SFTIndex > ndeltaf-1)
 		{
-		  Xalpha_k.re= Xalpha_k.im=0.0;
+		  Xalpha_k.realf_FIXME= Xalpha_k.imagf_FIXME=0.0;
 		}else{
 		Xalpha_k=SFTData[filenum]->fft->data->data[SFTIndex];
 	      }
 
 	      /* these four lines compute P*xtilde */
-	      realXP += Xalpha_k.re*realP;
-	      realXP -= Xalpha_k.im*imagP;
-	      imagXP += Xalpha_k.re*imagP;
-	      imagXP += Xalpha_k.im*realP;
+	      realXP += crealf(Xalpha_k)*realP;
+	      realXP -= cimagf(Xalpha_k)*imagP;
+	      imagXP += crealf(Xalpha_k)*imagP;
+	      imagXP += cimagf(Xalpha_k)*realP;
 	    }
      
 	  /* fill in the data here */
-	  UpSFTData[filenum]->fft->data->data[i].re= realXP;
-	  UpSFTData[filenum]->fft->data->data[i].im= imagXP;
+	  UpSFTData[filenum]->fft->data->data[i].realf_FIXME= realXP;
+	  UpSFTData[filenum]->fft->data->data[i].imagf_FIXME= imagXP;
 	  
 /*  	  fprintf(stdout,"%d %d %e %e\n", i, filenum, realXP, imagXP); */
 
@@ -3536,8 +3536,8 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
       
       /* loop over SFT data to estimate noise */
       for (j=0;j<nbins;j++){
-        xre=SFTData[i]->fft->data->data[j].re;
-        xim=SFTData[i]->fft->data->data[j].im;
+        xre=crealf(SFTData[i]->fft->data->data[j]);
+        xim=cimagf(SFTData[i]->fft->data->data[j]);
         Sp->data[j]=((REAL8)xre)*((REAL8)xre)+((REAL8)xim)*((REAL8)xim);
       }
       
@@ -3576,12 +3576,12 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
       for (j=0;j<nbins;j++){
-        xre=SFTData[i]->fft->data->data[j].re;
-        xim=SFTData[i]->fft->data->data[j].im;
+        xre=crealf(SFTData[i]->fft->data->data[j]);
+        xim=cimagf(SFTData[i]->fft->data->data[j]);
         xreNorm=N[j]*xre; 
         ximNorm=N[j]*xim; 
-        SFTData[i]->fft->data->data[j].re = xreNorm;    
-        SFTData[i]->fft->data->data[j].im = ximNorm;
+        SFTData[i]->fft->data->data[j].realf_FIXME = xreNorm;    
+        SFTData[i]->fft->data->data[j].imagf_FIXME = ximNorm;
         Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       
