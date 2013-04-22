@@ -1939,8 +1939,7 @@ int XLALSimInspiralChooseTDWaveform(
             XLAL_ERROR(XLAL_EINVAL);
     }
 
-    if (ret == XLAL_FAILURE)
-        XLAL_ERROR(XLAL_EFUNC);
+    if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
 
     return ret;
 }
@@ -2031,6 +2030,7 @@ int XLALSimInspiralChooseFDWaveform(
                     XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
              * To get generic polarizations we multiply by incl. dependence
              * and note hc(f) \propto I * hp(f)
@@ -2058,6 +2058,7 @@ int XLALSimInspiralChooseFDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomAGenerateFD(hptilde, phiRef, deltaF, m1, m2,
                     f_min, f_max, r);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
              * To get generic polarizations we multiply by incl. dependence
              * and note hc(f) \propto I * hp(f)
@@ -2097,6 +2098,7 @@ int XLALSimInspiralChooseFDWaveform(
             ret = XLALSimInspiralSpinTaylorF2(hptilde, 0., phiRef, deltaF,
                     m1, m2, f_min, r, S1x, S1y, S1z,
                     LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             ret = XLALSimInspiralSpinTaylorF2(hctilde, LAL_PI/4.,phiRef, deltaF,
                     m1, m2, f_min, r, S1x, S1y, S1z,
                     LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
@@ -2126,6 +2128,7 @@ int XLALSimInspiralChooseFDWaveform(
             ret = XLALSimInspiralTaylorF2ReducedSpin(hptilde, phiRef, deltaF,
                     m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     f_min, f_max, r, phaseO, amplitudeO);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
              * To get generic polarizations we multiply by incl. dependence
              * and note hc(f) \propto I * hp(f)
@@ -2151,6 +2154,7 @@ int XLALSimInspiralChooseFDWaveform(
             ret = XLALSimInspiralTaylorF2ReducedSpinTidal(hptilde,phiRef,deltaF,
                     m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     lambda1, lambda2, f_min, f_max, r, phaseO, amplitudeO);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
              * To get generic polarizations we multiply by incl. dependence
              * and note hc(f) \propto I * hp(f)
@@ -2179,6 +2183,7 @@ int XLALSimInspiralChooseFDWaveform(
             ret = XLALSimIMRPhenomBGenerateFD(hptilde, phiRef, deltaF, m1, m2,
                     XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     f_min, f_max, r);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
              * To get generic polarizations we multiply by incl. dependence
              * and note hc(f) \propto I * hp(f)
@@ -2206,6 +2211,7 @@ int XLALSimInspiralChooseFDWaveform(
             ret = XLALSimIMRPhenomCGenerateFD(hptilde, phiRef, deltaF, m1, m2,
                     XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     f_min, f_max, r);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
              * To get generic polarizations we multiply by incl. dependence
              * and note hc(f) \propto I * hp(f)
@@ -2226,8 +2232,7 @@ int XLALSimInspiralChooseFDWaveform(
             XLAL_ERROR(XLAL_EINVAL);
     }
 
-    if (ret == XLAL_FAILURE)
-        XLAL_ERROR(XLAL_EFUNC);
+    if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
 
     return ret;
 }
