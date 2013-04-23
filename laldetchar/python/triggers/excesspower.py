@@ -13,9 +13,16 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- 
+
+## \addtogroup pkg_py_laldetchar_triggers_excesspower
 """Utitilies to find and manipulate triggers from (GSTLAL) ExcessPower
 """
+#
+# \heading{Synopsis}
+# ~~~
+# from laldetchar.triggers import excesspower
+# ~~~
+# \author Duncan Macleod (<duncan.macleod@ligo.org>)
 
 import os
 
@@ -35,6 +42,8 @@ __date__ = git_version.date
 
 ER3_RUN_DIRECTORY = "/home/detchar/excesspower/ER3"
 
+## \addtogroup pkg_py_laldetchar_triggers_excesspower
+#@{
 
 def find_online_cache(start, end, channel, **kwargs):
     """Find ExcessPower files from the online GSTLAL analysis
@@ -85,3 +94,5 @@ def find_online_cache(start, end, channel, **kwargs):
 
     out.sort(key=lambda e: e.segment[0])
     return out
+
+#@}

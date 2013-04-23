@@ -11,13 +11,19 @@
 # Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, 
+# with this program; if not, write to the Free Software Foundation,
 
-"""Utilites for manipulating the output of the Omega-pipeline
+## \addtogroup pkg_py_laldetchar_triggers_omega
+"""Read and write `ASCII` files written by the Omega-pipeline.
 """
+#
+# \heading{Synopsis}
+# ~~~
+# from laldetchar.triggers import omega
+# ~~~
+# \author Duncan Macleod (<duncan.macleod@ligo.org>)
 
 from __future__ import division
-
 
 import os
 import sys
@@ -42,27 +48,25 @@ __date__    = git_version.date
 _comment = re.compile('[#%]')
 _delim   = re.compile('[\t\,\s]+')
 
+## \addtogroup pkg_py_laldetchar_triggers_omega
+#@{
 
-#
-# =============================================================================
-#
-# Event reading
-#
-# =============================================================================
-#
+OMEGA_COLUMNS = ['process_id', 'event_id', 'start_time', 'start_time_ns',
+                 'peak_time', 'peak_time_ns', 'stop_time', 'stop_time_ns',
+                 'duration', 'central_freq', 'peak_frequency',
+                 'bandwidth', 'snr', 'amplitude']
 
-# convert ascii line to omega trigger
-def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
-    """Read a SnglBurst event from a line of Omega-format ASCII
+
+def ascii_trigger(line, columns=OMEGA_COLUMNS):
+    """Parse a line of ASCII text into a `SnglBurst` trigger
 
     @param line
-        string of ASCII to process, or list of attributes in ASCII order
+        single line of `ASCII` text
     @param columns
-        list of valid columns to load, defaults to ALL for SnglBurst
-    @param virgo
-        identifies ASCII as in Virgo-Omega format, default False
+        a list of `LIGO_LW` columns to laod, defaults to
+        `OMEGA_COLUMNS`
 
-    @returns a glue.lsctables.SnglBurst object representing this event
+    @returns a `SnglBurst` built from the `ASCII` data
     """
     if isinstance(line, str):
         dat = map(float, _delim.split(line.rstrip()))
@@ -70,16 +74,7 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
         dat = map(float, line)
 
     # map to known formats
-    if virgo:
-        (start, stop, peak, freq, band, cln, cle, snr) = dat
-        start    = LIGOTimeGPS(peak-duration/2)
-        stop     = LIGOTimeGPS(peak+duration/2)
-        peak     = LIGOTimeGPS(peak)
-        av_freq  = freq
-        av_band  = band
-        err_freq = 0
-        clusters = False
-    elif len(dat)==11:
+    if len(dat)==11:
         (peak, freq, duration, band, amplitude,
          cls, cle, cln, av_freq, av_band, err_freq) =  dat
         start    = LIGOTimeGPS(peak-duration/2)
@@ -108,10 +103,12 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
         snr      = (2*amplitude)**(1/2)
         clusters = False
     else:
-        raise ValueError("Wrong number of columns in ASCII line. Cannot read.")
-    
-    # set object
+        raise ValueError("Wrong number of columns in ASCII line. "
+                         "Cannot read.")
+
     t = lsctables.SnglBurst()
+    t.search = u"omega"
+    t.event_id = lsctables.SnglBurstTable.get_next_id()
 
     # set times
     if 'start_time' in columns:
@@ -126,13 +123,13 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
         t.stop_time = stop.gpsSeconds
     if 'stop_time_ns' in columns:
         t.stop_time_ns  = stop.gpsNanoSeconds
- 
+
     # set ms times
     if 'ms_start_time' in columns:
         t.ms_start_time = start.gpsSeconds
     if 'ms_start_time_ns' in columns:
         t.ms_start_time_ns = start.gpsNanoSeconds
-    if 'ms_stop_time' in columns: 
+    if 'ms_stop_time' in columns:
         t.ms_stop_time = stop.gpsSeconds
     if 'ms_stop_time_ns' in columns:
         t.ms_stop_time_ns = stop.gpsNanoSeconds
@@ -145,9 +142,9 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
 
     # set frequencies
     if 'central_freq' in columns:
-        t.central_freq = freq 
+        t.central_freq = freq
     if 'peak_frequency' in columns:
-        t.peak_frequency = av_freq 
+        t.peak_frequency = av_freq
     if 'peak_frequency_eror' in columns:
         t.peak_frequency_error = err_freq
     if 'bandwidth' in columns:
@@ -173,175 +170,75 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, virgo=False):
     if 'amplitude' in columns:
         t.amplitude = amplitude
 
-    # set other params
-    if 'cluster_size' in columns or 'param_one_value' in columns:
-        t.param_one_name = 'cluster_size'
-        if clusters:
-            t.param_one_value = cls
-        else:
-            t.param_one_value = numpy.NaN
-    if 'cluster_norm_energy' in columns or 'param_two_value' in columns:
-        t.param_two_name = 'cluster_norm_energy'
-        if clusters:
-            t.param_two_value = cle
-        else:
-            t.param_two_value = numpy.NaN
-    if 'cluster_number' in columns or 'param_three_value' in columns:
-        t.param_three_name = 'cluster_number'
-        if clusters:
-            t.param_three_value = cln
-        else:
-            t.param_three_value = numpy.NaN
-
     return t
+    ## \endcond
 
 
-# read triggers from file
-def from_file(fobj, start=None, end=None, ifo=None, channel=None,
-              columns=None, virgo=False):
-    """Read a SnglBurstTable from Omega-format ASCII file
+def from_ascii(filename, columns=None, start=None, end=None, channel=None):
+    """Read Omega triggers from an ASCII file
 
-    @param fobj
-        file object from which to read the data
-    @param start
-        GPS start time after which to restrict returned events
-    @param end
-        GPS end time before which to restrict returned
-    @param ifo
-        observatory that produced the given data
-    @param channel
-        source channel that produced the given data
+    Lines in the file are parsed one-by-one, excluding obvious comments
+    with each converted to an `OmegaTrigger` (a sub-class of
+    `SnglBurst`).
+
+    @param filename
+        path to the ASCII file
     @param columns
-        set of valid SnglBurst columns to read from data
-    @param virgo
-        identifies ASCII as in Virgo-Omega format, default False
+        a list of valid LIGO_LW column names to load (defaults to all)
+    @param start
+        minimum GPS time for returned triggers
+    @param end
+        maximum GPS time for returned triggers
+    @param channel
+        name of the source data channel for these events 
 
-    @returns a glue.lsctables.SnglBurstTable object representing the data
+    @returns a LIGO_LW table containing the triggers
     """
-    # set columns
-    if columns is None:
-        columns = lsctables.SnglBurst.__slots__
-        usercolumns = False
+    if channel and re.match("[A-Z]\d:", channel):
+        ifo = channel[:2]
     else:
-        usercolumns = True
-    columns = set(columns)
+        ifo = None
 
-    if channel and not ifo and re.match("[A-Z]\d:", channel):
-       ifo = channel[:2]
-
-    if start or end:
-        if start is None:
-            start = -numpy.inf
-        if end is None:
-            end = numpy.inf
+    if columns:
+        columns = set(columns)
+        if 'peak_time' not in columns and (start or end):
+            columns.add("peak_time")
+            columns.add("peak_time_ns")
+        if 'snr' in columns:
+            columns.add('amplitude')
+    if (start or end):
+        start = start or segments.NegInfinity
+        end = end or segments.PosInfinity
         span = segments.segment(start, end)
-        columns.update(["peak_time", "peak_time_ns"])
         check_time = True
     else:
         check_time = False
 
     # record amplitude if recording SNR
-    if 'snr' in columns:
-        columns.add("amplitude")
 
     # generate table
     out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
-    append = out.append
-
-    # remove unused names and types
-    if usercolumns:
-        for c in out.columnnames:
-            if c.lower() not in columns:
-                idx = out.columnnames.index(c)
-                out.columnnames.pop(idx)
-                out.columntypes.pop(idx)
+    columns = out.columnnames
 
     # read file and generate triggers
-    for i,line in enumerate(fobj):
-        if _comment.match(line):
-            continue
-        t = trigger(line, columns=columns, virgo=virgo)
-        t.ifo = ifo
-        t.channel = channel
-        t.search = u"Omega"
-        if not check_time or (check_time and float(t.get_peak()) in span):
-            append(t)
+    append = out.append
+    with open(filename, 'r') as f:
+        for line in f:
+            if _comment.match(line):
+               continue
+            t = ascii_trigger(line, columns=columns)
+            if channel:
+                t.ifo = ifo
+                t.channel = channel
+            if not check_time or (float(t.get_peak()) in span):
+                append(t)
 
     return out
 
+##@}
 
-# read triggers from a list of files 
-def from_files(filelist, start=None, end=None, ifo=None, channel=None,
-               columns=None, verbose=False, virgo=False):
-    """Read a SnglBurstTable from a list of Omega-format ASCII files
-
-    @param filelist
-        list of filepaths from which to read the data
-    @param start
-        GPS start time after which to restrict returned events
-    @param end
-        GPS end time before which to restrict returned
-    @param ifo
-        observatory that produced the given data
-    @param channel
-        source channel that produced the given data
-    @param columns
-        set of valid SnglBurst columns to read from data
-    @param verbose
-        print verbose progress, default False
-    @param virgo
-        identifies ASCII as in Virgo-Omega format, default False
-
-    @returns a glue.lsctables.SnglBurstTable object representing the data
-    """
-    if verbose:
-        sys.stdout.write("Extracting Omega triggers from %d files...     \r"
-                         % len(filelist))
-        sys.stdout.flush()
-        num = len(filelist)
-    out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
-    extend = out.extend
-    for i,fp in enumerate(filelist):
-        with open(fp, "r") as f:
-            extend(from_file(f, start=start, end=end, columns=columns,\
-                             ifo=ifo, channel=channel, virgo=virgo))
-        if verbose:
-            progress = int((i+1)/num*100)
-            sys.stdout.write("Extracting Omega triggers from %d files... "
-                             "%.2d%%\r" % (num, progress))
-            sys.stdout.flush()
-    if verbose:
-        sys.stdout.write("Extracting Omega triggers from %d files... "
-                         "100%%\n" % (num))
-        sys.stdout.flush()
-    return out
-
-def from_lal_cache(cache, start=None, end=None, ifo=None, channel=None,
-                   columns=None, verbose=False, virgo=False):
-    """Read a SnglBurstTable from a Cache of Omega-format ASCII files
-    
-    @param cache
-        glue.lal.Cache of filepaths from which to read the data
-    @param start
-        GPS start time after which to restrict returned events
-    @param end
-        GPS end time before which to restrict returned
-    @param ifo
-        observatory that produced the given data
-    @param channel
-        source channel that produced the given data
-    @param columns
-        set of valid SnglBurst columns to read from data
-    @param verbose
-        print verbose progress, default False
-    @param virgo
-        identifies ASCII as in Virgo-Omega format, default False
-
-    @returns a glue.lsctables.SnglBurstTable object representing the data
-    """
-    return from_files(cache.pfnlist(), start=start, end=end, ifo=ifo,
-                      channel=channel, columns=columns, verbose=verbose,
-                      virgo=virgo)
+# TODO: remove the functions below if a good trigfind solution is
+# implemented
 
 #
 # =============================================================================
@@ -368,7 +265,7 @@ def find_online_cache(start, end, ifo, mask='DOWNSELECT',
         check that the returned files can be read on disk, default False
     """
     out = Cache()
-    
+
     # verify host
     host = { 'G1':'atlas', 'H1':'ligo-wa', 'H2':'ligo-wa', 'L1':'ligo-la'}
     if (not kwargs.has_key('directory') and not
@@ -437,7 +334,7 @@ def find_dmt_cache(start, end, ifo, check_files=False, **kwargs):
         check that the returned files can be read on disk, default False
     """
     out = Cache()
-    
+
     # verify host
     host = { 'G1':'atlas', 'H1':'ligo-wa', 'H2':'ligo-wa', 'L1':'ligo-la'}
     if (not kwargs.has_key('directory') and not
@@ -497,3 +394,4 @@ def find_dmt_cache(start, end, ifo, check_files=False, **kwargs):
     out.sort(key=lambda e: e.path)
 
     return out
+
