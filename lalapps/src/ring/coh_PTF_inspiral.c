@@ -598,12 +598,12 @@ int main(int argc, char **argv)
 
   /* calulate number of events and cluster if needed */
   params->numEvents = XLALCountMultiInspiral(eventList);
-  fprintf(stderr,"There are %d total triggers before cluster.\n", params->numEvents);
+  verbose("There are %d total triggers before cluster.\n", params->numEvents);
   if ( params->clusterFlag )
   {
     coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
     params->numEvents = XLALCountMultiInspiral(eventList);
-    fprintf(stderr,"There are %d total triggers after cluster.\n", params->numEvents);
+    verbose("There are %d total triggers after cluster.\n", params->numEvents);
   }
 
   /* Output events to xml */
@@ -616,8 +616,8 @@ int main(int argc, char **argv)
 
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invplan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
-      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,Fplustrig,\
-      Fcrosstrig,skyPoints,time_slide_head,longTimeSlideList,\
+      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,slidTimeOffsets,Fplus,Fcross,\
+      Fplustrig,Fcrosstrig,skyPoints,time_slide_head,longTimeSlideList,
       shortTimeSlideList,timeSlideVectors,detectors, slideIDList);
   
   coh_PTF_free_veto_memory(params,bankNormOverlaps,bankFcTmplts,bankOverlaps,\

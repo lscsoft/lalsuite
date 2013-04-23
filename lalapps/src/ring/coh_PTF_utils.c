@@ -411,6 +411,8 @@ RingDataSegments *coh_PTF_get_segments(
 
   if ( params->analyzeInjSegsOnly )
   {
+    /* NOTE: Using this flag will override anything given by the option
+     * --only-analyse-segments, do not try and use both together */ 
     /* Figure out which segments the injections are in. If an injection is
      * within 1s of a segment boundary, analyse both segments. */ 
     for ( i = 0 ; i < params->numOverlapSegments; i++)
@@ -487,13 +489,15 @@ RingDataSegments *coh_PTF_get_segments(
   /* if todo list is empty then do them all */
   if ( (! params->segmentsToDoList || ! strlen( params->segmentsToDoList )) && (! params->analyzeInjSegsOnly) )
   {
+    /* Not convinved the code ever goes here, because empty segmentsToDoList
+     * does not evaluate to false. The loop below still works though! */ 
     segments->numSgmnt = params->numOverlapSegments;
     segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
     for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
     {
       slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
       timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] = 
-          (sgmnt-slidSegNum)*params->segmentDuration;
+          ((INT4)slidSegNum-(INT4)sgmnt)*params->strideDuration;
       compute_data_segment( &segments->sgmnt[sgmnt], slidSegNum, channel,
           invspec, response, params->segmentDuration, params->strideDuration,
           fwdplan );
@@ -506,6 +510,7 @@ RingDataSegments *coh_PTF_get_segments(
     /* first count the number of segments to do */
     count = 0;
     for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
+    {
       if ( params->analyzeInjSegsOnly )
       {
         if ( segListToDo[sgmnt] == 1)
@@ -520,6 +525,7 @@ RingDataSegments *coh_PTF_get_segments(
         else
           continue; /* skip this segment: it is not in todo list */
       }
+    }
 
     if ( ! count ) /* no segments to do */
     {
@@ -535,6 +541,7 @@ RingDataSegments *coh_PTF_get_segments(
     {
       if ( params->analyzeInjSegsOnly )
       {
+        /* NOTE: Time slide injection analysis is not currently possible */
         if ( segListToDo[sgmnt] == 1)
           compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
@@ -543,10 +550,10 @@ RingDataSegments *coh_PTF_get_segments(
       else
       {
         if ( is_in_list( sgmnt, params->segmentsToDoList ) )
-      /* we are sliding the names of segments here */
+        /* we are sliding the names of segments here */
         {
-          slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
-          timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] =
+          slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( params->numOverlapSegments );
+          timeSlideVectors[NumberIFO*params->numOverlapSegments + count] =
               ((INT4)slidSegNum-(INT4)sgmnt)*params->strideDuration;
           compute_data_segment( &segments->sgmnt[count++], slidSegNum, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
@@ -583,7 +590,7 @@ void coh_PTF_create_time_slide_table(
   UINT4 longSlideCount = 0;
   UINT4 shortSlideCount = 0;
   INT4 i;
-  UINT4 ui,uj,ifoNumber,ifoNum,lastStartPoint,wrapPoint,currId;
+  UINT4 ui,uj,ifoNumber,ifoNum,lastStartPoint,wrapPoint,currId,ifoCount;
   REAL8 currBaseOffset,currBaseIfoOffset[LAL_NUM_IFO],wrapTime,currIfoOffset;
 
   /* First construct the list of long slides */
@@ -621,7 +628,7 @@ void coh_PTF_create_time_slide_table(
       {
         if (params->haveTrig[ifoNumber])
         {
-          longTimeSlideList[longSlideCount].timeSlideVectors[ifoNumber] = \
+          longTimeSlideList[longSlideCount].timeSlideVectors[ifoNumber] = 
               timeSlideVectors[ifoNumber*params->numOverlapSegments+i];
         }
       }
@@ -635,12 +642,24 @@ void coh_PTF_create_time_slide_table(
       params->numShortSlides, sizeof(TimeSlideVectorList));
 
   /* Next construct the list of short time slides */
+  /* Always have a zero-lag short slide */
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      shortTimeSlideList[0].timeSlideVectors[ifoNumber] = 0.;
+    }
+  }
+  shortTimeSlideList[0].timeSlideID = 0;
+  shortTimeSlideList[0].analStartPoint = params->analStartPoint;
+  shortTimeSlideList[0].analEndPoint = params->analEndPoint;
+  shortSlideCount = 1;
+
   if (params->doShortSlides)
   {
+    currBaseOffset = params->shortSlideOffset;
     while (1)
     {
-      /* Get the base offset between ifos for this slide */
-      currBaseOffset = shortSlideCount * params->shortSlideOffset;
       /* Calculate offsets for each detector */
       ifoNum = 0;
       for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
@@ -665,7 +684,7 @@ void coh_PTF_create_time_slide_table(
       /* This avoids "WARNING: May be used unset" warning */
       lastStartPoint = 0;
       /* Now we need to consider the wrapping and set slides */
-      for (ui = 0; ui <= ifoNum; ui++)
+      for (ui = 0; ui < ifoNum; ui++)
       {
         /* Begin by initializing the slide */
         shortTimeSlideList[shortSlideCount].timeSlideID = shortSlideCount;
@@ -684,7 +703,7 @@ void coh_PTF_create_time_slide_table(
           /* Otherwise end at where we started before */
           shortTimeSlideList[shortSlideCount].analEndPoint = lastStartPoint;
         } 
-        if (ui == ifoNum)
+        if (ui == ifoNum - 1)
         {
           /* If ui = ifoNum we have to start at analStartPoint */
           shortTimeSlideList[shortSlideCount].analStartPoint = \
@@ -702,35 +721,27 @@ void coh_PTF_create_time_slide_table(
         }
         lastStartPoint = shortTimeSlideList[shortSlideCount].analStartPoint;
         /* Now we construct the wrapped offsets and store*/
+        ifoCount = 0;
         for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
         {
           /* We are looping backwards so invert this */
           if (params->haveTrig[ifoNumber])
           {
             currIfoOffset = currBaseIfoOffset[ifoNumber];
-            if (ifoNumber > ui)
+            if (ifoCount > ui)
             { /* Need to wrap */
               currIfoOffset -= params->strideDuration;
             }
             shortTimeSlideList[shortSlideCount].timeSlideVectors[ifoNumber] = \
                 currIfoOffset;
+            ifoCount++;
           }
         }
+        shortSlideCount++;
       } /* End loop over wrap points */
+      currBaseOffset += params->shortSlideOffset;
     } /* End the while(1) loop over base offsets */
   } /* End if do short slides */
-  else
-  {
-    shortSlideCount = 1;
-    for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-    {
-      if (params->haveTrig[ifoNumber])
-      {
-        shortTimeSlideList[0].timeSlideVectors[ifoNumber] = 0.;
-      }
-    }
-    shortTimeSlideList[0].timeSlideID = 0;
-  }
   sanity_check(shortSlideCount == params->numShortSlides);
 
   time_slide_head=NULL;
@@ -769,7 +780,7 @@ void coh_PTF_create_time_slide_table(
           curr_slide->offset = \
               longTimeSlideList[ui].timeSlideVectors[ifoNumber];
           curr_slide->offset += \
-              shortTimeSlideList[ui].timeSlideVectors[ifoNumber];
+              shortTimeSlideList[uj].timeSlideVectors[ifoNumber];
           /* Not sure what a process ID means, so set to 0 */
           curr_slide->process_id=0;
         }
@@ -2413,6 +2424,7 @@ void coh_PTF_cleanup(
     REAL8Array              **PTFN,
     COMPLEX8VectorSequence  **PTFqVec,
     REAL4                   *timeOffsets,
+    REAL4                   *slidTimeOffsets,
     REAL4                   *Fplus,
     REAL4                   *Fcross,
     REAL4                   *Fplustrig,
@@ -2539,6 +2551,8 @@ void coh_PTF_cleanup(
     LALFree( fcInitParams );
   if ( timeOffsets )
     LALFree( timeOffsets );
+  if ( slidTimeOffsets)
+    LALFree( slidTimeOffsets );
   if ( Fplus )
     LALFree( Fplus );
   if ( Fcross )
@@ -3578,7 +3592,7 @@ void findInjectionSegment(
 
     /* define variables */
     LIGOTimeGPS injTime, segmentStart, segmentEnd;
-    UINT4 injSamplePoint, injWindow;
+    UINT4 injSamplePoint, injWindow, tmpStart, tmpEnd;
     REAL8 injDiff;
     INT8 startDiff, endDiff;
     SimInspiralTable *thisInject = NULL;
@@ -3588,6 +3602,8 @@ void findInjectionSegment(
     segmentEnd   = *epoch;
     XLALGPSAdd(&segmentEnd, params->strideDuration);
     thisInject = params->injectList;
+
+    tmpStart = tmpEnd = 0;
 
     /* loop over injections */
     while (thisInject)
@@ -3600,11 +3616,11 @@ void findInjectionSegment(
         {
             verbose("Generating analysis segment for injection at %d.\n",
                     injTime.gpsSeconds);
-            if (*start)
+            if (tmpStart)
             {
                 verbose("warning: multiple injections in this segment.\n");
-                *start = params->analStartPoint;
-                *end = params->analEndPoint;
+                tmpStart = params->analStartPoint;
+                tmpEnd = params->analEndPoint;
             }
             else
             {
@@ -3614,17 +3630,19 @@ void findInjectionSegment(
                 injSamplePoint += params->analStartPoint;
                 injWindow = floor(params->injSearchWindow * params->sampleRate
                                   + 1);
-                *start = injSamplePoint - injWindow;
-                if (*start < params->analStartPoint)
-                    *start = params->analStartPoint;
-                *end = injSamplePoint + injWindow + 1;
-                if (*end > params->analEndPoint)
-                    *end = params->analEndPoint;
-                verbose("Found analysis segment at [%d,%d).\n", *start, *end);
+                tmpStart = injSamplePoint - injWindow;
+                if (tmpStart < params->analStartPoint)
+                    tmpStart = params->analStartPoint;
+                tmpEnd = injSamplePoint + injWindow + 1;
+                if (tmpEnd > params->analEndPoint)
+                    tmpEnd = params->analEndPoint;
+                verbose("Found analysis segment at [%d,%d).\n", tmpStart, tmpEnd);
             }
         }
         thisInject = thisInject->next;
     }
+    *start = tmpStart;
+    *end = tmpEnd;  
 }
 
 UINT4 checkInjectionMchirp(

@@ -591,9 +591,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   /* Determine the number of short slides */
   if (localparams.doShortSlides)
   {
-    localparams.numShortSlides = (int) floor( \
-        (localparams.shortSlideOffset * localparams.numIFO) / \
-        localparams.strideDuration );
+    localparams.numShortSlides = 1 + localparams.numIFO * (int) floor( \
+        localparams.strideDuration / \
+        (localparams.shortSlideOffset * (localparams.numIFO-1)) );
   }
   else
   {
