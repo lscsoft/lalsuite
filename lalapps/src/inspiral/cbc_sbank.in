@@ -230,4 +230,4 @@ if opts.user_tag:
 else:
     fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
 
-utils.write_filename(xmldoc, fout)
+utils.write_filename(xmldoc, fout,  gz=fout.endswith("gz"))
