@@ -742,6 +742,7 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      memset(TSofPowers->data, 0, sizeof(REAL4)*TSofPowers->length);
       for (ii=0; ii<ffdata->numfbins; ii++) {
          REAL4 totalweightval = 0.0;
          for (jj=0; jj<ffdata->numffts; jj++) {
@@ -769,8 +770,13 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       
-      REAL4 secFFTmean = calcMean(ffdata->ffdata);
-      REAL4 secFFTsigma = calcStddev(ffdata->ffdata);
+      REAL4 secFFTmean = 0.0, secFFTsigma = 0.0;
+      secFFTmean = calcMean(ffdata->ffdata);
+      secFFTsigma = calcStddev(ffdata->ffdata);
+      if (xlalErrno!=0) {
+         fprintf(stderr, "%s: calcStddev() failed.\n", __func__);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
       
       XLALDestroyREAL4Vector(TFdata_weighted);
       TFdata_weighted = NULL;
@@ -792,7 +798,7 @@ int main(int argc, char *argv[])
          fclose(FFDATA);
       }
 
-      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, 1.0);
+      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = 1.0\n", secFFTmean, secFFTsigma);
       
       //Exit with failure if there are no SFTs (probably this doesn't get hit)
       if (secFFTmean==0.0) {
@@ -1599,6 +1605,7 @@ void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfd
          XLAL_ERROR_VOID(XLAL_EFAILED);
       }
       for (jj=0; jj<numfbins; jj++) output->data[ii*numfbins + jj] = tfdata->data[ii*(numfbins+2*input->maxbinshift) + jj + input->maxbinshift + binshifts->data[ii]];
+      //memcpy(&(output->data[ii*numfbins]), &(tfdata->data[ii*(numfbins+2*input->maxbinshift) + input->maxbinshift + binshifts->data[ii]]), sizeof(REAL4)*numfbins);
    }
    
 } /* slideTFdata() */
@@ -2157,6 +2164,9 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    
    INT4 numffts = (INT4)antPatternWeights->length;
    INT4 numfbins = (INT4)(tfdata->length)/numffts;
+
+   //Initially set output to zero
+   memset(output->data, 0, sizeof(REAL4)*output->length);
    
    REAL4Vector *antweightssq = XLALCreateREAL4Vector(numffts);
    REAL4Vector *rngMeanssq = XLALCreateREAL4Vector(numffts);
