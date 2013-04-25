@@ -140,7 +140,7 @@ int main( int argc, char *argv[] )
   XLALPrintInfo("\n========== LALSegListRead tests \n");
   /*-------------------------------------------------------------------------*/
 
-  LALSegListRead( &status, &seglist1, DATADIR "SegmentsInput1.data", "" );
+  LALSegListRead( &status, &seglist1, TEST_DATA_DIR "SegmentsInput1.data", "" );
   if ( status.statusCode ) {
     RETFAIL( "LALSegListRead with standard segment list file",
 	     status.statusCode );

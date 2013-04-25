@@ -214,8 +214,8 @@ int main( int argc, char **argv )
   float a, b, c, d, e, f;         /* To specify center of search region */
   BOOLEAN rectangular;            /* is the search region rectangular? */
 
-  char earth[] = DATADIR "earth00-19-DE405.dat.gz";
-  char sun[]   = DATADIR "sun00-19-DE405.dat.gz";
+  char earth[] = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
+  char sun[]   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
 
   /* Set default values. */
   metric_code = 1;

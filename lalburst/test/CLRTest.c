@@ -181,7 +181,7 @@ int main ( void )
   /* read data  x(t) */
   /* insert here your own data from a given file/frame */
 
-  in_file = fopen(DATADIR "CLRindata.asc", "r");
+  in_file = fopen(TEST_DATA_DIR "CLRindata.asc", "r");
   for (i = 0; i < (int)n; ++i) {
     number = fscanf(in_file, "%f\n", &dummy );
     x->data[i] = dummy;

@@ -99,7 +99,7 @@ type-dependent format.
 
 /* Default parameter settings. */
 extern int lalDebugLevel;
-#define INFILE DATADIR "StreamInput.data"
+#define INFILE TEST_DATA_DIR "StreamInput.data"
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-o outfile] [-d debuglevel] [-t]\n"        \

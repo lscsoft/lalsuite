@@ -41,7 +41,7 @@ int main ( int argc, char *argv[])
   BOOLEAN wasRead = 0;
 
   // ---------- TEST 1: make sure the XLAL methods can read config files without sections ----------
-  const char *cfgname = DATADIR "ConfigFileSample.cfg";
+  const char *cfgname = TEST_DATA_DIR "ConfigFileSample.cfg";
 
   XLAL_CHECK ( XLALParseDataFile ( &cfgdata, cfgname ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse config-file '%s'", cfgname );
 
@@ -90,7 +90,7 @@ int main ( int argc, char *argv[])
 
   // ---------- TEST 2: read some values from different sections ----------
 
-  cfgname = DATADIR "ConfigFileSample2.cfg";
+  cfgname = TEST_DATA_DIR "ConfigFileSample2.cfg";
   XLAL_CHECK ( XLALParseDataFile ( &cfgdata, cfgname ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse config-file '%s'", cfgname );
 
   /* Check for a section we have and one we don't */
@@ -132,7 +132,7 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( testBool == 0, XLAL_EFAILED, "%s: got testBool = %d, expected 0\n", cfgname, testBool );
 
   // ---------- TEST 3: check reading of compressed files ----------
-  cfgname = DATADIR "ConfigFileSample3.cfg.gz";
+  cfgname = TEST_DATA_DIR "ConfigFileSample3.cfg.gz";
   XLAL_CHECK ( XLALParseDataFile ( &cfgdata, cfgname ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( cfgdata->lines->nTokens == 4, XLAL_EFAILED );

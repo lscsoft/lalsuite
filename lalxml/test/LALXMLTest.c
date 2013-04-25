@@ -730,7 +730,7 @@ int testTable ( void )
 int validateDocument(const xmlDocPtr xmlDocument)
 {
     /* set up local variables */
-    char schemaUrl[] = "file://" DATADIR "VOTable-1.1.xsd";
+    char schemaUrl[] = "file://" TEST_DATA_DIR "VOTable-1.1.xsd";
     int result;
 
     /* validate document */

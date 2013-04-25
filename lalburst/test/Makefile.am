@@ -1,4 +1,4 @@
-AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DDATADIR='"$(abs_srcdir)/"'
+AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DTEST_DATA_DIR='"$(abs_srcdir)/"'
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalburst.la
 
 check_PROGRAMS = \
