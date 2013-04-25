@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 if LALFRAME
 if LALMETAIO

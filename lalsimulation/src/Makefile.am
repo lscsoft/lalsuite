@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKGDATADIR='"$(pkgdatadir)"'
+AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = liblalsimulation.la
 
 NOISEPSDFILES = \
