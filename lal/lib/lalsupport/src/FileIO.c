@@ -75,6 +75,11 @@
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 
+struct tagLALFILE {
+  int compression;
+  void *fp;
+};
+
 LALFILE *lalstdin( void )
 {
   static LALFILE _lalstdin;

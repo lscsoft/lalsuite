@@ -1668,7 +1668,9 @@ void BankEfficiencyPrintResultsXml(
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
     /* finally write sngl inspiral table column's names */
-    xml_status = PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
+#define fputs XLALFilePuts
+    xml_status = PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp);
+#undef fputs
   }
   else
   {
@@ -1677,7 +1679,7 @@ void BankEfficiencyPrintResultsXml(
   }
 
   /* --- print the results of one simulation into the xml file --- */
-  fprintf(xmlStream.fp->fp,BANKEFFICIENCY_PARAMS_ROW,
+  XLALFilePrintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
     trigger.mass1_trigger,
     trigger.mass2_trigger,
     randIn.param.psi0,
@@ -1710,14 +1712,16 @@ void BankEfficiencyPrintResultsXml(
   /* --- if we reached the last simulations, we close the file --- */
   if (trigger.ntrial == (UINT4)userParam.ntrials)
   {
-    xml_status = PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp);
-    PRINT_LIGOLW_XML_FOOTER(xmlStream.fp->fp);
+#define fputs XLALFilePuts
+    xml_status = PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp);
+    PRINT_LIGOLW_XML_FOOTER(xmlStream.fp);
+#undef fputs
     XLALFileClose(xmlStream.fp);
     xmlStream.fp = NULL;
   }
   else
   {
-    fprintf(xmlStream.fp->fp, ",\n");
+    XLALFilePrintf(xmlStream.fp, ",\n");
     XLALFileClose(xmlStream.fp);
     xmlStream.fp = NULL;
   }
@@ -1801,8 +1805,8 @@ BankEfficiencyPrintProtoXml(
 
   /* finally write sngl inspiral table */
 
-  fclose( xmlStream.fp->fp );
-  xmlStream.fp->fp = NULL;
+  XLALFileClose( xmlStream.fp );
+  xmlStream.fp = NULL;
 
 #undef MAXIFO
   exit( 1 );

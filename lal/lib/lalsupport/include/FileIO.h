@@ -48,10 +48,8 @@ extern "C" {
 
 FILE *LALOpenDataFile( const char* );
 
-typedef struct tagLALFILE {
-  int compression;
-  void *fp;
-} LALFILE;
+typedef struct tagLALFILE LALFILE;
+
 LALFILE *lalstdin(void);
 LALFILE *lalstdout(void);
 LALFILE *lalstderr(void);
