@@ -362,6 +362,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
         REAL8Vector *new=XLALCreateREAL8Vector(old->length);
         if(new) memcpy(new->data,old->data,new->length);
         else XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to copy vector!\n");
+        LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
       }
       else /* Just memcpy */
         LALInferenceAddVariable(target, ptr->name, ptr->value, ptr->type,
