@@ -826,6 +826,23 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 else
                     XLALREAL8AverageSpectrumMedian(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
 
+                if(LALInferenceGetProcParamVal(commandLine, "--binFit")) {
+
+                    LIGOTimeGPS GPStime;
+
+                    GPStime.gpsSeconds = GPStrig.gpsSeconds - SegmentLength;
+                    GPStime.gpsNanoSeconds = GPStrig.gpsNanoSeconds;
+
+                    const UINT4 nameLength=256;
+                    char filename[nameLength];
+
+                    snprintf(filename, nameLength, "%s-BinFitLines.dat", IFOdata[i].name);
+
+                    printf("Running PSD bin fitting... ");
+                    LALInferenceAverageSpectrumBinFit(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan,filename,GPStime);
+                    printf("completed!\n");
+                }
+
                 if (LALInferenceGetProcParamVal(commandLine, "--chisquaredlines")){
 
                     double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
@@ -850,7 +867,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     snprintf(filename, nameLength, "%s-ChiSquaredLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 0.05) {
+                        if (pvalues[k] < 0.001) {
                             fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
@@ -889,7 +906,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     snprintf(filename, nameLength, "%s-KSLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 0.05) {
+                        if (pvalues[k] < 0.10) {
                             fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
@@ -903,6 +920,46 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     fclose(out);
 
                 }
+
+                if (LALInferenceGetProcParamVal(commandLine, "--powerlawlines")){
+
+                    double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
+                    int lengthF = IFOdata[i].oneSidedNoisePowerSpectrum->data->length;
+
+                    REAL8 *pvalues;
+                    pvalues = XLALMalloc( lengthF * sizeof( *pvalues ) );
+
+                    printf("Running power law tests... ");
+                    LALInferenceRemoveLinesPowerLaw(IFOdata[i].oneSidedNoisePowerSpectrum,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan,pvalues);
+                    printf("completed!\n");
+
+                    const UINT4 nameLength=256;
+                    char filename[nameLength];
+                    FILE *out;
+
+                    double lines_width;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--powerlawlinesWidth");
+                    if(ppt) lines_width = atoi(ppt->value);
+                    else lines_width = deltaF;
+
+                    snprintf(filename, nameLength, "%s-PowerLawLines.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        if (pvalues[k] < 1.0) {
+                            fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
+                        }
+                    }
+                    fclose(out);
+
+                    snprintf(filename, nameLength, "%s-PowerLawLines-pvalues.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        fprintf(out,"%g %g\n",((double) k) * deltaF,pvalues[k]);
+                    }
+                    fclose(out);
+
+                }
+
 
                 XLALDestroyREAL8TimeSeries(PSDtimeSeries);
             }
