@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 
@@ -23,8 +24,8 @@
 #include <lal/LALNoiseModels.h>
 #include <lal/XLALError.h>
 #include <lal/GenerateInspiral.h>
-#include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+//#include <lal/LIGOLwXMLRead.h>
+//#include <lal/LIGOLwXMLInspiralRead.h>
 
 #include <lal/SeqFactories.h>
 #include <lal/DetectorSite.h>
@@ -52,6 +53,14 @@
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
 #include <LALInferenceRemoveLines.h>
+
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_fft_complex.h>
+#include <gsl/gsl_fft_halfcomplex.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_statistics.h>
 
 #define max(a,b) (((a)>(b))?(a):(b))
 
@@ -455,6 +464,319 @@ int LALInferenceRemoveLinesKS(
     pvalues[k] = 2*exp(-(2.000071+.331/sqrt(count)+1.409/count)*nKSsquared);
 
   }
+
+  /* free the workspace data */
+  XLALFree( bin );
+  median_cleanup_REAL8( work, numseg );
+
+  return 0;
+}
+
+int LALInferenceAverageSpectrumBinFit(
+    REAL8FrequencySeries        *spectrum,
+    const REAL8TimeSeries       *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan,
+    char*                       filename, 
+    LIGOTimeGPS                 GPStime      
+    )
+{
+  REAL8FrequencySeries *work; /* array of frequency series */
+  REAL8 *bin; /* array of bin values */
+  REAL8 *bininterp;
+  UINT4 reclen; /* length of entire data record */
+  UINT4 numseg;
+  UINT4 seg;
+  UINT4 k;
+
+  double trigtime = GPStime.gpsSeconds+1e-9*GPStime.gpsNanoSeconds;
+  double PSDtime;
+  double *PSDtimes;
+  int *PSDtimesIndex, segindex;
+
+  if ( ! spectrum || ! tseries || ! plan )
+      XLAL_ERROR( XLAL_EFAULT );
+  if ( ! spectrum->data || ! tseries->data )
+      XLAL_ERROR( XLAL_EINVAL );
+  if ( tseries->deltaT <= 0.0 )
+      XLAL_ERROR( XLAL_EINVAL );
+
+  reclen = tseries->data->length;
+  numseg = 1 + (reclen - seglen)/stride;
+
+  /* consistency check for lengths: make sure that the segments cover the
+ *    * data record completely */
+  if ( (numseg - 1)*stride + seglen != reclen )
+    XLAL_ERROR( XLAL_EBADLEN );
+  if ( spectrum->data->length != seglen/2 + 1 )
+    XLAL_ERROR( XLAL_EBADLEN );
+
+  /* create frequency series data workspaces */
+  work = XLALCalloc( numseg, sizeof( *work ) );
+  if ( ! work )
+    XLAL_ERROR( XLAL_ENOMEM );
+  for ( seg = 0; seg < numseg; ++seg )
+  {
+    work[seg].data = XLALCreateREAL8Vector( spectrum->data->length );
+    if ( ! work[seg].data )
+    {
+      median_cleanup_REAL8( work, numseg ); /* cleanup */
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+
+  /* create array to hold a particular frequency bin data */
+  PSDtimes = XLALMalloc( (numseg-1) * sizeof( *PSDtimes ) );
+  PSDtimesIndex = XLALMalloc( (numseg-1) * sizeof( *PSDtimesIndex ) );
+
+  printf("%10.10lf\n",trigtime);
+  int count = 0;
+
+  for ( seg = 0; seg < numseg; ++seg )
+  {
+    REAL8Vector savevec; /* save the time series data vector */
+    int code;
+
+    /* save the time series data vector */
+    savevec = *tseries->data;
+
+    PSDtime = tseries->epoch.gpsSeconds + 1e-9*tseries->epoch.gpsNanoSeconds + seg*tseries->deltaT*seglen;
+    if ((PSDtime > trigtime - 0.5) & (PSDtime < trigtime + 0.5))
+    {
+    }
+    else {
+    PSDtimes[count] = PSDtime;
+    PSDtimesIndex[count] = seg;
+
+    printf("%10.10lf\n",PSDtimes[count]);
+    
+    count = count + 1;
+    }
+
+    /* set the data vector to be appropriate for the even segment */
+    tseries->data->length  = seglen;
+    tseries->data->data   += seg * stride;
+
+    /* compute the modified periodogram for the even segment */
+    code = XLALREAL8ModifiedPeriodogram( work + seg, tseries, window, plan );
+
+    /* restore the time series data vector to its original state */
+    *tseries->data = savevec;
+
+    /* now check for failure of the XLAL routine */
+    if ( code == XLAL_FAILURE )
+    {
+      median_cleanup_REAL8( work, numseg ); /* cleanup */
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+
+  /* create array to hold a particular frequency bin data */
+  bin = XLALMalloc( (numseg) * sizeof( *bin ) );
+  bininterp = XLALMalloc( (numseg) * sizeof( *bininterp ) );
+
+  if ( ! bin )
+  {
+    median_cleanup_REAL8( work, numseg ); /* cleanup */
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  FILE *out;
+
+  out = fopen(filename, "w");
+
+  /* now loop over frequency bins and compute the median-mean */
+  for ( k = 0; k < spectrum->data->length; ++k )
+  {
+    fprintf(out,"%g",((double) k) * work->deltaF);
+    /* assign array of even segment values to bin array for this freq bin */
+    for ( seg = 0; seg < numseg; ++seg ) {
+      bin[seg] = work[seg].data->data[k];
+      fprintf(out," %e ",bin[seg]);
+    }
+    fprintf(out,"\n");
+
+    for ( seg = 0; seg < numseg-1; ++seg ) {
+      segindex = PSDtimesIndex[seg];
+      bininterp[segindex] = work[segindex].data->data[k];
+      //printf(" %e ",bininterp[segindex]);
+    }
+    //printf("\n");
+
+    gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+    gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, numseg-1);
+    gsl_spline_init (spline, PSDtimes, bininterp, numseg-1);
+
+    spectrum->data->data[k] = gsl_spline_eval (spline,trigtime, acc);
+
+    printf("%e\n",spectrum->data->data[k]);
+
+  }
+
+  fclose(out);
+
+  /* set metadata 
+  spectrum->epoch       = work->epoch;
+  spectrum->f0          = work->f0;
+  spectrum->deltaF      = work->deltaF;
+  spectrum->sampleUnits = work->sampleUnits;
+  */
+
+  /* free the workspace data */
+  XLALFree( bin );
+  median_cleanup_REAL8( work, numseg );
+
+  return 0;
+}
+
+int LALInferenceRemoveLinesPowerLaw(
+    REAL8FrequencySeries        *spectrum,
+    const REAL8TimeSeries       *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan,
+    REAL8                       *pvalues
+    )
+{
+  REAL8FrequencySeries *work; /* array of frequency series */
+  REAL8 *bin; /* array of bin values */
+  UINT4 reclen; /* length of entire data record */
+  UINT4 numseg;
+  UINT4 seg;
+  UINT4 k,l;
+
+  if ( ! spectrum || ! tseries || ! plan )
+      XLAL_ERROR( XLAL_EFAULT );
+  if ( ! spectrum->data || ! tseries->data )
+      XLAL_ERROR( XLAL_EINVAL );
+  if ( tseries->deltaT <= 0.0 )
+      XLAL_ERROR( XLAL_EINVAL );
+
+  reclen = tseries->data->length;
+  numseg = 1 + (reclen - seglen)/stride;
+
+  /* consistency check for lengths: make sure that the segments cover the
+ *  *    * data record completely */
+  if ( (numseg - 1)*stride + seglen != reclen )
+    XLAL_ERROR( XLAL_EBADLEN );
+  if ( spectrum->data->length != seglen/2 + 1 )
+    XLAL_ERROR( XLAL_EBADLEN );
+
+  /* create frequency series data workspaces */
+  work = XLALCalloc( numseg, sizeof( *work ) );
+  if ( ! work )
+    XLAL_ERROR( XLAL_ENOMEM );
+  for ( seg = 0; seg < numseg; ++seg )
+  {
+    work[seg].data = XLALCreateREAL8Vector( spectrum->data->length );
+    if ( ! work[seg].data )
+    {
+      median_cleanup_REAL8( work, numseg ); /* cleanup */
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+
+  for ( seg = 0; seg < numseg; ++seg )
+  {
+    REAL8Vector savevec; /* save the time series data vector */
+    int code;
+
+    /* save the time series data vector */
+    savevec = *tseries->data;
+
+    /* set the data vector to be appropriate for the even segment */
+    tseries->data->length  = seglen;
+    tseries->data->data   += seg * stride;
+
+    /* compute the modified periodogram for the even segment */
+    code = XLALREAL8ModifiedPeriodogram( work + seg, tseries, window, plan );
+
+    /* restore the time series data vector to its original state */
+    *tseries->data = savevec;
+
+    /* now check for failure of the XLAL routine */
+    if ( code == XLAL_FAILURE )
+    {
+      median_cleanup_REAL8( work, numseg ); /* cleanup */
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+                                
+  /* create array to hold a particular frequency bin data */
+  bin = XLALMalloc( numseg * sizeof( *bin ) );
+  if ( ! bin )
+  {
+    median_cleanup_REAL8( work, numseg ); /* cleanup */
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  int count;
+  double SUMx = 0, SUMy = 0, SUMxy = 0, SUMxx = 0, SUMres = 0;
+  double res, slope, y_intercept, y_estimate, y_estimate_log;
+
+  double f, dataval, flog, datavallog;
+
+  double deltaF = spectrum->deltaF;
+  
+  for ( k = 0; k < spectrum->data->length; ++k ) {
+      pvalues[k] = 0.0;
+  }
+
+  UINT4 numBands = 4;
+  float frequencyBands[4];
+  frequencyBands[0] = 0, frequencyBands[1] = 10, frequencyBands[2] = 100, frequencyBands[3] = 2048;
+
+  for ( l = 0; l < numBands-1; ++l)
+  {
+
+    count = 0, SUMx = 0, SUMy = 0, SUMxy = 0, SUMxx = 0, SUMres = 0;
+    /* now loop over frequency bins and compute the median-mean */
+    for ( k = 0; k < spectrum->data->length; ++k )
+    {
+
+      f = ((double) k) * deltaF;
+      dataval = spectrum->data->data[k];
+      flog = log10(f);
+      datavallog = log10(dataval);
+ 
+      if ((f>=frequencyBands[l]) & (f<=frequencyBands[l+1])) {
+
+      SUMx = SUMx + flog;
+      SUMy = SUMy + datavallog;
+      SUMxy = SUMxy + flog*datavallog;
+      SUMxx = SUMxx + flog*flog;
+
+      count = count + 1;
+
+      }
+    } 
+
+    slope = ( SUMx*SUMy - count*SUMxy ) / ( SUMx*SUMx - count*SUMxx );
+    y_intercept = ( SUMy - slope*SUMx ) / count;
+
+    SUMres = 0;
+    for (k=0; k<spectrum->data->length; ++k) {
+
+      f = ((double) k) * deltaF;
+      dataval = spectrum->data->data[k];
+      flog = log10(f);
+      datavallog = log10(dataval);
+
+      if ((f>=frequencyBands[l]) & (f<=frequencyBands[l+1])) {
+
+      y_estimate_log = slope*flog + y_intercept;
+
+      y_estimate = pow(10.0,y_estimate_log);
+
+      res = fabsf(datavallog - y_estimate_log);
+      pvalues[k] = 1.0/res;
+      }
+    }
+  }
+
 
   /* free the workspace data */
   XLALFree( bin );

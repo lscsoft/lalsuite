@@ -1176,7 +1176,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       snprintf (ifoRemoveLines,500, "--%s-removeLines",dataPtr->name);
 
       ppt = LALInferenceGetProcParamVal(commandLine,ifoRemoveLines);
-      if(ppt || LALInferenceGetProcParamVal(commandLine, "--chisquaredlines") || LALInferenceGetProcParamVal(commandLine, "--KSlines"))
+      if(ppt || LALInferenceGetProcParamVal(commandLine, "--chisquaredlines") || LALInferenceGetProcParamVal(commandLine, "--KSlines") || LALInferenceGetProcParamVal(commandLine, "--powerlawlines"))
       /* Load in values from file if requested */
       {
         char line [ 128 ];
@@ -1187,6 +1187,9 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
         }
         else if (LALInferenceGetProcParamVal(commandLine, "--KSlines")) {
              snprintf (lines_tempfile,500, "%s-KSLines.dat",dataPtr->name);
+        }
+        else if (LALInferenceGetProcParamVal(commandLine, "--powerlawlines")) {
+             snprintf (lines_tempfile,500, "%s-PowerLawLines.dat",dataPtr->name);
         }
         else {
              char *lines_tempfile_temp = ppt->value;
