@@ -76,15 +76,16 @@ int main( int argc, char *argv[] )
     phi_spin1 = 0.0;
   }else{
     theta_spin1 = acos(injTable->spin1z / a_spin1);
-    phi_spin1 = acos(injTable->spin1x / (a_spin1 * sin(theta_spin1)));
+    phi_spin1 = atan2(injTable->spin1y,injTable->spin1x);
+    if (phi_spin1 < 0.0) phi_spin1+=2*LAL_PI;
   }
   if(a_spin2 == 0.0){
     theta_spin2 = 0.000000000001;
     phi_spin2 = 0.0;
   }else{
     theta_spin2 = acos(injTable->spin2z / a_spin2);
-    phi_spin2 = acos(injTable->spin2x / (a_spin2 * sin(theta_spin2)));
-
+    phi_spin2 = atan2(injTable->spin2y,injTable->spin2x);
+    if (phi_spin2 < 0.0) phi_spin2+=2*LAL_PI;
   }
   
   if(injTable->polarization>=LAL_PI){
