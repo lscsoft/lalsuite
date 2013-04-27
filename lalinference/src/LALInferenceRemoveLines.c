@@ -714,8 +714,8 @@ int LALInferenceRemoveLinesPowerLaw(
   }
 
   int count;
-  double SUMx = 0, SUMy = 0, SUMxy = 0, SUMxx = 0, SUMres = 0;
-  double res, slope, y_intercept, y_estimate, y_estimate_log;
+  double SUMx = 0, SUMy = 0, SUMxy = 0, SUMxx = 0;
+  double res, slope, y_intercept, y_estimate_log;
 
   double f, dataval, flog, datavallog;
 
@@ -732,7 +732,7 @@ int LALInferenceRemoveLinesPowerLaw(
   for ( l = 0; l < numBands-1; ++l)
   {
 
-    count = 0, SUMx = 0, SUMy = 0, SUMxy = 0, SUMxx = 0, SUMres = 0;
+    count = 0, SUMx = 0, SUMy = 0, SUMxy = 0, SUMxx = 0;
     /* now loop over frequency bins and compute the median-mean */
     for ( k = 0; k < spectrum->data->length; ++k )
     {
@@ -757,7 +757,6 @@ int LALInferenceRemoveLinesPowerLaw(
     slope = ( SUMx*SUMy - count*SUMxy ) / ( SUMx*SUMx - count*SUMxx );
     y_intercept = ( SUMy - slope*SUMx ) / count;
 
-    SUMres = 0;
     for (k=0; k<spectrum->data->length; ++k) {
 
       f = ((double) k) * deltaF;
@@ -768,8 +767,6 @@ int LALInferenceRemoveLinesPowerLaw(
       if ((f>=frequencyBands[l]) & (f<=frequencyBands[l+1])) {
 
       y_estimate_log = slope*flog + y_intercept;
-
-      y_estimate = pow(10.0,y_estimate_log);
 
       res = fabsf(datavallog - y_estimate_log);
       pvalues[k] = 1.0/res;
