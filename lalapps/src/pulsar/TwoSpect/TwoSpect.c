@@ -667,7 +667,7 @@ int main(int argc, char *argv[])
       if (args_info.printUninitialized_given) {
          char w[1000];
          snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TFdata_weighted.dat");
-         FILE *UNINITVALS = fopen("w", w);
+         FILE *UNINITVALS = fopen(w, "a");
          if (UNINITVALS==NULL) {
             fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
             XLAL_ERROR(XLAL_EFUNC);
@@ -756,7 +756,7 @@ int main(int argc, char *argv[])
       if (args_info.printUninitialized_given) {
          char w[1000];
          snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TSofPowers.dat");
-         FILE *UNINITVALS = fopen("w", w);
+         FILE *UNINITVALS = fopen(w, "a");
          if (UNINITVALS==NULL) {
             fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
             XLAL_ERROR(XLAL_EFUNC);
