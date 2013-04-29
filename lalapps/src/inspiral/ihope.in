@@ -299,10 +299,9 @@ except:
   print >> sys.stderr, """
 Error: Could not find a valid grid proxy. Please run 
 
-   unset X509_USER_PROXY
-   grid-proxy-init -rfc -hours 72
+   ligo-proxy-init albert.einstein
 
-to generate a new grid proxy certificate.
+with your LIGO.ORG username to generate a new grid proxy certificate.
 
 You may need to log out and do this on your home machine if your .globus
 directory is not present on the machine where you are running ihope.
