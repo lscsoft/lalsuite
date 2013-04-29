@@ -176,6 +176,12 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
 /** Converts between externally used parameter names and those internal */
 void LALInferenceTranslateExternalToInternalParamName(char *outName, const char *inName);
 
+/** Print the parameter names to a file as a tab-separated ASCII line
+ * \param out [in] pointer to output file
+ * \param params [in] LALInferenceVaraibles structure to print
+ */
+int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params);
+
 /** Print the parameters which do not vary to a file as a tab-separated ASCII line
  * \param out [in] pointer to output file
  * \param params [in] LALInferenceVaraibles structure to print

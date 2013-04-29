@@ -522,6 +522,7 @@ LALInferenceVariableItem *item=params->head;
 	for(;item;item=item->next)
 	{
 		if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
+        if(item->type!=LALINFERENCE_REAL8_t) continue; /* Only works for REAL8 */
 		else
 		{
 			

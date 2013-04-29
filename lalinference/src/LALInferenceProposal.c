@@ -976,7 +976,7 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
     exit(1);
   }
   do {
-    if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT) {
+    if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT && strcmp(proposeIterator->name,"psdscale")) {
       REAL8 tmp = *((REAL8 *)proposeIterator->value);
       REAL8 inc = jumpSize*gsl_matrix_get(eigenvectors, j, i);
       
@@ -1041,7 +1041,7 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
     LALInferenceVariableItem *item = runState->currentParams->head;
     i = 0;
     while (item != NULL) {
-      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
+      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && item->type==LALINFERENCE_REAL8_t ) {
         names[i] = item->name;
         i++;
       }

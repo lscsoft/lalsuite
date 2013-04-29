@@ -324,7 +324,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   UINT4 verbose=0;
   REAL8 sloppyfrac;
   UINT4 displayprogress=0;
-  LALInferenceVariableItem *param_ptr;
   LALInferenceVariables *currentVars=XLALCalloc(1,sizeof(LALInferenceVariables));
   REAL8 kdupdate=0.;
   
@@ -524,10 +523,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   lout=fopen(param_list,"w");
   minpos=0;
   LALInferenceSortVariablesByName(runState->livePoints[0]);
-  for(param_ptr=runState->livePoints[0]->head;param_ptr;param_ptr=param_ptr->next)
-  {
-    fprintf(lout,"%s\t",param_ptr->name);
-  }
+  LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
   fclose(lout);
   runState->currentParams=currentVars;
   fprintf(stdout,"Starting nested sampling loop!\n");

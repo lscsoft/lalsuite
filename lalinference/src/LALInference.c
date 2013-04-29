@@ -349,24 +349,33 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
         XLAL_ERROR_VOID(XLAL_EFAULT, "Badly formed LALInferenceVariableItem structure!");
       }
       /* Deep copy matrix and vector types */
-      if(ptr->type==LALINFERENCE_gslMatrix_t)
+      switch (ptr->type)
       {
-        gsl_matrix *old=*(gsl_matrix **)ptr->value;
-        gsl_matrix *new=gsl_matrix_alloc(old->size1,old->size2);
-        gsl_matrix_memcpy(new,old);
-        LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
+          case LALINFERENCE_gslMatrix_t:
+          {
+            gsl_matrix *old=*(gsl_matrix **)ptr->value;
+            gsl_matrix *new=gsl_matrix_alloc(old->size1,old->size2);
+            if(!new) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to create %ix%i matrix\n",old->size1,old->size2);
+            gsl_matrix_memcpy(new,old);
+            LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
+            break;
+          }
+          case LALINFERENCE_REAL8Vector_t:
+          {
+            REAL8Vector *old=*(REAL8Vector **)ptr->value;
+            REAL8Vector *new=XLALCreateREAL8Vector(old->length);
+            if(new) memcpy(new->data,old->data,new->length);
+            else XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to copy vector!\n");
+            LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
+            break;
+          }
+          default:
+          { /* Just memcpy */
+            LALInferenceAddVariable(target, ptr->name, ptr->value, ptr->type,
+                                    ptr->vary);
+            break;
+          }
       }
-      if(ptr->type==LALINFERENCE_REAL8Vector_t)
-      {
-        REAL8Vector *old=*(REAL8Vector **)ptr->value;
-        REAL8Vector *new=XLALCreateREAL8Vector(old->length);
-        if(new) memcpy(new->data,old->data,new->length);
-        else XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to copy vector!\n");
-        LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
-      }
-      else /* Just memcpy */
-        LALInferenceAddVariable(target, ptr->name, ptr->value, ptr->type,
-                                ptr->vary);
     }
   }
 
@@ -510,6 +519,8 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
 }
 
 void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
+  int i,j;
+  gsl_matrix *m=NULL;
   if(sample==NULL) return;
   LALInferenceVariableItem *ptr=sample->head;
   if(fp==NULL) return;
@@ -541,8 +552,16 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
       case LALINFERENCE_string_t:
         fprintf(fp, "%s", *((CHAR **)ptr->value));
         break;
-      case LALINFERENCE_gslMatrix_t:
-        XLALPrintWarning("<can't print matrix>");
+	  case LALINFERENCE_gslMatrix_t:
+        m = *((gsl_matrix **)ptr->value);
+        for(i=0; i<(int)( m->size1 ); i++)
+        {
+          for(j=0; j<(int)( m->size2); j++)
+          {
+            fprintf(fp,"%11.7f",gsl_matrix_get(m, i, j));
+            if(i<(int)( m->size1 )-1 && j<(int)( m->size2)-1) fprintf(fp,"\t");
+          }
+        }
         break;
       default:
         XLALPrintWarning("<can't print>");
@@ -587,17 +606,15 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 							(REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
 					break;
 				case LALINFERENCE_gslMatrix_t:
-          
-          m = *((gsl_matrix **)ptr->value);
-          for(i=0; i<(int)( m->size1 ); i++)
-          {
-            for(j=0; j<(int)( m->size2); j++)
-            {
-              fprintf(fp,"%11.7f",gsl_matrix_get(m, i, j));
-              if(i<(int)( m->size1 )-1 && j<(int)( m->size2)-1) fprintf(fp,"\t");
-            }
-          }
-           
+                    m = *((gsl_matrix **)ptr->value);
+                    for(i=0; i<(int)( m->size1 ); i++)
+                    {
+                        for(j=0; j<(int)( m->size2); j++)
+                        {
+                            fprintf(fp,"%11.7f",gsl_matrix_get(m, i, j));
+                            if(i<(int)( m->size1 )-1 && j<(int)( m->size2)-1) fprintf(fp,"\t");
+                        }
+                    }
 					break;
 				default:
 					fprintf(stdout, "<can't print>");
@@ -717,6 +734,30 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
   }
 }
 
+
+int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params) {
+  LALInferenceVariableItem *head = params->head;
+  int i,j;
+  gsl_matrix *matrix = NULL;
+
+  while (head != NULL) {
+      if(head->type==LALINFERENCE_gslMatrix_t)
+      {
+          matrix = *((gsl_matrix **)head->value);
+          for(i=0; i<(int)matrix->size1; i++)
+          {
+              for(j=0; j<(int)matrix->size2; j++)
+              {
+                  fprintf(out, "%s%i%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i,j);
+              }
+          }
+      }
+      else fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
+      head = head->next;
+  }
+  return 0;
+}
+
 int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params) {
   LALInferenceVariableItem *head = params->head;
 
@@ -725,15 +766,8 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
 
   while (head != NULL) {
     if (head->vary != LALINFERENCE_PARAM_FIXED) {
-      if(!strcmp(head->name,"psdscale"))
+      if(head->type==LALINFERENCE_gslMatrix_t)
       {
-        /*
-        fprintf(stdout,"\n");
-        fprintf(stdout,"Skipping noise parameters in output files\n");
-        fprintf(stdout,"   edit LALInferenceFprintParameterNonFixedHeaders()\n");
-        fprintf(stdout,"   and LALInferencePrintSampleNonFixed() to modify\n");
-         */
-        
         matrix = *((gsl_matrix **)head->value);
         for(i=0; i<(int)matrix->size1; i++)
         {
@@ -762,7 +796,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
   LALInferenceVariableItem *ptr1 = var1->head;
   LALInferenceVariableItem *ptr2 = NULL;
   if (var1->dimension != var2->dimension) result = 1;  // differing dimension
-  while ((ptr1 != NULL) & (result == 0)) {
+  while ((ptr1 != NULL) && (result == 0)) {
     ptr2 = LALInferenceGetItem(var2, ptr1->name);
     if (ptr2 != NULL) {  // corrsesponding entry exists; now compare type, then value:
       if (ptr2->type == ptr1->type) {  // entry type identical
@@ -791,8 +825,10 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
                       || ((REAL8) cimag(*(COMPLEX16 *) ptr2->value) != (REAL8) cimag(*(COMPLEX16 *) ptr1->value)));
             break;
           case LALINFERENCE_gslMatrix_t:
-            XLAL_PRINT_WARNING("Cannot yet compare \"gslMatrix\" entries (entry: \"%s\"). For now, entries are by default assumed different.", ptr1->name);
-            result = 1;
+            if( gsl_matrix_equal(*(gsl_matrix **)ptr1->value,*(gsl_matrix **)ptr2->value) )
+                result = 0;
+            else
+                result = 1;
             break;
           default:
             XLAL_ERROR(XLAL_EFAILED, "Encountered unknown LALInferenceVariables type (entry: \"%s\").", ptr1->name);

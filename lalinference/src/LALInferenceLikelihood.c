@@ -371,6 +371,8 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   memset(&status,0,sizeof(status));
   LALInferenceVariables intrinsicParams;
 
+  if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
+
   //noise model meta parameters
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
   gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
