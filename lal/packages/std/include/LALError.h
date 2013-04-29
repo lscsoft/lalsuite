@@ -33,25 +33,31 @@ extern "C" {
 #endif
 
 /* lalDebugLevel bit field values: */
-    enum {
-        LALNDEBUG = 0,
-        LALERROR = 1,
-        LALWARNING = 2,
-        LALINFO = 4,
-        LALTRACE = 8,
-        LALMEMINFO = 16,
-        LALNMEMDBG = 32,
-        LALNMEMPAD = 64,
-        LALNMEMTRK = 128,
-        LALMEMDBG = 16384       /* convenience: don't combine with other bits */
-    };
+enum {
+    LALERRORBIT   = 0001,
+    LALWARNINGBIT = 0002,
+    LALINFOBIT    = 0004,
+    LALTRACEBIT   = 0010,
+    LALMEMDBGBIT  = 0020,
+    LALMEMPADBIT  = 0040,
+    LALMEMTRKBIT  = 0100,
+    LALMEMINFOBIT = 0200
+};
 
 /* composite lalDebugLevels: */
-    enum { LALMSGLVL1 = LALERROR };
-    enum { LALMSGLVL2 = LALERROR | LALWARNING };
-    enum { LALMSGLVL3 = LALERROR | LALWARNING | LALINFO };
-    enum { LALMEMTRACE = LALTRACE | LALMEMINFO };
-    enum { LALALLDBG = ~(LALNMEMDBG | LALNMEMPAD | LALNMEMTRK) };
+enum {
+    LALNDEBUG   = 0,
+    LALERROR    = LALERRORBIT,
+    LALWARNING  = LALWARNINGBIT,
+    LALINFO     = LALINFOBIT,
+    LALTRACE    = LALTRACEBIT,
+    LALMSGLVL1  = LALERRORBIT,
+    LALMSGLVL2  = LALERRORBIT | LALWARNINGBIT,
+    LALMSGLVL3  = LALERRORBIT | LALWARNINGBIT | LALINFOBIT,
+    LALMEMDBG   = LALMEMDBGBIT | LALMEMPADBIT | LALMEMTRKBIT,
+    LALMEMTRACE = LALTRACEBIT | LALMEMDBG | LALMEMINFOBIT,
+    LALALLDBG   = ~LALNDEBUG
+};
 
 #ifndef SWIG    /* exclude from SWIG interface */
 

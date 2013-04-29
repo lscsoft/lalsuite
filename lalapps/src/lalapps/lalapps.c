@@ -184,16 +184,22 @@ int set_debug_level( const char *s )
     level |= LALINFO;
   if ( strstr( s, "TRACE" ) )
     level |= LALTRACE;
-  if ( strstr( s, "MEMINFO" ) )
-    level |= LALMEMINFO;
-  if ( strstr( s, "MEMDBG" ) )
-    level |= LALMEMDBG;
+  if ( strstr( s, "MEMDBGBIT" ) )
+    level |= LALMEMDBGBIT;
+  if ( strstr( s, "MEMPADBIT" ) )
+    level |= LALMEMPADBIT;
+  if ( strstr( s, "MEMTRKBIT" ) )
+    level |= LALMEMTRKBIT;
+  if ( strstr( s, "MEMINFOBIT" ) )
+    level |= LALMEMINFOBIT;
   if ( strstr( s, "MSGLVL1" ) )
     level |= LALMSGLVL1;
   if ( strstr( s, "MSGLVL2" ) )
     level |= LALMSGLVL2;
   if ( strstr( s, "MSGLVL3" ) )
     level |= LALMSGLVL3;
+  if ( strstr( s, "MEMDBG" ) )
+    level |= LALMEMDBG;
   if ( strstr( s, "MEMTRACE" ) )
     level |= LALMEMTRACE;
   if ( strstr( s, "ALLDBG" ) )

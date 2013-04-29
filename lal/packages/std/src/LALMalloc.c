@@ -135,7 +135,7 @@ static const size_t padding = 0xDeadBeef;
 static const size_t repadding = 0xBeefDead;
 static const size_t magic = 0xABadCafe;
 
-#define allocsz( n ) ( lalDebugLevel & LALNMEMPAD ? n : padFactor * n + prefix )
+#define allocsz(n) ((lalDebugLevel & LALMEMPADBIT) ? (padFactor * (n) + prefix) : (n))
 
 static struct allocNode {
     void *addr;
@@ -208,7 +208,7 @@ static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
 {
     size_t i;
 
-    if (lalDebugLevel & LALNMEMPAD) {
+    if (!(lalDebugLevel & LALMEMPADBIT)) {
         return p;
     }
 
@@ -216,7 +216,7 @@ static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
         return NULL;
     }
 
-    if (lalDebugLevel & LALMEMINFO) {
+    if (lalDebugLevel & LALMEMINFOBIT) {
         LALPrintError("%s meminfo: allocating %ld bytes at address %p\n",
                       func, n, p + nprefix);
     }
@@ -251,7 +251,7 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
     size_t *q;
     char *s;
 
-    if (lalDebugLevel & LALNMEMPAD) {
+    if (!(lalDebugLevel & LALMEMPADBIT)) {
         return p;
     }
 
@@ -264,7 +264,7 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
     n = q[0];
     s = (char *) q;
 
-    if (lalDebugLevel & LALMEMINFO) {
+    if (lalDebugLevel & LALMEMINFOBIT) {
         LALPrintError("%s meminfo: freeing %ld bytes at address %p\n",
                       func, n, p);
     }
@@ -327,7 +327,7 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
 static void *PushAlloc(void *p, size_t n, const char *file, int line)
 {
     struct allocNode *newnode;
-    if (lalDebugLevel & LALNMEMTRK) {
+    if (!(lalDebugLevel & LALMEMTRKBIT)) {
         return p;
     }
     if (!p) {
@@ -351,7 +351,7 @@ static void *PushAlloc(void *p, size_t n, const char *file, int line)
 static void *PopAlloc(void *p, const char *func)
 {
     struct allocNode *node;
-    if (lalDebugLevel & LALNMEMTRK) {
+    if (!(lalDebugLevel & LALMEMTRKBIT)) {
         return p;
     }
     if (!p) {
@@ -392,7 +392,7 @@ static void *ModAlloc(void *p, void *q, size_t n, const char *func,
                       const char *file, int line)
 {
     struct allocNode *node;
-    if (lalDebugLevel & LALNMEMTRK) {
+    if (!(lalDebugLevel & LALMEMTRKBIT)) {
         return q;
     }
     if (!p || !q) {
@@ -424,8 +424,7 @@ static void *ModAlloc(void *p, void *q, size_t n, const char *func,
 
 void *LALMallocShort(size_t n)
 {
-    return (!lalDebugLevel || lalDebugLevel & LALNMEMDBG) ? malloc(n) :
-        LALMallocLong(n, "unknown", -1);
+    return (lalDebugLevel & LALMEMDBGBIT) ? LALMallocLong(n, "unknown", -1) : malloc(n);
 }
 
 
@@ -435,22 +434,18 @@ void *LALMallocLong(size_t n, const char *file, int line)
     void *p;
     void *q;
 
-    if (!lalDebugLevel || lalDebugLevel & LALNMEMDBG) {
+    if (!(lalDebugLevel & LALMEMDBGBIT)) {
         return malloc(n);
     }
 
     p = malloc(allocsz(n));
     q = PushAlloc(PadAlloc(p, n, 0, "LALMalloc"), n, file, line);
     lalMemDbgPtr = lalMemDbgRetPtr = q;
-    lalIsMemDbgPtr = lalIsMemDbgRetPtr =
-        (lalMemDbgRetPtr == lalMemDbgUsrPtr);
+    lalIsMemDbgPtr = lalIsMemDbgRetPtr = (lalMemDbgRetPtr == lalMemDbgUsrPtr);
     if (!q) {
-        XLALPrintError
-            ("LALMalloc: failed to allocate %zd bytes of memory\n", n);
-        XLALPrintError
-            ("LALMalloc: %zd bytes of memory already allocated\n",
-             lalMallocTotal);
-        if (lalDebugLevel & LALMEMINFO) {
+        XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
+        XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
+        if (lalDebugLevel & LALMEMINFOBIT) {
             LALPrintError("LALMalloc meminfo: out of memory\n");
         }
         if (p) {
@@ -464,8 +459,8 @@ void *LALMallocLong(size_t n, const char *file, int line)
 
 void *LALCallocShort(size_t m, size_t n)
 {
-    return (!lalDebugLevel || lalDebugLevel & LALNMEMDBG) ? calloc(m, n) :
-        LALCallocLong(m, n, "unknown", -1);
+    return (lalDebugLevel & LALMEMDBGBIT) ? LALCallocLong(m, n, "unknown", -1) :
+ calloc(m, n);
 }
 
 
@@ -476,7 +471,7 @@ void *LALCallocLong(size_t m, size_t n, const char *file, int line)
     void *p;
     void *q;
 
-    if (!lalDebugLevel || lalDebugLevel & LALNMEMDBG) {
+    if (!(lalDebugLevel & LALMEMDBGBIT)) {
         return calloc(m, n);
     }
 
@@ -484,15 +479,11 @@ void *LALCallocLong(size_t m, size_t n, const char *file, int line)
     p = malloc(allocsz(sz));
     q = PushAlloc(PadAlloc(p, sz, 1, "LALCalloc"), sz, file, line);
     lalMemDbgPtr = lalMemDbgRetPtr = q;
-    lalIsMemDbgPtr = lalIsMemDbgRetPtr =
-        (lalMemDbgRetPtr == lalMemDbgUsrPtr);
+    lalIsMemDbgPtr = lalIsMemDbgRetPtr = (lalMemDbgRetPtr == lalMemDbgUsrPtr);
     if (!q) {
-        XLALPrintError
-            ("LALMalloc: failed to allocate %zd bytes of memory\n", n);
-        XLALPrintError
-            ("LALMalloc: %zd bytes of memory already allocated\n",
-             lalMallocTotal);
-        if (lalDebugLevel & LALMEMINFO) {
+        XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
+        XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
+        if (lalDebugLevel & LALMEMINFOBIT) {
             LALPrintError("LALCalloc meminfo: out of memory\n");
         }
         if (p) {
@@ -506,8 +497,7 @@ void *LALCallocLong(size_t m, size_t n, const char *file, int line)
 
 void *LALReallocShort(void *p, size_t n)
 {
-    return (!lalDebugLevel || lalDebugLevel & LALNMEMDBG) ? realloc(p, n) :
-        LALReallocLong(p, n, "unknown", -1);
+    return (lalDebugLevel & LALMEMDBGBIT) ? LALReallocLong(p, n, "unknown", -1): realloc(p, n);
 }
 
 
@@ -515,23 +505,19 @@ void *LALReallocShort(void *p, size_t n)
 void *LALReallocLong(void *q, size_t n, const char *file, const int line)
 {
     void *p;
-    if (!lalDebugLevel || lalDebugLevel & LALNMEMDBG) {
+    if (!(lalDebugLevel & LALMEMDBGBIT)) {
         return realloc(q, n);
     }
 
     lalMemDbgPtr = lalMemDbgArgPtr = q;
-    lalIsMemDbgPtr = lalIsMemDbgArgPtr =
-        (lalMemDbgArgPtr == lalMemDbgUsrPtr);
+    lalIsMemDbgPtr = lalIsMemDbgArgPtr = (lalMemDbgArgPtr == lalMemDbgUsrPtr);
     if (!q) {
         p = malloc(allocsz(n));
         q = PushAlloc(PadAlloc(p, n, 0, "LALRealloc"), n, file, line);
         if (!q) {
-            XLALPrintError
-                ("LALMalloc: failed to allocate %zd bytes of memory\n", n);
-            XLALPrintError
-                ("LALMalloc: %zd bytes of memory already allocated\n",
-                 lalMallocTotal);
-            if (lalDebugLevel & LALMEMINFO) {
+            XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
+            XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
+            if (lalDebugLevel & LALMEMINFOBIT) {
                 LALPrintError("LALRealloc meminfo: out of memory\n");
             }
             if (p) {
@@ -554,11 +540,9 @@ void *LALReallocLong(void *q, size_t n, const char *file, const int line)
         return NULL;
     }
 
-    q = ModAlloc(q, PadAlloc(realloc(p, allocsz(n)), n, 1, "LALRealloc"),
-                 n, "LALRealloc", file, line);
+    q = ModAlloc(q, PadAlloc(realloc(p, allocsz(n)), n, 1, "LALRealloc"), n, "LALRealloc", file, line);
     lalMemDbgPtr = lalMemDbgRetPtr = q;
-    lalIsMemDbgPtr = lalIsMemDbgRetPtr =
-        (lalMemDbgRetPtr == lalMemDbgUsrPtr);
+    lalIsMemDbgPtr = lalIsMemDbgRetPtr = (lalMemDbgRetPtr == lalMemDbgUsrPtr);
 
     return q;
 }
@@ -568,13 +552,14 @@ void *LALReallocLong(void *q, size_t n, const char *file, const int line)
 void LALFree(void *q)
 {
     void *p;
-    if (!lalDebugLevel || lalDebugLevel & LALNMEMDBG) {
+    if (q == NULL)
+        return;
+    if (!(lalDebugLevel & LALMEMDBGBIT)) {
         free(q);
         return;
     }
     lalMemDbgPtr = lalMemDbgArgPtr = q;
-    lalIsMemDbgPtr = lalIsMemDbgArgPtr =
-        (lalMemDbgArgPtr == lalMemDbgUsrPtr);
+    lalIsMemDbgPtr = lalIsMemDbgArgPtr = (lalMemDbgArgPtr == lalMemDbgUsrPtr);
     p = UnPadAlloc(PopAlloc(q, "LALFree"), 0, "LALFree");
     if (p) {
         free(p);
@@ -587,12 +572,12 @@ void LALFree(void *q)
 void LALCheckMemoryLeaks(void)
 {
     int leak = 0;
-    if (!lalDebugLevel || lalDebugLevel & LALNMEMDBG) {
+    if (!(lalDebugLevel & LALMEMDBGBIT)) {
         return;
     }
 
     /* allocList should be NULL */
-    if (!(lalDebugLevel & LALNMEMTRK) && allocList) {
+    if ((lalDebugLevel & LALMEMTRKBIT) && allocList) {
         struct allocNode *node = allocList;
         LALPrintError("LALCheckMemoryLeaks: allocation list\n");
         while (node) {
@@ -605,7 +590,7 @@ void LALCheckMemoryLeaks(void)
     }
 
     /* lalMallocTotal and lalMallocCount should be zero */
-    if (!(lalDebugLevel & LALNMEMPAD)
+    if ((lalDebugLevel & LALMEMPADBIT)
         && (lalMallocTotal || lalMallocCount)) {
         LALPrintError("LALCheckMemoryLeaks: lalMallocCount = %d allocs, "
                       "lalMallocTotal = %ld bytes\n", lalMallocCount,
@@ -615,7 +600,7 @@ void LALCheckMemoryLeaks(void)
 
     if (leak) {
         lalRaiseHook(SIGSEGV, "LALCheckMemoryLeaks: memory leak\n");
-    } else if (lalDebugLevel & LALMEMINFO) {
+    } else if (lalDebugLevel & LALMEMINFOBIT) {
         LALPrintError
             ("LALCheckMemoryLeaks meminfo: no memory leaks detected\n");
     }

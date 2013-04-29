@@ -174,7 +174,7 @@ main(int argc, char **argv)
   DetectorResponse detector;   /* the detector in question */
   REAL4TimeSeries output;      /* detector ADC output */
 
-  lalDebugLevel = LALINFO | LALNMEMDBG;
+  lalDebugLevel = LALINFO;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *

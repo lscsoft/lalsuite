@@ -99,7 +99,7 @@
 
 
 /* debug level for LAL */
-INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO | LALNMEMDBG;
+INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO;
 
 /* Header that defines the GEO SFT Data Format */
 struct headertag {
