@@ -1482,8 +1482,14 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    
    fprintf(LOG, "Duty factor = %f\n", 1.0-(REAL4)nonexistantsft/(REAL4)numffts);
    fprintf(stderr, "Duty factor = %f\n", 1.0-(REAL4)nonexistantsft/(REAL4)numffts);
-   fprintf(LOG, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", calcMean(tfdata), calcStddev(tfdata));
-   fprintf(stderr, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", calcMean(tfdata), calcStddev(tfdata));
+   REAL4 meanTFdata = calcMean(tfdata);
+   REAL4 stdTFdata = calcStddev(tfdata);
+   if (xlalErrno!=0) {
+      fprintf(stderr, "%s: calcStddev() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+   fprintf(LOG, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stdTFdata);
+   fprintf(stderr, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stdTFdata);
    
    return tfdata;
 
@@ -1984,6 +1990,10 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
       if (TFdata->data[ii*totalnumfbins]!=0.0) {
          memcpy(sftdata->data, &(TFdata->data[ii*totalnumfbins]), totalnumfbins*sizeof(REAL4));
          REAL4 stddev = calcStddev(sftdata);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: calcStddev() failed.\n", __func__);
+            XLAL_ERROR_NULL(XLAL_EFUNC);
+         }
          weights->data[ii] = 1.0/(stddev*stddev);
          sumweights += weights->data[ii];
       }
@@ -2017,7 +2027,7 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
-   //Determine the mid frequency, low frequency and high frequency of the line when considering SFT shifts
+   //Determine which bins are above the threshold and store the bin number of the line
    REAL4 f0 = (REAL4)(round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0 - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift) + 0.5*(blksize-1))/params->Tcoh);
    REAL4 df = 1.0/params->Tcoh;
    for (ii=0; ii<(INT4)testRngMedian->length; ii++) {
