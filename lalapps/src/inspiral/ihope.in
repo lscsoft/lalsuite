@@ -1189,7 +1189,7 @@ export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
 export _CONDOR_DAGMAN_COPY_TO_SPOOL=False
 
 if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG} ] ; then
-  pegasus-run --conf ${IHOPE_RUN_DIR}/pegasus.properties --nodatabase ${TMP_EXEC_DIR}/.
+  pegasus-run --conf ${IHOPE_RUN_DIR}/pegasus.properties ${TMP_EXEC_DIR}/.
 else
   pegasus-plan --conf ${IHOPE_RUN_DIR}/pegasus.properties \\
                --dax %s \\
