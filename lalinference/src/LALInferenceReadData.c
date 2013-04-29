@@ -960,6 +960,46 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
                 }
 
+                if (LALInferenceGetProcParamVal(commandLine, "--xcorrbands")){
+
+                    double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
+                    int lengthF = IFOdata[i].oneSidedNoisePowerSpectrum->data->length;
+
+                    REAL8 *pvalues;
+                    pvalues = XLALMalloc( lengthF * sizeof( *pvalues ) );
+
+                    const UINT4 nameLength=256;
+                    char filename[nameLength];
+                    FILE *out;
+
+                    snprintf(filename, nameLength, "%s-XCorrVals.dat", IFOdata[i].name);
+
+                    printf("Running xcorr tests... ");
+                    LALInferenceXCorrBands(IFOdata[i].oneSidedNoisePowerSpectrum,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan,pvalues,filename);
+                    printf("completed!\n");
+
+                    double lines_width;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--powerlawlinesWidth");
+                    if(ppt) lines_width = atoi(ppt->value);
+                    else lines_width = deltaF;
+
+                    snprintf(filename, nameLength, "%s-XCorrBands.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        if (pvalues[k] < 0.001) {
+                            fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
+                        }
+                    }
+                    fclose(out);
+
+                    snprintf(filename, nameLength, "%s-ChiSquaredLines-pvalues.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        fprintf(out,"%g %g\n",((double) k) * deltaF,pvalues[k]);
+                    }
+                    fclose(out);
+
+                }
 
                 XLALDestroyREAL8TimeSeries(PSDtimeSeries);
             }

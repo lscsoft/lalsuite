@@ -1,3 +1,23 @@
+/*
+ * LALInferenceRemoveLines.c: Line removal functions for LALInference
+ * 
+ * Copyright (C) 2013 Michael Coughlin
+ *  
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with with program; see the file COPYING. If not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA  02111-1307  USA
+*/
 
 
 #include <stdio.h>
@@ -65,6 +85,8 @@
 #define max(a,b) (((a)>(b))?(a):(b))
 
 static void median_cleanup_REAL8( REAL8FrequencySeries *work, UINT4 n );
+static double chisqr(int Dof, double Cv);
+static double igf(double S, double Z);
 
 int LALInferenceRemoveLinesChiSquared(
     REAL8FrequencySeries        *spectrum,
@@ -234,7 +256,7 @@ static void median_cleanup_REAL8( REAL8FrequencySeries *work, UINT4 n )
   return;
 }
 
-double chisqr(int Dof, double Cv)
+static double chisqr(int Dof, double Cv)
 {
     if(Cv < 0 || Dof < 1)
     {
@@ -248,19 +270,17 @@ double chisqr(int Dof, double Cv)
     }
  
     double PValue = igf(K, X);
-    //if(isnan(PValue) || isinf(PValue) || PValue <= 1e-8)
     if(isnan(PValue) || isinf(PValue))
     {
         return 1e-14;
     } 
 
-    //PValue /= gamma(K);
     PValue /= tgamma(K); 
 
     return (1.0 - PValue);
 }
 
-double igf(double S, double Z)
+static double igf(double S, double Z)
 {
     if(Z < 0.0)
     {
@@ -485,7 +505,6 @@ int LALInferenceAverageSpectrumBinFit(
 {
   REAL8FrequencySeries *work; /* array of frequency series */
   REAL8 *bin; /* array of bin values */
-  REAL8 *bininterp;
   UINT4 reclen; /* length of entire data record */
   UINT4 numseg;
   UINT4 seg;
@@ -575,13 +594,17 @@ int LALInferenceAverageSpectrumBinFit(
 
   /* create array to hold a particular frequency bin data */
   bin = XLALMalloc( (numseg) * sizeof( *bin ) );
-  bininterp = XLALMalloc( (numseg) * sizeof( *bininterp ) );
 
   if ( ! bin )
   {
     median_cleanup_REAL8( work, numseg ); /* cleanup */
     XLAL_ERROR( XLAL_ENOMEM );
   }
+
+  double SUMx = 0, SUMy = 0, SUMxy = 0, SUMxx = 0;
+  double f, t, dataval, datavallog;
+  double slope, y_intercept, y_estimate, y_estimate_log;
+  double deltaF = work->deltaF;
 
   FILE *out;
 
@@ -590,7 +613,9 @@ int LALInferenceAverageSpectrumBinFit(
   /* now loop over frequency bins and compute the median-mean */
   for ( k = 0; k < spectrum->data->length; ++k )
   {
-    fprintf(out,"%g",((double) k) * work->deltaF);
+    f = ((double) k) * deltaF;
+
+    fprintf(out,"%e",((double) k) * work->deltaF);
     /* assign array of even segment values to bin array for this freq bin */
     for ( seg = 0; seg < numseg; ++seg ) {
       bin[seg] = work[seg].data->data[k];
@@ -598,18 +623,30 @@ int LALInferenceAverageSpectrumBinFit(
     }
     fprintf(out,"\n");
 
+    count = 0; SUMx = 0, SUMy = 0, SUMxy = 0, SUMxx = 0;
     for ( seg = 0; seg < numseg-1; ++seg ) {
       segindex = PSDtimesIndex[seg];
-      bininterp[segindex] = work[segindex].data->data[k];
-      //printf(" %e ",bininterp[segindex]);
+
+      t = PSDtimes[segindex];
+      dataval = bin[segindex];
+      datavallog = log10(bin[segindex]);
+
+      SUMx = SUMx + t;
+      SUMy = SUMy + datavallog;
+      SUMxy = SUMxy + t*datavallog;
+      SUMxx = SUMxx + t*t;
+
+      count = count + 1;
+
     }
-    //printf("\n");
 
-    gsl_interp_accel *acc = gsl_interp_accel_alloc ();
-    gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, numseg-1);
-    gsl_spline_init (spline, PSDtimes, bininterp, numseg-1);
+    slope = ( SUMx*SUMy - count*SUMxy ) / ( SUMx*SUMx - count*SUMxx );
+    y_intercept = ( SUMy - slope*SUMx ) / count;
 
-    spectrum->data->data[k] = gsl_spline_eval (spline,trigtime, acc);
+    y_estimate_log = slope*trigtime + y_intercept;
+    y_estimate = pow(10.0,y_estimate_log);
+
+    spectrum->data->data[k] = y_estimate;
 
     printf("%e\n",spectrum->data->data[k]);
 
@@ -617,18 +654,18 @@ int LALInferenceAverageSpectrumBinFit(
 
   fclose(out);
 
-  /* set metadata 
+  /* set metadata */
   spectrum->epoch       = work->epoch;
   spectrum->f0          = work->f0;
   spectrum->deltaF      = work->deltaF;
   spectrum->sampleUnits = work->sampleUnits;
-  */
 
   /* free the workspace data */
   XLALFree( bin );
   median_cleanup_REAL8( work, numseg );
 
   return 0;
+
 }
 
 int LALInferenceRemoveLinesPowerLaw(
@@ -782,3 +819,145 @@ int LALInferenceRemoveLinesPowerLaw(
   return 0;
 }
 
+int LALInferenceXCorrBands(
+    REAL8FrequencySeries        *spectrum,
+    const REAL8TimeSeries       *tseries,
+    UINT4                        seglen,
+    UINT4                        stride,
+    const REAL8Window           *window,
+    const REAL8FFTPlan          *plan,
+    REAL8                       *pvalues,
+    char*                       filename
+    )
+{
+  REAL8FrequencySeries *work; /* array of frequency series */
+  REAL8 *bin; /* array of bin values */
+  UINT4 reclen; /* length of entire data record */
+  UINT4 numseg;
+  UINT4 seg;
+  UINT4 k,l;
+
+  if ( ! spectrum || ! tseries || ! plan )
+      XLAL_ERROR( XLAL_EFAULT );
+  if ( ! spectrum->data || ! tseries->data )
+      XLAL_ERROR( XLAL_EINVAL );
+  if ( tseries->deltaT <= 0.0 )
+      XLAL_ERROR( XLAL_EINVAL );
+
+  reclen = tseries->data->length;
+  numseg = 1 + (reclen - seglen)/stride;
+
+  /* consistency check for lengths: make sure that the segments cover the
+ *  *  *  *    * data record completely */
+  if ( (numseg - 1)*stride + seglen != reclen )
+    XLAL_ERROR( XLAL_EBADLEN );
+  if ( spectrum->data->length != seglen/2 + 1 )
+    XLAL_ERROR( XLAL_EBADLEN );
+
+  /* create frequency series data workspaces */
+  work = XLALCalloc( numseg, sizeof( *work ) );
+  if ( ! work )
+    XLAL_ERROR( XLAL_ENOMEM );
+  for ( seg = 0; seg < numseg; ++seg )
+  {
+    work[seg].data = XLALCreateREAL8Vector( spectrum->data->length );
+    if ( ! work[seg].data )
+    {
+      median_cleanup_REAL8( work, numseg ); /* cleanup */
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+
+  for ( seg = 0; seg < numseg; ++seg )
+  {
+    REAL8Vector savevec; /* save the time series data vector */
+    int code;
+
+    /* save the time series data vector */
+    savevec = *tseries->data;
+
+    /* set the data vector to be appropriate for the even segment */
+    tseries->data->length  = seglen;
+    tseries->data->data   += seg * stride;
+
+    /* compute the modified periodogram for the even segment */
+    code = XLALREAL8ModifiedPeriodogram( work + seg, tseries, window, plan );
+
+    /* restore the time series data vector to its original state */
+    *tseries->data = savevec;
+
+    /* now check for failure of the XLAL routine */
+    if ( code == XLAL_FAILURE )
+    {
+      median_cleanup_REAL8( work, numseg ); /* cleanup */
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+
+  /* create array to hold a particular frequency bin data */
+  bin = XLALMalloc( numseg * sizeof( *bin ) );
+  if ( ! bin )
+  {
+    median_cleanup_REAL8( work, numseg ); /* cleanup */
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  double mx,my,sx,sy,sxy,denom,r;
+
+  for ( k = 0; k < spectrum->data->length; ++k ) {
+      pvalues[k] = 0.0;
+  }
+
+  FILE *out;
+
+  out = fopen(filename, "w");
+
+  for ( k = 0; k < spectrum->data->length; ++k )
+  {
+    fprintf(out,"%e",((double) k) * work->deltaF);
+
+    /* now loop over frequency bins and compute the median-mean */
+    for ( l = 0; l < spectrum->data->length; ++l )
+    {
+
+      /* Calculate the mean of the two series x[], y[] */
+      mx = 0;
+      my = 0;
+      for ( seg = 0; seg < numseg; ++seg ) {
+        mx += work[seg].data->data[k];
+        my += work[seg].data->data[l];
+      }
+      mx /= numseg;
+      my /= numseg;
+
+      /* Calculate the denominator */
+      sx = 0;
+      sy = 0;
+      for ( seg = 0; seg < numseg; ++seg ) {
+        sx += (work[seg].data->data[k] - mx) * (work[seg].data->data[k] - mx);
+        sy += (work[seg].data->data[l] - my) * (work[seg].data->data[l] - my);
+      }
+      denom = sqrt(sx*sy);
+
+      sxy = 0;
+      for ( seg = 0; seg < numseg; ++seg ) {
+         sxy += (work[seg].data->data[k] - mx) * (work[seg].data->data[l] - my);
+      }
+      r = fabsf(sxy / denom);
+
+      fprintf(out," %e ",r);
+
+    }
+
+    fprintf(out,"\n");
+
+  }
+
+  fclose(out);
+
+  /* free the workspace data */
+  XLALFree( bin );
+  median_cleanup_REAL8( work, numseg );
+
+  return 0;
+}
