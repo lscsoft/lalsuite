@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.26"
+#define CMDLINE_PARSER_VERSION "1.1.26_1"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -227,6 +227,8 @@ struct gengetopt_args_info
   const char *printUsedSFTtimes_help; /**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests help description.  */
   int printData_flag;	/**< @brief Print to ASCII files the data values (default=off).  */
   const char *printData_help; /**< @brief Print to ASCII files the data values help description.  */
+  int printUninitialized_flag;	/**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors (default=off).  */
+  const char *printUninitialized_help; /**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors help description.  */
   int randSeed_arg;	/**< @brief Random seed value.  */
   char * randSeed_orig;	/**< @brief Random seed value original value given at command line.  */
   const char *randSeed_help; /**< @brief Random seed value help description.  */
@@ -304,6 +306,7 @@ struct gengetopt_args_info
   unsigned int printSFTtimes_given ;	/**< @brief Whether printSFTtimes was given.  */
   unsigned int printUsedSFTtimes_given ;	/**< @brief Whether printUsedSFTtimes was given.  */
   unsigned int printData_given ;	/**< @brief Whether printData was given.  */
+  unsigned int printUninitialized_given ;	/**< @brief Whether printUninitialized was given.  */
   unsigned int randSeed_given ;	/**< @brief Whether randSeed was given.  */
   unsigned int chooseSeed_given ;	/**< @brief Whether chooseSeed was given.  */
 

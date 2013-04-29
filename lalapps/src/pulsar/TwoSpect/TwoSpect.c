@@ -664,6 +664,17 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts*ffdata->numfbins);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      if (args_info.printUninitialized_given) {
+         char w[1000];
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TFdata_weighted.dat");
+         FILE *UNINITVALS = fopen("w", w);
+         if (UNINITVALS==NULL) {
+            fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         for (ii=0; ii<(INT4)TFdata_weighted->length; ii++) fprintf(UNINITVALS, "%g\n", TFdata_weighted->data[ii]);
+         fclose(UNINITVALS);
+      }
       tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
@@ -741,6 +752,17 @@ int main(int argc, char *argv[])
       } else if (TSofPowers==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
          XLAL_ERROR(XLAL_EFUNC);
+      }
+      if (args_info.printUninitialized_given) {
+         char w[1000];
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TSofPowers.dat");
+         FILE *UNINITVALS = fopen("w", w);
+         if (UNINITVALS==NULL) {
+            fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         for (ii=0; ii<(INT4)TSofPowers->length; ii++) fprintf(UNINITVALS, "%g\n", TSofPowers->data[ii]);
+         fclose(UNINITVALS);
       }
       memset(TSofPowers->data, 0, sizeof(REAL4)*TSofPowers->length);
       for (ii=0; ii<ffdata->numfbins; ii++) {
