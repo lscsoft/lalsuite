@@ -141,6 +141,26 @@ static long indexof_confidence_level(long npix, double *P, double level, gsl_per
 
 
 /* Perform sky localization based on TDOAs alone. Returns log probability; not normalized. */
+static double bayestar_log_posterior_tdoa(
+    double n[3], /* Cartesian unit vector in geographic coordinates. */
+    int nifos, /* Input: number of detectors. */
+    const double **locs, /* Input: array of detector positions. */
+    const double *toas, /* Input: array of times of arrival. */
+    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+) {
+    int iifo;
+
+    /* Loop over detectors. */
+    double dt[nifos];
+    for (iifo = 0; iifo < nifos; iifo ++)
+        dt[iifo] = toas[iifo] + cblas_ddot(3, n, 1, locs[iifo], 1) / LAL_C_SI;
+
+    /* Evaluate the (un-normalized) Gaussian log likelihood. */
+    return -0.5 * gsl_stats_wtss(w_toas, 1, dt, 1, nifos);
+}
+
+
+/* Perform sky localization based on TDOAs alone. Returns log probability; not normalized. */
 static int bayestar_sky_map_tdoa_not_normalized_log(
     long npix, /* Input: number of HEALPix pixels. */
     double *P, /* Output: pre-allocated array of length npix to store posterior map. */
@@ -161,8 +181,6 @@ static int bayestar_sky_map_tdoa_not_normalized_log(
     /* Loop over pixels. */
     for (i = 0; i < npix; i ++)
     {
-        int j;
-
         /* Determine polar coordinates of this pixel. */
         double theta, phi;
         pix2ang_ring(nside, i, &theta, &phi);
@@ -174,13 +192,8 @@ static int bayestar_sky_map_tdoa_not_normalized_log(
         double n[3];
         ang2vec(theta, phi, n);
 
-        /* Loop over detectors. */
-        double dt[nifos];
-        for (j = 0; j < nifos; j ++)
-            dt[j] = toas[j] + cblas_ddot(3, n, 1, locs[j], 1) / LAL_C_SI;
-
         /* Evaluate the (un-normalized) Gaussian log likelihood. */
-        P[i] = -0.5 * gsl_stats_wtss(w_toas, 1, dt, 1, nifos);
+        P[i] = bayestar_log_posterior_tdoa(n, nifos, locs, toas, w_toas);
     }
 
     /* Done! */
@@ -311,6 +324,63 @@ static double radial_integrand(double r, void *params)
     const double onebyr2 = gsl_pow_2(onebyr);
     return exp(integrand_params->A * onebyr2 + integrand_params->B * onebyr - integrand_params->log_offset)
         * gsl_pow_int(r, integrand_params->prior_distance_power);
+}
+
+
+double bayestar_log_posterior_tdoa_snr(
+    double ra,
+    double sin_dec,
+    double distance,
+    double u,
+    double twopsi,
+    double gmst, /* Greenwich mean sidereal time in radians. */
+    int nifos, /* Input: number of detectors. */
+    const float (**responses)[3], /* Pointers to detector responses. */
+    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
+    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
+    const double *snrs, /* Input: array of SNRs. */
+    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+    const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
+    int prior_distance_power) /* Use a prior of (distance)^(prior_distance_power) */
+{
+    int iifo;
+    double logp;
+    const double dec = asin(sin_dec);
+    const double u2 = gsl_pow_2(u);
+    const double u4 = gsl_pow_2(u2);
+    const double costwopsi = cos(twopsi);
+    const double sintwopsi = sin(twopsi);
+
+    {
+        double n[3];
+        ang2vec(M_PI_2 - dec, ra - gmst, n);
+        logp = bayestar_log_posterior_tdoa(n, nifos, locations, toas, w_toas);
+    }
+
+    /* Loop over detectors */
+    for (iifo = 0; iifo < nifos; iifo++)
+    {
+        double Fp, Fx;
+        XLALComputeDetAMResponse(&Fp, &Fx, responses[iifo], ra, dec, 0, gmst);
+
+        const double FpFx = Fp * Fx;
+        const double FpFp = gsl_pow_2(Fp);
+        const double FxFx = gsl_pow_2(Fx);
+        const double rho2 = 0.125 * ((FpFp + FxFx) * (1 + 6*u2 + u4) - gsl_pow_2(1 - u2) * ((FpFp - FxFx) * costwopsi + 2 * FpFx * sintwopsi));
+        double residual = snrs[iifo];
+
+        /* FIXME: due to roundoff, rhotimesr2 can be very small and
+         * negative rather than simply zero. If this happens, don't
+         accumulate the log-likelihood terms for this detector. */
+        if (rho2 > 0)
+            residual -= sqrt(rho2) * horizons[iifo] / distance;
+        logp += -0.5 * gsl_pow_2(residual);
+    }
+
+    if (prior_distance_power != 0)
+        logp += prior_distance_power * log(distance);
+
+    return logp;
 }
 
 
