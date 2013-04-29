@@ -836,6 +836,7 @@ int main(int argc, char *argv[])
          fprintf(LOG, "Testing template f=%f, P=%f, Df=%f\n", args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg);
          loadCandidateData(&(exactCandidates1->data[0]), args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0);
 
+         //Allocate and make the template
          templateStruct *template = new_templateStruct(inputParams->maxtemplatelength);
          if (template==NULL) {
             fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, inputParams->maxtemplatelength);
@@ -861,21 +862,23 @@ int main(int argc, char *argv[])
             fclose(TEMPLATEDATA);
          }
 
+         //Calculate R from the template and the data
          REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
          if (XLAL_IS_REAL8_FAIL_NAN(R)) {
             fprintf(stderr,"%s: calculateR() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-         REAL8 prob = 0.0;
-         REAL8 h0 = 0.0;
-         if ( R > 0.0 ) {
-            prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-            if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-               fprintf(stderr,"%s: probR() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
+
+         //Calculate FAP
+         REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+         if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+            fprintf(stderr,"%s: probR() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
          }
+
+         //Estimate the h0 if R>0.0
+         REAL8 h0 = 0.0;
+         if ( R > 0.0 ) h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
 
          if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
             exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
