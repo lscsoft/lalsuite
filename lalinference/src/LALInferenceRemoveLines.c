@@ -602,7 +602,7 @@ int LALInferenceAverageSpectrumBinFit(
   }
 
   double SUMx = 0, SUMy = 0, SUMxy = 0, SUMxx = 0;
-  double f, t, dataval, datavallog;
+  double f, t, datavallog;
   double slope, y_intercept, y_estimate, y_estimate_log;
   double deltaF = work->deltaF;
 
@@ -615,7 +615,7 @@ int LALInferenceAverageSpectrumBinFit(
   {
     f = ((double) k) * deltaF;
 
-    fprintf(out,"%e",((double) k) * work->deltaF);
+    fprintf(out,"%e",f);
     /* assign array of even segment values to bin array for this freq bin */
     for ( seg = 0; seg < numseg; ++seg ) {
       bin[seg] = work[seg].data->data[k];
@@ -628,7 +628,6 @@ int LALInferenceAverageSpectrumBinFit(
       segindex = PSDtimesIndex[seg];
 
       t = PSDtimes[segindex];
-      dataval = bin[segindex];
       datavallog = log10(bin[segindex]);
 
       SUMx = SUMx + t;
