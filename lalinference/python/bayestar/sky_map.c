@@ -23,7 +23,7 @@
 #include <numpy/arrayobject.h>
 #include <chealpix.h>
 #include <gsl/gsl_errno.h>
-#include "bayestar_sky_map.h"
+#include <lal/bayestar_sky_map.h>
 
 
 /**
