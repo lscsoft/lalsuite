@@ -140,7 +140,7 @@ if alert_type == 'new':
         from lalinference.bayestar.ligolw_sky_map import gracedb_sky_map
         from lalinference.bayestar import fits
         log.info("starting sky localization")
-        sky_map, epoch, elapsed_time = gracedb_sky_map(coinc_file, psd_file, "TaylorF2threePointFivePN", 10, prior="uniform in log distance", reference_frequency=120)
+        sky_map, epoch, elapsed_time = gracedb_sky_map(coinc_file, psd_file, "TaylorF2threePointFivePN", 10, prior_distance_power=-1, reference_frequency=120)
         log.info("sky localization complete")
 
         # upload FITS file

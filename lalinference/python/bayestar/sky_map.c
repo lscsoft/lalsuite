@@ -233,7 +233,6 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
         *locations_obj, *horizons_obj;
 
     PyArrayObject *toas_npy = NULL, *snrs_npy = NULL, *w_toas_npy = NULL, **responses_npy = NULL, **locations_npy = NULL, *horizons_npy = NULL;
-    char *prior_str = NULL;
 
     double *toas;
     double *snrs;
@@ -244,7 +243,7 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
     double *horizons;
 
     double min_distance, max_distance;
-    bayestar_prior_t prior = -1;
+    int prior_distance_power;
 
     npy_intp dims[1];
     PyArrayObject *out = NULL, *ret = NULL;
@@ -255,16 +254,16 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
     /* Names of arguments */
     static const char *keywords[] = {"gmst", "toas", "snrs",
         "w_toas", "responses", "locations", "horizons",
-        "min_distance", "max_distance", "prior", "nside", NULL};
+        "min_distance", "max_distance", "prior_distance_power", "nside", NULL};
 
     /* Silence warning about unused parameter. */
     (void)module;
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dOOOOOOdds|l", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dOOOOOOddi|l", keywords,
         &gmst, &toas_obj, &snrs_obj, &w_toas_obj,
         &responses_obj, &locations_obj, &horizons_obj,
-        &min_distance, &max_distance, &prior_str, &nside)) goto fail;
+        &min_distance, &max_distance, &prior_distance_power, &nside)) goto fail;
 
     if (nside == -1)
     {
@@ -384,16 +383,8 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
     }
     horizons = PyArray_DATA(horizons_npy);
 
-    if (prior_str)
-    {
-        if (strcmp(prior_str, "uniform in log distance") == 0)
-            prior = BAYESTAR_PRIOR_UNIFORM_IN_LOG_DISTANCE;
-        else if (strcmp(prior_str, "uniform in volume") == 0)
-            prior = BAYESTAR_PRIOR_UNIFORM_IN_VOLUME;
-    }
-
     old_handler = gsl_set_error_handler(my_gsl_error);
-    P = bayestar_sky_map_tdoa_snr(&npix, gmst, nifos, responses, locations, toas, snrs, w_toas, horizons, min_distance, max_distance, prior);
+    P = bayestar_sky_map_tdoa_snr(&npix, gmst, nifos, responses, locations, toas, snrs, w_toas, horizons, min_distance, max_distance, prior_distance_power);
     gsl_set_error_handler(old_handler);
 
     if (!P)

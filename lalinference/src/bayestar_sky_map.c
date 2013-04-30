@@ -289,28 +289,19 @@ typedef struct {
     double A;
     double B;
     double log_offset;
+    int prior_distance_power;
 } inner_integrand_params;
 
 
 /* Radial integrand for uniform-in-log-distance prior. */
-static double radial_integrand_uniform_in_log_distance(double r, void *params)
+static double radial_integrand(double r, void *params)
 {
     const inner_integrand_params *integrand_params = (const inner_integrand_params *) params;
 
     const double onebyr = 1 / r;
     const double onebyr2 = gsl_pow_2(onebyr);
-    return exp(integrand_params->A * onebyr2 + integrand_params->B * onebyr - integrand_params->log_offset) * onebyr;
-}
-
-
-/* Radial integrand for uniform-in-volume prior. */
-static double radial_integrand_uniform_in_volume(double r, void *params)
-{
-    const inner_integrand_params *integrand_params = (const inner_integrand_params *) params;
-
-    const double onebyr = 1 / r;
-    const double onebyr2 = gsl_pow_2(onebyr);
-    return exp(integrand_params->A * onebyr2 + integrand_params->B * onebyr - integrand_params->log_offset) * gsl_pow_2(r);
+    return exp(integrand_params->A * onebyr2 + integrand_params->B * onebyr - integrand_params->log_offset)
+        * gsl_pow_int(r, integrand_params->prior_distance_power);
 }
 
 
@@ -327,7 +318,7 @@ double *bayestar_sky_map_tdoa_snr(
     const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
     double min_distance,
     double max_distance,
-    bayestar_prior_t prior)
+    int prior_distance_power) /* Use a prior of (distance)^(prior_distance_power) */
 {
     long nside;
     long maxpix;
@@ -335,9 +326,6 @@ double *bayestar_sky_map_tdoa_snr(
     double d1[nifos];
     double *P;
     gsl_permutation *pix_perm;
-
-    /* Function pointer to hold radial integrand. */
-    double (* radial_integrand) (double x, void *params);
 
     /* Will point to memory for storing GSL return values for each thread. */
     int *gsl_errnos;
@@ -357,20 +345,6 @@ double *bayestar_sky_map_tdoa_snr(
 
     /* Number of integration steps in cos(inclination) */
     static const int nu = 16;
-
-    /* Choose radial integrand function based on selected prior. */
-    switch (prior)
-    {
-        case BAYESTAR_PRIOR_UNIFORM_IN_LOG_DISTANCE:
-            radial_integrand = radial_integrand_uniform_in_log_distance;
-            break;
-        case BAYESTAR_PRIOR_UNIFORM_IN_VOLUME:
-            radial_integrand = radial_integrand_uniform_in_volume;
-            break;
-        default:
-            GSL_ERROR_NULL("unrecognized choice of prior", GSL_EINVAL);
-            break;
-    }
 
     /* Rescale distances so that furthest horizon distance is 1. */
     {
@@ -526,7 +500,7 @@ double *bayestar_sky_map_tdoa_snr(
                 {
                     /* Perform adaptive integration. Stop when a relative
                      * accuracy of 0.05 has been reached. */
-                    inner_integrand_params integrand_params = {A, B, -0.25 * gsl_pow_2(B) / A};
+                    inner_integrand_params integrand_params = {A, B, -0.25 * gsl_pow_2(B) / A, prior_distance_power};
                     const gsl_function func = {radial_integrand, &integrand_params};
                     double result, abserr;
                     int ret = gsl_integration_qagp(&func, &breakpoints[0], num_breakpoints, DBL_MIN, 0.05, subdivision_limit, workspace, &result, &abserr);
