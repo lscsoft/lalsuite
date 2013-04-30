@@ -235,7 +235,6 @@ int main (int argc , char **argv) {
     case BCVSpin:
     case IMRPhenomFA:
     case IMRPhenomFB:
-    case PhenSpinTaylorRDF:
       switch( otherIn.output )
       {
         default:

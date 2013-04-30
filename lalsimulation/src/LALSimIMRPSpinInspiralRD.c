@@ -60,7 +60,7 @@
 #define nModes 8
 #define RD_EFOLDS 10
 
-static REAL8 dsign(int i){
+static REAL8 dsign(INT4 i){
   if (i>=0) return 1.;
   else return -1.;
 }
@@ -155,7 +155,7 @@ static REAL8 fracRD(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2
 /**
  * Convenience function to set up XLALSimInspiralSpinTaylotT4Coeffs struct
  */
-static int XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  *params, /** PN params [returned] */
+static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  *params, /** PN params [returned] */
                                          REAL8 dt,                                      /** Sampling in secs */
                                          REAL8 fStart,                                  /** Starting frequency of integration*/
                                          REAL8 fEnd,                                    /** Ending frequency of integration*/
@@ -310,7 +310,7 @@ static int XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  *
   return XLAL_SUCCESS;
 } /* End of XLALSimIMRPhenSpinParamsSetup */
 
-static int XLALSpinInspiralDerivatives(UNUSED double t,
+static INT4 XLALSpinInspiralDerivatives(UNUSED double t,
                                        const double values[],
                                        double dvalues[],
                                        void *mparams)
@@ -494,13 +494,13 @@ static int XLALSpinInspiralDerivatives(UNUSED double t,
   return GSL_SUCCESS;
 } /* end of XLALSpinInspiralDerivatives */
 
-static int XLALGenerateWaveDerivative (REAL8Vector *dwave,
+static INT4 XLALGenerateWaveDerivative (REAL8Vector *dwave,
                                        REAL8Vector *wave,
                                        REAL8 dt
 )
 {
   /* XLAL error handling */
-  int errcode = XLAL_SUCCESS;
+  INT4 errcode = XLAL_SUCCESS;
 
   /* For checking GSL return codes */
   INT4 gslStatus;
@@ -579,7 +579,7 @@ static int XLALGenerateWaveDerivative (REAL8Vector *dwave,
   return errcode;
 } /* End of XLALGenerateWaveDerivative */
 
-static int XLALSimSpinInspiralTest(UNUSED double t, const double values[], double dvalues[], void *mparams) {
+static INT4 XLALSimSpinInspiralTest(UNUSED double t, const double values[], double dvalues[], void *mparams) {
 
   LALSimInspiralPhenSpinTaylorT4Coeffs *params = (LALSimInspiralPhenSpinTaylorT4Coeffs *) mparams;
 
@@ -618,7 +618,7 @@ static int XLALSimSpinInspiralTest(UNUSED double t, const double values[], doubl
 } /* End of XLALSimSpinInspiralTest */
 
 
-static int XLALSimIMRPhenSpinTest(UNUSED double t, const double values[], double dvalues[], void *mparams) {
+static INT4 XLALSimIMRPhenSpinTest(UNUSED double t, const double values[], double dvalues[], void *mparams) {
 
   LALSimInspiralPhenSpinTaylorT4Coeffs *params = (LALSimInspiralPhenSpinTaylorT4Coeffs *) mparams;
 
@@ -690,7 +690,7 @@ typedef struct tagLALSimInspiralInclAngle {
   REAL8 sDi;
 } LALSimInspiralInclAngle;
 
-static int XLALSimSpinInspiralFillL2Modes(COMPLEX16Vector *hL2,
+static INT4 XLALSimSpinInspiralFillL2Modes(COMPLEX16Vector *hL2,
                                    REAL8 v,
                                    REAL8 eta,
                                    REAL8 dm,
@@ -699,7 +699,7 @@ static int XLALSimSpinInspiralFillL2Modes(COMPLEX16Vector *hL2,
                                    LALSimInspiralInclAngle *an
                                    )
 {
-  const int os=2;
+  const INT4 os=2;
   REAL8 amp20 = sqrt(1.5);
   REAL8 v2    = v*v;
   REAL8 damp  = 1.;
@@ -741,7 +741,7 @@ static int XLALSimSpinInspiralFillL2Modes(COMPLEX16Vector *hL2,
   return XLAL_SUCCESS;
 } /* End of XLALSimSpinInspiralFillL2Modes*/
 
-static int XLALSimSpinInspiralFillL3Modes(COMPLEX16Vector *hL3,
+static INT4 XLALSimSpinInspiralFillL3Modes(COMPLEX16Vector *hL3,
                                    REAL8 v,
                                    REAL8 eta,
                                    REAL8 dm,
@@ -749,7 +749,7 @@ static int XLALSimSpinInspiralFillL3Modes(COMPLEX16Vector *hL3,
                                    REAL8 alpha,
                                    LALSimInspiralInclAngle *an)
 {
-  const int os=3;
+  const INT4 os=3;
   REAL8 amp32 = sqrt(1.5);
   REAL8 amp31 = sqrt(0.15);
   REAL8 amp30 = 1. / sqrt(5)/2.;
@@ -798,7 +798,7 @@ static int XLALSimSpinInspiralFillL3Modes(COMPLEX16Vector *hL3,
 
 } /*End of XLALSimSpinInspiralFillL3Modes*/
 
-static int XLALSimSpinInspiralFillL4Modes(COMPLEX16Vector *hL4,
+static INT4 XLALSimSpinInspiralFillL4Modes(COMPLEX16Vector *hL4,
                                    UNUSED REAL8 v,
                                    REAL8 eta,
                                    UNUSED REAL8 dm,
@@ -807,7 +807,7 @@ static int XLALSimSpinInspiralFillL4Modes(COMPLEX16Vector *hL4,
                                    LALSimInspiralInclAngle *an
                                    )
 {
-  const int os=4;
+  const INT4 os=4;
   REAL8 amp43 = - sqrt(2.);
   REAL8 amp42 = sqrt(7.)/2.;
   REAL8 amp41 = sqrt(3.5)/4.;
@@ -850,7 +850,7 @@ static int XLALSimSpinInspiralFillL4Modes(COMPLEX16Vector *hL4,
   return XLAL_SUCCESS;
 } /* End of XLALSimSpinInspiralFillL4Modes*/
 
-static int XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**< post-Newtonian parameter [returned]*/
+static INT4 XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**< post-Newtonian parameter [returned]*/
                                              REAL8TimeSeries **Phi,        /**< orbital phase            [returned]*/
                                              REAL8TimeSeries **LNhatx,     /**< LNhat vector x component [returned]*/
                                              REAL8TimeSeries **LNhaty,     /**< "    "    "  y component [returned]*/
@@ -868,9 +868,9 @@ static int XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**< 
                                              LALSimInspiralPhenSpinTaylorT4Coeffs *params)
 {
   UINT4 idx;
-  int jdx;
+  INT4 jdx;
   UINT4 intLen;
-  int intReturn;
+  INT4 intReturn;
 
   REAL8 S1x0,S1y0,S1z0,S2x0,S2y0,S2z0;  /** Used to store initial spin values */
   REAL8Array *yout;                     /** Used to store integration output */
@@ -947,7 +947,7 @@ static int XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**< 
   /* Copy dynamical variables from yout array to output time series.
    * Note the first 'len' members of yout are the time steps.
    */
-  int sign=params->dt > 0. ? 1 : -1;
+  INT4 sign=params->dt > 0. ? 1 : -1;
   jdx= (intLen-1)*(-sign+1)/2;
 
   for (idx=0;idx<intLen;idx++) {
@@ -970,7 +970,7 @@ static int XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**< 
   return intReturn;
 } /* End of XLALSimInspiralSpinTaylorT4Engine */
 
-static int XLALSimInspiralComputeInclAngle(REAL8 ciota, LALSimInspiralInclAngle *angle){
+static INT4 XLALSimInspiralComputeInclAngle(REAL8 ciota, LALSimInspiralInclAngle *angle){
   angle->ci=ciota;
   angle->si=sqrt(1.-ciota*ciota);
   angle->ci2=angle->ci*angle->ci;
@@ -1005,7 +1005,7 @@ static int XLALSimInspiralComputeInclAngle(REAL8 ciota, LALSimInspiralInclAngle 
  * safely set to zero, as it is.
  **/
 
-static int XLALSimInspiralComputeAlpha(LALSimInspiralPhenSpinTaylorT4Coeffs params, REAL8 LNhx, REAL8 LNhy, REAL8 S1x, REAL8 S1y, REAL8 S2x, REAL8 S2y,REAL8 *alpha){
+static INT4 XLALSimInspiralComputeAlpha(LALSimInspiralPhenSpinTaylorT4Coeffs params, REAL8 LNhx, REAL8 LNhy, REAL8 S1x, REAL8 S1y, REAL8 S2x, REAL8 S2y,REAL8 *alpha){
   if ((LNhy*LNhy+LNhx*LNhx)==0.) {
     REAL8 S1xy=S1x*S1x+S1y*S1y;
     REAL8 S2xy=S2x*S2x+S2y*S2y;
@@ -1054,7 +1054,7 @@ static int XLALSimInspiralComputeAlpha(LALSimInspiralPhenSpinTaylorT4Coeffs para
   REAL8 tmp[3]={*vx,*vy,*vz};
   *vx=*vy=*vz=0.;
   REAL8 rotX[3][3]={{1.,0.,0.},{0,cos(phi),-sin(phi)},{0,sin(phi),cos(phi)}};
-  int idx;
+  INT4 idx;
   for (idx=0;idx<3;idx++) {
     *vx+=rotX[0][idx]*tmp[idx];
     *vy+=rotX[1][idx]*tmp[idx];
@@ -1065,7 +1065,7 @@ static void rotateY(REAL8 phi,REAL8 *vx, REAL8 *vy, REAL8 *vz){
   REAL8 rotY[3][3]={{cos(phi),0.,sin(phi)},{0.,1.,0.},{-sin(phi),0.,cos(phi)}};
   REAL8 tmp[3]={*vx,*vy,*vz};
   *vx=*vy=*vz=0.;
-  int idx;
+  INT4 idx;
   for (idx=0;idx<3;idx++) {
     *vx+=rotY[0][idx]*tmp[idx];
     *vy+=rotY[1][idx]*tmp[idx];
@@ -1076,7 +1076,7 @@ static void rotateZ(REAL8 phi,REAL8 *vx, REAL8 *vy, REAL8 *vz){
   REAL8 tmp[3]={*vx,*vy,*vz};
   REAL8 rotZ[3][3]={{cos(phi),-sin(phi),0.},{sin(phi),cos(phi),0.},{0.,0.,1.}};
   *vx=*vy=*vz=0.;
-  int idx;
+  INT4 idx;
   for (idx=0;idx<3;idx++) {
     *vx+=rotZ[0][idx]*tmp[idx];
     *vy+=rotZ[1][idx]*tmp[idx];
@@ -1084,7 +1084,7 @@ static void rotateZ(REAL8 phi,REAL8 *vx, REAL8 *vy, REAL8 *vz){
   }
 }
 
-static int XLALSimIMRPhenSpinInspiralSetAxis(REAL8 mass1, /* in MSun units */
+static INT4 XLALSimIMRPhenSpinInspiralSetAxis(REAL8 mass1, /* in MSun units */
                                              REAL8 mass2, /* in MSun units */
                                              REAL8 *iota, /* input/output */
                                              REAL8 *yinit,/* RETURNED */
@@ -1195,13 +1195,13 @@ static int XLALSimIMRPhenSpinInspiralSetAxis(REAL8 mass1, /* in MSun units */
  * PhenSpin Initialization
  **/
 
-static int XLALSimIMRPhenSpinInitialize(REAL8 mass1,                              /* in Msun units */
+static INT4 XLALSimIMRPhenSpinInitialize(REAL8 mass1,                              /* in Msun units */
                                         REAL8 mass2,                              /* in Msun units */
                                         REAL8 *yinit,
                                         REAL8 fStart,                             /* in Hz*/
                                         REAL8 fEnd,                               /* in Hz*/
                                         REAL8 deltaT,
-                                        int phaseO,
+                                        INT4 phaseO,
                                         LALSimInspiralPhenSpinTaylorT4Coeffs *params,
                                         LALSimInspiralWaveformFlags      *waveFlags,
                                         LALSimInspiralTestGRParam        *testGRparams,
@@ -1256,7 +1256,7 @@ static int XLALSimIMRPhenSpinInitialize(REAL8 mass1,                            
  * sample of begin.  Frees end before returning a pointer to the result, which is
  * the resized start series.  */
 static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start, REAL8TimeSeries *end) {
-    unsigned int origlen = start->data->length;
+    UINT4 origlen = start->data->length;
     start = XLALResizeREAL8TimeSeries(start, 0,
             start->data->length + end->data->length - 1);
 
@@ -1276,7 +1276,7 @@ static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start, REAL8TimeSeries 
  *
  * All units are SI units.
  */
-int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-polarization waveform [returned] */
+INT4 XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-polarization waveform [returned] */
                                  REAL8TimeSeries **hCross,              /**< x-polarization waveform [returned] */
                                  REAL8 phi_start,                       /**< start phase */
                                  REAL8 deltaT,                          /**< sampling interval */
@@ -1292,17 +1292,17 @@ int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-p
                                  REAL8 s2x,                             /**< x-component of dimensionless spin for object 2 */
                                  REAL8 s2y,                             /**< y-component of dimensionless spin for object 2 */
                                  REAL8 s2z,                             /**< z-component of dimensionless spin for object 2 */
-                                 int phaseO,                            /**< twice post-Newtonian phase order */
-                                 int UNUSED ampO,                       /**< twice post-Newtonian amplitude order */
+                                 INT4 phaseO,                            /**< twice post-Newtonian phase order */
+                                 INT4 UNUSED ampO,                       /**< twice post-Newtonian amplitude order */
                                  LALSimInspiralWaveformFlags *waveFlags,/**< Choice of axis for input spin params */
                                  LALSimInspiralTestGRParam *testGRparams/**< Non-GR params */)
 {
 
-  int errcode=0;
-  int errcodeInt=0;
-  int intLen;         /* Length of arrays after integration*/
-  int lengthH;
-  int idx,kdx;
+  INT4 errcode=0;
+  INT4 errcodeInt=0;
+  INT4 intLen;         /* Length of arrays after integration*/
+  INT4 lengthH;
+  INT4 idx,kdx;
   LALSimInspiralPhenSpinTaylorT4Coeffs params;
   REAL8 mass1=m1/LAL_MSUN_SI;
   REAL8 mass2=m2/LAL_MSUN_SI;
@@ -1323,7 +1323,7 @@ int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-p
 
   REAL8 tn = XLALSimInspiralTaylorLength(deltaT, m1, m2, f_start, phaseO);
   REAL8 x  = 1.1 * (tn + 1. ) / deltaT;
-  int length = ceil(log10(x)/log10(2.));
+  INT4 length = ceil(log10(x)/log10(2.));
   lengthH    = pow(2, length);
   REAL8TimeSeries *omega=NULL;
   REAL8TimeSeries *Phi=NULL;
@@ -1363,7 +1363,7 @@ int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-p
 
     errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega1,&Phi1,&LNhatx1,&LNhaty1,&LNhatz1,&S1x1,&S1y1,&S1z1,&S2x1,&S2y1,&S2z1,&Energy1,yinit,lengthH,PhenSpinTaylor,&params);
 
-    int intLen1=Phi1->data->length;
+    INT4 intLen1=Phi1->data->length;
     /* report on abnormal termination*/
     if ( (errcodeInt != LALSIMINSPIRAL_PST4_TEST_FREQBOUND ) ) {
       XLALPrintError("** LALSimIMRPSpinInspiralRD WARNING **: integration terminated with code %d.\n",errcode);
@@ -1480,7 +1480,7 @@ int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-p
   XLALDestroyREAL8TimeSeries(S2z);
   XLALDestroyREAL8TimeSeries(Energy);
 
-  int m,l;
+  INT4 m,l;
   LALSimInspiralModesChoice modesChoice=XLALSimInspiralGetModesChoice(waveFlags);
   if ( ( modesChoice &  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED) ==  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED ) {
     l=2;
@@ -1535,7 +1535,7 @@ int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-p
       XLAL_ERROR(XLAL_ENOMEM);
   }
 
-  int minLen=hPtmp->data->length < (*hPlus)->data->length ? hPtmp->data->length : (*hPlus)->data->length;
+  INT4 minLen=hPtmp->data->length < (*hPlus)->data->length ? hPtmp->data->length : (*hPlus)->data->length;
   for (idx=0;idx<minLen;idx++) {
     (*hPlus)->data->data[idx] =hPtmp->data->data[idx];
     (*hCross)->data->data[idx]=hCtmp->data->data[idx];
@@ -1552,7 +1552,7 @@ int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-p
 
 } /* End of XLALSimSpinInspiralGenerator*/
 
-int XLALSimIMRPhenSpinFinalMassSpin(REAL8 *finalMass,
+INT4 XLALSimIMRPhenSpinFinalMassSpin(REAL8 *finalMass,
                                     REAL8 *finalSpin,
                                     REAL8 mass1,
                                     REAL8 mass2,
@@ -1657,7 +1657,7 @@ static INT4 XLALSimIMRHybridRingdownWave(
   gsl_vector *x;
   gsl_permutation *p;
   REAL8Vector *modeamps;
-  int s;
+  INT4 s;
   REAL8 tj=0.;
   REAL8 m;
 
@@ -1814,7 +1814,7 @@ static INT4 XLALSimIMRHybridRingdownWave(
   FILE *frd=fopen("checkrdPS.dat","w");
   double a1=0.;
   double a2=0.;
-  int jdx;
+  INT4 jdx;
   for (jdx = -5; jdx < 0; ++jdx) {
     tj = jdx * dt;
     a1=0.;
@@ -1849,9 +1849,9 @@ static INT4 XLALSimIMRHybridRingdownWave(
   return errcode;
 }
 
-static int XLALUpSampling(REAL8Vector* vHi, REAL8 dtHi, REAL8Vector* v, REAL8 dt)
+static INT4 XLALUpSampling(REAL8Vector* vHi, REAL8 dtHi, REAL8Vector* v, REAL8 dt)
 {
-  uint idx;
+  UINT4 idx;
   gsl_interp_accel *acc;
   gsl_spline *spline;
   INT4 gslStatus;
@@ -1909,7 +1909,7 @@ static int XLALUpSampling(REAL8Vector* vHi, REAL8 dtHi, REAL8Vector* v, REAL8 dt
  * Driver routine for generating PhenSpinRD waveforms
  **/
 
-int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,               /**< +-polarization waveform [returned] */
+INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,               /**< +-polarization waveform [returned] */
                                           REAL8TimeSeries **hCross,              /**< x-polarization waveform [returned] */
                                           REAL8 phi_start,                       /**< start phase */
                                           REAL8 deltaT,                          /**< sampling interval */
@@ -1925,7 +1925,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
                                           REAL8 s2x,                             /**< x-component of dimensionless spin for object 2 */
                                           REAL8 s2y,                             /**< y-component of dimensionless spin for object 2 */
                                           REAL8 s2z,                             /**< z-component of dimensionless spin for object 2 */
-                                          int phaseO,                            /**< twice post-Newtonian phase order */                                                     int UNUSED ampO,                       /**< twice post-Newtonian amplitude order */
+                                          INT4 phaseO,                            /**< twice post-Newtonian phase order */                                                     INT4 UNUSED ampO,                       /**< twice post-Newtonian amplitude order */
                                           LALSimInspiralWaveformFlags *waveFlags,/**< Choice of axis for input spin params */                                                 LALSimInspiralTestGRParam *testGRparams/**< Non-GR params */)
 {
 
@@ -1934,11 +1934,11 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
     XLALPrintError("** LALSimIMRPSpinInspiralRD ERROR **: rate must be smaller than %8.0f Hz, value %8.0f Hz given\n",rateHi,1./deltaT);
     XLAL_ERROR(XLAL_EFUNC);
   }
-  int errcode=0;
-  int errcodeInt=0;
-  uint lengthH=0;     /* Length of hPlus and hCross passed, 0 if NULL*/
-  uint intLen;        /* Length of arrays after integration*/
-  int idx,jdx,kdx;
+  INT4 errcode=0;
+  INT4 errcodeInt=0;
+  UINT4 lengthH=0;     /* Length of hPlus and hCross passed, 0 if NULL*/
+  UINT4 intLen;        /* Length of arrays after integration*/
+  INT4 idx,jdx,kdx;
   LALSimInspiralPhenSpinTaylorT4Coeffs params;
   REAL8 S1S1=s1x*s1x+s1y*s1y+s1z*s1z;
   REAL8 S2S2=s1x*s1x+s1y*s1y+s1z*s1z;
@@ -1966,7 +1966,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
 
   REAL8 tn = XLALSimInspiralTaylorLength(deltaT, m1, m2, f_start, phaseO);
   REAL8 x  = 1.1 * (tn + 1. ) / deltaT;
-  int length = ceil(log10(x)/log10(2.));
+  INT4 length = ceil(log10(x)/log10(2.));
   lengthH    = pow(2, length);
 
   if (f_ref<=f_start) {
@@ -2003,7 +2003,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
       XLALPrintError("                           S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);
     }
 
-    int intLen1=Phi1->data->length;
+    INT4 intLen1=Phi1->data->length;
 
     yinit[0] = Phi1->data->data[intLen1-1];
     yinit[1] = omega1->data->data[intLen1-1];
@@ -2052,7 +2052,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
       XLALPrintError("                           S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);
   }
 
-  int count=intLen;
+  INT4 count=intLen;
   double tPeak=0.,tm=0.;
   LIGOTimeGPS tStart=LIGOTIMEGPSZERO;
   COMPLEX16Vector* hL2tmp=XLALCreateCOMPLEX16Vector(5);
@@ -2282,7 +2282,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
 
     count  = iMatch;
     tm=((REAL8) iMatch)*deltaT;
-    const int fac=2;
+    const INT4 fac=2;
     REAL8 dt=((REAL8)fac)*dtHi;
     REAL8 t0  = tm + ((REAL8) iMatchUp )*dtHi;
     REAL8 tm1 = t0 - dt;
@@ -2357,9 +2357,9 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
       REAL8 omegaRD = creal(modefreqs->data[0])*Mass*LAL_MTSUN_SI/2.;
       REAL8 frOmRD  = fracRD(LNhS1,LNhS2,S1S1,S1S2,S2S2)*omegaRD;
 
-      int up=((int)(deltaT/dtHi));
-      int upcntP=0,upcnt=0;
-      int cntI=count;
+      INT4 up=((int)(deltaT/dtHi));
+      INT4 upcntP=0,upcnt=0;
+      INT4 cntI=count;
       do {
 	count++;
 	for (idx=0;idx<up;idx++) {
@@ -2387,7 +2387,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
        * Attach the ringdown waveform to the end of inspiral/merger
        -------------------------------------------------------------*/
 
-      static const int nPtsComb=6;
+      static const INT4 nPtsComb=6;
       if (upcntP<nPtsComb) {
 	XLALPrintError("*** LALSimIMRPSpinInspiralRD ERROR: impossible to attach RD");
         XLAL_ERROR( XLAL_ENOMEM );
@@ -2404,7 +2404,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
       REAL8VectorSequence *inspWaveR = XLALCreateREAL8VectorSequence( 2, nPtsComb );
       REAL8VectorSequence *inspWaveI = XLALCreateREAL8VectorSequence( 2, nPtsComb );
 
-      int nRDWave = (INT4) (RD_EFOLDS / fabs(cimag(modefreqs->data[0])) / deltaT);
+      INT4 nRDWave = (INT4) (RD_EFOLDS / fabs(cimag(modefreqs->data[0])) / deltaT);
 
       REAL8Vector *matchrange=XLALCreateREAL8Vector(3);
       matchrange->data[2]=count*deltaT/Mtime;
@@ -2434,7 +2434,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
         XLAL_ERROR( XLAL_ENOMEM );
       }
 
-      int l,m;
+      INT4 l,m;
       if ( ( modesChoice &  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED) ==  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED ) {
         REAL8Vector *rdwave1l2 = XLALCreateREAL8Vector( nRDWave );
         REAL8Vector *rdwave2l2 = XLALCreateREAL8Vector( nRDWave );
@@ -2598,7 +2598,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
   }
   else {
     XLALGPSAdd(&tStart,-tPeak);
-    int wfLen=1;
+    INT4 wfLen=1;
     while (wfLen<count) wfLen*=2;
     *hPlus  = XLALCreateREAL8TimeSeries("H+", &tStart, 0.0, deltaT, &lalDimensionlessUnit, wfLen);
     *hCross = XLALCreateREAL8TimeSeries("Hx", &tStart, 0.0, deltaT, &lalDimensionlessUnit, wfLen);
@@ -2606,7 +2606,7 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,              
       XLAL_ERROR(XLAL_ENOMEM);
   }
 
-  int minLen=hPtmp->data->length < (*hPlus)->data->length ? hPtmp->data->length : (*hPlus)->data->length;
+  INT4 minLen=hPtmp->data->length < (*hPlus)->data->length ? hPtmp->data->length : (*hPlus)->data->length;
   for (idx=0;idx<minLen;idx++) {
     (*hPlus)->data->data[idx] =hPtmp->data->data[idx];
     (*hCross)->data->data[idx]=hCtmp->data->data[idx];
