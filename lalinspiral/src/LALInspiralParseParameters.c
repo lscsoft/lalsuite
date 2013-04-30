@@ -179,8 +179,6 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	    params->approximant = SpinTaylorT4; }
 	  else if (strcmp(argv[i],"SpinQuadTaylor")==0){
 	    params->approximant = SpinQuadTaylor;}
-	  else if (strcmp(argv[i],"PhenSpinTaylorRDF")==0){
-	    params->approximant = PhenSpinTaylorRDF;}
 	  else if (strcmp(argv[i],"PhenSpinTaylorRD")==0){
 	    params->approximant = PhenSpinTaylorRD;}
 	  else if (strcmp(argv[i],"FindChirpSP")==0){
@@ -496,7 +494,7 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--approximant (TaylorT1, TaylorT2, TaylorT3, TaylorT4,\n");
   fprintf(stderr,"\t\tTaylorF1, TaylorF2, TaylorF2RedSpin, PadeT1, PadeF1, BCV, BCVSpin\n");
   fprintf(stderr,"\t\tBCVC, SpinTaylorT3, SpinTaylorFrameless, SpinTaylor,\n");
-  fprintf(stderr,"\t\tSpinQuadTaylor, PhenSpinTaylorRD, PhenSpinTaylorRDF,\n");
+  fprintf(stderr,"\t\tSpinQuadTaylor, PhenSpinTaylorRD,\n");
   fprintf(stderr,"\t\tFindChirpSP, FindChirpPTF, GeneratePPN, AmpCorPPN,\n");
   fprintf(stderr,"\t\tFrameFile, NumRel, Eccentricity, EOB, EOBNR,\n");
   fprintf(stderr,"\t\tIMRPhenomA, IMRPhenomB, IMRPhenomFA, IMRPhenomFB,\n");
@@ -563,4 +561,30 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"              other - attach ringdown for IMR waveform (default)\n");
 
 
+}
+
+/**
+ * XLAL function to determine adaptive integration flag from a string.  Returns
+ * 1 if string contains 'fixedStep', otherwise returns 0 to signal
+ * adaptive integration should be used.
+ */
+int XLALGetAdaptiveIntFromString(const CHAR *inString)
+{
+  if (strstr(inString, "fixedStep"))
+    return 1;
+  else
+    return 0;
+}
+
+/**
+ * XLAL function to determine inspiral-only flag from a string.  Returns
+ * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal
+ * full inspiral-merger-ringdown waveform should be generated.
+ */
+int XLALGetInspiralOnlyFromString(const CHAR *inString)
+{
+  if (strstr(inString, "inspiralOnly"))
+    return 1;
+  else
+    return 0;
 }

@@ -971,6 +971,8 @@ int XLALSimInspiralPNPolarizationWaveforms(
  *
  * NOTE: The vectors MUST be given in the so-called radiation frame where
  * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
+ * For different convention (Z is the direction of initial total angular
+ * momentum, useful for GRB and comparison to NR, see XLALSimSpinInspiralGenerator())
  */
 int XLALSimInspiralPrecessingPolarizationWaveforms(
 	REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
@@ -1655,11 +1657,8 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 v0 = 1., quadparam1 = 1., quadparam2 = 1.;
 
     /* General sanity checks that will abort */
-    /*
-     * If non-GR approximants are added, change the below to
-     * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
-     */
-    if( nonGRparams )
+
+    if( nonGRparams && approximant != PhenSpinTaylor && approximant != PhenSpinTaylorRD )
     {
         XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
         XLAL_ERROR(XLAL_EINVAL);
@@ -1898,17 +1897,26 @@ int XLALSimInspiralChooseTDWaveform(
                     f_min, 0., r, i);
             break;
 
+        case PhenSpinTaylor:
+            /* Waveform-specific sanity checks */
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            /* Call the waveform driver routine */
+            ret = XLALSimSpinInspiralGenerator(hplus, hcross, phiRef,
+					       deltaT, m1, m2, f_min, f_ref, r, i, S1x, S1y, S1z, S2x, S2y, S2z,
+					       phaseO, amplitudeO, waveFlags, nonGRparams);
+            break;
+
         case PhenSpinTaylorRD:
             /* Waveform-specific sanity checks */
-            // FIXME: need to create a function to take in different modes or produce an error if all modes not given
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
             if( f_ref != 0.)
                 XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at the start.\n", __func__);
             /* Call the waveform driver routine */
-            ret = XLALSimIMRPSpinInspiralRDGenerator(hplus, hcross, phiRef,
-                    deltaT, m1, m2, f_min, r, i, S1x, S1y, S1z, S2x, S2y, S2z,
-                    phaseO, XLALSimInspiralGetFrameAxis(waveFlags), 0);
+            ret = XLALSimIMRPhenSpinInspiralRDGenerator(hplus, hcross, phiRef,
+							deltaT, m1, m2, f_min, f_ref, r, i, S1x, S1y, S1z, S2x, S2y, S2z,
+							phaseO, amplitudeO,  waveFlags, nonGRparams);
             break;
 
         case SEOBNRv1:
@@ -2491,6 +2499,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case SpinTaylorT2:
         case SpinTaylorT4:
         case IMRPhenomB:
+        case PhenSpinTaylor:
         case PhenSpinTaylorRD:
         case SEOBNRv1:
             return 1;
@@ -2557,13 +2566,13 @@ int XLALGetApproximantFromString(const CHAR *inString)
   {
     return TaylorR2F4;
   }
-  else if ( strstr(inString, "PhenSpinTaylorRDF" ) )
-  {
-    return PhenSpinTaylorRDF;
-  }
   else if ( strstr(inString, "PhenSpinTaylorRD" ) )
   {
     return PhenSpinTaylorRD;
+  }
+  else if ( strstr(inString, "PhenSpinTaylor" ) )
+  {
+    return PhenSpinTaylor;
   }
   else if ( strstr(inString, "SpinTaylorT2" ) )
   {
@@ -2734,10 +2743,10 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("TaylorF2RedSpin");
     case TaylorF2:
       return strdup("TaylorF2");
+    case PhenSpinTaylor:
+      return strdup("PhenSpinTaylor");
     case TaylorR2F4:
       return strdup("TaylorR2F4");
-    case PhenSpinTaylorRDF:
-      return strdup("PhenSpinTaylorRDF");
     case PhenSpinTaylorRD:
       return strdup("PhenSpinTaylorRD");
     case SpinTaylorF2:
@@ -2956,36 +2965,9 @@ int XLALGetFrameAxisFromString(const CHAR *inString)
     return LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW;
 }
 
-/** 
- * XLAL function to determine adaptive integration flag from a string.  Returns
- * 1 if string contains 'fixedStep', otherwise returns 0 to signal 
- * adaptive integration should be used.
- */
-int XLALGetAdaptiveIntFromString(const CHAR *inString) 
-{
-  if (strstr(inString, "fixedStep"))
-    return 1;
-  else 
-    return 0;
-}
-
-/** 
- * XLAL function to determine inspiral-only flag from a string.  Returns
- * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal 
- * full inspiral-merger-ringdown waveform should be generated.
- */
-int XLALGetInspiralOnlyFromString(const CHAR *inString)
-{
-  if (strstr(inString, "inspiralOnly"))
-    return 1;
-  else
-    return 0;
-}
-
 /**
  * XLAL function to determine modes choice from a string.
  */
-
 int XLALGetHigherModesFromString(const CHAR *inString)
 {
   if (strstr(inString, "L2"))
@@ -3537,4 +3519,3 @@ static int StoreFDHCache(LALSimInspiralWaveformCache *cache,
 
   return XLAL_SUCCESS;
 }
-

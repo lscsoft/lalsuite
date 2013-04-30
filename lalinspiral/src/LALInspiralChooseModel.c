@@ -542,7 +542,6 @@ XLALInspiralChooseModel(
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
-         case PhenSpinTaylorRDF:
 		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
@@ -595,7 +594,6 @@ XLALInspiralChooseModel(
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
-         case PhenSpinTaylorRDF:
 		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
@@ -645,7 +643,6 @@ XLALInspiralChooseModel(
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
-         case PhenSpinTaylorRDF:
 		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
@@ -698,7 +695,6 @@ XLALInspiralChooseModel(
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
-         case PhenSpinTaylorRDF:
 		 case SpinQuadTaylor:
 /*
    The value vlsoT4 is too large and doesn't work sometimes;
@@ -755,7 +751,6 @@ XLALInspiralChooseModel(
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
-         case PhenSpinTaylorRDF:
 		 case SpinQuadTaylor:
 /*
    The value vlsoT4 is too large and doesn't work with 2.5 PN
@@ -812,7 +807,6 @@ XLALInspiralChooseModel(
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
-         case PhenSpinTaylorRDF:
 	     case SpinQuadTaylor:
 /*
    vlsoT6 is as yet undetermined and vlsoT4 is too large in
@@ -869,7 +863,6 @@ XLALInspiralChooseModel(
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
-         case PhenSpinTaylorRDF:
 		 case SpinQuadTaylor:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt6;
@@ -939,7 +932,6 @@ XLALInspiralChooseModel(
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
-         case PhenSpinTaylorRDF:
          case SpinQuadTaylor:
          case PadeT1:
          case PadeF1:
@@ -977,7 +969,6 @@ XLALInspiralChooseModel(
       case SpinTaylorT3:
       case SpinTaylor:
       case PhenSpinTaylorRD:
-      case PhenSpinTaylorRDF:
       case SpinQuadTaylor:
       case TaylorEt:
       case TaylorT4:

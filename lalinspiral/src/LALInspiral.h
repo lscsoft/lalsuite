@@ -1813,6 +1813,19 @@ INT4 XLALInspiralAttachRingdownWave (
         REAL4Vector  	 *signalvec2,
         InspiralTemplate *params);
 
+/** 
+ * XLAL function to determine adaptive integration flag from a string.  Returns
+ * 1 if string contains 'fixedStep', otherwise returns 0 to signal 
+ * adaptive integration should be used.
+ */
+int XLALGetAdaptiveIntFromString(const CHAR *inString);
+
+/** 
+ * XLAL function to determine inspiral-only flag from a string.  Returns
+ * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal 
+ * full inspiral-merger-ringdown waveform should be generated.
+ */
+int XLALGetInspiralOnlyFromString(const CHAR *inString);
 
 INT4 XLALPSpinInspiralRingdownWave (
        REAL8Vector             *rdwave,

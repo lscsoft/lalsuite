@@ -86,6 +86,7 @@ const char * usage =
 "                             SEOBNRv1\n"
 "                             SpinTaylorT4\n"
 "                             SpinTaylorT2\n"
+"                             PhenSpinTaylor\n"
 "                             PhenSpinTaylorRD\n"
 "                           Supported FD approximants:\n"
 "                             IMRPhenomA\n"

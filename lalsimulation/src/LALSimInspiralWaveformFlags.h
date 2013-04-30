@@ -103,7 +103,7 @@ typedef enum {
  * or only the set of l=2 modes for precessing models.
  */
 typedef enum {
-  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED = 1,                     /**< Include only (2,2) or l=2 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT    = 1,                     /**< Include only (2,2) or l=2 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_3L         = 1<<1,                  /**< Inlude only l=3 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3L     = (1<<2) - 1,            /**< Inlude l=2,3 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_4L         = 1<<2,                  /**< Inlude only l=4 modes */

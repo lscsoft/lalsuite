@@ -386,9 +386,6 @@ LALInspiralWave(
       case PhenSpinTaylorRD:
            if (XLALPSpinInspiralRD(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
            break;
-      case PhenSpinTaylorRDF:
-           if (XLALPSpinInspiralRDFreqDom(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
-           break;
       case SpinQuadTaylor:
            if (XLALSQTPNWaveform(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
            CHECKSTATUSPTR(status);
