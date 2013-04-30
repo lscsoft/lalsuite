@@ -513,8 +513,7 @@ XLALErrorHandlerType *XLALSetSilentErrorHandler(void);
  */
 
 #ifdef SWIG     /* SWIG interface directives */
-SWIGLAL(DISABLE_EXCEPTIONS
-        (XLALSetErrno, XLALGetBaseErrno, XLALClearErrno));
+SWIGLAL(DISABLE_EXCEPTIONS(XLALSetErrno, XLALGetBaseErrno, XLALClearErrno));
 #endif /* SWIG */
 
 /** Sets the XLAL error number to errnum, returns the new value. */

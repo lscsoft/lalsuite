@@ -24,7 +24,7 @@
 
 #include <lal/LALAtomicDatatypes.h>
 
-                                                                                              /** \addtogroup LALDatatypes *//*@{ */
+/** \addtogroup LALDatatypes *//*@{ */
 
 /* ---------- constants ---------- */
 
@@ -70,91 +70,81 @@ extern "C" {
 /* ---------- Vector types ---------- */
 
 /** Vector of type CHAR, see \ref ss_Vector for more details. */
-typedef struct
-    tagCHARVector {
+typedef struct tagCHARVector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(CHAR, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(CHAR, data, UINT4, length));
 #endif /* SWIG */
-    UINT4 length;
-                 /**< Number of elements in array. */
-    CHAR *data;
-                 /**< Pointer to the data array. */
+    UINT4 length; /**< Number of elements in array. */
+    CHAR *data; /**< Pointer to the data array. */
 } CHARVector;
 
 /** Vector of type CHAR*, ie 'strings', see \ref ss_Vector for more details.  */
 typedef struct tagLALStringVector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(CHAR *, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(CHAR *, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     CHAR **data; /**< Pointer to the data array. */
 } LALStringVector;
 
 /** Vector of type INT2, see \ref ss_Vector for more details. */
-typedef struct
-    tagINT2Vector {
+typedef struct tagINT2Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(INT2, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(INT2, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     INT2 *data; /**< Pointer to the data array. */
 } INT2Vector;
 
 /** Vector of type UINT2, see \ref ss_Vector for more details. */
-typedef struct
-    tagUINT2Vector {
+typedef struct tagUINT2Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(UINT2, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(UINT2, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     UINT2 *data; /**< Pointer to the data array. */
 } UINT2Vector;
 
 /** Vector of type INT4, see \ref ss_Vector for more details. */
-typedef struct
-    tagINT4Vector {
+typedef struct tagINT4Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(INT4, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(INT4, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     INT4 *data; /**< Pointer to the data array. */
 } INT4Vector;
 
 /** Vector of type UINT4, see \ref ss_Vector for more details. */
-typedef struct
-    tagUINT4Vector {
+typedef struct tagUINT4Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(UINT4, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(UINT4, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     UINT4 *data; /**< Pointer to the data array. */
 } UINT4Vector;
 
 /** Vector of type INT8, see \ref ss_Vector for more details. */
-typedef struct
-    tagINT8Vector {
+typedef struct tagINT8Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(INT8, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(INT8, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     INT8 *data; /**< Pointer to the data array. */
 } INT8Vector;
 
 /** Vector of type UINT8, see \ref ss_Vector for more details. */
-typedef struct
-    tagUINT8Vector {
+typedef struct tagUINT8Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(UINT8, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(UINT8, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     UINT8 *data; /**< Pointer to the data array. */
 } UINT8Vector;
 
 /** Vector of type REAL4, see \ref ss_Vector for more details. */
-typedef struct
-    tagREAL4Vector {
+typedef struct tagREAL4Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(REAL4, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(REAL4, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     REAL4 *data; /**< Pointer to the data array. */
@@ -163,7 +153,7 @@ typedef struct
 /** Vector of type REAL8, see \ref ss_Vector for more details. */
 typedef struct tagREAL8Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(REAL8, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(REAL8, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     REAL8 *data; /**< Pointer to the data array. */
@@ -172,7 +162,7 @@ typedef struct tagREAL8Vector {
 /** Vector of type COMPLEX8, see \ref ss_Vector for more details. */
 typedef struct tagCOMPLEX8Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(COMPLEX8, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(COMPLEX8, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     COMPLEX8 *data; /**< Pointer to the data array. */
@@ -181,7 +171,7 @@ typedef struct tagCOMPLEX8Vector {
 /** Vector of type COMPLEX16, see \ref ss_Vector for more details. */
 typedef struct tagCOMPLEX16Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(1 D_ARRAY(COMPLEX16, data, UINT4, length));
+    SWIGLAL(1D_ARRAY(COMPLEX16, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length;    /**< Number of elements in array. */
     COMPLEX16 *data; /**< Pointer to the data array. */
@@ -191,71 +181,61 @@ typedef struct tagCOMPLEX16Vector {
 /* ---------- Array types ---------- */
 
 /** Multidimentional array of INT2, see \ref ss_Array for more details. */
-typedef struct
-    tagINT2Array {
+typedef struct tagINT2Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     INT2 *data;      /**< Pointer to the data array. */
 } INT2Array;
 
 /** Multidimentional array of UINT2, see \ref ss_Array for more details. */
-typedef struct
-    tagUINT2Array {
+typedef struct tagUINT2Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     UINT2 *data;     /**< Pointer to the data array. */
 } UINT2Array;
 
 /** Multidimentional array of INT4, see \ref ss_Array for more details. */
-typedef struct
-    tagINT4Array {
+typedef struct tagINT4Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     INT4 *data;      /**< Pointer to the data array. */
 } INT4Array;
 
 /** Multidimentional array of UINT4, see \ref ss_Array for more details. */
-typedef struct
-    tagUINT4Array {
+typedef struct tagUINT4Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     UINT4 *data;     /**< Pointer to the data array. */
 } UINT4Array;
 
 /** Multidimentional array of INT8, see \ref ss_Array for more details. */
-typedef struct
-    tagINT8Array {
+typedef struct tagINT8Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     INT8 *data;      /**< Pointer to the data array. */
 } INT8Array;
 
 /** Multidimentional array of UINT8, see \ref ss_Array for more details. */
-typedef struct
-    tagUINT8Array {
+typedef struct tagUINT8Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     UINT8 *data;     /**< Pointer to the data array. */
 } UINT8Array;
 
 /** Multidimentional array of REAL4, see \ref ss_Array for more details. */
-typedef struct
-    tagREAL4Array {
+typedef struct tagREAL4Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     REAL4 *data;     /**< Pointer to the data array. */
 } REAL4Array;
 
 /** Multidimentional array of REAL8, see \ref ss_Array for more details. */
-typedef struct
-    tagREAL8Array {
+typedef struct tagREAL8Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     REAL8 *data;     /**< Pointer to the data array. */
 } REAL8Array;
 
 /** Multidimentional array of COMPLEX8, see \ref ss_Array for more details. */
-typedef struct
-    tagCOMPLEX8Array {
+typedef struct tagCOMPLEX8Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     COMPLEX8 *data; /**< Pointer to the data array. */
 } COMPLEX8Array;
 
 /** Multidimentional array of COMPLEX16, see \ref ss_Array for more details. */
-typedef struct
-    tagCOMPLEX16Array {
+typedef struct tagCOMPLEX16Array {
     UINT4Vector *dimLength; /**< Vector of array dimensions. */
     COMPLEX16 *data; /**< Pointer to the data array. */
 } COMPLEX16Array;
@@ -278,10 +258,9 @@ typedef COMPLEX16Vector COMPLEX16Sequence; /**< See \ref ss_Sequence for documen
     /* ---------- VectorSequence types ---------- */
 
 /** Sequence of CHAR Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagCHARVectorSequence {
+typedef struct tagCHARVectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(CHAR, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(CHAR, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -289,10 +268,9 @@ typedef struct
 } CHARVectorSequence;
 
 /** Sequence of INT2 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagINT2VectorSequence {
+typedef struct tagINT2VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(INT2, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(INT2, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -300,10 +278,9 @@ typedef struct
 } INT2VectorSequence;
 
 /** Sequence of UINT2 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagUINT2VectorSequence {
+typedef struct tagUINT2VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(UINT2, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(UINT2, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -311,10 +288,9 @@ typedef struct
 } UINT2VectorSequence;
 
 /** Sequence of INT4 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagINT4VectorSequence {
+typedef struct tagINT4VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(INT4, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(INT4, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -322,10 +298,9 @@ typedef struct
 } INT4VectorSequence;
 
 /** Sequence of UINT4 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagUINT4VectorSequence {
+typedef struct tagUINT4VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(UINT4, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(UINT4, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -333,10 +308,9 @@ typedef struct
 } UINT4VectorSequence;
 
 /** Sequence of INT8 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagINT8VectorSequence {
+typedef struct tagINT8VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(INT8, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(INT8, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -344,10 +318,9 @@ typedef struct
 } INT8VectorSequence;
 
 /** Sequence of UINT8 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagUINT8VectorSequence {
+typedef struct tagUINT8VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(UINT8, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(UINT8, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -355,10 +328,9 @@ typedef struct
 } UINT8VectorSequence;
 
 /** Sequence of REAL4 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagREAL4VectorSequence {
+typedef struct tagREAL4VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(REAL4, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(REAL4, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -366,10 +338,9 @@ typedef struct
 } REAL4VectorSequence;
 
 /** Sequence of REAL8 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagREAL8VectorSequence {
+typedef struct tagREAL8VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(REAL8, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(REAL8, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -377,10 +348,9 @@ typedef struct
 } REAL8VectorSequence;
 
 /** Sequence of COMPLEX8 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagCOMPLEX8VectorSequence {
+typedef struct tagCOMPLEX8VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(COMPLEX8, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(COMPLEX8, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -388,10 +358,9 @@ typedef struct
 } COMPLEX8VectorSequence;
 
 /** Sequence of COMPLEX16 Vectors, see \ref ss_VectorSequence for more details. */
-typedef struct
-    tagCOMPLEX16VectorSequence {
+typedef struct tagCOMPLEX16VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(2 D_ARRAY(COMPLEX16, data, UINT4, length, vectorLength));
+    SWIGLAL(2D_ARRAY(COMPLEX16, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length;    /**< The number \a l of vectors. */
     UINT4 vectorLength;    /**< The length \a n of each vector. */
@@ -401,8 +370,7 @@ typedef struct
 /* ---------- ArraySequence types ---------- */
 
 /** Sequence of INT2 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagINT2ArraySequence {
+typedef struct tagINT2ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -410,8 +378,7 @@ typedef struct
 } INT2ArraySequence;
 
 /** Sequence of UINT2 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagUINT2ArraySequence {
+typedef struct tagUINT2ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -419,8 +386,7 @@ typedef struct
 } UINT2ArraySequence;
 
 /** Sequence of INT4 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagINT4ArraySequence {
+typedef struct tagINT4ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -428,8 +394,7 @@ typedef struct
 } INT4ArraySequence;
 
 /** Sequence of UINT4 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagUINT4ArraySequence {
+typedef struct tagUINT4ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -437,8 +402,7 @@ typedef struct
 } UINT4ArraySequence;
 
 /** Sequence of INT8 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagINT8ArraySequence {
+typedef struct tagINT8ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -446,8 +410,7 @@ typedef struct
 } INT8ArraySequence;
 
 /** Sequence of UINT8 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagUINT8ArraySequence {
+typedef struct tagUINT8ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -455,8 +418,7 @@ typedef struct
 } UINT8ArraySequence;
 
 /** Sequence of REAL4 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagREAL4ArraySequence {
+typedef struct tagREAL4ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -464,8 +426,7 @@ typedef struct
 } REAL4ArraySequence;
 
 /** Sequence of REAL8 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagREAL8ArraySequence {
+typedef struct tagREAL8ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -473,8 +434,7 @@ typedef struct
 } REAL8ArraySequence;
 
 /** Sequence of COMPLEX8 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagCOMPLEX8ArraySequence {
+typedef struct tagCOMPLEX8ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -482,8 +442,7 @@ typedef struct
 } COMPLEX8ArraySequence;
 
 /** Sequence of COMPLEX16 multidimensional arrays, see \ref ss_ArraySequence for more details. */
-typedef struct
-    tagCOMPLEX16ArraySequence {
+typedef struct tagCOMPLEX16ArraySequence {
     UINT4 length;      /**< The number \a l of vectors. */
     UINT4 arrayDim;      /**< The number of data \a N in each array element (this is not the number \a m of indices). */
     UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
@@ -493,8 +452,7 @@ typedef struct
     /* ---------- Structured datatypes ---------- */
 
 /** Epoch relative to GPS epoch, see \ref ss_LIGOTimeGPS for more details */
-typedef struct
-    tagLIGOTimeGPS {
+typedef struct tagLIGOTimeGPS {
     INT4 gpsSeconds; /**< Seconds since 0h UTC 6 Jan 1980. */
     INT4 gpsNanoSeconds; /**< Residual nanoseconds. */
 } LIGOTimeGPS;
@@ -556,8 +514,7 @@ enum {
  * \f}
  *
  */
-typedef struct
-tagLALUnit {
+typedef struct tagLALUnit {
     INT2 powerOfTen; /**< Overall power-of-ten scaling is 10^\c powerOfTen. */
     INT2 unitNumerator[LALNumUnits]; /**< Array of unit power numerators. */
     UINT2 unitDenominatorMinusOne[LALNumUnits]; /**< Array of unit power denominators-minus-one. */
@@ -570,8 +527,7 @@ tagLALUnit {
 enum enumLALNameLength { LALNameLength = 64 };
 
 /** Time series of INT2 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagINT2TimeSeries {
+typedef struct tagINT2TimeSeries {
     CHAR name[LALNameLength];        /**< The name of the time series. */
     LIGOTimeGPS epoch; /**< The start time of the time series. */
     REAL8 deltaT;       /**< The time step between samples of the time series in seconds. */
@@ -581,8 +537,7 @@ tagINT2TimeSeries {
 } INT2TimeSeries;
 
 /** Time series of UINT2 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagUINT2TimeSeries {
+typedef struct tagUINT2TimeSeries {
     CHAR name[LALNameLength];         /**< The name of the time series. */
     LIGOTimeGPS epoch; /**< The start time of the time series. */
     REAL8 deltaT;        /**< The time step between samples of the time series in seconds. */ REAL8 f0;        /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
@@ -591,8 +546,7 @@ tagUINT2TimeSeries {
 } UINT2TimeSeries;
 
 /** Time series of INT4 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagINT4TimeSeries {
+typedef struct tagINT4TimeSeries {
     CHAR name[LALNameLength];        /**< The name of the time series. */
     LIGOTimeGPS epoch; /**< The start time of the time series. */
     REAL8 deltaT;       /**< The time step between samples of the time series in seconds. */
@@ -602,8 +556,7 @@ tagINT4TimeSeries {
 } INT4TimeSeries;
 
 /** Time series of UINT4 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagUINT4TimeSeries {
+typedef struct tagUINT4TimeSeries {
     CHAR name[LALNameLength];         /**< The name of the time series. */
     LIGOTimeGPS epoch; /**< The start time of the time series. */
     REAL8 deltaT;        /**< The time step between samples of the time series in seconds. */
@@ -613,8 +566,7 @@ tagUINT4TimeSeries {
 } UINT4TimeSeries;
 
 /** Time series of INT8 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagINT8TimeSeries {
+typedef struct tagINT8TimeSeries {
     CHAR name[LALNameLength];        /**< The name of the time series. */
     LIGOTimeGPS epoch; /**< The start time of the time series. */
     REAL8 deltaT;       /**< The time step between samples of the time series in seconds. */
@@ -624,8 +576,7 @@ tagINT8TimeSeries {
 } INT8TimeSeries;
 
 /** Time series of UINT8 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagUINT8TimeSeries {
+typedef struct tagUINT8TimeSeries {
     CHAR name[LALNameLength];         /**< The name of the time series. */
     LIGOTimeGPS epoch; /**< The start time of the time series. */
     REAL8 deltaT;        /**< The time step between samples of the time series in seconds. */
@@ -635,8 +586,7 @@ tagUINT8TimeSeries {
 } UINT8TimeSeries;
 
 /** Time series of REAL4 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagREAL4TimeSeries {
+typedef struct tagREAL4TimeSeries {
     CHAR name[LALNameLength];         /**< The name of the time series. */
     LIGOTimeGPS epoch; /**< The start time of the time series. */
     REAL8 deltaT;        /**< The time step between samples of the time series in seconds. */
@@ -646,8 +596,7 @@ tagREAL4TimeSeries {
 } REAL4TimeSeries;
 
 /** Time series of REAL8 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagREAL8TimeSeries {
+typedef struct tagREAL8TimeSeries {
     CHAR name[LALNameLength];         /**< The name of the time series. */
     LIGOTimeGPS epoch; /**< The start time of the time series. */
     REAL8 deltaT;        /**< The time step between samples of the time series in seconds. */
@@ -657,8 +606,7 @@ tagREAL8TimeSeries {
 } REAL8TimeSeries;
 
 /** Time series of COMPLEX8 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagCOMPLEX8TimeSeries {
+typedef struct tagCOMPLEX8TimeSeries {
     CHAR name[LALNameLength];            /**< The name of the time series. */
     LIGOTimeGPS epoch;     /**< The start time of the time series. */
     REAL8 deltaT;           /**< The time step between samples of the time series in seconds. */
@@ -668,8 +616,7 @@ tagCOMPLEX8TimeSeries {
 } COMPLEX8TimeSeries;
 
 /** Time series of COMPLEX16 data, see \ref ss_TimeSeries for more details. */
-typedef struct
-tagCOMPLEX16TimeSeries {
+typedef struct tagCOMPLEX16TimeSeries {
     CHAR name[LALNameLength];             /**< The name of the time series. */
     LIGOTimeGPS epoch;      /**< The start time of the time series. */
     REAL8 deltaT;            /**< The time step between samples of the time series in seconds. */
@@ -682,8 +629,7 @@ tagCOMPLEX16TimeSeries {
     /* ---------- TimeVectorSeries types ---------- */
 
 /** Time series of INT2 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagINT2TimeVectorSeries {
+typedef struct tagINT2TimeVectorSeries {
     CHAR name[LALNameLength];               /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;        /**< The start time of the time series of vectors. */
     REAL8 deltaT;              /**< The time step between samples of the time series of vectors in seconds. */
@@ -693,8 +639,7 @@ tagINT2TimeVectorSeries {
 } INT2TimeVectorSeries;
 
 /** Time series of UINT2 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagUINT2TimeVectorSeries {
+typedef struct tagUINT2TimeVectorSeries {
     CHAR name[LALNameLength];               /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;        /**< The start time of the time series of vectors. */
     REAL8 deltaT;              /**< The time step between samples of the time series of vectors in seconds. */
@@ -704,8 +649,7 @@ tagUINT2TimeVectorSeries {
 } UINT2TimeVectorSeries;
 
 /** Time series of INT4 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagINT4TimeVectorSeries {
+typedef struct tagINT4TimeVectorSeries {
     CHAR name[LALNameLength];               /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;        /**< The start time of the time series of vectors. */
     REAL8 deltaT;              /**< The time step between samples of the time series of vectors in seconds. */
@@ -715,8 +659,7 @@ tagINT4TimeVectorSeries {
 } INT4TimeVectorSeries;
 
 /** Time series of UINT4 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagUINT4TimeVectorSeries {
+typedef struct tagUINT4TimeVectorSeries {
     CHAR name[LALNameLength];               /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;        /**< The start time of the time series of vectors. */
     REAL8 deltaT;              /**< The time step between samples of the time series of vectors in seconds. */
@@ -726,8 +669,7 @@ tagUINT4TimeVectorSeries {
 } UINT4TimeVectorSeries;
 
 /** Time series of INT8 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagINT8TimeVectorSeries {
+typedef struct tagINT8TimeVectorSeries {
     CHAR name[LALNameLength];               /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;        /**< The start time of the time series of vectors. */
     REAL8 deltaT;              /**< The time step between samples of the time series of vectors in seconds. */
@@ -737,8 +679,7 @@ tagINT8TimeVectorSeries {
 } INT8TimeVectorSeries;
 
 /** Time series of UINT8 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagUINT8TimeVectorSeries {
+typedef struct tagUINT8TimeVectorSeries {
     CHAR name[LALNameLength];               /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;        /**< The start time of the time series of vectors. */
     REAL8 deltaT;              /**< The time step between samples of the time series of vectors in seconds. */
@@ -748,8 +689,7 @@ tagUINT8TimeVectorSeries {
 } UINT8TimeVectorSeries;
 
 /** Time series of REAL4 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagREAL4TimeVectorSeries {
+typedef struct tagREAL4TimeVectorSeries {
     CHAR name[LALNameLength];               /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;        /**< The start time of the time series of vectors. */
     REAL8 deltaT;              /**< The time step between samples of the time series of vectors in seconds. */
@@ -759,8 +699,7 @@ tagREAL4TimeVectorSeries {
 } REAL4TimeVectorSeries;
 
 /** Time series of REAL8 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagREAL8TimeVectorSeries {
+typedef struct tagREAL8TimeVectorSeries {
     CHAR name[LALNameLength];               /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;        /**< The start time of the time series of vectors. */
     REAL8 deltaT;              /**< The time step between samples of the time series of vectors in seconds. */
@@ -770,8 +709,7 @@ tagREAL8TimeVectorSeries {
 } REAL8TimeVectorSeries;
 
 /** Time series of COMPLEX8 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagCOMPLEX8TimeVectorSeries {
+typedef struct tagCOMPLEX8TimeVectorSeries {
     CHAR name[LALNameLength];                   /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;            /**< The start time of the time series of vectors. */
     REAL8 deltaT;                  /**< The time step between samples of the time series of vectors in seconds. */
@@ -781,8 +719,7 @@ tagCOMPLEX8TimeVectorSeries {
 } COMPLEX8TimeVectorSeries;
 
 /** Time series of COMPLEX16 vectors, see \ref ss_TimeVectorSeries for more details. */
-typedef struct
-tagCOMPLEX16TimeVectorSeries {
+typedef struct tagCOMPLEX16TimeVectorSeries {
     CHAR name[LALNameLength];                    /**< The name of the time series of vectors. */
     LIGOTimeGPS epoch;             /**< The start time of the time series of vectors. */
     REAL8 deltaT;                   /**< The time step between samples of the time series of vectors in seconds. */
@@ -795,8 +732,7 @@ tagCOMPLEX16TimeVectorSeries {
 /* ---------- TimeArraySeries ---------- */
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagINT2TimeArraySeries {
+typedef struct tagINT2TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -806,8 +742,7 @@ tagINT2TimeArraySeries {
 } INT2TimeArraySeries;
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagUINT2TimeArraySeries {
+typedef struct tagUINT2TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -817,8 +752,7 @@ tagUINT2TimeArraySeries {
 } UINT2TimeArraySeries;
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagINT4TimeArraySeries {
+typedef struct tagINT4TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -828,8 +762,7 @@ tagINT4TimeArraySeries {
 } INT4TimeArraySeries;
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagUINT4TimeArraySeries {
+typedef struct tagUINT4TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -839,8 +772,7 @@ tagUINT4TimeArraySeries {
 } UINT4TimeArraySeries;
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagINT8TimeArraySeries {
+typedef struct tagINT8TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -850,8 +782,7 @@ tagINT8TimeArraySeries {
 } INT8TimeArraySeries;
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagUINT8TimeArraySeries {
+typedef struct tagUINT8TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -861,8 +792,7 @@ tagUINT8TimeArraySeries {
 } UINT8TimeArraySeries;
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagREAL4TimeArraySeries {
+typedef struct tagREAL4TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -872,8 +802,7 @@ tagREAL4TimeArraySeries {
 } REAL4TimeArraySeries;
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagREAL8TimeArraySeries {
+typedef struct tagREAL8TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -883,8 +812,7 @@ tagREAL8TimeArraySeries {
 } REAL8TimeArraySeries;
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagCOMPLEX8TimeArraySeries {
+typedef struct tagCOMPLEX8TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -894,8 +822,7 @@ tagCOMPLEX8TimeArraySeries {
 } COMPLEX8TimeArraySeries;
 
 /** See \ref ss_TimeArraySeries for documentation */
-typedef struct
-tagCOMPLEX16TimeArraySeries {
+typedef struct tagCOMPLEX16TimeArraySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 deltaT;
@@ -908,8 +835,7 @@ tagCOMPLEX16TimeArraySeries {
 /* ---------- FrequencySeries types ---------- */
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagINT2FrequencySeries {
+typedef struct tagINT2FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -919,8 +845,7 @@ tagINT2FrequencySeries {
 } INT2FrequencySeries;
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagUINT2FrequencySeries {
+typedef struct tagUINT2FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -930,8 +855,7 @@ tagUINT2FrequencySeries {
 } UINT2FrequencySeries;
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagINT4FrequencySeries {
+typedef struct tagINT4FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -941,8 +865,7 @@ tagINT4FrequencySeries {
 } INT4FrequencySeries;
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagUINT4FrequencySeries {
+typedef struct tagUINT4FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -952,8 +875,7 @@ tagUINT4FrequencySeries {
 } UINT4FrequencySeries;
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagINT8FrequencySeries {
+typedef struct tagINT8FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -963,8 +885,7 @@ tagINT8FrequencySeries {
 } INT8FrequencySeries;
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagUINT8FrequencySeries {
+typedef struct tagUINT8FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -974,8 +895,7 @@ tagUINT8FrequencySeries {
 } UINT8FrequencySeries;
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagREAL4FrequencySeries {
+typedef struct tagREAL4FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -985,8 +905,7 @@ tagREAL4FrequencySeries {
 } REAL4FrequencySeries;
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagREAL8FrequencySeries {
+typedef struct tagREAL8FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -996,8 +915,7 @@ tagREAL8FrequencySeries {
 } REAL8FrequencySeries;
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagCOMPLEX8FrequencySeries {
+typedef struct tagCOMPLEX8FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -1007,8 +925,7 @@ tagCOMPLEX8FrequencySeries {
 } COMPLEX8FrequencySeries;
 
 /** See \ref ss_FrequencySeries for documentation */
-typedef struct
-tagCOMPLEX16FrequencySeries {
+typedef struct tagCOMPLEX16FrequencySeries {
     CHAR name[LALNameLength];
     LIGOTimeGPS epoch;
     REAL8 f0;
@@ -1020,8 +937,7 @@ tagCOMPLEX16FrequencySeries {
 /* ---------- ZPGFilter types ---------- */
 
 /** See \ref ss_ZPGFilter for details */
-typedef struct
-tagCOMPLEX8ZPGFilter {
+typedef struct tagCOMPLEX8ZPGFilter {
     CHAR name[LALNameLength];
     REAL8 deltaT;
     COMPLEX8Vector *zeros;
@@ -1030,8 +946,7 @@ tagCOMPLEX8ZPGFilter {
 } COMPLEX8ZPGFilter;
 
 /** See \ref ss_ZPGFilter for details */
-typedef struct
-tagCOMPLEX16ZPGFilter {
+typedef struct tagCOMPLEX16ZPGFilter {
     CHAR name[LALNameLength];
     REAL8 deltaT;
     COMPLEX16Vector *zeros;
@@ -1047,8 +962,7 @@ tagCOMPLEX16ZPGFilter {
 /** \ingroup LALStatusMacros_h
  * \brief LAL status structure, see \ref ss_LALStatus for more details.
  */
-typedef struct
-tagLALStatus {
+typedef struct tagLALStatus {
     INT4 statusCode;                            /**< A numerical code identifying the type of error, or 0 for nominal status; Negative values are reserved for certain standard error types */
     const CHAR *statusDescription;              /**< An explanatory string corresponding to the numerical status code */
     volatile const CHAR *Id;                    /**< A character string identifying the source file and version number of the function being reported on */
