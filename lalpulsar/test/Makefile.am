@@ -21,7 +21,6 @@ check_PROGRAMS = \
 	PtoleMeshTest \
 	PtoleMetricTest \
 	PulsarCatTest \
-	ResampleTest \
 	SFTfileIOTest \
 	SimulateTaylorCWTest \
 	SkyMetricTest \
