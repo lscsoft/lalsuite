@@ -47,8 +47,7 @@ HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 			  StackSlideFstat.c StackSlideFstat.h \
 			  HoughFStatToplist.c HoughFStatToplist.h \
 			  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
-			  $(FDSsrc)/ComputeFStatistic.h \
-			  $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.h $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.c
+			  $(FDSsrc)/ComputeFStatistic.h
 
 lalapps_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources)
 
@@ -56,7 +55,6 @@ lalapps_RecalcHSCandidates_SOURCES = RecalcHSCandidates.c HierarchicalSearch.h \
 				  HoughFStatToplist.c HoughFStatToplist.h \
 				  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
 				  $(FDSsrc)/ComputeFStatistic.h \
-				  $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.h $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.c \
 				  $(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h
 
 

@@ -110,9 +110,24 @@
  *
  */
 
-#include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "HierarchicalSearch.h"
 
+typedef struct tagMultiSFTVectorSequence {
+  UINT4 length;     		/**< number of segments */
+  MultiSFTVector **data; 	/**< the SFT vectors */
+} MultiSFTVectorSequence;
+
+/** sequence of Multi-noise weights vectors -- for each segment */
+typedef struct tagMultiNoiseWeightsSequence {
+  UINT4 length;     		/**< number of segments */
+  MultiNoiseWeights **data; 	/**< the noise weights */
+} MultiNoiseWeightsSequence;
+
+/** sequence of Multi-detector state vectors -- for each segment */
+typedef struct tagMultiDetectorStateSeriesSequence {
+  UINT4 length;     		/**< number of segments */
+  MultiDetectorStateSeries **data; /**< the detector state series */
+} MultiDetectorStateSeriesSequence;
 
 /* This need to go here after HierarchicalSearch.h is included;
    StackSlideFstat.h needs SemiCohCandidateList defined. */
@@ -441,10 +456,6 @@ int MAIN( int argc, char *argv[]) {
 
   BOOLEAN uvar_correctFreqs = TRUE;
 
-#ifndef GPUREADY_DEFAULT
-#define GPUREADY_DEFAULT 0
-#endif
-  BOOLEAN uvar_GPUready = GPUREADY_DEFAULT;
   INT4 uvar_gpu_device = -1;
   global_status = &status;
 
@@ -528,7 +539,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0, UVAR_DEVELOPER, "Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "correctFreqs", 0, UVAR_DEVELOPER, "Correct candidate output frequencies (ie fix bug #147). Allows reproducing 'historical results'", &uvar_correctFreqs), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "device",       0, UVAR_DEVELOPER, "GPU device id", &uvar_gpu_device ), &status);
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
@@ -974,7 +984,6 @@ int MAIN( int argc, char *argv[]) {
     {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
-      ComputeFBufferREAL4V cfvBuffer = empty_ComputeFBufferREAL4V;
 
       /* if (skyGridCounter == 25965) { */
 
@@ -1074,7 +1083,6 @@ int MAIN( int argc, char *argv[]) {
 
       } /* fstat memory allocation block */
 
-      cfvBuffer = empty_ComputeFBufferREAL4V;
 
 	/* loop over fdot values
 	   -- spindown range and resolutionhas been set earlier */
@@ -1090,8 +1098,6 @@ int MAIN( int argc, char *argv[]) {
 
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
-          if ( !uvar_GPUready )
-            {
               for ( k = 0; k < nStacks; k++)
                 {
                   /* set spindown value for Fstat calculation */
@@ -1105,24 +1111,6 @@ int MAIN( int argc, char *argv[]) {
                                                    stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
                                                    stackMultiDetStates.data[k], &CFparams), &status);
                 } /* for k < nStacks */
-            }
-          else	/* run "GPU-ready" REAL4 version aiming at maximum parallelism for GPU optimization */
-            {
-              /* set spindown value for Fstat calculation */
-              thisPoint.fkdot[1] = usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot;
-              thisPoint.fkdot[0] = fstatVector.data[0].f0;
-              /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
-
-              /* this is the most costly function. We here allow for using an architecture-specific optimized
-               * function from e.g. a local file instead of the standard ComputeFStatFreqBand() from LAL */
-              if ( XLALComputeFStatFreqBandVector ( &fstatVector, &thisPoint, &stackMultiSFT, &stackMultiNoiseWeights,
-                                                    &stackMultiDetStates, CFparams.Dterms, &cfvBuffer) != XLAL_SUCCESS )
-                {
-                  LogPrintf (LOG_CRITICAL, "main(): XLALComputeFStatFreqBandVector() failed with errno = %d\n", xlalErrno );
-                  return XLAL_EFUNC;
-                }
-
-            } /* if GPUready */
 
           LogPrintfVerbatim(LOG_DETAIL, "done\n");
 
@@ -1209,7 +1197,6 @@ int MAIN( int argc, char *argv[]) {
 
 	} /* end loop over coarse grid fdot values */
 
-      XLALEmptyComputeFBufferREAL4V ( &cfvBuffer );
 
       /* continue forward till the end if uvar_skyPointIndex is set
 	 ---This probably doesn't make sense when checkpointing is turned on */
