@@ -624,7 +624,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     /* intermediate variables */
     UINT4 i, cutlen, len;
     int sgn, offset;
-    REAL8 norm, dtStart, dtEnd, lengths, wEnd, m1sec, m2sec, Msec, Mcsec;
+    REAL8 norm, dtStart, dtEnd, lengths, wEnd, m1sec, m2sec, Msec, Mcsec, fTerm;
     LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
 
     /* Check start and end frequencies are positive */
@@ -823,6 +823,11 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
 
     /* Adjust tStart so last sample is at time=0 */
     XLALGPSAdd(&tStart, -1.0*(cutlen-1)*deltaT);
+
+    // Report termination condition and final frequency
+    // Will only report this info if '4' bit of lalDebugLevel is 1
+    fTerm = yout->data[2*len+cutlen-1] / LAL_PI / Msec;
+    XLALPrintInfo("XLAL Info - %s: integration terminated with code %d. The final GW frequency reached was %g\n", __func__, intreturn, fTerm);
 
     /* allocate memory for output vectors */
     *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", &tStart, 0., 
