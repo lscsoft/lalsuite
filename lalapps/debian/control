@@ -16,6 +16,7 @@ Standards-Version: 3.8.6
 Package: lalapps
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
+  python-healpy,
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, zlib1g,
   libframe1 (>= 8.0), libmetaio1 (>= 8.2), lal (>= 6.10.0),
   lalframe (>= 1.0.10), lalmetaio (>= 1.1.0), lalsimulation (>= 0.7.0),
