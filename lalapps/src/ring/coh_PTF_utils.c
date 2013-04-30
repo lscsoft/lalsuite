@@ -576,14 +576,22 @@ RingDataSegments *coh_PTF_get_segments(
 void coh_PTF_create_time_slide_table(
   struct coh_PTF_params   *params,
   INT8                    *slideIDList,
+  RingDataSegments        **segments,
   TimeSlide               **time_slide_headP,
+  TimeSlideSegmentMapTable **time_slide_map_headP,
+  SegmentTable            **segment_table_headP,
   TimeSlideVectorList     **longTimeSlideListP,
   TimeSlideVectorList     **shortTimeSlideListP,
   REAL4                   *timeSlideVectors,
   INT4                    numSegments
 )
 {
-  TimeSlide *time_slide_head;
+  TimeSlide *time_slide_head = NULL;
+  TimeSlide *curr_slide = NULL;
+  TimeSlideSegmentMapTable *time_slide_map_head = NULL;
+  TimeSlideSegmentMapTable *curr_time_slide_map = NULL;
+  SegmentTable *segment_table_head = NULL;
+  SegmentTable *curr_slide_segment = NULL;
   TimeSlideVectorList *longTimeSlideList = LALCalloc(\
       numSegments, sizeof(TimeSlideVectorList));
   CHAR ifoName[LIGOMETA_IFO_MAX];
@@ -591,7 +599,9 @@ void coh_PTF_create_time_slide_table(
   UINT4 shortSlideCount = 0;
   INT4 i;
   UINT4 ui,uj,ifoNumber,ifoNum,lastStartPoint,wrapPoint,currId,ifoCount;
+  UINT4 slideSegmentCount;
   REAL8 currBaseOffset,currBaseIfoOffset[LAL_NUM_IFO],wrapTime,currIfoOffset;
+  LIGOTimeGPS slideStartTime,slideEndTime;
 
   /* First construct the list of long slides */
   for (i = 0 ; i < numSegments ; i++)
@@ -744,9 +754,6 @@ void coh_PTF_create_time_slide_table(
   } /* End if do short slides */
   sanity_check(shortSlideCount == params->numShortSlides);
 
-  time_slide_head=NULL;
-  TimeSlide *curr_slide = NULL;
-
   /* Time slide table will contain every long+short slide combination */
   for (ui = 0 ; ui < longSlideCount; ui++)
   { /* Loop over long slides */
@@ -755,6 +762,21 @@ void coh_PTF_create_time_slide_table(
       /* Construct the ID from the current long and short slide */
       currId = longTimeSlideList[ui].timeSlideID*shortSlideCount;
       currId += shortTimeSlideList[uj].timeSlideID;
+      /* Create an entry in the time_slide_map */
+      if (! time_slide_map_head)
+      {
+        time_slide_map_head=XLALCreateTimeSlideSegmentMapTableRow();
+        curr_time_slide_map = time_slide_map_head;
+      }
+      else
+      {
+        curr_time_slide_map->next = XLALCreateTimeSlideSegmentMapTableRow();
+        curr_time_slide_map = curr_time_slide_map->next;
+      }
+      /* Set the ID in the time_slide_table */
+      curr_time_slide_map->time_slide_id = currId;
+      curr_time_slide_map->segment_def_id = currId;
+
       for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
         if (params->haveTrig[ifoNumber])
@@ -781,13 +803,59 @@ void coh_PTF_create_time_slide_table(
               longTimeSlideList[ui].timeSlideVectors[ifoNumber];
           curr_slide->offset += \
               shortTimeSlideList[uj].timeSlideVectors[ifoNumber];
-          /* Not sure what a process ID means, so set to 0 */
+          /* Process IDs will be 0 */
           curr_slide->process_id=0;
         }
       } /* End ifo loop */
     } /* End short slide loop */
   } /* End long slide loop */
+
+  /* Now we construct the list of analysed segments for each time slide_id
+   * This will be a segment for *every* segment+short_slide combination */ 
+  slideSegmentCount = 0;
+  for (i = 0 ; i < numSegments ; i++)
+  { /* Loop over segments */
+    for (uj = 0 ; uj < shortSlideCount; uj++)
+    { /* Loop over short slides */
+      /* Contruct the ID form the current long+short slide */
+      currId = slideIDList[i]*shortSlideCount;
+      currId += shortTimeSlideList[uj].timeSlideID;
+      /* Construct the segment start and end times */
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          slideStartTime = segments[ifoNumber]->sgmnt[i].epoch; 
+          slideEndTime = segments[ifoNumber]->sgmnt[i].epoch;
+        }
+      }
+      XLALGPSAdd(&slideStartTime, \
+          ((REAL8)shortTimeSlideList[uj].analStartPoint) / params->sampleRate );
+      XLALGPSAdd(&slideEndTime, \
+          ((REAL8)shortTimeSlideList[uj].analEndPoint) / params->sampleRate );
+      /* Add this to the segment table */
+      if (! segment_table_head)
+      { /* Create table if it doesn't exist */
+        segment_table_head=XLALCreateSegmentTableRow(NULL);
+        curr_slide_segment= segment_table_head;
+      }
+      else
+      { /* Or setup the next entry in the linked list */
+        curr_slide_segment->next=XLALCreateSegmentTableRow(NULL);
+        curr_slide_segment = curr_slide_segment->next;
+      }
+      curr_slide_segment->segment_id = slideSegmentCount;
+      curr_slide_segment->segment_def_id = currId;
+      curr_slide_segment->start_time = slideStartTime;
+      curr_slide_segment->end_time = slideEndTime;
+      curr_slide_segment->process_id = 0;
+      slideSegmentCount++;
+    }
+  }
+
   *time_slide_headP = time_slide_head;
+  *time_slide_map_headP = time_slide_map_head;
+  *segment_table_headP = segment_table_head;
   *shortTimeSlideListP = shortTimeSlideList;
   *longTimeSlideListP = longTimeSlideList;
 }
@@ -2435,7 +2503,9 @@ void coh_PTF_cleanup(
     TimeSlideVectorList     *shortTimeSlideList,
     REAL4                   *timeSlideVectors,
     LALDetector             **detectors,
-    INT8                    *slideIDList
+    INT8                    *slideIDList,
+    TimeSlideSegmentMapTable *time_slide_map_head,
+    SegmentTable            *segment_table_head
 )
 {
   if ( params->injectList )
@@ -2570,6 +2640,10 @@ void coh_PTF_cleanup(
   }
   if (time_slide_head)
     XLALDestroyTimeSlideTable(time_slide_head);
+  if (time_slide_map_head)
+    XLALDestroyTimeSlideSegmentMapTable(time_slide_map_head);
+  if (segment_table_head)
+    XLALDestroySegmentTable(segment_table_head);
   if (longTimeSlideList)
     LALFree(longTimeSlideList);
   if (shortTimeSlideList)

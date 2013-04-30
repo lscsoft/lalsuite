@@ -445,7 +445,10 @@ RingDataSegments *coh_PTF_get_segments(
 void coh_PTF_create_time_slide_table(
   struct coh_PTF_params   *params,
   INT8                    *slideIDList,
+  RingDataSegments        **segments,
   TimeSlide               **time_slide_headP,
+  TimeSlideSegmentMapTable **time_slide_map_headP,
+  SegmentTable            **segment_table_headP,
   TimeSlideVectorList     **longTimeSlideListP,
   TimeSlideVectorList     **shortTimeSlideListP,
   REAL4                   *timeSlideVectors,
@@ -805,7 +808,9 @@ void coh_PTF_cleanup(
     TimeSlideVectorList     *shortTimeSlideList,
     REAL4                   *timeSlideVectors,
     LALDetector             **detectors,
-    INT8                    *slideIDList
+    INT8                    *slideIDList,
+    TimeSlideSegmentMapTable *time_slide_map_head,
+    SegmentTable            *segment_table_head
 );
 
 REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
@@ -1049,12 +1054,14 @@ ProcessParamsTable * create_process_params(
 
 int coh_PTF_output_events_xml(
     char               *outputFile,
-    MultiInspiralTable *events,
+    MultiInspiralTable  *events,
     SimInspiralTable *injections,
     ProcessParamsTable *processParamsTable,
     TimeSlide          *time_slide_head,
+    TimeSlideSegmentMapTable *time_slide_map_head,
+    SegmentTable       *segment_table_head,
     struct coh_PTF_params *params
-);
+    );
 
 int coh_PTF_output_tmpltbank(
     char               *outputFile,

@@ -44,6 +44,8 @@ int main(int argc, char **argv)
   TimeSlide *time_slide_head = NULL;
   TimeSlideVectorList *longTimeSlideList = NULL;
   TimeSlideVectorList * shortTimeSlideList = NULL;
+  SegmentTable *segment_table_head = NULL;
+  TimeSlideSegmentMapTable *time_slide_map_head = NULL;
 
   /* FFT structures */
   REAL4FFTPlan             *fwdplan                 = NULL;
@@ -191,7 +193,8 @@ int main(int argc, char **argv)
    *------------------------------------------------------------------------*/
 
   slideIDList = LALCalloc(1, numSegments*sizeof(INT8));
-  coh_PTF_create_time_slide_table(params,slideIDList,&time_slide_head,\
+  coh_PTF_create_time_slide_table(params,slideIDList,segments,&time_slide_head,\
+                                  &time_slide_map_head,&segment_table_head,\
                                   &longTimeSlideList,&shortTimeSlideList,\
                                   timeSlideVectors,numSegments);
                              
@@ -608,7 +611,8 @@ int main(int argc, char **argv)
 
   /* Output events to xml */
   coh_PTF_output_events_xml(params->outputFile, eventList, params->injectList,\
-                            procpar, time_slide_head, params);
+                            procpar, time_slide_head, time_slide_map_head,\
+                            segment_table_head, params);
 
   /* Everything that follows is memory cleanup */
   coh_PTF_destroy_time_series(cohSNR,nullSNR,traceSNR,bankVeto,autoVeto,\
@@ -618,7 +622,8 @@ int main(int argc, char **argv)
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,slidTimeOffsets,Fplus,Fcross,\
       Fplustrig,Fcrosstrig,skyPoints,time_slide_head,longTimeSlideList,
-      shortTimeSlideList,timeSlideVectors,detectors, slideIDList);
+      shortTimeSlideList,timeSlideVectors,detectors, slideIDList,\
+      time_slide_map_head,segment_table_head);
   
   coh_PTF_free_veto_memory(params,bankNormOverlaps,bankFcTmplts,bankOverlaps,\
       dataOverlaps,autoTempOverlaps);
