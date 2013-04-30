@@ -909,6 +909,12 @@ int XLALGetInteractionFromString(const CHAR *inString);
 int XLALGetFrameAxisFromString(const CHAR *inString);
 
 /** 
+ * XLAL function to determine mode flag from a string.
+ * Returns one of enum values as name matches case of enum.
+ */
+int XLALGetHigherModesFromString(const CHAR *inString);
+
+/** 
  * XLAL function to determine adaptive integration flag from a string.  Returns
  * 1 if string contains 'fixedStep', otherwise returns 0 to signal 
  * adaptive integration should be used.
