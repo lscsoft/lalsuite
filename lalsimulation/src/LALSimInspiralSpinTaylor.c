@@ -1008,10 +1008,10 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
     // Copy current value of domega to prev. value of domega for next call
     params->prev_domega = dvalues[1];
 
-    if( abs(omegaEnd) > LAL_REAL4_EPS && omegaEnd > omegaStart
+    if( fabs(omegaEnd) > LAL_REAL4_EPS && omegaEnd > omegaStart
                 && omega > omegaEnd) /* freq. above bound */
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
-    else if( abs(omegaEnd) > LAL_REAL4_EPS && omegaEnd < omegaStart
+    else if( fabs(omegaEnd) > LAL_REAL4_EPS && omegaEnd < omegaStart
                 && omega < omegaEnd) /* freq. below bound */
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
     else if (test < 0.0) /* energy test fails! */
