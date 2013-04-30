@@ -35,12 +35,13 @@
 */
 
 /* use error codes above 1024 to avoid conflicts with GSL */
-#define LALSIMINSPIRAL_ST_TEST_ENERGY 			1025
-#define LALSIMINSPIRAL_ST_TEST_OMEGADOT 		1026
-#define LALSIMINSPIRAL_ST_TEST_COORDINATE 		1027
-#define LALSIMINSPIRAL_ST_TEST_OMEGANAN 		1028
-#define LALSIMINSPIRAL_ST_TEST_FREQBOUND 		1029
-#define LALSIMINSPIRAL_ST_DERIVATIVE_OMEGANONPOS 	1030
+#define LALSIMINSPIRAL_ST_TEST_ENERGY               1025
+#define LALSIMINSPIRAL_ST_TEST_OMEGADOT             1026
+#define LALSIMINSPIRAL_ST_TEST_COORDINATE           1027
+#define LALSIMINSPIRAL_ST_TEST_OMEGANAN             1028
+#define LALSIMINSPIRAL_ST_TEST_FREQBOUND            1029
+#define LALSIMINSPIRAL_ST_DERIVATIVE_OMEGANONPOS    1030
+#define LALSIMINSPIRAL_ST_TEST_LARGEV               1031
 
 /* (2x) Highest available PN order - UPDATE IF NEW ORDERS ADDED!!*/
 #define LAL_MAX_PN_ORDER 8
@@ -901,6 +902,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
  *		2) The orbital frequency begins decreasing
  *		3) The orbital frequency becomes infinite 
  *		4) The orbital frequency has gone outside the requested bounds
+ *      5) The PN parameter v/c becomes >= 1
  * SpinTaylorT4 and SpinTaylorT2 both use this same stopping test
  */
 static int XLALSimInspiralSpinTaylorStoppingTest(
@@ -1001,6 +1003,8 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
         return LALSIMINSPIRAL_ST_TEST_OMEGADOT;
     else if isnan(omega) /* omega is nan! */
         return LALSIMINSPIRAL_ST_TEST_OMEGANAN;
+    else if (v >= 1.) // v/c >= 1!
+        return LALSIMINSPIRAL_ST_TEST_LARGEV;
     else /* Step successful, continue integrating */
         return GSL_SUCCESS;
 }
