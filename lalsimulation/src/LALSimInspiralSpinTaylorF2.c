@@ -373,14 +373,14 @@ int XLALSimInspiralSpinTaylorF2(
     const REAL8 pfa7 = LAL_PI * 5.L/756.L * ( 15419335.L/336.L + 75703.L/2.L * eta - 14809.L * eta*eta);
 
     /* flux coefficients */
-    const REAL8 FTaN = XLALSimInspiralTaylorT1Flux_0PNCoeff(eta);
-    const REAL8 FTa2 = XLALSimInspiralTaylorT1Flux_2PNCoeff(eta);
-    const REAL8 FTa3 = XLALSimInspiralTaylorT1Flux_3PNCoeff(eta);
-    const REAL8 FTa4 = XLALSimInspiralTaylorT1Flux_4PNCoeff(eta);
-    const REAL8 FTa5 = XLALSimInspiralTaylorT1Flux_5PNCoeff(eta);
-    const REAL8 FTl6 = XLALSimInspiralTaylorT1Flux_6PNLogCoeff(eta);
-    const REAL8 FTa6 = XLALSimInspiralTaylorT1Flux_6PNCoeff(eta);
-    const REAL8 FTa7 = XLALSimInspiralTaylorT1Flux_7PNCoeff(eta);
+    const REAL8 FTaN = XLALSimInspiralPNFlux_0PNCoeff(eta);
+    const REAL8 FTa2 = XLALSimInspiralPNFlux_2PNCoeff(eta);
+    const REAL8 FTa3 = XLALSimInspiralPNFlux_3PNCoeff(eta);
+    const REAL8 FTa4 = XLALSimInspiralPNFlux_4PNCoeff(eta);
+    const REAL8 FTa5 = XLALSimInspiralPNFlux_5PNCoeff(eta);
+    const REAL8 FTl6 = XLALSimInspiralPNFlux_6PNLogCoeff(eta);
+    const REAL8 FTa6 = XLALSimInspiralPNFlux_6PNCoeff(eta);
+    const REAL8 FTa7 = XLALSimInspiralPNFlux_7PNCoeff(eta);
 
     /* energy coefficients */
     const REAL8 dETaN = 2. * XLALSimInspiralPNEnergy_0PNCoeff(eta);
