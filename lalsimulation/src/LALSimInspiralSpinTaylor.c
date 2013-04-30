@@ -36,7 +36,7 @@
 
 /* use error codes above 1024 to avoid conflicts with GSL */
 #define LALSIMINSPIRAL_ST_TEST_ENERGY               1025
-#define LALSIMINSPIRAL_ST_TEST_OMEGADOT             1026
+#define LALSIMINSPIRAL_ST_TEST_OMEGADOUBLEDOT       1026
 #define LALSIMINSPIRAL_ST_TEST_COORDINATE           1027
 #define LALSIMINSPIRAL_ST_TEST_OMEGANAN             1028
 #define LALSIMINSPIRAL_ST_TEST_FREQBOUND            1029
@@ -102,6 +102,7 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
 	REAL8 fEnd; ///< ending GW frequency of integration
 	LALSimInspiralSpinOrder spinO; ///< Twice PN order of included spin effects
 	LALSimInspiralTidalOrder tideO;///< Twice PN order of included tidal effects
+	REAL8 prev_domega; ///< Previous value of domega/dt used in stopping test
 } XLALSimInspiralSpinTaylorTxCoeffs;
 
 
@@ -783,7 +784,6 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
 
     /* Print warning about abnormal termination */
     if (intreturn != 0 && intreturn != LALSIMINSPIRAL_ST_TEST_ENERGY
-            && intreturn != LALSIMINSPIRAL_ST_TEST_OMEGADOT
             && intreturn != LALSIMINSPIRAL_ST_TEST_FREQBOUND)
     {
         XLALPrintWarning("XLAL Warning - %s: integration terminated with code %d.\n Waveform parameters were m1 = %e, m2 = %e, s1 = (%e,%e,%e), s2 = (%e,%e,%e), inc = %e.\n", __func__, intreturn, m1 * pow(LAL_C_SI, 3.0) / LAL_G_SI / LAL_MSUN_SI, m2 * pow(LAL_C_SI, 3.0) / LAL_G_SI / LAL_MSUN_SI, s1x, s1y, s1z, s2x, s2y, s2z, acos(lnhatz));
@@ -912,7 +912,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
 	void *mparams
 	)
 {
-    REAL8 omega, v, test, omegaStart, omegaEnd;
+    REAL8 omega, v, test, omegaStart, omegaEnd, ddomega;
     REAL8 LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
     REAL8 LNdotS1, LNdotS2, S1dotS2, S1sq, S2sq;
     XLALSimInspiralSpinTaylorTxCoeffs *params 
@@ -993,18 +993,30 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
             + v * ( 9. * (params->Ecoeff[7] + Espin35)
 			+ v * v * v * ( 12. * params->Etidal5pn
 			+ v * v * ( 14. * params->Etidal6pn ) ) ) ) ) ) ) );
-    if( abs(omegaEnd) > LAL_REAL4_EPS && omegaEnd > omegaStart && omega > omegaEnd) /* freq. above bound */
+
+    // Check d^2omega/dt^2 > 0 (true iff current_domega - prev_domega > 0)
+    ddomega = dvalues[1] - params->prev_domega;
+    // ...but we can integrate forward or backward, so beware of the sign!
+    if ( params->fEnd < params->fStart && params->fEnd != 0.
+                && params->prev_domega != 0.)
+        ddomega *= -1;
+    // Copy current value of domega to prev. value of domega for next call
+    params->prev_domega = dvalues[1];
+
+    if( abs(omegaEnd) > LAL_REAL4_EPS && omegaEnd > omegaStart
+                && omega > omegaEnd) /* freq. above bound */
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
-    else if( abs(omegaEnd) > LAL_REAL4_EPS && omegaEnd < omegaStart && omega < omegaEnd) /* freq. below bound */
+    else if( abs(omegaEnd) > LAL_REAL4_EPS && omegaEnd < omegaStart
+                && omega < omegaEnd) /* freq. below bound */
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
     else if (test < 0.0) /* energy test fails! */
         return LALSIMINSPIRAL_ST_TEST_ENERGY;
-    else if (dvalues[1] < 0.0) /* omegadot < 0! */
-        return LALSIMINSPIRAL_ST_TEST_OMEGADOT;
     else if isnan(omega) /* omega is nan! */
         return LALSIMINSPIRAL_ST_TEST_OMEGANAN;
     else if (v >= 1.) // v/c >= 1!
         return LALSIMINSPIRAL_ST_TEST_LARGEV;
+    else if (ddomega <= 0.) // d^2omega/dt^2 <= 0!
+        return LALSIMINSPIRAL_ST_TEST_OMEGADOUBLEDOT;
     else /* Step successful, continue integrating */
         return GSL_SUCCESS;
 }
