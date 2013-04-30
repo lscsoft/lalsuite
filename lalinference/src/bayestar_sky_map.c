@@ -148,9 +148,8 @@ static int bayestar_sky_map_tdoa_not_normalized_log(
     int nifos, /* Input: number of detectors. */
     const double **locs, /* Input: array of detector positions. */
     const double *toas, /* Input: array of times of arrival. */
-    const double *s2_toas /* Input: uncertainties in times of arrival. */
+    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
 ) {
-    double t[nifos], w[nifos];
     long nside;
     long i;
 
@@ -158,17 +157,6 @@ static int bayestar_sky_map_tdoa_not_normalized_log(
     nside = npix2nside(npix);
     if (nside < 0)
         GSL_ERROR("output is not a valid HEALPix array", GSL_EINVAL);
-
-    /* Take reciprocal of measurement variances to get sum-of-squares weights. */
-    for (i = 0; i < nifos; i ++)
-        w[i] = 1 / s2_toas[i];
-
-    /* Subtract off zeroth TOA so that when we compare these with the expected
-     * time delays we are subtracting numbers of similar size (rather than
-     * subtracting gigaseconds from milliseconds). In exact arithmetic, this
-     * would not affect the final answer. */
-    for (i = 0; i < nifos; i ++)
-        t[i] = toas[i] - toas[0];
 
     /* Loop over pixels. */
     for (i = 0; i < npix; i ++)
@@ -189,10 +177,10 @@ static int bayestar_sky_map_tdoa_not_normalized_log(
         /* Loop over detectors. */
         double dt[nifos];
         for (j = 0; j < nifos; j ++)
-            dt[j] = t[j] + cblas_ddot(3, n, 1, locs[j], 1) / LAL_C_SI;
+            dt[j] = toas[j] + cblas_ddot(3, n, 1, locs[j], 1) / LAL_C_SI;
 
         /* Evaluate the (un-normalized) Gaussian log likelihood. */
-        P[i] = -0.5 * gsl_stats_wtss(w, 1, dt, 1, nifos);
+        P[i] = -0.5 * gsl_stats_wtss(w_toas, 1, dt, 1, nifos);
     }
 
     /* Done! */
@@ -213,7 +201,7 @@ static double *bayestar_sky_map_tdoa_adapt_resolution(
     int nifos, /* Input: number of detectors. */
     const double **locs, /* Input: array of detector positions. */
     const double *toas, /* Input: array of times of arrival. */
-    const double *s2_toas /* Input: uncertainties in times of arrival. */
+    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
 ) {
     int ret;
     double *P = NULL;
@@ -233,7 +221,7 @@ static double *bayestar_sky_map_tdoa_adapt_resolution(
             P = malloc(my_npix * sizeof(double));
             if (!P)
                 GSL_ERROR_NULL("failed to allocate output array", GSL_ENOMEM);
-            ret = bayestar_sky_map_tdoa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, s2_toas);
+            ret = bayestar_sky_map_tdoa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, w_toas);
             if (ret != GSL_SUCCESS)
             {
                 free(P);
@@ -255,7 +243,7 @@ static double *bayestar_sky_map_tdoa_adapt_resolution(
         P = malloc(my_npix * sizeof(double));
         if (!P)
             GSL_ERROR_NULL("failed to allocate output array", GSL_ENOMEM);
-        ret = bayestar_sky_map_tdoa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, s2_toas);
+        ret = bayestar_sky_map_tdoa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, w_toas);
         if (ret != GSL_SUCCESS)
         {
             free(P);
@@ -287,11 +275,11 @@ double *bayestar_sky_map_tdoa(
     int nifos, /* Input: number of detectors. */
     const double **locs, /* Input: array of detector positions. */
     const double *toas, /* Input: array of times of arrival. */
-    const double *s2_toas /* Input: uncertainties in times of arrival. */
+    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
 ) {
     long maxpix;
     gsl_permutation *pix_perm = NULL;
-    double *ret = bayestar_sky_map_tdoa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locs, toas, s2_toas);
+    double *ret = bayestar_sky_map_tdoa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locs, toas, w_toas);
     gsl_permutation_free(pix_perm);
     return ret;
 }
@@ -335,7 +323,7 @@ double *bayestar_sky_map_tdoa_snr(
     const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
     const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
     const double *snrs, /* Input: array of SNRs. */
-    const double *s2_toas, /* Measurement variance of TOAs. */
+    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
     const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
     double min_distance,
     double max_distance,
@@ -398,7 +386,7 @@ double *bayestar_sky_map_tdoa_snr(
     }
 
     /* Evaluate posterior term only first. */
-    P = bayestar_sky_map_tdoa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, s2_toas);
+    P = bayestar_sky_map_tdoa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas);
     if (!P)
         return NULL;
 

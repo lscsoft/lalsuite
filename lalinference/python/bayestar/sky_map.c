@@ -93,12 +93,12 @@ static PyObject *sky_map_tdoa(PyObject *module, PyObject *args, PyObject *kwargs
     long npix;
     long nifos = 0;
     double gmst;
-    PyObject *toas_obj, *toa_variances_obj, *locations_obj;
+    PyObject *toas_obj, *w_toas_obj, *locations_obj;
 
-    PyArrayObject *toas_npy = NULL, *toa_variances_npy = NULL, **locations_npy = NULL;
+    PyArrayObject *toas_npy = NULL, *w_toas_npy = NULL, **locations_npy = NULL;
 
     double *toas;
-    double *toa_variances;
+    double *w_toas;
     const double **locations = NULL;
 
     npy_intp dims[1];
@@ -109,14 +109,14 @@ static PyObject *sky_map_tdoa(PyObject *module, PyObject *args, PyObject *kwargs
 
     /* Names of arguments */
     static const char *keywords[] = {"gmst", "toas",
-        "toa_variances", "locations", "nside", NULL};
+        "w_toas", "locations", "nside", NULL};
 
     /* Silence warning about unused parameter. */
     (void)module;
 
     /* Parse arguments */
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dOOO|l", keywords,
-        &gmst, &toas_obj, &toa_variances_obj, &locations_obj, &nside))
+        &gmst, &toas_obj, &w_toas_obj, &locations_obj, &nside))
         goto fail;
 
     if (nside == -1)
@@ -136,14 +136,14 @@ static PyObject *sky_map_tdoa(PyObject *module, PyObject *args, PyObject *kwargs
     nifos = PyArray_DIM(toas_npy, 0);
     toas = PyArray_DATA(toas_npy);
 
-    toa_variances_npy = (PyArrayObject *) PyArray_ContiguousFromAny(toa_variances_obj, NPY_DOUBLE, 1, 1);
-    if (!toa_variances_npy) goto fail;
-    if (PyArray_DIM(toa_variances_npy, 0) != nifos)
+    w_toas_npy = (PyArrayObject *) PyArray_ContiguousFromAny(w_toas_obj, NPY_DOUBLE, 1, 1);
+    if (!w_toas_npy) goto fail;
+    if (PyArray_DIM(w_toas_npy, 0) != nifos)
     {
-        PyErr_SetString(PyExc_ValueError, "toas and toa_variances must have the same length");
+        PyErr_SetString(PyExc_ValueError, "toas and w_toas must have the same length");
         goto fail;
     }
-    toa_variances = PyArray_DATA(toa_variances_npy);
+    w_toas = PyArray_DATA(w_toas_npy);
 
     locations_npy = malloc(nifos * sizeof(PyObject *));
     if (!locations_npy)
@@ -183,7 +183,7 @@ static PyObject *sky_map_tdoa(PyObject *module, PyObject *args, PyObject *kwargs
     }
 
     old_handler = gsl_set_error_handler(my_gsl_error);
-    P = bayestar_sky_map_tdoa(&npix, gmst, nifos, locations, toas, toa_variances);
+    P = bayestar_sky_map_tdoa(&npix, gmst, nifos, locations, toas, w_toas);
     gsl_set_error_handler(old_handler);
 
     if (!P)
@@ -209,7 +209,7 @@ static PyObject *sky_map_tdoa(PyObject *module, PyObject *args, PyObject *kwargs
     out = NULL;
 fail:
     Py_XDECREF(toas_npy);
-    Py_XDECREF(toa_variances_npy);
+    Py_XDECREF(w_toas_npy);
     if (locations_npy)
         for (i = 0; i < nifos; i ++)
             Py_XDECREF(locations_npy[i]);
@@ -229,15 +229,15 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
     long npix;
     long nifos = 0;
     double gmst;
-    PyObject *toas_obj, *snrs_obj, *toa_variances_obj, *responses_obj,
+    PyObject *toas_obj, *snrs_obj, *w_toas_obj, *responses_obj,
         *locations_obj, *horizons_obj;
 
-    PyArrayObject *toas_npy = NULL, *snrs_npy = NULL, *toa_variances_npy = NULL, **responses_npy = NULL, **locations_npy = NULL, *horizons_npy = NULL;
+    PyArrayObject *toas_npy = NULL, *snrs_npy = NULL, *w_toas_npy = NULL, **responses_npy = NULL, **locations_npy = NULL, *horizons_npy = NULL;
     char *prior_str = NULL;
 
     double *toas;
     double *snrs;
-    double *toa_variances;
+    double *w_toas;
     /* FIXME: make const; change XLALComputeDetAMResponse prototype */
     /* const */ float **responses = NULL;
     const double **locations = NULL;
@@ -254,7 +254,7 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
 
     /* Names of arguments */
     static const char *keywords[] = {"gmst", "toas", "snrs",
-        "toa_variances", "responses", "locations", "horizons",
+        "w_toas", "responses", "locations", "horizons",
         "min_distance", "max_distance", "prior", "nside", NULL};
 
     /* Silence warning about unused parameter. */
@@ -262,7 +262,7 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
 
     /* Parse arguments */
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dOOOOOOdds|l", keywords,
-        &gmst, &toas_obj, &snrs_obj, &toa_variances_obj,
+        &gmst, &toas_obj, &snrs_obj, &w_toas_obj,
         &responses_obj, &locations_obj, &horizons_obj,
         &min_distance, &max_distance, &prior_str, &nside)) goto fail;
 
@@ -292,14 +292,14 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
     }
     snrs = PyArray_DATA(snrs_npy);
 
-    toa_variances_npy = (PyArrayObject *) PyArray_ContiguousFromAny(toa_variances_obj, NPY_DOUBLE, 1, 1);
-    if (!toa_variances_npy) goto fail;
-    if (PyArray_DIM(toa_variances_npy, 0) != nifos)
+    w_toas_npy = (PyArrayObject *) PyArray_ContiguousFromAny(w_toas_obj, NPY_DOUBLE, 1, 1);
+    if (!w_toas_npy) goto fail;
+    if (PyArray_DIM(w_toas_npy, 0) != nifos)
     {
-        PyErr_SetString(PyExc_ValueError, "toas and toa_variances must have the same length");
+        PyErr_SetString(PyExc_ValueError, "toas and w_toas must have the same length");
         goto fail;
     }
-    toa_variances = PyArray_DATA(toa_variances_npy);
+    w_toas = PyArray_DATA(w_toas_npy);
 
     responses_npy = malloc(nifos * sizeof(PyObject *));
     if (!responses_npy)
@@ -393,7 +393,7 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
     }
 
     old_handler = gsl_set_error_handler(my_gsl_error);
-    P = bayestar_sky_map_tdoa_snr(&npix, gmst, nifos, responses, locations, toas, snrs, toa_variances, horizons, min_distance, max_distance, prior);
+    P = bayestar_sky_map_tdoa_snr(&npix, gmst, nifos, responses, locations, toas, snrs, w_toas, horizons, min_distance, max_distance, prior);
     gsl_set_error_handler(old_handler);
 
     if (!P)
@@ -420,7 +420,7 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
 fail:
     Py_XDECREF(toas_npy);
     Py_XDECREF(snrs_npy);
-    Py_XDECREF(toa_variances_npy);
+    Py_XDECREF(w_toas_npy);
     if (responses_npy)
         for (i = 0; i < nifos; i ++)
             Py_XDECREF(responses_npy[i]);

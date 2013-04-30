@@ -132,13 +132,14 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
             m2 * lal.LAL_MSUN_SI,
             0, 4))) for m1, m2 in zip(mass1s, mass2s)]
 
-    # Convert TOAs from nanoseconds to seconds.
-    toas = 1e-9 * toas_ns
-
     # Find average Greenwich mean sidereal time of event.
     mean_toa_ns = sum(toas_ns) // len(toas_ns)
     epoch = lal.LIGOTimeGPS(0, long(mean_toa_ns))
     gmst = lal.GreenwichMeanSiderealTime(epoch)
+
+    # Convert TOAs from nanoseconds to seconds, subtracting off mean TOA
+    # to keep numbers small.
+    toas = 1e-9 * (toas_ns - mean_toa_ns)
 
     # Power spectra for each detector.
     if psds is None:
@@ -154,7 +155,7 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
 
     # Estimate TOA uncertainty (squared) using CRB or BRB evaluated at MEASURED
     # values of the SNRs.
-    s2_toas = [np.square(signal_model.get_toa_uncert(np.abs(snr)))
+    w_toas = [1/np.square(signal_model.get_toa_uncert(np.abs(snr)))
         for signal_model, snr in zip(signal_models, snrs)]
 
     # Look up physical parameters for detector.
@@ -176,9 +177,9 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     # Time and run sky localization.
     start_time = time.time()
     if method == "toa":
-        prob = sky_map.tdoa(gmst, toas, s2_toas, locations, nside=nside)
+        prob = sky_map.tdoa(gmst, toas, w_toas, locations, nside=nside)
     elif method == "toa_snr":
-        prob = sky_map.tdoa_snr(gmst, toas, snrs, s2_toas, responses, locations, horizons, min_distance, max_distance, prior, nside=nside)
+        prob = sky_map.tdoa_snr(gmst, toas, snrs, w_toas, responses, locations, horizons, min_distance, max_distance, prior, nside=nside)
     else:
         raise ValueError("Unrecognized method: %s" % method)
     end_time = time.time()
