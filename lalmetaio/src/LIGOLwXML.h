@@ -180,6 +180,16 @@ int XLALWriteLIGOLwXMLTimeSlideTable(
 	const TimeSlide *
 );
 
+int XLALWriteLIGOLwXMLSegmentTable(
+	LIGOLwXMLStream *xml,
+	const SegmentTable *segment_table
+);
+
+int XLALWriteLIGOLwXMLTimeSlideSegmentMapTable(
+	LIGOLwXMLStream *xml,
+	const TimeSlideSegmentMapTable *time_slide_seg_map
+);
+
 int XLALCreateLIGODataFileName(
         char* filename,
         size_t size,

@@ -126,6 +126,14 @@ SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *);
 void XLALDestroySearchSummaryTableRow(SearchSummaryTable *);
 void XLALDestroySearchSummaryTable(SearchSummaryTable *);
 
+SegmentTable *XLALCreateSegmentTableRow(const ProcessTable *process);
+void XLALDestroySegmentTableRow(SegmentTable *row);
+void XLALDestroySegmentTable(SegmentTable *head);
+
+TimeSlideSegmentMapTable *XLALCreateTimeSlideSegmentMapTableRow(void);
+void XLALDestroyTimeSlideSegmentMapTableRow(TimeSlideSegmentMapTable *row);
+void XLALDestroyTimeSlideSegmentMapTable(TimeSlideSegmentMapTable *head);
+
 int
 XLALCountProcessTable(
     ProcessTable *head
