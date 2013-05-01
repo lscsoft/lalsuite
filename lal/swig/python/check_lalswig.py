@@ -8,7 +8,7 @@ expected_exception = False
 # check module load
 import lal
 from lal import cvar as lalcvar
-lalcvar.lalDebugLevel = 1
+lalcvar.lalDebugLevel = lal.LALERROR | lal.LALMEMTRACE
 print("passed module load")
 
 # check memory allocation

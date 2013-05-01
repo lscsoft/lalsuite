@@ -6,7 +6,7 @@ import lal
 import laldetchar
 from laldetchar import cvar as laldetcharcvar
 from lal import cvar as lalcvar
-lalcvar.lalDebugLevel = 1
+lalcvar.lalDebugLevel = lal.LALERROR | lal.LALMEMTRACE
 print("passed module load")
 
 # check object parent tracking
