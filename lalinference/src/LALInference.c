@@ -65,7 +65,22 @@ static char *colNameToParamName(const char *colName);
 static INT4 checkREAL8TimeSeries(REAL8TimeSeries *series);
 static INT4 checkREAL8FrequencySeries(REAL8FrequencySeries *series);
 static INT4 checkCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *series);
+static INT4 matrix_equal(gsl_matrix *a, gsl_matrix *b);
 
+/* This replaces gsl_matrix_equal which is only available with gsl 1.15+ */
+/* Return 1 if matrices are equal, 0 otherwise */
+static INT4 matrix_equal(gsl_matrix *a, gsl_matrix *b)
+{
+    if(!a||!b) return 0;
+    if(a->size1!=b->size1 || a->size2!=b->size2) return 0;
+    UINT4 i,j;
+    for(i=0;i<a->size1;i++)
+        for(j=0;j<a->size2;j++)
+            if(gsl_matrix_get(a,i,j)!=gsl_matrix_get(b,i,j))
+                return 0;
+
+    return 1;
+}
 
 LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,const char *name)
 /* (this function is only to be used internally) */
@@ -825,7 +840,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
                       || ((REAL8) cimag(*(COMPLEX16 *) ptr2->value) != (REAL8) cimag(*(COMPLEX16 *) ptr1->value)));
             break;
           case LALINFERENCE_gslMatrix_t:
-            if( gsl_matrix_equal(*(gsl_matrix **)ptr1->value,*(gsl_matrix **)ptr2->value) )
+            if( matrix_equal(*(gsl_matrix **)ptr1->value,*(gsl_matrix **)ptr2->value) )
                 result = 0;
             else
                 result = 1;
