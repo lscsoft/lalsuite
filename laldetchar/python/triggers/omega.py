@@ -174,7 +174,8 @@ def ascii_trigger(line, columns=OMEGA_COLUMNS):
     ## \endcond
 
 
-def from_ascii(filename, columns=None, start=None, end=None, channel=None):
+def from_ascii(filename, columns=None,, start=None, end=None,
+               channel=None):
     """Read Omega triggers from an ASCII file
 
     Lines in the file are parsed one-by-one, excluding obvious comments
@@ -199,6 +200,8 @@ def from_ascii(filename, columns=None, start=None, end=None, channel=None):
     else:
         ifo = None
 
+    if not columns:
+        columns = OMEGA_COLUMNS
     if columns:
         columns = set(columns)
         if 'peak_time' not in columns and (start or end):
@@ -206,6 +209,8 @@ def from_ascii(filename, columns=None, start=None, end=None, channel=None):
             columns.add("peak_time_ns")
         if 'snr' in columns:
             columns.add('amplitude')
+        if channel:
+            columns.update(['ifo', 'channel'])
     if (start or end):
         start = start or segments.NegInfinity
         end = end or segments.PosInfinity

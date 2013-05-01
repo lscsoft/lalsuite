@@ -52,11 +52,17 @@ __date__    = git_version.date
 _comment = re.compile('[#%]')
 _delim   = re.compile('[\t\,\s]+')
 
+KLEINEWELLE_COLUMNS = ["search", "peak_time", "peak_time_ns", "start_time",
+                       "start_time_ns", "stop_time", "stop_time_ns",
+                       "duration", "central_freq", "peak_frequency",
+                       "bandwidth", "snr", "amplitude", "confidence"]
+
+
 ## \addtogroup pkg_py_laldetchar_triggers_kleinewelle
 #@{
 
 
-def ascii_trigger(line, columns=lsctables.SnglBurst.__slots__):
+def ascii_trigger(line, columns=KLEINEWELLE_COLUMNS):
     """Parse a line of `ASCII` text into a `SnglBurst` object
 
     @param line
@@ -171,7 +177,8 @@ def ascii_trigger(line, columns=lsctables.SnglBurst.__slots__):
     return t
 
 
-def from_ascii(filename, columns=None, start=None, end=None, channel=None):
+def from_ascii(filename, columns=None, start=None, end=None,
+               channel=None):
     """Read KleineWelle triggers from an `ASCII` file
 
     Lines in the file are parsed one-by-one, excluding obvious comments
@@ -196,6 +203,8 @@ def from_ascii(filename, columns=None, start=None, end=None, channel=None):
     else:
         ifo = None
 
+    if not columns:
+        columns = KLEINEWELLE_COLUMNS
     if columns:
         columns = set(columns)
         if 'peak_time' not in columns and (start or end):
@@ -203,6 +212,8 @@ def from_ascii(filename, columns=None, start=None, end=None, channel=None):
             columns.add("peak_time_ns")
         if 'snr' in columns:
             columns.add('amplitude')
+        if channel:
+            columns.update(['ifo', 'channel'])
     if (start or end):
         start = start or segments.NegInfinity
         end = end or segments.PosInfinity

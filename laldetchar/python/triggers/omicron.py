@@ -41,8 +41,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
 __date__ = git_version.date
 
-OMICRON_COLUMNS = ["process_id", "search", "channel", "ifo",
-                   "peak_time", "peak_time_ns", "start_time", "start_time_ns",
+OMICRON_COLUMNS = ["search", "peak_time", "peak_time_ns", "start_time",
+                   "start_time_ns",
                    "stop_time", "stop_time_ns", "duration",
                    "central_freq", "peak_frequency",
                    "flow", "fhigh", "bandwidth",
@@ -55,7 +55,7 @@ _re_delim = re.compile("[\t\,\s]+")
 #@{
 
 
-def ascii_trigger(line, columns=lsctables.SnglBurst.__slots__):
+def ascii_trigger(line, columns=OMICRON_COLUMNS):
     """Parse a line of `ASCII` text into a `SnglBurst` object
 
     @param line
@@ -117,7 +117,7 @@ def ascii_trigger(line, columns=lsctables.SnglBurst.__slots__):
     return t
 
 
-def root_trigger(root_event, columns=lsctables.SnglBurst.__slots__):
+def root_trigger(root_event, columns=OMICRON_COLUMNS):
     """Parse a `ROOT` tree entry into a `SnglBurst` object.
 
     @param root_event
@@ -172,7 +172,8 @@ def root_trigger(root_event, columns=lsctables.SnglBurst.__slots__):
     return t
 
 
-def from_ascii(filename, columns=None, start=None, end=None, channel=None):
+def from_ascii(filename, columns=None, start=None, end=None,
+               channel=None):
     """Read Omicron triggers from an ASCII file
 
     Lines in the file are parsed one-by-one, excluding obvious comments
@@ -197,6 +198,8 @@ def from_ascii(filename, columns=None, start=None, end=None, channel=None):
     else:
         ifo = None
 
+    if not columns:
+        columns = OMICRON_COLUMNS
     if columns:
         columns = set(columns)
         if 'peak_time' not in columns and (start or end):
@@ -204,6 +207,8 @@ def from_ascii(filename, columns=None, start=None, end=None, channel=None):
             columns.add("peak_time_ns")
         if 'snr' in columns:
             columns.add('amplitude')
+        if channel:
+            columns.update(['ifo', 'channel'])
     if (start or end):
         start = start or segments.NegInfinity
         end = end or segments.PosInfinity
@@ -233,7 +238,8 @@ def from_ascii(filename, columns=None, start=None, end=None, channel=None):
 
     return out
 
-def from_root(filename, columns=None, start=None, end=None, channel=None):
+def from_root(filename, columns=None, start=None, end=None,
+              channel=None):
     """Read Omicron triggers from a `ROOT` file
 
     @param filename
@@ -256,6 +262,8 @@ def from_root(filename, columns=None, start=None, end=None, channel=None):
     else:
         ifo = None
 
+    if not columns:
+        columns = OMICRON_COLUMNS
     if columns:
         columns = set(columns)
         if 'peak_time' not in columns and (start or end):
@@ -263,6 +271,8 @@ def from_root(filename, columns=None, start=None, end=None, channel=None):
             columns.add("peak_time_ns")
         if 'snr' in columns:
             columns.add('amplitude')
+        if channel:
+            columns.update(['ifo', 'channel'])
     if (start or end):
         start = start or segments.NegInfinity
         end = end or segments.PosInfinity

@@ -199,6 +199,10 @@ def from_root(filename, columns=None, start=None, end=None, ifo=None,
     if channel and re.match("[A-Z]\d:", channel) and not ifo:
         ifo = channel[:2]
 
+    if not columns and ifo:
+        columns = CWB_SNGL_COLUMNS
+    elif not columns:
+        columns = CWB_MULTI_COLUMNS
     if columns:
         columns = set(columns)
         if 'peak_time' not in columns and (start or end):
