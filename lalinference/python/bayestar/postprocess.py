@@ -25,6 +25,83 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 import numpy as np
 import healpy as hp
 import collections
+import scipy.stats
+import scipy.optimize
+
+
+def _healpix_pvalue(ipix, hist):
+    D, pvalue = scipy.stats.kstest(ipix, np.cumsum(hist).__getitem__)
+    return pvalue
+
+
+def _smoothed_hist(fwhm, hist):
+    # Smooth the histogram (assumes ring indexing).
+    hist = hp.smoothing(hist, fwhm, regression=False)
+    # Reorder to nested indexing.
+    hist = hp.reorder(hist, r2n=True)
+    # Done!
+    return hist
+
+
+def _smoothing_kstest(fwhm, target_pvalue, ipix, hist):
+    pvalue = _healpix_pvalue(ipix, _smoothed_hist(fwhm, hist))
+    return target_pvalue - pvalue
+
+
+def adaptive_healpix_histogram(theta, phi, nside=-1, max_nside=512):
+    npix = hp.nside2npix(max_nside)
+    ipix = hp.ang2pix(max_nside, theta, phi)
+
+    # Count up number of samples in each pixel
+    hist = np.zeros(npix, dtype=np.intp)
+    for i in ipix:
+        hist[i] += 1
+
+    # Divide by the total number of samples. WARNING: '/=' would not work here
+    # because Numpy does not do true division on assignment!
+    hist = hist / len(ipix)
+
+    # Convert to nested indices for KS test.
+    ipix = hp.ring2nest(max_nside, ipix)
+
+    # Find smoothing kernel size such that a one-sample KS test fails to reject
+    # the null hypothesis that the samples are drawn from the smoothed
+    # distribution.
+    # FIXME: use rtol= keyword argument to prevent overkill accuracy. rtol= is
+    # currently ignored in scipy.optimize.brentq.
+    # See <https://github.com/scipy/scipy/pull/2462>.
+    fwhm = scipy.optimize.brentq(_smoothing_kstest, 0, np.pi/2, args=(0.8, ipix, hist))
+
+    # Smooth the histogram.
+    hist = _smoothed_hist(fwhm, hist)
+
+    # Correct for any negative values due to FFT convolution.
+    hist[hist < 0] = 0
+    hist /= hist.sum()
+
+    if nside == -1:
+        # Find the lowest resolution at which a one-sample KS test fails to
+        # reject the null hypothesis that the samples are drawn from the
+        # smoothed, downsampled distribution.
+        for order in range(1, int(1 + np.log2(max_nside))):
+            new_nside = 1 << order
+            new_hist = hp.ud_grade(hist, new_nside,
+                order_in='NESTED', order_out='NESTED')
+            pvalue = _healpix_pvalue(ipix, hp.ud_grade(new_hist, max_nside,
+                order_in='NESTED', order_out='NESTED'))
+            if pvalue >= 0.4:
+                break
+
+        # Convert back to ring indexing.
+        hist = hp.reorder(new_hist, n2r=True)
+
+        # Re-normalize.
+        hist /= hist.sum()
+    else:
+        hist = hp.ud_grade(new_hist, nside, order_in='NESTED', order_out='RING')
+
+    # Done!
+    return hist
 
 
 def flood_fill(nside, ipix, m):

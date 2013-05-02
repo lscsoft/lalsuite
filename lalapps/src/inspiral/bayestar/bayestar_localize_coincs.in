@@ -132,7 +132,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
         for sngl_inspiral in sngl_inspirals)
 
     # Loop over sky localization methods
-    for method in ("toa", "toa_snr"):
+    for method in ("toa", "toa_snr", "toa_snr_mcmc"):
         log.info("%s:method '%s':computing sky map", coinc.coinc_event_id, method)
         try:
             sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
@@ -140,7 +140,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
                 opts.min_distance, opts.max_distance, opts.prior_distance_power,
                 psds=psds, reference_frequency=opts.reference_frequency,
                 method=method, nside=opts.nside)
-        except ArithmeticError:
+        except (ArithmeticError, ValueError):
             log.exception("%s:method '%s':sky localization failed", coinc.coinc_event_id, method)
             count_sky_maps_failed += 1
             if not opts.keep_going:

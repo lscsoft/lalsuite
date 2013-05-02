@@ -25,6 +25,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 import time
 import numpy as np
 from . import filter
+from . import postprocess
 from . import timing
 from . import sky_map
 import lal, lalsimulation
@@ -116,6 +117,40 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
         prob = sky_map.tdoa(gmst, toas, w_toas, locations, nside=nside)
     elif method == "toa_snr":
         prob = sky_map.tdoa_snr(gmst, toas, snrs, w_toas, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
+    elif method == "toa_snr_mcmc":
+        import emcee
+
+        ntemps = 20
+        nwalkers = 100
+        ndim = 5
+        sampler = emcee.PTSampler(
+            ntemps=ntemps,
+            nwalkers=nwalkers,
+            dim=ndim,
+            logl=(lambda args: sky_map.log_posterior_tdoa_snr(*args,
+                gmst=gmst,
+                toas=toas,
+                snrs=snrs,
+                w_toas=w_toas,
+                responses=responses,
+                locations=locations,
+                horizons=horizons,
+                prior_distance_power=prior_distance_power)),
+            logp=(lambda (ra, sin_dec, distance, u, twopsi):
+                1 if 0 <= ra < 2*np.pi
+                and -1 <= sin_dec <= 1
+                and min_distance <= distance <= max_distance
+                and 0 <= u <= 1
+                and 0 <= twopsi < 2*np.pi
+                else -np.inf))
+        p0 = np.random.uniform(
+            [0, -1, min_distance, 0, 0],
+            [2*np.pi, 1, max_distance, 1, 2*np.pi], (ntemps, nwalkers, ndim))
+        sampler.run_mcmc(p0, 1000)
+        ra, sin_dec, _, _, _ = np.concatenate(sampler.chain[0, :, 100:]).T
+        theta = np.arccos(sin_dec)
+        phi = ra
+        prob = postprocess.adaptive_healpix_histogram(theta, phi)
     else:
         raise ValueError("Unrecognized method: %s" % method)
     end_time = time.time()
