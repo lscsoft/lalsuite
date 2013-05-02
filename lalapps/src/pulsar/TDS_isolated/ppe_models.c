@@ -536,324 +536,297 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 }
 
 
-// /** \brief The amplitude model of a complex heterodyned triaxial neutron star
-// *
-// * This function calculates the complex heterodyned time series model for a
-// * triaxial neutron star (see [\ref DupuisWoan2005]). It is defined as:
-// * \f{eqnarray*}{
-// * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
-// * (1+\cos^2\iota)\exp{i\phi_0} - iF_{\times}(t,\psi)\cos{\iota}\exp{i\phi_0}
-// * \right),
-// * \f}
-// * where \f$F_+\f$ and \f$F_{\times}\f$ are the antenna response functions for
-// * the plus and cross polarisations.
-// *
-// * The antenna pattern functions are contained in a 2D lookup table, so within
-// * this function the correct value for the given time and \f$\psi\f$ are
-// * interpolated from this lookup table using bilinear interpolation (e.g.):
-// * \f{eqnarray*}{
-// * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
-// * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
-// * \f}
-// * where \f$\psi\f$ and \f$t\f$ have been scaled to be within a unit square,
-// * and \f$\psi_i\f$ and \f$t_j\f$ are the closest points within the lookup
-// * table to the required values.
-// *
-// * \param pars [in] A set of pulsar parameters
-// * \param data [in] The data parameters giving information on the data and
-// * detector
-// *
-// */
-//void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
-//  INT4 i = 0, length;
-//
-//  REAL8 psteps, tsteps, psv, tsv;
-//  INT4 psibinMin, psibinMax, timebinMin, timebinMax;
-//  REAL8 plus, cross;
-//  REAL8 plus00, plus01, plus10, plus11, cross00, cross01, cross10, cross11;
-//  REAL8 psiScaled, timeScaled;
-//  REAL8 psiMin, psiMax, timeMin, timeMax;
-//  REAL8 T;
-//  REAL8 Xplus, Xcross;
-//  COMPLEX16 expiphi, Xpexpphi, Xcexpphi;
-//
-//  gsl_matrix *LU_Fplus, *LU_Fcross;
-//  REAL8Vector *sidDayFrac = NULL;
-//
-//  length = data->dataTimes->length;
-//
-//  /* set lookup table parameters */
-//  psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
-//  tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
-//
-//  LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams,
-//                                                     "LU_Fplus");
-//  LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams,
-//                                                      "LU_Fcross");
-//  /* get the sidereal time since the initial data point % sidereal day */
-//  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
-//                                                        "siderealDay" );
-//
-//  expiphi = cexp( I * pars.phi0 );
-//
-//  /************************* CREATE MODEL *************************************/
-//  /* This model is a complex heterodyned time series for a triaxial neutron
-//     star emitting at twice its rotation frequency (as defined in Dupuis and
-//     Woan, PRD, 2005):
-//       h(t) = (h0/2) * ((1/2)*F+(t)*(1+cos(iota)^2)*exp(i*phi0)
-//         - i*Fx(t)*cos(iota)*exp(i*phi0))
-//   ****************************************************************************/
-//
-//  Xplus = 0.25*(1.+pars.cosiota*pars.cosiota)*pars.h0;
-//  Xcross = 0.5*pars.cosiota*pars.h0;
-//  Xpexpphi = Xplus*expiphi;
-//  Xcexpphi = Xcross*expiphi;
-//
-//  /* set the psi bin for the lookup table - the lookup table runs from -pi/2
-//     to pi/2, but for the triaxial case we only require psi values from -pi/4
-//     to pi/4 (the grid will be twice as coarse) */
-//  psv = LAL_PI / ( psteps - 1. );
-//  psibinMin = (INT4)floor( ( pars.psi + LAL_PI_2 )/psv );
-//  psiMin = -(LAL_PI_2) + psibinMin*psv;
-//  psibinMax = psibinMin + 1;
-//  psiMax = psiMin + psv;
-//
-//  /* rescale psi for bilinear interpolation on a unit square */
-//  psiScaled = (pars.psi - psiMin)/(psiMax - psiMin);
-//
-//  tsv = LAL_DAYSID_SI / tsteps;
-//
-//  for( i=0; i<length; i++ ){
-//    /* set the time bin for the lookup table */
-//    /* sidereal day in secs*/
-//    T = sidDayFrac->data[i];
-//    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
-//   timeMin = timebinMin*tsv;
-//    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
-//    timeMax = timeMin + tsv;
-//
-//    /* get values of matrix for bilinear interpolation */
-//    plus00 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMin );
-//    plus01 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMax );
-//    plus10 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMin );
-//    plus11 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMax );
-//
-//    cross00 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMin );
-//    cross01 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMax );
-//    cross10 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMin );
-//    cross11 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMax );
-//
-//    /* rescale time for bilinear interpolation on a unit square */
-//    timeScaled = (T - timeMin)/(timeMax - timeMin);
-//
-//    plus = plus00*(1. - psiScaled)*(1. - timeScaled) +
-//      plus10*psiScaled*(1. - timeScaled) + plus01*(1. - psiScaled)*timeScaled +
-//      plus11*psiScaled*timeScaled;
-//    cross = cross00*(1. - psiScaled)*(1. - timeScaled) +
-//      cross10*psiScaled*(1. - timeScaled) + cross01*(1. - psiScaled)*timeScaled
-//      + cross11*psiScaled*timeScaled;
-//
-//    /* create the complex signal amplitude model */
-//    data->compModelData->data->data[i] = plus*Xpexpphi - I*cross*Xcexpphi;
-//  }
-//}
+/** \brief The amplitude model of a complex heterodyned triaxial neutron star
+ *
+ * This function calculates the complex heterodyned time series model for a triaxial neutron star (see [\ref
+ * DupuisWoan2005]). It is defined as:
+ * \f{eqnarray*}{
+ * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
+ * (1+\cos^2\iota)\exp{i\phi_0} - iF_{\times}(t,\psi)\cos{\iota}\exp{i\phi_0}
+ * \right),
+ * \f}
+ * where \f$F_+\f$ and \f$F_{\times}\f$ are the antenna response functions for the plus and cross polarisations.
+ *
+ * The antenna pattern functions are contained in a 2D lookup table, so within this function the correct value for the
+ * given time and \f$\psi\f$ are interpolated from this lookup table using bilinear interpolation (e.g.):
+ * \f{eqnarray*}{
+ * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
+ * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
+ * \f}
+ * where \f$\psi\f$ and \f$t\f$ have been scaled to be within a unit square, and \f$\psi_i\f$ and \f$t_j\f$ are the
+ * closest points within the lookup table to the required values.
+ *
+ * \param pars [in] A set of pulsar parameters
+ * \param data [in] The data parameters giving information on the data and detector
+ *
+ * DEPRECATED: use \c get_amplitude_model instead.
+ */
+void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
+  INT4 i = 0, length;
 
-// /** \brief The amplitude model of a complex heterodyned signal from a NS rotating
-// * about the pinning axis of its pinned superfluid component.
-// *
-// * This function calculates the complex heterodyned time series model for a
-// * triaxial neutron star rotating about the pinning axis of its pinned superfluid component.
-// *
-// * Unlike the standard triaxial model, this model has emission at f and 2f, therefore
-// * this model function processes two sets of data per detector. In this model the
-// * \f$\phi_0\f$ parameter is the initial rotational phase, rather than the GW
-// * phase as in the triaxial model.
-// *
-// * As for the standard triaxial model, the antenna pattern functions are contained in a 2D lookup table, so within
-// * this function the correct value for the given time and \f$\psi\f$ are
-// * interpolated from this lookup table using bilinear interpolation (e.g.):
-// * \f{eqnarray*}{
-// * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
-// * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
-// * \f}
-// * where \f$\psi\f$ and \f$t\f$ have been scaled to be within a unit square,
-// * and \f$\psi_i\f$ and \f$t_j\f$ are the closest points within the lookup
-// * table to the required values.
-// *
-// * \param pars [in] A set of pulsar parameters
-// * \param data [in] The data parameters giving information on the data and
-// * detector
-// *
-// */
-//void get_pinsf_amplitude_model( BinaryPulsarParams pars,
-//                                LALInferenceIFOData *data ){
-//  INT4 i = 0, length;
-//
-//  REAL8 psteps, tsteps, psv, tsv;
-//  INT4 psibinMin, psibinMax, timebinMin, timebinMax;
-//  REAL8 plus00, plus01, plus10, plus11, cross00, cross01, cross10, cross11;
-//  REAL8 psiScaled, timeScaled;
-//  REAL8 psiMin, psiMax, timeMin, timeMax;
-//  REAL8 plus, cross;
-//  REAL8 T;
-//  REAL8 Xplusf, Xcrossf, Xplus2f, Xcross2f;
-//  REAL8 A1, A2, B1, B2;
-//  REAL4 sinphi, cosphi, sin2phi, cos2phi;
-//  REAL8 iota = acos(pars.cosiota), theta = acos(pars.costheta);
-//  REAL8 siniota = sin(iota);
-//  REAL8 sintheta = sin(theta), sin2theta = sin( 2.*theta );
-//  REAL4 coslambda, sinlambda;
-//  REAL8 sin2lambda = sin( 2.*pars.lambda );
-//  REAL8 f2_r;
-//
-//  gsl_matrix *LU_Fplus, *LU_Fcross;
-//  REAL8Vector *sidDayFrac1 = NULL;
-//  REAL8Vector *sidDayFrac2 = NULL;
-//
-//  /* set lookup table parameters */
-//  psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
-//  tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
-//
-//  LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams,
-//    "LU_Fplus");
-//  LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams,
-//    "LU_Fcross");
-//  /* get the sidereal time since the initial data point % sidereal day */
-//  sidDayFrac1 = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
-//                                                        "siderealDay" );
-//
-//  /* phi0 here is rotational phase not GW phase */
-//  sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
-//  sin_cos_LUT( &sin2phi, &cos2phi, 2.*pars.phi0 );
-//
-//  sin_cos_LUT( &sinlambda, &coslambda, pars.lambda );
-//
-//  /* f^2 / r */
-//  f2_r = pars.f0 * pars.f0 / pars.r;
-//
-//  /************************* CREATE MODEL *************************************/
-//  /* This model is a complex heterodyned time series for a pinned superfluid neutron
-//     star emitting at its roation frequency and twice its rotation frequency
-//     (as defined in Jones 2009):
-//
-//   ****************************************************************************/
-//  Xplusf = -( f2_r / 2. ) * siniota * pars.cosiota;
-//  Xcrossf = -( f2_r / 2. ) * siniota;
-//  Xplus2f = -f2_r * ( 1. + pars.cosiota * pars.cosiota );
-//  Xcross2f = -f2_r * 2. * pars.cosiota;
-//
-//  A1 = ( pars.I21 * coslambda * coslambda - pars.I31 ) * sin2theta;
-//  A2 = pars.I21 * sin2lambda * sintheta;
-//  B1 = pars.I21 * ( coslambda * coslambda * pars.costheta * pars.costheta
-//    - sinlambda * sinlambda ) + pars.I31 * sintheta * sintheta;
-//  B2 = pars.I21 * sin2lambda * pars.costheta;
-//
-//  /*fprintf(stderr,"A1: %e, A2: %e, B1: %e, B2: %e\n", A1, A2, B1, B2);
-//  fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
-//
-//  /* set the psi bin for the lookup table (look-up table cover that fill -pi/2
-//     to pi/2 range) */
-//  psv = LAL_PI / ( psteps - 1. );
-//  psibinMin = (INT4)floor( ( pars.psi + LAL_PI_2 )/psv );
-//  psiMin = -(LAL_PI_2) + psibinMin*psv;
-//  psibinMax = psibinMin + 1;
-//  psiMax = psiMin + psv;
-//
-//  /* rescale psi for bilinear interpolation on a unit square */
-//  psiScaled = (pars.psi - psiMin)/(psiMax - psiMin);
-//
-//  tsv = LAL_DAYSID_SI / tsteps;
-//
-//  /*--------------------------------------------------------------------------*/
-//  /* set model for 1f component */
-//
-//  length = data->dataTimes->length;
-//
-//  for( i=0; i<length; i++ ){
-//    /* set the time bin for the lookup table */
-//    /* sidereal day in secs*/
-//    T = sidDayFrac1->data[i];
-//    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
-//    timeMin = timebinMin*tsv;
-//    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
-//    timeMax = timeMin + tsv;
-//
-//    /* get values of matrix for bilinear interpolation */
-//    plus00 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMin );
-//    plus01 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMax );
-//    plus10 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMin );
-//    plus11 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMax );
-//
-//    cross00 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMin );
-//    cross01 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMax );
-//    cross10 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMin );
-//    cross11 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMax );
-//
-//    /* rescale time for bilinear interpolation on a unit square */
-//    timeScaled = (T - timeMin)/(timeMax - timeMin);
-//
-//    plus = plus00*(1. - psiScaled)*(1. - timeScaled) +
-//      plus10*psiScaled*(1. - timeScaled) + plus01*(1. - psiScaled)*timeScaled +
-//      plus11*psiScaled*timeScaled;
-//    cross = cross00*(1. - psiScaled)*(1. - timeScaled) +
-//      cross10*psiScaled*(1. - timeScaled) + cross01*(1. - psiScaled)*timeScaled
-//      + cross11*psiScaled*timeScaled;
-//
-//    /* create the complex signal amplitude model */
-//    /*at f*/
-//    data->compModelData->data->data[i] =
-//      ( plus * Xplusf * ( A1 * cosphi - A2 * sinphi ) +
-//      cross * Xcrossf * ( A2 * cosphi + A1 * sinphi ) ) +
-//      I * ( plus * Xplusf * ( A2 * cosphi + A1 * sinphi ) +
-//      cross * Xcrossf * ( A2 * sinphi - A1 * cosphi ) );
-//  }
-//  /*--------------------------------------------------------------------------*/
-//  /* set model for 2f component */
-//  length = data->next->dataTimes->length;
-//
-//  sidDayFrac2 = *(REAL8Vector**)LALInferenceGetVariable( data->next->dataParams,
-//                                                        "siderealDay" );
-//
-//  for( i=0; i<length; i++ ){
-//    /* set the time bin for the lookup table */
-//    /* sidereal day in secs*/
-//    T = sidDayFrac2->data[i];
-//    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
-//    timeMin = timebinMin*tsv;
-//    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
-//    timeMax = timeMin + tsv;
-//
-//    /* get values of matrix for bilinear interpolation */
-//    plus00 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMin );
-//    plus01 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMax );
-//    plus10 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMin );
-//    plus11 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMax );
-//
-//    cross00 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMin );
-//    cross01 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMax );
-//    cross10 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMin );
-//    cross11 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMax );
-//
-//    /* rescale time for bilinear interpolation on a unit square */
-//    timeScaled = (T - timeMin)/(timeMax - timeMin);
-//
-//    plus = plus00*(1. - psiScaled)*(1. - timeScaled) +
-//      plus10*psiScaled*(1. - timeScaled) + plus01*(1. - psiScaled)*timeScaled +
-//      plus11*psiScaled*timeScaled;
-//    cross = cross00*(1. - psiScaled)*(1. - timeScaled) +
-//      cross10*psiScaled*(1. - timeScaled) + cross01*(1. - psiScaled)*timeScaled
-//      + cross11*psiScaled*timeScaled;
-//
-//    /* create the complex signal amplitude model at 2f*/
-//    data->next->compModelData->data->data[i] =
-//      ( plus * Xplus2f * ( B1 * cos2phi - B2 * sin2phi ) +
-//      cross * Xcross2f * ( B2 * cos2phi + B1 * sin2phi ) ) +
-//      I * ( plus * Xplus2f * ( B2 * cos2phi + B1 * sin2phi ) +
-//      cross * Xcross2f * ( B2 * sin2phi - B1 * cos2phi ) );
-//
-//  }
-//  /*--------------------------------------------------------------------------*/
-//}
+  REAL8 psteps, tsteps, psv, tsv;
+  INT4 psibinMin, psibinMax, timebinMin, timebinMax;
+  REAL8 plus, cross;
+  REAL8 plus00, plus01, plus10, plus11, cross00, cross01, cross10, cross11;
+  REAL8 psiScaled, timeScaled;
+  REAL8 psiMin, psiMax, timeMin, timeMax;
+  REAL8 T;
+  REAL8 Xplus, Xcross;
+  COMPLEX16 expiphi, Xpexpphi, Xcexpphi;
+
+  gsl_matrix *LU_Fplus, *LU_Fcross;
+  REAL8Vector *sidDayFrac = NULL;
+
+  length = data->dataTimes->length;
+
+  /* set lookup table parameters */
+  psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
+  tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
+
+  LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fplus" );
+  LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fcross" );
+
+  /* get the sidereal time since the initial data point % sidereal day */
+  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams, "siderealDay" );
+
+  expiphi = cexp( I * pars.phi0 );
+
+  /************************* CREATE MODEL *************************************/
+  /* This model is a complex heterodyned time series for a triaxial neutron star emitting at twice its rotation
+   * frequency (as defined in Dupuis and Woan, PRD, 2005):
+   *    h(t) = (h0/2) * ((1/2)*F+(t)*(1+cos(iota)^2)*exp(i*phi0) - i*Fx(t)*cos(iota)*exp(i*phi0))
+   ****************************************************************************/
+  Xplus = 0.25*(1.+pars.cosiota*pars.cosiota)*pars.h0;
+  Xcross = 0.5*pars.cosiota*pars.h0;
+  Xpexpphi = Xplus*expiphi;
+  Xcexpphi = Xcross*expiphi;
+
+  /* set the psi bin for the lookup table - the lookup table runs from -pi/2 to pi/2, but for the triaxial case we only
+   * require psi values from -pi/4 to pi/4 (the grid will be twice as coarse) */
+  psv = LAL_PI / ( psteps - 1. );
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI_2 )/psv );
+  psiMin = -(LAL_PI_2) + psibinMin*psv;
+  psibinMax = psibinMin + 1;
+  psiMax = psiMin + psv;
+
+  /* rescale psi for bilinear interpolation on a unit square */
+  psiScaled = (pars.psi - psiMin)/(psiMax - psiMin);
+
+  tsv = LAL_DAYSID_SI / tsteps;
+
+  for( i=0; i<length; i++ ){
+    /* set the time bin for the lookup table */
+    /* sidereal day in secs*/
+    T = sidDayFrac->data[i];
+    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
+   timeMin = timebinMin*tsv;
+    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+    timeMax = timeMin + tsv;
+
+    /* get values of matrix for bilinear interpolation */
+    plus00 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMin );
+    plus01 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMax );
+    plus10 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMin );
+    plus11 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMax );
+
+    cross00 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMin );
+    cross01 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMax );
+    cross10 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMin );
+    cross11 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMax );
+
+    /* rescale time for bilinear interpolation on a unit square */
+    timeScaled = (T - timeMin)/(timeMax - timeMin);
+
+    plus = plus00*(1. - psiScaled)*(1. - timeScaled) +
+      plus10*psiScaled*(1. - timeScaled) + plus01*(1. - psiScaled)*timeScaled +
+      plus11*psiScaled*timeScaled;
+    cross = cross00*(1. - psiScaled)*(1. - timeScaled) +
+      cross10*psiScaled*(1. - timeScaled) + cross01*(1. - psiScaled)*timeScaled
+      + cross11*psiScaled*timeScaled;
+
+    /* create the complex signal amplitude model */
+    data->compModelData->data->data[i] = plus*Xpexpphi - I*cross*Xcexpphi;
+  }
+}
+
+
+/** \brief The amplitude model of a complex heterodyned signal from a NS rotating about the pinning axis of its pinned
+ * superfluid component.
+ *
+ * This function calculates the complex heterodyned time series model for a triaxial neutron star rotating about the
+ * pinning axis of its pinned superfluid component.
+ *
+ * Unlike the standard triaxial model, this model has emission at f and 2f, therefore this model function processes two
+ * sets of data per detector. In this model the \f$\phi_0\f$ parameter is the initial rotational phase, rather than the
+ * GW phase as in the triaxial model.
+ *
+ * As for the standard triaxial model, the antenna pattern functions are contained in a 2D lookup table, so within this
+ * function the correct value for the given time and \f$\psi\f$ are interpolated from this lookup table using bilinear
+ * interpolation (e.g.):
+ * \f{eqnarray*}{
+ * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
+ * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
+ * \f}
+ * where \f$\psi\f$ and \f$t\f$ have been scaled to be within a unit square, and \f$\psi_i\f$ and \f$t_j\f$ are the
+ * closest points within the lookup table to the required values.
+ *
+ * \param pars [in] A set of pulsar parameters
+ * \param data [in] The data parameters giving information on the data and detector
+ *
+ * DEPRECATED: use \c get_amplitude_model instead.
+ */
+void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
+  INT4 i = 0, length;
+
+  REAL8 psteps, tsteps, psv, tsv;
+  INT4 psibinMin, psibinMax, timebinMin, timebinMax;
+  REAL8 plus00, plus01, plus10, plus11, cross00, cross01, cross10, cross11;
+  REAL8 psiScaled, timeScaled;
+  REAL8 psiMin, psiMax, timeMin, timeMax;
+  REAL8 plus, cross;
+  REAL8 T;
+  REAL8 Xplusf, Xcrossf, Xplus2f, Xcross2f;
+  REAL8 A21, A22, B21, B22;
+  COMPLEX16 ePhi, e2Phi;
+  REAL8 iota = acos(pars.cosiota), theta = acos(pars.costheta);
+  REAL8 siniota = sin(iota);
+  REAL8 sintheta = sin(theta), sin2theta = sin( 2.*theta );
+  REAL4 coslambda, sinlambda;
+  REAL8 sin2lambda = sin( 2.*pars.lambda );
+  REAL8 f2_r;
+
+  gsl_matrix *LU_Fplus, *LU_Fcross;
+  REAL8Vector *sidDayFrac1 = NULL;
+  REAL8Vector *sidDayFrac2 = NULL;
+
+  /* set lookup table parameters */
+  psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
+  tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
+
+  LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fplus" );
+  LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams, "LU_Fcross");
+  /* get the sidereal time since the initial data point % sidereal day */
+  sidDayFrac1 = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams, "siderealDay" );
+
+  /* phi0 here is rotational phase not GW phase */
+  ePhi = cexp( pars.phi0 * I );
+  e2Phi = cexp( 2. * pars.phi0 * I );
+
+  sin_cos_LUT( &sinlambda, &coslambda, pars.lambda );
+
+  /* f^2 / r */
+  f2_r = pars.f0 * pars.f0 / pars.dist;
+
+  /************************* CREATE MODEL *************************************
+   * This model is a complex heterodyned time series for a pinned superfluid neutron star emitting at its roation
+   * frequency and twice its rotation frequency (as originally defined in Jones 2009, but using Eqns 35-38 of Jones
+   * 2012 LIGO DCC T1200265-v3).
+   ****************************************************************************/
+  Xplusf = -( f2_r / 2. ) * siniota * pars.cosiota;
+  Xcrossf = ( f2_r / 2. ) * siniota;
+  Xplus2f = -f2_r * ( 1. + pars.cosiota * pars.cosiota );
+  Xcross2f = 2. * f2_r * pars.cosiota;
+
+  A21 = pars.I21 * sin2lambda * sintheta;
+  B21 = ( pars.I21 * coslambda * coslambda - pars.I31 ) * sin2theta;
+
+  A22 = pars.I21 * ( sinlambda * sinlambda - coslambda * coslambda * pars.costheta * pars.costheta ) -
+    pars.I31 * sintheta * sintheta;
+  B22 = pars.I21 * sin2lambda * pars.costheta;
+
+  /* set the psi bin for the lookup table (look-up table cover that fill -pi/2 to pi/2 range) */
+  psv = LAL_PI / ( psteps - 1. );
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI_2 )/psv );
+  psiMin = -(LAL_PI_2) + psibinMin*psv;
+  psibinMax = psibinMin + 1;
+  psiMax = psiMin + psv;
+
+  /* rescale psi for bilinear interpolation on a unit square */
+  psiScaled = (pars.psi - psiMin)/(psiMax - psiMin);
+
+  tsv = LAL_DAYSID_SI / tsteps;
+
+  /*--------------------------------------------------------------------------*/
+  /* set model for 1f component */
+  length = data->dataTimes->length;
+
+  for( i=0; i<length; i++ ){
+    /* set the time bin for the lookup table */
+    /* sidereal day in secs*/
+    T = sidDayFrac1->data[i];
+    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
+    timeMin = timebinMin*tsv;
+    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+    timeMax = timeMin + tsv;
+
+    /* get values of matrix for bilinear interpolation */
+    plus00 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMin );
+    plus01 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMax );
+    plus10 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMin );
+    plus11 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMax );
+
+    cross00 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMin );
+    cross01 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMax );
+    cross10 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMin );
+    cross11 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMax );
+
+    /* rescale time for bilinear interpolation on a unit square */
+    timeScaled = (T - timeMin)/(timeMax - timeMin);
+
+    plus = plus00*(1. - psiScaled)*(1. - timeScaled) +
+      plus10*psiScaled*(1. - timeScaled) + plus01*(1. - psiScaled)*timeScaled +
+      plus11*psiScaled*timeScaled;
+    cross = cross00*(1. - psiScaled)*(1. - timeScaled) +
+      cross10*psiScaled*(1. - timeScaled) + cross01*(1. - psiScaled)*timeScaled
+      + cross11*psiScaled*timeScaled;
+
+    /* create the complex signal amplitude model at f */
+    data->compModelData->data->data[i] = ( plus * Xplusf * ePhi * ( A21 - I * B21 ) ) +
+                                         ( cross * Xcrossf * ePhi * ( B21 + I * A21 ) );
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /* set model for 2f component */
+  length = data->next->dataTimes->length;
+
+  sidDayFrac2 = *(REAL8Vector**)LALInferenceGetVariable( data->next->dataParams, "siderealDay" );
+
+  for( i=0; i<length; i++ ){
+    /* set the time bin for the lookup table */
+    /* sidereal day in secs*/
+    T = sidDayFrac2->data[i];
+    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
+    timeMin = timebinMin*tsv;
+    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+    timeMax = timeMin + tsv;
+
+    /* get values of matrix for bilinear interpolation */
+    plus00 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMin );
+    plus01 = gsl_matrix_get( LU_Fplus, psibinMin, timebinMax );
+    plus10 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMin );
+    plus11 = gsl_matrix_get( LU_Fplus, psibinMax, timebinMax );
+
+    cross00 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMin );
+    cross01 = gsl_matrix_get( LU_Fcross, psibinMin, timebinMax );
+    cross10 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMin );
+    cross11 = gsl_matrix_get( LU_Fcross, psibinMax, timebinMax );
+
+    /* rescale time for bilinear interpolation on a unit square */
+    timeScaled = (T - timeMin)/(timeMax - timeMin);
+
+    plus = plus00*(1. - psiScaled)*(1. - timeScaled) +
+      plus10*psiScaled*(1. - timeScaled) + plus01*(1. - psiScaled)*timeScaled +
+      plus11*psiScaled*timeScaled;
+    cross = cross00*(1. - psiScaled)*(1. - timeScaled) +
+      cross10*psiScaled*(1. - timeScaled) + cross01*(1. - psiScaled)*timeScaled
+      + cross11*psiScaled*timeScaled;
+
+    /* create the complex signal amplitude model at 2f */
+    data->next->compModelData->data->data[i] = ( plus * Xplus2f * e2Phi * ( A22 - I * B22 ) ) +
+                                               ( cross * Xcross2f * e2Phi * ( B22 + I * A22 ) );
+  }
+  /*--------------------------------------------------------------------------*/
+}
 
 
 /** \brief The amplitude model of a complex heterodyned signal from the \f$l=2, m=1,2\f$ harmonics of a rotating neutron
@@ -1284,7 +1257,8 @@ void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime, REAL8 *phi0, R
 
 /** \brief Convert sources parameters into amplitude and phase notation parameters
  *
- * Convert the physical source parameters into the amplitude and phase notation given in LIGO T1200265-v3.
+ * Convert the physical source parameters into the amplitude and phase notation given in Eqns
+ * 76-79 of LIGO T1200265-v3.
  */
 void invert_source_params( BinaryPulsarParams *params ){
   /* if h0 is defined then we have a triaxial source (l=m=2) emitting just at twice the rotation frequency */

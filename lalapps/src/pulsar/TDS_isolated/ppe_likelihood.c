@@ -186,7 +186,8 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     // REAL8 logVolume = LALInferenceKDLogCellVolume(currentCell);
     REAL8 logCellFactor = log((REAL8)currentCell->npts / (REAL8)tree->npts);
 
-    prior = logVolume + logCellFactor;
+    /* probability is proportional to the inverse of the cell volume */
+    prior = -(logVolume + logCellFactor);
 
     return prior;
   }

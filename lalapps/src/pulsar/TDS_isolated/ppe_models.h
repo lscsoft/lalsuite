@@ -52,9 +52,9 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatimes, REAL8Vector *dts,
                             EphemerisData *ephem );
 
-//void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
+void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
 
-//void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
+void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
 
 void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
 
