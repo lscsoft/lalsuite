@@ -16,6 +16,7 @@ bayestar_PYTHON = \
 	fits.py \
 	ligolw.py \
 	ligolw_sky_map.py \
+	plot.py \
 	timing.py
 
 if HAVE_CHEALPIX
