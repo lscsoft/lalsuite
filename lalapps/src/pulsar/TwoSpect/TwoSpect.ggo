@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.26_1"
+version "1.1.26_2"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser --show-required=[required]"
@@ -88,7 +88,7 @@ option "ULoff"    - "Turn off upper limits computation" flag off hidden
 option "printSFTtimes" - "Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs" flag off hidden
 option "printUsedSFTtimes"  - "Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests" flag off hidden
 option "printData"     - "Print to ASCII files the data values" flag off hidden
-option "printUninitialized" - "Print uninitialized values in TFdata_weighted and TSofPowers vectors" flag off hidden
+option "printUninitialized" - "Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!)" int optional hidden
 option "randSeed" - "Random seed value" int optional hidden
 option "chooseSeed"    - "The random seed value is chosen based on the input search parameters" flag off hidden
 

@@ -542,13 +542,15 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
-   
+
+   INT4 skycounter = -1;
    
    //Search over the sky region (outer loop of single TwoSpect program instance)
    while (scan.state != STATE_FINISHED) {
       fprintf(LOG, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
       fprintf(stderr, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
-      
+      skycounter++;
+
       //Determine detector velocity w.r.t. a sky location for each SFT
       CompAntennaVelocity(detectorVelocities, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, inputParams->det[0], edat);
       if (xlalErrno!=0) {
@@ -614,13 +616,6 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: slideTFdata() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      //fprintf(stderr, "Mean of TFdata_slided %g, background_slided %g\n", calcMean(TFdata_slided), calcMean(background_slided));
-      /* FILE *TFBACKGROUND = fopen("./output/tfbackground.dat","w");  //comment this
-      for (ii=0; ii<(INT4)background_slided->length; ii++) fprintf(TFBACKGROUND, "%f\n", background_slided->data[ii]);
-      fclose(TFBACKGROUND); */
-      /* FILE *TFSLIDED = fopen("./output/tfslided.dat","w");
-      for (ii=0; ii<(INT4)TFdata_slided->length; ii++) fprintf(TFSLIDED, "%.6g\n", TFdata_slided->data[ii]);
-      fclose(TFSLIDED); */
 
       //Print out data product if requested
       if (args_info.printData_given) {
@@ -664,10 +659,10 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts*ffdata->numfbins);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      if (args_info.printUninitialized_given) {
+      if (args_info.printUninitialized_given && args_info.printUninitialized_arg==skycounter) {
          char w[1000];
          snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TFdata_weighted.dat");
-         FILE *UNINITVALS = fopen(w, "a");
+         FILE *UNINITVALS = fopen(w, "w");
          if (UNINITVALS==NULL) {
             fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
             XLAL_ERROR(XLAL_EFUNC);
@@ -681,9 +676,6 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       XLALDestroyREAL4Vector(TFdata_slided);
-      /* FILE *TFDATA = fopen("./output/tfdata.dat","w");  //comment this out
-      for (jj=0; jj<(INT4)TFdata_weighted->length; jj++) fprintf(TFDATA,"%.6f\n",TFdata_weighted->data[jj]);
-      fclose(TFDATA); */
 
       //Print out data product if requested
       if (args_info.printData_given) {
@@ -753,16 +745,17 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      if (args_info.printUninitialized_given) {
+      if (args_info.printUninitialized_given && args_info.printUninitialized_arg==skycounter) {
          char w[1000];
          snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TSofPowers.dat");
-         FILE *UNINITVALS = fopen(w, "a");
+         FILE *UNINITVALS = fopen(w, "w");
          if (UNINITVALS==NULL) {
             fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
             XLAL_ERROR(XLAL_EFUNC);
          }
          for (ii=0; ii<(INT4)TSofPowers->length; ii++) fprintf(UNINITVALS, "%g\n", TSofPowers->data[ii]);
          fclose(UNINITVALS);
+         args_info.printUninitialized_given = 0; //Set this to zero now because the data files will get too large
       }
       memset(TSofPowers->data, 0, sizeof(REAL4)*TSofPowers->length);
       for (ii=0; ii<ffdata->numfbins; ii++) {
@@ -802,11 +795,7 @@ int main(int argc, char *argv[])
       
       XLALDestroyREAL4Vector(TFdata_weighted);
       TFdata_weighted = NULL;
-      
-      //comment this out
-      /* FILE *FFDATA = fopen("./output/ffdata.dat","w");
-      for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
-      fclose(FFDATA); */
+
       //Print out data product if requested
       if (args_info.printData_given) {
          char w[1000];
