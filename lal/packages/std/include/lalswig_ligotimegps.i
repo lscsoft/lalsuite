@@ -49,7 +49,8 @@
     char *end = NULL;
     if (XLALStrToGPS(gps, str, &end) < 0 || *end != '\0') {
       XLALFree(gps);
-      XLAL_ERROR_NULL(XLAL_EFUNC);
+      xlalErrno = XLAL_EFUNC;   // Silently signal an error to constructor
+      return NULL;
     }
     return gps;
   }
