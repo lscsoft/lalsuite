@@ -6,7 +6,7 @@ import lal
 import lalstochastic
 from lalstochastic import cvar as lalstochasticcvar
 from lal import cvar as lalcvar
-lalcvar.lalDebugLevel = lal.LALERROR | lal.LALMEMTRACE
+lalcvar.lalDebugLevel = lal.LALERROR | lal.LALMEMDBG
 print("passed module load")
 
 # check object parent tracking

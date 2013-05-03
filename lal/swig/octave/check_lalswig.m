@@ -7,7 +7,7 @@ expected_exception = 0;
 lal;
 assert(exist("lal", "var"));
 assert(exist("lalcvar", "var"));
-lalcvar.lalDebugLevel = bitor(LALERROR, LALMEMTRACE);
+lalcvar.lalDebugLevel = bitor(LALERROR, LALMEMDBG);
 disp("passed module load");
 
 ## check memory allocation
