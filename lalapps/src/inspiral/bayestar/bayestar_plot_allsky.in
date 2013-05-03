@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 """
-Plot a pointing of several telescopes.
+Plot an all-sky map on a Mollweide projection.
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
