@@ -1951,7 +1951,7 @@ int main( int argc, char *argv[] )
               "unknown mass distribution: %s must be one of\n"
               "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
               "totalMassRatio, totalMassFraction, logTotalMassUniformMassRatio,\n"
-              "m1m2SquareGrid)\n",
+              "m1m2SquareGrid, fixMasses)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -3280,13 +3280,23 @@ int main( int argc, char *argv[] )
   }
 
   /* check for gaussian mass distribution parameters */
-  if ( ( mDistr==gaussianMassDist ) && ( meanMass1 <= 0.0 ||
-        massStdev1 <= 0.0 || meanMass2 <= 0.0 || massStdev2 <= 0.0 ) )
+  if ( mDistr==gaussianMassDist )
   {
-    fprintf( stderr,
-      "Must specify positive --mean-mass1/2 and --stdev-mass1/2 if choosing \n"
-      " --m-distr gaussian\n" );
-    exit( 1 );
+    if ( meanMass1 <= 0.0 || massStdev1 <= 0.0 ||
+         meanMass2 <= 0.0 || massStdev2 <= 0.0 )
+    {
+      fprintf( stderr,
+        "Must specify positive --mean-mass1/2 and --stdev-mass1/2 if choosing \n"
+        " --m-distr gaussian\n" );
+      exit( 1 );
+    }
+    if ( minMass1==maxMass1 || minMass2==maxMass2 )
+    {
+      fprintf( stderr,
+        "Must specify a nonzero range of mass1 and mass2 if choosing \n"
+        " --m-distr gaussian\n" );
+      exit( 1 );
+    }
   }
   /* inverse logic check for junk options */
   if ( ( meanMass1>=0.0 || meanMass2>=0.0 || massStdev1>=0.0 || massStdev2>=0.0 )
