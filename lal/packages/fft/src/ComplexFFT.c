@@ -184,11 +184,11 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   }
 
   /* create the plan */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   plan->plan = fftwf_plan_dft_1d( size,
       (fftwf_complex *)tmp1, (fftwf_complex *)tmp2,
       fwdflg ? FFTW_FORWARD : FFTW_BACKWARD, flags );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 
   /* free temporary arrays */
   XLALFree( tmp2 );
@@ -235,9 +235,9 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan )
   {
     if ( plan->plan )
     {
-      LAL_FFTW_PTHREAD_MUTEX_LOCK;
+      LAL_FFTW_WISDOM_LOCK;
       fftwf_destroy_plan( plan->plan );
-      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+      LAL_FFTW_WISDOM_UNLOCK;
     }
     memset( plan, 0, sizeof( *plan ) );
     XLALFree( plan );
@@ -317,11 +317,11 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
   }
 
   /* create the plan */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   plan->plan = fftw_plan_dft_1d( size,
       (fftw_complex *)tmp1, (fftw_complex *)tmp2,
       fwdflg ? FFTW_FORWARD : FFTW_BACKWARD, flags );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 
   /* free temporary arrays */
   XLALFree( tmp2 );
@@ -368,9 +368,9 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan )
   {
     if ( plan->plan )
     {
-      LAL_FFTW_PTHREAD_MUTEX_LOCK;
+      LAL_FFTW_WISDOM_LOCK;
       fftw_destroy_plan( plan->plan );
-      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+      LAL_FFTW_WISDOM_UNLOCK;
     }
     memset( plan, 0, sizeof( *plan ) );
     XLALFree( plan );

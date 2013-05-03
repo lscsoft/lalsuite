@@ -521,9 +521,9 @@ int main( int argc, char *argv[] )
   /* Import system wide FFTW wisdom file, if it exists.  Only single precision used. */
 
 #ifdef LAL_FFTW3_ENABLED
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   fftwf_import_system_wisdom();
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 #endif
 
   /* can use LALMalloc() and LALCalloc() from here onwards */

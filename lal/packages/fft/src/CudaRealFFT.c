@@ -85,12 +85,12 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 	
   if( size == 1 ) createSize = 2;
   else	createSize = size;
-  /* LAL_FFTW_PTHREAD_MUTEX_LOCK; */
+  /* LAL_FFTW_WISDOM_LOCK; */
   if ( fwdflg ) /* forward */
     retval= cufftPlan1d( &plan->plan, createSize, CUFFT_R2C, 1 );
   else /* reverse */
     retval= cufftPlan1d( &plan->plan, createSize, CUFFT_C2R, 1 );
-  /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
+  /* LAL_FFTW_WISDOM_UNLOCK; */
   /* check to see success of plan creation */
 	
   /* "Plan=0" Bugfix by Wiesner, K.: plan->plan is an integer handle not a pointer and 0 is a valid handle
@@ -145,12 +145,12 @@ void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan )
       XLAL_ERROR_VOID( XLAL_EINVAL );
   */
 
-  /* LAL_FFTW_PTHREAD_MUTEX_LOCK; */
+  /* LAL_FFTW_WISDOM_LOCK; */
   /* Free the Cuda specific variables */
   XLALCudaFree( plan->d_real );
   cufftDestroy( plan->plan );
   XLALCudaFree( plan->d_complex );
-  /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
+  /* LAL_FFTW_WISDOM_UNLOCK; */
   memset( plan, 0, sizeof( *plan ) );
   XLALFree( plan );
   return;
@@ -408,12 +408,12 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
     XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   if ( fwdflg ) /* forward */
     plan->plan = fftw_plan_r2r_1d( size, tmp1, tmp2, FFTW_R2HC, flags );
   else /* reverse */
     plan->plan = fftw_plan_r2r_1d( size, tmp1, tmp2, FFTW_HC2R, flags );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 
   /* free temporary arrays */
   XLALFree( tmp2 );
@@ -464,9 +464,9 @@ void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan )
      if ( ! plan->plan )
      XLAL_ERROR_VOID( XLAL_EINVAL );
   */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   fftw_destroy_plan( plan->plan );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
   memset( plan, 0, sizeof( *plan ) );
   XLALFree( plan );
 

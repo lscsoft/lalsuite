@@ -59,14 +59,14 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   }
 
   /* create the plan */
-  /* LAL_FFTW_PTHREAD_MUTEX_LOCK; */
+  /* LAL_FFTW_WISDOM_LOCK; */
   /*
    * Change the size to avoid CUDA bug with FFT of size 1
    */
   if( size == 1 ) createSize = 2;
   else createSize = size;
   cufftPlan1d( &plan->plan, createSize, CUFFT_C2C, 1 );
-  /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
+  /* LAL_FFTW_WISDOM_UNLOCK; */
 
   /* "Plan=0" Bugfix by Wiesner, K.: plan->plan is an integer handle not a pointer and 0 is a valid handle
       So checking against 0 and occasionaly destroy the plan is a bug.
@@ -115,11 +115,11 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan )
    if ( ! plan->plan )
       XLAL_ERROR_VOID( XLAL_EINVAL );
   */
-  //LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  //LAL_FFTW_WISDOM_LOCK;
   cufftDestroy( plan->plan );
   XLALCudaFree(plan->d_input);
   XLALCudaFree(plan->d_output);
-  //LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  //LAL_FFTW_WISDOM_UNLOCK;
   memset( plan, 0, sizeof( *plan ) );
   XLALFree( plan );
   return;
@@ -205,11 +205,11 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
   }
 
   /* create the plan */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   plan->plan = fftw_plan_dft_1d( size,
       (fftw_complex *)tmp1, (fftw_complex *)tmp2,
       fwdflg ? FFTW_FORWARD : FFTW_BACKWARD, flags );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 
   /* free temporary arrays */
   XLALFree( tmp2 );
@@ -259,9 +259,9 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan )
     if ( ! plan->plan )
      XLAL_ERROR_VOID( XLAL_EINVAL );
   */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   fftw_destroy_plan( plan->plan );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
   memset( plan, 0, sizeof( *plan ) );
   XLALFree( plan );
   return;
