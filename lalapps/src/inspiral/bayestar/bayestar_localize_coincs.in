@@ -80,6 +80,7 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('BAYESTAR')
 
 # LIGO-LW XML imports.
+import lal.series
 from glue.ligolw import utils as ligolw_utils
 
 # BAYESTAR imports.
@@ -103,7 +104,7 @@ reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process
 @memoized
 def reference_psds_for_filename(filename):
     xmldoc = ligolw_utils.load_filename(filename)
-    psds = ligolw_sky_map.read_psd_xmldoc(xmldoc)
+    psds = lal.series.read_psd_xmldoc(xmldoc)
     return dict(
         (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
         for key, psd in psds.iteritems() if psd is not None)

@@ -1,7 +1,8 @@
 pkgpython_PYTHON = \
 	__init__.py \
 	gpstime.py \
-	git_version.py
+	git_version.py \
+	series.py
 
 EXTRA_DIST = \
 	gpstime.py \

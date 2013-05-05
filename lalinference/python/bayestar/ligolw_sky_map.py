@@ -28,77 +28,6 @@ from . import filter
 from . import timing
 from . import sky_map
 import lal, lalsimulation
-from glue.ligolw import ligolw
-from glue.ligolw import array as ligolw_array
-from glue.ligolw import param as ligolw_param
-
-
-# Copied and adapted from pylal.series.parse_REAL8FrequencySeries.
-def parse_REAL8FrequencySeries(elem):
-    t, = elem.getElementsByTagName(ligolw.Time.tagName)
-    a, = elem.getElementsByTagName(ligolw.Array.tagName)
-    dims = a.getElementsByTagName(ligolw.Dim.tagName)
-    f0 = ligolw_param.get_param(elem, u"f0")
-
-    epoch = lal.LIGOTimeGPS(str(t.pcdata))
-
-    # Target units: inverse seconds
-    inverse_seconds_unit = lal.Unit()
-    lal.ParseUnitString(inverse_seconds_unit, "s^-1")
-
-    # Parse units of f0 field
-    f0_unit = lal.Unit()
-    lal.ParseUnitString(f0_unit, str(f0.get_unit()))
-
-    # Parse units of deltaF field
-    deltaF_unit = lal.Unit()
-    lal.ParseUnitString(deltaF_unit, str(dims[0].getAttribute(u"Unit")))
-
-    # Parse units of data
-    sample_unit = lal.Unit()
-    lal.ParseUnitString(sample_unit, str(a.getAttribute(u"Unit")))
-
-    # Parse data
-    data = a.array[1]
-
-    # Initialize data structure
-    series = lal.CreateREAL8FrequencySeries(
-        str(a.getAttribute(u"Name")),
-        epoch,
-        float(f0.pcdata) * lal.UnitRatio(f0_unit, inverse_seconds_unit),
-        float(dims[0].getAttribute(u"Scale")) * lal.UnitRatio(deltaF_unit, inverse_seconds_unit),
-        sample_unit,
-        len(data)
-    )
-
-    # Copy data
-    series.data.data = data
-
-    # Done!
-    return series
-# End section copied and adapted from pylal.series.parse_REAL8FrequencySeries.
-
-
-# Copied and adapted from pylal.series.read_psd_xmldoc.
-def read_psd_xmldoc(xmldoc):
-    """
-    Parse a dictionary of PSD frequency series objects from an XML
-    document.  See also make_psd_xmldoc() for the construction of XML documents
-    from a dictionary of PSDs.  Interprets an empty freuency series for an
-    instrument as None.
-    """
-    out = dict(
-        (ligolw_param.get_pyvalue(elem, u"instrument"),
-        parse_REAL8FrequencySeries(elem))
-        for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName)
-        if elem.hasAttribute(u"Name")
-        and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
-    # Interpret empty frequency series as None
-    for k in out:
-        if len(out[k].data.data) == 0:
-            out[k] = None
-    return out
-# End section copied and adapted from pylal.series.read_psd_xmldoc.
 
 
 def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_low, min_distance=None, max_distance=None, prior_distance_power=None, method="toa_snr", reference_frequency=None, psds=None, nside=-1):
@@ -196,6 +125,7 @@ def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, ma
     from glue.ligolw import table as ligolw_table
     from glue.ligolw import utils as ligolw_utils
     from glue.ligolw import lsctables
+    import lal.series
 
     # Determine approximant, amplitude order, and phase order from command line arguments.
     approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(waveform)
@@ -224,7 +154,7 @@ def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, ma
         psds = None
     else:
         xmldoc, _ = ligolw_utils.load_fileobj(psd_file)
-        psds = read_psd_xmldoc(xmldoc)
+        psds = lal.series.read_psd_xmldoc(xmldoc)
 
         # Rearrange PSDs into the same order as the sngl_inspirals.
         psds = [psds[sngl_inspiral.ifo] for sngl_inspiral in sngl_inspirals]
