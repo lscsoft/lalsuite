@@ -56,7 +56,7 @@ RUNTIME =                 21.5 / Runtime in seconds of the CREATOR program
 END
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
-__all__ = ("write_map",)
+__all__ = ("read_sky_map", "write_sky_map")
 
 
 import gzip
