@@ -1017,26 +1017,33 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams_t intparams = empty_intparams;
   UINT4 i, j;
   REAL8 gg;
-  UINT4 dim;
-  const DopplerCoordinateSystem *coordSys;
 
   /* ---------- sanity/consistency checks ---------- */
-  if ( !metricParams || !edat ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer passed.\n\n", __func__);
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
+  XLAL_CHECK_NULL ( metricParams != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( edat != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
   UINT4 Nseg = metricParams->segmentList.length;
   XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
 
+  UINT4 dim = metricParams->coordSys.dim;
+  const DopplerCoordinateSystem *coordSys = &(metricParams->coordSys);
+  // ----- check that {n2x_equ, n2y_equ} are not used at the equator (delta=0), as metric is undefined there
+  BOOLEAN have_n2xy = 0;
+  for ( i = 0; i < dim; i ++ ) {
+    if ( (coordSys->coordIDs[i] == DOPPLERCOORD_N2X_EQU) || ( coordSys->coordIDs[i] == DOPPLERCOORD_N2Y_EQU) ) {
+      have_n2xy = 1;
+    }
+  }
+  BOOLEAN at_equator = (metricParams->signalParams.Doppler.Delta == 0);
+  XLAL_CHECK_NULL ( !(at_equator && have_n2xy), XLAL_EINVAL, "Can't use 'n2x_equ','n2y_equ' at equator (Delta=0): metric is singular there");
+
+  // ----- useful shortcuts
   LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
   LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
   REAL8 Tspan = XLALGPSDiff( endTime, startTime );
 
   const LIGOTimeGPS *refTime   = &(metricParams->signalParams.Doppler.refTime);
 
-  dim = metricParams->coordSys.dim;
-  coordSys = &(metricParams->coordSys);
 
   /* ---------- prepare output metric ---------- */
   if ( (g_ij = gsl_matrix_calloc ( dim, dim )) == NULL ) {
@@ -1143,6 +1150,18 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 {
   XLAL_CHECK_NULL ( metricParams, XLAL_EINVAL, "Invalid NULL input 'metricParams'\n" );
   XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
+
+  UINT4 dim = metricParams->coordSys.dim;
+  const DopplerCoordinateSystem *coordSys = &(metricParams->coordSys);
+  // ----- check that {n2x_equ, n2y_equ} are not used at the equator (delta=0), as metric is undefined there
+  BOOLEAN have_n2xy = 0;
+  for ( UINT4 i = 0; i < dim; i ++ ) {
+    if ( (coordSys->coordIDs[i] == DOPPLERCOORD_N2X_EQU) || ( coordSys->coordIDs[i] == DOPPLERCOORD_N2Y_EQU) ) {
+      have_n2xy = 1;
+    }
+  }
+  BOOLEAN at_equator = (metricParams->signalParams.Doppler.Delta == 0);
+  XLAL_CHECK_NULL ( !(at_equator && have_n2xy), XLAL_EINVAL, "Can't use 'n2x_equ','n2y_equ' at equator (Delta=0): metric is singular there");
 
   UINT4 Nseg = metricParams->segmentList.length;	// number of semi-coherent segments to average metrics over
   XLAL_CHECK_NULL ( Nseg >= 1, XLAL_EINVAL, "Got empty segment list metricParams->segmentList, needs to contain at least 1 segments\n");
