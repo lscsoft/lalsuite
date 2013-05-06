@@ -202,6 +202,12 @@ LALSUITE_SWIG_DEPENDS([lal],[true])
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
+# Disable OpenMP by default.
+# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+AS_IF(
+  [test "x$enable_openmp" = "x"],
+  [OPENMP_CFLAGS=]
+)
 # add compiler flags for OpenMP
 AS_IF(
   [test "x$OPENMP_CFLAGS" = "x"],
