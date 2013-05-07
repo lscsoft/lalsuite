@@ -494,6 +494,7 @@
           error("failed to perform indexed assignment for %s type", nm.c_str());
           return octave_value();
         }
+        count++;
         return octave_value(this);
       }
 
