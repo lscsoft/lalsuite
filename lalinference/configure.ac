@@ -143,8 +143,8 @@ AS_IF([test "x$OPENMP_CFLAGS" != "x"],
         AC_MSG_RESULT([no, disabling OpenMP])
         OPENMP_CFLAGS=
       ]
-      CFLAGS=$save_CFLAGS
     )
+    CFLAGS=$save_CFLAGS
   ]
 )
 
