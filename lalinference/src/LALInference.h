@@ -648,3 +648,4 @@ void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefile
 /*@}*/
 
 #endif
+
