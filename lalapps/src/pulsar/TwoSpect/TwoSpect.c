@@ -537,6 +537,10 @@ int main(int argc, char *argv[])
    //When doing linear polarizations, the IHS factor needs to be 25.2*1.082 and this antenna weights
    //function needs to be set to use linear polarization.
    REAL4Vector *antweightsforihs2h0 = XLALCreateREAL4Vector(ffdata->numffts);
+   if (antweightsforihs2h0==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
+      XLAL_ERROR(XLAL_EFUNC);
+   }
    CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
    if (xlalErrno!=0) {
       fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
@@ -569,6 +573,10 @@ int main(int argc, char *argv[])
       REAL4VectorSequence *trackedlines = NULL;
       if (lines!=NULL) {
          trackedlines = trackLines(lines, binshifts, inputParams);
+         if (trackedlines==NULL) {
+            fprintf(stderr, "%s: trackLines() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
       }
       
       //Compute antenna pattern weights. If antennaOff input flag is given, then set all values equal to 1.0
@@ -1120,15 +1128,14 @@ int main(int argc, char *argv[])
                fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
             }
-            REAL8 prob = 0.0;
-            if ( R > 0.0 ) {
-               prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-               if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                  fprintf(stderr,"%s: probR() failed.\n", __func__);
-                  XLAL_ERROR(XLAL_EFUNC);
-               }
+            REAL8 h0 = 0.0;
+            REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+            if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+               fprintf(stderr,"%s: probR() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
             }
-            REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            if ( R > 0.0 ) h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+
             if ((!inputParams->calcRthreshold && prob<inputParams->log10templatefar) || (inputParams->calcRthreshold && R>farval->far)) {
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) {
                   exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length);
