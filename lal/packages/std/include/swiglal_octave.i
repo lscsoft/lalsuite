@@ -343,6 +343,9 @@
 
     public:
 
+      virtual ~swiglal_oct_array_view()
+      { }
+
       swiglal_oct_array_view()
         : octave_base_value(), sloav_parent(),
           sloav_ptr(0), sloav_esize(0), sloav_ndims(0),
@@ -813,6 +816,9 @@
       protected:
 
       public:
+
+        virtual ~%swiglal_oct_array_view_class(ACFTYPE)()
+        { }
 
         %swiglal_oct_array_view_class(ACFTYPE)()
           : %swiglal_oct_array_view_tmpl(ACFTYPE)()
