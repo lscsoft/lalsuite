@@ -132,6 +132,8 @@ typedef struct
   REAL8 fStart;		/**< Start Frequency to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --Freq instead) */
   REAL8 fBand;		/**< Frequency Band to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --FreqBand instead) */
 
+  BOOLEAN version;	/**< Output version information */
+
 } UserVariables_t;
 
 /** Config variables 'derived' from user-input
@@ -193,6 +195,19 @@ main(int argc, char *argv[])
   /* register and read user variables */
   if (initUserVars(argc, argv, &uvar) != XLAL_SUCCESS)
     return EXIT_FAILURE;
+
+  /* assemble version string */
+  CHAR *VCSInfoString;
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed with xlalErrno = %d\n", xlalErrno );
+    return EXIT_FAILURE;
+  }
+
+  if ( uvar.version )
+    {
+      printf ("%s\n", VCSInfoString );
+      return (0);
+    }
 
   /* exit if help was required */
   if (uvar.help)
@@ -446,6 +461,7 @@ main(int argc, char *argv[])
   XLALDestroyREAL8Vector ( overIFOs );
   XLALDestroyREAL8Vector ( finalPSD );
   XLALDestroyREAL8Vector ( finalNormSFT );
+  XLALFree ( VCSInfoString );
 
   LALCheckMemoryLeaks();
 
@@ -578,6 +594,8 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   uvar->binStep   = 0.0;
   uvar->binStep   = 1;
 
+  uvar->version = FALSE;
+
   /* register user input variables */
   XLALregBOOLUserStruct  (help,             'h', UVAR_HELP,     "Print this message" );
   XLALregSTRINGUserStruct(inputData,        'i', UVAR_REQUIRED, "Input SFT pattern");
@@ -630,6 +648,7 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALregREALUserStruct  (fStart,           'f', UVAR_DEVELOPER, "Start Frequency to load from SFT and compute PSD, including rngmed wings (BETTER: use --Freq instead)");
   XLALregREALUserStruct  (fBand,            'b', UVAR_DEVELOPER, "Frequency Band to load from SFT and compute PSD, including rngmed wings (BETTER: use --FreqBand instead)");
 
+  XLALregBOOLUserStruct  (version,          'V', UVAR_SPECIAL, "Output version information");
 
 
   /* read all command line variables */
