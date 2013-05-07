@@ -948,6 +948,20 @@ if (swiglal_release_parent(PTR)) {
 // Do not try to free const char* return arguments.
 %typemap(newfree,noblock=1) const char* "";
 
+// Input typemap for pointer-to-const SWIGTYPEs. This typemap is identical to the
+// standard SWIGTYPE pointer typemap, except $disown is commented out. This prevents
+// SWIG transferring ownership of SWIG-wrapped objects when assigning to pointer-to-const
+// members of structs. In this case, it is assumed that the struct does not want to take
+// ownership of the pointer, since it cannot free it (since it is a pointer-to-const).
+%typemap(in,noblock=1) const SWIGTYPE * (void *argp = 0, int res = 0) {
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+    %argument_fail(res, "$type", $symname, $argnum);
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+}
+%typemap(freearg) const SWIGTYPE * "";
+
 // Typemap for output SWIGTYPEs. This typemaps will match either the SWIG-wrapped
 // return argument from functions (which will have the SWIG_POINTER_OWN bit set
 // in $owner) or return a member of a struct through a 'get' functions (in which
