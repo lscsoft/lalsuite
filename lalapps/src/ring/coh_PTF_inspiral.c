@@ -1366,21 +1366,24 @@ UINT4 coh_PTF_accept_trig_check(
   {
     time2.gpsSeconds=currEvent->end_time.gpsSeconds;
     time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
-    if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
+    if (thisEvent.time_slide_id == currEvent.time_slide_id)
     {
-      if (thisEvent.snr_dof == currEvent->snr_dof)
+      if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
       {
-        if (thisEvent.snr < currEvent->snr\
-            && (thisEvent.event_id->id != currEvent->event_id->id))
+        if (thisEvent.snr_dof == currEvent->snr_dof)
         {
-          if ( XLALGPSDiff(&time1,&time2) < 0 )
-            loudTrigBefore = 1;
-          else
-            loudTrigAfter = 1;
-
-          if (loudTrigBefore && loudTrigAfter)
+          if (thisEvent.snr < currEvent->snr\
+              && (thisEvent.event_id->id != currEvent->event_id->id))
           {
-            return 0;
+            if ( XLALGPSDiff(&time1,&time2) < 0 )
+              loudTrigBefore = 1;
+            else
+              loudTrigAfter = 1;
+
+            if (loudTrigBefore && loudTrigAfter)
+            {
+              return 0;
+            }
           }
         }
       }
