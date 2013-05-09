@@ -2566,7 +2566,6 @@ int main( int argc, char *argv[] )
       
       case 1707: /* Set min coincident SNR in two IFOs */
             single_IFO_SNR_threshold=(REAL8) atof(optarg);
-            printf("set min snr %lf\n",single_IFO_SNR_threshold);
             break;
 
       case 'g':
