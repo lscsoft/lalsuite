@@ -2930,6 +2930,12 @@ int main( int argc, char *argv[] )
         "Must provide all of --min-snr, --max-snr and --ifos to distribute by SNR\n" );
       exit( 1 );
     }
+    if (single_IFO_SNR_threshold > maxSNR)
+    {
+      fprintf(stderr,
+        "Minimum coincident SNR should not be larger than maximum network SNR. Exiting...\n");
+      exit(1);
+    }
     
     /* Check that each ifo has its PSD file or fakePSD */
     char *tmp, *ifo;
@@ -2940,8 +2946,8 @@ int main( int argc, char *argv[] )
     ifo = strtok (tmp,",");
     while (ifo != NULL)
     {
-        numifos += 1;
-        ifo= strtok (NULL, ",");
+      numifos += 1;
+      ifo= strtok (NULL, ",");
     }
     ifonames=realloc(ifonames,(numifos+2)*sizeof(CHAR **));
     strcpy(tmp, ifos);
@@ -2951,67 +2957,76 @@ int main( int argc, char *argv[] )
     i=1;
     while (ifo != NULL)
     {
-        ifo       = strtok (NULL, ",");
-        if (ifo!=NULL){
-            ifonames[i]=malloc(strlen(ifo)+1);
-            sprintf(ifonames[i],"%s",ifo);
-        }
-        i++;
+      ifo = strtok (NULL, ",");
+      if (ifo!=NULL)
+      {
+        ifonames[i]=malloc(strlen(ifo)+1);
+        sprintf(ifonames[i],"%s",ifo);
+      }
+      i++;
     }
     ifonames[numifos]=NULL;
     i=0;
-    while (ifonames[i]!= NULL){
-        
-        if (!strcmp(ifonames[i],"H1") || !strcmp(ifonames[i],"L1")){
-            /* Check either PSD file or fakePSD are given */
-            if(!(ligoFakePsd || ligoPsdFileName )){
-                fprintf( stderr,
-                "Must provide PSD file or the name of analytic PSD for LIGO if --snr-distr is given and H1 or L1 are in --ifos. \n" );
-                exit( 1 );
-            }
-            /* Check we didn't give both fake PSD and filename*/
-            if ( ligoFakePsd && ligoPsdFileName ){
-                fprintf( stderr,"Must provide only one between --ligo-psd and --ligo-fake-psd \n" );
-                exit( 1 );
-            }
-            /* Check flow for SNR calculation was given */
-            if (ligoStartFreq < 0) {
-                fprintf( stderr, "Must specify --ligo-start-freq together with --ligo-psd or --ligo-fake-psd.\n");
-                exit( 1 );
-            }
-            /* Ninja only work with PSD file, check user provided it */
-            if (ninjaSNR && !(ligoPsdFileName)){
-                fprintf( stderr, "Ninja injections do not support SNR calculation with simulated PSD. Please provide PSD file for LIGO (with --ligo-psd filename.dat). Exiting...\n");
-                exit( 1 );
-                }
+    while (ifonames[i]!= NULL)
+    {
+      if (!strcmp(ifonames[i],"H1") || !strcmp(ifonames[i],"L1"))
+      {
+        /* Check either PSD file or fakePSD are given */
+        if(!(ligoFakePsd || ligoPsdFileName ))
+        {
+          fprintf( stderr,
+           "Must provide PSD file or the name of analytic PSD for LIGO if --snr-distr is given and H1 or L1 are in --ifos. \n" );
+          exit( 1 );
         }
-        else if (!strcmp(ifonames[i],"V1")){
-            /* Check either PSD file or fakePSD are given */
-            if(!(virgoFakePsd || virgoPsdFileName )){
-                fprintf( stderr,
-                "Must provide PSD file or the name of analytic PSD for Virgo if --snr-distr is given and V1 is in --ifos. \n" );
-                exit( 1 );
-            }
-            /* Check we didn't give both fake PSD and filename*/
-            if ( virgoFakePsd && virgoPsdFileName ){
-                fprintf( stderr,"Must provide only one between --virgo-psd and --virgo-fake-psd \n" );
-                exit( 1 );
-            }
-            /* Check flow for SNR calculation was given */
-            if (virgoStartFreq < 0) {
-              fprintf( stderr,
-                "Must specify --virgo-start-freq with --virgo-psd or --virgo-fake-psd.\n"
-                );
-              exit( 1 );
-            }
-            /* Ninja only work with PSD file, check user provided it */
-            if (ninjaSNR && !(virgoPsdFileName)){
-                fprintf( stderr, "Ninja injections do not support SNR calculation with simulated PSD. Please provide PSD file for Virgo (with --virgo-psd filename.dat). Exiting...\n");
-                exit( 1 );
-                }
+        /* Check we didn't give both fake PSD and filename*/
+        if ( ligoFakePsd && ligoPsdFileName )
+        {
+          fprintf( stderr,"Must provide only one between --ligo-psd and --ligo-fake-psd \n" );
+          exit( 1 );
         }
+          /* Check flow for SNR calculation was given */
+        if (ligoStartFreq < 0)
+        {
+          fprintf( stderr, "Must specify --ligo-start-freq together with --ligo-psd or --ligo-fake-psd.\n");
+          exit( 1 );
+        }
+            /* Ninja only work with PSD file, check user provided it */
+        if (ninjaSNR && !(ligoPsdFileName))
+        {
+          fprintf( stderr, "Ninja injections do not support SNR calculation with simulated PSD. Please provide PSD file for LIGO (with --ligo-psd filename.dat). Exiting...\n");
+          exit( 1 );
+        }
+      }
+      else if (!strcmp(ifonames[i],"V1"))
+      {
+        /* Check either PSD file or fakePSD are given */
+        if(!(virgoFakePsd || virgoPsdFileName ))
+        {
+          fprintf( stderr,
+            "Must provide PSD file or the name of analytic PSD for Virgo if --snr-distr is given and V1 is in --ifos. \n" );
+          exit( 1 );
+        }
+        /* Check we didn't give both fake PSD and filename*/
+        if ( virgoFakePsd && virgoPsdFileName )
+        {
+          fprintf( stderr,"Must provide only one between --virgo-psd and --virgo-fake-psd \n" );
+          exit( 1 );
+        }
+        /* Check flow for SNR calculation was given */
+        if (virgoStartFreq < 0) 
+        {
+          fprintf( stderr,"Must specify --virgo-start-freq with --virgo-psd or --virgo-fake-psd.\n");
+          exit( 1 );
+        }
+        /* Ninja only work with PSD file, check user provided it */
+        if (ninjaSNR && !(virgoPsdFileName))
+        {
+          fprintf( stderr, "Ninja injections do not support SNR calculation with simulated PSD. Please provide PSD file for Virgo (with --virgo-psd filename.dat). Exiting...\n");
+          exit( 1 );
+        }
+      }
         
-        i++;
+      i++;
     }
     if (tmp) LALFree(tmp);
     if (ifo) LALFree(ifo);
@@ -3023,7 +3038,7 @@ int main( int argc, char *argv[] )
     }
     if (single_IFO_SNR_threshold<0.0)
       {
-      fprintf( stderr,
+        fprintf( stderr,
             "The single IFO SNR threshold must be positive. Exiting...\n" );
         exit( 1 );
       }
@@ -3040,15 +3055,15 @@ int main( int argc, char *argv[] )
         free(ligoPsdFileName);
         }
 
-  if (virgoPsdFileName) {
-    if (XLALPsdFromFile(&virgoPsd, virgoPsdFileName) != XLAL_SUCCESS)
-        {
-          fprintf(stderr, "Unable to load PSD file %s.\n", virgoPsdFileName);
-          exit( 1 );
-        }
-    /* We're done with the filename */
-    free(virgoPsdFileName);
-  }
+    if (virgoPsdFileName) {
+      if (XLALPsdFromFile(&virgoPsd, virgoPsdFileName) != XLAL_SUCCESS)
+      {
+        fprintf(stderr, "Unable to load PSD file %s.\n", virgoPsdFileName);
+        exit( 1 );
+      }
+      /* We're done with the filename */
+      free(virgoPsdFileName);
+    }
       
   }
 
@@ -3080,6 +3095,7 @@ int main( int argc, char *argv[] )
         "or choose another mass-distribution (--m-distr).\n" );
     exit( 1 );
   }
+  
   if ( !nrFileName && mDistr==massFromNRFile )
   {
     fprintf( stderr,
@@ -3561,16 +3577,15 @@ int main( int argc, char *argv[] )
     }
     else if (dDistr==uniformSnr || dDistr==uniformLogSnr || dDistr==uniformVolumeSnr)
     {
-        /* Set distance to just any value, e.g. 100, which will be used to scale the SNR */
-        simTable->distance=100.0;
+      /* Set distance to just any value, e.g. 100, which will be used to scale the SNR */
+      simTable->distance=100.0;
     }
-    /* Salvo: Do we need something for z here? 
-     * Possible errors (i.e. no dDistr given) should have already been caught, but just to be sure (in case someone adds new LoudnessDistribution) */ 
+    /* Possible errors (i.e. no dDistr given) should have already been caught, but just to be sure (in case someone adds new LoudnessDistribution) */ 
     else
     {
-        fprintf(stderr,"Error while generating the distance of the event.\n");
-        exit(1);
-     }
+      fprintf(stderr,"Error while generating the distance of the event.\n");
+      exit(1);
+    }
     /* Scale by chirp mass if desired, relative to a 1.4,1.4 object */
     if ( useChirpDist )
     {
@@ -3744,75 +3759,81 @@ int main( int argc, char *argv[] )
     }
 
     /* adjust SNR to desired distribution using LALSimulation WF Generator */
-    if (ifos!=NULL && !ninjaSNR){
-    
-        char *ifo;
-        REAL8 *start_freqs;
-        REAL8FrequencySeries **psds;
-        i=1;
-    
-        /*reset counter */
-        ifo=ifonames[0];
-        i=0;
-        //printf("numifos %d\n",numifos);
-        /* Create variables for PSDs and starting frequencies */
-        start_freqs = (REAL8 *) LALCalloc(numifos+1, sizeof(REAL8));
-        psds        = (REAL8FrequencySeries **) LALCalloc(numifos+1, sizeof(REAL8FrequencySeries *));
+    if (ifos!=NULL && !ninjaSNR)
+    {
+      char *ifo;
+      REAL8 *start_freqs;
+      REAL8FrequencySeries **psds;
+      i=1;
+  
+      /*reset counter */
+      ifo=ifonames[0];
+      i=0;
+      //printf("numifos %d\n",numifos);
+      /* Create variables for PSDs and starting frequencies */
+      start_freqs = (REAL8 *) LALCalloc(numifos+1, sizeof(REAL8));
+      psds        = (REAL8FrequencySeries **) LALCalloc(numifos+1, sizeof(REAL8FrequencySeries *));
+      
+      /* Hardcoded values of srate and segment length. If changed here they must also be changed in inspiralutils.c/calculate_lalsim_snr */
+      REAL8 srate=4096.0;
+      /* Increase srate for EOB WFs */ 
+      const char* WF=simTable->waveform;
+      if (strstr(WF,"EOB"))
+        srate=8192.0;
+      /* We may want to increase the segment length when starting at low frequencies */
+      REAL8 segment=64.0;
+      size_t seglen=(size_t) segment*srate;
         
-        /* Hardcoded values of srate and segment length. If changed here they must also be changed in inspiralutils.c/calculate_lalsim_snr */
-        REAL8 srate=4096.0;
-        /* Increase srate for EOB WFs */ 
-        const char* WF=simTable->waveform;
-        if (strstr(WF,"EOB"))
-            srate=8192.0;
-        /* Salvo: Use 60secs. May want to increase*/
-        REAL8 segment=60.0;
-        size_t seglen=(size_t) segment*srate;
         
-        
-        /* Fill psds and start_freqs */
-        /* If the user did not provide files for the PSDs, use XLALSimNoisePSD to fill in ligoPsd and virgoPsd */
-        while(ifo !=NULL){
-            if(!strcmp("V1",ifo)){
-                start_freqs[i]=virgoStartFreq;
-                if (!virgoPsd){
-                    virgoPsd=XLALCreateREAL8FrequencySeries("VPSD", &(simTable->geocent_end_time), 0, 1.0/segment, &lalHertzUnit, seglen/2+1);
-                    get_FakePsdFromString(virgoPsd,virgoFakePsd, virgoStartFreq);
-                }
-                if (!virgoPsd) fprintf(stderr,"Failed to produce Virgo PSD series. Exiting...\n");
-                psds[i]=virgoPsd;
-            }
-            else if (!strcmp("L1",ifo) || !strcmp("H1",ifo)){
-                start_freqs[i]=ligoStartFreq;
-                if(!ligoPsd){
-                    ligoPsd=XLALCreateREAL8FrequencySeries("LPSD", &(simTable->geocent_end_time), 0, 1.0/segment, &lalHertzUnit, seglen/2+1);
-                    get_FakePsdFromString(ligoPsd,ligoFakePsd,ligoStartFreq);
-                }   
-                if (!ligoPsd) fprintf(stderr,"Failed to produce LIGO PSD series. Exiting...\n");   
-                psds[i]=ligoPsd;
-            }
-            else{
-                fprintf(stderr,"Unknown IFO. Allowed IFOs are H1,L1 and V1. Exiting...\n");
-                exit(-1);
-                }
-            i++;
-            ifo=ifonames[i];
-            }
-        
-        /* If 1 detector is used, turn the single IFO snr check off. */ 
-        if (numifos<2){
-                fprintf(stdout,"Warning: You are using less than 2 IFOs. Disabling the single IFO SNR threshold check...\n");
-                single_IFO_SNR_threshold=0.0;
+      /* Fill psds and start_freqs */
+      /* If the user did not provide files for the PSDs, use XLALSimNoisePSD to fill in ligoPsd and virgoPsd */
+      while(ifo !=NULL)
+      {
+        if(!strcmp("V1",ifo))
+        {
+          start_freqs[i]=virgoStartFreq;
+          if (!virgoPsd)
+          {
+            virgoPsd=XLALCreateREAL8FrequencySeries("VPSD", &(simTable->geocent_end_time), 0, 1.0/segment, &lalHertzUnit, seglen/2+1);
+            get_FakePsdFromString(virgoPsd,virgoFakePsd, virgoStartFreq);
+          }
+          if (!virgoPsd) fprintf(stderr,"Failed to produce Virgo PSD series. Exiting...\n");
+          psds[i]=virgoPsd;
         }
-        
-        /* This function takes care of drawing a proposed SNR and set the distance accordingly  */
-        scale_lalsim_distance(simTable,ifonames, psds, start_freqs, dDistr);
-        
-        /* Clean  */
-        if (psds) LALFree(psds);
-        if (start_freqs) LALFree(start_freqs);
-        /* Done */
-        /* Note: Because LALPopulateSimInspiralSiteInfo is called afterwards, the effective distances are also been scaled. */
+        else if (!strcmp("L1",ifo) || !strcmp("H1",ifo))
+        {
+          start_freqs[i]=ligoStartFreq;
+          if(!ligoPsd){
+            ligoPsd=XLALCreateREAL8FrequencySeries("LPSD", &(simTable->geocent_end_time), 0, 1.0/segment, &lalHertzUnit, seglen/2+1);
+            get_FakePsdFromString(ligoPsd,ligoFakePsd,ligoStartFreq);
+          }   
+          if (!ligoPsd) fprintf(stderr,"Failed to produce LIGO PSD series. Exiting...\n");   
+          psds[i]=ligoPsd;
+        }
+        else
+        {
+          fprintf(stderr,"Unknown IFO. Allowed IFOs are H1,L1 and V1. Exiting...\n");
+          exit(-1);
+        }
+        i++;
+        ifo=ifonames[i];
+      }
+      
+      /* If 1 detector is used, turn the single IFO snr check off. */ 
+      if (numifos<2)
+      {
+        fprintf(stdout,"Warning: You are using less than 2 IFOs. Disabling the single IFO SNR threshold check...\n");
+        single_IFO_SNR_threshold=0.0;
+      }
+      
+      /* This function takes care of drawing a proposed SNR and set the distance accordingly  */
+      scale_lalsim_distance(simTable,ifonames, psds, start_freqs, dDistr);
+      
+      /* Clean  */
+      if (psds) LALFree(psds);
+      if (start_freqs) LALFree(start_freqs);
+      /* Done */
+      /* Note: Because LALPopulateSimInspiralSiteInfo is called afterwards, the effective distances are also been scaled. */
     }  
 
     /* populate the site specific information */
@@ -3993,122 +4014,135 @@ int main( int argc, char *argv[] )
 static void scale_lalsim_distance(SimInspiralTable *inj,char ** IFOnames, REAL8FrequencySeries **psds,REAL8 *start_freqs,LoudnessDistribution snrDistr)
 {
     
-    REAL8 proposedSNR=0.0;
-    REAL8 local_min=0.0;
-    REAL8 net_snr=0.0;
-    REAL8 * SNRs=NULL;
-    UINT4 above_threshold=0;
-    REAL8 ratio=1.0;
-    UINT4 j=0;
-    UINT4 num_ifos=0;
-    /* If not already done, set distance to 100Mpc, just to have something while calculating the actual SNR */
-    if (inj->distance<=0)
-        inj->distance=100.0;
+  REAL8 proposedSNR=0.0;
+  REAL8 local_min=0.0;
+  REAL8 net_snr=0.0;
+  REAL8 * SNRs=NULL;
+  UINT4 above_threshold=0;
+  REAL8 ratio=1.0;
+  UINT4 j=0;
+  UINT4 num_ifos=0;
+  /* If not already done, set distance to 100Mpc, just to have something while calculating the actual SNR */
+  if (inj->distance<=0)
+    inj->distance=100.0;
+  
+  if (IFOnames ==NULL)
+  {
+    fprintf(stderr,"scale_lalsim_distance() called with IFOnames=NULL. Exiting...\n");
+    exit(1);
+  }
+  char * ifo=IFOnames[0];
+  
+  /* Get the number of IFOs from IFOnames*/
+  while(ifo !=NULL)
+  {
+      num_ifos++;
+      ifo=IFOnames[num_ifos];
+  }
     
-    if (IFOnames ==NULL){
-        fprintf(stderr,"scale_lalsim_distance() called with IFOnames=NULL. Exiting...\n");
-        exit(1);
-        }
-    char * ifo=IFOnames[0];
     
-    /* Get the number of IFOs from IFOnames*/
-    while(ifo !=NULL){
-        num_ifos++;
-        ifo=IFOnames[num_ifos];
-    }
-    
-    
-    SNRs=calloc(num_ifos+1 ,sizeof(REAL8));
-    /* Calculate the single IFO and network SNR for the dummy distance of 100Mpc */
-    for (j=0;j<num_ifos;j++){
-        SNRs[j]=calculate_lalsim_snr(inj,IFOnames[j],psds[j],start_freqs[j]);
-        net_snr+=SNRs[j]*SNRs[j];
-    }
-    net_snr=sqrt(net_snr);
+  SNRs=calloc(num_ifos+1 ,sizeof(REAL8));
+  /* Calculate the single IFO and network SNR for the dummy distance of 100Mpc */
+  for (j=0;j<num_ifos;j++)
+  {
+    SNRs[j]=calculate_lalsim_snr(inj,IFOnames[j],psds[j],start_freqs[j]);
+    net_snr+=SNRs[j]*SNRs[j];
+  }
+  net_snr=sqrt(net_snr);
     
 
-    local_min=minSNR;  
+  local_min=minSNR;  
     /* Draw a proposed netw SNR. Check that two or more IFOs are above coincidence (if given and if num_ifos>=2) */
-    do{
-        above_threshold=num_ifos;
-        /* Generate a new SNR from given distribution */
-        if (snrDistr==uniformSnr){
-            proposedSNR=draw_uniform_snr(local_min,maxSNR);
-        }
-        else if(snrDistr==uniformLogSnr){
-            proposedSNR=draw_log10_snr(local_min,maxSNR);
-        }
-        else if (snrDistr==uniformVolumeSnr){
-            proposedSNR=draw_volume_snr(local_min,maxSNR);
-        }
-        else{
-            fprintf(stderr,"Allowed values for snr-distr are uniformSnr, uniformLogSnr and uniformVolumeSnr. Exiting...\n");
-            exit(1);
-        }
-   
-        if (vrbflg){
-            printf("proposed SNR %lf. Proposed new dist %lf \n",proposedSNR,inj->distance*net_snr/proposedSNR);
-        }
-        ratio=net_snr/proposedSNR;
-        
-        
-        /* Check that single ifo SNRs above threshold in two IFOs */
-        for (j=0;j<num_ifos;j++){
-            //printf("snr %d %lf\n",j,SNRs[j]/ratio);
-            if (SNRs[j]<single_IFO_SNR_threshold*ratio)
-                above_threshold--;
-        }
-        /* Set the min to the proposed SNR, so that next drawing for this event (if necessary) will give higher SNR */
-        local_min=proposedSNR;
-        /* We hit the upper bound of the Network SNR. It is simply not possible to have >2 IFOs with single IFO above coincidence level without getting the network SNR above the maxSNR.
-         * Use the last proposed value (~maxSNR) and continue */ 
-        if (maxSNR-proposedSNR<0.1 && single_IFO_SNR_threshold>0.0)
-        {
-            fprintf(stdout,"WARNING: Could not get two or more IFOs having SNR>%.1f without making the network SNR larger that its maximum value %.1f. Setting SNR to %lf.\n",single_IFO_SNR_threshold,maxSNR,proposedSNR);
-            
-            /* set above_threshold to 3 to go out */
-            above_threshold=3;
-        }
-        else
-        if (vrbflg){
-            if (above_threshold<2 && num_ifos>=2) 
-                fprintf(stdout,"WARNING: Proposed SNR does not get two or more IFOs having SNR>%.1f. Re-drawing... \n",single_IFO_SNR_threshold);
-        }
-        
-    }while(!(above_threshold>=2) && num_ifos>=2); 
-    
-    inj->distance=inj->distance*ratio;
-    char SnrName[200];
-    sprintf(SnrName,"SNRfile.txt");
-    FILE * snrout = fopen(SnrName,"a");
-    fprintf(snrout,"%lf\n",proposedSNR);
-    fclose(snrout);
-if (SNRs) free(SNRs);
+  do
+  {
+    above_threshold=num_ifos;
+    /* Generate a new SNR from given distribution */
+      if (snrDistr==uniformSnr)
+      {
+        proposedSNR=draw_uniform_snr(local_min,maxSNR);
+      }
+      else if(snrDistr==uniformLogSnr)
+      {
+        proposedSNR=draw_log10_snr(local_min,maxSNR);
+      }
+      else if (snrDistr==uniformVolumeSnr)
+      {
+        proposedSNR=draw_volume_snr(local_min,maxSNR);
+      }
+      else
+      {
+        fprintf(stderr,"Allowed values for snr-distr are uniformSnr, uniformLogSnr and uniformVolumeSnr. Exiting...\n");
+        exit(1);
+      }
+ 
+      if (vrbflg)
+      { /* print if verbose */
+        printf("proposed SNR %lf. Proposed new dist %lf \n",proposedSNR,inj->distance*net_snr/proposedSNR);
+      }
+      ratio=net_snr/proposedSNR;
+      
+      
+      /* Check that single ifo SNRs above threshold in two IFOs */
+      for (j=0;j<num_ifos;j++)
+      {
+        if (SNRs[j]<single_IFO_SNR_threshold*ratio)
+        above_threshold--;
+      }
+      /* Set the min to the proposed SNR, so that next drawing for this event (if necessary) will give higher SNR */
+      local_min=proposedSNR;
+      /* We hit the upper bound of the Network SNR. It is simply not possible to have >2 IFOs with single IFO above coincidence level without getting the network SNR above the maxSNR.
+       * Use the last proposed value (~maxSNR) and continue */ 
+      if (maxSNR-proposedSNR<0.1 && single_IFO_SNR_threshold>0.0)
+      {
+        fprintf(stdout,"WARNING: Could not get two or more IFOs having SNR>%.1f without making the network SNR larger that its maximum value %.1f. Setting SNR to %lf.\n",single_IFO_SNR_threshold,maxSNR,proposedSNR);
+          
+        /* set above_threshold to 3 to go out */
+        above_threshold=3;
+      }
+      else
+      if (vrbflg)
+      {
+        if (above_threshold<2 && num_ifos>=2) 
+        fprintf(stdout,"WARNING: Proposed SNR does not get two or more IFOs having SNR>%.1f. Re-drawing... \n",single_IFO_SNR_threshold);
+      }
+      
+  }while(!(above_threshold>=2) && num_ifos>=2); 
+  
+  inj->distance=inj->distance*ratio;
+
+  /* We may want the resulting SNR printed to a file. If so, uncomment those lines 
+  char SnrName[200];
+  sprintf(SnrName,"SNRfile.txt");
+  FILE * snrout = fopen(SnrName,"a");
+  fprintf(snrout,"%lf\n",proposedSNR);
+  fclose(snrout);
+  */
+  
+  if (SNRs) free(SNRs);
 
 }
 
-static REAL8 draw_volume_snr(REAL8 minsnr,REAL8 maxsnr){
+static REAL8 draw_volume_snr(REAL8 minsnr,REAL8 maxsnr)
+{
+  REAL8 proposedSNR=0.0;
+  proposedSNR=1.0/(maxsnr*maxsnr*maxsnr)+(1.0/(minsnr*minsnr*minsnr)- 1.0/(maxsnr*maxsnr*maxsnr))*XLALUniformDeviate(randParams);
+  proposedSNR=1.0/cbrt(proposedSNR);
+  return proposedSNR;
+}
     
-    REAL8 proposedSNR=0.0;
+static REAL8 draw_uniform_snr(REAL8 minsnr,REAL8 maxsnr)
+{
     
-    proposedSNR=1.0/(maxsnr*maxsnr*maxsnr)+(1.0/(minsnr*minsnr*minsnr)- 1.0/(maxsnr*maxsnr*maxsnr))*XLALUniformDeviate(randParams);
-    proposedSNR=1.0/cbrt(proposedSNR);
-    return proposedSNR;
-    }
+  REAL8 proposedSNR=0.0;  
+  proposedSNR=minsnr+ (maxsnr-minsnr)*XLALUniformDeviate(randParams);
+  return proposedSNR;
+}
     
-static REAL8 draw_uniform_snr(REAL8 minsnr,REAL8 maxsnr){
-    
-    REAL8 proposedSNR=0.0;
-    
-    proposedSNR=minsnr+ (maxsnr-minsnr)*XLALUniformDeviate(randParams);
-    return proposedSNR;
-    }
-    
-static REAL8 draw_log10_snr(REAL8 minsnr,REAL8 maxsnr){
-
-    REAL8 proposedlogSNR=0.0;
-    REAL8 logminsnr=log10(minsnr);
-    REAL8 logmaxsnr=log10(maxsnr);    
-    proposedlogSNR=logminsnr+ (logmaxsnr-logminsnr)*XLALUniformDeviate(randParams);
-    return pow(10.0,proposedlogSNR);
-    }
+static REAL8 draw_log10_snr(REAL8 minsnr,REAL8 maxsnr)
+{
+  REAL8 proposedlogSNR=0.0;
+  REAL8 logminsnr=log10(minsnr);
+  REAL8 logmaxsnr=log10(maxsnr);    
+  proposedlogSNR=logminsnr+ (logmaxsnr-logminsnr)*XLALUniformDeviate(randParams);
+  return pow(10.0,proposedlogSNR);
+}

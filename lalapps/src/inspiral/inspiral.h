@@ -159,6 +159,9 @@ REAL8FrequencySeries *XLALInterpolatePSD(
               REAL8 deltaFout
             );
 
+REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencySeries *psd, REAL8 start_freq);
+void get_FakePsdFromString(REAL8FrequencySeries* PsdFreqSeries,char* FakePsdName, REAL8 StartFreq);
+
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
