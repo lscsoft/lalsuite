@@ -1189,6 +1189,9 @@ export X509_USER_PROXY
 export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
 export _CONDOR_DAGMAN_COPY_TO_SPOOL=False
 
+# increase the JAVA heap size for processing large workflows
+export JAVA_HEAPMAX=4096
+
 if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG} ] ; then
   pegasus-run --conf ${IHOPE_RUN_DIR}/pegasus.properties ${TMP_EXEC_DIR}/.
 else
