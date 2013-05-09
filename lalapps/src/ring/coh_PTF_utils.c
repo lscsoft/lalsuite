@@ -678,7 +678,11 @@ void coh_PTF_create_time_slide_table(
         {
           currBaseIfoOffset[ifoNumber] = currBaseOffset * ifoNum;
           /* If the offset is bigger than the stride then this cannot be done*/
-          if (currBaseIfoOffset[ifoNumber] > params->strideDuration)
+          /* EDIT: We need to check that the offset is not bigger than the */
+          /* stride minus the BaseOffset, otherwise we can end up with short */
+          /* slides whose offsets are very similar to the long slides */
+          if (currBaseIfoOffset[ifoNumber] > \
+                  (params->strideDuration - params->shortSlideOffset) )
           {
             break;
           }
