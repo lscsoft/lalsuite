@@ -867,7 +867,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     snprintf(filename, nameLength, "%s-ChiSquaredLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < pow(10.0,-14.0)) {
+                        if (pvalues[k] < 2*pow(10.0,-14.0)) {
                             fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
