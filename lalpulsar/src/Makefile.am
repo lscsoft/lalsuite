@@ -27,11 +27,9 @@ lalpulsarinclude_HEADERS = \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
 	HoughMap.h \
-	LALBarycenter.h \
 	LALComputeAM.h \
 	LALDemod.h \
 	LALHough.h \
-	LALInitBarycenter.h \
 	LALPulsarConfig.h \
 	LALPulsarLibVCSInfo.h \
 	LALPulsarVCSInfo.h \
@@ -49,6 +47,7 @@ lalpulsarinclude_HEADERS = \
 	PulsarDataTypes.h \
 	PulsarSimulateCoherentGW.h \
 	PulsarTimes.h \
+	Resample.h \
 	SFTClean.h \
 	SFTfileIO.h \
 	SFTutils.h \
@@ -65,6 +64,7 @@ lalpulsarinclude_HEADERS = \
 
 lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \
+	ApplyResampleRules.c \
 	BinaryPulsarTiming.c \
 	CoherentMetric.c \
 	ComplexAM.c \
@@ -72,7 +72,9 @@ liblalpulsar_la_SOURCES = \
 	ComputeSky.c \
 	ComputeSkyBinary.c \
 	ConstructPLUT.c \
+	CreateResampleRules.c \
 	DTEphemeris.c \
+	DestroyResampleRules.c \
 	DetectorStates.c \
 	DopplerFullScan.c \
 	DopplerLatticeCovering.c \
@@ -92,11 +94,9 @@ liblalpulsar_la_SOURCES = \
 	GenerateTaylorCW.c \
 	GetEarthTimes.c \
 	HoughMap.c \
-	LALBarycenter.c \
 	LALComputeAM.c \
 	LALDemod.c \
 	LALDemodFAST.c \
-	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
 	LISAspecifics.c \
@@ -106,6 +106,7 @@ liblalpulsar_la_SOURCES = \
 	ParamPLUT.c \
 	PatchGrid.c \
 	Peak2PHMD.c \
+	PolycoToTimingDifference.c \
 	ProbabilityDensity.c \
 	ProjectMetric.c \
 	PtoleMetric.c \
@@ -115,6 +116,7 @@ liblalpulsar_la_SOURCES = \
 	PulsarCrossCorr_v2.c \
 	PulsarDataTypes.c \
 	PulsarSimulateCoherentGW.c \
+	RulesToTimingDifference.c \
 	SFTClean.c \
 	SFTfileIO.c \
 	SFTutils.c \

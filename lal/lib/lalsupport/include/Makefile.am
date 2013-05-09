@@ -2,6 +2,7 @@ pkginclude_HEADERS = \
 	Audio.h \
 	FileIO.h \
 	LALCache.h \
+	LALInitBarycenter.h \
 	LALMathematica.h \
 	LogPrintf.h \
 	PrintFTSeries.h \

@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 32
+# serial 31
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -25,14 +25,30 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
 
   # options to enable/disable languages
   swig_build_any=false
-  swig_min_version=0.0
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[2.0.7],[LALSUITE_REQUIRE_CXX])
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[2.0.7])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[LALSUITE_REQUIRE_CXX])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false])
+
+  # option to use specific SWIG binary
+  AC_ARG_WITH(
+    [swig],
+    AC_HELP_STRING(
+      [--with-swig],
+      [specify SWIG binary (default: search $PATH)]
+    ),[
+      AS_IF([test -f "${withval}"],[
+        SWIG="${withval}"
+      ],[
+        AC_MSG_ERROR([file "${withval}" not found])
+      ])
+    ],[
+      SWIG=
+    ]
+  )
 
 ])
 
 # options to enable/disable languages
-# args: $1=language, $2=default enabled?, $3=SWIG version required, [$4=action if enabled]
+# args: $1=language, $2=default enabled?, [$3=action if enabled]
 AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
   m4_pushdef([lowercase],translit([$1],[A-Z],[a-z]))
 
@@ -53,27 +69,13 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
     ]
   )
 
-  # if $1 is enabled, set minimum SWIG version and perform other actions
+  # if $1 is enabled
   AS_IF([test "${swig_build_]lowercase[}" = true],[:
     swig_build_any=true
-    AS_VERSION_COMPARE([${swig_min_version}],[$3],[swig_min_version=$3])
-    $4
+    $3
   ])
 
   m4_popdef([lowercase])
-])
-
-# check the version of ${SWIG}, and store it in ${SWIG_VERSION}
-AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
-  SWIG_VERSION=0.0
-  swig_version_output=[`${SWIG} -version 2>/dev/null`]
-  AS_IF([test $? -eq 0],[
-    swig_version_regex=['s|^ *SWIG [Vv]ersion \([0-9.][0-9.]*\)|\1|p;d']
-    SWIG_VERSION=[`echo "${swig_version_output}" | ${SED} "${swig_version_regex}"`]
-    AS_IF([test "x${SWIG_VERSION}" = x],[
-      AC_MSG_ERROR([could not determine version of ${SWIG}])
-    ])
-  ])
 ])
 
 # configure SWIG wrapping modules
@@ -108,28 +110,25 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
   AM_CONDITIONAL(SWIG_BUILD,[test "${swig_build_any}" = true])
   AM_COND_IF(SWIG_BUILD,[
 
-    # check for SWIG binary: use value of ${SWIG} first,
-    # then check for common SWIG binary names
-    AS_IF([test "x${SWIG}" != x],[
-      _LALSUITE_CHECK_SWIG_VERSION
-      AS_VERSION_COMPARE([${SWIG_VERSION}],[${swig_min_version}],[
-        AC_MSG_ERROR([require ${SWIG} version >= ${swig_min_version}])
+    # check for SWIG binary
+    AS_IF([test "x${SWIG}" = x],[
+      AC_PATH_PROGS(SWIG,[swig2.0 swig],[])
+      AS_IF([test "x${SWIG}" = x],[
+        AC_MSG_ERROR([could not find "swig" in path])
       ])
-    ],[
-      for SWIG in swig swig2.0; do
-        _LALSUITE_CHECK_SWIG_VERSION
-        AS_VERSION_COMPARE([${SWIG_VERSION}],[${swig_min_version}],[],[break],[break])
-        SWIG=
-      done
     ])
 
-    # if a SWIG binary was found, get its full path and print its version, otherwise fail
-    AS_IF([test "x${SWIG}" != x],[
-      AC_PATH_PROG(SWIG,["${SWIG}"])
-      AC_MSG_CHECKING([${SWIG} version])
-      AC_MSG_RESULT([${SWIG_VERSION}])
-    ],[
-      AC_MSG_ERROR([could not find SWIG with version >= ${swig_min_version}])
+    # check SWIG version
+    swig_min_version=2.0.7
+    AC_MSG_CHECKING([${SWIG} version])
+    swig_regex=['s|^ *SWIG [Vv]ersion \([0-9.][0-9.]*\) *$|\1|p;d']
+    swig_version=[`${SWIG} -version | ${SED} "${swig_regex}"`]
+    AS_IF([test "x${swig_version}" = x],[
+      AC_MSG_ERROR([could not determine SWIG version])
+    ])
+    AC_MSG_RESULT([${swig_version}])
+    AS_VERSION_COMPARE([${swig_min_version}],[${swig_version}],[],[],[
+      AC_MSG_ERROR([require SWIG version >= ${swig_min_version}])
     ])
 
     # symbol prefixes for this LAL library
