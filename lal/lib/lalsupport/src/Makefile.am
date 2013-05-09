@@ -7,7 +7,6 @@ liblalsupport_la_SOURCES = \
 	ConfigFile.c \
 	FileIO.c \
 	LALCache.c \
-	LALInitBarycenter.c \
 	LALMath3DPlot.c \
 	LALMathNDPlot.c \
 	LogPrintf.c \
