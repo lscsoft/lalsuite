@@ -550,7 +550,6 @@ int LALInferenceAverageSpectrumBinFit(
   PSDtimes = XLALMalloc( (numseg-1) * sizeof( *PSDtimes ) );
   PSDtimesIndex = XLALMalloc( (numseg-1) * sizeof( *PSDtimesIndex ) );
 
-  printf("%10.10lf\n",trigtime);
   int count = 0;
 
   for ( seg = 0; seg < numseg; ++seg )
@@ -569,8 +568,6 @@ int LALInferenceAverageSpectrumBinFit(
     PSDtimes[count] = PSDtime;
     PSDtimesIndex[count] = seg;
 
-    printf("%10.10lf\n",PSDtimes[count]);
-    
     count = count + 1;
     }
 
@@ -646,8 +643,6 @@ int LALInferenceAverageSpectrumBinFit(
     y_estimate = pow(10.0,y_estimate_log);
 
     spectrum->data->data[k] = y_estimate;
-
-    printf("%e\n",spectrum->data->data[k]);
 
   }
 

@@ -980,37 +980,59 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     nifo++;
   }
 
-  UINT4 nscale_block_temp   = 10000;
-  gsl_matrix *bands_min_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
-  gsl_matrix *bands_max_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
+  UINT4 j = 0;
 
-  UINT4 j;
-
-  for (i = 0; i < nifo; i ++) {
-     for (j = 0; j < nscale_block_temp; j++)
-        {
-          gsl_matrix_set(bands_min_temp,i,j,-1.0);
-          gsl_matrix_set(bands_max_temp,i,j,-1.0);
-        }
-  }
-
-  ppt = LALInferenceGetProcParamVal(commandLine, "--psdFitText");
-  if(ppt)  // Load in values from file if requested
+  ppt = LALInferenceGetProcParamVal(commandLine, "--psdFit");
+  if(ppt)//MARK: Here is where noise PSD parameters are being added to the model
   {
+ 
+    printf("Setting up PSD fitting for %i ifos...\n",nifo);
 
-      char line [ 128 ];
-      char *bands_tempfile = ppt->value;
-      printf("Reading bands_temp from %s\n",bands_tempfile);
+    dataPtr = state->data;
+    UINT4 nscale_block_temp   = 10000;
+    gsl_matrix *bands_min_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
+    gsl_matrix *bands_max_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
 
-      UINT4 band_min = 0, band_max = 0;
+    i=0;
+    while (dataPtr != NULL)
+    {
 
-      nscale_block = 0;
-      char * pch;
-      j = 0;
-
-      FILE *file = fopen ( bands_tempfile, "r" );
-      if ( file != NULL )
+      for (j = 0; j < nscale_block_temp; j++)
       {
+        gsl_matrix_set(bands_min_temp,i,j,-1.0);
+        gsl_matrix_set(bands_max_temp,i,j,-1.0);
+      }
+
+      printf("ifo=%i  %s\n",i,dataPtr->name);fflush(stdout);
+
+      char ifoPSDFitBands[500];
+      snprintf (ifoPSDFitBands,500, "--%s-psdFit",dataPtr->name);
+
+      ppt = LALInferenceGetProcParamVal(commandLine,ifoPSDFitBands);
+      if(ppt || LALInferenceGetProcParamVal(commandLine, "--xcorrbands"))
+      /* Load in values from file if requested */
+      {
+        char line [ 128 ];
+        char bands_tempfile[500];
+
+        if (LALInferenceGetProcParamVal(commandLine, "--xcorrbands")) {
+           snprintf (bands_tempfile,500, "%s-XCorrBands.dat",dataPtr->name);
+        }
+        else {
+           char *bands_tempfile_temp = ppt->value;
+           strcpy( bands_tempfile, bands_tempfile_temp );
+        }
+        printf("Reading bands_temp from %s\n",bands_tempfile);
+
+        UINT4 band_min = 0, band_max = 0;
+ 
+        nscale_block = 0;
+        char * pch;
+        j = 0;
+
+        FILE *file = fopen ( bands_tempfile, "r" );
+        if ( file != NULL )
+        {
           while ( fgets ( line, sizeof line, file ) != NULL )
           {
               pch = strtok (line," ");
@@ -1023,55 +1045,48 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                   count++;
               }
 
-              for (i = 0; i < nifo; i ++) {
-
-                gsl_matrix_set(bands_min_temp,i,j,band_min/df);
-                gsl_matrix_set(bands_max_temp,i,j,band_max/df);
-
-              }
+              gsl_matrix_set(bands_min_temp,i,j,band_min/df);
+              gsl_matrix_set(bands_max_temp,i,j,band_max/df);
  
               nscale_block++;
               j++;
 
           }
-      fclose ( file );
-      }
+        fclose ( file );
+        }
 
-      else
-      {
+        else
+        {
           perror ( bands_tempfile ); /* why didn't the file open? */
+        }
+  
+
       }
-
-
-  }
-  else // Otherwise use defaults
-  {
-
-    nscale_bin   = (f_max+1-f_min)/nscale_block;
-    nscale_dflog = log( (double)(f_max+1)/(double)f_min )/(double)nscale_block;
-
-    //nscale_bin   = (f_max+1)/nscale_block;
-    //nscale_dflog = log( (double)(f_max+1) )/(double)nscale_block;
-
-    int freq_min, freq_max;
-
-    for (i = 0; i < nifo; i++)
-    {
-      for (j = 0; j < nscale_block; j++)
+      else // Otherwise use defaults
       {
 
-        freq_min = (int) exp(log((double)f_min ) + nscale_dflog*(j-1));
-        freq_max = (int) exp(log((double)f_min ) + nscale_dflog*j);
+        nscale_bin   = (f_max+1-f_min)/nscale_block;
+        nscale_dflog = log( (double)(f_max+1)/(double)f_min )/(double)nscale_block;
 
-        //freq_min = (int) exp(1 + nscale_dflog*(j-1));
-        //freq_max = (int) exp(1 + nscale_dflog*j);
-        
-        gsl_matrix_set(bands_min_temp,i,j,freq_min);
-        gsl_matrix_set(bands_max_temp,i,j,freq_max);
-      }
+        int freq_min, freq_max;
+
+        for (j = 0; j < nscale_block; j++)
+        {
+
+            freq_min = (int) exp(log((double)f_min ) + nscale_dflog*j);
+            freq_max = (int) exp(log((double)f_min ) + nscale_dflog*(j+1));
+
+            gsl_matrix_set(bands_min_temp,i,j,freq_min);
+            gsl_matrix_set(bands_max_temp,i,j,freq_max);
+        }
+
+      }  
+
+      dataPtr = dataPtr->next;
+      i++;
+
     }
 
-  }
 
     gsl_matrix *bands_min      = gsl_matrix_alloc(nifo,nscale_block);
     gsl_matrix *bands_max      = gsl_matrix_alloc(nifo,nscale_block);
@@ -1083,15 +1098,23 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
         gsl_matrix_set(bands_min,i,j,gsl_matrix_get(bands_min_temp,i,j));
         gsl_matrix_set(bands_max,i,j,gsl_matrix_get(bands_max_temp,i,j));
 
-        //printf("%f %f\n",gsl_matrix_get(bands_min_temp,i,j),gsl_matrix_get(bands_max_temp,i,j));
-
       }
     }
 
+    printf("Running PSD fitting with bands (Hz)...\n");
+    dataPtr = state->data;
+    i=0;
+    while (dataPtr != NULL)
+    {
+      printf("%s:",dataPtr->name);
+      for (j = 0; j < nscale_block; j++)
+      {
+        printf(" %f-%f ",gsl_matrix_get(bands_min,i,j)*df,gsl_matrix_get(bands_max,i,j)*df);
+      }
 
-  ppt = LALInferenceGetProcParamVal(commandLine, "--psdFit");
-  if(ppt)//MARK: Here is where noise PSD parameters are being added to the model
-  {
+      dataPtr = dataPtr->next;
+      i++;
+    }
 
     nscale_bin   = (f_max+1-f_min)/nscale_block;
     nscale_dflog = log( (double)(f_max+1)/(double)f_min )/(double)nscale_block;

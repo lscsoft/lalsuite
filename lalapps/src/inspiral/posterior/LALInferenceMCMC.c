@@ -350,6 +350,13 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--psdNblock)                    Number of noise parameters per IFO channel (8)\n\
                (--psdFlatPrior)                 Use flat prior on psd parameters (Gaussian)\n\
                (--removeLines)                  Do include persistent PSD lines in fourier-domain integration\n\
+               (--KSlines)                      Run with the KS test line removal\n\
+               (--KSlinesWidth)                 Width of the lines removed by the KS test (deltaF)\n\
+               (--chisquaredlines)              Run with the Chi squared test line removal\n\
+               (--chisquaredlinesWidth)         Width of the lines removed by the Chi squared test (deltaF)\n\
+               (--powerlawlines)                Run with the power law line removal\n\
+               (--powerlawlinesWidth)           Width of the lines removed by the power law test (deltaF)\n\
+               (--xcorrbands)                   Run PSD fitting with correlated frequency bands\n\
                \n\
                ---------------------------------------------------------------------------------------------------\n\
                --- Proposals  ------------------------------------------------------------------------------------\n\
