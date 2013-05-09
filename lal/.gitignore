@@ -150,7 +150,6 @@ packages/tools/test/ComputeTransferTest
 packages/tools/test/CubicSplineTriggerInterpolantTest
 packages/tools/test/DetectorSiteTest
 packages/tools/test/FrequencySeriesTest
-packages/tools/test/LALBarycenterTest
 packages/tools/test/LALIndependentTestDetResponse
 packages/tools/test/LALTestDetResponse0
 packages/tools/test/LanczosTriggerInterpolantTest
