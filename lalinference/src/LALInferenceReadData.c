@@ -867,7 +867,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     snprintf(filename, nameLength, "%s-ChiSquaredLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 0.001) {
+                        if (pvalues[k] < pow(10.0,-14.0)) {
                             fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
@@ -906,7 +906,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     snprintf(filename, nameLength, "%s-KSLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 0.10) {
+                        if (pvalues[k] < 0.134558) {
                             fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
@@ -945,7 +945,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     snprintf(filename, nameLength, "%s-PowerLawLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 1.0) {
+                        if (pvalues[k] < 0.7197370) {
                             fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
