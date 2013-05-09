@@ -864,10 +864,17 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     if(ppt) lines_width = atoi(ppt->value);
                     else lines_width = deltaF;
 
+                    double lines_threshold;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--chisquaredlinesThreshold");
+                    if(ppt) lines_threshold = atoi(ppt->value);
+                    else lines_threshold = 2*pow(10.0,-14.0);
+
+                    printf("Using chi squared threshold of %g\n",lines_threshold);
+
                     snprintf(filename, nameLength, "%s-ChiSquaredLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 2*pow(10.0,-14.0)) {
+                        if (pvalues[k] < lines_threshold) {
                             fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
@@ -903,10 +910,17 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     if(ppt) lines_width = atoi(ppt->value);
                     else lines_width = deltaF;
 
+                    double lines_threshold;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--KSlinesThreshold");
+                    if(ppt) lines_threshold = atoi(ppt->value);
+                    else lines_threshold = 0.134558;
+
+                    printf("Using KS threshold of %g\n",lines_threshold);
+
                     snprintf(filename, nameLength, "%s-KSLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 0.134558) {
+                        if (pvalues[k] < lines_threshold) {
                             fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
@@ -942,10 +956,17 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     if(ppt) lines_width = atoi(ppt->value);
                     else lines_width = deltaF;
 
+                    double lines_threshold;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--powerlawlinesThreshold");
+                    if(ppt) lines_threshold = atoi(ppt->value);
+                    else lines_threshold = 0.7197370;
+
+                    printf("Using power law threshold of %g\n",lines_threshold);
+
                     snprintf(filename, nameLength, "%s-PowerLawLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 0.7197370) {
+                        if (pvalues[k] < lines_threshold) {
                             fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
