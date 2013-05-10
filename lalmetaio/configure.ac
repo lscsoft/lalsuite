@@ -12,6 +12,8 @@ AC_CONFIG_FILES([ \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  python/Makefile \
+  python/__init__.py \
   src/Makefile \
   swig/Makefile \
   swig/octave/Makefile \
