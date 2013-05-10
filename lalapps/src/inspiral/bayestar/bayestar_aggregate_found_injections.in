@@ -28,6 +28,9 @@ summary values for each sky map:
  * searched posterior probability
  * angle between true sky location and maximum a posteriori estimate
  * runtime in seconds
+
+The filenames of the sky maps may be provided as positional command line
+arguments, and may also be provided as globs (such as '*.fits.gz').
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
@@ -49,19 +52,25 @@ opts, args = parser.parse_args()
 
 try:
     dbfilename = args[0]
-    fitsfilenames = args[1:]
+    fitsfileglobs = args[1:]
 except IndexError:
     parser.error("not enough command line arguments")
 
 outfile = open(opts.output, "w")
 
 # Imports.
+import glob
+import itertools
 import os
 import numpy as np
 import healpy as hp
 import sqlite3
 from pylal.progress import ProgressBar
 from lalinference.bayestar import fits
+
+
+fitsfilenames = itertools.chain.from_iterable(glob.iglob(fitsfileglob)
+    for fitsfileglob in fitsfileglobs)
 
 
 sql = """
