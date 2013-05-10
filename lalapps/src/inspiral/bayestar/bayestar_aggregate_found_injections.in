@@ -17,6 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 from __future__ import division
+from __future__ import print_function
 """
 Match sky maps with injections in an inspinjfind-style sqlite database and print
 summary values for each sky map:
@@ -38,7 +39,12 @@ from lalinference.bayestar import command
 parser = OptionParser(
     formatter=command.NewlinePreservingHelpFormatter(),
     description=__doc__,
-    usage="%prog DATABASE.sqlite FILE1.fits[.gz] FILE2.fits[.gz] ...")
+    usage="%prog [-o OUTPUT] DATABASE.sqlite FILE1.fits[.gz] FILE2.fits[.gz] ...",
+    option_list=[
+        Option("-o", "--output", default="/dev/stdout",
+            help="Name of output file [default=%default]")
+    ]
+)
 opts, args = parser.parse_args()
 
 try:
@@ -46,6 +52,8 @@ try:
     fitsfilenames = args[1:]
 except IndexError:
     parser.error("not enough command line arguments")
+
+outfile = open(opts.output, "w")
 
 # Imports.
 import os
@@ -131,7 +139,8 @@ progress = ProgressBar()
 progress.update(-1, 'opening database')
 db = sqlite3.connect(dbfilename)
 
-print 'objid,far,searched_area,searched_prob,offset,runtime'
+print('objid', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',
+    sep=',', file=outfile)
 
 for fitsfilename in progress.iterate(fitsfilenames):
     sky_map, metadata = fits.read_sky_map(fitsfilename)
@@ -145,4 +154,5 @@ for fitsfilename in progress.iterate(fitsfilenames):
     true_ra, true_dec, far = db.execute(sql, (coinc_event_id,)).fetchone()
     searched_area, searched_prob, offset = find_injection(sky_map, true_ra, true_dec)
 
-    print ','.join(str(item) for item in (coinc_event_id, far, searched_area, searched_prob, offset, runtime))
+    print(coinc_event_id, far, searched_area, searched_prob, offset, runtime,
+        sep=',', file=outfile)
