@@ -180,7 +180,7 @@ int LALInferenceRemoveLinesChiSquared(
   int count;
   float interval = (float)(max - min ) / numBins;
   double CriticalValue = 0.0;
-  double XSqr, XSqrTerm, XSqrVal;
+  double XSqr, XSqrTerm;
   double bin_val, expected_val;
 
   for ( k = 0; k < spectrum->data->length; ++k ) {
@@ -228,12 +228,9 @@ int LALInferenceRemoveLinesChiSquared(
 
       CriticalValue = CriticalValue + XSqrTerm;
 
-      /*printf("%f %f %f %f %f %f\n",bin_val,Observed[l],Expected[l],XSqr,XSqrTerm,CriticalValue); */ 
-  
     }
 
-    XSqrVal = chisqr(count-1,CriticalValue);
-    pvalues[k] = XSqrVal;
+    pvalues[k] = 1.0/CriticalValue;
 
   }
 
@@ -242,18 +239,6 @@ int LALInferenceRemoveLinesChiSquared(
   median_cleanup_REAL8( work, numseg );
 
   return 0;
-}
-
-static void median_cleanup_REAL8( REAL8FrequencySeries *work, UINT4 n )
-{
-  int saveErrno = xlalErrno;
-  UINT4 i;
-  for ( i = 0; i < n; ++i )
-    if ( work[i].data )
-      XLALDestroyREAL8Vector( work[i].data );
-  XLALFree( work );
-  xlalErrno = saveErrno;
-  return;
 }
 
 static double chisqr(int Dof, double Cv)
@@ -266,16 +251,16 @@ static double chisqr(int Dof, double Cv)
     double X = Cv * 0.5;
     if(Dof == 2)
     {
-	return exp(-1.0 * X);
+        return exp(-1.0 * X);
     }
- 
+
     double PValue = igf(K, X);
     if(isnan(PValue) || isinf(PValue))
     {
         return 1e-14;
-    } 
+    }
 
-    PValue /= tgamma(K); 
+    PValue /= tgamma(K);
 
     return (1.0 - PValue);
 }
@@ -284,25 +269,37 @@ static double igf(double S, double Z)
 {
     if(Z < 0.0)
     {
-	return 0.0;
+        return 0.0;
     }
     double Sc = (1.0 / S);
     Sc *= pow(Z, S);
     Sc *= exp(-Z);
- 
+
     double Sum = 1.0;
     double Nom = 1.0;
     double Denom = 1.0;
- 
+
     for(int k = 0; k < 200; k++)
     {
-	Nom *= Z;
-	S++;
-	Denom *= S;
-	Sum += (Nom / Denom);
+        Nom *= Z;
+        S++;
+        Denom *= S;
+        Sum += (Nom / Denom);
     }
- 
+
     return Sum * Sc;
+}
+
+static void median_cleanup_REAL8( REAL8FrequencySeries *work, UINT4 n )
+{
+  int saveErrno = xlalErrno;
+  UINT4 i;
+  for ( i = 0; i < n; ++i )
+    if ( work[i].data )
+      XLALDestroyREAL8Vector( work[i].data );
+  XLALFree( work );
+  xlalErrno = saveErrno;
+  return;
 }
 
 int LALInferenceRemoveLinesKS(
