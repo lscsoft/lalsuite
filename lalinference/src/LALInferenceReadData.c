@@ -861,12 +861,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
                     double lines_width;
                     ppt = LALInferenceGetProcParamVal(commandLine, "--chisquaredlinesWidth");
-                    if(ppt) lines_width = atoi(ppt->value);
+                    if(ppt) lines_width = atof(ppt->value);
                     else lines_width = deltaF;
 
                     double lines_threshold;
                     ppt = LALInferenceGetProcParamVal(commandLine, "--chisquaredlinesThreshold");
-                    if(ppt) lines_threshold = atoi(ppt->value);
+                    if(ppt) lines_threshold = atof(ppt->value);
                     else lines_threshold = 2*pow(10.0,-14.0);
 
                     printf("Using chi squared threshold of %g\n",lines_threshold);
@@ -907,12 +907,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
                     double lines_width;
                     ppt = LALInferenceGetProcParamVal(commandLine, "--KSlinesWidth");
-                    if(ppt) lines_width = atoi(ppt->value);
+                    if(ppt) lines_width = atof(ppt->value);
                     else lines_width = deltaF;
 
                     double lines_threshold;
                     ppt = LALInferenceGetProcParamVal(commandLine, "--KSlinesThreshold");
-                    if(ppt) lines_threshold = atoi(ppt->value);
+                    if(ppt) lines_threshold = atof(ppt->value);
                     else lines_threshold = 0.134558;
 
                     printf("Using KS threshold of %g\n",lines_threshold);
@@ -953,12 +953,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
                     double lines_width;
                     ppt = LALInferenceGetProcParamVal(commandLine, "--powerlawlinesWidth");
-                    if(ppt) lines_width = atoi(ppt->value);
+                    if(ppt) lines_width = atof(ppt->value);
                     else lines_width = deltaF;
 
                     double lines_threshold;
                     ppt = LALInferenceGetProcParamVal(commandLine, "--powerlawlinesThreshold");
-                    if(ppt) lines_threshold = atoi(ppt->value);
+                    if(ppt) lines_threshold = atof(ppt->value);
                     else lines_threshold = 0.7197370;
 
                     printf("Using power law threshold of %g\n",lines_threshold);

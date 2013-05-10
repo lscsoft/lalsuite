@@ -1039,8 +1039,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
               int count = 0;
               while (pch != NULL)
               {
-                  if (count==0) {band_min = atoi(pch);}
-                  if (count==1) {band_max = atoi(pch);}
+                  if (count==0) {band_min = atof(pch);}
+                  if (count==1) {band_max = atof(pch);}
                   pch = strtok (NULL, " ");
                   count++;
               }
@@ -1234,8 +1234,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
             int count = 0;
             while (pch != NULL)
             {
-                if (count==0) {freqline = atoi(pch);}
-                if (count==1) {freqlinewidth = atoi(pch);}
+                if (count==0) {freqline = atof(pch);}
+                if (count==1) {freqlinewidth = atof(pch);}
                 pch = strtok (NULL, " ");
                 count++;
             }
