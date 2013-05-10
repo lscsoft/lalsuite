@@ -61,12 +61,9 @@ if __name__ == '__main__':
 
     outfile = open(opts.output, "w")
 
+
 # Imports.
-import glob
-import functools
-import itertools
 import sqlite3
-from pylal.progress import ProgressBar
 from lalinference.bayestar import fits
 from lalinference.bayestar import postprocess
 
@@ -102,14 +99,19 @@ def process(fitsfilename):
 
 
 if __name__ == '__main__':
+    import glob
+    import functools
+    import itertools
+    import pylal.progress
+    progress = pylal.progress.ProgressBar()
+
+    progress.update(-1, 'spawning {0} workers'.format(opts.jobs))
     if opts.jobs == 1:
         from itertools import imap
         startup(dbfilename)
     else:
         import multiprocessing
         imap = multiprocessing.Pool(opts.jobs, startup, (dbfilename,)).imap_unordered
-
-    progress = ProgressBar()
 
     progress.update(-1, 'obtaining filenames of sky maps')
     fitsfilenames = tuple(itertools.chain.from_iterable(glob.iglob(fitsfileglob)
