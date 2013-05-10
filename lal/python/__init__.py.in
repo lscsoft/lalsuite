@@ -1,2 +1,10 @@
 # Import SWIG wrappings, if available
 @SWIG_BUILD_PYTHON_TRUE@from lal import *
+
+## \addtogroup pkg_py_lal
+"""This package provides python wrappings and extensions to the @ref
+ch_gen defined in the LALSuite @ref ch_c.
+"""
+#@{
+#	\defgroup GPSTime_py	GPSTime
+#@}

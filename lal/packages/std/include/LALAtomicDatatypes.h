@@ -120,12 +120,12 @@ typedef double complex COMPLEX16;   /**< Double-precision floating-point complex
 
 /** \cond DONT_DOXYGEN */
 /* Old LAL complex structs, being phased out ... */
-typedef struct tagCOMPLEX8 { REAL4 re; REAL4 im; } COMPLEX8;
-#define crealf(z) ((z).re)
-#define cimagf(z) ((z).im)
-typedef struct tagCOMPLEX16 { REAL8 re; REAL8 im; } COMPLEX16;
-#define creal(z) ((z).re)
-#define cimag(z) ((z).im)
+typedef struct tagCOMPLEX8 { REAL4 realf_FIXME; REAL4 imagf_FIXME; } COMPLEX8;
+#define crealf(z) ((z).realf_FIXME)
+#define cimagf(z) ((z).imagf_FIXME)
+typedef struct tagCOMPLEX16 { REAL8 real_FIXME; REAL8 imag_FIXME; } COMPLEX16;
+#define creal(z) ((z).real_FIXME)
+#define cimag(z) ((z).imag_FIXME)
 /** \endcond */
 
 #endif /* LAL_USE_OLD_COMPLEX_STRUCTS */

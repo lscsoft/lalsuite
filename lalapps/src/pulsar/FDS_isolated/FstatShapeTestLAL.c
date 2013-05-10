@@ -61,7 +61,6 @@
 #include <math.h>
 #include <float.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
@@ -998,15 +997,18 @@ ReadData( LALStatus *status, /*!< LAL status pointer */
   /* data input begin */
   for( irec = 0; irec < FaFbPair->freqObsv->length; irec++ ) {
     if( ( ptr = fgets(buff,sizeof(buff),fpobsv) ) == NULL ) break;
+    REAL8 Fa_real, Fa_imag, Fb_real, Fb_imag;
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqObsv->data[irec]),
-		   &(FaFbPair->FaFbObsv->Fa[irec].re),
-		   &(FaFbPair->FaFbObsv->Fa[irec].im),
-		   &(FaFbPair->FaFbObsv->Fb[irec].re),
-		   &(FaFbPair->FaFbObsv->Fb[irec].im),
+		   &Fa_real,
+		   &Fa_imag,
+		   &Fb_real,
+		   &Fb_imag,
 		   &(FaFbPair->FaFbObsv->F[irec])
 		   );
     if ( (count != 6) || (count == EOF) ) break;
+    FaFbPair->FaFbObsv->Fa[irec] = crect(Fa_real, Fa_imag);
+    FaFbPair->FaFbObsv->Fb[irec] = crect(Fb_real, Fb_imag);
   }
 
   if( irec != FaFbPair->freqObsv->length ) {
@@ -1019,15 +1021,18 @@ ReadData( LALStatus *status, /*!< LAL status pointer */
 
   for( irec = 0; irec < FaFbPair->freqTest->length; irec++ ) {
     if( ( ptr = fgets(buff,sizeof(buff),fptest) ) == NULL ) break;
+    REAL8 Fa_real, Fa_imag, Fb_real, Fb_imag;
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqTest->data[irec]),
-		   &(FaFbPair->FaFbTest->Fa[irec].re),
-		   &(FaFbPair->FaFbTest->Fa[irec].im),
-		   &(FaFbPair->FaFbTest->Fb[irec].re),
-		   &(FaFbPair->FaFbTest->Fb[irec].im),
+		   &Fa_real,
+		   &Fa_imag,
+		   &Fb_real,
+		   &Fb_imag,
 		   &(FaFbPair->FaFbTest->F[irec])
 		   );
     if ( (count != 6) || (count == EOF) ) break;
+    FaFbPair->FaFbTest->Fa[irec] = crect(Fa_real, Fa_imag);
+    FaFbPair->FaFbTest->Fb[irec] = crect(Fb_real, Fb_imag);
   }
   if( irec != FaFbPair->freqTest->length ) {
     fprintf(stderr,"Data read error: The length of the data is not consistent with that of the readable test data. \n");
@@ -1118,10 +1123,10 @@ ComputeVetoStatisticCore( LALStatus *status, /*!< LAL status pointer */
       jindO = irec * indexStepO;
       jindT = irec * indexStepT + indexOffset;
 
-      RFa = FaFbPair->FaFbObsv->Fa[jindO].re - FaFbPair->FaFbTest->Fa[jindT].re;
-      IFa = FaFbPair->FaFbObsv->Fa[jindO].im - FaFbPair->FaFbTest->Fa[jindT].im;
-      RFb = FaFbPair->FaFbObsv->Fb[jindO].re - FaFbPair->FaFbTest->Fb[jindT].re;
-      IFb = FaFbPair->FaFbObsv->Fb[jindO].im - FaFbPair->FaFbTest->Fb[jindT].im;
+      RFa = creal(FaFbPair->FaFbObsv->Fa[jindO]) - creal(FaFbPair->FaFbTest->Fa[jindT]);
+      IFa = cimag(FaFbPair->FaFbObsv->Fa[jindO]) - cimag(FaFbPair->FaFbTest->Fa[jindT]);
+      RFb = creal(FaFbPair->FaFbObsv->Fb[jindO]) - creal(FaFbPair->FaFbTest->Fb[jindT]);
+      IFb = cimag(FaFbPair->FaFbObsv->Fb[jindO]) - cimag(FaFbPair->FaFbTest->Fb[jindT]);
 
       FaSq  = RFa*RFa + IFa*IFa;
       FbSq  = RFb*RFb + IFb*IFb;
@@ -1138,10 +1143,10 @@ ComputeVetoStatisticCore( LALStatus *status, /*!< LAL status pointer */
       jindO = irec * indexStepO - indexOffset;
       jindT = irec * indexStepT; 
 
-      RFa = FaFbPair->FaFbObsv->Fa[jindO].re - FaFbPair->FaFbTest->Fa[jindT].re;
-      IFa = FaFbPair->FaFbObsv->Fa[jindO].im - FaFbPair->FaFbTest->Fa[jindT].im;
-      RFb = FaFbPair->FaFbObsv->Fb[jindO].re - FaFbPair->FaFbTest->Fb[jindT].re;
-      IFb = FaFbPair->FaFbObsv->Fb[jindO].im - FaFbPair->FaFbTest->Fb[jindT].im;
+      RFa = creal(FaFbPair->FaFbObsv->Fa[jindO]) - creal(FaFbPair->FaFbTest->Fa[jindT]);
+      IFa = cimag(FaFbPair->FaFbObsv->Fa[jindO]) - cimag(FaFbPair->FaFbTest->Fa[jindT]);
+      RFb = creal(FaFbPair->FaFbObsv->Fb[jindO]) - creal(FaFbPair->FaFbTest->Fb[jindT]);
+      IFb = cimag(FaFbPair->FaFbObsv->Fb[jindO]) - cimag(FaFbPair->FaFbTest->Fb[jindT]);
 
       FaSq  = RFa*RFa + IFa*IFa;
       FbSq  = RFb*RFb + IFb*IFb;

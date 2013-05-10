@@ -240,7 +240,7 @@ for header in headers:
         structs[struct['name']] = struct
 
 # look for a destructor function for each struct
-dtor_name_regexp = re.compile('(Destroy|Close)([A-Z0-9]|$)')
+dtor_name_regexp = re.compile('(Destroy|Close)([A-Z0-9_]|$)')
 dtor_decl_regexp = re.compile('^f\(p\.(.*)\)\.$')
 for function_name in functions:
 

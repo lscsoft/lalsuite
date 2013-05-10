@@ -17,6 +17,8 @@
 *  MA  02111-1307  USA
 */
 
+#include <math.h>
+
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -306,8 +308,8 @@ LALRingInjectSignals(
   CHECKSTATUSPTR( stat );
   for ( k = 0; k < resp->data->length; ++k )
   {
-    unity->data[k].re = 1.0;
-    unity->data[k].im = 0.0;
+    unity->data[k].realf_FIXME = 1.0;
+    unity->data[k].imagf_FIXME = 0.0;
   }
 
   LALCCVectorDivide( stat->statusPtr, transfer->data, unity,

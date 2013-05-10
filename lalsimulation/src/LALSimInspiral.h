@@ -34,6 +34,8 @@ extern "C" {
 #endif
 
 #define LAL_PN_MODE_L_MAX 3
+/* (2x) Highest available PN order - UPDATE IF NEW ORDERS ADDED!!*/
+#define LAL_MAX_PN_ORDER 8
 
 /** Enum that specifies the PN approximant to be used in computing the waveform.
 */
@@ -68,8 +70,8 @@ typedef enum {
    SpinTaylorF2,	/**< Spinning case F2 models (single spin only) */
    SpinTaylorFrameless,	/**< Spinning case PN models (replace SpinTaylor by removing the coordinate singularity) */
    SpinTaylor,		/**< Spinning case PN models (should replace SpinTaylorT3 in the future) */
+   PhenSpinTaylor,      /**< Inspiral part of the PhenSpinTaylorRD. */
    PhenSpinTaylorRD,	/**< Phenomenological waveforms, interpolating between a T4 spin-inspiral and the ringdown. */
-   PhenSpinTaylorRDF,	/**< UNDOCUMENTED */
    SpinQuadTaylor,	/**< Spinning case PN models with quadrupole-monopole and self-spin interaction. */
    FindChirpSP,		/**< The stationary phase templates implemented by FindChirpSPTemplate in the findchirp package (equivalent to TaylorF2 at twoPN order). */
    FindChirpPTF,	/**< UNDOCUMENTED */
@@ -909,20 +911,12 @@ int XLALGetInteractionFromString(const CHAR *inString);
 int XLALGetFrameAxisFromString(const CHAR *inString);
 
 /** 
- * XLAL function to determine adaptive integration flag from a string.  Returns
- * 1 if string contains 'fixedStep', otherwise returns 0 to signal 
- * adaptive integration should be used.
+ * XLAL function to determine mode flag from a string.
+ * Returns one of enum values as name matches case of enum.
  */
-int XLALGetAdaptiveIntFromString(const CHAR *inString);
+int XLALGetHigherModesFromString(const CHAR *inString);
 
-/** 
- * XLAL function to determine inspiral-only flag from a string.  Returns
- * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal 
- * full inspiral-merger-ringdown waveform should be generated.
- */
-int XLALGetInspiralOnlyFromString(const CHAR *inString);
-
-/** 
+/*
  * Construct and initialize a waveform cache.  Caches are used to
  * avoid re-computation of waveforms that differ only by simple
  * scaling relations in parameters.

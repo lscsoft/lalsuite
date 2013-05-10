@@ -51,7 +51,6 @@ Unless the <tt>-f</tt> option is used, the environment variable
 */
 #include <config.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -161,8 +160,8 @@ main (int argc, char *argv[])
 
         for (i = 0; i < response.data->length; ++i)
         {
-          fprintf (fp, "%d\t%e\t%e\n", i, response.data->data[i].re,
-                   response.data->data[i].im);
+          fprintf (fp, "%d\t%e\t%e\n", i, crealf(response.data->data[i]),
+                   cimagf(response.data->data[i]));
         }
 
         fclose (fp);

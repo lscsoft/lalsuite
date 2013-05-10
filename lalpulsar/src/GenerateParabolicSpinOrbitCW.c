@@ -24,7 +24,7 @@
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
 /**
@@ -144,7 +144,7 @@ estimate exceeds 0.01 cycles, a warning is issued.
 */
 void
 LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
-				 CoherentGW            *output,
+				 PulsarCoherentGW            *output,
 				 SpinOrbitCWParamStruc *params )
 {
   UINT4 n, i;              /* number of and index over samples */

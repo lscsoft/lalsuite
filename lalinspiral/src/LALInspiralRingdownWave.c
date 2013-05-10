@@ -178,25 +178,25 @@ INT4 XLALInspiralHybridRingdownWave (
   for (i = 0; i < nmodes; ++i)
   {
 	gsl_matrix_set(coef, 0, i, 1);
-	gsl_matrix_set(coef, 1, i, - modefreqs->data[i].im);
-	gsl_matrix_set(coef, 2, i, exp(-modefreqs->data[i].im*t1) * cos(modefreqs->data[i].re*t1));
-	gsl_matrix_set(coef, 3, i, exp(-modefreqs->data[i].im*t2) * cos(modefreqs->data[i].re*t2));
-	gsl_matrix_set(coef, 4, i, exp(-modefreqs->data[i].im*t3) * cos(modefreqs->data[i].re*t3));
-	gsl_matrix_set(coef, 5, i, exp(-modefreqs->data[i].im*t4) * cos(modefreqs->data[i].re*t4));
-	gsl_matrix_set(coef, 6, i, exp(-modefreqs->data[i].im*t5) * cos(modefreqs->data[i].re*t5));
-	gsl_matrix_set(coef, 7, i, exp(-modefreqs->data[i].im*t5) * 
-				      (-modefreqs->data[i].im * cos(modefreqs->data[i].re*t5)
-				       -modefreqs->data[i].re * sin(modefreqs->data[i].re*t5)));
+	gsl_matrix_set(coef, 1, i, - cimagf(modefreqs->data[i]));
+	gsl_matrix_set(coef, 2, i, exp(-cimagf(modefreqs->data[i])*t1) * cos(crealf(modefreqs->data[i])*t1));
+	gsl_matrix_set(coef, 3, i, exp(-cimagf(modefreqs->data[i])*t2) * cos(crealf(modefreqs->data[i])*t2));
+	gsl_matrix_set(coef, 4, i, exp(-cimagf(modefreqs->data[i])*t3) * cos(crealf(modefreqs->data[i])*t3));
+	gsl_matrix_set(coef, 5, i, exp(-cimagf(modefreqs->data[i])*t4) * cos(crealf(modefreqs->data[i])*t4));
+	gsl_matrix_set(coef, 6, i, exp(-cimagf(modefreqs->data[i])*t5) * cos(crealf(modefreqs->data[i])*t5));
+	gsl_matrix_set(coef, 7, i, exp(-cimagf(modefreqs->data[i])*t5) * 
+				      (-cimagf(modefreqs->data[i]) * cos(crealf(modefreqs->data[i])*t5)
+				       -crealf(modefreqs->data[i]) * sin(crealf(modefreqs->data[i])*t5)));
 	gsl_matrix_set(coef, 8, i, 0);
-	gsl_matrix_set(coef, 9, i, - modefreqs->data[i].re);
-	gsl_matrix_set(coef, 10, i, -exp(-modefreqs->data[i].im*t1) * sin(modefreqs->data[i].re*t1));
-	gsl_matrix_set(coef, 11, i, -exp(-modefreqs->data[i].im*t2) * sin(modefreqs->data[i].re*t2));
-	gsl_matrix_set(coef, 12, i, -exp(-modefreqs->data[i].im*t3) * sin(modefreqs->data[i].re*t3));
-	gsl_matrix_set(coef, 13, i, -exp(-modefreqs->data[i].im*t4) * sin(modefreqs->data[i].re*t4));
-	gsl_matrix_set(coef, 14, i, -exp(-modefreqs->data[i].im*t5) * sin(modefreqs->data[i].re*t5));
-	gsl_matrix_set(coef, 15, i, exp(-modefreqs->data[i].im*t5) * 
-				      ( modefreqs->data[i].im * sin(modefreqs->data[i].re*t5)
-				       -modefreqs->data[i].re * cos(modefreqs->data[i].re*t5)));
+	gsl_matrix_set(coef, 9, i, - crealf(modefreqs->data[i]));
+	gsl_matrix_set(coef, 10, i, -exp(-cimagf(modefreqs->data[i])*t1) * sin(crealf(modefreqs->data[i])*t1));
+	gsl_matrix_set(coef, 11, i, -exp(-cimagf(modefreqs->data[i])*t2) * sin(crealf(modefreqs->data[i])*t2));
+	gsl_matrix_set(coef, 12, i, -exp(-cimagf(modefreqs->data[i])*t3) * sin(crealf(modefreqs->data[i])*t3));
+	gsl_matrix_set(coef, 13, i, -exp(-cimagf(modefreqs->data[i])*t4) * sin(crealf(modefreqs->data[i])*t4));
+	gsl_matrix_set(coef, 14, i, -exp(-cimagf(modefreqs->data[i])*t5) * sin(crealf(modefreqs->data[i])*t5));
+	gsl_matrix_set(coef, 15, i, exp(-cimagf(modefreqs->data[i])*t5) * 
+				      ( cimagf(modefreqs->data[i]) * sin(crealf(modefreqs->data[i])*t5)
+				       -crealf(modefreqs->data[i]) * cos(crealf(modefreqs->data[i])*t5)));
   }
   for (i = 0; i < 2; ++i)
   {
@@ -293,12 +293,12 @@ INT4 XLALInspiralHybridRingdownWave (
 	rdwave2->data[j] = 0;
 	for (i = 0; i < nmodes; ++i)
 	{
-	  rdwave1->data[j] += exp(- tj * modefreqs->data[i].im)
-			* ( modeamps->data[i] * cos(tj * modefreqs->data[i].re)
-			+   modeamps->data[i + nmodes] * sin(tj * modefreqs->data[i].re) );
-	  rdwave2->data[j] += exp(- tj * modefreqs->data[i].im)
-			* (- modeamps->data[i] * sin(tj * modefreqs->data[i].re)
-			+   modeamps->data[i + nmodes] * cos(tj * modefreqs->data[i].re) );
+	  rdwave1->data[j] += exp(- tj * cimagf(modefreqs->data[i]))
+			* ( modeamps->data[i] * cos(tj * crealf(modefreqs->data[i]))
+			+   modeamps->data[i + nmodes] * sin(tj * crealf(modefreqs->data[i])) );
+	  rdwave2->data[j] += exp(- tj * cimagf(modefreqs->data[i]))
+			* (- modeamps->data[i] * sin(tj * crealf(modefreqs->data[i]))
+			+   modeamps->data[i + nmodes] * cos(tj * crealf(modefreqs->data[i])) );
 	}
   }
 
@@ -367,12 +367,12 @@ INT4 XLALInspiralRingdownWave (
   for (i = 0; i < nmodes; ++i)
   {
 	gsl_matrix_set(coef, 0, i, 1);
-	gsl_matrix_set(coef, 1, i, - modefreqs->data[i].im);
-	gsl_matrix_set(coef, 2, i, modefreqs->data[i].im * modefreqs->data[i].im
-			- modefreqs->data[i].re * modefreqs->data[i].re);
+	gsl_matrix_set(coef, 1, i, - cimagf(modefreqs->data[i]));
+	gsl_matrix_set(coef, 2, i, cimagf(modefreqs->data[i]) * cimagf(modefreqs->data[i])
+			- crealf(modefreqs->data[i]) * crealf(modefreqs->data[i]));
 	gsl_matrix_set(coef, 3, i, 0);
-	gsl_matrix_set(coef, 4, i, - modefreqs->data[i].re);
-	gsl_matrix_set(coef, 5, i,  2 * modefreqs->data[i].re * modefreqs->data[i].im);
+	gsl_matrix_set(coef, 4, i, - crealf(modefreqs->data[i]));
+	gsl_matrix_set(coef, 5, i,  2 * crealf(modefreqs->data[i]) * cimagf(modefreqs->data[i]));
 
 	gsl_vector_set(hderivs, i, inspwave1->data[(i + 1) * inspwave1->vectorLength - 1]);
 	gsl_vector_set(hderivs, i + nmodes, inspwave2->data[(i + 1) * inspwave2->vectorLength - 1]);
@@ -435,12 +435,12 @@ INT4 XLALInspiralRingdownWave (
 	rdwave2->data[j] = 0;
 	for (i = 0; i < nmodes; ++i)
 	{
-	  rdwave1->data[j] += exp(- tj * modefreqs->data[i].im)
-			* ( modeamps->data[i] * cos(tj * modefreqs->data[i].re)
-			+   modeamps->data[i + nmodes] * sin(tj * modefreqs->data[i].re) );
-	  rdwave2->data[j] += exp(- tj * modefreqs->data[i].im)
-			* (- modeamps->data[i] * sin(tj * modefreqs->data[i].re)
-			+   modeamps->data[i + nmodes] * cos(tj * modefreqs->data[i].re) );
+	  rdwave1->data[j] += exp(- tj * cimagf(modefreqs->data[i]))
+			* ( modeamps->data[i] * cos(tj * crealf(modefreqs->data[i]))
+			+   modeamps->data[i + nmodes] * sin(tj * crealf(modefreqs->data[i])) );
+	  rdwave2->data[j] += exp(- tj * cimagf(modefreqs->data[i]))
+			* (- modeamps->data[i] * sin(tj * crealf(modefreqs->data[i]))
+			+   modeamps->data[i + nmodes] * cos(tj * crealf(modefreqs->data[i])) );
 	}
   }
 
@@ -683,11 +683,11 @@ INT4 XLALGenerateQNMFreq(
   /* QNM frequencies from the fitting given in PRD73, 064030 */
   for (i = 0; i < nmodes; ++i)
   {
-	modefreqs->data[i].re = BCWre[i][0] + BCWre[i][1] * pow(1.- finalSpin, BCWre[i][2]);
-	modefreqs->data[i].im = modefreqs->data[i].re / 2
+	modefreqs->data[i].realf_FIXME = BCWre[i][0] + BCWre[i][1] * pow(1.- finalSpin, BCWre[i][2]);
+	modefreqs->data[i].imagf_FIXME = crealf(modefreqs->data[i]) / 2
 			     / (BCWim[i][0] + BCWim[i][1] * pow(1.- finalSpin, BCWim[i][2]));
-	modefreqs->data[i].re *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
-	modefreqs->data[i].im *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
+	modefreqs->data[i].realf_FIXME *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
+	modefreqs->data[i].imagf_FIXME *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
   }
   return errcode;
 }
@@ -908,16 +908,16 @@ INT4 XLALGenerateQNMFreqV2(
     gsl_spline_init( spline, afinallist, reomegaqnm[i], 50 );
     gsl_interp_accel_reset( acc );
     
-    modefreqs->data[i].re = gsl_spline_eval( spline, finalSpin, acc );
+    modefreqs->data[i].realf_FIXME = gsl_spline_eval( spline, finalSpin, acc );
 
     gsl_spline_init( spline, afinallist, imomegaqnm[i], 50 );
     gsl_interp_accel_reset( acc );
 
-    modefreqs->data[i].im = gsl_spline_eval( spline, finalSpin, acc );
+    modefreqs->data[i].imagf_FIXME = gsl_spline_eval( spline, finalSpin, acc );
 
     /* Scale by the appropriate mass factors */
-    modefreqs->data[i].re *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
-    modefreqs->data[i].im *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
+    modefreqs->data[i].realf_FIXME *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
+    modefreqs->data[i].imagf_FIXME *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
   }
 
   /* Free memory and exit */
@@ -1011,7 +1011,7 @@ INT4 XLALInspiralHybridAttachRingdownWave (
       }
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-      Nrdwave = (INT4) (10 / modefreqs->data[0].im / dt);
+      Nrdwave = (INT4) (10 / cimagf(modefreqs->data[0]) / dt);
 
       /* Check the value of attpos, to prevent memory access problems later */
       if ( matchrange->data[0] * mTot / dt < 5 || matchrange->data[1]*mTot/dt > matchrange->data[2] *mTot/dt - 2 )
@@ -1194,7 +1194,7 @@ INT4 XLALInspiralAttachRingdownWave (
       }
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-      Nrdwave = (INT4) (10 / modefreqs->data[0].im / dt);
+      Nrdwave = (INT4) (10 / cimagf(modefreqs->data[0]) / dt);
       /* Patch length, centered around the matching point "attpos" */
       Npatch = 11;
 

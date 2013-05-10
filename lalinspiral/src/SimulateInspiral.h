@@ -23,7 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
 #include <lal/SkyCoordinates.h>
-#include <lal/LALBarycenter.h>
 
 #if defined(__cplusplus)
 extern "C" {

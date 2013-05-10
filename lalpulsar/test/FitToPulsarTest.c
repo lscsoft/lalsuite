@@ -139,7 +139,7 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
   n = input->B->length;
 
   for (i = 0; i < n; i++)
-     ASSERT(input->var->data[i].re > 0.0 && input->var->data[i].im > 0.0, status,
+     ASSERT(creal(input->var->data[i]) > 0.0 && cimag(input->var->data[i]) > 0.0, status,
          FITTOPULSARH_EVAR, FITTOPULSARH_MSGEVAR);
 
   detector = params->detector;
@@ -169,7 +169,7 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
 
   for (i=0;i<n;i++)
   {
-    var->data[i] = input->var->data[i].re + input->var->data[i].im;
+    var->data[i] = creal(input->var->data[i]) + cimag(input->var->data[i]);
   }
   /******* DO ANALYSIS ************/
 
@@ -196,42 +196,42 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
      {
        cosIota = params->meshCosIota[0] + iCosIota*params->meshCosIota[1];
        cosIota2 = 1.0 + cosIota*cosIota;
-       Xp.re = cosIota2 * cos2phase;
-       Xp.im = cosIota2 * sin2phase;
+       Xp.real_FIXME = cosIota2 * cos2phase;
+       Xp.imag_FIXME = cosIota2 * sin2phase;
 
        Y = 2.0*cosIota;
 
-       Xc.re = Y*sin2phase;
-       Xc.im = -Y*cos2phase;
+       Xc.real_FIXME = Y*sin2phase;
+       Xc.imag_FIXME = -Y*cos2phase;
 
        sumAB = 0.0;
        sumAA = 0.0;
        sumBB = 0.0;
-       eh0.re=0.0;
-       eh0.im=0.0;
+       eh0.real_FIXME=0.0;
+       eh0.imag_FIXME=0.0;
 
        for (i = 0; i < n; i++)
        {
-         B.re = input->B->data[i].re;
-         B.im = input->B->data[i].im;
+         B.real_FIXME = creal(input->B->data[i]);
+         B.imag_FIXME = cimag(input->B->data[i]);
 
-         A.re = Fp->data[i]*Xp.re + Fc->data[i]*Xc.re;
-         A.im = Fp->data[i]*Xp.im + Fc->data[i]*Xc.im;
+         A.real_FIXME = Fp->data[i]*creal(Xp) + Fc->data[i]*creal(Xc);
+         A.imag_FIXME = Fp->data[i]*cimag(Xp) + Fc->data[i]*cimag(Xc);
 
-         sumBB += (B.re*B.re + B.im*B.im) / var->data[i];
-         sumAA += (A.re*A.re + A.im*A.im) / var->data[i];
-         sumAB += (B.re*A.re + B.im*A.im) / var->data[i];
+         sumBB += (creal(B)*creal(B) + cimag(B)*cimag(B)) / var->data[i];
+         sumAA += (creal(A)*creal(A) + cimag(A)*cimag(A)) / var->data[i];
+         sumAB += (creal(B)*creal(A) + cimag(B)*cimag(A)) / var->data[i];
 
          /**** calculate error on h0 **********/
-         eh0.re += (Fp->data[i]*cosIota2*cos2phase
+         eh0.real_FIXME += (Fp->data[i]*cosIota2*cos2phase
                 + 2.0*Fc->data[i]*cosIota*sin2phase)
                 * (Fp->data[i]*cosIota2*cos2phase
-                + 2.0*Fc->data[i]*cosIota*sin2phase) / input->var->data[i].re;
+                + 2.0*Fc->data[i]*cosIota*sin2phase) / creal(input->var->data[i]);
 
-         eh0.im += (Fp->data[i]*cosIota2*sin2phase
+         eh0.imag_FIXME += (Fp->data[i]*cosIota2*sin2phase
                 - 2.0*Fc->data[i]*cosIota*cos2phase)
                 * (Fp->data[i]*cosIota2*sin2phase
-                - 2.0*Fc->data[i]*cosIota*cos2phase) / input->var->data[i].im;
+                - 2.0*Fc->data[i]*cosIota*cos2phase) / cimag(input->var->data[i]);
         }
 
         for (iH0 = 0; iH0 < params->meshH0[2]; iH0++)
@@ -246,10 +246,10 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
             cosIotaBestFit = cosIota;
             psiBestFit = psi;
             phaseBestFit = phase;
-            output->eh0[0] = 1.0 /sqrt(sqrt(eh0.re*eh0.re + eh0.im*eh0.im));
+            output->eh0[0] = 1.0 /sqrt(sqrt(creal(eh0)*creal(eh0) + cimag(eh0)*cimag(eh0)));
           }
 
-          weh0 = 1.0 /sqrt(sqrt(eh0.re*eh0.re + eh0.im*eh0.im));
+          weh0 = 1.0 /sqrt(sqrt(creal(eh0)*creal(eh0) + cimag(eh0)*cimag(eh0)));
 
           if (weh0>oldMaxEh0)
           {
@@ -429,12 +429,12 @@ int main(void)
     input.t[i].gpsSeconds = FITTOPULSARTEST_T0 + 60*i;
     input.t[i].gpsNanoSeconds = 0;
 
-    input.B->data[i].re =  pResponseSeries.pPlus->data->data[i]*h0*(1.0 + cosIota*cosIota)*cos2phase
+    input.B->data[i].real_FIXME =  pResponseSeries.pPlus->data->data[i]*h0*(1.0 + cosIota*cosIota)*cos2phase
                          + 2.0*pResponseSeries.pCross->data->data[i]*h0*cosIota*sin2phase;
-    input.B->data[i].im =  pResponseSeries.pPlus->data->data[i]*h0*(1.0 + cosIota*cosIota)*sin2phase
+    input.B->data[i].imag_FIXME =  pResponseSeries.pPlus->data->data[i]*h0*(1.0 + cosIota*cosIota)*sin2phase
                          - 2.0*pResponseSeries.pCross->data->data[i]*h0*cosIota*cos2phase;
-    input.var->data[i].re = noise->data[FITTOPULSARTEST_LENGTH-i-1]*noise->data[FITTOPULSARTEST_LENGTH-i-1];
-    input.var->data[i].im = noise->data[i]*noise->data[i];
+    input.var->data[i].real_FIXME = noise->data[FITTOPULSARTEST_LENGTH-i-1]*noise->data[FITTOPULSARTEST_LENGTH-i-1];
+    input.var->data[i].imag_FIXME = noise->data[i]*noise->data[i];
   }
 
   input.B->length = FITTOPULSARTEST_LENGTH;

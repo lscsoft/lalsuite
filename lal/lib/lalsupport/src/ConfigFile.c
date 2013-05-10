@@ -59,7 +59,7 @@ static void cleanConfig (CHARSequence *text);
 
 /** Parse an ASCII data-file into a pre-cleaned array of lines.
  *
- * The cleaning gets rid of comments ('\#', ';'), empty lines,
+ * The cleaning gets rid of comments ('\#', '\%'), empty lines,
  * and performs line-continuation if '\\' is found at EOL
  *
  * NOTE: This function can transparently detect and read gzip-compressed
@@ -588,7 +588,7 @@ XLALReadConfigSTRINGVariable (CHAR ** varp,		/**< [out] string, allocated here! 
  *       No error or warning is generated when clipping occurs!
  *
  * \par Note 3: at return, the value <tt>varp->length</tt> is set to the length of the
- *        string copied
+ *              string copied (*including* the trailing 0)
  *
  */
 int
@@ -623,7 +623,7 @@ XLALReadConfigSTRINGNVariable (CHARVector *varp,        /**< [out] must be alloc
       strncpy (varp->data, tmp, varp->length - 1);
       varp->data[varp->length-1] = '\0';
       XLALFree (tmp);
-      varp->length = strlen (varp->data);
+      varp->length = strlen (varp->data) + 1;
       *wasRead = TRUE;
     }
   else
@@ -719,12 +719,21 @@ cleanConfig (CHARSequence *text)
       if ( (*ptr) == '\"' )
         inQuotes = !inQuotes;	/* flip state */
 
-      if ( ((*ptr) == '#') || ( (*ptr) == ';') || ( (*ptr) == '%') )
+      if ( ((*ptr) == '#') || ( (*ptr) == '%') )
         if ( !inQuotes )	/* only consider as comments if not quoted */
           {
             len = strcspn (ptr, "\n");
             memset ( (void*)ptr, '\n', len);
           }
+
+      // replace un-quoted ';' by '\n' to allow semi-colons to separate assignments
+      if ( (!inQuotes) && ((*ptr) == ';') ) {
+        (*ptr) = '\n';
+      }
+      // replace DOS-style '\r' EOL characters by '\n'
+      if ( (*ptr) == '\r' ) {
+        (*ptr) = '\n';
+      }
 
       ptr ++;
 

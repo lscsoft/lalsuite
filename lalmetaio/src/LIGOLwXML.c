@@ -115,7 +115,6 @@ list of all the files which must be updated.
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -775,18 +774,18 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->null_stat_h1h2,
               tablePtr.multiInspiralTable->null_stat_degen,
               tablePtr.multiInspiralTable->event_id->id,
-              tablePtr.multiInspiralTable->h1quad.re,
-              tablePtr.multiInspiralTable->h1quad.im,
-              tablePtr.multiInspiralTable->h2quad.re,
-              tablePtr.multiInspiralTable->h2quad.im,
-              tablePtr.multiInspiralTable->l1quad.re,
-              tablePtr.multiInspiralTable->l1quad.im,
-              tablePtr.multiInspiralTable->g1quad.re,
-              tablePtr.multiInspiralTable->g1quad.im,
-              tablePtr.multiInspiralTable->t1quad.re,
-              tablePtr.multiInspiralTable->t1quad.im,
-              tablePtr.multiInspiralTable->v1quad.re,
-              tablePtr.multiInspiralTable->v1quad.im,
+              crealf(tablePtr.multiInspiralTable->h1quad),
+              cimagf(tablePtr.multiInspiralTable->h1quad),
+              crealf(tablePtr.multiInspiralTable->h2quad),
+              cimagf(tablePtr.multiInspiralTable->h2quad),
+              crealf(tablePtr.multiInspiralTable->l1quad),
+              cimagf(tablePtr.multiInspiralTable->l1quad),
+              crealf(tablePtr.multiInspiralTable->g1quad),
+              cimagf(tablePtr.multiInspiralTable->g1quad),
+              crealf(tablePtr.multiInspiralTable->t1quad),
+              cimagf(tablePtr.multiInspiralTable->t1quad),
+              crealf(tablePtr.multiInspiralTable->v1quad),
+              cimagf(tablePtr.multiInspiralTable->v1quad),
 	      tablePtr.multiInspiralTable->coh_snr_h1h2,
 	      tablePtr.multiInspiralTable->cohSnrSqLocal,
 	      tablePtr.multiInspiralTable->autoCorrCohSq,

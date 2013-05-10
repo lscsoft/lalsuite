@@ -103,10 +103,22 @@ typedef enum {
  * or only the set of l=2 modes for precessing models.
  */
 typedef enum {
-    LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED, /**< Include only (2,2) or l=2 modes */
-    LAL_SIM_INSPIRAL_MODES_CHOICE_ALL /**< Include all available (l,m) modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT    = 1,                     /**< Include only (2,2) or l=2 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_3L         = 1<<1,                  /**< Inlude only l=3 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3L     = (1<<2) - 1,            /**< Inlude l=2,3 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_4L         = 1<<2,                  /**< Inlude only l=4 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4L = (1<<3) - 1,            /**< Include l=2,3,4 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4L     = (1<<3) - 1 - (1<<1),   /**< Include l=2,4 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4L     = (1<<3) - (1<<1),       /**< Include l=3,4 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_5L         = 1<<3,                  /**< Inlude only l=5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND5L     = (1<<4) -1,             /**< Inlude l=2,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND5L     = (1<<4) - (1<<1),       /**< Inlude l=3,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_4AND5L     = (1<<4),                /**< Inlude l=4,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND5L = (1<<4) - 1 -(1<<2),    /**< Inlude l=2,3,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4AND5L = (1<<4) - 1 -(1<<1),    /**< Inlude l=2,4,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4AND5L = (1<<4) - (1<<1),       /**< Inlude l=3,4,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_ALL        = (1<<4) - 1,            /**< Include l=2,3,4,5 modes */
 } LALSimInspiralModesChoice;
-
 
 /**
  * Struct containing several enumerated flags that control specialized behavior

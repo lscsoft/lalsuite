@@ -33,6 +33,62 @@ REAL8 lalswig_test_REAL8_matrix[2][3];
 COMPLEX8 lalswig_test_COMPLEX8_vector[3];
 COMPLEX8 lalswig_test_COMPLEX8_matrix[2][3];
 
+// Test dynamic array of pointer access
+typedef struct taglalswig_test_arrayofdata {
+#ifdef SWIG
+  SWIGLAL(1D_ARRAY(INT4, data, UINT4, length));
+#endif // SWIG
+  UINT4 length;
+  INT4 *data;
+} lalswig_test_arrayofdata;
+typedef struct taglalswig_test_arrayofptrs {
+#ifdef SWIG
+  SWIGLAL(1D_ARRAY(lalswig_test_arrayofdata*, data, UINT4, length));
+#endif // SWIG
+  UINT4 length;
+  lalswig_test_arrayofdata **data;
+} lalswig_test_arrayofptrs;
+lalswig_test_arrayofptrs* lalswig_test_Create_arrayofptrs(UINT4);
+void lalswig_test_Destroy_arrayofptrs(lalswig_test_arrayofptrs*);
+#ifdef SWIG
+%header %{
+  lalswig_test_arrayofptrs* lalswig_test_Create_arrayofptrs(UINT4 length) {
+    lalswig_test_arrayofptrs* ap = (lalswig_test_arrayofptrs*)XLALMalloc(sizeof(lalswig_test_arrayofptrs));
+    XLAL_CHECK_NULL(ap != NULL, XLAL_ENOMEM);
+    ap->length = length;
+    ap->data = (lalswig_test_arrayofdata**)XLALCalloc(ap->length, sizeof(lalswig_test_arrayofdata*));
+    XLAL_CHECK_NULL(ap->data != NULL, XLAL_ENOMEM);
+    for (UINT4 i = 0; i < ap->length; ++i) {
+      ap->data[i] = (lalswig_test_arrayofdata*)XLALMalloc(sizeof(lalswig_test_arrayofdata));
+      XLAL_CHECK_NULL(ap->data[i] != NULL, XLAL_ENOMEM);
+      ap->data[i]->length = 2*length;
+      ap->data[i]->data = (INT4*)XLALCalloc(ap->data[i]->length, sizeof(INT4));
+      XLAL_CHECK_NULL(ap->data[i]->data != NULL, XLAL_ENOMEM);
+      for (UINT4 j = 0; j < ap->data[i]->length; ++j) {
+        ap->data[i]->data[j] = 42*length*i + j;
+      }
+    }
+    return ap;
+  }
+  void lalswig_test_Destroy_arrayofptrs(lalswig_test_arrayofptrs* ap) {
+    if (ap) {
+      if (ap->data) {
+        for (UINT4 i = 0; i < ap->length; ++i) {
+          if (ap->data[i]) {
+            if (ap->data[i]->data) {
+              XLALFree(ap->data[i]->data);
+            }
+            XLALFree(ap->data[i]);
+          }
+        }
+        XLALFree(ap->data);
+      }
+      XLALFree(ap);
+    }
+  }
+%}
+#endif // SWIG
+
 // Test LIGOTimeGPS operations.
 typedef struct taglalswig_test_gps {
   LIGOTimeGPS t;

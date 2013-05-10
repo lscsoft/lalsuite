@@ -522,18 +522,18 @@ LALInferenceVariableItem *item=params->head;
 	for(;item;item=item->next)
 	{
 		if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
+        if(item->type!=LALINFERENCE_REAL8_t) continue; /* Only works for REAL8 */
 		else
 		{
 			
 			val = 0;
 			min =-DBL_MAX;
 			max = DBL_MAX;
-			if(strcmp(item->name,"psdscale"))
+			if(LALInferenceCheckMinMaxPrior(priorParams,item->name))
 			{
 				LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
 				val = *(REAL8 *)item->value;
 			}
-
 			if(val<min || val>max) return -DBL_MAX;
 			else
 			{
@@ -805,7 +805,7 @@ LALInferenceVariableItem *item=params->head;
           UINT4 psdGaussianPrior;
 
           REAL8Vector *sigma = *((REAL8Vector **)LALInferenceGetVariable(priorParams, "psdsigma"));
-          gsl_matrix *nparams = *((gsl_matrix **)item->value);
+          gsl_matrix *nparams = *((gsl_matrix **)(item->value));
 
           component_min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
           component_max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");

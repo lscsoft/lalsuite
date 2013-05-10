@@ -26,7 +26,6 @@
  *
  *-----------------------------------------------------------------------
  */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -69,12 +68,12 @@ void Chisq_CPU (REAL4* chisq, COMPLEX8* q, COMPLEX8* qtilde, FindChirpChisqParam
     {
       for ( UINT4 l = 0; l < numChisqBins; ++l )
 	{
-	  REAL4 Xl = params->qBinVecPtr[l]->data[j].re;
-	  REAL4 Yl = params->qBinVecPtr[l]->data[j].im;
+	  REAL4 Xl = crealf(params->qBinVecPtr[l]->data[j]);
+	  REAL4 Yl = cimagf(params->qBinVecPtr[l]->data[j]);
 	  REAL4 deltaXl = chisqNorm * Xl -
-	    (chisqNorm * q[j].re / (REAL4) (numChisqBins));
+	    (chisqNorm * crealf(q[j]) / (REAL4) (numChisqBins));
 	  REAL4 deltaYl = chisqNorm * Yl -
-	    (chisqNorm * q[j].im / (REAL4) (numChisqBins));
+	    (chisqNorm * cimagf(q[j]) / (REAL4) (numChisqBins));
 	  
 	  chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
 	}

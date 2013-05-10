@@ -3,6 +3,7 @@ Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
+  libchealpix-dev,
   zlib1g-dev, libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2),
   lal-dev (>= 6.10.0), lalframe-dev (>= 1.0.10),
   lalmetaio-dev (>= 1.1.0), lalsimulation-dev (>= 0.7.0),
@@ -13,6 +14,7 @@ Standards-Version: 3.8.6
 Package: lalinference
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
+  libchealpix0, python-healpy,
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libmetaio1 (>= 8.2),
   lal (>= 6.10.0), lalframe (>= 1.0.10), lalmetaio (>= 1.1.0),
   lalsimulation (>= 0.7.0), lalinspiral (>= 1.5.0),
@@ -25,6 +27,7 @@ Description: LSC Algorithm Library Inference
 Package: lalinference-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
+  libchealpix-dev,
   libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.10.0),
   lalframe-dev (>= 1.0.10), lalmetaio-dev (>= 1.1.0),
   lalsimulation-dev (>= 0.7.0), lalinspiral-dev (>= 1.5.0),

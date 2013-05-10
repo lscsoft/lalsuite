@@ -1595,8 +1595,8 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "\n");
 
   /* Fstat-values */
-  fprintf (fp, "Fa       = % .6g  %+.6gi;\n", Fcand->Fstat.Fa.re, Fcand->Fstat.Fa.im );
-  fprintf (fp, "Fb       = % .6g  %+.6gi;\n", Fcand->Fstat.Fb.re, Fcand->Fstat.Fb.im );
+  fprintf (fp, "Fa       = % .6g  %+.6gi;\n", creal(Fcand->Fstat.Fa), cimag(Fcand->Fstat.Fa) );
+  fprintf (fp, "Fb       = % .6g  %+.6gi;\n", creal(Fcand->Fstat.Fb), cimag(Fcand->Fstat.Fb) );
   fprintf (fp, "twoF     = % .6g;\n", 2.0 * Fcand->Fstat.F );
 
   fprintf (fp, "\nAmpFisher = \\\n" );
@@ -1912,8 +1912,8 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
   /*for(m = -number ; m < (number)*(if1-if0-1) ; m++ )*/
   for(m = -number; m < ((INT4)L->length)-number; m++)
   {
-    llSFT.re =0.0;
-    llSFT.im =0.0;
+    llSFT.real_FIXME =0.0;
+    llSFT.imag_FIXME =0.0;
 
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<number;alpha++)
@@ -1960,10 +1960,10 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
 	    /* these four lines compute P*xtilde */
 	    Xalpha_k = Xalpha[sftIndex];
 
-	    realXP += Xalpha_k.re*realP;
-	    realXP -= Xalpha_k.im*imagP;
-	    imagXP += Xalpha_k.re*imagP;
-	    imagXP += Xalpha_k.im*realP;
+	    realXP += crealf(Xalpha_k)*realP;
+	    realXP -= cimagf(Xalpha_k)*imagP;
+	    imagXP += crealf(Xalpha_k)*imagP;
+	    imagXP += cimagf(Xalpha_k)*realP;
 	  }
 	y = -LAL_TWOPI*alpha*(if0+(REAL8)m/(REAL8)number);
 
@@ -1974,13 +1974,13 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
 	{
 	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
 	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-	  llSFT.re += realQXP;
-	  llSFT.im += imagQXP;
+	  llSFT.real_FIXME += realQXP;
+	  llSFT.imag_FIXME += imagQXP;
 	}
       }      
 
-    L->data[m+number].re = llSFT.re; 
-    L->data[m+number].im = llSFT.im; 
+    L->data[m+number].real_FIXME = creal(llSFT); 
+    L->data[m+number].imag_FIXME = cimag(llSFT); 
     
   }
   XLALFree(sinVal);
@@ -2004,8 +2004,8 @@ void ApplyWindow(REAL8Window *Win, COMPLEX16Vector *X)
   /* Multiply it to both the Real and Imaginary Parts */
   for(i=0;i<Win->data->length;i++)
     {
-      X->data[i].re = Win->data->data[i] * X->data[i].re; /* Real */
-      X->data[i].im = Win->data->data[i] * X->data[i].im; /* Imag */
+      X->data[i].real_FIXME = Win->data->data[i] * creal(X->data[i]); /* Real */
+      X->data[i].imag_FIXME = Win->data->data[i] * cimag(X->data[i]); /* Imag */
     }
 
 }/*ApplyWindow*/
@@ -2029,23 +2029,23 @@ void Reshuffle(COMPLEX16Vector *X)
   Temp = (COMPLEX8*)XLALMalloc(sizeof(COMPLEX8)*length);
   for(i=0;i<length;i++)
     {
-      Temp[i].re = X->data[i].re; /* Real */
-      Temp[i].im = X->data[i].im; /* Imag */
+      Temp[i].realf_FIXME = creal(X->data[i]); /* Real */
+      Temp[i].imagf_FIXME = cimag(X->data[i]); /* Imag */
     }
   
   /* Copy first half */
   for(i=M;i<length;i++)
     {
-      X->data[k].re = Temp[i].re;
-      X->data[k].im = Temp[i].im;
+      X->data[k].real_FIXME = crealf(Temp[i]);
+      X->data[k].imag_FIXME = cimagf(Temp[i]);
       k++;
     }
 
   /* Copy Second half */
   for(i=0;i<M;i++)
     {
-      X->data[k].re = Temp[i].re;
-      X->data[k].im = Temp[i].im;
+      X->data[k].real_FIXME = crealf(Temp[i]);
+      X->data[k].imag_FIXME = cimagf(Temp[i]);
       k++;
     }
 
@@ -2317,8 +2317,8 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	    {
 	      for(p=0;p<N;p++)
 		{
-		  L->data[p].re = SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms].re;
-		  L->data[p].im = SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms].im;
+		  L->data[p].real_FIXME = crealf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]);
+		  L->data[p].imag_FIXME = cimagf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]);
 		}
 	    }
 	 	  
@@ -2340,17 +2340,17 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	    {
 	      REAL8 cosphis = cos(LAL_TWOPI*(TSeries->f_het)*(C.StartTime[k]-StartTime));
 	      REAL8 sinphis = -sin(LAL_TWOPI*(TSeries->f_het)*(C.StartTime[k]-StartTime));
-	      REAL8 Realpart = SmallT->data[p].re;
-	      REAL8 Imagpart = SmallT->data[p].im;
-	      SmallT->data[p].re = Realpart*cosphis - Imagpart*sinphis;
-	      SmallT->data[p].im = Realpart*sinphis + Imagpart*cosphis;
+	      REAL8 Realpart = creal(SmallT->data[p]);
+	      REAL8 Imagpart = cimag(SmallT->data[p]);
+	      SmallT->data[p].real_FIXME = Realpart*cosphis - Imagpart*sinphis;
+	      SmallT->data[p].imag_FIXME = Realpart*sinphis + Imagpart*cosphis;
 	    }
 	  
 	  /* Add into appropriate chunk */
 	  for(p=0;p<N;p++)
 	    {
-	      TSeries->Real[i]->data[C.StartIndex[k]+p] = SmallT->data[p].re*deltaF/C.NumContinuous[k];
-	      TSeries->Imag[i]->data[C.StartIndex[k]+p] = SmallT->data[p].im*deltaF/C.NumContinuous[k];
+	      TSeries->Real[i]->data[C.StartIndex[k]+p] = creal(SmallT->data[p])*deltaF/C.NumContinuous[k];
+	      TSeries->Imag[i]->data[C.StartIndex[k]+p] = cimag(SmallT->data[p])*deltaF/C.NumContinuous[k];
 	      
 	    }
  
@@ -2761,7 +2761,12 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
-      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
+      if ( (multiSSB = XLALGetMultiSSBtimes ( multiDetStates, skypos, doppler->refTime, params->SSBprec )) == NULL )
+        {
+          XLALPrintError("XLALGetMultiSSBtimes() failed with error = %d\n\n", xlalErrno );
+          ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+        }
+
       if ( Buffer )
 	{
 	  XLALDestroyMultiSSBtimes ( Buffer->multiSSB );
@@ -2784,7 +2789,11 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       else
 	{
 	  /* compute binary time corrections to the SSB time delays and SSB time derivitive */
-	  TRY ( LALGetMultiBinarytimes ( status->statusPtr, &multiBinary, multiSSB, multiDetStates, doppler->orbit, doppler->refTime ), status );
+	  if ( (XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, doppler->orbit )) != XLAL_SUCCESS )
+            {
+              XLALPrintError("XLALAddMultiBinaryTimes() failed with xlalErrno = %d\n\n", xlalErrno );
+              ABORTXLAL( status );
+            }
 
 	  /* store these in buffer if available */
 	  if ( Buffer )
@@ -2809,7 +2818,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 	XLALPrintError("\nXLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
- 
+
      /* store these in buffer if available */
       if ( Buffer )
 	{

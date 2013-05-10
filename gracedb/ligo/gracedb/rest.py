@@ -251,10 +251,11 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid)
         return self.get(uri)
 
-    def writeLog(self, graceid, message):
+    def writeLog(self, graceid, message, tagname=None, displayName=None):
         template = self.templates['event-log-template']
         uri = template.format(graceid=graceid)
-        return self.post(uri, body={'message' : message})
+        return self.post(uri, body={'message' : message, 'tagname': tagname, 
+            'displayName': displayName})
 
     def labels(self, graceid, label=""):
         template = self.templates['event-label-template']
@@ -285,6 +286,22 @@ class GraceDb(GsiRest):
         template = self.templates['slot-template']
         uri = template.format(graceid=graceid, slotname=slotname)
         return self.delete(uri)
+
+    def tags(self, graceid, n):
+        template = self.templates['taglist-template']
+        uri = template.format(graceid=graceid, n=n)
+        return self.get(uri)
+
+    def createTag(self, graceid, n, tagname, displayName=None):
+        template = self.templates['tag-template']
+        uri = template.format(graceid=graceid, n=n, tagname=tagname)
+        return self.put(uri, body={'displayName': displayName})
+
+    def deleteTag(self, graceid, n, tagname):
+        template = self.templates['tag-template']
+        uri = template.format(graceid=graceid, n=n, tagname=tagname)
+        return self.delete(uri)
+
 
 #-----------------------------------------------------------------
 # TBD

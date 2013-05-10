@@ -33,7 +33,6 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/StringInput.h>
 #include <lal/XLALError.h>
@@ -1792,13 +1791,13 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
       }
       break;
     case VOT_COMPLEX8:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX8*)arrayPtr)[arrayIndex].re, ((COMPLEX8*)arrayPtr)[arrayIndex].im ) < 0) {
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, crealf(((COMPLEX8*)arrayPtr)[arrayIndex]), cimagf(((COMPLEX8*)arrayPtr)[arrayIndex]) ) < 0) {
         XLALPrintError("%s: failed to convert COMPLEX8 element (arrayIndex=%d) to string using fmt '%s'.\n", __func__, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( XLAL_EFAILED );
       }
       break;
     case VOT_COMPLEX16:
-      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, ((COMPLEX16*)arrayPtr)[arrayIndex].re, ((COMPLEX16*)arrayPtr)[arrayIndex].im ) < 0) {
+      if ( snprintf(textbuf, TEXTBUFLEN, writeFmt, creal(((COMPLEX16*)arrayPtr)[arrayIndex]), cimag(((COMPLEX16*)arrayPtr)[arrayIndex]) ) < 0) {
         XLALPrintError("%s: failed to convert COMPLEX16 element (arrayIndex=%d) to string using fmt '%s'.\n", __func__, arrayIndex, writeFmt );
         XLAL_ERROR_NULL ( XLAL_EFAILED );
       }
@@ -1831,6 +1830,8 @@ XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of e
 {
   UINT4 len;
   const char *instring = (const char*)content;
+  REAL4 realf, imagf;
+  REAL8 real, imag;
 
   switch ( datatype )
     {
@@ -1914,17 +1915,19 @@ XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of e
       break;
 
     case VOT_COMPLEX8:
-      if ( sscanf( instring, "%" LAL_REAL4_FORMAT "%" LAL_REAL4_FORMAT , &( ((COMPLEX8*)arrayPtr)[arrayIndex].re ), &( ((COMPLEX8*)arrayPtr)[arrayIndex].im ) ) != 2 ) {
+      if ( sscanf( instring, "%" LAL_REAL4_FORMAT "%" LAL_REAL4_FORMAT , &realf, &imagf ) != 2 ) {
         XLALPrintError("%s: failed to parse COMPLEX8 element '%s' at arrayIndex=%d.\n", __func__, instring, arrayIndex );
         XLAL_ERROR ( XLAL_EFAILED );
       }
+      ((COMPLEX8*)arrayPtr)[arrayIndex] = crectf(realf, imagf);
       break;
 
     case VOT_COMPLEX16:
-      if ( sscanf( instring, "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &( ((COMPLEX16*)arrayPtr)[arrayIndex].re ), &( ((COMPLEX16*)arrayPtr)[arrayIndex].im ) ) != 2 ) {
+      if ( sscanf( instring, "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &real, &imag ) != 2 ) {
         XLALPrintError("%s: failed to parse COMPLEX16 element '%s' at arrayIndex=%d.\n", __func__, instring, arrayIndex );
         XLAL_ERROR ( XLAL_EFAILED );
       }
+      ((COMPLEX16*)arrayPtr)[arrayIndex] = crect(real, imag);
       break;
 
     default:

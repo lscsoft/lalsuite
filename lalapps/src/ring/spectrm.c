@@ -19,7 +19,6 @@
 
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/Units.h>
@@ -298,8 +297,8 @@ int calibrate_spectrum(
     {
       for ( k = cut; k < spectrum->data->length; ++k )
       {
-        REAL4 re = response->data->data[k].re;
-        REAL4 im = response->data->data[k].im;
+        REAL4 re = crealf(response->data->data[k]);
+        REAL4 im = cimagf(response->data->data[k]);
         spectrum->data->data[k] /= (re*re + im*im );
       }
       XLALUnitMultiply( &spectrum->sampleUnits, &spectrum->sampleUnits,
@@ -309,8 +308,8 @@ int calibrate_spectrum(
     {
       for ( k = cut; k < spectrum->data->length; ++k )
       {
-        REAL4 re = response->data->data[k].re;
-        REAL4 im = response->data->data[k].im;
+        REAL4 re = crealf(response->data->data[k]);
+        REAL4 im = cimagf(response->data->data[k]);
         spectrum->data->data[k] *= (re*re + im*im );
       }
       XLALUnitDivide( &spectrum->sampleUnits, &spectrum->sampleUnits,

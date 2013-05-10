@@ -280,6 +280,9 @@ REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
                                           LALInferenceIFOData *data,
                                           LALInferenceTemplateFunction templt);
 
+REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,LALInferenceTemplateFunction templt);
+
+
 /*@}*/
 
 #endif

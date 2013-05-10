@@ -26,6 +26,8 @@
 
 #ifdef  __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
 #ifdef LAL_PTHREAD_LOCK
@@ -48,9 +50,9 @@ extern pthread_mutex_t lalGSLPthreadMutex;
           XLALGSL_PTHREAD_MUTEX_UNLOCK; \
         } while (0)
 
-
-#ifdef  __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
-
 #endif /* XLALGSL_H */

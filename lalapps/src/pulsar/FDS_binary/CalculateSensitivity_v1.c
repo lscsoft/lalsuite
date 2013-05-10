@@ -209,8 +209,8 @@ int SelectSFTs(FFT ***SFTData,FFT ***tempSFTData,dataset *dataparams,dataset *fu
 
 	/* loop over the SFT data and copy it */
 	for (s=0;s<(INT4)(*SFTData)[i]->fft->data->length;s++) {
-	  (*tempSFTData)[k]->fft->data->data[s].re=(*SFTData)[i]->fft->data->data[s].re;
-	  (*tempSFTData)[k]->fft->data->data[s].im=(*SFTData)[i]->fft->data->data[s].im;
+	  (*tempSFTData)[k]->fft->data->data[s].realf_FIXME=crealf((*SFTData)[i]->fft->data->data[s]);
+	  (*tempSFTData)[k]->fft->data->data[s].imagf_FIXME=cimagf((*SFTData)[i]->fft->data->data[s]);
 	}
 
 	/* increment the loop counter */
@@ -691,8 +691,8 @@ int CalculateSh(FFT ***SFTData, dataset *dataparams,REAL8 *ShAV)
     /* loop over each SFT */
     for (k=0;k<dataparams->sftno;k++) {
       Sh[j]=Sh[j]+
-	(REAL8)(*SFTData)[k]->fft->data->data[j].re * (REAL8)(*SFTData)[k]->fft->data->data[j].re+
-	(REAL8)(*SFTData)[k]->fft->data->data[j].im * (REAL8)(*SFTData)[k]->fft->data->data[j].im;
+	(REAL8)crealf((*SFTData)[k]->fft->data->data[j]) * (REAL8)crealf((*SFTData)[k]->fft->data->data[j])+
+	(REAL8)cimagf((*SFTData)[k]->fft->data->data[j]) * (REAL8)cimagf((*SFTData)[k]->fft->data->data[j]);
     }
   }
 

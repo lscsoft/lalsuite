@@ -77,7 +77,7 @@ extern "C" {
  *
  * LALGeneratePulsarSignal() is basically a wrapper for the two
  * LAL-functions GenerateSpinOrbitCW() to produce the source-signal,
- * and LALSimulateCoherentGW() to turn it into a time-series at the detector.
+ * and LALPulsarSimulateCoherentGW() to turn it into a time-series at the detector.
  *
  * LALSignalToSFTs() uses LALForwardRealFFT() appropriately on the input-timeseries to
  * produce the required output-SFTs ( v2-normalization! ).
@@ -295,8 +295,8 @@ typedef struct tagPulsarSignalParams {
   UINT4 duration;           	/**< length of time series in seconds */
   REAL8 samplingRate;		/**< sampling rate of time-series (= 2 * frequency-Band) */
   REAL8 fHeterodyne;		/**< heterodyning frequency for output time-series */
-  UINT4 dtDelayBy2; 		/**< half-interval for the Doppler delay look-up table for LALSimulateCoherentGW() */
-  UINT4 dtPolBy2; 		/**< half-interval for the polarisation response look-up table for LALSimulateCoherentGW() */
+  UINT4 dtDelayBy2; 		/**< half-interval for the Doppler delay look-up table for LALPulsarSimulateCoherentGW() */
+  UINT4 dtPolBy2; 		/**< half-interval for the polarisation response look-up table for LALPulsarSimulateCoherentGW() */
 } PulsarSignalParams;
 
 /** Parameters defining the SFTs to be returned from LALSignalToSFTs().
@@ -342,14 +342,17 @@ extern const SFTandSignalParams empty_SFTandSignalParams;
 /*@}*/
 
 /* ---------- Function prototypes ---------- */
+REAL4TimeSeries *XLALGeneratePulsarSignal ( const PulsarSignalParams *params );
+SFTVector *XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, const SFTParams *params );
+int XLALConvertGPS2SSB ( LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params );
+int XLALConvertSSB2GPS ( LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params );
+
+// ----- obsolete and deprecated LAL interface
 void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signalvec, const PulsarSignalParams *params);
 void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signalvec, const SFTParams *params);
 
 void LALComputeSkyAndZeroPsiAMResponse (LALStatus *, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
 void LALFastGeneratePulsarSFTs (LALStatus *, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
-
-void LALConvertGPS2SSB (LALStatus* , LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-void LALConvertSSB2GPS (LALStatus *, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 
 /*@}*/
 

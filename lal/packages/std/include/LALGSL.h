@@ -124,18 +124,16 @@ do nothing.
 
 #ifdef  __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
-#ifndef SWIG /* exclude from SWIG interface */
-extern LALStatus * lalGSLGlobalStatusPtr;
+#ifndef SWIG    /* exclude from SWIG interface */
+extern LALStatus *lalGSLGlobalStatusPtr;
 #endif /* SWIG */
 void
-LALGSLErrorHandler(
-    const char *reason,
-    const char *file,
-    int line,
-    int errnum
-    );
+LALGSLErrorHandler(const char *reason,
+                   const char *file, int line, int errnum);
 
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
@@ -205,8 +203,9 @@ extern pthread_mutex_t lalGSLPthreadMutex;
                   "       Null status pointer passed to CALLGSL\n",           \
                   __FILE__, __LINE__ )
 
-#ifdef  __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
-
 #endif /* _LALGSL_H */

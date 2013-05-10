@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/FileIO.h>
 #include <lal/LALStdio.h>
 #include <lal/SFTfileIO.h>
@@ -120,8 +119,8 @@ void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
   for (i=0; i < nsamples; i++)
   {
     ff = f0 + i*df;
-    valre = sft->data->data[i].re;
-    valim = sft->data->data[i].im;
+    valre = crealf(sft->data->data[i]);
+    valim = cimagf(sft->data->data[i]);
     if ( (i==0) && (i == nsamples-1) )
       P_k = sqrt(valre*valre + valim*valim);
     else

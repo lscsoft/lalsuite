@@ -92,7 +92,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
+		XLALPrintError("%s(): failure reading %s table: missing required column\n", __func__, table_name);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
@@ -120,6 +120,14 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
+		}
+		if(strlen(env.ligo_lw.table.elt[column_pos.ifo].data.lstring.data) >= sizeof(row->ifo) ||
+		strlen(env.ligo_lw.table.elt[column_pos.search].data.lstring.data) >= sizeof(row->search) ||
+		strlen(env.ligo_lw.table.elt[column_pos.channel].data.lstring.data) >= sizeof(row->channel)) {
+			XLALDestroySnglBurstTable(head);
+			MetaioAbort(&env);
+			XLALPrintError("%s(): failure reading %s table: string too long\n", __func__, table_name);
+			XLAL_ERROR_NULL(XLAL_EIO);
 		}
 		strncpy(row->ifo, env.ligo_lw.table.elt[column_pos.ifo].data.lstring.data, sizeof(row->ifo) - 1);
 		strncpy(row->search, env.ligo_lw.table.elt[column_pos.search].data.lstring.data, sizeof(row->search) - 1);
@@ -241,7 +249,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
+		XLALPrintError("%s(): failure reading %s table: missing required column\n", __func__, table_name);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
@@ -265,6 +273,13 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
+		}
+		if(strlen(env.ligo_lw.table.elt[column_pos.waveform].data.lstring.data) >= sizeof(row->waveform)) {
+			XLALDestroySimBurst(row);
+			XLALDestroySimBurstTable(head);
+			MetaioAbort(&env);
+			XLALPrintError("%s(): failure reading %s table: string too long\n", __func__, table_name);
+			XLAL_ERROR_NULL(XLAL_EIO);
 		}
 		strncpy(row->waveform, env.ligo_lw.table.elt[column_pos.waveform].data.lstring.data, sizeof(row->waveform) - 1);
 		if(column_pos.ra >= 0)
@@ -294,7 +309,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in %s table\n", __func__, table_name);
+				XLALPrintError("%s(): failure reading %s table: missing required column\n", __func__, table_name);
 				XLAL_ERROR_NULL(XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
@@ -305,7 +320,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in %s table\n", __func__, table_name);
+				XLALPrintError("%s(): failure reading %s table: missing required column\n", __func__, table_name);
 				XLAL_ERROR_NULL(XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
@@ -320,7 +335,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in %s table\n", __func__, table_name);
+				XLALPrintError("%s(): failure reading %s table: missing required column\n", __func__, table_name);
 				XLAL_ERROR_NULL(XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
@@ -333,7 +348,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in %s table\n", __func__, table_name);
+				XLALPrintError("%s(): failure reading %s table: missing required column\n", __func__, table_name);
 				XLAL_ERROR_NULL(XLAL_EIO);
 			}
 			row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_8;

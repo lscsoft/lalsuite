@@ -54,7 +54,7 @@ lalapps_cache_SOURCES = \
 	cache.c
 
 LDADD = liblalapps.la @LAL_LIBS@
-AM_CPPFLAGS = -I$(top_srcdir)/src
+AM_CPPFLAGS = -I$(top_srcdir)/src -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 if HAVE_PYTHON
 pkgpython_PYTHON = \

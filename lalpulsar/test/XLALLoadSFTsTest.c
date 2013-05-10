@@ -20,7 +20,6 @@
 
 /*---------- INCLUDES ----------*/
 #include <config.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
 #include <lal/Units.h>
@@ -173,8 +172,8 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
       return(-1);
     }
     for(bin=0; bin < sft1.data->length; bin++) {
-      if((sft1.data->data[bin].re != sft2.data->data[bin].re) ||
-	 (sft1.data->data[bin].im != sft2.data->data[bin].im)) {
+      if((crealf(sft1.data->data[bin]) != crealf(sft2.data->data[bin])) ||
+	 (cimagf(sft1.data->data[bin]) != cimagf(sft2.data->data[bin]))) {
 	XLALPrintError ( "CompareSFTVectors(): bins %u of SFT#%u differ!\n", sft, bin);
 	return(-1);
       }

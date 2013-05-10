@@ -45,7 +45,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <getopt.h>
 #include <stdarg.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -84,21 +83,6 @@ extern int optind, opterr, optopt;
 
 COMPLEX8 tmpa, tmpb, tmpc;
 REAL4 tmpx, tmpy;
-
-#define cdiv( a, b ) \
-( tmpa = (a), tmpb = (b), \
-  fabs( tmpb.re ) >= fabs( tmpb.im ) ? \
-    ( tmpx = tmpb.im / tmpb.re, \
-      tmpy = tmpb.re + tmpx * tmpb.im, \
-      tmpc.re = ( tmpa.re + tmpx * tmpa.im ) / tmpy, \
-      tmpc.im = ( tmpa.im - tmpx * tmpa.re ) / tmpy, \
-      tmpc ) : \
-    ( tmpx = tmpb.re / tmpb.im, \
-      tmpy = tmpb.im + tmpx * tmpb.re, \
-      tmpc.re = ( tmpa.re * tmpx + tmpa.im ) / tmpy, \
-      tmpc.im = ( tmpa.im * tmpx - tmpa.re ) / tmpy, \
-      tmpc ) )
-
 
 #define MAXLINESRS   60000     /* Maximum # of lines in a Response file */
 #define MAXFACTORS   100000       /* Maximum # of factors to be computed */
@@ -540,19 +524,16 @@ FrStream *framestream=NULL;
       params.asQ = &darm;
       params.exc = &exc;
       params.lineFrequency = CLA.fcal;
-      params.openloop.re =  CLA.G0Re;
-      params.openloop.im =  CLA.G0Im;
-      params.digital.re = CLA.D0Re;
-      params.digital.im = CLA.D0Im;
-      params.whitener.re = CLA.W0Re;
-      params.whitener.im = CLA.W0Im;
+      params.openloop = crect( CLA.G0Re, CLA.G0Im );
+      params.digital = crect( CLA.D0Re, CLA.D0Im );
+      params.whitener = crect( CLA.W0Re, CLA.W0Im );
 
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
 
       /* put factors into series */
-      factors.alphabeta.re /= CLA.gamma_fudgefactor;
-      gamma_fac[m]   = factors.alphabeta.re;
+      factors.alphabeta = crect( creal(factors.alphabeta) / CLA.gamma_fudgefactor, cimag(factors.alphabeta) );
+      gamma_fac[m]   = creal(factors.alphabeta);
 
       if(CLA.nofactors)
 	{
@@ -560,12 +541,12 @@ FrStream *framestream=NULL;
 	}
 
       fprintf(stdout,"%18.9Lf %e %e %e %e %e %e %e %e %e %e %e %e %e \n",gtime,
-	      factors.alpha.re,factors.alpha.im,
-	      factors.beta.re,factors.beta.im,
-	      factors.alphabeta.re,gamma_fac[m],factors.alphabeta.im,
-	      factors.asq.re*2/CLA.t,factors.asq.im*2/CLA.t,
-	      factors.darm.re*2/CLA.t,factors.darm.im*2/CLA.t,
-	      factors.exc.re*2/CLA.t,factors.exc.im*2/CLA.t);
+	      creal(factors.alpha),cimag(factors.alpha),
+	      creal(factors.beta),cimag(factors.beta),
+	      creal(factors.alphabeta),gamma_fac[m],cimag(factors.alphabeta),
+	      creal(factors.asq)*2/CLA.t,cimag(factors.asq)*2/CLA.t,
+	      creal(factors.darm)*2/CLA.t,cimag(factors.darm)*2/CLA.t,
+	      creal(factors.exc)*2/CLA.t,cimag(factors.exc)*2/CLA.t);
 
       gtime += CLA.t;
       localgpsepoch.gpsSeconds = (INT4)gtime;
@@ -695,26 +676,24 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 
 	for (k=0; k<nsamples; k++)
 	  {
-	    REAL4 dr= fftderrData->data[k+firstbin].re;
-	    REAL4 di= fftderrData->data[k+firstbin].im;
+	    REAL4 dr= crealf(fftderrData->data[k+firstbin]);
+	    REAL4 di= cimagf(fftderrData->data[k+firstbin]);
 	    REAL8 dpsq;
 	    REAL4 caldr,caldi;
 
-	    REAL4 hr= ffthtData->data[k+firstbin].re;
-	    REAL4 hi= ffthtData->data[k+firstbin].im;
+	    REAL4 hr= creal(ffthtData->data[k+firstbin]);
+	    REAL4 hi= cimag(ffthtData->data[k+firstbin]);
 	    REAL8 hpsq;
 
 	    /* Compute Response */
-	    C.re=gamma_fac[n]*Sensing[j].re[k];
-	    C.im=gamma_fac[n]*Sensing[j].im[k];
+	    C = crectf( gamma_fac[n]*Sensing[j].re[k], gamma_fac[n]*Sensing[j].im[k] );
 
-	    H.re=1.0+gamma_fac[n]*OLG[j].re[k];
-	    H.im=gamma_fac[n]*OLG[j].im[k];
-	    R=cdiv(H,C);
+	    H = crectf( 1.0+gamma_fac[n]*OLG[j].re[k], gamma_fac[n]*OLG[j].im[k] );
+	    R = H / C;
 
 	    /* Apply response to DARM_ERR */
-	    caldr=dr*R.re-di*R.im;
-	    caldi=di*R.re+dr*R.im;
+	    caldr=dr*crealf(R)-di*cimagf(R);
+	    caldi=di*crealf(R)+dr*cimagf(R);
 
 	    dpsq=pow(caldr,2.0)+pow(caldi,2);
 	    hpsq=pow(hr,2.0)+pow(hi,2);

@@ -243,7 +243,22 @@ Nested sampling arguments:\n\
 (--prior_distr )\t Set the prior to use (for the moment the only possible choice is SkyLoc which will use the sky localization project prior. All other values or skipping this option select LALInferenceInspiralPriorNormalised)\n\
 (--correlatedgaussianlikelihood)\tUse analytic, correlated Gaussian for Likelihood.\n\
 (--bimodalgaussianlikelihood)\tUse analytic, bimodal correlated Gaussian for Likelihood.\n\
-(--rosenbrocklikelihood \tUse analytic, Rosenbrock banana for Likelihood.\n";
+(--rosenbrocklikelihood \tUse analytic, Rosenbrock banana for Likelihood.\n\
+  ---------------------------------------------------------------------------------------------------\n\
+  --- Noise Model -----------------------------------------------------------------------------------\n\
+  ---------------------------------------------------------------------------------------------------\n\
+  (--psdFit)                       Run with PSD fitting\n\
+  (--psdNblock)                    Number of noise parameters per IFO channel (8)\n\
+  (--psdFlatPrior)                 Use flat prior on psd parameters (Gaussian)\n\
+  (--removeLines)                  Do include persistent PSD lines in fourier-domain integration\n\
+  (--KSlines)                      Run with the KS test line removal\n\
+  (--KSlinesWidth)                 Width of the lines removed by the KS test (deltaF)\n\
+  (--chisquaredlines)              Run with the Chi squared test line removal\n\
+  (--chisquaredlinesWidth)         Width of the lines removed by the Chi squared test (deltaF)\n\
+  (--powerlawlines)                Run with the power law line removal\n\
+  (--powerlawlinesWidth)           Width of the lines removed by the power law test (deltaF)\n\
+  (--xcorrbands)                   Run PSD fitting with correlated frequency bands\n\
+  \n";
 //(--tdlike)\tUse time domain likelihood.\n";
 
 	ProcessParamsTable *ppt=NULL;
@@ -295,7 +310,11 @@ Nested sampling arguments:\n\
                 runState->likelihood=&LALInferenceRosenbrockLogLikelihood;
                 runState->prior=LALInferenceAnalyticNullPrior;
         }
-
+    /* Marginalise over phase */
+    if(LALInferenceGetProcParamVal(commandLine,"--margphi")){
+      printf("Using Marginalise Phase Likelihood\n");
+      runState->likelihood=&LALInferenceMarginalisedPhaseLogLikelihood;
+    }
 //	if(LALInferenceGetProcParamVal(commandLine,"--tdlike")){
 //		fprintf(stderr, "Computing likelihood in the time domain.\n");
 //		runState->likelihood=&LALInferenceTimeDomainLogLikelihood;

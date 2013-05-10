@@ -27,7 +27,7 @@
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
-} /* so that editors will match preceding brace */
+}       /* so that editors will match preceding brace */
 #endif
 
 
@@ -156,7 +156,7 @@ int XLALPrintWarning(const char *fmt, ...);
 /** Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALPrintInfo(const char *fmt, ...);
 
-#ifndef SWIG /* exclude from SWIG interface */
+#ifndef SWIG    /* exclude from SWIG interface */
 
 /** Prints an error message if error printing is enabled by lalDebugLevel. */
 int XLALVPrintError(const char *fmt, va_list ap);
@@ -178,29 +178,35 @@ int XLALVPrintInfo(const char *fmt, va_list ap);
 
 /** Print an error message with standard XLAL formatting (if error messages
  * are enabled by lalDebugLevel).  */
-void XLALPrintErrorMessage(const char *func, const char *file, int line, const char *fmt, ...);
+void XLALPrintErrorMessage(const char *func, const char *file, int line,
+                           const char *fmt, ...);
 
 /** Print an warning message with standard XLAL formatting (if warning messages
  * are enabled by lalDebugLevel).  */
-void XLALPrintWarningMessage(const char *func, const char *file, int line, const char *fmt, ...);
+void XLALPrintWarningMessage(const char *func, const char *file, int line,
+                             const char *fmt, ...);
 
 /** Print an info message with standard XLAL formatting (if info messages
  * are enabled by lalDebugLevel).  */
-void XLALPrintInfoMessage(const char *func, const char *file, int line, const char *fmt, ...);
+void XLALPrintInfoMessage(const char *func, const char *file, int line,
+                          const char *fmt, ...);
 
-#ifndef SWIG /* exclude from SWIG interface */
+#ifndef SWIG    /* exclude from SWIG interface */
 
 /** Print an error message with standard XLAL formatting (if error messages
  * are enabled by lalDebugLevel).  */
-void XLALVPrintErrorMessage(const char *func, const char *file, int line, const char *fmt, va_list ap);
+void XLALVPrintErrorMessage(const char *func, const char *file, int line,
+                            const char *fmt, va_list ap);
 
 /** Print an warning message with standard XLAL formatting (if warning messages
  * are enabled by lalDebugLevel).  */
-void XLALVPrintWarningMessage(const char *func, const char *file, int line, const char *fmt, va_list ap);
+void XLALVPrintWarningMessage(const char *func, const char *file, int line,
+                              const char *fmt, va_list ap);
 
 /** Print an error message with standard XLAL formatting (if error messages
  * are enabled by lalDebugLevel).  */
-void XLALVPrintInfoMessage(const char *func, const char *file, int line, const char *fmt, va_list ap);
+void XLALVPrintInfoMessage(const char *func, const char *file, int line,
+                           const char *fmt, va_list ap);
 
 #endif /* SWIG */
 
@@ -288,7 +294,7 @@ int XLALPrintDeprecationWarning(const char *old, const char *replacement);
 /* Hexadecimal representation of the <tt>REAL4</tt> and <tt>REAL8</tt> NaN
  * failure bit pattern. */
 #define XLAL_REAL4_FAIL_NAN_INT 0x7fc001a1 /**< Hexadecimal representation of <tt>REAL4</tt> NaN failure bit pattern */
-#define XLAL_REAL8_FAIL_NAN_INT LAL_INT8_C(0x7ff80000000001a1) /**< Hexadecimal representation of <tt>REAL8</tt> NaN failure bit pattern */ 
+#define XLAL_REAL8_FAIL_NAN_INT LAL_INT8_C(0x7ff80000000001a1) /**< Hexadecimal representation of <tt>REAL8</tt> NaN failure bit pattern */
 
 /*
  * The floating point values themselves are returned by static functions that
@@ -299,42 +305,65 @@ int XLALPrintDeprecationWarning(const char *old, const char *replacement);
 /** Returns the value of the XLAL <tt>REAL4</tt> failure NaN. */
 static REAL4 UNUSED XLALREAL4FailNaN(void)
 {
-	volatile const union { INT4 i; REAL4 x; } val = { XLAL_REAL4_FAIL_NAN_INT } ;
-	return val.x;
+    volatile const union {
+        INT4 i;
+        REAL4 x;
+    } val = {
+    XLAL_REAL4_FAIL_NAN_INT};
+    return val.x;
 }
 
 /** Returns the value of the XLAL <tt>REAL8</tt> failure NaN. */
 static REAL8 UNUSED XLALREAL8FailNaN(void)
 {
-	volatile const union { INT8 i; REAL8 x; } val = { XLAL_REAL8_FAIL_NAN_INT } ;
-	return val.x;
+    volatile const union {
+        INT8 i;
+        REAL8 x;
+    } val = {
+    XLAL_REAL8_FAIL_NAN_INT};
+    return val.x;
 }
 
 /** Tests if a value is an XLAL <tt>REAL4</tt> failure NaN. */
 static int UNUSED XLALIsREAL4FailNaN(REAL4 val)
 {
-	volatile const union { INT4 i; unsigned char s[4]; } a = { XLAL_REAL4_FAIL_NAN_INT } ;
-	volatile union { REAL4 x; unsigned char s[4]; } b;
-	size_t n;
-	b.x = val;
-	for (n = 0; n < sizeof(val); ++n)
-		if (a.s[n] != b.s[n])
-			return 0;
-	return 1;
+    volatile const union {
+        INT4 i;
+        unsigned char s[4];
+    } a = {
+    XLAL_REAL4_FAIL_NAN_INT};
+    volatile union {
+        REAL4 x;
+        unsigned char s[4];
+    } b;
+    size_t n;
+    b.x = val;
+    for (n = 0; n < sizeof(val); ++n)
+        if (a.s[n] != b.s[n])
+            return 0;
+    return 1;
 }
 
 /** Tests if a value is an XLAL <tt>REAL8</tt> failure NaN. */
 static int UNUSED XLALIsREAL8FailNaN(REAL8 val)
 {
-	volatile const union { INT8 i; unsigned char s[8]; } a = { XLAL_REAL8_FAIL_NAN_INT } ;
-	volatile union { REAL8 x; unsigned char s[8]; } b;
-	size_t n;
-	b.x = val;
-	for (n = 0; n < sizeof(val); ++n)
-		if (a.s[n] != b.s[n])
-		return 0;
-	return 1;
+    volatile const union {
+        INT8 i;
+        unsigned char s[8];
+    } a = {
+    XLAL_REAL8_FAIL_NAN_INT};
+    volatile union {
+        REAL8 x;
+        unsigned char s[8];
+    } b;
+    size_t n;
+    b.x = val;
+    for (n = 0; n < sizeof(val); ++n)
+        if (a.s[n] != b.s[n])
+            return 0;
+    return 1;
 }
+
 #undef UNUSED
 
 /* Here are the macro constants for the fail NaNs. */
@@ -349,66 +378,66 @@ static int UNUSED XLALIsREAL8FailNaN(REAL8 val)
 
 /** XLAL error numbers and return values. */
 enum XLALErrorValue {
-	XLAL_SUCCESS =  0, /**< Success return value (not an error number) */
-	XLAL_FAILURE = -1, /**< Failure return value (not an error number) */
+    XLAL_SUCCESS = 0,      /**< Success return value (not an error number) */
+    XLAL_FAILURE = -1,     /**< Failure return value (not an error number) */
 
-	/* these are standard error numbers */
-	XLAL_EIO     =  5,  /**< I/O error */
-	XLAL_ENOMEM  = 12,  /**< Memory allocation error */
-	XLAL_EFAULT  = 14,  /**< Invalid pointer */
-	XLAL_EINVAL  = 22,  /**< Invalid argument */
-	XLAL_EDOM    = 33,  /**< Input domain error */
-	XLAL_ERANGE  = 34,  /**< Output range error */
+    /* these are standard error numbers */
+    XLAL_EIO = 5,           /**< I/O error */
+    XLAL_ENOMEM = 12,       /**< Memory allocation error */
+    XLAL_EFAULT = 14,       /**< Invalid pointer */
+    XLAL_EINVAL = 22,       /**< Invalid argument */
+    XLAL_EDOM = 33,         /**< Input domain error */
+    XLAL_ERANGE = 34,       /**< Output range error */
 
-	/* extended error numbers start at 128 ...
-	 * should be beyond normal errnos */
+    /* extended error numbers start at 128 ...
+     * should be beyond normal errnos */
 
-	/* these are common errors for XLAL functions */
-	XLAL_EFAILED = 128, /**< Generic failure */
-	XLAL_EBADLEN = 129, /**< Inconsistent or invalid length */
-	XLAL_ESIZE   = 130, /**< Wrong size */
-	XLAL_EDIMS   = 131, /**< Wrong dimensions */
-	XLAL_ETYPE   = 132, /**< Wrong or unknown type */
-	XLAL_ETIME   = 133, /**< Invalid time */
-	XLAL_EFREQ   = 134, /**< Invalid freqency */
-	XLAL_EUNIT   = 135, /**< Invalid units */
-	XLAL_ENAME   = 136, /**< Wrong name */
-	XLAL_EDATA   = 137, /**< Invalid data */
+    /* these are common errors for XLAL functions */
+    XLAL_EFAILED = 128,     /**< Generic failure */
+    XLAL_EBADLEN = 129,     /**< Inconsistent or invalid length */
+    XLAL_ESIZE = 130,       /**< Wrong size */
+    XLAL_EDIMS = 131,       /**< Wrong dimensions */
+    XLAL_ETYPE = 132,       /**< Wrong or unknown type */
+    XLAL_ETIME = 133,       /**< Invalid time */
+    XLAL_EFREQ = 134,       /**< Invalid freqency */
+    XLAL_EUNIT = 135,       /**< Invalid units */
+    XLAL_ENAME = 136,       /**< Wrong name */
+    XLAL_EDATA = 137,       /**< Invalid data */
 
-	/* user-defined errors */
-	XLAL_EUSR0   = 200, /**< User-defined error 0 */
-	XLAL_EUSR1   = 201, /**< User-defined error 1 */
-	XLAL_EUSR2   = 202, /**< User-defined error 2 */
-	XLAL_EUSR3   = 203, /**< User-defined error 3 */
-	XLAL_EUSR4   = 204, /**< User-defined error 4 */
-	XLAL_EUSR5   = 205, /**< User-defined error 5 */
-	XLAL_EUSR6   = 206, /**< User-defined error 6 */
-	XLAL_EUSR7   = 207, /**< User-defined error 7 */
-	XLAL_EUSR8   = 208, /**< User-defined error 8 */
-	XLAL_EUSR9   = 209, /**< User-defined error 9 */
+    /* user-defined errors */
+    XLAL_EUSR0 = 200,       /**< User-defined error 0 */
+    XLAL_EUSR1 = 201,       /**< User-defined error 1 */
+    XLAL_EUSR2 = 202,       /**< User-defined error 2 */
+    XLAL_EUSR3 = 203,       /**< User-defined error 3 */
+    XLAL_EUSR4 = 204,       /**< User-defined error 4 */
+    XLAL_EUSR5 = 205,       /**< User-defined error 5 */
+    XLAL_EUSR6 = 206,       /**< User-defined error 6 */
+    XLAL_EUSR7 = 207,       /**< User-defined error 7 */
+    XLAL_EUSR8 = 208,       /**< User-defined error 8 */
+    XLAL_EUSR9 = 209,       /**< User-defined error 9 */
 
-	/* external or internal errors */
-	XLAL_ESYS    = 254, /**< System error */
-	XLAL_EERR    = 255, /**< Internal error */
+    /* external or internal errors */
+    XLAL_ESYS = 254,        /**< System error */
+    XLAL_EERR = 255,        /**< Internal error */
 
-	/* specific mathematical and numerical errors start at 256 */
+    /* specific mathematical and numerical errors start at 256 */
 
-	/* IEEE floating point errors */
-	XLAL_EFPINVAL  = 256, /**< IEEE Invalid floating point operation, eg sqrt(-1), 0/0 */
-	XLAL_EFPDIV0   = 257, /**< IEEE Division by zero floating point error */
-	XLAL_EFPOVRFLW = 258, /**< IEEE Floating point overflow error */
-	XLAL_EFPUNDFLW = 259, /**< IEEE Floating point underflow error */
-	XLAL_EFPINEXCT = 260, /**< IEEE Floating point inexact error */
+    /* IEEE floating point errors */
+    XLAL_EFPINVAL = 256,      /**< IEEE Invalid floating point operation, eg sqrt(-1), 0/0 */
+    XLAL_EFPDIV0 = 257,       /**< IEEE Division by zero floating point error */
+    XLAL_EFPOVRFLW = 258,     /**< IEEE Floating point overflow error */
+    XLAL_EFPUNDFLW = 259,     /**< IEEE Floating point underflow error */
+    XLAL_EFPINEXCT = 260,     /**< IEEE Floating point inexact error */
 
-	/* numerical algorithm errors */
-	XLAL_EMAXITER  = 261, /**< Exceeded maximum number of iterations */
-	XLAL_EDIVERGE  = 262, /**< Series is diverging */
-	XLAL_ESING     = 263, /**< Apparent singularity detected */
-	XLAL_ETOL      = 264, /**< Failed to reach specified tolerance */
-	XLAL_ELOSS     = 265, /**< Loss of accuracy */
+    /* numerical algorithm errors */
+    XLAL_EMAXITER = 261,      /**< Exceeded maximum number of iterations */
+    XLAL_EDIVERGE = 262,      /**< Series is diverging */
+    XLAL_ESING = 263,         /**< Apparent singularity detected */
+    XLAL_ETOL = 264,          /**< Failed to reach specified tolerance */
+    XLAL_ELOSS = 265,         /**< Loss of accuracy */
 
-	/* failure from within a function call: "or" error number with this */
-	XLAL_EFUNC     = 1024 /**< Internal function call failed bit: "or" this with existing error number */
+    /* failure from within a function call: "or" error number with this */
+    XLAL_EFUNC = 1024         /**< Internal function call failed bit: "or" this with existing error number */
 };
 
 
@@ -422,7 +451,7 @@ enum XLALErrorValue {
  */
 
 /** Returns the error message associated with an error number. */
-const char * XLALErrorString(int errnum);
+const char *XLALErrorString(int errnum);
 
 /** Prints an error message for a particular error code in a standard format. */
 void XLALPerror(const char *func, const char *file, int line, int errnum);
@@ -438,34 +467,41 @@ void XLALPerror(const char *func, const char *file, int line, int errnum);
  *
  */
 
-#ifndef SWIG /* exclude from SWIG interface */
+#ifndef SWIG    /* exclude from SWIG interface */
 
 /** The XLAL error handler type. */
-typedef void XLALErrorHandlerType(const char *func, const char *file, int line, int errnum);
+typedef void XLALErrorHandlerType(const char *func, const char *file,
+                                  int line, int errnum);
 
 /** The default XLAL error handler. */
-void XLALDefaultErrorHandler(const char *func, const char *file, int line, int errnum);
+void XLALDefaultErrorHandler(const char *func, const char *file, int line,
+                             int errnum);
 /** A silent XLAL error handler. */
-void XLALSilentErrorHandler(const char *func, const char *file, int line, int errnum);
+void XLALSilentErrorHandler(const char *func, const char *file, int line,
+                            int errnum);
 
 /* Other useful XLAL error handlers. */
 /** The XLAL error handler that raises SIGABRT. */
-void XLALAbortErrorHandler(const char *func, const char *file, int line, int errnum);
+void XLALAbortErrorHandler(const char *func, const char *file, int line,
+                           int errnum);
 /** The XLAL error handler that calls exit. */
-void XLALExitErrorHandler(const char *func, const char *file, int line, int errnum);
+void XLALExitErrorHandler(const char *func, const char *file, int line,
+                          int errnum);
 /** The XLAL error handler that prints a function call backtrace then raises SIGABRT. */
-void XLALBacktraceErrorHandler(const char *func, const char *file, int line, int errnum);
+void XLALBacktraceErrorHandler(const char *func, const char *file,
+                               int line, int errnum);
 
 /** Function to return pointer to the XLAL error handler function pointer. */
-XLALErrorHandlerType ** XLALGetErrorHandlerPtr( void );
+XLALErrorHandlerType **XLALGetErrorHandlerPtr(void);
 
 /** Sets the error handler to a new handler and returns the old handler. */
-XLALErrorHandlerType * XLALSetErrorHandler(XLALErrorHandlerType *newHandler);
+XLALErrorHandlerType *XLALSetErrorHandler(XLALErrorHandlerType *
+                                          newHandler);
 
 /** Sets the error handler to the default handler and returns the old handler. */
-XLALErrorHandlerType * XLALSetDefaultErrorHandler(void);
+XLALErrorHandlerType *XLALSetDefaultErrorHandler(void);
 /** Sets the error handler to a silent handler and returns the old handler. */
-XLALErrorHandlerType * XLALSetSilentErrorHandler(void);
+XLALErrorHandlerType *XLALSetSilentErrorHandler(void);
 
 #endif /* SWIG */
 
@@ -476,7 +512,7 @@ XLALErrorHandlerType * XLALSetSilentErrorHandler(void);
  *
  */
 
-#ifdef SWIG /* SWIG interface directives */
+#ifdef SWIG     /* SWIG interface directives */
 SWIGLAL(DISABLE_EXCEPTIONS(XLALSetErrno, XLALGetBaseErrno, XLALClearErrno));
 #endif /* SWIG */
 
@@ -501,7 +537,7 @@ int XLALClearErrno(void);
  */
 
 /** Function to return pointer to the XLAL error number. */
-int * XLALGetErrnoPtr(void);
+int *XLALGetErrnoPtr(void);
 
 
 /* these are the modifiable lvalues for xlalErrno and XLALErrorHandler */
@@ -544,12 +580,13 @@ int * XLALGetErrnoPtr(void);
 
 /** Routine to set the XLAL error number and invoke the XLAL error handler.
  * It is used by the error macros. */
-void XLALError(
-	const char *func, /**< name of function where the error occurs */
-	const char *file, /**< source file name (use the __FILE__ macro) */
-	int line,         /**< source line number (use the __LINE__ macro) */
-	int errnum        /**< error code */
-	);
+void XLALError(const char *func,
+                          /**< name of function where the error occurs */
+               const char *file,
+                          /**< source file name (use the __FILE__ macro) */
+               int line,  /**< source line number (use the __LINE__ macro) */
+               int errnum /**< error code */
+    );
 
 /** \brief Macro to invoke the <tt>XLALError()</tt> function and return
  * with code val (it should not really be used itself, but forms the basis for
@@ -746,7 +783,7 @@ void XLALError(
 /*@}*/
 
 #if 0
-{ /* so that editors will match succeeding brace */
+{       /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
 }
 #endif

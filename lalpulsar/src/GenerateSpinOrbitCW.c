@@ -23,9 +23,42 @@
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/GenerateSpinOrbitCW.h>
+
+static LALStatus empty_LALStatus;
+
+
+/**
+ * FIXME: Temporary XLAL-wapper to LAL-function LALGenerateSpinOrbitCW()
+ *
+ * NOTE: This violates the current version of the XLAL-spec, but is unavoidable at this time,
+ * as LALGenerateSpinOrbitCW() hasn't been properly XLALified yet, and doing this would be beyond
+ * the scope of this patch.
+ * However, doing it here in this way is better than calling LALGenerateSpinOrbitCW() from various
+ * far-flung XLAL-functions, as in this way the "violation" is localized in one place, and serves
+ * as a reminder for future XLAL-ification at the same time.
+ */
+int
+XLALGenerateSpinOrbitCW ( PulsarCoherentGW *sourceSignal,		///< [out] output signal
+                          SpinOrbitCWParamStruc *sourceParams	///< [in] input parameters
+                          )
+{
+  XLAL_CHECK ( sourceSignal != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sourceParams != NULL, XLAL_EINVAL );
+
+  LALStatus status = empty_LALStatus;
+
+  LALGenerateSpinOrbitCW ( &status, sourceSignal, sourceParams );
+
+  XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALGenerateSpinOrbitCW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
+
+  return XLAL_SUCCESS;
+
+} // XLALGenerateSpinOrbitCW()
+
+
 
 /* First, define a function to compute C(a,b) = (a!)/[(b!)*(a-b)!] */
 static UINT4
@@ -102,7 +135,7 @@ same functional dependence on \f$t\f$ for either \f$i=1\f$ or~2.
 */
 void
 LALGenerateSpinOrbitCW( LALStatus             *stat,
-			CoherentGW            *output,
+			PulsarCoherentGW            *output,
 			SpinOrbitCWParamStruc *params )
 {
 

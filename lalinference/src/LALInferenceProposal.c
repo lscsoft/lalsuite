@@ -335,7 +335,7 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, TINYWEIGHT);
   }
 
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi"))
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--margphi") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi"))
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
 
   LALInferenceFrame frame=LALINFERENCE_FRAME_RADIATION;
@@ -392,6 +392,14 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     }
   }
 
+  //Add LALInferencePSDFitJump to the cycle
+  if(LALInferenceGetProcParamVal(runState->commandLine, "--psdFit"))
+  {
+    LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
+  }
+
+  
+  
   /********** TURNED OFF - very small acceptance with nested sampling, slows everything down ****************/
   /*
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kdtree")) {
@@ -968,7 +976,7 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
     exit(1);
   }
   do {
-    if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT) {
+    if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT && strcmp(proposeIterator->name,"psdscale")) {
       REAL8 tmp = *((REAL8 *)proposeIterator->value);
       REAL8 inc = jumpSize*gsl_matrix_get(eigenvectors, j, i);
       
@@ -1033,7 +1041,7 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
     LALInferenceVariableItem *item = runState->currentParams->head;
     i = 0;
     while (item != NULL) {
-      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && strcmp(item->name,"psdscale")) {
+      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && item->type==LALINFERENCE_REAL8_t ) {
         names[i] = item->name;
         i++;
       }

@@ -133,7 +133,7 @@ static int testOK( void )
 {
   int keep = lalDebugLevel;
 
-  lalDebugLevel &= ~( LALNMEMDBG | LALNMEMPAD | LALNMEMTRK );
+  lalDebugLevel |= LALMEMDBGBIT | LALMEMPADBIT | LALMEMTRKBIT;
   trial( p = LALMalloc( 1024 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) p[i] = i;
   trial( q = LALCalloc( 1024, sizeof( *q ) ), 0, "" );
@@ -148,7 +148,7 @@ static int testOK( void )
   trial( LALFree( p ), 0, "" );
   trial( LALCheckMemoryLeaks(), 0, "" );
 
-  lalDebugLevel |= LALNMEMPAD;
+  lalDebugLevel &= ~LALMEMPADBIT;
   trial( p = LALMalloc( 1024 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) p[i] = i;
   trial( q = LALCalloc( 1024, sizeof( *q ) ), 0, "" );
@@ -161,8 +161,8 @@ static int testOK( void )
   trial( LALFree( p ), 0, "" );
   trial( LALCheckMemoryLeaks(), 0, "" );
 
-  lalDebugLevel &= ~LALNMEMPAD;
-  lalDebugLevel |= LALNMEMTRK;
+  lalDebugLevel |= LALMEMPADBIT;
+  lalDebugLevel &= ~LALMEMTRKBIT;
   trial( p = LALMalloc( 1024 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) p[i] = i;
   trial( q = LALCalloc( 1024, sizeof( *q ) ), 0, "" );
@@ -177,7 +177,7 @@ static int testOK( void )
   trial( LALFree( p ), 0, "" );
   trial( LALCheckMemoryLeaks(), 0, "" );
 
-  lalDebugLevel |= LALNMEMDBG;
+  lalDebugLevel &= ~LALMEMDBGBIT;
   trial( p = LALMalloc( 1024 * sizeof( *p ) ), 0, "" );
   for ( i = 0; i < 1024; ++i ) p[i] = i;
   trial( q = LALCalloc( 1024, sizeof( *q ) ), 0, "" );
@@ -200,11 +200,12 @@ static int testPadding( void )
 {
   int keep = lalDebugLevel;
 
-  lalDebugLevel |= LALNMEMTRK;
-  lalDebugLevel &= ~( LALNMEMDBG | LALNMEMPAD );
+  lalDebugLevel |= LALMEMDBGBIT | LALMEMPADBIT;
+  lalDebugLevel &= ~LALMEMTRKBIT;
 
   /* try to free NULL pointer */
-  trial( LALFree( NULL ), SIGSEGV, "error: tried to free NULL pointer" );
+  /* changed behaviour: LALFree is a no-op when passed NULL */
+  // trial( LALFree( NULL ), SIGSEGV, "error: tried to free NULL pointer" );
 
   /* wrong magic */
   trial( p = LALMalloc( 2 * sizeof( *p ) ), 0, "" );
@@ -252,8 +253,8 @@ static int testAllocList( void )
 
   s = malloc( sizeof( *s ) );
 
-  lalDebugLevel |= LALNMEMPAD;
-  lalDebugLevel &= ~( LALNMEMDBG | LALNMEMTRK );
+  lalDebugLevel |= LALMEMDBGBIT | LALMEMTRKBIT;
+  lalDebugLevel &= ~LALMEMPADBIT;
 
   /* empty allocation list */
   trial( LALCheckMemoryLeaks(), 0, "" );
@@ -291,7 +292,8 @@ static int stressTestRealloc( void )
 
   v = NULL;
 
-  lalDebugLevel &= ~( LALMEMINFO | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK );
+  lalDebugLevel |= LALMEMDBGBIT | LALMEMPADBIT | LALMEMTRKBIT;
+  lalDebugLevel &= ~LALMEMINFOBIT;
 
   /* ascending */
   for ( n = 1; n <= nmax; ++n )

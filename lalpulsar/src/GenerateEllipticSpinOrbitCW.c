@@ -24,18 +24,18 @@
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 #include <gsl/gsl_roots.h>
 
 
-REAL8 gsl_E_solver(REAL8 e, void *p);
+static REAL8 gsl_E_solver(REAL8 e, void *p);
 
 struct E_solver_params {
    REAL8 a, b, x;
 };
 
-REAL8 gsl_E_solver(REAL8 e, void *p) {
+static REAL8 gsl_E_solver(REAL8 e, void *p) {
    struct E_solver_params *params = (struct E_solver_params*)p;
    return e + params->a*sin(e) + params->b*(cos(e) - 1.0) - params->x;
 }
@@ -167,7 +167,7 @@ be non-monotonic functions of one another.
 */
 void
 LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
-				CoherentGW            *output,
+				PulsarCoherentGW            *output,
 				SpinOrbitCWParamStruc *params )
 {
   UINT4 n, i;              /* number of and index over samples */

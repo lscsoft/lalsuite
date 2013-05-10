@@ -24,7 +24,7 @@
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
 /**
@@ -144,7 +144,7 @@ Eq.\eqref{eq_relativistic-orbit} in \ref LALGenerateEllipticSpinOrbitCW().
 */
 void
 LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
-				  CoherentGW            *output,
+				  PulsarCoherentGW            *output,
 				  SpinOrbitCWParamStruc *params )
 {
   UINT4 n, i;              /* number of and index over samples */

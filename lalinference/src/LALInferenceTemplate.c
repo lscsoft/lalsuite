@@ -1,4 +1,4 @@
-/* 
+/*
  *  LALInferenceTemplate.c: Bayesian Followup, template calls to LAL
  *  template functions. Temporary GeneratePPN
  *
@@ -367,10 +367,10 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
       plusIm  *= plusCoef;
     }
     /* copy f'domain waveform over to IFOdata: */
-    IFOdata->freqModelhPlus->data->data[i].re  = plusRe;
-    IFOdata->freqModelhPlus->data->data[i].im  = plusIm;
-    IFOdata->freqModelhCross->data->data[i].re = crossRe;
-    IFOdata->freqModelhCross->data->data[i].im = crossIm;
+    IFOdata->freqModelhPlus->data->data[i].real_FIXME  = plusRe;
+    IFOdata->freqModelhPlus->data->data[i].imag_FIXME  = plusIm;
+    IFOdata->freqModelhCross->data->data[i].real_FIXME = crossRe;
+    IFOdata->freqModelhCross->data->data[i].imag_FIXME = crossIm;
   }
   IFOdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
   return;
@@ -390,10 +390,10 @@ void LALInferenceTemplateNullFreqdomain(LALInferenceIFOData *IFOdata)
     XLAL_ERROR_VOID(XLAL_EFAULT);
   }
   for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i){
-    IFOdata->freqModelhPlus->data->data[i].re  = 0.0;
-    IFOdata->freqModelhPlus->data->data[i].im  = 0.0;
-    IFOdata->freqModelhCross->data->data[i].re = 0.0;
-    IFOdata->freqModelhCross->data->data[i].im = 0.0;
+    IFOdata->freqModelhPlus->data->data[i].real_FIXME  = 0.0;
+    IFOdata->freqModelhPlus->data->data[i].imag_FIXME  = 0.0;
+    IFOdata->freqModelhCross->data->data[i].real_FIXME = 0.0;
+    IFOdata->freqModelhCross->data->data[i].imag_FIXME = 0.0;
   }
   IFOdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
   return;
@@ -940,8 +940,8 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     /* Normalise by RMS of window (same as injections and data) */
     REAL8 WinNorm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
     for(i=0;i<IFOdata->freqModelhPlus->data->length;i++) {
-      IFOdata->freqModelhPlus->data->data[i].re/=WinNorm;
-      IFOdata->freqModelhPlus->data->data[i].im/=WinNorm;
+      IFOdata->freqModelhPlus->data->data[i].real_FIXME/=WinNorm;
+      IFOdata->freqModelhPlus->data->data[i].imag_FIXME/=WinNorm;
     }
   }  
   else
@@ -949,19 +949,19 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
       IFOdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
 
       /* copy over: */
-      IFOdata->freqModelhPlus->data->data[0].re = ((REAL8) LALSignal->data[0]);
-      IFOdata->freqModelhPlus->data->data[0].im = 0.0;
+      IFOdata->freqModelhPlus->data->data[0].real_FIXME = ((REAL8) LALSignal->data[0]);
+      IFOdata->freqModelhPlus->data->data[0].imag_FIXME = 0.0;
       for (i=1; i<IFOdata->freqModelhPlus->data->length-1; ++i) {
-	IFOdata->freqModelhPlus->data->data[i].re = ((REAL8) LALSignal->data[i]);
-	IFOdata->freqModelhPlus->data->data[i].im = ((REAL8) LALSignal->data[n-i]);
+	IFOdata->freqModelhPlus->data->data[i].real_FIXME = ((REAL8) LALSignal->data[i]);
+	IFOdata->freqModelhPlus->data->data[i].imag_FIXME = ((REAL8) LALSignal->data[n-i]);
       }
-      IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].re = LALSignal->data[IFOdata->freqModelhPlus->data->length-1];
-      IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
+      IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].real_FIXME = LALSignal->data[IFOdata->freqModelhPlus->data->length-1];
+      IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].imag_FIXME = 0.0;
       LALDestroyVector(&status, &LALSignal);
       /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
       for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
-	IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) n) * deltaT;
-	IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) n) * deltaT;
+	IFOdata->freqModelhPlus->data->data[i].real_FIXME *= ((REAL8) n) * deltaT;
+	IFOdata->freqModelhPlus->data->data[i].imag_FIXME *= ((REAL8) n) * deltaT;
       }
       if(LALInferenceCheckVariable(IFOdata->modelParams, "ppealpha") && LALInferenceCheckVariable(IFOdata->modelParams, "ppeuppera") &&
 	 LALInferenceCheckVariable(IFOdata->modelParams, "ppelowera") && LALInferenceCheckVariable(IFOdata->modelParams, "ppebeta") &&
@@ -981,8 +981,8 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 	  cos_ppE_phase = cos(ppE_phase);
 	  sin_ppE_phase = sin(ppE_phase);
       
-	  IFOdata->freqModelhPlus->data->data[i].re = (ppE_amp)*(IFOdata->freqModelhPlus->data->data[i].re*cos_ppE_phase-IFOdata->freqModelhPlus->data->data[i].im*sin_ppE_phase);
-	  IFOdata->freqModelhPlus->data->data[i].im = (ppE_amp)*(IFOdata->freqModelhPlus->data->data[i].re*sin_ppE_phase+IFOdata->freqModelhPlus->data->data[i].im*cos_ppE_phase);
+	  IFOdata->freqModelhPlus->data->data[i].real_FIXME = (ppE_amp)*(creal(IFOdata->freqModelhPlus->data->data[i])*cos_ppE_phase-cimag(IFOdata->freqModelhPlus->data->data[i])*sin_ppE_phase);
+	  IFOdata->freqModelhPlus->data->data[i].imag_FIXME = (ppE_amp)*(creal(IFOdata->freqModelhPlus->data->data[i])*sin_ppE_phase+cimag(IFOdata->freqModelhPlus->data->data[i])*cos_ppE_phase);
 	}
       }
     }
@@ -991,13 +991,13 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 
   /*  cross waveform is "i x plus" :  */
   for (i=1; i<IFOdata->freqModelhCross->data->length-1; ++i) {
-    IFOdata->freqModelhCross->data->data[i].re = -IFOdata->freqModelhPlus->data->data[i].im;
-    IFOdata->freqModelhCross->data->data[i].im = IFOdata->freqModelhPlus->data->data[i].re;
+    IFOdata->freqModelhCross->data->data[i].real_FIXME = -cimag(IFOdata->freqModelhPlus->data->data[i]);
+    IFOdata->freqModelhCross->data->data[i].imag_FIXME = creal(IFOdata->freqModelhPlus->data->data[i]);
     // consider inclination angle's effect:
-    IFOdata->freqModelhPlus->data->data[i].re  *= plusCoef;
-    IFOdata->freqModelhPlus->data->data[i].im  *= plusCoef;
-    IFOdata->freqModelhCross->data->data[i].re *= crossCoef;
-    IFOdata->freqModelhCross->data->data[i].im *= crossCoef;
+    IFOdata->freqModelhPlus->data->data[i].real_FIXME  *= plusCoef;
+    IFOdata->freqModelhPlus->data->data[i].imag_FIXME  *= plusCoef;
+    IFOdata->freqModelhCross->data->data[i].real_FIXME *= crossCoef;
+    IFOdata->freqModelhCross->data->data[i].imag_FIXME *= crossCoef;
   }
 
   /*
@@ -1080,14 +1080,14 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
         /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
         re = cos(twopit * f);
         im = - sin(twopit * f);
-        templateReal = IFOdata->freqModelhPlus->data->data[i].re;
-        templateImag = IFOdata->freqModelhPlus->data->data[i].im;
-        IFOdata->freqModelhPlus->data->data[i].re = templateReal*re - templateImag*im;
-        IFOdata->freqModelhPlus->data->data[i].im = templateReal*im + templateImag*re;
-        templateReal = IFOdata->freqModelhCross->data->data[i].re;
-        templateImag = IFOdata->freqModelhCross->data->data[i].im;
-        IFOdata->freqModelhCross->data->data[i].re = templateReal*re - templateImag*im;
-        IFOdata->freqModelhCross->data->data[i].im = templateReal*im + templateImag*re;
+        templateReal = creal(IFOdata->freqModelhPlus->data->data[i]);
+        templateImag = cimag(IFOdata->freqModelhPlus->data->data[i]);
+        IFOdata->freqModelhPlus->data->data[i].real_FIXME = templateReal*re - templateImag*im;
+        IFOdata->freqModelhPlus->data->data[i].imag_FIXME = templateReal*im + templateImag*re;
+        templateReal = creal(IFOdata->freqModelhCross->data->data[i]);
+        templateImag = cimag(IFOdata->freqModelhCross->data->data[i]);
+        IFOdata->freqModelhCross->data->data[i].real_FIXME = templateReal*re - templateImag*im;
+        IFOdata->freqModelhCross->data->data[i].imag_FIXME = templateReal*im + templateImag*re;
       }
     }
     else {
@@ -1834,25 +1834,72 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 
 
 void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOdata)
-/********************************************************************************************/
-/* XLALSimInspiralChooseWaveform wrapper.																*/
-/*  Required (`IFOdata->modelParams') parameters are:										*/
-/*   - "m1"				(mass of object 1; REAL8, solar mass)								*/
-/*   - "m2"				(mass of object 1; REAL8, solar mass)								*/
-/*   - "inclination"	(inclination angle; REAL8, radians)                                 */
-/*   - "coa_phase"      (phase angle; REAL8, radians)                                       */
-/*   - "spin1x"			(x component of the spin of object 1; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin1y"			(y component of the spin of object 1; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin1z"			(z component of the spin of object 1; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin2x"			(x component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin2y"			(y component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
-/*   - "spin2z"			(z component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
-/*	 - "shift0"			(shift offset; REAL8, radians)			                            */
-/*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
-/*	 - "PNorder"		(Phase PN order)												*/
-/*   - "Amporder"   (Amplitude PN order) */
-/*   - "fRef"            (Optional; frequency at which the above parameters are defined (useful for fixing values 'in the bucket'). Defaults to 0.)                                                 */
-/********************************************************************************************/
+/*************************************************************************************************************************/
+/* Wrapper for LALSimulation waveforms:						                                                                       */
+/* XLALSimInspiralChooseFDWaveform() and XLALSimInspiralChooseTDWaveform().                                              */
+/*                                                                                                                       */
+/*  IFOdata->modelParams parameters are:										                                                             */
+/*  - "name" description; type OPTIONAL (default value)										                                               */
+/*										                                                                                                   */
+/*   MODEL PARAMETERS										                                                                                 */
+/*   - "LAL_APPROXIMANT"	  Approximant;        Approximant                                                              */
+/*   - "LAL_PNORDER"        Phase PN order;     INT4                                                                     */
+/*   - "LAL_AMPORDER"       Amplitude PN order; INT4 OPTIONAL (-1)                                                       */
+/*   - "LALINFERENCE_FRAME" reference frame;    LALInferenceFrame OPTIONAL (LALINFERENCE_FRAME_RADIATION)                */
+/*   - "spinO"              Spin order;         LALSimInspiralSpinOrder OPTIONAL (LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT)   */
+/*   - "tideO"              Tidal order;        LALSimInspiralTidalOrder OPTIONAL (LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT) */
+/*   - "fRef"               frequency at which the (frequency dependent) parameters are defined; REAL8 OPTIONAL (0.0)    */
+/*   - "fLow"               lower frequency bound; REAL8 OPTIONAL (IFOdata->fLow)                                        */
+/*                                                                                                                       */
+/*   MASS PARAMETERS; either:                                                                                            */
+/*      - "mass1"           mass of object 1 in solar mass; REAL8								                                         */
+/*      - "mass2"		        mass of object 1 in solar mass; REAL8								                                         */
+/*      OR                                                                                                               */
+/*      - "chirpmass"       chirpmass in solar mass; REAL8                                                               */
+/*      - "asym_massratio"  asymmetric mass ration m2/m1, 0<asym_massratio<1; REAL8                                      */
+/*      OR                                                                                                               */
+/*      - "chirpmass"       chirpmass in solar mass; REAL8                                                               */
+/*      - "massratio"       symmetric mass ratio (m1*m2)/(m1+m2)^2; REAL8                                                */
+/*                                                                                                                       */
+/*   ORIENTATION AND SPIN PARAMETERS                                                                                     */
+/*   - "phi0"               reference phase as per LALSimulation convention; REAL8                                       */
+/*   - if LALINFERENCE_FRAME == LALINFERENCE_FRAME_RADIATION (default)                                                   */
+/*      - "inclination"	    inclination angle L.N in radians;                            REAL8                           */
+/*      - "theta_spin1"     polar angle of spin 1, default to the spin aligned case;     REAL8 OPTIONAL (inclination)    */
+/*      - "phi_spin1"       azimuthal angle of spin 1, default to the spin aligned case; REAL8  OPTIONAL (0.0)           */
+/*      - "theta_spin2"     polar angle of spin 2, default to the spin aligned case;     REAL8 OPTIONAL (inclination)    */
+/*      - "phi_spin2"       azimuthal angle of spin 1, default to the spin aligned case; REAL8  OPTIONAL (0.0)           */
+/*   - else if LALINFERENCE_FRAME == LALINFERENCE_FRAME_SYSTEM                                                           */
+/*      - "theta_JN");      zenith angle between J and N in radians;            REAL8                                    */
+/*      - "phi_JL");        azimuthal angle of L_N on its cone about J radians; REAL8                                    */
+/*      - "tilt_spin1");    zenith angle between S1 and LNhat in radians;       REAL8                                    */
+/*      - "tilt_spin2");    zenith angle between S2 and LNhat in radians;       REAL8                                    */
+/*      - "phi12");         difference in azimuthal angle between S1, S2 in radians;   REAL8                             */
+/*   - "a_spin1"            magnitude of spin 1 in general configuration, 0<a_spin1<1; REAL8 OPTIONAL (0.0)              */
+/*   - "a_spin2"            magnitude of spin 2 in general configuration, 0<a_spin1<1; REAL8 OPTIONAL (0.0)              */
+/*   - "spin1"              magnitude of spin 1 in aligned configuration, -1<spin1<1;  REAL8 OPTIONAL (0.0)              */
+/*   - "spin2"              magnitude of spin 2 in aligned configuration, -1<spin1<1;  REAL8 OPTIONAL (0.0)              */
+/*                                                                                                                       */
+/*   OTHER PARAMETERS                                                                                                    */
+/*   - "lambda1"            tidal parameter of object 1; REAL8  OPTIONAL (0.0)                                           */
+/*   - "lambda2"            tidal parameter of object 1; REAL8  OPTIONAL (0.0)                                           */
+/*                                                                                                                       */
+/*   - "time"               used as an OUTPUT only; REAL8								                                                 */
+/*                                                                                                                       */
+/*                                                                                                                       */
+/*   IFOdata needs to also contain:                                                                                      */
+/*   - IFOdata->fLow Unless  - "fLow" OPTIONAL                                                                           */
+/*   - IFOdata->timeData                                                                                                 */
+/*      - IFOdata->timeData->deltaT                                                                                      */
+/*   - if IFOdata->modelDomain == LAL_SIM_DOMAIN_FREQUENCY                                                               */
+/*      - IFOdata->freqData                                                                                              */
+/*          - IFOdata->freqData->deltaF                                                                                  */
+/*      - IFOdata->freqModelhCross                                                                                       */
+/*      - IFOdata->freqModelhPlus                                                                                        */
+/*   - else                                                                                                              */
+/*      - IFOdata->timeModelhPlus                                                                                        */
+/*      - IFOdata->timeModelhCross                                                                                       */
+/*************************************************************************************************************************/
 {
 	
   Approximant approximant = (Approximant) 0;
@@ -2039,8 +2086,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
       if(i < hptilde->data->length){
         IFOdata->freqModelhPlus->data->data[i] = dataPtr[i];
       }else{
-        IFOdata->freqModelhPlus->data->data[i].re = 0.0;
-        IFOdata->freqModelhPlus->data->data[i].im = 0.0;
+        IFOdata->freqModelhPlus->data->data[i].real_FIXME = 0.0;
+        IFOdata->freqModelhPlus->data->data[i].imag_FIXME = 0.0;
       }
     }
     for (i=0; i<IFOdata->freqModelhCross->data->length; ++i) {
@@ -2048,8 +2095,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
       if(i < hctilde->data->length){
         IFOdata->freqModelhCross->data->data[i] = dataPtr[i];
       }else{
-        IFOdata->freqModelhCross->data->data[i].re = 0.0;
-        IFOdata->freqModelhCross->data->data[i].im = 0.0;
+        IFOdata->freqModelhCross->data->data[i].real_FIXME = 0.0;
+        IFOdata->freqModelhCross->data->data[i].imag_FIXME = 0.0;
       }
     }
     /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
@@ -2273,10 +2320,10 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
       fprintf(outfile, "%f,%e,%e,%e,%e,%e\n",
               f, data->oneSidedNoisePowerSpectrum->data->data[i],
               /*data->freqData->data->data[i].re, data->freqData->data->data[i].im,*/
-              data->freqModelhPlus->data->data[i].re,
-              data->freqModelhPlus->data->data[i].im,
-              data->freqModelhCross->data->data[i].re,
-              data->freqModelhCross->data->data[i].im);
+              creal(data->freqModelhPlus->data->data[i]),
+              cimag(data->freqModelhPlus->data->data[i]),
+              creal(data->freqModelhCross->data->data[i]),
+              cimag(data->freqModelhCross->data->data[i]));
     }
     fclose(outfile);
     dataPtr = NULL;

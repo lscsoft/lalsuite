@@ -31,11 +31,11 @@
 #include <lal/LALVersion.h>
 #include <lal/LALVCSInfo.h>
 
-const char *const lalVersion       = LAL_VERSION;
-const int         lalVersionMajor  = LAL_VERSION_MAJOR;
-const int         lalVersionMinor  = LAL_VERSION_MINOR;
-const int         lalVersionMicro  = LAL_VERSION_MICRO;
-const int         lalVersionDevel  = LAL_VERSION_DEVEL;
+const char *const lalVersion = LAL_VERSION;
+const int lalVersionMajor = LAL_VERSION_MAJOR;
+const int lalVersionMinor = LAL_VERSION_MINOR;
+const int lalVersionMicro = LAL_VERSION_MICRO;
+const int lalVersionDevel = LAL_VERSION_DEVEL;
 const char *const lalConfigureArgs = LAL_CONFIGURE_ARGS;
 const char *const lalConfigureDate = LAL_CONFIGURE_DATE;
 
@@ -47,34 +47,34 @@ const char *const lalConfigureDate = LAL_CONFIGURE_DATE;
  *
  */
 void
-LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose )
+LALVersion(LALStatus * status, CHAR * message, UINT4 size, INT4 verbose)
 {
-  INT4 nchar;
-  INITSTATUS(status);
+    INT4 nchar;
+    INITSTATUS(status);
 
-  ASSERT( message,  status, LALVERSIONH_ENULL, LALVERSIONH_MSGENULL );
-  ASSERT( size > 0, status, LALVERSIONH_ESIZE, LALVERSIONH_MSGESIZE );
+    ASSERT(message, status, LALVERSIONH_ENULL, LALVERSIONH_MSGENULL);
+    ASSERT(size > 0, status, LALVERSIONH_ESIZE, LALVERSIONH_MSGESIZE);
 
-  nchar = verbose ?
-    snprintf( message, size,
-        "LAL Version:         %s\n"
-        "Git ID:              %s\n"
-        "Git Tag:             %s\n"
-        "Build Date:          %s\n"
-        "Configure Date:      %s\n"
-        "Configure Arguments: %s\n",
-        lalVersion, lalHeaderVCSInfo.vcsId, lalHeaderVCSInfo.vcsTag,
-        lalBuildDate, lalConfigureDate, lalConfigureArgs) :
-    snprintf( message, size, "LAL Version: %s\n", lalVersion ) ;
+    nchar = verbose ?
+        snprintf(message, size,
+                 "LAL Version:         %s\n"
+                 "Git ID:              %s\n"
+                 "Git Tag:             %s\n"
+                 "Build Date:          %s\n"
+                 "Configure Date:      %s\n"
+                 "Configure Arguments: %s\n",
+                 lalVersion, lalHeaderVCSInfo.vcsId,
+                 lalHeaderVCSInfo.vcsTag, lalBuildDate, lalConfigureDate,
+                 lalConfigureArgs) : snprintf(message, size,
+                                              "LAL Version: %s\n",
+                                              lalVersion);
 
-  if ( nchar < 0 )
-  {
-    ABORT( status, LALVERSIONH_ESPRN, LALVERSIONH_MSGESPRN );
-  }
-  if ( nchar > (INT4) size )
-  {
-    ABORT( status, LALVERSIONH_ESHRT, LALVERSIONH_MSGESHRT );
-  }
+    if (nchar < 0) {
+        ABORT(status, LALVERSIONH_ESPRN, LALVERSIONH_MSGESPRN);
+    }
+    if (nchar > (INT4) size) {
+        ABORT(status, LALVERSIONH_ESHRT, LALVERSIONH_MSGESHRT);
+    }
 
-  RETURN( status );
+    RETURN(status);
 }

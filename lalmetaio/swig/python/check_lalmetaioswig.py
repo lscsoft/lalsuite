@@ -6,7 +6,7 @@ import lal
 import lalmetaio
 from lalmetaio import cvar as lalmetaiocvar
 from lal import cvar as lalcvar
-lalcvar.lalDebugLevel = 1
+lalcvar.lalDebugLevel = lal.LALERROR | lal.LALMEMDBG
 print("passed module load")
 
 # check object parent tracking

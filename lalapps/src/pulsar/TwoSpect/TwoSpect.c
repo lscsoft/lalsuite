@@ -38,6 +38,8 @@
 
 #include <gsl/gsl_math.h>
 
+#include <lalapps.h>
+
 #include "IHS.h"
 #include "candidates.h"
 #include "antenna.h"
@@ -121,6 +123,16 @@ int main(int argc, char *argv[])
    //print start time
    fprintf(stderr, "Program %s %s executed on %s", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
    fprintf(LOG, "Program %s %s executed on %s", CMDLINE_PARSER_PACKAGE_NAME, CMDLINE_PARSER_VERSION, asctime(ptm));
+
+   //print VCS info
+   CHAR *VCSInfoString;
+   if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+      fprintf(stderr, "%s: XLALGetVersionString(0) failed\n", __func__);
+      XLAL_ERROR(XLAL_EFUNC);
+   }
+   fprintf(LOG, "%s\n", VCSInfoString);
+   fprintf(stderr, "%s\n", VCSInfoString);
+   XLALFree(VCSInfoString);
    
    //Print out the inputs and outputs
    if (args_info.config_given) {
@@ -380,7 +392,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "\n%s: existingSFTs() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
-   INT4 totalincludedsftnumber = 0.0;
+   INT4 totalincludedsftnumber = 0;
    for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber++;
    REAL4 frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
    fprintf(stderr, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
@@ -525,18 +537,24 @@ int main(int argc, char *argv[])
    //When doing linear polarizations, the IHS factor needs to be 25.2*1.082 and this antenna weights
    //function needs to be set to use linear polarization.
    REAL4Vector *antweightsforihs2h0 = XLALCreateREAL4Vector(ffdata->numffts);
+   if (antweightsforihs2h0==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
+      XLAL_ERROR(XLAL_EFUNC);
+   }
    CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
    if (xlalErrno!=0) {
       fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
-   
+
+   INT4 skycounter = -1;
    
    //Search over the sky region (outer loop of single TwoSpect program instance)
    while (scan.state != STATE_FINISHED) {
       fprintf(LOG, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
       fprintf(stderr, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
-      
+      skycounter++;
+
       //Determine detector velocity w.r.t. a sky location for each SFT
       CompAntennaVelocity(detectorVelocities, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, inputParams->det[0], edat);
       if (xlalErrno!=0) {
@@ -555,6 +573,10 @@ int main(int argc, char *argv[])
       REAL4VectorSequence *trackedlines = NULL;
       if (lines!=NULL) {
          trackedlines = trackLines(lines, binshifts, inputParams);
+         if (trackedlines==NULL) {
+            fprintf(stderr, "%s: trackLines() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
       }
       
       //Compute antenna pattern weights. If antennaOff input flag is given, then set all values equal to 1.0
@@ -602,13 +624,6 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: slideTFdata() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      //fprintf(stderr, "Mean of TFdata_slided %g, background_slided %g\n", calcMean(TFdata_slided), calcMean(background_slided));
-      /* FILE *TFBACKGROUND = fopen("./output/tfbackground.dat","w");  //comment this
-      for (ii=0; ii<(INT4)background_slided->length; ii++) fprintf(TFBACKGROUND, "%f\n", background_slided->data[ii]);
-      fclose(TFBACKGROUND); */
-      /* FILE *TFSLIDED = fopen("./output/tfslided.dat","w");
-      for (ii=0; ii<(INT4)TFdata_slided->length; ii++) fprintf(TFSLIDED, "%.6g\n", TFdata_slided->data[ii]);
-      fclose(TFSLIDED); */
 
       //Print out data product if requested
       if (args_info.printData_given) {
@@ -652,15 +667,23 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts*ffdata->numfbins);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      if (args_info.printUninitialized_given && args_info.printUninitialized_arg==skycounter) {
+         char w[1000];
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TFdata_weighted.dat");
+         FILE *UNINITVALS = fopen(w, "w");
+         if (UNINITVALS==NULL) {
+            fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         for (ii=0; ii<(INT4)TFdata_weighted->length; ii++) fprintf(UNINITVALS, "%g\n", TFdata_weighted->data[ii]);
+         fclose(UNINITVALS);
+      }
       tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
       XLALDestroyREAL4Vector(TFdata_slided);
-      /* FILE *TFDATA = fopen("./output/tfdata.dat","w");  //comment this out
-      for (jj=0; jj<(INT4)TFdata_weighted->length; jj++) fprintf(TFDATA,"%.6f\n",TFdata_weighted->data[jj]);
-      fclose(TFDATA); */
 
       //Print out data product if requested
       if (args_info.printData_given) {
@@ -730,6 +753,19 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      if (args_info.printUninitialized_given && args_info.printUninitialized_arg==skycounter) {
+         char w[1000];
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TSofPowers.dat");
+         FILE *UNINITVALS = fopen(w, "w");
+         if (UNINITVALS==NULL) {
+            fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         for (ii=0; ii<(INT4)TSofPowers->length; ii++) fprintf(UNINITVALS, "%g\n", TSofPowers->data[ii]);
+         fclose(UNINITVALS);
+         args_info.printUninitialized_given = 0; //Set this to zero now because the data files will get too large
+      }
+      memset(TSofPowers->data, 0, sizeof(REAL4)*TSofPowers->length);
       for (ii=0; ii<ffdata->numfbins; ii++) {
          REAL4 totalweightval = 0.0;
          for (jj=0; jj<ffdata->numffts; jj++) {
@@ -757,16 +793,17 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       
-      REAL4 secFFTmean = calcMean(ffdata->ffdata);
-      REAL4 secFFTsigma = calcStddev(ffdata->ffdata);
+      REAL4 secFFTmean = 0.0, secFFTsigma = 0.0;
+      secFFTmean = calcMean(ffdata->ffdata);
+      secFFTsigma = calcStddev(ffdata->ffdata);
+      if (xlalErrno!=0) {
+         fprintf(stderr, "%s: calcStddev() failed.\n", __func__);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
       
       XLALDestroyREAL4Vector(TFdata_weighted);
       TFdata_weighted = NULL;
-      
-      //comment this out
-      /* FILE *FFDATA = fopen("./output/ffdata.dat","w");
-      for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
-      fclose(FFDATA); */
+
       //Print out data product if requested
       if (args_info.printData_given) {
          char w[1000];
@@ -780,7 +817,7 @@ int main(int argc, char *argv[])
          fclose(FFDATA);
       }
 
-      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, 1.0);
+      fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = 1.0\n", secFFTmean, secFFTsigma);
       
       //Exit with failure if there are no SFTs (probably this doesn't get hit)
       if (secFFTmean==0.0) {
@@ -796,6 +833,7 @@ int main(int argc, char *argv[])
          fprintf(LOG, "Testing template f=%f, P=%f, Df=%f\n", args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg);
          loadCandidateData(&(exactCandidates1->data[0]), args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0);
 
+         //Allocate and make the template
          templateStruct *template = new_templateStruct(inputParams->maxtemplatelength);
          if (template==NULL) {
             fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, inputParams->maxtemplatelength);
@@ -821,21 +859,23 @@ int main(int argc, char *argv[])
             fclose(TEMPLATEDATA);
          }
 
+         //Calculate R from the template and the data
          REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
          if (XLAL_IS_REAL8_FAIL_NAN(R)) {
             fprintf(stderr,"%s: calculateR() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-         REAL8 prob = 0.0;
-         REAL8 h0 = 0.0;
-         if ( R > 0.0 ) {
-            prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-            if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-               fprintf(stderr,"%s: probR() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
+
+         //Calculate FAP
+         REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+         if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+            fprintf(stderr,"%s: probR() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
          }
+
+         //Estimate the h0 if R>0.0
+         REAL8 h0 = 0.0;
+         if ( R > 0.0 ) h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
 
          if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
             exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
@@ -1088,15 +1128,14 @@ int main(int argc, char *argv[])
                fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
             }
-            REAL8 prob = 0.0;
-            if ( R > 0.0 ) {
-               prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-               if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                  fprintf(stderr,"%s: probR() failed.\n", __func__);
-                  XLAL_ERROR(XLAL_EFUNC);
-               }
+            REAL8 h0 = 0.0;
+            REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+            if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+               fprintf(stderr,"%s: probR() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
             }
-            REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            if ( R > 0.0 ) h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+
             if ((!inputParams->calcRthreshold && prob<inputParams->log10templatefar) || (inputParams->calcRthreshold && R>farval->far)) {
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) {
                   exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length);
@@ -1464,8 +1503,14 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    
    fprintf(LOG, "Duty factor = %f\n", 1.0-(REAL4)nonexistantsft/(REAL4)numffts);
    fprintf(stderr, "Duty factor = %f\n", 1.0-(REAL4)nonexistantsft/(REAL4)numffts);
-   fprintf(LOG, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", calcMean(tfdata), calcStddev(tfdata));
-   fprintf(stderr, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", calcMean(tfdata), calcStddev(tfdata));
+   REAL4 meanTFdata = calcMean(tfdata);
+   REAL4 stdTFdata = calcStddev(tfdata);
+   if (xlalErrno!=0) {
+      fprintf(stderr, "%s: calcStddev() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+   fprintf(LOG, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stdTFdata);
+   fprintf(stderr, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stdTFdata);
    
    return tfdata;
 
@@ -1587,6 +1632,7 @@ void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfd
          XLAL_ERROR_VOID(XLAL_EFAILED);
       }
       for (jj=0; jj<numfbins; jj++) output->data[ii*numfbins + jj] = tfdata->data[ii*(numfbins+2*input->maxbinshift) + jj + input->maxbinshift + binshifts->data[ii]];
+      //memcpy(&(output->data[ii*numfbins]), &(tfdata->data[ii*(numfbins+2*input->maxbinshift) + input->maxbinshift + binshifts->data[ii]]), sizeof(REAL4)*numfbins);
    }
    
 } /* slideTFdata() */
@@ -1965,6 +2011,10 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
       if (TFdata->data[ii*totalnumfbins]!=0.0) {
          memcpy(sftdata->data, &(TFdata->data[ii*totalnumfbins]), totalnumfbins*sizeof(REAL4));
          REAL4 stddev = calcStddev(sftdata);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: calcStddev() failed.\n", __func__);
+            XLAL_ERROR_NULL(XLAL_EFUNC);
+         }
          weights->data[ii] = 1.0/(stddev*stddev);
          sumweights += weights->data[ii];
       }
@@ -1998,7 +2048,7 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
-   //Determine the mid frequency, low frequency and high frequency of the line when considering SFT shifts
+   //Determine which bins are above the threshold and store the bin number of the line
    REAL4 f0 = (REAL4)(round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0 - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift) + 0.5*(blksize-1))/params->Tcoh);
    REAL4 df = 1.0/params->Tcoh;
    for (ii=0; ii<(INT4)testRngMedian->length; ii++) {
@@ -2145,6 +2195,9 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    
    INT4 numffts = (INT4)antPatternWeights->length;
    INT4 numfbins = (INT4)(tfdata->length)/numffts;
+
+   //Initially set output to zero
+   memset(output->data, 0, sizeof(REAL4)*output->length);
    
    REAL4Vector *antweightssq = XLALCreateREAL4Vector(numffts);
    REAL4Vector *rngMeanssq = XLALCreateREAL4Vector(numffts);

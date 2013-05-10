@@ -477,20 +477,20 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
         XLALPrintError ("%s: XALComputeFaFbREAL4() failed\n", __func__ );
         XLAL_ERROR_VOID ( XLAL_EFUNC );
       }
-      if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
+      if ( !finite(crealf(FcX.Fa)) || !finite(cimagf(FcX.Fa)) || !finite(crealf(FcX.Fb)) || !finite(cimagf(FcX.Fb)) ) {
 	XLALPrintError("%s: XLALComputeFaFbREAL4() returned non-finite: Fa_X=(%f,%f), Fb_X=(%f,%f) for X=%d\n",
-                       __func__, FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im, X );
+                       __func__, crealf(FcX.Fa), cimagf(FcX.Fa), crealf(FcX.Fb), cimagf(FcX.Fb), X );
 	XLAL_ERROR_VOID ( XLAL_EFPINVAL );
       }
 #endif
 
       /* Fa = sum_X Fa_X */
-      Fa_re += FcX.Fa.re;
-      Fa_im += FcX.Fa.im;
+      Fa_re += crealf(FcX.Fa);
+      Fa_im += cimagf(FcX.Fa);
 
       /* Fb = sum_X Fb_X */
-      Fb_re += FcX.Fb.re;
-      Fb_im += FcX.Fb.im;
+      Fb_re += crealf(FcX.Fb);
+      Fb_im += cimagf(FcX.Fb);
 
     } /* for  X < numIFOs */
 
@@ -523,7 +523,7 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
  * Note: this is a single-precision version aimed for GPU parallelization.
  *
  */
-void
+int
 XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for this parameter-space point */
                        const SFTVector *sfts,		/**< [in] single-IFO input data ("SFTs") */
                        const PulsarSpinsREAL4 *fkdot4,	/**< [in] frequency (and derivatives) in REAL4-safe format */
@@ -555,18 +555,18 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
     XLALPrintError ("%s: Output-pointer is NULL !\n", __func__);
-    XLAL_ERROR_VOID ( XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( !sfts || !sfts->data ) {
     XLALPrintError ("%s: Input SFTs are NULL!\n", __func__);
-    XLAL_ERROR_VOID ( XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( !fkdot4 || !tSSB || !tSSB->DeltaT_int || !tSSB->DeltaT_rem || !tSSB->TdotM1 || !amcoe || !amcoe->a || !amcoe->b )
     {
       XLALPrintError ("%s: Illegal NULL in input !\n", __func__);
-      XLAL_ERROR_VOID ( XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL );
     }
 #endif
 
@@ -583,10 +583,10 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
   tau = 1.0f / df;
   Freq = f0 + df;
 
-  Fa.re = 0.0f;
-  Fa.im = 0.0f;
-  Fb.re = 0.0f;
-  Fb.im = 0.0f;
+  Fa.realf_FIXME = 0.0f;
+  Fa.imagf_FIXME = 0.0f;
+  Fb.realf_FIXME = 0.0f;
+  Fb.imagf_FIXME = 0.0f;
 
   /* convenient shortcuts, pointers to beginning of alpha-arrays */
   a_al = amcoe->a->data;
@@ -673,7 +673,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	  {
 	    XLALPrintError ("%s: Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
                             __func__, k0, k1, freqIndex0, freqIndex1 );
-	    XLAL_ERROR_VOID( XLAL_EDOM);
+	    XLAL_ERROR ( XLAL_EDOM );
 	  }
 
       } /* compute kappa_star, lambda_alpha */
@@ -730,8 +730,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
           REAL4 kappa_max = kappa_star + 1.0f * Dterms - 1.0f;
-	  REAL4 Sn = (*Xalpha_l).re;
-	  REAL4 Tn = (*Xalpha_l).im;
+	  REAL4 Sn = crealf(*Xalpha_l);
+	  REAL4 Tn = cimagf(*Xalpha_l);
 	  REAL4 pn = kappa_max;
 	  REAL4 qn = pn;
 	  REAL4 U_alpha, V_alpha;
@@ -743,8 +743,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	      Xalpha_l ++;
 
 	      pn = pn - 1.0f; 				/* p_(n+1) */
-	      Sn = pn * Sn + qn * (*Xalpha_l).re;	/* S_(n+1) */
-	      Tn = pn * Tn + qn * (*Xalpha_l).im;	/* T_(n+1) */
+	      Sn = pn * Sn + qn * crealf(*Xalpha_l);	/* S_(n+1) */
+	      Tn = pn * Tn + qn * cimagf(*Xalpha_l);	/* T_(n+1) */
 	      qn *= pn;					/* q_(n+1) */
 	    } /* for l <= 2*Dterms */
 
@@ -790,8 +790,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
   	  if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
   	  else ind0 = Dterms;
-	  realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
-	  imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
+	  realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
+	  imagXP = TWOPI_FLOAT * cimagf(Xalpha_l[ind0]);
 	} /* if |remainder| <= LD_SMALL4 */
 
       realQXP = realQ * realXP - imagQ * imagXP;
@@ -801,11 +801,11 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      Fa.re += a_alpha * realQXP;
-      Fa.im += a_alpha * imagQXP;
+      Fa.realf_FIXME += a_alpha * realQXP;
+      Fa.imagf_FIXME += a_alpha * imagQXP;
 
-      Fb.re += b_alpha * realQXP;
-      Fb.im += b_alpha * imagQXP;
+      Fb.realf_FIXME += b_alpha * realQXP;
+      Fb.imagf_FIXME += b_alpha * imagQXP;
 
 
       /* advance pointers over alpha */
@@ -821,12 +821,12 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.re = norm * Fa.re;
-  FaFb->Fa.im = norm * Fa.im;
-  FaFb->Fb.re = norm * Fb.re;
-  FaFb->Fb.im = norm * Fb.im;
+  FaFb->Fa.realf_FIXME = norm * crealf(Fa);
+  FaFb->Fa.imagf_FIXME = norm * cimagf(Fa);
+  FaFb->Fb.realf_FIXME = norm * crealf(Fb);
+  FaFb->Fb.imagf_FIXME = norm * cimagf(Fb);
 
-  return;
+  return XLAL_SUCCESS;
 
 } /* XLALComputeFaFbREAL4() */
 

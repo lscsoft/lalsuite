@@ -141,10 +141,10 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )
   {
-    Fa.re =0.0;
-    Fa.im =0.0;
-    Fb.re =0.0;
-    Fb.im =0.0;
+    Fa.real_FIXME =0.0;
+    Fa.imag_FIXME =0.0;
+    Fb.real_FIXME =0.0;
+    Fb.imag_FIXME =0.0;
 
     f=params->f0+i*params->df;
 
@@ -196,10 +196,10 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 
 	    /* these four lines compute P*xtilde */
 	    Xalpha_k=Xalpha[sftIndex];
-	    realXP += Xalpha_k.re*realP;
-	    realXP -= Xalpha_k.im*imagP;
-	    imagXP += Xalpha_k.re*imagP;
-	    imagXP += Xalpha_k.im*realP;
+	    realXP += crealf(Xalpha_k)*realP;
+	    realXP -= cimagf(Xalpha_k)*imagP;
+	    imagXP += crealf(Xalpha_k)*imagP;
+	    imagXP += cimagf(Xalpha_k)*realP;
 	  }
 
 	y=-LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
@@ -211,16 +211,16 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 	{
 	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
 	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-	  Fa.re += a*realQXP;
-	  Fa.im += a*imagQXP;
-	  Fb.re += b*realQXP;
-	  Fb.im += b*imagQXP;
+	  Fa.real_FIXME += a*realQXP;
+	  Fa.imag_FIXME += a*imagQXP;
+	  Fb.real_FIXME += b*realQXP;
+	  Fb.imag_FIXME += b*imagQXP;
 	}
     }
 
-    FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
-    FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
-    FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
+    FaSq = creal(Fa)*creal(Fa)+cimag(Fa)*cimag(Fa);
+    FbSq = creal(Fb)*creal(Fb)+cimag(Fb)*cimag(Fb);
+    FaFb = creal(Fa)*creal(Fb)+cimag(Fa)*cimag(Fb);
 
     Fstat->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
     if (params->returnFaFb)

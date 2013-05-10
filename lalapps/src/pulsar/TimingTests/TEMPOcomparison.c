@@ -539,7 +539,7 @@ main(int argc, char *argv[]){
   pulsarparams.ephemerides = edat;
   
   /* generate SSB initial TOA in GPS */
-  LALConvertGPS2SSB (&status,&TstartSSB,TstartGPS,&pulsarparams); 
+  XLALConvertGPS2SSB ( &TstartSSB, TstartGPS, &pulsarparams);
   if (lalDebugLevel) fprintf(stdout,"STATUS : TstartSSB = %d %d\n",TstartSSB.gpsSeconds,TstartSSB.gpsNanoSeconds);
   
   /* force integer seconds */
@@ -553,7 +553,7 @@ main(int argc, char *argv[]){
   if (lalDebugLevel) fprintf(stdout,"STATUS : GPS end time of TOAs = %d %d\n",TendGPS.gpsSeconds,TendGPS.gpsNanoSeconds);
 
   /* generate SSB end time in GPS (force integer seconds) */
-  LALConvertGPS2SSB (&status,&TendSSB,TendGPS,&pulsarparams); 
+  XLALConvertGPS2SSB (&TendSSB,TendGPS,&pulsarparams);
   if (lalDebugLevel) fprintf(stdout,"STATUS : TendSSB = %d %d\n",TendSSB.gpsSeconds,TendSSB.gpsNanoSeconds);
   
   /* force integer seconds */
@@ -620,11 +620,16 @@ main(int argc, char *argv[]){
       LIGOTimeGPS GPStest;
 
       /* convert SSB to Detector time */
-      LALConvertSSB2GPS (&status,&TDET,TSSB[i],&pulsarparams); 
+      int ret = XLALConvertSSB2GPS ( &TDET, TSSB[i], &pulsarparams);
+      if ( ret != XLAL_SUCCESS ) {
+        XLALPrintError ("XLALConvertSSB2GPS() failed with xlalErrno = %d\n", xlalErrno );
+	return(TEMPOCOMPARISONC_ESUB);
+      }
+
       if (lalDebugLevel) fprintf(stdout,"STATUS : converted SSB TOA %d %d -> Detector TOA %d %d\n",TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds,TDET.gpsSeconds,TDET.gpsNanoSeconds);
       
       /* convert back for testing conversion */
-      LALConvertGPS2SSB (&status,&TSSBtest,TDET,&pulsarparams); 
+      XLALConvertGPS2SSB (&TSSBtest,TDET,&pulsarparams);
       diff = XLALGPSDiff(&TSSBtest,&TSSB[i]);
       if ( fabs(diff)  > 1e-9) {
 	fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);

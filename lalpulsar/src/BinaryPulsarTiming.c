@@ -954,9 +954,12 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->Across=0.;
   output->I21=0.;
   output->I31=0.;
-  output->r=0.;
   output->lambda=0.;
   output->costheta=0.;
+  output->C22=0.;
+  output->C21=0.;
+  output->phi22=0.;
+  output->phi21=0.;
 
   output->h0Err=0.;
   output->cosiotaErr=0.;
@@ -966,9 +969,12 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->AcrossErr=0.;
   output->I21Err=0.;
   output->I31Err=0.;
-  output->rErr=0.;
   output->lambdaErr=0.;
   output->costhetaErr=0.;
+  output->C22Err=0.;
+  output->C21Err=0.;
+  output->phi22Err=0.;
+  output->phi21Err=0.;
 
   output->wave_omErr = 0.0;
 
@@ -1854,15 +1860,6 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"r") || !strcmp(val[i],"R") ) {
-      output->r = atof(val[i+1]);
-      j++;
-
-      if(atoi(val[i+2])==1 && i+2<k){
-        output->rErr = atof(val[i+3]);
-        j+=2;
-      }
-    }
     else if( !strcmp(val[i],"lambda") || !strcmp(val[i],"LAMBDA") ) {
       output->lambda = atof(val[i+1]);
       j++;
@@ -1878,6 +1875,42 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
       if(atoi(val[i+2])==1 && i+2<k){
         output->costhetaErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"c22") || !strcmp(val[i],"C22") ) {
+      output->C22 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->C22Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"c21") || !strcmp(val[i],"C21") ) {
+      output->C21 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->C21Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"phi22") || !strcmp(val[i],"PHI22") ) {
+      output->phi22 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->phi22Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"phi21") || !strcmp(val[i],"phi21") ) {
+      output->phi21 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->phi21Err = atof(val[i+3]);
         j+=2;
       }
     }

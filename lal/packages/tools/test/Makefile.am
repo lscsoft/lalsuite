@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DDATADIR='"$(abs_srcdir)/"'
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DTEST_DATA_DIR='"$(abs_srcdir)/"'
 LDADD = \
 	$(top_builddir)/lib/lal/liblal.la \
 	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
@@ -8,7 +8,6 @@ check_PROGRAMS = \
 	ComputeTransferTest \
 	DetectorSiteTest \
 	FrequencySeriesTest \
-	LALBarycenterTest \
 	LALIndependentTestDetResponse \
 	LALTestDetResponse0 \
 	SegmentsTest \
@@ -25,17 +24,14 @@ EXTRA_DIST = \
 	ComputeCalibrationFactorsTest.c \
 	LALIndTestDetRes.sh \
 	ResampleTimeSeriesTest.c \
-	earth98.dat \
 	indTestDetResGEO.cfg \
 	indTestDetResLHO.cfg \
-	indTestDetResLLO.cfg \
-	sun98.dat
+	indTestDetResLLO.cfg
 
 TESTS = \
 	ComputeTransferTest \
 	DetectorSiteTest \
 	FrequencySeriesTest \
-	LALBarycenterTest \
 	LALIndTestDetRes.sh \
 	LALTestDetResponse0 \
 	SequenceTest \

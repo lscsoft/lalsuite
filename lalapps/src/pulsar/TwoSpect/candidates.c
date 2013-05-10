@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011 Evan Goetz
+*  Copyright (C) 2010, 2011, 2013 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -242,7 +242,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                if (mindf > input->data[locs2->data[kk]].moddepth || mindf == 0.0) mindf = input->data[locs2->data[kk]].moddepth;
                if (maxdf < input->data[locs2->data[kk]].moddepth) maxdf = input->data[locs2->data[kk]].moddepth;
                
-               if (loc2==1 && input->data[locs2->data[kk]].fsig>=params->fmin && input->data[locs2->data[kk]].fsig<=(params->fmin+params->fspan) && input->data[locs2->data[kk]].period>=params->Pmin && input->data[locs2->data[kk]].period<=params->Pmax) {
+               if (loc2==1 && input->data[locs2->data[kk]].fsig>=params->fmin && input->data[locs2->data[kk]].fsig<(params->fmin+params->fspan) && input->data[locs2->data[kk]].period>=params->Pmin && input->data[locs2->data[kk]].period<=params->Pmax) {
                   besth0 = input->data[locs2->data[kk]].h0;
                   bestmoddepth = input->data[locs2->data[kk]].moddepth;
                   bestR = input->data[locs2->data[kk]].stat;
@@ -290,11 +290,12 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                      }
                      
                      REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
-                     REAL8 prob = probR(template, ffplanenoise, fbinaveratios, R, params, &proberrcode);
                      if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                         fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                         XLAL_ERROR_VOID(XLAL_EFUNC);
-                     } else if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                     }
+                     REAL8 prob = probR(template, ffplanenoise, fbinaveratios, R, params, &proberrcode);
+                     if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR_VOID(XLAL_EFUNC);
                      }
@@ -317,7 +318,9 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             } /* if loc2 > 1 ... */
             
             if (bestR != 0.0) {
-               besth0 = 2.7426*pow(bestR/(params->Tcoh*params->Tobs),0.25);
+               if (bestR > 0.0) besth0 = 2.7426*pow(bestR/(params->Tcoh*params->Tobs),0.25);
+               else besth0 = 0.0;
+
                if (output->numofcandidates == output->length-1) {
                   output = resize_candidateVector(output, 2*output->length);
                   if (output->data==NULL) {
@@ -443,13 +446,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
                }
-               if ( R > 0.0) {
-                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                     fprintf(stderr,"%s: probR() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-               } else prob = 0.0; //log10(1.0) = 0.0
+               prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+               if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                  fprintf(stderr,"%s: probR() failed.\n", __func__);
+                  XLAL_ERROR(XLAL_EFUNC);
+               }
                
                /* Note the candidate if R exceeds the FAR or check other possibilities of different 
                 periods */
@@ -475,13 +476,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                      XLAL_ERROR(XLAL_EFUNC);
                   }
-                  if ( R > 0.0) {
-                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-                     if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                        fprintf(stderr,"%s: probR() failed.\n", __func__);
-                        XLAL_ERROR(XLAL_EFUNC);
-                     }
-                  } else prob = 0.0;
+                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                     fprintf(stderr,"%s: probR() failed.\n", __func__);
+                     XLAL_ERROR(XLAL_EFUNC);
+                  }
                   if (inputParams->calcRthreshold && bestProb==0.0) {
                      numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                      if (xlalErrno!=0) {
@@ -510,13 +509,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                      XLAL_ERROR(XLAL_EFUNC);
                   }
-                  if ( R > 0.0) {
-                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-                     if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                        fprintf(stderr,"%s: probR() failed.\n", __func__);
-                        XLAL_ERROR(XLAL_EFUNC);
-                     }
-                  } else prob = 0.0;
+                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                     fprintf(stderr,"%s: probR() failed.\n", __func__);
+                     XLAL_ERROR(XLAL_EFUNC);
+                  }
                   if (inputParams->calcRthreshold && bestProb==0.0) {
                      numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                      if (xlalErrno!=0) {
@@ -554,13 +551,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                      XLAL_ERROR(XLAL_EFUNC);
                   }
-                  if ( R > 0.0) {
-                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-                     if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                        fprintf(stderr,"%s: probR() failed.\n", __func__);
-                        XLAL_ERROR(XLAL_EFUNC);
-                     }
-                  } else prob = 0.0;
+                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                     fprintf(stderr,"%s: probR() failed.\n", __func__);
+                     XLAL_ERROR(XLAL_EFUNC);
+                  }
                   //Calculate FAR if bestProb=0
                   if (inputParams->calcRthreshold && bestProb==0.0) {
                      numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
@@ -592,13 +587,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                      XLAL_ERROR(XLAL_EFUNC);
                   }
-                  if ( R > 0.0) {
-                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-                     if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                        fprintf(stderr,"%s: probR() failed.\n", __func__);
-                        XLAL_ERROR(XLAL_EFUNC);
-                     }
-                  } else prob = 0.0;
+                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                     fprintf(stderr,"%s: probR() failed.\n", __func__);
+                     XLAL_ERROR(XLAL_EFUNC);
+                  }
                   if (inputParams->calcRthreshold && bestProb==0.0) {
                      numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                      if (xlalErrno!=0) {
@@ -618,7 +611,8 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             
             
             if (bestProb != 0.0) {
-	       REAL8 h0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));  //Now compute the h0 value
+               REAL8 h0 = 0.0;
+               if (bestR > 0.0) h0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));  //Now compute the h0 value
                
                if (output->numofcandidates == output->length-1) {
                   output = resize_candidateVector(output, 2*output->length);

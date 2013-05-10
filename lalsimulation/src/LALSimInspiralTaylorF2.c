@@ -127,8 +127,8 @@ int XLALSimInspiralTaylorF2(
                     - 305.*eta*eta/36.) - d * (170978035./48384.
                     - 2876425.*eta/672. - 4735.*eta*eta/144.) ) * chi2 * S2z;
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
-            psiSO3 = LAL_PI * ( (3760.*chi1/3. - 1490./3.) * chi1 * S1z
-                    + (3760.*chi2/3. + 1490./3.) * chi2 * S2z);
+            psiSO3 = LAL_PI * ( (260.*chi1 + 1490./3.) * chi1 * S1z
+                    + (260.*chi2 + 1490./3.) * chi2 * S2z);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             /* Compute 2.5PN SO correction */
             // See Eq. (6.25) in arXiv:0810.5336
@@ -182,14 +182,14 @@ int XLALSimInspiralTaylorF2(
     }
 
     /* flux coefficients */
-    const REAL8 FTaN = XLALSimInspiralTaylorT1Flux_0PNCoeff(eta);
-    const REAL8 FTa2 = XLALSimInspiralTaylorT1Flux_2PNCoeff(eta);
-    const REAL8 FTa3 = XLALSimInspiralTaylorT1Flux_3PNCoeff(eta);
-    const REAL8 FTa4 = XLALSimInspiralTaylorT1Flux_4PNCoeff(eta);
-    const REAL8 FTa5 = XLALSimInspiralTaylorT1Flux_5PNCoeff(eta);
-    const REAL8 FTl6 = XLALSimInspiralTaylorT1Flux_6PNLogCoeff(eta);
-    const REAL8 FTa6 = XLALSimInspiralTaylorT1Flux_6PNCoeff(eta);
-    const REAL8 FTa7 = XLALSimInspiralTaylorT1Flux_7PNCoeff(eta);
+    const REAL8 FTaN = XLALSimInspiralPNFlux_0PNCoeff(eta);
+    const REAL8 FTa2 = XLALSimInspiralPNFlux_2PNCoeff(eta);
+    const REAL8 FTa3 = XLALSimInspiralPNFlux_3PNCoeff(eta);
+    const REAL8 FTa4 = XLALSimInspiralPNFlux_4PNCoeff(eta);
+    const REAL8 FTa5 = XLALSimInspiralPNFlux_5PNCoeff(eta);
+    const REAL8 FTl6 = XLALSimInspiralPNFlux_6PNLogCoeff(eta);
+    const REAL8 FTa6 = XLALSimInspiralPNFlux_6PNCoeff(eta);
+    const REAL8 FTa7 = XLALSimInspiralPNFlux_7PNCoeff(eta);
 
     /* energy coefficients */
     const REAL8 dETaN = 2. * XLALSimInspiralPNEnergy_0PNCoeff(eta);
@@ -224,12 +224,16 @@ int XLALSimInspiralTaylorF2(
     amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);
     shft = LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
 
+    const REAL8 log4=log(4.0);
+    const REAL8 logv0=log(v0);
+    
     /* Fill with non-zero vals from fStart to f_max */
     iStart = (size_t) ceil(fStart / deltaF);
     data = htilde->data->data;
     for (i = iStart; i < n; i++) {
         const REAL8 f = i * deltaF;
         const REAL8 v = cbrt(piM*f);
+	const REAL8 logv = log(v);
         const REAL8 v2 = v * v;
         const REAL8 v3 = v * v2;
         const REAL8 v4 = v * v3;
@@ -251,9 +255,9 @@ int XLALSimInspiralTaylorF2(
             case 7:
                 phasing += pfa7 * v7;
             case 6:
-                phasing += (pfa6 + pfl6 * log(4.*v) ) * v6;
+                phasing += (pfa6 + pfl6 * (log4+logv)) * v6;
             case 5:
-                phasing += (pfa5 + pfl5 * log(v/v0)) * v5;
+                phasing += (pfa5 + pfl5 * (logv-logv0)) * v5;
             case 4:
                 phasing += pfa4 * v4;
             case 3:
@@ -273,7 +277,7 @@ int XLALSimInspiralTaylorF2(
             case 7:
                 flux += FTa7 * v7;
             case 6:
-                flux += (FTa6 + FTl6*log(16.*v2)) * v6;
+                flux += (FTa6 + FTl6*2.0*(log4+logv)) * v6;
                 dEnergy += dETa3 * v6;
             case 5:
                 flux += FTa5 * v5;
@@ -302,7 +306,7 @@ int XLALSimInspiralTaylorF2(
             case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
                 phasing += psiSO3 * v6;
             case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
-                phasing += -pn_gamma * (1 + 3*log(v/v0)) * v5;
+                phasing += -pn_gamma * (1 + 3*(logv-logv0)) * v5;
             case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
                 phasing += -10.L*pn_sigma * v4;
             case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:

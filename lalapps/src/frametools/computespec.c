@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <math.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
@@ -245,8 +244,8 @@ int main( int argc, char *argv[] )
             LALForwardRealFFT( &status, Hvec, &hvec, pfwd );
 
             for( j=0 ; j<numPoints/2+1; j++){
-                re = Hvec->data[j].re;
-                im = Hvec->data[j].im;
+                re = crealf(Hvec->data[j]);
+                im = cimagf(Hvec->data[j]);
                 spectrum->data[j] += 2.0*(re*re+im*im)/((REAL4)navg);
             }
         }

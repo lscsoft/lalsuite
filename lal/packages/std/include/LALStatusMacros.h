@@ -38,9 +38,11 @@
 
 #ifdef  __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
-extern int lalDebugLevel;	/**< Global LAL debug level, see \ref ss_lalDebugLevel for more details */
+extern int lalDebugLevel;       /**< Global LAL debug level, see \ref ss_lalDebugLevel for more details */
 extern const int lalNoDebug;
 
 #define LAL_EXLAL     16384
@@ -261,8 +263,9 @@ do {                                                                          \
     (statusptr)->statusCode = (code) )
 
 
-#ifdef  __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
-
 #endif /* _LALSTATUSMACROS_H */

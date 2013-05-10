@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
 
   REAL8 tolerance = 2e-6;	/* same algorithm, should be basically identical results */
 
-  char earthEphem[] = DATADIR "earth00-19-DE405.dat.gz";
-  char sunEphem[]   = DATADIR "sun00-19-DE405.dat.gz";
+  char earthEphem[] = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
+  char sunEphem[]   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
 
   UINT4 numChecks = 1; /* Number of times to check */
 

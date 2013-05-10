@@ -1,7 +1,7 @@
 /*
  *  LALInferenceCBCInit.c:  Bayesian Followup initialisation routines.
  *
- *  Copyright (C) 2012 Vivien Raymond and John Veitch
+ *  Copyright (C) 2012 Vivien Raymond, John Veitch, Salvatore Vitale
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,9 +36,11 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
 
+
+static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline);
+
 /* Setup the template generation */
 /* Defaults to using LALSimulation */
-
 void LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
 {
   char help[]="(--template [LAL,PhenSpin,LALGenerateInspiral,LALSim]\tSpecify template (default LAL)\n";
@@ -463,14 +465,12 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     approx = XLALGetApproximantFromString(ppt->value);
     ppt_order=LALInferenceGetProcParamVal(commandLine,"--order");
     if(ppt_order) PhaseOrder = XLALGetOrderFromString(ppt_order->value);
-    else fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
   }
   ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
   if(ppt){
     approx = XLALGetApproximantFromString(ppt->value);
     XLAL_TRY(PhaseOrder = XLALGetOrderFromString(ppt->value),errnum);
     if( (int) PhaseOrder == XLAL_FAILURE || errnum) {
-      fprintf(stdout, "No phase order given.  Using maximum available order for the template.\n");
       PhaseOrder=-1;
     }
   }
@@ -484,14 +484,12 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   
   if(approx==NumApproximants && injTable){ /* Read aproximant from injection file */
     approx=XLALGetApproximantFromString(injTable->waveform);
-    if(PhaseOrder!=(LALPNOrder)XLALGetOrderFromString(injTable->waveform))
-      fprintf(stdout,"WARNING! Injection specified phase order %i, you are using %i\n",\
-      XLALGetOrderFromString(injTable->waveform),PhaseOrder);
-    if(AmpOrder!=(LALPNOrder)injTable->amp_order)
-      fprintf(stdout,"WARNING! Injection specified amplitude order %i, you are using %i\n",
-	      injTable->amp_order,AmpOrder);
   }
-  if(approx==NumApproximants) approx=TaylorF2; /* Defaults to TF2 */
+  if(approx==NumApproximants){
+      
+       approx=TaylorF2; /* Defaults to TF2 */
+       XLALPrintWarning("You did not provide an approximant for the templates. Using default %s, which might now be what you want!\n",XLALGetStringFromApproximant(approx));
+  }
     
   /* Set the modeldomain appropriately */
   switch(approx)
@@ -527,7 +525,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       exit(1);
       break;
   }
-  fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,modelDomain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
+  //fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,modelDomain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
   
   ppt=LALInferenceGetProcParamVal(commandLine, "--fref");
   if (ppt) fRef = atof(ppt->value);
@@ -982,98 +980,113 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     nifo++;
   }
 
-  UINT4 nscale_block_temp   = 10000;
-  gsl_matrix *bands_min_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
-  gsl_matrix *bands_max_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
+  UINT4 j = 0;
 
-  UINT4 j;
-
-  for (i = 0; i < nifo; i ++) {
-     for (j = 0; j < nscale_block_temp; j++)
-        {
-          gsl_matrix_set(bands_min_temp,i,j,-1.0);
-          gsl_matrix_set(bands_max_temp,i,j,-1.0);
-        }
-  }
-
-  ppt = LALInferenceGetProcParamVal(commandLine, "--psdFitText");
-  if(ppt)  // Load in values from file if requested
+  ppt = LALInferenceGetProcParamVal(commandLine, "--psdFit");
+  if(ppt)//MARK: Here is where noise PSD parameters are being added to the model
   {
+ 
+    printf("Setting up PSD fitting for %i ifos...\n",nifo);
 
-      char line [ 128 ];
-      char *bands_tempfile = ppt->value;
-      printf("Reading bands_temp from %s\n",bands_tempfile);
+    dataPtr = state->data;
+    UINT4 nscale_block_temp   = 10000;
+    gsl_matrix *bands_min_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
+    gsl_matrix *bands_max_temp      = gsl_matrix_alloc(nifo,nscale_block_temp);
 
-      UINT4 band_min = 0, band_max = 0;
+    i=0;
+    while (dataPtr != NULL)
+    {
 
-      nscale_block = 0;
-      char * pch;
-      j = 0;
-
-      FILE *file = fopen ( bands_tempfile, "r" );
-      if ( file != NULL )
+      for (j = 0; j < nscale_block_temp; j++)
       {
+        gsl_matrix_set(bands_min_temp,i,j,-1.0);
+        gsl_matrix_set(bands_max_temp,i,j,-1.0);
+      }
+
+      printf("ifo=%i  %s\n",i,dataPtr->name);fflush(stdout);
+
+      char ifoPSDFitBands[500];
+      snprintf (ifoPSDFitBands,500, "--%s-psdFit",dataPtr->name);
+
+      ppt = LALInferenceGetProcParamVal(commandLine,ifoPSDFitBands);
+      if(ppt || LALInferenceGetProcParamVal(commandLine, "--xcorrbands"))
+      /* Load in values from file if requested */
+      {
+        char line [ 128 ];
+        char bands_tempfile[500];
+
+        if (LALInferenceGetProcParamVal(commandLine, "--xcorrbands")) {
+           snprintf (bands_tempfile,500, "%s-XCorrBands.dat",dataPtr->name);
+        }
+        else {
+           char *bands_tempfile_temp = ppt->value;
+           strcpy( bands_tempfile, bands_tempfile_temp );
+        }
+        printf("Reading bands_temp from %s\n",bands_tempfile);
+
+        UINT4 band_min = 0, band_max = 0;
+ 
+        nscale_block = 0;
+        char * pch;
+        j = 0;
+
+        FILE *file = fopen ( bands_tempfile, "r" );
+        if ( file != NULL )
+        {
           while ( fgets ( line, sizeof line, file ) != NULL )
           {
               pch = strtok (line," ");
               int count = 0;
               while (pch != NULL)
               {
-                  if (count==0) {band_min = atoi(pch);}
-                  if (count==1) {band_max = atoi(pch);}
+                  if (count==0) {band_min = atof(pch);}
+                  if (count==1) {band_max = atof(pch);}
                   pch = strtok (NULL, " ");
                   count++;
               }
 
-              for (i = 0; i < nifo; i ++) {
-
-                gsl_matrix_set(bands_min_temp,i,j,band_min/df);
-                gsl_matrix_set(bands_max_temp,i,j,band_max/df);
-
-              }
+              gsl_matrix_set(bands_min_temp,i,j,band_min/df);
+              gsl_matrix_set(bands_max_temp,i,j,band_max/df);
  
               nscale_block++;
               j++;
 
           }
-      fclose ( file );
-      }
+        fclose ( file );
+        }
 
-      else
-      {
+        else
+        {
           perror ( bands_tempfile ); /* why didn't the file open? */
+        }
+  
+
       }
-
-
-  }
-  else // Otherwise use defaults
-  {
-
-    nscale_bin   = (f_max+1-f_min)/nscale_block;
-    nscale_dflog = log( (double)(f_max+1)/(double)f_min )/(double)nscale_block;
-
-    //nscale_bin   = (f_max+1)/nscale_block;
-    //nscale_dflog = log( (double)(f_max+1) )/(double)nscale_block;
-
-    int freq_min, freq_max;
-
-    for (i = 0; i < nifo; i++)
-    {
-      for (j = 0; j < nscale_block; j++)
+      else // Otherwise use defaults
       {
 
-        freq_min = (int) exp(log((double)f_min ) + nscale_dflog*(j-1));
-        freq_max = (int) exp(log((double)f_min ) + nscale_dflog*j);
+        nscale_bin   = (f_max+1-f_min)/nscale_block;
+        nscale_dflog = log( (double)(f_max+1)/(double)f_min )/(double)nscale_block;
 
-        //freq_min = (int) exp(1 + nscale_dflog*(j-1));
-        //freq_max = (int) exp(1 + nscale_dflog*j);
-        
-        gsl_matrix_set(bands_min_temp,i,j,freq_min);
-        gsl_matrix_set(bands_max_temp,i,j,freq_max);
-      }
+        int freq_min, freq_max;
+
+        for (j = 0; j < nscale_block; j++)
+        {
+
+            freq_min = (int) exp(log((double)f_min ) + nscale_dflog*j);
+            freq_max = (int) exp(log((double)f_min ) + nscale_dflog*(j+1));
+
+            gsl_matrix_set(bands_min_temp,i,j,freq_min);
+            gsl_matrix_set(bands_max_temp,i,j,freq_max);
+        }
+
+      }  
+
+      dataPtr = dataPtr->next;
+      i++;
+
     }
 
-  }
 
     gsl_matrix *bands_min      = gsl_matrix_alloc(nifo,nscale_block);
     gsl_matrix *bands_max      = gsl_matrix_alloc(nifo,nscale_block);
@@ -1085,15 +1098,23 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
         gsl_matrix_set(bands_min,i,j,gsl_matrix_get(bands_min_temp,i,j));
         gsl_matrix_set(bands_max,i,j,gsl_matrix_get(bands_max_temp,i,j));
 
-        //printf("%f %f\n",gsl_matrix_get(bands_min_temp,i,j),gsl_matrix_get(bands_max_temp,i,j));
-
       }
     }
 
+    printf("Running PSD fitting with bands (Hz)...\n");
+    dataPtr = state->data;
+    i=0;
+    while (dataPtr != NULL)
+    {
+      printf("%s:",dataPtr->name);
+      for (j = 0; j < nscale_block; j++)
+      {
+        printf(" %f-%f ",gsl_matrix_get(bands_min,i,j)*df,gsl_matrix_get(bands_max,i,j)*df);
+      }
 
-  ppt = LALInferenceGetProcParamVal(commandLine, "--psdFit");
-  if(ppt)//MARK: Here is where noise PSD parameters are being added to the model
-  {
+      dataPtr = dataPtr->next;
+      i++;
+    }
 
     nscale_bin   = (f_max+1-f_min)/nscale_block;
     nscale_dflog = log( (double)(f_max+1)/(double)f_min )/(double)nscale_block;
@@ -1119,9 +1140,9 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     gsl_matrix_set_all(nscale, 1.0);
     gsl_matrix_set_all(nstore, 1.0);
 
+
     LALInferenceAddVariable(currentParams, "psdscale", &nscale, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(currentParams, "psdstore", &nstore, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
-
     LALInferenceAddVariable(currentParams, "logdeltaf", &nscale_dflog, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
     LALInferenceAddVariable(currentParams, "psdBandsMin", &bands_min, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
@@ -1178,7 +1199,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       snprintf (ifoRemoveLines,500, "--%s-removeLines",dataPtr->name);
 
       ppt = LALInferenceGetProcParamVal(commandLine,ifoRemoveLines);
-      if(ppt || LALInferenceGetProcParamVal(commandLine, "--chisquaredlines") || LALInferenceGetProcParamVal(commandLine, "--KSlines"))
+      if(ppt || LALInferenceGetProcParamVal(commandLine, "--chisquaredlines") || LALInferenceGetProcParamVal(commandLine, "--KSlines") || LALInferenceGetProcParamVal(commandLine, "--powerlawlines"))
       /* Load in values from file if requested */
       {
         char line [ 128 ];
@@ -1190,14 +1211,18 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
         else if (LALInferenceGetProcParamVal(commandLine, "--KSlines")) {
              snprintf (lines_tempfile,500, "%s-KSLines.dat",dataPtr->name);
         }
+        else if (LALInferenceGetProcParamVal(commandLine, "--powerlawlines")) {
+             snprintf (lines_tempfile,500, "%s-PowerLawLines.dat",dataPtr->name);
+        }
         else {
              char *lines_tempfile_temp = ppt->value;
              strcpy( lines_tempfile, lines_tempfile_temp );
         }
         printf("Reading lines_temp from %s\n",lines_tempfile);
 
+        char * pch;
         j = 0;
-        double freqline;
+        double freqline = 0, freqlinewidth = 0;
         lines_num_ifo = 0;
         FILE *file = fopen ( lines_tempfile, "r" );
         if ( file != NULL )
@@ -1205,9 +1230,18 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
           while ( fgets ( line, sizeof line, file ) != NULL )
           {
 
-            freqline = atof(line);
+            pch = strtok (line," ");
+            int count = 0;
+            while (pch != NULL)
+            {
+                if (count==0) {freqline = atof(pch);}
+                if (count==1) {freqlinewidth = atof(pch);}
+                pch = strtok (NULL, " ");
+                count++;
+            }
+
             gsl_matrix_set(lines_temp,i,j,freqline/df);
-            gsl_matrix_set(linewidth_temp,i,j,1.0);
+            gsl_matrix_set(linewidth_temp,i,j,freqlinewidth/df);
             j++;
             lines_num_ifo++;
           }
@@ -1365,14 +1399,16 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }
   LALInferenceAddMinMaxPrior(priorArgs, "time",     &timeMin, &timeMax,   LALINFERENCE_REAL8_t);
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--fixPhi");
-  if(ppt){
-    LALInferenceAddVariable(currentParams, "phase",           &start_phase,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    if(lalDebugLevel>0) fprintf(stdout,"phase fixed and set to %f\n",start_phase);
-  }else{
-    LALInferenceAddVariable(currentParams, "phase",           &start_phase,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+  if(!LALInferenceGetProcParamVal(commandLine,"--margphi")){
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixPhi");
+    if(ppt){
+        LALInferenceAddVariable(currentParams, "phase",           &start_phase,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        if(lalDebugLevel>0) fprintf(stdout,"phase fixed and set to %f\n",start_phase);
+    }else{
+        LALInferenceAddVariable(currentParams, "phase",           &start_phase,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+    }
+    LALInferenceAddMinMaxPrior(priorArgs, "phase",     &phiMin, &phiMax,   LALINFERENCE_REAL8_t);
   }
-  LALInferenceAddMinMaxPrior(priorArgs, "phase",     &phiMin, &phiMax,   LALINFERENCE_REAL8_t);
 
   /* Jump in log distance if requested, otherwise use distance */
   if(LALInferenceGetProcParamVal(commandLine,"--logdistance"))
@@ -1763,6 +1799,13 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(currentParams, "tideO", &tideO,
         LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   }
+  if (injTable)
+     print_flags_orders_warning(injTable,commandLine); 
+         
+     /* Print info about orders and waveflags used for templates */
+     fprintf(stdout,"\n\n---\t\t ---\n");
+     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i, in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, modelDomain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
+     fprintf(stdout,"---\t\t ---\n\n");
   return(currentParams);
 }
 
@@ -1928,4 +1971,86 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferen
   return(currentParams);
 }
 
+static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline){
 
+    /* If lalDebugLevel > 0, print information about:
+     * 
+     * - Eventual injection/template mismatch on phase and amplitude orders, as well as on waveFlags
+     * - Those fiels being set only for injection or template
+     * 
+     **/
+    XLALPrintWarning("\n");
+    LALPNOrder PhaseOrder=-1;
+    LALPNOrder AmpOrder=-1;
+    LALSimInspiralSpinOrder default_spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
+    LALSimInspiralTidalOrder default_tideO = LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL;
+    Approximant approx=NumApproximants;
+    ProcessParamsTable *ppt=NULL;
+    ProcessParamsTable *ppt_order=NULL;
+    int errnum;
+    ppt=LALInferenceGetProcParamVal(commline,"--approximant");
+    if(ppt){
+        approx=XLALGetApproximantFromString(ppt->value);
+        ppt=LALInferenceGetProcParamVal(commline,"--order");
+        if(ppt) PhaseOrder = XLALGetOrderFromString(ppt->value);
+    }
+    ppt=LALInferenceGetProcParamVal(commline,"--approx");
+    if(ppt){
+       approx=XLALGetApproximantFromString(ppt->value);
+       XLAL_TRY(PhaseOrder = XLALGetOrderFromString(ppt->value),errnum);
+       if( (int) PhaseOrder == XLAL_FAILURE || errnum) {
+          XLALPrintWarning("WARNING: No phase order given.  Using maximum available order for the template.\n");
+          PhaseOrder=-1;
+        }
+     }
+     /* check approximant is given */
+    if (approx==NumApproximants){
+        approx=XLALGetApproximantFromString(injt->waveform);
+        XLALPrintWarning("WARNING: You did not provide an approximant for the templates. Using value in injtable (%s), which might not what you want!\n",XLALGetStringFromApproximant(approx));
+     }
+    
+    /* check inj/rec amporder */
+    ppt=LALInferenceGetProcParamVal(commline,"--amporder");
+    if(ppt) AmpOrder=atoi(ppt->value);
+    ppt=LALInferenceGetProcParamVal(commline,"--ampOrder");
+    if(ppt) AmpOrder = XLALGetOrderFromString(ppt->value);
+    if(AmpOrder!=(LALPNOrder)injt->amp_order)
+       XLALPrintWarning("WARNING: Injection specified amplitude order %i. Template will use  %i\n",
+               injt->amp_order,AmpOrder);
+
+    /* check inj/rec phase order */
+    if(PhaseOrder!=(LALPNOrder)XLALGetOrderFromString(injt->waveform))
+        XLALPrintWarning("WARNING: Injection specified phase order %i. Template will use %i\n",\
+             XLALGetOrderFromString(injt->waveform),PhaseOrder);
+
+    /* check inj/rec spinflag */
+    ppt=LALInferenceGetProcParamVal(commline, "--spinOrder");
+    ppt_order=LALInferenceGetProcParamVal(commline, "--inj-spinOrder");
+    if (ppt && ppt_order){
+       if (!(atoi(ppt->value)== atoi(ppt_order->value)))
+            XLALPrintWarning("WARNING: Set different spin orders for injection (%i ) and template (%i) \n",atoi(ppt_order->value),atoi(ppt->value));       
+    }
+    else if (ppt || ppt_order){
+        if (ppt)
+            XLALPrintWarning("WARNING: You set the spin order only for the template (%i). Injection will use default value (%i). You can change that with --inj-spinOrder. \n",atoi(ppt->value),default_spinO);   
+        else 
+            XLALPrintWarning("WARNING: You set the spin order only for the injection (%i). Template will use default value (%i). You can change that with --spinOrder. \n",atoi(ppt_order->value),default_spinO);     }
+    else
+        XLALPrintWarning("WARNING: You did not set the spin order. Injection and template will use default values (%i). You change that using --inj-spinOrder (set injection value) and --spinOrder (set template value).\n",default_spinO);    
+    /* check inj/rec tidal flag */
+    ppt=LALInferenceGetProcParamVal(commline, "--tidalOrder");
+    ppt_order=LALInferenceGetProcParamVal(commline, "--inj-tidalOrder");
+    if (ppt && ppt_order){
+        if (!(atoi(ppt->value)==atoi( ppt_order->value)))
+            XLALPrintWarning("WARNING: Set different tidal orders for injection (%i ) and template (%i) \n",atoi(ppt_order->value),atoi(ppt->value));   
+    }
+    else if (ppt || ppt_order){
+        if (ppt)
+            XLALPrintWarning("WARNING: You set the tidal order only for the template (%d). Injection will use default value (%i). You can change that with --inj-tidalOrder. \n",atoi(ppt->value),default_tideO);        
+        else 
+            XLALPrintWarning("WARNING: You set the tidal order only for the injection (%i). Template will use default value (%i). You can  change that with --tidalOrder\n",atoi(ppt_order->value),default_tideO);
+        }
+    else
+       XLALPrintWarning("WARNING: You did not set the tidal order. Injection and template will use default values (%i). You change that using --inj-tidalOrder (set injection value) and --tidalOrder (set template value).\n",default_tideO); 
+    return;    
+}

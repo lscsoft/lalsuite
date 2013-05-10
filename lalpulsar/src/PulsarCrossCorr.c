@@ -150,10 +150,9 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       COMPLEX8FrequencySeries  *sft2,
 			       REAL8FrequencySeries     *psd1,
 			       REAL8FrequencySeries     *psd2,
-			       REAL8                    freq1,
-			       REAL8                    freq2)
+			       UINT4                    bin1,
+			       UINT4                    bin2)
 {
-  INT4 bin1, bin2;
   REAL8 deltaF;
   REAL8 re1, re2, im1, im2;
 
@@ -168,28 +167,24 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   deltaF = sft1->deltaF;
 
   /* check that frequencies are in the right range */
-  if ((freq1 < sft1->f0) || (freq1 > (sft1->f0 + deltaF*sft1->data->length)) ) {
+  if ( bin1 >= (sft1->data->length) ) {
 	ABORT(status, PULSARCROSSCORR_EVAL, PULSARCROSSCORR_MSGEVAL);
   }
   /* check that frequencies are in the right range */
-  if ((freq2 < sft2->f0) || (freq2 > (sft2->f0 + deltaF*sft2->data->length)) ) {
+  if ( bin2 >= (sft2->data->length) ) {
 	ABORT(status, PULSARCROSSCORR_EVAL, PULSARCROSSCORR_MSGEVAL);
   }
 
+  re1 = crealf(sft1->data->data[bin1]);
+  im1 = cimagf(sft1->data->data[bin1]);
+  re2 = crealf(sft2->data->data[bin2]);
+  im2 = cimagf(sft2->data->data[bin2]);
 
-
-  bin1 = (INT4)ceil( ((freq1 - sft1->f0) / (deltaF)) - 0.5);
-  bin2 = (INT4)ceil( ((freq2 - sft2->f0)/ (deltaF)) - 0.5);
-
-  re1 = sft1->data->data[bin1].re;
-  im1 = sft1->data->data[bin1].im;
-  re2 = sft2->data->data[bin2].re;
-  im2 = sft2->data->data[bin2].im;
-
-  out->re = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*re2 + im1*im2);
-  out->im = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
+  out->real_FIXME = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*re2 + im1*im2);
+  out->imag_FIXME = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
 
 /*
+printf("bin1 bin2 %d %d\n", bin1, bin2);
 printf("psd1 psd2 %1.15g %1.15g\n", psd1->data->data[bin1], psd2->data->data[bin2]);
 printf("sft1.re sft1.im %1.15g %1.15g\n", re1*sqrt(psd1->data->data[bin1]), im1*sqrt(psd1->data->data[bin1]));
 printf("sft2.re sft2.im %1.15g %1.15g\n\n", re2*sqrt(psd2->data->data[bin2]), im2*sqrt(psd2->data->data[bin2]));
@@ -316,12 +311,11 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
  * where the factor of DeltaT^2/4 is absorbed in psd1 and psd2*/
 void LALCalculateSigmaAlphaSq(LALStatus            *status,
 			      REAL8                *out,
-			      REAL8                freq1,
-			      REAL8                freq2,
+			      UINT4                bin1,
+			      UINT4                bin2,
 			      REAL8FrequencySeries *psd1,
 			      REAL8FrequencySeries *psd2)
 {
-  INT8 bin1, bin2;
   REAL8 deltaF;
 
   INITSTATUS(status);
@@ -332,8 +326,6 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 
   deltaF = psd1->deltaF;
 
-  bin1 = (INT8)ceil( ((freq1 - psd1->f0) / (deltaF)) - 0.5);
-  bin2 = (INT8)ceil( ((freq2 - psd2->f0)/ (deltaF)) - 0.5);
   *out = SQUARE(deltaF)*SQUARE(deltaF) * psd1->data->data[bin1] * psd2->data->data[bin2];
   DETATCHSTATUSPTR (status);
   /* normal exit */
@@ -360,14 +352,14 @@ void LALCalculateAveUalpha(LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
+  deltaPhi = phiI - phiJ - LAL_PI*(freqI - freqJ)/deltaF;
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(exp^(-i delta phi)) * (aIaJ + bIbJ)*/
   re = 0.1 * cos(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
   im = - 0.1 * sin(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
 
   /*calculate Ualpha*/
-  out->re = re/(sigmasq);
-  out->im = -im/(sigmasq);
+  out->real_FIXME = re/(sigmasq);
+  out->imag_FIXME = -im/(sigmasq);
 
   DETATCHSTATUSPTR (status);
 
@@ -404,7 +396,7 @@ void LALCalculateUalpha(LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
+  deltaPhi = phiI - phiJ - LAL_PI*(freqI - freqJ)/deltaF;
 
  
   /*if not averaging over psi, calculate F+, Fx exactly*/
@@ -423,11 +415,11 @@ void LALCalculateUalpha(LALStatus *status,
 	          - (sin(deltaPhi) * (FplusI*FplusJ*amplitudes.Aplussq + FcrossI*FcrossJ * amplitudes.Acrosssq)) );
 
   /*calculate estimators*/
-  gplus->re = 0.25*cos(deltaPhi)*FplusI*FplusJ;
-  gplus->im = 0.25*(-sin(deltaPhi))*FplusI*FplusJ;
+  gplus->real_FIXME = 0.25*cos(deltaPhi)*FplusI*FplusJ;
+  gplus->imag_FIXME = 0.25*(-sin(deltaPhi))*FplusI*FplusJ;
 
-  gcross->re = 0.25*cos(deltaPhi)*FcrossI*FcrossJ;
-  gcross->im = 0.25*(-sin(deltaPhi))*FcrossI*FcrossJ;
+  gcross->real_FIXME = 0.25*cos(deltaPhi)*FcrossI*FcrossJ;
+  gcross->imag_FIXME = 0.25*(-sin(deltaPhi))*FcrossI*FcrossJ;
 
 
   }
@@ -451,8 +443,8 @@ void LALCalculateUalpha(LALStatus *status,
 
 
   /*calculate Ualpha*/
-  out->re = re/(sigmasq);
-  out->im = -im/(sigmasq);
+  out->real_FIXME = re/(sigmasq);
+  out->imag_FIXME = -im/(sigmasq);
 
 
 
@@ -484,7 +476,7 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
 
   for (i=0; i < (INT4)yalpha->length; i++) {
 
-  *out += 2.0 * ((yalpha->data[i].re * ualpha->data[i].re) - (yalpha->data[i].im * ualpha->data[i].im));
+  *out += 2.0 * ((creal(yalpha->data[i]) * creal(ualpha->data[i])) - (cimag(yalpha->data[i]) * cimag(ualpha->data[i])));
 
   }
 
@@ -514,7 +506,7 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
 
 
   for (i=0; i < (INT4)ualpha->length; i++) {
-	variance += (SQUARE(ualpha->data[i].re) + SQUARE(ualpha->data[i].im)) * sigmaAlphasq->data[i];
+	variance += (SQUARE(creal(ualpha->data[i])) + SQUARE(cimag(ualpha->data[i]))) * sigmaAlphasq->data[i];
 
   }
 
@@ -552,10 +544,10 @@ void LALCalculateEstimators(LALStatus    *status,
 
 
   for (i=0; i < (INT4)yalpha->length; i++) {
-	ap1 += 2.0*(SQUARE(gplus->data[i].re) + SQUARE(gplus->data[i].im))/sigmaAlphasq->data[i];
-	ac1 += 2.0*(SQUARE(gcross->data[i].re) + SQUARE(gcross->data[i].im))/sigmaAlphasq->data[i];
-	ap2 += 2.0*((yalpha->data[i].re * gplus->data[i].re) + (yalpha->data[i].im * gplus->data[i].im))/sigmaAlphasq->data[i];
-	ac2 += 2.0*((yalpha->data[i].re * gcross->data[i].re) + (yalpha->data[i].im * gcross->data[i].im))/sigmaAlphasq->data[i];
+	ap1 += 2.0*(SQUARE(creal(gplus->data[i])) + SQUARE(cimag(gplus->data[i])))/sigmaAlphasq->data[i];
+	ac1 += 2.0*(SQUARE(creal(gcross->data[i])) + SQUARE(cimag(gcross->data[i])))/sigmaAlphasq->data[i];
+	ap2 += 2.0*((creal(yalpha->data[i]) * creal(gplus->data[i])) + (cimag(yalpha->data[i]) * cimag(gplus->data[i])))/sigmaAlphasq->data[i];
+	ac2 += 2.0*((creal(yalpha->data[i]) * creal(gcross->data[i])) + (cimag(yalpha->data[i]) * cimag(gcross->data[i])))/sigmaAlphasq->data[i];
   }
 
   *aplussq1 = ap1;

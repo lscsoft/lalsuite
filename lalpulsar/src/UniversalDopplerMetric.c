@@ -213,6 +213,7 @@ BOOLEAN outputIntegrand = 0;
 
 /* Some local constants. */
 #define rOrb_c  (LAL_AU_SI / LAL_C_SI)
+#define rEarth_c  (LAL_REARTH_SI / LAL_C_SI)
 #define vOrb_c  (LAL_TWOPI * LAL_AU_SI / LAL_C_SI / LAL_YRSID_SI)
 
 /*---------- internal prototypes ----------*/
@@ -1016,26 +1017,33 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams_t intparams = empty_intparams;
   UINT4 i, j;
   REAL8 gg;
-  UINT4 dim;
-  const DopplerCoordinateSystem *coordSys;
 
   /* ---------- sanity/consistency checks ---------- */
-  if ( !metricParams || !edat ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer passed.\n\n", __func__);
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
+  XLAL_CHECK_NULL ( metricParams != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( edat != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
   UINT4 Nseg = metricParams->segmentList.length;
   XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
 
+  UINT4 dim = metricParams->coordSys.dim;
+  const DopplerCoordinateSystem *coordSys = &(metricParams->coordSys);
+  // ----- check that {n2x_equ, n2y_equ} are not used at the equator (delta=0), as metric is undefined there
+  BOOLEAN have_n2xy = 0;
+  for ( i = 0; i < dim; i ++ ) {
+    if ( (coordSys->coordIDs[i] == DOPPLERCOORD_N2X_EQU) || ( coordSys->coordIDs[i] == DOPPLERCOORD_N2Y_EQU) ) {
+      have_n2xy = 1;
+    }
+  }
+  BOOLEAN at_equator = (metricParams->signalParams.Doppler.Delta == 0);
+  XLAL_CHECK_NULL ( !(at_equator && have_n2xy), XLAL_EINVAL, "Can't use 'n2x_equ','n2y_equ' at equator (Delta=0): metric is singular there");
+
+  // ----- useful shortcuts
   LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
   LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
   REAL8 Tspan = XLALGPSDiff( endTime, startTime );
 
   const LIGOTimeGPS *refTime   = &(metricParams->signalParams.Doppler.refTime);
 
-  dim = metricParams->coordSys.dim;
-  coordSys = &(metricParams->coordSys);
 
   /* ---------- prepare output metric ---------- */
   if ( (g_ij = gsl_matrix_calloc ( dim, dim )) == NULL ) {
@@ -1142,6 +1150,18 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 {
   XLAL_CHECK_NULL ( metricParams, XLAL_EINVAL, "Invalid NULL input 'metricParams'\n" );
   XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
+
+  UINT4 dim = metricParams->coordSys.dim;
+  const DopplerCoordinateSystem *coordSys = &(metricParams->coordSys);
+  // ----- check that {n2x_equ, n2y_equ} are not used at the equator (delta=0), as metric is undefined there
+  BOOLEAN have_n2xy = 0;
+  for ( UINT4 i = 0; i < dim; i ++ ) {
+    if ( (coordSys->coordIDs[i] == DOPPLERCOORD_N2X_EQU) || ( coordSys->coordIDs[i] == DOPPLERCOORD_N2Y_EQU) ) {
+      have_n2xy = 1;
+    }
+  }
+  BOOLEAN at_equator = (metricParams->signalParams.Doppler.Delta == 0);
+  XLAL_CHECK_NULL ( !(at_equator && have_n2xy), XLAL_EINVAL, "Can't use 'n2x_equ','n2y_equ' at equator (Delta=0): metric is singular there");
 
   UINT4 Nseg = metricParams->segmentList.length;	// number of semi-coherent segments to average metrics over
   XLAL_CHECK_NULL ( Nseg >= 1, XLAL_EINVAL, "Got empty segment list metricParams->segmentList, needs to contain at least 1 segments\n");
@@ -2379,10 +2399,11 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
  * where \f$\overline{\Delta T}\equiv\sum_{k}^{N} \Delta T_k\f$ is the average segment-length
  * over all \f$N\f$ segments.
  *
- * Sky coordinates are scaled by
- * \f[ \frac{2\pi \bar{f} R_{ES}}{c} \f]
- * where \f$\bar{f}\f$ is a fiducial frequency and
- * \f$R_{ES}\f$ the mean Earth--Sun distance.
+ * Sky coordinates are scaled by Holgers' units, see Eq.(44) in PRD82,042002(2010),
+ * without the equatorial rotation in alpha:
+ * \f[ \frac{2\pi f R_{E}  \cos(\delta_{D})}{c} \f]
+ * where \f$f\f$ is the frequency and
+ * \f$R_{E}\f$ the Earth radius, and \f$\delta_{D}\f$ is the detectors latitude.
  *
  * Returns NULL on error, otherwise a new matrix is allocated.
  */
@@ -2391,7 +2412,6 @@ gsl_matrix* XLALNaturalizeMetric(
   const DopplerMetricParams *metricParams	/**< [in] Input parameters used to calculate g_ij */
   )
 {
-
   /* Check input */
   XLAL_CHECK_NULL( g_ij, XLAL_EINVAL );
   XLAL_CHECK_NULL( g_ij->size1 == g_ij->size2, XLAL_EINVAL, "Input matrix g_ij must be square! (got %d x %d)\n", g_ij->size1, g_ij->size2 );
@@ -2455,7 +2475,10 @@ gsl_matrix* XLALNaturalizeMetric(
     case DOPPLERCOORD_N3SY_EQU:
     case DOPPLERCOORD_N3OX_ECL:
     case DOPPLERCOORD_N3OY_ECL:
-      scale = LAL_TWOPI * Freq * rOrb_c;
+      {
+        REAL8 cosdD = cos ( metricParams->detInfo.sites[0].frDetector.vertexLatitudeRadians );
+        scale = LAL_TWOPI * Freq * rEarth_c * cosdD;
+      }
       break;
 
     default:

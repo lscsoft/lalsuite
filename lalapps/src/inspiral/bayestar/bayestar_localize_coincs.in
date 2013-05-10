@@ -1,0 +1,177 @@
+#!@PYTHONPROG@
+#
+# Copyright (C) 2013  Leo Singer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+"""
+Produce GW sky maps for all coincidences in a LIGO-LW XML file.
+
+A string naming the kind of prior -- "uniform in log distance" or
+"uniform in volume" -- is a required command line argument as well as the
+minimum and maximum distance. The filename of the (optionally gzip-compressed)
+LIGO-LW XML input is an optional argument; if omitted, input is read from stdin.
+
+If the --min-distance argument is omitted, it defaults to half the minimum
+effective distance among all of the detectors. If the --max-distance argument
+is omitted, it defaults to twice the maximum effective distance among detectors.
+
+A FITS file is created for each sky map, having a filename of the form
+
+  "X.toa.fits.gz" or
+  "X.toa_snr.fits.gz"
+
+where X is the LIGO-LW row id of the coinc and "toa" or "toa_snr" identifies
+whether the sky map accounts for TOA only or both TOA and SNR.
+"""
+__author__ = "Leo Singer <leo.singer@ligo.org>"
+
+
+# Command line interface.
+from optparse import Option, OptionParser
+from lalinference.bayestar import command
+
+parser = OptionParser(
+    formatter = command.NewlinePreservingHelpFormatter(),
+    description = __doc__,
+    usage = '%prog [options] --prior-distance-power -1|2 [INPUT.xml[.gz]]',
+    option_list = [
+        Option("--nside", "-n", type=int, default=-1,
+            help="HEALPix lateral resolution (default=auto)"),
+        Option("--f-low", type=float, metavar="Hz",
+            help="Low frequency cutoff (required)"),
+        Option("--waveform",
+            help="Waveform to use for determining parameter estimation accuracy from signal model (required)"),
+        Option("--min-distance", type=float, metavar="Mpc",
+            help="Minimum distance of prior in megaparsec (default=infer from effective distance)"),
+        Option("--max-distance", type=float, metavar="Mpc",
+            help="Maximum distance of prior in megaparsecs (default=infer from effective distance)"),
+        Option("--prior-distance-power", type=int, metavar="-1|2",
+            help="Distance prior (required, -1 for uniform in log, 2 for uniform in distance)"),
+        Option("--reference-frequency", type=float, metavar="Hz",
+            help="Shift trigger times from coalescence time to time when GW inspiral has this frequency (default=do not use)"),
+        Option("--keep-going", "-k", default=False, action="store_true",
+            help="Keep processing events if a sky map fails to converge (default=False).")
+    ]
+)
+opts, args = parser.parse_args()
+infilename = command.get_input_filename(parser, args)
+command.check_required_arguments(parser, opts, "f_low", "waveform", "prior_distance_power")
+
+
+#
+# Logging
+#
+
+import logging
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger('BAYESTAR')
+
+# LIGO-LW XML imports.
+from glue.ligolw import utils as ligolw_utils
+
+# BAYESTAR imports.
+from lalinference.bayestar.decorator import memoized
+from lalinference.bayestar import fits
+from lalinference.bayestar import ligolw as ligolw_bayestar
+from lalinference.bayestar import filter
+from lalinference.bayestar import timing
+from lalinference.bayestar import ligolw_sky_map
+
+# Other imports.
+import healpy as hp
+import numpy as np
+
+# Read coinc file.
+log.info('%s:reading input XML file', infilename)
+xmldoc = ligolw_utils.load_filename(infilename)
+
+reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
+
+@memoized
+def reference_psds_for_filename(filename):
+    xmldoc = ligolw_utils.load_filename(filename)
+    psds = ligolw_sky_map.read_psd_xmldoc(xmldoc)
+    return dict(
+        (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
+        for key, psd in psds.iteritems() if psd is not None)
+
+def reference_psd_for_ifo_and_filename(ifo, filename):
+    return reference_psds_for_filename(filename)[ifo]
+
+f_low = opts.f_low
+approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(opts.waveform)
+
+count_sky_maps_failed = 0
+
+# Loop over all coinc_event <-> sim_inspiral coincs.
+for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
+
+    # Look up PSDs
+    log.info('%s:reading PSDs', coinc.coinc_event_id)
+    psds = tuple(
+        reference_psd_for_ifo_and_filename(sngl_inspiral.ifo,
+        reference_psd_filenames_by_process_id[sngl_inspiral.process_id])
+        for sngl_inspiral in sngl_inspirals)
+
+    #
+    # TOA-only sky localization
+    #
+
+    # Time and run sky localization.
+    log.info('%s:computing TOA-only sky map', coinc.coinc_event_id)
+    try:
+        sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
+            sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
+            psds=psds, reference_frequency=opts.reference_frequency,
+            method="toa", nside=opts.nside)
+    except ArithmeticError:
+        log.exception("%s:TOA sky localization failed", coinc.coinc_event_id)
+        count_sky_maps_failed += 1
+        if not opts.keep_going:
+            raise
+    else:
+        log.info('%s:saving TOA-only sky map', coinc.coinc_event_id)
+        fits.write_sky_map('%s.toa.fits.gz' % int(coinc.coinc_event_id),
+            sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
+            creator=parser.prog, runtime=elapsed_time)
+
+
+    #
+    # TOA+SNR sky localization
+    #
+
+    # Time and run sky localization.
+    log.info('%s:computing TOA+SNR sky map', coinc.coinc_event_id)
+    try:
+        sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
+            sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
+            opts.min_distance, opts.max_distance, opts.prior_distance_power, psds=psds,
+            reference_frequency=opts.reference_frequency, method="toa_snr",
+            nside=opts.nside)
+    except ArithmeticError:
+        log.exception("%s:TOA+SNR sky localization failed", coinc.coinc_event_id)
+        count_sky_maps_failed += 1
+        if not opts.keep_going:
+            raise
+    else:
+        log.info('%s:saving TOA+SNR sky map', coinc.coinc_event_id)
+        fits.write_sky_map('%s.toa_snr.fits.gz' % int(coinc.coinc_event_id),
+            sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
+            creator=parser.prog, runtime=elapsed_time)
+
+
+if count_sky_maps_failed > 0:
+    raise RuntimeError("{0} sky maps did not converge".format(count_sky_maps_failed))

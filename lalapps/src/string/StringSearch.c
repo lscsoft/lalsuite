@@ -211,7 +211,7 @@ int main(int argc,char *argv[])
   REAL8FFTPlan *rplan;        /* fft plan */
   REAL8FrequencySeries *Spec; /* average spectrum */
 
-  lalDebugLevel = LALINFO | LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
+  lalDebugLevel = LALINFO | LALWARNING | LALERROR;
 
   /* create the process and process params tables */
   procparams.processParamsTable = NULL;

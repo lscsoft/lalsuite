@@ -85,7 +85,6 @@ strncpy()
 */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/Units.h>
@@ -273,8 +272,7 @@ LALStochasticInverseNoiseCal(
   if (f0 == 0)
   {
     /* set DC channel to zero */
-    hcInvNoise->data->data[0].re = 0;
-    hcInvNoise->data->data[0].im = 0;
+    hcInvNoise->data->data[0] = 0;
     invNoise->data->data[0] = 0;
 
     /* initialize pointers */
@@ -294,7 +292,7 @@ LALStochasticInverseNoiseCal(
 
   for (; sPtrPW < sStopPtr ; ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC)
   {
-    *sPtrIP = (cPtrR->re*cPtrR->re + cPtrR->im*cPtrR->im) / *sPtrPW;
+    *sPtrIP = (crealf(*cPtrR)*crealf(*cPtrR) + cimagf(*cPtrR)*cimagf(*cPtrR)) / *sPtrPW;
   }
 
   DETATCHSTATUSPTR(status);
@@ -485,8 +483,7 @@ LALStochasticInverseNoise(
   if (f0 == 0)
   {
     /* set DC channel to zero */
-    hwInvNoise->data->data[0].re = 0;
-    hwInvNoise->data->data[0].im = 0;
+    hwInvNoise->data->data[0] = 0;
     invNoise->data->data[0] = 0;
 
     /* initialize pointers */
@@ -506,11 +503,11 @@ LALStochasticInverseNoise(
 
   for (; sPtrPW < sStopPtr ; ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC)
   {
-    *sPtrIP = (cPtrR->re*cPtrR->re + cPtrR->im*cPtrR->im) / *sPtrPW;
-    cPtrIPHC->re = cPtrR->re / *sPtrPW;
+    *sPtrIP = (crealf(*cPtrR)*crealf(*cPtrR) + cimagf(*cPtrR)*cimagf(*cPtrR)) / *sPtrPW;
+    *cPtrIPHC = crectf( crealf(*cPtrR) / *sPtrPW,
 
     /* minus sign because of complex conjugate */
-    cPtrIPHC->im = -cPtrR->im / *sPtrPW;
+                        -cimagf(*cPtrR) / *sPtrPW );
   }
 
   DETATCHSTATUSPTR(status);

@@ -685,8 +685,8 @@ int main(int argc, char *argv[])
      f = i*STOCHASTICINVERSENOISETESTC_DELTAF;
 
      wNoise.data->data[i]     = f*f*f;
-     wFilter.data->data[i].re = f*f;
-     wFilter.data->data[i].im = f*f;
+     wFilter.data->data[i].realf_FIXME = f*f;
+     wFilter.data->data[i].imagf_FIXME = f*f;
    }
 
    /* fill inverse noise input and output */
@@ -812,10 +812,10 @@ int main(int argc, char *argv[])
    if (optVerbose)
    {
      printf("1/PHW(0)=%g + %g i, should be 0\n",
-            hwInvNoise.data->data[0].re, hwInvNoise.data->data[0].im);
+            crealf(hwInvNoise.data->data[0]), cimagf(hwInvNoise.data->data[0]));
    }
-   if ( fabs(hwInvNoise.data->data[0].re) > STOCHASTICINVERSENOISETESTC_TOL
-        || fabs(hwInvNoise.data->data[0].im)
+   if ( fabs(crealf(hwInvNoise.data->data[0])) > STOCHASTICINVERSENOISETESTC_TOL
+        || fabs(cimagf(hwInvNoise.data->data[0]))
 	> STOCHASTICINVERSENOISETESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
@@ -834,12 +834,12 @@ int main(int argc, char *argv[])
     if (optVerbose)
     {
       printf("1/PHW(%f Hz)=%g + %g i, should be %g + %g i\n",
-	     f, hwInvNoise.data->data[i].re, hwInvNoise.data->data[i].im,
+	     f, crealf(hwInvNoise.data->data[i]), cimagf(hwInvNoise.data->data[i]),
 	     expectedReal, expectedImag);
     }
-    if (fabs(hwInvNoise.data->data[i].re - expectedReal)/expectedReal
+    if (fabs(crealf(hwInvNoise.data->data[i]) - expectedReal)/expectedReal
 	> STOCHASTICINVERSENOISETESTC_TOL
-	|| fabs(hwInvNoise.data->data[i].im - expectedImag)/expectedImag
+	|| fabs(cimagf(hwInvNoise.data->data[i]) - expectedImag)/expectedImag
 	> STOCHASTICINVERSENOISETESTC_TOL)
     {
       printf("  FAIL: Valid data test\n");

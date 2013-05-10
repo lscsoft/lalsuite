@@ -22,8 +22,10 @@
 
 #include <lal/LALDatatypes.h>
 
-#ifdef __cplusplus
+#ifdef  __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
 /**
@@ -50,15 +52,15 @@ extern const char *lalConfigureDate;
 These constant variables are set at compile time and included into the LAL
 library.  They contain the information about the version of LAL and the
 configuration information.
+      
+*//*@{ */
 
-*/ /*@{*/
+                           /**\name Error Codes *//*@{ */
 
-/**\name Error Codes */ /*@{*/
-
-#define LALVERSIONH_ENULL 1	/**< Null string pointer */
-#define LALVERSIONH_ESIZE 2	/**< Zero string size */
-#define LALVERSIONH_ESPRN 4	/**< Error in snprintf */
-#define LALVERSIONH_ESHRT 8	/**< String too short */
+#define LALVERSIONH_ENULL 1     /**< Null string pointer */
+#define LALVERSIONH_ESIZE 2     /**< Zero string size */
+#define LALVERSIONH_ESPRN 4     /**< Error in snprintf */
+#define LALVERSIONH_ESHRT 8     /**< String too short */
 /*@}*/
 /*@}*/
 
@@ -69,20 +71,21 @@ configuration information.
 
 
 extern const char *const lalVersion;
-extern const int         lalVersionMajor;
-extern const int         lalVersionMinor;
-extern const int         lalVersionMicro;
-extern const int         lalVersionDevel;
+extern const int lalVersionMajor;
+extern const int lalVersionMinor;
+extern const int lalVersionMicro;
+extern const int lalVersionDevel;
 extern const char *const lalBuildDate;
 extern const char *const lalConfigureArgs;
 extern const char *const lalConfigureDate;
 
 
-void
-LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose );
+void LALVersion(LALStatus * status, CHAR * message, UINT4 size,
+                INT4 verbose);
 
-#ifdef __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
-
 #endif /* _LALVERSION_H */

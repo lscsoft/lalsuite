@@ -132,7 +132,7 @@ interpolation of the waveforms will give phases accurate to well
 within a radian.
 
 The output from <tt>LALGenerateTaylorCW()</tt> is then passed to
-<tt>LALSimulateCoherentGW()</tt> to generate an output time series.  If
+<tt>LALPulsarSimulateCoherentGW()</tt> to generate an output time series.  If
 there are multiple lines in \c sourcefile, the procedure is
 repeated and the new waveforms added into the output.  A warning is
 generated if the wave frequency exceeds the Nyquist rate for the
@@ -175,7 +175,7 @@ output time series.
 #include <lal/VectorOps.h>
 #include <lal/DetectorSite.h>
 #include <lal/Units.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
@@ -304,7 +304,7 @@ main(int argc, char **argv)
   /* Other variables. */
   UINT4 i, j;                /* generic indecies */
   INT8 tStart, tStop;        /* start and stop times for waveform */
-  DetectorResponse detector; /* the detector in question */
+  PulsarDetectorResponse detector; /* the detector in question */
   REAL4TimeSeries output;    /* detector output */
 
   lalDebugLevel = 0;
@@ -447,7 +447,7 @@ main(int argc, char **argv)
 
 
   /* Set up detector structure. */
-  memset( &detector, 0, sizeof(DetectorResponse) );
+  memset( &detector, 0, sizeof(PulsarDetectorResponse) );
   detector.transfer = (COMPLEX8FrequencySeries *)
     LALMalloc( sizeof(COMPLEX8FrequencySeries) );
   if ( !(detector.transfer) ) {
@@ -497,8 +497,8 @@ main(int argc, char **argv)
     /* Convert response function to a transfer function. */
     SUB( LALCCreateVector( &stat, &unity, response->length ), &stat );
     for ( i = 0; i < response->length; i++ ) {
-      unity->data[i].re = 1.0;
-      unity->data[i].im = 0.0;
+      unity->data[i].realf_FIXME = 1.0;
+      unity->data[i].imagf_FIXME = 0.0;
     }
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ),
                            response->length ), &stat );
@@ -514,10 +514,10 @@ main(int argc, char **argv)
     detector.transfer->deltaF = FSTOP;
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ), 2 ),
          &stat );
-    detector.transfer->data->data[0].re = 1.0;
-    detector.transfer->data->data[1].re = 1.0;
-    detector.transfer->data->data[0].im = 0.0;
-    detector.transfer->data->data[1].im = 0.0;
+    detector.transfer->data->data[0].realf_FIXME = 1.0;
+    detector.transfer->data->data[1].realf_FIXME = 1.0;
+    detector.transfer->data->data[0].imagf_FIXME = 0.0;
+    detector.transfer->data->data[1].imagf_FIXME = 0.0;
   }
   if ( site ) {
     /* Set detector location. */
@@ -594,12 +594,12 @@ main(int argc, char **argv)
   /* For each line in the sourcefile... */
   while ( ok ) {
     TaylorCWParamStruc params; /* wave generation parameters */
-    CoherentGW waveform;       /* amplitude and phase structure */
+    PulsarCoherentGW waveform;       /* amplitude and phase structure */
     REAL4TimeSeries signalvec;    /* GW signal */
     CHAR message[MSGLEN];      /* warning/info messages */
 
     /* Initialize output structures. */
-    memset( &waveform, 0, sizeof(CoherentGW) );
+    memset( &waveform, 0, sizeof(PulsarCoherentGW) );
     signalvec = output;
     signalvec.data = NULL;
 
@@ -702,7 +702,7 @@ main(int argc, char **argv)
         WARNING( message );
       }
       SUB( LALSCreateVector( &stat, &(signalvec.data), npt ), &stat );
-      SUB( LALSimulateCoherentGW( &stat, &signalvec, &waveform,
+      SUB( LALPulsarSimulateCoherentGW( &stat, &signalvec, &waveform,
 				  &detector ), &stat );
       if ( params.f )
 	SUB( LALDDestroyVector( &stat, &(params.f) ), &stat );

@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 lalinspiralincludedir = $(includedir)/lal
 lalinspiralinclude_HEADERS = \
@@ -205,6 +205,7 @@ liblalinspiral_la_SOURCES = \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \
+	Playground.c \
 	RingUtils.c \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \

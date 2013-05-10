@@ -41,121 +41,127 @@
 /* Prints an error message if error printing is enabled by lalDebugLevel. */
 int XLALVPrintError(const char *fmt, va_list ap)
 {
-	return (lalDebugLevel & LALERROR) ?  vfprintf(stderr, fmt, ap) : 0;
+    return (lalDebugLevel & LALERROR) ? vfprintf(stderr, fmt, ap) : 0;
 }
 
 /* Prints a warning message if warning printing is enabled by lalDebugLevel. */
 int XLALVPrintWarning(const char *fmt, va_list ap)
 {
-	return (lalDebugLevel & LALWARNING) ?  vfprintf(stderr, fmt, ap) : 0;
+    return (lalDebugLevel & LALWARNING) ? vfprintf(stderr, fmt, ap) : 0;
 }
 
 /* Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALVPrintInfo(const char *fmt, va_list ap)
 {
-	return (lalDebugLevel & LALINFO) ?  vfprintf(stderr, fmt, ap) : 0;
+    return (lalDebugLevel & LALINFO) ? vfprintf(stderr, fmt, ap) : 0;
 }
 
 /* Prints an error message if error printing is enabled by lalDebugLevel. */
 int XLALPrintError(const char *fmt, ...)
 {
-	int n = 0;
-	va_list ap;
-	va_start(ap, fmt);
-	n = XLALVPrintError(fmt, ap);
-	return n;
+    int n = 0;
+    va_list ap;
+    va_start(ap, fmt);
+    n = XLALVPrintError(fmt, ap);
+    return n;
 }
 
 /* Prints a warning message if warning printing is enabled by lalDebugLevel. */
 int XLALPrintWarning(const char *fmt, ...)
 {
-	int n = 0;
-	va_list ap;
-	va_start(ap, fmt);
-	n = XLALVPrintWarning(fmt, ap);
-	va_end(ap);
-	return n;
+    int n = 0;
+    va_list ap;
+    va_start(ap, fmt);
+    n = XLALVPrintWarning(fmt, ap);
+    va_end(ap);
+    return n;
 }
 
 /* Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALPrintInfo(const char *fmt, ...)
 {
-	int n = 0;
-	va_list ap;
-	va_start(ap, fmt);
-	n = XLALVPrintInfo(fmt, ap);
-	va_end(ap);
-	return n;
+    int n = 0;
+    va_list ap;
+    va_start(ap, fmt);
+    n = XLALVPrintInfo(fmt, ap);
+    va_end(ap);
+    return n;
 }
 
 /*
  * Prints a standard-formatted error message
  * (if error printing is enabled by lalDebugLevel).
  */
-void XLALVPrintErrorMessage(const char *func, const char *file, int line, const char *fmt, va_list ap)
+void XLALVPrintErrorMessage(const char *func, const char *file, int line,
+                            const char *fmt, va_list ap)
 {
-	XLALPrintError("XLAL Error");
-	if (func && *func)
-		XLALPrintError(" - %s", func);
-	if (file && *file)
-		XLALPrintError(" (%s:%d)", file, line);
-	XLALPrintError(": ");
-	XLALVPrintError(fmt, ap);
-	XLALPrintError("\n");
-	return;
+    XLALPrintError("XLAL Error");
+    if (func && *func)
+        XLALPrintError(" - %s", func);
+    if (file && *file)
+        XLALPrintError(" (%s:%d)", file, line);
+    XLALPrintError(": ");
+    XLALVPrintError(fmt, ap);
+    XLALPrintError("\n");
+    return;
 }
 
-void XLALVPrintWarningMessage(const char *func, const char *file, int line, const char *fmt, va_list ap)
+void XLALVPrintWarningMessage(const char *func, const char *file, int line,
+                              const char *fmt, va_list ap)
 {
-	XLALPrintWarning("XLAL Warning");
-	if (func && *func)
-		XLALPrintWarning(" - %s", func);
-	if (file && *file)
-		XLALPrintWarning(" (%s:%d)", file, line);
-	XLALPrintWarning(": ");
-	XLALVPrintWarning(fmt, ap);
-	XLALPrintWarning("\n");
-	return;
+    XLALPrintWarning("XLAL Warning");
+    if (func && *func)
+        XLALPrintWarning(" - %s", func);
+    if (file && *file)
+        XLALPrintWarning(" (%s:%d)", file, line);
+    XLALPrintWarning(": ");
+    XLALVPrintWarning(fmt, ap);
+    XLALPrintWarning("\n");
+    return;
 }
 
-void XLALVPrintInfoMessage(const char *func, const char *file, int line, const char *fmt, va_list ap)
+void XLALVPrintInfoMessage(const char *func, const char *file, int line,
+                           const char *fmt, va_list ap)
 {
-	XLALPrintInfo("XLAL Info");
-	if (func && *func)
-		XLALPrintInfo(" - %s", func);
-	if (file && *file)
-		XLALPrintInfo(" (%s:%d)", file, line);
-	XLALPrintInfo(": ");
-	XLALVPrintInfo(fmt, ap);
-	XLALPrintInfo("\n");
-	return;
+    XLALPrintInfo("XLAL Info");
+    if (func && *func)
+        XLALPrintInfo(" - %s", func);
+    if (file && *file)
+        XLALPrintInfo(" (%s:%d)", file, line);
+    XLALPrintInfo(": ");
+    XLALVPrintInfo(fmt, ap);
+    XLALPrintInfo("\n");
+    return;
 }
 
-void XLALPrintErrorMessage(const char *func, const char *file, int line, const char *fmt, ...)
+void XLALPrintErrorMessage(const char *func, const char *file, int line,
+                           const char *fmt, ...)
 {
-	va_list ap;
-	va_start(ap, fmt);
-	XLALVPrintErrorMessage(func, file, line, fmt, ap);
-	va_end(ap);
-	return;
+    va_list ap;
+    va_start(ap, fmt);
+    XLALVPrintErrorMessage(func, file, line, fmt, ap);
+    va_end(ap);
+    return;
 }
 
-void XLALPrintWarningMessage(const char *func, const char *file, int line, const char *fmt, ...)
+void XLALPrintWarningMessage(const char *func, const char *file, int line,
+                             const char *fmt, ...)
 {
-	va_list ap;
-	va_start(ap, fmt);
-	XLALVPrintWarningMessage(func, file, line, fmt, ap);
-	va_end(ap);
-	return;
+    va_list ap;
+    va_start(ap, fmt);
+    XLALVPrintWarningMessage(func, file, line, fmt, ap);
+    va_end(ap);
+    return;
 }
 
-void XLALPrintInfoMessage(const char *func, const char *file, int line, const char *fmt, ...)
+void XLALPrintInfoMessage(const char *func, const char *file, int line,
+                          const char *fmt, ...)
 {
-	va_list ap;
-	va_start(ap, fmt);
-	XLALVPrintInfoMessage(func, file, line, fmt, ap);
-	va_end(ap);
-	return;
+    va_list ap;
+    va_start(ap, fmt);
+    XLALVPrintInfoMessage(func, file, line, fmt, ap);
+    va_end(ap);
+    return;
 }
 
 
@@ -165,14 +171,17 @@ void XLALPrintInfoMessage(const char *func, const char *file, int line, const ch
  */
 int XLALPrintProgressBar(double fraction)
 {
-	static const char mrk[] =
-		"+++++++++++++++++++++++++++++++++++++++++++++++++)";
-	static const char spc[] =
-		"-------------------------------------------------)";
-	int l = sizeof(mrk) / sizeof(*mrk) - 1;
-	int offset = floor((fraction < 0.0 ? 0.0 : fraction > 1.0 ? 1.0 : fraction) * l + 0.5);
+    static const char mrk[] =
+        "+++++++++++++++++++++++++++++++++++++++++++++++++)";
+    static const char spc[] =
+        "-------------------------------------------------)";
+    int l = sizeof(mrk) / sizeof(*mrk) - 1;
+    int offset =
+        floor((fraction < 0.0 ? 0.0 : fraction >
+               1.0 ? 1.0 : fraction) * l + 0.5);
 
-	return XLALPrintInfo("[%s%s %.1f%%", mrk + l - offset, spc + offset, 100.0 * fraction);
+    return XLALPrintInfo("[%s%s %.1f%%", mrk + l - offset, spc + offset,
+                         100.0 * fraction);
 }
 
 /*
@@ -181,7 +190,10 @@ int XLALPrintProgressBar(double fraction)
 
 int XLALPrintDeprecationWarning(const char *old, const char *replacement)
 {
-	return XLALPrintWarning ("DEPRECATION WARNING:  program has invoked obsolete function %s().  Please see %s() for information about a replacement.\n", old, replacement);
+    return
+        XLALPrintWarning
+        ("DEPRECATION WARNING:  program has invoked obsolete function %s().  Please see %s() for information about a replacement.\n",
+         old, replacement);
 }
 
 
@@ -192,7 +204,7 @@ int XLALPrintDeprecationWarning(const char *old, const char *replacement)
  *
  */
 
-#ifndef LAL_PTHREAD_LOCK  /* non-pthread-safe code */
+#ifndef LAL_PTHREAD_LOCK        /* non-pthread-safe code */
 
 /* XLAL error number is just a global variable */
 int xlalErrnoGlobal = 0;
@@ -200,7 +212,7 @@ int xlalErrnoGlobal = 0;
 /* XLALGetErrnoPtr just returns the address of the global variable */
 int *XLALGetErrnoPtr(void)
 {
-	return &xlalErrnoGlobal;
+    return &xlalErrnoGlobal;
 }
 
 /* XLAL error handler is just a global variable */
@@ -209,7 +221,7 @@ XLALErrorHandlerType *xlalErrorHandlerGlobal = NULL;
 /* XLALGetErrorHandlerPtr just returns the address of the global variable */
 XLALErrorHandlerType **XLALGetErrorHandlerPtr(void)
 {
-	return &xlalErrorHandlerGlobal;
+    return &xlalErrorHandlerGlobal;
 }
 
 #else /* pthread safe code */
@@ -230,76 +242,80 @@ pthread_once_t xlalErrorHandlerKeyOnce = PTHREAD_ONCE_INIT;
 /* routine to free the XLAL error number pointer */
 static void XLALDestroyErrnoPtr(void *xlalErrnoPtr)
 {
-	free(xlalErrnoPtr);
-	return;
+    free(xlalErrnoPtr);
+    return;
 }
 
 /* routine to free the XLAL error handler pointer */
 static void XLALDestroyErrorHandlerPtr(void *xlalErrorHandlerPtr)
 {
-	free(xlalErrorHandlerPtr);
-	return;
+    free(xlalErrorHandlerPtr);
+    return;
 }
 
 /* routine to create the XLAL error number key */
 static void XLALCreateErrnoKey(void)
 {
-	pthread_key_create(&xlalErrnoKey, XLALDestroyErrnoPtr);
-	return;
+    pthread_key_create(&xlalErrnoKey, XLALDestroyErrnoPtr);
+    return;
 }
 
 /* routine to create the XLAL error handler key */
 static void XLALCreateErrorHandlerKey(void)
 {
-	pthread_key_create(&xlalErrorHandlerKey, XLALDestroyErrorHandlerPtr);
-	return;
+    pthread_key_create(&xlalErrorHandlerKey, XLALDestroyErrorHandlerPtr);
+    return;
 }
 
 /* return the pointer to the XLAL error number in this thread */
 int *XLALGetErrnoPtr(void)
 {
-	int *xlalErrnoPtr;
+    int *xlalErrnoPtr;
 
-	/* create key on the first call only */
-	pthread_once(&xlalErrnoKeyOnce, XLALCreateErrnoKey);
+    /* create key on the first call only */
+    pthread_once(&xlalErrnoKeyOnce, XLALCreateErrnoKey);
 
-	/* get the pointer to the XLAL error number in this thread */
-	xlalErrnoPtr = pthread_getspecific(xlalErrnoKey);
-	if (!xlalErrnoPtr) {  /* haven't allocated pointer yet... do it now */
-		xlalErrnoPtr = malloc(sizeof(*xlalErrnoPtr));
-		if (!xlalErrnoPtr)
-			lalAbortHook("could not set xlal error number: malloc failed\n");
-		*xlalErrnoPtr = 0;  /* raises segv if memory allocation fails */
-		/* now set the value of the pointer in this thread in the key */
-		if (pthread_setspecific(xlalErrnoKey, xlalErrnoPtr))
-			lalAbortHook("could not set xlal error number: pthread_setspecific failed\n");
-	}
-	return xlalErrnoPtr;
+    /* get the pointer to the XLAL error number in this thread */
+    xlalErrnoPtr = pthread_getspecific(xlalErrnoKey);
+    if (!xlalErrnoPtr) {        /* haven't allocated pointer yet... do it now */
+        xlalErrnoPtr = malloc(sizeof(*xlalErrnoPtr));
+        if (!xlalErrnoPtr)
+            lalAbortHook
+                ("could not set xlal error number: malloc failed\n");
+        *xlalErrnoPtr = 0;      /* raises segv if memory allocation fails */
+        /* now set the value of the pointer in this thread in the key */
+        if (pthread_setspecific(xlalErrnoKey, xlalErrnoPtr))
+            lalAbortHook
+                ("could not set xlal error number: pthread_setspecific failed\n");
+    }
+    return xlalErrnoPtr;
 }
 
 /* return the pointer to the XLAL error handler in this thread */
 XLALErrorHandlerType **XLALGetErrorHandlerPtr(void)
 {
-	XLALErrorHandlerType **xlalErrorHandlerPtr;
+    XLALErrorHandlerType **xlalErrorHandlerPtr;
 
-	/* create key on the first call only */
-	pthread_once(&xlalErrorHandlerKeyOnce, XLALCreateErrorHandlerKey);
+    /* create key on the first call only */
+    pthread_once(&xlalErrorHandlerKeyOnce, XLALCreateErrorHandlerKey);
 
-	/* get the pointer to the XLAL error handler in this thread */
-	xlalErrorHandlerPtr = pthread_getspecific(xlalErrorHandlerKey);
-	if (!xlalErrorHandlerPtr) { /* haven't allocated pointer yet... do it now */
-		xlalErrorHandlerPtr = malloc(sizeof(*xlalErrorHandlerPtr));
-		if (!xlalErrorHandlerPtr)
-			lalAbortHook("could not set xlal error handler: malloc failed\n");
-		*xlalErrorHandlerPtr = NULL; /* raises segv if memory allocation fails */
-		/* now set the value of the pointer in this thread in the key */
-		if (pthread_setspecific(xlalErrorHandlerKey, xlalErrorHandlerPtr))
-			lalAbortHook("could not set xlal error handler: pthread_setspecific failed\n");
-	}
-	return xlalErrorHandlerPtr;
+    /* get the pointer to the XLAL error handler in this thread */
+    xlalErrorHandlerPtr = pthread_getspecific(xlalErrorHandlerKey);
+    if (!xlalErrorHandlerPtr) { /* haven't allocated pointer yet... do it now */
+        xlalErrorHandlerPtr = malloc(sizeof(*xlalErrorHandlerPtr));
+        if (!xlalErrorHandlerPtr)
+            lalAbortHook
+                ("could not set xlal error handler: malloc failed\n");
+        *xlalErrorHandlerPtr = NULL;    /* raises segv if memory allocation fails */
+        /* now set the value of the pointer in this thread in the key */
+        if (pthread_setspecific(xlalErrorHandlerKey, xlalErrorHandlerPtr))
+            lalAbortHook
+                ("could not set xlal error handler: pthread_setspecific failed\n");
+    }
+    return xlalErrorHandlerPtr;
 }
 
-#endif  /* end of pthread-safe code */
+#endif /* end of pthread-safe code */
 
 
 /*
@@ -312,73 +328,75 @@ XLALErrorHandlerType **XLALGetErrorHandlerPtr(void)
 /* Set the XLAL error number to errnum. */
 int XLALSetErrno(int errnum)
 {
-	if (errnum == 0) {
-		xlalErrno = 0;
-		return xlalErrno;
-	}
+    if (errnum == 0) {
+        xlalErrno = 0;
+        return xlalErrno;
+    }
 
-	/*
-	 * if this is an error indicating an internal error then set the bit
-	 * that indicates this; otherwise, xlalErrno should presumably be zero
-	 */
-	if (errnum & XLAL_EFUNC) {
-		xlalErrno |= XLAL_EFUNC; /* make sure XLAL_EFUNC bit is set */
-		return xlalErrno;
-	}
+    /*
+     * if this is an error indicating an internal error then set the bit
+     * that indicates this; otherwise, xlalErrno should presumably be zero
+     */
+    if (errnum & XLAL_EFUNC) {
+        xlalErrno |= XLAL_EFUNC;        /* make sure XLAL_EFUNC bit is set */
+        return xlalErrno;
+    }
 
-	/*
-	 * if xlalErrno is not zero, probably forgot to deal with previous
- 	 * error
-	 */
-	if (xlalErrno)
-		XLAL_PRINT_WARNING("Ignoring previous error (xlalErrno=%d) %s\n", xlalErrno, XLALErrorString(xlalErrno));
-	xlalErrno = errnum;
-	return xlalErrno;
+    /*
+     * if xlalErrno is not zero, probably forgot to deal with previous
+     * error
+     */
+    if (xlalErrno)
+        XLAL_PRINT_WARNING("Ignoring previous error (xlalErrno=%d) %s\n",
+                           xlalErrno, XLALErrorString(xlalErrno));
+    xlalErrno = errnum;
+    return xlalErrno;
 }
 
 
 /* Gets the basic error number ignoring the internal-function-failed flag. */
 int XLALGetBaseErrno(void)
 {
-	return xlalErrno & ~XLAL_EFUNC;
+    return xlalErrno & ~XLAL_EFUNC;
 }
 
 
 /* Clears the XLAL error number. */
 int XLALClearErrno(void)
 {
-	int olderrno = xlalErrno;
-	xlalErrno = 0;
-	return olderrno;
+    int olderrno = xlalErrno;
+    xlalErrno = 0;
+    return olderrno;
 }
 
 
 /* Set the XLAL error handler to newHandler; return the old handler. */
-XLALErrorHandlerType *XLALSetErrorHandler(XLALErrorHandlerType *newHandler)
+XLALErrorHandlerType *XLALSetErrorHandler(XLALErrorHandlerType *
+                                          newHandler)
 {
-	XLALErrorHandlerType *oldHandler;
-	oldHandler = XLALErrorHandler;
-	XLALErrorHandler = newHandler;
-	return oldHandler;
+    XLALErrorHandlerType *oldHandler;
+    oldHandler = XLALErrorHandler;
+    XLALErrorHandler = newHandler;
+    return oldHandler;
 }
 
 
 /* Set the XLAL error handler to the default handler; return the old handler.  */
 XLALErrorHandlerType *XLALSetDefaultErrorHandler(void)
 {
-	XLALErrorHandlerType *oldHandler;
-	oldHandler = XLALErrorHandler;
-	XLALErrorHandler = XLALDefaultErrorHandler;
-	return oldHandler;
+    XLALErrorHandlerType *oldHandler;
+    oldHandler = XLALErrorHandler;
+    XLALErrorHandler = XLALDefaultErrorHandler;
+    return oldHandler;
 }
 
 /* Set the XLAL error handler to a silent handler; return the old handler. */
 XLALErrorHandlerType *XLALSetSilentErrorHandler(void)
 {
-	XLALErrorHandlerType *oldHandler;
-	oldHandler = XLALErrorHandler;
-	XLALErrorHandler = XLALSilentErrorHandler;
-	return oldHandler;
+    XLALErrorHandlerType *oldHandler;
+    oldHandler = XLALErrorHandler;
+    XLALErrorHandler = XLALSilentErrorHandler;
+    return oldHandler;
 }
 
 
@@ -393,142 +411,143 @@ XLALErrorHandlerType *XLALSetSilentErrorHandler(void)
 const char *XLALErrorString(int code)
 {
 
-	if (code <= 0) { /* this is a return code, not an error number */
-		if (code == 0)
-			return "Success";
-		else if (code == -1)
-			return "Failure";
-		else
-			return "Unknown return code";
-	}
+    if (code <= 0) {    /* this is a return code, not an error number */
+        if (code == 0)
+            return "Success";
+        else if (code == -1)
+            return "Failure";
+        else
+            return "Unknown return code";
+    }
 
-	/* check to see if an internal function call has failed, but the error
-	 * number was not "or"ed against the mask XLAL_EFUNC */
-	if (code == XLAL_EFUNC)
-		return "Internal function call failed";
+    /* check to see if an internal function call has failed, but the error
+     * number was not "or"ed against the mask XLAL_EFUNC */
+    if (code == XLAL_EFUNC)
+        return "Internal function call failed";
 
-	/* use this to report error strings... deals with possible mask for
- 	 * errors arising from internal function calls */
+    /* use this to report error strings... deals with possible mask for
+     * errors arising from internal function calls */
 # define XLAL_ERROR_STRING(s) \
     ( ( code & XLAL_EFUNC ) ? "Internal function call failed: " s : s )
-	switch (code & ~XLAL_EFUNC) {
-		/* these are standard error numbers */
-	case XLAL_EIO:
-		return XLAL_ERROR_STRING("I/O error");
-	case XLAL_ENOMEM:
-		return XLAL_ERROR_STRING("Memory allocation error");
-	case XLAL_EFAULT:
-		return XLAL_ERROR_STRING("Invalid pointer");
-	case XLAL_EINVAL:
-		return XLAL_ERROR_STRING("Invalid argument");
-	case XLAL_EDOM:
-		return XLAL_ERROR_STRING("Input domain error");
-	case XLAL_ERANGE:
-		return XLAL_ERROR_STRING("Output range error");
+    switch (code & ~XLAL_EFUNC) {
+        /* these are standard error numbers */
+    case XLAL_EIO:
+        return XLAL_ERROR_STRING("I/O error");
+    case XLAL_ENOMEM:
+        return XLAL_ERROR_STRING("Memory allocation error");
+    case XLAL_EFAULT:
+        return XLAL_ERROR_STRING("Invalid pointer");
+    case XLAL_EINVAL:
+        return XLAL_ERROR_STRING("Invalid argument");
+    case XLAL_EDOM:
+        return XLAL_ERROR_STRING("Input domain error");
+    case XLAL_ERANGE:
+        return XLAL_ERROR_STRING("Output range error");
 
-	/* extended error numbers start at 128 ...
-	 * should be beyond normal errnos */
+        /* extended error numbers start at 128 ...
+         * should be beyond normal errnos */
 
-	/* these are common errors for XLAL functions */
-	case XLAL_EFAILED:
-		return XLAL_ERROR_STRING("Generic failure");
-	case XLAL_EBADLEN:
-		return XLAL_ERROR_STRING("Inconsistent or invalid vector length");
-	case XLAL_ESIZE:
-		return XLAL_ERROR_STRING("Wrong size");
-	case XLAL_EDIMS:
-		return XLAL_ERROR_STRING("Wrong dimensions");
-	case XLAL_ETYPE:
-		return XLAL_ERROR_STRING("Wrong or unknown type");
-	case XLAL_ETIME:
-		return XLAL_ERROR_STRING("Invalid time");
-	case XLAL_EFREQ:
-		return XLAL_ERROR_STRING("Invalid freqency");
-	case XLAL_EUNIT:
-		return XLAL_ERROR_STRING("Invalid units");
-	case XLAL_ENAME:
-		return XLAL_ERROR_STRING("Wrong name");
-	case XLAL_EDATA:
-		return XLAL_ERROR_STRING("Invalid data");
+        /* these are common errors for XLAL functions */
+    case XLAL_EFAILED:
+        return XLAL_ERROR_STRING("Generic failure");
+    case XLAL_EBADLEN:
+        return XLAL_ERROR_STRING("Inconsistent or invalid vector length");
+    case XLAL_ESIZE:
+        return XLAL_ERROR_STRING("Wrong size");
+    case XLAL_EDIMS:
+        return XLAL_ERROR_STRING("Wrong dimensions");
+    case XLAL_ETYPE:
+        return XLAL_ERROR_STRING("Wrong or unknown type");
+    case XLAL_ETIME:
+        return XLAL_ERROR_STRING("Invalid time");
+    case XLAL_EFREQ:
+        return XLAL_ERROR_STRING("Invalid freqency");
+    case XLAL_EUNIT:
+        return XLAL_ERROR_STRING("Invalid units");
+    case XLAL_ENAME:
+        return XLAL_ERROR_STRING("Wrong name");
+    case XLAL_EDATA:
+        return XLAL_ERROR_STRING("Invalid data");
 
-	/* user-defined errors */
-	case XLAL_EUSR0:
-		return XLAL_ERROR_STRING("User-defined error 0");
-	case XLAL_EUSR1:
-		return XLAL_ERROR_STRING("User-defined error 1");
-	case XLAL_EUSR2:
-		return XLAL_ERROR_STRING("User-defined error 2");
-	case XLAL_EUSR3:
-		return XLAL_ERROR_STRING("User-defined error 3");
-	case XLAL_EUSR4:
-		return XLAL_ERROR_STRING("User-defined error 4");
-	case XLAL_EUSR5:
-		return XLAL_ERROR_STRING("User-defined error 5");
-	case XLAL_EUSR6:
-		return XLAL_ERROR_STRING("User-defined error 6");
-	case XLAL_EUSR7:
-		return XLAL_ERROR_STRING("User-defined error 7");
-	case XLAL_EUSR8:
-		return XLAL_ERROR_STRING("User-defined error 8");
-	case XLAL_EUSR9:
-		return XLAL_ERROR_STRING("User-defined error 9");
+        /* user-defined errors */
+    case XLAL_EUSR0:
+        return XLAL_ERROR_STRING("User-defined error 0");
+    case XLAL_EUSR1:
+        return XLAL_ERROR_STRING("User-defined error 1");
+    case XLAL_EUSR2:
+        return XLAL_ERROR_STRING("User-defined error 2");
+    case XLAL_EUSR3:
+        return XLAL_ERROR_STRING("User-defined error 3");
+    case XLAL_EUSR4:
+        return XLAL_ERROR_STRING("User-defined error 4");
+    case XLAL_EUSR5:
+        return XLAL_ERROR_STRING("User-defined error 5");
+    case XLAL_EUSR6:
+        return XLAL_ERROR_STRING("User-defined error 6");
+    case XLAL_EUSR7:
+        return XLAL_ERROR_STRING("User-defined error 7");
+    case XLAL_EUSR8:
+        return XLAL_ERROR_STRING("User-defined error 8");
+    case XLAL_EUSR9:
+        return XLAL_ERROR_STRING("User-defined error 9");
 
-	/* external or internal errors */
-	case XLAL_ESYS:
-		return XLAL_ERROR_STRING("System error");
-	case XLAL_EERR:
-		return XLAL_ERROR_STRING("Internal error");
+        /* external or internal errors */
+    case XLAL_ESYS:
+        return XLAL_ERROR_STRING("System error");
+    case XLAL_EERR:
+        return XLAL_ERROR_STRING("Internal error");
 
-	/* specific mathematical and numerical errors start at 256 */
+        /* specific mathematical and numerical errors start at 256 */
 
-	/* IEEE floating point errors */
-	case XLAL_EFPINVAL:
-		return
-			XLAL_ERROR_STRING("Invalid floating point operation, eg sqrt(-1), 0/0");
-	case XLAL_EFPDIV0:
-		return XLAL_ERROR_STRING("Division by zero floating point error");
-	case XLAL_EFPOVRFLW:
-		return XLAL_ERROR_STRING("Floating point overflow error");
-	case XLAL_EFPUNDFLW:
-		return XLAL_ERROR_STRING("Floating point underflow error");
-	case XLAL_EFPINEXCT:
-		return XLAL_ERROR_STRING("Floating point inexact error");
+        /* IEEE floating point errors */
+    case XLAL_EFPINVAL:
+        return
+            XLAL_ERROR_STRING
+            ("Invalid floating point operation, eg sqrt(-1), 0/0");
+    case XLAL_EFPDIV0:
+        return XLAL_ERROR_STRING("Division by zero floating point error");
+    case XLAL_EFPOVRFLW:
+        return XLAL_ERROR_STRING("Floating point overflow error");
+    case XLAL_EFPUNDFLW:
+        return XLAL_ERROR_STRING("Floating point underflow error");
+    case XLAL_EFPINEXCT:
+        return XLAL_ERROR_STRING("Floating point inexact error");
 
-	/* numerical algorithm errors */
-	case XLAL_EMAXITER:
-		return XLAL_ERROR_STRING("Exceeded maximum number of iterations");
-	case XLAL_EDIVERGE:
-		return XLAL_ERROR_STRING("Series is diverging");
-	case XLAL_ESING:
-		return XLAL_ERROR_STRING("Apparent singularity detected");
-	case XLAL_ETOL:
-		return XLAL_ERROR_STRING("Failed to reach specified tolerance");
-	case XLAL_ELOSS:
-		return XLAL_ERROR_STRING("Loss of accuracy");
+        /* numerical algorithm errors */
+    case XLAL_EMAXITER:
+        return XLAL_ERROR_STRING("Exceeded maximum number of iterations");
+    case XLAL_EDIVERGE:
+        return XLAL_ERROR_STRING("Series is diverging");
+    case XLAL_ESING:
+        return XLAL_ERROR_STRING("Apparent singularity detected");
+    case XLAL_ETOL:
+        return XLAL_ERROR_STRING("Failed to reach specified tolerance");
+    case XLAL_ELOSS:
+        return XLAL_ERROR_STRING("Loss of accuracy");
 
-	/* unrecognized error number */
-	default:
-		return "Unknown error";
-	}
+        /* unrecognized error number */
+    default:
+        return "Unknown error";
+    }
 # undef XLAL_ERROR_STRING
-	return NULL;				/* impossible to get here */
+    return NULL;        /* impossible to get here */
 }
 
 /* Print an error message associated with an error number or return code. */
 void XLALPerror(const char *func, const char *file, int line, int code)
 {
-	if (code > 0)
-		XLALPrintError("XLAL Error");
-	else
-		XLALPrintError("XLAL Result");
-	if (func && *func)
-		XLALPrintError(" - %s", func);
-	if (file && *file)
-		XLALPrintError(" (%s:%d)", file, line);
-	XLALPrintError(": ");
-	XLALPrintError(XLALErrorString(code));
-	XLALPrintError("\n");
-	return;
+    if (code > 0)
+        XLALPrintError("XLAL Error");
+    else
+        XLALPrintError("XLAL Result");
+    if (func && *func)
+        XLALPrintError(" - %s", func);
+    if (file && *file)
+        XLALPrintError(" (%s:%d)", file, line);
+    XLALPrintError(": ");
+    XLALPrintError(XLALErrorString(code));
+    XLALPrintError("\n");
+    return;
 }
 
 
@@ -539,16 +558,19 @@ void XLALPerror(const char *func, const char *file, int line, int code)
  */
 
 /* Default XLAL error handler */
-void XLALDefaultErrorHandler(const char *func, const char *file, int line, int errnum)
+void XLALDefaultErrorHandler(const char *func, const char *file, int line,
+                             int errnum)
 {
-	XLALPerror(func, file, line, errnum);
-	return;
+    XLALPerror(func, file, line, errnum);
+    return;
 }
 
 /* Silent XLAL error handler */
-void XLALSilentErrorHandler(const char UNUSED * func, const char UNUSED * file, int UNUSED line, int UNUSED errnum)
+void XLALSilentErrorHandler(const char UNUSED * func,
+                            const char UNUSED * file, int UNUSED line,
+                            int UNUSED errnum)
 {
-	return;
+    return;
 }
 
 
@@ -559,11 +581,11 @@ void XLALSilentErrorHandler(const char UNUSED * func, const char UNUSED * file, 
  */
 void XLALError(const char *func, const char *file, int line, int errnum)
 {
-	XLALSetErrno(errnum);
-	if (!XLALErrorHandler)
-		XLALErrorHandler = XLALDefaultErrorHandler;
-	XLALErrorHandler(func, file, line, xlalErrno);
-	return;
+    XLALSetErrno(errnum);
+    if (!XLALErrorHandler)
+        XLALErrorHandler = XLALDefaultErrorHandler;
+    XLALErrorHandler(func, file, line, xlalErrno);
+    return;
 }
 
 
@@ -574,26 +596,29 @@ void XLALError(const char *func, const char *file, int line, int errnum)
  */
 
 /* XLAL error handler to abort on error. */
-void XLALAbortErrorHandler(const char *func, const char *file, int line, int errnum)
+void XLALAbortErrorHandler(const char *func, const char *file, int line,
+                           int errnum)
 {
-	XLALPerror(func, file, line, errnum);
-	abort();
+    XLALPerror(func, file, line, errnum);
+    abort();
 }
 
 /* XLAL error handler to exit on error. */
-void XLALExitErrorHandler(const char *func, const char *file, int line, int errnum)
+void XLALExitErrorHandler(const char *func, const char *file, int line,
+                          int errnum)
 {
-	XLALPerror(func, file, line, errnum);
-	exit(1);
+    XLALPerror(func, file, line, errnum);
+    exit(1);
 }
 
 static int print_stack(void);
 /* XLAL error handler to abort on error and print a backtrace (if possible). */
-void XLALBacktraceErrorHandler(const char *func, const char *file, int line, int errnum)
+void XLALBacktraceErrorHandler(const char *func, const char *file,
+                               int line, int errnum)
 {
-	XLALPerror(func, file, line, errnum);
-	print_stack();
-	abort();
+    XLALPerror(func, file, line, errnum);
+    print_stack();
+    abort();
 }
 
 /*
@@ -614,12 +639,12 @@ void XLALBacktraceErrorHandler(const char *func, const char *file, int line, int
 
 static int print_stack(void)
 {
-	void *array[LEVELMAX];
-	size_t size;
-	size = backtrace(array, LEVELMAX);
-	fprintf(stderr, "Call list:\n");
-	backtrace_symbols_fd(array, size, fileno(stderr));
-	return 0;
+    void *array[LEVELMAX];
+    size_t size;
+    size = backtrace(array, LEVELMAX);
+    fprintf(stderr, "Call list:\n");
+    backtrace_symbols_fd(array, size, fileno(stderr));
+    return 0;
 }
 
 #else
@@ -628,7 +653,7 @@ static int print_stack(void)
 /* Using DARWIN_UNIX03 */
 
 #ifdef __GLIBC__
-#define __USE_GNU  /* required to get dladdr */
+#define __USE_GNU       /* required to get dladdr */
 #endif
 #include <dlfcn.h>
 
@@ -703,32 +728,33 @@ static int print_stack(void)
 
 int print_stack(void)
 {
-	Dl_info info;
-	int level;
-	fprintf(stderr, "Call list:\n");
-	for (level = 0; level < LEVELMAX; ++level) {
-		void *addr;
-		get_return_address(addr, level);
-		if (!addr)
-			break;
-		dladdr(addr, &info);
-		fprintf(stderr, "%s(%s+%p)[%p]\n", info.dli_fname, info.dli_sname, (void *) ((char *) addr - (char *) info.dli_saddr), addr);
-	}
-	return 0;
+    Dl_info info;
+    int level;
+    fprintf(stderr, "Call list:\n");
+    for (level = 0; level < LEVELMAX; ++level) {
+        void *addr;
+        get_return_address(addr, level);
+        if (!addr)
+            break;
+        dladdr(addr, &info);
+        fprintf(stderr, "%s(%s+%p)[%p]\n", info.dli_fname, info.dli_sname,
+                (void *) ((char *) addr - (char *) info.dli_saddr), addr);
+    }
+    return 0;
 }
 
 #endif
 
-#else  /* Not using GLIBC or DARWIN ... don't do anything. */
+#else /* Not using GLIBC or DARWIN ... don't do anything. */
 static int print_stack(void)
 {
-	return 0;
+    return 0;
 }
 #endif
 
-#else  /* Not using GCC ... don't do anything. */
+#else /* Not using GCC ... don't do anything. */
 static int print_stack(void)
 {
-	return 0;
+    return 0;
 }
 #endif

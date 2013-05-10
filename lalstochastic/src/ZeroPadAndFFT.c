@@ -449,8 +449,8 @@ LALCZeroPadAndFFT(
         windowPtr = parameters->window->data->data ; cPtr < cStopPtr ; \
         ++cPtr, ++hBarPtr, ++windowPtr )
     {
-      hBarPtr->re = cPtr->re * *(windowPtr);
-      hBarPtr->im = cPtr->im * *(windowPtr);
+      hBarPtr->realf_FIXME = crealf(*cPtr) * *(windowPtr);
+      hBarPtr->imagf_FIXME = cimagf(*cPtr) * *(windowPtr);
     }
   }
 

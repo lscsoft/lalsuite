@@ -51,7 +51,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/TimeFreq.h>
 
 #define MIN(A, B)       ((A) < (B) ? (A) : (B))
@@ -132,7 +131,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
       LALForwardRealFFT(stat->statusPtr, vtmp, lacf, plan);
 
       for (row = 0; row < (tfr->fRow/2+1); row++)
-	tfr->map[column][row] = vtmp->data[row].re;
+	tfr->map[column][row] = crealf(vtmp->data[row]);
 
     }
   /* Reflecting frequency halfing in WV distrob so multiply by 1/2 */

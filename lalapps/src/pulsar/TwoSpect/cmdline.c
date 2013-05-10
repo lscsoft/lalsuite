@@ -111,6 +111,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --printSFTtimes           Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of input SFTs  (default=off)",
   "      --printUsedSFTtimes       Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of the SFTs passing tests  \n                                  (default=off)",
   "      --printData               Print to ASCII files the data values  \n                                  (default=off)",
+  "      --printUninitialized=INT  Print uninitialized values in TFdata_weighted \n                                  and TSofPowers vectors at n-th sky location \n                                  specified by option (if not enough sky \n                                  locations exist, then these vectors don't get \n                                  printed!)",
   "      --randSeed=INT            Random seed value",
   "      --chooseSeed              The random seed value is chosen based on the \n                                  input search parameters  (default=off)",
     0
@@ -309,6 +310,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->printSFTtimes_given = 0 ;
   args_info->printUsedSFTtimes_given = 0 ;
   args_info->printData_given = 0 ;
+  args_info->printUninitialized_given = 0 ;
   args_info->randSeed_given = 0 ;
   args_info->chooseSeed_given = 0 ;
 }
@@ -408,6 +410,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->printSFTtimes_flag = 0;
   args_info->printUsedSFTtimes_flag = 0;
   args_info->printData_flag = 0;
+  args_info->printUninitialized_orig = NULL;
   args_info->randSeed_orig = NULL;
   args_info->chooseSeed_flag = 0;
   
@@ -491,8 +494,9 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->printSFTtimes_help = gengetopt_args_info_full_help[76] ;
   args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[77] ;
   args_info->printData_help = gengetopt_args_info_full_help[78] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[79] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[80] ;
+  args_info->printUninitialized_help = gengetopt_args_info_full_help[79] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[80] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[81] ;
   
 }
 
@@ -690,6 +694,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->templateTestDf_orig));
   free_string_field (&(args_info->ULsolver_orig));
   free_string_field (&(args_info->dopplerMultiplier_orig));
+  free_string_field (&(args_info->printUninitialized_orig));
   free_string_field (&(args_info->randSeed_orig));
   
   
@@ -911,6 +916,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "printUsedSFTtimes", 0, 0 );
   if (args_info->printData_given)
     write_into_file(outfile, "printData", 0, 0 );
+  if (args_info->printUninitialized_given)
+    write_into_file(outfile, "printUninitialized", args_info->printUninitialized_orig, 0);
   if (args_info->randSeed_given)
     write_into_file(outfile, "randSeed", args_info->randSeed_orig, 0);
   if (args_info->chooseSeed_given)
@@ -1656,6 +1663,7 @@ cmdline_parser_internal (
         { "printSFTtimes",	0, NULL, 0 },
         { "printUsedSFTtimes",	0, NULL, 0 },
         { "printData",	0, NULL, 0 },
+        { "printUninitialized",	1, NULL, 0 },
         { "randSeed",	1, NULL, 0 },
         { "chooseSeed",	0, NULL, 0 },
         { 0,  0, 0, 0 }
@@ -2590,6 +2598,20 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->printData_flag), 0, &(args_info->printData_given),
                 &(local_args_info.printData_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "printData", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!).  */
+          else if (strcmp (long_options[option_index].name, "printUninitialized") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->printUninitialized_arg), 
+                 &(args_info->printUninitialized_orig), &(args_info->printUninitialized_given),
+                &(local_args_info.printUninitialized_given), optarg, 0, 0, ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "printUninitialized", '-',
                 additional_error))
               goto failure;
           

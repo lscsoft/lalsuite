@@ -675,14 +675,14 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	else
 	  inData = sft->data->data + length - 1;
 
-	tempDataPow[k] = (inData->re)*(inData->re) + (inData->im)*(inData->im);
+	tempDataPow[k] = (crealf(*inData))*(crealf(*inData)) + (cimagf(*inData))*(cimagf(*inData));
 
 	if (lineBin - minBin -leftWingBins - k > 0)
 	  inData = sft->data->data + lineBin - minBin - leftWingBins - k - 1;
 	else
 	  inData = sft->data->data;
 
-	tempDataPow[k+window] = (inData->re)*(inData->re) + (inData->im)*(inData->im);
+	tempDataPow[k+window] = (crealf(*inData))*(crealf(*inData)) + (cimagf(*inData))*(cimagf(*inData));
       }
 
       gsl_sort( tempDataPow, 1, 2*window);
@@ -693,11 +693,11 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
       inData = sft->data->data + lineBin - minBin;
 
       randVal = ranVector->data + tempk;
-      inData->re = stdPow * (*randVal);
+      inData->realf_FIXME = stdPow * (*randVal);
       tempk++;
 
       randVal = ranVector->data + tempk;
-      inData->im = stdPow * (*randVal);
+      inData->imagf_FIXME = stdPow * (*randVal);
       tempk++;
 
       /* now go left and set the left wing to noise */
@@ -709,11 +709,11 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	    inData = sft->data->data + lineBin - minBin - leftCount - 1;
 
 	    randVal = ranVector->data + tempk;
-	    inData->re = stdPow * (*randVal);
+	    inData->realf_FIXME = stdPow * (*randVal);
 	    tempk++;
 
 	    randVal = ranVector->data + tempk;
-	    inData->im = stdPow * (*randVal);
+	    inData->imagf_FIXME = stdPow * (*randVal);
 	    tempk++;
 	  }
 	}
@@ -726,11 +726,11 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	    inData = sft->data->data + lineBin - minBin + rightCount + 1;
 
 	    randVal = ranVector->data + tempk;
-	    inData->re = stdPow * (*randVal);
+	    inData->realf_FIXME = stdPow * (*randVal);
             tempk++;
 
 	    randVal = ranVector->data + tempk;
-	    inData->im = stdPow * (*randVal);
+	    inData->imagf_FIXME = stdPow * (*randVal);
 	    tempk++;
 	  }
 	}

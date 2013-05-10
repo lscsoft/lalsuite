@@ -54,7 +54,6 @@ LALDestroyVector()
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -493,10 +492,10 @@ LALFindChirpTDNormalize(
   segNormSum = 0;
   for ( k = 1; k < fcTmplt->data->length; ++k )
   {
-    REAL4 re = fcTmplt->data->data[k].re;
-    REAL4 im = fcTmplt->data->data[k].im;
+    REAL4 re = crealf(fcTmplt->data->data[k]);
+    REAL4 im = cimagf(fcTmplt->data->data[k]);
     REAL4 power = re * re + im * im;
-    tmpltPower[k] = power * wtilde[k].re;
+    tmpltPower[k] = power * crealf(wtilde[k]);
     segNormSum += tmpltPower[k];
     segNorm[k] = segNormSum;
   }

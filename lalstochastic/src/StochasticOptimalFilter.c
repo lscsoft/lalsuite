@@ -732,8 +732,8 @@ LALStochasticOptimalFilter(
 
   /* Done with unit manipulation */
 
-  optimalFilter->data->data[0].re = 0;
-  optimalFilter->data->data[0].im = 0;
+  optimalFilter->data->data[0].realf_FIXME = 0;
+  optimalFilter->data->data[0].imagf_FIXME = 0;
 
   /* calculate optimal filter values */
   for (i = (f0 == 0 ? 1 : 0) ; i < length; ++i)
@@ -751,11 +751,11 @@ LALStochasticOptimalFilter(
 
     realFactor = (mygamma * omega * lambda->value) / f3;
 
-    cPtrOptimalFilter->re = realFactor * ((p1HWInv.re * p2HWInv.re) + \
-        (p1HWInv.im * p2HWInv.im));
+    cPtrOptimalFilter->realf_FIXME = realFactor * ((crealf(p1HWInv) * crealf(p2HWInv)) + \
+        (cimagf(p1HWInv) * cimagf(p2HWInv)));
 
-    cPtrOptimalFilter->im = realFactor * ((p1HWInv.re * p2HWInv.im) - \
-        (p1HWInv.im * p2HWInv.re));
+    cPtrOptimalFilter->imagf_FIXME = realFactor * ((crealf(p1HWInv) * cimagf(p2HWInv)) - \
+        (cimagf(p1HWInv) * crealf(p2HWInv)));
   }
 
   DETATCHSTATUSPTR(status);

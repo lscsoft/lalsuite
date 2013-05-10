@@ -44,11 +44,12 @@
   }
 
   // Construct a new LIGOTimeGPS from a string
-  tagLIGOTimeGPS(const char* str) {
+  tagLIGOTimeGPS(const char *str) {
     LIGOTimeGPS *gps = %lalswig_new_LIGOTimeGPS();
     char *end = NULL;
-    if (XLALStrToGPS(gps, str, &end) < 0 || end == str) {
+    if (XLALStrToGPS(gps, str, &end) < 0 || *end != '\0') {
       XLALFree(gps);
+      xlalErrno = XLAL_EFUNC;   // Silently signal an error to constructor
       return NULL;
     }
     return gps;
@@ -243,6 +244,11 @@
   %lalswig_LIGOTimeGPS_comparison_operator(ne, !=);
   %lalswig_LIGOTimeGPS_comparison_operator(gt, > );
   %lalswig_LIGOTimeGPS_comparison_operator(ge, >=);
+
+  // Return the number of nanoseconds in a LIGOTimeGPS
+  INT8 ns() {
+    return XLALGPSToINT8NS($self);
+  }
 
 } // %extend tagLIGOTimeGPS
 

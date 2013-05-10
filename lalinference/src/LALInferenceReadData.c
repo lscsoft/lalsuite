@@ -826,6 +826,23 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 else
                     XLALREAL8AverageSpectrumMedian(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
 
+                if(LALInferenceGetProcParamVal(commandLine, "--binFit")) {
+
+                    LIGOTimeGPS GPStime;
+
+                    GPStime.gpsSeconds = GPStrig.gpsSeconds - SegmentLength;
+                    GPStime.gpsNanoSeconds = GPStrig.gpsNanoSeconds;
+
+                    const UINT4 nameLength=256;
+                    char filename[nameLength];
+
+                    snprintf(filename, nameLength, "%s-BinFitLines.dat", IFOdata[i].name);
+
+                    printf("Running PSD bin fitting... ");
+                    LALInferenceAverageSpectrumBinFit(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan,filename,GPStime);
+                    printf("completed!\n");
+                }
+
                 if (LALInferenceGetProcParamVal(commandLine, "--chisquaredlines")){
 
                     double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
@@ -842,11 +859,23 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     char filename[nameLength];
                     FILE *out;
 
+                    double lines_width;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--chisquaredlinesWidth");
+                    if(ppt) lines_width = atof(ppt->value);
+                    else lines_width = deltaF;
+
+                    double lines_threshold;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--chisquaredlinesThreshold");
+                    if(ppt) lines_threshold = atof(ppt->value);
+                    else lines_threshold = 2*pow(10.0,-14.0);
+
+                    printf("Using chi squared threshold of %g\n",lines_threshold);
+
                     snprintf(filename, nameLength, "%s-ChiSquaredLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 0.05) {
-                            fprintf(out,"%g\n",((double) k) * deltaF);
+                        if (pvalues[k] < lines_threshold) {
+                            fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
                     fclose(out);
@@ -876,11 +905,23 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     char filename[nameLength];
                     FILE *out;
 
+                    double lines_width;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--KSlinesWidth");
+                    if(ppt) lines_width = atof(ppt->value);
+                    else lines_width = deltaF;
+
+                    double lines_threshold;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--KSlinesThreshold");
+                    if(ppt) lines_threshold = atof(ppt->value);
+                    else lines_threshold = 0.134558;
+
+                    printf("Using KS threshold of %g\n",lines_threshold);
+
                     snprintf(filename, nameLength, "%s-KSLines.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
                     for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 0.05) {
-                            fprintf(out,"%g\n",((double) k) * deltaF);
+                        if (pvalues[k] < lines_threshold) {
+                            fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
                         }
                     }
                     fclose(out);
@@ -890,6 +931,86 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     for (int k = 0; k < lengthF; ++k ) {
                         fprintf(out,"%g %g\n",((double) k) * deltaF,pvalues[k]);
                     }
+                    fclose(out);
+
+                }
+
+                if (LALInferenceGetProcParamVal(commandLine, "--powerlawlines")){
+
+                    double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
+                    int lengthF = IFOdata[i].oneSidedNoisePowerSpectrum->data->length;
+
+                    REAL8 *pvalues;
+                    pvalues = XLALMalloc( lengthF * sizeof( *pvalues ) );
+
+                    printf("Running power law tests... ");
+                    LALInferenceRemoveLinesPowerLaw(IFOdata[i].oneSidedNoisePowerSpectrum,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan,pvalues);
+                    printf("completed!\n");
+
+                    const UINT4 nameLength=256;
+                    char filename[nameLength];
+                    FILE *out;
+
+                    double lines_width;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--powerlawlinesWidth");
+                    if(ppt) lines_width = atof(ppt->value);
+                    else lines_width = deltaF;
+
+                    double lines_threshold;
+                    ppt = LALInferenceGetProcParamVal(commandLine, "--powerlawlinesThreshold");
+                    if(ppt) lines_threshold = atof(ppt->value);
+                    else lines_threshold = 0.7197370;
+
+                    printf("Using power law threshold of %g\n",lines_threshold);
+
+                    snprintf(filename, nameLength, "%s-PowerLawLines.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        if (pvalues[k] < lines_threshold) {
+                            fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
+                        }
+                    }
+                    fclose(out);
+
+                    snprintf(filename, nameLength, "%s-PowerLawLines-pvalues.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    for (int k = 0; k < lengthF; ++k ) {
+                        fprintf(out,"%g %g\n",((double) k) * deltaF,pvalues[k]);
+                    }
+                    fclose(out);
+
+                }
+
+                if (LALInferenceGetProcParamVal(commandLine, "--xcorrbands")){
+
+                    //double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
+                    int lengthF = IFOdata[i].oneSidedNoisePowerSpectrum->data->length;
+
+                    REAL8 *pvalues;
+                    pvalues = XLALMalloc( lengthF * sizeof( *pvalues ) );
+
+                    const UINT4 nameLength=256;
+                    char filename[nameLength];
+                    FILE *out;
+
+                    snprintf(filename, nameLength, "%s-XCorrVals.dat", IFOdata[i].name);
+
+                    printf("Running xcorr tests... ");
+                    LALInferenceXCorrBands(IFOdata[i].oneSidedNoisePowerSpectrum,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan,pvalues,filename);
+                    printf("completed!\n");
+
+                    snprintf(filename, nameLength, "%s-XCorrBands.dat", IFOdata[i].name);
+                    out = fopen(filename, "w");
+                    /*
+                    for (int k = 0; k < lengthF; ++k ) {
+                        if (pvalues[k] < 0.001) {
+                            fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
+                        }
+                    }
+                    */
+                    fprintf(out,"%g %g\n",10.0,75.0);
+                    fprintf(out,"%g %g\n",16.0,40.0);
+                    fprintf(out,"%g %g\n",40.0,330.0);
                     fclose(out);
 
                 }
@@ -1336,16 +1457,15 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       if(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")) {
         spinO = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")->value);
         XLALSimInspiralSetSpinOrder(waveFlags, spinO);
-        fprintf(stdout,"Injection (twice) PN spin order set to %i\n",spinO);
       }
       LALSimInspiralTidalOrder tideO = -1;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-tidalOrder")) {
         tideO = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-tidalOrder")->value);
         XLALSimInspiralSetTidalOrder(waveFlags, tideO);
-        fprintf(stdout,"Injection (twice) PN tidal order set to %i\n",tideO);
       }
       LALSimInspiralTestGRParam *nonGRparams = NULL;
-      
+      /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
+      fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain.\n",approximant,XLALGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO);
       XLALSimInspiralChooseTDWaveform(&hplus, &hcross, injEvent->coa_phase, 1.0/InjSampleRate,
                                       injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
                                       injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
@@ -2023,18 +2143,20 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
         spinO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")->value);
         LALInferenceAddVariable(tmpdata->modelParams, "spinO", &spinO,   LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     }
-    else
-        fprintf(stdout,"No --inj-spinOrder option given. Injecting the highest spin order for this waveform!\n");
+  
     LALSimInspiralTidalOrder tideO = LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL;
 
     if(LALInferenceGetProcParamVal(commandLine, "--inj-tidalOrder")) {
         tideO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-tidalOrder")->value);
         LALInferenceAddVariable(tmpdata->modelParams, "tideO", &tideO,   LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     }
-    else
-        fprintf(stdout,"No --inj-tidalOrder option given. Injecting the highest tidal order for this waveform!\n");
-    fprintf(stdout,"injectTaylorF2 will run using Approximant %i (%s), phase order %i, amp order %i, spinOrder %i TidalOrder %i in the Frequency domain.\n",injapprox,XLALGetStringFromApproximant(injapprox),phase_order,amp_order,(int) spinO,(int) tideO);
-    
+   
+   /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
+    fprintf(stdout,"\n\n---\t\t ---\n");
+   fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the frequency domain.\n",injapprox,XLALGetStringFromApproximant(injapprox),phase_order,amp_order,(int) spinO,(int) tideO);
+     fprintf(stdout,"---\t\t ---\n\n");
+
+     
     COMPLEX16FrequencySeries *freqModelhCross=NULL;
    freqModelhCross=XLALCreateCOMPLEX16FrequencySeries("freqDatahC",&(tmpdata->timeData->epoch),0.0,tmpdata->freqData->deltaF,&lalDimensionlessUnit,tmpdata->freqData->data->length);
     COMPLEX16FrequencySeries *freqModelhPlus=NULL;

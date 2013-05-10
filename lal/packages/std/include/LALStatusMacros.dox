@@ -133,17 +133,17 @@ combining these flags using the bitwise-\e or operator,
 <tr><td>#LALWARNING</td><td>000002</td><td>2</td><td>Turn on warning messages</td></tr>
 <tr><td>#LALINFO</td><td>000004</td><td>4</td><td>Turn on info messages</td></tr>
 <tr><td>#LALTRACE</td><td>000010</td><td>8</td><td>Turn on tracing messages</td></tr>
-<tr><td>#LALMEMINFO</td><td>000020</td><td>16</td><td>Turn on memory messages</td></tr>
-<tr><td>#LALNMEMDBG</td><td>000040</td><td>32</td><td>Turn off all memory debugging</td></tr>
-<tr><td>#LALNMEMPAD</td><td>000100</td><td>64</td><td>Turn off memory padding</td></tr>
-<tr><td>#LALNMEMTRK</td><td>000200</td><td>128</td><td>Turn off memory tracking</td></tr>
-<tr><td>#LALMEMDBG</td><td>040000</td><td>16384</td><td>Turn on memory debugging without messages</td></tr>
+<tr><td>#LALMEMDBGBIT</td><td>000020</td><td>16</td><td>Turn on memory debugging</td></tr>
+<tr><td>#LALNMEMPADBIT</td><td>000040</td><td>32</td><td>Turn on memory padding (if memory debugging is on)</td></tr>
+<tr><td>#LALNMEMTRKBIT</td><td>000100</td><td>64</td><td>Turn on memory tracking (if memory debuggin is on)</td></tr>
+<tr><td>#LALMEMINFOBIT</td><td>000200</td><td>128</td><td>Turn on memory messages (if memory debugging is on)</td></tr>
 <tr><td><em>Combination flags</em></td></tr>
 <tr><td>#LALMSGLVL1</td><td>000001</td><td>1</td><td>Error messages only</td></tr>
 <tr><td>#LALMSGLVL2</td><td>000003</td><td>3</td><td>Error and warning messages</td></tr>
 <tr><td>#LALMSGLVL3</td><td>000007</td><td>7</td><td>Error, warning, and info messages</td></tr>
-<tr><td>#LALMEMTRACE</td><td>000030</td><td>24</td><td>Memory and tracing messages</td></tr>
-<tr><td>#LALALLDBG</td><td>077437</td><td>32543</td><td>All messages and debugging</td></tr>
+<tr><td>#LALMEMDBG</td><td>000160</td><td>112</td><td>Memory debugging with padding and tracking</td></tr>
+<tr><td>#LALMEMTRACE</td><td>000370</td><td>248</td><td>Memory and tracing messages</td></tr>
+<tr><td>#LALALLDBG</td><td>077777</td><td>32767</td><td>All messages and debugging</td></tr>
 </table>
 
 The most significant bit

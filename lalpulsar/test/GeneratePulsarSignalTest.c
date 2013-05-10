@@ -129,7 +129,7 @@ int main(int UNUSED argc, char **argv)
 
   static LALStatus status; /* status structure */
 
-  lalDebugLevel = 0;
+  lalDebugLevel = 1;
 
   /* initialize status */
   status.statusCode = 0;
@@ -189,8 +189,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   CHAR IFO[6] = "LHO";
   EphemerisData *edat = NULL;
 
-  char earthFile[] = DATADIR "earth00-19-DE405.dat.gz";
-  char sunFile[]   = DATADIR "sun00-19-DE405.dat.gz";
+  char earthFile[] = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
+  char sunFile[]   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
 
   /* containers for sky position and spindown data */
   REAL8 **skyPosData;
@@ -452,8 +452,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     pPulsarSignalParams->pulsar.position.longitude = skyPosData[iSky][0] + (((REAL8)randval) - 0.5)*tmpDeltaRA;
 
     /* Find reference time in SSB for this sky positions */
-    LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.refTime), GPSin, pPulsarSignalParams);
-    CHECKSTATUSPTR (status);
+    int ret = XLALConvertGPS2SSB ( &(pPulsarSignalParams->pulsar.refTime), GPSin, pPulsarSignalParams );
+    if ( ret != XLAL_SUCCESS ) {
+      XLALPrintError ("XLALConvertGPS2SSB() failed with xlalErrno = %d\n", xlalErrno );
+      ABORTXLAL (status);
+    }
 
     /* one per sky position fill in SkyConstAndZeroPsiAMResponse for use with LALFastGeneratePulsarSFTs */
     LALComputeSkyAndZeroPsiAMResponse (status->statusPtr, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
@@ -610,9 +613,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
           jFastMaxMod = -1;
           /* Since doppler shifts can move the signal by an unknown number of bins search the whole band for max modulus: */
           for(j=0;j<nBinsSFT;j++) {
-               sftMod = renorm*renorm*outputSFTs->data[i].data->data[j].re*outputSFTs->data[i].data->data[j].re + renorm*renorm*outputSFTs->data[i].data->data[j].im*outputSFTs->data[i].data->data[j].im;
+               sftMod = renorm*renorm*crealf(outputSFTs->data[i].data->data[j])*crealf(outputSFTs->data[i].data->data[j]) + renorm*renorm*cimagf(outputSFTs->data[i].data->data[j])*cimagf(outputSFTs->data[i].data->data[j]);
                sftMod = sqrt(sftMod);
-               fastSFTMod = fastOutputSFTs->data[i].data->data[j].re*fastOutputSFTs->data[i].data->data[j].re + fastOutputSFTs->data[i].data->data[j].im*fastOutputSFTs->data[i].data->data[j].im;
+               fastSFTMod = crealf(fastOutputSFTs->data[i].data->data[j])*crealf(fastOutputSFTs->data[i].data->data[j]) + cimagf(fastOutputSFTs->data[i].data->data[j])*cimagf(fastOutputSFTs->data[i].data->data[j]);
                fastSFTMod = sqrt(fastSFTMod);
                if (fabs(sftMod) > smallMod) {
                    tmpDiffSFTMod = fabs((sftMod - fastSFTMod)/sftMod);
@@ -679,8 +682,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
        /* 09/07/05 gam; Initialize fastOutputSFTs since only 2*Dterms bins are changed by LALFastGeneratePulsarSFTs */
        for (i = 0; i < numSFTs; i++) {
           for(j=0;j<nBinsSFT;j++) {
-             fastOutputSFTs->data[i].data->data[j].re = 0.0;
-             fastOutputSFTs->data[i].data->data[j].im = 0.0;
+             fastOutputSFTs->data[i].data->data[j].realf_FIXME = 0.0;
+             fastOutputSFTs->data[i].data->data[j].imagf_FIXME = 0.0;
           }
        }
 

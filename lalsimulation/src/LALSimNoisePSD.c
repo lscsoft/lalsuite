@@ -971,7 +971,7 @@ int XLALSimNoisePSD(
 /* opens a data file */
 static LALFILE *XLALSimNoisePSDFileOpen(const char *fname)
 {
-	const char *pkgdatadir = PKGDATADIR;
+	const char *pkgdatadir = PKG_DATA_DIR;
 	char path[PATH_MAX] = "";
 	LALFILE *fp;
 
