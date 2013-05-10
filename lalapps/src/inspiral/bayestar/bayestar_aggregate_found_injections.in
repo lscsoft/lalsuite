@@ -58,6 +58,8 @@ if __name__ == '__main__':
         fitsfileglobs = args[1:]
     except IndexError:
         parser.error("not enough command line arguments")
+    if opts.jobs < 1:
+        parser.error("invalid value for -j, --jobs: must be >= 1")
 
     outfile = open(opts.output, "w")
 
