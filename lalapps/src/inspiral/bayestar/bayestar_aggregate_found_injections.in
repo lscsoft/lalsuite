@@ -71,16 +71,6 @@ from lalinference.bayestar import fits
 from lalinference.bayestar import postprocess
 
 
-sql = """
-SELECT DISTINCT sim.longitude AS ra, sim.latitude AS dec, ci.combined_far AS far
-FROM coinc_event_map AS cem1 INNER JOIN coinc_event_map AS cem2
-ON (cem1.coinc_event_id = cem2.coinc_event_id)
-INNER JOIN sim_inspiral AS sim ON (cem1.event_id = sim.simulation_id)
-INNER JOIN coinc_inspiral AS ci ON (cem2.event_id = ci.coinc_event_id)
-WHERE cem1.table_name = 'sim_inspiral' AND cem2.table_name = 'coinc_event'
-AND cem2.event_id = ?"""
-
-
 def startup(dbfilename):
     global db
     db = sqlite3.connect(dbfilename)
@@ -95,7 +85,16 @@ def process(fitsfilename):
     except KeyError:
         runtime = None
 
-    true_ra, true_dec, far = db.execute(sql, (coinc_event_id,)).fetchone()
+    true_ra, true_dec, far = db.execute("""
+        SELECT DISTINCT sim.longitude AS ra, sim.latitude AS dec,
+        ci.combined_far AS far
+        FROM coinc_event_map AS cem1 INNER JOIN coinc_event_map AS cem2
+        ON (cem1.coinc_event_id = cem2.coinc_event_id)
+        INNER JOIN sim_inspiral AS sim ON (cem1.event_id = sim.simulation_id)
+        INNER JOIN coinc_inspiral AS ci ON (cem2.event_id = ci.coinc_event_id)
+        WHERE cem1.table_name = 'sim_inspiral'
+        AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
+        (coinc_event_id,)).fetchone()
     searched_area, searched_prob, offset = postprocess.find_injection(
         sky_map, true_ra, true_dec)
 
