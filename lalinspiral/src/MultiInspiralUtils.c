@@ -539,7 +539,7 @@ XLALMultiSimInspiralTest (
   MultiInspiralTable *prevEvent   = NULL;
   MultiInspiralTable *thisMissed  = NULL;
   EventIDColumn     *thisId      = NULL;
-  CHAR              ifo[3];
+  CHAR              ifo[LIGOMETA_IFO_MAX];
 
   int numSimFound  = 0;
   int coincidence = 0;
