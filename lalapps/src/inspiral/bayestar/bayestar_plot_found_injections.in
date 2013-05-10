@@ -72,7 +72,7 @@ for i, log10_far in enumerate(range(log10_min_far, log10_max_far + 1)):
     datasets = [dataset[dataset['far'] <= far] for dataset in datasets_]
 
     # Compute titles and labels for plots.
-    labels = dataset_names
+    labels = tuple(r'\verb/{0}/'.format(name) for name in dataset_names)
     title = r'$\mathrm{{FAR}} \leq 10^{{{0}}}$ Hz'.format(log10_far)
     if len(args) == 1:
         title += ' ({0} events)'.format(len(datasets[0]))
