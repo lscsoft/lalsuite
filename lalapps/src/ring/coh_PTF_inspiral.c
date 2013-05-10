@@ -689,7 +689,6 @@ void coh_PTF_statistic(
   REAL4 *powerBinsPlus[LAL_NUM_IFO+1],*powerBinsCross[LAL_NUM_IFO+1];
   UINT4 currPointLoc;
   struct bankCohTemplateOverlaps *bankCohOverlaps,*autoCohOverlaps;
-  COMPLEX8VectorSequence *tempqVec;
   gsl_matrix *eigenvecs,*eigenvecsNull,*Autoeigenvecs;
   gsl_vector *eigenvals,*eigenvalsNull,*Autoeigenvals;
   /* FIXME: the 50s below seem to hardcode a limit on the number of templates
@@ -718,8 +717,6 @@ void coh_PTF_statistic(
     csVecLengthTwo = 1;
 
   /* Initialize pointers, some initialize to NULL */
-  tempqVec = NULL;
-  Autoeigenvecs = NULL;
   Autoeigenvals = NULL;
   bankCohOverlaps = NULL;
   autoCohOverlaps = NULL;
@@ -1204,10 +1201,6 @@ UINT8 coh_PTF_add_triggers(
   INT4   timeOffsetPoints[LAL_NUM_IFO];
   MultiInspiralTable *lastEvent = *thisEvent;
   MultiInspiralTable *currEvent = NULL;
-
-  REAL4 cohSNRThreshold = params->threshold;
-  if (spinTrigger)
-    cohSNRThreshold = params->spinThreshold;
 
   coh_PTF_convert_time_offsets_to_points(params,timeOffsets,timeOffsetPoints);
 
