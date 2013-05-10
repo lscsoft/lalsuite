@@ -123,10 +123,10 @@ def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
     sngl_inspiral_table = ligolw_table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 
     # Look up coinc_def id.
-    sngl_sngl_coinc_def_id = coinc_def_table.get_coinc_def_id(
-        ligolw_thinca.InspiralCoincDef.search,
-        ligolw_thinca.InspiralCoincDef.search_coinc_type,
-        create_new=False)
+    sngl_sngl_coinc_def_ids = set(row.coinc_def_id for row in coinc_def_table
+        if (row.search, row.search_coinc_type) ==
+        (ligolw_thinca.InspiralCoincDef.search,
+        ligolw_thinca.InspiralCoincDef.search_coinc_type))
 
     # Indices to speed up lookups by ID.
     key = operator.attrgetter('coinc_event_id')
@@ -138,7 +138,7 @@ def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
     # Loop over all sngl_inspiral <-> sngl_inspiral coincs.
     for coinc in coinc_table:
-        if coinc.coinc_def_id == sngl_sngl_coinc_def_id:
+        if coinc.coinc_def_id in sngl_sngl_coinc_def_ids:
             coinc_maps = coinc_maps_by_coinc_event_id[coinc.coinc_event_id]
             yield coinc, tuple(sngl_inspirals_by_event_id[coinc_map.event_id]
                 for coinc_map in coinc_maps)
