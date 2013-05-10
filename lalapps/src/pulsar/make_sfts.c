@@ -493,12 +493,15 @@ int main(int argc,char *argv[]){
   exit(0);
 #endif
 
+  printf("%%CAUTION: This program has been superceded by lalapps/src/pulsar/MakeSFTs/MakeSFTs.c\n\n");
+
   printf("%%Normal startup\n");
   fflush(stdout);
 
   /* check command syntax */
   if (argc !=5 || (jobnum=atoi(argv[1]))<0 || jobnum>99999){
     int a;
+    pout("CAUTION: This program has been superceded by lalapps/src/pulsar/MakeSFTs/MakeSFTs.c\n");
     pout("Syntax:\n\t%s N DIR1 DIR2 DETECTOR\nwhere 0<=N<=99999.\n",argv[0]);
     pout("Files used are jobdata.N, jobtimes.N, where N has five digits\n");
     pout("Input files are taken from DIR1\n");
