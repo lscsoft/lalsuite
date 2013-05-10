@@ -1366,7 +1366,7 @@ UINT4 coh_PTF_accept_trig_check(
   {
     time2.gpsSeconds=currEvent->end_time.gpsSeconds;
     time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
-    if (thisEvent.time_slide_id == currEvent.time_slide_id)
+    if (thisEvent.time_slide_id == currEvent->time_slide_id)
     {
       if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
       {
