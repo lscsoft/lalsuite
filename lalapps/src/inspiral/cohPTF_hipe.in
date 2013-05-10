@@ -22,6 +22,7 @@ from optparse import *
 import tempfile
 import ConfigParser
 import urlparse
+import itertools
 sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
@@ -155,23 +156,61 @@ def setup_coh_inspiral(ifo_name,ifo_char,insp_job,runSplitBank,calibrated,\
 ##############################################################################
 #function to build the timeslides vector
 def setup_timeslides(ifo_analyze, num_slides):
-  
-  slide = {}
-  slide_offset = {}
-  range_offset = {}
-  
-  #doing timeslides here
-  for ifo_name in ifo_analyze: 
-    slide[ifo_name] = cp.get('input','%s-slide' % (ifo_name))
-    slide_offset[ifo_name] = cp.get('input','%s-slide-offset' % (ifo_name))
-    range_offset[ifo_name] = [i*int(slide[ifo_name]) + int(slide_offset[ifo_name]) for i in range(0, int(num_slides))]
-  ifo_keys = range_offset.keys()
+  # Initialise output 
   slide_vector = []
-  for elements in range(len(range_offset.values()[0])):
-    newDict={}
-    for detectors in range (len(range_offset.keys())):
-      newDict[ifo_keys[detectors]] = range_offset[ ifo_keys[detectors] ][elements]
-    slide_vector.append(newDict)
+
+  # Calculate the number of segments being used
+  # Note that this is the number of segments that coh_PTF will use for filtering
+  # This is not equal to the number of segments that tmpltbank might use for PSD
+  # estimation
+  block_duration = int(cp.get('coh_PTF_inspiral','block-duration'))
+  segment_duration = int(cp.get('coh_PTF_inspiral','segment-duration'))
+  number_segments = (block_duration * 2 / segment_duration) - 1
+
+  # Create a dictionary to hold offsets between pairs
+  offsetPairDict = {}
+  for i,ifo1 in enumerate(ifo_analyse):
+    for j,ifo2 in enumerate(ifo_analyse):
+      if ifo1 != ifo2 and i < j:
+        offsetPairDict[ifo1+ifo2] = [0]
+
+  # Begin looping over the possible offsets
+  start = [0 for i in range(len(ifo_analyse) - 1)]
+  stop = [number_segments for i in range(len(ifo_analyse) - 1)]
+  # I don't really know how this works, but it gives [0,0],[0,1] .. [0,len],
+  # [1,0],[1,1] ... [1,len],[2,0] ... [len,0] ... [len,len] for 3 ifos,
+  # for 4 it would be [0,0,0],[0,0,1] ...  and so on
+  for offsetList in itertools.product(*[xrange(i, i+j) \
+                                        for i,j in zip(start, size)]):
+    currOffsets = [0].extend(offsetList)
+    print currOffsets
+    acceptSlide = True
+    for i,ifo1 in enumerate(ifo_analyse):
+      for j,ifo2 in enumerate(ifo_analyse):
+        if ifo1 != ifo2 and i < j:
+          ifoOffset = offsetList[i] - offsetList[j]
+          if ifoOffset < 0:
+            ifoOffset += number_segments
+          if ifoOffset in offsetPairDict[ifo1+ifo2].values():
+            acceptSlide = False
+            break
+      if not acceptSlide:
+        break
+    if acceptSlide:
+      print "Accepting:",currOffsets
+      # Add slide to list
+      slideDict = {}
+      for i,ifo in enumerate(ifo_analyse):
+        slideDict[ifo] = currOffsets[i]
+      slide_vector.append(slideDict)
+      # And update ifo-ifo delay lists
+      for i,ifo1 in enumerate(ifo_analyse):
+        for j,ifo2 in enumerate(ifo_analyse):
+          if ifo1 != ifo2 and i < j:
+            ifoOffset = offsetList[i] - offsetList[j]
+            if ifoOffset < 0:
+              ifoOffset += number_segments
+            offsetPairDict[ifo1+ifo2].append(ifoOffset)
   
   return slide_vector
 
@@ -221,13 +260,15 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
       data_opts[ifo_name] = 'ligo-data'
       try: 
         type[ifo_name] = cp.get('input','ligo-type')
-        if (type[ifo_name] == 'RDS_R_L4') or ('RDS_C' in type[ifo_name]) or ('DMT_C' in type[ifo_name]) or ('LDAS_C' in type[ifo_name]):
+        if (type[ifo_name] == 'RDS_R_L4') or ('RDS_C' in type[ifo_name]) or \
+            ('DMT_C' in type[ifo_name]) or ('LDAS_C' in type[ifo_name]):
           type[ifo_name] = ifo_name + '_' + type[ifo_name]
       except: type[ifo_name] = None
       channel[ifo_name] = cp.get('input','ligo-channel')
 
   # see if we are using calibrated data
-  if cp.has_section(data_opts[ifo_name]) and cp.has_option(data_opts[ifo_name],'calibrated-data'):
+  if cp.has_section(data_opts[ifo_name]) and \
+      cp.has_option(data_opts[ifo_name],'calibrated-data'):
     calibrated = True
     print "we use calibrated data for ", ifo_name 
   else: calibrated = False
@@ -264,7 +305,8 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
             tb_node.set_ifo(ifo_name)
             tb_node.set_vds_group(ifo_name[0] + str(chunk.start()))
             tb_node.set_user_tag((usertag.split('_')[0])+'_DATAFIND')
-            os.symlink("../datafind/" + tb_node.get_output(),tb_node.get_output())
+            os.symlink("../datafind/" + tb_node.get_output(),\
+                       tb_node.get_output())
             sbBankFile=tb_node.get_output()           
 
           # Set up the bank splitting
@@ -291,7 +333,8 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                 sc_node.set_bank(sbOutBanks[bank])
                 sc_node.add_parent(sb_node)
                 scSpinBank.append(sbOutBanks[bank].replace('.xml','_spin.xml'))
-                scNoSpinBank.append(sbOutBanks[bank].replace('.xml','_nospin.xml'))
+                scNoSpinBank.append(sbOutBanks[bank].replace('.xml',\
+                                                             '_nospin.xml'))
                 sc_node.set_ifo_tag("FIRST_" + str(bank))
               else:
                 sc_node.set_ifo_tag("FIRST")
@@ -308,24 +351,31 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
               exttrigUserTag = usertag + "_" + str(inj)
               injectionFile = injectionFileTemplate % exttrigUserTag
               for bank in range(sbNumBanks):
-                insp = setup_coh_inspiral(ifo_name,ifo_char,insp_job,runSplitBank,calibrated,\
-                                          runSpinChecker,chunk,dag,bank,scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,exttrigUserTag)
+                insp = setup_coh_inspiral(ifo_name,ifo_char,insp_job,\
+                    runSplitBank,calibrated,runSpinChecker,chunk,dag,bank,\
+                    scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,\
+                    exttrigUserTag)
                 insp.set_injections(injectionFile)
           elif doSlides:
             num_slides = cp.get('input','num-slides')
             slide_vector = setup_timeslides(ifo_analyze, num_slides)
             for slide in range(int(num_slides)):
               vector = slide_vector[slide]
-              slidesUserTag = usertag + "_" + "slide" + "_" + str('_'.join(map(str,[str(key) + "_" + str(vector[key]) for key in vector.keys()]))) 
+              slidesUserTag = usertag + "_" + "slide" + "_" + \
+                  str('_'.join(map(str,[str(key) + "_" + str(vector[key])\
+                                        for key in vector.keys()]))) 
               for bank in range(sbNumBanks):
-                insp = setup_coh_inspiral(ifo_name,ifo_char,insp_job,runSplitBank,calibrated,\
-                                          runSpinChecker,chunk,dag,bank,scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,slidesUserTag)
+                insp = setup_coh_inspiral(ifo_name,ifo_char,insp_job,\
+                    runSplitBank,calibrated,runSpinChecker,chunk,dag,bank,\
+                    scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,\
+                    slidesUserTag)
                 for key in vector.keys():
                   insp.add_var_opt(key.lower()+'-slide', vector[key])
           else:
             for bank in range(sbNumBanks):
-              insp = setup_coh_inspiral(ifo_name,ifo_char,insp_job,runSplitBank,calibrated,\
-                                        runSpinChecker,chunk,dag,bank,scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,usertag)
+              insp = setup_coh_inspiral(ifo_name,ifo_char,insp_job,\
+                  runSplitBank,calibrated,runSpinChecker,chunk,dag,bank,\
+                  scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,usertag)
 
           # store this chunk in the list of filtered data 
           for ifo_name in ifo_list:
@@ -653,9 +703,7 @@ if doExtTrig:
 else:
   exttrigInjections=[0,0]
 
-doSlides = cp.has_option('input','num-slides') and cp.get('input','num-slides') != ''
-if doSlides:
-  num_slides = cp.get('input','num-slides')
+doSlides = cp.has_option('input','do-short-slides')
 
 tmplt_job = inspiral.TmpltBankJob(cp,opts.dax)
 
