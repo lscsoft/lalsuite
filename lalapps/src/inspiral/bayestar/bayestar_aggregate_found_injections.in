@@ -65,9 +65,6 @@ if __name__ == '__main__':
 import glob
 import functools
 import itertools
-import os
-import numpy as np
-import healpy as hp
 import sqlite3
 from pylal.progress import ProgressBar
 from lalinference.bayestar import fits
