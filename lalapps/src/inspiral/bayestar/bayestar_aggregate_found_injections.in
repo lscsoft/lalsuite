@@ -102,7 +102,6 @@ def process(fitsfilename):
 
 if __name__ == '__main__':
     import glob
-    import functools
     import itertools
     import pylal.progress
     progress = pylal.progress.ProgressBar()
@@ -124,7 +123,7 @@ if __name__ == '__main__':
 
     count_records = 0
     progress.max = len(fitsfilenames)
-    for record in imap(functools.partial(process), fitsfilenames):
+    for record in imap(process, fitsfilenames):
         count_records += 1
         progress.update(count_records, record[0])
         print(*record, sep=',', file=outfile)
