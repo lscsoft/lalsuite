@@ -20,7 +20,7 @@
 /**
  * \author B.Krishnan, S.Larson, J.T.Whelan
  * \date 2013
- * \file
+ * \file pulsar_crosscorr_v2.c
  * \ingroup pulsarApps
  * \brief Perform CW cross-correlation search - version 2
  *
@@ -54,8 +54,9 @@ typedef struct{
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
 } UserInput_t;
 
-/* struct to store useful stuff */
+/* struct to store useful variables */
 typedef struct{
+  SFTCatalog *catalog; /**< catalog of SFTs */  
   EphemerisData *edat; /**< ephemeris data */
 } ConfigVariables;
 
@@ -75,20 +76,16 @@ int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 
 int main(int argc, char *argv[]){
-  /* LALStatus pointer */
-  static LALStatus status;  
 
   UserInput_t uvar = empty_UserInput;
+  static ConfigVariables config;
 
   /* sft related variables */ 
   MultiSFTVector *inputSFTs = NULL;
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
-  SFTCatalog *catalog = NULL;
-  static SFTConstraints constraints;
-  REAL8 fMin, fMax; /* min and max freuencies read from SFTs */
+  REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   
-
   /* read lal-debug leve with short-option -v */
    if ( XLALGetDebugLevel ( argc, argv, 'v') != XLAL_SUCCESS )
      XLAL_ERROR ( XLAL_EFUNC );
@@ -108,35 +105,23 @@ int main(int argc, char *argv[]){
   if (uvar.help)	/* if help was requested, then exit */
     return 0;
 
-  
-  /* set sft catalog constraints */
-  constraints.detector = NULL;
-  constraints.timestamps = NULL;
-  XLALGPSSet( constraints.startTime, uvar.startTime, 0);
-  XLALGPSSet( constraints.endTime, uvar.endTime,0); 
-  if ( (constraints.startTime == NULL)&& (constraints.startTime == NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALGPSSet() failed with errno=%d\n", __func__, xlalErrno );
+ 
+  /* configure useful variables based on user input */
+  if ( XLALInitializeConfigVars ( &config, &uvar) != XLAL_SUCCESS ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
 
+  /* now read the data */
   /* FIXME: need to correct fMin and fMax for Doppler shift, rngmedian bins and spindown range */
   /* this is essentially just a place holder for now */
   fMin = uvar.fStart;
   fMin = uvar.fStart + uvar.fBand;
 
-  /* get catalog of SFTs and load them */
-  if ((catalog = XLALSFTdataFind (uvar.sftLocation, &constraints)) == NULL){ 
-    LogPrintf ( LOG_CRITICAL, "%s: XLALSFTdataFind() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
-  }
-
-  if ((inputSFTs = XLALLoadMultiSFTs ( catalog, fMin, fMax)) == NULL){ 
+  if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALLoadSFTs() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
-
-
-  
 
 
   /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
@@ -201,7 +186,7 @@ int main(int argc, char *argv[]){
   /* LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status); */
 
 
-  XLALDestroySFTCatalog (catalog);
+  XLALDestroySFTCatalog (config.catalog);
 
 
   /* de-allocate memory for user input variables */
@@ -263,8 +248,28 @@ int XLALInitUserVars (UserInput_t *uvar)
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
 {
 
+  static SFTConstraints constraints;
   CHAR EphemEarth[MAXFILENAMELENGTH]; /* file with earth-ephemeris data */
   CHAR EphemSun[MAXFILENAMELENGTH];	/* file with sun-ephemeris data */
+
+
+  /* set sft catalog constraints */
+  constraints.detector = NULL;
+  constraints.timestamps = NULL;
+  XLALGPSSet( constraints.startTime, uvar->startTime, 0);
+  XLALGPSSet( constraints.endTime, uvar->endTime,0); 
+  if ( (constraints.startTime == NULL)&& (constraints.startTime == NULL) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALGPSSet() failed with errno=%d\n", __func__, xlalErrno );
+    return 1;
+  }
+
+  /* get catalog of SFTs */
+  if ((config->catalog = XLALSFTdataFind (uvar->sftLocation, &constraints)) == NULL){ 
+    LogPrintf ( LOG_CRITICAL, "%s: XLALSFTdataFind() failed with errno=%d\n", __func__, xlalErrno );
+    return 1;
+  }
+
+
 
   /* initialize ephemeris data*/
   /* first check input consistency */
