@@ -35,7 +35,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/DopplerScan.h>
 #include <lal/ExtrapolatePulsarSpins.h>
-
+#include <lal/LALInitBarycenter.h>
 
 extern int lalDebugLevel;
 
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]){
   /* FIXME: need to correct fMin and fMax for Doppler shift, rngmedian bins and spindown range */
   /* this is essentially just a place holder for now */
   fMin = uvar.fStart;
-  fMin = uvar.fStart + uvar.fBand;
+  fMax = uvar.fStart + uvar.fBand;
 
   if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALLoadSFTs() failed with errno=%d\n", __func__, xlalErrno );
@@ -183,10 +183,12 @@ int main(int argc, char *argv[]){
   /*   spinRange_refTime.fkdotBand[0] = uvar_fBand; */
   /* } */
 
-  /* LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status); */
 
 
-  XLALDestroySFTCatalog (config.catalog);
+  XLALDestroySFTCatalog (config.catalog );
+  XLALFree( config.edat->ephemE );
+  XLALFree( config.edat->ephemS );
+  XLALFree( config.edat );
 
 
   /* de-allocate memory for user input variables */
