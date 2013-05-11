@@ -156,7 +156,6 @@ LALSUITE_CHECK_LIB([LALFrame],[1.0.10],[LALFrOpen],[lal/LALFrameL.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG([XLAL LAL])
-LALSUITE_SWIG_DEPENDS([lal],[true])
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS

@@ -320,8 +320,10 @@ iface_file.write('%%module %s;\n' % module_name)
 iface_file.write('%include <lal/swiglal_common.i>\n')
 
 # import dependent modules
+iface_file.write('#ifndef SWIGIMPORTED\n')
 for module in module_depends.split():
     iface_file.write('%%import <lal/%sswig.i>\n' % module)
+iface_file.write('#endif\n')
 
 # include interface headers in wrapping code
 iface_file.write('%header %{\n')
