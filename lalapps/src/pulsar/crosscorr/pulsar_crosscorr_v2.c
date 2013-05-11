@@ -42,15 +42,16 @@ extern int lalDebugLevel;
 /* user input variables */
 typedef struct{
   BOOLEAN help; /**< if the user wants a help message */
-  INT4    startTime;   /**< desired start GPS time of search */ 
-  INT4    endTime;     /**< desired end GPS time */
-  REAL8   fStart;      /**< start frequency */
-  REAL8   fBand;       /**< frequency band to search over */
-  REAL8   fdotStart;   /**< starting value for first spindown */
-  REAL8   fdotBand;    /**< range of first spindown to search over */
-  REAL8   refTime;     /**< reference time for pulsar phase definition */
-  CHAR    *sftLocation;/**< location of SFT data */
-  CHAR    *ephemYear;  /**< range of years for ephemeris file */
+
+  INT4    startTime;          /**< desired start GPS time of search */ 
+  INT4    endTime;            /**< desired end GPS time */
+  REAL8   fStart;             /**< start frequency */
+  REAL8   fBand;              /**< frequency band to search over */
+  REAL8   fdotStart;          /**< starting value for first spindown */
+  REAL8   fdotBand;           /**< range of first spindown to search over */
+  REAL8   refTime;            /**< reference time for pulsar phase definition */
+  CHAR    *sftLocation;       /**< location of SFT data */
+  CHAR    *ephemYear;         /**< range of years for ephemeris file */
 } UserInput_t;
 
 /* struct to store useful stuff */
@@ -88,8 +89,6 @@ int main(int argc, char *argv[]){
   REAL8 fMin, fMax; /* min and max freuencies read from SFTs */
   
 
-
-
   /* read lal-debug leve with short-option -v */
    if ( XLALGetDebugLevel ( argc, argv, 'v') != XLAL_SUCCESS )
      XLAL_ERROR ( XLAL_EFUNC );
@@ -120,9 +119,7 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
-  
-
-  /* FIXME: need to correct fMin and fMax for Doppler shift, rndmedian bins and spindown range */
+  /* FIXME: need to correct fMin and fMax for Doppler shift, rngmedian bins and spindown range */
   /* this is essentially just a place holder for now */
   fMin = uvar.fStart;
   fMin = uvar.fStart + uvar.fBand;
@@ -165,25 +162,6 @@ int main(int argc, char *argv[]){
   /*   uvar_fResolution = 1/tObs; */
   /* } */
 
-  /* /\*  set up ephemeris  *\/ */
-  /* if(uvar_ephemDir) { */
-  /*   snprintf(EphemEarth, MAXFILENAMELENGTH, "%s/earth%s.dat", */
-  /* 		uvar_ephemDir, uvar_ephemYear); */
-  /*   snprintf(EphemSun, MAXFILENAMELENGTH, "%s/sun%s.dat", */
-  /* 		uvar_ephemDir, uvar_ephemYear); */
-  /* } else { */
-  /*   snprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar_ephemYear); */
-  /*   snprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat", uvar_ephemYear); */
-  /* } */
-
-  /* EphemEarth[MAXFILENAMELENGTH-1] = 0; */
-  /* EphemSun[MAXFILENAMELENGTH-1] = 0; */
-
-  /* edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData)); */
-  /* (*edat).ephiles.earthEphemeris = EphemEarth; */
-  /* (*edat).ephiles.sunEphemeris = EphemSun; */
-
-  /* LAL_CALL( LALInitBarycenter( &status, edat), &status); */
 
 
   /* { */
@@ -258,17 +236,18 @@ int XLALInitUserVars (UserInput_t *uvar)
 
   uvar->sftLocation = XLALCalloc(1, MAXFILENAMELENGTH+1);
 
+
   /* register  user-variables */
-  XLALregBOOLUserStruct ( help, 	   'h',  UVAR_HELP, "Print this message");  
+  XLALregBOOLUserStruct ( help, 	 'h',  UVAR_HELP, "Print this message");  
   
-  XLALregINTUserStruct   ( startTime,       0,  UVAR_OPTIONAL, "Desired start time of analysis in GPS seconds");
-  XLALregINTUserStruct   ( endTime,         0,  UVAR_OPTIONAL, "Desired end time of analysis in GPS seconds");
-  XLALregREALUserStruct  ( fStart,          0,  UVAR_OPTIONAL, "Start frequency in Hz");
-  XLALregREALUserStruct  ( fBand,           0,  UVAR_OPTIONAL, "Frequency band to search over in HZ ");
-  XLALregREALUserStruct  ( fdotStart,       0,  UVAR_OPTIONAL, "Start value of spindown in Hz/s");
-  XLALregREALUserStruct  ( fdotBand,        0,  UVAR_OPTIONAL, "Band for spindown values in Hz/s");
-  XLALregSTRINGUserStruct( ephemYear,       0,  UVAR_OPTIONAL, "String Ephemeris year range");
-  XLALregSTRINGUserStruct( sftLocation,     0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
+  XLALregINTUserStruct   ( startTime,     0,  UVAR_OPTIONAL, "Desired start time of analysis in GPS seconds");
+  XLALregINTUserStruct   ( endTime,       0,  UVAR_OPTIONAL, "Desired end time of analysis in GPS seconds");
+  XLALregREALUserStruct  ( fStart,        0,  UVAR_OPTIONAL, "Start frequency in Hz");
+  XLALregREALUserStruct  ( fBand,         0,  UVAR_OPTIONAL, "Frequency band to search over in HZ ");
+  XLALregREALUserStruct  ( fdotStart,     0,  UVAR_OPTIONAL, "Start value of spindown in Hz/s");
+  XLALregREALUserStruct  ( fdotBand,      0,  UVAR_OPTIONAL, "Band for spindown values in Hz/s");
+  XLALregSTRINGUserStruct( ephemYear,     0,  UVAR_OPTIONAL, "String Ephemeris year range");
+  XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
@@ -283,6 +262,28 @@ int XLALInitUserVars (UserInput_t *uvar)
 /* initialize and register user variables */
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
 {
+
+  CHAR EphemEarth[MAXFILENAMELENGTH]; /* file with earth-ephemeris data */
+  CHAR EphemSun[MAXFILENAMELENGTH];	/* file with sun-ephemeris data */
+
+  /* initialize ephemeris data*/
+  /* first check input consistency */
+  if ( uvar->ephemYear == NULL) {
+    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
+  }
+
+  /* construct ephemeris file names from ephemeris year input*/
+  snprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar->ephemYear);
+  snprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat",  uvar->ephemYear);
+  EphemEarth[MAXFILENAMELENGTH-1]=0;
+  EphemSun[MAXFILENAMELENGTH-1]=0;
+
+  /* now call initbarycentering routine */
+  if ( (config->edat = XLALInitBarycenter ( EphemEarth, EphemSun)) == NULL ) {
+    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  }
   
   return XLAL_SUCCESS;
 
