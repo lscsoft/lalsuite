@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 32
+# serial 33
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -245,9 +245,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
   ])
 
-  # string to add to user environment setup scripts
-  AC_SUBST(SWIG_USER_ENV,[""])
-
   # configure SWIG languages
   LALSUITE_USE_SWIG_OCTAVE
   LALSUITE_USE_SWIG_PYTHON
@@ -389,9 +386,6 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     octexecdir='${prefix}'/"${octexecdir}"
     AC_MSG_RESULT([${octexecdir}])
     AC_SUBST(octexecdir)
-
-    # string to add to user environment setup scripts
-    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend OCTAVE_PATH $(octexecdir)\n'
 
   ])
 ])
