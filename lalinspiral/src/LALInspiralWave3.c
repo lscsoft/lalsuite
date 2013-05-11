@@ -664,7 +664,7 @@ XLALInspiralWave3Engine(
     }
 
     fOld = f;
-    v = pow(f*LAL_PI*totalMass, oneby3);
+    v = pow(f*LAL_PI*totalMass, (1./3.));
     v2 = v*v;
     if (output1)
     {

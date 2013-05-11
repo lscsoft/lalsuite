@@ -12,6 +12,8 @@ AC_CONFIG_FILES([ \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  python/Makefile \
+  python/__init__.py \
   src/Makefile \
   swig/Makefile \
   swig/octave/Makefile \
@@ -125,7 +127,6 @@ LALSUITE_CHECK_LIB([LALSupport],[6.10.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG([XLAL LAL])
-LALSUITE_SWIG_DEPENDS([lal],[true])
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS

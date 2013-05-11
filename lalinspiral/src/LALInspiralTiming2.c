@@ -100,7 +100,7 @@ XLALInspiralTiming2_0PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v8 = pow(v,8.);
 
   toff = - toffIn->t + toffIn->tc
@@ -153,7 +153,7 @@ XLALInspiralTiming2_2PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v8 = v2*v2*v2*v2;
 
@@ -208,7 +208,7 @@ XLALInspiralTiming2_3PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v3 = v2*v;
   v8 = v3*v3*v2;
@@ -265,7 +265,7 @@ XLALInspiralTiming2_4PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;
@@ -324,7 +324,7 @@ XLALInspiralTiming2_5PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;
@@ -386,7 +386,7 @@ XLALInspiralTiming2_6PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;
@@ -449,7 +449,7 @@ XLALInspiralTiming2_7PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM*f, oneby3);
+  v = pow(toffIn->piM*f, (1./3.));
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;

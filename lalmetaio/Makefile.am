@@ -18,7 +18,8 @@ SUBDIRS = \
 	debian \
 	include \
 	src \
-	swig
+	swig \
+	python
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalmetaio.pc

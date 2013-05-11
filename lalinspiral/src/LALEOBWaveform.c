@@ -117,6 +117,8 @@ at the last stable orbit. It is recommended that a rather generous
 #define UNUSED
 #endif
 
+#define ninty4by3etc 18.687902694437592603 /* (94/3 -41/31*pi*pi) */
+
 typedef struct tagrOfOmegaIn {
    REAL8 eta, omega;
 } rOfOmegaIn;

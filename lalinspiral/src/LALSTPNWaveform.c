@@ -1064,7 +1064,7 @@ LALSTPNWaveformEngine (
 
       if (signalvec1)
 	{
-	  v = pow(omega, oneby3);
+	  v = pow(omega, (1./3.));
 	  amp = params->signalAmplitude*v*v;
 
 

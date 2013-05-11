@@ -30,7 +30,7 @@ void LALEstimateEffectiveDistance (
         REAL8                   *effDistance
         )
 {
-    REAL8   msevenby3, powerNorm, totalMass, flso, distanceNorm;
+    REAL8   powerNorm, totalMass, flso, distanceNorm;
     REAL8   f, ins_amp;
     INT4    i;
     REAL8   dynRange = 1.0;
@@ -38,7 +38,6 @@ void LALEstimateEffectiveDistance (
     INITSTATUS(status);
     ATTATCHSTATUSPTR (status);
 
-    msevenby3 = -7.L/3.L;
     powerNorm = 0.;
     totalMass = param.totalMass*LAL_MTSUN_SI;
 
@@ -48,7 +47,7 @@ void LALEstimateEffectiveDistance (
     for (i=1; i<(INT4)psd->length; i++)  {
         f = i*df;
         if (f > flso) break;
-        if (psd->data[i]) powerNorm += pow(f,msevenby3)/psd->data[i];
+        if (psd->data[i]) powerNorm += pow(f,(-7./3.))/psd->data[i];
     }
 
     /* I am not sure if there should be a factor of 2.0 here inside the sqrt ()

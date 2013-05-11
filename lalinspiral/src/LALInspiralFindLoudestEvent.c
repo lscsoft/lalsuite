@@ -70,7 +70,6 @@ LALInspiralFindLoudestEvent
    REAL8 norm;
    REAL8 distanceNorm;
    REAL8 flso;
-   REAL8 msevenby3;
    REAL8 x;
    REAL8 y;
    REAL8 z;
@@ -274,7 +273,6 @@ LALInspiralFindLoudestEvent
          }
          printf("&\n");
    }
-   msevenby3 = -7.L/3.L;
    distanceNorm = 0.;
    totalMass = findeventsin->param.totalMass*LAL_MTSUN_SI;
    eta = findeventsin->param.eta;
@@ -283,7 +281,7 @@ LALInspiralFindLoudestEvent
    {
 	   f = i*df;
 	   if (f > flso) break;
-	   if (findeventsin->psd.data[i]) distanceNorm += pow(f,msevenby3)/findeventsin->psd.data[i];
+	   if (findeventsin->psd.data[i]) distanceNorm += pow(f,(-7./3.))/findeventsin->psd.data[i];
    }
    distanceNorm = sqrt(distanceNorm);
    distanceNorm *= df * pow(totalMass, 5.L/6.L) * sqrt(5.L*eta/12.L)/pow(LAL_PI,2.L/3.L) ;

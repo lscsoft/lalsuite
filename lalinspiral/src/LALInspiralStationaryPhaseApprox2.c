@@ -128,7 +128,7 @@ XLALInspiralStationaryPhaseApprox2 (
    InspiralTemplate *params
    )
 {
-   REAL8 Oneby3, UNUSED h1, UNUSED h2, pimmc, f, v, df, shft, phi, amp0, amp, psif, psi;
+   REAL8 UNUSED h1, UNUSED h2, pimmc, f, v, df, shft, phi, amp0, amp, psif, psi;
    INT4 n, nby2, i, f0, fn;
    expnCoeffs ak;
    expnFunc func;
@@ -188,12 +188,11 @@ XLALInspiralStationaryPhaseApprox2 (
      XLAL_ERROR(XLAL_EFUNC);
 
    /* compute some basic variables */
-   Oneby3 = 1.L/3.L;
    df = params->tSampling/signalvec->length;
    pimmc = LAL_PI * params->totalMass * LAL_MTSUN_SI;
    f0 = params->fLower;
    fn = (params->fCutoff < ak.fn) ? params->fCutoff : ak.fn;
-   v = pow(pimmc*f0, Oneby3);
+   v = pow(pimmc*f0, (1./3.));
 
    /* If we want to pad with zeroes in the beginning then the instant of
     * coalescence will be the chirp time + the duration for which padding
@@ -223,7 +222,7 @@ XLALInspiralStationaryPhaseApprox2 (
        }
      else
        {
-       v = pow(pimmc * f, Oneby3);
+       v = pow(pimmc * f, (1./3.));
        psif = XLALInspiralTaylorF2Phasing(v, &ak);
        psi = shft * f + phi + psif;
        /*

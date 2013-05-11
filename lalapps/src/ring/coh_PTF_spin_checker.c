@@ -325,8 +325,8 @@ int main( int argc, char **argv )
   LALFree(timeSlideVectors);
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
-      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,NULL,NULL,NULL,
-      NULL,NULL,NULL,NULL);
+      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,NULL,Fplus,Fcross,NULL,NULL,\
+      NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
   while ( PTFSpinTmpltHead )
   {
     PTFSpinTmplt = PTFSpinTmpltHead;

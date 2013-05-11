@@ -66,7 +66,8 @@
         %swiglal_call_dtor(gsl_vector##NAME##_free, $self);
       }
     }
-    %swiglal_array_dynamic_1D(TYPE, size_t, data, size, arg1->stride);
+    %swiglal_array_dynamic_size(size_t, size);
+    %swiglal_array_dynamic_1D(TYPE, size_t, data, arg1->size, arg1->stride);
   } gsl_vector##NAME;
 
   // GSL matrix of type NAME.
@@ -84,7 +85,9 @@
         %swiglal_call_dtor(gsl_matrix##NAME##_free, $self);
       }
     }
-    %swiglal_array_dynamic_2D(TYPE, size_t, data, size1, size2, arg1->tda, 1);
+    %swiglal_array_dynamic_size(size_t, size1);
+    %swiglal_array_dynamic_size(size_t, size2);
+    %swiglal_array_dynamic_2D(TYPE, size_t, data, arg1->size1, arg1->size2, arg1->tda, 1);
   } gsl_matrix##NAME;
 
 %enddef // %lalswig_gsl_vector_matrix

@@ -31,17 +31,21 @@ int main(int argc, char **argv)
 
   /* Declarations of parameters */
   INT4  i,j,k;
-  UINT4 uj,sp;
+  UINT4 uj,sp,slideNum;
 
   /* process structures */
   struct coh_PTF_params    *params                  = NULL;
   ProcessParamsTable       *procpar                 = NULL;
 
   /* sky position+time slide structures */
-  UINT4                    numSkyPoints;
+  UINT4                    numSkyPoints,currAnalStart,currAnalEnd;
   CohPTFSkyPositions       *skyPoints               = NULL;
-  INT8  *slideIDList;
-  TimeSlide *time_slide_head;
+  INT8  *slideIDList,currSlideID;
+  TimeSlide *time_slide_head = NULL;
+  TimeSlideVectorList *longTimeSlideList = NULL;
+  TimeSlideVectorList * shortTimeSlideList = NULL;
+  SegmentTable *segment_table_head = NULL;
+  TimeSlideSegmentMapTable *time_slide_map_head = NULL;
 
   /* FFT structures */
   REAL4FFTPlan             *fwdplan                 = NULL;
@@ -84,7 +88,7 @@ int main(int argc, char **argv)
   segStartTime.gpsNanoSeconds = 0;
   struct timeval           startTime;
   LALDetector              *detectors[LAL_NUM_IFO+1];
-  REAL4                    *timeOffsets;
+  REAL4                    *timeOffsets,*slidTimeOffsets;
   REAL4                    *Fplus;
   REAL4                    *Fcross;
   REAL4                    *Fplustrig;
@@ -164,6 +168,7 @@ int main(int argc, char **argv)
 
   /* allocate memory for time offsets and detector responses */
   timeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
+  slidTimeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
   Fplus       = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
   Fcross      = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
   Fplustrig   = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
@@ -188,7 +193,9 @@ int main(int argc, char **argv)
    *------------------------------------------------------------------------*/
 
   slideIDList = LALCalloc(1, numSegments*sizeof(INT8));
-  coh_PTF_create_time_slide_table(params,slideIDList,&time_slide_head,\
+  coh_PTF_create_time_slide_table(params,slideIDList,segments,&time_slide_head,\
+                                  &time_slide_map_head,&segment_table_head,\
+                                  &longTimeSlideList,&shortTimeSlideList,\
                                   timeSlideVectors,numSegments);
                              
   /*------------------------------------------------------------------------*
@@ -446,75 +453,101 @@ int main(int argc, char **argv)
         /* Calculate offsets and responses for this sky point */
         coh_PTF_calculate_det_stuff(params,detectors,timeOffsets,Fplus,\
                             Fcross,skyPoints,sp);
-
-        /* FIXME: This is a hack when doing faceOn+faceAway analysis */
-        if (params->faceAwayAnalysis && params->faceOnAnalysis)
+        /* Loop over short slides */
+        for (slideNum = 0; slideNum < params->numShortSlides ; slideNum++)
         {
-          params->faceOnStatistic = 1;
-        }
+          /* Update the offsets */
+          for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+          {
+            if (params->haveTrig[ifoNumber])
+            {
+              slidTimeOffsets[ifoNumber] = timeOffsets[ifoNumber] + \
+                  shortTimeSlideList[slideNum].timeSlideVectors[ifoNumber];
+            }
+          }
+          /* Determine slide ID */
+          currSlideID = slideIDList[j]*params->numShortSlides;
+          currSlideID += shortTimeSlideList[slideNum].timeSlideID;
 
-        // This function calculates the cohSNR time series and all of the
-        // signal based vetoes as appropriate
-        coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
-                         timeOffsets, Fplus, Fcross,
+          /* FIXME: This is a hack when doing faceOn+faceAway analysis */
+          if (params->faceAwayAnalysis && params->faceOnAnalysis)
+          {
+            params->faceOnStatistic = 1;
+          }
+
+          // This function calculates the cohSNR time series and all of the
+          // signal based vetoes as appropriate
+          coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
+                         slidTimeOffsets, Fplus, Fcross,
                          j, pValues, gammaBeta, snrComps, nullSNR,
                          traceSNR, bankVeto, autoVeto,
                          chiSquare, subBankSize, bankOverlaps, 
                          bankNormOverlaps, dataOverlaps, autoTempOverlaps,
                          fcTmplt, invspec, segments, invplan, 
                          &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
-                         frequencyRangesCross, startTime);
+                         frequencyRangesCross, startTime,
+                         shortTimeSlideList[slideNum].analStartPoint,
+                         shortTimeSlideList[slideNum].analEndPoint);
      
-        verbose("Made coherent statistic for segment %d, template %d, "
-                "sky point %d at %ld \n", j, i, sp,
-                timeval_subtract(&startTime));      
+          verbose("Made coherent statistic for segment %d, template %d, "
+                  "sky point %d at %ld \n", j, i, sp,
+                  timeval_subtract(&startTime));      
+          
+          currAnalStart = shortTimeSlideList[slideNum].analStartPoint - \
+                      params->analStartPoint;
+          currAnalEnd = shortTimeSlideList[slideNum].analEndPoint - \
+                      params->analStartPoint;
 
-        /* This function construct triggers from loud events */
-        eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
-                                       cohSNR, *PTFtemplate, eventId,
-                                       spinTemplate,
-                                       pValues, gammaBeta, snrComps,
-                                       nullSNR, traceSNR, bankVeto,
-                                       autoVeto, chiSquare, PTFM,
-                                       skyPoints->data[sp].longitude,
-                                       skyPoints->data[sp].latitude,
-                                       slideIDList[j], timeOffsets);
+          /* This function construct triggers from loud events */
+          eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
+                                         cohSNR, *PTFtemplate, eventId,
+                                         spinTemplate,
+                                         pValues, gammaBeta, snrComps,
+                                         nullSNR, traceSNR, bankVeto,
+                                         autoVeto, chiSquare, PTFM,
+                                         skyPoints->data[sp].longitude,
+                                         skyPoints->data[sp].latitude,
+                                         currSlideID, slidTimeOffsets,
+                                         currAnalStart,currAnalEnd);
 
-        /* FIXME: Also part of the faceAway + faceOn hack */
-        if (params->faceAwayAnalysis && params->faceOnAnalysis)
-        {
-          params->faceOnStatistic = 2; 
+          /* FIXME: Also part of the faceAway + faceOn hack */
+          if (params->faceAwayAnalysis && params->faceOnAnalysis)
+          {
+            params->faceOnStatistic = 2; 
 
-          coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
-                         timeOffsets, Fplus, Fcross,
+            coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
+                         slidTimeOffsets, Fplus, Fcross,
                          j, pValues, gammaBeta, snrComps, nullSNR,
                          traceSNR, bankVeto, autoVeto,
                          chiSquare, subBankSize, bankOverlaps,
                          bankNormOverlaps, dataOverlaps, autoTempOverlaps,
                          fcTmplt, invspec, segments, invplan,
                          &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
-                         frequencyRangesCross, startTime);
+                         frequencyRangesCross, startTime,
+                         shortTimeSlideList[slideNum].analStartPoint,
+                         shortTimeSlideList[slideNum].analEndPoint);
 
-          verbose("Made coherent statistic for segment %d, template %d, "
-                  "sky point %d at %ld \n", j, i, sp,
-                  timeval_subtract(&startTime));
+            verbose("Made coherent statistic for segment %d, template %d, "
+                    "sky point %d at %ld \n", j, i, sp,
+                    timeval_subtract(&startTime));
 
-          eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
-                                       cohSNR, *PTFtemplate, eventId,
-                                       spinTemplate,
-                                       pValues, gammaBeta, snrComps,
-                                       nullSNR, traceSNR, bankVeto,
-                                       autoVeto, chiSquare, PTFM,
-                                       skyPoints->data[sp].longitude,
-                                       skyPoints->data[sp].latitude,
-                                       slideIDList[j], timeOffsets);
-        }
+            eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
+                                         cohSNR, *PTFtemplate, eventId,
+                                         spinTemplate,
+                                         pValues, gammaBeta, snrComps,
+                                         nullSNR, traceSNR, bankVeto,
+                                         autoVeto, chiSquare, PTFM,
+                                         skyPoints->data[sp].longitude,
+                                         skyPoints->data[sp].latitude,
+                                         currSlideID, slidTimeOffsets,
+                                         currAnalStart,currAnalEnd);
+          } /* End of if faceaway and faceon block */
 
-        params->numEvents = XLALCountMultiInspiral(eventList);
-        verbose("There are currently %d triggers.\n", params->numEvents);
-        verbose("Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime));
-
-      }
+          params->numEvents = XLALCountMultiInspiral(eventList);
+          verbose("There are currently %d triggers.\n", params->numEvents);
+          verbose("Generated triggers for segment %d, template %d, sky point %d, short slide %d at %ld \n", j, i, sp, slideNum, timeval_subtract(&startTime));
+        }/* End loop over time slides */
+      }/* End loop over sky points*/
 
       /* Free memory for temporary chisq products */
 
@@ -568,17 +601,18 @@ int main(int argc, char **argv)
 
   /* calulate number of events and cluster if needed */
   params->numEvents = XLALCountMultiInspiral(eventList);
-  fprintf(stderr,"There are %d total triggers before cluster.\n", params->numEvents);
+  verbose("There are %d total triggers before cluster.\n", params->numEvents);
   if ( params->clusterFlag )
   {
     coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
     params->numEvents = XLALCountMultiInspiral(eventList);
-    fprintf(stderr,"There are %d total triggers after cluster.\n", params->numEvents);
+    verbose("There are %d total triggers after cluster.\n", params->numEvents);
   }
 
   /* Output events to xml */
   coh_PTF_output_events_xml(params->outputFile, eventList, params->injectList,\
-                            procpar, time_slide_head, params);
+                            procpar, time_slide_head, time_slide_map_head,\
+                            segment_table_head, params);
 
   /* Everything that follows is memory cleanup */
   coh_PTF_destroy_time_series(cohSNR,nullSNR,traceSNR,bankVeto,autoVeto,\
@@ -586,9 +620,10 @@ int main(int argc, char **argv)
 
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invplan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
-      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,Fplustrig,\
-      Fcrosstrig,skyPoints,time_slide_head,timeSlideVectors,detectors,\
-      slideIDList);
+      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,slidTimeOffsets,Fplus,Fcross,\
+      Fplustrig,Fcrosstrig,skyPoints,time_slide_head,longTimeSlideList,
+      shortTimeSlideList,timeSlideVectors,detectors, slideIDList,\
+      time_slide_map_head,segment_table_head);
   
   coh_PTF_free_veto_memory(params,bankNormOverlaps,bankFcTmplts,bankOverlaps,\
       dataOverlaps,autoTempOverlaps);
@@ -632,7 +667,9 @@ void coh_PTF_statistic(
     struct bankDataOverlaps **chisqSnglOverlapsP,
     REAL4 *frequencyRangesPlus[LAL_NUM_IFO+1],
     REAL4 *frequencyRangesCross[LAL_NUM_IFO+1],
-    struct timeval          startTime
+    struct timeval          startTime,
+    UINT4                   segStartPoint,
+    UINT4                   segEndPoint
 )
 
 {
@@ -643,7 +680,7 @@ void coh_PTF_statistic(
    * appropriate calculates the desired signal based vetoes. */
 
   /* Begin with all the declarations */
-  UINT4  segStartPoint, segEndPoint,csVecLength,csVecLengthTwo;
+  UINT4  csVecLength,csVecLengthTwo;
   UINT4  i, j, k, ifoNumber, vecLength, vecLengthTwo,ifoNum1,ifoNum2;
   INT4   timeOffsetPoints[LAL_NUM_IFO],tOffset1,tOffset2,numPointCheck;
   REAL4 *v1p,*v2p,coincSNR,snglSNRthresh;
@@ -652,7 +689,6 @@ void coh_PTF_statistic(
   REAL4 *powerBinsPlus[LAL_NUM_IFO+1],*powerBinsCross[LAL_NUM_IFO+1];
   UINT4 currPointLoc;
   struct bankCohTemplateOverlaps *bankCohOverlaps,*autoCohOverlaps;
-  COMPLEX8VectorSequence *tempqVec;
   gsl_matrix *eigenvecs,*eigenvecsNull,*Autoeigenvecs;
   gsl_vector *eigenvals,*eigenvalsNull,*Autoeigenvals;
   /* FIXME: the 50s below seem to hardcode a limit on the number of templates
@@ -681,8 +717,6 @@ void coh_PTF_statistic(
     csVecLengthTwo = 1;
 
   /* Initialize pointers, some initialize to NULL */
-  tempqVec = NULL;
-  Autoeigenvecs = NULL;
   Autoeigenvals = NULL;
   bankCohOverlaps = NULL;
   autoCohOverlaps = NULL;
@@ -734,9 +768,6 @@ void coh_PTF_statistic(
    * injection. Here we figure out what that time shou/rd be. No injections
    * equates to analyse the whole segment.
    */
-
-  segStartPoint = 0;
-  segEndPoint = 0;
 
   if ( params->injectFile )
   {
@@ -887,7 +918,9 @@ void coh_PTF_statistic(
 
   numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
 
-  coh_PTF_template_time_series_cluster(cohSNR,numPointCheck);
+  coh_PTF_template_time_series_cluster(cohSNR,numPointCheck,\
+                                       segStartPoint - params->analStartPoint,\
+                                       segEndPoint - params->analStartPoint);
 
   verbose("-->Done template clustering at %ld \n",timeval_subtract(&startTime));
 
@@ -1157,7 +1190,9 @@ UINT8 coh_PTF_add_triggers(
     REAL4                   rightAscension,
     REAL4                   declination,
     INT8                    slideId,
-    REAL4                   *timeOffsets
+    REAL4                   *timeOffsets,
+    UINT4                   startPoint,
+    UINT4                   endPoint
 )
 {
   // This function adds a trigger to the event list
@@ -1167,13 +1202,9 @@ UINT8 coh_PTF_add_triggers(
   MultiInspiralTable *lastEvent = *thisEvent;
   MultiInspiralTable *currEvent = NULL;
 
-  REAL4 cohSNRThreshold = params->threshold;
-  if (spinTrigger)
-    cohSNRThreshold = params->spinThreshold;
-
   coh_PTF_convert_time_offsets_to_points(params,timeOffsets,timeOffsetPoints);
 
-  for (i = 0 ; i < cohSNR->data->length ; i++)
+  for (i = startPoint ; i < endPoint ; i++)
   {
     if (cohSNR->data->data[i])
     {
@@ -1328,21 +1359,24 @@ UINT4 coh_PTF_accept_trig_check(
   {
     time2.gpsSeconds=currEvent->end_time.gpsSeconds;
     time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
-    if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
+    if (thisEvent.time_slide_id == currEvent->time_slide_id)
     {
-      if (thisEvent.snr_dof == currEvent->snr_dof)
+      if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
       {
-        if (thisEvent.snr < currEvent->snr\
-            && (thisEvent.event_id->id != currEvent->event_id->id))
+        if (thisEvent.snr_dof == currEvent->snr_dof)
         {
-          if ( XLALGPSDiff(&time1,&time2) < 0 )
-            loudTrigBefore = 1;
-          else
-            loudTrigAfter = 1;
-
-          if (loudTrigBefore && loudTrigAfter)
+          if (thisEvent.snr < currEvent->snr\
+              && (thisEvent.event_id->id != currEvent->event_id->id))
           {
-            return 0;
+            if ( XLALGPSDiff(&time1,&time2) < 0 )
+              loudTrigBefore = 1;
+            else
+              loudTrigAfter = 1;
+
+            if (loudTrigBefore && loudTrigAfter)
+            {
+              return 0;
+            }
           }
         }
       }

@@ -51,7 +51,7 @@ lalstochastic-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
-	@printf "$(SWIG_USER_ENV)" >>$@
+	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
 
 lalstochastic-user-env.csh lalstochastic-user-env.sh: lalstochastic-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }

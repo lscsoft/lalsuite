@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 32
+# serial 34
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -243,20 +243,28 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     ])
     AC_SUBST(SWIG_LD_LIBPATH_NAME)
 
-  ])
+    # list of other LAL SWIG modules that this module depends on
+    AC_SUBST(SWIG_MODULE_DEPENDS,[""])
+    for arg in ${swig_save_LIBS}; do
+      swig_module=["`echo ${arg} | ${SED} -n 's|^.*/lib\(lal[^.]*\)\.la$|\1|p'`"]
+      AS_IF([test "x${swig_module}" != x && test "x${swig_module}" != xlalsupport],[
+        SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} ${swig_module}"
+      ])
+    done
 
-  # string to add to user environment setup scripts
-  AC_SUBST(SWIG_USER_ENV,[""])
+    # scripting-language path to search for pre-installed SWIG modules
+    AC_SUBST(SWIG_PREINST_PATH,["\$(SWIG_OUTDIR)"])
+    AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
+      for dir in ${LALSUITE_SUBDIRS}; do
+        SWIG_PREINST_PATH="${SWIG_PREINST_PATH}:\$(abs_top_builddir)/../${dir}/\$(subdir)/${objdir}"
+      done
+    ])
+
+  ])
 
   # configure SWIG languages
   LALSUITE_USE_SWIG_OCTAVE
   LALSUITE_USE_SWIG_PYTHON
-
-  # list of other LAL libraries SWIG wrapping module depends on
-  AC_SUBST(SWIG_MODULE_DEPENDS,[""])
-
-  # scripting-language path to search for pre-installed SWIG modules
-  AC_SUBST(SWIG_PREINST_PATH,["\$(SWIG_OUTDIR)"])
 
   # restore global compiler/linker variables
   CPPFLAGS=${swig_save_CPPFLAGS}
@@ -265,20 +273,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
   LDFLAGS=${swig_save_LDFLAGS}
   LIBS=${swig_save_LIBS}
 
-])
-
-# add to list of other LAL libraries SWIG wrapping module depends on
-# args: $1=LAL library, $2=enable dependency?
-AC_DEFUN([LALSUITE_SWIG_DEPENDS],[
-  AS_IF([test "x$2" = xtrue],[
-    SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} $1"
-
-    # add to scripting-language path to search for pre-installed SWIG modules
-    AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
-      SWIG_PREINST_PATH="${SWIG_PREINST_PATH}:\$(abs_top_builddir)/../$1/\$(subdir)/${objdir}"
-    ])
-
-  ])
 ])
 
 # configure SWIG language wrapping module
@@ -389,9 +383,6 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     octexecdir='${prefix}'/"${octexecdir}"
     AC_MSG_RESULT([${octexecdir}])
     AC_SUBST(octexecdir)
-
-    # string to add to user environment setup scripts
-    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend OCTAVE_PATH $(octexecdir)\n'
 
   ])
 ])

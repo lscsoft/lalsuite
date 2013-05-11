@@ -1269,3 +1269,104 @@ void XLALDestroySearchSummaryTable(SearchSummaryTable *head)
     head = next;
   }
 }
+
+/*
+ * Create a SegmentTable structure.
+ */
+
+
+SegmentTable *XLALCreateSegmentTableRow(const ProcessTable *process)
+{
+  SegmentTable *new = XLALMalloc(sizeof(*new));
+
+  if(!new)
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+
+  new->next = NULL;
+  if(process)
+    new->process_id = process->process_id;
+  else
+    new->process_id = -1;
+  new->creator_db = -1;
+  new->segment_id = -1;
+  new->segment_def_id = -1;
+  new->segment_def_cdb = -1;
+  XLALGPSSet(&new->start_time, 0, 0);
+  XLALGPSSet(&new->end_time, 0, 0);
+
+  return new;
+}
+
+
+/*
+ * Destroy a SegmentTable structure.
+ */
+
+
+void XLALDestroySegmentTableRow(SegmentTable *row)
+{
+  XLALFree(row);
+}
+
+
+/*
+ * Destroy a SegmentTable linked list.
+ */
+
+
+void XLALDestroySegmentTable(SegmentTable *head)
+{
+  while(head)
+  {
+    SegmentTable *next = head->next;
+    XLALDestroySegmentTableRow(head);
+    head = next;
+  }
+}
+
+/*
+ * Create a TimeSlideSegmentMap structure.
+ */
+
+
+TimeSlideSegmentMapTable *XLALCreateTimeSlideSegmentMapTableRow(void)
+{
+  TimeSlideSegmentMapTable *new = XLALMalloc(sizeof(*new));
+
+  if(!new)
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+
+  new->next = NULL;
+  new->time_slide_id = -1;
+  new->segment_def_id = -1;
+
+  return new;
+}
+
+
+/*
+ * Destroy a TimeSlideSegmentMap structure.
+ */
+
+
+void XLALDestroyTimeSlideSegmentMapTableRow(TimeSlideSegmentMapTable *row)
+{
+  XLALFree(row);
+}
+
+
+/*
+ * Destroy a TimeSlideSegmentMap linked list.
+ */
+
+
+void XLALDestroyTimeSlideSegmentMapTable(TimeSlideSegmentMapTable *head)
+{
+  while(head)
+  {
+    TimeSlideSegmentMapTable *next = head->next;
+    XLALDestroyTimeSlideSegmentMapTableRow(head);
+    head = next;
+  }
+}
+

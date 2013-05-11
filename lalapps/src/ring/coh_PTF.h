@@ -191,6 +191,8 @@ struct coh_PTF_params {
   char         userTag[256];
   char         ifoTag[256];
   UINT4        slideSegments[LAL_NUM_IFO+1];
+  REAL4        shortSlideOffset;
+  UINT4        numShortSlides;
   UINT4        fftLevel;
   UINT4        simDataType;
   REAL4        clusterWindow;
@@ -222,6 +224,7 @@ struct coh_PTF_params {
   int          dynTempLength;
   int          storeAmpParams;
   int          analSegmentEnd;
+  int          doShortSlides;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
@@ -270,6 +273,8 @@ typedef struct tagTimeSlideVectorList
 {
   REAL4       timeSlideVectors[LAL_NUM_IFO];
   INT8        timeSlideID;
+  UINT4        analStartPoint;
+  UINT4        analEndPoint;
 }
 TimeSlideVectorList;
 
@@ -318,7 +323,9 @@ void coh_PTF_statistic(
     struct bankDataOverlaps **chisqSnglOverlapsP,
     REAL4 *frequencyRangesPlus[LAL_NUM_IFO+1],
     REAL4 *frequencyRangesCross[LAL_NUM_IFO+1],
-    struct timeval          startTime
+    struct timeval          startTime,
+    UINT4                   segStartPoint,
+    UINT4                   segEndPoint
 );
 
 UINT8 coh_PTF_add_triggers(
@@ -341,7 +348,9 @@ UINT8 coh_PTF_add_triggers(
     REAL4                   rightAscension,
     REAL4                   declination,
     INT8                    slideId,
-    REAL4                   *timeOffsets
+    REAL4                   *timeOffsets,
+    UINT4                   startPoint,
+    UINT4                   endPoint
 );
 void coh_PTF_cluster_triggers(
   struct coh_PTF_params   *params,
@@ -436,7 +445,12 @@ RingDataSegments *coh_PTF_get_segments(
 void coh_PTF_create_time_slide_table(
   struct coh_PTF_params   *params,
   INT8                    *slideIDList,
+  RingDataSegments        **segments,
   TimeSlide               **time_slide_headP,
+  TimeSlideSegmentMapTable **time_slide_map_headP,
+  SegmentTable            **segment_table_headP,
+  TimeSlideVectorList     **longTimeSlideListP,
+  TimeSlideVectorList     **shortTimeSlideListP,
   REAL4                   *timeSlideVectors,
   INT4                    numSegments
 );
@@ -524,7 +538,9 @@ REAL4 coh_PTF_get_spin_SNR(
 
 void coh_PTF_template_time_series_cluster(
   REAL4TimeSeries *cohSNR,
-  INT4 numPointCheck
+  INT4 numPointCheck,
+  UINT4 startPoint,
+  UINT4 endPoint
 );
 
 UINT4 coh_PTF_test_veto_vals(
@@ -781,15 +797,20 @@ void coh_PTF_cleanup(
     REAL8Array              **PTFN,
     COMPLEX8VectorSequence  **PTFqVec,
     REAL4                   *timeOffsets,
+    REAL4                   *slidTimeOffsets,
     REAL4                   *Fplus,
     REAL4                   *Fcross,
     REAL4                   *Fplustrig,
     REAL4                   *Fcrosstrig,
     CohPTFSkyPositions      *skyPoints,
     TimeSlide               *time_slide_head,
+    TimeSlideVectorList     *longTimeSlideList,
+    TimeSlideVectorList     *shortTimeSlideList,
     REAL4                   *timeSlideVectors,
     LALDetector             **detectors,
-    INT8                    *slideIDList
+    INT8                    *slideIDList,
+    TimeSlideSegmentMapTable *time_slide_map_head,
+    SegmentTable            *segment_table_head
 );
 
 REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
@@ -1033,12 +1054,14 @@ ProcessParamsTable * create_process_params(
 
 int coh_PTF_output_events_xml(
     char               *outputFile,
-    MultiInspiralTable *events,
+    MultiInspiralTable  *events,
     SimInspiralTable *injections,
     ProcessParamsTable *processParamsTable,
     TimeSlide          *time_slide_head,
+    TimeSlideSegmentMapTable *time_slide_map_head,
+    SegmentTable       *segment_table_head,
     struct coh_PTF_params *params
-);
+    );
 
 int coh_PTF_output_tmpltbank(
     char               *outputFile,

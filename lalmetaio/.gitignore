@@ -21,6 +21,8 @@ lalmetaio-*.tar.gz
 lalmetaio.pc
 lalmetaio.spec
 libtool
+python/__init__.py
+python/git_version.py
 src/LALMetaIOConfig.h
 src/LALMetaIOVCSInfo.h
 src/git_version

@@ -162,7 +162,6 @@ INOTIFY_ENABLE_VAL="`eval test x$inotify = xtrue && echo "ENABLED" || echo "DISA
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG([XLAL LAL])
-LALSUITE_SWIG_DEPENDS([lal],[true])
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS

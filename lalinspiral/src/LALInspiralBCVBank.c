@@ -496,13 +496,10 @@ LALPSItoMasses (
   {
     REAL8 totalMass;
     REAL8 eta;
-    REAL8 eightBy3 	= 8.L/3.L;
-    REAL8 twoBy3	= 2.L/3.L;
-    REAL8 fiveBy3 	= 5.L/3.L;
 	/*we estimate the total mass and then fFinal*/
     params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
     eta = params->eta =
-      3.L/(128.L * params->psi0 * pow(LAL_PI*params->totalMass, fiveBy3));
+      3.L/(128.L * params->psi0 * pow(LAL_PI*params->totalMass, (5./3.)));
     totalMass = params->totalMass;
     params->fFinal = 1.L/( LAL_PI * pow(HighGM, 1.5L) * params->totalMass );
     params->totalMass /= LAL_MTSUN_SI;
@@ -521,10 +518,10 @@ LALPSItoMasses (
     }
 #endif
 
-    params->t0 = 5.0 / ( 256.0*eta*pow(totalMass, fiveby3) *
-        pow(LAL_PI * params->fLower, eightBy3));
-    params->t3 = LAL_PI/(8.0*eta*pow(totalMass, twoBy3) *
-        pow(LAL_PI * params->fLower, fiveBy3));
+    params->t0 = 5.0 / ( 256.0*eta*pow(totalMass, (5./3.)) *
+        pow(LAL_PI * params->fLower, (8./3.)));
+    params->t3 = LAL_PI/(8.0*eta*pow(totalMass, (2./3.)) *
+        pow(LAL_PI * params->fLower, (5./3.)));
   }
   DETATCHSTATUSPTR(status);
   RETURN (status);

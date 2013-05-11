@@ -86,7 +86,7 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 	UNUSED(t);
 
 	omega = values[1];
-	v = pow(omega,oneby3);
+	v = pow(omega,(1./3.));
 
   test = -0.5 * params->eta * ( (2.0/3.0) * (1.0/v) * params->epnorb[0]	+
                                 params->epnorb[1] +
@@ -177,7 +177,7 @@ static int XLALSTPNAdaptiveDerivatives(double t,const double values[],double dva
 		return LALSTPN_DERIVATIVE_OMEGANONPOS;
 	}
 
-  v = pow(omega,oneby3);
+  v = pow(omega,(1./3.));
   v2  = v * v; v3 = v2 * v;	v4 = v3 * v; v7 = v4 * v3; v11 = v7 * v4;
 
   dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
@@ -403,7 +403,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 			REAL8 v=0, amp=0, alpha=0, alpha0 = atan2(LNhy[0],LNhx[0]);
 
 			for(unsigned int i=0;i<len;i++) {
-				v = pow(omega[i],oneby3);
+				v = pow(omega[i],(1./3.));
 				amp = params->signalAmplitude * (v*v);
 				if(LNhx[i]*LNhx[i] + LNhy[i]*LNhy[i] > 0.0) {
           alpha = atan2(LNhy[i],LNhx[i]); alpha0 = alpha;
@@ -429,7 +429,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 			apcommon = -4.0 * params->mu * LAL_MRSUN_SI/(params->distance);
 
 			for(unsigned int i=0;i<len;i++) {
-				f2a = pow(omega[i],twoby3);
+				f2a = pow(omega[i],(2./3.));
 				if(LNhx[i]*LNhx[i] + LNhy[i]*LNhy[i] > 0.0) {
           alpha = atan2(LNhy[i],LNhx[i]); alpha0 = alpha;
         } else {

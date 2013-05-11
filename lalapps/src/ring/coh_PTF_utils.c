@@ -411,6 +411,8 @@ RingDataSegments *coh_PTF_get_segments(
 
   if ( params->analyzeInjSegsOnly )
   {
+    /* NOTE: Using this flag will override anything given by the option
+     * --only-analyse-segments, do not try and use both together */ 
     /* Figure out which segments the injections are in. If an injection is
      * within 1s of a segment boundary, analyse both segments. */ 
     for ( i = 0 ; i < params->numOverlapSegments; i++)
@@ -487,13 +489,15 @@ RingDataSegments *coh_PTF_get_segments(
   /* if todo list is empty then do them all */
   if ( (! params->segmentsToDoList || ! strlen( params->segmentsToDoList )) && (! params->analyzeInjSegsOnly) )
   {
+    /* Not convinved the code ever goes here, because empty segmentsToDoList
+     * does not evaluate to false. The loop below still works though! */ 
     segments->numSgmnt = params->numOverlapSegments;
     segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
     for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
     {
       slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
       timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] = 
-          (sgmnt-slidSegNum)*params->segmentDuration;
+          ((INT4)slidSegNum-(INT4)sgmnt)*params->strideDuration;
       compute_data_segment( &segments->sgmnt[sgmnt], slidSegNum, channel,
           invspec, response, params->segmentDuration, params->strideDuration,
           fwdplan );
@@ -506,6 +510,7 @@ RingDataSegments *coh_PTF_get_segments(
     /* first count the number of segments to do */
     count = 0;
     for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
+    {
       if ( params->analyzeInjSegsOnly )
       {
         if ( segListToDo[sgmnt] == 1)
@@ -520,6 +525,7 @@ RingDataSegments *coh_PTF_get_segments(
         else
           continue; /* skip this segment: it is not in todo list */
       }
+    }
 
     if ( ! count ) /* no segments to do */
     {
@@ -535,6 +541,7 @@ RingDataSegments *coh_PTF_get_segments(
     {
       if ( params->analyzeInjSegsOnly )
       {
+        /* NOTE: Time slide injection analysis is not currently possible */
         if ( segListToDo[sgmnt] == 1)
           compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
@@ -543,10 +550,10 @@ RingDataSegments *coh_PTF_get_segments(
       else
       {
         if ( is_in_list( sgmnt, params->segmentsToDoList ) )
-      /* we are sliding the names of segments here */
+        /* we are sliding the names of segments here */
         {
-          slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
-          timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] =
+          slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( params->numOverlapSegments );
+          timeSlideVectors[NumberIFO*params->numOverlapSegments + count] =
               ((INT4)slidSegNum-(INT4)sgmnt)*params->strideDuration;
           compute_data_segment( &segments->sgmnt[count++], slidSegNum, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
@@ -569,32 +576,50 @@ RingDataSegments *coh_PTF_get_segments(
 void coh_PTF_create_time_slide_table(
   struct coh_PTF_params   *params,
   INT8                    *slideIDList,
+  RingDataSegments        **segments,
   TimeSlide               **time_slide_headP,
+  TimeSlideSegmentMapTable **time_slide_map_headP,
+  SegmentTable            **segment_table_headP,
+  TimeSlideVectorList     **longTimeSlideListP,
+  TimeSlideVectorList     **shortTimeSlideListP,
   REAL4                   *timeSlideVectors,
   INT4                    numSegments
 )
 {
-  TimeSlide *time_slide_head;
-  TimeSlideVectorList timeSlideList[numSegments];
+  TimeSlide *time_slide_head = NULL;
+  TimeSlide *curr_slide = NULL;
+  TimeSlideSegmentMapTable *time_slide_map_head = NULL;
+  TimeSlideSegmentMapTable *curr_time_slide_map = NULL;
+  SegmentTable *segment_table_head = NULL;
+  SegmentTable *curr_slide_segment = NULL;
+  TimeSlideVectorList *longTimeSlideList = LALCalloc(\
+      numSegments, sizeof(TimeSlideVectorList));
   CHAR ifoName[LIGOMETA_IFO_MAX];
-  UINT4 slideCount = 0;
+  UINT4 longSlideCount = 0;
+  UINT4 shortSlideCount = 0;
   INT4 i;
-  UINT4 ui,uj,ifoNumber;
+  UINT4 ui,uj,ifoNumber,ifoNum,lastStartPoint,wrapPoint,currId,ifoCount;
+  UINT4 slideSegmentCount;
+  REAL8 currBaseOffset,currBaseIfoOffset[LAL_NUM_IFO],wrapTime,currIfoOffset;
+  LIGOTimeGPS slideStartTime,slideEndTime;
 
+  /* First construct the list of long slides */
   for (i = 0 ; i < numSegments ; i++)
   {
     UINT4 slideDuplicate = 0;
-    if (slideCount)
+    if (longSlideCount)
     {
-      for (uj = 0; uj < slideCount; uj++)
+      for (uj = 0; uj < longSlideCount; uj++)
       {
         UINT4 slideChecking = 1;
+        /* Here we check if the time-slid segment i is the same slide as the
+         * timeSlideList[uj] */  
         for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
         {
           if (params->haveTrig[ifoNumber])
           {
             if (timeSlideVectors[ifoNumber*params->numOverlapSegments+i] != \
-                timeSlideList[uj].timeSlideVectors[ifoNumber])
+                longTimeSlideList[uj].timeSlideVectors[ifoNumber])
             {
               slideChecking = 0;
             }
@@ -603,7 +628,7 @@ void coh_PTF_create_time_slide_table(
         if (slideChecking)
         {
           slideDuplicate = 1;
-          slideIDList[i] = timeSlideList[uj].timeSlideID;
+          slideIDList[i] = longTimeSlideList[uj].timeSlideID;
         }
       }
     }
@@ -613,45 +638,230 @@ void coh_PTF_create_time_slide_table(
       {
         if (params->haveTrig[ifoNumber])
         {
-          timeSlideList[slideCount].timeSlideVectors[ifoNumber] = \
+          longTimeSlideList[longSlideCount].timeSlideVectors[ifoNumber] = 
               timeSlideVectors[ifoNumber*params->numOverlapSegments+i];
         }
       }
-      timeSlideList[slideCount].timeSlideID = slideCount;
-      slideIDList[i] = timeSlideList[slideCount].timeSlideID;
-      slideCount++;
+      longTimeSlideList[longSlideCount].timeSlideID = longSlideCount;
+      slideIDList[i] = longTimeSlideList[longSlideCount].timeSlideID;
+      longSlideCount++;
     }
   }
 
-  time_slide_head=NULL;
-  TimeSlide *curr_slide = NULL;
+  TimeSlideVectorList *shortTimeSlideList = LALCalloc(\
+      params->numShortSlides, sizeof(TimeSlideVectorList));
 
-  for (ui = 0 ; ui < slideCount; ui++)
+  /* Next construct the list of short time slides */
+  /* Always have a zero-lag short slide */
+  for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
-    for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    if (params->haveTrig[ifoNumber])
     {
-      if (params->haveTrig[ifoNumber])
+      shortTimeSlideList[0].timeSlideVectors[ifoNumber] = 0.;
+    }
+  }
+  shortTimeSlideList[0].timeSlideID = 0;
+  shortTimeSlideList[0].analStartPoint = params->analStartPoint;
+  shortTimeSlideList[0].analEndPoint = params->analEndPoint;
+  shortSlideCount = 1;
+
+  if (params->doShortSlides)
+  {
+    currBaseOffset = params->shortSlideOffset;
+    while (1)
+    {
+      /* Calculate offsets for each detector */
+      ifoNum = 0;
+      for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
-        if (! time_slide_head)
+        if (params->haveTrig[ifoNumber])
         {
-          time_slide_head=XLALCreateTimeSlide();
-          curr_slide= time_slide_head;
+          currBaseIfoOffset[ifoNumber] = currBaseOffset * ifoNum;
+          /* If the offset is bigger than the stride then this cannot be done*/
+          /* EDIT: We need to check that the offset is not bigger than the */
+          /* stride minus the BaseOffset, otherwise we can end up with short */
+          /* slides whose offsets are very similar to the long slides */
+          if (currBaseIfoOffset[ifoNumber] > \
+                  (params->strideDuration - params->shortSlideOffset) )
+          {
+            break;
+          }
+          ifoNum += 1;
+        }
+      }  
+      if (ifoNumber != LAL_NUM_IFO)
+      { /* If I did not finish the previous for loop due to break, break here*/
+        /* THIS IS THE ONLY PLACE THAT I MIGHT BREAK FROM THE WHILE LOOP */
+        break;
+      }
+
+      /* This avoids "WARNING: May be used unset" warning */
+      lastStartPoint = 0;
+      /* Now we need to consider the wrapping and set slides */
+      for (ui = 0; ui < ifoNum; ui++)
+      {
+        /* Begin by initializing the slide */
+        shortTimeSlideList[shortSlideCount].timeSlideID = shortSlideCount;
+
+        /* Next we populate the slide's start and end times */
+        /* We're actually going to loop backwards, so ui = 0 corresponds to the
+         * end of the segment where are slides will have wrapped */  
+        if (ui == 0)
+        {
+          /* If ui=0 we know the end point of slide will be analEndPoint */
+          shortTimeSlideList[shortSlideCount].analEndPoint = \
+               params->analEndPoint;
         }
         else
         {
-          curr_slide->next=XLALCreateTimeSlide();
-          curr_slide = curr_slide->next;
+          /* Otherwise end at where we started before */
+          shortTimeSlideList[shortSlideCount].analEndPoint = lastStartPoint;
+        } 
+        if (ui == ifoNum - 1)
+        {
+          /* If ui = ifoNum we have to start at analStartPoint */
+          shortTimeSlideList[shortSlideCount].analStartPoint = \
+              params->analStartPoint;
         }
-        curr_slide->time_slide_id = timeSlideList[ui].timeSlideID;
-        /* FIXME */
-        XLALReturnIFO(ifoName,ifoNumber);
-        strncpy(curr_slide->instrument,ifoName,sizeof(curr_slide->instrument)-1);
-        curr_slide->offset = timeSlideList[ui].timeSlideVectors[ifoNumber];
-        curr_slide->process_id=0;
+        else
+        {
+          /* Now the tricky one, we have to figure out where the next (previous
+           * as we're looping backwards) wrap point will be. */  
+          wrapTime = params->strideDuration - (ui + 1) * currBaseOffset;
+          wrapPoint = floor(wrapTime * params->sampleRate + 0.5);
+          /* Start point is then start point + wrap point */
+          shortTimeSlideList[shortSlideCount].analStartPoint = \
+              params->analStartPoint + wrapPoint;
+        }
+        lastStartPoint = shortTimeSlideList[shortSlideCount].analStartPoint;
+        /* Now we construct the wrapped offsets and store*/
+        ifoCount = 0;
+        for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          /* We are looping backwards so invert this */
+          if (params->haveTrig[ifoNumber])
+          {
+            currIfoOffset = currBaseIfoOffset[ifoNumber];
+            if (ifoCount > ui)
+            { /* Need to wrap */
+              currIfoOffset -= params->strideDuration;
+            }
+            shortTimeSlideList[shortSlideCount].timeSlideVectors[ifoNumber] = \
+                currIfoOffset;
+            ifoCount++;
+          }
+        }
+        shortSlideCount++;
+      } /* End loop over wrap points */
+      currBaseOffset += params->shortSlideOffset;
+    } /* End the while(1) loop over base offsets */
+  } /* End if do short slides */
+  sanity_check(shortSlideCount == params->numShortSlides);
+
+  /* Time slide table will contain every long+short slide combination */
+  for (ui = 0 ; ui < longSlideCount; ui++)
+  { /* Loop over long slides */
+    for (uj = 0 ; uj < shortSlideCount; uj++)
+    { /* Loop over short slides */
+      /* Construct the ID from the current long and short slide */
+      currId = longTimeSlideList[ui].timeSlideID*shortSlideCount;
+      currId += shortTimeSlideList[uj].timeSlideID;
+      /* Create an entry in the time_slide_map */
+      if (! time_slide_map_head)
+      {
+        time_slide_map_head=XLALCreateTimeSlideSegmentMapTableRow();
+        curr_time_slide_map = time_slide_map_head;
       }
+      else
+      {
+        curr_time_slide_map->next = XLALCreateTimeSlideSegmentMapTableRow();
+        curr_time_slide_map = curr_time_slide_map->next;
+      }
+      /* Set the ID in the time_slide_table */
+      curr_time_slide_map->time_slide_id = currId;
+      curr_time_slide_map->segment_def_id = currId;
+
+      for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          /* We need an entry for every ifo and every slide */
+          if (! time_slide_head)
+          { /* Create table if it doesn't exist */
+            time_slide_head=XLALCreateTimeSlide();
+            curr_slide= time_slide_head;
+          }
+          else
+          { /* Or setup the next entry in the linked list */
+            curr_slide->next=XLALCreateTimeSlide();
+            curr_slide = curr_slide->next;
+          }
+          /* Set the ID in the time_slide_table */
+          curr_slide->time_slide_id = currId;
+          /* Set the IFO  */
+          XLALReturnIFO(ifoName,ifoNumber);
+          strncpy(curr_slide->instrument,ifoName,\
+                  sizeof(curr_slide->instrument)-1);
+          /* Set the offset as the sum of the short and long offests */
+          curr_slide->offset = \
+              longTimeSlideList[ui].timeSlideVectors[ifoNumber];
+          curr_slide->offset += \
+              shortTimeSlideList[uj].timeSlideVectors[ifoNumber];
+          /* Process IDs will be 0 */
+          curr_slide->process_id=0;
+        }
+      } /* End ifo loop */
+    } /* End short slide loop */
+  } /* End long slide loop */
+
+  /* Now we construct the list of analysed segments for each time slide_id
+   * This will be a segment for *every* segment+short_slide combination */ 
+  slideSegmentCount = 0;
+  for (i = 0 ; i < numSegments ; i++)
+  { /* Loop over segments */
+    for (uj = 0 ; uj < shortSlideCount; uj++)
+    { /* Loop over short slides */
+      /* Contruct the ID form the current long+short slide */
+      currId = slideIDList[i]*shortSlideCount;
+      currId += shortTimeSlideList[uj].timeSlideID;
+      /* Construct the segment start and end times */
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          slideStartTime = segments[ifoNumber]->sgmnt[i].epoch; 
+          slideEndTime = segments[ifoNumber]->sgmnt[i].epoch;
+        }
+      }
+      XLALGPSAdd(&slideStartTime, \
+          ((REAL8)shortTimeSlideList[uj].analStartPoint) / params->sampleRate );
+      XLALGPSAdd(&slideEndTime, \
+          ((REAL8)shortTimeSlideList[uj].analEndPoint) / params->sampleRate );
+      /* Add this to the segment table */
+      if (! segment_table_head)
+      { /* Create table if it doesn't exist */
+        segment_table_head=XLALCreateSegmentTableRow(NULL);
+        curr_slide_segment= segment_table_head;
+      }
+      else
+      { /* Or setup the next entry in the linked list */
+        curr_slide_segment->next=XLALCreateSegmentTableRow(NULL);
+        curr_slide_segment = curr_slide_segment->next;
+      }
+      curr_slide_segment->segment_id = slideSegmentCount;
+      curr_slide_segment->segment_def_id = currId;
+      curr_slide_segment->start_time = slideStartTime;
+      curr_slide_segment->end_time = slideEndTime;
+      curr_slide_segment->process_id = 0;
+      slideSegmentCount++;
     }
   }
+
   *time_slide_headP = time_slide_head;
+  *time_slide_map_headP = time_slide_map_head;
+  *segment_table_headP = segment_table_head;
+  *shortTimeSlideListP = shortTimeSlideList;
+  *longTimeSlideListP = longTimeSlideList;
 }
 
 void coh_PTF_calculate_det_stuff(
@@ -1456,14 +1666,18 @@ XXXXX
 
 void coh_PTF_template_time_series_cluster(
   REAL4TimeSeries *cohSNR,
-  INT4 numPointCheck
+  INT4 numPointCheck,
+  UINT4 startPoint,
+  UINT4 endPoint
 )
 {
   UINT4 ui,check;
   UINT4 logicArray[cohSNR->data->length];
   INT4 j,tempPoint;
-  INT4 dataLen = (INT4) cohSNR->data->length;
-  for (ui = 0; ui < cohSNR->data->length; ui++)
+  /* Have to cast from UINT4 to INT4 to avoid warning */
+  INT4 startPointI = (INT4) startPoint;
+  INT4 endPointI = (INT4) endPoint;
+  for (ui = startPoint; ui < endPoint; ui++)
   {
     logicArray[ui] = 0;
     if (cohSNR->data->data[ui])
@@ -1472,11 +1686,11 @@ void coh_PTF_template_time_series_cluster(
       for (j = -numPointCheck; j < numPointCheck; j++)
       {
         tempPoint = ui + j;
-        if (tempPoint < 0)
+        if (tempPoint < startPointI)
         {
           continue;
         }
-        if (tempPoint >= dataLen)
+        if (tempPoint >= endPointI)
         {
           continue;
         }
@@ -1488,7 +1702,7 @@ void coh_PTF_template_time_series_cluster(
       }
     }
   }
-  for (ui = 0; ui < cohSNR->data->length; ui++)
+  for (ui = startPoint; ui < endPoint; ui++)
   {
     if (logicArray[ui])
     {
@@ -2282,15 +2496,20 @@ void coh_PTF_cleanup(
     REAL8Array              **PTFN,
     COMPLEX8VectorSequence  **PTFqVec,
     REAL4                   *timeOffsets,
+    REAL4                   *slidTimeOffsets,
     REAL4                   *Fplus,
     REAL4                   *Fcross,
     REAL4                   *Fplustrig,
     REAL4                   *Fcrosstrig,
     CohPTFSkyPositions      *skyPoints,
     TimeSlide               *time_slide_head,
+    TimeSlideVectorList     *longTimeSlideList,
+    TimeSlideVectorList     *shortTimeSlideList,
     REAL4                   *timeSlideVectors,
     LALDetector             **detectors,
-    INT8                    *slideIDList
+    INT8                    *slideIDList,
+    TimeSlideSegmentMapTable *time_slide_map_head,
+    SegmentTable            *segment_table_head
 )
 {
   if ( params->injectList )
@@ -2406,6 +2625,8 @@ void coh_PTF_cleanup(
     LALFree( fcInitParams );
   if ( timeOffsets )
     LALFree( timeOffsets );
+  if ( slidTimeOffsets)
+    LALFree( slidTimeOffsets );
   if ( Fplus )
     LALFree( Fplus );
   if ( Fcross )
@@ -2423,6 +2644,14 @@ void coh_PTF_cleanup(
   }
   if (time_slide_head)
     XLALDestroyTimeSlideTable(time_slide_head);
+  if (time_slide_map_head)
+    XLALDestroyTimeSlideSegmentMapTable(time_slide_map_head);
+  if (segment_table_head)
+    XLALDestroySegmentTable(segment_table_head);
+  if (longTimeSlideList)
+    LALFree(longTimeSlideList);
+  if (shortTimeSlideList)
+    LALFree(shortTimeSlideList);
   if (timeSlideVectors)
     LALFree(timeSlideVectors);
 
@@ -3436,9 +3665,12 @@ void findInjectionSegment(
     struct coh_PTF_params *params
     )
 {
+    /* WARNING: THIS FUNCTION WILL NOT WORK WITH SHORT SLIDES. DO NOT ATTEMPT
+     * TO SLIDE INJECTION TRIGGERS WITHOUT FIXING THIS FUNCTION FIRST! */ 
+
     /* define variables */
     LIGOTimeGPS injTime, segmentStart, segmentEnd;
-    UINT4 injSamplePoint, injWindow;
+    UINT4 injSamplePoint, injWindow, tmpStart, tmpEnd;
     REAL8 injDiff;
     INT8 startDiff, endDiff;
     SimInspiralTable *thisInject = NULL;
@@ -3448,6 +3680,8 @@ void findInjectionSegment(
     segmentEnd   = *epoch;
     XLALGPSAdd(&segmentEnd, params->strideDuration);
     thisInject = params->injectList;
+
+    tmpStart = tmpEnd = 0;
 
     /* loop over injections */
     while (thisInject)
@@ -3460,11 +3694,11 @@ void findInjectionSegment(
         {
             verbose("Generating analysis segment for injection at %d.\n",
                     injTime.gpsSeconds);
-            if (*start)
+            if (tmpStart)
             {
                 verbose("warning: multiple injections in this segment.\n");
-                *start = params->analStartPoint;
-                *end = params->analEndPoint;
+                tmpStart = params->analStartPoint;
+                tmpEnd = params->analEndPoint;
             }
             else
             {
@@ -3474,17 +3708,19 @@ void findInjectionSegment(
                 injSamplePoint += params->analStartPoint;
                 injWindow = floor(params->injSearchWindow * params->sampleRate
                                   + 1);
-                *start = injSamplePoint - injWindow;
-                if (*start < params->analStartPoint)
-                    *start = params->analStartPoint;
-                *end = injSamplePoint + injWindow + 1;
-                if (*end > params->analEndPoint)
-                    *end = params->analEndPoint;
-                verbose("Found analysis segment at [%d,%d).\n", *start, *end);
+                tmpStart = injSamplePoint - injWindow;
+                if (tmpStart < params->analStartPoint)
+                    tmpStart = params->analStartPoint;
+                tmpEnd = injSamplePoint + injWindow + 1;
+                if (tmpEnd > params->analEndPoint)
+                    tmpEnd = params->analEndPoint;
+                verbose("Found analysis segment at [%d,%d).\n", tmpStart, tmpEnd);
             }
         }
         thisInject = thisInject->next;
     }
+    *start = tmpStart;
+    *end = tmpEnd;  
 }
 
 UINT4 checkInjectionMchirp(

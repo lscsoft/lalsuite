@@ -83,6 +83,8 @@ int coh_PTF_output_events_xml(
     SimInspiralTable *injections,
     ProcessParamsTable *processParamsTable,
     TimeSlide          *time_slide_head,
+    TimeSlideSegmentMapTable *time_slide_map_head,
+    SegmentTable       *segment_table_head,
     struct coh_PTF_params *params
     )
 {
@@ -127,6 +129,12 @@ int coh_PTF_output_events_xml(
 
   /* output time slide table */
   XLALWriteLIGOLwXMLTimeSlideTable( results, time_slide_head);
+
+  /* output time slide map table */
+  XLALWriteLIGOLwXMLTimeSlideSegmentMapTable( results, time_slide_map_head);
+
+  /* output segment list */
+  XLALWriteLIGOLwXMLSegmentTable( results, segment_table_head);
 
   /* output the events */
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, results, multi_inspiral_table ), &status );

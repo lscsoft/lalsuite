@@ -125,7 +125,6 @@ LALSUITE_CHECK_LIB([LALMetaIO],[1.1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRe
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG([XLAL LAL])
-LALSUITE_SWIG_DEPENDS([lal],[true])
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS

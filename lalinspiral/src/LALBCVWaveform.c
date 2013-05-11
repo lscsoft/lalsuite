@@ -86,8 +86,7 @@ LALBCVWaveform(
  {
 
   REAL8 f, df;
-  REAL8 shift, phi, psi, amp0, amp;
-  REAL8 Sevenby6, Fiveby3, Twoby3, alpha;
+  REAL8 shift, phi, psi, amp0, amp, alpha;
   INT4 n, i;
 
   INITSTATUS(status);
@@ -101,13 +100,10 @@ LALBCVWaveform(
   ASSERT (params->tSampling > 0, status,  LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   n = signalvec->length;
-  Twoby3 = 2.L/3.L;
-  Sevenby6 = 7.L/6.L;
-  Fiveby3 = 5.L/3.L;
 
   df = params->tSampling/(REAL8)n;
   params->fFinal = params->fCutoff;
-  alpha = params->alpha / pow(params->fCutoff, Twoby3);
+  alpha = params->alpha / pow(params->fCutoff, (2./3.));
 
 
   /* to do : check that a_f in [0,1]??*/
@@ -119,15 +115,15 @@ LALBCVWaveform(
   */
   /*
   shift = LAL_TWOPI * ((double) params->nStartPad/params->tSampling + params->startTime);
-  phi = params->startPhase + params->psi0 * pow(params->fLower, -Fiveby3)
-	  + params->psi3 * pow(params->fLower, -Twoby3);
+  phi = params->startPhase + params->psi0 * pow(params->fLower, -(5./3.))
+	  + params->psi3 * pow(params->fLower, -(2./3.));
    */
   shift = -LAL_TWOPI * ((double)params->nStartPad/params->tSampling);
   phi = - params->startPhase;
 
   /*
   amp0 = params->signalAmplitude * pow(5./(384.*params->eta), 0.5) *
-	   totalMass * pow(LAL_PI * totalMass,-Sevenby6) *
+	   totalMass * pow(LAL_PI * totalMass,-(7./6.)) *
 	   params->tSampling * (2. / signalvec->length);
 
    */
@@ -154,8 +150,8 @@ LALBCVWaveform(
        	  else
 	  {
           /* What shall we put for sign phi? for uspa it must be "-" */
-              psi =  (shift*f + phi + params->psi0*pow(f,-Fiveby3) + params->psi3*pow(f,-Twoby3));
-	      amp = amp0 * (1. - alpha * pow(f,Twoby3)) * pow(f,-Sevenby6);
+              psi =  (shift*f + phi + params->psi0*pow(f,-(5./3.)) + params->psi3*pow(f,-(2./3.)));
+	      amp = amp0 * (1. - alpha * pow(f,(2./3.))) * pow(f,-(7./6.));
 
               signalvec->data[i] = (REAL4) (amp * cos(psi));
               signalvec->data[n-i] = (REAL4) (-amp * sin(psi));
@@ -180,7 +176,6 @@ LALBCVSpinWaveform(
 
   REAL8 f, df;
   REAL8 shift, phi, psi, amp0, ampRe, ampIm, modphase;
-  REAL8 Sevenby6, Fiveby3, Twoby3;
   INT4 n, i;
 
   INITSTATUS(status);
@@ -194,9 +189,6 @@ LALBCVSpinWaveform(
   ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   n = signalvec->length;
-  Twoby3 = 2.L/3.L;
-  Sevenby6 = 7.L/6.L;
-  Fiveby3 = 5.L/3.L;
 
   df = params->tSampling/(REAL8)n;
 
@@ -214,7 +206,7 @@ LALBCVSpinWaveform(
 
   /*
   amp0 = params->signalAmplitude * pow(5./(384.*params->eta), 0.5) *
-	   totalMass * pow(LAL_PI * totalMass,-Sevenby6) *
+	   totalMass * pow(LAL_PI * totalMass,-(7./6.)) *
 	   params->tSampling * (2. / signalvec->length);
 
    */
@@ -240,14 +232,14 @@ LALBCVSpinWaveform(
 	  {
           /* What shall we put for sign phi? for uspa it must be "-" */
 
-	    psi = (shift*f + phi + params->psi0*pow(f,-Fiveby3) + params->psi3*pow(f,-Twoby3));
-	    modphase = params->beta * pow(f,-Twoby3);
+	    psi = (shift*f + phi + params->psi0*pow(f,-(5./3.)) + params->psi3*pow(f,-(2./3.)));
+	    modphase = params->beta * pow(f,-(2./3.));
 
-	    ampRe = amp0 * pow(f,-Sevenby6)
+	    ampRe = amp0 * pow(f,-(7./6.))
                          * (params->alpha1
                          + (params->alpha2 * cos(modphase))
                          + (params->alpha3 * sin(modphase)));
-	    ampIm = amp0 * pow(f,-Sevenby6)
+	    ampIm = amp0 * pow(f,-(7./6.))
                          * (params->alpha4
                          + (params->alpha5 * cos(modphase))
                          + (params->alpha6 * sin(modphase)));
