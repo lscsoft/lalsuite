@@ -615,6 +615,13 @@ if (swiglal_release_parent(PTR)) {
 %typemap(swiglal_dynarr_isptr) SWIGTYPE* "true";
 %typemap(swiglal_dynarr_tinfo) SWIGTYPE* "$descriptor";
 
+// Check that array dimensions and strides are non-zero, otherwise fail.
+%define %swiglal_array_dynamic_check_dims_strides(DATA, I)
+  if (dims[I-1] == 0 || strides[I-1] == 0) {
+    SWIG_exception_fail(SWIG_IndexError, "Size/stride of dimension "#I" of '"#DATA"' is zero");
+  }
+%enddef // %swiglal_array_dynamic_check_dims_strides()
+
 // The %swiglal_array_dynamic_<n>D() macros create typemaps which convert
 // <n>-D dynamically-allocated arrays in structs. The macros must be
 // added inside the definition of the struct, before the struct members
@@ -638,6 +645,7 @@ if (swiglal_release_parent(PTR)) {
     if (arg1) {
       const size_t dims[] = {arg1->NI};
       const size_t strides[] = {SI};
+      %swiglal_array_dynamic_check_dims_strides(DATA, 1);
       $1 = %reinterpret_cast(arg1->DATA, TYPE*);
       // swiglal_array_typeid input type: $1_type
       int ecode = %swiglal_array_copyin($1_type)(swiglal_self(), $input, %as_voidptr($1),
@@ -653,6 +661,7 @@ if (swiglal_release_parent(PTR)) {
     if (arg1) {
       const size_t dims[] = {arg1->NI};
       const size_t strides[] = {SI};
+      %swiglal_array_dynamic_check_dims_strides(DATA, 1);
       $1 = %reinterpret_cast(arg1->DATA, TYPE*);
       // swiglal_array_typeid input type: $1_type
       %set_output(%swiglal_array_viewout($1_type)(swiglal_self(), %as_voidptr($1),
@@ -698,6 +707,8 @@ if (swiglal_release_parent(PTR)) {
     if (arg1) {
       const size_t dims[] = {arg1->NI, arg1->NJ};
       const size_t strides[] = {SI, SJ};
+      %swiglal_array_dynamic_check_dims_strides(DATA, 1);
+      %swiglal_array_dynamic_check_dims_strides(DATA, 2);
       $1 = %reinterpret_cast(arg1->DATA, TYPE*);
       // swiglal_array_typeid input type: $1_type
       int ecode = %swiglal_array_copyin($1_type)(swiglal_self(), $input, %as_voidptr($1),
@@ -713,6 +724,8 @@ if (swiglal_release_parent(PTR)) {
     if (arg1) {
       const size_t dims[] = {arg1->NI, arg1->NJ};
       const size_t strides[] = {SI, SJ};
+      %swiglal_array_dynamic_check_dims_strides(DATA, 1);
+      %swiglal_array_dynamic_check_dims_strides(DATA, 2);
       $1 = %reinterpret_cast(arg1->DATA, TYPE*);
       // swiglal_array_typeid input type: $1_type
       %set_output(%swiglal_array_viewout($1_type)(swiglal_self(), %as_voidptr($1),
