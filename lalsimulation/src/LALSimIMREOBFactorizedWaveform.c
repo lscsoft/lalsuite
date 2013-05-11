@@ -47,6 +47,12 @@
 #define UNUSED
 #endif
 
+/**
+ * Constant which comes up in some of the EOB models. Its value is
+ * (94/3 -41/32*pi*pi)
+ */
+#define ninty4by3etc 18.687902694437592603
+
 
 static inline REAL8 XLALCalculateA5( REAL8 eta );
 

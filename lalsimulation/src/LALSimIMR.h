@@ -37,12 +37,6 @@ extern "C" {
 #define EOB_RD_EFOLDS 10.0
 
 /**
- * Constant which comes up in some of the EOB models. Its value is
- * (94/3 -41/32*pi*pi)
- */
-#define ninty4by3etc 18.687902694437592603
-
-/**
  * Driver routine to compute the non-spinning, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomA in the frequency domain.
  *
