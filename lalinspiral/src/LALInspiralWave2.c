@@ -529,7 +529,7 @@ XLALInspiralWave2Engine(
   toffIn.tc = -tC;
 
   /* Determine the initial phase: it is phasing2(v0) with ak.phiC=0 */
-  v = pow(fs * LAL_PI * totalMass, oneby3);
+  v = pow(fs * LAL_PI * totalMass, (1./3.));
   ak.phiC = 0.0;
   phase = func.phasing2(v, &ak);
   if (XLAL_IS_REAL8_FAIL_NAN(phase))
@@ -578,7 +578,7 @@ XLALInspiralWave2Engine(
     }
 
     fOld = freq;
-    v = pow(freq*toffIn.piM, oneby3);
+    v = pow(freq*toffIn.piM, (1./3.));
     phase = func.phasing2(v, &ak); /* phase at given v */
     if (XLAL_IS_REAL8_FAIL_NAN(phase))
       XLAL_ERROR(XLAL_EFUNC);

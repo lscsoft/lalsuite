@@ -247,7 +247,7 @@ XLALInspiralParameterCalc (
          if (params->t2 <= 0)
             XLAL_ERROR(XLAL_EDOM);
 
-         A0 = 5./ pow(piFl, eightby3)/256.;
+         A0 = 5./ pow(piFl, (8./3.))/256.;
          A2 = 3715.0/(64512.0*pow(piFl,2.0));
          B2 = 4620.0/3715 * ieta;
          Tau2In.t2 = params->t2;
@@ -296,10 +296,10 @@ XLALInspiralParameterCalc (
          if (params->t3 <= 0)
             XLAL_ERROR(XLAL_EDOM);
 
-         A0 = 5./ pow(piFl, eightby3)/256.;
-         A3 = LAL_PI / pow(piFl, fiveby3)/8.;
+         A0 = 5./ pow(piFl, (8./3.))/256.;
+         A3 = LAL_PI / pow(piFl, (5./3.))/8.;
          totalMass = A0 * params->t3/(A3 * params->t0);
-         eta = A0/(params->t0 * pow(totalMass, fiveby3));
+         eta = A0/(params->t0 * pow(totalMass, (5./3.)));
 
 	 if (eta > oneby4) {
 		 eta-=tiny;
@@ -322,8 +322,8 @@ XLALInspiralParameterCalc (
          if (params->t4 <= 0)
             XLAL_ERROR(XLAL_EDOM);
 
-	 A0 = 5./(256. * pow(piFl, eightby3));
-         A4 = 5./(128.0 * pow(piFl,fourby3)) * 3058673./1016064.;
+	 A0 = 5./(256. * pow(piFl, (8./3.)));
+         A4 = 5./(128.0 * pow(piFl,(4./3.))) * 3058673./1016064.;
          B4 = 5429./1008 * 1016064./3058673. * ieta;
          C4 = 617./144. * 1016064./3058673. * ieta;
          Tau4In.t4 = params->t4;
@@ -371,7 +371,7 @@ XLALInspiralParameterCalc (
       if (params->psi0 > 0 && params->psi3 < 0)
       {
 	      params->totalMass = totalMass = -params->psi3/(16.L * LAL_PI * LAL_PI * params->psi0)/LAL_MTSUN_SI;
-	      params->eta = eta = 3.L/(128.L * params->psi0 * pow (LAL_PI * totalMass*LAL_MTSUN_SI, fiveby3));
+	      params->eta = eta = 3.L/(128.L * params->psi0 * pow (LAL_PI * totalMass*LAL_MTSUN_SI, (5./3.)));
 
 	      /* if eta < 1/4 amd M > 0 then physical values*/
 	      if (eta <= oneby4)
@@ -405,10 +405,10 @@ XLALInspiralParameterCalc (
    v = pow(piFl * totalMass, 1.L/3.L);
    tN = 5.L/256.L / eta * totalMass / pow(v,8.L);
 
-   params->t0 	= 5.0L/(256.0L*eta*pow(totalMass,fiveby3)*pow(piFl,eightby3));
+   params->t0 	= 5.0L/(256.0L*eta*pow(totalMass,(5./3.))*pow(piFl,(8./3.)));
    params->t2 	= (3715.0L + (4620.0L*ieta*eta))/(64512.0*eta*totalMass*pow(piFl,2.0));
-   params->t3 	= LAL_PI/(8.0*eta*pow(totalMass,twoby3)*pow(piFl,fiveby3));
-   params->t4 	= (5.0/(128.0*eta*pow(totalMass,oneby3)*pow(piFl,fourby3)))
+   params->t3 	= LAL_PI/(8.0*eta*pow(totalMass,(2./3.))*pow(piFl,(5./3.)));
+   params->t4 	= (5.0/(128.0*eta*pow(totalMass,(1./3.))*pow(piFl,(4./3.))))
               	* (3058673./1016064. + 5429.*ieta*eta/1008. +617.*ieta*eta*eta/144.);
    params->t5 	= -5.*(7729./252. - 13./3.*ieta*eta)/(256.*eta*params->fLower);
    /* This is a ddraft. t6 and t7 need to be checked propely*/
@@ -419,8 +419,8 @@ XLALInspiralParameterCalc (
    params->t6 = tN * (params->t6  + 6848.L/105.L*log(4.*v)) * pow(v,6);
    params->t7 = (-15419335.L/127008.L-75703.L/756.L*ieta*eta+14809.L/378.L*ieta*eta*eta) * LAL_PI * tN * pow(v,7);
 
-   params->psi0 = 3.L/(128.L * eta * pow(LAL_PI * totalMass, fiveby3));
-   params->psi3 = -3.L * LAL_PI/(8.L * eta * pow(LAL_PI * totalMass, twoby3));
+   params->psi0 = 3.L/(128.L * eta * pow(LAL_PI * totalMass, (5./3.)));
+   params->psi3 = -3.L * LAL_PI/(8.L * eta * pow(LAL_PI * totalMass, (2./3.)));
 
    switch (params->order) {
 

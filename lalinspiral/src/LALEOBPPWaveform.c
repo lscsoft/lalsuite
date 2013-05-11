@@ -59,6 +59,7 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 
 #include <gsl/gsl_sf_gamma.h>
 
+#define ninty4by3etc 18.687902694437592603 /* (94/3 -41/31*pi*pi) */
 
 static const int EOBNRV2_NUM_MODES_MAX = 5;
 

@@ -166,13 +166,11 @@ LALFindChirpBCVSpinTemplate (
   REAL8                 rootDenominator;
   REAL8                 denominator1;
   REAL8                 numerator1;
-  REAL4                 Twoby3           = 2.0/3.0;
   REAL8                 deltaTto2by3;
   REAL8                *A1Vec            = NULL;
   REAL8                *A2Vec            = NULL;
   REAL8                *A3Vec            = NULL;
   REAL4                 deltaT;
-  REAL4                 rLSOto3by2       = 0.0;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
@@ -236,7 +234,7 @@ LALFindChirpBCVSpinTemplate (
 
   /* parameters */
   deltaT        = params->deltaT;
-  deltaTto2by3  = pow(deltaT, Twoby3);
+  deltaTto2by3  = pow(deltaT, (2./3.));
   deltaF        = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
   x1            = pow( deltaF, -1.0/3.0 );
   fFinal        = tmplt->fFinal;
@@ -249,7 +247,7 @@ LALFindChirpBCVSpinTemplate (
 
   if (fFinal == 0.0)
   {
-        rLSOto3by2 = 14.69693846; /* 6 to 3by2) */
+        const REAL4 rLSOto3by2 = 14.69693846; /* 6 to 3by2) */
 
 	fFinal = (-psi00 * 16 * LAL_PI) / (psi15 * rLSOto3by2);
 

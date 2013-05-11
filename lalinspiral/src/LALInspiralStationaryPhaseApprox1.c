@@ -216,7 +216,7 @@ XLALInspiralStationaryPhaseApprox1 (
       }
       else
       {
-         ak.vf = v = pow(pimmc * f, oneby3);
+         ak.vf = v = pow(pimmc * f, (1./3.));
          if (v==ak.v0)
          {
             psif = 0.;

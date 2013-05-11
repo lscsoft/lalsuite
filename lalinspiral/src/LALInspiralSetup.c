@@ -162,7 +162,7 @@ XLALInspiralSetup (
 
 /* Set initial velocity according to initial frequency */
 
-   ak->v0 = pow (LAL_PI * ak->totalmass * ak->f0, oneby3);
+   ak->v0 = pow (LAL_PI * ak->totalmass * ak->f0, (1./3.));
 
 /* Taylor coefficients of E(x) */
    ak->ETaN = -eta/2.;
