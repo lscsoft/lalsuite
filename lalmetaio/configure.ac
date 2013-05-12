@@ -131,6 +131,11 @@ LALSUITE_USE_SWIG([XLAL LAL])
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE(LAL_HEADER_LINK)
