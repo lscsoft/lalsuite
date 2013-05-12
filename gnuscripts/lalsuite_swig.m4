@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 34
+# serial 35
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -65,6 +65,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
 
 # check the version of ${SWIG}, and store it in ${SWIG_VERSION}
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
+  AC_MSG_CHECKING([${SWIG} version])
   SWIG_VERSION=0.0
   swig_version_output=[`${SWIG} -version 2>/dev/null`]
   AS_IF([test $? -eq 0],[
@@ -74,6 +75,7 @@ AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
       AC_MSG_ERROR([could not determine version of ${SWIG}])
     ])
   ])
+  AC_MSG_RESULT([${SWIG_VERSION}])
 ])
 
 # configure SWIG wrapping modules
@@ -126,8 +128,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # if a SWIG binary was found, get its full path and print its version, otherwise fail
     AS_IF([test "x${SWIG}" != x],[
       AC_PATH_PROG(SWIG,["${SWIG}"])
-      AC_MSG_CHECKING([${SWIG} version])
-      AC_MSG_RESULT([${SWIG_VERSION}])
     ],[
       AC_MSG_ERROR([could not find SWIG with version >= ${swig_min_version}])
     ])
