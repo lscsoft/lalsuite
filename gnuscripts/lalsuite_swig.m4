@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 35
+# serial 36
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -244,13 +244,18 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AC_SUBST(SWIG_LD_LIBPATH_NAME)
 
     # list of other LAL SWIG modules that this module depends on
+    AC_MSG_CHECKING([for SWIG module dependencies])
     AC_SUBST(SWIG_MODULE_DEPENDS,[""])
-    for arg in ${swig_save_LIBS}; do
-      swig_module=["`echo ${arg} | ${SED} -n 's|^.*/lib\(lal[^.]*\)\.la$|\1|p'`"]
-      AS_IF([test "x${swig_module}" != x && test "x${swig_module}" != xlalsupport],[
-        SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} ${swig_module}"
+    for arg in ${LALSUITE_CHECKED_LIBS}; do
+      AS_IF([test "x`echo ${arg} | ${SED} -n '/^lalsupport$/d;/^lal/p'`" != x],[
+        SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} ${arg}"
       ])
     done
+    AS_IF([test "x${SWIG_MODULE_DEPENDS}" = x],[
+      AC_MSG_RESULT([none])
+    ],[
+      AC_MSG_RESULT([${SWIG_MODULE_DEPENDS}])
+    ])
 
     # scripting-language path to search for pre-installed SWIG modules
     AC_SUBST(SWIG_PREINST_PATH,["\$(SWIG_OUTDIR)"])
