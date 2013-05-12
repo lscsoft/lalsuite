@@ -34,7 +34,7 @@ lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
 
 LALSUITE_BUILD="true"
-LALSUITE_SUBDIRS="${ac_subdirs_all}"
+LALSUITE_SUBDIRS="`echo ${ac_subdirs_all}`"
 export LALSUITE_BUILD LALSUITE_SUBDIRS
 
 LAL_LIBS="-L${libdir} ${lalsuite_top_builddir}/lal/lib/lal/liblal.la"
