@@ -691,6 +691,12 @@ void coh_PTF_statistic(
   struct bankCohTemplateOverlaps *bankCohOverlaps,*autoCohOverlaps;
   gsl_matrix *eigenvecs,*eigenvecsNull,*Autoeigenvecs;
   gsl_vector *eigenvals,*eigenvalsNull,*Autoeigenvals;
+  eigenvecs = NULL;
+  eigenvecsNull = NULL;
+  Autoeigenvecs = NULL;
+  eigenvals = NULL;
+  eigenvalsNull = NULL;
+  Autoeigenvals = NULL;
   /* FIXME: the 50s below seem to hardcode a limit on the number of templates
    * this should not be hardcoded. Note that this value is hardcoded in some
    * function declarations as well as here! Double pointers will fix this*/

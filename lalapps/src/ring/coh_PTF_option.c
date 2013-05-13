@@ -862,6 +862,7 @@ int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
                     "why are you using the coherent code? \n");
   }
 
+  sanity_check( params->numShortSlides > 0);
 
   return 0;
 }
