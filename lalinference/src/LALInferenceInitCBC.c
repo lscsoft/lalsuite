@@ -125,6 +125,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--amporder PNorder)            Specify a PN order in amplitude to use (defaults: LALSimulation: max available; LALInspiral: newtownian).\n\
                (--fref fRef)                   Specify a reference frequency at which parameters are defined (default 0).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
+               (--tidalT)                      Enables reparmeterized tidal corrections, only with LALSimulation.\n\
                (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
                (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
                (--modeldomain)                 domain the waveform template will be computed in (\"time\" or \"frequency\").\n\
@@ -155,6 +156,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--phi2 phi2)                   Trigger phi2.\n\
                (--lambda1)                     Trigger lambda1.\n\
                (--lambda2)                     Trigger lambda2.\n\
+               (--lambdaT)                     Trigger lambdaT.\n\
+               (--dLambdaT)                    Trigger dLambdaT.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Prior Arguments ----------------------------------------------------------------------------------------------\n\
@@ -178,6 +181,10 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--lambda1-max)                 Maximum lambda1 (3000).\n\
                (--lambda2-min)                 Minimum lambda2 (0).\n\
                (--lambda2-max)                 Maximum lambda2 (3000).\n\
+               (--lambdaT-min)                 Minimum lambdaT (0).\n\
+               (--lambdaT-max)                 Maximum lambdaT (3000).\n\
+               (--dLambdaT-min)                Minimum dLambdaT (-500).\n\
+               (--dLambdaT-max)                Maximum dLambdaT (500).\n\
                (--dt time)                     Width of time prior, centred around trigger (0.1s).\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
@@ -201,6 +208,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--fixTime)                     Do not allow coalescence time to vary.\n\
                (--fixLambda1)                  Do not allow lambda1 to vary.\n\
                (--fixLambda2)                  Do not allow lambda2 to vary.\n\
+               (--fixLambdaT)                  Do not allow lambdaT to vary.\n\
+               (--fixDlambdaT)                 Do not allow dLambdaT to vary.\n\
                (--varyFlow)                    Allow the lower frequency bound of integration to vary.\n\
                (--pinparams)                   List of parameters to set to injected values [mchirp,asym_massratio,etc].\n";
 
@@ -276,7 +285,11 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   REAL8 lambda1Min=0.0;
   REAL8 lambda1Max=3000.0;
   REAL8 lambda2Min=0.0;
-  REAL8 lambda2Max=3000.0;  
+  REAL8 lambda2Max=3000.0;
+  REAL8 lambdaTMin=0.0;
+  REAL8 lambdaTMax=3000.0;
+  REAL8 dLambdaTMin=-500.0;
+  REAL8 dLambdaTMax=500.0;
   REAL8 tmpMin,tmpMax;//,tmpVal;
   gsl_rng *GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
@@ -305,6 +318,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   REAL8 start_phi_spin2	=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
   REAL8 start_lambda1 =lambda1Min+gsl_rng_uniform(GSLrandom)*(lambda1Max-lambda1Min);
   REAL8 start_lambda2 =lambda2Min+gsl_rng_uniform(GSLrandom)*(lambda2Max-lambda2Min);
+  REAL8 start_lambdaT =lambdaTMin+gsl_rng_uniform(GSLrandom)*(lambdaTMax-lambdaTMin);
+  REAL8 start_dLambdaT =dLambdaTMin+gsl_rng_uniform(GSLrandom)*(dLambdaTMax-dLambdaTMin);
   UINT4 spinAligned=0;
   UINT4 singleSpin=0;
   UINT4 noSpin=0;
@@ -708,7 +723,17 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if (ppt) {
     start_lambda2 = atof(ppt->value);
   }
-  
+ 
+  ppt=LALInferenceGetProcParamVal(commandLine,"--lambdaT");
+  if (ppt) {
+    start_lambdaT = atof(ppt->value);
+  }
+
+  ppt=LALInferenceGetProcParamVal(commandLine,"--dLambdaT");
+  if (ppt) {
+    start_dLambdaT = atof(ppt->value);
+  }
+
   /* Over-ride time prior if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
   if(ppt){
@@ -732,25 +757,49 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(ppt){
     lambda1Min=atof(ppt->value);
   }
-  
+
   /* Over-ride lambda1 max if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--lambda1-max");
   if(ppt){
     lambda1Max=atof(ppt->value);
   }
-  
+
   /* Over-ride lambda2 min if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--lambda2-min");
   if(ppt){
     lambda2Min=atof(ppt->value);
   }
-  
+
   /* Over-ride lambda2 max if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--lambda2-max");
   if(ppt){
     lambda2Max=atof(ppt->value);
   }
-  
+
+  /* Over-ride lambdaT min if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--lambdaT-min");
+  if(ppt){
+    lambdaTMin=atof(ppt->value);
+  }
+
+  /* Over-ride lambdaT max if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--lambdaT-max");
+  if(ppt){
+    lambdaTMax=atof(ppt->value);
+  }
+
+  /* Over-ride dLambdaT min if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--dLambdaT-min");
+  if(ppt){
+    dLambdaTMin=atof(ppt->value);
+  }
+
+  /* Over-ride dLambdaT max if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--dLambdaT-max");
+  if(ppt){
+    dLambdaTMax=atof(ppt->value);
+  }
+
   /* Over-ride component masses */
   ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min");
   if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
@@ -1763,28 +1812,48 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     LALInferenceAddMinMaxPrior(priorArgs, "ppelowerb",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 
   }
-  
-  ppt=LALInferenceGetProcParamVal(commandLine,"--tidal");
-  if(ppt){
-    ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda1");
-    if(ppt){
-      LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      if(lalDebugLevel>0) fprintf(stdout,"phase fixed and set to %f\n",start_lambda1);
-    }else{
-      LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    }
-    LALInferenceAddMinMaxPrior(priorArgs, "lambda1",     &lambda1Min, &lambda1Max,   LALINFERENCE_REAL8_t);
-  
-    ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda2");
-    if(ppt){
-    LALInferenceAddVariable(currentParams, "lambda2",           &start_lambda2,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      if(lalDebugLevel>0) fprintf(stdout,"phase fixed and set to %f\n",start_lambda2);
-    }else{
-      LALInferenceAddVariable(currentParams, "lambda2",           &start_lambda2,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    }
-    LALInferenceAddMinMaxPrior(priorArgs, "lambda2",     &lambda2Min, &lambda2Max,   LALINFERENCE_REAL8_t);
+
+  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--tidal")){
+    XLALPrintError("Error: cannot use both --tidalT and --tidal.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")){
+      ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambdaT");
+      if(ppt){
+        LALInferenceAddVariable(currentParams, "lambdaT",           &start_lambdaT,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        if(lalDebugLevel>0) fprintf(stdout,"lambdaT fixed and set to %f\n",start_lambdaT);
+      }else{
+        LALInferenceAddVariable(currentParams, "lambdaT",           &start_lambdaT,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      }
+      LALInferenceAddMinMaxPrior(priorArgs, "lambdaT",     &lambdaTMin, &lambdaTMax,   LALINFERENCE_REAL8_t);
+
+      ppt=LALInferenceGetProcParamVal(commandLine,"--fixDlambdaT");
+      if(ppt){
+      LALInferenceAddVariable(currentParams, "dLambdaT",           &start_dLambdaT,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        if(lalDebugLevel>0) fprintf(stdout,"dLambdaT fixed and set to %f\n",start_dLambdaT);
+      }else{
+        LALInferenceAddVariable(currentParams, "dLambdaT",           &start_dLambdaT,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      }
+      LALInferenceAddMinMaxPrior(priorArgs, "dLambdaT",     &dLambdaTMin, &dLambdaTMax,   LALINFERENCE_REAL8_t);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")){
+      ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda1");
+      if(ppt){
+        LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        if(lalDebugLevel>0) fprintf(stdout,"lambda1 fixed and set to %f\n",start_lambda1);
+      }else{
+        LALInferenceAddVariable(currentParams, "lambda1",           &start_lambda1,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      }
+      LALInferenceAddMinMaxPrior(priorArgs, "lambda1",     &lambda1Min, &lambda1Max,   LALINFERENCE_REAL8_t);
+
+      ppt=LALInferenceGetProcParamVal(commandLine,"--fixLambda2");
+      if(ppt){
+      LALInferenceAddVariable(currentParams, "lambda2",           &start_lambda2,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        if(lalDebugLevel>0) fprintf(stdout,"lambda2 fixed and set to %f\n",start_lambda2);
+      }else{
+        LALInferenceAddVariable(currentParams, "lambda2",           &start_lambda2,        LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      }
+      LALInferenceAddMinMaxPrior(priorArgs, "lambda2",     &lambda2Min, &lambda2Max,   LALINFERENCE_REAL8_t);
   }
-  
+
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinOrder");
   if(ppt) {
