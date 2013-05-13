@@ -111,7 +111,6 @@ def generate_segments(ifo1_data, ifo2_data, ifo3_data, ifo4_data):
     ifo4_data = data segments for ifo4
   """ 
 
-  print ifo2_data,ifo3_data,ifo4_data
   segment_list = pipeline.ScienceData()
   segment_list = copy.deepcopy(ifo1_data)
   segment_list.intersect_4(ifo2_data, ifo3_data, ifo4_data)
@@ -155,7 +154,7 @@ def setup_coh_inspiral(ifo_name,ifo_char,insp_job,runSplitBank,calibrated,\
   return insp
 ##############################################################################
 #function to build the timeslides vector
-def setup_timeslides(ifo_analyze, num_slides):
+def setup_timeslides(ifo_analyse):
   # Initialise output 
   slide_vector = []
 
@@ -176,28 +175,27 @@ def setup_timeslides(ifo_analyze, num_slides):
 
   # Begin looping over the possible offsets
   start = [0 for i in range(len(ifo_analyse) - 1)]
-  stop = [number_segments for i in range(len(ifo_analyse) - 1)]
+  size = [number_segments for i in range(len(ifo_analyse) - 1)]
   # I don't really know how this works, but it gives [0,0],[0,1] .. [0,len],
   # [1,0],[1,1] ... [1,len],[2,0] ... [len,0] ... [len,len] for 3 ifos,
   # for 4 it would be [0,0,0],[0,0,1] ...  and so on
   for offsetList in itertools.product(*[xrange(i, i+j) \
                                         for i,j in zip(start, size)]):
-    currOffsets = [0].extend(offsetList)
-    print currOffsets
+    currOffsets = [0]
+    currOffsets.extend(offsetList)
     acceptSlide = True
     for i,ifo1 in enumerate(ifo_analyse):
       for j,ifo2 in enumerate(ifo_analyse):
         if ifo1 != ifo2 and i < j:
-          ifoOffset = offsetList[i] - offsetList[j]
+          ifoOffset = currOffsets[i] - currOffsets[j]
           if ifoOffset < 0:
             ifoOffset += number_segments
-          if ifoOffset in offsetPairDict[ifo1+ifo2].values():
+          if ifoOffset in offsetPairDict[ifo1+ifo2]:
             acceptSlide = False
             break
       if not acceptSlide:
         break
     if acceptSlide:
-      print "Accepting:",currOffsets
       # Add slide to list
       slideDict = {}
       for i,ifo in enumerate(ifo_analyse):
@@ -207,7 +205,7 @@ def setup_timeslides(ifo_analyze, num_slides):
       for i,ifo1 in enumerate(ifo_analyse):
         for j,ifo2 in enumerate(ifo_analyse):
           if ifo1 != ifo2 and i < j:
-            ifoOffset = offsetList[i] - offsetList[j]
+            ifoOffset = currOffsets[i] - currOffsets[j]
             if ifoOffset < 0:
               ifoOffset += number_segments
             offsetPairDict[ifo1+ifo2].append(ifoOffset)
@@ -270,7 +268,6 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   if cp.has_section(data_opts[ifo_name]) and \
       cp.has_option(data_opts[ifo_name],'calibrated-data'):
     calibrated = True
-    print "we use calibrated data for ", ifo_name 
   else: calibrated = False
 
   if ifo_data:
@@ -288,7 +285,6 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 
       # now loop over all the data that we need to filter
       for seg_to_do in ifo_to_do[ifo_name]:
-        print chunk, seg_to_do
 
         # if the current chunk is in one of the segments we need to filter
         if not done_this_chunk and inspiral.overlap_test(chunk,seg_to_do):
@@ -357,8 +353,8 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                     exttrigUserTag)
                 insp.set_injections(injectionFile)
           elif doSlides:
-            num_slides = cp.get('input','num-slides')
-            slide_vector = setup_timeslides(ifo_analyze, num_slides)
+            slide_vector = setup_timeslides(ifo_analyze)
+            num_slides = len(slide_vector)
             for slide in range(int(num_slides)):
               vector = slide_vector[slide]
               slidesUserTag = usertag + "_" + "slide" + "_" + \
@@ -703,7 +699,7 @@ if doExtTrig:
 else:
   exttrigInjections=[0,0]
 
-doSlides = cp.has_option('input','do-short-slides')
+doSlides = cp.has_option('input','do-long-slides')
 
 tmplt_job = inspiral.TmpltBankJob(cp,opts.dax)
 
@@ -885,7 +881,6 @@ for ifo in ifo_list:
   data[ifo] = pipeline.ScienceData() 
   if segments[ifo]:
     data[ifo].read(segments[ifo],length + 2 * pad) 
-    print length,overlap,playground_only,pad
     data[ifo].make_chunks(length,overlap,playground_only,0,overlap/2,pad)
     data[ifo].make_chunks_from_unused(length,overlap/2,playground_only,
         0,0,overlap/2,pad)
@@ -946,22 +941,15 @@ for ifo in ifo_list:
 
   # set the exttrig segments
   if exttrig_analyze is None or exttrig_analyze == "all":
-    print "passing"
     pass  # Explicitly do nothing
   elif exttrig_analyze == "on_source":
-    for seg in data_out[ifo]:
-      print 'before',seg
     data_out[ifo].intersection(exttrig_segments)
-    for seg in data_out[ifo]:
-      print 'after',seg
 
   elif exttrig_analyze == "off_source":
-    print "done"
     sys.stdout.flush()
     temp = copy.deepcopy(exttrig_segments)  # don't mutate exttrig_segments
     temp.invert()
     data_out[ifo].intersection(temp)
-    print "done"
     sys.stdout.flush()
   else:
     raise ValueError, "exttrig-analyze has been set to a bad value.  It "\
@@ -1006,7 +994,6 @@ chunks_analyzed = {}
 prev_df = None
 
 print "setting up jobs to filter " + ifo + " data...",
-print ifo_analyze
 sys.stdout.flush()
 
 chunks_analyzed = analyze_coh(ifo_analyze,data,data_to_do,  
