@@ -1671,7 +1671,8 @@ void coh_PTF_template_time_series_cluster(
   UINT4 endPoint
 )
 {
-  UINT4 ui,check;
+  UINT4 ui;
+  //UINT4 check;
   UINT4 logicArray[cohSNR->data->length];
   INT4 j,tempPoint;
   /* Have to cast from UINT4 to INT4 to avoid warning */
@@ -1682,7 +1683,7 @@ void coh_PTF_template_time_series_cluster(
     logicArray[ui] = 0;
     if (cohSNR->data->data[ui])
     {
-      check = 1;
+      //check = 1;
       for (j = -numPointCheck; j < numPointCheck; j++)
       {
         tempPoint = ui + j;
