@@ -333,6 +333,25 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
   return string;
 }
 
+/** Allocates and returns a new string, which is populated with the unit
+ * string.  If there is a failure, returns a \c NULL pointer and \c xlalErrno
+ * is set to one of the error values of \c XLALUnitAsString or \c XLALMalloc.
+ * Caller is responsible for freeing return value with \c XLALFree.
+ */
+char * XLALUnitToString( const LALUnit *input )
+{
+  char *output = NULL, *buf = XLALMalloc(LALUnitTextSize);
+  if (buf)
+  {
+    output = XLALUnitAsString(buf, LALUnitTextSize, input);
+    if (output)
+      output = XLALRealloc(buf, strlen(buf) + 1);
+    if (!output)
+      XLALFree(buf);
+  }
+  return output;
+}
+
 /** \deprecated Use XLALUnitAsString() instead.
  */
 void
