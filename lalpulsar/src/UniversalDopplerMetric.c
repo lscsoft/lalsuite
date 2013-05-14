@@ -34,6 +34,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/XLALGSL.h>
 #include <lal/Factorial.h>
+#include <lal/LogPrintf.h>
 
 #include <lal/UniversalDopplerMetric.h>
 
@@ -182,6 +183,7 @@ typedef enum {
 /** parameters for metric-integration */
 typedef struct
 {
+  int errnum;			/**< store XLAL error of any failures within integrator */
   DetectorMotionType detMotionType;	/**< which detector-motion to use in metric integration */
   DopplerCoordinateID deriv1, deriv2;	/**< the two components of the derivative-product Phi_i_Phi_j to compute*/
   DopplerCoordinateID deriv;		/**< component for single phase-derivative Phi_i compute */
@@ -208,8 +210,6 @@ const DopplerMetricParams empty_DopplerMetricParams;
 const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
 
 /*---------- Global variables ----------*/
-
-BOOLEAN outputIntegrand = 0;
 
 /* Some local constants. */
 #define rOrb_c  (LAL_AU_SI / LAL_C_SI)
@@ -290,7 +290,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
       if ( stat != 0 )
         {
           XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <am1_am2_Phi_i Phi_j> did not reach requested precision!\n", __func__ );
-          XLALPrintWarning ("Segment n=%d, Result = %g, abserr=%g ==> relerr = %.2e > %.2e\n", n, res_n, err_n, fabs(err_n/res_n), epsrel);
+          XLALPrintWarning ("xlalErrno=%i, Segment n=%d, Result = %g, abserr=%g ==> relerr = %.2e > %.2e\n",
+                            par.errnum, n, res_n, err_n, fabs(err_n/res_n), epsrel);
           /* XLAL_ERROR_REAL8( XLAL_EFUNC ); */
         }
 
@@ -327,6 +328,9 @@ double
 CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 {
   intparams_t *par = (intparams_t*) params;
+  if (par->errnum) {
+    return GSL_NAN;
+  }
 
   REAL8 am1, am2, phi_i, phi_j, ret;
 
@@ -388,13 +392,10 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 
   ret = am1 * am2 * phi_i * phi_j;
 
-  if ( outputIntegrand )
-    {
-      printf ( "%d %d %d %d   %f  %f  %f  %f  %f   %f\n",
-               par->amcomp1, par->amcomp2, par->deriv1, par->deriv2,
-               tt, am1, am2, phi_i, phi_j, ret );
-    }
-
+  LogPrintf( LOG_DETAIL,
+             "amcomp1=%d amcomp2=%d deriv1=%d deriv2=%d tt=%f am1=%f am2=%f phi_i=%f phi_j=%f ret=%f\n",
+             par->amcomp1, par->amcomp2, par->deriv1, par->deriv2,
+             tt, am1, am2, phi_i, phi_j, ret );
 
   return ( ret );
 
@@ -412,8 +413,12 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 double
 CWPhaseDeriv_i ( double tt, void *params )
 {
-  REAL8 ret = 0;
   intparams_t *par = (intparams_t*) params;
+  if (par->errnum) {
+    return GSL_NAN;
+  }
+
+  REAL8 ret = 0;
   vect3D_t nn_equ, nn_ecl;	/* skypos unit vector */
   vect3D_t nDeriv_i;	/* derivative of sky-pos vector wrt i */
 
@@ -444,11 +449,10 @@ CWPhaseDeriv_i ( double tt, void *params )
   REAL8 ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
   LIGOTimeGPS ttGPS;
   XLALGPSSetREAL8( &ttGPS, ttSI );
-  int errnum;
-  XLAL_TRY( XLALDetectorPosVel ( &spin_posvel, &orbit_posvel, &ttGPS, par->site, par->edat, par->detMotionType ), errnum );
-  if ( errnum ) {
+  if ( XLALDetectorPosVel ( &spin_posvel, &orbit_posvel, &ttGPS, par->site, par->edat, par->detMotionType ) != XLAL_SUCCESS ) {
+    par->errnum = xlalErrno;
     XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", __func__);
-    GSL_ERROR_VAL( "Failure in CWPhaseDeriv_i", GSL_EFAILED, GSL_NAN );
+    return GSL_NAN;
   }
 
   /* XLALDetectorPosVel() returns detector positions and velocities from XLALBarycenter(),
@@ -600,8 +604,9 @@ CWPhaseDeriv_i ( double tt, void *params )
       break;
 
     default:
+      par->errnum = XLAL_EINVAL;
       XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, par->deriv );
-      GSL_ERROR_VAL( "Failure in CWPhaseDeriv_i", GSL_EFAILED, GSL_NAN );
+      return GSL_NAN;
       break;
 
     } /* switch par->deriv */
@@ -922,10 +927,9 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
       /* compute <phi_i phi_j> */
       integrand.function = &CW_am1_am2_Phi_i_Phi_j;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
-      if ( outputIntegrand ) printf ("\n");
       if ( stat != 0 ) {
-        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i Phi_j> failed! seg=%d, av_ij_n=%g, abserr=%g\n",
-                         __func__, n, res_n, abserr);
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i Phi_j> failed! xlalErrno=%i, seg=%d, av_ij_n=%g, abserr=%g\n",
+                         __func__, par.errnum, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       res_n *= scale12;
@@ -938,8 +942,8 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
       par.deriv = par.deriv1;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
-        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i> failed! seg=%d, av_i_n=%g, abserr=%g\n",
-                         __func__, n, res_n, abserr);
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i> failed! xlalErrno=%i, seg=%d, av_i_n=%g, abserr=%g\n",
+                         __func__, par.errnum, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       res_n *= scale1;
@@ -952,8 +956,8 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
       par.deriv = par.deriv2;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
-        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_j> failed! seg=%d, av_j_n=%g, abserr=%g\n",
-                         __func__, n, res_n, abserr);
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_j> failed! xlalErrno=%i, seg=%d, av_j_n=%g, abserr=%g\n",
+                         __func__, par.errnum, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       res_n *= scale2;
@@ -1095,12 +1099,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
           maxrelerr = MYMAX ( maxrelerr, err );
 	  if ( xlalErrno ) {
 	    XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", __func__, i, j, xlalErrno );
-            xlalErrno = 0;
-            BOOLEAN sav = outputIntegrand;
-            outputIntegrand = 1;
-            gg = CWPhase_cov_Phi_ij ( &metricParams->detInfo, &intparams, &maxrelerr );	/* [Phi_i, Phi_j] */
-            outputIntegrand = sav;
-
 	    XLAL_ERROR_NULL( XLAL_EFUNC );
 	  }
 	  gsl_matrix_set (g_ij, i, j, gg);
