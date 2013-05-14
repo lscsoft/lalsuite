@@ -82,8 +82,8 @@ int main(int argc, char *argv[]){
 
   /* sft related variables */ 
   MultiSFTVector *inputSFTs = NULL;
-  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
-  REAL8 tObs;
+  //LIGOTimeGPS firstTimeStamp, lastTimeStamp;
+  //REAL8 tObs;
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   
   /* read lal-debug leve with short-option -v */
