@@ -112,8 +112,12 @@ REAL8 XLALrOfOmegaP4PN( REAL8 r, void *params);
 static
 REAL8 XLALvrP4PN(const REAL8 r, const REAL8 omega, pr3In *params);
 
-static 
+static
 size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start, const int fsign);
+
+static
+size_t find_instant_freq_hlm(const COMPLEX16TimeSeries *hlm,
+    const REAL8 target, const size_t start);
 
 /*-------------------------------------------------------------------*/
 /*                      pseudo-4PN functions                         */
@@ -723,11 +727,34 @@ static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries
   XLAL_ERROR(XLAL_EDOM);
 }
 
+static size_t find_instant_freq_hlm(const COMPLEX16TimeSeries *hlm,
+    const REAL8 target, const size_t start) {
+  size_t k = start + 1;
+  const size_t n = hlm->data->length - 1;
+  COMPLEX16 *dataPtr = hlm->data->data;
+  /* Use second order differencing to find the instantaneous frequency as
+   * h_lm = A e^(-2 pi i f t) ==> f = - d/dt(h_lm) / (2*pi*h_lm) */
+  for (; k < n; k++) {
+    const REAL8 hreDot = (creal(dataPtr[k+1]) - creal(dataPtr[k-1]))
+        / (2 * hlm->deltaT);
+    const REAL8 himDot = (cimag(dataPtr[k+1]) - cimag(dataPtr[k-1]))
+        / (2 * hlm->deltaT);
+    REAL8 f = hreDot * cimag(dataPtr[k]) - himDot * creal(dataPtr[k]);
+    f /= LAL_TWOPI;
+    f /= creal(dataPtr[k]) * creal(dataPtr[k])
+        + cimag(dataPtr[k]) * cimag(dataPtr[k]);
+    if (f >= target) return k - 1;
+  }
+  printf("Error: initial frequency too high, no waveform generated");
+  XLAL_ERROR(XLAL_EDOM);
+}
+
 /* Engine function of EOBNRv2 */
 static int
 XLALSimIMREOBNRv2Generator(
-              REAL8TimeSeries **hplus,
-              REAL8TimeSeries **hcross,
+              REAL8TimeSeries   **hplus,
+              REAL8TimeSeries   **hcross,
+              SphHarmTimeSeries **h_lms,
               const REAL8       phiC,
               const REAL8       deltaT,
               const REAL8       m1SI,
@@ -740,6 +767,7 @@ XLALSimIMREOBNRv2Generator(
 {
    UINT4                   count, nn=4, hiSRndx=0;
    UINT4                   flag_fLower_extend = 0;
+   size_t                  cut_ind = 0.;
 
    /* Vector containing the current signal mode */
    COMPLEX16TimeSeries     *sigMode = NULL;
@@ -842,16 +870,28 @@ XLALSimIMREOBNRv2Generator(
    INT4 currentMode;
 
    /* Checks on input */
-   if ( !hplus || !hcross )
+   if ( (!hplus || !hcross) && !h_lms )
    {
      XLAL_ERROR( XLAL_EFAULT );
    }
 
-   if ( *hplus || *hcross )
+   if ( hplus && hcross ) // If given polarization double pointers **hp, **hc...
    {
-     XLALPrintError( "(*hplus) and (*hcross) are expected to be NULL; got %p and %p\n",
-         *hplus, *hcross );
-     XLAL_ERROR( XLAL_EFAULT );
+     if ( *hplus || *hcross ) // ...Make sure *hp, *hc are NULL
+     {
+       XLALPrintError( "(*hplus) and (*hcross) are expected to be NULL; got %p and %p\n",
+           *hplus, *hcross);
+       XLAL_ERROR( XLAL_EFAULT );
+     }
+   }
+   if ( h_lms ) // If given Sph. Harm. double pointer **h_lms...
+   {
+     if ( *h_lms ) // ...Make sure *h_lms is NULL
+     {
+       XLALPrintError( "(*h_lms) is expected to be NULL; got %p\n",
+           *h_lms);
+       XLAL_ERROR( XLAL_EFAULT );
+     }
    }
 
    if ( distance <= 0.0 )
@@ -1340,49 +1380,52 @@ XLALSimIMREOBNRv2Generator(
 
   XLALGPSAdd( &epoch, -t);
 
-  /* Allocate vectors for current modes and final output */
+  /* Allocate vectors for polarizations if they are being output */
   /* Their length should be the length of the inspiral + the merger/ringdown */
-  sigMode = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &epoch, 0.0, deltaT, &lalStrainUnit,
-       hiSRndx - startIdx + lengthHiSR / resampFac );
-
-  *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &epoch, 0.0, deltaT, &lalStrainUnit, sigMode->data->length );
-  *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &epoch, 0.0, deltaT, &lalStrainUnit, sigMode->data->length );
-
-  if ( !sigMode || !(*hplus) || !(*hcross) )
+  if( hplus && hcross )
   {
-    if ( sigMode ) XLALDestroyCOMPLEX16TimeSeries( sigMode );
-    if ( *hplus )  
-    { 
-      XLALDestroyREAL8TimeSeries( *hplus ); 
-      *hplus = NULL;
-    }
-    if ( *hcross )  
-    { 
-      XLALDestroyREAL8TimeSeries( *hcross ); 
-      *hplus = NULL;
-    }
-    XLALDestroyREAL8Vector( sigReHi );
-    XLALDestroyREAL8Vector( sigImHi );
-    XLALDestroyREAL8Vector( phseHi );
-    XLALDestroyREAL8Vector( omegaHi );
-    XLALDestroyREAL8Vector( ampNQC );
-    XLALDestroyREAL8Vector( q1 );
-    XLALDestroyREAL8Vector( q2 );
-    XLALDestroyREAL8Vector( q3 );
-    XLALDestroyREAL8Vector( p1 );
-    XLALDestroyREAL8Vector( p2 );
-    XLALDestroyREAL8Vector( values );
-    XLALDestroyREAL8Vector( dvalues );
-  }
+    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &epoch, 0.0, deltaT,
+        &lalStrainUnit, hiSRndx - startIdx + lengthHiSR / resampFac );
+    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &epoch, 0.0, deltaT,
+        &lalStrainUnit, (*hplus)->data->length );
 
-  memset( sigMode->data->data, 0, sigMode->data->length * sizeof( COMPLEX16 ) );
-  memset( (*hplus)->data->data, 0, sigMode->data->length * sizeof( REAL8 ) );
-  memset( (*hcross)->data->data, 0, sigMode->data->length * sizeof( REAL8 ) );
+    if ( !(*hplus) || !(*hcross) ) // Check hp, hc allocated properly
+    {
+      if ( *hplus )  
+      { 
+        XLALDestroyREAL8TimeSeries( *hplus ); 
+        *hplus = NULL;
+      }
+      if ( *hcross )  
+      { 
+        XLALDestroyREAL8TimeSeries( *hcross ); 
+        *hcross = NULL;
+      }
+      XLALDestroyREAL8Vector( sigReHi );
+      XLALDestroyREAL8Vector( sigImHi );
+      XLALDestroyREAL8Vector( phseHi );
+      XLALDestroyREAL8Vector( omegaHi );
+      XLALDestroyREAL8Vector( ampNQC );
+      XLALDestroyREAL8Vector( q1 );
+      XLALDestroyREAL8Vector( q2 );
+      XLALDestroyREAL8Vector( q3 );
+      XLALDestroyREAL8Vector( p1 );
+      XLALDestroyREAL8Vector( p2 );
+      XLALDestroyREAL8Vector( values );
+      XLALDestroyREAL8Vector( dvalues );
+    }
+    memset( (*hplus)->data->data, 0, (*hplus)->data->length * sizeof(REAL8) );
+    memset( (*hcross)->data->data, 0, (*hcross)->data->length * sizeof(REAL8) );
+  }
 
   /* We can now start calculating things for NQCs, and hiSR waveform */
 
   for ( currentMode = 0; currentMode < nModes; currentMode++ )
   {
+     sigMode = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &epoch, 0.0, deltaT,
+         &lalStrainUnit, hiSRndx - startIdx + lengthHiSR / resampFac );
+
+     memset(sigMode->data->data, 0, sigMode->data->length * sizeof(COMPLEX16) );
      count = 0;
 
      modeL = lmModes[currentMode][0];
@@ -1482,6 +1525,7 @@ XLALSimIMREOBNRv2Generator(
        XLALDestroyCOMPLEX16TimeSeries( sigMode );
        XLALDestroyREAL8TimeSeries( *hplus );  *hplus  = NULL;
        XLALDestroyREAL8TimeSeries( *hcross ); *hcross = NULL;
+       XLALDestroySphHarmTimeSeries( *h_lms ); *h_lms = NULL;
        XLALDestroyREAL8Vector( sigReHi );
        XLALDestroyREAL8Vector( sigImHi );
        XLALDestroyREAL8Vector( phseHi );
@@ -1504,6 +1548,7 @@ XLALSimIMREOBNRv2Generator(
        XLALDestroyCOMPLEX16TimeSeries( sigMode );
        XLALDestroyREAL8TimeSeries( *hplus );  *hplus  = NULL;
        XLALDestroyREAL8TimeSeries( *hcross ); *hcross = NULL;
+       XLALDestroySphHarmTimeSeries( *h_lms ); *h_lms = NULL;
        XLALDestroyREAL8Vector( sigReHi );
        XLALDestroyREAL8Vector( sigImHi );
        XLALDestroyREAL8Vector( phseHi );
@@ -1539,6 +1584,7 @@ XLALSimIMREOBNRv2Generator(
        XLALDestroyCOMPLEX16TimeSeries( sigMode );
        XLALDestroyREAL8TimeSeries( *hplus );  *hplus  = NULL;
        XLALDestroyREAL8TimeSeries( *hcross ); *hcross = NULL;
+       XLALDestroySphHarmTimeSeries( *h_lms ); *h_lms = NULL;
        XLALDestroyREAL8Vector( sigReHi );
        XLALDestroyREAL8Vector( sigImHi );
        XLALDestroyREAL8Vector( phseHi );
@@ -1564,12 +1610,37 @@ XLALSimIMREOBNRv2Generator(
      }
 
      /* Add mode to final output h+ and hx */
-     XLALSimAddMode( *hplus, *hcross, sigMode, inclination, 0., modeL, modeM, 1 );
+     if( hplus && hcross)
+     {
+       XLALSimAddMode( *hplus, *hcross, sigMode, inclination, 0., modeL, modeM, 1 );
+     }
+     else if( !(*h_lms) ) // Create a new SphHarmTimeSeries to hold 1st mode
+     {
+       if (flag_fLower_extend == 1) // Find where 1st mode (2,2) hits fLower
+       {
+         cut_ind = find_instant_freq_hlm(sigMode, fLower, 1);
+         sigMode = XLALResizeCOMPLEX16TimeSeries(sigMode, cut_ind,
+             sigMode->data->length - cut_ind);
+         if (!sigMode )
+           XLAL_ERROR(XLAL_EFUNC);
+       }
+       *h_lms = XLALSphHarmTimeSeriesAddMode(sigMode, modeL, modeM, NULL);
+     }
+     else // Append additional modes into existing SphHarmTimeSeries
+     {
+       if (flag_fLower_extend == 1) // Resize all modes to length of (2,2)
+       {
+         sigMode = XLALResizeCOMPLEX16TimeSeries(sigMode, cut_ind,
+             sigMode->data->length - cut_ind);
+         if (!sigMode )
+           XLAL_ERROR(XLAL_EFUNC);
+       }
+       *h_lms = XLALSphHarmTimeSeriesAddMode( sigMode, modeL, modeM, *h_lms);
+     }
 
   } /* End loop over modes */
 
   /* clip the parts below f_min */
-  size_t cut_ind = 0.;
   if (flag_fLower_extend == 1)
   {
     if ( cos(inclination) < 0.0 )
@@ -1625,7 +1696,7 @@ XLALSimIMREOBNRv2DominantMode(
               )
 {
 
-  if ( XLALSimIMREOBNRv2Generator( hplus, hcross, phiC, deltaT, m1SI, m2SI,
+  if ( XLALSimIMREOBNRv2Generator(hplus, hcross, NULL, phiC, deltaT, m1SI, m2SI,
               fLower, distance, inclination, 0 ) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
@@ -1643,7 +1714,7 @@ int
 XLALSimIMREOBNRv2AllModes(
               REAL8TimeSeries **hplus,      /**<< The +-polarization waveform (returned) */
               REAL8TimeSeries **hcross,     /**<< The x-polarization waveform (returned) */
-              const REAL8       phiC,       /**<< The phase at the coalescence time (twice the orbital phase at the max orbital frequency moment) */
+              const REAL8       phiC,       /**<< The orbital phase at the coalescence time */
               const REAL8       deltaT,     /**<< Sampling interval (in seconds) */
               const REAL8       m1SI,       /**<< First component mass (in kg) */
               const REAL8       m2SI,       /**<< Second component mass (in kg) */
@@ -1653,11 +1724,36 @@ XLALSimIMREOBNRv2AllModes(
               )
 {
 
-  if ( XLALSimIMREOBNRv2Generator( hplus, hcross, phiC, deltaT, m1SI, m2SI, 
+  if ( XLALSimIMREOBNRv2Generator(hplus, hcross, NULL, phiC, deltaT, m1SI, m2SI,
               fLower, distance, inclination, 1 ) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
+}
+
+/**
+ * Wrapper function to generate the -2 spin-weighted spherical harmonic modes
+ * (as opposed to generating the polarizations). This model is defined in
+ * Pan et al, PRD84, 124052(2011). Returns the (2,2), (2,1), (3,3), (4,4), (5,5)
+ * SWSH modes in a SphHarmTimeSeries struct.
+ */
+SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(
+        const REAL8 phiRef,  /**< Orbital phase at coalescence (radians) */
+        const REAL8 deltaT,  /**< Sampling interval (s) */
+        const REAL8 m1,      /**< First component mass (kg) */
+        const REAL8 m2,      /**< Second component mass (kg) */
+        const REAL8 fLower,  /**< Starting GW frequency (Hz) */
+        const REAL8 distance /**< Distance to sources (m) */
+        )
+{
+  SphHarmTimeSeries *hlms = NULL;
+  if ( XLALSimIMREOBNRv2Generator(NULL, NULL, &hlms, phiRef, deltaT, m1, m2,
+              fLower, distance, 0., 1) == XLAL_FAILURE )
+  {
+    XLAL_ERROR_NULL( XLAL_EFUNC );
+  }
+
+  return hlms;
 }

@@ -21,10 +21,9 @@
 #define _LALSIMINSPIRAL_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALSimIMR.h>
-#include  <lal/LALSimInspiralWaveformFlags.h>
-#include  <lal/LALSimInspiralTestGRParams.h>
-#include  <lal/TimeSeries.h>
+#include <lal/LALSimInspiralWaveformFlags.h>
+#include <lal/LALSimInspiralTestGRParams.h>
+#include <lal/TimeSeries.h>
 #include <gsl/gsl_matrix.h>
 
 #if defined(__cplusplus)

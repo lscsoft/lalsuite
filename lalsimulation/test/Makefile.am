@@ -9,7 +9,7 @@ check_PROGRAMS = \
 	WaveformFlagsTest \
 	TestSphHarmTS \
 	TestWaveformFromCache \
-	TestPrecessWaveform
+	TestPrecessWaveformEOBNR
 TESTS = $(check_PROGRAMS)
 
 # disable test programs

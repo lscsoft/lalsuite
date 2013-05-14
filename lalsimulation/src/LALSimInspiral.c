@@ -26,6 +26,7 @@
 #include <gsl/gsl_odeiv.h>
 
 #include <lal/LALSimInspiral.h>
+#include <lal/LALSimIMR.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
@@ -2242,6 +2243,9 @@ int XLALSimInspiralChooseFDWaveform(
  * Interface to compute a set of -2 spin-weighted spherical harmonic modes
  * for a binary inspiral of any available amplitude and phase PN order.
  * The phasing is computed with any of the TaylorT1, T2, T3, T4 methods.
+ *
+ * It can also return the (2,2), (2,1), (3,3), (4,4), (5,5) modes of the EOBNRv2
+ * model. Note that EOBNRv2 will ignore ampO, phaseO, lmax and f_ref arguments.
  */
 SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
@@ -2262,7 +2266,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     )
 {
     REAL8 v0 = 1.;
-    SphHarmTimeSeries *hlm;
+    SphHarmTimeSeries *hlm = NULL;
 
     /* General sanity checks that will abort */
     /*
@@ -2348,6 +2352,18 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
                     deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
                     XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
                     phaseO, lmax);
+            break;
+        case EOBNRv2:
+        case EOBNRv2HM:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags);
+            /* Call the waveform driver routine */
+            hlm = XLALSimIMREOBNRv2Modes(phiRef, deltaT, m1, m2, f_min, r);
             break;
 
         default:

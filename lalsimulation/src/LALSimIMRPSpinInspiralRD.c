@@ -33,6 +33,7 @@
 #include <lal/SphericalHarmonics.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALSimInspiral.h>
+#include <lal/LALSimIMR.h>
 #include <lal/Date.h>
 
 //#include "LALSimIMRPhenSpin.h"

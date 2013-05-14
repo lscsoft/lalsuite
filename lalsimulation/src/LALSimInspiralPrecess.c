@@ -86,7 +86,7 @@ int XLALSimInspiralPrecessionRotateModes(
  * given l and the appropriate action will be taken for *all* of the submodes.
  */
 int XLALSimInspiralConstantPrecessionConeWaveformModes(
-				SphHarmTimeSeries* h_lm, /**< (l,m) modes, modified in place */
+				SphHarmTimeSeries** h_lm_tmp, /**< (l,m) modes, modified in place */
 				double precess_freq, /**< Precession frequency in Hz */
 				double a, /**< Opening angle of precession cone in rads  */
 				double phi_precess, /**< initial phase in cone of L around J */
@@ -97,12 +97,13 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 		 * Since the h_22 modes are the most likely to exist, we'll use those
 		 * to do our error checking
 		 */
+		SphHarmTimeSeries* h_lm = *h_lm_tmp;
 
 		COMPLEX16TimeSeries *h_22, *h_2_2;
 		h_22 = XLALSphHarmTimeSeriesGetMode( h_lm, 2, 2 );
 		h_2_2 = XLALSphHarmTimeSeriesGetMode( h_lm, 2, -2 );
 
-		if( !h_22 && !h_2_2 ){
+		if( !(h_22 && h_2_2) ){
 			XLALPrintError( "XLAL Error - %s: Currently, ConstanntPrecessionConeWaveformModes requires the l=2 m=+/-2 modes to exist to continue.", __func__);
 			XLAL_ERROR( XLAL_EINVAL );
 		}
@@ -233,7 +234,7 @@ int XLALSimInspiralConstantPrecessionConeWaveform(
 				double beta_0 /**< zenith btwn center of cone and line of sight */
 ) {
 		int ret = XLALSimInspiralConstantPrecessionConeWaveformModes( 
-						h_lm,
+						&h_lm,
 						precess_freq, a, phi_precess,
 						alpha_0, beta_0 );
         if( ret != XLAL_SUCCESS )

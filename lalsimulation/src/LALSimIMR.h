@@ -21,8 +21,7 @@
 #define _LALSIMIMR_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALSimInspiralWaveformFlags.h>
-#include <lal/LALSimInspiralTestGRParams.h>
+#include <lal/LALSimInspiral.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -195,6 +194,15 @@ int XLALSimIMREOBNRv2AllModes(
     const REAL8       distance,   /**<< Distance to source (in metres) */
     const REAL8       inclination /**<< Inclination of the source (in radians) */
 );
+
+SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(
+        const REAL8 phiRef,  /**< Orbital phase at coalescence (radians) */
+        const REAL8 deltaT,  /**< Sampling interval (s) */
+        const REAL8 m1,      /**< First component mass (kg) */
+        const REAL8 m2,      /**< Second component mass (kg) */
+        const REAL8 fLower,  /**< Starting GW frequency (Hz) */
+        const REAL8 distance /**< Distance to sources (m) */
+        );
 
 int XLALSimIMRSpinAlignedEOBWaveform(
         REAL8TimeSeries **hplus,

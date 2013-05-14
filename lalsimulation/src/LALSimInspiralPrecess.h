@@ -45,7 +45,7 @@ int XLALSimInspiralPrecessionRotateModes(
 );
 
 int XLALSimInspiralConstantPrecessionConeWaveformModes(
-				SphHarmTimeSeries* h_lm,
+				SphHarmTimeSeries** h_lm_tmp,
 				double precess_freq,
 				double a,
 				double phi_precess,
