@@ -58,7 +58,10 @@ lalstochastic-user-env.csh lalstochastic-user-env.sh: lalstochastic-user-env.she
 
 EXTRA_DIST = \
 	LALStochasticConfig.h.in \
+	config.h.in \
 	generate_user_env.awk
+
+DISTCLEANFILES = config.h
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALStochasticVCSInfo.h
