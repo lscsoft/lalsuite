@@ -90,8 +90,8 @@ pkgdata_DATA = \
 	earth00-19-DE405.dat.gz \
 	earth00-19-DE414.dat.gz \
 	sun00-19-DE200.dat.gz \
-        sun00-19-DE405.dat.gz \
-        sun00-19-DE414.dat.gz \
+	sun00-19-DE405.dat.gz \
+	sun00-19-DE414.dat.gz \
 	testTimestamps.dat \
 	VOTable-1.1.xsd \
 	tdb_2000-2019.dat.gz \
