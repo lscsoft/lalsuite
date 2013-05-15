@@ -27,7 +27,10 @@ liblalmetaio_la_LDFLAGS = -version-info $(LIBVERSION)
 
 EXTRA_DIST = \
 	LALMetaIOConfig.h.in \
+	config.h.in \
 	generate_user_env.awk
+
+DISTCLEANFILES = config.h
 
 MOSTLYCLEANFILES = \
 	lalmetaio-user-env.shell \

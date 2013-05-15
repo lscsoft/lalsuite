@@ -12,11 +12,8 @@ config.log
 config.lt
 config.status
 configure
-include/config.h
-include/config.h.in
 include/lal/*.h
 include/lal/*.i
-include/stamp-h1
 lalmetaio-*.tar.gz
 lalmetaio.pc
 lalmetaio.spec
@@ -25,8 +22,11 @@ python/__init__.py
 python/git_version.py
 src/LALMetaIOConfig.h
 src/LALMetaIOVCSInfo.h
+src/config.h
+src/config.h.in
 src/git_version
 src/lalmetaio-user-env.csh
 src/lalmetaio-user-env.sh
 src/lalmetaio-user-env.shell
+src/stamp-h1
 src/stamp-h2
