@@ -53,6 +53,7 @@ laldetchar-user-env.csh laldetchar-user-env.sh: laldetchar-user-env.shell $(srcd
 
 EXTRA_DIST = \
 	LALDetCharConfig.h.in \
+	config.h.in \
 	generate_user_env.awk
 
 if HAVE_GIT_REPO
@@ -62,6 +63,8 @@ LALDetCharVCSInfo.h .PHONY : gen-LALDetCharVCSInfo.h
 gen-LALDetCharVCSInfo.h :
 	$(AM_V_at)$(GENERATE_VCS_INFO) LALDetCharVCSInfo.h $(srcdir)/LALDetCharVCSInfo.h.git
 endif
+
+DISTCLEANFILES = config.h
 
 @LAL_HEADER_LINK@
 

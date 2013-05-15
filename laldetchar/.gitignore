@@ -12,11 +12,8 @@ config.log
 config.lt
 config.status
 configure
-include/config.h
-include/config.h.in
 include/lal/*.h
 include/lal/*.i
-include/stamp-h1
 laldetchar-*.tar.gz
 laldetchar.pc
 laldetchar.spec
@@ -25,8 +22,11 @@ python/__init__.py
 python/git_version.py
 src/LALDetCharConfig.h
 src/LALDetCharVCSInfo.h
+src/config.h
+src/config.h.in
 src/laldetchar-hveto
 src/laldetchar-user-env.csh
 src/laldetchar-user-env.sh
 src/laldetchar-user-env.shell
+src/stamp-h1
 src/stamp-h2
