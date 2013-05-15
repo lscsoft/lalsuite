@@ -23,7 +23,7 @@ lalinferenceinclude_HEADERS = \
 	LALInferenceLibVCSInfo.h \
 	LALInferenceInit.h \
 	LALInferenceVCSInfo.h \
-        LALInferenceRemoveLines.h \
+	LALInferenceRemoveLines.h \
 	lalinferenceswig_test.i \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
@@ -39,7 +39,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceProposal.c \
 	LALInferenceInitCBC.c \
 	LALInferenceVCSInfo.c \
-        LALInferenceRemoveLines.c \
+	LALInferenceRemoveLines.c \
 	$(BAYESTARSRC) \
 	$(XMLSRC)
 
