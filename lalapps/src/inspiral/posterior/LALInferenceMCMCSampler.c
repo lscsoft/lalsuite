@@ -1016,7 +1016,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
   }
 
   /* Return values for colder chain: 0=nothing happened; 1=swap proposed, not accepted; 2=swap proposed & accepted */
-  if (swapProposed || swapAccepted) {
+  if (swapProposed) {
       if (swapAccepted)
           swapReturn = ACCEPTED_SWAP;
       else
@@ -1024,7 +1024,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
   } else {
       swapReturn = NO_SWAP_PROPOSED;
   }
-  return swapProposed;
+  return swapReturn;
 }
 
 UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile)
