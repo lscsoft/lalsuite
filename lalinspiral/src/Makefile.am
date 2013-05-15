@@ -263,6 +263,7 @@ lalinspiral-user-env.csh lalinspiral-user-env.sh: lalinspiral-user-env.shell $(s
 EXTRA_DIST = \
 	Chisq_GPU.cu \
 	LALInspiralConfig.h.in \
+	config.h.in \
 	generate_user_env.awk
 
 if HAVE_GIT_REPO
@@ -272,6 +273,8 @@ LALInspiralVCSInfo.h .PHONY : gen-LALInspiralVCSInfo.h
 gen-LALInspiralVCSInfo.h :
 	$(AM_V_at)$(GENERATE_VCS_INFO) LALInspiralVCSInfo.h $(srcdir)/LALInspiralVCSInfo.h.git
 endif
+
+DISTCLEANFILES = config.h
 
 @LAL_HEADER_LINK@
 
