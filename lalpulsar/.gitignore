@@ -12,11 +12,8 @@ config.log
 config.lt
 config.status
 configure
-include/config.h
-include/config.h.in
 include/lal/*.h
 include/lal/*.i
-include/stamp-h1
 lalpulsar-*.tar.gz
 lalpulsar.pc
 lalpulsar.spec
@@ -25,10 +22,13 @@ python/__init__.py
 python/git_version.py
 src/LALPulsarConfig.h
 src/LALPulsarVCSInfo.h
+src/config.h
+src/config.h.in
 src/git_version
 src/lalpulsar-user-env.csh
 src/lalpulsar-user-env.sh
 src/lalpulsar-user-env.shell
+src/stamp-h1
 src/stamp-h2
 test/BinarySSBTimesTest
 test/ExtrapolatePulsarSpinsTest

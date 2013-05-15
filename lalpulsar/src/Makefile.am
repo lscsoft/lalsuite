@@ -168,6 +168,7 @@ lalpulsar-user-env.csh lalpulsar-user-env.sh: lalpulsar-user-env.shell $(srcdir)
 
 EXTRA_DIST = \
 	LALPulsarConfig.h.in \
+	config.h.in \
 	generate_user_env.awk
 
 if HAVE_GIT_REPO
@@ -177,6 +178,8 @@ LALPulsarVCSInfo.h .PHONY : gen-LALPulsarVCSInfo.h
 gen-LALPulsarVCSInfo.h :
 	$(AM_V_at)$(GENERATE_VCS_INFO) LALPulsarVCSInfo.h $(srcdir)/LALPulsarVCSInfo.h.git
 endif
+
+DISTCLEANFILES = config.h
 
 @LAL_HEADER_LINK@
 

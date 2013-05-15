@@ -1,4 +1,5 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DTEST_DATA_DIR='"$(abs_srcdir)/"'
+AM_CPPFLAGS = -I$(top_builddir)/include -DSRCDIR=\"$(srcdir)\"
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
 
 if LALXML
@@ -44,7 +45,6 @@ check_PROGRAMS = \
 TESTS = $(check_PROGRAMS)
 EXTRA_PROGRAMS = XLALLoadSFTsTest
 
-AM_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
 
 UniversalDopplerMetricTest_SOURCES = UniversalDopplerMetricTest.c old-FstatMetric.c
