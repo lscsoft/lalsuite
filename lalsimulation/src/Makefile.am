@@ -129,6 +129,7 @@ lalsimulation-user-env.csh lalsimulation-user-env.sh: lalsimulation-user-env.she
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
+	config.h.in \
 	generate_user_env.awk \
 	LALSimulationConfig.h.in \
 	$(NOISEPSDFILES)
@@ -140,6 +141,8 @@ LALSimulationVCSInfo.h .PHONY : gen-LALSimulationVCSInfo.h
 gen-LALSimulationVCSInfo.h :
 	$(AM_V_at)$(GENERATE_VCS_INFO) LALSimulationVCSInfo.h $(srcdir)/LALSimulationVCSInfo.h.git
 endif
+
+DISTCLEANFILES = config.h
 
 @LAL_HEADER_LINK@
 
