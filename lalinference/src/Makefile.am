@@ -76,6 +76,7 @@ EXTRA_DIST = \
 	LALInferenceXML.c \
 	LALInferenceXML.h \
 	chapter_inference.dox \
+	config.h.in \
 	generate_user_env.awk
 
 if HAVE_GIT_REPO
@@ -85,6 +86,8 @@ LALInferenceVCSInfo.h .PHONY : gen-LALInferenceVCSInfo.h
 gen-LALInferenceVCSInfo.h :
 	$(AM_V_at)$(GENERATE_VCS_INFO) LALInferenceVCSInfo.h $(srcdir)/LALInferenceVCSInfo.h.git
 endif
+
+DISTCLEANFILES = config.h
 
 @LAL_HEADER_LINK@
 
