@@ -32,7 +32,7 @@ TESTS_ENVIRONMENT = \
 	export $(SWIG_LD_LIBPATH_NAME) PYTHONPATH;
 
 # run Python for interactive testing
-run-python : $(pyexec_LTLIBRARIES)
+run-python : $(pkgpyexec_LTLIBRARIES)
 	$(TESTS_ENVIRONMENT) $${IPYTHON:-$(PYTHON)}
 
 endif # SWIG_BUILD_PYTHON
