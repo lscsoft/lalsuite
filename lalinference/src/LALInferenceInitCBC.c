@@ -603,7 +603,9 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     printf("Read end time %f\n",endtime);
   }
   /* Adjust prior accordingly */
-  timeMin=endtime-dt; timeMax=endtime+dt;
+  if (!analytic) {
+      timeMin=endtime-dt; timeMax=endtime+dt;
+  }
   
   /* Over-ride chirp mass if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--mc");
