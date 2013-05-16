@@ -70,8 +70,8 @@ def parse_command_line():
     parser.add_option("--mchirp-max", help="Set maximum chirp-mass of the system (in solar masses)", type="float")
     parser.add_option("--mratio-min", dest="qmin", help="Set minimum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float", default=1.0)
     parser.add_option("--mratio-max", dest="qmax", help="Set maximum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float")
-    parser.add_option("--spin-min", help="Set minimum allowed value for the spin parameter chi", type="float")
-    parser.add_option("--spin-max", help="Set maximum allowed value for the spin parameter chi", type="float")
+    parser.add_option("--spin-min", help="Set minimum allowed value for the component mass spin along the z-axis", type="float", default = -1.0)
+    parser.add_option("--spin-max", help="Set maximum allowed value for the component mass spin along the z-axis", type="float", default = 1.0)
     parser.add_option("--aligned-spin", action="store_true", default=False, help="Only generate templates whose spins are parallel to the orbital angular momentum.")
     parser.add_option("--user-tag", default=None, help="base for output filename")
     parser.add_option("--verbose", default=False,action="store_true", help="Be verbose and write diagnostic information out to file.")
@@ -90,6 +90,9 @@ def parse_command_line():
     #
     if opts.qmin < 1:
         parser.error("Mass ratio is assumed to be >= 1.")
+
+    if not -1 <= opts.spin_min <= opts.spin_max <=1:
+        raise ValueError("unphysical spin bounds: [%.2f, %.2f]" % (opts.spin_min, opts.spin_max))
 
     if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","SEOBNRv1"] and not opts.aligned_spin:
         parser.error("--aligned-spin is required for the %s approximant" % opts.approximant)
@@ -176,7 +179,7 @@ params = {'mass1': (opts.mass1_min, opts.mass1_max),
         }
 # update with waveform dependent parameters
 if opts.spin_min is not None or opts.spin_max is not None:
-    params.update({'chi': (opts.spin_min, opts.spin_max)})
+    params.update({'spin': (opts.spin_min, opts.spin_max)})
 
 # get the correct generator
 proposal = proposals[opts.approximant](opts.flow, **params)

@@ -188,17 +188,19 @@ class TaylorF2RedSpinTemplate(Template):
     param_names = ("m1", "m2", "chi")
     param_formats = ("%.5f", "%.5f", "%+.4f")
 
-    __slots__ = ("m1", "m2", "chi", "bank", "_f_final", "_dur", "_mchirp", "_eta", "_theta0", "_theta3", "_theta3s")
+    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_f_final", "_dur", "_mchirp", "_eta", "_theta0", "_theta3", "_theta3s")
 
-    def __init__(self, m1, m2, chi, bank):
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
         Template.__init__(self)
         # don't want numpy scalars; arithmetic with them costs a whole lot of overhead
         m1 = float(m1)
         m2 = float(m2)
-        chi = float(chi)
+        chi = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(m1, m2, spin1z, spin2z)
 
         self.m1 = m1
         self.m2 = m2
+        self.spin1z = spin1z
+        self.spin2z = spin2z
         self.chi = chi
         self.bank = bank
 
@@ -252,12 +254,11 @@ class TaylorF2RedSpinTemplate(Template):
 
     @classmethod
     def from_sim(cls, sim, bank):
-        chi = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z)
-        return cls(sim.mass1, sim.mass2, chi, bank)
+        return cls(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z, bank)
 
     @classmethod
     def from_sngl(cls, sngl, bank):
-        return cls(sngl.mass1, sngl.mass2, sngl.chi, bank)
+        return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
 
     def to_sngl(self):
         # note that we use the C version; this causes all numerical values to be initiated
@@ -271,7 +272,8 @@ class TaylorF2RedSpinTemplate(Template):
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
         row.f_final = self._f_final
         row.template_duration = self._dur
-        row.chi = self.chi
+        row.spin1z = self.spin1z
+        row.spin2z = self.spin2z
         row.sigmasq = self.sigmasq
 
         return row
@@ -281,12 +283,15 @@ class IMRPhenomBTemplate(Template):
     param_names = ("m1", "m2", "chi")
     param_formats = ("%.2f", "%.2f", "%+.2f")
 
-    __slots__ = ("m1", "m2", "chi", "bank", "_f_final", "_dur", "_mchirp")
+    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_f_final", "_dur", "_mchirp")
 
-    def __init__(self, m1, m2, chi, bank):
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
         Template.__init__(self)
         self.m1 = m1
         self.m2 = m2
+        self.spin1z = spin1z
+        self.spin2z = spin2z
+        chi = lalsim.SimIMRPhenomBComputeChi( self.m1, self.m2, self.spin1z, self.spin2z )
         self.chi = chi
         self.bank = bank
 
@@ -315,12 +320,11 @@ class IMRPhenomBTemplate(Template):
 
     @classmethod
     def from_sim(cls, sim, bank):
-        chi = lalsim.SimIMRPhenomBComputeChi(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z)
-        return cls(sim.mass1, sim.mass2, chi, bank)
+        return cls(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z, bank)
 
     @classmethod
     def from_sngl(cls, sngl, bank):
-        return cls(sngl.mass1, sngl.mass2, sngl.chi, bank)
+        return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
 
     def to_sngl(self):
         # note that we use the C version; this causes all numerical values to be initiated
@@ -334,7 +338,8 @@ class IMRPhenomBTemplate(Template):
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
         row.f_final = self._f_final
         row.template_duration = self._dur
-        row.chi = self.chi
+        row.spin1z = self.spin1z
+        row.spin2z = self.spin2z
         row.sigmasq = self.sigmasq
 
         return row
@@ -424,7 +429,6 @@ class SEOBNRv1Template(Template):
         # FIXME: change storing spins in alpha when sngl_inspiral table is updated
         row.alpha1 = self.spin1z
         row.alpha2 = self.spin2z
-        row.chi = self._chi
         row.sigmasq = self.sigmasq
 
         return row

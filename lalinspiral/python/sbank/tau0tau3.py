@@ -345,6 +345,7 @@ def urand_tau0tau3_generator(flow, **constraints):
                 mchirp_min <= m1m2_to_mchirp(mass1, mass2) <= mchirp_max:
             yield mass1, mass2
 
+
 def IMRPhenomB_param_generator(flow, **kwargs):
     """
     Specify the min and max mass of the bigger component, then
@@ -357,52 +358,47 @@ def IMRPhenomB_param_generator(flow, **kwargs):
     See urand_tau0tau3_generator for more usage help.
     """
     # get args
-    smin, smax = kwargs.pop('chi', (-numpy.inf, numpy.inf))
+    smin, smax = kwargs.pop('spin', (-1.0, 1.0))
     # the rest will be checked in the call to urand_tau0tau3_generator
 
     # IMRPhenomB has special bounds on chi, so we will silently truncate
     chi_low_bounds = (max(-0.85, smin), min(0.85, smax))
     chi_high_bounds = (max(-0.5, smin), min(0.75, smax))
     for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
-        q = mass1/mass2
-        if q < 1: q = mass2 / mass1
+        q = max(mass1/mass2, mass2/mass1)
         if 4 < q <= 10:
-            chi = uniform(*chi_high_bounds)
-        elif 0 < q <= 4:
-            chi = uniform(*chi_low_bounds)
+            spin1 = uniform(*chi_high_bounds) #guaranteed to give chi in correct range
+            spin2 = uniform(*chi_high_bounds)
+        elif 1 <= q <= 4:
+            spin1 = uniform(*chi_low_bounds) #guaranteed to give chi in correct range
+            spin2 = uniform(*chi_low_bounds)
         else:
             raise ValueError("mass ratio out of range")
-        yield mass1, mass2, chi
+        yield mass1, mass2, spin1, spin2
 
-def TaylorF2RedSpin_param_generator(flow, **kwargs):
+
+def aligned_spin_param_generator(flow, **kwargs):
     """
-    Specify the min and max mass of the bigger component, then
-    the min and max mass of the total mass.
-
-    @kwargs: must specify a component_mass range; mtotal, q, chi, and tau0
-    ranges are optional. If no chi is specified, [-1, 1] will be used.
-    See urand_tau0tau3_generator for more usage help.
+    Specify the min and max mass of the bigger component, the min and
+    max mass of the total mass and the min and max values for the
+    z-axis spin angular momentum.
     """
     # get args
-    chi_bounds = kwargs.pop('chi', (-1., 1.))
-    if chi_bounds[0] < -1 or chi_bounds[1] > 1:
-        raise ValueError("unphysical chi bounds %s; limit to |chi| <= 1")
+    spin_bounds = kwargs.pop('spin', (-1., 1.))
     # the rest will be checked in the call to urand_tau0tau3_generator
 
     for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
-        chi = uniform(*chi_bounds)
-        yield mass1, mass2, chi
+        spin1 = uniform(*spin_bounds)
+        spin2 = uniform(*spin_bounds)
+        yield mass1, mass2, spin1, spin2
 
-def SEOBNRv1_param_generator(flow, **kwargs):
-    # FIXME implement!
-    raise NotImplementedError
 
 def SpinTaylorT4_param_generator(flow, **kwargs):
     # FIXME implement!
     raise NotImplementedError
 
 proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
-             "TaylorF2RedSpin":TaylorF2RedSpin_param_generator,
+             "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":urand_tau0tau3_generator,
-             "SEOBNRv1":SEOBNRv1_param_generator,
+             "SEOBNRv1":aligned_spin_param_generator,
              "SpinTaylorT4":SpinTaylorT4_param_generator}
