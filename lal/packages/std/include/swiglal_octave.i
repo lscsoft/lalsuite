@@ -484,9 +484,11 @@
       // Do subscript assignment, and copy result back to C array.
       octave_value subsasgn(const std::string& type, const std::list<octave_value_list>& idx, const octave_value& rhs) {
         octave_value obj = sloav_array_out().subsasgn(type, idx, rhs);
-        if (!SWIG_IsOK(sloav_array_in(obj))) {
-          std::string nm = type_name ();
-          error("failed to perform indexed assignment for %s type", nm.c_str());
+        int ecode = sloav_array_in(obj);
+        if (!SWIG_IsOK(ecode)) {
+          std::string n = type_name();
+          std::string e = SWIG_ErrorType(ecode).string_value();
+          error("failed to perform indexed assignment for %s type: %s", n.c_str(), e.c_str());
           return octave_value();
         }
         count++;
