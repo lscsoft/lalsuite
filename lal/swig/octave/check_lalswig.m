@@ -114,6 +114,9 @@ disp("passed static vector/matrix conversions");
 ## check dynamic vector/matrix conversions
 function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   expected_exception = 0;
+  iv.data = zeros(ivl, 1);
+  rv.data = zeros(rvl, 1);
+  cm.data = zeros(cms1, cms2);
   assert(ivl == 5);
   iv.data = [1; 3; 2; 4; 3];
   assert(all(iv.data == [1; 3; 2; 4; 3]));

@@ -115,6 +115,9 @@ print("passed static vector/matrix conversions")
 # check dynamic vector/matrix conversions
 def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     expected_exception = False
+    iv.data = numpy.zeros(ivl, dtype=iv.data.dtype)
+    rv.data = numpy.zeros(rvl, dtype=rv.data.dtype)
+    cm.data = numpy.zeros((cms1, cms2), dtype=cm.data.dtype)
     assert(ivl == 5)
     iv.data = [1, 3, 2, 4, 3]
     assert((iv.data == [1, 3, 2, 4, 3]).all())
