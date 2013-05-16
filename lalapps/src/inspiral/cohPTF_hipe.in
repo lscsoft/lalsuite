@@ -727,9 +727,11 @@ for ifo1 in ifo_list:
 
     elif ifo1 == 'V1':
       spincheck_job.add_opt(ifo1.lower()+'-channel-name',ifo1.upper()+':' + cp.get('input','virgo-channel'))
-      spincheck_job.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0]  + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
+      if cp.get('input','virgo-type').startswith('T1300121'): spincheck_job.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0]  + '-' + ifo1 + '_' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
+      else: spincheck_job.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0]  + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
       insp_jobs.add_opt(ifo1.lower()+'-channel-name',ifo1.upper()+':' + cp.get('input','virgo-channel'))
-      insp_jobs.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0] + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
+      if cp.get('input','virgo-type').startswith('T1300121'): insp_jobs.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0] + '-' + ifo1 + '_' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
+      else: insp_jobs.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0] + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
 
 for ifo1 in ifo_list:
   if do[ifo1]:
@@ -743,7 +745,8 @@ for ifo1 in ifo_list:
 
     elif ifo1 == 'V1':
       spincheck_job.add_opt(ifo1.lower()+'-channel-name',ifo1.upper()+':' + cp.get('input','virgo-channel'))
-      spincheck_job.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0]  + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
+      if cp.get('input','virgo-type').startswith('T1300121'): spincheck_job.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0]  + '-' + ifo1 + '_'  + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
+      else: spincheck_job.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0]  + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
 
   #splitbank
   split_job = inspiral.SplitBankJob(cp,opts.dax)
