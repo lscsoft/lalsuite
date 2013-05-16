@@ -417,11 +417,6 @@
       // Copy the C array to the returned Octave array.
       octave_value sloav_array_out() const {
 
-        // Check that C array is non-NULL.
-        if (!sloav_ptr) {
-          return SWIG_MemoryError;
-        }
-
         // Create a new Octave array.
         dim_vector objdims = sloav_dims;
         typename HELPER::OVType objval(objdims);

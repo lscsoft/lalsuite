@@ -24,6 +24,7 @@ lalswig_test_struct lalswig_test_struct_vector[3];
 lalswig_test_struct lalswig_test_struct_matrix[2][3];
 lalswig_test_enum lalswig_test_enum_vector[3];
 lalswig_test_enum lalswig_test_enum_matrix[2][3];
+INT4 lalswig_test_empty_INT4_vector[0];
 INT4 lalswig_test_INT4_vector[3];
 INT4 lalswig_test_INT4_matrix[2][3];
 const INT4 lalswig_test_INT4_const_vector[3] = {1, 2, 4};

@@ -76,6 +76,7 @@ for i in range(0, 3):
 del sts
 assert(not lalcvar.lalswig_test_enum_vector.any())
 assert(not lalcvar.lalswig_test_enum_matrix.any())
+assert(len(lalcvar.lalswig_test_empty_INT4_vector) == 0)
 assert(not lalcvar.lalswig_test_INT4_vector.any())
 assert(not lalcvar.lalswig_test_INT4_matrix.any())
 assert(not lalcvar.lalswig_test_REAL8_vector.any())
@@ -163,6 +164,10 @@ cm = lal.CreateCOMPLEX8VectorSequence(4, 6)
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength)
 del iv, rv, cm
+rv0 = lal.CreateREAL8Vector(0)
+assert(rv0.length == 0)
+assert(len(rv0.data) == 0)
+del rv0
 rv1 = lal.CreateREAL8Vector(1)
 rv1.data[0] = 1
 del rv1
