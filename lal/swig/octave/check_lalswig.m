@@ -11,21 +11,25 @@ lalcvar.lalDebugLevel = bitor(LALERROR, LALMEMDBG);
 disp("passed module load");
 
 ## check memory allocation
-CheckMemoryLeaks();
-mem1 = new_Detector();
-mem2 = CreateCOMPLEX8Vector(5);
-mem3 = CreateREAL8Vector(3);
-mem4 = CreateREAL4TimeSeries("test", LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimensionlessUnit, 10);
-disp("*** below should be an error message from CheckMemoryLeaks() ***");
-try
+if lalcvar.swig_debug
   CheckMemoryLeaks();
-  expected_exception = 1;
-end_try_catch
-assert(!expected_exception);
-disp("*** above should be an error message from CheckMemoryLeaks() ***");
-clear mem1 mem2 mem3 mem4;
-CheckMemoryLeaks();
-disp("passed memory allocation");
+  mem1 = new_Detector();
+  mem2 = CreateCOMPLEX8Vector(5);
+  mem3 = CreateREAL8Vector(3);
+  mem4 = CreateREAL4TimeSeries("test", LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimensionlessUnit, 10);
+  disp("*** below should be an error message from CheckMemoryLeaks() ***");
+  try
+    CheckMemoryLeaks();
+    expected_exception = 1;
+  end_try_catch
+  assert(!expected_exception);
+  disp("*** above should be an error message from CheckMemoryLeaks() ***");
+  clear mem1 mem2 mem3 mem4;
+  CheckMemoryLeaks();
+  disp("passed memory allocation");
+else
+  disp("skipped memory allocation");
+endif
 
 ## check string conversions
 strs = {"a"; "bc"; "def"};

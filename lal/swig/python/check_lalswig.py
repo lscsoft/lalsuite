@@ -12,22 +12,25 @@ lalcvar.lalDebugLevel = lal.LALERROR | lal.LALMEMDBG
 print("passed module load")
 
 # check memory allocation
-lal.CheckMemoryLeaks()
-mem1 = lal.Detector()
-mem2 = lal.CreateCOMPLEX8Vector(5)
-mem3 = lal.CreateREAL8Vector(3)
-mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimensionlessUnit, 10)
-print("*** below should be an error message from CheckMemoryLeaks() ***")
-try:
+if lal.cvar.swig_debug:
     lal.CheckMemoryLeaks()
-    expected_exception = True
-except:
-    pass
-assert(not expected_exception)
-print("*** above should be an error message from CheckMemoryLeaks() ***")
-del mem1, mem2, mem3, mem4
-lal.CheckMemoryLeaks()
-print("passed memory allocation")
+    mem1 = lal.Detector()
+    mem2 = lal.CreateCOMPLEX8Vector(5)
+    mem3 = lal.CreateREAL8Vector(3)
+    mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimensionlessUnit, 10)
+    print("*** below should be an error message from CheckMemoryLeaks() ***")
+    try:
+        lal.CheckMemoryLeaks()
+        expected_exception = True
+    except:
+        pass
+    assert(not expected_exception)
+    print("*** above should be an error message from CheckMemoryLeaks() ***")
+    del mem1, mem2, mem3, mem4
+    lal.CheckMemoryLeaks()
+    print("passed memory allocation")
+else:
+    print("skipped memory allocation")
 
 # check string conversions
 strs = ["a", "bc", "def"]
