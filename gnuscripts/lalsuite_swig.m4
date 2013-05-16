@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 37
+# serial 38
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -172,7 +172,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     ])
 
     # look here for interfaces and LAL headers (but not for preprocessing)
-    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I/usr/include -I\$(top_builddir)/include"
+    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I\$(top_builddir)/include -I/usr/include"
 
     # flags for compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CFLAGS,[])
