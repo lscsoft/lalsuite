@@ -466,10 +466,10 @@ double *bayestar_sky_map_tdoa_snr(
                 {
                     const double Fp = F[iifo][0]; /* `plus' antenna factor times r */
                     const double Fx = F[iifo][1]; /* `cross' antenna factor times r */
+                    const double FpFx = Fp * Fx;
                     const double FpFp = gsl_pow_2(Fp);
                     const double FxFx = gsl_pow_2(Fx);
-                    const double FpFx = Fp * Fx;
-                    const double rhotimesr2 = 0.125 * ((FpFp + FxFx) * (1 + 6*u2 + u4) + gsl_pow_2(1 - u2) * ((FpFp - FxFx) * costwopsi + 2 * FpFx * sintwopsi));
+                    const double rhotimesr2 = 0.125 * ((FpFp + FxFx) * (1 + 6*u2 + u4) - gsl_pow_2(1 - u2) * ((FpFp - FxFx) * costwopsi + 2 * FpFx * sintwopsi));
                     const double rhotimesr = sqrt(rhotimesr2);
 
                     /* FIXME: due to roundoff, rhotimesr2 can be very small and

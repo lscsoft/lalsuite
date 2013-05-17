@@ -179,6 +179,7 @@ LALUnitPair;
 
 /* XLAL routines */
 char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input );
+char * XLALUnitToString( const LALUnit *input );
 LALUnit * XLALParseUnitString( LALUnit *output, const char *string );
 int XLALUnitNormalize( LALUnit *unit );
 int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 );

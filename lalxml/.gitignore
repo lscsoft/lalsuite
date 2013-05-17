@@ -12,11 +12,8 @@ config.log
 config.lt
 config.status
 configure
-include/config.h
-include/config.h.in
 include/lal/*.h
 include/lal/*.i
-include/stamp-h1
 lalxml-*.tar.gz
 lalxml.pc
 lalxml.spec
@@ -25,9 +22,12 @@ python/__init__.py
 python/git_version.py
 src/LALXMLConfig.h
 src/LALXMLVCSInfo.h
+src/config.h
+src/config.h.in
 src/git_version
 src/lalxml-user-env.csh
 src/lalxml-user-env.sh
 src/lalxml-user-env.shell
+src/stamp-h1
 src/stamp-h2
 test/LALXMLTest

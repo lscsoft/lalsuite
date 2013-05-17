@@ -76,7 +76,10 @@ lalburst-user-env.csh lalburst-user-env.sh: lalburst-user-env.shell $(srcdir)/ge
 
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
+	config.h.in \
 	generate_user_env.awk
+
+DISTCLEANFILES = config.h
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALBurstVCSInfo.h

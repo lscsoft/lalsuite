@@ -1565,6 +1565,16 @@ void LALInferenceQ2Eta(double q, double *eta)
   return;
 }
 
+void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2){
+  REAL8 a=(8./13.)*(1.+7.*eta-31.*eta*eta);
+  REAL8 b=(8./13.)*sqrt(1.-4.*eta)*(1.+9.*eta-11.*eta*eta);
+  REAL8 c=sqrt(1.-4.*eta)*(1.-32132.*eta/2195.+43784.*eta*eta/2195.);
+  REAL8 d=(1.-36522.*eta/2195.+103658.*eta*eta/2195.-32084.*eta*eta*eta/2195.);
+  *lambda1=((c-d)*lambdaT-(a-b)*dLambdaT)/(2.*(b*c-a*d));
+  *lambda2=((c+d)*lambdaT-(a+b)*dLambdaT)/(2.*(a*d-b*c));
+  return;
+}
+
 static void deleteCell(LALInferenceKDTree *cell) {
   if (cell == NULL) {
     return; /* Our work here is done. */

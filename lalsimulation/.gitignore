@@ -12,11 +12,8 @@ config.log
 config.lt
 config.status
 configure
-include/config.h
-include/config.h.in
 include/lal/*.h
 include/lal/*.i
-include/stamp-h1
 lalsimulation-*.tar.gz
 lalsimulation.pc
 lalsimulation.spec
@@ -25,6 +22,8 @@ python/__init__.py
 python/git_version.py
 src/LALSimulationConfig.h
 src/LALSimulationVCSInfo.h
+src/config.h
+src/config.h.in
 src/lalsim-bh-qnmode
 src/lalsim-bh-ringdown
 src/lalsim-bh-sphwf
@@ -34,6 +33,7 @@ src/lalsim-unicorn
 src/lalsimulation-user-env.csh
 src/lalsimulation-user-env.sh
 src/lalsimulation-user-env.shell
+src/stamp-h1
 src/stamp-h2
 test/GRFlagsTest
 test/GenerateSimulation

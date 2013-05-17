@@ -313,6 +313,8 @@ LALInspiralWave(
           signalvec->data[idx] = (REAL4) hplus->data->data[idx];
       }
 
+      params->tC = - ( ((REAL8)hplus->epoch.gpsSeconds) + 1.e-9*((REAL8)hplus->epoch.gpsNanoSeconds) );
+
       /* free hplus and hcross */
       XLALDestroyREAL8TimeSeries(hplus);
       XLALDestroyREAL8TimeSeries(hcross);
@@ -471,6 +473,8 @@ LALInspiralWaveTemplates(
           signalvec1->data[idx] = (REAL4) hplus->data->data[idx];
           signalvec2->data[idx] = (REAL4) hcross->data->data[idx];
       }
+
+      params->tC = - ( ((REAL8)hplus->epoch.gpsSeconds) + 1.e-9*((REAL8)hplus->epoch.gpsNanoSeconds) );
 
       /* free hplus and hcross */
       XLALDestroyREAL8TimeSeries(hplus);

@@ -1671,7 +1671,8 @@ void coh_PTF_template_time_series_cluster(
   UINT4 endPoint
 )
 {
-  UINT4 ui,check;
+  UINT4 ui;
+  //UINT4 check;
   UINT4 logicArray[cohSNR->data->length];
   INT4 j,tempPoint;
   /* Have to cast from UINT4 to INT4 to avoid warning */
@@ -1682,7 +1683,7 @@ void coh_PTF_template_time_series_cluster(
     logicArray[ui] = 0;
     if (cohSNR->data->data[ui])
     {
-      check = 1;
+      //check = 1;
       for (j = -numPointCheck; j < numPointCheck; j++)
       {
         tempPoint = ui + j;
@@ -2477,6 +2478,307 @@ MultiInspiralTable* coh_PTF_create_multi_event(
   return currEvent;
 }
 
+UINT8 coh_PTF_add_sngl_triggers(
+    struct coh_PTF_params   *params,
+    SnglInspiralTable       **eventList,
+    SnglInspiralTable       **thisEvent,
+    REAL4TimeSeries         *cohSNR,
+    InspiralTemplate        PTFTemplate,
+    UINT8                   eventId,
+    REAL4TimeSeries         **pValues,
+    REAL4TimeSeries         **bankVeto,
+    REAL4TimeSeries         **autoVeto,
+    REAL4TimeSeries         **chiSquare,
+    REAL8Array              **PTFM,
+    UINT4                   startPoint,
+    UINT4                   endPoint
+)
+{
+  /* This function adds SnglInspiral events to the event list */
+  
+  UINT4 i;
+  SnglInspiralTable *lastEvent = *thisEvent;
+  SnglInspiralTable *currEvent = NULL;
+
+  for (i = startPoint ; i < endPoint ; i++)
+  {
+    if (cohSNR->data->data[i])
+    {
+      currEvent = coh_PTF_create_sngl_event(params,cohSNR,PTFTemplate,\
+          &eventId,pValues,bankVeto,autoVeto,chiSquare,PTFM,i);
+
+      /* Check trigger against trig times */
+      if (coh_PTF_trig_time_check(params,currEvent->end_time,\
+                                         currEvent->end_time))
+      {
+        if (currEvent->event_id)
+        {
+          LALFree(currEvent->event_id);
+        }
+        LALFree(currEvent);
+        continue;
+      }
+      /* And add the trigger to the lists. IF it passes clustering! */
+      if (!*eventList)
+      {
+        *eventList = currEvent;
+        lastEvent = currEvent;
+      }
+      else
+      {
+        if (! params->clusterFlag)
+        {
+          lastEvent->next = currEvent;
+          lastEvent = currEvent;
+        }
+        else if (coh_PTF_accept_sngl_trig_check(params,eventList,*currEvent) )
+        {
+          lastEvent->next = currEvent;
+          lastEvent = currEvent;
+        }
+        else
+        {
+          if (currEvent->event_id)
+          {
+            LALFree(currEvent->event_id);
+          }
+          LALFree(currEvent);
+        }
+      }
+    }
+  }
+  *thisEvent = lastEvent;
+  return eventId;
+}
+
+SnglInspiralTable* coh_PTF_create_sngl_event(
+    struct coh_PTF_params   *params,
+    REAL4TimeSeries         *cohSNR,
+    InspiralTemplate        PTFTemplate,
+    UINT8                   *eventId,
+    REAL4TimeSeries         **pValues,
+    REAL4TimeSeries         **bankVeto,
+    REAL4TimeSeries         **autoVeto,
+    REAL4TimeSeries         **chiSquare,
+    REAL8Array              **PTFM,
+    UINT4                   currPos
+)
+{
+  LIGOTimeGPS trigTime;
+  UINT4 numDOF = 2;
+  UINT4 ifoNumber;
+  CHAR searchName[LIGOMETA_SEARCH_MAX];
+
+  SnglInspiralTable *thisEvent;
+  thisEvent = (SnglInspiralTable *)
+      LALCalloc(1, sizeof(SnglInspiralTable));
+  thisEvent->event_id = (EventIDColumn *)
+      LALCalloc(1, sizeof(EventIDColumn));
+  thisEvent->event_id->id=*eventId;
+  (*eventId)++;
+  /* Set end times */
+  trigTime = cohSNR->epoch;
+  XLALGPSAdd(&trigTime,currPos*cohSNR->deltaT);
+  thisEvent->end_time = trigTime;
+  thisEvent->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
+      &thisEvent->end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI;     /* hours */
+
+  /* Set SNR, chisqs, sigmasq, eff_distance */
+  thisEvent->snr = cohSNR->data->data[currPos];
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( params->haveTrig[ifoNumber] )
+    {
+      thisEvent->chisq = chiSquare[ifoNumber]->data->data[currPos];
+      thisEvent->bank_chisq = bankVeto[ifoNumber]->data->data[currPos];
+      thisEvent->cont_chisq = autoVeto[ifoNumber]->data->data[currPos];
+      thisEvent->sigmasq = PTFM[ifoNumber]->data[0];
+    }
+  }
+  thisEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+  thisEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
+  thisEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
+  /* FIXME: I doubt the normalization is right to get eff_distance in Mpc */
+  thisEvent->eff_distance = sqrt( thisEvent->sigmasq ) / thisEvent->snr;
+  /* FIXME: What is this? What is it used for? */
+  thisEvent->event_duration = 0;
+  /* FIXME: What does coa_phase actually mean here? */
+  thisEvent->coa_phase = (REAL4)
+      atan2( pValues[0]->data->data[currPos], pValues[1]->data->data[currPos]); 
+
+  /* set the impulse time for the event FIXME:Check this! */
+  thisEvent->template_duration = (REAL8) PTFTemplate.tC;
+  
+  /* record the ifo name for the event */
+  snprintf(thisEvent->ifo, LIGOMETA_IFO_MAX, "%s", params->ifoName[0]);
+  /* Set the channel name */
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( params->haveTrig[ifoNumber] )
+    {
+      strncpy( thisEvent->channel, (params->channel[ifoNumber]) + 3,
+      (LALNameLength - 3) * sizeof(CHAR) );
+    }
+  }
+  /* FIXME: NOt sure about this one either, inspiral just copies end_time */
+  thisEvent->impulse_time = thisEvent->end_time;
+
+  /* copy the template into the event */
+  thisEvent->mass1   = (REAL4) PTFTemplate.mass1;
+  thisEvent->mass2   = (REAL4) PTFTemplate.mass2;
+  thisEvent->mtotal  = (REAL4) PTFTemplate.totalMass;
+  thisEvent->mchirp  = (REAL4) PTFTemplate.chirpMass;
+  thisEvent->eta     = (REAL4) PTFTemplate.eta;
+  thisEvent->kappa   = (REAL4) PTFTemplate.kappa;
+  thisEvent->chi     = (REAL4) PTFTemplate.chi;
+  thisEvent->tau0    = (REAL4) PTFTemplate.t0;
+  thisEvent->tau2    = (REAL4) PTFTemplate.t2;
+  thisEvent->tau3    = (REAL4) PTFTemplate.t3;
+  thisEvent->tau4    = (REAL4) PTFTemplate.t4;
+  thisEvent->tau5    = (REAL4) PTFTemplate.t5;
+  thisEvent->ttotal  = (REAL4) PTFTemplate.tC;
+  thisEvent->f_final = (REAL4) PTFTemplate.fFinal;
+  thisEvent->spin1z  = (REAL4) PTFTemplate.spin1[2];
+  thisEvent->spin2z  = (REAL4) PTFTemplate.spin2[2];
+
+  /* We can now memcpy the 10 metric co-efficients */
+  memcpy (thisEvent->Gamma, PTFTemplate.Gamma, 10*sizeof(REAL4));
+
+  /* Store the approximant */
+  XLALInspiralGetApproximantString( searchName, LIGOMETA_SEARCH_MAX,
+                                    params->approximant, params->order );
+  memcpy( thisEvent->search, searchName,
+      LIGOMETA_SEARCH_MAX * sizeof(CHAR) );
+
+  return thisEvent;
+}
+
+UINT4 coh_PTF_accept_sngl_trig_check(
+    struct coh_PTF_params   *params,
+    SnglInspiralTable      **eventList,
+    SnglInspiralTable      thisEvent
+)
+{
+  SnglInspiralTable *currEvent = *eventList;
+  LIGOTimeGPS time1,time2;
+  UINT4 loudTrigBefore=0,loudTrigAfter=0;
+
+  currEvent = *eventList;
+
+  /* for each trigger, find out whether a louder trigger is within the
+ *    * clustering time */
+  time1.gpsSeconds=thisEvent.end_time.gpsSeconds;
+  time1.gpsNanoSeconds = thisEvent.end_time.gpsNanoSeconds;
+  while (currEvent)
+  {
+    time2.gpsSeconds=currEvent->end_time.gpsSeconds;
+    time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
+    if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
+    {
+      if (thisEvent.snr < currEvent->snr\
+          && (thisEvent.event_id->id != currEvent->event_id->id))
+      {
+        if ( XLALGPSDiff(&time1,&time2) < 0 )
+          loudTrigBefore = 1;
+        else
+          loudTrigAfter = 1;
+        if (loudTrigBefore && loudTrigAfter)
+        {
+          return 0;
+        }
+      }
+    }
+    currEvent = currEvent->next;
+  }
+
+  return 1;
+}
+
+void coh_PTF_cluster_sngl_triggers(
+    struct coh_PTF_params   *params,
+    SnglInspiralTable      **eventList,
+    SnglInspiralTable      **thisEvent
+)
+{
+
+  SnglInspiralTable *currEvent = *eventList;
+  SnglInspiralTable *currEvent2 = NULL;
+  SnglInspiralTable *newEvent = NULL;
+  SnglInspiralTable *newEventHead = NULL;
+  UINT4 triggerNum = 0;
+  UINT4 lenTriggers = 0;
+  UINT4 numRemovedTriggers = 0;
+
+  /* find number of triggers */
+  while (currEvent)
+  {
+    lenTriggers+=1;
+    currEvent = currEvent->next;
+  }
+
+  currEvent = *eventList;
+  UINT4 rejectTriggers[lenTriggers];
+
+  /* for each trigger, find out whether a louder trigger is within the
+ *    * clustering time */
+  while (currEvent)
+  {
+    if (coh_PTF_accept_sngl_trig_check(params,eventList,*currEvent) )
+    {
+      rejectTriggers[triggerNum] = 0;
+      triggerNum += 1;
+    }
+    else
+    {
+      rejectTriggers[triggerNum] = 1;
+      triggerNum += 1;
+      numRemovedTriggers += 1;
+    }
+    currEvent = currEvent->next;
+  }
+
+  currEvent = *eventList;
+  triggerNum = 0;
+
+  /* construct new event table with triggers to keep */
+  while (currEvent)
+  {
+    if (! rejectTriggers[triggerNum])
+    {
+      if (! newEventHead)
+      {
+        newEventHead = currEvent;
+        newEvent = currEvent;
+      }
+      else
+      {
+        newEvent->next = currEvent;
+        newEvent = currEvent;
+      }
+      currEvent = currEvent->next;
+    }
+    else
+    {
+      if (currEvent->event_id)
+      {
+        LALFree(currEvent->event_id);
+      }
+      currEvent2 = currEvent->next;
+      LALFree(currEvent);
+      currEvent = currEvent2;
+    }
+    triggerNum+=1;
+  }
+
+  /* write new table over old one */
+  if (newEvent)
+  {
+    newEvent->next = NULL;
+    *eventList = newEventHead;
+    *thisEvent = newEvent;
+  }
+}
+
 void coh_PTF_cleanup(
     struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
@@ -2488,6 +2790,7 @@ void coh_PTF_cleanup(
     REAL4FrequencySeries    **invspec,
     RingDataSegments        **segments,
     MultiInspiralTable      *events,
+    SnglInspiralTable       *snglEvents,
     InspiralTemplate        *PTFbankhead,
     FindChirpTemplate       *fcTmplt,
     FindChirpTmpltParams    *fcTmpltParams,
@@ -2541,6 +2844,18 @@ void coh_PTF_cleanup(
     }
     LALFree( thisEvent );
   }
+  while ( snglEvents )
+  {
+    SnglInspiralTable *thisSnglEvent;
+    thisSnglEvent = snglEvents;
+    snglEvents = snglEvents->next;
+    if ( thisSnglEvent->event_id )
+    {
+      LALFree( thisSnglEvent->event_id );
+    }
+    LALFree( thisSnglEvent );
+  }
+
   while ( PTFbankhead )
   {
     InspiralTemplate *thisTmplt;
@@ -3721,6 +4036,34 @@ void findInjectionSegment(
     }
     *start = tmpStart;
     *end = tmpEnd;  
+}
+
+UINT4 coh_PTF_trig_time_check(
+    struct coh_PTF_params *params,
+    LIGOTimeGPS segStartTime,
+    LIGOTimeGPS segEndTime)
+{
+  INT8 currTimeNS;
+  /* Does the segment end before the trigStartTime */
+  if (params->trigStartTimeNS)
+  {
+    currTimeNS = segEndTime.gpsSeconds * 1E9 + segEndTime.gpsNanoSeconds;
+    if (params->trigStartTimeNS > currTimeNS)
+    {
+      return 1;
+    }
+  }
+  /* Does the segment start before the trigEndTime */
+  if (params->trigEndTimeNS)
+  {
+    currTimeNS = segStartTime.gpsSeconds * 1E9 + segStartTime.gpsNanoSeconds;
+    if (params->trigStartTimeNS > currTimeNS)
+    {
+      return 1;
+    }
+  }
+  /* Otherwise pass */
+  return 0;
 }
 
 UINT4 checkInjectionMchirp(

@@ -454,8 +454,12 @@ if test "${allstatic}" = "true" ; then
   LDFLAGS="-static -all-static $LDFLAGS"
 fi
 
-AC_OUTPUT
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+AC_OUTPUT
 echo "
 ==================================================
 LALApps has now been successfully configured:

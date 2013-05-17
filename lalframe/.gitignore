@@ -12,11 +12,8 @@ config.log
 config.lt
 config.status
 configure
-include/config.h
-include/config.h.in
 include/lal/*.h
 include/lal/*.i
-include/stamp-h1
 lalframe-*.tar.gz
 lalframe.pc
 lalframe.spec
@@ -25,10 +22,13 @@ python/__init__.py
 python/git_version.py
 src/LALFrameConfig.h
 src/LALFrameVCSInfo.h
+src/config.h
+src/config.h.in
 src/lalfr-*
 src/lalframe-user-env.csh
 src/lalframe-user-env.sh
 src/lalframe-user-env.shell
+src/stamp-h1
 src/stamp-h2
 test/AggregationTest
 test/FrameCacheTest

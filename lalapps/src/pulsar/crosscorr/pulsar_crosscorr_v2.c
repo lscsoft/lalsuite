@@ -86,6 +86,7 @@ int main(int argc, char *argv[]){
   MultiPSDVector *psd = NULL;
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
+
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   
   /* read lal-debug leve with short-option -v */
@@ -289,7 +290,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   /* first check input consistency */
   if ( uvar->ephemYear == NULL) {
     XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* construct ephemeris file names from ephemeris year input*/
@@ -301,7 +302,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   /* now call initbarycentering routine */
   if ( (config->edat = XLALInitBarycenter ( EphemEarth, EphemSun)) == NULL ) {
     XLALPrintError ("%s: XLALInitBarycenter() failed.\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+    XLAL_ERROR ( XLAL_EFUNC );
   }
   
   return XLAL_SUCCESS;

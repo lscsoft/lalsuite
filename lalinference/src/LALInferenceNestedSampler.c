@@ -162,17 +162,17 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
 /* estimateCovarianceMatrix reads the list of live points,
  and works out the covariance matrix of the varying parameters
  - CIRCULAR parameters are wrapped around before the calculation and must be
- scaled to the range 0 -> 2pi */
+ scaled to the range 0 -> 2pi. Only works with REAL8 variables */
 void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4 Nlive)
 {
 	UINT4 i,j,k;
 	UINT4 ND=0;
 	LALInferenceVariableItem *item,*k_item,*j_item;
-	REAL8 *means, *ms, *mc;
+	REAL8 *means, *ms, *mc,jval=0.,kval=0.;
 	
 	/* Find the number of dimensions which vary in the covariance matrix */
 	for(item=Live[0]->head;item!=NULL;item=item->next)
-		if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR) ND++;
+		if((item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR) && item->type==LALINFERENCE_REAL8_t) ND++;
 	
 	/* Set up matrix if necessary */
 	if(*cvm==NULL)
@@ -195,31 +195,30 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
           ms[i] = 0.;
           mc[i] = 0.;
         }
-	for(i=0;i<Nlive;i++){
-                   for(item=Live[i]->head,j=0;item;item=item->next) {
-			/*if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR ) {
-				if (item->type==LALINFERENCE_REAL4_t) means[j]+=*(REAL4 *)item->value;
-				if (item->type==LALINFERENCE_REAL8_t) means[j]+=*(REAL8 *)item->value;
-				j++;
-			}*/
-                        if(item->vary==LALINFERENCE_PARAM_LINEAR ) {
-                                if (item->type==LALINFERENCE_REAL4_t) means[j]+=*(REAL4 *)item->value;
-                                if (item->type==LALINFERENCE_REAL8_t) means[j]+=*(REAL8 *)item->value;
-                                j++;
-                        }
-			else if( item->vary==LALINFERENCE_PARAM_CIRCULAR ){
-                               if(item->type==LALINFERENCE_REAL4_t){
-                                 ms[j] += sin(*(REAL4 *)item->value);
-                                 mc[j] += cos(*(REAL4 *)item->value);
-                               }
-                               if(item->type==LALINFERENCE_REAL8_t){
-                                 ms[j] += sin(*(REAL8 *)item->value);
-                                 mc[j] += cos(*(REAL8 *)item->value);
-                               }
-
-                               j++;
-                        }
-		}
+        for(item=Live[0]->head,j=0;item;item=item->next){
+	  if((item->vary!=LALINFERENCE_PARAM_CIRCULAR && item->vary!=LALINFERENCE_PARAM_LINEAR) || item->type!=LALINFERENCE_REAL8_t) continue;
+	    for(i=0;i<Nlive;i++){
+			void *ptr = LALInferenceGetVariable(Live[i],item->name);
+			switch(item->vary)
+			{
+			  case LALINFERENCE_PARAM_LINEAR:
+			  {
+                                means[j]+=*(REAL8 *)ptr;
+				break;
+			  }
+			  case LALINFERENCE_PARAM_CIRCULAR:
+			  {
+                               ms[j] += sin(*(REAL8 *)ptr);
+                               mc[j] += cos(*(REAL8 *)ptr);
+                               break;
+			  }
+			  default:
+			  {
+			    break;
+			  }
+			}
+	  }
+	  j++;
 	}
 
         for(item=Live[0]->head,j=0;item;item=item->next){ 
@@ -241,53 +240,48 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
         XLALFree(ms);
         XLALFree(mc);
         
-	/* Find the (co)-variances */
-	for(i=0;i<Nlive;i++){
-		k_item = j_item = item = Live[i]->head;
+	/* Iterate over the matrix elements one at a time */
+	j_item=k_item=Live[0]->head;
+	for(j=0,j_item=Live[0]->head;j_item;j_item=j_item->next)
+	{
+	  /* Skip non-varying parameters */
+	  if((j_item->vary!=LALINFERENCE_PARAM_LINEAR && j_item->vary!=LALINFERENCE_PARAM_CIRCULAR )||j_item->type!=LALINFERENCE_REAL8_t ) {continue;}
 
-		for( j_item=item,j=0; j_item; j_item=j_item->next ){
-		  REAL8 jval = 0.;	
-                  if(j_item->vary!=LALINFERENCE_PARAM_LINEAR && j_item->vary!=LALINFERENCE_PARAM_CIRCULAR) {
-				continue;}
-			
-			if( j_item->vary==LALINFERENCE_PARAM_CIRCULAR )
-                          jval = LALInferenceAngularDistance(*(REAL8 *)j_item->value, means[j]);
-                        else if( j_item->vary==LALINFERENCE_PARAM_LINEAR )
-                          jval = *(REAL8 *)j_item->value - means[j];
-			
-			for( k_item=item, k=0; k<=j; k_item=k_item->next ){	
-                          REAL8 kval = 0.;
-                          if(k_item->vary!=LALINFERENCE_PARAM_LINEAR && k_item->vary!=LALINFERENCE_PARAM_CIRCULAR) {
-					continue;}
-                                        
-                                        if( k_item->vary==LALINFERENCE_PARAM_CIRCULAR )
-                                          kval = LALInferenceAngularDistance(*(REAL8 *)k_item->value, means[k]);
-                                        else if( k_item->vary==LALINFERENCE_PARAM_LINEAR )
-                                          kval = *(REAL8 *)k_item->value - means[k];
-
-					gsl_matrix_set(*cvm,j,k,gsl_matrix_get(*cvm,j,k) +
-							   kval*jval);
-					k++;
-			}
-			j++;
-		}
-	}
-
+	  for(k_item=Live[0]->head,k=0;k_item &&k<=j;k_item=k_item->next)
+	  {
+	    /* Skip non-varying parameters */
+	    if((k_item->vary!=LALINFERENCE_PARAM_LINEAR && k_item->vary!=LALINFERENCE_PARAM_CIRCULAR)||k_item->type!=LALINFERENCE_REAL8_t) {continue;}
+	    
+	    /* Loop over live points updating covariance elements */
+	    for(i=0;i<Nlive;i++)
+	    {
+	      void *jptr=LALInferenceGetVariable(Live[i],j_item->name);
+	      void *kptr=LALInferenceGetVariable(Live[i],k_item->name);
+	      
+	      /* Check for linear or circular */
+	      if( j_item->vary==LALINFERENCE_PARAM_CIRCULAR )
+		jval = LALInferenceAngularDistance(*(REAL8 *)jptr, means[j]);
+	      else if( j_item->vary==LALINFERENCE_PARAM_LINEAR )
+		jval = *(REAL8 *)jptr - means[j];
+	      
+	      if( k_item->vary==LALINFERENCE_PARAM_CIRCULAR )
+		kval = LALInferenceAngularDistance(*(REAL8 *)kptr, means[k]);
+	      else if( k_item->vary==LALINFERENCE_PARAM_LINEAR )
+		kval = *(REAL8 *)kptr - means[k];
+	      
+	      gsl_matrix_set(*cvm,j,k, gsl_matrix_get(*cvm,j,k) + kval*jval);
+	      
+	    }
+	    
+	    k++;
+	  } /* end loop over k */
+	  j++;
+	}/* end loop over j */
+	
 	/* Normalise */
 	for(i=0;i<ND;i++) for(j=0;j<ND;j++) gsl_matrix_set(*cvm,i,j,gsl_matrix_get(*cvm,i,j)/((REAL8) Nlive));
 	XLALFree(means);
         
-	/* Fill in variances for circular parameters */
-	/*for(item=Live[0]->head,j=0;item;item=item->next) {
-		if(item->vary!=LALINFERENCE_PARAM_CIRCULAR && item->vary!=LALINFERENCE_PARAM_LINEAR) continue;
-		if(item->vary==LALINFERENCE_PARAM_CIRCULAR) {
-			for(k=0;k<j;k++) gsl_matrix_set(*cvm,j,k,0.0);
-			gsl_matrix_set(*cvm,j,j,LALInferenceAngularVariance(Live,item->name,Nlive));
-			for(k=j+1;k<ND;k++) gsl_matrix_set(*cvm,k,j,0.0);
-		}
-		j++;
-	}*/
-	
 	/* the other half */
 	for(i=0;i<ND;i++) 
           for(j=0;j<i;j++)
@@ -429,6 +423,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Find maximum likelihood and sanity check */
   for(i=0;i<Nlive;i++)
   {
+    LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     logLtmp=logLikelihoods[i];
     logLmax=logLtmp>logLmax? logLtmp : logLmax;
     if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
@@ -437,6 +432,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	exit(1);
     }
   }
+  /* sort points for consistent order before creating the matrix */
+  for(i=0;i<Nlive;i++) 
+    LALInferenceSortVariablesByName(runState->livePoints[i]);
+
   /* Add the covariance matrix for proposal distribution */
   LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
   runState->differentialPoints=runState->livePoints;
@@ -484,12 +483,18 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
   for(i=0;i<Nlive;i++) {
     runState->currentParams=runState->livePoints[i];
-    LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     runState->evolve(runState);
     logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
     if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
   }
   
+  /* sort points for consistent order after attaching delta parameters */
+  for(i=0;i<Nlive;i++) 
+    LALInferenceSortVariablesByName(runState->livePoints[i]);
+
+  /* Update the covariance matrix for proposal distribution */
+  LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
+
   /* re-calculate the k-D tree from the new points if required */
   if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
     LALInferenceSetupkDTreeNSLivePoints( runState );
@@ -522,7 +527,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   sprintf(param_list,"%s_params.txt",outfile);
   lout=fopen(param_list,"w");
   minpos=0;
-  LALInferenceSortVariablesByName(runState->livePoints[0]);
   LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
   fclose(lout);
   runState->currentParams=currentVars;

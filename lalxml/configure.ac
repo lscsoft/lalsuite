@@ -1,6 +1,6 @@
 AC_PREREQ([2.63])
 AC_INIT([lalxml],[1.1.8.1],[lal-discuss@gravity.phys.uwm.edu])
-AC_CONFIG_HEADERS([include/config.h src/LALXMLConfig.h])
+AC_CONFIG_HEADERS([src/config.h src/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])

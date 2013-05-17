@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 34
+# serial 38
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -65,6 +65,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
 
 # check the version of ${SWIG}, and store it in ${SWIG_VERSION}
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
+  AC_MSG_CHECKING([${SWIG} version])
   SWIG_VERSION=0.0
   swig_version_output=[`${SWIG} -version 2>/dev/null`]
   AS_IF([test $? -eq 0],[
@@ -74,6 +75,7 @@ AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
       AC_MSG_ERROR([could not determine version of ${SWIG}])
     ])
   ])
+  AC_MSG_RESULT([${SWIG_VERSION}])
 ])
 
 # configure SWIG wrapping modules
@@ -126,8 +128,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # if a SWIG binary was found, get its full path and print its version, otherwise fail
     AS_IF([test "x${SWIG}" != x],[
       AC_PATH_PROG(SWIG,["${SWIG}"])
-      AC_MSG_CHECKING([${SWIG} version])
-      AC_MSG_RESULT([${SWIG_VERSION}])
     ],[
       AC_MSG_ERROR([could not find SWIG with version >= ${swig_min_version}])
     ])
@@ -172,7 +172,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     ])
 
     # look here for interfaces and LAL headers (but not for preprocessing)
-    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I/usr/include"
+    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I\$(top_builddir)/include -I/usr/include"
 
     # flags for compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CFLAGS,[])
@@ -244,13 +244,18 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AC_SUBST(SWIG_LD_LIBPATH_NAME)
 
     # list of other LAL SWIG modules that this module depends on
+    AC_MSG_CHECKING([for SWIG module dependencies])
     AC_SUBST(SWIG_MODULE_DEPENDS,[""])
-    for arg in ${swig_save_LIBS}; do
-      swig_module=["`echo ${arg} | ${SED} -n 's|^.*/lib\(lal[^.]*\)\.la$|\1|p'`"]
-      AS_IF([test "x${swig_module}" != x && test "x${swig_module}" != xlalsupport],[
-        SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} ${swig_module}"
+    for arg in ${LALSUITE_CHECKED_LIBS}; do
+      AS_IF([test "x`echo ${arg} | ${SED} -n '/^lalsupport$/d;/^lal/p'`" != x],[
+        SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} ${arg}"
       ])
     done
+    AS_IF([test "x${SWIG_MODULE_DEPENDS}" = x],[
+      AC_MSG_RESULT([none])
+    ],[
+      AC_MSG_RESULT([${SWIG_MODULE_DEPENDS}])
+    ])
 
     # scripting-language path to search for pre-installed SWIG modules
     AC_SUBST(SWIG_PREINST_PATH,["\$(SWIG_OUTDIR)"])

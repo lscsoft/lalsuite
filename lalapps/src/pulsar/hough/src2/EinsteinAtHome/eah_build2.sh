@@ -332,7 +332,7 @@ echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 
 gsl=gsl-1.9
 fftw=fftw-3.2.2
-zlib=zlib-1.2.7
+zlib=zlib-1.2.8
 binutils=binutils-2.19
 
 if ! [ .$check_only = .true ]; then
@@ -668,8 +668,7 @@ if [ .$check = .true ]; then
     log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4
     log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat
     log_and_do cp ../eah_ComputeFStatistic_v2$ext lalapps_ComputeFStatistic_v2
-    log_and_do cp "$INSTALL"/share/lalpulsar/*05-09.dat .
-    NOCLEANUP=1 PATH="$PWD:$PATH" \
+    LALPULSAR_DATADIR="$INSTALL/share/lalpulsar" NOCLEANUP=1 PATH="$PWD:$PATH" \
 	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testHS.sh $wine "$check_app" --Dterms=8
     log_and_show "==========================================="
     log_and_show "Test passed"

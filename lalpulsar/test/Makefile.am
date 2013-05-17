@@ -1,4 +1,5 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DTEST_DATA_DIR='"$(abs_srcdir)/"'
+AM_CPPFLAGS = -I$(top_builddir)/include -DSRCDIR=\"$(srcdir)\"
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
 
 if LALXML
@@ -44,7 +45,6 @@ check_PROGRAMS = \
 TESTS = $(check_PROGRAMS)
 EXTRA_PROGRAMS = XLALLoadSFTsTest
 
-AM_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
 
 UniversalDopplerMetricTest_SOURCES = UniversalDopplerMetricTest.c old-FstatMetric.c
@@ -90,8 +90,8 @@ pkgdata_DATA = \
 	earth00-19-DE405.dat.gz \
 	earth00-19-DE414.dat.gz \
 	sun00-19-DE200.dat.gz \
-        sun00-19-DE405.dat.gz \
-        sun00-19-DE414.dat.gz \
+	sun00-19-DE405.dat.gz \
+	sun00-19-DE414.dat.gz \
 	testTimestamps.dat \
 	VOTable-1.1.xsd \
 	tdb_2000-2019.dat.gz \

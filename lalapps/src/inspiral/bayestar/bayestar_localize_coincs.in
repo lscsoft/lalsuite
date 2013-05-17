@@ -126,51 +126,25 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
         reference_psd_filenames_by_process_id[sngl_inspiral.process_id])
         for sngl_inspiral in sngl_inspirals)
 
-    #
-    # TOA-only sky localization
-    #
-
-    # Time and run sky localization.
-    log.info('%s:computing TOA-only sky map', coinc.coinc_event_id)
-    try:
-        sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
-            sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
-            psds=psds, reference_frequency=opts.reference_frequency,
-            method="toa", nside=opts.nside)
-    except ArithmeticError:
-        log.exception("%s:TOA sky localization failed", coinc.coinc_event_id)
-        count_sky_maps_failed += 1
-        if not opts.keep_going:
-            raise
-    else:
-        log.info('%s:saving TOA-only sky map', coinc.coinc_event_id)
-        fits.write_sky_map('%s.toa.fits.gz' % int(coinc.coinc_event_id),
-            sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
-            creator=parser.prog, runtime=elapsed_time)
-
-
-    #
-    # TOA+SNR sky localization
-    #
-
-    # Time and run sky localization.
-    log.info('%s:computing TOA+SNR sky map', coinc.coinc_event_id)
-    try:
-        sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
-            sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
-            opts.min_distance, opts.max_distance, opts.prior_distance_power, psds=psds,
-            reference_frequency=opts.reference_frequency, method="toa_snr",
-            nside=opts.nside)
-    except ArithmeticError:
-        log.exception("%s:TOA+SNR sky localization failed", coinc.coinc_event_id)
-        count_sky_maps_failed += 1
-        if not opts.keep_going:
-            raise
-    else:
-        log.info('%s:saving TOA+SNR sky map', coinc.coinc_event_id)
-        fits.write_sky_map('%s.toa_snr.fits.gz' % int(coinc.coinc_event_id),
-            sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
-            creator=parser.prog, runtime=elapsed_time)
+    # Loop over sky localization methods
+    for method in ("toa", "toa_snr"):
+        log.info("%s:method '%s':computing sky map", coinc.coinc_event_id, method)
+        try:
+            sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
+                sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
+                opts.min_distance, opts.max_distance, opts.prior_distance_power,
+                psds=psds, reference_frequency=opts.reference_frequency,
+                method=method, nside=opts.nside)
+        except ArithmeticError:
+            log.exception("%s:method '%s':sky localization failed", coinc.coinc_event_id, method)
+            count_sky_maps_failed += 1
+            if not opts.keep_going:
+                raise
+        else:
+            log.info("%s:method '%s':saving sky map", coinc.coinc_event_id, method)
+            fits.write_sky_map('%s.%s.fits.gz' % (int(coinc.coinc_event_id), method),
+                sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
+                creator=parser.prog, runtime=elapsed_time)
 
 
 if count_sky_maps_failed > 0:

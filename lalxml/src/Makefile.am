@@ -23,6 +23,9 @@ MOSTLYCLEANFILES = \
 	lalxml-user-env.sh \
 	lalxml-user-env.csh
 
+DISTCLEANFILES = \
+	config.h
+
 sysconf_DATA = \
 	lalxml-user-env.sh \
 	lalxml-user-env.csh
@@ -45,6 +48,7 @@ lalxml-user-env.csh lalxml-user-env.sh: lalxml-user-env.shell $(srcdir)/generate
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
+	config.h.in \
 	generate_user_env.awk \
 	LALXMLConfig.h.in
 

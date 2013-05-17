@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 62
+# serial 64
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -93,6 +93,7 @@ AC_LANG(_AC_LANG)[]dnl
 
 AC_DEFUN([LALSUITE_ARG_VAR],[
   AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
+  AC_ARG_VAR(LALSUITE_SUBDIRS,[Set to subdirs configured by lalsuite])
 ])
 
 AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],
@@ -155,6 +156,7 @@ if test "$lowercase" = "true"; then
       *)   LIBS="$LIBS $arg";;
     esac
   done
+  LALSUITE_CHECKED_LIBS="${LALSUITE_CHECKED_LIBS} lowercase"
   if test "$LALSUITE_BUILD" = "true"; then
     AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
     lowercase="true"
@@ -193,6 +195,7 @@ if test "$lowercase" = "true"; then
         *)   LIBS="$LIBS $arg";;
       esac
     done
+    LALSUITE_CHECKED_LIBS="${LALSUITE_CHECKED_LIBS} lowercase"
     if test "$LALSUITE_BUILD" = "true"; then
       AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
       lowercase="true"

@@ -139,6 +139,7 @@ struct coh_PTF_params {
   UINT4        analStartPoint;
   REAL8        analStartTime;
   UINT4        analEndPoint;
+  REAL8        analEndTime;
   UINT4        analStartPointBuf;
   UINT4        analEndPointBuf;
   UINT4        numAnalPoints;
@@ -225,6 +226,7 @@ struct coh_PTF_params {
   int          storeAmpParams;
   int          analSegmentEnd;
   int          doShortSlides;
+  int          writeSnglInspiralTable;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
@@ -363,6 +365,48 @@ UINT4 coh_PTF_accept_trig_check(
     MultiInspiralTable      **eventList,
     MultiInspiralTable      thisEvent
 );
+
+SnglInspiralTable* coh_PTF_create_sngl_event(
+    struct coh_PTF_params   *params,
+    REAL4TimeSeries         *cohSNR,
+    InspiralTemplate        PTFTemplate,
+    UINT8                   *eventId,
+    REAL4TimeSeries         **pValues,
+    REAL4TimeSeries         **bankVeto,
+    REAL4TimeSeries         **autoVeto,
+    REAL4TimeSeries         **chiSquare,
+    REAL8Array              **PTFM,
+    UINT4                   currPos
+);
+
+UINT8 coh_PTF_add_sngl_triggers(
+    struct coh_PTF_params   *params,
+    SnglInspiralTable       **eventList,
+    SnglInspiralTable       **thisEvent,
+    REAL4TimeSeries         *cohSNR,
+    InspiralTemplate        PTFTemplate,
+    UINT8                   eventId,
+    REAL4TimeSeries         **pValues,
+    REAL4TimeSeries         **bankVeto,
+    REAL4TimeSeries         **autoVeto,
+    REAL4TimeSeries         **chiSquare,
+    REAL8Array              **PTFM,
+    UINT4                   startPoint,
+    UINT4                   endPoint
+);
+
+UINT4 coh_PTF_accept_sngl_trig_check(
+    struct coh_PTF_params   *params,
+    SnglInspiralTable      **eventList,
+    SnglInspiralTable      thisEvent
+);
+
+void coh_PTF_cluster_sngl_triggers(
+    struct coh_PTF_params   *params,
+    SnglInspiralTable      **eventList,
+    SnglInspiralTable      **thisEvent
+);
+
 
 /* Function declarations for coh_PTF_spin_checker */
 
@@ -789,6 +833,7 @@ void coh_PTF_cleanup(
     REAL4FrequencySeries    **invspec,
     RingDataSegments        **segments,
     MultiInspiralTable      *events,
+    SnglInspiralTable       *snglEvents,
     InspiralTemplate        *PTFbankhead,
     FindChirpTemplate       *fcTmplt,
     FindChirpTmpltParams    *fcTmpltParams,
@@ -1055,6 +1100,7 @@ ProcessParamsTable * create_process_params(
 int coh_PTF_output_events_xml(
     char               *outputFile,
     MultiInspiralTable  *events,
+    SnglInspiralTable *snglEvents,
     SimInspiralTable *injections,
     ProcessParamsTable *processParamsTable,
     TimeSlide          *time_slide_head,
@@ -1166,6 +1212,11 @@ void findInjectionSegment(
     LIGOTimeGPS *epoch,
     struct coh_PTF_params *params
 );
+
+UINT4 coh_PTF_trig_time_check(
+    struct coh_PTF_params *params,
+    LIGOTimeGPS segStartTime,
+    LIGOTimeGPS segEndTime);
 
 UINT4 checkInjectionMchirp(
     struct coh_PTF_params *params,

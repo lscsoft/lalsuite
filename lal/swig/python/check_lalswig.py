@@ -12,22 +12,25 @@ lalcvar.lalDebugLevel = lal.LALERROR | lal.LALMEMDBG
 print("passed module load")
 
 # check memory allocation
-lal.CheckMemoryLeaks()
-mem1 = lal.Detector()
-mem2 = lal.CreateCOMPLEX8Vector(5)
-mem3 = lal.CreateREAL8Vector(3)
-mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimensionlessUnit, 10)
-print("*** below should be an error message from CheckMemoryLeaks() ***")
-try:
+if lal.cvar.swig_debug:
     lal.CheckMemoryLeaks()
-    expected_exception = True
-except:
-    pass
-assert(not expected_exception)
-print("*** above should be an error message from CheckMemoryLeaks() ***")
-del mem1, mem2, mem3, mem4
-lal.CheckMemoryLeaks()
-print("passed memory allocation")
+    mem1 = lal.Detector()
+    mem2 = lal.CreateCOMPLEX8Vector(5)
+    mem3 = lal.CreateREAL8Vector(3)
+    mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimensionlessUnit, 10)
+    print("*** below should be an error message from CheckMemoryLeaks() ***")
+    try:
+        lal.CheckMemoryLeaks()
+        expected_exception = True
+    except:
+        pass
+    assert(not expected_exception)
+    print("*** above should be an error message from CheckMemoryLeaks() ***")
+    del mem1, mem2, mem3, mem4
+    lal.CheckMemoryLeaks()
+    print("passed memory allocation")
+else:
+    print("skipped memory allocation")
 
 # check string conversions
 strs = ["a", "bc", "def"]
@@ -76,6 +79,7 @@ for i in range(0, 3):
 del sts
 assert(not lalcvar.lalswig_test_enum_vector.any())
 assert(not lalcvar.lalswig_test_enum_matrix.any())
+assert(len(lalcvar.lalswig_test_empty_INT4_vector) == 0)
 assert(not lalcvar.lalswig_test_INT4_vector.any())
 assert(not lalcvar.lalswig_test_INT4_matrix.any())
 assert(not lalcvar.lalswig_test_REAL8_vector.any())
@@ -111,6 +115,9 @@ print("passed static vector/matrix conversions")
 # check dynamic vector/matrix conversions
 def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     expected_exception = False
+    iv.data = numpy.zeros(ivl, dtype=iv.data.dtype)
+    rv.data = numpy.zeros(rvl, dtype=rv.data.dtype)
+    cm.data = numpy.zeros((cms1, cms2), dtype=cm.data.dtype)
     assert(ivl == 5)
     iv.data = [1, 3, 2, 4, 3]
     assert((iv.data == [1, 3, 2, 4, 3]).all())
@@ -163,6 +170,10 @@ cm = lal.CreateCOMPLEX8VectorSequence(4, 6)
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength)
 del iv, rv, cm
+rv0 = lal.CreateREAL8Vector(0)
+assert(rv0.length == 0)
+assert(len(rv0.data) == 0)
+del rv0
 rv1 = lal.CreateREAL8Vector(1)
 rv1.data[0] = 1
 del rv1

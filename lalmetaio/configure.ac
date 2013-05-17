@@ -1,6 +1,6 @@
 AC_PREREQ([2.63])
 AC_INIT([lalmetaio],[1.1.0.1],[lal-discuss@gravity.phys.uwm.edu])
-AC_CONFIG_HEADERS([include/config.h src/LALMetaIOConfig.h])
+AC_CONFIG_HEADERS([src/config.h src/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([src/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -130,6 +130,11 @@ LALSUITE_USE_SWIG([XLAL LAL])
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
+
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk

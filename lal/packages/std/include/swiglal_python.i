@@ -778,11 +778,6 @@
       npy_intp objdims[ndims];
       npy_intp objstrides[ndims];
 
-      // Check that C array is non-NULL.
-      if (ptr == NULL) {
-        goto fail;
-      }
-
       // Copy C array dimensions and strides.
       for (int i = 0; i < ndims; ++i) {
         objdims[i] = dims[i];

@@ -296,6 +296,10 @@ class hipe_run(object):
     if self._cp.has_option('input','do-long-slides'):
       self._cp.remove_option('input','do-long-slides')
 
+  def set_longslides(self):
+    if not self._cp.has_option('input','do-long-slides'):
+      self._cp.set('input','do-long-slides','')
+
   def remove_shortslides(self):
     if self._cp.has_option('coh_PTF_inspiral','do-short-slides'):
       self._cp.remove_option('coh_PTF_inspiral','do-short-slides')
@@ -804,6 +808,7 @@ for grb in ext_trigs:
                         offSourceSegment,
                         usertag=idirectory + "_TIME_SLIDES_CATEGORY_1",
                         verbose=opts.verbose)
+      slide_analysis.set_longslides()
     else:
       slide_analysis = hipe_run(idirectory + "/timeslides", cp, grb_ifolist,
                         opts.log_path, source_file, "slides",

@@ -58,6 +58,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     {"store-amplitude-params",no_argument, &(localparams.storeAmpParams),1},
     {"analyse-segment-end", no_argument, &(localparams.analSegmentEnd),1},
     {"do-short-slides", no_argument, &(localparams.doShortSlides),1},
+    { "write-sngl-inspiral-table", no_argument, &(localparams.writeSnglInspiralTable),1},
     { "help",               no_argument, 0, 'h' },
     { "version",            no_argument, 0, 'V' },
     { "simulated-data",          required_argument, 0, '6' },
@@ -578,6 +579,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
                                 localparams.sampleRate;
   localparams.analStartPointBuf = localparams.analStartPoint\
                                   - localparams.numBufferPoints;
+  localparams.analEndTime = localparams.analEndPoint / \
+                                localparams.sampleRate;
   localparams.analEndPointBuf = localparams.analEndPoint\
                                + localparams.numBufferPoints;
   localparams.numAnalPoints = localparams.analEndPoint\
@@ -862,6 +865,9 @@ int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
                     "why are you using the coherent code? \n");
   }
 
+  sanity_check( params->numShortSlides > 0);
+
+  sanity_check( ! (params->writeSnglInspiralTable && (params->numIFO != 1)));
 
   return 0;
 }
