@@ -34,6 +34,9 @@ from pylal.xlal.datatypes.snglinspiraltable import SnglInspiralTable
 def compute_mchirp(m1, m2):
     return (m1 * m1 * m1 * m2 * m2 * m2 / (m1 + m2))**0.2
 
+def ceil_pow_2( number ):
+    return int(2**(np.ceil(np.log2( number ))))
+
 #
 # Represent template waveforms
 #
@@ -232,9 +235,13 @@ class TaylorF2RedSpinTemplate(Template):
         return self.m1, self.m2, self.chi
 
     def _compute_waveform(self, df, f_final):
-        return lalsim.SimInspiralTaylorF2ReducedSpin(
+
+        wf = lalsim.SimInspiralTaylorF2ReducedSpin(
             0, df, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self.chi,
             self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 3)
+        # have to resize wf to next pow 2 for FFT plan caching
+        lal.ResizeCOMPLEX16FrequencySeries( wf, 0, ceil_pow_2(wf.data.length) )
+        return wf
 
     def metric_match(self, other, df, **kwargs):
         g00, g01, g02, g11, g12, g22 = self._metric
