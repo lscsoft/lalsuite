@@ -778,7 +778,7 @@ int MAIN( int argc, char *argv[]) {
   if ( LALUserVarWasSet(&uvar_refTime))
     usefulParams.refTime = uvar_refTime;
   else {
-    LogPrintf(LOG_DETAIL, "Reference time will be set to mid-time of observation time\n");
+    XLALPrintWarning("Reference time will be set to mid-time of observation time\n");
     usefulParams.refTime = -1;
   }
 
@@ -861,6 +861,7 @@ int MAIN( int argc, char *argv[]) {
         } /* if have segmentList */
 
     } /* for iTS < nStacks */
+  XLALPrintWarning ("Number of segments: %d, total number of SFTs in segments: %d\n", nStacks, nSFTs );
 
   /* free segment list */
   if ( usefulParams.segmentList )
@@ -1188,7 +1189,7 @@ int MAIN( int argc, char *argv[]) {
       f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
       skycount = (UINT4) ((count - f1dotGridCounter) / nf1dot);
     }
-    fprintf (stderr, "%% --- Cpt:%d,  total:%d,  sky:%d/%d,  f1dot:%d/%d\n",
+   fprintf (stderr, "%% --- Cpt:%d,  total:%d,  sky:%d/%d,  f1dot:%d/%d\n",
              count, thisScan.numSkyGridPoints*nf1dot, skycount+1, thisScan.numSkyGridPoints, f1dotGridCounter+1, nf1dot);
 
     for(skyGridCounter = 0; skyGridCounter < skycount; skyGridCounter++)
@@ -1310,11 +1311,7 @@ int MAIN( int argc, char *argv[]) {
         while ( if2dot < nf2dot ) {
 
           /* show progress */
-#ifdef EAH_BOINC
-          LogPrintf( LOG_NORMAL, "%d/%d/%d\n", skyGridCounter+1, ifdot+1, if2dot+1 );
-#else
-          LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d f2dot:%d\n", skyGridCounter+1, ifdot+1, if2dot+1 );
-#endif
+          LogPrintf( LOG_NORMAL, "Coarse grid sky:%d/%d f1dot:%d/%d f2dot:%d/%d\n", skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot, if2dot+1, nf2dot );
 
           /* ------------- Set up coarse grid --------------------------------------*/
           coarsegrid.freqlength = (UINT4) (binsFstat1);
@@ -1756,7 +1753,6 @@ int MAIN( int argc, char *argv[]) {
               if( uvar_semiCohToplist ) {
                 /* this is necessary here, because UpdateSemiCohToplists() might set
                    a checkpoint that needs some information from here */
-                LogPrintf(LOG_DETAIL, "Updating toplist with semicoherent candidates\n");
                 LAL_CALL( UpdateSemiCohToplists (&status, semiCohToplist, semiCohToplist2, &finegrid, f1dot_fg, f2dot_fg, &usefulParams, NSegmentsInv, NSegmentsInvX ), &status);
               }
 
