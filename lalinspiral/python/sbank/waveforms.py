@@ -352,6 +352,14 @@ class IMRPhenomBTemplate(Template):
         return row
 
 
+class IMRPhenomCTemplate(IMRPhenomBTemplate):
+
+    def _compute_waveform(self, df, f_final):
+        return lalsim.SimIMRPhenomCGenerateFD(0, df,
+            self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI,
+            self.chi, self.bank.flow, f_final, 1000000 * LAL_PC_SI)
+
+
 class SEOBNRv1Template(Template):
     param_names = ("m1", "m2", "spin1z", "spin2z")
     param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
@@ -698,6 +706,7 @@ class SpinTaylorT5Template(Template):
 waveforms = {
     "TaylorF2RedSpin": TaylorF2RedSpinTemplate,
     "IMRPhenomB": IMRPhenomBTemplate,
+    "IMRPhenomC": IMRPhenomCTemplate,
     "SEOBNRv1": SEOBNRv1Template,
     "EOBNRv2": EOBNRv2Template,
     "SpinTaylorT4": SpinTaylorT4Template,

@@ -346,7 +346,7 @@ def urand_tau0tau3_generator(flow, **constraints):
             yield mass1, mass2
 
 
-def IMRPhenomB_param_generator(flow, **kwargs):
+def IMRPhenomBC_param_generator(flow, **kwargs):
     """
     Specify the min and max mass of the bigger component, then
     the min and max mass of the total mass. This function includes
@@ -405,7 +405,8 @@ def SpinTaylorT4_param_generator(flow, **kwargs):
     # FIXME implement!
     raise NotImplementedError
 
-proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
+proposals = {"IMRPhenomB":IMRPhenomBC_param_generator,
+             "IMRPhenomC":IMRPhenomBC_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":urand_tau0tau3_generator,
              "SEOBNRv1":aligned_spin_param_generator,
