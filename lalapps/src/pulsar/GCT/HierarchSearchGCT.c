@@ -667,8 +667,8 @@ int MAIN( int argc, char *argv[]) {
         return HIERARCHICALSEARCH_EFILE;
       }
       /* write column headings */
-      fprintf ( timing_fp, "%6s %6s %6s %6s %6s %6s %6s    %9s %9s %9s %9s    %9s %9s\n",
-                "%% Nsky", "Nf1", "Nf_F", "Nf_SB", "Nsft", "Nseg", "refine", "tau [s]", "tcoh [s]", "tsc [s]", "tLV [s]", "tauF0 [s]", "tauS0 [s]" );
+      fprintf ( timing_fp, "%10s %10s %10s %7s %7s    %9s %9s %9s %9s    %10s %10s\n",
+                "%% Ncoarse", "NSB", "Nfine", "Nsft", "Nseg", "tauWU[s]", "tauCo[s]", "tauIc[s]", "tauLV[s]", "c0co[s]", "c0ic[s]" );
       fclose ( timing_fp );
     } /* if outputTiming */
 
@@ -945,7 +945,7 @@ int MAIN( int argc, char *argv[]) {
 
   /**** debugging information ******/
   /* print some debug info about spinrange */
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_refTime.refTime.gpsSeconds,
             usefulParams.spinRange_refTime.fkdot[0],
             usefulParams.spinRange_refTime.fkdot[0] + usefulParams.spinRange_refTime.fkdotBand[0],
@@ -954,7 +954,7 @@ int MAIN( int argc, char *argv[]) {
             usefulParams.spinRange_refTime.fkdot[2],
             usefulParams.spinRange_refTime.fkdot[2] + usefulParams.spinRange_refTime.fkdotBand[2]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at startTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at startTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_startTime.refTime.gpsSeconds,
             usefulParams.spinRange_startTime.fkdot[0],
             usefulParams.spinRange_startTime.fkdot[0] + usefulParams.spinRange_startTime.fkdotBand[0],
@@ -963,7 +963,7 @@ int MAIN( int argc, char *argv[]) {
             usefulParams.spinRange_startTime.fkdot[2],
             usefulParams.spinRange_startTime.fkdot[2] + usefulParams.spinRange_startTime.fkdotBand[2]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at midTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at midTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_midTime.refTime.gpsSeconds,
             usefulParams.spinRange_midTime.fkdot[0],
             usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0],
@@ -972,7 +972,7 @@ int MAIN( int argc, char *argv[]) {
             usefulParams.spinRange_midTime.fkdot[2],
             usefulParams.spinRange_midTime.fkdot[2] + usefulParams.spinRange_midTime.fkdotBand[2]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at endTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at endTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_endTime.refTime.gpsSeconds,
             usefulParams.spinRange_endTime.fkdot[0],
             usefulParams.spinRange_endTime.fkdot[0] + usefulParams.spinRange_endTime.fkdotBand[0],
@@ -982,7 +982,7 @@ int MAIN( int argc, char *argv[]) {
             usefulParams.spinRange_endTime.fkdot[2] + usefulParams.spinRange_endTime.fkdotBand[2]);
 
   /* print debug info about stacks */
-  fprintf(stderr, "%% --- Setup, N = %d, T = %.0fs, Tobs = %.0fs, gammaRefine = %f, gamma2Refine = %f\n",
+  fprintf(stderr, "%% --- Setup, N = %d, T = %.0f s, Tobs = %.0f s, gammaRefine = %.0f, gamma2Refine = %.0f\n",
           nStacks, tStack, tObs, gammaRefine, gamma2Refine);
 
   for (k = 0; k < nStacks; k++) {
@@ -1809,8 +1809,6 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_outputTiming )
     timeEnd = XLALGetTimeOfDay();
 
-  UINT4 Nrefine = nf1dots_fg;
-
   LogPrintf( LOG_NORMAL, "Finished main analysis.\n");
 
   /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
@@ -1856,25 +1854,25 @@ int MAIN( int argc, char *argv[]) {
         XLALPrintError ("%s: failed to open timing-file '%s' for appending.\n", __func__, uvar_outputTiming );
         return HIERARCHICALSEARCH_EFILE;
       }
-      REAL8 tau = timeEnd - timeStart;
+      REAL8 tauWU = timeEnd - timeStart;
 
       /* compute fundamental timing-model constants:
        * 'tauF0' = Fstat time per template per SFT,
        * 'tauS0' = time to add one per-segment F-stat value per fine-grid point
        */
-      REAL8 Ncoarse = thisScan.numSkyGridPoints * nf1dot * ( binsFstatSearch + 2 * semiCohPar.extraBinsFstat);
-      REAL8 Nfine   = thisScan.numSkyGridPoints * binsFstatSearch * Nrefine * nf1dot;	// Note: doesn't include F-stat sideband bins!
-      REAL8 tauF0   = coherentTime / ( Ncoarse * nSFTs );
+      REAL8 Ncoarse = thisScan.numSkyGridPoints * nf1dot * nf2dot * ( binsFstatSearch + 2 * semiCohPar.extraBinsFstat);	// includes GCSideband bins
+      REAL8 NSB     = thisScan.numSkyGridPoints * nf1dot * nf2dot * 2 * semiCohPar.extraBinsFstat;	// pure coarse GCSideband template count
+      REAL8 Nfine   = thisScan.numSkyGridPoints * binsFstatSearch * nf1dots_fg * nf2dots_fg;	// doesn't include F-stat sideband bins
+      REAL8 c0co    = coherentTime / ( Ncoarse * nSFTs );
       // Note: we use (total-FstatTime) instead of incoherentTime to ensure accurate prediction power
       // whatever extra time isn't captured by incoherentTime+coherentTime also needs to be accounted as 'incoherent time'
       // in our model...
-      REAL8 tauS0   = (tau - coherentTime) / ( Nfine * nStacks );
+      REAL8 c0ic   = (tauWU - coherentTime) / ( Nfine * nStacks );
 
-      fprintf ( timing_fp, "%6d %6d %6d %6d %6d %6d %6d    %9.3g %9.3g %9.3g %9.3g    %9.3g %9.3g\n",
-                thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs,
-                nStacks, Nrefine, tau, coherentTime, incoherentTime, vetoTime, tauF0, tauS0 );
+      fprintf ( timing_fp, "%10.3g %10.3g %10.3g %7d %7d    %9.3g %9.3g %9.3g %9.3g    %10.3g %10.3g\n",
+                Ncoarse, NSB, Nfine, nSFTs, nStacks, tauWU, coherentTime, incoherentTime, vetoTime, c0co, c0ic );
       fclose ( timing_fp );
-    }
+    } // if uvar_outputTiming
 
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
   XLAL_CHECK ( write_hfs_oputput(uvar_fnameout, semiCohToplist) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist) failed.!\n", uvar_fnameout );
