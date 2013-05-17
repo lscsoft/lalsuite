@@ -80,6 +80,7 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 int coh_PTF_output_events_xml( 
     char               *outputFile,
     MultiInspiralTable  *events,
+    SnglInspiralTable *snglEvents,
     SimInspiralTable *injections,
     ProcessParamsTable *processParamsTable,
     TimeSlide          *time_slide_head,
@@ -91,6 +92,7 @@ int coh_PTF_output_events_xml(
   LALStatus status = blank_status;
   MetadataTable   siminspiral;
   MetadataTable   ringEvents;
+  MetadataTable snglEventTab;
   LIGOLwXMLStream *results;
 
   verbose( "output events to LIGOLw XML file %s\n", outputFile );
@@ -100,6 +102,7 @@ int coh_PTF_output_events_xml(
   /* create process table and search summary tables */
   siminspiral.simInspiralTable = injections;
   ringEvents.multiInspiralTable = events;
+  snglEventTab.snglInspiralTable = snglEvents;
 
   /* open results xml file */
   results = XLALOpenLIGOLwXMLFile(outputFile);
@@ -137,9 +140,18 @@ int coh_PTF_output_events_xml(
   XLALWriteLIGOLwXMLSegmentTable( results, segment_table_head);
 
   /* output the events */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, results, multi_inspiral_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, results, ringEvents,multi_inspiral_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, results ), &status );
+  if (! params->writeSnglInspiralTable)
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, results, multi_inspiral_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, results, ringEvents,multi_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, results ), &status );
+  }
+  else
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, results, sngl_inspiral_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, results, snglEventTab,sngl_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, results ), &status );
+  }
 
   /* close the xml file */
   XLALCloseLIGOLwXMLFile(results);

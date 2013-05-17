@@ -512,6 +512,8 @@ void coh_PTF_chi_square_sngl_setup(
     {
       /* FIXME: For sngl detector Plus and Cross ranges/bins are identical, do
        * not need to calculate both */ 
+      /* NOTE: I do not think any substantial slow down will be experienced here
+       * The filters are *not* calculated for both + and x at least */ 
       if (! frequencyRangesPlus[k])
       {
         frequencyRangesPlus[k] = (REAL4 *)

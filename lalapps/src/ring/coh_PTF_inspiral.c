@@ -84,6 +84,7 @@ int main(int argc, char **argv)
 
   /* triggered sky position and sensitivity structures */
   LIGOTimeGPS              segStartTime;
+  LIGOTimeGPS              segEndTime;
   segStartTime.gpsSeconds = 0;
   segStartTime.gpsNanoSeconds = 0;
   struct timeval           startTime;
@@ -121,6 +122,8 @@ int main(int argc, char **argv)
   /* output event structures */
   MultiInspiralTable       *eventList               = NULL;
   MultiInspiralTable       *thisEvent               = NULL;
+  SnglInspiralTable        *snglEventList           = NULL;
+  SnglInspiralTable        *snglThisEvent           = NULL;
   UINT8                    eventId                  = 0;
   
   /*------------------------------------------------------------------------*
@@ -348,11 +351,17 @@ int main(int argc, char **argv)
       if (params->haveTrig[ifoNumber])
       {
         segStartTime = segments[ifoNumber]->sgmnt[j].epoch;
+        segEndTime = segments[ifoNumber]->sgmnt[j].epoch;
         break;
       }
     }
     /* We only analyse middle half so add duration/4 to epoch */
     XLALGPSAdd(&segStartTime, params->analStartTime);
+    XLALGPSAdd(&segEndTime, params->analEndTime);
+
+    /* Test if trig-start and trig-end options overlap this segment at all */
+    if (coh_PTF_trig_time_check(params,segStartTime,segEndTime))
+      continue;
 
     if (params->doBankVeto)
     {
@@ -499,7 +508,9 @@ int main(int argc, char **argv)
                       params->analStartPoint;
 
           /* This function construct triggers from loud events */
-          eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
+          if (! params->writeSnglInspiralTable)
+          {
+            eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
                                          cohSNR, *PTFtemplate, eventId,
                                          spinTemplate,
                                          pValues, gammaBeta, snrComps,
@@ -509,6 +520,14 @@ int main(int argc, char **argv)
                                          skyPoints->data[sp].latitude,
                                          currSlideID, slidTimeOffsets,
                                          currAnalStart,currAnalEnd);
+          }
+          else
+          {
+            eventId = coh_PTF_add_sngl_triggers(params, &snglEventList,\
+                           &snglThisEvent,cohSNR,*PTFtemplate,eventId,\
+                           pValues,bankVeto,autoVeto,chiSquare,PTFM,\
+                           currAnalStart,currAnalEnd);
+          }
 
           /* FIXME: Also part of the faceAway + faceOn hack */
           if (params->faceAwayAnalysis && params->faceOnAnalysis)
@@ -543,7 +562,14 @@ int main(int argc, char **argv)
                                          currAnalStart,currAnalEnd);
           } /* End of if faceaway and faceon block */
 
-          params->numEvents = XLALCountMultiInspiral(eventList);
+          if (! params->writeSnglInspiralTable)
+          {
+            params->numEvents = XLALCountMultiInspiral(eventList);
+          }
+          else
+          {
+            params->numEvents = XLALCountSnglInspiral(snglEventList);
+          }
           verbose("There are currently %d triggers.\n", params->numEvents);
           verbose("Generated triggers for segment %d, template %d, sky point %d, short slide %d at %ld \n", j, i, sp, slideNum, timeval_subtract(&startTime));
         }/* End loop over time slides */
@@ -600,26 +626,43 @@ int main(int argc, char **argv)
   } /* End of loop over segments */
 
   /* calulate number of events and cluster if needed */
-  params->numEvents = XLALCountMultiInspiral(eventList);
+  if (! params->writeSnglInspiralTable)
+  {
+    params->numEvents = XLALCountMultiInspiral(eventList);
+  }
+  else
+  {
+    params->numEvents = XLALCountSnglInspiral(snglEventList);
+  }
+
   verbose("There are %d total triggers before cluster.\n", params->numEvents);
   if ( params->clusterFlag )
   {
-    coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
-    params->numEvents = XLALCountMultiInspiral(eventList);
+    if (! params->writeSnglInspiralTable)
+    {
+      coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
+      params->numEvents = XLALCountMultiInspiral(eventList);
+    }
+    else
+    {
+      coh_PTF_cluster_sngl_triggers(params,&snglEventList,&snglThisEvent);
+      params->numEvents = XLALCountSnglInspiral(snglEventList);
+    }
     verbose("There are %d total triggers after cluster.\n", params->numEvents);
   }
 
   /* Output events to xml */
-  coh_PTF_output_events_xml(params->outputFile, eventList, params->injectList,\
-                            procpar, time_slide_head, time_slide_map_head,\
-                            segment_table_head, params);
+  coh_PTF_output_events_xml(params->outputFile, eventList, snglEventList,\
+                            params->injectList, procpar, time_slide_head,\
+                            time_slide_map_head, segment_table_head, params);
 
   /* Everything that follows is memory cleanup */
   coh_PTF_destroy_time_series(cohSNR,nullSNR,traceSNR,bankVeto,autoVeto,\
           chiSquare,pValues,gammaBeta,snrComps);
 
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invplan,channel,
-      invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
+      invspec,segments,eventList,snglEventList,\
+      PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,slidTimeOffsets,Fplus,Fcross,\
       Fplustrig,Fcrosstrig,skyPoints,time_slide_head,longTimeSlideList,
       shortTimeSlideList,timeSlideVectors,detectors, slideIDList,\
@@ -1045,11 +1088,15 @@ void coh_PTF_statistic(
         /* Test whether to do chi^2 */
         if (params->chiSquareCalcThreshold)
         {
-          if ( coh_PTF_test_veto_vals(params,cohSNR,nullSNR,bankVeto,autoVeto,\
-                                      currPointLoc ) )
+          /* FIXME: Does not work for single detector runs */
+          if (params->numIFO!=1)
           {
-            chiSquare[LAL_NUM_IFO]->data->data[currPointLoc] = 0;
-            continue;
+            if ( coh_PTF_test_veto_vals(params,cohSNR,nullSNR,bankVeto,\
+                                        autoVeto,currPointLoc ) )
+            {
+              chiSquare[LAL_NUM_IFO]->data->data[currPointLoc] = 0;
+              continue;
+            }
           }
         }
         /* If no problems then calculate chi squared */
@@ -1219,6 +1266,21 @@ UINT8 coh_PTF_add_triggers(
           bankVeto,autoVeto,chiSquare,PTFM,rightAscension,declination,slideId,\
           timeOffsetPoints,i);
 
+      /* Check trigger against trig times */
+      if (coh_PTF_trig_time_check(params,currEvent->end_time,\
+                                         currEvent->end_time))
+      {
+        if (currEvent->event_id)
+        {
+          LALFree(currEvent->event_id);
+        }
+        if (currEvent->time_slide_id)
+        {
+          LALFree(currEvent->time_slide_id);
+        }
+        LALFree(currEvent);
+        continue;
+      }
       /* And add the trigger to the lists. IF it passes clustering! */
       if (!*eventList)
       {
