@@ -18,6 +18,7 @@
 from __future__ import division
 
 from time import strftime
+from collections import deque
 import numpy as np
 import sys
 
@@ -282,14 +283,15 @@ params = {'mass1': (opts.mass1_min, opts.mass1_max),
 # get the correct generator
 proposal = proposals[opts.approximant](opts.flow, **params)
 
-# To be 99.99% sure that an injection won't fall between the cracks,
-# require 10000 consecutive covered simulations.
-kmax = 10000
+# For robust convergence, ensure that an average of kmax/len(ks) of
+# the last len(ks) proposals have been rejected by SBank.
+ks = deque(10*[0], maxlen=10)
+kmax = 5000
 
 k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
 status_format = "bank size: %d\tproposed: %d\t" + "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
-while k < kmax:
+while (k + float(sum(ks)))/len(ks) < kmax:
     tmplt = waveform(*proposal.next(), bank=bank)
     k += 1
     nprop += 1
@@ -297,6 +299,7 @@ while k < kmax:
         bank.insort(tmplt)
         if opts.verbose:
             print >>sys.stdout, status_format % ((len(bank), k) + tmplt.params)
+        ks.append(k)
         k = 0
 
 print "total number of proposed templates: %d" % nprop
