@@ -4,9 +4,9 @@
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps  -I$(top_srcdir)/src/pulsar/FDS_isolated -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-bin_PROGRAMS = lalapps_pulsar_crosscorr
+bin_PROGRAMS = lalapps_pulsar_crosscorr_v2
 
-lalapps_pulsar_crosscorr_SOURCES = pulsar_crosscorr_v2.c 
+lalapps_pulsar_crosscorr_v2_SOURCES = pulsar_crosscorr_v2.c 
 
 
 ## make sure lalapps.la is rebuilt when appropriate

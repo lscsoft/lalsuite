@@ -25,10 +25,10 @@
  * \brief Perform CW cross-correlation search - version 2
  *
  * 
- *
+ */
 
 
-/ lalapps includes */
+/*lalapps includes */
 #include <lalapps.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
@@ -52,6 +52,7 @@ typedef struct{
   REAL8   refTime;            /**< reference time for pulsar phase definition */
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
+  UINT4   rngMedBlock;        /**< running median block size */
 } UserInput_t;
 
 /* struct to store useful variables */
@@ -82,6 +83,7 @@ int main(int argc, char *argv[]){
 
   /* sft related variables */ 
   MultiSFTVector *inputSFTs = NULL;
+  MultiPSDVector *psd = NULL;
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
@@ -104,7 +106,6 @@ int main(int argc, char *argv[]){
 
   if (uvar.help)	/* if help was requested, then exit */
     return 0;
-
  
   /* configure useful variables based on user input */
   if ( XLALInitializeConfigVars ( &config, &uvar) != XLAL_SUCCESS ) {
@@ -118,8 +119,15 @@ int main(int argc, char *argv[]){
   fMin = uvar.fStart;
   fMax = uvar.fStart + uvar.fBand;
 
+  /* read the SFTs*/
   if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALLoadSFTs() failed with errno=%d\n", __func__, xlalErrno );
+    return 1;
+  }
+
+  /* calculate the psd and normalize the SFTs */
+  if (( psd =  XLALNormalizeMultiSFTVect ( inputSFTs, uvar.rngMedBlock )) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
 
@@ -184,12 +192,15 @@ int main(int argc, char *argv[]){
   /* } */
 
 
+  XLALDestroyMultiSFTVector ( inputSFTs ); 
+  XLALDestroyMultiPSDVector ( psd );
 
   XLALDestroySFTCatalog (config.catalog );
   XLALFree( config.edat->ephemE );
   XLALFree( config.edat->ephemS );
   XLALFree( config.edat );
 
+  
 
   /* de-allocate memory for user input variables */
   XLALDestroyUserVars();
@@ -214,6 +225,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->fBand = 0.1;
   uvar->fdotStart = 0.0;
   uvar->fdotBand = 0.0;
+  uvar->rngMedBlock = 50;
 
   /* default for reftime is in the middle */
   uvar->refTime = 0.5*(uvar->startTime + uvar->endTime);
@@ -223,18 +235,18 @@ int XLALInitUserVars (UserInput_t *uvar)
 
   uvar->sftLocation = XLALCalloc(1, MAXFILENAMELENGTH+1);
 
-
   /* register  user-variables */
   XLALregBOOLUserStruct ( help, 	 'h',  UVAR_HELP, "Print this message");  
   
   XLALregINTUserStruct   ( startTime,     0,  UVAR_OPTIONAL, "Desired start time of analysis in GPS seconds");
   XLALregINTUserStruct   ( endTime,       0,  UVAR_OPTIONAL, "Desired end time of analysis in GPS seconds");
   XLALregREALUserStruct  ( fStart,        0,  UVAR_OPTIONAL, "Start frequency in Hz");
-  XLALregREALUserStruct  ( fBand,         0,  UVAR_OPTIONAL, "Frequency band to search over in HZ ");
+  XLALregREALUserStruct  ( fBand,         0,  UVAR_OPTIONAL, "Frequency band to search over in Hz ");
   XLALregREALUserStruct  ( fdotStart,     0,  UVAR_OPTIONAL, "Start value of spindown in Hz/s");
   XLALregREALUserStruct  ( fdotBand,      0,  UVAR_OPTIONAL, "Band for spindown values in Hz/s");
   XLALregSTRINGUserStruct( ephemYear,     0,  UVAR_OPTIONAL, "String Ephemeris year range");
   XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
+  XLALregINTUserStruct   ( rngMedBlock,   0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
