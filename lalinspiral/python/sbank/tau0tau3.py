@@ -96,7 +96,7 @@ def set_default_constraints(constraints):
     not). By convention, we require mass1 limits to be set.
     '''
     # complain about unknown constraints; don't silently ignore!
-    known_constraints = ["mass1","mass2","mratio","mtotal","mchirp"]
+    known_constraints = ["mass1","mass2","mratio","mtotal","mchirp","spin1","spin2"]
     unknown_constraints = [k for k in constraints.keys() if k not in known_constraints]
     if len(unknown_constraints):
         raise ValueError("unknown constraints %s" % ', '.join(unknown_constraints))
@@ -358,7 +358,14 @@ def IMRPhenomB_param_generator(flow, **kwargs):
     See urand_tau0tau3_generator for more usage help.
     """
     # get args
-    smin, smax = kwargs.pop('spin', (-1.0, 1.0))
+
+    # FIXME: PhenomB ignores spin2 and therefore requires symmetry in
+    # the spins. In BBH use cases, this is OK, but for NSBH
+    # applications this is undesired. The weird chi-q bounds make
+    # implementing this trick
+    smin, smax = kwargs.pop('spin1', (-1.0, 1.0))
+    kwargs.pop('spin2')
+    Warning("PhenomB: spin2 limits not implemented. Using spin1 limits for both components.")
     # the rest will be checked in the call to urand_tau0tau3_generator
 
     # IMRPhenomB has special bounds on chi, so we will silently truncate
@@ -384,12 +391,13 @@ def aligned_spin_param_generator(flow, **kwargs):
     z-axis spin angular momentum.
     """
     # get args
-    spin_bounds = kwargs.pop('spin', (-1., 1.))
+    spin1_bounds = kwargs.pop('spin1', (-1., 1.))
+    spin2_bounds = kwargs.pop('spin2', (-1., 1.))
     # the rest will be checked in the call to urand_tau0tau3_generator
 
     for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
-        spin1 = uniform(*spin_bounds)
-        spin2 = uniform(*spin_bounds)
+        spin1 = uniform(*spin1_bounds)
+        spin2 = uniform(*spin2_bounds)
         yield mass1, mass2, spin1, spin2
 
 
