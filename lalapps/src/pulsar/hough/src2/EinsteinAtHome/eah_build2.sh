@@ -332,7 +332,7 @@ echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 
 gsl=gsl-1.9
 fftw=fftw-3.2.2
-zlib=zlib-1.2.7
+zlib=zlib-1.2.8
 binutils=binutils-2.19
 
 if ! [ .$check_only = .true ]; then
