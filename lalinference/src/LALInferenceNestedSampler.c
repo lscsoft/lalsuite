@@ -488,6 +488,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
   }
   
+  /* sort points for consistent order after attaching delta parameters */
+  for(i=0;i<Nlive;i++) 
+    LALInferenceSortVariablesByName(runState->livePoints[i]);
+
+  /* Update the covariance matrix for proposal distribution */
+  LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
+
   /* re-calculate the k-D tree from the new points if required */
   if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
     LALInferenceSetupkDTreeNSLivePoints( runState );
