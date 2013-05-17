@@ -617,7 +617,6 @@ static int polarizationsInRadiationFrame(
     
         if (V->data->data[i]) {
 
-          //REAL8 alpha = alphaVec->data[i]; // Warning: set-but-not-used!
             LNx = LNhxVec->data->data[i];
             LNy = LNhyVec->data->data[i];
             LNz = LNhzVec->data->data[i];
