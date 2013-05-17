@@ -54,7 +54,6 @@
 #include <lal/StringVector.h>
 #include <lal/Sequence.h>
 #include <lal/ConfigFile.h>
-#include <lal/LogPrintf.h>
 
 /*---------- DEFINES ----------*/
 
@@ -809,8 +808,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
     }
     catalog->data[catPos].locator->isft = nSFTs - 1;
   }
-  LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): fMin: %f, fMax: %f, deltaF: %f, minbin: %u, maxbin: %u\n",
-	    fMin, fMax, deltaF, minbin, maxbin);
+  XLALPrintInfo("%s: fMin: %f, fMax: %f, deltaF: %f, minbin: %u, maxbin: %u\n", __func__, fMin, fMax, deltaF, minbin, maxbin);
 
   /* calculate first and last frequency bin to read */
   if (fMin < 0)
@@ -826,7 +824,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       XLALLOADSFTSERROR(XLAL_EINVAL);
     }
   }
-  LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): Reading from first bin: %u, last bin: %u\n", firstbin, lastbin);
+  XLALPrintInfo ( "%s: Reading from first bin: %u, last bin: %u\n", __func__, firstbin, lastbin);
 
   /* allocate the SFT vector that will be returned */
   if (!(sftVector = XLALCreateSFTVector (nSFTs, lastbin + 1 - firstbin))) {
@@ -927,7 +925,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	}
 	fname = locator->fname;
 	fp = fopen(fname,"rb");
-	LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): Opening file '%s'\n", fname);
+	XLALPrintInfo("%s: Opening file '%s'\n", __func__, fname);
 	if(!fp) {
 	  XLALPrintError("ERROR: Couldn't open file '%s'\n", fname);
 	  XLALLOADSFTSERROR(XLAL_EIO);
@@ -944,8 +942,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
       /* read SFT data */
       lastBinRead = read_sft_bins_from_fp ( thisSFT, &firstBinRead, firstbin, lastbin, fp );
-      LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): Read data from %s:%lu: %u - %u\n",
-		locator->fname, locator->offset, firstBinRead, lastBinRead);
+      XLALPrintInfo ("%s: Read data from %s:%lu: %u - %u\n", __func__, locator->fname, locator->offset, firstBinRead, lastBinRead);
     }
     /* SFT data has been read from file or taken from catalog */
 
@@ -999,7 +996,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
       } else if(!firstBinRead) {
 	/* no needed data had been in this segment */
-	LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): No data read from %s:%lu\n", locator->fname, locator->offset);
+        XLALPrintInfo ( "%s: No data read from %s:%lu\n", __func__, locator->fname, locator->offset);
 
 	/* set epoch if not yet set, if already set, check it */
 	if(GPSZERO(segments[isft].epoch))
