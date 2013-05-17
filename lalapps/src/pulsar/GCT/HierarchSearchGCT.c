@@ -49,6 +49,7 @@
 /* ---------- Defines -------------------- */
 /* #define OUTPUT_TIMING 1 */
 /* #define DIAGNOSISMODE 1 */
+#define NUDGE	10*LAL_REAL8_EPS
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -913,7 +914,7 @@ int MAIN( int argc, char *argv[]) {
   if ( df2dot == 0 ) {
     nf2dot = 1;
   } else {
-    nf2dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot) + 1;
+    nf2dot = (UINT4) floor( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot - NUDGE) + 1;
   }
 
   /* set number of fine-grid 2nd spindowns */
@@ -1368,7 +1369,7 @@ int MAIN( int argc, char *argv[]) {
           f1dotmin_fg = (usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot) - df1dot_fg * floor(nf1dots_fg / 2.0);
 
           /* fine-grid f2dot resolution */
-          if (nf2dot == 1) {
+          if ( uvar_f2dotBand == 0 ) {
             nf2dots_fg = 1;
           }
           else {
