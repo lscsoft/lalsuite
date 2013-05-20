@@ -31,7 +31,7 @@ from . import sky_map
 import lal, lalsimulation
 
 
-def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_low, min_distance=None, max_distance=None, prior_distance_power=None, method="toa_snr", reference_frequency=None, psds=None, nside=-1):
+def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_low, min_distance=None, max_distance=None, prior_distance_power=None, method="toa_snr", reference_frequency=None, psds=None, nside=-1, chain_dump=None):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc."""
 
@@ -147,6 +147,8 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
             [0, -1, min_distance, 0, 0],
             [2*np.pi, 1, max_distance, 1, 2*np.pi], (ntemps, nwalkers, ndim))
         sampler.run_mcmc(p0, 1000)
+        if chain_dump is not None:
+            np.save(chain_dump, sampler.chain)
         ra, sin_dec, _, _, _ = np.concatenate(sampler.chain[0, :, 100:]).T
         theta = np.arccos(sin_dec)
         phi = ra

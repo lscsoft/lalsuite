@@ -142,7 +142,8 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
                 sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
                 opts.min_distance, opts.max_distance, opts.prior_distance_power,
                 psds=psds, reference_frequency=opts.reference_frequency,
-                method=method, nside=opts.nside)
+                method=method, nside=opts.nside,
+                chain_dump='%s.chain.npy' % int(coinc.coinc_event_id))
         except (ArithmeticError, ValueError):
             log.exception("%s:method '%s':sky localization failed", coinc.coinc_event_id, method)
             count_sky_maps_failed += 1
