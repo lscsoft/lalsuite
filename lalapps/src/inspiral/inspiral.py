@@ -143,6 +143,7 @@ class InspInjJob(InspiralAnalysisJob):
     sections = ['inspinj']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.set_universe('vanilla')
 
     self.__listDone=[]
     self.__listNodes=[]
