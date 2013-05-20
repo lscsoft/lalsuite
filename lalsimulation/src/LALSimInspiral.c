@@ -353,9 +353,9 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 	} while (0)
 
 /* 
- * Structyure to carry a collectio of spherical harmonic modes in COMPLEX16 
+ * Structure to carry a collection of spherical harmonic modes in COMPLEX16
  * time series. Contains convenience getter and setter functions, as well as
- * a convienence "maximum l mode" function. Implemented as a singly forward
+ * a convenience "maximum l mode" function. Implemented as a singly forward
  * linked list.
  */
 struct
@@ -367,9 +367,16 @@ tagSphHarmTimeSeries
     struct tagSphHarmTimeSeries*    next; /**< next pointer */
 };
 
-/* Prepend a node to the linked list - or - create a new head */
-SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( const COMPLEX16TimeSeries* inmode, UINT4 l, INT4 m, SphHarmTimeSeries *appended ){
-
+/**
+ * Prepend a node to a linked list of SphHarmTimeSeries, or create a new head
+ */
+SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode(
+            SphHarmTimeSeries *appended, /**< Linked list to be prepended */
+            const COMPLEX16TimeSeries* inmode, /**< Time series of h_lm mode being prepended */
+            UINT4 l, /**< l index of h_lm mode being prepended */
+            INT4 m /**< m index of h_lm mode being prepended */
+            )
+{
     SphHarmTimeSeries* ts;
 
 	// Check if the node with this l, m already exists
@@ -383,7 +390,7 @@ SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( const COMPLEX16TimeSeries* inmo
 
 	if( ts ){
 		XLALDestroyCOMPLEX16TimeSeries( ts->mode );
-    	ts->mode = XLALCutCOMPLEX16TimeSeries( inmode, 0, inmode->data->length );
+		ts->mode = XLALCutCOMPLEX16TimeSeries( inmode, 0, inmode->data->length);
 		return appended;
 	} else {
     	ts = XLALMalloc( sizeof(SphHarmTimeSeries) );
@@ -394,7 +401,7 @@ SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( const COMPLEX16TimeSeries* inmo
 	// Cut returns a new series using a slice of the original. I ask it to
 	// return a new one for the full data length --- essentially a duplication
 	if( inmode ){
-    	ts->mode = XLALCutCOMPLEX16TimeSeries( inmode, 0, inmode->data->length );
+		ts->mode = XLALCutCOMPLEX16TimeSeries( inmode, 0, inmode->data->length);
 	} else {
 		ts->mode = NULL;
 	}
@@ -408,8 +415,11 @@ SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( const COMPLEX16TimeSeries* inmo
     return ts;
 }
 
-/* Delete list from current pointer to the end of the list */
-void XLALDestroySphHarmTimeSeries( SphHarmTimeSeries* ts ){
+/** Delete list from current pointer to the end of the list */
+void XLALDestroySphHarmTimeSeries(
+            SphHarmTimeSeries* ts /**< Head of linked list to destroy */
+            )
+{
     SphHarmTimeSeries* pop;
     while( (pop = ts) ){
 		if( pop->mode ){
@@ -420,10 +430,16 @@ void XLALDestroySphHarmTimeSeries( SphHarmTimeSeries* ts ){
     }
 }
 
-/* 
- * Get the mode-decomposed time series corresponding to l,m.
+/**
+ * Get the time series of a waveform's (l,m) spherical harmonic mode from a
+ * SphHarmTimeSeries linked list. Returns a pointer to its COMPLEX16TimeSeries
  */
-COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode( SphHarmTimeSeries *ts , UINT4 l, INT4 m ){
+COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode(
+            SphHarmTimeSeries *ts, /** linked list to extract mode from */
+            UINT4 l, /**< l index of h_lm mode to get */
+            INT4 m /**< m index of h_lm mode to get */
+            )
+{
     if( !ts ) return NULL;
 
     SphHarmTimeSeries *itr = ts;
@@ -434,8 +450,8 @@ COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode( SphHarmTimeSeries *ts , UINT4
     return itr->mode;
 }
 
-/* 
- * Get the maximum major mode added to structure.
+/**
+ * Get the largest l index of any mode in the SphHarmTimeSeries linked list
  */
 UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts ){
     SphHarmTimeSeries *itr = ts;
