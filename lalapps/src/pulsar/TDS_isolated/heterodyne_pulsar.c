@@ -1448,41 +1448,39 @@ channel.\n", channel);
 
 /* function to set up three low-pass third order Butterworth IIR filters */
 void set_filters(Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate){
-  static LALStatus status;
   COMPLEX16ZPGFilter *zpg=NULL;
   REAL4 wc;
 
   /* set zero pole gain values */
   wc = tan(LAL_PI * filterKnee/samplerate);
-  LAL_CALL( LALCreateCOMPLEX16ZPGFilter(&status, &zpg, 0, 3), &status );
+  zpg = XLALCreateCOMPLEX16ZPGFilter(0, 3);
   zpg->poles->data[0] = (wc*sqrt(3.)/2.) + I*(wc*0.5);
   zpg->poles->data[1] = I * wc;
   zpg->poles->data[2] = -(wc*sqrt(3.)/2.) + I*(wc*0.5);
   zpg->gain = I * wc * wc * wc;
-  LAL_CALL( LALWToZCOMPLEX16ZPGFilter( &status, zpg ), &status );
+  XLALWToZCOMPLEX16ZPGFilter( zpg );
 
   /* create IIR filters */
   iirFilters->filter1Re = NULL;
   iirFilters->filter1Im = NULL;
-  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter1Re, zpg ), &status);
-  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter1Im, zpg ), &status );
+  iirFilters->filter1Re = XLALCreateREAL8IIRFilter( zpg );
+  iirFilters->filter1Im = XLALCreateREAL8IIRFilter( zpg );
 
   iirFilters->filter2Re = NULL;
   iirFilters->filter2Im = NULL;
-  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter2Re, zpg ), &status );
-  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter2Im, zpg ), &status) ;
+  iirFilters->filter2Re = XLALCreateREAL8IIRFilter( zpg );
+  iirFilters->filter2Im = XLALCreateREAL8IIRFilter( zpg );
 
   iirFilters->filter3Re = NULL;
   iirFilters->filter3Im = NULL;
-  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter3Re, zpg ), &status );
-  LAL_CALL( LALCreateREAL8IIRFilter( &status, &iirFilters->filter3Im, zpg ), &status );
+  iirFilters->filter3Re = XLALCreateREAL8IIRFilter( zpg );
+  iirFilters->filter3Im = XLALCreateREAL8IIRFilter( zpg );
 
   /* destroy zpg filter */
-  LAL_CALL( LALDestroyCOMPLEX16ZPGFilter( &status, &zpg ), &status );
+  XLALDestroyCOMPLEX16ZPGFilter( zpg );
 }
 
-/* function to low-pass filter the data using three third order Butterworth IIR
-   filters */
+/* function to low-pass filter the data using three third order Butterworth IIR filters */
 void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters){
   COMPLEX16 tempData;
   INT4 i=0;
