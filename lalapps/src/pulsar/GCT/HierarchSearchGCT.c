@@ -2771,11 +2771,10 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
-  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
-
   /* Step through segment list:
    * for every segment:
-   *  - find earliest and last SFT fitting completely into this segment
+   *  - find earliest and last SFT *starting* within given segment
+   *     this ensures we use all SFTs and dont lose some that fall on segment boundaries
    *  - copy this range of SFT-headers into the segmented SFT-catalog 'stacks'
    */
   UINT4 iSeg;
@@ -2804,22 +2803,21 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
             }
         } /* while true */
 
-      /* ----- find last SFT completely fitting into this segment */
+      /* ----- find last SFT still starting within segment */
       iSFT1 = iSFT0;
       while ( 1 )
         {
           LIGOTimeGPS gpsEnd = catalog->data[iSFT1].header.epoch;
-          XLALGPSAdd( &gpsEnd, Tsft - 1e-3 );	/* subtract 1ms from end: segments are half-open intervals [t0, t1) */
           int cmp = XLALGPSInSeg ( &gpsEnd, thisSeg );
 
-          if ( cmp < 0 ) {      /* end of iSFT1 lies *before* current segment ==> something is screwed up! */
-            XLALPrintError ("%s: end of current SFT %d lies before current segment %d ==> code seems inconsistent!\n", __func__, iSFT1, iSeg );
+          if ( cmp < 0 ) {      /* start of iSFT1 lies *before* current segment ==> something is screwed up! */
+            XLALPrintError ("%s: start of current SFT %d lies before current segment %d ==> code seems inconsistent!\n", __func__, iSFT1, iSeg );
             XLAL_ERROR_NULL ( XLAL_EFAILED );
           }
-          if ( cmp == 0 )	/* end of iSFT1 lies *inside* current segment ==> advance */
+          if ( cmp == 0 )	/* start of iSFT1 lies *inside* current segment ==> advance */
             iSFT1 ++;
 
-          if ( cmp > 0 || iSFT1 == (INT4)numSFTs ) {	/* last SFT reached or end of iSFT1 lies *past* current segment => step back once and stop */
+          if ( cmp > 0 || iSFT1 == (INT4)numSFTs ) {	/* last SFT reached or start of iSFT1 lies *past* current segment => step back once and stop */
             iSFT1 --;
             break;
           }
