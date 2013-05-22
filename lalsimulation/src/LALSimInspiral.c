@@ -371,10 +371,10 @@ tagSphHarmTimeSeries
  * Prepend a node to a linked list of SphHarmTimeSeries, or create a new head
  */
 SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode(
-            SphHarmTimeSeries *appended, /**< Linked list to be prepended */
             const COMPLEX16TimeSeries* inmode, /**< Time series of h_lm mode being prepended */
             UINT4 l, /**< l index of h_lm mode being prepended */
-            INT4 m /**< m index of h_lm mode being prepended */
+            INT4 m, /**< m index of h_lm mode being prepended */
+            SphHarmTimeSeries *appended /**< Linked list to be prepended */
             )
 {
     SphHarmTimeSeries* ts;
@@ -462,6 +462,46 @@ UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts ){
 		itr = itr ->next;
     }
     return maxl;
+}
+
+/**
+ * Compute the polarizations from all the -2 spin-weighted spherical harmonic
+ * modes stored in 'hlms'. Be sure that 'hlms' is the head of the linked list!
+ *
+ * The computation done is:
+ * hp(t) - i hc(t) = \sum_l \sum_m h_lm(t) -2Y_lm(iota,psi)
+ *
+ * iota and psi are the inclination and polarization angle of the observer
+ * relative to the source of GWs.
+ */
+int XLALSimInspiralPolarizationsFromSphHarmTimeSeries(
+    REAL8TimeSeries **hp, /**< Plus polarization time series [returned] */
+    REAL8TimeSeries **hc, /**< Cross polarization time series [returned] */
+    SphHarmTimeSeries *hlms, /**< Head of linked list of waveform modes */
+    REAL8 iota, /**< inclination of viewer to source frame (rad) */
+    REAL8 psi /**< polarization angle (rad) */
+    )
+{
+    int ret;
+    SphHarmTimeSeries *ts = hlms;
+    size_t length = ts->mode->data->length;
+    // Destroy hp, hc TimeSeries if they already exist
+    if( (*hp) ) XLALDestroyREAL8TimeSeries( *hp );
+    if( (*hc) ) XLALDestroyREAL8TimeSeries( *hc );
+    *hp = XLALCreateREAL8TimeSeries("hplus", &(ts->mode->epoch), ts->mode->f0,
+                ts->mode->deltaT, &lalStrainUnit, length);
+    *hc = XLALCreateREAL8TimeSeries("hplus", &(ts->mode->epoch), ts->mode->f0,
+                ts->mode->deltaT, &lalStrainUnit, length);
+    memset( (*hp)->data->data, 0, (*hp)->data->length*sizeof(REAL8) );
+    memset( (*hc)->data->data, 0, (*hc)->data->length*sizeof(REAL8) );
+    while (ts) { // Add the contribution from the current mode to hp, hx...
+        // This function adds hlm(t) * Y_lm(incl,psi) to (h+ - i hx)(t)
+        ret = XLALSimAddMode(*hp, *hc, ts->mode, iota, psi, ts->l, ts->m, 0);
+        if( ret != XLAL_SUCCESS ) XLAL_ERROR(XLAL_EFUNC);
+        ts = ts->next;
+    }
+
+    return XLAL_SUCCESS;
 }
 
 /**

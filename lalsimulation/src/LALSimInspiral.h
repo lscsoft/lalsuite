@@ -189,6 +189,24 @@ COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode(
 );
 
 /**
+ * Compute the polarizations from all the -2 spin-weighted spherical harmonic
+ * modes stored in 'hlms'. Be sure that 'hlms' is the head of the linked list!
+ *
+ * The computation done is:
+ * hp(t) - i hc(t) = \sum_l \sum_m h_lm(t) -2Y_lm(iota,psi)
+ *
+ * iota and psi are the inclination and polarization angle of the observer
+ * relative to the source of GWs.
+ */
+int XLALSimInspiralPolarizationsFromSphHarmTimeSeries(
+    REAL8TimeSeries **hp, /**< Plus polarization time series [returned] */
+    REAL8TimeSeries **hc, /**< Cross polarization time series [returned] */
+    SphHarmTimeSeries *hlms, /**< Head of linked list of waveform modes */
+    REAL8 iota, /**< inclination of viewer to source frame (rad) */
+    REAL8 psi /**< polarization angle (rad) */
+    );
+
+/**
  * Computes h(2,2) mode of spherical harmonic decomposition of
  * the post-Newtonian inspiral waveform.
  *
