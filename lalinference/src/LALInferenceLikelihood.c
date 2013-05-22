@@ -34,6 +34,7 @@
 
 #include <gsl/gsl_sf_bessel.h>
 
+#include <lal/LALInferenceTemplate.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -99,6 +100,63 @@
 //    padded->data[nd/2] = data->data[nd/2];
 //  }
 //}
+
+void LALInferenceInitLikelihood(LALInferenceRunState *runState)
+{
+    char help[]="\
+                 (--zeroLogLike)                  Use flat, null likelihood.\n\
+                 (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n\
+                 (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood.\n\
+                 (--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood.\n\
+                 (--rosenbrockLikelihood)         Use analytic, Rosenbrock banana for Likelihood.\n\
+                 (--noiseonly)                    Using noise-only likelihood.\n\
+                 (--margphi)                      Using marginalised phase likelihood.\n";
+
+    ProcessParamsTable *commandLine=runState->commandLine;
+    LALInferenceIFOData *ifo=runState->data;
+
+    /* Print command line arguments if help requested */
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--help"))
+    {
+        fprintf(stdout,"%s",help);
+        while(ifo) {
+            fprintf(stdout,"(--dof-%s DoF)\tDegrees of freedom for %s\n",ifo->name,ifo->name);
+            ifo=ifo->next;
+        }
+        return;
+    }
+
+   if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
+    /* Use zero log(L) */
+    runState->likelihood=&LALInferenceZeroLogLikelihood;
+   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
+    runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
+   } else if (LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood")) {
+    runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
+   } else if (LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood")) {
+    runState->likelihood=&LALInferenceRosenbrockLogLikelihood;
+   } else if (LALInferenceGetProcParamVal(commandLine, "--studentTLikelihood")) {
+    fprintf(stderr, "Using Student's T Likelihood.\n");
+    runState->likelihood=&LALInferenceFreqDomainStudentTLogLikelihood;
+
+    /* Set the noise model evidence to the student t model value */
+    LALInferenceTemplateNullFreqdomain(runState->data);
+    REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(runState->currentParams,runState->data,&LALInferenceTemplateNullFreqdomain);
+    LALInferenceAddVariable(runState->algorithmParams,"logZnoise",&noiseZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    fprintf(stdout,"Student-t Noise evidence %lf\n",noiseZ);
+
+   } else if (LALInferenceGetProcParamVal(commandLine, "--noiseonly")) {
+    fprintf(stderr, "Using noise-only likelihood.\n");
+    runState->likelihood=&LALInferenceNoiseOnlyLogLikelihood;
+   } else if (LALInferenceGetProcParamVal(commandLine, "--margphi")) {
+    fprintf(stderr, "Using marginalised phase likelihood.\n");
+    runState->likelihood=&LALInferenceMarginalisedPhaseLogLikelihood;
+   } else {
+    runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
+   }
+
+    return;
+}
 
 /* Scaling used for the analytic likelihood parameters */
   static const REAL8 scaling[15] = {

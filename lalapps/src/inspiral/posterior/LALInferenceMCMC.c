@@ -435,7 +435,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   /* Choose the template generator for inspiral signals */
   LALInferenceInitCBCTemplate(runState);
-    
+
  /* runState->template=&LALInferenceTemplateLAL;
   if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation")){
     runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
@@ -460,27 +460,6 @@ void initializeMCMC(LALInferenceRunState *runState)
 //    fprintf(stderr, "Computing likelihood in the time domain.\n");
 //    runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
 //  } else
-  if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
-    /* Use zero log(L) */
-    runState->likelihood=&LALInferenceZeroLogLikelihood;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
-    runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood")) {
-    runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood")) {
-    runState->likelihood=&LALInferenceRosenbrockLogLikelihood;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--studentTLikelihood")) {
-    fprintf(stderr, "Using Student's T Likelihood.\n");
-    runState->likelihood=&LALInferenceFreqDomainStudentTLogLikelihood;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--noiseonly")) {
-    fprintf(stderr, "Using noise-only likelihood.\n");
-    runState->likelihood=&LALInferenceNoiseOnlyLogLikelihood;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--margphi")) {
-    fprintf(stderr, "Using marginalised phase likelihood.\n");
-    runState->likelihood=&LALInferenceMarginalisedPhaseLogLikelihood;
-  } else {
-    runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
-  }
 
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     runState->prior=&LALInferenceInspiralSkyLocPrior;
@@ -821,10 +800,13 @@ int main(int argc, char *argv[]){
 
   /* Set up currentParams with variables to be used */
   LALInferenceInitCBCVariables(runState);
-  
+ 
   /* Call the extra code that was removed from previous function */
   LALInferenceInitMCMCState(runState);
-  
+ 
+  /* Choose the likelihood */
+  LALInferenceInitLikelihood(runState);
+ 
   if(runState==NULL) {
     fprintf(stderr, "runState not allocated (%s, line %d).\n",
             __FILE__, __LINE__);

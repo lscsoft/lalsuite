@@ -282,6 +282,10 @@ REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
 
 REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,LALInferenceTemplateFunction templt);
 
+/** Initialisation function which reads runState->commaneLine and sets up the
+ * likelihood function accordingly. Can choose between Gaussian, Student-t, marginalised
+ * phase likelihoods */
+void LALInferenceInitLikelihood(LALInferenceRunState *runState);
 
 /*@}*/
 
