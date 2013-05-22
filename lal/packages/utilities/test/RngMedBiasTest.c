@@ -48,7 +48,6 @@
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
 /* Usage format string. */
 
 #define USAGE "Usage: %s [-d debuglevel] [-b block size] \n"
@@ -109,7 +108,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( RNGMEDBIASTESTC_EARG, RNGMEDBIASTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

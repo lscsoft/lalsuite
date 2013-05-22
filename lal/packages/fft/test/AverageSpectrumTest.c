@@ -43,7 +43,6 @@ int main( void )
   REAL8 ave;
   UINT4 i;
 
-  lalDebugLevel = 3;
 
   /* allocate memory for time and frequency series */
   tseries.deltaT = 1;

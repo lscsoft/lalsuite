@@ -53,7 +53,6 @@ void decode_rnd_str(char* winner_str, char* chan, double* wind, double* thresh);
 // Get a listing of the channels included
 GHashTable* get_channel_list( GSequence* triglist );
 
-extern int lalDebugLevel;
 
 //int main(int argc, char** argv){
 int main(int argc, char** argv){
@@ -72,8 +71,6 @@ int main(int argc, char** argv){
 		get_ignore_list( argv[4], ignorelist );
 	}
 
-	//lalDebugLevel = 1 | 2 | 4 | 32;
-	lalDebugLevel = 0;
 
 	/*
 	 * Round parameters

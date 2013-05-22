@@ -74,7 +74,6 @@ examinaton of the output files.
 #endif
 #endif
 
-INT4 lalDebugLevel = 3;
 
 int main( void )
 {

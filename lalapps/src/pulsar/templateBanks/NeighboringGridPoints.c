@@ -65,7 +65,6 @@
 #include <lal/LALConstants.h>
 #include <lal/StringInput.h>
 
-extern INT4 lalDebugLevel;
 
 #define NEIGHBORINGGRIDPOINTSH_ENULL 	1
 #define NEIGHBORINGGRIDPOINTSH_ENONULL	2

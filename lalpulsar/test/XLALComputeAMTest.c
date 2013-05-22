@@ -60,7 +60,6 @@ static const LALStatus empty_status;
 static const AMCoeffsParams empty_AMCoeffsParams;
 static const AMCoeffs empty_AMCoeffs;
 
-extern int lalDebugLevel;
 
 /* ----- internal prototypes ---------- */
 int XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REAL8 tolerance );
@@ -86,12 +85,10 @@ int main(int argc, char *argv[])
   UINT4 numChecks = 1; /* Number of times to check */
 
   /* read user input */
-  lalDebugLevel = 0;
 
   while ((opt = getopt( argc, argv, "n:qv:" )) != -1) {
     switch (opt) {
     case 'v': /* set lalDebugLevel */
-      lalDebugLevel = atoi( optarg );
       break;
     case 'n': /* number of times to check */
       numChecks = atoi( optarg );

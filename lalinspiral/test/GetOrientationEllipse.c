@@ -58,7 +58,6 @@ or not in this code but one could have use a function such as
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 
-INT4 lalDebugLevel=33;
 
 int
 main(void)

@@ -13,7 +13,6 @@ analysis
 [\option{--cluster-algorithm}~\parm{choice}] \newline \hspace*{0.5in}
 [\option{--cluster-time}~\parm{t}]\newline \hspace*{0.5in}
 [\option{--comment}~\parm{string}] \newline \hspace*{0.5in}
-[\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in}
 [\option{--disable-trig-start-time}] \newline \hspace*{0.5in}
 \option{--exclude-playground}\newline \hspace*{0.5in}
 \option{--glob}~\parm{globfiles} \newline \hspace*{0.5in}
@@ -58,11 +57,6 @@ times are processed, so the injection file can span a time larger than the
 input data and efficiencies will be correct. Missed injections can be written
 to the file \parm{missedfile}, if desired.
 
-Note that the default LAL debug level for \verb$lalapps_sire$ is $33$, rather
-than the usual $1$. This turns of memory allocation and leak checking to
-increase the speed of run time. The \texttt{--debug-level} option can be used
-to increase the level of debug checking used by the LAL functions.
-
 \item[Options]\leavevmode
 \begin{entry}
 \item[ \option{--all-data}]
@@ -83,12 +77,6 @@ Required if the \option{--cluster-algorithm} option is specified. Use the time w
 
 \item[ \option{--comment}~\parm{string}]
 Add the string \parm{comment} to the \verb$process$ table in the output XML file.
-
-\item[\option{--debug-level} \parm{level}]
-Sets the LAL debug level to \parm{level}.  The default value is
-\texttt{LALMSGLVL2}.  A useful setting is 65 which turns off memory
-padding, but keeps memory tracking and error messages.  If you want to turn
-off memory tracking completely, then use 33.
 
 \item[\option{--disable-trig-start-time} ]
 This option should only be used by
@@ -213,7 +201,6 @@ lalapps_sire \
 --summary-file summ_10.txt \
 --playground-only\
 --verbose\
---debug-level 1\
 --snr-threshold 10.0 \
 --injection-file HL-INJECTIONS_45-729273613-5094000.xml \
 --injection-coincidence 20\

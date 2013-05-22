@@ -121,7 +121,6 @@ REAL8 omegaEarthSun = LALIND_TWOPI/(365.0*86400.0 + 6.0*3600.0 + 9.0*60.0 + 10.0
 REAL8 zeta = ((REAL8)LALIND_PI_2);               /* 10/13/04 gam; angle between the detector arms */
 REAL8 sinZeta = 1.0;                             /* 10/13/04 gam */
 REAL8 zetaGEO = 94.33*((REAL8)LALIND_PI)/180.0;  /* 10/13/04 gam; value from JKS paper */
-INT4 lalDebugLevel = 0;
 
 int main( int argc, char *argv[] )
 {
@@ -207,7 +206,6 @@ int main( int argc, char *argv[] )
         case 'L':
 	  break;
 	case 'd':
-	  lalDebugLevel = atoi( optarg );
 	  break;
 	default:
           usage( program );

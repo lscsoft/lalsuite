@@ -95,14 +95,12 @@ main(int argc, char *argv[])
   UINT4 i;
   REAL8 maxd = 0;
 
-  lalDebugLevel = 0;
   vrbflg = 1;		/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* register all user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'd'), &status);
   LAL_CALL (initUserVars (&status), &status);
 
   /* read cmdline & cfgfile  */
@@ -137,7 +135,7 @@ main(int argc, char *argv[])
 
       if( strcmp( sft1->name, sft2->name ) )
 	{
-	  if ( lalDebugLevel ) XLALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", sft1->name, sft2->name );
+	  if ( lalDebugLevel ) XLALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", i, sft1->name, sft2->name );
 	  /* exit (1); */  /* can't be too strict here, as we also allow v1-SFTs, which don't have detector-name */
 	}
 

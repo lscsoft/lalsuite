@@ -51,7 +51,6 @@ Options:
   -h             print usage message
   -q             quiet: run silently
   -v             verbose: print extra information
-  -d level       set lalDebugLevel to level
 \endcode
 
 This program tests the function
@@ -121,9 +120,6 @@ LALSMoment()
 extern char	*optarg;
 extern int	optind;
 
-
-/*  Setting Global debug level  */
-int	lalDebugLevel	= 0;
 
 
 /*  Setting variables to parse command line flags  */
@@ -346,7 +342,6 @@ static void Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h             print this message\n");
   fprintf (stderr, "  -q             quiet: run silently\n");
   fprintf (stderr, "  -v             verbose: print extra information\n");
-  fprintf (stderr, "  -d level       set lalDebugLevel to level\n");
   exit (exitcode);
 }
 
@@ -374,7 +369,6 @@ static void ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

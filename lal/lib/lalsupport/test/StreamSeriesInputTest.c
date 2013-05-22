@@ -87,7 +87,6 @@ data file formats.
 #include <lal/StreamOutput.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define INFILE TEST_DATA_DIR "StreamSeriesInput.data"
 
 /* Usage format string. */
@@ -140,7 +139,6 @@ main(int argc, char **argv)
   FILE *fpIn = NULL;           /* input file pointer */
   FILE *fpOut = NULL;          /* output file pointer */
 
-  lalDebugLevel = 0;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;
@@ -175,7 +173,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( STREAMSERIESINPUTTESTC_EARG,
 	       STREAMSERIESINPUTTESTC_MSGEARG, 0 );

@@ -58,7 +58,6 @@
 #define CHANNEL "H1:LSC-AS_Q"
 #endif
 
-INT4 lalDebugLevel = LALWARNING | LALINFO;
 
 int main( void )
 {

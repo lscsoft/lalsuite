@@ -107,7 +107,6 @@ main (  int argc, char **argv )
 
    noisemodel = &LALVIRGOPsd;
 
-   lalDebugLevel = 1;
    quietFlag = 0;
 
 	/* ALL default Values here */

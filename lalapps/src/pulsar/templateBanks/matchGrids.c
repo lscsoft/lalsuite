@@ -89,14 +89,12 @@ int main(int argc, char *argv[])
 
   DopplerSkyGrid *node1, *node2;
 
-  lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status), &status);	  
 
   /* read cmdline & cfgfile  */	

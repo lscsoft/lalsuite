@@ -25,9 +25,6 @@
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
 
-extern INT4 lalDebugLevel;
-
-
 /**
  \defgroup ButterworthTimeSeries_c Module ButterworthTimeSeries.c
  \ingroup BandPassTimeSeries_h

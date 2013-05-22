@@ -50,7 +50,6 @@ inteasd of tau0/tau3 though.
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 
-INT4 lalDebugLevel=34;
 int
 main(void)
 {

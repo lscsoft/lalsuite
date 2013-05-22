@@ -53,7 +53,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALVersion.h>
 
-extern int lalDebugLevel;
 
 int main( void )
 {
@@ -61,7 +60,6 @@ int main( void )
   char msg[2048];
   int verbose = 1;
 
-  lalDebugLevel = 0;
 
   if ( strcmp( LAL_VERSION, lalVersion ) ||
        strcmp( LAL_CONFIGURE_ARGS, lalConfigureArgs ) ||

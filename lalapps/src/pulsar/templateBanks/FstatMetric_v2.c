@@ -201,17 +201,12 @@ main(int argc, char *argv[])
   UserVariables_t uvar = empty_UserVariables;
   DopplerMetricParams metricParams = empty_DopplerMetricParams;
 
-  lalDebugLevel = 1;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-  if ( XLALGetDebugLevel (argc, argv, 'v') != XLAL_SUCCESS ) {
-    XLALPrintError( "%s(): XLALGetDebugLevel() failed\n", __func__ );
-    return EXIT_FAILURE;
-  }
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );

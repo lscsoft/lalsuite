@@ -41,7 +41,6 @@
 			"tmpltbank","process:process_id:0","--space","string","Tau0Tau3",
 			"tmpltbank","process:process_id:0","--number-of-segments","int","15",
 			"tmpltbank","process:process_id:0","--minimal-match","float","1.000000e-05",
-			"tmpltbank","process:process_id:0","--debug-level","string","33",
 			"tmpltbank","process:process_id:0","--gps-start-time","int","874609048",
 			"tmpltbank","process:process_id:0","--high-pass-attenuation","float","1.000000e-01",
 			"tmpltbank","process:process_id:0","--min-high-freq-cutoff","string","SchwarzISCO",

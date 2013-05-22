@@ -31,7 +31,6 @@
 /* globals, constants and defaults */
 
 
-extern int lalDebugLevel;
 
 /* boolean global variables for controlling output */
 
@@ -99,9 +98,6 @@ int main(int argc, char *argv[]){
 
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
-  
-  lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
   
   uvar_help = FALSE;
 

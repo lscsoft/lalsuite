@@ -24,9 +24,6 @@
 #include <math.h>
 #include <lal/IIRFilter.h>
 
-extern INT4 lalDebugLevel;
-
-
 /**
    \addtogroup CreateIIRFilter_c
    \author Creighton, T. D.

@@ -483,9 +483,7 @@ void initializeMCMC(LALInferenceRunState *runState)
     verbose=1;
     LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , LALINFERENCE_UINT4_t,
                             LALINFERENCE_PARAM_FIXED);
-    set_debug_level("ERROR|INFO");
   }
-  else set_debug_level("NDEBUG");
 
   printf("set iteration number.\n");
   /* Number of live points */

@@ -122,7 +122,6 @@ char ifo[3];                        /* interferometer name: needed for frame fil
 /* GLOBAL VARIABLES */
 
 static LALStatus status;
-INT4 lalDebugLevel=3;
 FrCache *framecache;                                           /* frame reading variables */
 FrStream *framestream=NULL;
 

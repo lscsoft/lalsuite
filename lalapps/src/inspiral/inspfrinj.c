@@ -202,7 +202,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
   XLALSetErrorHandler( XLALAbortErrorHandler );
 
 
@@ -860,7 +859,6 @@ static void print_usage(char *program)
       " [--help]                           display this message\n"\
       " [--verbose]                        print progress information\n"\
       " [--version]                        print version information and exit\n"\
-      " [--debug-level]          level     set the LAL debug level to level\n"\
       " [--user-tag]             usertag   set the process_params usertag to usertag\n"\
       " [--comment]              string    set the process table comment to string\n"\
       "\n"\
@@ -935,7 +933,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"inject-safety",           required_argument, 0,                'S'},
     {"injection-channel",       required_argument, 0,                'I'},
     {"injection-start-freq",    required_argument, 0,                'L'},
-    {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
     {"version",                 no_argument,       0,                'V'},
@@ -960,7 +957,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     c = getopt_long_only( argc, argv, 
         "A:B:C:I:L:N:S:V:Z:"
-        "a:b:c:d:f:hi:l:p:q:r:s:u:w:y:z:",
+        "a:b:c:d:f:hi:l:p:q:r:s:u:w:y:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1280,11 +1277,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         optarg_len = strlen( optarg ) + 1;
         injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( injectionFile, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 

@@ -143,7 +143,6 @@ typedef struct ResponseFunctionTag
 /* GLOBAL VARIABLES */
 
 static LALStatus status;
-INT4 lalDebugLevel=0;
 
 FrCache *hoftframecache=NULL;                                           /* frame reading variables */
 FrStream *hoftframestream=NULL;

@@ -666,7 +666,6 @@ int main( int argc, char *argv[])
     SNRs=calloc(nIFO+1 ,sizeof(REAL8));
     
 	lal_errhandler = LAL_ERR_EXIT;
-        set_debug_level( "33" );
 
 	seed=0;
 	etawindow=1.0;

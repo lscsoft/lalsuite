@@ -27,7 +27,6 @@
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=3;
 LALStatus empty_status;
 
 REAL8 tol = LAL_REAL4_EPS;

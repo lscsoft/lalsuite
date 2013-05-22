@@ -65,7 +65,6 @@ of waveforms which have phases that differ by \f$\pi/2\f$.
 
 void printf_timeseries(INT4 n, REAL4 *signal1, REAL8 delta, REAL8 t0, FILE *file);
 
-INT4 lalDebugLevel=1;
 
 int
 main ( void )

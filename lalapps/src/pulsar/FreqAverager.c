@@ -70,7 +70,6 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA);
 int ComputePSD(struct CommandLineArgsTag CLA);
 
 INT4 SFTno,RealSFTno;                /* Global variables that keep track of no of SFTs */
-INT4 lalDebugLevel=3;
 INT4 ifmin,band;
 REAL4 *p;
 REAL8 *po;

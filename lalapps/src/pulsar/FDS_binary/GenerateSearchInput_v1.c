@@ -34,7 +34,6 @@
 
 #include "GenerateBinaryMesh_v1.h"
 
-INT4 lalDebugLevel=3;
 
 REAL8 alpha,delta;
 REAL8 sma,period,ecc,argp;

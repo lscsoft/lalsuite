@@ -46,7 +46,6 @@ lalDebugLevel
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-extern int lalDebugLevel;
 
 static void
 GetInspiralMoments (
@@ -78,7 +77,6 @@ main(void)
   REAL8 mismatch;
   FILE *fpr;
 
-  lalDebugLevel = 0;
 
   fpr = fopen("MetricTest.out", "w");
 
@@ -212,7 +210,6 @@ GetInspiralMoments (
 	   in.ndx = (REAL8) k /3.L;
 	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);
 	   CHECKSTATUSPTR(status);
-	   if (lalDebugLevel==1) fprintf(stderr, "j%1i=%e\n", k,moments->j[k]);
    }
    in.shf->deltaF *= params->fLower;
    in.shf->f0 *= params->fLower;

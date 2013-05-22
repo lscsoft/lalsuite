@@ -191,7 +191,6 @@ truncation error from single- to mixed- to double-precision filtering.
 #define IIRFILTERTESTC_MSGEFILE "Could not create output file"
 
 /* Default parameters. */
-INT4 lalDebugLevel=0;
 #define NPTS   4096    /* Default length of time series */
 #define NPTS_T 4194304 /* Length of time series for timing runs */
 #define WC     0.01    /* Characteristic frequency in w-plane */
@@ -295,7 +294,6 @@ main(int argc, char **argv)
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( IIRFILTERTESTC_EARG, IIRFILTERTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

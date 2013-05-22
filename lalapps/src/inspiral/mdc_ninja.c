@@ -172,7 +172,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"simulate-noise",          no_argument,       &addNoise,         1 },
     {"double-precision",        no_argument,       &doingREAL8,       1 },
     /* these options don't set a flag */
-    {"debug-level",             required_argument, 0,                'D'},
     {"injection-type",          required_argument, 0,                'T'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -197,9 +196,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {0, 0, 0, 0}
   };
 
-  /* set default debug level */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
 
   XLALSetSilentErrorHandler();
 
@@ -211,7 +208,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     size_t optarg_len;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "D:T:a:b:f:r:i:t:n:o:l:L:s:S:c:e:f:g:O:d:hV",
+    c = getopt_long_only( argc, argv, "T:a:b:f:r:i:t:n:o:l:L:s:S:c:e:f:g:O:d:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -426,11 +423,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
         optarg_len = strlen(optarg) + 1;
         outDir = (CHAR *)calloc(1, optarg_len * sizeof(CHAR));
         memcpy(outDir, optarg, optarg_len);
-        break;
-
-      case 'D':
-        /* set debug level */
-        set_debug_level( optarg );
         break;
 
       case '?':
@@ -871,7 +863,6 @@ static void print_usage( CHAR *program )
       "  [--help]                          display this message\n"\
       "  [--verbose]                       print progress information\n"\
       "  [--version]                       print version information and exit\n"\
-      "  --debug-level         lvl         set debug level to 'lvl'\n"\
       "  --injection-type      type        set injection type ('approximant' or 'NR')\n"\
       "  --injection-file      inj_file    read inj details from xml sim-insp inj_file\n"\
       "  --ifo                 ifo         IFO for which to generate injections\n"\

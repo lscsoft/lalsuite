@@ -34,7 +34,6 @@
 
 #include "psd.h"
 INT4 SFTno,RealSFTno;                /* Global variables that keep track of no of SFTs */
-INT4 lalDebugLevel=3;
 REAL4 *p;
 char filelist[MAXFILES][MAXFILENAMELENGTH];
 double N,deltaT,*po;

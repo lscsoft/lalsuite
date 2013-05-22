@@ -46,7 +46,6 @@
 
 /* Default parameters. */
 
-extern int lalDebugLevel;
 
 #define MAXFILENAMELENGTH 256
 /* defaults chosen for L1 */
@@ -90,10 +89,6 @@ int main(int argc, char *argv[]){
   INT4  uvar_window, uvar_maxBins;
 
   /* set defaults */
-
-  lalDebugLevel = 0;
-  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
   uvar_sftDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));

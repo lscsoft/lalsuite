@@ -102,7 +102,7 @@ else
 fi
 
 mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
-mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot -v${debug}"
+mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$noiseSqrtSh";
 fi
@@ -126,7 +126,7 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run directed CFS_v2 with LALDemod method"
 echo "----------------------------------------------------------------------"
 echo
-cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
+cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -163,7 +163,7 @@ sort $outfile_RS > __tmp_sorted && mv __tmp_sorted $outfile_RS
 
 ## compare absolute differences instead of relative, allow deviations of up to sigma=sqrt(8)~2.8
 echo
-cmdline="$cmp_code -1 ./${outfile_LD} -2 ./${outfile_RS} --clusterFiles=0 --sigFtolerance --Ftolerance=0.5 -v${debug}"
+cmdline="$cmp_code -1 ./${outfile_LD} -2 ./${outfile_RS} --clusterFiles=0 --sigFtolerance --Ftolerance=0.5"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."

@@ -101,7 +101,6 @@ FaFbdata *FaFbObsv, *FaFbTest,*FaFbSubt;
 REAL8 ChistatSum=0.0;     /* Chi square statistic  */
 REAL8 sigLevel=0.01;
 
-INT4 lalDebugLevel=3;
 /* static LALStatus status; */
 
 /* default input file name */

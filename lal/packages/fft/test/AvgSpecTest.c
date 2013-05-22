@@ -54,7 +54,6 @@ int main( void )
   UINT4 k;
   FILE *fp;
 
-  lalDebugLevel = 3;
 
   /* allocate memory for time and frequency series */
   tseries.deltaT = 0.1;

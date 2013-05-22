@@ -7,8 +7,6 @@ lalapps_ring - filters data through a bank of ringdown filters
 .RB [ \-\-help ]
 .RB [ \-\-version ]
 .RB [ \-\-verbose ]
-.RB [ \-\-debug\-level
-.IR dbglvl ] 
 .RB [ \-\-gps\-start\-time
 .IR startsec ] 
 .RB [ \-\-gps\-start\-time\-ns
@@ -81,9 +79,6 @@ Print the version information.
 .TP
 .BI \-\-verbose
 Verbose output.
-.TP
-.BI \-\-debug\-level " dbglvl"
-Set LAL debug level to \fIdbglvl\fP.
 .TP
 .BI \-\-gps\-start\-time " startsec"
 Analyze data starting at GPS time \fIstartsec\fP seconds.
@@ -223,61 +218,6 @@ Set the ringdown event signal-to-noise ratio threshold to \fIthresh\fP.
 .TP
 .BI \-scale " scale"
 Scale the response function by a dynamic range factor of \fIscale\fP.
-
-.SH DEBUG LEVELS
-The LAL debug level can be specified as an integer or as a string of flags:
-.RS
-.TP
-.B NDEBUG
-No debugging information is printed and memory debugging code is disabled.
-.TP
-.B ERROR
-Error messages are printed.
-.TP
-.B WARNING
-Warning messages are printed.
-.TP
-.B INFO
-Information messages are printed.
-.TP
-.B TRACE
-Function call tracing messages are printed.
-.TP
-.B MEMINFO
-Memory allocation information messages are printed.
-.TP
-.B MEMDBG
-Debugging of memory allocation routines is enabled but no messages are printed.
-.RE
-.PP
-
-The following composite levels are available:
-.RS
-.TP
-.B MSGLVL1
-Equivalent to
-.B ERROR
-.TP
-.B MSGLVL2
-Equivalent to
-.B ERROR | WARNING
-.TP
-.B MSGLVL3
-Equivalent to
-.B ERROR | WARNING | INFO
-.TP
-.B ALLDBG
-All debugging messages are printed.
-.RE
-.PP
-
-For example, the command
-.PP
-.RS
-lalapps_ring --debug-level "ERROR | INFO" ...
-.RE
-.PP
-will set the debug level so that error and information messages are printed.
 
 .SH ENVIRONMENT
 .TP

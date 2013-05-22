@@ -1627,7 +1627,6 @@ int main( int argc, char *argv[] )
 
   /* set up initial debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *)

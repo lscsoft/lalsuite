@@ -59,7 +59,6 @@ extern "C" {
  * Constant Declarations.  Default parameters.
  */
 
-/*INT4 lalDebugLevel=1; */
 
 
 /* ****************************************************** */

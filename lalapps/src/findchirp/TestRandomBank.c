@@ -107,7 +107,6 @@ main (INT4 argc, CHAR **argv )
   /* --- Some initialization --- */
 
   lal_errhandler = LAL_ERR_EXIT;
-  lalDebugLevel = 0;
 
   templateBank.snglInspiralTable = NULL;
 

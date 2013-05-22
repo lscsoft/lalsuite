@@ -219,7 +219,6 @@ UserVariables_t empty_UserVariables;
 /* ---------- global variables ----------*/
 
 extern int vrbflg;
-extern INT4 lalDebugLevel;
 
 
 /* ---------- local prototypes ---------- */
@@ -277,14 +276,10 @@ main(int argc, char *argv[]){
   MJDTime TrefTDBMJD;
   LIGOTimeGPS TrefSSB_TDB_GPS;
 
-  /* LALDebugLevel must be called before anything else */
-  lalDebugLevel = 1;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
-
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );

@@ -93,7 +93,6 @@ high-frequency-cutoff = 2048.0
 order = twoPN
 approximant = TaylorF2
 space = Tau0Tau3
-debug-level = 33
 
 [inspiral]
 ; inspiral analysis parameters -- added to all inspiral jobs
@@ -105,7 +104,6 @@ enable-output =
 cluster-method = window
 cluster-window = 16
 maximization-interval = 10000000
-debug-level = 33
 minimal-match = 0.55
 
 [no-veto-inspiral]
@@ -145,11 +143,9 @@ dynamic-range-exponent = 65.0
 
 [inca]
 ; common coincidence parameters -- added to all inca jobs
-debug-level = 33
 
 [thinca]
 ; common coincidence parameters -- added to all thinca jobs
-debug-level = 33
 parameter-test = mchirp_and_eta
 h1-time-accuracy = 1
 h2-time-accuracy = 1
@@ -187,16 +183,13 @@ injection-coincidence = 3
 
 [cohbank]
 ;params for the coherent bank code
-debug-level = 33
  
 [coh-trig]
 ;params for the trigbank code in the coherent stage
-debug-level = 33
 parameter-test = no_test
 
 [chia]
 ;params for the coherent code
-debug-level = 33
 maximize-over-chirp = 
 cohsnr-threshold = 10.0
 low-frequency-cutoff = 70.0

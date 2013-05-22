@@ -147,11 +147,6 @@ MACRO(A, B, X);
 #include <lal/Date.h>
 %}
 
-// Print LAL debugging errors by default.
-%init %{
-  lalDebugLevel |= LALERROR;
-%}
-
 // Version of SWIG used to generate wrapping code.
 %inline %{const int swig_version = SWIG_VERSION;%}
 

@@ -46,7 +46,6 @@ lalDebugLevel
 #include <lal/SeqFactories.h>
 
 /* Default parameter settings. */
-INT4 lalDebugLevel = 0;
 
 int
 main(void)

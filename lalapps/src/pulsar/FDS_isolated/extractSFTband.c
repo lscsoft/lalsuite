@@ -126,7 +126,6 @@ COMPLEX8Vector *fvec=NULL;
 LIGOTimeGPS *timestamps=NULL;
 
 
-INT4 lalDebugLevel=3;
 
 /* Prototypes for the functions defined in this file */
 int make_filelist(LALStatus *);

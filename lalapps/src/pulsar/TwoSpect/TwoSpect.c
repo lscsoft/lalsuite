@@ -92,7 +92,6 @@ int main(int argc, char *argv[])
    }
    
    //Set lalDebugLevel to user input or 0 if no input
-   lalDebugLevel = args_info.laldebug_arg;
    
    //Create directory
    mkdir(args_info.outdirectory_arg, 0777);

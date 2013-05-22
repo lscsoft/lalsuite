@@ -102,7 +102,6 @@ couple of minutes.
 */
 
 
-INT4  lalDebugLevel = 2;
 
 int main ( void )
 {

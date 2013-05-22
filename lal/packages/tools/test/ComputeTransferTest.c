@@ -41,7 +41,6 @@ const char *usage = "Usage: %s [options]\nOptions:\n"
     "\t-v\t\tverbose output\n";
 
 
-extern int lalDebugLevel;
 int verbose = 0;
 const char *program;
 
@@ -61,7 +60,6 @@ int main( int argc, char *argv[] )
   COMPLEX8Vector fvec;
   COMPLEX8FrequencySeries fser;
 
-  lalDebugLevel = LALMEMDBG;
 
   /* initialization */
   pvec.length = sizeof( poles ) / sizeof( *poles );
@@ -83,7 +81,6 @@ int main( int argc, char *argv[] )
   {
     if ( ! strcmp( *argv, "-d" ) )
     {
-      lalDebugLevel = atoi( *++argv );
       --argc;
     }
     else if ( ! strcmp( *argv, "-v" ) )

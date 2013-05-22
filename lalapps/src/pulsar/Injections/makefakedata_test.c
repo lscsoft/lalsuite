@@ -309,7 +309,6 @@ COMPLEX8Vector *fvecn = NULL;
 /*FFT plan*/
 RealFFTPlan *pfwd = NULL;
 
-INT4 lalDebugLevel = 1;
 
 /* Prototypes for the functions defined in this file */
 int read_commandline_and_file(LALStatus *, int argc, char *argv[]);
@@ -1688,7 +1687,6 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
       exit(0);
       break;
     case 'd':
-      lalDebugLevel = atoi (optarg);
       break;
     default:
 

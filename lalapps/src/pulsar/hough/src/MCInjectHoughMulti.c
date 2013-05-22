@@ -50,7 +50,6 @@
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./MCInjectHoughMulti.h" /* proper path*/
 
-extern int lalDebugLevel;
 
 #define EARTHEPHEMERIS "./earth05-09.dat" 
 #define SUNEPHEMERIS "./sun05-09.dat"    
@@ -197,10 +196,6 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler   =   LAL_ERR_EXIT;
   
-  lalDebugLevel = 0;
-  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
-
   uvar_help = FALSE;
   uvar_AllSkyFlag = 1;
   

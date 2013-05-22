@@ -116,7 +116,6 @@ each eigenvalue is the corresponding eigenvector.
 #include <lal/MatrixUtils.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define SIZE 3
 
 /* Usage format string. */
@@ -191,7 +190,6 @@ main( int argc, char **argv )
   clock_t start = 0, stop = 0; /* start and stop times for timing */
   FILE *fp = NULL;             /* input/output file pointer */
 
-  lalDebugLevel = 0;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *
@@ -254,7 +252,6 @@ main( int argc, char **argv )
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( EIGENTESTC_EARG, EIGENTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

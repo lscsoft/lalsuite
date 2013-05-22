@@ -114,14 +114,12 @@ int main(int argc, char *argv[])
   MultiSFTVector *SSBmultiSFTs = NULL;	/**< SFT vector transferred to the SSB */
   UINT4 X;
 
-  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL ( LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LAL_CALL ( LALInitUserVars(&status, &uvar), &status);
 
   /* do ALL cmdline and cfgfile handling */

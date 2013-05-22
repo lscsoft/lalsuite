@@ -75,7 +75,6 @@ int diffEmissionTime  ( EmissionTime  *diff, const EmissionTime *emit1, const Em
 int absmaxEmissionTime ( EmissionTime *absmax, const EmissionTime *demit1, const EmissionTime *demit2 );
 REAL8 maxErrInEmissionTime ( const EmissionTime *demit );
 
-INT4 lalDebugLevel = 5;
 
 // empty local initializers
 static const BarycenterInput empty_BarycenterInput;

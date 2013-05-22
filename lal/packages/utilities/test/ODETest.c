@@ -48,7 +48,6 @@
 #define TESTSTATUS( ps ) \
   if ( (ps)->statusCode ) { REPORTSTATUS( ps ); exit( 1 ); } else ( (void) 0 )
 
-extern int lalDebugLevel;
 
 /*
  *
@@ -223,7 +222,6 @@ static int EccentricOrbit( void )
 
 int main( void )
 {
-  lalDebugLevel = 1;
   CircularOrbit();
   EccentricOrbit();
   LALCheckMemoryLeaks();

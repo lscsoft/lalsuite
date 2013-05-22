@@ -182,9 +182,9 @@ while [ $iFreq -le $numFreqBands ]; do
     if [ ! -r $SFTname ]; then
         cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=H1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_H1'"
         if [ -n "$DEBUG" ]; then
-            cmdline="$cmdline -v1"
+            cmdline="$cmdline"
         else
-            cmdline="$cmdline -v0 &> /dev/null"
+            cmdline="$cmdline &> /dev/null"
         fi
         echo "$cmdline";
         if ! eval "$cmdline"; then
@@ -200,9 +200,9 @@ while [ $iFreq -le $numFreqBands ]; do
     if [ ! -r $SFTname ]; then
         cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=L1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_L1'";
         if [ -n "$DEBUG" ]; then
-            cmdline="$cmdline -v1"
+            cmdline="$cmdline"
         else
-            cmdline="$cmdline -v0 &> /dev/null"
+            cmdline="$cmdline &> /dev/null"
         fi
         echo "$cmdline";
         if ! eval "$cmdline"; then
@@ -244,9 +244,9 @@ if [ ! -r "$outfile_cfs" ]; then
         # ----- get multi-IFO + single-IFO F-stat values
         cmdline="$cfs_CL --DataFiles='$SFTfiles'"
         if [ -n "$DEBUG" ]; then
-            cmdline="$cmdline -v1"
+            cmdline="$cmdline"
         else
-            cmdline="$cmdline -v0 &> /dev/null"
+            cmdline="$cmdline &> /dev/null"
         fi
         echo "$cmdline"
         if ! eval "$cmdline"; then
@@ -307,9 +307,9 @@ timingsfile_RS="${testDir}/timing_RS.dat"
 if [ -z "$NORESAMP" ]; then
     cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats"
     if [ -n "$DEBUG" ]; then
-        cmdline="$cmdline -d1"
+        cmdline="$cmdline"
     else
-        cmdline="$cmdline -d0 &> /dev/null"
+        cmdline="$cmdline &> /dev/null"
     fi
     echo "$cmdline"
     if ! eval "$cmdline"; then
@@ -340,9 +340,9 @@ timingsfile_DM="${testDir}/timing_DM.dat"
 
 cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${LV_flags}"
 if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline -d1"
+    cmdline="$cmdline"
 else
-    cmdline="$cmdline -d0 &> /dev/null"
+    cmdline="$cmdline &> /dev/null"
 fi
 
 echo $cmdline
@@ -370,9 +370,9 @@ timingsfile_DM_LV="${testDir}/timing_DM_LV.dat"
 
 cmdline="$gct_code $gct_CL_common --useResamp=false ${LV_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
 if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline -d1"
+    cmdline="$cmdline"
 else
-    cmdline="$cmdline -d0 &> /dev/null"
+    cmdline="$cmdline &> /dev/null"
 fi
 
 echo $cmdline
@@ -399,9 +399,9 @@ timingsfile_DM_DUAL="${testDir}/timing_DM_DUAL.dat"
 
 cmdline="$gct_code $gct_CL_common --useResamp=false --SortToplist=3 ${LV_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
 if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline -d1"
+    cmdline="$cmdline"
 else
-    cmdline="$cmdline -d0 &> /dev/null"
+    cmdline="$cmdline &> /dev/null"
 fi
 
 echo $cmdline

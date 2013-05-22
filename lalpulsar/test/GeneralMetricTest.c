@@ -163,7 +163,6 @@ extern char *optarg;
 #define SPOKES 30
 #define MAGNIFY 1.0            /* Magnification factor of ellipses */
 
-extern int lalDebugLevel;
 
 int main( int argc, char *argv[] ) {
   static LALStatus status;          /* Status structure */
@@ -203,7 +202,6 @@ int main( int argc, char *argv[] ) {
   char earth[] = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
   char sun[]   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
 
-  lalDebugLevel = 0;
 
   /* Defaults that can be overwritten: */
   metric_code = 1;
@@ -244,7 +242,6 @@ int main( int argc, char *argv[] ) {
       detector = atoi( optarg );
       break;
     case 'e':
-      lalDebugLevel = 1;
       break;
     case 'f':
       f0 = atof( optarg );

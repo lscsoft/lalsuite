@@ -112,7 +112,6 @@
 #define CHANNEL "%s:LSC-AS_Q"
 #define CAL_CATALOG "%s-CAL-V03-%s.cache"
 
-INT4 lalDebugLevel = 1;
 
 extern char *optarg;
 extern int   optind;

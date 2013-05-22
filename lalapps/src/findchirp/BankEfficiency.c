@@ -91,7 +91,6 @@ main (INT4 argc, CHAR **argv )
   /* --- Some initialization --- */
   gsl_histogram_set_ranges_uniform (histogramNoise, 0.,20.);
   lal_errhandler = LAL_ERR_EXIT;
-  lalDebugLevel = 0;
   templateBank.snglInspiralTable = NULL;
   memset( &templateBank, 0, sizeof( MetadataTable ) );
   memset( &randIn, 0, sizeof( RandomInspiralSignalIn ) );
@@ -2750,9 +2749,6 @@ void BankEfficiencyParseParameters(
     else if (!strcmp(argv[i],   "--bank-psi3-range")) {
       BankEfficiencyParseGetDouble2(argv, &i,
           &(coarseBankIn->psi3Min), &(coarseBankIn->psi3Max));
-    }
-    else if (!strcmp(argv[i],"--debug")) {
-      BankEfficiencyParseGetInt(argv, &i, &(lalDebugLevel));
     }
     else if (!strcmp(argv[i],"--bank-eccentricity-range")){
       BankEfficiencyParseGetDouble2(argv, &i,

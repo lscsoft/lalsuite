@@ -112,7 +112,6 @@ lines of \f$N\f$ whitespace-separated numbers.
 #include <lal/MatrixUtils.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define SIZE 3
 
 /* Usage format string. */
@@ -189,7 +188,6 @@ main( int argc, char **argv )
   clock_t start = 0, stop = 0; /* start and stop times for timing */
   FILE *fp = NULL;             /* input/output file pointer */
 
-  lalDebugLevel = 0;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *
@@ -252,7 +250,6 @@ main( int argc, char **argv )
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( DETINVERSETESTC_EARG, DETINVERSETESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

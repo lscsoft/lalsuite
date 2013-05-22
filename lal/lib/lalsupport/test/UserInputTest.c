@@ -27,7 +27,6 @@
 
 
 /* Default parameters. */
-INT4 lalDebugLevel=3;
 
 typedef struct
 {
@@ -89,12 +88,6 @@ main(int argc, char *argv[])
       my_argv[i] = XLALCalloc ( 1, strlen(argv_in[i])+1);
       strcpy ( my_argv[i], argv_in[i] );
     }
-
-  /* laldebug level always needs to be read first (before any lal-mallocs!) */
-  if ( XLALGetDebugLevel (my_argc, my_argv, 'v') != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALGetDebugLevel() failed with code %d\n", __func__, xlalErrno );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
 
   /* ----- dump config-file content into config-file ----- */
   FILE *fid;

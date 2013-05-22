@@ -68,7 +68,6 @@ typedef struct {
 }
 UserParams;
 
-INT4 lalDebugLevel=33;
 
 int
 main(int argc, char **argv)

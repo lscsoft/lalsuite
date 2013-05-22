@@ -97,8 +97,6 @@ INT4 main()
   status.statusPtr = NULL;
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
-
   
    /* initialize gps time structure */  
   gpsStartTime.gpsSeconds = startTime;

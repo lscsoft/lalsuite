@@ -96,7 +96,6 @@ static void print_usage(char *program)
   fprintf(stderr,     "  [--help]                      display this message\n"                                 );
   fprintf(stderr,     "  [--verbose]                   print progress information\n"                           );
   fprintf(stderr,     "  [--version]                   print version information and exit\n"                   );
-  fprintf(stderr,     "  [--debug-level]   level       set the LAL debug level to LEVEL\n"                     );
   fprintf(stderr,     "  [--user-tag]      usertag     set the process_params usertag\n"                       );
   fprintf(stderr,     "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"                    );
   fprintf(stderr,     "  [--comment]       string      set the process table comment to STRING\n"              );
@@ -308,7 +307,6 @@ int main( int argc, char *argv[] )
     {"userTag",             required_argument, 0,                    'Z'},
     {"ifo-tag",             required_argument, 0,                    'i'},
     {"help",                no_argument,       0,                    'h'}, 
-    {"debug-level",         required_argument, 0,                    'z'},
     {"version",             no_argument,       0,                    'V'},
     {"high-mass",           required_argument, 0,                    '&'},
     {"h1-snr-cut",          required_argument, 0,                    '*'},
@@ -328,7 +326,6 @@ int main( int argc, char *argv[] )
    */
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
   setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* create the process and process params tables */
@@ -371,7 +368,7 @@ int main( int argc, char *argv[] )
 
     c = getopt_long_only( argc, argv, 
         "B:C:D:E:F:G:H:I:J:K:N:O:P:T:V:Z:"
-        "a:c:d:e:h:i:k:n:o:p:s:t:x:z:"
+        "a:c:d:e:h:i:k:n:o:p:s:t:x:"
         "@:&:(:):}", 
         long_options, &option_index );
 
@@ -689,11 +686,6 @@ int main( int argc, char *argv[] )
         /* help message */
         print_usage(argv[0]);
         exit( 1 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'Z':

@@ -53,7 +53,6 @@
               "   [--highpass freq attenuation]  High-pass filter parameters \n"\
               "   [--numpts npoints]     Points per graph displayed\n"
 
-INT4 lalDebugLevel = LALMSGLVL3;
 
 #include <config.h>
 #ifndef HAVE_LIBLALFRAME

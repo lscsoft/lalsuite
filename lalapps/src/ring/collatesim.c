@@ -139,7 +139,6 @@ int main( int argc, char *argv[] )
   
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
   
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *)
@@ -169,7 +168,6 @@ int main( int argc, char *argv[] )
     {
       {"verbose",             no_argument,        &vrbflg,              1 },
       {"help",                    no_argument,            0,           'h'},
-      {"debug-level",             required_argument,      0,           'z'},
       {"comment",                 required_argument,      0,           'c'},
       {"version",                 no_argument,            0,           'V'},
       {"glob",                    required_argument,      0,           'g'},
@@ -182,7 +180,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "h:g:i:o:z:V", long_options, &option_index );
+    c = getopt_long_only ( argc, argv, "h:g:i:o:V", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )

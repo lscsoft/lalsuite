@@ -172,7 +172,6 @@ REAL4 dec_max;
 
 
 extern char *optarg;     /* option argument for getopt() */
-int  lalDebugLevel = 0;  /* default value */
 int  metric_code;        /* Which metric code to use: */
                          /* 1 = Ptolemetric */
                          /* 2 = CoherentMetric + DTBarycenter */
@@ -263,7 +262,6 @@ int main( int argc, char **argv )
       detector = atoi( optarg );
       break;
     case 'e':
-      lalDebugLevel = 1;
       break;
     case 'f':
       fMax = atof( optarg );

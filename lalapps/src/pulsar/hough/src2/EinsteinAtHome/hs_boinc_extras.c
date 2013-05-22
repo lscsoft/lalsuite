@@ -1348,12 +1348,10 @@ int main(int argc, char**argv) {
       if ( 1 == fscanf(fp_debug, "%d", &read_int ) ) 
 	{
 	  LogPrintf (LOG_NORMAL, "...containing int: Setting lalDebugLevel -> %d\n", read_int );
-	  lalDebugLevel = read_int;
 	}
       else
 	{
 	  LogPrintf (LOG_NORMAL, "...with no parsable int: Setting lalDebugLevel -> 1\n");
-	  lalDebugLevel = 1;
 	}
       fclose (fp_debug);
 

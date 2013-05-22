@@ -176,8 +176,6 @@ LALCheckMemoryLeaks()
 extern char *optarg;
 extern int   optind;
 
-/* int lalDebugLevel  = LALMSGLVL3; */
-extern int lalDebugLevel;
 
 BOOLEAN optVerbose = STOCHASTICINVERSENOISETESTC_FALSE;
 UINT4 optLength    = 0;
@@ -220,7 +218,6 @@ int main(int argc, char *argv[])
 
   CHARVector               *unitString = NULL;
 
-  lalDebugLevel = LALNDEBUG;
 
   ParseOptions (argc, argv);
 
@@ -1200,7 +1197,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

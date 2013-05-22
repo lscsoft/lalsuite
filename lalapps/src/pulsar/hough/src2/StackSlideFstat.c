@@ -41,7 +41,6 @@
 
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
-extern int lalDebugLevel;
 
 #define BLOCKSIZE_REALLOC 50
 

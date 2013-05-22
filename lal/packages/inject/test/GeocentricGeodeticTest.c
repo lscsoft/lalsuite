@@ -118,7 +118,6 @@ about the same as the numerical loss of precision just outside of it.
 
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-x xmin xmax nx] [-y ymin ymax ny]\n" \
@@ -188,7 +187,6 @@ main( int argc, char **argv )
   static LALStatus stat;        /* status structure */
   EarthPosition earth;          /* terrestrial coordinates */
 
-  lalDebugLevel = 0;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *
@@ -256,7 +254,6 @@ main( int argc, char **argv )
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( GEOCENTRICGEODETICTESTC_EARG,
 	       GEOCENTRICGEODETICTESTC_MSGEARG, 0 );

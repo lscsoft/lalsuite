@@ -22,6 +22,8 @@
 #ifndef _LALERROR_H
 #define _LALERROR_H
 
+#include <lal/LALDebugLevel.h>
+
 #include <lal/LALDatatypes.h>
 
 #include <lal/XLALError.h>
@@ -31,33 +33,6 @@ extern "C" {
 #elif 0
 }       /* so that editors will match preceding brace */
 #endif
-
-/* lalDebugLevel bit field values: */
-enum {
-    LALERRORBIT   = 0001,
-    LALWARNINGBIT = 0002,
-    LALINFOBIT    = 0004,
-    LALTRACEBIT   = 0010,
-    LALMEMDBGBIT  = 0020,
-    LALMEMPADBIT  = 0040,
-    LALMEMTRKBIT  = 0100,
-    LALMEMINFOBIT = 0200
-};
-
-/* composite lalDebugLevels: */
-enum {
-    LALNDEBUG   = 0,
-    LALERROR    = LALERRORBIT,
-    LALWARNING  = LALWARNINGBIT,
-    LALINFO     = LALINFOBIT,
-    LALTRACE    = LALTRACEBIT,
-    LALMSGLVL1  = LALERRORBIT,
-    LALMSGLVL2  = LALERRORBIT | LALWARNINGBIT,
-    LALMSGLVL3  = LALERRORBIT | LALWARNINGBIT | LALINFOBIT,
-    LALMEMDBG   = LALMEMDBGBIT | LALMEMPADBIT | LALMEMTRKBIT,
-    LALMEMTRACE = LALTRACEBIT | LALMEMDBG | LALMEMINFOBIT,
-    LALALLDBG   = ~LALNDEBUG
-};
 
 #ifndef SWIG    /* exclude from SWIG interface */
 

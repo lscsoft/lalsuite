@@ -327,7 +327,6 @@ static REAL8 xbbad (REAL8 UNUSED x, void *p)
 extern char *optarg;
 extern int   optind;
 
-int   lalDebugLevel = 0;
 int   verbose    = 0;
 
 static void Usage (const char *program, int exitflag);
@@ -1029,7 +1028,6 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

@@ -68,7 +68,6 @@ Options:
 extern char *optarg;
 extern int   optind;
 
-int   lalDebugLevel = 0;
 int   verbose    = 0;
 
 static void Usage (const char *program, int exitflag);
@@ -386,7 +385,6 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

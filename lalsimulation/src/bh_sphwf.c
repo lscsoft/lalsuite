@@ -45,7 +45,6 @@ int parseargs( int argc, char **argv );
 
 int main( int argc, char *argv[] )
 {
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALBacktraceErrorHandler);
 
 	parseargs(argc, argv);

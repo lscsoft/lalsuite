@@ -104,10 +104,8 @@ main(int argc, char *argv[])
   ConfigVariables config = empty_ConfigVariables;
   UserVariables_t uvar = empty_UserVariables;
 
-  lalDebugLevel = 1;
 
   /* register user-variables */
-  XLAL_CHECK ( XLALGetDebugLevel ( argc, argv, 'v') == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( XLALInitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 

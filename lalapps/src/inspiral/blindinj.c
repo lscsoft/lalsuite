@@ -81,7 +81,6 @@
 "  --injection-type TYPE    type of injection, must be one of \n"\
 "                           (strain, etmx, etmy)\n"\
 "  --seed           SEED    seed random number generator with SEED (1)\n"\
-"  --debug-level    LEVEL   set the LAL debug level to LEVEL\n"\
 "\n"
 
 /* global definitions */
@@ -466,7 +465,6 @@ int main( int argc, char *argv[] )
     {"gps-start-time",          required_argument, 0,                'a'},
     {"injection-type",          required_argument, 0,                't'},
     {"seed",                    required_argument, 0,                's'},
-    {"debug-level",             required_argument, 0,                'z'},
     {0, 0, 0, 0}
   };
   int c;
@@ -504,7 +502,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
 
 
   /* create the process and process params tables */
@@ -615,12 +612,6 @@ int main( int argc, char *argv[] )
             "Stephen Fairhurst\n");
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        next_process_param( long_options[option_index].name, "int", "%d",
-            optarg );
         break;
 
       case 'h':

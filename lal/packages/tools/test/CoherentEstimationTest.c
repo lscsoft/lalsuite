@@ -25,7 +25,6 @@
 #include <lal/Random.h>
 #include <lal/SkyCoordinates.h>
 
-extern int lalDebugLevel;
 
 int
 main(void)
@@ -52,7 +51,6 @@ main(void)
 
   REAL8IIRFilter *filt = NULL;
 
-  lalDebugLevel = 3;
 
   /* initialize CoherentEstimation structure */
   params.preProcessed = 0; /* for pre-processing to happen */

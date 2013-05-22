@@ -65,7 +65,6 @@
 "  --help                    display this message\n"\
 "  --verbose                 print progress information\n"\
 "  --version                 print version information\n"\
-"  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING         set the process_params usertag to STRING\n"\
 "  --comment STRING          set the process table comment to STRING\n"\
 "\n"\
@@ -117,7 +116,6 @@ int main ( int argc, char *argv[] )
     {"userTag",                 required_argument, 0,                'Z'},
     {"comment",                 required_argument, 0,                's'},    
     {"help",                    no_argument,       0,                'h'}, 
-    {"debug-level",             required_argument, 0,                'z'},
     {"bank-file",               required_argument, 0,                'v'},
     {"number-of-banks",         required_argument, 0,                'n'},
     {"minimal-match",           required_argument, 0,                'M'},
@@ -134,7 +132,6 @@ int main ( int argc, char *argv[] )
 
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
   setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* create the process and process params tables */
@@ -161,7 +158,7 @@ int main ( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "i:n:VZ:hz:s:M:", 
+        "i:n:VZ:hs:M:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -238,19 +235,6 @@ int main ( int argc, char *argv[] )
         {
           snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg );
         }
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-          calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-            PROGRAM_NAME );
-        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-            "--%s", long_options[option_index].name );
-        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
         break;
 
       case 'Z':

@@ -86,7 +86,6 @@ description of how these values are interpreted.  If not specified,
 #define BANDPASSTESTC_MSGEFILE "Could not open file"
 
 /* Default parameters. */
-INT4 lalDebugLevel=0;
 #define NPTS 4096   /* Length of time series. */
 #define DT 1.0      /* Sampling interval of time series. */
 #define OFFSET 1024 /* Offset of the impulse from the start. */
@@ -161,7 +160,6 @@ main(int argc, char **argv)
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( BANDPASSTESTC_EARG, BANDPASSTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

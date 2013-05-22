@@ -736,7 +736,6 @@ int test_sgwb(void)
 
 int main(void)
 {
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 	gsl_rng_env_setup();
 	mksgwbdata();

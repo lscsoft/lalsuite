@@ -820,7 +820,6 @@ int leaver_table_3(void)
 
 int main(void)
 {
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 	leaver_table_2();
 	leaver_table_3();

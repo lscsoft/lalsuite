@@ -45,7 +45,6 @@ masses in the range defined by \c mmin and \c mmax.
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 
-INT4 lalDebugLevel=4;
 
 int main ( void ) {
    static InspiralTemplate p;

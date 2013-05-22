@@ -79,7 +79,6 @@ int main(int argc, char *argv[])
    }
    
    //Set lalDebugLevel to user input or 0 if no input
-   lalDebugLevel = args_info.laldebug_arg;
    
    //Allocate input parameters structure memory
    inputParamsStruct *inputParams = new_inputParams(args_info.IFO_given);

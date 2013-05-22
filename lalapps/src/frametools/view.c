@@ -107,7 +107,6 @@ int main( int argc, char *argv[] )
 	REAL8 discard;
 	UINT4 ndiscard;
 
-	lalDebugLevel = 1;
 	XLALSetErrorHandler( XLALAbortErrorHandler );
 
 	parseopts( argc, argv );

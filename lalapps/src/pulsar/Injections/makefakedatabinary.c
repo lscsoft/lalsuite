@@ -291,7 +291,6 @@ REAL8 OrbitalEccentricity;
 REAL8 ArgPeriapse;
 REAL8 OrbitalPeriod;
 
-INT4 lalDebugLevel=3;
 
 /* Prototypes for the functions defined in this file */
 int read_file(LALStatus *, int argc, char *argv[]);

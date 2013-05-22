@@ -214,15 +214,10 @@ int main( int argc, char *argv[] )
   CHAR clargs[LONGSTRINGLENGTH];                /* store the command line args */ 
   UINT4 i;                                       /* counter */
 
-  lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
-
-  /* setup LAL debug level */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
-  LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
   LAL_CALL (ReadUserVars(&status,argc,argv,&uvar,clargs), &status);

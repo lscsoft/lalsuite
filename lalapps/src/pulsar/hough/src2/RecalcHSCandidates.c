@@ -152,7 +152,6 @@
 #define UNINITIALIZE_COPROCESSOR_DEVICE
 #endif
 
-extern int lalDebugLevel;
 
 BOOLEAN uvar_printMaps = FALSE; /**< global variable for printing Hough maps */
 BOOLEAN uvar_printGrid = FALSE; /**< global variable for printing Hough grid */
@@ -425,11 +424,7 @@ int MAIN( int argc, char *argv[]) {
 
   BOOLEAN uvar_correctFreqs = TRUE;
 
-  /* LALDebugLevel must be called before any LALMallocs have been used */
-  lalDebugLevel = 0;
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 #ifdef EAH_LALDEBUGLEVEL
-  lalDebugLevel = EAH_LALDEBUGLEVEL;
 #endif
 
   uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );

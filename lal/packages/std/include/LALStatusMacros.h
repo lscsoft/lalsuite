@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <lal/LALDebugLevel.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
@@ -42,7 +43,6 @@ extern "C" {
 }       /* so that editors will match preceding brace */
 #endif
 
-extern int lalDebugLevel;       /**< Global LAL debug level, see \ref ss_lalDebugLevel for more details */
 extern const int lalNoDebug;
 
 #define LAL_EXLAL     16384

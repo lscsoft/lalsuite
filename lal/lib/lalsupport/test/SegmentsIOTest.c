@@ -81,13 +81,12 @@ and inspecting the output.
 
 /*-- Default debug level includes info messages (4), but not
      memory checking (16), error messages (1), or warning messages (2) --*/
-extern int lalDebugLevel;
 
 /*===========================================================================*/
 
 
 /*===========================================================================*/
-int main( int argc, char *argv[] )
+int main(void)
 {
   INT4 nfailures = 0;
   static LALStatus status;
@@ -99,16 +98,6 @@ int main( int argc, char *argv[] )
 
   /*-- Default debug level includes info messages (4), but not
      memory checking (16), error messages (1), or warning messages (2) --*/
-  lalDebugLevel = 4;
-
-  /*------ Parse input line. ------*/
-  if ( argc == 2 )
-    lalDebugLevel = atoi( argv[1] );
-  else if ( argc != 1 )
-    {
-      fprintf( stderr, "Usage: %s [ lalDebugLevel ]\n", argv[0] );
-      return 0; /* so that test script won't fail */
-    }
 
   /*-------------------------------------------------------------------------*/
   XLALPrintInfo("\n========== Initial setup \n");

@@ -108,9 +108,6 @@ struct tagDopplerLatticeScan {
 /*---------- empty initializers ---------- */
 dopplerParams_t empty_dopplerParams;
 
-/*---------- Global variables ----------*/
-extern INT4 lalDebugLevel;
-
 /*---------- internal function prototypes ----------*/
 void skyRegionString2vect3D ( LALStatus *, vect3Dlist_t **skyRegionEcl, const CHAR *skyRegionString );
 void setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRegion *searchRegion );

@@ -105,7 +105,6 @@ LALCheckMemoryLeaks()
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
 
 #define F0 500.0          /*  frequency to build the LUT. */
 #define TCOH 100000.0     /*  time baseline of coherent integration. */
@@ -230,7 +229,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

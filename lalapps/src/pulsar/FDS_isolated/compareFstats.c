@@ -99,13 +99,11 @@ main(int argc, char *argv[])
   UINT4 diffs = 0;
   UINT4 nlines1, nlines2;
 
-  lalDebugLevel = 0;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* register all user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status), &status);
 
   /* read cmdline & cfgfile  */

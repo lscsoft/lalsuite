@@ -221,9 +221,6 @@ INT4 main(INT4 argc, CHAR ** argv)
     exit(1);
   } 
 
-  set_debug_level( cla.dbglvl );
-
-
   /* Read the header information.  */
   LAL_CALL( ReadClusterInfo( &status, &clustInfoPair, &cla ), &status );
   if( status.statusCode ) {

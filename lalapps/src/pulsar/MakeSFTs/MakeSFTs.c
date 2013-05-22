@@ -164,7 +164,6 @@ REAL8 DF = 2000.0; /* default band */
 REAL8 winFncRMS = 1.0; /* 10/05/12 gam; global variable with the RMS of the window function; default value is 1.0 */
 
 static LALStatus status;
-INT4 lalDebugLevel=0;        /* 11/02/05 gam; changed from 3 to 0. */
 FrCache *framecache;         /* frame reading variables */
 FrStream *framestream=NULL;
 

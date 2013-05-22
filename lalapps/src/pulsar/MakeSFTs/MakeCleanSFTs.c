@@ -206,7 +206,6 @@ REAL8 FMIN = 48.0; /* default start frequency; 0.0056 */
 REAL8 DF = 2000.0; /* 2000.0 default band; 16383.9944 */
 
 static LALStatus status;
-INT4 lalDebugLevel=0;        /* 11/02/05 gam; changed from 3 to 0. */
 FrCache *framecache;         /* frame reading variables */
 FrStream *framestream=NULL;
 

@@ -165,7 +165,6 @@ extern int gpu_device_id;
 int gpu_device_id;
 #endif
 
-extern int lalDebugLevel;
 
 BOOLEAN uvar_printMaps = FALSE; /**< global variable for printing Hough maps */
 BOOLEAN uvar_printGrid = FALSE; /**< global variable for printing Hough grid */
@@ -450,11 +449,7 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_gpu_device = -1;
   global_status = &status;
 
-  /* LALDebugLevel must be called before any LALMallocs have been used */
-  lalDebugLevel = 0;
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 #ifdef EAH_LALDEBUGLEVEL
-  lalDebugLevel = EAH_LALDEBUGLEVEL;
 #endif
   uvar_ephemE = LALCalloc( alloc_len = strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
   XLAL_CHECK ( uvar_ephemE != NULL, XLAL_ENOMEM, "Failed to allocated memory LALCalloc(1, %d)\n", alloc_len );

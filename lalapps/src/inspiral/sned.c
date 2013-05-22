@@ -108,7 +108,6 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --help                   display this message\n"\
 "  --verbose                be verbose\n"\
 "  --version                version info\n"\
-"  --debug-level LEVEL      set the LAL debug level to LEVEL\n"\
 "  --spinning-search        use the normalization for a spinning search\n"\
 "                           instead of for a non-spinning search\n"\
 "  --inject-overhead        inject signals from overhead detector\n"\
@@ -263,9 +262,6 @@ int main( int argc, char *argv[] )
   SnglInspiralTable     *headFoundSngl = NULL;
   SnglInspiralTable     *L1FoundSngl = NULL;
 
-  /* set initial debug level */
-  set_debug_level("1");
-
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
@@ -295,7 +291,6 @@ int main( int argc, char *argv[] )
       {"inject-overhead",         no_argument,       &injoverhead,       1 },
       {"f-lower",                 required_argument, 0,                 'g'},
       {"ligo-only",               no_argument,       &ligoOnly,          1 },
-      {"debug-level",             required_argument, 0,                 'z'}, 
       {"snr-threshold",           required_argument, 0,                 's'},
       {0, 0, 0, 0}
     };
@@ -311,7 +306,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:g:z:s:hV", long_options,
+    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:g:s:hV", long_options,
         &option_index );
 
     /* detect the end of the options */
@@ -383,11 +378,6 @@ int main( int argc, char *argv[] )
             "Drew Keppel and Gareth Jones\n");
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 's':

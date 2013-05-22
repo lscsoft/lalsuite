@@ -200,7 +200,6 @@ int main( int argc, char *argv[] )
     {"minimum-distance",        required_argument, 0,                'V'},
     {"maximum-distance",        required_argument, 0,                'W'},
     {"epsilon",                 required_argument, 0,                'r'},
-    {"debug-level",             required_argument, 0,                'z'},
     {"waveform",                required_argument, 0,                'w'},
     {"coordinates",             required_argument, 0,                'c'},
     {"user-tag",                required_argument, 0,                'Z'},
@@ -219,7 +218,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
   gpsStartTime.gpsSeconds = S4StartTime;
   gpsEndTime.gpsSeconds   = S4StopTime;
@@ -256,7 +254,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:C:D:E:F:G:h:P:Q:r:s:t:V:W:vz:Z:", long_options, &option_index );
+        "a:A:b:B:C:D:E:F:G:h:P:Q:r:s:t:V:W:vZ:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -565,13 +563,6 @@ int main( int argc, char *argv[] )
         vrbflg = 1;
         break;
       
-      case 'z':
-        set_debug_level( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
-            "string", "%s", optarg );
-        break;
-
       case 'h':
         fprintf( stderr, USAGE );
         exit( 0 );

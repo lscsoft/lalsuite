@@ -45,7 +45,6 @@
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
 
 
 #define MAXFILENAMELENGTH 256
@@ -120,8 +119,6 @@ int main(int argc, char *argv[]){
   CHAR *uvar_cleannstar=NULL;
 
   /* set defaults */
-  lalDebugLevel = 0;
-  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;  
 

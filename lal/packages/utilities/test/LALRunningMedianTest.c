@@ -78,7 +78,6 @@ from the support package.
 
 
 /* Declare lalDebugLevel */
-extern int lalDebugLevel;
 
 /* global program name */
 char*argv0;
@@ -361,7 +360,6 @@ int main( int argc, char **argv )
   UINT4 i;
   BOOLEAN verbose = 0;
 
-  lalDebugLevel = 0; /* LALMEMINFO */
 
   /* set global program name */
   argv0 = argv[0];
@@ -380,7 +378,6 @@ int main( int argc, char **argv )
   }
   if ( argc == 4 ) {
     verbose = 1;
-    lalDebugLevel = atoi( argv[3] );
   }
   if (blocksize <= 3){
     fprintf(stderr,"blocksize must be >3\n");

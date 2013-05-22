@@ -81,7 +81,6 @@ LALSCreateVector()              LALSDestroyVector()
 #endif
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define MISMATCH 0.3
 #define DIM 2
 
@@ -158,7 +157,6 @@ main(int UNUSED argc, char **argv)
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   InspiralMomentsEtc moments;
 
-  lalDebugLevel = 0;
 
 /* Number of templates is nlist */
 
@@ -460,7 +458,6 @@ GetInspiralMoments (
 	   in.ndx = (REAL8) k /3.L;
 	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);
 	   CHECKSTATUSPTR(status);
-	   if (lalDebugLevel==1) fprintf(stderr, "j%1i=%e\n", k,moments->j[k]);
    }
    in.shf->deltaF *= params->fLower;
    in.shf->f0 *= params->fLower;

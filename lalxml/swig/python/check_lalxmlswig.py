@@ -6,7 +6,6 @@ import lal
 import lalxml
 from lalxml import cvar as lalxmlcvar
 from lal import cvar as lalcvar
-lalcvar.lalDebugLevel = lal.LALERROR | lal.LALMEMDBG
 print("passed module load")
 
 # check object parent tracking

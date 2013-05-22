@@ -168,7 +168,6 @@ int main( void )
   double y;
 
   original_handler = gsl_error_handler;
-  /* lalDebugLevel = LALTRACE | LALERROR; */
 
   /* these are simple tests of a LAL routine that calls a GSL function */
 

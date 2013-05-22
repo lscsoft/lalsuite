@@ -6,7 +6,6 @@ import lal
 import lalinspiral
 from lalinspiral import cvar as lalinspiralcvar
 from lal import cvar as lalcvar
-lalcvar.lalDebugLevel = lal.LALERROR | lal.LALMEMDBG
 print("passed module load")
 
 # check object parent tracking

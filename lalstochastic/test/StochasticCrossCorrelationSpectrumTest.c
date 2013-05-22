@@ -181,8 +181,6 @@ fabs()
 extern char *optarg;
 extern int   optind;
 
-/* int lalDebugLevel = LALMSGLVL3; */
-extern int lalDebugLevel;
 BOOLEAN optVerbose    = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FALSE;
 BOOLEAN optMatch    = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE;
 UINT4 optStreamLength     = 0;
@@ -219,7 +217,6 @@ int main( int argc, char *argv[] )
   INT4  code;
   REAL4 expIm;
 
-  lalDebugLevel = LALNDEBUG;
 
   ParseOptions( argc, argv );
 
@@ -946,7 +943,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

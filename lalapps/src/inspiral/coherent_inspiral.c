@@ -281,7 +281,6 @@ int main( int argc, char *argv[] )
 
   /* set default debugging level */
   XLALSetErrorHandler( XLALAbortErrorHandler );
-  set_debug_level( "1" ); /* change with parse option */
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
@@ -1623,7 +1622,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --help                       display this message\n"\
 "  --verbose                    print progress information\n"\
 "  --version                    print version information and exit\n"\
-"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
 "  --low-frequency-cutoff F     low f cutoff of previously filtered data\n"\
 "  --ifo-tag STRING             set STRING to whatever the ifo-tag of \n"\
                                 "the bank file(needed for file naming) \n"\
@@ -1681,7 +1679,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"write-compress",           no_argument,       &outCompress,       1 },
      {"help",                     no_argument,       0,                 'h'},
      {"version",                  no_argument,       0,                 'v'},
-     {"debug-level",              required_argument, 0,                 'd'},
      {"ifo-tag",                  required_argument, 0,                 'I'},
      {"user-tag",                 required_argument, 0,                 'B'},
      {"low-frequency-cutoff",     required_argument, 0,                 'f'},
@@ -1736,7 +1733,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-	   "A:B:a:b:c:D:F:G:I:L:l:e:g:W:X:Y:t:w:P:R:T:V:Z:d:f:h:p:s:C:r:u:U:v:",
+	   "A:B:a:b:c:D:F:G:I:L:l:e:g:W:X:Y:t:w:P:R:T:V:Z:f:h:p:s:C:r:u:U:v:",
            long_options, &option_index );
 
        if ( c == -1 )
@@ -1847,11 +1844,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
            snprintf( outputPath, FILENAME_MAX, "%s", optarg );
            ADD_PROCESS_PARAM( "string", "%s", outputPath );
-           break;
-
-         case 'd': /* set debuglevel */
-           set_debug_level( optarg );
-           ADD_PROCESS_PARAM( "string", "%s", optarg );
            break;
 
          case 'f': /* set fLow */

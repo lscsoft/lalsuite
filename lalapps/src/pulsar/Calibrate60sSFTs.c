@@ -128,7 +128,6 @@ REAL4 tmpx, tmpy;
       tmpc ) )
 
 INT4 SFTno,RealSFTno;
-INT4 lalDebugLevel=3;
 REAL4 *p,*pC;
 char filelist[MAXFILES][MAXFILENAMELENGTH];
 Sensing Sraw,So;

@@ -90,7 +90,6 @@
   } while( 0 )
 
 const LALStatus blank_status;
-extern int lalDebugLevel;
 int vrbflg = 0;
 
 lal_errhandler_t lal_errhandler = LAL_ERR_DFLT;
@@ -154,58 +153,6 @@ int clear_status( LALStatus *stat )
   }
   memset( stat, 0, sizeof( *stat ) );
   return 0;
-}
-
-int set_debug_level( const char *s )
-{
-  unsigned level = 0;
-  if ( ! s )
-  {
-    if ( ! ( s = getenv( "LAL_DEBUG_LEVEL" ) ) )
-      return lalDebugLevel = 0;
-  }
-
-  /* skip whitespace */
-  while ( isspace( *s ) )
-    ++s;
-
-  /* a value is set */
-  if ( isdigit( *s ) )
-    return lalDebugLevel = atoi( s );
-
-  /* construct the debug level */
-  if ( strstr( s, "NDEBUG" ) )
-    level |= LALNDEBUG;
-  if ( strstr( s, "ERROR" ) )
-    level |= LALERROR;
-  if ( strstr( s, "WARNING" ) )
-    level |= LALWARNING;
-  if ( strstr( s, "INFO" ) )
-    level |= LALINFO;
-  if ( strstr( s, "TRACE" ) )
-    level |= LALTRACE;
-  if ( strstr( s, "MEMDBGBIT" ) )
-    level |= LALMEMDBGBIT;
-  if ( strstr( s, "MEMPADBIT" ) )
-    level |= LALMEMPADBIT;
-  if ( strstr( s, "MEMTRKBIT" ) )
-    level |= LALMEMTRKBIT;
-  if ( strstr( s, "MEMINFOBIT" ) )
-    level |= LALMEMINFOBIT;
-  if ( strstr( s, "MSGLVL1" ) )
-    level |= LALMSGLVL1;
-  if ( strstr( s, "MSGLVL2" ) )
-    level |= LALMSGLVL2;
-  if ( strstr( s, "MSGLVL3" ) )
-    level |= LALMSGLVL3;
-  if ( strstr( s, "MEMDBG" ) )
-    level |= LALMEMDBG;
-  if ( strstr( s, "MEMTRACE" ) )
-    level |= LALMEMTRACE;
-  if ( strstr( s, "ALLDBG" ) )
-    level |= LALALLDBG;
-
-  return lalDebugLevel = level;
 }
 
 

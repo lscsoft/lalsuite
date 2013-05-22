@@ -218,14 +218,12 @@ int main(int argc,char *argv[])
 
   int gslstat;
 
-  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off ();
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LogSetLevel(lalDebugLevel);
   LAL_CALL (initUserVars(&status, &uvar), &status);
 

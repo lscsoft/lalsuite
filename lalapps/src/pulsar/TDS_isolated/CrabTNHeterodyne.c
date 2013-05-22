@@ -45,7 +45,6 @@
 /* Crab heterodyne specific headers */
 #include "HeterodyneCrabPulsar.h"
 
-INT4 lalDebugLevel = 1;
 
 #define MAXLENGTH 10000010
 /* max num of lines in crab ephem file (ok for next 61 years file contains 266 lines as of 15 Jan

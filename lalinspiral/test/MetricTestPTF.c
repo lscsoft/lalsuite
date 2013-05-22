@@ -47,7 +47,6 @@ lalDebugLevel
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-extern int lalDebugLevel;
 
 int main( void )
 {
@@ -64,7 +63,6 @@ int main( void )
   UINT4 N = 16384;
   REAL8 deltaF = 1.0/((REAL8)N * deltaT);
 
-  lalDebugLevel = 1;
 
   fullmetric = XLALCreateREAL8Vector( 45 );
 

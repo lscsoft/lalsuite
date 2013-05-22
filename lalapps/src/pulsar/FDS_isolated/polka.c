@@ -136,7 +136,6 @@ int compareCPfa(const void *ip, const void *jp);
 void locate(double xx[], int n, double x, int *j, int *indices);
 void ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname);
 
-extern INT4 lalDebugLevel;
 
 CandidateList CList1, CList2, CList3, CList4; /* treat up to 4 candidate files */
 
@@ -167,7 +166,6 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   static char resolved_filename[256];
 #endif
-  lalDebugLevel = 1;
 
   /* Reads command line arguments */
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) return 1;

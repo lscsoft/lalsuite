@@ -31,7 +31,6 @@
 #include <lal/LALSimInspiralPrecess.h>
 
 int main(void){
-		lalDebugLevel=7;
 
 		FILE* h_ref = fopen("h_ref.txt", "w");
 		FILE* h_rot = fopen("h_rot.txt", "w");

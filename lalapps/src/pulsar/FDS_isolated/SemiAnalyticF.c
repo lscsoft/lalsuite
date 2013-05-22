@@ -128,14 +128,10 @@ int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
 
-  lalDebugLevel = 0;	/* default value */
   vrbflg = 1;		/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
-
-  /*----------  read user-input and set up shop ----------*/
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
 
   /* register all user-variables */
   LAL_CALL (InitUserVars(&status, &CommandLineArgs), &status);	  

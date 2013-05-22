@@ -441,7 +441,6 @@ int main(int argc, char *argv[])
 
     /* set up inital debugging values */
     lal_errhandler = LAL_ERR_EXIT;
-    set_debug_level("1");
 
     /* create the process and process params tables */
     proctable.processTable =
@@ -2125,7 +2124,6 @@ fprintf( a,   "lalapps_inspiral [options]\n\n");\
 fprintf( a, "  --help                       display this message\n");\
 fprintf( a, "  --verbose                    print progress information\n");\
 fprintf( a, "  --version                    print version information and exit\n");\
-fprintf( a, "  --debug-level LEVEL          set the LAL debug level to LEVEL\n");\
 fprintf( a, "  --user-tag STRING            set the process_params usertag to STRING\n");\
 fprintf( a, "  --ifo-tag STRING             set the ifotag to STRING - for file naming\n");\
 fprintf( a, "  --comment STRING             set the process table comment to STRING\n");\
@@ -2345,7 +2343,6 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
         {"colored-gaussian", required_argument, 0, '.'},
         {"checkpoint-path", required_argument, 0, 'N'},
         {"output-path", required_argument, 0, 'O'},
-        {"debug-level", required_argument, 0, 'z'},
         {"user-tag", required_argument, 0, 'Z'},
         {"userTag", required_argument, 0, 'Z'},
         {"ifo-tag", required_argument, 0, 'I'},
@@ -2407,7 +2404,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
         c = getopt_long_only(argc, argv,
                              "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:?:X:Y:Z:"
-                             "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
+                             "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:"
                              "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:|:+:=:^:.:",
                              long_options, &option_index);
 
@@ -3154,11 +3151,6 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                     exit(1);
                 }
                 ADD_PROCESS_PARAM("string", "%s", optarg);
-
-            case 'z':
-                set_debug_level(optarg);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
-                break;
 
             case 'Z':
                 /* create storage for the usertag */

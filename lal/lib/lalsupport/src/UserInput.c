@@ -26,8 +26,6 @@
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
 
-extern INT4 lalDebugLevel;
-
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
@@ -937,69 +935,6 @@ XLALUserVarCheckRequired (void)
 } /* XLALUserVarCheckRequired() */
 
 
-/** Handle the delicate setting of lalDebuglevel.
- *
- * \note *NEVER* call this function after any LALMalloc/LALCalloc/LALRealloc
- * have been used. A change of lalDebugLevel can then lead to inconsistencies
- * in the LAL memory-checker.
- * You should therefore call this function very early on in main(), before any
- * LALMallocs ...
- */
-int
-XLALGetDebugLevel (int argc, char *argv[], CHAR optchar)
-{
-  static const char *help = "set lalDebugLevel";
-  static INT4 defaultDebugLevel;
-
-  INT4 i;
-  CHAR *ptr;
-
-  if ( !argv ) {
-    XLALPrintError ("%s: NULL argv[] passed as input.\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-  if ( UVAR_vars.next != NULL || UVAR_vars.varp ) {
-    XLALPrintError ("%s: lalDebugLevel can only be read before ANY mallocs(), even hidden..\n", __func__ );
-    XLAL_ERROR ( XLAL_EFAULT );
-  }
-
-  /* "register" the debug-level variable in the head of the UVAR-list,
-   * to avoid any mallocs. We need this to show up in the help-string */
-  UVAR_vars.name = NULL;
-  UVAR_vars.type = UVAR_INT4;
-  UVAR_vars.optchar = optchar;
-  UVAR_vars.help = help;
-
-  defaultDebugLevel = lalDebugLevel;
-  UVAR_vars.varp = &defaultDebugLevel;	/* trick: use to store default-value (for help-string) */
-
-  UVAR_vars.state = UVAR_OPTIONAL;
-  UVAR_vars.next = NULL;
-
-  /* the command-line has to be processed by hand for this... ! */
-  for (i=1; i < argc; i++)
-    {
-      if ( (argv[i][0] == '-') && (argv[i][1] == optchar) )
-	{
-	  if (argv[i][2] != '\0')
-	    ptr = argv[i]+2;
-	  else
-	    ptr = argv[i+1];
-
-	  if ( (ptr == NULL) || (sscanf ( ptr, "%d", &lalDebugLevel) != 1) ) {
-	    XLALPrintError ("%s: Setting debug-level `-%c` requires an argument\n", __func__, optchar);
-	    XLAL_ERROR ( XLAL_EDOM );
-	  }
-	  break;
-	} /* if debug-switch found */
-
-    } /* for i < argc */
-
-  return XLAL_SUCCESS;
-
-} /* XLALGetDebugLevel() */
-
-
 /** Return a log-string representing the <em>complete</em> user-input.
  * <em>NOTE:</em> we only record user-variables that have been set
  * by the user.
@@ -1398,28 +1333,6 @@ LALUserVarWasSet (const void *cvar)
 {
   return (XLALUserVarWasSet(cvar));
 }
-
-/** \deprecated use XLALGetDebugLevel() instead */
-void
-LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
-{
-  const char *fn = __func__;
-
-  INITSTATUS(status);
-
-  ASSERT (argv, status,  USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (UVAR_vars.next == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
-  ASSERT (UVAR_vars.varp == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
-
-  if ( XLALGetDebugLevel (argc, argv, optchar) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: call to XLALGetDebugLevel() failed with code %d\n", fn, xlalErrno );
-    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
-  }
-
-  RETURN (status);
-
-} /* LALGetDebugLevel() */
-
 
 /** \deprecated use XLALUserVarGetLog() instead */
 void

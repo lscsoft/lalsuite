@@ -44,7 +44,6 @@ int XLALStringVector_TEST ( void );
 
 int main( int argc, char *argv[] )
 {
-  lalDebugLevel = 1;
 
   /* sanity checks */
   if ( argc != 1 )

@@ -165,7 +165,6 @@ this with the <tt>-i</tt> option.
 #include <lal/PulsarCat.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define J2000GPS 630763213 /* J2000.0 epoch in GPS seconds */
 #define J2000JD    2451545 /* J2000.0 epoch in Julian days */
 
@@ -272,7 +271,6 @@ main(int argc, char **argv)
   LALPlaceAndGPS detectorTime; /* epoch and detector site */
   EphemerisData *edat = NULL;  /* detector ephemerides */
 
-  lalDebugLevel = 0;
 
   /* First set up some defaults. */
   memset( &node, 0, sizeof(PulsarCatNode) );
@@ -357,7 +355,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

@@ -39,7 +39,6 @@
 #include "ReadSourceFile_v1.h"
 
 
-INT4 lalDebugLevel=3;
 static LALStatus status;
 REAL8 *dist;
 LIGOTimeGPS tperi0,*tperi,TstartDET,TstartSSB,tperiCURRENT;

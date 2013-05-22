@@ -140,7 +140,6 @@ LALXMGRPlotMesh()
 
 
 extern char *optarg;     /* option argument for getopt() */
-int  lalDebugLevel = 1;  /* default value */
 
 void getRange( LALStatus *, REAL4 [2], REAL4, void * );
 void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
@@ -202,7 +201,6 @@ int main( int argc, char **argv )
       center.latitude = (d+e/60+f/3600)*LAL_PI_180;
       break;
     case 'e':
-      lalDebugLevel = atof( optarg );
       break;
     case 'f':
       fMax = atof( optarg );

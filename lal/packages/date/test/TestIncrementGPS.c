@@ -30,7 +30,6 @@
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel = 0;
 
 #define SUCCESS 0
 #define FAILURE 1
@@ -64,13 +63,10 @@ static BOOLEAN compare_gps_ok(const LIGOTimeGPS *p_gps1,
 /* static int sprint_time_interval(char *str,
                                 const LALTimeInterval *p_time_interval); */
 
-int main(int argc, char **argv)
+int main(void)
 {
   LIGOTimeGPS      gps;
 
-
-  if (argc > 1)
-    lalDebugLevel = atoi(argv[1]);
 
   if (lalDebugLevel >= 4)
     verbose_p = TRUE;

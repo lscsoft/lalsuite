@@ -473,7 +473,6 @@ int main(int argc,char *argv[])
   vrbflg = 1;   /* verbose error-messages */
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(status, argc, argv, 'v'), status);
   LAL_CALL (initUserVars(status), status);  
 
   /* we use lalDebugLevel for our logging */
@@ -483,7 +482,6 @@ int main(int argc,char *argv[])
   LogSetLevel ( lalDebugLevel - 1 );
 #endif
 
-  LogPrintf (LOG_NORMAL, "Started search at lalDebugLevel = %d\n", lalDebugLevel);
 
   debug_dump_commandline (argc, argv);
 
@@ -3846,12 +3844,10 @@ int main(int argc, char *argv[])
       if ( 1 == fscanf(fp_debug, "%d", &read_int ) ) 
 	{
 	  LogPrintf (LOG_NORMAL, "...containing int: Setting lalDebugLevel -> %d\n", read_int );
-	  lalDebugLevel = read_int;
 	}
       else
 	{
 	  LogPrintf (LOG_NORMAL, "...with no parsable int: Setting lalDebugLevel -> 1\n");
-	  lalDebugLevel = 1;
 	}
       fclose (fp_debug);
 
@@ -4055,7 +4051,6 @@ getCheckpointCounters(LALStatus *stat,		/**< pointer to LALStatus structure */
   int i;
 #ifdef DEBUG_CHECKPOINTING
   int savelaldebuglevel=lalDebugLevel;
-  lalDebugLevel=1;
 #endif
  
   INITSTATUS(stat);
@@ -4174,7 +4169,6 @@ getCheckpointCounters(LALStatus *stat,		/**< pointer to LALStatus structure */
   *checksum=cksum;
 
 #ifdef DEBUG_CHECKPOINTING
-  lalDebugLevel=savelaldebuglevel;
 #endif
   
   fclose(fp);

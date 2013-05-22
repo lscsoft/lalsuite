@@ -166,15 +166,10 @@ int main(int argc,char *argv[])
   ExRegion exr = empty_ExRegion;		/* initialise the exclusion region structure */
 	
 
-  lalDebugLevel = 0;				/* lalDebugLevel default */
   vrbflg = 1;					/* verbose error-messages */
 
 
   /* setup LAL debug level */
-  if (XLALGetDebugLevel(argc, argv, 'v')) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",fn,xlalErrno);
-    return XLAL_EFAULT;
-  }
   LogSetLevel(lalDebugLevel);
   LogPrintf(LOG_DEBUG,"Debug level set to %d \n", lalDebugLevel);
   

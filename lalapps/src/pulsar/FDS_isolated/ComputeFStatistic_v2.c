@@ -405,14 +405,12 @@ int main(int argc,char *argv[])
   UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
-  lalDebugLevel = LALERROR;	/* only output error-messages by default */
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars(&status, &uvar), &status);
 
   if ( (GV.VCSInfoString = XLALGetVersionString(0)) == NULL ) {

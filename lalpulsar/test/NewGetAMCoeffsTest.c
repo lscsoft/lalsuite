@@ -100,7 +100,6 @@ static const LALStatus empty_status;
 static const AMCoeffsParams empty_AMCoeffsParams;
 static const AMCoeffs empty_AMCoeffs;
 
-extern int lalDebugLevel;
 
 /** Very simple test: pick random skyposition, compute a_i, b_i using
  *  once LALComputeAM() and once LALNewGetAMCoeffs(), and look at the errors
@@ -143,12 +142,10 @@ int main(int argc, char *argv[])
   duration = 86164;
   Tsft = 2154.1; */
 
-  lalDebugLevel = 0;
 
   while ((opt = getopt( argc, argv, "n:qv:" )) != -1) {
     switch (opt) {
     case 'v': /* set lalDebugLevel */
-      lalDebugLevel = atoi( optarg );
       break;
     case 'q': /* don't fail if tolerance exceeded */
       ignoreErrors = 1;

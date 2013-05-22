@@ -67,7 +67,6 @@ See Figs.\figref{utilities_f_dirichlet_fig1}-\figref{utilities_f_dirichlet_fig3}
 #include <lal/PrintVector.h>
 #include <lal/Dirichlet.h>
 
-extern int lalDebugLevel;
 
 int check ( LALStatus*, INT4, const CHAR* );
 
@@ -79,7 +78,6 @@ main( void )
   REAL4Vector*                poutput = NULL;
   DirichletParameters         parameters;
 
-  lalDebugLevel = LALNDEBUG;
 
 
 #ifndef LAL_NDEBUG

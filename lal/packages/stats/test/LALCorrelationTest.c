@@ -72,7 +72,6 @@ LALCorrelationTest()
 static INT4 readData(InputCorrelation **in, CorrelationParams **p, OutputCorrelation **should);
 static INT4 compareOutputs(OutputCorrelation *is, OutputCorrelation *should);
 
-extern int lalDebugLevel;
 const CHAR fileName[] = "data.txt";
 
 int main( void )
@@ -86,7 +85,6 @@ int main( void )
   INT4 io;
   INT4 comparison;
 
-  lalDebugLevel = LALMSGLVL3;
 
   printf("\n\n---- Test of LALCorrelation -----\n\n");
 

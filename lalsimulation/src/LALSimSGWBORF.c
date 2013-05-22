@@ -142,7 +142,6 @@ int test_orf(void)
 
 int main(void)
 {
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 	test_orf();
 	LALCheckMemoryLeaks();

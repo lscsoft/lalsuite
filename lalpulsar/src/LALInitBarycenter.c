@@ -373,21 +373,17 @@ XLALReadEphemerisFile ( const CHAR *fname )
 
   sprintf ( fname_open, "%s", fname );
   FILE *fp;
-  INT4 lalDebugLevel_bak = lalDebugLevel;
-  lalDebugLevel = 0;	// avoid spurious error-message ouput by stupid LALOpenDataFile()
   if ( (fp = LALOpenDataFile (fname_open)) == NULL )
     {
       sprintf ( fname_open, "%s.gz", fname );
       if ( (fp = LALOpenDataFile (fname_open)) == NULL )
         {
-          lalDebugLevel = lalDebugLevel_bak;
           XLALPrintError ( "Failed to open either '%s' or '%s' for reading\n", fname, fname_open );
           XLALFree ( fname_open );
           XLAL_ERROR_NULL ( XLAL_EIO );
         } // if fopen(fname.gz) failed
     } // if fopen(fname) failed
   fclose ( fp );
-  lalDebugLevel = lalDebugLevel_bak;
 
   /* read in file with XLALParseDataFile to ignore comment header lines */
   LALParsedDataFile *flines = NULL;

@@ -22,7 +22,6 @@
 #include <lal/ConfigFile.h>
 
 /* Default parameters. */
-INT4 lalDebugLevel=3;
 
 int main ( int argc, char *argv[])
 {

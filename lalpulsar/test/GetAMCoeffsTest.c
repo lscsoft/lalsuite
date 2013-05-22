@@ -82,7 +82,6 @@ static const LALStatus empty_status;
 static const AMCoeffsParams empty_AMCoeffsParams;
 static const AMCoeffs empty_AMCoeffs;
 
-extern int lalDebugLevel;
 
 /** Very simple test: pick random skyposition, compute a_i, b_i using
  *  once LALComputeAM() and once LALGetAMCoeffs(), and look at the errors
@@ -116,9 +115,7 @@ int main(int argc, char *argv[])
   char earthEphem[] = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
   char sunEphem[]   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
 
-  lalDebugLevel = 0;
   if ( argc == 2 && !strcmp(argv[1], "-v1") )
-    lalDebugLevel = 1;
 
 
   /* init random-generator */

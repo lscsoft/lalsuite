@@ -8,7 +8,6 @@ assert(exist("lalsimulationcvar", "var"));
 lal;
 assert(exist("lal", "var"));
 assert(exist("lalcvar", "var"));
-lalcvar.lalDebugLevel = bitor(LALERROR, LALMEMDBG);
 disp("passed module load");
 
 # check object parent tracking

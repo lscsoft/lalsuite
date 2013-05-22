@@ -125,7 +125,6 @@ extern char *optarg;
 #define SPOKES 30
 #define MAGNIFY 1.0           /* Magnification factor of ellipses */
 
-extern int lalDebugLevel;
 
 int main( int argc, char *argv[] ) {
   static LALStatus status;          /* Status structure */
@@ -142,7 +141,6 @@ int main( int argc, char *argv[] ) {
   FILE            *pvc=NULL;        /* Temporary file for xmgrace option */
   FILE            *fnongrace=NULL;  /* File contaning ellipse coordinates */
 
-  lalDebugLevel = 0;
 
   /* Default values. */
   in.duration = DEFAULT_DURATION;
@@ -159,7 +157,6 @@ int main( int argc, char *argv[] ) {
       break;
     case 'e':
       test = 1;
-      lalDebugLevel = 1;
       break;
     case 'm':
       mismatch = atof( optarg );

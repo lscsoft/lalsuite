@@ -111,8 +111,6 @@ Initialisation arguments:\n\
 	  LALInferenceAddVariable(irs->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
 				  LALINFERENCE_PARAM_FIXED);		
 	}
-	if(verbose) lalDebugLevel=verbose;
-	else set_debug_level("NDEBUG");
 	
 	irs->data = LALInferenceReadData(commandLine);
 	/* (this will already initialise each LALIFOData's following elements:  */

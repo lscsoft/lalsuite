@@ -76,7 +76,6 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "l1-frame-cache",          required_argument, 0, 'Y' },
     { "v1-channel-name",         required_argument, 0, 'z' },
     { "v1-frame-cache",          required_argument, 0, 'Z' },
-    { "debug-level",             required_argument, 0, 'd' },
     { "low-template-freq",       required_argument, 0, 'e' },
     { "low-filter-freq",         required_argument, 0, 'H' },
     { "high-filter-freq",        required_argument, 0, 'I' },
@@ -131,7 +130,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "short-slide-offset",      required_argument, 0, '@' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:5:6:7:8:9:<:>:!:&:(:):#:|:@";
+  char args[] = "a:A:b:B:c:C:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:5:6:7:8:9:<:>:!:&:(:):#:|:@";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -195,9 +194,6 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'X': /* h2 frame-cache */
         localparams.dataCache[LAL_IFO_H2] = optarg;
-        break;
-      case 'd': /* debug-level */
-        set_debug_level( optarg );
         break;
       case 'e': /* start frequency of template generation */
         localparams.lowTemplateFrequency = atof( optarg );
@@ -892,7 +888,6 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--help                     print this message\n" );
   fprintf( stderr, "--version                  print the version of the code\n" );
   fprintf( stderr, "--verbose                  print verbose messages while running\n" );
-  fprintf( stderr, "--debug-level=dbglvl       set the LAL debug level\n" );
 
   fprintf( stderr, "\ndata reading options:\n" );
   fprintf( stderr, "--h1-data                  Analyze h1 data \n" );

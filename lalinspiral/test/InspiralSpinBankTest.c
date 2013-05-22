@@ -133,7 +133,6 @@ int main( int argc, char *argv[] )
   REAL4 noiseMin = 1;
   BOOLEAN haveXML = 0;
 
-  lalDebugLevel = 33;
 
   if( (list = (Math3DPointList *) LALCalloc( 1, sizeof( Math3DPointList )))
       == NULL )

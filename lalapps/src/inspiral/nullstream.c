@@ -217,8 +217,6 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "%d.\n", LAL_NUM_IFO );
 
-  set_debug_level( "1" ); /* change with parse option */
-
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) LALCalloc(1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
@@ -760,7 +758,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --help                      display this message\n"\
 "  --verbose                   print progress information\n"\
 "  --version                   print version information and exit\n"\
-"  --debug-level LEVEL         set the LAL debug level to LEVEL\n"\
 "  --ifo-tag STRING            set STRING to the ifo-tag of the bank file\n"\
 "  --user-tag STRING           set STRING to tag the file names\n"\
 "\n"
@@ -790,7 +787,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"verbose",                no_argument,       &vrbflg,            1 },
      {"help",                   no_argument,       0,                 'h'},
      {"version",                no_argument,       0,                 'v'},
-     {"debug-level",            required_argument, 0,                 'd'},
      {"ifo-tag",                required_argument, 0,                 'I'},
      {"user-tag",               required_argument, 0,                 'B'},
      {"cohbank-file",           required_argument, 0,                 'u'},
@@ -819,7 +815,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      int option_index = 0;
      size_t optarg_len;
 
-     c = getopt_long_only( argc, argv, "A:B:S:I:l:e:W:X:P:Z:d:h:r:u:v:a:b:",
+     c = getopt_long_only( argc, argv, "A:B:S:I:l:e:W:X:P:Z:h:r:u:v:a:b:",
          long_options, &option_index );
 
      if ( c == -1 )
@@ -881,11 +877,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          optarg_len = strlen( optarg ) + 1;
          frInType = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
          memcpy( frInType, optarg, optarg_len );
-         ADD_PROCESS_PARAM( "string", "%s", optarg );
-         break;
-
-       case 'd': /* set debuglevel */
-         set_debug_level( optarg );
          ADD_PROCESS_PARAM( "string", "%s", optarg );
          break;
 

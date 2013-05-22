@@ -49,7 +49,6 @@ static void SDensity (REAL8 *dEgw, REAL8 nu)
   return;
  }
 
-extern int lalDebugLevel;
 int main ( void )
  {
   static LALStatus status;
@@ -58,7 +57,6 @@ int main ( void )
   AstroOmegaCosmoParams cosmop;
   REAL8 nu, test;
 
-  lalDebugLevel = 0;
 
   cosmop.ho = 0.65;
   cosmop.density_matter = 0.3;

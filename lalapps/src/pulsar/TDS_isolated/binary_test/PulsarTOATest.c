@@ -88,7 +88,6 @@ int main(int argc, char *argv[]){
   
   TimeCorrectionType ttype;
   
-  lalDebugLevel = 7;
   XLALSetErrorHandler( XLALExitErrorHandler );
   
   get_input_args(&par, argc, argv);

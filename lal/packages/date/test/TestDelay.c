@@ -53,9 +53,8 @@ This program does zero-th order tests for XLALTimeDelayFromEarthCenter().
 #define DOUBLE_EPSILON 1.0536712127723507013e-08
 
 
-extern int lalDebugLevel;
 
-int main(int argc, char **argv)
+int main(void)
 {
   LALFrDetector    frdet1;     /* Framelib detector info */
   LALFrDetector    frdet2;
@@ -66,10 +65,6 @@ int main(int argc, char **argv)
   REAL8            delay;
   REAL8            difference;
 
-  lalDebugLevel = 0;
-
-  if (argc > 1)
-    lalDebugLevel = atoi(argv[1]);
 
   /*
    * Set up a source that will be used in both LALTimeDelay() and

@@ -93,7 +93,6 @@ LALInspiralParameterCalc
 
 void printf_timeseries (INT4 n, REAL4 *signal1, REAL8 delta, REAL8 t0);
 
-INT4 lalDebugLevel=1;
 
 int
 main (  int argc, char **argv )

@@ -74,7 +74,6 @@ tests passed, 1 if one or more tests failed.
     "*FAIL* functional check for %s: %s\n", testname, reason ); nfailures++;
 
 
-extern int lalDebugLevel;
 
 int main( int argc, char *argv[] )
 {
@@ -186,12 +185,9 @@ int main( int argc, char *argv[] )
 
   /*-- Default debug level includes info messages (4), but not
      memory checking (16), error messages (1), or warning messages (2) --*/
-  lalDebugLevel = 4;
 
   /*------ Parse input line. ------*/
-  if ( argc == 2 )
-    lalDebugLevel = atoi( argv[1] );
-  else if ( argc != 1 )
+  if ( argc != 1 )
     {
       fprintf( stderr, "Usage: %s [ lalDebugLevel ]\n", argv[0] );
       return 0; /* so that test script won't fail */

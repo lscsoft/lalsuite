@@ -104,9 +104,6 @@ int main (int argc, char *argv[])
   /* End Global Variable Declarations */
 
   /* SET LAL DEBUG STUFF */
-  /*set_debug_level("ERROR");*/
-  /*set_debug_level("ERROR | WARNING | TRACE");*/
-  /*set_debug_level("ERROR | WARNING | MEMDBG | TRACE");*/
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
   lal_errhandler = LAL_ERR_DFLT;

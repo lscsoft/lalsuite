@@ -58,7 +58,6 @@ Input shoud be from
 #include "./MCInjectHoughS2.h" /* proper path*/
 
 
-extern int lalDebugLevel;
 
 #define EARTHEPHEMERIS "./earth00-04.dat"
 #define SUNEPHEMERIS "./sun00-04.dat"
@@ -181,9 +180,6 @@ int main(int argc, char *argv[]){
 #endif
 
   /*  set up the default parameters  */
-  lalDebugLevel = 0;
-  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
   uvar_AllSkyFlag = 1;

@@ -109,7 +109,6 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --help                   display this message\n"\
 "  --verbose                be verbose\n"\
 "  --version                version info\n"\
-"  --debug-level LEVEL      set the LAL debug level to LEVEL\n"\
 "  --spectrum-H1 FILE       FILE contains PSD info for H1\n"\
 "  --spectrum-H2 FILE       FILE contains PSD info for H2\n"\
 "  --spectrum-L1 FILE       FILE contains PSD info for L1\n"\
@@ -243,9 +242,6 @@ int main( int argc, char *argv[] )
   REAL4 bitten_H2 = 0;
   REAL4 thisCombSnr_H1H2 = 0;
 
-  /* set initial debug level */
-  set_debug_level("1");
-
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
@@ -278,7 +274,6 @@ int main( int argc, char *argv[] )
     {"write-chan",              no_argument,       &writechan,        1 },
     {"inject-overhead",         no_argument,       &injoverhead,      1 },
     {"f-lower",                 required_argument, 0,                'g'},
-    {"debug-level",             required_argument, 0,                'z'}, 
     {0, 0, 0, 0}
   };
   int c;
@@ -293,7 +288,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:g:z:hV", long_options, &option_index );
+    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:g:hV", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -397,11 +392,6 @@ int main( int argc, char *argv[] )
         exit( 0 );
         break;
 
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
-        break;
-    
      default:
         fprintf( stderr, "unknown error while parsing options\n" );
         fprintf( stderr, USAGE );

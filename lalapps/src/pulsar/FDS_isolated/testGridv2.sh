@@ -135,7 +135,7 @@ outputv1_2="./Fstatv1_grid2.dat";
 ## common cmdline-options for v1 and v2
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
-cfs_CL="--IFO=$IFO --DataFiles='$SFTdir/testSFT*' -v${debug}"
+cfs_CL="--IFO=$IFO --DataFiles='$SFTdir/testSFT*'"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -235,7 +235,7 @@ echo
 ## ----- grid=0
 echo "Comparing gridType=0:"
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv1_0  -2 ./$outputv2_0 --clusterFiles=0 --Ftolerance=0.1 -v${debug}";
+cmd0="$cmp_code -1 ./$outputv1_0  -2 ./$outputv2_0 --clusterFiles=0 --Ftolerance=0.1";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
@@ -246,7 +246,7 @@ fi
 ## ----- grid=1
 echo "Comparing gridType=1:"
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv1_1  -2 ./$outputv2_1 --clusterFiles=0 --Ftolerance=0.1 -v${debug}";
+cmd0="$cmp_code -1 ./$outputv1_1  -2 ./$outputv2_1 --clusterFiles=0 --Ftolerance=0.1";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
@@ -258,7 +258,7 @@ fi
 ## ----- grid=2
 echo "Comparing gridType=2:"
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv1_2  -2 ./$outputv2_2 --clusterFiles=0 --Ftolerance=0.1 -v${debug}";
+cmd0="$cmp_code -1 ./$outputv1_2  -2 ./$outputv2_2 --clusterFiles=0 --Ftolerance=0.1";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
@@ -269,7 +269,7 @@ fi
 ## ----- grid=6
 echo "Comparing gridType=6:"
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv2_2 -2 ./$outputv2_6 --clusterFiles=0 --Ftolerance=0.01 -v${debug}";
+cmd0="$cmp_code -1 ./$outputv2_2 -2 ./$outputv2_6 --clusterFiles=0 --Ftolerance=0.01";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2

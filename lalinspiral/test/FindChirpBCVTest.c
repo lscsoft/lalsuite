@@ -70,7 +70,6 @@ InputDataType;
 extern char    *optarg;
 extern int      optind;
 
-extern int lalDebugLevel;
 
 static InputDataType    inputDataType   = gaussian;
 static BOOLEAN          rhosqout        = 0;
@@ -140,7 +139,6 @@ main (int argc, char *argv[])
   InspiralTemplate             *tmplt = NULL;
   InspiralEvent                *event = NULL;
 
-  lalDebugLevel = 1;
 
   /*
    *
@@ -755,7 +753,6 @@ ParseOptions (
     switch (c)
     {
       case 'd': /* set debuglevel */
-        lalDebugLevel = atoi (optarg);
         break;
       case 'V': /* set verbosity */
         verbose = 1;

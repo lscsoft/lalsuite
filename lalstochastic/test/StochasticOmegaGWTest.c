@@ -186,8 +186,6 @@ h_{100}^2\Omega_{\mathrm{GW}}
 extern char *optarg;
 extern int   optind;
 
-/* int lalDebugLevel = LALMSGLVL3; */
-extern int lalDebugLevel;
 BOOLEAN optVerbose    = STOCHASTICOMEGAGWTESTC_FALSE;
 REAL8 optDeltaF     = -1.0;
 UINT4 optLength     = 0;
@@ -214,7 +212,6 @@ int main( int argc, char *argv[] )
   REAL4 omega, f;
   INT4 code;
 
-  lalDebugLevel = LALNDEBUG;
 
   /* define valid parameters */
 
@@ -631,7 +628,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

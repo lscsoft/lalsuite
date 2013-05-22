@@ -100,8 +100,6 @@ int main (int argc, char *argv[])
   /* End Global Variable Declarations */
    
   /* Debug Settings */
-  /* SET LAL DEBUG STUFF */
-  set_debug_level("MEMDBG");
 
   intializeArgs(argc,argv,&params);
   /* Prepare to make frame time series */

@@ -27,7 +27,6 @@ SFTConstraints empty_constraints;
 
 /*---------- Global variables ----------*/
 
-INT4 lalDebugLevel = 1;
 SFTVector *sft_vect = NULL;
 REAL8 *sinVal,*cosVal;
 

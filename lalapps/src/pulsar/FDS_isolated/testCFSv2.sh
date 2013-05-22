@@ -119,7 +119,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --outSFTv1 -v${debug}"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --outSFTv1"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -133,7 +133,7 @@ fi
 
 echo
 echo -n "Running '$saf_code' ... "
-cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh -v${debug}"
+cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"
 echo $cmdline
 if ! resF=`eval "$cmdline  2> /dev/null"`; then
     echo "Error ... something failed running '$saf_code' ..."
@@ -149,7 +149,7 @@ echo "----------------------------------------------------------------------"
 echo
 outfile_v1="Fstat_v1.dat";
 ## common cmdline-options for v1 and v2
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
+cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -195,7 +195,7 @@ sort $outfile_v2NWoff > __tmp_sorted && mv __tmp_sorted $outfile_v2NWoff
 sort $outfile_v2NWon > __tmp_sorted && mv __tmp_sorted $outfile_v2NWon
 
 echo
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance_NWoff -v${debug}"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance_NWoff"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
@@ -204,7 +204,7 @@ else
     echo "	==> OK."
 fi
 
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance_NWon -v${debug}"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance_NWon"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."

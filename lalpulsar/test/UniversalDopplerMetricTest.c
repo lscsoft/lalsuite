@@ -51,7 +51,6 @@
 #define MULT_VECT(v,lam) do{ (v)[0] *= (lam); (v)[1] *= (lam); (v)[2] *= (lam); } while(0)
 
 // ---------- global variables --------------------
-extern int lalDebugLevel;
 
 static LALStatus empty_LALStatus;
 static PtoleMetricIn empty_PtoleMetricIn;
@@ -71,7 +70,6 @@ DopplerMetric *XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricPara
 int main( void )
 {
   INT4 ret;
-  lalDebugLevel = 3;
 
   ret = test_XLALDopplerFstatMetric();
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "test_XLALDopplerFstatMetric() failed with status = %d.\n", ret );

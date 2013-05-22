@@ -243,13 +243,10 @@ main(int argc, char *argv[])
   size_t len;
   UserVariables_t uvar = empty_UserVariables;
 
-  lalDebugLevel = 0;	/* default value */
 
   /* ------------------------------
    * read user-input and set up shop
    *------------------------------*/
-  XLAL_CHECK ( XLALGetDebugLevel(argc, argv, 'v') == XLAL_SUCCESS, XLAL_EFUNC );
-
   XLAL_CHECK ( XLALInitUserVars ( &uvar, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( XLALInitMakefakedata ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );

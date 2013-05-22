@@ -308,7 +308,6 @@ int test_noise(void)
 
 int main(void)
 {
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 	gsl_rng_env_setup();
 	// mkligodata();

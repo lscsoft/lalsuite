@@ -43,7 +43,6 @@ static void print_usage(FILE *ptr, const char *program_name);
 int main(int argc, char **argv)
 {
   /* setup error handler */
-  set_debug_level( "LALMSGLVL3" );
   lal_errhandler = LAL_ERR_EXIT;
 
   /* parse command line options */

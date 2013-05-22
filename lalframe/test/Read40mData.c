@@ -54,7 +54,6 @@
 
 #define CHANNEL "IFO_DMRO"
 
-INT4 lalDebugLevel = LALMSGLVL3;
 
 int main( void )
 {

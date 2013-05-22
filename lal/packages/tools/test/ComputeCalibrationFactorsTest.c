@@ -70,7 +70,6 @@ struct SegmentListTag {
 } SegmentList;
 
 static LALStatus status;
-INT4 lalDebugLevel=3,numsegs;
 
 FrCache *framecache;
 FrStream *framestream=NULL;

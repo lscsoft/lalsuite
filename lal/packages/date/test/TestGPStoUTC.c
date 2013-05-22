@@ -26,9 +26,8 @@
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel = 0;
 
-int main(int argc, char *argv[])
+int main(void)
 {
   LIGOTimeGPS         gpsTime = {0, 0};
   LIGOTimeGPS         tmpGps  = {0, 0};
@@ -36,9 +35,6 @@ int main(int argc, char *argv[])
   CHARVector         *timestamp = NULL;
   char                refstamp[128];
   /* char                infostr[256]; */
-
-  if (argc > 1)
-      lalDebugLevel = atoi(argv[1]);
 
   timestamp = XLALCreateCHARVector(128);
 

@@ -85,9 +85,6 @@ struct tagDopplerFullScanState {
 /* some empty structs for initializations */
 const DopplerFullScanState empty_DopplerFullScanState;
 
-/*---------- Global variables ----------*/
-extern INT4 lalDebugLevel;
-
 /*---------- internal prototypes ----------*/
 void initFactoredGrid (LALStatus *, DopplerFullScanState *scan,	const DopplerFullScanInit *init);
 int nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan);

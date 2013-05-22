@@ -82,7 +82,6 @@ void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 static LALUnit empty_LALUnit;
 static LALStatus empty_LALStatus;
 
-extern int lalDebugLevel;
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
@@ -94,7 +93,6 @@ int main(void)
 {
   int res1;
 
-  lalDebugLevel = 1;
 
   LogPrintf (LOG_DEBUG, "%s: Now testing XLALSFTVectorToCOMPLEX8TimeSeries() ... ", __func__);
   if ( (res1 = test_XLALSFTVectorToCOMPLEX8TimeSeries()) != TEST_PASSED )

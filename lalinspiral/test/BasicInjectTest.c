@@ -164,7 +164,6 @@ the same format.
 #include <lal/StreamInput.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define EPOCH (0)
 #define DIST  (0.00002*LAL_MRSUN_SI )
 #define M1    (1.4)
@@ -278,7 +277,6 @@ main(int argc, char **argv)
   DetectorResponse detector;   /* the detector in question */
   INT2TimeSeries output;       /* detector ACD output */
 
-  lalDebugLevel = 0;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *
@@ -355,7 +353,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( BASICINJECTTESTC_EARG, BASICINJECTTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

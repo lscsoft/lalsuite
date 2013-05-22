@@ -54,7 +54,6 @@ Basically, you can provide all the arguments from the InspiralTemplate structure
 #include <lal/Random.h>
 #include <lal/GenerateInspiral.h>
 
-INT4 lalDebugLevel=1;
 #define ERROR( code, msg, statement )                                \
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \

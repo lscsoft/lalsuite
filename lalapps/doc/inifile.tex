@@ -59,7 +59,6 @@ high-frequency-cutoff = 2048.0
 order = twoPN
 approximant = TaylorF2 {for BNS} BCV {for BCV}
 space = Tau0Tau3 {for BNS} Psi0Psi3 {for BCV}
-debug-level = 33
 ; the following are necessary for the BCV search
 minimum-psi0 = 10.0
 maximum-psi0 = 550000.0
@@ -77,13 +76,11 @@ dynamic-range-exponent = 69.0
 enable-output = 
 enable-event-cluster = 
 chisq-bins = 0
-debug-level = 33
 approximant = TaylorF2 {for BNS} BCV {for BCV}
 
 [trigtotmplt]
 minimal-match = 0.95
 parameter-test = m1_and_m2 {for BNS} psi0_and_psi3 {for BCV}
-debug-level = 33
 
 [inca]
 playground-only =
@@ -92,7 +89,6 @@ kappa = 5000.0
 dt = 15.0
 dm = 0.03
 parameter-test =m1_and_m2 {for BNS} psi0_and_psi3 {for BCV}
-debug-level = 33
 ; the following are necessary for the BCV search only
 dpsi0 = 0.0
 dpsi3 = 0.0

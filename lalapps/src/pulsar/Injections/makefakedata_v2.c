@@ -309,7 +309,6 @@ COMPLEX8Vector *fvecn = NULL;
 /*FFT plan*/
 RealFFTPlan *pfwd = NULL;
 
-INT4 lalDebugLevel = 1;
 
 /* Note: apparently including unistd.h leads to a bus-error using getopt() on MacOSX,
  * most likely due to a header/lib conflict with the included getopt source in LALsuite.

@@ -65,7 +65,6 @@ lalapps_coinj: create coherent injection files for LIGO and VIRGO\n"
 #endif
 
 extern int vrbflg;
-extern int lalDebugLevel;
 
 typedef enum
 {
@@ -167,8 +166,6 @@ int main(int argc, char *argv[])
   int UNUSED SNROK=1;
   int rewriteXML=0;
   FrameH *frame;
-  /*vrbflg=6;
-    lalDebugLevel=6; */
 
   struct option long_options[]=
     {

@@ -199,8 +199,6 @@ fabs()
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
-/* int lalDebugLevel  = LALMSGLVL3; */
 BOOLEAN optVerbose = STOCHASTICOPTIMALFILTERTESTC_FALSE;
 BOOLEAN optHetero = STOCHASTICOPTIMALFILTERTESTC_FALSE;
 REAL8 optFRef      = 1.0;
@@ -256,7 +254,6 @@ int main(int argc, char *argv[])
 
   REAL4WithUnits           lambda;
 
-  lalDebugLevel = LALNDEBUG;
 
   ParseOptions (argc, argv);
 
@@ -1653,7 +1650,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

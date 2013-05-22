@@ -254,7 +254,6 @@ static void times(REAL8 , INT4, LIGOTimeGPS *, INT4 );
 
 static void times2(REAL8 tSFT, INT4 howMany, LIGOTimeGPS **ts, INT4 **sftPerCoh, INT4 sw, INT4 mCohSFT);
 
-extern int lalDebugLevel;
 
 static PulsarCoherentGW emptySignal;
 
@@ -344,7 +343,6 @@ int main(int argc, char **argv)
 
   /***** END VARIABLE DECLARATION *****/
 
-  lalDebugLevel = 3;
 
   /***** PARSE COMMAND LINE OPTIONS *****/
   basicInputsFile=(char *)LALMalloc(50*sizeof(char));

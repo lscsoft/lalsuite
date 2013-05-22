@@ -127,7 +127,6 @@ LALStatus empty_status;
 
 /*---------- Global variables ----------*/
 
-INT4 lalDebugLevel = 3;
 
 /* ----------------------------------------------------------------------*/
 int main(int argc, char *argv[])

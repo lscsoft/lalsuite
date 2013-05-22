@@ -341,14 +341,12 @@ int main( int argc, char *argv[] )  {
   XTEUINT4TimeSeriesArray *ts = NULL;           /* a timeseries array structure */ 
   CHAR clargs[LONGSTRINGLENGTH];                /* store the command line args */
 
-  lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
 
   /* setup LAL debug level */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */

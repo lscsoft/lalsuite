@@ -73,7 +73,6 @@ Unless the <tt>-f</tt> option is used, the environment variable
 extern char *optarg;
 extern int   optind;
 
-int   lalDebugLevel = 0;
 int   verbose    = 0;
 int   output     = 0;
 char *framePath  = NULL;
@@ -321,7 +320,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

@@ -46,7 +46,6 @@ extern "C" {
 
  The general approach consists of these steps
  <ol>
- <li> read log-level from user-input using XLALGetDebugLevel() [<b>Note:</b> this must happend before and (X)LAL memory allocation!!]</li>
  <li> set default-value for optional user-variables</li>
  <li> \c register all user-variables using calls to \c XLALRegister<TYPE>UserVar(), or more conveniently, using the shortcut-macros
       XLALreg<TYPE>UserStruct() that assume a struct-pointer named 'uvar' containing all user-variables as 'uvar->UserVariable'.</li>
@@ -79,15 +78,11 @@ int main(int argc,char *argv[])
    UserInput_t UserVariables = empty_UserInput; // initializes this struct to {0}
    UserInput_t *uvar = &UserVariables;          // struct-pointer allows us to use the XLALreg<TYPE>UserStruct() macros...
 
-   // 1. step: read lal-debug level, using short-option '-v'
-   if ( XLALGetDebugLevel ( argc, argv, 'v') != XLAL_SUCCESS )
-     XLAL_ERROR ( XLAL_EFUNC );
-
-   // 2. step: set default-values for optional user-input variables
+   // 1. step: set default-values for optional user-input variables
    uvar->anInteger = 0;
    uvar->andAString = NULL;     // Note: need to assign allocated strings here as default!!
 
-   // 3. step: Register all user-variables using the shortcut macros:
+   // 2. step: Register all user-variables using the shortcut macros:
    XLALregBOOLUserStruct  ( help,               'h',  UVAR_HELP,     "Output this help-message");
    XLALregINTUserStruct   ( anInteger,          'i',  UVAR_OPTIONAL, "An example user-variable of an optional integer");
    XLALregREALUserStruct  ( aDoubleVar,         'r',  UVAR_REQUIRED, "This REAL8 user-variable is required");
@@ -95,7 +90,7 @@ int main(int argc,char *argv[])
 
    XLALregREALUserStruct  ( specialGeekSwitch,   'g',  UVAR_DEVELOPER, "This REAL8 user-variable is required");
 
-   // 4. step: parse all user-input, from either config-file if given, or commandline (overloads config-file values)
+   // 3. step: parse all user-input, from either config-file if given, or commandline (overloads config-file values)
    if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS )
      XLAL_ERROR ( XLAL_EFUNC );
 
@@ -104,7 +99,7 @@ int main(int argc,char *argv[])
 
    printf ("User-input was: anInteger = %d, aDoubleVar = %f, andAString = %s\n", uvar->anInteger, uvar->aDoubleVar, uvar->andAString );
 
-   // 5. step: free user-input module memory
+   // 4. step: free user-input module memory
    XLALDestroyUserVars();
 
    LALCheckMemoryLeaks();
@@ -190,7 +185,6 @@ CHAR *XLALUserVarHelpString ( const CHAR *progname );
 int XLALUserVarReadAllInput ( int argc, char *argv[] );
 int XLALUserVarCheckRequired( void );
 int XLALUserVarWasSet (const void *cvar);
-int XLALGetDebugLevel (int argc, char *argv[], CHAR optchar);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
 /* type-specific wrappers to XLALRegisterUserVar() to allow type-checking! */
@@ -287,7 +281,6 @@ void LALUserVarReadCfgfile (LALStatus *, const CHAR *cfgfile);
 void LALUserVarHelpString (LALStatus *, CHAR **helpstring, const CHAR *progname);
 void LALUserVarCheckRequired (LALStatus *);
 INT4 LALUserVarWasSet (const void *cvar);
-void LALGetDebugLevel (LALStatus *, int argc, char *argv[], CHAR optchar);
 void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
 #if 0
 void LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR *progname);

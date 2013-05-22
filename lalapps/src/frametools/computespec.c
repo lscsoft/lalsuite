@@ -57,7 +57,6 @@
               "    --numpts npoints      Points per graph displayed\n"\
               "    --numavg navg         Number of segments to average\n"
 
-INT4 lalDebugLevel = LALMSGLVL3;
 
 #include <config.h>
 #ifndef HAVE_LIBLALFRAME

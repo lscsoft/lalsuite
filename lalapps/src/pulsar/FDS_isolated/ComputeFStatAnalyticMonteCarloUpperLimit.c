@@ -118,7 +118,6 @@ int main(int argc, char *argv[]) {
     
   /* Initialise LAL error handler, debug level and log level */
   lal_errhandler = LAL_ERR_EXIT;
-  LAL_CALL(LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LogSetLevel(lalDebugLevel);
   
   /* Register command line arguments */

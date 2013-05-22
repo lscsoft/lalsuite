@@ -10,7 +10,6 @@
 [\option{--help}] \newline \hspace*{0.5in} 
 [\option{--verbose}] \newline \hspace*{0.5in} 
 [\option{--version}] \newline \hspace*{0.5in}
-\option{--debug-level}~\parm{LEVEL} \newline \hspace*{0.5in} 
 [\option{--user-tag}~\parm{STRING}] \newline \hspace*{0.5in}           
 [\option{--ifo-tag}~\parm{STRING}] \newline \hspace*{0.5in}
 \option{--gps-start-time}~\parm{SEC} \newline \hspace*{0.5in}           
@@ -89,9 +88,6 @@ or GEO data for gravitational wave signals and Monte Carlo analysis; it also has
 \item[\option{--help}] Optional. Display a brief usage summary.
 
 \item[\option{--verbose}] Optional. Print progress information.
-
-\item[\option{--debug-level}~\parm{LEVEL}] Set the LAL debug level to 
-\parm{LEVEL}. For example: 1 :developer, 33 :production.
 
 \item[\option{user-tag}~\parm{STRING}] Optional. Set the process-params 
 usertag to \parm{STRING}.
@@ -309,7 +305,6 @@ To run the program, type:
 \begin{verbatim}
 lalapps_inspiral \
 --verbose \
---debug-level 33 \ 
 --gps-start-time 73200096 \
 --gps-end-time 732902144 \
 --bank-file L1-TMPLTBANK-732900096-2048.xml \

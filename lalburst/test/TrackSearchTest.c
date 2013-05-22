@@ -27,7 +27,6 @@
 #include <lal/FileIO.h>
 #include <lal/TrackSearch.h>
 
-INT4 lalDebugLevel=0;
 int main( void )
 {
   static LALStatus status;

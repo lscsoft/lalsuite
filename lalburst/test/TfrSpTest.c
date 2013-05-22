@@ -48,7 +48,6 @@
 
 #include <lal/TimeFreq.h>
 
-extern int lalDebugLevel;
 
 int main(void)
 {
@@ -66,7 +65,6 @@ int main(void)
   INT4 column;
   INT4 row;
 
-  lalDebugLevel = 2;
 
   /*--------------------------------------------------------------------*/
 

@@ -54,7 +54,6 @@
 #define CHANNEL "H2:LSC-AS_Q"
 #endif
 
-INT4 lalDebugLevel = LALMSGLVL3;
 
 int main( void )
 {

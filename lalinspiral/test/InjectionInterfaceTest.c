@@ -148,7 +148,6 @@ int main(int UNUSED argc, char **argv)
   UINT4 lenfile;
 
   /* --- for debugging --- */
-  lalDebugLevel = 33;
   program       = *argv;
 
   /* --- Start Main part here --- */

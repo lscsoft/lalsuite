@@ -193,7 +193,6 @@ int main(int argc, char *argv[])
   REAL8 fMax = -1.0;
   int loglevel = LOG_DETAIL;
 
-  lalDebugLevel = 3;
 
   if((argc != 4) && (argc != 5)) {
     XLALPrintError ( "Usage: %s <files> <fmin> <fmax> [<debuglevel>]\n", argv[0]);

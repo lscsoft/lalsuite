@@ -53,7 +53,6 @@
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 // ----- global variables
-extern int lalDebugLevel;
 static REAL8 p,q,r;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
 
 // initializers
@@ -75,12 +74,10 @@ main ( int argc, char *argv[] )
   LALStatus status = empty_LALStatus;
 
   /* read user input */
-  lalDebugLevel = 0;
   int opt;
   while ((opt = getopt( argc, argv, "v:" )) != -1) {
     switch (opt) {
     case 'v': /* set lalDebugLevel */
-      lalDebugLevel = atoi( optarg );
       break;
     default:
       XLAL_ERROR ( XLAL_EINVAL, "Invalid commandline-option '%c'\n", opt );

@@ -206,7 +206,6 @@ int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,
 
 /* ---------- Global variables -------------------- */
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
-extern int lalDebugLevel;
 char *global_column_headings_stringp;
 
 /* ###################################  MAIN  ################################### */
@@ -417,12 +416,8 @@ int MAIN( int argc, char *argv[]) {
   global_argc = argc;
 #endif
 
-  /* LALDebugLevel must be called before any LALMallocs have been used */
-  lalDebugLevel = 0;
 #ifdef EAH_LALDEBUGLEVEL
-  lalDebugLevel = EAH_LALDEBUGLEVEL;
 #endif
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   /* set log-level */
 #ifdef EAH_LOGLEVEL

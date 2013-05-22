@@ -181,7 +181,6 @@ output time series.
 #include <lal/LALInitBarycenter.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define EPOCH  (0LL) /* about Jan. 1, 1990 */
 #define APLUS  (1000.0)
 #define ACROSS (1000.0)
@@ -307,7 +306,6 @@ main(int argc, char **argv)
   PulsarDetectorResponse detector; /* the detector in question */
   REAL4TimeSeries output;    /* detector output */
 
-  lalDebugLevel = 0;
 
   /*******************************************************************
    * ARGUMENT PARSING (arg stores the current position)              *
@@ -398,7 +396,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( SIMULATETAYLORCWTESTC_EARG,
 	       SIMULATETAYLORCWTESTC_MSGEARG, 0 );

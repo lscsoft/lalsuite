@@ -69,7 +69,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       /* options that don't set a flag */
       {"version", no_argument, 0, 'v'},
       {"help", no_argument, 0, 'a'},
-      {"debug-level", required_argument, 0, 'b'},
       {"ifo", required_argument, 0, 'c'},
       {"gps-start-time", required_argument, 0, 'd'},
       {"gps-end-time", required_argument, 0, 'e'},
@@ -88,7 +87,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "vab:c:d:e:f:g:h:i:j:k:l", \
+    c = getopt_long_only(argc, argv, "vac:d:e:f:g:h:i:j:k:l", \
         long_options, &option_index);
 
     if (c == -1)
@@ -126,7 +125,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stderr, " --help                 print this message\n");
         fprintf(stderr, " --version              display version information\n");
         fprintf(stderr, " --verbose              run in verbose mode\n");
-        fprintf(stderr, " --debug-level N        set lalDebugLevel\n");
         fprintf(stderr, " --ifo IFO              set IFO\n");
         fprintf(stderr, " --gps-start-time GPS   start of GPS time range\n");
         fprintf(stderr, " --gps-end-time GPS     end of GPS time range\n");
@@ -135,11 +133,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stderr, " --observatory SITE     set SITE\n");
         fprintf(stderr, " --type FRAME_TYPE      set FRAME_TYPE\n");
         exit(0);
-        break;
-
-      case 'b':
-        /* get debug level */
-        lalDebugLevel = atoi(optarg);
         break;
 
       case 'c':

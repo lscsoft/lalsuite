@@ -105,7 +105,6 @@ result disagrees by more than a milliradian.
 #include <lal/SkyCoordinates.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-i system lat lon] [-o system] [-z lat lon]\n" \
@@ -172,7 +171,6 @@ main( int argc, char **argv )
   EarthPosition earth;     /* terrestrial coordinates */
   ConvertSkyParams params; /* additional parameters for conversion */
 
-  lalDebugLevel = 0;
 
   memset( &params, 0, sizeof(ConvertSkyParams ) );
 
@@ -303,7 +301,6 @@ main( int argc, char **argv )
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( SKYCOORDINATESTESTC_EARG, SKYCOORDINATESTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

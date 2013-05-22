@@ -66,7 +66,6 @@ routines and checks to make sure the resulting series agree, printing the result
 #define  READFTSERIESTEST_TOL 1e6
 #define  READFTSERIESTEST_LEN 20
 
-extern int lalDebugLevel;
 
 
 int main( void )
@@ -130,7 +129,6 @@ int main( void )
   /* Data Test Variable */
   UINT4   j;
 
-  lalDebugLevel = LALMSGLVL3;
 
   fprintf(stderr,"Testing value of LALUnitTextSize ... ");
   if ( (int)LALSupportUnitTextSize != (int)LALUnitTextSize )

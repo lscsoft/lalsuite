@@ -820,7 +820,6 @@ int XLALSimInspiralTaylorT4PNRestricted(
 #if 0
 #include <lal/PrintFTSeries.h>
 #include <lal/PrintFTSeries.h>
-extern int lalDebugLevel;
 int main(void)
 {
 	LIGOTimeGPS tc = { 888888888, 222222222 };
@@ -835,7 +834,6 @@ int main(void)
 	int O = -1;
 	REAL8TimeSeries *hplus;
 	REAL8TimeSeries *hcross;
-	lalDebugLevel = 7;
 	XLALSimInspiralTaylorT4PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2, tideO, O);
 	LALDPrintTimeSeries(hplus, "hp.dat");
 	LALDPrintTimeSeries(hcross, "hc.dat");

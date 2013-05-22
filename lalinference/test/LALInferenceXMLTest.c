@@ -106,6 +106,5 @@ int testLALInferenceVariables(void){
 
 int main(void)
 {
-  lalDebugLevel=5;
   return(testLALInferenceVariables());
 }

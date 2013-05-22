@@ -66,7 +66,6 @@ static void print_usage(char *program)
       " [--help]                       display this message\n"\
       " [--verbose]                    print progress information\n"\
       " [--version]                    print version information and exit\n"\
-      " [--debug-level]       level    set the LAL debug level to LEVEL\n"\
       " [--user-tag]          usertag  set the process_params usertag\n"\
       " [--comment]           string   set the process table comment\n"\
       " [--mass-tag]          string   specify what mass bin in summfile\n"\
@@ -233,7 +232,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
@@ -264,7 +262,6 @@ int main( int argc, char *argv[] )
       {"verbose",                 no_argument,       &vrbflg,              1 },
       {"sort-triggers",           no_argument,  &sortTriggers,             1 },
       {"help",                    no_argument,            0,              'h'},
-      {"debug-level",             required_argument,      0,              'z'},
       {"user-tag",                required_argument,      0,              'Z'},
       {"userTag",                 required_argument,      0,              'Z'},
       {"comment",                 required_argument,      0,              'c'},
@@ -305,7 +302,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "a:b:c:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:z:"
+    c = getopt_long_only ( argc, argv, "a:b:c:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:"
                                        "A:C:D:E:G:I:L:N:R:S:T:VZ",
                                        long_options, &option_index );
 
@@ -367,11 +364,6 @@ int main( int argc, char *argv[] )
       case 'h':
         print_usage(argv[0]);
         exit( 0 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'Z':

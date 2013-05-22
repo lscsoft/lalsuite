@@ -129,7 +129,6 @@ int main(int UNUSED argc, char **argv)
 
   static LALStatus status; /* status structure */
 
-  lalDebugLevel = 1;
 
   /* initialize status */
   status.statusCode = 0;

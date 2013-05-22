@@ -89,7 +89,7 @@ outSFT="./testpsd_sft_H1"
 linefreq="50.05"
 
 ## ----- run MFDv4
-cmdline="${mfd_code} -v1 --IFO=$IFO --outSingleSFT=1 --outSFTbname=$outSFT --startTime=828002611 --duration=1800 --fmin=50 --Band=0.1 --noiseSqrtSh=3.25e-22 --lineFeature=1 --h0=5e-23 --cosi=0 --Freq=$linefreq --randSeed=1 "
+cmdline="${mfd_code} --IFO=$IFO --outSingleSFT=1 --outSFTbname=$outSFT --startTime=828002611 --duration=1800 --fmin=50 --Band=0.1 --noiseSqrtSh=3.25e-22 --lineFeature=1 --h0=5e-23 --cosi=0 --Freq=$linefreq --randSeed=1 "
 
 echo $cmdline;
 if ! eval $cmdline; then

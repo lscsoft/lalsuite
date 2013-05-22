@@ -54,7 +54,6 @@
               "   [--freq frequency]     Frequency of line\n"\
               "   [--numpts npoints]     Points to use\n"
 
-INT4 lalDebugLevel = LALMSGLVL3;
 
 #include <config.h>
 #ifndef HAVE_LIBLALFRAME

@@ -100,7 +100,6 @@ resampled at intervals \c deltat to generate actual wave output.
 #include <lal/GeneratePPNInspiral.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define EPOCH (315187200000000000LL) /* about Jan. 1, 1990 */
 #define M1    (1.4)
 #define M2    (1.4)
@@ -207,7 +206,6 @@ main(int argc, char **argv)
   CoherentGW waveform;          /* output waveform */
   FILE *fp;                     /* output file pointer */
 
-  lalDebugLevel = 0;
 
   /*******************************************************************
    * ARGUMENT PARSING (arg stores the current position)              *
@@ -318,7 +316,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( GENERATEPPNINSPIRALTESTC_EARG,
 	       GENERATEPPNINSPIRALTESTC_MSGEARG, 0 );

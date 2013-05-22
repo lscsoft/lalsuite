@@ -82,7 +82,6 @@
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel=0;
 
 void printf_timeseries (int n, float *sig, double delta, double t0) ;
 void printf_timeseries (int n, float *sig, double delta, double t0)

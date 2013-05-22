@@ -98,7 +98,6 @@ type-dependent format.
 #include <lal/StreamInput.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define INFILE TEST_DATA_DIR "StreamInput.data"
 
 /* Usage format string. */
@@ -316,7 +315,6 @@ main(int argc, char **argv)
   FILE *fpOut = NULL;          /* output file pointer */
   clock_t start = 0, stop = 0; /* data input timestamps */
 
-  lalDebugLevel = 0;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;
@@ -336,7 +334,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( STREAMINPUTTESTC_EARG, STREAMINPUTTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

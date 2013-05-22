@@ -30,7 +30,6 @@
 #include <lal/ComputeSky.h>
 #include <gsl/gsl_cdf.h>
 
-extern INT4 lalDebugLevel;
 
 /* defaults */
 #define EARTHEPHEMERIS ".earth00-19-DE405.dat"
@@ -125,13 +124,9 @@ int main( int argc, char *argv[]){
   REAL8Vector *weight;
 
   /*  set up the default parameters  */
-  lalDebugLevel = 0;
 
   nfSizeCylinder = NFSIZE;
   
-  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
-
   /* *********************************************************************** */
   /* set other user input variables */
   uvar_help = FALSE;

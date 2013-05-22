@@ -93,7 +93,7 @@ echo
 echo "mfd_v4: producing SFTs via heterodyned timeseries (generationMode=0 [ALL_AT_ONCE] )..."
 echo
 
-mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 -v${debug}"
+mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0"
 cmdline="$mfdCODE $mfdCL --outSFTbname=$testDIR1";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -114,7 +114,7 @@ echo
 echo "mfd_v4: producing SFTs via heterodyned timeseries (generationMode=1 [PER_SFT] )..."
 echo
 
-mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 -v${debug}"
+mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1"
 cmdline="$mfdCODE $mfdCL --outSFTbname=$testDIR2";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -135,7 +135,7 @@ echo
 echo "mfd_v4: producing SFTs via 'exact' timeseries (non-heterodyned)..."
 echo
 
-mfdCL="--Tsft=$Tsft --fmin=0 --Band=$fUpper --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 -v${debug}"
+mfdCL="--Tsft=$Tsft --fmin=0 --Band=$fUpper --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0"
 cmdline="$mfdCODE $mfdCL --outSFTbname=$testDIR3";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -147,7 +147,7 @@ echo "... and extracting the relevant frequency band ..."
 echo
 
 ## extract relevant frequency-band
-extractCL="--inputSFTs='$testDIR3/*.sft' --fmin=$fmin --fmax=$fmax --outputDir=$testDIR3 --descriptionMisc=Band -v${debug}"
+extractCL="--inputSFTs='$testDIR3/*.sft' --fmin=$fmin --fmax=$fmax --outputDir=$testDIR3 --descriptionMisc=Band"
 cmdline="$extractCODE $extractCL"
 echo $cmdline;
 if ! eval $cmdline; then
@@ -162,7 +162,7 @@ fi
 echo
 echo "comparison of resulting SFTs:"
 
-cmdline="$cmpCODE -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/*_Band*' -d${debug}"
+cmdline="$cmpCODE -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/*_Band*'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
@@ -173,7 +173,7 @@ fi
 
 
 echo
-cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/*_Band*' -d${debug}"
+cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/*_Band*'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
@@ -186,7 +186,7 @@ fi
 echo
 echo "comparison of concatenating SFTs:"
 
-cmdline="$cmpCODE -e 1e-10 -1 '${testDIR1}/*.sft' -2 '${testDIR1}.sft' -d${debug}"
+cmdline="$cmpCODE -e 1e-10 -1 '${testDIR1}/*.sft' -2 '${testDIR1}.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... concatenated SFTs differ! Something might be wrong..."
@@ -196,7 +196,7 @@ else
 fi
 
 echo
-cmdline="$cmpCODE -e 1e-10 -1 '${testDIR2}/*.sft' -2 '${testDIR2}.sft' -d${debug}"
+cmdline="$cmpCODE -e 1e-10 -1 '${testDIR2}/*.sft' -2 '${testDIR2}.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... concatenated SFTs differ! Something might be wrong..."

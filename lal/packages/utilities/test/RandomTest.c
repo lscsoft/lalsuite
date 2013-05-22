@@ -69,7 +69,6 @@ extern char *optarg;
 extern int   optind;
 
 int output     = 0;
-extern int lalDebugLevel;
 int verbose    = 0;
 
 static void
@@ -90,7 +89,6 @@ main (int argc, char *argv[])
   static RandomParams *randpar;
   UINT4                i;
 
-  lalDebugLevel = 0;
 
   /*
    *
@@ -382,7 +380,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

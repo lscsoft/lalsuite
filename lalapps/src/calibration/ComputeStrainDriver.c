@@ -129,7 +129,6 @@ LIGOTimeGPS gpsStartepoch;
 INT4TimeSeries OutputDQ;  /* data quality */
 
 static LALStatus status;
-INT4 lalDebugLevel=0;
 FrCache *framecache;                                           /* frame reading variables */
 FrStream *framestream=NULL;
 char sv_cname[] = "Xn:IFO-SV_STATE_VECTOR",                      /* channel names */

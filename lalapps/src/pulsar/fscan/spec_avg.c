@@ -99,8 +99,6 @@ int main(int argc, char **argv)
     CHAR *sunFile = NULL;
   /*========================================================================================================================*/
     
-    lalDebugLevel = 0;
-    LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
     
     LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",         'h', UVAR_HELP,     "Print this help message",     &help        ), &status);
     LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'p', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);

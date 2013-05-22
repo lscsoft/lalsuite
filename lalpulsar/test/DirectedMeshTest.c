@@ -192,7 +192,6 @@ LALDSymmetricEigenVectors()     snprintf()
 /** \cond DONT_DOXYGEN */
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define NSTACKS 1
 #define STACKLENGTH 86400.0 /* arbitrary */
 #define STARTTIME 0.0       /* arbitrary */
@@ -325,7 +324,6 @@ main(int argc, char **argv)
   static PulsarTimesParamStruc spinParams; /* spindown parameters */
   static PulsarTimesParamStruc compParams; /* composite parameters */
 
-  lalDebugLevel = 0;
 
   /* Set up array creation structure. */
   dimLength.length = 2;
@@ -414,7 +412,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( DIRECTEDMESHTESTC_EARG, DIRECTEDMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

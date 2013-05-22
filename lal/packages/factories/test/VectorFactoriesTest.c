@@ -61,7 +61,6 @@ lalDebugLevel
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 int verbose    = 0;
 
 static void
@@ -145,7 +144,6 @@ TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 int main( int argc, char *argv[] )
 {
-  lalDebugLevel = 0;
 
   ParseOptions( argc, argv );
 
@@ -254,7 +252,6 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

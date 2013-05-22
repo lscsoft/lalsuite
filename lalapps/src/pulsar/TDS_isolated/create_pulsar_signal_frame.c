@@ -345,7 +345,6 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
   CHAR *program = argv[0];
 
   /* default the debug level to 1 */
-  lalDebugLevel = 1;
 
   /* default to no set the detector to the geocentre */
   inputParams->geocentre = 0;
@@ -373,7 +372,6 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
         fprintf(stderr, USAGE, program);
         exit(0);
       case 'l': /* debug level */
-        lalDebugLevel = atoi(optarg);
         break;
       case 'i': /* interferometer/detector */
         inputParams->det = XLALStringDuplicate( optarg );

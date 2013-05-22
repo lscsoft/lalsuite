@@ -9,6 +9,7 @@ pkginclude_HEADERS = \
 	LALAtomicDatatypes.h \
 	LALConstants.h \
 	LALDatatypes.h \
+	LALDebugLevel.h \
 	LALErrno.h \
 	LALError.h \
 	LALGSL.h \

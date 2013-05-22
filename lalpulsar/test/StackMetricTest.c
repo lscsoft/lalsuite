@@ -96,7 +96,6 @@ LALGetEarthTimes()
 #include <lal/PulsarTimes.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define NSTACKS 1
 #define STACKLENGTH 100000.0  /* arbitrary */
 #define STARTTIME 0.0         /* arbitrary */
@@ -197,7 +196,6 @@ main(int argc, char **argv)
   static PulsarTimesParamStruc compParams;
   static MetricParamStruc params;
 
-  lalDebugLevel = 0;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;
@@ -231,7 +229,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( STACKMETRICTESTC_EARG, STACKMETRICTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

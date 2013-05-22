@@ -49,7 +49,6 @@ XLALCompareLVComputations ( const REAL4 TwoF,
 
 int main( int argc, char *argv[]) {
 
-  lalDebugLevel = 1;
 
   /* sanity check for input arguments */
   if ( argc != 1 )

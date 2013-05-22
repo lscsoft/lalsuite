@@ -74,7 +74,6 @@ InputDataType;
 
 extern char    *optarg;
 extern int      optind;
-extern int lalDebugLevel;
 
 static FILE *fp[4];
 static FILE *fp2[4];
@@ -139,7 +138,6 @@ main (int argc, char *argv[])
   char namearray[6][256] = {"0","0","0","0","0","0"};
   char namearray2[6][256] = {"0","0","0","0","0","0"};
 
-  lalDebugLevel = 1;
 
   /*
    *
@@ -560,7 +558,6 @@ ParseOptions (
 	  Usage (argv[0], 0);
 	  break;
 	case 'd': /* set debuglevel */
-	  lalDebugLevel = atoi (optarg);
 	  break;
   	case 'A':
 	  strcpy(H1filename,optarg);

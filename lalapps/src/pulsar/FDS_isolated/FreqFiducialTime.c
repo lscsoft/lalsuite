@@ -182,7 +182,6 @@ void FreeConfigVars( LALStatus *, FiducialTimeConfigVars *CLA );
 /*! @param global_status LALStatus Used to initialize LALStatus lalStatus. */
 LALStatus global_status;
 /*! @param lalDebugLevel INT4 Control debugging behaviours. Defined in lalapps.h */
-extern INT4 lalDebugLevel;
 /*! @param vrbflg        INT4 Control debugging messages. Defined in lalapps.h */
 extern INT4 vrbflg;
 
@@ -204,11 +203,7 @@ int main(INT4 argc,CHAR *argv[])
   FiducialTimeConfigVars FTCV;
 
 
-  lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
-
-  /* Get the debuglevel from command line arg, then set laldebuglevel. */
-  LAL_CALL (LALGetDebugLevel(lalStatus, argc, argv, 'v'), lalStatus);
 
   /* Reads command line arguments */
   LAL_CALL( ReadCommandLineArgs( lalStatus, argc, argv, &FTCV ), lalStatus); 

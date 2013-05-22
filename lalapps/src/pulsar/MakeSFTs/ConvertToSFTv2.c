@@ -99,13 +99,9 @@ main(int argc, char *argv[])
   UINT4 i;
   REAL8 fMin, fMax;
 
-  lalDebugLevel = 0;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
-
-  /* set debug level */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
 
   /* register all user-variables */
   LAL_CALL (initUserVars (&status), &status);

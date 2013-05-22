@@ -256,10 +256,7 @@ main (INT4 argc, CHAR *argv[])
 
   lal_errhandler = LAL_ERR_EXIT;
   vrbflg = 1; /* verbose flag (see lalapps.h) */
-  lalDebugLevel = 0;
 
-
-  LAL_CALL( LALGetDebugLevel(status, argc, argv, 'v'), status);
 
   bfparams = (BayesFstatParams *) LALMalloc(sizeof(BayesFstatParams));
   LAL_CALL( InitBayesFstatParams(status, bfparams, argc, argv), status);

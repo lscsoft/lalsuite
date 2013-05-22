@@ -141,7 +141,6 @@ LALDestroyResampleRules()
 #endif
 
 /* Default parameter settings. */
-INT4 lalDebugLevel = 0;
 #define NPTS 4096
 #define AMP 1
 #define FREQ 0.1
@@ -275,7 +274,6 @@ main( int argc, char **argv )
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( RESAMPLETESTC_EARG, RESAMPLETESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

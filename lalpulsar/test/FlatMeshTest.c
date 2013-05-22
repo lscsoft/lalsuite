@@ -144,7 +144,6 @@ LALSCreateVector()              LALSDestroyVector()
 /** \cond DONT_DOXYGEN */
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define MISMATCH 0.1
 #define DIM 2
 REAL4 defaultMatrix[] = { 1.0, 0.0, 0.0, 1.0 };
@@ -206,7 +205,6 @@ main(int argc, char **argv)
   REAL4VectorSequence *mesh = NULL;      /* mesh of parameter values */
   FILE *fp;                  /* input/output file pointer */
 
-  lalDebugLevel = 0;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;
@@ -226,7 +224,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( FLATMESHTESTC_EARG, FLATMESHTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

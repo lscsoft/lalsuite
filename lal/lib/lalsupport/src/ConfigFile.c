@@ -46,8 +46,6 @@
 
 #include <lal/ConfigFile.h>
 
-extern INT4 lalDebugLevel;
-
 #define FMT_STRING "string"    /* reading in quoted strings needs some special treatment */
 #define WHITESPACE " \t"
 

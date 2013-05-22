@@ -29,7 +29,6 @@
 
 #include "olapredfcn.h"
 
-extern int lalDebugLevel;
 extern BOOLEAN optVerbose;
 extern REAL8 optDeltaF;
 extern UINT4 optLength;
@@ -58,7 +57,6 @@ olapredfcn_usage (
   fprintf (stderr, "  -h             print this message\n");
   fprintf (stderr, "  -q             quiet: run silently\n");
   fprintf (stderr, "  -v             verbose: print extra information\n");
-  fprintf (stderr, "  -d level       set lalDebugLevel to level\n");
   fprintf (stderr, "  -s siteID1     calculate overlap red fcn for site siteID1\n");
   fprintf (stderr, "  -t siteID2       with site siteID2\n");
   for (i=0; i<LALNumCachedDetectors; ++i)
@@ -87,14 +85,13 @@ olapredfcn_parse_options (
     char       *argv[]
     )
 {
-  const char *dbglvl  = NULL;
   FILE *fp;
 
   while (1)
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:s:t:a:b:f:e:n:o:");
+    c = getopt (argc, argv, "hqvs:t:a:b:f:e:n:o:");
     if (c == -1)
     {
       break;
@@ -133,11 +130,6 @@ olapredfcn_parse_options (
       case 't': /* specify detector #2 */
         optDetector2 = atoi (optarg);
 	break;
-
-      case 'd': /* set debug level */
-        dbglvl = optarg;
-        set_debug_level( dbglvl );
-        break;
 
       case 'v': /* optVerbose */
         optVerbose = OLAPREDFCNH_TRUE;

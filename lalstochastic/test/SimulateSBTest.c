@@ -151,8 +151,6 @@ REAL8     SIMULATESBTESTC_BARLOCZ     =  3209892.343;
 extern char *optarg;
 extern int   optind;
 
-/* int lalDebugLevel = LALMSGLVL3; */
-extern int lalDebugLevel;
 BOOLEAN optVerbose    = SIMULATESBTESTC_FALSE;
 REAL8 optDeltaT       = -1;
 UINT4 optLength       = 0;
@@ -262,7 +260,6 @@ int main( void ){
 
   LALFrDetector                      barFrame;
 
-  lalDebugLevel = LALNDEBUG;
 
 
   /*
@@ -549,7 +546,6 @@ ParseOptions (int argc, char *argv[])
 	  break;
 
 	case 'd': /* set debug level */
-	  lalDebugLevel = atoi (optarg);
 	  break;
 
 	case 'v': /* optVerbose */

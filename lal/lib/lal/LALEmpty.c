@@ -17,5 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/* an empty file to give automake something to find */
-int lalDebugLevel = 0; /* resolve this final symbol */
+/* An almost-empty file to give automake something to find */
+
+/*
+ * This needs to be in some source code somewhere,
+ * so may as well put it here.
+ */
+#include <config.h>
+#if defined(NDEBUG) || defined(LAL_NDEBUG)
+const int lalNoDebug = 1;
+#else
+const int lalNoDebug = 0;
+#endif

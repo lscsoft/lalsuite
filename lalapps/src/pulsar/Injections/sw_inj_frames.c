@@ -151,7 +151,6 @@ int main(int argc, char **argv)
   struct dirent **gwfnamelist;
   char pulin[256];
 
-  lalDebugLevel = 1;	/* debug level for this code */
   LALStatus status = empty_LALStatus;
 
   /*init ephemeris-data */

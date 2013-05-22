@@ -214,7 +214,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   status.statusPtr = NULL;
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
   /* parse command line options */
   parseOptions(argc, argv);
@@ -1203,7 +1202,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"hpf-attenuation", required_argument, 0, 'p'},
       {"hpf-order", required_argument, 0, 'P'},
       {"mask-bin", required_argument, 0, 'b'},
-      {"debug-level", required_argument, 0, 'z'},
       {"version", no_argument, 0, 'v'},
       {0, 0, 0, 0}
      };
@@ -1212,7 +1210,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "ht:T:i:I:c:C:d:D:l:s:S:r:R:f:F:w:k:p:P:b:z:v",
+                  "ht:T:i:I:c:C:d:D:l:s:S:r:R:f:F:w:k:p:P:b:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -1338,11 +1336,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
               maskBin = atoi(optarg);
               break;
         
-     case 'z':
-	     /* set debug level */
-	     set_debug_level( optarg );
-	     break;
-
      case 'v':
 	     /* display version info and exit */
 	     fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");

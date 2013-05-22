@@ -84,7 +84,6 @@ LALCheckMemoryLeaks()
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
 #define FILEOUT "OutHistogram.asc"      /* file output */
 
 /* Usage format string. */
@@ -151,7 +150,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( TESTSTATISTICSC_EARG, TESTSTATISTICSC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

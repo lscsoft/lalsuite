@@ -38,7 +38,6 @@
 
 #include "GenerateBinaryMesh_v1.h"
 
-INT4 lalDebugLevel=3;
 static LALStatus status;
 REAL8 sma0,period,ecc,argp;
 REAL8 *sma,*dist;

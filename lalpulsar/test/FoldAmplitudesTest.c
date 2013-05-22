@@ -82,7 +82,6 @@ LALFoldAmplitudes()
 /* ****** DECLARE AND SET GLOBAL lalDebugLevel ************/
 
 /** \cond DONT_DOXYGEN */
-extern int lalDebugLevel;
 
 /* See the section (currently 7.4.1) of the LSD
  * on "Status-reporting objects" for list of predefined debug levels */
@@ -109,7 +108,6 @@ int main( void )
   INT4			k;					   /* generic integer index */
   INT2			gotError = 0;                                /* Set nonzero if error condition occurs */
 
-  lalDebugLevel = LALMSGLVL3;
 
   /* Allocate memory */
   input.phaseVec = NULL;

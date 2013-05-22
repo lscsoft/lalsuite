@@ -37,8 +37,6 @@
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/LALInitBarycenter.h>
 
-extern int lalDebugLevel;
-
 /* user input variables */
 typedef struct{
   BOOLEAN help; /**< if the user wants a help message */
@@ -89,10 +87,6 @@ int main(int argc, char *argv[]){
 
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   
-  /* read lal-debug leve with short-option -v */
-   if ( XLALGetDebugLevel ( argc, argv, 'v') != XLAL_SUCCESS )
-     XLAL_ERROR ( XLAL_EFUNC );
-
    /* initialize and register user variables */
    if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );

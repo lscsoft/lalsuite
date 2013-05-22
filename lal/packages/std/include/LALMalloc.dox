@@ -208,7 +208,6 @@ Program received signal SIGSEGV, Segmentation fault.
 2       int main( void )
 3       {
 4         char *s;
-5         lalDebugLevel = 1;
 6         s = LALMalloc( 5 );
 7         s[8] = 'x';
 8         LALFree( s );
@@ -220,7 +219,6 @@ Breakpoint 1 at 0x1b60: file bad.c, line 5.
 (gdb) run
 
 Breakpoint 1, main () at bad.c:5
-5         lalDebugLevel = 1;
 (gdb) set var lalMemDbgUsrPtr = 0x1cf528
 (gdb) watch lalIsMemDbgRetPtr
 Hardware watchpoint 2: lalIsMemDbgRetPtr
@@ -253,7 +251,6 @@ main () at bad.c:8
 (gdb) list
 3       {
 4         char *s;
-5         lalDebugLevel = 1;
 6         s = LALMalloc( 5 );
 7         s[8] = 'x';
 8         LALFree( s );

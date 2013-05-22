@@ -63,7 +63,6 @@ for integers are not tested.
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel = LALMSGLVL3;
 
 int main( void )
 {

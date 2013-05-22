@@ -265,7 +265,6 @@ LALPlotTwoDMesh()
 /** \cond DONT_DOXYGEN */
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define X1 (1.0)
 #define Y1 (0.0)
 #define X2 (0.0)
@@ -354,7 +353,6 @@ main(int argc, char **argv)
   REAL4 dadx = DADX, dbdx = DBDX, dcdx = DCDX;       /* ellipse x gradient */
   REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;       /* ellipse y gradient */
 
-  lalDebugLevel = 0;
 
   /******************************************************************
    * ARGUMENT PARSING                                               *
@@ -390,7 +388,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

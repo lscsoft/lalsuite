@@ -86,7 +86,6 @@ static void print_usage(char *program)
   fprintf(stderr,
       " [--help]                      display this message\n"\
       " [--verbose]                   print progress information\n"\
-      " [--debug-level]   level       set the LAL debug level\n"\
       " [--user-tag]      usertag     set the process_params usertag\n"\
       " [--comment]       string      set the process table comment to string\n"\
       " [--version]                   print the CVS version string\n"\
@@ -222,7 +221,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
@@ -250,7 +248,6 @@ int main( int argc, char *argv[] )
       {"verbose",             no_argument,           &vrbflg,              1 },
       {"sort-triggers",       no_argument,     &sortTriggers,              1 },
       {"help",                    no_argument,            0,              'h'},
-      {"debug-level",             required_argument,      0,              'z'},
       {"user-tag",                required_argument,      0,              'Z'},
       {"userTag",                 required_argument,      0,              'Z'},
       {"comment",                 required_argument,      0,              'c'},
@@ -284,7 +281,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only ( argc, argv, 
-        "c:d:hj:k:m:o:q:r:s:t:v:u:z:C:D:HI:M:Q:R:S:T:U:VZ:", 
+        "c:d:hj:k:m:o:q:r:s:t:v:u:C:D:HI:M:Q:R:S:T:U:VZ:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -310,11 +307,6 @@ int main( int argc, char *argv[] )
       case 'h':
         print_usage(argv[0]);
         exit( 0 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'Z':

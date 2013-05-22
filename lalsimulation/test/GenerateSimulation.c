@@ -416,7 +416,6 @@ int main (int argc , char **argv) {
     GSParams *params;
 	
     /* set us up to fail hard */
-    lalDebugLevel = 7;
     XLALSetErrorHandler(XLALAbortErrorHandler);
 
     /* parse commandline */

@@ -78,7 +78,6 @@ int main(void)
     int result = LALXMLC_ENOM;
 
     /* set debug level*/
-    lalDebugLevel = LALMSGLVL3;
 
     printf( "======================================================================\n");
     printf( "1: Test LIGOTimeGPS (de)serialization\n");

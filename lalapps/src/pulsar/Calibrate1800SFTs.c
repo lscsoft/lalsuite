@@ -132,7 +132,6 @@ REAL4 tmpx, tmpy;
 
 
 INT4 SFTno,RealSFTno;                /* Global variables that keep track of no of SFTs*/
-INT4 lalDebugLevel=3;
 REAL4 *p,*pC;
 char filelist[MAXFILES][MAXFILENAMELENGTH];
 Sensing Sraw,So;

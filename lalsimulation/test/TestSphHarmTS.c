@@ -34,7 +34,6 @@
 #include <lal/Units.h>
 
 int main(void){
-		lalDebugLevel=7;
 		// Empty time series -- technically works, but doesn't make a lot
 		// of sense
 		SphHarmTimeSeries *ts = XLALSphHarmTimeSeriesAddMode( NULL, NULL, 0, 0 );

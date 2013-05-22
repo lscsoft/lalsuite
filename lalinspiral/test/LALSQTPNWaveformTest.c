@@ -43,7 +43,6 @@
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/LALSQTPNWaveformInterface.h>
 
-int lalDebugLevel = 0;	///< the debug level
 
 /** The main program.
  */

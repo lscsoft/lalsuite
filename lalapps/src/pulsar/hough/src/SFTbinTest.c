@@ -44,7 +44,6 @@
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
 
 #define MAXFILENAMELENGTH 64
 #define NFSIZE 5
@@ -126,7 +125,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( SFTBINTESTC_EARG, SFTBINTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

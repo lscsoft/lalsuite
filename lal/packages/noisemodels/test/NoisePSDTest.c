@@ -46,7 +46,6 @@ LALCheckMemoryLeaks
 
 /** \cond DONT_DOXYGEN */
 
-INT4 lalDebugLevel=1;
 /** \endcond */
 
 int main ( void )

@@ -171,7 +171,6 @@ LALDTBaryPtolemaic()            LALGetEarthTimes()
 #include <lal/PulsarTimes.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define NSTACKS 1
 #define STACKLENGTH 86400.0 /* arbitrary */
 #define STARTTIME 0.0       /* arbitrary */
@@ -298,7 +297,6 @@ main(int argc, char **argv)
   static MetricParamStruc params; /* metric computation parameters */
   static PulsarTimesParamStruc baryParams; /* barycentring parameters */
 
-  lalDebugLevel = 0;
 
   /* Some more initializations. */
   ra[0] = RA_MIN; dec[0] = DEC_MIN;
@@ -367,7 +365,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( SKYMETRICTESTC_EARG, SKYMETRICTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

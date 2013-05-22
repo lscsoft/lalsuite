@@ -70,7 +70,6 @@ Options:
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 BOOLEAN verbose_p = FALSE;
 
 #if 0
@@ -98,11 +97,9 @@ main(int argc, char **argv)
   BOOLEAN          result_ok_p = TRUE;
   int              retval = 1;
 
-  lalDebugLevel = 0;
 
   if (argc > 1)
     {
-      lalDebugLevel = atoi(argv[1]);
       verbose_p = TRUE;
     }
 

@@ -124,9 +124,6 @@ extern char	*optarg;
 extern int	optind;
 
 
-/*  Setting Global debug level  */
-int	lalDebugLevel	= 0;
-
 
 /*  Setting variables to parse command line flags  */
 BOOLEAN	optVerbose	= MERSENNERANDOMTESTC_FALSE;
@@ -397,7 +394,6 @@ static void ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

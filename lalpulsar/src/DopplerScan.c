@@ -115,9 +115,6 @@ const DopplerSkyScanInit empty_DopplerSkyScanInit;
 const DopplerRegion empty_DopplerRegion;
 const SkyRegion empty_SkyRegion;
 
-/*---------- Global variables ----------*/
-extern INT4 lalDebugLevel;
-
 /*---------- internal prototypes ----------*/
 void getRange( LALStatus *, meshREAL y[2], meshREAL x, void *params );
 void getMetric( LALStatus *, meshREAL g[3], meshREAL skypos[2], void *params );

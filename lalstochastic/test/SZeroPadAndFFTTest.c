@@ -185,8 +185,6 @@ fabs()
 extern char *optarg;
 extern int   optind;
 
-/* int lalDebugLevel = LALMSGLVL3; */
-extern int lalDebugLevel;
 BOOLEAN optVerbose = SZEROPADANDFFTTESTC_FALSE;
 BOOLEAN optMeasurePlan = SZEROPADANDFFTTESTC_FALSE;
 UINT4 optLength    = 0;
@@ -248,7 +246,6 @@ main( int argc, char *argv[] )
 
    SZeroPadAndFFTParameters   goodParams;
 
-   lalDebugLevel = LALNDEBUG;
 
    goodParams.window = NULL;
    goodParams.fftPlan = NULL;
@@ -890,7 +887,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

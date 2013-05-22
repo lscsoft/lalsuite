@@ -87,7 +87,6 @@ int main( int argc, char *argv[] )
   int arg;
 
   program = argv[0];
-  lalDebugLevel = 7 | 32;
   XLALSetErrorHandler( XLALAbortErrorHandler );
 
   arguments = XLALStringAppend( arguments, argv[0] );

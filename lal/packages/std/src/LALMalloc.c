@@ -146,7 +146,6 @@ static struct allocNode {
 } *allocList = NULL;
 static size_t lalMallocTotal = 0;
 static int lalMallocCount = 0;
-extern int lalDebugLevel;
 
 /* need this to turn off gcc warnings about unused functions */
 #ifdef __GNUC__

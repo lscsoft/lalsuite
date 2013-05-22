@@ -80,7 +80,6 @@
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 int verbose       = 0;
 UINT4 m_ = 1; /* number of random trials */
 UINT4 n_ = 0; /* size of each transform  */
@@ -134,7 +133,6 @@ int main( int argc, char *argv[] )
 
   FILE *fp;
 
-  lalDebugLevel = 0;
 
   ParseOptions( argc, argv );
   m = m_;
@@ -420,7 +418,6 @@ ParseOptions( int argc, char *argv[] )
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi( optarg );
         break;
 
       case 'v': /* verbose */

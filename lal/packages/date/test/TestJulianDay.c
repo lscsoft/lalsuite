@@ -22,7 +22,6 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-INT4 lalDebugLevel = 0;
 
 #define SUCCESS              0
 #define FAIL_JULIAN_DAY      1
@@ -126,7 +125,7 @@ static int test(const struct tm *utc, double expected_julian_day, double expecte
 }
 
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	time_t now;
 	struct tm utc;
@@ -136,15 +135,12 @@ int main(int argc, char *argv[])
 	REAL8 ref_mod_julian_day;
 	REAL8 mod_julian_day;
 #endif
-	INT4 old_debuglvl;
 
 
 	/*
 	 * Distinctly not robust
 	 */
 
-	if(argc > 1)
-		lalDebugLevel = atoi(argv[1]);
 
 	/*
 	 * Get current local time
@@ -187,10 +183,6 @@ int main(int argc, char *argv[])
 	/* */
 
 	if(lalDebugLevel > 1) {
-		old_debuglvl = lalDebugLevel;
-
-		lalDebugLevel = 1;	/* LAL seems to not consider any debug level > 1 */
-
 		utc.tm_sec = 0;
 		utc.tm_min = 0;
 		utc.tm_hour = 11;
@@ -205,7 +197,6 @@ int main(int argc, char *argv[])
 		if(test(&utc, XLAL_REAL8_FAIL_NAN, XLAL_REAL8_FAIL_NAN, __LINE__))
 			return 1;
 
-		lalDebugLevel = old_debuglvl;
 	}
 
 

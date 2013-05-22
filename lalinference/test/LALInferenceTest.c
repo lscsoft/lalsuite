@@ -73,7 +73,6 @@ int LALInferenceProcessParamLine_TEST_CHARFILE(void);
 int LALInferenceExecuteFTTEST_NULLPLAN(void);
 
 int main(void){
-    lalDebugLevel |= LALERROR;
     
 	int failureCount = 0;
 

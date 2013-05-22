@@ -44,9 +44,6 @@ void REPORTSTATUS(LALStatus * status);
 #endif
 #endif
 
-extern int lalDebugLevel;
-
-
 int LALPrintError(const char *fmt, ...)
 {
     int n;

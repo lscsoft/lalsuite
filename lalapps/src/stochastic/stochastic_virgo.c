@@ -287,7 +287,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   status.statusPtr = NULL;
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
   /* parse command line options */
   parseOptions(argc, argv);
@@ -2052,7 +2051,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"scale-factor", required_argument, 0, 'o'},
       {"seed", required_argument, 0, 'g'},
       {"output-dir", required_argument, 0, 'S'},
-      {"debug-level", required_argument, 0, 'z'},
       {"version", no_argument, 0, 'v'},
       {0, 0, 0, 0}
      };
@@ -2061,7 +2059,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "ht:T:i:I:c:C:d:D:l:s:S:r:R:f:F:w:k:p:P:b:a:o:g:O:z:v",
+                  "ht:T:i:I:c:C:d:D:l:s:S:r:R:f:F:w:k:p:P:b:a:o:g:O:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -2207,12 +2205,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
              /* directory for output files */
              strncpy(outputFilePath, optarg, LALNameLength);
              break;
-
-        
-     case 'z':
-	     /* set debug level */
-	     set_debug_level( optarg );
-	     break;
 
      case 'v':
 	     /* display version info and exit */

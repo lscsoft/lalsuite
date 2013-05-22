@@ -340,17 +340,12 @@ int main( int argc, char *argv[] )  {
   REAL8 fmin_read,fmax_read,fband_read;         /* the range of frequencies to be read from SFTs */
   UINT4 i;                                      /* counter */
 
-  lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
 
   /* setup LAL debug level */
-  if (XLALGetDebugLevel(argc, argv, 'v')) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",__func__,xlalErrno);
-    return 1;
-  }
   LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */

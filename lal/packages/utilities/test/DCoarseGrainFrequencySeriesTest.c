@@ -166,8 +166,6 @@ the specified output file.
 extern char *optarg;
 extern int   optind;
 
-/* int lalDebugLevel = LALMSGLVL3; */
-extern int lalDebugLevel;
 BOOLEAN optVerbose = DCOARSEGRAINFREQUENCYSERIESTESTC_FALSE;
 UINT4 optInLength    = 0;
 UINT4 optOutLength   = 0;
@@ -213,7 +211,6 @@ main( int argc, char *argv[] )
 
    FrequencySamplingParams     params;
 
-   lalDebugLevel  = LALNDEBUG;
 
    ParseOptions( argc, argv );
 
@@ -1051,7 +1048,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

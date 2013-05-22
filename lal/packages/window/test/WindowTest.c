@@ -30,7 +30,6 @@
 
 #define NWINDOWS 11
 
-int lalDebugLevel = 0;
 
 const char *names[] = {
 	"rectangular",

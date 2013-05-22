@@ -168,7 +168,6 @@ INT4 main(INT4 argc, CHAR **argv)
     {"nr-data-dir", required_argument, 0, 'd'},
     {"output", required_argument, 0, 'o'},
     {"double-precision", no_argument, 0, 'p'},
-    {"debug-level", required_argument, 0, 'D'},
     {"help", no_argument, 0, 'h'},
     {"version", no_argument, 0, 'V'},
     {0, 0, 0, 0}
@@ -176,7 +175,6 @@ INT4 main(INT4 argc, CHAR **argv)
 
   /* default debug level */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level("33");
 
   /* parse the arguments */
   while(1)
@@ -185,7 +183,7 @@ INT4 main(INT4 argc, CHAR **argv)
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only(argc, argv, "f:m:d:o:D:phV", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "f:m:d:o:phV", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == -1)
@@ -248,11 +246,6 @@ INT4 main(INT4 argc, CHAR **argv)
       case 'p':
         /* We're generating a double-precision frame */
         generatingREAL8 = 1;
-        break;
-
-      case 'D':
-        /* set debug level */
-        set_debug_level(optarg);
         break;
 
       case '?':
@@ -727,7 +720,6 @@ static void print_usage(FILE *ptr, CHAR *program)
       "[--help                    display this message and exit]\n"\
       "[--version                 print version information and exit]\n"\
       "[--verbose                 display progress information]\n"\
-      "[--debug-level    LEVEL    set the debug level]\n"\
       "[--format         FORMAT   metadata format, defaults to NINJA1]\n"\
       "[--double-precision        generate REAL8 files, default is REAL4]\n"\
       " --nr-meta-file   FILE     file containing the details of the available\n"\

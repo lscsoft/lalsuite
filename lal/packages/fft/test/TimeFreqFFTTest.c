@@ -72,7 +72,6 @@
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 int verbose       = 0;
 
 static void
@@ -113,7 +112,6 @@ int main( int argc, char *argv[] )
 
   UINT4 j, sr, np, vr;
 
-  lalDebugLevel = 0;
 
   /*CHAR fname[2048];*/
 
@@ -407,7 +405,6 @@ ParseOptions( int argc, char *argv[] )
     switch ( c )
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi( optarg );
         break;
 
       case 'v': /* verbose */

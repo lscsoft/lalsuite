@@ -103,7 +103,6 @@ int main( int argc, char *argv[] )
     {"metric-type",       1, 0, 1},
     {"start-gps-seconds", 1, 0, 2},
     {"detector",          1, 0, 3},
-    {"debug-level",       1, 0, 4},
     {"integration-time",  1, 0, 5},
     {"min-spindown-age",  1, 0 ,6},
     {"spindown-order",    1, 0, 7},
@@ -153,10 +152,6 @@ int main( int argc, char *argv[] )
 	detector = tama;
       if( !strcmp( optarg, "virgo" ) )
 	detector = virgo;
-      break;
-
-    case 4:
-      set_debug_level( optarg );
       break;
 
     case 5:

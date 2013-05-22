@@ -280,7 +280,6 @@ int main ( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *)
@@ -1297,7 +1296,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 fprintf(a, "  --help                       display this message\n");\
 fprintf(a, "  --verbose                    print progress information\n");\
 fprintf(a, "  --version                    print version information and exit\n");\
-fprintf(a, "  --debug-level LEVEL          set the LAL debug level to LEVEL\n");\
 fprintf(a, "  --user-tag STRING            set the process_params usertag to STRING\n");\
 fprintf(a, "  --ifo-tag STRING             set the ifotag to STRING - for file naming\n");\
 fprintf(a, "  --comment STRING             set the process table comment to STRING\n");\
@@ -1437,7 +1435,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"frame-cache",             required_argument, 0,                'u'},
     {"frame-type",              required_argument, 0,                'n'},
     {"pad-data",                required_argument, 0,                'x'},
-    {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"ifo-tag",                 required_argument, 0,                'Y'},
     {"version",                 no_argument,       0,                'V'},
@@ -1521,10 +1518,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     c = getopt_long_only( argc, argv,
 #ifdef LALAPPS_CUDA_ENABLED
-        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:X:0:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yX:0:"
         "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:4:5:6:7:8:9:+:",
 #else
-        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:X:0:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yX:0:"
         "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:4:5:6:7:8:9:",
 #endif
         long_options, &option_index );
@@ -1912,11 +1909,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "int", "%d", padData );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'Z':

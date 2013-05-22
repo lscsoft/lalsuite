@@ -1,6 +1,6 @@
 universe = standard
 executable = executables/lalapps_thinca
-arguments = --e-thinca-parameter 0.5 --l1-triggers $(macrol1triggers) --multi-ifo-coinc --user-tag INJ001 --debug-level 33 --ifo-tag $(macroifotag) --gps-start-time $(macrogpsstarttime) --parameter-test ellipsoid --gps-end-time $(macrogpsendtime) --h2-triggers $(macroh2triggers) --write-compress --h1-triggers $(macroh1triggers) --data-type all_data $(macroarguments)
+arguments = --e-thinca-parameter 0.5 --l1-triggers $(macrol1triggers) --multi-ifo-coinc --user-tag INJ001 --ifo-tag $(macroifotag) --gps-start-time $(macrogpsstarttime) --parameter-test ellipsoid --gps-end-time $(macrogpsendtime) --h2-triggers $(macroh2triggers) --write-compress --h1-triggers $(macroh1triggers) --data-type all_data $(macroarguments)
 environment = KMP_LIBRARY=serial;MKL_SERIAL=yes
 log = /people/jclayton/logs/RmpMoimny
 error = logs/thinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err

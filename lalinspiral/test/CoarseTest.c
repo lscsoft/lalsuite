@@ -122,7 +122,6 @@ and \c LALInspiralCreateFineBank modules.
 #include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel=0;
 
 /* Nlist = expected number of coarse grid templates; if not sufficient increase */
 

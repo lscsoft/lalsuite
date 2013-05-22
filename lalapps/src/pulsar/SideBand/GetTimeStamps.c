@@ -95,7 +95,6 @@ int main(int argc,char *argv[])
   LIGOTimeGPS end = empty_LIGOTimeGPS;
   INT4 i;
 
-  lalDebugLevel = 0;  
   vrbflg = 0;	/* verbose error-messages */
 
   /**************************************************************************************/
@@ -105,7 +104,6 @@ int main(int argc,char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars(&status), &status); 	
 
   /* do ALL cmdline and cfgfile handling */

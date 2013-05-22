@@ -150,7 +150,6 @@ ConfigVariables_t empty_ConfigVariables;
 /* ---------- global variables ----------*/
 
 extern int vrbflg;
-extern INT4 lalDebugLevel;
 
 
 /* ---------- local prototypes ---------- */
@@ -183,14 +182,10 @@ main(int argc, char *argv[])
   REAL8Vector *finalPSD = NULL; /* math. operation PSD over SFTs and IFOs */
   REAL8Vector *finalNormSFT = NULL; /* normalised SFT power */
 
-  /* LALDebugLevel must be called before anything else */
-  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
-  if (XLALGetDebugLevel(argc, argv, 'v') != XLAL_SUCCESS)
-    return EXIT_FAILURE;
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
