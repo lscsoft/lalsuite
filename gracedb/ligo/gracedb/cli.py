@@ -16,10 +16,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import httplib, mimetypes, urllib
-import socket
+import mimetypes, urllib
 import os, sys, shutil
 import json
+from rest import GraceDb
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
@@ -39,69 +39,6 @@ def warning(*message):
 def output(*message):
     message = "".join(message) + "\n"
     sys.stdout.write(message)
-
-#-----------------------------------------------------------------
-# HTTP/S Proxy classses
-# Taken from: http://code.activestate.com/recipes/456195/
-
-class ProxyHTTPConnection(httplib.HTTPConnection):
-
-    _ports = {'http' : 80, 'https' : 443}
-
-    def request(self, method, url, body=None, headers={}):
-        #request is called before connect, so can interpret url and get
-        #real host/port to be used to make CONNECT request to proxy
-        proto, rest = urllib.splittype(url)
-        if proto is None:
-            raise ValueError, "unknown URL type: %s" % url
-        #get host
-        host, rest = urllib.splithost(rest)
-        #try to get port
-        host, port = urllib.splitport(host)
-        #if port is not defined try to get from proto
-        if port is None:
-            try:
-                port = self._ports[proto]
-            except KeyError:
-                raise ValueError, "unknown protocol for: %s" % url
-        self._real_host = host
-        self._real_port = port
-        httplib.HTTPConnection.request(self, method, url, body, headers)
-        
-
-    def connect(self):
-        httplib.HTTPConnection.connect(self)
-        #send proxy CONNECT request
-        self.send("CONNECT %s:%d HTTP/1.0\r\n\r\n" % (self._real_host, self._real_port))
-        #expect a HTTP/1.0 200 Connection established
-        response = self.response_class(self.sock, strict=self.strict, method=self._method)
-        (version, code, message) = response._read_status()
-        #probably here we can handle auth requests...
-        if code != 200:
-            #proxy returned and error, abort connection, and raise exception
-            self.close()
-            raise socket.error, "Proxy connection failed: %d %s" % (code, message.strip())
-        #eat up header block from proxy....
-        while True:
-            #should not use directly fp probablu
-            line = response.fp.readline()
-            if line == '\r\n': break
-
-
-class ProxyHTTPSConnection(ProxyHTTPConnection):
-    
-    default_port = 443
-
-    def __init__(self, host, port = None, key_file = None, cert_file = None, strict = None):
-        ProxyHTTPConnection.__init__(self, host, port)
-        self.key_file = key_file
-        self.cert_file = cert_file
-    
-    def connect(self):
-        ProxyHTTPConnection.connect(self)
-        #make the sock ssl-aware
-        ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
-        self.sock = httplib.FakeSocket(self.sock, ssl)
 
 #-----------------------------------------------------------------
 # HTTP upload encoding
@@ -169,103 +106,24 @@ def encode_multipart_formdata(fields, files):
 def get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
-#-----------------------------------------------------------------
-# X509 Credentials
-
-def checkProxy(fname):
-    """Check to see if this is a pre-RFC proxy.
-       Not sure if this is valid in all cases, but it works at
-       least sometimes and is better than giving the user a
-       "broken pipe" error message.
-
-       Do one of three things:
-
-         (1) If a check cannot be done because the M2Crypto lib is not
-             available, say so.
-
-         (2) If it is a RFC 3820 compliant proxy, say and do nothing.
-
-         (3) Otherwise issue a warning.
-       """
-    try:
-        import M2Crypto
-        cert = M2Crypto.X509.load_cert(fname)
-        try:
-            cert.get_ext('proxyCertInfo')
-        except LookupError:
-            # Really, there shouldn't be an undefined extension.
-            warning("Warning: You seem to be using a pre-RFC proxy.\n"
-                    "Try doing grid-proxy-init -rfc")
-    except ImportError:
-        warning("Warning: Cannot load M2Crypto.  Not able to check proxy\n"
-                "   If you are getting errors, perhaps you are not using\n"
-                '   an RFC compliant proxy.  Did you do "grid-proxy-init -rfc"?\n'
-                "To enable proxy checking, install m2crypto (CentOS, RedHat),\n"
-                "python-m2crypto (Debian) or py25-m2crypto (MacPorts)")
-
-def findUserCredentials(warnOnOldProxy=1):
-
-    proxyFile = os.environ.get('X509_USER_PROXY')
-    certFile = os.environ.get('X509_USER_CERT')
-    keyFile = os.environ.get('X509_USER_KEY')
-
-    if certFile and keyFile:
-        return certFile, keyFile
-
-    if proxyFile:
-        if warnOnOldProxy:
-            checkProxy(proxyFile)
-        return proxyFile, proxyFile
-
-    # Try default proxy
-    proxyFile = os.path.join('/tmp', "x509up_u%d" % os.getuid())
-    if os.path.exists(proxyFile):
-        if warnOnOldProxy:
-            checkProxy(proxyFile)
-        return proxyFile, proxyFile
-
-    # Try default cert/key
-    homeDir = os.environ.get('HOME')
-    certFile = os.path.join(homeDir, '.globus', 'usercert.pem')
-    keyFile = os.path.join(homeDir, '.globus', 'userkey.pem')
-
-    if os.path.exists(certFile) and os.path.exists(keyFile):
-        return certFile, keyFile
 
 #-----------------------------------------------------------------
 # Web Service Client
 
-class Client:
+# XXX Replace with something that looks like this.  
+# the methods from GraceDb as necessary.
+class Client(GraceDb):
     def __init__(self,
-            url=DEFAULT_SERVICE_URL,
+            url=DEFAULT_SERVICE_URL, 
             proxy_host=None, proxy_port=3128,
-            credentials=None):
-        if credentials is None:
-            credentials = findUserCredentials(warnOnOldProxy=0)
-            if not credentials:
-                raise Exception("No credentials found")
-        cert, key = credentials
-        if proxy_host:
-            self.connector = lambda: ProxyHTTPSConnection(
-                    proxy_host, proxy_port, key_file=key, cert_file=cert)
-        else:
-            proto, rest = urllib.splittype(url)
-            if proto is None:
-                raise ValueError, "unknown URL type: %s" % url
-            #get host
-            host, rest = urllib.splithost(rest)
-            #try to get port
-            host, port = urllib.splitport(host)
-            port = port or 443
-            self.connector = lambda: httplib.HTTPSConnection(
-                    host, port, key_file=key, cert_file=cert)
-        self.url = url
-        # XXX sad sad hack for transition from our somewhat ad hoc to rest api.
-        if url.endswith('cli') or url.endswith('cli/'):
-            self.rest_url = url[:url.rindex('cli')]+"api"
-        else:
-            self.rest_url = url
+            credentials=None,
+            *args, **kwargs):
+        if (url[-1] != '/'):
+            url += '/'
+        super(Client, self).__init__(self, url, proxy_host, proxy_port, 
+                                        credentials, *args, **kwargs)
 
+# XXX break here, branson
     def _connect(self):
         self._conn = self.connector()
 
@@ -289,6 +147,8 @@ class Client:
 
         try:
             # XXX Bad!  Should be JSON conversion
+            # XXX Well, I could make it so.  Might as well, right?  But I want
+            # the responses to look like they did before.
             return eval(rv)
         except Exception, e:
             if "Authorization Required" in rv:
@@ -361,9 +221,6 @@ class Client:
 
     def log(self, graceid, message, alert=False):
         return self._send('log', graceid=graceid, message=message, alert=alert)
-
-    def tag(self, graceid, tag):
-        return self._send('tag', graceid=graceid, tag=tag)
 
     def label(self, graceid, label, alert=False):
         return self._send('label', graceid=graceid, label=label, alert=alert)
@@ -453,10 +310,12 @@ def main():
 %%prog [options] ping
    Test server connection
 
-%%prog [options] upload GRACEID FILE [COMMENT]
+%%prog [options] upload GRACEID FILE [COMMENT] [TAG_NAME] [DISP_NAME]
    where GRACEID is the id of an existing candidate event in GraCEDb
-         FILE    is the name of the file to upload. '-' indicates stdin.
-         COMMENT is an optional annotation to enter into the log
+         FILE      is the name of the file to upload. '-' indicates stdin.
+         COMMENT   is an optional annotation to enter into the log
+         TAG_NAME  is the name of a tag to add to the log message
+         DISP_NAME is the display name of the tag (use for new tags only)
    Upload FILE to the private data area for a candidate event
 
 %%prog [options] download GRACEID FILE [DESTINATION]
@@ -474,8 +333,12 @@ def main():
 %%prog [options] label GRACEID LABEL
     Label event with GRACEDID with LABEL.  LABEL must already exist.
 
-%%prog [options] slot GRACEID slotname [filename]
-    Tag an uploaded file with a name or view value of slotname.
+%%prog [options] tag GRACEID LOG_N TAG_NAME [DISP_NAME]
+    Tag an existing log message.
+    LOG_N is the number of the log message.
+
+%%prog [options] delete_tag GRACEID LOG_N TAG_NAME
+    Remove a tag from a log message.
 
 %%prog [options] search SEARCH PARAMS
     Search paramaters are a list of requirements to be satisfied.  They
@@ -550,6 +413,8 @@ Longer strings will be truncated.""" % {
     if len(args) < 1:
         op.error("not enough arguments")
     elif args[0] == 'ping':
+        # XXX Branson: need a ping method in the REST API.
+        # Also need to add alert options through the API?
         msg = " ".join(args[1:]) or "PING"
         response = client.ping(msg)
     elif args[0] == 'upload':
@@ -557,8 +422,28 @@ Longer strings will be truncated.""" % {
             op.error("not enough arguments for upload")
         graceid = args[1]
         filename = args[2]
-        comment = " ".join(args[3:])
-        response = client.upload(graceid, filename, comment=comment, alert=options.alert)
+        # In the previous version, you passed in comment and alert options.
+        # XXX What do we need to do now?
+        # comment = " ".join(args[3:])
+        # XXX How does the response differ in these two cases?
+        # response = client.upload(graceid, filename, comment=comment, alert=options.alert)
+        # The old one was whatever you get from 
+        # httplib.HTTPConnection().getresponse()
+        # i.e., an httplib.HTTPResponse instance.
+        # You then return whatever you would've gotten from response.read(), which is 
+        # just the response body. Since we're posting to /cli/upload, we look to see
+        # what the function gracedb.view.upload returns.
+        # The body is a plaintext message.
+        # ERROR: missing arg(s)
+        # ERROR: Event does not exist.
+        # OK
+        # ERROR: problem creating log engry
+        # ERROR: could not save file.
+        # Can you translate the API output to look like this.  Check status code and
+        # do something with it.
+        
+        # Actually you should make this a log message.
+        response = client.writeFile(graceid, filename)
     elif args[0] == 'download':
         if len(args) not in [2,3,4]:
             op.error("not enough arguments for download")
@@ -590,19 +475,51 @@ Longer strings will be truncated.""" % {
         message = " ".join(args[2:])
         response = client.log(graceid, message, alert=options.alert)
     elif args[0] == 'tag':
-        if len(args) != 3:
+        if len(args) not in [3,4]:
             op.error("wrong number of arguments for tag")
         graceid = args[1]
-        tag = args[2]
-        response = client.tag(graceid, tag)
+        logN = args[2]
+        tagName = args[3]
+        dispName = args[4]
+        response = client.createTag(graceid, logN, tagName, dispName)
+        # XXX Umm... how should I communicate errors.  Print?
+        # Were they coming from the cli views before?
+        if response.status==404:
+            print "ERROR: %s" % response.read()
+        elif response.status==409:
+            print "FAILED: %s" % response.read()
+        elif response.status==201:
+            print "Tag operation successful."
+    elif args[0] == 'delete_tag':
+        if len(args) != 3:
+            op.error("wrong number of arguments for delete_tag")
+        graceid = args[1]
+        logN = args[2]
+        tagName = args[3]
+        response = client.delete_tag(graceid, logN, tagName, dispName)
+# XXX Branson: so far worked on the label action.
     elif args[0] == 'label':
         if len(args) != 3:
             op.error("wrong number of arguments for label")
         graceid = args[1]
         label = args[2]
-        response = client.label(graceid, label, alert=options.alert)
+        response = client.writeLabel(graceid, label, alert=options.alert)
+        rdict = response.json()
+        if response.status == 201:
+            for key in rdict:
+                op.error("%s" % rdict[key])
+        elif response.status == 404:
+            op.error("ERROR: Event matching query does not exist.")
+        elif response.status == 400:
+            op.error("ERROR: No such label '%s'" % label)
+# XXX Branson crap.  How are you going to make stuff into ligolw?
+# Look at views.cli_search.  Still how is the best way to handle this?
+# Create xml file on server side?
+# Another option would be to overwrite the client search function 
+# to be the same as in the old client. Then forget about it.
     elif args[0] == 'search':
         response = client.search(" ".join(args[1:]), options.columns, options.ligolw)
+        #response = client.events(" ".join(args[1:]))
     elif args[0] == 'replace':
         if len(args) != 3:
             op.error("wrong number of args for replace")

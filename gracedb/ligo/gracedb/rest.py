@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import httplib
+import httplib, socket
 import mimetypes
 import urllib
 import os
@@ -35,11 +35,77 @@ class HTTPError(Exception):
         Exception.__init__(self, (status, reason+" / "+message))
 
 #-----------------------------------------------------------------
+# HTTP/S Proxy classses
+# Taken from: http://code.activestate.com/recipes/456195/
+
+class ProxyHTTPConnection(httplib.HTTPConnection):
+
+    _ports = {'http' : 80, 'https' : 443}
+
+    def request(self, method, url, body=None, headers={}):
+        #request is called before connect, so can interpret url and get
+        #real host/port to be used to make CONNECT request to proxy
+        proto, rest = urllib.splittype(url)
+        if proto is None:
+            raise ValueError, "unknown URL type: %s" % url
+        #get host
+        host, rest = urllib.splithost(rest)
+        #try to get port
+        host, port = urllib.splitport(host)
+        #if port is not defined try to get from proto
+        if port is None:
+            try:
+                port = self._ports[proto]
+            except KeyError:
+                raise ValueError, "unknown protocol for: %s" % url
+        self._real_host = host
+        self._real_port = port
+        httplib.HTTPConnection.request(self, method, url, body, headers)
+
+
+    def connect(self):
+        httplib.HTTPConnection.connect(self)
+        #send proxy CONNECT request
+        self.send("CONNECT %s:%d HTTP/1.0\r\n\r\n" % (self._real_host, self._real_port))
+        #expect a HTTP/1.0 200 Connection established
+        response = self.response_class(self.sock, strict=self.strict, method=self._method)
+        (version, code, message) = response._read_status()
+        #probably here we can handle auth requests...
+        if code != 200:
+            #proxy returned and error, abort connection, and raise exception
+            self.close()
+            raise socket.error, "Proxy connection failed: %d %s" % (code, message.strip())
+        #eat up header block from proxy....
+        while True:
+            #should not use directly fp probablu
+            line = response.fp.readline()
+            if line == '\r\n': break
+
+class ProxyHTTPSConnection(ProxyHTTPConnection):
+
+    default_port = 443
+
+    def __init__(self, host, port = None, key_file = None, cert_file = None, strict = None):
+        ProxyHTTPConnection.__init__(self, host, port)
+        self.key_file = key_file
+        self.cert_file = cert_file
+
+    def connect(self):
+        ProxyHTTPConnection.connect(self)
+        #make the sock ssl-aware
+        ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
+        self.sock = httplib.FakeSocket(self.sock, ssl)
+
+#-----------------------------------------------------------------
 # Generic GSI REST
 
 class GsiRest(object):
     """docstring for GracedbRest"""
-    def __init__(self, cred=None):
+    def __init__(self, 
+            url=DEFAULT_SERVICE_URL, 
+            proxy_host=None, 
+            proxy_port=3128, 
+            cred=None):
         if not cred:
             cred = findUserCredentials()
         if isinstance(cred, (list, tuple)):
@@ -48,12 +114,23 @@ class GsiRest(object):
             self.cert = self.key = cred
         self.connection = None
 
-    def getConnection(self, url):
-        proto, rest = urllib.splittype(url)
-        host, path = urllib.splithost(rest)
-        host, port = urllib.splitport(host)
-        return httplib.HTTPSConnection(host, port,
-                key_file=self.key, cert_file=self.cert)
+        if proxy_host:
+            self.connector = lambda: ProxyHTTPSConnection(
+                    proxy_host, proxy_port, key_file=self.key, cert_file=self.cert)
+        else:
+            proto, rest = urllib.splittype(url)
+            if proto is None:
+                raise ValueError, "unknown URL type: %s" % url
+            #get host
+            host, rest = urllib.splithost(rest)
+            #try to get port
+            host, port = urllib.splitport(host)
+            port = port or 443
+            self.connector = lambda: httplib.HTTPSConnection(
+                    host, port, key_file=self.key, cert_file=self.cert)
+
+    def getConnection(self):
+        return self.connector()
 
     def request(self, method, url, body=None, headers=None, priming_url=None):
         # Bug in Python (versions < 2.7.1 (?))
@@ -67,7 +144,7 @@ class GsiRest(object):
         url = url and str(url)
         priming_url = priming_url and str(priming_url)
 
-        conn = self.getConnection(url)
+        conn = self.getConnection()
         if priming_url:
             conn.request("GET", priming_url, headers={'connection' : 'keep-alive'})
             response = conn.getresponse()
@@ -134,8 +211,9 @@ class GsiRest(object):
 
 class GraceDb(GsiRest):
     """docstring for GraceDb"""
-    def __init__(self, service_url=DEFAULT_SERVICE_URL, *args, **kwargs):
-        GsiRest.__init__(self, *args, **kwargs)
+    def __init__(self, service_url=DEFAULT_SERVICE_URL, 
+            proxy_host=None, proxy_port=3128, *args, **kwargs):
+        GsiRest.__init__(self, service_url, proxy_host, proxy_port, *args, **kwargs)
 
         self.service_url = service_url
         self._service_info = None
@@ -262,10 +340,10 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid, label=label)
         return self.get(uri)
 
-    def writeLabel(self, graceid, label):
+    def writeLabel(self, graceid, label, alert=None):
         template = self.templates['event-label-template']
         uri = template.format(graceid=graceid, label=label)
-        return self.put(uri)
+        return self.put(uri, body={'alert': alert})
 
     def removeLabel(self, graceid, label):
         template = self.templates['event-label-template']
@@ -357,7 +435,7 @@ def get_content_type(filename):
 #-----------------------------------------------------------------
 # X509 Credentials
 
-
+# XXX No longer checking whether this is a pre-RFC proxy.  Is this okay?
 def findUserCredentials(warnOnOldProxy=1):
 
     proxyFile = os.environ.get('X509_USER_PROXY')
