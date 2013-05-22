@@ -380,6 +380,8 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid, n=n, tagname=tagname)
         return self.delete(uri)
 
+    def ping(self):
+        return self.get(self.links['self'])
 
 #-----------------------------------------------------------------
 # TBD
