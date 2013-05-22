@@ -1854,7 +1854,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
         ss = np.vstack([ss, s])
 
       # get SNR
-      snrtmp = get_optimal_snr( s, npsds[j] )
+      snrtmp = get_optimal_snr( s[0], npsds[j] )
     elif len(freqfac) == 2:
       ts, s = heterodyned_pulsar_signal(starttime, duration, dt, det, pardict)
 
@@ -1929,7 +1929,7 @@ def detector_noise( det, f ):
   elif det == 'H1' or det == 'L1': # iLIGO SRD
     return lalsimulation.SimNoisePSDiLIGOSRD( f )
   elif det == 'H2':
-    return lalsimulation.SimNoisePSDiLIGOSRD( f )/2.
+    return lalsimulation.SimNoisePSDiLIGOSRD( f )*2.
   elif det == 'G1': # GEO_600
     return lalsimulation.SimNoisePSDGEO( f )
   elif det == 'V1': # initial Virgo
@@ -1943,16 +1943,15 @@ def detector_noise( det, f ):
   else:
     raise ValueError, "%s is not a recognised detector" % (det)
 
-
 # function to calculate the optimal SNR of a heterodyned pulsar signal - it
 # takes in a complex signal model and noise standard deviation
 def get_optimal_snr( s, sig ):
   ss = 0
   # sum square of signal
-  for i, s in enumerate(sr):
-    ss = ss + s[i].real*s[i].real + s[i].imag*s[i].imag
+  for val in s:
+    ss = ss + val.real**2 + val.imag**2
 
-  return np.sqrt( ss / (sig*sig) )
+  return np.sqrt( ss / sig**2 )
 
 
 # use the Gelman-Rubins convergence test for MCMC chains, where chains is a list
