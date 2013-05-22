@@ -399,8 +399,6 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
                              LALINFERENCE_PARAM_FIXED );
     verbose_output = 1;
   }
-  LALInferenceAddVariable( runState->algorithmParams, "verbose", &verbose , LALINFERENCE_UINT4_t,
-                           LALINFERENCE_PARAM_FIXED );
 
   /* Number of live points */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nlive" );
