@@ -990,16 +990,14 @@ REAL8 noise_only_model( LALInferenceRunState *runState ){
 
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
 
-  /*Open the Znoise file for writing*/
-  if ( (INT4)freqFactors->length > 1 ){
-    /*set the Znoise filename to the outfile name with "_Znoise" appended*/
-    Znoisefile = XLALStringDuplicate( ppt->value );
-    Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
+  /* open the file to output noise evidence (or null signal evidence) for each individual data stream */
+  /* set the Znoise filename to the outfile name with "_Znoise" appended */
+  Znoisefile = XLALStringDuplicate( ppt->value );
+  Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
 
-    if( (fp = fopen(Znoisefile, "w")) == NULL ){
-      fprintf(stderr, "Error... cannot open output Znoise file!\n");
-      exit(0);
-    }
+  if( (fp = fopen(Znoisefile, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open output Znoise file!\n");
+    exit(0);
   }
 
   /*calculate the evidence */
@@ -1008,6 +1006,7 @@ REAL8 noise_only_model( LALInferenceRunState *runState ){
     REAL8Vector *sumDat = NULL;
 
     REAL8 chunkLength = 0.;
+    REAL8 logLtmp = 0.;
 
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,  "chunkLength" );
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "sumData" );
@@ -1015,24 +1014,23 @@ REAL8 noise_only_model( LALInferenceRunState *runState ){
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];
 
-      logL -= chunkLength * log(sumDat->data[i]) + LAL_LN2 * (chunkLength-1.) + gsl_sf_lnfact(chunkLength);
+      logLtmp -= chunkLength * log(sumDat->data[i]) + LAL_LN2 * (chunkLength-1.) + gsl_sf_lnfact(chunkLength);
     }
 
-    /* if I am dealing with any model with more than one datastream, I will have more than one freq factor and I want to
-     * output the evidence for the data being gaussian noise seperately for each datastream */
-    if((INT4)freqFactors->length > 1){
-      fprintf(fp, "Datastream at freq factor: %f, Z: %f\n", freqFactors->data[k], logL);
-    }
+    logL += logLtmp;
+
+    /* output the noise evidence for each data stream for each detector  */
+    fprintf(fp, "%s\t%.3lf\t%.16le\n", data->name, freqFactors->data[k], logLtmp);
 
     k += 1; /* advance counter now, as freqfactors array index starts at zero.*/
 
     /* reset k, freqfactor counter once all datastreamns for a detector are done */
-    if(k >= (INT4)freqFactors->length) { k = 0; }
+    if( k >= (INT4)freqFactors->length ) { k = 0; }
 
     data = data->next;
   }
 
-  if( (INT4)freqFactors->length > 1 ) { fclose(fp); }
+  fclose(fp);
 
   return logL;
 }

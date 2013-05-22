@@ -865,7 +865,7 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
 
     /* initialise random number generator */
     /* Moved into det loop so same random seed can be used with */
-    /* Different detector combos and still get same noise realisation */
+    /* different detector combos and still get same noise realisation */
     randomParams = XLALCreateRandomParams( seed+i );
 
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
@@ -891,6 +891,7 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
 
     /* set detector */
     ifodata->detector = XLALGetSiteInfo( dets[FACTOR(i,ml)] );
+    snprintf(ifodata->name, sizeof(char)*DETNAMELEN, "%s", dets[FACTOR(i,ml)]);
 
     /* set dummy initial time */
     gpstime.gpsSeconds = 0;
@@ -2194,14 +2195,13 @@ void injectSignal( LALInferenceRunState *runState ){
 
     /* If model uses more than one data stream need to advance data on to next, so this loop only runs once if there
      * is only 1 det */
-    for ( k = 1; k < (INT4)freqFactors->length; k++ ){
-      data = data->next;
-      //fprintf(stderr,"data has been advanced for 2nd datastream\n");
-    }
+    for ( k = 1; k < (INT4)freqFactors->length; k++ ){ data = data->next; }
   }
 
   /* reset data to head */
   data = runState->data;
+
+  fprintf(fpsnr, "# Injected SNR\n");
 
   /* calculate SNRs */
   while ( data ){
@@ -2209,10 +2209,13 @@ void injectSignal( LALInferenceRunState *runState ){
 
     snrmulti += SQUARE(snrval);
 
-    fprintf(fpsnr, "freq_factor: %lf, non-scaled snr: %le\n", freqFactors->data[ndats%(INT4)freqFactors->length],
-            snrval);
-    //fprintf(stderr, "freq_factor: %lf, non-scaled snr: %le\n", freqFactors->data[ndats%(INT4)freqFactors->length],
+    //fprintf(fpsnr, "freq_factor: %lf, non-scaled snr: %le\n", freqFactors->data[ndats%(INT4)freqFactors->length],
     //        snrval);
+
+    /* if not scaling print out individual detector/datastream SNRs */
+    if( snrscale == 0. ){
+      fprintf(fpsnr, "%s\t%.3lf\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
+    }
 
     data = data->next;
 
@@ -2222,12 +2225,9 @@ void injectSignal( LALInferenceRunState *runState ){
   /* get overall multi-detector SNR */
   snrmulti = sqrt(snrmulti);
 
-  //fprintf(stderr, "SNR multi %le\n", snrmulti);
-
   /* only need to print out multi-detector snr if the were multiple detectors or data streams */
   if ( snrscale == 0. ){
-    if ( ndats > 1 ) { fprintf(fpsnr, "%le\n", snrmulti); }
-    else { fprintf(fpsnr, "\n"); }
+    if ( ndats > 1 ) { fprintf(fpsnr, "Coherent\t%le\n", snrmulti); }
   }
   else{
     /* rescale the signal and calculate the SNRs */
@@ -2256,6 +2256,7 @@ void injectSignal( LALInferenceRunState *runState ){
 
     /* get new snrs */
     snrmulti = 0;
+    ndats = 0;
 
     while( data ){
       REAL8 snrval = 0.;
@@ -2265,20 +2266,19 @@ void injectSignal( LALInferenceRunState *runState ){
 
       snrmulti += SQUARE(snrval);
 
-      fprintf(fpsnr, "scaled snr: %le\t", snrval);
+      fprintf(fpsnr, "%s\t%.3lf\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
 
       data = data->next;
+
+      ndats++;
     }
 
     snrmulti = sqrt( snrmulti );
     //fprintf(stderr, "scaled multi data snr: %le\n", snrmulti);
 
     if( ndats > 1 ){
-      fprintf(fpsnr, "%le\t", snrmulti);
-      fprintf(fpsnr, "\n");
+      fprintf(fpsnr, "Coherent\t%le\n", snrmulti);
     }
-    else { fprintf(fpsnr, "\n"); }
-
   }
 
   fclose( fpsnr );
@@ -3339,6 +3339,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   INT4 ndats = 0;
   INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams, "Nlive" );
   REAL8 snrmulti = 0.;
+  REAL8Vector *freqFactors = NULL;
 
   CHAR *snrfile = NULL;
   FILE *fpsnr = NULL;
@@ -3355,7 +3356,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   LALInferenceCopyVariables( runState->livePoints[Nlive-1], loudestParams );
 
   /* make sure that the signal model in runState->data is that of the loudest signal */
-  REAL8 logLnew = runState->likelihood( loudestParams, runState->data, runState->templt);
+  REAL8 logLnew = runState->likelihood( loudestParams, runState->data, runState->templt );
 
   if ( logLnew != *(REAL8 *)LALInferenceGetVariable(
     runState->livePoints[Nlive-1], "logL" ) ){
@@ -3387,6 +3388,10 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   //FILE *fp = NULL;
   //fp = fopen("max_like_signal.txt", "w");
 
+  fprintf(fpsnr, "# Recovered SNR\n");
+
+  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
+
   while( data ){
     REAL8 snrval = calculate_time_domain_snr( data );
 
@@ -3405,7 +3410,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     snrmulti += SQUARE( snrval );
 
     /* print out SNR value */
-    fprintf(fpsnr, "%le\t", snrval);
+    fprintf(fpsnr, "%s\t%.3lf\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
 
     data = data->next;
   }
@@ -3413,8 +3418,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   //fclose(fp);
 
   /* print out multi-detector/multi-datastream SNR value */
-  if ( ndats > 1 ) { fprintf(fpsnr, "%le\n", sqrt(snrmulti)); }
-  else { fprintf(fpsnr, "\n"); }
+  if ( ndats > 1 ) { fprintf(fpsnr, "Coherent\t%le\n", sqrt(snrmulti)); }
 
   fclose( fpsnr );
 }
