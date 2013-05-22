@@ -1888,9 +1888,9 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
     # for triaxial model
     if len(freqfac) == 1:
       # generate random numbers
-      rs = np.random.randn(len(ts), 2)
+      rs = np.random.randn(len(ts[0]), 2)
 
-      for j, t in enumerate(ts):
+      for j, t in enumerate(ts[0]):
         if len(tss.shape) == 1:
           ss[j] = (snrscale*ss[j].real + npsds[i]*rs[j][0]) + 1j*(snrscale*ss[j].imag + npsds[i]*rs[j][1])
         else:
