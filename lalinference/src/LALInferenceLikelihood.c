@@ -134,8 +134,53 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
                               {0.004402554308030674, -0.011250694688474675, 0.004477221036185477, -0.003292722856107429, -0.006603857049454523, -0.006454778807421815, -0.0005191095254772072, -0.005321753837620446, 0.0003370445313891318, -0.014065326026662679, -0.0008193127407211239, -0.0007262691465810616, 0.0010194948614718226, 0.05244900188599414, -0.000256550861960499},
                               {-0.00334987648531921, 0.007465228985669282, -0.006204169580739178, -0.005873218251875899, -0.009241221870695395, 0.003330357760641278, -0.008466566781233205, 0.011126783289057604, -0.0031735521631824654, -0.005619012077114915, -0.007137012700864866, -0.006482422704208912, 0.0033872675386130632, -0.000256550861960499, 0.05380987317762257}};
 
+const char *non_intrinsic_params[] = {"rightascension", "declination", "polarisation", "time",
+                                "deltaLogL", "logL", "deltaloglH1", "deltaloglL1", "deltaloglV1",
+                                "logw", "logPrior", "distance", "logdistance", NULL};
 
+LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *currentParams)
+/***************************************************************/
+/* Return a variables structure containing only intrinsic      */
+/* parameters.                                                 */
+/***************************************************************/
+{
+    // TODO: add pointer to template function here.
+    // (otherwise same parameters but different template will lead to no re-computation!!)
+    LALInferenceVariables intrinsicParams;
+    const char **non_intrinsic_param = non_intrinsic_params;
 
+    intrinsicParams.head      = NULL;
+    intrinsicParams.dimension = 0;
+    LALInferenceCopyVariables(currentParams, &intrinsicParams);
+
+    while (*non_intrinsic_param) {
+        if (LALInferenceCheckVariable(&intrinsicParams, *non_intrinsic_param))
+            LALInferenceRemoveVariable(&intrinsicParams, *non_intrinsic_param);
+        non_intrinsic_param++;
+    }
+
+    return intrinsicParams;
+}
+
+INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i)
+{
+    INT4 lineimin = 0;
+    INT4 lineimax = 0;
+    INT4 lineSwitch=1;
+    INT4 j;
+
+    if(lineFlag) {
+        for(j=0;j<Nlines;j++) {
+            //find range of fourier fourier bins which are excluded from integration
+            lineimin = lines_array[j] - widths_array[j];
+            lineimax = lines_array[j] + widths_array[j];
+
+            //if the current bin is inside the exluded region, set the switch to 0
+            if(i>lineimin && i<lineimax) lineSwitch=0;
+        }
+    }
+    return lineSwitch;
+}
 
 /* ============ Likelihood computations: ========== */
 
@@ -175,9 +220,6 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
   int Nlines = 1;            //number of lines to be removed
   int psdFlag;               //flag for including psd fitting
   int lineFlag;              //flag for excluding lines from integration
-  int lineimin = 0;
-  int lineimax = 0;
-  int lineSwitch;          //switch inside integration to exclude bins
 
   //line removal parameters
   lineFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "removeLinesFlag"));
@@ -295,24 +337,8 @@ REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, L
         }
       }
 
-      /* Remove lines from model */
-      lineSwitch=1;
-
-      if(lineFlag)
-      {
-        for(j=0;j<Nlines;j++)
-        {
-          //find range of fourier fourier bins which are excluded from integration
-          lineimin = lines_array[j] - widths_array[j];//gsl_matrix_get(widths,ifo,j));
-          lineimax = lines_array[j] + widths_array[j];//(int)(gsl_matrix_get(lines,ifo,j) + gsl_matrix_get(widths,ifo,j));
-
-          //if the current bin is inside the exluded region, set the switch to 0
-          if(i>lineimin && i<lineimax) lineSwitch=0;
-        }
-      }
-
       /*only sum over bins which are outside of excluded regions */
-      if(lineSwitch)
+      if(LALInferenceLineSwitch(lineFlag, Nlines, lines_array, widths_array, i))
       {
         chisquared  += temp;
         dataPtr->loglikelihood -= temp;
@@ -379,9 +405,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   int Nlines = 1;            //number of lines to be removed
   int psdFlag = 0;           //flag for including psd fitting
   int lineFlag = 0;          //flag for excluding lines from integration
-  int lineimin = 0;
-  int lineimax = 0;
-  int lineSwitch;          //switch inside integration to exclude bins
 
   //line removal parameters
   if(LALInferenceCheckVariable(currentParams, "removeLinesFlag"))
@@ -434,36 +457,8 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   /* figure out GMST: */
   XLALGPSSetREAL8(&GPSlal, GPSdouble);
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
-  intrinsicParams.head      = NULL;
-  intrinsicParams.dimension = 0;
-  LALInferenceCopyVariables(currentParams, &intrinsicParams);
-  LALInferenceRemoveVariable(&intrinsicParams, "rightascension");
-  LALInferenceRemoveVariable(&intrinsicParams, "declination");
-  LALInferenceRemoveVariable(&intrinsicParams, "polarisation");
-  LALInferenceRemoveVariable(&intrinsicParams, "time");
-  
-  /* Remove likelihood and prior params from intrinsicParams before equality with currentParams is done */
-   if (LALInferenceCheckVariable(&intrinsicParams,"deltalogL"))
-  LALInferenceRemoveVariable(&intrinsicParams, "deltalogL");
-    if (LALInferenceCheckVariable(&intrinsicParams,"logL"))
-  LALInferenceRemoveVariable(&intrinsicParams, "logL");
-    if (LALInferenceCheckVariable(&intrinsicParams,"deltaloglV1"))
-  LALInferenceRemoveVariable(&intrinsicParams, "deltaloglV1");
-    if (LALInferenceCheckVariable(&intrinsicParams,"deltaloglL1"))
-  LALInferenceRemoveVariable(&intrinsicParams, "deltaloglL1");
-    if (LALInferenceCheckVariable(&intrinsicParams,"deltaloglH1"))
-  LALInferenceRemoveVariable(&intrinsicParams, "deltaloglH1");
-      if (LALInferenceCheckVariable(&intrinsicParams,"logw"))
-  LALInferenceRemoveVariable(&intrinsicParams, "logw");
-        if (LALInferenceCheckVariable(&intrinsicParams,"logPrior"))
-  LALInferenceRemoveVariable(&intrinsicParams, "logPrior");
-  
-	if(logDistFlag)
-			LALInferenceRemoveVariable(&intrinsicParams, "logdistance");
-	else
-			LALInferenceRemoveVariable(&intrinsicParams, "distance");
-  // TODO: add pointer to template function here.
-  // (otherwise same parameters but different template will lead to no re-computation!!)
+
+  intrinsicParams = LALInferenceGetInstrinsicParams(currentParams);
 
   chisquared = 0.0;
   /* loop over data (different interferometers): */
@@ -488,7 +483,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       LALInferenceRemoveVariable(dataPtr->modelParams, "time");
     }
     else timeTmp = GPSdouble;
-    different = LALInferenceCompareVariables(dataPtr->modelParams, &intrinsicParams);
+
     /* "different" now may also mean that "dataPtr->modelParams" */
     /* wasn't allocated yet (as in the very 1st iteration).      */
 
@@ -625,24 +620,8 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
         }
       }
 
-      /* Remove lines from model */
-      lineSwitch=1;
-      
-      if(lineFlag)
-      {
-        for(j=0;j<Nlines;j++)
-        {
-          //find range of fourier fourier bins which are excluded from integration
-          lineimin = lines_array[j] - widths_array[j];//gsl_matrix_get(widths,ifo,j));
-          lineimax = lines_array[j] + widths_array[j];//(int)(gsl_matrix_get(lines,ifo,j) + gsl_matrix_get(widths,ifo,j));
-
-          //if the current bin is inside the exluded region, set the switch to 0
-          if(i>lineimin && i<lineimax) lineSwitch=0;
-        }
-      }
-
       /*only sum over bins which are outside of excluded regions */
-      if(lineSwitch)
+      if(LALInferenceLineSwitch(lineFlag, Nlines, lines_array, widths_array, i))
       {
         chisquared  += temp;
         dataPtr->loglikelihood -= temp;
@@ -740,14 +719,8 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
   /* figure out GMST: */
   XLALGPSSetREAL8(&GPSlal, GPSdouble);
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
-  intrinsicParams.head      = NULL;
-  intrinsicParams.dimension = 0;
-  LALInferenceCopyVariables(currentParams, &intrinsicParams);
-  LALInferenceRemoveVariable(&intrinsicParams, "rightascension");
-  LALInferenceRemoveVariable(&intrinsicParams, "declination");
-  LALInferenceRemoveVariable(&intrinsicParams, "polarisation");
-  LALInferenceRemoveVariable(&intrinsicParams, "time");
-  LALInferenceRemoveVariable(&intrinsicParams, "distance");
+
+  intrinsicParams = LALInferenceGetInstrinsicParams(currentParams);
   /*  TODO: add pointer to template function here.                                         */
   /*  (otherwise same parameters but different template will lead to no re-computation!!)  */
 
@@ -1120,15 +1093,8 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
 	/* figure out GMST: */
 	XLALGPSSetREAL8(&GPSlal, GPSdouble);
 	gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
-	intrinsicParams.head      = NULL;
-	intrinsicParams.dimension = 0;
-	LALInferenceCopyVariables(currentParams, &intrinsicParams);
-	LALInferenceRemoveVariable(&intrinsicParams, "rightascension");
-	LALInferenceRemoveVariable(&intrinsicParams, "declination");
-	LALInferenceRemoveVariable(&intrinsicParams, "polarisation");
-	LALInferenceRemoveVariable(&intrinsicParams, "time");
-	LALInferenceRemoveVariable(&intrinsicParams, "distance");
 
+    intrinsicParams = LALInferenceGetInstrinsicParams(currentParams);
 
 	// TODO: add pointer to template function here.
 	// (otherwise same parameters but different template will lead to no re-computation!!)
@@ -1618,9 +1584,6 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   int Nlines = 1;            //number of lines to be removed
   int psdFlag = 0;           //flag for including psd fitting
   int lineFlag = 0;          //flag for excluding lines from integration
-  int lineimin = 0;
-  int lineimax = 0;
-  int lineSwitch;          //switch inside integration to exclude bins
   
   //line removal parameters
   if(LALInferenceCheckVariable(currentParams, "removeLinesFlag"))
@@ -1696,18 +1659,7 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
   
   /* Create parameter set to pass to the template function */
-  intrinsicParams.head      = NULL;
-  intrinsicParams.dimension = 0;
-  LALInferenceCopyVariables(currentParams, &intrinsicParams);
-  if(logDistFlag)
-    LALInferenceRemoveVariable(&intrinsicParams, "logdistance");
-  else
-    LALInferenceRemoveVariable(&intrinsicParams, "distance");
-  LALInferenceRemoveVariable(&intrinsicParams, "rightascension");
-  LALInferenceRemoveVariable(&intrinsicParams, "declination");
-  LALInferenceRemoveVariable(&intrinsicParams, "polarisation");
-  LALInferenceRemoveVariable(&intrinsicParams, "time");
-  LALInferenceRemoveVariable(&intrinsicParams, "phase");
+  intrinsicParams = LALInferenceGetInstrinsicParams(currentParams);
   LALInferenceAddVariable(&intrinsicParams, "phase",&phi0,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   
   // TODO: add pointer to template function here.
@@ -1850,26 +1802,9 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
     /* Loop over freq domain */
     for (i=lower; i<=upper; ++i){
 
-      
-      /* Remove lines from model */
-      lineSwitch=1;
-      
-      if(lineFlag)
-      {
-	for(INT4 j=0;j<Nlines;j++)
-	{
-	  //find range of fourier fourier bins which are excluded from integration
-	  lineimin = lines_array[j] - widths_array[j];//gsl_matrix_get(widths,ifo,j));
-	  lineimax = lines_array[j] + widths_array[j];//(int)(gsl_matrix_get(lines,ifo,j) + gsl_matrix_get(widths,ifo,j));
-	  
-	  //if the current bin is inside the exluded region, set the switch to 0
-	  if(i>lineimin && i<lineimax) lineSwitch=0;
-	}
-      }
-      
-      /*only sum over bins which are outside of excluded regions */
-      if(lineSwitch)
-      {
+    /*only sum over bins which are outside of excluded regions */
+    if(LALInferenceLineSwitch(lineFlag, Nlines, lines_array, widths_array, i))
+    {
 	
 	/* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
 	plainTemplateReal = FplusScaled * creal(dataPtr->freqModelhPlus->data->data[i])

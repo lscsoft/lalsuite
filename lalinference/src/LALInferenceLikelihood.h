@@ -199,6 +199,12 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
  * phase likelihoods */
 void LALInferenceInitLikelihood(LALInferenceRunState *runState);
 
+/** Get the intrinsic parameters from currentParams */
+LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *currentParams);
+
+/** Switch for controlling the removal of lines */
+INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i);
+
 /*@}*/
 
 #endif
