@@ -212,7 +212,7 @@ def from_ascii(filename, columns=None, start=None, end=None,
     if (start or end):
         start = start or segments.NegInfinity
         end = end or segments.PosInfinity
-        span = segments.segment(start, end)
+        span = Segment(start, end)
         check_time = True
     else:
         check_time = False
@@ -276,7 +276,7 @@ def from_root(filename, columns=None, start=None, end=None,
     if (start or end):
         start = start or segments.NegInfinity
         end = end or segments.PosInfinity
-        span = segments.segment(start, end)
+        span = Segment(start, end)
         check_time = True
     else:
         check_time = False
