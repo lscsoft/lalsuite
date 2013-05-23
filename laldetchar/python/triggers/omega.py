@@ -174,7 +174,7 @@ def ascii_trigger(line, columns=OMEGA_COLUMNS):
     ## \endcond
 
 
-def from_ascii(filename, columns=None,, start=None, end=None,
+def from_ascii(filename, columns=None, start=None, end=None,
                channel=None):
     """Read Omega triggers from an ASCII file
 
