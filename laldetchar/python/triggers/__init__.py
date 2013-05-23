@@ -37,6 +37,7 @@ events from their native format, either `ASCII` or `ROOT`, into standard
 # trigs = triggers.load_triggers("mytrigfile.root", "omicron")
 # \endcode
 
+import sys
 import re as _re
 import warnings as _warnings
 _warnings.filterwarnings("ignore", "column name", UserWarning)
@@ -88,7 +89,8 @@ def from_file(filename, etg, columns=None, start=None, end=None, **kwargs):
                                 start=start, end=end, **kwargs)
 
 
-def from_files(filelist, etg, columns=None, start=None, end=None):
+def from_files(filelist, etg, columns=None, start=None, end=None,
+               verbose=False, **kwargs):
     """Read the triggers for the stated trigger generator from each of
     the files in filelist into a single LIGO_LW table.
 
@@ -103,19 +105,41 @@ def from_files(filelist, etg, columns=None, start=None, end=None):
         minimum GPS time for returned triggers
     @param end
         maximum GPS time for returned triggers
+    @param kwargs
+        other keyword arguments passed to the relevant trigger reader
+        for this ETG
 
     @returns a LIGO_LW table containing the triggers
     """
+    if verbose:
+        N = float(len(filelist))
+        def print_verbose(i, final=False):
+            v = "Reading triggers... %d/%d (%.1f%%)" % (i, N, i/N * 100)
+            if final:
+                sys.stdout.write("%s\n" % v)
+            else:
+                sys.stdout.write("%s\r" % v)
+            sys.stdout.flush()
     if isinstance(filelist, _cache.Cache):
         span = Segment(start is not None and start or segments.NegInfinity,
                        end is not None and end or segments.PosInfinity)
         filelist = filelist.sieve(segment=span).pfnlist()
     if len(filelist) == 0:
         return utils.new_ligolw_table(etg, columns=columns)
-    out = from_file(filelist[0], etg, columns=columns, start=start, end=end)
+    if verbose:
+        print_verbose(0)
+    out = from_file(filelist[0], etg, columns=columns, start=start, end=end,
+                    **kwargs)
     extend = out.extend
-    for fp in filelist[1:]:
-        extend(from_file(fp, etg, columns=columns, start=start, end=end))
+    if verbose:
+        print_verbose(1)
+    for i,fp in enumerate(filelist[1:]):
+        extend(from_file(fp, etg, columns=columns, start=start, end=end,
+                         **kwargs))
+        if verbose:
+            print_verbose(i+2)
+    if verbose:
+        print_verbose(N, final=True)
     return out
 
 # close doxygen
