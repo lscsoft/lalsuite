@@ -148,6 +148,9 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+# get numpy flags
+AC_SUBST([NUMPY_CFLAGS], [`python -c "from numpy.lib.utils import get_include ; print '-I%s' % get_include()"`])
+
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE(LAL_HEADER_LINK)

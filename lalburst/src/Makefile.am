@@ -1,6 +1,10 @@
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 lalburstincludedir = $(includedir)/lal
+
+dist_bin_SCRIPTS = \
+	lalapps_string_cs_gamma
+
 lalburstinclude_HEADERS = \
 	CLR.h \
 	EPSearch.h \
