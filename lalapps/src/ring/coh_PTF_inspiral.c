@@ -880,8 +880,8 @@ void coh_PTF_statistic(
 
   for (j = 0; j < numAcceptPoints; ++j) /* loop over time */
   { /* We only loop over points that are not already rejected for speed */
-    i = acceptPointList[j];
-    currPointLoc = i-params->analStartPoint;
+    currPointLoc = acceptPointList[j];
+    i = currPointLoc + params->analStartPoint;
     /* Check if point is going to be rejected */
     if (snrData[currPointLoc])
     { 
@@ -984,8 +984,8 @@ void coh_PTF_statistic(
   {
     for (j = 0; j < numAcceptPoints; ++j) /* loop over time */
     { /* We only loop over points that are not already rejected for speed */
-      i = acceptPointList[j];
-      currPointLoc = i-params->analStartPoint;
+      currPointLoc = acceptPointList[j];
+      i = currPointLoc + params->analStartPoint;
       if (snrData[currPointLoc])
       {
         /* Test whether to do chi^2 */
