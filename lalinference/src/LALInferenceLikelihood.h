@@ -129,44 +129,6 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
 void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData * dataPtr,
                               LALInferenceTemplateFunction templt, COMPLEX16Vector *freqWaveform);
 
-/***********************************************************//**
- * Time domain (log-) likelihood function.                     
- * Returns the non-normalised logarithmic likelihood.          
- * Mathematically equivalent to Frequency domain likelihood.   
- * Time domain version of LALInferenceFreqDomainLogLikelihood()
- *
- * Required (`currentParams') parameters are:                  
- *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
- *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
- *   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        
- *   - "distance"        (REAL8, Mpc, >0)                      
- *   - "time"            (REAL8, GPS sec.)                     
- ***************************************************************/
-//REAL8 LALInferenceTimeDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-//                              LALInferenceTemplateFunction templt);
-
-/***********************************************************//**
- * Based on ComputeFreqDomainResponse above.                   
- * Time-domain single-IFO response computation.                
- * Computes response for a given template.                     
- * Will re-compute template only if necessary                  
- * (i.e., if previous, as stored in data->timeModelhCross,     
- * was based on different parameters or template function).    
- * Carries out timeshifting for a given detector               
- * and projection onto this detector.                          
- * Result stored in timeResponse, assumed to be correctly      
- * initialized												   
- * 
- * Required (`currentParams') parameters are:                  
- *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
- *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
- *   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        
- *   - "distance"        (REAL8, Mpc, >0)                      
- *   - "time"            (REAL8, GPS sec.)                     
- ***************************************************************/		
-//void LALInferenceComputeTimeDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData * dataPtr,
-//                               LALInferenceTemplateFunction templt, REAL8TimeSeries *timeWaveform);
-
 /**
  * Computes the <x|y> overlap in the Fourrier domain.
  */
@@ -178,56 +140,6 @@ REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * data,
  * Used for normalising.
  */
 REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data);
-
-/**
- * Identical to LALInferenceTimeDomainLogLikelihood, but returns the likelihood of a null template.
- * Used for normalising.
- */
-//REAL8 LALInferenceTimeDomainNullLogLikelihood(LALInferenceIFOData *data);
-
-/**
- * Computes the whitened <x|y> overlap in the time domain.
- * For overlaps in time domain including IFO data.
- */
-//REAL8 LALInferenceWhitenedTimeDomainOverlap(const REAL8TimeSeries *whitenedData, const REAL8TimeSeries *data);
-
-/**
- * Takes a Power Spectrum Density and transforms it to the equivalent Time Domain Weights.
- */
-//void LALInferencePSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan,
-//              const REAL8 fMin, const REAL8 fMax); 
-
-/* UINT4 nextPowerOfTwo(const UINT4 n);
-void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
-void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data); */
-/* UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *time, const REAL8TimeSeries *series); */
-
-/**
- * Integrate (in the time-domain) the product of two series.
- */
-//REAL8 LALInferenceIntegrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2);
-
-/**
- * Convolves a time serie and the data (equivalent to product in the Fourrier domain).
- */
-//void LALInferenceConvolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, const REAL8TimeSeries *response);
-/* UINT4 NTDWFromNPSD(const UINT4 NPSD); */
-
-/**
- * Transform a wrapped time serie into a linear time serie. UNUSED.
- */
-//void LALInferenceWrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8TimeSeries *wrapped);
-
-/**
- * Transform a linear time serie into a wrapped time serie. UNUSED.
- */
-//void LALInferenceLinearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear);
-
-/**
- * Computes the <x|y> overlap in the time domain.
- * For template overlaps in time domain.
- */
-//REAL8 LALInferenceTimeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, const REAL8TimeSeries *B);
 
 /***********************************************************//**
  * Student-t (log-) likelihood function                        
