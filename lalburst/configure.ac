@@ -97,7 +97,6 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -110,6 +109,24 @@ AC_HEADER_STDC
 
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
+
+# check for Python
+AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
+AX_PYTHON_DEVEL()
+# hack to remove default lib dirs from PYTHON_LDFLAGS.  only tested on
+# Debian and SL6.  FIXME:  find a way to do this properly
+PYTHON_LDFLAGS="`echo $PYTHON_LDFLAGS | sed -e 'sX-L/usr/lib\(64\)\?\(/\)\?[[:space:]]*XXg'`"
+
+# check for NumPy
+AX_PYTHON_MODULE(numpy, fatal)
+NUMPY_CFLAGS=-I`$PYTHON -c "import numpy;print (numpy.get_include());"`
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS ${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"
+AC_CHECK_HEADER([numpy/arrayobject.h],
+	[PYTHON_CPPFLAGS="${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"],
+	[AC_MSG_ERROR([Numpy extension header not found])],
+	[#include "Python.h"])
+CFLAGS="$old_CFLAGS"
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -147,9 +164,6 @@ LALSUITE_ADD_GCC_FLAGS
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
-
-# get numpy flags
-AC_SUBST([NUMPY_CFLAGS], [`python -c "from numpy.lib.utils import get_include ; print '-I%s' % get_include()"`])
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
