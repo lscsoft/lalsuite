@@ -263,54 +263,59 @@ main(int argc, char *argv[])
     } /* if outputting ASCII time-series */
 
   /* output time-series to frames if requested */
+#ifdef HAVE_LIBLALFRAME
   if ( uvar.TDDframedir )
     {
-      REAL4TimeSeries *Tseries = mTseries->data[0];
-#ifndef HAVE_LIBLALFRAME
-      XLAL_ERROR ( XLAL_EINVAL, "--TDDframedir option not supported, code has to be compiled with lalframe\n" );
-#else
-      /* use standard frame output filename format */
       XLAL_CHECK ( XLALCheckValidDescriptionField ( uvar.outLabel ) == XLAL_SUCCESS, XLAL_EFUNC );
       len = strlen(uvar.TDDframedir) + strlen(uvar.outLabel) + 100;
       char *fname;
-      char IFO[2] = { Tseries->name[0], Tseries->name[1] };
-      LIGOTimeGPS startTimeGPS = Tseries->epoch;
-      REAL8 duration = Tseries->data->length * Tseries->deltaT;
-      XLAL_CHECK ( (fname = LALCalloc (1, len )) != NULL, XLAL_ENOMEM );
-      size_t written = snprintf ( fname, len, "%s/%c-%c%c_%s-%d-%d.gwf",
-                                      uvar.TDDframedir, IFO[0], IFO[0], IFO[1], uvar.outLabel, startTimeGPS.gpsSeconds, (int)duration );
-      XLAL_CHECK ( written < len, XLAL_ESIZE, "Frame-filename exceeds expected maximal length (%d): '%s'\n", len, fname );
 
-      /* define the output frame */
-      struct FrameH *outFrame;
-      XLAL_CHECK ( (outFrame = XLALFrameNew ( &startTimeGPS, duration, uvar.outLabel, 1, 0, 0 )) != NULL, XLAL_EFUNC );
-
-      /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
-      char buffer[LALNameLength];
-      written = snprintf ( buffer, LALNameLength, "%s:%s", Tseries->name, uvar.outLabel );
-      XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Updated frame name exceeds max length (%d): '%s'\n", LALNameLength, buffer );
-      strcpy ( Tseries->name, buffer );
-
-      XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
-
-      /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
       char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
-      FrHistoryAdd ( outFrame, hist );
 
-      /* then we add the version string */
-      FrHistoryAdd ( outFrame, GV.VCSInfoString );
+      for ( UINT4 X=0; X < mTseries->length; X ++ )
+        {
+          REAL4TimeSeries *Tseries = mTseries->data[X];
 
-      /* output the frame to file - compression level 1 (higher values make no difference) */
-      XLAL_CHECK ( (XLALFrameWrite(outFrame, fname,1) == 0) , XLAL_EFUNC );
+          /* use standard frame output filename format */
+          char IFO[2] = { Tseries->name[0], Tseries->name[1] };
+          LIGOTimeGPS startTimeGPS = Tseries->epoch;
+          REAL8 duration = Tseries->data->length * Tseries->deltaT;
+          XLAL_CHECK ( (fname = LALCalloc (1, len )) != NULL, XLAL_ENOMEM );
+          size_t written = snprintf ( fname, len, "%s/%c-%c%c_%s-%d-%d.gwf",
+                                      uvar.TDDframedir, IFO[0], IFO[0], IFO[1], uvar.outLabel, startTimeGPS.gpsSeconds, (int)duration );
+          XLAL_CHECK ( written < len, XLAL_ESIZE, "Frame-filename exceeds expected maximal length (%d): '%s'\n", len, fname );
 
-      /* free the frame, frame file name and history memory */
-      FrameFree ( outFrame );
-      LALFree ( fname );
+          /* define the output frame */
+          struct FrameH *outFrame;
+          XLAL_CHECK ( (outFrame = XLALFrameNew ( &startTimeGPS, duration, uvar.outLabel, 1, 0, 0 )) != NULL, XLAL_EFUNC );
+
+          /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
+          char buffer[LALNameLength];
+          written = snprintf ( buffer, LALNameLength, "%s:%s", Tseries->name, uvar.outLabel );
+          XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Updated frame name exceeds max length (%d): '%s'\n", LALNameLength, buffer );
+          strcpy ( Tseries->name, buffer );
+
+          XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
+
+          /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
+          FrHistoryAdd ( outFrame, hist );
+
+          /* then we add the version string */
+          FrHistoryAdd ( outFrame, GV.VCSInfoString );
+
+          /* output the frame to file - compression level 1 (higher values make no difference) */
+          XLAL_CHECK ( XLALFrameWrite ( outFrame, fname, 1 ) == XLAL_SUCCESS , XLAL_EFUNC );
+
+          /* free the frame, frame file name and history memory */
+          FrameFree ( outFrame );
+          LALFree ( fname );
+
+        } // for X < numDetectors
+
       LALFree ( hist );
-#endif
-    } /* if outputting time-series to frames */
 
-
+    } /* if uvar.TDDframedir: outputting time-series to frames */
+#endif // HAVE_LIBLALFRAME
 
   /* ---------- free memory ---------- */
   XLALDestroyMultiREAL4TimeSeries ( mTseries );
@@ -445,6 +450,13 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLALFree(earthdata);
   XLALFree(sundata);
 
+
+#ifndef HAVE_LIBLALFRAME
+  if ( uvar->TDDframedir ) {
+    XLAL_ERROR ( XLAL_EINVAL, "--TDDframedir option not supported, code has to be compiled with lalframe\n" );
+  }
+#endif
+
   return XLAL_SUCCESS;
 
 } /* XLALInitMakefakedata() */
@@ -482,6 +494,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregSTRINGUserStruct(  outLabel,	         0, UVAR_OPTIONAL, "'misc' entry in SFT-filenames or 'description' entry of frame filenames" );
 
   XLALregSTRINGUserStruct ( TDDfile,            't', UVAR_OPTIONAL, "Filename to output time-series into");
+  XLALregSTRINGUserStruct ( TDDframedir,	'F', UVAR_OPTIONAL, "Directory to output frame time-series into");
 
   XLALregSTRINGUserStruct ( logfile,            'l', UVAR_OPTIONAL, "Filename for log-output");
 
