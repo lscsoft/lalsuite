@@ -800,12 +800,12 @@ int main(int argc, char *argv[]){
 
   /* Set up currentParams with variables to be used */
   LALInferenceInitCBCVariables(runState);
+
+  /* Choose the likelihood */
+  LALInferenceInitLikelihood(runState);
  
   /* Call the extra code that was removed from previous function */
   LALInferenceInitMCMCState(runState);
- 
-  /* Choose the likelihood */
-  LALInferenceInitLikelihood(runState);
  
   if(runState==NULL) {
     fprintf(stderr, "runState not allocated (%s, line %d).\n",
