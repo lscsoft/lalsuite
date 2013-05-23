@@ -127,8 +127,6 @@ const SFTConstraints empty_SFTConstraints;
 const SFTCatalog empty_SFTCatalog;
 
 /*---------- internal prototypes ----------*/
-static LALStringVector *find_files (const CHAR *fpattern);
-
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
 static BOOLEAN is_pattern(const char*c); /* filename string is a glob-style pattern */
@@ -201,7 +199,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 
   /* find matching filenames */
   LALStringVector *fnames;
-  XLAL_CHECK_NULL ( (fnames = find_files (file_pattern)) != NULL, XLAL_EIO, "Failed to find filelist matching pattern '%s'.\n\n", file_pattern );
+  XLAL_CHECK_NULL ( (fnames = XLALFindFiles (file_pattern)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", file_pattern );
   UINT4 numFiles = fnames->length;
 
   UINT4 numSFTs = 0;
@@ -2683,7 +2681,7 @@ LALGetSFTheaders (LALStatus *status,			/**< pointer to LALStatus structure */
     t1 = 0;
 
   /* get filelist of files matching fpattern */
-  if ( (fnames = find_files (fpattern)) == NULL) {
+  if ( (fnames = XLALFindFiles (fpattern)) == NULL) {
     ABORT (status, SFTFILEIO_EGLOB, SFTFILEIO_MSGEGLOB);
   }
 
@@ -2888,7 +2886,7 @@ LALReadSFTfiles (LALStatus *status,			/**< pointer to LALStatus structure */
 
   /* make filelist
    * NOTE: we don't use glob() as it was reported to fail under condor */
-  if ( (fnames = find_files (fpattern)) == NULL) {
+  if ( (fnames = XLALFindFiles (fpattern)) == NULL) {
     ABORT (status, SFTFILEIO_EGLOB, SFTFILEIO_MSGEGLOB);
   }
 
@@ -4054,8 +4052,8 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
  * NOTE: the list of filenames is returned SORTED ALPHABETICALLY !
  *
  *----------------------------------------------------------------------*/
-static LALStringVector *
-find_files (const CHAR *globstring)
+LALStringVector *
+XLALFindFiles (const CHAR *globstring)
 {
 #ifndef _MSC_VER
   DIR *dir;
@@ -4076,10 +4074,12 @@ find_files (const CHAR *globstring)
   UINT4 namelen;
   CHAR *thisFname = NULL;
 
+  XLAL_CHECK_NULL ( globstring != NULL, XLAL_EINVAL );
+
 #define FILE_SEPARATOR ';'
   if ( (ptr2 = strchr (globstring, FILE_SEPARATOR)) )
     { /* globstring is multi-pattern ("pattern1;pattern2;pattern3") */
-      /* call find_files() with every pattern found in globstring */
+      /* call XLALFindFiles() with every pattern found in globstring */
 
       ptr1 = (const CHAR*)globstring;
       while ( (ptr2 = strchr (ptr1, FILE_SEPARATOR)) )
@@ -4093,13 +4093,13 @@ find_files (const CHAR *globstring)
 	      LALFree (filelist[j]);
 	    if(filelist)
 	      LALFree (filelist);
-	    return(NULL);
+	    XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	  }
 	  strncpy(thisFname,ptr1,namelen);
 	  thisFname[namelen] = '\0';
 
-	  /* call find_files(thisFname) */
-	  ret = find_files(thisFname);
+	  /* call XLALFindFiles(thisFname) */
+	  ret = XLALFindFiles(thisFname);
 
 	  /* append the output (if any) to the existing filelist */
 	  if (ret) {
@@ -4108,7 +4108,7 @@ find_files (const CHAR *globstring)
 	    if ((filelist = LALRealloc (filelist, (newNumFiles) * sizeof(CHAR*))) == NULL) {
 	      XLALDestroyStringVector(ret);
 	      LALFree(thisFname);
-	      return (NULL);
+	      XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	    }
 
 	    for(j=0; j < ret->length; j++)
@@ -4122,7 +4122,7 @@ find_files (const CHAR *globstring)
 	    if(filelist)
 	      LALFree (filelist);
 	    LALFree(thisFname);
-	    return(NULL);
+	    XLAL_ERROR_NULL ( XLAL_EFUNC);
 	  }
 
 	  /* skip the separator */
@@ -4131,13 +4131,13 @@ find_files (const CHAR *globstring)
 
       LALFree(thisFname);
 
-      ret = find_files(ptr1);
+      ret = XLALFindFiles(ptr1);
       if (ret) {
 	newNumFiles = numFiles + ret->length;
 
 	if ((filelist = LALRealloc (filelist, (newNumFiles) * sizeof(CHAR*))) == NULL) {
 	  XLALDestroyStringVector(ret);
-	  return (NULL);
+	  XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	}
 
 	for(j=0; j < ret->length; j++)
@@ -4158,7 +4158,7 @@ find_files (const CHAR *globstring)
     /* create list file name
        prefix with "./" if not an absolute file name (see LALOpenDataFile()) */
     if ((listfname = LALCalloc(1, strlen(globstring) + 3)) == NULL) {
-      return NULL;
+      XLAL_ERROR_NULL ( XLAL_ENOMEM ) ;
     }
     ptr1 = globstring + strlen(LIST_PREFIX);
     if (*ptr1 == '/')
@@ -4170,8 +4170,7 @@ find_files (const CHAR *globstring)
 
     /* read list of file names from file */
     if (XLALParseDataFile(&list, listfname) != XLAL_SUCCESS) {
-      XLALPrintError("\n%s: Could not parse list file '%s'\n", __func__, listfname);
-      return NULL;
+      XLAL_ERROR_NULL ( XLAL_EFUNC, "Could not parse list file '%s'\n",listfname );
     }
 
     /* allocate "filelist" */
@@ -4180,12 +4179,12 @@ find_files (const CHAR *globstring)
       XLALPrintWarning("\n%s: List file '%s' contains no file names\n", __func__, listfname);
       LALFree(listfname);
       XLALDestroyParsedDataFile(list);
-      return NULL;
+      XLAL_ERROR_NULL ( XLAL_EINVAL );
     }
     if ((filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
       LALFree(listfname);
       XLALDestroyParsedDataFile(list);
-      return NULL;
+      XLAL_ERROR_NULL ( XLAL_ENOMEM );
     }
 
     /* copy file names from "list" to "filelist" */
@@ -4212,7 +4211,7 @@ find_files (const CHAR *globstring)
 	LALFree(filelist);
 	LALFree(listfname);
 	XLALDestroyParsedDataFile(list);
-	return NULL;
+	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       /* copy string */
@@ -4244,7 +4243,7 @@ find_files (const CHAR *globstring)
 	{ /* yes, copy directory-path */
 	  dirlen = (size_t)(ptr1 - globstring) + 1;
 	  if ( (dname = LALCalloc (1, dirlen)) == NULL)
-	    return (NULL);
+	    XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	  strncpy (dname, globstring, dirlen);
 	  dname[dirlen-1] = '\0';
 
@@ -4253,7 +4252,7 @@ find_files (const CHAR *globstring)
 	  if ( (fpattern = LALCalloc (1, strlen(ptr1) + 1)) == NULL )
 	    {
 	      LALFree (dname);
-	      return (NULL);
+	      XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	    }
 	  strcpy (fpattern, ptr1);
 
@@ -4261,13 +4260,13 @@ find_files (const CHAR *globstring)
       else /* no pathname given, assume "." */
 	{
 	  if ( (dname = LALCalloc(1, 2)) == NULL)
-	    return (NULL);
+            XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	  strcpy (dname, ".");
 
 	  if ( (fpattern = LALCalloc(1, strlen(globstring)+1)) == NULL)
 	    {
 	      LALFree (dname);
-	      return (NULL);
+              XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	    }
 	  strcpy (fpattern, globstring);	/* just file-pattern given */
 	} /* if !ptr */
@@ -4278,7 +4277,7 @@ find_files (const CHAR *globstring)
       if ( (dir = opendir(dname)) == NULL) {
 	XLALPrintError ("Can't open data-directory `%s`\n", dname);
 	LALFree (dname);
-	return (NULL);
+        XLAL_ERROR_NULL ( XLAL_EIO );
       }
 #else
       if ((ptr3 = (CHAR*)LALMalloc(strlen(dname)+3)) == NULL)
@@ -4289,7 +4288,7 @@ find_files (const CHAR *globstring)
       if (dir == -1) {
 	XLALPrintError ("Can't find file for pattern `%s`\n", ptr3);
 	LALFree (dname);
-	return (NULL);
+        XLAL_ERROR_NULL ( XLAL_EIO );
       }
 #endif
 
@@ -4315,7 +4314,7 @@ find_files (const CHAR *globstring)
 	      if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
 		LALFree (dname);
 		LALFree (fpattern);
-		return (NULL);
+                XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	      }
 
 	      namelen = strlen(thisFname) + strlen(dname) + 2 ;
@@ -4326,7 +4325,7 @@ find_files (const CHAR *globstring)
 		LALFree (filelist);
 		LALFree (dname);
 		LALFree (fpattern);
-		return (NULL);
+                XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	      }
 
 	      sprintf(filelist[numFiles-1], "%s%c%s", dname, DIR_SEPARATOR, thisFname);
@@ -4356,19 +4355,20 @@ find_files (const CHAR *globstring)
 
       numFiles++;
       if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
-	return (NULL);
+        XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
       namelen = strlen(globstring) + 1;
       if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
 	LALFree (filelist);
-	return (NULL);
+        XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
       strcpy(filelist[numFiles-1], globstring );
     }
 
   /* ok, did we find anything? */
   if (numFiles == 0)
-    return (NULL);
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
+
 
   /* make a LALStringVector from the list of filenames */
   if ( (ret = LALCalloc (1, sizeof (LALStringVector) )) == NULL)
@@ -4376,7 +4376,7 @@ find_files (const CHAR *globstring)
       for (j=0; j<numFiles; j++)
 	LALFree (filelist[j]);
       LALFree (filelist);
-      return (NULL);
+      XLAL_ERROR_NULL ( XLAL_ENOMEM );
     }
   ret->length = numFiles;
   ret->data = filelist;
@@ -4386,7 +4386,8 @@ find_files (const CHAR *globstring)
     XLALSortStringVector (ret);
 
   return (ret);
-} /* find_files() */
+
+} /* XLALFindFiles() */
 
 /* portable file-len function */
 static long get_file_len ( FILE *fp )

@@ -295,6 +295,8 @@ void LALCheckSFTCatalog ( LALStatus *status, INT4 *check_result, SFTCatalog *cat
 void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
 void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
 
+LALStringVector *XLALFindFiles (const CHAR *globstring);
+
 /*================================================================================
  * OBSOLETE v1-only API [DEPRECATED!]
  *================================================================================*/
