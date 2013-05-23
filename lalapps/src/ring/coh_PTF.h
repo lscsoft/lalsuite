@@ -580,8 +580,27 @@ REAL4 coh_PTF_get_spin_SNR(
   UINT4 vecLengthTwo
 );
 
-void coh_PTF_template_time_series_cluster(
+void coh_PTF_calculate_coherent_SNR(
+  struct coh_PTF_params      *params,
+  REAL4                      *snrData,
+  REAL4TimeSeries            **pValues,
+  REAL4TimeSeries            **snrComps,
+  INT4                       *timeOffsetPoints,
+  COMPLEX8VectorSequence     **PTFqVec,
+  REAL4                      *Fplus,
+  REAL4                      *Fcross,
+  gsl_matrix                 *eigenvecs,
+  gsl_vector                 *eigenvals,
+  UINT4                      segStartPoint,
+  UINT4                      segEndPoint,
+  UINT4                      vecLength,
+  UINT4                      vecLengthTwo,
+  UINT4                      spinTemplate
+);
+
+UINT4 coh_PTF_template_time_series_cluster(
   REAL4TimeSeries *cohSNR,
+  UINT4 *acceptPoints,
   INT4 numPointCheck,
   UINT4 startPoint,
   UINT4 endPoint

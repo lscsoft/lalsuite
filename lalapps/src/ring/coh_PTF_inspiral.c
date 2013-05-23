@@ -691,6 +691,8 @@ void coh_PTF_statistic(
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     UNUSED REAL4TimeSeries         *gammaBeta[2],
+/* NOTE: This is unused because the spin record extrinsic parameters function 
+ * is broken. When fixed, this will be used, so DO NOT DELETE */
     REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
@@ -726,11 +728,12 @@ void coh_PTF_statistic(
   UINT4  csVecLength,csVecLengthTwo;
   UINT4  i, j, k, ifoNumber, vecLength, vecLengthTwo,ifoNum1,ifoNum2;
   INT4   timeOffsetPoints[LAL_NUM_IFO],tOffset1,tOffset2,numPointCheck;
-  REAL4 *v1p,*v2p,coincSNR,snglSNRthresh;
-  REAL4 v1_dot_u1,v2_dot_u2,max_eigen;
+  REAL4 *v1p,*v2p,snglSNRthresh;
   REAL4 cohSNRThreshold,cohSNRThresholdSq;
   REAL4 *powerBinsPlus[LAL_NUM_IFO+1],*powerBinsCross[LAL_NUM_IFO+1];
-  UINT4 currPointLoc;
+  REAL4 *snrData;
+  UINT4 currPointLoc,numAcceptPoints;
+  UINT4 *acceptPointList;
   struct bankCohTemplateOverlaps *bankCohOverlaps,*autoCohOverlaps;
   gsl_matrix *eigenvecs,*eigenvecsNull,*Autoeigenvecs;
   gsl_vector *eigenvals,*eigenvalsNull,*Autoeigenvals;
@@ -785,6 +788,7 @@ void coh_PTF_statistic(
   eigenvalsNull = gsl_vector_alloc(vecLength);
   v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
   v2p = LALCalloc(vecLengthTwo , sizeof(REAL4));
+  acceptPointList = LALCalloc(segEndPoint - segStartPoint, sizeof(UINT4));
 
   /* Pick the relevant SNR threshold */
   cohSNRThreshold = params->threshold;
@@ -850,124 +854,21 @@ void coh_PTF_statistic(
     tOffset2 = timeOffsetPoints[ifoNum2] - params->analStartPointBuf;
   }
 
-  verbose("-->Begin loop over time at %ld \n",timeval_subtract(&startTime));
+  verbose("-->Begin SNR calculation at %ld \n",timeval_subtract(&startTime));
 
-  for (i = segStartPoint; i < segEndPoint; ++i) /* Main loop over time */
-  {
-    currPointLoc = i-params->analStartPoint;
-    /* Don't bother calculating coherent SNR if all ifo's SNR is less than
-       some value */
-    for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
-    {
-      if (params->haveTrig[ifoNumber])
-      {
-        if (snrComps[ifoNumber]->data->
-                data[i-params->analStartPointBuf+timeOffsetPoints[ifoNumber]]
-                 > snglSNRthresh)
-        {
-          break;
-        }
-      }
-    }
-    if (ifoNumber == LAL_NUM_IFO)
-    {
-      cohSNR->data->data[currPointLoc] = 0;
-      continue;
-    }
+  snrData = cohSNR->data->data;
 
-    if (params->numIFO == 2 && (! params->singlePolFlag) &&\
-        (!params->faceOnStatistic) )
-    { /*If only 2 detectors cohSNR = coincident SNR. SO just use that */
-      cohSNR->data->data[currPointLoc] = sqrt(\
-                          snrComps[ifoNum1]->data->data[i+tOffset1] *
-                          snrComps[ifoNum1]->data->data[i+tOffset1] +
-                          snrComps[ifoNum2]->data->data[i+tOffset2] *
-                          snrComps[ifoNum2]->data->data[i+tOffset2]);
-    }
-    else
-    {
-      coincSNR = 0;
-      /* Calculate the coincident SNR at this time point*/
-      for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
-      {
-        if (params->haveTrig[ifoNumber])
-        {
-          coincSNR += snrComps[ifoNumber]->data->data[\
-              i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]]
-              * snrComps[ifoNumber]->data->data[\
-              i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]];
-        }
-      }
-      /* Do not need to calculate coherent SNR if coinc SNR < threshold */
-      /* NOTE: Cheaper to compare coincSNRSq than use pow(x,0.5) */
-      if (coincSNR < cohSNRThresholdSq)
-      {
-        cohSNR->data->data[currPointLoc] = 0;
-        continue;
-      }
-
-      /* This function combines the various (Q_i | s) and rotates them into
-       * the orthonormal basis, using the eigen[vector,value]s.
-       */
-      coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,Fplus,Fcross,
-        timeOffsetPoints,eigenvecs,eigenvals,
-        params->numTimePoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
-
-      /* And SNR is calculated
-       * For non-spin+multi-site+coherent: 
-       *               v1p[0] * v1p[0] = (\bf{F}_+\bf{h}_0 | \bf{s})^2
-       *               v1p[1] * v1p[1] = (\bf{F}_x\bf{h}_0 | \bf{s})^2
-       *               v2p[0] * v2p[0] = (\bf{F}_+\bf{h}_{\pi/2} | \bf{s})^2
-       *               v2p[1] * v2p[1] = (\bf{F}_x\bf{h}_{\pi/2} | \bf{s})^2
-       * For non-spin+single-site/face-on there will only be two components
-       * in this calculation, but otherwise the same.
-       */
-      if (spinTemplate == 0)
-      {
-        v1_dot_u1 = v2_dot_u2 = 0.0;
-        for (j = 0; j < vecLengthTwo; j++)
-        {
-          v1_dot_u1 += v1p[j] * v1p[j];
-          v2_dot_u2 += v2p[j] * v2p[j];
-        }
-        max_eigen = (v1_dot_u1 + v2_dot_u2);
-        if (max_eigen < cohSNRThresholdSq)
-        {
-          cohSNR->data->data[currPointLoc] = 0;
-          continue;
-        }
-        else
-        {
-          cohSNR->data->data[currPointLoc] = sqrt(max_eigen);
-          if (params->storeAmpParams)
-          {
-            for (j = 0 ; j < vecLengthTwo ; j++)
-            {
-              pValues[j]->data->data[currPointLoc] = v1p[j];
-              pValues[j+vecLengthTwo]->data->data[currPointLoc] = v2p[j];
-            }
-          }
-
-        }
-      }
-      else
-      { /* Spinning case follow PTF notation to get SNR */
-        cohSNR->data->data[i-params->analStartPoint] = \
-            coh_PTF_get_spin_SNR(v1p,v2p,vecLengthTwo);
-        if (params->storeAmpParams)
-        {
-          fprintf(stderr,"Spinning amplitude stuff is currently disabled\n");
-          /* coh_PTF_get_spin_amp_terms(.......) */
-        }
-      }
-    }
-  }
+  coh_PTF_calculate_coherent_SNR(params,snrData,pValues,snrComps,\
+                                 timeOffsetPoints,PTFqVec,Fplus,Fcross,\
+                                 eigenvecs,eigenvals,segStartPoint,segEndPoint,\
+                                 vecLength,vecLengthTwo,spinTemplate);
 
   verbose("-->Calculated all SNRs at %ld \n",timeval_subtract(&startTime));
 
   numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
 
-  coh_PTF_template_time_series_cluster(cohSNR,numPointCheck,\
+  numAcceptPoints = coh_PTF_template_time_series_cluster(\
+                                       cohSNR,acceptPointList,numPointCheck,\
                                        segStartPoint - params->analStartPoint,\
                                        segEndPoint - params->analStartPoint);
 
@@ -977,11 +878,12 @@ void coh_PTF_statistic(
    * Only calculated if this will be a trigger
    */
 
-  for (i = segStartPoint; i < segEndPoint; ++i) /* loop over time */
-  {
+  for (j = 0; j < numAcceptPoints; ++j) /* loop over time */
+  { /* We only loop over points that are not already rejected for speed */
+    i = acceptPointList[j];
     currPointLoc = i-params->analStartPoint;
     /* Check if point is going to be rejected */
-    if (cohSNR->data->data[currPointLoc])
+    if (snrData[currPointLoc])
     { 
       /* First sbv to be calculated is the null stream SNR. */
       if (params->doNullStream)
@@ -1080,10 +982,11 @@ void coh_PTF_statistic(
 
   if (params->doChiSquare)
   {
-    for (i = segStartPoint; i < segEndPoint; ++i) /* loop over time */
-    {
+    for (j = 0; j < numAcceptPoints; ++j) /* loop over time */
+    { /* We only loop over points that are not already rejected for speed */
+      i = acceptPointList[j];
       currPointLoc = i-params->analStartPoint;
-      if (cohSNR->data->data[currPointLoc])
+      if (snrData[currPointLoc])
       {
         /* Test whether to do chi^2 */
         if (params->chiSquareCalcThreshold)
@@ -1210,6 +1113,7 @@ void coh_PTF_statistic(
 
   LALFree(v1p);
   LALFree(v2p);
+  LALFree(acceptPointList);
   gsl_matrix_free(eigenvecs);
   gsl_vector_free(eigenvals);
   gsl_matrix_free(eigenvecsNull);

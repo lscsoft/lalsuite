@@ -1664,26 +1664,174 @@ XXXXX
 }
 */
 
-void coh_PTF_template_time_series_cluster(
+void coh_PTF_calculate_coherent_SNR(
+  struct coh_PTF_params      *params,
+  REAL4                      *snrData,
+  REAL4TimeSeries            **pValues,
+  REAL4TimeSeries            **snrComps,
+  INT4                       *timeOffsetPoints,
+  COMPLEX8VectorSequence     **PTFqVec,
+  REAL4                      *Fplus,
+  REAL4                      *Fcross,
+  gsl_matrix                 *eigenvecs,
+  gsl_vector                 *eigenvals,
+  UINT4                      segStartPoint,
+  UINT4                      segEndPoint,
+  UINT4                      vecLength,
+  UINT4                      vecLengthTwo,
+  UINT4                      spinTemplate
+)
+{
+  REAL4 snglSNRthresh = params->snglSNRThreshold;
+  REAL4 *v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
+  REAL4 *v2p = LALCalloc(vecLengthTwo , sizeof(REAL4));
+
+  UINT4 i,j,ifoNumber,currPointLoc,ifoNum1,ifoNum2;
+  INT4 tOffset1,tOffset2;
+  REAL4 v1_dot_u1,v2_dot_u2,max_eigen,coincSNR;
+  REAL4 cohSNRThresholdSq = params->threshold * params->threshold;
+
+  for (i = segStartPoint; i < segEndPoint; ++i) /* Main loop over time */
+  {
+    currPointLoc = i-params->analStartPoint;
+    /* Don't bother calculating coherent SNR if all ifo's SNR is less than
+       some value */
+    for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if (params->haveTrig[ifoNumber])
+      {
+        if (snrComps[ifoNumber]->data->
+                data[i-params->analStartPointBuf+timeOffsetPoints[ifoNumber]]
+                 > snglSNRthresh)
+        {
+          break;
+        }
+      }
+    }
+    if (ifoNumber == LAL_NUM_IFO)
+    {
+      snrData[currPointLoc] = 0;
+      continue;
+    }
+
+    if (params->numIFO == 2 && (! params->singlePolFlag) &&\
+        (!params->faceOnStatistic) )
+    { /*If only 2 detectors cohSNR = coincident SNR. SO just use that */
+      max_eigen = snrComps[ifoNum1]->data->data[i+tOffset1] *
+                          snrComps[ifoNum1]->data->data[i+tOffset1] +
+                          snrComps[ifoNum2]->data->data[i+tOffset2] *
+                          snrComps[ifoNum2]->data->data[i+tOffset2];
+      if (max_eigen < cohSNRThresholdSq)
+      {
+        snrData[currPointLoc] = 0;
+        continue;
+      }
+      snrData[currPointLoc] = sqrt(max_eigen);
+    }
+    else
+    {
+      coincSNR = 0;
+      /* Calculate the coincident SNR at this time point*/
+      for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          coincSNR += snrComps[ifoNumber]->data->data[\
+              i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]]
+              * snrComps[ifoNumber]->data->data[\
+              i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]];
+        }
+      }
+      /* Do not need to calculate coherent SNR if coinc SNR < threshold */
+      /* NOTE: Cheaper to compare coincSNRSq than use pow(x,0.5) */
+      if (coincSNR < cohSNRThresholdSq)
+      {
+        snrData[currPointLoc] = 0;
+        continue;
+      }
+
+      /* This function combines the various (Q_i | s) and rotates them into
+       * the orthonormal basis, using the eigen[vector,value]s.
+       */
+      coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,Fplus,Fcross,
+        timeOffsetPoints,eigenvecs,eigenvals,
+        params->numTimePoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
+
+      /* And SNR is calculated
+       * For non-spin+multi-site+coherent: 
+       *               v1p[0] * v1p[0] = (\bf{F}_+\bf{h}_0 | \bf{s})^2
+       *               v1p[1] * v1p[1] = (\bf{F}_x\bf{h}_0 | \bf{s})^2
+       *               v2p[0] * v2p[0] = (\bf{F}_+\bf{h}_{\pi/2} | \bf{s})^2
+       *               v2p[1] * v2p[1] = (\bf{F}_x\bf{h}_{\pi/2} | \bf{s})^2
+       * For non-spin+single-site/face-on there will only be two components
+       * in this calculation, but otherwise the same.
+       */
+      if (spinTemplate == 0)
+      {
+        v1_dot_u1 = v2_dot_u2 = 0.0;
+        for (j = 0; j < vecLengthTwo; j++)
+        {
+          v1_dot_u1 += v1p[j] * v1p[j];
+          v2_dot_u2 += v2p[j] * v2p[j];
+        }
+        max_eigen = (v1_dot_u1 + v2_dot_u2);
+        if (max_eigen < cohSNRThresholdSq)
+        {
+          snrData[currPointLoc] = 0;
+          continue;
+        }
+        else
+        {
+          snrData[currPointLoc] = sqrt(max_eigen);
+          if (params->storeAmpParams)
+          {
+            for (j = 0 ; j < vecLengthTwo ; j++)
+            {
+              pValues[j]->data->data[currPointLoc] = v1p[j];
+              pValues[j+vecLengthTwo]->data->data[currPointLoc] = v2p[j];
+            }
+          }
+
+        }
+      }
+      else
+      { /* Spinning case follow PTF notation to get SNR */
+        snrData[i-params->analStartPoint] = \
+            coh_PTF_get_spin_SNR(v1p,v2p,vecLengthTwo);
+        if (params->storeAmpParams)
+        {
+          fprintf(stderr,"Spinning amplitude stuff is currently disabled\n");
+          /* coh_PTF_get_spin_amp_terms(.......) */
+        }
+      }
+    }
+  }
+}
+
+
+UINT4 coh_PTF_template_time_series_cluster(
   REAL4TimeSeries *cohSNR,
+  UINT4 *acceptPoints,
   INT4 numPointCheck,
   UINT4 startPoint,
   UINT4 endPoint
 )
 {
   UINT4 ui;
-  //UINT4 check;
+  UINT4 count = 0;
   UINT4 logicArray[cohSNR->data->length];
   INT4 j,tempPoint;
   /* Have to cast from UINT4 to INT4 to avoid warning */
   INT4 startPointI = (INT4) startPoint;
   INT4 endPointI = (INT4) endPoint;
+
+  REAL4 *snrData = cohSNR->data->data;
+
   for (ui = startPoint; ui < endPoint; ui++)
   {
     logicArray[ui] = 0;
-    if (cohSNR->data->data[ui])
+    if (snrData[ui])
     {
-      //check = 1;
       for (j = -numPointCheck; j < numPointCheck; j++)
       {
         tempPoint = ui + j;
@@ -1695,7 +1843,7 @@ void coh_PTF_template_time_series_cluster(
         {
           continue;
         }
-        if (cohSNR->data->data[tempPoint] > cohSNR->data->data[ui])
+        if (snrData[tempPoint] > snrData[ui])
         {
           logicArray[ui] = 1;
           break;
@@ -1707,9 +1855,18 @@ void coh_PTF_template_time_series_cluster(
   {
     if (logicArray[ui])
     {
-      cohSNR->data->data[ui] = 0.;
+      snrData[ui] = 0.;
+    }
+    else
+    {
+      if (snrData[ui])
+      {
+        acceptPoints[count] = ui;
+        count++;  
+      }
     }
   }
+  return count;
 }
 
 UINT4 coh_PTF_test_veto_vals(
