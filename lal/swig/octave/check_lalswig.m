@@ -256,6 +256,7 @@ t4struct.t = 1234.5;
 assert(t4struct.t == 1234.5);
 t5 = LIGOTimeGPS("1000");
 assert(t5 == 1000);
+if lalcvar.swig_version >= hex2dec("020010")
 try
   t5 = LIGOTimeGPS("abc1000");
   expected_exception = 1;
@@ -266,6 +267,7 @@ try
   expected_exception = 1;
 end_try_catch
 assert(!expected_exception);
+endif # lalcvar.swig_version >= hex2dec("020010")
 clear t0 t1 t2 t3 t4struct t5;
 CheckMemoryLeaks();
 disp("passed LIGOTimeGPS operations");
