@@ -785,8 +785,8 @@ XLALBarycenterEarthNew ( EarthState *earth,                /**< [out] the earth'
 
       rse2=earth->drse=0.0;
       for (j=0;j<3;j++){
-        sunPosNow[j]=sunPos[j] + sunVel[j]*tdiffS + 0.5*sunAcc[j]*tdiff2S;
-        sunVelNow[j]=sunVel[j] + sunAcc[j]*tdiffS;
+        sunPosNow[j]= scorr * (sunPos[j] + sunVel[j]*tdiffS + 0.5*sunAcc[j]*tdiff2S);
+        sunVelNow[j]= scorr * (sunVel[j] + sunAcc[j]*tdiffS);
 
         earth->se[j]=earth->posNow[j]-sunPosNow[j];
         earth->dse[j]=earth->velNow[j]-sunVelNow[j];
