@@ -419,6 +419,23 @@ main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
+    /* write header info in comments */
+    if ( XLAL_SUCCESS != XLALOutputVersionString ( fpOut, 0 ) )
+      XLAL_ERROR ( XLAL_EFUNC );
+
+    /* write the command-line */
+    for (int a = 0; a < argc; a++)
+      fprintf(fpOut,"%%%% argv[%d]: '%s'\n", a, argv[a]);
+
+    /* write column headings */
+    fprintf(fpOut,"%%%% columns:\n%%%% FreqBinStart");
+    if (uvar.outFreqBinEnd)
+      fprintf(fpOut," FreqBinEnd");
+    fprintf(fpOut," PSD");
+    if (uvar.outputNormSFT)
+      fprintf(fpOut," normSFTpower");
+    fprintf(fpOut,"\n");
+
     LogPrintf(LOG_DEBUG, "Printing PSD to file ... ");
     for (k = 0; k < finalNumBins; ++k) {
       UINT4 b = k * finalBinStep;

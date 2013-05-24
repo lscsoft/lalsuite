@@ -38,6 +38,7 @@ fBand=0.099997	  ## 0.1 - 3eps
 
 blocksRngMed=101
 outPSD=psd1.dat
+outPSDstripped=psd1-stripped.dat
 refPSD=${srcdir}/psd_ref.dat
 
 inputData="${SFTdir}/SFT.0*"
@@ -58,8 +59,9 @@ if [ ! -r "$outPSD" -o ! -r "$refPSD" ]; then
     echo "ERROR: missing psd output file '$outPSD' or '$refPSD'"
     exit 1
 fi
+cat ${outPSD} | sed -e"/^%%.*/d" > ${outPSDstripped}
 
-cmp=`paste $outPSD $refPSD | LC_ALL=C awk 'BEGIN {n=0; maxErr = 0; avgErr = 0; binsOff = 0} {n+=1; dFreq = $3 - $1; if ( dFreq != 0 ) binsOff ++; relErr = 2*($4 - $2)/($4 + $2); if (relErr > maxErr) maxErr = relErr; avgErr += relErr } END { avgErr /= n; printf "binsOff=%d; avgErr=%g; maxErr=%g", binsOff, avgErr, maxErr}'`
+cmp=`paste ${outPSDstripped} $refPSD | LC_ALL=C awk 'BEGIN {n=0; maxErr = 0; avgErr = 0; binsOff = 0} {n+=1; dFreq = $3 - $1; if ( dFreq != 0 ) binsOff ++; relErr = 2*($4 - $2)/($4 + $2); if (relErr > maxErr) maxErr = relErr; avgErr += relErr } END { avgErr /= n; printf "binsOff=%d; avgErr=%g; maxErr=%g", binsOff, avgErr, maxErr}'`
 
 eval $cmp
 
@@ -169,7 +171,7 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm $outPSD
+    rm $outPSD $outPSDstripped
     rm $outSFT
     rm $outPSD_band
     rm $outPSD_full
