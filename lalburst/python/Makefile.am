@@ -1,3 +1,5 @@
+INCLUDES = -I$(top_builddir)/include
+
 pkgpython_PYTHON = \
 	__init__.py \
 	git_version.py
