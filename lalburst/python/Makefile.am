@@ -21,6 +21,6 @@ endif
 
 cs_gamma_la_SOURCES = cs_gamma.c
 cs_gamma_la_CPPFLAGS = $(AM_CPPFLAGS) $(PYTHON_CPPFLAGS)
-cs_gamma_la_CFLAGS = $(AM_CFLAGS) $(GSL_CFLAGS) $(LAL_CFLAGS) -Wno-error=unused-parameter -Wno-error=missing-prototypes
+cs_gamma_la_CFLAGS = $(AM_CFLAGS) $(GSL_CFLAGS) $(LAL_CFLAGS)
 cs_gamma_la_LIBADD = $(top_builddir)/src/liblalburst.la
 cs_gamma_la_LDFLAGS = $(AM_LDFLAGS) $(GSL_LIBS) $(LAL_LIBS) $(PYTHON_LDFLAGS) -module -avoid-version

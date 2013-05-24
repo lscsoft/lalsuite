@@ -66,6 +66,7 @@ static PyObject *cs_gamma_finddRdz(PyObject *self, PyObject *args)
   int Namp;
   cs_cosmo_functions_t cosmofns;
   int j;
+  (void)self;	/* silence unused parameter warning */
 
   if (!PyArg_ParseTuple(args, "ddddO!", &Gmu, &alpha, &f, &Gamma, &PyArray_Type, &Numpy_zofA))
     return NULL;
@@ -124,6 +125,7 @@ static PyObject *cs_gamma_findzofA(PyObject *self, PyObject *args)
   PyObject *Numpy_zofA;
   double Gmu, alpha, *zofA, *amp;
   int Namp;
+  (void)self;	/* silence unused parameter warning */
 
   double z_min = 1e-20, z_max = 1e10;
   double dlnz = 0.05;
@@ -203,6 +205,7 @@ static PyMethodDef cs_gammaMethods[] = {
 };
 
 //They Python module initialization function.
+PyMODINIT_FUNC initcs_gamma(void);	/* silence no-previous-prototype warning */
 PyMODINIT_FUNC
 initcs_gamma(void)
 {
