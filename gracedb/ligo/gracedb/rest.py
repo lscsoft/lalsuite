@@ -19,7 +19,7 @@
 import httplib, socket
 import mimetypes
 import urllib
-import os
+import os, sys
 import json
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/api/"
@@ -266,7 +266,11 @@ class GraceDb(GsiRest):
             # XXX Terrible error messages / weak exception type
             raise Exception(str(errors))
         if filecontents is None:
-            filecontents = open(filename, 'rb').read() # XXX or 'rb' ?
+            if filename == '-':
+                filename = 'initial.data'
+                filecontents = sys.stdin.read()
+            else:
+                filecontents = open(filename, 'rb').read() 
         fields = [
                   ('group', group),
                   ('type', analysis_type_code),
@@ -278,6 +282,8 @@ class GraceDb(GsiRest):
 
     def replaceEvent(self, graceid, filename, filecontents=None):
         if filecontents is None:
+            # Note: not allowing filename '-' here.  We want the event datafile
+            # to be versioned.
             filecontents = open(filename, 'rb').read()
         return self.put(
                 self.templates['event-detail-template'].format(graceid=graceid),
@@ -317,7 +323,11 @@ class GraceDb(GsiRest):
         template = self.templates['files-template']
         uri = template.format(graceid=graceid, filename=os.path.basename(filename))
         if filecontents is None:
-            filecontents = open(filename, "rb").read()
+            if filename == '-':
+                filename = 'stdin'
+                filecontents = sys.stdin.read()
+            else:
+                filecontents = open(filename, "rb").read()
         elif isinstance(filecontents, file):
             # XXX Does not scale well.
             filecontents = filecontents.read()
@@ -329,6 +339,7 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid)
         return self.get(uri)
 
+# XXX fix to have alert option.
     def writeLog(self, graceid, message, tagname=None, displayName=None):
         template = self.templates['event-log-template']
         uri = template.format(graceid=graceid)
