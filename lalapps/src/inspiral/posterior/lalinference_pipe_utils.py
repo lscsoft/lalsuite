@@ -961,8 +961,8 @@ class ResultsPageNode(pipeline.CondorDAGNode):
       """
       self.add_parent(node)
       self.add_file_arg(node.get_pos_file())
-	  if node.snrpath is not None:
-          self.set_snr_file(node.get_snr_file())
+      if node.snrpath is not None:
+        self.set_snr_file(node.get_snr_file())
       if isinstance(node,LALInferenceMCMCNode):
 	    self.add_var_opt('lalinfmcmc','')
     def get_pos_file(self): return self.posfile
