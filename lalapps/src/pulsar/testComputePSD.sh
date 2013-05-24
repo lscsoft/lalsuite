@@ -14,15 +14,15 @@ injectdir="./Injections/"
 
 ## check for LALPulsar data directory
 if [ -z "${LALPULSAR_DATADIR}" ]; then
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to" 
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)" 
-    echo "This might indicate an incomplete LAL+LALPULSAR installation" 
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
     exit 1
 fi
 
 ##---------- names of codes and input/output files
 psd_code="${builddir}lalapps_ComputePSD"
-mfd_code="${injectdir}lalapps_Makefakedata_v4 -E ${LALPULSAR_DATADIR}" 
+mfd_code="${injectdir}lalapps_Makefakedata_v4 -E ${LALPULSAR_DATADIR}"
 SFTdir="$srcdir"
 
 tolerance=1e-5
@@ -134,7 +134,7 @@ topline_power_band=$(sort -nr -k3,3 $outPSD_band | head -1)
 toppower_band=$(echo $topline_power_band | awk '{print $3}')
 toppowerfreq_band=$(echo $topline_power_band | awk '{print $1}')
 
-echo "Loudest bins:"      
+echo "Loudest bins:"
 echo "==>  full SFT: PSD=$toppsd_full at $toppsdfreq_full Hz, normPower=$toppower_full at $toppowerfreq_full Hz"
 echo "==>  freqband: PSD=$toppsd_band at $toppsdfreq_band Hz, normPower=$toppower_band at $toppowerfreq_band Hz"
 
