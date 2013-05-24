@@ -215,7 +215,7 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
     }
   if ( (metricType == METRIC_TYPE_PHASE) || (metricType == METRIC_TYPE_ALL) )
     {
-      if ( metricParams->detMotionType == DETMOTION_SPINXY_ORBIT )
+      if ( metricParams->detMotionType == (DETMOTION_SPINXY | DETMOTION_ORBIT) )
         {
           XLAL_CHECK_NULL ( XLALFlatMetricCW ( metric->g_ij, config.refTime, config.startTime, duration, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
@@ -738,9 +738,9 @@ InitCode ( ConfigVariables *cfg,
   cfg->Al3 = ( SQ(Aplus) - SQ(Across) ) * sin2psi * cos2psi ;
 
   // ----- translate 'new-API' DetectorMotionType into 'old-API' PhaseType_t
-  switch ( metricParams->detMotionType )
+  switch ( (int)metricParams->detMotionType )
     {
-    case DETMOTION_SPIN_ORBIT:
+    case DETMOTION_SPIN | DETMOTION_ORBIT:
       cfg->phaseType = PHASE_FULL;
       break;
 
@@ -752,18 +752,12 @@ InitCode ( ConfigVariables *cfg,
       cfg->phaseType = PHASE_SPIN;
       break;
 
-    case DETMOTION_SPIN_PTOLEORBIT:
+    case DETMOTION_SPIN | DETMOTION_PTOLEORBIT:
       cfg->phaseType = PHASE_PTOLE;
       break;
 
-    case DETMOTION_PTOLEORBIT:
-    case DETMOTION_SPINZ_ORBIT:
-    case DETMOTION_SPINXY_ORBIT:
-      XLAL_ERROR ( XLAL_EDOM, "Can't deal with detMotionType = %d, not analog exists for XLALOldDopplerFstatMetric()\n", metricParams->detMotionType );
-      break;
-
     default:
-      XLAL_ERROR ( XLAL_EDOM, "Invalid detMotionType = %d, not in [0, %d]\n", metricParams->detMotionType,   DETMOTION_LAST - 1 );
+      XLAL_ERROR ( XLAL_EDOM, "Can't deal with detMotionType = %d, not analog exists for XLALOldDopplerFstatMetric()\n", metricParams->detMotionType );
       break;
     } // switch(detMotionType)
 

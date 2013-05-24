@@ -89,19 +89,16 @@ typedef struct tagPosVel3D_t {
 } PosVel3D_t;
 
 
-/** Different types of detector-motion to use in order to compute the Doppler-metric */
+/** Bitfield of different types of detector-motion to use in order to compute the Doppler-metric */
 typedef enum {
-  DETMOTION_SPIN_ORBIT,		/**< full detector motion: spin + ephemeris-based orbital motion */
-  DETMOTION_ORBIT,		/**< pure ephemeris-based orbital motion, no spin motion */
-  DETMOTION_SPIN,		/**< pure spin motion, no orbital motion */
+  DETMOTION_SPIN       = 0x01,   /**< Full spin motion */
+  DETMOTION_SPINZ      = 0x02,   /**< Ecliptic-Z component of spin motion only */
+  DETMOTION_SPINXY     = 0x03,   /**< Ecliptic-X+Y components of spin motion only */
+  DETMOTION_MASKSPIN   = 0x0F,   /**< Mask for spin motion bits */
 
-  DETMOTION_SPIN_PTOLEORBIT,	/**< spin motion + Ptolemaic (circular) orbital motion */
-  DETMOTION_PTOLEORBIT,		/**< pure Ptolemaic (circular) orbital motion, no spin motion */
-
-  DETMOTION_SPINZ_ORBIT,	/**< *only* ecliptic-Z component of spin motion + ephemeris-based orbital motion*/
-  DETMOTION_SPINXY_ORBIT,	/**< *only* ecliptic-X+Y components of spin motion + ephemeris-based orbital motion */
-
-  DETMOTION_LAST
+  DETMOTION_ORBIT      = 0x10,   /**< Ephemeris-based orbital motion */
+  DETMOTION_PTOLEORBIT = 0x20,   /**< Ptolemaic (circular) orbital motion */
+  DETMOTION_MASKORBIT  = 0xF0,   /**< Mask for orbital motion bits */
 } DetectorMotionType;
 
 

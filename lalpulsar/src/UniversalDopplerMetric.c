@@ -66,21 +66,27 @@
 
 /** Array of symbolic 'names' for various detector-motions
  */
-static const CHAR *const DetectorMotionNames[DETMOTION_LAST] = {
-  [DETMOTION_SPIN_ORBIT] = "spin+orbit",
-  [DETMOTION_ORBIT] = "orbit",
-  [DETMOTION_SPIN] = "spin",
+static const struct {
+  const DetectorMotionType type;
+  const char *const name;
+} DetectorMotionNames[] = {
 
-  [DETMOTION_SPIN_PTOLEORBIT] = "spin+ptoleorbit",
-  [DETMOTION_PTOLEORBIT] = "ptoleorbit",
+#define DETMOTION_NAMES(orbit_type, spin_orbit_name, nospin_orbit_name) \
+  {DETMOTION_SPIN | orbit_type, "spin" spin_orbit_name}, \
+  {DETMOTION_SPINZ | orbit_type, "spinz" spin_orbit_name}, \
+  {DETMOTION_SPINXY | orbit_type, "spinxy" spin_orbit_name}, \
+  {orbit_type, nospin_orbit_name}   /* this must be the last entry in the macro */
 
-  [DETMOTION_SPINZ_ORBIT] = "spinz+orbit",
-  [DETMOTION_SPINXY_ORBIT] = "spinxy+orbit",
+  DETMOTION_NAMES(DETMOTION_ORBIT, "+orbit", "orbit"),
+  DETMOTION_NAMES(DETMOTION_PTOLEORBIT, "+ptoleorbit", "ptoleorbit"),
+  DETMOTION_NAMES(0, "", NULL)   /* last entry provides marker for end of list */
+
+#undef DETMOTION_NAMES
 };
 
 /** Array of descriptor structs for each Doppler coordinate name
  */
-const struct {
+static const struct {
   const char *const name;	/**< coordinate name */
   const double scale;		/**< multiplicative scaling factor of the coordinate */
   const char *const help;	/**< help string explaining the coordinate's meaning and units */
@@ -615,19 +621,15 @@ CWPhaseDeriv_i ( double tt, void *params )
 
 
 /** Given a GPS time and detector, return the current position (and velocity) of the detector.
- *
- * NOTE: the 'special' flag allows to simulate artifically truncated
- * detector motions, such as pure orbital motion.
- *
  */
 int
-XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal position and velocity vector */
-                     PosVel3D_t *orbit_posvel,	/**< [out] instantaneous orbital position and velocity vector */
-		     const LIGOTimeGPS *tGPS,	/**< [in] GPS time */
-		     const LALDetector *site,	/**< [in] detector info */
-		     const EphemerisData *edat,	/**< [in] ephemeris data */
-		     DetectorMotionType special	/**< [in] detector motion type */
-		     )
+XLALDetectorPosVel ( PosVel3D_t *spin_posvel,		/**< [out] instantaneous sidereal position and velocity vector */
+                     PosVel3D_t *orbit_posvel,		/**< [out] instantaneous orbital position and velocity vector */
+                     const LIGOTimeGPS *tGPS,		/**< [in] GPS time */
+                     const LALDetector *site,		/**< [in] detector info */
+                     const EphemerisData *edat,		/**< [in] ephemeris data */
+                     DetectorMotionType detMotionType	/**< [in] detector motion type */
+                     )
 {
   EarthState earth;
   BarycenterInput baryinput = empty_BarycenterInput;
@@ -635,171 +637,101 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   PosVel3D_t Det_wrt_Earth;
   PosVel3D_t PtoleOrbit;
   PosVel3D_t Spin_z, Spin_xy;
-  REAL8 eZ[3];
+  const vect3D_t eZ = {0, -LAL_SINIEARTH, LAL_COSIEARTH};       /* ecliptic z-axis in equatorial coordinates */
 
-  if ( !tGPS || !site || !edat ) {
-    XLALPrintError ( "%s: Illegal NULL pointer passed!\n", __func__);
-    XLAL_ERROR( XLAL_EINVAL );
-  }
+  XLAL_CHECK( tGPS, XLAL_EFAULT );
+  XLAL_CHECK( site, XLAL_EFAULT );
+  XLAL_CHECK( edat, XLAL_EFAULT );
+
+  XLAL_CHECK( detMotionType > 0, XLAL_EINVAL, "Invalid detector motion type '%d'", detMotionType );
 
   /* ----- find ephemeris-based position of Earth wrt to SSB at this moment */
-  if ( XLALBarycenterEarth( &earth, tGPS, edat ) != XLAL_SUCCESS ) {
-    XLALPrintError ( "%s: call to XLALBarycenterEarth() failed!\n\n", __func__);
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALBarycenterEarth( &earth, tGPS, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   /* ----- find ephemeris-based position of detector wrt to SSB */
   baryinput.tgps = *tGPS;
   baryinput.site = *site;
   baryinput.site.location[0] /= LAL_C_SI; baryinput.site.location[1] /= LAL_C_SI; baryinput.site.location[2] /= LAL_C_SI;
   baryinput.alpha = 0; baryinput.delta = 0; baryinput.dInv = 0;
-  if ( XLALBarycenter ( &emit, &baryinput, &earth ) != XLAL_SUCCESS ) {
-    XLALPrintError ( "%s: call to XLALBarycenter() failed!\n\n", __func__);
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALBarycenter ( &emit, &baryinput, &earth ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- determine position-vector of detector wrt center of Earth */
   COPY_VECT(Det_wrt_Earth.pos, emit.rDetector);
   SUB_VECT(Det_wrt_Earth.pos, earth.posNow);
-
   COPY_VECT(Det_wrt_Earth.vel, emit.vDetector);
   SUB_VECT(Det_wrt_Earth.vel, earth.velNow);
 
-  eZ[0] = 0; eZ[1] = -LAL_SINIEARTH; eZ[2] = LAL_COSIEARTH; 	/* ecliptic z-axis in equatorial coordinates */
   /* compute ecliptic-z projected spin motion */
   REAL8 pz = DOT_VECT ( Det_wrt_Earth.pos, eZ );
   REAL8 vz = DOT_VECT ( Det_wrt_Earth.vel, eZ );
-
   COPY_VECT ( Spin_z.pos, eZ );
   MULT_VECT ( Spin_z.pos, pz );
-
   COPY_VECT ( Spin_z.vel, eZ );
   MULT_VECT ( Spin_z.vel, vz );
 
   /* compute ecliptic-xy projected spin motion */
   COPY_VECT ( Spin_xy.pos, Det_wrt_Earth.pos );
   SUB_VECT ( Spin_xy.pos, Spin_z.pos );
-
   COPY_VECT ( Spin_xy.vel, Det_wrt_Earth.vel );
   SUB_VECT ( Spin_xy.vel, Spin_z.vel );
 
   /* ----- Ptolemaic special case: orbital motion on a circle */
-  if ( (special == DETMOTION_SPIN_PTOLEORBIT) || (special == DETMOTION_PTOLEORBIT) )
-    {
-      if ( XLALPtolemaicPosVel ( &PtoleOrbit, tGPS ) ) {
-	XLALPrintError ( "%s: call to XLALPtolemaicPosVel() failed!\n\n", __func__);
-	XLAL_ERROR( XLAL_EFUNC );
-      }
-    }
+  if ( detMotionType & DETMOTION_PTOLEORBIT ) {
+    XLAL_CHECK( XLALPtolemaicPosVel ( &PtoleOrbit, tGPS ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   /* ----- return the requested type of detector motion */
-  switch ( special )
-    {
-    case DETMOTION_SPIN_ORBIT:		/**< full detector motion: spin + ephemeris-based orbital motion */
-      if ( spin_posvel ) {
-        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
-      }
+  if ( spin_posvel ) {
+    switch ( detMotionType & DETMOTION_MASKSPIN ) {
 
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, earth.posNow);
-        COPY_VECT(orbit_posvel->vel, earth.velNow);
-      }
+    case 0:   /**< No spin motion */
+      ZERO_VECT(spin_posvel->pos);
+      ZERO_VECT(spin_posvel->vel);
       break;
 
-    case DETMOTION_ORBIT:		/**< pure ephemeris-based orbital motion, no spin motion */
-      if ( spin_posvel ) {
-        ZERO_VECT(spin_posvel->pos);
-        ZERO_VECT(spin_posvel->vel);
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, earth.posNow);
-        COPY_VECT(orbit_posvel->vel, earth.velNow);
-      }
+    case DETMOTION_SPIN:   /**< Full spin motion */
+      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
       break;
 
-    case DETMOTION_SPIN:		/**< pure spin motion, no orbital motion */
-      if ( spin_posvel ) {
-        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
-      }
-
-      if ( orbit_posvel ) {
-        ZERO_VECT(orbit_posvel->pos);
-        ZERO_VECT(orbit_posvel->vel);
-      }
+    case DETMOTION_SPINZ:   /**< Ecliptic-Z component of spin motion only */
+      COPY_VECT ( spin_posvel->pos, Spin_z.pos );
+      COPY_VECT ( spin_posvel->vel, Spin_z.vel );
       break;
 
-    case DETMOTION_PTOLEORBIT:		/**< pure Ptolemaic (circular) orbital motion, no spin motion */
-      if ( spin_posvel ) {
-        ZERO_VECT(spin_posvel->pos);
-        ZERO_VECT(spin_posvel->vel);
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
-      }
-      break;
-
-    case DETMOTION_SPIN_PTOLEORBIT:	/**< spin motion + Ptolemaic (circular) orbital motion */
-      if ( spin_posvel ) {
-        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
-      }
-      /*
-      printf ("\nPtole = [ %f, %f, %f ], Ephem = [%f, %f, %f]\n",
-	      posvel->pos[0], posvel->pos[1], posvel->pos[2],
-	      emit.rDetector[0], emit.rDetector[1], emit.rDetector[2] );
-      */
-      break;
-
-    case DETMOTION_SPINZ_ORBIT:		/**< *only* ecliptic-Z component of spin motion + ephemeris-based orbital motion*/
-      if ( spin_posvel ) {
-        COPY_VECT ( spin_posvel->pos, Spin_z.pos );
-        COPY_VECT ( spin_posvel->vel, Spin_z.vel );
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, earth.posNow);
-        COPY_VECT(orbit_posvel->vel, earth.velNow);
-      }
-
-      break;
-
-    case DETMOTION_SPINXY_ORBIT:	/**< *only* ecliptic-X+Y components of spin motion + ephemeris-based orbital motion */
-      if ( spin_posvel ) {
-        COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
-        COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, earth.posNow);
-        COPY_VECT(orbit_posvel->vel, earth.velNow);
-      }
-
+    case DETMOTION_SPINXY:   /**< Ecliptic-X+Y components of spin motion only */
+      COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
+      COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
       break;
 
     default:
-      XLALPrintError("\n%s: Illegal 'special' value passed: '%d'\n\n", __func__, special );
-      XLAL_ERROR( XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL, "%s: Illegal spin motion '%d'\n\n", __func__, detMotionType & DETMOTION_MASKSPIN );
       break;
-    } /* switch(special) */
+    }
+  }
+  if ( orbit_posvel ) {
+    switch ( detMotionType & DETMOTION_MASKORBIT ) {
 
+    case 0:   /**< No orbital motion */
+      ZERO_VECT(orbit_posvel->pos);
+      ZERO_VECT(orbit_posvel->vel);
+      break;
 
-#if 0
-  /* debug output */
-  printf ("%.6f  %.16g  %.16g  %.16g    %.16g  %.16g %.16g \n",
-          GPS2REAL8((*tGPS)),
-          posvel->pos[0], posvel->pos[1], posvel->pos[2],
-          posvel->vel[0], posvel->vel[1], posvel->vel[2] );
+    case DETMOTION_ORBIT:   /**< Ephemeris-based orbital motion */
+      COPY_VECT(orbit_posvel->pos, earth.posNow);
+      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      break;
 
-#endif
+    case DETMOTION_PTOLEORBIT:   /**< Ptolemaic (circular) orbital motion */
+      COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
+      COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      break;
+
+    default:
+      XLAL_ERROR( XLAL_EINVAL, "%s: Illegal orbit motion '%d'\n\n", __func__, detMotionType & DETMOTION_MASKORBIT );
+      break;
+    }
+  }
 
   return XLAL_SUCCESS;
 
@@ -1625,21 +1557,16 @@ XLALDestroyDopplerMetric ( DopplerMetric *metric )
 int
 XLALParseDetectorMotionString ( const CHAR *detMotionString )
 {
-  int i;
 
-  if ( ! detMotionString ) {
-    XLAL_ERROR ( XLAL_EINVAL );
+  XLAL_CHECK( detMotionString, XLAL_EINVAL );
+
+  for ( int i = 0; DetectorMotionNames[i].type > 0; ++i ) {
+    if ( strcmp ( detMotionString, DetectorMotionNames[i].name ) != 0 )
+      continue;
+    return DetectorMotionNames[i].type;   /* found the right entry */
   }
 
-  for ( i=0; i < DETMOTION_LAST; i ++ )
-    {
-      if ( DetectorMotionNames[i] && strcmp ( detMotionString, DetectorMotionNames[i] ) )
-	continue;
-      return i;	/* found the right entry */
-    }
-
-  XLALPrintError ("\nCould not parse '%s' into a valid detector-motion type!\n\n", detMotionString );
-  XLAL_ERROR ( XLAL_EINVAL );
+  XLAL_ERROR ( XLAL_EINVAL, "Could not parse '%s' into a valid detector-motion type!", detMotionString );
 
 } /* XLALParseDetectorMotionString() */
 
@@ -1648,17 +1575,16 @@ XLALParseDetectorMotionString ( const CHAR *detMotionString )
  * cooresponding to the enum DopplerCoordinateID
  */
 const CHAR *
-XLALDetectorMotionName ( DetectorMotionType detType )
+XLALDetectorMotionName ( DetectorMotionType detMotionType )
 {
-  if ( detType >= DETMOTION_LAST ) {
-    XLAL_ERROR_NULL ( XLAL_EINVAL, "detector-motion type '%d' outside valid range [0, %d]\n\n", detType, DETMOTION_LAST - 1 );
+
+  for ( int i = 0; DetectorMotionNames[i].type > 0; ++i ) {
+    if ( DetectorMotionNames[i].type != detMotionType )
+      continue;
+    return DetectorMotionNames[i].name;   /* found the right entry */
   }
 
-  if ( !DetectorMotionNames[detType] ) {
-    XLAL_ERROR_NULL ( XLAL_EINVAL, "detector-motion type '%d' has no associated name\n\n", detType );
-  }
-
-  return ( DetectorMotionNames[detType] );
+  XLAL_ERROR_NULL ( XLAL_EINVAL, "Could not parse '%d' into a valid detector-motion name!", detMotionType );
 
 } /* XLALDetectorMotionName() */
 

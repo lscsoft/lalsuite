@@ -48,6 +48,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/PulsarTimes.h>
 #include <lal/SFTutils.h>
+#include <lal/LALString.h>
 
 #include <lal/ComputeFstat.h>
 #include <lal/LogPrintf.h>
@@ -156,7 +157,7 @@ typedef struct
 
   CHAR* outputMetric;	/**< filename to write metrics into */
 
-  INT4 detMotionType;	/**< enum-value DetectorMotionType specifying type of detector-motion to use */
+  CHAR *detMotionStr;	/**< string specifying type of detector-motion to use */
 
   INT4 metricType;	/**< type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both */
 
@@ -254,9 +255,13 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALInitCode() failed with xlalErrno = %d\n\n", xlalErrno );
   config.history->VCSInfoString = VCSInfoString;
 
+  /* parse detector motion string */
+  int detMotionType = XLALParseDetectorMotionString( uvar.detMotionStr );
+  XLAL_CHECK ( detMotionType != XLAL_FAILURE, XLAL_EFUNC, "Failed to pass detector motion string '%s'", uvar.detMotionStr );
+  metricParams.detMotionType = detMotionType;
+
   metricParams.segmentList   = config.segmentList;
   metricParams.coordSys      = config.coordSys;
-  metricParams.detMotionType = uvar.detMotionType;
   metricParams.metricType    = uvar.metricType;
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
@@ -338,7 +343,7 @@ initUserVars (UserVariables_t *uvar)
 
   uvar->sqrtSX = NULL;
 
-  uvar->detMotionType = DETMOTION_SPIN_ORBIT;
+  uvar->detMotionStr = XLALStringDuplicate(XLALDetectorMotionName(DETMOTION_SPIN | DETMOTION_ORBIT));
   uvar->metricType = 0;	/* by default: compute only phase metric */
 
   if ( (uvar->coords = XLALCreateStringVector ( "freq", "alpha", "delta", "f1dot", NULL )) == NULL ) {
@@ -379,7 +384,7 @@ initUserVars (UserVariables_t *uvar)
   XLALregLISTUserStruct(coords,		'c', UVAR_OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
   XLALregBOOLUserStruct(coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
 
-  XLALregINTUserStruct(detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit, 5=orbit+spin_z, 6=orbit+spin_xy");
+  XLALregSTRINGUserStruct(detMotionStr,  0,  UVAR_DEVELOPER,	"Detector-motion string: S|O|S+O where S=spin|spinz|spinxy and O=orbit|ptoleorbit");
   XLALregBOOLUserStruct(approxPhase,     0,  UVAR_DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
 
   XLALregBOOLUserStruct(version,        'V', UVAR_SPECIAL,      "Output code version");
