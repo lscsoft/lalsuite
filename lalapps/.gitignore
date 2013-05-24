@@ -244,6 +244,7 @@ src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation_nested
 src/pulsar/TimingTests/lalapps_TEMPOcomparison
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
+src/pulsar/crosscorr/lalapps_pulsar_crosscorr_v2
 src/pulsar/fscan/lalapps_spec_avg
 src/pulsar/hough/src/lalapps_DriveHoughMulti
 src/pulsar/hough/src/lalapps_DriveHough_v3
