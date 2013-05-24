@@ -2,8 +2,8 @@ pkgpython_PYTHON = \
 	__init__.py \
 	git_version.py
 
-pkgpython_LTLIBRARIES = \
-	cs_gamma.la
+#pkgpython_LTLIBRARIES = \
+#	cs_gamma.la
 
 EXTRA_DIST = \
 	git_version.py

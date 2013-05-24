@@ -112,21 +112,21 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for Python
 AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
-AX_PYTHON_DEVEL()
+#AX_PYTHON_DEVEL()
 # hack to remove default lib dirs from PYTHON_LDFLAGS.  only tested on
 # Debian and SL6.  FIXME:  find a way to do this properly
-PYTHON_LDFLAGS="`echo $PYTHON_LDFLAGS | sed -e 'sX-L/usr/lib\(64\)\?\(/\)\?[[:space:]]*XXg'`"
+#PYTHON_LDFLAGS="`echo $PYTHON_LDFLAGS | sed -e 'sX-L/usr/lib\(64\)\?\(/\)\?[[:space:]]*XXg'`"
 
 # check for NumPy
-AX_PYTHON_MODULE(numpy, fatal)
-NUMPY_CFLAGS=-I`$PYTHON -c "import numpy;print (numpy.get_include());"`
-old_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS ${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"
-AC_CHECK_HEADER([numpy/arrayobject.h],
-	[PYTHON_CPPFLAGS="${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"],
-	[AC_MSG_ERROR([Numpy extension header not found])],
-	[#include "Python.h"])
-CFLAGS="$old_CFLAGS"
+#AX_PYTHON_MODULE(numpy, fatal)
+#NUMPY_CFLAGS=-I`$PYTHON -c "import numpy;print (numpy.get_include());"`
+#old_CFLAGS="$CFLAGS"
+#CFLAGS="$CFLAGS ${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"
+#AC_CHECK_HEADER([numpy/arrayobject.h],
+#	[PYTHON_CPPFLAGS="${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"],
+#	[AC_MSG_ERROR([Numpy extension header not found])],
+#	[#include "Python.h"])
+#CFLAGS="$old_CFLAGS"
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
