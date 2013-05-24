@@ -665,6 +665,7 @@ class EngineJob(pipeline.CondorDAGJob):
     self.engine=cp.get('analysis','engine')
     basepath=cp.get('paths','basedir')
     snrpath=os.path.join(basepath,'SNR')
+    self.snrpath=snrpath
     mkdirs(snrpath)
     if self.engine=='lalinferencemcmc':
       exe=cp.get('condor','mpirun')
@@ -761,6 +762,11 @@ class EngineNode(pipeline.CondorDAGNode):
   def get_ifos(self):
     return ''.join(map(str,self.ifos))
       
+  def get_snr_file(self):
+    ifos=''
+    for i in self.ifos: ifos='%s%s'%(ifos,i)
+    return os.path.join(self.job.snrpath,'snr_%s_%10.1f.dat'%(ifos,float(self.get_trig_time())))
+  
   def set_trig_time(self,time):
     """
     Set the end time of the signal for the centre of the prior in time
@@ -911,6 +917,7 @@ class LALInferenceMCMCNode(EngineNode):
   def get_pos_file(self):
     return self.posfile
 
+
 class ResultsPageJob(pipeline.CondorDAGJob):
   def __init__(self,cp,submitFile,logdir):
     exe=cp.get('condor','resultspage')
@@ -954,7 +961,8 @@ class ResultsPageNode(pipeline.CondorDAGNode):
       """
       self.add_parent(node)
       self.add_file_arg(node.get_pos_file())
-	
+	  if node.snrpath is not None:
+          self.set_snr_file(node.get_snr_file())
       if isinstance(node,LALInferenceMCMCNode):
 	    self.add_var_opt('lalinfmcmc','')
     def get_pos_file(self): return self.posfile
@@ -962,6 +970,8 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         self.add_var_arg('--bci '+bcifile)
     def set_bayes_coherent_noise(self,bsnfile):
         self.add_var_arg('--bsn '+bsnfile)
+    def set_snr_file(self,snrfile):
+        self.add_var_arg('--snr '+snrfile)
         
 class CoherenceTestJob(pipeline.CondorDAGJob):
     """
