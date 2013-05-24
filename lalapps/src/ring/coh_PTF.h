@@ -572,12 +572,13 @@ void coh_PTF_calculate_single_detector_filters(
   UINT4                      segNum
 );
 
-void coh_PTF_calculate_single_det_spin_snr(
+UINT4 coh_PTF_calculate_single_det_spin_snr(
   struct coh_PTF_params      *params,
   REAL8Array                 **PTFM,
   COMPLEX8VectorSequence     **PTFqVec,
   REAL4TimeSeries            **snrComps,
-  UINT4                      ifoNumber
+  UINT4                      ifoNumber,
+  UINT4                      *localAcceptPoints
 );
 
 REAL4 coh_PTF_get_spin_SNR(

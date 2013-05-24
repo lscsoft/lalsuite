@@ -1452,7 +1452,6 @@ void coh_PTF_calculate_single_detector_filters(
   REAL4 *localSNRData;
   UINT4 *localAcceptPoints;
 
-  /* FIXME: Will not work for spin */
   REAL4 acceptThresh = params->snglSNRThreshold;
 
   for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
@@ -1485,8 +1484,8 @@ void coh_PTF_calculate_single_detector_filters(
       /* Here we calculate the single detector SNR */
       if (spinTemplate)
       {
-        coh_PTF_calculate_single_det_spin_snr(params,PTFM,PTFqVec,snrComps,\
-                                              ifoNumber);
+        localCount = coh_PTF_calculate_single_det_spin_snr(params,PTFM,PTFqVec,\
+                         snrComps,ifoNumber,localAcceptPoints);
       }
       else
       {
@@ -1511,15 +1510,16 @@ void coh_PTF_calculate_single_detector_filters(
   }
 }
 
-void coh_PTF_calculate_single_det_spin_snr(
+UINT4 coh_PTF_calculate_single_det_spin_snr(
   struct coh_PTF_params      *params,
   REAL8Array                 **PTFM,
   COMPLEX8VectorSequence     **PTFqVec,
   REAL4TimeSeries            **snrComps,
-  UINT4                      ifoNumber
+  UINT4                      ifoNumber,
+  UINT4                      *localAcceptPoints
 )
 {
-  UINT4 ui,uj;
+  UINT4 ui,uj,localCount;
   gsl_matrix *PTFmatrix;
   gsl_vector *eigenvalsSngl;
   gsl_matrix *eigenvecsSngl;
@@ -1530,6 +1530,7 @@ void coh_PTF_calculate_single_det_spin_snr(
   eigenvalsSngl = gsl_vector_alloc(5);
   snglv1p = LALCalloc(5 , sizeof(REAL4));
   snglv2p = LALCalloc(5 , sizeof(REAL4));
+  REAL4 acceptThresh = params->snglSNRThreshold;
 
   /* convert PTFM to gsl_matrix */
   PTFmatrix = gsl_matrix_alloc(5,5);
@@ -1545,6 +1546,7 @@ void coh_PTF_calculate_single_det_spin_snr(
   gsl_eigen_symmv(PTFmatrix, eigenvalsSngl, eigenvecsSngl,matTemp);
   gsl_eigen_symmv_free(matTemp);
   gsl_matrix_free(PTFmatrix);
+  localCount = 0;
   for (ui = params->analStartPointBuf; ui < params->analEndPointBuf; ++ui)
   {  /* loop over time */
     coh_PTF_calculate_rotated_vectors(params,PTFqVec,snglv1p,snglv2p,NULL,\
@@ -1563,9 +1565,17 @@ void coh_PTF_calculate_single_det_spin_snr(
         (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
     snrComps[ifoNumber]->data->data[ui-params->analStartPointBuf] =\
         sqrt(max_eigen);
+    if (snrComps[ifoNumber]->data->data[ui-params->analStartPointBuf] >\
+         acceptThresh)
+    {
+      localAcceptPoints[localCount] = uj;
+      localCount++;
+    }
+
   }
   LALFree(snglv1p);
   LALFree(snglv2p);
+  return localCount;
 }
 
 REAL4 coh_PTF_get_spin_SNR(

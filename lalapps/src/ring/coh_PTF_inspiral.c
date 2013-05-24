@@ -1180,7 +1180,7 @@ UINT8 coh_PTF_add_triggers(
 
   for (j = 0; j < numAcceptPoints; ++j)
   {
-    i = acceptPointList[j] + params->analStartPoint;
+    i = acceptPointList[j];
     if (cohSNR->data->data[i])
     {
       currEvent = coh_PTF_create_multi_event(params,cohSNR,PTFTemplate,\
