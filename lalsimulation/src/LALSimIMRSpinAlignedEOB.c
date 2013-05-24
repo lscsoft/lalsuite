@@ -749,7 +749,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   //fclose(out);
   if (timewavePeak < 1.0e-16 || peakCount == 0)
   {
-    printf("YP::warning: could not locate mode peak, use calibrated time shift of amplitude peak instead.\n");
+    /*printf("YP::warning: could not locate mode peak, use calibrated time shift of amplitude peak instead.\n");*/
     /* NOTE: instead of looking for the actual peak, use the calibrated value,    */
     /*       ignoring the error in using interpolated NQC instead of iterated NQC */
     timewavePeak = timePeak - timewavePeak;
