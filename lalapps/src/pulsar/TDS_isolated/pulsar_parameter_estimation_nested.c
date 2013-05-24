@@ -1422,10 +1422,10 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "psi", pars.psi );
 
   /* amplitude model parameters for l=2, m=1 and 2 harmonic emission */
-  add_variable_scale( ini, scaleFac, "I21", pars.I21 );
+  /* add_variable_scale( ini, scaleFac, "I21", pars.I21 );
   add_variable_scale( ini, scaleFac, "I31", pars.I31 );
   add_variable_scale( ini, scaleFac, "lambda", pars.lambda );
-  add_variable_scale( ini, scaleFac, "costheta", pars.costheta );
+  add_variable_scale( ini, scaleFac, "costheta", pars.costheta ); */
 
   /* amplitude model parameters in phase and amplitude form */
   add_variable_scale( ini, scaleFac, "C22", pars.C22 );
@@ -3037,14 +3037,8 @@ void rescaleOutput( LALInferenceRunState *runState ){
       paramsStr = XLALAppendString2Vector( paramsStr, v );
 
       /* re-output everything but the "model" value to a temporary file */
-      if( strcmp(v, "model") != 0 && strcmp(v, "logL")!=0
-        && strcmp(v, "logPrior") != 0 && strcmp(v, "logw") != 0
-        && strcmp(v, "deltalogl") != 0 && strcmp(v, "deltalogL") != 0 )
-        fprintf(fpparstmp, "%s\t", v);
+      if( strcmp(v, "model") ) { fprintf(fpparstmp, "%s\t", v); }
     }
-
-    /* we will put the logPrior and logLikelihood at the end of the lines */
-    fprintf(fpparstmp, "deltalogl\tdeltalogL\tlogw\tlogPrior\tlogL\n");
 
     fclose(fppars);
     fclose(fpparstmp);
@@ -3055,10 +3049,7 @@ void rescaleOutput( LALInferenceRunState *runState ){
     while ( 1 ){
       UINT4 i = 0;
 
-      REAL8 logPrior = 0., logL = 0., logw = 0., dlogl=0., dlogL = 0.;
-
-      /* scan through line, get value and reprint out scaled value to temporary
-        file */
+      /* scan through line, get value and reprint out scaled value to temporary file */
       for( i = 0; i < paramsStr->length; i++ ){
         CHAR scalename[VARNAME_MAX] = "";
         CHAR scaleminname[VARNAME_MAX] = "";
@@ -3075,21 +3066,17 @@ void rescaleOutput( LALInferenceRunState *runState ){
           scalefac = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, scalename );
           scalemin = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, scaleminname );
 
-          fprintf(fptemp, "%.12le", atof(value)*scalefac + scalemin);
+          fprintf(fptemp, "%.12le\t", atof(value)*scalefac + scalemin);
         }
-        else if( !strcmp(paramsStr->data[i], "logL") ) { logL = atof(value); }
-        else if( !strcmp(paramsStr->data[i], "logPrior") ) { logPrior = atof(value); }
-        else if( !strcmp(paramsStr->data[i], "logw") ) { logw = atof(value); }
-        else if( !strcmp(paramsStr->data[i], "deltalogl") ) { dlogl = atof(value); }
-        else if( !strcmp(paramsStr->data[i], "deltalogL") ) { dlogl = atof(value); }
-
-        fprintf(fptemp, "\t");
+        else if( strcmp(paramsStr->data[i], "model") ){
+          fprintf(fptemp, "%.12le\t", atof(value));
+        }
       }
 
       if( feof(fp) ) break;
 
       /* print out the last two items to be the logPrior and logLikelihood */
-      fprintf(fptemp, "%lf\t%lf\t%lf\t%lf\t%lf\n", dlogl, dlogL, logw, logPrior, logL);
+      fprintf(fptemp, "\n");
     }
 
     fclose(fp);
