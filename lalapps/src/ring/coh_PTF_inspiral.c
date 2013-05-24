@@ -81,6 +81,8 @@ int main(int argc, char **argv)
   REAL8Array               *PTFM[LAL_NUM_IFO+1];
   REAL8Array               *PTFN[LAL_NUM_IFO+1];
   COMPLEX8VectorSequence   *PTFqVec[LAL_NUM_IFO+1];
+  UINT4                    *acceptPointList         = NULL;
+  UINT4                    numAcceptPoints;
 
   /* triggered sky position and sensitivity structures */
   LIGOTimeGPS              segStartTime;
@@ -100,6 +102,8 @@ int main(int argc, char **argv)
   REAL4TimeSeries          *cohSNR                  = NULL;
   REAL4TimeSeries          *pValues[10];
   REAL4TimeSeries          *snrComps[LAL_NUM_IFO];
+  UINT4                    *snglAcceptPoints[LAL_NUM_IFO];
+  UINT4                    snglAcceptCount[LAL_NUM_IFO];
   REAL4TimeSeries          *gammaBeta[2];
   REAL4TimeSeries          *nullSNR                 = NULL;
   REAL4TimeSeries          *traceSNR                = NULL;
@@ -161,6 +165,7 @@ int main(int argc, char **argv)
   coh_PTF_set_null_input_RingDataSegments(segments,LAL_NUM_IFO+1);
   coh_PTF_set_null_input_REAL4TimeSeries(pValues,10);
   coh_PTF_set_null_input_REAL4TimeSeries(snrComps,LAL_NUM_IFO);
+  coh_PTF_set_null_input_UINT4(snglAcceptPoints,LAL_NUM_IFO);
   coh_PTF_set_null_input_REAL4TimeSeries(bankVeto,LAL_NUM_IFO+1);
   coh_PTF_set_null_input_REAL4TimeSeries(autoVeto,LAL_NUM_IFO+1);
   coh_PTF_set_null_input_REAL4TimeSeries(chiSquare,LAL_NUM_IFO+1);
@@ -306,6 +311,16 @@ int main(int argc, char **argv)
   coh_PTF_initialize_time_series(params,segStartTime,\
           params->lowTemplateFrequency,&cohSNR,&nullSNR,&traceSNR,bankVeto,\
           autoVeto,chiSquare,snrComps,pValues,gammaBeta,numSpinTmplts);
+  /* FIXME: Move into function above if this works */
+  for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      snglAcceptPoints[ifoNumber] = \
+          LALCalloc(params->numAnalPointsBuf, sizeof(UINT4));
+    }
+  }
+
   verbose("Initialized storage arrays at %ld\n",timeval_subtract(&startTime));
 
 
@@ -421,7 +436,8 @@ int main(int argc, char **argv)
 
       /* Calculate single detector filters */
       coh_PTF_calculate_single_detector_filters(params,fcTmplt,invspec,PTFM,\
-              PTFqVec,snrComps,segments,invplan,spinTemplate,j);
+              PTFqVec,snrComps,snglAcceptPoints,snglAcceptCount,segments,\
+              invplan,spinTemplate,j);
       verbose("Calculated sngl filters for segment %d template %d at %ld\n",\
           j, i, timeval_subtract(&startTime));
 
@@ -465,6 +481,8 @@ int main(int argc, char **argv)
         /* Loop over short slides */
         for (slideNum = 0; slideNum < params->numShortSlides ; slideNum++)
         {
+          acceptPointList = LALCalloc(shortTimeSlideList[slideNum].analEndPoint\
+               - shortTimeSlideList[slideNum].analStartPoint, sizeof(UINT4));
           /* Update the offsets */
           for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
           {
@@ -486,7 +504,8 @@ int main(int argc, char **argv)
 
           // This function calculates the cohSNR time series and all of the
           // signal based vetoes as appropriate
-          coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
+          numAcceptPoints = coh_PTF_statistic(\
+                         cohSNR, PTFM, PTFqVec, params, spinTemplate,
                          slidTimeOffsets, Fplus, Fcross,
                          j, pValues, gammaBeta, snrComps, nullSNR,
                          traceSNR, bankVeto, autoVeto,
@@ -496,7 +515,8 @@ int main(int argc, char **argv)
                          &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
                          frequencyRangesCross, startTime,
                          shortTimeSlideList[slideNum].analStartPoint,
-                         shortTimeSlideList[slideNum].analEndPoint);
+                         shortTimeSlideList[slideNum].analEndPoint,\
+                         snglAcceptPoints,snglAcceptCount,acceptPointList);
      
           verbose("Made coherent statistic for segment %d, template %d, "
                   "sky point %d at %ld \n", j, i, sp,
@@ -519,7 +539,7 @@ int main(int argc, char **argv)
                                          skyPoints->data[sp].longitude,
                                          skyPoints->data[sp].latitude,
                                          currSlideID, slidTimeOffsets,
-                                         currAnalStart,currAnalEnd);
+                                         acceptPointList,numAcceptPoints);
           }
           else
           {
@@ -534,7 +554,8 @@ int main(int argc, char **argv)
           {
             params->faceOnStatistic = 2; 
 
-            coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
+            numAcceptPoints = coh_PTF_statistic(\
+                         cohSNR, PTFM, PTFqVec, params, spinTemplate,
                          slidTimeOffsets, Fplus, Fcross,
                          j, pValues, gammaBeta, snrComps, nullSNR,
                          traceSNR, bankVeto, autoVeto,
@@ -544,7 +565,8 @@ int main(int argc, char **argv)
                          &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
                          frequencyRangesCross, startTime,
                          shortTimeSlideList[slideNum].analStartPoint,
-                         shortTimeSlideList[slideNum].analEndPoint);
+                         shortTimeSlideList[slideNum].analEndPoint,\
+                         snglAcceptPoints,snglAcceptCount,acceptPointList);
 
             verbose("Made coherent statistic for segment %d, template %d, "
                     "sky point %d at %ld \n", j, i, sp,
@@ -559,19 +581,23 @@ int main(int argc, char **argv)
                                          skyPoints->data[sp].longitude,
                                          skyPoints->data[sp].latitude,
                                          currSlideID, slidTimeOffsets,
-                                         currAnalStart,currAnalEnd);
+                                         acceptPointList,numAcceptPoints);
           } /* End of if faceaway and faceon block */
 
-          if (! params->writeSnglInspiralTable)
+          if (vrbflg)
           {
-            params->numEvents = XLALCountMultiInspiral(eventList);
+            if (! params->writeSnglInspiralTable)
+            {
+              params->numEvents = XLALCountMultiInspiral(eventList);
+            }
+            else
+            {
+              params->numEvents = XLALCountSnglInspiral(snglEventList);
+            }
+            verbose("There are currently %d triggers.\n", params->numEvents);
+            verbose("Generated triggers for segment %d, template %d, sky point %d, short slide %d at %ld \n", j, i, sp, slideNum, timeval_subtract(&startTime));
           }
-          else
-          {
-            params->numEvents = XLALCountSnglInspiral(snglEventList);
-          }
-          verbose("There are currently %d triggers.\n", params->numEvents);
-          verbose("Generated triggers for segment %d, template %d, sky point %d, short slide %d at %ld \n", j, i, sp, slideNum, timeval_subtract(&startTime));
+          LALFree(acceptPointList);
         }/* End loop over time slides */
       }/* End loop over sky points*/
 
@@ -671,6 +697,14 @@ int main(int argc, char **argv)
   coh_PTF_free_veto_memory(params,bankNormOverlaps,bankFcTmplts,bankOverlaps,\
       dataOverlaps,autoTempOverlaps);
 
+  for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if (params->haveTrig[ifoNumber])
+    {
+      LALFree(snglAcceptPoints[ifoNumber]);
+    }
+  }
+
   verbose("Generated output xml file, cleaning up and exiting at %ld \n",
       timeval_subtract(&startTime));
 
@@ -679,7 +713,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
-void coh_PTF_statistic(
+UINT4 coh_PTF_statistic(
     REAL4TimeSeries         *cohSNR,
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
@@ -714,7 +748,10 @@ void coh_PTF_statistic(
     REAL4 *frequencyRangesCross[LAL_NUM_IFO+1],
     struct timeval          startTime,
     UINT4                   segStartPoint,
-    UINT4                   segEndPoint
+    UINT4                   segEndPoint,
+    UINT4                   **snglAcceptPoints,
+    UINT4                   *snglAcceptCount,
+    UINT4                   *acceptPointList
 )
 
 {
@@ -733,7 +770,6 @@ void coh_PTF_statistic(
   REAL4 *powerBinsPlus[LAL_NUM_IFO+1],*powerBinsCross[LAL_NUM_IFO+1];
   REAL4 *snrData;
   UINT4 currPointLoc,numAcceptPoints;
-  UINT4 *acceptPointList;
   struct bankCohTemplateOverlaps *bankCohOverlaps,*autoCohOverlaps;
   gsl_matrix *eigenvecs,*eigenvecsNull,*Autoeigenvecs;
   gsl_vector *eigenvals,*eigenvalsNull,*Autoeigenvals;
@@ -788,7 +824,6 @@ void coh_PTF_statistic(
   eigenvalsNull = gsl_vector_alloc(vecLength);
   v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
   v2p = LALCalloc(vecLengthTwo , sizeof(REAL4));
-  acceptPointList = LALCalloc(segEndPoint - segStartPoint, sizeof(UINT4));
 
   /* Pick the relevant SNR threshold */
   /*cohSNRThreshold = params->threshold;
@@ -840,16 +875,19 @@ void coh_PTF_statistic(
   coh_PTF_calculate_coherent_SNR(params,snrData,pValues,snrComps,\
                                  timeOffsetPoints,PTFqVec,Fplus,Fcross,\
                                  eigenvecs,eigenvals,segStartPoint,segEndPoint,\
-                                 vecLength,vecLengthTwo,spinTemplate);
+                                 vecLength,vecLengthTwo,spinTemplate,\
+                                 snglAcceptPoints,snglAcceptCount);
 
   verbose("-->Calculated all SNRs at %ld \n",timeval_subtract(&startTime));
 
   numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
 
-  numAcceptPoints = coh_PTF_template_time_series_cluster(\
-                                       cohSNR,acceptPointList,numPointCheck,\
+  numAcceptPoints = coh_PTF_template_time_series_cluster(params,
+                                       cohSNR,acceptPointList,timeOffsetPoints,\
+                                       numPointCheck,\
                                        segStartPoint - params->analStartPoint,\
-                                       segEndPoint - params->analStartPoint);
+                                       segEndPoint - params->analStartPoint,\
+                                       snglAcceptPoints,snglAcceptCount);
 
   verbose("-->Done template clustering at %ld \n",timeval_subtract(&startTime));
 
@@ -1092,7 +1130,6 @@ void coh_PTF_statistic(
 
   LALFree(v1p);
   LALFree(v2p);
-  LALFree(acceptPointList);
   gsl_matrix_free(eigenvecs);
   gsl_vector_free(eigenvals);
   gsl_matrix_free(eigenvecsNull);
@@ -1104,6 +1141,7 @@ void coh_PTF_statistic(
   verbose("-->Completed memory cleanup and exiting loop at %ld \n",\
           timeval_subtract(&startTime));
 
+  return numAcceptPoints;
 }
 
 UINT8 coh_PTF_add_triggers(
@@ -1127,21 +1165,22 @@ UINT8 coh_PTF_add_triggers(
     REAL4                   declination,
     INT8                    slideId,
     REAL4                   *timeOffsets,
-    UINT4                   startPoint,
-    UINT4                   endPoint
+    UINT4                   *acceptPointList,
+    UINT4                   numAcceptPoints
 )
 {
   // This function adds a trigger to the event list
 
-  UINT4 i;
+  UINT4 i,j;
   INT4   timeOffsetPoints[LAL_NUM_IFO];
   MultiInspiralTable *lastEvent = *thisEvent;
   MultiInspiralTable *currEvent = NULL;
 
   coh_PTF_convert_time_offsets_to_points(params,timeOffsets,timeOffsetPoints);
 
-  for (i = startPoint ; i < endPoint ; i++)
+  for (j = 0; j < numAcceptPoints; ++j)
   {
+    i = acceptPointList[j] + params->analStartPoint;
     if (cohSNR->data->data[i])
     {
       currEvent = coh_PTF_create_multi_event(params,cohSNR,PTFTemplate,\

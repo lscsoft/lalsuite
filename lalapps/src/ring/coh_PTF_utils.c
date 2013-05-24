@@ -1439,19 +1439,29 @@ void coh_PTF_calculate_single_detector_filters(
   REAL8Array                 **PTFM,
   COMPLEX8VectorSequence     **PTFqVec,
   REAL4TimeSeries            **snrComps,
+  UINT4                      **snglAcceptPoints,
+  UINT4                      *snglAcceptCount,
   RingDataSegments           **segments,
   COMPLEX8FFTPlan            *invPlan,
   UINT4                      spinTemplate,
   UINT4                      segNum
 )
 {
-  UINT4 ifoNumber,ui,uj;
+  UINT4 ifoNumber,ui,uj,localCount;
   REAL4 reSNRcomp,imSNRcomp;
+  REAL4 *localSNRData;
+  UINT4 *localAcceptPoints;
+
+  /* FIXME: Will not work for spin */
+  REAL4 acceptThresh = params->snglSNRThreshold;
 
   for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if (params->haveTrig[ifoNumber])
     {
+      localCount = 0;
+      localSNRData = snrComps[ifoNumber]->data->data;
+      localAcceptPoints = snglAcceptPoints[ifoNumber];
       /* Zero the storage vectors for the PTF filters */
       if (params->approximant == FindChirpPTF)
       {
@@ -1485,11 +1495,17 @@ void coh_PTF_calculate_single_detector_filters(
           uj = ui - params->analStartPointBuf;
           reSNRcomp = crealf(PTFqVec[ifoNumber]->data[ui]);
           imSNRcomp = cimagf(PTFqVec[ifoNumber]->data[ui]);
-          snrComps[ifoNumber]->data->data[uj] =
-              sqrt((reSNRcomp*reSNRcomp + imSNRcomp*imSNRcomp)/
+          localSNRData[uj] = sqrt((reSNRcomp*reSNRcomp + imSNRcomp*imSNRcomp)/
                    PTFM[ifoNumber]->data[0]);
+          if (localSNRData[uj] > acceptThresh)
+          {
+            localAcceptPoints[localCount] = uj;
+            localCount++;
+          }
         }
       }
+      snglAcceptCount[ifoNumber] = localCount;
+      fprintf(stderr,"%d %d \n",ifoNumber,localCount);
       
     }
   }
@@ -1679,21 +1695,24 @@ void coh_PTF_calculate_coherent_SNR(
   UINT4                      segEndPoint,
   UINT4                      vecLength,
   UINT4                      vecLengthTwo,
-  UINT4                      spinTemplate
+  UINT4                      spinTemplate,
+  UINT4                      **snglAcceptPoints,
+  UINT4                      *snglAcceptCount
 )
 {
   REAL4 snglSNRthresh = params->snglSNRThreshold;
   REAL4 *v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
   REAL4 *v2p = LALCalloc(vecLengthTwo , sizeof(REAL4));
 
-  UINT4 i,j,ifoNumber,currPointLoc,ifoNum1,ifoNum2;
+  UINT4 i,j,k,ifoNumber,ifoNumber2,currPointLoc,ifoNum1,ifoNum2;
+  UINT4 localCount,*localAcceptPoints,localOffset;
   INT4 tOffset1,tOffset2;
   REAL4 v1_dot_u1,v2_dot_u2,max_eigen,coincSNR;
   REAL4 cohSNRThresholdSq = params->threshold * params->threshold;
 
   /* If only two detectors & standard analysis identify the 2 detectors
- *    * up front for speed
- *       */
+   * up front for speed
+   */
   ifoNum1 = ifoNum2 = tOffset1 = tOffset2 = 0;
   if (params->numIFO == 2 && (! params->singlePolFlag) &&\
       (!params->faceOnStatistic) )
@@ -1712,178 +1731,236 @@ void coh_PTF_calculate_coherent_SNR(
     tOffset2 = timeOffsetPoints[ifoNum2] - params->analStartPointBuf;
   }
 
-  for (i = segStartPoint; i < segEndPoint; ++i) /* Main loop over time */
+  for (ifoNumber2 = 0; ifoNumber2 < LAL_NUM_IFO; ifoNumber2++)
   {
-    currPointLoc = i-params->analStartPoint;
-    /* Don't bother calculating coherent SNR if all ifo's SNR is less than
-       some value */
-    for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    if (! params->haveTrig[ifoNumber2])
     {
-      if (params->haveTrig[ifoNumber])
-      {
-        if (snrComps[ifoNumber]->data->
-                data[i-params->analStartPointBuf+timeOffsetPoints[ifoNumber]]
-                 > snglSNRthresh)
-        {
-          break;
-        }
-      }
-    }
-    if (ifoNumber == LAL_NUM_IFO)
-    {
-      snrData[currPointLoc] = 0;
       continue;
     }
-
-    if (params->numIFO == 2 && (! params->singlePolFlag) &&\
-        (!params->faceOnStatistic) )
-    { /*If only 2 detectors cohSNR = coincident SNR. SO just use that */
-      max_eigen = snrComps[ifoNum1]->data->data[i+tOffset1] *
-                          snrComps[ifoNum1]->data->data[i+tOffset1] +
-                          snrComps[ifoNum2]->data->data[i+tOffset2] *
-                          snrComps[ifoNum2]->data->data[i+tOffset2];
-      if (max_eigen < cohSNRThresholdSq)
+    localCount = snglAcceptCount[ifoNumber2];
+    localAcceptPoints = snglAcceptPoints[ifoNumber2];
+    localOffset = params->analStartPointBuf-timeOffsetPoints[ifoNumber2];
+    for (k = 0; k < localCount; ++k)
+    {
+      i = localAcceptPoints[k] + localOffset;
+      currPointLoc = i-params->analStartPoint;
+      /* Continue if not in this analysis segment */
+      if ((i < segStartPoint) || (i > segEndPoint))
       {
-        snrData[currPointLoc] = 0;
         continue;
       }
-      snrData[currPointLoc] = sqrt(max_eigen);
-    }
-    else
-    {
-      coincSNR = 0;
-      /* Calculate the coincident SNR at this time point*/
+
+      /* Don't bother calculating coherent SNR if all ifo's SNR is less than
+         some value */
       for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
         if (params->haveTrig[ifoNumber])
         {
-          coincSNR += snrComps[ifoNumber]->data->data[\
-              i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]]
-              * snrComps[ifoNumber]->data->data[\
-              i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]];
+          if (snrComps[ifoNumber]->data->
+                data[i-params->analStartPointBuf+timeOffsetPoints[ifoNumber]]
+                > snglSNRthresh)
+          {
+            break;
+          }
         }
       }
-      /* Do not need to calculate coherent SNR if coinc SNR < threshold */
-      /* NOTE: Cheaper to compare coincSNRSq than use pow(x,0.5) */
-      if (coincSNR < cohSNRThresholdSq)
+      if (ifoNumber == LAL_NUM_IFO)
       {
         snrData[currPointLoc] = 0;
+        fprintf(stderr,"I shouldn't be here now!!\n");
         continue;
       }
 
-      /* This function combines the various (Q_i | s) and rotates them into
-       * the orthonormal basis, using the eigen[vector,value]s.
-       */
-      coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,Fplus,Fcross,
-        timeOffsetPoints,eigenvecs,eigenvals,
-        params->numTimePoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
-
-      /* And SNR is calculated
-       * For non-spin+multi-site+coherent: 
-       *               v1p[0] * v1p[0] = (\bf{F}_+\bf{h}_0 | \bf{s})^2
-       *               v1p[1] * v1p[1] = (\bf{F}_x\bf{h}_0 | \bf{s})^2
-       *               v2p[0] * v2p[0] = (\bf{F}_+\bf{h}_{\pi/2} | \bf{s})^2
-       *               v2p[1] * v2p[1] = (\bf{F}_x\bf{h}_{\pi/2} | \bf{s})^2
-       * For non-spin+single-site/face-on there will only be two components
-       * in this calculation, but otherwise the same.
-       */
-      if (spinTemplate == 0)
-      {
-        v1_dot_u1 = v2_dot_u2 = 0.0;
-        for (j = 0; j < vecLengthTwo; j++)
-        {
-          v1_dot_u1 += v1p[j] * v1p[j];
-          v2_dot_u2 += v2p[j] * v2p[j];
-        }
-        max_eigen = (v1_dot_u1 + v2_dot_u2);
+      if (params->numIFO == 2 && (! params->singlePolFlag) &&\
+          (!params->faceOnStatistic) )
+      { /*If only 2 detectors cohSNR = coincident SNR. SO just use that */
+        max_eigen = snrComps[ifoNum1]->data->data[i+tOffset1] *
+                            snrComps[ifoNum1]->data->data[i+tOffset1] +
+                            snrComps[ifoNum2]->data->data[i+tOffset2] *
+                            snrComps[ifoNum2]->data->data[i+tOffset2];
         if (max_eigen < cohSNRThresholdSq)
         {
           snrData[currPointLoc] = 0;
           continue;
         }
-        else
-        {
-          snrData[currPointLoc] = sqrt(max_eigen);
-          if (params->storeAmpParams)
-          {
-            for (j = 0 ; j < vecLengthTwo ; j++)
-            {
-              pValues[j]->data->data[currPointLoc] = v1p[j];
-              pValues[j+vecLengthTwo]->data->data[currPointLoc] = v2p[j];
-            }
-          }
-
-        }
+        snrData[currPointLoc] = sqrt(max_eigen);
       }
       else
-      { /* Spinning case follow PTF notation to get SNR */
-        snrData[i-params->analStartPoint] = \
-            coh_PTF_get_spin_SNR(v1p,v2p,vecLengthTwo);
-        if (params->storeAmpParams)
+      {
+        coincSNR = 0;
+        /* Calculate the coincident SNR at this time point*/
+        for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
         {
-          fprintf(stderr,"Spinning amplitude stuff is currently disabled\n");
-          /* coh_PTF_get_spin_amp_terms(.......) */
+          if (params->haveTrig[ifoNumber])
+          {
+            coincSNR += snrComps[ifoNumber]->data->data[\
+                i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]]
+                * snrComps[ifoNumber]->data->data[\
+                i - params->analStartPointBuf + timeOffsetPoints[ifoNumber]];
+          }
+        }
+        /* Do not need to calculate coherent SNR if coinc SNR < threshold */
+        /* NOTE: Cheaper to compare coincSNRSq than use pow(x,0.5) */
+        if (coincSNR < cohSNRThresholdSq)
+        {
+          snrData[currPointLoc] = 0;
+          continue;
+        }
+
+        /* This function combines the various (Q_i | s) and rotates them into
+         * the orthonormal basis, using the eigen[vector,value]s.
+         */
+        coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,Fplus,Fcross,
+          timeOffsetPoints,eigenvecs,eigenvals,
+          params->numTimePoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
+
+        /* And SNR is calculated
+         * For non-spin+multi-site+coherent: 
+         *               v1p[0] * v1p[0] = (\bf{F}_+\bf{h}_0 | \bf{s})^2
+         *               v1p[1] * v1p[1] = (\bf{F}_x\bf{h}_0 | \bf{s})^2
+         *               v2p[0] * v2p[0] = (\bf{F}_+\bf{h}_{\pi/2} | \bf{s})^2
+         *               v2p[1] * v2p[1] = (\bf{F}_x\bf{h}_{\pi/2} | \bf{s})^2
+         * For non-spin+single-site/face-on there will only be two components
+         * in this calculation, but otherwise the same.
+         */
+        if (spinTemplate == 0)
+        {
+          v1_dot_u1 = v2_dot_u2 = 0.0;
+          for (j = 0; j < vecLengthTwo; j++)
+          {
+            v1_dot_u1 += v1p[j] * v1p[j];
+            v2_dot_u2 += v2p[j] * v2p[j];
+          }
+          max_eigen = (v1_dot_u1 + v2_dot_u2);
+          if (max_eigen < cohSNRThresholdSq)
+          {
+            snrData[currPointLoc] = 0;
+            continue;
+          }
+          else
+          {
+            snrData[currPointLoc] = sqrt(max_eigen);
+            if (params->storeAmpParams)
+            {
+              for (j = 0 ; j < vecLengthTwo ; j++)
+              {
+                pValues[j]->data->data[currPointLoc] = v1p[j];
+                pValues[j+vecLengthTwo]->data->data[currPointLoc] = v2p[j];
+              }
+            }
+          }
+        }
+        else
+        { /* Spinning case follow PTF notation to get SNR */
+          snrData[i-params->analStartPoint] = \
+              coh_PTF_get_spin_SNR(v1p,v2p,vecLengthTwo);
+          if (params->storeAmpParams)
+          {
+            fprintf(stderr,"Spinning amplitude stuff is currently disabled\n");
+            /* coh_PTF_get_spin_amp_terms(.......) */
+          }
         }
       }
     }
   }
 }
 
-
 UINT4 coh_PTF_template_time_series_cluster(
+  struct coh_PTF_params      *params,
   REAL4TimeSeries *cohSNR,
   UINT4 *acceptPoints,
+  INT4 *timeOffsetPoints,
   INT4 numPointCheck,
   UINT4 startPoint,
-  UINT4 endPoint
+  UINT4 endPoint,
+  UINT4 **snglAcceptPoints,
+  UINT4 *snglAcceptCount
 )
 {
-  UINT4 ui;
+  UINT4 ui,ifoNumber2,k,i;
   UINT4 count = 0;
   UINT4 logicArray[cohSNR->data->length];
   INT4 j,tempPoint;
+  UINT4 localCount,*localAcceptPoints,localOffset;
   /* Have to cast from UINT4 to INT4 to avoid warning */
   INT4 startPointI = (INT4) startPoint;
   INT4 endPointI = (INT4) endPoint;
 
   REAL4 *snrData = cohSNR->data->data;
 
-  for (ui = startPoint; ui < endPoint; ui++)
+  for (ifoNumber2 = 0; ifoNumber2 < LAL_NUM_IFO; ifoNumber2++)
   {
-    logicArray[ui] = 0;
-    if (snrData[ui])
+    if (! params->haveTrig[ifoNumber2])
     {
-      for (j = -numPointCheck; j < numPointCheck; j++)
+      continue;
+    }
+    localCount = snglAcceptCount[ifoNumber2];
+    localAcceptPoints = snglAcceptPoints[ifoNumber2];
+    localOffset = params->analStartPointBuf-timeOffsetPoints[ifoNumber2];
+    for (k = 0; k < localCount; ++k)
+    {
+      i = localAcceptPoints[k] + localOffset;
+      ui = i-params->analStartPoint;
+      /* Continue if not in this analysis segment */
+      if ((ui < startPoint) || (ui > endPoint))
       {
-        tempPoint = ui + j;
-        if (tempPoint < startPointI)
+        continue;
+      }
+      logicArray[ui] = 1;
+      if (snrData[ui])
+      {
+        for (j = -numPointCheck; j < numPointCheck; j++)
         {
-          continue;
-        }
-        if (tempPoint >= endPointI)
-        {
-          continue;
-        }
-        if (snrData[tempPoint] > snrData[ui])
-        {
-          logicArray[ui] = 1;
-          break;
+          tempPoint = ui + j;
+          if (tempPoint < startPointI)
+          {
+            continue;
+          }
+          if (tempPoint >= endPointI)
+          {
+            continue;
+          }
+          if (snrData[tempPoint] > snrData[ui])
+          {
+            logicArray[ui] = 0;
+            break;
+          }
         }
       }
     }
   }
-  for (ui = startPoint; ui < endPoint; ui++)
+
+  for (ifoNumber2 = 0; ifoNumber2 < LAL_NUM_IFO; ifoNumber2++)
   {
-    if (logicArray[ui])
+    if (! params->haveTrig[ifoNumber2])
     {
-      snrData[ui] = 0.;
+      continue;
     }
-    else
+    localCount = snglAcceptCount[ifoNumber2];
+    localAcceptPoints = snglAcceptPoints[ifoNumber2];
+    localOffset = params->analStartPointBuf-timeOffsetPoints[ifoNumber2];
+    for (k = 0; k < localCount; ++k)
     {
-      if (snrData[ui])
+      i = localAcceptPoints[k] + localOffset;
+      ui = i-params->analStartPoint;
+      /* Continue if not in this analysis segment */
+      if ((ui < startPoint) || (ui > endPoint))
       {
-        acceptPoints[count] = ui;
-        count++;  
+        continue;
+      }
+
+      if (! logicArray[ui])
+      {
+        snrData[ui] = 0.;
+      }
+      else if (logicArray[ui] == 1)
+      {
+        if (snrData[ui])
+        {
+          acceptPoints[count] = ui;
+          count++;  
+          logicArray[ui] = 2;
+        }
       }
     }
   }
@@ -4373,6 +4450,18 @@ void coh_PTF_set_null_input_COMPLEX8VectorSequence(
 
 void coh_PTF_set_null_input_REAL4(
   REAL4** array,
+  UINT4 length
+)
+{
+  UINT4 i;
+  for (i = 0 ; i < length ; i++)
+  {
+    array[i] = NULL;
+  }
+}
+
+void coh_PTF_set_null_input_UINT4(
+  UINT4** array,
   UINT4 length
 )
 {
