@@ -726,8 +726,8 @@ void coh_PTF_statistic(
 
   /* Begin with all the declarations */
   UINT4  csVecLength,csVecLengthTwo;
-  UINT4  i, j, k, ifoNumber, vecLength, vecLengthTwo,ifoNum1,ifoNum2;
-  INT4   timeOffsetPoints[LAL_NUM_IFO],tOffset1,tOffset2,numPointCheck;
+  UINT4  i, j, k, vecLength, vecLengthTwo;
+  INT4   timeOffsetPoints[LAL_NUM_IFO],numPointCheck;
   REAL4 *v1p,*v2p,snglSNRthresh;
   REAL4 cohSNRThreshold,cohSNRThresholdSq;
   REAL4 *powerBinsPlus[LAL_NUM_IFO+1],*powerBinsCross[LAL_NUM_IFO+1];
@@ -831,27 +831,6 @@ void coh_PTF_statistic(
   {
     segStartPoint = params->analStartPoint;
     segEndPoint = params->analEndPoint;
-  }
-
-  /* If only two detectors & standard analysis identify the 2 detectors
-   * up front for speed
-   */ 
-  ifoNum1 = ifoNum2 = tOffset1 = tOffset2 = 0;
-  if (params->numIFO == 2 && (! params->singlePolFlag) &&\
-      (!params->faceOnStatistic) )
-  {
-    for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-    {
-      if (params->haveTrig[ifoNumber])
-      {
-        if (ifoNum1 == 0)
-          ifoNum1 = ifoNumber;
-        else if (ifoNum2 == 0)
-          ifoNum2 = ifoNumber;
-      }
-    }
-    tOffset1 = timeOffsetPoints[ifoNum1] - params->analStartPointBuf;
-    tOffset2 = timeOffsetPoints[ifoNum2] - params->analStartPointBuf;
   }
 
   verbose("-->Begin SNR calculation at %ld \n",timeval_subtract(&startTime));

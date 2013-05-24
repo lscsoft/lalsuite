@@ -1691,6 +1691,27 @@ void coh_PTF_calculate_coherent_SNR(
   REAL4 v1_dot_u1,v2_dot_u2,max_eigen,coincSNR;
   REAL4 cohSNRThresholdSq = params->threshold * params->threshold;
 
+  /* If only two detectors & standard analysis identify the 2 detectors
+ *    * up front for speed
+ *       */
+  ifoNum1 = ifoNum2 = tOffset1 = tOffset2 = 0;
+  if (params->numIFO == 2 && (! params->singlePolFlag) &&\
+      (!params->faceOnStatistic) )
+  {
+    for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+    {
+      if (params->haveTrig[ifoNumber])
+      {
+        if (ifoNum1 == 0)
+          ifoNum1 = ifoNumber;
+        else if (ifoNum2 == 0)
+          ifoNum2 = ifoNumber;
+      }
+    }
+    tOffset1 = timeOffsetPoints[ifoNum1] - params->analStartPointBuf;
+    tOffset2 = timeOffsetPoints[ifoNum2] - params->analStartPointBuf;
+  }
+
   for (i = segStartPoint; i < segEndPoint; ++i) /* Main loop over time */
   {
     currPointLoc = i-params->analStartPoint;
