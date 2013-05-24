@@ -1026,7 +1026,8 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
 # Function to set up and run pipedown
 
 def pipedownSetup(dag,config,logPath,pipedownDir,\
-                  cacheFile,parentNodes,playgroundOnly):
+                  cacheFile,parentNodes,playgroundOnly, \
+                  optiontorunmvsc):
   """
   Set up and run pipedown
   dag      = the dag
@@ -1072,6 +1073,8 @@ def pipedownSetup(dag,config,logPath,pipedownDir,\
   pipeCommand += " --gps-start-time " + gpsStart
   pipeCommand += " --gps-end-time " + gpsEnd
   pipeCommand += " --ihope-cache " + cacheFile
+  if optiontorunmvsc:
+    pipeCommand += " --run-mvsc"
   if not playgroundOnly:
     pipeCommand += " --generate-all-data-plots"
     # Need to add playground command

@@ -166,6 +166,9 @@ parser.add_option("-W","--skip-hardware-injections",action="store_false",\
 parser.add_option("-w","--skip-omega-scans",action="store_false",\
     default=True,dest="do_omega_scans", help="Skip the omega scan setup.")
 
+parser.add_option("-M","--run-mvsc",action="store_true",\
+    default=False,dest="run_mvsc", help="Run the multivariate statisical classifier in pipedown")
+
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX")
 
@@ -719,7 +722,7 @@ if opts.complete_cache:
           print>>sys.stderr, "does not exist! This might cause later failures."
 
 
-			      
+            
     if opts.run_injections:
       if opts.run_data_quality:
         print "Running inspiral hipe for injections with vetoes"
@@ -851,7 +854,7 @@ if opts.run_pipedown:
 
   print "Running lalapps_pipedown"
   dag = inspiralutils.pipedownSetup(dag,cp,opts.log_path,"pipedown",\
-                            "../" + cachefilename,parentNodes,playgroundOnly)
+                            "../" + cachefilename,parentNodes,playgroundOnly,opts.run_mvsc)
 
 ##############################################################################
 # Set up the directories for plotting and run lalapps_plot
