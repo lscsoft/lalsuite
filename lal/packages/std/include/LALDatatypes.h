@@ -460,26 +460,10 @@ typedef struct tagLIGOTimeGPS {
 /** Zero-initializer for LIGOTimeGPS structs */
 #define LIGOTIMEGPSZERO { 0, 0 }
 
-#if defined(SWIG) && !defined(SWIGXML)  /* SWIG interface directives */
-// Specialised input typemap for LIGOTimeGPSs. Accepts a SWIG-wrapped LIGOTimeGPS and a double as input.
-%typemap(in, noblock=1, fragment=SWIG_AsVal_frag(double))
-  LIGOTimeGPS* (LIGOTimeGPS tmp, void *argp = 0, int res = 0),
-  const LIGOTimeGPS* (LIGOTimeGPS tmp, void *argp = 0, int res = 0)
-{
-  res = SWIG_ConvertPtr($input, &argp, $descriptor, $disown | %convertptr_flags);
-  if (!SWIG_IsOK(res)) {
-    double val = 0;
-    res = SWIG_AsVal(double)($input, &val);
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "$type", $symname, $argnum);
-    } else {
-      $1 = %reinterpret_cast(XLALGPSSetREAL8(&tmp, val), $ltype);
-    }
-  } else {
-    $1 = %reinterpret_cast(argp, $ltype);
-  }
-}
-%typemap(freearg) LIGOTimeGPS*, const LIGOTimeGPS* "";
+#ifdef SWIG     /* SWIG interface directives */
+/* *INDENT-OFF* */
+%include <lal/lalswig_ligotimegps.i>
+/* *INDENT-ON* */
 #endif /* SWIG */
 
 /** Indices of arrays corresponding to particular units.
