@@ -623,14 +623,14 @@ if (swiglal_release_parent(PTR)) {
 %enddef // %swiglal_array_dynamic_size()
 
 // Check that array strides are non-zero, otherwise fail.
-%define %swiglal_array_dynamic_check_strides(DATA, I)
+%define %swiglal_array_dynamic_check_strides(NAME, DATA, I)
   if (strides[I-1] == 0) {
-    SWIG_exception_fail(SWIG_IndexError, "Stride of dimension "#I" of '"#DATA"' is zero");
+    SWIG_exception_fail(SWIG_IndexError, "Stride of dimension "#I" of "#NAME"."#DATA" is zero");
   }
 %enddef // %swiglal_array_dynamic_check_strides()
 
 // The %swiglal_array_dynamic_<n>D() macros create typemaps which convert
-// <n>-D dynamically-allocated arrays in structs. The macros must be
+// <n>-D dynamically-allocated arrays in structs NAME. The macros must be
 // added inside the definition of the struct, before the struct members
 // comprising the array are defined. The DATA and N{I,J} members give
 // the array data and dimensions, TYPE and SIZET give their respective
@@ -638,14 +638,14 @@ if (swiglal_release_parent(PTR)) {
 // If the sizes or strides are members of the struct, 'arg1->' should be
 // used to access the struct itself.
 // 1-D arrays:
-%define %swiglal_array_dynamic_1D(TYPE, SIZET, DATA, NI, SI)
+%define %swiglal_array_dynamic_1D(NAME, TYPE, SIZET, DATA, NI, SI)
 
   // Typemaps which convert to/from the dynamically-allocated array.
   %typemap(in, noblock=1) TYPE* DATA {
     if (arg1) {
       const size_t dims[] = {NI};
       const size_t strides[] = {SI};
-      %swiglal_array_dynamic_check_strides(DATA, 1);
+      %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
       $1 = %reinterpret_cast(arg1->DATA, TYPE*);
       // swiglal_array_typeid input type: $1_type
       int ecode = %swiglal_array_copyin($1_type)(swiglal_self(), $input, %as_voidptr($1),
@@ -661,7 +661,7 @@ if (swiglal_release_parent(PTR)) {
     if (arg1) {
       const size_t dims[] = {NI};
       const size_t strides[] = {SI};
-      %swiglal_array_dynamic_check_strides(DATA, 1);
+      %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
       $1 = %reinterpret_cast(arg1->DATA, TYPE*);
       // swiglal_array_typeid input type: $1_type
       %set_output(%swiglal_array_viewout($1_type)(swiglal_self(), %as_voidptr($1),
@@ -690,15 +690,15 @@ if (swiglal_release_parent(PTR)) {
 
 %enddef // %swiglal_array_dynamic_1D()
 // 2-D arrays:
-%define %swiglal_array_dynamic_2D(TYPE, SIZET, DATA, NI, NJ, SI, SJ)
+%define %swiglal_array_dynamic_2D(NAME, TYPE, SIZET, DATA, NI, NJ, SI, SJ)
 
   // Typemaps which convert to/from the dynamically-allocated array.
   %typemap(in, noblock=1) TYPE* DATA {
     if (arg1) {
       const size_t dims[] = {NI, NJ};
       const size_t strides[] = {SI, SJ};
-      %swiglal_array_dynamic_check_strides(DATA, 1);
-      %swiglal_array_dynamic_check_strides(DATA, 2);
+      %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
+      %swiglal_array_dynamic_check_strides(NAME, DATA, 2);
       $1 = %reinterpret_cast(arg1->DATA, TYPE*);
       // swiglal_array_typeid input type: $1_type
       int ecode = %swiglal_array_copyin($1_type)(swiglal_self(), $input, %as_voidptr($1),
@@ -714,8 +714,8 @@ if (swiglal_release_parent(PTR)) {
     if (arg1) {
       const size_t dims[] = {NI, NJ};
       const size_t strides[] = {SI, SJ};
-      %swiglal_array_dynamic_check_strides(DATA, 1);
-      %swiglal_array_dynamic_check_strides(DATA, 2);
+      %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
+      %swiglal_array_dynamic_check_strides(NAME, DATA, 2);
       $1 = %reinterpret_cast(arg1->DATA, TYPE*);
       // swiglal_array_typeid input type: $1_type
       %set_output(%swiglal_array_viewout($1_type)(swiglal_self(), %as_voidptr($1),
@@ -745,40 +745,40 @@ if (swiglal_release_parent(PTR)) {
 %enddef // %swiglal_array_dynamic_2D()
 
 // These macros should be called from within the definitions of
-// LAL structs containing dynamically-allocated arrays.
+// LAL structs NAME containing dynamically-allocated arrays.
 // 1-D arrays, e.g:
 //   SIZET NI;
 //   TYPE* DATA;
-%define %swiglal_public_ARRAY_1D(TYPE, DATA, SIZET, NI)
+%define %swiglal_public_ARRAY_1D(NAME, TYPE, DATA, SIZET, NI)
   %swiglal_array_dynamic_size(SIZET, NI);
-  %swiglal_array_dynamic_1D(TYPE, SIZET, DATA, arg1->NI, 1);
+  %swiglal_array_dynamic_1D(NAME, TYPE, SIZET, DATA, arg1->NI, 1);
   %ignore DATA;
   %ignore NI;
 %enddef
-#define %swiglal_public_clear_ARRAY_1D(TYPE, DATA, SIZET, NI)
+#define %swiglal_public_clear_ARRAY_1D(NAME, TYPE, DATA, SIZET, NI)
 // 2-D arrays of fixed-length arrays, e.g:
 //   typedef ETYPE[NJ] ATYPE;
 //   SIZET NI;
 //   ATYPE* DATA;
-%define %swiglal_public_ARRAY_2D_FIXED(ETYPE, ATYPE, DATA, SIZET, NI)
+%define %swiglal_public_ARRAY_2D_FIXED(NAME, ETYPE, ATYPE, DATA, SIZET, NI)
   %swiglal_array_dynamic_size(SIZET, NI);
-  %swiglal_array_dynamic_2D(ETYPE, SIZET, DATA, arg1->NI, (sizeof(ATYPE)/sizeof(ETYPE)), (sizeof(ATYPE)/sizeof(ETYPE)), 1);
+  %swiglal_array_dynamic_2D(NAME, ETYPE, SIZET, DATA, arg1->NI, (sizeof(ATYPE)/sizeof(ETYPE)), (sizeof(ATYPE)/sizeof(ETYPE)), 1);
   %ignore DATA;
   %ignore NI;
 %enddef
-#define %swiglal_public_clear_ARRAY_2D_FIXED(ETYPE, ATYPE, DATA, SIZET, NI)
+#define %swiglal_public_clear_ARRAY_2D_FIXED(NAME, ETYPE, ATYPE, DATA, SIZET, NI)
 // 2-D arrays, e.g:
 //   SIZET NI, NJ;
 //   TYPE* DATA;
-%define %swiglal_public_ARRAY_2D(TYPE, DATA, SIZET, NI, NJ)
+%define %swiglal_public_ARRAY_2D(NAME, TYPE, DATA, SIZET, NI, NJ)
   %swiglal_array_dynamic_size(SIZET, NI);
   %swiglal_array_dynamic_size(SIZET, NJ);
-  %swiglal_array_dynamic_2D(TYPE, SIZET, DATA, arg1->NI, arg1->NJ, arg1->NJ, 1);
+  %swiglal_array_dynamic_2D(NAME, TYPE, SIZET, DATA, arg1->NI, arg1->NJ, arg1->NJ, 1);
   %ignore DATA;
   %ignore NI;
   %ignore NJ;
 %enddef
-#define %swiglal_public_clear_ARRAY_2D(TYPE, DATA, SIZET, NI, NJ)
+#define %swiglal_public_clear_ARRAY_2D(NAME, TYPE, DATA, SIZET, NI, NJ)
 
 ////////// Include scripting-language-specific interface headers //////////
 

@@ -58,7 +58,7 @@ extern "C" {
 /** A vector of COMPLEX8FrequencySeries */
 typedef struct tagCOMPLEX8FrequencySeriesVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(COMPLEX8FrequencySeries, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(COMPLEX8FrequencySeriesVector, COMPLEX8FrequencySeries, data, UINT4, length));
 #endif /* SWIG */
   UINT4 			length;		/**< number of SFTs */
   COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
@@ -67,7 +67,7 @@ typedef struct tagCOMPLEX8FrequencySeriesVector {
 /** A vector of REAL8FrequencySeries */
 typedef struct tagREAL8FrequencySeriesVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(REAL8FrequencySeries, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(REAL8FrequencySeriesVector, REAL8FrequencySeries, data, UINT4, length));
 #endif /* SWIG */
   UINT4                  length;
   REAL8FrequencySeries   *data;
@@ -76,7 +76,7 @@ typedef struct tagREAL8FrequencySeriesVector {
 /** A vector of REAL4FrequencySeries */
 typedef struct tagREAL4FrequencySeriesVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(REAL4FrequencySeries, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(REAL4FrequencySeriesVector, REAL4FrequencySeries, data, UINT4, length));
 #endif /* SWIG */
   UINT4                  length;
   REAL4FrequencySeries   *data;
@@ -96,7 +96,7 @@ typedef REAL8FrequencySeriesVector PSDVector;
 /** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiSFTVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(SFTVector*, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(MultiSFTVector, SFTVector*, data, UINT4, length));
 #endif /* SWIG */
   UINT4      length;  	/**< number of ifos */
   SFTVector  **data; 	/**< sftvector for each ifo */
@@ -106,7 +106,7 @@ typedef struct tagMultiSFTVector {
 /** A collection of PSD vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiPSDVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(PSDVector*, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(MultiPSDVector, PSDVector*, data, UINT4, length));
 #endif /* SWIG */
   UINT4      length;  	/**< number of ifos */
   PSDVector  **data; 	/**< sftvector for each ifo */
@@ -115,7 +115,7 @@ typedef struct tagMultiPSDVector {
 /** One noise-weight (number) per SFT (therefore indexed over IFOs and SFTs */
 typedef struct tagMultiNoiseWeights {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(REAL8Vector*, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(MultiNoiseWeights, REAL8Vector*, data, UINT4, length));
 #endif /* SWIG */
   UINT4 length;		/**< number of ifos */
   REAL8Vector **data;	/**< weights-vector for each SFTs */
@@ -125,7 +125,7 @@ typedef struct tagMultiNoiseWeights {
 /** A collection of (multi-IFO) time-series */
 typedef struct tagMultiREAL4TimeSeries {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(REAL4TimeSeries*, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(MultiREAL4TimeSeries, REAL4TimeSeries*, data, UINT4, length));
 #endif /* SWIG */
   UINT4 length;			/**< number of ifos */
   REAL4TimeSeries **data;	/**< vector of REAL4 timeseries */
@@ -134,7 +134,7 @@ typedef struct tagMultiREAL4TimeSeries {
 /** A vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct tagLIGOTimeGPSVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(LIGOTimeGPS, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(LIGOTimeGPSVector, LIGOTimeGPS, data, UINT4, length));
 #endif /* SWIG */
   UINT4 	length;		/**< number of timestamps */
   LIGOTimeGPS 	*data;		/**< array of timestamps */
@@ -144,7 +144,7 @@ typedef struct tagLIGOTimeGPSVector {
 /** A vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct tagMultiLIGOTimeGPSVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(LIGOTimeGPSVector*, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(MultiLIGOTimeGPSVector, LIGOTimeGPSVector*, data, UINT4, length));
 #endif /* SWIG */
   UINT4 	        length;	   /**< number of timestamps vectors or ifos */
   LIGOTimeGPSVector 	**data;    /**< timestamps vector for each ifo */

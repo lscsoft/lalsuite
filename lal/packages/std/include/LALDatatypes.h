@@ -72,7 +72,7 @@ extern "C" {
 /** Vector of type CHAR, see \ref ss_Vector for more details. */
 typedef struct tagCHARVector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(CHAR, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(CHARVector, CHAR, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     CHAR *data; /**< Pointer to the data array. */
@@ -81,7 +81,7 @@ typedef struct tagCHARVector {
 /** Vector of type CHAR*, ie 'strings', see \ref ss_Vector for more details.  */
 typedef struct tagLALStringVector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(CHAR *, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(LALStringVector, CHAR *, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     CHAR **data; /**< Pointer to the data array. */
@@ -90,7 +90,7 @@ typedef struct tagLALStringVector {
 /** Vector of type INT2, see \ref ss_Vector for more details. */
 typedef struct tagINT2Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(INT2, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(INT2Vector, INT2, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     INT2 *data; /**< Pointer to the data array. */
@@ -99,7 +99,7 @@ typedef struct tagINT2Vector {
 /** Vector of type UINT2, see \ref ss_Vector for more details. */
 typedef struct tagUINT2Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(UINT2, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(UINT2Vector, UINT2, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     UINT2 *data; /**< Pointer to the data array. */
@@ -108,7 +108,7 @@ typedef struct tagUINT2Vector {
 /** Vector of type INT4, see \ref ss_Vector for more details. */
 typedef struct tagINT4Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(INT4, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(INT4Vector, INT4, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     INT4 *data; /**< Pointer to the data array. */
@@ -117,7 +117,7 @@ typedef struct tagINT4Vector {
 /** Vector of type UINT4, see \ref ss_Vector for more details. */
 typedef struct tagUINT4Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(UINT4, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(UINT4Vector, UINT4, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     UINT4 *data; /**< Pointer to the data array. */
@@ -126,7 +126,7 @@ typedef struct tagUINT4Vector {
 /** Vector of type INT8, see \ref ss_Vector for more details. */
 typedef struct tagINT8Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(INT8, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(INT8Vector, INT8, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     INT8 *data; /**< Pointer to the data array. */
@@ -135,7 +135,7 @@ typedef struct tagINT8Vector {
 /** Vector of type UINT8, see \ref ss_Vector for more details. */
 typedef struct tagUINT8Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(UINT8, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(UINT8Vector, UINT8, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     UINT8 *data; /**< Pointer to the data array. */
@@ -144,7 +144,7 @@ typedef struct tagUINT8Vector {
 /** Vector of type REAL4, see \ref ss_Vector for more details. */
 typedef struct tagREAL4Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(REAL4, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(REAL4Vector, REAL4, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     REAL4 *data; /**< Pointer to the data array. */
@@ -153,7 +153,7 @@ typedef struct tagREAL4Vector {
 /** Vector of type REAL8, see \ref ss_Vector for more details. */
 typedef struct tagREAL8Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(REAL8, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(REAL8Vector, REAL8, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     REAL8 *data; /**< Pointer to the data array. */
@@ -162,7 +162,7 @@ typedef struct tagREAL8Vector {
 /** Vector of type COMPLEX8, see \ref ss_Vector for more details. */
 typedef struct tagCOMPLEX8Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(COMPLEX8, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(COMPLEX8Vector, COMPLEX8, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length; /**< Number of elements in array. */
     COMPLEX8 *data; /**< Pointer to the data array. */
@@ -171,7 +171,7 @@ typedef struct tagCOMPLEX8Vector {
 /** Vector of type COMPLEX16, see \ref ss_Vector for more details. */
 typedef struct tagCOMPLEX16Vector {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_1D(COMPLEX16, data, UINT4, length));
+    SWIGLAL(ARRAY_1D(COMPLEX16Vector, COMPLEX16, data, UINT4, length));
 #endif /* SWIG */
     UINT4 length;    /**< Number of elements in array. */
     COMPLEX16 *data; /**< Pointer to the data array. */
@@ -260,7 +260,7 @@ typedef COMPLEX16Vector COMPLEX16Sequence; /**< See \ref ss_Sequence for documen
 /** Sequence of CHAR Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagCHARVectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(CHAR, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(CHARVectorSequence, CHAR, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -270,7 +270,7 @@ typedef struct tagCHARVectorSequence {
 /** Sequence of INT2 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagINT2VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(INT2, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(INT2VectorSequence, INT2, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -280,7 +280,7 @@ typedef struct tagINT2VectorSequence {
 /** Sequence of UINT2 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagUINT2VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(UINT2, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(UINT2VectorSequence, UINT2, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -290,7 +290,7 @@ typedef struct tagUINT2VectorSequence {
 /** Sequence of INT4 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagINT4VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(INT4, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(INT4VectorSequence, INT4, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -300,7 +300,7 @@ typedef struct tagINT4VectorSequence {
 /** Sequence of UINT4 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagUINT4VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(UINT4, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(UINT4VectorSequence, UINT4, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -310,7 +310,7 @@ typedef struct tagUINT4VectorSequence {
 /** Sequence of INT8 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagINT8VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(INT8, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(INT8VectorSequence, INT8, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -320,7 +320,7 @@ typedef struct tagINT8VectorSequence {
 /** Sequence of UINT8 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagUINT8VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(UINT8, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(UINT8VectorSequence, UINT8, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -330,7 +330,7 @@ typedef struct tagUINT8VectorSequence {
 /** Sequence of REAL4 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagREAL4VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(REAL4, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(REAL4VectorSequence, REAL4, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -340,7 +340,7 @@ typedef struct tagREAL4VectorSequence {
 /** Sequence of REAL8 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagREAL8VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(REAL8, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(REAL8VectorSequence, REAL8, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -350,7 +350,7 @@ typedef struct tagREAL8VectorSequence {
 /** Sequence of COMPLEX8 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagCOMPLEX8VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(COMPLEX8, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(COMPLEX8VectorSequence, COMPLEX8, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length; /**< The number \a l of vectors. */
     UINT4 vectorLength; /**< The length \a n of each vector. */
@@ -360,7 +360,7 @@ typedef struct tagCOMPLEX8VectorSequence {
 /** Sequence of COMPLEX16 Vectors, see \ref ss_VectorSequence for more details. */
 typedef struct tagCOMPLEX16VectorSequence {
 #ifdef SWIG     /* SWIG interface directives */
-    SWIGLAL(ARRAY_2D(COMPLEX16, data, UINT4, length, vectorLength));
+    SWIGLAL(ARRAY_2D(COMPLEX16VectorSequence, COMPLEX16, data, UINT4, length, vectorLength));
 #endif /* SWIG */
     UINT4 length;    /**< The number \a l of vectors. */
     UINT4 vectorLength;    /**< The length \a n of each vector. */
