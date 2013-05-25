@@ -66,7 +66,7 @@ typedef REAL8 mat33_t[3][3];
 /** variable-length list of 2D-vectors */
 typedef struct tagvect2Dlist_t {
 #ifdef SWIG   // SWIG interface directives
-  SWIGLAL(2D_ARRAY_FIXED(REAL8, vect2D_t, data, UINT4, length));
+  SWIGLAL(ARRAY_2D_FIXED(REAL8, vect2D_t, data, UINT4, length));
 #endif   // SWIG
   UINT4 length;			/**< number of elements */
   vect2D_t *data;		/**< array of 2D vectors */
@@ -75,7 +75,7 @@ typedef struct tagvect2Dlist_t {
 /** variable-length list of 3D vectors */
 typedef struct tagvect3Dlist_t {
 #ifdef SWIG   // SWIG interface directives
-  SWIGLAL(2D_ARRAY_FIXED(REAL8, vect3D_t, data, UINT4, length));
+  SWIGLAL(ARRAY_2D_FIXED(REAL8, vect3D_t, data, UINT4, length));
 #endif   // SWIG
   UINT4 length;			/**< number of elements */
   vect3D_t *data;		/**< array of 3D vectors */

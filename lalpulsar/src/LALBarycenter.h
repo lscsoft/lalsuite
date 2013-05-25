@@ -162,8 +162,8 @@ typedef struct tagEphemerisData
   EphemerisFilenames ephiles; /**< Names of the two files containing positions of
                                * Earth and Sun, respectively at evenly spaced times. */
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(1D_ARRAY(PosVelAcc, ephemE, INT4, nentriesE));
-  SWIGLAL(1D_ARRAY(PosVelAcc, ephemS, INT4, nentriesS));
+  SWIGLAL(ARRAY_1D(PosVelAcc, ephemE, INT4, nentriesE));
+  SWIGLAL(ARRAY_1D(PosVelAcc, ephemS, INT4, nentriesS));
 #endif /* SWIG */
   INT4  nentriesE;      /**< The number of entries in Earth ephemeris table. */
   INT4  nentriesS;      /**< The number of entries in Sun ephemeris table. */

@@ -749,28 +749,28 @@ if (swiglal_release_parent(PTR)) {
 // 1-D arrays, e.g:
 //   SIZET NI;
 //   TYPE* DATA;
-%define %swiglal_public_1D_ARRAY(TYPE, DATA, SIZET, NI)
+%define %swiglal_public_ARRAY_1D(TYPE, DATA, SIZET, NI)
   %swiglal_array_dynamic_size(SIZET, NI);
   %swiglal_array_dynamic_1D(TYPE, SIZET, DATA, arg1->NI, 1);
   %ignore DATA;
   %ignore NI;
 %enddef
-#define %swiglal_public_clear_1D_ARRAY(TYPE, DATA, SIZET, NI)
+#define %swiglal_public_clear_ARRAY_1D(TYPE, DATA, SIZET, NI)
 // 2-D arrays of fixed-length arrays, e.g:
 //   typedef ETYPE[NJ] ATYPE;
 //   SIZET NI;
 //   ATYPE* DATA;
-%define %swiglal_public_2D_ARRAY_FIXED(ETYPE, ATYPE, DATA, SIZET, NI)
+%define %swiglal_public_ARRAY_2D_FIXED(ETYPE, ATYPE, DATA, SIZET, NI)
   %swiglal_array_dynamic_size(SIZET, NI);
   %swiglal_array_dynamic_2D(ETYPE, SIZET, DATA, arg1->NI, (sizeof(ATYPE)/sizeof(ETYPE)), (sizeof(ATYPE)/sizeof(ETYPE)), 1);
   %ignore DATA;
   %ignore NI;
 %enddef
-#define %swiglal_public_clear_2D_ARRAY_FIXED(ETYPE, ATYPE, DATA, SIZET, NI)
+#define %swiglal_public_clear_ARRAY_2D_FIXED(ETYPE, ATYPE, DATA, SIZET, NI)
 // 2-D arrays, e.g:
 //   SIZET NI, NJ;
 //   TYPE* DATA;
-%define %swiglal_public_2D_ARRAY(TYPE, DATA, SIZET, NI, NJ)
+%define %swiglal_public_ARRAY_2D(TYPE, DATA, SIZET, NI, NJ)
   %swiglal_array_dynamic_size(SIZET, NI);
   %swiglal_array_dynamic_size(SIZET, NJ);
   %swiglal_array_dynamic_2D(TYPE, SIZET, DATA, arg1->NI, arg1->NJ, arg1->NJ, 1);
@@ -778,7 +778,7 @@ if (swiglal_release_parent(PTR)) {
   %ignore NI;
   %ignore NJ;
 %enddef
-#define %swiglal_public_clear_2D_ARRAY(TYPE, DATA, SIZET, NI, NJ)
+#define %swiglal_public_clear_ARRAY_2D(TYPE, DATA, SIZET, NI, NJ)
 
 ////////// Include scripting-language-specific interface headers //////////
 

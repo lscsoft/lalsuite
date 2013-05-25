@@ -37,14 +37,14 @@ COMPLEX8 lalswig_test_COMPLEX8_matrix[2][3];
 // Test dynamic array of pointer access
 typedef struct taglalswig_test_arrayofdata {
 #ifdef SWIG
-  SWIGLAL(1D_ARRAY(INT4, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(INT4, data, UINT4, length));
 #endif // SWIG
   UINT4 length;
   INT4 *data;
 } lalswig_test_arrayofdata;
 typedef struct taglalswig_test_arrayofptrs {
 #ifdef SWIG
-  SWIGLAL(1D_ARRAY(lalswig_test_arrayofdata*, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(lalswig_test_arrayofdata*, data, UINT4, length));
 #endif // SWIG
   UINT4 length;
   lalswig_test_arrayofdata **data;
