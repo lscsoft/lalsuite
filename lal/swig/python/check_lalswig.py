@@ -273,6 +273,7 @@ try:
 except:
     pass
 assert(not expected_exception)
+assert(lal.lalswig_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.lalswig_test_noptrgps(1234.5))
 del t0, t1, t2, t3, t4struct, t5
 lal.CheckMemoryLeaks()
 print("passed LIGOTimeGPS operations")

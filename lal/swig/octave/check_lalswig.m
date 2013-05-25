@@ -267,6 +267,7 @@ try
 end_try_catch
 assert(!expected_exception);
 endif # lalcvar.swig_version >= hex2dec("020010")
+assert(lalswig_test_noptrgps(LIGOTimeGPS(1234.5)) == lalswig_test_noptrgps(1234.5))
 clear t0 t1 t2 t3 t4struct t5;
 CheckMemoryLeaks();
 disp("passed LIGOTimeGPS operations");

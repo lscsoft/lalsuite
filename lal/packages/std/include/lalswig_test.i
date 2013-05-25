@@ -94,3 +94,11 @@ void lalswig_test_Destroy_arrayofptrs(lalswig_test_arrayofptrs*);
 typedef struct taglalswig_test_gps {
   LIGOTimeGPS t;
 } lalswig_test_gps;
+REAL8 lalswig_test_noptrgps(const LIGOTimeGPS gps);
+#ifdef SWIG
+%header %{
+  REAL8 lalswig_test_noptrgps(const LIGOTimeGPS gps) {
+    return XLALGPSGetREAL8(&gps);
+  }
+%}
+#endif // SWIG
