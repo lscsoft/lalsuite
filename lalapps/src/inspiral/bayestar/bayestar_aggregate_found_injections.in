@@ -84,8 +84,8 @@ def process(fitsfilename):
     except KeyError:
         runtime = None
 
-    true_ra, true_dec, far = db.execute("""
-        SELECT DISTINCT sim.longitude AS ra, sim.latitude AS dec,
+    simulation_id, true_ra, true_dec, far = db.execute("""
+        SELECT DISTINCT sim.simulation_id AS simulation_id, sim.longitude AS ra, sim.latitude AS dec,
         ci.combined_far AS far
         FROM coinc_event_map AS cem1 INNER JOIN coinc_event_map AS cem2
         ON (cem1.coinc_event_id = cem2.coinc_event_id)
@@ -97,7 +97,7 @@ def process(fitsfilename):
     searched_area, searched_prob, offset = postprocess.find_injection(
         sky_map, true_ra, true_dec)
 
-    return coinc_event_id, far, searched_area, searched_prob, offset, runtime
+    return coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime
 
 
 if __name__ == '__main__':
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     fitsfilenames = tuple(itertools.chain.from_iterable(glob.iglob(fitsfileglob)
         for fitsfileglob in fitsfileglobs))
 
-    print('objid', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',
+    print('coinc_event_id', 'simulation_id', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',
         sep=',', file=outfile)
 
     count_records = 0
