@@ -84,7 +84,7 @@ MACRO(A, X);
 %enddef
 
 // The macro %swiglal_map_ab() maps a three-argument MACRO(A, B, X) onto a list
-// of arguments (which may be empty), with a common first arguments A and B.
+// of arguments (which may be empty), with common first arguments A and B.
 %define %_swiglal_map_ab(MACRO, A, B, X, ...)
 #if #X != ""
 MACRO(A, B, X);
@@ -93,6 +93,18 @@ MACRO(A, B, X);
 %enddef
 %define %swiglal_map_ab(MACRO, A, B, ...)
 %_swiglal_map_ab(MACRO, A, B, __VA_ARGS__, );
+%enddef
+
+// The macro %swiglal_map_abc() maps a four-argument MACRO(A, B, C, X) onto a list
+// of arguments (which may be empty), with common first arguments A, B, and C.
+%define %_swiglal_map_abc(MACRO, A, B, C, X, ...)
+#if #X != ""
+MACRO(A, B, C, X);
+%_swiglal_map_abc(MACRO, A, B, C, __VA_ARGS__);
+#endif
+%enddef
+%define %swiglal_map_abc(MACRO, A, B, C, ...)
+%_swiglal_map_abc(MACRO, A, B, C, __VA_ARGS__, );
 %enddef
 
 // Apply and clear SWIG typemaps.
@@ -106,6 +118,9 @@ MACRO(A, B, X);
 // Apply a SWIG feature.
 %define %swiglal_feature(FEATURE, VALUE, NAME)
 %feature(FEATURE, VALUE) NAME;
+%enddef
+%define %swiglal_feature_nspace(FEATURE, VALUE, NSPACE, NAME)
+%feature(FEATURE, VALUE) NSPACE::NAME;
 %enddef
 
 // Macros for allocating/copying new instances and arrays
@@ -821,6 +836,13 @@ if (swiglal_release_parent(PTR)) {
 %swiglal_map_ab(%swiglal_feature, "callback", "%sPtr", __VA_ARGS__);
 %enddef
 #define %swiglal_public_clear_FUNCTION_POINTER(...)
+
+// The SWIGLAL(STRUCT_IMMUTABLE(TAGNAME, ...)) macro can be used to make
+// the listed members of the struct TAGNAME immutable.
+%define %swiglal_public_STRUCT_IMMUTABLE(TAGNAME, ...)
+%swiglal_map_abc(%swiglal_feature_nspace, "immutable", "1", TAGNAME, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_STRUCT_IMMUTABLE(...)
 
 // Typemap for functions which return 'int'. If these functions also return
 // other output arguments (via 'argout' typemaps), the 'int' return value is

@@ -56,7 +56,7 @@ extern "C" {
 
 /** initialization struct for full InitDopplerScan() [UNDER CONSTRUCTION] */
 #ifdef SWIG /* SWIG interface directives */
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagDopplerFullScanInit::gridFile;
+SWIGLAL(STRUCT_IMMUTABLE(tagDopplerFullScanInit, gridFile));
 #endif /* SWIG */
 typedef struct tagDopplerFullScanInit {
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */

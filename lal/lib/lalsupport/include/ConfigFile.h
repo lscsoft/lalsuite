@@ -121,9 +121,7 @@ typedef enum {
 /** This structure defines a config-variable to be read in using the
  * general-purpose reading function LALReadConfigVariable(). */
 #ifdef SWIG /* SWIG interface directives */
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::secName;
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::varName;
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::fmt;
+SWIGLAL(STRUCT_IMMUTABLE(tagLALConfigVar, secName, varName, fmt));
 #endif /* SWIG */
 typedef struct tagLALConfigVar {
   const CHAR *secName;          /**< Section name within which to find varName.  May be NULL */

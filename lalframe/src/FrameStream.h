@@ -185,7 +185,7 @@ FrChanType;
  *
 */
 #ifdef SWIG /* SWIG interface directives */
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrChanIn::name;
+SWIGLAL(STRUCT_IMMUTABLE(tagFrChanIn, name));
 #endif /* SWIG */
 typedef struct
 tagFrChanIn
@@ -215,8 +215,7 @@ FrChanIn;
  *
 */
 #ifdef SWIG /* SWIG interface directives */
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrOutPar::source;
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrOutPar::description;
+SWIGLAL(STRUCT_IMMUTABLE(tagFrOutPar, source, description));
 #endif /* SWIG */
 typedef struct
 tagFrOutPar
