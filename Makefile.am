@@ -17,15 +17,7 @@ SUBDIRS = \
 	gnuscripts \
 	@subdirs@
 
-distcleancheck_listfiles = find . -type f \! -name "LAL*VCSInfo.h" -print
-
+if HAVE_GIT_REPO
 vcs-clean: maintainer-clean
-	rm -f Makefile.in
-	rm -f configure
-	rm -f aclocal.m4
-	rm -f config.cache
-	rm -f config.status
-	rm -f config.log
-	rm -f gnuscripts/Makefile.in
-
-cvs-clean: vcs-clean
+	-cd $(top_srcdir) && $(GIT) clean -Xdf
+endif

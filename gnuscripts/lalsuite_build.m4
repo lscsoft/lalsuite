@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 64
+# serial 65
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -21,6 +21,7 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   AM_CONDITIONAL(HAVE_GIT_REPO,[test "x${have_git_repo}" = xyes])
   # command line for version information generation script
   AM_COND_IF(HAVE_GIT_REPO,[
+    m4_pattern_allow([AM_DEFAULT_VERBOSITY])
     m4_pattern_allow([AM_V_GEN])
     AC_SUBST([genvcsinfo_],["\$(genvcsinfo_\$(AM_DEFAULT_VERBOSITY))"])
     AC_SUBST([genvcsinfo_0],["--am-v-gen='\$(AM_V_GEN)'"])
