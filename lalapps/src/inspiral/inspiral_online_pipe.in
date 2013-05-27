@@ -177,11 +177,12 @@ Usage: lalapps_inspiral_online_pipe [options]
 
   -c, --config-file FILE         use configuration file FILE
   -l, --log-path PATH            directory to write condor log file
+  -p, --coh-ptf                 Use coh_PTF_inspiral.c instead of inspiral.c
 """
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvs:e:a:b:f:t:c:l:"
+shortop = "hvs:e:a:b:f:t:c:l:p:"
 longop = [
   "help",
   "version",
@@ -192,7 +193,8 @@ longop = [
   "dag-file-name=",
   "aux-data-path=",
   "config-file=",
-  "log-path="
+  "log-path=",
+  "coh-ptf"
   ]
 
 try:
@@ -209,6 +211,7 @@ dag_file_name = None
 aux_data_path = None
 config_file = None
 log_path = None
+doCohPTF = False
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -233,6 +236,8 @@ for o, a in opts:
     config_file = a
   elif o in ("-l", "--log-path"):
     log_path = a
+  elif o in ("-p", "--coh-ptf"):
+    doCohPTF = True
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -331,7 +336,10 @@ for ifo in ifo_list:
     split_job = inspiral.SplitBankJob(cp)
 
     # and one to run the inspirals
-    insp_job  = inspiral.InspiralJob(cp)
+    if doCohPTF:
+      insp_job  = inspiral.PTFInspiralJob(cp)
+    else:
+      insp_job  = inspiral.InspiralJob(cp)
 
     # template and inspiral jobs also need to know about the data
     if ifo == 'V1':
@@ -342,7 +350,6 @@ for ifo in ifo_list:
         channel_name = 'ligo-channel'
         data_name    = 'ligo-data'
         type_name    = 'ligo-type'
-        df_job.add_opt('type',ifo + '_' + cp.get('input','ligo-type'))
 
     channel = cp.get('input',channel_name)
     type    = cp.get('input',type_name)
@@ -351,21 +358,31 @@ for ifo in ifo_list:
     tmplt_job.add_ini_opts(cp, data_name)
 
     # Add ifo-specific inspiral config
-    if cp.has_section(ifo.lower() + '-inspiral'):
-        insp_job.add_ini_opts(cp,ifo.lower() + '-inspiral')
+    if doCohPTF:
+      insp_job.add_opt(ifo.lower() + '-data','')
+      gps_times = str(gps_start_time) + '-' + str(gps_end_time - gps_start_time)
+      if ifo == 'H1' or ifo == 'H2' or ifo == 'L1':
+        insp_job.add_opt(ifo.lower()+'-channel-name',ifo.upper()+':' + cp.get('input','ligo-channel'))
+        insp_job.add_opt(ifo.lower()+'-frame-cache','cache/' + ifo[0] + '-' + ifo + '_' + cp.get('input','ligo-type') + '_CACHE-' + gps_times + '.lcf')
+      elif ifo == 'V1':
+        insp_job.add_opt(ifo.lower()+'-channel-name',ifo.upper()+':' + cp.get('input','virgo-channel'))
+        insp_job.add_opt(ifo.lower()+'-frame-cache','cache/' + ifo[0] + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
+    else:
+      if cp.has_section(ifo.lower() + '-inspiral'):
+          insp_job.add_ini_opts(cp,ifo.lower() + '-inspiral')
 
-    insp_job.set_channel(channel)
-    insp_job.add_ini_opts(cp, data_name)
+      insp_job.set_channel(channel)
+      insp_job.add_ini_opts(cp, data_name)
 
-    # First inspiral doesn't do vetos
-    insp_job.add_ini_opts(cp, 'no-veto-inspiral')
+      # First inspiral doesn't do vetos
+      insp_job.add_ini_opts(cp, 'no-veto-inspiral')
 
     # add log configuration
     lwadd_job = pipeline.LigolwAddJob('logs',cp)
 
     # make the lwadd job a priority so results get reported quickly
     lwadd_job.add_condor_cmd('priority', '20')
-    lwadd_job.add_opt('add-lfn-table',None)
+    lwadd_job.add_opt('add-lfn-table','')
 
     # set the usertag in the template bank
     if usertag:
@@ -389,16 +406,19 @@ for ifo in ifo_list:
     o   = int(cp.get('inspiral', 'segment-overlap'))
     length  = ( n * s - ( s - 1 ) * o ) / r
     overlap = o / r
+    if doCohPTF:
+      overlap = int(cp.get('coh_PTF_inspiral','segment-duration')) / 2
     job_analysis_time = length - overlap
-
-    print length, overlap
 
     # find the data between the start time and the end time
     df = pipeline.LSCDataFindNode(df_job)
     df.set_start(gps_start_time)
     df.set_end(gps_end_time)
     df.set_observatory(ifo[0])
-    df.set_type(type)
+    if ifo == 'V1':
+      df.set_type(type)
+    else:
+      df.set_type(ifo + '_' + type)
     dag.add_node(df)
 
     # modify the start and end time by pad seconds
@@ -457,21 +477,29 @@ for ifo in ifo_list:
         sub_insp = []
 
         for i,subbank in enumerate(split.get_output()):
-            insp = inspiral.InspiralNode(insp_job)
+            if doCohPTF:
+              insp = inspiral.PTFInspiralNode(insp_job)
+            else:
+              insp = inspiral.InspiralNode(insp_job)
             insp.set_start(seg[0])
             insp.set_end(seg[1])
-            insp.add_var_opt('trig-start-time',analysis_seg[0])
-            insp.add_var_opt('trig-end-time',analysis_seg[1])
+            insp.set_trig_start('trig-start-time')
+            insp.set_trig_end('trig-end-time')
 
             insp.set_ifo(ifo)
-            insp.set_cache(df.get_output())
-            insp.set_bank(subbank)
+            if doCohPTF:
+              insp.set_no_spin_bank(subbank)
+              insp.set_ifo_tag('FIRST')
+            else:
+              insp.set_cache(df.get_output())
+              insp.set_bank(subbank)
 
             if usertag:
                 insp.set_user_tag(usertag + "_%2.2d" % i)
             else:
                 insp.set_user_tag("UNCLUSTERED_%2.2d" % i)
 
+            insp.set_output()
             insp.add_parent(split)
             dag.add_node(insp)
             sub_insp.append(insp)
@@ -547,6 +575,7 @@ for ifo in ifo_list:
         
 # write the dag
 dag.write_sub_files()
+dag.write_script()
 dag.write_dag()
 
 log_fh.close()

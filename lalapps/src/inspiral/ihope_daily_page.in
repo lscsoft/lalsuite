@@ -150,7 +150,7 @@ class Tree:
     children   = []
     local      = False
 
-    def __init__(self, action, config, ifo, level, cluster, start_time, end_time, local = False):
+    def __init__(self, action, config, ifo, level, cluster, start_time, end_time, local = False, flower = 40):
         self.id         = self.make_id()
         self.action     = action
         self.config     = config
@@ -161,6 +161,7 @@ class Tree:
         self.end_time   = end_time
         self.children   = []
         self.local      = local
+        self.flower     = flower
 
     def make_id(self):
         idchars = '0123456789ABCDEF'
@@ -170,8 +171,8 @@ class Tree:
         self.children.append(child)
         return child
 
-    def add_sub_job(self, action, config, ifo, level, cluster, start_time, end_time, local = False):
-        return self.add_child( Tree(action, config, ifo, level, cluster, start_time, end_time, local) )
+    def add_sub_job(self, action, config, ifo, level, cluster, start_time, end_time, local = False, flower=40):
+        return self.add_child( Tree(action, config, ifo, level, cluster, start_time, end_time, local, flower) )
 
 
     def add_sub_jobs(self, *args):
@@ -185,7 +186,7 @@ class Tree:
             print >>out, 'JOB %s daily_ihope_page.sub' % self.id
 
         print >>out, 'RETRY %s 3' % self.id
-        print >>out, 'VARS %s macroaction="%s" macroconfig="%s" macroifo="%s" macrocategory="%d" macrocluster="%s" macrogpsstarttime="%s" macrogpsendtime="%s"' % (self.id, self.action, self.config['filename'], self.ifo, self.level, self.cluster, self.start_time, self.end_time)
+        print >>out, 'VARS %s macroaction="%s" macroconfig="%s" macroifo="%s" macrocategory="%d" macrocluster="%s" macrogpsstarttime="%s" macrogpsendtime="%s" macroflower="%f"' % (self.id, self.action, self.config['filename'], self.ifo, self.level, self.cluster, self.start_time, self.end_time, self.flower)
 
 	if self.action in ['make_glitch_page','make_hwinj_page']:
 	    print >>out, 'CATEGORY %s database' % self.id
@@ -244,7 +245,7 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
 
                 job.add_sub_job('plot_snr_vs_time',         config, ifo, job.level, cluster, start_time, end_time)
                 job.add_sub_job('plot_template_counts',     config, ifo, job.level, cluster, start_time, end_time)
-                job.add_sub_job('plot_mass_hist',           config, ifo, job.level, cluster, start_time, end_time)
+                job.add_sub_job('plot_mass_hist',           config, ifo, job.level, cluster, start_time, end_time, flower = options.flower)
                 job.add_sub_job('plot_glitchgram',          config, ifo, job.level, cluster, start_time, end_time)
 
                 # Ugh.  This one is actually a child of all the csv jobs, needs some tweaking...
@@ -275,7 +276,7 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
     out = open(config['tmp_dir'] + '/daily_ihope_page.sub','w')
     print >>out, """universe = vanilla
 executable = %s
-arguments = " --config $(macroconfig) --action $(macroaction) --ifos $(macroifo) --veto-categories $(macrocategory) --cluster-categories $(macrocluster) --gps-start-time $(macrogpsstarttime) --gps-end-time $(macrogpsendtime) "
+arguments = " --config $(macroconfig) --action $(macroaction) --ifos $(macroifo) --veto-categories $(macrocategory) --cluster-categories $(macrocluster) --gps-start-time $(macrogpsstarttime) --gps-end-time $(macrogpsendtime) --flower $(macroflower)"
 priority     = 20
 getenv       = True
 log          = %s/log/daily_plot.log
@@ -321,6 +322,7 @@ def parse_command_line():
 
     parser.add_option("-s", "--gps-start-time",    metavar = "gps_start_time",    help="")
     parser.add_option("-e", "--gps-end-time",      metavar = "gps_end_time",      help="")
+    parser.add_option("-F", "--flower", type=float, metavar = 'flower', default =40., help="The lower frequency cutoff used")
 
     options, filenames = parser.parse_args()
 
@@ -1566,24 +1568,33 @@ def plot_hexmass(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.close()
 
 
-def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time):
+def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time, flower):
     """Histogram of templates by mass"""
 
-    rnge = range(45)
-
-    def filename_to_bins(filename, s, e):
+    def filename_to_bins(filename, s, e, d):
         f = open(filename)
         mtots_and_etas = [l.strip().split(',')[s:e] for l in f.readlines()]
-        durations      = [chirplen(40.0, float(x[0]), float(x[1])) for x in mtots_and_etas]
+        f.close()
+        f = open(filename)
+        durations      = [chirplen(flower, float(x[0]), float(x[1])) for x in mtots_and_etas]
+        trig_durations = [float(l.strip().split(',')[d]) for l in f.readlines()]
         f.close()
 
+        maxduration = max([max(trig_durations),max(durations)])
+        rnge = range(int(maxduration) + 5)
+
         bins = [0 for x in rnge]
-        for d in durations:
+        chirpTbins = [0 for x in rnge]
+        for d,d2 in zip(trig_durations,durations):
+            if d2 < d or d < 0.0001:
+                d = d2
             bins[int(d)] += 1
+            chirpTbins[int(d2)] += 1
 
-        return bins
+        return rnge,bins,chirpTbins
 
-    bins = filename_to_bins('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster), 6, 8)
+    rnge,bins,inspChirpBins = filename_to_bins('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster), 6, 8, 9)
+    rnge_insp = rnge
     fig  = pylab.figure(0, figsize=(8.1,4.0))
     # axes = pylab.Axes(fig,[0.07, 0.1, 1.0 - 0.07 - 0.03, 0.8])
     # fig.add_axes(axes)
@@ -1609,7 +1620,7 @@ def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.savefig('%s/%s_%d_%s_mass_hist.png' % (config['out_dir'], ifo, veto_level, cluster))
     pylab.close()
 
-    weights = filename_to_bins('%s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster), 3, 5)
+    rnge, weights, tmpltChirpWeights = filename_to_bins('%s/%s-TMPLTBANK_%s.csv' % (config['tmp_dir'], ifo, cluster), 3, 5, 6)
 
     pylab.figure(2, figsize=(8.1,4.0))
 
@@ -1624,13 +1635,15 @@ def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time):
 
     pylab.title(make_title(ifo, veto_level, cluster, start_time))
     pylab.legend(['Templates by chirplen'])
-    pylab.xlabel('Chirp length from 40Hz (sec)')
+    pylab.xlabel('Chirp length from %fHz (sec)' %(flower))
     pylab.ylabel('Num. Templates')
     pylab.savefig('%s/%s_%d_%s_tmpl_hist.png' % (config['out_dir'], ifo, veto_level, cluster))
     pylab.close()
 
-    weights = [w or 1 for w in weights]
-    wbins   = [bins[i] / weights[i] for i in rnge]
+    tmpltChirpWeights = [w or 1 for w in tmpltChirpWeights]
+    if len(rnge_insp) < len(rnge):
+      rnge = rnge_insp
+    wbins   = [inspChirpBins[i] / tmpltChirpWeights[i] for i in rnge]
 
     pylab.figure(1, figsize=(8.1,4))
 
@@ -1638,7 +1651,7 @@ def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.grid()
     pylab.title(make_title(ifo, veto_level, cluster, start_time))
     pylab.legend(['Avg. triggers per template'])
-    pylab.xlabel('Chirp length from 40Hz (sec)')
+    pylab.xlabel('Chirp length from %fHz (sec)' %(flower))
     pylab.ylabel('Num. triggers / Num. templates')
 
     pylab.savefig('%s/%s_%d_%s_mass_hist_norm.png' % (config['out_dir'], ifo, veto_level, cluster))
@@ -1652,12 +1665,14 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     eta    = []
     snr    = []
     newsnr = []
+    duration = []
     for line in f:
       d = line.split(',')
       gps.append(float(d[0]))
       gpsns.append(float(d[1]))
       mtot.append(float(d[6]))
       eta.append(float(d[7]))
+      duration.append(float(d[9]))
       snr.append(float(d[3]))
       newsnr.append( new_snr(float(d[3]), float(d[11]), float(d[12])) )
 
@@ -1669,7 +1684,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     newsnr = pylab.array(newsnr)
     seconds_in_hour = 60.0 * 60.0
     time = (gps-start_time) / seconds_in_hour
-    duration = chirplen(40.0, mtot, eta)  #FIXME - Lower freq cutoff is hardcoded! Hot damn!!
+    duration = pylab.array(duration)
 
     if not len(gps):
         # If there's no data generate an empty plot
@@ -1678,7 +1693,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
         fig.add_axes(axes)
         pylab.xlim(0, 24)
         pylab.xticks(range(0,24,2))
-        pylab.ylabel('Chirp length from 40Hz (sec)')
+        pylab.ylabel('Template duration (sec)')
         pylab.title('No triggers')
         pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
         pylab.close()
@@ -1688,7 +1703,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
         fig.add_axes(axes)
         pylab.xlim(0, 24)
         pylab.xticks(range(0,24,2))
-        pylab.ylabel('Chirp length from 40Hz (sec)')
+        pylab.ylabel('Template duration (sec)')
         pylab.title('No triggers')
         pylab.savefig('%s/%s_%d_%s_new_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
         pylab.close()
@@ -1716,7 +1731,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.xlabel(make_time_label(start_time))
     pylab.xlim(0, 24)
     pylab.xticks(range(0,24,2))
-    pylab.ylabel('Chirp time from 40Hz (sec)')
+    pylab.ylabel('Template duration (sec)')
     pylab.title('Loudest: GPS=%.3f SNR=%.1f' % (gps[snrmax_index]+1e-9*gpsns[snrmax_index], snr[snrmax_index]))
     pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
     pylab.close()
@@ -1743,7 +1758,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.xlabel(make_time_label(start_time))
     pylab.xlim(0, 24)
     pylab.xticks(range(0,24,2))
-    pylab.ylabel('Chirp time from 40Hz (sec)')
+    pylab.ylabel('Template duration (sec)')
     pylab.title('Loudest: GPS=%.3f  newSNR=%.1f' % (gps[newsnrmax_index]+1e-9*gpsns[newsnrmax_index], newsnr[newsnrmax_index]))
     pylab.savefig('%s/%s_%d_%s_new_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
     pylab.close()
@@ -1840,5 +1855,8 @@ if __name__ == '__main__':
     for ifo in ifos:
         for cat in map(int, cats):
             for cluster in clusters:
-                actions[action](config, ifo, cat, cluster, start_time, end_time)
+                if action == 'plot_mass_hist':
+                    actions[action](config, ifo, cat, cluster, start_time, end_time, options.flower)
+                else:
+                    actions[action](config, ifo, cat, cluster, start_time, end_time)
 
