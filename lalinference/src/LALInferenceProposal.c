@@ -1663,7 +1663,7 @@ void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariable
       gsl_matrix_set(ny,i,j,draw);
     }
   }
-  
+  LALInferenceSetLogProposalRatio(runState, 0.0);
 }
 
 void 
@@ -1798,6 +1798,7 @@ void LALInferenceCorrPolarizationPhaseJump(LALInferenceRunState *runState, LALIn
   LALInferenceSetVariable(proposedParams, "polarisation", &psi);
   LALInferenceSetVariable(proposedParams, "phase", &phi);
 
+  LALInferenceSetLogProposalRatio(runState, 0.0);
 }
 typedef enum {
   USES_DISTANCE_VARIABLE,
