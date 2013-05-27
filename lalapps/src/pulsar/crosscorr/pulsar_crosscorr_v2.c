@@ -86,6 +86,7 @@ int main(int argc, char *argv[]){
   REAL8 tObs;
 
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
+  REAL8 deltaF, Tsft; /* frequency resolution and time baseline of SFTs */
 
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
@@ -108,11 +109,15 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
+  deltaF = config.catalog->data[0].header.deltaF;
+  Tsft = 1. / deltaF;
+
   /* now read the data */
   /* FIXME: need to correct fMin and fMax for Doppler shift, rngmedian bins and spindown range */
   /* this is essentially just a place holder for now */
-  fMin = uvar.fStart;
-  fMax = uvar.fStart + uvar.fBand;
+  /* FIXME: this running median buffer is overkill, since the running median block need not be centered on the search frequency */
+  fMin = uvar.fStart - 0.5 * uvar.rngMedBlock * deltaF;
+  fMax = uvar.fStart + 0.5 * uvar.rngMedBlock * deltaF + uvar.fBand;
 
   /* read the SFTs*/
   if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){ 
