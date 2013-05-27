@@ -40,7 +40,6 @@
 /* user input variables */
 typedef struct{
   BOOLEAN help; /**< if the user wants a help message */
-
   INT4    startTime;          /**< desired start GPS time of search */ 
   INT4    endTime;            /**< desired end GPS time */
   REAL8   fStart;             /**< start frequency */
@@ -86,9 +85,9 @@ int main(int argc, char *argv[]){
   REAL8 tObs;
 
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
-  
-   /* initialize and register user variables */
-   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
+
+  /* initialize and register user variables */
+  if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
@@ -194,8 +193,6 @@ int main(int argc, char *argv[]){
   XLALFree( config.edat->ephemE );
   XLALFree( config.edat->ephemS );
   XLALFree( config.edat );
-
-  
 
   /* de-allocate memory for user input variables */
   XLALDestroyUserVars();
