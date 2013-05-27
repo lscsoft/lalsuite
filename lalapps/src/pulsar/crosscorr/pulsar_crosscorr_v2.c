@@ -36,6 +36,7 @@
 #include <lal/DopplerScan.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/LALInitBarycenter.h>
+#include <lal/NormalizeSFTRngMed.h>
 
 /* user input variables */
 typedef struct{
@@ -49,7 +50,7 @@ typedef struct{
   REAL8   refTime;            /**< reference time for pulsar phase definition */
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
-  UINT4   rngMedBlock;        /**< running median block size */
+  INT4    rngMedBlock;        /**< running median block size */
 } UserInput_t;
 
 /* struct to store useful variables */
