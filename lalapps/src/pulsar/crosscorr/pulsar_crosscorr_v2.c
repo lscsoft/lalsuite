@@ -37,6 +37,7 @@
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/NormalizeSFTRngMed.h>
+#include <lal/PulsarCrossCorr_v2.h>
 
 /* user input variables */
 typedef struct{
@@ -82,6 +83,7 @@ int main(int argc, char *argv[]){
   /* sft related variables */ 
   MultiSFTVector *inputSFTs = NULL;
   MultiPSDVector *psd = NULL;
+  SFTIndexList *sftIndices;
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
 
@@ -129,6 +131,23 @@ int main(int argc, char *argv[]){
   if (( psd =  XLALNormalizeMultiSFTVect ( inputSFTs, uvar.rngMedBlock )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
+  }
+
+  /* Construct the flat list of SFTs (this sort of replicates the
+     catalog, but there's not an obvious way to get the information
+     back) */
+
+  if ( ( XLALCreateSFTIndexListFromMultiSFTVect( &sftIndices, inputSFTs ) != XLAL_SUCCESS ) ) {
+    XLALDestroyMultiSFTVector ( inputSFTs ); 
+    XLALDestroyMultiPSDVector ( psd );    
+    XLALDestroySFTCatalog (config.catalog );
+    XLALFree( config.edat->ephemE );
+    XLALFree( config.edat->ephemS );
+    XLALFree( config.edat );
+    /* de-allocate memory for user input variables */
+
+    XLALDestroyUserVars();
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
 

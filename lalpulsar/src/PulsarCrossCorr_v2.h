@@ -114,6 +114,13 @@ int XLALGetDopplerShiftedFrequencyInfo
   )
 ;
 
+int XLALCreateSFTIndexListFromMultiSFTVect
+  (
+   SFTIndexList        **indexList,
+   MultiSFTVector      *sfts
+  )
+;
+
 /*@}*/
 
 #ifdef  __cplusplus

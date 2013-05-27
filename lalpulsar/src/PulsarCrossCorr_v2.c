@@ -80,3 +80,48 @@ int XLALGetDopplerShiftedFrequencyInfo
   return XLAL_SUCCESS;
 
 }
+
+/** Construct flat SFTIndexList out of a MultiSFTVector */
+/* Allocates memory as well */
+int XLALCreateSFTIndexListFromMultiSFTVect
+  (
+   SFTIndexList        **indexList,   /* Output: flat list of indices to locate SFTs */
+   MultiSFTVector      *sfts         /* Input: set of per-detector SFT vectors */
+  )
+{
+  SFTIndexList *ret = NULL;
+  UINT8 numSFTs;
+  UINT4 j, k, l, numDets, numForDet;
+
+  numDets = sfts->length;
+
+  numSFTs = 0;
+  for (k=0; k < numDets; k++) {
+    numSFTs += sfts->data[k]->length;
+  }
+
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) )) == NULL ) {
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+  ret->length = numSFTs;
+  if ( ( ret->data = XLALCalloc ( numSFTs, sizeof ( *ret->data ) )) == NULL ) {
+    XLALFree ( ret );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+
+  j = 0;
+  for (k=0; k < numDets; k++) {
+    numForDet = sfts->data[k]->length;
+    for (l=0; l < numForDet; l++) {
+      ret->data[j].detInd = k;
+      ret->data[j].sftInd = l;
+    }
+  }
+  /* should sort list by GPS time if possible */
+  /* qsort(ret->data, ret->length, sizeof(ret->data[0]), CompareGPSTime ) */
+
+  (*indexList) = ret;
+  
+  return XLAL_SUCCESS;
+}
+
