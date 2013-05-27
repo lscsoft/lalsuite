@@ -256,6 +256,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
 {
 
   static SFTConstraints constraints;
+  LIGOTimeGPS startTime, endTime;
   CHAR EphemEarth[MAXFILENAMELENGTH]; /* file with earth-ephemeris data */
   CHAR EphemSun[MAXFILENAMELENGTH];	/* file with sun-ephemeris data */
 
@@ -263,20 +264,26 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   /* set sft catalog constraints */
   constraints.detector = NULL;
   constraints.timestamps = NULL;
+  constraints.startTime = &startTime;
+  constraints.endTime = &endTime;
   XLALGPSSet( constraints.startTime, uvar->startTime, 0);
   XLALGPSSet( constraints.endTime, uvar->endTime,0); 
-  if ( (constraints.startTime == NULL)&& (constraints.startTime == NULL) ) {
+
+  /* This check doesn't seem to work, since XLALGPSSet doesn't set its
+     first argument.
+
+  if ( (constraints.startTime == NULL)&& (constraints.endTime == NULL) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALGPSSet() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
+
+  */
 
   /* get catalog of SFTs */
   if ((config->catalog = XLALSFTdataFind (uvar->sftLocation, &constraints)) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALSFTdataFind() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
-
-
 
   /* initialize ephemeris data*/
   /* first check input consistency */
