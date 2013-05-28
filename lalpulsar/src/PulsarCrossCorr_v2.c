@@ -91,7 +91,8 @@ int XLALCreateSFTIndexListFromMultiSFTVect
 {
   SFTIndexList *ret = NULL;
   UINT8 numSFTs;
-  UINT4 j, k, l, numDets, numForDet;
+  UINT8 j, k, l, numForDet;
+  UINT4 numDets;
 
   numDets = sfts->length;
 
@@ -140,7 +141,7 @@ int XLALCreateSFTPairIndexList
   SFTPairIndexList *ret = NULL;
   UINT8 numSFTs;
   UINT8 numPairs;
-  UINT4 j, k, l, lMin;
+  UINT8 j, k, l, lMin;
   REAL8 timeDiff;
   LIGOTimeGPS gps1, gps2;
 
@@ -181,6 +182,12 @@ int XLALCreateSFTPairIndexList
       }
     }
   }
+  ret->length = j;
+  if ( ( ret->data = XLALRealloc ( ret->data, j * sizeof ( *ret->data ) )) == NULL ) {
+    XLALFree ( ret );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+  
 
   (*pairIndexList) = ret;
   
