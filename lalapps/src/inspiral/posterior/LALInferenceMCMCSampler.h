@@ -52,7 +52,8 @@ typedef enum {
 	ONLY_PT,          /** Run only parallel tempers. */
 	TEMP_PT,          /** In the parallel tempering phase of an annealed run */
     ANNEALING,        /** In the annealing phase of an annealed run */
-	SINGLE_CHAIN      /** In the single-chain sampling phase of an annealed run */
+	SINGLE_CHAIN,     /** In the single-chain sampling phase of an annealed run */
+    LADDER_UPDATE     /** Move all temperature chains to cold chains location (helpful for burnin) */
 } LALInferenceMCMCrunPhase;
 
 /* MPI communications */
@@ -76,9 +77,11 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile);
 
 /* Functions for controlling adaptation */
+void acknowledgePhaseChange(LALInferenceRunState *runState);
 void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle);
 void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle);
 void LALInferenceAdaptationEnvelope(LALInferenceRunState *runState, INT4 cycle);
+void LALInferenceLadderUpdate(LALInferenceRunState *runState);
 
 /* Data IO routines */
 FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState);
