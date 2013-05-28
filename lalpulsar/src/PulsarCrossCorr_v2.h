@@ -120,6 +120,15 @@ int XLALCreateSFTIndexListFromMultiSFTVect
    MultiSFTVector      *sfts
   )
 ;
+int XLALCreateSFTPairIndexList
+  (
+   SFTPairIndexList  **pairIndexList,
+   SFTIndexList       *indexList,
+   MultiSFTVector     *sfts,
+   REAL8               maxLag,
+   BOOLEAN             inclAutoCorr
+  )
+;
 
 /*@}*/
 

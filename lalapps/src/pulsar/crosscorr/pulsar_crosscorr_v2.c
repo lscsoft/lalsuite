@@ -44,10 +44,12 @@ typedef struct{
   BOOLEAN help; /**< if the user wants a help message */
   INT4    startTime;          /**< desired start GPS time of search */ 
   INT4    endTime;            /**< desired end GPS time */
-  REAL8   fStart;             /**< start frequency */
-  REAL8   fBand;              /**< frequency band to search over */
-  REAL8   fdotStart;          /**< starting value for first spindown */
-  REAL8   fdotBand;           /**< range of first spindown to search over */
+  REAL8   maxLag;             /**< maximum lag time in seconds between SFTs in correlation */
+  BOOLEAN inclAutoCorr;       /**< include auto-correlation terms (an SFT with itself) */
+  REAL8   fStart;             /**< start frequency in Hz */
+  REAL8   fBand;              /**< frequency band to search over in Hz */
+  REAL8   fdotStart;          /**< starting value for first spindown in Hz/s*/
+  REAL8   fdotBand;           /**< range of first spindown to search over in Hz/s */
   REAL8   refTime;            /**< reference time for pulsar phase definition */
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
@@ -84,6 +86,7 @@ int main(int argc, char *argv[]){
   MultiSFTVector *inputSFTs = NULL;
   MultiPSDVector *psd = NULL;
   SFTIndexList *sftIndices;
+  SFTPairIndexList *sftPairs;
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
 
@@ -150,6 +153,21 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
+  /* Construct the list of SFT pairs */
+
+  if ( ( XLALCreateSFTPairIndexList( &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr ) != XLAL_SUCCESS ) ) {
+    /* XLALDestroySFTIndexList(sftIndices) */
+    XLALDestroyMultiSFTVector ( inputSFTs ); 
+    XLALDestroyMultiPSDVector ( psd );    
+    XLALDestroySFTCatalog (config.catalog );
+    XLALFree( config.edat->ephemE );
+    XLALFree( config.edat->ephemS );
+    XLALFree( config.edat );
+    /* de-allocate memory for user input variables */
+
+    XLALDestroyUserVars();
+    XLAL_ERROR( XLAL_EFUNC );
+  }
 
   /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
   /* /\* calculate deltaF_SFT *\/ */
@@ -211,6 +229,8 @@ int main(int argc, char *argv[]){
   /* } */
 
 
+  /* XLALDestroySFTPairIndexList(sftPairs) */
+  /* XLALDestroySFTIndexList(sftIndices) */
   XLALDestroyMultiSFTVector ( inputSFTs ); 
   XLALDestroyMultiPSDVector ( psd );
 
@@ -238,6 +258,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->help = FALSE;
   uvar->startTime = 814838413;	/* 1 Nov 2005, ~ start of S5 */
   uvar->endTime = uvar->startTime + (INT4) round ( LAL_YRSID_SI ) ;	/* 1 year of data */
+  uvar->maxLag = 0.0;
+  uvar->inclAutoCorr = FALSE;
   uvar->fStart = 100.0; 
   uvar->fBand = 0.1;
   uvar->fdotStart = 0.0;
@@ -257,6 +279,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   
   XLALregINTUserStruct   ( startTime,     0,  UVAR_OPTIONAL, "Desired start time of analysis in GPS seconds");
   XLALregINTUserStruct   ( endTime,       0,  UVAR_OPTIONAL, "Desired end time of analysis in GPS seconds");
+  XLALregREALUserStruct  ( maxLag,        0,  UVAR_OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");
+  XLALregBOOLUserStruct  ( inclAutoCorr,  0,  UVAR_OPTIONAL, "Include auto-correlation terms (an SFT with itself)");
   XLALregREALUserStruct  ( fStart,        0,  UVAR_OPTIONAL, "Start frequency in Hz");
   XLALregREALUserStruct  ( fBand,         0,  UVAR_OPTIONAL, "Frequency band to search over in Hz ");
   XLALregREALUserStruct  ( fdotStart,     0,  UVAR_OPTIONAL, "Start value of spindown in Hz/s");
