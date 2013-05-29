@@ -18,6 +18,7 @@
  */
 
 #include <lal/LALDetCharHveto.h>
+#include <lal/LALDetCharHvetoUtils.h>
 #include <lal/LIGOLwXML.h>
 
 /*

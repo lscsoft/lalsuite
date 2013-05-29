@@ -176,6 +176,7 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			// Not the target channel?
 			if( strstr( sb_aux->channel, chan ) || sb_aux->next == TRIG_MASKED ){ 
 				trigp = g_sequence_iter_next(trigp);
+				if( g_sequence_iter_is_end(trigp) ) break;
 				sb_aux = (SnglBurst*)g_sequence_get(trigp);
 				continue;
 			}
@@ -483,75 +484,3 @@ double XLALDetCharHvetoSignificance( double mu, int k ){
 		return -k*log10(mu) + mu*log10(exp(1)) + gsl_sf_lngamma(k+1)/log(10);
 	}
 }
-
-#if 0
-GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, char* ignore_list ){
-	GSequence* trig_sequence = g_sequence_new(NULL);
-	GSequence* ignorel = g_sequence_new(g_free);
-
-    SnglBurst* tbl = XLALSnglBurstTableFromLIGOLw( fname );
-    SnglBurst *begin = NULL, *deleteme = NULL;
-    if( !tbl ) {
-		return trig_sequence;
-	}
-
-    int cnt = 0;
-    char* tmp;
-    tmp = malloc( sizeof(char)*512 );
-    FILE* lfile = fopen( ignore_list, "r" );
-    while(!feof(lfile)){
-        cnt = fscanf( lfile, "%s", tmp );
-        if( cnt == EOF ) break;
-        g_sequence_append( ignorel, g_strdup(tmp) );
-    }
-    free(tmp);
-    fclose(lfile);
-
-    do {
-        gboolean ignore = FALSE;
-        GSequenceIter* igitr;
-        // FIXME: Support ignorelist == NULL
-        igitr = ignorel ? g_sequence_get_begin_iter(ignorel) : NULL;
-        while( (igitr != NULL) & !g_sequence_iter_is_end(igitr) ){
-            /*
-             * Note this will cause incorrect behavior if the same channel name
-             * with different interferometers is included in the same run as
-             * the SB channel names do not include ifo by default.
-             */
-            ignore = (strstr(g_sequence_get(igitr), tbl->channel) != NULL);
-            if( !ignore ) {
-                igitr = g_sequence_iter_next(igitr);
-            } else {
-                break;
-            }
-        }
-        if( tbl->snr >= min_snr && !ignore ){
-            //printf( "Adding event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
-            g_sequence_insert_sorted( trig_sequence, tbl, (GCompareDataFunc)compare, NULL );
-            tbl=tbl->next;
-        } else {
-            //printf( "Ignoring event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
-            if( !deleteme ){
-                begin = deleteme = tbl;
-            } else {
-                deleteme->next = tbl;
-                deleteme = deleteme->next;
-            }
-            tbl=tbl->next;
-        }
-        //} // end pragma task
-    //}
-    } while( tbl );
-    //} // end pragma single
-    //} // end pragma parallel
-    printf( "Deleting %d unused events.\n", XLALSnglBurstTableLength(begin) );
-    deleteme->next = NULL; // Detach this from its sucessor in case that's used
-    deleteme = NULL;
-    XLALDestroySnglBurstTable(begin);
-    printf( "Done.\n" );
-
-	g_sequence_free( ignorel );
-
-	return trig_sequence;
-}
-#endif

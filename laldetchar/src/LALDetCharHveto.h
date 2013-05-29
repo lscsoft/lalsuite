@@ -42,7 +42,10 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
 GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan, double snr_thresh );
 void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, const LALSeg veto, const char* vchan );
 double XLALDetCharHvetoSignificance( double mu, int k );
-//GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, char* ignore_list );
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(RETURN_VALUE(GSequence*, XLALDetCharRemoveTrigs));
+#endif
 
 #ifdef  __cplusplus
 }
