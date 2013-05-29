@@ -222,11 +222,11 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 	}
 
         for(item=Live[0]->head,j=0;item;item=item->next){ 
-          if( item->vary==LALINFERENCE_PARAM_LINEAR ){
+          if( item->vary==LALINFERENCE_PARAM_LINEAR && item->type==LALINFERENCE_REAL8_t ){
             means[j]/=(REAL8)Nlive;
             j++;
           }
-          if( item->vary==LALINFERENCE_PARAM_CIRCULAR ){
+          if( item->vary==LALINFERENCE_PARAM_CIRCULAR && item->type==LALINFERENCE_REAL8_t ){
             ms[j]/=(REAL8)Nlive;
             mc[j]/=(REAL8)Nlive;
             
