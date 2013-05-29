@@ -97,7 +97,6 @@ extern const char *const cycleArrayCounterName;
 extern const char *const singleAdaptProposalName;
 extern const char *const singleProposalName;
 extern const char *const orbitalPhaseJumpName;
-extern const char *const inclinationDistanceName;
 extern const char *const covarianceEigenvectorJumpName;
 extern const char *const skyLocWanderJumpName;
 extern const char *const differentialEvolutionFullName;
@@ -109,7 +108,6 @@ extern const char *const skyReflectDetPlaneName;
 extern const char *const rotateSpinsName;
 extern const char *const polarizationPhaseJumpName;
 extern const char *const distanceQuasiGibbsProposalName;
-extern const char *const orbitalPhaseQuasiGibbsProposalName;
 extern const char *const extrinsicParamProposalName;
 extern const char *const KDNeighborhoodProposalName;
 
@@ -141,14 +139,10 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState);
 /** A reasonable default proposal.  Uses adaptation if the --adapt
     command-line flag active. */
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-/* void LALInferencetempProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
 
 /** Proposal for rapid sky localization.  Used when --rapidSkyLoc
     is specified. */
 void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-/** Proposal for finding max temperature for PTMCMC. */
-void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Proposal for after annealing is over. */
 void LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
@@ -160,11 +154,6 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
 /** Like LALInferenceSingleProposal() but will use adaptation if the
     --adapt command-line flag given. */
 void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-/** Chooses a detector at random, and keeps the amplitude coefficient
-    in that detector, A = (fPlus*iPlus + fCross*iCross)/d, constant
-    while choosing a different inclination and distance. */
-void LALInferenceInclinationDistance(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Increments the orbital phase by pi. */
 void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
@@ -231,13 +220,6 @@ void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariabl
     sampler for distance (though a Gibbs sampler would sample from the
     *posterior* in d, not the likelihood in u = 1/d). */
 void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-/** Samples from the analytic likelihood distribution in orbital phase
-    (log(L) ~ <d|d> + 2*Re(<d|h>)*cos(delta-phi) -
-    2*Im(<d|h>)*sin(delta-phi) + <h|h>, where delta-phi is the orbital
-    phase shift relative to the reference used for h.  This is
-    effectively a Gibbs sampler for the phase coordinate. */
-void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Uses a kD tree containing the previously-output points to propose
     the next sample.  The proposal chooses a stored point at random,

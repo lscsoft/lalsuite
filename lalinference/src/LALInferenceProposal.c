@@ -51,7 +51,6 @@ const char *const LALInferenceCurrentProposalName = "Current Proposal";
 const char *const singleAdaptProposalName = "Single";
 const char *const singleProposalName = "Single";
 const char *const orbitalPhaseJumpName = "OrbitalPhase";
-const char *const inclinationDistanceName = "InclinationDistance";
 const char *const covarianceEigenvectorJumpName = "CovarianceEigenvector";
 const char *const skyLocWanderJumpName = "SkyLocWander";
 const char *const differentialEvolutionFullName = "DifferentialEvolutionFull";
@@ -67,7 +66,6 @@ const char *const rotateSpinsName = "RotateSpins";
 const char *const polarizationPhaseJumpName = "PolarizationPhase";
 const char *const polarizationCorrPhaseJumpName = "CorrPolarizationPhase";
 const char *const distanceQuasiGibbsProposalName = "DistanceQuasiGibbs";
-const char *const orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
 const char *const extrinsicParamProposalName = "ExtrinsicParamProposal";
 const char *const KDNeighborhoodProposalName = "KDNeighborhood";
 
@@ -104,19 +102,6 @@ numDetectorsUniquePositions(LALInferenceRunState *runState) {
 
   return nIFO - nCollision;
 }
-
-/*
-static void 
-getDetectorsLikelihoods(LALInferenceRunState *runState, REAL8 *L) {
-  LALInferenceIFOData *dataPtr = runState->data;
-  INT4 i=0;
-  while (dataPtr != NULL) {
-    L[i] = dataPtr->loglikelihood;
-    dataPtr = dataPtr->next;
-    i++;
-  }
-}
-*/
 
 static void
 LALInferenceSetLogProposalRatio(LALInferenceRunState *runState, REAL8 logP) {
@@ -355,11 +340,6 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
       LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
     }
-    /*
-      else if(LALInferenceCheckVariable(proposedParams,"inclination")&&LALInferenceCheckVariable(proposedParams,"distance")) {
-      LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
-    }
-    */
     if(LALInferenceGetProcParamVal(runState->commandLine,"--proposal-drawprior"))
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
     
@@ -466,11 +446,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
-  /*
-  if(LALInferenceCheckVariable(proposedParams,"inclination")) {
-    LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
-  }
-  */
 
   //Add LALInferencePSDFitJump to the cycle
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--psdFit");
@@ -511,7 +486,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-gibbs")){
     LALInferenceAddProposalToCycle(runState, distanceQuasiGibbsProposalName, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
-    LALInferenceAddProposalToCycle(runState, orbitalPhaseQuasiGibbsProposalName, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT);
   }
 
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--noProposalSkyRing")) {
@@ -530,7 +504,6 @@ SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
   LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, 100);
   //LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, 1);
-  //LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, 1);
   LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, 1);
 
   LALInferenceFrame frame=LALINFERENCE_FRAME_RADIATION;
@@ -556,32 +529,8 @@ SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal")){
     LALInferenceAddProposalToCycle(runState, distanceQuasiGibbsProposalName, &LALInferenceDistanceQuasiGibbsProposal, 1);
-    LALInferenceAddProposalToCycle(runState, orbitalPhaseQuasiGibbsProposalName, &LALInferenceOrbitalPhaseQuasiGibbsProposal, 1);
   }
 
-  LALInferenceRandomizeProposalCycle(runState);
-}
-
-/*static void
-SetuptempProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
-  LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  if(LALInferenceGetProcParamVal(runState->commandLine,"--extrinsicparamproposal")){
-    LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, 10);
-  }else{
-    LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, 5);
-    LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, 5);
-  }
-  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, 10);
-  LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, 1);
-  
-  LALInferenceRandomizeProposalCycle(runState);
-}*/
-
-
-static void
-SetupPTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
-  LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, 1);
   LALInferenceRandomizeProposalCycle(runState);
 }
 
@@ -602,17 +551,6 @@ SetupPostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *propo
   }
 
   LALInferenceRandomizeProposalCycle(runState);
-}
-
-void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
-  LALInferenceVariables *propArgs = runState->proposalArgs;
-  if (!LALInferenceCheckVariable(propArgs, cycleArrayName) || !LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
-    /* In case there is a partial cycle set up already, delete it. */
-    LALInferenceDeleteProposalCycle(runState);
-    SetupPTTempTestProposal(runState, proposedParams);
-  }
-
-  LALInferenceCyclicProposal(runState, proposedParams);
 }
 
 void LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
@@ -655,19 +593,6 @@ void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVar
   /* Set adapting flag to 0, it will be set to 1 if an adapting step is used*/
   LALInferenceCyclicProposal(runState, proposedParams);
 }
-
-/*void LALInferencetempProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
-{
-  LALInferenceVariables *propArgs = runState->proposalArgs;
-  
-  if (!LALInferenceCheckVariable(propArgs, cycleArrayName) || !LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
-    LALInferenceDeleteProposalCycle(runState);
-    SetuptempProposal(runState, proposedParams);
-  }
-  
-  LALInferenceCyclicProposal(runState, proposedParams);
-}*/
-
 
 void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *propName = singleAdaptProposalName;
@@ -873,81 +798,6 @@ void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVa
 
   /* Probably not needed, but play it safe. */
   LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
-}
-
-/* The idea for this jump proposal is to explore the cos(I)-d
-   degeneracy that we see in our MCMC's.  If we had exactly one
-   detector in the network, this would be a perfect degeneracy for
-   non-spinning signals, since the inclination and distance both enter
-   only in the amplitude of the signal.  With multiple detectors, the
-   degeneracy is broken because each detector responds differently to
-   the + and x polarizations (i.e. has different f+, fx), and
-   therefore differently to changes in the inclination of the system.  
-
-   This jump proposal selects one of the detectors at random, and then
-   jumps to a random location on the cos(I)-d curve that keeps that
-   detector's received GW amplitude constant.  We choose to keep the
-   amplitude constant in only one of the detectors instead of, for
-   example, keeping the SNR-weighted amplitude constant, or the
-   uniformly-weighted amplitude, or the sensitivity-weighted
-   amplitude, or ... because it makes for the simplest jump proposal.
-   */
-void LALInferenceInclinationDistance(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
-  const char *propName = inclinationDistanceName;
-  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  LALInferenceCopyVariables(runState->currentParams, proposedParams);
-
-  UINT4 nIFO = 0;
-  LALInferenceIFOData *data = runState->data;
-  while (data != NULL) {
-    nIFO++;
-    data = data->next;
-  }
-
-  /* Grab one of the detectors. */
-  UINT4 iIFO = gsl_rng_uniform_int(runState->GSLrandom, nIFO);
-  data = runState->data;
-  while (iIFO > 0) {
-    iIFO--;
-    data = data->next;
-  }
-
-  REAL8 ra, dec, psi, t, gmst;
-  LIGOTimeGPS tGPS;
-  ra = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
-  dec = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
-  psi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "polarisation");
-  t = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
-  
-  XLALGPSSetREAL8(&tGPS, t);
-  gmst = XLALGreenwichMeanSiderealTime(&tGPS);
-
-  REAL8 fPlus, fCross;
-  XLALComputeDetAMResponse(&fPlus, &fCross, data->detector->response, ra, dec, psi, gmst);
-
-  /* Choose new inclination uniformly in cos(i). */
-  REAL8 inc = *(REAL8 *)LALInferenceGetVariable(proposedParams, "inclination");
-  REAL8 cosI = cos(inc);
-  REAL8 cosINew = 2.0*gsl_rng_uniform(runState->GSLrandom) - 1.0;
-
-  REAL8 d = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
-
-  /* This is the constant that describes the curve. */
-  REAL8 C = (fPlus*(1 + cosI*cosI) + 2.0*fCross*cosI)/d;
-
-  REAL8 dNew = (fPlus*(1 + cosINew*cosINew) + 2.0*fCross*cosINew) / C;
-
-  REAL8 incNew = acos(cosINew);
-
-  /* This is the determinant of the Jacobian d(cos(i),C)/d(i, d),
-     which is the probability density in (i,d) space of a proposal
-     that is uniform in cos(i), C.*/
-  REAL8 dcosiCdid = C*C*sqrt(1-cosINew*cosINew) / (fPlus + 2.0*fCross*cosINew + fPlus*cosINew*cosINew);
-
-  LALInferenceSetVariable(proposedParams, "inclination", &incNew);
-  LALInferenceSetVariable(proposedParams, "distance", &dNew);
-
-  LALInferenceSetLogProposalRatio(runState, log(dcosiCdid));
 }
 
 void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
@@ -2104,71 +1954,6 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
   }
 
   return;
-}
-
-/* We know that the likelihood with all variables but phase fixed can
-   be written as 
-
-   log(L) = <d|d> + 2*Re(<d|h>)cos(dPhi) +/- 2*Im(<d|h>)sin(dPhi) + <h|h>
-
-   This proposal computes the coefficients of the likelihood and draws
-   phase from the analytic distribution that results. */
-void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
-  const char *propName = orbitalPhaseQuasiGibbsProposalName;
-  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  LALInferenceCopyVariables(runState->currentParams, proposedParams);
-
-  REAL8 L0, L1, L2;
-  REAL8 dPhi0, dPhi1, dPhi2;
-  REAL8 phi0, phi1, phi2;
-
-  phi0 = *(REAL8 *)LALInferenceGetVariable(proposedParams, "phase");
-  dPhi0 = 0.0;
-  L0 = runState->currentLikelihood;
-
-  dPhi1 = 2.0*M_PI/3.0;
-  phi1 = fmod(phi0 + dPhi1, 2.0*M_PI);
-  LALInferenceSetVariable(proposedParams, "phase", &phi1);
-  L1 = runState->likelihood(proposedParams, runState->data, runState->templt);
-
-  dPhi2 = 4.0*M_PI/3.0;
-  phi2 = fmod(phi0 + dPhi2, 2.0*M_PI);
-  LALInferenceSetVariable(proposedParams, "phase", &phi2);
-  L2 = runState->likelihood(proposedParams, runState->data, runState->templt);
-
-  /* log(L) = A + C*cos(dPhi) + S*sin(dPhi) */
-  REAL8 c0 = cos(dPhi0), c1 = cos(dPhi1), c2 = cos(dPhi2);
-  REAL8 s0 = sin(dPhi0), s1 = sin(dPhi1), s2 = sin(dPhi2);
-  REAL8 A = (L0 + L1 + L2) / 3.0;
-  REAL8 C = (L0 + L1*cos(dPhi1) + L2*cos(dPhi2))/(c0*c0 + c1*c1 + c2*c2);
-  REAL8 S = (L1*sin(dPhi1) + L2*sin(dPhi2))/(s0*s0 + s1*s1 + s2*s2);
-
-  /* One extremum of L: */
-  REAL8 dphiMax = atan(S/C);
-  REAL8 LMax = A + C*cos(dphiMax) + S*sin(dphiMax);
-
-  /* Is the other extremum a maxmim? */
-  if (A - C*cos(dphiMax) - S*sin(dphiMax) > LMax) {
-    LMax = A - C*cos(dphiMax) - S*sin(dphiMax);
-    dphiMax = fmod(dphiMax + M_PI, 2.0*M_PI);
-  }
-
-  /* Now von Neumann rejection sample in the dPhi, L plane until we
-     get a dPhi that matches.  The only tricky part is that we choose
-     the vertical coordinate in log-space---that is, we choose log(y)
-     uniformly in *y* between 0 and exp(LMax). */
-  REAL8 dPhi;
-  REAL8 logY;
-  do { 
-    dPhi = 2.0*M_PI*gsl_rng_uniform(runState->GSLrandom);
-    logY = LMax + log(gsl_rng_uniform(runState->GSLrandom));
-  } while (logY > A + C*cos(dPhi) + S*sin(dPhi));
-  
-  REAL8 LDPhi = A + C*cos(dPhi) + S*sin(dPhi);
-
-  REAL8 phiNew = fmod(phi0 + dPhi, 2.0*M_PI);
-  LALInferenceSetVariable(proposedParams, "phase", &phiNew);
-  LALInferenceSetLogProposalRatio(runState, L0 - LDPhi);
 }
 
 void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
