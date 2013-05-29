@@ -87,11 +87,9 @@ int main(int argc, char *argv[]){
   MultiPSDVector *psd = NULL;
   SFTIndexList *sftIndices;
   SFTPairIndexList *sftPairs;
-  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
-  REAL8 tObs;
 
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
-  REAL8 deltaF, Tsft; /* frequency resolution and time baseline of SFTs */
+  REAL8 deltaF; /* Tsft; frequency resolution and time baseline of SFTs */
 
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
@@ -115,7 +113,7 @@ int main(int argc, char *argv[]){
   }
 
   deltaF = config.catalog->data[0].header.deltaF;
-  Tsft = 1. / deltaF;
+  /*Tsft = 1. / deltaF;*/
 
   /* now read the data */
   /* FIXME: need to correct fMin and fMax for Doppler shift, rngmedian bins and spindown range */
