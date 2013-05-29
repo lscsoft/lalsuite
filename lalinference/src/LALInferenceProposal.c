@@ -54,9 +54,7 @@ const char *const orbitalPhaseJumpName = "OrbitalPhase";
 const char *const covarianceEigenvectorJumpName = "CovarianceEigenvector";
 const char *const skyLocWanderJumpName = "SkyLocWander";
 const char *const differentialEvolutionFullName = "DifferentialEvolutionFull";
-const char *const differentialEvolutionMassesName = "DifferentialEvolutionMasses";
-const char *const differentialEvolutionSpinsName = "DifferentialEvolutionSpins";
-const char *const differentialEvolutionPhysicalSpinsName = "DifferentialEvolutionPhysicalSpins";
+const char *const differentialEvolutionIntrinsicName = "DifferentialEvolutionIntrinsic";
 const char *const differentialEvolutionExtrinsicName = "DifferentialEvolutionExtrinsic";
 const char *const drawApproxPriorName = "DrawApproxPrior";
 const char *const skyReflectDetPlaneName = "SkyReflectDetPlane";
@@ -363,13 +361,8 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
   /* Use differential evolution unless turned off */
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-differentialevolution")) {
     LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
-    LALInferenceAddProposalToCycle(runState, differentialEvolutionMassesName, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionIntrinsicName, &LALInferenceDifferentialEvolutionIntrinsic, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, SMALLWEIGHT);
-    if (LALInferenceCheckVariable(proposedParams, "theta_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
-      LALInferenceAddProposalToCycle(runState, differentialEvolutionSpinsName, &LALInferenceDifferentialEvolutionSpins, SMALLWEIGHT);
-    } else if (LALInferenceCheckVariable(proposedParams, "tilt_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
-      LALInferenceAddProposalToCycle(runState, differentialEvolutionPhysicalSpinsName, &LALInferenceDifferentialEvolutionPhysicalSpins, SMALLWEIGHT);
-    }
   }
 
   //Add LALInferencePSDFitJump to the cycle
@@ -470,13 +463,8 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")
       && !LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-differentialevolution")) {
     LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
-    LALInferenceAddProposalToCycle(runState, differentialEvolutionMassesName, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionIntrinsicName, &LALInferenceDifferentialEvolutionIntrinsic, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, SMALLWEIGHT);
-    if (LALInferenceCheckVariable(proposedParams, "theta_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
-      LALInferenceAddProposalToCycle(runState, differentialEvolutionSpinsName, &LALInferenceDifferentialEvolutionSpins, SMALLWEIGHT);
-    } else if (LALInferenceCheckVariable(proposedParams, "tilt_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
-      LALInferenceAddProposalToCycle(runState, differentialEvolutionPhysicalSpinsName, &LALInferenceDifferentialEvolutionPhysicalSpins, SMALLWEIGHT);
-    }
 
   }
 
@@ -546,7 +534,7 @@ SetupPostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *propo
 
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
     LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, 2);
-    LALInferenceAddProposalToCycle(runState, differentialEvolutionMassesName, &LALInferenceDifferentialEvolutionMasses, 4);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionIntrinsicName, &LALInferenceDifferentialEvolutionIntrinsic, 4);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, 4);
   }
 
@@ -951,30 +939,11 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   LALInferenceSetLogProposalRatio(runState, 0.0); /* Symmetric proposal. */
 }
   
-void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LALInferenceVariables *pp) {
-  const char *propName = differentialEvolutionMassesName;
+void LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *pp) {
+  const char *propName = differentialEvolutionIntrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"chirpmass", "asym_massratio", NULL};
-  if (LALInferenceCheckVariable(pp, "massratio")) {
-    names[1] = "massratio";
-  } else if (LALInferenceCheckVariable(pp, "m1")) {
-    names[0] = "m1";
-    names[1] = "m2";
-  }
-  LALInferenceDifferentialEvolutionNames(runState, pp, names);
-}
-
-void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *runState, LALInferenceVariables *pp) {
-  const char *propName = differentialEvolutionSpinsName;
-  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"a_spin1", "a_spin2", "phi_spin1", "phi_spin2", "theta_spin1", "theta_spin2", NULL};
-  LALInferenceDifferentialEvolutionNames(runState, pp, names);
-}
-
-void LALInferenceDifferentialEvolutionPhysicalSpins(LALInferenceRunState *runState, LALInferenceVariables *pp) {
-  const char *propName = differentialEvolutionSpinsName;
-  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"a_spin1", "a_spin2", "tilt_spin1", "tilt_spin2", "phi12", NULL};
+  const char *names[] = {"chirpmass", "asym_massratio", "massratio", "m1", "m2", "a_spin1", "a_spin2",
+      "tilt_spin1", "tilt_spin2", "phi12", "phi_spin1", "phi_spin2", "theta_spin1", "theta_spin2", NULL};
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 

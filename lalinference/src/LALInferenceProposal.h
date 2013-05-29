@@ -100,8 +100,7 @@ extern const char *const orbitalPhaseJumpName;
 extern const char *const covarianceEigenvectorJumpName;
 extern const char *const skyLocWanderJumpName;
 extern const char *const differentialEvolutionFullName;
-extern const char *const differentialEvolutionMassesName;
-extern const char *const differentialEvolutionSpinsName;
+extern const char *const differentialEvolutionIntrinsicName;
 extern const char *const differentialEvolutionExtrinsicName;
 extern const char *const drawApproxPriorName;
 extern const char *const skyReflectDetPlaneName;
@@ -182,16 +181,12 @@ void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInfer
     LALInferenceDifferentialEvolutionFull() step.*/
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *proposedParams, const char *names[]);
 
-/** Perform differential evolution on only the mass parameters. */
-void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+/** Perform differential evolution on only the intrinsic parameters. */
+void LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /** Perform a differential evolution step on only the extrinsic
     parameters. */
 void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
-
-/** Perform a differential evolution step on only the spin variables. */
-void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
-void LALInferenceDifferentialEvolutionPhysicalSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /** Draws from an approximation to the true prior.  Flat in all
     variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
