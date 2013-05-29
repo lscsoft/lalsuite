@@ -250,7 +250,6 @@ static int XLALSimInspiralSpinTaylorT2Setup(
      */
     switch( spinO )
     {
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
             params->wdotSO35s1 = 1796084999./3048192. - 1317319.*eta/3024.
                     + 61.*eta*eta/144. + (dm/m1M) * (-34195607./193536.
@@ -265,6 +264,7 @@ static int XLALSimInspiralSpinTaylorT2Setup(
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
             params->wdotSO3s1 = LAL_PI*(-188./3. + (dm/m1M)*149./6.);
             params->wdotSO3s2 = LAL_PI*(-188./3. - (dm/m2M)*149./6.);
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             params->wdotSO25s1 = 110869./1008. + 11.*eta/4. + (dm/m1M) * (-8349./224. + 3.*eta/4.);
             params->wdotSO25s2 = 110869./1008. + 11.*eta/4. + (dm/m2M) * (8349./224. - 3.*eta/4.);
@@ -456,7 +456,6 @@ static int XLALSimInspiralSpinTaylorT4Setup(
      */
     switch( spinO )
     {
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
             params->wdotSO35s1 = -4323559./18144. + 436705.*eta/672.
                     - 5575.*eta*eta/27. + (dm/m1M) * (1195759./18144.
@@ -471,6 +470,7 @@ static int XLALSimInspiralSpinTaylorT4Setup(
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
             params->wdotSO3s1 = LAL_PI*(-188./3. + (dm/m1M)*151./6.);
             params->wdotSO3s2 = LAL_PI*(-188./3. - (dm/m2M)*151./6.);
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             params->wdotSO25s1 = -5861./144. + 1001.*eta/12. 
                     + (dm/m1M) * (809./84. - 281.*eta/8.);
