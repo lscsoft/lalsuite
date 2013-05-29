@@ -136,8 +136,8 @@ int main(void){
 		XLALSimInspiralDestroyWaveformFlags( waveFlags );
 
 		SphHarmTimeSeries *ts = NULL;
-		ts = XLALSphHarmTimeSeriesAddMode( ts, h_22, 2, 2 );
-		ts = XLALSphHarmTimeSeriesAddMode( ts, h_2_2, 2, -2 );
+		ts = XLALSphHarmTimeSeriesAddMode( h_22, 2, 2, ts );
+		ts = XLALSphHarmTimeSeriesAddMode( h_2_2, 2, -2, ts );
 
 		ret = XLALSimInspiralConstantPrecessionConeWaveform(
 				&hp, &hx,

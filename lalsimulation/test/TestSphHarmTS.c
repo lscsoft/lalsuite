@@ -36,7 +36,7 @@
 int main(void){
 		// Empty time series -- technically works, but doesn't make a lot
 		// of sense
-		SphHarmTimeSeries *ts = XLALSphHarmTimeSeriesAddMode( NULL, NULL, 0, 0 );
+		SphHarmTimeSeries *ts = XLALSphHarmTimeSeriesAddMode( NULL, 0, 0, NULL );
 
 		// blow it away
 		XLALDestroySphHarmTimeSeries( ts );
@@ -57,7 +57,7 @@ int main(void){
 						&(lalStrainUnit),
 						100
 					);
-				ts = XLALSphHarmTimeSeriesAddMode( ts, h_lm, l, m );
+				ts = XLALSphHarmTimeSeriesAddMode( h_lm, l, m, ts );
 				// time series makes a duplicate of the input, so this isn't
 				// needed.
 				XLALDestroyCOMPLEX16TimeSeries(h_lm);
@@ -76,7 +76,7 @@ int main(void){
 
 		// Overwrite a component mode
 		SphHarmTimeSeries **check = &ts;
-		ts = XLALSphHarmTimeSeriesAddMode( ts, h_lm, 2, -2 );
+		ts = XLALSphHarmTimeSeriesAddMode( h_lm, 2, -2, ts );
 		XLALDestroyCOMPLEX16TimeSeries(h_lm);
 		if( check != &ts ){
 			fprintf( stderr, "Returned structure does not match after mode overwrite." );

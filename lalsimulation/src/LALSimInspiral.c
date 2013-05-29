@@ -367,7 +367,7 @@ tagSphHarmTimeSeries
 };
 
 /* Prepend a node to the linked list - or - create a new head */
-SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( SphHarmTimeSeries *appended, const COMPLEX16TimeSeries* inmode, UINT4 l, INT4 m ){
+SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( const COMPLEX16TimeSeries* inmode, UINT4 l, INT4 m, SphHarmTimeSeries *appended ){
 
     SphHarmTimeSeries* ts;
 
