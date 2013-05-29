@@ -77,11 +77,11 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile);
 
 /* Functions for controlling adaptation */
-void acknowledgePhaseChange(LALInferenceRunState *runState);
+void acknowledgePhase(LALInferenceRunState *runState);
 void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle);
 void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle);
 void LALInferenceAdaptationEnvelope(LALInferenceRunState *runState, INT4 cycle);
-void LALInferenceLadderUpdate(LALInferenceRunState *runState);
+void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag);
 
 /* Data IO routines */
 FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState);
