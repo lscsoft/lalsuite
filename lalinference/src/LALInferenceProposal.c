@@ -514,11 +514,11 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, orbitalPhaseQuasiGibbsProposalName, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT);
   }
 
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--proposalSkyRing")) {
+  if (!LALInferenceGetProcParamVal(runState->commandLine,"--noProposalSkyRing")) {
     LALInferenceAddProposalToCycle(runState, skyRingProposalName, &LALInferenceSkyRingProposal, SMALLWEIGHT);
   }
 
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--proposalCorrPsiPhi")) {
+  if (!LALInferenceGetProcParamVal(runState->commandLine,"--noProposalCorrPsiPhi")) {
     LALInferenceAddProposalToCycle(runState, polarizationCorrPhaseJumpName, &LALInferenceCorrPolarizationPhaseJump, SMALLWEIGHT);
   }
 

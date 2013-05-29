@@ -365,8 +365,10 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--kDTree)                       Use a kDTree proposal.\n\
                (--kDNCell N)                    Number of points per kD cell in proposal.\n\
                (--covarianceMatrix file)        Find the Cholesky decomposition of the covariance matrix for jumps in file.\n\
-               (--proposalSkyRing)              Rotate sky position around vector connecting any two IFOs in network.\n\
-               (--proposalCorrPsiPhi)           Jump along psi-phi correlation\n\
+               (--noProposalSkyRing)              Disable the proposal that rotates sky position\n\
+                                                  around vector connecting any two IFOs in network.\n\
+               (--noProposalCorrPsiPhi)           Disable the proponal that jumps along psi-phi \n\
+                                                  correlation\n\
                \n\
                ---------------------------------------------------------------------------------------------------\n\
                --- Parallel Tempering Algorithm Parameters -------------------------------------------------------\n\
