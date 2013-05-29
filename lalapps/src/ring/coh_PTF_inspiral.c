@@ -728,8 +728,8 @@ void coh_PTF_statistic(
   UINT4  csVecLength,csVecLengthTwo;
   UINT4  i, j, k, vecLength, vecLengthTwo;
   INT4   timeOffsetPoints[LAL_NUM_IFO],numPointCheck;
-  REAL4 *v1p,*v2p,snglSNRthresh;
-  REAL4 cohSNRThreshold,cohSNRThresholdSq;
+  REAL4 *v1p,*v2p; /*snglSNRthresh;*/
+  /*REAL4 cohSNRThreshold, cohSNRThresholdSq;*/
   REAL4 *powerBinsPlus[LAL_NUM_IFO+1],*powerBinsCross[LAL_NUM_IFO+1];
   REAL4 *snrData;
   UINT4 currPointLoc,numAcceptPoints;
@@ -791,11 +791,11 @@ void coh_PTF_statistic(
   acceptPointList = LALCalloc(segEndPoint - segStartPoint, sizeof(UINT4));
 
   /* Pick the relevant SNR threshold */
-  cohSNRThreshold = params->threshold;
+  /*cohSNRThreshold = params->threshold;
   if (spinTemplate)
     cohSNRThreshold = params->spinThreshold;
   snglSNRthresh = params->snglSNRThreshold;
-  cohSNRThresholdSq = cohSNRThreshold*cohSNRThreshold;
+  cohSNRThresholdSq = cohSNRThreshold*cohSNRThreshold;*/
 
   /* This function takes the (Q_i|Q_j) matrices, combines it across the ifos
    * and returns the eigenvalues and eigenvectors of this new matrix.
