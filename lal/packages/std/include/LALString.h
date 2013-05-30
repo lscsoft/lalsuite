@@ -21,6 +21,7 @@
 #define _LALSTRING_H
 
 #include <stddef.h>
+#include <lal/LALAtomicDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {
