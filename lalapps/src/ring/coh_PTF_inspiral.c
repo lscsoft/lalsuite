@@ -1211,6 +1211,8 @@ UINT8 coh_PTF_add_triggers(
           &eventId,spinTrigger,pValues,gammaBeta,snrComps,nullSNR,traceSNR,\
           bankVeto,autoVeto,chiSquare,PTFM,rightAscension,declination,slideId,\
           timeOffsetPoints,i);
+      /* Important to zero out the cohSNR array as we go */
+      cohSNR->data->data[i] = 0.;
 
       /* Check trigger against trig times */
       if (coh_PTF_trig_time_check(params,currEvent->end_time,\
