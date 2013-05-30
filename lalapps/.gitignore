@@ -276,6 +276,7 @@ src/pulsar/lalapps_create_time_correction_ephemeris
 src/pulsar/lalapps_make_job_input_data
 src/pulsar/lalapps_make_sfts
 src/pulsar/lalapps_psd
+src/pulsar/lalapps_ssbtodetector
 src/pulsar/psd1.dat
 src/pulsar/templateBanks/Fmetric.dat
 src/pulsar/templateBanks/Fmetric_v2.dat
