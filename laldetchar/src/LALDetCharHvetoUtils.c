@@ -17,6 +17,7 @@
  *  MA  02111-1307  USA
  */
 
+#include <lal/LALString.h>
 #include <lal/LALDetCharHvetoUtils.h>
 
 /* 
@@ -115,7 +116,7 @@ GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, 
 	if( !trig_sequence ){
     	trig_sequence = g_sequence_new(NULL);
 	}
-    GSequence* ignorel = g_sequence_new(free);
+    GSequence* ignorel = g_sequence_new(XLALFree);
 
     SnglBurst* tbl = XLALSnglBurstTableFromLIGOLw( fname );
     SnglBurst *begin = NULL, *deleteme = NULL;
@@ -125,14 +126,14 @@ GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, 
 
     int cnt = 0;
     char* tmp;
-    tmp = malloc( sizeof(char)*512 );
+    tmp = XLALMalloc( sizeof(char)*512 );
     FILE* lfile = fopen( ignore_list, "r" );
     while(!feof(lfile)){
         cnt = fscanf( lfile, "%s", tmp );
         if( cnt == EOF ) break;
-        g_sequence_append( ignorel, g_strdup(tmp) );
+        g_sequence_append( ignorel, XLALStringDuplicate(tmp) );
     }
-    free(tmp);
+    XLALFree(tmp);
     fclose(lfile);
 
     do {
