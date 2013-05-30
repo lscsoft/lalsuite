@@ -115,9 +115,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[6])
+AC_SUBST([LIBCURRENT],[7])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[1])
+AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # set library api info - liblalsupport
@@ -134,7 +134,7 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[3])
+AC_SUBST([LIBCURRENT_SUPPORT],[4])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
 AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
