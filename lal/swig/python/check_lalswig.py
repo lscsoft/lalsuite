@@ -39,7 +39,7 @@ assert((sv.data.astype(numpy.object) == strs).all())
 strs[0] = "ghijk"
 sv.data[0] = strs[0]
 strs.append("lmnopq")
-lal.AppendString2Vector(sv, strs[3])
+sv = lal.AppendString2Vector(sv, strs[3])
 assert(sv.length == 4)
 for i in range(0, 4):
     assert(sv.data[i] == strs[i])

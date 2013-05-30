@@ -268,7 +268,7 @@ for function_name in functions:
     # remove destructor function from interface
     functions[function_name]['feature_ignore'] = '1'
 
-# determine whether return value of functions should be ignored
+# determine whether first argument of a function should be disowned
 func_arg_types_regexp = re.compile('^f\((.*)\)\.(p\.)*$')
 for function_name in functions:
 
@@ -282,31 +282,14 @@ for function_name in functions:
     if not func_arg_types_match.group(2) is None:
         func_retn_type = func_arg_types_match.group(2) + func_retn_type
 
-    # return function values by default
-    func_ignore_retn = False
+    # if first argument of function is a pointer type and matches the return type,
+    # disown the first argument, since many LAL functions return their first argument
+    # after performing some operation on it, but we want to prevent two different
+    # SWIG wrapping objects from owning the same LAL memory
+    disown_first_arg = (func_retn_type.startswith('p.') and func_retn_type == func_arg_types[0])
 
-    # ignore function return values whose type is a pointer and which
-    # matches the type of the first argument, since it is common for
-    # XLAL functions to return the value of the first argument
-    if func_retn_type.startswith('p.') and func_retn_type == func_arg_types[0]:
-        func_ignore_retn = True
-
-    if func_ignore_retn:
-
-        # construct return type from SWIG type syntax
-        if func_retn_type.startswith('p.'):
-            func_c_retn_type = func_retn_type[2:] + '*'
-        else:
-            func_c_retn_type = func_retn_type
-        func_c_retn_type = func_c_retn_type.replace('q(const).', 'const ')
-
-    else:
-
-        # empty return type indicates that return value is not ignored
-        func_c_retn_type = ''
-
-    # add return type as extra argument to swiglal_process_function() macro
-    functions[function_name]['extra_process_args'].append(func_c_retn_type)
+    # add disown flag as extra argument to swiglal_process_function() macro
+    functions[function_name]['extra_process_args'].append('%d' % disown_first_arg)
 
 # open SWIG interface file
 iface_file = open(iface_filename, 'w')

@@ -38,7 +38,7 @@ assert(all(strcmp(sv.data, strs)));
 strs{1} = "ghijk";
 sv.data{1} = strs{1};
 strs{end+1} = "lmnopq";
-AppendString2Vector(sv, strs{4});
+sv = AppendString2Vector(sv, strs{4});
 assert(sv.length == 4);
 for i = 1:4
   assert(strcmp(sv.data{i}, strs{i}));

@@ -258,17 +258,13 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 
 // Process an interface function NAME: rename it to RENAME, and set it to
 // always return SWIG-owned wrapping objects (unless the function is being
-// ignored). If TYPE is given, ignore the return value of the function.
-%typemap(out, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID {
-  %set_output(VOID_Object);
-}
-%typemap(newfree, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID "";
-%define %swiglal_process_function(NAME, RENAME, TYPE)
+// ignored). If DISOWN is true, disown the function's first argument.
+%define %swiglal_process_function(NAME, RENAME, DISOWN)
 %rename(#RENAME) NAME;
 #if #RENAME != "$ignore"
 %feature("new", "1") NAME;
-#if #TYPE != ""
-%apply SWIGTYPE SWIGLAL_RETURN_VOID { TYPE NAME };
+#if DISOWN
+%feature("del", "1") NAME;
 #endif
 #endif
 %enddef
