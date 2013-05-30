@@ -1114,19 +1114,19 @@ if (swiglal_release_parent(PTR)) {
 // Make the wrapping of printf-style LAL functions a little safer, as suggested in
 // the SWIG 2.0 documentation (section 13.5). These functions should now be safely
 // able to print any string, so long as the format string is named "format" or "fmt".
-%typemap(in, fragment="SWIG_AsCharPtrAndSize") (const char *SWIGLAL_PRINTF_FORMAT, ...)
+%typemap(in, fragment="SWIG_AsLALcharPtrAndSize") (const char *SWIGLAL_PRINTF_FORMAT, ...)
 (char fmt[] = "%s", char *str = 0, int alloc = 0)
 {
   $1 = fmt;
-  int ecode = SWIG_AsCharPtrAndSize($input, &str, NULL, &alloc);
+  int ecode = SWIG_AsLALcharPtr($input, &str, &alloc);
   if (!SWIG_IsOK(ecode)) {
-    %argument_fail(ecode, "const char*, ...", $symname, $argnum);
+    %argument_fail(ecode, "$type", $symname, $argnum);
   }
   $2 = (void *) str;
 }
 %typemap(freearg, match="in") (const char *format, ...) {
   if (SWIG_IsNewObj(alloc$argnum)) {
-    %delete_array(str$argnum);
+    XLALFree(str$argnum);
   }
 }
 %apply (const char *SWIGLAL_PRINTF_FORMAT, ...) {
