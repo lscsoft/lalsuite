@@ -1218,7 +1218,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode50(
     UINT4 j;
     /* Loop over time samples, compute hlm(t) */
     for (j=0; j < V->data->length; j++) {
-        hlm->data->data[j] = crect(1., 0.);
+        hlm->data->data[j] = crect(0., 0.);
     }
     return hlm;
 }
