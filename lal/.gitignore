@@ -58,6 +58,7 @@ lib/lalsupport/test/?TS*.dat
 lib/lalsupport/test/ConfigFile.cfg
 lib/lalsupport/test/ConfigFileTest
 lib/lalsupport/test/ConfigFileTest2
+lib/lalsupport/test/GzipTest
 lib/lalsupport/test/LALMath3DPlotTest
 lib/lalsupport/test/LALMathNDPlotTest
 lib/lalsupport/test/Math3DNotebook.nb

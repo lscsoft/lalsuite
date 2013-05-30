@@ -79,6 +79,9 @@ long XLALFileTell( LALFILE *file );
 void XLALFileRewind( LALFILE *file );
 int XLALFileEOF( LALFILE *file );
 
+int XLALGzipTextFile( const char *path );
+int XLALGunzipTextFile( const char *filename );
+
 /*@}*/
 
 #ifdef __cplusplus

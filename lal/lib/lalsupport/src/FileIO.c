@@ -521,3 +521,145 @@ int XLALFileEOF( LALFILE *file )
 #endif
   return c;
 }
+
+/** \brief Use gzip to compress a text file
+ *
+ * This function will use the gzip compression routines in \c zlib to compress a text file. The compressed file will
+ * have the extension ".gz" and the original uncompressed file will be removed.
+ *
+ * \param filename [in] The input text file.
+ */
+int XLALGzipTextFile( const char *filename ){
+  char *memblock = NULL; /* memory block to read data into */
+  long pos;
+  char *outname = NULL;
+
+  LALFILE *fp = NULL; /* input file pointer */
+  LALFILE *fg = NULL; /* output gzipped file pointer */
+
+  /* open file for reading and work out its size */
+  if( (fp = XLALFileOpen( filename, "rb" )) == NULL ){
+    XLALPrintError ("%s: Unable to open file %s.\n", __func__, filename );
+    XLAL_ERROR( XLAL_EIO );
+  }
+
+  XLALFileSeek( fp, 0, SEEK_END ); /* go to end of the file */
+  pos = XLALFileTell( fp ); /* get the position of the file pointer */
+  XLALFileRewind( fp ); /* return the file pointer to the start of the file */
+
+  /* allocate memory to read in data */
+  memblock = XLALMalloc( pos );
+
+  if ( !memblock ){
+    XLALPrintError ("%s: Unable to allocate memory for reading file.\n", __func__ );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+
+  /* read in data */
+  if ( XLALFileRead( memblock, pos, 1, fp ) == 0 ){
+    XLALPrintError ("%s: Unable to read in file.\n", __func__ );
+    XLAL_ERROR( XLAL_EIO );
+  }
+
+  XLALFileClose( fp );
+
+  /* create output name with .gz appended */
+  if ( (outname = XLALCalloc(strlen(filename)+4, 1)) == NULL)      /* we need local copy */{
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+
+  strcpy(outname, filename);
+  strcat(outname, ".gz"); /* add the extension */
+
+  if ( !outname ){
+    XLALPrintError("%s: Unable to create output filename.\n", __func__ );
+    XLAL_ERROR( XLAL_EFAULT );
+  }
+
+  /* open output gzip file */
+  if ( (fg = XLALFileOpen( outname, "wb" )) == NULL ){
+    XLALPrintError ("%s: Unable to open output file %s.\n", __func__, outname );
+    XLAL_ERROR( XLAL_EIO );
+  }
+
+  if ( XLALFilePuts( memblock, fg ) != 0 ){
+    XLALPrintError ("%s: Unable to output gzipped data.\n", __func__ );
+    XLAL_ERROR( XLAL_EIO );
+  }
+
+  XLALFileClose( fg );
+
+  /* remove original file */
+  if ( remove( filename ) == -1 ){
+    XLALPrintError ("%s: Unable to remove original text file.\n", __func__ );
+    XLAL_ERROR( XLAL_EFAILED );
+  }
+
+  return XLAL_SUCCESS;
+}
+
+
+/** \brief Use gzip to uncompress a compressed text file
+ *
+ * This function will use the gzip compression routines in \c zlib to uncompress a gzipped text file. The compressed
+ * file should have the ".gz" extension otherwise it will be rejected. The output will have the same filename with the
+ * ".gz" extension removed. The compressed file will be removed.
+ *
+ * Note: \c gzopen will check the file's "magic number" to see if it is a gzipped file. If it's not a gzipped file it
+ * will still open the file for reading as a standard file.
+ *
+ * \param filename [in] The input gzipped text file.
+ */
+int XLALGunzipTextFile( const char *filename ){
+  CHAR *memblock = NULL; /* memory block to read data into */
+  CHAR *outname = NULL;
+  CHAR *gzpos = NULL;
+
+  LALFILE *fp = NULL; /* output file pointer */
+  LALFILE *fg = NULL; /* input gzipped file pointer */
+  size_t n;
+
+  /* create output file name by striping .gz from the input file name */
+  if ( (gzpos = strstr(filename, ".gz")) == NULL ){
+    XLALPrintError ("%s: File %s does not contain the .gz extension.\n", __func__, filename );
+    XLAL_ERROR ( XLAL_EIO );
+  }
+
+  n = gzpos-filename;
+  outname = XLALMalloc( sizeof(CHAR)*(n+1) );
+
+  if ( ( outname = strncpy(outname, filename, n) ) == NULL ){
+    XLALPrintError ("%s: Unable to strip extension from file string.\n", __func__ );
+    XLAL_ERROR ( XLAL_EIO );
+  }
+
+  /* open gzipped file for reading */
+  if ( (fg = XLALFileOpen(filename, "rb")) == NULL ){
+    XLALPrintError ("%s: Unable to open gzipped file %s.\n", __func__, filename );
+    XLAL_ERROR ( XLAL_EIO );
+  }
+
+  /* open output text file */
+  if ( (fp = XLALFileOpen(outname, "w")) == NULL ){
+    XLALPrintError ("%s: Unable to open output file %s.\n", __func__, outname );
+    XLAL_ERROR ( XLAL_EIO );
+  }
+
+  /* allocate memory for a single char */
+  memblock = XLALMalloc( sizeof(CHAR) );
+
+  /* read in gzipped data one byte at a time and output to text file */
+  while( ( memblock = XLALFileGets(memblock, 2, fg) ) != NULL ){ XLALFilePrintf(fp, "%s", memblock); }
+
+  /* close files */
+  XLALFileClose( fg );
+  XLALFileClose( fp );
+
+  /* remove original file */
+  if ( remove( filename ) == -1 ){
+    XLALPrintError ("%s: Unable to remove original gzipped file.\n", __func__ );
+    XLAL_ERROR( XLAL_EFAILED );
+  }
+
+  return XLAL_SUCCESS;
+}
