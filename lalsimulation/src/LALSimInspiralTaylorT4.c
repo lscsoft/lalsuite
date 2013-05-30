@@ -684,7 +684,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT4PNModes(
             if ( !hxx ){
                 XLAL_ERROR_NULL(XLAL_EFUNC);
             }
-            XLALSphHarmTimeSeriesAddMode(hxx, l, m, hlm);
+            hlm = XLALSphHarmTimeSeriesAddMode(hxx, l, m, hlm);
             XLALDestroyCOMPLEX16TimeSeries(hxx);
         }
     }
