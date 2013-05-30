@@ -58,7 +58,7 @@ GHashTable* XLALCreateGHashTable( void );
 // TODO: Check if this is the case with the new lalmetaio bindings
 //struct tagSnglBurst* list_from_g_sequence( GSequence* in );
 struct tagSnglBurst* XLALGLibSBListFromSeq( GSequence* in );
-GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, char* ignore_list, GSequence* trig_sequence );
-GSequence* XLALPopulateTrigSequenceFromTrigList( SnglBurst* tbl, GSequence* trig_sequence );
+GSequence* XLALPopulateTrigSequenceFromFile( GSequence* trig_sequence, const char* fname, double min_snr, char* ignore_list );
+GSequence* XLALPopulateTrigSequenceFromTrigList( GSequence* trig_sequence, SnglBurst* tbl );
 
 #endif

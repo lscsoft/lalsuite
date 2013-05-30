@@ -112,10 +112,10 @@ struct tagSnglBurst* XLALGLibSBListFromSeq( GSequence* in ){
     return begin;
 }
 
-GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, char* ignore_list, GSequence* trig_sequence ){
-	if( !trig_sequence ){
+GSequence* XLALPopulateTrigSequenceFromFile( GSequence* trig_sequence, const char* fname, double min_snr, char* ignore_list ){
+    if( !trig_sequence ){
     	trig_sequence = g_sequence_new(NULL);
-	}
+    }
     GSequence* ignorel = g_sequence_new(XLALFree);
 
     SnglBurst* tbl = XLALSnglBurstTableFromLIGOLw( fname );
@@ -188,7 +188,7 @@ GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, 
     return trig_sequence;
 }
 
-GSequence* XLALPopulateTrigSequenceFromTrigList( SnglBurst* tbl, GSequence* trig_sequence ){
+GSequence* XLALPopulateTrigSequenceFromTrigList( GSequence* trig_sequence, SnglBurst* tbl ){
 	if( !trig_sequence ){
     	trig_sequence = g_sequence_new(NULL);
 	}
