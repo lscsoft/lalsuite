@@ -222,7 +222,7 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
  * chan parameter is the target channel. The t_ratio parameter is the ratio of
  * the veto window duration to the total examined livetime.
  */
-double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio ){
+double XLALDetCharVetoRound( char** winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio ){
 	double mu, sig, max_sig=-1;
 	size_t *k;
 
@@ -250,11 +250,12 @@ double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* ch
 		sig = XLALDetCharHvetoSignificance( mu, *k );
 		printf( "Significance for this channel: %g\n", sig );
 		if( sig > max_sig && !strstr(chan, (char*)key) ){
-				max_sig = sig;
-				strcpy( winner, (char *)key );
+			max_sig = sig;
+			*winner = XLALRealloc(*winner, (strlen((char *)key) + 1) * sizeof(char));
+			strcpy( *winner, (char *)key );
 		}
 	}
-	printf( "winner: %s\n", winner );
+	printf( "winner: %s\n", *winner );
 	return max_sig;
 }
 

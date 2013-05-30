@@ -213,7 +213,8 @@ int main(int argc, char** argv){
 			for( nw=nwinds; nw >= 0; nw-- ){
 				wind = twins[nw];
 				printf( "Window (#%d) %f\n", nw, wind );
-				winner = XLALMalloc( sizeof(char)*1024 );
+				winner = XLALMalloc( sizeof(char) );
+                                *winner = '\0';
 
 				GHashTableIter chanit;
 				g_hash_table_iter_init( &chanit, chanlist );
@@ -250,7 +251,6 @@ int main(int argc, char** argv){
 					print_hash_table( chanhist, outpath );
 				}
 
-				strcpy( winner, "" );
 				/* 
 				 * If there's no value for the target channel, there's no 
 				 * vetoes to do, move on.
@@ -264,7 +264,7 @@ int main(int argc, char** argv){
 					XLALFree( winner );
 					continue;
 				} else {
-					rnd_sig = XLALDetCharVetoRound( winner, chancount, chanhist, refchan, t_ratio );
+					rnd_sig = XLALDetCharVetoRound( &winner, chancount, chanhist, refchan, t_ratio );
 				}
 
 				sig = XLALMalloc(sizeof(double));
