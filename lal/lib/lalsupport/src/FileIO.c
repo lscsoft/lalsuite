@@ -494,7 +494,7 @@ long XLALFileTell( LALFILE *file )
 #endif
   if ( c == -1 )
     XLAL_ERROR( XLAL_EIO );
-  return 0;
+  return c;
 }
 
 void XLALFileRewind( LALFILE *file )
