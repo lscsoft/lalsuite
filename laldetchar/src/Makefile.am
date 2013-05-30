@@ -46,7 +46,7 @@ laldetchar-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
-	@echo "prepend PYTHONDIR $(pyexecdir)" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
 
