@@ -988,6 +988,38 @@ if (swiglal_release_parent(PTR)) {
                        strlen, %swiglal_new_copy_array, XLALFree,
                        "<limits.h>", CHAR_MIN, CHAR_MAX);
 
+// Typemaps for string pointers.  By default, treat arguments of type char**
+// as output-only arguments, which do not require a scripting-language input
+// argument, and return their results in the output argument list. Also
+// supply an INOUT typemap for input-output arguments, which allows a
+// scripting-language input string to be supplied. The INOUT typemaps can be
+// applied as needed using the SWIGLAL(INOUT_STRINGS(...)) macro.
+%typemap(in, noblock=1, numinputs=0) char ** (char *str = NULL, int alloc = 0) {
+  $1 = %reinterpret_cast(&str, $ltype);
+  alloc = 0;
+}
+%typemap(in, noblock=1, fragment="SWIG_AsLALcharPtrAndSize") char ** INOUT (char *str = NULL, int alloc = 0, int ecode = 0) {
+  ecode = SWIG_AsLALcharPtr($input, &str, &alloc);
+  if (!SWIG_IsOK(ecode)) {
+    %argument_fail(ecode, "$type", $symname, $argnum);
+  }
+  $1 = %reinterpret_cast(&str, $ltype);
+}
+%typemap(argout, noblock=1) char ** {
+  %append_output(SWIG_FromLALcharPtr(str$argnum));
+}
+%typemap(freearg, match="in") char ** {
+  if (SWIG_IsNewObj(alloc$argnum)) {
+    XLALFree(str$argnum);
+  }
+}
+%define %swiglal_public_INOUT_STRINGS(...)
+%swiglal_map_ab(%swiglal_apply, char ** INOUT, char **, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_INOUT_STRINGS(...)
+%swiglal_map_a(%swiglal_clear, char **, __VA_ARGS__);
+%enddef
+
 // Do not try to free const char* return arguments.
 %typemap(newfree,noblock=1) const char* "";
 
