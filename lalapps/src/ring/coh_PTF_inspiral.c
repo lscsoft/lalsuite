@@ -122,6 +122,7 @@ int main(int argc, char **argv)
   struct bankDataOverlaps *dataOverlaps = NULL;
   UINT4 timeStepPoints = 0;
   struct bankComplexTemplateOverlaps *autoTempOverlaps = NULL;
+  REAL4                   **overlapCont = NULL;
 
   /* output event structures */
   MultiInspiralTable       *eventList               = NULL;
@@ -312,8 +313,11 @@ int main(int argc, char **argv)
           params->lowTemplateFrequency,&cohSNR,&nullSNR,&traceSNR,bankVeto,\
           autoVeto,chiSquare,snrComps,pValues,gammaBeta,numSpinTmplts);
   /* FIXME: Move into function above if this works */
+  overlapCont = LALCalloc(1, LAL_NUM_IFO*sizeof(*overlapCont));
+  acceptPointList = LALCalloc(params->numAnalPoints, sizeof(UINT4));
   for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
+    overlapCont[ifoNumber] = NULL;
     if (params->haveTrig[ifoNumber])
     {
       snglAcceptPoints[ifoNumber] = \
@@ -475,14 +479,20 @@ int main(int argc, char **argv)
       /* Primary loop over sky points */
       for (sp = 0; sp < numSkyPoints ; sp++)
       {
+/*        if (! ((sp == 0) || (sp == 3285)))
+        {
+          continue;
+        } */
         /* Calculate offsets and responses for this sky point */
         coh_PTF_calculate_det_stuff(params,detectors,timeOffsets,Fplus,\
                             Fcross,skyPoints,sp);
         /* Loop over short slides */
         for (slideNum = 0; slideNum < params->numShortSlides ; slideNum++)
         {
-          acceptPointList = LALCalloc(shortTimeSlideList[slideNum].analEndPoint\
-               - shortTimeSlideList[slideNum].analStartPoint, sizeof(UINT4));
+/*          if (! ((slideNum == 30) || (slideNum == 21)))
+          {
+            continue; 
+          }*/
           /* Update the offsets */
           for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
           {
@@ -490,6 +500,10 @@ int main(int argc, char **argv)
             {
               slidTimeOffsets[ifoNumber] = timeOffsets[ifoNumber] + \
                   shortTimeSlideList[slideNum].timeSlideVectors[ifoNumber];
+            }
+            else
+            {
+              slidTimeOffsets[ifoNumber] = 0;
             }
           }
           /* Determine slide ID */
@@ -513,7 +527,7 @@ int main(int argc, char **argv)
                          bankNormOverlaps, dataOverlaps, autoTempOverlaps,
                          fcTmplt, invspec, segments, invplan, 
                          &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
-                         frequencyRangesCross, startTime,
+                         frequencyRangesCross, overlapCont, startTime,
                          shortTimeSlideList[slideNum].analStartPoint,
                          shortTimeSlideList[slideNum].analEndPoint,\
                          snglAcceptPoints,snglAcceptCount,acceptPointList);
@@ -563,7 +577,7 @@ int main(int argc, char **argv)
                          bankNormOverlaps, dataOverlaps, autoTempOverlaps,
                          fcTmplt, invspec, segments, invplan,
                          &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
-                         frequencyRangesCross, startTime,
+                         frequencyRangesCross, overlapCont, startTime,
                          shortTimeSlideList[slideNum].analStartPoint,
                          shortTimeSlideList[slideNum].analEndPoint,\
                          snglAcceptPoints,snglAcceptCount,acceptPointList);
@@ -597,7 +611,6 @@ int main(int argc, char **argv)
             verbose("There are currently %d triggers.\n", params->numEvents);
             verbose("Generated triggers for segment %d, template %d, sky point %d, short slide %d at %ld \n", j, i, sp, slideNum, timeval_subtract(&startTime));
           }
-          LALFree(acceptPointList);
         }/* End loop over time slides */
       }/* End loop over sky points*/
 
@@ -644,6 +657,11 @@ int main(int argc, char **argv)
         {
           LALFree(frequencyRangesCross[ifoNumber]);
           frequencyRangesCross[ifoNumber] = NULL;
+        }
+        if (overlapCont[ifoNumber])
+        {
+          LALFree(overlapCont[ifoNumber]);
+          overlapCont[ifoNumber] = NULL;
         }
       }
 
@@ -697,6 +715,7 @@ int main(int argc, char **argv)
   coh_PTF_free_veto_memory(params,bankNormOverlaps,bankFcTmplts,bankOverlaps,\
       dataOverlaps,autoTempOverlaps);
 
+  /* FIXME: Move into above if this works */
   for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if (params->haveTrig[ifoNumber])
@@ -704,6 +723,7 @@ int main(int argc, char **argv)
       LALFree(snglAcceptPoints[ifoNumber]);
     }
   }
+  LALFree(acceptPointList);
 
   verbose("Generated output xml file, cleaning up and exiting at %ld \n",
       timeval_subtract(&startTime));
@@ -746,6 +766,7 @@ UINT4 coh_PTF_statistic(
     struct bankDataOverlaps **chisqSnglOverlapsP,
     REAL4 *frequencyRangesPlus[LAL_NUM_IFO+1],
     REAL4 *frequencyRangesCross[LAL_NUM_IFO+1],
+    REAL4                   **overlapCont,
     struct timeval          startTime,
     UINT4                   segStartPoint,
     UINT4                   segEndPoint,
@@ -1031,11 +1052,13 @@ UINT4 coh_PTF_statistic(
            * ranges for all sky points. Because of this we recalculate the
            * unequal power bins each time. 
            */
+          verbose("-->Starting coh_setup at %ld \n",timeval_subtract(&startTime));
           coh_PTF_chi_square_coh_setup(params,&Autoeigenvecs,\
               &Autoeigenvals,frequencyRangesPlus,frequencyRangesCross,\
-              powerBinsPlus,powerBinsCross,&chisqOverlaps,fcTmplt,invspec,\
-              segments,Fplus,Fcross,PTFM,invPlan,segmentNumber,csVecLength,\
-              csVecLengthTwo,vecLength);
+              powerBinsPlus,powerBinsCross,overlapCont,&chisqOverlaps,fcTmplt,\
+              invspec,segments,Fplus,Fcross,PTFM,invPlan,segmentNumber,\
+              csVecLength,csVecLengthTwo,vecLength);
+          verbose("-->Done coh_setup at %ld \n",timeval_subtract(&startTime));
 
           /* Calculate chi square here */
           chiSquare[LAL_NUM_IFO]->data->data[currPointLoc] = \
@@ -1044,6 +1067,7 @@ UINT4 coh_PTF_statistic(
                   Autoeigenvals,powerBinsPlus[LAL_NUM_IFO],\
                   powerBinsCross[LAL_NUM_IFO],LAL_NUM_IFO,csVecLength,\
                   csVecLengthTwo);
+          verbose("-->Done calc_coh at %ld \n",timeval_subtract(&startTime));
         }
         if (params->doSnglChiSquared)
         {
@@ -1051,7 +1075,7 @@ UINT4 coh_PTF_statistic(
            * coherent chi squared, the filters are reused for every sky point
            */ 
           coh_PTF_chi_square_sngl_setup(params,frequencyRangesPlus,\
-              frequencyRangesCross,powerBinsPlus,powerBinsCross,\
+              frequencyRangesCross,powerBinsPlus,powerBinsCross,overlapCont,\
               &chisqSnglOverlaps,fcTmplt,invspec,segments,PTFM,invPlan,\
               segmentNumber);
           for(k = 0; k < LAL_NUM_IFO; k++)

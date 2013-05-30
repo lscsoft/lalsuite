@@ -1504,7 +1504,6 @@ void coh_PTF_calculate_single_detector_filters(
         }
       }
       snglAcceptCount[ifoNumber] = localCount;
-      fprintf(stderr,"%d %d \n",ifoNumber,localCount);
       
     }
   }
@@ -1519,7 +1518,7 @@ UINT4 coh_PTF_calculate_single_det_spin_snr(
   UINT4                      *localAcceptPoints
 )
 {
-  UINT4 ui,uj,localCount;
+  UINT4 ui,uj,uk,localCount;
   gsl_matrix *PTFmatrix;
   gsl_vector *eigenvalsSngl;
   gsl_matrix *eigenvecsSngl;
@@ -1549,6 +1548,7 @@ UINT4 coh_PTF_calculate_single_det_spin_snr(
   localCount = 0;
   for (ui = params->analStartPointBuf; ui < params->analEndPointBuf; ++ui)
   {  /* loop over time */
+    uk = ui - params->analStartPointBuf;
     coh_PTF_calculate_rotated_vectors(params,PTFqVec,snglv1p,snglv2p,NULL,\
             NULL,NULL,eigenvecsSngl,eigenvalsSngl,\
             params->numTimePoints,ui,5,5,ifoNumber);
@@ -1568,7 +1568,7 @@ UINT4 coh_PTF_calculate_single_det_spin_snr(
     if (snrComps[ifoNumber]->data->data[ui-params->analStartPointBuf] >\
          acceptThresh)
     {
-      localAcceptPoints[localCount] = uj;
+      localAcceptPoints[localCount] = uk;
       localCount++;
     }
 
@@ -1891,7 +1891,11 @@ UINT4 coh_PTF_template_time_series_cluster(
   UINT4 count = 0;
   UINT4 logicArray[cohSNR->data->length];
   INT4 j,tempPoint;
-  UINT4 localCount,*localAcceptPoints,localOffset;
+  /* FIXME: Bizarrely, the mac clang compiler will "optimize away" this variable
+   * if I do not use the volatile keyword, which causes seg faults as it should
+   * not be "optimized away". Is this a bug in clang??? */
+  volatile INT4 localOffset;
+  UINT4 localCount,*localAcceptPoints;
   /* Have to cast from UINT4 to INT4 to avoid warning */
   INT4 startPointI = (INT4) startPoint;
   INT4 endPointI = (INT4) endPoint;
