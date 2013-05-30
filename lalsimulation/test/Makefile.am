@@ -10,6 +10,7 @@ check_PROGRAMS = \
 	TestSphHarmTS \
 	TestWaveformFromCache \
 	TestPrecessWaveform \
+	TestPrecessWaveformIMRPhenomB \
 	TestPrecessWaveformEOBNR
 TESTS = $(check_PROGRAMS)
 
@@ -22,4 +23,8 @@ MOSTLYCLEANFILES =
 CLEANFILES = \
 	*.dat \
 	h_ref.txt \
-	h_rot.txt
+	h_rot.txt \
+	h_ref_EOBNR.txt \
+	h_rot_EOBNR.txt \
+	h_ref_PhenomB.txt \
+	h_rot_PhenomB.txt

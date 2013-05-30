@@ -41,6 +41,8 @@ test/ST2-dynamics.dat
 test/ST4-dynamics.dat
 test/TestEOBNRv2
 test/TestPrecessWaveform
+test/TestPrecessWaveformEOBNR
+test/TestPrecessWaveformIMRPhenomB
 test/TestSphHarmTS
 test/TestSpinTaylorT4Dynamics
 test/TestWaveformFromCache
@@ -48,4 +50,8 @@ test/WaveformFlagsTest
 test/eobHPlusCross.dat
 test/h_ref.txt
 test/h_rot.txt
+test/h_ref_EOBNR.txt
+test/h_rot_EOBNR.txt
+test/h_ref_PhenomB.txt
+test/h_rot_PhenomB.txt
 test/simulation.dat
