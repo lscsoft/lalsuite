@@ -56,7 +56,9 @@ $1 == "set" {
             value = value ":" $i
         }
     }
-    setvars[name] = substr(value, 2)
+    if (value != "") {
+        setvars[name] = substr(value, 2)
+    }
     delete pathvars[name]
 }
 
@@ -67,9 +69,6 @@ $1 == "prepend" {
     if (name == "") {
         msg("no name given to prepend")
     }
-    if (pathvars[name] == "") {
-        pathvars[name] = sprintf("${%s}", name)
-    }
     value = ""
     for (i = 3; i <= NF; ++i) {
         found = index(":" pathvars[name] ":", ":" $i ":") > 0 ||
@@ -78,7 +77,12 @@ $1 == "prepend" {
             value = value $i ":"
         }
     }
-    pathvars[name] = value pathvars[name]
+    if (value != "") {
+        if (pathvars[name] == "") {
+            pathvars[name] = sprintf("${%s}", name)
+        }
+        pathvars[name] = value pathvars[name]
+    }
     delete setvars[name]
 }
 
@@ -89,9 +93,6 @@ $1 == "append" {
     if (name == "") {
         msg("no name given to prepend")
     }
-    if (pathvars[name] == "") {
-        pathvars[name] = sprintf("${%s}", name)
-    }
     value = ""
     for (i = 3; i <= NF; ++i) {
         found = index(":" pathvars[name] ":", ":" $i ":") > 0 ||
@@ -100,7 +101,12 @@ $1 == "append" {
             value = value ":" $i
         }
     }
-    pathvars[name] = pathvars[name] value
+    if (value != "") {
+        if (pathvars[name] == "") {
+            pathvars[name] = sprintf("${%s}", name)
+        }
+        pathvars[name] = pathvars[name] value
+    }
     delete setvars[name]
 }
 
