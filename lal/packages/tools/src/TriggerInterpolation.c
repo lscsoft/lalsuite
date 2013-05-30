@@ -31,6 +31,98 @@
 
 
 /*
+ * Helpers for declaring apply functions for other data types
+ */
+
+
+typedef int (*XLALCOMPLEX16ApplyFunc)(void *, double *, COMPLEX16 *, const COMPLEX16 *);
+
+
+static int XLALCOMPLEX8ApplyTriggerInterpolant(
+    void *interp,
+    XLALCOMPLEX16ApplyFunc applyfunc,
+    int window,
+    double *tmax,
+    COMPLEX8 *ymax,
+    const COMPLEX8 *y)
+{
+    int i;
+    int ret;
+    double tmax_full;
+    COMPLEX16 ymax_full;
+    COMPLEX16 data_full[2 * window + 1];
+    COMPLEX16 *y_full = &data_full[window];
+
+    for (i = -window; i <= window; i ++)
+        data_full[i] = y[i];
+
+    ret = applyfunc(interp, &tmax_full, &ymax_full, y_full);
+    if (ret == GSL_SUCCESS)
+    {
+        *tmax = tmax_full;
+        *ymax = ymax_full;
+    }
+    return ret;
+}
+
+
+static int XLALREAL8ApplyTriggerInterpolant(
+    void *interp,
+    XLALCOMPLEX16ApplyFunc applyfunc,
+    int window,
+    double *tmax,
+    REAL8 *ymax,
+    const REAL8 *y)
+{
+    int i;
+    int ret;
+    double tmax_full;
+    COMPLEX16 ymax_full;
+    COMPLEX16 data_full[2 * window + 1];
+    COMPLEX16 *y_full = &data_full[window];
+
+    for (i = -window; i <= window; i ++)
+        data_full[i] = y[i];
+
+    ret = applyfunc(interp, &tmax_full, &ymax_full, y_full);
+    if (ret == GSL_SUCCESS)
+    {
+        *tmax = tmax_full;
+        *ymax = creal(ymax_full);
+    }
+    return ret;
+}
+
+
+static int XLALREAL4ApplyTriggerInterpolant(
+    void *interp,
+    XLALCOMPLEX16ApplyFunc applyfunc,
+    int window,
+    double *tmax,
+    REAL4 *ymax,
+    const REAL4 *y)
+{
+    int i;
+    int ret;
+    double tmax_full;
+    COMPLEX16 ymax_full;
+    COMPLEX16 data_full[2 * window + 1];
+    COMPLEX16 *y_full = &data_full[window];
+
+    for (i = -window; i <= window; i ++)
+        data_full[i] = y[i];
+
+    ret = applyfunc(interp, &tmax_full, &ymax_full, y_full);
+    if (ret == GSL_SUCCESS)
+    {
+        *tmax = tmax_full;
+        *ymax = creal(ymax_full);
+    }
+    return ret;
+}
+
+
+/*
  * General functions
  */
 
@@ -251,7 +343,7 @@ void XLALDestroyCubicSplineTriggerInterpolant(CubicSplineTriggerInterpolant *int
 }
 
 
-int XLALApplyCubicSplineTriggerInterpolant(
+int XLALCOMPLEX16ApplyCubicSplineTriggerInterpolant(
     CubicSplineTriggerInterpolant *interp,
     double *t,
     COMPLEX16 *y,
@@ -275,6 +367,42 @@ int XLALApplyCubicSplineTriggerInterpolant(
     }
 
     return GSL_SUCCESS;
+}
+
+
+int XLALCOMPLEX8ApplyCubicSplineTriggerInterpolant(
+    CubicSplineTriggerInterpolant *interp,
+    double *tmax,
+    COMPLEX8 *ymax,
+    const COMPLEX8 *y)
+{
+    return XLALCOMPLEX8ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyCubicSplineTriggerInterpolant,
+        2, tmax, ymax, y);
+}
+
+
+int XLALREAL8ApplyCubicSplineTriggerInterpolant(
+    CubicSplineTriggerInterpolant *interp,
+    double *tmax,
+    REAL8 *ymax,
+    const REAL8 *y)
+{
+    return XLALREAL8ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyCubicSplineTriggerInterpolant,
+        2, tmax, ymax, y);
+}
+
+
+int XLALREAL4ApplyCubicSplineTriggerInterpolant(
+    CubicSplineTriggerInterpolant *interp,
+    double *tmax,
+    REAL4 *ymax,
+    const REAL4 *y)
+{
+    return XLALREAL4ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyCubicSplineTriggerInterpolant,
+        2, tmax, ymax, y);
 }
 
 
@@ -355,7 +483,7 @@ void XLALDestroyLanczosTriggerInterpolant(LanczosTriggerInterpolant *interp)
 }
 
 
-int XLALApplyLanczosTriggerInterpolant(
+int XLALCOMPLEX16ApplyLanczosTriggerInterpolant(
     LanczosTriggerInterpolant *interp,
     double *t,
     COMPLEX16 *y,
@@ -386,6 +514,42 @@ int XLALApplyLanczosTriggerInterpolant(
     *y = lanczos_interpolant(*t, &params);
 
     return GSL_SUCCESS;
+}
+
+
+int XLALCOMPLEX8ApplyLanczosTriggerInterpolant(
+    LanczosTriggerInterpolant *interp,
+    double *tmax,
+    COMPLEX8 *ymax,
+    const COMPLEX8 *y)
+{
+    return XLALCOMPLEX8ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyLanczosTriggerInterpolant,
+        interp->window, tmax, ymax, y);
+}
+
+
+int XLALREAL8ApplyLanczosTriggerInterpolant(
+    LanczosTriggerInterpolant *interp,
+    double *tmax,
+    REAL8 *ymax,
+    const REAL8 *y)
+{
+    return XLALREAL8ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyLanczosTriggerInterpolant,
+        interp->window, tmax, ymax, y);
+}
+
+
+int XLALREAL4ApplyLanczosTriggerInterpolant(
+    LanczosTriggerInterpolant *interp,
+    double *tmax,
+    REAL4 *ymax,
+    const REAL4 *y)
+{
+    return XLALREAL4ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyLanczosTriggerInterpolant,
+        interp->window, tmax, ymax, y);
 }
 
 
@@ -424,7 +588,7 @@ void XLALDestroyNearestNeighborTriggerInterpolant(NearestNeighborTriggerInterpol
 }
 
 
-int XLALApplyNearestNeighborTriggerInterpolant(
+int XLALCOMPLEX16ApplyNearestNeighborTriggerInterpolant(
     __attribute__((unused)) NearestNeighborTriggerInterpolant *interp,
     double *t,
     COMPLEX16 *y,
@@ -433,6 +597,42 @@ int XLALApplyNearestNeighborTriggerInterpolant(
     *t = 0;
     *y = data[0];
     return GSL_SUCCESS;
+}
+
+
+int XLALCOMPLEX8ApplyNearestNeighborTriggerInterpolant(
+    NearestNeighborTriggerInterpolant *interp,
+    double *tmax,
+    COMPLEX8 *ymax,
+    const COMPLEX8 *y)
+{
+    return XLALCOMPLEX8ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyNearestNeighborTriggerInterpolant,
+        interp->window, tmax, ymax, y);
+}
+
+
+int XLALREAL8ApplyNearestNeighborTriggerInterpolant(
+    NearestNeighborTriggerInterpolant *interp,
+    double *tmax,
+    REAL8 *ymax,
+    const REAL8 *y)
+{
+    return XLALREAL8ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyNearestNeighborTriggerInterpolant,
+        interp->window, tmax, ymax, y);
+}
+
+
+int XLALREAL4ApplyNearestNeighborTriggerInterpolant(
+    NearestNeighborTriggerInterpolant *interp,
+    double *tmax,
+    REAL4 *ymax,
+    const REAL4 *y)
+{
+    return XLALREAL4ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyNearestNeighborTriggerInterpolant,
+        interp->window, tmax, ymax, y);
 }
 
 
@@ -520,7 +720,7 @@ void XLALDestroyQuadraticFitTriggerInterpolant(QuadraticFitTriggerInterpolant *i
 }
 
 
-int XLALApplyQuadraticFitTriggerInterpolant(
+int XLALCOMPLEX16ApplyQuadraticFitTriggerInterpolant(
     QuadraticFitTriggerInterpolant *interp,
     double *t,
     COMPLEX16 *y,
@@ -550,4 +750,40 @@ int XLALApplyQuadraticFitTriggerInterpolant(
     *y = data[0];
 
     return GSL_SUCCESS;
+}
+
+
+int XLALCOMPLEX8ApplyQuadraticFitTriggerInterpolant(
+    QuadraticFitTriggerInterpolant *interp,
+    double *tmax,
+    COMPLEX8 *ymax,
+    const COMPLEX8 *y)
+{
+    return XLALCOMPLEX8ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyQuadraticFitTriggerInterpolant,
+        interp->window, tmax, ymax, y);
+}
+
+
+int XLALREAL8ApplyQuadraticFitTriggerInterpolant(
+    QuadraticFitTriggerInterpolant *interp,
+    double *tmax,
+    REAL8 *ymax,
+    const REAL8 *y)
+{
+    return XLALREAL8ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyQuadraticFitTriggerInterpolant,
+        interp->window, tmax, ymax, y);
+}
+
+
+int XLALREAL4ApplyQuadraticFitTriggerInterpolant(
+    QuadraticFitTriggerInterpolant *interp,
+    double *tmax,
+    REAL4 *ymax,
+    const REAL4 *y)
+{
+    return XLALREAL4ApplyTriggerInterpolant(interp,
+        (XLALCOMPLEX16ApplyFunc) XLALCOMPLEX16ApplyQuadraticFitTriggerInterpolant,
+        interp->window, tmax, ymax, y);
 }

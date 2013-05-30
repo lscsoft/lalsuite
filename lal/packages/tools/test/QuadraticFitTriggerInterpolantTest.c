@@ -34,7 +34,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
     if (!interp)
         exit(EXIT_FAILURE);
 
-    result = XLALApplyQuadraticFitTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
+    result = XLALCOMPLEX16ApplyQuadraticFitTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
     if (result)
         exit(EXIT_FAILURE);
 

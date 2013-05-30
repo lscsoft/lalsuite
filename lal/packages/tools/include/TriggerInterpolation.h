@@ -133,11 +133,29 @@ void XLALDestroyCubicSplineTriggerInterpolant(CubicSplineTriggerInterpolant *);
  * complex interpolated signal, and return 0. On failure, return a non-zero GSL
  * error code.
  */
-int XLALApplyCubicSplineTriggerInterpolant(
+int XLALCOMPLEX16ApplyCubicSplineTriggerInterpolant(
     CubicSplineTriggerInterpolant *interp,
     double *tmax,
     COMPLEX16 *ymax,
     const COMPLEX16 *y);
+
+int XLALCOMPLEX8ApplyCubicSplineTriggerInterpolant(
+    CubicSplineTriggerInterpolant *interp,
+    double *tmax,
+    COMPLEX8 *ymax,
+    const COMPLEX8 *y);
+
+int XLALREAL8ApplyCubicSplineTriggerInterpolant(
+    CubicSplineTriggerInterpolant *interp,
+    double *tmax,
+    REAL8 *ymax,
+    const REAL8 *y);
+
+int XLALREAL4ApplyCubicSplineTriggerInterpolant(
+    CubicSplineTriggerInterpolant *interp,
+    double *tmax,
+    REAL4 *ymax,
+    const REAL4 *y);
 
 /* \} */
 
@@ -181,11 +199,29 @@ void XLALDestroyLanczosTriggerInterpolant(LanczosTriggerInterpolant *);
  * complex interpolated signal, and return 0. On failure, return a non-zero GSL
  * error code.
  */
-int XLALApplyLanczosTriggerInterpolant(
+int XLALCOMPLEX16ApplyLanczosTriggerInterpolant(
     LanczosTriggerInterpolant *interp,
     double *tmax,
     COMPLEX16 *ymax,
     const COMPLEX16 *y);
+
+int XLALCOMPLEX8ApplyLanczosTriggerInterpolant(
+    LanczosTriggerInterpolant *interp,
+    double *tmax,
+    COMPLEX8 *ymax,
+    const COMPLEX8 *y);
+
+int XLALREAL8ApplyLanczosTriggerInterpolant(
+    LanczosTriggerInterpolant *interp,
+    double *tmax,
+    REAL8 *ymax,
+    const REAL8 *y);
+
+int XLALREAL4ApplyLanczosTriggerInterpolant(
+    LanczosTriggerInterpolant *interp,
+    double *tmax,
+    REAL4 *ymax,
+    const REAL4 *y);
 
 /* \} */
 
@@ -235,11 +271,29 @@ void XLALDestroyNearestNeighborTriggerInterpolant(NearestNeighborTriggerInterpol
  * complex interpolated signal, and return 0. On failure, return a non-zero GSL
  * error code.
  */
-int XLALApplyNearestNeighborTriggerInterpolant(
+int XLALCOMPLEX16ApplyNearestNeighborTriggerInterpolant(
     NearestNeighborTriggerInterpolant *interp,
     double *tmax,
     COMPLEX16 *ymax,
     const COMPLEX16 *y);
+
+int XLALCOMPLEX8ApplyNearestNeighborTriggerInterpolant(
+    NearestNeighborTriggerInterpolant *interp,
+    double *tmax,
+    COMPLEX8 *ymax,
+    const COMPLEX8 *y);
+
+int XLALREAL8ApplyNearestNeighborTriggerInterpolant(
+    NearestNeighborTriggerInterpolant *interp,
+    double *tmax,
+    REAL8 *ymax,
+    const REAL8 *y);
+
+int XLALREAL4ApplyNearestNeighborTriggerInterpolant(
+    NearestNeighborTriggerInterpolant *interp,
+    double *tmax,
+    REAL4 *ymax,
+    const REAL4 *y);
 
 /* \} */
 
@@ -285,11 +339,29 @@ void XLALDestroyQuadraticFitTriggerInterpolant(QuadraticFitTriggerInterpolant *)
  * complex interpolated signal, and return 0. On failure, return a non-zero GSL
  * error code.
  */
-int XLALApplyQuadraticFitTriggerInterpolant(
+int XLALCOMPLEX16ApplyQuadraticFitTriggerInterpolant(
     QuadraticFitTriggerInterpolant *interp,
     double *tmax,
     COMPLEX16 *ymax,
     const COMPLEX16 *y);
+
+int XLALCOMPLEX8ApplyQuadraticFitTriggerInterpolant(
+    QuadraticFitTriggerInterpolant *interp,
+    double *tmax,
+    COMPLEX8 *ymax,
+    const COMPLEX8 *y);
+
+int XLALREAL8ApplyQuadraticFitTriggerInterpolant(
+    QuadraticFitTriggerInterpolant *interp,
+    double *tmax,
+    REAL8 *ymax,
+    const REAL8 *y);
+
+int XLALREAL4ApplyQuadraticFitTriggerInterpolant(
+    QuadraticFitTriggerInterpolant *interp,
+    double *tmax,
+    REAL4 *ymax,
+    const REAL4 *y);
 
 /* \} */
 

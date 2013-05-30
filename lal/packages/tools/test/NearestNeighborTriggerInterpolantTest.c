@@ -34,7 +34,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
     if (!interp)
         exit(EXIT_FAILURE);
 
-    result = XLALApplyNearestNeighborTriggerInterpolant(interp, &tmax, &ymax, y);
+    result = XLALCOMPLEX16ApplyNearestNeighborTriggerInterpolant(interp, &tmax, &ymax, y);
     if (result)
         exit(EXIT_FAILURE);
 
