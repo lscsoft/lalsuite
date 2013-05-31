@@ -21,6 +21,7 @@ import mimetypes
 import urllib
 import os, sys
 import json
+from urlparse import urlparse
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/api/"
 
@@ -45,14 +46,12 @@ class ProxyHTTPConnection(httplib.HTTPConnection):
     def request(self, method, url, body=None, headers={}):
         #request is called before connect, so can interpret url and get
         #real host/port to be used to make CONNECT request to proxy
-        proto, rest = urllib.splittype(url)
+        o = urlparse(url)
+        proto = o.scheme
+        port = o.port
+        host = o.hostname
         if proto is None:
             raise ValueError, "unknown URL type: %s" % url
-        #get host
-        host, rest = urllib.splithost(rest)
-        #try to get port
-        host, port = urllib.splitport(host)
-        #if port is not defined try to get from proto
         if port is None:
             try:
                 port = self._ports[proto]
@@ -118,13 +117,9 @@ class GsiRest(object):
             self.connector = lambda: ProxyHTTPSConnection(
                     proxy_host, proxy_port, key_file=self.key, cert_file=self.cert)
         else:
-            proto, rest = urllib.splittype(url)
-            if proto is None:
-                raise ValueError, "unknown URL type: %s" % url
-            #get host
-            host, rest = urllib.splithost(rest)
-            #try to get port
-            host, port = urllib.splitport(host)
+            o = urlparse(url)
+            port = o.port
+            host = o.hostname
             port = port or 443
             self.connector = lambda: httplib.HTTPSConnection(
                     host, port, key_file=self.key, cert_file=self.cert)
