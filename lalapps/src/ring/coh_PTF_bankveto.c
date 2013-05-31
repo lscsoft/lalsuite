@@ -1322,7 +1322,8 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       if (freqBinPlus < numFreqBins)
       {
         /* Record the frequency */
-        frequencyRangesPlus[freqBinPlus-1] = i*deltaF;
+        frequencyRangesPlus[freqBinPlus-1] = (i)*deltaF;
+        fprintf(stderr,"Frequency %d %e %e %e\n",freqBinPlus-1,i*deltaF,SNRtempPlus,SNRmaxPlus);
         freqBinPlus+=1;
       }
     }
@@ -1331,15 +1332,15 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       if (freqBinCross < numFreqBins)
       {
         /* Record the frequency */
-        frequencyRangesCross[freqBinCross-1] = i*deltaF;
+        frequencyRangesCross[freqBinCross-1] = (i)*deltaF;
+        fprintf(stderr,"Frequency %d %e %e %e\n",freqBinCross-1,i*deltaF,SNRtempCross,SNRmaxCross);
         freqBinCross+=1;
       }
     }
   }
-
-  /* Final frequency bins should go to kmax */
-  frequencyRangesPlus[freqBinPlus-1] = kmax * deltaF;
-  frequencyRangesCross[freqBinCross-1] = kmax * deltaF;
+  /* Final frequency bins should be infinite */
+//  frequencyRangesPlus[freqBinPlus-1] = kmax * deltaF;
+//  frequencyRangesCross[freqBinCross-1] = kmax * deltaF;
 }
 
 void coh_PTF_calculate_standard_chisq_power_bins(
@@ -1362,7 +1363,9 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   /* THIS FUNCTION IS NON-SPIN ONLY! DO NOT TRY TO RUN WITH PTF IN SPIN MODE */
   UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
   REAL4 v1,v2,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
-  REAL4 SNRplusLast,SNRcrossLast,tmpOverlapCont,currOverlapContPlus;
+  REAL4 SNRplusLast,SNRcrossLast,currOverlapContPlus;
+  /* FIXME: Change to REAL8 for consistency with PTFM */
+  REAL4 tmpOverlapCont;
   REAL4 currOverlapContCross;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
@@ -1372,6 +1375,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   PTFQtilde = fcTmplt->PTFQtilde->data;
   len = 0;
   deltaF = 0;
+  tmpOverlapCont = 0;
 
   for ( k = 0; k < LAL_NUM_IFO; k++)
   {
@@ -1464,32 +1468,39 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   {
     if ( params->haveTrig[k] )
     {
-      if (! overlapCont[k])
+      if (! overlapCont[k] && ((detectorNum == LAL_NUM_IFO)||(detectorNum==k)) )
       {
         overlapCont[k] = LALCalloc(1, 2*params->numChiSquareBins*sizeof(REAL4));
+        tmpOverlapCont = 0;
+        freqBinPlus = 0;
+        freqBinCross = 0;
         for ( i = kmin; i < kmax ; ++i )
         {
-          tmpOverlapCont = (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) + \
+          tmpOverlapCont += (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) + \
                         cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) ) * \
                         invspec[k]->data->data[i] ;
           if (i * deltaF > frequencyRangesPlus[freqBinPlus] && \
               freqBinPlus < (numFreqBins-1))
           {
             (overlapCont[k])[freqBinPlus] = tmpOverlapCont;
+            freqBinPlus++;
           }
           if (i * deltaF > frequencyRangesCross[freqBinCross] \
               && freqBinCross < (numFreqBins-1))
           {
             (overlapCont[k])[freqBinCross+params->numChiSquareBins] = tmpOverlapCont;
+            freqBinCross++;
           }
         } /* End loop over frequency */
         if (freqBinPlus == (numFreqBins-1))
         {
           (overlapCont[k])[freqBinPlus] = tmpOverlapCont;
+          fprintf(stderr,"TESTING: %e %e\n",tmpOverlapCont * 4 * deltaF,PTFM[k]->data[0]);
         }
         if (freqBinCross == (numFreqBins-1))
         {
           (overlapCont[k])[params->numChiSquareBins + freqBinCross] = tmpOverlapCont;
+          fprintf(stderr,"TESTING: %e %e\n",tmpOverlapCont * 4 * deltaF,PTFM[k]->data[0]);
         }
       } /* End if data has not yet been calculated */
     } /* End if ifo active */
@@ -1497,6 +1508,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 
   for ( i = 0; i < params->numChiSquareBins; ++i )
   {
+    v1 = v2 = 0;
     if (detectorNum == LAL_NUM_IFO)
     { 
       for( k = 0; k < LAL_NUM_IFO; k++)
@@ -1505,8 +1517,9 @@ void coh_PTF_calculate_standard_chisq_power_bins(
         {
           currOverlapContPlus = (overlapCont[k])[i];
           currOverlapContCross = (overlapCont[k])[i+params->numChiSquareBins];
-          v1 = a2[k] * a2[k] * currOverlapContPlus * 4 * deltaF;
-          v2 = b2[k] * b2[k] * currOverlapContCross * 4 * deltaF;
+          v1 += a2[k] * a2[k] * currOverlapContPlus * 4 * deltaF;
+          v2 += b2[k] * b2[k] * currOverlapContCross * 4 * deltaF;
+          fprintf(stderr,"V1s %e %e\n",v1,v2);
         }
       }
     }
@@ -1528,6 +1541,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 
     powerBinsCross[i] = SNRtempCross/SNRmaxCross - SNRcrossLast;
     SNRcrossLast = SNRtempCross/SNRmaxCross;
+    fprintf(stderr,"Power binsE: %e %e %e %e %e %e\n",powerBinsPlus[i],powerBinsCross[i], SNRtempPlus, SNRmaxPlus, SNRtempCross, SNRmaxCross);
   }
 
   /* Ensure that the power Bins add to 1. This should already be true but
@@ -1543,6 +1557,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   {
     powerBinsPlus[i] = powerBinsPlus[i]/SNRplusLast;
     powerBinsCross[i] = powerBinsCross[i]/SNRcrossLast;
+    fprintf(stderr,"Power bins: %e %e \n",powerBinsPlus[i],powerBinsCross[i]);
   }
 
 }

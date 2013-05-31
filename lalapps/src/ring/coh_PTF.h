@@ -326,6 +326,7 @@ UINT4 coh_PTF_statistic(
     REAL4 *frequencyRangesPlus[LAL_NUM_IFO+1],
     REAL4 *frequencyRangesCross[LAL_NUM_IFO+1],
     REAL4                   **overlapCont,
+    REAL4                   **snglOverlapCont,
     struct timeval          startTime,
     UINT4                   segStartPoint,
     UINT4                   segEndPoint,
