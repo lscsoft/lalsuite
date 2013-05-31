@@ -155,6 +155,8 @@ int XLALSimInspiralREAL8WaveTaper(
  */
 typedef struct tagSphHarmTimeSeries SphHarmTimeSeries;
 
+typedef struct tagSphHarmFrequencySeries SphHarmFrequencySeries;
+
 /* 
  * Create a SphHarmTimeSeries. If appended is not NULL, this will prepend a new
  * structure to the list by duplicating the mode inmode, mode numbers l, and m, 

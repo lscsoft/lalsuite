@@ -367,6 +367,15 @@ tagSphHarmTimeSeries
     struct tagSphHarmTimeSeries*    next; /**< next pointer */
 };
 
+struct
+tagSphHarmFrequencySeries
+{
+    COMPLEX16FrequencySeries*            mode; /**< The sequences of sampled data. */
+    UINT4                           l; /**< Node mode l  */
+    INT4                            m; /**< Node submode m  */
+    struct tagSphHarmFrequencySeries*    next; /**< next pointer */
+};
+
 /**
  * Prepend a node to a linked list of SphHarmTimeSeries, or create a new head
  */
