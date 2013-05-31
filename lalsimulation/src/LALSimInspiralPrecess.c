@@ -231,3 +231,102 @@ int XLALSimInspiralConstantPrecessionConeWaveform(
 
 		return XLAL_SUCCESS;
 }
+
+/**
+ * Determine the ``preferred direction'' matrix for the l=2 subspace from the
+ * relevant mode decomposed h. Modifies mtx in place.
+ */
+int XLALSimInspiralOrientationMatrixForL2(
+				REAL8 mtx[3][3], /**< 3x3 orientation matrix, modified in place */
+				COMPLEX16 h22, /**< l=2, m=2 h sample */
+				COMPLEX16 h2m2, /**< l=2, m=-2 h sample */
+				COMPLEX16 h21,  /**< l=2, m=1 h sample */
+				COMPLEX16 h2m1, /**< l=2, m=-1 h sample */
+				COMPLEX16 h20   /**< l=2, m=0 h sample */
+) {
+
+		COMPLEX16 I2, I1, I0, Izz;
+		COMPLEX16 nm;
+
+		// Hardcode the result for the l=2 subspace, which dominates
+		// Derivation:
+		/* c[l_, m_] := Sqrt[l (l + 1) - m (m + 1)] */
+		/* Sum[1/2 conj[2, m + 2] h[2, m] c[2, m] c[2, m + 1], {m, -2, 0}] */
+		/* Sum[conj[2, m + 1] h[2, m] c[2, m] (m + 1/2), {m, -2, 1}] */
+
+		I2 = sqrt(6.)*( conj(h20)*h2m2 + h20*conj(h22)    ) + 3*conj(h21)*h2m1;
+		I0 = 1/2.*(  
+						(2*(3) -  2*2)* conj(h22)*h22
+						+ (2*(3) -  2*2) *conj(h2m2)*h2m2
+						+ (2*(3) -  1*1)* conj(h21)*h21 
+						+ (2*(3) -  1*1) *conj(h2m1)*h2m1 
+						+ (2*(3) -  0 )* conj(h20)*h20
+				  );
+		Izz  =   ( (2*2)* conj(h22)*h22 
+						+ (  2*2) *conj(h2m2)*h2m2
+						+ (  1*1) *conj(h21)*h21
+						+ ( 1*1) *conj(h2m1)*h2m1
+						+ (  0 ) *conj(h20)*h20
+				 );
+		I1 = (
+						3*conj(h22)*h2m1 - 3 *conj(h2m1)*h2m2
+						+ sqrt(3./2.)*(conj(h21)*h20 - conj(h20)*h2m1)
+			 );
+
+		nm = conj(h22)*h22 + conj(h21)*h21 + conj(h20)*h20  + conj(h2m1)*h2m1 + conj(h2m2)*h2m2;
+
+		mtx[0][0] = creal( (I0 + creal(I2))/nm );
+		mtx[1][0] = mtx[0][1] = cimag(I2/nm);
+		mtx[2][0] = mtx[0][2] = creal(I1/nm);
+		mtx[1][1] = creal( (I0 - creal(I2))/nm );
+		mtx[2][1] = mtx[1][2] = cimag(I1/nm);
+		mtx[2][2] = creal(Izz/nm);
+
+		return XLAL_SUCCESS;
+}
+
+/**
+ * Determine a direction vector from the orientation matrix.
+ *
+ * NOTE: vec should be *initialized* to be a unit vector -- its value is used, 
+ * then replaced
+ */
+int XLALSimInspiralOrientationMatrixDirection(
+				REAL8 vec[3], /**< 3 dim unit vector, modified in place */
+				REAL8 mtx[3][3] /**< 3x3 orientation matrix */
+) {
+		REAL8 vecLast[3];
+		gsl_matrix *m = gsl_matrix_alloc(3,3);
+		gsl_vector *eval = gsl_vector_alloc(3);
+		gsl_matrix *evec = gsl_matrix_alloc(3,3);
+		gsl_eigen_symmv_workspace  *w = gsl_eigen_symmv_alloc(3);
+		int i,j;
+
+		vecLast[0] = vec[0];
+		vecLast[1] = vec[1];
+		vecLast[2]=vec[2];
+		for (i=0; i<3; i++) {
+				for (j=0; j<3; j++) {
+						gsl_matrix_set(m,i,j,mtx[i][j]);
+				}
+		}
+		gsl_eigen_symmv(m, eval, evec, w);
+		gsl_eigen_symmv_free(w);
+
+		gsl_eigen_symmv_sort (eval, evec, GSL_EIGEN_SORT_ABS_ASC);  
+
+		for (i=0; i<3; i++) {
+				vec[i] = gsl_matrix_get(evec,2,i);
+		}
+
+		if (vecLast[0]*vec[0] + vecLast[1]*vec[1] + vecLast[2]*vec[2] <0) {
+				for (i=0; i<3; i++) {
+						vec[i] =  - vec[i];
+				}
+		}
+
+		gsl_vector_free(eval);
+		gsl_matrix_free(evec);
+
+		return XLAL_SUCCESS;
+}

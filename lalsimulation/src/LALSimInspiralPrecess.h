@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Chris Pankow
+ *  Copyright (C) 2012 Chris Pankow, R. O'Shaughnessy
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,6 +37,9 @@
 #include <lal/LALDatatypes.h>
 #include <lal/SphericalHarmonics.h>
 
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_eigen.h>
+
 int XLALSimInspiralPrecessionRotateModes(
 				SphHarmTimeSeries* h_lm,
 				REAL8TimeSeries* alpha,
@@ -64,3 +67,16 @@ int XLALSimInspiralConstantPrecessionConeWaveform(
 				double beta_0
 );
 
+int XLALSimInspiralOrientationMatrixForL2(
+				REAL8 mtx[3][3], 
+				COMPLEX16 h22,
+				COMPLEX16 h2m2,
+				COMPLEX16 h21,
+				COMPLEX16 h2m1,
+				COMPLEX16 h20
+);
+
+int XLALSimInspiralOrientationMatrixDirection(
+				REAL8 vec[3],
+				REAL8 mtx[3][3]
+);
