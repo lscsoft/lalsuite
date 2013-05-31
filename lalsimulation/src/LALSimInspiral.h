@@ -194,6 +194,39 @@ COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode(
 				INT4 m 
 );
 
+/* 
+ * Create a SphHarmFrequencySeries. If appended is not NULL, this will prepend a new
+ * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
+ * and then set the next pointer to the appended structure.
+ */
+SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode( 
+		SphHarmFrequencySeries *appended,  /**< List structure to prepend to */
+		const COMPLEX16FrequencySeries* inmode,  /**< mode series to contain */
+		UINT4 l, /**< major mode number */
+		INT4 m  /**< minor mode number */
+);
+
+/* 
+ * Destroy a SphHarmFrequencySeries. Note that this will destroy any 
+ * COMPLEX16TimeSeries which it has references to.
+ */
+void XLALDestroySphHarmFrequencySeries( SphHarmFrequencySeries* ts );
+
+/* 
+ * Destroy a SphHarmFrequencySeries. Note that this will destroy any 
+ * COMPLEX16TimeSeries which it has references to.
+ */
+UINT4 XLALSphHarmFrequencySeriesGetMaxL( SphHarmFrequencySeries* ts );
+
+/* 
+ * Get the mode-decomposed time series corresponding to l,m.
+ */
+COMPLEX16TimeSeries* XLALSphHarmFrequencySeriesGetMode( 
+				SphHarmFrequencySeries *ts, 
+				UINT4 l, 
+				INT4 m 
+);
+
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic
  * modes stored in 'hlms'. Be sure that 'hlms' is the head of the linked list!
