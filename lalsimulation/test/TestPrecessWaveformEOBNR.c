@@ -87,7 +87,7 @@ int main(void){
 					tmpmode->data->data[j] = cpow(-1, l)
 						* conj( tmpmode->data->data[j] );
 				}
-				ts = XLALSphHarmTimeSeriesAddMode( tmpmode, l, m, ts );
+				ts = XLALSphHarmTimeSeriesAddMode( ts, tmpmode, l, m );
 				XLALDestroyCOMPLEX16TimeSeries( tmpmode );
 			}
 		}

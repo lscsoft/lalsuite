@@ -371,10 +371,10 @@ tagSphHarmTimeSeries
  * Prepend a node to a linked list of SphHarmTimeSeries, or create a new head
  */
 SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode(
+            SphHarmTimeSeries *appended, /**< Linked list to be prepended */
             const COMPLEX16TimeSeries* inmode, /**< Time series of h_lm mode being prepended */
             UINT4 l, /**< l index of h_lm mode being prepended */
-            INT4 m, /**< m index of h_lm mode being prepended */
-            SphHarmTimeSeries *appended /**< Linked list to be prepended */
+            INT4 m /**< m index of h_lm mode being prepended */
             )
 {
     SphHarmTimeSeries* ts;

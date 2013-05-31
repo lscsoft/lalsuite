@@ -1624,7 +1624,7 @@ XLALSimIMREOBNRv2Generator(
          if (!sigMode )
            XLAL_ERROR(XLAL_EFUNC);
        }
-       *h_lms = XLALSphHarmTimeSeriesAddMode(sigMode, modeL, modeM, NULL);
+       *h_lms = XLALSphHarmTimeSeriesAddMode(NULL, sigMode, modeL, modeM);
      }
      else // Append additional modes into existing SphHarmTimeSeries
      {
@@ -1635,7 +1635,7 @@ XLALSimIMREOBNRv2Generator(
          if (!sigMode )
            XLAL_ERROR(XLAL_EFUNC);
        }
-       *h_lms = XLALSphHarmTimeSeriesAddMode( sigMode, modeL, modeM, *h_lms);
+       *h_lms = XLALSphHarmTimeSeriesAddMode(*h_lms, sigMode, modeL, modeM);
      }
 
   } /* End loop over modes */

@@ -161,10 +161,10 @@ typedef struct tagSphHarmTimeSeries SphHarmTimeSeries;
  * and then set the next pointer to the appended structure.
  */
 SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( 
+		SphHarmTimeSeries *appended,  /**< List structure to prepend to */
 		const COMPLEX16TimeSeries* inmode,  /**< mode series to contain */
 		UINT4 l, /**< major mode number */
-		INT4 m , /**< minor mode number */
-		SphHarmTimeSeries *appended  /**< List structure to prepend to */
+		INT4 m  /**< minor mode number */
 );
 
 /* 
