@@ -21,15 +21,6 @@
 #include <lal/LALDetCharHvetoUtils.h>
 #include <lal/LIGOLwXML.h>
 
-/*
-static gint compare(gconstpointer a, gconstpointer b) {
-        const SnglBurst *_a = a;
-        const SnglBurst *_b = b;
-
-        return XLALCompareSnglBurstByPeakTimeAndSNR(&_a, &_b);
-}
-*/
-
 // Program level functions, mostly utility
 
 // Fake a series of triggers
@@ -388,7 +379,7 @@ void populate_trig_sequence_from_file( GSequence* trig_sequence, const char* fna
 		}
 		if( tbl->snr >= min_snr && !ignore ){
 			//printf( "Adding event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
-			g_sequence_insert_sorted( trig_sequence, tbl, (GCompareDataFunc)compare, NULL );
+			g_sequence_insert_sorted( trig_sequence, tbl, XLALGLibCompareSnglBurst, NULL );
 			tbl=tbl->next;
 		} else {
 			//printf( "Ignoring event %p #%d, channel: %s\n", tbl, tbl->event_id, tbl->channel );
@@ -434,7 +425,7 @@ void populate_trig_sequence( GSequence* trig_sequence ){
 		t->event_id = i;
 		strcpy( t->channel, channel_list[rand()%6] );
 		strcpy( t->ifo, "H1" );
-		g_sequence_insert_sorted( trig_sequence, t, (GCompareDataFunc)compare, NULL );
+		g_sequence_insert_sorted( trig_sequence, t, XLALGLibCompareSnglBurst, NULL );
 		fprintf( stderr, "%d %s %d.%d\n", i, t->channel, t->peak_time.gpsSeconds, t->peak_time.gpsNanoSeconds );
 	}
 	fprintf( stderr, "\nCreated %d events\n", i );

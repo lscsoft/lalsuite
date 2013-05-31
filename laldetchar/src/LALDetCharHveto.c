@@ -19,15 +19,6 @@
 #define TRIG_NOT_MASKED (SnglBurst*)0x0
 
 /*
-static gint compare(gconstpointer a, gconstpointer b) {
-        const SnglBurst *_a = a;
-        const SnglBurst *_b = b;
-
-        return XLALCompareSnglBurstByPeakTimeAndSNR(&_a, &_b);
-}
-*/
-
-/*
  * Scan through a list of triggers and count the instances of each trigger type
  * and count its coincidences with the target channel. The hash tables for the
  * channel count and coincidence count must already be initialized. The
