@@ -43,10 +43,6 @@ GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, 
 void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, const LALSeg veto, const char* vchan );
 double XLALDetCharHvetoSignificance( double mu, int k );
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VALUE(GSequence*, XLALDetCharRemoveTrigs));
-#endif
-
 #ifdef  __cplusplus
 }
 #endif

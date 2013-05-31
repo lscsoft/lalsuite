@@ -61,19 +61,4 @@ struct tagSnglBurst* XLALGLibSBListFromSeq( GSequence* in );
 GSequence* XLALPopulateTrigSequenceFromFile( const char* fname, double min_snr, char* ignore_list, GSequence* trig_sequence );
 GSequence* XLALPopulateTrigSequenceFromTrigList( SnglBurst* tbl, GSequence* trig_sequence );
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VALUE(GHashTable*, XLALGetChannelList));
-#endif
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VALUE(GHashTable*, XLALCreateGHashTable));
-#endif
-
-// Use proper destructors for GLib types
-#ifdef SWIG // SWIG interface directives
-// This causes the hveto script to hang in a kernel function
-//SWIGLAL(EXTERNAL_STRUCT(GSequence, g_sequence_free));
-SWIGLAL(EXTERNAL_STRUCT(GHashTable, g_hash_table_destroy));
-#endif
-
 #endif
