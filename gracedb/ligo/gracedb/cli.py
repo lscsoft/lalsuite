@@ -18,7 +18,7 @@
 
 import os, sys, shutil
 import json
-from rest import GraceDb
+from ligo.gracedb.rest import GraceDb
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/api"
 
@@ -73,7 +73,7 @@ class Client(GraceDb):
             *args, **kwargs):
         if (url[-1] != '/'):
             url += '/'
-        super(Client, self).__init__(self, url, proxy_host, proxy_port, 
+        super(Client, self).__init__(url, proxy_host, proxy_port, 
                                         credentials, *args, **kwargs)
 
     def search(self, query, columns=None, ligolw=False):
@@ -233,7 +233,7 @@ Longer strings will be truncated.""" % {
                   help="tag name in database (only used for log, upload, tag, and delete_tag)",
                   action="store_true", default=False
                  )
-    op.add_option("-t", "--tag-display-name", dest="tagDispName",
+    op.add_option("-d", "--tag-display-name", dest="tagDispName",
                   help="tag display name (ignored for existing tags)",
                   action="store_true", default=False
                  )
@@ -265,6 +265,9 @@ Longer strings will be truncated.""" % {
         # XXX Branson: need a ping method in the REST API.
         # what about the response to this?
         response = client.ping()
+        if response.status==200:
+            output("%s: 200 OK" % service)
+            exit(0)
     elif args[0] == 'upload':
         if len(args) < 3:
             op.error("not enough arguments for upload")
@@ -398,21 +401,23 @@ Longer strings will be truncated.""" % {
     else:
         rv = response.read()
         # XXX If you got this far, you should be JSON.
-        responseBody = json.loads(rv)
+        try:
+            responseBody = json.loads(rv)
+        except:
+            responseBody = rv
         status = response.status
         if status >= 400:
             exitCode=1
         if isinstance(responseBody, str):
             output("%d: %s" % (status, responseBody))
         else:
-            # XXX Think about what will happen here with ping. Right now just 200.
             output("Server returned %d" % status)
-            if ('error' in response) and response['error']:
+            if ('error' in responseBody) and response['error']:
                 error(response['error'])
                 exitCode = 1
-            if ('warning' in response) and response['warning']:
+            if ('warning' in responseBody) and response['warning']:
                 warning(response['warning'])
-            if ('output' in response) and response['output']:
+            if ('output' in responseBody) and response['output']:
                 output(response['output'])
 
     return exitCode
