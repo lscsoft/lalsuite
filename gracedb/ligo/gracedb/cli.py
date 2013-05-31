@@ -73,38 +73,9 @@ class Client(GraceDb):
             *args, **kwargs):
         if (url[-1] != '/'):
             url += '/'
+        self.url = url
         super(Client, self).__init__(url, proxy_host, proxy_port, 
                                         credentials, *args, **kwargs)
-
-    def search(self, query, columns=None, ligolw=False):
-        terms = { "query" : query }
-        if columns:
-            terms['columns'] = columns
-        if ligolw:
-            terms['ligolw'] = 1
-        headers = {'connection' : 'keep-alive'}
-
-        # construct url via ugly hack.
-        url = self.url[:self.url.rindex('api')] + "cli/search"
-
-        try:
-            response = self.post(url,body=terms,headers=headers)
-            rv = response.read()
-            if "Authorization Required" in rv:
-                return { 'error': 'Credentials not accepted' }
-        except Exception, e:
-            return { 'error':  "client send exception: " + str(e) }
-
-        # XXX ridiculous hack to deal with downloaded ligolw search results.
-        if response.getheader('content-type') == 'application/xml':
-            return rv
-        else:
-            try:
-                rv = json.loads(rv)  
-                return rv
-            except Exception, e:
-                return {'error': "while parsing:%s\nclient send exception: %s" % (rv, str(e))}
-
 
     def download(self, graceid, filename, destfile):
         # Check that we *could* write the file before we
@@ -354,7 +325,40 @@ Longer strings will be truncated.""" % {
         label = args[2]
         response = client.writeLabel(graceid, label, alert=options.alert)
     elif args[0] == 'search':
-        response = client.search(" ".join(args[1:]), options.columns, options.ligolw)
+        query = " ".join(args[1:])
+        terms = { "query" : query }
+        if options.columns:
+            terms['columns'] = options.columns
+        if options.ligolw:
+            terms['ligolw'] = 1
+        headers = {'connection' : 'keep-alive'}
+
+        # construct url via ugly hack.
+        url = client.url[:client.url.rindex('api')] + "cli/search"
+
+        exitCode = 0
+        try:
+            response = client.post(url,body=terms,headers=headers)
+            status = response.status
+            if status >= 400:
+                exitCode=1
+            rv = response.read()
+            if "Authorization Required" in rv:
+                error('Credentials not accepted') 
+        except Exception, e:
+            error("client send exception: " + str(e))
+
+        # XXX ridiculous hack to deal with downloaded ligolw search results.
+        if response.getheader('content-type') == 'application/xml':
+            print(response)
+        else:
+            try:
+                rv = json.loads(rv)  
+                output(rv['output'])
+            except Exception, e:
+                error("while parsing:%s\nclient send exception: %s" % (rv, str(e)))
+        return exitCode
+
     elif args[0] == 'replace':
         if len(args) != 3:
             op.error("wrong number of args for replace")
@@ -399,13 +403,16 @@ Longer strings will be truncated.""" % {
     if isinstance(response, str):
         print(response)
     else:
-        rv = response.read()
+        try:
+            rv = response.read()
+            status = response.status
+        except:
+            rv = response
         # XXX If you got this far, you should be JSON.
         try:
             responseBody = json.loads(rv)
         except:
             responseBody = rv
-        status = response.status
         if status >= 400:
             exitCode=1
         if isinstance(responseBody, str):
@@ -423,9 +430,10 @@ Longer strings will be truncated.""" % {
     return exitCode
 
 if __name__ == "__main__":
-    try:
-        code = main()
-    except Exception, e:
-        error(str(e))
-        sys.exit(1)
+    code = main()
+#    try:
+#        code = main()
+#    except Exception, e:
+#        error(str(e))
+#        sys.exit(1)
     sys.exit(code)
