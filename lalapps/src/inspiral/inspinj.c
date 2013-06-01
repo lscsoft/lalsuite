@@ -2211,7 +2211,7 @@ int main( int argc, char *argv[] )
         minZ = atof( optarg );
         this_proc_param = this_proc_param->next =
             next_process_param( long_options[option_index].name,
-            "float", "%le", minSNR );
+            "float", "%le", minZ );
         if ( minZ < 0 )
         {
           fprintf(stderr,"invalid argument to --%s:\n"
@@ -2225,7 +2225,7 @@ int main( int argc, char *argv[] )
         maxZ = atof( optarg );
         this_proc_param = this_proc_param->next =
             next_process_param( long_options[option_index].name,
-            "float", "%le", minSNR );
+            "float", "%le", maxZ );
         if ( maxZ < 0 )
         {
           fprintf(stderr,"invalid argument to --%s:\n"
@@ -2558,7 +2558,7 @@ int main( int argc, char *argv[] )
         ligoStartFreq = (REAL8) atof( optarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "float", "%f", optarg );
+              "float", "%f", ligoStartFreq );
         break;
 
       case 600:  /* Virgo psd file */
@@ -2583,14 +2583,14 @@ int main( int argc, char *argv[] )
         virgoStartFreq = (REAL8) atof( optarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "float", "%f", optarg );
+              "float", "%f", virgoStartFreq );
         break;
 
       case 1707: /* Set min coincident SNR in two IFOs */
         single_IFO_SNR_threshold=(REAL8) atof(optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "float", "%e", optarg );
+              "float", "%e", single_IFO_SNR_threshold );
         break;
 
       case 'g':
