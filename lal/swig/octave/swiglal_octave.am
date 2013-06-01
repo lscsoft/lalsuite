@@ -29,7 +29,7 @@ M_LOG_FLAGS = -qfH
 TESTS_ENVIRONMENT = \
 	$(SWIG_LD_LIBPATH_NAME)="$(SWIG_LD_LIBRARY_PATH)"; export $(SWIG_LD_LIBPATH_NAME); \
 	OCTAVE_PATH="$(SWIG_PREINST_PATH):$${OCTAVE_PATH}"; export OCTAVE_PATH; \
-	LAL_DEBUG_LEVEL=113; export LAL_DEBUG_LEVEL;
+	LAL_DEBUG_LEVEL=error,memdbg; export LAL_DEBUG_LEVEL;
 
 # run Octave for interactive testing
 run-octave : $(octexec_LTLIBRARIES)

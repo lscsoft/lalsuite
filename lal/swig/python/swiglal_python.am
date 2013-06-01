@@ -29,7 +29,7 @@ PY_LOG_FLAGS =
 TESTS_ENVIRONMENT = \
 	$(SWIG_LD_LIBPATH_NAME)="$(SWIG_LD_LIBRARY_PATH)"; export $(SWIG_LD_LIBPATH_NAME); \
 	PYTHONPATH="$(SWIG_PREINST_PATH):$${PYTHONPATH}"; export PYTHONPATH; \
-	LAL_DEBUG_LEVEL=113; export LAL_DEBUG_LEVEL;
+	LAL_DEBUG_LEVEL=error,memdbg; export LAL_DEBUG_LEVEL;
 
 # run Python for interactive testing
 run-python : $(pkgpyexec_LTLIBRARIES)
