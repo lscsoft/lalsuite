@@ -199,7 +199,6 @@ MACRO(A, B, C, X);
 //    should be undefined, i.e. functions are XLAL functions by default.
 %header %{
 static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, NULL, 0};
-#define swiglal_XLAL_error() XLALError(__func__, __FILE__, __LINE__, XLAL_EFAILED)
 #undef swiglal_check_LALStatus
 %}
 %typemap(in, noblock=1, numinputs=0) LALStatus* {
@@ -212,7 +211,7 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
   $action
 #ifdef swiglal_check_LALStatus
   if (lalstatus.statusCode) {
-    swiglal_XLAL_error();
+    XLALSetErrno(XLAL_EFAILED);
     SWIG_exception(SWIG_RuntimeError, lalstatus.statusDescription);
   }
 #else

@@ -37,7 +37,7 @@
     (void) vfprintf(stderr, fmt, ap);
     va_end(ap);
     (void) fprintf(stderr, "LALRaise: %s\n", strsignal(sig));
-    swiglal_XLAL_error();
+    XLALSetErrno(XLAL_EFAILED);
     return 0;
   }
 
@@ -47,7 +47,7 @@
     va_start(ap, fmt);
     (void) vfprintf(stderr, fmt, ap);
     va_end(ap);
-    swiglal_XLAL_error();
+    XLALSetErrno(XLAL_EFAILED);
   }
 
 %}
