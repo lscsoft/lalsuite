@@ -2058,14 +2058,14 @@ int main( int argc, char *argv[] )
         fixedMass1 = atof( optarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "float", "%d", fixedMass1 );
+              "float", "%f", fixedMass1 );
         break;
 
       case '[':
         fixedMass2 = atof( optarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "float", "%d", fixedMass2 );
+              "float", "%f", fixedMass2 );
         break;
 
       case 'e':
@@ -2353,6 +2353,9 @@ int main( int argc, char *argv[] )
         /* Turn on galaxy catalog completion function */
         srcComplete = 1;
         srcCompleteDist = (REAL8) atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, 
+              "string", "%s", optarg );
         break;
 
       case '.':
@@ -2529,45 +2532,66 @@ int main( int argc, char *argv[] )
         outputFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( outputFileName, optarg, optarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
-          next_process_param( long_options[option_index].name, "string",
-              "%s", optarg );
+          next_process_param( long_options[option_index].name,
+              "string", "%s", optarg );
         break;
 
       case 500:  /* LIGO psd file */
         optarg_len      = strlen( optarg ) + 1;
         ligoPsdFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( ligoPsdFileName, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "string", "%s", optarg );
         break;
 
       case 501:  /* LIGO fake LALSim PSD */
         optarg_len      = strlen( optarg ) + 1;
         ligoFakePsd = calloc( 1, optarg_len * sizeof(char) );
         memcpy( ligoFakePsd, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "string", "%s", optarg );
         break;
 
       case 502:  /* LIGO start frequency */
         ligoStartFreq = (REAL8) atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%f", optarg );
         break;
 
       case 600:  /* Virgo psd file */
         optarg_len       = strlen( optarg ) + 1;
         virgoPsdFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( virgoPsdFileName, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "string", "%s", optarg );
         break;
 
-       case 601:  /* Virgo fake LALSim PSD */
+      case 601:  /* Virgo fake LALSim PSD */
         optarg_len      = strlen( optarg ) + 1;
         virgoFakePsd = calloc( 1, optarg_len * sizeof(char) );
         memcpy( virgoFakePsd, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "string", "%s", optarg );
         break;
 
       case 602:  /* Virgo start frequency */
         virgoStartFreq = (REAL8) atof( optarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%f", optarg );
         break;
 
       case 1707: /* Set min coincident SNR in two IFOs */
-            single_IFO_SNR_threshold=(REAL8) atof(optarg);
-            break;
+        single_IFO_SNR_threshold=(REAL8) atof(optarg);
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%e", optarg );
+        break;
 
       case 'g':
         minSpin1 = atof( optarg );
@@ -2718,9 +2742,9 @@ int main( int argc, char *argv[] )
         break;
 
       case 1002:
+        spinDistr = gaussianSpinDist;
         this_proc_param = this_proc_param->next =
         next_process_param( long_options[option_index].name, "string", "" );
-        spinDistr = gaussianSpinDist;
         break;
 
       case 1003:
@@ -4157,7 +4181,8 @@ static void scale_lalsim_distance(SimInspiralTable *inj,
   net_snr=sqrt(net_snr);
 
   local_min=minSNR;
-  /* Draw a proposed new SNR. Check that two or more IFOs are above coincidence (if given and if num_ifos>=2) */
+  /* Draw a proposed new SNR. Check that two or more IFOs are */
+  /* above threshold (if given and if num_ifos>=2)            */
   do
   {
     above_threshold=num_ifos;
@@ -4180,25 +4205,25 @@ static void scale_lalsim_distance(SimInspiralTable *inj,
       exit(1);
     }
 
-    if (vrbflg)
-    { /* print if verbose */
-      printf("proposed SNR %lf. Proposed new dist %lf \n",proposedSNR,inj->distance*net_snr/proposedSNR);
-    }
+    if (vrbflg) { printf("proposed SNR %lf. Proposed new dist %lf \n",
+          proposedSNR,inj->distance*net_snr/proposedSNR); }
+
     ratio=net_snr/proposedSNR;
 
-    /* Check that single ifo SNRs above threshold in two IFOs */
+    /* Check that single ifo SNRs above threshold in at least two IFOs */
     for (j=0;j<num_ifos;j++)
     {
       if (SNRs[j]<single_IFO_SNR_threshold*ratio)
       above_threshold--;
     }
-    /* Set the min to the proposed SNR, so that next drawing for this event (if necessary) will give higher SNR */
+    /* Set the min to the proposed SNR, so that next drawing for */ 
+    /* this event (if necessary) will give higher SNR            */
     local_min=proposedSNR;
 
-    /* We hit the upper bound of the Network SNR. It is simply not possible to have */
-    /* >2 IFOs with single IFO above coincidence level without getting the network  */
-    /* SNR above the maxSNR.                                                        */
-    /* Use the last proposed value (~maxSNR) and continue */
+    /* We hit the upper bound of the Network SNR. It is simply not possible to  */
+    /* have >2 IFOs with single IFO above threshold without getting the network */
+    /* SNR above maxSNR.                                                        */
+    /* Use the last proposed value (~maxSNR) and continue                       */
     if (maxSNR-proposedSNR<0.1 && single_IFO_SNR_threshold>0.0)
     {
       fprintf(stdout,"WARNING: Could not get two or more IFOs having SNR>%.1f without\n"
