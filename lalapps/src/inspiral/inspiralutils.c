@@ -392,7 +392,7 @@ void InjectNumRelWaveformsUsingPSDREAL8(LALStatus *status,         /**< pointer 
         {
           REAL8TimeSeries *strain = NULL;
           strain  = XLALNRInjectionStrain(ifo, thisInj);
-          
+
           if (ifo[0] == 'V')
             thisSNR = calculate_snr_from_strain_and_psd_real8( strain, virgoPSD, virgoSnrLowFreq, ifo );
           else
@@ -797,51 +797,47 @@ REAL8 calculate_snr_from_strain_and_psd_real8(  REAL8TimeSeries *strain,
   /* The PSD, if provided, comes in as it was in the original file  */
   /* since we don't know deltaF until we get here.  Interpolate now */
   if ( psd )
-    {
-      psd = XLALInterpolatePSD(psd, 1.0 / deltaF);
-    }
+  {
+    psd = XLALInterpolatePSD(psd, 1.0 / deltaF);
+  }
 
   /* compute the SNR for initial LIGO at design */
   for ( snrSq = 0, k = 0; k < fftData->data->length; k++ )
+  {
+    freq = fftData->deltaF * k;
+
+    if ( psd )
     {
-      freq = fftData->deltaF * k;
-
-      if ( psd )
-        {
-            if ( freq < startFreq || k > psd->data->length )
-              continue;
-            psdValue  = psd->data->data[k];
-            psdValue /= 9e-46;
-        }
-      else if ( ifo[0] == 'V' )
-        {
-          if (freq < 35)
-            continue;
-
-          LALVIRGOPsd( NULL, &psdValue, freq );
-          psdValue /= 9e-46;
-        }
-      else
-        {
-          if (freq < 40)
-            continue;
-
-          LALLIGOIPsd( NULL, &psdValue, freq );
-        }
-
-
-      fftData->data->data[k] /= 3e-23;
-
-      snrSq += creal(fftData->data->data[k]) * creal(fftData->data->data[k]) / psdValue;
-      snrSq += cimag(fftData->data->data[k]) * cimag(fftData->data->data[k]) / psdValue;
-
+      if ( freq < startFreq || k > psd->data->length )
+        continue;
+      psdValue  = psd->data->data[k];
+      psdValue /= 9e-46;
     }
+    else if ( ifo[0] == 'V' )
+    {
+      if (freq < 35)
+        continue;
+      LALVIRGOPsd( NULL, &psdValue, freq );
+      psdValue /= 9e-46;
+    }
+    else
+    {
+      if (freq < 40)
+        continue;
+      LALLIGOIPsd( NULL, &psdValue, freq );
+    }
+
+    fftData->data->data[k] /= 3e-23;
+
+    snrSq += creal(fftData->data->data[k]) * creal(fftData->data->data[k]) / psdValue;
+    snrSq += cimag(fftData->data->data[k]) * cimag(fftData->data->data[k]) / psdValue;
+  }
 
   snrSq *= 4*fftData->deltaF;
 
   XLALDestroyREAL8FFTPlan( pfwd );
   XLALDestroyCOMPLEX16FrequencySeries( fftData );
-  
+
   if ( psd )
     XLALDestroyREAL8FrequencySeries( psd );
 
@@ -850,7 +846,6 @@ REAL8 calculate_snr_from_strain_and_psd_real8(  REAL8TimeSeries *strain,
   printf("Obtained snr=%f\n", ret);
   return ret;
 }
-
 
 
 REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
@@ -925,7 +920,7 @@ XLALPsdFromFile(REAL8FrequencySeries **psd,  /**< [out] The PSD */
   REAL8 freq, value;
   REAL8 step1=0, deltaF=0;
   int retval;
-  
+
   /* XLALParseDataFile checks that filename is not null for us */
   retval = XLALParseDataFile(&cfgdata, filename);
   if ( retval != XLAL_SUCCESS ) {
@@ -933,8 +928,8 @@ XLALPsdFromFile(REAL8FrequencySeries **psd,  /**< [out] The PSD */
   }
 
   /*number of data points */
-  length = cfgdata->lines->nTokens; 
-  
+  length = cfgdata->lines->nTokens;
+
   /* allocate memory */
   ret = XLALCreateREAL8FrequencySeries("PSD", &stubEpoch, 0, 0, &lalHertzUnit, length);
   if (ret == NULL) {
@@ -971,7 +966,7 @@ XLALPsdFromFile(REAL8FrequencySeries **psd,  /**< [out] The PSD */
   XLALDestroyParsedDataFile( cfgdata );
 
   return XLAL_SUCCESS;
-} 
+}
 
 
 /** Function for interpolating PSD to a given sample rate
@@ -1036,6 +1031,7 @@ XLALInterpolatePSD( REAL8FrequencySeries *in,      /**< input strain time series
   return ret;
 }
 
+
 void get_FakePsdFromString(REAL8FrequencySeries* PsdFreqSeries,char* FakePsdName, REAL8 StartFreq)
 {
   /* Call XLALSimNoisePSD to fill the REAL8FrequencySeries PsdFreqSeries (must been already allocated by callers). FakePsdName contains the label of the fake PSD */
@@ -1047,7 +1043,7 @@ void get_FakePsdFromString(REAL8FrequencySeries* PsdFreqSeries,char* FakePsdName
   {
     XLALSimNoisePSD(PsdFreqSeries,StartFreq,XLALSimNoisePSDVirgo);
   }
-  else if(!strcmp("LALAdLIGO",FakePsdName)) 
+  else if(!strcmp("LALAdLIGO",FakePsdName))
   {
     XLALSimNoisePSD(PsdFreqSeries,StartFreq,XLALSimNoisePSDaLIGOZeroDetHighPower);
   }
@@ -1062,92 +1058,94 @@ void get_FakePsdFromString(REAL8FrequencySeries* PsdFreqSeries,char* FakePsdName
   }
 }
 
+
 REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencySeries *psd, REAL8 start_freq)
 {
-  /* Calculate and return the single IFO SNR 
-   * 
+  /* Calculate and return the single IFO SNR
+   *
    * Required options:
-   * 
+   *
    * inj:     SimInspiralTable entry for which the SNR has to be calculated
    * IFOname: The canonical name (e.g. H1, L1, V1) name of the IFO for which the SNR must be calculated
    * PSD:     PSD curve to be used for the overlap integrap
    * start_freq: lower cutoff of the overlap integral
-   * 
-   * */   
-     
+   *
+   * */
+
   int ret=0;
   INT4 errnum=0;
   UINT4 j=0;
   /* Fill detector site info */
   LALDetector*  detector=NULL;
   detector=calloc(1,sizeof(LALDetector));
-  if(!strcmp(IFOname,"H1")) 			
+  if(!strcmp(IFOname,"H1"))
     memcpy(detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
-  if(!strcmp(IFOname,"H2")) 
+  if(!strcmp(IFOname,"H2"))
     memcpy(detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
-  if(!strcmp(IFOname,"LLO")||!strcmp(IFOname,"L1")) 
+  if(!strcmp(IFOname,"LLO")||!strcmp(IFOname,"L1"))
     memcpy(detector,&lalCachedDetectors[LALDetectorIndexLLODIFF],sizeof(LALDetector));
-  if(!strcmp(IFOname,"V1")||!strcmp(IFOname,"VIRGO")) 
+  if(!strcmp(IFOname,"V1")||!strcmp(IFOname,"VIRGO"))
     memcpy(detector,&lalCachedDetectors[LALDetectorIndexVIRGODIFF],sizeof(LALDetector));
-    
+
   Approximant approx=TaylorF2;
   approx=XLALGetApproximantFromString(inj->waveform);
   LALSimulationDomain modelDomain;
- 
+
   switch(approx)
-	{
-		case GeneratePPN:
-		case TaylorT1:
-		case TaylorT2:
-		case TaylorT3:
-		case TaylorT4:
-		case EOB:
-		case EOBNR:
-		case EOBNRv2:
-		case EOBNRv2HM:
-		case SpinTaylor:
-		case SpinTaylorT4:
-		case SpinQuadTaylor:
-		case SpinTaylorFrameless:
-		case PhenSpinTaylorRD:
-		case NumRel:
+  {
+    case GeneratePPN:
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorT4:
+    case EOB:
+    case EOBNR:
+    case EOBNRv2:
+    case EOBNRv2HM:
+    case SpinTaylor:
+    case SpinTaylorT4:
+    case SpinQuadTaylor:
+    case SpinTaylorFrameless:
+    case PhenSpinTaylorRD:
+    case NumRel:
       modelDomain=LAL_SIM_DOMAIN_TIME;
-			break;
-		case TaylorF1:
-		case TaylorF2:
-		case TaylorF2RedSpin:
-		case TaylorF2RedSpinTidal:
-		case IMRPhenomA:
-		case IMRPhenomB:
+      break;
+    case TaylorF1:
+    case TaylorF2:
+    case TaylorF2RedSpin:
+    case TaylorF2RedSpinTidal:
+    case IMRPhenomA:
+    case IMRPhenomB:
       modelDomain=LAL_SIM_DOMAIN_FREQUENCY;
-			break;
-		default:
-			fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
-			exit(1);
-			break;
-	}
-    
+      break;
+    default:
+      fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
+      exit(1);
+      break;
+  }
+
   REAL8 m1,m2, s1x,s1y,s1z,s2x,s2y,s2z,phi0,f_min,f_max,iota,polarization,
-    
+
   /* No tidal PN terms until injtable is able to get them */
   lambda1=0.0,lambda2=0.0;
-  
+
   LALSimInspiralWaveformFlags *waveFlags= XLALSimInspiralCreateWaveformFlags();
-    
-  /* Spin and tidal interactios at the highest level (default) until injtable stores them.
+
+  /* Spin and tidal interactions at the highest level (default) until injtable stores them.
    * When spinO and tideO are added to injtable we can un-comment those lines and should be ok
-   * 
+   *
   int spinO = inj->spinO;
   int tideO = inj->tideO;
   XLALSimInspiralSetSpinOrder(waveFlags, *(LALSimInspiralSpinOrder*) spinO);
   XLALSimInspiralSetTidalOrder(waveFlags, *(LALSimInspiralTidalOrder*) tideO);
   */
-  
-  /* When nonGR terms stored in the table, we can add them here. (If they are only phase deformations, they won't change the SNR though) */
-  LALSimInspiralTestGRParam *nonGRparams=NULL; 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
 
-  LALPNOrder  order; /* Phase Order of the model             */
-  INT4        amporder=0;   
+  /* When nonGR terms stored in the table, we can add them here. (If they are only phase deformations, they won't change the SNR though) */
+  LALSimInspiralTestGRParam *nonGRparams=NULL;
+  /* Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+
+  LALPNOrder  order;   /* Phase order of the model   */
+  INT4        amporder=0;
   order = XLALGetOrderFromString(inj->waveform);
   amporder = inj->amp_order;
   /* Read parameters */
@@ -1166,9 +1164,9 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   REAL8 latitude=inj->latitude;
   REAL8 longitude=inj->longitude;
 
-  LIGOTimeGPS		    epoch;  
+  LIGOTimeGPS epoch;
   memcpy(&epoch,&(inj->geocent_end_time),sizeof(LIGOTimeGPS));
-    
+
   /* Hardcoded values of srate and segment length. If changed here they must also be changed in inspinj.c */
   REAL8 srate=4096.0;
   const CHAR *WF=inj->waveform;
@@ -1176,17 +1174,15 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   if (strstr(WF,"EOB"))
     srate=8192.0;
   REAL8 segment=64.0;
-  
-  
+
   f_max=(srate/2.0-(1.0/segment));
   size_t seglen=(size_t) segment*srate;
-  REAL8 deltaF=1.0/segment ;
+  REAL8 deltaF=1.0/segment;
   REAL8 deltaT=1.0/srate;
 
-     
-  /* Frequency domain h+ and hx. They are going to be filled either by a FD WF or by the FFT of a TD WF*/ 
+  /* Frequency domain h+ and hx. They are going to be filled either by a FD WF or by the FFT of a TD WF*/
   COMPLEX16FrequencySeries *freqHplus;
-  COMPLEX16FrequencySeries* freqHcross;
+  COMPLEX16FrequencySeries *freqHcross;
   freqHplus=  XLALCreateCOMPLEX16FrequencySeries("fhplus",
     &epoch,
     0.0,
@@ -1194,7 +1190,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
     &lalDimensionlessUnit,
     seglen/2+1
   );
-                      
+
   freqHcross=XLALCreateCOMPLEX16FrequencySeries("fhcross",
     &epoch,
     0.0,
@@ -1202,11 +1198,11 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
     &lalDimensionlessUnit,
     seglen/2+1
   );
-   
+
   /* If the approximant is on the FD call XLALSimInspiralChooseFDWaveform */
-  if(modelDomain == LAL_SIM_DOMAIN_FREQUENCY) 
+  if (modelDomain == LAL_SIM_DOMAIN_FREQUENCY)
   {
-    
+
     COMPLEX16FrequencySeries *hptilde=NULL;
     COMPLEX16FrequencySeries *hctilde=NULL;
     XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&hptilde,&hctilde, phi0, deltaF, m1, m2,
@@ -1214,15 +1210,15 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       iota, lambda1, lambda2, waveFlags, nonGRparams,
       amporder, order, approx),errnum
     );
-                       
-    if(!hptilde|| hptilde->data==NULL || hptilde->data->data==NULL ||!hctilde|| hctilde->data==NULL || hctilde->data->data==NULL) 
+
+    if(!hptilde|| hptilde->data==NULL || hptilde->data->data==NULL ||!hctilde|| hctilde->data==NULL || hctilde->data->data==NULL)
     {
       XLALPrintError(" ERROR in XLALSimInspiralChooseFDWaveform(): error generating waveform. errnum=%d. Exiting...\n",errnum );
       exit(1);
     }
-      
+
     COMPLEX16 *dataPtr = hptilde->data->data;
-    for (j=0; j<(UINT4) freqHplus->data->length; ++j) 
+    for (j=0; j<(UINT4) freqHplus->data->length; ++j)
     {
       if(j < hptilde->data->length)
       {
@@ -1234,7 +1230,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       }
     }
     dataPtr = hctilde->data->data;
-    for (j=0; j<(UINT4) freqHplus->data->length; ++j) 
+    for (j=0; j<(UINT4) freqHplus->data->length; ++j)
     {
       if(j < hctilde->data->length)
       {
@@ -1245,20 +1241,21 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
         freqHcross->data->data[j]=0.0+0.0*I;
       }
     }
-    /* Clean */    
+    /* Clean */
     if(hptilde) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
     if(hctilde) XLALDestroyCOMPLEX16FrequencySeries(hctilde);
 
   }
   else
   {
-    /* Otherwise use  XLALSimInspiralChooseTDWaveform */
+
+    /* Otherwise use XLALSimInspiralChooseTDWaveform */
     REAL8FFTPlan *timeToFreqFFTPlan = XLALCreateForwardREAL8FFTPlan((UINT4) seglen, 0 );
-    REAL8TimeSeries *hplus=NULL; 
-    REAL8TimeSeries *hcross=NULL; 
+    REAL8TimeSeries *hplus=NULL;
+    REAL8TimeSeries *hcross=NULL;
     REAL8TimeSeries *timeHplus=NULL;
     REAL8TimeSeries *timeHcross=NULL;
-  
+
     timeHcross=XLALCreateREAL8TimeSeries("timeModelhCross",
       &epoch,
       0.0,
@@ -1273,37 +1270,40 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       &lalDimensionlessUnit,
       seglen
     );
-                                                                
-    XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phi0, deltaT,m1,m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min,0.,LAL_PC_SI * 1.0e6,
-                                            iota, lambda1, lambda2, waveFlags, nonGRparams, amporder, order, approx),errnum);
-    
+
+    XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phi0, deltaT,
+        m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, 0., LAL_PC_SI*1.0e6,
+        iota, lambda1, lambda2, waveFlags, nonGRparams, amporder, order, approx),
+        errnum);
+
     if (ret == XLAL_FAILURE || hplus == NULL || hcross == NULL)
     {
       XLALPrintError(" ERROR in XLALSimInspiralChooseTDWaveform(): error generating waveform. errnum=%d. Exiting...\n",errnum );
       exit(1);
     }
-    
+
     memset(timeHplus->data->data, 0, sizeof (REAL8)*timeHplus->data->length);
     memset(timeHcross->data->data, 0, sizeof (REAL8)*timeHcross->data->length);
     memcpy(timeHplus->data->data, hplus->data->data,hplus->data->length*sizeof(REAL8));
     memcpy(timeHcross->data->data, hcross->data->data ,hplus->data->length*sizeof(REAL8));
-    
-    for (j=0; j<(UINT4) freqHplus->data->length; ++j) 
+
+    for (j=0; j<(UINT4) freqHplus->data->length; ++j)
     {
-      freqHplus->data->data[j]=0.0+I*0.0; 
+      freqHplus->data->data[j]=0.0+I*0.0;
       freqHcross->data->data[j]=0.0+I*0.0;
     }
-    
+
     /* FFT into freqHplus and freqHcross */
     XLALREAL8TimeFreqFFT(freqHplus,timeHplus,timeToFreqFFTPlan);
     XLALREAL8TimeFreqFFT(freqHcross,timeHcross,timeToFreqFFTPlan);
-    
+
     /* Clean... */
     if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
     if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
     if ( timeHplus ) XLALDestroyREAL8TimeSeries(timeHplus);
     if ( timeHcross ) XLALDestroyREAL8TimeSeries(timeHcross);
     if (timeToFreqFFTPlan) LALFree(timeToFreqFFTPlan);
+
   }
 
   /* The WF has been generated and is in freqHplus/cross. Now project into the IFO frame */
@@ -1321,30 +1321,30 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   /* And take the distance into account */
   FplusScaled  = Fplus  / (inj->distance);
   FcrossScaled = Fcross / (inj->distance);
-  
+
   REAL8 timedelay = XLALTimeDelayFromEarthCenter(detector->location,longitude, latitude, &GPSlal);
   REAL8 timeshift =  timedelay;
-  REAL8  twopit    = LAL_TWOPI * timeshift;
+  REAL8 twopit    = LAL_TWOPI * timeshift;
 
   UINT4 lower = (UINT4)ceil(f_min / deltaF);
   UINT4 upper = (UINT4)floor(f_max / deltaF);
   REAL8 re = cos(twopit*deltaF*lower);
-  REAL8  im = -sin(twopit*deltaF*lower);
+  REAL8 im = -sin(twopit*deltaF*lower);
 
   /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
   REAL8 dim = -sin(twopit*deltaF);
   REAL8 dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
   REAL8 TwoDeltaToverN = 2.0 *deltaT / ((double) seglen);
 
-  REAL8  plainTemplateReal,  plainTemplateImag,templateReal,templateImag;
-  REAL8  newRe, newIm,temp;
+  REAL8 plainTemplateReal,  plainTemplateImag,templateReal,templateImag;
+  REAL8 newRe, newIm,temp;
   REAL8 this_snr=0.0;
   for (j=lower; j<=(UINT4) upper; ++j)
   {
     /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-    plainTemplateReal = FplusScaled * creal(freqHplus->data->data[j])  
+    plainTemplateReal = FplusScaled * creal(freqHplus->data->data[j])
                         +  FcrossScaled *creal(freqHcross->data->data[j]);
-    plainTemplateImag = FplusScaled * cimag(freqHplus->data->data[j])  
+    plainTemplateImag = FplusScaled * cimag(freqHplus->data->data[j])
                         +  FcrossScaled * cimag(freqHcross->data->data[j]);
 
     /* do time-shifting...             */
@@ -1368,7 +1368,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   if (waveFlags) XLALSimInspiralDestroyWaveformFlags(waveFlags);
   if (nonGRparams) XLALSimInspiralDestroyTestGRParam(nonGRparams);
   if (detector) free(detector);
-  
+
   return sqrt(this_snr*2.0);
 
 }
