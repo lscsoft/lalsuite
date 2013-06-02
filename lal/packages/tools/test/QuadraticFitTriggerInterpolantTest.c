@@ -27,23 +27,70 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 {
     int result;
     double tmax;
-    COMPLEX16 ymax;
-    const COMPLEX16 y[] = {0, 3, 4, 3, 0};
 
     QuadraticFitTriggerInterpolant *interp = XLALCreateQuadraticFitTriggerInterpolant(2);
     if (!interp)
         exit(EXIT_FAILURE);
 
-    result = XLALCOMPLEX16ApplyQuadraticFitTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
-    if (result)
-        exit(EXIT_FAILURE);
+    {
+        const COMPLEX16 y[] = {0, 3, 4, 3, 0};
+        COMPLEX16 ymax;
 
-    if (tmax != 0)
-        exit(EXIT_FAILURE);
-    if (creal(ymax) != 4)
-        exit(EXIT_FAILURE);
-    if (cimag(ymax) != 0)
-        exit(EXIT_FAILURE);
+        result = XLALCOMPLEX16ApplyQuadraticFitTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
+        if (result)
+            exit(EXIT_FAILURE);
+
+        if (tmax != 0)
+            exit(EXIT_FAILURE);
+        if (creal(ymax) != 4)
+            exit(EXIT_FAILURE);
+        if (cimag(ymax) != 0)
+            exit(EXIT_FAILURE);
+    }
+
+    {
+        const COMPLEX8 y[] = {0, 3, 4, 3, 0};
+        COMPLEX8 ymax;
+
+        result = XLALCOMPLEX8ApplyQuadraticFitTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
+        if (result)
+            exit(EXIT_FAILURE);
+
+        if (tmax != 0)
+            exit(EXIT_FAILURE);
+        if (crealf(ymax) != 4)
+            exit(EXIT_FAILURE);
+        if (cimagf(ymax) != 0)
+            exit(EXIT_FAILURE);
+    }
+
+    {
+        const REAL8 y[] = {0, 3, 4, 3, 0};
+        REAL8 ymax;
+
+        result = XLALREAL8ApplyQuadraticFitTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
+        if (result)
+            exit(EXIT_FAILURE);
+
+        if (tmax != 0)
+            exit(EXIT_FAILURE);
+        if (ymax != 4)
+            exit(EXIT_FAILURE);
+    }
+
+    {
+        const REAL4 y[] = {0, 3, 4, 3, 0};
+        REAL4 ymax;
+
+        result = XLALREAL4ApplyQuadraticFitTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
+        if (result)
+            exit(EXIT_FAILURE);
+
+        if (tmax != 0)
+            exit(EXIT_FAILURE);
+        if (ymax != 4)
+            exit(EXIT_FAILURE);
+    }
 
     XLALDestroyQuadraticFitTriggerInterpolant(interp);
     exit(EXIT_SUCCESS);
