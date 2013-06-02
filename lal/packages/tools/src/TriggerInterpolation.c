@@ -54,7 +54,7 @@ static int XLALCOMPLEX8ApplyTriggerInterpolant(
     COMPLEX16 *y_full = &data_full[window];
 
     for (i = -window; i <= window; i ++)
-        data_full[i] = y[i];
+        y_full[i] = y[i];
 
     ret = applyfunc(interp, &tmax_full, &ymax_full, y_full);
     if (ret == GSL_SUCCESS)
@@ -82,7 +82,7 @@ static int XLALREAL8ApplyTriggerInterpolant(
     COMPLEX16 *y_full = &data_full[window];
 
     for (i = -window; i <= window; i ++)
-        data_full[i] = y[i];
+        y_full[i] = y[i];
 
     ret = applyfunc(interp, &tmax_full, &ymax_full, y_full);
     if (ret == GSL_SUCCESS)
@@ -110,7 +110,7 @@ static int XLALREAL4ApplyTriggerInterpolant(
     COMPLEX16 *y_full = &data_full[window];
 
     for (i = -window; i <= window; i ++)
-        data_full[i] = y[i];
+        y_full[i] = y[i];
 
     ret = applyfunc(interp, &tmax_full, &ymax_full, y_full);
     if (ret == GSL_SUCCESS)
