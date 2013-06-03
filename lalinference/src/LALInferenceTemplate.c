@@ -55,10 +55,15 @@
 #define UNUSED
 #endif
 
+/* Max amplitude orders found in LALSimulation (not accessible from outside of LALSim) */
+#define MAX_NONPRECESSING_AMP_PN_ORDER 6
+#define MAX_PRECESSING_AMP_PN_ORDER 3
+
 extern int newswitch; //temporay global variable to use the new LALSTPN
 static void destroyCoherentGW( CoherentGW *waveform );
 static void q2eta(double q, double *eta);
 static void q2masses(double mc, double q, double *m1, double *m2);
+static REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder);
 
 
 void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
@@ -263,6 +268,18 @@ static void q2masses(double mc, double q, double *m1, double *m2)
   return;
 }
 
+static REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder)
+/*  Compute the minimum frequency for waveform generation */
+/*  using amplitude orders above Newtonian.  The waveform */
+/*  generator turns on all orders at the orbital          */
+/*  associated with fMin, so information from higher      */
+/*  orders is not included at fLow unless fMin is         */
+/*  sufficiently low.                                     */
+{
+    REAL8 fStart;
+    fStart = fLow * 2./(ampOrder+2);
+    return fStart;
+}
 
 void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 
@@ -1604,14 +1621,14 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 
 void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOdata)
 /*************************************************************************************************************************/
-/* Wrapper for LALSimulation waveforms:						                                                                       */
+/* Wrapper for LALSimulation waveforms:						                                                             */
 /* XLALSimInspiralChooseFDWaveform() and XLALSimInspiralChooseTDWaveform().                                              */
 /*                                                                                                                       */
-/*  IFOdata->modelParams parameters are:										                                                             */
-/*  - "name" description; type OPTIONAL (default value)										                                               */
-/*										                                                                                                   */
-/*   MODEL PARAMETERS										                                                                                 */
-/*   - "LAL_APPROXIMANT"	  Approximant;        Approximant                                                              */
+/*  IFOdata->modelParams parameters are:										                                         */
+/*  - "name" description; type OPTIONAL (default value)										                             */
+/*										                                                                                 */
+/*   MODEL PARAMETERS										                                                             */
+/*   - "LAL_APPROXIMANT"	  Approximant;        Approximant                                                            */
 /*   - "LAL_PNORDER"        Phase PN order;     INT4                                                                     */
 /*   - "LAL_AMPORDER"       Amplitude PN order; INT4 OPTIONAL (-1)                                                       */
 /*   - "LALINFERENCE_FRAME" reference frame;    LALInferenceFrame OPTIONAL (LALINFERENCE_FRAME_RADIATION)                */
@@ -1621,8 +1638,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /*   - "fLow"               lower frequency bound; REAL8 OPTIONAL (IFOdata->fLow)                                        */
 /*                                                                                                                       */
 /*   MASS PARAMETERS; either:                                                                                            */
-/*      - "mass1"           mass of object 1 in solar mass; REAL8								                                         */
-/*      - "mass2"		        mass of object 1 in solar mass; REAL8								                                         */
+/*      - "mass1"           mass of object 1 in solar mass; REAL8								                         */
+/*      - "mass2"		        mass of object 1 in solar mass; REAL8								                     */
 /*      OR                                                                                                               */
 /*      - "chirpmass"       chirpmass in solar mass; REAL8                                                               */
 /*      - "asym_massratio"  asymmetric mass ration m2/m1, 0<asym_massratio<1; REAL8                                      */
@@ -1653,7 +1670,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /*   - "lambda1"            tidal parameter of object 1; REAL8  OPTIONAL (0.0)                                           */
 /*   - "lambda2"            tidal parameter of object 1; REAL8  OPTIONAL (0.0)                                           */
 /*                                                                                                                       */
-/*   - "time"               used as an OUTPUT only; REAL8								                                                 */
+/*   - "time"               used as an OUTPUT only; REAL8								                                 */
 /*                                                                                                                       */
 /*                                                                                                                       */
 /*   IFOdata needs to also contain:                                                                                      */
@@ -1672,8 +1689,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 {
 	
   Approximant approximant = (Approximant) 0;
-  int order=-1;
-  int amporder=-1;
+  INT4 order=-1;
+  INT4 amporder;
   LALInferenceFrame frame=LALINFERENCE_FRAME_RADIATION;
 
   unsigned long	i;
@@ -1688,7 +1705,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
   
   REAL8 mc;
-  REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, inclination;
+  REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_low, f_start, distance, inclination;
   
   REAL8 *m1_p,*m2_p;
   REAL8 deltaF, f_max;
@@ -1706,14 +1723,24 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
     XLAL_ERROR_VOID(XLAL_EDATA);
   }
+
+  /* Explicitly set the default amplitude order if one is not specified.
+   *   This serves two purposes:
+   *     1) The default behavior of the code won't change unexpectedly due to changes in LALSimulation.
+   *     2) We need to know the amplitude order in order to set the starting frequency of the waveform properly. */
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_AMPORDER"))
     amporder = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_AMPORDER");
+  else if (approximant == SpinTaylorT2 || approximant == SpinTaylorT4)
+    amporder = MAX_PRECESSING_AMP_PN_ORDER;
+  else
+    amporder = MAX_NONPRECESSING_AMP_PN_ORDER;
 
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LALINFERENCE_FRAME"))
     frame = *(LALInferenceFrame*) LALInferenceGetVariable(IFOdata->modelParams, "LALINFERENCE_FRAME");
 
   REAL8 fRef = 0.0;
   if (LALInferenceCheckVariable(IFOdata->modelParams, "fRef")) fRef = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams, "fRef");
+
   REAL8 fTemp = fRef;
 
   if(LALInferenceCheckVariable(IFOdata->modelParams,"chirpmass"))
@@ -1748,9 +1775,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 
   /* Check if fLow is a model parameter, otherwise use data structure definition */
   if(LALInferenceCheckVariable(IFOdata->modelParams, "fLow"))
-    f_min = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "fLow");
+    f_low = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "fLow");
   else
-    f_min = IFOdata->fLow /** 0.9 */;
+    f_low = IFOdata->fLow /** 0.9 */;
+
+  f_start = fLow2fStart(f_low, amporder);
   f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using IFOdata->fHigh causes NaNs in waveform (see redmine issue #750)*/
   
   if(frame==LALINFERENCE_FRAME_RADIATION){
@@ -1780,8 +1809,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     REAL8 tilt2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "tilt_spin2");     /* zenith angle between S2 and LNhat in radians */
     REAL8 phi12 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi12");      /* difference in azimuthal angle btwn S1, S2 in radians */
  
+    /* The transformation function doesn't know fLow, so fRef==0 isn't interpretted as a request to use the starting frequency for reference. */
     if(fTemp==0.0)
-      fTemp = f_min;
+      fTemp = f_start;
  
     XLAL_TRY(ret=XLALSimInspiralTransformPrecessingInitialConditions(
           &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
@@ -1834,7 +1864,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     
 	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_min, f_max, distance, inclination,
+            spin2x, spin2y, spin2z, f_start, f_max, distance, inclination,
             lambda1, lambda2, waveFlags, nonGRparams, amporder, order,
             approximant), errnum);
 
@@ -1880,7 +1910,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 
     XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phi0, deltaT,
             m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_min, fRef, distance,
+            spin2x, spin2y, spin2z, f_start, fRef, distance,
             inclination, lambda1, lambda2, waveFlags, nonGRparams,
             amporder, order, approximant), errnum);
     XLALSimInspiralDestroyWaveformFlags(waveFlags);
