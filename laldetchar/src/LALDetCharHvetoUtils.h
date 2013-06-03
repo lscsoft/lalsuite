@@ -31,8 +31,8 @@
 #include <lal/LIGOLwXMLBurstRead.h>
 
 static gint compare(gconstpointer a, gconstpointer b) {
-        const SnglBurst *_a = a;
-        const SnglBurst *_b = b;
+        const SnglBurst *_a = (const SnglBurst *)a;
+        const SnglBurst *_b = (const SnglBurst *)b;
 
         return XLALCompareSnglBurstByPeakTimeAndSNR(&_a, &_b);
 }
