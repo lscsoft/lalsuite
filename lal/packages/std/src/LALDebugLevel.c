@@ -18,8 +18,11 @@
 */
 
 #include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 #include <config.h>
 #include <lal/LALDebugLevel.h>
+#include <lal/LALError.h>
 #undef lalDebugLevel
 
 #ifdef LAL_PTHREAD_LOCK
@@ -49,6 +52,18 @@ void XLALClobberDebugLevel(int level)
     lalDebugLevel = level;
 }
 
+static int compare_token_to_name(const char* token, const size_t toklen, const char* name) {
+  if (toklen != strlen(name)) {
+    return 0;
+  }
+  for (size_t i = 0; i < toklen; ++i) {
+    if (toupper(token[i]) != name[i]) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
 static void XLALSetDebugLevel(void)
 {
     int level;
@@ -66,9 +81,45 @@ static void XLALSetDebugLevel(void)
         return;
     }
 
-    /* could handle more complicated strings in the future? */
-    /* for now, ignore environment strings that cannot be parsed */
+    /* try to parse as a comma-separated list of debug level names */
+    const char *const seps = ",";
+    const char *token = env;
+    do {
+        size_t toklen = strcspn(token, seps);
+        if (toklen > 0) {
+            if (compare_token_to_name(token, toklen, "NDEBUG")) {
+                level |= 0; /* no debugging */
+            } else if (compare_token_to_name(token, toklen, "ERROR")) {
+                level |= LALERRORBIT; /* enable error messages */
+            } else if (compare_token_to_name(token, toklen, "WARNING")) {
+                level |= LALWARNINGBIT; /* enable warning messages */
+            } else if (compare_token_to_name(token, toklen, "INFO")) {
+                level |= LALINFOBIT; /* enable info messages */
+            } else if (compare_token_to_name(token, toklen, "TRACE")) {
+                level |= LALTRACEBIT; /* enable tracing messages */
+            } else if (compare_token_to_name(token, toklen, "MSGLVL1")) {
+                level |= LALERRORBIT; /* enable error messages */
+            } else if (compare_token_to_name(token, toklen, "MSGLVL2")) {
+                level |= LALERRORBIT | LALWARNINGBIT; /* enable error and warning messages */
+            } else if (compare_token_to_name(token, toklen, "MSGLVL3")) {
+                level |= LALERRORBIT | LALWARNINGBIT | LALINFOBIT; /* enable error, warning, and info messages */
+            } else if (compare_token_to_name(token, toklen, "MEMDBG")) {
+                level |= LALMEMDBGBIT | LALMEMPADBIT | LALMEMTRKBIT; /* enable memory debugging tools */
+            } else if (compare_token_to_name(token, toklen, "MEMTRACE")) {
+                level |= LALTRACEBIT | LALMEMDBG | LALMEMINFOBIT; /* enable memory tracing tools */
+            } else if (compare_token_to_name(token, toklen, "ALLDBG")) {
+                level |= ~LALNDEBUG; /* enable all debugging */
+            } else {
+              /* not a valid debug level name */
+                lalAbortHook("%s: could not parse LAL_DEBUG_LEVEL='%s'\n", __func__, env);
+                return;
+            }
+        }
+        token += toklen;
+    } while (*(token++) != '\0');
+    lalDebugLevel = level;
     return;
+
 }
 
 int XLALGetDebugLevel(void)
