@@ -375,7 +375,7 @@ Longer strings will be truncated.""" % {
         # NB: the dictionary returned by the API has keys and values
         # reversed w.r.t. the typeCodeMap above.
         foundType = False
-        for key, value in client.analysis_types:
+        for key, value in client.analysis_types.items():
             if type==str(value):
                 type = key
                 foundType = True
