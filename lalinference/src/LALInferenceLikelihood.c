@@ -486,6 +486,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
     /* "different" now may also mean that "dataPtr->modelParams" */
     /* wasn't allocated yet (as in the very 1st iteration).      */
+    different = LALInferenceCompareVariables(dataPtr->modelParams, &intrinsicParams);
 
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
