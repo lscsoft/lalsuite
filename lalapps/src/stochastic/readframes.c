@@ -39,7 +39,7 @@
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -81,7 +81,7 @@ INT4 main()
   LALStatus status;
   
   /* frame variables */
-  FrCache *frCache;
+  LALCache *frCache;
   FrStream *frStream;
   FrChanIn frChanIn;
  
@@ -123,7 +123,7 @@ INT4 main()
   fprintf(stdout, "Opening frame cache...\n");
   frCache=NULL;
   frStream=NULL;
-  LAL_CALL( LALFrCacheImport( &status, &frCache, frameCache), &status );
+  frCache = XLALCacheImport( frameCache );
   LAL_CALL( LALFrCacheOpen( &status, &frStream, frCache), &status );
 
    /* set the mode of the frame stream to fail on gaps or time errors */

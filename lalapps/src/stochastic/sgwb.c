@@ -330,7 +330,7 @@ COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
 {
   /* variables */
   COMPLEX8FrequencySeries *response;
-  FrCache *cache = NULL;
+  LALCache *cache = NULL;
   CalibrationUpdateParams calib_params;
 
   /* apply offset to epoch */
@@ -345,14 +345,14 @@ COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
   calib_params.ifo = ifo;
 
   /* open calibration frame cache */
-  cache = XLALFrImportCache(cache_file);
+  cache = XLALCacheImport(cache_file);
 
   /* generate response function */
   LAL_CALL(LALExtractFrameResponse(status, response, cache, &calib_params), \
       status);
 
   /* destory calibration frame cache */
-  XLALFrDestroyCache(cache);
+  XLALDestroyCache(cache);
 
   /* reduce to required band */
   XLALShrinkCOMPLEX8FrequencySeries(response, f0/delta_f, length);

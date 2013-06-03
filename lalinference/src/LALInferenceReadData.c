@@ -29,7 +29,7 @@
 #include <lal/LALStdlib.h>
 
 #include <lal/LALInspiral.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/LALDetectors.h>
@@ -183,11 +183,11 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
 {
 	LALStatus status;
 	memset(&status,0,sizeof(status));
-	FrCache *cache = NULL;
+	LALCache *cache = NULL;
 	FrStream *stream = NULL;
 	REAL8TimeSeries *out = NULL;
 	
-	cache  = XLALFrImportCache( cachefile );
+	cache  = XLALCacheImport( cachefile );
         int err;
         err = *XLALGetErrnoPtr();
 	if(cache==NULL) {fprintf(stderr,"ERROR: Unable to import cache file \"%s\",\n       XLALError: \"%s\".\n",cachefile, XLALErrorString(err)); exit(-1);}
@@ -195,7 +195,7 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
 	if(stream==NULL) {fprintf(stderr,"ERROR: Unable to open stream from frame cache file\n"); exit(-1);}
 	out = XLALFrInputREAL8TimeSeries( stream, channel, &start, length , 0 );
 	if(out==NULL) fprintf(stderr,"ERROR: unable to read channel %s from %s at time %i\nCheck the specified data duration is not too long\n",channel,cachefile,start.gpsSeconds);
-	LALDestroyFrCache(&status,&cache);
+	XLALDestroyCache(cache);
 	LALFrClose(&status,&stream);
 	return out;
 }

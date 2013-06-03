@@ -140,7 +140,7 @@ int main( int argc, char *argv[] )
 
   static LALStatus      status;
   const CHAR            calCacheName[LALNameLength];
-  FrCache              *calCache = NULL;
+  LALCache             *calCache = NULL;
   UINT4                 numPoints = 262144;
   UINT4                 sampleRate = 4096;
   CHAR                  outFile[LALNameLength];

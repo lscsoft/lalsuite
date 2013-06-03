@@ -877,7 +877,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *chname, LIGOTimeGPS start, LIGOTimeGPS end, size_t lengthlimit)
 {
 	double duration = XLALGPSDiff(&end, &start);
-	FrCache *cache;
+	LALCache *cache;
 	FrStream *stream;
 	LALTYPECODE series_type;
 	REAL8TimeSeries *series;
@@ -889,11 +889,11 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Open frame stream.
 	 */
 
-	cache = XLALFrImportCache(cachefilename);
+	cache = XLALCacheImport(cachefilename);
 	if(!cache)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	stream = XLALFrCacheOpen(cache);
-	XLALFrDestroyCache(cache);
+	XLALDestroyCache(cache);
 	if(!stream)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 
@@ -1098,18 +1098,7 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 
 		return response;
 	} else {
-		FrCache *cache = XLALFrImportCache(cachefile);
-		if(cache) {
-			LALCalData *caldata = XLALFrCacheGetCalData(&epoch, channel_name, cache);
-			XLALFrDestroyCache(cache);
-			if(caldata) {
-				response = XLALCreateCOMPLEX8Response(&epoch, duration, deltaf, n, caldata);
-				XLALDestroyCalData(caldata);
-				if(response)
-					return response;
-			}
-		}
-		XLAL_ERROR_NULL(XLAL_EFUNC);
+                XLAL_ERROR_NULL(XLAL_EERR, "Calibration frames no longer supported");
 	}
 }
 

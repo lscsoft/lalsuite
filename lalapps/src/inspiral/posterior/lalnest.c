@@ -9,7 +9,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/Units.h>
 #include "LALInspiralMCMC.h"
@@ -231,18 +231,18 @@ void PrintSNRsToFile(REAL8* SNRs,SimInspiralTable *inj_table,LALMCMCInput *input
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
 	LALStatus status;
-	FrCache *cache = NULL;
+	LALCache *cache = NULL;
 	FrStream *stream = NULL;
 	REAL8TimeSeries *out = NULL;
 	memset(&status,0,sizeof(LALStatus));
     fprintf(stdout,"Attempting to open %s at time %lf\n",cachefile,start.gpsSeconds+1e-9*start.gpsNanoSeconds);
-	cache  = XLALFrImportCache( cachefile );
+	cache  = XLALCacheImport( cachefile );
 	if(cache==NULL) {fprintf(stderr,"ERROR: Unable to import cache file %s\n",cachefile); exit(-1);}
 	stream = XLALFrCacheOpen( cache );
 	if(stream==NULL) {fprintf(stderr,"ERROR: Unable to open stream from frame cache file\n"); exit(-1);}
 	out = XLALFrInputREAL8TimeSeries( stream, channel, &start, length , 0 );
 	if(out==NULL) fprintf(stderr,"ERROR: unable to read channel %s from %s at time %i\nCheck the specified data duration is not too long\n",channel,cachefile,start.gpsSeconds);
-	LAL_CALL(LALDestroyFrCache(&status,&cache),&status);
+	XLALDestroyCache(cache);
 	LAL_CALL(LALFrClose(&status,&stream),&status);
 	return out;
 }

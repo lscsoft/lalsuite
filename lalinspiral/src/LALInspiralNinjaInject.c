@@ -104,7 +104,7 @@ XLALAddNumRelStrainModesREAL8(
   CHAR *channel_name_plus;
   CHAR *channel_name_cross;
   FrStream  *frStream = NULL;
-  FrCache frCache;
+  LALCache frCache;
   LIGOTimeGPS epoch;
   REAL8TimeSeries  *modePlus=NULL;
   REAL8TimeSeries  *modeCross=NULL;
@@ -114,9 +114,9 @@ XLALAddNumRelStrainModesREAL8(
   modeLhi = thisinj->numrel_mode_max;
 
   /* create a frame cache and open the frame stream */
-  frCache.numFrameFiles     = 1;
-  frCache.frameFiles        = LALCalloc(1, sizeof(frCache.frameFiles[0]));
-  frCache.frameFiles[0].url = thisinj->numrel_data;
+  frCache.length      = 1;
+  frCache.list        = LALCalloc(1, sizeof(frCache.list[0]));
+  frCache.list[0].url = thisinj->numrel_data;
   frStream                  = XLALFrCacheOpen( &frCache );
 
   /* the total mass of the binary in Mpc */
@@ -211,7 +211,7 @@ XLALAddNumRelStrainModesREAL8(
   (*seriesPlus)->deltaT  *= timeStep;
   (*seriesCross)->deltaT *= timeStep;
   XLALFrClose( frStream );
-  LALFree(frCache.frameFiles);
+  LALFree(frCache.list);
 
   return XLAL_SUCCESS;
 }

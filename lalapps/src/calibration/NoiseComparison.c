@@ -50,7 +50,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
@@ -144,10 +144,10 @@ typedef struct ResponseFunctionTag
 
 static LALStatus status;
 
-FrCache *hoftframecache=NULL;                                           /* frame reading variables */
+LALCache *hoftframecache=NULL;                                           /* frame reading variables */
 FrStream *hoftframestream=NULL;
 
-FrCache *derrframecache=NULL;                                           /* frame reading variables */
+LALCache *derrframecache=NULL;                                           /* frame reading variables */
 FrStream *derrframestream=NULL;
 
 LIGOTimeGPS gpsepoch;
@@ -263,19 +263,15 @@ int main(int argc,char *argv[])
 int Initialise(struct CommandLineArgsTag CLA)
 {
   /* create Frame cache, open frame stream and delete frame cache */
-  LALFrCacheImport(&status,&derrframecache,CommandLineArgs.derrFrCacheFile);
-  TESTSTATUS( &status );
+  derrframecache = XLALCacheImport(CommandLineArgs.derrFrCacheFile);
   LALFrCacheOpen(&status,&derrframestream,derrframecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&derrframecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(derrframecache);
 
-  LALFrCacheImport(&status,&hoftframecache,CommandLineArgs.hoftFrCacheFile);
-  TESTSTATUS( &status );
+  hoftframecache = XLALCacheImport(CommandLineArgs.hoftFrCacheFile);
   LALFrCacheOpen(&status,&hoftframestream,hoftframecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&hoftframecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(hoftframecache);
 
   chanin_derr.type  = ADCDataChannel;
   chanin_hoft.type = ProcDataChannel;
@@ -447,16 +443,14 @@ INT4 k,m;
 LIGOTimeGPS localgpsepoch=gpsepoch; /* Local variable epoch used to calculate the calibration factors */
 long double gtime=(long double)(localgpsepoch.gpsSeconds+(long double)localgpsepoch.gpsNanoSeconds*1E-9);
 
-FrCache *framecache=NULL;                                           /* frame reading variables */
+LALCache *framecache=NULL;                                           /* frame reading variables */
 FrStream *framestream=NULL;
 
   /* create Frame cache, open frame stream and delete frame cache */
-  LALFrCacheImport(&status,&framecache,CommandLineArgs.derrFrCacheFile);
-  TESTSTATUS( &status );
+  framecache = XLALCacheImport(CommandLineArgs.derrFrCacheFile);
   LALFrCacheOpen(&status,&framestream,framecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&framecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(framecache);
 
   chanin_darm.type = ADCDataChannel;
   chanin_exc.type  = ADCDataChannel;

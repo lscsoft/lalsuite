@@ -39,7 +39,7 @@ int main( void ) { return 77; }
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <math.h>
 #include <lal/PrintFTSeries.h>
@@ -71,7 +71,7 @@ struct SegmentListTag {
 
 static LALStatus status;
 
-FrCache *framecache;
+LALCache *framecache;
 FrStream *framestream=NULL;
 
 static REAL4TimeSeries darm;
@@ -409,10 +409,10 @@ int ReadFiles(struct CommandLineArgsTag CLA)
   Af0.im += x * A0.data->data[i].im;
 
  /* create Frame cache */
- LALFrCacheImport(&status,&framecache,CLA.FrCacheFile);
+ framecache = XLALCacheImport(CLA.FrCacheFile);
  LALFrCacheOpen(&status,&framestream,framecache);
 
- LALDestroyFrCache(&status,&framecache);
+ XLALDestroyCache(&framecache);
 
  LALZDestroyVector(&status,&R0.data);
  LALZDestroyVector(&status,&C0.data);

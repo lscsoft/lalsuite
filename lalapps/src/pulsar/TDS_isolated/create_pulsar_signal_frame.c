@@ -40,7 +40,7 @@
 #include <lal/Units.h>
 #include <lal/FrameStream.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>

@@ -54,7 +54,7 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 #include <lal/Units.h>
 #include <lal/FrameStream.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>

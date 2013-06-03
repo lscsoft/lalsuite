@@ -21,8 +21,7 @@
 #define _LALFRAMEIO_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALCalibration.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/LALFrameL.h>
 
 #ifdef __cplusplus
@@ -57,19 +56,6 @@ int XLALFrameAddINT4TimeSeriesProcData( FrameH *frame, INT4TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series );
 int XLALFrameAddREAL8TimeSeriesSimData( FrameH *frame, REAL8TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series );
-
-COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeGPS *epoch, const char *channel, FrameH *frame );
-
-/* int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series ); */
-int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series, int version );
-
-/* REAL4TimeSeries * XLALFrameGetCalFac( const char *channel, FrameH *frame ); */
-REAL4TimeSeries * XLALFrameGetCalFac( LIGOTimeGPS *epoch, const char *channel, FrameH *frame );
-
-/* high-level function */
-LALCalData * XLALFrameGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrameH *frame );
-LALCalData * XLALFrGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, const char *fname );
-LALCalData * XLALFrCacheGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrCache *cache );
 
 /* frame writing function */
 int XLALFrameWrite(FrameH *frame, const char *fname, int compressLevel);

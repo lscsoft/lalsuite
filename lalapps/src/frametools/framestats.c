@@ -51,10 +51,9 @@
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/LALDatatypes.h>
-#include <lal/FrameCache.h>
 
 /***********************************************************************************************/
 /* some macros */

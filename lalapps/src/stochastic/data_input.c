@@ -155,7 +155,7 @@ REAL4TimeSeries *get_time_series(CHAR *ifo,
   /* variables */
   REAL4TimeSeries *series;
   FrStream *stream = NULL;
-  FrCache *cache = NULL;
+  LALCache *cache = NULL;
   size_t length;
   PassBandParamStruc high_pass_params;
   int mode = LAL_FR_VERBOSE_MODE;
@@ -171,9 +171,9 @@ REAL4TimeSeries *get_time_series(CHAR *ifo,
     fprintf(stdout, "Opening frame cache \"%s\"...\n", cache_file);
 
   /* open frame stream */
-  cache = XLALFrImportCache(cache_file);
+  cache = XLALCacheImport(cache_file);
   stream = XLALFrCacheOpen(cache);
-  XLALFrDestroyCache(cache);
+  XLALDestroyCache(cache);
 
   /* turn on checking for missing data */
   XLALFrSetMode(stream, mode);

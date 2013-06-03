@@ -54,7 +54,6 @@
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
 #include <lal/Calibration.h>
-#include <lal/LALCalibration.h>
 #include <lal/LALFrameIO.h>
 #include <lal/FrameCalibration.h>
 #include <lal/LIGOMetadataTables.h>
@@ -155,8 +154,8 @@ int main( int argc, char *argv[] )
   LALStatus             status = blank_status;
 
   /* frame input data */
-  FrCache      *frInCache = NULL;
-  FrCache      *calCache = NULL;
+  LALCache     *frInCache = NULL;
+  LALCache     *calCache = NULL;
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
   FrChanIn      injChan;
@@ -268,8 +267,7 @@ int main( int argc, char *argv[] )
     chan.epoch = gpsStartTime;
 
     /* open a frame cache */
-    LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), 
-        &status );
+    frInCache = XLALCacheImport(frInCacheName);
     LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
 
     /* set the mode of the frame stream to fail on gaps or time errors */
@@ -342,12 +340,10 @@ int main( int argc, char *argv[] )
       {
         /* close current frame cache */
         LAL_CALL( LALFrClose( &status, &frStream ), &status );
-        if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, 
-              &frInCache ), &status );
+        if ( frInCacheName ) XLALDestroyCache( frInCache );
 
         /* open injection frame cache */
-        LAL_CALL( LALFrCacheImport( &status, &frInCache, injCacheName), 
-            &status );
+        frInCache = XLALCacheImport(injCacheName);
         LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
       }
 
@@ -383,8 +379,7 @@ int main( int argc, char *argv[] )
 
     /* close the frame file stream and destroy the frame cache */
     LAL_CALL( LALFrClose( &status, &frStream ), &status );
-    if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), 
-        &status );
+    if ( frInCacheName ) XLALDestroyCache( frInCache );
   }
 
   /* 
@@ -460,13 +455,7 @@ int main( int argc, char *argv[] )
 
       if ( calFileName )
       {
-        REAL8 duration = XLALGPSDiff(&gpsEndTime, &gpsStartTime);
-        LALCalData *caldata;
-        caldata = XLALFrGetCalData( &inj.epoch, fqChanName, calFileName );
-        if ( duration < caldata->cavityFactors->deltaT )
-          duration = 0.0; /* must be a unity factor: don't bother averaging */
-        XLALUpdateResponse( &injResp, duration, caldata );
-        XLALDestroyCalData( caldata );
+        XLAL_ERROR(XLAL_EERR, "Calibration frames no longer supported");
       }
       else if ( calCacheName )
       {
@@ -484,11 +473,10 @@ int main( int argc, char *argv[] )
         durationNS = gpsEndTimeNS - gpsStartTimeNS;
         XLALINT8NSToGPS( &(inj_calfacts.duration), durationNS );
 
-        LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
-            &status );
+        calCache = XLALCacheImport( calCacheName );
         LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
               &inj_calfacts ), &status );
-        LAL_CALL( LALDestroyFrCache( &status, &calCache ), &status );
+        XLALDestroyCache( calCache );
         inj_alpha = (REAL4) crealf(inj_calfacts.alpha);
         inj_alphabeta = (REAL4) crealf(inj_calfacts.alphabeta);
         if ( vrbflg ) fprintf( stdout, 

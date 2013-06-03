@@ -184,7 +184,7 @@ int main( int argc, char *argv[] )
   INT4   numCoincs       = 0;
   INT4   numEvents       = 0;
 
-  FrCache              *frInCache        = NULL;
+  LALCache             *frInCache        = NULL;
 
   SnglInspiralTable    *currentTrigger   = NULL;
   SnglInspiralTable    *currentTrigH1    = NULL;
@@ -730,7 +730,7 @@ int main( int argc, char *argv[] )
   cleanexit:
 
   /* free the frame cache */
-  if( frInCache ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+  if( frInCache ) XLALDestroyCache( frInCache );
   if ( frInType ) free( frInType );
 
   if ( vrbflg ) fprintf( stdout, "Checking memory leaks and exiting.\n" );

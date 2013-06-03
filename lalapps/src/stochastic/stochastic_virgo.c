@@ -43,7 +43,7 @@
 #include <lal/CoarseGrainFrequencySeries.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/IIRFilter.h>
 #include <lal/LALConstants.h>
@@ -189,7 +189,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 ptEst, error;
 
   /* frame variables */
-  FrCache *frCache1,*frCache2,*frCacheMC1,*frCacheMC2;
+  LALCache *frCache1,*frCache2,*frCacheMC1,*frCacheMC2;
   FrStream *frStream1,*frStream2,*frStreamMC1,*frStreamMC2;
   FrChanIn frChanIn1, frChanIn2,frChanInMC1,frChanInMC2;
 
@@ -337,7 +337,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    fprintf(stdout, "Opening first frame cache...\n");
   /* open first frame cache */
   frCache1=NULL;frStream1=NULL;
-  LAL_CALL( LALFrCacheImport( &status, &frCache1, frameCache1), &status );
+  frCache1 = XLALCacheImport( frameCache1 );
   LAL_CALL( LALFrCacheOpen( &status, &frStream1, frCache1), &status );
 
   if (verbose_flag)
@@ -345,7 +345,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* open second frame cache */
   frCache2=NULL;frStream2=NULL;
-  LAL_CALL( LALFrCacheImport( &status, &frCache2, frameCache2), &status);
+  frCache2 = XLALCacheImport( frameCache2 );
   LAL_CALL( LALFrCacheOpen( &status, &frStream2, frCache2), &status);
 
    /* set the mode of the frame stream to fail on gaps or time errors */
@@ -358,7 +358,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stdout, "Opening first frame cache for MC...\n");
    /* open first frame cache */
    frCacheMC1=NULL;frStreamMC1=NULL;
-   LAL_CALL( LALFrCacheImport( &status, &frCacheMC1, frameCacheMC1), &status );
+   frCacheMC1 = XLALCacheImport( frameCacheMC1 );
    LAL_CALL( LALFrCacheOpen( &status, &frStreamMC1, frCacheMC1), &status );
 
    if (verbose_flag)
@@ -366,7 +366,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
    /* open second frame cache */
    frCacheMC2=NULL;frStreamMC2=NULL;
-   LAL_CALL( LALFrCacheImport( &status, &frCacheMC2, frameCacheMC2), &status);
+   frCacheMC2 = XLALCacheImport( frameCacheMC2 );
    LAL_CALL( LALFrCacheOpen( &status, &frStreamMC2, frCacheMC2), &status);
 
    /* set the mode of the frame stream to fail on gaps or time errors */

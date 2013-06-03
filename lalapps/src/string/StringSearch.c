@@ -51,7 +51,7 @@
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/Window.h>
 #include <lal/LALConstants.h>
@@ -990,16 +990,16 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
       ht->data->data[p] = gsl_ran_gaussian(rng, 1.0);
     gsl_rng_free(rng);
   } else {
-    FrCache *cache;
+    LALCache *cache;
     FrStream *stream;
     LALTYPECODE series_type;
 
     /* create Frame cache, open frame stream and delete frame cache */
-    cache = XLALFrImportCache(CLA.FrCacheFile);
+    cache = XLALCacheImport(CLA.FrCacheFile);
     if(!cache)
       XLAL_ERROR_NULL(XLAL_EFUNC);
     stream = XLALFrCacheOpen(cache);
-    XLALFrDestroyCache(cache);
+    XLALDestroyCache(cache);
     if(!stream)
       XLAL_ERROR_NULL(XLAL_EFUNC);
 

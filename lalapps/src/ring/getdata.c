@@ -174,7 +174,7 @@ REAL4TimeSeries * ring_get_frame_data(
     int          dataType
     )
 {
-  FrCache         *cache  = NULL;
+  LALCache        *cache  = NULL;
   FrStream        *stream = NULL;
   int              mode   = LAL_FR_VERBOSE_MODE;
   REAL4TimeSeries *series;
@@ -182,9 +182,9 @@ REAL4TimeSeries * ring_get_frame_data(
   verbose( "get data from cache file %s\n", cacheName );
 
   /* open the data cache and use it to get a frame stream */
-  cache  = XLALFrImportCache( cacheName );
+  cache  = XLALCacheImport( cacheName );
   stream = XLALFrCacheOpen( cache );
-  XLALFrDestroyCache( cache );
+  XLALDestroyCache( cache );
 
   /* set the mode of the frame stream */
   XLALFrSetMode( stream, mode );
@@ -215,7 +215,7 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
 {
   REAL4TimeSeries *series;
   REAL8TimeSeries *dblser;
-  FrCache         *cache  = NULL;
+  LALCache        *cache  = NULL;
   FrStream        *stream = NULL;
   int              mode   = LAL_FR_VERBOSE_MODE;
   UINT4 j;
@@ -223,9 +223,9 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
   verbose( "get data from cache file %s\n", cacheName );
 
   /* open the data cache and use it to get a frame stream */
-  cache  = XLALFrImportCache( cacheName );
+  cache  = XLALCacheImport( cacheName );
   stream = XLALFrCacheOpen( cache );
-  XLALFrDestroyCache( cache );
+  XLALDestroyCache( cache );
 
   /* set the mode of the frame stream */
   XLALFrSetMode( stream, mode );

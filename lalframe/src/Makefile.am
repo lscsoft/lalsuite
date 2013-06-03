@@ -27,7 +27,6 @@ lalfr_paste_SOURCES = paste.c utils.c utils.h
 lalframeincludedir = $(includedir)/lal
 lalframeinclude_HEADERS = \
 	Aggregation.h \
-	FrameCache.h \
 	FrameCalibration.h \
 	FrameData.h \
 	FrameStream.h \
@@ -44,7 +43,6 @@ lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \
 	LALFrameU.c \
 	Aggregation.c \
-	FrameCache.c \
 	FrameCalibration.c \
 	FrameData.c \
 	FrameSeries.c \

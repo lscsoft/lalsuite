@@ -108,7 +108,7 @@ int gethostname(char *name, int len);
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 
 /*
@@ -246,16 +246,16 @@ static void free_flist( FrFileInfo *flist )
 
 
 /* create a frame file list from a cache */
-static UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
+static UINT4 create_flist( FrFileInfo **plist, LALCache *cache )
 {
   FrFileInfo *list;
   INT4 i, j, n;
-  n = cache->numFrameFiles;
+  n = cache->length;
   list = *plist = LALCalloc( n + 1, sizeof( *list ) );
   list[n].ind = -2; /* indicates end */
   for ( i = 0; i < n; ++i )
   {
-    FrStat *file = cache->frameFiles + i;
+    LALCacheEntry *file = cache->list + i;
     list[i].url = LALMalloc( strlen( file->url ) + 1 );
     if ( ! list[i].url )
     {
@@ -265,10 +265,10 @@ static UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
       return 0;
     }
     strcpy( list[i].url, file->url );
-    if ( file->startTime > 0 && file->duration > 0 )
+    if ( file->t0 > 0 && file->dt > 0 )
     {
-      list[i].t0 = file->startTime;
-      list[i].dt = file->duration;
+      list[i].t0 = file->t0;
+      list[i].dt = file->dt;
     }
     else
     {
@@ -301,7 +301,7 @@ static UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
     }
   }
 
-  qsort( list, cache->numFrameFiles, sizeof( *list ), flist_compare );
+  qsort( list, cache->length, sizeof( *list ), flist_compare );
 
   /* index lines and look for duplicate entries (and get rid of them) */
   i = 0;
@@ -323,9 +323,9 @@ static UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
     }
   }
   n = i;
-  for ( ; i < (INT4)cache->numFrameFiles; ++i )
+  for ( ; i < (INT4)cache->length; ++i )
       list[i].ind = -1; /* beyond the last file in the list */
-  list[cache->numFrameFiles].ind = -2; /* last item in list */
+  list[cache->length].ind = -2; /* last item in list */
 
   return n;
 }
@@ -338,7 +338,7 @@ static UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
  */
 
 
-FrStream * XLALFrCacheOpen( FrCache *cache )
+FrStream * XLALFrCacheOpen( LALCache *cache )
 {
   FrStream *stream;
 
@@ -385,9 +385,9 @@ FrStream * XLALFrCacheOpen( FrCache *cache )
 FrStream * XLALFrOpen( const char *dirname, const char *pattern )
 {
   FrStream *stream;
-  FrCache *cache;
+  LALCache *cache;
 
-  cache = XLALFrGenerateCache( dirname, pattern );
+  cache = XLALCacheGlob( dirname, pattern );
   if ( ! cache )
     XLAL_ERROR_NULL( XLAL_EFUNC );
 
@@ -395,7 +395,7 @@ FrStream * XLALFrOpen( const char *dirname, const char *pattern )
   if ( ! stream )
     XLAL_ERROR_NULL( XLAL_EFUNC );
 
-  XLALFrDestroyCache( cache );
+  XLALDestroyCache( cache );
   return stream;
 }
 
@@ -822,7 +822,7 @@ void
 LALFrCacheOpen(
     LALStatus  *status,
     FrStream  **output,
-    FrCache    *cache
+    LALCache    *cache
     )
 { 
   FrStream *stream;
@@ -861,29 +861,12 @@ LALFrOpen(
     const CHAR   *pattern
     )
 { 
-  FrCache *cache = NULL;
-
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! *stream, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
 
-  LALFrCacheGenerate( status->statusPtr, &cache, dirname, pattern );
-  CHECKSTATUSPTR( status );
-
-  LALFrCacheOpen( status->statusPtr, stream, cache );
-  BEGINFAIL( status )
-  {
-    TRY( LALDestroyFrCache( status->statusPtr, &cache ), status );
-  }
-  ENDFAIL( status );
-
-  LALDestroyFrCache( status->statusPtr, &cache );
-  BEGINFAIL( status )
-  {
-    TRY( LALFrClose( status->statusPtr, stream ), status );
-  }
-  ENDFAIL( status );
+  *stream = XLALFrOpen(dirname, pattern);
 
   DETATCHSTATUSPTR( status );
   RETURN( status );

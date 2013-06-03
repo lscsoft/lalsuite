@@ -3,16 +3,10 @@ lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 lalapps_NoiseComparison_SOURCES = NoiseComparison.c
 
-if LALFRAME
-FRAMEPROGRAMS = lalapps_makecalframe
-lalapps_makecalframe_SOURCES = makecalframe.c LALASCIIFileRead.c LALASCIIFileRead.h
-endif
-
 bin_PROGRAMS = \
 	lalapps_ComputeFactors \
 	lalapps_ComputeStrainDriver \
-	lalapps_NoiseComparison \
-	$(FRAMEPROGRAMS)
+	lalapps_NoiseComparison
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la

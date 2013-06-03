@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
@@ -28,8 +28,8 @@ int main(int argc,char *argv[])
   
   char cache_name_1[256];       /* H1 frame cache name */
   char cache_name_2[256];       /* H2 frame cache name */
-  FrCache *cache_1;             /* H1 frame cache      */
-  FrCache *cache_2;             /* H2 frame cache      */
+  LALCache *cache_1;            /* H1 frame cache      */
+  LALCache *cache_2;            /* H2 frame cache      */
   FrStream *stream_1;           /* H1 stream           */
   FrStream *stream_2;           /* H2 stream           */
 
@@ -54,26 +54,26 @@ int main(int argc,char *argv[])
   sprintf(cache_name_2,"%s/H2.cache", argv[3]);
   
   /* create Frame cache, open frame stream and delete frame cache */
-  cache_1 = XLALFrImportCache(cache_name_1);
+  cache_1 = XLALCacheImport(cache_name_1);
   if(!cache_1){
     printf("%s(): no cache named %s\n",__func__,cache_name_1);
     return 2;
   }
   stream_1 = XLALFrCacheOpen(cache_1);
-  XLALFrDestroyCache(cache_1);
+  XLALDestroyCache(cache_1);
   if(!stream_1){
     printf("%s(): no stream for H1\n",__func__);
     return 2;
   }
   if(!stream_1) XLAL_ERROR(XLAL_EFUNC);
  
-  cache_2 = XLALFrImportCache(cache_name_2);
+  cache_2 = XLALCacheImport(cache_name_2);
   if(!cache_2){
     printf("%s(): no cache named %s\n",__func__,cache_name_2);
     return 3;
   }
   stream_2 = XLALFrCacheOpen(cache_2);
-  XLALFrDestroyCache(cache_2);
+  XLALDestroyCache(cache_2);
   if(!stream_2){
     printf("%s(): no stream for H2\n",__func__);
     return 3;

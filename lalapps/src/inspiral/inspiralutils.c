@@ -226,7 +226,7 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
   CHAR *channel_name_plus;
   CHAR *channel_name_cross;
   FrStream  *frStream = NULL;
-  FrCache frCache;
+  LALCache frCache;
   LIGOTimeGPS epoch;
   REAL4TimeSeries  *seriesPlus=NULL;
   REAL4TimeSeries  *seriesCross=NULL;
@@ -242,9 +242,9 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
   modeLhi = thisinj->numrel_mode_max;
 
   /* create a frame cache and open the frame stream */
-  frCache.numFrameFiles = 1;
-  frCache.frameFiles = LALCalloc(1, sizeof(frCache.frameFiles[0]));
-  frCache.frameFiles[0].url = thisinj->numrel_data;
+  frCache.length = 1;
+  frCache.list = LALCalloc(1, sizeof(frCache.list[0]));
+  frCache.list[0].url = thisinj->numrel_data;
   frStream = XLALFrCacheOpen( &frCache );
 
   /* the total mass of the binary in Mpc */
@@ -342,7 +342,7 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
   } /* end loop over modeL values */
 
   XLALFrClose( frStream );
-  LALFree(frCache.frameFiles);
+  LALFree(frCache.list);
   *outStrain = sumStrain;
   DETATCHSTATUSPTR(status);
   RETURN(status);

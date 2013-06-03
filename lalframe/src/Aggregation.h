@@ -23,7 +23,7 @@
 #define _AGGREGATION_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 
 #ifdef __cplusplus
@@ -79,7 +79,7 @@ CHAR *XLALAggregationFrameURL(CHAR *ifo,
 LIGOTimeGPS *XLALAggregationLatestGPS(CHAR *ifo);
 
 /* return frame cache given ifo, gps time, and duration */
-FrCache *XLALAggregationFrameCache(CHAR *ifo,
+LALCache *XLALAggregationFrameCache(CHAR *ifo,
     LIGOTimeGPS *start,
     REAL8 duration);
 

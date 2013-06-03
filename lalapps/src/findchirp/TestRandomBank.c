@@ -2730,8 +2730,8 @@ LALCreateRealPsd(LALStatus *status,
 
 
   /* frame input data */
-  FrCache      *frInCache = NULL;
-  FrCache      *calCache = NULL;
+  LALCache     *frInCache = NULL;
+  LALCache     *calCache = NULL;
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
   CHAR tmpChName[LALNameLength];
@@ -2910,8 +2910,7 @@ LALCreateRealPsd(LALStatus *status,
     fprintf( stdout,  "reading frame file locations from cache file: %s\n", frInCacheName );
 
   /* read a frame cache from the specified file */
-  LAL_CALL( LALFrCacheImport( status->statusPtr, &frInCache,
-			      frInCacheName), status->statusPtr );
+  frInCache = XLALCacheImport(frInCacheName);
 
 
   /* open the input data frame stream from the frame cache */
@@ -3063,7 +3062,7 @@ LALCreateRealPsd(LALStatus *status,
   LAL_CALL( LALFrClose( status->statusPtr, &frStream ), status->statusPtr );
 
 
-  LAL_CALL( LALDestroyFrCache( status->statusPtr, &frInCache ), status->statusPtr );
+  XLALDestroyCache( frInCache );
 
 
   if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
@@ -3211,7 +3210,7 @@ LALCreateRealPsd(LALStatus *status,
     LAL_CALL( LALExtractFrameResponse( status->statusPtr, &resp, calCache,
 				       &calfacts), status->statusPtr );
 
-    LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
+    XLALDestroyCache(calCache);
     if ( vrbflg ) fprintf( stdout,
 			   "for calibration of data, alpha = %f and alphabeta = %f\n",
 			   (REAL4) calfacts.alpha.re, (REAL4) calfacts.alphabeta.re);
@@ -3328,7 +3327,7 @@ LALCreateRealPsd(LALStatus *status,
                 &inj_calfacts ), status->statusPtr );
 
 
-	  LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
+	  XLALDestroyCache(calCache);
 
 
           injRespPtr = &injResp;

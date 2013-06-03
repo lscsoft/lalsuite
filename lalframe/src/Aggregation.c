@@ -31,7 +31,7 @@
 #include <lal/LALMalloc.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/TimeSeries.h>
 #include <lal/AVFactories.h>
@@ -312,7 +312,7 @@ LIGOTimeGPS *XLALAggregationLatestGPS(CHAR *ifo)
 
 
 /* return frame cache given ifo, gps time, and duration */
-FrCache *XLALAggregationFrameCache(CHAR *ifo,
+LALCache *XLALAggregationFrameCache(CHAR *ifo,
     LIGOTimeGPS *start,
     REAL8 duration)
 {
@@ -322,7 +322,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
   LIGOTimeGPS *last_frame_start;
   CHAR *type;
   CHAR *url;
-  FrCache *cache;
+  LALCache *cache;
   int i = 0;
   INT4 frame_duration;
   INT4 num_frames;
@@ -354,11 +354,11 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     /* failed to allocate memory for cache */
     XLAL_ERROR_NULL(XLAL_ENOMEM);
   }
-  cache->numFrameFiles = num_frames;
-  cache->frameFiles = XLALCalloc(num_frames, sizeof(*cache->frameFiles));
-  if (cache->frameFiles == NULL)
+  cache->length = num_frames;
+  cache->list = XLALCalloc(num_frames, sizeof(*cache->list));
+  if (cache->list == NULL)
   {
-    /* failed to allocate memory for cache->frameFiles */
+    /* failed to allocate memory for cache->list */
     XLALFree(cache);
     XLAL_ERROR_NULL(XLAL_ENOMEM);
   }
@@ -368,7 +368,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
   if (type == NULL)
   {
     /* failed to determine type */
-    XLALFrDestroyCache(cache);
+    XLALDestroyCache(cache);
     XLAL_ERROR_NULL(XLAL_EINVAL);
   }
 
@@ -380,7 +380,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
   for (i = 0; i < num_frames; i++)
   {
     /* declare variables */
-    FrStat *file = cache->frameFiles + i;
+    LALCacheEntry *file = cache->list + i;
 
     /* increment gps */
     gps.gpsSeconds = start->gpsSeconds + (i * LAL_ONLINE_FRAME_DURATION);
@@ -391,7 +391,7 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     if (url == NULL)
     {
       /* failed to determine url */
-      XLALFrDestroyCache(cache);
+      XLALDestroyCache(cache);
       XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
@@ -399,30 +399,30 @@ FrCache *XLALAggregationFrameCache(CHAR *ifo,
     frame_start = XLALAggregationFrameStart(&gps);
 
     /* allocate memory for cache entry */
-    file->source = XLALMalloc(strlen(ifo) + 1);
-    if (!file->source)
+    file->src = XLALMalloc(strlen(ifo) + 1);
+    if (!file->src)
     {
-      XLALFrDestroyCache(cache);
+      XLALDestroyCache(cache);
       XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
-    file->description = XLALMalloc(strlen(type) + 1);
-    if (!file->description)
+    file->dsc = XLALMalloc(strlen(type) + 1);
+    if (!file->dsc)
     {
-      XLALFrDestroyCache(cache);
+      XLALDestroyCache(cache);
       XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
     file->url = XLALMalloc(strlen(url) + 1);
     if (!file->url)
     {
-      XLALFrDestroyCache(cache);
+      XLALDestroyCache(cache);
       XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
 
     /* add frame to cache */
-    strcpy(file->source, ifo);
-    strcpy(file->description, type);
-    file->startTime = frame_start->gpsSeconds;
-    file->duration = LAL_ONLINE_FRAME_DURATION;
+    strcpy(file->src, ifo);
+    strcpy(file->dsc, type);
+    file->t0 = frame_start->gpsSeconds;
+    file->dt = LAL_ONLINE_FRAME_DURATION;
     strcpy(file->url, url);
 
     /* free memory */
@@ -439,7 +439,7 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo,
     REAL8 duration)
 {
   /* declare variables */
-  FrCache *cache;
+  LALCache *cache;
   FrStream *stream;
 
   /* check arguments */
@@ -461,12 +461,12 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo,
   if (stream == NULL)
   {
     /* failed to open stream */
-    XLALFrDestroyCache(cache);
+    XLALDestroyCache(cache);
     XLAL_ERROR_NULL(XLAL_EINVAL);
   }
 
   /* destroy cache */
-  XLALFrDestroyCache(cache);
+  XLALDestroyCache(cache);
 
   return stream;
 }
@@ -1076,7 +1076,7 @@ INT4 XLALAggregationStatFiles(CHAR *ifo,
 {
   /* declare variables */
   LIGOTimeGPS time_now;
-  FrCache *cache;
+  LALCache *cache;
   UINT4 i;
 
   /* check arguments */
@@ -1108,14 +1108,14 @@ INT4 XLALAggregationStatFiles(CHAR *ifo,
   }
 
   /* loop through files in cache */
-  for (i = 0; i < cache->numFrameFiles; i++)
+  for (i = 0; i < cache->length; i++)
   {
     /* declare variables */
     struct stat file_status;
     CHAR *filename;
 
     /* strip file://localhost from url */
-    filename = cache->frameFiles[i].url + 16;
+    filename = cache->list[i].url + 16;
 
     /* check that file exists */
     if (stat(filename, &file_status) == -1)
@@ -1126,7 +1126,7 @@ INT4 XLALAggregationStatFiles(CHAR *ifo,
   }
 
   /* close cache */
-  XLALFrDestroyCache(cache);
+  XLALDestroyCache(cache);
 
   return 0;
 }

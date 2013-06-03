@@ -56,7 +56,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrameStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
@@ -129,7 +129,7 @@ LIGOTimeGPS gpsStartepoch;
 INT4TimeSeries OutputDQ;  /* data quality */
 
 static LALStatus status;
-FrCache *framecache;                                           /* frame reading variables */
+LALCache *framecache;                                           /* frame reading variables */
 FrStream *framestream=NULL;
 char sv_cname[] = "Xn:IFO-SV_STATE_VECTOR",                      /* channel names */
     lax_cname[] = "Xn:LSC-LA_PTRX_NORM", lay_cname[] = "Xn:LSC-LA_PTRY_NORM",
@@ -388,10 +388,17 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
       gammaim->data->data[i]=cimag(OutputData.alphabeta.data->data[i]);
     }
 
+  /* Deprecating Stat Data Calibration...
   XLALFrameAddCalFac( frame, alphare, atoi(&CLA.frametype[9]) );
   XLALFrameAddCalFac( frame, alphaim, atoi(&CLA.frametype[9]) );
   XLALFrameAddCalFac( frame, gammare, atoi(&CLA.frametype[9]));
   XLALFrameAddCalFac( frame, gammaim, atoi(&CLA.frametype[9]));
+  ... add it as Proc Data instead: */
+  XLALFrameAddREAL4TimeSeriesProcData( frame, alphare );
+  XLALFrameAddREAL4TimeSeriesProcData( frame, alphaim );
+  XLALFrameAddREAL4TimeSeriesProcData( frame, gammare );
+  XLALFrameAddREAL4TimeSeriesProcData( frame, gammaim );
+
 
   XLALDestroyREAL4TimeSeries( gammare );
   XLALDestroyREAL4TimeSeries( alphare );
@@ -456,12 +463,10 @@ static FrChanIn chanin_lay;  /* light in y-arm */
   chanin_lay.name  = lay_cname;
 
   /* create Frame cache, open frame stream and delete frame cache */
-  LALFrCacheImport(&status,&framecache,CommandLineArgs.FrCacheFile);
-  TESTSTATUS( &status );
+  framecache = XLALCacheImport(CommandLineArgs.FrCacheFile);
   LALFrCacheOpen(&status,&framestream,framecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&framecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(framecache);
 
   /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
   LALFrSeek(&status,&gpsStartepoch,framestream);

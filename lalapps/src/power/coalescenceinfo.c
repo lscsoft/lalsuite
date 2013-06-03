@@ -29,7 +29,7 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/LALInspiral.h>
 #include <lalapps.h>
 

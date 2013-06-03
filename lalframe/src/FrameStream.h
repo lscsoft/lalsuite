@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 #include <lal/LALDatatypes.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 
 #ifndef _FRAMESTREAM_H
 #define _FRAMESTREAM_H
@@ -114,6 +114,7 @@ typedef struct tagFrFileInfo
   INT4  t0;
   INT4  dt;
 }
+FrFileInfo;
 
 /**
  *
@@ -121,7 +122,6 @@ typedef struct tagFrFileInfo
  * private; you should not tamper with them!
  *
 */
-FrFileInfo;
 typedef struct tagFrStream
 {
   FrState        state;
@@ -230,7 +230,7 @@ tagFrOutPar
 FrOutPar;
 
 
-FrStream * XLALFrCacheOpen( FrCache *cache );
+FrStream * XLALFrCacheOpen( LALCache *cache );
 FrStream * XLALFrOpen( const char *dirname, const char *pattern );
 void XLALFrClose( FrStream *stream );
 int XLALFrSetMode( FrStream *stream, int mode );
@@ -295,7 +295,7 @@ void
 LALFrCacheOpen(
     LALStatus  *status,
     FrStream  **output,
-    FrCache    *cache
+    LALCache    *cache
     );
 
 void

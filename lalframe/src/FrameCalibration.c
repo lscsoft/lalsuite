@@ -128,11 +128,11 @@
       LALFrCacheOpen( status->statusPtr, &facStream, facCache ); \
       BEGINFAIL( status ) \
       { \
-        TRY( LALDestroyFrCache( status->statusPtr, &facCache ), status ); \
+        XLALDestroyCache( facCache ); \
         RETURN_POINT_CAL; \
       } \
       ENDFAIL( status ); \
-      LALDestroyFrCache( status->statusPtr, &facCache ); \
+      XLALDestroyCache( facCache ); \
       BEGINFAIL( status ) \
       { \
         TRY( LALFrClose( status->statusPtr, &facStream ), status ); \
@@ -161,18 +161,17 @@ void
 LALExtractFrameResponse(
     LALStatus               *status,
     COMPLEX8FrequencySeries *output,
-    FrCache                 *calCache,
+    LALCache                *calCache,
     CalibrationUpdateParams *calfacts
     )
 
 {
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
-  FrCache      *refCache  = NULL;
-  FrCache      *facCache  = NULL;
+  LALCache      *refCache  = NULL;
+  LALCache      *facCache  = NULL;
   FrStream     *refStream = NULL;
   FrStream     *facStream = NULL;
-  FrCacheSieve  sieve;
   FrChanIn      frameChan;
   FrPos         facPos;
 
@@ -249,16 +248,12 @@ LALExtractFrameResponse(
 
 
   /* sieve the calibration cache for the reference frame */
-  memset( &sieve, 0, sizeof(FrCacheSieve) );
-  sieve.dscRegEx = REF_TYPE;
-  LALFrSieveCache( status->statusPtr, &refCache, calCache, &sieve );
-  if ( status->statusPtr->statusCode || ! refCache->numFrameFiles )
+  refCache = XLALCacheDuplicate(calCache);
+  XLALCacheSieve(refCache, 0, 0, NULL, REF_TYPE, NULL);
+  if ( ! refCache->length )
   {
     /* if we don't have a reference calibration, we can't do anything */
-    if ( ! status->statusPtr->statusCode )
-    {
-      TRY( LALDestroyFrCache( status->statusPtr, &refCache ), status );
-    }
+    XLALDestroyCache( refCache );
     ABORT( status, FRAMECALIBRATIONH_ECREF, FRAMECALIBRATIONH_MSGECREF );
   }
 
@@ -267,10 +262,10 @@ LALExtractFrameResponse(
   if ( status->statusPtr->statusCode )
   {
     /* if we don't have a reference calibration, we can't do anything */
-    TRY( LALDestroyFrCache( status->statusPtr, &refCache ), status );
+    XLALDestroyCache( refCache );
     ABORT( status, FRAMECALIBRATIONH_EOREF, FRAMECALIBRATIONH_MSGEOREF );
   }
-  LALDestroyFrCache( status->statusPtr, &refCache );
+  XLALDestroyCache( refCache );
   if ( status->statusPtr->statusCode )
   {
     TRY( LALFrClose( status->statusPtr, &refStream ), status );
@@ -285,7 +280,7 @@ LALExtractFrameResponse(
   if ( status->statusCode )
   {
     /* if we don't have a reference calibration, we can't do anything */
-    TRY( LALDestroyFrCache( status->statusPtr, &refCache ), status );
+    XLALDestroyCache( refCache );
     ABORT( status, FRAMECALIBRATIONH_EREFR, FRAMECALIBRATIONH_MSGEREFR );
   }
 
@@ -297,7 +292,7 @@ LALExtractFrameResponse(
   BEGINFAIL( status )
   {
     /* no cavity gain response to update point cal */
-    TRY( LALDestroyFrCache( status->statusPtr, &refCache ), status );
+    XLALDestroyCache( refCache );
     TRY( LALFrClose( status->statusPtr, &refStream ), status );
     RETURN_POINT_CAL;
   }
@@ -321,19 +316,17 @@ LALExtractFrameResponse(
   /* try and get some update factors. first we try to get a cache  */
   /* containing sensemon frames. if that fails, try the S1 type    */
   /* calibration data, otherwise just return the point calibration */
-  sieve.dscRegEx = facDsc;
   do
   {
     /* try and get sensemon frames */
     snprintf( facDsc, LALNameLength * sizeof(CHAR), SENSEMON_FAC_TYPE );
-    LALFrSieveCache( status->statusPtr, &facCache, calCache, &sieve );
-    BEGINFAIL( status )
-    {
+    facCache = XLALCacheDuplicate(calCache);
+    XLALCacheSieve(facCache, 0, 0, NULL, facDsc, NULL);
+    if (!facCache) {
       RETURN_POINT_CAL;
     }
-    ENDFAIL( status );
 
-    if ( facCache->numFrameFiles )
+    if ( facCache->length )
     {
       /* sensemon stores fac times series as real_8 adc trend data */
       REAL8TimeSeries     sensemonTS;
@@ -464,23 +457,16 @@ LALExtractFrameResponse(
     }
 
     /* destroy the empty frame cache and try again */
-    LALDestroyFrCache( status->statusPtr, &facCache );
-    BEGINFAIL( status )
-    {
-      RETURN_POINT_CAL;
-    }
-    ENDFAIL( status );
+    XLALDestroyCache( facCache );
 
     /* try and get the the factors from lalapps_mkcalfac frames */
-    sieve.dscRegEx = FAC_TYPE;
-    LALFrSieveCache( status->statusPtr, &facCache, calCache, &sieve );
-    BEGINFAIL( status )
-    {
+    facCache = XLALCacheDuplicate(calCache);
+    XLALCacheSieve(facCache, 0, 0, NULL, FAC_TYPE, NULL); 
+    if (!facCache) {
       RETURN_POINT_CAL;
     }
-    ENDFAIL( status );
 
-    if ( facCache->numFrameFiles )
+    if ( facCache->length )
     {
       /* the lalapps frames are complex_8 proc data */
       OPEN_FAC;
@@ -576,12 +562,7 @@ LALExtractFrameResponse(
     }
 
     /* destroy the empty frame cache and give up */
-    LALDestroyFrCache( status->statusPtr, &facCache );
-    BEGINFAIL( status )
-    {
-      RETURN_POINT_CAL;
-    }
-    ENDFAIL( status );
+    XLALDestroyCache( facCache );
 
     /* no update factors available, so just return the point cal */
     RETURN_POINT_CAL;
@@ -637,7 +618,7 @@ LALExtractFrameResponse(
 void
 LALCreateCalibFrCache(
     LALStatus          *status,
-    FrCache           **output,
+    LALCache          **output,
     const CHAR         *calCacheName,
     const CHAR         *dirstr,
     const CHAR         *calGlobPattern
@@ -662,7 +643,7 @@ LALCreateCalibFrCache(
   if ( calCacheName )
   {
     /* read in a calibration cache file */
-    LALFrCacheImport( status->statusPtr, output, calCacheName );
+    *output = XLALCacheImport( calCacheName );
     CHECKSTATUSPTR( status );
   }
   else
@@ -672,8 +653,7 @@ LALCreateCalibFrCache(
     dirstr = dirstr ? dirstr : ".";
 
     /* build the cache by globbing */
-    LALFrCacheGenerate( status->statusPtr, output, dirstr, calGlobPattern );
-    CHECKSTATUSPTR( status );
+    *output = XLALCacheGlob( dirstr, calGlobPattern );
   }
 
   DETATCHSTATUSPTR( status );

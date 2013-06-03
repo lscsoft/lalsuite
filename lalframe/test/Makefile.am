@@ -32,7 +32,6 @@ endif
 
 check_PROGRAMS = \
 	AggregationTest \
-	FrameCacheTest \
 	FrameDataTest \
 	FrameStreamTest \
 	MakeFrames \
@@ -41,7 +40,6 @@ check_PROGRAMS = \
 	ReadLHOData \
 	$(PTHREADPRGS)
 TESTS = \
-	FrameCacheTest.sh \
 	FrameStreamTest \
 	$(PTHREADPRGS)
 
@@ -54,8 +52,7 @@ EXTRA_DIST = \
 	catalog \
 	mkcatalog.sh \
 	H1-CAL-V03-729273600-734367600.cache \
-	L1-CAL-V03-729273600-734367600.cache \
-	FrameCacheTest.sh
+	L1-CAL-V03-729273600-734367600.cache
 
 MOSTLYCLEANFILES = *.out *.[0-9][0-9][0-9] catalog.out Response*.txt
 CLEANFILES = catalog catalog.test H-H1_LSC_AS_Q-600000120-60.gwf

@@ -81,8 +81,11 @@ LALCache *XLALCacheImport(const char *fname);
  */
 LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn);
 
-/** Writes a LALCache structure to an output LAL cache file. */
+/** Writes a LALCache structure to output LALFILE. */
 int XLALCacheFileWrite(LALFILE * fp, const LALCache * cache);
+
+/** Exports a LALCache structure to an output LAL cache file. */
+int XLALCacheExport(const LALCache * cache, const char *filename);
 
 /** Sorts entries in a LALCache structure. */
 int XLALCacheSort(LALCache * cache);
