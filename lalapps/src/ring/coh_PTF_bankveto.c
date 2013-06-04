@@ -1187,8 +1187,10 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
 {
   /* THIS FUNCTION IS NON-SPIN ONLY! DO NOT TRY TO RUN WITH PTF IN SPIN MODE */
   UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
-  REAL4 v1,v2,u1,u2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
+  REAL4 SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL8         f_min, deltaF, fFinal;
+  /* Set to REAL8 for consistency with sigma squared calculation */
+  REAL8 v1,v2,overlapCont;
   COMPLEX8     *PTFQtilde   = NULL;
   REAL4 a2[LAL_NUM_IFO];
   REAL4 b2[LAL_NUM_IFO];
@@ -1292,8 +1294,8 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
         {
           overlapCont = (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
                  cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) )* invspec[k]->data->data[i] ;
-          v1 += a2[k] * a2[k] * overlapCont * 4 * deltaF;
-          v2 += b2[k] * b2[k] * overlapCont * 4 * deltaF;
+          v1 += a2[k] * a2[k] * overlapCont;
+          v2 += b2[k] * b2[k] * overlapCont;
         }
       }
     }
@@ -1302,15 +1304,13 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       overlapCont = ( crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
                       cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) ) * 
                       invspec[detectorNum]->data->data[i] ;
-      v1 += overlapCont * 4 * deltaF;
+      v1 += overlapCont;
       v2 = v1;
     }
     /* Calculate SNR */
-    u1 = v1;
-    u2 = v2;
-    SNRtempPlus = u1;
+    SNRtempPlus = v1 * 4 * deltaF;
     if (SNRtempPlus < 0) SNRtempPlus = -SNRtempPlus;
-    SNRtempCross = u2;
+    SNRtempCross = v2 * 4 * deltaF;
     if (SNRtempCross < 0) SNRtempCross = -SNRtempCross;
     /* Compare to max SNR */
     if (SNRtempPlus > SNRmaxPlus * ((REAL4)freqBinPlus/(REAL4)numFreqBins))
@@ -1332,6 +1332,10 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       }
     }
   }
+
+  /* Final frequency bins should go to kmax */
+  frequencyRangesPlus[freqBinPlus-1] = kmax * deltaF;
+  frequencyRangesCross[freqBinCross-1] = kmax * deltaF;
 }
 
 void coh_PTF_calculate_standard_chisq_power_bins(
@@ -1352,8 +1356,10 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 {
   /* THIS FUNCTION IS NON-SPIN ONLY! DO NOT TRY TO RUN WITH PTF IN SPIN MODE */
   UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
-  REAL4 v1,v2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
+  REAL4 SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL4 SNRplusLast,SNRcrossLast;
+  /* Set this to REAL8 to be consistent with calculation of sigma squared */
+  REAL8 overlapCont,v1,v2;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
   REAL4 a2[LAL_NUM_IFO];
@@ -1459,8 +1465,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
         {
           overlapCont = (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
                  cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) )* invspec[k]->data->data[i] ;
-          v1 += a2[k] * a2[k] * overlapCont * 4 * deltaF;
-          v2 += b2[k] * b2[k] * overlapCont * 4 * deltaF;
+          v1 += a2[k] * a2[k] * overlapCont;
+          v2 += b2[k] * b2[k] * overlapCont;
         }
       }
     }
@@ -1468,12 +1474,12 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     {
       overlapCont = (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
              cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) )* invspec[detectorNum]->data->data[i] ;
-      v1 += overlapCont * 4 * deltaF;
+      v1 += overlapCont;
       v2 = v1;
     }
-    SNRtempPlus = v1;
+    SNRtempPlus = v1 * 4 * deltaF;
     if (SNRtempPlus < 0) SNRtempPlus = -SNRtempPlus;
-    SNRtempCross = v2;
+    SNRtempCross = v2 * 4 * deltaF;
     if (SNRtempCross < 0) SNRtempCross = -SNRtempCross;
 
     if (i * deltaF > frequencyRangesPlus[freqBinPlus] && freqBinPlus < (numFreqBins-1))
