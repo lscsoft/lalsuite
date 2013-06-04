@@ -30,7 +30,7 @@
  */
 
 #include <lal/LALDatatypes.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <stdio.h>
 #include <gsl/gsl_rng.h>
 #include <lal/LALStdlib.h>
@@ -91,11 +91,11 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
 
 /* low-level routine to read single-precision frame data */
 REAL4TimeSeries * fr_get_REAL4TimeSeries( const char *channelName,
-    LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream );
+    LIGOTimeGPS *epoch, REAL8 duration, LALFrStream *stream );
 
 /* low-level routine to read double-precision frame data */
 REAL8TimeSeries * fr_get_REAL8TimeSeries( const char *channelName,
-    LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream );
+    LIGOTimeGPS *epoch, REAL8 duration, LALFrStream *stream );
 
 /* resample time series */
 int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate );

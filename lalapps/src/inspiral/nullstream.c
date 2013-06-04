@@ -56,7 +56,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
@@ -141,7 +141,7 @@ int main( int argc, char *argv[] )
   /* FrChanIn      frChan; */
 
   /* frame data */
-  FrStream       *frStream   = NULL;
+  LALFrStream       *frStream   = NULL;
   struct FrFile  *frOutFile  = NULL;
   struct FrameH  *outFrame   = NULL;
 
@@ -258,7 +258,7 @@ int main( int argc, char *argv[] )
     {
       if ( ifoframefile[k] )
       { 
-        frStream = XLALFrOpen( NULL, ifoframefile[k]); 
+        frStream = XLALFrStreamOpen( NULL, ifoframefile[k]); 
         if (!frStream)
         {
           fprintf(stdout,"The file %s does not exist - exiting.\n", 
@@ -504,7 +504,7 @@ int main( int argc, char *argv[] )
         if ( (j == LAL_IFO_H1) || (j == LAL_IFO_H2) ) 
         { 
           if (vrbflg) fprintf(stdout, " j = %d \n", j );
-          frStream = XLALFrOpen( NULL, ifoframefile[j] ); 
+          frStream = XLALFrStreamOpen( NULL, ifoframefile[j] ); 
           if ( vrbflg ) fprintf( stdout, 
                  "Getting the c-data time series for %s.\n",
                  thisCoinc->snglInspiral[j]->ifo );
@@ -541,7 +541,7 @@ int main( int argc, char *argv[] )
           }
 
           if ( vrbflg ) fprintf( stdout, "error");
-          XLALFrGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
+          XLALFrStreamGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
           if ( vrbflg ) fprintf( stdout, "error");
 
           /* Need to worry about WRAPPING of time-slides             */
@@ -550,7 +550,7 @@ int main( int argc, char *argv[] )
                          CVec->cData[j]->epoch.gpsNanoSeconds * 1e-9;
           if ( vrbflg ) fprintf( stdout,"tempTime = %f\n", tempTime[j] );
  
-          XLALFrClose( frStream );
+          XLALFrStreamClose( frStream );
  
           if (j == 2) j = LAL_NUM_IFO+1;
         }

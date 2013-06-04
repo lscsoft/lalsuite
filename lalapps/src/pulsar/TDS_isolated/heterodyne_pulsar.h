@@ -44,7 +44,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/IIRFilter.h>
 #include <lal/ZPGFilter.h>
 #include <lal/LALBarycenter.h>

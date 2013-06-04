@@ -29,7 +29,7 @@ lalframeinclude_HEADERS = \
 	Aggregation.h \
 	FrameCalibration.h \
 	FrameData.h \
-	FrameStream.h \
+	LALFrStream.h \
 	LALFrameConfig.h \
 	LALFrameL.h \
 	LALFrameIO.h \
@@ -46,7 +46,7 @@ liblalframe_la_SOURCES = \
 	FrameCalibration.c \
 	FrameData.c \
 	FrameSeries.c \
-	FrameStream.c \
+	LALFrStream.c \
 	LALFrameIO.c \
 	LALFrameVCSInfo.c \
 	LowLatencyData.c

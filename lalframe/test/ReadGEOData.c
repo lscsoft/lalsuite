@@ -45,7 +45,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 #ifndef CHANNEL
 #define CHANNEL "LSC_MID_EP-P"
@@ -62,7 +62,7 @@ int main( void )
   REAL4TimeSeries tser;
   INT2TimeSeries  chan;
   FrChanIn  chanin = { CHANNEL, ADCDataChannel };
-  FrStream *stream = NULL;
+  LALFrStream *stream = NULL;
   FrOutPar  outpar = { "G:" CHANNEL, "TEST", ADCDataChannel, 6, 0, 0 };
   char *dirname = getenv( "LAL_FRAME_PATH" );
 

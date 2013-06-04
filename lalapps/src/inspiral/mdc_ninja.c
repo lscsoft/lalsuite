@@ -48,7 +48,7 @@
 #include <lal/VectorOps.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/FindChirp.h>
 #include <lal/Random.h>
 #include <lal/LALNoiseModels.h>
@@ -948,7 +948,7 @@ static void output_frame(CHAR *ifo,
   /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
    *  It should be modified to use git version information. */
   snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
-  XLALFrHistoryAdd(frame, "creator", creator);
+  XLALFrameAddFrHistory(frame, "creator", creator);
 
   /* add channel to frame */
   XLALFrameAddREAL4TimeSeriesSimData( frame, injData );
@@ -1023,7 +1023,7 @@ static void output_frame_real8(CHAR *ifo,
   /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
    *  It should be modified to use git version information. */
   snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
-  XLALFrHistoryAdd(frame, "creator", creator);
+  XLALFrameAddFrHistory(frame, "creator", creator);
 
   /* add channel to frame */
   XLALFrameAddREAL8TimeSeriesSimData( frame, injData );
@@ -1080,7 +1080,7 @@ static void output_multi_channel_frame(INT4 num_ifos,
   /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
    *  It should be modified to use git version information. */
   snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
-  XLALFrHistoryAdd(frame, "creator", creator);
+  XLALFrameAddFrHistory(frame, "creator", creator);
 
   /* add channels to frame */
   for( i = 0; i < num_ifos; i++ )
@@ -1144,7 +1144,7 @@ static void output_multi_channel_frame_real8(INT4 num_ifos,
   /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
    *  It should be modified to use git version information. */
   snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
-  XLALFrHistoryAdd(frame, "creator", creator);
+  XLALFrameAddFrHistory(frame, "creator", creator);
 
   /* add channels to frame */
   for( i = 0; i < num_ifos; i++ )

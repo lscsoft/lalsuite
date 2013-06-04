@@ -22,7 +22,7 @@
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "tracksearch.h"
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 #define PROGRAM_NAME "tracksearch"
 
@@ -1224,7 +1224,7 @@ void LALappsGetFrameData(TSSearchParams*     params,
 			 CHAR*               cachefile
 			 )
 {
-  FrStream             *stream = NULL;
+  LALFrStream             *stream = NULL;
   LALCache             *frameCache = NULL;
   FrChanIn              channelIn;
   /*
@@ -1266,12 +1266,12 @@ void LALappsGetFrameData(TSSearchParams*     params,
   if(dirname)
     {
       /* Open frame stream */
-      stream=XLALFrOpen(dirname->data,"*.gwf");
-      errcode=XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
+      stream=XLALFrStreamOpen(dirname->data,"*.gwf");
+      errcode=XLALFrStreamSetMode(stream,LAL_FR_STREAM_VERBOSE_MODE);
       if (errcode != 0)
 	{
-	  fprintf(stderr,"Error setting Verbose Mode using XLALFrSetMode.\n");
-	  fprintf(stderr,"XLALFrSetMode Error Code :%i\n",xlalErrno);
+	  fprintf(stderr,"Error setting Verbose Mode using XLALFrStreamSetMode.\n");
+	  fprintf(stderr,"XLALFrStreamSetMode Error Code :%i\n",xlalErrno);
 	  fprintf(stderr,"XLAL Error Message :%s\n",XLALErrorString(xlalErrno));
 	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGESUB);
 	  fflush(stderr);
@@ -1306,14 +1306,14 @@ void LALappsGetFrameData(TSSearchParams*     params,
 	  fprintf(stdout,"Creating data stream.\n");
 	  fflush(stdout);
 	}
-      stream=XLALFrCacheOpen(frameCache);	  
+      stream=XLALFrStreamCacheOpen(frameCache);	  
 
       /* Set verbosity of stream so user sees frame read problems! */
-      errcode=XLALFrSetMode(stream,LAL_FR_VERBOSE_MODE);
+      errcode=XLALFrStreamSetMode(stream,LAL_FR_STREAM_VERBOSE_MODE);
       if (errcode != 0)
 	{
-	  fprintf(stderr,"Error setting Verbose Mode using XLALFrSetMode.\n");
-	  fprintf(stderr,"XLALFrSetMode Error Code :%i\n",xlalErrno);
+	  fprintf(stderr,"Error setting Verbose Mode using XLALFrStreamSetMode.\n");
+	  fprintf(stderr,"XLALFrStreamSetMode Error Code :%i\n",xlalErrno);
 	  fprintf(stderr,"XLAL Error Message :%s\n",XLALErrorString(xlalErrno));
 	  fprintf(stderr,"%s\n",TRACKSEARCHC_MSGESUB);
 	  fflush(stderr);
@@ -1338,7 +1338,7 @@ void LALappsGetFrameData(TSSearchParams*     params,
 	  fprintf(stderr,"Stop            : %f\n",bufferedDataStop);
 	  fprintf(stderr,"Interval length : %f\n",bufferedDataTimeInterval);
 	}
-      errcode=XLALFrSeek(stream,&bufferedDataStopGPS);
+      errcode=XLALFrStreamSeek(stream,&bufferedDataStopGPS);
       if (errcode!=0)
 	{
 	  fprintf(stderr,"Error seeking stream to end time: %f\n",XLALGPSGetREAL8(&bufferedDataStopGPS));
@@ -1349,7 +1349,7 @@ void LALappsGetFrameData(TSSearchParams*     params,
 	  fflush(stderr);
 	  exit(errcode);
 	}
-      errcode=XLALFrSeek(stream,&bufferedDataStartGPS);
+      errcode=XLALFrStreamSeek(stream,&bufferedDataStartGPS);
       if (errcode!=0)
 	{
 	  fprintf(stderr,"Error seeking stream to start time: %f\n",XLALGPSGetREAL8(&bufferedDataStartGPS));
@@ -1370,7 +1370,7 @@ void LALappsGetFrameData(TSSearchParams*     params,
   /*
    * Determine the variable type of data in the frame file.
    */
-  dataTypeCode=XLALFrGetTimeSeriesType(channelIn.name, stream);
+  dataTypeCode=XLALFrStreamGetTimeSeriesType(channelIn.name, stream);
   if (params->verbosity >= verbose)
     {
       fprintf(stdout,"Checking data stream variable type for :%s \n",channelIn.name);
@@ -1471,7 +1471,7 @@ void LALappsGetFrameData(TSSearchParams*     params,
   if (stream)
     {
       /*Close the frame stream if found open*/
-      XLALFrClose(stream);
+      XLALFrStreamClose(stream);
     }
   /*
    * If DC_Detrend option is requested detrend the time series

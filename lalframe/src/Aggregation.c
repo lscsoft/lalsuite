@@ -32,7 +32,7 @@
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/TimeSeries.h>
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
@@ -434,13 +434,13 @@ LALCache *XLALAggregationFrameCache(CHAR *ifo,
 
 
 /* return frame stream for given ifo, gps time, and duration */
-FrStream *XLALAggregationFrameStream(CHAR *ifo,
+LALFrStream *XLALAggregationFrameStream(CHAR *ifo,
     LIGOTimeGPS *start,
     REAL8 duration)
 {
   /* declare variables */
   LALCache *cache;
-  FrStream *stream;
+  LALFrStream *stream;
 
   /* check arguments */
   if (!ifo)
@@ -457,7 +457,7 @@ FrStream *XLALAggregationFrameStream(CHAR *ifo,
   }
 
   /* open cache as stream */
-  stream = XLALFrCacheOpen(cache);
+  stream = XLALFrStreamCacheOpen(cache);
   if (stream == NULL)
   {
     /* failed to open stream */
@@ -478,7 +478,7 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
     REAL8 duration)
 {
   /* declare variables */
-  FrStream *stream;
+  LALFrStream *stream;
   REAL8TimeSeries *series;
   CHAR channel[LAL_AGGREGATION_CHANNEL_MAX];
   LIGOTimeGPS time_now;
@@ -553,16 +553,16 @@ REAL8TimeSeries *XLALAggregationStrainData(CHAR *ifo,
   }
 
   /* get strain data time series */
-  series = XLALFrReadREAL8TimeSeries(stream, channel, start, duration, 0);
+  series = XLALFrStreamReadREAL8TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
   {
     /* failed to read data */
-    XLALFrClose(stream);
+    XLALFrStreamClose(stream);
     XLAL_ERROR_NULL(XLAL_EINVAL);
   }
 
   /* close stream */
-  XLALFrClose(stream);
+  XLALFrStreamClose(stream);
 
   return series;
 }
@@ -575,7 +575,7 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
     REAL8 duration)
 {
   /* declare variables */
-  FrStream *stream;
+  LALFrStream *stream;
   INT4TimeSeries *series;
   CHAR channel[LAL_AGGREGATION_CHANNEL_MAX];
   LIGOTimeGPS time_now;
@@ -650,16 +650,16 @@ INT4TimeSeries *XLALAggregationDQVector(CHAR *ifo,
   }
 
   /* get data quality vector time series */
-  series = XLALFrReadINT4TimeSeries(stream, channel, start, duration, 0);
+  series = XLALFrStreamReadINT4TimeSeries(stream, channel, start, duration, 0);
   if (series == NULL)
   {
     /* failed to read data */
-    XLALFrClose(stream);
+    XLALFrStreamClose(stream);
     XLAL_ERROR_NULL(XLAL_EINVAL);
   }
 
   /* close stream */
-  XLALFrClose(stream);
+  XLALFrStreamClose(stream);
 
   return series;
 }
@@ -671,7 +671,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
     REAL8 duration)
 {
   /* declare variables */
-  FrStream *stream;
+  LALFrStream *stream;
   REAL4TimeSeries *state;
   INT4TimeSeries *series;
   CHAR channel[LAL_AGGREGATION_CHANNEL_MAX];
@@ -742,11 +742,11 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   }
 
   /* get state vector time series */
-  state = XLALFrReadREAL4TimeSeries(stream, channel, start, duration, 0);
+  state = XLALFrStreamReadREAL4TimeSeries(stream, channel, start, duration, 0);
   if (state == NULL)
   {
     /* failed to read data */
-    XLALFrClose(stream);
+    XLALFrStreamClose(stream);
     XLAL_ERROR_NULL(XLAL_EINVAL);
   }
 
@@ -763,7 +763,7 @@ INT4TimeSeries *XLALAggregationStateVector(CHAR *ifo,
   XLALDestroyREAL4TimeSeries(state);
 
   /* close stream */
-  XLALFrClose(stream);
+  XLALFrStreamClose(stream);
 
   return series;
 }
@@ -926,7 +926,7 @@ REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
     UINT4 max_wait)
 {
   /* declare variables */
-  FrStream *stream;
+  LALFrStream *stream;
   REAL8TimeSeries *series;
   UINT4 wait_time;
 
@@ -950,7 +950,7 @@ REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
     if ((series == NULL) && (wait_time > max_wait))
     {
       /* already waited for maximum duration */
-      XLALFrClose(stream);
+      XLALFrStreamClose(stream);
       XLAL_ERROR_NULL(XLAL_EIO);
     }
     else if (series == NULL)
@@ -962,7 +962,7 @@ REAL8TimeSeries *XLALAggregationStrainDataWait(CHAR *ifo,
   } while (series == NULL);
 
   /* close frame stream */
-  XLALFrClose(stream);
+  XLALFrStreamClose(stream);
 
   return series;
 }
@@ -976,7 +976,7 @@ INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
     UINT4 max_wait)
 {
   /* declare variables */
-  FrStream *stream;
+  LALFrStream *stream;
   INT4TimeSeries *series;
   UINT4 wait_time;
 
@@ -1000,7 +1000,7 @@ INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
     if ((series == NULL) && (wait_time > max_wait))
     {
       /* already waited for maximum duration */
-      XLALFrClose(stream);
+      XLALFrStreamClose(stream);
       XLAL_ERROR_NULL(XLAL_EIO);
     }
     else if (series == NULL)
@@ -1012,7 +1012,7 @@ INT4TimeSeries *XLALAggregationDQVectorWait(CHAR *ifo,
   } while (series == NULL);
 
   /* close frame stream */
-  XLALFrClose(stream);
+  XLALFrStreamClose(stream);
 
   return series;
 }
@@ -1026,7 +1026,7 @@ INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
     UINT4 max_wait)
 {
   /* declare variables */
-  FrStream *stream;
+  LALFrStream *stream;
   INT4TimeSeries *series;
   UINT4 wait_time;
 
@@ -1050,7 +1050,7 @@ INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
     if ((series == NULL) && (wait_time > max_wait))
     {
       /* already waited for maximum duration */
-      XLALFrClose(stream);
+      XLALFrStreamClose(stream);
       XLAL_ERROR_NULL(XLAL_EIO);
     }
     else if (series == NULL)
@@ -1062,7 +1062,7 @@ INT4TimeSeries *XLALAggregationStateVectorWait(CHAR *ifo,
   } while (series == NULL);
 
   /* close frame stream */
-  XLALFrClose(stream);
+  XLALFrStreamClose(stream);
 
   return series;
 }

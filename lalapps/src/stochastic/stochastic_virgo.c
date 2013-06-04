@@ -44,7 +44,7 @@
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/IIRFilter.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -190,7 +190,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* frame variables */
   LALCache *frCache1,*frCache2,*frCacheMC1,*frCacheMC2;
-  FrStream *frStream1,*frStream2,*frStreamMC1,*frStreamMC2;
+  LALFrStream *frStream1,*frStream2,*frStreamMC1,*frStreamMC2;
   FrChanIn frChanIn1, frChanIn2,frChanInMC1,frChanInMC2;
 
   /* input data segment */
@@ -349,8 +349,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALFrCacheOpen( &status, &frStream2, frCache2), &status);
 
    /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream1->mode = LAL_FR_VERBOSE_MODE;
-  frStream2->mode = LAL_FR_VERBOSE_MODE;
+  frStream1->mode = LAL_FR_STREAM_VERBOSE_MODE;
+  frStream2->mode = LAL_FR_STREAM_VERBOSE_MODE;
 
   if (inject_file_flag)
    {
@@ -370,8 +370,8 @@ INT4 main(INT4 argc, CHAR *argv[])
    LAL_CALL( LALFrCacheOpen( &status, &frStreamMC2, frCacheMC2), &status);
 
    /* set the mode of the frame stream to fail on gaps or time errors */
-   frStreamMC1->mode = LAL_FR_VERBOSE_MODE;
-   frStreamMC2->mode = LAL_FR_VERBOSE_MODE;
+   frStreamMC1->mode = LAL_FR_STREAM_VERBOSE_MODE;
+   frStreamMC2->mode = LAL_FR_STREAM_VERBOSE_MODE;
    }
 
   /* set resample parameters */

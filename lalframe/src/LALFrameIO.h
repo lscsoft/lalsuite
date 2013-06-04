@@ -21,43 +21,57 @@
 #define _LALFRAMEIO_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALCache.h>
+#include <lal/LALDetectors.h>
+
+#if 1
+/* to be deprecated */
 #include <lal/LALFrameL.h>
+#else
+/* new code */
+#include <lal/LALFrameU.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(EXTERNAL_STRUCT(FrameH, XLALFrameFree));
+/* alias some types */
+#if 1
+/* to be deprecated */
+typedef struct FrameH LALFrameH;
+typedef struct FrFile LALFrFile;
+#else
+/* new code */
+struct tagLALFrFile;
+typedef LALFrameUFrameH LALFrameH;
+typedef struct tagLALFrFile LALFrFile;
 #endif
 
-struct FrFile * XLALFrOpenURL( const char *url );
-int XLALFrFileCheckSum( FrFile *iFile );
-FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comment );
-FrDetector * XLALFrDetectorNew( int detector );
-void XLALFrameFree( FrameH *frame );
-FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
-    const char *project, int run, int frnum, int detectorFlags );
-FrVect * XLALFrVectINT4TimeSeries( INT4TimeSeries *series );
-FrVect * XLALFrVectREAL4TimeSeries( REAL4TimeSeries *series );
-FrVect * XLALFrVectREAL8TimeSeries( REAL8TimeSeries *series );
-FrVect * XLALFrVectCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series );
-FrVect * XLALFrVectCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series );
-FrVect * XLALFrVectREAL4FrequencySeries( REAL4FrequencySeries *series );
-FrVect * XLALFrVectREAL8FrequencySeries( REAL8FrequencySeries *series );
-FrVect * XLALFrVectCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series );
-FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series );
 
-int XLALFrameAddREAL8TimeSeriesProcData( FrameH *frame, REAL8TimeSeries *series );
-int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series );
-int XLALFrameAddINT4TimeSeriesProcData( FrameH *frame, INT4TimeSeries *series );
-int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series );
-int XLALFrameAddREAL8TimeSeriesSimData( FrameH *frame, REAL8TimeSeries *series );
-int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series );
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(EXTERNAL_STRUCT(LALFrameH, XLALFrameFree));
+#endif
+
+LALFrFile * XLALFrFileOpenURL( const char *url );
+int XLALFrFileCksumValid( const LALFrFile *frfile );
+
+int XLALFrameAddFrHistory( LALFrameH *frame, const char *name, const char *comment );
+int XLALFrameAddFrDetector( LALFrameH *frame, const LALDetector *detector );
+void XLALFrameFree( LALFrameH *frame );
+LALFrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
+    const char *project, int run, int frnum, int detectorFlags );
+
+int XLALFrameAddREAL4TimeSeriesAdcData( LALFrameH *frame, REAL4TimeSeries *series );
+
+int XLALFrameAddINT4TimeSeriesProcData( LALFrameH *frame, INT4TimeSeries *series );
+int XLALFrameAddREAL4TimeSeriesProcData( LALFrameH *frame, REAL4TimeSeries *series );
+int XLALFrameAddREAL8TimeSeriesProcData( LALFrameH *frame, REAL8TimeSeries *series );
+
+int XLALFrameAddREAL4TimeSeriesSimData( LALFrameH *frame, REAL4TimeSeries *series );
+int XLALFrameAddREAL8TimeSeriesSimData( LALFrameH *frame, REAL8TimeSeries *series );
 
 /* frame writing function */
-int XLALFrameWrite(FrameH *frame, const char *fname, int compressLevel);
+int XLALFrameWrite(LALFrameH *frame, const char *fname, int compressLevel);
 
 #ifdef __cplusplus
 }

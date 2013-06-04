@@ -28,7 +28,7 @@
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>

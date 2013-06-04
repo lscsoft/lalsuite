@@ -95,7 +95,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/FrameCalibration.h>
 #include <lal/LALFrameL.h>
 #include <lal/Calibration.h>

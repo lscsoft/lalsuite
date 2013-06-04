@@ -2732,7 +2732,7 @@ LALCreateRealPsd(LALStatus *status,
   /* frame input data */
   LALCache     *frInCache = NULL;
   LALCache     *calCache = NULL;
-  FrStream     *frStream = NULL;
+  LALFrStream     *frStream = NULL;
   FrChanIn      frChan;
   CHAR tmpChName[LALNameLength];
 
@@ -2917,7 +2917,7 @@ LALCreateRealPsd(LALStatus *status,
   LAL_CALL( LALFrCacheOpen( status->statusPtr, &frStream,frInCache ), status->statusPtr );
 
   /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream->mode = LAL_FR_VERBOSE_MODE;
+  frStream->mode = LAL_FR_STREAM_VERBOSE_MODE;
 
   /* seek to required epoch and set chan name */
   LAL_CALL( LALFrSeek( status->statusPtr, &(chan.epoch), frStream ), status->statusPtr );

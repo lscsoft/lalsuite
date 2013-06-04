@@ -53,24 +53,24 @@
  * gaps in data and requests for times when there is no data (e.g., before
  * the beginning of the data, after the end of the data, or in some missing
  * data).  The default mode, which is given the value
- * \c LAL_FR_DEFAULT_MODE, prints warnings if a time requested
+ * \c LAL_FR_STREAM_DEFAULT_MODE, prints warnings if a time requested
  * corresponds to a time when there is no data (but then skips to the first
  * avaliable data) and prints an info message when a gap in the data occurs
  * (but then skips beyond the gap).  This default mode is equal to the
  * combination
- * <tt>LAL_FR_VERBOSE_MODE | LAL_FR_IGNOREGAP_MODE | LAL_FR_IGNORETIME_MODE</tt>
- * where \c LAL_FR_VERBOSE_MODE is equal to the combination
- * <tt>LAL_FR_TIMEWARN_MODE | LAL_FR_GAPINFO_MODE</tt>.  Use
- * \c LAL_FR_VERBOSE_MODE to print out warnings when requesting times
+ * <tt>LAL_FR_STREAM_VERBOSE_MODE | LAL_FR_IGNOREGAP_MODE | LAL_FR_IGNORETIME_MODE</tt>
+ * where \c LAL_FR_STREAM_VERBOSE_MODE is equal to the combination
+ * <tt>LAL_FR_STREAM_TIMEWARN_MODE | LAL_FR_GAPINFO_MODE</tt>.  Use
+ * \c LAL_FR_STREAM_VERBOSE_MODE to print out warnings when requesting times
  * with no data and print out an info message when a gap in the data is
  * encountered.  Unless the mode is supplemented with
- * \c LAL_FR_IGNOREGAP_MODE, gaps encountered in the data will cause
+ * \c LAL_FR_STREAM_IGNOREGAP_MODE, gaps encountered in the data will cause
  * a routine to exit with a non-zero status code; similarly,
- * \c LAL_FR_IGNORETIME_MODE prevents routines from failing if a time
+ * \c LAL_FR_STREAM_IGNORETIME_MODE prevents routines from failing if a time
  * when there is not data is requested.  Set the mode to
- * \c LAL_FR_SILENT_MODE to suppress the warning and info messages but
+ * \c LAL_FR_STREAM_SILENT_MODE to suppress the warning and info messages but
  * still cause routines to fail when data is not available.
- * Note: the default value \c LAL_FR_DEFAULT_MODE is assumed initially,
+ * Note: the default value \c LAL_FR_STREAM_DEFAULT_MODE is assumed initially,
  * but this is not necessarily the recommended mode --- it is adopted for
  * compatibility reasons.
  *
@@ -109,7 +109,7 @@ int gethostname(char *name, int len);
 #include <lal/LALStdlib.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 /*
  *
@@ -129,15 +129,15 @@ int gethostname(char *name, int len);
  */
 
 
-static struct FrFile *URLFrFileINew( FrFileInfo *file, int dochecksum )
+static LALFrFile *URLFrFileINew( FrFileInfo *file, int dochecksum )
 {
-  struct FrFile *frfile;
+  LALFrFile *frfile;
   if ( ! file )
     return NULL;
-  frfile = XLALFrOpenURL( file->url );
+  frfile = XLALFrFileOpenURL( file->url );
   if ( frfile && dochecksum ) {
     int code;
-    code = XLALFrFileCheckSum( frfile );
+    code = XLALFrFileCksumValid( frfile );
     switch ( code ) {
       case 0:
         break;
@@ -272,7 +272,7 @@ static UINT4 create_flist( FrFileInfo **plist, LALCache *cache )
     }
     else
     {
-      struct FrFile *frfile;
+      LALFrFile *frfile;
       double t1;
       frfile = URLFrFileINew( list + i, 0 );
       if ( ! frfile )
@@ -338,9 +338,9 @@ static UINT4 create_flist( FrFileInfo **plist, LALCache *cache )
  */
 
 
-FrStream * XLALFrCacheOpen( LALCache *cache )
+LALFrStream * XLALFrStreamCacheOpen( LALCache *cache )
 {
-  FrStream *stream;
+  LALFrStream *stream;
 
   if ( ! cache )
     XLAL_ERROR_NULL( XLAL_EFAULT );
@@ -349,7 +349,7 @@ FrStream * XLALFrCacheOpen( LALCache *cache )
   if ( ! stream )
     XLAL_ERROR_NULL( XLAL_ENOMEM );
 
-  stream->mode = LAL_FR_DEFAULT_MODE;
+  stream->mode = LAL_FR_STREAM_DEFAULT_MODE;
   stream->nfile = create_flist( &stream->flist, cache );
   if ( ! stream->flist )
   {
@@ -382,16 +382,16 @@ FrStream * XLALFrCacheOpen( LALCache *cache )
 }
 
 
-FrStream * XLALFrOpen( const char *dirname, const char *pattern )
+LALFrStream * XLALFrStreamOpen( const char *dirname, const char *pattern )
 {
-  FrStream *stream;
+  LALFrStream *stream;
   LALCache *cache;
 
   cache = XLALCacheGlob( dirname, pattern );
   if ( ! cache )
     XLAL_ERROR_NULL( XLAL_EFUNC );
 
-  stream = XLALFrCacheOpen( cache );
+  stream = XLALFrStreamCacheOpen( cache );
   if ( ! stream )
     XLAL_ERROR_NULL( XLAL_EFUNC );
 
@@ -400,7 +400,7 @@ FrStream * XLALFrOpen( const char *dirname, const char *pattern )
 }
 
 
-void XLALFrClose( FrStream *stream )
+void XLALFrStreamClose( LALFrStream *stream )
 {
   if ( stream ) {
     FrFileIEnd( stream->file );
@@ -410,19 +410,19 @@ void XLALFrClose( FrStream *stream )
 }
 
 
-int XLALFrSetMode( FrStream *stream, int mode )
+int XLALFrStreamSetMode( LALFrStream *stream, int mode )
 {
   if ( ! stream )
     XLAL_ERROR( XLAL_EFAULT );
   stream->mode = mode;
   /* if checksum mode is turned on, do checksum on current file */
-  if ( (mode & LAL_FR_CHECKSUM_MODE) && (stream->file) )
-    return XLALFrFileCheckSum( stream->file );
+  if ( (mode & LAL_FR_STREAM_CHECKSUM_MODE) && (stream->file) )
+    return XLALFrFileCksumValid( stream->file );
   return 0;
 }
 
 
-int XLALFrGetState( FrStream *stream )
+int XLALFrStreamGetState( LALFrStream *stream )
 {
   if ( ! stream )
     XLAL_ERROR( XLAL_EFAULT );
@@ -430,16 +430,16 @@ int XLALFrGetState( FrStream *stream )
 }
 
 
-int XLALFrClearErr( FrStream *stream )
+int XLALFrStreamClearErr( LALFrStream *stream )
 {
   if ( ! stream )
     XLAL_ERROR( XLAL_EFAULT );
-  stream->state = LAL_FR_OK;
+  stream->state = LAL_FR_STREAM_OK;
   return 0;
 }
 
 
-int XLALFrRewind( FrStream *stream )
+int XLALFrStreamRewind( LALFrStream *stream )
 {
   if ( ! stream )
     XLAL_ERROR( XLAL_EFAULT );
@@ -451,11 +451,11 @@ int XLALFrRewind( FrStream *stream )
   }
   stream->pos   = 0;
   stream->fnum  = 0;
-  stream->file  = URLFrFileINew( stream->flist, stream->mode & LAL_FR_CHECKSUM_MODE );
-  stream->state = LAL_FR_OK;
+  stream->file  = URLFrFileINew( stream->flist, stream->mode & LAL_FR_STREAM_CHECKSUM_MODE );
+  stream->state = LAL_FR_STREAM_OK;
   if ( ! stream->file )
   {
-    stream->state =  (FrState) ( stream->state |LAL_FR_ERR | LAL_FR_URL);
+    stream->state =  (FrState) ( stream->state |LAL_FR_STREAM_ERR | LAL_FR_STREAM_URL);
     XLAL_ERROR( XLAL_EIO );
   }
   if ( FrTOCReadFull( stream->file ) == NULL )
@@ -464,7 +464,7 @@ int XLALFrRewind( FrStream *stream )
         __func__, stream->flist->url );
     FrFileIEnd( stream->file );
     stream->file   = NULL;
-    stream->state =(FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
+    stream->state =(FrState) ( stream->state | LAL_FR_STREAM_ERR | LAL_FR_STREAM_TOC );
     XLAL_ERROR( XLAL_EIO );
   }
   stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[0];
@@ -473,7 +473,7 @@ int XLALFrRewind( FrStream *stream )
 }
 
 
-int XLALFrNext( FrStream *stream )
+int XLALFrStreamNext( LALFrStream *stream )
 {
   /* timing accuracy: tenth of a sample interval for a 16kHz fast channel */
   const INT8 tacc = (INT8)floor( 0.1 * 1e9 / 16384.0 );
@@ -488,11 +488,11 @@ int XLALFrNext( FrStream *stream )
   if ( ! stream )
     XLAL_ERROR( XLAL_EFAULT );
 
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
     return 1; /* end code */
 
   /* turn off gap bit */
-  stream->state = (FrState) (stream->state & ~LAL_FR_GAP );
+  stream->state = (FrState) (stream->state & ~LAL_FR_STREAM_GAP );
 
   url2 = url1 = stream->flist[stream->fnum].url;
   pos2 = pos1 = stream->pos;
@@ -523,15 +523,15 @@ int XLALFrNext( FrStream *stream )
     stream->pos = 0;
     if ( stream->fnum >= stream->nfile )
     {
-      stream->state = (FrState) ( stream->state | LAL_FR_END );
+      stream->state = (FrState) ( stream->state | LAL_FR_STREAM_END );
       return 1;
     }
     stream->pos  = 0;
-    stream->file = URLFrFileINew( stream->flist + stream->fnum, stream->mode & LAL_FR_CHECKSUM_MODE );
+    stream->file = URLFrFileINew( stream->flist + stream->fnum, stream->mode & LAL_FR_STREAM_CHECKSUM_MODE );
     url2 = stream->flist[stream->fnum].url;
     if ( ! stream->file )
     {
-      stream->state = (FrState) ( stream->state |LAL_FR_ERR | LAL_FR_URL );
+      stream->state = (FrState) ( stream->state |LAL_FR_STREAM_ERR | LAL_FR_STREAM_URL );
       XLAL_ERROR( XLAL_EIO );
     }
     pos2 = stream->pos;
@@ -546,7 +546,7 @@ int XLALFrNext( FrStream *stream )
           __func__, stream->flist[stream->fnum].url );
       FrFileIEnd( stream->file );
       stream->file   = NULL;
-      stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
+      stream->state = (FrState) ( stream->state | LAL_FR_STREAM_ERR | LAL_FR_STREAM_TOC );
       XLAL_ERROR( XLAL_EIO );
     }
   }
@@ -559,13 +559,13 @@ int XLALFrNext( FrStream *stream )
 
   if ( abs( texp - tact ) > tacc ) /* there is a gap */
   {
-    stream->state = (FrState) ( stream->state | LAL_FR_GAP );
-    if ( stream->mode & LAL_FR_GAPINFO_MODE )
+    stream->state = (FrState) ( stream->state | LAL_FR_STREAM_GAP );
+    if ( stream->mode & LAL_FR_STREAM_GAPINFO_MODE )
     {
       XLALPrintInfo( "XLAL Info - %s: gap in frame data between times "
           "%.6f and %.6f\n", __func__, 1e-9 * texp, 1e-9 * tact );
     }
-    if ( ! ( stream->mode & LAL_FR_IGNOREGAP_MODE ) )
+    if ( ! ( stream->mode & LAL_FR_STREAM_IGNOREGAP_MODE ) )
     {
       XLALPrintError( "XLAL Error - %s: gap in frame data\n", __func__ );
       XLALPrintError( "XLAL Error - %s: time %.6f "
@@ -581,7 +581,7 @@ int XLALFrNext( FrStream *stream )
 }
 
 
-int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
+int XLALFrStreamSeek( LALFrStream *stream, const LIGOTimeGPS *epoch )
 {
   FrFileInfo *fileinfo;
   double twant = XLALGPSGetREAL8( epoch );
@@ -595,24 +595,24 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
   }
 
   /* clear EOF or GAP states; preserve ERR state */
-  if ( stream->state & LAL_FR_ERR )
-    stream->state = LAL_FR_ERR;
+  if ( stream->state & LAL_FR_STREAM_ERR )
+    stream->state = LAL_FR_STREAM_ERR;
   else
-    stream->state = LAL_FR_OK;
+    stream->state = LAL_FR_STREAM_OK;
 
   /* is epoch before first file? */
   if ( epoch->gpsSeconds < stream->flist->t0 )
   {
-    XLALFrRewind( stream );
-    stream->state = (FrState) ( stream->state | LAL_FR_GAP );
+    XLALFrStreamRewind( stream );
+    stream->state = (FrState) ( stream->state | LAL_FR_STREAM_GAP );
     /* is this reported as an error? */
-    if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
+    if ( ! ( stream->mode & LAL_FR_STREAM_IGNORETIME_MODE ) )
     {
       /* FIXME:  if this is an error, should the stream state say so? */
-      /*stream->state |= LAL_FR_ERR;*/
+      /*stream->state |= LAL_FR_STREAM_ERR;*/
       XLAL_ERROR( XLAL_ETIME );
     }
-    if ( stream->mode & LAL_FR_TIMEWARN_MODE )
+    if ( stream->mode & LAL_FR_STREAM_TIMEWARN_MODE )
       XLALPrintWarning( "XLAL Warning - %s: "
           "requested time %d before first frame\n", __func__, epoch->gpsSeconds );
     return 1; /* before first file code */
@@ -634,15 +634,15 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
     {
       /* end of file list, time not yet found */
       stream->fnum   = stream->nfile;
-      stream->state = ( FrState) ( stream->state |  LAL_FR_END );
+      stream->state = ( FrState) ( stream->state |  LAL_FR_STREAM_END );
       /* is this reported as an error? */
-      if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
+      if ( ! ( stream->mode & LAL_FR_STREAM_IGNORETIME_MODE ) )
       {
         /* FIXME:  if this is an error, should the stream state say so? */
-        /*stream->state |= LAL_FR_ERR;*/
+        /*stream->state |= LAL_FR_STREAM_ERR;*/
         XLAL_ERROR( XLAL_ETIME );
       }
-      if ( stream->mode & LAL_FR_TIMEWARN_MODE )
+      if ( stream->mode & LAL_FR_STREAM_TIMEWARN_MODE )
         XLALPrintWarning( "XLAL Warning - %s: "
             "requested time %d after last frame\n", __func__, epoch->gpsSeconds );
       return 2; /* after last file code */
@@ -652,10 +652,10 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
     {
       /* epoch matches this cache entry, check file contents */
       stream->fnum = fileinfo - stream->flist;
-      stream->file = URLFrFileINew( fileinfo, stream->mode & LAL_FR_CHECKSUM_MODE );
+      stream->file = URLFrFileINew( fileinfo, stream->mode & LAL_FR_STREAM_CHECKSUM_MODE );
       if ( ! stream->file )
       {
-        stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_URL );
+        stream->state = (FrState) ( stream->state | LAL_FR_STREAM_ERR | LAL_FR_STREAM_URL );
         XLAL_ERROR( XLAL_EIO );
       }
       if ( FrTOCReadFull( stream->file ) == NULL )
@@ -665,7 +665,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
             __func__, fileinfo->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
-        stream->state =  (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
+        stream->state =  (FrState) ( stream->state | LAL_FR_STREAM_ERR | LAL_FR_STREAM_TOC );
         XLAL_ERROR( XLAL_EIO );
       }
       /* loop over frames */
@@ -680,7 +680,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
         }
         if ( XLALGPSCmp( epoch, &tbeg ) < 0 ) /* detect a gap */
         {
-          stream->state = (FrState) ( stream->state | LAL_FR_GAP );
+          stream->state = (FrState) ( stream->state | LAL_FR_STREAM_GAP );
           goto found;
         }
       }
@@ -691,13 +691,13 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
     }
     else if ( epoch->gpsSeconds < fileinfo->t0 ) /* detect a gap */
     {
-      stream->state = (FrState) ( stream->state | LAL_FR_GAP );
+      stream->state = (FrState) ( stream->state | LAL_FR_STREAM_GAP );
       stream->fnum   = fileinfo - stream->flist;
-      stream->file   = URLFrFileINew( fileinfo, stream->mode & LAL_FR_CHECKSUM_MODE );
+      stream->file   = URLFrFileINew( fileinfo, stream->mode & LAL_FR_STREAM_CHECKSUM_MODE );
       stream->pos    = 0;
       if ( ! stream->file )
       {
-        stream->state = (FrState)  ( stream->state | LAL_FR_ERR | LAL_FR_URL );
+        stream->state = (FrState)  ( stream->state | LAL_FR_STREAM_ERR | LAL_FR_STREAM_URL );
         XLAL_ERROR( XLAL_EIO );
       }
       if ( FrTOCReadFull( stream->file ) == NULL )
@@ -707,7 +707,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
             __func__, fileinfo->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
-        stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
+        stream->state = (FrState) ( stream->state | LAL_FR_STREAM_ERR | LAL_FR_STREAM_TOC );
         XLAL_ERROR( XLAL_EIO );
       }
       goto found;
@@ -718,13 +718,13 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
 found:
 
   /* set time of stream */
-  if ( stream->state & LAL_FR_GAP )
+  if ( stream->state & LAL_FR_STREAM_GAP )
   {
     XLALGPSSet( &stream->epoch, stream->file->toc->GTimeS[stream->pos], stream->file->toc->GTimeN[stream->pos] );
-    if ( stream->mode & LAL_FR_TIMEWARN_MODE )
+    if ( stream->mode & LAL_FR_STREAM_TIMEWARN_MODE )
       XLALPrintWarning( "XLAL Warning - %s: "
           "requested time %.6f in gap in frame data\n", __func__, twant );
-    if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
+    if ( ! ( stream->mode & LAL_FR_STREAM_IGNORETIME_MODE ) )
       XLAL_ERROR( XLAL_ETIME );
     return 3; /* in a gap code */
   }
@@ -734,7 +734,7 @@ found:
 }
 
 
-int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream )
+int XLALFrStreamTell( LIGOTimeGPS *epoch, LALFrStream *stream )
 {
   if ( ! epoch || ! stream )
     XLAL_ERROR( XLAL_EFAULT );
@@ -743,7 +743,7 @@ int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream )
 }
 
 
-int XLALFrGetpos( FrPos *position, FrStream *stream )
+int XLALFrStreamGetpos( LALFrStreamPos *position, LALFrStream *stream )
 {
   if ( ! position || ! stream )
     XLAL_ERROR( XLAL_EFAULT );
@@ -754,15 +754,15 @@ int XLALFrGetpos( FrPos *position, FrStream *stream )
 }
 
 
-int XLALFrSetpos( FrStream *stream, FrPos *position )
+int XLALFrStreamSetpos( LALFrStream *stream, LALFrStreamPos *position )
 {
   if ( ! stream || ! position )
     XLAL_ERROR( XLAL_EFAULT );
   /* clear EOF or GAP states; preserve ERR state */
-  if ( stream->state & LAL_FR_ERR )
-    stream->state = LAL_FR_ERR;
+  if ( stream->state & LAL_FR_STREAM_ERR )
+    stream->state = LAL_FR_STREAM_ERR;
   else
-    stream->state = LAL_FR_OK;
+    stream->state = LAL_FR_STREAM_OK;
   stream->epoch = position->epoch;
   if ( stream->fnum != position->fnum )
   {
@@ -774,14 +774,14 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
     if ( position->fnum >= stream->fnum )
     {
       stream->fnum  = stream->nfile;
-      stream->state = (FrState) ( stream->state | LAL_FR_END );
+      stream->state = (FrState) ( stream->state | LAL_FR_STREAM_END );
       XLAL_ERROR( XLAL_EINVAL );
     }
     stream->fnum = position->fnum;
-    stream->file = URLFrFileINew( stream->flist + stream->fnum, stream->mode & LAL_FR_CHECKSUM_MODE );
+    stream->file = URLFrFileINew( stream->flist + stream->fnum, stream->mode & LAL_FR_STREAM_CHECKSUM_MODE );
     if ( ! stream->file )
     {
-      stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_URL );
+      stream->state = (FrState) ( stream->state | LAL_FR_STREAM_ERR | LAL_FR_STREAM_URL );
       XLAL_ERROR( XLAL_EIO );
     }
   }
@@ -793,14 +793,14 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
           __func__, stream->flist[stream->fnum].url );
       FrFileIEnd( stream->file );
       stream->file   = NULL;
-      stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
+      stream->state = (FrState) ( stream->state | LAL_FR_STREAM_ERR | LAL_FR_STREAM_TOC );
       XLAL_ERROR( XLAL_EIO );
     }
   }
   stream->pos = position->pos;
   if ( stream->pos > stream->file->toc->nFrame )
   {
-    stream->state = (FrState) (stream->state | LAL_FR_ERR );
+    stream->state = (FrState) (stream->state | LAL_FR_STREAM_ERR );
     XLAL_ERROR( XLAL_EINVAL );
   }
   return 0;
@@ -821,18 +821,18 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
 void
 LALFrCacheOpen(
     LALStatus  *status,
-    FrStream  **output,
+    LALFrStream  **output,
     LALCache    *cache
     )
 { 
-  FrStream *stream;
+  LALFrStream *stream;
 
   INITSTATUS(status);
   ASSERT( cache, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! *output, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
 
-  stream = *output = XLALFrCacheOpen( cache );
+  stream = *output = XLALFrStreamCacheOpen( cache );
   if ( ! stream )
   {
     int errnum = xlalErrno;
@@ -856,7 +856,7 @@ LALFrCacheOpen(
 void
 LALFrOpen(
     LALStatus    *status,
-    FrStream    **stream,
+    LALFrStream    **stream,
     const CHAR   *dirname,
     const CHAR   *pattern
     )
@@ -866,7 +866,7 @@ LALFrOpen(
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! *stream, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
 
-  *stream = XLALFrOpen(dirname, pattern);
+  *stream = XLALFrStreamOpen(dirname, pattern);
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -879,13 +879,13 @@ LALFrOpen(
 void
 LALFrClose(
     LALStatus  *status,
-    FrStream  **stream
+    LALFrStream  **stream
     )
 { 
   INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( *stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  XLALFrClose( *stream );
+  XLALFrStreamClose( *stream );
   *stream = NULL;
   RETURN( status );
 }
@@ -895,7 +895,7 @@ void
 LALFrSetMode(
     LALStatus *status,
     INT4       mode,
-    FrStream  *stream
+    LALFrStream  *stream
     )
 { 
   INITSTATUS(status);
@@ -910,13 +910,13 @@ void
 LALFrEnd(
     LALStatus *status,
     INT4      *end,
-    FrStream  *stream
+    LALFrStream  *stream
     )
 { 
   INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( end, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  *end = XLALFrGetState( stream ) & LAL_FR_END;
+  *end = XLALFrStreamGetState( stream ) & LAL_FR_STREAM_END;
   RETURN( status );
 }
 
@@ -924,19 +924,19 @@ LALFrEnd(
 void
 LALFrRewind(
     LALStatus *status,
-    FrStream  *stream
+    LALFrStream  *stream
     )
 { 
   INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  if ( XLALFrRewind( stream ) )
+  if ( XLALFrStreamRewind( stream ) )
   {
     XLALClearErrno();
-    if ( stream->state & LAL_FR_URL ) /* problem was in opening a file */
+    if ( stream->state & LAL_FR_STREAM_URL ) /* problem was in opening a file */
     {
       ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
     }
-    if ( stream->state & LAL_FR_TOC ) /* problem was in reading a file */
+    if ( stream->state & LAL_FR_STREAM_TOC ) /* problem was in reading a file */
     {
       ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
     }
@@ -949,7 +949,7 @@ LALFrRewind(
 void
 LALFrNext(
     LALStatus   *status,
-    FrStream    *stream
+    LALFrStream    *stream
     )
 { 
   CHAR frErrMsg[1024];
@@ -957,29 +957,29 @@ LALFrNext(
   INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
   {
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
 
-  code = XLALFrNext( stream );
+  code = XLALFrStreamNext( stream );
   if ( code < 0 )
   {
     XLALClearErrno();
-    if ( stream->state & LAL_FR_ERR )
+    if ( stream->state & LAL_FR_STREAM_ERR )
     {
-      if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
+      if ( stream->state & LAL_FR_STREAM_URL ) /* must have failed to open a file */
       {
         snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not open URL %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
-      if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
+      if ( stream->state & LAL_FR_STREAM_TOC ) /* must have failed to read a file */
       {
         snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not read TOC from %s\n", (stream->flist+stream->fnum)->url );
@@ -1002,7 +1002,7 @@ void
 LALFrSeek(
     LALStatus         *status,
     const LIGOTimeGPS *epoch,
-    FrStream          *stream
+    LALFrStream          *stream
     )
 { 
   CHAR frErrMsg[1024];
@@ -1010,25 +1010,25 @@ LALFrSeek(
   INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
 
-  code = XLALFrSeek( stream, epoch );
+  code = XLALFrStreamSeek( stream, epoch );
   if ( code < 0 )
   {
     XLALClearErrno();
-    if ( stream->state & LAL_FR_ERR ) /* a file error */
+    if ( stream->state & LAL_FR_STREAM_ERR ) /* a file error */
     {
-      if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
+      if ( stream->state & LAL_FR_STREAM_URL ) /* must have failed to open a file */
       {
         snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not open URL %s\n", (stream->flist+stream->fnum)->url );
         LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
-      if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
+      if ( stream->state & LAL_FR_STREAM_TOC ) /* must have failed to read a file */
       {
         snprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
             "Could not read TOC from %s\n", (stream->flist+stream->fnum)->url );
@@ -1051,17 +1051,17 @@ void
 LALFrTell(
     LALStatus   *status,
     LIGOTimeGPS *epoch,
-    FrStream    *stream
+    LALFrStream    *stream
     )
 { 
   INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  XLALFrTell( epoch, stream );
+  XLALFrStreamTell( epoch, stream );
   RETURN( status );
 }
 
@@ -1070,18 +1070,18 @@ LALFrTell(
 void
 LALFrGetPos(
     LALStatus *status,
-    FrPos     *position,
-    FrStream  *stream
+    LALFrStreamPos     *position,
+    LALFrStream  *stream
     )
 { 
   INITSTATUS(status);
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  XLALFrGetpos( position, stream );
+  XLALFrStreamGetpos( position, stream );
   RETURN( status );
 }
 
@@ -1090,27 +1090,27 @@ LALFrGetPos(
 void
 LALFrSetPos(
     LALStatus *status,
-    FrPos     *position,
-    FrStream  *stream
+    LALFrStreamPos     *position,
+    LALFrStream  *stream
     )
 { 
   INITSTATUS(status);
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  if ( XLALFrSetpos( stream, position ) )
+  if ( XLALFrStreamSetpos( stream, position ) )
   {
     XLALClearErrno();
-    if ( stream->state & LAL_FR_ERR )
+    if ( stream->state & LAL_FR_STREAM_ERR )
     {
-      if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
+      if ( stream->state & LAL_FR_STREAM_URL ) /* must have failed to open a file */
       {
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
-      if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
+      if ( stream->state & LAL_FR_STREAM_TOC ) /* must have failed to read a file */
       {
         ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
       }

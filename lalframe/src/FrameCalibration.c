@@ -99,7 +99,7 @@
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>
 #include <lal/Date.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/FrameCalibration.h>
 
 #define DURATION 256
@@ -170,10 +170,10 @@ LALExtractFrameResponse(
 
   LALCache      *refCache  = NULL;
   LALCache      *facCache  = NULL;
-  FrStream     *refStream = NULL;
-  FrStream     *facStream = NULL;
+  LALFrStream     *refStream = NULL;
+  LALFrStream     *facStream = NULL;
   FrChanIn      frameChan;
-  FrPos         facPos;
+  LALFrStreamPos         facPos;
 
   CHAR          facDsc[LALNameLength];
   CHAR          channelName[LALNameLength];

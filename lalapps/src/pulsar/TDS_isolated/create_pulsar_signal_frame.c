@@ -38,7 +38,7 @@
 /*LAL Functions */
 #include <lalapps.h>
 #include <lal/Units.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALCache.h>
 #include <lal/TimeSeries.h>

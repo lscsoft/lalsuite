@@ -27,12 +27,12 @@
 
 #include <stdio.h>
 #include <lal/LALDatatypes.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
-int XLALFrGetREAL8FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream);
-int XLALFrGetREAL4FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream);
-int XLALFrGetINT2FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream);
-int XLALFrGetINT4FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream);
-int XLALFrGetINT8FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, FrStream *stream);
+int XLALFrGetREAL8FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, LALFrStream *stream);
+int XLALFrGetREAL4FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, LALFrStream *stream);
+int XLALFrGetINT2FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, LALFrStream *stream);
+int XLALFrGetINT4FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, LALFrStream *stream);
+int XLALFrGetINT8FrameConvertToREAL4TimeSeries (REAL4TimeSeries *inputSeries, LALFrStream *stream);
 
 #endif

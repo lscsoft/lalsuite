@@ -80,7 +80,7 @@ int rename( const char *from, const char *to );
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALDatatypes.h>
@@ -107,7 +107,7 @@ int rename( const char *from, const char *to );
  * Routine to load a FrVect associated with a given channel from a given frame.
  *
  */
-static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
+static struct FrVect *loadFrVect( LALFrStream *stream, const char *channel )
 {
   char        chan[256];
   FrAdcData  *adc;
@@ -122,7 +122,7 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
   {
     if ( FrTOCReadFull( stream->file ) == 0 )
     {
-      stream->state = (FrState)(stream->state| LAL_FR_ERR | LAL_FR_TOC);
+      stream->state = (FrState)(stream->state| LAL_FR_STREAM_ERR | LAL_FR_STREAM_TOC);
       return NULL;
     }
   }
@@ -364,7 +364,7 @@ static FrVect * FrVectReadInfo( FrFile *iFile, FRULONG *pos )
   return v;
 }
 
-int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
+int XLALFrStreamGetTimeSeriesType( const char *channel, LALFrStream *stream )
 {
   FrChanType chantype;
   FrTOCts    *ts   = NULL;
@@ -375,9 +375,9 @@ int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
 
   if ( ! channel || ! stream )
     XLAL_ERROR( XLAL_EFAULT );
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
     XLAL_ERROR( XLAL_EIO );
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
     XLAL_ERROR( XLAL_EIO );
 
   if ( ! stream->file->toc )
@@ -386,7 +386,7 @@ int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
     {
       XLALPrintError( "XLAL Error - %s: could not open frame TOC %s\n",
           __func__, stream->file );
-      stream->state = (FrState) ( stream->state |LAL_FR_ERR | LAL_FR_TOC );
+      stream->state = (FrState) ( stream->state |LAL_FR_STREAM_ERR | LAL_FR_STREAM_TOC );
       XLAL_ERROR( XLAL_EIO );
     }
   }
@@ -485,14 +485,14 @@ int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
 
 
 /* little helper function for getting number of points in a channel */
-int XLALFrGetVectorLength ( CHAR *name, FrStream *stream )
+int XLALFrStreamGetVectorLength ( CHAR *name, LALFrStream *stream )
 {
   struct FrVect	*vect;
   int ret = -1;
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
     XLAL_ERROR( XLAL_EIO );
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
     XLAL_ERROR( XLAL_EIO );
 
   vect = loadFrVect( stream, name );
@@ -514,7 +514,7 @@ LALFrGetTimeSeriesType(
     LALStatus   *status,
     LALTYPECODE *output,
     FrChanIn    *chanin,
-    FrStream    *stream
+    LALFrStream    *stream
     )
 { 
   int type;
@@ -525,16 +525,16 @@ LALFrGetTimeSeriesType(
   ASSERT( chanin, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( chanin->name, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
   {
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
 
-  type = XLALFrGetTimeSeriesType( chanin->name, stream );
+  type = XLALFrStreamGetTimeSeriesType( chanin->name, stream );
   if ( type < 0 )
   {
     int errnum = xlalErrno;
@@ -607,7 +607,7 @@ static int copy_FrVect_to_REAL8( REAL8 *data, struct FrVect *vect, size_t ncpy, 
 	return ncpy;
 }
 
-REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *channel, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit )
+REAL8TimeSeries * XLALFrStreamInputREAL8TimeSeries( LALFrStream *stream, const char *channel, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit )
 {
 	const REAL8 fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
 	struct FrVect *vect;
@@ -623,13 +623,13 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 	REAL8  rate;
 	int    code;
 
-	if ( stream->state & LAL_FR_ERR )
+	if ( stream->state & LAL_FR_STREAM_ERR )
 		XLAL_ERROR_NULL( XLAL_EIO );
-	if ( stream->state & LAL_FR_END )
+	if ( stream->state & LAL_FR_STREAM_END )
 		XLAL_ERROR_NULL( XLAL_EIO );
 
 	/* seek to the correct place */
-	if ( XLALFrSeek( stream, start ) )
+	if ( XLALFrStreamSeek( stream, start ) )
 		XLAL_ERROR_NULL( XLAL_EIO );
 
 	vect = loadFrVect( stream, channel );
@@ -687,12 +687,12 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 
 	/* if still data remaining */
 	while ( need ) {
-		if ( XLALFrNext( stream ) < 0 ) {
+		if ( XLALFrStreamNext( stream ) < 0 ) {
 			if(vect) FrVectFree(vect);
 			XLALDestroyREAL8TimeSeries( series );
 			XLAL_ERROR_NULL( XLAL_EFUNC );
 		}
-		if ( stream->state & LAL_FR_END ) {
+		if ( stream->state & LAL_FR_STREAM_END ) {
 			if(vect) FrVectFree(vect);
 			XLALDestroyREAL8TimeSeries( series );
 			XLAL_ERROR_NULL( XLAL_EIO );
@@ -705,7 +705,7 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 			XLAL_ERROR_NULL( XLAL_ENAME );
 		}
 
-		if ( stream->state & LAL_FR_GAP ) { /* failure: gap in data */
+		if ( stream->state & LAL_FR_STREAM_GAP ) { /* failure: gap in data */
 			if(vect) FrVectFree(vect);
 			XLALDestroyREAL8TimeSeries( series );
 			XLAL_ERROR_NULL( XLAL_ETIME );
@@ -740,14 +740,14 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 		LIGOTimeGPS keep;
 		keep = stream->epoch;
 		/* advance a frame -- failure is benign */
-		stream->mode |= LAL_FR_IGNOREGAP_MODE;
-		XLALFrNext( stream );
-		if ( ! (stream->state & LAL_FR_GAP) )
+		stream->mode |= LAL_FR_STREAM_IGNOREGAP_MODE;
+		XLALFrStreamNext( stream );
+		if ( ! (stream->state & LAL_FR_STREAM_GAP) )
 			stream->epoch = keep;
 		stream->mode = keepmode;
 	}
 
-	if ( stream->state & LAL_FR_ERR ) {
+	if ( stream->state & LAL_FR_STREAM_ERR ) {
 		XLALDestroyREAL8TimeSeries( series );
 		XLAL_ERROR_NULL( XLAL_EIO );
 	}

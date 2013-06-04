@@ -45,7 +45,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
@@ -61,7 +61,7 @@ int main( void )
   const float duration = 60.0; /* seconds of data to read at a time */
   REAL4TimeSeries chan;
   FrChanIn  chanin = { CHANNEL, ADCDataChannel };
-  FrStream *stream = NULL;
+  LALFrStream *stream = NULL;
   FrOutPar  outpar = { CHANNEL, "TEST", ADCDataChannel, 6, 0, 0 };
   char *dirname = getenv( "LAL_FRAME_PATH" );
 

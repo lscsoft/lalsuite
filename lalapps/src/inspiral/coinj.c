@@ -38,7 +38,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/InspiralInjectionParams.h>
 #include <lal/VectorOps.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALFrameIO.h>
 

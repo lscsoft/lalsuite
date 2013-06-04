@@ -35,7 +35,7 @@
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/FrameCalibration.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALStdio.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/StochasticCrossCorrelation.h>

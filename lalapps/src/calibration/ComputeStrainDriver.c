@@ -57,7 +57,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
 #include <lal/ComputeDataQualityVector.h>
@@ -130,7 +130,7 @@ INT4TimeSeries OutputDQ;  /* data quality */
 
 static LALStatus status;
 LALCache *framecache;                                           /* frame reading variables */
-FrStream *framestream=NULL;
+LALFrStream *framestream=NULL;
 char sv_cname[] = "Xn:IFO-SV_STATE_VECTOR",                      /* channel names */
     lax_cname[] = "Xn:LSC-LA_PTRX_NORM", lay_cname[] = "Xn:LSC-LA_PTRY_NORM",
     asq_cname[] = "Xn:LSC-DARM_ERR",  /* temporary hack: set name of (unused) asq to darm_err */
@@ -436,7 +436,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 int ReadData(struct CommandLineArgsTag CLA)
 {
 
-FrPos pos1;
+LALFrStreamPos pos1;
 
 static FrChanIn chanin_darm;
 static FrChanIn chanin_darmerr;

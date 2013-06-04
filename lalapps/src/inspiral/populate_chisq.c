@@ -54,7 +54,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/Calibration.h>
 #include <lal/FrameCalibration.h>
@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
     LALCache *frInCache = NULL;
     LALCache *frGlobCache = NULL;
     LALCache *calCache = NULL;
-    FrStream *frStream = NULL;
+    LALFrStream *frStream = NULL;
     FrChanIn frChan;
     const size_t calGlobLen = FILENAME_MAX;
     CHAR *calGlobPattern;
@@ -678,10 +678,10 @@ int main(int argc, char *argv[])
     LAL_CALL(LALFrCacheOpen(&status, &frStream, frInCache), &status);
 
     /* set the mode of the frame stream to fail on gaps or time errors */
-    frStream->mode = LAL_FR_VERBOSE_MODE;
+    frStream->mode = LAL_FR_STREAM_VERBOSE_MODE;
 
     /* enable frame-file checksum checking */
-    XLALFrSetMode(frStream, frStream->mode | LAL_FR_CHECKSUM_MODE);
+    XLALFrStreamSetMode(frStream, frStream->mode | LAL_FR_STREAM_CHECKSUM_MODE);
 
     /* seek to required epoch and set chan name */
     LAL_CALL(LALFrSeek(&status, &(chan.epoch), frStream), &status);

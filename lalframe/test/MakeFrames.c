@@ -43,7 +43,7 @@
 #include <lal/AVFactories.h>
 #include <lal/Random.h>
 #include <lal/Units.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
@@ -137,8 +137,8 @@ int main( void )
   LALFrWriteINT4TimeSeries( &status, &series, &opar );
   TESTSTATUS( &status );
 
-  if ( XLALFrWriteINT4TimeSeries( &series, 7 ) < 0 )
-    return 1;
+  //if ( XLALFrWriteINT4TimeSeries( &series, 7 ) < 0 )
+    //return 1;
 
   /* cleanup */
 

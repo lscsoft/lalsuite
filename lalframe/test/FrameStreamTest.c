@@ -45,7 +45,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALFrameL.h>
 
 #define TESTSTATUS( pstat ) \
@@ -64,8 +64,8 @@ int main( void )
   static LALStatus status;
   const UINT4 npts = 200001;
   FrChanIn  chanin = { CHANNEL, ADCDataChannel };
-  FrStream *stream = NULL;
-  FrPos     frpos;
+  LALFrStream *stream = NULL;
+  LALFrStreamPos     frpos;
   static INT4TimeSeries chan; /* must zero the f0 field */
   LIGOTimeGPS epoch;
   CHAR *dirname = getenv( "LAL_FRAME_PATH" );
@@ -83,7 +83,7 @@ int main( void )
   LALFrOpen( &status, &stream, dirname, "F-TEST-*.gwf" );
   TESTSTATUS( &status );
 
-  if ( XLALFrSetMode( stream, LAL_FR_VERBOSE_MODE | LAL_FR_CHECKSUM_MODE ) )
+  if ( XLALFrStreamSetMode( stream, LAL_FR_STREAM_VERBOSE_MODE | LAL_FR_STREAM_CHECKSUM_MODE ) )
     return 1;
 
   /* seek to some initial time */

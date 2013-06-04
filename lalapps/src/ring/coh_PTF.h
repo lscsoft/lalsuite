@@ -40,7 +40,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/Date.h>
 #include <lal/RealFFT.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>

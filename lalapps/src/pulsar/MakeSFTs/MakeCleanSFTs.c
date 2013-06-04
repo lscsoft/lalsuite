@@ -85,7 +85,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
 #include <lal/LALConstants.h>
@@ -207,7 +207,7 @@ REAL8 DF = 2000.0; /* 2000.0 default band; 16383.9944 */
 
 static LALStatus status;
 LALCache *framecache;         /* frame reading variables */
-FrStream *framestream=NULL;
+LALFrStream *framestream=NULL;
 
 REAL8TimeSeries dataDouble;
 REAL4TimeSeries dataSingle;

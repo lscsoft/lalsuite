@@ -47,7 +47,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
@@ -66,7 +66,7 @@ int main( void )
   INT2TimeSeries  lock;
   FrChanIn  dmroin = { CHANNEL, ADCDataChannel };
   FrChanIn  lockin = { "IFO_Lock", ADCDataChannel };
-  FrStream *stream = NULL;
+  LALFrStream *stream = NULL;
   FrOutPar  outpar = { "C1:" CHANNEL, "REDUCED", ADCDataChannel, 6, 0, 0 };
   char *dirname = getenv( "LAL_FRAME_PATH" );
   int  locklost = 1;
@@ -112,7 +112,7 @@ int main( void )
 
   while ( 1 )
   {
-    FrPos frpos;
+    LALFrStreamPos frpos;
     UINT4 i;
     INT8  tacc = 0.1 * 1e9 / 16384;
     INT8  texp;

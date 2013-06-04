@@ -57,7 +57,7 @@
 #include <lal/LALFrameIO.h>
 #include <lal/UserInput.h>
 #include <lalappsfrutils.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALFrameL.h>
 
@@ -264,7 +264,15 @@ int main(INT4 argc, CHAR *argv[])
   /* loop over frame files and select the ones with nr-params in the right range */
   for (k = 0; k < frInCache->length; k++)
   {
-    frFile = XLALFrOpenURL(frInCache->list[k].url);
+    /* convert url to path by skipping protocol part of protocol:path */
+    char *path;
+    path = strchr(frInCache->list[k].url, ':');
+    if (path == NULL)
+      path = frInCache->list[k].url;
+    else
+      path++; /* skip the ':' -- now on the path */
+
+    frFile = FrFileINew(path);
 
     frame = FrameRead(frFile);
 

@@ -29,7 +29,7 @@ extern int high_pass_flag;
 extern int vrbflg;
 
 /* read a LIGO time series */
-REAL4TimeSeries *get_ligo_data(FrStream *stream,
+REAL4TimeSeries *get_ligo_data(LALFrStream *stream,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end)
@@ -49,7 +49,7 @@ REAL4TimeSeries *get_ligo_data(FrStream *stream,
     fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
-  XLALFrGetREAL4TimeSeriesMetadata(series, stream);
+  XLALFrStreamGetREAL4TimeSeriesMetadata(series, stream);
 
   if (vrbflg)
     fprintf(stdout, "Resizing \"%s\" series...\n", channel);
@@ -62,14 +62,14 @@ REAL4TimeSeries *get_ligo_data(FrStream *stream,
     fprintf(stdout, "Reading channel \"%s\"...\n", channel);
 
   /* seek to and read data */
-  XLALFrSeek(stream, &start);
-  XLALFrGetREAL4TimeSeries(series, stream);
+  XLALFrStreamSeek(stream, &start);
+  XLALFrStreamGetREAL4TimeSeries(series, stream);
 
   return(series);
 }
 
 /* read and high pass filter a GEO time series */
-REAL4TimeSeries *get_geo_data(FrStream *stream,
+REAL4TimeSeries *get_geo_data(LALFrStream *stream,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end,
@@ -95,7 +95,7 @@ REAL4TimeSeries *get_geo_data(FrStream *stream,
     fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
-  XLALFrGetREAL8TimeSeriesMetadata(geo, stream);
+  XLALFrStreamGetREAL8TimeSeriesMetadata(geo, stream);
 
   if (vrbflg)
     fprintf(stdout, "Resizing \"%s\" series...\n", channel);
@@ -108,8 +108,8 @@ REAL4TimeSeries *get_geo_data(FrStream *stream,
     fprintf(stdout, "Reading channel \"%s\"...\n", channel);
 
   /* seek to and read data */
-  XLALFrSeek(stream, &start);
-  XLALFrGetREAL8TimeSeries(geo, stream);
+  XLALFrStreamSeek(stream, &start);
+  XLALFrStreamGetREAL8TimeSeries(geo, stream);
 
   if (vrbflg)
     fprintf(stdout, "High pass filtering \"%s\"...\n", channel);
@@ -154,11 +154,11 @@ REAL4TimeSeries *get_time_series(CHAR *ifo,
 {
   /* variables */
   REAL4TimeSeries *series;
-  FrStream *stream = NULL;
+  LALFrStream *stream = NULL;
   LALCache *cache = NULL;
   size_t length;
   PassBandParamStruc high_pass_params;
-  int mode = LAL_FR_VERBOSE_MODE;
+  int mode = LAL_FR_STREAM_VERBOSE_MODE;
 
   /* apply resample buffer if required */
   if (buffer)
@@ -172,11 +172,11 @@ REAL4TimeSeries *get_time_series(CHAR *ifo,
 
   /* open frame stream */
   cache = XLALCacheImport(cache_file);
-  stream = XLALFrCacheOpen(cache);
+  stream = XLALFrStreamCacheOpen(cache);
   XLALDestroyCache(cache);
 
   /* turn on checking for missing data */
-  XLALFrSetMode(stream, mode);
+  XLALFrStreamSetMode(stream, mode);
 
   /* get the data */
   if (strncmp(ifo, "G1", 2) == 0)
@@ -188,7 +188,7 @@ REAL4TimeSeries *get_time_series(CHAR *ifo,
     series = get_ligo_data(stream, channel, start, end);
 
   /* check for missing data */
-  if (stream->state & LAL_FR_GAP)
+  if (stream->state & LAL_FR_STREAM_GAP)
   {
     fprintf(stderr, "Gap in data detected between GPS times %d s and %d s\n", \
         start.gpsSeconds, end.gpsSeconds);
@@ -197,7 +197,7 @@ REAL4TimeSeries *get_time_series(CHAR *ifo,
   }
 
   /* clean up */
-  XLALFrClose(stream);
+  XLALFrStreamClose(stream);
 
   /* resample if required */
   if (resample_rate)

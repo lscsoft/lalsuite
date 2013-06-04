@@ -7,26 +7,26 @@
 #define STYPE CONCAT2(TYPE,TimeSeries)
 #define FSTYPE CONCAT2(TYPE,FrequencySeries)
 
-#define XFUNC CONCAT2(XLALFrGet,STYPE)
-#define XFUNCM CONCAT3(XLALFrGet,STYPE,Metadata)
+#define XFUNC CONCAT2(XLALFrStreamGet,STYPE)
+#define XFUNCM CONCAT3(XLALFrStreamGet,STYPE,Metadata)
 #define FUNC CONCAT2(LALFrGet,STYPE)
 #define FUNCM CONCAT3(LALFrGet,STYPE,Metadata)
-#define XFSFUNC CONCAT2(XLALFrGet,FSTYPE)
+#define XFSFUNC CONCAT2(XLALFrStreamGet,FSTYPE)
 #define FSFUNC CONCAT2(LALFrGet,FSTYPE)
-#define XRFUNC CONCAT2(XLALFrRead,STYPE)
+#define XRFUNC CONCAT2(XLALFrStreamRead,STYPE)
 #define XCFUNC CONCAT2(XLALCreate,STYPE)
 #define XDFUNC CONCAT2(XLALDestroy,STYPE)
 #define XREFUNC CONCAT2(XLALResize,STYPE)
 
 
 
-int XFSFUNC ( FSTYPE *series, FrStream *stream )
+int XFSFUNC ( FSTYPE *series, LALFrStream *stream )
 {
   struct FrVect	*vect;
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
     XLAL_ERROR( XLAL_EIO );
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
     XLAL_ERROR( XLAL_EIO );
 
   vect = loadFrVect( stream, series->name );
@@ -72,7 +72,7 @@ FSFUNC (
     LALStatus		*status,
     FSTYPE	*series,
     FrChanIn		*chanin,
-    FrStream		*stream
+    LALFrStream		*stream
     )
 {
   struct FrVect	*vect;
@@ -82,11 +82,11 @@ FSFUNC (
   ASSERT( ! series->data, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
   {
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
@@ -133,7 +133,7 @@ FSFUNC (
 }
 
 
-int XFUNCM ( STYPE *series, FrStream *stream )
+int XFUNCM ( STYPE *series, LALFrStream *stream )
 {
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
@@ -142,9 +142,9 @@ int XFUNCM ( STYPE *series, FrStream *stream )
   INT8		 tbeg;
   REAL8          rate;
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
     XLAL_ERROR( XLAL_EIO );
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
     XLAL_ERROR( XLAL_EIO );
 
   vect = loadFrVect( stream, series->name );
@@ -184,7 +184,7 @@ int XFUNCM ( STYPE *series, FrStream *stream )
 }
 
 
-int XFUNC ( STYPE *series, FrStream *stream )
+int XFUNC ( STYPE *series, LALFrStream *stream )
 {
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
@@ -199,9 +199,9 @@ int XFUNC ( STYPE *series, FrStream *stream )
   REAL8          rate;
   INT4           gap = 0;
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
     XLAL_ERROR( XLAL_EIO );
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
     XLAL_ERROR( XLAL_EIO );
 
   vect = loadFrVect( stream, series->name );
@@ -271,13 +271,13 @@ int XFUNC ( STYPE *series, FrStream *stream )
   /* if still data remaining */
   while ( need )
   {
-    if ( XLALFrNext( stream ) < 0 )
+    if ( XLALFrStreamNext( stream ) < 0 )
     {
       if(vect) FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
       XLAL_ERROR( XLAL_EFUNC );
     }
-    if ( stream->state & LAL_FR_END )
+    if ( stream->state & LAL_FR_STREAM_END )
     {
       if(vect) FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
@@ -298,7 +298,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
       XLAL_ERROR( XLAL_ETYPE ); /* now type is wrong ... */
     }
 
-    if ( stream->state & LAL_FR_GAP ) /* gap in data */
+    if ( stream->state & LAL_FR_STREAM_GAP ) /* gap in data */
     {
       dest = series->data->data;
       need = series->data->length;
@@ -342,21 +342,21 @@ int XFUNC ( STYPE *series, FrStream *stream )
     keep = stream->epoch;
     /* advance a frame */
     /* failure is benign, so we return results */
-    stream->mode |= LAL_FR_IGNOREGAP_MODE;
-    if ( XLALFrNext( stream ) < 0 ) {
+    stream->mode |= LAL_FR_STREAM_IGNOREGAP_MODE;
+    if ( XLALFrStreamNext( stream ) < 0 ) {
       stream->mode = keepmode;
       XLAL_ERROR( XLAL_EFUNC );
     }
-    if ( ! (stream->state & LAL_FR_GAP) )
+    if ( ! (stream->state & LAL_FR_STREAM_GAP) )
       stream->epoch = keep;
     stream->mode = keepmode;
   }
 
   if ( gap ) /* there was a gap in the data */
-    stream->state = (FrState)( stream->state | LAL_FR_GAP);
+    stream->state = (FrState)( stream->state | LAL_FR_STREAM_GAP);
   /* FIXME: does this need to cause a failure if mode is set to fail on gaps? */
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
     XLAL_ERROR( XLAL_EIO );
 
   return 0;
@@ -369,7 +369,7 @@ FUNC (
     LALStatus		*status,
     STYPE	*series,
     FrChanIn		*chanin,
-    FrStream		*stream
+    LALFrStream		*stream
     )
 {
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
@@ -390,11 +390,11 @@ FUNC (
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
   {
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
@@ -481,7 +481,7 @@ FUNC (
       memset( dest, 0, need * sizeof( *series->data->data ) );
     }
     ENDFAIL( status );
-    if ( stream->state & LAL_FR_END )
+    if ( stream->state & LAL_FR_STREAM_END )
     {
       if(vect) FrVectFree(vect);
       memset( dest, 0, need * sizeof( *series->data->data ) );
@@ -502,7 +502,7 @@ FUNC (
       ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
     }
 
-    if ( stream->state & LAL_FR_GAP ) /* gap in data */
+    if ( stream->state & LAL_FR_STREAM_GAP ) /* gap in data */
     {
       dest = series->data->data;
       need = series->data->length;
@@ -545,9 +545,9 @@ FUNC (
     keep = stream->epoch;
     /* advance a frame */
     /* failure is benign, so we return results */
-    stream->mode |= LAL_FR_IGNOREGAP_MODE;
+    stream->mode |= LAL_FR_STREAM_IGNOREGAP_MODE;
     TRY( LALFrNext( status->statusPtr, stream ), status );
-    if ( ! (stream->state & LAL_FR_GAP) )
+    if ( ! (stream->state & LAL_FR_STREAM_GAP) )
     {
       stream->epoch = keep;
     }
@@ -556,17 +556,17 @@ FUNC (
 
   if ( gap ) /* there was a gap in the data */
   {
-    stream->state = (FrState)( stream->state | LAL_FR_GAP );
+    stream->state = (FrState)( stream->state | LAL_FR_STREAM_GAP );
   }
 
-  if ( stream->state & LAL_FR_ERR )
+  if ( stream->state & LAL_FR_STREAM_ERR )
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
 
   /* remove this: the error will be reported on the *next* call! */
   /*
-  if ( stream->state & LAL_FR_END )
+  if ( stream->state & LAL_FR_STREAM_END )
   {
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
@@ -583,7 +583,7 @@ FUNCM (
     LALStatus		*status,
     STYPE	*series,
     FrChanIn		*chanin,
-    FrStream		*stream
+    LALFrStream		*stream
     )
 {
   void *sequence;
@@ -611,7 +611,7 @@ FUNCM (
 
 
 STYPE *XRFUNC (
-	FrStream *stream,
+	LALFrStream *stream,
 	const char *chname,
 	const LIGOTimeGPS *start,
 	REAL8 duration,
@@ -642,7 +642,7 @@ STYPE *XRFUNC (
 	}
 
 	/* read the data */
-	if(XLALFrSeek (stream, start) || XFUNC(series, stream)) {
+	if(XLALFrStreamSeek (stream, start) || XFUNC(series, stream)) {
 		XDFUNC(series);
 		XLAL_ERROR_NULL (XLAL_EFUNC);
 	}

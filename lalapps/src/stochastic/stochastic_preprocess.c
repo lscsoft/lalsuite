@@ -44,7 +44,7 @@
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/IIRFilter.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -154,7 +154,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   
   /* frame variables */
   LALCache *frCache1,*frCache2;
-  FrStream *frStream1,*frStream2;
+  LALFrStream *frStream1,*frStream2;
   FrChanIn frChanIn1, frChanIn2;
   FrOutPar frPSD1 = { ifo1, "PSD", ProcDataChannel, 1, 0, 0 };
   FrOutPar frPSD2 = { ifo2, "PSD", ProcDataChannel, 1, 0, 0 };
@@ -269,8 +269,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALFrCacheOpen( &status, &frStream2, frCache2), &status);
 
    /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream1->mode = LAL_FR_VERBOSE_MODE;
-  frStream2->mode = LAL_FR_VERBOSE_MODE;
+  frStream1->mode = LAL_FR_STREAM_VERBOSE_MODE;
+  frStream2->mode = LAL_FR_STREAM_VERBOSE_MODE;
 
   
   /* set resample parameters */

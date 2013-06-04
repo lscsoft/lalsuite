@@ -24,7 +24,7 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,7 +84,7 @@ LALCache *XLALAggregationFrameCache(CHAR *ifo,
     REAL8 duration);
 
 /* return frame stream for given ifo, gps time, and duration */
-FrStream *XLALAggregationFrameStream(CHAR *ifo,
+LALFrStream *XLALAggregationFrameStream(CHAR *ifo,
     LIGOTimeGPS *start,
     REAL8 duration);
 

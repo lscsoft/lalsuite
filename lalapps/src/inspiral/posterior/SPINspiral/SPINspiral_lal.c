@@ -58,7 +58,7 @@
 #include <lal/Units.h>
 
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/Units.h>
 //#include <lal/TimeFreqFFT.h>
 #include <lal/LALDetectors.h>

@@ -53,7 +53,7 @@ int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
 #include <lal/LALConstants.h>
@@ -123,7 +123,7 @@ char ifo[3];                        /* interferometer name: needed for frame fil
 
 static LALStatus status;
 LALCache *framecache;                                           /* frame reading variables */
-FrStream *framestream=NULL;
+LALFrStream *framestream=NULL;
 
 GlobalVariables GV;   /* A bunch of stuff is stored in here; mainly to protect it from accidents */
 
@@ -191,7 +191,7 @@ int GetFactors(struct CommandLineArgsTag CLA)
   char a_name[64];
   char ab_name[64];
 
-FrPos pos1;
+LALFrStreamPos pos1;
 
 static REAL4TimeSeries darm;
 static REAL4TimeSeries asq;

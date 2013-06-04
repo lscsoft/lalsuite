@@ -51,7 +51,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
 #include <lal/LALConstants.h>
@@ -145,10 +145,10 @@ typedef struct ResponseFunctionTag
 static LALStatus status;
 
 LALCache *hoftframecache=NULL;                                           /* frame reading variables */
-FrStream *hoftframestream=NULL;
+LALFrStream *hoftframestream=NULL;
 
 LALCache *derrframecache=NULL;                                           /* frame reading variables */
-FrStream *derrframestream=NULL;
+LALFrStream *derrframestream=NULL;
 
 LIGOTimeGPS gpsepoch;
 
@@ -166,8 +166,8 @@ COMPLEX16Vector *ffthtData = NULL;
 COMPLEX8Vector *fftderrData = NULL;
 REAL8FFTPlan *fftPlanDouble=NULL;
 REAL4FFTPlan *fftPlan=NULL;
-FrPos derrpos;
-FrPos hoftpos;
+LALFrStreamPos derrpos;
+LALFrStreamPos hoftpos;
 
 Response OLG0, OLG[MAXFREQUENCIES], Sensing0, Sensing[MAXFREQUENCIES];
 
@@ -426,7 +426,7 @@ int Initialise(struct CommandLineArgsTag CLA)
 int GetFactors(struct CommandLineArgsTag CLA)
 {
 
-FrPos pos1;
+LALFrStreamPos pos1;
 
 static REAL4TimeSeries darm;
 static REAL4TimeSeries exc;
@@ -444,7 +444,7 @@ LIGOTimeGPS localgpsepoch=gpsepoch; /* Local variable epoch used to calculate th
 long double gtime=(long double)(localgpsepoch.gpsSeconds+(long double)localgpsepoch.gpsNanoSeconds*1E-9);
 
 LALCache *framecache=NULL;                                           /* frame reading variables */
-FrStream *framestream=NULL;
+LALFrStream *framestream=NULL;
 
   /* create Frame cache, open frame stream and delete frame cache */
   framecache = XLALCacheImport(CommandLineArgs.derrFrCacheFile);

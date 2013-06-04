@@ -32,7 +32,7 @@
 
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALStdio.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/TimeSeries.h>
@@ -41,13 +41,13 @@
 #include <lalapps.h>
 
 /* read a LIGO time series */
-REAL4TimeSeries *get_ligo_data(FrStream *stream,
+REAL4TimeSeries *get_ligo_data(LALFrStream *stream,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end);
 
 /* read and high pass filter a GEO time series */
-REAL4TimeSeries *get_geo_data(FrStream *stream,
+REAL4TimeSeries *get_geo_data(LALFrStream *stream,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end,

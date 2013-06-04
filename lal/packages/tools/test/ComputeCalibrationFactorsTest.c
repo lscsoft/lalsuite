@@ -40,7 +40,7 @@ int main( void ) { return 77; }
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <math.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Window.h>
@@ -72,7 +72,7 @@ struct SegmentListTag {
 static LALStatus status;
 
 LALCache *framecache;
-FrStream *framestream=NULL;
+LALFrStream *framestream=NULL;
 
 static REAL4TimeSeries darm;
 static REAL4TimeSeries asq;
@@ -107,7 +107,7 @@ int FreeMem(void);
 
 int main(int argc,char *argv[])
 {
-  FrPos pos;
+  LALFrStreamPos pos;
   int i,j,k;
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
@@ -202,7 +202,7 @@ int main(int argc,char *argv[])
 int GetChannelNames(struct CommandLineArgsTag CLA)
 {
 
-  FrPos pos1;
+  LALFrStreamPos pos1;
 
   chanin_asq.type=ADCDataChannel;
   chanin_darm.type=ADCDataChannel;

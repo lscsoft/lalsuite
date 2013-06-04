@@ -45,7 +45,7 @@
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALSimulation.h>
 #include <lal/NRWaveInject.h>
 #include <lal/LALInspiral.h>
@@ -53,7 +53,7 @@
 
 int XLALCheckFrameHasChannel(
         CHAR *name,
-        FrStream *stream
+        LALFrStream *stream
 );
 
 int XLALAddNumRelStrainModesREAL8(
@@ -67,7 +67,7 @@ REAL8TimeSeries *XLALNRInjectionStrain(
         SimInspiralTable *inj
 );
 
-int XLALCheckFrameHasChannel( CHAR *channel, FrStream *stream )
+int XLALCheckFrameHasChannel( CHAR *channel, LALFrStream *stream )
 {
   FrTOCts    *ts;
   ts = stream->file->toc->adc;
@@ -103,7 +103,7 @@ XLALAddNumRelStrainModesREAL8(
   INT4 len, lenPlus, lenCross, k;
   CHAR *channel_name_plus;
   CHAR *channel_name_cross;
-  FrStream  *frStream = NULL;
+  LALFrStream  *frStream = NULL;
   LALCache frCache;
   LIGOTimeGPS epoch;
   REAL8TimeSeries  *modePlus=NULL;
@@ -117,7 +117,7 @@ XLALAddNumRelStrainModesREAL8(
   frCache.length      = 1;
   frCache.list        = LALCalloc(1, sizeof(frCache.list[0]));
   frCache.list[0].url = thisinj->numrel_data;
-  frStream                  = XLALFrCacheOpen( &frCache );
+  frStream                  = XLALFrStreamCacheOpen( &frCache );
 
   /* the total mass of the binary in Mpc */
   massMpc = (thisinj->mass1 + thisinj->mass2) * LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
@@ -140,7 +140,7 @@ XLALAddNumRelStrainModesREAL8(
       /*get number of data points */
       if (XLALCheckFrameHasChannel(channel_name_plus, frStream ) )
       {
-        lenPlus = XLALFrGetVectorLength ( channel_name_plus, frStream );
+        lenPlus = XLALFrStreamGetVectorLength ( channel_name_plus, frStream );
       }
       else
       {
@@ -152,7 +152,7 @@ XLALAddNumRelStrainModesREAL8(
       /*get number of data points */
       if (XLALCheckFrameHasChannel(channel_name_cross, frStream ) )
       {
-        lenCross = XLALFrGetVectorLength ( channel_name_cross, frStream );
+        lenCross = XLALFrStreamGetVectorLength ( channel_name_cross, frStream );
       }
       else
       {
@@ -173,14 +173,14 @@ XLALAddNumRelStrainModesREAL8(
       /* allocate and read the plus/cross time series */
       modePlus = XLALCreateREAL8TimeSeries ( channel_name_plus, &epoch, 0, 0, &lalDimensionlessUnit, len);
       memset(modePlus->data->data, 0, modePlus->data->length*sizeof(REAL8));
-      XLALFrGetREAL8TimeSeries ( modePlus, frStream );
-      XLALFrRewind( frStream );
+      XLALFrStreamGetREAL8TimeSeries ( modePlus, frStream );
+      XLALFrStreamRewind( frStream );
       LALFree(channel_name_plus);
 
       modeCross = XLALCreateREAL8TimeSeries ( channel_name_cross, &epoch, 0, 0, &lalDimensionlessUnit, len);
       memset(modeCross->data->data, 0, modeCross->data->length*sizeof(REAL8));
-      XLALFrGetREAL8TimeSeries ( modeCross, frStream );
-      XLALFrRewind( frStream );
+      XLALFrStreamGetREAL8TimeSeries ( modeCross, frStream );
+      XLALFrStreamRewind( frStream );
       LALFree(channel_name_cross);
 
       /* scale and add */
@@ -210,7 +210,7 @@ XLALAddNumRelStrainModesREAL8(
   } /* end loop over modeL values */
   (*seriesPlus)->deltaT  *= timeStep;
   (*seriesCross)->deltaT *= timeStep;
-  XLALFrClose( frStream );
+  XLALFrStreamClose( frStream );
   LALFree(frCache.list);
 
   return XLAL_SUCCESS;

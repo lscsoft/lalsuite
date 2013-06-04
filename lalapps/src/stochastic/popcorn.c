@@ -59,7 +59,7 @@
 #include <lal/VectorOps.h>
 #include <lal/FileIO.h> 
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/ResampleTimeSeries.h>
 
 
@@ -164,7 +164,7 @@ INT4 main (INT4 argc, CHAR *argv[])
 
   /* frame variables */
   LALCache *frCache1,*frCache2;
-  FrStream *frStream1,*frStream2;
+  LALFrStream *frStream1,*frStream2;
   FrChanIn frChanIn1, frChanIn2;
   LIGOTimeGPS gpsStartTime;
   ResampleTSParams resampleParams;

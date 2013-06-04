@@ -28,7 +28,7 @@
 
 #include <lal/LALFrameIO.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
@@ -311,8 +311,8 @@ REAL4TimeSeries * setdata( int intype, const char *channel, LIGOTimeGPS *start, 
 REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *channel, LIGOTimeGPS *start, REAL8 duration )
 {
 	LALCache *cache   = NULL;
-	FrStream *stream = NULL;
-	int mode = LAL_FR_VERBOSE_MODE;
+	LALFrStream *stream = NULL;
+	int mode = LAL_FR_STREAM_VERBOSE_MODE;
 	int tstype;
 	REAL4TimeSeries *series;
 
@@ -339,20 +339,20 @@ REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *chann
 		verbose( "using data file(s) %s\n", path );
 		cache = XLALCacheGlob( dirname, basename );
 	}
-	stream = XLALFrCacheOpen( cache );
+	stream = XLALFrStreamCacheOpen( cache );
 	XLALDestroyCache( cache );
 
 	/* set the mode of the frame stream */
-	XLALFrSetMode( stream, mode );
+	XLALFrStreamSetMode( stream, mode );
 
-	tstype = XLALFrGetTimeSeriesType( channel, stream );
+	tstype = XLALFrStreamGetTimeSeriesType( channel, stream );
 	if ( tstype == LAL_S_TYPE_CODE ) {
-		series = XLALFrReadREAL4TimeSeries( stream, channel, start, duration, 0 );
+		series = XLALFrStreamReadREAL4TimeSeries( stream, channel, start, duration, 0 );
 	} else if ( tstype == LAL_D_TYPE_CODE ) { /* assume strain data */
 		REAL8TimeSeries *dblseries;
 		UINT4 i;
 		dynrange_ = 1e20;
-		dblseries = XLALFrReadREAL8TimeSeries( stream, channel, start, duration, 0 );
+		dblseries = XLALFrStreamReadREAL8TimeSeries( stream, channel, start, duration, 0 );
 		/* TODO: this shouldn't be hard-coded! */
 		XLALHighPassREAL8TimeSeries( dblseries, 40.0, 0.9, 8 );
 		series = XLALCreateREAL4TimeSeries( dblseries->name, &dblseries->epoch, dblseries->f0, dblseries->deltaT, &dblseries->sampleUnits, dblseries->data->length );
@@ -363,7 +363,7 @@ REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *chann
 	}
 
 	/* close the stream */
-	XLALFrClose( stream );
+	XLALFrStreamClose( stream );
 
 	return series;
 }

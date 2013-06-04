@@ -40,7 +40,7 @@
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStatusMacros.h>
@@ -82,7 +82,7 @@ INT4 main()
   
   /* frame variables */
   LALCache *frCache;
-  FrStream *frStream;
+  LALFrStream *frStream;
   FrChanIn frChanIn;
  
  /* input data segment */
@@ -127,7 +127,7 @@ INT4 main()
   LAL_CALL( LALFrCacheOpen( &status, &frStream, frCache), &status );
 
    /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream->mode = LAL_FR_VERBOSE_MODE;
+  frStream->mode = LAL_FR_STREAM_VERBOSE_MODE;
                 
   /* read data */	
   fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn.name); 

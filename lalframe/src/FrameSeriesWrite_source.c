@@ -9,6 +9,9 @@
 
 #define WFUNC CONCAT2(LALFrWrite,STYPE)
 #define FSWFUNC CONCAT2(LALFrWrite,FSTYPE)
+
+
+#if 0
 #define XWFUNC CONCAT2(XLALFrWrite,STYPE)
 #define XFSWFUNC CONCAT2(XLALFrWrite,FSTYPE)
 
@@ -145,6 +148,7 @@ int XWFUNC ( STYPE *series, int frnum )
 
   return 0;
 }
+#endif
 
 
 

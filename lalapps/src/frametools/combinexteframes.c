@@ -44,7 +44,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/LALFrameIO.h>
 #include <lal/SFTutils.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lalappsfrutils.h>
 #include <lalapps.h>
 
@@ -53,7 +53,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALDatatypes.h>
 
 /***********************************************************************************************/
@@ -421,7 +421,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
   INT4 count = 0;                 /* counter */
   CHAR *temp,*c;                  /* temporary char pointers */
   CHAR *channelinfo;              /* string containing channel names */
-  FrStream *fs = NULL;            /* frame stream pointer */
+  LALFrStream *fs = NULL;            /* frame stream pointer */
   glob_t pglob;
   CHAR glob_pattern[STRINGLENGTH];
   CHAR apid[APIDLENGTH];
@@ -473,7 +473,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
     if ( ! ( (!goodxenon) && (strstr(pglob.gl_pathv[i],"XENO") != NULL) ) ) {
 
       /* open the frame file */
-      if ((fs = XLALFrOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
+      if ((fs = XLALFrStreamOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
 	LogPrintf(LOG_CRITICAL,"%s : unable to open FS46 frame file %s.\n",__func__,pglob.gl_pathv[i]);
 	XLAL_ERROR(XLAL_EINVAL);
       }
@@ -492,7 +492,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
       free(channelinfo);
       
       /* close the frame file */
-      XLALFrClose(fs);
+      XLALFrStreamClose(fs);
   
     }
 
@@ -519,7 +519,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
       CHAR *temp_obsid;
       
       /* open the frame file */
-      if ((fs = XLALFrOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
+      if ((fs = XLALFrStreamOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
 	LogPrintf(LOG_CRITICAL,"%s : unable to open FS46 frame file %s.\n",__func__,pglob.gl_pathv[i]);
 	XLAL_ERROR(XLAL_EINVAL);
       }
@@ -575,7 +575,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
 	  LogPrintf(LOG_DEBUG,"%s : read channel name as %s\n",__func__,channelname);
 	  
 	  /* read in timeseries metadata from this channel - specifically to get deltaT */
-	  if (XLALFrGetINT4TimeSeriesMetadata(&ts,fs)) {
+	  if (XLALFrStreamGetINT4TimeSeriesMetadata(&ts,fs)) {
 	    LogPrintf(LOG_CRITICAL,"%s : unable to read channel %s from frame file %s.\n",__func__,ts.name,(*framechannels)->channel[i].filename);
 	    XLAL_ERROR(XLAL_EINVAL);
 	  }
@@ -681,7 +681,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
       }
       
       /* close the frame file and free history */
-      XLALFrClose(fs);
+      XLALFrStreamClose(fs);
       XLALFree(temp_obsid);
     
     }
@@ -776,7 +776,7 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
 
     UINT2 pcucount = 0;
     INT4 FS46channels = 0;
-    FrStream *fs = NULL;
+    LALFrStream *fs = NULL;
     LIGOTimeGPS epoch;
     LIGOTimeGPS end;
     REAL8 duration;
@@ -790,7 +790,7 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
       	INT4TimeSeries *ts = NULL;
 
 	/* open the frame file */
-	if ((fs = XLALFrOpen(framechannels->dir,framechannels->channel[i].filename)) == NULL) {
+	if ((fs = XLALFrStreamOpen(framechannels->dir,framechannels->channel[i].filename)) == NULL) {
 	  LogPrintf(LOG_CRITICAL,"%s: unable to open FS46 frame file %s.\n",__func__,framechannels->channel[i].filename);
 	  XLAL_ERROR(XLAL_EINVAL);
 	}
@@ -804,13 +804,13 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
 	LogPrintf(LOG_DEBUG,"%s: frame duration = %f.\n",__func__,duration);
 	
 	/* seek to the start of the frame */
-	if (XLALFrSeek(fs,&epoch)) {
+	if (XLALFrStreamSeek(fs,&epoch)) {
 	  LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",__func__,framechannels->channel[i].filename);
 	  XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
-	if ((ts = XLALFrReadINT4TimeSeries(fs,framechannels->channel[i].channelname,&epoch,duration,0)) == NULL) {
+	if ((ts = XLALFrStreamReadINT4TimeSeries(fs,framechannels->channel[i].channelname,&epoch,duration,0)) == NULL) {
 	  LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",__func__,framechannels->channel[i].channelname,framechannels->channel[i].filename);
 	  XLAL_ERROR(XLAL_EINVAL);
 	}
@@ -837,7 +837,7 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
 	XLALDestroyINT4TimeSeries(ts);
 	
 	/* close the frame file */
-	XLALFrClose(fs);
+	XLALFrStreamClose(fs);
 
 	/* increment the number of channels read from this file */
 	FS46channels++;
@@ -1419,7 +1419,7 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
   for (i=0;i<(INT4)plan->channellist.length;i++) {
 
     INT4TimeSeries *tempts = NULL;
-    FrStream *fs = NULL;
+    LALFrStream *fs = NULL;
     CHAR channelname[STRINGLENGTH];
     INT4 lldfactor = 1;
     INT8 testN = (INT8)(plan->duration/plan->channellist.channel[i].dt);
@@ -1430,7 +1430,7 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
     LogPrintf(LOG_DEBUG,"%s: channel %d/%d is %s.\n",__func__,i+1,plan->channellist.length,channelname);
 
     /* open the frame file */
-    if ((fs = XLALFrOpen(plan->channellist.dir,plan->channellist.channel[i].filename)) == NULL) {
+    if ((fs = XLALFrStreamOpen(plan->channellist.dir,plan->channellist.channel[i].filename)) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s: unable to open frame file %s.\n",__func__,plan->channellist.channel[i].filename);
       XLAL_ERROR(XLAL_EINVAL);
     }
@@ -1444,13 +1444,13 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
     LogPrintf(LOG_DEBUG,"%s : read history field from file %s.\n",__func__,plan->channellist.channel[i].filename);
 
     /* seek to the start of the frame */
-    if (XLALFrSeek(fs,&(plan->epoch))) {
+    if (XLALFrStreamSeek(fs,&(plan->epoch))) {
       LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",__func__,plan->channellist.channel[i].filename);
       XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
-    if ((tempts = XLALFrReadINT4TimeSeries(fs,channelname,&(plan->epoch),plan->duration,testN)) == NULL) {
+    if ((tempts = XLALFrStreamReadINT4TimeSeries(fs,channelname,&(plan->epoch),plan->duration,testN)) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",__func__,plan->channellist.channel[i].filename);
       XLAL_ERROR(XLAL_EINVAL);
     }
@@ -1460,7 +1460,7 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
     printf("\n");
     
     /* close the frame file */
-    XLALFrClose(fs);
+    XLALFrStreamClose(fs);
     LogPrintf(LOG_DEBUG,"%s : closed input frame file.\n",__func__);
 
     /* if the data is lld data then we multiply by 2 before adding */

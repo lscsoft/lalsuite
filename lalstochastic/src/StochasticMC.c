@@ -51,7 +51,7 @@ The following program shows how to use the routines LALStochasticMCDso and LALSt
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/FrameCalibration.h>
 #include <lal/Calibration.h>
 #include <lal/LALConstants.h>

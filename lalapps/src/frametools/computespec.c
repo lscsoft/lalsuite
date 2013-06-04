@@ -28,7 +28,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALMoment.h>
 #include <lal/Units.h>
 #include <lal/RealFFT.h>
@@ -70,7 +70,7 @@ int main( void )
 int main( int argc, char *argv[] )
 {
     static LALStatus  status;
-    FrStream         *stream = NULL;
+    LALFrStream         *stream = NULL;
     FrChanIn          channelIn;
     REAL4             lowfreq, highfreq=0, norm;
     REAL4Vector      *spectrum = NULL;

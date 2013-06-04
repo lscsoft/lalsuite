@@ -39,7 +39,7 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lalappsfrutils.h>
 #include <lalapps.h>
 
@@ -52,7 +52,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALDatatypes.h>
 
 /***********************************************************************************************/
@@ -314,7 +314,7 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
 				CHAR *channel                  /**< [in] the channel to be read */
 				)
 {
-  FrStream *fs = NULL;
+  LALFrStream *fs = NULL;
   LIGOTimeGPS epoch;
   REAL8 duration;
 
@@ -334,7 +334,7 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
   LogPrintf(LOG_DEBUG,"%s : checked input\n",__func__);
   
   /* open the frame file */
-  if ((fs = XLALFrOpen(NULL,filename)) == NULL) {
+  if ((fs = XLALFrStreamOpen(NULL,filename)) == NULL) {
     LogPrintf(LOG_DEBUG,"%s: unable to open frame file %s.\n",__func__,filename);
     XLAL_ERROR(XLAL_EINVAL);
   }  
@@ -345,20 +345,20 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
   duration = fs->flist->dt;
   
   /* seek to the start of the frame */
-  if (XLALFrSeek(fs,&epoch)) {
+  if (XLALFrStreamSeek(fs,&epoch)) {
     LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",__func__,filename);
     XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
-  if (((*ts) = XLALFrReadINT4TimeSeries(fs,channel,&epoch,duration,0)) == NULL) {
+  if (((*ts) = XLALFrStreamReadINT4TimeSeries(fs,channel,&epoch,duration,0)) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",__func__,channel,filename);
     XLAL_ERROR(XLAL_EINVAL);
   }
   LogPrintf(LOG_DEBUG,"%s: reading channel %s\n",__func__,channel);
   
   /* close the frame file */
-  XLALFrClose(fs);
+  XLALFrStreamClose(fs);
   
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
@@ -372,7 +372,7 @@ int XLALReadXTEFrameINT4Keyword(INT4 *value,          /**< [out] the keyword val
 				const CHAR *keyword         /**< [in] the keyword to be read */
 				)
 {
-  FrStream *fs = NULL;
+  LALFrStream *fs = NULL;
   CHAR *c = NULL;
   CHAR *history_string = NULL;
 
@@ -388,7 +388,7 @@ int XLALReadXTEFrameINT4Keyword(INT4 *value,          /**< [out] the keyword val
   LogPrintf(LOG_DEBUG,"%s : checked input\n",__func__);
   
   /* open the frame file */
-  if ((fs = XLALFrOpen(NULL,filename)) == NULL) {
+  if ((fs = XLALFrStreamOpen(NULL,filename)) == NULL) {
     LogPrintf(LOG_DEBUG,"%s: unable to open frame file %s.\n",__func__,filename);
     XLAL_ERROR(XLAL_EINVAL);
   }  
@@ -423,7 +423,7 @@ int XLALReadXTEFrameINT4Keyword(INT4 *value,          /**< [out] the keyword val
   XLALFree(history_string);
   
   /* close the frame file */
-  XLALFrClose(fs);
+  XLALFrStreamClose(fs);
   
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
