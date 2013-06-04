@@ -1339,8 +1339,8 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
     }
   }
   /* Final frequency bins should be infinite */
-//  frequencyRangesPlus[freqBinPlus-1] = kmax * deltaF;
-//  frequencyRangesCross[freqBinCross-1] = kmax * deltaF;
+  frequencyRangesPlus[freqBinPlus-1] = kmax * deltaF;
+  frequencyRangesCross[freqBinCross-1] = kmax * deltaF;
 }
 
 void coh_PTF_calculate_standard_chisq_power_bins(
@@ -1365,7 +1365,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   REAL4 v1,v2,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL4 SNRplusLast,SNRcrossLast,currOverlapContPlus;
   /* FIXME: Change to REAL8 for consistency with PTFM */
-  REAL4 tmpOverlapCont;
+  REAL8 tmpOverlapCont;
   REAL4 currOverlapContCross;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
