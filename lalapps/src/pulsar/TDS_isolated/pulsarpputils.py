@@ -1821,7 +1821,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
     for j, det in enumerate(detectors):
       for frf in freqfac:
         if len(npsds) == 1:
-          tmpnpsds.append( (npsds/2.0)/(2.0*dt) )
+          tmpnpsds.append( (npsds[0]/2.0)/(2.0*dt) )
         else:
           tmpnpsds.append( (npsds[count]/2.0)/(2.0*dt) )
 
@@ -1880,6 +1880,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
   # add noise and rescale signals if necessary
   if snrscale is not None:
     snrscale = snrscale / snrtot
+    # print snrscale
   else:
     snrscale = 1
 
