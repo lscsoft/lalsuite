@@ -1270,11 +1270,9 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
     v2 = PTFM[detectorNum]->data[0];
   }
 
-  u1 = v1;
-  u2 = v2;
-  SNRmaxPlus = u1;
+  SNRmaxPlus = v1;
   if (SNRmaxPlus < 0) SNRmaxPlus = -SNRmaxPlus;
-  SNRmaxCross = u2;
+  SNRmaxCross = v2;
   if (SNRmaxCross < 0) SNRmaxCross = -SNRmaxCross;
 
   v1 = 0;
