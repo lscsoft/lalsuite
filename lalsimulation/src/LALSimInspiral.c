@@ -2476,6 +2476,7 @@ COMPLEX16TimeSeries *XLALSimInspiralChooseTDMode(
 {
     REAL8 v0 = 1.;
     COMPLEX16TimeSeries *hlm;
+    SphHarmTimeSeries *ts;
 
     /* General sanity checks that will abort */
     /*
@@ -2559,6 +2560,11 @@ COMPLEX16TimeSeries *XLALSimInspiralChooseTDMode(
                     deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
                     XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO,
                     phaseO, l, m);
+            break;
+        case EOBNRv2:
+        case EOBNRv2HM:
+            ts = XLALSimIMREOBNRv2Modes(phiRef, deltaT, m1, m2, f_min, r);
+            hlm = XLALSphHarmTimeSeriesGetMode(ts, l, m);
             break;
 
         default:
