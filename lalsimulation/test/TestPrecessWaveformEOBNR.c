@@ -72,26 +72,6 @@ int main(void){
 			approximant
 		);
 
-		// EOBNRv2 does not output the negative m modes, get them by symmetry
-		size_t l, j;
-		int m;
-		for( l=2; l <= XLALSphHarmTimeSeriesGetMaxL( ts ); l++ ){
-			for( m=-l; m<0; m++){
-				COMPLEX16TimeSeries* inmode = XLALSphHarmTimeSeriesGetMode(
-					ts, l, -m );
-				if( !inmode ) continue;
-				COMPLEX16TimeSeries* tmpmode = XLALCutCOMPLEX16TimeSeries(
-					inmode, 0, inmode->data->length );
-
-				for( j=0; j < tmpmode->data->length; j++ ){
-					tmpmode->data->data[j] = cpow(-1, l)
-						* conj( tmpmode->data->data[j] );
-				}
-				ts = XLALSphHarmTimeSeriesAddMode( ts, tmpmode, l, m );
-				XLALDestroyCOMPLEX16TimeSeries( tmpmode );
-			}
-		}
-
 		// Generate the unrotated polarizations from the modes
 		ret = XLALSimInspiralPolarizationsFromSphHarmTimeSeries(&hp, &hx, ts,
 				inclination, psi);
