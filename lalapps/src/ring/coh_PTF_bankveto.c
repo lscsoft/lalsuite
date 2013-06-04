@@ -403,7 +403,6 @@ void coh_PTF_chi_square_coh_setup(
 
   if (! chisqOverlaps)
   {
-    fprintf(stderr,"STARTING FILTERS\n");
     tempqVec = XLALCreateCOMPLEX8VectorSequence (1, params->numTimePoints);
     chisqOverlaps = LALCalloc(2*params->numChiSquareBins,\
                               sizeof(*chisqOverlaps));
@@ -469,7 +468,6 @@ void coh_PTF_chi_square_coh_setup(
         }
       }/* End loop over ifos */
     }/* End loop over chi-square bins */
-    fprintf(stderr,"DONE WITH FILTERS\n");
     XLALDestroyCOMPLEX8VectorSequence(tempqVec);
   }
 
@@ -542,7 +540,6 @@ void coh_PTF_chi_square_sngl_setup(
       {
         if (! chisqSnglOverlaps[j].PTFqVec[k])
         {
-          fprintf(stderr,"STARTING FILTERS\n");
           if (! tempqVec)
           {
             tempqVec = XLALCreateCOMPLEX8VectorSequence(1, \
@@ -575,7 +572,6 @@ void coh_PTF_chi_square_sngl_setup(
           coh_PTF_bank_filters(params,fcTmplt,0,\
               &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,\
               chisqSnglOverlaps[j].PTFqVec[k],fLow,fHigh);
-          fprintf(stderr,"DONE FILTERS\n");
         }
       } /* End loop over chisq bins */
     } /* End of if params->haveTrig */
@@ -1323,7 +1319,6 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       {
         /* Record the frequency */
         frequencyRangesPlus[freqBinPlus-1] = (i)*deltaF;
-        fprintf(stderr,"Frequency %d %e %e %e\n",freqBinPlus-1,i*deltaF,SNRtempPlus,SNRmaxPlus);
         freqBinPlus+=1;
       }
     }
@@ -1333,7 +1328,6 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       {
         /* Record the frequency */
         frequencyRangesCross[freqBinCross-1] = (i)*deltaF;
-        fprintf(stderr,"Frequency %d %e %e %e\n",freqBinCross-1,i*deltaF,SNRtempCross,SNRmaxCross);
         freqBinCross+=1;
       }
     }
@@ -1495,12 +1489,10 @@ void coh_PTF_calculate_standard_chisq_power_bins(
         if (freqBinPlus == (numFreqBins-1))
         {
           (overlapCont[k])[freqBinPlus] = tmpOverlapCont;
-          fprintf(stderr,"TESTING: %e %e\n",tmpOverlapCont * 4 * deltaF,PTFM[k]->data[0]);
         }
         if (freqBinCross == (numFreqBins-1))
         {
           (overlapCont[k])[params->numChiSquareBins + freqBinCross] = tmpOverlapCont;
-          fprintf(stderr,"TESTING: %e %e\n",tmpOverlapCont * 4 * deltaF,PTFM[k]->data[0]);
         }
       } /* End if data has not yet been calculated */
     } /* End if ifo active */
@@ -1519,7 +1511,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
           currOverlapContCross = (overlapCont[k])[i+params->numChiSquareBins];
           v1 += a2[k] * a2[k] * currOverlapContPlus * 4 * deltaF;
           v2 += b2[k] * b2[k] * currOverlapContCross * 4 * deltaF;
-          fprintf(stderr,"V1s %e %e\n",v1,v2);
         }
       }
     }
@@ -1541,7 +1532,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 
     powerBinsCross[i] = SNRtempCross/SNRmaxCross - SNRcrossLast;
     SNRcrossLast = SNRtempCross/SNRmaxCross;
-    fprintf(stderr,"Power binsE: %e %e %e %e %e %e\n",powerBinsPlus[i],powerBinsCross[i], SNRtempPlus, SNRmaxPlus, SNRtempCross, SNRmaxCross);
   }
 
   /* Ensure that the power Bins add to 1. This should already be true but
@@ -1557,7 +1547,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   {
     powerBinsPlus[i] = powerBinsPlus[i]/SNRplusLast;
     powerBinsCross[i] = powerBinsCross[i]/SNRcrossLast;
-    fprintf(stderr,"Power bins: %e %e \n",powerBinsPlus[i],powerBinsCross[i]);
   }
 
 }
