@@ -24,7 +24,9 @@ noinst_DATA = \
 	StreamInput.data \
 	StreamSeriesInput.data
 
-EXTRA_DIST = $(DATA)
+EXTRA_DIST = \
+	$(DATA) \
+	GzipTest.sh
 
 TESTS = \
 	$(check_PROGRAMS) \
