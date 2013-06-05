@@ -817,13 +817,6 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 #define %swiglal_public_clear_DISABLE_EXCEPTIONS(...)
 
-// The SWIGLAL(NO_NEW_OBJECT(...)) macro can be used to turn off
-// SWIG object ownership for certain functions.
-%define %swiglal_public_NO_NEW_OBJECT(...)
-%swiglal_map_ab(%swiglal_feature, "new", "0", __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_NO_NEW_OBJECT(...)
-
 // The SWIGLAL(FUNCTION_POINTER(...)) macro can be used to create
 // a function pointer constant, for functions which need to be used
 // as callback functions.
