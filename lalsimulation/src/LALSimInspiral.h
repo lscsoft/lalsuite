@@ -179,6 +179,10 @@ void XLALDestroySphHarmTimeSeries( SphHarmTimeSeries* ts );
  */
 UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts );
 
+#ifdef SWIG   // SWIG interface directives
+SWIGLAL(GET_OBJECT(COMPLEX16TimeSeries*, XLALSphHarmTimeSeriesGetMode));
+#endif
+
 /* 
  * Get the mode-decomposed time series corresponding to l,m.
  */
