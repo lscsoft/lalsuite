@@ -54,6 +54,9 @@ extern "C" {
  */
 typedef struct tagPulsarParamsVector
 {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(PulsarParamsVector, PulsarParams, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;		//!< number of pulsar-signals
   PulsarParams *data;	//!< array of pulsar-signal parameters
 } PulsarParamsVector;
@@ -62,6 +65,9 @@ typedef struct tagPulsarParamsVector
  * Struct controlling all the aspects of the fake data (time-series + SFTs)
  * to be produced by XLALCWMakeFakeData() and XLALCWMakeFakeMultiData()
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagCWMFDataParams, SFTWindowType));
+#endif /* SWIG */
 typedef struct tagCWMFDataParams
 {
   REAL8 fMin;					//!< smallest frequency guaranteed to be generated [returned fMin can be smaller]
@@ -77,6 +83,14 @@ typedef struct tagCWMFDataParams
 extern const CWMFDataParams empty_CWMFDataParams;
 
 // ---------- exported prototypes [API] ----------
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(MultiSFTVector**, multiSFTs));
+SWIGLAL(INOUT_STRUCTS(MultiREAL4TimeSeries**, multiTseries));
+SWIGLAL(INOUT_STRUCTS(SFTVector**, SFTVect));
+SWIGLAL(INOUT_STRUCTS(REAL4TimeSeries**, Tseries));
+#endif
+
 int XLALFindSmallestValidSamplingRate ( UINT4 *n1, UINT4 n0, const LIGOTimeGPSVector *timestamps );
 int XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries,
                               const PulsarParamsVector *injectionSources, const CWMFDataParams *dataParams, const EphemerisData *edat );
