@@ -143,7 +143,7 @@ def new_ligolw_table(etg, columns=None):
              given trigger generator
     """
     table_name = which_table(etg)
-    return lsctables.New(lsctables.TableByName(table_name), columns=columns)
+    return lsctables.New(lsctables.TableByName[table_name], columns=columns)
 
 
 def time_func(table_name, ifo=None):
