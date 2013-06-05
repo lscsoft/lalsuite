@@ -140,7 +140,7 @@ routines never actually use this coefficient.
  * The length of the history vector gives the order of the filter
  */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(STRUCT_IMMUTABLE(tagREAL4IIRFilter, name));
+SWIGLAL(IMMUTABLE_MEMBERS(tagREAL4IIRFilter, name));
 #endif /* SWIG */
 typedef struct tagREAL4IIRFilter{
   const CHAR *name;        /**< User assigned name. */
@@ -155,7 +155,7 @@ typedef struct tagREAL4IIRFilter{
  * The length of the history vector gives the order of the filter
  */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(STRUCT_IMMUTABLE(tagREAL8IIRFilter, name));
+SWIGLAL(IMMUTABLE_MEMBERS(tagREAL8IIRFilter, name));
 #endif /* SWIG */
 typedef struct tagREAL8IIRFilter{
   const CHAR *name;        /**< User assigned name. */

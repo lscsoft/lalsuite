@@ -185,7 +185,7 @@ FrChanType;
  *
 */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(STRUCT_IMMUTABLE(tagFrChanIn, name));
+SWIGLAL(IMMUTABLE_MEMBERS(tagFrChanIn, name));
 #endif /* SWIG */
 typedef struct
 tagFrChanIn
@@ -215,7 +215,7 @@ FrChanIn;
  *
 */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(STRUCT_IMMUTABLE(tagFrOutPar, source, description));
+SWIGLAL(IMMUTABLE_MEMBERS(tagFrOutPar, source, description));
 #endif /* SWIG */
 typedef struct
 tagFrOutPar

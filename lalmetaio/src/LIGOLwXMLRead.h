@@ -93,7 +93,7 @@ with columns in an xml file.
 
 */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(STRUCT_IMMUTABLE(tagMetaTableDirectory, name));
+SWIGLAL(IMMUTABLE_MEMBERS(tagMetaTableDirectory, name));
 #endif /* SWIG */
 typedef struct
 tagMetaTableDirectory

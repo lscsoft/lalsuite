@@ -135,7 +135,7 @@ FrCache;
  *
 */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(STRUCT_IMMUTABLE(tagFrCacheSieve, srcRegEx, dscRegEx, urlRegEx));
+SWIGLAL(IMMUTABLE_MEMBERS(tagFrCacheSieve, srcRegEx, dscRegEx, urlRegEx));
 #endif /* SWIG */
 typedef struct
 tagFrCacheSieve

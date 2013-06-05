@@ -832,12 +832,12 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 #define %swiglal_public_clear_FUNCTION_POINTER(...)
 
-// The SWIGLAL(STRUCT_IMMUTABLE(TAGNAME, ...)) macro can be used to make
+// The SWIGLAL(IMMUTABLE_MEMBERS(TAGNAME, ...)) macro can be used to make
 // the listed members of the struct TAGNAME immutable.
-%define %swiglal_public_STRUCT_IMMUTABLE(TAGNAME, ...)
+%define %swiglal_public_IMMUTABLE_MEMBERS(TAGNAME, ...)
 %swiglal_map_abc(%swiglal_feature_nspace, "immutable", "1", TAGNAME, __VA_ARGS__);
 %enddef
-#define %swiglal_public_clear_STRUCT_IMMUTABLE(...)
+#define %swiglal_public_clear_IMMUTABLE_MEMBERS(...)
 
 // Typemap for functions which return 'int'. If these functions also return
 // other output arguments (via 'argout' typemaps), the 'int' return value is

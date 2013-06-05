@@ -131,7 +131,7 @@ typedef struct tagDopplerSkyGrid {
 
 /** initialization-structure passed to InitDopplerSkyScan() */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(STRUCT_IMMUTABLE(tagDopplerSkyScanInit, skyGridFile));
+SWIGLAL(IMMUTABLE_MEMBERS(tagDopplerSkyScanInit, skyGridFile));
 #endif /* SWIG */
 typedef struct tagDopplerSkyScanInit {
   CHAR *skyRegionString;	/**< sky-region to search: format polygon '(a1,d1), (a2,d2), ..' */
