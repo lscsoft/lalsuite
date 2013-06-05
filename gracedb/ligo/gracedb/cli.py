@@ -91,9 +91,7 @@ class Client(GraceDb):
                     destfile = sys.stdout
                 else:
                     destfile = open(destfile, "w")
-            # XXX Check.  This is a django rest framework response object.
-            # We want to get the body. Hence .read() 
-            shutil.copyfileobj(response.read(), destfile)
+            shutil.copyfileobj(response, destfile)
             return 0
         else:
             return "Error. (%d) %s" % (response.status, response.reason)
@@ -233,8 +231,6 @@ Longer strings will be truncated.""" % {
     if len(args) < 1:
         op.error("not enough arguments")
     elif args[0] == 'ping':
-        # XXX Branson: need a ping method in the REST API.
-        # what about the response to this?
         response = client.ping()
         if response.status==200:
             output("%s: 200 OK" % service)
@@ -255,7 +251,7 @@ Longer strings will be truncated.""" % {
         # ERROR: could not save file.
         
         # XXX Fix this.
-        op.warning("comment ignored: %s" % comment)
+        output("comment ignored: %s" % comment)
         response = client.writeFile(graceid, filename)
         # response = client.writeLog(graceid, filename, comment, 
         #    tagName, tagDispName,  options.alert)
@@ -353,8 +349,12 @@ Longer strings will be truncated.""" % {
             print(response)
         else:
             try:
-                rv = json.loads(rv)  
-                output(rv['output'])
+                rv = json.loads(rv) 
+                if 'output' in rv.keys():
+                    output(rv['output'])
+                elif 'error' in rv.keys():
+                    error(rv['error'])
+                    exitCode=1
             except Exception, e:
                 error("while parsing:%s\nclient send exception: %s" % (rv, str(e)))
         return exitCode
@@ -392,6 +392,31 @@ Longer strings will be truncated.""" % {
         if not response:
             error("There was a problem.  Did you do grid-proxy-init -rfc?")
             sys.exit(1)
+
+        # Must output graceid for consistency with earlier client.
+        # Therefore, must deal with response here rather than at the end.
+        # XXX Sorta ugly, though.
+        exitCode = 0
+        status = response.status
+        if status >= 400:
+            exitCode=1
+        try:
+            rv = response.read()
+        except:
+            rv = response
+        try:
+            rv = json.loads(rv)
+        except:
+            pass
+
+        if 'graceid' in rv.keys():
+            output(rv['graceid'])
+        elif 'error' in rv.keys():
+            exitCode=1
+            error(rv['error'])
+
+        return exitCode
+
     else:
         op.error("")
         sys.exit(1)

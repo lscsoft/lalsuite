@@ -423,11 +423,13 @@ def encode_multipart_formdata(fields, files):
         L.append('--' + BOUNDARY)
         L.append('Content-Disposition: form-data; name="%s"' % key)
         L.append('')
-        L.append(value)
+        # str(value) in case it is unicode
+        L.append(str(value))
     for (key, filename, value) in files:
         if value is None: continue
         L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+        # str(filename) in case it is unicode
+        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, str(filename)))
         L.append('Content-Type: %s' % get_content_type(filename))
         L.append('')
         L.append(value)
