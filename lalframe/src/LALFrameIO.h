@@ -33,6 +33,8 @@
 
 #ifdef __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
 /* alias some types */
@@ -48,32 +50,44 @@ typedef struct tagLALFrFile LALFrFile;
 #endif
 
 
-#ifdef SWIG // SWIG interface directives
+#ifdef SWIG     // SWIG interface directives
 SWIGLAL(EXTERNAL_STRUCT(LALFrameH, XLALFrameFree));
 #endif
 
-LALFrFile * XLALFrFileOpenURL( const char *url );
-int XLALFrFileCksumValid( const LALFrFile *frfile );
+LALFrFile *XLALFrFileOpenURL(const char *url);
+int XLALFrFileCksumValid(const LALFrFile * frfile);
 
-int XLALFrameAddFrHistory( LALFrameH *frame, const char *name, const char *comment );
-int XLALFrameAddFrDetector( LALFrameH *frame, const LALDetector *detector );
-void XLALFrameFree( LALFrameH *frame );
-LALFrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
-    const char *project, int run, int frnum, int detectorFlags );
+int XLALFrameAddFrHistory(LALFrameH * frame, const char *name,
+                          const char *comment);
+int XLALFrameAddFrDetector(LALFrameH * frame,
+                           const LALDetector * detector);
+void XLALFrameFree(LALFrameH * frame);
+LALFrameH *XLALFrameNew(LIGOTimeGPS * epoch, double duration,
+                        const char *project, int run, int frnum,
+                        int detectorFlags);
 
-int XLALFrameAddREAL4TimeSeriesAdcData( LALFrameH *frame, REAL4TimeSeries *series );
+int XLALFrameAddREAL4TimeSeriesAdcData(LALFrameH * frame,
+                                       REAL4TimeSeries * series);
 
-int XLALFrameAddINT4TimeSeriesProcData( LALFrameH *frame, INT4TimeSeries *series );
-int XLALFrameAddREAL4TimeSeriesProcData( LALFrameH *frame, REAL4TimeSeries *series );
-int XLALFrameAddREAL8TimeSeriesProcData( LALFrameH *frame, REAL8TimeSeries *series );
+int XLALFrameAddINT4TimeSeriesProcData(LALFrameH * frame,
+                                       INT4TimeSeries * series);
+int XLALFrameAddREAL4TimeSeriesProcData(LALFrameH * frame,
+                                        REAL4TimeSeries * series);
+int XLALFrameAddREAL8TimeSeriesProcData(LALFrameH * frame,
+                                        REAL8TimeSeries * series);
 
-int XLALFrameAddREAL4TimeSeriesSimData( LALFrameH *frame, REAL4TimeSeries *series );
-int XLALFrameAddREAL8TimeSeriesSimData( LALFrameH *frame, REAL8TimeSeries *series );
+int XLALFrameAddREAL4TimeSeriesSimData(LALFrameH * frame,
+                                       REAL4TimeSeries * series);
+int XLALFrameAddREAL8TimeSeriesSimData(LALFrameH * frame,
+                                       REAL8TimeSeries * series);
 
 /* frame writing function */
-int XLALFrameWrite(LALFrameH *frame, const char *fname, int compressLevel);
+int XLALFrameWrite(LALFrameH * frame, const char *fname,
+                   int compressLevel);
 
-#ifdef __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

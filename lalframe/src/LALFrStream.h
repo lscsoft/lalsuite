@@ -25,7 +25,7 @@
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
-} /* so that editors will match preceding brace */
+}       /* so that editors will match preceding brace */
 #endif
 
 /**
@@ -84,37 +84,31 @@ extern "C" {
 #define FRAMESTREAMH_MSGEDGAP "Gap in the data"
 /*@}*/
 
-typedef enum
-{
-  LAL_FR_STREAM_OK  = 0,  /* nominal */
-  LAL_FR_STREAM_ERR = 1,  /* error in frame stream */
-  LAL_FR_STREAM_END = 2,  /* end of frame stream */
-  LAL_FR_STREAM_GAP = 4,  /* gap in frame stream */
-  LAL_FR_STREAM_URL = 8,  /* error opening frame URL */
-  LAL_FR_STREAM_TOC = 16  /* error reading frame TOC */
-}
-FrState;
-typedef enum
-{
-  LAL_FR_STREAM_SILENT_MODE     = 0,
-  LAL_FR_STREAM_TIMEWARN_MODE   = 1,  /* display warning for invalid time requests */
-  LAL_FR_STREAM_GAPINFO_MODE    = 2,  /* display info for gaps in data */
-  LAL_FR_STREAM_VERBOSE_MODE    = 3,  /* display warnings and info */
-  LAL_FR_STREAM_IGNOREGAP_MODE  = 4,  /* ignore gaps in data */
-  LAL_FR_STREAM_IGNORETIME_MODE = 8,  /* ignore invalid times requested */
-  LAL_FR_STREAM_DEFAULT_MODE    = 15, /* ignore time/gaps but report warnings & info */
-  LAL_FR_STREAM_CHECKSUM_MODE   = 16  /* ensure that file checksums are OK */
-}
-FrMode;
+typedef enum {
+    LAL_FR_STREAM_OK = 0,       /* nominal */
+    LAL_FR_STREAM_ERR = 1,      /* error in frame stream */
+    LAL_FR_STREAM_END = 2,      /* end of frame stream */
+    LAL_FR_STREAM_GAP = 4,      /* gap in frame stream */
+    LAL_FR_STREAM_URL = 8,      /* error opening frame URL */
+    LAL_FR_STREAM_TOC = 16      /* error reading frame TOC */
+} FrState;
+typedef enum {
+    LAL_FR_STREAM_SILENT_MODE = 0,
+    LAL_FR_STREAM_TIMEWARN_MODE = 1,    /* display warning for invalid time requests */
+    LAL_FR_STREAM_GAPINFO_MODE = 2,     /* display info for gaps in data */
+    LAL_FR_STREAM_VERBOSE_MODE = 3,     /* display warnings and info */
+    LAL_FR_STREAM_IGNOREGAP_MODE = 4,   /* ignore gaps in data */
+    LAL_FR_STREAM_IGNORETIME_MODE = 8,  /* ignore invalid times requested */
+    LAL_FR_STREAM_DEFAULT_MODE = 15,    /* ignore time/gaps but report warnings & info */
+    LAL_FR_STREAM_CHECKSUM_MODE = 16    /* ensure that file checksums are OK */
+} FrMode;
 struct FrFile;
-typedef struct tagFrFileInfo
-{
-  INT4  ind;
-  CHAR *url;
-  INT4  t0;
-  INT4  dt;
-}
-FrFileInfo;
+typedef struct tagFrFileInfo {
+    INT4 ind;
+    CHAR *url;
+    INT4 t0;
+    INT4 dt;
+} FrFileInfo;
 
 /**
  *
@@ -122,18 +116,16 @@ FrFileInfo;
  * private; you should not tamper with them!
  *
 */
-typedef struct tagLALFrStream
-{
-  FrState        state;
-  INT4           mode;
-  LIGOTimeGPS    epoch;
-  UINT4          nfile;
-  FrFileInfo    *flist;
-  UINT4          fnum;
-  struct FrFile *file;
-  INT4           pos;
-}
-LALFrStream;
+typedef struct tagLALFrStream {
+    FrState state;
+    INT4 mode;
+    LIGOTimeGPS epoch;
+    UINT4 nfile;
+    FrFileInfo *flist;
+    UINT4 fnum;
+    struct FrFile *file;
+    INT4 pos;
+} LALFrStream;
 
 
 /**
@@ -149,17 +141,13 @@ LALFrStream;
  *
 */
 typedef struct
-tagLALFrStreamPos
-{
-  LIGOTimeGPS epoch;
-  UINT4       fnum;
-  INT4        pos;
-}
-LALFrStreamPos;
+    tagLALFrStreamPos {
+    LIGOTimeGPS epoch;
+    UINT4 fnum;
+    INT4 pos;
+} LALFrStreamPos;
 
-typedef enum
-{ LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN }
-FrChanType;
+typedef enum { LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN } FrChanType;
 /* for backwards compatability... */
 #define ChannelType FrChanType
 #define ProcDataChannel LAL_PROC_CHAN
@@ -184,16 +172,14 @@ FrChanType;
  * </dd></dl>
  *
 */
-#ifdef SWIG /* SWIG interface directives */
+#ifdef SWIG     /* SWIG interface directives */
 SWIGLAL(STRUCT_IMMUTABLE(tagFrChanIn, name));
 #endif /* SWIG */
 typedef struct
-tagFrChanIn
-{
-  const CHAR *name;
-  ChannelType type;
-}
-FrChanIn;
+    tagFrChanIn {
+    const CHAR *name;
+    ChannelType type;
+} FrChanIn;
 
 
 /**
@@ -214,70 +200,129 @@ FrChanIn;
  * \f$\langle\mbox{duration}\rangle\f$<tt>.gwf</tt>.
  *
 */
-#ifdef SWIG /* SWIG interface directives */
+#ifdef SWIG     /* SWIG interface directives */
 SWIGLAL(STRUCT_IMMUTABLE(tagFrOutPar, source, description));
 #endif /* SWIG */
 typedef struct
-tagFrOutPar
-{
-  const CHAR *source;
-  const CHAR *description;
-  ChannelType type;
-  UINT4 nframes;
-  UINT4 frame;
-  UINT4 run;
-}
-FrOutPar;
+    tagFrOutPar {
+    const CHAR *source;
+    const CHAR *description;
+    ChannelType type;
+    UINT4 nframes;
+    UINT4 frame;
+    UINT4 run;
+} FrOutPar;
 
 
-LALFrStream * XLALFrStreamCacheOpen( LALCache *cache );
-LALFrStream * XLALFrStreamOpen( const char *dirname, const char *pattern );
-void XLALFrStreamClose( LALFrStream *stream );
-int XLALFrStreamSetMode( LALFrStream *stream, int mode );
-int XLALFrStreamGetState( LALFrStream *stream );
-int XLALFrStreamClearErr( LALFrStream *stream );
-int XLALFrStreamRewind( LALFrStream *stream );
-int XLALFrStreamNext( LALFrStream *stream );
-int XLALFrStreamSeek( LALFrStream *stream, const LIGOTimeGPS *epoch );
-int XLALFrStreamTell( LIGOTimeGPS *epoch, LALFrStream *stream );
-int XLALFrStreamGetpos( LALFrStreamPos *position, LALFrStream *stream );
-int XLALFrStreamSetpos( LALFrStream *stream, LALFrStreamPos *position );
-int XLALFrStreamGetTimeSeriesType( const char *channel, LALFrStream *stream );
+LALFrStream *XLALFrStreamCacheOpen(LALCache * cache);
+LALFrStream *XLALFrStreamOpen(const char *dirname, const char *pattern);
+void XLALFrStreamClose(LALFrStream * stream);
+int XLALFrStreamSetMode(LALFrStream * stream, int mode);
+int XLALFrStreamGetState(LALFrStream * stream);
+int XLALFrStreamClearErr(LALFrStream * stream);
+int XLALFrStreamRewind(LALFrStream * stream);
+int XLALFrStreamNext(LALFrStream * stream);
+int XLALFrStreamSeek(LALFrStream * stream, const LIGOTimeGPS * epoch);
+int XLALFrStreamTell(LIGOTimeGPS * epoch, LALFrStream * stream);
+int XLALFrStreamGetpos(LALFrStreamPos * position, LALFrStream * stream);
+int XLALFrStreamSetpos(LALFrStream * stream, LALFrStreamPos * position);
+int XLALFrStreamGetTimeSeriesType(const char *channel,
+                                  LALFrStream * stream);
 
-int XLALFrStreamGetINT2TimeSeries( INT2TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetINT4TimeSeries( INT4TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetINT8TimeSeries( INT8TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetREAL4TimeSeries( REAL4TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetREAL8TimeSeries( REAL8TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series, LALFrStream *stream );
+int XLALFrStreamGetINT2TimeSeries(INT2TimeSeries * series,
+                                  LALFrStream * stream);
+int XLALFrStreamGetINT4TimeSeries(INT4TimeSeries * series,
+                                  LALFrStream * stream);
+int XLALFrStreamGetINT8TimeSeries(INT8TimeSeries * series,
+                                  LALFrStream * stream);
+int XLALFrStreamGetREAL4TimeSeries(REAL4TimeSeries * series,
+                                   LALFrStream * stream);
+int XLALFrStreamGetREAL8TimeSeries(REAL8TimeSeries * series,
+                                   LALFrStream * stream);
+int XLALFrStreamGetCOMPLEX8TimeSeries(COMPLEX8TimeSeries * series,
+                                      LALFrStream * stream);
+int XLALFrStreamGetCOMPLEX16TimeSeries(COMPLEX16TimeSeries * series,
+                                       LALFrStream * stream);
 
-int XLALFrStreamGetINT2TimeSeriesMetadata( INT2TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetINT4TimeSeriesMetadata( INT4TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetINT8TimeSeriesMetadata( INT8TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetREAL4TimeSeriesMetadata( REAL4TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetREAL8TimeSeriesMetadata( REAL8TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetCOMPLEX8TimeSeriesMetadata( COMPLEX8TimeSeries *series, LALFrStream *stream );
-int XLALFrStreamGetCOMPLEX16TimeSeriesMetadata( COMPLEX16TimeSeries *series, LALFrStream *stream );
+int XLALFrStreamGetINT2TimeSeriesMetadata(INT2TimeSeries * series,
+                                          LALFrStream * stream);
+int XLALFrStreamGetINT4TimeSeriesMetadata(INT4TimeSeries * series,
+                                          LALFrStream * stream);
+int XLALFrStreamGetINT8TimeSeriesMetadata(INT8TimeSeries * series,
+                                          LALFrStream * stream);
+int XLALFrStreamGetREAL4TimeSeriesMetadata(REAL4TimeSeries * series,
+                                           LALFrStream * stream);
+int XLALFrStreamGetREAL8TimeSeriesMetadata(REAL8TimeSeries * series,
+                                           LALFrStream * stream);
+int XLALFrStreamGetCOMPLEX8TimeSeriesMetadata(COMPLEX8TimeSeries * series,
+                                              LALFrStream * stream);
+int XLALFrStreamGetCOMPLEX16TimeSeriesMetadata(COMPLEX16TimeSeries *
+                                               series,
+                                               LALFrStream * stream);
 
-int XLALFrStreamGetINT2FrequencySeries( INT2FrequencySeries *series, LALFrStream *stream );
-int XLALFrStreamGetINT4FrequencySeries( INT4FrequencySeries *series, LALFrStream *stream );
-int XLALFrStreamGetINT8FrequencySeries( INT8FrequencySeries *series, LALFrStream *stream );
-int XLALFrStreamGetREAL4FrequencySeries( REAL4FrequencySeries *series, LALFrStream *stream );
-int XLALFrStreamGetREAL8FrequencySeries( REAL8FrequencySeries *series, LALFrStream *stream );
-int XLALFrStreamGetCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series, LALFrStream *stream );
-int XLALFrStreamGetCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series, LALFrStream *stream );
-int XLALFrStreamGetVectorLength ( CHAR *name, LALFrStream *stream );
+int XLALFrStreamGetINT2FrequencySeries(INT2FrequencySeries * series,
+                                       LALFrStream * stream);
+int XLALFrStreamGetINT4FrequencySeries(INT4FrequencySeries * series,
+                                       LALFrStream * stream);
+int XLALFrStreamGetINT8FrequencySeries(INT8FrequencySeries * series,
+                                       LALFrStream * stream);
+int XLALFrStreamGetREAL4FrequencySeries(REAL4FrequencySeries * series,
+                                        LALFrStream * stream);
+int XLALFrStreamGetREAL8FrequencySeries(REAL8FrequencySeries * series,
+                                        LALFrStream * stream);
+int XLALFrStreamGetCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries *
+                                           series, LALFrStream * stream);
+int XLALFrStreamGetCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *
+                                            series, LALFrStream * stream);
+int XLALFrStreamGetVectorLength(CHAR * name, LALFrStream * stream);
 
-INT2TimeSeries *XLALFrStreamReadINT2TimeSeries( LALFrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
-INT4TimeSeries *XLALFrStreamReadINT4TimeSeries( LALFrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
-INT8TimeSeries *XLALFrStreamReadINT8TimeSeries( LALFrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
-REAL4TimeSeries *XLALFrStreamReadREAL4TimeSeries( LALFrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
-REAL8TimeSeries *XLALFrStreamReadREAL8TimeSeries( LALFrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
-COMPLEX8TimeSeries *XLALFrStreamReadCOMPLEX8TimeSeries( LALFrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
-COMPLEX16TimeSeries *XLALFrStreamReadCOMPLEX16TimeSeries( LALFrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+INT2TimeSeries *XLALFrStreamReadINT2TimeSeries(LALFrStream * stream,
+                                               const char *chname,
+                                               const LIGOTimeGPS * start,
+                                               REAL8 duration,
+                                               size_t lengthlimit);
+INT4TimeSeries *XLALFrStreamReadINT4TimeSeries(LALFrStream * stream,
+                                               const char *chname,
+                                               const LIGOTimeGPS * start,
+                                               REAL8 duration,
+                                               size_t lengthlimit);
+INT8TimeSeries *XLALFrStreamReadINT8TimeSeries(LALFrStream * stream,
+                                               const char *chname,
+                                               const LIGOTimeGPS * start,
+                                               REAL8 duration,
+                                               size_t lengthlimit);
+REAL4TimeSeries *XLALFrStreamReadREAL4TimeSeries(LALFrStream * stream,
+                                                 const char *chname,
+                                                 const LIGOTimeGPS * start,
+                                                 REAL8 duration,
+                                                 size_t lengthlimit);
+REAL8TimeSeries *XLALFrStreamReadREAL8TimeSeries(LALFrStream * stream,
+                                                 const char *chname,
+                                                 const LIGOTimeGPS * start,
+                                                 REAL8 duration,
+                                                 size_t lengthlimit);
+COMPLEX8TimeSeries *XLALFrStreamReadCOMPLEX8TimeSeries(LALFrStream *
+                                                       stream,
+                                                       const char *chname,
+                                                       const LIGOTimeGPS *
+                                                       start,
+                                                       REAL8 duration,
+                                                       size_t lengthlimit);
+COMPLEX16TimeSeries *XLALFrStreamReadCOMPLEX16TimeSeries(LALFrStream *
+                                                         stream,
+                                                         const char
+                                                         *chname,
+                                                         const LIGOTimeGPS
+                                                         * start,
+                                                         REAL8 duration,
+                                                         size_t
+                                                         lengthlimit);
 
-REAL8TimeSeries * XLALFrStreamInputREAL8TimeSeries( LALFrStream *stream, const char *channel, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+REAL8TimeSeries *XLALFrStreamInputREAL8TimeSeries(LALFrStream * stream,
+                                                  const char *channel,
+                                                  const LIGOTimeGPS *
+                                                  start, REAL8 duration,
+                                                  size_t lengthlimit);
 
 
 /*
@@ -287,368 +332,223 @@ REAL8TimeSeries * XLALFrStreamInputREAL8TimeSeries( LALFrStream *stream, const c
  */
 
 void
-LALFrCacheOpen(
-    LALStatus  *status,
-    LALFrStream  **output,
-    LALCache    *cache
-    );
+LALFrCacheOpen(LALStatus * status,
+               LALFrStream ** output, LALCache * cache);
 
 void
-LALFrOpen(
-    LALStatus    *status,
-    LALFrStream    **stream,
-    const CHAR   *dirname,
-    const CHAR   *pattern
-    );
+LALFrOpen(LALStatus * status,
+          LALFrStream ** stream,
+          const CHAR * dirname, const CHAR * pattern);
+
+void LALFrClose(LALStatus * status, LALFrStream ** stream);
+
+void LALFrSetMode(LALStatus * status, INT4 mode, LALFrStream * stream);
+
+void LALFrEnd(LALStatus * status, INT4 * end, LALFrStream * stream);
+
+void LALFrNext(LALStatus * status, LALFrStream * stream);
+
+void LALFrRewind(LALStatus * status, LALFrStream * stream);
 
 void
-LALFrClose(
-    LALStatus  *status,
-    LALFrStream  **stream
-    );
+LALFrSeek(LALStatus * status,
+          const LIGOTimeGPS * epoch, LALFrStream * stream);
 
 void
-LALFrSetMode(
-    LALStatus *status,
-    INT4       mode,
-    LALFrStream  *stream
-    );
+LALFrTell(LALStatus * status, LIGOTimeGPS * epoch, LALFrStream * stream);
 
 void
-LALFrEnd(
-    LALStatus *status,
-    INT4      *end,
-    LALFrStream  *stream
-    );
+LALFrGetPos(LALStatus * status,
+            LALFrStreamPos * position, LALFrStream * stream);
 
 void
-LALFrNext(
-    LALStatus *status,
-    LALFrStream  *stream
-    );
+LALFrSetPos(LALStatus * status,
+            LALFrStreamPos * position, LALFrStream * stream);
 
 void
-LALFrRewind(
-    LALStatus *status,
-    LALFrStream  *stream
-    );
+LALFrGetTimeSeriesType(LALStatus * status,
+                       LALTYPECODE * output,
+                       FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrSeek(
-    LALStatus         *status,
-    const LIGOTimeGPS *epoch,
-    LALFrStream          *stream
-    );
+LALFrGetINT2TimeSeries(LALStatus * status,
+                       INT2TimeSeries * series,
+                       FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrTell(
-    LALStatus   *status,
-    LIGOTimeGPS *epoch,
-    LALFrStream    *stream
-    );
+LALFrGetINT2TimeSeriesMetadata(LALStatus * status,
+                               INT2TimeSeries * series,
+                               FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetPos(
-    LALStatus *status,
-    LALFrStreamPos     *position,
-    LALFrStream  *stream
-    );
+LALFrGetINT4TimeSeries(LALStatus * status,
+                       INT4TimeSeries * series,
+                       FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrSetPos(
-    LALStatus *status,
-    LALFrStreamPos     *position,
-    LALFrStream  *stream
-    );
+LALFrGetINT4TimeSeriesMetadata(LALStatus * status,
+                               INT4TimeSeries * series,
+                               FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetTimeSeriesType(
-    LALStatus   *status,
-    LALTYPECODE *output,
-    FrChanIn    *chanin,
-    LALFrStream    *stream
-    );
+LALFrGetINT8TimeSeries(LALStatus * status,
+                       INT8TimeSeries * series,
+                       FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetINT2TimeSeries(
-    LALStatus      *status,
-    INT2TimeSeries *series,
-    FrChanIn       *chanin,
-    LALFrStream       *stream
-    );
+LALFrGetINT8TimeSeriesMetadata(LALStatus * status,
+                               INT8TimeSeries * series,
+                               FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetINT2TimeSeriesMetadata(
-    LALStatus      *status,
-    INT2TimeSeries *series,
-    FrChanIn       *chanin,
-    LALFrStream       *stream
-    );
+LALFrGetREAL4TimeSeries(LALStatus * status,
+                        REAL4TimeSeries * series,
+                        FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetINT4TimeSeries(
-    LALStatus      *status,
-    INT4TimeSeries *series,
-    FrChanIn       *chanin,
-    LALFrStream       *stream
-    );
+LALFrGetREAL4TimeSeriesMetadata(LALStatus * status,
+                                REAL4TimeSeries * series,
+                                FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetINT4TimeSeriesMetadata(
-    LALStatus      *status,
-    INT4TimeSeries *series,
-    FrChanIn       *chanin,
-    LALFrStream       *stream
-    );
+LALFrGetREAL8TimeSeries(LALStatus * status,
+                        REAL8TimeSeries * series,
+                        FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetINT8TimeSeries(
-    LALStatus      *status,
-    INT8TimeSeries *series,
-    FrChanIn       *chanin,
-    LALFrStream       *stream
-    );
+LALFrGetREAL8TimeSeriesMetadata(LALStatus * status,
+                                REAL8TimeSeries * series,
+                                FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetINT8TimeSeriesMetadata(
-    LALStatus      *status,
-    INT8TimeSeries *series,
-    FrChanIn       *chanin,
-    LALFrStream       *stream
-    );
+LALFrGetCOMPLEX8TimeSeries(LALStatus * status,
+                           COMPLEX8TimeSeries * series,
+                           FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetREAL4TimeSeries(
-    LALStatus       *status,
-    REAL4TimeSeries *series,
-    FrChanIn        *chanin,
-    LALFrStream        *stream
-    );
+LALFrGetCOMPLEX8TimeSeriesMetadata(LALStatus * status,
+                                   COMPLEX8TimeSeries * series,
+                                   FrChanIn * chanin,
+                                   LALFrStream * stream);
 
 void
-LALFrGetREAL4TimeSeriesMetadata(
-    LALStatus       *status,
-    REAL4TimeSeries *series,
-    FrChanIn        *chanin,
-    LALFrStream        *stream
-    );
+LALFrGetCOMPLEX16TimeSeries(LALStatus * status,
+                            COMPLEX16TimeSeries * series,
+                            FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetREAL8TimeSeries(
-    LALStatus       *status,
-    REAL8TimeSeries *series,
-    FrChanIn        *chanin,
-    LALFrStream        *stream
-    );
-
-void
-LALFrGetREAL8TimeSeriesMetadata(
-    LALStatus       *status,
-    REAL8TimeSeries *series,
-    FrChanIn        *chanin,
-    LALFrStream        *stream
-    );
-
-void
-LALFrGetCOMPLEX8TimeSeries(
-    LALStatus          *status,
-    COMPLEX8TimeSeries *series,
-    FrChanIn           *chanin,
-    LALFrStream           *stream
-    );
-
-void
-LALFrGetCOMPLEX8TimeSeriesMetadata(
-    LALStatus          *status,
-    COMPLEX8TimeSeries *series,
-    FrChanIn           *chanin,
-    LALFrStream           *stream
-    );
-
-void
-LALFrGetCOMPLEX16TimeSeries(
-    LALStatus           *status,
-    COMPLEX16TimeSeries *series,
-    FrChanIn            *chanin,
-    LALFrStream            *stream
-    );
-
-void
-LALFrGetCOMPLEX16TimeSeriesMetadata(
-    LALStatus           *status,
-    COMPLEX16TimeSeries *series,
-    FrChanIn            *chanin,
-    LALFrStream            *stream
-    );
+LALFrGetCOMPLEX16TimeSeriesMetadata(LALStatus * status,
+                                    COMPLEX16TimeSeries * series,
+                                    FrChanIn * chanin,
+                                    LALFrStream * stream);
 
 
 void
-LALFrGetINT2FrequencySeries(
-    LALStatus      *status,
-    INT2FrequencySeries *series,
-    FrChanIn       *chanin,
-    LALFrStream       *stream
-    );
+LALFrGetINT2FrequencySeries(LALStatus * status,
+                            INT2FrequencySeries * series,
+                            FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetINT4FrequencySeries(
-    LALStatus      *status,
-    INT4FrequencySeries *series,
-    FrChanIn       *chanin,
-    LALFrStream       *stream
-    );
+LALFrGetINT4FrequencySeries(LALStatus * status,
+                            INT4FrequencySeries * series,
+                            FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetINT8FrequencySeries(
-    LALStatus      *status,
-    INT8FrequencySeries *series,
-    FrChanIn       *chanin,
-    LALFrStream       *stream
-    );
+LALFrGetINT8FrequencySeries(LALStatus * status,
+                            INT8FrequencySeries * series,
+                            FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetREAL4FrequencySeries(
-    LALStatus       *status,
-    REAL4FrequencySeries *series,
-    FrChanIn        *chanin,
-    LALFrStream        *stream
-    );
+LALFrGetREAL4FrequencySeries(LALStatus * status,
+                             REAL4FrequencySeries * series,
+                             FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetREAL8FrequencySeries(
-    LALStatus       *status,
-    REAL8FrequencySeries *series,
-    FrChanIn        *chanin,
-    LALFrStream        *stream
-    );
+LALFrGetREAL8FrequencySeries(LALStatus * status,
+                             REAL8FrequencySeries * series,
+                             FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetCOMPLEX8FrequencySeries(
-    LALStatus          *status,
-    COMPLEX8FrequencySeries *series,
-    FrChanIn           *chanin,
-    LALFrStream           *stream
-    );
+LALFrGetCOMPLEX8FrequencySeries(LALStatus * status,
+                                COMPLEX8FrequencySeries * series,
+                                FrChanIn * chanin, LALFrStream * stream);
 
 void
-LALFrGetCOMPLEX16FrequencySeries(
-    LALStatus           *status,
-    COMPLEX16FrequencySeries *series,
-    FrChanIn            *chanin,
-    LALFrStream            *stream
-    );
+LALFrGetCOMPLEX16FrequencySeries(LALStatus * status,
+                                 COMPLEX16FrequencySeries * series,
+                                 FrChanIn * chanin, LALFrStream * stream);
 
 
 void
-LALFrWriteINT2TimeSeries(
-    LALStatus       *status,
-    INT2TimeSeries  *series,
-    FrOutPar        *params
-    );
+LALFrWriteINT2TimeSeries(LALStatus * status,
+                         INT2TimeSeries * series, FrOutPar * params);
 
 void
-LALFrWriteINT4TimeSeries(
-    LALStatus       *status,
-    INT4TimeSeries  *series,
-    FrOutPar        *params
-    );
+LALFrWriteINT4TimeSeries(LALStatus * status,
+                         INT4TimeSeries * series, FrOutPar * params);
 
 void
-LALFrWriteINT8TimeSeries(
-    LALStatus       *status,
-    INT8TimeSeries  *series,
-    FrOutPar        *params
-    );
+LALFrWriteINT8TimeSeries(LALStatus * status,
+                         INT8TimeSeries * series, FrOutPar * params);
 
 void
-LALFrWriteREAL4TimeSeries(
-    LALStatus       *status,
-    REAL4TimeSeries *series,
-    FrOutPar        *params
-    );
+LALFrWriteREAL4TimeSeries(LALStatus * status,
+                          REAL4TimeSeries * series, FrOutPar * params);
 
 void
-LALFrWriteREAL8TimeSeries(
-    LALStatus       *status,
-    REAL8TimeSeries *series,
-    FrOutPar        *params
-    );
+LALFrWriteREAL8TimeSeries(LALStatus * status,
+                          REAL8TimeSeries * series, FrOutPar * params);
 
 void
-LALFrWriteCOMPLEX8TimeSeries(
-    LALStatus          *status,
-    COMPLEX8TimeSeries *series,
-    FrOutPar           *params
-    );
+LALFrWriteCOMPLEX8TimeSeries(LALStatus * status,
+                             COMPLEX8TimeSeries * series,
+                             FrOutPar * params);
 
 void
-LALFrWriteCOMPLEX16TimeSeries(
-    LALStatus           *status,
-    COMPLEX16TimeSeries *series,
-    FrOutPar            *params
-    );
+LALFrWriteCOMPLEX16TimeSeries(LALStatus * status,
+                              COMPLEX16TimeSeries * series,
+                              FrOutPar * params);
 
 
 void
-LALFrWriteINT2FrequencySeries(
-    LALStatus       *status,
-    INT2FrequencySeries  *series,
-    FrOutPar        *params,
-    INT4             subtype
-    );
+LALFrWriteINT2FrequencySeries(LALStatus * status,
+                              INT2FrequencySeries * series,
+                              FrOutPar * params, INT4 subtype);
 
 void
-LALFrWriteINT4FrequencySeries(
-    LALStatus       *status,
-    INT4FrequencySeries  *series,
-    FrOutPar        *params,
-    INT4             subtype
-    );
+LALFrWriteINT4FrequencySeries(LALStatus * status,
+                              INT4FrequencySeries * series,
+                              FrOutPar * params, INT4 subtype);
 
 void
-LALFrWriteINT8FrequencySeries(
-    LALStatus       *status,
-    INT8FrequencySeries  *series,
-    FrOutPar        *params,
-    INT4             subtype
-    );
+LALFrWriteINT8FrequencySeries(LALStatus * status,
+                              INT8FrequencySeries * series,
+                              FrOutPar * params, INT4 subtype);
 
 void
-LALFrWriteREAL4FrequencySeries(
-    LALStatus       *status,
-    REAL4FrequencySeries *series,
-    FrOutPar        *params,
-    INT4             subtype
-    );
+LALFrWriteREAL4FrequencySeries(LALStatus * status,
+                               REAL4FrequencySeries * series,
+                               FrOutPar * params, INT4 subtype);
 
 void
-LALFrWriteREAL8FrequencySeries(
-    LALStatus       *status,
-    REAL8FrequencySeries *series,
-    FrOutPar        *params,
-    INT4             subtype
-    );
+LALFrWriteREAL8FrequencySeries(LALStatus * status,
+                               REAL8FrequencySeries * series,
+                               FrOutPar * params, INT4 subtype);
 
 void
-LALFrWriteCOMPLEX8FrequencySeries(
-    LALStatus          *status,
-    COMPLEX8FrequencySeries *series,
-    FrOutPar           *params,
-    INT4             subtype
-    );
+LALFrWriteCOMPLEX8FrequencySeries(LALStatus * status,
+                                  COMPLEX8FrequencySeries * series,
+                                  FrOutPar * params, INT4 subtype);
 
 void
-LALFrWriteCOMPLEX16FrequencySeries(
-    LALStatus           *status,
-    COMPLEX16FrequencySeries *series,
-    FrOutPar            *params,
-    INT4             subtype
-    );
+LALFrWriteCOMPLEX16FrequencySeries(LALStatus * status,
+                                   COMPLEX16FrequencySeries * series,
+                                   FrOutPar * params, INT4 subtype);
 
 /*@}*/
 
 #if 0
-{ /* so that editors will match succeeding brace */
+{       /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
 }
 #endif
