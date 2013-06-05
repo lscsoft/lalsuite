@@ -41,6 +41,12 @@
 #define swiglal_no_self() NULL
 %}
 
+// Name of PyObject containing the SWIG wrapping of the
+// first argument to a function.
+%header %{
+#define swiglal_1starg()  obj0
+%}
+
 ////////// SWIG directives for operators //////////
 
 // These macros apply the correct python:slot directives

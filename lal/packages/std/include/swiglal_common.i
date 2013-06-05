@@ -1033,22 +1033,22 @@ if (swiglal_release_parent(PTR)) {
 // the member being accessed, in order to prevent it from being destroyed as long
 // as the SWIG-wrapped member object is in scope. The return object is then always
 // created with SWIG_POINTER_OWN, so that its destructor will always be called.
-%define %swiglal_store_parent(PTR, OWNER)
+%define %swiglal_store_parent(PTR, OWNER, SELF)
 %#if !(OWNER & SWIG_POINTER_OWN)
   if (%as_voidptr(PTR) != NULL) {
-    swiglal_store_parent(%as_voidptr(PTR), swiglal_self());
+    swiglal_store_parent(%as_voidptr(PTR), SELF);
   }
 %#endif
 %enddef
 %typemap(out,noblock=1) SWIGTYPE *, SWIGTYPE &, SWIGTYPE[] {
-  %swiglal_store_parent($1, $owner);
+  %swiglal_store_parent($1, $owner, swiglal_self());
   %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
 }
 %typemap(out,noblock=1) const SWIGTYPE *, const SWIGTYPE &, const SWIGTYPE[] {
   %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) & ~SWIG_POINTER_OWN));
 }
 %typemap(out, noblock=1) SWIGTYPE *const& {
-  %swiglal_store_parent(*$1, $owner);
+  %swiglal_store_parent(*$1, $owner, swiglal_self());
   %set_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
 }
 %typemap(out, noblock=1) const SWIGTYPE *const& {
@@ -1056,7 +1056,7 @@ if (swiglal_release_parent(PTR)) {
 }
 %typemap(out, noblock=1) SWIGTYPE (void* copy = NULL) {
   copy = %swiglal_new_copy($1, $ltype);
-  %swiglal_store_parent(copy, SWIG_POINTER_OWN);
+  %swiglal_store_parent(copy, SWIG_POINTER_OWN, swiglal_self());
   %set_output(SWIG_NewPointerObj(copy, $&descriptor, (%newpointer_flags) | SWIG_POINTER_OWN));
 }
 %typemap(varout, noblock=1) SWIGTYPE *, SWIGTYPE [] {
@@ -1067,6 +1067,23 @@ if (swiglal_release_parent(PTR)) {
 }
 %typemap(varout, noblock=1) SWIGTYPE {
   %set_varoutput(SWIG_NewPointerObj(%as_voidptr(&$1), $&descriptor, (%newpointer_flags) & ~SWIG_POINTER_OWN));
+}
+
+// The SWIGLAL(GET_OBJECT(...)) macro is used when a function returns an object whose
+// memory is owned by the object supplied as the first argument to the function.
+// Typically this occurs when the function is returning some property of its first
+// argument. The macro applies a typemap which calles swiglal_store_parent() to store
+// a reference to the first argument as the 'parent' of the return argument, so that
+// the parent will not be destroyed as long as the return value is in scope.
+%define %swiglal_public_GET_OBJECT(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_GET_OBJECT, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_GET_OBJECT(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%typemap(out,noblock=1) SWIGTYPE* SWIGLAL_GET_OBJECT {
+  %swiglal_store_parent($1, 0, swiglal_1starg());
+  %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
 }
 
 // Typemaps for pointers to primitive scalars. These are treated as output-only

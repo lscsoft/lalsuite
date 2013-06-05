@@ -54,6 +54,12 @@
 #define swiglal_no_self() octave_value()
 %}
 
+// Name of octave_value containing the SWIG wrapping of the
+// first argument to a function.
+%header %{
+#define swiglal_1starg()  (args.length() > 0 ? args(0) : octave_value())
+%}
+
 ////////// SWIG directives for operators //////////
 
 // Unary operators which return a new object, and thus
