@@ -31,7 +31,7 @@
   #include <signal.h>
 
   // Print the supplied error message, then raise an XLAL error.
-  int lalswig_LALRaise(int sig, const char *fmt, ...) {
+  static int lalswig_LALRaise(int sig, const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     (void) vfprintf(stderr, fmt, ap);
@@ -42,7 +42,7 @@
   }
 
   // Print the supplied error message, then raise an XLAL error.
-  void lalswig_LALAbort(const char *fmt, ...) {
+  static void lalswig_LALAbort(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     (void) vfprintf(stderr, fmt, ap);
