@@ -266,8 +266,8 @@ for header in headers:
         structs[struct['name']] = struct
 
 # look for a destructor function for each struct
-dtor_name_regexp = re.compile('(Destroy|Close)([A-Z0-9_]|$)')
-dtor_decl_regexp = re.compile('^f\(p\.(.*)\)\.$')
+dtor_name_regexp = re.compile(r'(Destroy|Close)([A-Z0-9_]|$)')
+dtor_decl_regexp = re.compile(r'^f\(p\.(.*)\)\.$')
 for function_name in functions:
 
     # function must match destructor name regexp, and return void
@@ -297,7 +297,7 @@ for function_name in functions:
 # determine whether a function should:
 # - ignore its return value
 # - disown its first argument
-func_arg_types_regexp = re.compile('^f\((.*)\)\.(p\.)*$')
+func_arg_types_regexp = re.compile(r'^f\((.*)\)\.(p\.)*$')
 for function_name in functions:
 
     # get function argument and return types
