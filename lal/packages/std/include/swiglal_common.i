@@ -585,30 +585,30 @@ if (swiglal_release_parent(PTR)) {
 }
 
 // Public macros to make fixed nD arrays:
-// * output-only arguments: SWIGLAL(OUTPUT_nDARRAY(TYPE, ...))
-%define %swiglal_public_OUTPUT_1DARRAY(TYPE, ...)
+// * output-only arguments: SWIGLAL(OUTPUT_ARRAY_nD(TYPE, ...))
+%define %swiglal_public_OUTPUT_ARRAY_1D(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE OUTPUT[ANY], TYPE, __VA_ARGS__);
 %enddef
-%define %swiglal_public_clear_OUTPUT_1DARRAY(TYPE, ...)
+%define %swiglal_public_clear_OUTPUT_ARRAY_1D(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
-%define %swiglal_public_OUTPUT_2DARRAY(TYPE, ...)
+%define %swiglal_public_OUTPUT_ARRAY_2D(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE OUTPUT[ANY][ANY], TYPE, __VA_ARGS__);
 %enddef
-%define %swiglal_public_clear_OUTPUT_2DARRAY(TYPE, ...)
+%define %swiglal_public_clear_OUTPUT_ARRAY_2D(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
-// * input-output arguments: SWIGLAL(INOUT_nDARRAY(TYPE, ...))
-%define %swiglal_public_INOUT_1DARRAY(TYPE, ...)
+// * input-output arguments: SWIGLAL(INOUT_ARRAY_nD(TYPE, ...))
+%define %swiglal_public_INOUT_ARRAY_1D(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE INOUT[ANY], TYPE, __VA_ARGS__);
 %enddef
-%define %swiglal_public_clear_INOUT_1DARRAY(TYPE, ...)
+%define %swiglal_public_clear_INOUT_ARRAY_1D(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
-%define %swiglal_public_INOUT_2DARRAY(TYPE, ...)
+%define %swiglal_public_INOUT_ARRAY_2D(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE INOUT[ANY][ANY], TYPE, __VA_ARGS__);
 %enddef
-%define %swiglal_public_clear_INOUT_2DARRAY(TYPE, ...)
+%define %swiglal_public_clear_INOUT_ARRAY_2D(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 
