@@ -11,7 +11,6 @@
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>
 
-#include <lal/FrameData.h>
 #include <lal/LALFrStream.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALDatatypes.h>

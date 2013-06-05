@@ -32,12 +32,8 @@ endif
 
 check_PROGRAMS = \
 	AggregationTest \
-	FrameDataTest \
 	FrameStreamTest \
 	MakeFrames \
-	Read40mData \
-	ReadGEOData \
-	ReadLHOData \
 	$(PTHREADPRGS)
 TESTS = \
 	FrameStreamTest \

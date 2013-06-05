@@ -28,7 +28,6 @@ lalframeincludedir = $(includedir)/lal
 lalframeinclude_HEADERS = \
 	Aggregation.h \
 	FrameCalibration.h \
-	FrameData.h \
 	LALFrStream.h \
 	LALFrameConfig.h \
 	LALFrameL.h \
@@ -44,7 +43,6 @@ liblalframe_la_SOURCES = \
 	LALFrameU.c \
 	Aggregation.c \
 	FrameCalibration.c \
-	FrameData.c \
 	FrameSeries.c \
 	LALFrStream.c \
 	LALFrameIO.c \
