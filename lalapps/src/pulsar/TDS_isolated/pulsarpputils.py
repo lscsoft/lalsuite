@@ -272,7 +272,8 @@ float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6",
               "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
               "FB0", "FB1", "FB2", "ELAT", "ELONG", "PMRA", "PMDEC", "DIST",
               # GW PARAMETERS
-              "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31"]
+              "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31", "C22",
+              "C21", "PHI22", "PHI21", "SNR"]
 str_keys = ["FILE", "PSR", "PSRJ", "NAME", "RAJ", "DECJ", "RA", "DEC", "EPHEM",
             "CLK", "BINARY", "UNITS"]
 
@@ -597,7 +598,7 @@ def plot_posterior_hist(poslist, param, ifos,
       # prepend a zero to ct
       ct = np.insert(ct, 0, 0)
 
-      # use spline interpolation to find the value at 'upper limit'
+      # use linear interpolation to find the value at 'upper limit'
       ctu, ui = np.unique(ct, return_index=True)
       intf = interp1d(ctu, bins[ui], kind='linear')
       ulvals.append(intf(float(upperlimit)))
@@ -619,6 +620,29 @@ def plot_posterior_hist(poslist, param, ifos,
     myfigs.append(myfig)
 
   return myfigs, ulvals
+
+
+# function to return an upper limit from a posteriors: pos is an array of posteriors samples for a
+# particular parameter
+def upper_limit(pos, upperlimit=0.95, parambounds=[float("-inf"), float("inf")], nbins=50):
+  ulval = 0
+
+  # get a normalised histogram of posterior samples
+  n, bins = hist_norm_bounds( pos, int(nbins), parambounds[0], parambounds[1] )
+
+  # if upper limit is needed then integrate posterior using trapezium rule
+  if upperlimit != 0:
+    ct = cumtrapz(n, bins)
+
+    # prepend a zero to ct
+    ct = np.insert(ct, 0, 0)
+
+    # use linear interpolation to find the value at 'upper limit'
+    ctu, ui = np.unique(ct, return_index=True)
+    intf = interp1d(ctu, bins[ui], kind='linear')
+    ulval = intf(float(upperlimit))
+
+  return ulval
 
 
 # function to plot a posterior chain (be it MCMC chains or nested samples)
@@ -1914,7 +1938,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 
   snrtot = snrtot*snrscale
 
-  return tss, ss, snrtot
+  return tss, ss, snrtot, snrscale
 
 
 # function to create a time domain PSD from theoretical
