@@ -240,7 +240,7 @@ static int interp_find_roots(size_t *nroots, COMPLEX16 *roots, const double *are
  * surrounding the trigger and once for the last four of the five samples
  * surrounding the trigger.
  */
-static double cubic_interp_1(COMPLEX16 *val, const COMPLEX16 *y, gsl_poly_complex_workspace *workspace)
+static int cubic_interp_1(gsl_poly_complex_workspace *workspace, double *t, COMPLEX16 *val, const COMPLEX16 *y)
 {
     double argmax = NAN, new_argmax;
     COMPLEX16 maxval, new_maxval;
@@ -261,7 +261,7 @@ static double cubic_interp_1(COMPLEX16 *val, const COMPLEX16 *y, gsl_poly_comple
     /* Find local maxima of (|a|^2 + |b|^2). */
     result = interp_find_roots(&nroots, roots, are, aim, n, workspace);
     if (result != GSL_SUCCESS)
-        goto fail;
+        return result;
 
     /* Determine which of the endpoints is greater. */
     argmax = 0;
@@ -298,9 +298,9 @@ static double cubic_interp_1(COMPLEX16 *val, const COMPLEX16 *y, gsl_poly_comple
         }
     }
 
+    *t = argmax;
     *val = maxval;
-fail:
-    return argmax;
+    return GSL_SUCCESS;
 }
 
 
@@ -345,9 +345,14 @@ int XLALCOMPLEX16ApplyCubicSplineTriggerInterpolant(
     COMPLEX16 max1, max2;
     double max1_abs1, max2_abs2;
     double argmax1, argmax2;
+    int result;
 
-    argmax1 = cubic_interp_1(&max1, &data[-2], interp->workspace);
-    argmax2 = cubic_interp_1(&max2, &data[-1], interp->workspace);
+    result = cubic_interp_1(interp->workspace, &argmax1, &max1, &data[-2]);
+    if (result != GSL_SUCCESS)
+        return result;
+    result = cubic_interp_1(interp->workspace, &argmax2, &max2, &data[-1]);
+    if (result != GSL_SUCCESS)
+        return result;
     max1_abs1 = cabs2(max1);
     max2_abs2 = cabs2(max2);
 
