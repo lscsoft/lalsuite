@@ -127,17 +127,10 @@ static int XLALREAL4ApplyTriggerInterpolant(
  */
 
 
-/* Return x^2 for a real number x. */
-static double square(double x)
-{
-    return x * x;
-}
-
-
 /* Return |z|^2 for a complex number z. */
 static double cabs2(COMPLEX16 z)
 {
-    return square(creal(z)) + square(cimag(z));
+    return gsl_pow_2(creal(z)) + gsl_pow_2(cimag(z));
 }
 
 
