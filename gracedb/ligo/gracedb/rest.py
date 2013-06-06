@@ -334,7 +334,6 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid)
         return self.get(uri)
 
-# XXX fix to have alert option.
     def writeLog(self, graceid, message, tagname=None, displayName=None):
         template = self.templates['event-log-template']
         uri = template.format(graceid=graceid)
@@ -346,10 +345,10 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid, label=label)
         return self.get(uri)
 
-    def writeLabel(self, graceid, label, alert=None):
+    def writeLabel(self, graceid, label):
         template = self.templates['event-label-template']
         uri = template.format(graceid=graceid, label=label)
-        return self.put(uri, body={'alert': alert})
+        return self.put(uri)
 
     def removeLabel(self, graceid, label):
         template = self.templates['event-label-template']

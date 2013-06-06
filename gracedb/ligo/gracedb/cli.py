@@ -185,8 +185,8 @@ Longer strings will be truncated.""" % {
                   help="If data is read from stdin, use this as the filename.", metavar="NAME")
 
     op.add_option("-a", "--alert", dest="alert",
-                  help="Send an LV alert (not meaningful for search, implied for create)",
-                  action="store_true", default=False
+                  help="Send an LV alert (deprecated; alerts sent by default)",
+                  action="store_true", default=True
                  )
 
     op.add_option("-c", "--columns", dest="columns",
@@ -213,6 +213,9 @@ Longer strings will be truncated.""" % {
     service = options.service or \
               os.environ.get('GRACEDB_SERVICE_URL', None) or \
               DEFAULT_SERVICE_URL
+
+    if options.alert:
+        warning("alert option is deprecated.  Alerts are now sent by default.")
 
     proxyport = None
     if proxy and proxy.find(':') > 0:
@@ -254,7 +257,7 @@ Longer strings will be truncated.""" % {
         output("comment ignored: %s" % comment)
         response = client.writeFile(graceid, filename)
         # response = client.writeLog(graceid, filename, comment, 
-        #    tagName, tagDispName,  options.alert)
+        #    tagName, tagDispName)
     elif args[0] == 'download':
         if len(args) not in [2,3,4]:
             op.error("not enough arguments for download")
@@ -284,9 +287,6 @@ Longer strings will be truncated.""" % {
             op.error("not enough arguments for log")
         graceid = args[1]
         message = " ".join(args[2:])
-        # XXX need alert option in here.
-#        response = client.writeLog(graceid, message, options.tagName, options.tagDispName, 
-#            alert=options.alert)
         response = client.writeLog(graceid, message, options.tagName, options.tagDispName)
     elif args[0] == 'tag':
         if options.tagName:
@@ -319,7 +319,7 @@ Longer strings will be truncated.""" % {
             op.error("wrong number of arguments for label")
         graceid = args[1]
         label = args[2]
-        response = client.writeLabel(graceid, label, alert=options.alert)
+        response = client.writeLabel(graceid, label)
     elif args[0] == 'search':
         query = " ".join(args[1:])
         terms = { "query" : query }
