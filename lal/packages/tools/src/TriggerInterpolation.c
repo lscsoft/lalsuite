@@ -670,7 +670,7 @@ QuadraticFitTriggerInterpolant *XLALCreateQuadraticFitTriggerInterpolant(unsigne
         double x = i - window;
         gsl_matrix_set(interp->X, i, 0, 1);
         gsl_matrix_set(interp->X, i, 1, x);
-        gsl_matrix_set(interp->X, i, 2, x * x);
+        gsl_matrix_set(interp->X, i, 2, gsl_pow_2(x));
     }
 
     interp->cov = gsl_matrix_alloc(3, 3);
