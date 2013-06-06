@@ -30,6 +30,7 @@ __version__ = '$Revision$'
 import sys, os
 import getopt, re, string
 import tempfile
+import math
 #import ConfigParser
 #sys.path.append('')
 
@@ -248,7 +249,7 @@ for o, a in opts:
   elif o in ("-M", "--datafind-match"):
     datafindMatch = a
   elif o in ("-y", "--synchronize-start"):
-    synchronizeStart = a
+    synchronizeStart = int(a)
   elif o in ("-k", "--filter-knee-freq"):
     filterKneeFreq = int(a)
   elif o in ("-T", "--time-baseline"):
