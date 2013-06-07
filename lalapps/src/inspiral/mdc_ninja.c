@@ -122,6 +122,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   /* start/end times */
   INT4 gpsStartSec          = -1;
   INT4 gpsEndSec            = -1;
+  INT4 injectWindow         = 0;
   LIGOTimeGPS gpsStartTime  = {0, 0};
   LIGOTimeGPS UNUSED gpsEndTime = {0, 0};
 
@@ -191,6 +192,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"virgo-low-freq-cutoff",   required_argument, 0,                'j'},
     {"out-xml-file",            required_argument, 0,                'O'},
     {"fr-out-dir",              required_argument, 0,                'd'},
+    {"inject-window",           required_argument, 0,                'I'},
     {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -208,7 +210,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     size_t optarg_len;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "T:a:b:f:r:i:t:n:o:l:L:s:S:c:e:f:g:O:d:hV",
+    c = getopt_long_only( argc, argv, "T:a:b:f:r:i:I:t:n:o:l:L:s:S:c:e:f:g:O:d:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -281,6 +283,11 @@ INT4 main( INT4 argc, CHAR *argv[] )
           exit( 1 );
         }
         gpsEndTime.gpsSeconds = gpsEndSec;
+        break;
+
+      case 'I':
+        /* set gps end seconds */
+        injectWindow = atoi( optarg );
         break;
 
       case 'f':
@@ -634,7 +641,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   /* read the injections */
   numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
-      gpsStartSec, gpsEndSec );
+      gpsStartSec-injectWindow, gpsEndSec+injectWindow );
 
   if ( vrbflg )
   {
@@ -865,6 +872,7 @@ static void print_usage( CHAR *program )
       "  [--version]                       print version information and exit\n"\
       "  --injection-type      type        set injection type ('approximant' or 'NR')\n"\
       "  --injection-file      inj_file    read inj details from xml sim-insp inj_file\n"\
+      "  --inject-window       time        Buffer time in which to generate injections. This covers injections which do not merge within the GPS times given but may still overlap the data segment.\n"\
       "  --ifo                 ifo         IFO for which to generate injections\n"\
       "  --all-ifos                        create injections for all IFOs\n"\
       "  --gps-start-time      start       start time of output file\n"\
