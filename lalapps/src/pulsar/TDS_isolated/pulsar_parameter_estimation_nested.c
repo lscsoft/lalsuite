@@ -924,8 +924,34 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       REAL8 tmpre = 0., tmpim = 0., timetmp = 0., dtcur = 0., dtprev = 0.;
       REAL8 tnow = 0., tprev = 0.;
 
-      /* read in data */
-      while(fscanf(fp, "%lf%lf%lf", &times, &dataValsRe, &dataValsIm) != EOF){
+      /* read in data - ignore lines starting with # or % */
+      long offset;
+      while(!feof(fp)){
+        offset = ftell(fp);
+        int testchar;
+
+        if( (testchar = fgetc(fp)) == EOF ){ break; }
+        else{ fseek(fp, offset, SEEK_SET); } /* return to start of line */
+
+        /* test for comment characters */
+        if( ( testchar == '%' ) || ( testchar == '#' ) ){
+          /* skip to end of line */
+          /* some lines for testing the comment check */
+          // char *line = NULL;
+          // size_t len = 0;
+          // ssize_t testread;
+
+          // if( (testread = getline(&line, &len, fp)) == -1 ){ break; }
+          // fprintf(stderr, "%s", line);
+
+          if ( fscanf(fp, "%*[^\n]") == EOF ){ break; }
+        }
+        else{ /* read in data */
+          int rc = fscanf(fp, "%lf%lf%lf", &times, &dataValsRe, &dataValsIm);
+          if( rc == EOF ){ break; }
+          else if( rc != 3 ){ continue; } /* ignore the line */
+        }
+
         j++;
 
         tnow = times;
