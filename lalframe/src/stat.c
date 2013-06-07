@@ -70,9 +70,8 @@ int main(int argc, char *argv[])
         if (!toc)
             FAILURE("no TOC found\n");
 
-
         nframe = XLALFrameUFrTOCQueryNFrame(toc);
-        if ((int) (nframe) <= 0)
+        if ((int)(nframe) <= 0)
             FAILURE("no frames found\n");
 
         ndet = XLALFrameUFrTOCQueryDetectorN(toc);
@@ -166,7 +165,7 @@ int main(int argc, char *argv[])
         dt = ceil(t1max) - floor(t0min);
         printf("%s", sites);
         printf("\t%s", dsc);
-        printf("\t%d", (int) floor(t0min));
+        printf("\t%d", (int)floor(t0min));
         printf("\t%d", dt > 0 ? dt : 1);
         if (strcmp(path, "-") == 0)
             printf("\t-");
@@ -184,8 +183,8 @@ int main(int argc, char *argv[])
 
 int charcmp(const void *c1, const void *c2)
 {
-    char a = *((const char *) c1);
-    char b = *((const char *) c2);
+    char a = *((const char *)c1);
+    char b = *((const char *)c2);
     return (a > b) - (a < b);
 }
 
@@ -205,7 +204,8 @@ char *fnametodsc(const char *fname)
         base = base ? base + 1 : fname;
 
         /* see if basename is in canonical form */
-        n = sscanf(base, "%[A-Z]-%[a-zA-Z0-9_+#]-%u-%u.gwf", src, dsc, &t0, &dt);
+        n = sscanf(base, "%[A-Z]-%[a-zA-Z0-9_+#]-%u-%u.gwf", src, dsc, &t0,
+            &dt);
         if (n == 4)     /* correct number of conversions */
             return strdup(dsc); /* return description field */
 

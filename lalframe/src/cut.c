@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
             FAILURE("no TOC found in file %s\n", fname);
 
         nframe = XLALFrameUFrTOCQueryNFrame(toc);
-        if ((int) (nframe) <= 0)
+        if ((int)(nframe) <= 0)
             FAILURE("no frames found in file %s\n", fname);
 
         /* loop over frames in input file */

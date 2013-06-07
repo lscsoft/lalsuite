@@ -71,6 +71,8 @@ int main( void )
   CHAR *dirname = getenv( "LAL_FRAME_PATH" );
   INT4 file = 0;
 
+  XLALSetErrorHandler(XLALAbortErrorHandler);
+
   /* test files are version 4 frames */
   /* ignore this test if using earlier version of frame library */
   if ( FRAMELIB_VERSION < 4 )

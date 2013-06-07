@@ -69,6 +69,7 @@ REAL8TimeSeries *XLALNRInjectionStrain(
 
 int XLALCheckFrameHasChannel( CHAR *channel, LALFrStream *stream )
 {
+#if 0
   FrTOCts    *ts;
   ts = stream->file->toc->adc;
   while ( ts && strcmp( channel, ts->name ) )
@@ -90,6 +91,11 @@ int XLALCheckFrameHasChannel( CHAR *channel, LALFrStream *stream )
   if ( ! ts )
     return 0;
   return 1;
+#else
+  if ((int)XLALFrStreamGetVectorLength(channel, stream) < 0)
+    return 0;
+  return 1;
+#endif
 }
 
 int

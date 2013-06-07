@@ -149,7 +149,7 @@ INT4 main(INT4 argc, CHAR **argv)
   REAL8TimeSeries *hcrossREAL8[MAX_L+1][(2*MAX_L) + 1];
 
   /* frame variables */
-  FrameH *frame;
+  LALFrameH *frame;
   CHAR *frame_name = NULL;
   LIGOTimeGPS epoch;
   INT4 duration;
@@ -593,7 +593,7 @@ INT4 main(INT4 argc, CHAR **argv)
     fprintf(stdout, "writing frame: %s\n", frame_name);
 
   /* write frame */
-  if (XLALFrameWrite(frame, frame_name, 8) != 0 )
+  if (XLALFrameWrite(frame, frame_name) != 0 )
   {
     fprintf(stderr, "Error: Cannot save frame file '%s'\n", frame_name);
     exit(1);
@@ -703,7 +703,7 @@ INT4 main(INT4 argc, CHAR **argv)
   }
 
   /* clear frame */
-  FrameFree(frame);
+  XLALFrameFree(frame);
 
   /* check for memory leaks */
   LALCheckMemoryLeaks();

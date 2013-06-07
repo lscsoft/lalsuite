@@ -81,54 +81,69 @@ void XLALFrameUFrFileClose(LALFrameUFrFile * stream);
 LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode);
 int XLALFrameUFileCksumValid(LALFrameUFrFile * stream);
 
-
 void XLALFrameUFrTOCFree(LALFrameUFrTOC * toc);
 LALFrameUFrTOC *XLALFrameUFrTOCRead(LALFrameUFrFile * stream);
 
 size_t XLALFrameUFrTOCQueryNFrame(const LALFrameUFrTOC * toc);
-double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc, size_t pos);
+double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc,
+    size_t pos);
 double XLALFrameUFrTOCQueryDt(const LALFrameUFrTOC * toc, size_t pos);
 size_t XLALFrameUFrTOCQueryAdcN(const LALFrameUFrTOC * toc);
-const char *XLALFrameUFrTOCQueryAdcName(const LALFrameUFrTOC * toc, size_t adc);
+const char *XLALFrameUFrTOCQueryAdcName(const LALFrameUFrTOC * toc,
+    size_t adc);
 size_t XLALFrameUFrTOCQuerySimN(const LALFrameUFrTOC * toc);
-const char *XLALFrameUFrTOCQuerySimName(const LALFrameUFrTOC * toc, size_t sim);
+const char *XLALFrameUFrTOCQuerySimName(const LALFrameUFrTOC * toc,
+    size_t sim);
 size_t XLALFrameUFrTOCQueryProcN(const LALFrameUFrTOC * toc);
-const char *XLALFrameUFrTOCQueryProcName(const LALFrameUFrTOC * toc, size_t proc);
+const char *XLALFrameUFrTOCQueryProcName(const LALFrameUFrTOC * toc,
+    size_t proc);
 size_t XLALFrameUFrTOCQueryDetectorN(const LALFrameUFrTOC * toc);
-const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc, size_t det);
+const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc,
+    size_t det);
 
 void XLALFrameUFrameHFree(LALFrameUFrameH * frame);
-LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start, double dt, int frnum);
+LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start,
+    double dt, int frnum);
 LALFrameUFrameH *XLALFrameUFrameHRead(LALFrameUFrFile * stream, int pos);
 int XLALFrameUFrameHWrite(LALFrameUFrFile * stream, LALFrameUFrameH * frame);
-int XLALFrameUFrameHFrChanAdd(LALFrameUFrameH * frame, LALFrameUFrChan * channel);
-int XLALFrameUFrameHFrDetectorAdd(LALFrameUFrameH * frame, LALFrameUFrDetector * detector);
-int XLALFrameUFrameHFrHistoryAdd(LALFrameUFrameH * frame, LALFrameUFrHistory * history);
-
+int XLALFrameUFrameHFrChanAdd(LALFrameUFrameH * frame,
+    LALFrameUFrChan * channel);
+int XLALFrameUFrameHFrDetectorAdd(LALFrameUFrameH * frame,
+    LALFrameUFrDetector * detector);
+int XLALFrameUFrameHFrHistoryAdd(LALFrameUFrameH * frame,
+    LALFrameUFrHistory * history);
 
 const char *XLALFrameUFrameHQueryName(const LALFrameUFrameH * frame);
 int XLALFrameUFrameHQueryRun(const LALFrameUFrameH * frame);
 int XLALFrameUFrameHQueryFrame(const LALFrameUFrameH * frame);
 int XLALFrameUFrameHQueryDataQuality(const LALFrameUFrameH * frame);
-double XLALFrameUFrameHQueryGTimeModf(double *iptr, const LALFrameUFrameH * frame);
+double XLALFrameUFrameHQueryGTimeModf(double *iptr,
+    const LALFrameUFrameH * frame);
 int XLALFrameUFrameHQueryULeapS(const LALFrameUFrameH * frame);
 double XLALFrameUFrameHQueryDt(const LALFrameUFrameH * frame);
 
 int XLALFrameUFrameHSetRun(LALFrameUFrameH * frame, int run);
 
 void XLALFrameUFrChanFree(LALFrameUFrChan * channel);
-LALFrameUFrChan *XLALFrameUFrChanRead(LALFrameUFrFile * stream, const char *name, size_t pos);
-LALFrameUFrChan *XLALFrameUFrAdcChanAlloc(const char *name, int dtype, size_t ndata);
-LALFrameUFrChan *XLALFrameUFrSimChanAlloc(const char *name, int dtype, size_t ndata);
-LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type, int subtype, int dtype, size_t ndata);
+LALFrameUFrChan *XLALFrameUFrChanRead(LALFrameUFrFile * stream,
+    const char *name, size_t pos);
+LALFrameUFrChan *XLALFrameUFrAdcChanAlloc(const char *name, int dtype,
+    size_t ndata);
+LALFrameUFrChan *XLALFrameUFrSimChanAlloc(const char *name, int dtype,
+    size_t ndata);
+LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type,
+    int subtype, int dtype, size_t ndata);
 
 const char *XLALFrameUFrChanQueryName(const LALFrameUFrChan * channel);
 double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel);
 
-int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel, double sampleRate);
+int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
+    double sampleRate);
 
-int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype, size_t ndata);
-int XLALFrameUFrChanVectorCompress(LALFrameUFrChan * channel, int compressLevel);
+int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype,
+    size_t ndata);
+int XLALFrameUFrChanVectorCompress(LALFrameUFrChan * channel,
+    int compressLevel);
 int XLALFrameUFrChanVectorExpand(LALFrameUFrChan * channel);
 
 const char *XLALFrameUFrChanVectorQueryName(const LALFrameUFrChan * channel);
@@ -138,40 +153,62 @@ void *XLALFrameUFrChanVectorQueryData(const LALFrameUFrChan * channel);
 size_t XLALFrameUFrChanVectorQueryNBytes(const LALFrameUFrChan * channel);
 size_t XLALFrameUFrChanVectorQueryNData(const LALFrameUFrChan * channel);
 size_t XLALFrameUFrChanVectorQueryNDim(const LALFrameUFrChan * channel);
-size_t XLALFrameUFrChanVectorQueryNx(const LALFrameUFrChan * channel, size_t dim);
-double XLALFrameUFrChanVectorQueryDx(const LALFrameUFrChan * channel, size_t dim);
-double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel, size_t dim);
-const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel, size_t dim);
+size_t XLALFrameUFrChanVectorQueryNx(const LALFrameUFrChan * channel,
+    size_t dim);
+double XLALFrameUFrChanVectorQueryDx(const LALFrameUFrChan * channel,
+    size_t dim);
+double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel,
+    size_t dim);
+const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel,
+    size_t dim);
 const char *XLALFrameUFrChanVectorQueryUnitY(const LALFrameUFrChan * channel);
 
-int XLALFrameUFrChanVectorSetName(LALFrameUFrChan * channel, const char *name);
+int XLALFrameUFrChanVectorSetName(LALFrameUFrChan * channel,
+    const char *name);
 int XLALFrameUFrChanVectorSetDx(LALFrameUFrChan * channel, double dx);
 int XLALFrameUFrChanVectorSetStartX(LALFrameUFrChan * channel, double x0);
-int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel, const char *unit);
-int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel, const char *unit);
+int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel,
+    const char *unit);
+int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel,
+    const char *unit);
 
 /* TODO: a bunch more things to set coming up!!! */
 
 void XLALFrameUFrDetectorFree(LALFrameUFrDetector * detector);
-LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream, const char *name);
+LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream,
+    const char *name);
 LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
-                                               const char *prefix, double latitude, double longitude, double elevation, double azimuthX, double azimuthY, double altitudeX, double altitudeY, double midpointX, double midpointY, int localTime);
+    const char *prefix, double latitude, double longitude, double elevation,
+    double azimuthX, double azimuthY, double altitudeX, double altitudeY,
+    double midpointX, double midpointY, int localTime);
 
-const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector * detector);
-const char *XLALFrameUFrDetectorQueryPrefix(const LALFrameUFrDetector * detector);
-double XLALFrameUFrDetectorQueryLongitude(const LALFrameUFrDetector * detector);
-double XLALFrameUFrDetectorQueryLatitude(const LALFrameUFrDetector * detector);
-double XLALFrameUFrDetectorQueryElevation(const LALFrameUFrDetector * detector);
-double XLALFrameUFrDetectorQueryArmXAzimuth(const LALFrameUFrDetector * detector);
-double XLALFrameUFrDetectorQueryArmYAzimuth(const LALFrameUFrDetector * detector);
-double XLALFrameUFrDetectorQueryArmXAltitude(const LALFrameUFrDetector * detector);
-double XLALFrameUFrDetectorQueryArmYAltitude(const LALFrameUFrDetector * detector);
-double XLALFrameUFrDetectorQueryArmXMidpoint(const LALFrameUFrDetector * detector);
-double XLALFrameUFrDetectorQueryArmYMidpoint(const LALFrameUFrDetector * detector);
+const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector *
+    detector);
+const char *XLALFrameUFrDetectorQueryPrefix(const LALFrameUFrDetector *
+    detector);
+double XLALFrameUFrDetectorQueryLongitude(const LALFrameUFrDetector *
+    detector);
+double XLALFrameUFrDetectorQueryLatitude(const LALFrameUFrDetector *
+    detector);
+double XLALFrameUFrDetectorQueryElevation(const LALFrameUFrDetector *
+    detector);
+double XLALFrameUFrDetectorQueryArmXAzimuth(const LALFrameUFrDetector *
+    detector);
+double XLALFrameUFrDetectorQueryArmYAzimuth(const LALFrameUFrDetector *
+    detector);
+double XLALFrameUFrDetectorQueryArmXAltitude(const LALFrameUFrDetector *
+    detector);
+double XLALFrameUFrDetectorQueryArmYAltitude(const LALFrameUFrDetector *
+    detector);
+double XLALFrameUFrDetectorQueryArmXMidpoint(const LALFrameUFrDetector *
+    detector);
+double XLALFrameUFrDetectorQueryArmYMidpoint(const LALFrameUFrDetector *
+    detector);
 int XLALFrameUFrDetectorQueryLocalTime(const LALFrameUFrDetector * detector);
 
 void XLALFrameUFrHistoryFree(LALFrameUFrHistory * history);
-LALFrameUFrHistory *XLALFrameUFrHistoryAlloc(const char *name, double gpssec, const char *comment);
+LALFrameUFrHistory *XLALFrameUFrHistoryAlloc(const char *name, double gpssec,
+    const char *comment);
 
 #if 0
 {

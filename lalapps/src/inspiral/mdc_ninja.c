@@ -906,7 +906,7 @@ static void output_frame(CHAR *ifo,
   CHAR fname[FILENAME_MAX];
   INT4 duration;
   INT4 detectorFlags;
-  FrameH *frame;
+  LALFrameH *frame;
   CHAR creator[HISTORY_COMMENT];
   CHAR channel[LALNameLength];
 
@@ -957,14 +957,14 @@ static void output_frame(CHAR *ifo,
     fprintf( stdout, "Writing injection to frame: '%s'\n", fname );
 
   /* write frame */
-  if (XLALFrameWrite( frame, fname, 8) != 0)
+  if (XLALFrameWrite( frame, fname) != 0)
   {
     fprintf( stderr, "ERROR: Cannot save frame file: '%s'\n", fname );
     exit( 1 );
   }
 
   /* clear frame */
-  FrameFree( frame );
+  XLALFrameFree( frame );
 
   return;
 }
@@ -981,7 +981,7 @@ static void output_frame_real8(CHAR *ifo,
   CHAR fname[FILENAME_MAX];
   INT4 duration;
   INT4 detectorFlags;
-  FrameH *frame;
+  LALFrameH *frame;
   CHAR creator[HISTORY_COMMENT];
   CHAR channel[LALNameLength];
 
@@ -1032,14 +1032,14 @@ static void output_frame_real8(CHAR *ifo,
     fprintf( stdout, "Writing injection to frame: '%s'\n", fname );
 
   /* write frame */
-  if (XLALFrameWrite( frame, fname, 8) != 0)
+  if (XLALFrameWrite( frame, fname) != 0)
   {
     fprintf( stderr, "ERROR: Cannot save frame file: '%s'\n", fname );
     exit( 1 );
   }
 
   /* clear frame */
-  FrameFree( frame );
+  XLALFrameFree( frame );
 
   return;
 }
@@ -1055,7 +1055,7 @@ static void output_multi_channel_frame(INT4 num_ifos,
   CHAR fname[FILENAME_MAX];
   INT4 duration;
   INT4 detectorFlags;
-  FrameH *frame;
+  LALFrameH *frame;
   INT4 i;
   CHAR creator[HISTORY_COMMENT];
   CHAR *ifo = NULL;
@@ -1095,14 +1095,14 @@ static void output_multi_channel_frame(INT4 num_ifos,
     fprintf( stdout, "Writing injections to frame: '%s'\n", fname );
 
   /* write frame */
-  if ( XLALFrameWrite( frame, fname, 8 ) != 0 )
+  if ( XLALFrameWrite( frame, fname ) != 0 )
   {
     fprintf( stderr, "ERROR: Cannot save frame file: '%s'\n", fname );
     exit( 1 );
   }
 
   /* clear frame */
-  FrameFree( frame );
+  XLALFrameFree( frame );
 
   return;
 }
@@ -1119,7 +1119,7 @@ static void output_multi_channel_frame_real8(INT4 num_ifos,
   CHAR fname[FILENAME_MAX];
   INT4 duration;
   INT4 detectorFlags;
-  FrameH *frame;
+  LALFrameH *frame;
   INT4 i;
   CHAR creator[HISTORY_COMMENT];
   CHAR *ifo = NULL;
@@ -1159,14 +1159,14 @@ static void output_multi_channel_frame_real8(INT4 num_ifos,
     fprintf( stdout, "Writing injections to frame: '%s'\n", fname );
 
   /* write frame */
-  if ( XLALFrameWrite( frame, fname, 8 ) != 0 )
+  if ( XLALFrameWrite( frame, fname ) != 0 )
   {
     fprintf( stderr, "ERROR: Cannot save frame file: '%s'\n", fname );
     exit( 1 );
   }
 
   /* clear frame */
-  FrameFree( frame );
+  XLALFrameFree( frame );
 
   return;
 }

@@ -46,9 +46,7 @@ struct tagLALFrameUFrDetector {
     char prefix[3];
 };
 
-
 /* TODO: get XLAL error macros going! */
-
 
 /*
  * FrFile functions
@@ -90,7 +88,8 @@ LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)
             char buf[BUFSZ];
 #undef BUFSZ
             tmpfp = fopen(tmpnam(tmpfname), "w");
-            while (fwrite(buf, 1, fread(buf, 1, sizeof(buf), stdin), tmpfp) == sizeof(buf));
+            while (fwrite(buf, 1, fread(buf, 1, sizeof(buf), stdin),
+                    tmpfp) == sizeof(buf)) ;
             fclose(tmpfp);
             stream->handle = FrFileINew(tmpfname);
             unlink(tmpfname);   /* remove tempfile when closed */
@@ -139,19 +138,18 @@ int XLALFrameUFileCksumValid(LALFrameUFrFile * stream)
      * the following line may need to be updated in future */
     FrIOSet(stream->handle->frfd, FR_FILE_HEADER_SIZE);
 
-    while ((frame = FrameReadRecycle(stream->handle, frame)));
+    while ((frame = FrameReadRecycle(stream->handle, frame))) ;
     stream->handle->chkSumFiFlag = chkSumFiFlag;
     stream->handle->chkSumFrFlag = chkSumFrFlag;
     if (stream->handle->error != FR_OK)
-        XLAL_ERROR(XLAL_EFAILED, "%s", FrErrorGetHistory());
+        XLAL_ERROR_VAL(0, XLAL_EFAILED, "%s", FrErrorGetHistory());
     if (stream->handle->chkTypeFiRead == 0)
-        XLAL_ERROR(XLAL_EFAILED, "Missing checksum");
+        XLAL_ERROR_VAL(0, XLAL_EFAILED, "Missing checksum");
     if (stream->handle->chkSumFiRead != stream->handle->chkSumFi)
-        XLAL_ERROR(XLAL_EFAILED, "Bad checksum");
+        XLAL_ERROR_VAL(0, XLAL_EFAILED, "Bad checksum");
     FrFileIRewind(stream->handle);
-    return 0;
+    return 1;
 }
-
 
 /*
  * FrTOC functions
@@ -173,7 +171,8 @@ size_t XLALFrameUFrTOCQueryNFrame(const LALFrameUFrTOC * toc)
     return toc->nFrame;
 }
 
-double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc, size_t pos)
+double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc,
+    size_t pos)
 {
     if (pos < (size_t) toc->nFrame) {
         LIGOTimeGPS epoch;
@@ -198,7 +197,8 @@ size_t XLALFrameUFrTOCQueryAdcN(const LALFrameUFrTOC * toc)
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrTOCQueryAdcName(const LALFrameUFrTOC * toc, size_t adc)
+const char *XLALFrameUFrTOCQueryAdcName(const LALFrameUFrTOC * toc,
+    size_t adc)
 {
     FrTOCts *ts = toc->adc;
     size_t i = 0;
@@ -220,7 +220,8 @@ size_t XLALFrameUFrTOCQuerySimN(const LALFrameUFrTOC * toc)
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrTOCQuerySimName(const LALFrameUFrTOC * toc, size_t sim)
+const char *XLALFrameUFrTOCQuerySimName(const LALFrameUFrTOC * toc,
+    size_t sim)
 {
     FrTOCts *ts = toc->sim;
     size_t i = 0;
@@ -242,7 +243,8 @@ size_t XLALFrameUFrTOCQueryProcN(const LALFrameUFrTOC * toc)
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrTOCQueryProcName(const LALFrameUFrTOC * toc, size_t proc)
+const char *XLALFrameUFrTOCQueryProcName(const LALFrameUFrTOC * toc,
+    size_t proc)
 {
     FrTOCts *ts = toc->proc;
     size_t i = 0;
@@ -264,7 +266,8 @@ size_t XLALFrameUFrTOCQueryDetectorN(const LALFrameUFrTOC * toc)
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc, size_t det)
+const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc,
+    size_t det)
 {
     FrTOCdet *d = toc->detector;
     size_t i = 0;
@@ -276,7 +279,6 @@ const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc, size_t 
     return 0;
 }
 
-
 /*
  * FrameH functions
  */
@@ -287,7 +289,8 @@ void XLALFrameUFrameHFree(LALFrameUFrameH * frame)
     return;
 }
 
-LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start, double dt, int frnum)
+LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start,
+    double dt, int frnum)
 {
     LALFrameUFrameH *frame;
     frame = calloc(1, sizeof(*frame));
@@ -314,7 +317,8 @@ LALFrameUFrameH *XLALFrameUFrameHRead(LALFrameUFrFile * stream, int pos)
             return NULL;        /* couldn't read TOC */
 
     /* go to the right position */
-    if (FrFileIOSet(stream->handle, stream->handle->toc->positionH[pos]) == -1)
+    if (FrFileIOSet(stream->handle,
+            stream->handle->toc->positionH[pos]) == -1)
         return NULL;
 
     /* get the frame */
@@ -371,7 +375,7 @@ static FrHistory *XLALFrHistoryCopy(const FrHistory * original)
     }
     /* successful return */
     return copy;
-failure:       /* unsuccessful return */
+  failure:     /* unsuccessful return */
     FrHistoryFree(copy);
     return NULL;
 }
@@ -423,7 +427,7 @@ static FrAdcData *XLALFrAdcDataCopy(const FrAdcData * original)
     }
     /* successful return */
     return copy;
-failure:       /* unsuccessful return */
+  failure:     /* unsuccessful return */
     FrAdcDataFree(copy);
     return NULL;
 }
@@ -460,11 +464,13 @@ static FrProcData *XLALFrProcDataCopy(const FrProcData * original)
     if (original->nAuxParam > 0) {
         int i;
         copy->auxParam = calloc(original->nAuxParam, sizeof(*copy->auxParam));
-        copy->auxParamNames = calloc(original->nAuxParam, sizeof(*copy->auxParamNames));
+        copy->auxParamNames =
+            calloc(original->nAuxParam, sizeof(*copy->auxParamNames));
         if (!copy->auxParam || !copy->auxParamNames)
             goto failure;
         copy->nAuxParam = original->nAuxParam;  /* now set value of nAuxParam */
-        memcpy(copy->auxParam, original->auxParam, copy->nAuxParam * sizeof(*copy->auxParam));
+        memcpy(copy->auxParam, original->auxParam,
+            copy->nAuxParam * sizeof(*copy->auxParam));
         for (i = 0; i < copy->nAuxParam; ++i)
             copy->auxParamNames[i] = strdup(original->auxParamNames[i]);
     }
@@ -495,7 +501,7 @@ static FrProcData *XLALFrProcDataCopy(const FrProcData * original)
     }
     /* successful return */
     return copy;
-failure:       /* unsuccessful return */
+  failure:     /* unsuccessful return */
     FrProcDataFree(copy);
     return NULL;
 }
@@ -547,12 +553,13 @@ static FrSimData *XLALFrSimDataCopy(const FrSimData * original)
     }
     /* successful return */
     return copy;
-failure:       /* unsuccessful return */
+  failure:     /* unsuccessful return */
     FrSimDataFree(copy);
     return NULL;
 }
 
-int XLALFrameUFrameHFrChanAdd(LALFrameUFrameH * frame, LALFrameUFrChan * channel)
+int XLALFrameUFrameHFrChanAdd(LALFrameUFrameH * frame,
+    LALFrameUFrChan * channel)
 {
     LALFrameUFrChan copy;
     switch (channel->type) {
@@ -585,7 +592,8 @@ int XLALFrameUFrameHFrChanAdd(LALFrameUFrameH * frame, LALFrameUFrChan * channel
     return 0;
 }
 
-int XLALFrameUFrameHFrDetectorAdd(LALFrameUFrameH * frame, LALFrameUFrDetector * detector)
+int XLALFrameUFrameHFrDetectorAdd(LALFrameUFrameH * frame,
+    LALFrameUFrDetector * detector)
 {
     FrDetector *copy;
     copy = calloc(1, sizeof(*copy));
@@ -620,10 +628,13 @@ int XLALFrameUFrameHFrDetectorAdd(LALFrameUFrameH * frame, LALFrameUFrDetector *
     return 0;
 }
 
-int XLALFrameUFrameHFrHistoryAdd(LALFrameUFrameH * frame, LALFrameUFrHistory * history)
+int XLALFrameUFrameHFrHistoryAdd(LALFrameUFrameH * frame,
+    LALFrameUFrHistory * history)
 {
     FrHistory *copy;
-    copy = FrHistoryNew(history->name ? history->name : frame->name, history->time, history->comment);
+    copy =
+        FrHistoryNew(history->name ? history->name : frame->name,
+        history->time, history->comment);
     if (!copy)
         return -1;
     copy->next = frame->history;
@@ -652,7 +663,8 @@ int XLALFrameUFrameHQueryDataQuality(const LALFrameUFrameH * frame)
     return frame->dataQuality;
 }
 
-double XLALFrameUFrameHQueryGTimeModf(double *iptr, const LALFrameUFrameH * frame)
+double XLALFrameUFrameHQueryGTimeModf(double *iptr,
+    const LALFrameUFrameH * frame)
 {
     LIGOTimeGPS epoch;
     XLALGPSSet(&epoch, frame->GTimeS, frame->GTimeN);
@@ -676,7 +688,6 @@ int XLALFrameUFrameHSetRun(LALFrameUFrameH * frame, int run)
     frame->run = run;
     return 0;
 }
-
 
 /* 
  * FrChan functions
@@ -703,7 +714,8 @@ void XLALFrameUFrChanFree(LALFrameUFrChan * channel)
     return;
 }
 
-LALFrameUFrChan *XLALFrameUFrChanRead(LALFrameUFrFile * stream, const char *name, size_t pos)
+LALFrameUFrChan *XLALFrameUFrChanRead(LALFrameUFrFile * stream,
+    const char *name, size_t pos)
 {
     LALFrameUFrChan *channel;
     FrTOCts *ts;
@@ -779,7 +791,7 @@ LALFrameUFrChan *XLALFrameUFrChanRead(LALFrameUFrFile * stream, const char *name
         }
 
     /* couldn't find channel */
-failure:
+  failure:
     LALFree(channel);
     return NULL;
 }
@@ -853,7 +865,8 @@ static FrProcData *XLALFrameUFrProcDataNew(const char *name)
 }
 
 /* helper function to create new channel of appropriate type */
-static LALFrameUFrChan *XLALFrameUFrChanAlloc(const char *name, int chanType, int dataType, size_t ndata)
+static LALFrameUFrChan *XLALFrameUFrChanAlloc(const char *name, int chanType,
+    int dataType, size_t ndata)
 {
     LALFrameUFrChan *channel;
     channel = LALCalloc(1, sizeof(*channel));
@@ -893,20 +906,27 @@ static LALFrameUFrChan *XLALFrameUFrChanAlloc(const char *name, int chanType, in
     return channel;
 }
 
-LALFrameUFrChan *XLALFrameUFrAdcChanAlloc(const char *name, int dtype, size_t ndata)
+LALFrameUFrChan *XLALFrameUFrAdcChanAlloc(const char *name, int dtype,
+    size_t ndata)
 {
-    return XLALFrameUFrChanAlloc(name, XLAL_FRAMEU_FR_CHAN_TYPE_ADC, dtype, ndata);
+    return XLALFrameUFrChanAlloc(name, XLAL_FRAMEU_FR_CHAN_TYPE_ADC, dtype,
+        ndata);
 }
 
-LALFrameUFrChan *XLALFrameUFrSimChanAlloc(const char *name, int dtype, size_t ndata)
+LALFrameUFrChan *XLALFrameUFrSimChanAlloc(const char *name, int dtype,
+    size_t ndata)
 {
-    return XLALFrameUFrChanAlloc(name, XLAL_FRAMEU_FR_CHAN_TYPE_SIM, dtype, ndata);
+    return XLALFrameUFrChanAlloc(name, XLAL_FRAMEU_FR_CHAN_TYPE_SIM, dtype,
+        ndata);
 }
 
-LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type, int subtype, int dtype, size_t ndata)
+LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type,
+    int subtype, int dtype, size_t ndata)
 {
     LALFrameUFrChan *channel;
-    channel = XLALFrameUFrChanAlloc(name, XLAL_FRAMEU_FR_CHAN_TYPE_PROC, dtype, ndata);
+    channel =
+        XLALFrameUFrChanAlloc(name, XLAL_FRAMEU_FR_CHAN_TYPE_PROC, dtype,
+        ndata);
     if (!channel)
         return NULL;
     /* set type and subtype metadata */
@@ -950,7 +970,8 @@ double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel)
     }
 }
 
-int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel, double sampleRate)
+int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
+    double sampleRate)
 {
     switch (channel->type) {
     case XLAL_FRAMEU_FR_CHAN_TYPE_ADC:
@@ -970,7 +991,8 @@ int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel, double sampleRate)
  */
 
 /* helper function to allocate vector in channel */
-int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype, size_t ndata)
+int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype,
+    size_t ndata)
 {
     switch (channel->type) {
     case XLAL_FRAMEU_FR_CHAN_TYPE_ADC:
@@ -997,7 +1019,9 @@ int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype, size_t nda
         /* discard old vector (if present) */
         FrVectFree(channel->handle.adc->data);
         /* create new vector; note negative type means use malloc, not calloc */
-        channel->handle.adc->data = FrVectNew1D(channel->handle.adc->name, -dtype, ndata, 0.0, NULL, NULL);
+        channel->handle.adc->data =
+            FrVectNew1D(channel->handle.adc->name, -dtype, ndata, 0.0, NULL,
+            NULL);
         if (!channel->handle.adc->data)
             return -1;
         break;
@@ -1016,7 +1040,9 @@ int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype, size_t nda
         /* discard old vector (if present) */
         FrVectFree(channel->handle.sim->data);
         /* create new vector; note negative type means use malloc, not calloc */
-        channel->handle.sim->data = FrVectNew1D(channel->handle.sim->name, -dtype, ndata, 0.0, NULL, NULL);
+        channel->handle.sim->data =
+            FrVectNew1D(channel->handle.sim->name, -dtype, ndata, 0.0, NULL,
+            NULL);
         if (!channel->handle.sim->data)
             return -1;
         break;
@@ -1024,7 +1050,9 @@ int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype, size_t nda
         /* discard old vector (if present) */
         FrVectFree(channel->handle.proc->data);
         /* create new vector; note negative type means use malloc, not calloc */
-        channel->handle.proc->data = FrVectNew1D(channel->handle.proc->name, -dtype, ndata, 0.0, NULL, NULL);
+        channel->handle.proc->data =
+            FrVectNew1D(channel->handle.proc->name, -dtype, ndata, 0.0, NULL,
+            NULL);
         if (!channel->handle.proc->data)
             return -1;
         break;
@@ -1049,7 +1077,8 @@ static FrVect *XLALFrameUFrChanVectorPtr(const LALFrameUFrChan * channel)
     }
 }
 
-int XLALFrameUFrChanVectorCompress(LALFrameUFrChan * channel, int compressLevel)
+int XLALFrameUFrChanVectorCompress(LALFrameUFrChan * channel,
+    int compressLevel)
 {
     FrVect *vect;
     vect = XLALFrameUFrChanVectorPtr(channel);
@@ -1134,21 +1163,24 @@ size_t XLALFrameUFrChanVectorQueryNDim(const LALFrameUFrChan * channel)
     return vect->nDim;
 }
 
-size_t XLALFrameUFrChanVectorQueryNx(const LALFrameUFrChan * channel, size_t dim)
+size_t XLALFrameUFrChanVectorQueryNx(const LALFrameUFrChan * channel,
+    size_t dim)
 {
     FrVect *vect;
     vect = XLALFrameUFrChanVectorPtr(channel);
     return vect && dim < vect->nDim ? vect->nx[dim] : (size_t) (-1);
 }
 
-double XLALFrameUFrChanVectorQueryDx(const LALFrameUFrChan * channel, size_t dim)
+double XLALFrameUFrChanVectorQueryDx(const LALFrameUFrChan * channel,
+    size_t dim)
 {
     FrVect *vect;
     vect = XLALFrameUFrChanVectorPtr(channel);
     return vect && dim < vect->nDim ? vect->dx[dim] : -1.0;
 }
 
-double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel, size_t dim)
+double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel,
+    size_t dim)
 {
     FrVect *vect;
     vect = XLALFrameUFrChanVectorPtr(channel);
@@ -1156,7 +1188,8 @@ double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel, size_t
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel, size_t dim)
+const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel,
+    size_t dim)
 {
     FrVect *vect;
     vect = XLALFrameUFrChanVectorPtr(channel);
@@ -1183,7 +1216,8 @@ int XLALFrameUFrChanVectorSetName(LALFrameUFrChan * channel, const char *name)
     return 0;
 }
 
-int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel, const char *unit)
+int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel,
+    const char *unit)
 {
     FrVect *vect;
     vect = XLALFrameUFrChanVectorPtr(channel);
@@ -1215,7 +1249,8 @@ int XLALFrameUFrChanVectorSetStartX(LALFrameUFrChan * channel, double x0)
     return 0;
 }
 
-int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel, const char *unit)
+int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel,
+    const char *unit)
 {
     FrVect *vect;
     vect = XLALFrameUFrChanVectorPtr(channel);
@@ -1224,7 +1259,6 @@ int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel, const char *unit)
     vect->unitX[0] = strdup(unit);
     return 0;
 }
-
 
 /*
  * FrDetector functions
@@ -1239,7 +1273,8 @@ void XLALFrameUFrDetectorFree(LALFrameUFrDetector * detector)
     return;
 }
 
-LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream, const char *name)
+LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream,
+    const char *name)
 {
     LALFrameUFrDetector *detector;
     FrTOCdet *d;
@@ -1253,15 +1288,21 @@ LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream, const ch
             prefix[0] = det->prefix[0];
             prefix[1] = det->prefix[1];
             prefix[2] = 0;
-            detector = XLALFrameUFrDetectorAlloc(det->name, prefix, det->latitude, det->longitude, det->elevation, det->armXazimuth, det->armYazimuth, det->armXaltitude, det->armYaltitude, det->armXmidpoint, det->armYmidpoint, det->localTime);
+            detector =
+                XLALFrameUFrDetectorAlloc(det->name, prefix, det->latitude,
+                det->longitude, det->elevation, det->armXazimuth,
+                det->armYazimuth, det->armXaltitude, det->armYaltitude,
+                det->armXmidpoint, det->armYmidpoint, det->localTime);
             return detector;
         }
     /* didn't find a detector of that name */
     return NULL;
 }
 
-LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name, const char *prefix, double latitude, double longitude, double elevation, double azimuthX, double azimuthY, double altitudeX, double altitudeY, double midpointX, double midpointY,
-                                               int localTime)
+LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
+    const char *prefix, double latitude, double longitude, double elevation,
+    double azimuthX, double azimuthY, double altitudeX, double altitudeY,
+    double midpointX, double midpointY, int localTime)
 {
     LALFrameUFrDetector *detector;
     detector = LALCalloc(1, sizeof(*detector));
@@ -1294,18 +1335,21 @@ LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name, const char *pre
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector * detector)
+const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector *
+    detector)
 {
     return detector->handle->name;
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrDetectorQueryPrefix(const LALFrameUFrDetector * detector)
+const char *XLALFrameUFrDetectorQueryPrefix(const LALFrameUFrDetector *
+    detector)
 {
     return detector->prefix;
 }
 
-double XLALFrameUFrDetectorQueryLongitude(const LALFrameUFrDetector * detector)
+double XLALFrameUFrDetectorQueryLongitude(const LALFrameUFrDetector *
+    detector)
 {
     return detector->handle->longitude;
 }
@@ -1315,37 +1359,44 @@ double XLALFrameUFrDetectorQueryLatitude(const LALFrameUFrDetector * detector)
     return detector->handle->latitude;
 }
 
-double XLALFrameUFrDetectorQueryElevation(const LALFrameUFrDetector * detector)
+double XLALFrameUFrDetectorQueryElevation(const LALFrameUFrDetector *
+    detector)
 {
     return detector->handle->elevation;
 }
 
-double XLALFrameUFrDetectorQueryArmXAzimuth(const LALFrameUFrDetector * detector)
+double XLALFrameUFrDetectorQueryArmXAzimuth(const LALFrameUFrDetector *
+    detector)
 {
     return detector->handle->armXazimuth;
 }
 
-double XLALFrameUFrDetectorQueryArmYAzimuth(const LALFrameUFrDetector * detector)
+double XLALFrameUFrDetectorQueryArmYAzimuth(const LALFrameUFrDetector *
+    detector)
 {
     return detector->handle->armYazimuth;
 }
 
-double XLALFrameUFrDetectorQueryArmXAltitude(const LALFrameUFrDetector * detector)
+double XLALFrameUFrDetectorQueryArmXAltitude(const LALFrameUFrDetector *
+    detector)
 {
     return detector->handle->armXaltitude;
 }
 
-double XLALFrameUFrDetectorQueryArmYAltitude(const LALFrameUFrDetector * detector)
+double XLALFrameUFrDetectorQueryArmYAltitude(const LALFrameUFrDetector *
+    detector)
 {
     return detector->handle->armYaltitude;
 }
 
-double XLALFrameUFrDetectorQueryArmXMidpoint(const LALFrameUFrDetector * detector)
+double XLALFrameUFrDetectorQueryArmXMidpoint(const LALFrameUFrDetector *
+    detector)
 {
     return detector->handle->armXmidpoint;
 }
 
-double XLALFrameUFrDetectorQueryArmYMidpoint(const LALFrameUFrDetector * detector)
+double XLALFrameUFrDetectorQueryArmYMidpoint(const LALFrameUFrDetector *
+    detector)
 {
     return detector->handle->armYmidpoint;
 }
@@ -1354,7 +1405,6 @@ int XLALFrameUFrDetectorQueryLocalTime(const LALFrameUFrDetector * detector)
 {
     return detector->handle->localTime;
 }
-
 
 /*
  * FrHistory routines
@@ -1366,7 +1416,8 @@ void XLALFrameUFrHistoryFree(LALFrameUFrHistory * history)
     return;
 }
 
-LALFrameUFrHistory *XLALFrameUFrHistoryAlloc(const char *name, double gpssec, const char *comment)
+LALFrameUFrHistory *XLALFrameUFrHistoryAlloc(const char *name, double gpssec,
+    const char *comment)
 {
     FrHistory *history;
     history = calloc(1, sizeof(*history));

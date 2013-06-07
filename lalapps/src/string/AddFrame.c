@@ -19,7 +19,7 @@ int Min(int a, int b);
 
 int main(int argc,char *argv[])
 {
-  FrameH *frame;                /* output frame        */
+  LALFrameH *frame;                /* output frame        */
   char filename[256];           /* output file name    */
 
   REAL8TimeSeries *ht_1;        /* H1 strain data      */
@@ -125,13 +125,13 @@ int main(int argc,char *argv[])
     /*XLALFrameAddREAL8TimeSeriesProcData( frame, ht_2 );*/
     XLALFrameAddREAL8TimeSeriesProcData( frame, ht_m );
     sprintf(filename,"%s/H-H1H2_COHERENT-%d-%d.gwf", argv[3],start,end-start);
-    XLALFrameWrite(frame, filename, 0);
+    XLALFrameWrite(frame, filename);
     
     /* cleaning */
     XLALDestroyREAL8TimeSeries(ht_1);
     XLALDestroyREAL8TimeSeries(ht_2);
     XLALDestroyREAL8TimeSeries(ht_m);
-    FrameFree(frame);
+    XLALFrameFree(frame);
   }
   
   /* close streams */

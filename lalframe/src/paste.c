@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
             FAILURE("no TOC found in file %s\n", fname);
 
         nframe[f] = XLALFrameUFrTOCQueryNFrame(toc);
-        if ((int) (nframe[f]) <= 0)
+        if ((int)(nframe[f]) <= 0)
             FAILURE("no frames found in file %s\n", fname);
 
         if (nframe[f] > nframemax)
@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
         XLALFrameUFrameHWrite(output, frame);
         XLALFrameUFrameHFree(frame);
     }
-
 
     /* close files */
     for (f = 0; f < filec; ++f)

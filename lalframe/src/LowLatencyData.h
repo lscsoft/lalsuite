@@ -23,7 +23,7 @@
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
-} /* so that editors will match preceding brace */
+}       /* so that editors will match preceding brace */
 #endif
 
 /**
@@ -36,16 +36,14 @@ extern "C" {
 struct tagLowLatencyData;
 typedef struct tagLowLatencyData LowLatencyData;
 
-
 /**
  * Create a new instance of LowLatencyData.
  * It will be ready to read the next available frame file.
  */
-LowLatencyData *XLALLowLatencyDataOpen(
-  const char *data_path,    /* for example:  "/dev/shm/H1"    */
-  const char *observatory,  /* for example:  "H"              */
-  const char *frame_type    /* for example:  "H1_DMT_C00_L0"  */
-);
+LowLatencyData *XLALLowLatencyDataOpen(const char *data_path,   /* for example:  "/dev/shm/H1"    */
+    const char *observatory,    /* for example:  "H"              */
+    const char *frame_type      /* for example:  "H1_DMT_C00_L0"  */
+    );
 
 /**
  * Destroy an instance of LowLatencyData.
@@ -63,14 +61,14 @@ void XLALLowLatencyDataClose(LowLatencyData *);
  * On failure, NULL is returned and (*size) is not modified.  It is unspecified
  * whether any previously returned pointer is invalidated on failure.
  */
-void *XLALLowLatencyDataNextBuffer(LowLatencyData *, size_t *size);
+void *XLALLowLatencyDataNextBuffer(LowLatencyData *, size_t * size);
 
 /*@}*/
 
 #if 0
-{ /* so that editors will match succeeding brace */
+{       /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
-} /* extern "C" */
+}       /* extern "C" */
 #endif
 
 #endif /* _LOWLATENCYDATA_h */
