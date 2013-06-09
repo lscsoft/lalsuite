@@ -75,14 +75,8 @@ $(swig_iface_preproc_xml) : $(swig_iface_preproc)
 	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(swig_preprocflags) -MD -MF $(swig_iface_preproc_deps) -o $@ $< || $(rm_targets)
 
 # generate SWIG interface file
-export PACKAGE_NAME
-export SWIG_MODULE_DEPENDS
-export SWIG_SYMBOL_PREFIXES
-export swig_iface_preproc
-export swig_iface_preproc_xml
-export swig_iface
 $(swig_iface) : $(swig_iface_preproc_xml) $(swig_generate_iface)
-	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) || $(rm_targets)
+	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) -n "$(PACKAGE_NAME)" -d "$(SWIG_MODULE_DEPENDS)" -s "$(SWIG_SYMBOL_PREFIXES)" -p "$(swig_iface_preproc)" -x "$(swig_iface_preproc_xml)" -i "$(swig_iface)" || $(rm_targets)
 	@$(MKDIR_P) $(builddir)/lal && ( test -r "$(builddir)/lal/$@" || $(LN_S) ../$@ $(builddir)/lal/$@ )
 
 endif

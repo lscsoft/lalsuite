@@ -3933,7 +3933,8 @@ int main( int argc, char *argv[] )
         else if (!strcmp("L1",ifo) || !strcmp("H1",ifo))
         {
           start_freqs[i]=ligoStartFreq;
-          if(!ligoPsd){
+          if (!ligoPsd)
+          {
             ligoPsd=XLALCreateREAL8FrequencySeries("LPSD", &(simTable->geocent_end_time), 0, 1.0/segment, &lalHertzUnit, seglen/2+1);
             get_FakePsdFromString(ligoPsd,ligoFakePsd,ligoStartFreq);
           }
@@ -3949,24 +3950,22 @@ int main( int argc, char *argv[] )
         ifo=ifonames[i];
       }
 
-      /* If 1 detector is used, turn the single IFO snr check off. */
+      /* If exactly one detector is specified, turn the single IFO snr check off */
       if (numifos<2)
       {
         fprintf(stdout,"Warning: You are using less than 2 IFOs. Disabling the single IFO SNR threshold check...\n");
         single_IFO_SNR_threshold=0.0;
       }
 
-      /* This function takes care of drawing a proposed SNR and set the distance accordingly  */
-      scale_lalsim_distance(simTable,ifonames, psds, start_freqs, dDistr);
+      /* This function draws a proposed SNR and rescales the distance accordingly */
+      scale_lalsim_distance(simTable, ifonames, psds, start_freqs, dDistr);
 
       /* Clean  */
       if (psds) LALFree(psds);
       if (start_freqs) LALFree(start_freqs);
-
-      /* Note: Because LALPopulateSimInspiralSiteInfo is called afterwards, the effective distances have also been scaled. */
     }
 
-    /* populate the site specific information */
+    /* populate the site specific information: end times and effective distances */
     LALPopulateSimInspiralSiteInfo( &status, simTable );
 
     /* populate the taper options */
@@ -4058,7 +4057,6 @@ int main( int argc, char *argv[] )
       calloc( 1, sizeof(SimRingdownTable) );
 
   }
-
 
   /* destroy the structure containing the random params */
   LAL_CALL(  LALDestroyRandomParams( &status, &randParams ), &status);
@@ -4230,8 +4228,8 @@ static void scale_lalsim_distance(SimInspiralTable *inj,
         "making the network SNR larger that its maximum value %.1f. Setting SNR to %lf.\n",
         single_IFO_SNR_threshold,maxSNR,proposedSNR);
 
-    /* set above_threshold to 3 to go out */
-    above_threshold=3;
+      /* set above_threshold to 3 to go out */
+      above_threshold=3;
     }
     else if (vrbflg)
     {

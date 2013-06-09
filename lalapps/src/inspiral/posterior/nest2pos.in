@@ -100,7 +100,7 @@ if __name__=='__main__':
   # Write out an evidence file
   if opts.pos is not None:
     Bfile=opts.pos+'_B.txt'
-    Bs=map(getBfile,[d+'_B.txt' for d in datafiles])
+    Bs=map(getBfile,[d.replace('.gz', '')+'_B.txt' for d in datafiles])
     if not any([b is None for b in Bs]):
       meanB=reduce(logaddexp,[b[0] for b in Bs])-log(len(Bs))
       meanZ=reduce(logaddexp,[b[1] for b in Bs])-log(len(Bs))

@@ -126,4 +126,4 @@ if __name__ == '__main__':
     for record in imap(process, fitsfilenames):
         count_records += 1
         progress.update(count_records, record[0])
-        print(*record, sep=',', file=outfile)
+        print(*record, sep="\t", file=outfile)

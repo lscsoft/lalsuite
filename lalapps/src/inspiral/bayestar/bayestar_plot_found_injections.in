@@ -49,7 +49,7 @@ pb = ProgressBar()
 pb.update(-1, 'reading data')
 
 # Read in all of the datasets listed as positional command line arguments.
-datasets_ = [np.recfromtxt(arg, names=True, delimiter=',', usemask=True) for arg in args]
+datasets_ = [np.recfromtxt(arg, names=True, usemask=True) for arg in args]
 dataset_names = [os.path.splitext(arg)[0] for arg in args]
 
 # Find a range of false alarm rates that contains all of the triggers in all of

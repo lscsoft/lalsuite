@@ -37,7 +37,7 @@
 
 // Set custom GSL error handler which raises an XLAL error (instead of aborting).
 %header %{
-  void swiglal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
+  static void swiglal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
     XLALPrintError("GSL function failed: %s (errnum=%i)\n", reason, errnum);
     XLALError("<GSL function>", file, line, XLAL_EFAILED);
   }

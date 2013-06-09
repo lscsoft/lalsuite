@@ -112,7 +112,6 @@ static double vector_peak_interp(const double ym1, const double y, const double 
  */
 REAL8 XLALInspiralSBankComputeMatch(const COMPLEX8FrequencySeries *inj, const COMPLEX8FrequencySeries *tmplt, WS *workspace_cache) {
     size_t min_len = (inj->data->length <= tmplt->data->length) ? inj->data->length : tmplt->data->length;
-    size_t max_len = (inj->data->length >= tmplt->data->length) ? inj->data->length : tmplt->data->length;
 
     /* get workspace for + and - frequencies */
     size_t n = 2 * (min_len - 1);   /* no need to integrate implicit zeros */
@@ -148,9 +147,6 @@ REAL8 XLALInspiralSBankComputeMatch(const COMPLEX8FrequencySeries *inj, const CO
         result = max;
     else
         result = vector_peak_interp(abs2(zdata[argmax - 1]), abs2(zdata[argmax]), abs2(zdata[argmax + 1]));
-
-    /* normalization depends on vector length; correct for differing normalizations */
-    result *= (min_len - 1.) / (max_len - 1.);
 
     /* compute match */
     /* return 4. * inj->deltaF * sqrt(result) / n; */  /* inverse FFT = reverse / n */
