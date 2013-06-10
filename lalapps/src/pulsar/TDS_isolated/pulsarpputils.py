@@ -99,7 +99,9 @@ paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
              'Q22': '$Q_{22}$\,(kg\,m$^2$)', \
              'SDRAT': 'spin-down ratio', \
              'OMDT': '$\dot{\omega}$', \
-             'EPS1': '$\\epsilon_1$', 'EPS2': '$\\epsilon_2$'}
+             'EPS1': '$\\epsilon_1$', 'EPS2': '$\\epsilon_2$', \
+             'C22': '$C_{22}$', 'C21': '$C_{21}$', \
+             'PHI22': '$\phi_{22}$', 'PHI21': '$\phi_{21}$'}
 
 # some angle conversion functions taken from psr_utils.py in PRESTO
 def rad_to_dms(rad):
@@ -554,6 +556,10 @@ def plot_posterior_hist(poslist, param, ifos,
   if parfile:
     parval = parfile[param.upper()]
 
+  if ifos == None:
+    # default to just output colour for H1
+    ifos = ['H1']
+
   # loop over ifos
   for idx, ifo in enumerate(ifos):
     # check whether to plot all figures on top of each other
@@ -989,9 +995,13 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
 
   parval1 = None
   parval2 = None
+
   if parfile:
-    parval1 = parfile[params[0].upper]
-    parval2 = parfile[params[1].upper]
+    parval1 = parfile[params[0].upper()]
+    parval2 = parfile[params[1].upper()]
+
+  if ifos == None:
+    ifos = ['H1']
 
   for idx, ifo in enumerate(ifos):
     posterior = poslist[idx]
@@ -1024,7 +1034,7 @@ interpolation='bicubic', cmap='gray_r')
     # plot injection values if given
     if parval1 and parval2:
       plt.hold(True)
-      plt.plot(parval1, parval2, 'rx', markersize=2)
+      plt.plot(parval1, parval2, 'rx', markersize=8, mew=2)
 
     myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
 
