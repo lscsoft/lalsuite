@@ -153,9 +153,9 @@ def matched_filter_real_fd(template, psd):
     fdfilter = lal.CreateCOMPLEX16FrequencySeries(template.name, template.epoch,
         template.f0, template.deltaF, template.sampleUnits, len(template.data.data))
     fdfilter.data.data = template.data.data
-    lal.WhitenCOMPLEX16FrequencySeries(fdfilter, psd)
+    fdfilter = lal.WhitenCOMPLEX16FrequencySeries(fdfilter, psd)
     fdfilter.data.data /= np.sqrt(np.sum(np.abs(fdfilter.data.data)**2))
-    lal.WhitenCOMPLEX16FrequencySeries(fdfilter, psd)
+    fdfilter = lal.WhitenCOMPLEX16FrequencySeries(fdfilter, psd)
     return fdfilter
 
 
