@@ -186,7 +186,7 @@ Longer strings will be truncated.""" % {
 
     op.add_option("-a", "--alert", dest="alert",
                   help="Send an LV alert (deprecated; alerts sent by default)",
-                  action="store_true", default=True
+                  action="store_true", default=None
                  )
 
     op.add_option("-c", "--columns", dest="columns",
@@ -214,7 +214,7 @@ Longer strings will be truncated.""" % {
               os.environ.get('GRACEDB_SERVICE_URL', None) or \
               DEFAULT_SERVICE_URL
 
-    if options.alert:
+    if options.alert is not None:
         warning("alert option is deprecated.  Alerts are now sent by default.")
 
     proxyport = None
@@ -343,6 +343,7 @@ Longer strings will be truncated.""" % {
                 error('Credentials not accepted') 
         except Exception, e:
             error("client send exception: " + str(e))
+            exit(1)
 
         # XXX ridiculous hack to deal with downloaded ligolw search results.
         if response.getheader('content-type') == 'application/xml':
