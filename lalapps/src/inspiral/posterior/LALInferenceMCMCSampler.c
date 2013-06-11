@@ -934,7 +934,6 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 
   REAL8Vector * parameters = NULL;
   REAL8Vector * adjParameters = NULL;
-  adjParameters = XLALCreateREAL8Vector(nPar);
 
   /* If Tskip reached, then block until next chain in ladder is prepared to accept swap proposal */
   if (((i % Tskip) == 0) && MPIrank < nChain-1) {
@@ -947,6 +946,8 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 
     /* Perform Swap */
     if (swapAccepted) {
+      adjParameters = XLALCreateREAL8Vector(nPar);
+
       /* Set new likelihood */
       MPI_Recv(&adjCurrentLikelihood, 1, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD, &MPIstatus);
       runState->currentLikelihood = adjCurrentLikelihood;
@@ -963,6 +964,9 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
       /* Recieve and unpack parameters */
       MPI_Recv(adjParameters->data, nPar, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD, &MPIstatus);
       LALInferenceCopyArrayToVariables(adjParameters, runState->currentParams);
+
+      XLALDestroyREAL8Vector(parameters);
+      XLALDestroyREAL8Vector(adjParameters);
     }
   }
 
@@ -991,6 +995,8 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 
       /* Perform Swap */
       if (swapAccepted) {
+        adjParameters = XLALCreateREAL8Vector(nPar);
+
         /* Swap likelihoods */
         MPI_Send(&(runState->currentLikelihood), 1, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD);
         runState->currentLikelihood=adjCurrentLikelihood;
@@ -1010,10 +1016,11 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
         /* Unpack parameters */
         LALInferenceCopyArrayToVariables(adjParameters, runState->currentParams);
 
+        XLALDestroyREAL8Vector(parameters);
+        XLALDestroyREAL8Vector(adjParameters);
       }
     }
   }
-  XLALDestroyREAL8Vector(adjParameters);
 
   /* Return values for colder chain: 0=nothing happened; 1=swap proposed, not accepted; 2=swap proposed & accepted */
   if (swapProposed) {
@@ -1076,6 +1083,8 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
     MPI_Send(parameters->data, nPar, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD);
     MPI_Recv(adjParameters->data, nPar, MPI_DOUBLE, MPIrank+1, 0, MPI_COMM_WORLD, &MPIstatus);
     LALInferenceCopyArrayToVariables(adjParameters, adjCurrentParams);
+    XLALDestroyREAL8Vector(parameters);
+    XLALDestroyREAL8Vector(adjParameters);
 
     /* Calculate likelihood at adjacent parameters and send */
     lowLikeHighParams = runState->likelihood(adjCurrentParams, runState->data, runState->templt);
@@ -1136,6 +1145,8 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
       MPI_Recv(adjParameters->data, nPar, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD, &MPIstatus);
       MPI_Send(parameters->data, nPar, MPI_DOUBLE, MPIrank-1, 0, MPI_COMM_WORLD);
       LALInferenceCopyArrayToVariables(adjParameters, adjCurrentParams);
+      XLALDestroyREAL8Vector(parameters);
+      XLALDestroyREAL8Vector(adjParameters);
 
       /* Calculate likelihood at adjacent parameters */
       highLikeLowParams = runState->likelihood(adjCurrentParams, runState->data, runState->templt);
