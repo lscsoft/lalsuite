@@ -492,10 +492,6 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   
   ppt=LALInferenceGetProcParamVal(commandLine,"--amporder");
   if(ppt) AmpOrder=atoi(ppt->value);
-  ppt=LALInferenceGetProcParamVal(commandLine,"--ampOrder");
-  if(ppt) AmpOrder = XLALGetOrderFromString(ppt->value);
-  
-  
   
   if(approx==NumApproximants && injTable){ /* Read aproximant from injection file */
     approx=XLALGetApproximantFromString(injTable->waveform);
