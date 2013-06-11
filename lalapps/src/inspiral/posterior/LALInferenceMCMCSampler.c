@@ -271,13 +271,19 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   /* Command line flags (avoid repeated checks of runState->commandLine) */
   //
   LALInferenceMCMCrunPhase runPhase = ONLY_PT;
-  LALInferenceMCMCrunPhase phaseAcknowledged;
   UINT4 annealingOn = 0; // Chains will be annealed
   if (LALInferenceGetProcParamVal(runState->commandLine, "--anneal")) {
     annealingOn = 1;
     runPhase = TEMP_PT;
   }
-  phaseAcknowledged = runPhase;
+
+  LALInferenceMCMCrunPhase *runPhase_p = &runPhase;
+  LALInferenceAddVariable(runState->algorithmParams, "runPhase", &runPhase_p,  LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+
+  /* Setup non-blocking recieve that will allow other chains to update the runPhase */
+  acknowledgePhase(runState);
+
+  LALInferenceMCMCrunPhase *phaseAcknowledged = *(LALInferenceMCMCrunPhase **) LALInferenceGetVariable(runState->algorithmParams, "acknowledgedRunPhase");
 
   UINT4 diffEvo = 1; // Differential evolution
   if (LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution") || LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution")) {
@@ -582,12 +588,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
   }
 
-  LALInferenceAddVariable(runState->algorithmParams, "runPhase", &runPhase,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->algorithmParams, "acknowledgedRunPhase", &phaseAcknowledged,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-
-  /* Setup non-blocking recieve that will update the runPhase when chain 0 does */
-  acknowledgePhase(runState);
-
   /* Setup non-blocking recieve that will succeed when chain 0 is complete. */
   if (MPIrank!=0)
     MPI_Irecv(&runComplete, 1, MPI_INT, 0, RUN_COMPLETE, MPI_COMM_WORLD, &MPIrequest);
@@ -657,7 +657,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     // Annealing phase
     if (runPhase==ANNEALING) {
-      if (phaseAcknowledged!=ANNEALING) {
+      if (*phaseAcknowledged!=ANNEALING) {
         acknowledgePhase(runState);
 
         /* Broadcast the cold chain ACL from parallel tempering */
@@ -694,7 +694,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         }
       } else {
         runPhase = SINGLE_CHAIN;
-        phaseAcknowledged=runPhase;
+        *phaseAcknowledged=runPhase;
         if (MPIrank==0)
           printf(" Single-chain sampling starting at iteration %i.\n", i);
       }
@@ -841,9 +841,16 @@ void acknowledgePhase(LALInferenceRunState *runState)
 {
   INT4 MPIrank;
   MPI_Request MPIrequest;
-  LALInferenceMCMCrunPhase *runPhase = (LALInferenceMCMCrunPhase *) LALInferenceGetVariable(runState->algorithmParams, "runPhase");
-  LALInferenceMCMCrunPhase *acknowledgedRunPhase = (LALInferenceMCMCrunPhase *) LALInferenceGetVariable(runState->algorithmParams, "acknowledgedRunPhase");
-  *acknowledgedRunPhase = *runPhase;
+
+  LALInferenceMCMCrunPhase *runPhase = *(LALInferenceMCMCrunPhase **) LALInferenceGetVariable(runState->algorithmParams, "runPhase");
+  if (!LALInferenceCheckVariable(runState->algorithmParams, "acknowledgedRunPhase")) {
+    LALInferenceMCMCrunPhase acknowledgedRunPhase = *runPhase;
+    LALInferenceMCMCrunPhase *acknowledgedRunPhase_p = &acknowledgedRunPhase;
+    LALInferenceAddVariable(runState->algorithmParams, "acknowledgedRunPhase", &acknowledgedRunPhase_p,  LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+  } else {
+    LALInferenceMCMCrunPhase *acknowledgedRunPhase = *(LALInferenceMCMCrunPhase **) LALInferenceGetVariable(runState->algorithmParams, "acknowledgedRunPhase");
+    *acknowledgedRunPhase = *runPhase;
+  }
 
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
   if (MPIrank!=0)
@@ -1061,8 +1068,7 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
 
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 nChain = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nChain");
-  LALInferenceMCMCrunPhase *runPhase = (LALInferenceMCMCrunPhase *) LALInferenceGetVariable(runState->algorithmParams, "runPhase");
-  LALInferenceMCMCrunPhase *acknowledgedRunPhase = (LALInferenceMCMCrunPhase *) LALInferenceGetVariable(runState->algorithmParams, "acknowledgedRunPhase");
+  LALInferenceMCMCrunPhase *runPhase = *(LALInferenceMCMCrunPhase **) LALInferenceGetVariable(runState->algorithmParams, "runPhase");
 
   REAL8Vector *params = NULL;
 
@@ -1102,7 +1108,8 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
   }
 
   /* Reset runPhase to the last phase each chain was in */
-  *runPhase = *acknowledgedRunPhase;
+  LALInferenceMCMCrunPhase acknowledgedRunPhase = **(LALInferenceMCMCrunPhase **) LALInferenceGetVariable(runState->algorithmParams, "acknowledgedRunPhase");
+  *runPhase = acknowledgedRunPhase;
   acknowledgePhase(runState);
 
   XLALDestroyREAL8Vector(params);
