@@ -1053,10 +1053,11 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag)
 {
   INT4 MPIrank, chain;
-  INT4 readyToSend=0;
+  INT4 attemptingSwap=0, readyToSend=0;
+  REAL8 dummyLikelihood;
+  REAL8 swapRejection=0;
   MPI_Status MPIstatus;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-  printf("Chain %i in ladder update.\n", MPIrank);
 
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 nChain = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nChain");
@@ -1068,18 +1069,25 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
   if (sourceChainFlag == 1) {
     /* Inform hotter chains of ladder update */
     *runPhase=LADDER_UPDATE;
-    for (chain=MPIrank+1; chain<nChain; chain++) {
+    for (chain=MPIrank+1; chain<nChain; chain++)
       MPI_Send(runPhase, 1, MPI_INT, chain, RUN_PHASE_COM, MPI_COMM_WORLD);
-    }
 
     /* Package and send current parameters */
     params = LALInferenceCopyVariablesToArray(runState->currentParams);
 
-    for (chain=MPIrank+1; chain<nChain; chain++) {
+    /* Start from the top down since colder chains may still be getting PT swaps rejected */
+    for (chain=nChain-1; chain>MPIrank; chain--) {
       MPI_Send(params->data, nPar, MPI_DOUBLE, chain, LADDER_UPDATE_COM, MPI_COMM_WORLD);
     }
 
   } else {
+    /* Flush out any lingering swap proposals from colder chains */
+    MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
+    if (attemptingSwap) {
+      MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+      MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
+    }
+
     params = XLALCreateREAL8Vector(nPar);
 
     /* Wait until source chain is ready to send parameters */
