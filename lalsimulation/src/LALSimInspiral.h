@@ -214,14 +214,18 @@ void XLALDestroySphHarmFrequencySeries( SphHarmFrequencySeries* ts );
 
 /* 
  * Destroy a SphHarmFrequencySeries. Note that this will destroy any 
- * COMPLEX16TimeSeries which it has references to.
+ * COMPLEX16FrequencySeries which it has references to.
  */
 UINT4 XLALSphHarmFrequencySeriesGetMaxL( SphHarmFrequencySeries* ts );
 
+#ifdef SWIG   // SWIG interface directives
+SWIGLAL(GET_OBJECT(COMPLEX16FrequencySeries*, XLALSphHarmFrequencySeriesGetMode));
+#endif
+
 /* 
- * Get the mode-decomposed time series corresponding to l,m.
+ * Get the mode-decomposed frequency series corresponding to l,m.
  */
-COMPLEX16TimeSeries* XLALSphHarmFrequencySeriesGetMode( 
+COMPLEX16FrequencySeries* XLALSphHarmFrequencySeriesGetMode( 
 				SphHarmFrequencySeries *ts, 
 				UINT4 l, 
 				INT4 m 
