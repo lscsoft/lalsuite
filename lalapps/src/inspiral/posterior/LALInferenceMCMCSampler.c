@@ -514,12 +514,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   char statfilename[256];
   char propstatfilename[256];
   char swapfilename[256];
-  if(MPIrank == 0){
-    if (tempVerbose) {
-      sprintf(swapfilename,"PTMCMC.tempswaps.%u",randomseed);
-      swapfile = fopen(swapfilename, "w");
-      fprintf(swapfile, "cycle\tlog(chain_swap)\ttemp_low\ttemp_high\n");  // Print header for temp stat file
-    }
+  if (tempVerbose && MPIrank > 0) {
+    sprintf(swapfilename,"PTMCMC.tempswaps.%u.%2.2d",randomseed,MPIrank);
+    swapfile = fopen(swapfilename, "w");
+    fprintf(swapfile, "cycle\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\n");  // Print header for temp stat file
   }
 
   if (adaptationOn && adaptVerbose) {
@@ -985,6 +983,12 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 
       MPI_Send(&swapAccepted, 1, MPI_INT, MPIrank-1, 0, MPI_COMM_WORLD);
 
+      /* Print to file if verbose is chosen */
+      if (swapfile != NULL) {
+        fprintf(swapfile,"%d\t%f\t%f\t%f\t%i\n",i,logChainSwap,adjCurrentLikelihood,runState->currentLikelihood,swapAccepted);
+        fflush(swapfile);
+      }
+
       /* Perform Swap */
       if (swapAccepted) {
         /* Swap likelihoods */
@@ -1006,11 +1010,6 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
         /* Unpack parameters */
         LALInferenceCopyArrayToVariables(adjParameters, runState->currentParams);
 
-        /* Print to file if verbose is chosen */
-        if (swapfile != NULL) {
-          fprintf(swapfile,"%d\t%f\t%f\t%f\n",i,logChainSwap,ladder[MPIrank-1],ladder[MPIrank]);
-          fflush(swapfile);
-        }
       }
     }
   }
@@ -1154,6 +1153,12 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
       }
       MPI_Send(&swapAccepted, 1, MPI_INT, MPIrank-1, 0, MPI_COMM_WORLD);
 
+      /* Print to file if verbose is chosen */
+      if (swapfile != NULL) {
+        fprintf(swapfile,"%d\t%f\t%f\t%f\t%i\n",i,logChainSwap,lowLikeLowParams,highLikeHighParams,swapAccepted);
+        fflush(swapfile);
+      }
+
       if (swapAccepted) {
         /* Swap likelihoods */
         runState->currentLikelihood = highLikeLowParams;
@@ -1165,12 +1170,6 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
 
         /* Set new parameters */
         LALInferenceCopyVariables(adjCurrentParams,runState->currentParams);
-
-        /* Print to file if verbose is chosen */
-        if (swapfile != NULL) {
-          fprintf(swapfile,"%d\t%f\t%f\t%f\n",i,logChainSwap,ladder[MPIrank-1],ladder[MPIrank]);
-          fflush(swapfile);
-        }
       }
 
       /* Unfix fLow if it was originally unfixed */
