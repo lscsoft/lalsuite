@@ -58,9 +58,10 @@ typedef enum {
 
 /* MPI communications */
 typedef enum {
-    PT_COMM,          /** Parallel tempering communications */
-    RUN_PHASE_COMM,   /** runPhase passing */
-    RUN_COMLETE       /** Run complete */
+    PT_COM,          /** Parallel tempering communications */
+    LADDER_UPDATE_COM,    /** Update positions across the ladder */
+    RUN_PHASE_COM,   /** runPhase passing */
+    RUN_COMPLETE       /** Run complete */
 } LALInferenceMPIcomm;
 
 /* PT swap return values  */
