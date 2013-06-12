@@ -67,7 +67,7 @@ with H5File(fname, "r") as h5file:
 
     # extract columns of interest and apply row ordering
     inj_arr = h5file["/sim_inspiral"]["mass1", "mass2", "spin1z", "spin2z"][inj_ind]
-    tmplt_arr = h5file["/sngl_inspiral"]["mass1", "mass2", "chi"][tmplt_ind]
+    tmplt_arr = h5file["/sngl_inspiral"]["mass1", "mass2", "spin1z", "spin2z"][tmplt_ind]
 
     # extract waveforms
     pid = find_process_id(h5file["/process"], u"lalapps_cbc_sbank_sim")
@@ -94,8 +94,10 @@ inj_mchirp = compute_mchirp(inj_arr["mass1"], inj_arr["mass2"])
 
 # sim_inspiral tables don't have a chi column; which chi to use? Switch on sngl.
 if tmplt_approx == "TaylorF2RedSpin":
+    tmplt_chi = [SimInspiralTaylorF2ReducedSpinComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
     inj_chi = [SimInspiralTaylorF2ReducedSpinComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
 elif tmplt_approx == "IMRPhenomB":
+    tmplt_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
     inj_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
 else:
     raise NotImplementedError("only know how to compute chi for TaylorF2RedSpin and IMRPhenomB")
@@ -176,7 +178,7 @@ fig.savefig(name+"_match_vs_tmpltm2_vs_injm2.png")
 
 fig = Figure()
 ax = fig.add_subplot(111)
-collection = ax.scatter(inj_chi, tmplt_arr["chi"], c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+collection = ax.scatter(inj_chi, tmplt_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
 ax.set_xlabel("Injection $\chi$")
 ax.set_ylabel("Best Matching Template $\chi$")
 ax.set_title("Colorbar is Fitting Factor")
@@ -231,6 +233,17 @@ fig.savefig(name+"_match_vs_injm2_vs_injm1.png")
 
 fig = Figure()
 ax = fig.add_subplot(111)
+collection = ax.scatter(inj_arr["spin1z"], inj_arr["spin2z"], c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injected $s_{1z}$")
+ax.set_ylabel("Injected $s_{2z}$")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injs1z_vs_injs2z.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
 collection = ax.scatter(inj_tau0, inj_tau3, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
 ax.set_xlabel(r"Injected $\tau_0$ (s)")
 ax.set_ylabel(r"Injected $\tau_3$ (s)")
@@ -264,7 +277,7 @@ fig.savefig(name+"_match_vs_tmplttau0_vs_tmplttau3.png")
 
 fig = Figure()
 ax = fig.add_subplot(111)
-collection = ax.scatter(tmplt_tau0, tmplt_arr["chi"], c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+collection = ax.scatter(tmplt_tau0, tmplt_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
 ax.set_xlabel(r"Template $\tau_0$ (s)")
 ax.set_ylabel(r"Template $\chi$ (s)")
 ax.set_title(r"Colorbar is Fitting Factor; assuming $f_\mathrm{low}=%d\,\mathrm{Hz}$" % flow)
@@ -272,6 +285,17 @@ ax.grid(True)
 fig.colorbar(collection, ax=ax)
 canvas = FigureCanvas(fig)
 fig.savefig(name+"_match_vs_tmplttau0_vs_tmpltchi.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(tmplt_M, tmplt_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel(r"Template $M_{total}$ ($M_\odot$)")
+ax.set_ylabel(r"Template $\chi$ (s)")
+ax.set_title(r"Colorbar is Fitting Factor; assuming $f_\mathrm{low}=%d\,\mathrm{Hz}$" % flow)
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_tmpltM_vs_tmpltchi.png")
 
 fig = Figure()
 ax = fig.add_axes((0.1, 0.1, 0.85, 0.85), xscale="log", yscale="log")
