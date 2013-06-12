@@ -5,7 +5,7 @@ To run REST API tests:
 
 To run CLI tests:
 
-	GRACEDB=python bin/gracedb ligo/gracedb/test/test.sh 
+	PYTHONPATH=. GRACEDB='python bin/gracedb' ligo/gracedb/test/test.sh 
 
 
 Default GraceDB service for tests is at: moe.phys.uwm.edu, a dev box.

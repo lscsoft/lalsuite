@@ -161,20 +161,6 @@ ${GRACEDB} search $GRACEID |grep DQV > $OUTFILE 2>&1
 recordTest "verify label" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
-# Slot
-#
-OUTFILE=$(mktemp)
-${GRACEDB} slot $GRACEID aslot event.log > $OUTFILE 2>&1
-recordTest "slot $GRACEID" "$?" "$(cat $OUTFILE)"
-rm $OUTFILE
-
-# Verify slot
-#
-OUTFILE=$(mktemp)
-${GRACEDB} slot $GRACEID aslot | grep event.log > $OUTFILE 2>&1
-recordTest "verify slot" "$?" "$(cat $OUTFILE)"
-rm $OUTFILE
-
 
 showStats
 
