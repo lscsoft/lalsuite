@@ -2566,26 +2566,22 @@ void PrintFstatVec (LALStatus *status,
                     LIGOTimeGPS          refTime,
                     INT4                 stackIndex)
 {
-  INT4 length, k;
-  REAL8 f0, deltaF, alpha, delta;
-  PulsarSpins fkdot;
-
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  INIT_MEM(fkdot);
-
   fprintf(fp, "%% Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
 
-  alpha = thisPoint->Alpha;
-  delta = thisPoint->Delta;
-  fkdot[1] = thisPoint->fkdot[1];
-  f0 = thisPoint->fkdot[0];
+  REAL8 alpha = thisPoint->Alpha;
+  REAL8 delta = thisPoint->Delta;
 
-  length = in->data->length;
-  deltaF = in->deltaF;
+  PulsarSpins fkdot;
+  memcpy ( fkdot, thisPoint->fkdot, sizeof(fkdot) );
 
-  for (k=0; k<length; k++)
+  UINT4 length = in->data->length;
+  REAL8 deltaF = in->deltaF;
+
+  REAL8 f0 = fkdot[0];
+  for (UINT4 k=0; k<length; k++)
     {
       fkdot[0] = f0 + k*deltaF;
 
