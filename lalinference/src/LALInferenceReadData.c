@@ -1494,10 +1494,15 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       LALSimInspiralTestGRParam *nonGRparams = NULL;
       /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
       fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain.\n",approximant,XLALGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO);
+
+      /* ChooseWaveform starts the (2,2) mode of the waveform at the given minimum frequency.  We want the highest order contribution to start at the f_lower of the injection file */
+      REAL8 f_min = fLow2fStart(injEvent->f_lower, amporder, approximant);
+      printf("Injecting with f_min = %f.\n", f_min);
+
       XLALSimInspiralChooseTDWaveform(&hplus, &hcross, injEvent->coa_phase, 1.0/InjSampleRate,
                                       injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
                                       injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
-                                      injEvent->spin2z, injEvent->f_lower, 0., injEvent->distance*LAL_PC_SI * 1.0e6,
+                                      injEvent->spin2z, f_min, 0., injEvent->distance*LAL_PC_SI * 1.0e6,
                                       injEvent->inclination, lambda1, lambda2, waveFlags,
                                       nonGRparams, amporder, order, approximant);
       if(!hplus || !hcross) {

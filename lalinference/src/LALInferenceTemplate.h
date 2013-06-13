@@ -52,6 +52,12 @@
  */
 /*@{*/
 
+/** Function for determining the starting frequency of the (2,2) mode when the highest
+ *  order contribution starts at fLow.
+ */
+REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant);
+
+
 /** De-bugging function writing a (frequency-domain) signal template to a CSV file.
  *  File contains real & imaginary parts of plus & cross components.
  *  Template amplitude is (usually) scaled to 1 Mpc luminosity distance.                        

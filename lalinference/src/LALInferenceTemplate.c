@@ -63,7 +63,6 @@ extern int newswitch; //temporay global variable to use the new LALSTPN
 static void destroyCoherentGW( CoherentGW *waveform );
 static void q2eta(double q, double *eta);
 static void q2masses(double mc, double q, double *m1, double *m2);
-static REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder);
 
 
 void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
@@ -268,7 +267,7 @@ static void q2masses(double mc, double q, double *m1, double *m2)
   return;
 }
 
-static REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder)
+REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant)
 /*  Compute the minimum frequency for waveform generation */
 /*  using amplitude orders above Newtonian.  The waveform */
 /*  generator turns on all orders at the orbital          */
@@ -276,6 +275,13 @@ static REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder)
 /*  orders is not included at fLow unless fMin is         */
 /*  sufficiently low.                                     */
 {
+  if (ampOrder == -1) {
+      if (approximant == SpinTaylorT2 || approximant == SpinTaylorT4)
+          ampOrder = MAX_PRECESSING_AMP_PN_ORDER;
+      else
+          ampOrder = MAX_NONPRECESSING_AMP_PN_ORDER;
+  }
+
     REAL8 fStart;
     fStart = fLow * 2./(ampOrder+2);
     return fStart;
@@ -1730,10 +1736,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
    *     2) We need to know the amplitude order in order to set the starting frequency of the waveform properly. */
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_AMPORDER"))
     amporder = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_AMPORDER");
-  else if (approximant == SpinTaylorT2 || approximant == SpinTaylorT4)
-    amporder = MAX_PRECESSING_AMP_PN_ORDER;
   else
-    amporder = MAX_NONPRECESSING_AMP_PN_ORDER;
+    amporder = -1;
 
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LALINFERENCE_FRAME"))
     frame = *(LALInferenceFrame*) LALInferenceGetVariable(IFOdata->modelParams, "LALINFERENCE_FRAME");
@@ -1779,7 +1783,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   else
     f_low = IFOdata->fLow /** 0.9 */;
 
-  f_start = fLow2fStart(f_low, amporder);
+  f_start = fLow2fStart(f_low, amporder, approximant);
   f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using IFOdata->fHigh causes NaNs in waveform (see redmine issue #750)*/
   
   if(frame==LALINFERENCE_FRAME_RADIATION){
