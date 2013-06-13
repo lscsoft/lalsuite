@@ -3095,7 +3095,7 @@ class PlotSlidesJob(pipeline.SqliteJob):
     """
     Sets plot-playground-only option. This causes job to only plot playground.
     """
-    self.add_var_opt('plot-playground-only')
+    self.add_opt('plot-playground-only','')
 
 
 class PlotSlidesNode(pipeline.SqliteNode):
@@ -3126,7 +3126,7 @@ class PlotCumhistJob(pipeline.SqliteJob):
     """
     Sets plot-playground-only option. This causes job to only plot playground.
     """
-    self.add_var_opt('plot-playground-only')
+    self.add_opt('plot-playground-only','')
 
 
 class PlotCumhistNode(pipeline.SqliteNode):
