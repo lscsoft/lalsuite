@@ -2773,7 +2773,8 @@ SnglInspiralTable* coh_PTF_create_sngl_event(
       thisEvent->sigmasq = PTFM[ifoNumber]->data[0];
     }
   }
-  thisEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+  /* FIXME: Should be fixed so that this actually stores the DOF! */
+  thisEvent->chisq_dof = params->numChiSquareBins;
   thisEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
   thisEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
   /* FIXME: I doubt the normalization is right to get eff_distance in Mpc */
