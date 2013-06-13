@@ -49,7 +49,6 @@ FrVect * XLALFrVectREAL8FrequencySeries( REAL8FrequencySeries *series );
 FrVect * XLALFrVectCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series );
 FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series );
 
-int XLALFrameAddCalRef( FrameH *frame, COMPLEX8FrequencySeries *series, int version, double duration );
 int XLALFrameAddREAL8TimeSeriesProcData( FrameH *frame, REAL8TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series );
 int XLALFrameAddINT4TimeSeriesProcData( FrameH *frame, INT4TimeSeries *series );
