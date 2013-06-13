@@ -2189,3 +2189,14 @@ def read_pulsar_mcmc_file(cf):
       cfdata = None
 
   return cfdata
+
+
+# function to add two exponentiated log values and return the log of the result
+def logplus(x, y):
+  if np.isinf(x) and np.isinf(y) and x < 0 and y < 0:
+    return float("-inf")
+  if x > y:
+    return x + math.log(1. + math.exp(y-x))
+  else:
+    return y + math.log(1. + math.exp(x-y))
+
