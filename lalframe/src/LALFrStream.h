@@ -275,6 +275,9 @@ typedef enum {
  * (\c ADCDataChannel), and "simulated data" (\c SimDataChannel).
  */
 
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagFrChanIn, name));
+#endif /* SWIG */
 typedef struct tagFrChanIn {
     const CHAR *name;
     ChannelType type;
@@ -287,6 +290,9 @@ typedef struct tagFrChanIn {
  * </dd></dl>
  */
 
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagFrOutPar, source, description));
+#endif /* SWIG */
 typedef struct tagFrOutPar {
     const CHAR *source;
     const CHAR *description;
