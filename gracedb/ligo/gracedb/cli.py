@@ -334,6 +334,8 @@ Longer strings will be truncated.""" % {
 
         exitCode = 0
         try:
+            # Er, for the new one, you'll need to urlencode those term thingies.
+            # XXX
             response = client.post(url,body=terms,headers=headers)
             status = response.status
             if status >= 400:
@@ -347,7 +349,7 @@ Longer strings will be truncated.""" % {
 
         # XXX ridiculous hack to deal with downloaded ligolw search results.
         if response.getheader('content-type') == 'application/xml':
-            print(response)
+            print(rv)
         else:
             try:
                 rv = json.loads(rv) 
