@@ -108,6 +108,13 @@ unsigned long XLALGetFlatLatticePointCount(
   );
 
 ///
+/// Return the increment vectors which are used to generate the lattice.
+///
+gsl_matrix* XLALGetFlatLatticeIncrements(
+  FlatLatticeTiling* tiling	///< [in] Tiling state
+  );
+
+///
 /// Set a parameter space bound on the flat lattice tiling
 ///
 int XLALSetFlatLatticeBound(
