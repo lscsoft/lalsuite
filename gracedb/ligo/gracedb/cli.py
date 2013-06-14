@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os, sys, shutil
+import os, sys, shutil, urllib
 import json
 from ligo.gracedb.rest import GraceDb
 
@@ -322,21 +322,29 @@ Longer strings will be truncated.""" % {
         response = client.writeLabel(graceid, label)
     elif args[0] == 'search':
         query = " ".join(args[1:])
-        terms = { "query" : query }
-        if options.columns:
-            terms['columns'] = options.columns
-        if options.ligolw:
-            terms['ligolw'] = 1
+        columns = options.columns
         headers = {'connection' : 'keep-alive'}
+        if options.ligolw:
+            headers['Accept'] = 'application/ligolw-xml'
+        else:
+            headers['Accept'] = 'text/tab-separated-values'
 
-        # construct url via ugly hack.
-        url = client.url[:client.url.rindex('api')] + "cli/search"
+        count = 1000 # XXX WTF?
+        orderby = None # XXX Should we implement this?
+
+        uri = client.links['events']
+        qdict = {}
+        if query:   qdict['query'] = query
+        if count:   qdict['count'] = count
+        if orderby: qdict['orderby'] = orderby
+        if columns: qdict['columns'] = columns 
+        if qdict:
+            uri += "?" + urllib.urlencode(qdict)
 
         exitCode = 0
+        print(' hie.  uri=%s \n' % uri)
         try:
-            # Er, for the new one, you'll need to urlencode those term thingies.
-            # XXX
-            response = client.post(url,body=terms,headers=headers)
+            response = client.get(uri,headers=headers)
             status = response.status
             if status >= 400:
                 exitCode=1
@@ -347,19 +355,21 @@ Longer strings will be truncated.""" % {
             error("client send exception: " + str(e))
             exit(1)
 
-        # XXX ridiculous hack to deal with downloaded ligolw search results.
-        if response.getheader('content-type') == 'application/xml':
-            print(rv)
-        else:
-            try:
-                rv = json.loads(rv) 
-                if 'output' in rv.keys():
-                    output(rv['output'])
-                elif 'error' in rv.keys():
-                    error(rv['error'])
-                    exitCode=1
-            except Exception, e:
-                error("while parsing:%s\nclient send exception: %s" % (rv, str(e)))
+        print(rv)
+
+#        # XXX ridiculous hack to deal with downloaded ligolw search results.
+#        if response.getheader('content-type') == 'application/ligolw-xml':
+#            print(rv)
+#        else:
+#            try:
+#                rv = json.loads(rv) 
+#                if 'output' in rv.keys():
+#                    output(rv['output'])
+#                elif 'error' in rv.keys():
+#                    error(rv['error'])
+#                    exitCode=1
+#            except Exception, e:
+#                error("while parsing:%s\nclient send exception: %s" % (rv, str(e)))
         return exitCode
 
     elif args[0] == 'replace':

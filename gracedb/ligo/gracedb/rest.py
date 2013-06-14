@@ -288,12 +288,13 @@ class GraceDb(GsiRest):
         return self.get(
                 self.templates['event-detail-template'].format(graceid=graceid))
 
-    def events(self, query=None, orderby=None, count=None):
+    def events(self, query=None, orderby=None, count=None, columns=None):
         uri = self.links['events']
         qdict = {}
         if query:   qdict['query'] = query
         if count:   qdict['count'] = count
         if orderby: qdict['orderby'] = orderby
+        if columns: qdict['columns'] = columns
         if qdict:
             uri += "?" + urllib.urlencode(qdict)
         while uri:
