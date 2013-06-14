@@ -1107,8 +1107,8 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
     LALInferenceCopyArrayToVariables(params, runState->currentParams);
 
     /* Update prior and likelihood */
-    runState->currentPrior = runState->prior(runState, &(runState->currentParams));
-    runState->currentLikelihood = runState->likelihood(&(runState->currentParams), runState->data, runState->templt);
+    runState->currentPrior = runState->prior(runState, runState->currentParams);
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
   }
 
   /* Reset runPhase to the last phase each chain was in */
