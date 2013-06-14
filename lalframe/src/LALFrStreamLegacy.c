@@ -263,7 +263,7 @@ void LALFrGetTimeSeriesType(LALStatus * status, LALTYPECODE * output,
     RETURN(status);
 }
 
-/* GET TIME SERIES FUNCTIONS */
+/* GET SERIES FUNCTIONS */
 
 #define DEFINE_LAL_GET_TS_FUNCTION(laltype) \
     void LALFrGet ## laltype ## TimeSeries(LALStatus *status, laltype ## TimeSeries *series, FrChanIn *chanin, LALFrStream *stream) \
@@ -297,6 +297,20 @@ void LALFrGetTimeSeriesType(LALStatus * status, LALTYPECODE * output,
         RETURN(status); \
     }
 
+#define DEFINE_LAL_GET_FS_FUNCTION(laltype) \
+    void LALFrGet ## laltype ## FrequencySeries(LALStatus *status, laltype ## FrequencySeries *series, FrChanIn *chanin, LALFrStream *stream) \
+    { \
+        int code; \
+        XLALPrintDeprecationWarning(__func__, "XLALFrStreamGet" #laltype "FrequencySeries"); \
+        INITSTATUS(status); \
+        strcpy(series->name, chanin->name); \
+        code = XLALFrStreamGet ## laltype ## FrequencySeries(series, stream); \
+        if (code < 0) { \
+            ABORT(status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD); \
+        } \
+        RETURN(status); \
+    }
+
 /* *INDENT-OFF* */
 DEFINE_LAL_GET_TS_FUNCTION(INT2)
 DEFINE_LAL_GET_TS_FUNCTION(INT4)
@@ -313,9 +327,14 @@ DEFINE_LAL_GET_TSM_FUNCTION(REAL4)
 DEFINE_LAL_GET_TSM_FUNCTION(REAL8)
 DEFINE_LAL_GET_TSM_FUNCTION(COMPLEX8)
 DEFINE_LAL_GET_TSM_FUNCTION(COMPLEX16)
+
+DEFINE_LAL_GET_FS_FUNCTION(REAL4)
+DEFINE_LAL_GET_FS_FUNCTION(REAL8)
+DEFINE_LAL_GET_FS_FUNCTION(COMPLEX8)
+DEFINE_LAL_GET_FS_FUNCTION(COMPLEX16)
 /* *INDENT-ON* */
 
-/* WRITE TIME SERIES FUNCTIONS */
+/* WRITE SERIES FUNCTIONS */
 
 /* FIXME: now only supports one frame per file and ProcData channels only */
 #define DEFINE_LAL_WRITE_TS_FUNCTION(laltype) \
