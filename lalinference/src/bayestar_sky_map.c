@@ -293,7 +293,16 @@ typedef struct {
 } inner_integrand_params;
 
 
-/* Radial integrand for uniform-in-log-distance prior. */
+/* Logarithm of radial integrand, without log offset. */
+static double log_radial_integrand(double r, double A, double B, int prior_distance_power)
+{
+    const double onebyr = 1 / r;
+    const double onebyr2 = gsl_pow_2(onebyr);
+    return A * onebyr2 + B * onebyr + prior_distance_power * log(r);
+}
+
+
+/* Radial integrand. */
 static double radial_integrand(double r, void *params)
 {
     const inner_integrand_params *integrand_params = (const inner_integrand_params *) params;
@@ -445,6 +454,7 @@ double *bayestar_sky_map_tdoa_snr(
                 double A = 0, B = 0;
                 double breakpoints[5];
                 int num_breakpoints = 0;
+                double log_offset;
 
                 /* The log-likelihood is quadratic in the estimated and true
                  * values of the SNR, and in 1/r. It is of the form A/r^2 + B/r,
@@ -498,9 +508,25 @@ double *bayestar_sky_map_tdoa_snr(
                 }
 
                 {
+                    /*
+                     * Set log_offset to the maximum of the logarithm of the
+                     * radial integrand evaluated at all of the breakpoints. */
+                    int ibreakpoint;
+                    log_offset = log_radial_integrand(
+                        breakpoints[0], A, B, prior_distance_power);
+                    for (ibreakpoint = 1; ibreakpoint < num_breakpoints; ibreakpoint++)
+                    {
+                        const double new_log_offset = log_radial_integrand(
+                            breakpoints[ibreakpoint], A, B, prior_distance_power);
+                        if (new_log_offset > log_offset)
+                            log_offset = new_log_offset;
+                    }
+                }
+
+                {
                     /* Perform adaptive integration. Stop when a relative
                      * accuracy of 0.05 has been reached. */
-                    inner_integrand_params integrand_params = {A, B, -0.25 * gsl_pow_2(B) / A, prior_distance_power};
+                    inner_integrand_params integrand_params = {A, B, log_offset, prior_distance_power};
                     const gsl_function func = {radial_integrand, &integrand_params};
                     double result, abserr;
                     int ret = gsl_integration_qagp(&func, &breakpoints[0], num_breakpoints, DBL_MIN, 0.05, subdivision_limit, workspace, &result, &abserr);
