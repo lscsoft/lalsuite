@@ -325,11 +325,12 @@ Longer strings will be truncated.""" % {
         columns = options.columns
         headers = {'connection' : 'keep-alive'}
         if options.ligolw:
-            headers['Accept'] = 'application/ligolw-xml'
+            headers['Accept'] = 'application/xml'
         else:
             headers['Accept'] = 'text/tab-separated-values'
 
-        count = 1000 # XXX WTF?
+        # NOTE: count will be limited to 1000 on the server side.
+        count = None # XXX Let's just get rid of this?
         orderby = None # XXX Should we implement this?
 
         uri = client.links['events']
