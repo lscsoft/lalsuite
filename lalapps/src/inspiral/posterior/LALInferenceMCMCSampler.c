@@ -1105,6 +1105,10 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
     MPI_Recv(params->data, nPar, MPI_DOUBLE, MPI_ANY_SOURCE, LADDER_UPDATE_COM, MPI_COMM_WORLD, &MPIstatus);
 
     LALInferenceCopyArrayToVariables(params, runState->currentParams);
+
+    /* Update prior and likelihood */
+    runState->currentPrior = runState->prior(runState, &(runState->currentParams));
+    runState->currentLikelihood = runState->likelihood(&(runState->currentParams), runState->data, runState->templt);
   }
 
   /* Reset runPhase to the last phase each chain was in */
