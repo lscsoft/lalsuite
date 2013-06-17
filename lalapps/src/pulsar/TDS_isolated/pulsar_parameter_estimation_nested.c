@@ -2162,6 +2162,20 @@ void injectSignal( LALInferenceRunState *runState ){
   REAL8 snrmulti = 0.;
   REAL8 snrscale = 0;
 
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
+  if( !ppt ){
+    fprintf(stderr, "Error... no output file specified!\n");
+    exit(0);
+  }
+
+  snrfile = XLALStringDuplicate( ppt->value );
+  snrfile = XLALStringAppend( snrfile, "_SNR" );
+
+  if( (fpsnr = fopen(snrfile, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open output SNR file!\n");
+    exit(0);
+  }
+
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
     injectfile = XLALStringDuplicate( ppt->value );
@@ -2179,6 +2193,7 @@ void injectSignal( LALInferenceRunState *runState ){
     invert_source_params( &injpars );
   }
   else{
+    fclose( fpsnr );
     return;
   }
 
@@ -2187,20 +2202,6 @@ void injectSignal( LALInferenceRunState *runState ){
   /* get the SNR scale factor if required */
   ppt = LALInferenceGetProcParamVal( commandLine, "--scale-snr" );
   if ( ppt ) { snrscale = atof( ppt->value ); }
-
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( !ppt ){
-    fprintf(stderr, "Error... no output file specified!\n");
-    exit(0);
-  }
-
-  snrfile = XLALStringDuplicate( ppt->value );
-  snrfile = XLALStringAppend( snrfile, "_SNR" );
-
-  if( (fpsnr = fopen(snrfile, "w")) == NULL ){
-    fprintf(stderr, "Error... cannot open output SNR file!\n");
-    exit(0);
-  }
 
   /* create signal to inject */
   while( data ){
