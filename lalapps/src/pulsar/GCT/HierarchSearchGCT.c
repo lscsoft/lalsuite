@@ -915,7 +915,7 @@ int MAIN( int argc, char *argv[]) {
   if ( df2dot == 0 ) {
     nf2dot = 1;
   } else {
-    nf2dot = (UINT4) floor( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot - NUDGE) + 1;
+    nf2dot = (UINT4) floor( usefulParams.spinRange_midTime.fkdotBand[2] / uvar_df2dot + NUDGE) + 1;
   }
 
   /* set number of fine-grid 2nd spindowns */
