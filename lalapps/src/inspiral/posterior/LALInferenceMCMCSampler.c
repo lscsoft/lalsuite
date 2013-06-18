@@ -1102,7 +1102,7 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
     }
 
     /* Recieve new parameters and unpack into current params */
-    MPI_Recv(params->data, nPar, MPI_DOUBLE, MPI_ANY_SOURCE, LADDER_UPDATE_COM, MPI_COMM_WORLD, &MPIstatus);
+    MPI_Recv(params->data, nPar, MPI_DOUBLE, MPIstatus.MPI_SOURCE, LADDER_UPDATE_COM, MPI_COMM_WORLD, &MPIstatus);
 
     LALInferenceCopyArrayToVariables(params, runState->currentParams);
 
