@@ -96,6 +96,33 @@ bool XLALSimInspiralWaveformFlagsIsDefault(
 }
 
 /**
+ * Checks if all flags in two LALSimInspiralWaveformFlags structs are equal.
+ * Returns true if all flags are equal. Returns false if one or more differ.
+ */
+bool XLALSimInspiralWaveformFlagsEqual(
+        LALSimInspiralWaveformFlags *waveFlags1,
+        LALSimInspiralWaveformFlags *waveFlags2
+        )
+{
+    LALSimInspiralSpinOrder spinO1, spinO2;
+    LALSimInspiralTidalOrder tideO1, tideO2;
+    LALSimInspiralFrameAxis axisChoice1, axisChoice2;
+    LALSimInspiralModesChoice modesChoice1, modesChoice2;
+
+    spinO1 = XLALSimInspiralGetSpinOrder(waveFlags1);
+    spinO2 = XLALSimInspiralGetSpinOrder(waveFlags2);
+    tideO1 = XLALSimInspiralGetTidalOrder(waveFlags1);
+    tideO2 = XLALSimInspiralGetTidalOrder(waveFlags2);
+    axisChoice1 = XLALSimInspiralGetFrameAxis(waveFlags1);
+    axisChoice2 = XLALSimInspiralGetFrameAxis(waveFlags2);
+    modesChoice1 = XLALSimInspiralGetModesChoice(waveFlags1);
+    modesChoice2 = XLALSimInspiralGetModesChoice(waveFlags2);
+
+    return ( (spinO1==spinO2) && (tideO1==tideO2) && (axisChoice1==axisChoice2)
+            && (modesChoice1==modesChoice2) );
+}
+
+/**
  * Set the LALSimInspiralSpinOrder within a LALSimInspiralWaveformFlags struct
  */
 void XLALSimInspiralSetSpinOrder(
