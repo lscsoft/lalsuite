@@ -503,41 +503,15 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }
     
   /* Set the modeldomain appropriately */
-  switch(approx)
-  {
-    case GeneratePPN:
-    case TaylorT1:
-    case TaylorT2:
-    case TaylorT3:
-    case TaylorT4:
-    case EOB:
-    case EOBNR:
-    case EOBNRv2:
-    case EOBNRv2HM:
-    case SEOBNRv1:
-    case SpinTaylor:
-    case SpinTaylorT4:
-    case SpinQuadTaylor:
-    case SpinTaylorFrameless:
-    case PhenSpinTaylorRD:
-    case NumRel:
-      modelDomain=LAL_SIM_DOMAIN_TIME;
-      break;
-    case TaylorF1:
-    case TaylorF2:
-    case TaylorF2RedSpin:
-    case TaylorF2RedSpinTidal:
-    case IMRPhenomA:
-    case IMRPhenomB:
-      modelDomain=LAL_SIM_DOMAIN_FREQUENCY;
-      break;
-    default:
-      fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
-      exit(1);
-      break;
+  if (XLALSimInspiralImplementedTDApproximants(approx)) {
+    modelDomain = LAL_SIM_DOMAIN_TIME;
+  } else if (XLALSimInspiralImplementedFDApproximants(approx)) {
+    modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
+  } else {
+    fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
+    exit(1);
   }
-  //fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,modelDomain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
-  
+
   ppt=LALInferenceGetProcParamVal(commandLine, "--fref");
   if (ppt) fRef = atof(ppt->value);
 
