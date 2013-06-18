@@ -149,7 +149,7 @@ int main(int argc, char** argv){
 		for( i=0; i<live.length; i++ ){
 			LALSeg s = live.segs[i];
 			livetime += XLALGPSDiff( &s.end, &s.start );
-			printf( "Segment #%lu:\t(%d.%d %d.%d)\t%f\t%f\n",
+			printf( "Segment #%zu:\t(%d.%d %d.%d)\t%f\t%f\n",
 				i, s.start.gpsSeconds, s.start.gpsNanoSeconds, 
 				s.end.gpsSeconds, s.end.gpsNanoSeconds, 
 				XLALGPSDiff( &s.end, &s.start ), livetime );
