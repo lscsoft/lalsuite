@@ -992,7 +992,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
   }
 
   /* Check if next lower temperature is ready to swap */
-  if (MPIrank > 0) {
+  else if (MPIrank > 0) {
     MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &readyToSwap, &MPIstatus);
 
     /* Hotter chain decides acceptance */
@@ -1203,7 +1203,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
   }
 
   /* Check if next lower temperature is ready to swap */
-  if (MPIrank > 0) {
+  else if (MPIrank > 0) {
     MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &readyToSwap, &MPIstatus);
 
     /* Hotter chain decides acceptance */
