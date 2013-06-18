@@ -1062,7 +1062,7 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
   INT4 MPIrank, chain;
   INT4 attemptingSwap=0, readyToSend=0;
   REAL8 dummyLikelihood;
-  REAL8 swapRejection=0;
+  INT4 swapRejection=0;
   MPI_Status MPIstatus;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
@@ -1353,6 +1353,7 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
     }
   }
 
+  /* Move hotter chains to this location */
   if (MPIrank != nChain-1)
       LALInferenceLadderUpdate(runState, 1);
 
