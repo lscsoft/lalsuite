@@ -1528,7 +1528,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   ppt=LALInferenceGetProcParamVal(commandLine,"--singleSpin");
   if(ppt) singleSpin=1;
   
-  if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD || approx==SpinTaylorT4) && !noSpin){
+  if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD || approx==SpinTaylorT4 || approx==SpinTaylorF2) && !noSpin){
     if(frame==LALINFERENCE_FRAME_RADIATION) {
       if(spinAligned && !(LALInferenceGetProcParamVal(commandLine,"--a-min"))) a1min=-1.0;
       ppt=LALInferenceGetProcParamVal(commandLine,"--fixA1");
