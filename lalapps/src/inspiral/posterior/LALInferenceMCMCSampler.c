@@ -602,7 +602,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     i++;
 
     if (runPhase == LADDER_UPDATE)
-      LALInferenceLadderUpdate(runState, 0);
+      LALInferenceLadderUpdate(runState, 0, i);
 
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 
@@ -1057,7 +1057,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
   return swapReturn;
 }
 
-void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag)
+void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle)
 {
   INT4 MPIrank, chain;
   INT4 attemptingSwap=0, readyToSend=0;
@@ -1109,6 +1109,9 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
     /* Update prior and likelihood */
     runState->currentPrior = runState->prior(runState, runState->currentParams);
     runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+
+    /* Restart adaptation to tune for the current location */
+    LALInferenceAdaptationRestart(runState, cycle);
   }
 
   /* Reset runPhase to the last phase each chain was in */
@@ -1331,6 +1334,7 @@ void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle)
 //-----------------------------------------
 void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
 {
+  LALInferenceMCMCrunPhase runPhase = **(LALInferenceMCMCrunPhase **) LALInferenceGetVariable(runState->algorithmParams, "runPhase");
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
   INT4 nChain = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nChain");
   INT4 adapting=1;
@@ -1354,8 +1358,8 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
   }
 
   /* Move hotter chains to this location */
-  if (MPIrank != nChain-1)
-      LALInferenceLadderUpdate(runState, 1);
+  if (runPhase != LADDER_UPDATE && MPIrank != nChain-1)
+      LALInferenceLadderUpdate(runState, 1, cycle);
 
   LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
   LALInferenceSetVariable(runState->proposalArgs, "adaptStart", &cycle);
