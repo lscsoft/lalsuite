@@ -1357,8 +1357,8 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
     }
   }
 
-  /* Move hotter chains to this location */
-  if (runPhase != LADDER_UPDATE && MPIrank != nChain-1)
+  /* Move hotter chains to this location.  Stagger when chains can start peforming such an update. */
+  if (runPhase != LADDER_UPDATE && MPIrank != nChain-1 && cycle > MPIrank*1000)
       LALInferenceLadderUpdate(runState, 1, cycle);
 
   LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
