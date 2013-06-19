@@ -1,45 +1,5 @@
-laldetchar (0.4.0-1) unstable; urgency=low
+laldetchar (0.0.1-1) unstable; urgency=low
 
-  * LALSimulation 0.4.0
+  * LALDetchar 0.0.1
 
- -- Adam Mercer <adam.mercer@ligo.org>  Wed, 13 Jun 2012 16:56:12 +0100
-
-laldetchar (0.3.0-1) unstable; urgency=low
-
-  * LALSimulation 0.3.0
-
- -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 May 2012 11:52:29 -0500
-
-laldetchar (0.2.0-1) unstable; urgency=low
-
-  * LALSimulation 0.2.0
-
- -- Adam Mercer <adam.mercer@ligo.org>  Tue, 10 Apr 2012 11:29:57 -0500
-
-laldetchar (0.1.1-1) unstable; urgency=low
-
-  * LALSimulation 0.1.1
-  * add support for "unicorn" injections
-  * update to automake-1.11.2
-  * packaging updates
-
- -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 09:47:29 -0600
-
-laldetchar (0.1.0-1) unstable; urgency=low
-
-  * LALSimulation 0.1.0
-
- -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 13:01:33 -0600
-
-laldetchar (0.1.0~rc2-1) unstable; urgency=low
-
-  * LALSimulation 0.1.0 Release Candidate 2
-  * packaging updates
-
- -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:22:15 -0600
-
-laldetchar (0.1.0~rc1-1) unstable; urgency=low
-
-  * LALSimulation 0.1.0 Release Candidate 1
-
- -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 15:04:56 -0600
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 27 Jun 2013 10:37:26 -0500
