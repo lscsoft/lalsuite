@@ -535,7 +535,7 @@ int main(int argc, char **argv)
                          shortTimeSlideList[slideNum].analStartPoint,
                          shortTimeSlideList[slideNum].analEndPoint,\
                          snglAcceptPoints,snglAcceptCount,acceptPointList);
-     
+
           verbose("Made coherent statistic for segment %d, template %d, "
                   "sky point %d at %ld \n", j, i, sp,
                   timeval_subtract(&startTime));      
@@ -549,7 +549,7 @@ int main(int argc, char **argv)
           if (! params->writeSnglInspiralTable)
           {
             eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
-                                         cohSNR, *PTFtemplate, eventId,
+                                         cohSNR, fcTmplt, *PTFtemplate, eventId,
                                          spinTemplate,
                                          pValues, gammaBeta, snrComps,
                                          nullSNR, traceSNR, bankVeto,
@@ -562,7 +562,7 @@ int main(int argc, char **argv)
           else
           {
             eventId = coh_PTF_add_sngl_triggers(params, &snglEventList,\
-                           &snglThisEvent,cohSNR,*PTFtemplate,eventId,\
+                           &snglThisEvent,cohSNR,fcTmplt,*PTFtemplate,eventId,\
                            pValues,bankVeto,autoVeto,chiSquare,PTFM,\
                            currAnalStart,currAnalEnd);
           }
@@ -592,7 +592,7 @@ int main(int argc, char **argv)
                     timeval_subtract(&startTime));
 
             eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
-                                         cohSNR, *PTFtemplate, eventId,
+                                         cohSNR, fcTmplt, *PTFtemplate, eventId,
                                          spinTemplate,
                                          pValues, gammaBeta, snrComps,
                                          nullSNR, traceSNR, bankVeto,
@@ -663,6 +663,9 @@ int main(int argc, char **argv)
           LALFree(frequencyRangesCross[ifoNumber]);
           frequencyRangesCross[ifoNumber] = NULL;
         }
+      }
+      for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
         if (overlapCont[ifoNumber])
         {
           LALFree(overlapCont[ifoNumber]);
@@ -721,7 +724,7 @@ int main(int argc, char **argv)
       Fplustrig,Fcrosstrig,skyPoints,time_slide_head,longTimeSlideList,
       shortTimeSlideList,timeSlideVectors,detectors, slideIDList,\
       time_slide_map_head,segment_table_head);
-  
+
   coh_PTF_free_veto_memory(params,bankNormOverlaps,bankFcTmplts,bankOverlaps,\
       dataOverlaps,autoTempOverlaps);
 
@@ -1181,6 +1184,7 @@ UINT8 coh_PTF_add_triggers(
     MultiInspiralTable      **eventList,
     MultiInspiralTable      **thisEvent,
     REAL4TimeSeries         *cohSNR,
+    FindChirpTemplate       *fcTmplt,
     InspiralTemplate        PTFTemplate,
     UINT8                   eventId,
     UINT4                   spinTrigger,
@@ -1215,7 +1219,7 @@ UINT8 coh_PTF_add_triggers(
     i = acceptPointList[j];
     if (cohSNR->data->data[i])
     {
-      currEvent = coh_PTF_create_multi_event(params,cohSNR,PTFTemplate,\
+      currEvent = coh_PTF_create_multi_event(params,cohSNR,fcTmplt,PTFTemplate,\
           &eventId,spinTrigger,pValues,gammaBeta,snrComps,nullSNR,traceSNR,\
           bankVeto,autoVeto,chiSquare,PTFM,rightAscension,declination,slideId,\
           timeOffsetPoints,i);

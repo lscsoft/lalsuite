@@ -599,6 +599,23 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     localparams.numShortSlides = 1;
   }
 
+  /* Set the template correction factor */
+  if ( localparams.approximant == FindChirpSP)
+  {
+    /* Most of this gets stored in fcTmplt->fcTmpltNorm which is computed on th
+     * fly. This is correction needed to that. */
+    /* First need to add ( (df)**-7./6. )**2 */
+    localparams.tempCorrFac = pow(localparams.segmentDuration,14./6.); 
+    /* For some reason FindChirp multiplies by a dt factor, take this out */
+    localparams.tempCorrFac *= pow(localparams.sampleRate,2./6.);
+  }
+  else
+  {
+    /* Sigmasq factors are not yet available for all approximants */
+    /* Set values to 0 to avoid confusion in this case */
+    localparams.tempCorrFac = 0;
+  }
+
   *params = localparams;
 
   return 0;
@@ -631,7 +648,7 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   params->injSearchWindow = 1.;
 
   /* dynamic range factor must be greater than zero */
-  params->dynRangeFac = 1.0;
+  params->dynRangeFac = 1E20;
 
   /* Various frequencies must be set */
   params->highpassFrequency     = -1.0; 
@@ -995,6 +1012,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--user-tag=string          set the process_params usertag to string\n" );
   fprintf( stderr, "--do-clustering            turn on clustering\n");
   fprintf( stderr, "--cluster-window=arg       cluster window length\n");
+  fprintf( stderr, "--write-sngl-inspiral-table Write output as sngl_inspiral\n");
 
   fprintf( stderr, "\nintermediate data output options:\n" );
   fprintf( stderr, "--write-raw-data           write raw data before injection or conditioning\n" );

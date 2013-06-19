@@ -147,11 +147,12 @@ struct coh_PTF_params {
   UINT4        numBufferPoints;
   REAL4        maxTempLength;
   UINT4        numOverlapSegments;
-  REAL4        dynRangeFac;
   REAL4        lowTemplateFrequency;
   REAL4        lowFilterFrequency;
   REAL4        highFilterFrequency;
   REAL4        highpassFrequency;
+  REAL8        dynRangeFac; /* How much data is scaled by */
+  REAL8        tempCorrFac; /* Correction scaling for template */
   Approximant  approximant;
   LALPNOrder   order;
   REAL4        invSpecLen;
@@ -340,6 +341,7 @@ UINT8 coh_PTF_add_triggers(
     MultiInspiralTable      **eventList,
     MultiInspiralTable      **thisEvent,
     REAL4TimeSeries         *cohSNR,
+    FindChirpTemplate       *fcTmplt,
     InspiralTemplate        PTFTemplate,
     UINT8                   eventId,
     UINT4                   spinTrigger,
@@ -375,6 +377,7 @@ UINT4 coh_PTF_accept_trig_check(
 SnglInspiralTable* coh_PTF_create_sngl_event(
     struct coh_PTF_params   *params,
     REAL4TimeSeries         *cohSNR,
+    FindChirpTemplate       *fcTmplt,
     InspiralTemplate        PTFTemplate,
     UINT8                   *eventId,
     REAL4TimeSeries         **pValues,
@@ -390,6 +393,7 @@ UINT8 coh_PTF_add_sngl_triggers(
     SnglInspiralTable       **eventList,
     SnglInspiralTable       **thisEvent,
     REAL4TimeSeries         *cohSNR,
+    FindChirpTemplate       *fcTmplt,
     InspiralTemplate        PTFTemplate,
     UINT8                   eventId,
     REAL4TimeSeries         **pValues,
@@ -839,6 +843,7 @@ void coh_PTF_calculate_rotated_vectors(
 MultiInspiralTable* coh_PTF_create_multi_event(
     struct coh_PTF_params   *params,
     REAL4TimeSeries         *cohSNR,
+    FindChirpTemplate       *fcTmplt,
     InspiralTemplate        PTFTemplate,
     UINT8                   *eventId,
     UINT4                   spinTrigger,
