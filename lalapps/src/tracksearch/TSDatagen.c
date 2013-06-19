@@ -26,7 +26,7 @@
 #include "TSDatagen.h"
 #include "tracksearch.h"
 #include <config.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALConstants.h>
 #include <lal/LALNoiseModels.h>

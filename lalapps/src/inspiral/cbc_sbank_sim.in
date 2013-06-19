@@ -78,6 +78,9 @@ def parse_command_line():
     parser.add_option("--user-tag",default="banksim")
     parser.add_option("--injection-file",default = None)
     parser.add_option("--injection-approx",default = None)
+    parser.add_option("--mratio-max",default = float('inf'), type="float", help="Cull injections based on mass ratio")
+    parser.add_option("--mtotal-min",default = 0, type="float", help="Cull injections based on total mass")
+    parser.add_option("--mtotal-max",default = float('inf'), type="float", help="Cull injections based on total mass")
     parser.add_option("--template-bank",default = None)
     parser.add_option("--template-approx",default = None)
     parser.add_option("--noise-model", choices=noise_models.keys(), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model")
@@ -157,7 +160,9 @@ sims = table.get_table(xmldoc2, lsctables.SimInspiralTable.tableName)
 # the injection --> best match mapping correct later
 #
 newtbl = lsctables.SimInspiralTable()
-[newtbl.append(s) for s in sorted(sims, key=lambda g: g.mchirp)]
+for s in sorted(sims, key=lambda g: g.mchirp):
+    if 1./opts.mratio_max <= s.mass1/s.mass2 <= opts.mratio_max and opts.mtotal_min <= s.mass1 + s.mass2 <= opts.mtotal_max:
+        newtbl.append(s)
 sims = newtbl
 
 # FIXME inspinj is a terrible person

@@ -71,7 +71,9 @@ int main(int argc, char *argv[])
             dt = dimlen / srate;
         else {  /* first dimension is gps time */
             /* assume sample rate in Hz is an integer */
-            srate = floor(0.5 + (dimlen - 1) / (data[(dimlen - 1) * ndim] - data[0]));
+            srate =
+                floor(0.5 + (dimlen - 1) / (data[(dimlen - 1) * ndim] -
+                    data[0]));
             dt = dimlen / srate;
             t0 = data[0];
         }
@@ -84,7 +86,9 @@ int main(int argc, char *argv[])
             size_t i;
 
             snprintf(channame, sizeof(channame), "C%02zu", dim);
-            channel = XLALFrameUFrProcChanAlloc(channame, type, subtype, dtype, dimlen);
+            channel =
+                XLALFrameUFrProcChanAlloc(channame, type, subtype, dtype,
+                dimlen);
             XLALFrameUFrChanSetSampleRate(channel, srate);
             XLALFrameUFrChanVectorAlloc(channel, dtype, dimlen);
             XLALFrameUFrChanVectorSetName(channel, channame);
@@ -107,7 +111,6 @@ int main(int argc, char *argv[])
     XLALFrameUFrFileClose(output);
     return 0;
 }
-
 
 int readdata(size_t * ndim, size_t * dimlen, double **data, FILE * fp)
 {
@@ -134,7 +137,7 @@ int readdata(size_t * ndim, size_t * dimlen, double **data, FILE * fp)
                     break;
                 ++cols;
             }
-            while (s != endp && *endp != '\0');
+            while (s != endp && *endp != '\0') ;
             if (cols == 0)
                 FAILURE("format error on input line %zu\n", rows + 1);
         }

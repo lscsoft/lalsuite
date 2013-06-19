@@ -6,12 +6,12 @@
 
 #define XFUNC CONCAT3(XLALFrGet,TYPE,FrameConvertToREAL4TimeSeries)
 #define CREATESERIES CONCAT3(XLALCreate,TYPE,TimeSeries)
-#define GETMETA CONCAT3(XLALFrGet,TYPE,TimeSeriesMetadata)
-#define GETDATA CONCAT3(XLALFrGet,TYPE,TimeSeries)
+#define GETMETA CONCAT3(XLALFrStreamGet,TYPE,TimeSeriesMetadata)
+#define GETDATA CONCAT3(XLALFrStreamGet,TYPE,TimeSeries)
 #define DESTROYSERIES CONCAT3(XLALDestroy,TYPE,TimeSeries)
 #define VARTYPE CONCAT2(TYPE,TimeSeries)
 
-int XFUNC (REAL4TimeSeries *inputSeries, FrStream *stream)
+int XFUNC (REAL4TimeSeries *inputSeries, LALFrStream *stream)
 {
 VARTYPE *tmpData=NULL;
 VARTYPE *tmpData2=NULL;
@@ -52,10 +52,10 @@ if (errcode!=0)
    fflush(stderr);
    return errcode;
    }
-errcode=XLALFrSeek(stream,&(tmpData2->epoch));
+errcode=XLALFrStreamSeek(stream,&(tmpData2->epoch));
 if (errcode!=0)
    {
-   fprintf(stderr,"XLALFrSeek : Can not seek frame to start epoch?\n");
+   fprintf(stderr,"XLALFrStreamSeek : Can not seek frame to start epoch?\n");
    fflush(stderr);
    return errcode;
    }

@@ -89,13 +89,17 @@ int copydetector(LALFrameUFrameH * frame, LALFrameUFrDetector * detector)
     altitudey = XLALFrameUFrDetectorQueryArmYAltitude(detector);
     midpointy = XLALFrameUFrDetectorQueryArmYMidpoint(detector);
 
-    detectorcopy = XLALFrameUFrDetectorAlloc(name, prefix, latitude, longitude, elevation, azimuthx, azimuthy, altitudex, altitudey, midpointx, midpointy, loctime);
+    detectorcopy =
+        XLALFrameUFrDetectorAlloc(name, prefix, latitude, longitude,
+        elevation, azimuthx, azimuthy, altitudex, altitudey, midpointx,
+        midpointy, loctime);
     XLALFrameUFrameHFrDetectorAdd(frame, detectorcopy);
     XLALFrameUFrDetectorFree(detectorcopy);
     return 0;
 }
 
-int copychannels(LALFrameUFrameH * frame, LALFrameUFrFile * frfile, size_t pos, const char *match)
+int copychannels(LALFrameUFrameH * frame, LALFrameUFrFile * frfile,
+    size_t pos, const char *match)
 {
     LALFrameUFrTOC *toc;
     size_t nadc, adc;
@@ -146,7 +150,8 @@ int copychannels(LALFrameUFrameH * frame, LALFrameUFrFile * frfile, size_t pos, 
     return 0;
 }
 
-int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel, int chantype)
+int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel,
+    int chantype)
 {
     const char *channame;
     const char *vectname;
@@ -182,7 +187,10 @@ int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel, int chantype
         chancopy = XLALFrameUFrAdcChanAlloc(channame, dtype, ndata);
         break;
     case PROC_CHAN_TYPE:
-        chancopy = XLALFrameUFrProcChanAlloc(channame, LAL_FRAMEU_FR_PROC_TYPE_TIME_SERIES, LAL_FRAMEU_FR_PROC_SUB_TYPE_UNKNOWN, dtype, ndata);
+        chancopy =
+            XLALFrameUFrProcChanAlloc(channame,
+            LAL_FRAMEU_FR_PROC_TYPE_TIME_SERIES,
+            LAL_FRAMEU_FR_PROC_SUB_TYPE_UNKNOWN, dtype, ndata);
         break;
     case SIM_CHAN_TYPE:
         chancopy = XLALFrameUFrSimChanAlloc(channame, dtype, ndata);

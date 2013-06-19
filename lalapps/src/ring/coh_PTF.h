@@ -40,7 +40,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/Date.h>
 #include <lal/RealFFT.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
@@ -294,7 +294,7 @@ Skyloopingtype;
 
 /* Function declarations for coh_PTF_inspiral */
 
-void coh_PTF_statistic(
+UINT4 coh_PTF_statistic(
     REAL4TimeSeries         *cohSNR,
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
@@ -325,9 +325,14 @@ void coh_PTF_statistic(
     struct bankDataOverlaps **chisqSnglOverlapsP,
     REAL4 *frequencyRangesPlus[LAL_NUM_IFO+1],
     REAL4 *frequencyRangesCross[LAL_NUM_IFO+1],
+    REAL4                   **overlapCont,
+    REAL4                   **snglOverlapCont,
     struct timeval          startTime,
     UINT4                   segStartPoint,
-    UINT4                   segEndPoint
+    UINT4                   segEndPoint,
+    UINT4                   **snglAcceptPoints,
+    UINT4                   *snglAcceptCount,
+    UINT4                   *acceptPointList
 );
 
 UINT8 coh_PTF_add_triggers(
@@ -351,9 +356,10 @@ UINT8 coh_PTF_add_triggers(
     REAL4                   declination,
     INT8                    slideId,
     REAL4                   *timeOffsets,
-    UINT4                   startPoint,
-    UINT4                   endPoint
+    UINT4                   *acceptPointList,
+    UINT4                   numAcceptPoints
 );
+
 void coh_PTF_cluster_triggers(
   struct coh_PTF_params   *params,
   MultiInspiralTable      **eventList,
@@ -560,18 +566,21 @@ void coh_PTF_calculate_single_detector_filters(
   REAL8Array                 **PTFM,
   COMPLEX8VectorSequence     **PTFqVec,
   REAL4TimeSeries            **snrComps,
+  UINT4                      **snglAcceptPoints,
+  UINT4                      *snglAcceptCount,
   RingDataSegments           **segments,
   COMPLEX8FFTPlan            *invPlan,
   UINT4                      spinTemplate,
   UINT4                      segNum
 );
 
-void coh_PTF_calculate_single_det_spin_snr(
+UINT4 coh_PTF_calculate_single_det_spin_snr(
   struct coh_PTF_params      *params,
   REAL8Array                 **PTFM,
   COMPLEX8VectorSequence     **PTFqVec,
   REAL4TimeSeries            **snrComps,
-  UINT4                      ifoNumber
+  UINT4                      ifoNumber,
+  UINT4                      *localAcceptPoints
 );
 
 REAL4 coh_PTF_get_spin_SNR(
@@ -595,15 +604,21 @@ void coh_PTF_calculate_coherent_SNR(
   UINT4                      segEndPoint,
   UINT4                      vecLength,
   UINT4                      vecLengthTwo,
-  UINT4                      spinTemplate
+  UINT4                      spinTemplate,
+  UINT4                      **snglAcceptPoints,
+  UINT4                      *snglAcceptCount
 );
 
 UINT4 coh_PTF_template_time_series_cluster(
+  struct coh_PTF_params      *params,
   REAL4TimeSeries *cohSNR,
   UINT4 *acceptPoints,
+  INT4 *timeOffsetPoints,
   INT4 numPointCheck,
   UINT4 startPoint,
-  UINT4 endPoint
+  UINT4 endPoint,
+  UINT4 **snglAcceptPoints,
+  UINT4 *snglAcceptCount
 );
 
 UINT4 coh_PTF_test_veto_vals(
@@ -745,6 +760,7 @@ void coh_PTF_chi_square_coh_setup(
   REAL4                   **frequencyRangesCross,
   REAL4                   **powerBinsPlus,
   REAL4                   **powerBinsCross,
+  REAL4                   **overlapCont,
   struct bankDataOverlaps **chisqOverlapsP,
   FindChirpTemplate       *fcTmplt,
   REAL4FrequencySeries    **invspec,
@@ -765,6 +781,7 @@ void coh_PTF_chi_square_sngl_setup(
   REAL4                   **frequencyRangesCross,
   REAL4                   **powerBinsPlus,
   REAL4                   **powerBinsCross,
+  REAL4                   **overlapCont,
   struct bankDataOverlaps **chisqSnglOverlapsP,
   FindChirpTemplate       *fcTmplt,
   REAL4FrequencySeries    **invspec,
@@ -1066,6 +1083,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     REAL4 *frequencyRangesCross,
     REAL4 *powerBinsPlus,
     REAL4 *powerBinsCross,
+    REAL4 **overlapCont,
     gsl_matrix *eigenvecs,
     UINT4 detectorNum,
     UINT4 singlePolFlag
@@ -1270,6 +1288,11 @@ void coh_PTF_set_null_input_COMPLEX8VectorSequence(
 
 void coh_PTF_set_null_input_REAL4(
   REAL4** array,
+  UINT4 length
+);
+
+void coh_PTF_set_null_input_UINT4(
+  UINT4** array,
   UINT4 length
 );
 

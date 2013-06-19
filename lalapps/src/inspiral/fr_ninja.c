@@ -28,7 +28,7 @@
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALDetectors.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
@@ -149,7 +149,7 @@ INT4 main(INT4 argc, CHAR **argv)
   REAL8TimeSeries *hcrossREAL8[MAX_L+1][(2*MAX_L) + 1];
 
   /* frame variables */
-  FrameH *frame;
+  LALFrameH *frame;
   CHAR *frame_name = NULL;
   LIGOTimeGPS epoch;
   INT4 duration;
@@ -420,35 +420,35 @@ INT4 main(INT4 argc, CHAR **argv)
    */
 
   /* common metadata */
-  XLALFrHistoryAdd(frame, "creator", str_creator);
-  XLALFrHistoryAdd(frame, "mass-ratio", str_mass_ratio);
-  XLALFrHistoryAdd(frame, "spin1x", str_spin1x);
-  XLALFrHistoryAdd(frame, "spin1y", str_spin1y);
-  XLALFrHistoryAdd(frame, "spin1z", str_spin1z);
-  XLALFrHistoryAdd(frame, "spin2x", str_spin2x);
-  XLALFrHistoryAdd(frame, "spin2y", str_spin2y);
-  XLALFrHistoryAdd(frame, "spin2z", str_spin2z);
+  XLALFrameAddFrHistory(frame, "creator", str_creator);
+  XLALFrameAddFrHistory(frame, "mass-ratio", str_mass_ratio);
+  XLALFrameAddFrHistory(frame, "spin1x", str_spin1x);
+  XLALFrameAddFrHistory(frame, "spin1y", str_spin1y);
+  XLALFrameAddFrHistory(frame, "spin1z", str_spin1z);
+  XLALFrameAddFrHistory(frame, "spin2x", str_spin2x);
+  XLALFrameAddFrHistory(frame, "spin2y", str_spin2y);
+  XLALFrameAddFrHistory(frame, "spin2z", str_spin2z);
 
   /* format specific metadata */
   if (strcmp(metadata_format, "NINJA1") == 0)
   {
     /* NINJA1 */
-    XLALFrHistoryAdd(frame, "simulation-details", str_simulation_details);
-    XLALFrHistoryAdd(frame, "nr-group", str_nr_group);
-    XLALFrHistoryAdd(frame, "email", str_email);
-    XLALFrHistoryAdd(frame, "freqStart22", str_freq_start_22);
+    XLALFrameAddFrHistory(frame, "simulation-details", str_simulation_details);
+    XLALFrameAddFrHistory(frame, "nr-group", str_nr_group);
+    XLALFrameAddFrHistory(frame, "email", str_email);
+    XLALFrameAddFrHistory(frame, "freqStart22", str_freq_start_22);
   }
   else if (strcmp(metadata_format, "NINJA2") == 0)
   {
     /* NINJA2 */
-    XLALFrHistoryAdd(frame, "waveform-name", str_waveform_name);
-    XLALFrHistoryAdd(frame, "initial-separation", str_initial_separation);
-    XLALFrHistoryAdd(frame, "eccentricity", str_eccentricity);
-    XLALFrHistoryAdd(frame, "freq_start_22", str_freq_start_22);
-    XLALFrHistoryAdd(frame, "number-of-cycles-22", str_number_of_cycles_22);
-    XLALFrHistoryAdd(frame, "code", str_code);
-    XLALFrHistoryAdd(frame, "submitter-email", str_code);
-    XLALFrHistoryAdd(frame, "authors-emails", str_authors_emails);
+    XLALFrameAddFrHistory(frame, "waveform-name", str_waveform_name);
+    XLALFrameAddFrHistory(frame, "initial-separation", str_initial_separation);
+    XLALFrameAddFrHistory(frame, "eccentricity", str_eccentricity);
+    XLALFrameAddFrHistory(frame, "freq_start_22", str_freq_start_22);
+    XLALFrameAddFrHistory(frame, "number-of-cycles-22", str_number_of_cycles_22);
+    XLALFrameAddFrHistory(frame, "code", str_code);
+    XLALFrameAddFrHistory(frame, "submitter-email", str_code);
+    XLALFrameAddFrHistory(frame, "authors-emails", str_authors_emails);
   }
   else
   {
@@ -593,7 +593,7 @@ INT4 main(INT4 argc, CHAR **argv)
     fprintf(stdout, "writing frame: %s\n", frame_name);
 
   /* write frame */
-  if (XLALFrameWrite(frame, frame_name, 8) != 0 )
+  if (XLALFrameWrite(frame, frame_name) != 0 )
   {
     fprintf(stderr, "Error: Cannot save frame file '%s'\n", frame_name);
     exit(1);
@@ -703,7 +703,7 @@ INT4 main(INT4 argc, CHAR **argv)
   }
 
   /* clear frame */
-  FrameFree(frame);
+  XLALFrameFree(frame);
 
   /* check for memory leaks */
   LALCheckMemoryLeaks();

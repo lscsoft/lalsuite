@@ -3095,7 +3095,7 @@ class PlotSlidesJob(pipeline.SqliteJob):
     """
     Sets plot-playground-only option. This causes job to only plot playground.
     """
-    self.add_var_opt('plot-playground-only')
+    self.add_opt('plot-playground-only','')
 
 
 class PlotSlidesNode(pipeline.SqliteNode):
@@ -3126,7 +3126,7 @@ class PlotCumhistJob(pipeline.SqliteJob):
     """
     Sets plot-playground-only option. This causes job to only plot playground.
     """
-    self.add_var_opt('plot-playground-only')
+    self.add_opt('plot-playground-only','')
 
 
 class PlotCumhistNode(pipeline.SqliteNode):
@@ -3320,7 +3320,7 @@ class SearchUpperLimitNode(pipeline.SqliteNode):
 
 class MVSCDagGenerationJob(InspiralAnalysisJob):
   """
-  a job that generatest the mvsc_dag, which will be run as an external subdag
+  a job that generates the mvsc_dag, which will be run as an external subdag
   """
   def __init__(self, cp, dax = False):
     """
@@ -3339,17 +3339,12 @@ class MVSCDagGenerationJob(InspiralAnalysisJob):
 
 class MVSCDagGenerationNode(InspiralAnalysisNode):
   """
-  the node that runs the mvsc dag generation script
+  the node that runs the mvsc dag generation script for a given configuration
+  generally the different nodes will be for different categories of vetoes
   """
   def __init__(self, job):
-    """
-    @job: A HWinjPageJob.
-    """
     InspiralAnalysisNode.__init__(self, job)
   def set_database(self, database):
-    """
-    Sets the extract-to-xml option.
-    """
     self.add_var_arg(database)
   def set_user_tag(self, tag):
     self.add_var_opt("user-tag",tag)

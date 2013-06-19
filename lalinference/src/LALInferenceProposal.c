@@ -1637,6 +1637,9 @@ vectorToColatLong(const REAL8 v[3],
 
 void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
+  const char *propName = PSDFitJumpName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+
   INT4 i,j;
   INT4 nifo;
   INT4 N;

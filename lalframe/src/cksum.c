@@ -41,10 +41,11 @@ int main(int argc, char *argv[])
         if (!frfile)
             FAILURE("file %s not found\n", fname);
 
-        valid = (XLALFrameUFileCksumValid(frfile) == 0);
+        valid = XLALFrameUFileCksumValid(frfile);
         retval += !valid;
 
-        fprintf(stdout, "%svalid checksum for %s\n", valid ? "" : "in", fname);
+        fprintf(stdout, "%svalid checksum for %s\n", valid ? "" : "in",
+            fname);
 
         XLALFrameUFrFileClose(frfile);
     }

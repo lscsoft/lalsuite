@@ -43,8 +43,8 @@
 #include <lal/CoarseGrainFrequencySeries.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/IIRFilter.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -153,8 +153,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 lInter, lSeg;
   
   /* frame variables */
-  FrCache *frCache1,*frCache2;
-  FrStream *frStream1,*frStream2;
+  LALCache *frCache1,*frCache2;
+  LALFrStream *frStream1,*frStream2;
   FrChanIn frChanIn1, frChanIn2;
   FrOutPar frPSD1 = { ifo1, "PSD", ProcDataChannel, 1, 0, 0 };
   FrOutPar frPSD2 = { ifo2, "PSD", ProcDataChannel, 1, 0, 0 };
@@ -257,7 +257,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    fprintf(stdout, "Opening first frame cache...\n");
   /* open first frame cache */
   frCache1=NULL;frStream1=NULL;
-  LAL_CALL( LALFrCacheImport( &status, &frCache1, frameCache1), &status );
+  frCache1 = XLALCacheImport( frameCache1 );
   LAL_CALL( LALFrCacheOpen( &status, &frStream1, frCache1), &status );
 
   if (verbose_flag)
@@ -265,12 +265,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* open second frame cache */
   frCache2=NULL;frStream2=NULL;
-  LAL_CALL( LALFrCacheImport( &status, &frCache2, frameCache2), &status);
+  frCache2 = XLALCacheImport( frameCache2 );
   LAL_CALL( LALFrCacheOpen( &status, &frStream2, frCache2), &status);
 
    /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream1->mode = LAL_FR_VERBOSE_MODE;
-  frStream2->mode = LAL_FR_VERBOSE_MODE;
+  frStream1->mode = LAL_FR_STREAM_VERBOSE_MODE;
+  frStream2->mode = LAL_FR_STREAM_VERBOSE_MODE;
 
   
   /* set resample parameters */

@@ -271,7 +271,7 @@ def inject(hplus, hcross, ifo, psd):
         ra, dec, psi, detector)
 
     # Add injection to data
-    lal.AddREAL8TimeSeries(x, h)
+    x = lal.AddREAL8TimeSeries(x, h)
 
     # Done!
     return x

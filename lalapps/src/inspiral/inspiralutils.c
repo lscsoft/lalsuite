@@ -53,7 +53,7 @@
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/Calibration.h>
 #include <lal/FrameCalibration.h>
@@ -225,8 +225,8 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
   INT4 len, lenPlus, lenCross, k;
   CHAR *channel_name_plus;
   CHAR *channel_name_cross;
-  FrStream  *frStream = NULL;
-  FrCache frCache;
+  LALFrStream  *frStream = NULL;
+  LALCache frCache;
   LIGOTimeGPS epoch;
   REAL4TimeSeries  *seriesPlus=NULL;
   REAL4TimeSeries  *seriesCross=NULL;
@@ -242,10 +242,10 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
   modeLhi = thisinj->numrel_mode_max;
 
   /* create a frame cache and open the frame stream */
-  frCache.numFrameFiles = 1;
-  frCache.frameFiles = LALCalloc(1, sizeof(frCache.frameFiles[0]));
-  frCache.frameFiles[0].url = thisinj->numrel_data;
-  frStream = XLALFrCacheOpen( &frCache );
+  frCache.length = 1;
+  frCache.list = LALCalloc(1, sizeof(frCache.list[0]));
+  frCache.list[0].url = thisinj->numrel_data;
+  frStream = XLALFrStreamCacheOpen( &frCache );
 
   /* the total mass of the binary in Mpc */
   massMpc = (thisinj->mass1 + thisinj->mass2) * LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
@@ -263,12 +263,12 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
       /* first the plus polarization */
       channel_name_plus = XLALGetNinjaChannelName("plus", modeL, modeM);
       /*get number of data points */
-      lenPlus = XLALFrGetVectorLength ( channel_name_plus, frStream );
+      lenPlus = XLALFrStreamGetVectorLength ( channel_name_plus, frStream );
 
       /* now the cross polarization */
       channel_name_cross = XLALGetNinjaChannelName("cross", modeL, modeM);
       /*get number of data points */
-      lenCross = XLALFrGetVectorLength ( channel_name_cross, frStream );
+      lenCross = XLALFrStreamGetVectorLength ( channel_name_cross, frStream );
 
       /* skip on to next mode if mode doesn't exist */
       if ( (lenPlus <= 0) || (lenCross <= 0) || (lenPlus != lenCross) ) {
@@ -285,14 +285,14 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
       /* allocate and read the plus/cross time series */
       seriesPlus = XLALCreateREAL4TimeSeries ( channel_name_plus, &epoch, 0, 0, &lalDimensionlessUnit, len);
       memset(seriesPlus->data->data, 0, seriesPlus->data->length*sizeof(REAL4));
-      XLALFrGetREAL4TimeSeries ( seriesPlus, frStream );
-      XLALFrRewind( frStream );
+      XLALFrStreamGetREAL4TimeSeries ( seriesPlus, frStream );
+      XLALFrStreamRewind( frStream );
       LALFree(channel_name_plus);
 
       seriesCross = XLALCreateREAL4TimeSeries ( channel_name_cross, &epoch, 0, 0, &lalDimensionlessUnit, len);
       memset(seriesCross->data->data, 0, seriesCross->data->length*sizeof(REAL4));
-      XLALFrGetREAL4TimeSeries ( seriesCross, frStream );
-      XLALFrRewind( frStream );
+      XLALFrStreamGetREAL4TimeSeries ( seriesCross, frStream );
+      XLALFrStreamRewind( frStream );
       LALFree(channel_name_cross);
 
       /* allocate memory for tempStrain */
@@ -341,8 +341,8 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
     } /* end loop over modeM values */
   } /* end loop over modeL values */
 
-  XLALFrClose( frStream );
-  LALFree(frCache.frameFiles);
+  XLALFrStreamClose( frStream );
+  LALFree(frCache.list);
   *outStrain = sumStrain;
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -688,8 +688,16 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
   CHAR *comment=NULL;
   CHAR *token=NULL;
   REAL8 ret=0;
+  CHAR *path;
 
-  frFile =  XLALFrOpenURL( url );
+  /* convert url to path by skipping protocol part of protocol:path */
+  path = strchr(url, ':');
+  if (path == NULL)
+    path = url;
+  else
+    path++; /* skip the ':' -- now on the path */
+
+  frFile =  FrFileINew( path );
   frame = FrameRead (frFile);
   frHist = frame->history;
   thisHist = frHist;

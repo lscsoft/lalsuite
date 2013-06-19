@@ -42,7 +42,7 @@
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/FrameCalibration.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/GenerateBurst.h>
 #include <lal/IIRFilter.h>
 #include <lal/LALConstants.h>

@@ -401,7 +401,7 @@ main(int argc, char *argv[])
           XLAL_CHECK ( written < len, XLAL_ESIZE, "Frame-filename exceeds expected maximal length (%d): '%s'\n", len, fname );
 
 	  /* define the output frame */
-	  struct FrameH *outFrame;
+	  LALFrameH *outFrame;
 	  XLAL_CHECK ( (outFrame = XLALFrameNew( &(params.startTimeGPS), params.duration, uvar.frameDesc, 1, 0, 0 )) != NULL, XLAL_EFUNC );
 
 	  /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
@@ -414,16 +414,16 @@ main(int argc, char *argv[])
 
 	  /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
 	  char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
-          FrHistoryAdd ( outFrame, hist );
+          XLALFrameAddFrHistory ( outFrame, __FILE__, hist );
 
 	  /* then we add the version string */
-	  FrHistoryAdd ( outFrame, GV.VCSInfoString );
+	  XLALFrameAddFrHistory ( outFrame, __FILE__, GV.VCSInfoString );
 
 	  /* output the frame to file - compression level 1 (higher values make no difference) */
-	  XLAL_CHECK ( (XLALFrameWrite(outFrame, fname,1) == 0) , XLAL_EFUNC );
+	  XLAL_CHECK ( (XLALFrameWrite(outFrame, fname) == 0) , XLAL_EFUNC );
 
 	  /* free the frame, frame file name and history memory */
-	  FrameFree ( outFrame );
+	  XLALFrameFree ( outFrame );
 	  LALFree ( fname );
           LALFree ( hist );
 #endif

@@ -591,9 +591,11 @@ class SpinTaylorT4Template(Template):
             -np.sin(self.inclination),	# initial value of E1z
             0,				# tidal deformability of mass 1
             0,				# tidal deformability of mass 2
+            1, # phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs)
             lalsim.LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN, # flags to control spin effects
+            0, # twice PN tidal order
             7,				# twice PN phase order
-            0
+            3 # twice PN amplitude order
         )
 
         # project onto detector

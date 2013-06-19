@@ -544,7 +544,7 @@ v          -0.3926141  & -0.0776130  & -0.2473886 \\
   } \
 }
 
-#define LAL_FR_DETECTOR_STRUCT(d) \
+#define LAL_FR_STREAM_DETECTOR_STRUCT(d) \
 { \
   LAL_DETECTOR_CONSTANT(d,DETECTOR_NAME), \
   LAL_DETECTOR_CONSTANT(d,DETECTOR_PREFIX), \
@@ -567,7 +567,7 @@ v          -0.3926141  & -0.0776130  & -0.2473886 \\
   LAL_DETECTOR_LOCATION(d),      \
   LAL_DETECTOR_RESPONSE(d,t),    \
   LAL_XCAT(LALDETECTORTYPE_,t),  \
-  LAL_FR_DETECTOR_STRUCT(d)      \
+  LAL_FR_STREAM_DETECTOR_STRUCT(d)      \
 }
 
 /** Pre-existing detectors. */

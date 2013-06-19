@@ -31,13 +31,8 @@ src/lalframe-user-env.shell
 src/stamp-h1
 src/stamp-h2
 test/AggregationTest
-test/FrameCacheTest
-test/FrameDataTest
-test/FrameStreamTest
+test/LALFrSeriesTest
 test/H1:LSC-AS_Q.???
 test/MakeFrames
-test/Read40mData
-test/ReadGEOData
-test/ReadLHOData
 test/TestLowLatencyData*
 test/catalog*

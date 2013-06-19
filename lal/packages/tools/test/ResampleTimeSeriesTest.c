@@ -92,7 +92,7 @@
 #include <lal/LALConstants.h>
 #include <lal/Units.h>
 #include <lal/ResampleTimeSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/AVFactories.h>
 #include <lal/LALStdio.h>
 #ifdef HAVE_UNISTD_H

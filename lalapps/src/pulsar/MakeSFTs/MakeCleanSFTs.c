@@ -84,8 +84,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
 #include <lal/LALConstants.h>
@@ -206,8 +206,8 @@ REAL8 FMIN = 48.0; /* default start frequency; 0.0056 */
 REAL8 DF = 2000.0; /* 2000.0 default band; 16383.9944 */
 
 static LALStatus status;
-FrCache *framecache;         /* frame reading variables */
-FrStream *framestream=NULL;
+LALCache *framecache;         /* frame reading variables */
+LALFrStream *framestream=NULL;
 
 REAL8TimeSeries dataDouble;
 REAL4TimeSeries dataSingle;
@@ -518,12 +518,10 @@ int main(int argc,char *argv[])
   SegmentDuration = CommandLineArgs.GPSEnd - CommandLineArgs.GPSStart ;
 
   /* create Frame cache, open frame stream and delete frame cache */
-  LALFrCacheImport(&status,&framecache,CommandLineArgs.FrCacheFile);
-  TESTSTATUS( &status );
+  framecache = XLALCacheImport(CommandLineArgs.FrCacheFile);
   LALFrCacheOpen(&status,&framestream,framecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&framecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(framecache);
 
   #if TRACKMEMUSE
     printf("Memory use after reading command line arguments and reading frame cache:\n"); printmemuse();

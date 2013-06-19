@@ -1163,7 +1163,7 @@ XLALFindChirpBankSimInjectSignal (
   CHAR                  tmpChName[LALNameLength];
   REAL4                 M, mu;
 #if 0
-  FrStream             *frStream = NULL;
+  LALFrStream             *frStream = NULL;
   REAL4TimeSeries       frameData;
   INT8                  waveformStartTime = 0;
   UINT4                 waveformLengthCtr = 0;
@@ -1203,8 +1203,8 @@ XLALFindChirpBankSimInjectSignal (
     snprintf( bankInjection->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
         "%s", simParams->frameChan );
 
-    frStream = XLALFrOpen( NULL, simParams->frameName );
-    XLALFrSetMode( frStream, LAL_FR_VERBOSE_MODE );
+    frStream = XLALFrStreamOpen( NULL, simParams->frameName );
+    XLALFrStreamSetMode( frStream, LAL_FR_STREAM_VERBOSE_MODE );
 
     memset( &frameData, 0, sizeof(REAL4TimeSeries) );
     snprintf( frameData.name,
@@ -1214,7 +1214,7 @@ XLALFindChirpBankSimInjectSignal (
     frameData.data =
       XLALCreateREAL4Vector( dataSegVec->data->chan->data->length );
 
-    XLALFrGetREAL4TimeSeries( &frameData, frStream );
+    XLALFrStreamGetREAL4TimeSeries( &frameData, frStream );
     if ( xlalErrno == XLAL_EIO )
     {
       /* ignore end of data: we need the channel */
@@ -1229,7 +1229,7 @@ XLALFindChirpBankSimInjectSignal (
     fprintf( stderr, "expected template sampling rate = %le\n",
         dataSegVec->data->chan->deltaT );
 
-    XLALFrClose( frStream );
+    XLALFrStreamClose( frStream );
 
     /* center the waveform in the data segment */
     waveformStartTime = XLALGPSToINT8NS( &(dataSegVec->data->chan->epoch) );

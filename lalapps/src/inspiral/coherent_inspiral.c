@@ -60,7 +60,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXML.h>
@@ -674,7 +674,7 @@ int main( int argc, char *argv[] )
 
               if( vrbflg ) fprintf(stdout, "getting the COMPLEX8TimeSeries %s \n", nameArrayCData[j] );
 
-              if ( !(frfileIn[j]= XLALFrOpenURL( ifoframefile[j] )) ) {
+              if ( !(frfileIn[j]= FrFileINew( ifoframefile[j] )) ) {
                 XLALPrintError( "XLAL Error: could not open frame file %s - exiting...\n", ifoframefile[j] );
                 exit(1);
               }

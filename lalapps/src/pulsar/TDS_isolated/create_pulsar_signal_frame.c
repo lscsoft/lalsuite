@@ -38,9 +38,9 @@
 /*LAL Functions */
 #include <lalapps.h>
 #include <lal/Units.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -198,7 +198,7 @@ int main(int argc, char **argv){
   sprintf(out_file, "%s-%s-%d-%d.gwf", inputs.det, inputs.outStr,
           epoch.gpsSeconds, ndata );
 
-  struct FrameH *outFrame = NULL;
+  LALFrameH *outFrame = NULL;
 
   if ((outFrame = XLALFrameNew( &epoch, (REAL8)ndata, inputs.channel, 1, 0,
        0 )) == NULL) {
@@ -283,12 +283,12 @@ int main(int argc, char **argv){
   CHAR OUTFILE[256];
   sprintf(OUTFILE, "%s/%s", inputs.outDir, out_file);
 
-  if (  XLALFrameWrite(outFrame, OUTFILE,1)){
+  if (  XLALFrameWrite(outFrame, OUTFILE)){
     LogPrintf(LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n", fn, xlalErrno);
     XLAL_ERROR( XLAL_EFAILED );
   }
 
-  FrameFree(outFrame);
+  XLALFrameFree(outFrame);
   XLALDestroyREAL8TimeSeries( series );
 
   return 0;

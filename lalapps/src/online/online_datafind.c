@@ -30,8 +30,8 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
@@ -275,7 +275,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LIGOTimeGPS *latest_time;
   LIGOTimeGPS time_now;
   INT4 duration;
-  FrCache *cache;
+  LALCache *cache;
   CHAR *type;
   INT4 wait_time;
   CHAR *ptimeout;
@@ -463,7 +463,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* save cache */
-  XLALFrExportCache(cache, output_filename);
+  XLALCacheExport(cache, output_filename);
 
   /* free memory */
   if (ifo)

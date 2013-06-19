@@ -342,6 +342,7 @@ void coh_PTF_chi_square_coh_setup(
   REAL4                   **frequencyRangesCross,
   REAL4                   **powerBinsPlus,
   REAL4                   **powerBinsCross,
+  REAL4                   **overlapCont,
   struct bankDataOverlaps **chisqOverlapsP,
   FindChirpTemplate       *fcTmplt,
   REAL4FrequencySeries    **invspec,
@@ -396,7 +397,7 @@ void coh_PTF_chi_square_coh_setup(
     coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,\
         Fplus,Fcross,frequencyRangesPlus[LAL_NUM_IFO],\
         frequencyRangesCross[LAL_NUM_IFO],powerBinsPlus[LAL_NUM_IFO],\
-        powerBinsCross[LAL_NUM_IFO],Autoeigenvecs,LAL_NUM_IFO,\
+        powerBinsCross[LAL_NUM_IFO],overlapCont,Autoeigenvecs,LAL_NUM_IFO,\
         params->singlePolFlag);
   }
 
@@ -478,6 +479,7 @@ void coh_PTF_chi_square_sngl_setup(
   REAL4                   **frequencyRangesCross,
   REAL4                   **powerBinsPlus,
   REAL4                   **powerBinsCross,
+  REAL4                   **overlapCont,
   struct bankDataOverlaps **chisqSnglOverlapsP,
   FindChirpTemplate       *fcTmplt,
   REAL4FrequencySeries    **invspec,
@@ -532,7 +534,7 @@ void coh_PTF_chi_square_sngl_setup(
             LALCalloc(params->numChiSquareBins, sizeof(REAL4));
         coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,\
             PTFM,NULL,NULL,frequencyRangesPlus[k],frequencyRangesCross[k],\
-            powerBinsPlus[k],powerBinsCross[k],NULL,k,0);
+            powerBinsPlus[k],powerBinsCross[k],overlapCont,NULL,k,0);
       }
       for(j = 0; j < params->numChiSquareBins; j++)
       {
@@ -1316,7 +1318,7 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       if (freqBinPlus < numFreqBins)
       {
         /* Record the frequency */
-        frequencyRangesPlus[freqBinPlus-1] = i*deltaF;
+        frequencyRangesPlus[freqBinPlus-1] = (i)*deltaF;
         freqBinPlus+=1;
       }
     }
@@ -1325,13 +1327,12 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       if (freqBinCross < numFreqBins)
       {
         /* Record the frequency */
-        frequencyRangesCross[freqBinCross-1] = i*deltaF;
+        frequencyRangesCross[freqBinCross-1] = (i)*deltaF;
         freqBinCross+=1;
       }
     }
   }
-
-  /* Final frequency bins should go to kmax */
+  /* Final frequency bins should be infinite */
   frequencyRangesPlus[freqBinPlus-1] = kmax * deltaF;
   frequencyRangesCross[freqBinCross-1] = kmax * deltaF;
 }
@@ -1347,6 +1348,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     REAL4 *frequencyRangesCross,
     REAL4 *powerBinsPlus,
     REAL4 *powerBinsCross,
+    REAL4 **overlapCont,
     gsl_matrix *eigenvecs,
     UINT4 detectorNum,
     UINT4 singlePolFlag
@@ -1354,10 +1356,11 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 {
   /* THIS FUNCTION IS NON-SPIN ONLY! DO NOT TRY TO RUN WITH PTF IN SPIN MODE */
   UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
-  REAL4 SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
-  REAL4 SNRplusLast,SNRcrossLast;
-  /* Set this to REAL8 to be consistent with calculation of sigma squared */
-  REAL8 overlapCont,v1,v2;
+  REAL4 v1,v2,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
+  REAL4 SNRplusLast,SNRcrossLast,currOverlapContPlus;
+  /* FIXME: Change to REAL8 for consistency with PTFM */
+  REAL8 tmpOverlapCont;
+  REAL4 currOverlapContCross;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
   REAL4 a2[LAL_NUM_IFO];
@@ -1366,6 +1369,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   PTFQtilde = fcTmplt->PTFQtilde->data;
   len = 0;
   deltaF = 0;
+  tmpOverlapCont = 0;
+
   for ( k = 0; k < LAL_NUM_IFO; k++)
   {
     if ( params->haveTrig[k] )
@@ -1453,55 +1458,81 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   SNRplusLast = 0.;
   SNRcrossLast = 0.;
 
-  for ( i = kmin; i < kmax ; ++i )
+  for( k = 0; k < LAL_NUM_IFO; k++)
   {
+    if ( params->haveTrig[k] )
+    {
+      if (! overlapCont[k] && ((detectorNum == LAL_NUM_IFO)||(detectorNum==k)) )
+      {
+        overlapCont[k] = LALCalloc(1, 2*params->numChiSquareBins*sizeof(REAL4));
+        tmpOverlapCont = 0;
+        freqBinPlus = 0;
+        freqBinCross = 0;
+        for ( i = kmin; i < kmax ; ++i )
+        {
+          tmpOverlapCont += (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) + \
+                        cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) ) * \
+                        invspec[k]->data->data[i] ;
+          if (i * deltaF > frequencyRangesPlus[freqBinPlus] && \
+              freqBinPlus < (numFreqBins-1))
+          {
+            (overlapCont[k])[freqBinPlus] = tmpOverlapCont;
+            freqBinPlus++;
+          }
+          if (i * deltaF > frequencyRangesCross[freqBinCross] \
+              && freqBinCross < (numFreqBins-1))
+          {
+            (overlapCont[k])[freqBinCross+params->numChiSquareBins] = tmpOverlapCont;
+            freqBinCross++;
+          }
+        } /* End loop over frequency */
+        if (freqBinPlus == (numFreqBins-1))
+        {
+          (overlapCont[k])[freqBinPlus] = tmpOverlapCont;
+        }
+        if (freqBinCross == (numFreqBins-1))
+        {
+          (overlapCont[k])[params->numChiSquareBins + freqBinCross] = tmpOverlapCont;
+        }
+      } /* End if data has not yet been calculated */
+    } /* End if ifo active */
+  } /* End loop over ifos */
+
+  for ( i = 0; i < params->numChiSquareBins; ++i )
+  {
+    v1 = v2 = 0;
     if (detectorNum == LAL_NUM_IFO)
     { 
       for( k = 0; k < LAL_NUM_IFO; k++)
       {
         if ( params->haveTrig[k] )
         {
-          overlapCont = (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
-                 cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) )* invspec[k]->data->data[i] ;
-          v1 += a2[k] * a2[k] * overlapCont;
-          v2 += b2[k] * b2[k] * overlapCont;
+          currOverlapContPlus = (overlapCont[k])[i];
+          currOverlapContCross = (overlapCont[k])[i+params->numChiSquareBins];
+          v1 += a2[k] * a2[k] * currOverlapContPlus * 4 * deltaF;
+          v2 += b2[k] * b2[k] * currOverlapContCross * 4 * deltaF;
         }
       }
     }
     else
     {
-      overlapCont = (crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
-             cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) )* invspec[detectorNum]->data->data[i] ;
-      v1 += overlapCont;
+      currOverlapContPlus = (overlapCont[detectorNum])[i]; 
+      v1 = currOverlapContPlus * 4 * deltaF;
       v2 = v1;
     }
-    SNRtempPlus = v1 * 4 * deltaF;
+
+    /* FIXME: How can these be negative?? Why is this check here??? */
+    SNRtempPlus = v1;
     if (SNRtempPlus < 0) SNRtempPlus = -SNRtempPlus;
     SNRtempCross = v2 * 4 * deltaF;
     if (SNRtempCross < 0) SNRtempCross = -SNRtempCross;
 
-    if (i * deltaF > frequencyRangesPlus[freqBinPlus] && freqBinPlus < (numFreqBins-1))
-    {
-      powerBinsPlus[freqBinPlus] = SNRtempPlus/SNRmaxPlus - SNRplusLast;
-      SNRplusLast = SNRtempPlus/SNRmaxPlus;
-      freqBinPlus++;
-    }
-    if (i * deltaF > frequencyRangesCross[freqBinCross] && freqBinCross < (numFreqBins-1))
-    {
-      powerBinsCross[freqBinCross] = SNRtempCross/SNRmaxCross - SNRcrossLast;
-      SNRcrossLast = SNRtempCross/SNRmaxCross;
-      freqBinCross++;
-    }
+    powerBinsPlus[i] = SNRtempPlus/SNRmaxPlus - SNRplusLast;
+    SNRplusLast = SNRtempPlus/SNRmaxPlus;
 
+    powerBinsCross[i] = SNRtempCross/SNRmaxCross - SNRcrossLast;
+    SNRcrossLast = SNRtempCross/SNRmaxCross;
   }
-  if (freqBinPlus == (numFreqBins-1))  
-  {
-    powerBinsPlus[freqBinPlus] = SNRtempPlus/SNRmaxPlus - SNRplusLast;
-  }
-  if (freqBinCross == (numFreqBins-1))
-  {
-    powerBinsCross[freqBinCross] = SNRtempCross/SNRmaxCross - SNRcrossLast;
-  }   
 
   /* Ensure that the power Bins add to 1. This should already be true but
   numerical counting errors can have a small effect here.*/
@@ -1517,6 +1548,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     powerBinsPlus[i] = powerBinsPlus[i]/SNRplusLast;
     powerBinsCross[i] = powerBinsCross[i]/SNRcrossLast;
   }
+
 }
 
 REAL4 coh_PTF_calculate_chi_square(

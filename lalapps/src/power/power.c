@@ -52,7 +52,7 @@
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/FrameCalibration.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/FrequencySeries.h>
 #include <lal/GenerateBurst.h>
 #include <lal/Inject.h>
@@ -877,8 +877,8 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *chname, LIGOTimeGPS start, LIGOTimeGPS end, size_t lengthlimit)
 {
 	double duration = XLALGPSDiff(&end, &start);
-	FrCache *cache;
-	FrStream *stream;
+	LALCache *cache;
+	LALFrStream *stream;
 	LALTYPECODE series_type;
 	REAL8TimeSeries *series;
 
@@ -889,11 +889,11 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Open frame stream.
 	 */
 
-	cache = XLALFrImportCache(cachefilename);
+	cache = XLALCacheImport(cachefilename);
 	if(!cache)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
-	stream = XLALFrCacheOpen(cache);
-	XLALFrDestroyCache(cache);
+	stream = XLALFrStreamCacheOpen(cache);
+	XLALDestroyCache(cache);
 	if(!stream)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 
@@ -901,15 +901,15 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Turn on checking for missing data.
 	 */
 
-	XLALFrSetMode(stream, LAL_FR_VERBOSE_MODE);
+	XLALFrStreamSetMode(stream, LAL_FR_STREAM_VERBOSE_MODE);
 
 	/*
 	 * Get the data.
 	 */
 
-	series_type = XLALFrGetTimeSeriesType(chname, stream);
+	series_type = XLALFrStreamGetTimeSeriesType(chname, stream);
 	if((int) series_type < 0) {
-		XLALFrClose(stream);
+		XLALFrStreamClose(stream);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
@@ -919,16 +919,16 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 		 * Read data as single-precision and convert to double.
 		 */
 
-		REAL4TimeSeries *tmp = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
+		REAL4TimeSeries *tmp = XLALFrStreamReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
 		unsigned i;
 		if(!tmp) {
-			XLALFrClose(stream);
+			XLALFrStreamClose(stream);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		series = XLALCreateREAL8TimeSeries(tmp->name, &tmp->epoch, tmp->f0, tmp->deltaT, &tmp->sampleUnits, tmp->data->length);
 		if(!series) {
 			XLALDestroyREAL4TimeSeries(tmp);
-			XLALFrClose(stream);
+			XLALFrStreamClose(stream);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		for(i = 0; i < tmp->data->length; i++)
@@ -938,16 +938,16 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	}
 
 	case LAL_D_TYPE_CODE:
-		series = XLALFrReadREAL8TimeSeries(stream, chname, &start, duration, lengthlimit);
+		series = XLALFrStreamReadREAL8TimeSeries(stream, chname, &start, duration, lengthlimit);
 		if(!series) {
-			XLALFrClose(stream);
+			XLALFrStreamClose(stream);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		break;
 
 	default:
 		XLALPrintError("get_time_series(): error: invalid channel data type %d\n", series_type);
-		XLALFrClose(stream);
+		XLALFrStreamClose(stream);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 
@@ -955,7 +955,7 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Check for missing data.
 	 */
 
-	if(stream->state & LAL_FR_GAP) {
+	if(stream->state & LAL_FR_STREAM_GAP) {
 		XLALPrintError("get_time_series(): error: gap in data detected between GPS times %d.%09u s and %d.%09u s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
 		XLALDestroyREAL8TimeSeries(series);
 		XLAL_ERROR_NULL(XLAL_EDATA);
@@ -965,7 +965,7 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Close stream.
 	 */
 
-	XLALFrClose(stream);
+	XLALFrStreamClose(stream);
 
 	/*
 	 * Verbosity.
@@ -1098,18 +1098,7 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 
 		return response;
 	} else {
-		FrCache *cache = XLALFrImportCache(cachefile);
-		if(cache) {
-			LALCalData *caldata = XLALFrCacheGetCalData(&epoch, channel_name, cache);
-			XLALFrDestroyCache(cache);
-			if(caldata) {
-				response = XLALCreateCOMPLEX8Response(&epoch, duration, deltaf, n, caldata);
-				XLALDestroyCalData(caldata);
-				if(response)
-					return response;
-			}
-		}
-		XLAL_ERROR_NULL(XLAL_EFUNC);
+                XLAL_ERROR_NULL(XLAL_EERR, "Calibration frames no longer supported");
 	}
 }
 

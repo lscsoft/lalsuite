@@ -52,7 +52,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/Calibration.h>
 #include <lal/FrameCalibration.h>

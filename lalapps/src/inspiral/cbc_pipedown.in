@@ -106,6 +106,11 @@ parser.add_option( "", "--generate-all-data-plots", action = "store_true",
     "and exclude_play coincs will still exist in the resulting databases " +
     "(they just won't be plotted)."
   )
+parser.add_option( "", "--run-mvsc", action="store_true",
+  default = False,
+  help =
+    "Turn on if you want to run the multivariate statistical analysis (MVSC)"
+  )
 
 (options, args) = parser.parse_args()
 
@@ -791,23 +796,23 @@ for result_db in result_dbs_cache:
   
   ############################################################################
   # MVSC Calculation
-
-  if 'FULL_DATA' in tag and veto_cat in sim_caches:
-    print "\tsetting up MVSC dag..."
-    mvsc_dag_name = options.config_file.replace('.ini','')+'_mvsc_'+tag+'_n'+cp.get("mvsc_dag","number-of-trees")+'_l'+cp.get("mvsc_dag","leaf-size")+'_s'+cp.get("mvsc_dag","sampled-parameters")+'_c'+cp.get("mvsc_dag","criterion-for-optimization")+'.dag'
-    mvsc_dag_generator_job = inspiral.MVSCDagGenerationJob(cp)
-    for key,val in cp.items("mvsc_dag"):
-      mvsc_dag_generator_job.add_opt(key,val)
-    mvsc_dag_generator_job.add_opt("ini-file", options.config_file)
-    mvsc_dag_generator_node = inspiral.MVSCDagGenerationNode(mvsc_dag_generator_job)
-    mvsc_dag_generator_node.set_user_tag(tag)
-    mvsc_dag_generator_node.set_database(result_db.path)
-    mvsc_dag_generator_node.add_parent(comp_durs_node)
-    dag.add_node(mvsc_dag_generator_node)
-    mvsc_dag_job = pipeline.CondorDAGManJob(mvsc_dag_name, os.getcwd(), None)
-    mvsc_dag_node = pipeline.CondorDAGManNode(mvsc_dag_job)
-    mvsc_dag_node.add_parent(mvsc_dag_generator_node)
-    dag.add_node(mvsc_dag_node)
+  if options.run_mvsc:
+    if 'FULL_DATA' in tag and veto_cat in sim_caches:
+      print "\tsetting up MVSC dag..."
+      mvsc_dag_name = options.config_file.replace('.ini','')+'_mvsc_'+tag+'_n'+cp.get("mvsc_dag","number-of-trees")+'_l'+cp.get("mvsc_dag","leaf-size")+'_s'+cp.get("mvsc_dag","sampled-parameters")+'_c'+cp.get("mvsc_dag","criterion-for-optimization")+'.dag'
+      mvsc_dag_generator_job = inspiral.MVSCDagGenerationJob(cp)
+      for key,val in cp.items("mvsc_dag"):
+        mvsc_dag_generator_job.add_opt(key,val)
+      mvsc_dag_generator_job.add_opt("ini-file", options.config_file)
+      mvsc_dag_generator_node = inspiral.MVSCDagGenerationNode(mvsc_dag_generator_job)
+      mvsc_dag_generator_node.set_user_tag(tag)
+      mvsc_dag_generator_node.set_database(result_db.path)
+      mvsc_dag_generator_node.add_parent(comp_durs_node)
+      dag.add_node(mvsc_dag_generator_node)
+      mvsc_dag_job = pipeline.CondorDAGManJob(mvsc_dag_name, os.getcwd(), None)
+      mvsc_dag_node = pipeline.CondorDAGManNode(mvsc_dag_job)
+      mvsc_dag_node.add_parent(mvsc_dag_generator_node)
+      dag.add_node(mvsc_dag_node)
 
   ############################################################################
   # Compute the uncombined false alarm rates
@@ -824,8 +829,9 @@ for result_db in result_dbs_cache:
   
   # set parent node
   ucfar_node.add_parent( comp_durs_node )
-  if 'FULL_DATA' in tag and veto_cat in sim_caches:
-    ucfar_node.add_parent( mvsc_dag_node )
+  if options.run_mvsc:
+    if 'FULL_DATA' in tag and veto_cat in sim_caches:
+      ucfar_node.add_parent( mvsc_dag_node )
   
   dag.add_node( ucfar_node )
   

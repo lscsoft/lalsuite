@@ -52,9 +52,9 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 /*LAL Functions */
 #include <lalapps.h>
 #include <lal/Units.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -206,7 +206,7 @@ int main(int argc, char **argv)
   char out_file[256]; /*need a different way to do this */
   FILE *inject; /*for .par file from uvar->inputdir*/
 
-  CHAR gwf_dir[256]; /* for use with XLALFrOpen */
+  CHAR gwf_dir[256]; /* for use with XLALFrStreamOpen */
   sprintf( gwf_dir, "%s/.", uvar->gwfdir );
 
   LIGOTimeGPS epoch;
@@ -296,9 +296,9 @@ int main(int argc, char **argv)
       continue; /*make sure it's a .gwf file */
     }
     else{
-      FrStream *gwffile=NULL;
+      LALFrStream *gwffile=NULL;
 
-      if (( gwffile = XLALFrOpen( uvar->gwfdir, gwfnamelist[k]->d_name)) == NULL ) {
+      if (( gwffile = XLALFrStreamOpen( uvar->gwfdir, gwfnamelist[k]->d_name)) == NULL ) {
 	/*XLAL_ERROR ( fn, XLAL_EFUNC ); -- don't want to abort, but save elsewhere test that it's an acceptable file */
 
 	/*Writing to failed file*/
@@ -362,7 +362,7 @@ int main(int argc, char **argv)
 	  XLAL_ERROR ( XLAL_EFUNC );
 	}
 
-	if ( XLALFrGetREAL8TimeSeries( gwfseries, gwffile ) != XLAL_SUCCESS ) {
+	if ( XLALFrStreamGetREAL8TimeSeries( gwfseries, gwffile ) != XLAL_SUCCESS ) {
 	  XLAL_ERROR ( XLAL_EFUNC );
 	}
 
@@ -601,7 +601,7 @@ int main(int argc, char **argv)
       /* </log file> */
       /*fprintf(stderr, "you created %s\n", out_file);*/
 
-      XLALFrClose( gwffile );
+      XLALFrStreamClose( gwffile );
 
     } /*ends loop through all .gwf files in .gwf directory*/
   }

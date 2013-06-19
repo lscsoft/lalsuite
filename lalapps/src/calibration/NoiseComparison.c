@@ -50,8 +50,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
 #include <lal/LALConstants.h>
@@ -144,11 +144,11 @@ typedef struct ResponseFunctionTag
 
 static LALStatus status;
 
-FrCache *hoftframecache=NULL;                                           /* frame reading variables */
-FrStream *hoftframestream=NULL;
+LALCache *hoftframecache=NULL;                                           /* frame reading variables */
+LALFrStream *hoftframestream=NULL;
 
-FrCache *derrframecache=NULL;                                           /* frame reading variables */
-FrStream *derrframestream=NULL;
+LALCache *derrframecache=NULL;                                           /* frame reading variables */
+LALFrStream *derrframestream=NULL;
 
 LIGOTimeGPS gpsepoch;
 
@@ -166,8 +166,8 @@ COMPLEX16Vector *ffthtData = NULL;
 COMPLEX8Vector *fftderrData = NULL;
 REAL8FFTPlan *fftPlanDouble=NULL;
 REAL4FFTPlan *fftPlan=NULL;
-FrPos derrpos;
-FrPos hoftpos;
+LALFrStreamPos derrpos;
+LALFrStreamPos hoftpos;
 
 Response OLG0, OLG[MAXFREQUENCIES], Sensing0, Sensing[MAXFREQUENCIES];
 
@@ -263,19 +263,15 @@ int main(int argc,char *argv[])
 int Initialise(struct CommandLineArgsTag CLA)
 {
   /* create Frame cache, open frame stream and delete frame cache */
-  LALFrCacheImport(&status,&derrframecache,CommandLineArgs.derrFrCacheFile);
-  TESTSTATUS( &status );
+  derrframecache = XLALCacheImport(CommandLineArgs.derrFrCacheFile);
   LALFrCacheOpen(&status,&derrframestream,derrframecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&derrframecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(derrframecache);
 
-  LALFrCacheImport(&status,&hoftframecache,CommandLineArgs.hoftFrCacheFile);
-  TESTSTATUS( &status );
+  hoftframecache = XLALCacheImport(CommandLineArgs.hoftFrCacheFile);
   LALFrCacheOpen(&status,&hoftframestream,hoftframecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&hoftframecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(hoftframecache);
 
   chanin_derr.type  = ADCDataChannel;
   chanin_hoft.type = ProcDataChannel;
@@ -430,7 +426,7 @@ int Initialise(struct CommandLineArgsTag CLA)
 int GetFactors(struct CommandLineArgsTag CLA)
 {
 
-FrPos pos1;
+LALFrStreamPos pos1;
 
 static REAL4TimeSeries darm;
 static REAL4TimeSeries exc;
@@ -447,16 +443,14 @@ INT4 k,m;
 LIGOTimeGPS localgpsepoch=gpsepoch; /* Local variable epoch used to calculate the calibration factors */
 long double gtime=(long double)(localgpsepoch.gpsSeconds+(long double)localgpsepoch.gpsNanoSeconds*1E-9);
 
-FrCache *framecache=NULL;                                           /* frame reading variables */
-FrStream *framestream=NULL;
+LALCache *framecache=NULL;                                           /* frame reading variables */
+LALFrStream *framestream=NULL;
 
   /* create Frame cache, open frame stream and delete frame cache */
-  LALFrCacheImport(&status,&framecache,CommandLineArgs.derrFrCacheFile);
-  TESTSTATUS( &status );
+  framecache = XLALCacheImport(CommandLineArgs.derrFrCacheFile);
   LALFrCacheOpen(&status,&framestream,framecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&framecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(framecache);
 
   chanin_darm.type = ADCDataChannel;
   chanin_exc.type  = ADCDataChannel;

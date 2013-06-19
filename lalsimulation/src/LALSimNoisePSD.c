@@ -17,17 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-#include <limits.h>
 #include <math.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 #include <lal/FrequencySeries.h>
-#include <lal/FileIO.h>
+#include <lal/LALSimReadData.h>
 #include <lal/LALSimNoise.h>
 
 // Values for iLIGO
@@ -968,87 +965,6 @@ int XLALSimNoisePSD(
 	return 0;
 }
 
-/* opens a data file */
-static LALFILE *XLALSimNoisePSDFileOpen(const char *fname)
-{
-	const char *pkgdatadir = PKG_DATA_DIR;
-	char path[PATH_MAX] = "";
-	LALFILE *fp;
-
-	if (strchr(fname, '/')) {
-		/* a specific path is given */
-		if (realpath(fname, path) == NULL)
-			XLAL_ERROR_NULL(XLAL_EIO, "Unresolvable path %s\n", path);
-	} else {
-		/* unspecific path given: use LALSIM_DATA_PATH environment */
-		char *env = getenv("LALSIM_DATA_PATH");
-		char *str;
-		char *dir;
-		env = str = XLALStringDuplicate(env ? env : ":");
-		while ((dir = strsep(&str, ":"))) {
-			if (strlen(dir))
-				snprintf(path, sizeof(path), "%s/%s", dir, fname);
-			else /* use default path */
-				snprintf(path, sizeof(path), "%s/%s", pkgdatadir, fname);
-			if (access(path, R_OK) == 0) /* found it! */
-				break;
-			*path = 0;
-		}
-		XLALFree(env);
-	}
-	if (! *path) /* could not find file */
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not find data file %s\n", fname);
-	fp = XLALFileOpenRead(path);
-	if (! fp) /* open failure */
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not open data file %s\n", path);
-	return fp;
-}
-
-/* loads a two-column data file */
-#ifndef PAGESIZE
-#ifdef _SC_PAGE_SIZE
-#define PAGESIZE _SC_PAGE_SIZE
-#else
-#define PAGESIZE 1024
-#endif
-#endif
-#ifndef LINE_MAX
-#ifdef _SC_LINE_MAX
-#define LINE_MAX _SC_LINE_MAX
-#else
-#define LINE_MAX 1024
-#endif
-#endif
-static size_t XLALSimNoiseRead2ColData(double **xdat, double **ydat, LALFILE *fp)
-{
-	char    line[LINE_MAX];
-	size_t  size = PAGESIZE;
-	size_t  npts;
-	*xdat = XLALMalloc(size * sizeof(**xdat));
-	*ydat = XLALMalloc(size * sizeof(**ydat));
-	npts = 0;
-	while (XLALFileGets(line, sizeof(line), fp)) {
-		if (strchr(line, '\n') == NULL) {
-			XLALFree(*xdat);
-			XLALFree(*ydat);
-			XLAL_ERROR(XLAL_EIO, "Line %zd too long\n", npts + 1);
-		}
-		if (sscanf(line, "%lf %lf", *xdat + npts, *ydat + npts) != 2) {
-			XLALFree(*xdat);
-			XLALFree(*ydat);
-			XLAL_ERROR(XLAL_EIO, "Line %zd malformed\n", npts + 1);
-		}
-		if (++npts == size) {
-			size += PAGESIZE;
-			*xdat = XLALRealloc(*xdat, size * sizeof(**xdat));
-			*ydat = XLALRealloc(*ydat, size * sizeof(**ydat));
-		}
-	}
-	*xdat = XLALRealloc(*xdat, npts * sizeof(**xdat));
-	*ydat = XLALRealloc(*ydat, npts * sizeof(**ydat));
-	return npts;
-}
-
 
 /**
  * Reads file fname containing two-column amplitude spectral density data file
@@ -1070,10 +986,10 @@ int XLALSimNoisePSDFromFile(
 	LALFILE *fp;
 
 	/* first, read the data form the datafile */
-	fp = XLALSimNoisePSDFileOpen(fname);
+	fp = XLALSimReadDataFileOpen(fname);
 	if (!fp)
 		XLAL_ERROR(XLAL_EFUNC);
-	n = XLALSimNoiseRead2ColData(&f, &h, fp);
+	n = XLALSimReadDataFile2Col(&f, &h, fp);
 	XLALFileClose(fp);
 	if (n == (size_t)(-1))
 		XLAL_ERROR(XLAL_EFUNC);

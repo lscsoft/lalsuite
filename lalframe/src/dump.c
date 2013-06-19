@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
         /* loop over frames in file */
         nframe = XLALFrameUFrTOCQueryNFrame(toc);
-        if ((int) (nframe) <= 0)
+        if ((int)(nframe) <= 0)
             FAILURE("no frames found\n");
         for (pos = 0; pos < nframe; ++pos)
             dumpframe(frfile, pos);
@@ -91,16 +91,16 @@ int dumpdetector(LALFrameUFrFile * frfile, size_t det)
     const char *name;
     const char *prefix;
     /*
-    double longitude;
-    double latitude;
-    double elevation;
-    double azimuthx;
-    double azimuthy;
-    double altitudex;
-    double altitudey;
-    double midpointx;
-    double midpointy;
-    */
+     * double longitude;
+     * double latitude;
+     * double elevation;
+     * double azimuthx;
+     * double azimuthy;
+     * double altitudex;
+     * double altitudey;
+     * double midpointx;
+     * double midpointy;
+     */
     int loctime;
 
     if (!frfile)
@@ -118,19 +118,20 @@ int dumpdetector(LALFrameUFrFile * frfile, size_t det)
     prefix = XLALFrameUFrDetectorQueryPrefix(detector);
     loctime = XLALFrameUFrDetectorQueryLocalTime(detector);
     /*
-    longitude = XLALFrameUFrDetectorQueryLongitude(detector);
-    latitude = XLALFrameUFrDetectorQueryLatitude(detector);
-    elevation = XLALFrameUFrDetectorQueryElevation(detector);
-    azimuthx = XLALFrameUFrDetectorQueryArmXAzimuth(detector);
-    altitudex = XLALFrameUFrDetectorQueryArmXAltitude(detector);
-    midpointx = XLALFrameUFrDetectorQueryArmXMidpoint(detector);
-    azimuthy = XLALFrameUFrDetectorQueryArmYAzimuth(detector);
-    altitudey = XLALFrameUFrDetectorQueryArmYAltitude(detector);
-    midpointy = XLALFrameUFrDetectorQueryArmYMidpoint(detector);
-    */
+     * longitude = XLALFrameUFrDetectorQueryLongitude(detector);
+     * latitude = XLALFrameUFrDetectorQueryLatitude(detector);
+     * elevation = XLALFrameUFrDetectorQueryElevation(detector);
+     * azimuthx = XLALFrameUFrDetectorQueryArmXAzimuth(detector);
+     * altitudex = XLALFrameUFrDetectorQueryArmXAltitude(detector);
+     * midpointx = XLALFrameUFrDetectorQueryArmXMidpoint(detector);
+     * azimuthy = XLALFrameUFrDetectorQueryArmYAzimuth(detector);
+     * altitudey = XLALFrameUFrDetectorQueryArmYAltitude(detector);
+     * midpointy = XLALFrameUFrDetectorQueryArmYMidpoint(detector);
+     */
 
     indent;
-    printf("FrDetector %zu %s (%s): localtime = %d\n", det, name, prefix, loctime);
+    printf("FrDetector %zu %s (%s): localtime = %d\n", det, name, prefix,
+        loctime);
 
     XLALFrameUFrTOCFree(toc);
     XLALFrameUFrDetectorFree(detector);
@@ -181,7 +182,7 @@ int dumpframe(LALFrameUFrFile * frfile, size_t pos)
     printf(" run %d, frame %d", run, frnum);
     printf(": dq = %d, ", dq);
     if (tfp == 0.0)
-        printf("t0 = %d s, ", (int) tip);
+        printf("t0 = %d s, ", (int)tip);
     else
         printf("t0 = %f s, ", tip + tfp);
     printf("dt = %g s, ", dt);
@@ -365,7 +366,6 @@ const char *compressstr(int compress)
     }
     return "unknown compression";
 }
-
 
 /* output quote formatting */
 #undef indent

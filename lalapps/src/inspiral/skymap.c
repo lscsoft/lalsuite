@@ -11,8 +11,7 @@
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>
 
-#include <lal/FrameData.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
@@ -417,15 +416,15 @@ void load_data(NetworkProperties* network , int slot )
        *  Read the frame file here
        */
       
-      FrStream *stream = NULL;
+      LALFrStream *stream = NULL;
       COMPLEX8TimeSeries H1series;
       int i;
       
       sprintf(H1series.name,"%s", selected_channel_name);
-      stream = XLALFrOpen("./", file);
+      stream = XLALFrStreamOpen("./", file);
       if (!stream)
         {
-	  fprintf(stderr, "error: failed to open FrStream from file %s\n", H1series.name);
+	  fprintf(stderr, "error: failed to open LALFrStream from file %s\n", H1series.name);
 	  exit(1);
         }
       
@@ -435,8 +434,8 @@ void load_data(NetworkProperties* network , int slot )
 	  fprintf(stderr, "error: failed to create COMPLEX8 vector\n");
 	  exit(1);
         }
-      XLALFrGetCOMPLEX8TimeSeries(&H1series,stream);
-      XLALFrClose(stream);
+      XLALFrStreamGetCOMPLEX8TimeSeries(&H1series,stream);
+      XLALFrStreamClose(stream);
       
       /* 
        * real/complex or waveform one/two  

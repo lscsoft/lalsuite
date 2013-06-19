@@ -21,59 +21,177 @@
 #define _LALFRAMEIO_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALCalibration.h>
-#include <lal/FrameCache.h>
-#include <lal/LALFrameL.h>
+#include <lal/LALDetectors.h>
+#include <lal/LALFrameU.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(EXTERNAL_STRUCT(FrameH, XLALFrameFree));
+#if 0
+}
 #endif
+struct tagLALFrFile;
 
-struct FrFile * XLALFrOpenURL( const char *url );
-int XLALFrFileCheckSum( FrFile *iFile );
-FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comment );
-FrDetector * XLALFrDetectorNew( int detector );
-void XLALFrameFree( FrameH *frame );
-FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
-    const char *project, int run, int frnum, int detectorFlags );
-FrVect * XLALFrVectINT4TimeSeries( INT4TimeSeries *series );
-FrVect * XLALFrVectREAL4TimeSeries( REAL4TimeSeries *series );
-FrVect * XLALFrVectREAL8TimeSeries( REAL8TimeSeries *series );
-FrVect * XLALFrVectCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series );
-FrVect * XLALFrVectCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series );
-FrVect * XLALFrVectREAL4FrequencySeries( REAL4FrequencySeries *series );
-FrVect * XLALFrVectREAL8FrequencySeries( REAL8FrequencySeries *series );
-FrVect * XLALFrVectCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series );
-FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series );
+/* alias some LALFrameU types */
+typedef LALFrameUFrameH LALFrameH;
+typedef struct tagLALFrFile LALFrFile;
 
-int XLALFrameAddCalRef( FrameH *frame, COMPLEX8FrequencySeries *series, int version, double duration );
-int XLALFrameAddREAL8TimeSeriesProcData( FrameH *frame, REAL8TimeSeries *series );
-int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series );
-int XLALFrameAddINT4TimeSeriesProcData( FrameH *frame, INT4TimeSeries *series );
-int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series );
-int XLALFrameAddREAL8TimeSeriesSimData( FrameH *frame, REAL8TimeSeries *series );
-int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series );
+int XLALFrFileClose(LALFrFile * frfile);
+LALFrFile *XLALFrFileOpenURL(const char *url);
+size_t XLALFrFileQueryNFrame(const LALFrFile * frfile);
+LIGOTimeGPS *XLALFrFileQueryGTime(LIGOTimeGPS * start,
+    const LALFrFile * frfile, size_t pos);
+double XLALFrFileQueryDt(const LALFrFile * frfile, size_t pos);
+LALTYPECODE XLALFrFileQueryChanType(const LALFrFile * frfile,
+    const char *chname, size_t pos);
+size_t XLALFrFileQueryChanVectorLength(const LALFrFile * frfile,
+    const char *chname, size_t pos);
+int XLALFrFileCksumValid(LALFrFile * frfile);
 
-COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeGPS *epoch, const char *channel, FrameH *frame );
+INT2TimeSeries *XLALFrFileReadINT2TimeSeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
+INT4TimeSeries *XLALFrFileReadINT4TimeSeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
+INT8TimeSeries *XLALFrFileReadINT8TimeSeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
+UINT2TimeSeries *XLALFrFileReadUINT2TimeSeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
+UINT4TimeSeries *XLALFrFileReadUINT4TimeSeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
+UINT8TimeSeries *XLALFrFileReadUINT8TimeSeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
+REAL4TimeSeries *XLALFrFileReadREAL4TimeSeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
+REAL8TimeSeries *XLALFrFileReadREAL8TimeSeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
+COMPLEX8TimeSeries *XLALFrFileReadCOMPLEX8TimeSeriesMetadata(LALFrFile *
+    stream, const char *chname, size_t pos);
+COMPLEX16TimeSeries *XLALFrFileReadCOMPLEX16TimeSeriesMetadata(LALFrFile *
+    stream, const char *chname, size_t pos);
+REAL4FrequencySeries *XLALFrFileReadREAL4FrequencySeriesMetadata(LALFrFile *
+    stream, const char *chname, size_t pos);
+REAL8FrequencySeries *XLALFrFileReadREAL8FrequencySeriesMetadata(LALFrFile *
+    stream, const char *chname, size_t pos);
+COMPLEX8FrequencySeries
+    *XLALFrFileReadCOMPLEX8FrequencySeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
+COMPLEX16FrequencySeries
+    *XLALFrFileReadCOMPLEX16FrequencySeriesMetadata(LALFrFile * stream,
+    const char *chname, size_t pos);
 
-/* int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series ); */
-int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series, int version );
+/* routines to read channels from a frame at position pos in a frame file */
+INT2TimeSeries *XLALFrFileReadINT2TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+INT4TimeSeries *XLALFrFileReadINT4TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+INT8TimeSeries *XLALFrFileReadINT8TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+UINT2TimeSeries *XLALFrFileReadUINT2TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+UINT4TimeSeries *XLALFrFileReadUINT4TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+UINT8TimeSeries *XLALFrFileReadUINT8TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+REAL4TimeSeries *XLALFrFileReadREAL4TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+REAL8TimeSeries *XLALFrFileReadREAL8TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+COMPLEX8TimeSeries *XLALFrFileReadCOMPLEX8TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+COMPLEX16TimeSeries *XLALFrFileReadCOMPLEX16TimeSeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+REAL4FrequencySeries *XLALFrFileReadREAL4FrequencySeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+REAL8FrequencySeries *XLALFrFileReadREAL8FrequencySeries(LALFrFile * stream,
+    const char *chname, size_t pos);
+COMPLEX8FrequencySeries *XLALFrFileReadCOMPLEX8FrequencySeries(LALFrFile *
+    stream, const char *chname, size_t pos);
+COMPLEX16FrequencySeries *XLALFrFileReadCOMPLEX16FrequencySeries(LALFrFile *
+    stream, const char *chname, size_t pos);
 
-/* REAL4TimeSeries * XLALFrameGetCalFac( const char *channel, FrameH *frame ); */
-REAL4TimeSeries * XLALFrameGetCalFac( LIGOTimeGPS *epoch, const char *channel, FrameH *frame );
+int XLALFrameAddFrHistory(LALFrameH * frame, const char *name,
+    const char *comment);
+int XLALFrameAddFrDetector(LALFrameH * frame, const LALFrDetector * detector);
+void XLALFrameFree(LALFrameH * frame);
+LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
+    const char *project, int run, int frnum, int detectorFlags);
 
-/* high-level function */
-LALCalData * XLALFrameGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrameH *frame );
-LALCalData * XLALFrGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, const char *fname );
-LALCalData * XLALFrCacheGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrCache *cache );
+int XLALFrameAddINT2TimeSeriesAdcData(LALFrameH * frame,
+    const INT2TimeSeries * series);
+int XLALFrameAddINT4TimeSeriesAdcData(LALFrameH * frame,
+    const INT4TimeSeries * series);
+int XLALFrameAddREAL4TimeSeriesAdcData(LALFrameH * frame,
+    const REAL4TimeSeries * series);
+int XLALFrameAddREAL8TimeSeriesAdcData(LALFrameH * frame,
+    const REAL8TimeSeries * series);
+
+int XLALFrameAddINT2TimeSeriesSimData(LALFrameH * frame,
+    const INT2TimeSeries * series);
+int XLALFrameAddINT4TimeSeriesSimData(LALFrameH * frame,
+    const INT4TimeSeries * series);
+int XLALFrameAddREAL4TimeSeriesSimData(LALFrameH * frame,
+    const REAL4TimeSeries * series);
+int XLALFrameAddREAL8TimeSeriesSimData(LALFrameH * frame,
+    const REAL8TimeSeries * series);
+
+int XLALFrameAddINT2TimeSeriesProcData(LALFrameH * frame,
+    const INT2TimeSeries * series);
+int XLALFrameAddINT4TimeSeriesProcData(LALFrameH * frame,
+    const INT4TimeSeries * series);
+int XLALFrameAddINT8TimeSeriesProcData(LALFrameH * frame,
+    const INT8TimeSeries * series);
+int XLALFrameAddUINT2TimeSeriesProcData(LALFrameH * frame,
+    const UINT2TimeSeries * series);
+int XLALFrameAddUINT4TimeSeriesProcData(LALFrameH * frame,
+    const UINT4TimeSeries * series);
+int XLALFrameAddUINT8TimeSeriesProcData(LALFrameH * frame,
+    const UINT8TimeSeries * series);
+int XLALFrameAddREAL4TimeSeriesProcData(LALFrameH * frame,
+    const REAL4TimeSeries * series);
+int XLALFrameAddREAL8TimeSeriesProcData(LALFrameH * frame,
+    const REAL8TimeSeries * series);
+int XLALFrameAddCOMPLEX8TimeSeriesProcData(LALFrameH * frame,
+    const COMPLEX8TimeSeries * series);
+int XLALFrameAddCOMPLEX16TimeSeriesProcData(LALFrameH * frame,
+    const COMPLEX16TimeSeries * series);
+
+int XLALFrameAddREAL4FrequencySeriesProcData(LALFrameH * frame,
+    const REAL4FrequencySeries * series, int subtype);
+int XLALFrameAddREAL8FrequencySeriesProcData(LALFrameH * frame,
+    const REAL8FrequencySeries * series, int subtype);
+int XLALFrameAddCOMPLEX8FrequencySeriesProcData(LALFrameH * frame,
+    const COMPLEX8FrequencySeries * series, int subtype);
+int XLALFrameAddCOMPLEX16FrequencySeriesProcData(LALFrameH * frame,
+    const COMPLEX16FrequencySeries * series, int subtype);
 
 /* frame writing function */
-int XLALFrameWrite(FrameH *frame, const char *fname, int compressLevel);
 
+int XLALFrameWrite(LALFrameH * frame, const char *fname);
+
+/* direct output functions */
+
+int XLALFrWriteINT2TimeSeries(const INT2TimeSeries * series, int fnum);
+int XLALFrWriteINT4TimeSeries(const INT4TimeSeries * series, int fnum);
+int XLALFrWriteINT8TimeSeries(const INT8TimeSeries * series, int fnum);
+int XLALFrWriteREAL4TimeSeries(const REAL4TimeSeries * series, int fnum);
+int XLALFrWriteREAL8TimeSeries(const REAL8TimeSeries * series, int fnum);
+int XLALFrWriteCOMPLEX8TimeSeries(const COMPLEX8TimeSeries * series,
+    int fnum);
+int XLALFrWriteCOMPLEX16TimeSeries(const COMPLEX16TimeSeries * series,
+    int fnum);
+
+int XLALFrWriteREAL4FrequencySeries(const REAL4FrequencySeries * series,
+    int fnum, int subtype);
+int XLALFrWriteREAL8FrequencySeries(const REAL8FrequencySeries * series,
+    int fnum, int subtype);
+int XLALFrWriteCOMPLEX8FrequencySeries(const COMPLEX8FrequencySeries *
+    series, int fnum, int subtype);
+int XLALFrWriteCOMPLEX16FrequencySeries(const COMPLEX16FrequencySeries *
+    series, int fnum, int subtype);
+
+#if 0
+{
+#endif
 #ifdef __cplusplus
 }
 #endif

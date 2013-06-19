@@ -367,6 +367,15 @@ tagSphHarmTimeSeries
     struct tagSphHarmTimeSeries*    next; /**< next pointer */
 };
 
+struct
+tagSphHarmFrequencySeries
+{
+    COMPLEX16FrequencySeries*            mode; /**< The sequences of sampled data. */
+    UINT4                           l; /**< Node mode l  */
+    INT4                            m; /**< Node submode m  */
+    struct tagSphHarmFrequencySeries*    next; /**< next pointer */
+};
+
 /**
  * Prepend a node to a linked list of SphHarmTimeSeries, or create a new head
  */
@@ -463,6 +472,104 @@ UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts ){
     }
     return maxl;
 }
+
+/**
+ * Prepend a node to a linked list of SphHarmFrequencySeries, or create a new head
+ */
+SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode(
+            SphHarmFrequencySeries *appended, /**< Linked list to be prepended */
+            const COMPLEX16FrequencySeries* inmode, /**< Time series of h_lm mode being prepended */
+            UINT4 l, /**< l index of h_lm mode being prepended */
+            INT4 m /**< m index of h_lm mode being prepended */
+            )
+{
+    SphHarmFrequencySeries* ts;
+
+	// Check if the node with this l, m already exists
+	ts = appended;
+	while( ts ){
+		if( l == ts->l && m == ts->m ){
+			break;
+		}
+		ts = ts->next;
+	}
+
+	if( ts ){
+		XLALDestroyCOMPLEX16FrequencySeries( ts->mode );
+		ts->mode = XLALCutCOMPLEX16FrequencySeries( inmode, 0, inmode->data->length);
+		return appended;
+	} else {
+    	ts = XLALMalloc( sizeof(SphHarmFrequencySeries) );
+	}
+
+    ts->l = l;
+    ts->m = m;
+	// Cut returns a new series using a slice of the original. I ask it to
+	// return a new one for the full data length --- essentially a duplication
+	if( inmode ){
+		ts->mode = XLALCutCOMPLEX16FrequencySeries( inmode, 0, inmode->data->length);
+	} else {
+		ts->mode = NULL;
+	}
+
+    if( appended ){
+        ts->next = appended;
+    } else {
+        ts->next = NULL;
+    }
+
+    return ts;
+}
+
+/** Delete list from current pointer to the end of the list */
+void XLALDestroySphHarmFrequencySeries(
+            SphHarmFrequencySeries* ts /**< Head of linked list to destroy */
+            )
+{
+    SphHarmFrequencySeries* pop;
+    while( (pop = ts) ){
+		if( pop->mode ){
+        	XLALDestroyCOMPLEX16FrequencySeries( pop->mode );
+		}
+        ts = pop->next;
+        XLALFree( pop );
+    }
+}
+
+/**
+ * Get the time series of a waveform's (l,m) spherical harmonic mode from a
+ * SphHarmFrequencySeries linked list. Returns a pointer to its COMPLEX16FrequencySeries
+ */
+COMPLEX16FrequencySeries* XLALSphHarmFrequencySeriesGetMode(
+            SphHarmFrequencySeries *ts, /** linked list to extract mode from */
+            UINT4 l, /**< l index of h_lm mode to get */
+            INT4 m /**< m index of h_lm mode to get */
+            )
+{
+    if( !ts ) return NULL;
+
+    SphHarmFrequencySeries *itr = ts;
+    while( itr->l != l || itr->m != m ){
+        itr = itr->next;
+        if( !itr ) return NULL;
+    }
+    return itr->mode;
+}
+
+/**
+ * Get the largest l index of any mode in the SphHarmFrequencySeries linked list
+ */
+UINT4 XLALSphHarmFrequencySeriesGetMaxL( SphHarmFrequencySeries* ts ){
+    SphHarmFrequencySeries *itr = ts;
+	UINT4 maxl=0;
+
+    while( itr ){
+		maxl = itr->l > maxl ? itr->l : maxl;
+		itr = itr ->next;
+    }
+    return maxl;
+}
+
 
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic

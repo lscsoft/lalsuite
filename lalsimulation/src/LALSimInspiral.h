@@ -155,6 +155,8 @@ int XLALSimInspiralREAL8WaveTaper(
  */
 typedef struct tagSphHarmTimeSeries SphHarmTimeSeries;
 
+typedef struct tagSphHarmFrequencySeries SphHarmFrequencySeries;
+
 /* 
  * Create a SphHarmTimeSeries. If appended is not NULL, this will prepend a new
  * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
@@ -188,6 +190,43 @@ SWIGLAL(GET_OBJECT(COMPLEX16TimeSeries*, XLALSphHarmTimeSeriesGetMode));
  */
 COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode( 
 				SphHarmTimeSeries *ts, 
+				UINT4 l, 
+				INT4 m 
+);
+
+/* 
+ * Create a SphHarmFrequencySeries. If appended is not NULL, this will prepend a new
+ * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
+ * and then set the next pointer to the appended structure.
+ */
+SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode( 
+		SphHarmFrequencySeries *appended,  /**< List structure to prepend to */
+		const COMPLEX16FrequencySeries* inmode,  /**< mode series to contain */
+		UINT4 l, /**< major mode number */
+		INT4 m  /**< minor mode number */
+);
+
+/* 
+ * Destroy a SphHarmFrequencySeries. Note that this will destroy any 
+ * COMPLEX16TimeSeries which it has references to.
+ */
+void XLALDestroySphHarmFrequencySeries( SphHarmFrequencySeries* ts );
+
+/* 
+ * Destroy a SphHarmFrequencySeries. Note that this will destroy any 
+ * COMPLEX16FrequencySeries which it has references to.
+ */
+UINT4 XLALSphHarmFrequencySeriesGetMaxL( SphHarmFrequencySeries* ts );
+
+#ifdef SWIG   // SWIG interface directives
+SWIGLAL(GET_OBJECT(COMPLEX16FrequencySeries*, XLALSphHarmFrequencySeriesGetMode));
+#endif
+
+/* 
+ * Get the mode-decomposed frequency series corresponding to l,m.
+ */
+COMPLEX16FrequencySeries* XLALSphHarmFrequencySeriesGetMode( 
+				SphHarmFrequencySeries *ts, 
 				UINT4 l, 
 				INT4 m 
 );

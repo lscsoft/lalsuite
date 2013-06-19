@@ -42,7 +42,7 @@
 #include <lal/VectorOps.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 
 #ifdef  __cplusplus   /* C++ protection. */

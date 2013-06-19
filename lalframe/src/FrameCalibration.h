@@ -18,14 +18,14 @@
 */
 #include <lal/LALDatatypes.h>
 #include <lal/Calibration.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #ifndef _FRAMECALIBRATION_H
 #define _FRAMECALIBRATION_H
 
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
-} /* so that editors will match preceding brace */
+}       /* so that editors will match preceding brace */
 #endif
 
 /**
@@ -90,26 +90,20 @@ extern "C" {
 /*@}*/
 
 void
-LALExtractFrameResponse(
-    LALStatus               *status,
-    COMPLEX8FrequencySeries *output,
-    FrCache                 *calCache,
-    CalibrationUpdateParams *calfacts
-    );
+LALExtractFrameResponse(LALStatus * status,
+    COMPLEX8FrequencySeries * output,
+    LALCache * calCache, CalibrationUpdateParams * calfacts);
 
 void
-LALCreateCalibFrCache(
-    LALStatus          *status,
-    FrCache           **output,
-    const CHAR         *calCacheName,
-    const CHAR         *dirstr,
-    const CHAR         *calGlobPattern
-    );
+LALCreateCalibFrCache(LALStatus * status,
+    LALCache ** output,
+    const CHAR * calCacheName,
+    const CHAR * dirstr, const CHAR * calGlobPattern);
 
 /*@}*/
 
 #if 0
-{ /* so that editors will match succeeding brace */
+{       /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
 }
 #endif

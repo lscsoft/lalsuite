@@ -52,8 +52,8 @@ int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
 #include <lal/LALConstants.h>
@@ -122,8 +122,8 @@ char ifo[3];                        /* interferometer name: needed for frame fil
 /* GLOBAL VARIABLES */
 
 static LALStatus status;
-FrCache *framecache;                                           /* frame reading variables */
-FrStream *framestream=NULL;
+LALCache *framecache;                                           /* frame reading variables */
+LALFrStream *framestream=NULL;
 
 GlobalVariables GV;   /* A bunch of stuff is stored in here; mainly to protect it from accidents */
 
@@ -155,12 +155,10 @@ int i;
   GV.ifo[2] = 0;
 
   /* create Frame cache, open frame stream and delete frame cache */
-  LALFrCacheImport(&status,&framecache,CommandLineArgs.FrCacheFile);
-  TESTSTATUS( &status );
+  framecache = XLALCacheImport(CommandLineArgs.FrCacheFile);
   LALFrCacheOpen(&status,&framestream,framecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&framecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(framecache);
 
   for(i=0;i<GV.numsegs;i++)
     {
@@ -193,7 +191,7 @@ int GetFactors(struct CommandLineArgsTag CLA)
   char a_name[64];
   char ab_name[64];
 
-FrPos pos1;
+LALFrStreamPos pos1;
 
 static REAL4TimeSeries darm;
 static REAL4TimeSeries asq;
