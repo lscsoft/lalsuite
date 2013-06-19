@@ -342,37 +342,25 @@ Longer strings will be truncated.""" % {
         if qdict:
             uri += "?" + urllib.urlencode(qdict)
 
-        exitCode = 0
-        print(' hie.  uri=%s \n' % uri)
         try:
             response = client.get(uri,headers=headers)
             status = response.status
+            rv = response.read()
             if status >= 400:
                 exitCode=1
-            rv = response.read()
+                # XXX Error message is in plain text.
+                error(rv)
+                exit(1)
+            # This probably came from apache, so 
             if "Authorization Required" in rv:
                 error('Credentials not accepted') 
+                exit(1)
         except Exception, e:
             error("client send exception: " + str(e))
             exit(1)
 
         print(rv)
-
-#        # XXX ridiculous hack to deal with downloaded ligolw search results.
-#        if response.getheader('content-type') == 'application/ligolw-xml':
-#            print(rv)
-#        else:
-#            try:
-#                rv = json.loads(rv) 
-#                if 'output' in rv.keys():
-#                    output(rv['output'])
-#                elif 'error' in rv.keys():
-#                    error(rv['error'])
-#                    exitCode=1
-#            except Exception, e:
-#                error("while parsing:%s\nclient send exception: %s" % (rv, str(e)))
-        return exitCode
-
+        return 0
     elif args[0] == 'replace':
         if len(args) != 3:
             op.error("wrong number of args for replace")
