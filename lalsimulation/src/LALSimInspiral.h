@@ -167,6 +167,23 @@ SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode(
 );
 
 /* 
+ * Set the tdata pointer to a REAL8Sequence for all members of the 
+ * SphHarmTimeSeries linked list. This is mainly intended for use with
+ * unevenly sampled time series data
+ */
+void XLALSphHarmTimeSeriesSetTData( 
+		SphHarmTimeSeries *ts,  /**< List structure to set tdata */
+		REAL8Sequence* fdata  /**< sequence of timestamps */
+);
+
+/* 
+ * Get the tdata pointer.
+ */
+REAL8Sequence* XLALSphHarmTimeSeriesGetTData( 
+		SphHarmTimeSeries *ts  /**< List structure to get tdata */
+);
+
+/* 
  * Destroy a SphHarmTimeSeries. Note that this will destroy any 
  * COMPLEX16TimeSeries which it has references to.
  */
@@ -201,6 +218,23 @@ SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode(
 		const COMPLEX16FrequencySeries* inmode,  /**< mode series to contain */
 		UINT4 l, /**< major mode number */
 		INT4 m  /**< minor mode number */
+);
+
+/* 
+ * Set the tdata pointer to a REAL8Sequence for all members of the 
+ * SphHarmFrequencySeries linked list. This is mainly intended for use with
+ * unevenly sampled time series data
+ */
+void XLALSphHarmFrequencySeriesSetFData( 
+		SphHarmFrequencySeries *ts,  /**< List structure to add tdata */
+		REAL8Sequence* tdata  /**< sequence of timestamps */
+);
+
+/* 
+ * Get the fdata pointer.
+ */
+REAL8Sequence* XLALSphHarmFrequencySeriesGetFData( 
+		SphHarmFrequencySeries *ts  /**< List structure to get fdata */
 );
 
 /* 

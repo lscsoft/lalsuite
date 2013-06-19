@@ -29,6 +29,7 @@
 #include <lal/LALSimIMR.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
+#include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
@@ -260,6 +261,7 @@ tagSphHarmTimeSeries
     COMPLEX16TimeSeries*            mode; /**< The sequences of sampled data. */
     UINT4                           l; /**< Node mode l  */
     INT4                            m; /**< Node submode m  */
+	REAL8Sequence*					tdata; /**< Timestamp values */
     struct tagSphHarmTimeSeries*    next; /**< next pointer */
 };
 
@@ -269,6 +271,7 @@ tagSphHarmFrequencySeries
     COMPLEX16FrequencySeries*            mode; /**< The sequences of sampled data. */
     UINT4                           l; /**< Node mode l  */
     INT4                            m; /**< Node submode m  */
+	REAL8Sequence*					fdata; /**< Frequency values */
     struct tagSphHarmFrequencySeries*    next; /**< next pointer */
 };
 
@@ -313,11 +316,40 @@ SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode(
 
     if( appended ){
         ts->next = appended;
+		ts->tdata = appended->tdata;
     } else {
         ts->next = NULL;
+		ts->tdata = NULL;
     }
 
     return ts;
+}
+
+/**
+ * Set the tdata member for *all* nodes in the list.
+ */
+void XLALSphHarmTimeSeriesSetTData(
+            SphHarmTimeSeries *ts, /**< Linked list to be prepended */
+            REAL8Sequence* tdata /**< series of time data*/
+            )
+{
+	while( ts ){
+		ts->tdata = tdata;
+		ts = ts->next;
+	}
+}
+
+/**
+ * Get the tdata member for nodes in the list.
+ */
+REAL8Sequence* XLALSphHarmTimeSeriesGetTData(
+            SphHarmTimeSeries *ts /**< Get tdata from this list */
+            )
+{
+	if( ts ){
+		return ts->tdata;
+	}
+	return NULL;
 }
 
 /** Delete list from current pointer to the end of the list */
@@ -329,6 +361,10 @@ void XLALDestroySphHarmTimeSeries(
     while( (pop = ts) ){
 		if( pop->mode ){
         	XLALDestroyCOMPLEX16TimeSeries( pop->mode );
+		}
+		// The tdata pointer is shared so we delete on the last node
+		if( pop->next == NULL && pop->tdata ){
+        	XLALDestroyREAL8Sequence( pop->tdata );
 		}
         ts = pop->next;
         XLALFree( pop );
@@ -410,11 +446,40 @@ SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode(
 
     if( appended ){
         ts->next = appended;
+		ts->fdata = appended->fdata;
     } else {
         ts->next = NULL;
+		ts->fdata = NULL;
     }
 
     return ts;
+}
+
+/**
+ * Set the tdata member for *all* nodes in the list.
+ */
+void XLALSphHarmFrequencySeriesSetFData(
+            SphHarmFrequencySeries *ts, /**< Linked list to be prepended */
+            REAL8Sequence* fdata /**< series of frequency data*/
+            )
+{
+	while( ts ){
+		ts->fdata = fdata;
+		ts = ts->next;
+	}
+}
+
+/**
+ * Get the fdata member.
+ */
+REAL8Sequence* XLALSphHarmFrequencySeriesGetFData(
+            SphHarmFrequencySeries *ts /**< Get tdata from this list */
+            )
+{
+	if( ts ){
+		return ts->fdata;
+	}
+	return NULL;
 }
 
 /** Delete list from current pointer to the end of the list */
@@ -426,6 +491,10 @@ void XLALDestroySphHarmFrequencySeries(
     while( (pop = ts) ){
 		if( pop->mode ){
         	XLALDestroyCOMPLEX16FrequencySeries( pop->mode );
+		}
+		// The fdata pointer is shared so we delete on the last node
+		if( pop->next == NULL && pop->fdata ){
+        	XLALDestroyREAL8Sequence( pop->fdata );
 		}
         ts = pop->next;
         XLALFree( pop );
