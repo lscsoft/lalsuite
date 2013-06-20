@@ -1495,6 +1495,7 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "f4", pars.f4 );
   add_variable_scale( ini, scaleFac, "f5", pars.f5 );
   add_variable_scale( ini, scaleFac, "pepoch", pars.pepoch );
+  add_variable_scale( ini, scaleFac, "cgw", pars.cgw );
 
   /* sky position */
   add_variable_scale( ini, scaleFac, "ra", pars.ra );
@@ -1692,6 +1693,14 @@ void initialisePrior( LALInferenceRunState *runState )
     if( ( !strcmp(tempPar, "phi0") || !strcmp(tempPar, "phi22") || !strcmp(tempPar, "phi21") )
       && !strcmp(tempPrior, "uniform")  ){
       if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ) { phidef = 1; }
+    }
+
+    /* if a (fractional) gravitational wave speed is specified then check it's between 0 and 1 */
+    if( !strcmp(tempPar, "cgw") ){
+      if( high > 1. || high <= 0. || low > 1. || low <= 0. || low > high ){
+        fprintf(stderr, "Error... The GW speed range is non-physical.\n");
+        exit(3);
+      }
     }
 
     /* if psi is covering the range -pi/4 to pi/4, i.e. as used in the triaxial
