@@ -96,6 +96,12 @@ class Client(GraceDb):
         else:
             return "Error. (%d) %s" % (response.status, response.reason)
 
+    # XXX Hamstring 'adjustResponse' from the example REST client.
+    # I don't want it messing with the response from the server.
+    def adjustResponse(self, response):
+        response.json = lambda: json.loads(response.read())
+        return response
+
 #-----------------------------------------------------------------
 # Main 
 
@@ -329,7 +335,7 @@ Longer strings will be truncated.""" % {
         else:
             headers['Accept'] = 'text/tab-separated-values'
 
-        # NOTE: count will be limited to 1000 on the server side.
+        # NOTE: count will be limited to 1000 on the server side (if ligolw)
         count = None # XXX Let's just get rid of this?
         orderby = None # XXX Should we implement this?
 
@@ -348,7 +354,6 @@ Longer strings will be truncated.""" % {
             rv = response.read()
             if status >= 400:
                 exitCode=1
-                # XXX Error message is in plain text.
                 error(rv)
                 exit(1)
             # This probably came from apache, so 
@@ -358,7 +363,6 @@ Longer strings will be truncated.""" % {
         except Exception, e:
             error("client send exception: " + str(e))
             exit(1)
-
         print(rv)
         return 0
     elif args[0] == 'replace':
