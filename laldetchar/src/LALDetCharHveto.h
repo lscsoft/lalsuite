@@ -25,6 +25,7 @@
 
 #include <gsl/gsl_sf.h>
 
+#include <lal/LALString.h>
 #include <lal/LALDetCharGlib.h>
 #include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOMetadataTables.h>

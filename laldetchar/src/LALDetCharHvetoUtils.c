@@ -47,7 +47,7 @@ size_t XLALGetGSnglBurstSeqLength( GSnglBurstSeq* seq ){
 size_t XLALGetGSnglBurstSeqUnmarkedLength( GSnglBurstSeq* trig_sequence ){
   GSnglBurstIter* itr = XLALGSnglBurstSeqBegin(trig_sequence);
   size_t cntr = 0;
-  while( itr != NULL ){
+  while( !g_sequence_iter_is_end(itr) ){
     SnglBurst* sb = XLALGSnglBurstIterGet(itr);
     if( sb->next == NULL ){
       cntr++;
@@ -62,6 +62,9 @@ GSnglBurstIter* XLALGSnglBurstSeqBegin(GSnglBurstSeq* trig_sequence) {
 }
 
 SnglBurst* XLALGSnglBurstIterGet(GSnglBurstIter* itr) {
+  if(g_sequence_iter_is_end(itr)) {
+    return NULL;
+  }
   return (SnglBurst*)g_sequence_get(itr);
 }
 
@@ -69,19 +72,27 @@ GSnglBurstIter* XLALGSnglBurstIterNext(GSnglBurstIter* itr) {
   return g_sequence_iter_is_end(itr) ? NULL : g_sequence_iter_next(itr);
 }
 
-GStrHashTable* XLALCreateGStrHashTable(void) {
+GHashTable* XLALCreateGHashTable(void) {
   return g_hash_table_new_full(g_str_hash, g_str_equal, XLALFree, XLALFree);
 }
 
-void XLALDestroyGStrHashTable(GStrHashTable* tbl) {
+void XLALDestroyGHashTable(GHashTable* tbl) {
   g_hash_table_destroy(tbl);
 }
 
-char* XLALGetGStrHashTableVal(GStrHashTable* tbl, const char* key) {
+char* XLALGetStrGHashTableVal(GHashTable* tbl, const char* key) {
   return XLALStringDuplicate((char*)g_hash_table_lookup( tbl, key ));
 }
 
-char* XLALGetGStrHashTableKey(GStrHashTable* tbl, const size_t indx) {
+double XLALGetDblGHashTableVal(GHashTable* tbl, const char* key) {
+  return *(double*)g_hash_table_lookup( tbl, key );
+}
+
+size_t XLALGetIntGHashTableVal(GHashTable* tbl, const char* key) {
+  return *(size_t*)g_hash_table_lookup( tbl, key );
+}
+
+char* XLALGetGHashTableKey(GHashTable* tbl, const size_t indx) {
   GList* keys = g_hash_table_get_keys( tbl );
   size_t i = 0;
   while( keys ){
@@ -94,12 +105,12 @@ char* XLALGetGStrHashTableKey(GStrHashTable* tbl, const size_t indx) {
   return NULL;
 }
 
-GStrHashTable* XLALGetChannelList( GSequence *trig_sequence ){
+GHashTable* XLALGetChannelList( GSequence *trig_sequence ){
   GSnglBurstIter* itr = XLALGSnglBurstSeqBegin(trig_sequence);
-  GStrHashTable* channellist = XLALCreateGStrHashTable();
-  while( itr != NULL ){
+  GHashTable* channellist = XLALCreateGHashTable();
+  while( !g_sequence_iter_is_end(itr) ){
     SnglBurst* sb = XLALGSnglBurstIterGet(itr);
-    g_hash_table_insert( channellist, g_strdup(sb->channel), g_strdup(sb->channel) );
+    g_hash_table_insert( channellist, XLALStringDuplicate(sb->channel), XLALStringDuplicate(sb->channel) );
     itr = XLALGSnglBurstIterNext(itr);
   }
   return channellist;
