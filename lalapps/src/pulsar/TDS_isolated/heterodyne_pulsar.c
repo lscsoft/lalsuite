@@ -1139,6 +1139,10 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         tdt_2 = t - T0Update + emit.deltaT;
       }
 
+      /* add the effect of a variable gravitational wave speed */
+      tdt /= (1.-hetParams.het.cgw);
+      tdt_2 /= (1.-hetParams.het.cgw);
+
       /* check if any timing noise whitening is used */
       if( hetParams.het.nwaves != 0 ){
         /* dtWave only doesn't include binary corrections as they would
@@ -1261,7 +1265,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       if( filtresp != NULL ){
         /* calculate df  = f*(dt(t2) - dt(t))/(t2 - t) here (t2 - t) is 1 sec */
         df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT -
-          binOutput.deltaT + tWave2 - tWave1);
+          binOutput.deltaT + tWave2 - tWave1) / (1.-hetParams.hetUpdate.cgw);
         df += (ffine - fcoarse);
 
         /*sample rate*/
@@ -1271,6 +1275,9 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         /* find filter frequency response closest to df */
         position = middle + (INT4)floor(df/filtresp->deltaf);
       }
+
+      /* add the effect of a variable gravitational wave speed */
+      tdt /= (1.-hetParams.hetUpdate.cgw);
 
       tdt2 = tdt*tdt;
       /* multiply by freqfactor to get gw phase */
@@ -1299,7 +1306,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       hetParams.heterodyneflag == 4){
       deltaphase = 2.*LAL_PI*fmod(phaseUpdate - phaseCoarse, 1.);
 
-      /* mutliply the data by the filters complex response function to remove
+      /* multiply the data by the filters complex response function to remove
          its effect */
       /* do a linear interpolation between filter response function points */
       if( filtresp != NULL ){
