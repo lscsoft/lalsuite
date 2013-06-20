@@ -96,8 +96,8 @@ class Client(GraceDb):
         else:
             return "Error. (%d) %s" % (response.status, response.reason)
 
-    # XXX Hamstring 'adjustResponse' from the example REST client.
-    # I don't want it messing with the response from the server.
+    # Hamstring 'adjustResponse' from the example REST client.
+    # We don't want it messing with the response from the server.
     def adjustResponse(self, response):
         response.json = lambda: json.loads(response.read())
         return response
@@ -428,35 +428,32 @@ Longer strings will be truncated.""" % {
         sys.exit(1)
 
     # Output the response.
-
     exitCode = 0
-    # XXX oddball exception for ligolw query responses.
-    if isinstance(response, str):
-        print(response)
+    try:
+        rv = response.read()
+        status = response.status
+    except:
+        rv = response
+
+    # XXX If you got this far, you should be JSON.
+    try:
+        responseBody = json.loads(rv)
+    except:
+        responseBody = rv
+
+    if status >= 400:
+        exitCode=1
+    if isinstance(responseBody, str):
+        output("%d: %s" % (status, responseBody))
     else:
-        try:
-            rv = response.read()
-            status = response.status
-        except:
-            rv = response
-        # XXX If you got this far, you should be JSON.
-        try:
-            responseBody = json.loads(rv)
-        except:
-            responseBody = rv
-        if status >= 400:
-            exitCode=1
-        if isinstance(responseBody, str):
-            output("%d: %s" % (status, responseBody))
-        else:
-            output("Server returned %d" % status)
-            if ('error' in responseBody) and response['error']:
-                error(response['error'])
-                exitCode = 1
-            if ('warning' in responseBody) and response['warning']:
-                warning(response['warning'])
-            if ('output' in responseBody) and response['output']:
-                output(response['output'])
+        output("Server returned %d" % status)
+        if ('error' in responseBody) and response['error']:
+            error(response['error'])
+            exitCode = 1
+        if ('warning' in responseBody) and response['warning']:
+            warning(response['warning'])
+        if ('output' in responseBody) and response['output']:
+            output(response['output'])
 
     return exitCode
 
