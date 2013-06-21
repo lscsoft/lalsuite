@@ -19,6 +19,7 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \
+  bin/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])

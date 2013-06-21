@@ -20,6 +20,7 @@ SUBDIRS = \
 	src \
 	python \
 	swig \
+	bin \
 	test
 
 pkgconfigdir = $(libdir)/pkgconfig

@@ -8,6 +8,8 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache/
+bin/laldetchar-hveto
+bin/python_config.sed
 config.log
 config.lt
 config.status
