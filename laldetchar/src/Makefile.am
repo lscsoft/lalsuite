@@ -31,10 +31,10 @@ sysconf_DATA = \
 	laldetchar-user-env.sh \
 	laldetchar-user-env.csh
 
-bin_PROGRAMS = \
-	laldetchar-hveto
+#bin_PROGRAMS = \
+	#laldetchar-hveto
 
-laldetchar_hveto_SOURCES = hveto.c
+#laldetchar_hveto_SOURCES = hveto.c
 
 BUILT_SOURCES = \
 	laldetchar-user-env.sh \
