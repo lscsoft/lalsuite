@@ -2801,7 +2801,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 	}
 	
 	setvbuf(fpChi2, (char *)NULL, _IOLBF, 0);
-	fprintf(fpChi2, "%g  %g %g  %g  %g %g  %g \n", pulsarTemplate.f0, pulsarTemplate.longitude, pulsarTemplate.latitude, pulsarTemplate.spindown.data[0], (numberCountTotal - meanN)/sigmaN, oldSig, chi2);
+	fprintf(fpChi2, "%.13g  %.7g %.7g  %.5g  %.6g %.6g  %.7g \n", pulsarTemplate.f0, pulsarTemplate.longitude, pulsarTemplate.latitude, pulsarTemplate.spindown.data[0], (numberCountTotal - meanN)/sigmaN, oldSig, chi2);
 	
 	/*-----------------------------*/
 		
