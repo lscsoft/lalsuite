@@ -1125,11 +1125,15 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         }
 
         if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
-            const UINT4 nameLength=256;
+            const UINT4 nameLength=FILENAME_MAX;
             char filename[nameLength];
             FILE *out;
-
-            snprintf(filename, nameLength, "%s-PSD.dat", IFOdata[i].name);
+            ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+            if(ppt) {
+            	snprintf(filename, nameLength, "%s-%s-PSD.dat", ppt->value, IFOdata[i].name);
+            }
+            else
+                snprintf(filename, nameLength, "%s-PSD.dat", IFOdata[i].name);
             out = fopen(filename, "w");
             for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
                 REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
