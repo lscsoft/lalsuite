@@ -12,3 +12,7 @@ bin_SCRIPTS = \
 
 EXTRA_DIST = \
 	laldetchar-hveto.in
+
+CLEANFILES = \
+	laldetchar-hveto \
+	python_config.sed
