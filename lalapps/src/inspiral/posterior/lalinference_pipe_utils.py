@@ -444,7 +444,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             e.event_id=i
             used_events.append(e)
         events=used_events
-    events = [ e for e in events if e.trig_time > gpsstart and e.trig_time<gpsend]
+    if gpsstart is not None:
+        events = filter(lambda e:e.trig_time>gpsstart, events)
+    if gpsend is not None:
+        events = filter(lambda e:e.trig_time<gpsend, events)
     return events
 
   def add_full_analysis_lalinferencenest(self,event):

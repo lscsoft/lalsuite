@@ -19,15 +19,6 @@
 #define TRIG_NOT_MASKED (SnglBurst*)0x0
 
 /*
-static gint compare(gconstpointer a, gconstpointer b) {
-        const SnglBurst *_a = a;
-        const SnglBurst *_b = b;
-
-        return XLALCompareSnglBurstByPeakTimeAndSNR(&_a, &_b);
-}
-*/
-
-/*
  * Scan through a list of triggers and count the instances of each trigger type
  * and count its coincidences with the target channel. The hash tables for the
  * channel count and coincidence count must already be initialized. The
@@ -78,12 +69,12 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 		if( value ){
 			(*value)++;
 			XLALPrintInfo( "Count: Incrementing, %s value: %lu\n", sb_target->channel, *value );
-			g_hash_table_insert( chancount, g_strdup(sb_target->channel), value );
+			//g_hash_table_insert( chancount, XLALStringDuplicate(sb_target->channel), value );
 		} else {
 			value = g_new(size_t, 1);
 			*value = 1;
 			XLALPrintInfo( "Count: Adding %s with time %d.%d\n", sb_target->channel, sb_target->peak_time.gpsSeconds, sb_target->peak_time.gpsNanoSeconds );
-			g_hash_table_insert( chancount, g_strdup(sb_target->channel), value );
+			g_hash_table_insert( chancount, XLALStringDuplicate(sb_target->channel), value );
 		}
 
 		// Is it the channel we're looking at?
@@ -148,12 +139,12 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			if( value != NULL ){
 				(*value)++;
 				XLALPrintInfo( "Left Coincidence: Incrementing, %s->%ld, time %d.%d value: %lu\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
-				g_hash_table_insert( chanhist, &sb_aux->channel, value );
+				//g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			} else {
 				value = g_new(size_t, 1);
 				*value = 1;
 				XLALPrintInfo( "Left Coincidence: Adding %s->%ld with time %d.%d\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
-				g_hash_table_insert( chanhist, &sb_aux->channel, value );
+				g_hash_table_insert( chanhist, XLALStringDuplicate(sb_aux->channel), value );
 			}
 			if( g_sequence_iter_is_begin(trigp) ) break;
 			trigp = g_sequence_iter_prev(trigp);
@@ -198,12 +189,12 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			if( value != NULL ){
 				(*value)++;
 				XLALPrintInfo( "Right Coincidence: Incrementing, %s->%ld, time %d.%d value: %lu\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
-				g_hash_table_insert( chanhist, &sb_aux->channel, value );
+				//g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			} else {
 				value = g_new(size_t, 1);
 				*value = 1;
 				XLALPrintInfo( "Right Coincidence: Adding %s->%ld with time %d.%d\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
-				g_hash_table_insert( chanhist, &sb_aux->channel, value );
+				g_hash_table_insert( chanhist, XLALStringDuplicate(sb_aux->channel), value );
 			}
 			trigp = g_sequence_iter_next(trigp);
 			if( g_sequence_iter_is_end(trigp) ) break;
@@ -222,7 +213,7 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
  * chan parameter is the target channel. The t_ratio parameter is the ratio of
  * the veto window duration to the total examined livetime.
  */
-double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio ){
+double XLALDetCharVetoRound( char** winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio ){
 	double mu, sig, max_sig=-1;
 	size_t *k;
 
@@ -250,11 +241,12 @@ double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* ch
 		sig = XLALDetCharHvetoSignificance( mu, *k );
 		printf( "Significance for this channel: %g\n", sig );
 		if( sig > max_sig && !strstr(chan, (char*)key) ){
-				max_sig = sig;
-				strcpy( winner, (char *)key );
+			max_sig = sig;
+			*winner = XLALRealloc(*winner, (strlen((char *)key) + 1) * sizeof(char));
+			strcpy( *winner, (char *)key );
 		}
 	}
-	printf( "winner: %s\n", winner );
+	printf( "winner: %s\n", *winner );
 	return max_sig;
 }
 
