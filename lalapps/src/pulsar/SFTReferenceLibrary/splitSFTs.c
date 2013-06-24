@@ -153,14 +153,16 @@ int main(int argc, char**argv) {
 	    "\n"
 	    "%s [-c 0|1|2] [-a] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]\n"
 	    "  [-fs <startfrequency>] [-fe <endfrequency (exclusively)>] [-fb <frequencywidth>]\n"
-	    "  [-m <factor>] [-d <detector>] [-o <outputprefix>] -i <inputfile> ...\n"
+	    "  [-x <overlap>] [-fx overlap] [-m <factor>] [-d <detector>] [-o <outputprefix>]\n"
+	    "  -i <inputfile> ...\n"
 	    "\n"
 	    "  This program reads in binary SFTs (v1 and v2) and writes out narrow-banded\n"
 	    "  merged SFTs (v2).\n"
 	    "\n"
 	    "  The frequency bands of the ouput SFTs (first frequency bin of first output SFT,\n"
 	    "  last frequency bin of last output SFT, number of bins in each output SFT)\n"
-	    "  can be specified either in bins ('-s', '-e', '-b') or Hz ('-fs', '-fe', '-fb')\n"
+	    "  and a possible overlap of the output files can be specified\n"
+	    "  either in bins ('-s', '-e', '-b', -'x') or Hz ('-fs', '-fe', '-fb', '-fx')\n"
 	    "  (or mixed - if both are given, frequency values take precedence).\n"
 	    "\n"
 	    "  A 'mystery factor' can be specified with '-m' option.\n"
@@ -247,7 +249,7 @@ int main(int argc, char**argv) {
 	      (strcmp(argv[arg], "--frequency-bandwidth") == 0)) {
       fWidth = atof(argv[++arg]);
     } else if((strcmp(argv[arg], "-fx") == 0) ||
-	      (strcmp(argv[arg], "--output-prefix") == 0)) {
+	      (strcmp(argv[arg], "--frequency-overlap") == 0)) {
       fOverlap = atof(argv[++arg]);
     } else if((strcmp(argv[arg], "-m") == 0) ||
 	      (strcmp(argv[arg], "--factor") == 0)) {
