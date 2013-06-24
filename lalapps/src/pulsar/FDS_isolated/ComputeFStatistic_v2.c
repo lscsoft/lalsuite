@@ -1246,7 +1246,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->LVuseAllTerms = TRUE;
   uvar->LVrho = 0.0;
   uvar->LVlX = NULL;       /* NULL is intepreted as LVlX[X] = 1.0 for all X by XLALComputeLineVeto(Array) */
-  uvar->LVthreshold = 0.0;
+  uvar->LVthreshold = - LAL_REAL8_MAX;
 
 #define DEFAULT_TRANSIENT "none"
   uvar->transient_WindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
