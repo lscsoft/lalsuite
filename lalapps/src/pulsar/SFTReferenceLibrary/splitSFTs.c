@@ -152,10 +152,22 @@ int main(int argc, char**argv) {
 	    "\n"
 	    "  Write this help message\n"
 	    "\n"
-	    "%s [-c 0|1|2] [-a] [-v] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]\n"
-	    "  [-fs <startfrequency>] [-fe <endfrequency (exclusively)>] [-fb <frequencywidth>]\n"
-	    "  [-x <overlap>] [-fx overlap] [-m <factor>] [-d <detector>] [-o <outputprefix>]\n"
-	    "  -i <inputfile> ...\n"
+	    "%s\n"
+	    "  [-a|--all-comments]\n"
+	    "  [-c|--add-comment 0|1|2]\n"
+	    "  [-v|--no-validation]\n"
+	    "  [-s|--start-bin <startbin>]\n"
+	    "  [-e|--end-bin <endbin (exclusively)>]\n"
+	    "  [-b|--width <sftbins>]\n"
+	    "  [-x|--overlap <overlap>]\n"
+	    "  [-fs|--start-frequency <startfrequency>]\n"
+	    "  [-fe|--end-frequency <endfrequency (exclusively)>]\n"
+	    "  [-fb|--frequency-bandwidth <frequencywidth>]\n"
+	    "  [-fx|--frequency-overlap <frequencyoverlap>]\n"
+	    "  [-m|--factor <factor>]\n"
+	    "  [-d|--detector <detector>]\n"
+	    "  [-o|--output-prefix <outputprefix>]\n"
+	    "  -i|--input-files <inputfile> ...\n"
 	    "\n"
 	    "  This program reads in binary SFTs (v1 and v2) and writes out narrow-banded\n"
 	    "  merged SFTs (v2).\n"
@@ -222,7 +234,8 @@ int main(int argc, char**argv) {
 
   /* get parameters from command-line */
   for(arg = 1; arg < argc; arg++) {
-    if(strcmp(argv[arg], "-d") == 0) {
+    if((strcmp(argv[arg], "-d") == 0) ||
+	      (strcmp(argv[arg], "--detector") == 0)) {
       detector = argv[++arg];
     } else if((strcmp(argv[arg], "-c") == 0) ||
 	      (strcmp(argv[arg], "--add-comment") == 0)) {
