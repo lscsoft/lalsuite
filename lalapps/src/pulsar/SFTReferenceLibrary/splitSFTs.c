@@ -135,6 +135,7 @@ int main(int argc, char**argv) {
   double fMin = -1.0, fMax = -1.0;     /* start and end in Hz */
   double fWidth = -1.0, fOverlap = -1; /* width and overlap in Hz */
   unsigned int nactivesamples;         /* number of bins to actually read in */
+  int validate = TRUE;                 /* validate the checksum of each input SFT before using it? */
 
   /* initialize throtteling */
   time(&read_bandwidth.last_checked);
@@ -151,7 +152,7 @@ int main(int argc, char**argv) {
 	    "\n"
 	    "  Write this help message\n"
 	    "\n"
-	    "%s [-c 0|1|2] [-a] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]\n"
+	    "%s [-c 0|1|2] [-a] [-v] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]\n"
 	    "  [-fs <startfrequency>] [-fe <endfrequency (exclusively)>] [-fb <frequencywidth>]\n"
 	    "  [-x <overlap>] [-fx overlap] [-m <factor>] [-d <detector>] [-o <outputprefix>]\n"
 	    "  -i <inputfile> ...\n"
@@ -166,6 +167,8 @@ int main(int argc, char**argv) {
 	    "  (or mixed - if both are given, frequency values take precedence).\n"
 	    "\n"
 	    "  A 'mystery factor' can be specified with '-m' option.\n"
+	    "\n"
+	    "  '-v' skips validation of the CRC checksum of the input files\n"
 	    "\n"
 	    "  In case of reading v1 SFTs (which don't support detector information in the header)\n"
 	    "  the detector needs to be specified on the command-line using '-d' option.\n"
@@ -254,6 +257,9 @@ int main(int argc, char**argv) {
     } else if((strcmp(argv[arg], "-m") == 0) ||
 	      (strcmp(argv[arg], "--factor") == 0)) {
       factor = atof(argv[++arg]);
+    } else if((strcmp(argv[arg], "-v") == 0) ||
+	      (strcmp(argv[arg], "--no-validation") == 0)) {
+      validate = FALSE;
     } else if((strcmp(argv[arg], "-o") == 0) ||
 	      (strcmp(argv[arg], "--output-prefix") == 0)) {
       prefix = argv[++arg];
@@ -299,7 +305,7 @@ int main(int argc, char**argv) {
     
     /* read header */
     request_resource(&read_bandwidth, 40);
-    TRYSFT(ReadSFTHeader(fp, &hd, &oldcomment, &swap, 1),
+    TRYSFT(ReadSFTHeader(fp, &hd, &oldcomment, &swap, validate),
 	   "could not read SFT header");
 
     /* calculate bins from frequency parameters if they were given */
