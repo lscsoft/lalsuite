@@ -241,7 +241,7 @@ def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
         if not isinstance(instruments, basestring):
             instruments = str(lsctables.ifos_from_instrument_set(instruments))
         extra_metadata.append(('INSTRUME', instruments,
-            'Gravitational-wave instruments contributing data to this event'))
+            'Gravitational-wave instruments that triggered this event'))
 
     if gps_time is not None:
         extra_metadata.append(('DATE-OBS', gps_to_iso8601(gps_time),
