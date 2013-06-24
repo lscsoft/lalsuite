@@ -65,6 +65,7 @@ import os
 import shutil
 import tempfile
 import healpy as hp
+from glue.ligolw import lsctables
 from healpy.fitsfunc import getformat, pixelfunc, standard_column_names, pf, np
 import lal
 
@@ -237,6 +238,8 @@ def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
             'URL of this event'))
 
     if instruments is not None:
+        if not isinstance(instruments, basestring):
+            instruments = str(lsctables.ifos_from_instrument_set(instruments))
         extra_metadata.append(('INSTRUME', instruments,
             'Gravitational-wave instruments contributing data to this event'))
 
@@ -288,6 +291,7 @@ def read_sky_map(filename):
     except KeyError:
         pass
     else:
+        value = set(str(ifo) for ifo in lsctables.instrument_set_from_ifos(value))
         metadata['instruments'] = value
 
     try:
