@@ -268,6 +268,14 @@ double XLALSimNoisePSDVirgo(double f /**< frequency (Hz) */);
  */
 double XLALSimNoisePSDGEO(double f /**< frequency (Hz) */);
 
+/** Provides a GEO-HF noise power spectrum based on a fit to Figure 6
+ * from \ref Grote2010.
+ *
+ * The fit is good between 50Hz to 8kHz and errors between the analytic
+ * fit given and the <a href="https://intranet.aei.uni-hannover.de/geo600/geohflogbook.nsf/7e8722dffa24dea0c1256de900406c84/4837a612ac990060c12575ce004e70fd?OpenDocument">estimated curve</a> are less than 1%.
+ */
+double XLALSimNoisePSDGEOHF(double f /**< frequency (Hz) */);
+
 /** Provides a TAMA300 noise power spectrum based on that from Table IV of
  * \ref dis2001.
  *
@@ -404,7 +412,7 @@ double XLALSimNoisePSDaLIGOZeroDetLowPower(double f /**< frequency (Hz) */);
 double XLALSimNoisePSDaLIGOZeroDetHighPower(double f /**< frequency (Hz) */);
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to optimize sensitivity to NS-NS inspirals.
  *
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
@@ -416,7 +424,7 @@ double XLALSimNoisePSDaLIGOZeroDetHighPower(double f /**< frequency (Hz) */);
 double XLALSimNoisePSDaLIGONSNSOpt(double f /**< frequency (Hz) */);
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to optimize sensitivity to 30+30 solar mass binary
  * black holes with fixed signal recycling cavity detuning of 20 degrees.
  *
@@ -429,7 +437,7 @@ double XLALSimNoisePSDaLIGONSNSOpt(double f /**< frequency (Hz) */);
 double XLALSimNoisePSDaLIGOBHBH20Deg(double f /**< frequency (Hz) */);
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to narrow-band high-frequency sensitivity around
  * 1 kHz.
  *
