@@ -261,9 +261,9 @@ Longer strings will be truncated.""" % {
         
         # XXX Fix this.
         output("comment ignored: %s" % comment)
-        response = client.writeFile(graceid, filename)
-        # response = client.writeLog(graceid, filename, comment, 
-        #    tagName, tagDispName)
+        #response = client.writeFile(graceid, filename)
+        response = client.writeLog(graceid, comment, filename, None,
+            tagName, tagDispName)
     elif args[0] == 'download':
         if len(args) not in [2,3,4]:
             op.error("not enough arguments for download")

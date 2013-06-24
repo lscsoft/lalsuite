@@ -335,11 +335,25 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid)
         return self.get(uri)
 
-    def writeLog(self, graceid, message, tagname=None, displayName=None):
+    def writeLog(self, graceid, message, filename=None, filecontents=None, 
+            tagname=None, displayName=None):
         template = self.templates['event-log-template']
         uri = template.format(graceid=graceid)
+        files = None
+        if filename:
+            if filecontents is None:
+                if filename == '-':
+                    filename = 'stdin'
+                    filecontents = sys.stdin.read()
+                else:
+                    filecontents = open(filename, "rb").read()
+            elif isinstance(filecontents, file):
+                # XXX Does not scale well.
+                filecontents = filecontents.read()
+            files = [('upload', os.path.basename(filename), filecontents)]
+
         return self.post(uri, body={'message' : message, 'tagname': tagname, 
-            'displayName': displayName})
+            'displayName': displayName}, files=files)
 
     def labels(self, graceid, label=""):
         template = self.templates['event-label-template']
