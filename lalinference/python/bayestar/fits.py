@@ -214,7 +214,7 @@ def gps_to_mjd(gps_time):
     """Convert a floating-point GPS time in seconds to an ISO 8601 date string."""
     gps_seconds_fraction, gps_seconds = math.modf(gps_time)
     jd = lal.JulianDay(lal.GPSToUTC(int(gps_seconds)))
-    return jd - lal.XLAL_MJD_REF + gps_seconds_fraction
+    return jd - lal.XLAL_MJD_REF + gps_seconds_fraction / 86400.
 
 
 def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
