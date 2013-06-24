@@ -81,7 +81,8 @@ log = logging.getLogger('BAYESTAR')
 from lalinference.bayestar import fits
 from lalinference.bayestar.ligolw_sky_map import gracedb_sky_map
 
-sky_map, epoch, elapsed_time = gracedb_sky_map(open(infilename, "rb"), open(opts.psd, "rb"), opts.waveform, opts.f_low, opts.min_distance, opts.max_distance, opts.prior_distance_power, reference_frequency=opts.reference_frequency, nside=opts.nside)
+sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(open(infilename, "rb"), open(opts.psd, "rb"), opts.waveform, opts.f_low, opts.min_distance, opts.max_distance, opts.prior_distance_power, reference_frequency=opts.reference_frequency, nside=opts.nside)
 
 # Write sky map
-fits.write_sky_map(opts.output, sky_map, gps_time=float(epoch), creator=parser.prog)
+fits.write_sky_map(opts.output, sky_map, gps_time=float(epoch),
+    creator=parser.prog, runtime=elapsed_time, instruments=instruments)

@@ -140,7 +140,7 @@ if alert_type == 'new':
         from lalinference.bayestar.ligolw_sky_map import gracedb_sky_map
         from lalinference.bayestar import fits
         log.info("starting sky localization")
-        sky_map, epoch, elapsed_time = gracedb_sky_map(coinc_file, psd_file, "TaylorF2threePointFivePN", 10, prior_distance_power=-1, reference_frequency=120)
+        sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(coinc_file, psd_file, "TaylorF2threePointFivePN", 10, prior_distance_power=-1, reference_frequency=120)
         log.info("sky localization complete")
 
         # upload FITS file
@@ -148,7 +148,9 @@ if alert_type == 'new':
         try:
             fitspath = os.path.join(fitsdir, "skymap.fits.gz")
             fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
-                creator=parser.prog, objid=str(graceid))
+                creator=parser.prog, objid=str(graceid), runtime=elapsed_time,
+                url='https://gracedb.ligo.org/events/{0}'.format(graceid),
+                instruments=instruments)
             response = gracedb.writeFile(graceid, fitspath)
             response_json = response.read()
             attrs = json.loads(response_json)

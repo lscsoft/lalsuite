@@ -120,6 +120,8 @@ count_sky_maps_failed = 0
 # Loop over all coinc_event <-> sim_inspiral coincs.
 for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
+    instruments = set(sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
+
     # Look up PSDs
     log.info('%s:reading PSDs', coinc.coinc_event_id)
     psds = tuple(
@@ -145,7 +147,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
             log.info("%s:method '%s':saving sky map", coinc.coinc_event_id, method)
             fits.write_sky_map('%s.%s.fits.gz' % (int(coinc.coinc_event_id), method),
                 sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
-                creator=parser.prog, runtime=elapsed_time)
+                creator=parser.prog, runtime=elapsed_time, instruments=instruments)
 
 
 if count_sky_maps_failed > 0:
