@@ -206,11 +206,11 @@ Longer strings will be truncated.""" % {
                  )
     op.add_option("-t", "--tag-name", dest="tagName",
                   help="tag name in database (only used for log, upload, tag, and delete_tag)",
-                  action="store_true", default=False
+                  action="store_true", default=None
                  )
     op.add_option("-d", "--tag-display-name", dest="tagDispName",
                   help="tag display name (ignored for existing tags)",
-                  action="store_true", default=False
+                  action="store_true", default=None
                  )
 
     options, args = op.parse_args()
@@ -252,16 +252,6 @@ Longer strings will be truncated.""" % {
         comment = " ".join(args[3:])
         tagName = options.tagName
         tagDispName = options.tagDispName
-        # XXX How does the old response look?
-        # ERROR: missing arg(s)
-        # ERROR: Event does not exist.
-        # OK
-        # ERROR: problem creating log engry
-        # ERROR: could not save file.
-        
-        # XXX Fix this.
-        output("comment ignored: %s" % comment)
-        #response = client.writeFile(graceid, filename)
         response = client.writeLog(graceid, comment, filename, None,
             tagName, tagDispName)
     elif args[0] == 'download':
@@ -403,9 +393,8 @@ Longer strings will be truncated.""" % {
             error("There was a problem.  Did you do grid-proxy-init -rfc?")
             sys.exit(1)
 
-        # Must output graceid for consistency with earlier client.
+        # XXX Must output graceid for consistency with earlier client.
         # Therefore, must deal with response here rather than at the end.
-        # XXX Sorta ugly, though.
         exitCode = 0
         status = response.status
         if status >= 400:
@@ -439,7 +428,6 @@ Longer strings will be truncated.""" % {
     except:
         rv = response
 
-    # XXX If you got this far, you should be JSON.
     try:
         responseBody = json.loads(rv)
     except:
