@@ -219,7 +219,8 @@ def gps_to_mjd(gps_time):
 
 
 def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
-    gps_time=None, gps_creation_time=None, creator=None, runtime=None):
+    gps_time=None, gps_creation_time=None, creator=None, origin=None,
+    runtime=None):
     """Write a gravitational-wave sky map to a file, populating the header
     with optional metadata."""
 
@@ -257,6 +258,10 @@ def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
     if creator is not None:
         extra_metadata.append(('CREATOR', creator,
             'Program that created this file'))
+
+    if origin is not None:
+        extra_metadata.append(('ORIGIN', origin,
+            'Organization responsible for this FITS file'))
 
     if runtime is not None:
         extra_metadata.append(('RUNTIME', runtime,
@@ -316,6 +321,13 @@ def read_sky_map(filename):
         metadata['creator'] = value
 
     try:
+        value = header['ORIGIN']
+    except KeyError:
+        pass
+    else:
+        metadata['origin'] = value
+
+    try:
         value = header['RUNTIME']
     except KeyError:
         pass
@@ -338,6 +350,7 @@ if __name__ == '__main__':
         gps_time=1049492268.25,
         creator=os.path.basename(__file__),
         url='http://www.youtube.com/watch?v=0ccKPSVQcFk',
+        origin='LIGO Scientific Collaboration',
         runtime=21.5)
 
     print read_sky_map('test.fits.gz')

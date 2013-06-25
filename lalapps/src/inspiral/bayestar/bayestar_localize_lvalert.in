@@ -150,7 +150,8 @@ if alert_type == 'new':
             fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
                 creator=parser.get_prog_name(), objid=str(graceid),
                 url='https://gracedb.ligo.org/events/{0}'.format(graceid),
-                runtime=elapsed_time, instruments=instruments)
+                runtime=elapsed_time, instruments=instruments,
+                origin='LIGO Scientific Collaboration')
             response = gracedb.writeFile(graceid, fitspath)
             response_json = response.read()
             attrs = json.loads(response_json)
