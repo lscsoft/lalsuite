@@ -112,8 +112,8 @@ class GsiRest(object):
             if isinstance(body, dict):
 #           XXX What about the headers in the params?
                 if 'content-type' not in headers:
-                    headers['content-type'] = "application/x-www-form-urlencoded"
-                body = urllib.urlencode(body)
+                    headers['content-type'] = "application/json"
+                body = json.dumps(body)
         else:
             body = body or {}
             if isinstance(body, dict):
@@ -333,11 +333,13 @@ def encode_multipart_formdata(fields, files):
     CRLF = '\r\n'
     L = []
     for (key, value) in fields:
+        if value is None: continue
         L.append('--' + BOUNDARY)
         L.append('Content-Disposition: form-data; name="%s"' % key)
         L.append('')
         L.append(value)
     for (key, filename, value) in files:
+        if value is None: continue
         L.append('--' + BOUNDARY)
         L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
         L.append('Content-Type: %s' % get_content_type(filename))
