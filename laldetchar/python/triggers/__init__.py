@@ -44,7 +44,7 @@ _warnings.filterwarnings("ignore", "column name", UserWarning)
 
 from . import utils
 
-from glue import lal as _cache
+from glue import (segments, lal as _cache)
 
 from laldetchar import git_version as version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -121,8 +121,9 @@ def from_files(filelist, etg, columns=None, start=None, end=None,
                 sys.stdout.write("%s\r" % v)
             sys.stdout.flush()
     if isinstance(filelist, _cache.Cache):
-        span = Segment(start is not None and start or segments.NegInfinity,
-                       end is not None and end or segments.PosInfinity)
+        span = segments.segment(start is not None and start or
+                                segments.NegInfinity,
+                                end is not None and end or segments.PosInfinity)
         filelist = filelist.sieve(segment=span).pfnlist()
     if len(filelist) == 0:
         return utils.new_ligolw_table(etg, columns=columns)
