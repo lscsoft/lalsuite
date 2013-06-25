@@ -211,6 +211,9 @@ ligolw_process.set_process_end_time(process)
 # output
 h5file.create_dataset("/match_map", data=match_map, compression='gzip', compression_opts=1)
 proc = table.get_table(fake_xmldoc, lsctables.ProcessTable.tableName)
+for p in proc:
+    p.cvs_entry_time = 0
+    p.end_time = 0
 h5file.create_dataset("/process", data=ligolw_table_to_array(proc))
 pp = table.get_table(fake_xmldoc, lsctables.ProcessParamsTable.tableName)
 h5file.create_dataset("/process_params", data=ligolw_table_to_array(pp))
