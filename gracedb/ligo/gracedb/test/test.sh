@@ -124,7 +124,7 @@ rm $OUTFILE
 # Upload a file
 #
 OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
-${GRACEDB} upload $GRACEID "$TEST_DATA_DIR/upload.data.gz" > $OUTFILE 2>&1
+${GRACEDB} --tag-name=tag_test upload $GRACEID "$TEST_DATA_DIR/upload.data.gz" > $OUTFILE 2>&1
 recordTest "upload file $GRACEID" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 

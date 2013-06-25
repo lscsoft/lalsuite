@@ -206,11 +206,11 @@ Longer strings will be truncated.""" % {
                  )
     op.add_option("-t", "--tag-name", dest="tagName",
                   help="tag name in database (only used for log, upload, tag, and delete_tag)",
-                  action="store_true", default=None
+                  default=None
                  )
     op.add_option("-d", "--tag-display-name", dest="tagDispName",
                   help="tag display name (ignored for existing tags)",
-                  action="store_true", default=None
+                  default=None
                  )
 
     options, args = op.parse_args()
