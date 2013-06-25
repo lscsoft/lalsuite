@@ -35,7 +35,7 @@ parser = OptionParser(
     usage = '%prog [options] --mass1 MSUN --mass2 MSUN [INPUT.xml[.gz]] [-o OUTPUT.xml[.gz]]',
     option_list = [
         Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
-            help="Name of output file (default=stdout)"),
+            help="Name of output file [default: %default]"),
         Option("--mass1", type=float, metavar="MSUN"),
         Option("--mass2", type=float, metavar="MSUN"),
         Option("--snr", type=float, metavar="SNR")

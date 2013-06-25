@@ -46,9 +46,9 @@ if __name__ == '__main__':
         usage="%prog [-o OUTPUT] DATABASE.sqlite FILE1.fits[.gz] FILE2.fits[.gz] ...",
         option_list=[
             Option("-o", "--output", default="/dev/stdout",
-                help="Name of output file [default=%default]"),
+                help="Name of output file [default: %default]"),
             Option("-j", "--jobs", default=1, type=int,
-                help="Number of threads [default=%default]")
+                help="Number of threads [default: %default]")
         ]
     )
     opts, args = parser.parse_args()

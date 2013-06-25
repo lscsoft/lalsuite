@@ -35,13 +35,13 @@ parser = OptionParser(
     usage="%prog [options] [INPUT.xml[.gz]] [-o OUTPUT.xml[.gz]]",
     option_list = [
         Option("--initial-mass1", metavar="Msun", type=float, default=1.4,
-            help="Mass of first component of an initial lattice point (default=1.4)"),
+            help="Mass of first component of an initial lattice point [default: %default]"),
         Option("--initial-mass2", metavar="Msun", type=float, default=1.4,
-            help="Mass of second component of an initial lattice point (default=1.4)"),
+            help="Mass of second component of an initial lattice point [default: %default]"),
         Option("--min-mass", metavar="Msun", type=float, default=1.,
-            help="Minimum component mass (default=1)"),
+            help="Minimum component mass [default: %default]"),
         Option("--max-mass", metavar="Msun", type=float, default=3.,
-            help="Maximum component mass (default=3)"),
+            help="Maximum component mass [default: %default]"),
         Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
             help="Name of output file (default=stdout)")
     ]
