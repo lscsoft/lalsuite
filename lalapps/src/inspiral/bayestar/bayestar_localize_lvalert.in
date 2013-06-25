@@ -148,9 +148,9 @@ if alert_type == 'new':
         try:
             fitspath = os.path.join(fitsdir, "skymap.fits.gz")
             fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
-                creator=parser.prog, objid=str(graceid), runtime=elapsed_time,
+                creator=parser.get_prog_name(), objid=str(graceid),
                 url='https://gracedb.ligo.org/events/{0}'.format(graceid),
-                instruments=instruments)
+                runtime=elapsed_time, instruments=instruments)
             response = gracedb.writeFile(graceid, fitspath)
             response_json = response.read()
             attrs = json.loads(response_json)

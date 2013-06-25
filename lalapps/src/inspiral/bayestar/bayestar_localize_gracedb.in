@@ -85,4 +85,4 @@ sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(open(infilename, "rb
 
 # Write sky map
 fits.write_sky_map(opts.output, sky_map, gps_time=float(epoch),
-    creator=parser.prog, runtime=elapsed_time, instruments=instruments)
+    creator=parser.get_prog_name(), runtime=elapsed_time, instruments=instruments)
