@@ -549,29 +549,34 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
           fpout=fopen(outfile,"a");
       }
       /* Install a periodic alarm that will trigger a checkpoint */
+      int sigretcode=0;
       struct sigaction sa;
       sa.sa_sigaction=catch_alarm;
       sa.sa_flags=SA_SIGINFO;
-      sigaction(SIGVTALRM,&sa,NULL);
+      sigretcode=sigaction(SIGVTALRM,&sa,NULL);
+      if(sigretcode!=0) printf("WARNING: Cannot establish checkpoint timer!\n");
       /* Condor sends SIGUSR2 to checkpoint and continue */
-      sigaction(SIGUSR2,&sa,NULL);
-      if(retcode!=0) printf("WARNING: Cannot establish checkpoint timer!\n");
+      sigretcode=sigaction(SIGUSR2,&sa,NULL);
+      if(sigretcode!=0) printf("WARNING: Cannot establish checkpoint on SIGUSR2.\n");
       checkpoint_timer.it_interval.tv_sec=4*3600; /* Default timer 4 hours */
       checkpoint_timer.it_interval.tv_usec=0;
       checkpoint_timer.it_value=checkpoint_timer.it_interval;
       setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
       /* Install the handler for the condor interrupt signal */
       sa.sa_sigaction=catch_interrupt;
-      sigaction(SIGINT,&sa,NULL);
+      sigretcode=sigaction(SIGINT,&sa,NULL);
+      if(sigretcode!=0) printf("WARNING: Cannot establish checkpoint on SIGINT.\n");
       /* Condor sends SIGTERM to vanilla universe jobs to evict them */
-      sigaction(SIGTERM,&sa,NULL);
+      sigretcode=sigaction(SIGTERM,&sa,NULL);
+      if(sigretcode!=0) printf("WARNING: Cannot establish checkpoint on SIGTERM.\n");
       /* Condor sends SIGTSTP to standard universe jobs to evict them.
        *I think condor handles this, so didn't add a handler CHECK */
   }
   
   if(retcode!=0)
-  { 
-    fprintf(stdout,"Unable to open resume file %s. Starting anew.\n",resumefilename);
+  {
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
+        fprintf(stdout,"Unable to open resume file %s. Starting anew.\n",resumefilename);
     /* Sprinkle points */
     LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
     for(i=0;i<Nlive;i++) {
