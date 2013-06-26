@@ -131,3 +131,34 @@ int XLALStringToLowerCase(CHAR * string)
     return XLAL_SUCCESS;
 
 }       /* XLALStringToLowerCase() */
+
+
+/**
+ * Helper function:  turn a string in-place into uppercase without
+ * using locale-dependent functions.
+ */
+int XLALStringToUpperCase(CHAR * string)
+{
+/**< [in/out] string to convert */
+    XLAL_CHECK(string != NULL, XLAL_EINVAL);
+
+    /* ctype replacements w/o locale */
+    const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
+
+    for (UINT4 i = 0; i < strlen(string); i++) {
+        int c = string[i];
+        if (c) {
+            char *p = strchr(lower_chars, c);
+            if (p) {
+                int offset = p - lower_chars;
+                c = upper_chars[offset];
+            }
+        }
+        string[i] = c;
+
+    }   // for i < len(string)
+
+    return XLAL_SUCCESS;
+
+}       /* XLALStringToUpperCase() */
