@@ -35,11 +35,10 @@ int main(int argc, char *argv[])
     parseargs(argc, argv);
 
     logpmax = log(XLALSimNeutronStarEOSMaxPressure(global_eos));
-    /* THIS ONLY GIVES global_npts-1 POINTS: */
     dlogp = (logpmax - logpmin) / global_npts;
 
-    for (i = 1; i < global_npts; ++i) { /* is this npts-1 or npts points? */
-        double pc = exp(logpmin + i * dlogp);
+    for (i = 0; i < global_npts; ++i) {
+        double pc = exp(logpmin + (0.5 + i) * dlogp);
         double c, m, r, k2;
         XLALSimNeutronStarTOVODEIntegrate(&r, &m, &k2, pc, global_eos);
         /* convert units */

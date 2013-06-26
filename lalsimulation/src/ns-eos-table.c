@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 
     hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(global_eos);
     for (i = 0; i < global_npts; i++) {
-        double h = i * hmax / (global_npts - 1);
+        double h = hmax * (0.5 + i) / global_npts;
         double p;
         double epsilon;
         double rho;
