@@ -132,25 +132,29 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos)
 {
+    /* ode integration variables */
     const double epsabs = 0.0, epsrel = 1e-6;
     double y[TOV_ODE_VARS_DIM];
+    double dy[TOV_ODE_VARS_DIM];
     struct tov_ode_vars *vars = tov_ode_vars_cast(y);
     gsl_odeiv_system sys = { tov_ode, NULL, TOV_ODE_VARS_DIM, eos };
     gsl_odeiv_step *step =
         gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_ODE_VARS_DIM);
     gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
     gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_ODE_VARS_DIM);
-    double yy;
-    double c;
 
     /* central values */
-    /* FIXME: update with Lindblom's series expansion */
+    /* note: will be updated with Lindblom's series expansion */
     /* geometrisized units for variables in length (m) */
     double pc = central_pressure_si * LAL_G_C4_SI;
     double ec =
         XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos);
     double hc =
         XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos);
+    double dedp_c =
+        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(pc, eos);
+    double dhdp_c = 1.0 / (ec + pc);
+    double dedh_c = dedp_c / dhdp_c;
     double dh = -1e-3 * hc;
     double h0 = hc + dh;
     double h1 = 0.0 - dh;
@@ -158,13 +162,24 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     double m0 = 4.0 * M_PI * r0 * r0 * r0 * ec / 3.0;
     double H0 = r0 * r0;
     double b0 = 2.0 * r0;
-    double h;
 
+    double yy;
+    double c;
+    double h;
+    size_t i;
+
+    /* series expansion for the initial core */
+
+    /* second factor of Eq. (7) of Lindblom (1992) */
+    r0 *= 1.0 + 0.25 * dh * (ec - 3.0 * pc  - 0.6 * dedh_c) / (ec + 3.0 * pc);
+    /* second factor of Eq. (8) of Lindblom (1992) */
+    m0 *= 1.0 + 0.6 * dh * dedh_c / ec;
+
+    /* perform integration */
     vars->r = r0;
     vars->m = m0;
     vars->H = H0;
     vars->b = b0;
-
     h = h0;
     while (h > h1) {
         int s =
@@ -174,7 +189,10 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
                 "Error encountered in GSL's ODE integrator\n");
     }
 
-    /* FIXME: take one final Euler step to get to surface */
+    /* take one final Euler step to get to surface */
+    tov_ode(h, y, dy, eos);
+    for (i = 0; i < TOV_ODE_VARS_DIM; ++i)
+        y[i] += dy[i] * (0.0 - h1);
 
     /* compute tidal Love number k2 */
     c = vars->m / vars->r;      /* compactness */
