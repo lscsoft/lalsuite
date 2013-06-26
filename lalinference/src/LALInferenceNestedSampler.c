@@ -826,8 +826,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     /* Clean up resume file */
     if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
     {
-      if(access(resumefilename,W_OK)) remove(resumefilename);
-      if(access(outfilebackup,W_OK)) remove(outfilebackup);
+      if(!access(resumefilename,W_OK)) remove(resumefilename);
+      if(!access(outfilebackup,W_OK)) remove(outfilebackup);
     }
     
     /* Free memory */
