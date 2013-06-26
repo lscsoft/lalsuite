@@ -148,6 +148,7 @@ def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, ma
         if coinc_map.coinc_event_id == coinc_event_id]
     sngl_inspirals = [(sngl_inspiral for sngl_inspiral in sngl_inspiral_table
         if sngl_inspiral.event_id == event_id).next() for event_id in event_ids]
+    instruments = set(sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
 
     # Read PSDs.
     if psd_file is None:
@@ -163,6 +164,9 @@ def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, ma
         psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data) for psd in psds]
 
     # TOA+SNR sky localization
-    return ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
+    prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, approximant,
+        amplitude_order, phase_order, f_low,
         min_distance, max_distance, prior_distance_power,
         reference_frequency=reference_frequency, nside=nside, psds=psds)
+
+    return prob, epoch, elapsed_time, instruments

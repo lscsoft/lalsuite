@@ -42,7 +42,6 @@ from lalinspiral.sbank.waveforms import waveforms
 from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
 
 import lal
-lal.cvar.lalDebugLevel = 33
 
 usage = """
 

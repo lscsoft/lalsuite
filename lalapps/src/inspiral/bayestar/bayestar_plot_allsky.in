@@ -30,16 +30,16 @@ parser = OptionParser(
     usage = "%prog [options] [INPUT]",
     option_list = [
         Option("-o", "--output", metavar="FILE.{pdf,png}",
-            help="name of output file (default=plot to screen)"),
+            help="name of output file [default: plot to screen]"),
         Option("--colormap", default="jet",
-            help="name of matplotlib colormap (default=jet)"),
+            help="name of matplotlib colormap [default: %default]"),
         Option("--figure-width", metavar="INCHES", type=float, default=8.,
-            help="width of figure in inches (default=8)"),
+            help="width of figure in inches [default: %default]"),
         Option("--figure-height", metavar="INCHES", type=float, default=6.,
-            help="height of figure in inches (default=6)"),
+            help="height of figure in inches [default: %default]"),
         Option("--contour", metavar="PERCENT", type=float, action="append",
             default=[], help="plot contour enclosing this percentage of"
-            + " probability mass (may be specified multiple times; default=none)")
+            + " probability mass [may be specified multiple times, default: none]")
     ]
 )
 opts, args = parser.parse_args()

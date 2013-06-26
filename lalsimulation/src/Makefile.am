@@ -9,11 +9,19 @@ NOISEPSDFILES = \
 	LIGO-T0900288-v3-ZERO_DET_high_P.txt \
 	LIGO-T0900288-v3-ZERO_DET_low_P.txt
 
+EOSDATAFILES = \
+	LALSimNeutronStarEOS_AP4.dat \
+	LALSimNeutronStarEOS_FPS.dat \
+	LALSimNeutronStarEOS_SLY4.dat
+	
+
 bin_PROGRAMS = \
 	lalsim-bh-qnmode \
 	lalsim-bh-ringdown \
 	lalsim-bh-sphwf \
 	lalsim-detector-noise \
+	lalsim-ns-eos-table \
+	lalsim-ns-mass-radius \
 	lalsim-sgwb \
 	lalsim-unicorn
 
@@ -27,6 +35,7 @@ lalsimulationinclude_HEADERS = \
 	LALSimIMR.h \
 	LALSimInspiral.h \
 	LALSimulation.h \
+	LALSimNeutronStar.h \
 	LALSimNoise.h \
 	LALSimReadData.h \
 	LALSimSGWB.h \
@@ -51,7 +60,9 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBAuxFuncs.c \
 	LALSimIMRSpinEOBFactorizedWaveform.c \
 	LALSimIMRSpinEOBFactorizedFlux.c \
-	LALSimIMREOBFactorizedFlux.c
+	LALSimIMREOBFactorizedFlux.c \
+	LALSimNeutronStarEOSPiecewisePolytrope.c \
+	LALSimNeutronStarEOSTabular.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
@@ -84,6 +95,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralWaveformTaper.c \
 	LALSimulation.c \
 	LALSimulationVCSInfo.c \
+	LALSimNeutronStarEOS.c \
+	LALSimNeutronStarTOV.c \
 	LALSimNoisePSD.c \
 	LALSimNoise.c \
 	LALSimReadData.c \
@@ -98,6 +111,8 @@ liblalsimulation_la_LDFLAGS = -version-info $(LIBVERSION)
 lalsim_bh_qnmode_SOURCES = bh_qnmode.c
 lalsim_bh_sphwf_SOURCES = bh_sphwf.c
 lalsim_bh_ringdown_SOURCES = bh_ringdown.c
+lalsim_ns_eos_table_SOURCES = ns-eos-table.c
+lalsim_ns_mass_radius_SOURCES = ns-mass-radius.c
 lalsim_sgwb_SOURCES = sgwb.c
 lalsim_unicorn_SOURCES = unicorn.c
 lalsim_detector_noise_SOURCES = detector_noise.c
@@ -107,7 +122,7 @@ MOSTLYCLEANFILES = \
 	lalsimulation-user-env.sh \
 	lalsimulation-user-env.csh
 
-pkgdata_DATA = $(NOISEPSDFILES)
+pkgdata_DATA = $(NOISEPSDFILES) $(EOSDATAFILES)
 
 sysconf_DATA = \
 	lalsimulation-user-env.sh \

@@ -65,6 +65,7 @@ import os
 import shutil
 import tempfile
 import healpy as hp
+from glue.ligolw import lsctables
 from healpy.fitsfunc import getformat, pixelfunc, standard_column_names, pf, np
 import lal
 
@@ -214,11 +215,12 @@ def gps_to_mjd(gps_time):
     """Convert a floating-point GPS time in seconds to an ISO 8601 date string."""
     gps_seconds_fraction, gps_seconds = math.modf(gps_time)
     jd = lal.JulianDay(lal.GPSToUTC(int(gps_seconds)))
-    return jd - lal.XLAL_MJD_REF + gps_seconds_fraction
+    return jd - lal.XLAL_MJD_REF + gps_seconds_fraction / 86400.
 
 
 def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
-    gps_time=None, gps_creation_time=None, creator=None, runtime=None):
+    gps_time=None, gps_creation_time=None, creator=None, origin=None,
+    runtime=None):
     """Write a gravitational-wave sky map to a file, populating the header
     with optional metadata."""
 
@@ -237,8 +239,10 @@ def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
             'URL of this event'))
 
     if instruments is not None:
+        if not isinstance(instruments, basestring):
+            instruments = str(lsctables.ifos_from_instrument_set(instruments))
         extra_metadata.append(('INSTRUME', instruments,
-            'Gravitational-wave instruments contributing data to this event'))
+            'Instruments that triggered this event'))
 
     if gps_time is not None:
         extra_metadata.append(('DATE-OBS', gps_to_iso8601(gps_time),
@@ -254,6 +258,10 @@ def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
     if creator is not None:
         extra_metadata.append(('CREATOR', creator,
             'Program that created this file'))
+
+    if origin is not None:
+        extra_metadata.append(('ORIGIN', origin,
+            'Organization responsible for this FITS file'))
 
     if runtime is not None:
         extra_metadata.append(('RUNTIME', runtime,
@@ -288,6 +296,7 @@ def read_sky_map(filename):
     except KeyError:
         pass
     else:
+        value = set(str(ifo) for ifo in lsctables.instrument_set_from_ifos(value))
         metadata['instruments'] = value
 
     try:
@@ -312,6 +321,13 @@ def read_sky_map(filename):
         metadata['creator'] = value
 
     try:
+        value = header['ORIGIN']
+    except KeyError:
+        pass
+    else:
+        metadata['origin'] = value
+
+    try:
         value = header['RUNTIME']
     except KeyError:
         pass
@@ -334,6 +350,7 @@ if __name__ == '__main__':
         gps_time=1049492268.25,
         creator=os.path.basename(__file__),
         url='http://www.youtube.com/watch?v=0ccKPSVQcFk',
+        origin='LIGO Scientific Collaboration',
         runtime=21.5)
 
     print read_sky_map('test.fits.gz')

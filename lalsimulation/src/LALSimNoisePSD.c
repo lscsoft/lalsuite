@@ -95,7 +95,7 @@ double XLALSimNoisePSDSeismic(
 	double A_pend   = pow(f_pend / f, 2);
 	double A_stack  = pow(f_stack / f, 2 * n_stack);
 	double S_ground = 1e-18; /* m^2 / Hz */
-	
+
 	if (f > 10.0)
 		S_ground *= pow(10.0 / f, 4);
 
@@ -336,13 +336,13 @@ double XLALSimNoisePSDiLIGOThermal(double f /**< frequency (Hz) */)
 	double susp;
 	double coat;
 	susp = XLALSimNoisePSDSuspTherm(f,
-			LAL_ILIGO_ARMLENGTH_SI, 
+			LAL_ILIGO_ARMLENGTH_SI,
 			LAL_ILIGO_MIRROR_MASS_SI,
 			LAL_ILIGO_TEMPERATURE_SI,
 			LAL_ILIGO_THERMAL_SUSP_FREQ_SI,
 			LAL_ILIGO_THERMAL_SUSP_QUAL);
 	coat = XLALSimNoisePSDMirrorTherm(f,
-			LAL_ILIGO_ARMLENGTH_SI, 
+			LAL_ILIGO_ARMLENGTH_SI,
 			LAL_ILIGO_MIRROR_MASS_SI,
 			LAL_ILIGO_TEMPERATURE_SI,
 			LAL_ILIGO_THERMAL_COAT_FREQ_SI,
@@ -475,6 +475,21 @@ double XLALSimNoisePSDGEO(double f /**< frequency (Hz) */)
   return 1e-46*(seismic + thermal + shot);
 }
 
+
+/** Provides a GEO-HF noise power spectrum based on a fit to Figure 6
+ * from \ref Grote2010.
+ *
+ * The fit is good between 50Hz to 8kHz and errors between the analytic
+ * fit given and the <a href="https://intranet.aei.uni-hannover.de/geo600/geohflogbook.nsf/7e8722dffa24dea0c1256de900406c84/4837a612ac990060c12575ce004e70fd?OpenDocument">estimated curve</a> are less than 1%.
+ */
+double XLALSimNoisePSDGEOHF(double f /**< frequency (Hz) */)
+{
+  REAL8 f2 = f*f;
+
+  return 7.18e-46*(1. + (f2/(1059.*1059.))) + (4.90e-41/f2) + (8.91e-43/f) + (1.6e-17/pow(f, 16.));
+}
+
+
 /** Provides a TAMA300 noise power spectrum based on that from Table IV of
  * \ref dis2001.
  *
@@ -510,13 +525,13 @@ double XLALSimNoisePSDaLIGOThermal(double f /**< frequency (Hz) */)
 	double susp;
 	double coat;
 	susp = XLALSimNoisePSDSuspTherm(f,
-			LAL_ALIGO_ARMLENGTH_SI, 
+			LAL_ALIGO_ARMLENGTH_SI,
 			LAL_ALIGO_MIRROR_MASS_SI,
 			LAL_ALIGO_TEMPERATURE_SI,
 			LAL_ALIGO_THERMAL_SUSP_FREQ_SI,
 			LAL_ALIGO_THERMAL_SUSP_QUAL);
 	coat = XLALSimNoisePSDMirrorTherm(f,
-			LAL_ALIGO_ARMLENGTH_SI, 
+			LAL_ALIGO_ARMLENGTH_SI,
 			LAL_ALIGO_MIRROR_MASS_SI,
 			LAL_ALIGO_TEMPERATURE_SI,
 			LAL_ALIGO_THERMAL_COAT_FREQ_SI,
@@ -826,7 +841,7 @@ double XLALSimNoisePSDaLIGOZeroDetHighPower(double f /**< frequency (Hz) */)
 
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to optimize sensitivity to NS-NS inspirals.
  *
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
@@ -848,7 +863,7 @@ double XLALSimNoisePSDaLIGONSNSOpt(double f /**< frequency (Hz) */)
 
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to optimize sensitivity to 30+30 solar mass binary
  * black holes with fixed signal recycling cavity detuning of 20 degrees.
  *
@@ -871,7 +886,7 @@ double XLALSimNoisePSDaLIGOBHBH20Deg(double f /**< frequency (Hz) */)
 
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to narrow-band high-frequency sensitivity around
  * 1 kHz.
  *
@@ -951,7 +966,7 @@ int XLALSimNoisePSD(
 	/* set DC and Nyquist to zero */
 	/* note: assumes last element is Nyquist */
 	psd->data->data[0] = psd->data->data[psd->data->length - 1] = 0.0;
-	
+
 	/* determine low frequency cutoff */
 	kmin = flow / psd->deltaF;
 
@@ -1143,14 +1158,14 @@ int test_iligo_psd(void)
 				4);
 
 		S_susp = XLALSimNoisePSDSuspTherm(f,
-				LAL_ILIGO_ARMLENGTH_SI, 
+				LAL_ILIGO_ARMLENGTH_SI,
 				LAL_ILIGO_MIRROR_MASS_SI,
 				LAL_ILIGO_TEMPERATURE_SI,
 				LAL_ILIGO_THERMAL_SUSP_FREQ_SI,
 				LAL_ILIGO_THERMAL_SUSP_QUAL);
 
 		S_coat = XLALSimNoisePSDMirrorTherm(f,
-				LAL_ILIGO_ARMLENGTH_SI, 
+				LAL_ILIGO_ARMLENGTH_SI,
 				LAL_ILIGO_MIRROR_MASS_SI,
 				LAL_ILIGO_TEMPERATURE_SI,
 				LAL_ILIGO_THERMAL_COAT_FREQ_SI,

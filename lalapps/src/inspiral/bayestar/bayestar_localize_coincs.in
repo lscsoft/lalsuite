@@ -49,21 +49,21 @@ parser = OptionParser(
     usage = '%prog [options] --prior-distance-power -1|2 [INPUT.xml[.gz]]',
     option_list = [
         Option("--nside", "-n", type=int, default=-1,
-            help="HEALPix lateral resolution (default=auto)"),
+            help="HEALPix lateral resolution [default: auto]"),
         Option("--f-low", type=float, metavar="Hz",
-            help="Low frequency cutoff (required)"),
+            help="Low frequency cutoff [required]"),
         Option("--waveform",
-            help="Waveform to use for determining parameter estimation accuracy from signal model (required)"),
+            help="Waveform to use for determining parameter estimation accuracy from signal model [required]"),
         Option("--min-distance", type=float, metavar="Mpc",
-            help="Minimum distance of prior in megaparsec (default=infer from effective distance)"),
+            help="Minimum distance of prior in megaparsec [default: infer from effective distance]"),
         Option("--max-distance", type=float, metavar="Mpc",
-            help="Maximum distance of prior in megaparsecs (default=infer from effective distance)"),
+            help="Maximum distance of prior in megaparsecs [default: infer from effective distance]"),
         Option("--prior-distance-power", type=int, metavar="-1|2",
-            help="Distance prior (required, -1 for uniform in log, 2 for uniform in distance)"),
+            help="Distance prior [required, -1 for uniform in log, 2 for uniform in distance]"),
         Option("--reference-frequency", type=float, metavar="Hz",
-            help="Shift trigger times from coalescence time to time when GW inspiral has this frequency (default=do not use)"),
+            help="Shift trigger times from coalescence time to time when GW inspiral has this frequency [default: do not use]"),
         Option("--keep-going", "-k", default=False, action="store_true",
-            help="Keep processing events if a sky map fails to converge (default=False).")
+            help="Keep processing events if a sky map fails to converge [default: no].")
     ]
 )
 opts, args = parser.parse_args()
@@ -120,6 +120,8 @@ count_sky_maps_failed = 0
 # Loop over all coinc_event <-> sim_inspiral coincs.
 for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
+    instruments = set(sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
+
     # Look up PSDs
     log.info('%s:reading PSDs', coinc.coinc_event_id)
     psds = tuple(
@@ -145,7 +147,8 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
             log.info("%s:method '%s':saving sky map", coinc.coinc_event_id, method)
             fits.write_sky_map('%s.%s.fits.gz' % (int(coinc.coinc_event_id), method),
                 sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
-                creator=parser.prog, runtime=elapsed_time)
+                creator=parser.get_prog_name(), runtime=elapsed_time,
+                instruments=instruments)
 
 
 if count_sky_maps_failed > 0:
