@@ -18,9 +18,10 @@
  */
 
 #include <math.h>
-#include <gsl/gsl_integration.h>
-#include <gsl/gsl_odeiv2.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_odeiv.h>
 
+#include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALSimNeutronStar.h>
 
@@ -134,7 +135,11 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     const double epsabs = 0.0, epsrel = 1e-6;
     double y[TOV_ODE_VARS_DIM];
     struct tov_ode_vars *vars = tov_ode_vars_cast(y);
-    gsl_odeiv2_system sys = { tov_ode, NULL, TOV_ODE_VARS_DIM, eos };
+    gsl_odeiv_system sys = { tov_ode, NULL, TOV_ODE_VARS_DIM, eos };
+    gsl_odeiv_step *step =
+        gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_ODE_VARS_DIM);
+    gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
+    gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_ODE_VARS_DIM);
     double yy;
     double c;
 
@@ -148,15 +153,12 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
         XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos);
     double dh = -1e-3 * hc;
     double h0 = hc + dh;
+    double h1 = 0.0 - dh;
     double r0 = sqrt(-3.0 * dh / (2.0 * M_PI * (ec + 3.0 * pc)));
     double m0 = 4.0 * M_PI * r0 * r0 * r0 * ec / 3.0;
     double H0 = r0 * r0;
     double b0 = 2.0 * r0;
     double h;
-
-    gsl_odeiv2_driver *d =
-        gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd, dh, epsabs,
-        epsrel);
 
     vars->r = r0;
     vars->m = m0;
@@ -164,7 +166,13 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     vars->b = b0;
 
     h = h0;
-    gsl_odeiv2_driver_apply(d, &h, 0.0 - dh, y);
+    while (h > h1) {
+        int s =
+            gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+        if (s != GSL_SUCCESS)
+            XLAL_ERROR(XLAL_EERR,
+                "Error encountered in GSL's ODE integrator\n");
+    }
 
     /* FIXME: take one final Euler step to get to surface */
 
@@ -177,9 +185,11 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     *mass = vars->m * LAL_MSUN_SI / LAL_MRSUN_SI;
     *love_number_k2 = tidal_Love_number_k2(c, yy);
 
-    gsl_odeiv2_driver_free(d);
+    /* free ode memory */
+    gsl_odeiv_evolve_free(evolv);
+    gsl_odeiv_control_free(ctrl);
+    gsl_odeiv_step_free(step);
     return 0;
 }
-
 
 /** @} */
