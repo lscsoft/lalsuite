@@ -435,6 +435,10 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
             "Adiabitic indices gamma1=%g, gamma2=%g, and gamma3=%g "
             "must all be greater than 1", gamma1, gamma2, gamma3);
 
+    /* Calculate the variable joining density rho0 between the high and low
+     * density EOS */
+    rho0 = pow(kLow[3] / k1, 1.0 / (gamma1 - gammaLow[3]));
+
     /* Transition densities between the 3 high-density polytropes */
     rho1 = pow(10, 17.7);
     rho2 = pow(10, 18.0);
@@ -446,10 +450,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
     k1 = p1 / pow(rho1, gamma1);
     k2 = p1 / pow(rho1, gamma2);
     k3 = k2 * pow(rho2, gamma2 - gamma3);
-
-    /* Calculate the variable joining density rho0 between the high and low
-     * density EOS */
-    rho0 = pow(kLow[3] / k1, 1.0 / (gamma1 - gammaLow[3]));
 
     p1min = kLow[3] * pow(rho1, gammaLow[3]);
     if (logp1_si < log10(p1min) || logp1_si > 34.5)
