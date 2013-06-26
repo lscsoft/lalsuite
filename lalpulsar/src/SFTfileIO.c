@@ -126,6 +126,10 @@ static LALStatus empty_status;
 const SFTConstraints empty_SFTConstraints;
 const SFTCatalog empty_SFTCatalog;
 
+static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
+static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
+
+
 /*---------- internal prototypes ----------*/
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
@@ -739,6 +743,10 @@ typedef struct {
  *
  * Note 3: This function has the capability to read sequences of (v2-)SFT segments and
  * putting them together to single SFTs while reading.
+ *
+ * Note 4: The 'fudge region' allowing for numerical noise is fudge= 10*LAL_REAL8_EPS ~2e-15
+ * relative deviation: ie if the SFT contains a bin at 'fi', then we consider for example
+ * "fMin == fi" if  fabs(fi - fMin)/fi < fudge.
 */
 SFTVector*
 XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
@@ -812,11 +820,11 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   if (fMin < 0)
     firstbin = minbin;
   else
-    firstbin = floor (fMin / deltaF);
+    firstbin = (UINT4) floor (fMin / deltaF * fudge_up);	// round *down*, but allow for 10*eps 'fudge'
   if (fMax < 0)
     lastbin = maxbin;
   else {
-    lastbin = ceil (fMax / deltaF);
+    lastbin = (UINT4) ceil (fMax / deltaF * fudge_down);	// round *up*, but allow for 10*eps fudge
     if((lastbin == 0) && (fMax != 0)) {
       XLALPrintError("ERROR: last bin to read is 0 (fMax: %f, deltaF: %f)\n", fMax, deltaF);
       XLALLOADSFTSERROR(XLAL_EINVAL);
