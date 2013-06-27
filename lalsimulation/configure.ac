@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalsimulation],[0.7.0.1],[lal-discuss@ligo.org])
+AC_INIT([lalsimulation],[1.0.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALSimulationConfig.h])
 AC_CONFIG_SRCDIR([src/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
