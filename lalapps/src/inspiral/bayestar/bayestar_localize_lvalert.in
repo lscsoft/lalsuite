@@ -164,9 +164,6 @@ if alert_type == 'new':
             log.info('uploaded sky map: <a href="https://ldas-jobs.phys.uwm.edu/gracedb/data/%s/private/%s">%s</a>', graceid, permalink_filename, permalink_filename)
         finally:
             shutil.rmtree(fitsdir)
-
-        # write EM_READY label
-        gracedb.writeLabel(graceid, "EM_READY")
     except:
         log.exception("sky localization failed")
         raise
