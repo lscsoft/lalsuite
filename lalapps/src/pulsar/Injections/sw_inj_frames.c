@@ -361,7 +361,22 @@ int main(int argc, char **argv)
 	}
 
 	if ( XLALFrStreamGetREAL8TimeSeries( gwfseries, gwffile ) != XLAL_SUCCESS ) {
-	  XLAL_ERROR ( XLAL_EFUNC );
+	  /*Writing to failed file*/
+	  FILE *frames;
+	  char framefilename[256];
+	  sprintf(framefilename, "%s/%s/failed_frames.txt", uvar->outputdir, uvar->logDir);
+          if (( frames = fopen( framefilename, "a" )) == NULL ) {
+            fprintf (stderr, "Error opening file %s! \n", framefilename );
+            return 0;
+          }
+          else {
+            fprintf (frames, "%s\n", gwfnamelist[k]->d_name);
+	    fclose(frames);
+          }
+          
+          /* </failed file> */
+          XLALDestroyREAL8TimeSeries( gwfseries );
+	  continue; /*don't exit program if .gwf file fails, continue through*/
 	}
 
 	/* define output .gwf file */
