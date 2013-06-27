@@ -1,7 +1,7 @@
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
-%define _pkgpythondir %{_prefix}/lib/python2.6/site-packages/@PACKAGE@
+%define _pkgpythondir %{_prefix}/lib64/python2.6/site-packages/@PACKAGE@
 %define _pkgpyexecdir %{_libdir}/python2.6/site-packages/@PACKAGE@
 
 Name: @PACKAGE@
