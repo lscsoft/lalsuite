@@ -1,3 +1,8 @@
+ligo-gracedb (1.12-1) unstable; urgency=low
+  * Changed client to use REST API exclusively.
+  * Extended REST API to include all API functionality.
+ -- Branson Stephens <branson.stephens@ligo.org>  Thu, 27 Jun 2013 14:12:19 -0500
+
 ligo-gracedb (1.11-2) unstable; urgency=low
 
   * Re-add "--with python2" to match other ligo-* python modules
