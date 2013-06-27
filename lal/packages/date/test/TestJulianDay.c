@@ -96,10 +96,10 @@ UTC 02:37:54
  * pass 0 for expected_julian_day or expected_modified_julian_day to disable testing
  */
 
-static int test(const struct tm *utc, double expected_julian_day, double expected_modified_julian_day, int line)
+static int test(const struct tm *utc, double expected_julian_day, int expected_modified_julian_day, int line)
 {
 	double julian_day;
-	double modified_julian_day;
+	int modified_julian_day;
 	int result = 0;
 
 	if(lalDebugLevel)
@@ -114,11 +114,11 @@ static int test(const struct tm *utc, double expected_julian_day, double expecte
 	} else if(lalDebugLevel) {
 		fprintf(stderr, "XLALJulianDay() returned %.16g\n", julian_day);
 	}
-	if(expected_modified_julian_day && (modified_julian_day != expected_modified_julian_day)) {
-		fprintf(stderr, "XLALModifiedJulianDay() failed (line %d):  expected %.17g got %.17g\n", line, expected_modified_julian_day, modified_julian_day);
+	if(expected_modified_julian_day && (abs(modified_julian_day) != expected_modified_julian_day)) {
+		fprintf(stderr, "XLALModifiedJulianDay() failed (line %d):  expected %d got %d\n", line, expected_modified_julian_day, modified_julian_day);
 		result = -1;
 	} else if(lalDebugLevel) {
-		fprintf(stderr, "XLALModifiedJulianDay() returned %.17g\n", modified_julian_day);
+		fprintf(stderr, "XLALModifiedJulianDay() returned %d\n", modified_julian_day);
 	}
 
 	return result;
@@ -164,7 +164,7 @@ int main(void)
 	utc.tm_yday = 0;
 	utc.tm_isdst = 0;
 
-	if(test(&utc, 2451545.0, 51544.0, __LINE__))
+	if(test(&utc, 2451545.0, 51544, __LINE__))
 		return 1;
 
 	utc.tm_sec = 0;
@@ -177,7 +177,7 @@ int main(void)
 	utc.tm_yday = 0;
 	utc.tm_isdst = 0;
 
-	if(test(&utc, 2451544.9583333333, 51544.0, __LINE__))
+	if(test(&utc, 2451544.9583333333, 51544, __LINE__))
 		return 1;
 
 	/* */
@@ -194,8 +194,9 @@ int main(void)
 		utc.tm_isdst = 0;
 
 		/* here, we EXPECT an error */
-		if(test(&utc, XLAL_REAL8_FAIL_NAN, XLAL_REAL8_FAIL_NAN, __LINE__))
+		if(!test(&utc, XLAL_REAL8_FAIL_NAN, XLAL_FAILURE, __LINE__))
 			return 1;
+		XLALClearErrno();
 
 	}
 
@@ -213,7 +214,7 @@ int main(void)
 	utc.tm_yday = 0;
 	utc.tm_isdst = 0;
 
-	if(test(&utc, 2449672.5, 49672.0, __LINE__))
+	if(test(&utc, 2449672.5, 49672, __LINE__))
 		return 1;
 
 	/* */
@@ -228,7 +229,7 @@ int main(void)
 	utc.tm_yday = 0;
 	utc.tm_isdst = 1;
 
-	if(test(&utc, 2452044.6096527777, 52044.0, __LINE__))
+	if(test(&utc, 2452044.6096527777, 52044, __LINE__))
 		return 1;
 
 	return SUCCESS;
