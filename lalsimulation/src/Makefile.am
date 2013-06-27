@@ -21,6 +21,7 @@ bin_PROGRAMS = \
 	lalsim-detector-noise \
 	lalsim-ns-eos-table \
 	lalsim-ns-mass-radius \
+	lalsim-ns-params \
 	lalsim-sgwb \
 	lalsim-unicorn
 
@@ -95,6 +96,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimulation.c \
 	LALSimulationVCSInfo.c \
 	LALSimNeutronStarEOS.c \
+	LALSimNeutronStarFamily.c \
 	LALSimNeutronStarTOV.c \
 	LALSimNoisePSD.c \
 	LALSimNoise.c \
@@ -112,6 +114,7 @@ lalsim_bh_sphwf_SOURCES = bh_sphwf.c
 lalsim_bh_ringdown_SOURCES = bh_ringdown.c
 lalsim_ns_eos_table_SOURCES = ns-eos-table.c
 lalsim_ns_mass_radius_SOURCES = ns-mass-radius.c
+lalsim_ns_params_SOURCES = ns-params.c
 lalsim_sgwb_SOURCES = sgwb.c
 lalsim_unicorn_SOURCES = unicorn.c
 lalsim_detector_noise_SOURCES = detector_noise.c

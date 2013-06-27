@@ -16,6 +16,16 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+/**
+ * @addtogroup LALSimNeutronStarEOS_c
+ * @{
+ */
+/**
+ * @name Creation routines for piecewise polytrope equations of state
+ * @{
+ */
+
+/** @cond */
 
 /* Store data for generating polytropic EOS so you don't have to reevaluate it
  * every time. */
@@ -315,6 +325,8 @@ print_piecewise_polytrope_data(LALSimNeutronStarEOSDataPiecewisePolytrope *
 }
 #endif
 
+/** @endcond */
+
 /* GLOBAL FUNCTIONS */
 
 /**
@@ -339,6 +351,9 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
 
     eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_PIECEWISE_POLYTROPE;
     eos->data.piecewisePolytrope = data;
+    snprintf(eos->name, sizeof(eos->name),
+	"Gamma=%g Polytrope (p=%g Pa @ rho=%g kg/m^3)", Gamma,
+	reference_pressure_si, reference_density_si);
 
     /* setup function pointers */
     eos->free = eos_free_piecewise_polytrope;
@@ -463,6 +478,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
 
     eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_PIECEWISE_POLYTROPE;
     eos->data.piecewisePolytrope = data;
+    snprintf(eos->name, sizeof(eos->name), "4-Piece Polytrope (p1=10^%g Pa,"
+	"Gamma1=%g,Gamma2=%g,Gamma3=%g)", logp1_si, gamma1, gamma2, gamma3);
 
     /* setup function pointers */
     eos->free = eos_free_piecewise_polytrope;
@@ -612,3 +629,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
 
     return eos;
 }
+
+/** @} */
+/** @} */

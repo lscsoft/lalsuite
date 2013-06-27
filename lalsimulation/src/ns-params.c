@@ -33,120 +33,37 @@ int output(const char *fmt, double c, double m, double r, double k2);
 /* global variables  */
 
 LALSimNeutronStarEOS *global_eos = NULL;
-
-const char *const default_fmt = "%r\\t%m\\n";
-const char *global_fmt;
-
-const long default_npts = 100;
-long global_npts;
+double global_mass;
 
 int main(int argc, char *argv[])
 {
-    const double logpmin = 75.5;
-    double logpmax;
-    double dlogp;
-    long i;
-
+    LALSimNeutronStarFamily *fam;
     XLALSetErrorHandler(XLALAbortErrorHandler);
 
-    global_npts = default_npts;
-    global_fmt = default_fmt;
     parseargs(argc, argv);
 
-    logpmax = log(XLALSimNeutronStarEOSMaxPressure(global_eos));
-    dlogp = (logpmax - logpmin) / global_npts;
-
-    for (i = 0; i < global_npts; ++i) {
-        double pc = exp(logpmin + (0.5 + i) * dlogp);
-        double c, m, r, k2;
-        XLALSimNeutronStarTOVODEIntegrate(&r, &m, &k2, pc, global_eos);
-        /* convert units */
-        m /= LAL_MSUN_SI;       /* mass in solar masses */
-        c = m * LAL_MRSUN_SI / r;       /* compactness (dimensionless) */
-        r /= 1000.0;    /* radius in km */
-        output(global_fmt, c, m, r, k2);
+    fam = XLALCreateSimNeutronStarFamily(global_eos);
+    printf("Equation of State: %s\n", XLALSimNeutronStarEOSName(global_eos));
+    printf("Maximum Mass (solar) = %g\n",
+        XLALSimNeutronStarMaximumMass(fam) / LAL_MSUN_SI);
+    if (global_mass != 0.0) {
+        double m = global_mass * LAL_MSUN_SI;
+        double p = XLALSimNeutronStarCentralPressure(m, fam);
+        double r = XLALSimNeutronStarRadius(m, fam);
+        double k = XLALSimNeutronStarLoveNumberK2(m, fam);
+        double c = global_mass * LAL_MRSUN_SI / r;
+        double l = (2.0 / 3.0) * k / pow(c, 5);
+        printf("Parameters for Neutron Star Mass (solar) = %g\n", global_mass);
+        printf("- Central Pressure (Pa) = %g\n", p);
+        printf("- Radius (km) = %g\n", r / 1000.0);
+        printf("- Compactness (dimensionless) = %g\n", c);
+        printf("- Love Number (dimensionless) = %g\n", k);
+        printf("- Tidal Parameter (dimensionless) = %g\n", l);
     }
 
+    XLALDestroySimNeutronStarFamily(fam);
     XLALDestroySimNeutronStarEOS(global_eos);
     LALCheckMemoryLeaks();
-    return 0;
-}
-
-int output(const char *fmt, double c, double m, double r, double k2)
-{
-    int i;
-    for (i = 0; fmt[i]; ++i) {
-        switch (fmt[i]) {
-        case '%':      /* conversion character */
-            switch (fmt[i + 1]) {
-            case '%':
-                fputc('%', stdout);
-                break;
-            case 'c':
-                fprintf(stdout, "%e", c);
-                break;
-            case 'k':
-                fprintf(stdout, "%e", k2);
-                break;
-            case 'l':
-                fprintf(stdout, "%e", (2.0 / 3.0) * k2 / pow(c, 5));
-                break;
-            case 'm':
-                fprintf(stdout, "%e", m);
-                break;
-            case 'r':
-                fprintf(stdout, "%e", r);
-                break;
-            default:
-                fprintf(stderr,
-                    "unrecognized conversion %%%c in output format\n",
-                    fmt[i + 1]);
-                exit(1);
-                break;
-            }
-            ++i;
-            break;
-        case '\\':     /* escaped character */
-            switch (fmt[i + 1]) {
-            case '\\':
-                fputc('\\', stdout);
-                break;
-            case 'a':
-                fputc('\a', stdout);
-                break;
-            case 'b':
-                fputc('\b', stdout);
-                break;
-            case 'f':
-                fputc('\f', stdout);
-                break;
-            case 'n':
-                fputc('\n', stdout);
-                break;
-            case 'r':
-                fputc('\r', stdout);
-                break;
-            case 't':
-                fputc('\t', stdout);
-                break;
-            case 'v':
-                fputc('\v', stdout);
-                break;
-            case '\0': /* impossible! */
-                fprintf(stderr,
-                    "impossible escaped NUL character in format\n");
-                exit(1);
-            default:
-                fputc(fmt[i + 1], stdout);
-                break;
-            }
-            ++i;
-            break;
-        default:
-            fputc(fmt[i], stdout);
-            break;
-        }
-    }
     return 0;
 }
 
@@ -154,10 +71,9 @@ int parseargs(int argc, char **argv)
 {
     struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
+        {"mass", required_argument, 0, 'm'},
         {"eos-file", required_argument, 0, 'f'},
         {"eos-name", required_argument, 0, 'n'},
-        {"format", required_argument, 0, 'F'},
-        {"npts", required_argument, 0, 'N'},
         {"polytrope", no_argument, 0, 'P'},
         {"gamma", required_argument, 0, 'G'},
         {"pressure", required_argument, 0, 'p'},
@@ -169,7 +85,7 @@ int parseargs(int argc, char **argv)
         {"gamma3", required_argument, 0, '3'},
         {0, 0, 0, 0}
     };
-    char args[] = "hf:n:F:N:PG:p:r:Qq:1:2:3:";
+    char args[] = "hm:f:n:PG:p:r:Qq:1:2:3:";
 
     /* quantities for 1-piece polytrope: */
     int polytropeFlag = 0;
@@ -199,21 +115,14 @@ int parseargs(int argc, char **argv)
         case 'h':      /* help */
             usage(argv[0]);
             exit(0);
+        case 'm':      /* mass */
+            global_mass = atof(optarg);
+            break;
         case 'f':      /* eos-file */
             global_eos = XLALSimNeutronStarEOSFromFile(optarg);
             break;
         case 'n':      /* eos-name */
             global_eos = XLALSimNeutronStarEOSByName(optarg);
-            break;
-        case 'F':      /* format */
-            global_fmt = optarg;
-            break;
-        case 'N':      /* npts */
-            global_npts = strtol(optarg, NULL, 0);
-            if (global_npts < 1) {
-                fprintf(stderr, "invalid number of points\n");
-                exit(1);
-            }
             break;
 
             /* using a 1-piece polytrope */
@@ -287,6 +196,8 @@ int usage(const char *program)
     fprintf(stderr,
         "\t-h, --help                   \tprint this message and exit\n");
     fprintf(stderr,
+        "\t-m MASS, --mass=MASS         \tparameters of a neutron star of mass MASS (solar)\n");
+    fprintf(stderr,
         "\t-f FILE, --eos-file=FILE     \tuse EOS with from data filename FILE\n");
     fprintf(stderr,
         "\t-n NAME, --eos-name=NAME     \tuse EOS with name NAME\n");
@@ -309,20 +220,5 @@ int usage(const char *program)
         "\t-2 Gamma_2, --gamma2=Gamma_2     \tadiabatic index 10^17.7--10^18 kg/m^3\n");
     fprintf(stderr,
         "\t-3 Gamma_3, --gamma3=Gamma_3     \tadiabatic index >10^18.0 kg/m^3\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr,
-        "\t-N NPTS, --npts=NPTS         \toutput NPTS points [%ld]\n",
-        default_npts);
-    fprintf(stderr,
-        "\t-F FORMAT, --format=FORMAT   \toutput format FORMAT [\"%s\"]\n",
-        default_fmt);
-    fprintf(stderr, "Format string conversions:\n");
-    fprintf(stderr,
-        "\t%%c\t is replaced by the dimensionless compactness M/R\n");
-    fprintf(stderr,
-        "\t%%l\t is replaced by the dimensionless tidal parameter\n");
-    fprintf(stderr, "\t%%k\t is replaced by the tidal love number k2\n");
-    fprintf(stderr, "\t%%m\t is replaced by the mass in solar masses\n");
-    fprintf(stderr, "\t%%r\t is replaced by the radius in kilometers\n");
     return 0;
 }

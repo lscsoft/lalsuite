@@ -16,6 +16,12 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+/**
+ * @author Jolien Creighton, Benjamin Lackey
+ * @addtogroup LALSimNeutronStarTOV_c
+ * @brief Provides routines for solving the Tolman-Oppenheimer-Volkov equation.
+ * @{
+ */
 
 #include <math.h>
 #include <gsl/gsl_errno.h>
@@ -25,10 +31,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALSimNeutronStar.h>
 
-/**
- * @name Neutron Star Structure Integration
- * @{
- */
+/** @cond */
 
 /* Implements Eq. (50) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).
  * See also Eq. (14) of Hinderer et al. Phys. Rev. D 81 123016 (2010). */
@@ -112,6 +115,8 @@ static int tov_ode(double h, const double *y, double *dy, void *params)
     derivs->b = db;
     return 0;
 }
+
+/** @endcond */
 
 /**
  * @brief Integrates the Tolman-Oppenheimer-Volkov stellar structure equations.

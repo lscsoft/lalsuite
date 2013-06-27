@@ -16,6 +16,12 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+/**
+ * @author Jolien Creighton, Benjamin Lackey
+ * @addtogroup LALSimNeutronStarEOS_c
+ * @brief Provides routines for handling neutron star equations of state.
+ * @{
+ */
 
 #include <ctype.h>
 #include <math.h>
@@ -23,14 +29,12 @@
 #include <string.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALString.h>
 #include <lal/FileIO.h>
 #include <lal/LALSimNeutronStar.h>
 #include <lal/LALSimReadData.h>
 
-/**
- * @name Neutron Star Equation of State Routines
- * @{
- */
+/** @cond */
 
 /* Enumeration for type of equation of state data storage. */
 enum {
@@ -55,6 +59,7 @@ typedef union tagLALSimNeutronStarEOSData {
 
 /* Contents of the equation of state structure. */
 struct tagLALSimNeutronStarEOS {
+    char name[LALNameLength];
     double pmax;
     double hmax;
     double hMinAcausal; /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1) */
@@ -70,6 +75,13 @@ struct tagLALSimNeutronStarEOS {
     LALSimNeutronStarEOSData data;
 };
 
+/** @endcond */
+
+/**
+ * @name Destruction routine
+ * @{
+ */
+
 /**
  * @brief Frees the memory associated with a pointer to an EOS structure.
  * @param eos Pointer to the EOS structure to be freed.
@@ -80,11 +92,30 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
     return;
 }
 
+/** @} */
+
 /* Tabular Equation of State Code. */
 #include "LALSimNeutronStarEOSTabular.c"
 
 /* Piecewise-Polytrope Equation of State Code */
 #include "LALSimNeutronStarEOSPiecewisePolytrope.c"
+
+/**
+ * @name Routines to access equation of state variables
+ * @{
+ */
+
+/**
+ * @brief The name of the equation of state.
+ * @param[in] eos Pointer to the EOS structure.
+ * @return Pointer to a string containing the name of the equation of state.
+ * @warning The pointer returned might be shallow and might be left
+ * dangling if the @a eos structure is freed.
+ */
+char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos)
+{
+    return eos->name;
+}
 
 /**
  * @brief Returns the maximum pressure of the EOS in geometrized units m^-2.
@@ -361,4 +392,5 @@ double XLALSimNeutronStarEOSSpeedOfSound(double h, LALSimNeutronStarEOS * eos)
 }
 
 
+/** @} */
 /** @} */

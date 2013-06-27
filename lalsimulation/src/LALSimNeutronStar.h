@@ -16,11 +16,23 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+/**
+ * @author Jolien Creighton, Benjamin Lackey
+ * @addtogroup LALSimNeutronStar_h      Header LALSimNeutronStar.h
+ * @brief Provides routines for neutron star physical parameters.
+ * @{
+ * @defgroup LALSimNeutronStarEOS_c     Module LALSimNeutronStarEOS.c
+ * @defgroup LALSimNeutronStarTOV_c     Module LALSimNeutronStarTOV.c
+ * @defgroup LALSimNeutronStarFamily_c  Module LALSimNeutronStarFamily.c
+ * @}
+ * @{
+ */
 
 #ifndef _LALSIMNEUTRONSTAR_H
 #define _LALSIMNEUTRONSTAR_H
 
 #include <lal/LALConstants.h>
+
 
 /* CONSTANTS */
 
@@ -39,10 +51,14 @@
 
 /* EOS ROUTINES */
 
-/** Incomplete type for the neutron star Equation of State (EOS) */
+/** Incomplete type for the neutron star Equation of State (EOS). */
 typedef struct tagLALSimNeutronStarEOS LALSimNeutronStarEOS;
 
+/** Incomplete type for a neutron star family having a particular EOS. */
+typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
+
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
+char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
@@ -94,4 +110,18 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos);
 
+/* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
+
+void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam);
+LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
+    LALSimNeutronStarEOS * eos);
+
+double XLALSimNeutronStarMaximumMass(LALSimNeutronStarFamily * fam);
+double XLALSimNeutronStarCentralPressure(double m,
+    LALSimNeutronStarFamily * fam);
+double XLALSimNeutronStarRadius(double m, LALSimNeutronStarFamily * fam);
+double XLALSimNeutronStarLoveNumberK2(double m, LALSimNeutronStarFamily * fam);
+
 #endif /* _LALSIMNEUTRONSTAR_H */
+
+/** @} */

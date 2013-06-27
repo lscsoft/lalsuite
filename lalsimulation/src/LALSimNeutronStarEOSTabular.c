@@ -16,9 +16,19 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+/**
+ * @addtogroup LALSimNeutronStarEOS_c
+ * @{
+ */
+/**
+ * @name Creation routines for tabulated equations of state
+ * @{
+ */
 
 #include <lal/LALSimReadData.h>
 #include <gsl/gsl_interp.h>
+
+/** @cond */
 
 /* Contents of the tabular equation of state data structure. */
 struct tagLALSimNeutronStarEOSDataTabular {
@@ -280,6 +290,18 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     return eos;
 }
 
+static int mystrcasecmp(const char *s1, const char *s2)
+{
+    while (*s1) {
+        int c1 = toupper(*s1++);
+        int c2 = toupper(*s2++);
+        if (c1 != c2)
+            return (c1 > c2) - (c1 < c2);
+    }
+    return 0;
+}
+
+/** @endcond */
 
 /**
  * @brief Reads a data file containing a tabulated equation of state.
@@ -311,18 +333,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
         XLAL_ERROR_NULL(XLAL_EFUNC);
 
     eos = eos_alloc_tabular(pdat, edat, ndat);
+    snprintf(eos->name, sizeof(eos->name), "%s", fname);
     return eos;
-}
-
-static int mystrcasecmp(const char *s1, const char *s2)
-{
-    while (*s1) {
-        int c1 = toupper(*s1++);
-        int c2 = toupper(*s2++);
-        if (c1 != c2)
-            return (c1 > c2) - (c1 < c2);
-    }
-    return 0;
 }
 
 /**
@@ -358,6 +370,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
             eos = XLALSimNeutronStarEOSFromFile(fname);
             if (!eos)
                 XLAL_ERROR_NULL(XLAL_EFUNC);
+            snprintf(eos->name, sizeof(eos->name), "%s", eos_names[i]);
             return eos;
         }
 
@@ -368,3 +381,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
     XLALPrintError("\n");
     XLAL_ERROR_NULL(XLAL_ENAME);
 }
+
+/** @} */
+/** @} */
