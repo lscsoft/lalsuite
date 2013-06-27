@@ -13,7 +13,6 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_AP4.dat \
 	LALSimNeutronStarEOS_FPS.dat \
 	LALSimNeutronStarEOS_SLY4.dat
-	
 
 bin_PROGRAMS = \
 	lalsim-bh-qnmode \
@@ -122,7 +121,9 @@ MOSTLYCLEANFILES = \
 	lalsimulation-user-env.sh \
 	lalsimulation-user-env.csh
 
-pkgdata_DATA = $(NOISEPSDFILES) $(EOSDATAFILES)
+pkgdata_DATA = \
+	$(NOISEPSDFILES) \
+	$(EOSDATAFILES)
 
 sysconf_DATA = \
 	lalsimulation-user-env.sh \
