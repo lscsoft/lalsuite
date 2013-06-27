@@ -152,16 +152,8 @@ if alert_type == 'new':
                 url='https://gracedb.ligo.org/events/{0}'.format(graceid),
                 runtime=elapsed_time, instruments=instruments,
                 origin='LIGO Scientific Collaboration')
-            response = gracedb.writeFile(graceid, fitspath)
-            response_json = response.read()
-            attrs = json.loads(response_json)
-            permalink_url = attrs['permalink']
-            permalink_path = urlparse.urlparse(permalink_url).path
-            permalink_filename = os.path.basename(permalink_path)
-
-            # FIXME: the 'permalink' URL does not work in a browser; use this
-            # hardcoded URL base instead
-            log.info('uploaded sky map: <a href="https://ldas-jobs.phys.uwm.edu/gracedb/data/%s/private/%s">%s</a>', graceid, permalink_filename, permalink_filename)
+            gracedb.writeLog(graceid, "uploaded sky map",
+                filename=fitspath, tagname="sky_loc")
         finally:
             shutil.rmtree(fitsdir)
     except:
