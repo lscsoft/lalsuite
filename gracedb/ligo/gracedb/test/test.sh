@@ -59,12 +59,12 @@ else
     GRACEID="NOID"
 fi
 
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} Test MBTAOnline $TEST_DATA_DIR/cbc-mbta.gwf >$OUTFILE 2>&1
 recordTest "create MBTA" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} Test CWB $TEST_DATA_DIR/burst-cwb.txt >$OUTFILE 2>&1
 recordTest "create CWB"  "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
@@ -72,19 +72,19 @@ rm $OUTFILE
 
 # Try a simple search
 #
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} search $GRACEID >$OUTFILE 2>&1
 recordTest "search $GRACEID" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
 # Make sure FAR of created LM event is correct.
 #
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} search "--columns=gpstime" $GRACEID > $OUTFILE 2>&1
 RETCODE=$?
 if [ $RETCODE == 0 ]
 then
-    if [ $(grep -v '#' <$OUTFILE) == 971609248 ]
+    if [ "$(grep -v '#' <$OUTFILE)" == 971609248 ]
     then
         RETCODE=0
     else
@@ -97,7 +97,7 @@ rm $OUTFILE
 
 # Replace LM event with new data
 #
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} replace $GRACEID $TEST_DATA_DIR/cbc-lm2.xml >$OUTFILE 2>&1
 RETCODE=$?
 recordTest "replace $GRACEID" "$RETCODE" "$(cat $OUTFILE)"
@@ -106,12 +106,12 @@ rm $OUTFILE
 
 # Make sure FAR of replaced LM event is correct.
 #
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} search "--columns=gpstime" $GRACEID > $OUTFILE 2>&1
 RETCODE=$?
 if [ $RETCODE == 0 ]
 then
-    if [ $(grep -v '#' <$OUTFILE) == 971609249 ]
+    if [ "$(grep -v '#' <$OUTFILE)" == 971609249 ]
     then
         RETCODE=0
     else
@@ -121,16 +121,16 @@ fi
 recordTest "verify new GPS time $GRACEID" "$RETCODE" "$(cat $OUTFILE)"
 rm $OUTFILE
 
-# Upload a file (a binary file)
+# Upload a file
 #
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} upload $GRACEID "$TEST_DATA_DIR/upload.data.gz" > $OUTFILE 2>&1
 recordTest "upload file $GRACEID" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
 # Download that uploaded file
 #
-DOWNLOAD=$(mktemp)
+DOWNLOAD=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} download $GRACEID "upload.data.gz" - > $DOWNLOAD 2>&1
 recordTest "download file" "$?" "$(cat $DOWNLOAD)"
 
@@ -142,25 +142,38 @@ rm $DOWNLOAD
 
 # Log
 #
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} log $GRACEID "test the" "logging" > $OUTFILE 2>&1
 recordTest "log message" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
 # Label
 #
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} label $GRACEID DQV > $OUTFILE 2>&1
 recordTest "label $GRACEID" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
 # Verify labelling
 #
-OUTFILE=$(mktemp)
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
 ${GRACEDB} search $GRACEID |grep DQV > $OUTFILE 2>&1
 recordTest "verify label" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
+# Tag
+#
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
+${GRACEDB} tag $GRACEID 1 tag_test > $OUTFILE 2>&1
+recordTest "tag event" "$?" "$(cat $OUTFILE)"
+rm $OUTFILE
+
+# Delete tag
+#
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
+${GRACEDB} delete_tag $GRACEID 1 tag_test > $OUTFILE 2>&1
+recordTest "delete tag" "$?" "$(cat $OUTFILE)"
+rm $OUTFILE
 
 showStats
 

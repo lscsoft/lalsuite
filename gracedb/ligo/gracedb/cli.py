@@ -301,20 +301,24 @@ Longer strings will be truncated.""" % {
             tagName = options.tagName
             tagDispName = options.tagDispName
         else:
-            if len(args) not in [3,4]:
+            if len(args) not in [4,5]:
                 op.error("wrong number of arguments for tag")
             tagName = args[3]
-            tagDispName = args[3]
+            tagDispName = None
+            if len(args)==5:
+                tagDispName = args[4]
         graceid = args[1]
         logN = args[2]
         response = client.createTag(graceid, logN, tagName, tagDispName)
     elif args[0] == 'delete_tag':
+        error("len args = %s" % len(args))
+        error("args = %s" % args)
         if options.tagName:
             if len(args) != 2:
                 op.error("wrong number of arguments for delete_tag")
             tagName = options.tagName
         else:
-            if len(args) != 3:
+            if len(args) != 4:
                 op.error("wrong number of arguments for delete_tag")
             tagName = args[3]
         graceid = args[1]
