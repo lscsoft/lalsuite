@@ -13,7 +13,7 @@ Default GraceDB service for tests is at: moe.phys.uwm.edu, a dev box.
 To use production servers, set environment for CLI and REST API,
 respectively:
 
-	GRACEDB_SERVICE_URL=https://gracedb.ligo.org/cli/ 
+	GRACEDB_SERVICE_URL=https://gracedb.ligo.org/api/ 
 	TEST_SERVICE=https://gracedb.ligo.org/api/
 
 To use custom test data, set TEST_DATA_DIR. (see test.py and test.sh

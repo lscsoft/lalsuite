@@ -5,7 +5,7 @@
 
 : ${GRACEDB:="gracedb"}
 : ${TEST_DATA_DIR:=$(dirname $0)/data}
-: ${GRACEDB_SERVICE_URL:="https://moe.phys.uwm.edu/gracedb/cli"}
+: ${GRACEDB_SERVICE_URL:="https://moe.phys.uwm.edu/gracedb/api/"}
 
 export GRACEDB_SERVICE_URL
 
