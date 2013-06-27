@@ -150,7 +150,8 @@ EXTRA_DIST = \
 	config.h.in \
 	generate_user_env.awk \
 	LALSimulationConfig.h.in \
-	$(NOISEPSDFILES)
+	$(NOISEPSDFILES) \
+	$(EOSDATAFILES)
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALSimulationVCSInfo.h
