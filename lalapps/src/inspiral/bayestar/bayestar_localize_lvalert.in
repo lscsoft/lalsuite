@@ -151,7 +151,7 @@ if alert_type == 'new':
                 creator=parser.get_prog_name(), objid=str(graceid),
                 url='https://gracedb.ligo.org/events/{0}'.format(graceid),
                 runtime=elapsed_time, instruments=instruments,
-                origin='LIGO Scientific Collaboration')
+                origin='LIGO/Virgo')
             gracedb.writeLog(graceid, "uploaded sky map",
                 filename=fitspath, tagname="sky_loc")
         finally:
