@@ -235,6 +235,11 @@ class GraceDb(GsiRest):
     def groups(self):
         return self.service_info.get('groups')
 
+    def request(self, method, *args, **kwargs):
+        if method.lower() in ['post', 'put']:
+            kwargs['priming_url'] = self.service_url
+        return GsiRest.request(self, method, *args, **kwargs)
+
     def _analysisTypeCode(self, analysis_type):
         """Check if analysis_type is valid.
            Return coded version of type if it is"""
