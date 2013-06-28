@@ -22,6 +22,7 @@
  
 
 import sys
+import itertools
 from collections import defaultdict
 from optparse import OptionParser, OptionGroup
 
@@ -34,7 +35,7 @@ from matplotlib import pyplot
 from glue.lal import Cache
 from glue.segments import segment, segmentlist, segmentlistdict
 from glue.segmentsUtils import fromsegwizard
-from glue.ligolw import ligolw, utils, lsctables, ilwd
+from glue.ligolw import ligolw, utils, lsctables, ilwd, table
 from glue.ligolw.utils import process
 from glue.ligolw.utils import segments as ligolw_segments
 
@@ -48,6 +49,37 @@ import lalmetaio
 
 # FIXME: gridspec...
 #import breakout
+
+#
+# NOTE: This is mostly a re-implementation of some of the framework within
+# ligolw_burca because its very explicit in its dislike of intra-instrument 
+# coincidences. Since we construct coincidences explicitly through the algorihtm
+# this is mostly just to record them
+#
+from pylal.ligolw_burca import make_multi_burst
+from pylal import snglcoinc
+
+#
+# CoincDefs
+#
+HVetoBBCoincDef = lsctables.CoincDef(search = u"hveto", search_coinc_type = 0, description = u"sngl_burst<-->sngl_burst coincidences")
+
+class HVetoCoincTables(snglcoinc.CoincTables):
+	def __init__(self, xmldoc):
+		snglcoinc.CoincTables.__init__(self, xmldoc)
+		
+		# find the multi_burst table or create one if not found
+		try:
+			self.multibursttable = lsctables.table.get_table(xmldoc, lsctables.MultiBurstTable.tableName)
+		except ValueError:
+			self.multibursttable = lsctables.New(lsctables.MultiBurstTable, ("process_id", "duration", "central_freq", "bandwidth", "snr", "confidence", "amplitude", "coinc_event_id"))
+			xmldoc.childNodes[0].appendChild(self.multibursttable)
+	
+	def append_coinc(self, process_id, time_slide_id, coinc_def_id, events):
+	        coinc = snglcoinc.CoincTables.append_coinc(self, process_id, time_slide_id, coinc_def_id, events)
+		# FIXME: Reenable if we add ms colums to sb
+	        #self.multibursttable.append(make_multi_burst(process_id, coinc.coinc_event_id, events, self.time_slide_index[time_slide_id]))
+	        return coinc
 
 # Functions to convert various SWIG wrapped LAL functions to and from their 
 # (more convenient) equivalents in glue.
@@ -145,6 +177,45 @@ def get_chan_list( gseq ):
 	# its keys into a proper set.
 	return set(ghash_to_dict( laldetchar.GetChannelList( gseq ), str ).keys())
 
+def write_coinc_tables( vetotrigs, xmldoc, refchannel, twind, time_slide_id=None):
+	"""
+	Write a set of coinc tables for this round. We only write coincidences for coincs with refchannel. Note: This is probably gonna be slow... aaaand that's why we implemented the real algorithm in C. 
+	"""
+	# Retrieve process information
+	process = [ p for p in table.get_table( xmldoc, lsctables.ProcessTable.tableName ) if p.program == "laldetchar-hveto" ][0]
+	process_id = process.process_id
+
+	# Insert a time slide ID. It's not yet really necessary
+	if time_slide_id is None:
+		from pylal import ligolw_tisi
+		timeslidetable = lsctables.New(lsctables.TimeSlideTable)
+		time_slide = timeslidetable.RowType
+		time_slide.process_id = process_id
+		time_slide.time_slide_id = time_slide_id = ilwd.ilwdchar( "time_slide:time_slide_id:0" )
+		time_slide.instrument = opt.instrument
+		time_slide.offset = 0.0
+		timeslidetable.append(time_slide)
+		xmldoc.childNodes[0].appendChild( timeslidetable )
+
+	# Set up coinc tables
+	coinc_def = HVetoBBCoincDef
+	coincdeftable = lsctables.New(lsctables.CoincDefTable)
+	coinc_def.coinc_def_id = coinc_def_id = coincdeftable.get_next_id()
+	coincdeftable.append( coinc_def )
+	xmldoc.childNodes[0].appendChild( coincdeftable )
+
+	coinc_def = HVetoCoincTables( xmldoc )
+	reftrigs = [ (segment( sb.get_peak()-twind/2.0, sb.get_peak()+twind/2.0 ), sb) for sb in vetotrigs if sb.channel == refchannel ]
+	for vt in vetotrigs:
+		if vt.channel == refchannel:
+			continue
+		for (s, t) in reftrigs:
+			if vt.get_peak() in s:
+				coinc_def.append_coinc( process_id, time_slide_id, coinc_def_id, (t, vt))
+	return xmldoc
+				
+
+
 def write_round_xml( vetosegs, vetotrigs, winner, ifo, opts ):
 	"""
 	Write out the products from this round of hveto: veto segments and the vetoed triggers.
@@ -154,7 +225,7 @@ def write_round_xml( vetosegs, vetotrigs, winner, ifo, opts ):
 	xmldoc.appendChild( ligolw.LIGO_LW() )
 
 	# Append the process information
-	procrow = utils.process.append_process( xmldoc )
+	procrow = utils.process.append_process( xmldoc, program="laldetchar-hveto" )
 	utils.process.append_process_params( xmldoc, procrow, utils.process.process_params_from_dict(opts) )
 
 	# Add the vetoed triggers
@@ -270,6 +341,7 @@ def process_options():
 	veto_settings.add_option( "-I", "--ignore-list", help="Text file, one channel per line with a list of channels to ignore when loading triggers." )
 	# FIXME:
 	#veto_settings.add_option( "-C", "--ignore-channel", action="append", help="Ignore these channels. Given several times, will ignore several channels. Do not prepend instrument. E.g. -C LSC-DARM_CTRL." )
+	veto_settings.add_option( "--write-coinc", action="store_true", default=False, help="If set, output table will include coinc tables indicating which triggers were coincided in the process of execution." )
 	opt.add_option_group( veto_settings )
 
 	livetime_settings = OptionGroup( opt, "livetime settings" )
@@ -498,6 +570,10 @@ while True:
 
 	# Write out vetoes and vetoed triggers
 	xmldoc = write_round_xml( vetosegs, vetoed_trigs, winner, ref_ifo, opt.__dict__ )
+	if opt.write_coinc:
+		if opt.verbose:
+			print "Appending coincs to output."
+		write_coinc_tables( vetoed_trigs, xmldoc, ref_chan, wind_win )
 	fname = "%s-HVETO_ROUND_%d-%d-%d.xml.gz" % (ref_ifo, rnd, int(runseg[0]), int(abs(runseg)))
 	utils.write_filename( xmldoc, fname, gz=True, verbose=verbose )
 
