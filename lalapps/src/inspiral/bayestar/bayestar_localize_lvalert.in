@@ -61,11 +61,14 @@ log = logging.getLogger('BAYESTAR')
 # Parse input
 #
 
-if len(args) > 0:
-    # Manual start
+if len(args) > 1:
+    # Too many command line arguments
+    parser.error("expected at most one command line argument")
+elif len(args) == 1:
+    # One command line argument; manual start from GraceDB id
     lvadata = {'uid': args[0], 'alert_type': 'update', 'file': 'psd.xml.gz'}
 else:
-    # Read LVAlert data from stdin
+    # No command line arguments; read LVAlert data from stdin
     lvadata = ligo.lvalert.utils.get_LVAdata_from_stdin(sys.stdin, as_dict=True)
 
 
