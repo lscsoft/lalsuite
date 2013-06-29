@@ -38,16 +38,11 @@ opts, args = parser.parse_args()
 # Late imports
 #
 
-from cStringIO import StringIO
-import json
-import io
 import logging
 import os
 import shutil
 import sys
 import tempfile
-import time
-import urlparse
 
 import ligo.gracedb.logging
 import ligo.gracedb.rest
@@ -60,33 +55,6 @@ import ligo.lvalert.utils
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('BAYESTAR')
-
-
-#
-# Functions
-#
-
-
-class DownloadNotFoundError(Exception):
-    pass
-
-
-def wait_for_download(gracedb, graceid, filename, max_timeout=16):
-    timeout = 1
-    log.debug("%s:waiting for file to arrive", filename)
-    while True:
-        try:
-            fileobj = gracedb.files(graceid, filename)
-        except ligo.gracedb.rest.HTTPError:
-            if timeout <= max_timeout:
-                log.debug('%s:not found, sleeping for %d seconds', filename, timeout)
-                time.sleep(timeout)
-                timeout *= 2
-            else:
-                raise DownloadNotFoundError(filename)
-        else:
-            log.debug('%s:downloaded', filename)
-            return fileobj
 
 
 #
@@ -123,18 +91,11 @@ if alert_type == 'new':
 
     # Produce log message for any otherwise uncaught exception
     try:
-        try:
-            # download coinc.xml
-            coinc_file = wait_for_download(gracedb, graceid, "coinc.xml")
-        except DownloadNotFoundError as e:
-            log.error("%s:file not found, giving up on this event", e.args[0])
+        # download coinc.xml
+        coinc_file = gracedb.files(graceid, "coinc.xml")
 
-        try:
-            # download psd.xml.gz
-            psd_file = wait_for_download(gracedb, graceid, "psd.xml.gz")
-        except DownloadNotFoundError as e:
-            psd_file = None
-            log.warn("%s:file not found, assuming aLIGO/AdvVirgo model PSDs", e.args[0])
+        # download psd.xml.gz
+        psd_file = gracedb.files(graceid, "psd.xml.gz")
 
         # perform sky localization
         from lalinference.bayestar.ligolw_sky_map import gracedb_sky_map
