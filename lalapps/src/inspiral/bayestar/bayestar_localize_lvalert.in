@@ -63,7 +63,7 @@ log = logging.getLogger('BAYESTAR')
 
 if len(args) > 0:
     # Manual start
-    lvadata = {'uid': args[0], 'alert_type': 'new'}
+    lvadata = {'uid': args[0], 'alert_type': 'update', 'file': 'psd.xml.gz'}
 else:
     # Read LVAlert data from stdin
     lvadata = ligo.lvalert.utils.get_LVAdata_from_stdin(sys.stdin, as_dict=True)
@@ -74,10 +74,10 @@ else:
 #
 
 graceid = lvadata['uid']
-alert_type = lvadata['alert_type']
-log.info("received lvalert event for uid='%s' of type '%s'", graceid, alert_type)
+log.info("received lvalert event of type='%s' for uid='%s' and file='%s'",
+    lvadata['alert_type'], graceid, lvadata['file'])
 
-if alert_type == 'new':
+if lvadata['alert_type'] == 'update' and lvadata['file'] == 'psd.xml.gz':
     # Fire up a GraceDb client
     gracedb = ligo.gracedb.rest.GraceDb()
 
