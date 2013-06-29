@@ -57,7 +57,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(lvalertfile,SNRthreshold=0,gid=None):
+def readLValert(SNRthreshold=0,gid=None,flow=40.0):
   """
   Parse LV alert file, continaing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -71,7 +71,11 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   from glue.ligolw import array
   from pylal import series as lalseries
   import numpy as np
-  xmldoc=utils.load_filename(lvalertfile)
+  import subprocess
+  from subprocess import Popen, PIPE
+  print "gracedb download %s coinc.xml" % gid
+  subprocess.call(["gracedb","download", gid ,"coinc.xml"])
+  xmldoc=utils.load_filename("coinc.xml")
   coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.getTablesByType(xmldoc, lsctables.SnglInspiralTable)[0]
@@ -83,22 +87,32 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   ifos = coinc_table[0].instruments.split(",")
   trigSNR = coinctable[0].snr
   # Parse PSD
-  xmlpsd = utils.load_filename("psd.xml.gz")
-  psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
-  for instrument, psd in psddict.items():
-    combine=[]
-    for i,p in enumerate(psd.data):
-      combine.append([psd.f0+i*psd.deltaF,np.sqrt(p)])
-    np.savetxt(instrument+'psd.txt',combine)
-  srate = combine[-1][0]
+  if os.path.exists("psd.xml.gz"):
+    xmlpsd = utils.load_filename("psd.xml.gz")
+    psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
+    for instrument, psd in psddict.items():
+      combine=[]
+      for i,p in enumerate(psd.data):
+        combine.append([psd.f0+i*psd.deltaF,np.sqrt(p)])
+      np.savetxt(instrument+'psd.txt',combine)
+    srate = combine[-1][0]
   
   # Logic for template duration and sample rate disabled
   coinc_map = lsctables.getTablesByType(xmldoc, lsctables.CoincMapTable)[0]
   for coinc in coinc_events:
     these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
-    dur = min([e.template_duration for e in these_sngls]) + 2 # Add 2s padding
-    #srate = pow(2.0, ceil( log(max([e.f_final]), 2) ) ) # Round up to power of 2
-    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = dur, srate = srate, trigSNR = trigSNR)
+    #if these_sngls[0].template_duration:
+      #dur = min([e.template_duration for e in these_sngls]) + 2.0 # Add 2s padding CAREFULL, DEPENDS ON THE LOW FREQUENCY CUTOFF OF THE DETECTION PIPELINE
+      #srate = pow(2.0, ceil( log(max([e.f_final]), 2) ) ) # Round up to power of 2
+    #else:
+    dur=[]
+    srate=[]
+    for e in these_sngls:
+      p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
+      strlen = p.stdout.read()
+      dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
+      srate.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[1].split()[5])), 2) ) ) * 2 )
+    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = max(srate), trigSNR = trigSNR)
     if(coinc.snr>SNRthreshold): output.append(ev)
   
   print "Found %d coinc events in table." % len(coinc_events)
@@ -333,12 +347,18 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     Calculate the data that will be needed to process all events
     """
-    psdlength=self.config.getint('input','max-psd-length')
+    #psdlength = self.config.getint('input','max-psd-length')
     padding=self.config.getint('input','padding')
-    seglen = self.config.getint('lalinference','seglen')
-    # Assume that the data interval is (end_time - seglen -padding , end_time + psdlength +padding )
+    if self.config.has_option('lalinference','seglen'):
+      seglen = self.config.getint('lalinference','seglen')
+      psdlength = 32*seglen
+    else:
+      seglen = max(e.duration for e in self.events)
+      psdlength = 32*seglen
+    # Assume that the data interval is (end_time - seglen -padding , end_time + psdlength +padding ) 
+    # -> change to (trig_time - seglen - padding - psdlength + 2 , trig_time + padding + 2) to estimate the psd before the trigger for online follow-up.
     # Also require padding before start time
-    return (min(times)-padding-seglen,max(times)+padding+psdlength)
+    return (min(times)-padding-seglen-psdlength+2,max(times)+padding+2)
 
   def setup_from_times(self,times):
     """
@@ -380,7 +400,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     gpsstart=None
     gpsend=None
-    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','lvalert-file']
+    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid']#,'lvalert-file']
     if sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])!=1:
         print 'Plese specify only one input file'
         sys.exit(1)
@@ -417,11 +437,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       coincTable = CoincInspiralUtils.readCoincInspiralFromFiles([self.config.get('input','coinc-inspiral-file')])
       events = [Event(CoincInspiral=coinc) for coinc in coincTable]
     # LVAlert CoincInspiral Table
-    if self.config.has_option('input','gid'): gid=self.config.get('input','gid')
-    else: gid=None
-    if self.config.has_option('input','lvalert-file'):
-      events = readLValert(self.config.get('input','lvalert-file'),gid=gid)
+    #if self.config.has_option('input','lvalert-file'):
+    if self.config.has_option('input','gid'):
+      gid=self.config.get('input','gid')
+      flow=40.0
+      if self.config.has_option('lalinference','flow'):
+        flow=min(ast.literal_eval(self.config.get('lalinference','flow')))
+      events = readLValert(gid=gid,flow=flow)
     # pipedown-database
+    else: gid=None
     if self.config.has_option('input','pipedown-db'):
       db_connection = open_pipedown_database(self.config.get('input','pipedown-db'),None)[0]
       # Timeslides
@@ -480,7 +504,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if event.GID is not None:
-        self.add_gracedb_log_node(respagenode,event.GID)
+      if self.config.has_option('analysis','upload-to-gracedb'):
+        if self.config.getboolean('analysis','upload-to-gracedb'):
+          self.add_gracedb_log_node(respagenode,event.GID)
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
@@ -525,7 +551,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode=self.add_results_page_node(outdir=pagedir)
     map(respagenode.add_engine_parent, enginenodes)
     if event.GID is not None:
-        self.add_gracedb_log_node(respagenode,event.GID)
+      if self.config.has_option('analysis','upload-to-gracedb'):
+        if self.config.getboolean('analysis','upload-to-gracedb'):
+          self.add_gracedb_log_node(respagenode,event.GID)
 
   def add_science_segments(self):
     # Query the segment database for science segments and
@@ -637,12 +665,16 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Add control options
     if self.config.has_option('input','injection-file'):
        node.set_injection(self.config.get('input','injection-file'),event.event_id)
-    node.set_seglen(self.config.getint('lalinference','seglen'))
+    if self.config.has_option('lalinference','seglen'):
+      node.set_seglen(self.config.getint('lalinference','seglen'))
+    else:
+      node.set_seglen(event.duration)
     if self.config.has_option('input','psd-length'):
       node.set_psdlength(self.config.getint('input','psd-length'))
     if self.config.has_option('input','psd-start-time'):
       node.set_psdstart(self.config.getfloat('input','psd-start-time'))
     node.set_max_psdlength(self.config.getint('input','max-psd-length'))
+    node.set_padding(self.config.getint('input','padding'))
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
     node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
@@ -733,11 +765,13 @@ class EngineNode(pipeline.CondorDAGNode):
     self.timeslides={}
     self.seglen=None
     self.psdlength=None
+    self.padding=None
     self.maxlength=None
     self.psdstart=None
     self.cachefiles={}
     self.id=EngineNode.new_id()
     self.__finaldata=False
+    self.snrpath=None
 
   def set_seglen(self,seglen):
     self.seglen=seglen
@@ -747,7 +781,10 @@ class EngineNode(pipeline.CondorDAGNode):
 
   def set_max_psdlength(self,psdlength):
     self.maxlength=psdlength
-
+  
+  def set_padding(self,padding):
+    self.padding=padding
+  
   def set_psdstart(self,psdstart):
     self.psdstart=psdstart
 
@@ -856,8 +893,11 @@ class EngineNode(pipeline.CondorDAGNode):
         starttime=max([int(self.scisegs[ifo].start()) for ifo in self.ifos])
         endtime=min([int(self.scisegs[ifo].end()) for ifo in self.ifos])
       else:
-        starttime=self.get_trig_time()-0.5*self.maxlength
-        endtime=starttime+self.maxlength
+        (starttime,endtime)=self.get_required_data(self.get_trig_time())
+        starttime=floor(starttime)
+        endtime=ceil(endtime)
+        #starttime=self.get_trig_time()-self.padding-self.seglen-self.psdlength#-0.5*self.maxlength
+        #endtime=starttime+self.padding#+self.maxlength
       self.GPSstart=starttime
       self.__GPSend=endtime
       length=endtime-starttime
@@ -878,7 +918,7 @@ class EngineNode(pipeline.CondorDAGNode):
         #  raise Exception('Bad psdstart specified') 
       self.add_var_opt('psdstart',str(self.GPSstart))
       if self.psdlength is None:
-        self.psdlength=self.__GPSend-self.GPSstart
+        self.psdlength=self.__GPSend-self.GPSstart-2*self.padding-self.seglen-1
         if(self.psdlength>self.maxlength):
           self.psdlength=self.maxlength
       self.add_var_opt('psdlength',self.psdlength)
