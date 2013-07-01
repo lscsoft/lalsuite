@@ -74,13 +74,6 @@ void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LA
                             LALInferenceTemplateFunction templt, const char *filename);
 
 
-/** Template function to generate LAL's "parametrized post-Newtonian" (PPN) inspiral waveform.
- *  Internally uses LAL's LALGeneratePPNInspiral() function. 
- *  Signal amplitude is scaled to 1 Mpc luminosity distance.
- */
-void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata);
-
-
 /** 2.0PN / 2.5PN stationary phase approximation inspiral template in frequency domain.
  * 
  *  Computations are done 
