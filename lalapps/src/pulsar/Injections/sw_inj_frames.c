@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     return 0;
 
   char version[256];
-  sprintf(version, "v11"); /*manually change */
+  sprintf(version, "v13"); /*manually change */
 
   /*Get current time for log */
   time_t result;
@@ -628,7 +628,7 @@ int main(int argc, char **argv)
 
   fprintf(stderr, "done\n" );
 
-  return 1;
+  return 0;
 
 } /* main() */
 
