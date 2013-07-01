@@ -1,0 +1,73 @@
+Packaging procedure:
+
+1. alter these files w/new version/release numbers:
+    debian/changelog (timestamp comes from relevant git hash)
+    setup.py
+    ligo/gracedb/__init__.py
+    ligo/gracedb/cli.py
+
+    (in other words, whatever has GIT_TAG in it).
+
+2. check that the package is good
+
+3. push changes to the repo:
+    git tag -a YOUR_GIT_TAG
+    git push --tags
+
+4. generate the source tarball to put into the repo
+    python setup.py sdist
+
+*. to generate .deb and .rpm for testing.
+    python setup.py bdist_rpm
+    some arcane debian stuff, then pick through the 17 files it spews out to find your .deb.
+    debuild -i -us -uc -S
+
+5. put source dist into repo:
+    https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/
+    ( located at: /home/htdocs/uwmlsc/root/daswg/download/software/source/ )
+
+    eg: gsiscp dist/ligo-gracedb-1.2.tar.gz marlin.phys.uwm.edu:/home/htdocs/uwmlsc/root/daswg/download/software/source/
+
+
+6. Send mail to daswg+announce@gravity.phys.uwm.edu and lscdebian@aei.mpg.de:
+	SUBJECT: GraceDB Client 1.12 Release
+
+        There is a new release of the gracedb command line client.
+         
+        New features are:
+         
+           "gracedb download EVENTID FILENAME"
+         
+                download files associated with an event.
+         
+           "gracedb search --columns=graceid,gpstime,analysisType QUERY"
+         
+                specify columns to be included in search results.
+         
+           "gracedb search --ligolw QUERY"
+         
+                download ligolw XML search results.
+         
+         
+        The release tag is: gracedb-1.2-1
+         
+        The source is available at:
+         
+           https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/ligo-gracedb-1.2.tar.gz
+         
+         
+        Thank you,
+        Brian
+
+
+The foregoing steps should get things into testing.
+
+# LIES
+# Oh.  gracedb/utils.py is full of glue depended stuff that is only (?) used on
+# the server side.  It messes up Adam / MacPorts.
+
+7. For testing -> production:
+
+    SCCB request things.
+    TBD
+

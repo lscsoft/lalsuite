@@ -3,6 +3,7 @@ To run REST API tests:
 
 	PYTHONPATH=. python ligo/gracedb/test/test.py 
 
+(First make sure that there is an empty file at ligo/__init__.py.)
 To run CLI tests:
 
 	PYTHONPATH=. GRACEDB='python bin/gracedb' ligo/gracedb/test/test.sh 

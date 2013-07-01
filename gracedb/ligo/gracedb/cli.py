@@ -22,7 +22,7 @@ from ligo.gracedb.rest import GraceDb
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/api"
 
-GIT_TAG = 'gracedb-1.12-1'
+GIT_TAG = 'gracedb-1.13-1'
 
 #-----------------------------------------------------------------
 # Util routines

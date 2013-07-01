@@ -253,7 +253,7 @@ class TestGracedb(unittest.TestCase):
     def test_gittag(self):
         # try to make sure GIT_TAG is set properly.
         import errno
-        version = "1.12"
+        version = "1.13"
         try:
             # If we are in the source dir (setup.py is available)
             # make sure the version above agrees.
