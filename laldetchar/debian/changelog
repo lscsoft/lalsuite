@@ -1,3 +1,10 @@
+laldetchar (0.0.2-1) unstable; urgency=low
+
+  * LALDetChar 0.0.2
+  * Add coinc tables option to hveto
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 01 Jul 2013 11:23:27 -0500
+
 laldetchar (0.0.1-1) unstable; urgency=low
 
   * LALDetchar 0.0.1
