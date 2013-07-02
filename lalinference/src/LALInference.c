@@ -2700,3 +2700,4 @@ int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **var
   }
   return N;
 }
+
