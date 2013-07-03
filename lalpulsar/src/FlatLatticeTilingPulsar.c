@@ -168,7 +168,7 @@ int XLALSetFlatLatticeFnDotConstantBound(
   info->bounds[1] = GSL_MAX(bound1, bound2);
 
   // Set parameter space bound
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, false, FnDotConstantBound, (void*)info) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, bound1 == bound2, FnDotConstantBound, (void*)info) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
