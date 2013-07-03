@@ -1848,7 +1848,7 @@ int main( int argc, char *argv[] )
         &chan, &spec, &resp, fcInitParams ), &status );
 
   /* set the analyze flag according to what we are doing */
-  if ( tdFollowUpFiles || injectionFile )
+  if ( tdFollowUpFiles || (injectionFile && (flagFilterInjOnly) ) )
   {
     if (tdFollowUpFiles)
     {
