@@ -1065,7 +1065,14 @@ LALFindChirpSetAnalyseTemplate (
     for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent;
         tmpltCurrent = tmpltCurrent->next, kj++)
     {
-      analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ;
+      if ( numInjections )
+      {
+        analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ;
+      }
+      else
+      {
+        analyseThisTmplt[kj] = 1;
+      }
     }
   }
 
