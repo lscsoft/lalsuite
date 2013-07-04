@@ -384,7 +384,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *i
     if ( params.model != NULL ) { deltat = DT + dts->data[i] + bdts->data[i]; }
     else { deltat = DT + dts->data[i]; }
 
-    deltat /= (1.-params.cgw); /* correct for speed of GW compared to speed of light */
+    deltat /= params.cgw; /* correct for speed of GW compared to speed of light */
 
     /* work out phase */
     deltat2 = deltat*deltat;

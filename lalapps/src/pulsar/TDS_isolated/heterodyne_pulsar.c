@@ -69,8 +69,6 @@ void printmemuse() {
 INT4 verbose=0;
 
 int main(int argc, char *argv[]){
-  static LALStatus status;
-
   InputParams inputParams;
   HeterodyneParams hetParams;
 
@@ -685,15 +683,17 @@ file!\n");
   }
 
   if( inputParams.filterknee > 0. ){
-    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Re );
-    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Im );
-    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Re );
-    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Im );
-    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Re );
-    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Im );
+    XLALDestroyREAL8IIRFilter( iirFilters.filter1Re );
+    XLALDestroyREAL8IIRFilter( iirFilters.filter1Im );
+    XLALDestroyREAL8IIRFilter( iirFilters.filter2Re );
+    XLALDestroyREAL8IIRFilter( iirFilters.filter2Im );
+    XLALDestroyREAL8IIRFilter( iirFilters.filter3Re );
+    XLALDestroyREAL8IIRFilter( iirFilters.filter3Im );
 
     if( verbose ){ fprintf(stderr, "I've destroyed all filters.\n"); }
   }
+
+  if ( filtresp != NULL ){ destroy_filter_response( filtresp ); }
 
   #if TRACKMEMUSE
     fprintf(stderr, "Memory use at the end of the code:\n"); printmemuse();
@@ -1140,8 +1140,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       }
 
       /* add the effect of a variable gravitational wave speed */
-      tdt /= (1.-hetParams.het.cgw);
-      tdt_2 /= (1.-hetParams.het.cgw);
+      tdt /= hetParams.het.cgw;
+      tdt_2 /= hetParams.het.cgw;
 
       /* check if any timing noise whitening is used */
       if( hetParams.het.nwaves != 0 ){
@@ -1265,7 +1265,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       if( filtresp != NULL ){
         /* calculate df  = f*(dt(t2) - dt(t))/(t2 - t) here (t2 - t) is 1 sec */
         df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT -
-          binOutput.deltaT + tWave2 - tWave1) / (1.-hetParams.hetUpdate.cgw);
+          binOutput.deltaT + tWave2 - tWave1) / (hetParams.hetUpdate.cgw);
         df += (ffine - fcoarse);
 
         /*sample rate*/
@@ -1277,7 +1277,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       }
 
       /* add the effect of a variable gravitational wave speed */
-      tdt /= (1.-hetParams.hetUpdate.cgw);
+      tdt /= hetParams.hetUpdate.cgw;
 
       tdt2 = tdt*tdt;
       /* multiply by freqfactor to get gw phase */
@@ -2129,6 +2129,14 @@ FilterResponse *create_filter_response( REAL8 filterKnee ){
     data->data[i] = dataTmpRe + I * dataTmpIm;
   }
 
+  /* destroy filters */
+  XLALDestroyREAL8IIRFilter( testFilters.filter1Re );
+  XLALDestroyREAL8IIRFilter( testFilters.filter1Im );
+  XLALDestroyREAL8IIRFilter( testFilters.filter2Re );
+  XLALDestroyREAL8IIRFilter( testFilters.filter2Im );
+  XLALDestroyREAL8IIRFilter( testFilters.filter3Re );
+  XLALDestroyREAL8IIRFilter( testFilters.filter3Im );
+
   /* FFT the data */
   if( (fftplan = XLALCreateForwardCOMPLEX16FFTPlan(srate*ttime, 1)) == NULL ||
       (fftdata = XLALCreateCOMPLEX16Vector(srate*ttime)) == NULL )
@@ -2179,4 +2187,10 @@ FilterResponse *create_filter_response( REAL8 filterKnee ){
   XLALDestroyCOMPLEX16FFTPlan(fftplan);
 
   return filtresp;
+}
+
+void destroy_filter_response( FilterResponse *filtresp ){
+  XLALDestroyREAL8Vector( filtresp->freqResp );
+  XLALDestroyREAL8Vector( filtresp->phaseResp );
+  XLALFree( filtresp );
 }
