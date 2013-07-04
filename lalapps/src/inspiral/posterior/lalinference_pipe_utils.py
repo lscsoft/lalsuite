@@ -5,6 +5,7 @@ import itertools
 import glue
 from glue import pipeline,segmentsUtils,segments
 import os
+import socket
 from lalapps import inspiralutils
 import uuid
 import ast
@@ -87,6 +88,8 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0):
   ifos = coinc_table[0].instruments.split(",")
   trigSNR = coinctable[0].snr
   # Parse PSD
+  print "gracedb download %s psd.xml.gz" % gid
+  subprocess.call(["gracedb","download", gid ,"psd.xml.gz"])
   if os.path.exists("psd.xml.gz"):
     xmlpsd = utils.load_filename("psd.xml.gz")
     psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
@@ -96,7 +99,8 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0):
         combine.append([psd.f0+i*psd.deltaF,np.sqrt(p)])
       np.savetxt(instrument+'psd.txt',combine)
     srate = combine[-1][0]
-  
+  else:
+    print "Failed to gracedb download %s psd.xml.gz" % gid
   # Logic for template duration and sample rate disabled
   coinc_map = lsctables.getTablesByType(xmldoc, lsctables.CoincMapTable)[0]
   for coinc in coinc_events:
@@ -351,11 +355,17 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     padding=self.config.getint('input','padding')
     if self.config.has_option('lalinference','seglen'):
       seglen = self.config.getint('lalinference','seglen')
-      psdlength = 32*seglen
+      if os.path.exists("psd.xml.gz"):
+        psdlength = 0
+      else:
+        psdlength = 32*seglen
     else:
       seglen = max(e.duration for e in self.events)
-      psdlength = 32*seglen
-    # Assume that the data interval is (end_time - seglen -padding , end_time + psdlength +padding ) 
+      if os.path.exists("psd.xml.gz"):
+        psdlength = 0
+      else:
+        psdlength = 32*seglen
+    # Assume that the data interval is (end_time - seglen -padding , end_time + psdlength +padding )
     # -> change to (trig_time - seglen - padding - psdlength + 2 , trig_time + padding + 2) to estimate the psd before the trigger for online follow-up.
     # Also require padding before start time
     return (min(times)-padding-seglen-psdlength+2,max(times)+padding+2)
@@ -720,9 +730,15 @@ class EngineJob(pipeline.CondorDAGJob):
       machine_count=cp.get('mpi','machine-count')
       #self.add_condor_cmd('machine_count',machine_count)
       #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
-      self.add_condor_cmd('Requirements','CAN_RUN_MULTICORE')
-      self.add_condor_cmd('+RequiresMultipleCores','True')
+      try:
+        hostname=socket.gethostbyaddr(socket.gethostname())[0]
+      except:
+        hostname='Unknown'
+      if hostname=='pcdev1.phys.uwm.edu':
+        self.add_condor_cmd('Requirements','CAN_RUN_MULTICORE')
+        self.add_condor_cmd('+RequiresMultipleCores','True')
       self.add_condor_cmd('request_cpus',machine_count)
+      self.add_condor_cmd('request_memory',machine_count*1024)
       self.add_condor_cmd('getenv','true')
       
     self.add_ini_opts(cp,self.engine)
@@ -857,6 +873,7 @@ class EngineNode(pipeline.CondorDAGNode):
       ifostring='['
       cachestring='['
       psdstring='['
+      psdstring_gracedb='['
       flowstring='['
       channelstring='['
       slidestring='['
@@ -869,12 +886,14 @@ class EngineNode(pipeline.CondorDAGNode):
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
         if self.psds: psdstring=psdstring+delim+self.psds[ifo]
+        if os.path.exists(ifo+'psd.txt'): psdstring_gracedb=psdstring_gracedb+delim+ifo+'psd.txt'
         if self.flows: flowstring=flowstring+delim+self.flows[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
         slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
       cachestring=cachestring+']'
       psdstring=psdstring+']'
+      psdstring_gracedb=psdstring_gracedb+']'
       flowstring=flowstring+']'
       channelstring=channelstring+']'
       slidestring=slidestring+']'
@@ -882,6 +901,7 @@ class EngineNode(pipeline.CondorDAGNode):
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
       if self.psds: self.add_var_opt('psd',psdstring)
+      elif psdstring_gracedb!='[]': self.add_var_opt('psd',psdstring_gracedb)
       if self.flows: self.add_var_opt('flow',flowstring)
       if any(self.timeslides):
 	self.add_var_opt('timeslide',slidestring)
@@ -1008,7 +1028,9 @@ class ResultsPageNode(pipeline.CondorDAGNode):
       if node.snrpath is not None:
         self.set_snr_file(node.get_snr_file())
       if isinstance(node,LALInferenceMCMCNode):
-	    self.add_var_opt('lalinfmcmc','')
+	      self.add_var_opt('lalinfmcmc','')
+      if os.path.exists("psd.xml.gz"):
+        self.add_var_opt('trig','coinc.xml')
     def get_pos_file(self): return self.posfile
     def set_bayes_coherent_incoherent(self,bcifile):
         self.add_var_arg('--bci '+bcifile)
