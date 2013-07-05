@@ -56,8 +56,11 @@ import lalmetaio
 # coincidences. Since we construct coincidences explicitly through the algorihtm
 # this is mostly just to record them
 #
-from pylal.ligolw_burca import make_multi_burst
-from pylal import snglcoinc
+try:
+	from pylal.ligolw_burca import make_multi_burst
+	from pylal import snglcoinc
+except ImportError:
+	sys.exit( "Couldn't import from pylal, please install first." )
 
 #
 # CoincDefs
