@@ -1,3 +1,11 @@
+laldetchar (0.0.3-1) unstable; urgency=low
+
+  * LALDetChar 0.0.3
+  * Packaging updates
+  * Add pyLAL import protections
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 05 Jul 2013 14:30:05 -0500
+
 laldetchar (0.0.2-1) unstable; urgency=low
 
   * LALDetChar 0.0.2
