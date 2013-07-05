@@ -13,7 +13,7 @@ URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig python-devel octave-devel
-Requires: gsl libframe libmetaio lal lalframe lalmetaio lalsimulation
+Requires: gsl libframe libmetaio lal lalframe lalmetaio lalburst
 Prefix: %{_prefix}
 
 %description
