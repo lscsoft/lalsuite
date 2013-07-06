@@ -58,6 +58,12 @@
 #define swiglal_1starg()  (args.length() > 0 ? args(0) : octave_value())
 %}
 
+// Append an argument to the output argument list of an Octave SWIG-wrapped function, if the list is empty.
+%header %{
+#define swiglal_append_output_if_empty(v) \
+  if (_outp->length() == 0) _outp = SWIG_Octave_AppendOutput(_outp, v)
+%}
+
 ////////// SWIG directives for operators //////////
 
 // Unary operators which return a new object, and thus
