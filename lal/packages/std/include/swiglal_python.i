@@ -48,7 +48,7 @@
 // Append an argument to the output argument list of an Python SWIG-wrapped function, if the list is empty.
 %header %{
 #define swiglal_append_output_if_empty(v) \
-  if (PySequence_Length(resultobj)) resultobj = SWIG_Python_AppendOutput(resultobj, v)
+  if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
 %}
 
 ////////// SWIG directives for operators //////////
