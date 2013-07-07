@@ -124,7 +124,7 @@ def str_to_gps(time_string=None):
     if not time_string or time_string.lower() == "now":
         return _gps_time_now()
     elif time_string == "today":
-        return utc_to_gps(datetime.datetime.today())
+        return utc_to_gps(_datetime.datetime.today())
     elif time_string == "tomorrow":
         today = _datetime.datetime.today()
         tomorrow = today + _datetime.timedelta(days=1)
