@@ -849,6 +849,26 @@ double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel);
 int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
     double sampleRate);
 
+/**
+ * @brief Set the time offset in a FrChan structure.
+ * @param channel Pointer to the FrChan structure to be modified.
+ * @param timeOffset The offset of the first sample relative to the frame
+ * start time in seconds.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ * @remark The offset must be positive and smaller than the frame length.
+ * Time offsets are always added together: to obtain the time of the
+ * first sample, add the time offset to the frame start time as obtained
+ * from the routine XLALFrameUFrTOCQueryGTimeModf() or from the routine
+ * XLALFrameUFrameHQueryGTimeModf().
+ * @sa Sections 4.3.2.4, 4.3.2.11, and 4.3.2.14 of
+ * <em>Specification of a Common Data Frame Format for Interferometric
+ * Gravitational Wave Detectors (IGWD)</em>
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ */
+int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel,
+    double timeOffset);
+
 /** @} */
 /** @} */
 

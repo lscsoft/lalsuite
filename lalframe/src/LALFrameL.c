@@ -1005,6 +1005,26 @@ int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
     }
 }
 
+int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel,
+    double timeOffset)
+{
+    if (timeOffset < 0)         /* timeOffset must be positive */
+	return -1;
+    switch (channel->type) {
+    case XLAL_FRAMEU_FR_CHAN_TYPE_ADC:
+        channel->handle.adc->timeOffset = timeOffset;
+        return 0;
+    case XLAL_FRAMEU_FR_CHAN_TYPE_SIM:
+        channel->handle.sim->timeOffset = timeOffset;
+        return 0;
+    case XLAL_FRAMEU_FR_CHAN_TYPE_PROC:
+        channel->handle.sim->timeOffset = timeOffset;
+	return 0;
+    default:   /* unrecognized channel type */
+        return -1;
+    }
+}
+
 /*
  * FrVect functions
  */

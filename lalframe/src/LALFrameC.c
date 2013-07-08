@@ -509,13 +509,9 @@ const char *XLALFrameUFrChanQueryName(const LALFrameUFrChan * channel)
 
 double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel)
 {
-    /*  TODO: implement when functionality is made available */
-    /*
-     * fr_chan_time_offset_t offset;
-     * TRY_FRAMEC_FUNCTION_VAL( offset, 0, FrameCFrChanQuery, channel, FR_CHAN_FIELD_TIME_OFFSET, &offset, FR_CHAN_FIELD_LAST );
-     */
-    channel = NULL;
-    return 0;
+    fr_chan_time_offset_t offset;
+    TRY_FRAMEC_FUNCTION_VAL(offset, 0, FrameCFrChanQuery, channel,
+        FR_CHAN_FIELD_TIME_OFFSET, &offset, FR_CHAN_FIELD_LAST);
 }
 
 /* Channel set functions */
@@ -526,6 +522,14 @@ int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
     fr_chan_sample_rate_t srate = sampleRate;
     TRY_FRAMEC_FUNCTION(FrameCFrChanSet, channel, FR_CHAN_FIELD_SAMPLE_RATE,
         srate, FR_CHAN_FIELD_LAST);
+}
+
+int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel,
+    double timeOffset)
+{
+    fr_chan_time_offset_t offset = timeOffset;
+    TRY_FRAMEC_FUNCTION(FrameCFrChanSet, channel, FR_CHAN_FIELD_TIME_OFFSET,
+        offset, FR_CHAN_FIELD_LAST);
 }
 
 /* ChanVector functions */

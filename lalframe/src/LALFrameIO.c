@@ -433,17 +433,34 @@ LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
     return frame;
 }
 
-/*
- * FIXME: How Do I Set timeOffset ????
- * TODO: add compressLevel 
- */
+static LIGOTimeGPS *XLALFrameQueryGTime(LIGOTimeGPS * start,
+    const LALFrameH * frame)
+{
+    double ip, fp;      /* integer part and fraction part */
+    fp = XLALFrameUFrameHQueryGTimeModf(&ip, frame);
+    return XLALGPSSet(start, ip, XLAL_BILLION_REAL8 * fp);
+}
+
 
 #define DEFINE_FR_CHAN_ADD_TS_FUNCTION(chantype, laltype, vectype, compress) \
 	int XLALFrameAdd ## laltype ## TimeSeries ## chantype ## Data(LALFrameH *frame, const laltype ## TimeSeries *series) \
 	{ \
-		/* const char unitX[] = "s"; */ \
+		LIGOTimeGPS frameStart; \
+		double timeOffset; \
+		const char unitX[] = "s"; \
+		char unitY[LALUnitTextSize]; \
 		LALFrameUFrChan *channel = NULL; \
 		void *data = NULL; \
+		XLALUnitAsString(unitY, sizeof(unitY), &series->sampleUnits); \
+		XLALFrameQueryGTime(&frameStart, frame); \
+		timeOffset = XLALGPSDiff(&series->epoch, &frameStart); \
+		if (timeOffset < 0) \
+			XLAL_ERROR(XLAL_EINVAL, "Series start time %d.%09d " \
+				"is earlier than frame start time %d.%09d", \
+				series->epoch.gpsSeconds, \
+				series->epoch.gpsNanoSeconds, \
+				frameStart.gpsSeconds, \
+				frameStart.gpsNanoSeconds); \
 		channel = XLALFrameUFrAdcChanAlloc(series->name, LAL_FRAMEU_FR_VECT_ ## vectype, series->data->length); \
 		if (!channel) \
 			goto failure; \
@@ -451,8 +468,13 @@ LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
 		if (!data) \
 			goto failure; \
 		memcpy(data, series->data->data, series->data->length * sizeof(*series->data->data)); \
-		/* TODO: set a bunch more metadata */ \
 		XLALFrameUFrChanSetSampleRate(channel, 1.0/series->deltaT); \
+		XLALFrameUFrChanSetTimeOffset(channel, timeOffset); \
+		XLALFrameUFrChanVectorSetName(channel, series->name); \
+		XLALFrameUFrChanVectorSetDx(channel, series->deltaT); \
+		XLALFrameUFrChanVectorSetStartX(channel, 0.0); \
+		XLALFrameUFrChanVectorSetUnitX(channel, unitX); \
+		XLALFrameUFrChanVectorSetUnitY(channel, unitY); \
 		XLALFrameUFrChanVectorCompress(channel, LAL_FRAMEU_FR_VECT_COMPRESS_ ## compress); \
 		XLALFrameUFrameHFrChanAdd(frame, channel); \
 		XLALFrameUFrChanFree(channel); \
@@ -462,12 +484,26 @@ LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
 		XLAL_ERROR(XLAL_EFUNC); \
 	}
 
+
 #define DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(laltype, vectype, compress) \
 int XLALFrameAdd ## laltype ## TimeSeriesProcData(LALFrameH *frame, const laltype ## TimeSeries *series) \
 	{ \
-		/* const char unitX[] = "s"; */ \
+		LIGOTimeGPS frameStart; \
+		double timeOffset; \
+		const char unitX[] = "s"; \
+		char unitY[LALUnitTextSize]; \
 		LALFrameUFrChan *channel = NULL; \
 		void *data = NULL; \
+		XLALUnitAsString(unitY, sizeof(unitY), &series->sampleUnits); \
+		XLALFrameQueryGTime(&frameStart, frame); \
+		timeOffset = XLALGPSDiff(&series->epoch, &frameStart); \
+		if (timeOffset < 0) \
+			XLAL_ERROR(XLAL_EINVAL, "Series start time %d.%09d " \
+				"is earlier than frame start time %d.%09d", \
+				series->epoch.gpsSeconds, \
+				series->epoch.gpsNanoSeconds, \
+				frameStart.gpsSeconds, \
+				frameStart.gpsNanoSeconds); \
 		channel = XLALFrameUFrProcChanAlloc(series->name, LAL_FRAMEU_FR_PROC_TYPE_TIME_SERIES, LAL_FRAMEU_FR_PROC_SUB_TYPE_UNKNOWN, LAL_FRAMEU_FR_VECT_ ## vectype, series->data->length); \
 		if (!channel) \
 			goto failure; \
@@ -475,7 +511,12 @@ int XLALFrameAdd ## laltype ## TimeSeriesProcData(LALFrameH *frame, const laltyp
 		if (!data) \
 			goto failure; \
 		memcpy(data, series->data->data, series->data->length * sizeof(*series->data->data)); \
-		/* TODO: set a bunch more metadata */ \
+		XLALFrameUFrChanSetTimeOffset(channel, timeOffset); \
+		XLALFrameUFrChanVectorSetName(channel, series->name); \
+		XLALFrameUFrChanVectorSetDx(channel, series->deltaT); \
+		XLALFrameUFrChanVectorSetStartX(channel, 0.0); \
+		XLALFrameUFrChanVectorSetUnitX(channel, unitX); \
+		XLALFrameUFrChanVectorSetUnitY(channel, unitY); \
 		XLALFrameUFrChanVectorCompress(channel, LAL_FRAMEU_FR_VECT_COMPRESS_ ## compress); \
 		XLALFrameUFrameHFrChanAdd(frame, channel); \
 		XLALFrameUFrChanFree(channel); \
@@ -485,12 +526,26 @@ int XLALFrameAdd ## laltype ## TimeSeriesProcData(LALFrameH *frame, const laltyp
 		XLAL_ERROR(XLAL_EFUNC); \
 	}
 
+
 #define DEFINE_FR_PROC_CHAN_ADD_FS_FUNCTION(laltype, vectype, compress) \
 int XLALFrameAdd ## laltype ## FrequencySeriesProcData(LALFrameH *frame, const laltype ## FrequencySeries *series, int subtype) \
 	{ \
-		/* const char unitX[] = "s^-1"; */ \
+		LIGOTimeGPS frameStart; \
+		double timeOffset; \
+		const char unitX[] = "s^-1"; \
+		char unitY[LALUnitTextSize]; \
 		LALFrameUFrChan *channel = NULL; \
 		void *data = NULL; \
+		XLALUnitAsString(unitY, sizeof(unitY), &series->sampleUnits); \
+		XLALFrameQueryGTime(&frameStart, frame); \
+		timeOffset = XLALGPSDiff(&series->epoch, &frameStart); \
+		if (timeOffset < 0) \
+			XLAL_ERROR(XLAL_EINVAL, "Series start time %d.%09d " \
+				"is earlier than frame start time %d.%09d", \
+				series->epoch.gpsSeconds, \
+				series->epoch.gpsNanoSeconds, \
+				frameStart.gpsSeconds, \
+				frameStart.gpsNanoSeconds); \
 		channel = XLALFrameUFrProcChanAlloc(series->name, LAL_FRAMEU_FR_PROC_TYPE_FREQUENCY_SERIES, subtype, LAL_FRAMEU_FR_VECT_ ## vectype, series->data->length); \
 		if (!channel) \
 			goto failure; \
@@ -498,7 +553,12 @@ int XLALFrameAdd ## laltype ## FrequencySeriesProcData(LALFrameH *frame, const l
 		if (!data) \
 			goto failure; \
 		memcpy(data, series->data->data, series->data->length * sizeof(*series->data->data)); \
-		/* TODO: set a bunch more metadata */ \
+		XLALFrameUFrChanSetTimeOffset(channel, timeOffset); \
+		XLALFrameUFrChanVectorSetName(channel, series->name); \
+		XLALFrameUFrChanVectorSetDx(channel, series->deltaF); \
+		XLALFrameUFrChanVectorSetStartX(channel, series->f0); \
+		XLALFrameUFrChanVectorSetUnitX(channel, unitX); \
+		XLALFrameUFrChanVectorSetUnitY(channel, unitY); \
 		XLALFrameUFrChanVectorCompress(channel, LAL_FRAMEU_FR_VECT_COMPRESS_ ## compress); \
 		XLALFrameUFrameHFrChanAdd(frame, channel); \
 		XLALFrameUFrChanFree(channel); \
