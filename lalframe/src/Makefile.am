@@ -11,7 +11,20 @@ bin_PROGRAMS = \
 	lalfr-split \
 	lalfr-cut \
 	lalfr-paste \
-	lalfr-stream
+	lalfr-stream \
+	lalfr-vis
+man_MANS = \
+	lalfr-cksum.1 \
+	lalfr-stat.1 \
+	lalfr-dump.1 \
+	lalfr-print.1 \
+	lalfr-fmt.1 \
+	lalfr-cat.1 \
+	lalfr-split.1 \
+	lalfr-cut.1 \
+	lalfr-paste.1 \
+	lalfr-stream.1 \
+	lalfr-vis.1
 
 lalfr_cksum_SOURCES = cksum.c
 lalfr_stat_SOURCES = stat.c
@@ -23,6 +36,7 @@ lalfr_split_SOURCES = split.c utils.c utils.h
 lalfr_cut_SOURCES = cut.c utils.c utils.h
 lalfr_paste_SOURCES = paste.c utils.c utils.h
 lalfr_stream_SOURCES = stream.c
+lalfr_vis_SOURCES = vis.c
 
 lalframeincludedir = $(includedir)/lal
 lalframeinclude_HEADERS = \
@@ -82,6 +96,7 @@ lalframe-user-env.csh lalframe-user-env.sh: lalframe-user-env.shell $(srcdir)/ge
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
+	$(MANS) \
 	config.h.in \
 	generate_user_env.awk \
 	LALFrameC.c \

@@ -125,7 +125,9 @@ int readdata(size_t * ndim, size_t * dimlen, double **data, FILE * fp)
     while (fgets(line, sizeof(line), fp)) {
         char *s;
         char *endp;
-        if (cols == 0) {        /* count columns on first call */
+        if (*line == '#')       /* ignore lines beginning with '#' */
+            continue;
+        if (cols == 0) {        /* count columns on first line */
             endp = line;
             while (1) {
                 s = endp;
@@ -137,7 +139,6 @@ int readdata(size_t * ndim, size_t * dimlen, double **data, FILE * fp)
                     break;
                 ++cols;
             }
-            while (s != endp && *endp != '\0') ;
             if (cols == 0)
                 FAILURE("format error on input line %zu\n", rows + 1);
         }
@@ -156,7 +157,7 @@ int readdata(size_t * ndim, size_t * dimlen, double **data, FILE * fp)
         ++rows;
     }
 
-    *data = realloc(*data, rows * cols * sizeof(*data));
+    *data = realloc(*data, rows * cols * sizeof(**data));
     *ndim = cols;
     *dimlen = rows;
 

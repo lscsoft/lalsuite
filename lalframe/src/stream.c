@@ -1,3 +1,21 @@
+/*
+*  Copyright (C) 2013 Jolien Creighton
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
 
 #include <math.h>
 #include <stdio.h>
@@ -205,14 +223,12 @@ int usage(const char *program)
 {
     fprintf(stderr, "usage: %s [options]\n", program);
     fprintf(stderr, "options:\n");
-    fprintf(stderr,
-        "\t-h, --help                   \tprint this message and exit\n");
-    fprintf(stderr, "\t-c, --channel                \tchannel name\n");
-    fprintf(stderr, "\t-f, --frame-cache            \tframe cache file\n");
-    fprintf(stderr,
-        "\t-g, --frame-glob             \tframe file glob string\n");
-    fprintf(stderr, "\t-s, --start-time             \tGPS start time (s)\n");
-    fprintf(stderr, "\t-t, --duration               \tduration (s)\n");
+    fprintf(stderr, "\t-h, --help                   \tprint this message and exit\n");
+    fprintf(stderr, "\t-c, CHAN --channel=CHAN      \tchannel name CHAN\n");
+    fprintf(stderr, "\t-f CACHE, --frame-cache=CACHE\tframe cache file CACHE\n");
+    fprintf(stderr, "\t-g GLOB, --frame-glob=GLOB   \tframe file glob string GLOB\n");
+    fprintf(stderr, "\t-s T0, --start-time=T0       \tGPS start time T0 (s)\n");
+    fprintf(stderr, "\t-t DT, --duration=DT         \tduration DT (s)\n");
     return 0;
 }
 
