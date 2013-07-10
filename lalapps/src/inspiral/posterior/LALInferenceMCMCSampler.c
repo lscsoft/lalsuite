@@ -815,7 +815,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
   }// while (!runComplete)
   
-
+  /* Flush any remaining PT swap attempts before moving on */
+  LALInferenceFlushPTswap();
   MPI_Barrier(MPI_COMM_WORLD);
 
   fclose(chainoutput);
@@ -1057,12 +1058,32 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
   return swapReturn;
 }
 
+/* Utility function that checks if the next coldest chain is attempting a PT swap.  If so, it is rejected. */
+void LALInferenceFlushPTswap() {
+    INT4 MPIrank;
+    INT4 attemptingSwap=0;
+    INT4 swapRejection=0;
+    REAL8 dummyLikelihood;
+    MPI_Status MPIstatus;
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+
+    if (MPIrank==0) {
+        return;
+    } else {
+        MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
+        if (attemptingSwap) {
+          MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+          MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
+        }
+    }
+    return;
+}
+
+
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle)
 {
   INT4 MPIrank, chain;
-  INT4 attemptingSwap=0, readyToSend=0;
-  REAL8 dummyLikelihood;
-  INT4 swapRejection=0;
+  INT4 readyToSend=0;
   MPI_Status MPIstatus;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
@@ -1088,11 +1109,7 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
 
   } else {
     /* Flush out any lingering swap proposals from colder chains */
-    MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
-    if (attemptingSwap) {
-      MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
-      MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
-    }
+    LALInferenceFlushPTswap();
 
     params = XLALCreateREAL8Vector(nPar);
 
