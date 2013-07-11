@@ -22,13 +22,13 @@ int main(void) {
 
 	double frequency = 20.0 / 2 / 3.14159;
 
-	FILE* fref = fopen( "fref.txt", "w" );
+	//FILE* fref = fopen( "fref.txt", "w" );
 	REAL8Sequence *fcn = XLALCreateREAL8Sequence(len);
 	for(i=0; i<len; i++) {
 		fcn->data[i] = sin( sample_time->data[i] * frequency );
-		fprintf( fref, "%f %f\n", sample_time->data[i], fcn->data[i] );
+		//fprintf( fref, "%f %f\n", sample_time->data[i], fcn->data[i] );
 	}
-	fclose(fref);
+	//fclose(fref);
 
 	LIGOTimeGPS ep = {0, 0};
 	
