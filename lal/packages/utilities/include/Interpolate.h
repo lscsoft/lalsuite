@@ -20,7 +20,13 @@
 #ifndef _INTERPOLATE_H
 #define _INTERPOLATE_H
 
+#include <lal/Date.h>
+#include <lal/Sequence.h>
 #include <lal/LALDatatypes.h>
+
+#include <lal/XLALGSL.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -166,6 +172,25 @@ XLALREAL8PolynomialInterpolation (
     UINT4  n
     );
 
+int
+XLALREAL8Interpolation (
+    REAL8Sequence *x_in, // Assumed to be in ascending order
+    REAL8Sequence *y_in,
+    REAL8Sequence *x_out,
+    REAL8Sequence *y_out, // Modified in place
+    UINT4 n_data_points,
+    const gsl_interp_type *itrp_type // Can be NULL -- default it to cubic spline
+    );
+
+int
+XLALREAL8TimeSeriesInterpolation (
+    REAL8TimeSeries *ts_in,
+    REAL8Sequence *y_in,
+    REAL8Sequence *t_in,
+    REAL8Sequence *t_out, // If NULL, interpolate from dt and epoch of ts_in
+    UINT4 n_data_points,
+    const gsl_interp_type *itrp_type
+    );
 
 /*@}*/
 
