@@ -38,18 +38,18 @@ int main(void) {
 
 	REAL8 start = XLALGPSGetREAL8(&ts->epoch);
 	REAL8 tolerance = 1e-6;
-	FILE* fout = fopen( "fout.txt", "w" );
+	//FILE* fout = fopen( "fout.txt", "w" );
 	for(i=0; i<ts->data->length; i++) {
 		REAL8 t = ts->deltaT * i + start;
 		REAL8 fcnval = sin(frequency*t);
 		REAL8 diff = fabs(ts->data->data[i] - fcnval);
-		fprintf( fout, "%f %f %f\n", t, fcnval, ts->data->data[i] );
+		//fprintf( fout, "%f %f %f\n", t, fcnval, ts->data->data[i] );
 		if (diff > tolerance) {
 			fprintf(stderr, "%f %g\n", t, diff);
 			return -1;
 		}
 	}
-	fclose(fout);
+	//fclose(fout);
 
 	return ret;
 }
