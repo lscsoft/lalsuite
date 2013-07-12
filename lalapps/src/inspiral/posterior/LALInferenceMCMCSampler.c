@@ -806,11 +806,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
     }
 
-    if (MPIrank==0 && i > Niter) {
-        runComplete=1;
-        for (c=1; c<nChain; c++) {
-            MPI_Send(&runComplete, 1, MPI_INT, c, RUN_COMPLETE, MPI_COMM_WORLD);
-        }
+    if (MPIrank==0 && i > Niter)
+      runComplete=1;
+
+    if (MPIrank==0 && runComplete==1) {
+      for (c=1; c<nChain; c++) {
+        MPI_Send(&runComplete, 1, MPI_INT, c, RUN_COMPLETE, MPI_COMM_WORLD);
+      }
     }
   }// while (!runComplete)
   
