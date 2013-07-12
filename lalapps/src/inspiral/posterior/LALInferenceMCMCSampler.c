@@ -806,12 +806,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
     }
 
-    if (MPIrank==0 && i > Niter)
-      runComplete=1;
-    if (MPIrank==0 && runComplete==1) {
-      for (c=1; c<nChain; c++) {
-        MPI_Send(&runComplete, 1, MPI_INT, c, RUN_COMPLETE, MPI_COMM_WORLD);
-      }
+    if (MPIrank==0 && i > Niter) {
+        runComplete=1;
+        for (c=1; c<nChain; c++) {
+            MPI_Send(&runComplete, 1, MPI_INT, c, RUN_COMPLETE, MPI_COMM_WORLD);
+        }
     }
   }// while (!runComplete)
   
@@ -951,7 +950,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
   REAL8 logChainSwap;
   INT4 readyToSwap = 0;
   UINT4 swapProposed=0;
-  UINT4 swapAccepted=0;
+  INT4 swapAccepted=0;
   LALInferenceMPIcomm swapReturn;
 
   REAL8Vector * parameters = NULL;
@@ -964,7 +963,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
     MPI_Send(&(runState->currentLikelihood), 1, MPI_DOUBLE, MPIrank+1, PT_COM, MPI_COMM_WORLD);
 
     /* Determine if swap was accepted */
-    MPI_Recv(&swapAccepted, 1, MPI_DOUBLE, MPIrank+1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+    MPI_Recv(&swapAccepted, 1, MPI_INT, MPIrank+1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
 
     /* Perform Swap */
     if (swapAccepted) {
@@ -1151,7 +1150,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
   REAL8 logChainSwap;
   INT4 readyToSwap = 0;
   UINT4 swapProposed=0;
-  UINT4 swapAccepted=0;
+  INT4 swapAccepted=0;
 
   REAL8 lowLikeLowParams = 0;
   REAL8 highLikeHighParams = 0;
@@ -1196,7 +1195,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
     MPI_Send(&lowLikeHighParams, 1, MPI_DOUBLE, MPIrank+1, PT_COM, MPI_COMM_WORLD);
 
     /* Determine if swap was accepted */
-    MPI_Recv(&swapAccepted, 1, MPI_DOUBLE, MPIrank+1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+    MPI_Recv(&swapAccepted, 1, MPI_INT, MPIrank+1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
 
     if (swapAccepted) {
       /* Set new likelihood */
