@@ -27,7 +27,7 @@
  *
  * */
 
-#include <LALSimInspiralWaveformCache.h>
+#include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/FrequencySeries.h>
 #include <time.h>
 #include <lal/LALConstants.h>
