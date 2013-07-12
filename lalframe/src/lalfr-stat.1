@@ -1,0 +1,40 @@
+.TH LALFR-STAT 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-stat -- briefly describe frame files
+
+.SH SYNOPSIS
+.B lalfr-stat
+[\fIfile\fP ...]
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-stat\fP utility displays information about the file pointed to
+by \fIfile\fP.  If \fIfile\fP is a single dash (`\fB-\fP') or absent,
+\fBlalfr-stat\fP reads from the standard input.
+
+For each \fIfile\fP, \fBlalfr-stat\fP writes to standard output a line
+containing five columns.  The first column contains the detector site
+information for all detector structures contained in \fIfile\fP.  The
+second column contains a file description that is parsed from the file
+name.  The third column contains the GPS second that is equal to or
+just before the beginning of the data contained in \fIfile\fP.  The
+fourth column contains an integer duration in seconds such that the sum
+of columns three and four gives a GPS time after the data contained in
+the file.  The fifth column contains the URL of the file.
+
+If any of the above data is missing or unknown, the value in the column
+is given by ``-''.
+
+.SH EXAMPLE
+.PP
+The command:
+.PP
+.RS
+lalfr-stat *.gwf > cache
+.RE
+.PP
+will produce a standard LAL cache file \fIcache\fP describing all the frames
+in the current directory.
+
+.SH AUTHOR
+Jolien Creighton

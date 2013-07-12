@@ -5,6 +5,7 @@ LDADD = \
 
 check_PROGRAMS = \
 	CCoarseGrainFrequencySeriesTest \
+	CSInterpolateTest \
 	DCoarseGrainFrequencySeriesTest \
 	DetInverseTest \
 	DirichletTest \
@@ -25,6 +26,9 @@ CCoarseGrainFrequencySeriesTest_SOURCES = \
 	CheckStatus.c \
 	CheckStatus.h \
 	CCoarseGrainFrequencySeriesTest.c
+
+CSInterpolateTest_SOURCES = \
+	CSInterpolateTest.c
 
 DCoarseGrainFrequencySeriesTest_SOURCES = \
 	CheckStatus.c \

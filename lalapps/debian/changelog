@@ -1,3 +1,17 @@
+lalapps (6.13.1-1) unstable; urgency=low
+
+  * LALApps 6.13.1
+  * Online ihope updates
+  * Bayestar updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 01 Jul 2013 11:29:17 -0500
+
+lalapps (6.13.0-1) unstable; urgency=low
+
+  * LALApps 6.13.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 27 Jun 2013 10:43:05 -0500
+
 lalapps (6.12.0-2) unstable; urgency=low
 
   * LALApps 6.12.0 rebuild with debian/dirs and debian/install

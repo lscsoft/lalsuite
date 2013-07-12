@@ -1003,7 +1003,11 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   # h0
   bounds = [0, float("inf")]
   ul = 0.95
-  histbins = 30
+  if not opts.__dict__['histbins']:
+    histbins = 30 # default number of histogram bins
+  else:
+    histbins = opts.histbins
+
   h0Fig, ulvals = pppu.plot_posterior_hist( poslist, 'h0', ifosNew, \
                                             bounds, histbins, \
                                             ul, overplot=True, \

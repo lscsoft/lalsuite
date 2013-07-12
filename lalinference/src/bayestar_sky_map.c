@@ -454,7 +454,7 @@ double *bayestar_sky_map_tdoa_snr(
                 double A = 0, B = 0;
                 double breakpoints[5];
                 int num_breakpoints = 0;
-                double log_offset;
+                double log_offset = -INFINITY;
 
                 /* The log-likelihood is quadratic in the estimated and true
                  * values of the SNR, and in 1/r. It is of the form A/r^2 + B/r,
@@ -512,13 +512,11 @@ double *bayestar_sky_map_tdoa_snr(
                      * Set log_offset to the maximum of the logarithm of the
                      * radial integrand evaluated at all of the breakpoints. */
                     int ibreakpoint;
-                    log_offset = log_radial_integrand(
-                        breakpoints[0], A, B, prior_distance_power);
-                    for (ibreakpoint = 1; ibreakpoint < num_breakpoints; ibreakpoint++)
+                    for (ibreakpoint = 0; ibreakpoint < num_breakpoints; ibreakpoint++)
                     {
                         const double new_log_offset = log_radial_integrand(
                             breakpoints[ibreakpoint], A, B, prior_distance_power);
-                        if (new_log_offset > log_offset)
+                        if (new_log_offset < INFINITY && new_log_offset > log_offset)
                             log_offset = new_log_offset;
                     }
                 }

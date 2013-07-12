@@ -34,6 +34,7 @@ char *XLALStringDuplicate(const char *s);
 size_t XLALStringCopy(char *dst, const char *src, size_t size);
 size_t XLALStringConcatenate(char *dst, const char *src, size_t size);
 int XLALStringToLowerCase(CHAR * string);
+int XLALStringToUpperCase(CHAR * string);
 
 #if 0
 {       /* so that editors will match succeeding brace */

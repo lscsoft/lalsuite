@@ -80,6 +80,23 @@ class TestGracedb(unittest.TestCase):
         self.assertTrue('numRows' in logs)
         pass
 
+    def test_upload_large_file(self):
+        """Upload a large file.  Issue https://bugs.ligo.org/redmine/issues/951"""
+
+        uploadFile = os.path.join(testdatadir, "big.data")
+        r = gracedb.writeFile(eventId, uploadFile)
+        self.assertEqual(r.status, 201) # CREATED
+        r_content = r.json()
+        link = r_content['permalink']
+        self.assertEqual(
+                open(uploadFile, 'r').read(),
+                gracedb.get(gracedb.files(eventId).json()['big.data']).read()
+                )
+        self.assertEqual(
+                open(uploadFile, 'r').read(),
+                gracedb.get(link).read()
+                )
+
     def test_upload_file(self):
         """Upload and re-upload a file"""
 
@@ -236,7 +253,7 @@ class TestGracedb(unittest.TestCase):
     def test_gittag(self):
         # try to make sure GIT_TAG is set properly.
         import errno
-        version = "1.11"
+        version = "1.13"
         try:
             # If we are in the source dir (setup.py is available)
             # make sure the version above agrees.

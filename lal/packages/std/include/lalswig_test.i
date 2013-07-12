@@ -9,6 +9,7 @@ typedef enum {
   lalswig_test_enum_c
 } lalswig_test_enum;
 typedef struct taglalswig_test_struct {
+  int n;
   INT4 i;
   REAL4 f;
   CHAR str[10];
@@ -17,7 +18,7 @@ typedef struct taglalswig_test_struct {
   lalswig_test_enum evec[3];
 } lalswig_test_struct;
 static const lalswig_test_struct lalswig_test_struct_const = {
-  3, 5.7, "abcde", {1,2,3}, {{4,5,6},{7,8,9}},
+  2, 3, 5.7, "abcde", {1,2,3}, {{4,5,6},{7,8,9}},
   {lalswig_test_enum_a,lalswig_test_enum_b,lalswig_test_enum_c}
 };
 static lalswig_test_struct lalswig_test_struct_vector[3];

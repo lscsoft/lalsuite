@@ -1,0 +1,31 @@
+.TH LALFR-CKSUM 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-cksum -- validates the checksum of a frame file
+
+.SH SYNOPSIS
+.B lalfr-cksum
+\fIfile\fP [\fIfiles\fP ...]
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-cksum\fP utility validates the checksum on the specified files
+to the standard output.  The \fIfile\fP operands are processed in command-line
+order.  If \fIfile\fP is a single dash (`\fB-\fP') or absent, \fBlalfr-cksum\fP
+reads from the standard input.
+
+.SH EXIT STATUS
+The \fBlalfr-cksum\fP utility exits 0 on success, and >0 if one or more of
+the frame files have invalid checksums.
+
+.SH EXAMPLE
+.PP
+The command:
+.PP
+.RS
+lalfr-cksum file1.gwf file2.gwf
+.RE
+.PP
+will validate frame files \fIfile1.gwf\fP and \fIfile2.gwf\fP.
+
+.SH AUTHOR
+Jolien Creighton

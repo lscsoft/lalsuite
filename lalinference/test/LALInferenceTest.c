@@ -989,8 +989,6 @@ void DataTest(void)
     LALInferenceAddVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     numberI4 = LAL_PNORDER_TWO;
     LALInferenceAddVariable(&currentParams, "LAL_PNORDER",     &numberI4,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);*/
-	 fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood..\n");
-    likelihood = LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceLALTemplateGeneratePPN);
     nulllikelihood = LALInferenceNullLogLikelihood(runstate->data);
 printf("Likelihood %g NullLikelihood %g RelativeLikelihood %g\n", likelihood, nulllikelihood, likelihood-nulllikelihood);
 

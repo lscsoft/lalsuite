@@ -1,4 +1,5 @@
 EXTRA_DIST = \
+	compile \
 	ax_pthread.m4 \
 	config.guess \
 	config.sub \

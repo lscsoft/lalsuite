@@ -13,7 +13,7 @@ URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig python-devel octave-devel
-Requires: gsl libframe libmetaio lal lalframe lalmetaio lalsimulation
+Requires: gsl libframe libmetaio lal lalframe lalmetaio lalburst
 Prefix: %{_prefix}
 
 %description
@@ -83,11 +83,15 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files python
 %defattr(-,root,root)
+%{_bindir}/laldetchar-hveto
 %{_libdir}/python*/site-packages/laldetchar/*.py
-%{_libdir}/python*/site-packages/laldetcha/r*.pyc
+%{_libdir}/python*/site-packages/laldetchar/*.pyc
 %{_libdir}/python*/site-packages/laldetchar/_laldetchar.so*
+%{_libdir}/python*/site-packages/laldetchar/triggers/*.py
+%{_libdir}/python*/site-packages/laldetchar/triggers/*.pyc
 %exclude %{_libdir}/python*/site-packages/laldetchar/*.pyo
 %exclude %{_libdir}/python*/site-packages/laldetchar/*.la
+%exclude %{_libdir}/python*/site-packages/laldetchar/triggers/*.pyo
 
 %files octave
 %defattr(-,root,root)

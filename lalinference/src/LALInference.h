@@ -648,6 +648,22 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state);
  */
 void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefilename);
 
+/** Write a LALInferenceVariables as binary to a given FILE pointer, returns the number
+ * of items written (should be the dimension of the variables) or -1 on error */
+int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars);
+
+/** Read from the given FILE * a LALInferenceVariables, which was previously
+ * written with LALInferenceWriteVariablesBinary() Returns a new LALInferenceVariables */
+LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream);
+
+/** Write an array N of LALInferenceVariables to the given FILE * using
+ * LALInferenceWriteVariablesBinary(). Returns the number written (should be ==N) */
+int LALInferenceWriteVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N);
+
+/** Read N LALInferenceVariables from the binary FILE *file, previously written with
+ * LALInferenceWriteVariablesArrayBinary() returns the number read */
+int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N);
+
 /*@}*/
 
 #endif

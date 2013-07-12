@@ -1,0 +1,50 @@
+.TH LALFR-FMT 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-fmt -- formats multicolumn text files into channels in a frame file
+
+.SH SYNOPSIS
+.B lalfr-fmt
+[\fIfile\fP ...]
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-fmt\fP utility reads each multicolumn input file \fIfile\fP
+and formats the columns into different channels that are output as a
+frame file to the standard output.  The \fIfile\fP operands are processed in
+command-line order.  If \fIfile\fP is a single dash (`\fB-\fP') or absent,
+\fBlalfr-fmt\fP reads from the standard input.
+
+If \fIfile\fP contains only one column of data, each row is interpreted as a
+sample of a single channel having a sample rate of 16384 Hz.  If there
+are more than one column in \fIfile\fP then the first column is interpreted
+as the GPS time of each sample.  The remaining columns then describe the
+samples for separate channels.  The output channels are named ``C01'',
+``C02'', etc.
+
+.SH EXAMPLES
+.PP
+The command:
+.PP
+.RS
+.HP
+seq 0 0.02 99.98 | paste - - - - - | lalfr-fmt > file.gwf
+.RE
+.PP
+produces a frame file \fIfile.gwf\fP containing four channels named
+C01, C02, C03, and C04, each with a sample rate of 10 Hz.
+.PP
+The command:
+.PP
+.RS
+.HP
+lalsim-detector-noise -s 1000000000 -t 64 -aligo-zerodet-highpower | lalfr-fmt > noise.gwf
+.RE
+.PP
+produces a frame file \fInoise.gwf\fP containing 64 seconds of simulated
+aLIGO noise.
+
+.SH SEE ALSO
+lalfr-print(1)
+
+.SH AUTHOR
+Jolien Creighton

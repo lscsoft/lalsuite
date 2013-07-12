@@ -13,7 +13,7 @@ URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig python-devel octave-devel
-Requires: chealpix python-healpy gsl libmetaio lal lalmetaio lalsimulation lalinspiral lalpulsar
+Requires: chealpix healpy gsl libmetaio lal lalmetaio lalsimulation lalinspiral lalpulsar
 Prefix: %{_prefix}
 
 %description

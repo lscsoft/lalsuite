@@ -257,15 +257,11 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 
 // Process an interface function NAME: rename it to RENAME, and set it to
 // always return SWIG-owned wrapping objects (unless the function is being
-// ignored). If IGNORE_TYPE is given, ignore the function's return value.
-// If DISOWN is true, disown the function's first argument.
-%define %swiglal_process_function(NAME, RENAME, IGNORE_TYPE, DISOWN)
+// ignored). If DISOWN is true, disown the function's first argument.
+%define %swiglal_process_function(NAME, RENAME, DISOWN)
 %rename(#RENAME) NAME;
 #if #RENAME != "$ignore"
 %feature("new", "1") NAME;
-#if #IGNORE_TYPE != ""
-%apply SWIGTYPE SWIGLAL_RETURN_VOID { IGNORE_TYPE NAME };
-#endif
 #if DISOWN
 %feature("del", "1") NAME;
 #endif
@@ -847,6 +843,35 @@ if (swiglal_release_parent(PTR)) {
 %swiglal_map_abc(%swiglal_feature_nspace, "immutable", "1", TAGNAME, __VA_ARGS__);
 %enddef
 #define %swiglal_public_clear_IMMUTABLE_MEMBERS(...)
+
+// Typemap for functions which return 'int'. If these functions also return
+// other output arguments (via 'argout' typemaps), the 'int' return value is
+// ignored. This is because 'int' is very commonly used to return an XLAL
+// error code, which will be converted into a native scripting-language
+// exception, and so the error code itself is not needed directly. To avoid
+// having to unpack the error code when collecting the other output arguments,
+// therefore, it is ignored in the wrappings. Functions which fit this criteria
+// but do return a useful 'int' can use SWIGLAL(RETURN_VALUE(int, ...)) to
+// disable this behaviour.
+//
+// For functions, since %feature("new") is set, the 'out' typemap will have $owner=1,
+// and the 'newfree' typemap is also applied. The 'out' typemap ignores the 'int'
+// return value by setting the output argument list to VOID_Object; the wrapping
+// function them proceeds to add other output arguments to the list, if any. After
+// this, the 'newfree' typemap is triggered, which appends the 'int' return if the
+// output argument list is empty, using the scripting-language-specific macro
+// swiglal_append_output_if_empty(). For structs, $owner=0, so the int return is
+// set straight away, and the 'newfree' typemap is never applied.
+%typemap(out, noblock=1) int {
+%#if $owner
+  %set_output(VOID_Object);
+%#else
+  %set_output(SWIG_From(int)($1));
+%#endif
+}
+%typemap(newfree, noblock=1, fragment=SWIG_From_frag(int)) int {
+  swiglal_append_output_if_empty(SWIG_From(int)($1));
+}
 
 // Typemaps for empty arguments. These typemaps are useful when no input from the
 // scripting language is required, and an empty struct needs to be supplied to

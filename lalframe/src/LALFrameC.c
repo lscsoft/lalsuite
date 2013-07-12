@@ -1,3 +1,22 @@
+/*
+*  Copyright (C) 2013 Jolien Creighton
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -490,13 +509,9 @@ const char *XLALFrameUFrChanQueryName(const LALFrameUFrChan * channel)
 
 double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel)
 {
-    /*  TODO: implement when functionality is made available */
-    /*
-     * fr_chan_time_offset_t offset;
-     * TRY_FRAMEC_FUNCTION_VAL( offset, 0, FrameCFrChanQuery, channel, FR_CHAN_FIELD_TIME_OFFSET, &offset, FR_CHAN_FIELD_LAST );
-     */
-    channel = NULL;
-    return 0;
+    fr_chan_time_offset_t offset;
+    TRY_FRAMEC_FUNCTION_VAL(offset, 0, FrameCFrChanQuery, channel,
+        FR_CHAN_FIELD_TIME_OFFSET, &offset, FR_CHAN_FIELD_LAST);
 }
 
 /* Channel set functions */
@@ -507,6 +522,14 @@ int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
     fr_chan_sample_rate_t srate = sampleRate;
     TRY_FRAMEC_FUNCTION(FrameCFrChanSet, channel, FR_CHAN_FIELD_SAMPLE_RATE,
         srate, FR_CHAN_FIELD_LAST);
+}
+
+int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel,
+    double timeOffset)
+{
+    fr_chan_time_offset_t offset = timeOffset;
+    TRY_FRAMEC_FUNCTION(FrameCFrChanSet, channel, FR_CHAN_FIELD_TIME_OFFSET,
+        offset, FR_CHAN_FIELD_LAST);
 }
 
 /* ChanVector functions */

@@ -4,8 +4,8 @@ Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7.0.0), pkg-config, python-all-dev,
   libgsl0-dev (>= 1.9), libglib2.0-dev, swig (>= 2.0.7),
-  octave3.2-headers, lal-dev (>= 6.10.0),
-  lal-python (>= 6.10.0), lal-octave (>= 6.10.0),
+  octave3.2-headers, lal-dev (>= 6.11.0~),
+  lal-python (>= 6.11.0~), lal-octave (>= 6.11.0~),
   lalmetaio-dev (>= 1.1.0), lalmetaio-python (>= 1.1.0),
   lalmetaio-octave (>= 1.1.0), lalburst-dev (>= 1.2.0),
   lalburst-python (>= 1.2.0), lalburst-octave (>= 1.2.0)
@@ -16,7 +16,7 @@ Package: laldetchar
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libglib2.0-0,
-  lal (>= 6.10.0), lalmetaio (>= 1.1.0), lalburst (>= 1.2.0)
+  lal (>= 6.11.0~), lalmetaio (>= 1.1.0), lalburst (>= 1.2.0)
 Description: LSC Algorithm Library Detector Characterisation
  The LSC Algorithm Detector Characterisation Library for gravitational
  wave data analysis. This package contains the shared-object libraries
@@ -25,7 +25,7 @@ Description: LSC Algorithm Library Detector Characterisation
 Package: laldetchar-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9),
-  libglib2.0-dev, lal-dev (>= 6.10.0), lalmetaio-dev (>= 1.1.0),
+  libglib2.0-dev, lal-dev (>= 6.11.0~), lalmetaio-dev (>= 1.1.0),
   lalburst-dev (>= 1.2.0), laldetchar (= ${binary:Version})
 Description: LSC Algorithm Library Detector Characterisation Developers
  The LSC Algorithm Detector Characterisation Library for gravitational
@@ -35,13 +35,13 @@ Description: LSC Algorithm Library Detector Characterisation Developers
 Package: laldetchar-python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
-  laldetchar (= ${binary:Version}), lal-python (>= 6.10.0),
+  laldetchar (= ${binary:Version}), lal-python (>= 6.11.0~),
   lalmetaio-python (>= 1.1.0), lalburst-python (>= 1.2.0)
 Description: Python bindings for LALDetChar
 
 Package: laldetchar-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
-  laldetchar (= ${binary:Version}), lal-octave (>= 6.10.0),
+  laldetchar (= ${binary:Version}), lal-octave (>= 6.11.0~),
   lalmetaio-python (>= 1.1.0), lalburst-python (>= 1.2.0)
 Description: Octave bindings for LALDetChar

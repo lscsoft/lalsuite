@@ -156,6 +156,15 @@ bool XLALSimInspiralWaveformFlagsIsDefault(
         );
 
 /**
+ * Checks if all flags in two LALSimInspiralWaveformFlags structs are equal.
+ * Returns true if all flags are equal. Returns false if one or more differ.
+ */
+bool XLALSimInspiralWaveformFlagsEqual(
+        LALSimInspiralWaveformFlags *waveFlags1,
+        LALSimInspiralWaveformFlags *waveFlags2
+        );
+
+/**
  * Set the LALSimInspiralSpinOrder within a LALSimInspiralWaveformFlags struct
  */
 void XLALSimInspiralSetSpinOrder(

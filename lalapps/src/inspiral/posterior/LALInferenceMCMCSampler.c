@@ -602,7 +602,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     i++;
 
     if (runPhase == LADDER_UPDATE)
-      LALInferenceLadderUpdate(runState, 0);
+      LALInferenceLadderUpdate(runState, 0, i);
 
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 
@@ -815,7 +815,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
   }// while (!runComplete)
   
-
+  /* Flush any remaining PT swap attempts before moving on */
+  LALInferenceFlushPTswap();
   MPI_Barrier(MPI_COMM_WORLD);
 
   fclose(chainoutput);
@@ -992,7 +993,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
   }
 
   /* Check if next lower temperature is ready to swap */
-  if (MPIrank > 0) {
+  else if (MPIrank > 0) {
     MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &readyToSwap, &MPIstatus);
 
     /* Hotter chain decides acceptance */
@@ -1057,12 +1058,32 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
   return swapReturn;
 }
 
-void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag)
+/* Utility function that checks if the next coldest chain is attempting a PT swap.  If so, it is rejected. */
+void LALInferenceFlushPTswap() {
+    INT4 MPIrank;
+    INT4 attemptingSwap=0;
+    INT4 swapRejection=0;
+    REAL8 dummyLikelihood;
+    MPI_Status MPIstatus;
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+
+    if (MPIrank==0) {
+        return;
+    } else {
+        MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
+        if (attemptingSwap) {
+          MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+          MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
+        }
+    }
+    return;
+}
+
+
+void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle)
 {
   INT4 MPIrank, chain;
-  INT4 attemptingSwap=0, readyToSend=0;
-  REAL8 dummyLikelihood;
-  REAL8 swapRejection=0;
+  INT4 readyToSend=0;
   MPI_Status MPIstatus;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
@@ -1088,11 +1109,7 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
 
   } else {
     /* Flush out any lingering swap proposals from colder chains */
-    MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
-    if (attemptingSwap) {
-      MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
-      MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
-    }
+    LALInferenceFlushPTswap();
 
     params = XLALCreateREAL8Vector(nPar);
 
@@ -1102,13 +1119,16 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
     }
 
     /* Recieve new parameters and unpack into current params */
-    MPI_Recv(params->data, nPar, MPI_DOUBLE, MPI_ANY_SOURCE, LADDER_UPDATE_COM, MPI_COMM_WORLD, &MPIstatus);
+    MPI_Recv(params->data, nPar, MPI_DOUBLE, MPIstatus.MPI_SOURCE, LADDER_UPDATE_COM, MPI_COMM_WORLD, &MPIstatus);
 
     LALInferenceCopyArrayToVariables(params, runState->currentParams);
 
     /* Update prior and likelihood */
     runState->currentPrior = runState->prior(runState, runState->currentParams);
     runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+
+    /* Restart adaptation to tune for the current location */
+    LALInferenceAdaptationRestart(runState, cycle);
   }
 
   /* Reset runPhase to the last phase each chain was in */
@@ -1203,7 +1223,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
   }
 
   /* Check if next lower temperature is ready to swap */
-  if (MPIrank > 0) {
+  else if (MPIrank > 0) {
     MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &readyToSwap, &MPIstatus);
 
     /* Hotter chain decides acceptance */
@@ -1331,8 +1351,9 @@ void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle)
 //-----------------------------------------
 void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
 {
+  //LALInferenceMCMCrunPhase runPhase = **(LALInferenceMCMCrunPhase **) LALInferenceGetVariable(runState->algorithmParams, "runPhase");
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
-  INT4 nChain = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nChain");
+  //INT4 nChain = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nChain");
   INT4 adapting=1;
   INT4 goodACL=0;
 
@@ -1353,8 +1374,9 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
     }
   }
 
-  if (MPIrank != nChain-1)
-      LALInferenceLadderUpdate(runState, 1);
+  /* Move hotter chains to this location.  Stagger when chains can start peforming such an update. */
+  //if (runPhase != LADDER_UPDATE && MPIrank != nChain-1 && cycle > MPIrank*1000)
+  //    LALInferenceLadderUpdate(runState, 1, cycle);
 
   LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
   LALInferenceSetVariable(runState->proposalArgs, "adaptStart", &cycle);

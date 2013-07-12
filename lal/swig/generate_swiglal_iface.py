@@ -294,9 +294,7 @@ for function_name in functions:
     # remove destructor function from interface
     functions[function_name]['feature_ignore'] = '1'
 
-# determine whether a function should:
-# - ignore its return value
-# - disown its first argument
+# determine whether a function should disown its first argument
 func_arg_types_regexp = re.compile(r'^f\((.*)\)\.(p\.)*$')
 for function_name in functions:
 
@@ -309,25 +307,6 @@ for function_name in functions:
     func_retn_type = functions[function_name]['type']
     if not func_arg_types_match.group(2) is None:
         func_retn_type = func_arg_types_match.group(2) + func_retn_type
-
-    # if function returns 'int', and at least one argument is a double pointer,
-    # i.e. an output argument, ignore the returned 'int', since many LAL functions
-    # only use int to return an error code (XLAL_SUCCESS or XLAL_FAILURE), which is
-    # not needed in the wrappings since XLAL errors are already handled as native
-    # exceptions through xlalErrno, and the returned 'int' gets in the way of
-    # handling output arguments
-    ignore_retn_value = (func_retn_type == 'int' and any([arg.startswith('p.p.') for arg in func_arg_types]))
-
-    # add C return type or '' as extra argument to swiglal_process_function() macro
-    if ignore_retn_value:
-        if func_retn_type.startswith('p.'):
-            ignore_retn_c_type = func_retn_type[2:] + '*'
-        else:
-            ignore_retn_c_type = func_retn_type
-        ignore_retn_c_type = ignore_retn_c_type.replace('q(const).', 'const ')
-    else:
-        ignore_retn_c_type = ''
-    functions[function_name]['extra_process_args'].append(ignore_retn_c_type)
 
     # if first argument of function is a pointer type and matches the return type,
     # disown the first argument, since many LAL functions return their first argument

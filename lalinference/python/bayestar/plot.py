@@ -42,7 +42,7 @@ import healpy as hp
 
 
 # FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
-if mpl_version > '1.2.0':
+if mpl_version >= '1.3.0':
     FixedMollweideAxes = MollweideAxes
 elif mpl_version < '1.2.0':
     class FixedMollweideAxes(MollweideAxes):

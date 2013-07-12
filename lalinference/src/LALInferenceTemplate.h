@@ -52,6 +52,12 @@
  */
 /*@{*/
 
+/** Function for determining the starting frequency of the (2,2) mode when the highest
+ *  order contribution starts at fLow.
+ */
+REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant);
+
+
 /** De-bugging function writing a (frequency-domain) signal template to a CSV file.
  *  File contains real & imaginary parts of plus & cross components.
  *  Template amplitude is (usually) scaled to 1 Mpc luminosity distance.                        
@@ -66,13 +72,6 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
  */
 void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                             LALInferenceTemplateFunction templt, const char *filename);
-
-
-/** Template function to generate LAL's "parametrized post-Newtonian" (PPN) inspiral waveform.
- *  Internally uses LAL's LALGeneratePPNInspiral() function. 
- *  Signal amplitude is scaled to 1 Mpc luminosity distance.
- */
-void LALInferenceLALTemplateGeneratePPN(LALInferenceIFOData *IFOdata);
 
 
 /** 2.0PN / 2.5PN stationary phase approximation inspiral template in frequency domain.

@@ -16,11 +16,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import httplib
+import httplib, socket
 import mimetypes
 import urllib
-import os
+import os, sys
 import json
+from urlparse import urlparse
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/api/"
 
@@ -35,11 +36,75 @@ class HTTPError(Exception):
         Exception.__init__(self, (status, reason+" / "+message))
 
 #-----------------------------------------------------------------
+# HTTP/S Proxy classses
+# Taken from: http://code.activestate.com/recipes/456195/
+
+class ProxyHTTPConnection(httplib.HTTPConnection):
+
+    _ports = {'http' : 80, 'https' : 443}
+
+    def request(self, method, url, body=None, headers={}):
+        #request is called before connect, so can interpret url and get
+        #real host/port to be used to make CONNECT request to proxy
+        o = urlparse(url)
+        proto = o.scheme
+        port = o.port
+        host = o.hostname
+        if proto is None:
+            raise ValueError, "unknown URL type: %s" % url
+        if port is None:
+            try:
+                port = self._ports[proto]
+            except KeyError:
+                raise ValueError, "unknown protocol for: %s" % url
+        self._real_host = host
+        self._real_port = port
+        httplib.HTTPConnection.request(self, method, url, body, headers)
+
+
+    def connect(self):
+        httplib.HTTPConnection.connect(self)
+        #send proxy CONNECT request
+        self.send("CONNECT %s:%d HTTP/1.0\r\n\r\n" % (self._real_host, self._real_port))
+        #expect a HTTP/1.0 200 Connection established
+        response = self.response_class(self.sock, strict=self.strict, method=self._method)
+        (version, code, message) = response._read_status()
+        #probably here we can handle auth requests...
+        if code != 200:
+            #proxy returned and error, abort connection, and raise exception
+            self.close()
+            raise socket.error, "Proxy connection failed: %d %s" % (code, message.strip())
+        #eat up header block from proxy....
+        while True:
+            #should not use directly fp probablu
+            line = response.fp.readline()
+            if line == '\r\n': break
+
+class ProxyHTTPSConnection(ProxyHTTPConnection):
+
+    default_port = 443
+
+    def __init__(self, host, port = None, key_file = None, cert_file = None, strict = None):
+        ProxyHTTPConnection.__init__(self, host, port)
+        self.key_file = key_file
+        self.cert_file = cert_file
+
+    def connect(self):
+        ProxyHTTPConnection.connect(self)
+        #make the sock ssl-aware
+        ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
+        self.sock = httplib.FakeSocket(self.sock, ssl)
+
+#-----------------------------------------------------------------
 # Generic GSI REST
 
 class GsiRest(object):
     """docstring for GracedbRest"""
-    def __init__(self, cred=None):
+    def __init__(self, 
+            url=DEFAULT_SERVICE_URL, 
+            proxy_host=None, 
+            proxy_port=3128, 
+            cred=None):
         if not cred:
             cred = findUserCredentials()
         if isinstance(cred, (list, tuple)):
@@ -48,12 +113,19 @@ class GsiRest(object):
             self.cert = self.key = cred
         self.connection = None
 
-    def getConnection(self, url):
-        proto, rest = urllib.splittype(url)
-        host, path = urllib.splithost(rest)
-        host, port = urllib.splitport(host)
-        return httplib.HTTPSConnection(host, port,
-                key_file=self.key, cert_file=self.cert)
+        if proxy_host:
+            self.connector = lambda: ProxyHTTPSConnection(
+                    proxy_host, proxy_port, key_file=self.key, cert_file=self.cert)
+        else:
+            o = urlparse(url)
+            port = o.port
+            host = o.hostname
+            port = port or 443
+            self.connector = lambda: httplib.HTTPSConnection(
+                    host, port, key_file=self.key, cert_file=self.cert)
+
+    def getConnection(self):
+        return self.connector()
 
     def request(self, method, url, body=None, headers=None, priming_url=None):
         # Bug in Python (versions < 2.7.1 (?))
@@ -67,7 +139,7 @@ class GsiRest(object):
         url = url and str(url)
         priming_url = priming_url and str(priming_url)
 
-        conn = self.getConnection(url)
+        conn = self.getConnection()
         if priming_url:
             conn.request("GET", priming_url, headers={'connection' : 'keep-alive'})
             response = conn.getresponse()
@@ -112,8 +184,8 @@ class GsiRest(object):
             if isinstance(body, dict):
 #           XXX What about the headers in the params?
                 if 'content-type' not in headers:
-                    headers['content-type'] = "application/x-www-form-urlencoded"
-                body = urllib.urlencode(body)
+                    headers['content-type'] = "application/json"
+                body = json.dumps(body)
         else:
             body = body or {}
             if isinstance(body, dict):
@@ -134,8 +206,9 @@ class GsiRest(object):
 
 class GraceDb(GsiRest):
     """docstring for GraceDb"""
-    def __init__(self, service_url=DEFAULT_SERVICE_URL, *args, **kwargs):
-        GsiRest.__init__(self, *args, **kwargs)
+    def __init__(self, service_url=DEFAULT_SERVICE_URL, 
+            proxy_host=None, proxy_port=3128, *args, **kwargs):
+        GsiRest.__init__(self, service_url, proxy_host, proxy_port, *args, **kwargs)
 
         self.service_url = service_url
         self._service_info = None
@@ -161,6 +234,11 @@ class GraceDb(GsiRest):
     @property
     def groups(self):
         return self.service_info.get('groups')
+
+    def request(self, method, *args, **kwargs):
+        if method.lower() in ['post', 'put']:
+            kwargs['priming_url'] = self.service_url
+        return GsiRest.request(self, method, *args, **kwargs)
 
     def _analysisTypeCode(self, analysis_type):
         """Check if analysis_type is valid.
@@ -188,7 +266,11 @@ class GraceDb(GsiRest):
             # XXX Terrible error messages / weak exception type
             raise Exception(str(errors))
         if filecontents is None:
-            filecontents = open(filename, 'rb').read() # XXX or 'rb' ?
+            if filename == '-':
+                filename = 'initial.data'
+                filecontents = sys.stdin.read()
+            else:
+                filecontents = open(filename, 'rb').read() 
         fields = [
                   ('group', group),
                   ('type', analysis_type_code),
@@ -200,6 +282,8 @@ class GraceDb(GsiRest):
 
     def replaceEvent(self, graceid, filename, filecontents=None):
         if filecontents is None:
+            # Note: not allowing filename '-' here.  We want the event datafile
+            # to be versioned.
             filecontents = open(filename, 'rb').read()
         return self.put(
                 self.templates['event-detail-template'].format(graceid=graceid),
@@ -209,12 +293,13 @@ class GraceDb(GsiRest):
         return self.get(
                 self.templates['event-detail-template'].format(graceid=graceid))
 
-    def events(self, query=None, orderby=None, count=None):
+    def events(self, query=None, orderby=None, count=None, columns=None):
         uri = self.links['events']
         qdict = {}
         if query:   qdict['query'] = query
         if count:   qdict['count'] = count
         if orderby: qdict['orderby'] = orderby
+        if columns: qdict['columns'] = columns
         if qdict:
             uri += "?" + urllib.urlencode(qdict)
         while uri:
@@ -239,7 +324,11 @@ class GraceDb(GsiRest):
         template = self.templates['files-template']
         uri = template.format(graceid=graceid, filename=os.path.basename(filename))
         if filecontents is None:
-            filecontents = open(filename, "rb").read()
+            if filename == '-':
+                filename = 'stdin'
+                filecontents = sys.stdin.read()
+            else:
+                filecontents = open(filename, "rb").read()
         elif isinstance(filecontents, file):
             # XXX Does not scale well.
             filecontents = filecontents.read()
@@ -251,11 +340,25 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid)
         return self.get(uri)
 
-    def writeLog(self, graceid, message, tagname=None, displayName=None):
+    def writeLog(self, graceid, message, filename=None, filecontents=None, 
+            tagname=None, displayName=None):
         template = self.templates['event-log-template']
         uri = template.format(graceid=graceid)
+        files = None
+        if filename:
+            if filecontents is None:
+                if filename == '-':
+                    filename = 'stdin'
+                    filecontents = sys.stdin.read()
+                else:
+                    filecontents = open(filename, "rb").read()
+            elif isinstance(filecontents, file):
+                # XXX Does not scale well.
+                filecontents = filecontents.read()
+            files = [('upload', os.path.basename(filename), filecontents)]
+
         return self.post(uri, body={'message' : message, 'tagname': tagname, 
-            'displayName': displayName})
+            'displayName': displayName}, files=files)
 
     def labels(self, graceid, label=""):
         template = self.templates['event-label-template']
@@ -302,6 +405,8 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid, n=n, tagname=tagname)
         return self.delete(uri)
 
+    def ping(self):
+        return self.get(self.links['self'])
 
 #-----------------------------------------------------------------
 # TBD
@@ -333,13 +438,17 @@ def encode_multipart_formdata(fields, files):
     CRLF = '\r\n'
     L = []
     for (key, value) in fields:
+        if value is None: continue
         L.append('--' + BOUNDARY)
         L.append('Content-Disposition: form-data; name="%s"' % key)
         L.append('')
-        L.append(value)
+        # str(value) in case it is unicode
+        L.append(str(value))
     for (key, filename, value) in files:
+        if value is None: continue
         L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+        # str(filename) in case it is unicode
+        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, str(filename)))
         L.append('Content-Type: %s' % get_content_type(filename))
         L.append('')
         L.append(value)
@@ -355,7 +464,7 @@ def get_content_type(filename):
 #-----------------------------------------------------------------
 # X509 Credentials
 
-
+# XXX No longer checking whether this is a pre-RFC proxy.  Is this okay?
 def findUserCredentials(warnOnOldProxy=1):
 
     proxyFile = os.environ.get('X509_USER_PROXY')

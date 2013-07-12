@@ -2556,3 +2556,148 @@ void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefile
         data=data->next;
     }
 }
+
+static void REAL8Vector_fwrite(FILE *f, REAL8Vector *vec);
+static void REAL8Vector_fwrite(FILE *f, REAL8Vector *vec)
+{
+  fwrite(&(vec->length),sizeof(UINT4),1,f);
+  fwrite(vec->data,sizeof(REAL8),vec->length,f);
+}
+
+static REAL8Vector * REAL8Vector_fread(FILE *f);
+static REAL8Vector * REAL8Vector_fread(FILE *f)
+{
+  REAL8Vector *out=NULL;
+  UINT4 size;
+  fread(&size,sizeof(size),1,f);
+  out=XLALCreateREAL8Vector(size);
+  fread(out->data,sizeof(REAL8),size,f);
+  return out;
+}
+
+int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
+{
+  int i=0;
+  char termchar='\n';
+  if(!vars) return -1;
+  LALInferenceVariableItem *item=vars->head;
+  /* Write initial info (number of dimensions) */
+  fwrite(&(vars->dimension),sizeof(vars->dimension),1,file);
+  /* Write each item */
+  for(i=0;item;i++)
+  {
+    /* Name */
+    fputs(item->name,file);
+    fwrite(&termchar,sizeof(char),1,file);
+    fwrite(&(item->type),sizeof(item->type),1,file);
+    fwrite(&(item->vary),sizeof(item->vary),1,file);
+    switch(item->type)
+    {
+      case LALINFERENCE_gslMatrix_t:
+      {
+	gsl_matrix *matrix=*(gsl_matrix **)item->value;
+	fwrite(&(matrix->size1),sizeof(matrix->size1),1,file);
+	fwrite(&(matrix->size2),sizeof(matrix->size2),1,file);
+	gsl_matrix_fwrite(file,matrix);
+	break;
+      }
+      case LALINFERENCE_REAL8Vector_t:
+      {
+	REAL8Vector *vec=*(REAL8Vector **)item->value;
+	REAL8Vector_fwrite(file,vec);
+	break;
+      }
+      default:
+      {
+	fwrite(item->value,LALInferenceTypeSize[item->type],1,file);
+	break;
+      }
+    }
+    item=item->next;
+  }
+  return i;
+}
+
+LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
+{
+  //UINT4 i=0;
+  UINT4 j;
+  UINT4 dim;
+  LALInferenceVariables *vars=XLALCalloc(1,sizeof(LALInferenceVariables));
+  //LALInferenceVariableItem **item=NULL;
+  /* Number of variables to read */
+  fread(&dim, sizeof(vars->dimension), 1, stream);
+  //item=&(vars->head);
+  /* Now read them in */
+  for(;dim>0;dim--)
+  {
+    char name[VARNAME_MAX];
+    LALInferenceVariableType type;
+    LALInferenceParamVaryType vary;
+    fgets(name,sizeof(name),stream);
+    
+    //*item=LALCalloc(1,sizeof(LALInferenceVariableItem));
+    //fgets((*item)->name, sizeof((*item)->name), stream);
+    j=sizeof(name);
+    while(j>1 && name[j-1]!='\n') name[--j]='\0';
+    if(j>1) name[j-1]='\0';
+    else
+    {
+      fprintf(stderr,"ERROR reading saved variable!");
+      return(NULL);
+    }
+    fread(&type,sizeof(type),1,stream);
+    fread(&vary,sizeof(vary),1,stream);
+    switch(type)
+    {
+      case  LALINFERENCE_gslMatrix_t:
+      {
+	size_t size1,size2;
+	fread(&size1,sizeof(size1),1,stream);
+	fread(&size2,sizeof(size2),1,stream);
+	gsl_matrix *matrix=gsl_matrix_alloc(size1,size2);
+	gsl_matrix_fread(stream,matrix);
+	LALInferenceAddVariable(vars,name,&matrix,type,vary);
+	//(*item)->value=XLALCalloc(1,sizeof(gsl_matrix *));
+	//memcpy((*item)->value,matrix,sizeof(matrix));
+	break;
+      }
+      case LALINFERENCE_REAL8Vector_t:
+      {
+	REAL8Vector *v=REAL8Vector_fread(stream);
+	LALInferenceAddVariable(vars,name,&v,type,vary);
+//	(*item)->value=XLALCalloc(1,sizeof(REAL8Vector *));
+//	memcpy((*item)->value,v,sizeof(v));
+	break;
+      }
+      default:
+      {
+	void *value=NULL;
+	UINT4 storagesize=LALInferenceTypeSize[type];
+	value=XLALCalloc(1,storagesize);
+	fread(value, storagesize, 1, stream);
+	LALInferenceAddVariable(vars,name,value,type,vary);
+      }
+    }
+    //item=&( (*item)->next);
+  }
+  //*item=NULL;
+  return vars;
+}
+
+int LALInferenceWriteVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
+{
+  UINT4 i=0;
+  for(i=0;i<N;i++) LALInferenceWriteVariablesBinary(file, vars[i]);
+  return N;
+}
+
+int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
+{
+  UINT4 i=0;
+  for(i=0;i<N;i++){
+    vars[i]=LALInferenceReadVariablesBinary(file);
+  }
+  return N;
+}
+

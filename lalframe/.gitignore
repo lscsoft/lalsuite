@@ -24,7 +24,7 @@ src/LALFrameConfig.h
 src/LALFrameVCSInfo.h
 src/config.h
 src/config.h.in
-src/lalfr-*
+src/lalfr-*[!1]
 src/lalframe-user-env.csh
 src/lalframe-user-env.sh
 src/lalframe-user-env.shell

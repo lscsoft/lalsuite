@@ -32,6 +32,7 @@ for a given trigger generator, and a few helper functions.
 import numpy
 import re
 
+from glue import iterutils
 from glue.ligolw import (lsctables, table as ligolw_table,
                          utils as ligolw_utils)
 
@@ -234,7 +235,7 @@ def from_ligolw(filepath, table_name, columns=None, start=None, end=None):
     xmldoc = ligolw_utils.load_filename(filepath)
     out = ligolw_table.get_table(xmldoc, table_name)
     if start or end:
-        time = time_func(out)
+        time = time_func(table_name)
         start = start is not None and start or segments.NegInfinity
         end = end is not None and end or segments.PosInfinity
         keep = lambda row: ((start <= float(time(row))) & (time(row) < end))

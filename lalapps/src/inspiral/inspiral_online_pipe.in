@@ -499,7 +499,8 @@ for ifo in ifo_list:
             else:
                 insp.set_user_tag("UNCLUSTERED_%2.2d" % i)
 
-            insp.set_output()
+            if doCohPTF:
+              insp.set_output()
             insp.add_parent(split)
             dag.add_node(insp)
             sub_insp.append(insp)

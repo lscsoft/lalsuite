@@ -32,7 +32,7 @@ INT4 coh_PTF_data_condition(
       channel[ifoNumber] = coh_PTF_get_data(params, params->channel[ifoNumber],
                                             params->dataCache[ifoNumber],
                                             ifoNumber);
-      coh_PTF_rescale_data(channel[ifoNumber], 1E20);
+      coh_PTF_rescale_data(channel[ifoNumber], params->dynRangeFac);
 
       /* compute the spectrum */
       invspec[ifoNumber] = coh_PTF_get_invspec(channel[ifoNumber], fwdplan,
@@ -992,6 +992,7 @@ void coh_PTF_initialize_structures(
    * because of conditioning and the PSD.*/
   fcTmpltParams->invSpecTrunc = params->truncateDuration;
   fcTmpltParams->maxTempLength = params->maxTempLength;
+  fcTmpltParams->dynRange = params->dynRangeFac;
 
   for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -2478,6 +2479,7 @@ void coh_PTF_calculate_rotated_vectors(
 MultiInspiralTable* coh_PTF_create_multi_event(
     struct coh_PTF_params   *params,
     REAL4TimeSeries         *cohSNR,
+    FindChirpTemplate       *fcTmplt,
     InspiralTemplate        PTFTemplate,
     UINT8                   *eventId,
     UINT4                   spinTrigger,
@@ -2669,41 +2671,45 @@ MultiInspiralTable* coh_PTF_create_multi_event(
     currEvent->g1quad = crectf( gammaBeta[0]->data->data[currPos], gammaBeta[1]->data->data[currPos] );
   }
 
+  REAL8 sigmasqCorrFac;
+  sigmasqCorrFac = ( (REAL8)fcTmplt->tmpltNorm);
+  sigmasqCorrFac *= ( (REAL8)params->tempCorrFac);
+
   if (snrComps[LAL_IFO_G1])
   {
     currEvent->snr_g = snrComps[LAL_IFO_G1]->data->
         data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_G1]];
-    currEvent->sigmasq_g = PTFM[LAL_IFO_G1]->data[0];
+    currEvent->sigmasq_g = PTFM[LAL_IFO_G1]->data[0] * sigmasqCorrFac;
   }
   if (snrComps[LAL_IFO_H1])
   {
     currEvent->snr_h1 = snrComps[LAL_IFO_H1]->data->
         data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_H1]];
-    currEvent->sigmasq_h1 = PTFM[LAL_IFO_H1]->data[0];
+    currEvent->sigmasq_h1 = PTFM[LAL_IFO_H1]->data[0] * sigmasqCorrFac;
   }
   if (snrComps[LAL_IFO_H2])
   {
     currEvent->snr_h2 = snrComps[LAL_IFO_H2]->data->
         data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_H2]];
-    currEvent->sigmasq_h2 = PTFM[LAL_IFO_H2]->data[0];
+    currEvent->sigmasq_h2 = PTFM[LAL_IFO_H2]->data[0] * sigmasqCorrFac;
   }
   if (snrComps[LAL_IFO_L1])
   {
     currEvent->snr_l = snrComps[LAL_IFO_L1]->data->
         data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_L1]];
-    currEvent->sigmasq_l = PTFM[LAL_IFO_L1]->data[0];
+    currEvent->sigmasq_l = PTFM[LAL_IFO_L1]->data[0] * sigmasqCorrFac;
   }
   if (snrComps[LAL_IFO_T1])
   {
     currEvent->snr_t = snrComps[LAL_IFO_T1]->data->
         data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_T1]];
-    currEvent->sigmasq_t = PTFM[LAL_IFO_T1]->data[0];
+    currEvent->sigmasq_t = PTFM[LAL_IFO_T1]->data[0] * sigmasqCorrFac;
   }
   if (snrComps[LAL_IFO_V1])
   {
     currEvent->snr_v = snrComps[LAL_IFO_V1]->data->
         data[currPos+params->numBufferPoints+timeOffsetPoints[LAL_IFO_V1]];
-    currEvent->sigmasq_v = PTFM[LAL_IFO_V1]->data[0];
+    currEvent->sigmasq_v = PTFM[LAL_IFO_V1]->data[0] * sigmasqCorrFac;
   }
   if (spinTrigger == 1)
   {
@@ -2752,6 +2758,7 @@ UINT8 coh_PTF_add_sngl_triggers(
     SnglInspiralTable       **eventList,
     SnglInspiralTable       **thisEvent,
     REAL4TimeSeries         *cohSNR,
+    FindChirpTemplate       *fcTmplt,
     InspiralTemplate        PTFTemplate,
     UINT8                   eventId,
     REAL4TimeSeries         **pValues,
@@ -2773,7 +2780,7 @@ UINT8 coh_PTF_add_sngl_triggers(
   {
     if (cohSNR->data->data[i])
     {
-      currEvent = coh_PTF_create_sngl_event(params,cohSNR,PTFTemplate,\
+      currEvent = coh_PTF_create_sngl_event(params,cohSNR,fcTmplt,PTFTemplate,\
           &eventId,pValues,bankVeto,autoVeto,chiSquare,PTFM,i);
 
       /* Check trigger against trig times */
@@ -2823,6 +2830,7 @@ UINT8 coh_PTF_add_sngl_triggers(
 SnglInspiralTable* coh_PTF_create_sngl_event(
     struct coh_PTF_params   *params,
     REAL4TimeSeries         *cohSNR,
+    FindChirpTemplate       *fcTmplt,
     InspiralTemplate        PTFTemplate,
     UINT8                   *eventId,
     REAL4TimeSeries         **pValues,
@@ -2853,6 +2861,10 @@ SnglInspiralTable* coh_PTF_create_sngl_event(
       &thisEvent->end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI;     /* hours */
 
   /* Set SNR, chisqs, sigmasq, eff_distance */
+  REAL8 sigmasqCorrFac;
+  sigmasqCorrFac = ( (REAL8)fcTmplt->tmpltNorm);
+  sigmasqCorrFac *= ( (REAL8)params->tempCorrFac);
+
   thisEvent->snr = cohSNR->data->data[currPos];
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -2861,14 +2873,13 @@ SnglInspiralTable* coh_PTF_create_sngl_event(
       thisEvent->chisq = chiSquare[ifoNumber]->data->data[currPos];
       thisEvent->bank_chisq = bankVeto[ifoNumber]->data->data[currPos];
       thisEvent->cont_chisq = autoVeto[ifoNumber]->data->data[currPos];
-      thisEvent->sigmasq = PTFM[ifoNumber]->data[0];
+      thisEvent->sigmasq = PTFM[ifoNumber]->data[0] * sigmasqCorrFac;
     }
   }
   /* FIXME: Should be fixed so that this actually stores the DOF! */
   thisEvent->chisq_dof = params->numChiSquareBins;
   thisEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
   thisEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
-  /* FIXME: I doubt the normalization is right to get eff_distance in Mpc */
   thisEvent->eff_distance = sqrt( thisEvent->sigmasq ) / thisEvent->snr;
   /* FIXME: What is this? What is it used for? */
   thisEvent->event_duration = 0;
