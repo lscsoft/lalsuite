@@ -181,6 +181,7 @@ int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel,
     void *datacopy;
     const char *unity;
     const char *unitx;
+    double toffset;
     double x0;
     double dx;
     LALFrameUFrChan *chancopy;
@@ -190,6 +191,7 @@ int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel,
 
     channame = XLALFrameUFrChanQueryName(channel);
     vectname = XLALFrameUFrChanVectorQueryName(channel);
+    toffset = XLALFrameUFrChanQueryTimeOffset(channel);
 
     XLALFrameUFrChanVectorExpand(channel);
     dtype = XLALFrameUFrChanVectorQueryType(channel);
@@ -217,6 +219,8 @@ int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel,
     default:
         abort();
     }
+
+    XLALFrameUFrChanSetTimeOffset(chancopy, toffset);
 
     XLALFrameUFrChanVectorAlloc(chancopy, dtype, ndata);
     XLALFrameUFrChanVectorSetName(chancopy, vectname);
