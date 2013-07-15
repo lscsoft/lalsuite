@@ -659,6 +659,17 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: ffPlaneNoise() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      if (args_info.printData_given) {
+         char w[1000];
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "ffbackground.dat");
+         FILE *FFBACKGROUND = fopen(w, "w");
+         if (FFBACKGROUND==NULL) {
+            fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         for (ii=0; ii<(INT4)aveNoise->length; ii++) fprintf(FFBACKGROUND, "%g\n", aveNoise->data[ii]);
+         fclose(FFBACKGROUND);
+      }
       
       //Compute the weighted TF data
       REAL4Vector *TFdata_weighted = XLALCreateREAL4Vector(ffdata->numffts*ffdata->numfbins);
@@ -719,11 +730,17 @@ int main(int argc, char *argv[])
             XLAL_ERROR(XLAL_EFUNC);
          }
          XLALDestroyREAL4Vector(usableTFdata2);
-         tfWeight(usableTFdata_slided2, usableTFdata_slided2, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
+         REAL4Vector *usableTFdata_slidedweighted2 = XLALCreateREAL4Vector(ffdata->numfbins*ffdata->numffts);
+         if (usableTFdata_slidedweighted2==NULL) {
+            fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins*ffdata->numffts);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         tfWeight(usableTFdata_slidedweighted2, usableTFdata_slided2, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
          if (xlalErrno!=0) {
             fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
+         XLALDestroyREAL4Vector(usableTFdata_slided2);
 
          char w[1000];
          snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "procTFdata.dat");
@@ -732,9 +749,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
             XLAL_ERROR(XLAL_EFUNC);
          }
-         for (ii=0; ii<(INT4)usableTFdata_slided2->length; ii++) fprintf(PROCTFDATA, "%g\n", usableTFdata_slided2->data[ii]);
+         for (ii=0; ii<(INT4)usableTFdata_slidedweighted2->length; ii++) fprintf(PROCTFDATA, "%g\n", usableTFdata_slidedweighted2->data[ii]);
          fclose(PROCTFDATA);
-         XLALDestroyREAL4Vector(usableTFdata_slided2);
+         XLALDestroyREAL4Vector(usableTFdata_slidedweighted2);
       }
 
       //We can now destroy the antenna weights
@@ -2600,6 +2617,24 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
                prevnoiseval = noiseval;
             }
          } /* for jj < x->length */
+
+         //Reverse the correlations, comment this out below!
+         /* memset(x->data, 0, sizeof(REAL4)*x->length);
+         for (jj=(INT4)x->length-1; jj>=0; jj--) {
+            if (sftexist->data[jj] != 0) {
+               noiseval = expRandNum(aveNoiseInTime->data[jj], input->rng);
+               if (XLAL_IS_REAL8_FAIL_NAN(noiseval)) {
+                  fprintf(stderr, "%s: expRandNum() failed.\n", __func__);
+                  XLAL_ERROR_VOID(XLAL_EFUNC);
+               }
+               if (jj<(INT4)x->length-1 && sftexist->data[jj+1]!=0) {
+                  noiseval *= (1.0-corrfactorsquared);
+                  noiseval += corrfactorsquared*prevnoiseval;
+               }
+               x->data[jj] = (REAL4)(noiseval/aveNoiseInTime->data[jj]-1.0);
+               prevnoiseval = noiseval;
+            }
+            } */
       
          //Window and rescale because of antenna and noise weights
          if (input->useSSE) {
