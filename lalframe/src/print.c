@@ -136,6 +136,8 @@ int printchannel(LALFrameUFrChan * channel, double t0)
     if (!channel)
         return -1;
 
+    XLALFrameUFrChanVectorExpand(channel);
+
     /* name = XLALFrameUFrChanQueryName(channel); */
     t0 += XLALFrameUFrChanQueryTimeOffset(channel);
 
