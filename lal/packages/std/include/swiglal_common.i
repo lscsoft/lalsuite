@@ -862,7 +862,7 @@ if (swiglal_release_parent(PTR)) {
 // output argument list is empty, using the scripting-language-specific macro
 // swiglal_append_output_if_empty(). For structs, $owner=0, so the int return is
 // set straight away, and the 'newfree' typemap is never applied.
-%typemap(out, noblock=1) int {
+%typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int {
 %#if $owner
   %set_output(VOID_Object);
 %#else

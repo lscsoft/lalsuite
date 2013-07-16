@@ -132,11 +132,11 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 # check for framec or libframe libraries and headers
 PKG_PROG_PKG_CONFIG
 AS_IF([test "${framec}" = "true"],[
-       PKG_CHECK_MODULES([FRAMEC],[framec >= 1.19.25],[true],[false])
-       CPPFLAGS="$CPPFLAGS $FRAMEC_CFLAGS"
-       LIBS="$LIBS $FRAMEC_LIBS"
-       AC_CHECK_LIB([FrameC],[FrameCFileOpen],,[AC_MSG_ERROR([could not find the framec library])])
-       AC_CHECK_HEADERS([framec/FrameC.h],,[AC_MSG_ERROR([could not find the FrameC.h header])])
+       PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 1.19.32],[true],[false])
+       CPPFLAGS="$CPPFLAGS $FRAMECPPC_CFLAGS"
+       LIBS="$LIBS $FRAMECPPC_LIBS"
+       AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[AC_MSG_ERROR([could not find the framec library])])
+       AC_CHECK_HEADERS([framecppc/FrameC.h],,[AC_MSG_ERROR([could not find the FrameC.h header])])
        AC_DEFINE([USE_FRAMEC],[],[Define to use FrameC])
        FRAME_LIBRARY="FrameC"])
 AS_IF([test "${framel}" = "true"],[

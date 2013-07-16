@@ -46,7 +46,6 @@
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/LALFrStream.h>
-#include <lal/LALFrameL.h>
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { \
@@ -72,11 +71,6 @@ int main( void )
   INT4 file = 0;
 
   XLALSetErrorHandler(XLALAbortErrorHandler);
-
-  /* test files are version 4 frames */
-  /* ignore this test if using earlier version of frame library */
-  if ( FRAMELIB_VERSION < 4 )
-    return 77;
 
   chan.data = NULL;
   LALI4CreateVector( &status, &chan.data, npts );
