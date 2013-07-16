@@ -59,7 +59,7 @@ parser = OptionParser(
         Option("--max-distance", type=float, metavar="Mpc",
             help="Maximum distance of prior in megaparsecs [default: infer from effective distance]"),
         Option("--prior-distance-power", type=int, metavar="-1|2",
-            help="Distance prior [required, -1 for uniform in log, 2 for uniform in distance]"),
+            help="Distance prior [required, -1 for uniform in log, 2 for uniform in volume]"),
         Option("--reference-frequency", type=float, metavar="Hz",
             help="Shift trigger times from coalescence time to time when GW inspiral has this frequency [default: do not use]"),
         Option("--keep-going", "-k", default=False, action="store_true",
