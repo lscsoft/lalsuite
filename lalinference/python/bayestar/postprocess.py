@@ -42,12 +42,15 @@ def find_injection(sky_map, true_ra, true_dec, prob_contours=()):
     Given a sky map and the true right ascension and declination (in radians),
     find the smallest area in deg^2 that would have to be searched to find the
     source, the smallest posterior mass, and the angular offset in degrees from
-    the true location to the maximum (mode) of the posterior.
+    the true location to the maximum (mode) of the posterior. Optionally, also
+    compute the areas of the smallest contours containing a given total
+    probability.
     """
 
     # Compute the HEALPix lateral resolution parameter for this sky map.
     npix = len(sky_map)
     nside = hp.npix2nside(npix)
+    deg2perpix = hp.nside2pixarea(nside, degrees=True)
 
     # Convert from ra, dec to conventional spherical polar coordinates.
     true_theta = 0.5 * np.pi - true_dec
@@ -73,17 +76,20 @@ def find_injection(sky_map, true_ra, true_dec, prob_contours=()):
     # the true location. Note that 1 is added to the index because we want
     # the **length** of the array up to and including the idx'th element,
     # not the index itself.
-    searched_area = (idx + 1) * hp.nside2pixarea(nside, degrees=True)
+    searched_area = (idx + 1) * deg2perpix
 
     # Find the smallest posterior mass that would have to be searched to find
     # the true location.
     searched_prob = cum_sky_map[idx]
 
-    # If areas of confidence intervals are wanted then compute
-    # the area of the smallest contour
-    prob_areas = []
-    for prob in prob_contours:
-        prob_areas.append((np.argmax(cum_sky_map>=prob) + 1) * hp.nside2pixarea(nside, degrees=True))
+    # Reverse pixel order so that we can use np.searchsorted() to locate
+    # the index where a given confidence level ends.
+    cum_sky_map = cum_sky_map[::-1]
+
+    # For each of the given confidence levels, compute the area of the
+    # smallest region containing that probability.
+    prob_areas = [(np.searchsorted(cum_sky_map, p, side='right') + 1)
+        * deg2perpix for p in prob_contours]
 
     # Find the angular offset between the mode and true locations.
     offset = np.rad2deg(angle_distance(true_theta, true_phi, mode_theta, mode_phi))
