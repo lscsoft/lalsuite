@@ -93,14 +93,14 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     responses = [det.response for det in detectors]
     locations = [det.location for det in detectors]
 
-    # Use 0 Mpc as the minimum effective distance, and the horizon distance of the most
-    # sensitive detector at SNR=4 as the maximum effective distance, as the default settings
-    if min_distance is None or max_distance is None:
-        effective_distances = np.asarray(horizons) / 4
-        if min_distance is None:
-            min_distance = 0
-        if max_distance is None:
-            max_distance = max(effective_distances)
+    # If minimum distance is not specified, then default to 0 Mpc.
+    if min_distance is None:
+        min_distance = 0
+
+    # If maximum distance is not specified, then default to the SNR=4
+    # horizon distance of the most sensitive detector.
+    if max_distance is None:
+        max_distance = max(horizons) / 4
 
     # Raise an exception if 0 Mpc is the minimum effective distance and the prior
     # is of the form r**k for k<0
