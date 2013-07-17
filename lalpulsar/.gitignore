@@ -44,7 +44,7 @@ test/H-1_H1_60SFT_test-000012465-61.sft
 test/H-1_H1_60SFT_test-000012585-61.sft
 test/H-1_H1_60SFT_test-000012765-61.sft
 test/H-1_H1_60SFT_test-000012825-61.sft
-test/H-1_H1_60SFT_test-concat.sft
+test/H-3_H1_60SFT_test_concat-000012345-302.sft
 test/HeterodynePulsarTest
 test/LALBarycenterTest
 test/LALPulsarXMLTest
