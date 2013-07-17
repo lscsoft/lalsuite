@@ -110,7 +110,8 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     # Raise an exception if 0 Mpc is the minimum effective distance and the prior
     # is of the form r**k for k<0
     if min_distance == 0 and prior_distance_power < 0:
-        raise ArithmeticError("Prior is a power law r^k with k=%s (undefined at r=0)" % prior_distance_power)
+        raise ValueError(("Prior is a power law r^k with k={}, "
+            + "undefined at min_distance=0").format(prior_distance_power))
 
     # Time and run sky localization.
     start_time = time.time()
