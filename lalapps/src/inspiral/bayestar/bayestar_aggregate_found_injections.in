@@ -50,8 +50,10 @@ if __name__ == '__main__':
                 help="Name of output file [default: %default]"),
             Option("-j", "--jobs", default=1, type=int,
                 help="Number of threads [default: %default]"),
-            Option("-p", "--contour-probability", default=None, action="append", type="float",
-                help="Report the area of the smallest contour containing this much probability.  Can be repeated mulitple times")
+            Option("-p", "--prob-contour", default=[], action="append",
+                type=float, metavar="0.DD",
+                help="Report the area of the smallest contour containing this "
+                + "much probability. Can be repeated mulitple times")
         ]
     )
     opts, args = parser.parse_args()
@@ -73,9 +75,10 @@ from lalinference.bayestar import fits
 from lalinference.bayestar import postprocess
 
 
-def startup(dbfilename):
-    global db
+def startup(dbfilename, opts_prob_contour):
+    global db, prob_contours
     db = sqlite3.connect(dbfilename)
+    prob_contours = opts_prob_contour
 
 
 def process(fitsfilename):
@@ -98,7 +101,7 @@ def process(fitsfilename):
         AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
         (coinc_event_id,)).fetchone()
     searched_area, searched_prob, offset, prob_areas = postprocess.find_injection(
-        sky_map, true_ra, true_dec, prob_contours=opts.contour_probability)
+        sky_map, true_ra, true_dec, prob_contours=prob_contours)
 
     return [coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime] + prob_areas
 
@@ -112,22 +115,19 @@ if __name__ == '__main__':
     progress.update(-1, 'spawning {0} workers'.format(opts.jobs))
     if opts.jobs == 1:
         from itertools import imap
-        startup(dbfilename)
     else:
         import multiprocessing
-        imap = multiprocessing.Pool(opts.jobs, startup, (dbfilename,)).imap_unordered
+        imap = multiprocessing.Pool(opts.jobs, startup, (dbfilename, opts.prob_contour)).imap_unordered
+    startup(dbfilename, opts.prob_contour)
 
     progress.update(-1, 'obtaining filenames of sky maps')
     fitsfilenames = tuple(itertools.chain.from_iterable(glob.iglob(fitsfileglob)
         for fitsfileglob in fitsfileglobs))
 
-    if opts.contour_probability is not None:
-        prob_opts = '\t'.join([str(s)+'_area' for s in opts.contour_probability])
-        print('coinc_event_id', 'simulation_id', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',
-            prob_opts, sep="\t", file=outfile)
-    else:
-        print('coinc_event_id', 'simulation_id', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',
-            sep="\t", file=outfile)
+    colnames = ['coinc_event_id', 'simulation_id', 'far', 'searched_area',
+        'searched_prob', 'offset', 'runtime'] + ["area({0:g})".format(p)
+        for p in prob_contours]
+    print(*colnames, sep="\t", file=outfile)
 
     count_records = 0
     progress.max = len(fitsfilenames)
