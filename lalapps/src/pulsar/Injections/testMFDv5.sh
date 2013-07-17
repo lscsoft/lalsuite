@@ -12,14 +12,6 @@ cmp_CODE="${builddir}lalapps_compareSFTs"
 
 testDIR="./mfdv5_TEST"
 
-
-## ----- user-controlled level of debug-output detail
-if [ -n "$DEBUG" ]; then
-    debug=${DEBUG}
-else
-    debug=0	## default=quiet
-fi
-
 if [ -n "${LALPULSAR_DATADIR}" ]; then
     mfdv4_extra="-E ${LALPULSAR_DATADIR}"
     mfdv5_extra="-E ${LALPULSAR_DATADIR}"
@@ -160,7 +152,7 @@ sftsv5_meth2=${testDIR}/*_mfdv5_meth2-*.sft
 echo
 echo "========== MFDv4 =========="
 echo
-mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --fmin=$fmin --Band=$Band --generationMode=0  -v${debug} --outSingleSFT"
+mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --fmin=$fmin --Band=$Band --generationMode=0 --outSingleSFT"
 echo "---------- mfdv4: inject first signal ----------"
 sig1="--refTime=${s1_refTime} --h0=${s1_h0} --cosi=${s1_cosi} --psi=${s1_psi} --phi0=${s1_phi0} --Freq=${s1_Freq} --Alpha=${s1_Alpha} --Delta=${s1_Delta} --f1dot=${s1_f1dot} --f2dot=${s1_f2dot}"
 ##----- first IFO
@@ -220,7 +212,7 @@ fi
 echo
 echo "========== MFDv5 =========="
 echo
-mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --fmin=$fmin --Band=$Band -v${debug}"
+mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --fmin=$fmin --Band=$Band"
 
 echo "----- Method 1: single multi-IFO, multi-signal call"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
@@ -257,7 +249,7 @@ echo "Comparison of resulting (concatenated) SFTs:"
 echo "--------------------------------------------------"
 
 echo "---------- compare mfdv5 Method 1 SFTs ----------"
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth1}' -d${debug}"
+cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth1}'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
@@ -266,7 +258,7 @@ else
     echo "OK."
 fi
 
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth1}' -d${debug}"
+cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth1}'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
@@ -277,7 +269,7 @@ fi
 
 echo
 echo "---------- compare mfdv5 Method 2  SFTs ----------"
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth2}' -d${debug}"
+cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth2}'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
@@ -286,7 +278,7 @@ else
     echo "OK."
 fi
 
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth2}' -d${debug}"
+cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth2}'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
