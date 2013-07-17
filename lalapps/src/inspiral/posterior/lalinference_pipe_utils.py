@@ -58,7 +58,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(SNRthreshold=0,gid=None,flow=40.0):
+def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
   """
   Parse LV alert file, continaing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -75,7 +75,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0):
   import subprocess
   from subprocess import Popen, PIPE
   print "gracedb download %s coinc.xml" % gid
-  subprocess.call(["gracedb","download", gid ,"coinc.xml"])
+  subprocess.call([gracedb,"download", gid ,"coinc.xml"])
   xmldoc=utils.load_filename("coinc.xml")
   coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
   coinc_events = [event for event in coinctable]
@@ -310,6 +310,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       self.dataseed=None
     # Set up necessary job files.
     self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config)
+    self.datafind_job.set_universe('vanilla')
     self.datafind_job.add_opt('url-type','file')
     self.datafind_job.set_sub_file(os.path.join(self.basepath,'datafind.sub'))
     self.engine_job = EngineJob(self.config, os.path.join(self.basepath,'lalinference.sub'),self.logpath)
@@ -727,7 +728,7 @@ class EngineJob(pipeline.CondorDAGJob):
     self.set_sub_file(submitFile)
     if self.engine=='lalinferencemcmc':
       #openmpipath=cp.get('condor','openmpi')
-      machine_count=cp.get('mpi','machine-count')
+      self.machine_count=cp.get('mpi','machine-count')
       #self.add_condor_cmd('machine_count',machine_count)
       #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
       try:
@@ -737,10 +738,12 @@ class EngineJob(pipeline.CondorDAGJob):
       if hostname=='pcdev1.phys.uwm.edu':
         self.add_condor_cmd('Requirements','CAN_RUN_MULTICORE')
         self.add_condor_cmd('+RequiresMultipleCores','True')
-      self.add_condor_cmd('request_cpus',machine_count)
-      self.add_condor_cmd('request_memory',machine_count*1024)
+      self.add_condor_cmd('request_cpus',self.machine_count)
+      self.add_condor_cmd('request_memory',str(float(self.machine_count)*512))
       self.add_condor_cmd('getenv','true')
-      
+      if cp.has_option('condor','queue'):
+        self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+        self.add_condor_cmd('Requirements','(TARGET.'+cp.get('condor','queue')+' =?= True)')
     self.add_ini_opts(cp,self.engine)
     self.add_opt('snrpath',snrpath)
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
@@ -755,7 +758,7 @@ class EngineJob(pipeline.CondorDAGJob):
     pipeline.CondorDAGJob.write_sub_file(self)
     # Then read it back in to mangle the arguments line
     outstring=""
-    MPIextraargs= ' -np 8 '+self.binary+' -- ' #'--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
+    MPIextraargs= ' -np '+self.machine_count+' '+self.binary#'--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
     subfilepath=self.get_sub_file()
     subfile=open(subfilepath,'r')
     for line in subfile:
@@ -1029,7 +1032,7 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         self.set_snr_file(node.get_snr_file())
       if isinstance(node,LALInferenceMCMCNode):
 	      self.add_var_opt('lalinfmcmc','')
-      if os.path.exists("psd.xml.gz"):
+      if os.path.exists("coinc.xml"):
         self.add_var_opt('trig','coinc.xml')
     def get_pos_file(self): return self.posfile
     def set_bayes_coherent_incoherent(self,bcifile):
