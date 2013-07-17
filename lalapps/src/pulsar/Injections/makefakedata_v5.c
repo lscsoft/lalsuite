@@ -286,7 +286,7 @@ main(int argc, char *argv[])
           XLAL_CHECK ( written < len, XLAL_ESIZE, "Frame-filename exceeds expected maximal length (%d): '%s'\n", len, fname );
 
           /* define the output frame */
-          struct FrameH *outFrame;
+          LALFrameH *outFrame;
           XLAL_CHECK ( (outFrame = XLALFrameNew ( &startTimeGPS, duration, uvar.outLabel, 1, 0, 0 )) != NULL, XLAL_EFUNC );
 
           /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
@@ -298,21 +298,21 @@ main(int argc, char *argv[])
           XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
 
           /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
-          FrHistoryAdd ( outFrame, hist );
+          XLALFrameAddFrHistory ( outFrame, __FILE__, hist );
 
           /* then we add the version string */
-          FrHistoryAdd ( outFrame, GV.VCSInfoString );
+          XLALFrameAddFrHistory ( outFrame, __FILE__, GV.VCSInfoString );
 
           /* output the frame to file - compression level 1 (higher values make no difference) */
-          XLAL_CHECK ( XLALFrameWrite ( outFrame, fname, 1 ) == XLAL_SUCCESS , XLAL_EFUNC );
+          XLAL_CHECK ( XLALFrameWrite ( outFrame, fname ) == XLAL_SUCCESS , XLAL_EFUNC );
 
           /* free the frame, frame file name and history memory */
-          FrameFree ( outFrame );
-          LALFree ( fname );
+          XLALFrameFree ( outFrame );
+          XLALFree ( fname );
 
         } // for X < numDetectors
 
-      LALFree ( hist );
+      XLALFree ( hist );
 
     } /* if uvar.TDDframedir: outputting time-series to frames */
 #endif // HAVE_LIBLALFRAME
