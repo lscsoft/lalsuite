@@ -27,8 +27,10 @@
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 
+#include <lal/Date.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
 
 /* Error codes and messages */
 /**\name Error Codes */ /*@{*/

@@ -54,6 +54,8 @@
 #include <lal/StringVector.h>
 #include <lal/Sequence.h>
 #include <lal/ConfigFile.h>
+#include <lal/LogPrintf.h>
+#include <lal/SFTutils.h>
 
 /*---------- DEFINES ----------*/
 
@@ -125,6 +127,13 @@ typedef struct
 static LALStatus empty_status;
 const SFTConstraints empty_SFTConstraints;
 const SFTCatalog empty_SFTCatalog;
+const SFTtype empty_SFTtype;
+const SFTVector empty_SFTVector;
+const MultiSFTVector empty_MultiSFTVector;
+const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
+const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
+const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
+
 
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
@@ -152,6 +161,8 @@ static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, 
 static int compareSFTdesc(const void *ptr1, const void *ptr2);
 static int compareSFTloc(const void *ptr1, const void *ptr2);
 static int compareDetName(const void *ptr1, const void *ptr2);
+static int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
+
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 
@@ -1058,16 +1069,20 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
 
 
-/** Function to load a catalog of SFTs from possibly different detectors.
-    This is similar to LALLoadSFTs except that the input SFT catalog is
-    allowed to contain multiple ifos. The output is the structure
-    MultiSFTVector which is a vector of (pointers to) SFTVectors, one for
-    each ifo found in the catalog. As in LALLoadSFTs, fMin and fMax can be
-    set to -1 to get the full SFT from the lowest to the highest frequency
-    bin found in the SFT.
-    *
-    * output SFTvectors are sorted alphabetically by detector-name
-    *
+/**
+ * Function to load a catalog of SFTs from possibly different detectors.
+ * This is similar to LALLoadSFTs except that the input SFT catalog is
+ * allowed to contain multiple ifos. The output is the structure
+ * MultiSFTVector which is a vector of (pointers to) SFTVectors, one for
+ * each ifo found in the catalog. As in LALLoadSFTs, fMin and fMax can be
+ * set to -1 to get the full SFT from the lowest to the highest frequency
+ * bin found in the SFT.
+ *
+ * output SFTvectors are sorted alphabetically by detector-name
+ *
+ * NOTE: this is basically a backwards-compatible API wrapper to
+ * XLALLoadMultiSFTsFromView(), which takes a MultiSFTCatalogView as input instead.
+ *
  */
 MultiSFTVector *
 XLALLoadMultiSFTs (const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFTs to load */
@@ -1076,192 +1091,63 @@ XLALLoadMultiSFTs (const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFT
 		   )
 
 {
-  UINT4 k, j, i, length;
-  UINT4 numifo=0; /* number of ifos */
-  UINT4 numifoMax, numifoMaxNew; /* for memory allocation purposes */
-  CHAR  *name=NULL;
-  CHAR  **ifolist=NULL; /* list of ifo names */
-  UINT4  *numsfts=NULL; /* number of sfts for each ifo */
-  UINT4 **sftLocationInCatalog=NULL; /* location of sfts in catalog for each ifo */
-  SFTCatalog **catalog=NULL;
-  MultiSFTVector *multSFTVec=NULL;
+  XLAL_CHECK_NULL ( (inputCatalog != NULL) && (inputCatalog->length != 0), XLAL_EINVAL );
 
-  if(!inputCatalog || !(inputCatalog->length)) {
-    XLAL_ERROR_NULL(XLAL_EINVAL);
-  }
+  MultiSFTCatalogView *multiCatalogView;
+  // get the (alphabetically-sorted!) multiSFTCatalogView
+  XLAL_CHECK_NULL ( (multiCatalogView = XLALGetMultiSFTCatalogView ( inputCatalog )) != NULL, XLAL_EFUNC );
 
-  length = inputCatalog->length;
-  if ( (name = (CHAR *)XLALCalloc(3, sizeof(CHAR))) == NULL ) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-
-  /* the number of ifos can be at most equal to length */
-  /* each ifo name is 2 characters + \0 */
-
-  numifoMax = 3; /* should be sufficient -- realloc used later in case required */
-
-  if ( (ifolist = (CHAR **)XLALCalloc( 1, numifoMax * sizeof(CHAR *))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-  if ( (sftLocationInCatalog = (UINT4 **)XLALCalloc( 1, numifoMax * sizeof(UINT4 *))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-  if ( (numsfts = (UINT4 *)XLALCalloc( 1, numifoMax * sizeof(UINT4))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-
-  for ( k = 0; k < numifoMax; k++) {
-    if ( (ifolist[k] = (CHAR *)XLALCalloc( 1, 3*sizeof(CHAR))) == NULL) {
-      XLAL_ERROR_NULL(XLAL_ENOMEM);
-    }
-    if ( (sftLocationInCatalog[k] = (UINT4 *)XLALCalloc( 1, length*sizeof(UINT4))) == NULL) {
-      XLAL_ERROR_NULL(XLAL_ENOMEM);
-    }
-  }
-
-  /* loop over sfts in catalog and look at ifo names and
-     find number of different ifos and number of sfts for each ifo
-     Also find location of sft in catalog  */
-  for ( k = 0; k < length; k++)
-    {
-      strncpy( name, inputCatalog->data[k].header.name, 3 );
-
-      /* go through list of ifos till a match is found or list is exhausted */
-      for ( j = 0; ( j < numifo ) && strncmp( name, ifolist[j], 3); j++ )
-	;
-
-      if ( j < numifo )
-	{
-	  /* match found with jth existing ifo */
-	  sftLocationInCatalog[j][ numsfts[j] ] = k;
-	  numsfts[j]++;
-	}
-      else
-	{
-	  /* add ifo to list of ifos */
-
-	  /* first check if number of ifos is larger than numifomax */
-	  /* and realloc if necessary */
-	  if ( numifo >= numifoMax )
-	    {
-	      numifoMaxNew = numifoMax + 3;
-	      if ( (ifolist = (CHAR **)XLALRealloc( ifolist, numifoMaxNew * sizeof(CHAR *))) == NULL) {
-		XLAL_ERROR_NULL(XLAL_ENOMEM);
-	      }
-	      if ( (sftLocationInCatalog = (UINT4 **)XLALRealloc( sftLocationInCatalog, numifoMaxNew * sizeof(UINT4 *))) == NULL) {
-		XLAL_ERROR_NULL(XLAL_ENOMEM);
-	      }
-	      if ( (numsfts = (UINT4 *)XLALRealloc( numsfts, numifoMaxNew * sizeof(UINT4))) == NULL) {
-		XLAL_ERROR_NULL(XLAL_ENOMEM);
-	      }
-
-	      for ( i = numifoMax; i < numifoMaxNew; i++) {
-		if ( (ifolist[i] = (CHAR *)XLALCalloc( 1, 3*sizeof(CHAR))) == NULL) {
-		  XLAL_ERROR_NULL(XLAL_ENOMEM);
-		}
-		if ( (sftLocationInCatalog[i] = (UINT4 *)XLALCalloc( 1, length*sizeof(UINT4))) == NULL) {
-		  XLAL_ERROR_NULL(XLAL_ENOMEM);
-		}
-	      } /* loop from numifoMax to numifoMaxNew */
-
-	      /* reset numifoMax */
-	      numifoMax = numifoMaxNew;
-	    } /* if ( numifo >= numifoMax) -- end of realloc */
-
-	  strncpy( ifolist[numifo], name, 3);
-	  sftLocationInCatalog[j][0] = k;
-	  numsfts[numifo] = 1;
-	  numifo++;
-
-	} /* else part of if ( j < numifo ) */
-    } /*  for ( k = 0; k < length; k++) */
-
-  /* now we can create the catalogs */
-  if ( (catalog = (SFTCatalog **)XLALCalloc( numifo, sizeof(SFTCatalog *))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-
-  for ( j = 0; j < numifo; j++)
-    {
-      if ( (catalog[j] = (SFTCatalog *)XLALCalloc(1, sizeof(SFTCatalog))) == NULL) {
-	XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-      catalog[j]->length = numsfts[j];
-      if ( (catalog[j]->data = (SFTDescriptor *)XLALCalloc( numsfts[j], sizeof(SFTDescriptor))) == NULL) {
-	XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
-
-      for ( k = 0; k < numsfts[j]; k++)
-	{
-	  UINT4 location = sftLocationInCatalog[j][k];
-	  catalog[j]->data[k] = inputCatalog->data[location];
-	}
-    }
-
-  /* create multi sft vector */
-  if ( (multSFTVec = (MultiSFTVector *)XLALCalloc(1, sizeof(MultiSFTVector))) == NULL){
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-  multSFTVec->length = numifo;
-
-  if ( (multSFTVec->data = (SFTVector **)XLALCalloc(numifo, sizeof(SFTVector *))) == NULL) {
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
-  }
-  for ( j = 0; j < numifo; j++) {
-    if( ! ( multSFTVec->data[j] = XLALLoadSFTs ( catalog[j], fMin, fMax ) ) )
-    {
-      /* free sft vectors created previously in loop */
-      for ( i = 0; (INT4)i < (INT4)j-1; i++)
-	XLALDestroySFTVector(multSFTVec->data[i]);
-      XLALFree(multSFTVec->data);
-      XLALFree(multSFTVec);
-
-      /* also free catalog and other memory allocated earlier */
-      for ( i = 0; i < numifo; i++) {
-	XLALFree(catalog[i]->data);
-	XLALFree(catalog[i]);
-      }
-      XLALFree( catalog);
-
-      for ( i = 0; i < numifoMax; i++) {
-	XLALFree(ifolist[i]);
-	XLALFree(sftLocationInCatalog[i]);
-      }
-      XLALFree(ifolist);
-      XLALFree(sftLocationInCatalog);
-
-      XLALFree(numsfts);
-      XLALFree(name);
-
-      XLAL_ERROR_NULL ( XLAL_EFUNC );
-
-    }
-  }
-
-  /* sort final multi-SFT vector by detector-name */
-  qsort ( multSFTVec->data, multSFTVec->length, sizeof( multSFTVec->data[0] ), compareDetName );
+  MultiSFTVector *multiSFTs;
+  XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTsFromView ( multiCatalogView, fMin, fMax )) != NULL, XLAL_EFUNC );
 
   /* free memory and exit */
-  for ( j = 0; j < numifo; j++) {
-    XLALFree(catalog[j]->data);
-    XLALFree(catalog[j]);
-  }
-  XLALFree(catalog);
+  XLALDestroyMultiSFTCatalogView ( multiCatalogView );
 
-  for ( k = 0; k < numifoMax; k++) {
-    XLALFree(ifolist[k]);
-    XLALFree(sftLocationInCatalog[k]);
-  }
-  XLALFree(ifolist);
-  XLALFree(sftLocationInCatalog);
-
-  XLALFree(numsfts);
-  XLALFree(name);
-
-  return(multSFTVec);
+  return multiSFTs;
 
 } /* XLALLoadMultiSFTs() */
 
+/**
+ * This function loads a MultiSFTVector from a given input MultiSFTCatalogView,
+ * otherwise the documentation of XLALLoadMultiSFTs() applies.
+ *
+ * Note: this is basically the core-function of XLALLoadMultiSFTs() doing the
+ * actual work.
+ *
+ * Note2: we keep the IFO sort-order of the input multiCatalogView
+ */
+MultiSFTVector *
+XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView,/**< The multi-SFT catalogue view of SFTs to load */
+                            REAL8 fMin,		             		/**< minumum requested frequency (-1 = read from lowest) */
+                            REAL8 fMax		             		/**< maximum requested frequency (-1 = read up to highest) */
+                            )
+{
+  XLAL_CHECK_NULL ( multiCatalogView != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( multiCatalogView->length != 0, XLAL_EINVAL );
+
+  UINT4 numIFOs = multiCatalogView->length;
+
+  /* create multi sft vector */
+  MultiSFTVector *multiSFTs;
+  XLAL_CHECK_NULL ( (multiSFTs = XLALCalloc(1, sizeof(*multiSFTs))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (multiSFTs->data = XLALCalloc ( numIFOs, sizeof(*multiSFTs->data))) != NULL, XLAL_ENOMEM );
+  multiSFTs->length = numIFOs;
+
+  for ( UINT4 X = 0; X < numIFOs; X++ )
+    {
+      if( ( multiSFTs->data[X] = XLALLoadSFTs ( &(multiCatalogView->data[X]), fMin, fMax ) ) == NULL )
+        {
+          /* free sft vectors created previously in loop */
+          XLALDestroyMultiSFTVector ( multiSFTs );
+          XLAL_ERROR_NULL ( XLAL_EFUNC, "Failed to XLALLoadSFTs() for IFO X = %d\n", X );
+        } // if XLALLoadSFTs() failed
+
+    } // for X < numIFOs
+
+  // return final multi-SFT vector
+  return multiSFTs;
+
+} // XLALLoadMultiSFTsFromView()
 
 
 /** Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
@@ -1863,7 +1749,8 @@ LALCheckSFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* LALCheckSFTCatalog() */
 
-/** Load timestamps file into LIGOTimeGPSVector struct, allocated here.
+/**
+ * Load timestamps file 'fname' into LIGOTimeGPSVector struct, allocated here.
  *
  * The timestamps file is of the format: <repeated lines of the form "seconds nano-seconds">
  * allowing for '%#' as comments, which are ignored.
@@ -1872,44 +1759,39 @@ LALCheckSFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 LIGOTimeGPSVector *
 XLALReadTimestampsFile ( const CHAR *fname )
 {
-  LIGOTimeGPSVector *timestamps = NULL;
-
   /** check input consistency */
-  if ( !fname ) {
-    XLALPrintError ( "%s: NULL input 'fname'", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
+  XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL );
 
   /* read and parse timestamps-list file contents*/
   LALParsedDataFile *flines = NULL;
-  if ( XLALParseDataFile ( &flines, fname ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALParseDataFile ( &flines, fname ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   UINT4 numTS = flines->lines->nTokens;
-  /* allocate and initialized segment list */
-  if ( ( timestamps = XLALCreateTimestampVector ( numTS )) == NULL )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
 
-  UINT4 iTS;
-  for ( iTS = 0; iTS < numTS; iTS ++ )
+  /* allocate and initialized segment list */
+  LIGOTimeGPSVector *timestamps = NULL;
+  XLAL_CHECK_NULL ( ( timestamps = XLALCreateTimestampVector ( numTS )) != NULL, XLAL_EFUNC );
+
+  for ( UINT4 iTS = 0; iTS < numTS; iTS ++ )
     {
       INT4 secs, ns;
-      if ( sscanf ( flines->lines->tokens[iTS], "%d %d\n", &secs, &ns ) != 2 ) {
-        XLALPrintError ("%s: failed to parse data-line %d: '%s' in timestamps-file '%s' (needs to be in format 'sec ns')\n", __func__, iTS + 1, flines->lines->tokens[iTS], fname );
+      char junk[11] = "";
+      if ( sscanf ( flines->lines->tokens[iTS], "%d %d%10s\n", &secs, &ns, junk ) != 2 ) {
+        if ( junk[0] != 0 ) { XLALPrintError ("Found junk '%s' after timestamp in line %d/%d\n", junk, iTS+1, numTS ); }
+        XLALPrintError ( "Failed to parse data-line %d: '%s' in timestamps-file '%s' (needs to be in format 'sec ns')\n",
+                         iTS + 1, flines->lines->tokens[iTS], fname );
         XLALDestroyTimestampVector ( timestamps );
         XLALDestroyParsedDataFile ( flines );
         XLAL_ERROR_NULL ( XLAL_ESYS );
       }
-      if ( ( secs < 0 ) || ( ns < 0 ) ) {
-	XLALPrintError ("%s: timestamps-file contains negative time-entry in line %d : s = %d, ns = %d\n", __func__, iTS, secs, ns );
-	XLAL_ERROR_NULL ( XLAL_EDOM );
-      }
-      if ( ns > 999999999 ) {
-        XLALPrintError ("%s: timestamps-file contains nano-seconds entry >= 1 billion ns in line %d: s = %d, ns = %d\n", __func__, iTS, secs, ns );
-	XLAL_ERROR_NULL ( XLAL_EDOM );
-      }
 
-      timestamps->data[iTS].gpsSeconds = secs;
+      XLAL_CHECK_NULL ( ( secs >= 0 ) && ( ns >= 0 ), XLAL_EDOM,
+                        "Timestamps-file '%s' contains negative time-entry in line %d : s = %d, ns = %d\n", fname, iTS, secs, ns );
+
+      XLAL_CHECK_NULL ( ns <= 999999999, XLAL_EDOM,
+                        "Timestamps-file '%s' contains nano-seconds entry >= 1 billion ns in line %d: s = %d, ns = %d\n", fname, iTS, secs, ns );
+
+      timestamps->data[iTS].gpsSeconds     = secs;
       timestamps->data[iTS].gpsNanoSeconds = ns;
 
     } /* for iTS < numTS */
@@ -1920,6 +1802,39 @@ XLALReadTimestampsFile ( const CHAR *fname )
   return timestamps;
 
 } /* XLALReadTimestampsFile() */
+
+
+/**
+ * Load several timestamps files, return a MultiLIGOTimeGPSVector struct, allocated here.
+ *
+ * The timestamps files are of the format: <repeated lines of the form "seconds nano-seconds">
+ * allowing for '%#' as comments, which are ignored.
+ *
+ */
+MultiLIGOTimeGPSVector *
+XLALReadMultiTimestampsFiles ( const LALStringVector *fnames )
+{
+  XLAL_CHECK_NULL ( fnames != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( fnames->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( fnames->length > 0, XLAL_EDOM );
+
+  UINT4 numDet = fnames->length;
+
+  // ----- prepare output container
+  MultiLIGOTimeGPSVector *multiTS;
+  XLAL_CHECK_NULL ( ( multiTS = XLALCalloc ( 1, sizeof(*multiTS) )) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( ( multiTS->data = XLALCalloc ( numDet, sizeof(multiTS->data[0]))) != NULL, XLAL_ENOMEM );
+  multiTS->length = numDet;
+
+  for ( UINT4 X=0; X < numDet; X ++ )
+    {
+      XLAL_CHECK_NULL ( fnames->data[X] != NULL, XLAL_EINVAL );
+      XLAL_CHECK_NULL ( ( multiTS->data[X] = XLALReadTimestampsFile ( fnames->data[X] )) != NULL, XLAL_EFUNC );
+    } // for X < numDet
+
+  return multiTS;
+
+} // XLALReadMultiTimestampsFiles()
 
 
 
@@ -2163,90 +2078,36 @@ LALWriteSFT2file (LALStatus *status,			/**< pointer to LALStatus structure */
  * Output SFTs have naming convention following LIGO-T040164-01
  */
 int
-XLALWriteSFTVector2Dir(
-		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
-		       const CHAR *dirname,		/**< base filename (including directory path)*/
-		       const CHAR *SFTcomment,		/**< optional comment (for v2 only) */
-		       const CHAR *description)         /**< optional sft description to go in the filename */
+XLALWriteSFTVector2Dir ( const SFTVector *sftVect,	/**< SFT vector to write to disk */
+                         const CHAR *dirname,		/**< base filename (including directory path)*/
+                         const CHAR *SFTcomment,	/**< optional comment */
+                         const CHAR *Misc         	/**< optional 'Misc' field in SFT description (can be NULL) */
+                         )
 {
-  UINT4 length, k;
-  CHAR *filename = NULL;
-  CHAR filenumber[16];
-  SFTtype *sft;
-  UINT4 timeBase, duration;
-  UINT4 filenamelen;
-  LIGOTimeGPS time0;
+  XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->length > 0, XLAL_EINVAL );
+  XLAL_CHECK ( dirname != NULL, XLAL_EINVAL );
 
-  if (! (sftVect) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (sftVect->data) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (sftVect->length > 0) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (dirname) ) XLAL_ERROR ( XLAL_EINVAL );
+  UINT4 numSFTs = sftVect->length;
 
-  length = sftVect->length;
+  for ( UINT4 k = 0; k < numSFTs; k++ )
+    {
+      SFTtype *sft = &(sftVect->data[k]);
 
-  filenamelen = 128 + strlen(dirname);
-  if ( description )
-    filenamelen += strlen ( description );
+      CHAR *filename;
+      XLAL_CHECK ( (filename = XLALGetOfficialName4SFT ( sft, Misc )) != NULL, XLAL_EFUNC );
 
-  if ( (filename = (CHAR *)XLALCalloc(1, filenamelen )) == NULL) {
-    XLAL_ERROR ( XLAL_ENOMEM );
-  }
+      CHAR *path;
+      int len = strlen ( dirname ) + 1 + strlen ( filename ) + 1;
+      XLAL_CHECK ( (path = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
+      sprintf ( path, "%s/%s", dirname, filename );
+      XLAL_CHECK ( XLALWriteSFT2file( sft, path, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  /* will not be same as actual sft timebase if it is not
-     an integer number of seconds */
-  timeBase = floor(1.0/sftVect->data[0].deltaF + 0.5);
+      XLALFree ( path );
+      XLALFree ( filename );
 
-  for ( k = 0; k < length; k++) {
-
-    sft = sftVect->data + k;
-    if ( sft == NULL ) {
-      XLAL_ERROR ( XLAL_EFAULT );
-    }
-
-    if ( sft->name == NULL ) {
-      XLAL_ERROR ( XLAL_EFAULT );
-    }
-
-
-    time0 = sft->epoch;
-
-    /* calculate sft 'duration' -- may be different from timebase if nanosecond
-       of sft-epoch is non-zero */
-    duration = timeBase;
-    if ( time0.gpsNanoSeconds > 0) {
-      duration += 1;
-    }
-
-    /* create the k^th filename following naming convention
-       -- try to simplify this*/
-    strcpy( filename, dirname);
-    strcat( filename, "/");
-    strncat( filename, sft->name, 1);
-    strcat( filename, "-1_"); /* single (not merged) sft */
-    strncat( filename, sft->name, 2); /* full detector name */
-    strcat( filename, "_");
-    sprintf( filenumber, "%d", timeBase); /* sft timebase */
-    strcat( filename, filenumber);
-    strcat( filename, "SFT");
-    if ( description ) {
-      strcat( filename, "_");
-      strcat( filename, description);
-    }
-    strcat( filename, "-");
-    sprintf( filenumber, "%09d", sft->epoch.gpsSeconds);
-    strncat( filename, filenumber, 9);
-    strcat( filename, "-");
-    sprintf( filenumber, "%d", duration);
-    strcat( filename, filenumber);
-    strcat( filename, ".sft");
-
-    /* write the k^th sft */
-    if ( XLALWriteSFT2file( sft, filename, SFTcomment ) != XLAL_SUCCESS ) {
-      XLAL_ERROR ( xlalErrno );
-    }
-  }
-
-  XLALFree(filename);
+    } // for k < numSFTs
 
   return XLAL_SUCCESS;
 
@@ -2269,60 +2130,76 @@ LALWriteSFTVector2Dir (LALStatus *status,			/**< pointer to LALStatus structure 
   RETURN (status);
 }
 
+/** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
+ *  Add the comment to SFT if SFTcomment != NULL.
+ *
+ * NOTE: user specifies output directory, but the output SFT-filename follows the SFT-v2 naming convention,
+ * see XLALOfficialSFTFilename() for details.
+ */
+int
+XLALWriteSFTVector2File ( const SFTVector *sftVect,	//!< SFT vector to write to disk */
+                          const CHAR *dirname,		//!< base filename (including directory path)*/
+                          const CHAR *SFTcomment,	//!< optional comment (can be NULL) */
+                          const CHAR *Misc         	//!< optional 'Misc' field in SFT description (can be NULL) */
+                          )
+{
+  XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( dirname != NULL, XLAL_EINVAL );
+
+  char *filename;
+  XLAL_CHECK ( (filename = XLALGetOfficialName4MergedSFTs ( sftVect, Misc )) != NULL, XLAL_EFUNC );
+
+  CHAR *path;
+  int len = strlen ( dirname ) + 1 + strlen ( filename ) + 1;
+  XLAL_CHECK ( (path = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
+  sprintf ( path, "%s/%s", dirname, filename );
+
+  XLAL_CHECK ( XLALWriteSFTVector2NamedFile( sftVect, path, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALFree ( path );
+  XLALFree ( filename );
+
+  return XLAL_SUCCESS;
+
+} // XLALWriteSFTVector2File()
 
 
 /** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
  *  Add the comment to SFT if SFTcomment != NULL.
  *
- * NOTE: Currently this only supports writing v2-SFTs.
- * If you need to write a v1-SFT, you should use LALWriteSFTfile()
+ * Allows specifying a filename for the output merged-SFT file.
  */
 int
-XLALWriteSFTVector2File(
-		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
-		       const CHAR *filename,		/**< filename of concatenated SFT */
-		       const CHAR *SFTcomment)		/**< optional comment (for v2 only) */
+XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect,	/**< SFT vector to write to disk */
+                               const CHAR *filename,		/**< complete path+filename for concatenated SFT */
+                               const CHAR *SFTcomment 		/**< optional comment */
+                               )
 {
-  UINT4 length, k;
-  FILE *fp = NULL;
-  SFTtype *sft;
+  XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->length > 0, XLAL_EINVAL );
+  XLAL_CHECK ( filename != NULL, XLAL_EINVAL );
 
-  if (! (sftVect) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (sftVect->data) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (sftVect->length > 0) ) XLAL_ERROR ( XLAL_EINVAL );
-  if (! (filename) ) XLAL_ERROR ( XLAL_EINVAL );
-
-  length = sftVect->length;
+  UINT4 numSFTs = sftVect->length;
 
   /* open SFT-file for writing */
-  if ( (fp = LALFopen ( filename, "wb" )) == NULL )
+  FILE *fp;
+  XLAL_CHECK ( (fp = LALFopen ( filename, "wb" )) != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s\n\n", filename, strerror(errno));
+
+  for ( UINT4 k = 0; k < numSFTs; k++ )
     {
-      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", filename, strerror(errno));
-      XLAL_ERROR ( XLAL_EIO );
-    }
+      SFTtype *sft = &( sftVect->data[k] );
 
-  for ( k = 0; k < length; k++) {
+      /* write the k^th sft */
+      XLAL_CHECK ( XLALWriteSFT2fp ( sft, fp, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    sft = sftVect->data + k;
-    if ( sft == NULL ) {
-      XLAL_ERROR ( XLAL_EFAULT );
-    }
-
-    if ( sft->name == NULL ) {
-      XLAL_ERROR ( XLAL_EFAULT );
-    }
-
-    /* write the k^th sft */
-    if ( XLALWriteSFT2fp ( sft, fp, SFTcomment ) != XLAL_SUCCESS ) {
-      XLAL_ERROR ( xlalErrno );
-    }
-  }
+    } // for k < numSFTs
 
   fclose(fp);
 
   return XLAL_SUCCESS;
 
-} /* XLALWriteSFTVector2File() */
+} /* XLALWriteSFTVector2NamedFile() */
 
 
 
@@ -2643,7 +2520,296 @@ INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
 
   return numifo;
 
-}
+} // XLALCountIFOsInCatalog()
+
+
+/**
+ * Return a MultiSFTCatalogView generated from an input SFTCatalog.
+ *
+ * The input catalog can describe SFTs from several IFOs in one vector,
+ * while the returned multi-Catalog view contains an array of single-IFO SFTCatalogs.
+ *
+ * NOTE: remember that this is only a multi-IFO "view" of the existing SFTCatalog,
+ * various allocated memory of the original catalog is only pointed to, not duplicated!
+ * This means one must not free the original catalog while this multi-view is still in use!
+ *
+ * NOTE2: the returned multi-IFO catalog is sorted alphabetically by detector-name
+ *
+ */
+MultiSFTCatalogView *
+XLALGetMultiSFTCatalogView ( const SFTCatalog *catalog )
+{
+  XLAL_CHECK_NULL ( catalog != NULL, XLAL_EINVAL );
+
+  UINT4 numSFTsTotal = catalog->length;
+
+  /* the number of ifos can be at most equal to numSFTsTotal */
+  /* each ifo name is 2 characters + \0 */
+  UINT4 numIFOsMax = 3; /* should be sufficient -- realloc used later in case required */
+  UINT4 numIFOsMaxNew; /* for memory allocation purposes */
+
+  CHAR  **ifolist;	/* list of ifo names */
+  XLAL_CHECK_NULL ( (ifolist = XLALCalloc( 1, numIFOsMax * sizeof(*ifolist))) != NULL, XLAL_ENOMEM );
+
+  UINT4 **sftLocationInCatalog;	/* location of sfts in catalog for each ifo */
+  XLAL_CHECK_NULL ( (sftLocationInCatalog = XLALCalloc( 1, numIFOsMax * sizeof(*sftLocationInCatalog)) ) != NULL, XLAL_ENOMEM );
+
+  UINT4  *numSFTsPerIFO;	/* number of sfts for each ifo 'X' */
+  XLAL_CHECK_NULL ( (numSFTsPerIFO = XLALCalloc( 1, numIFOsMax * sizeof(*numSFTsPerIFO))) != NULL, XLAL_ENOMEM );
+
+  for ( UINT4 X = 0; X < numIFOsMax; X++ )
+    {
+      XLAL_CHECK_NULL ( (ifolist[X] = XLALCalloc( 1, 3 * sizeof(*ifolist[X]) )) != NULL, XLAL_ENOMEM );
+      XLAL_CHECK_NULL ( (sftLocationInCatalog[X] = XLALCalloc( 1, numSFTsTotal * sizeof(*sftLocationInCatalog[X]))) != NULL, XLAL_ENOMEM );
+    } // for k < numIFOsMax
+
+  UINT4 numIFOs = 0; /* number of ifos found so far */
+
+  /* loop over sfts in catalog and look at ifo names and
+   * find number of different ifos and number of sfts for each ifo
+   * Also find location of sft in catalog */
+  for ( UINT4 k = 0; k < numSFTsTotal; k++)
+    {
+      CHAR  name[3];
+      strncpy( name, catalog->data[k].header.name, 3 );
+
+      UINT4 X;
+      /* go through list of ifos till a match is found or list is exhausted */
+      for ( X = 0; ( X < numIFOs ) && strncmp( name, ifolist[X], 3); X++ )
+	;
+
+      if ( X < numIFOs )
+	{
+	  /* match found with X-th existing ifo */
+	  sftLocationInCatalog[X][ numSFTsPerIFO[X] ] = k;
+	  numSFTsPerIFO[X] ++;
+	}
+      else
+	{
+	  /* add ifo to list of ifos */
+
+	  /* first check if number of ifos is larger than numIFOsmax */
+	  /* and realloc if necessary */
+	  if ( numIFOs >= numIFOsMax )
+	    {
+	      numIFOsMaxNew = numIFOsMax + 3;
+	      XLAL_CHECK_NULL ( (ifolist = XLALRealloc( ifolist, numIFOsMaxNew * sizeof(*ifolist))) != NULL, XLAL_ENOMEM );
+
+	      XLAL_CHECK_NULL ( (sftLocationInCatalog = XLALRealloc( sftLocationInCatalog, numIFOsMaxNew * sizeof(*sftLocationInCatalog))) != NULL, XLAL_ENOMEM );
+
+	      XLAL_CHECK_NULL ( (numSFTsPerIFO = XLALRealloc( numSFTsPerIFO, numIFOsMaxNew * sizeof(*numSFTsPerIFO))) != NULL, XLAL_ENOMEM );
+
+	      for ( UINT4 Y = numIFOsMax; Y < numIFOsMaxNew; Y++ )
+                {
+                  XLAL_CHECK_NULL ( (ifolist[Y] = XLALCalloc( 1,  3 * sizeof(*ifolist[Y]))) != NULL, XLAL_ENOMEM );
+                  XLAL_CHECK_NULL ( (sftLocationInCatalog[Y] = XLALCalloc( 1, numSFTsTotal * sizeof(*sftLocationInCatalog[Y]))) != NULL, XLAL_ENOMEM );
+                } // endfor X=numIFOsMax < numIFOsMaxNew
+
+	      numIFOsMax = numIFOsMaxNew; // reset numIFOsMax
+
+	    } /* endif ( numIFOs >= numIFOsMax) -- end of realloc */
+
+	  strncpy( ifolist[numIFOs], name, 3);
+	  sftLocationInCatalog[X][0] = k;
+	  numSFTsPerIFO[numIFOs] = 1;
+	  numIFOs ++;
+
+	} /* else part of if ( X < numIFOs ) */
+
+    } /*  for ( k = 0; k < numSFTsTotal; k++) */
+
+  /* now we can create the return multi-SFT catalog view */
+  MultiSFTCatalogView *ret;
+
+  XLAL_CHECK_NULL ( (ret = XLALCalloc( 1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (ret->data = XLALCalloc( numIFOs, sizeof(*ret->data))) != NULL, XLAL_ENOMEM );
+  ret->length = numIFOs;
+
+  for ( UINT4 X = 0; X < numIFOs; X++ )
+    {
+      ret->data[X].length = numSFTsPerIFO[X];
+
+      XLAL_CHECK_NULL ( (ret->data[X].data = XLALCalloc( numSFTsPerIFO[X], sizeof(*(ret->data[X].data)) )) != NULL, XLAL_ENOMEM );
+
+      for ( UINT4 k = 0; k < numSFTsPerIFO[X]; k++ )
+	{
+	  UINT4 location = sftLocationInCatalog[X][k];
+	  ret->data[X].data[k] = catalog->data[location];	// struct copy, but keep all original pointers in struct!
+	} // for k < numSFTsPerIFO[X]
+
+    } // for X < numIFOs
+
+  // free all temporary internal memory
+  for ( UINT4 X = 0; X < numIFOsMax; X ++)
+    {
+      XLALFree ( ifolist[X] );
+      XLALFree ( sftLocationInCatalog[X] );
+    }
+  XLALFree ( ifolist );
+  XLALFree ( sftLocationInCatalog );
+  XLALFree ( numSFTsPerIFO );
+
+  // sort final multi-catalog view alphabetically by detector name
+  qsort ( ret->data, ret->length, sizeof( ret->data[0] ), compareDetNameCatalogs );
+
+  return ret;
+
+} // XLALGetMultiSFTCatalogView()
+
+/**
+ * Destroys a MultiSFTCatalogView, without freeing the original
+ * catalog that the 'view' was referring to, which
+ * must be destroyed separately using XLALDestroySFTCatalog().
+ */
+void
+XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView )
+{
+  if ( !multiView ) {
+    return;
+  }
+
+  for ( UINT4 X = 0; X < multiView->length; X ++ )
+    {
+      XLALFree ( multiView->data[X].data );
+    }
+
+  XLALFree ( multiView->data );
+  XLALFree ( multiView );
+
+  return;
+
+} // XLALDestroyMultiSFTCatalog()
+
+
+/**
+ * Return the 'official' file name for a given SFT, folllowing the SFT-v2 naming convention
+ * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385,
+ * see also XLALOfficialSFTFilename() for details.
+ */
+char *
+XLALGetOfficialName4SFT ( const SFTtype *sft,	//!< [in] input SFT to generate name for
+                          const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
+                          )
+{
+  XLAL_CHECK_NULL ( sft != NULL, XLAL_EINVAL );
+
+
+  UINT4 Tsft = (UINT4) round ( 1.0 / sft->deltaF );
+
+  /* calculate sft 'duration' -- may be different from timebase if nanosecond of sft-epoch is non-zero */
+  UINT4 Tspan = Tsft;
+  if ( sft->epoch.gpsNanoSeconds > 0) {
+    Tspan += 1;
+  }
+
+  char *filename;
+  XLAL_CHECK_NULL ( (filename = XLALOfficialSFTFilename ( sft->name[0], sft->name[1], 1, Tsft, sft->epoch.gpsSeconds, Tspan, Misc )) != NULL, XLAL_EFUNC );
+
+  return filename;
+
+} // XLALGetOfficialName4SFT()
+
+/**
+ * Return the 'official' file name for a given SFT-vector written into a single "merged SFT-file",
+ * folllowing the SFT-v2 naming convention
+ * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385,
+ * see also XLALOfficialSFTFilename() for details.
+ */
+char *
+XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts,	//!< [in] input SFT vector to generate name for
+                                 const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
+                                 )
+{
+  XLAL_CHECK_NULL ( sfts != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( sfts->length > 0, XLAL_EINVAL );
+
+  UINT4 numSFTs = sfts->length;
+  SFTtype *sftStart       = &(sfts->data[0]);
+  SFTtype *sftEnd         = &(sfts->data[numSFTs-1]);
+  LIGOTimeGPS *epochStart = &(sftStart->epoch);
+  LIGOTimeGPS *epochEnd   = &(sftEnd->epoch);
+
+  const char *name = sftStart->name;
+  UINT4 Tsft = (UINT4) round ( 1.0 / sftStart->deltaF );
+
+  /* calculate time interval covered -- may be different from timebase if nanosecond of sft-epochs are non-zero */
+  UINT4 Tspan = epochEnd->gpsSeconds - epochStart->gpsSeconds + Tsft;
+  if ( epochStart->gpsNanoSeconds > 0) {
+    Tspan += 1;
+  }
+  if ( epochEnd->gpsNanoSeconds > 0) {
+    Tspan += 1;
+  }
+
+  char *filename;
+  XLAL_CHECK_NULL ( (filename = XLALOfficialSFTFilename ( name[0], name[1], numSFTs, Tsft, epochStart->gpsSeconds, Tspan, Misc )) != NULL, XLAL_EFUNC );
+
+  return filename;
+
+} // XLALGetOfficialName4MergedSFTs()
+
+
+/**
+ * Return the 'official' file name for a given SFT, folllowing the SFT-v2 naming convention
+ * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385, namely
+ *
+ * name = S-D-G-T.sft
+ * where
+ * S = Source: upper-case single letter site designation 'G', 'H', 'L', 'V', ...
+ * D = description: a free-form string of alphanumerics and {_, +, #}
+ * G = GPS start time of first SFT in seconds (9- or 10-digit number)
+ * T = total time interval covered by the data in this file
+ *
+ * furthermore, the v2-spec uses the following convention for the description field 'D':
+ * D = numSFTs_IFO_SFTtype[_Misc]
+ * where
+ * numSFTs : number of SFTs in the file
+ * IFO     : 2-character detector name, eg 'G1', 'H1', 'H2', 'L1', 'V1', ...
+ * SFTtype : SFT-timebase, in the form '[T]SFT', where [T] is the SFT-duration in seconds, eg "1800SFT"
+ * Misc    : optional string providing additional information
+ */
+char *
+XLALOfficialSFTFilename ( char site,		//!< site-character 'G', 'H', 'L', ...
+                          char channel,	//!< channel character '1', '2', ...
+                          UINT4 numSFTs,	//!< number of SFTs in SFT-file
+                          UINT4 Tsft,		//!< time-baseline in (integer) seconds
+                          UINT4 GPS_start,	//!< GPS seconds of first SFT start time
+                          UINT4 Tspan,		//!< total time-spanned by all SFTs in seconds
+                          const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
+                          )
+{
+  // ----- S
+  char S[2] = { site, 0 };
+
+  // ----- D
+  char D[512];
+  char IFO[2] = { site, channel };
+  size_t written = snprintf ( D, sizeof(D), "%d_%c%c_%dSFT%s%s", numSFTs, IFO[0], IFO[1], Tsft, Misc ? "_" : "", Misc ? Misc : "" );
+  XLAL_CHECK_NULL ( written < sizeof(D), XLAL_EINVAL, "Description field length of %d exceeds buffer length of %d characters\n", written, sizeof(D)-1 );
+
+  // ----- G
+  char G[11];
+  written = snprintf ( G, sizeof(G), "%09d", GPS_start );
+  XLAL_CHECK_NULL ( written < sizeof(G), XLAL_EINVAL, "GPS seconds %d exceed buffer length of %d characters\n", GPS_start, sizeof(G)-1 );
+
+  // ----- T
+  char T[10];
+  written = snprintf ( T, sizeof(T), "%d", Tspan );
+  XLAL_CHECK_NULL ( written < sizeof(T), XLAL_EINVAL, "Tspan=%d s exceed buffer length of %d characters\n", Tspan, sizeof(T)-1 );
+
+  // S-D-G-T.sft
+  size_t len = strlen(S) + 1 + strlen(D) + 1 + strlen(G) + 1 + strlen(T) + 4 + 1;
+  char *filename;
+  XLAL_CHECK_NULL ( (filename = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
+
+  written = snprintf ( filename, len, "%s-%s-%s-%s.sft", S, D, G, T );
+  XLAL_CHECK_NULL ( written < len, XLAL_EFAILED, "Miscounted string-length, expected %d characters but got %d\n", len - 1, written );
+
+  return filename;
+
+} // XLALGetOfficialName4SFT()
+
+
 
 /*================================================================================
  * OBSOLETE and deprecated SFT-v1 API :
@@ -4536,6 +4702,28 @@ compareDetName(const void *ptr1, const void *ptr2)
     return 0;
 
 } /* compareDetName() */
+
+/* compare two SFT-catalog by detector name in alphabetic order */
+static int
+compareDetNameCatalogs ( const void *ptr1, const void *ptr2 )
+{
+  SFTCatalog const* cat1 = (SFTCatalog const*)ptr1;
+  SFTCatalog const* cat2 = (SFTCatalog const*)ptr2;
+  const char *name1 = cat1->data[0].header.name;
+  const char *name2 = cat2->data[0].header.name;
+
+  if ( name1[0] < name2[0] )
+    return -1;
+  else if ( name1[0] > name2[0] )
+    return 1;
+  else if ( name1[1] < name2[1] )
+    return -1;
+  else if ( name1[1] > name2[1] )
+    return 1;
+  else
+    return 0;
+
+} /* compareDetNameCatalogs() */
 
 
 

@@ -34,17 +34,21 @@
   import_array();
 %}
 
-// Name of PyObject containing the SWIG wrapping of the 'this'
-// pointer, i.e. the struct whose members are being accessed.
+// Name of PyObject containing the SWIG wrapping of the struct whose members are being accessed.
 %header %{
-#define swiglal_self()    self
-#define swiglal_no_self() NULL
+#define swiglal_self()    (self)
+#define swiglal_no_self() (NULL)
 %}
 
-// Name of PyObject containing the SWIG wrapping of the
-// first argument to a function.
+// Name of PyObject containing the SWIG wrapping of the first argument to a function.
 %header %{
-#define swiglal_1starg()  obj0
+#define swiglal_1starg()  (obj0)
+%}
+
+// Append an argument to the output argument list of an Python SWIG-wrapped function, if the list is empty.
+%header %{
+#define swiglal_append_output_if_empty(v) \
+  if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
 %}
 
 ////////// SWIG directives for operators //////////

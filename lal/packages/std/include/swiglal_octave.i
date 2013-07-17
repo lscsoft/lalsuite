@@ -47,17 +47,21 @@
 #include <octave/toplev.h>
 }%}
 
-// Name of octave_value containing the SWIG wrapping of the 'this'
-// pointer, i.e. the struct whose members are being accessed.
+// Name of octave_value containing the SWIG wrapping of the struct whose members are being accessed.
 %header %{
 #define swiglal_self()    (args.length() > 0 ? args(0) : octave_value())
-#define swiglal_no_self() octave_value()
+#define swiglal_no_self() (octave_value())
 %}
 
-// Name of octave_value containing the SWIG wrapping of the
-// first argument to a function.
+// Name of octave_value containing the SWIG wrapping of the first argument to a function.
 %header %{
 #define swiglal_1starg()  (args.length() > 0 ? args(0) : octave_value())
+%}
+
+// Append an argument to the output argument list of an Octave SWIG-wrapped function, if the list is empty.
+%header %{
+#define swiglal_append_output_if_empty(v) \
+  if (_outp->length() == 0) _outp = SWIG_Octave_AppendOutput(_outp, v)
 %}
 
 ////////// SWIG directives for operators //////////

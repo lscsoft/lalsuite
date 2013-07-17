@@ -79,7 +79,7 @@ noinst_DATA = \
 	testTimestamps.dat
 
 MOSTLYCLEANFILES = \
-	H-1_H1*.sft \
+	H-*_H1*.sft \
 	OutHistogram.asc \
 	OutHough.asc \
 	outputsft*.sft

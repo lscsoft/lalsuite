@@ -1,6 +1,26 @@
+/*
+*  Copyright (C) 2013 Jolien Creighton
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 #include <lal/Date.h>
@@ -9,19 +29,31 @@
 #undef CHAR
 #endif
 #define CHAR FRAMEC_CHAR
-#include <framec/FrameC.h>
-#include <framec/FrameH.h>
-#include <framec/Stream.h>
-#include <framec/FrTOC.h>
+#include <framecppc/FrameC.h>
+#include <framecppc/FrameH.h>
+#include <framecppc/Stream.h>
+#include <framecppc/FrTOC.h>
 #undef CHAR
 #define CHAR CHAR
 
 /* resolve incomplete types with FrameL structs and custom structs */
 #define tagLALFrameUFrameH		frame_h
-#define tagLALFrameUFrFile		fr_file
 #define tagLALFrameUFrChan		fr_chan
 #define tagLALFrameUFrTOC		fr_toc_t_
 #define tagLALFrameUFrHistory		fr_history
+
+#ifndef FRAMEC_HANDLES_STDIO_STDOUT
+struct tagLALFrameUFrFile {
+    fr_file_t *handle;
+    fr_file_mode_t mode;
+    FILE *tmpfp;
+};
+#define FRFILE(stream) ((stream)->handle)
+#else
+#define tagLALFrameUFrFile		fr_file
+#define FRFILE(stream) (stream)
+#endif
+
 #include <lal/LALFrameU.h>
 
 /* for safety, have a string prefix that is nul-terminated as well */
@@ -30,59 +62,158 @@ struct tagLALFrameUFrDetector {
     char prefix[3];
 };
 
-/* TODO: do something with XLAL error macros;
- * TODO: also, free the error handle */
+/* calls a FrameC function and assigns the return value to retval */
+#define CALL_FRAMEC_FUNCTION_RETVAL(retval, err, f, ...) do { \
+		FrameCError *error = NULL; \
+		retval = f(&error, __VA_ARGS__); \
+		if (error) { \
+			XLAL_PRINT_ERROR("FrameC function %s() failed with code %d: %s", #f, (error)->s_errno, (error)->s_message); \
+			free(error); \
+			err = 1; \
+		} \
+		else err = 0; \
+	} while (0)
 
+/* calls a FrameC function having no return value */
 #define CALL_FRAMEC_FUNCTION(err, f, ...) do { \
 		FrameCError *error = NULL; \
 		f(&error, __VA_ARGS__); \
 		if (error) { \
-			fprintf(stderr, "XLAL Error - %s (%s:%d): function %s failed with code %d: %s\n", __func__, __FILE__, __LINE__, #f, (error)->s_errno, (error)->s_message); \
+			XLAL_PRINT_ERROR("FrameC function %s() failed with code %d: %s", #f, (error)->s_errno, (error)->s_message); \
+			free(error); \
 			err = 1; \
-		}\
+		} \
 		else err = 0; \
 	} while (0)
 
+/* calls a FrameC and returns with 0 on success or -1 on failure */
 #define TRY_FRAMEC_FUNCTION(f, ...) do { \
-		FrameCError *error = NULL; \
-		f(&error, __VA_ARGS__); \
-		if (error) { \
-			fprintf(stderr, "XLAL Error - %s (%s:%d): function %s failed with code %d: %s\n", __func__, __FILE__, __LINE__, #f, (error)->s_errno, (error)->s_message); \
-			return -1; \
-		}\
+		int err; \
+		CALL_FRAMEC_FUNCTION(err, f, __VA_ARGS__); \
+		if (err) { \
+			XLAL_ERROR(XLAL_EFUNC); \
+		} \
 		return 0; \
 	} while (0)
 
+/* calls a FrameC and returns a specified retval or errval on failure */
 #define TRY_FRAMEC_FUNCTION_VAL(retval, errval, f, ...) do { \
-		FrameCError *error = NULL; \
-		f(&error, __VA_ARGS__); \
-		if (error) { \
-			fprintf(stderr, "XLAL Error - %s (%s:%d): function %s failed with code %d: %s\n", __func__, __FILE__, __LINE__, #f, (error)->s_errno, (error)->s_message); \
-			return errval; \
-		}\
+		int err; \
+		CALL_FRAMEC_FUNCTION(err, f, __VA_ARGS__); \
+		if (err) { \
+			XLAL_ERROR_VAL(errval, XLAL_EFUNC); \
+		} \
 		return retval; \
 	} while (0)
 
-#define TRY_FRAMEC_FUNCTION_PTR(f, ...) do { \
-		FrameCError *error = NULL; \
-		void *ptr = f(&error, __VA_ARGS__); \
-		if (error) { \
-			fprintf(stderr, "XLAL Error - %s (%s:%d): function %s failed with code %d: %s\n", __func__, __FILE__, __LINE__, #f, (error)->s_errno, (error)->s_message); \
-			return NULL; \
-		}\
-		return ptr; \
+/* calls a FrameC and returns its integer return value or -1 on failure */
+#define TRY_FRAMEC_FUNCTION_INT(f, ...) do { \
+		int retval; \
+		int err; \
+		CALL_FRAMEC_FUNCTION_RETVAL(retval, err, f, __VA_ARGS__); \
+		if (err) { \
+			XLAL_ERROR(XLAL_EFUNC); \
+		} \
+		return retval; \
 	} while (0)
 
+/* calls a FrameC and returns its pointer return value or NULL on failure */
+#define TRY_FRAMEC_FUNCTION_PTR(f, ...) do { \
+		void *retval; \
+		int err; \
+		CALL_FRAMEC_FUNCTION_RETVAL(retval, err, f, __VA_ARGS__); \
+		if (err) { \
+			XLAL_ERROR_NULL(XLAL_EFUNC); \
+		} \
+		return retval; \
+	} while (0)
+
+/* calls a FrameC and returns */
 #define TRY_FRAMEC_FUNCTION_VOID(f, ...) do { \
-		FrameCError *error = NULL; \
-		f(&error, __VA_ARGS__); \
-		if (error) { \
-			fprintf(stderr, "XLAL Error - %s (%s:%d): function %s failed with code %d: %s\n", __func__, __FILE__, __LINE__, #f, (error)->s_errno, (error)->s_message); \
-		}\
+		int err; \
+		CALL_FRAMEC_FUNCTION(err, f, __VA_ARGS__); \
+		if (err) { \
+			XLAL_ERROR_VOID(XLAL_EFUNC); \
+		} \
 		return; \
 	} while (0)
 
-/* Stream functions */
+/*
+ * FrFile functions
+ */
+
+#ifndef FRAMEC_HANDLES_STDIO_STDOUT
+
+#define BUFSZ 16384
+
+void XLALFrameUFrFileClose(LALFrameUFrFile * stream)
+{
+    int err;
+    if (stream) {
+        CALL_FRAMEC_FUNCTION(err, FrameCFileClose, FRFILE(stream));
+        if (stream->tmpfp) {
+            /* must dump temporary file contents to stdout */
+            char buf[BUFSZ];
+            while (fwrite(buf, 1, fread(buf, 1, sizeof(buf), stream->tmpfp),
+                    stdout) == sizeof(buf)) ;
+            fclose(stream->tmpfp);
+        }
+        LALFree(stream);
+        if (err)
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+    }
+    return;
+}
+
+LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)
+{
+    char tmpfname[L_tmpnam + 1] = "";
+    LALFrameUFrFile *stream;
+    int err;
+    stream = LALCalloc(1, sizeof(*stream));
+    if (*mode == 'r')
+        stream->mode = FRAMEC_FILE_MODE_INPUT;
+    else if (*mode == 'w')
+        stream->mode = FRAMEC_FILE_MODE_OUTPUT;
+    else {
+        LALFree(stream);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+    if (filename == NULL || strcmp(filename, "-") == 0) {
+        /* hack to allow reading from stdin */
+        filename = tmpnam(tmpfname);
+        if (stream->mode == FRAMEC_FILE_MODE_INPUT) {
+            /* dump stdin to a temporary file */
+            char buf[BUFSZ];
+            stream->tmpfp = fopen(tmpfname, "w");
+            while (fwrite(buf, 1, fread(buf, 1, sizeof(buf), stdin),
+                    stream->tmpfp) == sizeof(buf)) ;
+            fclose(stream->tmpfp);
+            stream->tmpfp = NULL;
+        }
+    }
+    CALL_FRAMEC_FUNCTION_RETVAL(stream->handle, err, FrameCFileOpen,
+        filename, stream->mode);
+    if (*tmpfname) {
+        if (stream->mode == FRAMEC_FILE_MODE_OUTPUT)
+            stream->tmpfp = fopen(tmpfname, "r");
+        unlink(tmpfname);       /* remove temporary file when closed */
+    }
+    if (err) {
+        LALFree(stream);
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+    }
+    return stream;
+}
+
+int XLALFrameUFileCksumValid(LALFrameUFrFile * stream)
+{
+    TRY_FRAMEC_FUNCTION_INT(FrameCFileCksumValid, FRFILE(stream));
+}
+
+#undef BUFSZ
+
+#else /* defined FRAMEC_HANDLES_STDIN_STDOUT */
 
 void XLALFrameUFrFileClose(LALFrameUFrFile * stream)
 {
@@ -98,15 +229,22 @@ LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)
         m = FRAMEC_FILE_MODE_OUTPUT;
     else
         return NULL;
+    /* FIXME: does this work? */
+    if (filename == NULL)
+        filename = "-";         /* indicates we should use stdin or stdout */
     TRY_FRAMEC_FUNCTION_PTR(FrameCFileOpen, filename, m);
 }
 
 int XLALFrameUFileCksumValid(LALFrameUFrFile * stream)
 {
-    TRY_FRAMEC_FUNCTION(FrameCFileCksumValid, stream);
+    TRY_FRAMEC_FUNCTION_INT(FrameCFileCksumValid, stream);
 }
 
-/* TOC functions */
+#endif /* defined FRAMEC_HANDLES_STDIN_STDOUT */
+
+/*
+ * FrTOC functions
+ */
 
 void XLALFrameUFrTOCFree(LALFrameUFrTOC * toc)
 {
@@ -115,7 +253,7 @@ void XLALFrameUFrTOCFree(LALFrameUFrTOC * toc)
 
 LALFrameUFrTOC *XLALFrameUFrTOCRead(LALFrameUFrFile * stream)
 {
-    TRY_FRAMEC_FUNCTION_PTR(FrameCFrTOCRead, stream);
+    TRY_FRAMEC_FUNCTION_PTR(FrameCFrTOCRead, FRFILE(stream));
 }
 
 size_t XLALFrameUFrTOCQueryNFrame(const LALFrameUFrTOC * toc)
@@ -153,7 +291,7 @@ double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc,
 double XLALFrameUFrTOCQueryDt(const LALFrameUFrTOC * toc, size_t pos)
 {
     fr_toc_nframe_t nframe;
-    fr_toc_dt_element_t *dt;
+    fr_toc_dt_t dt;
     double retval;
     int err;
     CALL_FRAMEC_FUNCTION(err, FrameCFrTOCQuery, toc, FR_TOC_FIELD_NFRAME,
@@ -163,7 +301,7 @@ double XLALFrameUFrTOCQueryDt(const LALFrameUFrTOC * toc, size_t pos)
     dt = LALCalloc(nframe, sizeof(*dt));
     if (!dt)
         return -1.0;
-    CALL_FRAMEC_FUNCTION(err, FrameCFrTOCQuery, toc, FR_TOC_FIELD_GTIME, dt,
+    CALL_FRAMEC_FUNCTION(err, FrameCFrTOCQuery, toc, FR_TOC_FIELD_DT, dt,
         nframe, FR_TOC_FIELD_LAST);
     retval = err ? -1.0 : dt[pos];
     LALFree(dt);
@@ -177,6 +315,7 @@ size_t XLALFrameUFrTOCQueryAdcN(const LALFrameUFrTOC * toc)
         &n, FR_TOC_FIELD_LAST);
 }
 
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrTOCQueryAdcName(const LALFrameUFrTOC * toc,
     size_t adc)
 {
@@ -205,6 +344,7 @@ size_t XLALFrameUFrTOCQuerySimN(const LALFrameUFrTOC * toc)
         &n, FR_TOC_FIELD_LAST);
 }
 
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrTOCQuerySimName(const LALFrameUFrTOC * toc,
     size_t sim)
 {
@@ -233,6 +373,7 @@ size_t XLALFrameUFrTOCQueryProcN(const LALFrameUFrTOC * toc)
         &n, FR_TOC_FIELD_LAST);
 }
 
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrTOCQueryProcName(const LALFrameUFrTOC * toc,
     size_t proc)
 {
@@ -261,6 +402,7 @@ size_t XLALFrameUFrTOCQueryDetectorN(const LALFrameUFrTOC * toc)
         FR_TOC_FIELD_DETECTOR_N, &n, FR_TOC_FIELD_LAST);
 }
 
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc,
     size_t det)
 {
@@ -282,9 +424,9 @@ const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc,
     return name;
 }
 
-/* FrameH functions */
-
-/* frame allocation/free functions */
+/*
+ * FrameH functions
+ */
 
 void XLALFrameUFrameHFree(LALFrameUFrameH * frame)
 {
@@ -300,16 +442,14 @@ LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start,
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrameHAlloc, name, gtime, dt, frnum);
 }
 
-/* I/O functions for frame */
-
 LALFrameUFrameH *XLALFrameUFrameHRead(LALFrameUFrFile * stream, int pos)
 {
-    TRY_FRAMEC_FUNCTION_PTR(FrameCFrameHRead, stream, pos);
+    TRY_FRAMEC_FUNCTION_PTR(FrameCFrameHRead, FRFILE(stream), pos);
 }
 
 int XLALFrameUFrameHWrite(LALFrameUFrFile * stream, LALFrameUFrameH * frame)
 {
-    TRY_FRAMEC_FUNCTION(FrameCFrameHWrite, stream, frame);
+    TRY_FRAMEC_FUNCTION(FrameCFrameHWrite, FRFILE(stream), frame);
 }
 
 /* function to add a channel to a frame */
@@ -338,7 +478,7 @@ int XLALFrameUFrameHFrHistoryAdd(LALFrameUFrameH * frame,
 
 /* functions to query frame metadata */
 
-/* note: returns a pointer to internal memory that will be lost when frame is freed */
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrameHQueryName(const LALFrameUFrameH * frame)
 {
     frame_h_name_t name;
@@ -400,7 +540,9 @@ int XLALFrameUFrameHSetRun(LALFrameUFrameH * frame, int run)
         FRAME_H_FIELD_LAST);
 }
 
-/* Channel functions */
+/* 
+ * FrChan functions
+ */
 
 void XLALFrameUFrChanFree(LALFrameUFrChan * channel)
 {
@@ -410,7 +552,7 @@ void XLALFrameUFrChanFree(LALFrameUFrChan * channel)
 LALFrameUFrChan *XLALFrameUFrChanRead(LALFrameUFrFile * stream,
     const char *name, size_t pos)
 {
-    TRY_FRAMEC_FUNCTION_PTR(FrameCFrChanRead, stream, name, pos);
+    TRY_FRAMEC_FUNCTION_PTR(FrameCFrChanRead, FRFILE(stream), name, pos);
 }
 
 LALFrameUFrChan *XLALFrameUFrAdcChanAlloc(const char *name, int dtype,
@@ -479,8 +621,9 @@ LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type,
         XLALFrProcSubType(subtype), dtype, ndata);
 }
 
-/* Channel query functions */
+/* channel query functions */
 
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrChanQueryName(const LALFrameUFrChan * channel)
 {
     fr_chan_name_t name;
@@ -490,16 +633,12 @@ const char *XLALFrameUFrChanQueryName(const LALFrameUFrChan * channel)
 
 double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel)
 {
-    /*  TODO: implement when functionality is made available */
-    /*
-     * fr_chan_time_offset_t offset;
-     * TRY_FRAMEC_FUNCTION_VAL( offset, 0, FrameCFrChanQuery, channel, FR_CHAN_FIELD_TIME_OFFSET, &offset, FR_CHAN_FIELD_LAST );
-     */
-    channel = NULL;
-    return 0;
+    fr_chan_time_offset_t offset;
+    TRY_FRAMEC_FUNCTION_VAL(offset, 0, FrameCFrChanQuery, channel,
+        FR_CHAN_FIELD_TIME_OFFSET, &offset, FR_CHAN_FIELD_LAST);
 }
 
-/* Channel set functions */
+/* channel set functions */
 
 int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
     double sampleRate)
@@ -509,7 +648,17 @@ int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
         srate, FR_CHAN_FIELD_LAST);
 }
 
-/* ChanVector functions */
+int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel,
+    double timeOffset)
+{
+    fr_chan_time_offset_t offset = timeOffset;
+    TRY_FRAMEC_FUNCTION(FrameCFrChanSet, channel, FR_CHAN_FIELD_TIME_OFFSET,
+        offset, FR_CHAN_FIELD_LAST);
+}
+
+/*
+ * FrVect functions
+ */
 
 int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype,
     size_t ndata)
@@ -517,7 +666,7 @@ int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype,
     TRY_FRAMEC_FUNCTION(FrameCFrChanVectorAlloc, channel, dtype, ndata);
 }
 
-/* get the FrameC compression scheme for a particular Frame Spec compressLevel */
+/* get the FrameC compression scheme for a particular compressLevel */
 static fr_vect_compression_schemes_t XLALFrVectCompressionScheme(int
     compressLevel)
 {
@@ -558,12 +707,12 @@ int XLALFrameUFrChanVectorExpand(LALFrameUFrChan * channel)
 
 /* functions to query FrVect structures within a channel */
 
-/* note: returns a pointer to internal memory which is lost when channel is freed */
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrChanVectorQueryName(const LALFrameUFrChan * channel)
 {
     fr_vect_name_t name;
     TRY_FRAMEC_FUNCTION_VAL(name, NULL, FrameCFrChanVectorQuery, channel,
-        FR_VECT_FIELD_DATA, &name, FR_VECT_FIELD_LAST);
+        FR_VECT_FIELD_NAME, &name, FR_VECT_FIELD_LAST);
 }
 
 int XLALFrameUFrChanVectorQueryCompress(const LALFrameUFrChan * channel)
@@ -672,6 +821,7 @@ double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel,
     return retval;
 }
 
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel,
     size_t dim)
 {
@@ -693,6 +843,7 @@ const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel,
     return retval;
 }
 
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrChanVectorQueryUnitY(const LALFrameUFrChan * channel)
 {
     fr_vect_unit_y_t unitY;
@@ -708,46 +859,40 @@ int XLALFrameUFrChanVectorSetName(LALFrameUFrChan * channel, const char *name)
         (fr_vect_name_t) (name), FR_VECT_FIELD_LAST);
 }
 
-/*
-int XLALFrameUFrChanVectorSetData(LALFrameUFrChan *channel, void *data, size_t ndata)
+int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel,
+    const char *unit)
 {
-	fr_vect_ndim_t ndim_ = ndim;
-	fr_vect_dx_t *dx_;
-	size_t i;
-	int err;
-	dx_ = LALCalloc(ndim, sizeof(*dx_));
-	for (i = 0; i < ndim; ++i)
-		dx_[i] = dx[i];
-	CALL_FRAMEC_FUNCTION( err, FrameCFrChanVectorSet, channel, FR_VECT_FIELD_DX, dx_, ndim_, FR_VECT_FIELD_LAST );
-	LALFree(dx_);
-	return err ? -1 : 0;
+    TRY_FRAMEC_FUNCTION(FrameCFrChanVectorSet, channel, FR_VECT_FIELD_UNIT_Y,
+        (fr_vect_unit_y_t) (unit), 1, FR_VECT_FIELD_LAST);
 }
-*/
 
-/* TODO:
-XLALFrameUFrChanVectorSetDx
-XLALFrameUFrChanVectorSetStartX
-XLALFrameUFrChanVectorSetUnitX
-XLALFrameUFrChanVectorSetUnitY
-*/
+/* NOTE: only support 1-dimensional vectors */
+
+int XLALFrameUFrChanVectorSetDx(LALFrameUFrChan * channel, double dx)
+{
+    fr_vect_dx_t dx_ = dx;
+    TRY_FRAMEC_FUNCTION(FrameCFrChanVectorSet, channel, FR_VECT_FIELD_DX,
+        &dx_, 1, FR_VECT_FIELD_LAST);
+}
+
+int XLALFrameUFrChanVectorSetStartX(LALFrameUFrChan * channel, double x0)
+{
+    fr_vect_startx_t x0_ = x0;
+    TRY_FRAMEC_FUNCTION(FrameCFrChanVectorSet, channel, FR_VECT_FIELD_START_X,
+        &x0_, 1, FR_VECT_FIELD_LAST);
+}
+
+int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel,
+    const char *unit)
+{
+    fr_vect_unit_x_t unit_ = unit;
+    TRY_FRAMEC_FUNCTION(FrameCFrChanVectorSet, channel, FR_VECT_FIELD_UNIT_X,
+        &unit_, 1, FR_VECT_FIELD_LAST);
+}
 
 /*
-int XLALFrameUFrChanVectorSetDx(LALFrameUFrChan *channel, const double *dx, size_t ndim)
-{
-	fr_vect_ndim_t ndim_ = ndim;
-	fr_vect_dx_t *dx_;
-	size_t i;
-	int err;
-	dx_ = LALCalloc(ndim, sizeof(*dx_));
-	for (i = 0; i < ndim; ++i)
-		dx_[i] = dx[i];
-	CALL_FRAMEC_FUNCTION( err, FrameCFrChanVectorSet, channel, FR_VECT_FIELD_DX, dx_, ndim_, FR_VECT_FIELD_LAST );
-	LALFree(dx_);
-	return err ? -1 : 0;
-}
-*/
-
-/* Detector functions */
+ * FrDetector functions
+ */
 
 void XLALFrameUFrDetectorFree(LALFrameUFrDetector * detector)
 {
@@ -755,6 +900,8 @@ void XLALFrameUFrDetectorFree(LALFrameUFrDetector * detector)
         int err;
         CALL_FRAMEC_FUNCTION(err, FrameCFrDetectorFree, detector->handle);
         LALFree(detector);
+        if (err)
+            XLAL_ERROR_VOID(XLAL_EFUNC);
     }
     return;
 }
@@ -769,7 +916,7 @@ LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream,
     if (!detector)
         return NULL;
     CALL_FRAMEC_FUNCTION(err, detector->handle =
-        FrameCFrDetectorRead, stream, name);
+        FrameCFrDetectorRead, FRFILE(stream), name);
     if (err || !detector->handle) {
         XLALFrameUFrDetectorFree(detector);
         return NULL;
@@ -797,10 +944,9 @@ LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
         return NULL;
     if (prefix)
         memcpy(detector->prefix, prefix, 2);
-    CALL_FRAMEC_FUNCTION(err, detector->handle =
-        FrameCFrDetectorAlloc, name, prefix, latitude, longitude, elevation,
-        azimuthX, azimuthY, altitudeX, altitudeY, midpointX, midpointY,
-        localTime);
+    CALL_FRAMEC_FUNCTION_RETVAL(detector->handle, err, FrameCFrDetectorAlloc,
+	name, prefix, latitude, longitude, elevation, azimuthX, azimuthY,
+        altitudeX, altitudeY, midpointX, midpointY, localTime);
     if (err || !detector->handle) {
         XLALFrameUFrDetectorFree(detector);
         return NULL;
@@ -808,6 +954,7 @@ LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
     return detector;
 }
 
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector *
     detector)
 {
@@ -817,6 +964,7 @@ const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector *
         FR_DETECTOR_FIELD_LAST);
 }
 
+/* WARNING: returns pointer to memory that is lost when frame is freed */
 const char *XLALFrameUFrDetectorQueryPrefix(const LALFrameUFrDetector *
     detector)
 {
@@ -911,7 +1059,9 @@ int XLALFrameUFrDetectorQueryLocalTime(const LALFrameUFrDetector * detector)
         FR_DETECTOR_FIELD_LAST);
 }
 
-/* History routines */
+/*
+ * FrHistory routines
+ */
 
 void XLALFrameUFrHistoryFree(LALFrameUFrHistory * history)
 {

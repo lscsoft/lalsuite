@@ -469,6 +469,10 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
 
    INT4 ii, jj;
 
+   //The minimum and maximum index to search in the IHS vector
+   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/7200.0, params->Tobs/params->Pmin)) - 5;
+   INT4 minIndexForIHS = (INT4)floor(fmax(5.0, params->Tobs/params->Pmax)) - 5;
+
    //Allocate a vector sequence that holds the summed values of at least two nearest neighbor rows
    //On the first iteration this holds the nearest neighbor sums, but on subsequent iterations, this holds nearest 3 neighbors
    //sums, then nearest 4 neighbor sums, and so on.
@@ -522,7 +526,7 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             excessabovenoise->data[jj] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + jj] - scaledExpectedIHSVectorValues->data[jj];
          }
       }
-      ihslocations->data[ii] = max_index(excessabovenoise) + 5;  //Find the location of the maximum IHS value
+      ihslocations->data[ii] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;  //Find the location of the maximum IHS value
       ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];  //And get the value
       //fprintf(stderr, "%d %f\n", ihslocations->data[ii], ihsvalues->data[ii]);
    } /* for ii=0 --> ihsvalues->length */
@@ -863,7 +867,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
 
    INT4 ii, jj, kk;
 
-   //Again, we start off by allocating a "towrows" vector sequence of IHS nearest neighbor sums
+   //Again, we start off by allocating a "tworows" vector sequence of IHS nearest neighbor sums
    REAL4VectorSequence *tworows = XLALCreateREAL4VectorSequence(ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
    if (tworows==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4VectorSequence(%d,%d) failed.\n", __func__, ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
@@ -894,7 +898,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
    }
    
    //The minimum and maximum index to search in the IHS vector
-   INT4 maxIndexForIHS = (INT4)ceil(fmin(2.0*params->Tobs/7200.0, 2.0*params->Tobs/params->Pmin)) - 5;
+   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/7200.0, params->Tobs/params->Pmin)) - 5;
    INT4 minIndexForIHS = (INT4)floor(fmax(5.0, params->Tobs/params->Pmax)) - 5;
    
    //Finding the maximum for each IHS vector and the location using SSE or not

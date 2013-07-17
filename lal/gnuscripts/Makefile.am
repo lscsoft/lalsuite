@@ -1,5 +1,6 @@
 EXTRA_DIST = \
 	ax_pthread.m4 \
+	compile \
 	config.guess \
 	config.sub \
 	cuda.common \

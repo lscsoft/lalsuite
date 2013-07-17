@@ -34,6 +34,7 @@ lalsimulationinclude_HEADERS = \
 	LALSimInspiralTestGRParams.h \
 	LALSimIMR.h \
 	LALSimInspiral.h \
+	LALSimInspiralWaveformCache.h \
 	LALSimulation.h \
 	LALSimNeutronStar.h \
 	LALSimNoise.h \
@@ -92,6 +93,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
 	LALSimInspiralTaylorLength.c \
+	LALSimInspiralWaveformCache.c \
 	LALSimInspiralWaveformTaper.c \
 	LALSimulation.c \
 	LALSimulationVCSInfo.c \

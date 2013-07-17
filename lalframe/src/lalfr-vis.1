@@ -1,0 +1,225 @@
+.TH LALFR-VIS 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-vis -- visualize frame data
+
+.SH SYNOPSIS
+.NF
+.B lalfr-vis
+\-\-channel=\fIchannel\fP \-\-frame\-cache=\fIcachefile\fP
+          \-\-start\-time=\fItstart\fP \-\-duration=\fIdeltat\fP [\-\-output=\fIoutfile\fP]
+          [\-\-highpass=\fIminfreq\fP] [\-\-lowpass=\fImaxfreq\fP] [\-\-pad=\fIpadding\fP]
+          [\-\-resample=\fIsrate\fP] [\-\-spectrum=\fIresolution\fP]
+
+        
+.B lalfr-vis
+\-\-channel=\fIchannel\fP \-\-frame\-glob=\fIglobstring\fP
+          \-\-start\-time=\fItstart\fP \-\-duration=\fIdeltat\fP [\-\-output=\fIoutfile\fP]
+          [\-\-highpass=\fIminfreq\fP] [\-\-lowpass=\fImaxfreq\fP] [\-\-pad=\fIpadding\fP]
+          [\-\-resample=\fIsrate\fP] [\-\-spectrum=\fIresolution\fP]
+.FI
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-vis\fP utility reads a requested interval
+[\fItstart\fP,\fItstart\fP+\fIdeltat\fP)
+of \fIchannel\fP data from frame files that are either indexed
+in the \fIcachefile\fP or matching the pattern \fIglobstring\fP as
+described by glob(3).
+The output is written to \fIoutfile\fP and the
+format of the output is determined by extension of \fIoutfile\fP
+as described below.
+If \fIoutfile\fP is not specified, the output is written to the
+standard output in two-column ascii format data.
+
+The \fBlalfr-vis\fP can optionally perform certain manipulations of
+the data that is read, including:
+.IP o
+High-pass filtering of the data.
+.IP o
+Low-pass filtering of the data.
+.IP o
+Resampling of the data.
+.IP o
+Computing the power spectrum of the data.
+.PP
+If any of the filtering or resampling operations are performed, it is
+recommended additional \fIpadding\fP is used.  This additional data,
+before and after the requested interval, will be discarded before output (or
+before computing the power spectrum) which will remove filter transients.
+Note that data will be read for the entire interval
+[\fItstart\fP-\fIpadding\fP,\fItstart\fP+\fIdeltat\fP+\fIpadding\fP)
+and must be available.
+
+.SH OPTIONS
+.TP
+\fB-h\fP, \fB--help
+Prints the help message.
+.TP
+\fB-c\fP \fIchannel\fP, \fB--channel\fP=\fIchannel\fP
+The \fIchannel\fP name that is to be read.
+.TP
+\fB-f\fP \fIcachefile\fP, \fB--frame-cache\fP=\fIcachefile\fP
+The \fIcachefile\fP indexing the frame files to be used.
+.TP
+\fB-f\fP \fIglobstring\fP, \fB--frame-cache\fP=\fIglobstring\fP
+The \fIcachefile\fP indexing the frame files to be used.
+.TP
+\fB-o\fP \fIoutfile\fP, \fB--output\fP=\fIoutfile\fP
+The \fIoutfile\fP to use.  The extension of \fIoutfile\fP is used to
+determine the format of the output.  The output formats are described below.
+.TP
+\fB-s\fP \fItstart\fP, \fB--start-time\fP=\fItstart\fP
+The time \fItstart\fP GPS seconds of the data to read.  If padding
+is specified with the \fB-P\fP option or the \fB--pad\fP option, an additional
+amount of data preceding \fItstart\fP is also read, and discarded after
+any requested filtering of the data is complete.
+.TP
+\fB-t\fP \fIdeltat\fP, \fB--duration\fP=\fIdeltat\fP
+The duration \fIdeltat\fP in seconds of data to read.  If padding
+is specified with the \fB-P\fP option or the \fB--pad\fP option, an additional
+amount of data is also read, and discarded after any requested filtering of
+the data is complete.
+.TP
+\fB-H\fP \fIminfreq\fP, \fB--highpass\fP=\fIminfreq\fP
+High-pass filter the data at \fIminfreq\fP Hertz.
+An additional amount of data, which will be discarded after the filtering,
+should be specified with the \fB-P\fP option or the \fB--pad\fP option to
+remove filter transients.
+.TP
+\fB-L\fP \fImaxfreq\fP, \fB--lowpass\fP=\fImaxfreq\fP
+Low-pass filter the data at \fIminfreq\fP Hertz.
+An additional amount of data, which will be discarded after the filtering,
+should be specified with the \fB-P\fP option or the \fB--pad\fP option to
+remove filter transients.
+.TP
+\fB-P\fP \fIpadding\fP, \fB--pad\fP=\fIpadding\fP
+Read \fIpadding\fP additional seconds of data before and after the requested
+interval.  This data is then dropped after all requested filtering has been
+performed in order to remove filter transients.
+.TP
+\fB-R\fP \fIsrate\fP, \fB--resample\fP=\fIsrate\fP
+Resample the data to sampling rate \fIsrate\fP Hertz.
+An additional amount of data, which will be discarded after the filtering,
+should be specified with the \fB-P\fP option or the \fB--pad\fP option to
+remove filter transients.
+.TP
+\fB-S\fP \fIresolution\fP, \fB--spectrum\fP=\fIresolution\fP
+Compute the power spectrum of the data at the requested \fIresolution\fP
+in Hertz.  Depending on the output format, either the amplitude spectral
+density or the power spectral density is output.
+
+.SH OUTPUT FORMATS
+If the \fB-o\fP or \fB--output\fP option is used to specify an output
+file, the extension of that file is used to determine the output format.
+Supported output formats include:
+.IP .au
+Au audio file format.
+This format is for time-series data only and may
+not be used if the \fB-S\fP or the \fB--spectrum\fP option is used.
+.IP .eps
+Encapsulated PostScript (EPS) graphical file format.
+A plot of the data values as a function of time is produced using the
+gnuplot(1) program, if available.
+If the \fB-S\fP or the \fB--spectrum\fP option is used, a log-log plot
+of the amplitude spectrum is produced instead.
+.IP .gif
+Graphics Interchange Format (GIF) graphical file format.
+A plot of the data values as a function of time is produced using the
+gnuplot(1) program, if available.
+If the \fB-S\fP or the \fB--spectrum\fP option is used, a log-log plot
+of the amplitude spectrum is produced instead.
+.IP .jpg
+JPEG graphical file format.
+A plot of the data values as a function of time is produced using the
+gnuplot(1) program, if available.
+If the \fB-S\fP or the \fB--spectrum\fP option is used, a log-log plot
+of the amplitude spectrum is produced instead.
+.IP .pdf
+Portable Document Format (PDF) graphical file format.
+A plot of the data values as a function of time is produced using the
+gnuplot(1) program, if available.
+If the \fB-S\fP or the \fB--spectrum\fP option is used, a log-log plot
+of the amplitude spectrum is produced instead.
+.IP .png
+Portable Network Graphics (PNG) graphical file format.
+A plot of the data values as a function of time is produced using the
+gnuplot(1) program, if available.
+If the \fB-S\fP or the \fB--spectrum\fP option is used, a log-log plot
+of the amplitude spectrum is produced instead.
+.IP .ps
+PostScript (PS) graphical file format.
+A plot of the data values as a function of time is produced using the
+gnuplot(1) program, if available.
+If the \fB-S\fP or the \fB--spectrum\fP option is used, a log-log plot
+of the amplitude spectrum is produced instead.
+.IP .svg
+Scalable Vector Graphics (SVG) graphical file format.
+A plot of the data values as a function of time is produced using the
+gnuplot(1) program, if available.
+If the \fB-S\fP or the \fB--spectrum\fP optione used, a log-log plot
+of the amplitude spectrum is produced instead.
+.IP .wav
+Waveform Audio File Format (WAVE) audio file format.
+This format is for time-series data only and may
+not be used if the \fB-S\fP or the \fB--spectrum\fP option is used.
+.IP .xml
+XML-based LIGO-lightweight (LIGOLw) file format.
+If the \fB-S\fP or the \fB--spectrum\fP option is used, the power
+spectral density data is written to the file.
+.PP
+If none of these extensions are used then the output will be in
+two-column ascii format.  The first column will be the GPS time of
+each sample of data and the second column will be the sample values.
+However, if the \fB-S\fP or the \fB--spectrum\fP option is used,
+the first column will be the frequency of each sample of the
+spectrum and the second column will be the value of the power spectral
+density at that frequency.
+
+
+.SH ENVIRONMENT
+The LAL_DEBUG_LEVEL can used to control the error and warning reporting
+of \fBlalfr-vis\fP.  Common values are:
+LAL_DEBUG_LEVEL=0 which suppresses error messages,
+LAL_DEBUG_LEVEL=1 which prints error messages alone,
+LAL_DEBUG_LEVEL=3 which prints both error messages and warning messages, and
+LAL_DEBUG_LEVEL=7 which additionally prints informational messages.
+
+.SH EXIT STATUS
+The \fBlalfr-vis\fP utility exits 0 on success, and >0 if an error occurs.
+
+
+.SH EXAMPLES
+.PP
+The command:
+.PP
+.RS
+.HP
+lalfr-vis -c H1:LSC-STRAIN -g "H-*.gwf" -s 1000000000 -t 16 -o out.wav
+.RE
+.PP
+will read 16 seconds beginning at GPS time 1000000000 of H1:LSC-STRAIN data
+from frame files matching ``H-*.gwf'' in the current directory and ouput
+the data as a WAVE audio file \fIout.wav\fP.
+.PP
+The command:
+.PP
+.RS
+.HP
+lalfr-vis -c L1:LSC-STRAIN -f LLO.cache -s 1000000001 -t 64 -R 2048
+-H 10 -L 1000 -P 1 -S 0.25 -o out.png
+.RE
+.PP
+will read 66 seconds beginning at GPS time 1000000000 of L1:LSC-STRAIN data
+from frame files indexed in \fILLO.cache\fP, and the following manipulations
+will be performed: the data will be resampled to a sampling rate of 2048 Hz,
+the data will be high-pass filtered at 10 Hz, the data will be low-pass
+filtered at 1000 Hz, the first and last 1 second of data will be dropped
+(to remove filter transients), a power spectrum will be computed with 0.25 Hz
+resolution, and a PNG file displaying a log-log plot of the amplitude spectral
+density will output in file \fIout.pnd\fP.
+
+.SH SEE ALSO
+gnuplot(1), lalfr-stream(1)
+
+.SH AUTHOR
+Jolien Creighton
