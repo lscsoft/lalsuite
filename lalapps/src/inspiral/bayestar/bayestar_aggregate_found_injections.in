@@ -120,7 +120,7 @@ if __name__ == '__main__':
     progress.update(-1, 'obtaining filenames of sky maps')
     fitsfilenames = tuple(itertools.chain.from_iterable(glob.iglob(fitsfileglob)
         for fitsfileglob in fitsfileglobs))
-    
+
     if opts.contour_probability is not None:
         prob_opts = '\t'.join([str(s)+'_area' for s in opts.contour_probability])
         print('coinc_event_id', 'simulation_id', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',

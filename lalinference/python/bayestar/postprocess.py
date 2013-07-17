@@ -76,10 +76,10 @@ def find_injection(sky_map, true_ra, true_dec, prob_contours=None):
     # Find the smallest posterior mass that would have to be searched to find
     # the true location.
     searched_prob = cum_sky_map[idx]
-    
-    # If areas of confidence intervals are wanted then compute 
+
+    # If areas of confidence intervals are wanted then compute
     # the area of the smallest contour
-    prob_areas = [] 
+    prob_areas = []
     if prob_contours is not None:
         for prob in prob_contours:
             prob_areas.append((np.argmax(cum_sky_map>=prob) + 1) * hp.nside2pixarea(nside, degrees=True))
