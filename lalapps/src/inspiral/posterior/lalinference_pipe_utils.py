@@ -89,7 +89,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0):
   trigSNR = coinctable[0].snr
   # Parse PSD
   print "gracedb download %s psd.xml.gz" % gid
-  subprocess.call(["gracedb","download", gid ,"psd.xml.gz"])
+  subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
   if os.path.exists("psd.xml.gz"):
     xmlpsd = utils.load_filename("psd.xml.gz")
     psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
