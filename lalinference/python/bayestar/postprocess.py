@@ -69,8 +69,10 @@ def find_injection(sky_map, true_ra, true_dec, prob_contours=()):
     # Find the index of the true location in the cumulative distribution.
     idx = (i for i, pix in enumerate(indices) if pix == true_pix).next()
 
-    # Find the smallest area that would have to be searched to find the true
-    # location.
+    # Find the smallest area that would have to be searched to find
+    # the true location. Note that 1 is added to the index because we want
+    # the **length** of the array up to and including the idx'th element,
+    # not the index itself.
     searched_area = (idx + 1) * hp.nside2pixarea(nside, degrees=True)
 
     # Find the smallest posterior mass that would have to be searched to find
