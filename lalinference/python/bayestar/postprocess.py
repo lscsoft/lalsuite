@@ -83,10 +83,6 @@ def find_injection(sky_map, true_ra, true_dec, prob_contours=()):
     for prob in prob_contours:
         prob_areas.append((np.argmax(cum_sky_map>=prob) + 1) * hp.nside2pixarea(nside, degrees=True))
 
-    # Permute the cumulative distribution so that it is indexed the same way
-    # as the original sky map.
-    cum_sky_map[indices] = cum_sky_map
-
     # Find the angular offset between the mode and true locations.
     offset = np.rad2deg(angle_distance(true_theta, true_phi, mode_theta, mode_phi))
 
