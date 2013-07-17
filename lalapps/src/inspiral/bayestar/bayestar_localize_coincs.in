@@ -26,9 +26,9 @@ The distance prior is controlled by the --prior-distance-power argument.
 If you set --prior-distance-power=k, then the distance prior is
 proportional to r^k. The default is 2, uniform in volume.
 
-If the --min-distance argument is omitted, it defaults to half the minimum
-effective distance among all of the detectors. If the --max-distance argument
-is omitted, it defaults to twice the maximum effective distance among detectors.
+If the --min-distance argument is omitted, it defaults to zero. If the
+--max-distance argument is omitted, it defaults to the SNR=4 horizon
+distance of the most sensitive detector.
 
 A FITS file is created for each sky map, having a filename of the form
 
