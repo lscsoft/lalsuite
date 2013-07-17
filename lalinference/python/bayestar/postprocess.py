@@ -37,7 +37,7 @@ def angle_distance(theta0, phi0, theta1, phi1):
         return np.arccos(cos_angle_distance)
 
 
-def find_injection(sky_map, true_ra, true_dec):
+def find_injection(sky_map, true_ra, true_dec, prob_contours=None):
     """
     Given a sky map and the true right ascension and declination (in radians),
     find the smallest area in deg^2 that would have to be searched to find the
@@ -76,6 +76,13 @@ def find_injection(sky_map, true_ra, true_dec):
     # Find the smallest posterior mass that would have to be searched to find
     # the true location.
     searched_prob = cum_sky_map[idx]
+    
+    # If areas of confidence intervals are wanted then compute 
+    # the area of the smallest contour
+    prob_areas = [] 
+    if prob_contours is not None:
+        for prob in prob_contours:
+            prob_areas.append((np.argmax(cum_sky_map>=prob) + 1) * hp.nside2pixarea(nside, degrees=True))
 
     # Permute the cumulative distribution so that it is indexed the same way
     # as the original sky map.
@@ -85,5 +92,5 @@ def find_injection(sky_map, true_ra, true_dec):
     offset = np.rad2deg(angle_distance(true_theta, true_phi, mode_theta, mode_phi))
 
     # Done.
-    return searched_area, searched_prob, offset
+    return searched_area, searched_prob, offset, prob_areas
 

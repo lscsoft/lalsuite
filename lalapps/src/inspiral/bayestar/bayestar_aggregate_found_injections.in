@@ -28,6 +28,7 @@ summary values for each sky map:
  * searched posterior probability
  * angle between true sky location and maximum a posteriori estimate
  * runtime in seconds
+ * (optional) areas of specified probability contours
 
 The filenames of the sky maps may be provided as positional command line
 arguments, and may also be provided as globs (such as '*.fits.gz').
@@ -48,7 +49,9 @@ if __name__ == '__main__':
             Option("-o", "--output", default="/dev/stdout",
                 help="Name of output file [default: %default]"),
             Option("-j", "--jobs", default=1, type=int,
-                help="Number of threads [default: %default]")
+                help="Number of threads [default: %default]"),
+            Option("-p", "--contour-probability", default=None, action="append", type="float",
+                help="Report the area of the smallest contour containing this much probability.  Can be repeated mulitple times")
         ]
     )
     opts, args = parser.parse_args()
@@ -94,10 +97,10 @@ def process(fitsfilename):
         WHERE cem1.table_name = 'sim_inspiral'
         AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
         (coinc_event_id,)).fetchone()
-    searched_area, searched_prob, offset = postprocess.find_injection(
-        sky_map, true_ra, true_dec)
+    searched_area, searched_prob, offset, prob_areas = postprocess.find_injection(
+        sky_map, true_ra, true_dec, prob_contours=opts.contour_probability)
 
-    return coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime
+    return [coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime] + prob_areas
 
 
 if __name__ == '__main__':
@@ -117,9 +120,14 @@ if __name__ == '__main__':
     progress.update(-1, 'obtaining filenames of sky maps')
     fitsfilenames = tuple(itertools.chain.from_iterable(glob.iglob(fitsfileglob)
         for fitsfileglob in fitsfileglobs))
-
-    print('coinc_event_id', 'simulation_id', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',
-        sep="\t", file=outfile)
+    
+    if opts.contour_probability is not None:
+        prob_opts = '\t'.join([str(s)+'_area' for s in opts.contour_probability])
+        print('coinc_event_id', 'simulation_id', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',
+            prob_opts, sep="\t", file=outfile)
+    else:
+        print('coinc_event_id', 'simulation_id', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',
+            sep="\t", file=outfile)
 
     count_records = 0
     progress.max = len(fitsfilenames)
