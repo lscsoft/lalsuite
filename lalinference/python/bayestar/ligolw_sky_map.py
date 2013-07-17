@@ -102,6 +102,11 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     if max_distance is None:
         max_distance = max(horizons) / 4
 
+    # If prior_distance_power is not specified, then default to 2
+    # (p(r) ~ r^2, uniform in volume).
+    if prior_distance_power is None:
+        prior_distance_power = 2
+
     # Raise an exception if 0 Mpc is the minimum effective distance and the prior
     # is of the form r**k for k<0
     if min_distance == 0 and prior_distance_power < 0:
