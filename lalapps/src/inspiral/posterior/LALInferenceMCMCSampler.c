@@ -1071,10 +1071,11 @@ void LALInferenceFlushPTswap() {
     if (MPIrank==0) {
         return;
     } else {
+        MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
         MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
         if (attemptingSwap) {
           MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
-          MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
+          //MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
         }
     }
     return;
