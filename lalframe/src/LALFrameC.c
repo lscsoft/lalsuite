@@ -159,6 +159,8 @@ void XLALFrameUFrFileClose(LALFrameUFrFile * stream)
             fclose(stream->tmpfp);
         }
         LALFree(stream);
+        if (err)
+            XLAL_ERROR_VOID(XLAL_EFUNC);
     }
     return;
 }
@@ -898,6 +900,8 @@ void XLALFrameUFrDetectorFree(LALFrameUFrDetector * detector)
         int err;
         CALL_FRAMEC_FUNCTION(err, FrameCFrDetectorFree, detector->handle);
         LALFree(detector);
+        if (err)
+            XLAL_ERROR_VOID(XLAL_EFUNC);
     }
     return;
 }
