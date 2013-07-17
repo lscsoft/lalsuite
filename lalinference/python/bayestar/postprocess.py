@@ -28,7 +28,8 @@ import healpy as hp
 
 def angle_distance(theta0, phi0, theta1, phi1):
     """Angular separation in radians between two points on the unit sphere."""
-    cos_angle_distance = np.cos(phi1 - phi0) * np.sin(theta0) * np.sin(theta1) + np.cos(theta0) * np.cos(theta1)
+    cos_angle_distance = (np.cos(phi1 - phi0) * np.sin(theta0) * np.sin(theta1)
+        + np.cos(theta0) * np.cos(theta1))
     if cos_angle_distance > 1:
         return 0.
     elif cos_angle_distance < -1:
@@ -92,7 +93,8 @@ def find_injection(sky_map, true_ra, true_dec, prob_contours=()):
         * deg2perpix for p in prob_contours]
 
     # Find the angular offset between the mode and true locations.
-    offset = np.rad2deg(angle_distance(true_theta, true_phi, mode_theta, mode_phi))
+    offset = np.rad2deg(angle_distance(true_theta, true_phi,
+        mode_theta, mode_phi))
 
     # Done.
     return searched_area, searched_prob, offset, prob_areas
