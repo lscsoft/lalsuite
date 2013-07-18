@@ -72,18 +72,17 @@ def ascii_trigger(line, columns=KLEINEWELLE_COLUMNS):
 
     @returns a `SnglBurst` built from the `ASCII` data
     """
-    if isinstance(line, str):
-        dat = map(float, _delim.split(line.rstrip()))
-    else:
-        dat = map(float, line)
+    t = lsctables.SnglBurst()
+    t.search = u"kleinewelle"
 
+    dat = line.rstrip().split()
     if len(dat) == 9:
         channel = re.sub("_", ":", dat.pop(-1), 1)
-        if re.search("_\d+_\d+\Z", c):
+        if re.search("_\d+_\d+\Z", channel):
             channel = channel.rsplit("_", 2)[0]
         if 'channel' in columns:
             t.channel = channel
-    elif len(dat) == 8:
+    if len(dat) == 8:
         (start, stop, peak, freq, energy,
          amplitude, n_pix, sig) = list(map(float, dat))
         start = LIGOTimeGPS(start)
@@ -96,8 +95,6 @@ def ascii_trigger(line, columns=KLEINEWELLE_COLUMNS):
         raise ValueError("Wrong number of columns in ASCII line. "
                          "Cannot read.")
 
-    t = lsctables.SnglBurst()
-    t.search = u"kleinewelle"
     # set times
     if 'start_time' in columns:
         t.start_time = start.gpsSeconds
