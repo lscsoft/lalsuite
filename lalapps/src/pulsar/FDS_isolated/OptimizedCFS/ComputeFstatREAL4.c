@@ -756,7 +756,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
 #ifndef LAL_NDEBUG
 	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
-	    XLAL_ERROR_VOID ( XLAL_EFPINVAL );
+	    XLAL_ERROR ( XLAL_EFPINVAL );
 	  }
 #endif
 
