@@ -454,7 +454,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       flow=40.0
       if self.config.has_option('lalinference','flow'):
         flow=min(ast.literal_eval(self.config.get('lalinference','flow')))
-      events = readLValert(gid=gid,flow=flow)
+      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'))
     # pipedown-database
     else: gid=None
     if self.config.has_option('input','pipedown-db'):
