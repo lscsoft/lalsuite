@@ -21,6 +21,7 @@
 /*---------- INCLUDES ----------*/
 #include <config.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
 #include <lal/Units.h>
 
 /*---------- DEFINES ----------*/
@@ -311,14 +312,13 @@ int main(int argc, char *argv[])
 
   /* write v2-SFT to single file */
   {
-    const CHAR *concatSFT = "H-1_H1_60SFT_test-concat.sft";
     const CHAR *currSingleSFT = NULL;
     UINT4 i = 0;
     FILE *fpConcat = NULL, *fpSingle = NULL;
     int concat = 0, single = 0;
 
     xlalErrno = 0;
-    if (XLAL_SUCCESS != XLALWriteSFTVector2File(multsft_vect->data[0], concatSFT, "A v2-SFT file for testing!")) {
+    if (XLAL_SUCCESS != XLALWriteSFTVector2File ( multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test-concat" )) {
       LALPrintError ( "\n XLALWriteSFTVector2File failed to write multi-SFT vector to file!\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
@@ -331,6 +331,7 @@ int main(int argc, char *argv[])
     };
     printf("*** Comparing single and concatenated SFTs ***\n");
     /* try to open concatenated SFT */
+    const CHAR *concatSFT = "H-3_H1_60SFT_test-concat-000012345-302.sft";
     if ( ( fpConcat = fopen(concatSFT, "rb" ) ) == NULL ) {
       LALPrintError ( "\n Cound not open SFT '%s'!\n\n", concatSFT);
       return SFTFILEIOTESTC_ESUB;

@@ -93,15 +93,25 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     responses = [det.response for det in detectors]
     locations = [det.location for det in detectors]
 
-    # Use half the minimum effective distance as the default value for
-    # min_distance and twice the maximum effective distance as the default
-    # value for max_distance.
-    if min_distance is None or max_distance is None:
-        effective_distances = np.asarray(horizons) / np.abs(snrs)
-        if min_distance is None:
-            min_distance = 0.5 * min(effective_distances)
-        if max_distance is None:
-            max_distance = 2 * max(effective_distances)
+    # If minimum distance is not specified, then default to 0 Mpc.
+    if min_distance is None:
+        min_distance = 0
+
+    # If maximum distance is not specified, then default to the SNR=4
+    # horizon distance of the most sensitive detector.
+    if max_distance is None:
+        max_distance = max(horizons) / 4
+
+    # If prior_distance_power is not specified, then default to 2
+    # (p(r) ~ r^2, uniform in volume).
+    if prior_distance_power is None:
+        prior_distance_power = 2
+
+    # Raise an exception if 0 Mpc is the minimum effective distance and the prior
+    # is of the form r**k for k<0
+    if min_distance == 0 and prior_distance_power < 0:
+        raise ValueError(("Prior is a power law r^k with k={}, "
+            + "undefined at min_distance=0").format(prior_distance_power))
 
     # Time and run sky localization.
     start_time = time.time()

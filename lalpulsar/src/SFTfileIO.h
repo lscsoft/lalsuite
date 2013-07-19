@@ -20,6 +20,10 @@
 #ifndef _SFTFILEIO_H  	/* Double-include protection. */
 #define _SFTFILEIO_H
 
+#ifdef  __cplusplus   /* C++ protection. */
+extern "C" {
+#endif
+
 /* includes */
 #include <stdlib.h>
 #include <math.h>
@@ -30,11 +34,6 @@
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/PulsarDataTypes.h>
-
-#ifdef  __cplusplus   /* C++ protection. */
-extern "C" {
-#endif
 
 /**
  * \defgroup SFTfileIO_h Header SFTfileIO.h
@@ -217,6 +216,74 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 #define SFTFILEIO_MSGECRC64	"Invalid CRC64 checksum in SFT"
 /*@}*/
 
+// ---------- exported types ----------
+
+/** A vector of COMPLEX8FrequencySeries */
+typedef struct tagCOMPLEX8FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(COMPLEX8FrequencySeriesVector, COMPLEX8FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 			length;		/**< number of SFTs */
+  COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
+} COMPLEX8FrequencySeriesVector;
+
+
+/** A vector of REAL4FrequencySeries */
+typedef struct tagREAL4FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(REAL4FrequencySeriesVector, REAL4FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4                  length;
+  REAL4FrequencySeries   *data;
+} REAL4FrequencySeriesVector;
+
+/** A collection of (multi-IFO) time-series */
+typedef struct tagMultiREAL4TimeSeries {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiREAL4TimeSeries, REAL4TimeSeries*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length;			/**< number of ifos */
+  REAL4TimeSeries **data;	/**< vector of REAL4 timeseries */
+} MultiREAL4TimeSeries;
+
+
+/** A vector of 'timestamps' of type LIGOTimeGPS */
+typedef struct tagLIGOTimeGPSVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(LIGOTimeGPSVector, LIGOTimeGPS, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 	length;		/**< number of timestamps */
+  LIGOTimeGPS 	*data;		/**< array of timestamps */
+  REAL8		deltaT;		/**< 'length' of each timestamp (e.g. typically Tsft) */
+} LIGOTimeGPSVector;
+
+/** A vector of 'timestamps' of type LIGOTimeGPS */
+typedef struct tagMultiLIGOTimeGPSVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiLIGOTimeGPSVector, LIGOTimeGPSVector*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 	        length;	   /**< number of timestamps vectors or ifos */
+  LIGOTimeGPSVector 	**data;    /**< timestamps vector for each ifo */
+} MultiLIGOTimeGPSVector;
+
+
+/** A so-called 'SFT' (short-Fourier-transform) will be stored in a COMPLEX8FrequencySeries */
+typedef COMPLEX8FrequencySeries 	SFTtype;
+
+
+/** The corresponding vector-type to hold a vector of 'SFTs' */
+typedef COMPLEX8FrequencySeriesVector 	SFTVector;
+
+/** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
+typedef struct tagMultiSFTVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiSFTVector, SFTVector*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4      length;  	/**< number of ifos */
+  SFTVector  **data; 	/**< sftvector for each ifo */
+} MultiSFTVector;
+
+
 /** 'Constraints' for SFT-matching: which detector, within which time-stretch and which
  * timestamps exactly should be loaded ?
  * Any of the entries is optional, and they will be combined by logical AND.
@@ -252,10 +319,31 @@ typedef struct tagSFTCatalog
   SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
 } SFTCatalog;
 
+/** A multi-SFT-catalogue "view": a multi-IFO vector of SFT-catalogs
+ *
+ * Note: this is only a multi-IFO "view" of an existing SFTCatalog,
+ * various allocated memory of the original catalog is only
+ * pointed to, not duplicated!
+ * This means one must not free the original catalog
+ * while this multi-view is still in use!
+ */
+typedef struct tagMultiSFTCatalogView
+{
+  UINT4 length;			/**< number of detectors */
+  SFTCatalog *data;		/**< array of SFT-catalog pointers */
+} MultiSFTCatalogView;
+
+
 /*---------- Global variables ----------*/
 /* empty init-structs for the types defined in here */
 extern const SFTConstraints empty_SFTConstraints;
 extern const SFTCatalog empty_SFTCatalog;
+extern const SFTtype empty_SFTtype;
+extern const SFTVector empty_SFTVector;
+extern const MultiSFTVector empty_MultiSFTVector;
+extern const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
+extern const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
+extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 
 /*
  * Functions Declarations (i.e., prototypes).
@@ -266,17 +354,30 @@ extern const SFTCatalog empty_SFTCatalog;
  *================================================================================*/
 SFTCatalog *XLALSFTdataFind ( const CHAR *file_pattern, const SFTConstraints *constraints );
 
-int  XLALWriteSFT2fp (const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
-int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
-int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
-int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment);
+int XLALWriteSFTVector2Dir  ( const SFTVector *sftVect, const CHAR *dirname, const CHAR *SFTcomment, const CHAR *Misc );
+int XLALWriteSFTVector2File ( const SFTVector *sftVect, const CHAR *dirname, const CHAR *SFTcomment, const CHAR *Misc );
+int XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment );
+int XLALWriteSFT2fp   ( const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
+int XLALWriteSFT2file ( const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
+
 LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
+MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFiles ( const LALStringVector *fnames );
 
 SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+
 MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+MultiSFTVector *XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView, REAL8 fMin, REAL8 fMax );
+
 void XLALDestroySFTCatalog ( SFTCatalog *catalog );
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
+
+void XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView );
+MultiSFTCatalogView *XLALGetMultiSFTCatalogView ( const SFTCatalog *catalog );
+
+char *XLALGetOfficialName4SFT ( const SFTtype *sft, const char *Misc );
+char *XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts, const char *Misc );
+char *XLALOfficialSFTFilename ( char site, char channel, UINT4 numSFTs, UINT4 Tsft, UINT4 GPS_start, UINT4 Tspan, const char *Misc );
 
 /*================================================================================
  * DEPRECATED LAL-API [use XLAL-API whenever available]

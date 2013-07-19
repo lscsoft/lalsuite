@@ -1452,20 +1452,29 @@ int XLALSetFlatLatticeEllipticalBounds(
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(x_semi > 0.0, XLAL_EINVAL);
-  XLAL_CHECK(y_semi > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(x_semi >= 0.0, XLAL_EINVAL);
+  XLAL_CHECK(y_semi >= 0.0, XLAL_EINVAL);
 
-  // Allocate and set bounds data
-  double* bounds = XLALCalloc(4, sizeof(double));
-  XLAL_CHECK(bounds != NULL, XLAL_ENOMEM);
-  bounds[0] = x_centre;
-  bounds[1] = y_centre;
-  bounds[2] = x_semi;
-  bounds[3] = y_semi;
-
-  // Set parameter space bound
+  // Set parameter space X bound
   XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension, x_centre - x_semi, x_centre + x_semi) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, x_dimension + 1, false, EllipticalYBound, (void*)bounds) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  // Set parameter space Y bound
+  if (x_semi == 0.0 || y_semi == 0.0) {
+    XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension + 1, y_centre - y_semi, y_centre + y_semi) == XLAL_SUCCESS, XLAL_EFAILED);
+  } else {
+
+    // Allocate and set bounds data
+    double* bounds = XLALCalloc(4, sizeof(double));
+    XLAL_CHECK(bounds != NULL, XLAL_ENOMEM);
+    bounds[0] = x_centre;
+    bounds[1] = y_centre;
+    bounds[2] = x_semi;
+    bounds[3] = y_semi;
+
+    // Set parameter space bound
+    XLAL_CHECK(XLALSetFlatLatticeBound(tiling, x_dimension + 1, false, EllipticalYBound, (void*)bounds) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  }
 
   return XLAL_SUCCESS;
 

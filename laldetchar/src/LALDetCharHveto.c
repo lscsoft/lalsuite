@@ -279,7 +279,7 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
 		 * This trigger is in the subsequent segment, thus we need to advance
 		 * the pointer to account for it
 		 */
-		if( pos > 0 && i < onsource->length ){
+		if( pos > 0 && i < onsource->length-1 ){
 			i++;
 			onseg = onsource->segs[i];
 			continue;

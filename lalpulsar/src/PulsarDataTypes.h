@@ -48,7 +48,7 @@ extern "C" {
 #include <lal/SkyCoordinates.h>
 #include <lal/LALBarycenter.h>
 
-#include "SFTutils.h"
+#include <lal/SFTutils.h>
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7

@@ -28,7 +28,8 @@ import healpy as hp
 
 def angle_distance(theta0, phi0, theta1, phi1):
     """Angular separation in radians between two points on the unit sphere."""
-    cos_angle_distance = np.cos(phi1 - phi0) * np.sin(theta0) * np.sin(theta1) + np.cos(theta0) * np.cos(theta1)
+    cos_angle_distance = (np.cos(phi1 - phi0) * np.sin(theta0) * np.sin(theta1)
+        + np.cos(theta0) * np.cos(theta1))
     if cos_angle_distance > 1:
         return 0.
     elif cos_angle_distance < -1:
@@ -37,17 +38,20 @@ def angle_distance(theta0, phi0, theta1, phi1):
         return np.arccos(cos_angle_distance)
 
 
-def find_injection(sky_map, true_ra, true_dec):
+def find_injection(sky_map, true_ra, true_dec, contours=()):
     """
     Given a sky map and the true right ascension and declination (in radians),
     find the smallest area in deg^2 that would have to be searched to find the
     source, the smallest posterior mass, and the angular offset in degrees from
-    the true location to the maximum (mode) of the posterior.
+    the true location to the maximum (mode) of the posterior. Optionally, also
+    compute the areas of the smallest contours containing a given total
+    probability.
     """
 
     # Compute the HEALPix lateral resolution parameter for this sky map.
     npix = len(sky_map)
     nside = hp.npix2nside(npix)
+    deg2perpix = hp.nside2pixarea(nside, degrees=True)
 
     # Convert from ra, dec to conventional spherical polar coordinates.
     true_theta = 0.5 * np.pi - true_dec
@@ -69,21 +73,29 @@ def find_injection(sky_map, true_ra, true_dec):
     # Find the index of the true location in the cumulative distribution.
     idx = (i for i, pix in enumerate(indices) if pix == true_pix).next()
 
-    # Find the smallest area that would have to be searched to find the true
-    # location.
-    searched_area = (idx + 1) * hp.nside2pixarea(nside, degrees=True)
+    # Find the smallest area that would have to be searched to find
+    # the true location. Note that 1 is added to the index because we want
+    # the **length** of the array up to and including the idx'th element,
+    # not the index itself.
+    searched_area = (idx + 1) * deg2perpix
 
     # Find the smallest posterior mass that would have to be searched to find
     # the true location.
     searched_prob = cum_sky_map[idx]
 
-    # Permute the cumulative distribution so that it is indexed the same way
-    # as the original sky map.
-    cum_sky_map[indices] = cum_sky_map
+    # Reverse pixel order so that we can use np.searchsorted() to locate
+    # the index where a given confidence level ends.
+    cum_sky_map = cum_sky_map[::-1]
+
+    # For each of the given confidence levels, compute the area of the
+    # smallest region containing that probability.
+    contour_areas = [(np.searchsorted(cum_sky_map, p, side='right') + 1)
+        * deg2perpix for p in contours]
 
     # Find the angular offset between the mode and true locations.
-    offset = np.rad2deg(angle_distance(true_theta, true_phi, mode_theta, mode_phi))
+    offset = np.rad2deg(angle_distance(true_theta, true_phi,
+        mode_theta, mode_phi))
 
     # Done.
-    return searched_area, searched_prob, offset
+    return searched_area, searched_prob, offset, contour_areas
 

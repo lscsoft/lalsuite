@@ -96,6 +96,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
 
 #ifdef PSS_ENABLED
 #include <XLALPSSInterface.h>

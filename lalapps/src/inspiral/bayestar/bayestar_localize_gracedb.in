@@ -20,14 +20,16 @@
 Generate a sky map for a GraCEDb event by extracting times of arrival and SNRs
 for the coinc_inspiral record that is present in a LIGO LW-XML file.
 
-A string naming the kind of prior -- "uniform in log distance" or
-"uniform in volume" -- is a required command line argument as well as the
-minimum and maximum distance. The filename of the (optionally gzip-compressed)
-LIGO-LW XML input is an optional argument; if omitted, input is read from stdin.
+The filename of the (optionally gzip-compressed) LIGO-LW XML input is an
+optional argument; if omitted, input is read from stdin.
 
-If the --min-distance argument is omitted, it defaults to half the minimum
-effective distance among all of the detectors. If the --max-distance argument
-is omitted, it defaults to twice the maximum effective distance among detectors.
+The distance prior is controlled by the --prior-distance-power argument.
+If you set --prior-distance-power=k, then the distance prior is
+proportional to r^k. The default is 2, uniform in volume.
+
+If the --min-distance argument is omitted, it defaults to zero. If the
+--max-distance argument is omitted, it defaults to the SNR=4 horizon
+distance of the most sensitive detector.
 
 Output is an optionally gzip-compressed HEALPix FITS file, whose filename is
 provided by the required "-o" or "--output" argument.
@@ -55,7 +57,7 @@ parser = OptionParser(
         Option("--max-distance", type=float, metavar="Mpc",
             help="Maximum distance of prior in megaparsecs [default: infer from effective distance]"),
         Option("--prior-distance-power", type=int, metavar="-1|2",
-            help="Distance prior [required, -1 for uniform in log, 2 for uniform in distance]"),
+            help="Distance prior [-1 for uniform in log, 2 for uniform in volume, default: 2]"),
         Option("--reference-frequency", type=float, metavar="Hz",
             help="Shift trigger times from coalescence time to time when GW inspiral has this frequency"),
         Option("--psd", metavar="PSD.xml[.gz]",
@@ -66,7 +68,7 @@ parser = OptionParser(
 )
 opts, args = parser.parse_args()
 infilename = command.get_input_filename(parser, args)
-command.check_required_arguments(parser, opts, "prior_distance_power", "psd", "output")
+command.check_required_arguments(parser, opts, "psd", "output")
 
 
 #
