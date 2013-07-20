@@ -29,11 +29,12 @@ void XLALInspiralPyCBCTemplatePhase (COMPLEX8Vector* htilde, REAL4Vector* sincos
                     float pfa2, float pfa3, float pfa4, float pfa5, float pfl5,
                     float pfa6, float pfl6, float pfa7, float v0){
 
-    float dp = LAL_TWOPI / (sincos_look->length);
+    /* float dp = LAL_TWOPI / (sincos_look->length); */
+    (void)sincos_look->length; /* Have to use every variable! */
     float piM13 = cbrtf(piM);
     float logpiM13 = log(piM13);
     float logv0 = log(v0);
-    float log4 = log(4);
+    float log4 = log(4.);
 
     if ( !htilde )
         XLAL_ERROR_VOID(XLAL_EFAULT, "XLALInspiralPyCBCTemplatePhase");
@@ -70,7 +71,7 @@ void XLALInspiralPyCBCTemplatePhase (COMPLEX8Vector* htilde, REAL4Vector* sincos
         phasing *= pfaN / v5;
         phasing -= LAL_PI_4;
 
-        float sphase = phasing - (int) (phasing / LAL_TWOPI) * LAL_TWOPI;
+/*        float sphase = phasing - (int) (phasing / LAL_TWOPI) * LAL_TWOPI;
         float cphase = (phasing + LAL_PI_2) - (int) ((phasing + LAL_PI_2 ) / LAL_TWOPI) * LAL_TWOPI;
 
         int sindex = sphase / dp;
@@ -79,6 +80,7 @@ void XLALInspiralPyCBCTemplatePhase (COMPLEX8Vector* htilde, REAL4Vector* sincos
         float pcos = sincos_look->data[cindex];
         float psin = sincos_look->data[sindex];
 
-        htilde->data[i] = (pcos - psin*I);
+        htilde->data[i] = (pcos - psin*I); */
+        htilde->data[i] = (cos(phasing) - sin(phasing)*I);
     }
 }
