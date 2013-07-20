@@ -49,7 +49,10 @@ AC_CONFIG_FILES([\
   src/online/Makefile \
   src/hwinjection/Makefile \
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+# FIXME: -Wno-unsupported is a hack which silences warnings regarding
+# subdir-objects in automake-1.14+. this will be the default, and only,
+# behaviour in automake-2.0+ so this is only a temporary measure
+AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests -Wno-unsupported])
 AH_TOP([
 #ifndef CONFIG_H
 #define CONFIG_H])
