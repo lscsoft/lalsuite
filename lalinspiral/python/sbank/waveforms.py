@@ -240,7 +240,7 @@ class TaylorF2RedSpinTemplate(Template):
             0, df, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self.chi,
             self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 3)
         # have to resize wf to next pow 2 for FFT plan caching
-        lal.ResizeCOMPLEX16FrequencySeries( wf, 0, ceil_pow_2(wf.data.length) )
+        wf = lal.ResizeCOMPLEX16FrequencySeries( wf, 0, ceil_pow_2(wf.data.length) )
         return wf
 
     def metric_match(self, other, df, **kwargs):
