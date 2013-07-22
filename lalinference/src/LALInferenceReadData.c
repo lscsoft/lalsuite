@@ -2571,8 +2571,6 @@ void enforce_m1_larger_m2(SimInspiralTable* injEvent){
     REAL8 m1,m2,tmp;
     m1=injEvent->mass1;
     m2=injEvent->mass2;
-    {
-printf("RETURNING....------------------------\n"); return;}
     fprintf(stdout, "Injtable has m1<m2. Flipping masses and spins in injection. Shifting phase by pi. \n");
     if (m1>=m2) return;
     else{        
