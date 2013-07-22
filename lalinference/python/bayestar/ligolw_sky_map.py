@@ -34,9 +34,6 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc."""
 
-    if method == "toa_snr" and prior_distance_power is None:
-        raise ValueError("For method='toa_snr', the argument prior_distance_power is required.")
-
     ifos = [sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals]
 
     # Extract masses from the table.

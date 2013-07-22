@@ -28,6 +28,7 @@ summary values for each sky map:
  * searched posterior probability
  * angle between true sky location and maximum a posteriori estimate
  * runtime in seconds
+ * (optional) areas of specified probability contours
 
 The filenames of the sky maps may be provided as positional command line
 arguments, and may also be provided as globs (such as '*.fits.gz').
@@ -48,7 +49,11 @@ if __name__ == '__main__':
             Option("-o", "--output", default="/dev/stdout",
                 help="Name of output file [default: %default]"),
             Option("-j", "--jobs", default=1, type=int,
-                help="Number of threads [default: %default]")
+                help="Number of threads [default: %default]"),
+            Option("-p", "--contour", default=[], action="append",
+                type=float, metavar="PERCENT",
+                help="Report the area of the smallest contour containing this "
+                + "much probability. Can be repeated mulitple times")
         ]
     )
     opts, args = parser.parse_args()
@@ -70,9 +75,10 @@ from lalinference.bayestar import fits
 from lalinference.bayestar import postprocess
 
 
-def startup(dbfilename):
-    global db
+def startup(dbfilename, opts_contour):
+    global db, contours
     db = sqlite3.connect(dbfilename)
+    contours = opts_contour
 
 
 def process(fitsfilename):
@@ -94,10 +100,10 @@ def process(fitsfilename):
         WHERE cem1.table_name = 'sim_inspiral'
         AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
         (coinc_event_id,)).fetchone()
-    searched_area, searched_prob, offset = postprocess.find_injection(
-        sky_map, true_ra, true_dec)
+    searched_area, searched_prob, offset, contour_areas = postprocess.find_injection(
+        sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours])
 
-    return coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime
+    return [coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime] + contour_areas
 
 
 if __name__ == '__main__':
@@ -109,17 +115,19 @@ if __name__ == '__main__':
     progress.update(-1, 'spawning {0} workers'.format(opts.jobs))
     if opts.jobs == 1:
         from itertools import imap
-        startup(dbfilename)
     else:
         import multiprocessing
-        imap = multiprocessing.Pool(opts.jobs, startup, (dbfilename,)).imap_unordered
+        imap = multiprocessing.Pool(opts.jobs, startup, (dbfilename, opts.contour)).imap_unordered
+    startup(dbfilename, opts.contour)
 
     progress.update(-1, 'obtaining filenames of sky maps')
     fitsfilenames = tuple(itertools.chain.from_iterable(glob.iglob(fitsfileglob)
         for fitsfileglob in fitsfileglobs))
 
-    print('coinc_event_id', 'simulation_id', 'far', 'searched_area', 'searched_prob', 'offset', 'runtime',
-        sep="\t", file=outfile)
+    colnames = ['coinc_event_id', 'simulation_id', 'far', 'searched_area',
+        'searched_prob', 'offset', 'runtime'] + ["area({0:g})".format(p)
+        for p in contours]
+    print(*colnames, sep="\t", file=outfile)
 
     count_records = 0
     progress.max = len(fitsfilenames)
