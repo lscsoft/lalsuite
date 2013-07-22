@@ -321,10 +321,13 @@ double XLALGetLocalRate(LALCosmologicalRateParameters *rate)
 * Implements the fit to the SFR in Eq.7 of Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 )
 * See also Porciani & Madau ( http://arxiv.org/pdf/astro-ph/0008294v2.pdf ) and references therein
 **/
-double XLALStarFormationDensity(double z, void *rate)
+double XLALStarFormationDensity(double z, void *params)
 {
-    LALCosmologicalRateParameters *p = (LALCosmologicalRateParameters *)rate;
-    return p->r0*(1.0+p->W)*exp(p->Q*z)/(exp(p->R*z)+p->W);
+    LALCosmologicalParametersAndRate *p = (LALCosmologicalParametersAndRate *)params;
+    double hz = XLALHubbleParameter(z,p->omega);
+    double x = 1.0/sqrt(1.+z);
+    double hz0 = x*x*x;
+    return hz0/hz*p->rate->r0*(1.0+p->rate->W)*exp(p->rate->Q*z)/(exp(p->rate->R*z)+p->rate->W);
 }
 /** 
 * Returns the Rate weighted uniform comoving volume density
@@ -333,7 +336,7 @@ double XLALRateWeightedUniformComovingVolumeDensity(double z, void *params)
 {
     LALCosmologicalParametersAndRate *p = (LALCosmologicalParametersAndRate *)params;
     double dvdz = XLALUniformComovingVolumeDensity(z,p->omega);
-    double ez = XLALStarFormationDensity(z,p->rate);
+    double ez = XLALStarFormationDensity(z,p);
     return ez*dvdz;
 }
 
