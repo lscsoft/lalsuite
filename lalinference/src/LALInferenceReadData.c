@@ -136,6 +136,7 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	return (fvec[i-1].x + delta*a);
 }
 void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine);
+void enforce_m1_larger_m2(SimInspiralTable* injEvent);
 
 typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
 void MetaNoiseFunc(LALStatus *status, REAL8 *psd, REAL8 f, struct fvec *interp, NoiseFunc *noisefunc);
@@ -1319,7 +1320,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
 	injEvent = injTable;
 	injEvent->next = NULL;
-	
+        enforce_m1_larger_m2(injEvent);	
 	//memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
 	injapprox = XLALGetApproximantFromString(injTable->waveform);
@@ -2140,6 +2141,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
 	modelParams=tmpdata->modelParams;
     memset(modelParams,0,sizeof(LALInferenceVariables));
 
+    enforce_m1_larger_m2(inj_table);
     eta = inj_table->eta;
     mc=inj_table->mchirp;
     startPhase = inj_table->coa_phase;
@@ -2402,6 +2404,7 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
 	}
     /* Destroy existing parameters */
     if(vars->head!=NULL) LALInferenceClearVariables(vars);
+    enforce_m1_larger_m2(theEventTable);
     REAL8 q = theEventTable->mass2 / theEventTable->mass1;
     if (q > 1.0) q = 1.0/q;
 
@@ -2561,3 +2564,31 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     return;
 }
 
+void enforce_m1_larger_m2(SimInspiralTable* injEvent){	
+    /* Template generator assumes m1>=m2 thus we must enfore the same convention while injecting, otherwise spin2 will be assigned to mass1
+    *        We also shift the phase by pi to be sure the same WF in injected 
+    */
+    REAL8 m1,m2,tmp;
+    m1=injEvent->mass1;
+    m2=injEvent->mass2;
+    {
+printf("RETURNING....------------------------\n"); return;}
+    fprintf(stdout, "Injtable has m1<m2. Flipping masses and spins in injection. Shifting phase by pi. \n");
+    if (m1>=m2) return;
+    else{        
+        tmp=m1;
+        injEvent->mass1=injEvent->mass2;
+        injEvent->mass2=tmp;
+        tmp=injEvent->spin1x;
+        injEvent->spin1x=injEvent->spin2x;
+        injEvent->spin2x=tmp;
+        tmp=injEvent->spin1y;
+        injEvent->spin1y=injEvent->spin2y;
+        injEvent->spin2y=tmp;
+        tmp=injEvent->spin1z;
+        injEvent->spin1z=injEvent->spin2z;
+        injEvent->spin2z=tmp;
+	injEvent->coa_phase=injEvent->coa_phase+LAL_PI;
+        }
+    return ;
+}
