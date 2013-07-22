@@ -399,7 +399,7 @@ class SEOBNRv1Template(Template):
             self.bank.flow, 1e6*LAL_PC_SI, 0., self.spin1z, self.spin2z)
         # zero-pad up to 1/df
         N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hplus, 0, N)
+        hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
         # taper
         lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_START)
 
@@ -485,7 +485,7 @@ class EOBNRv2Template(Template):
             self.bank.flow, 1e6*LAL_PC_SI, 0.)
         # zero-pad up to 1/df
         N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hplus, 0, N)
+        hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
         # taper
         lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_START)
 
