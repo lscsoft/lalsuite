@@ -309,10 +309,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
       self.dataseed=None
     # Set up necessary job files.
-    self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config)
-    self.datafind_job.set_universe('vanilla')
-    self.datafind_job.add_opt('url-type','file')
-    self.datafind_job.set_sub_file(os.path.join(self.basepath,'datafind.sub'))
+    if not cp.has_option('lalinference','fake-cache'):
+      self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config)
+      self.datafind_job.set_universe('vanilla')
+      self.datafind_job.add_opt('url-type','file')
+      self.datafind_job.set_sub_file(os.path.join(self.basepath,'datafind.sub'))
     self.engine_job = EngineJob(self.config, os.path.join(self.basepath,'lalinference.sub'),self.logpath)
     self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath)
     self.merge_job = MergeNSJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath)
