@@ -194,3 +194,50 @@ int XLALCreateSFTPairIndexList
   return XLAL_SUCCESS;
 }
 
+/** Construct vector of sigma_alpha values for each SFT pair */
+/* This version uses a single frequency rather than the doppler-shifted ones */
+/* Allocates memory as well */
+int XLALCalculateCrossCorrSigmaUnshifted
+  (
+   REAL8Vector      **sigma_alpha,    /* Output: vector of sigma_alpha values */
+   SFTPairIndexList  *pairIndexList,  /* Input: list of SFT pairs */
+   SFTIndexList      *indexList,      /* Input: list of SFTs */
+   MultiPSDVector    *psds,           /* Input: PSD estimate (Sn*Tsft/2) for each SFT */
+   REAL8              freq,           /* Frequency to extract from PSD */
+   REAL8              Tsft            /**< SFT duration */
+  )
+{
+
+  UINT8 j, numPairs, numSFTs, index;
+  REAL8Vector *psdData;
+  REAL8FrequencySeries *psd;
+  SFTIndex sftIndex;
+  REAL8Vector *ret = NULL;
+  REAL8 Tsft4;
+
+  Tsft4 = SQUARE(SQUARE(Tsft));
+
+  numPairs = pairIndexList->length;
+  numSFTs = indexList->length;
+
+  XLAL_CHECK ( ( psdData = XLALCreateREAL8Vector ( numSFTs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %d ) failed.", numSFTs );
+
+  for (j=0; j < numSFTs; j++) {
+    sftIndex = indexList->data[j];
+    psd = &(psds->data[sftIndex.detInd]->data[sftIndex.sftInd]);
+    index = (UINT8) floor( (freq - psd->f0)/psd->deltaF + 0.5 );
+    psdData->data[j] = psd->data->data[index];
+  }
+
+  XLAL_CHECK ( ( ret = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %d ) failed.", numPairs );
+
+  for (j=0; j < numPairs; j++) {
+    ret->data[j] = ( psdData->data[pairIndexList->data[j].sftNum[0]]
+		     * psdData->data[pairIndexList->data[j].sftNum[1]]
+		     ) / Tsft4 ;
+  }
+
+  (*sigma_alpha) = ret;
+  XLALDestroyREAL8Vector ( psdData );
+  return XLAL_SUCCESS;
+}
