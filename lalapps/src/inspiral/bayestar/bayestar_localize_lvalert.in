@@ -96,7 +96,7 @@ try:
 
     # perform sky localization
     log.info("starting sky localization")
-    sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(coinc_file, psd_file, "TaylorF2threePointFivePN", 10, prior_distance_power=-1, reference_frequency=120)
+    sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(coinc_file, psd_file, "TaylorF2threePointFivePN", 10, reference_frequency=120)
     log.info("sky localization complete")
 
     # upload FITS file
