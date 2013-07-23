@@ -87,8 +87,9 @@ int main(int argc, char *argv[]){
   /* sft related variables */ 
   MultiSFTVector *inputSFTs = NULL;
   MultiPSDVector *psd = NULL;
-  SFTIndexList *sftIndices;
-  SFTPairIndexList *sftPairs;
+  MultiLIGOTimeGPSVector *gpsTimes = NULL;
+  SFTIndexList *sftIndices = NULL;
+  SFTPairIndexList *sftPairs = NULL;
 
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   REAL8 deltaF, Tsft; /* frequency resolution and time baseline of SFTs */
@@ -130,6 +131,12 @@ int main(int argc, char *argv[]){
   /* read the SFTs*/
   if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALLoadMultiSFTs() failed with errno=%d\n", __func__, xlalErrno );
+    return 1;
+  }
+
+  /* read the timestamps from the SFTs*/
+  if ((gpsTimes = XLALExtractMultiTimestampsFromSFTs ( inputSFTs )) == NULL){ 
+    LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
 
