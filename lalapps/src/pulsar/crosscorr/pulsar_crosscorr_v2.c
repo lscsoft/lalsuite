@@ -50,6 +50,8 @@ typedef struct{
   REAL8   fBand;              /**< frequency band to search over in Hz */
   /* REAL8   fdotStart;          /\**< starting value for first spindown in Hz/s*\/ */
   /* REAL8   fdotBand;           /\**< range of first spindown to search over in Hz/s *\/ */
+  REAL8   alphaRad;           /**< right ascension in radians */
+  REAL8   deltaRad;           /**< declination in radians */
   REAL8   refTime;            /**< reference time for pulsar phase definition */
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
@@ -283,6 +285,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->fBand = 0.1;
   /* uvar->fdotStart = 0.0; */
   /* uvar->fdotBand = 0.0; */
+  uvar->alphaRad = 0.0;
+  uvar->deltaRad = 0.0;
   uvar->rngMedBlock = 50;
 
   /* default for reftime is in the middle */
@@ -304,6 +308,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregREALUserStruct  ( fBand,         0,  UVAR_OPTIONAL, "Frequency band to search over in Hz ");
   /* XLALregREALUserStruct  ( fdotStart,     0,  UVAR_OPTIONAL, "Start value of spindown in Hz/s"); */
   /* XLALregREALUserStruct  ( fdotBand,      0,  UVAR_OPTIONAL, "Band for spindown values in Hz/s"); */
+  XLALregREALUserStruct  ( alphaRad,      0,  UVAR_OPTIONAL, "Right ascension for directed search (radians)");
+  XLALregREALUserStruct  ( deltaRad,      0,  UVAR_OPTIONAL, "Declination for directed search (radians)");
   XLALregSTRINGUserStruct( ephemYear,     0,  UVAR_OPTIONAL, "String Ephemeris year range");
   XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
   XLALregINTUserStruct   ( rngMedBlock,   0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
