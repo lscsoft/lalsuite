@@ -208,7 +208,7 @@ int XLALCalculateCrossCorrSigmaUnshifted
   )
 {
 
-  UINT8 j, numPairs, numSFTs, index;
+  UINT8 j, numPairs, numSFTs, freqInd;
   REAL8Vector *psdData;
   REAL8FrequencySeries *psd;
   SFTIndex sftIndex;
@@ -225,8 +225,8 @@ int XLALCalculateCrossCorrSigmaUnshifted
   for (j=0; j < numSFTs; j++) {
     sftIndex = indexList->data[j];
     psd = &(psds->data[sftIndex.detInd]->data[sftIndex.sftInd]);
-    index = (UINT8) floor( (freq - psd->f0)/psd->deltaF + 0.5 );
-    psdData->data[j] = psd->data->data[index];
+    freqInd = (UINT8) floor( (freq - psd->f0)/psd->deltaF + 0.5 );
+    psdData->data[j] = psd->data->data[freqInd];
   }
 
   XLAL_CHECK ( ( ret = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %d ) failed.", numPairs );
