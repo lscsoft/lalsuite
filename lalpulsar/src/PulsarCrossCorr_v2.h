@@ -138,7 +138,16 @@ int XLALCalculateCrossCorrSigmaUnshifted
    SFTIndexList      *indexList,
    MultiPSDVector    *psds,
    REAL8              freq,
-   REAL8              Tsft       
+   REAL8              Tsft
+  )
+;
+
+int XLALCalculateAveCurlyGAmpUnshifted
+  (
+   REAL8Vector      **G_alpha,
+   SFTPairIndexList  *pairIndexList,
+   SFTIndexList      *indexList,
+   MultiAMCoeffs     *multiCoeffs
   )
 ;
 

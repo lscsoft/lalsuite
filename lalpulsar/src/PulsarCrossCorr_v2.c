@@ -241,3 +241,42 @@ int XLALCalculateCrossCorrSigmaUnshifted
   XLALDestroyREAL8Vector ( psdData );
   return XLAL_SUCCESS;
 }
+
+/** Construct vector of G_alpha amplitudes for each SFT pair */
+/* This is averaged over unknown cosi and psi */
+/* Allocates memory as well */
+int XLALCalculateAveCurlyGAmpUnshifted
+  (
+   REAL8Vector      **G_alpha,       /* Output: vector of sigma_alpha values */
+   SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
+   SFTIndexList      *indexList,     /* Input: list of SFTs */
+   MultiAMCoeffs     *multiCoeffs    /* Input: AM coefficients */
+  )
+{
+
+  UINT8 j, numPairs;
+  UINT8 detInd1, detInd2;
+  UINT8 sftInd1, sftInd2;
+  UINT8 sftNum1, sftNum2;
+  REAL8Vector *ret = NULL;
+
+  numPairs = pairIndexList->length;
+
+  XLAL_CHECK ( ( ret = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %d ) failed.", numPairs );
+
+  for (j=0; j < numPairs; j++) {
+    sftNum1 = pairIndexList->data[j].sftNum[0];
+    sftNum2 = pairIndexList->data[j].sftNum[1];
+    detInd1 = indexList->data[sftNum1].detInd;
+    detInd2 = indexList->data[sftNum2].detInd;
+    sftInd1 = indexList->data[sftNum1].sftInd;
+    sftInd2 = indexList->data[sftNum2].sftInd;
+    ret->data[j] = 0.1 * ( multiCoeffs->data[detInd1]->a->data[sftInd1]
+			   * multiCoeffs->data[detInd2]->a->data[sftInd2]
+			   + multiCoeffs->data[detInd1]->b->data[sftInd1]
+			   * multiCoeffs->data[detInd2]->b->data[sftInd2] );
+  }
+
+  (*G_alpha) = ret;
+  return XLAL_SUCCESS;
+}

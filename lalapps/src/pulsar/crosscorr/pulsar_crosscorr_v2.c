@@ -101,6 +101,7 @@ int main(int argc, char *argv[]){
   REAL8 roughFreq; /* Approximate frequency to use for metric calculations */
 
   REAL8Vector *sigmaUnshifted = NULL;
+  REAL8Vector *curlyGUnshifted = NULL;
 
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
@@ -196,6 +197,11 @@ int main(int argc, char *argv[]){
   /* Get weighting factors for calculation of metric */
   if ( ( XLALCalculateCrossCorrSigmaUnshifted( &sigmaUnshifted, sftPairs, sftIndices, multiPSDs, roughFreq, Tsft)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateCrossCorrSigmaUnshifted() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  if ( ( XLALCalculateAveCurlyGAmpUnshifted( &curlyGUnshifted, sftPairs, sftIndices, multiCoeffs)  != XLAL_SUCCESS ) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
