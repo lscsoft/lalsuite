@@ -105,13 +105,13 @@ int main(int argc, char *argv[]){
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* read user input from the command line or config file */
   if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   if (uvar.help)	/* if help was requested, then exit */
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]){
   /* configure useful variables based on user input */
   if ( XLALInitializeConfigVars ( &config, &uvar) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   deltaF = config.catalog->data[0].header.deltaF;
@@ -136,31 +136,31 @@ int main(int argc, char *argv[]){
   /* read the SFTs*/
   if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALLoadMultiSFTs() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* calculate the psd and normalize the SFTs */
   if (( multiPSDs =  XLALNormalizeMultiSFTVect ( inputSFTs, uvar.rngMedBlock )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* read the timestamps from the SFTs */
   if ((multiTimes = XLALExtractMultiTimestampsFromSFTs ( inputSFTs )) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* read the detector information from the SFTs */
   if ((multiDetectors = XLALExtractMultiLALDetectorFromSFTs ( inputSFTs )) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiLALDetectorFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Find the detector state for each SFT */
   if ((multiStates = XLALGetMultiDetectorStates ( multiTimes, multiDetectors, config.edat, 0.0 )) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Note this is specialized to a single sky position */
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]){
   /* Calculate the AM coefficients (a,b) for each SFT */
   if ((multiCoeffs = XLALComputeMultiAMCoeffs ( multiStates, NULL, skyPos )) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Construct the flat list of SFTs (this sort of replicates the
@@ -180,31 +180,14 @@ int main(int argc, char *argv[]){
      back) */
 
   if ( ( XLALCreateSFTIndexListFromMultiSFTVect( &sftIndices, inputSFTs ) != XLAL_SUCCESS ) ) {
-    XLALDestroyMultiSFTVector ( inputSFTs ); 
-    XLALDestroyMultiPSDVector ( multiPSDs );    
-    XLALDestroySFTCatalog (config.catalog );
-    XLALFree( config.edat->ephemE );
-    XLALFree( config.edat->ephemS );
-    XLALFree( config.edat );
-    /* de-allocate memory for user input variables */
-
-    XLALDestroyUserVars();
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateSFTIndexListFromMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Construct the list of SFT pairs */
 
   if ( ( XLALCreateSFTPairIndexList( &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr ) != XLAL_SUCCESS ) ) {
-    /* XLALDestroySFTIndexList(sftIndices) */
-    XLALDestroyMultiSFTVector ( inputSFTs ); 
-    XLALDestroyMultiPSDVector ( multiPSDs );    
-    XLALDestroySFTCatalog (config.catalog );
-    XLALFree( config.edat->ephemE );
-    XLALFree( config.edat->ephemS );
-    XLALFree( config.edat );
-    /* de-allocate memory for user input variables */
-
-    XLALDestroyUserVars();
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexList() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -212,17 +195,7 @@ int main(int argc, char *argv[]){
 
   /* Get weighting factors for calculation of metric */
   if ( ( XLALCalculateCrossCorrSigmaUnshifted( &sigmaUnshifted, sftPairs, sftIndices, multiPSDs, roughFreq, Tsft)  != XLAL_SUCCESS ) ) {
-    /* XLALDestroySFTPairIndexList(sftPairs) */
-    /* XLALDestroySFTIndexList(sftIndices) */
-    XLALDestroyMultiSFTVector ( inputSFTs ); 
-    XLALDestroyMultiPSDVector ( multiPSDs );    
-    XLALDestroySFTCatalog (config.catalog );
-    XLALFree( config.edat->ephemE );
-    XLALFree( config.edat->ephemS );
-    XLALFree( config.edat );
-    /* de-allocate memory for user input variables */
-    
-    XLALDestroyUserVars();
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateCrossCorrSigmaUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -383,7 +356,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
 
   if ( (constraints.startTime == NULL)&& (constraints.endTime == NULL) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALGPSSet() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   */
@@ -391,7 +364,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   /* get catalog of SFTs */
   if ((config->catalog = XLALSFTdataFind (uvar->sftLocation, &constraints)) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALSFTdataFind() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* initialize ephemeris data*/
