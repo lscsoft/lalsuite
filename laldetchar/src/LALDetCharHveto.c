@@ -31,13 +31,13 @@
  * (e.g. if two triggers from the same channel are found in coincidence, only
  * one is recorded).
  */
-void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequence* trig_sequence, const char* chan, double twind, int coinctype ){
+void XLALDetCharScanTrigs( LALGHashTable *chancount, LALGHashTable *chanhist, LALGSequence* trig_sequence, const char* chan, double twind, int coinctype ){
 
 	/*
 	 * pointer to the position in the list for the current auxiliary trigger
 	 * being examined
 	 */
-	GSequenceIter *cur_trig = g_sequence_get_begin_iter( trig_sequence );
+	GSequenceIter *cur_trig = XLALGSequenceBeginRaw( trig_sequence, LALGTYPE_SNGL_BURST );
 
 	LIGOTimeGPS start;
 	LIGOTimeGPS stop;
@@ -64,17 +64,16 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 		 * Increment the trigger count for this channel.
 		 * If it is not in the hash table, add it and initialize properly
 		 */
-		size_t *value;
-		value = (size_t*)g_hash_table_lookup( chancount, sb_target->channel );
+		int *value;
+		value = XLALGetGHashTblIntPtr( chancount, sb_target->channel );
 		if( value ){
 			(*value)++;
 			XLALPrintInfo( "Count: Incrementing, %s value: %lu\n", sb_target->channel, *value );
 			//g_hash_table_insert( chancount, XLALStringDuplicate(sb_target->channel), value );
 		} else {
-			value = g_new(size_t, 1);
-			*value = 1;
 			XLALPrintInfo( "Count: Adding %s with time %d.%d\n", sb_target->channel, sb_target->peak_time.gpsSeconds, sb_target->peak_time.gpsNanoSeconds );
-			g_hash_table_insert( chancount, XLALStringDuplicate(sb_target->channel), value );
+                        XLALSetGHashTblInt( chancount, sb_target->channel, 1 );
+                        value = XLALGetGHashTblIntPtr( chancount, sb_target->channel );
 		}
 
 		// Is it the channel we're looking at?
@@ -133,7 +132,7 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			}
 
 			// TODO: Macroize?
-			value = (size_t*)g_hash_table_lookup( chanhist, sb_aux->channel );
+			value = XLALGetGHashTblIntPtr( chanhist, sb_aux->channel );
 			// If we have an entry for this channel, use it, otherwise create a
 			// new one
 			if( value != NULL ){
@@ -141,10 +140,9 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 				XLALPrintInfo( "Left Coincidence: Incrementing, %s->%ld, time %d.%d value: %lu\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
 				//g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			} else {
-				value = g_new(size_t, 1);
-				*value = 1;
 				XLALPrintInfo( "Left Coincidence: Adding %s->%ld with time %d.%d\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
-				g_hash_table_insert( chanhist, XLALStringDuplicate(sb_aux->channel), value );
+                                XLALSetGHashTblInt( chanhist, sb_aux->channel, 1 );
+                                value = XLALGetGHashTblIntPtr( chanhist, sb_aux->channel );
 			}
 			if( g_sequence_iter_is_begin(trigp) ) break;
 			trigp = g_sequence_iter_prev(trigp);
@@ -183,7 +181,7 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 			}
 
 			// TODO: Macroize?
-			value = (size_t*)g_hash_table_lookup( chanhist, sb_aux->channel );
+			value = XLALGetGHashTblIntPtr( chanhist, sb_aux->channel );
 			// If we have an entry for this channel, use it, otherwise create a
 			// new one
 			if( value != NULL ){
@@ -191,10 +189,9 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
 				XLALPrintInfo( "Right Coincidence: Incrementing, %s->%ld, time %d.%d value: %lu\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
 				//g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			} else {
-				value = g_new(size_t, 1);
-				*value = 1;
 				XLALPrintInfo( "Right Coincidence: Adding %s->%ld with time %d.%d\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
-				g_hash_table_insert( chanhist, XLALStringDuplicate(sb_aux->channel), value );
+                                XLALSetGHashTblInt( chanhist, sb_aux->channel, 1 );
+                                value = XLALGetGHashTblIntPtr( chanhist, sb_aux->channel );
 			}
 			trigp = g_sequence_iter_next(trigp);
 			if( g_sequence_iter_is_end(trigp) ) break;
@@ -213,13 +210,13 @@ void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chanhist, GSequenc
  * chan parameter is the target channel. The t_ratio parameter is the ratio of
  * the veto window duration to the total examined livetime.
  */
-double XLALDetCharVetoRound( char** winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio ){
+double XLALDetCharVetoRound( char** winner, LALGHashTable* chancount, LALGHashTable* chanhist, const char* chan, double t_ratio ){
 	double mu, sig, max_sig=-1;
-	size_t *k;
+	int *k;
 
 	// No reference channel present in sequence?
 	// This is mostly just here to prevent a segfault later.
-	if( !g_hash_table_lookup(chancount, chan) ){
+	if( !XLALGHashTableKeyExists(chancount, chan) ){
 		XLALPrintInfo( "Reference channel not present in channel count.\n" );
 		return -1.0;
 	}
@@ -227,9 +224,9 @@ double XLALDetCharVetoRound( char** winner, GHashTable* chancount, GHashTable* c
 	GHashTableIter iter;
 	gpointer key, val;
 	// Number of triggers in target channel
-	size_t n_h = *(size_t *)g_hash_table_lookup(chancount, chan);
+	int n_h = XLALGetGHashTblInt(chancount, chan);
 
-	g_hash_table_iter_init( &iter, chanhist );
+	XLALGHashTableBeginRaw( chanhist, LALGTYPE_INT, &iter );
 	// Iterate over each channel and check the significance of the
 	// accumulated trigger number
 	while( g_hash_table_iter_next( &iter, &key, &val ) ){
@@ -238,10 +235,10 @@ double XLALDetCharVetoRound( char** winner, GHashTable* chancount, GHashTable* c
 			continue;
 		}
 		// Number of triggers in auxillary channel
-		size_t n_aux = *(size_t *)g_hash_table_lookup(chancount, key);
+		int n_aux = XLALGetGHashTblInt(chancount, key);
 		mu = n_h*n_aux*t_ratio;
 
-		k = (size_t *)val;
+		k = (int*)val;
 
 		XLALPrintInfo( "Total coincidences for channel %s: %zu\n", (char *)key, *k );
 		XLALPrintInfo( "Mu for channel %s: %g\n", (char *)key, mu );
@@ -257,7 +254,7 @@ double XLALDetCharVetoRound( char** winner, GHashTable* chancount, GHashTable* c
 	return max_sig;
 }
 
-void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource, double snr_thresh, const char* refchan ){
+void XLALDetCharPruneTrigs( LALGSequence* trig_sequence, const LALSegList* onsource, double snr_thresh, const char* refchan ){
 	// FIXME: Actually, this should prune all triggers
 	if( onsource->length == 0 ){
 		return;
@@ -265,7 +262,7 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
 	size_t i = 0;
 
 	GSequenceIter *trigp, *tmp;
-	trigp = g_sequence_get_begin_iter( trig_sequence );
+	trigp = XLALGSequenceBeginRaw( trig_sequence, LALGTYPE_SNGL_BURST );
 
 	LALSeg onseg = onsource->segs[0];
 	while( !g_sequence_iter_is_end( trigp ) ){
@@ -329,22 +326,22 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
  * TODO: Merge vetolist creation here
  * TODO: Can we also decrement the count / coincidences efficiently here?
  */
-GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan, const char* refchan, double snr_thresh ){
+void XLALDetCharRemoveTrigs( LALGSequence* trig_sequence, LALGSequence** tbd, const LALSeg veto, const char* vchan, const char* refchan, double snr_thresh ){
 
 	size_t vetoed_events = 0;
 	size_t de_vetoed_events = 0;
-	size_t nevents = g_sequence_get_length(trig_sequence);
+	size_t nevents = XLALGetGSequenceLength(trig_sequence);
 	XLALPrintInfo( "nevents: %lu\n", nevents );
 	XLALPrintInfo( "Channel to veto: %s\n", vchan );
 
 	// Pointer to the current position in the trigger list
-	GSequenceIter* trigp = g_sequence_get_begin_iter(trig_sequence);
+	GSequenceIter* trigp = XLALGSequenceBeginRaw( trig_sequence, LALGTYPE_SNGL_BURST );
 	// Pointer to the trigger under examination
 	SnglBurst* sb;
 
 	// Store the triggers to be deleted
-	GSequence* tbd = g_sequence_new((GDestroyNotify)XLALDestroySnglBurst);
-	GSequenceIter* tbdit = g_sequence_get_begin_iter(tbd);
+	*tbd = XLALCreateGSequence(LALGTYPE_SNGL_BURST);
+	GSequenceIter* tbdit = XLALGSequenceBeginRaw( *tbd, LALGTYPE_SNGL_BURST );
 
 	// Loop over our list, looking to remove trigs
 	while( !g_sequence_iter_is_end(trigp) ){
@@ -430,24 +427,23 @@ GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, 
 		XLALFree( trig_veto );
 
 		XLALPrintInfo( "%lu events deleted so far.\n", vetoed_events );
-		nevents = g_sequence_get_length(trig_sequence);
+		nevents = XLALGetGSequenceLength(trig_sequence);
 		XLALPrintInfo( "%lu events remain\n", nevents );
 	}
 	XLALPrintInfo( "Done, total events removed %lu\n", vetoed_events );
 	XLALPrintInfo( "Done, ref channel total events removed %lu\n", de_vetoed_events );
 
-	return tbd;
 }
 
 /*
  * Turn all the peak times for channel vchan into a segment list of vetoes.
  */
-void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, const LALSeg veto, const char* vchan ){
+void XLALDetCharTrigsToVetoList( LALSegList* vetoes, LALGSequence* trig_sequence, const LALSeg veto, const char* vchan ){
 
 	float wind = XLALGPSDiff(&veto.end, &veto.start);
 
 	// Pointer to the current position in the trigger list
-	GSequenceIter* trigp = g_sequence_get_begin_iter(trig_sequence);
+	GSequenceIter* trigp = XLALGSequenceBeginRaw( trig_sequence, LALGTYPE_SNGL_BURST );
 	// Pointer to the trigger under examination
 	SnglBurst* sb;
 
