@@ -1107,6 +1107,16 @@ if (swiglal_release_parent(PTR)) {
   %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
 }
 
+// The SWIGLAL(ACQUIRES_OWNERSHIP(...)) macro indicates that a function will acquire ownership
+// of a particular argument, e.g. by storing that argument in some container, and that therefore
+// the SWIG object wrapping that argument should no longer own its memory.
+%define %swiglal_public_ACQUIRES_OWNERSHIP(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* DISOWN, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_ACQUIRES_OWNERSHIP(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+
 // Typemaps for pointers to primitive scalars. These are treated as output-only
 // arguments by default, by globally applying the SWIG OUTPUT typemaps. The INOUT
 // typemaps can be supplied as needed using the SWIGLAL(INOUT_SCALARS(TYPE, ...)) macro.
