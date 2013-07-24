@@ -243,17 +243,17 @@ double XLALDetCharVetoRound( char** winner, GHashTable* chancount, GHashTable* c
 
 		k = (size_t *)val;
 
-		printf( "Total coincidences for channel %s: %zu\n", (char *)key, *k );
-		printf( "Mu for channel %s: %g\n", (char *)key, mu );
+		XLALPrintInfo( "Total coincidences for channel %s: %zu\n", (char *)key, *k );
+		XLALPrintInfo( "Mu for channel %s: %g\n", (char *)key, mu );
 		sig = XLALDetCharHvetoSignificance( mu, *k );
-		printf( "Significance for this channel: %g\n", sig );
+		XLALPrintInfo( "Significance for this channel: %g\n", sig );
 		if( sig > max_sig && !strstr(chan, (char*)key) ){
 			max_sig = sig;
 			*winner = XLALRealloc(*winner, (strlen((char *)key) + 1) * sizeof(char));
 			strcpy( *winner, (char *)key );
 		}
 	}
-	printf( "winner: %s\n", *winner );
+	XLALPrintInfo( "winner: %s\n", *winner );
 	return max_sig;
 }
 
@@ -329,9 +329,8 @@ void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource
  * TODO: Merge vetolist creation here
  * TODO: Can we also decrement the count / coincidences efficiently here?
  */
-GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan, double snr_thresh ){
+GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan, const char* refchan, double snr_thresh ){
 
-	char refchan[] = "LSC-DARM_ERR";
 	size_t vetoed_events = 0;
 	size_t de_vetoed_events = 0;
 	size_t nevents = g_sequence_get_length(trig_sequence);
