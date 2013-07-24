@@ -126,12 +126,24 @@ def from_files(filelist, etg, columns=None, start=None, end=None,
                                 end is not None and end or segments.PosInfinity)
         filelist = filelist.sieve(segment=span).pfnlist()
     if len(filelist) == 0:
-        return utils.new_ligolw_table(etg, columns=columns)
+        if (kwargs.has_key('channel') and
+            (not isinstance(kwargs['channel'], basestring) and
+             kwargs['channel'] is not None)):
+            channels = kwargs['channel']
+            return dict((c, utils.new_ligolw_table(etg, columns=columns)) for
+                        c in channels)
+        else:
+            return utils.new_ligolw_table(etg, columns=columns)
     if verbose:
         print_verbose(0)
     out = from_file(filelist[0], etg, columns=columns, start=start, end=end,
                     **kwargs)
-    extend = out.extend
+    if isinstance(out, dict):
+        def extend(in_):
+            for key,tab in in_.iteritems():
+                out[key].extend(tab)
+    else:
+        extend = out.extend
     if verbose:
         print_verbose(1)
     for i,fp in enumerate(filelist[1:]):

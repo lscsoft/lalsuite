@@ -48,8 +48,10 @@ typedef struct{
   BOOLEAN inclAutoCorr;       /**< include auto-correlation terms (an SFT with itself) */
   REAL8   fStart;             /**< start frequency in Hz */
   REAL8   fBand;              /**< frequency band to search over in Hz */
-  REAL8   fdotStart;          /**< starting value for first spindown in Hz/s*/
-  REAL8   fdotBand;           /**< range of first spindown to search over in Hz/s */
+  /* REAL8   fdotStart;          /\**< starting value for first spindown in Hz/s*\/ */
+  /* REAL8   fdotBand;           /\**< range of first spindown to search over in Hz/s *\/ */
+  REAL8   alphaRad;           /**< right ascension in radians */
+  REAL8   deltaRad;           /**< declination in radians */
   REAL8   refTime;            /**< reference time for pulsar phase definition */
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
@@ -85,11 +87,15 @@ int main(int argc, char *argv[]){
   /* sft related variables */ 
   MultiSFTVector *inputSFTs = NULL;
   MultiPSDVector *psd = NULL;
-  SFTIndexList *sftIndices;
-  SFTPairIndexList *sftPairs;
+  MultiLIGOTimeGPSVector *gpsTimes = NULL;
+  SFTIndexList *sftIndices = NULL;
+  SFTPairIndexList *sftPairs = NULL;
 
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
-  REAL8 deltaF; /* Tsft; frequency resolution and time baseline of SFTs */
+  REAL8 deltaF, Tsft; /* frequency resolution and time baseline of SFTs */
+  REAL8 roughFreq; /* Approximate frequency to use for metric calculations */
+
+  REAL8Vector *sigmaUnshifted = NULL;
 
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
@@ -113,7 +119,7 @@ int main(int argc, char *argv[]){
   }
 
   deltaF = config.catalog->data[0].header.deltaF;
-  /*Tsft = 1. / deltaF;*/
+  Tsft = 1. / deltaF;
 
   /* now read the data */
   /* FIXME: need to correct fMin and fMax for Doppler shift, rngmedian bins and spindown range */
@@ -125,6 +131,12 @@ int main(int argc, char *argv[]){
   /* read the SFTs*/
   if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALLoadMultiSFTs() failed with errno=%d\n", __func__, xlalErrno );
+    return 1;
+  }
+
+  /* read the timestamps from the SFTs*/
+  if ((gpsTimes = XLALExtractMultiTimestampsFromSFTs ( inputSFTs )) == NULL){ 
+    LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
 
@@ -163,6 +175,24 @@ int main(int argc, char *argv[]){
     XLALFree( config.edat );
     /* de-allocate memory for user input variables */
 
+    XLALDestroyUserVars();
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  roughFreq = uvar.fStart + 0.5 * uvar.fBand;
+
+  /* Get weighting factors for calculation of metric */
+  if ( ( XLALCalculateCrossCorrSigmaUnshifted( &sigmaUnshifted, sftPairs, sftIndices, psd, roughFreq, Tsft)  != XLAL_SUCCESS ) ) {
+    /* XLALDestroySFTPairIndexList(sftPairs) */
+    /* XLALDestroySFTIndexList(sftIndices) */
+    XLALDestroyMultiSFTVector ( inputSFTs ); 
+    XLALDestroyMultiPSDVector ( psd );    
+    XLALDestroySFTCatalog (config.catalog );
+    XLALFree( config.edat->ephemE );
+    XLALFree( config.edat->ephemS );
+    XLALFree( config.edat );
+    /* de-allocate memory for user input variables */
+    
     XLALDestroyUserVars();
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -260,8 +290,10 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->inclAutoCorr = FALSE;
   uvar->fStart = 100.0; 
   uvar->fBand = 0.1;
-  uvar->fdotStart = 0.0;
-  uvar->fdotBand = 0.0;
+  /* uvar->fdotStart = 0.0; */
+  /* uvar->fdotBand = 0.0; */
+  uvar->alphaRad = 0.0;
+  uvar->deltaRad = 0.0;
   uvar->rngMedBlock = 50;
 
   /* default for reftime is in the middle */
@@ -281,8 +313,10 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregBOOLUserStruct  ( inclAutoCorr,  0,  UVAR_OPTIONAL, "Include auto-correlation terms (an SFT with itself)");
   XLALregREALUserStruct  ( fStart,        0,  UVAR_OPTIONAL, "Start frequency in Hz");
   XLALregREALUserStruct  ( fBand,         0,  UVAR_OPTIONAL, "Frequency band to search over in Hz ");
-  XLALregREALUserStruct  ( fdotStart,     0,  UVAR_OPTIONAL, "Start value of spindown in Hz/s");
-  XLALregREALUserStruct  ( fdotBand,      0,  UVAR_OPTIONAL, "Band for spindown values in Hz/s");
+  /* XLALregREALUserStruct  ( fdotStart,     0,  UVAR_OPTIONAL, "Start value of spindown in Hz/s"); */
+  /* XLALregREALUserStruct  ( fdotBand,      0,  UVAR_OPTIONAL, "Band for spindown values in Hz/s"); */
+  XLALregREALUserStruct  ( alphaRad,      0,  UVAR_OPTIONAL, "Right ascension for directed search (radians)");
+  XLALregREALUserStruct  ( deltaRad,      0,  UVAR_OPTIONAL, "Declination for directed search (radians)");
   XLALregSTRINGUserStruct( ephemYear,     0,  UVAR_OPTIONAL, "String Ephemeris year range");
   XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
   XLALregINTUserStruct   ( rngMedBlock,   0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");

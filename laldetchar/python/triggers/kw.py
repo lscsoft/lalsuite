@@ -82,6 +82,10 @@ def ascii_trigger(line, columns=KLEINEWELLE_COLUMNS):
             channel = channel.rsplit("_", 2)[0]
         if 'channel' in columns:
             t.channel = channel
+        if 'ifo' in columns and re.match("[A-Z]\d:", channel):
+            t.ifo = channel[:2]
+        elif 'ifo' in columns:
+            t.ifo = None
     if len(dat) == 8:
         (start, stop, peak, freq, energy,
          amplitude, n_pix, sig) = list(map(float, dat))
@@ -195,14 +199,19 @@ def from_ascii(filename, columns=None, start=None, end=None,
 
     @returns a `LIGO_LW` table containing the triggers
     """
-    if channel and re.match("[A-Z]\d:", channel):
-        ifo = channel[:2]
+    if isinstance(channel, basestring):
+        channels = [channel]
+    elif channel is None:
+        channels = [None]
     else:
-        ifo = None
+        channels = channel
 
     if not columns:
         columns = KLEINEWELLE_COLUMNS
     if columns:
+        if channel:
+            columns.append('channel')
+            columns.append('ifo')
         columns = set(columns)
         if 'peak_time' not in columns and (start or end):
             columns.add("peak_time")
@@ -219,27 +228,31 @@ def from_ascii(filename, columns=None, start=None, end=None,
     else:
         check_time = False
 
-    # generate table
-    out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
-    columns = out.columnnames
+    out = dict()
 
+    for ch in channels:
+        # generate table
+        out[ch] = lsctables.New(lsctables.SnglBurstTable, columns=columns)
+        columns = out[ch].columnnames
 
     # read file and generate triggers
-    append = out.append
-    next_id = out.get_next_id
+    append = dict((ch, out[ch].append) for ch in channels)
+    next_id = out[ch].get_next_id
     with open(filename, 'r') as f:
         for line in f:
             if _comment.match(line):
                continue
             t = ascii_trigger(line, columns=columns)
+            if channel and t.channel not in channels:
+                continue
             t.event_id = next_id()
-            if channel:
-                t.ifo = ifo
-                t.channel = channel
             if not check_time or (float(t.get_peak()) in span):
-                append(t)
+                append[t.channel](t)
 
-    return out
+    if isinstance(channel, basestring) or channel is None:
+        return out[channel]
+    else:
+        return out
 
 
 # TODO: remove following lines when a good trigfind method is in place

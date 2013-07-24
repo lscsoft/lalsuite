@@ -120,6 +120,7 @@ int XLALCreateSFTIndexListFromMultiSFTVect
    MultiSFTVector      *sfts
   )
 ;
+
 int XLALCreateSFTPairIndexList
   (
    SFTPairIndexList  **pairIndexList,
@@ -127,6 +128,17 @@ int XLALCreateSFTPairIndexList
    MultiSFTVector     *sfts,
    REAL8               maxLag,
    BOOLEAN             inclAutoCorr
+  )
+;
+
+int XLALCalculateCrossCorrSigmaUnshifted
+  (
+   REAL8Vector      **sigma_alpha,
+   SFTPairIndexList  *pairIndexList,
+   SFTIndexList      *indexList,
+   MultiPSDVector    *psds,
+   REAL8              freq,
+   REAL8              Tsft       
   )
 ;
 
