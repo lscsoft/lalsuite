@@ -20,7 +20,7 @@
 #ifndef _LALDETCHARHVETOUTIL_H
 #define _LALDETCHARHVETOUTIL_H
 
-#include <lal/LALDetCharGlib.h>
+#include <lal/LALDetCharGlibTypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/LIGOLwXMLBurstRead.h>
@@ -29,63 +29,22 @@
 extern "C" {
 #endif
 
-gint XLALGLibCompareSnglBurst(gconstpointer a, gconstpointer b, gpointer user_data);
+int XLALCountUnmarkedSnglBurst(LALGSequence* seq);
 
-#ifdef SWIG
-SWIGLAL(EXTERNAL_STRUCT(GSequence, g_sequence_free));
+LALGHashTable* XLALGetChannelList(LALGSequence *trig_sequence);
+
+LALGSequence* XLALPopulateTrigSequenceFromFile(LALGSequence* trig_sequence, const char* fname, double min_snr, char* ignore_list);
+
+#ifdef SWIG   // SWIG interface directives
+SWIGLAL(ACQUIRES_OWNERSHIP(SnglBurst*, tbl));
 #endif
-typedef GSequence GSnglBurstSeq;
-GSnglBurstSeq* XLALCreateGSnglBurstSeq(void);
-void XLALDestroyGSnglBurstSeq(GSnglBurstSeq* trig_sequence);
-size_t XLALGetGSnglBurstSeqLength( GSnglBurstSeq* seq );
-size_t XLALGetGSnglBurstSeqUnmarkedLength( GSnglBurstSeq* seq );
-
-typedef GSequenceIter GSnglBurstIter;
-GSnglBurstIter* XLALGSnglBurstSeqBegin(GSnglBurstSeq* trig_sequence);
-GSnglBurstIter* XLALGSnglBurstIterNext(GSnglBurstIter* iter);
-
-#ifdef SWIG
-SWIGLAL(RETURNS_PROPERTY(SnglBurst*, XLALGSnglBurstIterGet));
+LALGSequence* XLALPopulateTrigSequenceFromTrigList(LALGSequence* trig_sequence, SnglBurst* tbl);
+#ifdef SWIG   // SWIG interface directives
+SWIGLAL_CLEAR(ACQUIRES_OWNERSHIP(SnglBurst*, tbl));
 #endif
-SnglBurst* XLALGSnglBurstIterGet(GSnglBurstIter* iter);
-
-
-#ifdef SWIG
-SWIGLAL(EXTERNAL_STRUCT(GHashTable, g_hash_table_destroy));
-#endif
-GHashTable* XLALCreateGHashTable(void);
-void XLALDestroyGHashTable(GHashTable* tbl);
-char* XLALGetStrGHashTableVal(GHashTable* tbl, const char* key);
-double XLALGetDblGHashTableVal(GHashTable* tbl, const char* key);
-size_t XLALGetIntGHashTableVal(GHashTable* tbl, const char* key);
-char* XLALGetGHashTableKey(GHashTable* tbl, const size_t indx);
-
-#if 0
-typedef GHashTable GStrHashTable;
-GStrHashTable* XLALCreateGStrHashTable(void);
-void XLALDestroyGStrHashTable(GStrHashTable* tbl);
-char* XLALGetGStrHashTableVal(GStrHashTable* tbl, const char* key);
-char* XLALGetGStrHashTableKey(GStrHashTable* tbl, const size_t indx);
-
-typedef GHashTable GIntHashTable;
-GIntHashTable* XLALCreateGIntHashTable(void);
-void XLALDestroyGIntHashTable(GIntHashTable* tbl);
-size_t XLALGetGIntHashTableVal(GIntHashTable* tbl, const char* key);
-char* XLALGetGIntHashTableKey(GIntHashTable* tbl, const size_t indx);
-
-typedef GHashTable GDblHashTable;
-GDblHashTable* XLALCreateGDblHashTable(void);
-void XLALDestroyGDblHashTable(GDblHashTable* tbl);
-double XLALGetGDblHashTableVal(GDblHashTable* tbl, const char* key);
-char* XLALGetGDblHashTableKey(GDblHashTable* tbl, const size_t indx);
-#endif
-
-GHashTable* XLALGetChannelList( GSequence *trig_sequence );
-GSnglBurstSeq* XLALPopulateTrigSequenceFromFile( GSnglBurstSeq* trig_sequence, const char* fname, double min_snr, char* ignore_list );
-GSnglBurstSeq* XLALPopulateTrigSequenceFromTrigList( GSnglBurstSeq* trig_sequence, SnglBurst* tbl );
 
 #ifdef  __cplusplus
 }
 #endif
 
-#endif
+#endif /* _LALDETCHARHVETOUTIL_H */

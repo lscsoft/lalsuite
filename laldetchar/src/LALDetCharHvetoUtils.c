@@ -17,8 +17,9 @@
  *  MA  02111-1307  USA
  */
 
-#include <lal/LALString.h>
 #include <lal/LALDetCharHvetoUtils.h>
+#include <lal/LALString.h>
+#include <lal/LALDetCharGlib.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -26,99 +27,36 @@
 #define UNUSED
 #endif
 
-gint XLALGLibCompareSnglBurst(gconstpointer a, gconstpointer b, gpointer UNUSED user_data) {
-  const SnglBurst *_a = a;
-  const SnglBurst *_b = b;
-  return XLALCompareSnglBurstByPeakTimeAndSNR(&_a, &_b);
-}
-
-GSnglBurstSeq* XLALCreateGSnglBurstSeq(void) {
-  return g_sequence_new((GDestroyNotify)XLALDestroySnglBurst);
-}
-
-void XLALDestroyGSnglBurstSeq(GSnglBurstSeq* trig_sequence) {
-  g_sequence_free(trig_sequence);
-}
-
-size_t XLALGetGSnglBurstSeqLength( GSnglBurstSeq* seq ){
-  return g_sequence_get_length(seq);
-}
-
-size_t XLALGetGSnglBurstSeqUnmarkedLength( GSnglBurstSeq* trig_sequence ){
-  GSnglBurstIter* itr = XLALGSnglBurstSeqBegin(trig_sequence);
-  size_t cntr = 0;
-  while( !g_sequence_iter_is_end(itr) ){
-    SnglBurst* sb = XLALGSnglBurstIterGet(itr);
+int XLALCountUnmarkedSnglBurst(LALGSequence* seq) {
+  XLAL_CHECK(seq, XLAL_EFAULT);
+  int unmarked = 0;
+  LALGSequenceIter* itr = XLALGSequenceBegin(seq);
+  while( itr ){
+    SnglBurst* sb = XLALGetGSeqSnglBurst(itr);
     if( sb->next == NULL ){
-      cntr++;
+      unmarked++;
     }
-    itr = XLALGSnglBurstIterNext(itr);
+    itr = XLALGSequenceNext(itr);
   }
-  return cntr;
+  XLALDestroyGSequenceIter(itr);
+  return unmarked;
 }
 
-GSnglBurstIter* XLALGSnglBurstSeqBegin(GSnglBurstSeq* trig_sequence) {
-  return g_sequence_get_begin_iter(trig_sequence);
-}
-
-SnglBurst* XLALGSnglBurstIterGet(GSnglBurstIter* itr) {
-  if(g_sequence_iter_is_end(itr)) {
-    return NULL;
+LALGHashTable* XLALGetChannelList(LALGSequence *trig_sequence) {
+  LALGSequenceIter* itr = XLALGSequenceBegin(trig_sequence);
+  LALGHashTable* channellist = XLALCreateGHashTable(LALGTYPE_STR);
+  while( itr ){
+    SnglBurst* sb = XLALGetGSeqSnglBurst(itr);
+    XLALSetGHashTblStr(channellist, sb->channel, sb->channel);
+    itr = XLALGSequenceNext(itr);
   }
-  return (SnglBurst*)g_sequence_get(itr);
-}
-
-GSnglBurstIter* XLALGSnglBurstIterNext(GSnglBurstIter* itr) {
-  return g_sequence_iter_is_end(itr) ? NULL : g_sequence_iter_next(itr);
-}
-
-GHashTable* XLALCreateGHashTable(void) {
-  return g_hash_table_new_full(g_str_hash, g_str_equal, XLALFree, XLALFree);
-}
-
-void XLALDestroyGHashTable(GHashTable* tbl) {
-  g_hash_table_destroy(tbl);
-}
-
-char* XLALGetStrGHashTableVal(GHashTable* tbl, const char* key) {
-  return XLALStringDuplicate((char*)g_hash_table_lookup( tbl, key ));
-}
-
-double XLALGetDblGHashTableVal(GHashTable* tbl, const char* key) {
-  return *(double*)g_hash_table_lookup( tbl, key );
-}
-
-size_t XLALGetIntGHashTableVal(GHashTable* tbl, const char* key) {
-  return *(size_t*)g_hash_table_lookup( tbl, key );
-}
-
-char* XLALGetGHashTableKey(GHashTable* tbl, const size_t indx) {
-  GList* keys = g_hash_table_get_keys( tbl );
-  size_t i = 0;
-  while( keys ){
-    if( i == indx ) {
-      return XLALStringDuplicate( (char*)keys->data );
-    }
-    i++;
-    keys = keys->next;
-  }
-  return NULL;
-}
-
-GHashTable* XLALGetChannelList( GSequence *trig_sequence ){
-  GSnglBurstIter* itr = XLALGSnglBurstSeqBegin(trig_sequence);
-  GHashTable* channellist = XLALCreateGHashTable();
-  while( !g_sequence_iter_is_end(itr) ){
-    SnglBurst* sb = XLALGSnglBurstIterGet(itr);
-    g_hash_table_insert( channellist, XLALStringDuplicate(sb->channel), XLALStringDuplicate(sb->channel) );
-    itr = XLALGSnglBurstIterNext(itr);
-  }
+  XLALDestroyGSequenceIter(itr);
   return channellist;
 }
 
-GSnglBurstSeq* XLALPopulateTrigSequenceFromFile( GSnglBurstSeq* trig_sequence, const char* fname, double min_snr, char* ignore_list ){
+LALGSequence* XLALPopulateTrigSequenceFromFile( LALGSequence* trig_sequence, const char* fname, double min_snr, char* ignore_list ){
   if( !trig_sequence ){
-    trig_sequence = XLALCreateGSnglBurstSeq();
+    trig_sequence = XLALCreateGSequence(LALGTYPE_SNGL_BURST);
   }
   GSequence* ignorel = g_sequence_new(XLALFree);
 
@@ -160,7 +98,7 @@ GSnglBurstSeq* XLALPopulateTrigSequenceFromFile( GSnglBurstSeq* trig_sequence, c
     }
     if( tbl->snr >= min_snr && !ignore ){
       //printf( "Adding event %p #%lu, channel: %s\n", tbl, tbl->event_id, tbl->channel );
-      g_sequence_insert_sorted( trig_sequence, tbl, XLALGLibCompareSnglBurst, NULL );
+      XLALAddGSeqSnglBurst( trig_sequence, tbl );
       tbl=tbl->next;
     } else {
       //printf( "Ignoring event %p #%lu, channel: %s\n", tbl, tbl->event_id, tbl->channel );
@@ -189,12 +127,20 @@ GSnglBurstSeq* XLALPopulateTrigSequenceFromFile( GSnglBurstSeq* trig_sequence, c
 
   g_sequence_free( ignorel );
 
+  LALGSequenceIter* itr = XLALGSequenceBegin(trig_sequence);
+  while( itr ){
+    SnglBurst* sb = XLALGetGSeqSnglBurst(itr);
+    sb->next = NULL;
+    itr = XLALGSequenceNext(itr);
+  }
+  XLALDestroyGSequenceIter(itr);
+
   return trig_sequence;
 }
 
-GSnglBurstSeq* XLALPopulateTrigSequenceFromTrigList( GSnglBurstSeq* trig_sequence, SnglBurst* tbl ){
+LALGSequence* XLALPopulateTrigSequenceFromTrigList( LALGSequence* trig_sequence, SnglBurst* tbl ){
   if( !trig_sequence ){
-    trig_sequence = g_sequence_new(NULL);
+    trig_sequence = XLALCreateGSequence(LALGTYPE_SNGL_BURST);
   }
 
   if( !tbl ) {
@@ -202,9 +148,17 @@ GSnglBurstSeq* XLALPopulateTrigSequenceFromTrigList( GSnglBurstSeq* trig_sequenc
   }
 
   do {
-    g_sequence_insert_sorted( trig_sequence, tbl, XLALGLibCompareSnglBurst, NULL );
+    XLALAddGSeqSnglBurst( trig_sequence, tbl );
     tbl=tbl->next;
   } while( tbl );
+
+  LALGSequenceIter* itr = XLALGSequenceBegin(trig_sequence);
+  while( itr ){
+    SnglBurst* sb = XLALGetGSeqSnglBurst(itr);
+    sb->next = NULL;
+    itr = XLALGSequenceNext(itr);
+  }
+  XLALDestroyGSequenceIter(itr);
 
   return trig_sequence;
 }
