@@ -90,8 +90,11 @@ int main(int argc, char *argv[]){
   MultiLIGOTimeGPSVector *multiTimes = NULL;
   MultiLALDetector *multiDetectors = NULL;
   MultiDetectorStateSeries *multiStates = NULL;
+  MultiAMCoeffs *multiCoeffs = NULL;
   SFTIndexList *sftIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
+
+  SkyPosition skyPos = empty_SkyPosition;
 
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   REAL8 deltaF, Tsft; /* frequency resolution and time baseline of SFTs */
@@ -136,6 +139,12 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
+  /* calculate the psd and normalize the SFTs */
+  if (( multiPSDs =  XLALNormalizeMultiSFTVect ( inputSFTs, uvar.rngMedBlock )) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
+    return 1;
+  }
+
   /* read the timestamps from the SFTs */
   if ((multiTimes = XLALExtractMultiTimestampsFromSFTs ( inputSFTs )) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
@@ -154,9 +163,15 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
-  /* calculate the psd and normalize the SFTs */
-  if (( multiPSDs =  XLALNormalizeMultiSFTVect ( inputSFTs, uvar.rngMedBlock )) == NULL){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
+  /* Note this is specialized to a single sky position */
+  /* This might need to be moved into the config variables */
+  skyPos.system = COORDINATESYSTEM_EQUATORIAL;
+  skyPos.longitude = uvar.alphaRad;
+  skyPos.latitude  = uvar.deltaRad;
+
+  /* Calculate the AM coefficients (a,b) for each SFT */
+  if ((multiCoeffs = XLALComputeMultiAMCoeffs ( multiStates, NULL, skyPos )) == NULL){ 
+    LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
 
