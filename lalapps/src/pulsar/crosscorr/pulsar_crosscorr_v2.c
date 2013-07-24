@@ -86,8 +86,10 @@ int main(int argc, char *argv[]){
 
   /* sft related variables */ 
   MultiSFTVector *inputSFTs = NULL;
-  MultiPSDVector *psd = NULL;
-  MultiLIGOTimeGPSVector *gpsTimes = NULL;
+  MultiPSDVector *multiPSDs = NULL;
+  MultiLIGOTimeGPSVector *multiTimes = NULL;
+  MultiLALDetector *multiDetectors = NULL;
+  MultiDetectorStateSeries *multiStates = NULL;
   SFTIndexList *sftIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
 
@@ -134,14 +136,26 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
-  /* read the timestamps from the SFTs*/
-  if ((gpsTimes = XLALExtractMultiTimestampsFromSFTs ( inputSFTs )) == NULL){ 
+  /* read the timestamps from the SFTs */
+  if ((multiTimes = XLALExtractMultiTimestampsFromSFTs ( inputSFTs )) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
 
+  /* read the detector information from the SFTs */
+  if ((multiDetectors = XLALExtractMultiLALDetectorFromSFTs ( inputSFTs )) == NULL){ 
+    LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiLALDetectorFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
+    return 1;
+  }
+
+  /* Find the detector state for each SFT */
+  if ((multiStates = XLALGetMultiDetectorStates ( multiTimes, multiDetectors, config.edat, 0.0 )) == NULL){ 
+    LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
+    return 1;
+  }
+
   /* calculate the psd and normalize the SFTs */
-  if (( psd =  XLALNormalizeMultiSFTVect ( inputSFTs, uvar.rngMedBlock )) == NULL){
+  if (( multiPSDs =  XLALNormalizeMultiSFTVect ( inputSFTs, uvar.rngMedBlock )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
@@ -152,7 +166,7 @@ int main(int argc, char *argv[]){
 
   if ( ( XLALCreateSFTIndexListFromMultiSFTVect( &sftIndices, inputSFTs ) != XLAL_SUCCESS ) ) {
     XLALDestroyMultiSFTVector ( inputSFTs ); 
-    XLALDestroyMultiPSDVector ( psd );    
+    XLALDestroyMultiPSDVector ( multiPSDs );    
     XLALDestroySFTCatalog (config.catalog );
     XLALFree( config.edat->ephemE );
     XLALFree( config.edat->ephemS );
@@ -168,7 +182,7 @@ int main(int argc, char *argv[]){
   if ( ( XLALCreateSFTPairIndexList( &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr ) != XLAL_SUCCESS ) ) {
     /* XLALDestroySFTIndexList(sftIndices) */
     XLALDestroyMultiSFTVector ( inputSFTs ); 
-    XLALDestroyMultiPSDVector ( psd );    
+    XLALDestroyMultiPSDVector ( multiPSDs );    
     XLALDestroySFTCatalog (config.catalog );
     XLALFree( config.edat->ephemE );
     XLALFree( config.edat->ephemS );
@@ -182,11 +196,11 @@ int main(int argc, char *argv[]){
   roughFreq = uvar.fStart + 0.5 * uvar.fBand;
 
   /* Get weighting factors for calculation of metric */
-  if ( ( XLALCalculateCrossCorrSigmaUnshifted( &sigmaUnshifted, sftPairs, sftIndices, psd, roughFreq, Tsft)  != XLAL_SUCCESS ) ) {
+  if ( ( XLALCalculateCrossCorrSigmaUnshifted( &sigmaUnshifted, sftPairs, sftIndices, multiPSDs, roughFreq, Tsft)  != XLAL_SUCCESS ) ) {
     /* XLALDestroySFTPairIndexList(sftPairs) */
     /* XLALDestroySFTIndexList(sftIndices) */
     XLALDestroyMultiSFTVector ( inputSFTs ); 
-    XLALDestroyMultiPSDVector ( psd );    
+    XLALDestroyMultiPSDVector ( multiPSDs );    
     XLALDestroySFTCatalog (config.catalog );
     XLALFree( config.edat->ephemE );
     XLALFree( config.edat->ephemS );
@@ -260,7 +274,7 @@ int main(int argc, char *argv[]){
   /* XLALDestroySFTPairIndexList(sftPairs) */
   /* XLALDestroySFTIndexList(sftIndices) */
   XLALDestroyMultiSFTVector ( inputSFTs ); 
-  XLALDestroyMultiPSDVector ( psd );
+  XLALDestroyMultiPSDVector ( multiPSDs );
 
   XLALDestroySFTCatalog (config.catalog );
   XLALFree( config.edat->ephemE );
