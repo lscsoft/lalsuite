@@ -1090,19 +1090,19 @@ if (swiglal_release_parent(PTR)) {
   %set_varoutput(SWIG_NewPointerObj(%as_voidptr(&$1), $&descriptor, (%newpointer_flags) & ~SWIG_POINTER_OWN));
 }
 
-// The SWIGLAL(GET_OBJECT(...)) macro is used when a function returns an object whose
+// The SWIGLAL(RETURNS_PROPERTY(...)) macro is used when a function returns an object whose
 // memory is owned by the object supplied as the first argument to the function.
 // Typically this occurs when the function is returning some property of its first
 // argument. The macro applies a typemap which calles swiglal_store_parent() to store
 // a reference to the first argument as the 'parent' of the return argument, so that
 // the parent will not be destroyed as long as the return value is in scope.
-%define %swiglal_public_GET_OBJECT(TYPE, ...)
-%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_GET_OBJECT, TYPE, __VA_ARGS__);
+%define %swiglal_public_RETURNS_PROPERTY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_RETURNS_PROPERTY, TYPE, __VA_ARGS__);
 %enddef
-%define %swiglal_public_clear_GET_OBJECT(TYPE, ...)
+%define %swiglal_public_clear_RETURNS_PROPERTY(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
-%typemap(out,noblock=1) SWIGTYPE* SWIGLAL_GET_OBJECT {
+%typemap(out,noblock=1) SWIGTYPE* SWIGLAL_RETURNS_PROPERTY {
   %swiglal_store_parent($1, 0, swiglal_1starg());
   %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
 }

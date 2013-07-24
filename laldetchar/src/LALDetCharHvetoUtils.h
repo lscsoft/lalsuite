@@ -45,7 +45,7 @@ GSnglBurstIter* XLALGSnglBurstSeqBegin(GSnglBurstSeq* trig_sequence);
 GSnglBurstIter* XLALGSnglBurstIterNext(GSnglBurstIter* iter);
 
 #ifdef SWIG
-SWIGLAL(GET_OBJECT(SnglBurst*, XLALGSnglBurstIterGet));
+SWIGLAL(RETURNS_PROPERTY(SnglBurst*, XLALGSnglBurstIterGet));
 #endif
 SnglBurst* XLALGSnglBurstIterGet(GSnglBurstIter* iter);
 

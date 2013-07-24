@@ -91,7 +91,7 @@ size_t XLALGetFlatLatticeDimensions(
   );
 
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(GET_OBJECT(XLALGetFlatLatticePoint));
+SWIGLAL(RETURNS_PROPERTY(XLALGetFlatLatticePoint));
 #endif
 ///
 /// Return the current lattice tiling parameter space point

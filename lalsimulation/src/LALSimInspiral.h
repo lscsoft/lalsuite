@@ -177,7 +177,7 @@ void XLALDestroySphHarmTimeSeries( SphHarmTimeSeries* ts );
 UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts );
 
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL(GET_OBJECT(COMPLEX16TimeSeries*, XLALSphHarmTimeSeriesGetMode));
+SWIGLAL(RETURNS_PROPERTY(COMPLEX16TimeSeries*, XLALSphHarmTimeSeriesGetMode));
 #endif
 
 /* 
@@ -214,7 +214,7 @@ void XLALDestroySphHarmFrequencySeries( SphHarmFrequencySeries* ts );
 UINT4 XLALSphHarmFrequencySeriesGetMaxL( SphHarmFrequencySeries* ts );
 
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL(GET_OBJECT(COMPLEX16FrequencySeries*, XLALSphHarmFrequencySeriesGetMode));
+SWIGLAL(RETURNS_PROPERTY(COMPLEX16FrequencySeries*, XLALSphHarmFrequencySeriesGetMode));
 #endif
 
 /* 
