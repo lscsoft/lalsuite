@@ -340,10 +340,11 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     }
     if(LALInferenceGetProcParamVal(runState->commandLine,"--proposal-drawprior"))
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
-    
-    if(LALInferenceCheckVariable(proposedParams,"phase")) {
-      LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
-    }
+   
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--margphi"))
+        if(LALInferenceCheckVariable(proposedParams,"phase")) {
+          LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
+        }
   }
 
   /* Now add various special proposals that are conditional on
