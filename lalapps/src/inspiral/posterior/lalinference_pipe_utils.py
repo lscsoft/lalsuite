@@ -100,7 +100,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
       np.savetxt(instrument+'psd.txt',combine)
     srate = combine[-1][0]
   else:
-    print "Failed to gracedb download %s psd.xml.gz" % gid
+    print "Failed to gracedb download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
   # Logic for template duration and sample rate disabled
   coinc_map = lsctables.getTablesByType(xmldoc, lsctables.CoincMapTable)[0]
   for coinc in coinc_events:
