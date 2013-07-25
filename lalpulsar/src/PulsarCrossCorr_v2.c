@@ -225,7 +225,7 @@ int XLALCalculateCrossCorrSigmaUnshifted
   for (j=0; j < numSFTs; j++) {
     sftIndex = indexList->data[j];
     psd = &(psds->data[sftIndex.detInd]->data[sftIndex.sftInd]);
-    freqInd = (UINT8) floor( (freq - psd->f0)/psd->deltaF + 0.5 );
+    freqInd = (UINT8) lrintf( (freq - psd->f0)/psd->deltaF );
     psdData->data[j] = psd->data->data[freqInd];
   }
 
