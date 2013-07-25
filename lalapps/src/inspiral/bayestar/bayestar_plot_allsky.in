@@ -39,7 +39,10 @@ parser = OptionParser(
             help="height of figure in inches [default: %default]"),
         Option("--contour", metavar="PERCENT", type=float, action="append",
             default=[], help="plot contour enclosing this percentage of"
-            + " probability mass [may be specified multiple times, default: none]")
+            + " probability mass [may be specified multiple times, default: none]"),
+        Option("--radec", nargs=2, metavar="RA Dec", type=float, action="append",
+            default=[], help="right ascension (deg) and declination (deg) to mark"
+            + " [may be specified multiple times, default: none]")
     ]
 )
 opts, args = parser.parse_args()
@@ -88,6 +91,16 @@ if opts.contour:
     cs = plot.healpix_contour(region, colors='k', linewidths=0.5, levels=opts.contour)
     plt.clabel(cs, fmt='%g%%', fontsize=6, inline=True)
 
+# Add markers (e.g., for injections or external triggers).
+for ra, dec in np.deg2rad(opts.radec):
+    # Convert the right ascension to either a reference angle from -pi to pi
+    # or a wrapped angle from 0 to 2 pi, depending on the version of Matplotlib.
+    # FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
+    if plot.mpl_version < '1.2.0':
+        ra = plot.reference_angle(ra)
+    else:
+        ra = plot.wrapped_angle(ra)
+    ax.plot(ra, dec, '*', markerfacecolor='white', markeredgecolor='black', markersize=10)
 
 # If we are using a new enough version of matplotlib, then
 # add a white outline to all text to make it stand out from the background.
