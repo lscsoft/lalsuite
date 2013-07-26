@@ -703,6 +703,97 @@ XLALGetSiteInfo ( const CHAR *name )
 } /* XLALGetSiteInfo() */
 
 
+/** Computes weight factors arising from MultiSFTs with different noise
+ * floors
+ */
+MultiNoiseWeights *
+XLALComputeMultiNoiseWeights ( const MultiPSDVector  *rngmed,
+			       UINT4                 blocksRngMed,
+			       UINT4                 excludePercentile)
+{
+  XLAL_CHECK_NULL ( rngmed != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( rngmed->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( rngmed->length != 0, XLAL_EINVAL );
+
+  UINT4 numIFOs = rngmed->length;
+  REAL8 Tsft = 1.0 / rngmed->data[0]->data[0].deltaF;
+
+  /* create multi noise weights for output */
+  MultiNoiseWeights *multiWeights = NULL;
+  XLAL_CHECK_NULL ( (multiWeights = XLALCalloc(1, sizeof(*multiWeights))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (multiWeights->data = XLALCalloc ( numIFOs, sizeof(*multiWeights->data))) != NULL, XLAL_ENOMEM );
+  multiWeights->length = numIFOs;
+
+  UINT4 numSFTsTot = 0;
+  REAL8 sumWeights = 0;
+
+  for ( UINT4 X = 0; X < numIFOs; X++)
+    {
+      UINT4 numSFTs = rngmed->data[X]->length;
+      numSFTsTot += numSFTs;
+
+      /* create k^th weights vector */
+      if( ( multiWeights->data[X] = XLALCreateREAL8Vector ( numSFTs ) ) == NULL )
+        {
+          /* free weights vectors created previously in loop */
+          XLALDestroyMultiNoiseWeights ( multiWeights );
+          XLAL_ERROR_NULL ( XLAL_EFUNC, "Failed to allocate noiseweights for IFO X = %d\n", X );
+        } /* if XLALCreateREAL8Vector() failed */
+
+      /* loop over rngmeds and calculate weights -- one for each sft */
+      for ( UINT4 alpha = 0; alpha < numSFTs; alpha++)
+	{
+	  UINT4 halfBlock = blocksRngMed/2;
+
+	  REAL8FrequencySeries *thisrm = &(rngmed->data[X]->data[alpha]);
+
+	  UINT4 lengthsft = thisrm->data->length;
+
+	  XLAL_CHECK_NULL ( lengthsft >= blocksRngMed, XLAL_EINVAL );
+
+	  UINT4 length = lengthsft - blocksRngMed + 1;
+	  UINT4 halfLength = length/2;
+
+	  /* calculate index in power medians vector from which to calculate mean */
+	  UINT4 excludeIndex =  excludePercentile * halfLength ; /* integer arithmetic */
+	  excludeIndex /= 100; /* integer arithmetic */
+
+	  REAL8 Tsft_avgS2 = 0.0;	// 'S2' refers to double-sided PSD
+	  for ( UINT4 k = halfBlock + excludeIndex; k < lengthsft - halfBlock - excludeIndex; k++)
+	    {
+	      Tsft_avgS2 += thisrm->data->data[k];
+	    }
+	  Tsft_avgS2 /= lengthsft - 2*halfBlock - 2*excludeIndex;
+
+          REAL8 wXa = 1.0/Tsft_avgS2;	// unnormalized weight
+	  multiWeights->data[X]->data[alpha] = wXa;
+
+	  sumWeights += wXa;	// sum the weights to normalize this at the end
+	} /* end loop over sfts for each ifo */
+
+    } /* end loop over ifos */
+
+  /* overall noise-normalization factor Sinv = 1/Nsft sum_Xa Sinv_Xa,
+   * see Eq.(60) in CFSv2 notes:
+   * https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=1665&version=3
+   */
+  REAL8 TsftS2_inv = sumWeights / numSFTsTot;	// this is double-sided PSD 'S2'
+
+  /* make weights of order unity by normalizing with TsftS2_inv, see Eq.(58) in CFSv2 notes (v3) */
+  for ( UINT4 X = 0; X < numIFOs; X ++) {
+    UINT4 numSFTs = multiWeights->data[X]->length;
+    for ( UINT4 alpha = 0; alpha < numSFTs; alpha ++)
+      {
+	multiWeights->data[X]->data[alpha] /= TsftS2_inv;
+      }
+  }
+
+  multiWeights->Sinv_Tsft = 0.5 * Tsft*Tsft * TsftS2_inv;		/* 'Sinv * Tsft' refers to single-sided PSD!! Eq.(60) in CFSv2 notes (v3)*/
+
+  return multiWeights;
+
+} /* XLALComputeMultiNoiseWeights() */
+
 /** Destroy a MultiNoiseWeights object */
 void
 XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights )
