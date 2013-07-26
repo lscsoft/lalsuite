@@ -354,8 +354,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     #psdlength = self.config.getint('input','max-psd-length')
     padding=self.config.getint('input','padding')
-    if self.config.has_option('lalinference','seglen'):
-      seglen = self.config.getint('lalinference','seglen')
+    if self.config.has_option('engine','seglen') or self.config.has_option('lalinference','seglen'):
+      if self.config.has_option('engine','seglen'):
+        seglen = self.config.getint('engine','seglen')
+      if self.config.has_option('lalinference','seglen'):
+        seglen = self.config.getint('lalinference','seglen')
+
       if os.path.exists("psd.xml.gz"):
         psdlength = 0
       else:
@@ -678,6 +682,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
        node.set_injection(self.config.get('input','injection-file'),event.event_id)
     if self.config.has_option('lalinference','seglen'):
       node.set_seglen(self.config.getint('lalinference','seglen'))
+    elif  self.config.has_option('engine','seglen'):
+      node.set_seglen(self.config.getint('engine','seglen'))
     else:
       node.set_seglen(event.duration)
     if self.config.has_option('input','psd-length'):
@@ -744,7 +750,10 @@ class EngineJob(pipeline.CondorDAGJob):
       if cp.has_option('condor','queue'):
         self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
         self.add_condor_cmd('Requirements','(TARGET.'+cp.get('condor','queue')+' =?= True)')
-    self.add_ini_opts(cp,self.engine)
+    if cp.has_section(self.engine):
+      self.add_ini_opts(cp,self.engine)
+    if  cp.has_section('engine'):
+      self.add_ini_opts(cp,'engine')
     self.add_opt('snrpath',snrpath)
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
@@ -1103,7 +1112,6 @@ class MergeNSJob(pipeline.CondorDAGJob):
       self.set_sub_file(submitFile)
       self.set_stdout_file(os.path.join(logdir,'merge-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
-      self.add_opt('Nlive',cp.get('lalinferencenest','nlive'))
       self.add_condor_cmd('getenv','True')
       if cp.has_option('merge','npos'):
       	self.add_opt('npos',cp.get('merge','npos'))
