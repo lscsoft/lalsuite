@@ -24,6 +24,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 import numpy as np
 import healpy as hp
+import collections
 
 
 def angle_distance(theta0, phi0, theta1, phi1):
@@ -36,6 +37,11 @@ def angle_distance(theta0, phi0, theta1, phi1):
         return np.pi
     else:
         return np.arccos(cos_angle_distance)
+
+
+# Class to hold return value of find_injection method
+FoundInjection = collections.namedtuple('FoundInjection',
+    'searched_area searched_prob offset contour_areas')
 
 
 def find_injection(sky_map, true_ra, true_dec, contours=()):
@@ -97,5 +103,5 @@ def find_injection(sky_map, true_ra, true_dec, contours=()):
         mode_theta, mode_phi))
 
     # Done.
-    return searched_area, searched_prob, offset, contour_areas
+    return FoundInjection(searched_area, searched_prob, offset, contour_areas)
 
