@@ -37,6 +37,10 @@
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
+#include <lal/LALDatatypes.h>
+#include <lal/FrequencySeries.h>
+#include <lal/LALSimInspiral.h>
+#include <lal/LALSimNoise.h>
 #include <lal/XLALError.h>
 
 #include <lal/LALStdlib.h>
@@ -2418,3 +2422,309 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
         }
         *adaptableStep = 0;
 }
+
+/*Some helper conversion functions*/
+static double m2eta(double m1, double m2)
+{
+    return(m1*m2/((m1+m2)*(m1+m2)));
+}
+
+static double m2mc(double m1, double m2) 
+{
+    return(pow(m2eta(m1,m2),0.6)*(m1+m2));
+}
+
+static void q2masses(double mc, double q, double *m1, double *m2)
+{
+    *m1 = mc * pow(q, -3.0/5.0) * pow(q+1, 1.0/5.0);
+    *m2 = (*m1) * q;
+    return;
+}
+
+
+void drawFisherMatrix(LALInferenceRunState *runState)
+{
+    int i, j, nIFO;
+    LALInferenceIFOData *dataPtr;
+    dataPtr = runState->data;
+
+    /*set parameters*/
+    FIMParams *params;
+    params = (FIMParams *) XLALMalloc(sizeof(FIMParams));
+    memset(params, 0, sizeof(FIMParams));
+	parametersSetFIM(runState, params);
+
+    /*define step sizes for partial derivatives*/
+	/*this can be tuned on the fly for better numerical estimates*/
+    double h[9];
+    for(i = 0 ; i < 9 ; i++) h[i] = 6.e-6;
+
+    nIFO = 0;
+    while(dataPtr != NULL)
+    {
+        nIFO++;
+        dataPtr = dataPtr->next;
+    }
+
+
+	/*compute array of the partial derivatives*/
+    COMPLEX16FrequencySeries ***outputDerivs;
+	outputDerivs = (COMPLEX16FrequencySeries ***)malloc(nIFO*sizeof(COMPLEX16FrequencySeries **));
+		for(i = 0 ; i < nIFO ; i++) outputDerivs[i] = (COMPLEX16FrequencySeries **)
+		                                              malloc(9*sizeof(COMPLEX16FrequencySeries*));
+	waveformDerivative(params, runState, h, outputDerivs);
+
+    /*compute the Fisher Matrix from the partial derivatives*/
+    gsl_matrix *fisherMatrix;
+	fisherMatrix = gsl_matrix_alloc(9,9);
+    computeFisherMatrix(fisherMatrix, runState, outputDerivs);
+
+
+	/*add fisher matrix to runState*/
+	if(!LALInferenceCheckVariable(runState->proposalArgs,"fisherMatrix"))
+        LALInferenceAddVariable(runState->proposalArgs, "fisherMatrix", &fisherMatrix,
+		                        LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
+	else
+        LALInferenceSetVariable(runState->proposalArgs, "fisherMatrix", &fisherMatrix);
+
+
+    /*clean up all the crap we've generated*/
+	for(i = 0 ; i < nIFO ; i++)
+	{
+	    for(j = 0 ; j < 9 ; j++)
+	        XLALDestroyCOMPLEX16FrequencySeries(outputDerivs[i][j]);
+		free(outputDerivs[i]);
+    }
+	free(outputDerivs);
+	gsl_matrix_free(fisherMatrix);
+	XLALFree(params);
+
+  /*code to print out the FIM*/
+  /*drawFisherMatrix(runState);
+  gsl_matrix *FIM = *((gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs, "fisherMatrix"));
+    for(i = 0 ; i < 9 ; i++)
+	{
+	    for(j = 0 ; j < 9 ; j++)
+		    fprintf(stdout, "%lg\t", gsl_matrix_get(FIM, i, j));
+        fprintf(stdout, "\n");
+    }*/
+}
+
+void waveformDerivative(FIMParams *params, /**< \theta_0 params where you compute the FIM */
+                        LALInferenceRunState *runState,
+                        double *h,       /**< derivative step sizes for finite difference */
+					    COMPLEX16FrequencySeries ***outputDerivs) /**< array of complex series, each element
+					                                                is a derivative at parameter i*/
+{
+    int i, det;
+	long length, j;
+	double m1,m2;
+	double mc,q;
+	COMPLEX16 hN, hNp1;
+	REAL8 Fp,Fc,FpN,FcN;
+    COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
+    COMPLEX16FrequencySeries *hptildeN=NULL, *hctildeN=NULL;
+
+    FIMParams *paramsNp1;
+    paramsNp1 = (FIMParams *) XLALMalloc(sizeof(FIMParams));
+
+	for(i = 0 ; i < 9 ; i++)
+	{
+		/*pick a single parameter and move it forward for the finite difference*/
+		*paramsNp1 = *params;
+		/*reset the waveform structures*/
+		hptilde  = NULL;
+		hctilde  = NULL;
+		hptildeN = NULL;
+		hctildeN = NULL;
+		switch(i)
+		{
+		    case LALINFERENCEFIM_MC:
+			    mc = m2mc(params->m1,params->m2)/LAL_MSUN_SI;
+				q = params->m2/params->m1;
+			    q2masses(mc + h[LALINFERENCEFIM_MC],q,&m1,&m2);
+			    paramsNp1->m1 = m1*LAL_MSUN_SI; 
+			    paramsNp1->m2 = m2*LAL_MSUN_SI;
+				break;
+		    case LALINFERENCEFIM_Q:
+			    mc = m2mc(params->m1,params->m2); 
+				q = params->m2/params->m1;
+			    q2masses(mc,q + h[LALINFERENCEFIM_Q],&m1,&m2);
+			    paramsNp1->m1 = m1; 
+			    paramsNp1->m2 = m2; 
+				break;
+		    case LALINFERENCEFIM_PHIREF:
+			    paramsNp1->phiRef = paramsNp1->phiRef + h[LALINFERENCEFIM_PHIREF];
+				break;
+		    case LALINFERENCEFIM_DIST:
+			    paramsNp1->distance = paramsNp1->distance + h[LALINFERENCEFIM_DIST]*1e6*LAL_PC_SI;
+				break;
+		    case LALINFERENCEFIM_INCL:
+			    paramsNp1->inclination = paramsNp1->inclination + h[LALINFERENCEFIM_INCL];
+				break;
+		    case LALINFERENCEFIM_RA:
+			    paramsNp1->ra = paramsNp1->ra + h[LALINFERENCEFIM_RA];
+				break;
+		    case LALINFERENCEFIM_DEC:
+			    paramsNp1->dec = paramsNp1->dec + h[LALINFERENCEFIM_DEC];
+				break;
+		    case LALINFERENCEFIM_PSI:
+			    paramsNp1->psi = paramsNp1->psi + h[LALINFERENCEFIM_PSI];
+				break;
+		    case LALINFERENCEFIM_TIME:
+			    paramsNp1->gmst = paramsNp1->gmst + h[LALINFERENCEFIM_TIME];
+				break;
+        }
+
+		/*Compute old and new waveforms*/
+        XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde,
+                                    params->phiRef,params->deltaF,params->m1,params->m2,
+                                    params->s1x,params->s1y,params->s1z,params->s2x,
+                                    params->s2y,params->s2z,params->f_min,params->f_max,
+                                    params->distance,params->inclination,params->lambda1,
+									params->lambda2,params->waveFlags,params->nonGRparams,
+									params->ampPhase,params->phaseO,params->approximant);
+        XLALSimInspiralChooseFDWaveform(&hptildeN, &hctildeN,
+                                    paramsNp1->phiRef,paramsNp1->deltaF,paramsNp1->m1,paramsNp1->m2,
+                                    paramsNp1->s1x,paramsNp1->s1y,paramsNp1->s1z,paramsNp1->s2x,
+                                    paramsNp1->s2y,paramsNp1->s2z,paramsNp1->f_min,paramsNp1->f_max,
+                                    paramsNp1->distance,paramsNp1->inclination,paramsNp1->lambda1,
+									paramsNp1->lambda2,paramsNp1->waveFlags,paramsNp1->nonGRparams,
+									paramsNp1->ampPhase,paramsNp1->phaseO,paramsNp1->approximant);
+
+
+		/*If changing the masses, the termination point of the waveform can change
+		 * pick the smaller length waveform to avoid horrendous overlap in deriv*/
+		if(hptildeN->data->length < hptilde->data->length)
+		    length = hptildeN->data->length;
+		else
+		    length = hptilde->data->length;
+
+
+        LALInferenceIFOData *dataPtr;
+        dataPtr = runState->data;
+		det = 0;
+
+        while(dataPtr != NULL)
+		{
+			/*Compute old and new detector Response for each detector*/
+			XLALComputeDetAMResponse(&Fp, &Fc, dataPtr->detector->response, 
+			                         params->ra, params->dec, params->psi, params->gmst);
+			XLALComputeDetAMResponse(&FpN, &FcN, dataPtr->detector->response,
+			                         paramsNp1->ra, paramsNp1->dec, paramsNp1->psi, paramsNp1->gmst);
+
+			/*allocate the length to that derivative*/
+			outputDerivs[det][i] = XLALCreateCOMPLEX16FrequencySeries("Deriv",
+										&(hptilde)->epoch, hptilde->f0, hptilde->deltaF,
+										&(hptilde)->sampleUnits, length);
+
+			/*compute forward Euler finite difference*/
+			for(j = 0 ; j < length ; j++)
+			{
+				hN   = Fp*(hptilde->data->data[j]) + Fc*(hctilde->data->data[j]);
+				hNp1 = FpN*(hptildeN->data->data[j]) + FcN*(hctildeN->data->data[j]); 
+				outputDerivs[det][i]->data->data[j] = (hN - hNp1) / h[i];
+			}
+			det++;
+			dataPtr = dataPtr->next;
+		}
+    }
+    XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+    XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+    XLALDestroyCOMPLEX16FrequencySeries(hptildeN);
+    XLALDestroyCOMPLEX16FrequencySeries(hctildeN);
+	XLALFree(paramsNp1);
+}
+
+void computeFisherMatrix(void *fisherMatrix, /**GSL Matrix to store FIM values*/
+						 LALInferenceRunState *runState,
+                         COMPLEX16FrequencySeries ***outputDerivs) /**derivative table from waveformDerivative*/
+{
+	int i,j,det=0;
+	long k;
+	double length, integrand, elementFIM;
+    //(gsl_matrix *)fisherMatrix;
+    LALInferenceIFOData *dataPtr;
+	int iLow = (int) runState->data->fLow / runState->data->freqData->deltaF;
+
+    /*Compute each element of the FIM*/
+    for(i = 0 ; i < 9 ; i++)
+	{
+	elementFIM = 0;
+	    for(j = i ; j < 9 ; j++)
+		{
+			det = 0;
+		    if(outputDerivs[0][i]->data->length < outputDerivs[0][j]->data->length)
+		        length = outputDerivs[0][i]->data->length;
+		    else
+		        length = outputDerivs[0][j]->data->length;
+			/*Peform the appropriate inner product (4 Re \int h_i h_j* / sh)*/
+            dataPtr = runState->data;
+			while(dataPtr != NULL)
+			{
+		        for(k = iLow + 1 ; k < length ; k++)
+			    {  
+		        	integrand = creal(outputDerivs[det][i]->data->data[k])*
+					            creal(outputDerivs[det][j]->data->data[k]) + 
+		           	        	cimag(outputDerivs[det][i]->data->data[k])*
+								cimag(outputDerivs[det][j]->data->data[k]);
+		            integrand /= XLALSimNoisePSDaLIGOZeroDetHighPower(
+					                outputDerivs[det][i]->f0 + k*(outputDerivs[det][i]->deltaF));
+	//		    	integrand /= dataPtr->oneSidedNoisePowerSpectrum->data->data[k];
+					elementFIM += (double)integrand;
+				}
+				dataPtr = dataPtr->next;
+				det++;
+			}
+			elementFIM *= 4*(outputDerivs[0][i]->deltaF);
+			/*set FIM elements and symmetric elements*/
+			gsl_matrix_set(fisherMatrix, i, j, elementFIM);
+			if(i != j) gsl_matrix_set(fisherMatrix, j, i, elementFIM);
+        }
+	}
+}
+
+void parametersSetFIM(LALInferenceRunState *runState, FIMParams *params)
+{
+    REAL8 m1,m2,Mc,q;
+
+	/*convert to m1 and m2 for LALSimulation*/
+    Mc = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "chirpmass");
+    q = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "asym_massratio");
+    q2masses(Mc,q,&m1,&m2);
+
+	/*if making general, complete this*/
+	params->waveFlags = XLALSimInspiralCreateWaveformFlags();
+	params->nonGRparams = NULL;
+	params->approximant = TaylorF2;
+	params->domain = LAL_SIM_DOMAIN_FREQUENCY;
+	params->phaseO = 7;
+	params->ampO = 0;
+	params->phiRef = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "phase");
+	params->deltaT = 1./4096.;
+	params->deltaF = runState->data->freqData->deltaF; 
+	params->m1 = m1*LAL_MSUN_SI; 
+	params->m2 = m2*LAL_MSUN_SI; 
+	params->f_min = runState->data->fLow; 
+	params->fRef = 0.;
+	params->f_max = 0.; /* Generate as much as possible */
+	params->distance = (*(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance"))
+	                              *1.e6*LAL_PC_SI; 
+	params->inclination = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "inclination");
+	params->s1x = 0.;
+	params->s1y = 0.;
+	params->s1z = 0.;
+	params->s2x = 0.;
+	params->s2y = 0.;
+	params->s2z = 0.;
+	params->lambda1 = 0.;
+	params->lambda2 = 0.;
+	params->ampPhase = 0; /* output h+ and hx */
+	params->verbose = 0; /* No verbosity */
+	params->ra = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "rightascension");       	 params->dec = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "declination");
+	params->psi = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "polarisation"); 
+	params->gmst = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "time");            
+
+    return;
+}
+
