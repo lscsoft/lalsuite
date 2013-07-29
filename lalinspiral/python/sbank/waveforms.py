@@ -591,10 +591,11 @@ class SpinTaylorT4Template(Template):
             -np.sin(self.inclination),	# initial value of E1z
             0,				# tidal deformability of mass 1
             0,				# tidal deformability of mass 2
+            1, # phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs)
             1, # phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs)
-            lalsim.LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN, # flags to control spin effects
+            7, # twice PN spin order
             0, # twice PN tidal order
-            7,				# twice PN phase order
+            7, # twice PN phase order
             3 # twice PN amplitude order
         )
 
@@ -602,8 +603,8 @@ class SpinTaylorT4Template(Template):
         hoft = project_hplus_hcross(hplus, hcross, self.theta, self.phi, self.psi)
 
         # zero-pad up to 1/df
-        N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hoft, 0, N)
+        N = ceil_pow_2(int(sample_rate / df))
+        hoft = lal.ResizeREAL8TimeSeries(hoft, 0, N)
 
         # taper
         lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
@@ -684,7 +685,7 @@ class SpinTaylorT5Template(Template):
 
         # zero-pad up to 1/df
         N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hoft, 0, N)
+        hoft = lal.ResizeREAL8TimeSeries(hoft, 0, N)
 
         # taper
         lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
