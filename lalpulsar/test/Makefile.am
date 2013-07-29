@@ -39,6 +39,7 @@ check_PROGRAMS = \
 	TwoDMeshTest \
 	UniversalDopplerMetricTest \
 	NormalizeSFTRngMedTest \
+	XLALMultiNoiseWeightsTest \
 	$(XMLTEST)
 ##	SFTCleanTest \
 
@@ -74,6 +75,13 @@ noinst_DATA = \
 	SFT-test5 \
 	SFT-test6 \
 	SFT-test7 \
+	MultiNoiseWeightsTest1.sft \
+	MultiNoiseWeightsTest2.sft \
+	MultiNoiseWeightsTest3.sft \
+	MultiNoiseWeightsTest4.sft \
+	MultiNoiseWeightsTest5.sft \
+	MultiNoiseWeightsTest6.sft \
+	MultiNoiseWeightsTest7.sft \
 	inputsft.0 \
 	inputsft.1 \
 	earth98.dat \
