@@ -95,23 +95,24 @@ def seq_to_sbtable( sblist, get_col=None ):
 	"""
 	Convert a GSequence of SnglBurst to a SnglBurstTable.
 	"""
-	sbtable = lsctables.New(lsctables.SnglBurstTable,
-	  ["peak_time_ns", "start_time_ns", "channel",
+	desired_columns = ["peak_time_ns", "start_time_ns", "channel",
 	  "process_id", "ifo", "peak_time", "start_time",
 	  "duration", "central_freq", "search",
-	  "bandwidth", "event_id", "snr"])
+	  "bandwidth", "event_id", "snr"]
+	sbtable = lsctables.New(lsctables.SnglBurstTable,
+	  desired_columns)
 
-	sblistitr = laldetchar.GSnglBurstSeqBegin( sblist )
+	sblistitr = laldetchar.GSequenceBegin( sblist )
 
 	col_ar = []
-	while True:
-		next_sb = laldetchar.GSnglBurstIterGet( sblistitr )
+	while sblistitr is not None:
+		next_sb = laldetchar.GetGSeqSnglBurst( sblistitr )
 		if next_sb is None:
 			break
 		if get_col is not None:
 			col_ar.append( getattr( next_sb, get_col ) )
-		sbtable.append( lalburst_sb_to_glue_sb(next_sb) )
-		sblistitr = laldetchar.GSnglBurstIterNext( sblistitr )
+		sbtable.append( lalburst_sb_to_glue_sb(next_sb, desired_columns) )
+		sblistitr = laldetchar.GSequenceNext( sblistitr )
 
 	if get_col is not None:
 		return col_ar
@@ -146,19 +147,6 @@ def seglist_from_lalseg( lalsegl ):
 # Functions to convert various SWIG wrapped glib and LAL structures to their
 # (more convenient) equivalents in python.
 
-def retrieve_func( dtype ):
-	"""
-	Since the type information of a returnable object from a GHashTable is not known in advance, the user will supply the required return type. This is a convenience function to get the right value retrieval function from a type definition. FIXME: This is sooooo stupid. We really need the proper bindings for GHashTable -> dict.
-	"""
-	if dtype == str:
-		return laldetchar.GetStrGHashTableVal
-	elif dtype == int:
-		return laldetchar.GetIntGHashTableVal
-	elif dtype == float:
-		return laldetchar.GetDblGHashTableVal
-	else:
-		raise TypeError( "Don't have right function to retrieve key for type %s" % dtype )
-
 def ghash_key_in_dict( ghash, dkey ):
 	"""
 	Check if dkey is in ghash.
@@ -174,7 +162,7 @@ def ghash_key_in_dict( ghash, dkey ):
 	return False
 	
 
-def ghash_to_dict( ghash, dtype ):
+def ghash_to_dict( ghash ):
 	"""
 	Convert a GHashTable into a python dictionary. Note that all the GHashTables in use by laldetchar map a string to a fixed type (e.g. double or string), so the dtype argument should match that.
 	"""
@@ -186,8 +174,16 @@ def ghash_to_dict( ghash, dtype ):
 			break
 		i += 1
 		keys.append( key )
-	
-	rfunc = retrieve_func( dtype )
+
+	dtype = laldetchar.GetGHashTableType( ghash )
+	if dtype == laldetchar.LALGTYPE_INT:
+		rfunc = laldetchar.GetGHashTblInt
+	elif dtype == laldetchar.LALGTYPE_DBL:
+		rfunc = laldetchar.GetGHashTblDbl
+	elif dtype == laldetchar.LALGTYPE_STR:
+		rfunc = laldetchar.GetGHashTblStr
+	else:
+		raise TypeError( "Don't have right function to retrieve key for LALGType=%i" % dtype )
 	return dict( [ (key, rfunc( ghash, key )) for key in keys ] )
 
 def query_segments_xml( xml_location, gps_start, gps_end, spec ):
@@ -226,7 +222,7 @@ def get_chan_list( gseq ):
 	# This is necessarily complicated because there is no "set" type in glib
 	# thus the closest thing is a hash. This retrieves the hash, then converts
 	# its keys into a proper set.
-	return set(ghash_to_dict( laldetchar.GetChannelList( gseq ), str ).keys())
+	return set(ghash_to_dict( laldetchar.GetChannelList( gseq ) ).keys())
 
 def write_coinc_tables( vetotrigs, xmldoc, refchannel, twind, time_slide_id=None):
 	"""
@@ -291,12 +287,12 @@ def write_round_xml( vetosegs, vetotrigs, winner, ifo, opts ):
 	
 	return xmldoc
 
-def lalburst_sb_to_glue_sb( sb_in ):
+def lalburst_sb_to_glue_sb( sb_in, desired_columns ):
 	"""
 	Convert a lalburst SnglBurst structure to a SnglBurst row from glue.
 	"""
 	sb = lsctables.SnglBurstTable.RowType()
-	for att in lsctables.SnglBurstTable.validcolumns.keys():
+	for att in desired_columns:
 		if att == "start_time":
 			start_time = float( sb_in.start_time )
 			sb.start_time = int(start_time) 
@@ -498,7 +494,7 @@ for i, fname in enumerate(args):
 	sys.stderr.write( "\b"*len(pstr) )
 	sys.stderr.write( " "*len(pstr) )
 	sys.stderr.write( "\b"*len(pstr) )
-	pstr = "%d/%d %s (%d triggers)" % (i+1, len(args), fname, laldetchar.GetGSnglBurstSeqLength( trig_seq ) )
+	pstr = "%d/%d %s (%d triggers)" % (i+1, len(args), fname, laldetchar.GetGSequenceLength( trig_seq ) )
 	sys.stderr.write( pstr )
 	trig_seq = laldetchar.PopulateTrigSequenceFromFile( trig_seq, fname, min_aux_chan_snr, ignore_list )
 print ""
@@ -534,9 +530,9 @@ print "Channels present:\n\t" + "\n\t".join(chanlist)
 
 # Preprocessing. Remove triggers which are outside the livetime segments or 
 # below our minimum SNR threshold
-print "Length before prune: %d" % laldetchar.GetGSnglBurstSeqLength( trig_seq )
+print "Length before prune: %d" % laldetchar.GetGSequenceLength( trig_seq )
 laldetchar.DetCharPruneTrigs( trig_seq, lalsegl, min_ref_chan_snr, None );
-total_ref_trigs = laldetchar.GetGSnglBurstSeqLength( trig_seq )
+total_ref_trigs = laldetchar.GetGSequenceLength( trig_seq )
 print "Length after prune: %d" % total_ref_trigs
 
 # Make a histogram of the reference channel triggers, and save it to compare
@@ -572,7 +568,7 @@ while True:
 
 		# Mark triggers not meeting threshold criteria
 		laldetchar.DetCharPruneTrigs( trig_seq, lalsegl, snr_t, ref_chan )
-		if laldetchar.GetGSnglBurstSeqUnmarkedLength( trig_seq ) <= 0:
+		if laldetchar.CountUnmarkedSnglBurst( trig_seq ) <= 0:
 			if verbose:
 				print "No triggers remaining at current threshold. Moving on."
 			continue
@@ -580,7 +576,8 @@ while True:
 		for wind in twind:
 			if verbose:
 				print "SNR threshold %f, time window %f" % (snr_t, wind)
-			chancount, chancoinc = laldetchar.CreateGHashTable(), laldetchar.CreateGHashTable()
+			chancount = laldetchar.CreateGHashTable(laldetchar.LALGTYPE_INT)
+			chancoinc = laldetchar.CreateGHashTable(laldetchar.LALGTYPE_INT)
 			# TODO: Wrap this better
 			laldetchar.DetCharScanTrigs( chancount, chancoinc, trig_seq, ref_chan, wind, coinc_type )
 
@@ -594,9 +591,9 @@ while True:
 			if verbose:
 				print "Subround winner %s (SNR: %f, wind: %f): %f" % (winner, snr_t, wind, rnd_sig)
 
-			chancount = ghash_to_dict( chancount, int )
+			chancount = ghash_to_dict( chancount )
 			subround_count[(snr_t, wind)] = chancount
-			chancoinc = ghash_to_dict( chancoinc, int )
+			chancoinc = ghash_to_dict( chancoinc )
 			subround_coinc[(snr_t, wind)] = chancoinc
 
 			if chancoinc.has_key(winner):
@@ -626,7 +623,7 @@ while True:
 	#all_ref_trigs = filter(lambda sb: sb.channel == ref_chan, seq_to_sbtable( trig_seq ) )
 
 	print "Retrieving vetoed triggers from list."
-	vetoed_trigs = laldetchar.DetCharRemoveTrigs( trig_seq, veto, winner, snr_win )
+	vetoed_trigs = laldetchar.DetCharRemoveTrigs( trig_seq, veto, winner, None, snr_win )
 
 	vetoed_trigs = seq_to_sbtable( vetoed_trigs )
 	# Number of reference channel triggers vetoed
