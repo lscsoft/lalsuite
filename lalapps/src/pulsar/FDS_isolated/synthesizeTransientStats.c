@@ -54,6 +54,7 @@
 #include <gsl/gsl_rng.h>
 
 /* LAL-includes */
+#include <lal/LALString.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
@@ -69,7 +70,6 @@
 #include <lalapps.h>
 
 /*---------- DEFINES ----------*/
-#define EPHEM_YEARS  "00-19-DE405"	/**< default range, covering S5: override with --ephemYear */
 #define SQ(x) ((x)*(x))
 #define CUBE(x) ((x)*(x)*(x))
 #define QUAD(x) ((x)*(x)*(x)*(x))
@@ -128,7 +128,8 @@ typedef struct {
 
   BOOLEAN useFReg;	/**< use 'regularized' Fstat (1/D)*e^F for marginalization, or 'standard' e^F */
 
-  CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
+  CHAR *ephemEarth;	/**< Earth ephemeris file to use */
+  CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
   BOOLEAN version;	/**< output version-info */
   INT4 randSeed;	/**< GSL random-number generator seed value to use */
@@ -159,7 +160,6 @@ int main(int argc,char *argv[]);
 
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
-EphemerisData * XLALInitEphemeris (const CHAR *ephemYear );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 
 /* exportable API */
@@ -516,8 +516,8 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->dataStartGPS = 814838413;	/* 1 Nov 2005, ~ start of S5 */
   uvar->dataDuration = (INT4) round ( LAL_YRSID_SI );	/* 1 year of data */
 
-  uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar->ephemYear, EPHEM_YEARS);
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->numDraws = 1;
   uvar->TAtom = 1800;
@@ -613,7 +613,8 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
   XLALregBOOLUserStruct ( useFReg,        	 0,  UVAR_OPTIONAL, "use 'regularized' Fstat (1/D)*e^F (if TRUE) for marginalization, or 'standard' e^F (if FALSE)");
 
-  XLALregSTRINGUserStruct( ephemYear, 	        'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  XLALregSTRINGUserStruct ( ephemEarth, 	 0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct ( ephemSun, 	 	 0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
 
   XLALregBOOLUserStruct ( version,        	'V', UVAR_SPECIAL,  "Output code version");
 
@@ -684,9 +685,9 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   LogPrintf ( LOG_DEBUG, "seed = %lu\n", gsl_rng_default_seed );
 
   /* init ephemeris-data */
-  EphemerisData *edat;
-  if ( (edat = XLALInitEphemeris ( uvar->ephemYear )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Failed to init ephemeris data for year-span '%s'\n", __func__, uvar->ephemYear );
+  EphemerisData *edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun );
+  if ( !edat ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALInitBarycenter failed: could not load Earth ephemeris '%s' and Sun ephemeris '%s'\n", __func__, uvar->ephemEarth, uvar->ephemSun);
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
@@ -830,42 +831,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 } /* XLALInitCode() */
 
 
-/**
- * Load Ephemeris from ephemeris data-files
- */
-EphemerisData *
-XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
-{
-#define FNAME_LENGTH 1024
-  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-
-  /* check input consistency */
-  if ( !ephemYear ) {
-    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-  snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
-
-  EphemEarth[FNAME_LENGTH-1]=0;
-  EphemSun[FNAME_LENGTH-1]=0;
-
-  EphemerisData *edat;
-  if ( (edat = XLALInitBarycenter ( EphemEarth, EphemSun)) == NULL ) {
-    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-  }
-
-  /* return ephemeris */
-  return edat;
-
-} /* XLALInitEphemeris() */
-
-
-/**
- * Initialize amplitude-prior pdfs from the user-input
+/** Initialize amplitude-prior pdfs from the user-input
  */
 int
 XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
