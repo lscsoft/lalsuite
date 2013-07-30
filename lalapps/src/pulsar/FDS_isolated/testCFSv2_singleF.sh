@@ -27,7 +27,15 @@ SFTfiles="$SFTdir${dirsep}*"
 
 if [ -n "${LALPULSAR_DATADIR}" ]; then
     mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
-    cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR}"
+fi
+
+if [ -z "${LAL_DATA_PATH}" ]; then
+    echo
+    echo "Need environment-variable LAL_DATA_PATH to be set to include"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 ## ---------- fixed parameter of our test-signal -------------
