@@ -23,7 +23,6 @@ if [ -n "${LALPULSAR_DATADIR}" ]; then
     mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
     saf_code="${saf_code} -E ${LALPULSAR_DATADIR}"
     cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR}"
-    pfs_code="${pfs_code} -E ${LALPULSAR_DATADIR}"
 fi
 
 if [ -z "${LAL_DATA_PATH}" ]; then

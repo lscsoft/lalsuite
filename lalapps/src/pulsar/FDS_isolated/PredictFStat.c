@@ -38,6 +38,7 @@
 #endif
 
 /* LAL-includes */
+#include <lal/LALString.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
@@ -57,8 +58,6 @@
 /*---------- DEFINES ----------*/
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
-
-#define EPHEM_YEARS  "00-19-DE405"	/**< default range: override with --ephemYear */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -124,8 +123,8 @@ typedef struct {
 
   CHAR *IFO;		/**< GW detector short-name, only useful if not using v2-SFTs as input */
 
-  CHAR *ephemDir;	/**< directory where ephemeris-files are to be found */
-  CHAR *ephemYear;	/**< year-range of ephemeris-files to use */
+  CHAR *ephemEarth;	/**< Earth ephemeris file to use */
+  CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
   CHAR *DataFiles;	/**< SFT input-files to use to determine startTime, duration, IFOs and for noise-floor estimation */
   CHAR *outputFstat;	/**< output file to write F-stat estimation results into */
@@ -150,7 +149,6 @@ int main(int argc,char *argv[]);
 
 void initUserVars (LALStatus *status, UserInput_t *uvar );
 void InitPFS ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
-void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear);
 
 /*---------- empty initializers ---------- */
 
@@ -283,12 +281,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   /* set a few defaults */
   uvar->RngMedWindow = 50;	/* for running-median */
 
-  uvar->ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar->ephemYear, EPHEM_YEARS);
-
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar->ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (uvar->ephemDir, DEFAULT_EPHEMDIR);
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->help = FALSE;
   uvar->outputFstat = NULL;
@@ -320,8 +314,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
   LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files");
   LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
-  LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserStruct(status,ephemEarth, 	 0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  LALregSTRINGUserStruct(status,ephemSun, 	 0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
   LALregSTRINGUserStruct(status,outputFstat,     0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
   LALregBOOLUserStruct(status,printFstat,	 0,  UVAR_OPTIONAL, "Print predicted F-stat value to terminal" );
 
@@ -344,50 +338,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   RETURN (status);
 
 } /* initUserVars() */
-
-/** Load Ephemeris from ephemeris data-files  */
-void
-InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
-	       EphemerisData *edat,	/**< [out] the ephemeris-data */
-	       const CHAR *ephemDir,	/**< directory containing ephems */
-	       const CHAR *ephemYear	/**< which years do we need? */
-	       )
-{
-#define FNAME_LENGTH 1024
-  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT ( edat, status, PREDICTFSTAT_ENULL, PREDICTFSTAT_MSGENULL );
-  ASSERT ( ephemYear, status, PREDICTFSTAT_ENULL, PREDICTFSTAT_MSGENULL );
-
-  if ( ephemDir )
-    {
-      snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
-      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
-    }
-  else
-    {
-      snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
-    }
-  EphemEarth[FNAME_LENGTH-1]=0;
-  EphemSun[FNAME_LENGTH-1]=0;
-
-  /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
-   * why we can use local variables (EphemEarth, EphemSun) to initialize them.
-   */
-  edat->ephiles.earthEphemeris = EphemEarth;
-  edat->ephiles.sunEphemeris = EphemSun;
-
-  TRY (LALInitBarycenter(status->statusPtr, edat), status);
-
-  DETATCHSTATUSPTR ( status );
-  RETURN ( status );
-
-} /* InitEphemeris() */
 
 /** Initialized Fstat-code: handle user-input and set everything up. */
 void
@@ -506,14 +456,11 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   { /* ----- load ephemeris-data ----- */
-    CHAR *ephemDir;
-
-    edat = LALCalloc(1, sizeof(EphemerisData));
-    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
-      ephemDir = uvar->ephemDir;
-    else
-      ephemDir = NULL;
-    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar->ephemYear ), status);
+    edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun );
+    if ( !edat ) {
+      XLALPrintError("XLALInitBarycenter failed: could not load Earth ephemeris '%s' and Sun ephemeris '%s'\n", uvar->ephemEarth, uvar->ephemSun);
+      ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
+    }
   }
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
@@ -638,10 +585,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   XLALDestroyMultiAMCoeffs ( multiAMcoef );
 
   /* Free ephemeris data */
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
-
+  XLALDestroyEphemerisData (edat);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
