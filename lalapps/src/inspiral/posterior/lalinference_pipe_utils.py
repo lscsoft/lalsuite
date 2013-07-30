@@ -88,6 +88,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
   ifos = coinc_table[0].instruments.split(",")
   trigSNR = coinctable[0].snr
   # Parse PSD
+  srate_psdfile=16384
   print "gracedb download %s psd.xml.gz" % gid
   subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
   if os.path.exists("psd.xml.gz"):
@@ -98,7 +99,12 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
       for i,p in enumerate(psd.data):
         combine.append([psd.f0+i*psd.deltaF,np.sqrt(p)])
       np.savetxt(instrument+'psd.txt',combine)
-    srate = combine[-1][0]
+      try:
+        combine[-1][0]
+      except:
+        print "No PSD for "+instrument
+      else:
+        srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) )
   else:
     print "Failed to gracedb download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
   # Logic for template duration and sample rate disabled
@@ -115,8 +121,8 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
       p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
       strlen = p.stdout.read()
       dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
-      srate.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[1].split()[5])), 2) ) ) * 2 )
-    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = max(srate), trigSNR = trigSNR)
+      srate.append(pow(2.0, ceil( log(float(strlen.splitlines()[1].split()[5]), 2) ) ) * 2 )
+    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = min(max(srate),srate_psdfile), trigSNR = trigSNR)
     if(coinc.snr>SNRthreshold): output.append(ev)
   
   print "Found %d coinc events in table." % len(coinc_events)
