@@ -24,7 +24,7 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None):
+  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None,fhigh=None):
     self.trig_time=trig_time
     self.injection=SimInspiral
     self.sngltrigger=SnglInspiral
@@ -41,6 +41,7 @@ class Event():
     self.duration = duration
     self.srate = srate
     self.trigSNR = trigSNR
+    self.fhigh = fhigh
     if event_id is not None:
         self.event_id=event_id
     else:
@@ -104,7 +105,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
       except:
         print "No PSD for "+instrument
       else:
-        srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) )
+        srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
   else:
     print "Failed to gracedb download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
   # Logic for template duration and sample rate disabled
@@ -122,7 +123,12 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
       strlen = p.stdout.read()
       dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
       srate.append(pow(2.0, ceil( log(float(strlen.splitlines()[1].split()[5]), 2) ) ) * 2 )
-    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = min(max(srate),srate_psdfile), trigSNR = trigSNR)
+    if max(srate)<srate_psdfile:
+      srate = max(srate)
+    else:
+      srate = srate_psdfile
+      fhigh = srate_psdfile * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal 
+    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = srate, trigSNR = trigSNR, fhigh = fhigh)
     if(coinc.snr>SNRthreshold): output.append(ev)
   
   print "Found %d coinc events in table." % len(coinc_events)
@@ -656,6 +662,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       gotdata=1
     if self.config.has_option('lalinference','flow'):
       node.flows=ast.literal_eval(self.config.get('lalinference','flow'))
+    if event.fhigh:
+      for ifo in ifos:
+        node.fhighs[ifo]=str(event.fhigh)
     if self.config.has_option('lalinference','ER2-cache'):
       node.cachefiles=ast.literal_eval(self.config.get('lalinference','ER2-cache'))
       node.channels=ast.literal_eval(self.config.get('data','channels'))
@@ -796,6 +805,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.channels={}
     self.psds={}
     self.flows={}
+    self.fhighs={}
     self.timeslides={}
     self.seglen=None
     self.psdlength=None
@@ -893,6 +903,7 @@ class EngineNode(pipeline.CondorDAGNode):
       psdstring='['
       psdstring_gracedb='['
       flowstring='['
+      fhighstring='['
       channelstring='['
       slidestring='['
       first=True
@@ -906,6 +917,7 @@ class EngineNode(pipeline.CondorDAGNode):
         if self.psds: psdstring=psdstring+delim+self.psds[ifo]
         if os.path.exists(ifo+'psd.txt'): psdstring_gracedb=psdstring_gracedb+delim+ifo+'psd.txt'
         if self.flows: flowstring=flowstring+delim+self.flows[ifo]
+        if self.fhighs: fhighstring=fhighstring+delim+self.fhighs[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
         slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
@@ -913,6 +925,7 @@ class EngineNode(pipeline.CondorDAGNode):
       psdstring=psdstring+']'
       psdstring_gracedb=psdstring_gracedb+']'
       flowstring=flowstring+']'
+      fhighstring=fhighstring+']'
       channelstring=channelstring+']'
       slidestring=slidestring+']'
       self.add_var_opt('ifo',ifostring)
@@ -921,6 +934,7 @@ class EngineNode(pipeline.CondorDAGNode):
       if self.psds: self.add_var_opt('psd',psdstring)
       elif psdstring_gracedb!='[]': self.add_var_opt('psd',psdstring_gracedb)
       if self.flows: self.add_var_opt('flow',flowstring)
+      if self.fhighs: self.add_var_opt('fhigh',fhighstring)
       if any(self.timeslides):
 	self.add_var_opt('timeslide',slidestring)
       # Start at earliest common time
