@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 66
+# serial 67
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -35,6 +35,11 @@ AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   lalsuite_require_cxx=true
 ])
 
+AC_DEFUN([LALSUITE_REQUIRE_F77],[
+  # require an F77 compiler
+  lalsuite_require_f77=true
+])
+
 # because we want to decide whether to run AC_PROG_CXX/AC_PROG_CXXCPP
 # at ./configure run time, we must erase the following macros, which
 # (in autoconf 2.64 and later) require AC_PROG_CXX/AC_PROG_CXXCPP to
@@ -42,6 +47,11 @@ AC_DEFUN([LALSUITE_REQUIRE_CXX],[
 # they're needed or not (which is only decided later at run time).
 m4_defun([AC_LANG_COMPILER(C++)],[])
 m4_defun([AC_LANG_PREPROC(C++)],[])
+# Same for Fortran compilers
+m4_defun([AC_LANG_COMPILER(Fortran 77)],[])
+m4_defun([AC_LANG_PREPROC(Fortran 77)],[])
+m4_defun([AC_LANG_COMPILER(Fortran)],[])
+m4_defun([AC_LANG_PREPROC(Fortran)],[])
 
 AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # check for C99 compiler
@@ -75,6 +85,13 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   LALSUITE_CHECK_C99_COMPLEX_NUMBERS
   AS_IF([test "${lalsuite_require_cxx}" = true],[
     LALSUITE_CHECK_CXX_COMPLEX_NUMBERS
+  ])
+
+  # check for F77 compiler, if needed
+  AS_IF([test "${lalsuite_require_f77}" = true],[
+    AC_PROG_F77
+  ],[
+    F77=
   ])
 ])
 

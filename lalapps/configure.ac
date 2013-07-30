@@ -69,6 +69,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LALSUITE_CHECK_GIT_REPO
 
 LALAPPS_WITH_CC
+
 LALAPPS_WITH_LAL_PREFIX
 LALAPPS_WITH_EXTRA_CPPFLAGS
 LALAPPS_WITH_EXTRA_CFLAGS
@@ -86,6 +87,7 @@ LALSUITE_ENABLE_BOINC
 LALAPPS_ENABLE_STATIC_BINARIES
 
 LALAPPS_ENABLE_MPI
+LALAPPS_ENABLE_BAMBI
 
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
@@ -140,6 +142,12 @@ LALSUITE_MULTILIB_LIBTOOL_HACK
 
 # use silent build rules
 AM_SILENT_RULES([yes])
+
+# enable Fortran and C++ compilers for BAMBI
+AS_IF([test "$bambi" = "true"], [
+  LALSUITE_REQUIRE_F77
+  LALSUITE_REQUIRE_CXX
+])
 
 # check for required compilers
 LALSUITE_PROG_COMPILERS
@@ -390,6 +398,15 @@ if test "${pss}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([PSS],[pss])
 
+# check for libbambi
+# Note:  if done in AS_IF() then AC_REQUIRE'd checks are done when not wanted, causing problems
+BAMBI_ENABLE_VAL="DISABLED"
+hbf=false
+if test "$bambi" = "true"; then
+  LALAPPS_CHECK_BAMBI
+fi
+AM_CONDITIONAL([HAVE_BAMBI],[${hbf}])
+
 # use c++ mode for boinc build
 if test "${boinc}" = "true" ; then
    AC_LANG_PUSH([C++])
@@ -481,6 +498,7 @@ LALApps has now been successfully configured:
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * FITS library support is $CFITSIO_ENABLE_VAL
 * PSS library support is $PSS_ENABLE_VAL
+* BAMBI library support is $BAMBI_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
 * MPI support is $MPI_ENABLE_VAL

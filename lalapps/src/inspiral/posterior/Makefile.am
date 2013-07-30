@@ -24,6 +24,12 @@ pulsar_progs = lalinference_nest ChiSquare_test #lalinference_mcmcmpi
 ChiSquare_test_SOURCES = ChiSquare_test.c
 lalinference_nest_SOURCES = LALInferenceNest.c
 
+if HAVE_BAMBI
+pulsar_progs += lalinference_bambi
+lalinference_bambi_SOURCES = LALInferenceBAMBI.c
+lalinference_bambi_LDADD = ${BAMBI_LIBS}
+endif
+
 endif
 
 endif

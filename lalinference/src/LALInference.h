@@ -308,6 +308,13 @@ tagLALInferenceProposalStatistics
 typedef REAL8 (*LALInferencePriorFunction) (struct tagLALInferenceRunState *runState,
 	LALInferenceVariables *params);
 
+/** Type declaration for CubeToPrior function which converts parameters in unit hypercube
+  * to their corresponding physical values according to the prior.
+  * Can depend on \param runState ->priorArgs
+  */
+typedef UINT4 (*LALInferenceCubeToPriorFunction) (struct tagLALInferenceRunState *runState,
+  LALInferenceVariables *params, double *cube, void *context);
+
 //Likelihood calculator 
 //Should take care to perform expensive evaluation of h+ and hx 
 //only once if possible, unless necessary because different IFOs 
@@ -347,6 +354,7 @@ tagLALInferenceRunState
   LALInferenceAlgorithm              algorithm; /** The algorithm function */
   LALInferenceEvolveOneStepFunction  evolve; /** The algorithm's single iteration function */
   LALInferencePriorFunction          prior; /** The prior for the parameters */
+  LALInferenceCubeToPriorFunction    CubeToPrior; /** MultiNest prior for the parameters */
   LALInferenceLikelihoodFunction     likelihood; /** The likelihood function */
   LALInferenceProposalFunction       proposal; /** The proposal function */
   LALInferenceTemplateFunction       templt; /** The template generation function */

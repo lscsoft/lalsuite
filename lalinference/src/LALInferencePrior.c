@@ -150,6 +150,371 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
   return(logPrior);
 }
 
+/* Convert the hypercube parameter to physical parameters, for the non-spinning inspiral signal case */
+UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context)
+{
+    REAL8 min, max, logPrior=0.;
+    LALInferenceVariableItem *item;
+
+    char **info = (char **)context;
+    char *header = &info[1][0];
+    strcpy(header,"");
+    char *timeID = &info[2][0];
+    int i = 0;
+
+    // latitude
+    item = LALInferenceGetItem(params, "declination");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        double lat = asin(2.0 * Cube[i] - 1.0);
+        LALInferenceSetVariable(params, "declination", &lat);
+        Cube[i] = lat;
+        logPrior += log(fabs(cos(lat)));
+        i++;
+        strcat(header,"dec ");
+    }
+
+    // longitude
+    item = LALInferenceGetItem(params, "rightascension");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "rightascension", (void *)&min, (void *)&max);
+        double longitude = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "rightascension", &longitude);
+        Cube[i] = longitude;
+        i++;
+        strcat(header,"RA ");
+    }
+
+    // inclination angle
+    item = LALInferenceGetItem(params, "inclination");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        double iota;
+        iota = acos(1.0 - 2.0 * Cube[i]);
+        LALInferenceSetVariable(params, "inclination", &iota);
+        Cube[i] = iota;
+        logPrior += log(fabs(sin(iota)));
+        i++;
+        strcat(header,"iota ");
+    }
+
+    // phi
+    item = LALInferenceGetItem(params, "phase");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
+        double phi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "phase", &phi);
+        Cube[i] = phi;
+        i++;
+        strcat(header,"phi0 ");
+    }
+
+    // psi
+    item = LALInferenceGetItem(params, "polarisation");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "polarisation", (void *)&min, (void *)&max);
+        double psi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "polarisation", &psi);
+        Cube[i] = psi;
+        i++;
+        strcat(header,"psi ");
+    }
+
+    // time
+    item = LALInferenceGetItem(params, "time");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "time", (void *)&min, (void *)&max);
+        double tc = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "time", &tc);
+        Cube[i] = tc;
+        sprintf(timeID,"%d",i);
+        i++;
+        strcat(header,"time ");
+    }
+
+    // mchirp
+    double mc;
+    if( LALInferenceCheckVariable(params,"logmc") )
+    {
+        item = LALInferenceGetItem(params, "logmc");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "logmc", (void *)&min, (void *)&max);
+            min = exp(min); max = exp(max);
+            mc = LALInferenceCubeToPowerPrior(-5.0/6.0, Cube[i], min, max);
+            double logmc = log(mc);
+            LALInferenceSetVariable(params, "logmc", &logmc);
+            Cube[i] = mc;
+            logPrior -= 5.0/6.0*logmc;
+            i++;
+            strcat(header,"mchirp ");
+        }
+        else
+        {
+            mc = exp(*(REAL8 *)LALInferenceGetVariable(params, "logmc"));
+        }
+    }
+    else if( LALInferenceCheckVariable(params,"chirpmass") )
+    {
+        item = LALInferenceGetItem(params, "chirpmass");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "chirpmass", (void *)&min, (void *)&max);
+            mc = LALInferenceCubeToPowerPrior(-5.0/6.0, Cube[i], min, max);
+            LALInferenceSetVariable(params, "chirpmass", &mc);
+            Cube[i] = mc;
+            logPrior -= 5.0/6.0*log(mc);
+            i++;
+            strcat(header,"mchirp ");
+        }
+        else
+        {
+            mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
+        }
+    }
+
+    // eta
+    double eta, q, m1, m2;
+    if( LALInferenceCheckVariable(params,"massratio") )
+    {
+        item = LALInferenceGetItem(params, "massratio");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "massratio", (void *)&min, (void *)&max);
+            eta = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            Cube[i]=eta;
+            i++;
+            strcat(header,"eta ");
+            LALInferenceSetVariable(params, "massratio", &eta);
+        }
+        else
+        {
+            eta = *(REAL8 *)LALInferenceGetVariable(params, "massratio");
+        }
+        LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
+    }
+    else if( LALInferenceCheckVariable(params,"asym_massratio") )
+    {
+        item = LALInferenceGetItem(params, "asym_massratio");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            min = 0.0, max = 0.25;
+            eta = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
+            q=m2/m1;
+            Cube[i]=q;
+            i++;
+            strcat(header,"q ");
+            LALInferenceSetVariable(params, "asym_massratio", &q);
+        }
+        else
+        {
+            q = *(REAL8 *)LALInferenceGetVariable(params, "asym_massratio");
+            LALInferenceMcQ2Masses(mc,q,&m1,&m2);
+        }
+    }
+
+    // distance
+    double dist;
+    if( LALInferenceCheckVariable(params,"logdistance") )
+    {
+        item = LALInferenceGetItem(params, "logdistance");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "logdistance", (void *)&min, (void *)&max);
+            min = exp(min); max = exp(max);
+            dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
+            double logdist = log(dist);
+            LALInferenceSetVariable(params, "logdistance", &logdist);
+            Cube[i] = dist;
+            logPrior += 2.0*logdist;
+            i++;
+            strcat(header,"dist ");
+        }
+    }
+    else if( LALInferenceCheckVariable(params,"distance") )
+    {
+        item = LALInferenceGetItem(params, "distance");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", (void *)&min, (void *)&max);
+            dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
+            LALInferenceSetVariable(params, "distance", &dist);
+            Cube[i] = dist;
+            logPrior += 2.0*log(dist);
+            i++;
+            strcat(header,"dist ");
+        }
+    }
+
+    // a_spin1
+    if(LALInferenceCheckVariable(params,"a_spin1"))
+    {
+        item = LALInferenceGetItem(params, "a_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "a_spin1", (void *)&min, (void *)&max);
+            double a_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "a_spin1", &a_spin1);
+            Cube[i] = a_spin1;
+            i++;
+            strcat(header,"a1 ");
+        }
+    }
+    else if(LALInferenceCheckVariable(params,"spin1"))
+    {
+        item = LALInferenceGetItem(params, "spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "spin1", (void *)&min, (void *)&max);
+            double a_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "spin1", &a_spin1);
+            Cube[i] = a_spin1;
+            i++;
+            strcat(header,"a1 ");
+        }
+    }
+
+    // theta_spin1
+    if(LALInferenceCheckVariable(params,"theta_spin1"))
+    {
+        item = LALInferenceGetItem(params, "theta_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            double theta_spin1;
+            theta_spin1 = acos(1.0 - 2.0 * Cube[i]);
+            LALInferenceSetVariable(params, "theta_spin1", &theta_spin1);
+            Cube[i] = theta_spin1;
+            logPrior += log(fabs(sin(theta_spin1)));
+            i++;
+            strcat(header,"theta1 ");
+        }
+    }
+
+    // phi_spin1
+    if(LALInferenceCheckVariable(params,"phi_spin1"))
+    {
+        item = LALInferenceGetItem(params, "phi_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_spin1", (void *)&min, (void *)&max);
+            double phi_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_spin1", &phi_spin1);
+            Cube[i] = phi_spin1;
+            i++;
+            strcat(header,"phi1 ");
+        }
+    }
+
+    // a_spin2
+    if(LALInferenceCheckVariable(params,"a_spin2"))
+    {
+        item = LALInferenceGetItem(params, "a_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "a_spin2", (void *)&min, (void *)&max);
+            double a_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "a_spin2", &a_spin2);
+            Cube[i] = a_spin2;
+            i++;
+            strcat(header,"a2 ");
+        }
+    }
+    else if(LALInferenceCheckVariable(params,"spin2"))
+    {
+        item = LALInferenceGetItem(params, "spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "spin2", (void *)&min, (void *)&max);
+            double a_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "spin2", &a_spin2);
+            Cube[i] = a_spin2;
+            i++;
+            strcat(header,"a2 ");
+        }
+    }
+
+    // theta_spin2
+    if(LALInferenceCheckVariable(params,"theta_spin2"))
+    {
+        item = LALInferenceGetItem(params, "theta_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            double theta_spin2;
+            theta_spin2 = acos(1.0 - 2.0 * Cube[i]);
+            LALInferenceSetVariable(params, "theta_spin2", &theta_spin2);
+            Cube[i] = theta_spin2;
+            logPrior += log(fabs(sin(theta_spin2)));
+            i++;
+            strcat(header,"theta2 ");
+        }
+    }
+
+    // phi_spin2
+    if(LALInferenceCheckVariable(params,"phi_spin2"))
+    {
+        item = LALInferenceGetItem(params, "phi_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_spin2", (void *)&min, (void *)&max);
+            double phi_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_spin2", &phi_spin2);
+            Cube[i] = phi_spin2;
+            i++;
+            strcat(header,"phi2 ");
+        }
+
+    }
+
+
+    Cube[i] = m1; i++; strcat(header,"m1 ");
+    Cube[i] = m2; i++; strcat(header,"m2 ");
+    Cube[i] = LALInferenceInspiralPrior(runState,params);
+    i++; strcat(header,"logprior ");
+
+    strcat(header,"logl");
+
+    /* Check boundaries */
+    item=params->head;
+    LALInferenceVariables *priorParams=runState->priorArgs;
+    for(;item;item=item->next)
+    {
+        // if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR)
+        if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
+                        continue;
+        else
+        {
+            LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+            if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return 0 ;
+        }
+    }
+
+    /* Check for component masses in range, if specified */
+    if(LALInferenceCheckVariable(priorParams,"component_min"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
+           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
+            return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"component_max"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
+           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
+            return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"MTotMin"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMin") > m1+m2)
+            return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"MTotMax"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
+            return 0;
+
+    return 1;
+}
+
 void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
                                        LALInferenceVariables *priorArgs){
   if (parameter == NULL || priorArgs == NULL)
@@ -293,16 +658,16 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
       continue;
     else
     {
-			val = 0.0;
-			min =-DBL_MAX;
-			max = DBL_MAX;
-			if(strcmp(item->name,"psdscale"))
-			{
-				LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
-				val = *(REAL8 *)item->value;
-			}
+            val = 0.0;
+            min =-DBL_MAX;
+            max = DBL_MAX;
+            if(strcmp(item->name,"psdscale"))
+            {
+                LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
+                val = *(REAL8 *)item->value;
+            }
 
-			if(val<min || val>max) return -DBL_MAX;
+            if(val<min || val>max) return -DBL_MAX;
     }
   }
 
@@ -330,7 +695,7 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
     }
   }
   if(LALInferenceCheckVariable(params,"theta_spin2"))
-  { 
+  {
     LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"theta_spin2");
     if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
     {
@@ -437,18 +802,388 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
   return(logPrior);
 }
 
+/* Convert the hypercube parameter to physical parameters, for the non-spinning inspiral signal case */
+UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context)
+{
+    LALInferenceVariableItem *item;
+    LALInferenceVariables *priorParams=runState->priorArgs;
+
+    char **info = (char **)context;
+    char *header = &info[1][0];
+    strcpy(header,"");
+    char *timeID = &info[2][0];
+    REAL8 min, max, logPrior=0.;
+    int i = 0;
+
+    // latitude
+    item = LALInferenceGetItem(params, "declination");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        double lat = asin(2.0 * Cube[i] - 1.0);
+        LALInferenceSetVariable(params, "declination", &lat);
+        Cube[i] = lat;
+        logPrior += log(fabs(cos(lat)));
+        i++;
+        strcat(header,"dec ");
+    }
+
+    // longitude
+    item = LALInferenceGetItem(params, "rightascension");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "rightascension", (void *)&min, (void *)&max);
+        double longitude = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "rightascension", &longitude);
+        Cube[i] = longitude;
+        i++;
+        strcat(header,"RA ");
+    }
+
+    // inclination angle
+    item = LALInferenceGetItem(params, "inclination");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        double iota;
+        iota = acos(1.0 - 2.0 * Cube[i]);
+        LALInferenceSetVariable(params, "inclination", &iota);
+        Cube[i] = iota;
+        logPrior += log(fabs(sin(iota)));
+        i++;
+        strcat(header,"iota ");
+    }
+
+    // phi
+    item = LALInferenceGetItem(params, "phase");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
+        double phi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "phase", &phi);
+        Cube[i] = phi;
+        i++;
+        strcat(header,"phi0 ");
+    }
+
+    // psi
+    item = LALInferenceGetItem(params, "polarisation");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "polarisation", (void *)&min, (void *)&max);
+        double psi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "polarisation", &psi);
+        Cube[i] = psi;
+        i++;
+        strcat(header,"psi ");
+    }
+
+    // time
+    item = LALInferenceGetItem(params, "time");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "time", (void *)&min, (void *)&max);
+        double tc = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "time", &tc);
+        Cube[i] = tc;
+        sprintf(timeID,"%d",i);
+        i++;
+        strcat(header,"time ");
+    }
+
+    // check if mchirp is fixed
+    double mc = 0.0, eta = 0.0, q = 0.0, m1 = 0.0, m2 = 0.0, m = 0.0;
+    if( LALInferenceCheckVariable(params,"logmc") )
+    {
+        item = LALInferenceGetItem(params, "logmc");
+        if(item->vary == LALINFERENCE_PARAM_FIXED) mc = exp(*(REAL8 *)LALInferenceGetVariable(params, "logmc"));
+    }
+    else if( LALInferenceCheckVariable(params,"chirpmass") )
+    {
+        item = LALInferenceGetItem(params, "chirpmass");
+        if(item->vary == LALINFERENCE_PARAM_FIXED) mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
+    }
+
+    // check if eta is fixed
+    if( LALInferenceCheckVariable(params,"massratio") )
+    {
+        item = LALInferenceGetItem(params, "massratio");
+        if(item->vary == LALINFERENCE_PARAM_FIXED)
+        {
+            eta = *(REAL8 *)LALInferenceGetVariable(params, "massratio");
+            if( mc != 0.0 ) LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
+        }
+    }
+    else if( LALInferenceCheckVariable(params,"asym_massratio") )
+    {
+        item = LALInferenceGetItem(params, "asym_massratio");
+        if(item->vary == LALINFERENCE_PARAM_FIXED)
+        {
+            q = *(REAL8 *)LALInferenceGetVariable(params, "asym_massratio");
+            if( mc != 0.0 ) LALInferenceMcQ2Masses(mc,q,&m1,&m2);
+        }
+    }
+
+    //m1 & m2
+    if( m1 == 0.0 && m2 == 0.0 )
+    {
+        min = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
+        max = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
+        if( min == max )
+        {
+            m1 = m2 = min;
+            m = m1 + m2;
+            eta = m1 * m2 / (m*m);
+            mc = pow(eta,0.6) * m;
+            q = m2 / m1; // asymmetric mass ratio, m1 >= m2
+        }
+        else
+        {
+            m1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            m2 = LALInferenceCubeToFlatPrior(Cube[i+1], min, max);
+            if(m1<m2)
+            {
+                double temp = m2;
+                m2 = m1;
+                m1 = temp;
+            }
+
+            m = m1 + m2;
+            eta = m1 * m2 / (m*m);
+            mc = pow(eta,0.6) * m;
+            q = m2 / m1; // asymmetric mass ratio, m1 >= m2
+            Cube[i] = mc; i++;
+            strcat(header,"mchirp ");
+            Cube[i] = eta; i++;
+            strcat(header,"eta ");
+        }
+
+        // chirp mass and eta/q
+        if(LALInferenceCheckVariable(params,"massratio")||LALInferenceCheckVariable(params,"asym_massratio"))
+        {
+            if(LALInferenceCheckVariable(params,"logmc"))
+            {
+                double logmc = log(mc);
+                LALInferenceSetVariable(params, "logmc", &logmc);
+            }
+            else if(LALInferenceCheckVariable(params,"chirpmass"))
+            {
+                LALInferenceSetVariable(params, "chirpmass", &mc);
+            }
+
+                  if(LALInferenceCheckVariable(params,"asym_massratio"))
+                LALInferenceSetVariable(params, "asym_massratio", &q);
+            else if(LALInferenceCheckVariable(params,"massratio"))
+                    LALInferenceSetVariable(params, "massratio", &eta);
+        }
+    }
+
+    // distance
+    double dist;
+    if( LALInferenceCheckVariable(params,"logdistance") )
+    {
+        item = LALInferenceGetItem(params, "logdistance");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "logdistance", (void *)&min, (void *)&max);
+            min = exp(min); max = exp(max);
+            dist = LALInferenceCubeToLogFlatPrior(Cube[i], min, max);
+            double logdist = log(dist);
+            LALInferenceSetVariable(params, "logdistance", &logdist);
+            Cube[i] = dist;
+            logPrior -= logdist;
+            i++;
+            strcat(header,"dist ");
+        }
+    }
+    else if( LALInferenceCheckVariable(params,"distance") )
+    {
+        item = LALInferenceGetItem(params, "distance");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", (void *)&min, (void *)&max);
+            dist = LALInferenceCubeToLogFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "distance", &dist);
+            Cube[i] = dist;
+            logPrior -= log(dist);
+            i++;
+            strcat(header,"dist ");
+        }
+    }
+
+    // a_spin1
+    if(LALInferenceCheckVariable(params,"a_spin1"))
+    {
+        item = LALInferenceGetItem(params, "a_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "a_spin1", (void *)&min, (void *)&max);
+            double a_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "a_spin1", &a_spin1);
+            Cube[i] = a_spin1;
+            i++;
+            strcat(header,"a1 ");
+        }
+    }
+    else if(LALInferenceCheckVariable(params,"spin1"))
+    {
+        item = LALInferenceGetItem(params, "spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "spin1", (void *)&min, (void *)&max);
+            double a_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "spin1", &a_spin1);
+            Cube[i] = a_spin1;
+            i++;
+            strcat(header,"a1 ");
+        }
+    }
+
+    // theta_spin1
+    if(LALInferenceCheckVariable(params,"theta_spin1"))
+    {
+        item = LALInferenceGetItem(params, "theta_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            double theta_spin1;
+            theta_spin1 = acos(1.0 - 2.0 * Cube[i]);
+            LALInferenceSetVariable(params, "theta_spin1", &theta_spin1);
+            Cube[i] = theta_spin1;
+            logPrior += log(fabs(sin(theta_spin1)));
+            i++;
+            strcat(header,"theta1 ");
+        }
+    }
+
+    // phi_spin1
+    if(LALInferenceCheckVariable(params,"phi_spin1"))
+    {
+        item = LALInferenceGetItem(params, "phi_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_spin1", (void *)&min, (void *)&max);
+            double phi_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_spin1", &phi_spin1);
+            Cube[i] = phi_spin1;
+            i++;
+            strcat(header,"phi1 ");
+        }
+    }
+
+    // a_spin2
+    if(LALInferenceCheckVariable(params,"a_spin2"))
+    {
+        item = LALInferenceGetItem(params, "a_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "a_spin2", (void *)&min, (void *)&max);
+            double a_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "a_spin2", &a_spin2);
+            Cube[i] = a_spin2;
+            i++;
+            strcat(header,"a2 ");
+        }
+    }
+    else if(LALInferenceCheckVariable(params,"spin2"))
+    {
+        item = LALInferenceGetItem(params, "spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "spin2", (void *)&min, (void *)&max);
+            double a_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "spin2", &a_spin2);
+            Cube[i] = a_spin2;
+            i++;
+            strcat(header,"a2 ");
+        }
+    }
+
+    // theta_spin2
+    if(LALInferenceCheckVariable(params,"theta_spin2"))
+    {
+        item = LALInferenceGetItem(params, "theta_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            double theta_spin2;
+            theta_spin2 = acos(1.0 - 2.0 * Cube[i]);
+            LALInferenceSetVariable(params, "theta_spin2", &theta_spin2);
+            Cube[i] = theta_spin2;
+            logPrior += log(fabs(sin(theta_spin2)));
+            i++;
+            strcat(header,"theta2 ");
+        }
+    }
+
+    // phi_spin2
+    if(LALInferenceCheckVariable(params,"phi_spin2"))
+    {
+        item = LALInferenceGetItem(params, "phi_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_spin2", (void *)&min, (void *)&max);
+            double phi_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_spin2", &phi_spin2);
+            Cube[i] = phi_spin2;
+            i++;
+            strcat(header,"phi2 ");
+        }
+
+    }
+
+
+    Cube[i] = m1; i++; strcat(header,"m1 ");
+    Cube[i] = m2; i++; strcat(header,"m2 ");
+    Cube[i] = LALInferenceInspiralSkyLocPrior(runState,params);
+    i++; strcat(header,"logprior ");
+
+    strcat(header,"logl");
+
+    /* Check boundaries */
+    item=params->head;
+    for(;item;item=item->next)
+    {
+        // if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR)
+        if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
+                        continue;
+        else
+        {
+            LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+            if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return 0 ;
+        }
+    }
+
+    /* Check for component masses in range, if specified */
+    if(LALInferenceCheckVariable(priorParams,"component_min"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
+           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
+            return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"component_max"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
+           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
+            return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"MTotMin"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMin") > m1+m2)
+            return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"MTotMax"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
+            return 0;
+
+    return 1;
+}
+
 REAL8 LALInferenceInspiralNoiseOnlyPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
   REAL8 logPrior=0.0;
 
   (void)runState;
   LALInferenceVariableItem *item=params->head;
-	LALInferenceVariables *priorParams=runState->priorArgs;
+    LALInferenceVariables *priorParams=runState->priorArgs;
   REAL8 component_max, component_min;
 
-	/* Check boundaries */
-	for(;item;item=item->next)
-	{
+    /* Check boundaries */
+    for(;item;item=item->next)
+    {
     if(!strcmp(item->name, "psdscale"))
     {
       UINT4 i;
@@ -494,23 +1229,23 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
   REAL8 val;
 (void)runState;
 LALInferenceVariableItem *item=params->head;
-	LALInferenceVariables *priorParams=runState->priorArgs;
-	REAL8 min, max;
-	REAL8 mc=0.0;
+    LALInferenceVariables *priorParams=runState->priorArgs;
+    REAL8 min, max;
+    REAL8 mc=0.0;
   REAL8 eta=0.0;
-	REAL8 m1,m2;
-	REAL8 massRatioMin=0.0, massRatioMax=0.0; // min,max for q or eta
-	REAL8 MTotMax=0.0;
+    REAL8 m1,m2;
+    REAL8 massRatioMin=0.0, massRatioMax=0.0; // min,max for q or eta
+    REAL8 MTotMax=0.0;
   REAL8 component_max, component_min;
-	char normName[VARNAME_MAX];
-	char massRatioName[VARNAME_MAX];
-	REAL8 norm=0.0;
+    char normName[VARNAME_MAX];
+    char massRatioName[VARNAME_MAX];
+    REAL8 norm=0.0;
 
   if (!S6PEpriorWarning) {
     S6PEpriorWarning = 1;
     fprintf(stderr, "S6PEpaper priors are being used. (in %s, line %d)\n", __FILE__, __LINE__);
   }
-    
+
     if(LALInferenceCheckVariable(params,"asym_massratio")){
       LALInferenceGetMinMaxPrior(priorParams, "asym_massratio", (void *)&massRatioMin, (void *)&massRatioMax);
       strcpy(massRatioName,"asym_massratio");
@@ -518,40 +1253,40 @@ LALInferenceVariableItem *item=params->head;
       LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&massRatioMin, (void *)&massRatioMax);
       strcpy(massRatioName,"massratio");
     }
-	/* Check boundaries */
-	for(;item;item=item->next)
-	{
-		if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
+    /* Check boundaries */
+    for(;item;item=item->next)
+    {
+        if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
         if(item->type!=LALINFERENCE_REAL8_t) continue; /* Only works for REAL8 */
-		else
-		{
-			
-			val = 0;
-			min =-DBL_MAX;
-			max = DBL_MAX;
-			if(LALInferenceCheckMinMaxPrior(priorParams,item->name))
-			{
-				LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
-				val = *(REAL8 *)item->value;
-			}
-			if(val<min || val>max) return -DBL_MAX;
-			else
-			{
+        else
+        {
 
-		        	if(!strcmp(item->name, "chirpmass") || !strcmp(item->name, "logmc")){
-			          if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
-			            && LALInferenceCheckVariable(priorParams,"MTotMax")
-			            && (LALInferenceCheckVariable(params,"asym_massratio") || LALInferenceCheckVariable(params,"massratio")) ){
-            
-				            MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
-				            component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
-				            component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
-            
-				            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
-				                norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
-				            }else{
-				              	if( MTotMax > component_max && MTotMax < 2.0*component_max - component_min ) {
-				             	    norm = -log( (pow(MTotMax-2.0*component_min,2)/4.0) - (pow(MTotMax-component_max-component_min,2)/2.0) );
+            val = 0;
+            min =-DBL_MAX;
+            max = DBL_MAX;
+            if(LALInferenceCheckMinMaxPrior(priorParams,item->name))
+            {
+                LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
+                val = *(REAL8 *)item->value;
+            }
+            if(val<min || val>max) return -DBL_MAX;
+            else
+            {
+
+                    if(!strcmp(item->name, "chirpmass") || !strcmp(item->name, "logmc")){
+                      if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min")
+                        && LALInferenceCheckVariable(priorParams,"MTotMax")
+                        && (LALInferenceCheckVariable(params,"asym_massratio") || LALInferenceCheckVariable(params,"massratio")) ){
+
+                            MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
+                            component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
+                            component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
+
+                            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
+                                norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
+                            }else{
+                                  if( MTotMax > component_max && MTotMax < 2.0*component_max - component_min ) {
+                                     norm = -log( (pow(MTotMax-2.0*component_min,2)/4.0) - (pow(MTotMax-component_max-component_min,2)/2.0) );
                         }else if(MTotMax >= component_max - component_min){
                           norm = -log( pow(MTotMax-2.0*component_min,2)/4.0 );
                         }else if(2.0*MTotMax < component_max){
@@ -559,89 +1294,89 @@ LALInferenceVariableItem *item=params->head;
                         }else{
                           norm = 0.0; //no prior area for the masses !!
                         }
-				    	     	LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-            				}
-				        logPrior+=norm;
-				        if(!strcmp(item->name, "chirpmass")){
-				              mc=(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass"));
-            				}
-				        else if(!strcmp(item->name, "logmc")){
-				              mc=exp(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
-           				}
-            
-              				if(LALInferenceCheckVariable(params,"asym_massratio"))
-				                LALInferenceMcQ2Masses(mc,*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio"),&m1,&m2);
-			              	else if(LALInferenceCheckVariable(params,"massratio")){
-				                eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
-				                LALInferenceMcEta2Masses(mc,*(REAL8 *)LALInferenceGetVariable(params,"massratio"),&m1,&m2);
-				        }
-			               if(component_min > m1 || component_min > m2)
-			                  return -DBL_MAX;
- 			               if(component_max < m1 || component_max < m2)
-			                  return -DBL_MAX;
-			               if(MTotMax < m1+m2)
-			                  return -DBL_MAX;              
-          
-			               if(LALInferenceCheckVariable(params,"logmc")) {
-			                    if(LALInferenceCheckVariable(params,"asym_massratio")) {
-			                      	logPrior+=log(m1*m1);
-			                    } else {
-						logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m1-m2));
-                    			    }
-			               } else if(LALInferenceCheckVariable(params,"chirpmass")) {
- 			                    if(LALInferenceCheckVariable(params,"asym_massratio")) {
-			                      logPrior+=log(m1*m1/mc);
-                    			    } else {
-			                      logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
-					    }
-					}
-			         }else{
-			            fprintf(stderr,"ERROR; component_max, component_min and MTotMax required for this prior.\n");
-			            exit(1);
-			         }
-        		}
+                                 LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                            }
+                        logPrior+=norm;
+                        if(!strcmp(item->name, "chirpmass")){
+                              mc=(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass"));
+                            }
+                        else if(!strcmp(item->name, "logmc")){
+                              mc=exp(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
+                           }
+
+                              if(LALInferenceCheckVariable(params,"asym_massratio"))
+                                LALInferenceMcQ2Masses(mc,*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio"),&m1,&m2);
+                              else if(LALInferenceCheckVariable(params,"massratio")){
+                                eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+                                LALInferenceMcEta2Masses(mc,*(REAL8 *)LALInferenceGetVariable(params,"massratio"),&m1,&m2);
+                        }
+                           if(component_min > m1 || component_min > m2)
+                              return -DBL_MAX;
+                            if(component_max < m1 || component_max < m2)
+                              return -DBL_MAX;
+                           if(MTotMax < m1+m2)
+                              return -DBL_MAX;
+
+                           if(LALInferenceCheckVariable(params,"logmc")) {
+                                if(LALInferenceCheckVariable(params,"asym_massratio")) {
+                                      logPrior+=log(m1*m1);
+                                } else {
+                        logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m1-m2));
+                                    }
+                           } else if(LALInferenceCheckVariable(params,"chirpmass")) {
+                                 if(LALInferenceCheckVariable(params,"asym_massratio")) {
+                                  logPrior+=log(m1*m1/mc);
+                                    } else {
+                                  logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
+                        }
+                    }
+                     }else{
+                        fprintf(stderr,"ERROR; component_max, component_min and MTotMax required for this prior.\n");
+                        exit(1);
+                     }
+                }
         /*
         {
-					if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
-						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
-					}
-					else
-					{
-						if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
-						   && (LALInferenceCheckVariable(params,"asym_massratio") || LALInferenceCheckVariable(params,"massratio")) ){
-							if(LALInferenceCheckVariable(priorParams,"MTotMax")) 
-								MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
-							else 
-								MTotMax=2.0*(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"));
+                    if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
+                        norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
+                    }
+                    else
+                    {
+                        if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min")
+                           && (LALInferenceCheckVariable(params,"asym_massratio") || LALInferenceCheckVariable(params,"massratio")) ){
+                            if(LALInferenceCheckVariable(priorParams,"MTotMax"))
+                                MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
+                            else
+                                MTotMax=2.0*(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"));
 
-							norm = -log(computePriorMassNorm(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min"),
-														*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"),
-														MTotMax, min, max, massRatioMin, massRatioMax, massRatioName));
-							//printf("norm@%s=%f\n",item->name,norm);
-						}
-						else {
-							norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
-						}
-						LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-					}
-					if(!strcmp(item->name, "chirpmass")){
-						logmc=log(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass"));
-					}
-					else if(!strcmp(item->name, "logmc")){
-						logmc=(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
-					}
-					
+                            norm = -log(computePriorMassNorm(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min"),
+                                                        *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max"),
+                                                        MTotMax, min, max, massRatioMin, massRatioMax, massRatioName));
+                            //printf("norm@%s=%f\n",item->name,norm);
+                        }
+                        else {
+                            norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
+                        }
+                        LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                    }
+                    if(!strcmp(item->name, "chirpmass")){
+                        logmc=log(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass"));
+                    }
+                    else if(!strcmp(item->name, "logmc")){
+                        logmc=(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
+                    }
+
                     if(LALInferenceCheckVariable(params,"asym_massratio") || LALInferenceCheckVariable(params,"massratio")){
                         if(LALInferenceCheckVariable(params,"asym_massratio"))
                             LALInferenceMcQ2Masses(exp(logmc),*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio"),&m1,&m2);
                         else if(LALInferenceCheckVariable(params,"massratio"))
                             LALInferenceMcEta2Masses(exp(logmc),*(REAL8 *)LALInferenceGetVariable(params,"massratio"),&m1,&m2);
-                        
+
                         if(LALInferenceCheckVariable(priorParams,"component_min"))
                             if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
                                || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
                                 return -DBL_MAX;
-                    
+
                         if(LALInferenceCheckVariable(priorParams,"component_max"))
                             if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
                                || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
@@ -650,150 +1385,150 @@ LALInferenceVariableItem *item=params->head;
                         if(LALInferenceCheckVariable(priorParams,"MTotMax"))
                             if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
                                 return -DBL_MAX;
-					}
-					
-					logPrior += -(11./6.)*logmc+norm;
-					//printf("logPrior@%s=%f\n",item->name,logPrior);
-				}
-        */
-			else if(!strcmp(item->name, "massratio") || !strcmp(item->name, "asym_massratio")) continue;
-		        else if(!strcmp(item->name, "mass1")){
-          			if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
-			             && LALInferenceCheckVariable(priorParams,"MTotMax")
-			             && LALInferenceCheckVariable(params,"mass2") ){
-			            m1=(*(REAL8 *)LALInferenceGetVariable(params,"mass1"));
-			            m2=(*(REAL8 *)LALInferenceGetVariable(params,"mass2"));
-			            MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
-			            component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
-			            component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
-			            if(component_min > m1 || component_min > m2)
-			              return -DBL_MAX;
-			            if(component_max < m1 || component_max < m2)
-			              return -DBL_MAX;
- 			            if(MTotMax < m1+m2)
-			              return -DBL_MAX;
+                    }
 
-			            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
-			              norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
-			            }else{
-			              if( MTotMax < component_max || MTotMax > 2.0*component_max - component_min ) {
-			                	fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
-			                	fprintf(stderr,"MTotMax = %lf, component_max=%lf, component_min=%lf\n",MTotMax,component_min,component_max);
-			                	exit(1);
-			              }
-			              norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
-				      //printf("norm@%s=%f\n",item->name,norm);
-			              LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-		            	    }
-		            	    logPrior+=norm;
-			       	}else{
-			        	fprintf(stderr,"ERROR; mass2, component_max, component_min and MTotMax required for this prior.\n");
-				        exit(1);
-			        }
-		     	}
-			else if(!strcmp(item->name, "distance")){
-					if(LALInferenceCheckVariable(priorParams,"distance_norm")) {
-						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"distance_norm");
-					}
-					else
-					{
-						norm = +1.09861228867-log(max*max*max-min*min*min);
-						LALInferenceAddVariable(priorParams, "distance_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-					}
-					logPrior += 2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"))+norm;
-					//printf("logPrior@%s=%f\n",item->name,logPrior);
-				}
-				else if(!strcmp(item->name, "logdistance")){
-					if(LALInferenceCheckVariable(priorParams,"logdistance_norm")) {
-						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"logdistance_norm");
-					}
-					else
-					{
-						norm = 1.38629436112-log(max*max*max*max-min*min*min*min);
-						LALInferenceAddVariable(priorParams, "logdistance_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-					}
-					logPrior += 3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance")+norm;
-					//printf("logPrior@%s=%f\n",item->name,logPrior);
-				}
-				else if(!strcmp(item->name, "fLow")){
-					if(LALInferenceCheckVariable(priorParams,"fLow_norm")) {
-						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"fLow_norm");
-					}
-					else
-					{
-						norm = 0.69314718056-log(pow(max,2.)-pow(min,2.));
-						LALInferenceAddVariable(priorParams, "fLow_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-					}
+                    logPrior += -(11./6.)*logmc+norm;
+                    //printf("logPrior@%s=%f\n",item->name,logPrior);
+                }
+        */
+            else if(!strcmp(item->name, "massratio") || !strcmp(item->name, "asym_massratio")) continue;
+                else if(!strcmp(item->name, "mass1")){
+                      if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min")
+                         && LALInferenceCheckVariable(priorParams,"MTotMax")
+                         && LALInferenceCheckVariable(params,"mass2") ){
+                        m1=(*(REAL8 *)LALInferenceGetVariable(params,"mass1"));
+                        m2=(*(REAL8 *)LALInferenceGetVariable(params,"mass2"));
+                        MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
+                        component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
+                        component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
+                        if(component_min > m1 || component_min > m2)
+                          return -DBL_MAX;
+                        if(component_max < m1 || component_max < m2)
+                          return -DBL_MAX;
+                         if(MTotMax < m1+m2)
+                          return -DBL_MAX;
+
+                        if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
+                          norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
+                        }else{
+                          if( MTotMax < component_max || MTotMax > 2.0*component_max - component_min ) {
+                                fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
+                                fprintf(stderr,"MTotMax = %lf, component_max=%lf, component_min=%lf\n",MTotMax,component_min,component_max);
+                                exit(1);
+                          }
+                          norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
+                      //printf("norm@%s=%f\n",item->name,norm);
+                          LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                            }
+                            logPrior+=norm;
+                       }else{
+                        fprintf(stderr,"ERROR; mass2, component_max, component_min and MTotMax required for this prior.\n");
+                        exit(1);
+                    }
+                 }
+            else if(!strcmp(item->name, "distance")){
+                    if(LALInferenceCheckVariable(priorParams,"distance_norm")) {
+                        norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"distance_norm");
+                    }
+                    else
+                    {
+                        norm = +1.09861228867-log(max*max*max-min*min*min);
+                        LALInferenceAddVariable(priorParams, "distance_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                    }
+                    logPrior += 2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"))+norm;
+                    //printf("logPrior@%s=%f\n",item->name,logPrior);
+                }
+                else if(!strcmp(item->name, "logdistance")){
+                    if(LALInferenceCheckVariable(priorParams,"logdistance_norm")) {
+                        norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"logdistance_norm");
+                    }
+                    else
+                    {
+                        norm = 1.38629436112-log(max*max*max*max-min*min*min*min);
+                        LALInferenceAddVariable(priorParams, "logdistance_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                    }
+                    logPrior += 3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance")+norm;
+                    //printf("logPrior@%s=%f\n",item->name,logPrior);
+                }
+                else if(!strcmp(item->name, "fLow")){
+                    if(LALInferenceCheckVariable(priorParams,"fLow_norm")) {
+                        norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"fLow_norm");
+                    }
+                    else
+                    {
+                        norm = 0.69314718056-log(pow(max,2.)-pow(min,2.));
+                        LALInferenceAddVariable(priorParams, "fLow_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                    }
           logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"fLow"));
         }
 
 
-				else if(!strcmp(item->name, "inclination")){
-					if(LALInferenceCheckVariable(priorParams,"inclination_norm")) {
-						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"inclination_norm");
-					}
-					else
-					{
-						REAL8 intpart_min=0.0;
-						REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
-						REAL8 intpart_max=0.0;
-						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
-						norm = -log( cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min) );
-						LALInferenceAddVariable(priorParams, "inclination_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-					}
-					logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"inclination"))))+norm;
-					//printf("logPrior@%s=%f\n",item->name,logPrior);
-				}
-				else if(!strcmp(item->name, "declination")){
-					if(LALInferenceCheckVariable(priorParams,"declination_norm")) {
-						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"declination_norm");
-					}
-					else
-					{
-						REAL8 intpart_min=0.0;
-						REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
-						REAL8 intpart_max=0.0;
-						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
-						norm = -log( -sin(LAL_PI*fractpart_min)+sin(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min) );
-						LALInferenceAddVariable(priorParams, "declination_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-					}
-					logPrior += log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))))+norm;
-					//printf("logPrior@%s=%f\n",item->name,logPrior);
-				}
-				else if(!strcmp(item->name, "theta_spin1")){
-					if(LALInferenceCheckVariable(priorParams,"theta_spin1_norm")) {
-						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"theta_spin1_norm");
-					}
-					else
-					{
-						REAL8 intpart_min=0.0;
-						REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
-						REAL8 intpart_max=0.0;
-						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
-						norm = -log( cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min) );
-						LALInferenceAddVariable(priorParams, "theta_spin1_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-					}
-					logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))))+norm;
-					//printf("logPrior@%s=%f\n",item->name,logPrior);
-				}
-				else if(!strcmp(item->name, "theta_spin2")){
-					if(LALInferenceCheckVariable(priorParams,"theta_spin2_norm")) {
-						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"theta_spin2_norm");
-					}
-					else
-					{
-						REAL8 intpart_min=0.0;
-						REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
-						REAL8 intpart_max=0.0;
-						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
-						norm = -log( cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min) );
-						LALInferenceAddVariable(priorParams, "theta_spin2_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-					}
-					logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))))+norm;
-					//printf("logPrior@%s=%f\n",item->name,logPrior);
-				}
+                else if(!strcmp(item->name, "inclination")){
+                    if(LALInferenceCheckVariable(priorParams,"inclination_norm")) {
+                        norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"inclination_norm");
+                    }
+                    else
+                    {
+                        REAL8 intpart_min=0.0;
+                        REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
+                        REAL8 intpart_max=0.0;
+                        REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
+                        norm = -log( cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min) );
+                        LALInferenceAddVariable(priorParams, "inclination_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                    }
+                    logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"inclination"))))+norm;
+                    //printf("logPrior@%s=%f\n",item->name,logPrior);
+                }
+                else if(!strcmp(item->name, "declination")){
+                    if(LALInferenceCheckVariable(priorParams,"declination_norm")) {
+                        norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"declination_norm");
+                    }
+                    else
+                    {
+                        REAL8 intpart_min=0.0;
+                        REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
+                        REAL8 intpart_max=0.0;
+                        REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
+                        norm = -log( -sin(LAL_PI*fractpart_min)+sin(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min) );
+                        LALInferenceAddVariable(priorParams, "declination_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                    }
+                    logPrior += log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))))+norm;
+                    //printf("logPrior@%s=%f\n",item->name,logPrior);
+                }
+                else if(!strcmp(item->name, "theta_spin1")){
+                    if(LALInferenceCheckVariable(priorParams,"theta_spin1_norm")) {
+                        norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"theta_spin1_norm");
+                    }
+                    else
+                    {
+                        REAL8 intpart_min=0.0;
+                        REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
+                        REAL8 intpart_max=0.0;
+                        REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
+                        norm = -log( cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min) );
+                        LALInferenceAddVariable(priorParams, "theta_spin1_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                    }
+                    logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))))+norm;
+                    //printf("logPrior@%s=%f\n",item->name,logPrior);
+                }
+                else if(!strcmp(item->name, "theta_spin2")){
+                    if(LALInferenceCheckVariable(priorParams,"theta_spin2_norm")) {
+                        norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"theta_spin2_norm");
+                    }
+                    else
+                    {
+                        REAL8 intpart_min=0.0;
+                        REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
+                        REAL8 intpart_max=0.0;
+                        REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
+                        norm = -log( cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min) );
+                        LALInferenceAddVariable(priorParams, "theta_spin2_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                    }
+                    logPrior += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))))+norm;
+                    //printf("logPrior@%s=%f\n",item->name,logPrior);
+                }
         //PSD priors are Gaussian
-				else if(!strcmp(item->name, "psdscale"))
+                else if(!strcmp(item->name, "psdscale"))
         {
           UINT4 i;
           UINT4 j;
@@ -826,26 +1561,396 @@ LALInferenceVariableItem *item=params->head;
           }
           logPrior+=prior;
         }
-				else{
-					sprintf(normName,"%s_norm",item->name);
-					if(LALInferenceCheckVariable(priorParams,normName)) {
-						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,normName);
-					}
-					else
-					{
-						norm = -log(max-min);
-						LALInferenceAddVariable(priorParams, normName, &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-					}
-					logPrior += norm;
-					//printf("logPrior@%s=%f\n",item->name,logPrior);
-				}						
-										
-			}
-			
-		}
-	}
-	
-	return(logPrior);
+                else{
+                    sprintf(normName,"%s_norm",item->name);
+                    if(LALInferenceCheckVariable(priorParams,normName)) {
+                        norm = *(REAL8 *)LALInferenceGetVariable(priorParams,normName);
+                    }
+                    else
+                    {
+                        norm = -log(max-min);
+                        LALInferenceAddVariable(priorParams, normName, &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                    }
+                    logPrior += norm;
+                    //printf("logPrior@%s=%f\n",item->name,logPrior);
+                }
+
+            }
+
+        }
+    }
+
+    return(logPrior);
+}
+
+/* Convert the hypercube parameter to physical parameters, for the non-spinning inspiral signal case */
+UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context)
+{
+    LALInferenceVariableItem *item;
+    LALInferenceVariables *priorParams=runState->priorArgs;
+
+    char **info = (char **)context;
+    char *header = &info[1][0];
+    strcpy(header,"");
+    char *timeID = &info[2][0];
+    REAL8 min, max, logPrior=0.;
+    int i = 0;
+
+    // latitude
+    item = LALInferenceGetItem(params, "declination");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        double lat = asin(2.0 * Cube[i] - 1.0);
+        LALInferenceSetVariable(params, "declination", &lat);
+        Cube[i] = lat;
+        logPrior += log(fabs(cos(lat)));
+        i++;
+        strcat(header,"dec ");
+    }
+
+    // longitude
+    item = LALInferenceGetItem(params, "rightascension");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "rightascension", (void *)&min, (void *)&max);
+        double longitude = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "rightascension", &longitude);
+        Cube[i] = longitude;
+        i++;
+        strcat(header,"RA ");
+    }
+
+    // inclination angle
+    item = LALInferenceGetItem(params, "inclination");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        double iota;
+        iota = acos(1.0 - 2.0 * Cube[i]);
+        LALInferenceSetVariable(params, "inclination", &iota);
+        Cube[i] = iota;
+        logPrior += log(fabs(sin(iota)));
+        i++;
+        strcat(header,"iota ");
+    }
+
+    // phi
+    item = LALInferenceGetItem(params, "phase");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
+        double phi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "phase", &phi);
+        Cube[i] = phi;
+        i++;
+        strcat(header,"phi0 ");
+    }
+
+    // psi
+    item = LALInferenceGetItem(params, "polarisation");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "polarisation", (void *)&min, (void *)&max);
+        double psi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "polarisation", &psi);
+        Cube[i] = psi;
+        i++;
+        strcat(header,"psi ");
+    }
+
+    // time
+    item = LALInferenceGetItem(params, "time");
+    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "time", (void *)&min, (void *)&max);
+        double tc = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+        LALInferenceSetVariable(params, "time", &tc);
+        Cube[i] = tc;
+        sprintf(timeID,"%d",i);
+        i++;
+        strcat(header,"time ");
+    }
+
+    // check if mchirp is fixed
+    double mc = 0.0, eta = 0.0, q = 0.0, m1 = 0.0, m2 = 0.0, m = 0.0;
+    if( LALInferenceCheckVariable(params,"logmc") )
+    {
+        item = LALInferenceGetItem(params, "logmc");
+        if(item->vary == LALINFERENCE_PARAM_FIXED) mc = exp(*(REAL8 *)LALInferenceGetVariable(params, "logmc"));
+    }
+    else if( LALInferenceCheckVariable(params,"chirpmass") )
+    {
+        item = LALInferenceGetItem(params, "chirpmass");
+        if(item->vary == LALINFERENCE_PARAM_FIXED) mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
+    }
+
+    // check if eta is fixed
+    if( LALInferenceCheckVariable(params,"massratio") )
+    {
+        item = LALInferenceGetItem(params, "massratio");
+        if(item->vary == LALINFERENCE_PARAM_FIXED)
+        {
+            eta = *(REAL8 *)LALInferenceGetVariable(params, "massratio");
+            if( mc != 0.0 ) LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
+        }
+    }
+    else if( LALInferenceCheckVariable(params,"asym_massratio") )
+    {
+        item = LALInferenceGetItem(params, "asym_massratio");
+        if(item->vary == LALINFERENCE_PARAM_FIXED)
+        {
+            q = *(REAL8 *)LALInferenceGetVariable(params, "asym_massratio");
+            if( mc != 0.0 ) LALInferenceMcQ2Masses(mc,q,&m1,&m2);
+        }
+    }
+
+    //m1 & m2
+    if( m1 == 0.0 && m2 == 0.0 )
+    {
+        min = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
+        max = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
+        if( min == max )
+        {
+            m1 = m2 = min;
+            m = m1 + m2;
+            eta = m1 * m2 / (m*m);
+            mc = pow(eta,0.6) * m;
+            q = m2 / m1; // asymmetric mass ratio, m1 >= m2
+        }
+        else
+        {
+            m1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            m2 = LALInferenceCubeToFlatPrior(Cube[i+1], min, max);
+            if(m1<m2)
+            {
+                double temp = m2;
+                m2 = m1;
+                m1 = temp;
+            }
+
+            m = m1 + m2;
+            eta = m1 * m2 / (m*m);
+            mc = pow(eta,0.6) * m;
+            q = m2/m1; // asymmetric mass ratio, m1 >= m2
+            Cube[i] = mc; i++;
+            strcat(header,"mchirp ");
+            Cube[i] = eta; i++;
+            strcat(header,"eta ");
+        }
+
+        // chirp mass and eta/q
+        if(LALInferenceCheckVariable(params,"massratio")||LALInferenceCheckVariable(params,"asym_massratio"))
+        {
+            if(LALInferenceCheckVariable(params,"logmc"))
+            {
+                double logmc = log(mc);
+                LALInferenceSetVariable(params, "logmc", &logmc);
+            }
+            else if(LALInferenceCheckVariable(params,"chirpmass"))
+            {
+                LALInferenceSetVariable(params, "chirpmass", &mc);
+            }
+
+                  if(LALInferenceCheckVariable(params,"asym_massratio"))
+                LALInferenceSetVariable(params, "asym_massratio", &q);
+            else if(LALInferenceCheckVariable(params,"massratio"))
+                    LALInferenceSetVariable(params, "massratio", &eta);
+        }
+    }
+
+    // distance
+    double dist;
+    if( LALInferenceCheckVariable(params,"logdistance") )
+    {
+        item = LALInferenceGetItem(params, "logdistance");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "logdistance", (void *)&min, (void *)&max);
+            min = exp(min); max = exp(max);
+            dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
+            double logdist = log(dist);
+            LALInferenceSetVariable(params, "logdistance", &logdist);
+            Cube[i] = dist;
+            logPrior += 2.0*logdist;
+            i++;
+            strcat(header,"dist ");
+        }
+    }
+    else if( LALInferenceCheckVariable(params,"distance") )
+    {
+        item = LALInferenceGetItem(params, "distance");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", (void *)&min, (void *)&max);
+            dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
+            LALInferenceSetVariable(params, "distance", &dist);
+            Cube[i] = dist;
+            logPrior += 2.0*log(dist);
+            i++;
+            strcat(header,"dist ");
+        }
+    }
+
+    // a_spin1
+    if(LALInferenceCheckVariable(params,"a_spin1"))
+    {
+        item = LALInferenceGetItem(params, "a_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "a_spin1", (void *)&min, (void *)&max);
+            double a_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "a_spin1", &a_spin1);
+            Cube[i] = a_spin1;
+            i++;
+            strcat(header,"a1 ");
+        }
+    }
+    else if(LALInferenceCheckVariable(params,"spin1"))
+    {
+        item = LALInferenceGetItem(params, "spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "spin1", (void *)&min, (void *)&max);
+            double a_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "spin1", &a_spin1);
+            Cube[i] = a_spin1;
+            i++;
+            strcat(header,"a1 ");
+        }
+    }
+
+    // theta_spin1
+    if(LALInferenceCheckVariable(params,"theta_spin1"))
+    {
+        item = LALInferenceGetItem(params, "theta_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            double theta_spin1;
+            theta_spin1 = acos(1.0 - 2.0 * Cube[i]);
+            LALInferenceSetVariable(params, "theta_spin1", &theta_spin1);
+            Cube[i] = theta_spin1;
+            logPrior += log(fabs(sin(theta_spin1)));
+            i++;
+            strcat(header,"theta1 ");
+        }
+    }
+
+    // phi_spin1
+    if(LALInferenceCheckVariable(params,"phi_spin1"))
+    {
+        item = LALInferenceGetItem(params, "phi_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_spin1", (void *)&min, (void *)&max);
+            double phi_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_spin1", &phi_spin1);
+            Cube[i] = phi_spin1;
+            i++;
+            strcat(header,"phi1 ");
+        }
+    }
+
+    // a_spin2
+    if(LALInferenceCheckVariable(params,"a_spin2"))
+    {
+        item = LALInferenceGetItem(params, "a_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "a_spin2", (void *)&min, (void *)&max);
+            double a_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "a_spin2", &a_spin2);
+            Cube[i] = a_spin2;
+            i++;
+            strcat(header,"a2 ");
+        }
+    }
+    else if(LALInferenceCheckVariable(params,"spin2"))
+    {
+        item = LALInferenceGetItem(params, "spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "spin2", (void *)&min, (void *)&max);
+            double a_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "spin2", &a_spin2);
+            Cube[i] = a_spin2;
+            i++;
+            strcat(header,"a2 ");
+        }
+    }
+
+    // theta_spin2
+    if(LALInferenceCheckVariable(params,"theta_spin2"))
+    {
+        item = LALInferenceGetItem(params, "theta_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            double theta_spin2;
+            theta_spin2 = acos(1.0 - 2.0 * Cube[i]);
+            LALInferenceSetVariable(params, "theta_spin2", &theta_spin2);
+            Cube[i] = theta_spin2;
+            logPrior += log(fabs(sin(theta_spin2)));
+            i++;
+            strcat(header,"theta2 ");
+        }
+    }
+
+    // phi_spin2
+    if(LALInferenceCheckVariable(params,"phi_spin2"))
+    {
+        item = LALInferenceGetItem(params, "phi_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_spin2", (void *)&min, (void *)&max);
+            double phi_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_spin2", &phi_spin2);
+            Cube[i] = phi_spin2;
+            i++;
+            strcat(header,"phi2 ");
+        }
+
+    }
+
+
+    Cube[i] = m1; i++; strcat(header,"m1 ");
+    Cube[i] = m2; i++; strcat(header,"m2 ");
+    Cube[i] = LALInferenceInspiralPriorNormalised(runState,params);
+    i++; strcat(header,"logprior ");
+
+    strcat(header,"logl");
+
+    /* Check boundaries */
+    item=params->head;
+    for(;item;item=item->next)
+    {
+        // if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR)
+        if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
+                        continue;
+        else
+        {
+            LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+            if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return 0 ;
+        }
+    }
+
+    /* Check for component masses in range, if specified */
+    if(LALInferenceCheckVariable(priorParams,"component_min"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
+           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
+            return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"component_max"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
+           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
+            return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"MTotMin"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMin") > m1+m2)
+            return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"MTotMax"))
+        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
+            return 0;
+
+    return 1;
 }
 
 typedef struct {
@@ -883,16 +1988,16 @@ static double etaInnerIntegrand(double M2, void *viData) {
 #undef SQR
 
 typedef struct {
-	gsl_integration_workspace *wsInner;
-	size_t wsInnerSize;
-	double McMin;
-	double McMax;
-	double massRatioMin;
-	double massRatioMax;
-	double MTotMax;
-	double MMin;
-	double epsabs;
-	double epsrel;
+    gsl_integration_workspace *wsInner;
+    size_t wsInnerSize;
+    double McMin;
+    double McMax;
+    double massRatioMin;
+    double massRatioMax;
+    double MTotMax;
+    double MMin;
+    double epsabs;
+    double epsrel;
     gsl_function innerIntegrand;
 } outerData;
 
@@ -900,39 +2005,39 @@ typedef struct {
 
 static double outerIntegrand(double M1, void *voData) {
 
-	outerData *oData = (outerData *)voData;
-	gsl_function f;
-	innerData iData;
-	double result, err;
-	
-	iData.M1 = M1;
-	iData.McMin = oData->McMin;
-	iData.McMax = oData->McMax;
-	iData.massRatioMin = oData->massRatioMin;
-	iData.massRatioMax = oData->massRatioMax;
- 
+    outerData *oData = (outerData *)voData;
+    gsl_function f;
+    innerData iData;
+    double result, err;
+
+    iData.M1 = M1;
+    iData.McMin = oData->McMin;
+    iData.McMax = oData->McMax;
+    iData.massRatioMin = oData->massRatioMin;
+    iData.massRatioMax = oData->massRatioMax;
+
     f.function=(oData->innerIntegrand.function);
-    
-	f.params = &iData;
-	
-	gsl_integration_qag(&f, oData->MMin, MIN(M1, oData->MTotMax-M1), oData->epsabs, oData->epsrel, 
-						oData->wsInnerSize, GSL_INTEG_GAUSS61, oData->wsInner, &result, &err);
-	
-	return result;
+
+    f.params = &iData;
+
+    gsl_integration_qag(&f, oData->MMin, MIN(M1, oData->MTotMax-M1), oData->epsabs, oData->epsrel,
+                        oData->wsInnerSize, GSL_INTEG_GAUSS61, oData->wsInner, &result, &err);
+
+    return result;
 }
 
 #undef MIN
 
-REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, const double MTotMax, 
+REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, const double MTotMax,
                     const double McMin, const double McMax,
                     const double massRatioMin, const double massRatioMax, const char *massRatioName) {
-	const double epsabs = 1e-8;
-	const double epsrel = 1e-8;
-	const size_t wsSize = 10000;
-	double result, err;
-	outerData oData;
-	gsl_function f;
-	
+    const double epsabs = 1e-8;
+    const double epsrel = 1e-8;
+    const size_t wsSize = 10000;
+    double result, err;
+    outerData oData;
+    gsl_function f;
+
     if(!massRatioName)
         XLAL_ERROR_REAL8(XLAL_EFAULT, "Null arguments received.");
     else if(!strcmp(massRatioName,"asym_massratio"))
@@ -941,39 +2046,39 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
         oData.innerIntegrand.function = &etaInnerIntegrand;
     else
         XLAL_ERROR_REAL8(XLAL_ENAME, "Invalid mass ratio name specified");
-    
+
     // Disable GSL error reporting in favour of XLAL (the integration routines are liable to fail).
     gsl_error_handler_t *oldHandler = gsl_set_error_handler_off();
-    
-	gsl_integration_workspace *wsOuter = gsl_integration_workspace_alloc(wsSize);
-	gsl_integration_workspace *wsInner = gsl_integration_workspace_alloc(wsSize);
-	
-	oData.wsInnerSize = wsSize;
-	oData.wsInner = wsInner;
-	oData.McMin = McMin;
-	oData.McMax = McMax;
-	oData.massRatioMin  = massRatioMin;
-	oData.massRatioMax  = massRatioMax;
-	oData.MTotMax = MTotMax;
-	oData.epsabs = epsabs;
-	oData.epsrel = epsrel;
-	oData.MMin = MMin;
 
-	f.function = &outerIntegrand;
-	f.params = &oData;
-	
-	int status = gsl_integration_qag(&f, MMin, MMax, epsabs, epsrel, wsSize, GSL_INTEG_GAUSS61, wsOuter, 
-						&result, &err);
-	
+    gsl_integration_workspace *wsOuter = gsl_integration_workspace_alloc(wsSize);
+    gsl_integration_workspace *wsInner = gsl_integration_workspace_alloc(wsSize);
+
+    oData.wsInnerSize = wsSize;
+    oData.wsInner = wsInner;
+    oData.McMin = McMin;
+    oData.McMax = McMax;
+    oData.massRatioMin  = massRatioMin;
+    oData.massRatioMax  = massRatioMax;
+    oData.MTotMax = MTotMax;
+    oData.epsabs = epsabs;
+    oData.epsrel = epsrel;
+    oData.MMin = MMin;
+
+    f.function = &outerIntegrand;
+    f.params = &oData;
+
+    int status = gsl_integration_qag(&f, MMin, MMax, epsabs, epsrel, wsSize, GSL_INTEG_GAUSS61, wsOuter,
+                        &result, &err);
+
     if (status)
         XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_EDATA, "Bad data; GSL integration failed.");
-    
+
     gsl_set_error_handler(oldHandler);
-    
-	gsl_integration_workspace_free(wsOuter);
-	gsl_integration_workspace_free(wsInner);
-	
-	return result;
+
+    gsl_integration_workspace_free(wsOuter);
+    gsl_integration_workspace_free(wsInner);
+
+    return result;
 }
 
 /* Function to add the min and max values for the prior onto the priorArgs */
@@ -1173,18 +2278,18 @@ void LALInferenceDrawFromPrior( LALInferenceVariables *output,
   if( LALInferenceCheckVariable( priorArgs, "kDTreePrior" ) ){
     LALInferenceKDTree *tree =
       *(LALInferenceKDTree **)LALInferenceGetVariable(priorArgs, "kDTreePrior");
-    
+
     /* get parameter template */
-    LALInferenceVariables *templt = 
+    LALInferenceVariables *templt =
       *(LALInferenceVariables **)LALInferenceGetVariable(priorArgs,
                                                          "kDTreePriorTemplate");
-    
+
     UINT4 Ncell = 8; /* number of points in a prior cell - i.e. controls
-                        how fine or coarse the prior looks (default to 8) */ 
-      
+                        how fine or coarse the prior looks (default to 8) */
+
     if( LALInferenceCheckVariable( priorArgs, "kDTreePriorNcell" ) )
       Ncell = *(UINT4 *)LALInferenceGetVariable( priorArgs,"kDTreePriorNcell");
-    
+
     /* draw all points from the prior distribution */
     REAL8 *proposedPt = XLALCalloc(tree->dim, sizeof(REAL8));
 
@@ -1350,6 +2455,288 @@ REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALIn
   return(logPrior);
 }
 
+UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context) {
+    int i = 0;
+    REAL8 logPrior=0.,min,max;
+    REAL8 m1=1.,m2=1.,mc,eta,m;
+    LALInferenceVariableItem *item;
+
+    //char *header=(char *)LALInferenceGetVariable(runState->algorithmParams,"HeaderLine");
+    char **info = (char **)context;
+    char *header = &info[1][0];
+    strcpy(header,"");
+    char *timeID = &info[2][0];
+
+    if(LALInferenceCheckVariable(params,"m1"))
+    {
+        if(LALInferenceGetItem(params,"m1")->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "m1", (void *)&min, (void *)&max);
+            m1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "m1", &m1);
+            Cube[i] = m1; i++;
+            logPrior -= log(max-min);
+            strcat(header,"m1 ");
+        }
+        else
+        {
+            m1=(*(REAL8 *)LALInferenceGetVariable(params,"m1"));
+        }
+    }
+    if(LALInferenceCheckVariable(params,"m2"))
+    {
+        if(LALInferenceGetItem(params,"m2")->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "m2", (void *)&min, (void *)&max);
+            m2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "m2", &m2);
+            Cube[i] = m2; i++;
+            logPrior -= log(max-min);
+            strcat(header,"m2 ");
+        }
+        else
+        {
+            m2=(*(REAL8 *)LALInferenceGetVariable(params,"m2"));
+        }
+    }
+    m = m1 + m2;
+    eta = m1 * m2 / (m*m);
+    mc = pow(eta,0.6) * m;
+
+    if(LALInferenceCheckVariable(params,"inclination"))
+    {
+        item = LALInferenceGetItem(params,"inclination");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "inclination", (void *)&min, (void *)&max);
+            double inclination = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "inclination", &inclination);
+            Cube[i] = inclination;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"iota ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"phase"))
+    {
+        item = LALInferenceGetItem(params,"phase");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
+            double phase = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phase", &phase);
+            Cube[i] = phase;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"phi0 ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"polarisation"))
+    {
+        item = LALInferenceGetItem(params,"polarisation");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "polarisation", (void *)&min, (void *)&max);
+            double polarisation = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "polarisation", &polarisation);
+            Cube[i] = polarisation;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"psi ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"rightascension"))
+    {
+        item = LALInferenceGetItem(params,"rightascension");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "rightascension", (void *)&min, (void *)&max);
+            double rightascension = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "rightascension", &rightascension);
+            Cube[i] = rightascension;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"RA ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"declination"))
+    {
+        item = LALInferenceGetItem(params,"declination");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "declination", (void *)&min, (void *)&max);
+            double declination = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "declination", &declination);
+            Cube[i] = declination;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"dec ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"distance"))
+    {
+        item = LALInferenceGetItem(params,"distance");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", (void *)&min, (void *)&max);
+            double distance = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "distance", &distance);
+            Cube[i] = distance;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"dist ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"time"))
+    {
+        item = LALInferenceGetItem(params,"time");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "time", (void *)&min, (void *)&max);
+            double tc = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "time", &tc);
+            Cube[i] = tc;
+            sprintf(timeID,"%d",i);
+        i++;
+            logPrior -= log(max-min);
+            strcat(header,"time ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"a_spin1"))
+    {
+        item = LALInferenceGetItem(params,"a_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "a_spin1", (void *)&min, (void *)&max);
+            double a_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "a_spin1", &a_spin1);
+            Cube[i] = a_spin1;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"a1 ");
+        }
+    }
+    else if(LALInferenceCheckVariable(params,"spin1"))
+    {
+        item = LALInferenceGetItem(params, "spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "spin1", (void *)&min, (void *)&max);
+            double a_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "spin1", &a_spin1);
+            Cube[i] = a_spin1;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"a1 ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"a_spin2"))
+    {
+        item = LALInferenceGetItem(params,"a_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "a_spin2", (void *)&min, (void *)&max);
+            double a_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "a_spin2", &a_spin2);
+            Cube[i] = a_spin2;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"a2 ");
+        }
+    }
+    else if(LALInferenceCheckVariable(params,"spin2"))
+    {
+        item = LALInferenceGetItem(params, "spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "spin2", (void *)&min, (void *)&max);
+            double a_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "spin2", &a_spin2);
+            Cube[i] = a_spin2;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"a2 ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"theta_spin1"))
+    {
+        item = LALInferenceGetItem(params,"theta_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "theta_spin1", (void *)&min, (void *)&max);
+            double theta_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "theta_spin1", &theta_spin1);
+            Cube[i] = theta_spin1;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"theta1 ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"theta_spin2"))
+    {
+        item = LALInferenceGetItem(params,"theta_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "theta_spin2", (void *)&min, (void *)&max);
+            double theta_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "theta_spin2", &theta_spin2);
+            Cube[i] = theta_spin2;
+              i++;
+              logPrior -= log(max-min);
+            strcat(header,"theta2 ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"phi_spin1"))
+    {
+        item = LALInferenceGetItem(params,"phi_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_spin1", (void *)&min, (void *)&max);
+            double phi_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_spin1", &phi_spin1);
+            Cube[i] = phi_spin1;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"phi1 ");
+        }
+    }
+
+    if(LALInferenceCheckVariable(params,"phi_spin2"))
+    {
+        item = LALInferenceGetItem(params,"phi_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_spin2", (void *)&min, (void *)&max);
+            double phi_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_spin2", &phi_spin2);
+            Cube[i] = phi_spin2;
+            i++;
+            logPrior -= log(max-min);
+            strcat(header,"phi2 ");
+        }
+    }
+
+    Cube[i] = mc; i++; strcat(header,"mchirp ");
+    Cube[i] = eta; i++; strcat(header,"eta ");
+    Cube[i] = LALInferenceAnalyticNullPrior(runState,params);
+    i++; strcat(header,"logprior ");
+
+    strcat(header,"logl");
+
+    return 1;
+}
+
 REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
   LALInferenceVariableItem *cur;
@@ -1370,4 +2757,32 @@ REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceV
 
 REAL8 LALInferenceNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables UNUSED *params) {
   return 0.0;
+}
+
+/** Prior that converts from a Cube parameter in [0,1] to the flat prior bounded by x1
+    and x2.
+*/
+REAL8 LALInferenceCubeToFlatPrior(double r, double x1, double x2)
+{
+    return x1 + r * ( x2 - x1 );
+}
+
+/** Prior that converts from a Cube parameter in [0,1] to the flat in log prior bounded
+    by x1 and x2.
+*/
+REAL8 LALInferenceCubeToLogFlatPrior(double r, double x1, double x2)
+{
+    double lx1, lx2;
+    lx1 = log( x1 );
+    lx2 = log( x2 );
+    return exp( lx1 + r * ( lx2 - lx1 ) );
+}
+
+/** Prior that converts from a Cube parameter in [0,1] to the power prior bounded by x1
+    and x2 with power p.
+*/
+REAL8 LALInferenceCubeToPowerPrior(double p, double r, double x1, double x2)
+{
+    double pp = p + 1.0;
+    return pow(r * pow(x2, pp) + (1.0 - r) * pow(x1, pp), 1.0 / pp);
 }

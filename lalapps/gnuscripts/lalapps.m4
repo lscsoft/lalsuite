@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 10
+# serial 11
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -215,3 +215,25 @@ fi
 ,
 AC_MSG_RESULT([no]),
 AC_MSG_RESULT([unknown]) ) ] )
+
+AC_DEFUN([LALAPPS_ENABLE_BAMBI],
+[AC_ARG_ENABLE(
+  [bambi],
+  AC_HELP_STRING([--enable-bambi],[build LALInferenceBAMBI [default=no]]),
+  [ case "${enableval}" in
+      yes) bambi=true;;
+      no)  bambi=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-bambi) ;;
+    esac
+  ], [ bambi=false ] )
+])
+
+AC_DEFUN([LALAPPS_CHECK_BAMBI],[
+  PKG_CHECK_MODULES([BAMBI],[bambi],[
+    AX_LAPACK([
+      BAMBI_LIBS="$BAMBI_LIBS $LAPACK_LIBS $BLAS_LIBS $FLIBS"
+      BAMBI_ENABLE_VAL="ENABLED"
+      hbf=true
+    ])
+  ])
+])

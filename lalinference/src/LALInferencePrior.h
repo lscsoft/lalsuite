@@ -38,6 +38,10 @@
  */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *variables);
 
+/** Convert the hypercube parameter to physical parameters, for the non-spinning/spinning inspiral signal case.
+ */
+UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
+
 /** Apply cyclic and reflective boundaries to \c parameter to bring it
  *  back within the allowed prior ranges that are specified in \c
  *  priorArgs.  LALInferenceCyclicReflectiveBound() should not be
@@ -71,10 +75,24 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter );
  */
 REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
+/** Convert the hypercube parameter to physical parameters, for the prior density of the variables as
+ *  specified for the sky localisation project
+ *  (see: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/SkyLocComparison#priors ),
+ *  for the non-spinning/spinning inspiral signal case.
+ */
+UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
+
 /** Return the logarithmic prior density of the variables specified, 
  *  for the non-spinning/spinning inspiral signal case.
  */
 REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params);
+
+/** Convert the hypercube parameter to physical parameters, for the prior density of the variables as
+ *  specified for the S6 parameter estimation paper
+ *  (see: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/BayesS6PEpaper#Priors ),
+ *  for the non-spinning/spinning inspiral signal case.
+ */
+UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
 
 REAL8 LALInferenceInspiralNoiseOnlyPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
@@ -154,6 +172,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
 /** Prior that is 1 everywhere in component mass space. */
 REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
+/** Analytic null prior converted from hypercube */
+UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
+
 /** Prior that is 1 everywhere. */
 REAL8 LALInferenceNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
@@ -172,6 +193,18 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
     Ignores variables which are not REAL8 or do not have min and max values set.
 */
 REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
+
+/** Prior that converts from a Cube parameter in [0,1] to the flat prior bounded by x1 and x2.
+*/
+REAL8 LALInferenceCubeToFlatPrior(double r, double x1, double x2);
+
+/** Prior that converts from a Cube parameter in [0,1] to the flat in log prior bounded by x1 and x2.
+*/
+REAL8 LALInferenceCubeToLogFlatPrior(double r, double x1, double x2);
+
+/** Prior that converts from a Cube parameter in [0,1] to the power prior bounded by x1 and x2 with power p.
+*/
+REAL8 LALInferenceCubeToPowerPrior(double p, double r, double x1, double x2);
 
 /*@}*/
 
