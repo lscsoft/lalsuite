@@ -381,14 +381,12 @@ static int XLALSimInspiralSpinTaylorT5Derivatives(
 
     REAL8 LNh[3], S1[3], S2[3], chi1[3], chi2[3], Omega1[3], Omega2[3];
     REAL8 dS1byDt[3], dS2byDt[3], dLNhByDt[3];
-    REAL8 m1, m2, m, eta, q, delta, v, dEbyF, om0, v2, S1dotLNh, S2dotLNh, Lmag;
+    REAL8 m, eta, q, delta, v, dEbyF, om0, v2, S1dotLNh, S2dotLNh, Lmag;
     UINT4 phaseO, i, onePFpnFlag = 1, onePNFlag = 1;
     SpinTaylorT5Params *params = (SpinTaylorT5Params*) mParams;
 	UNUSED(t);
 
     /* binary parameters */
-    m1      = params->mass1;        /* in seconds */
-    m2      = params->mass2;        /* in seconds */
     m       = params->totalMass;    /* in seconds */
     eta     = params->eta;
     delta   = params->delta;
@@ -570,7 +568,7 @@ static int polarizationsInRadiationFrame(
 		REAL8 Theta					/**< angle between the initial total ang momentum and line of sight. */
 	) {
 
-    REAL8 alpha, angle_i, deltaPhi, twoPhiS, alphaDot;
+    REAL8 alpha, deltaPhi, twoPhiS, alphaDot;
     REAL8 LNx, LNy, LNz, v2, LNx_p2, LNy_p2, LNz_p2, LN_xz;
     UINT4 i; 
     REAL8Vector *alphaVec=NULL, *iVec=NULL;
@@ -622,7 +620,6 @@ static int polarizationsInRadiationFrame(
         if (V->data->data[i]) {
 
             alpha = alphaVec->data[i];
-            angle_i = iVec->data[i];
             LNx = LNhxVec->data->data[i];
             LNy = LNhyVec->data->data[i];
             LNz = LNhzVec->data->data[i];
