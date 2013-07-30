@@ -187,8 +187,8 @@ LALSUITE_MULTILIB_LIBTOOL_HACK
 # use silent build rules
 AM_SILENT_RULES([yes])
 
-# check for C/C++ compilers
-LALSUITE_PROG_CC_CXX
+# check for required compilers
+LALSUITE_PROG_COMPILERS
 
 # check for pthreads
 lal_pthread_available="yes"

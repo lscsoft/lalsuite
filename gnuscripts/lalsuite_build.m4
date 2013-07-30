@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 65
+# serial 66
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -43,7 +43,7 @@ AC_DEFUN([LALSUITE_REQUIRE_CXX],[
 m4_defun([AC_LANG_COMPILER(C++)],[])
 m4_defun([AC_LANG_PREPROC(C++)],[])
 
-AC_DEFUN([LALSUITE_PROG_CC_CXX],[
+AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # check for C99 compiler
   AC_REQUIRE([AC_PROG_CC])
   AC_REQUIRE([AC_PROG_CC_C99])
