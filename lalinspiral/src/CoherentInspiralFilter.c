@@ -2617,7 +2617,7 @@ XLALCoherentInspiralFilterSegment (
 	    /* Compute antenna-patterns if caseID[j] != 0 */
 	    if ( !(params->detIDVec->data[j] == 0 )) {
 	      XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
-				       detectors[detId].response, phi, theta,
+				       (const REAL4(*)[3])detectors[detId].response, phi, theta,
 				       psiInRadians, (double) gmstInRadians);
 
 	      /* Compute antenna-pattern factors */
@@ -3162,7 +3162,7 @@ XLALCoherentInspiralFilterSegment (
 	  /* Compute antenna-patterns if caseID[j] != 0 */
 	  if ( !(params->detIDVec->data[j] == 0 )) {
 	    XLALComputeDetAMResponse(&fplus[detId], &fcross[detId],
-				     detectors[detId].response, phi, theta,
+				     (const REAL4(*)[3])detectors[detId].response, phi, theta,
 				     psiInRadians, (double) gmstInRadians);
 
 	    /* Compute antenna-pattern factors */

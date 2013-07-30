@@ -1511,10 +1511,10 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   dataPtr = runState->data;
   while(dataPtr != NULL)
   {
-    XLALComputeDetAMResponse(&Fp, &Fc, dataPtr->detector->response, ra, dec, psi, gmst);
+    XLALComputeDetAMResponse(&Fp, &Fc, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
     Fx += Fp*Fp+Fc*Fc;
 
-    XLALComputeDetAMResponse(&Fp, &Fc, dataPtr->detector->response, newRA, newDec, newPsi, newGmst);
+    XLALComputeDetAMResponse(&Fp, &Fc, (const REAL4(*)[3])dataPtr->detector->response, newRA, newDec, newPsi, newGmst);
     Fy += Fp*Fp+Fc*Fc;
 
     dataPtr = dataPtr->next;
@@ -2025,12 +2025,12 @@ reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, c
   while (dataPtr != NULL) {
     
     psi_temp = 0.0;
-    XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
+    XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
     j=i-1;
     while (j>0){
       if(Fplus==x[j]){
         dataPtr = dataPtr->next;
-        XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
+        XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
       }
       j--;
     }
@@ -2039,7 +2039,7 @@ reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, c
     y[i]=Fcross;
     y2[i]=Fcross*Fcross;
     
-    XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, ra, dec, psi, gmst);
+    XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
     R2[i] = (((1.0+cosIota2)*(1.0+cosIota2))/(4.0*dist2))*Fplus*Fplus
     + ((cosIota2)/(dist2))*Fcross*Fcross;
     
@@ -2608,9 +2608,9 @@ void waveformDerivative(FIMParams *params, /**< \theta_0 params where you comput
         while(dataPtr != NULL)
 		{
 			/*Compute old and new detector Response for each detector*/
-			XLALComputeDetAMResponse(&Fp, &Fc, dataPtr->detector->response, 
+			XLALComputeDetAMResponse(&Fp, &Fc, (const REAL4(*)[3])dataPtr->detector->response, 
 			                         params->ra, params->dec, params->psi, params->gmst);
-			XLALComputeDetAMResponse(&FpN, &FcN, dataPtr->detector->response,
+			XLALComputeDetAMResponse(&FpN, &FcN, (const REAL4(*)[3])dataPtr->detector->response,
 			                         paramsNp1->ra, paramsNp1->dec, paramsNp1->psi, paramsNp1->gmst);
 
 			/*allocate the length to that derivative*/

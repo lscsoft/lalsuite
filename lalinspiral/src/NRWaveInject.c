@@ -235,7 +235,7 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
   else
   {
     /* compute detector response */
-    XLALComputeDetAMResponse(&fplus, &fcross, det.response, inj->longitude,
+    XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])det.response, inj->longitude,
         inj->latitude, inj->polarization, inj->end_time_gmst);
 
     /* calculate the time delay */

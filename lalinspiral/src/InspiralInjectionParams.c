@@ -676,7 +676,7 @@ SimInspiralTable *XLALInspiralSiteTimeAndDist(
   scross = -2.0 * cosiota;
 
   /* calculate the detector response */
-  XLALComputeDetAMResponse(&fplus, &fcross, detector->response, inj->longitude,
+  XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])detector->response, inj->longitude,
       inj->latitude, inj->polarization, inj->end_time_gmst);
 
   /* compute the effective distance */

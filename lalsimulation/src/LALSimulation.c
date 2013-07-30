@@ -230,7 +230,7 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 		double fplus, fcross;
 
 		XLALGPSAdd(&t, i * h->deltaT);
-		XLALComputeDetAMResponse(&fplus, &fcross, detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
+		XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
 
 		h->data->data[i] = fplus * hplus->data->data[i] + fcross * hcross->data->data[i];
 	}

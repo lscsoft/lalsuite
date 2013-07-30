@@ -568,7 +568,7 @@ static int polarizationsInRadiationFrame(
 		REAL8 Theta					/**< angle between the initial total ang momentum and line of sight. */
 	) {
 
-    REAL8 alpha, deltaPhi, twoPhiS, alphaDot;
+    REAL8 deltaPhi, twoPhiS, alphaDot;
     REAL8 LNx, LNy, LNz, v2, LNx_p2, LNy_p2, LNz_p2, LN_xz;
     UINT4 i; 
     REAL8Vector *alphaVec=NULL, *iVec=NULL;
@@ -619,7 +619,7 @@ static int polarizationsInRadiationFrame(
     
         if (V->data->data[i]) {
 
-            alpha = alphaVec->data[i];
+          //REAL8 alpha = alphaVec->data[i]; // Warning: set-but-not-used!
             LNx = LNhxVec->data->data[i];
             LNy = LNhyVec->data->data[i];
             LNz = LNhzVec->data->data[i];
