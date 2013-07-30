@@ -20,7 +20,6 @@ SFTdir="./testCFSv2_resamp_sfts"
 
 if [ -n "${LALPULSAR_DATADIR}" ]; then
     mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
-    saf_code="${saf_code} -E ${LALPULSAR_DATADIR}"
     cfs_resamp_code="${cfs_resamp_code} -E ${LALPULSAR_DATADIR}"
 fi
 
