@@ -898,7 +898,7 @@ void coh_PTF_calculate_det_stuff(
                                      &(params->trigTime));
     /* calculate response functions for trigger */
     XLALComputeDetAMResponse(&FplusTmp, &FcrossTmp,
-                            detectors[ifoNumber]->response,
+                            (const REAL4 (*)[3])detectors[ifoNumber]->response,
                             skyPoints->data[skyPointNum].longitude,
                             skyPoints->data[skyPointNum].latitude, 0.,
                             XLALGreenwichMeanSiderealTime(&(params->trigTime)));

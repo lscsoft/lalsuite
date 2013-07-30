@@ -1325,7 +1325,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
 
   /* Fill Fplus and Fcross*/
-  XLALComputeDetAMResponse(&Fplus, &Fcross,detector->response,longitude, latitude, polarization, gmst);
+  XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4 (*)[3])detector->response,longitude, latitude, polarization, gmst);
   /* And take the distance into account */
   FplusScaled  = Fplus  / (inj->distance);
   FcrossScaled = Fcross / (inj->distance);

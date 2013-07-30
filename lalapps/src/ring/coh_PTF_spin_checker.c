@@ -191,7 +191,7 @@ int main( int argc, char **argv )
           XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
           params->declination,&segStartTime);
       XLALComputeDetAMResponse(&FplusTmp, &FcrossTmp,
-         detectors[ifoNumber]->response,params->rightAscension,
+         (const REAL4 (*)[3])detectors[ifoNumber]->response,params->rightAscension,
          params->declination,0.,XLALGreenwichMeanSiderealTime(&segStartTime));
       Fplus[j*LAL_NUM_IFO + ifoNumber] = (REAL4) FplusTmp;
       Fcross[j*LAL_NUM_IFO + ifoNumber] = (REAL4) FcrossTmp;
