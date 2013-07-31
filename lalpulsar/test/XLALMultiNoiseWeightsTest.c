@@ -50,8 +50,9 @@
 #define FRACERR(x,y) (fabs((x)-(y))/(0.5*((x)+(y))))
 
 /*---------- empty initializers ---------- */
-LALStatus empty_status;
-SFTConstraints empty_constraints;
+const LALStatus empty_status;
+const SFTConstraints empty_constraints;
+const MultiNoiseWeights empty_MultiNoiseWeights;
 
 /* ----- internal prototypes ---------- */
 int XLALCompareMultiNoiseWeights ( MultiNoiseWeights *multiWeights1, MultiNoiseWeights *multiWeights2, REAL8 tolerance );
@@ -67,8 +68,25 @@ main (  void )
   MultiPSDVector *multiPSDs = NULL;
   MultiNoiseWeights *multiWeightsXLAL = NULL;
   MultiNoiseWeights *multiWeightsLAL = NULL;
+  MultiNoiseWeights *multiWeightsCorrect = NULL;
   UINT4 rngmedBins = 11;
   REAL8 tolerance = 2e-6;	/* same algorithm, should be basically identical results */
+
+  /* Construct the "correct" weights, calculated using the old LAL routines */
+  UINT4 numIFOsCorrect = 2;
+  XLAL_CHECK ( ( multiWeightsCorrect = XLALCalloc ( 1, sizeof(*multiWeightsCorrect ) ) ) != NULL, XLAL_ENOMEM );
+  multiWeightsCorrect->length = numIFOsCorrect;
+  multiWeightsCorrect->Sinv_Tsft = 1.980867126449e+52;
+  XLAL_CHECK ( ( multiWeightsCorrect->data = XLALCalloc ( numIFOsCorrect, sizeof(*multiWeightsCorrect->data ) ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK ( ( multiWeightsCorrect->data[0] = XLALCreateREAL8Vector(4) ) != NULL, XLAL_ENOMEM );
+  multiWeightsCorrect->data[0]->data[0] = 6.425160659487e-05;
+  multiWeightsCorrect->data[0]->data[1] = 7.259453662367e-06;
+  multiWeightsCorrect->data[0]->data[2] = 9.838893684664e-04;
+  multiWeightsCorrect->data[0]->data[3] = 5.043766789923e-05;
+  XLAL_CHECK ( ( multiWeightsCorrect->data[1] = XLALCreateREAL8Vector(3) ) != NULL, XLAL_ENOMEM );
+  multiWeightsCorrect->data[1]->data[0] = 1.582309910283e-04;
+  multiWeightsCorrect->data[1]->data[1] = 5.345673753744e-04;
+  multiWeightsCorrect->data[1]->data[2] = 6.998201363537e+00;
 
   /* Construct the catalog */
   XLAL_CHECK ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "MultiNoiseWeightsTest*.sft", &constraints ) ) != NULL, XLAL_EFUNC, " XLALSFTdataFind failed\n" );
@@ -86,10 +104,14 @@ main (  void )
   /* Get weights using XLAL function */
   XLAL_CHECK ( ( multiWeightsXLAL = XLALComputeMultiNoiseWeights ( multiPSDs, rngmedBins, 0 ) ) != NULL, XLAL_EFUNC, " XLALComputeMultiNoiseWeights failed\n" );
 
-  /* Compare LAL and XLAL weights */
-  XLAL_CHECK ( XLALCompareMultiNoiseWeights ( multiWeightsLAL, multiWeightsXLAL, tolerance ) == XLAL_SUCCESS, XLAL_EFAILED, "Comparison between LAL and XLAL MultiNoiseWeights failed\n" );
+  /* Compare XLAL weights to reference */
+  XLAL_CHECK ( XLALCompareMultiNoiseWeights ( multiWeightsXLAL, multiWeightsCorrect, tolerance ) == XLAL_SUCCESS, XLAL_EFAILED, "Comparison between XLAL and reference MultiNoiseWeights failed\n" );
+
+  /* Compare LAL weights to reference */
+  XLAL_CHECK ( XLALCompareMultiNoiseWeights ( multiWeightsLAL, multiWeightsCorrect, tolerance ) == XLAL_SUCCESS, XLAL_EFAILED, "Comparison between LAL and reference MultiNoiseWeights failed\n" );
 
   /* Clean up memory */
+  XLALDestroyMultiNoiseWeights ( multiWeightsCorrect );
   XLALDestroyMultiNoiseWeights ( multiWeightsXLAL );
   XLALDestroyMultiNoiseWeights ( multiWeightsLAL );
   XLALDestroyMultiPSDVector ( multiPSDs );
@@ -125,7 +147,7 @@ XLALCompareMultiNoiseWeights ( MultiNoiseWeights *multiWeights1, MultiNoiseWeigh
 
       for ( UINT4 alpha = 0; alpha < numSFTs; alpha++)
 	{
-	  XLALPrintInfo("IFO %d; SFT %d; XLAL weight %.12e; LAL weight %.12e\n", X, alpha, weights1->data[alpha], weights2->data[alpha]);
+	  XLALPrintInfo("IFO %d; SFT %d; weight1 %.12e; weight2 %.12e\n", X, alpha, weights1->data[alpha], weights2->data[alpha]);
 	  XLAL_CHECK ( FRACERR( weights1->data[alpha], weights2->data[alpha] ) <= tolerance, XLAL_EFAILED, "%s: weights for IFO %d, SFT %d differ by more than tolerance %g multiWeights1 = %g, multiWeights2 = %g\n", __func__, X, alpha, tolerance, weights1->data[alpha], weights2->data[alpha] );
 	}
     }
