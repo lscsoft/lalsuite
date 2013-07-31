@@ -1,3 +1,10 @@
+laldetchar (0.0.4-1) unstable; urgency=low
+
+  * LALDetChar 0.0.4
+  * Fix python shebang lines in debian packaging
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 31 Jul 2013 17:24:22 -0500
+
 laldetchar (0.0.3-1) unstable; urgency=low
 
   * LALDetChar 0.0.3
