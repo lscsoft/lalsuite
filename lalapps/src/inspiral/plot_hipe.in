@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHONPROG@
 """
 plot_inspiral_hipe.in - generates plots from ihope output
 

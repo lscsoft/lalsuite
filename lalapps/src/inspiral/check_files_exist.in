@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!@PYTHONPROG@
 
 """
 Check a cache file to see which files actually exist and which are missing

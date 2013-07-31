@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 from __future__ import division
 """
 coh_PTF_post_processing.in - post processing driver script for coh_PTF externally triggered pipeline

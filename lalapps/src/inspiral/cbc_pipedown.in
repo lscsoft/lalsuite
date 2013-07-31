@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path

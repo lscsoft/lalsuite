@@ -153,6 +153,8 @@ src/lalapps/lalapps-user-env.sh
 src/lalapps/lalapps-user-env.shell
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_fftw*_wisdom
+src/lalapps/lalapps_path2cache
+src/lalapps/lalapps_searchsum2cache
 src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version
 src/online/lalapps_online_datafind

@@ -1,4 +1,4 @@
-#!/usr/bin/env /usr/bin/python
+#!@PYTHONPROG@
 
 import shutil
 import os

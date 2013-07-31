@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 """
 inspiral_hipe.in - standalone inspiral pipeline driver script
 

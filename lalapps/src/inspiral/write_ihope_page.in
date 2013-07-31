@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!@PYTHONPROG@
 
 """
 Tools to create a HTML document that summarizes results produced by ihope. 
