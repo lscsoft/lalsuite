@@ -21,6 +21,7 @@
 #define __TWOSPECT_H__
 
 #include <lal/RealFFT.h>
+#include <lal/SFTfileIO.h>
 
 #include "cmdline.h"
 #include "TwoSpectTypes.h"
@@ -31,6 +32,9 @@ void free_inputParams(inputParamsStruct *input);
 ffdataStruct * new_ffdata(inputParamsStruct *input);
 void free_ffdata(ffdataStruct *data);
 
+SFTCatalog * findSFTdata(inputParamsStruct *input);
+MultiSFTVector * extractSFTband(inputParamsStruct *input, SFTCatalog *catalog);
+REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *input, REAL8 normalization);
 REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
 REAL4Vector * simpleTFdata(REAL8 fsig, REAL8 period, REAL8 moddepth, REAL8 Tcoh, REAL8 Tobs, REAL8 SFToverlap, REAL8 fminimum, REAL8 fmaximum, REAL8 sqrtSh);
 

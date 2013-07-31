@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.28"
+#define CMDLINE_PARSER_VERSION "1.1.29"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -93,12 +93,12 @@ struct gengetopt_args_info
   char * normRMSoutput_arg;	/**< @brief File for the output of the normalized RMS from the non-slided data.  */
   char * normRMSoutput_orig;	/**< @brief File for the output of the normalized RMS from the non-slided data original value given at command line.  */
   const char *normRMSoutput_help; /**< @brief File for the output of the normalized RMS from the non-slided data help description.  */
-  char * sftDir_arg;	/**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified).  */
-  char * sftDir_orig;	/**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified) original value given at command line.  */
-  const char *sftDir_help; /**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified) help description.  */
-  char * sftFile_arg;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified).  */
-  char * sftFile_orig;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified) original value given at command line.  */
-  const char *sftFile_help; /**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified) help description.  */
+  char * sftDir_arg;	/**< @brief Directory containing SFTs, e.g., /path/to/file (conflicts with --sftFile/--timestampsFile).  */
+  char * sftDir_orig;	/**< @brief Directory containing SFTs, e.g., /path/to/file (conflicts with --sftFile/--timestampsFile) original value given at command line.  */
+  const char *sftDir_help; /**< @brief Directory containing SFTs, e.g., /path/to/file (conflicts with --sftFile/--timestampsFile) help description.  */
+  char * sftFile_arg;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile).  */
+  char * sftFile_orig;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile) original value given at command line.  */
+  const char *sftFile_help; /**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile) help description.  */
   char * ephemDir_arg;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files.  */
   char * ephemDir_orig;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files original value given at command line.  */
   const char *ephemDir_help; /**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files help description.  */
@@ -184,6 +184,12 @@ struct gengetopt_args_info
   const char *useSSE_help; /**< @brief Use SSE functions (caution: user needs to have compiled for SSE or program fails) help description.  */
   int followUpOutsideULrange_flag;	/**< @brief Follow up outliers outside the range of the UL values (default=off).  */
   const char *followUpOutsideULrange_help; /**< @brief Follow up outliers outside the range of the UL values help description.  */
+  char * timestampsFile_arg;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options).  */
+  char * timestampsFile_orig;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) original value given at command line.  */
+  const char *timestampsFile_help; /**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) help description.  */
+  char * injectionSources_arg;	/**< @brief File containing sources to inject.  */
+  char * injectionSources_orig;	/**< @brief File containing sources to inject original value given at command line.  */
+  const char *injectionSources_help; /**< @brief File containing sources to inject help description.  */
   int signalOnly_flag;	/**< @brief SFTs contain only signal, no noise (default=off).  */
   const char *signalOnly_help; /**< @brief SFTs contain only signal, no noise help description.  */
   int templateTest_flag;	/**< @brief Test the doubly-Fourier transformed data against a single, exact template (default=off).  */
@@ -235,6 +241,9 @@ struct gengetopt_args_info
   const char *randSeed_help; /**< @brief Random seed value help description.  */
   int chooseSeed_flag;	/**< @brief The random seed value is chosen based on the input search parameters (default=off).  */
   const char *chooseSeed_help; /**< @brief The random seed value is chosen based on the input search parameters help description.  */
+  int injRandSeed_arg;	/**< @brief Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options) (default='0').  */
+  char * injRandSeed_orig;	/**< @brief Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options) original value given at command line.  */
+  const char *injRandSeed_help; /**< @brief Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options) help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
@@ -288,6 +297,8 @@ struct gengetopt_args_info
   unsigned int fastchisqinv_given ;	/**< @brief Whether fastchisqinv was given.  */
   unsigned int useSSE_given ;	/**< @brief Whether useSSE was given.  */
   unsigned int followUpOutsideULrange_given ;	/**< @brief Whether followUpOutsideULrange was given.  */
+  unsigned int timestampsFile_given ;	/**< @brief Whether timestampsFile was given.  */
+  unsigned int injectionSources_given ;	/**< @brief Whether injectionSources was given.  */
   unsigned int signalOnly_given ;	/**< @brief Whether signalOnly was given.  */
   unsigned int templateTest_given ;	/**< @brief Whether templateTest was given.  */
   unsigned int templateTestF_given ;	/**< @brief Whether templateTestF was given.  */
@@ -310,6 +321,7 @@ struct gengetopt_args_info
   unsigned int printUninitialized_given ;	/**< @brief Whether printUninitialized was given.  */
   unsigned int randSeed_given ;	/**< @brief Whether randSeed was given.  */
   unsigned int chooseSeed_given ;	/**< @brief Whether chooseSeed was given.  */
+  unsigned int injRandSeed_given ;	/**< @brief Whether injRandSeed was given.  */
 
 } ;
 

@@ -54,8 +54,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --configCopy=filename     Copy of the configuration file whose output is \n                                  gengetopt format  \n                                  (default=`input_values.conf')",
   "      --ULfilename=filename     Upper limit file name  (default=`uls.dat')",
   "      --normRMSoutput=filename  File for the output of the normalized RMS from \n                                  the non-slided data",
-  "      --sftDir=directory        Directory containing SFTs, e.g., /path/to/file \n                                  (one of --sftDir or --sftFile must be \n                                  specified)",
-  "      --sftFile=path/filename   Path and filename of SFTs, e.g., \n                                  /path/to/file/sftdata.sft (one of --sftDir or \n                                  --sftFile must be specified)",
+  "      --sftDir=path             Directory containing SFTs, e.g., /path/to/file \n                                  (conflicts with --sftFile/--timestampsFile)",
+  "      --sftFile=path/filename   Path and filename of SFTs, e.g., \n                                  /path/to/file/sftdata.sft (one of \n                                  --sftDir/--timestampsFile)",
   "      --ephemDir=directory      Path to ephemeris files, e.g. \n                                  /path/to/ephemeris/files [required]",
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files [required]",
   "\nTwoSpect search parameters:",
@@ -91,6 +91,9 @@ const char *gengetopt_args_info_full_help[] = {
   "      --fastchisqinv            Use a faster central chi-sq inversion function \n                                  (roughly float precision instead of double)  \n                                  (default=off)",
   "      --useSSE                  Use SSE functions (caution: user needs to have \n                                  compiled for SSE or program fails)  \n                                  (default=off)",
   "      --followUpOutsideULrange  Follow up outliers outside the range of the UL \n                                  values  (default=off)",
+  "\nInjection options:",
+  "      --timestampsFile=path/filename\n                                File to read timestamps from (file-format: \n                                  lines with <seconds> <nanoseconds>; conflicts \n                                  with --sftDir/--sftFile options)",
+  "      --injectionSources=path/filename\n                                File containing sources to inject",
   "\nHidden options:",
   "      --signalOnly              SFTs contain only signal, no noise  \n                                  (default=off)",
   "      --templateTest            Test the doubly-Fourier transformed data \n                                  against a single, exact template  \n                                  (default=off)",
@@ -114,6 +117,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --printUninitialized=INT  Print uninitialized values in TFdata_weighted \n                                  and TSofPowers vectors at n-th sky location \n                                  specified by option (if not enough sky \n                                  locations exist, then these vectors don't get \n                                  printed!)",
   "      --randSeed=INT            Random seed value",
   "      --chooseSeed              The random seed value is chosen based on the \n                                  input search parameters  (default=off)",
+  "      --injRandSeed=INT         Random seed value for reproducable noise \n                                  (conflicts with --sftDir/--sftFile options)  \n                                  (default=`0')",
     0
 };
 
@@ -179,11 +183,14 @@ init_help_array(void)
   gengetopt_args_info_help[56] = gengetopt_args_info_full_help[56];
   gengetopt_args_info_help[57] = gengetopt_args_info_full_help[57];
   gengetopt_args_info_help[58] = gengetopt_args_info_full_help[58];
-  gengetopt_args_info_help[59] = 0; 
+  gengetopt_args_info_help[59] = gengetopt_args_info_full_help[59];
+  gengetopt_args_info_help[60] = gengetopt_args_info_full_help[60];
+  gengetopt_args_info_help[61] = gengetopt_args_info_full_help[61];
+  gengetopt_args_info_help[62] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[60];
+const char *gengetopt_args_info_help[63];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -291,6 +298,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->fastchisqinv_given = 0 ;
   args_info->useSSE_given = 0 ;
   args_info->followUpOutsideULrange_given = 0 ;
+  args_info->timestampsFile_given = 0 ;
+  args_info->injectionSources_given = 0 ;
   args_info->signalOnly_given = 0 ;
   args_info->templateTest_given = 0 ;
   args_info->templateTestF_given = 0 ;
@@ -313,6 +322,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->printUninitialized_given = 0 ;
   args_info->randSeed_given = 0 ;
   args_info->chooseSeed_given = 0 ;
+  args_info->injRandSeed_given = 0 ;
 }
 
 static
@@ -389,6 +399,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->fastchisqinv_flag = 0;
   args_info->useSSE_flag = 0;
   args_info->followUpOutsideULrange_flag = 0;
+  args_info->timestampsFile_arg = NULL;
+  args_info->timestampsFile_orig = NULL;
+  args_info->injectionSources_arg = NULL;
+  args_info->injectionSources_orig = NULL;
   args_info->signalOnly_flag = 0;
   args_info->templateTest_flag = 0;
   args_info->templateTestF_orig = NULL;
@@ -413,6 +427,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->printUninitialized_orig = NULL;
   args_info->randSeed_orig = NULL;
   args_info->chooseSeed_flag = 0;
+  args_info->injRandSeed_arg = 0;
+  args_info->injRandSeed_orig = NULL;
   
 }
 
@@ -475,28 +491,31 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->fastchisqinv_help = gengetopt_args_info_full_help[56] ;
   args_info->useSSE_help = gengetopt_args_info_full_help[57] ;
   args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[58] ;
-  args_info->signalOnly_help = gengetopt_args_info_full_help[60] ;
-  args_info->templateTest_help = gengetopt_args_info_full_help[61] ;
-  args_info->templateTestF_help = gengetopt_args_info_full_help[62] ;
-  args_info->templateTestP_help = gengetopt_args_info_full_help[63] ;
-  args_info->templateTestDf_help = gengetopt_args_info_full_help[64] ;
-  args_info->ULsolver_help = gengetopt_args_info_full_help[65] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[66] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[67] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[68] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[69] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[70] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[71] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[72] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[73] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[74] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[75] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[76] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[77] ;
-  args_info->printData_help = gengetopt_args_info_full_help[78] ;
-  args_info->printUninitialized_help = gengetopt_args_info_full_help[79] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[80] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[81] ;
+  args_info->timestampsFile_help = gengetopt_args_info_full_help[60] ;
+  args_info->injectionSources_help = gengetopt_args_info_full_help[61] ;
+  args_info->signalOnly_help = gengetopt_args_info_full_help[63] ;
+  args_info->templateTest_help = gengetopt_args_info_full_help[64] ;
+  args_info->templateTestF_help = gengetopt_args_info_full_help[65] ;
+  args_info->templateTestP_help = gengetopt_args_info_full_help[66] ;
+  args_info->templateTestDf_help = gengetopt_args_info_full_help[67] ;
+  args_info->ULsolver_help = gengetopt_args_info_full_help[68] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[69] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[70] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[71] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[72] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[73] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[74] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[75] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[76] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[77] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[78] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[79] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[80] ;
+  args_info->printData_help = gengetopt_args_info_full_help[81] ;
+  args_info->printUninitialized_help = gengetopt_args_info_full_help[82] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[83] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[84] ;
+  args_info->injRandSeed_help = gengetopt_args_info_full_help[85] ;
   
 }
 
@@ -689,6 +708,10 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->simpleBandRejection_orig));
   free_string_field (&(args_info->lineDetection_orig));
   free_string_field (&(args_info->FFTplanFlag_orig));
+  free_string_field (&(args_info->timestampsFile_arg));
+  free_string_field (&(args_info->timestampsFile_orig));
+  free_string_field (&(args_info->injectionSources_arg));
+  free_string_field (&(args_info->injectionSources_orig));
   free_string_field (&(args_info->templateTestF_orig));
   free_string_field (&(args_info->templateTestP_orig));
   free_string_field (&(args_info->templateTestDf_orig));
@@ -696,6 +719,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->dopplerMultiplier_orig));
   free_string_field (&(args_info->printUninitialized_orig));
   free_string_field (&(args_info->randSeed_orig));
+  free_string_field (&(args_info->injRandSeed_orig));
   
   
 
@@ -878,6 +902,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "useSSE", 0, 0 );
   if (args_info->followUpOutsideULrange_given)
     write_into_file(outfile, "followUpOutsideULrange", 0, 0 );
+  if (args_info->timestampsFile_given)
+    write_into_file(outfile, "timestampsFile", args_info->timestampsFile_orig, 0);
+  if (args_info->injectionSources_given)
+    write_into_file(outfile, "injectionSources", args_info->injectionSources_orig, 0);
   if (args_info->signalOnly_given)
     write_into_file(outfile, "signalOnly", 0, 0 );
   if (args_info->templateTest_given)
@@ -922,6 +950,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "randSeed", args_info->randSeed_orig, 0);
   if (args_info->chooseSeed_given)
     write_into_file(outfile, "chooseSeed", 0, 0 );
+  if (args_info->injRandSeed_given)
+    write_into_file(outfile, "injRandSeed", args_info->injRandSeed_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -1644,6 +1674,8 @@ cmdline_parser_internal (
         { "fastchisqinv",	0, NULL, 0 },
         { "useSSE",	0, NULL, 0 },
         { "followUpOutsideULrange",	0, NULL, 0 },
+        { "timestampsFile",	1, NULL, 0 },
+        { "injectionSources",	1, NULL, 0 },
         { "signalOnly",	0, NULL, 0 },
         { "templateTest",	0, NULL, 0 },
         { "templateTestF",	1, NULL, 0 },
@@ -1666,6 +1698,7 @@ cmdline_parser_internal (
         { "printUninitialized",	1, NULL, 0 },
         { "randSeed",	1, NULL, 0 },
         { "chooseSeed",	0, NULL, 0 },
+        { "injRandSeed",	1, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -1926,7 +1959,7 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified).  */
+          /* Directory containing SFTs, e.g., /path/to/file (conflicts with --sftFile/--timestampsFile).  */
           else if (strcmp (long_options[option_index].name, "sftDir") == 0)
           {
           
@@ -1940,7 +1973,7 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified).  */
+          /* Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile).  */
           else if (strcmp (long_options[option_index].name, "sftFile") == 0)
           {
           
@@ -2364,6 +2397,34 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options).  */
+          else if (strcmp (long_options[option_index].name, "timestampsFile") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->timestampsFile_arg), 
+                 &(args_info->timestampsFile_orig), &(args_info->timestampsFile_given),
+                &(local_args_info.timestampsFile_given), optarg, 0, 0, ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "timestampsFile", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* File containing sources to inject.  */
+          else if (strcmp (long_options[option_index].name, "injectionSources") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->injectionSources_arg), 
+                 &(args_info->injectionSources_orig), &(args_info->injectionSources_given),
+                &(local_args_info.injectionSources_given), optarg, 0, 0, ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "injectionSources", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* SFTs contain only signal, no noise.  */
           else if (strcmp (long_options[option_index].name, "signalOnly") == 0)
           {
@@ -2638,6 +2699,20 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->chooseSeed_flag), 0, &(args_info->chooseSeed_given),
                 &(local_args_info.chooseSeed_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "chooseSeed", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options).  */
+          else if (strcmp (long_options[option_index].name, "injRandSeed") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->injRandSeed_arg), 
+                 &(args_info->injRandSeed_orig), &(args_info->injRandSeed_given),
+                &(local_args_info.injRandSeed_given), optarg, 0, "0", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "injRandSeed", '-',
                 additional_error))
               goto failure;
           
