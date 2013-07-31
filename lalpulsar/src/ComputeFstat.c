@@ -73,13 +73,82 @@ struct tagFstatInputData {
 
 static FstatInputData*
 SetupFstat_Common(
-  UNUSED MultiSFTVector **multiSFTs,
-  UNUSED MultiNoiseWeights **multiWeights,
-  UNUSED const EphemerisData *edat,
-  UNUSED const SSBprecision SSBprec
+  MultiSFTVector **multiSFTs,
+  MultiNoiseWeights **multiWeights,
+  const EphemerisData *edat,
+  const SSBprecision SSBprec
   )
 {
-  XLAL_ERROR_NULL( XLAL_EFAILED, "Unimplemented!" );
+
+  // Check input
+  XLAL_CHECK_NULL(multiSFTs != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(*multiSFTs != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(multiWeights != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(edat != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(SSBprec < SSBPREC_LAST, XLAL_EINVAL);
+
+  // Check number of SFTs
+  XLAL_CHECK_NULL((*multiSFTs)->length > 0, XLAL_EINVAL, "Found no SFTs!");
+  XLAL_CHECK_NULL((*multiSFTs)->length <= PULSAR_MAX_DETECTORS, XLAL_EINVAL, "Supports only up to PULSAR_MAX_DETECTORS=%u detectors", PULSAR_MAX_DETECTORS);
+  for (UINT4 X = 0; X < (*multiSFTs)->length; ++X) {
+
+    // Check number of SFTs for each detector
+    XLAL_CHECK_NULL((*multiSFTs)->data[X]->length > 0, XLAL_EINVAL, "Found no SFTs from detector %u", X);
+    for (UINT4 alpha = 0; alpha < (*multiSFTs)->data[X]->length; ++alpha) {
+
+      // Check length of SFTs
+      XLAL_CHECK_NULL((*multiSFTs)->data[X]->data[alpha].data->length > 0, XLAL_EINVAL,
+                      "Found zero-length SFT from detector %u, position %u", X, alpha);
+
+    }
+
+  }
+
+  // If noise weights were supplied ...
+  if (*multiWeights != NULL) {
+
+    // Check numbers of noise weights match SFTs
+    XLAL_CHECK_NULL((*multiWeights)->length == (*multiSFTs)->length, XLAL_EINVAL,
+                    "Number of noise weight detectors does not match SFTS: %u != %u",
+                    (*multiWeights)->length, (*multiSFTs)->length);
+    for (UINT4 X = 0; X < (*multiSFTs)->length; ++X) {
+
+      // Check number of noise weights for each detector
+      XLAL_CHECK_NULL((*multiWeights)->data[X]->length == (*multiSFTs)->data[X]->length, XLAL_EINVAL,
+                      "Number of noise weights from detector %u does not match SFTS: %u != %u",
+                      X, (*multiWeights)->data[X]->length, (*multiSFTs)->data[X]->length);
+
+    }
+
+  }
+
+  // Allocate input data struct
+  FstatInputData* input = XLALCalloc(1, sizeof(*input));
+  XLAL_CHECK_NULL(input != NULL, XLAL_ENOMEM);
+
+  // Save number of detectors, and copy name of each detector
+  input->common.numDetectors = (*multiSFTs)->length;
+  for (UINT4 X = 0; X < (*multiSFTs)->length; ++X) {
+    strncpy(input->common.detectorNames[X], (*multiSFTs)->data[X]->data[0].name, 2);
+  }
+
+  // If no noise weights were supplied ...
+  if (*multiWeights == NULL) {
+
+    // Correction to F-statistic quantities computed by XLALComputeFstat() without noise weights
+    const REAL8 Tsft = 1.0 / (*multiSFTs)->data[0]->data[0].deltaF;
+    input->common.Fnorm = 1.0 / sqrt( 0.5 * Tsft );
+
+  } else {
+    input->common.Fnorm = 0.0;
+  }
+
+  // Save pointer to input noise weights, set supplied pointer to NULL
+  input->common.multiWeights = *multiWeights;
+  *multiWeights = NULL;
+
+  return input;
+
 }
 
 FstatInputDataVector*
