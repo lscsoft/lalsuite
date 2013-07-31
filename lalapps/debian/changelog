@@ -1,3 +1,11 @@
+lalapps (6.13.2-1) unstable; urgency=low
+
+  * LALApps 6.13.2
+  * Fix python shebang lines in debian packaging
+  * BAYESTAR updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 31 Jul 2013 17:29:12 -0500
+
 lalapps (6.13.1-1) unstable; urgency=low
 
   * LALApps 6.13.1
