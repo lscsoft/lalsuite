@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # usage:  cat x.dagman.out | dag_node_runtimes "node name regex"
 
