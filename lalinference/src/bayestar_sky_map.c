@@ -318,8 +318,7 @@ double *bayestar_sky_map_tdoa_snr(
     long *npix, /* Input: number of HEALPix pixels. */
     double gmst, /* Greenwich mean sidereal time in radians. */
     int nifos, /* Input: number of detectors. */
-    /* FIXME: make const; change XLALComputeDetAMResponse prototype */
-    /* const */ float **responses, /* Pointers to detector responses. */
+    const float (*responses)[3][3], /* Pointers to detector responses. */
     const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
     const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
     const double *snrs, /* Input: array of SNRs. */
@@ -430,7 +429,7 @@ double *bayestar_sky_map_tdoa_snr(
         /* Look up antenna factors */
         for (iifo = 0; iifo < nifos; iifo ++)
         {
-            XLALComputeDetAMResponse(&F[iifo][0], &F[iifo][1], (float (*)[3])responses[iifo], phi, M_PI_2 - theta, 0, gmst);
+            XLALComputeDetAMResponse(&F[iifo][0], &F[iifo][1], responses[iifo], phi, M_PI_2 - theta, 0, gmst);
             F[iifo][0] *= d1[iifo];
             F[iifo][1] *= d1[iifo];
         }
