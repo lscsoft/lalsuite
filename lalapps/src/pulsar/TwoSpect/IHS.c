@@ -418,11 +418,13 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
       while (randval<=0.0 || randval>=2.0) randval = 1.0 + gsl_ran_gaussian(params->rng, 0.2);     //limit range of variation
 
       //scale the exponential noise
-      sseScaleREAL4Vector(noise, noise, randval);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      if (params->useSSE) {
+         sseScaleREAL4Vector(noise, noise, randval);
+         if (xlalErrno!=0) {
+           fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
+           XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+      } else for (jj=0; jj<(INT4)noise->length; jj++) noise->data[jj] *= randval;
 
       //Compute IHS value on exponential noise
       incHarmSumVector(ihsvector, noise, params->ihsfactor);
