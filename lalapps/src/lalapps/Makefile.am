@@ -127,17 +127,4 @@ gen-git_version.py :
 	$(AM_V_at)$(GENERATE_VCS_INFO) git_version.py $(srcdir)/git_version.py.git
 endif
 
-python_config.sed:
-	@-rm -f python_config.sed
-	@echo "@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
-	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
-
-lalapps_path2cache: $(srcdir)/lalapps_path2cache.in python_config.sed:
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/lalapps_path2cache.in > lalapps_path2cache
-	@chmod +x lalapps_path2cache
-
-lalapps_searchsum2cache: $(srcdir)/lalapps_searchsum2cache.in python_config.sed:
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/lalapps_searchsum2cache.in > lalapps_searchsum2cache
-	@chmod +x lalapps_searchsum2cache
-
 TESTS = lalapps_version
