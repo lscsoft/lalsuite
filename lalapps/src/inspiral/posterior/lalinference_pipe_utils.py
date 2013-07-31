@@ -127,7 +127,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
       srate = max(srate)
     else:
       srate = srate_psdfile
-      fhigh = srate_psdfile * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal 
+      fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
     ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = srate, trigSNR = trigSNR, fhigh = fhigh)
     if(coinc.snr>SNRthreshold): output.append(ev)
   
