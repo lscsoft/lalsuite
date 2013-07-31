@@ -430,7 +430,7 @@ double *bayestar_sky_map_tdoa_snr(
         /* Look up antenna factors */
         for (iifo = 0; iifo < nifos; iifo ++)
         {
-            XLALComputeDetAMResponse(&F[iifo][0], &F[iifo][1], (const REAL4 (*)[3])responses[iifo], phi, M_PI_2 - theta, 0, gmst);
+            XLALComputeDetAMResponse(&F[iifo][0], &F[iifo][1], (float (*)[3])responses[iifo], phi, M_PI_2 - theta, 0, gmst);
             F[iifo][0] *= d1[iifo];
             F[iifo][1] *= d1[iifo];
         }
