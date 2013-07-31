@@ -685,8 +685,7 @@ LALComputeNoiseWeights  (LALStatus        *status,
 } /* LALComputeNoiseWeights() */
 
 
-/** Computes weight factors arising from MultiSFTs with different noise
- * floors
+/** \deprecated Use XLALComputeMultiNoiseWeights() instead
  */
 void LALComputeMultiNoiseWeights  (LALStatus             *status,
 				   MultiNoiseWeights     **out,
@@ -694,12 +693,10 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 				   UINT4                 blocksRngMed,
 				   UINT4                 excludePercentile)
 {
-  UINT4 Y, X, alpha, k, numifos, numsfts, lengthsft, numsftsTot;
-  MultiNoiseWeights *weights;
-  REAL8 Tsft = 1.0 / rngmed->data[0]->data[0].deltaF;
+
+  MultiNoiseWeights *weights = NULL;
 
   INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
 
   ASSERT ( rngmed, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
   ASSERT ( rngmed->data, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
@@ -708,89 +705,14 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   ASSERT ( out, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
   ASSERT ( *out == NULL, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
 
-  numifos = rngmed->length;
-
-  if ( (weights = (MultiNoiseWeights *)LALCalloc(1, sizeof(MultiNoiseWeights))) == NULL ){
-    ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
-  }
-
-  weights->length = numifos;
-  if ( (weights->data = (REAL8Vector **)LALCalloc( numifos, sizeof(REAL8Vector *))) == NULL) {
-    ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
-  }
-
-  numsftsTot = 0;
-  REAL8 sumWeights = 0;
-
-  for ( X = 0; X < numifos; X++)
+  if ( (weights = XLALComputeMultiNoiseWeights ( rngmed, blocksRngMed, excludePercentile )) == NULL )
     {
-      numsfts = rngmed->data[X]->length;
-      numsftsTot += numsfts;
-
-      /* create k^th weights vector */
-      LALDCreateVector ( status->statusPtr, &(weights->data[X]), numsfts);
-      BEGINFAIL( status ) {
-	for ( Y = 0; Y < X-1; Y++)
-	  LALDDestroyVector (status->statusPtr, &(weights->data[Y]));
-	LALFree (weights->data);
-	LALFree (weights);
-      } ENDFAIL(status);
-
-      /* loop over rngmeds and calculate weights -- one for each sft */
-      for ( alpha = 0; alpha < numsfts; alpha++)
-	{
-	  REAL8FrequencySeries *thisrm;
-	  UINT4 halfBlock = blocksRngMed/2;
-	  UINT4 excludeIndex, halfLength, length;
-          REAL8 wXa;
-
-	  thisrm = &(rngmed->data[X]->data[alpha]);
-
-	  lengthsft = thisrm->data->length;
-	  if ( lengthsft < blocksRngMed ) {
-	    ABORT ( status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
-	  }
-
-	  length = lengthsft - blocksRngMed + 1;
-	  halfLength = length/2;
-
-	  /* calculate index in power medians vector from which to calculate mean */
-	  excludeIndex =  excludePercentile * halfLength ; /* integer arithmetic */
-	  excludeIndex /= 100; /* integer arithmetic */
-
-	  REAL8 Tsft_avgS2 = 0.0;	// 'S2' refers to double-sided PSD
-	  for ( k = halfBlock + excludeIndex; k < lengthsft - halfBlock - excludeIndex; k++)
-	    Tsft_avgS2 += thisrm->data->data[k];
-	  Tsft_avgS2 /= lengthsft - 2*halfBlock - 2*excludeIndex;
-
-          wXa = 1.0/Tsft_avgS2;	// unnormalized weight
-	  weights->data[X]->data[alpha] = wXa;
-
-	  sumWeights += wXa;	// sum the weights to normalize this at the end
-	} /* end loop over sfts for each ifo */
-
-    } /* end loop over ifos */
-
-  /* overall noise-normalization factor Sinv = 1/Nsft sum_Xa Sinv_Xa,
-   * see Eq.(60) in CFSv2 notes:
-   * https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=1665&version=3
-   */
-  REAL8 TsftS2_inv = sumWeights / numsftsTot;	// this is double-sided PSD 'S2'
-
-  /* make weights of order unity by normalizing with TsftS2_inv, see Eq.(58) in CFSv2 notes (v3) */
-  for ( X = 0; X < numifos; X ++) {
-    numsfts = weights->data[X]->length;
-    for ( alpha = 0; alpha < numsfts; alpha ++)
-      weights->data[X]->data[alpha] /= TsftS2_inv;
-  }
-
-  weights->Sinv_Tsft = 0.5 * Tsft*Tsft * TsftS2_inv;		/* 'Sinv * Tsft' refers to single-sided PSD!! Eq.(60) in CFSv2 notes (v3)*/
+      XLALPrintError ("XLALComputeMultiNoiseWeights() failed with xlalErrno = %d\n", xlalErrno );
+      ABORT ( status, SFTUTILS_EFUNC, SFTUTILS_MSGEFUNC );
+    }
 
   *out = weights;
 
-
-  DETATCHSTATUSPTR (status);
-   /* normal exit */
   RETURN (status);
 
 } /* LALComputeMultiNoiseWeights() */
