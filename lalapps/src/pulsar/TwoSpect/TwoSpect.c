@@ -3099,9 +3099,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    if (args_info.injRandSeed_given) {
       fprintf(LOG,"NOTE: injection random seed value %d is being used\n", args_info.injRandSeed_arg);
       fprintf(stderr,"NOTE: injection random seed value %d is being used\n", args_info.injRandSeed_arg);
-    }
-
-   //Extra warning that bad SFTs are being marked and removed
+   }
    if (args_info.markBadSFTs_given) {
       fprintf(LOG,"NOTE: Marking bad SFTs\n");
       fprintf(stderr,"NOTE: Marking bad SFTs\n");

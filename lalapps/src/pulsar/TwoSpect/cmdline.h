@@ -129,8 +129,8 @@ struct gengetopt_args_info
   int harmonicNumToSearch_arg;	/**< @brief Number of harmonics of the Pmin to Pmax range to search (default='1').  */
   char * harmonicNumToSearch_orig;	/**< @brief Number of harmonics of the Pmin to Pmax range to search original value given at command line.  */
   const char *harmonicNumToSearch_help; /**< @brief Number of harmonics of the Pmin to Pmax range to search help description.  */
-  int templateSearch_flag;	/**< @brief Flag for doing a pure template-based search on search region specified by (sky,f,fspan,Pmin,Pmax,dfmin,dfmax) (default=off).  */
-  const char *templateSearch_help; /**< @brief Flag for doing a pure template-based search on search region specified by (sky,f,fspan,Pmin,Pmax,dfmin,dfmax) help description.  */
+  int templateSearch_flag;	/**< @brief Flag for doing a pure template-based search on search region specified by (sky,f,fspan,hardcoded P, hardcoded asini) (default=off).  */
+  const char *templateSearch_help; /**< @brief Flag for doing a pure template-based search on search region specified by (sky,f,fspan,hardcoded P, hardcoded asini) help description.  */
   int ihsfactor_arg;	/**< @brief Number of harmonics to sum in IHS algorithm (default='5').  */
   char * ihsfactor_orig;	/**< @brief Number of harmonics to sum in IHS algorithm original value given at command line.  */
   const char *ihsfactor_help; /**< @brief Number of harmonics to sum in IHS algorithm help description.  */

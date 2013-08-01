@@ -67,7 +67,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --skyRegionFile=filename  File with the grid points",
   "      --linPolAngle=DOUBLE      Polarization angle to search using linear \n                                  polarization (when unspecified default is \n                                  circular polarization",
   "      --harmonicNumToSearch=INT Number of harmonics of the Pmin to Pmax range \n                                  to search  (default=`1')",
-  "      --templateSearch          Flag for doing a pure template-based search on \n                                  search region specified by \n                                  (sky,f,fspan,Pmin,Pmax,dfmin,dfmax)  \n                                  (default=off)",
+  "      --templateSearch          Flag for doing a pure template-based search on \n                                  search region specified by \n                                  (sky,f,fspan,hardcoded P, hardcoded asini)  \n                                  (default=off)",
   "\nTwoSpect threshold settings:",
   "      --ihsfactor=INT           Number of harmonics to sum in IHS algorithm  \n                                  (default=`5')",
   "      --ihsfar=DOUBLE           IHS FAR threshold",
@@ -2135,7 +2135,7 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* Flag for doing a pure template-based search on search region specified by (sky,f,fspan,Pmin,Pmax,dfmin,dfmax).  */
+          /* Flag for doing a pure template-based search on search region specified by (sky,f,fspan,hardcoded P, hardcoded asini).  */
           else if (strcmp (long_options[option_index].name, "templateSearch") == 0)
           {
           
