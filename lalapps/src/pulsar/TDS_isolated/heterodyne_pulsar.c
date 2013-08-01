@@ -46,6 +46,9 @@ and reheterodyne with this phase difference. */
 /* define a macro to round a number without having to use the C round function */
 #define ROUND(a) (floor(a+0.5))
 
+/* allocate 1Mb (2^20) of memory at a time */
+#define MAXALLOC 1048576
+
 /* track memory usage under linux */
 #define TRACKMEMUSE 0
 
@@ -474,11 +477,11 @@ heterodyne.\n");  }
             exit(1);
           }
 
-          /* dynamically allocate memory 100 lines at a time */
-          if( ( i == 1 ) || ( i % 100 == 0 ) ){
-            if( (times = XLALResizeREAL8Vector( times, 100*memcount )) == NULL
+          /* dynamically allocate memory 2^20 lines at a time */
+          if( ( i == 1 ) || ( i % MAXALLOC == 0 ) ){
+            if( (times = XLALResizeREAL8Vector( times, MAXALLOC*memcount )) == NULL
               || (data = XLALResizeCOMPLEX16TimeSeries( data, 0,
-              100*memcount)) == NULL )
+              MAXALLOC*memcount)) == NULL )
               {  XLALPrintError("Error resizing data memory.\n");  }
             memcount++;
           }
@@ -503,11 +506,11 @@ heterodyne.\n");  }
           }
           else continue;
 
-          /* dynamically allocate memory 100 lines at a time */
-          if( ( i == 1 ) || ( i % 100 == 0 ) ){
-            if( (times = XLALResizeREAL8Vector( times, 100*memcount )) == NULL
+          /* dynamically allocate memory 2^20 lines at a time */
+          if( ( i == 1 ) || ( i % MAXALLOC == 0 ) ){
+            if( (times = XLALResizeREAL8Vector( times, MAXALLOC*memcount )) == NULL
               || (data = XLALResizeCOMPLEX16TimeSeries( data, 0,
-              100*memcount)) == NULL )
+              MAXALLOC*memcount)) == NULL )
               {  XLALPrintError("Error resizing data memory.\n");  }
             memcount++;
           }
