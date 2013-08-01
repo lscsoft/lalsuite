@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
       XLALDestroyMultiSFTVector(sftvector);
    } else if (args_info.timestampsFile_given) {
       if (inputParams->signalOnly) args_info.avesqrtSh_arg = 0.0;
-      LALStringVector *timestampFiles = XLALCreateStringVector(args_info.timestampsFile_arg);
+      LALStringVector *timestampFiles = XLALCreateStringVector(args_info.timestampsFile_arg, NULL);
       if (timestampFiles==NULL) {
          fprintf(stderr, "%s: XLALCreateStringVector() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -1647,16 +1647,22 @@ REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *in
    //Load the data into the output vector, roughly normalizing as we go along from the input value
    REAL8 sqrtnorm = sqrt(normalization);
    for (ii=0; ii<numffts; ii++) {
-      SFTtype *sft = &(sfts->data[0]->data[ii - nonexistantsft]);
-      if (sft->epoch.gpsSeconds == (INT4)round(ii*(input->Tcoh-input->SFToverlap)+input->searchstarttime)) {
-         for (jj=0; jj<sftlength; jj++) {
-            COMPLEX8 sftcoeff = sft->data->data[jj];
-            tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*crealf(sftcoeff))*(sqrtnorm*crealf(sftcoeff)) + (sqrtnorm*cimagf(sftcoeff))*(sqrtnorm*cimagf(sftcoeff)));  //power, normalized
-         } /* for jj < sftLength */
+      if (ii-nonexistantsft < sfts->data[0]->length) {
+         SFTtype *sft = &(sfts->data[0]->data[ii - nonexistantsft]);
+         if (sft->epoch.gpsSeconds == (INT4)round(ii*(input->Tcoh-input->SFToverlap)+input->searchstarttime)) {
+            for (jj=0; jj<sftlength; jj++) {
+               COMPLEX8 sftcoeff = sft->data->data[jj];
+               tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*crealf(sftcoeff))*(sqrtnorm*crealf(sftcoeff)) + (sqrtnorm*cimagf(sftcoeff))*(sqrtnorm*cimagf(sftcoeff)));  //power, normalized
+            } /* for jj < sftLength */
+         } else {
+            memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
+            nonexistantsft++;    //increment the nonexistantsft counter
+         }
       } else {
-         memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
-         nonexistantsft++;    //increment the nonexistantsft counter
+          memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
+          nonexistantsft++;    //increment the nonexistantsft counter
       }
+      
       
    } /* for ii < numffts */
 
