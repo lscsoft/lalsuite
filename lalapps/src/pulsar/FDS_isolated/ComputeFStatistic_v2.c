@@ -287,8 +287,6 @@ typedef struct {
   CHAR *workingDir;		/**< directory to use for output files */
   REAL8 timerCount;		/**< output progress-meter every timerCount seconds */
 
-  INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
-
   BOOLEAN version;		/**< output version information */
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
@@ -1121,7 +1119,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
-  uvar->upsampleSFTs = 1;
   uvar->FreqBand = 0.0;
   uvar->Alpha 	= 0.0;
   uvar->Delta 	= 0.0;
@@ -1319,7 +1316,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
   LALregREALUserStruct(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: midTime]");
 
-  LALregINTUserStruct(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
   LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
 
   LALregSTRINGUserStruct(status,outputLogPrintf, 0,  UVAR_DEVELOPER, "Send all output from LogPrintf statements to this file");
@@ -1640,41 +1636,12 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 	    cfg->multiNoiseWeights->data[X]->data[alpha] = 1.0;
     } /* if ! SignalOnly */
 
-  /* ----- upsample SFTs ----- */
-  if ( (lalDebugLevel >= 2) && (uvar->upsampleSFTs > 1) )
-  {
-    UINT4 X, numDet = cfg->multiSFTs->length;
-    LogPrintf (LOG_DEBUG, "Writing original SFTs for debugging ... ");
-    for (X=0; X < numDet ; X ++ )
-      {
-	TRY ( LALWriteSFTVector2Dir ( status->statusPtr, cfg->multiSFTs->data[X], "./", "original", "orig"), status );
-      }
-    LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-  }
-
-  LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar->upsampleSFTs );
-  TRY ( upsampleMultiSFTVector ( status->statusPtr, cfg->multiSFTs, uvar->upsampleSFTs, 16 ), status );
-  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-
-  if ( lalDebugLevel >= 2 && (uvar->upsampleSFTs > 1) )
-  {
-    UINT4 X, numDet = cfg->multiSFTs->length;
-    CHAR tag[60];
-    sprintf (tag, "upsampled%02d", uvar->upsampleSFTs );
-    LogPrintf (LOG_DEBUG, "Writing upsampled SFTs for debugging ... ");
-    for (X=0; X < numDet ; X ++ )
-      {
-	TRY ( LALWriteSFTVector2Dir ( status->statusPtr, cfg->multiSFTs->data[X], "./", tag, tag), status );
-      }
-    LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-  }
-
   /* ----- set computational parameters for F-statistic from User-input ----- */
   cfg->CFparams.Dterms = uvar->Dterms;
   cfg->CFparams.SSBprec = uvar->SSBprecision;
   cfg->CFparams.useRAA = uvar->useRAA;
   cfg->CFparams.bufferedRAA = uvar->bufferedRAA;
-  cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs;
+  cfg->CFparams.upsampling = 1;
   cfg->CFparams.edat = cfg->ephemeris;	// this will be used by ComputeFStatFreqBand_RS() to internally compute the multiDetState series
 
   /* internal refTime is used for computing the F-statistic at, to avoid large (t - tRef)^2 values */
