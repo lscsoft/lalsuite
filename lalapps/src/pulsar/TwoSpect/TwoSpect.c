@@ -832,54 +832,10 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       XLALDestroyREAL4Vector(TFdata_slided);
+      XLALDestroyREAL4Vector(antweights);
 
       //Print out data product if requested
       if (args_info.printData_given) {
-         REAL8 tfnormvalue = ffdata->tfnormalization/(0.5*inputParams->Tcoh);
-         REAL4Vector *tfdata2 = readInSFTs(inputParams, &tfnormvalue);
-         if (tfdata2==NULL) {
-            fprintf(stderr, "\n%s: readInSFTs() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         if (inputParams->markBadSFTs!=0 && inputParams->signalOnly==0) {
-            INT4Vector *removeTheseSFTs2 = markBadSFTs(tfdata2, inputParams);
-            if (removeTheseSFTs2==NULL) {
-               fprintf(stderr, "%s: markBadSFTs() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            removeBadSFTs(tfdata2, removeTheseSFTs2);
-            XLALDestroyINT4Vector(removeTheseSFTs2);
-         }
-         REAL4Vector *usableTFdata2 = XLALCreateREAL4Vector(background->length);
-         if (usableTFdata2==NULL) {
-            fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, background->length);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         for (ii=0; ii<ffdata->numffts; ii++) memcpy(&(usableTFdata2->data[ii*(ffdata->numfbins+2*inputParams->maxbinshift)]), &(tfdata2->data[ii*(tempnumfbins+2*inputParams->maxbinshift) + (INT4)round(0.5*(inputParams->blksize-1))]), sizeof(REAL4)*(ffdata->numfbins+2*inputParams->maxbinshift));
-         XLALDestroyREAL4Vector(tfdata2);
-         REAL4Vector *usableTFdata_slided2 = XLALCreateREAL4Vector(ffdata->numfbins*ffdata->numffts);
-         if (usableTFdata_slided2==NULL) {
-            fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins*ffdata->numffts);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         slideTFdata(usableTFdata_slided2, inputParams, usableTFdata2, binshifts);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: slideTFdata() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         XLALDestroyREAL4Vector(usableTFdata2);
-         REAL4Vector *usableTFdata_slidedweighted2 = XLALCreateREAL4Vector(ffdata->numfbins*ffdata->numffts);
-         if (usableTFdata_slidedweighted2==NULL) {
-            fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins*ffdata->numffts);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         tfWeight(usableTFdata_slidedweighted2, usableTFdata_slided2, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         XLALDestroyREAL4Vector(usableTFdata_slided2);
-
          char w[1000];
          snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "procTFdata.dat");
          FILE *PROCTFDATA = fopen(w, "w");
@@ -887,14 +843,10 @@ int main(int argc, char *argv[])
             fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
             XLAL_ERROR(XLAL_EFUNC);
          }
-         for (ii=0; ii<(INT4)usableTFdata_slidedweighted2->length; ii++) fprintf(PROCTFDATA, "%g\n", usableTFdata_slidedweighted2->data[ii]);
+         for (ii=0; ii<(INT4)TFdata_weighted->length; ii++) fprintf(PROCTFDATA, "%g\n", TFdata_weighted->data[ii]);
          fclose(PROCTFDATA);
-         XLALDestroyREAL4Vector(usableTFdata_slidedweighted2);
       }
 
-      //We can now destroy the antenna weights
-      XLALDestroyREAL4Vector(antweights);
-      
       //Calculation of average TF noise per frequency bin ratio to total mean
       //this block of code does not avoid lines when computing the average F-bin ratio. Upper limits remain virtually unchanged
       //when comaring runs that have line finding enabled or disabled
