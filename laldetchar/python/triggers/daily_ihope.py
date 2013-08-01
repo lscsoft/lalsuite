@@ -101,7 +101,7 @@ def find_daily_cache(start, end, ifo, clustering=None, check_files=False,
             if intersects(e.segment):
                 append(e)
 
-    out.sort(key=lambda e: e.path())
+    out.sort(key=lambda e: e.path)
     return out
 
 def from_file(fileobj, start=None, end=None, columns=None):
