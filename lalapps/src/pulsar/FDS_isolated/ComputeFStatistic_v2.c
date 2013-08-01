@@ -74,7 +74,6 @@ int finite(double);
 /* local includes */
 #include "HeapToplist.h"
 
-#include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "../GCT/LineVeto.h"
 #include "../GCT/ComputeFstat_RS.h"
 
@@ -290,8 +289,6 @@ typedef struct {
 
   INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
 
-  BOOLEAN GPUready;		/**< use special single-precision  'GPU-ready' version */
-
   BOOLEAN version;		/**< output version information */
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
@@ -394,7 +391,6 @@ int main(int argc,char *argv[])
 
   FILE *fpFstat = NULL, *fpTransientStats = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
-  ComputeFBufferREAL4 cfBuffer4 = empty_ComputeFBufferREAL4;
   REAL8 numTemplates, templateCounter;
   time_t clock0;
   Fcomponents Fstat = empty_Fcomponents;
@@ -609,8 +605,6 @@ int main(int argc,char *argv[])
       internalDopplerpos.numFreqBins = numFreqBins_FBand;
 
       /* main function call: compute F-statistic for this template */
-      if ( ! uvar.GPUready )
-        {
           if ( uvar.useResamp )
             {
               fstatVector->epoch = GV.internalRefTime;
@@ -623,21 +617,6 @@ int main(int argc,char *argv[])
             {
               LAL_CALL( COMPUTEFSTAT (&status, &Fstat, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
             }
-        }
-      else
-        {
-          REAL4 F;
-
-          XLALDriverFstatREAL4 ( &F, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 );
-          if ( xlalErrno ) {
-            XLALPrintError ("%s: XLALDriverFstatREAL4() failed with errno=%d\n", __func__, xlalErrno );
-            return xlalErrno;
-          }
-          /* this function only returns F, not Fa, Fb */
-          Fstat = empty_Fcomponents;
-          Fstat.F = F;
-
-        } /* if GPUready==true */
 
       toc = GETTIME();
       timing.tauFstat += (toc - tic);   // pure Fstat-calculation time
@@ -691,15 +670,7 @@ int main(int argc,char *argv[])
       thisFCand.doppler = dopplerpos;	// use 'original' dopplerpos @ refTime !
       thisFCand.doppler.fkdot[0] += iFreq * dFreqResamp;	// this only does something for the resampling post-loop over frequency-bins, 0 otherwise ...
 
-      if ( uvar.GPUready )
-        {
-          thisFCand.Mmunu.Ad = cfBuffer4.multiAMcoef->Mmunu.Ad;
-          thisFCand.Mmunu.Bd = cfBuffer4.multiAMcoef->Mmunu.Bd;
-          thisFCand.Mmunu.Cd = cfBuffer4.multiAMcoef->Mmunu.Cd;
-          thisFCand.Mmunu.Sinv_Tsft = cfBuffer4.multiAMcoef->Mmunu.Sinv_Tsft;
-          thisFCand.Mmunu.Ed = 0.0;
-        }
-      else if ( uvar.useResamp )
+      if ( uvar.useResamp )
         {
           ;; // currently CFS_RS() doesnt report back antenna-pattern factors, so we leave this empty
         }
@@ -1107,7 +1078,6 @@ int main(int argc,char *argv[])
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   XLALEmptyComputeFBuffer ( &cfBuffer );
-  XLALEmptyComputeFBufferREAL4 ( &cfBuffer4 );
 
   /* free memory allocated for binary parameters */
   if (orbitalParams) LALFree(orbitalParams);
@@ -1230,7 +1200,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
 
-  uvar->GPUready = 0;
   uvar->useResamp = FALSE;
 
   uvar->outputSingleFstats = FALSE;
@@ -1335,7 +1304,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
-  LALregBOOLUserStruct(status,  GPUready,        0,  UVAR_DEVELOPER, "Use single-precision 'GPU-ready' core routines");
   LALregBOOLUserStruct(status,  useResamp,       0,  UVAR_OPTIONAL,  "Use FFT-resampling method instead of LALDemod()");
 
   /* ----- more experimental/expert options ----- */
@@ -1862,10 +1830,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   // ----- check that resampling option was used sensibly ...
   if ( uvar->useResamp )
     {
-      if ( uvar->GPUready ) {
-        XLALPrintError ("--useResamp cannot be used with --GPUready\n");
-        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-      }
       // FIXME: probably should check a few more things, can't think of any right now ...
       // let's hope users are sensible
     }
