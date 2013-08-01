@@ -1144,6 +1144,60 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
 }
 
 
+void analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
+{
+
+   INT4 proberrcode = 0;
+
+   //Allocate and make the template
+   templateStruct *template = new_templateStruct(params->maxtemplatelength);
+   if (template==NULL) {
+      fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, params->maxtemplatelength);
+      XLAL_ERROR_VOID(XLAL_EFUNC); 
+   }
+   resetTemplateStruct(template);
+   makeTemplate(template, *input, params, sftexist, plan);
+   if (xlalErrno!=0) {
+      fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   }
+
+   //Print out data product if requested
+   /* if (args_info.printData_given) {
+      char w[1000];
+      snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "templatedata.dat");
+      FILE *TEMPLATEDATA = fopen(w, "w");
+      if (TEMPLATEDATA==NULL) {
+        fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
+        XLAL_ERROR(XLAL_EFUNC);
+     }
+     for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(TEMPLATEDATA, "%g %d %d %d\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj]);
+     fclose(TEMPLATEDATA);
+     } */
+
+   //Calculate R from the template and the data
+   REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+   if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+      fprintf(stderr,"%s: calculateR() failed.\n", __func__);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   }
+
+   //Calculate FAP
+   REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
+   if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+      fprintf(stderr,"%s: probR() failed.\n", __func__);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   }
+
+   //Estimate the h0 if R>0.0
+   REAL8 h0 = 0.0;
+   if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
+
+   loadCandidateData(output, input->fsig, input->period, input->moddepth, input->ra, input->dec, R, h0, prob, proberrcode, 1.0);
+
+}
+
+
 //A brute force template search to find the most significant template around a candidate
 void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
@@ -1303,6 +1357,92 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    } else {
       loadCandidateData(output, bestf, bestp, bestdf, input.ra, input.dec, bestR, besth0, bestProb, bestproberrcode, input.normalization);
    }
+   
+}
+
+
+//A brute force template search in a region of parameter space
+/// Testing in progress
+void templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 fspan, REAL8 period, REAL8 asini, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+{
+   
+   INT4 ii;
+   REAL8Vector *trialf;
+   REAL8 fstepsize;
+   
+   //Set up parameters of signal frequency search
+   INT4 numfsteps = (INT4)round(2.0*fspan*params->Tcoh)+1;
+   trialf = XLALCreateREAL8Vector(numfsteps);
+   if (trialf==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numfsteps);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   }
+   fstepsize = fspan/(REAL8)(numfsteps-1);
+   for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
+   
+   //Now search over the frequencies
+   INT4 proberrcode = 0;
+   candidate cand;
+   templateStruct *template = new_templateStruct(params->maxtemplatelength);
+   if (template==NULL) {
+      fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, params->maxtemplatelength);
+      XLAL_ERROR_VOID(XLAL_EFUNC); 
+   }
+   
+   //Search over frequency
+   for (ii=0; ii<(INT4)trialf->length; ii++) {
+      //Determine modulation depth
+      REAL8 moddepth = 0.8727*(trialf->data[ii]/1000.0)*(7200.0/period)*asini;
+
+      //load candidate
+      loadCandidateData(&cand, trialf->data[ii], period, moddepth, 0.0, 0.0, 0, 0, 0.0, 0, 0.0);
+
+      //Make the template
+      resetTemplateStruct(template);
+      if (useExactTemplates!=0) {
+         makeTemplate(template, cand, params, sftexist, secondFFTplan);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+      } else {
+         makeTemplateGaussians(template, cand, params, (INT4)aveTFnoisePerFbinRatio->length, (INT4)aveNoise->length);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+      }
+
+      REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+      if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+        fprintf(stderr,"%s: calculateR() failed.\n", __func__);
+        XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
+      REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
+      if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+         fprintf(stderr,"%s: probR() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
+      REAL8 h0 = 0.0;
+      if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
+
+      //Resize the output candidate vector if necessary
+      if ((*output)->numofcandidates == (*output)->length-1) {
+         *output = resize_candidateVector(*output, 2*((*output)->length));
+         if (*output==NULL) {
+            fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", __func__, 2*((*output)->length));
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+      }
+
+      loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], period, moddepth, 0.0, 0.0, R, h0, prob, proberrcode, 0.0);
+      (*output)->numofcandidates++;
+      
+   } /* for ii < trialf */
+   free_templateStruct(template);
+   template = NULL;
+   XLALDestroyREAL8Vector(trialf);
+   trialf = NULL;
    
 }
 

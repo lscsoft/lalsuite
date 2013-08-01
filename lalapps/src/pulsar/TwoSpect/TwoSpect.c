@@ -937,52 +937,11 @@ int main(int argc, char *argv[])
          if (args_info.printData_given) fprintf(stderr, "numfbins=%d, maxbinshift=%d, numffts=%d, numfprbins=%d\n", ffdata->numfbins, inputParams->maxbinshift, ffdata->numffts, ffdata->numfprbins);
          fprintf(stderr, "Testing template f=%f, P=%f, Df=%f\n", args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg);
          fprintf(LOG, "Testing template f=%f, P=%f, Df=%f\n", args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg);
+
+         //Load template quantities into a test candidate
          loadCandidateData(&(exactCandidates1->data[0]), args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0);
-
-         //Allocate and make the template
-         templateStruct *template = new_templateStruct(inputParams->maxtemplatelength);
-         if (template==NULL) {
-            fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, inputParams->maxtemplatelength);
-            XLAL_ERROR(XLAL_EFUNC); 
-         }
-         resetTemplateStruct(template);
-         makeTemplate(template, exactCandidates1->data[0], inputParams, sftexist, secondFFTplan);
-         if (xlalErrno!=0) {
-            fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-
-         //Print out data product if requested
-         if (args_info.printData_given) {
-            char w[1000];
-            snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "templatedata.dat");
-            FILE *TEMPLATEDATA = fopen(w, "w");
-            if (TEMPLATEDATA==NULL) {
-               fprintf(stderr, "%s: fopen %s failed.\n", __func__, w);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(TEMPLATEDATA, "%g %d %d %d\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj]);
-            fclose(TEMPLATEDATA);
-         }
-
-         //Calculate R from the template and the data
-         REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-            fprintf(stderr,"%s: calculateR() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-
-         //Calculate FAP
-         REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-         if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-            fprintf(stderr,"%s: probR() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-
-         //Estimate the h0 if R>0.0
-         REAL8 h0 = 0.0;
-         if ( R > 0.0 ) h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
-
+ 
+         //Resize the output candidate vector if necessary
          if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
             exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
             if (exactCandidates2->data==NULL) {
@@ -991,8 +950,16 @@ int main(int argc, char *argv[])
             }
          }
 
-         loadCandidateData(&(exactCandidates2->data[exactCandidates2->numofcandidates]), args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
+         //Analyze the template stored in the test candidate
+         analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &(exactCandidates1->data[0]), ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: analyzeOneTemplate() failed.\n", __func__);
+            XLAL_ERROR(XLAL_FAILURE);
+         }
          exactCandidates2->numofcandidates++;
+
+         //Rescale the h0 output from the normaliztions and amount of observation time present
+         exactCandidates2->data[exactCandidates2->numofcandidates-1].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
 
       } else if (args_info.templateTest_given && (!args_info.templateTestF_given || !args_info.templateTestP_given || !args_info.templateTestDf_given)) {
          fprintf(stderr, "%s: the template test values must be given: --templateTestF, --templateTestP, and --templateTestDf\n", __func__);
@@ -1002,12 +969,24 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_FAILURE);
       }
 
+      //If the user wants to do a template search, that is done here
+      if (args_info.templateSearch_given) {
+
+         templateSearch_scox1Style(&exactCandidates2, inputParams->fmin, inputParams->fspan, 68023.8259, 1.44, inputParams, ffdata->ffdata, sftexist, aveNoise,  aveTFnoisePerFbinRatio,  secondFFTplan, 1);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: templateSearch_scox1Style() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         for (ii=0; ii<exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
+
+      }
+
       if (inputParams->signalOnly!=0) return 0;
       
 ////////Start of the IHS step!
       candidateVector *ihsCandidates_reduced = NULL;
       //Find the FAR of IHS sum -- only if the templateTest has not been given
-      if (!args_info.templateTest_given) {
+      if (!args_info.templateTest_given && !args_info.templateSearch_given) {
          if (ihsfarstruct->ihsfar->data[0]==0.0) {
             fprintf(stderr, "Determining IHS FAR values... ");
             fprintf(LOG, "Determining IHS FAR values... ");
@@ -1052,8 +1031,8 @@ int main(int argc, char *argv[])
 ////////End of the IHS step
       
 ////////Start of the Gaussian template search!
-      //First check to see if the IHSonly or templateTest was given
-      if (args_info.IHSonly_given && !args_info.templateTest_given) {
+      //First check to see if the IHSonly or templateTest or templateSearch was given
+      if (args_info.IHSonly_given && !args_info.templateTest_given && !args_info.templateSearch_given) {
          //If we keep only the top X IHS candidates and the number of candidates is greater than X, we need to use the pruned list (ihsCandidates_reduced)
          if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates > args_info.keepOnlyTopNumIHS_arg) {
             //If the exactCandidates2 vector is not large enough for the number of new candidates to put in, we have to resize the vector
@@ -1094,7 +1073,7 @@ int main(int argc, char *argv[])
             
          }
          
-      } else if (!args_info.templateTest_given && (!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<args_info.simpleBandRejection_arg))) {
+      } else if (!args_info.templateTest_given && !args_info.templateSearch_given && (!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<args_info.simpleBandRejection_arg))) {
          
          if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) {
             //Test the IHS candidates against Gaussian templates in this function
@@ -1114,9 +1093,9 @@ int main(int argc, char *argv[])
          fprintf(stderr,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
          
          for (ii=0; ii<(INT4)gaussCandidates1->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates1->data[ii].fsig, gaussCandidates1->data[ii].period, gaussCandidates1->data[ii].moddepth);
-      } /* if IHSonly is not given && templateTest not given */
+      } /* if IHSonly is not given && templateTest not given and templateSearch not given */
       
-      if (!args_info.templateTest_given && args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) free_candidateVector(ihsCandidates_reduced);
+      if (!args_info.templateTest_given && !args_info.templateSearch_given && args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) free_candidateVector(ihsCandidates_reduced);
       
 ////////End of the Gaussian template search
 
@@ -1329,7 +1308,7 @@ int main(int argc, char *argv[])
       } /* if gaussCandidates1->numofcandidates > 0 */
       
       //Determine upper limits, if the ULoff has not been set
-      if (!args_info.ULoff_given && !args_info.templateTest_given) {
+      if (!args_info.ULoff_given && !args_info.templateTest_given && !args_info.templateSearch_given) {
          upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
          upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
          upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;

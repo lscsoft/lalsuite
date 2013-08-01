@@ -39,6 +39,7 @@ option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec
 option "skyRegionFile"  - "File with the grid points" string typestr="filename" optional
 option "linPolAngle"    - "Polarization angle to search using linear polarization (when unspecified default is circular polarization" double optional
 option "harmonicNumToSearch"  - "Number of harmonics of the Pmin to Pmax range to search" int default="1" optional
+option "templateSearch" - "Flag for doing a pure template-based search on search region specified by (sky,f,fspan,Pmin,Pmax,dfmin,dfmax)" flag off
 
 section "TwoSpect threshold settings"
 option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="5" optional

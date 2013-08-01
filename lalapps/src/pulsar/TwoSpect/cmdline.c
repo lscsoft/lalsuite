@@ -67,6 +67,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --skyRegionFile=filename  File with the grid points",
   "      --linPolAngle=DOUBLE      Polarization angle to search using linear \n                                  polarization (when unspecified default is \n                                  circular polarization",
   "      --harmonicNumToSearch=INT Number of harmonics of the Pmin to Pmax range \n                                  to search  (default=`1')",
+  "      --templateSearch          Flag for doing a pure template-based search on \n                                  search region specified by \n                                  (sky,f,fspan,Pmin,Pmax,dfmin,dfmax)  \n                                  (default=off)",
   "\nTwoSpect threshold settings:",
   "      --ihsfactor=INT           Number of harmonics to sum in IHS algorithm  \n                                  (default=`5')",
   "      --ihsfar=DOUBLE           IHS FAR threshold",
@@ -186,11 +187,12 @@ init_help_array(void)
   gengetopt_args_info_help[59] = gengetopt_args_info_full_help[59];
   gengetopt_args_info_help[60] = gengetopt_args_info_full_help[60];
   gengetopt_args_info_help[61] = gengetopt_args_info_full_help[61];
-  gengetopt_args_info_help[62] = 0; 
+  gengetopt_args_info_help[62] = gengetopt_args_info_full_help[62];
+  gengetopt_args_info_help[63] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[63];
+const char *gengetopt_args_info_help[64];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -278,6 +280,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->skyRegionFile_given = 0 ;
   args_info->linPolAngle_given = 0 ;
   args_info->harmonicNumToSearch_given = 0 ;
+  args_info->templateSearch_given = 0 ;
   args_info->ihsfactor_given = 0 ;
   args_info->ihsfar_given = 0 ;
   args_info->ihsfom_given = 0 ;
@@ -375,6 +378,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->linPolAngle_orig = NULL;
   args_info->harmonicNumToSearch_arg = 1;
   args_info->harmonicNumToSearch_orig = NULL;
+  args_info->templateSearch_flag = 0;
   args_info->ihsfactor_arg = 5;
   args_info->ihsfactor_orig = NULL;
   args_info->ihsfar_orig = NULL;
@@ -471,51 +475,52 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->skyRegionFile_help = gengetopt_args_info_full_help[32] ;
   args_info->linPolAngle_help = gengetopt_args_info_full_help[33] ;
   args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[34] ;
-  args_info->ihsfactor_help = gengetopt_args_info_full_help[36] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[37] ;
-  args_info->ihsfom_help = gengetopt_args_info_full_help[38] ;
-  args_info->ihsfomfar_help = gengetopt_args_info_full_help[39] ;
-  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[40] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[41] ;
-  args_info->minTemplateLength_help = gengetopt_args_info_full_help[42] ;
-  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[43] ;
-  args_info->ULfmin_help = gengetopt_args_info_full_help[45] ;
-  args_info->ULfspan_help = gengetopt_args_info_full_help[46] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[47] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[48] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[49] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[51] ;
-  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[52] ;
-  args_info->lineDetection_help = gengetopt_args_info_full_help[53] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[55] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[56] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[57] ;
-  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[58] ;
-  args_info->timestampsFile_help = gengetopt_args_info_full_help[60] ;
-  args_info->injectionSources_help = gengetopt_args_info_full_help[61] ;
-  args_info->signalOnly_help = gengetopt_args_info_full_help[63] ;
-  args_info->templateTest_help = gengetopt_args_info_full_help[64] ;
-  args_info->templateTestF_help = gengetopt_args_info_full_help[65] ;
-  args_info->templateTestP_help = gengetopt_args_info_full_help[66] ;
-  args_info->templateTestDf_help = gengetopt_args_info_full_help[67] ;
-  args_info->ULsolver_help = gengetopt_args_info_full_help[68] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[69] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[70] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[71] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[72] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[73] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[74] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[75] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[76] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[77] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[78] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[79] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[80] ;
-  args_info->printData_help = gengetopt_args_info_full_help[81] ;
-  args_info->printUninitialized_help = gengetopt_args_info_full_help[82] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[83] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[84] ;
-  args_info->injRandSeed_help = gengetopt_args_info_full_help[85] ;
+  args_info->templateSearch_help = gengetopt_args_info_full_help[35] ;
+  args_info->ihsfactor_help = gengetopt_args_info_full_help[37] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[38] ;
+  args_info->ihsfom_help = gengetopt_args_info_full_help[39] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[40] ;
+  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[41] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[42] ;
+  args_info->minTemplateLength_help = gengetopt_args_info_full_help[43] ;
+  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[44] ;
+  args_info->ULfmin_help = gengetopt_args_info_full_help[46] ;
+  args_info->ULfspan_help = gengetopt_args_info_full_help[47] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[48] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[49] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[50] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[52] ;
+  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[53] ;
+  args_info->lineDetection_help = gengetopt_args_info_full_help[54] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[56] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[57] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[58] ;
+  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[59] ;
+  args_info->timestampsFile_help = gengetopt_args_info_full_help[61] ;
+  args_info->injectionSources_help = gengetopt_args_info_full_help[62] ;
+  args_info->signalOnly_help = gengetopt_args_info_full_help[64] ;
+  args_info->templateTest_help = gengetopt_args_info_full_help[65] ;
+  args_info->templateTestF_help = gengetopt_args_info_full_help[66] ;
+  args_info->templateTestP_help = gengetopt_args_info_full_help[67] ;
+  args_info->templateTestDf_help = gengetopt_args_info_full_help[68] ;
+  args_info->ULsolver_help = gengetopt_args_info_full_help[69] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[70] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[71] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[72] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[73] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[74] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[75] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[76] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[77] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[78] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[79] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[80] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[81] ;
+  args_info->printData_help = gengetopt_args_info_full_help[82] ;
+  args_info->printUninitialized_help = gengetopt_args_info_full_help[83] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[84] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[85] ;
+  args_info->injRandSeed_help = gengetopt_args_info_full_help[86] ;
   
 }
 
@@ -862,6 +867,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "linPolAngle", args_info->linPolAngle_orig, 0);
   if (args_info->harmonicNumToSearch_given)
     write_into_file(outfile, "harmonicNumToSearch", args_info->harmonicNumToSearch_orig, 0);
+  if (args_info->templateSearch_given)
+    write_into_file(outfile, "templateSearch", 0, 0 );
   if (args_info->ihsfactor_given)
     write_into_file(outfile, "ihsfactor", args_info->ihsfactor_orig, 0);
   if (args_info->ihsfar_given)
@@ -1654,6 +1661,7 @@ cmdline_parser_internal (
         { "skyRegionFile",	1, NULL, 0 },
         { "linPolAngle",	1, NULL, 0 },
         { "harmonicNumToSearch",	1, NULL, 0 },
+        { "templateSearch",	0, NULL, 0 },
         { "ihsfactor",	1, NULL, 0 },
         { "ihsfar",	1, NULL, 0 },
         { "ihsfom",	1, NULL, 0 },
@@ -2123,6 +2131,18 @@ cmdline_parser_internal (
                 &(local_args_info.harmonicNumToSearch_given), optarg, 0, "1", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "harmonicNumToSearch", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Flag for doing a pure template-based search on search region specified by (sky,f,fspan,Pmin,Pmax,dfmin,dfmax).  */
+          else if (strcmp (long_options[option_index].name, "templateSearch") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->templateSearch_flag), 0, &(args_info->templateSearch_given),
+                &(local_args_info.templateSearch_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "templateSearch", '-',
                 additional_error))
               goto failure;
           

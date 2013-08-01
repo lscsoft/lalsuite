@@ -129,6 +129,8 @@ struct gengetopt_args_info
   int harmonicNumToSearch_arg;	/**< @brief Number of harmonics of the Pmin to Pmax range to search (default='1').  */
   char * harmonicNumToSearch_orig;	/**< @brief Number of harmonics of the Pmin to Pmax range to search original value given at command line.  */
   const char *harmonicNumToSearch_help; /**< @brief Number of harmonics of the Pmin to Pmax range to search help description.  */
+  int templateSearch_flag;	/**< @brief Flag for doing a pure template-based search on search region specified by (sky,f,fspan,Pmin,Pmax,dfmin,dfmax) (default=off).  */
+  const char *templateSearch_help; /**< @brief Flag for doing a pure template-based search on search region specified by (sky,f,fspan,Pmin,Pmax,dfmin,dfmax) help description.  */
   int ihsfactor_arg;	/**< @brief Number of harmonics to sum in IHS algorithm (default='5').  */
   char * ihsfactor_orig;	/**< @brief Number of harmonics to sum in IHS algorithm original value given at command line.  */
   const char *ihsfactor_help; /**< @brief Number of harmonics to sum in IHS algorithm help description.  */
@@ -277,6 +279,7 @@ struct gengetopt_args_info
   unsigned int skyRegionFile_given ;	/**< @brief Whether skyRegionFile was given.  */
   unsigned int linPolAngle_given ;	/**< @brief Whether linPolAngle was given.  */
   unsigned int harmonicNumToSearch_given ;	/**< @brief Whether harmonicNumToSearch was given.  */
+  unsigned int templateSearch_given ;	/**< @brief Whether templateSearch was given.  */
   unsigned int ihsfactor_given ;	/**< @brief Whether ihsfactor was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
   unsigned int ihsfom_given ;	/**< @brief Whether ihsfom was given.  */
