@@ -92,20 +92,11 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
   srate_psdfile=16384
   print "gracedb download %s psd.xml.gz" % gid
   subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
+  psdasciidic=None
   if os.path.exists("psd.xml.gz"):
-    xmlpsd = utils.load_filename("psd.xml.gz")
-    psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
-    for instrument, psd in psddict.items():
-      combine=[]
-      for i,p in enumerate(psd.data):
-        combine.append([psd.f0+i*psd.deltaF,np.sqrt(p)])
-      np.savetxt(instrument+'psd.txt',combine)
-      try:
-        combine[-1][0]
-      except:
-        print "No PSD for "+instrument
-      else:
-        srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
+    psdasciidic=get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
+    combine=np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
+    srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
   else:
     print "Failed to gracedb download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
   # Logic for template duration and sample rate disabled
@@ -272,6 +263,92 @@ def scan_timefile(timefile):
       times.append(float(time))
     timefilehandle.close()
     return times
+    
+def get_xml_psds(psdxml,ifos,outpath,end_time=None):
+  """
+  Get a psd.xml.gz file and:
+  1) Reads it
+  2) Converts PSD (10e-44) -> ASD ( ~10e-22)
+  3) Checks the psd file contains all the IFO we want to analyze
+  4) Writes down the ASDs into an ascii file for each IFO in psd.xml.gz. The name of the file contains the trigtime (if given) and the ifo name.
+  Input:
+    psdxml: psd.xml.gz file
+    ifos: list of ifos used for the analysis
+    outpath: path where the ascii ASD will be written to
+    (end_time): trigtime for this event. Will be used a part of the ASD file name
+  """
+  lal=1
+  from glue.ligolw import utils
+  try: from lal import Aseries
+  except ImportError:
+    from pylal import series
+    lal=0
+  import numpy as np
+
+  out={}
+  if not os.path.isdir(outpath):
+    os.makedirs(outpath)
+  if end_time is not None:
+    time=repr(float(end_time))
+  else:
+    time=''
+  #check we don't already have ALL the psd files #
+  got_all=1
+  for ifo in ifos:
+    path_to_ascii_psd=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
+    # Check we don't already have that ascii (e.g. because we are running parallel runs of the save event 
+    if os.path.isfile(path_to_ascii_psd):
+      got_all*=1
+    else:
+      got_all*=0
+  if got_all==1:
+    #print "Already have PSD files. Nothing to do...\n"
+    for ifo in ifos:
+      out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
+    return out
+ 
+  # We need to convert the PSD for one or more IFOS. Open the file
+  if not os.path.isfile(psdxml):
+    print "ERROR: impossible to open the psd file %s. Exiting...\n"%psdxml
+    sys.exit(1)
+  xmlpsd =  series.read_psd_xmldoc(utils.load_filename(psdxml))
+  # Check the psd file contains all the IFOs we want to analize
+  for ifo in ifos:
+    if not ifo in [i.encode('ascii') for i in xmlpsd.keys()]:
+      print "ERROR. The PSD for the ifo %s does not seem to be contained in %s\n"%(ifo,psdxml)
+      sys.exit(1)
+  #loop over ifos in psd xml file
+  for instrument in xmlpsd.keys():
+    #name of the ascii file we are going to write the PSD into
+    path_to_ascii_psd=os.path.join(outpath,instrument.encode('ascii')+'_psd_'+time+'.txt')
+    # Check we don't already have that ascii (e.g. because we are running parallel runs of the save event 
+    if os.path.isfile(path_to_ascii_psd):
+      continue  
+    # get data for the IFO
+    ifodata=xmlpsd[instrument]
+    #check data is not empty
+    if ifodata is None:
+      continue
+    # we have data. Get psd array
+    if lal==0:
+      #pylal stores the series in ifodata.data
+      data=ifodata
+    else:
+      # lal stores it in ifodata.data.data
+      data=ifodata.data
+    # Fill a two columns array of (freq, psd) and save it in the ascii file
+    f0=ifodata.f0
+    deltaF=ifodata.deltaF
+    
+    combine=[]
+  
+    for i in np.arange(len(data.data)) :
+      combine.append([f0+i*deltaF,np.sqrt(data.data[i])])
+    np.savetxt(path_to_ascii_psd,combine)
+    ifo=instrument.encode('ascii') 
+    # set node.psds dictionary with the path to the ascii files
+    out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
+  return out
   
 class LALInferencePipelineDAG(pipeline.CondorDAG):
   def __init__(self,cp,dax=False):
@@ -660,6 +737,16 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else: node.ifos=ifos
       node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
       gotdata=1
+    if self.config.has_option('lalinference','psd-xmlfile'):
+      psdpath=os.path.realpath(self.config.get('lalinference','psd-xmlfile'))
+      node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time) 
+      if len(ifos)==0: node.ifos=node.cachefiles.keys()
+      else: node.ifos=ifos
+      gotdata=1
+    if self.config.has_option('input','gid'):
+      if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
+        psdpath=os.path.join(self.basepath,'psd.xml.gz')
+        node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None) 
     if self.config.has_option('lalinference','flow'):
       node.flows=ast.literal_eval(self.config.get('lalinference','flow'))
     if event.fhigh:
@@ -901,7 +988,6 @@ class EngineNode(pipeline.CondorDAGNode):
       ifostring='['
       cachestring='['
       psdstring='['
-      psdstring_gracedb='['
       flowstring='['
       fhighstring='['
       channelstring='['
@@ -915,7 +1001,6 @@ class EngineNode(pipeline.CondorDAGNode):
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
         if self.psds: psdstring=psdstring+delim+self.psds[ifo]
-        if os.path.exists(ifo+'psd.txt'): psdstring_gracedb=psdstring_gracedb+delim+ifo+'psd.txt'
         if self.flows: flowstring=flowstring+delim+self.flows[ifo]
         if self.fhighs: fhighstring=fhighstring+delim+self.fhighs[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
@@ -923,7 +1008,6 @@ class EngineNode(pipeline.CondorDAGNode):
       ifostring=ifostring+']'
       cachestring=cachestring+']'
       psdstring=psdstring+']'
-      psdstring_gracedb=psdstring_gracedb+']'
       flowstring=flowstring+']'
       fhighstring=fhighstring+']'
       channelstring=channelstring+']'
@@ -932,7 +1016,6 @@ class EngineNode(pipeline.CondorDAGNode):
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
       if self.psds: self.add_var_opt('psd',psdstring)
-      elif psdstring_gracedb!='[]': self.add_var_opt('psd',psdstring_gracedb)
       if self.flows: self.add_var_opt('flow',flowstring)
       if self.fhighs: self.add_var_opt('fhigh',fhighstring)
       if any(self.timeslides):
