@@ -1296,6 +1296,6 @@ class GraceDBNode(pipeline.CondorDAGNode):
             return
         self.add_var_arg('log')
         self.add_var_arg(str(self.gid))
-        #self.add_var_arg('"Parameter estimation finished. <a href=\"'+self.resultsurl+'/posplots.html\">'+self.resultsurl+'/posplots.html</a>"')
-        self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
+        self.add_var_arg('"Parameter estimation finished. <a href=\"'+self.resultsurl+'/posplots.html\">'+self.resultsurl+'/posplots.html</a>"')
+        #self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
         self.__finalized=True
