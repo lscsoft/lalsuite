@@ -219,14 +219,14 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
  * Extrapolate phase phi0 from epoch0 to epoch1, given the spins fkdot1 at epoch1
  * Returns phi1 in the range [0, 2pi]
  */
-void
-LALExtrapolatePulsarPhase (LALStatus *status,		/**< pointer to LALStatus structure */
-			   REAL8 *phi1,			/**< [out] phase at epoch1 */
-			   PulsarSpins fkdot1,		/**< [in] spin-params at reference epoch1 */
-			   LIGOTimeGPS epoch1, 		/**< [in] GPS SSB-time of epoch1 */
-			   REAL8 phi0,			/**< [in] initial phase at epoch 0 */
-			   LIGOTimeGPS epoch0		/**< [in] GPS SSB-time of reference-epoch */
-			   )
+int
+XLALExtrapolatePulsarPhase(
+  REAL8 *phi1,			/**< [out] phase at epoch1 */
+  PulsarSpins fkdot1,		/**< [in] spin-params at reference epoch1 */
+  LIGOTimeGPS epoch1, 		/**< [in] GPS SSB-time of epoch1 */
+  REAL8 phi0,			/**< [in] initial phase at epoch 0 */
+  LIGOTimeGPS epoch0		/**< [in] GPS SSB-time of reference-epoch */
+  )
 {
   UINT4 numSpins = PULSAR_MAX_SPINS;
   UINT4 k;
@@ -235,10 +235,8 @@ LALExtrapolatePulsarPhase (LALStatus *status,		/**< pointer to LALStatus structu
   REAL8 frac_cycles;
   REAL8 dummy, phi;
 
-  INITSTATUS(status);
-
-  ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
-  ASSERT ( phi1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+  XLAL_CHECK( fkdot1 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( phi1 != NULL, XLAL_EFAULT );
 
   kFact = 1;
   dTau = XLALGPSDiff( &epoch0, &epoch1 );
@@ -258,6 +256,6 @@ LALExtrapolatePulsarPhase (LALStatus *status,		/**< pointer to LALStatus structu
 
   (*phi1) = phi;
 
-  RETURN (status);
+  return XLAL_SUCCESS;
 
 } /* LALExtrapolatePulsarPhase() */

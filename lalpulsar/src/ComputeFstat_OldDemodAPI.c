@@ -2013,7 +2013,9 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 
   /* ===== debug-output resulting matrices ===== */
   /* propagate initial-phase from Fstat-reference-time to refTime of Doppler-params */
-  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, Fstat->refTime ), status );
+  if (XLALExtrapolatePulsarPhase (&phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, Fstat->refTime ) != XLAL_SUCCESS) {
+    ABORT (status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+  }
 
   if ( phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
     phi0 += LAL_TWOPI;

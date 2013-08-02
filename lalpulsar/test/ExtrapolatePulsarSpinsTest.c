@@ -146,7 +146,10 @@ int main(int argc, char *argv[])
     REAL8 phi0, phi1;
 
     phi0 = 1;
-    SUB ( LALExtrapolatePulsarPhase ( &status, &phi1, fkdot1, epoch1, phi0, epoch0 ), &status );
+    if ( XLALExtrapolatePulsarPhase ( &phi1, fkdot1, epoch1, phi0, epoch0 ) != XLAL_SUCCESS ) {
+      ERROR( PULSARSPINTESTC_ESUB, PULSARSPINTESTC_MSGESUB, "Function call \"XLALExtrapolatePulsarPhase\" failed:" );
+      return PULSARSPINTESTC_ESUB;
+    }
 
     printf ("\nExtrapolated phase phi1 = %.16f, Reference-result = %.16f\n", phi1, phi1Result );
     if ( RELERROR(phi1, phi1Result) > tolerancePhi )
