@@ -226,13 +226,6 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const MultiDetectorStateSeries *multiDetStates,
 			    const ComputeFParams *params);
 
-void
-LALEstimatePulsarAmplitudeParams (LALStatus * status,
-				  PulsarCandidate *pulsarParams,
-				  const Fcomponents *Fstat,
-				  const CmplxAntennaPatternMatrix *Mmunu
-				  );
-
 FstatAtomVector * XLALCreateFstatAtomVector ( UINT4 num );
 
 int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );

@@ -1020,7 +1020,10 @@ int main(int argc,char *argv[])
       PulsarCandidate pulsarParams = empty_PulsarCandidate;
       pulsarParams.Doppler = loudestFCand.doppler;
 
-      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &loudestFCand.Mmunu ), &status );
+      if (XLALEstimatePulsarAmplitudeParams (&pulsarParams, &loudestFCand.Fstat.refTime, loudestFCand.Fstat.Fa, loudestFCand.Fstat.Fb, &loudestFCand.Mmunu ) != XLAL_SUCCESS) {
+        XLALPrintError ("%s: XLALEstimatePulsarAmplitudeParams() failed with errno=%d\n", __func__, xlalErrno );
+        return COMPUTEFSTATISTIC_ESYS;
+      }
 
       if ( (fpLoudest = fopen (uvar.outputLoudest, "wb")) == NULL)
 	{

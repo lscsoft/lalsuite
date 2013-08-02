@@ -262,6 +262,22 @@ XLALDestroyFstatResults(
   FstatResults* Fstats				///< [in] #FstatResults structure to be freed.
   );
 
+///
+/// Estimate the amplitude parameters of a pulsar CW signal, given its phase parameters,
+/// constituent parts of the \f$\mathcal{F}\f$-statistic, and antenna pattern matrix.
+///
+/// \note Parameter-estimation based on large parts on Yousuke's notes and implemention (in CFSv1),
+/// extended for error-estimation.
+///
+int
+XLALEstimatePulsarAmplitudeParams(
+  PulsarCandidate *pulsarParams,		///< [in,out] Pulsar candidate parameters.
+  const LIGOTimeGPS* FaFb_refTime,		///< [in] Reference time of \f$F_a\f$ and \f$F_b\f$, may differ from pulsar candidate reference time.
+  const COMPLEX16 Fa,				///< [in] Complex \f$\mathcal{F}\f$-statistic amplitude \f$F_a\f$.
+  const COMPLEX16 Fb,				///< [in] Complex \f$\mathcal{F}\f$-statistic amplitude \f$F_b\f$.
+  const CmplxAntennaPatternMatrix *Mmunu	///< [in] Antenna pattern matrix \f$M_{\mu\nu}\f$.
+  );
+
 // @}
 
 #ifdef  __cplusplus
