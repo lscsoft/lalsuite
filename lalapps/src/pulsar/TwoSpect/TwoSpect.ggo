@@ -70,8 +70,9 @@ option "useSSE"         - "Use SSE functions (caution: user needs to have compil
 option "followUpOutsideULrange"  - "Follow up outliers outside the range of the UL values" flag off
 
 section "Injection options"
-option "timestampsFile"    - "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options)" string typestr="path/filename" optional
+option "timestampsFile"    - "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) with a required preceding @ symbol" string typestr="@path/filename" optional
 option "injectionSources"  - "File containing sources to inject" string typestr="path/filename" optional
+option "injRandSeed"       - "Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options)" int default="0" optional
 
 section "Hidden options"
 option "signalOnly"    - "SFTs contain only signal, no noise" flag off hidden
@@ -96,4 +97,3 @@ option "printData"     - "Print to ASCII files the data values" flag off hidden
 option "printUninitialized" - "Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!)" int optional hidden
 option "randSeed" - "Random seed value" int optional hidden
 option "chooseSeed"    - "The random seed value is chosen based on the input search parameters" flag off hidden
-option "injRandSeed"   - "Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options)" int default="0" optional hidden

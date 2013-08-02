@@ -3020,6 +3020,20 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    else params->ihsfomfar = 0.0;
    if (args_info.ihsfom_given) params->ihsfom = args_info.ihsfom_arg;            //IHS figure of merit threshold value
    else params->ihsfom = 0.0;
+
+   //Invalid FAR values
+   if (params->ihsfar<0.0 || params->ihsfar>1.0) {
+      fprintf(stderr, "%s: the IHS FAR (--ihsfar) must lie between 0 and 1 (inclusive).\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   if (params->ihsfomfar<0.0 || params->ihsfomfar>1.0) {
+      fprintf(stderr, "%s: the IHS FOM FAR (--ihsfomfar) must lie between 0 and 1 (inclusive).\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   if (params->templatefar<0.0 || params->templatefar>1.0) {
+      fprintf(stderr, "%s: the template FAR (--tmplfar) must lie between 0 and 1 (inclusive).\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    
    //log10(template FAR)
    params->log10templatefar = log10(params->templatefar);
@@ -3246,6 +3260,12 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    }
    sprintf(earth_ephemeris, "%s/earth%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
    sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
+
+   //SFT input conflicts with injRandSeed option
+   if (args_info.injRandSeed_given && (args_info.sftFile_given || args_info.sftDir_given)) {
+      fprintf(stderr, "%s: When specifying --injRandSeed, --sftDir or --sftFile cannot be used.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
 
    //SFT input file/directory or we only have a timestampsFile leaving sft_dir_file=NULL
    if (args_info.sftFile_given && args_info.sftDir_given && !args_info.timestampsFile_given) {
