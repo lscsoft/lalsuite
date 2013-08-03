@@ -237,7 +237,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     }
 
     // mchirp
-    double mc;
+    double mc=0.0;
     if( LALInferenceCheckVariable(params,"logmc") )
     {
         item = LALInferenceGetItem(params, "logmc");
@@ -278,7 +278,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     }
 
     // eta
-    double eta, q, m1, m2;
+    double eta=0.25, q=1.0, m1=0.0, m2=0.0;
     if( LALInferenceCheckVariable(params,"massratio") )
     {
         item = LALInferenceGetItem(params, "massratio");
