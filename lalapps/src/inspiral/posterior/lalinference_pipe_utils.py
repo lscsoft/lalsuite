@@ -93,6 +93,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
   print "gracedb download %s psd.xml.gz" % gid
   subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
   psdasciidic=None
+  fhigh=None
   if os.path.exists("psd.xml.gz"):
     psdasciidic=get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
     combine=np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
