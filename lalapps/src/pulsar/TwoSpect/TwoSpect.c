@@ -977,7 +977,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "%s: templateSearch_scox1Style() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-         for (ii=0; ii<exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
+         for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
 
       }
 
@@ -1578,7 +1578,7 @@ REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *in
    //Load the data into the output vector, roughly normalizing as we go along from the input value
    REAL8 sqrtnorm = sqrt(normalization);
    for (ii=0; ii<numffts; ii++) {
-      if (ii-nonexistantsft < sfts->data[0]->length) {
+      if (ii-nonexistantsft < (INT4)sfts->data[0]->length) {
          SFTtype *sft = &(sfts->data[0]->data[ii - nonexistantsft]);
          if (sft->epoch.gpsSeconds == (INT4)round(ii*(input->Tcoh-input->SFToverlap)+input->searchstarttime)) {
             for (jj=0; jj<sftlength; jj++) {
