@@ -737,7 +737,7 @@ static void getarm(double u[3], double alt, double azi, double lat, double lon)
 	return;
 }
 
-static void XLALComputeDetAMResponseParts(double *armlen, double *xcos, double *ycos, double *fxplus, double *fyplus, double *fxcross, double *fycross, LALDetector *detector, double ra, double dec, double psi, double gmst)
+static void XLALComputeDetAMResponseParts(double *armlen, double *xcos, double *ycos, double *fxplus, double *fyplus, double *fxcross, double *fycross, const LALDetector *detector, double ra, double dec, double psi, double gmst)
 {
 	double X[3];	/* wave frame x axis */
 	double Y[3];	/* wave frame y axis */
