@@ -28,6 +28,7 @@
 
 
 #include <math.h>
+#include <gsl/gsl_sf_trig.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
 #include <lal/DetResponse.h>
@@ -682,5 +683,955 @@ int XLALSimAddInjectionREAL4TimeSeries(
 
 	/* done */
 
+	return 0;
+}
+
+
+
+/* TODO: ROUTINES SHOULD GO INTO DETRESPONSE.[CH] IN LAL/PACKAGES/TOOLS */ 
+
+
+/*
+ *
+ * beta = pi f L / c
+ * mu = k . u
+ *
+ * @sa
+ * John T. Whelan, "Higher-Frequency Corrections to Stochastic Formulae",
+ * LIGO-T070172.
+ * @sa
+ * Louis J. Rubbo, Neil J. Cornish, and Olivier Poujade, "Forward modeling of
+ * space-borne gravitational wave detectors", Phys. Rev. D 69, 082003 (2004);
+ * arXiv:gr-qc/0311069.
+ * @sa
+ * Malik Rakhmanov, "Response of LIGO to Gravitational Waves at High
+ * Frequencies and in the Vicinity of the FSR (37.5 kHz)", LIGO-T060237.
+ */
+static COMPLEX16 XLALComputeDetArmTransferFunction(double beta, double mu)
+{
+	COMPLEX16 ans;
+	ans = cexp(I * beta * (1.0 - mu)) * gsl_sf_sinc(beta * (1.0 + mu));
+	ans += cexp(-I * beta * (1.0 + mu)) * gsl_sf_sinc(beta * (1.0 - mu));
+	ans *= 0.5;
+	return ans;
+}
+
+
+static void getarm(double u[3], double alt, double azi, double lat, double lon)
+{
+	double cosalt = cos(alt);
+	double sinalt = sin(alt);
+	double cosazi = cos(azi);
+	double sinazi = sin(azi);
+	double coslat = cos(lat);
+	double sinlat = sin(lat);
+	double coslon = cos(lon);
+	double sinlon = sin(lon);
+	double uNorth = cosalt * cosazi;
+	double uEast = cosalt * sinazi;
+	double uUp = sinalt;
+	double uRho = - sinlat * uNorth + coslat * uUp;
+	u[0] = coslon * uRho - sinlon * uEast;
+	u[1] = sinlon * uRho + coslon * uEast;
+	u[2] = coslat * uNorth + sinlat * uUp;
+	return;
+}
+
+static void XLALComputeDetAMResponseParts(double *armlen, double *xcos, double *ycos, double *fxplus, double *fyplus, double *fxcross, double *fycross, LALDetector *detector, double ra, double dec, double psi, double gmst)
+{
+	double X[3];	/* wave frame x axis */
+	double Y[3];	/* wave frame y axis */
+	double Z[3];	/* wave frame z axis (propagation direction) */
+	double U[3];	/* x arm unit vector */
+	double V[3];	/* y arm unit vector */
+	double DU[3][3];	/* single arm response tensor for x arm */
+	double DV[3][3];	/* single arm response tensor for y arm */
+	double gha = gmst - ra;	/* greenwich hour angle */
+	double cosgha = cos(gha);
+	double singha = sin(gha);
+	double cosdec = cos(dec);
+	double sindec = sin(dec);
+	double cospsi = cos(psi);
+	double sinpsi = sin(psi);
+	int i, j;
+
+	/* compute unit vectors specifying the wave frame x, y, and z axes */
+
+	X[0] = -cospsi * singha - sinpsi * cosgha * sindec;
+	X[1] = -cospsi * cosgha + sinpsi * singha * sindec;
+	X[2] =  sinpsi * cosdec;
+	Y[0] =  sinpsi * singha - cospsi * cosgha * sindec;
+	Y[1] =  sinpsi * cosgha + cospsi * singha * sindec;
+	Y[2] =  cospsi * cosdec;
+	Z[0] = -cosgha * cosdec;
+	Z[1] =  singha * cosdec;
+	Z[2] = -sindec;
+
+	switch (detector->type) {
+
+	case LALDETECTORTYPE_IFOCOMM:
+	case LALDETECTORTYPE_IFODIFF:
+	
+		/* FIXME: should compute the effect of non-equal arm lengths;
+		 * but, for now, just use the mean arm length */
+
+		*armlen = detector->frDetector.xArmMidpoint
+			+ detector->frDetector.yArmMidpoint;
+
+		/* get the unit vectors along the arms */
+
+		getarm(U, detector->frDetector.xArmAltitudeRadians,
+			detector->frDetector.xArmAzimuthRadians,
+			detector->frDetector.vertexLatitudeRadians,
+			detector->frDetector.vertexLongitudeRadians);
+
+		getarm(V, detector->frDetector.yArmAltitudeRadians,
+			detector->frDetector.yArmAzimuthRadians,
+			detector->frDetector.vertexLatitudeRadians,
+			detector->frDetector.vertexLongitudeRadians);
+
+		/* compute direction cosines for the signal direction relative
+         	 * to the x-arm and the y-arm */
+
+		*xcos = *ycos = 0.0;
+		for (i = 0; i < 3; ++i) {
+			*xcos += U[i] * Z[i];
+			*ycos += V[i] * Z[i];
+		}
+
+		/* compute the single arm response tensors for the x-arm and
+		 * y-arm */
+
+		for (i = 0; i < 3; ++i) {
+			DU[i][i] = 0.5 * U[i] * U[i];
+			DV[i][i] = 0.5 * V[i] * V[i];
+			for (j = i + 1; j < 3; ++j) {
+				DU[i][j] = DU[j][i] = 0.5 * U[i] * U[j];
+				DV[i][j] = DV[j][i] = 0.5 * V[i] * V[j];
+			}
+		}
+
+		/* compute the beam pattern partial responses for the x-arm and
+		 * y-arm */
+
+		*fxplus = *fxcross = 0.0;
+		*fyplus = *fycross = 0.0;
+		for (i = 0; i < 3; ++i) {
+			double DUX = DU[i][0]*X[0]+DU[i][1]*X[1]+DU[i][2]*X[2];
+			double DUY = DU[i][0]*Y[0]+DU[i][1]*Y[1]+DU[i][2]*Y[2];
+			double DVX = DV[i][0]*X[0]+DV[i][1]*X[1]+DV[i][2]*X[2];
+			double DVY = DV[i][0]*Y[0]+DV[i][1]*Y[1]+DV[i][2]*Y[2];
+			*fxplus  += X[i] * DUX - Y[i] * DUY;
+			*fxcross += X[i] * DUY + Y[i] * DUX;
+			*fyplus  += X[i] * DVX - Y[i] * DVY;
+			*fycross += X[i] * DVY + Y[i] * DVX;
+		}
+
+		/* differential interferometer: arm y is subtracted from
+		 * arm x */
+		if (detector->type == LALDETECTORTYPE_IFODIFF) {
+			*fyplus *= -1;
+			*fycross *= -1;
+		}
+
+		break;
+
+	case LALDETECTORTYPE_IFOXARM:
+
+		/* no y-arm */
+
+		*armlen = 2.0 * detector->frDetector.xArmMidpoint;
+
+		getarm(U, detector->frDetector.xArmAltitudeRadians,
+			detector->frDetector.xArmAzimuthRadians,
+			detector->frDetector.vertexLatitudeRadians,
+			detector->frDetector.vertexLongitudeRadians);
+
+		*xcos = *ycos = 0.0;
+		for (i = 0; i < 3; ++i)
+			*xcos += U[i] * Z[i];
+
+		*fyplus = *fycross = 0.0;
+		XLALComputeDetAMResponse(fxplus, fxcross, detector->response,
+			ra, dec, psi, gmst);
+
+		break;
+
+	case LALDETECTORTYPE_IFOYARM:
+
+		/* no x-arm */
+
+		*armlen = 2.0 * detector->frDetector.yArmMidpoint;
+
+		getarm(V, detector->frDetector.yArmAltitudeRadians,
+			detector->frDetector.yArmAzimuthRadians,
+			detector->frDetector.vertexLatitudeRadians,
+			detector->frDetector.vertexLongitudeRadians);
+
+		*xcos = *ycos = 0.0;
+		for (i = 0; i < 3; ++i)
+			*ycos += V[i] * Z[i];
+
+		*fxplus = *fxcross = 0.0;
+		XLALComputeDetAMResponse(fyplus, fycross, detector->response,
+			ra, dec, psi, gmst);
+
+		break;
+
+	default:
+
+		/* FIXME: could handle this situation properly; fur now, just
+		 * ignore non long-wavelength-limit effects by setting armlen
+		 * to zero; also, pretend that all of the response is
+		 * associated with the x-arm */
+
+		*armlen = *xcos = *ycos = 0.0;
+		*fyplus = *fycross = 0.0;
+		XLALComputeDetAMResponse(fxplus, fxcross, detector->response,
+			ra, dec, psi, gmst);
+
+		break;
+
+	}
+
+	return;
+}
+
+
+/* Helper routine that computes a segment of strain data with a single
+ * time delay and beam pattern applied to the whole segment.  The duration
+ * of the segment must therefore be reasonably short or else the movement
+ * of the earth will invalidate the use of a single time shift and beam
+ * pattern for the entire segment. */
+static int XLALSimComputeStrainSegmentREAL8TimeSeries(
+	REAL8TimeSeries *segment,
+	const REAL8TimeSeries *hplus,
+	const REAL8TimeSeries *hcross,
+	COMPLEX16FrequencySeries *work1,
+	COMPLEX16FrequencySeries *work2,
+	REAL8FFTPlan *fwdplan,
+	REAL8FFTPlan *revplan,
+	REAL8Window *window,
+	double ra,
+	double dec,
+	double psi,
+	LALDetector *detector,
+	const COMPLEX16FrequencySeries *response
+)
+{
+	LIGOTimeGPS t;
+	double gmst;
+	double xcos;
+	double ycos;
+	double fxplus;
+	double fyplus;
+	double fxcross;
+	double fycross;
+	double armlen;
+	double deltaT;
+	double offint;
+	double offrac;
+	int offset;
+	int j;
+	size_t k;
+
+	/* this routine assumes the segment has a length of N points where N is
+	 * a power of two and that the workspace frequency series and the FFT
+	 * plans are compatible with the size N; these assumptions are not
+	 * checked: the calling routine must ensure that they are true */
+
+	/* compute fplus, fcross, and time delay from earth's center at the
+ 	 * time corresponding to the middle of the segment */
+
+	t = segment->epoch;
+	XLALGPSAdd(&t, 0.5 * segment->data->length * segment->deltaT);
+	gmst = XLALGreenwichMeanSiderealTime(&t);
+	XLALComputeDetAMResponseParts(&armlen, &xcos, &ycos, &fxplus, &fyplus,
+		&fxcross, &fycross, detector, ra, dec, psi, gmst);
+	deltaT = XLALTimeDelayFromEarthCenter(detector->location, ra, dec, &t);
+
+	/* add to the geometric delay the difference in time between the
+	 * beginning of the injection timeseries and the beginning of the
+	 * segment */
+
+	deltaT += XLALGPSDiff(&hplus->epoch, &segment->epoch);
+
+	/* compute the integer and fractional parts of the sample index in the
+	 * segment on which the hplus and hcross time series begins: modf()
+	 * returns integer and fractional parts that have the same sign, e.g.,
+	 * -3.9 --> -3 + -0.9, and we adjust these so that magnitude of the
+	 * fractional part is not greater than 0.5, e.g., -3.9 --> -4.0 + 0.1,
+	 * so that we never do more than 1/2 a sample of re-interpolation */
+
+	offrac = modf(deltaT / segment->deltaT, &offint);
+	if (offrac < -0.5) {
+		offrac += 1.0;
+		offint -= 1.0;
+	} else if (offrac > 0.5) {
+		offrac -= 1.0;
+		offint += 1.0;
+	}
+	offset = offint;
+
+	/* now compute the sub-sample time shift that must be applied to the
+	 * segment data */
+
+	deltaT = offrac * segment->deltaT;
+
+	/* window the date and put it in frequency domain */
+
+	for (j = 0; j < (int)segment->data->length; ++j)
+		if (j >= offset && j < (int)hplus->data->length + offset) {
+			segment->data->data[j] = window->data->data[j]
+				* hplus->data->data[j - offset];
+		} else
+			segment->data->data[j] = 0.0;
+
+	if (XLALREAL8TimeFreqFFT(work1, segment, fwdplan) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	for (j = 0; j < (int)segment->data->length; ++j)
+		if (j >= offset && j < (int)hcross->data->length + offset) {
+			segment->data->data[j] = window->data->data[j]
+				* hcross->data->data[j - offset];
+		} else
+			segment->data->data[j] = 0.0;
+
+	if (XLALREAL8TimeFreqFFT(work2, segment, fwdplan) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* apply sub-sample time shift in frequency domain */
+
+	for (k = 0; k < work1->data->length; ++k) {
+		double f = work1->f0 + k * work1->deltaF;
+		double beta = LAL_PI * f * armlen / LAL_C_SI;
+		COMPLEX16 Tx, Ty; /* x- and y-arm transfer functions */
+		COMPLEX16 gplus, gcross;
+		COMPLEX16 fac;
+		
+		/* phase for sub-sample time correction */
+		fac = cexp(-I * LAL_TWOPI * f * deltaT);
+		if (response)
+			fac /= response->data->data[k];
+
+		Tx = XLALComputeDetArmTransferFunction(beta, xcos);
+		Ty = XLALComputeDetArmTransferFunction(beta, ycos);
+		gplus = Tx * fxplus + Ty * fyplus;
+		gcross = Tx * fxcross + Ty * fycross;
+
+		work1->data->data[k] *= gplus;
+		work1->data->data[k] += gcross * work2->data->data[k];
+		work1->data->data[k] *= fac;
+	}
+
+	/* adjust DC and Nyquist components: the DC component must always be
+	 * real-valued; because the calling routine has made the time series
+	 * have an even length, the Nyquist component must also be real-valued;
+	 * also this routine makes the assumption that both the DC and the
+	 * Nyquist components are zero */
+
+	work1->data->data[0] = cabs(work1->data->data[0]);
+	work1->data->data[work1->data->length - 1] =
+		creal(work1->data->data[work1->data->length - 1]);
+	
+	/* return data to time domain */
+
+	if (XLALREAL8FreqTimeFFT(segment, work1, revplan) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	return 0;
+}
+
+/* Helper routine that computes a segment of strain data with a single
+ * time delay and beam pattern applied to the whole segment.  The duration
+ * of the segment must therefore be reasonably short or else the movement
+ * of the earth will invalidate the use of a single time shift and beam
+ * pattern for the entire segment. */
+static int XLALSimComputeStrainSegmentREAL4TimeSeries(
+	REAL4TimeSeries *segment,
+	const REAL4TimeSeries *hplus,
+	const REAL4TimeSeries *hcross,
+	COMPLEX8FrequencySeries *work1,
+	COMPLEX8FrequencySeries *work2,
+	REAL4FFTPlan *fwdplan,
+	REAL4FFTPlan *revplan,
+	REAL4Window *window,
+	double ra,
+	double dec,
+	double psi,
+	LALDetector *detector,
+	const COMPLEX8FrequencySeries *response
+)
+{
+	LIGOTimeGPS t;
+	double gmst;
+	double xcos;
+	double ycos;
+	double fxplus;
+	double fyplus;
+	double fxcross;
+	double fycross;
+	double armlen;
+	double deltaT;
+	double offint;
+	double offrac;
+	int offset;
+	int j;
+	size_t k;
+
+	/* this routine assumes the segment has a length of N points where N is
+	 * a power of two and that the workspace frequency series and the FFT
+	 * plans are compatible with the size N; these assumptions are not
+	 * checked: the calling routine must ensure that they are true */
+
+	/* compute fplus, fcross, and time delay from earth's center at the
+ 	 * time corresponding to the middle of the segment */
+
+	t = segment->epoch;
+	XLALGPSAdd(&t, 0.5 * segment->data->length * segment->deltaT);
+	gmst = XLALGreenwichMeanSiderealTime(&t);
+	XLALComputeDetAMResponseParts(&armlen, &xcos, &ycos, &fxplus, &fyplus,
+		&fxcross, &fycross, detector, ra, dec, psi, gmst);
+	deltaT = XLALTimeDelayFromEarthCenter(detector->location, ra, dec, &t);
+
+	/* add to the geometric delay the difference in time between the
+	 * beginning of the injection timeseries and the beginning of the
+	 * segment */
+
+	deltaT += XLALGPSDiff(&hplus->epoch, &segment->epoch);
+
+	/* compute the integer and fractional parts of the sample index in the
+	 * segment on which the hplus and hcross time series begins: modf()
+	 * returns integer and fractional parts that have the same sign, e.g.,
+	 * -3.9 --> -3 + -0.9, and we adjust these so that magnitude of the
+	 * fractional part is not greater than 0.5, e.g., -3.9 --> -4.0 + 0.1,
+	 * so that we never do more than 1/2 a sample of re-interpolation */
+
+	offrac = modf(deltaT / segment->deltaT, &offint);
+	if (offrac < -0.5) {
+		offrac += 1.0;
+		offint -= 1.0;
+	} else if (offrac > 0.5) {
+		offrac -= 1.0;
+		offint += 1.0;
+	}
+	offset = offint;
+
+	/* now compute the sub-sample time shift that must be applied to the
+	 * segment data */
+
+	deltaT = offrac * segment->deltaT;
+
+	/* window the date and put it in frequency domain */
+
+	for (j = 0; j < (int)segment->data->length; ++j)
+		if (j >= offset && j < (int)hplus->data->length + offset) {
+			segment->data->data[j] = window->data->data[j]
+				* hplus->data->data[j - offset];
+		} else
+			segment->data->data[j] = 0.0;
+
+	if (XLALREAL4TimeFreqFFT(work1, segment, fwdplan) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	for (j = 0; j < (int)segment->data->length; ++j)
+		if (j >= offset && j < (int)hcross->data->length + offset) {
+			segment->data->data[j] = window->data->data[j]
+				* hcross->data->data[j - offset];
+		} else
+			segment->data->data[j] = 0.0;
+
+	if (XLALREAL4TimeFreqFFT(work2, segment, fwdplan) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* apply sub-sample time shift in frequency domain */
+
+	for (k = 0; k < work1->data->length; ++k) {
+		double f = work1->f0 + k * work1->deltaF;
+		double beta = LAL_PI * f * armlen / LAL_C_SI;
+		COMPLEX16 Tx, Ty; /* x- and y-arm transfer functions */
+		COMPLEX16 gplus, gcross;
+		COMPLEX16 fac;
+		
+		/* phase for sub-sample time correction */
+		fac = cexp(-I * LAL_TWOPI * f * deltaT);
+		if (response)
+			fac /= response->data->data[k];
+
+		Tx = XLALComputeDetArmTransferFunction(beta, xcos);
+		Ty = XLALComputeDetArmTransferFunction(beta, ycos);
+		gplus = Tx * fxplus + Ty * fyplus;
+		gcross = Tx * fxcross + Ty * fycross;
+
+		work1->data->data[k] *= gplus;
+		work1->data->data[k] += gcross * work2->data->data[k];
+		work1->data->data[k] *= fac;
+	}
+
+	/* adjust DC and Nyquist components: the DC component must always be
+	 * real-valued; because the calling routine has made the time series
+	 * have an even length, the Nyquist component must also be real-valued;
+	 * also this routine makes the assumption that both the DC and the
+	 * Nyquist components are zero */
+
+	work1->data->data[0] = cabs(work1->data->data[0]);
+	work1->data->data[work1->data->length - 1] =
+		creal(work1->data->data[work1->data->length - 1]);
+	
+	/* return data to time domain */
+
+	if (XLALREAL4FreqTimeFFT(segment, work1, revplan) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	return 0;
+}
+
+/**
+ * @brief Computes strain for a detector and injects into target time series.
+ * @details This routine takes care of the time-changing time delay from
+ * the Earth's center and the time-changing antenna response pattern; it
+ * also accounts for deviations from the long-wavelength limit at high
+ * frequencies.  An optional calibration response function can be provided
+ * if the output time series is not in strain units.
+ * @param[in/out] target Time series to inject strain into.
+ * @param[in] hplus Time series with plus-polarization gravitational waveform.
+ * @param[in] hcross Time series with cross-polarization gravitational waveform.
+ * @param[in] ra Right ascension of the source (radians).
+ * @param[in] dec Declination of the source (radians).
+ * @param[in] psi Polarization angle of the source (radians).
+ * @param[in] detector Detector to use when computing strain.
+ * @param[in] response Response function to use, or NULL if none.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
+int XLALSimInjectDetectorStrainREAL8TimeSeries(
+	REAL8TimeSeries *target,
+	const REAL8TimeSeries *hplus,
+	const REAL8TimeSeries *hcross,
+	double ra,
+	double dec,
+	double psi,
+	LALDetector *detector,
+	const COMPLEX16FrequencySeries *response
+)
+{
+	const double nominal_segdur = 2.0; /* nominal segment duration = 2s */
+	const double max_time_delay = 0.1; /* generous allowed time delay */
+	const size_t strides_per_segment = 2; /* 2 strides in one segment */
+	LIGOTimeGPS t0;
+	LIGOTimeGPS t1;
+	size_t length;		/* length in samples of interval t0 - t1 */
+	double segdur;		/* duration of segment in seconds */
+	size_t seglen;		/* length of segment in samples */
+	size_t padlen;		/* padding at beginning and end of segment */
+	size_t ovrlap;		/* overlapping data length */
+	size_t stride;		/* stride of each step */
+	size_t nsteps;		/* number of steps to take */
+	REAL8TimeSeries *h = NULL; /* strain timeseries to inject into target */
+	REAL8TimeSeries *segment = NULL;
+	COMPLEX16FrequencySeries *work1 = NULL;
+	COMPLEX16FrequencySeries *work2 = NULL;
+	REAL8FFTPlan *fwdplan = NULL;
+	REAL8FFTPlan *revplan = NULL;
+	REAL8Window *window = NULL;
+	size_t step;
+	size_t j;
+	int errnum = 0;
+
+	/* check validity and compatibility of time series */
+
+	LAL_CHECK_VALID_SERIES(target, XLAL_FAILURE);
+	LAL_CHECK_VALID_SERIES(hplus, XLAL_FAILURE);
+	LAL_CHECK_VALID_SERIES(hcross, XLAL_FAILURE);
+	LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, XLAL_FAILURE);
+	if (response == NULL) {
+		LAL_CHECK_COMPATIBLE_TIME_SERIES(target, hplus, XLAL_FAILURE);
+	} else {
+		/* units do no need to agree, but sample interval and
+		 * start frequency do */
+		if (fabs(target->deltaT - hplus->deltaT ) > LAL_REAL8_EPS)
+			XLAL_ERROR(XLAL_ETIME);
+		if (fabs(target->f0 - hplus->f0) > LAL_REAL8_EPS)
+			XLAL_ERROR(XLAL_EFREQ);
+	}
+			
+
+	/* constants describing the data segmentation: the length of the
+	 * segment must be a power of two and the segment duration is at least
+	 * nominal_segdur */
+
+	seglen = round_up_to_power_of_two(nominal_segdur / target->deltaT);
+	segdur = seglen * target->deltaT;
+	stride = seglen / strides_per_segment;
+	padlen = max_time_delay / target->deltaT;
+	ovrlap = seglen;
+	ovrlap -= 2 * padlen;
+	ovrlap -= stride;
+
+	/* determine start and end time: the start time is the later of the
+	 * start of the hplus/hcross time series and the target time series;
+	 * the end time is the earlier of the end of the hplus/hcross time
+	 * series and the target time series */
+
+	t0 = hplus->epoch;
+	t1 = target->epoch;
+	XLALGPSAdd(&t0, hplus->data->length * hplus->deltaT);
+	XLALGPSAdd(&t1, target->data->length * target->deltaT);
+	t1 = XLALGPSCmp(&t1, &t0) < 0 ? t1 : t0;
+	t0 = hplus->epoch;
+	t0 = XLALGPSCmp(&t0, &target->epoch) > 0 ? t0 : target->epoch;
+
+	/* add padding of 1 stride before and after these start and end times */
+
+	XLALGPSAdd(&t0, -1.0 * stride * target->deltaT);
+	XLALGPSAdd(&t1, stride * target->deltaT);
+
+	/* determine if this is a disjoint set: if so, there is nothing to do */
+
+	if (XLALGPSCmp(&t1, &t0) <= 0)
+		return 0;
+
+	/* create a segment that is segdur seconds long */
+
+	segment = XLALCreateREAL8TimeSeries(NULL, &t0, target->f0,
+		target->deltaT, &target->sampleUnits, seglen);
+	if (!segment) {
+		errnum = XLAL_EFUNC;
+		goto freereturn;
+	}
+
+	/* create a time series to hold the strain to inject into the target */
+
+	length = XLALGPSDiff(&t1, &t0) / target->deltaT;
+	h = XLALCreateREAL8TimeSeries(NULL, &t0, target->f0, target->deltaT,
+		&target->sampleUnits, length);
+	if (!h) {
+		errnum = XLAL_EFUNC;
+		goto freereturn;
+	}
+	memset(h->data->data, 0, h->data->length * sizeof(*h->data->data));
+
+	/* determine number of steps it takes to go from t0 to t1 */
+
+	nsteps = ((length%stride) ? (1 + length/stride) : (length/stride));
+
+
+	/* create frequency-domain workspace; note that the FFT function
+	 * populates the frequency series' metadata with the appropriate
+	 * values */
+
+	work1 = XLALCreateCOMPLEX16FrequencySeries(NULL, &t0, 0, 0,
+		&lalDimensionlessUnit, seglen / 2 + 1);
+	work2 = XLALCreateCOMPLEX16FrequencySeries(NULL, &t0, 0, 0,
+		&lalDimensionlessUnit, seglen / 2 + 1);
+	if (!work1 || !work2) {
+		errnum = XLAL_EFUNC;
+		goto freereturn;
+	}
+
+	/* create forward and reverse FFT plans */
+
+	fwdplan = XLALCreateForwardREAL8FFTPlan(seglen, 0);
+	revplan = XLALCreateReverseREAL8FFTPlan(seglen, 0);
+	if (!fwdplan || !revplan) {
+		errnum = XLAL_EFUNC;
+		goto freereturn;
+	}
+
+	/* create a Tukey window with tapers entirely within the padding */
+
+	window = XLALCreateTukeyREAL8Window(seglen, (double)padlen / seglen); 
+
+
+	/* loop over steps, adding data from the current step to the strain */
+
+	for (step = 0; step < nsteps; ++step) {
+
+		int status;
+		size_t offset;
+
+		/* compute one segment of strain with time appropriate beam
+ 		 * pattern functions and time delays from earth's center */
+
+		status = XLALSimComputeStrainSegmentREAL8TimeSeries(segment,				hplus, hcross, work1, work2, fwdplan, revplan, window,
+			ra, dec, psi, detector, response);
+		if (status < 0) {
+			errnum = XLAL_EFUNC;
+			goto freereturn;
+		}
+
+		/* compute the offset of this segment relative to the strain series */
+
+		offset = XLALGPSDiff(&segment->epoch, &h->epoch) / h->deltaT;
+		for (j = padlen; j < seglen - padlen; ++j)
+			if ((j + offset) < h->data->length) {
+				if (step && j - padlen < ovrlap) {
+					/* feather overlapping data */
+					double x = (double)(j - padlen) / ovrlap;
+					h->data->data[j + offset] = x * segment->data->data[j]
+						+ (1.0 - x) * h->data->data[j + offset];
+				} else /* no feathering of remaining data */
+					h->data->data[j + offset] = segment->data->data[j];
+			}
+
+		/* advance segment start time the next step */
+
+		XLALGPSAdd(&segment->epoch, stride * segment->deltaT);
+	}
+
+	/* apply window to beginning and end of time series to reduce ringing */
+
+	for (j = 0; j < stride - padlen; ++j)
+		h->data->data[j] = h->data->data[h->data->length - 1 - j] = 0.0;
+	for ( ; j < stride; ++j) {
+		double fac = window->data->data[j - (stride - padlen)];
+		h->data->data[j] *= fac;
+		h->data->data[h->data->length - 1 - j] *= fac;
+	}
+	
+
+	/* add computed strain to target time series */
+
+	XLALAddREAL8TimeSeries(target, h);
+
+freereturn:
+
+	/* free all memory and return */
+
+	XLALDestroyREAL8Window(window);
+	XLALDestroyREAL8FFTPlan(revplan);
+	XLALDestroyREAL8FFTPlan(fwdplan);
+	XLALDestroyCOMPLEX16FrequencySeries(work2);
+	XLALDestroyCOMPLEX16FrequencySeries(work1);
+	XLALDestroyREAL8TimeSeries(h);
+	XLALDestroyREAL8TimeSeries(segment);
+
+	if (errnum)
+		XLAL_ERROR(errnum);
+	return 0;
+}
+
+/**
+ * @brief Computes strain for a detector and injects into target time series.
+ * @details This routine takes care of the time-changing time delay from
+ * the Earth's center and the time-changing antenna response pattern; it
+ * also accounts for deviations from the long-wavelength limit at high
+ * frequencies.  An optional calibration response function can be provided
+ * if the output time series is not in strain units.
+ * @param[in/out] target Time series to inject strain into.
+ * @param[in] hplus Time series with plus-polarization gravitational waveform.
+ * @param[in] hcross Time series with cross-polarization gravitational waveform.
+ * @param[in] ra Right ascension of the source (radians).
+ * @param[in] dec Declination of the source (radians).
+ * @param[in] psi Polarization angle of the source (radians).
+ * @param[in] detector Detector to use when computing strain.
+ * @param[in] response Response function to use, or NULL if none.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
+int XLALSimInjectDetectorStrainREAL4TimeSeries(
+	REAL4TimeSeries *target,
+	const REAL4TimeSeries *hplus,
+	const REAL4TimeSeries *hcross,
+	double ra,
+	double dec,
+	double psi,
+	LALDetector *detector,
+	const COMPLEX8FrequencySeries *response
+)
+{
+	const double nominal_segdur = 2.0; /* nominal segment duration = 2s */
+	const double max_time_delay = 0.1; /* generous allowed time delay */
+	const size_t strides_per_segment = 2; /* 2 strides in one segment */
+	LIGOTimeGPS t0;
+	LIGOTimeGPS t1;
+	size_t length;		/* length in samples of interval t0 - t1 */
+	double segdur;		/* duration of segment in seconds */
+	size_t seglen;		/* length of segment in samples */
+	size_t padlen;		/* padding at beginning and end of segment */
+	size_t ovrlap;		/* overlapping data length */
+	size_t stride;		/* stride of each step */
+	size_t nsteps;		/* number of steps to take */
+	REAL4TimeSeries *h = NULL; /* strain timeseries to inject into target */
+	REAL4TimeSeries *segment = NULL;
+	COMPLEX8FrequencySeries *work1 = NULL;
+	COMPLEX8FrequencySeries *work2 = NULL;
+	REAL4FFTPlan *fwdplan = NULL;
+	REAL4FFTPlan *revplan = NULL;
+	REAL4Window *window = NULL;
+	size_t step;
+	size_t j;
+	int errnum = 0;
+
+	/* check validity and compatibility of time series */
+
+	LAL_CHECK_VALID_SERIES(target, XLAL_FAILURE);
+	LAL_CHECK_VALID_SERIES(hplus, XLAL_FAILURE);
+	LAL_CHECK_VALID_SERIES(hcross, XLAL_FAILURE);
+	LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, XLAL_FAILURE);
+	if (response == NULL) {
+		LAL_CHECK_COMPATIBLE_TIME_SERIES(target, hplus, XLAL_FAILURE);
+	} else {
+		/* units do no need to agree, but sample interval and
+		 * start frequency do */
+		if (fabs(target->deltaT - hplus->deltaT ) > LAL_REAL8_EPS)
+			XLAL_ERROR(XLAL_ETIME);
+		if (fabs(target->f0 - hplus->f0) > LAL_REAL8_EPS)
+			XLAL_ERROR(XLAL_EFREQ);
+	}
+			
+
+	/* constants describing the data segmentation: the length of the
+	 * segment must be a power of two and the segment duration is at least
+	 * nominal_segdur */
+
+	seglen = round_up_to_power_of_two(nominal_segdur / target->deltaT);
+	segdur = seglen * target->deltaT;
+	stride = seglen / strides_per_segment;
+	padlen = max_time_delay / target->deltaT;
+	ovrlap = seglen;
+	ovrlap -= 2 * padlen;
+	ovrlap -= stride;
+
+	/* determine start and end time: the start time is the later of the
+	 * start of the hplus/hcross time series and the target time series;
+	 * the end time is the earlier of the end of the hplus/hcross time
+	 * series and the target time series */
+
+	t0 = hplus->epoch;
+	t1 = target->epoch;
+	XLALGPSAdd(&t0, hplus->data->length * hplus->deltaT);
+	XLALGPSAdd(&t1, target->data->length * target->deltaT);
+	t1 = XLALGPSCmp(&t1, &t0) < 0 ? t1 : t0;
+	t0 = hplus->epoch;
+	t0 = XLALGPSCmp(&t0, &target->epoch) > 0 ? t0 : target->epoch;
+
+	/* add padding of 1 stride before and after these start and end times */
+
+	XLALGPSAdd(&t0, -1.0 * stride * target->deltaT);
+	XLALGPSAdd(&t1, stride * target->deltaT);
+
+	/* determine if this is a disjoint set: if so, there is nothing to do */
+
+	if (XLALGPSCmp(&t1, &t0) <= 0)
+		return 0;
+
+	/* create a segment that is segdur seconds long */
+
+	segment = XLALCreateREAL4TimeSeries(NULL, &t0, target->f0,
+		target->deltaT, &target->sampleUnits, seglen);
+	if (!segment) {
+		errnum = XLAL_EFUNC;
+		goto freereturn;
+	}
+
+	/* create a time series to hold the strain to inject into the target */
+
+	length = XLALGPSDiff(&t1, &t0) / target->deltaT;
+	h = XLALCreateREAL4TimeSeries(NULL, &t0, target->f0, target->deltaT,
+		&target->sampleUnits, length);
+	if (!h) {
+		errnum = XLAL_EFUNC;
+		goto freereturn;
+	}
+	memset(h->data->data, 0, h->data->length * sizeof(*h->data->data));
+
+	/* determine number of steps it takes to go from t0 to t1 */
+
+	nsteps = ((length%stride) ? (1 + length/stride) : (length/stride));
+
+
+	/* create frequency-domain workspace; note that the FFT function
+	 * populates the frequency series' metadata with the appropriate
+	 * values */
+
+	work1 = XLALCreateCOMPLEX8FrequencySeries(NULL, &t0, 0, 0,
+		&lalDimensionlessUnit, seglen / 2 + 1);
+	work2 = XLALCreateCOMPLEX8FrequencySeries(NULL, &t0, 0, 0,
+		&lalDimensionlessUnit, seglen / 2 + 1);
+	if (!work1 || !work2) {
+		errnum = XLAL_EFUNC;
+		goto freereturn;
+	}
+
+	/* create forward and reverse FFT plans */
+
+	fwdplan = XLALCreateForwardREAL4FFTPlan(seglen, 0);
+	revplan = XLALCreateReverseREAL4FFTPlan(seglen, 0);
+	if (!fwdplan || !revplan) {
+		errnum = XLAL_EFUNC;
+		goto freereturn;
+	}
+
+	/* create a Tukey window with tapers entirely within the padding */
+
+	window = XLALCreateTukeyREAL4Window(seglen, (double)padlen / seglen); 
+
+
+	/* loop over steps, adding data from the current step to the strain */
+
+	for (step = 0; step < nsteps; ++step) {
+
+		int status;
+		size_t offset;
+
+		/* compute one segment of strain with time appropriate beam
+ 		 * pattern functions and time delays from earth's center */
+
+		status = XLALSimComputeStrainSegmentREAL4TimeSeries(segment,				hplus, hcross, work1, work2, fwdplan, revplan, window,
+			ra, dec, psi, detector, response);
+		if (status < 0) {
+			errnum = XLAL_EFUNC;
+			goto freereturn;
+		}
+
+		/* compute the offset of this segment relative to the strain series */
+
+		offset = XLALGPSDiff(&segment->epoch, &h->epoch) / h->deltaT;
+		for (j = padlen; j < seglen - padlen; ++j)
+			if ((j + offset) < h->data->length) {
+				if (step && j - padlen < ovrlap) {
+					/* feather overlapping data */
+					double x = (double)(j - padlen) / ovrlap;
+					h->data->data[j + offset] = x * segment->data->data[j]
+						+ (1.0 - x) * h->data->data[j + offset];
+				} else /* no feathering of remaining data */
+					h->data->data[j + offset] = segment->data->data[j];
+			}
+
+		/* advance segment start time the next step */
+
+		XLALGPSAdd(&segment->epoch, stride * segment->deltaT);
+	}
+
+	/* apply window to beginning and end of time series to reduce ringing */
+
+	for (j = 0; j < stride - padlen; ++j)
+		h->data->data[j] = h->data->data[h->data->length - 1 - j] = 0.0;
+	for ( ; j < stride; ++j) {
+		double fac = window->data->data[j - (stride - padlen)];
+		h->data->data[j] *= fac;
+		h->data->data[h->data->length - 1 - j] *= fac;
+	}
+	
+
+	/* add computed strain to target time series */
+
+	XLALAddREAL4TimeSeries(target, h);
+
+freereturn:
+
+	/* free all memory and return */
+
+	XLALDestroyREAL4Window(window);
+	XLALDestroyREAL4FFTPlan(revplan);
+	XLALDestroyREAL4FFTPlan(fwdplan);
+	XLALDestroyCOMPLEX8FrequencySeries(work2);
+	XLALDestroyCOMPLEX8FrequencySeries(work1);
+	XLALDestroyREAL4TimeSeries(h);
+	XLALDestroyREAL4TimeSeries(segment);
+
+	if (errnum)
+		XLAL_ERROR(errnum);
 	return 0;
 }
