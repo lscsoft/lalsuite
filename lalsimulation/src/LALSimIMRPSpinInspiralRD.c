@@ -206,8 +206,8 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
     case 5:
       params->Ecoeff[5]     = 0.;
       params->wdotcoeff[5]  = XLALSimInspiralTaylorT4Phasing_5PNCoeff(params->eta);
-      params->ESO25s1     = XLALSimInspiralPNEnergy_5PNSOCoeffs1(params->m1ByM);
-      params->ESO25s2     = XLALSimInspiralPNEnergy_5PNSOCoeffs1(params->m1ByM);
+      params->ESO25s1     = XLALSimInspiralPNEnergy_5PNSOCoeff(params->m1ByM);
+      params->ESO25s2     = XLALSimInspiralPNEnergy_5PNSOCoeff(params->m1ByM);
       params->wdotSO25s1  = XLALSimInspiralTaylorT4Phasing_5PNSLCoeff(params->m1ByM);
       params->wdotSO25s2  = XLALSimInspiralTaylorT4Phasing_5PNSLCoeff(params->m2ByM);
       params->S1dot25     = XLALSimInspiralSpinDot_5PNCoeff(params->m1ByM);
