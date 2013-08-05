@@ -53,6 +53,11 @@ typedef struct{
   REAL8   alphaRad;           /**< right ascension in radians */
   REAL8   deltaRad;           /**< declination in radians */
   REAL8   refTime;            /**< reference time for pulsar phase definition */
+  REAL8   orbitAsiniSec;      /**< start projected semimajor axis in seconds */
+  REAL8   orbitAsiniSecBand;  /**< band for projected semimajor axis in seconds */
+  REAL8   orbitPSec;          /**< binary orbital period in seconds */
+  REAL8   orbitTimeAsc;       /**< start time of ascension for binary orbit */ 
+  REAL8   orbitTimeAscBand;   /**< band for time of ascension for binary orbit */ 
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
   INT4    rngMedBlock;        /**< running median block size */
@@ -306,6 +311,13 @@ int XLALInitUserVars (UserInput_t *uvar)
   /* default for reftime is in the middle */
   uvar->refTime = 0.5*(uvar->startTime + uvar->endTime);
 
+  /* zero binary orbital parameters means not a binary */
+  uvar->orbitAsiniSec = 0.0;
+  uvar->orbitAsiniSecBand = 0.0;
+  uvar->orbitPSec = 0.0;
+  uvar->orbitTimeAsc = 0;
+  uvar->orbitTimeAscBand = 0;
+
   uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);
 
@@ -325,6 +337,11 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregREALUserStruct  ( alphaRad,      0,  UVAR_OPTIONAL, "Right ascension for directed search (radians)");
   XLALregREALUserStruct  ( deltaRad,      0,  UVAR_OPTIONAL, "Declination for directed search (radians)");
   XLALregREALUserStruct  ( refTime,       0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: midPoint]");
+  XLALregREALUserStruct  ( orbitAsiniSec, 0,  UVAR_OPTIONAL, "Start of search band for projected semimajor axis (seconds) [0 means not a binary]");
+  XLALregREALUserStruct  ( orbitAsiniSecBand, 0,  UVAR_OPTIONAL, "Width of search band for projected semimajor axis (seconds)");
+  XLALregREALUserStruct  ( orbitPSec,     0,  UVAR_OPTIONAL, "Binary orbital period (seconds) [0 means not a binary]");
+  XLALregREALUserStruct  ( orbitTimeAsc,  0,  UVAR_OPTIONAL, "Start of orbital time-of-ascension band in GPS seconds");
+  XLALregREALUserStruct  ( orbitTimeAscBand, 0,  UVAR_OPTIONAL, "Width of orbital time-of-ascension band (seconds)");
   XLALregSTRINGUserStruct( ephemYear,     0,  UVAR_OPTIONAL, "String Ephemeris year range");
   XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
   XLALregINTUserStruct   ( rngMedBlock,   0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
