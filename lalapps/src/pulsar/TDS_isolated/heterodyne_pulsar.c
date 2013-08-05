@@ -1248,12 +1248,12 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) -
           hetParams.hetUpdate.waveepoch)/86400.;
 
-        for( INT4 k = 0; k < hetParams.hetUpdate.nwaves; k++ ){
+       for( INT4 k = 0; k < hetParams.hetUpdate.nwaves; k++ ){
           tWave1 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*dtWave) +
             hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*dtWave);
 
-          tWave2 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*(dtWave+1.)) +
-            hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*(dtWave+1.));
+          tWave2 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*(dtWave+(1./86400.))) +
+            hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*(dtWave+(1./86400.)));
         }
         phaseWave = hetParams.hetUpdate.f0*freqfactor*tWave1;
       }
