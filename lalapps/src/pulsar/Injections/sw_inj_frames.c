@@ -70,6 +70,7 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 #include <lal/LALRunningMedian.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/LogPrintf.h>
+#include <lal/LALString.h>
 /*#include <lal/PulsarDataTypes.h>*/
 
 #define STRINGLENGTH 256              /* the length of general string */
@@ -96,6 +97,8 @@ UserInput_t uvar_struct;
 EphemerisData * XLALInitEphemeris( const CHAR *ephemDir ); /*function to read ephemeris files*/
 
 int InitUserVars ( UserInput_t *uvar, int argc, char **argv ); /*Initiates user variables*/
+
+int XLALFrameFileName(char *fname, size_t size, const char *chname, const LIGOTimeGPS * epoch, double duration);
 
 /* empty initialiser */
 LALStatus empty_LALStatus;
@@ -183,11 +186,11 @@ int main(int argc, char **argv)
   /*fprintf( stderr, "\nin_chan = %s\n", in_chan);*/
 
   CHAR out_chan[256];
-  sprintf( out_chan, "%s_LDAS_C02_L2_CWINJ_TOT", uvar->IFO );
+  sprintf( out_chan, "%s:CWINJ_TOT", uvar->IFO );
   /*fprintf( stderr, "\nout_chan = %s\n", out_chan);*/
 
   CHAR inj_chan[256];
-  sprintf( inj_chan, "%s_LDAS_C02_L2_CWINJ_SIG", uvar->IFO );
+  sprintf( inj_chan, "%s:CWINJ_SIG", uvar->IFO );
 
   /*Writing to .log file*/
   if (( logfile = fopen( log_file, "a" )) == NULL ) {
@@ -379,8 +382,11 @@ int main(int argc, char **argv)
 	  continue; /*don't exit program if .gwf file fails, continue through*/
 	}
 
+        int detflags;
+
 	/* define output .gwf file */
-	sprintf(out_file, "%c-%s-%d-%d.gwf", uvar->IFO[0], out_chan, epoch.gpsSeconds, ndata);
+ 	detflags = XLALFrameFileName(out_file, sizeof(out_file), out_chan, &epoch, ndata);
+        //sprintf(out_file, "%c-%s-%d-%d.gwf", uvar->IFO[0], out_chan, epoch.gpsSeconds, ndata);
 
 	/*Writing to .log file*/
 	if (( logfile = fopen( log_file, "a" )) == NULL ) {
@@ -395,9 +401,9 @@ int main(int argc, char **argv)
 
 	/* read in and test generated frame with XLAL function*/
 
-	LALFrameH *outFrame   = NULL;        /* frame data structure */
+	LALFrameH *outFrame   = NULL;        /* frame data structure */     
 
-	if ((outFrame = XLALFrameNew(&epoch,(REAL8)ndata,"CW_INJ",1,0,0)) == NULL) {
+	if ((outFrame = XLALFrameNew(&epoch,(REAL8)ndata,"CW_INJ",0,0,detflags)) == NULL) {
 	  LogPrintf(LOG_CRITICAL, "%s : XLALFrameNew() failed with error = %d.\n",fn,xlalErrno);
 	  XLAL_ERROR(XLAL_EFAILED);
 	}
@@ -704,3 +710,70 @@ XLALInitEphemeris (const CHAR *ephemDir)
   return edat;
 
 } /* XLALInitEphemeris() */
+
+/* compare to chars - taken from LALFrameIO.c */
+static int charcmp(const void *c1, const void *c2){
+    char a = *(const char *)c1;
+    char b = *(const char *)c2;
+    return (a > b) - (a < b);
+}
+
+/* function to set the Frame file name from the input data - taken from LALFrameIO.c */
+int XLALFrameFileName(char *fname, size_t size, const char *chname, const LIGOTimeGPS * epoch, double duration){
+    char site[LAL_NUM_DETECTORS + 1] = "";
+    char *desc;
+    const char *cs;
+    char *s;
+    int detflgs = 0;
+    int t0;
+    int dt;
+
+    /* parse chname to get identified sites and detectors */
+    /* strip out detectors from "XmYn...:"-style prefix */
+    for (cs = chname; *cs; cs += 2) {
+        int d;
+        /* when you get to a colon, you're done! */
+        if (*cs == ':')
+            break;
+        /* see if this is an unexpected format */
+        if (strlen(cs) <= 2 || !isupper(cs[0]) || !isdigit(cs[1])) {
+            /* parse error so reset detflgs and site */
+            detflgs = 0;
+            site[0] = 0;
+            break;
+        }
+        /* try to find this detector */
+        for (d = 0; d < LAL_NUM_DETECTORS; ++d)
+            if (0 == strncmp(cs, lalCachedDetectors[d].frDetector.prefix, 2)) {
+                /* found it: put it in sites and detflgs */
+                detflgs |= 1 << 2 * d;
+                strncat(site, cs, 1);
+            }
+    }
+
+    /* sort and uniqify sites */
+    qsort(site, strlen(site), 1, charcmp);
+    cs = s = site;
+    for (cs = s = site; *s; ++cs)
+        if (*s != *cs)
+            *++s = *cs;
+
+    /* description is a modified version of chname */
+    /* replace invalid description char with '_' */
+    desc = XLALStringDuplicate(chname);
+    for (s = desc; *s; ++s)
+        if (!isalnum(*s))
+            *s = '_';
+
+    /* determine start time field and duration field */
+    t0 = epoch->gpsSeconds;
+    dt = (int)ceil(XLALGPSGetREAL8(epoch) + duration) - t0;
+
+    /* now format the file name */
+    snprintf(fname, size, "%s-%s-%d-%d.gwf", *site ? site : "X", desc, t0,
+        dt);
+
+    LALFree(desc);
+    return detflgs;
+}
+
