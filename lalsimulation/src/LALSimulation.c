@@ -1221,7 +1221,6 @@ int XLALSimInjectDetectorStrainREAL8TimeSeries(
 	LIGOTimeGPS t0;
 	LIGOTimeGPS t1;
 	size_t length;		/* length in samples of interval t0 - t1 */
-	//double segdur;		/* duration of segment in seconds */
 	size_t seglen;		/* length of segment in samples */
 	size_t padlen;		/* padding at beginning and end of segment */
 	size_t ovrlap;		/* overlapping data length */
@@ -1261,7 +1260,6 @@ int XLALSimInjectDetectorStrainREAL8TimeSeries(
 	 * nominal_segdur */
 
 	seglen = round_up_to_power_of_two(nominal_segdur / target->deltaT);
-	//segdur = seglen * target->deltaT;
 	stride = seglen / strides_per_segment;
 	padlen = max_time_delay / target->deltaT;
 	ovrlap = seglen;
@@ -1291,7 +1289,7 @@ int XLALSimInjectDetectorStrainREAL8TimeSeries(
 	if (XLALGPSCmp(&t1, &t0) <= 0)
 		return 0;
 
-	/* create a segment that is segdur seconds long */
+	/* create a segment that is seglen samples long */
 
 	segment = XLALCreateREAL8TimeSeries(NULL, &t0, target->f0,
 		target->deltaT, &target->sampleUnits, seglen);
@@ -1446,7 +1444,6 @@ int XLALSimInjectDetectorStrainREAL4TimeSeries(
 	LIGOTimeGPS t0;
 	LIGOTimeGPS t1;
 	size_t length;		/* length in samples of interval t0 - t1 */
-	//double segdur;		/* duration of segment in seconds */
 	size_t seglen;		/* length of segment in samples */
 	size_t padlen;		/* padding at beginning and end of segment */
 	size_t ovrlap;		/* overlapping data length */
@@ -1486,7 +1483,6 @@ int XLALSimInjectDetectorStrainREAL4TimeSeries(
 	 * nominal_segdur */
 
 	seglen = round_up_to_power_of_two(nominal_segdur / target->deltaT);
-	//segdur = seglen * target->deltaT;
 	stride = seglen / strides_per_segment;
 	padlen = max_time_delay / target->deltaT;
 	ovrlap = seglen;
@@ -1516,7 +1512,7 @@ int XLALSimInjectDetectorStrainREAL4TimeSeries(
 	if (XLALGPSCmp(&t1, &t0) <= 0)
 		return 0;
 
-	/* create a segment that is segdur seconds long */
+	/* create a segment that is seglen samples long */
 
 	segment = XLALCreateREAL4TimeSeries(NULL, &t0, target->f0,
 		target->deltaT, &target->sampleUnits, seglen);
