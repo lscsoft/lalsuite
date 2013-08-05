@@ -252,7 +252,10 @@ LALGetCrabEphemeris	( LALStatus			*status,
 
   /* read in ephermeris data */
   while(!feof(fp)){
-    fscanf(fp,"%lf%lf%lf%lf",&MJD,&GPStArr,&f0,&f1);
+    if( fscanf(fp,"%lf%lf%lf%lf",&MJD,&GPStArr,&f0,&f1) != 4 ){
+      fprintf(stderr, "Error... problem reading line %d of ephemeris file!\n", j+1);
+      exit(1);
+    }
     output->f0->data[j] = f0;
     output->f1->data[j] = f1;
     MJDVec[j] = MJD;

@@ -158,7 +158,10 @@ int main(int argc, char *argv[]){
     
     REAL8 tmpr, tmpi;
     
-    fscanf(fpin, "%lf%lf%lf", &times->data[i], &tmpr, &tmpi);
+    if( fscanf(fpin, "%lf%lf%lf", &times->data[i], &tmpr, &tmpi) != 3 ){
+      fprintf(stderr, "Error... problem reading line %d of the heterodyne file!\n", i+1);
+      exit(1);
+    }
     B->data[i] = tmpr + I*tmpi;
     i++;
   }
