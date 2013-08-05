@@ -207,8 +207,13 @@ int main( int argc, char *argv[] ){
   else if( !strcmp( det, "WSRT" ) ){ sn = WSRT; }
 
   if( sn != NUMSCOPES ){
-    params.site = XLALMalloc( sizeof(LALDetector) );
-    memcpy(params.site->location, scopelocations[sn], 3*sizeof(REAL8));
+    LALDetector *site = NULL;
+    site = (LALDetector *)XLALMalloc( sizeof(LALDetector) );
+    //memcpy(site->location, scopelocations[sn], 3*sizeof(REAL8));
+    site->location[0] = scopelocations[sn][0];
+    site->location[1] = scopelocations[sn][1];
+    site->location[2] = scopelocations[sn][2];
+    params.site = site;
   }
   else{ params.site = XLALGetSiteInfo( det ); } /* try a GW detector */
 
