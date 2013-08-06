@@ -120,7 +120,7 @@ static REAL8 UNUSED
 XLALSimInspiralPNEnergy_5PNSOCoeff(
 	REAL8 mByM)
 {
-	return 5. + 3./mByM + 29.*mByM/9. + mByM*mByM/9.;
+	return 5./3. + 3./mByM + 29.*mByM/9. + mByM*mByM/9.;
 }
 
 static REAL8 UNUSED
@@ -189,7 +189,7 @@ static REAL8 UNUSED
 XLALSimInspiralPNFlux_3PNSOCoeff(
 	REAL8 mByM)
 {
-	return 3./2. - 5./4./mByM;
+	return -3./2. - 5./4./mByM;
 }
 
 static REAL8 UNUSED
@@ -233,7 +233,7 @@ static REAL8 UNUSED
 XLALSimInspiralPNFlux_6PNSOCoeff(
 	REAL8 mByM)
 {
-	return LAL_PI*( 17./3. - 31./(6.*mByM) );
+	return LAL_PI*( -17./3. - 31./(6.*mByM) );
 }
 
 static REAL8 UNUSED
@@ -247,7 +247,7 @@ static REAL8 UNUSED
 XLALSimInspiralPNFlux_7PNSOCoeff(
 	REAL8 mByM)
 {
-	return -(18.737/13.608) + 95.35/(3.36*mByM) - 229.27*mByM/7.56 + 12.476*mByM*mByM/1.89 - 35*pow(mByM,3)/108 - 1117*pow(mByM,4)/54;
+        return (380.647/13.608) + 9535./(336.*mByM) - 40115.*mByM/756. + 3742.*mByM*mByM/63. - 35.*pow(mByM,3)/108. - 1117.*pow(mByM,4)/54.;
 }
 
 /*
