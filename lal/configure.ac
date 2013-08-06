@@ -22,6 +22,7 @@ AC_CONFIG_FILES([ \
   lib/lalsupport/test/Makefile \
   python/Makefile \
   python/__init__.py \
+  python/utils/Makefile \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \

@@ -1,3 +1,6 @@
+SUBDIRS = \
+	utils
+
 pkgpython_PYTHON = \
 	__init__.py \
 	gpstime.py \
