@@ -385,7 +385,7 @@ int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfi
 	SimInspiralTable *injections = NULL;
 	COMPLEX8FrequencySeries *response;
 	REAL4TimeSeries keep;
-	REAL8 deltaF;
+	// REAL8 deltaF;
 	int ninj;
 	int tbeg;
 	int tend;
@@ -411,7 +411,7 @@ int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfi
 		return 0;
 	}
 
-	deltaF = 1.0 / ( series->deltaT * series->data->length );
+	// deltaF = 1.0 / ( series->deltaT * series->data->length );
 	// response = getresp( calfile, series->name, &series->epoch, deltaF, series->data->length, 1.0 );
 	response = NULL;
 	keep = *series;
@@ -439,7 +439,7 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 	SimBurst *sim_burst;
 	REAL8TimeSeries *injections;
 	COMPLEX8FrequencySeries *response;
-	REAL8 deltaF;
+	// REAL8 deltaF;
 	LIGOTimeGPS tbeg = series->epoch;
 	LIGOTimeGPS tend = series->epoch;
 	unsigned i;
@@ -462,7 +462,7 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 
 	verbose( "injecting bursts listed in file %s between times %d and %d\n", burstinjfile, tbeg, tend );
 
-	deltaF = 1.0 / ( series->deltaT * series->data->length );
+	// deltaF = 1.0 / ( series->deltaT * series->data->length );
 	// response = getresp( calfile, series->name, &series->epoch, deltaF, series->data->length, 1.0 );
 	response = NULL;
 
@@ -515,7 +515,7 @@ int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 f_min )
 	COMPLEX8FrequencySeries *response;
 	COMPLEX8FrequencySeries *fseries;
 	REAL4FFTPlan *pfwd, *prev;
-	REAL8 deltaF;
+	// REAL8 deltaF;
 	UINT4 kmin, k;
 
 	if ( ! calfile )
@@ -529,7 +529,7 @@ int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 f_min )
 	fseries = XLALCreateCOMPLEX8FrequencySeries( tseries->name, &tseries->epoch, 0, 1.0/tseries->deltaT, &lalDimensionlessUnit, tseries->data->length/2 + 1 );
 	XLALREAL4TimeFreqFFT( fseries, tseries, pfwd );
 
-	deltaF = 1.0 / ( tseries->deltaT * tseries->data->length );
+	// deltaF = 1.0 / ( tseries->deltaT * tseries->data->length );
 	dynrange_ = 1e20;
 	// response = getresp( calfile, tseries->name, &tseries->epoch, deltaF, tseries->data->length, dynrange_ );
 	response = NULL;
