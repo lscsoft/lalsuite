@@ -1,5 +1,6 @@
 SUBDIRS = \
-	utils
+	utils \
+	spectrum
 
 pkgpython_PYTHON = \
 	__init__.py \
