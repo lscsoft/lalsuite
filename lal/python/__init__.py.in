@@ -6,5 +6,7 @@
 ch_gen defined in the LALSuite @ref ch_c.
 """
 #@{
-#	\defgroup GPSTime_py	GPSTime
+#	\defgroup pkg_py_lal_GPSTime_py	GPSTime
+#	\defgroup pkg_py_lal_spectrum	Spectrum
+#	\defgroup pkg_py_lal_utils	Utilities
 #@}
