@@ -440,7 +440,6 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_nf1dotRes = 1;
   INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   INT4 uvar_gridType1 = GRID_METRIC;
-  INT4 uvar_sftUpsampling = 1;
   INT4 uvar_skyPointIndex = -1;
 
   CHAR *uvar_ephemE = NULL;
@@ -536,7 +535,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0, UVAR_DEVELOPER, "Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "correctFreqs", 0, UVAR_DEVELOPER, "Correct candidate output frequencies (ie fix bug #147). Allows reproducing 'historical results'", &uvar_correctFreqs), &status);
@@ -730,15 +728,6 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf(LOG_DETAIL, "GPS Reference Time = %d\n", refTimeGPS.gpsSeconds);
 
 
-  if ( uvar_sftUpsampling > 1 )
-    {
-      LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_sftUpsampling );
-      for (k = 0; k < nStacks; k++) {
-	LAL_CALL ( upsampleMultiSFTVector ( &status, stackMultiSFT.data[k], uvar_sftUpsampling, 16 ), &status );
-      }
-      LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-    }
-
   /*------- set frequency and spindown resolutions and ranges for Fstat and semicoherent steps -----*/
 
   /* set Fstat calculation frequency resolution
@@ -864,7 +853,7 @@ int MAIN( int argc, char *argv[]) {
   /* some compute F params */
   CFparams.Dterms = uvar_Dterms;
   CFparams.SSBprec = uvar_SSBprecision;
-  CFparams.upsampling = uvar_sftUpsampling;
+  CFparams.upsampling = 1;
 
 
   /* set up some semiCoherent parameters */
