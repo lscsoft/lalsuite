@@ -391,7 +391,6 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_gamma2Refine = 1;
   INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   INT4 uvar_gridType1 = GRID_METRIC;
-  INT4 uvar_sftUpsampling = 1;
   INT4 uvar_skyPointIndex = -1;
 
   CHAR *uvar_ephemE = NULL;
@@ -500,7 +499,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No. of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=avg2F, 1=numbercount, 2=LV-stat, 3=dual-toplists 'avg2F+LV'",  &uvar_SortToplist), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "LVuseAllTerms",0, UVAR_DEVELOPER, "LineVeto: which terms to include - FALSE: only leading term, TRUE: all terms", &uvar_LVuseAllTerms), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
@@ -867,16 +865,6 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.segmentList = NULL;
 
 
-  /* special treatment of SFTs if upsampling is used */
-  if ( uvar_sftUpsampling > 1 )
-    {
-      LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_sftUpsampling );
-      for (k = 0; k < nStacks; k++) {
-        LAL_CALL ( upsampleMultiSFTVector ( &status, stackMultiSFT.data[k], uvar_sftUpsampling, 16 ), &status );
-      }
-      LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-    }
-
   /*------- set frequency and spindown resolutions and ranges for Fstat and semicoherent steps -----*/
 
   dFreqStack = usefulParams.dFreqStack;
@@ -1007,7 +995,7 @@ int MAIN( int argc, char *argv[]) {
   /* some compute F-Stat params */
   CFparams.Dterms = uvar_Dterms;
   CFparams.SSBprec = uvar_SSBprecision;
-  CFparams.upsampling = uvar_sftUpsampling;
+  CFparams.upsampling = 1;
   CFparams.edat = edat;
 
   /*---------- set up stuff for semi-coherent part ---------*/
