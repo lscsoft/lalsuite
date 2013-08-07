@@ -197,6 +197,8 @@ src/pulsar/FDS_isolated/testFstat_v3-LFT.sft
 src/pulsar/FDS_isolated/testFstat_v3-timeseries.dat
 src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/GCT/testLineVeto
+src/pulsar/Injections/Tseries_v2_*.dat
+src/pulsar/Injections/debug_phi_v2.dat
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_Makefakedata_v5
 src/pulsar/Injections/lalapps_compareSFTs
