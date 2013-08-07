@@ -214,7 +214,7 @@ XLALGetVersionString( int level )
   char lalapps_info[2048];
   char *ret;
   const char delim[] = ":";
-  char *tree_status;
+  char *tree_status, *orig_tree_status;
 
   if ((LAL_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
@@ -308,88 +308,99 @@ XLALGetVersionString( int level )
   {
     case 0:
       /* get lal info */
-      tree_status = strdup(lalVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalVCSInfo.vcsStatus);
       snprintf(lal_info, sizeof(lal_info),
           "%%%% LAL: %s (%s %s)\n", lalVCSInfo.version, \
           strsep(&tree_status, delim), lalVCSInfo.vcsId);
+      free(orig_tree_status);
 
 #ifdef HAVE_LIBLALFRAME
       /* get lalframe info */
-      tree_status = strdup(lalFrameVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalFrameVCSInfo.vcsStatus);
       snprintf(lalframe_info, sizeof(lalframe_info),
           "%%%% LALFrame: %s (%s %s)\n", lalFrameVCSInfo.version, \
           strsep(&tree_status, delim), lalFrameVCSInfo.vcsId);
+      free(orig_tree_status);
 #endif
 
 #ifdef HAVE_LIBLALMETAIO
       /* get lalmetaio info */
-      tree_status = strdup(lalMetaIOVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalMetaIOVCSInfo.vcsStatus);
       snprintf(lalmetaio_info, sizeof(lalmetaio_info),
           "%%%% LALMetaIO: %s (%s %s)\n", lalMetaIOVCSInfo.version, \
           strsep(&tree_status, delim), lalMetaIOVCSInfo.vcsId);
+      free(orig_tree_status);
 #endif
 
 #ifdef HAVE_LIBLALXML
       /* get lalxml info */
-      tree_status = strdup(lalXMLVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalXMLVCSInfo.vcsStatus);
       snprintf(lalxml_info, sizeof(lalxml_info),
           "%%%% LALXML: %s (%s %s)\n", lalXMLVCSInfo.version, \
           strsep(&tree_status, delim), lalXMLVCSInfo.vcsId);
+      free(orig_tree_status);
 #endif
 
 #ifdef HAVE_LIBLALSIMULATION
       /* get lalsimulation info */
-      tree_status = strdup(lalSimulationVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalSimulationVCSInfo.vcsStatus);
       snprintf(lalsimulation_info, sizeof(lalsimulation_info),
           "%%%% LALSimulation: %s (%s %s)\n", lalSimulationVCSInfo.version, \
           strsep(&tree_status, delim), lalSimulationVCSInfo.vcsId);
+      free(orig_tree_status);
 #endif
 
 #ifdef HAVE_LIBLALBURST
       /* get lalburst info */
-      tree_status = strdup(lalBurstVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalBurstVCSInfo.vcsStatus);
       snprintf(lalburst_info, sizeof(lalburst_info),
           "%%%% LALBurst: %s (%s %s)\n", lalBurstVCSInfo.version, \
           strsep(&tree_status, delim), lalBurstVCSInfo.vcsId);
+      free(orig_tree_status);
 #endif
 
 #ifdef HAVE_LIBLALINSPIRAL
       /* get lalinspiral info */
-      tree_status = strdup(lalInspiralVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalInspiralVCSInfo.vcsStatus);
       snprintf(lalinspiral_info, sizeof(lalinspiral_info),
           "%%%% LALInspiral: %s (%s %s)\n", lalInspiralVCSInfo.version, \
           strsep(&tree_status, delim), lalInspiralVCSInfo.vcsId);
+      free(orig_tree_status);
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
       /* get lalpulsar info */
-      tree_status = strdup(lalPulsarVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalPulsarVCSInfo.vcsStatus);
       snprintf(lalpulsar_info, sizeof(lalpulsar_info),
           "%%%% LALPulsar: %s (%s %s)\n", lalPulsarVCSInfo.version, \
           strsep(&tree_status, delim), lalPulsarVCSInfo.vcsId);
+      free(orig_tree_status);
 #endif
 
 #ifdef HAVE_LIBLALINFERENCE
       /* get lalinference info */
-      tree_status = strdup(lalInferenceVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalInferenceVCSInfo.vcsStatus);
       snprintf(lalinference_info, sizeof(lalinference_info),
           "%%%% LALInference: %s (%s %s)\n", lalInferenceVCSInfo.version, \
           strsep(&tree_status, delim), lalInferenceVCSInfo.vcsId);
+      free(orig_tree_status);
 #endif
 
 #ifdef HAVE_LIBLALSTOCHASTIC
       /* get lalstochastic info */
-      tree_status = strdup(lalStochasticVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalStochasticVCSInfo.vcsStatus);
       snprintf(lalstochastic_info, sizeof(lalstochastic_info),
           "%%%% LALStochastic: %s (%s %s)\n", lalStochasticVCSInfo.version, \
           strsep(&tree_status, delim), lalStochasticVCSInfo.vcsId);
+      free(orig_tree_status);
 #endif
 
       /* get lalapps info */
-      tree_status = strdup(lalAppsVCSInfo.vcsStatus);
+      tree_status = orig_tree_status = strdup(lalAppsVCSInfo.vcsStatus);
       snprintf(lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps: %s (%s %s)\n", lalAppsVCSInfo.version, \
           strsep(&tree_status, delim), lalAppsVCSInfo.vcsId);
+      free(orig_tree_status);
 
       break;
 
