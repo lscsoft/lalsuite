@@ -1,4 +1,8 @@
 #!/bin/sh
+
+## run all LALApps programs with memory debugging
+export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+
 prog=./lalapps_SFTvalidate
 
 ./lalapps_SFTwrite >/dev/null

@@ -117,7 +117,7 @@ erp_execinfo_plus.o: EinsteinAtHome/erp_execinfo_plus.c
 TESTS = testRecalcHS.sh
 EXTRA_DIST = testRecalcHS.sh
 
-TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
+TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
