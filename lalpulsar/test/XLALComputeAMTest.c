@@ -164,9 +164,7 @@ int main(int argc, char *argv[])
   }
   XLALDestroyMultiLALDetector ( multiDet );
   XLALDestroyMultiTimestamps ( multiTS );
-  XLALFree(edat->ephemE);
-  XLALFree(edat->ephemS);
-  XLALFree ( edat );
+  XLALDestroyEphemerisData ( edat );
 
   /* ========== MAIN LOOP: N-trials of comparisons XLAL <--> LAL multiAM functions ========== */
   while ( numChecks-- )
