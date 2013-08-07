@@ -1097,9 +1097,7 @@ int MAIN( int argc, char *argv[]) {
 
 
   /* free Vel/Pos vectors and ephemeris */
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
 
