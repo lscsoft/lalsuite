@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 67
+# serial 68
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -393,7 +393,7 @@ AC_ARG_ENABLE(
       no) laldetchar=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-laldetchar) ;;
     esac
-  ], [ laldetchar=${all_lal:-false} ] )
+  ], [ laldetchar=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
   laldetchar=false
 fi
