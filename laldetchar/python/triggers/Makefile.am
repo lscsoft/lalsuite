@@ -9,4 +9,5 @@ triggers_PYTHON = \
 	excesspower.py \
 	rate.py \
 	omicron.py \
-	omega.py
+	omega.py \
+	trigfind.py

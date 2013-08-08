@@ -352,11 +352,13 @@ def find_dmt_cache(start, end, ifo, check_files=False, **kwargs):
     span = segments.segment(start,end)
 
     # set known epochs
-    known_epochs = [1031340854, 1041657635, 1041669472, 1041682187]
+    known_epochs = {1031340854:55, 1041657635:55, 1041669472:55,
+                    1041682187:55, 1044093810:38, 1044111232:38, 1044111282:38,
+                    1044112180:38, 1057700030:38, 1057722672:38}
 
     # get parameters
+    epoch = kwargs.pop("epoch", sorted(known_epochs.keys()))
     dt = kwargs.pop("duration", 55)
-    epoch = kwargs.pop("epoch", known_epochs)
     try:
         iter(epoch)
     except TypeError:
@@ -376,23 +378,32 @@ def find_dmt_cache(start, end, ifo, check_files=False, **kwargs):
 
     # get times
     epoch_idx = bisect.bisect_right(epoch, start)-1
+    print epoch_idx
+    try:
+        dt = known_epochs[epoch[epoch_idx]]
+    except KeyError:
+        dt = 38
     next_epoch = len(epoch) >= epoch_idx+2  and epoch[epoch_idx+1] or 0
     start_time = int(start-numpy.mod(start-epoch[epoch_idx], dt-overlap))
     t = start_time
 
-    def _omega_file(gps, ifo):
+    def _omega_file(gps, ifo, deltaT):
         return ("%s/%s-OMEGA_TRIGGERS_CLUSTER-%.5s/"
                 "%s-OMEGA_TRIGGERS_CLUSTER-%.10d-%d.xml"
-                % (directory, ifo.upper(), gps, ifo.upper(), gps, dt))
+                % (directory, ifo.upper(), gps, ifo.upper(), gps, deltaT))
 
     # loop over time segments constructing file paths
     while t<end:
-        fp = _omega_file(t, ifo)
+        fp = _omega_file(t, ifo, dt)
         if (intersects(segment(t, t+dt)) and
                (not check_files or isfile(fp))):
             append(from_T050017(fp))
         t += dt - overlap
         if next_epoch and t > next_epoch:
+            try:
+                dt = known_epochs[next_epoch]
+            except KeyError:
+                dt = 55
             t = next_epoch
             epoch_idx += 1
             next_epoch = len(epoch) >= epoch_idx+2  and epoch[epoch_idx+1] or 0
