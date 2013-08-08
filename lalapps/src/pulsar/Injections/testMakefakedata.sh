@@ -139,7 +139,7 @@ fi
 
 ## clean up files [allow turning off via 'NOCLEANUP' environment variable
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDIR In.data-test
+    rm -rf $testDIR In.data-test debug_phi_v2.dat Tseries_v2_?????.dat
 fi
 
 
