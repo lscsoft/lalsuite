@@ -34,8 +34,7 @@ __date__ = git_version.date
 
 TRIGFIND_BASE_PATH = "/home/detchar/triggers"
 
-def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False,
-                      extension=None):
+def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False, **kwargs):
     """Find the paths of trigger files that represent the given
     observatory, channel, and ETG (event trigger generator) for a given
     GPS [start, end) segment.
@@ -44,14 +43,14 @@ def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False,
     if etg.lower() in ['kw', 'kleinewelle']:
         from .kw import find_dmt_cache
         ifo = channel.split(':')[0]
-        extension = extension or 'xml'
-        return find_dmt_cache(gpsstart, gpsend, ifo, format=extension,
-                              check_files=True)
+        kwargs.setdefault('extension', 'xml')
+        kwargs.setdefault('check_files', True)
+        return find_dmt_cache(gpsstart, gpsend, ifo, **kwargs)
     elif etg.lower() == 'omega':
         from .omega import find_dmt_cache
         ifo = channel.split(':')[0]
-        return find_dmt_cache(gpsstart, gpsend, ifo,
-                              check_files=False)
+        kwargs.setdefault('check_files', True)
+        return find_dmt_cache(gpsstart, gpsend, ifo, **kwargs)
 
     # construct search
     span = segments.segment(gpsstart, gpsend)
