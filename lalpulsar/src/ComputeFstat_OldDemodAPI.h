@@ -42,7 +42,7 @@ extern "C" {
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALComputeAM.h>
 #include <lal/ComplexAM.h>
-
+#include <lal/SSBtimes.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/DetectorStates.h>
 #include <gsl/gsl_vector.h>
@@ -67,23 +67,6 @@ extern "C" {
 /*@}*/
 
 /*---------- exported types ----------*/
-
-/**
- * Simple container for two REAL8-vectors, namely the SSB-timings DeltaT_alpha  and Tdot_alpha,
- * with one entry per SFT-timestamp. These are required input for XLALNewDemod().
- * We also store the SSB reference-time tau0.
- */
-typedef struct tagSSBtimes {
-  LIGOTimeGPS refTime;		/**< reference-time 'tau0' */
-  REAL8Vector *DeltaT;		/**< Time-difference of SFT-alpha - tau0 in SSB-frame */
-  REAL8Vector *Tdot;		/**< dT/dt : time-derivative of SSB-time wrt local time for SFT-alpha */
-} SSBtimes;
-
-/** Multi-IFO container for SSB timings */
-typedef struct tagMultiSSBtimes {
-  UINT4 length;		/**< number of IFOs */
-  SSBtimes **data;	/**< array of SSBtimes (pointers) */
-} MultiSSBtimes;
 
 /** one F-statistic 'atom', ie the elementary per-SFT quantities required to compute F, for one detector X */
 typedef struct tagFstatAtom {
@@ -118,14 +101,6 @@ typedef struct tagFcomponents {
   COMPLEX16 Fb;				/**< complex amplitude Fb */
   MultiFstatAtomVector *multiFstatAtoms;/**< per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
 } Fcomponents;
-
-/** The precision in calculating the barycentric transformation */
-typedef enum {
-  SSBPREC_NEWTONIAN,		/**< simple Newtonian: \f$\tau = t + \vec{r}\cdot\vec{n}/c\f$ */
-  SSBPREC_RELATIVISTIC,		/**< detailed relativistic: \f$\tau=\tau(t; \vec{n}, \vec{r})\f$ */
-  SSBPREC_RELATIVISTICOPT,  	/**< optimized relativistic, numerically equivalent to #SSBPREC_RELATIVISTIC, but faster */
-  SSBPREC_LAST			/**< end marker */
-} SSBprecision;
 
 /** [opaque] type holding a ComputeFBuffer for use in the resampling F-stat codes */
 typedef struct tagComputeFBuffer_RS ComputeFBuffer_RS;
@@ -171,8 +146,6 @@ typedef struct tagMultiFstatFrequencySeries {
 
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
-extern const SSBtimes empty_SSBtimes;
-extern const MultiSSBtimes empty_MultiSSBtimes;
 extern const Fcomponents empty_Fcomponents;
 extern const ComputeFParams empty_ComputeFParams;
 extern const ComputeFBuffer empty_ComputeFBuffer;
@@ -201,14 +174,6 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 		       const CmplxAMCoeffs *amcoe,
 		       const ComputeFParams *params);
 
-int XLALAddBinaryTimes ( SSBtimes **tSSBOut, const SSBtimes *tSSBIn, const BinaryOrbitParams *binaryparams );
-int XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut, const MultiSSBtimes *multiSSBIn, const BinaryOrbitParams *binaryparams );
-SSBtimes *XLALDuplicateSSBtimes ( const SSBtimes *tSSB );
-MultiSSBtimes *XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB );
-
-SSBtimes *XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates, SkyPosition pos, LIGOTimeGPS refTime, SSBprecision precision );
-MultiSSBtimes *XLALGetMultiSSBtimes ( const MultiDetectorStateSeries *multiDetStates, SkyPosition skypos, LIGOTimeGPS refTime, SSBprecision precision);
-
 
 void ComputeFStat ( LALStatus *, Fcomponents *Fstat,
 		    const PulsarDopplerParams *doppler,
@@ -232,7 +197,6 @@ int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudePa
 int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
 
 /* destructors */
-void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb );
 
 void XLALDestroyFstatAtomVector ( FstatAtomVector *atoms );

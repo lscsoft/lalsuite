@@ -55,8 +55,9 @@ lalpulsarinclude_HEADERS = \
 	PulsarTimes.h \
 	SFTClean.h \
 	SFTfileIO.h \
-	SFTutils.h \
 	SFTutils-LAL.h \
+	SFTutils.h \
+	SSBtimes.h \
 	StackMetric.h \
 	Statistics.h \
 	SynthesizeCWDraws.h \
@@ -126,6 +127,7 @@ liblalpulsar_la_SOURCES = \
 	SFTClean.c \
 	SFTfileIO.c \
 	SFTutils.c \
+	SSBtimes.c \
 	SimulatePulsarSignal.c \
 	StackMetric.c \
 	Statistics.c \

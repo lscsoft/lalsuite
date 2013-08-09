@@ -22,6 +22,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/SSBtimes.h>
 #include <lal/ComputeFstat_OldDemodAPI.h>
 #include <lal/ComputeFstat_OldResampAPI.h>
 
