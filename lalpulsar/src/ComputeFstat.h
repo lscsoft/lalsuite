@@ -342,6 +342,27 @@ XLALEstimatePulsarAmplitudeParams(
   const CmplxAntennaPatternMatrix *Mmunu	///< [in] Antenna pattern matrix \f$M_{\mu\nu}\f$.
   );
 
+///
+/// Convert amplitude params from 'physical' coordinates \f$(h_0, \cos\iota, \psi, \phi_0)\f$ into
+/// 'canonical' coordinates \f$A^\mu = (A_1, A_2, A_3, A_4)\f$. The equations can be found in
+/// \cite JKS98 or \cite Prix07 Eq.(2).
+///
+int
+XLALAmplitudeParams2Vect(
+  PulsarAmplitudeVect A_Mu,			///< [out] Canonical amplitude coordinates \f$A^\mu = (A_1, A_2, A_3, A_4)\f$.
+  const PulsarAmplitudeParams Amp		///< [in] Physical amplitude params \f$(h_0, \cos\iota, \psi, \phi_0)\f$.
+  );
+
+///
+/// Compute amplitude params \f$(h_0, \cos\iota, \psi, \phi_0)\f$ from amplitude-vector \f$A^\mu = (A_1, A_2, A_3, A_4)\f$.
+/// Adapted from algorithm in XLALEstimatePulsarAmplitudeParams().
+///
+int
+XLALAmplitudeVect2Params(
+  PulsarAmplitudeParams *Amp,			///< [out] Physical amplitude params \f$(h_0, \cos\iota, \psi, \phi_0)\f$.
+  const PulsarAmplitudeVect A_Mu		///< [in] Canonical amplitude coordinates \f$A^\mu = (A_1, A_2, A_3, A_4)\f$.
+  );
+
 // @}
 
 #ifdef  __cplusplus

@@ -710,3 +710,106 @@ XLALEstimatePulsarAmplitudeParams(
   return XLAL_SUCCESS;
 
 }
+
+int
+XLALAmplitudeParams2Vect(
+  PulsarAmplitudeVect A_Mu,
+  const PulsarAmplitudeParams Amp
+  )
+{
+
+  REAL8 aPlus = 0.5 * Amp.h0 * ( 1.0 + SQ(Amp.cosi) );
+  REAL8 aCross = Amp.h0 * Amp.cosi;
+  REAL8 cos2psi = cos ( 2.0 * Amp.psi );
+  REAL8 sin2psi = sin ( 2.0 * Amp.psi );
+  REAL8 cosphi0 = cos ( Amp.phi0 );
+  REAL8 sinphi0 = sin ( Amp.phi0 );
+
+  XLAL_CHECK( A_Mu != NULL, XLAL_EFAULT );
+
+  A_Mu[0] =  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0;
+  A_Mu[1] =  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0;
+  A_Mu[2] = -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0;
+  A_Mu[3] = -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0;
+
+  return XLAL_SUCCESS;
+
+}
+
+int
+XLALAmplitudeVect2Params(
+  PulsarAmplitudeParams *Amp,
+  const PulsarAmplitudeVect A_Mu
+  )
+{
+
+  REAL8 h0Ret, cosiRet, psiRet, phi0Ret;
+
+  REAL8 A1, A2, A3, A4, Asq, Da, disc;
+  REAL8 Ap2, Ac2, aPlus, aCross;
+  REAL8 beta, b1, b2, b3;
+
+  XLAL_CHECK( A_Mu != NULL, XLAL_EFAULT );
+  XLAL_CHECK( Amp != NULL, XLAL_EFAULT );
+
+  A1 = A_Mu[0];
+  A2 = A_Mu[1];
+  A3 = A_Mu[2];
+  A4 = A_Mu[3];
+
+  Asq = SQ(A1) + SQ(A2) + SQ(A3) + SQ(A4);
+  Da = A1 * A4 - A2 * A3;
+
+  disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
+
+  Ap2  = 0.5 * ( Asq + disc );
+  aPlus = sqrt(Ap2);
+
+  Ac2 = 0.5 * ( Asq - disc );
+  aCross = MYSIGN(Da) * sqrt( Ac2 );
+
+  beta = aCross / aPlus;
+
+  b1 =   A4 - beta * A1;
+  b2 =   A3 + beta * A2;
+  b3 = - A1 + beta * A4 ;
+
+  /* amplitude params in LIGO conventions */
+  psiRet  = 0.5 * atan2 ( b1,  b2 );  /* [-pi/2,pi/2] */
+  phi0Ret =       atan2 ( b2,  b3 );  /* [-pi, pi] */
+
+  /* Fix remaining sign-ambiguity by checking sign of reconstructed A1 */
+  REAL8 A1check = aPlus * cos(phi0Ret) * cos(2.0*psiRet) - aCross * sin(phi0Ret) * sin(2*psiRet);
+  if ( A1check * A1 < 0 ) {
+    phi0Ret += LAL_PI;
+  }
+
+  h0Ret = aPlus + sqrt ( disc );
+  cosiRet = aCross / h0Ret;
+
+  /* make unique by fixing the gauge to be psi in [-pi/4, pi/4], phi0 in [0, 2*pi] */
+  while ( psiRet > LAL_PI_4 ) {
+    psiRet  -= LAL_PI_2;
+    phi0Ret -= LAL_PI;
+  }
+  while ( psiRet < - LAL_PI_4 ) {
+    psiRet  += LAL_PI_2;
+    phi0Ret += LAL_PI;
+  }
+  while ( phi0Ret < 0 ) {
+    phi0Ret += LAL_TWOPI;
+  }
+
+  while ( phi0Ret > LAL_TWOPI ) {
+    phi0Ret -= LAL_TWOPI;
+  }
+
+  /* Return final answer */
+  Amp->h0   = h0Ret;
+  Amp->cosi = cosiRet;
+  Amp->psi  = psiRet;
+  Amp->phi0 = phi0Ret;
+
+  return XLAL_SUCCESS;
+
+}

@@ -172,9 +172,6 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const MultiDetectorStateSeries *multiDetStates,
 			    const ComputeFParams *params);
 
-int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
-int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
-
 /* destructors */
 void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb );
 
