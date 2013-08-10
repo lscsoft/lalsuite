@@ -161,16 +161,6 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
 						const SFTVector *SFTs                                  /**< [in] the SFT data */
 						);
 
-int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out,              /**< output GPS time */
-			       const MultiSSBtimes *multiSSB,        /**< input multi SSB SFT-midpoint timestamps */
-			       const REAL8 Tsft                     /**< the length of an SFT */
-			       );
-
-int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output latest GPS time */
-			     const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
-			     const REAL8 Tsft                    /**< the length of an SFT */
-			     );
-
 int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi,            /**< output interpolated timeseries */
 				    REAL8Vector *xi,              /**< input interpolation points */
 				    gsl_spline *spline		/**< [in] pre-computed spline data */

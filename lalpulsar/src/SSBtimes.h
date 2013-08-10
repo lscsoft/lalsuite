@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2009 Chris Messenger
  *  Copyright (C) 2005 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -76,6 +77,9 @@ MultiSSBtimes *XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB );
 
 SSBtimes *XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates, SkyPosition pos, LIGOTimeGPS refTime, SSBprecision precision );
 MultiSSBtimes *XLALGetMultiSSBtimes ( const MultiDetectorStateSeries *multiDetStates, SkyPosition skypos, LIGOTimeGPS refTime, SSBprecision precision);
+
+int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out, const MultiSSBtimes *multiSSB, const REAL8 Tsft );
+int XLALLatestMultiSSBtime ( LIGOTimeGPS *out, const MultiSSBtimes *multiSSB,  const REAL8 Tsft );
 
 /* destructors */
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
