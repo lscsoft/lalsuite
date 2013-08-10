@@ -68,28 +68,9 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
-/** one F-statistic 'atom', ie the elementary per-SFT quantities required to compute F, for one detector X */
-typedef struct tagFstatAtom {
-  UINT4 timestamp;		/**< SFT GPS timestamp t_i in seconds */
-  REAL8 a2_alpha;		/**< antenna-pattern factor a^2(X,t_i) */
-  REAL8 b2_alpha;		/**< antenna-pattern factor b^2(X,t_i) */
-  REAL8 ab_alpha;		/**< antenna-pattern factor a*b(X,t_i) */
-  COMPLEX8 Fa_alpha;		/**< Fa^X(t_i) */
-  COMPLEX8 Fb_alpha;		/**< Fb^X(t_i) */
-} FstatAtom;
-
-/** vector of F-statistic 'atoms', ie all per-SFT quantities required to compute F, for one detector X */
-typedef struct tagFstatAtomVector {
-  UINT4 length;			/**< number of per-SFT 'atoms' */
-  FstatAtom *data;		/** FstatAtoms array of given length */
-  UINT4 TAtom;			/**< time-baseline of F-stat atoms (typically Tsft) */
-} FstatAtomVector;
-
-/** multi-detector version of FstatAtoms type */
-typedef struct tagMultiFstatAtomVector {
-  UINT4 length;			/**< number of detectors */
-  FstatAtomVector **data;	/**< array of FstatAtom (pointers), one for each detector X */
-} MultiFstatAtomVector;
+#ifndef SWIG
+struct tagMultiFstatAtomVector;
+#endif
 
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct tagFcomponents {
@@ -99,7 +80,7 @@ typedef struct tagFcomponents {
   LIGOTimeGPS refTime;			/**< 'internal' refTime used to compute the F-statistic: only relevant for phase of complex amplitudes {Fa,Fb} */
   COMPLEX16 Fa;				/**< complex amplitude Fa */
   COMPLEX16 Fb;				/**< complex amplitude Fb */
-  MultiFstatAtomVector *multiFstatAtoms;/**< per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
+  struct tagMultiFstatAtomVector *multiFstatAtoms;/**< per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
 } Fcomponents;
 
 /** [opaque] type holding a ComputeFBuffer for use in the resampling F-stat codes */
@@ -191,16 +172,11 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const MultiDetectorStateSeries *multiDetStates,
 			    const ComputeFParams *params);
 
-FstatAtomVector * XLALCreateFstatAtomVector ( UINT4 num );
-
 int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
 int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
 
 /* destructors */
 void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb );
-
-void XLALDestroyFstatAtomVector ( FstatAtomVector *atoms );
-void XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms );
 
 /*@}*/
 

@@ -199,6 +199,73 @@ XLALDestroyFstatInputDataVector(
   }
 }
 
+FstatAtomVector*
+XLALCreateFstatAtomVector(
+  const UINT4 length
+  )
+{
+
+  // Allocate and initialise vector container
+  FstatAtomVector* atoms = XLALCalloc(1, sizeof(*atoms));
+  XLAL_CHECK_NULL(atoms != NULL, XLAL_ENOMEM);
+  atoms->length = length;
+
+  // Allocate and initialise vector data
+  if (atoms->length > 0) {
+    atoms->data = XLALCalloc(atoms->length, sizeof(atoms->data[0]));
+    XLAL_CHECK_NULL(atoms->data != NULL, XLAL_ENOMEM);
+  }
+
+  return atoms;
+
+}
+
+void
+XLALDestroyFstatAtomVector(
+  FstatAtomVector *atoms
+  )
+{
+  if (atoms != NULL) {
+    XLALFree(atoms->data);
+    XLALFree(atoms);
+  }
+}
+
+MultiFstatAtomVector*
+XLALCreateMultiFstatAtomVector(
+  const UINT4 length
+  )
+{
+
+  // Allocate and initialise vector container
+  MultiFstatAtomVector* multiAtoms = XLALCalloc(1, sizeof(*multiAtoms));
+  XLAL_CHECK_NULL(multiAtoms != NULL, XLAL_ENOMEM);
+  multiAtoms->length = length;
+
+  // Allocate and initialise vector data
+  if (multiAtoms->length > 0) {
+    multiAtoms->data = XLALCalloc(multiAtoms->length, sizeof(multiAtoms->data[0]));
+    XLAL_CHECK_NULL(multiAtoms->data != NULL, XLAL_ENOMEM);
+  }
+
+  return multiAtoms;
+
+}
+
+void
+XLALDestroyMultiFstatAtomVector(
+  MultiFstatAtomVector *multiAtoms
+  )
+{
+  if (multiAtoms != NULL) {
+    for (UINT4 X = 0; X < multiAtoms->length; ++X) {
+      XLALDestroyFstatAtomVector(multiAtoms->data[X]);
+    }
+    XLALFree(multiAtoms->data);
+    XLALFree(multiAtoms);
+  }
+}
+
 int
 XLALComputeFstat(
   FstatResults **Fstats,

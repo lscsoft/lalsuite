@@ -132,6 +132,37 @@ typedef struct tagFstatFaFb {
 } FstatFaFb;
 
 ///
+/// An \f$\mathcal{F}\f$-statistic 'atom', i.e. the elementary per-SFT quantities required to compute the
+/// \f$\mathcal{F}\f$-statistic, for one detector X.
+///
+typedef struct tagFstatAtom {
+  UINT4 timestamp;			///< SFT GPS timestamp \f$t_i\f$ in seconds.
+  REAL8 a2_alpha;			///< Antenna-pattern factor \f$a^2(X,t_i)\f$.
+  REAL8 b2_alpha;			///< Antenna-pattern factor \f$b^2(X,t_i)\f$.
+  REAL8 ab_alpha;			///< Antenna-pattern factor \f$a*b(X,t_i)\f$.
+  COMPLEX8 Fa_alpha;			///< \f$Fa^X(t_i)\f$.
+  COMPLEX8 Fb_alpha;			///< \f$Fb^X(t_i)\f$.
+} FstatAtom;
+
+///
+/// A vector of \f$\mathcal{F}\f$-statistic 'atoms', i.e. all per-SFT quantities required to compute
+/// the \f$\mathcal{F}\f$-statistic, for one detector X.
+///
+typedef struct tagFstatAtomVector {
+  UINT4 length;				///< Number of per-SFT 'atoms'.
+  FstatAtom *data;			///< Array of #FstatAtom pointers of given length.
+  UINT4 TAtom;				///< Time-baseline of 'atoms', typically \f$T_{\mathrm{sft}}\f$.
+} FstatAtomVector;
+
+///
+/// A multi-detector vector of #FstatAtomVector.
+///
+typedef struct tagMultiFstatAtomVector {
+  UINT4 length;				///< Number of detectors.
+  FstatAtomVector **data;		///< Array of #FstatAtomVector pointers, one for each detector X.
+} MultiFstatAtomVector;
+
+///
 /// XLALComputeFstat() computed results structure.
 ///
 typedef struct tagFstatResults {
@@ -206,6 +237,38 @@ XLALCreateFstatInputDataVector(
 void
 XLALDestroyFstatInputDataVector(
   FstatInputDataVector* input			///< [in] #FstatInputDataVector structure to be freed.
+  );
+
+///
+/// Create a #FstatAtomVector of the given length.
+///
+FstatAtomVector*
+XLALCreateFstatAtomVector(
+  const UINT4 length				///< [in] Length of the #FstatAtomVector.
+  );
+
+///
+/// Free all memory associated with a #FstatAtomVector structure.
+///
+void
+XLALDestroyFstatAtomVector(
+  FstatAtomVector *atoms			///< [in] #FstatAtomVector structure to be freed.
+  );
+
+///
+/// Create a #MultiFstatAtomVector of the given length.
+///
+MultiFstatAtomVector*
+XLALCreateMultiFstatAtomVector(
+  const UINT4 length				///< [in] Length of the #MultiFstatAtomVector.
+  );
+
+///
+/// Free all memory associated with a #MultiFstatAtomVector structure.
+///
+void
+XLALDestroyMultiFstatAtomVector(
+  MultiFstatAtomVector *atoms			///< [in] #MultiFstatAtomVector structure to be freed.
   );
 
 ///

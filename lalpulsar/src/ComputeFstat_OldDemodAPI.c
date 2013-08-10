@@ -48,7 +48,7 @@
 #include <gsl/gsl_roots.h>
 
 #include <lal/AVFactories.h>
-#include "ComputeFstat_OldDemodAPI.h"
+#include "ComputeFstat.h"
 #include "ComplexAM.h"
 
 /*---------- local DEFINES ----------*/
@@ -1220,69 +1220,6 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb)
 } /* XLALDestroyComputeFBuffer() */
 
 
-/**
- * Function to allocate a 'FstatAtomVector' struct of num timestamps, pre-initialized to zero!
- */
-FstatAtomVector *
-XLALCreateFstatAtomVector ( UINT4 num )
-{
-  FstatAtomVector *ret;
-
-  if ( (ret = LALCalloc ( 1, sizeof(*ret))) == NULL )
-    goto failed;
-
-  ret->length = num;
-
-  if ( num == 0 )	/* allow num=0: return just 'head' with NULL arrays */
-    return ret;
-
-  if ( (ret->data = LALCalloc ( num, sizeof( *ret->data) ) ) == NULL )
-    goto failed;
-
-  return ret;
-
- failed:
-  XLALDestroyFstatAtomVector ( ret );
-  XLAL_ERROR_NULL ( XLAL_ENOMEM );
-
-} /* XLALCreateFstatAtomVector() */
-
-/**
- * Function to destroy an FstatAtomVector
- */
-void
-XLALDestroyFstatAtomVector ( FstatAtomVector *atoms )
-{
-  if ( !atoms )
-    return;
-
-  if ( atoms->data )   LALFree ( atoms->data );
-  LALFree ( atoms );
-
-  return;
-
-} /* XLALDestroyFstatAtomVector() */
-
-
-/**
- * Function to destroy a multi-FstatAtom struct
- */
-void
-XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiFstatAtoms )
-{
-  UINT4 X;
-  if ( !multiFstatAtoms)
-    return;
-
-  for ( X=0; X < multiFstatAtoms->length; X++ )
-    XLALDestroyFstatAtomVector ( multiFstatAtoms->data[X] );
-
-  LALFree ( multiFstatAtoms->data );
-  LALFree ( multiFstatAtoms );
-
-  return;
-
-} /* XLALDestroyMultiFstatAtoms() */
 
 
 /**
