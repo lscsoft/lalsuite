@@ -122,14 +122,6 @@ MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries (
 			 );
 
 
-int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,
-				 MultiSFTVector *multisfts
-				 );
-
-int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,
-			       MultiSFTVector *multisfts
-			       );
-
 int XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft,                         /**< [out] the timeseries weighted by a(t) */
 					  COMPLEX8TimeSeries **Fboft,                         /**< [out] the timeseries weighted by b(t) */
 					  const COMPLEX8TimeSeries *timeseries,         /**< [in] the input timeseries */

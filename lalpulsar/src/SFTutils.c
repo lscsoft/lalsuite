@@ -1208,3 +1208,113 @@ XLALFindCoveringSFTBins ( UINT4 *firstBin,	///< [out] effective lower frequency-
   return XLAL_SUCCESS;
 
 } // XLALFindCoveringSFTBins()
+
+/** Finds the earliest timestamp in a multi-SFT data structure
+ *
+*/
+int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earliest GPS time */
+                                 MultiSFTVector *multisfts      /**< [in] multi SFT vector */
+                                 )
+{
+  UINT4 i,j;
+
+  /* check sanity of input */
+  if ( !multisfts || (multisfts->length == 0) )
+    {
+      XLALPrintError ("%s: empty multiSFT input!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
+    }
+  for (i=0;i<multisfts->length;i++)
+    {
+      if ( !multisfts->data[i] || (multisfts->data[i]->length == 0) )
+        {
+          XLALPrintError ("%s: empty multiSFT->data[%d] input!\n", __func__,i );
+          XLAL_ERROR (XLAL_EINVAL);
+        }
+    }
+
+  /* initialise the earliest sample value */
+  out->gpsSeconds = multisfts->data[0]->data[0].epoch.gpsSeconds;
+  out->gpsNanoSeconds = multisfts->data[0]->data[0].epoch.gpsNanoSeconds;
+
+  /* loop over detectors */
+  for (i=0;i<multisfts->length;i++) {
+
+    /* loop over all SFTs to determine the earliest SFT epoch */
+    for (j=0;j<multisfts->data[i]->length;j++) {
+
+      /* compare current SFT epoch with current earliest */
+      if ( (XLALGPSCmp(out,&multisfts->data[i]->data[j].epoch) == 1 ) ) {
+        out->gpsSeconds = multisfts->data[i]->data[j].epoch.gpsSeconds;
+        out->gpsNanoSeconds = multisfts->data[i]->data[j].epoch.gpsNanoSeconds;
+      }
+
+    }
+
+  }
+
+  /* success */
+  return XLAL_SUCCESS;
+
+} /* XLALEarliestMultiSFTsample() */
+
+/** Find the time of the end of the latest SFT in a multi-SFT data structure
+ *
+*/
+int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS time */
+                               MultiSFTVector *multisfts      /**< [in] multi SFT vector */
+                               )
+{
+  UINT4 i,j;
+  SFTtype *firstSFT;
+  REAL8 Tsft;
+
+  /* check sanity of input */
+  if ( !multisfts || (multisfts->length == 0) )
+    {
+      XLALPrintError ("%s: empty multiSFT input!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
+    }
+  for (i=0;i<multisfts->length;i++)
+    {
+      if ( !multisfts->data[i] || (multisfts->data[i]->length == 0) )
+        {
+          XLALPrintError ("%s: empty multiSFT->data[%d] input!\n", __func__,i );
+          XLAL_ERROR (XLAL_EINVAL);
+        }
+    }
+
+  /* define some useful quantities */
+  firstSFT = (multisfts->data[0]->data);        /* a pointer to the first SFT of the first detector */
+  Tsft = 1.0 / firstSFT->deltaF;                /* the length of the SFTs in seconds assuming 1/T freq resolution */
+
+  /* initialise the latest sample value */
+  out->gpsSeconds = firstSFT->epoch.gpsSeconds;
+  out->gpsNanoSeconds = firstSFT->epoch.gpsNanoSeconds;
+
+  /* loop over detectors */
+  for (i=0;i<multisfts->length;i++) {
+
+    /* loop over all SFTs to determine the earliest SFT midpoint of the input data in the SSB frame */
+    for (j=0;j<multisfts->data[i]->length;j++) {
+
+      /* compare current SFT epoch with current earliest */
+      if ( (XLALGPSCmp(out,&multisfts->data[i]->data[j].epoch) == -1 ) ) {
+        out->gpsSeconds = multisfts->data[i]->data[j].epoch.gpsSeconds;
+        out->gpsNanoSeconds = multisfts->data[i]->data[j].epoch.gpsNanoSeconds;
+      }
+    }
+
+  }
+
+  /* add length of SFT to the result so that we output the end of the SFT */
+  if ( XLALGPSAdd(out,Tsft) == NULL )
+    {
+      XLALPrintError ("%s: NULL pointer returned from XLALGPSAdd()!\n", __func__ );
+      XLAL_ERROR (XLAL_EFAULT);
+    }
+
+  /* success */
+  return XLAL_SUCCESS;
+
+} /* XLALLatestMultiSFTsample() */
