@@ -79,7 +79,6 @@ eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
     eah_HierarchSearchGCT-hs_boinc_extras.o \
     eah_HierarchSearchGCT-hs_boinc_options.o \
     eah_HierarchSearchGCT-win_lib.o \
-    eah_HierarchSearchGCT-LocalComputeFstat.o \
     libstdc++.a
 	$(CXX) $(CPPFLAGS) $(AC_CPPFLAGS) -o $@ $^ $(LDFLAGS) $(AC_LDFLAGS) $(LDADD) $(AC_LDADD) $(LIBS) $(AC_LIBS) libstdc++.a
 

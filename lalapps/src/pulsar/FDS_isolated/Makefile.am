@@ -13,7 +13,7 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_PredictFStat  lalapps_ComputeFStatistic_v2 \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
 	lalapps_synthesizeBstatMC lalapps_synthesizeTransientStats \
-	lalapps_synthesizeLVStats lalapps_ComputeFStatistic_v2_SSE
+	lalapps_synthesizeLVStats
 
 EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat eah_ComputeFStatistic_v2 \
 		 lalapps_ComputeFStatistic_v2_cuda
@@ -64,12 +64,6 @@ ComputeFStatisticV2Sources = ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h
 lalapps_ComputeFStatistic_v2_SOURCES = $(ComputeFStatisticV2Sources)
 
 ## optimized ComputeFStatistic_v2 targets
-
-# compilation of SSE targets requires a valid CPU architecture being set in AM_CFLAGS
-# (e.g. configure with CFLAGS=-march=pentium-m),
-lalapps_ComputeFStatistic_v2_SSE_SOURCES = $(ComputeFStatisticV2Sources) $(OPTsrc)/LocalComputeFstat.c
-lalapps_ComputeFStatistic_v2_SSE_CPPFLAGS = $(AM_CPPFLAGS) -DCFS_SSE_OPT
-lalapps_ComputeFStatistic_v2_SSE_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
 
 # compilation of CUDA target requires cuda header and library directories included in
 # CPPFLAGS and LDFLAGS respectively (until LAL/LALAapps have a proper CUDA detection in configure)

@@ -145,6 +145,12 @@ liblalpulsar_la_SOURCES = \
 
 EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_Demod.c \
+	ComputeFstat_Demod_altivec.i \
+	ComputeFstat_Demod_autovect.i \
+	ComputeFstat_Demod_generic.i \
+	ComputeFstat_Demod_precalc.i \
+	ComputeFstat_Demod_sse.i \
+	ComputeFstat_Demod_sse_msc.i \
 	ComputeFstat_Resamp.c \
 	SinCosLUT.i \
 	SFTutils-LAL.c
