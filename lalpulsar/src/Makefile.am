@@ -19,6 +19,7 @@ lalpulsarinclude_HEADERS = \
 	DopplerLatticeCovering.h \
 	DopplerScan.h \
 	ExtrapolatePulsarSpins.h \
+	CWFastMath.h \
 	FitToPulsar.h \
 	FlatLatticeTilingPulsar.h \
 	FlatMesh.h \
@@ -129,6 +130,7 @@ liblalpulsar_la_SOURCES = \
 	SFTutils.c \
 	SSBtimes.c \
 	SimulatePulsarSignal.c \
+	SinCosLUT.c \
 	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \

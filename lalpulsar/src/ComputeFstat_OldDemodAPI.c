@@ -36,6 +36,7 @@
 
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/FindRoot.h>
+#include <lal/CWFastMath.h>
 
 /* GSL includes */
 #include <lal/LALGSL.h>
@@ -622,7 +623,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
+	if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( XLAL_EFUNC);
 	}
 
@@ -647,7 +648,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
        * closest to zero and will pose no numerical difficulties !
        */
-      sin_cos_2PI_LUT ( &s_alpha, &c_alpha, kappa_star );
+      XLALSinCos2PiLUT ( &s_alpha, &c_alpha, kappa_star );
       c_alpha -= 1.0f;
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
@@ -888,7 +889,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
+	if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( XLAL_EFUNC);
 	}
 
@@ -913,7 +914,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
        * closest to zero and will pose no numerical difficulties !
        */
-      sin_cos_2PI_LUT ( &s_alpha, &c_alpha, kappa_star );
+      XLALSinCos2PiLUT ( &s_alpha, &c_alpha, kappa_star );
       c_alpha -= 1.0f;
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
@@ -1137,7 +1138,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 
 	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
+	if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR (XLAL_EFUNC);
 	}
 
@@ -1218,85 +1219,6 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb)
   return;
 } /* XLALDestroyComputeFBuffer() */
 
-/* ===== General internal helper functions ===== */
-
-/**
- * Calculate sin(x) and cos(x) to roughly 1e-7 precision using
- * a lookup-table and Taylor-expansion.
- *
- * NOTE: this function will fail for arguments larger than
- * |x| > INT4_MAX = 2147483647 ~ 2e9 !!!
- *
- * return = 0: OK, nonzero=ERROR
- */
-int
-sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
-{
-  return sin_cos_2PI_LUT ( sinx, cosx, x * OOTWOPI );
-} /* sin_cos_LUT() */
-
-#define LUT_RES         64      /* resolution of lookup-table */
-#define LUT_RES_F	(1.0 * LUT_RES)
-#define OO_LUT_RES	(1.0 / LUT_RES)
-
-#define X_TO_IND	(1.0 * LUT_RES * OOTWOPI )
-#define IND_TO_X	(LAL_TWOPI * OO_LUT_RES)
-int
-sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
-{
-  REAL8 xt;
-  INT4 i0;
-  REAL8 d, d2;
-  REAL8 ts, tc;
-  REAL8 dummy;
-
-  static BOOLEAN firstCall = 1;
-  static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
-
-  /* the first time we get called, we set up the lookup-table */
-  if ( firstCall )
-    {
-      UINT4 k;
-      for (k=0; k <= LUT_RES; k++)
-        {
-          sinVal[k] = sin( LAL_TWOPI * k * OO_LUT_RES );
-          cosVal[k] = cos( LAL_TWOPI * k * OO_LUT_RES );
-        }
-      firstCall = 0;
-    }
-
-  /* we only need the fractional part of 'x', which is number of cylces,
-   * this was previously done using
-   *   xt = x - (INT4)x;
-   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
-   * for saftey we therefore rather use modf(), even if that
-   * will be somewhat slower...
-   */
-  xt = modf(x, &dummy);/* xt in (-1, 1) */
-
-  if ( xt < 0.0 )
-    xt += 1.0;			/* xt in [0, 1 ) */
-#ifndef LAL_NDEBUG
-  if ( xt < 0.0 || xt > 1.0 )
-    {
-      XLALPrintError("\nFailed numerica in sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
-      return XLAL_FAILURE;
-    }
-#endif
-
-  i0 = (INT4)( xt * LUT_RES_F + 0.5 );	/* i0 in [0, LUT_RES ] */
-  d = d2 = LAL_TWOPI * (xt - OO_LUT_RES * i0);
-  d2 *= 0.5 * d;
-
-  ts = sinVal[i0];
-  tc = cosVal[i0];
-
-  /* use Taylor-expansions for sin/cos around LUT-points */
-  (*sin2pix) = ts + d * tc - d2 * ts;
-  (*cos2pix) = tc - d * ts - d2 * tc;
-
-  return XLAL_SUCCESS;
-} /* sin_cos_2PI_LUT() */
 
 /**
  * Function to allocate a 'FstatAtomVector' struct of num timestamps, pre-initialized to zero!

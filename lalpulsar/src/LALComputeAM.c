@@ -53,7 +53,7 @@
 
 /*---------- INCLUDES ----------*/
 #include <lal/LALComputeAM.h>
-#include <lal/ComputeFstat.h>
+#include <lal/CWFastMath.h>
 
 /*---------- local DEFINES and macros ----------*/
 
@@ -152,8 +152,8 @@ LALGetAMCoeffs(LALStatus *status,				/**< [in/out] LAL status structure pointer 
     REAL4 sin1lambda, cos1lambda;
     REAL4 sin2lambda, cos2lambda;
 
-    sin_cos_LUT (&sin2gamma, &cos2gamma, 2.0f * gam );
-    sin_cos_LUT (&sin1lambda, &cos1lambda, lambda );
+    XLALSinCosLUT (&sin2gamma, &cos2gamma, 2.0f * gam );
+    XLALSinCosLUT (&sin1lambda, &cos1lambda, lambda );
 
     sin2lambda = 2.0f * sin1lambda * cos1lambda;
     cos2lambda = cos1lambda * cos1lambda - sin1lambda * sin1lambda;
@@ -176,7 +176,7 @@ LALGetAMCoeffs(LALStatus *status,				/**< [in/out] LAL status structure pointer 
   alpha = skypos.longitude;
   delta = skypos.latitude;
 
-  sin_cos_LUT (&sin1delta, &cos1delta, delta );
+  XLALSinCosLUT (&sin1delta, &cos1delta, delta );
   sin2delta = 2.0f * sin1delta * cos1delta;
   cos2delta = cos1delta * cos1delta - sin1delta * sin1delta;
 
@@ -207,7 +207,7 @@ LALGetAMCoeffs(LALStatus *status,				/**< [in/out] LAL status structure pointer 
 
       ah = alpha - DetectorStates->data[i].LMST;
 
-      sin_cos_LUT ( &sin1ah, &cos1ah, ah );
+      XLALSinCosLUT ( &sin1ah, &cos1ah, ah );
       sin2ah = 2.0f * sin1ah * cos1ah;
       cos2ah = cos1ah * cos1ah - sin1ah * sin1ah;
 
@@ -292,8 +292,8 @@ LALNewGetAMCoeffs(LALStatus *status,			/**< [in/out] LAL status structure pointe
   alpha = skypos.longitude;
   delta = skypos.latitude;
 
-  sin_cos_LUT (&sin1delta, &cos1delta, delta );
-  sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
+  XLALSinCosLUT (&sin1delta, &cos1delta, delta );
+  XLALSinCosLUT (&sin1alpha, &cos1alpha, alpha );
   // see Eq.(17) in CFSv2 notes (version v3):
   // https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=1665&version=3
   xi1 =   sin1alpha;
@@ -767,8 +767,8 @@ XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries
 
   REAL4 sin1delta, cos1delta;
   REAL4 sin1alpha, cos1alpha;
-  sin_cos_LUT (&sin1delta, &cos1delta, delta );
-  sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
+  XLALSinCosLUT (&sin1delta, &cos1delta, delta );
+  XLALSinCosLUT (&sin1alpha, &cos1alpha, alpha );
 
   REAL4 xi1 = - sin1alpha;
   REAL4 xi2 =  cos1alpha;

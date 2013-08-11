@@ -33,6 +33,7 @@
 
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/FindRoot.h>
+#include <lal/CWFastMath.h>
 
 /* GSL includes */
 #include <lal/LALGSL.h>
@@ -1165,7 +1166,7 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
       REAL4 cosphase,sinphase;                                                                           /* the real and imaginary parts of the phase correction */
 
       /* use a look-up-table for speed to compute real and imaginary phase */
-      sin_cos_2PI_LUT ( &sinphase, &cosphase, -cycles );
+      XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles );
 
       /* printf("j = %d t = %6.12f tb = %6.12f tDiff = %6.12f\n",j,detectortimes->data[k],start_SSB + idx*deltaT_SSB,tDiff); */
       (*Faoft_RS)->data->data[idx] = crectf( out_FaFb[0]->data[k]*cosphase - out_FaFb[1]->data[k]*sinphase, out_FaFb[1]->data[k]*cosphase + out_FaFb[0]->data[k]*sinphase );
@@ -1481,7 +1482,7 @@ XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	        /**< [in/
       REAL4 yRe, yIm;
 
       /* use a sin/cos look-up-table for speed */
-      sin_cos_2PI_LUT ( &fact_im, &fact_re, shiftCycles );
+      XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCycles );
 
       /* apply the phase shift */
       yRe = fact_re * crealf((*x)->data->data[k]) - fact_im * cimagf((*x)->data->data[k]);
@@ -1577,7 +1578,7 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	                
       REAL4 cosphase, sinphase;
 
       /* use look-up-table for speed to compute real and imaginary phase */
-      sin_cos_2PI_LUT (&sinphase, &cosphase, -cycles );
+      XLALSinCos2PiLUT (&sinphase, &cosphase, -cycles );
 
       /* loop over detectors */
       for (i=0;i<numDetectors;i++) {

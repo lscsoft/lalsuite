@@ -22,9 +22,9 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
-#include "ComputeFstat.h"
-#include "DetectorStates.h"
-#include "LISAspecifics.h"
+#include <lal/CWFastMath.h>
+#include <lal/DetectorStates.h>
+#include <lal/LISAspecifics.h>
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -127,7 +127,7 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
       REAL4 sinG, cosG, sinGcosG, sinGsinG, cosGcosG;
       SymmTensor3 *detT = &(detState->detT);
 
-      sin_cos_LUT ( &sinG, &cosG, detState->earthState.gmstRad );
+      XLALSinCosLUT ( &sinG, &cosG, detState->earthState.gmstRad );
       sinGsinG = sinG * sinG;
       sinGcosG = sinG * cosG;
       cosGcosG = cosG * cosG;

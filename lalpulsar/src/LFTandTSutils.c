@@ -30,6 +30,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/ComplexFFT.h>
 #include <lal/ComputeFstat.h>
+#include <lal/CWFastMath.h>
 
 /*---------- DEFINES ----------*/
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
@@ -215,7 +216,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 
       hetCycles = fmod ( fHet * offsetEff, 1);	/* required heterodyning phase-correction for this SFT */
 
-      sin_cos_2PI_LUT (&hetCorr_im, &hetCorr_re, -hetCycles );
+      XLALSinCos2PiLUT (&hetCorr_im, &hetCorr_re, -hetCycles );
 
       /* apply all phase- and normalizing factors */
       fact_re = norm * hetCorr_re;
@@ -453,7 +454,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
     
       {
         REAL4 hetCorrection_re, hetCorrection_im;
-        sin_cos_2PI_LUT( &hetCorrection_im, &hetCorrection_re, -hetCycles );
+        XLALSinCos2PiLUT( &hetCorrection_im, &hetCorrection_re, -hetCycles );
         hetCorrection = crectf( hetCorrection_re, hetCorrection_im );
       }
      
@@ -668,7 +669,7 @@ XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
       REAL4 fact_re, fact_im;			/* complex phase-shift factor e^(-2pi f tau) */
       REAL4 yRe, yIm;
 
-      sin_cos_2PI_LUT ( &fact_im, &fact_re, shiftCyles );
+      XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCyles );
 
       yRe = fact_re * crealf(sft->data->data[k]) - fact_im * cimagf(sft->data->data[k]);
       yIm = fact_re * cimagf(sft->data->data[k]) + fact_im * crealf(sft->data->data[k]);

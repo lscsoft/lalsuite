@@ -26,6 +26,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
+#include <lal/PulsarDataTypes.h>
 #include <lal/AVFactories.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/DetectorSite.h>
@@ -39,7 +40,7 @@
 #include <lal/MatrixUtils.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
-#include <lal/ComputeFstat.h>
+#include <lal/CWFastMath.h>
 #include <lal/TimeSeries.h>
 
 #include <lalapps.h>
