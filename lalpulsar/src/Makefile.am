@@ -146,6 +146,7 @@ liblalpulsar_la_SOURCES = \
 EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_Demod.c \
 	ComputeFstat_Resamp.c \
+	SinCosLUT.i \
 	SFTutils-LAL.c
 
 liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
