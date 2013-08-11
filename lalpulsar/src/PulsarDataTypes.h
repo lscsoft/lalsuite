@@ -101,8 +101,6 @@ typedef struct tagPulsarDopplerParams {
   REAL8 Delta;		/**< skyposition: DEC (latitude) in equatorial coords and radians */
   PulsarSpins fkdot;	/**< intrinsic spins: [Freq, f1dot, f2dot, ... ] where fkdot = d^kFreq/dt^k */
   BinaryOrbitParams *orbit;	/**< binary orbital parameters (or NULL if isolated pulsar) */
-  REAL8 dFreq;		/**< if used for a frequency band: frequency increment between bins */
-  UINT4 numFreqBins;	/**< if used for a frequency band: number of frequency bins */
 } PulsarDopplerParams;
 
 // ---------- transient-CW related types ----------
