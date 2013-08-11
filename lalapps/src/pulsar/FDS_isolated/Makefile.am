@@ -13,12 +13,12 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_PredictFStat  lalapps_ComputeFStatistic_v2 \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
 	lalapps_synthesizeBstatMC lalapps_synthesizeTransientStats \
-	lalapps_synthesizeLVStats
+	lalapps_synthesizeLVStats lalapps_ComputeFStatistic_v2_SSE
 
 check_PROGRAMS = testFstat_v3
 
 EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat eah_ComputeFStatistic_v2 \
-		 lalapps_ComputeFStatistic_v2_SSE lalapps_ComputeFStatistic_v2_cuda
+		 lalapps_ComputeFStatistic_v2_cuda
 
 # CFSv2 doesn't compile with Condor
 #if CONDOR_ENABLED
