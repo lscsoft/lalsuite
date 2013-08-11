@@ -283,8 +283,13 @@ XLALSetupFstat_Demod(
   const EphemerisData *edat,			///< [in] Ephemerides over SFT time-span.
   const SSBprecision SSBprec,			///< [in] Barycentric transformation precision.
   const DemodAMType demodAM,			///< [in] Amplitude modulation coefficient type to use.
-  const UINT4 Dterms				///< [in] Number of terms to keep in Dirichlet kernel.
+  const UINT4 Dterms				///< [in] Number of terms to keep in Dirichlet kernel. If equal to #OptimisedHotloopDterms, optimised versions of the demodulation hotloop will be used, if available.
   );
+
+///
+/// Number of Dirichlet kernel terms used by optimised versions of the demodulation hotloop.
+///
+extern const UINT4 OptimisedHotloopDterms;
 
 ///
 /// Setup function for computing the \f$\mathcal{F}\f$-statistic using resampling.  See description

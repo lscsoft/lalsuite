@@ -584,7 +584,7 @@ XLALSetupFstat_Resamp(
   }
 
   // Set parameters to pass to ComputeFStatFreqBand_RS()
-  resamp->params.Dterms = 8;   // Use fixed Dterms for single frequency bin demodulation
+  resamp->params.Dterms = OptimisedHotloopDterms;   // Use fixed Dterms for single frequency bin demodulation
   resamp->params.SSBprec = SSBprec;
   resamp->params.buffer = NULL;
   resamp->params.bufferedRAA = 0;
@@ -729,9 +729,9 @@ ComputeFstat_Resamp_demod:
     Fcomponents Fcomp;
     {
       LALStatus status = empty_status;
-      ComputeFStat(&status, &Fcomp, &thisPoint, resamp->multiSFTs, common->multiWeights, resamp->multiDetStates, &resamp->params, &resamp->buffer);
+      LocalComputeFStat(&status, &Fcomp, &thisPoint, resamp->multiSFTs, common->multiWeights, resamp->multiDetStates, &resamp->params, &resamp->buffer);
       if (status.statusCode) {
-        XLAL_ERROR(XLAL_EFAILED, "ComputeFStat() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
+        XLAL_ERROR(XLAL_EFAILED, "LocalComputeFStat() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
       }
     }
 

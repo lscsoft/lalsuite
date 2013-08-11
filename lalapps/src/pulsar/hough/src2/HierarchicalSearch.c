@@ -434,7 +434,7 @@ int MAIN( int argc, char *argv[]) {
 
   INT4 uvar_blocksRngMed = BLOCKSRNGMED;
   INT4 uvar_nStacksMax = 1;
-  INT4 uvar_Dterms = DTERMS;
+  INT4 uvar_Dterms = OptimisedHotloopDterms;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_nf1dotRes = 1;
   INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;

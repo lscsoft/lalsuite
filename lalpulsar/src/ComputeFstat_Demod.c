@@ -54,6 +54,7 @@ static int firstcall = 1; /* for sin/cos lookup table initialization */
 
 /* LocalComputeFaFb: fixed DTERMS to allow for loop unrolling */
 #define DTERMS 8
+const UINT4 OptimisedHotloopDterms = DTERMS;
 
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ENONULL 		2
@@ -1408,7 +1409,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
  * it not implemented yet.
  *
  */
-static void UNUSED
+static void
 LocalComputeFStat ( LALStatus *status,          /* pointer to LALStatus structure */
                     Fcomponents *Fstat,                 /* [out] Fstatistic + Fa, Fb */
                     const PulsarDopplerParams *doppler, /* parameter-space point to compute F for */
@@ -1711,9 +1712,16 @@ ComputeFstat_Demod(
     Fcomponents Fcomp;
     {
       LALStatus status = empty_status;
-      ComputeFStat(&status, &Fcomp, &thisPoint, demod->multiSFTs, common->multiWeights, demod->multiDetStates, &demod->params, &demod->buffer);
-      if (status.statusCode) {
-        XLAL_ERROR(XLAL_EFAILED, "ComputeFStat() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
+      if ( (demod->params.Dterms != DTERMS) || (whatToCompute & FSTATQ_ATOMS_PER_DET) ) {
+        ComputeFStat(&status, &Fcomp, &thisPoint, demod->multiSFTs, common->multiWeights, demod->multiDetStates, &demod->params, &demod->buffer);
+        if (status.statusCode) {
+          XLAL_ERROR(XLAL_EFAILED, "ComputeFStat() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
+        }
+      } else {
+        LocalComputeFStat(&status, &Fcomp, &thisPoint, demod->multiSFTs, common->multiWeights, demod->multiDetStates, &demod->params, &demod->buffer);
+        if (status.statusCode) {
+          XLAL_ERROR(XLAL_EFAILED, "LocalComputeFStat() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
+        }
       }
     }
 

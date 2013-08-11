@@ -1043,11 +1043,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->DeltaBand = 0;
   uvar->skyRegion = NULL;
   // Dterms-default used to be 16, but has to be 8 for SSE version
-#ifdef CFS_SSE_OPT
-  uvar->Dterms 	= 8;
-#else
-  uvar->Dterms 	= 16;
-#endif
+  uvar->Dterms 	= OptimisedHotloopDterms;
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");

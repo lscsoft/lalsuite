@@ -396,7 +396,7 @@ int MAIN( int argc, char *argv[]) {
 
   INT4 uvar_blocksRngMed = BLOCKSRNGMED;
   INT4 uvar_nStacksMax = 1;
-  INT4 uvar_Dterms = DTERMS;
+  INT4 uvar_Dterms = OptimisedHotloopDterms;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
 
   CHAR *uvar_ephemE = NULL;

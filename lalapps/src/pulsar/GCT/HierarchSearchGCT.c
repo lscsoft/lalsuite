@@ -353,7 +353,7 @@ int MAIN( int argc, char *argv[]) {
   INT4  uvar_nStacksMax = 1;
   CHAR *uvar_segmentList = NULL;	/**< ALTERNATIVE: file containing a pre-computed segment list of tuples (startGPS endGPS duration[h] NumSFTs) */
 
-  INT4 uvar_Dterms = DTERMS;
+  INT4 uvar_Dterms = OptimisedHotloopDterms;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_gammaRefine = 1;
   INT4 uvar_gamma2Refine = 1;
