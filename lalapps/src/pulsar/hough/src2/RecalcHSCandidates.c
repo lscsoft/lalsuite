@@ -111,7 +111,6 @@
  *
  */
 
-#include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "HierarchicalSearch.h"
 #include "../../GCT/LineVeto.h"
 
@@ -162,6 +161,23 @@ BOOLEAN uvar_validateLUT = FALSE;
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 #define BLOCKSIZE_REALLOC 50
+
+typedef struct tagMultiSFTVectorSequence {
+  UINT4 length;     		/**< number of segments */
+  MultiSFTVector **data; 	/**< the SFT vectors */
+} MultiSFTVectorSequence;
+
+/** sequence of Multi-noise weights vectors -- for each segment */
+typedef struct tagMultiNoiseWeightsSequence {
+  UINT4 length;     		/**< number of segments */
+  MultiNoiseWeights **data; 	/**< the noise weights */
+} MultiNoiseWeightsSequence;
+
+/** sequence of Multi-detector state vectors -- for each segment */
+typedef struct tagMultiDetectorStateSeriesSequence {
+  UINT4 length;     		/**< number of segments */
+  MultiDetectorStateSeries **data; /**< the detector state series */
+} MultiDetectorStateSeriesSequence;
 
 /** Useful stuff for a single stage of the Hierarchical search */
 typedef struct {

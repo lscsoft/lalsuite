@@ -4,7 +4,7 @@
 AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-SUBDIRS = OptimizedCFS ResamplingFstat
+SUBDIRS = ResamplingFstat
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
@@ -26,7 +26,6 @@ EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat eah_ComputeFStatistic_v2 \
 #endif
 
 LVsrc = ../GCT
-OPTsrc = ./OptimizedCFS
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 

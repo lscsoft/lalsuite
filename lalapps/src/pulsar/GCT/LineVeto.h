@@ -48,7 +48,6 @@ extern "C" {
 #include <lalapps.h>
 
 /* additional includes */
-#include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "GCTtoplist.h"
 #include "../hough/src2/HoughFStatToplist.h"
 
