@@ -22,9 +22,9 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/LALComputeAM.h>
+#include <lal/ComplexAM.h>
 #include <lal/SSBtimes.h>
-#include <lal/ComputeFstat_OldDemodAPI.h>
-#include <lal/ComputeFstat_OldResampAPI.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -33,7 +33,8 @@ extern "C" {
 ///
 /// \defgroup ComputeFstat_h Header ComputeFstat.h
 /// \ingroup pkg_pulsarCoh
-/// \authors David Keitel, Bernd Machenschalk, Reinhard Prix, Karl Wette
+/// \authors Badri Krishnan, Bernd Machenschalk, Chris Messenger, David Keitel, Holger Pletsch,
+///          John T. Whelan, Karl Wette, Pinkesh Patel, Reinhard Prix, Xavier Siemens
 ///
 /// \brief Unified API for computing the \f$\mathcal{F}\f$-statistic.
 ///

@@ -62,6 +62,62 @@
 /** square */
 #define SQ(x) ( (x) * (x) )
 
+#define COMPUTEFSTATC_ENULL 		1
+#define COMPUTEFSTATC_ENONULL 		2
+#define COMPUTEFSTATC_EINPUT   		3
+#define COMPUTEFSTATC_EMEM   		4
+#define COMPUTEFSTATC_EXLAL		5
+#define COMPUTEFSTATC_EIEEE		6
+#define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
+#define COMPUTEFSTATC_MSGENONULL 	"Output pointer is non-NULL"
+#define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
+#define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
+#define COMPUTEFSTATC_MSGEXLAL		"XLAL function call failed"
+#define COMPUTEFSTATC_MSGEIEEE		"Floating point failure"
+
+/* Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
+typedef struct tagFcomponents {
+  REAL8 F;				/* F-statistic value */
+  REAL8 FX[PULSAR_MAX_DETECTORS];		/* vector of single-detector F-statistic values (array of fixed size) */
+  UINT4 numDetectors;			/* number of detectors = effective vector length. numDetectors=0 should make all code ignore the FX field. */
+  LIGOTimeGPS refTime;			/* 'internal' refTime used to compute the F-statistic: only relevant for phase of complex amplitudes {Fa,Fb} */
+  COMPLEX16 Fa;				/* complex amplitude Fa */
+  COMPLEX16 Fb;				/* complex amplitude Fb */
+  MultiFstatAtomVector *multiFstatAtoms;/* per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
+} Fcomponents;
+
+/* [opaque] type holding a ComputeFBuffer for use in the resampling F-stat codes */
+typedef struct tagComputeFBuffer_RS ComputeFBuffer_RS;
+
+/* Extra parameters controlling the actual computation of F */
+typedef struct tagComputeFParams {
+  UINT4 Dterms;		/* how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
+  REAL8 upsampling;	/* frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
+  SSBprecision SSBprec; /* whether to use full relativist SSB-timing, or just simple Newtonian */
+  BOOLEAN useRAA;        /* whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
+  BOOLEAN bufferedRAA;	/* approximate RAA by assuming constant response over (small) frequency band */
+  ComputeFBuffer_RS *buffer; /* buffer for storing pre-resampled timeseries (used for resampling implementation) */
+  const EphemerisData *edat;   /* ephemeris data for re-computing multidetector states */
+  BOOLEAN returnAtoms;	/* whether or not to return the 'FstatAtoms' used to compute the F-statistic */
+  BOOLEAN returnSingleF; /* in multi-detector case, whether or not to also return the single-detector Fstats computed from the atoms */
+} ComputeFParams;
+
+/* Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
+ * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
+ * For the first call of ComputeFStat() the pointer-entries should all be NULL.
+ */
+typedef struct tagComputeFBuffer {
+  const MultiDetectorStateSeries *multiDetStates;/* buffer for each detStates (store pointer) and skypos */
+  REAL8 Alpha, Delta;				/* skyposition of candidate */
+  MultiSSBtimes *multiSSB;
+  MultiSSBtimes *multiBinary;
+  MultiAMCoeffs *multiAMcoef;
+  MultiCmplxAMCoeffs *multiCmplxAMcoef;
+} ComputeFBuffer;
+
+static const Fcomponents empty_Fcomponents;
+static const ComputeFParams empty_ComputeFParams;
+static const ComputeFBuffer empty_ComputeFBuffer;
 
 /*----- SIN/COS Lookup table code inserted here -----*/
 /* In particular this defines
@@ -105,6 +161,25 @@ LocalComputeFStatFreqBand ( LALStatus *status,
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+
+
+/* Destruction of a ComputeFBuffer *contents*,
+ * i.e. the multiSSB and multiAMcoeff, while the
+ * buffer-container is not freed (which is why it's passed
+ * by value and not by reference...) */
+static void
+XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb)
+{
+  XLALDestroyMultiSSBtimes ( cfb->multiSSB );
+  cfb->multiSSB = NULL;
+  XLALDestroyMultiSSBtimes ( cfb->multiBinary );
+  cfb->multiBinary = NULL;
+  XLALDestroyMultiAMCoeffs ( cfb->multiAMcoef );
+  cfb->multiAMcoef = NULL;
+  XLALDestroyMultiCmplxAMCoeffs ( cfb->multiCmplxAMcoef );
+  cfb->multiCmplxAMcoef = NULL;
+  return;
+} /* XLALDestroyComputeFBuffer() */
 
 /**
  * Function to compute a vector of Fstatistic values for a number of frequency bins.
@@ -330,7 +405,7 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 
       if ( params->upsampling > 1) 
 	{
-	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
+	  if ( 1/*XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params)*/ != 0)
 	    {
 	      XLALPrintError ("\nXALComputeFaFbXavie() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
