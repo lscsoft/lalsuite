@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## run all LALApps programs with memory debugging
+export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+
 ## allow 'make test' to work from builddir != srcdir
 if [ -z "${srcdir}" ]; then
     srcdir=`dirname $0`
@@ -136,7 +139,7 @@ fi
 
 ## clean up files [allow turning off via 'NOCLEANUP' environment variable
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDIR In.data-test
+    rm -rf $testDIR In.data-test debug_phi_v2.dat Tseries_v2_?????.dat
 fi
 
 

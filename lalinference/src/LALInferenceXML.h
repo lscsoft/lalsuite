@@ -18,7 +18,7 @@
 */
 /* Double-include protection */
 #ifndef _LALXMLVOTABLESERIALIZERLALINFERENCE_H
-#define _LALXMLVOTABLESERIALIZERSLALINFERENCE_H
+#define _LALXMLVOTABLESERIALIZERLALINFERENCE_H
 
 /* C++ protection */
 #ifdef __cplusplus

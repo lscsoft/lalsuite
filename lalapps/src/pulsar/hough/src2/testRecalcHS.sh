@@ -4,6 +4,9 @@
 ## namely by feeding it the HS output candidate-file as input and verifying that it correctly reproduces these
 ## candidates
 
+## run all LALApps programs with memory debugging
+export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+
 ## take user-arguments:
 extra_args="$@"
 

@@ -15,7 +15,7 @@ TESTS = testCFS_resamp.sh
 EXTRA_DIST = testCFS_resamp.sh
 
 
-TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
+TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 
 ## make sure lalapps.la is rebuilt when appropriate

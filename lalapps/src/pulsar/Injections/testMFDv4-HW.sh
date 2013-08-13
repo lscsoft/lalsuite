@@ -8,6 +8,9 @@
 ## We use S5 pulsar0 parameters for the test.
 ##
 
+## run all LALApps programs with memory debugging
+export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+
 ## allow 'make test' to work from builddir != srcdir
 builddir="./";
 testDIR="./mfd_TEST-HW"

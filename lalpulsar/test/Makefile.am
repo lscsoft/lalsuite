@@ -45,6 +45,8 @@ check_PROGRAMS = \
 TESTS = $(check_PROGRAMS)
 EXTRA_PROGRAMS = XLALLoadSFTsTest
 
+TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg
+
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
 
 UniversalDopplerMetricTest_SOURCES = UniversalDopplerMetricTest.c old-FstatMetric.c

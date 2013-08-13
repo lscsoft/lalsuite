@@ -144,6 +144,7 @@ src/inspiral/posterior/lalapps_merge_nested_sampling_runs
 src/inspiral/posterior/lalapps_nest2pos
 src/inspiral/posterior/lalapps_nest_pipe
 src/inspiral/posterior/lalapps_vo_nest2pos
+src/inspiral/posterior/lalinference_bambi
 src/inspiral/posterior/lalinference_pipe
 src/inspiral/posterior/python_config.sed
 src/lalapps/LALAppsVCSInfo.h
@@ -196,6 +197,8 @@ src/pulsar/FDS_isolated/testFstat_v3-LFT.sft
 src/pulsar/FDS_isolated/testFstat_v3-timeseries.dat
 src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/GCT/testLineVeto
+src/pulsar/Injections/Tseries_v2_*.dat
+src/pulsar/Injections/debug_phi_v2.dat
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_Makefakedata_v5
 src/pulsar/Injections/lalapps_compareSFTs

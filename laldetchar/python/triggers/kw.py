@@ -339,7 +339,8 @@ def find_online_cache(start, end, ifo, mask='DOWNSELECT',
 
 
 # find files from aLIGO DMTKW
-def find_dmt_cache(start, end, ifo, format="xml", check_files=False, **kwargs):
+def find_dmt_cache(start, end, ifo, extension="xml", check_files=False,
+                   **kwargs):
     """Find DMT KW files for the given GPS period.
 
     @param start
@@ -399,7 +400,7 @@ def find_dmt_cache(start, end, ifo, format="xml", check_files=False, **kwargs):
         return ("%s/%s-%s-%.5s/"
                 "%s-%s-%.10d-%d.%s"
                 % (directory, ifo.upper()[0], dirtag, gps,
-                   ifo.upper()[0], filetag, gps, dt, format))
+                   ifo.upper()[0], filetag, gps, dt, extension))
 
     # loop over time segments constructing file paths
     while t<end:

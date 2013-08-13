@@ -109,7 +109,7 @@ TESTS += testCFSv2.sh testCFSv2_resamp.sh testGridv2.sh
 endif
 
 
-TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
+TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
 

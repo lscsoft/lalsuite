@@ -82,19 +82,25 @@ class SBankJob(inspiral.InspiralAnalysisJob):
 
 
 class SBankNode(pipeline.CondorDAGNode):
-    def __init__(self,job, dag, tag='sbank', seed=0, bank_seed=None, mchirp_boundaries_file=None, mchirp_boundaries_index=None, p_node=[]):
+    def __init__(self, job, dag, tag=None, seed=0, bank_seed=None, mchirp_boundaries_file=None, mchirp_boundaries_index=None, p_node=[]):
         pipeline.CondorDAGNode.__init__(self,job)
         if (mchirp_boundaries_file is None) ^ (mchirp_boundaries_index is None):
             raise ValueError("must supply both mchirp_boundaries_file and mchirp_boundaries_index or neither")
         if mchirp_boundaries_file is not None:
             self.add_var_arg("--mchirp-boundaries-file %s --mchirp-boundaries-index %s" % (mchirp_boundaries_file, mchirp_boundaries_index))
-        self.add_var_opt("user-tag",tag)
         if bank_seed is not None:
             self.add_var_arg("--bank-seed %s" % bank_seed)
         self.add_var_opt("seed", seed)
-        self.add_output_file("%s.xml" % tag)
+
+        if tag:
+            self.add_var_opt("user-tag", tag)
+            self.add_output_file("%s-SBANK_%s-%d-%d.xml.gz" % (job.get_opt("instrument"), tag, int(job.get_opt("gps-start-time")), int(job.get_opt("gps-end-time")) - int(job.get_opt("gps-start-time"))))
+        else:
+            self.add_output_file("%s-SBANK-%d-%d.xml.gz" % (job.get_opt("instrument"), int(job.get_opt("gps-start-time")), int(job.get_opt("gps-end-time")) - int(job.get_opt("gps-start-time"))))
+
         for p in p_node:
             self.add_parent(p)
+
         dag.add_node(self)
 
 
@@ -343,10 +349,10 @@ if options.template_bank:
     bank_nodes = [sbankSplitNode]
 else:
     # set up sole coarse node to plan out the mini-sbank nodes
-    xmlCoarse = "H1-SBANK_COARSE-%s.xml"%options.user_tag
-    coarse_sbank_node = SBankNode(sbankJob, dag, xmlCoarse.replace(".xml", ""))
+    coarse_sbank_node = SBankNode(sbankJob, dag, "COARSE")
     coarse_mm = cp.get("coarse-sbank", "match-min")
     coarse_sbank_node.add_var_opt("match-min", coarse_mm)
+    xmlCoarse, = coarse_sbank_node.get_output_files()
     pnode = [coarse_sbank_node]
 
     # use coarse bank to choose mchirp regions of roughly equal template number
@@ -356,8 +362,7 @@ else:
 
     # generate a bank for each mchirp region
     for j in xrange(nbanks):
-        tag = xmlCoarse.replace("COARSE", "%04d" % j).replace(".xml", "")
-        bank_node = SBankNode(sbankJob, dag, tag, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode])
+        bank_node = SBankNode(sbankJob, dag, "%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode])
         bank_node.add_var_opt("match-min", mm)
         bank_node.set_priority(1)  # want complete bank before sims
         bank_nodes.append(bank_node)

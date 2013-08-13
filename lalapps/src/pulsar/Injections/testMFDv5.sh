@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## run all LALApps programs with memory debugging
+export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+
 ## allow 'make test' to work from builddir != srcdir
 if [ -z "${srcdir}" ]; then
     srcdir=`dirname $0`

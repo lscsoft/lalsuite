@@ -171,6 +171,7 @@ LALStringVector *corlist = NULL;
                      detector and model harmonic in the list (must be in the\n\
                      same order) delimited by commas. If not set you can\n\
                      generate fake data (see --fake-data below)\n"\
+" --sample-interval   (REAL8) the time interval bewteen samples (default to 60 s)\n"\
 " --downsample-factor (INT4) factor by which to downsample the input data\n\
                      (default is for no downsampling and this is NOT\n\
                      applied to fake data)\n"\
@@ -1037,6 +1038,14 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
       ifodata->compModelData->epoch = ifodata->dataTimes->data[0];
 
+      /* add data sample interval */
+      ppt = LALInferenceGetProcParamVal( commandLine, "--sample-interval" );
+      REAL8 sampledt = 60.; /* default the sample interval to 60 seconds */
+      if( ppt ){
+        sampledt = atof( ppt->value );
+      }
+      LALInferenceAddVariable( ifodata->dataParams, "dt", &sampledt, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+
       XLALDestroyREAL8Vector( temptimes );
     }
     else{ /* set up fake data */
@@ -1051,6 +1060,9 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       /* allocate data time stamps */
       ifodata->dataTimes = NULL;
       ifodata->dataTimes = XLALCreateTimestampVector( (UINT4)datalength );
+
+      /* add data sample interval */
+      LALInferenceAddVariable( ifodata->dataParams, "dt", &fdt[0], LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
       /* resize the data and model times series */
       ifodata->compTimeData = XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, datalength );
@@ -2402,6 +2414,8 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
 
   chunkLengths = XLALCreateUINT4Vector( length );
 
+  REAL8 dt = *(REAL8*)LALInferenceGetVariable( data->dataParams, "dt" );
+
   /* create vector of data segment length */
   while( 1 ){
     count++; /* counter */
@@ -2419,8 +2433,8 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
     t1 = XLALGPSGetREAL8( &data->dataTimes->data[i-1 ]);
     t2 = XLALGPSGetREAL8( &data->dataTimes->data[i] );
 
-    /* if consecutive points are within 180 seconds of each other count as in the same chunk */
-    if( t2 - t1 > 180. || count == chunkMax ){
+    /* if consecutive points are within two sample times of each other count as in the same chunk */
+    if( t2 - t1 > 2.*dt || count == chunkMax ){
       chunkLengths->data[j] = count;
       count = 0; /* reset counter */
 

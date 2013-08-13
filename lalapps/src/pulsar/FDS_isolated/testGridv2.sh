@@ -1,5 +1,8 @@
 #!/bin/sh
 
+## run all LALApps programs with memory debugging
+export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+
 ## take user-arguments for CFS-v2:
 extra_args="$@"
 

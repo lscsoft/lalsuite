@@ -1,3 +1,7 @@
+SUBDIRS = \
+	utils \
+	spectrum
+
 pkgpython_PYTHON = \
 	__init__.py \
 	gpstime.py \

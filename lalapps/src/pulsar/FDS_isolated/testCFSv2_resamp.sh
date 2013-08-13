@@ -1,4 +1,7 @@
-!/bin/bash
+#!/bin/bash
+
+## run all LALApps programs with memory debugging
+export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
 
 ## make sure we work in 'C' locale here to avoid awk sillyness
 LC_ALL_old=$LC_ALL
