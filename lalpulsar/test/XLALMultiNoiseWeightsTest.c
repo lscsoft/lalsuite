@@ -116,6 +116,7 @@ main (  void )
   XLALDestroyMultiNoiseWeights ( multiWeightsLAL );
   XLALDestroyMultiPSDVector ( multiPSDs );
   XLALDestroyMultiSFTVector ( multiSFTs );
+  XLALDestroySFTCatalog ( catalog );
   /* check for memory-leaks */
   LALCheckMemoryLeaks();
 
