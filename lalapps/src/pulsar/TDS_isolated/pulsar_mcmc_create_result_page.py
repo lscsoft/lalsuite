@@ -303,17 +303,20 @@ def corrcoef(pos):
 # return the ATNF information on a given pulsar
 def get_atnf_info(par):
   try:
-    # set possible pulsar names to try consecutively
-    trynames = [par['PSRJ'], par['PSRB'], par['PSR'], par['NAME']]
+    # set possible pulsar names to try consecutively, also then try each with the wildcard * (this is currently necessary for J2022+17)
+    trynames = [par['PSRJ'], par['PSRB'], par['PSR'], par['NAME'], par['PSRJ'], par['PSRB'], par['PSR'], par['NAME']]
 
-    for psrname in trynames:
+    for i, psrname in enumerate(trynames):
       badurl = False
 
       if psrname != None:
         psrname = re.sub('\+', '%2B', psrname) # switch + for unicode character
 
+        if i+1 > len(trynames)/2:
+          psrname = psrname + '*'
+
         atnfurl = \
-'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?Dist=Dist&Assoc=\
+'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.47&Dist=Dist&Assoc=\
 Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
 sort_attr=&sort_order=asc&condition=&pulsar_names=' + psrname + \
 '&ephemeris=selected&submit_ephemeris=\
@@ -866,7 +869,7 @@ function toggle(id) {
     psrnameprefix = 'HWINJ'
 
   if not swinj and not hwinj and not notinatnf:
-    atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?startUserDefined=true&pulsar_names=' + pnameurl + '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
+    atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.47&startUserDefined=true&pulsar_names=' + pnameurl + '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
     pheadertext.append('<h1><a href="%s">%s %s</a></h1>\n' %
 (atnfurl, psrnameprefix, pname))
   else:
