@@ -46,6 +46,9 @@ and reheterodyne with this phase difference. */
 /* define a macro to round a number without having to use the C round function */
 #define ROUND(a) (floor(a+0.5))
 
+/* allocate 1Mb (2^20) of memory at a time */
+#define MAXALLOC 1048576
+
 /* track memory usage under linux */
 #define TRACKMEMUSE 0
 
@@ -474,11 +477,11 @@ heterodyne.\n");  }
             exit(1);
           }
 
-          /* dynamically allocate memory 100 lines at a time */
-          if( ( i == 1 ) || ( i % 100 == 0 ) ){
-            if( (times = XLALResizeREAL8Vector( times, 100*memcount )) == NULL
+          /* dynamically allocate memory 2^20 lines at a time */
+          if( ( i == 1 ) || ( i % MAXALLOC == 0 ) ){
+            if( (times = XLALResizeREAL8Vector( times, MAXALLOC*memcount )) == NULL
               || (data = XLALResizeCOMPLEX16TimeSeries( data, 0,
-              100*memcount)) == NULL )
+              MAXALLOC*memcount)) == NULL )
               {  XLALPrintError("Error resizing data memory.\n");  }
             memcount++;
           }
@@ -503,11 +506,11 @@ heterodyne.\n");  }
           }
           else continue;
 
-          /* dynamically allocate memory 100 lines at a time */
-          if( ( i == 1 ) || ( i % 100 == 0 ) ){
-            if( (times = XLALResizeREAL8Vector( times, 100*memcount )) == NULL
+          /* dynamically allocate memory 2^20 lines at a time */
+          if( ( i == 1 ) || ( i % MAXALLOC == 0 ) ){
+            if( (times = XLALResizeREAL8Vector( times, MAXALLOC*memcount )) == NULL
               || (data = XLALResizeCOMPLEX16TimeSeries( data, 0,
-              100*memcount)) == NULL )
+              MAXALLOC*memcount)) == NULL )
               {  XLALPrintError("Error resizing data memory.\n");  }
             memcount++;
           }
@@ -1245,12 +1248,12 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) -
           hetParams.hetUpdate.waveepoch)/86400.;
 
-        for( INT4 k = 0; k < hetParams.hetUpdate.nwaves; k++ ){
+       for( INT4 k = 0; k < hetParams.hetUpdate.nwaves; k++ ){
           tWave1 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*dtWave) +
             hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*dtWave);
 
-          tWave2 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*(dtWave+1.)) +
-            hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*(dtWave+1.));
+          tWave2 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*(dtWave+(1./86400.))) +
+            hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*(dtWave+(1./86400.)));
         }
         phaseWave = hetParams.hetUpdate.f0*freqfactor*tWave1;
       }

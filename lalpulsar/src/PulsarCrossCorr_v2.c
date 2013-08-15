@@ -197,6 +197,8 @@ int XLALCreateSFTPairIndexList
 /** Construct vector of sigma_alpha values for each SFT pair */
 /* This version uses a single frequency rather than the doppler-shifted ones */
 /* Allocates memory as well */
+/* Note this is probably obsolete because the noise-weighting takes
+   care of these factors */
 int XLALCalculateCrossCorrSigmaUnshifted
   (
    REAL8Vector      **sigma_alpha,    /* Output: vector of sigma_alpha values */

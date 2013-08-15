@@ -101,9 +101,6 @@ EXTRA_DIST = \
 	generate_user_env.awk \
 	LALFrameC.c \
 	LALFrameL.c \
-        lld.c \
-        LowLatencyData.c \
-        LowLatencyData.h \
 	LALFrameConfig.h.in
 
 if HAVE_GIT_REPO

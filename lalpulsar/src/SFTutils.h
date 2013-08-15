@@ -141,6 +141,9 @@ int XLALSFTAdd ( SFTtype *a, const SFTtype *b );
 void XLALDestroyPSDVector ( PSDVector *vect );
 void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );
 void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
+
+MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
+
 void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
 
 /*@}*/

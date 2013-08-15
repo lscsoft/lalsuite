@@ -53,6 +53,11 @@ typedef struct{
   REAL8   alphaRad;           /**< right ascension in radians */
   REAL8   deltaRad;           /**< declination in radians */
   REAL8   refTime;            /**< reference time for pulsar phase definition */
+  REAL8   orbitAsiniSec;      /**< start projected semimajor axis in seconds */
+  REAL8   orbitAsiniSecBand;  /**< band for projected semimajor axis in seconds */
+  REAL8   orbitPSec;          /**< binary orbital period in seconds */
+  REAL8   orbitTimeAsc;       /**< start time of ascension for binary orbit */ 
+  REAL8   orbitTimeAscBand;   /**< band for time of ascension for binary orbit */ 
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
   INT4    rngMedBlock;        /**< running median block size */
@@ -87,6 +92,7 @@ int main(int argc, char *argv[]){
   /* sft related variables */ 
   MultiSFTVector *inputSFTs = NULL;
   MultiPSDVector *multiPSDs = NULL;
+  MultiNoiseWeights *multiWeights = NULL;
   MultiLIGOTimeGPSVector *multiTimes = NULL;
   MultiLALDetector *multiDetectors = NULL;
   MultiDetectorStateSeries *multiStates = NULL;
@@ -97,10 +103,8 @@ int main(int argc, char *argv[]){
   SkyPosition skyPos = empty_SkyPosition;
 
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
-  REAL8 deltaF, Tsft; /* frequency resolution and time baseline of SFTs */
-  REAL8 roughFreq; /* Approximate frequency to use for metric calculations */
+  REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
 
-  REAL8Vector *sigmaUnshifted = NULL;
   REAL8Vector *curlyGUnshifted = NULL;
 
   /* initialize and register user variables */
@@ -125,7 +129,6 @@ int main(int argc, char *argv[]){
   }
 
   deltaF = config.catalog->data[0].header.deltaF;
-  Tsft = 1. / deltaF;
 
   /* now read the data */
   /* FIXME: need to correct fMin and fMax for Doppler shift, rngmedian bins and spindown range */
@@ -143,6 +146,12 @@ int main(int argc, char *argv[]){
   /* calculate the psd and normalize the SFTs */
   if (( multiPSDs =  XLALNormalizeMultiSFTVect ( inputSFTs, uvar.rngMedBlock )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  /* compute the noise weights for the AM coefficients */
+  if (( multiWeights = XLALComputeMultiNoiseWeights ( multiPSDs, uvar.rngMedBlock, 0 )) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALComputeMultiNoiseWeights() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -171,7 +180,7 @@ int main(int argc, char *argv[]){
   skyPos.latitude  = uvar.deltaRad;
 
   /* Calculate the AM coefficients (a,b) for each SFT */
-  if ((multiCoeffs = XLALComputeMultiAMCoeffs ( multiStates, NULL, skyPos )) == NULL){ 
+  if ((multiCoeffs = XLALComputeMultiAMCoeffs ( multiStates, multiWeights, skyPos )) == NULL){ 
     LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -192,14 +201,9 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  roughFreq = uvar.fStart + 0.5 * uvar.fBand;
-
   /* Get weighting factors for calculation of metric */
-  if ( ( XLALCalculateCrossCorrSigmaUnshifted( &sigmaUnshifted, sftPairs, sftIndices, multiPSDs, roughFreq, Tsft)  != XLAL_SUCCESS ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateCrossCorrSigmaUnshifted() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
+  /* note that the sigma-squared is now absorbed into the curly G
+     because the AM coefficients are noise-weighted. */
   if ( ( XLALCalculateAveCurlyGAmpUnshifted( &curlyGUnshifted, sftPairs, sftIndices, multiCoeffs)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
@@ -307,6 +311,13 @@ int XLALInitUserVars (UserInput_t *uvar)
   /* default for reftime is in the middle */
   uvar->refTime = 0.5*(uvar->startTime + uvar->endTime);
 
+  /* zero binary orbital parameters means not a binary */
+  uvar->orbitAsiniSec = 0.0;
+  uvar->orbitAsiniSecBand = 0.0;
+  uvar->orbitPSec = 0.0;
+  uvar->orbitTimeAsc = 0;
+  uvar->orbitTimeAscBand = 0;
+
   uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);
 
@@ -325,6 +336,12 @@ int XLALInitUserVars (UserInput_t *uvar)
   /* XLALregREALUserStruct  ( fdotBand,      0,  UVAR_OPTIONAL, "Band for spindown values in Hz/s"); */
   XLALregREALUserStruct  ( alphaRad,      0,  UVAR_OPTIONAL, "Right ascension for directed search (radians)");
   XLALregREALUserStruct  ( deltaRad,      0,  UVAR_OPTIONAL, "Declination for directed search (radians)");
+  XLALregREALUserStruct  ( refTime,       0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: midPoint]");
+  XLALregREALUserStruct  ( orbitAsiniSec, 0,  UVAR_OPTIONAL, "Start of search band for projected semimajor axis (seconds) [0 means not a binary]");
+  XLALregREALUserStruct  ( orbitAsiniSecBand, 0,  UVAR_OPTIONAL, "Width of search band for projected semimajor axis (seconds)");
+  XLALregREALUserStruct  ( orbitPSec,     0,  UVAR_OPTIONAL, "Binary orbital period (seconds) [0 means not a binary]");
+  XLALregREALUserStruct  ( orbitTimeAsc,  0,  UVAR_OPTIONAL, "Start of orbital time-of-ascension band in GPS seconds");
+  XLALregREALUserStruct  ( orbitTimeAscBand, 0,  UVAR_OPTIONAL, "Width of orbital time-of-ascension band (seconds)");
   XLALregSTRINGUserStruct( ephemYear,     0,  UVAR_OPTIONAL, "String Ephemeris year range");
   XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
   XLALregINTUserStruct   ( rngMedBlock,   0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
