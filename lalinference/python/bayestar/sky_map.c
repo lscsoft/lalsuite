@@ -237,7 +237,7 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
     double *toas;
     double *snrs;
     double *w_toas;
-    const float **responses = NULL;
+    const float (**responses)[3] = NULL;
     const double **locations = NULL;
     double *horizons;
 
