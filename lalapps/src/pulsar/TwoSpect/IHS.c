@@ -1101,7 +1101,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          }
          
          //The maximum index to search in the IHS vector
-         maxIndexForIHS = (INT4)ceil(fmin(2.0*params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), 2.0*params->Tobs/7200.0)) - 5;
+         //maxIndexForIHS = (INT4)ceil(fmin(2.0*params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), 2.0*params->Tobs/7200.0)) - 5;
+         maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), params->Tobs/7200.0))) - 5;
          
          REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
