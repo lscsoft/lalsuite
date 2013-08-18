@@ -32,6 +32,10 @@ if ($ifo eq "LHO" || $ifo eq "H1") {
    $t0 = 931113900;  #L1 start
    $ifo = "LLO";
    $ifokey = "L1";
+} elsif ($ifo eq "Virgo" || $ifo eq "V1") {
+   $t0 = 931131900;
+   $ifo = "Virgo";
+   $ifokey = "V1";
 }
 my $blksize = 101;
 my $minTemplateLength = 1;
