@@ -184,7 +184,7 @@ void UpdateSemiCohToplists ( LALStatus *status, toplist_t *list1, toplist_t *lis
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg,
                                REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg,
                                UsefulStageVariables *usefulparams );
-static inline INT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
+static inline INT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A1, REAL8 B1, REAL8 U1start, REAL8 U1winInv );
 void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL8 U2start, REAL8 U2winInv,
                    INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
@@ -290,11 +290,11 @@ int MAIN( int argc, char *argv[]) {
   UINT4 if1dot_fg, if2dot_fg;
   UINT4 fveclength, ifreq;
   INT4  U1idx;
-  REAL8 myf0, freq_event, f1dot_event, deltaF, f1dot_eventB1;
+  REAL8 myf0, freq_event, f1dot_event, deltaF;
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
   REAL8 df2dot_fg, f2dotmin_fg;
   REAL8 u1start, u1win, u1winInv;
-  REAL8 freq_fg, f1dot_fg, f2dot_fg;
+  REAL8 freq_fg, f1dot_fg, f2dot_fg, f1dot_event_fg;
   REAL4 Fstat;
   REAL8 A1, B1;
   // currently unused: REAL8 A2;
@@ -910,7 +910,7 @@ int MAIN( int argc, char *argv[]) {
   if ( df2dot == 0 ) {
     nf2dot = 1;
   } else {
-    nf2dot = (UINT4) floor( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot - NUDGE) + 1;
+    nf2dot = (UINT4) floor( usefulParams.spinRange_midTime.fkdotBand[2] / uvar_df2dot + NUDGE) + 1;
   }
 
   /* set number of fine-grid 2nd spindowns */
@@ -1527,9 +1527,6 @@ int MAIN( int argc, char *argv[]) {
                    U2idx = 0;
                 */
 
-                /* pre-compute product */
-                f1dot_eventB1 = f1dot_fg * B1;
-
                 /* timing */
                 if ( uvar_outputTiming )
                   timeStamp1 = XLALGetTimeOfDay();
@@ -1606,7 +1603,7 @@ int MAIN( int argc, char *argv[]) {
                     freq_event = myf0 + ifreq * deltaF;
 
                     /* compute the global-correlation coordinate indices */
-                    U1idx = ComputeU1idx ( freq_event, f1dot_eventB1, A1, u1start, u1winInv );
+                    U1idx = ComputeU1idx ( freq_event, f1dot_event, A1, B1, u1start, u1winInv );
 
                     /* Holger: current code structure of loops (processing f1dot by f1dot) needs only U1 calculation.
                        ComputeU2idx ( freq_event, f1dot_event, A2, B2, u2start, u2winInv, &U2idx);
@@ -1673,11 +1670,12 @@ int MAIN( int argc, char *argv[]) {
 
                 /* get the frequency of this fine-grid point at mid point of segment */
                 /* OLD: ifreq_fg = 0; freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg; */
+                f1dot_event_fg = f1dot_fg + f2dot_fg * timeDiffSeg;
                 freq_fg = finegrid.freqmin_fg + f1dot_fg * timeDiffSeg +
                   0.5 * f2dot_fg * timeDiffSeg * timeDiffSeg; /* first fine-grid frequency */
 
                 /* compute the global-correlation coordinate indices */
-                U1idx = ComputeU1idx ( freq_fg, f1dot_eventB1, A1, u1start, u1winInv );
+                U1idx = ComputeU1idx ( freq_fg, f1dot_event_fg, A1, B1, u1start, u1winInv );
 
                 if (U1idx < 0) {
                   fprintf(stderr,"ERROR: Stepped outside the coarse grid (%d)! \n", U1idx);
@@ -2561,26 +2559,22 @@ void PrintFstatVec (LALStatus *status,
                     LIGOTimeGPS          refTime,
                     INT4                 stackIndex)
 {
-  INT4 length, k;
-  REAL8 f0, deltaF, alpha, delta;
-  PulsarSpins fkdot;
-
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  INIT_MEM(fkdot);
-
   fprintf(fp, "%% Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
 
-  alpha = thisPoint->Alpha;
-  delta = thisPoint->Delta;
-  fkdot[1] = thisPoint->fkdot[1];
-  f0 = thisPoint->fkdot[0];
+  REAL8 alpha = thisPoint->Alpha;
+  REAL8 delta = thisPoint->Delta;
 
-  length = in->data->length;
-  deltaF = in->deltaF;
+  PulsarSpins fkdot;
+  memcpy ( fkdot, thisPoint->fkdot, sizeof(fkdot) );
 
-  for (k=0; k<length; k++)
+  UINT4 length = in->data->length;
+  REAL8 deltaF = in->deltaF;
+
+  REAL8 f0 = fkdot[0];
+  for (UINT4 k=0; k<length; k++)
     {
       fkdot[0] = f0 + k*deltaF;
 
@@ -2691,13 +2685,14 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
 
 /** Calculate the U1 index for a given point in parameter space */
 static inline INT4 ComputeU1idx( REAL8 freq_event,
-                                 REAL8 f1dot_eventB1,
+                                 REAL8 f1dot_event,
                                  REAL8 A1,
+                                 REAL8 B1,
                                  REAL8 U1start,
                                  REAL8 U1winInv)
 {
   /* compute the index of global-correlation coordinate U1, Eq. (1) */
-  return (((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5;
+  return (((freq_event * A1 + f1dot_event * B1) - U1start) * U1winInv) + 0.5;
 
 } /* ComputeU1idx */
 

@@ -193,6 +193,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         candidateDopplerParams.Delta = elem->Delta;
         candidateDopplerParams.fkdot[0] = elem->Freq;
         candidateDopplerParams.fkdot[1] = elem->F1dot;
+        candidateDopplerParams.fkdot[2] = elem->F2dot;
       } else if ( listEntryType == 2 ) {
         HoughFStatOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
@@ -207,12 +208,13 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         candidateDopplerParams.Delta = elem->DeltaBest;
         candidateDopplerParams.fkdot[0] = elem->Freq;
         candidateDopplerParams.fkdot[1] = elem->f1dot;
+        /* no 2nd spindown in HoughFStatOutputEntry */
       } /* if listEntryType 2 */
 
       /* write header information into segment-Fstats file */
       if ( singleSegStatsFile )
-        fprintf ( singleSegStatsFile, "%%%% Freq: %.16g\n%%%% RA: %.13g\n%%%% Dec: %.13g\n%%%% f1dot: %.13g\n%%%% reftime: %d\n",
-                  candidateDopplerParams.fkdot[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, candidateDopplerParams.fkdot[1], refTimeGPS.gpsSeconds );
+        fprintf ( singleSegStatsFile, "%%%% Freq: %.16g\n%%%% RA: %.13g\n%%%% Dec: %.13g\n%%%% f1dot: %.13g\n%%%% f2dot: %.13g\n%%%% reftime: %d\n",
+                  candidateDopplerParams.fkdot[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, candidateDopplerParams.fkdot[1], candidateDopplerParams.fkdot[2], refTimeGPS.gpsSeconds );
 
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
       XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, &CFparams_internal, SignalOnly, singleSegStatsFile );
@@ -353,7 +355,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 
       /* recompute multi-detector Fstat and atoms */
       if ( singleSegStatsFile )
-        fprintf ( singleSegStatsFile, "%%%% Reftime: %d %%%% Freq: %.16g %%%% RA: %.13g %%%% Dec: %.13g %%%% f1dot: %.13g\n", dopplerParams_temp.refTime.gpsSeconds, dopplerParams_temp.fkdot[0], dopplerParams_temp.Alpha, dopplerParams_temp.Delta, dopplerParams_temp.fkdot[1] );
+        fprintf ( singleSegStatsFile, "%%%% Reftime: %d %%%% Freq: %.16g %%%% RA: %.13g %%%% Dec: %.13g %%%% f1dot: %.13g %%%% f2dot: %.13g\n", dopplerParams_temp.refTime.gpsSeconds, dopplerParams_temp.fkdot[0], dopplerParams_temp.Alpha, dopplerParams_temp.Delta, dopplerParams_temp.fkdot[1], dopplerParams_temp.fkdot[2] );
       fakeStatus = blank_status;
       COMPUTEFSTAT ( &fakeStatus, &Fstat, &dopplerParams_temp, multiSFTsV->data[k], multiNoiseWeightsThisSeg, multiDetStatesV->data[k], CFparams, NULL );
       if ( fakeStatus.statusCode ) {
