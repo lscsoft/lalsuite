@@ -1033,14 +1033,23 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       ifodata->dataTimes = XLALCreateTimestampVector( datalength );
 
       /* fill in time stamps as LIGO Time GPS Vector */
-      for ( k = 0; k < datalength; k++ ) { XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] ); }
+      REAL8 sampledt = INFINITY; /* sample interval */
+      for ( k = 0; k < datalength; k++ ) {
+        XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] );
+
+        if ( k > 0 ){
+          /* get sample interval from the minimum time difference in the data */
+          if ( temptimes->data[k] - temptimes->data[k-1] < sampledt ) {
+            sampledt = temptimes->data[k] - temptimes->data[k-1];
+          }
+        }
+      }
 
       ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
       ifodata->compModelData->epoch = ifodata->dataTimes->data[0];
 
       /* add data sample interval */
       ppt = LALInferenceGetProcParamVal( commandLine, "--sample-interval" );
-      REAL8 sampledt = 60.; /* default the sample interval to 60 seconds */
       if( ppt ){
         sampledt = atof( ppt->value );
       }
