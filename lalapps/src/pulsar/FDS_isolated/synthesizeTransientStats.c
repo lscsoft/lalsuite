@@ -262,7 +262,7 @@ int main(int argc,char *argv[])
 
       /* ----- generate signal random draws from ranges and generate Fstat atoms */
       MultiFstatAtomVector *multiAtoms;
-      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
+      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng, -1);
       if ( multiAtoms ==NULL ) {
         LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", __func__, xlalErrno );
         XLAL_ERROR ( XLAL_EFUNC );

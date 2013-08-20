@@ -102,6 +102,7 @@ extern InjParams_t empty_InjParams_t;
 /*---------- exported prototypes [API] ----------*/
 int XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu, const gsl_matrix *L, gsl_rng * rng );
 
+// ----- API to synthesize F-stat atoms for transient CW searches
 FstatAtomVector* XLALGenerateFstatAtomVector ( const DetectorStateSeries *detStates, const AMCoeffs *amcoeffs );
 MultiFstatAtomVector*XLALGenerateMultiFstatAtomVector ( const MultiDetectorStateSeries *multiDetStates, const MultiAMCoeffs *multiAM );
 
@@ -109,7 +110,7 @@ int XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms, gsl_rng * rng );
 int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_rng * rng );
 
 REAL8 XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
-REAL8 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
+REAL8 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow, INT4 lineX );
 
 int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
 int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par, UINT4 dataStartGPS );
@@ -122,7 +123,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,
                                const MultiDetectorStateSeries *multiDetStates,
                                BOOLEAN SignalOnly,
                                multiAMBuffer_t *multiAMBuffer,
-                               gsl_rng *rng
+                               gsl_rng *rng,
+                               INT4 lineX
                                );
 
 
