@@ -70,6 +70,7 @@ liblalpulsar_la_SOURCES = \
 	BinaryPulsarTiming.c \
 	CoherentMetric.c \
 	ComplexAM.c \
+	ComputeFstat.c \
 	ComputeFstat_OldDemodAPI.c \
 	ComputeSky.c \
 	ComputeSkyBinary.c \
@@ -139,6 +140,8 @@ liblalpulsar_la_SOURCES = \
 	$(XMLSRC)
 
 EXTRA_liblalpulsar_la_SOURCES = \
+	ComputeFstat_Demod.c \
+	ComputeFstat_Resamp.c \
 	SFTutils-LAL.c
 
 liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
