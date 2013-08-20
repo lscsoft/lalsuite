@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 40
+# serial 41
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -137,8 +137,8 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # symbol prefixes for this LAL library
     AC_SUBST(SWIG_SYMBOL_PREFIXES,["$1"])
 
-    # flags for generating SWIG wrapping module sources
-    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror"])
+    # flags for preprocessing/generating SWIG wrapping module sources
+    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror -I\$(abs_top_builddir)/include"])
 
     # add -MP option if SWIG is greater than version 2.0.9
     AS_VERSION_COMPARE([${swig_version}],[2.0.9],[],[],[
@@ -157,6 +157,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
         [*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag}"]
       )
     done
+    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I/usr/include"
 
     # are we (not) in debugging mode?
     AS_IF([test "x${enable_debug}" = xno],[
@@ -169,9 +170,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DHAVE_LIBGSL"
       SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DHAVE_LIBGSL"
     ])
-
-    # look here for interfaces and LAL headers (but not for preprocessing)
-    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I\$(top_builddir)/include -I/usr/include"
 
     # flags for compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CFLAGS,[])
