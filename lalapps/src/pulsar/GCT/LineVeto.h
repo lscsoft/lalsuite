@@ -71,23 +71,18 @@ extern const LVcomponents empty_LVcomponents;
 int
 XLALComputeExtraStatsForToplist ( toplist_t *list,
 				  const char *listEntryTypeName,
-				  const MultiSFTVectorSequence *multiSFTs,
-				  const MultiNoiseWeightsSequence *multiNoiseWeights,
-				  const MultiDetectorStateSeriesSequence *multiDetStates,
-				  const ComputeFParams *CFparams,
+				  const FstatInputDataVector *Fstat_in_vec,
+				  const LALStringVector *detectorIDs,
+				  const LIGOTimeGPSVector *startTstack,
 				  const LIGOTimeGPS refTimeGPS,
-				  const BOOLEAN SignalOnly,
 				  const char* outputSingleSegStats );
 
 int
 XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
 				    const PulsarDopplerParams *dopplerParams,
-				    const MultiSFTVectorSequence *multiSFTs,
-				    const MultiNoiseWeightsSequence *multiNoiseWeights,
-				    const MultiDetectorStateSeriesSequence *multiDetStates,
+				    const FstatInputDataVector *Fstat_in_vec,
 				    const LALStringVector *detectorIDs,
-				    const ComputeFParams *CFparams,
-				    const BOOLEAN SignalOnly,
+				    const LIGOTimeGPSVector *startTstack,
 				    FILE *singleSegStatsFile );
 
 REAL8
@@ -110,7 +105,7 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,
                            const BOOLEAN useAllTerms );
 
 LALStringVector *
-XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV );
+XLALGetDetectorIDs ( LALStringVector *IFOList, const SFTCatalog *SFTcatalog );
 
 /* these functions operate on the module-local lookup-table for logarithms,
  * which will dynamically be generated on first use of XLALFastLog(), and can
