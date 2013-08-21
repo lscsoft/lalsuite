@@ -52,3 +52,13 @@ XLALSetupFstat_Demod(
   XLAL_ERROR_NULL( XLAL_EFAILED, "Unimplemented!" );
 
 }
+
+static int
+ComputeFstat_Demod(
+  UNUSED FstatResults* Fstats,
+  UNUSED const FstatInputData_Common *common,
+  UNUSED FstatInputData_Demod* demod
+  )
+{
+  XLAL_ERROR( XLAL_EFAILED, "Unimplemented!" );
+}

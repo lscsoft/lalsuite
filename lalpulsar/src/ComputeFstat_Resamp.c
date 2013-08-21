@@ -46,3 +46,13 @@ XLALSetupFstat_Resamp(
   XLAL_ERROR_NULL( XLAL_EFAILED, "Unimplemented!" );
 
 }
+
+static int
+ComputeFstat_Resamp(
+  UNUSED FstatResults* Fstats,
+  UNUSED const FstatInputData_Common *common,
+  UNUSED FstatInputData_Resamp* resamp
+  )
+{
+  XLAL_ERROR( XLAL_EFAILED, "Unimplemented!" );
+}

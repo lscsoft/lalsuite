@@ -188,15 +188,171 @@ XLALDestroyFstatInputDataVector(
 
 int
 XLALComputeFstat(
-  UNUSED FstatResults **Fstats,
-  UNUSED FstatInputData *input,
-  UNUSED const PulsarDopplerParams *doppler,
-  UNUSED const REAL8 dFreq,
-  UNUSED const UINT4 numFreqBins,
-  UNUSED const FstatQuantities whatToCompute
+  FstatResults **Fstats,
+  FstatInputData *input,
+  const PulsarDopplerParams *doppler,
+  const REAL8 dFreq,
+  const UINT4 numFreqBins,
+  const FstatQuantities whatToCompute
   )
 {
-  XLAL_ERROR( XLAL_EFAILED, "Unimplemented!" );
+
+  // Check input
+  XLAL_CHECK(Fstats != NULL, XLAL_EFAULT);
+  XLAL_CHECK(input != NULL, XLAL_EFAULT);
+  XLAL_CHECK(doppler != NULL, XLAL_EFAULT);
+  XLAL_CHECK(doppler->orbit == NULL, XLAL_EINVAL, "Binary parameters are currently not supported!");
+  XLAL_CHECK(dFreq > 0 || (numFreqBins == 1 && dFreq >= 0), XLAL_EINVAL);
+  XLAL_CHECK(numFreqBins > 0, XLAL_EINVAL);
+  XLAL_CHECK(0 < whatToCompute && whatToCompute < FSTATQ_LAST, XLAL_EINVAL);
+
+  // Allocate results struct, if needed
+  if (*Fstats == NULL) {
+    *Fstats = XLALCalloc(1, sizeof(**Fstats));
+    XLAL_CHECK(*Fstats != NULL, XLAL_ENOMEM);
+  }
+
+  // Get constant pointer to common input data
+  const FstatInputData_Common *common = &(input->common);
+  const UINT4 numDetectors = common->numDetectors;
+
+  // Enlarge result arrays if they are too small
+  const bool moreFreqBins = (numFreqBins > (*Fstats)->internalalloclen);
+  const bool moreDetectors = (numDetectors > (*Fstats)->numDetectors);
+  if (moreFreqBins || moreDetectors) {
+
+    // Enlarge multi-detector 2F array
+    if ((whatToCompute & FSTATQ_2F) && moreFreqBins) {
+      (*Fstats)->twoF = XLALRealloc((*Fstats)->twoF, numFreqBins*sizeof((*Fstats)->twoF[0]));
+      XLAL_CHECK((*Fstats)->twoF != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->twoF to length %u", numFreqBins);
+    }
+
+    // Enlarge multi-detector Fa & Fb array
+    if ((whatToCompute & FSTATQ_FAFB) && moreFreqBins) {
+      (*Fstats)->FaFb = XLALRealloc((*Fstats)->FaFb, numFreqBins*sizeof((*Fstats)->FaFb[0]));
+      XLAL_CHECK((*Fstats)->FaFb != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->FaFb to length %u", numFreqBins);
+    }
+
+    // Enlarge 2F per detector arrays
+    if ((whatToCompute & FSTATQ_2F_PER_DET) && (moreFreqBins || moreDetectors)) {
+      for (UINT4 X = 0; X < numDetectors; ++X) {
+        (*Fstats)->twoFPerDet[X] = XLALRealloc((*Fstats)->twoFPerDet[X], numFreqBins*sizeof((*Fstats)->twoFPerDet[X][0]));
+        XLAL_CHECK((*Fstats)->twoFPerDet[X] != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->twoFPerDet[%u] to length %u", X, numFreqBins);
+      }
+    }
+
+    // Enlarge Fa & Fb per detector arrays
+    if ((whatToCompute & FSTATQ_FAFB_PER_DET) && (moreFreqBins || moreDetectors)) {
+      for (UINT4 X = 0; X < numDetectors; ++X) {
+        (*Fstats)->FaFbPerDet[X] = XLALRealloc((*Fstats)->FaFbPerDet[X], numFreqBins*sizeof((*Fstats)->FaFbPerDet[X][0]));
+        XLAL_CHECK((*Fstats)->FaFbPerDet[X] != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->FaFbPerDet[%u] to length %u", X, numFreqBins);
+      }
+    }
+
+    // Enlarge F-atoms per detector arrays, and initialise to NULL
+    if ((whatToCompute & FSTATQ_ATOMS_PER_DET) && (moreFreqBins || moreDetectors)) {
+      for (UINT4 X = 0; X < numDetectors; ++X) {
+        (*Fstats)->multiFatoms = XLALRealloc((*Fstats)->multiFatoms, numFreqBins*sizeof((*Fstats)->multiFatoms[0]));
+        XLAL_CHECK((*Fstats)->multiFatoms != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->multiFatoms to length %u", numFreqBins);
+
+        // If more detectors are needed, destroy multi-F-atom vectors so they can be re-allocated later
+        if (moreDetectors) {
+          for (UINT4 k = 0; k < numFreqBins; ++k) {
+            XLALDestroyMultiFstatAtomVector((*Fstats)->multiFatoms[k]);
+            (*Fstats)->multiFatoms[k] = NULL;
+          }
+        } else {
+          for (UINT4 k = (*Fstats)->internalalloclen; k < numFreqBins; ++k) {
+            (*Fstats)->multiFatoms[k] = NULL;
+          }
+        }
+
+      }
+    }
+
+    // Update allocated length of arrays
+    (*Fstats)->internalalloclen = numFreqBins;
+
+  } // if (moreFreqBins || moreDetectors)
+
+  // Initialise result struct parameters
+  (*Fstats)->doppler = *doppler;
+  (*Fstats)->dFreq = dFreq;
+  (*Fstats)->numFreqBins = numFreqBins;
+  (*Fstats)->numDetectors = numDetectors;
+  memcpy((*Fstats)->detectorNames, common->detectorNames, sizeof(common->detectorNames));
+  (*Fstats)->whatWasComputed = whatToCompute;
+
+  // Call the appropriate algorithm function to compute the F-statistic
+  if (input->demod != NULL) {
+    XLAL_CHECK(ComputeFstat_Demod(*Fstats, common, input->demod) == XLAL_SUCCESS, XLAL_EFUNC);
+  } else if (input->resamp != NULL) {
+    XLAL_CHECK(ComputeFstat_Resamp(*Fstats, common, input->resamp) == XLAL_SUCCESS, XLAL_EFUNC);
+  } else {
+    XLAL_ERROR(XLAL_EFAILED, "Invalid FstatInputData struct passed to %s()", __func__);
+  }
+
+  // Correct F-statistic quantities when no noise weights are given
+  if (common->Fnorm != 0.0) {
+    const REAL8 Fnorm = common->Fnorm;
+    const REAL8 Fnorm_sqr = Fnorm * Fnorm;
+
+    // Correct antenna pattern matrix
+    (*Fstats)->Mmunu.Sinv_Tsft = 2.0 / Fnorm_sqr;   // equivalent to Tsft
+
+    // Correct multi-detector 2F array
+    if (whatToCompute & FSTATQ_2F) {
+      for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
+        (*Fstats)->twoF[k] *= Fnorm_sqr;
+        (*Fstats)->twoF[k] += 4;
+      }
+    }
+
+    // Correct multi-detector F-parts array
+    if (whatToCompute & FSTATQ_FAFB) {
+      for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
+        (*Fstats)->FaFb[k].Fa *= Fnorm;
+        (*Fstats)->FaFb[k].Fb *= Fnorm;
+      }
+    }
+
+    // Correct 2F per detector arrays
+    if (whatToCompute & FSTATQ_2F_PER_DET) {
+      for (UINT4 X = 0; X < numDetectors; ++X) {
+        for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
+          (*Fstats)->twoFPerDet[X][k] *= Fnorm_sqr;
+          (*Fstats)->twoFPerDet[X][k] += 4;
+        }
+      }
+    }
+
+    // Correct F-parts per detector arrays
+    if (whatToCompute & FSTATQ_FAFB_PER_DET) {
+      for (UINT4 X = 0; X < numDetectors; ++X) {
+        for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
+          (*Fstats)->FaFbPerDet[X][k].Fa *= Fnorm;
+          (*Fstats)->FaFbPerDet[X][k].Fb *= Fnorm;
+        }
+      }
+    }
+
+    // Correct F-atoms per detector arrays, and initialise to NULL
+    if (whatToCompute & FSTATQ_ATOMS_PER_DET) {
+      for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
+        for (UINT4 X = 0; X < numDetectors; ++X) {
+          FstatAtomVector *atomX = (*Fstats)->multiFatoms[k]->data[X];
+          for (UINT4 alpha = 0; alpha < atomX->length; ++alpha) {
+            atomX->data[alpha].Fa_alpha *= Fnorm;
+            atomX->data[alpha].Fb_alpha *= Fnorm;
+          }
+        }
+      }
+    }
+
+  } // if (common->Fnorm != 0.0)
+
+  return XLAL_SUCCESS;
+
 }
 
 void
@@ -217,8 +373,22 @@ XLALDestroyFstatInputData(
 
 void
 XLALDestroyFstatResults(
-  UNUSED FstatResults* Fstats
+  FstatResults* Fstats
   )
 {
-  XLAL_ERROR_VOID( XLAL_EFAILED, "Unimplemented!" );
+  if (Fstats != NULL) {
+    XLALFree(Fstats->twoF);
+    XLALFree(Fstats->FaFb);
+    for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; ++X) {
+      XLALFree(Fstats->twoFPerDet[X]);
+      XLALFree(Fstats->FaFbPerDet[X]);
+      if (Fstats->multiFatoms != NULL) {
+        for (UINT4 n = 0; n < Fstats->internalalloclen; ++n) {
+          XLALDestroyMultiFstatAtomVector(Fstats->multiFatoms[n]);
+        }
+        XLALFree(Fstats->multiFatoms);
+      }
+    }
+    XLALFree(Fstats);
+  }
 }
