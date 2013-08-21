@@ -20,9 +20,13 @@
 // This file implements the F-statistic resampling algorithm. It is not compiled directly, but
 // included from ComputeFstat.c
 
+#include <lal/LogPrintf.h>
+
 struct tagFstatInputData_Resamp {
   MultiSFTVector *multiSFTs;			// Input multi-detector SFTs
-  ComputeFParams params;			// Additional parameters for ComputeFStatFreqBand_RS()
+  MultiDetectorStateSeries *multiDetStates;	// Multi-detector state series
+  ComputeFParams params;			// Additional parameters for ComputeFStat() and ComputeFStatFreqBand_RS()
+  ComputeFBuffer buffer;			// Internal buffer for ComputeFStat()
   REAL4 *Fout;					// Output array of *F* values passed to ComputeFStatFreqBand_RS()
 };
 
@@ -32,8 +36,10 @@ DestroyFstatInputData_Resamp(
   )
 {
   XLALDestroyMultiSFTVector(resamp->multiSFTs);
+  XLALDestroyMultiDetectorStateSeries(resamp->multiDetStates);
   XLALEmptyComputeFBuffer_RS(resamp->params.buffer);
   XLALFree(resamp->params.buffer);
+  XLALEmptyComputeFBuffer(&resamp->buffer);
   XLALFree(resamp->Fout);
   XLALFree(resamp);
 }
@@ -59,8 +65,17 @@ XLALSetupFstat_Resamp(
   resamp->multiSFTs = *multiSFTs;
   multiSFTs = NULL;
 
+  // Calculate the detector states from the SFTs
+  {
+    LALStatus status = empty_status;
+    LALGetMultiDetectorStates(&status, &resamp->multiDetStates, resamp->multiSFTs, edat);
+    if (status.statusCode) {
+      XLAL_ERROR_NULL(XLAL_EFAILED, "LALGetMultiDetectorStates() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
+    }
+  }
+
   // Set parameters to pass to ComputeFStatFreqBand_RS()
-  resamp->params.Dterms = 0;
+  resamp->params.Dterms = 8;   // Use fixed Dterms for single frequency bin demodulation
   resamp->params.SSBprec = SSBprec;
   resamp->params.buffer = NULL;
   resamp->params.bufferedRAA = 0;
@@ -98,6 +113,11 @@ ComputeFstat_Resamp(
   XLAL_CHECK(!(whatToCompute & FSTATQ_FAFB), XLAL_EINVAL, "Resamping does not currently support Fa & Fb");
   XLAL_CHECK(!(whatToCompute & FSTATQ_FAFB_PER_DET), XLAL_EINVAL, "Resamping does not currently support Fa & Fb per detector");
   XLAL_CHECK(!(whatToCompute & FSTATQ_ATOMS_PER_DET), XLAL_EINVAL, "Resamping does not currently support atoms per detector");
+
+  // If only computing the \f$\mathcal{F}\f$-statistic for a single frequency bin, use demodulation
+  if (Fstats->numFreqBins == 1) {
+    goto ComputeFstat_Resamp_demod;
+  }
 
   // Set parameters to pass to ComputeFStatFreqBand_RS()
   resamp->params.returnSingleF = whatToCompute & FSTATQ_2F_PER_DET;
@@ -167,6 +187,87 @@ ComputeFstat_Resamp(
   Fstats->Mmunu.Ed = NAN;
   Fstats->Mmunu.Dd = NAN;
   Fstats->Mmunu.Sinv_Tsft = NAN;
+
+  return XLAL_SUCCESS;
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///// If only computing the \f$\mathcal{F}\f$-statistic for a single frequency bin, use demodulation /////
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
+ComputeFstat_Resamp_demod:
+  {
+    static int first_call = 1;
+    if (first_call) {
+      LogPrintf(LOG_NORMAL, "WARNING: %s() is using demodulation to compute the F-statistic for a single frequency bin\n", __func__);
+      first_call = 0;
+    }
+  }
+
+  // Set parameters to pass to ComputeFStat()
+  resamp->params.returnSingleF = (whatToCompute & FSTATQ_2F_PER_DET);
+  resamp->params.returnAtoms = (whatToCompute & FSTATQ_ATOMS_PER_DET);
+
+  // Save local copy of doppler point and starting frequency
+  thisPoint = Fstats->doppler;
+  const REAL8 fStart = thisPoint.fkdot[0];
+
+  // Call ComputeFStat() for each frequency bin
+  for (UINT4 k = 0; k < Fstats->numFreqBins; ++k) {
+
+    // Set frequency to search at
+    thisPoint.fkdot[0] = fStart + k * Fstats->dFreq;
+
+    // Call ComputeFStat()
+    Fcomponents Fcomp;
+    {
+      LALStatus status = empty_status;
+      ComputeFStat(&status, &Fcomp, &thisPoint, resamp->multiSFTs, common->multiWeights, resamp->multiDetStates, &resamp->params, &resamp->buffer);
+      if (status.statusCode) {
+        XLAL_ERROR(XLAL_EFAILED, "ComputeFStat() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
+      }
+    }
+
+    // Return multi-detector 2F
+    if (whatToCompute & FSTATQ_2F) {
+      Fstats->twoF[k] = 2.0 * Fcomp.F;   // *** Return value of 2F ***
+    }
+
+    // Return multi-detector Fa & Fb
+    if (whatToCompute & FSTATQ_FAFB) {
+      Fstats->FaFb[k].Fa = Fcomp.Fa;
+      Fstats->FaFb[k].Fb = Fcomp.Fb;
+    }
+
+    // Return 2F per detector
+    if (whatToCompute & FSTATQ_2F_PER_DET) {
+      for (UINT4 X = 0; X < Fstats->numDetectors; ++X) {
+        Fstats->twoFPerDet[X][k] = 2.0 * Fcomp.FX[X];   // *** Return value of 2F ***
+      }
+    }
+
+    // Return Fa & Fb per detector
+    if (whatToCompute & FSTATQ_FAFB_PER_DET) {
+      XLAL_ERROR(XLAL_EFAILED, "Unimplemented!");
+    }
+
+    // Return F-atoms per detector
+    if (whatToCompute & FSTATQ_ATOMS_PER_DET) {
+      XLALDestroyMultiFstatAtomVector(Fstats->multiFatoms[k]);
+      Fstats->multiFatoms[k] = Fcomp.multiFstatAtoms;
+    }
+
+  } // for k < Fstats->numFreqBins
+
+  // Return amplitude modulation coefficients
+  if (resamp->buffer.multiCmplxAMcoef != NULL) {
+    Fstats->Mmunu = resamp->buffer.multiCmplxAMcoef->Mmunu;
+  } else if (resamp->buffer.multiAMcoef != NULL) {
+    Fstats->Mmunu.Ad = resamp->buffer.multiAMcoef->Mmunu.Ad;
+    Fstats->Mmunu.Bd = resamp->buffer.multiAMcoef->Mmunu.Bd;
+    Fstats->Mmunu.Cd = resamp->buffer.multiAMcoef->Mmunu.Cd;
+    Fstats->Mmunu.Ed = 0;
+    Fstats->Mmunu.Dd = resamp->buffer.multiAMcoef->Mmunu.Dd;
+    Fstats->Mmunu.Sinv_Tsft = resamp->buffer.multiAMcoef->Mmunu.Sinv_Tsft;
+  }
 
   return XLAL_SUCCESS;
 
