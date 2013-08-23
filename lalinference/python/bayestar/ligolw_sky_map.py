@@ -31,7 +31,7 @@ from . import sky_map
 import lal, lalsimulation
 
 
-def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_low, min_distance=None, max_distance=None, prior_distance_power=None, method="toa_snr", reference_frequency=None, psds=None, nside=-1, chain_dump=None):
+def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_low, min_distance=None, max_distance=None, prior_distance_power=None, method="toa_phoa_snr", reference_frequency=None, psds=None, nside=-1, chain_dump=None):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc."""
 
@@ -68,6 +68,9 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     # to keep numbers small.
     toas = 1e-9 * (toas_ns - mean_toa_ns)
 
+    # Retrieve phases on arrival from table.
+    phoas = np.asarray([sngl_inspiral.coa_phase for sngl_inspiral in sngl_inspirals])
+
     # Power spectra for each detector.
     if psds is None:
         psds = [timing.get_noise_psd_func(ifo) for ifo in ifos]
@@ -84,6 +87,9 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     # values of the SNRs.
     w_toas = [1/np.square(signal_model.get_toa_uncert(np.abs(snr)))
         for signal_model, snr in zip(signal_models, snrs)]
+
+    w1s = [signal_model.get_sn_moment(1) for signal_model in signal_models]
+    w2s = [signal_model.get_sn_moment(2) for signal_model in signal_models]
 
     # Look up physical parameters for detector.
     detectors = [lalsimulation.InstrumentNameToLALDetector(str(ifo))
@@ -117,6 +123,8 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
         prob = sky_map.tdoa(gmst, toas, w_toas, locations, nside=nside)
     elif method == "toa_snr":
         prob = sky_map.tdoa_snr(gmst, toas, snrs, w_toas, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
+    elif method == "toa_phoa_snr":
+        prob = sky_map.tdoa_phoa_snr(gmst, toas, phoas, snrs, w_toas, w1s, w2s, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
     elif method == "toa_snr_mcmc":
         import emcee
 

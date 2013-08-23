@@ -112,4 +112,23 @@ double *bayestar_sky_map_tdoa_snr(
     int prior_distance_power /* Use a prior of (distance)^(prior_distance_power) */
 );
 
+/* Perform sky localization based on TDOAs, PHOAs, and amplitude. */
+double *bayestar_sky_map_tdoa_phoa_snr(
+    long *npix, /* In/out: number of HEALPix pixels. */
+    double gmst, /* Greenwich mean sidereal time in radians. */
+    int nifos, /* Input: number of detectors. */
+    const float (**responses)[3], /* Pointers to detector responses. */
+    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
+    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
+    const double *phoas, /* Input: array of phases of arrival with arbitrary relative offset. (Make phoas[0] == 0.) */
+    const double *snrs, /* Input: array of SNRs. */
+    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+    const double *w1s, /* Input: first moments of angular frequency. */
+    const double *w2s, /* Input: second moments of angular frequency. */
+    const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
+    double min_distance,
+    double max_distance,
+    int prior_distance_power /* Use a prior of (distance)^(prior_distance_power) */
+);
+
 #endif /* BAYESTAR_SKY_MAP_H */
