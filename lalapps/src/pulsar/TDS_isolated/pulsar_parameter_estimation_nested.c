@@ -1033,14 +1033,23 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       ifodata->dataTimes = XLALCreateTimestampVector( datalength );
 
       /* fill in time stamps as LIGO Time GPS Vector */
-      for ( k = 0; k < datalength; k++ ) { XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] ); }
+      REAL8 sampledt = INFINITY; /* sample interval */
+      for ( k = 0; k < datalength; k++ ) {
+        XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] );
+
+        if ( k > 0 ){
+          /* get sample interval from the minimum time difference in the data */
+          if ( temptimes->data[k] - temptimes->data[k-1] < sampledt ) {
+            sampledt = temptimes->data[k] - temptimes->data[k-1];
+          }
+        }
+      }
 
       ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
       ifodata->compModelData->epoch = ifodata->dataTimes->data[0];
 
       /* add data sample interval */
       ppt = LALInferenceGetProcParamVal( commandLine, "--sample-interval" );
-      REAL8 sampledt = 60.; /* default the sample interval to 60 seconds */
       if( ppt ){
         sampledt = atof( ppt->value );
       }
@@ -2548,9 +2557,13 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkM
 COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
   COMPLEX16Vector *submed = NULL;
   UINT4 length = data->length, i = 0, j = 0, n = 0;
-  UINT4 RANGE = 30; /* perform running median with 30 data points */
-  UINT4 N = (UINT4)floor(RANGE/2);
+  UINT4 mrange = 0;
+  UINT4 N = 0;
   INT4 sidx = 0;
+
+  if ( length > 30 ){ mrange = 30; } /* perform running median with 30 data points */
+  else { mrange = 2*floor((length-1)/2); } /* an even number less than length */
+  N = (UINT4)floor(mrange/2);
 
   submed = XLALCreateCOMPLEX16Vector( length );
 
@@ -2568,7 +2581,7 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
       sidx = (i-N)-1;
     }
     else{
-      n = RANGE;
+      n = mrange;
       sidx = i-N;
     }
 

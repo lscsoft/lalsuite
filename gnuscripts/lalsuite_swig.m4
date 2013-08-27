@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 38
+# serial 41
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -63,19 +63,18 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
   m4_popdef([lowercase])
 ])
 
-# check the version of ${SWIG}, and store it in ${SWIG_VERSION}
+# check the version of ${SWIG}, and store it in ${swig_version}
+# return swig_version=0.0 if ${SWIG} is not an executable
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
-  AC_MSG_CHECKING([${SWIG} version])
-  SWIG_VERSION=0.0
+  swig_version=0.0
   swig_version_output=[`${SWIG} -version 2>/dev/null`]
   AS_IF([test $? -eq 0],[
     swig_version_regex=['s|^ *SWIG [Vv]ersion \([0-9.][0-9.]*\)|\1|p;d']
-    SWIG_VERSION=[`echo "${swig_version_output}" | ${SED} "${swig_version_regex}"`]
-    AS_IF([test "x${SWIG_VERSION}" = x],[
+    swig_version=[`echo "${swig_version_output}" | ${SED} "${swig_version_regex}"`]
+    AS_IF([test "x${swig_version}" = x],[
       AC_MSG_ERROR([could not determine version of ${SWIG}])
     ])
   ])
-  AC_MSG_RESULT([${SWIG_VERSION}])
 ])
 
 # configure SWIG wrapping modules
@@ -110,54 +109,55 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
   AM_CONDITIONAL(SWIG_BUILD,[test "${swig_build_any}" = true])
   AM_COND_IF(SWIG_BUILD,[
 
-    # check for SWIG binary: use value of ${SWIG} first,
-    # then check for common SWIG binary names
+    # check for SWIG binary with version >= ${swig_min_version}; use
+    ## value of ${SWIG} if set, otherwise check common SWIG binary names
     AS_IF([test "x${SWIG}" != x],[
+      AC_MSG_CHECKING([${SWIG} version])
       _LALSUITE_CHECK_SWIG_VERSION
-      AS_VERSION_COMPARE([${SWIG_VERSION}],[${swig_min_version}],[
+      AS_VERSION_COMPARE([${swig_version}],[${swig_min_version}],[
         AC_MSG_ERROR([require ${SWIG} version >= ${swig_min_version}])
       ])
+      AC_MSG_RESULT([${swig_version}])
     ],[
+      AC_MSG_CHECKING([for SWIG with version >= ${swig_min_version}])
       for SWIG in swig swig2.0; do
         _LALSUITE_CHECK_SWIG_VERSION
-        AS_VERSION_COMPARE([${SWIG_VERSION}],[${swig_min_version}],[],[break],[break])
+        AS_VERSION_COMPARE([${swig_version}],[${swig_min_version}],[],[break],[break])
         SWIG=
       done
+      AS_IF([test "x${SWIG}" = x],[
+        AC_MSG_ERROR([could not find SWIG with version >= ${swig_min_version}])
+      ])
+      AC_MSG_RESULT([${SWIG} (version ${swig_version})])
     ])
 
-    # if a SWIG binary was found, get its full path and print its version, otherwise fail
-    AS_IF([test "x${SWIG}" != x],[
-      AC_PATH_PROG(SWIG,["${SWIG}"])
-    ],[
-      AC_MSG_ERROR([could not find SWIG with version >= ${swig_min_version}])
-    ])
+    # get full path of SWIG binary
+    AC_PATH_PROG(SWIG,["${SWIG}"])
 
     # symbol prefixes for this LAL library
     AC_SUBST(SWIG_SYMBOL_PREFIXES,["$1"])
 
-    # flags for generating SWIG wrapping module sources
-    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror"])
+    # flags for preprocessing/generating SWIG wrapping module sources
+    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror -I\$(abs_top_builddir)/include"])
 
     # add -MP option if SWIG is greater than version 2.0.9
     AS_VERSION_COMPARE([${swig_version}],[2.0.9],[],[],[
       SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -MP"
     ])
 
-    # look here for interfaces and LAL headers
-    SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -I\$(abs_top_builddir)/include"
-
     # send language-specific SWIG output files to libtool directory
     AC_SUBST(SWIG_OUTDIR,["\$(abs_builddir)/${objdir}"])
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -outdir \$(SWIG_OUTDIR)"
 
     # flags for generating/compiling SWIG wrapping module sources
-    AC_SUBST(SWIG_CPPFLAGS,[])
+    AC_SUBST(SWIG_CPPFLAGS,["-I\$(abs_top_builddir)/include"])
     for flag in ${swig_save_CPPFLAGS}; do
       AS_CASE([${flag}],
         [-I*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag} `echo ${flag} | ${SED} 's|/include$|/swig|'`"],
         [*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag}"]
       )
     done
+    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I/usr/include"
 
     # are we (not) in debugging mode?
     AS_IF([test "x${enable_debug}" = xno],[
@@ -170,9 +170,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DHAVE_LIBGSL"
       SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DHAVE_LIBGSL"
     ])
-
-    # look here for interfaces and LAL headers (but not for preprocessing)
-    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I\$(top_builddir)/include -I/usr/include"
 
     # flags for compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CFLAGS,[])

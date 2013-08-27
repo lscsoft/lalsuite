@@ -84,7 +84,7 @@ double *bayestar_sky_map_tdoa_snr(
     long *npix, /* In/out: number of HEALPix pixels. */
     double gmst, /* Greenwich mean sidereal time in radians. */
     int nifos, /* Input: number of detectors. */
-    const float (*responses)[3][3], /* Pointers to detector responses. */
+    const float (**responses)[3], /* Pointers to detector responses. */
     const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
     const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
     const double *snrs, /* Input: array of SNRs. */

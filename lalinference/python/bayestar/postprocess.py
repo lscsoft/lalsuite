@@ -89,14 +89,10 @@ def find_injection(sky_map, true_ra, true_dec, contours=()):
     # the true location.
     searched_prob = cum_sky_map[idx]
 
-    # Reverse pixel order so that we can use np.searchsorted() to locate
-    # the index where a given confidence level ends.
-    cum_sky_map = cum_sky_map[::-1]
-
     # For each of the given confidence levels, compute the area of the
     # smallest region containing that probability.
-    contour_areas = [(np.searchsorted(cum_sky_map, p, side='right') + 1)
-        * deg2perpix for p in contours]
+    contour_areas = (deg2perpix * (np.searchsorted(
+	cum_sky_map, contours, side='right') + 1)).tolist()
 
     # Find the angular offset between the mode and true locations.
     offset = np.rad2deg(angle_distance(true_theta, true_phi,

@@ -478,7 +478,8 @@ REAL8
 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [in/out] multi atoms vectors containing antenna-functions and possibly noise {Fa,Fb} */
                                       AntennaPatternMatrix *M_mu_nu,	 /**< [out] effective antenna-pattern matrix for the injected signal */
                                       const PulsarAmplitudeVect A_Mu, 	/**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
-                                      transientWindow_t transientWindow /**< transient signal window */
+                                      transientWindow_t transientWindow, /**< transient signal window */
+                                      INT4 lineX	 		/**< [in] if >= 0: generate signal only for detector 'lineX': must be within 0,...(Ndet-1) */
                                       )
 {
   /* check input consistency */
@@ -492,8 +493,9 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
   }
 
   UINT4 numDet = multiAtoms->length;
-  UINT4 X;
+  XLAL_CHECK ( (lineX < 0) || ((UINT4)lineX < numDet), XLAL_EINVAL, "Inconsistent input of lineX = %d, not within 0 ... Ndet-1 (= %d)\n", lineX, numDet );
 
+  UINT4 X;
   REAL8 rho2 = 0;
   (*M_mu_nu) = empty_AntennaPatternMatrix;
 
@@ -501,11 +503,15 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
     {
       REAL8 rho2X;
       AntennaPatternMatrix M_mu_nu_X;
-      rho2X = XLALAddSignalToFstatAtomVector ( multiAtoms->data[X], &M_mu_nu_X, A_Mu, transientWindow );
-      if ( xlalErrno ) {
-        XLALPrintError ("%s: XLALAddSignalToFstatAtomVector() failed.\n", __func__ );
-        XLAL_ERROR_REAL8 ( XLAL_EFUNC );
+      PulsarAmplitudeVect A0_Mu = {0,0,0,0};	// zero amplitude signal for simulating single-IFO line
+
+      if ( (lineX >= 0) && ((UINT4)lineX != X) ) {
+        rho2X = XLALAddSignalToFstatAtomVector ( multiAtoms->data[X], &M_mu_nu_X, A0_Mu, transientWindow );	// zero-signal injection
       }
+      else {
+        rho2X = XLALAddSignalToFstatAtomVector ( multiAtoms->data[X], &M_mu_nu_X, A_Mu, transientWindow );	// actual signal injection
+      }
+      XLAL_CHECK_REAL8 ( xlalErrno == 0, XLAL_EFUNC );
 
       rho2 += rho2X;			/* multi-IFO SNR^2 = sum_X SNR_X^2 */
       M_mu_nu->Ad += M_mu_nu_X.Ad;	/* multi-IFO M_mu_nu = sum_X M_mu_nu_X */
@@ -537,7 +543,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
                                const MultiDetectorStateSeries *multiDetStates, 	/**< [in] multi-detector state series covering observation time */
                                BOOLEAN SignalOnly,				/**< [in] switch to generate signal draws without noise */
                                multiAMBuffer_t *multiAMBuffer,			/**< [in/out] buffer for AM-coefficients if re-using same skyposition (must be !=NULL) */
-                               gsl_rng *rng					/**< [in/out] gsl random-number generator */
+                               gsl_rng *rng,					/**< [in/out] gsl random-number generator */
+                               INT4 lineX					/**< [in] if >= 0: generate signal only for detector 'lineX': must be within 0,...(Ndet-1) */
                                )
 {
   /* check input */
@@ -614,7 +621,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
 
   /* ----- add transient signal to the Fstat atoms */
   AntennaPatternMatrix M_mu_nu;
-  REAL8 rho2 = XLALAddSignalToMultiFstatAtomVector ( multiAtoms, &M_mu_nu, A_Mu, injectWindow );
+  REAL8 rho2 = XLALAddSignalToMultiFstatAtomVector ( multiAtoms, &M_mu_nu, A_Mu, injectWindow, lineX );
   if ( xlalErrno ) {
     XLALPrintError ( "%s: XLALAddSignalToMultiFstatAtomVector() failed with xlalErrno = %d\n", __func__, xlalErrno );
     XLAL_ERROR_NULL ( XLAL_EFUNC );

@@ -1217,6 +1217,7 @@ class MergeNSJob(pipeline.CondorDAGJob):
       self.set_stdout_file(os.path.join(logdir,'merge-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
       self.add_condor_cmd('getenv','True')
+      self.add_opt('Nlive',cp.get('engine','nlive'))
       if cp.has_option('merge','npos'):
       	self.add_opt('npos',cp.get('merge','npos'))
 
@@ -1297,6 +1298,6 @@ class GraceDBNode(pipeline.CondorDAGNode):
             return
         self.add_var_arg('log')
         self.add_var_arg(str(self.gid))
-        self.add_var_arg('"Parameter estimation finished. <a href=\"'+self.resultsurl+'/posplots.html\">'+self.resultsurl+'/posplots.html</a>"')
-        #self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
+        #self.add_var_arg('"Parameter estimation finished. <a href=\"'+self.resultsurl+'/posplots.html\">'+self.resultsurl+'/posplots.html</a>"')
+        self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
         self.__finalized=True

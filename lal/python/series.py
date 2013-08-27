@@ -83,22 +83,22 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
 
     # Target units: inverse seconds
     inverse_seconds_unit = lal.Unit()
-    lal.ParseUnitString(inverse_seconds_unit, "s^-1")
+    inverse_seconds_unit = lal.ParseUnitString(inverse_seconds_unit, "s^-1")
 
     delta_target_unit = lal.Unit()
-    lal.ParseUnitString(delta_target_unit, delta_target_unit_string)
+    delta_target_unit = lal.ParseUnitString(delta_target_unit, delta_target_unit_string)
 
     # Parse units of f0 field
     f0_unit = lal.Unit()
-    lal.ParseUnitString(f0_unit, str(f0.get_unit()))
+    f0_unit = lal.ParseUnitString(f0_unit, str(f0.get_unit()))
 
     # Parse units of deltaF field
     delta_unit = lal.Unit()
-    lal.ParseUnitString(delta_unit, str(dims[0].getAttribute(u"Unit")))
+    delta_unit = lal.ParseUnitString(delta_unit, str(dims[0].getAttribute(u"Unit")))
 
     # Parse units of data
     sample_unit = lal.Unit()
-    lal.ParseUnitString(sample_unit, str(a.getAttribute(u"Unit")))
+    sample_unit = lal.ParseUnitString(sample_unit, str(a.getAttribute(u"Unit")))
 
     # Initialize data structure
     series = creatorfunc(
