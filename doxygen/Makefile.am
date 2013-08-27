@@ -4,7 +4,6 @@ DOXY_HTML_FILES = \
 
 DOXY_PDF_FILES = \
 	doxy-pdf-config.cfg  \
-	doxy-pdf-header.tex \
 	doxy-pdf-layout.xml
 
 EXTRA_DIST = \

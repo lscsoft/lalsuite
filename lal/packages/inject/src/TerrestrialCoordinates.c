@@ -134,7 +134,6 @@ As explained in \ref CelestialCoordinates_c, the function
 \f$\arctan\!2(y,x)\f$ returns the argument of the complex number \f$x+iy\f$.
 
 
-\wrapfig{r,0.35\textwidth,fig_geodetic}
 \image html  inject_geodetic.png "Fig. [fig_geodetic]: The difference between geodetic and geocentric latitude."
 \image latex inject_geodetic.eps "The difference between geodetic and geocentric latitude." width=0.3\textwidth
 
@@ -237,7 +236,6 @@ h & = & r_e(\varpi-t/\varpi)\cos\phi
 	+ [z-\mathrm{sgn}({z})r_e(1-f)]\sin\phi \; .
 \f}
 
-\wrapfig{r,0.47\textwidth,fig_geodeticsing}
 \image html  inject_geodeticsing.png "Fig. [fig_geodeticsing]: Singular surfaces in the geodetic coordinate system.  The ellipticity of this spheroid has been exaggerated compared with the Earth"
 \image latex inject_geodeticsing.eps "Singular surfaces in the geodetic coordinate system. The ellipticity of this spheroid has been exaggerated compared with the Earth." width=0.47\textwidth
 

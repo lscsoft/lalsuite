@@ -52,7 +52,6 @@ consider lines \f$\tau_0 = \tau_0^{(n)} + D\tau_0^{(n)}\f$
 \f$\tau_3 = \tau_3^{(n)} + D\tau_3^{(n)}\f$
 (\f$PB\f$ of Fig.\figref{fig_equal_mass_algo}).
 
-\floatfig{h,fig_equal_mass_algo}
 \image html  LALInspiralBankHequalmass.png "Fig.[fig_equal_mass_algo]: Algorithm sketching the placement of templates along eta=1/4 curve"
 \image latex LALInspiralBankHequalmass.pdf "Algorithm sketching the placement of templates along eta=1/4 curve" width=4.0in
 
@@ -98,7 +97,6 @@ in a rectangular lattice in the rest of the parameter space is shown
 plotted in Fig.\figref{fig_coarse}, where the templates
 chosen are represented as points.
 
-\floatfig{h,fig_coarse}
 \image html  LALInspiralBankHCoarse2.png "Fig.[fig_coarse]: Algorithm sketching the construction of a rectangular lattice of templates"
 \image latex LALInspiralBankHCoarse2.pdf "Algorithm sketching the construction of a rectangular lattice of templates" width=4.5in
 

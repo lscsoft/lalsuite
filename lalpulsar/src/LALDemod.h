@@ -106,15 +106,11 @@ x'=\sum_{s} f_s B_{s\alpha} - k\\
 y_\alpha=\sum_{s} f_s A_{s\alpha}.
 \f}
 In the previous expressions \f$f_s\f$ indicate the spin-down parameters of different orders (labeled
-by the index \f$s\f$
-\latexonly\footnote{Note that when $s=0$ the values computed are coefficients of the
-intrinsic frequency and thus must be computed for the value corresponding to the index $b$.}\endlatexonly
-\if HTML
+by the index \f$s\f$), and \f$A_{s\alpha}\f$ and \f$B_{s\alpha}\f$ are functions that depend on the phase evolution, whose
+values depend on \f$\alpha\f$ and on \f$\vec\lambda\f$.
 [Note that when \f$s=0\f$ the values computed are coefficients of the
-intrinsic frequency and thus must be computed for the value corresponding to the index]
-\endif
-), and \f$A_{s\alpha}\f$ and \f$B_{s\alpha}\f$ are functions that depend on the phase evolution, whose
-values depend on \f$\alpha\f$ and on \f$\vec\lambda\f$.  The values of these functions are
+intrinsic frequency and thus must be computed for the value corresponding to the index.]
+The values of these functions are
 calculated by the ComputeSky() routine, also in this package.  Incidentally, in the code,
 these are the values contained in the variable \c skyConst.
 Note that the function \f$P_{\alpha k}\f$ is peaked around \f$x'=0\f$.  Thus in the summation

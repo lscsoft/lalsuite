@@ -23,7 +23,6 @@
 \ingroup pulsarTODO
 
 \heading{Module \ref PulsarCatInput.c}
-\latexonly\tag{ss_PulsarCatInput_c}\endlatexonly
 
 Parses a catalogue of pulsar data.
 

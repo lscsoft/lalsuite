@@ -26,7 +26,6 @@ user's specification) and \ref TwoDMesh_h modules by producing a
 template mesh.
 
 \heading{Program <tt>GeneralMeshTest.c</tt>}
-\latexonly\tag{ss_GeneralMeshTest}\endlatexonly
 
 \heading{Usage}
 \code

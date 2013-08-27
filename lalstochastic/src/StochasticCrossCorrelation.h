@@ -32,7 +32,6 @@ transfer function and the (uncalibrated) power spectral density of the
 noise in each detector.  The relationship among these modules is
 illustrated in Fig.\figref{stochastic_CrossCorrFlowchart}.
 
-\floatfig{htbp,stochastic_CrossCorrFlowchart}
 \image html stochastic_CrossCorrFlowchart.png "Fig. [stochastic_CrossCorrFlowchart]: Relationship between the modules in StochasticCrossCorrelation.h"
 \image latex stochastic_CrossCorrFlowchart.pdf "Relationship between the modules in StochasticCrossCorrelation.h"
 

@@ -73,7 +73,6 @@ extern "C" {
    + B_{+,\times}(t)\sin\phi(t) \; ,
    \f]
 
-   \wrapfig{r,0.47\textwidth,fig_phase_diagram}
    \image html inject_phase_diagram.png "Fig. [fig_phase_diagram]: Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+,h_x plane; the parameters A1, A2 and Phi remain roughly constant over many cycles in phi."
    \image latex inject_phase_diagram.eps "Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+,h_x plane; the parameters A1, A2 and Phi remain roughly constant over many cycles in phi." width=0.42\textwidth
 

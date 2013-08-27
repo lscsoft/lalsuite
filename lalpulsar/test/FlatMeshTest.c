@@ -24,7 +24,6 @@
 \brief Creates a template mesh for an arbitrary but constant \f$n\f$-dimensional mismatch metric.
 
 \heading{Program <tt>FlatMeshTest.c</tt>}
-\latexonly\tag{ss_FlatMeshTest_c}\endlatexonly
 
 \heading{Usage}
 \code

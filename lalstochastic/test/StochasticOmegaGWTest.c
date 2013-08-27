@@ -89,7 +89,6 @@ command with the following arguments:
 StochasticOmegaGWTest -e 1 -n 1000 -F 100 -O 1e-6 -a 2 -o OmegaGW.dat
 \endcode
 
-\floatfig{htbp,stochastic_quadOmega}
 \image html  stochasticOmegaGWQuadratic.png "Fig. [stochastic_quadOmega]: A quadratic stochastic gravitational-wave background spectrum."
 \image latex stochasticOmegaGWQuadratic.pdf "A quadratic stochastic gravitational-wave background spectrum."  width=4in
 

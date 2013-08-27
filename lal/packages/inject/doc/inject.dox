@@ -74,6 +74,4 @@ simulation, such as combining signal generation, detector simulation,
 and injection into a single function call, or modelling astrophysical
 distributions of sources.
 
-\latexonly \pagebreak \endlatexonly
-
 */

@@ -23,7 +23,6 @@
 \ingroup pulsarTODO
 
 \heading{Program \ref PulsarCatTest.c}
-\latexonly\tag{ss_PulsarCatTest_c}\endlatexonly
 
 Tests routines to manipulate pulsar data.
 

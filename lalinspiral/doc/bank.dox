@@ -43,7 +43,6 @@ the grid. Past studies [\ref SathyaprakashDhurandhar1991,\ref Sathyaprakash1994,
 have shown that this is most easily achieved by using the space of
 <em>chirp-times</em> to lay templates rather than the space of component masses.
 
-\floatfig{h,fig_chirp_times}
 \image html LALInspiralBankH4Figures.png "Fig. [fig_chirp_times]: Parameter space binary masses and corresponding chirp-times"
 \image latex LALInspiralBankH4Figures.pdf "Parameter space binary masses and corresponding chirp-times"
 
@@ -59,13 +58,9 @@ and \f$M_\mathrm{max} = 100 M_\odot.\f$
 The number of chirp
 times that one can define is determined by the post-Newtonian order
 one is working with. At the second post-Newtonian order (i.e.
-an approximation accurate to order
-\latexonly\footnote{We use units in which $c=G=1;$ thus $1M_\odot=4.92549095 \times 10^{-6}$~s.}
-\endlatexonly
-\if HTML
+an approximation accurate to order \f$v^4\f$)
 [Note: we use units in which \f$c=G=1;\f$ thus \f$1M_\odot=4.92549095 \times 10^{-6}\f$\ s]
-\endif
-\f$v^4\f$) and for
+and for
 a binary consisting of two non-spinning compact objects in a quasi-circular
 orbit, there are
 four chirp-times \f$\tau_k,\; k=0,\ 2,\ 3,\ 4,\f$ of which we can choose
@@ -111,13 +106,9 @@ described by the following main steps in the algorithm:
 <li> Compute the minimum and maximum chirp-times corresponding to the
 search space: \f$(\tau_0^\mathrm{min}, \tau_0^\mathrm{max}),\f$
 \f$(\tau_3^\mathrm{min}, \tau_3^\mathrm{max})\f$ (or
-\latexonly\footnote{In what follows we will only mention $\tau_3$; however, the algorithm is itself valid,
-and has been implemented, in the case of $(\tau_0,\tau_2)$ too.}\endlatexonly
 \f$(\tau_2^\mathrm{min}, \tau_2^\mathrm{max})\f$
-\if HTML
 [Note: In what follows we will only mention \f$\tau_3\f$; however, the algorithm is itself valid,
 and has been implemented, in the case of \f$(\tau_0,\tau_2)\f$ too.]
-\endif
 )
 </li>
 

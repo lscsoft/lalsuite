@@ -49,7 +49,6 @@
  * Figures.\figref{f_resamp1}-\figref{f_resamp3} show the results of various
  * tests using this program.
  *
- * \floatfig{htb,f_resamp1}
  * \image html  resamp_figs1.png "Fig. [f_resamp1]"
  * \image latex resamp_figs1.pdf ""
  *
@@ -60,7 +59,6 @@
  * It should say 100 Hz, not 10 Hz the output.
  *
  *
- * \floatfig{htb,f_resamp2}
  * \image html  resamp_figs2.png "Fig. [f_resamp2]"
  * \image latex resamp_figs2.pdf ""
  *
@@ -68,7 +66,6 @@
  * plot shows the start of the time series and the right plot the end. Note
  * the corruption of points due to the time domain filtering.
  *
- * \floatfig{htb,f_resamp3}
  * \image html  resamp_figs3.png "Fig. [f_resamp3]"
  * \image latex resamp_figs3.pdf ""
  *

@@ -14,11 +14,9 @@
  *
  *  \brief Module providing routines to convert among various sky coordinate systems.
 
-\latexonly \newpage \endlatexonly
 Most of these routines are discussed in Sec.\ 5.1 of \ref Lang_K1999; we reproduce here
 some of the essential elements of this discussion.
 
-\wrapfig{r,0.55\textwidth,fig_lat_long}
 \image html  inject_lat_long.png "Fig. [fig_lat_long]: Definition of latitude phi and longitude lambda for an arbitrary coordinate system."
 \image latex inject_lat_long.eps "Definition of latitude phi and longitude lambda for an arbitrary coordinate system." width=0.5\textwidth
 A general spatial coordinate system is shown in Fig.\figref{fig_lat_long}.
@@ -63,13 +61,10 @@ way, these routines transform <em>directions</em> in space, not
 the <tt>SkyPosition</tt> structure, defined below.
 
 The coordinate systems that we consider are defined as follows:
-\latexonly \newpage \endlatexonly
 
-\wrapfig{r,0.63\textwidth,fig_horizon}
 \image html  inject_horizon.png "Fig. [fig_horizon]: Definition of the horizon coordinate system."
 \image latex inject_horizon.eps "Definition of the horizon coordinate system." width=0.58\textwidth
-\latexonly\textbf{Horizon coordinates:}\endlatexonly
-\htmlonly      <b>Horizon coordinates:</b>\endhtmlonly
+<b>Horizon coordinates:</b>
 This is a local coordinate system for
 a particular observation point \f$O\f$ on the Earth, as shown in
 Fig.\figref{fig_horizon}.  The \f$z\f$-axis is defined to be the direction
@@ -86,11 +81,9 @@ This coordinate system is related to the geographic coordinate system
 (below) by the geographic latitude \f$\phi_z\f$ and longitude \f$\lambda_z\f$
 of the observer's \f$z\f$-axis direction.
 
-\wrapfig{l,0.43\textwidth,fig_geographic}
 \image html  inject_geographic.png "Fig. [fig_geographic]: Definition of the geographic (Earth-fixed) coordinate system."
 \image latex inject_geographic.eps "Definition of the geographic (Earth-fixed) coordinate system." width=0.38\textwidth
-\latexonly\textbf{Geographic coordinates:}\endlatexonly
-\htmlonly      <b>Geographic coordinates:</b>\endhtmlonly
+<b>Geographic coordinates:</b>
 This is a planetwide Earth-fixed
 coordinate system, shown in Fig.\figref{fig_geographic}.  The \f$z\f$-axis
 is defined to be parallel to the Earth's axis, in the direction of the
@@ -125,11 +118,9 @@ coordinates, as defined below.  This angle is called the Greenwich
 Mean Sidereal Time (GMST), and is often specified in hours, minutes,
 and seconds.
 
-\wrapfig{r,0.46\textwidth,fig_ecliptic}
 \image html  inject_ecliptic.png "Fig. [fig_ecliptic]: Definition of the ecliptic sky-fixed coordinate systems."
 \image latex inject_ecliptic.eps "Definition of the ecliptic sky-fixed coordinate systems." width=0.41\textwidth
-\latexonly\textbf{Equatorial coordinates:}\endlatexonly
-\htmlonly      <b>Equatorial coordinates:</b>\endhtmlonly
+<b>Equatorial coordinates:</b>
 This is the standard sky-fixed coordinate system.  The \f$z\f$-axis is defined as for geographic
 coordinates, above; the plane orthogonal to this passing through the
 Earth's centre is called the <em>equator</em>.  The \f$x\f$-axis is defined
@@ -140,8 +131,7 @@ Fig.\figref{fig_ecliptic}.  In this coordinate system, the latitude coordinate i
 <em>declination</em> \f$\delta\f$ and the longitude coordinate is called the
 <em>right ascension</em> \f$\alpha\f$.
 
-\latexonly\textbf{Ecliptic coordinates:}\endlatexonly
-\htmlonly   <p><b>Ecliptic coordinates:</b>\endhtmlonly
+<b>Ecliptic coordinates:</b>
 This is another sky-fixed coordinate
 system, shown in Fig.\figref{fig_ecliptic}. The \f$z\f$-axis is defined to
 be the direction orthogonal to the orbital plane of the Earth about
@@ -156,11 +146,9 @@ is, the inclination of the Earth's rotation axis relative to its
 orbital axis).  Ecliptic latitude is normally denoted as \f$\beta\f$ and
 ecliptic longitude as \f$\lambda\f$.
 
-\wrapfig{l,0.505\textwidth,fig_galactic}
 \image html  inject_galactic.png "Fig. [fig_galactic]: Definition of the Galactic coordinate system."
 \image latex inject_galactic.eps "Definition of the Galactic coordinate system." width=0.455\textwidth
-\latexonly\textbf{Galactic coordinates:}\endlatexonly
-\htmlonly      <b>Galactic coordinates:</b>\endhtmlonly
+<b>Galactic coordinates:</b>
 This coordinate system is shown in Fig.\figref{fig_galactic}.
 The \f$z\f$-axis is defined to be the direction
 orthogonal to the plane of our Galaxy and pointing into the northern
@@ -184,5 +172,4 @@ along the intersection of the Galactic and equatorial planes, such
 that right-handed rotation about the Galactic \f$z\f$-axis moves you from
 south to north through the equator.
 
-\latexonly \pagebreak \endlatexonly
 */

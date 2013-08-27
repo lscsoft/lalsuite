@@ -53,7 +53,6 @@ metric on the parameter space is defined in
 over the parameter space, the routines under this header only treat
 \f$\mathsf{g}_{ab}\f$ as constant over distances \f$\lesssim m_\mathrm{thresh}\f$.
 
-\floatfig{H,fig_tiling}
 \image html pulsar_tiling.png "Fig. [fig_tiling]: Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns."
 \image latex pulsar_tiling.pdf "Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns." width=\textwidth
 

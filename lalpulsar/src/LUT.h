@@ -103,7 +103,6 @@ construct look up tables (<tt>lut</tt>) where the  borders of these annuli are
 marked for any possible \f$\nu -F_0\f$ value. Since we work on a discrete space these <tt>lut</tt> are
 valid for many \f$F_0\f$ values.
 
-\floatfig{htbp,fig_stereo}
 \image html LUTstereo.png "Fig. [fig_stereo]: Stereographic projection. [Credit to: D.Hilbert, S.Cohn-Vossen, P. Nemenyi, ``Geometry and Imagination'', Chelsea Publishing Company, New York 1952.]"
 \image latex LUTstereo.eps "Stereographic projection. [Credit to: D.Hilbert, S.Cohn-Vossen, P. Nemenyi, ``Geometry and Imagination'', Chelsea Publishing Company, New York 1952.]"
 

@@ -153,7 +153,6 @@ These window functions are shown in Fig.\figref{f_window_t}, showing various win
 independend variable \f$y\f$, choosing \f$\beta = 6\f$ for the Kaiser window, \f$\beta = 2\f$ for the Creighton window,
 \f$\beta = 0.5\f$ for the Tukey window, and \f$\beta = 3\f$ for the Gauss window.
 
-\floatfig{htbp,f_window_t}
 \image html  window_t.png "Fig. [f_window_t]: Various windows as functions of the normalized independend variable y"
 \image latex window_t.pdf "Various windows as functions of the normalized independend variable y"
 
@@ -181,7 +180,6 @@ of the inverse of the normalized independend variable \f$y\f$, choosing \f$\beta
 for the Kaiser window, \f$\beta = 2\f$ for the Creighton window, \f$\beta = 0.5\f$ for
 the Tukey window, and \f$\beta = 3\f$ for the Gauss window.
 
-\floatfig{htbp,f_window_f}
 \image html  window_f.png "Fig. [f_window_f]: Frequency behaviour of various windows as functions of the inverse of the normalized independend variable y"
 \image latex window_f.pdf "Frequency behaviour of various windows as functions of the inverse of the normalized independend variable y"
 

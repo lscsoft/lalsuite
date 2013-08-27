@@ -34,7 +34,6 @@
 \ingroup pulsarTODO
 
 \heading{Header \ref LALXMGRInterface.h}
-\latexonly\tag{s_LALXMGRInterface_h}\endlatexonly
 
 Provides protypes, structures and functions to allow visualisation of
 the events generated \c findchirp and the \c inspiral shared

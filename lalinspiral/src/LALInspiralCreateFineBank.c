@@ -43,7 +43,6 @@ where
 \f[\Delta\tau_0 = d\tau_0 \left [ \frac{D\tau_0}{2d\tau_0} \right ], \f]
 and for any \f$x\f$, \f$[x]\f$ denotes the smallest integer greater than or
 equal to \f$x\f$.
-\floatfig{h,fig_fine}
 \image html  LALInspiralBankHfine.png "Fig.[fig_fine]: Algorithm sketching the construction of a rectangular fine grid around a given coordinate point"
 \image latex LALInspiralBankHfine.pdf "Algorithm sketching the construction of a rectangular fine grid around a given coordinate point" width=4.5in
 The algorithm takes as input a structure of type

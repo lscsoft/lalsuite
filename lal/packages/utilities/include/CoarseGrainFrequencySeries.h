@@ -80,7 +80,6 @@ range from \f$f_k-\delta f/2\f$ to \f$f_k+\delta f/2\f$, we consider the
 elements of the fine-grained series whose frequency ranges overlap
 with this.  (Fig.\figref{utilities_f_coarse}
 
-\floatfig{htbp,utilities_f_coarse}
 \image html  utilitiesCoarseGrain.png "Fig. [utilities_f_coarse]: Coarse graining a frequency series"
 \image latex utilitiesCoarseGrain.pdf "Coarse graining a frequency series"
 

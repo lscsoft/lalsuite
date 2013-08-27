@@ -85,7 +85,6 @@ period of the orbit.  For simplicity we write this as:
 t_r = T_p + \frac{1}{n}\left( E + A\sin E + B[\cos E - 1] \right) \;,
 \f}
 
-\wrapfig{r,0.28\textwidth,fig_binary_orbit_ell}
 \image html  inject_eanomaly.png "Fig. [fig_binary_orbit_ell]: Function to be inverted to find eccentric anomaly"
 \image latex inject_eanomaly.pdf "Function to be inverted to find eccentric anomaly" width=0.23\textwidth
 

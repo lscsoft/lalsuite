@@ -99,7 +99,6 @@ frequency of 2\% of Nyquist).</li>
 
 \heading{Algorithm}
 
-\wrapfig{r,0.6\textwidth,fig_iirfiltertest}
 \image html tdfilter_iirfiltertest.png "Fig.[fig_iirfiltertest]: Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option."
 \image latex tdfilter_iirfiltertest.pdf "Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option." width=0.55\textwidth
 

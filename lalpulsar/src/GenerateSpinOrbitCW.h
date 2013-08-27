@@ -82,7 +82,6 @@ rotation.
 
 \heading{Orbital motion}
 
-\wrapfig{r,0.52\textwidth,fig_binary_orbit}
 \image html  inject_binary.png "Fig.[fig_binary_orbit]: Binary orbit orientation parameters"
 \image latex inject_binary.pdf "Binary orbit orientation parameters" width=0.47\textwidth
 
@@ -94,10 +93,7 @@ marked \f$N\f$ is the direction along a meridian towards the North
 celestial pole.  The tilted plane is the plane of the binary orbit,
 and the axis labeled \f$z\f$ is the normal to this plane directed such
 that the orbit is right-handed about this axis.  The <em>ascending
-node</em> of the orbit, denoted by
-\latexonly\raisebox{-0.5pt}{\includegraphics{inject_ascend}}\endlatexonly
-\htmlonly<img class="formulaInl" src="inject_ascend.png"/>\endhtmlonly
-, is the direction
+node</em> of the orbit, denoted by \f$\Omega\f$, is the direction
 defined by \f$\hat{\mathbf{\mathit{R}}}\times\hat{\mathbf{\mathit{z}}}\f$.
 The binary orbit itself is shown as an off-centred ellipse, with the
 barycentre at one of its foci; the wave-emitting source is also shown.

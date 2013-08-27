@@ -24,7 +24,6 @@
 \brief Tests the LALPtoleMetric() function.
 
 \heading{Program \c PtoleMetricTest}
-\latexonly\tag{ss_PtoleMetricTest}\endlatexonly
 
 \heading{Usage}
 \code

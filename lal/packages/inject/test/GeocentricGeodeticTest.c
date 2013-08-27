@@ -76,7 +76,6 @@ difference greater than a micron.
 
 \heading{Algorithm}
 
-\wrapfig{r,0.6\textwidth,fig_geodetictest}
 \image html  inject_geodetictest.png "Fig.[fig_geodetictest]: Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required."
 \image latex inject_geodetictest.eps "Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required." width=0.55\textwidth
 

@@ -35,7 +35,6 @@
  * points in a three dimensional lattice.  The plot is animated so the user
  * can see the template bank from different perspectives.  See Fig.\figref{LALMathematicaHplot}.
  *
- \floatfig{htbp,LALMathematicaHplot}
  \image html  LALMathematicaHplot1.png "Fig. [LALMathematicaHplot]: an example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
  \image latex LALMathematicaHplot1.pdf "An example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
  *
