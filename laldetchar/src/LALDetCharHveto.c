@@ -236,7 +236,7 @@ double XLALDetCharVetoRound( char** winner, LALGHashTable* chancount, LALGHashTa
 		}
 		// Number of triggers in auxillary channel
 		int n_aux = XLALGetGHashTblInt(chancount, key);
-		mu = n_h*n_aux*t_ratio;
+		mu = n_h*t_ratio*n_aux;
 
 		k = (int*)val;
 
