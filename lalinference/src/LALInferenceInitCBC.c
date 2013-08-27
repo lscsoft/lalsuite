@@ -1234,7 +1234,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
 
   /* Check for spin disabled */
   ppt=LALInferenceGetProcParamVal(commandLine, "--noSpin");
-  if (!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--diable-spin");
+  if (!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--disable-spin");
   if (ppt) noSpin=1;
   
   /* Check for aligned spin */
