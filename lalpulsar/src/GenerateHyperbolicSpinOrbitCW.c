@@ -58,7 +58,7 @@ For hyperbolic orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
 directly as a function of \f$E\f$:
 \anchor eq_tr-e3 \f{eqnarray}{
 t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
-\label{eq_tr-e3}
+\tag{eq_tr-e3}
 	& + & \frac{1}{n} \left( -E +
 		\left[v_p(e-1)\cos\omega + e\right]\sinh E
 		- \left[v_p\sqrt{\frac{e-1}{e+1}}\sin\omega\right]
@@ -69,7 +69,7 @@ periapsis and \f$n=\dot{\upsilon}_p\sqrt{(1-e)^3/(1+e)}\f$ is a normalized
 angular speed for the orbit (the hyperbolic analogue of the mean
 angular speed for closed orbits).  For simplicity we write this as:
 \anchor eq_tr-e4 \f{equation}{
-\label{eq_tr-e4}
+\tag{eq_tr-e4}
 t_r = T_p + \frac{1}{n}\left( E + A\sinh E + B[\cosh E - 1] \right) \;,
 \f}
 

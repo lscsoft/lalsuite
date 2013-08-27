@@ -24,7 +24,7 @@
 \brief Tests and showcases the combination of \ref PtoleMetric_h and \ref TwoDMesh_h modules.
 
 \heading{Program \c PtoleMeshTest}
-\latexonly\label{ss_PtoleMeshTest}\endlatexonly
+\latexonly\tag{ss_PtoleMeshTest}\endlatexonly
 
 \heading{Usage}
 \code

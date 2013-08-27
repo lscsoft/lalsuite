@@ -33,7 +33,7 @@ This modules contains a few functions to perform these conversion.
 We know that
 \anchor eq_tau0a \f{equation}{
 \tau_0 = \frac{A_0}{\eta} M^{-5/2},
-\label{eq_tau0a}
+\tag{eq_tau0a}
 \f}
 and
  \f{equation}{
@@ -51,12 +51,12 @@ A_3 = \frac{\pi}{8 (\pi *f_L)^{5/3}},
 Therefore, it is straightforward to express \f$\tau_3\f$ as a function of \f$\tau_0\f$ amd \f$\eta\f$:
 \anchor eq_tau3b \f{equation}{
 \tau_3 = \frac{A3}{\eta} \left( \frac{\tau_0 \eta}{ A_0} \right)^{2/5}
-\label{eq_tau3b}
+\tag{eq_tau3b}
 \f}
 if \f$\eta=0.25\f$ on the equal-mass line, then
 \anchor eq_tau3a \f{equation}{
 \tau_3 = 4 A3 \left( \frac{\tau_0}{ 4 A_0} \right)^{2/5}
-\label{eq_tau3a}
+\tag{eq_tau3a}
 \f}
 
 Equation\eqref{eq_tau3b} returns \f$\tau_3\f$ given in \f$M, \eta\f$ and \f$f_L\f$ and is defined

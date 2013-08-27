@@ -24,7 +24,7 @@
 \brief Computes the sky-position metric for a coherent or semicoherent pulsar search.
 
 \heading{Program <tt>DirectedMeshTest.c</tt>}
-\latexonly\label{ss_DirectedMeshTest_c}\endlatexonly
+\latexonly\tag{ss_DirectedMeshTest_c}\endlatexonly
 
 \heading{Usage}
 \code

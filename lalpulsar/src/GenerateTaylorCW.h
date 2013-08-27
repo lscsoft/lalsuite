@@ -56,9 +56,9 @@ stochastic manner.
 The frequency and phase of such slowly-varying quasiperiodic sources
 are given by their Taylor series:
 \anchor eq_taylorcw-freq \anchor eq_taylorcw-phi \f{eqnarray}{
-\label{eq_taylorcw-freq}
+\tag{eq_taylorcw-freq}
 f(t)    & = & f_0 \left[ 1 + \sum_{k=1}^n f_k(t-t_0)^k \right] \;, \\
-\label{eq_taylorcw-phi}
+\tag{eq_taylorcw-phi}
 \phi(t) & = & \phi_0 + 2\pi f_0 \left[ (t-t_0) +
 		\sum_{k=1}^n \frac{f_k}{k+1}(t-t_0)^{k+1} \right] \;,
 \f}
@@ -78,9 +78,9 @@ would produce these effects.  Thus for any given source one can choose
 a polarization basis (described by some polarization angle \f$\psi\f$) in
 which the wave has a constant elliptical polarization of the form:
 \anchor eq_taylorcw-hplus \anchor eq_taylorcw-hcross \f{eqnarray}{
-\label{eq_taylorcw-hplus}
+\tag{eq_taylorcw-hplus}
 h_+(t)      & = & A_+      \cos\phi(t) \;, \\
-\label{eq_taylorcw-hcross}
+\tag{eq_taylorcw-hcross}
 h_\times(t) & = & A_\times \sin\phi(t) \;.
 \f}
 */

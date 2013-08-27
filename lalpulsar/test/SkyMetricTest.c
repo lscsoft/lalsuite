@@ -23,7 +23,7 @@
 \ingroup StackMetric_h
 
 \heading{Program <tt>SkyMetricTest.c</tt>}
-\latexonly\label{ss_SkyMetricTest_c}\endlatexonly
+\latexonly\tag{ss_SkyMetricTest_c}\endlatexonly
 
 \brief Computes the sky-position metric for a coherent or semicoherent pulsar search.
 

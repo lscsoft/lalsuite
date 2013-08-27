@@ -42,7 +42,7 @@ w_1[j]\, h_1[j]\, Q[j-k]\, w_2[j]\, h_2[k] \nonumber \\
 &=& \sum_{\ell=0}^{M-1} \delta f\,
 \widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
 \widetilde{\bar{h}}_{2}[\ell],
-\label{stochastic_e_ymax}
+\tag{stochastic_e_ymax}
 \f}
 
 where the sampling period is \f$\delta t=T/N\f$, the frequency spacing is
@@ -94,7 +94,7 @@ Y=\
 \widetilde{\bar{h}}_{2}[\ell]
 \right\}
 \right)\ .
-\label{stochastic_e_shortcut}
+\tag{stochastic_e_shortcut}
 \f}
 
 The routine <tt>LALStochasticCrossCorrelationStatistic()</tt> is
@@ -130,7 +130,7 @@ Y&=&\
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
 + \int_{f_0}^{f_0+P\delta f} df\
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
-\label{stochastic_e_bandlimited}
+\tag{stochastic_e_bandlimited}
 \f}
 
 The frequency sampling parameters (start frequency, frequency spacing,
@@ -162,7 +162,7 @@ w_1[k]\, h_1[j]^*\, Q[j-k]\, w_2[k]\, h_2[k] \nonumber \\
 &=& \sum_{\ell=0}^{M-1} \delta f\,
 \widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
 \widetilde{\bar{h}}_{2}[\ell],
-\label{stochastic_e_ymaxhet}
+\tag{stochastic_e_ymaxhet}
 \f}
 
 In this case, the Fourier transforms of the zero-padded data streams
@@ -176,7 +176,7 @@ Y=\
 \widetilde{Q}[\ell]\
 \widetilde{\bar{h}}_{2}[\ell]
 \ .
-\label{stochastic_e_heterodyned}
+\tag{stochastic_e_heterodyned}
 \f}
 While the mean value of the cross-correlation statistic for
 heterodyned data should be real (assuming both series were heterodyned
@@ -189,7 +189,7 @@ For diagnostic purposes, this function calculates the integrand of
 \eqref{stochastic_e_ymax} or\eqref{stochastic_e_ymaxhet}, i.e.
 \anchor stochastic_e_ccspec
 \f{equation}{
-  \label{stochastic_e_ccspec}
+  \tag{stochastic_e_ccspec}
 Y(f)=
 \widetilde{\bar{h}}_{1}(f)^* \
 \widetilde{Q}(f)\

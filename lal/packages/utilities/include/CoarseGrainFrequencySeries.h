@@ -66,7 +66,7 @@ whose contribution from the \f$k\f$th element is [It is
 The central idea in our definitions of coarse graining will thus be
 the correspondence
 \anchor utilities_e_coarse \f{equation}{
-  \label{utilities_e_coarse}
+  \tag{utilities_e_coarse}
   h_k \approx \frac{1}{\delta f}
   \int_{f_k-\delta f/2}^{f_k+\delta f/2} h(f)\,df
 \f}
@@ -117,7 +117,7 @@ Examination of Fig.\figref{utilities_f_coarse} shows that
 
 With these definitions, approximating the integral in
 \eqref{utilities_e_coarse} gives
-\anchor utilities_e_coarseapprox \f{equation}{\label{utilities_e_coarseapprox}
+\anchor utilities_e_coarseapprox \f{equation}{\tag{utilities_e_coarseapprox}
 h_k = \frac{1}{\rho}
 \left(
   (\ell^{\scriptstyle\textrm{min}}_k - \lambda^{\scriptstyle\textrm{min}}_k)

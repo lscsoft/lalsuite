@@ -40,7 +40,7 @@ The gravitational wave strain induced in an interferometer by a binary
 inspiral may be written as
 \anchor eq_rootwaveform \f{equation}{
 h(t) = \frac{A(t)}{\mathcal{D}} \cos\left( 2 \phi(t) - \theta \right),
-\label{eq_rootwaveform}
+\tag{eq_rootwaveform}
 \f}
 where
 \f{equation}{

@@ -188,7 +188,7 @@ To help clarify the problem, let us rewrite the equation in
 dimensionless parameters \f$y=8\pi fT_\odot m_\mathrm{tot}/M_\odot\f$ and
 \f$x=\Theta^{-1/8}\f$:
 \anchor eq_ppn_fnorm \f{equation}{
-\label{eq_ppn_fnorm}
+\tag{eq_ppn_fnorm}
 y = \sum_{k=0}^{5} C_k x^{k+3} \; ,
 \f}
 where:

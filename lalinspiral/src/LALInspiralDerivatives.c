@@ -48,7 +48,7 @@ The equations are
 \anchor ode2 \f{equation}{
 \frac{dv}{dt} = - \frac{\mathcal{F}(v)}{m E^{\prime}(v)},\ \ \ \
 \frac{d \phi(t)}{dt} = \frac{2v^{3}}{m}.
-\label{ode2}
+\tag{ode2}
 \f}
 
 \heading{Algorithm}

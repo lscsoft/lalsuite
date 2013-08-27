@@ -40,7 +40,7 @@ is \f$H_{n/2},\f$ \f$H_k,\f$ \f$k \ne 0,n/2,\f$ (\f$H_{n-k})\f$ is the real (ima
 part of the \f$k\f$th harmonic)
 \anchor eq_inspiralnorm \f{equation}{
 H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
-\label{eq_inspiralnorm}
+\tag{eq_inspiralnorm}
 \f}
 (Note that the zeroth and Nyquist components are ignored in the
 computation of the norm.)

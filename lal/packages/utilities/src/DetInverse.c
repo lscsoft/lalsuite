@@ -59,7 +59,7 @@ and uses an internal matrix in its computations, so the contents of
 
 A linear system of equations is written in matrix terms as:
 \anchor eq_linear_system \f{equation}{
-\label{eq_linear_system}
+\tag{eq_linear_system}
 \mathsf{M}^a{}_b \mathsf{x}^b = \mathsf{v}^a \;,
 \f}
 where \f$\mathsf{M}^a{}_b\f$ is a known matrix, \f$\mathsf{v}^a\f$ a known

@@ -55,7 +55,7 @@ Given these, the F statistic in the \f$b^{th}\f$ frequency bin is
 where
 
 \anchor eq_e1 \f{eqnarray}{
-\label{eq_e1}
+\tag{eq_e1}
 \hat{F_{\hat{a}}}=\sum_{a=0}^{NM-1} x_{a} \hat{a} e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})} \\
 \hat{F_{\hat{b}}}=\sum_{a=0}^{NM-1} x_{a} \hat{b} e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})}
 \f}
@@ -74,7 +74,7 @@ and a short time-series index \f$0\leq \alpha <M-1\f$, so that \f$a=N\alpha+j\f$
 above sum as
 \anchor eq_e2 \f{equation}{
 \hat{F_{\hat{a}}}({\vec{\lambda}})=\sum_{\alpha=0}^{M-1}\sum_{j=0}^{N-1}x_{\alpha j}a_{\alpha j}e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})}
-\label{eq_e2}
+\tag{eq_e2}
 \f}
 Note that \f$\hat{a}(t)\f$ is a periodic function with period equal to one sidereal day.  Since the
 sum over \f$N\f$ is on a timescale much shorter than that (say, 1 hour), then \f$\hat{a}(t)\f$ won't
@@ -83,12 +83,12 @@ midpoint of each SFT time.  Now, If \f$\tilde{x}_{\alpha k}\f$ is the matrix of 
 short time index \f$j\f$
 \anchor eq_e3 \f{equation}{
 x_{\alpha j}=\frac{1}{N}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}e^{2\pi{i}\frac{jk}{N}},
-\label{eq_e3}
+\tag{eq_e3}
 \f}
 making the appropriate substitutions, Eq.\eqref{eq_e1} becomes
 \anchor eq_e4 \f{equation}{
 \hat{F_{\hat{a}}}({\vec{\lambda}})=\sum_{\alpha=0}^{M-1}\hat{a}_{\alpha}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
-\label{eq_e4}
+\tag{eq_e4}
 \f}
 We assume that the phase evolution can be described as linear in \f$t\f$ during the time duration
 \f$T_{SFT}\f$; thus we can Taylor-expand \f$\Phi\f$ around the temporal midpoint of every SFT time
@@ -96,11 +96,11 @@ data chunk.  For large values of \f$N\f$, the summation over \f$j\f$ in Eq.\eqre
 expressed in closed form, thus saving computations, and Eq.\eqref{eq_e4} can be rewritten as
 \anchor DeFT2 \f{equation}{
 \hat{F_{\hat{a}}}=\sum_{\alpha=0}^{M-1}\hat{a}_{\alpha}e^{i y_\alpha}\sum_{k=0}^{N-1}\tilde{x}_{\alpha\beta} P_{\alpha k}(b,\vec{\lambda}),
-\label{DeFT2}
+\tag{DeFT2}
 \f}
 with
 \anchor DeFT_defs \f{eqnarray}{
-\label{DeFT_defs}
+\tag{DeFT_defs}
 P_{\alpha k}(b,\vec{\lambda})= \frac{\sin{x'}}{x'}-i \frac{1-\cos{x'}}{x'}\\
 x'=\sum_{s} f_s B_{s\alpha} - k\\
 y_\alpha=\sum_{s} f_s A_{s\alpha}.
@@ -122,7 +122,7 @@ over \f$k\f$ in Eq.\eqref{DeFT2} one only needs to consider a few values (NTERMS
 \f$k^*\f$ such that \f$x'(k^*)\approx 0\f$.  This approximation again saves
 computations. Eq.\eqref{DeFT2} can then be rewritten as
 \anchor DeFT_algo \f{equation}{
-\label{DeFT_algo}
+\tag{DeFT_algo}
 \hat{F_{\hat{a}}}=\sum_{\alpha=0}^{M-1}\hat{a}_{\alpha}e^{i y_\alpha}\sum_{k=k^*\pm NTERMS} \tilde x_{\alpha\beta}
 P_{\alpha k}(b,\vec{\lambda}).
 \f}

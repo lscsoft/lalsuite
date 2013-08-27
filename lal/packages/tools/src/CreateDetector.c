@@ -114,7 +114,7 @@ To express \f$\hat{u}\f$ in the Cartesian basis, we need
 \f$\hat{u}\cdot\hat{e}_1\f$, \f$\hat{u}\cdot\hat{e}_2\f$, and
 \f$\hat{u}\cdot\hat{e}_3\f$.  We first observe that
 \anchor tools_e_eE \f{align}{
-\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{E}} &= \cos{\mathcal{A}}\,\sin\zeta \label{tools_e_eE}\\
+\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{E}} &= \cos{\mathcal{A}}\,\sin\zeta \tag{tools_e_eE}\\
 \hat{u}\cdot\hat{e}_{\scriptstyle\textrm{N}} &= \cos{\mathcal{A}}\,\cos\zeta \\
 \hat{u}\cdot\hat{e}_{\scriptstyle\textrm{U}} &= \sin{\mathcal{A}}
 \f}
@@ -149,7 +149,7 @@ and finally that
 = (\hat{u}\cdot\hat{e}_\rho) \sin\lambda
  +(\hat{u}\cdot\hat{e}_\lambda) \cos\lambda \\
 \hat{u}\cdot\hat{e}_3 &= \hat{u}\cdot\hat{e}_z
-\label{tools_e_e3ez}
+\tag{tools_e_e3ez}
 \f}
 
 \heading{Cached Detectors}

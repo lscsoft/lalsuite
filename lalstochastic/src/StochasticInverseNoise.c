@@ -32,13 +32,13 @@ instrument response
 constructing an optimal filter are the inverse half-calibrated power
 spectral density
 \anchor stochastic_e_halfCalibratedPSD \f{equation}{
-  \label{stochastic_e_halfCalibratedPSD}
+  \tag{stochastic_e_halfCalibratedPSD}
   \frac{1}{P^{\mathrm{HC}}(f)}=\frac{1}{\widetilde{R}(f)\,P^{\mathrm{C}}(f)}
   =\frac{\widetilde{R}(f)^*}{P(f)}
 \f}
 and the inverse calibrated PSD
 \anchor stochastic_e_calibratedPSD \f{equation}{
-  \label{stochastic_e_calibratedPSD}
+  \tag{stochastic_e_calibratedPSD}
   \frac{1}{P^{\mathrm{C}}(f)}
   =\frac{|\widetilde{R}(f)|^2}{P(f)}
 \f}

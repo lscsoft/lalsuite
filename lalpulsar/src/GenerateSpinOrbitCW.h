@@ -57,7 +57,7 @@ frame.  The frequency and phase of the wave fronts crossing a
 reference point in an inertial frame (e.g.\ the Solar system
 barycentre) are simply \f$f[t(t_r)]\f$ and \f$\phi[t(t_r)]\f$, where
 \anchor eq_spinorbit-tr \f{equation}{
-\label{eq_spinorbit-tr}
+\tag{eq_spinorbit-tr}
 t_r = t + R(t)/c
 \f}
 is the (retarded) time measured at the inertial reference point a
@@ -135,10 +135,10 @@ second law
 \f$r^2\dot{\upsilon}=r_p^2\dot{\upsilon}_p=\mathrm{constant}\f$, where
 \f$\dot{\upsilon}_p\f$ is the angular speed at periapsis, to get:
 \anchor eq_orbit-r \anchor eq_orbit-rdot \f{eqnarray}{
-\label{eq_orbit-r}
+\tag{eq_orbit-r}
 R & = & R_0 + \frac{(1+e) r_p\sin i}{1+e\cos\upsilon}
 	\sin(\omega+\upsilon) \;,\\
-\label{eq_orbit-rdot}
+\tag{eq_orbit-rdot}
 \dot{R} & = & \dot{R}_0 + \frac{\dot{\upsilon}_p r_p\sin i}{1+e}
 	\left[ \cos(\omega+\upsilon) + e\cos\omega \right] \;.
 \f}
@@ -169,7 +169,7 @@ terms of an intermediate variable \f$E\f$ (called the <em>eccentric
 anomaly</em> for elliptic orbits, unnamed for open orbits).  The formulae
 are:
 \anchor eq_spinorbit-t \f{equation}{
-\label{eq_spinorbit-t}
+\tag{eq_spinorbit-t}
 t - t_p = \left\{ \begin{array}{l@{\qquad}c}
 	\frac{1}{\dot{\upsilon}_p} \sqrt{\frac{1+e}{(1-e)^3}}
 		\left( E - e\sin E \right) & 0 \leq e < 1 \\ & \\
@@ -180,7 +180,7 @@ t - t_p = \left\{ \begin{array}{l@{\qquad}c}
 \end{array} \right.
 \f}
 \anchor eq_spinorbit-upsilon \f{equation}{
-\label{eq_spinorbit-upsilon}
+\tag{eq_spinorbit-upsilon}
 \begin{array}{c} \tan\left(\frac{\upsilon}{2}\right) \end{array}
 = \left\{ \begin{array}{l@{\qquad}c}
 	\sqrt{\frac{1+e}{1-e}}\tan\left(\frac{E}{2}\right)
@@ -209,9 +209,9 @@ speed of the orbit with the angular speed at periapsis
 \f$\dot{\upsilon}_p\f$ rather than with the period \f$P\f$.  These parameters
 are related by:
 \anchor eq_spinorbit-a \anchor eq_spinorbit-p \f{eqnarray}{
-\label{eq_spinorbit-a}
+\tag{eq_spinorbit-a}
 a & = & \frac{r_p}{1-e} \;,\\
-\label{eq_spinorbit-p}
+\tag{eq_spinorbit-p}
 P & = & \frac{2\pi}{\dot{\upsilon}_p} \sqrt{\frac{1+e}{(1-e)^3}} \;.
 \f}
 Furthermore, for improved numerical precision when dealing with

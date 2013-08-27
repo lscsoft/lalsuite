@@ -45,12 +45,12 @@
  *
  * \anchor mass1 \f{equation}{
  * m = m_{1} + m_{2}
- * \label{mass1}
+ * \tag{mass1}
  * \f}
  * and
  * \anchor eta1 \f{equation}{
  * \eta = \frac{m_{1} m_{2}}{(m_{1} + m_{2})^{2}}
- * \label{eta1}
+ * \tag{eta1}
  * \f}
  * From Eq.\eqref{mass1} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
  * \f{equation}{

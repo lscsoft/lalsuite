@@ -76,7 +76,7 @@ be in the J2000 epoch.
 Galactic latitude \f$b\f$ and longitude \f$l\f$ to declination \f$\delta\f$ and
 right ascension \f$\alpha\f$:
 \f{eqnarray}
-\label{eq:b-galactic}
+\tag{eq:b-galactic}
 b & = & \arcsin[\cos\delta\cos\delta_\mathrm{NGP}
 		\cos(\alpha-\alpha_\mathrm{NGP}) +
 		\sin\delta\sin\delta_\mathrm{NGP}] \;,\\
@@ -84,7 +84,7 @@ l & = & \arctan\!2[\sin\delta\cos\delta_\mathrm{NGP} -
 		\cos\delta\cos(\alpha-\alpha_\mathrm{NGP})
 			\sin\delta_\mathrm{NGP},
 		\cos\delta\sin(\alpha-\alpha_\mathrm{NGP})] \nonumber\\
-\label{eq:l-galactic}
+\tag{eq:l-galactic}
 & & \quad + \; l_\mathrm{ascend} \;,
 \f}
 where \f$\arctan\!2(y,x)\f$ can be thought of as the argument of the
@@ -92,14 +92,14 @@ complex number \f$x+iy\f$; unlike \f$\arctan(y/x)\f$, it ranges over the full
 range \f$[0,2\pi)\f$ instead of just half of it.  The inverse
 transformations are:
 \f{eqnarray}
-\label{eq:delta-galactic}
+\tag{eq:delta-galactic}
 \delta & = & \arcsin[\cos b\cos\delta_\mathrm{NGP}\sin(l-l_\mathrm{ascend}) +
 		\sin b\sin\delta_\mathrm{NGP}] \;,\\
 \alpha & = & \arctan\!2[\cos b\cos(l-l_\mathrm{ascend}),
 		\sin b\cos\delta_\mathrm{NGP} -
 		\cos b\sin(l-l_\mathrm{ascend})\sin\delta_\mathrm{NGP}]
 		\nonumber\\
-\label{eq:alpha-galactic}
+\tag{eq:alpha-galactic}
 & & \quad + \; \alpha_\mathrm{NGP} \;.
 \f}
 In these equations we have defined the orientation of the Galaxy with
@@ -127,19 +127,19 @@ if \f$\mathbf{u}\f$ points in the direction \f$\delta=90^\circ\f$
 Ecliptic latitude \f$\beta\f$ and longitude \f$\lambda\f$ to declination
 \f$\delta\f$ and right ascension \f$\alpha\f$:
 \f{eqnarray}
-\label{eq:beta-ecliptic}
+\tag{eq:beta-ecliptic}
 \beta & = & \arcsin(\sin\delta\cos\epsilon -
 		\cos\delta\sin\alpha\sin\epsilon) \;, \\
-\label{eq:l-ecliptic}
+\tag{eq:l-ecliptic}
 \lambda & = & \arctan\!2(\cos\delta\sin\alpha\cos\epsilon +
 		\sin\delta\sin\epsilon, \cos\delta\cos\alpha) \;.
 \f}
 The inverse transformations are:
 \f{eqnarray}
-\label{eq:delta-ecliptic}
+\tag{eq:delta-ecliptic}
 \delta & = & \arcsin(\cos\beta\sin\lambda\sin\epsilon +
 		\sin\beta\cos\epsilon) \;, \\
-\label{eq:alpha-ecliptic}
+\tag{eq:alpha-ecliptic}
 \alpha & = & \arctan\!2(\cos\beta\sin\lambda\cos\epsilon -
 		\sin\beta\sin\epsilon, \cos\beta\cos\lambda) \;.
 \f}

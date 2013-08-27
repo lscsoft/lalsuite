@@ -33,7 +33,7 @@
 \ingroup pulsarTODO
 
 \heading{Module \ref LALXMGRInterface.c}
-\latexonly\label{ss_LALXMGRInterface_c}\endlatexonly
+\latexonly\tag{ss_LALXMGRInterface_c}\endlatexonly
 
 Functions for creating XMGR graphs from LAL structures and functions.
 

@@ -58,7 +58,7 @@ A square matrix \f$\mathsf{M}^a{}_b\f$ is said to have an eigenvalue
 \f$\lambda\f$ and associated eigenvector \f$\mathsf{x}^a\f$ if the following
 equation holds:
 \anchor eq_eigenvalue \f{equation}{
-\label{eq_eigenvalue}
+\tag{eq_eigenvalue}
 \mathsf{M}^a{}_b \mathsf{x}^b = \lambda\mathsf{x}^a
 \f}
 Generically an \f$N\times N\f$ matrix has \f$N\f$ distinct eigenvalues each

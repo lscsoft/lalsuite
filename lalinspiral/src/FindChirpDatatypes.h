@@ -182,14 +182,14 @@ tagFindChirpSegment
                                                          * \anchor eq_spsegnorm \f{equation}{
                                                          * \mathcal{S}_k = \sum_{k^\prime=1}^{k}
                                                          * \frac{\left(\frac{k^\prime}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)} \quad\quad 1 \le k \le N/2
-                                                         * \label{eq_spsegnorm}
+                                                         * \tag{eq_spsegnorm}
                                                          * \f}
                                                          * and can be computed once per data segment and re-used for each template;  For
                                                          * time domain templates, the segment dependent normalization is
                                                          * \anchor eq_tdsegnorm \f{equation}{
                                                          * \mathcal{S}_k = \sum_{k^\prime=1}^{k}
                                                          * \frac{\tilde{h}_{k^\prime}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)} \quad\quad 1 \le k \le N/2
-                                                         * \label{eq_tdsegnorm}
+                                                         * \tag{eq_tdsegnorm}
                                                          * \f}
                                                          * and it must be recomputed for each template \f$\tilde{h}_k\f$
                                                          */

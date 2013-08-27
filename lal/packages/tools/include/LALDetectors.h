@@ -115,15 +115,15 @@ given by
 x^1 &=\left(
           \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
           + h
-       \right) \cos\beta\cos\lambda             \label{tools_e_cart1}\\
+       \right) \cos\beta\cos\lambda             \tag{tools_e_cart1}\\
 x^2 &=\left(
           \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
           + h
-       \right) \cos\beta\sin\lambda             \label{tools_e_cart2}\\
+       \right) \cos\beta\sin\lambda             \tag{tools_e_cart2}\\
 x^3 &=\left(
           \frac{b^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
           + h
-       \right) \sin\beta  \label{tools_e_cart3} \\
+       \right) \sin\beta  \tag{tools_e_cart3} \\
 \f}
 
  * \heading{Cached Detectors}

@@ -23,7 +23,7 @@
 \ingroup StackMetric_h
 
 \heading{Program <tt>StackMetricTest.c</tt>}
-\latexonly\label{ss_StackMetricTest_c}\endlatexonly
+\latexonly\tag{ss_StackMetricTest_c}\endlatexonly
 
 \brief Computes the parameter space metric for a coherent pulsar search.
 

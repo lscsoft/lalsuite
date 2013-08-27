@@ -52,7 +52,7 @@ signal-generation routine.
 
 We want to calculate \f$h(t)\f$, given by
 \f[
-\label{eq:1}
+\tag{eq:1}
 	h(t) = F_+(t)\, h_+(t) + F_\times(t) \,h_\times(t)\,,
 \f]
 where \f$F_+\f$ and \f$F_x\f$ are called the <em>beam-pattern</em> functions,

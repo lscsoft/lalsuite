@@ -29,7 +29,7 @@
  *
 
 \heading{Header \ref PeakSelect.h}
-\latexonly\label{s_PeakSelect_h}\endlatexonly
+\latexonly\tag{s_PeakSelect_h}\endlatexonly
 From periodogram to peakgram
 
 \heading{Synopsis}

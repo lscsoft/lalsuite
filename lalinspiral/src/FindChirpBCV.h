@@ -70,7 +70,7 @@ with the inner product \f$<s,h>\f$ being defined as
 <s,h> = 2 \int_{-\infty}^{\infty} \frac{\tilde{s}^{\ast}(f) \tilde{h}(f)}
 {S_h(|f|)} df =
 4 \Re \int_0^{\infty} \frac{\tilde{s}^{\ast}(f) \tilde{h}(f)}{S_h(f)} df
-\label{SNRdef}
+\tag{SNRdef}
 \f}
 and \f$S_h(f)\f$ being the one-sided noise power spectral density.
 The last equality in Eq.\eqref{SNRdef} holds only if \f$\tilde{s}(f)\f$ and
@@ -80,7 +80,7 @@ The effective frequency-domain template given by Buonanno, Chen and Vallisneri
 is
 \anchor eq_tmplt \f{equation}{
 \tilde{h}(f) = A(f) e^{i \psi(f)}
-\label{eq_tmplt}
+\tag{eq_tmplt}
 \f}
 where
 \f{equation}{
@@ -127,7 +127,7 @@ where \f$N\f$ is a real number. Then:
 && 4 N^2 \int_0^{\infty} \frac{ [ f^{-7/6} (1-\alpha f^{2/3})]^2 \theta
 	(f_{cut}-f) }{S_h} df = 1 \: \Rightarrow \\
 && N = \sqrt{ I_{7/3} - 2 \: \alpha \: I_{5/3} + \alpha^2 \: I_1 }
-\label{Normalize}
+\tag{Normalize}
 \f}
 So the normalized template is
 \f{equation}{
@@ -143,7 +143,7 @@ linear subspace of templates, with \f$\phi_0 \in [0,2\pi)\f$ and
 Specifically, we want the basis vectors to satisfy
 \anchor OrthonormBasis \f{equation}{
 < \hat{h}_i , \hat{h}_j > = \delta_{ij}.
-\label{OrthonormBasis}
+\tag{OrthonormBasis}
 \f}
 For that we construct two real functions \f$A_1(f)\f$ and \f$A_2(f)\f$, linear
 combinations of \f$f^{-7/6}\f$ and \f$f^{-1/2}\f$, which are related to the 4 basis
@@ -155,7 +155,7 @@ vectors via:
 Then, Eq.\eqref{OrthonormBasis} becomes:
 \anchor OrthonormA \f{equation}{
 4 \Re \int_0^{\infty} \frac{A_i(f) A_j(f)}{S_h} df = \delta_{ij}.
-\label{OrthonormA}
+\tag{OrthonormA}
 \f}
 So we choose:
 
@@ -165,14 +165,14 @@ A_2(f) &=& b_1 f^{-7/6} + b_2 f^{-1/2}.
 \f}
 Imposing condition\eqref{OrthonormA} gives:
 \anchor A1 \anchor A2 \anchor A1A2 \f{eqnarray}{
-\label{A1}
+\tag{A1}
 && 4 \int_0^{\infty} \frac{A_1(f) A_1(f)}{S_h} df = 1 \: \Rightarrow \:
 	a_1 = I_{7/3}^{-1/2} \\
-\label{A2}
+\tag{A2}
 && 4 \int_0^{\infty} \frac{A_2(f) A_2(f)}{S_h} df = 1 \: \Rightarrow \:
 	b_1^2\: I_{7/3} + 2\: b_1\: b_2 \: I_{5/3} +
 	b_2^2 \: I_1 = 1 \\
-\label{A1A2}
+\tag{A1A2}
 && 4 \int_0^{\infty} \frac{A_1(f) A_2(f)}{S_h} df = 0 \: \Rightarrow \:
 	b_1 = - b_2 \frac{I_{5/3}}{I_{7/3}}
 \f}
@@ -224,15 +224,15 @@ The Fourier-transformed data is \f$s(f)\f$. The SNR is
 \f}
 where the 4 integrals are defined by
 \anchor K1 \anchor K2 \anchor K3 \anchor K4 \f{eqnarray}{
-\label{K1}
+\tag{K1}
 K_1 &=& <s,\hat{h}_1>  = \Re \int_0^{f_{cut}} \frac{4 s^{\ast} a_1 f^{-7/6}
-	e^{i \psi'}}{S_h} df \\ \label{K2}
+	e^{i \psi'}}{S_h} df \\ \tag{K2}
 K_2 &=& <s,\hat{h}_2>  = \Re \int_0^{f_{cut}} \frac{4 s^{\ast} (b_1 f^{-7/6}
-         + b_2 f^{-1/2} ) e^{i \psi'}}{S_h} df \\ \label{K3}
+         + b_2 f^{-1/2} ) e^{i \psi'}}{S_h} df \\ \tag{K3}
 K_3 &=& <s,\hat{h}_3>  = \Re \int_0^{f_{cut}} \frac{4 s^{\ast} a_1 f^{-7/6} i
         e^{i \psi'}}{S_h} df
 	= -\Im \int_0^{f_{cut}} \frac{4 s^{\ast} a_1 f^{-7/6} e^{i \psi'}}{S_h}
-	df  \\ \label{K4}
+	df  \\ \tag{K4}
 K_4 &=& <s,\hat{h}_4>  = \Re \int_0^{f_{cut}} \frac{4 s^{\ast} (b_1 f^{-7/6}
 	+ b_2 f^{-1/2} ) i e^{i \psi'}}{S_h} df
 	= -\Im \int_0^{f_{cut}} \frac{4 s^{\ast} (b_1 f^{-7/6} + b_2 f^{-1/2})
@@ -240,9 +240,9 @@ K_4 &=& <s,\hat{h}_4>  = \Re \int_0^{f_{cut}} \frac{4 s^{\ast} (b_1 f^{-7/6}
 \f}
 Now set
 \anchor OmegaMinusPhi \anchor OmegaPlusPhi \f{eqnarray}{
-\label{OmegaMinusPhi}
+\tag{OmegaMinusPhi}
 A &=& \omega - \phi_0 \\
-B &=& \omega + \phi_0 \label{OmegaPlusPhi}
+B &=& \omega + \phi_0 \tag{OmegaPlusPhi}
 \f}
 so that the expression for the SNR becomes
 \anchor MaxSNR \f{eqnarray}{
@@ -252,7 +252,7 @@ so that the expression for the SNR becomes
 	+\frac{1}{2} K_4 [\cos(\omega-\phi_0)-\cos(\omega+\phi_0)]\Rightarrow\\
 2 \rho &=& (K_1+K_4) \cos A + (K_2-K_3) \sin A + (K_1-K_4) \cos B + (K_2+K_3)
 \sin B.
-\label{MaxSNR}
+\tag{MaxSNR}
 \f}
 
 To maximize with respect to \f$A\f$ we take the first derivative
@@ -264,15 +264,15 @@ and set that equal to 0, which gives
 \anchor TANA \f{equation}{
 \frac{\partial(2 \rho)}{\partial A} \Big |_{A_0} = 0 \: \Rightarrow
 \: \tan A_0 =\frac{K_2-K_3}{K_1+K_4}. \\
-\label{TANA}
+\tag{TANA}
 \f}
 Then the sine and cosine of \f$A_0\f$ can be found:
 \anchor SINA \anchor COSA \f{eqnarray}{
 \sin A_0 &=& \pm \frac{\tan A_0}{\sqrt{1 + \tan^2 A_0}} = \pm
-\frac{K_2-K_3}{\sqrt{(K_1+K_4)^2 +(K_2-K_3)^2}},  \label{SINA} \\
+\frac{K_2-K_3}{\sqrt{(K_1+K_4)^2 +(K_2-K_3)^2}},  \tag{SINA} \\
 \cos A_0 &=& \pm \frac{1}{\sqrt{1 + \tan^2 A_0}} = \pm
 \frac{K_1+K_4}{\sqrt{(K_1+K_4)^2 +(K_2-K_3)^2}}.
-\label{COSA}
+\tag{COSA}
 \f}
 Notice that for Eq.\eqref{TANA} to be satisfied, the same sign must be kept
 in Eqs.\eqref{SINA} and\eqref{COSA}.
@@ -294,15 +294,15 @@ and set that equal to 0, which gives
 \anchor TANB \f{equation}{
 \frac{\partial(2 \rho)}{\partial B} \Big |_{B_0} = 0 \: \Rightarrow
 \: \tan B_0 =\frac{K_2+K_3}{K_1-K_4}. \\
-\label{TANB}
+\tag{TANB}
 \f}
 Then the sine and cosine of \f$B_0\f$ can be found:
 \anchor SINB \anchor COSB \f{eqnarray}{
 \sin B_0 &=& \pm \frac{\tan B_0}{\sqrt{1 + \tan^2 B_0}} = \pm
-\frac{K_2+K_3}{\sqrt{(K_1-K_4)^2 +(K_2+K_3)^2}},  \label{SINB} \\
+\frac{K_2+K_3}{\sqrt{(K_1-K_4)^2 +(K_2+K_3)^2}},  \tag{SINB} \\
 \cos B_0 &=& \pm \frac{1}{\sqrt{1 + \tan^2 B_0}} = \pm
 \frac{K_1-K_4}{\sqrt{(K_1-K_4)^2 +(K_2+K_3)^2}}.
-\label{COSB}
+\tag{COSB}
 \f}
 Again, the same sign must be kept in Eqs.\eqref{SINB} and\eqref{COSB}.
 To find the values that correspond to the maximum, we take the second

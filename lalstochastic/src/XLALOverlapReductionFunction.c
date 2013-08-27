@@ -39,7 +39,7 @@ XLALOverlapReductionFunction() calculates the values of the overlap reduction:
 \gamma(f):=\frac{5}{8\pi}\sum_A\int_{S^2}d\hat\Omega\
 e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
 F_1^A(\hat\Omega)F_2^A(\hat\Omega)\ ,
-\label{stochastic_e_gamma}
+\tag{stochastic_e_gamma}
 \f}
 
 where \f$\hat \Omega\f$ is a unit vector specifying a direction on the
@@ -48,7 +48,7 @@ between the two detectors, and
 
 \anchor stochastic_e_F_i \f{equation}{
 F_i^A(\hat\Omega):=e_{ab}^A(\hat\Omega)\ d_i^{ab}
-\label{stochastic_e_F_i}
+\tag{stochastic_e_F_i}
 \f}
 
 is the response of the \f$i\f$th detector \f$(i=1,2)\f$ to the \f$A=+,\times\f$
@@ -102,7 +102,7 @@ as sum of three spherical Bessel functions:
 \gamma(f)=\rho_1(\alpha)\ D_1^{ab}D_{2ab}
 +\rho_2(\alpha)\ D_1^{ab}D_{2a}{}^c s_b s_c
 +\rho_3(\alpha)\ D_1^{ab}D_2^{cd}s_a s_b s_c s_d\ ,
-\label{stochastic_e_closed1}
+\tag{stochastic_e_closed1}
 \f}
 
 where
@@ -131,7 +131,7 @@ j_1\\
 j_2
 \end{array}
 \right]\ ,
-\label{stochastic_e_closed2}
+\tag{stochastic_e_closed2}
 \f}
 
 \f$j_0\f$, \f$j_1\f$, and \f$j_2\f$ are the standard spherical Bessel functions:

@@ -141,14 +141,14 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
  *		\newcommand{\VPU}[2]{\left(\hat{#1}\times\hat{#2}\right)}
  *		\newcommand{\SP}[2]{\mathbf{\text{UNDEFINDE}[#1][#2]}}
  *		\begin{gather}
- *		\begin{gathered}\label{eq:LALSQTPNchih}
+ *		\begin{gathered}\tag{eq:LALSQTPNchih}
  *			\derTpM{{\hat{\chi}}_i}={SO}_{\chi i}\OM{5}+\left({SS}_{\chi i}+{QM}_{\chi i}\right)\OM{6},\\
  *			{SO}_{\chi i}=\frac{\eta}{2}\left(4+3\frac{m_j}{m_i}\right)\left(\hat{L_N}\times\hat{\chi_i}\right),\\
  *			{SS}_{\chi i}=\frac{1}{2}\frac{\chi_jm_j^2}{M^2}\left[\hat{\chi_j}-3\left(\hat{L_N}\hat{\chi_j}\right)\hat{L_N}\right]\times\hat{\chi_i},\\
  *			{QM}_{\chi i}=-\frac{3}{2}\eta\chi_iw_i\left(\hat{L_N}\hat{\chi_i}\right)\left(\hat{L_N}\times\hat{\chi_i}\right),
  *		\end{gathered}\\[15pt]
  *		\derTpM{\hat{L_N}}=\sum_i-\frac{1}{\eta}\frac{\chi_im_i^2}{M^2}\derTpM{\hat{\chi_i}},\\[15pt]
- *		\begin{gathered}\label{eq:LALSQTPNomega}
+ *		\begin{gathered}\tag{eq:LALSQTPNomega}
  *			\begin{split}
  *				\derTpM{\left(M\omega\right)}&=\frac{96\eta}{5}\OM{11}\bigg[1-\frac{743+924\eta}{336}\OM{2}\bigg.\\&
  *				\quad+\left(4\pi+SO_{\omega}\right)\OM{3}+\bigg(\frac{34103}{18144}+\frac{13661}{2016}\eta+\frac{59}{18}\eta^2\bigg.\\&

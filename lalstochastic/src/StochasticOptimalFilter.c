@@ -80,7 +80,7 @@ Y
 \f}
 where the "uncalibrated optimal filter" is
 \anchor stochastic_e_QW \f{eqnarray}{
-\label{stochastic_e_QW}
+\tag{stochastic_e_QW}
 \widetilde{Q}(f)
 &=&\frac{\widetilde{Q}^{\mathrm{C}}(f)}{\widetilde{R}_1(f)^*\widetilde{R}_2(f)}
 =\lambda\,\left(\frac{1}{\widetilde{R}_1(f)^*P^{\mathrm{C}}_1(f)}\right)

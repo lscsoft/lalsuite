@@ -58,12 +58,12 @@ and
 The individual masses may be calculated as follows.  We have
 \anchor eq_mass \f{equation}{
 m = m_{1} + m_{2}
-\label{eq_mass}
+\tag{eq_mass}
 \f}
 and
 \anchor eq_eta \f{equation}{
 \eta = \frac{m_{1} m_{2}}{(m_{1} + m_{2})^{2}}
-\label{eq_eta}
+\tag{eq_eta}
 \f}
 From Eq.\eqref{eq_mass} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
 \f{equation}{

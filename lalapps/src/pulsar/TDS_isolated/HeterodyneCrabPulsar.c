@@ -66,7 +66,7 @@
 	 either point as boundary conditions. The evolution of the phase, frequency
 	 and higher order derivatives are given by the following matrix:
 
-	 \anchor numatrix \f{equation}{\label{numatrix}
+	 \anchor numatrix \f{equation}{\tag{numatrix}
 	 \left( \begin{array}{c} \phi \\ f \\ \dot{f} \\ \ddot{f} \\
 	 \dddot{f} \\ \ddddot{f}
 	 \end{array} \right) =
@@ -88,7 +88,7 @@
 	 and \f$\mathbf{X}\f$ is the matrix of coefficients, it follows that \f$\vec{b} =
 	 \mathbf{X}^{-1}\vec{a}\f$. The inverse matrix \f$\mathbf{X}^{-1}\f$ is
 
-	 \anchor nu2matrix \f{equation}{\label{nu2matrix}
+	 \anchor nu2matrix \f{equation}{\tag{nu2matrix}
 	 \mathbf{X}^{-1} =
 	 \left( \begin{array}{cccccc} 1 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 &
 	 \frac{1}{24}t^4 & -\frac{1}{120}t^5 \\
@@ -115,7 +115,7 @@
 	 \eqref{simult1} to give\eqref{inverse1} and solving as above). The values
 	 could then be used to calculate a value of \f$\phi\f$ from\eqref{phi}.
 
-	 \anchor simult1 \f{equation}{\label{simult1}
+	 \anchor simult1 \f{equation}{\tag{simult1}
 	 \left( \begin{array}{c} f_0 + \dot{f_0}t - f + \dot{f}t \\
 	 \dot{f_0} - \dot{f} \\ 0 \\ 0 \end{array} \right) = \left(
 	 \begin{array}{cccc}
@@ -127,7 +127,7 @@
 	 \end{array} \right).
 	 \f}
 
-	 \anchor inverse1 \f{equation}{\label{inverse1}
+	 \anchor inverse1 \f{equation}{\tag{inverse1}
 	 \mathbf{X}^{-1}
 	 \left( \begin{array}{cccc}
 	 -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 \\
@@ -141,7 +141,7 @@
 	 to work out the six unknowns, which are shown in matrix form in equation
 	 \eqref{simult2}.
 
-	 \anchor simult2 \f{equation}{\label{simult2}
+	 \anchor simult2 \f{equation}{\tag{simult2}
 	 \left( \begin{array}{c} \phi_0 + f_0 t + \frac{\dot{f_0}}{2}t^2 - \phi + f t - \frac{\dot{f}}{2} \\ f_0 + \dot{f_0}t - f + \dot{f}t \\ \dot{f_0} - \dot{f} \\ 0 \\ 0 \\ 0 \end{array} \right) = \left( \begin{array}{cccccc}
 	 -\frac{1}{6}t^3 & -\frac{1}{24}t^4 & -\frac{1}{120}t^5 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 & \frac{1}{120}t^5 \\
 	 -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & -\frac{1}{24}t^4 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 \\
@@ -155,7 +155,7 @@
 
 	 The matrix has an inverse,
 
-	 \anchor inverse2 \f{equation}{\label{inverse2}
+	 \anchor inverse2 \f{equation}{\tag{inverse2}
 	 \mathbf{X}^{-1} =
 	 \left( \begin{array}{cccccc}
 	 -\frac{15}{2}\frac{1}{t^3} & -\frac{3}{2}\frac{1}{t^2} &

@@ -31,7 +31,7 @@ phasing formula,
 
 \anchor phiofv \f{equation}{
 \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
-\label{phiofv}
+\tag{phiofv}
 \f}
 
 \c LALInspiralPhase calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,  \f$v\f$, \f$E^{\prime}(v)\f$ and

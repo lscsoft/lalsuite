@@ -27,7 +27,7 @@ point in parameter space, and also producing an array of ellipses of
 constant mismatch.
 
 \heading{Program <tt>GeneralMetricTest.c</tt>}
-\latexonly\label{ss_GeneralMetricTest}\endlatexonly
+\latexonly\tag{ss_GeneralMetricTest}\endlatexonly
 
 \heading{Usage}
 \code

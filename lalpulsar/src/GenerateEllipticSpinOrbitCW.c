@@ -71,7 +71,7 @@ For elliptical orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
 directly as a function of the eccentric anomaly \f$E\f$:
 \anchor eq_tr-e1 \f{eqnarray}{
 t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
-\label{eq_tr-e1}
+\tag{eq_tr-e1}
 	& + & \left(\frac{P}{2\pi}\right) \left( E +
 		\left[v_p(1-e)\cos\omega - e\right]\sin E
 		+ \left[v_p\sqrt{\frac{1-e}{1+e}}\sin\omega\right]
@@ -81,7 +81,7 @@ where \f$v_p=r_p\dot{\upsilon}_p\sin i/c\f$ is a normalized velocity at
 periapsis and \f$P=2\pi\sqrt{(1+e)/(1-e)^3}/\dot{\upsilon}_p\f$ is the
 period of the orbit.  For simplicity we write this as:
 \anchor eq_tr-e2 \f{equation}{
-\label{eq_tr-e2}
+\tag{eq_tr-e2}
 t_r = T_p + \frac{1}{n}\left( E + A\sin E + B[\cos E - 1] \right) \;,
 \f}
 
@@ -157,7 +157,7 @@ significant by noting that \f$v/c\gtrsim v_p\f$ but
 \f$\Delta(r_p/r)\lesssim 2e/(1+e)\f$; we take these approximations as
 equalities and require that \f$\Delta\phi\lesssim\pi\f$, giving:
 \anchor eq_relativistic-orbit \f{equation}{
-\label{eq_relativistic-orbit}
+\tag{eq_relativistic-orbit}
 f_0Tv_p^2\frac{4e}{1+e}\lesssim1 \;.
 \f}
 When this critereon is violated, a warning is generated.  Furthermore,

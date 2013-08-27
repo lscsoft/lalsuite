@@ -56,7 +56,7 @@ For parabolic orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
 \eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
 directly as a function of \f$E\f$:
 \anchor eq_cubic-e \f{equation}{
-\label{eq_cubic-e}
+\tag{eq_cubic-e}
 t_r = t_p + \frac{r_p\sin i}{c} \left[ \cos\omega +
 	\left(\frac{1}{v_p} + \cos\omega\right)E -
 	\frac{\sin\omega}{4}E^2 + \frac{1}{12v_p}E^3\right] \;,
@@ -66,14 +66,14 @@ periapsis.  Following the prescription for the general analytic
 solution to the real cubic equation, we substitute
 \f$E=x+3v_p\sin\omega\f$ to obtain:
 \anchor eq_cubic-x \f{equation}{
-\label{eq_cubic-x}
+\tag{eq_cubic-x}
 x^3 + px = q \;,
 \f}
 where:
 \anchor eq_cubic-p \anchor eq_cubic-q \f{eqnarray}{
-\label{eq_cubic-p}
+\tag{eq_cubic-p}
 p & = & 12 + 12v_p\cos\omega - 3v_p^2\sin^2\omega \;, \\
-\label{eq_cubic-q}
+\tag{eq_cubic-q}
 q & = & 12v_p^2\sin\omega\cos\omega - 24v_p\sin\omega +
 	2v_p^3\sin^3\omega + 12\dot{\upsilon}_p(t_r-t_p) \;.
 \f}

@@ -78,7 +78,7 @@ quadratic fits to the function \f$\tau-t\f$ at various times \f$t_0\f$:
 		\nonumber\\
          & + & (\Delta f/f_c)\cos(2\pi f_m t_0)(t-t_0) \nonumber\\
          & - & \pi f_m (\Delta f/f_c)\sin(2\pi f_m t_0)(t-t_0)^2 \; ,
-\label{eq_polyco-formulae}
+\tag{eq_polyco-formulae}
 \f}
 with residuals less than \f$(2/3)\pi^2 f_m^2(\Delta f/f_c)(t-t_0)^3\f$.
 We require this residual to be always less than one sample interval
@@ -87,7 +87,7 @@ function must be evaluated at times \f$t_0\f$ separated by no more than:
 \f{equation}{
 \Delta t_0 \lesssim \sqrt[3]{\frac{12f_c\Delta t}{\pi^2f_m^2\Delta f}}
 	\; ,
-\label{eq_polyco-interval}
+\tag{eq_polyco-interval}
 \f}
 noting that each piecewise fit is good for a time interval
 \f$t_0\pm\Delta t_0/2\f$ about each central time \f$t_0\f$.

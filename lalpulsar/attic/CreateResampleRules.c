@@ -118,12 +118,12 @@ dimensionless parameters:
  n  & = & \frac{\tau - t}{\Delta t}   \; , \nonumber\\
  T  & = & \frac{t-t_{(i)}}{d\Delta t} \; , \nonumber\\
 A_k & = & a_{k(i)}(d\Delta t)^{k-1}   \; . \nonumber
-\label{eq:dimensionless-params}
+\tag{eq:dimensionless-params}
 \f}
 Eq.\eqref{eq_delta-tau} therefore
 gives us, for a quadratic fit:
 \f{equation}{
-\label{eq:dimensionless-tau}
+\tag{eq:dimensionless-tau}
 \frac{n}{d} = A_0 + A_1 T + A_2 T^2 \; .
 \f}
 If one wants to know whether \f$n\f$ is increasing or decreasing with \f$T\f$,
@@ -133,7 +133,7 @@ To compute the resample rules, we want to find the (integral)
 intervals in \f$T\f$ that correspond to (integral) shifts in \f$n\f$.
 Inverting the quadratic formula, we have the obvious solutions:
 \f{equation}{
-\label{eq:t-quadratic}
+\tag{eq:t-quadratic}
 T = \left(-\frac{A_1}{2A_2}\right) +
 	s\times\sqrt{\left[\left(-\frac{A_1}{2A_2}\right)^2
 	-\frac{A_0}{A_2}\right] + \left(\frac{1}{dA_2}\right)\times n}
@@ -165,7 +165,7 @@ coefficients per fitting interval, or if \f$A_2\f$ is dangerously small in
 a given fitting interval, then the LALCreateResampleRules()
 routine reverts to a linear fit:
 \f{equation}{
-\label{eq:t-linear}
+\tag{eq:t-linear}
 T = \left(-\frac{A_0}{A_1}\right) + \left(\frac{1}{dA_1}\right)
         \times n \; .
 \f}

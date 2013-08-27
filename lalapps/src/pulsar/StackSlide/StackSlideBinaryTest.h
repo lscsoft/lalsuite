@@ -38,7 +38,7 @@ Recall that a demodulated Fourier Transform (DeFT) is given by
 \anchor e4 \f{equation}{
 \hat{x}_b({\vec{\lambda}})=
 \sum_{\alpha =0}^{M-1}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
-\label{e4}
+\tag{e4}
 \f}
 The index \f$b\f$ defines the DeFT frequency bin, the index \f$\alpha\f$ loops through
 the SFTs that build the DeFT, \f$k\f$ runs on all the SFT frequency bins, and \f$j\f$
@@ -49,11 +49,11 @@ midpoint of each short segment of data, while retaining only first order
 terms.  The Taylor expansion of \f$\Phi (t)\f$ about the temporal midpoint
 \f$t_{\alpha,1/2}\f$ is
 \anchor taylor2 \f{equation}{
-\Phi_{\alpha}(t) = \Phi(t_{\alpha,1/2})+\left[t-t_{\alpha,1/2}\right]\frac{d\Phi}{dt}(t_{\alpha,1/2})\label{taylor2} \\
+\Phi_{\alpha}(t) = \Phi(t_{\alpha,1/2})+\left[t-t_{\alpha,1/2}\right]\frac{d\Phi}{dt}(t_{\alpha,1/2})\tag{taylor2} \\
 \f}
 For each value of \f$\alpha\f$, this expression consist of either constant or linear terms in time.  With the particular time discretization chosen in this code, \f$t=t_{0}+(N\alpha+j)\ T_{obs}/NM\f$, we have
 \anchor time \f{equation}{
-\label{time}
+\tag{time}
 \left[t-t_{\alpha,1/2}\right]=\frac{\ T_{obs}}{M}\left(\frac{j}{N}-\frac{1}{2}\right)=\mathcal{T}_{s}\left(\frac{j}{N}-\frac{1}{2}\right),
 \f}
 where \f$\mathcal{T}_{s}\f$ is the short time baseline of the \f$M\f$ short FTs.  On
@@ -67,11 +67,11 @@ the phase terms in the above equation are (neglecting constants)
 \anchor phi \anchor dphi \f{eqnarray}{
 \Phi(t_{\alpha,1/2})                     & = & f_{0}\Delta T_{\alpha}+\frac{1}{2}f_{1}\Delta T_{\alpha}^{2}
 +\frac{1}{3}f_{2}\Delta T_{\alpha}^{3}+\frac{1}{4}f_{3}\Delta T_{\alpha}^{4}+\frac{1}{5}f_{4}\Delta T_{\alpha}^{5}
-+\frac{1}{6}f_{5}\Delta T_{\alpha}^{6} \nonumber\label{phi} \\
++\frac{1}{6}f_{5}\Delta T_{\alpha}^{6} \nonumber\tag{phi} \\
                                          &   & \\
 \frac{d\Phi}{dt}(t_{\alpha,1/2})         & = & \dot{T}_{\alpha}\left(f_{0}+ f_{1}\Delta T_{\alpha}
 +f_{2}\Delta T_{\alpha}^{2}+f_{3}\Delta T_{\alpha}^{3}
-+f_{4}\Delta T_{\alpha}^{4}+f_{5}\Delta T_{\alpha}^{5}\right). \label{dphi}
++f_{4}\Delta T_{\alpha}^{4}+f_{5}\Delta T_{\alpha}^{5}\right). \tag{dphi}
 \f}
 These constants, for each value of \f$\alpha\f$, require \f$\dot{T}_{\alpha}\f$ and
 \f$\Delta T_{\alpha}\f$, which are calculated by a suitable timing routine.  For
@@ -83,7 +83,7 @@ each short time chunk, each call returning a specific  \f$\dot{T}_{\alpha}\f$ an
 in \f$t\f$) in order to save computations, we have
 \anchor phasecalc \f{equation}{
 \Phi_{\alpha}(t)=\sum_{s=0}^{n_{spin}}f_{s}A_{s\alpha}+\frac{j}{N}\sum_{s=0}^{n_{spin}}f_{s}B_{s\alpha},
-\label{phasecalc}
+\tag{phasecalc}
 \f}
 where \f$n_{spin}\f$ is the maximum order of spindown parameter.  Rather than
 store the values of \f$\dot{T}_{\alpha}\f$ and \f$\Delta T_{\alpha}\f$ for each value

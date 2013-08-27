@@ -38,20 +38,20 @@ following designations stand for) :
   \f$S_x^h(t,f)=|F_x^h(t,f)|^2\f$ is defined as the
   square modulus of the short-time Fourier transform :
 \anchor sp \f{equation}{
-\label{sp}
+\tag{sp}
 F_x^h(t,f)=\int{x(s)h(t-s)e^{-2i\pi sf}\,ds}.
 \f}</li>
 <li> the Wigner-Ville distribution (function: <tt>TfrWv()</tt>, type:
 \c WignerVille) is defined as :
 \anchor wv \f{equation}{
-\label{wv}
+\tag{wv}
 W_x(t,f)=\int{x(t+s/2)x(t-s/2)e^{-2i\pi sf}\,ds}.
 \f}</li>
 <li> the pseudo smoothed Wigner-Ville distribution (function:
 <tt>TfrPswv()</tt>, type: \c PSWignerVille) is a smoothed
 version of the previous TFR. Its definition reads :
 \anchor pswv \f{equation}{
-\label{pswv}
+\tag{pswv}
 PSW_x^{h,g}(t,f)=\int{h(\tau)\int{g(s-t)x(t+s/2)x(t-s/2)\,ds}\:e^{-2i\pi \tau
 f}\,d\tau}.
 \f}</li>
@@ -60,7 +60,7 @@ f}\,d\tau}.
 above) by the reassignment method through the following transformation
 operation :
 \anchor rsp \f{equation}{
-\label{rsp}
+\tag{rsp}
 \check{S}_x^h(t,f)=\int{\!\!\!\int{S_x^{h}(s,\xi)\delta(t-\hat{t}(s,\xi),f-\hat{f}(s,\xi))\,dsd\xi}},
 \f}
 where the reassignment operators can be written for the time operator as :

@@ -88,7 +88,7 @@ a direction in space is the same as its declination \f$\delta\f$, and
 longitude \f$\lambda\f$ and right ascension \f$\alpha\f$ differ only through
 the rotation of the Earth:
 \anchor eq_lambda_geographic \f{equation}{
-\label{eq_lambda_geographic}
+\tag{eq_lambda_geographic}
 \lambda = \alpha - \left(\frac{2\pi\,\mathrm{radians}}
 	{24\,\mathrm{hours}}\right)\times\mathrm{GMST} \; ,
 \f}
@@ -106,9 +106,9 @@ coordinate increases counterclockwise, and thus corresponds to the
 \e negative of the azimuth \f$A\f$ as defined by [\ref Lang_K1999].
 So we have:
 \anchor eq_altitude_horizon \anchor eq_azimuth_horizon \f{eqnarray}{
-\label{eq_altitude_horizon}
+\tag{eq_altitude_horizon}
 a & = & \arcsin(\sin\delta\sin\phi + \cos\delta\cos\phi\cos h) \; , \\
-\label{eq_azimuth_horizon}
+\tag{eq_azimuth_horizon}
 -A & = & \arctan\!2(\cos\delta\sin h, \sin\delta\cos\phi -
 		\cos\delta\sin\phi\cos h) \; ,
 \f}
@@ -124,9 +124,9 @@ h & = & \lambda_\mathrm{zenith} - \lambda \nonumber\\
 where LMST is the local mean sidereal time at the point of
 observation.  The inverse transformation is:
 \anchor eq_delta_horizon \anchor eq_h_horizon \f{eqnarray}{
-\label{eq_delta_horizon}
+\tag{eq_delta_horizon}
 \delta & = & \arcsin(\sin a\sin\phi + \cos a\cos A\cos\phi) \; , \\
-\label{eq_h_horizon}
+\tag{eq_h_horizon}
 h & = & \arctan\!2[\cos a\sin(-A), \sin a\cos\phi -
 		\cos a\cos A\sin\phi] \; .
 \f}

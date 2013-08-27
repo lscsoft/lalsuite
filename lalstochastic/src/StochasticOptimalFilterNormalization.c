@@ -28,7 +28,7 @@ statistic.
 As described in \ref StochasticOptimalFilter_c,
 the optimal filter for stochastic searches is defined as
 
-\anchor stochastic_e_Q \f{equation}{\label{stochastic_e_Q}
+\anchor stochastic_e_Q \f{equation}{\tag{stochastic_e_Q}
 \widetilde{Q}{}^{\mathrm{C}}(f)=\lambda\,
 \frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
 {|f|^3\,P^{\mathrm{C}}_1(f)\,P^{\mathrm{C}}_2(f)}
@@ -41,7 +41,7 @@ value of the cross-correlation statistic is [\ref Allen1999]
 \int_{-\infty}^{\infty} df\, |f|^{-3}\,
 \gamma(f)\,\Omega_{\mathrm{GW}}(f)
 \widetilde{Q}{}^{\mathrm{C}}(f) = \Omega_{\mathrm{R}} T
-\label{stochastic_e_mu}
+\tag{stochastic_e_mu}
 \f}
 where \f$T\f$ is the integration time
 (cf.\eqref{stochastic_e_ymax}, \f$w_1\f$ and \f$w_2\f$ are the functions
@@ -50,7 +50,7 @@ used to window the data, and
 stochastic background (see \ref OverlapReductionFunction_c).  This sets the
 value at
 \anchor stochastic_e_lambda \f{equation}{
-\label{stochastic_e_lambda}
+\tag{stochastic_e_lambda}
 \lambda = \frac{20\pi^2\, \Omega_{\mathrm{R}}}
                {3\,{H_0}^2 \overline{w_1w_2}}
 \left(
@@ -74,7 +74,7 @@ cross-correlation statistic, since
   \Omega_{\mathrm{GW}}(f)\,\widetilde{Q}{}^{\mathrm{C}}(f)
   \nonumber
   \\
-\label{stochastic_e_variance}
+\tag{stochastic_e_variance}
   &=& \frac{5\pi^2}{3 {H_0}^2}
   \,\frac{\overline{(w_1w_2)^2}}{\overline{w_1w_2}}
 \,\Omega_{\mathrm{R}} \,\lambda

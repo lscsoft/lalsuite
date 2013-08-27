@@ -64,7 +64,7 @@ standard DFT yields complex data
 \anchor standarddft
 \f{equation}{
 {\tilde h}_\gamma = \sum_{j=0}^{n-1} \, e^{-2 \pi i j \gamma / n} \, h_j
-\label{standarddft}
+\tag{standarddft}
 \f}
 in the Fourier domain, for \f$0 \le \gamma \le [n/2]+1\f$.  Here the data point
 \f${\tilde h}_\gamma\f$ corresponds to a frequency \f$f_\gamma = \gamma \Delta f\f$,
@@ -99,7 +99,7 @@ corresponds to
 \anchor verticalTFP \f{equation}{
 H_{J\Sigma} = \sum_{k=0}^{2 N_F-1} \, \exp \left[ 2 \pi i k \Sigma / (2
 N_F) \right] \, h_{2 N_F J + k},
-\label{verticalTFP}
+\tag{verticalTFP}
 \f}
 for \f$0 \le J < N_T\f$ and \f$0 \le \Sigma < N_F\f$.  We call this first type
 of TF plane a vertical TF plane, since it corresponds to a series of
@@ -114,7 +114,7 @@ formulae the TF plane elements are \anchor horizontalTFP
 \f{equation}{
 H_{J\Sigma} =
 \sum_{\gamma=0}^{N_T-1} \, \exp \left[ -2 \pi i J \gamma / N_T \right] \,
-{\tilde h}_{N_T \Sigma + \gamma}, \label{horizontalTFP}
+{\tilde h}_{N_T \Sigma + \gamma}, \tag{horizontalTFP}
 \f}
 for \f$0 \le J < N_T\f$ and \f$0 \le \Sigma < N_F\f$, where \f${\tilde h}_\gamma\f$ is given by
 Eq. \eqref{standarddft}.

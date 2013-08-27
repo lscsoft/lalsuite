@@ -113,7 +113,7 @@ may approximate the Fourier transform of this band limited signal \f$v(t_j)\f$ b
 \anchor eq_fftapprox \f{equation}{
 \tilde{v}(f_k) \rightarrow \sum_{j=0}^{N-1} \Delta t\, v(t_j) e^{-2 \pi i f_k t_j}
 = \Delta t \sum_{j=0}^{N-1} v_j e^{-2 \pi i j k / N},
-\label{eq_fftapprox}
+\tag{eq_fftapprox}
 \f}
 where \f$-(N/2 + 1) \le k \le N/2\f$ and the symbol \f$\rightarrow\f$ means
 equal to under discretization.  Notice that the approximation to the
@@ -130,7 +130,7 @@ both these values are equal due to the periodicity of the discrete transform
 defined by
 \anchor eq_dftdef \f{equation}{
 \tilde{v}_k = \sum_{j=0}^{N-1} v_j e^{-i 2 \pi j k / N}.
-\label{eq_dftdef}
+\tag{eq_dftdef}
 \f}
 We may estimate the discrete inverse Fourier transform
 in a similar way, using the relation
@@ -167,7 +167,7 @@ If we replace \f$\tilde{n}(f_k)\f$ with the discretely sampled quantities
 \anchor eq_ospsddisc \f{equation}{
 \left\langle\tilde{n}_k \tilde{n}_{k'}^\ast\right\rangle =
 \frac{N}{2\Delta t}{{S\left(\left|f_{k}\right|\right)}}\delta_{kk'}
-\label{eq_ospsddisc}
+\tag{eq_ospsddisc}
 \f}
 where \f$\delta_{kk'}\f$ is the dimensionless Kronecker \f$\delta\f$-function,
 obtained by discretization of the continuous \f$\delta\f$-function:

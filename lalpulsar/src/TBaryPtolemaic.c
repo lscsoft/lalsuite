@@ -71,7 +71,7 @@ written as:
 n_x & = & \cos\alpha\cos\delta \; , \nonumber\\
 n_y & = & \sin\alpha\cos\delta \; , \nonumber\\
 n_z & = & \sin\delta           \; .
-\label{eq_n-alphadelta}
+\tag{eq_n-alphadelta}
 \f}
 
 In a first-order Ptolemaic model of the solar system, the rotation of

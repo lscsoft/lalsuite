@@ -173,7 +173,7 @@ f)^{1/3}\f$
 to obtain
 \anchor phaselabel \f{equation}{
 \Psi(f) = 2 \pi f t_{c} + \sum_{k} \theta^{\prime}_{k} f^{(k-5)/3}
-\label{phaselabel}
+\tag{phaselabel}
 \f}
 where
 \f{equation}{

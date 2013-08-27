@@ -55,14 +55,14 @@ t_{\mathrm{bound}(i)}]\f$, and a set of fitting \e points
 \f$t_{(i)}\in T_i\f$.  In each region one then writes:
 \anchor eq_tau
 \f{equation}{
-\label{eq_tau}
+\tag{eq_tau}
 \tau(t) = \sum_{k=0} \frac{1}{k!}c_{k(i)}(t-t_{(i)})^k \; .
 \f}
 Since one is normally interested in tracking the difference
 \f$\tau(t)-t\f$, one can also write the expansion as:
 \anchor eq_delta-tau
 \f{equation}{
-\label{eq_delta-tau}
+\tag{eq_delta-tau}
 \tau(t)-t = \sum_{k=0} a_{k(i)}(t-t_{(i)})^k \; ,
 \f}
 where
@@ -71,7 +71,7 @@ where
 a_{0(i)} & = & c_{0(i)}-t_{(i)}           \; , \nonumber\\
 a_{1(i)} & = & c_{1(i)}-1                 \; , \nonumber\\
 a_{k(i)} & = & c_{k(i)}/k! \; , \; k\geq2 \; . \nonumber
-\label{eq_a_c}
+\tag{eq_a_c}
 \f}
 These are the polynomial coefficients normally assumed in the modules
 under this header.

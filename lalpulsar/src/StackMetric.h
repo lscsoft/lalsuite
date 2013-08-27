@@ -78,7 +78,7 @@ extern "C" {
  time interval:
  \anchor eq_gab_phi
  \f{equation}
- \label{eq_gab_phi}
+ \tag{eq_gab_phi}
  g_{\alpha\beta}(\mathbf{\lambda}) =
  \left\langle
  \frac{\partial\phi[t;\mathbf{\lambda}]}{\partial\lambda^\alpha}
@@ -109,7 +109,7 @@ extern "C" {
  \f$\gamma_{ij}(\vec{\lambda})\f$, where \f$i\f$ and \f$j\f$ run from 1 to \f$n\f$:
  \anchor eq_gij_gab
  \f{equation}
- \label{eq_gij_gab}
+ \tag{eq_gij_gab}
  \gamma_{ij}(\vec{\lambda}) = \left[g_{ij}-\frac{g_{0i}g_{0j}}{g_{00}}
  \right]_{\lambda^0=f_\mathrm{max}} \; .
  \f}
