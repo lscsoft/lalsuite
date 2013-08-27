@@ -80,6 +80,28 @@ int XLALSimInjectDetectorStrainREAL4TimeSeries(
 	const COMPLEX8FrequencySeries *response
 );
 
+int XLALSimInjectLWLDetectorStrainREAL8TimeSeries(
+	REAL8TimeSeries *target,
+	const REAL8TimeSeries *hplus,
+	const REAL8TimeSeries *hcross,
+	double ra,
+	double dec,
+	double psi,
+	LALDetector *detector,
+	const COMPLEX16FrequencySeries *response
+);
+
+int XLALSimInjectLWLDetectorStrainREAL4TimeSeries(
+	REAL4TimeSeries *target,
+	const REAL4TimeSeries *hplus,
+	const REAL4TimeSeries *hcross,
+	double ra,
+	double dec,
+	double psi,
+	LALDetector *detector,
+	const COMPLEX8FrequencySeries *response
+);
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
