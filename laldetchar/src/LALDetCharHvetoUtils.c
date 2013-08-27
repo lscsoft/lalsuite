@@ -148,17 +148,12 @@ LALGSequence* XLALPopulateTrigSequenceFromTrigList( LALGSequence* trig_sequence,
   }
 
   do {
-    XLALAddGSeqSnglBurst( trig_sequence, tbl );
+    LALGSequenceIter* itr = XLALAddGSeqSnglBurst( trig_sequence, tbl );
     tbl=tbl->next;
-  } while( tbl );
-
-  LALGSequenceIter* itr = XLALGSequenceBegin(trig_sequence);
-  while( itr ){
     SnglBurst* sb = XLALGetGSeqSnglBurst(itr);
     sb->next = NULL;
-    itr = XLALGSequenceNext(itr);
-  }
-  XLALDestroyGSequenceIter(itr);
+    XLALDestroyGSequenceIter(itr);
+  } while( tbl );
 
   return trig_sequence;
 }

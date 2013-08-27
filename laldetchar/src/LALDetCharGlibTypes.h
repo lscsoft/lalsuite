@@ -60,7 +60,7 @@ SnglBurst* XLALGetGSeqSnglBurst(LALGSequenceIter* itr);
 #ifdef SWIG   // SWIG interface directives
 SWIGLAL(ACQUIRES_OWNERSHIP(SnglBurst*, sb));
 #endif
-void XLALAddGSeqSnglBurst(LALGSequence* seq, SnglBurst* sb);
+LALGSequenceIter* XLALAddGSeqSnglBurst(LALGSequence* seq, SnglBurst* sb);
 #ifdef SWIG   // SWIG interface directives
 SWIGLAL_CLEAR(ACQUIRES_OWNERSHIP(SnglBurst*, sb));
 #endif
