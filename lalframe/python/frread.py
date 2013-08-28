@@ -270,8 +270,10 @@ def get_stream_length(stream, channel):
     nfile = stream.cache.length
     length = 0
     for i in range(nfile):
-        length += lalframe.FrStreamGetVectorLength(stream, channel)
-        lalframe.FrStreamNext(stream)
+        for j in range(lalframe.FrFileQueryNFrame(stream.file)):
+            length += lalframe.FrFileQueryChanVectorLength(stream.file,
+                                                           channel,0)
+            lalframe.FrStreamNext(stream)
     # rewind the stream and return
     lalframe.FrStreamSeek(stream, epoch)
     return length
@@ -292,8 +294,9 @@ def get_stream_duration(stream):
     nfile = stream.cache.length
     duration = 0
     for i in range(nfile):
-        duration += lalframe.FrFileQueryDt(stream.file, 0)
-        lalframe.FrStreamNext(stream)
+        for j in range(lalframe.FrFileQueryNFrame(stream.file)):
+            duration += lalframe.FrFileQueryDt(stream.file, 0)
+            lalframe.FrStreamNext(stream)
     # rewind stream and return
     lalframe.FrStreamSeek(stream, epoch)
     return duration
