@@ -37,7 +37,7 @@
 /**
  * \author Reinhard Prix
  * \file
- * \ingroup ComputeFstat_h
+ * \ingroup ComputeFstat_OldDemodAPI_h
  * \brief Tests for XLALAdd[Multi]BinaryTimes()
  *
  * We simply compare the results to the old+obsolete LAL functions LALGet[Multi]Binarytimes(),

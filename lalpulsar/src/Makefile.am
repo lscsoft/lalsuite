@@ -10,6 +10,7 @@ lalpulsarinclude_HEADERS = \
 	BinaryPulsarTiming.h \
 	ComplexAM.h \
 	ComputeFstat.h \
+	ComputeFstat_OldDemodAPI.h \
 	ComputeSky.h \
 	ComputeSkyBinary.h \
 	DetectorStates.h \
@@ -69,7 +70,7 @@ liblalpulsar_la_SOURCES = \
 	BinaryPulsarTiming.c \
 	CoherentMetric.c \
 	ComplexAM.c \
-	ComputeFstat.c \
+	ComputeFstat_OldDemodAPI.c \
 	ComputeSky.c \
 	ComputeSkyBinary.c \
 	ConstructPLUT.c \

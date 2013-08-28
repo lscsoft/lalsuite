@@ -47,7 +47,7 @@
 #include <gsl/gsl_roots.h>
 
 #include <lal/AVFactories.h>
-#include "ComputeFstat.h"
+#include "ComputeFstat_OldDemodAPI.h"
 #include "ComplexAM.h"
 
 /*---------- local DEFINES ----------*/
