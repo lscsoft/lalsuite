@@ -163,6 +163,7 @@ packages/tools/test/SkymapTest
 packages/tools/test/TimeSeriesTest
 packages/tools/test/UnitsTest
 packages/utilities/test/CCoarseGrainFrequencySeriesTest
+packages/utilities/test/CSInterpolateTest
 packages/utilities/test/DCoarseGrainFrequencySeriesTest
 packages/utilities/test/DetInverseTest
 packages/utilities/test/DirichletTest

@@ -74,6 +74,7 @@ test/TestVelocity
 test/TwoDMeshTest
 test/UniversalDopplerMetricTest
 test/XLALComputeAMTest
+test/XLALMultiNoiseWeightsTest
 test/outputsft_v1.sft
 test/outputsft_v2.sft
 test/outputsftv2_v1.sft
