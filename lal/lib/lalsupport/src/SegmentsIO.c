@@ -27,7 +27,8 @@
 #include <lal/SegmentsIO.h>
 #include <lal/StringInput.h>
 
-/** \brief Reads a segment list file.
+/**
+ * \brief Reads a segment list file.
  * \ingroup SegmentsIO_h
  * \author Peter Shawhan
  *
@@ -221,7 +222,8 @@ LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, co
 }
 
 
-/** \brief Writes a segment list file.
+/**
+ * \brief Writes a segment list file.
  * \ingroup SegmentsIO_h
  * \author Peter Shawhan
  *
@@ -239,20 +241,20 @@ LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, co
  * <table>
  * <tr><th>Character</th><th>Effect</th></tr>
  * <tr><td>  \c a</td><td>
- *      Causes the segment list to be written out in ASCII format.
- *       Currently, this is the only format supported, so \c 'a'
- *       \e must appear in the options string. In the future,
- *       some other format (<em>e.g.</em> XML) could be supported.</td></tr>
+ * Causes the segment list to be written out in ASCII format.
+ * Currently, this is the only format supported, so \c 'a'
+ * \e must appear in the options string. In the future,
+ * some other format (<em>e.g.</em> XML) could be supported.</td></tr>
  * <tr><td>  \c i</td><td>
- *        Write the 'id' of each segment to the file, appearing before the
- *        GPS start and end times on the line.  If this option is not requested,
- *        then the GPS start and end times will be the first things on the
- *        line.</td></tr>
+ * Write the 'id' of each segment to the file, appearing before the
+ * GPS start and end times on the line.  If this option is not requested,
+ * then the GPS start and end times will be the first things on the
+ * line.</td></tr>
  * <tr><td>  \c d</td><td>
- *      Include the duration (in seconds) of the segment on each line of the file,
- *      appearing after the GPS start and end times on the line.</td></tr>
+ * Include the duration (in seconds) of the segment on each line of the file,
+ * appearing after the GPS start and end times on the line.</td></tr>
  * </table>
-*/
+ */
 void
 LALSegListWrite( LALStatus *status, LALSegList *seglist, const CHAR *fileName, const CHAR *options )
 {

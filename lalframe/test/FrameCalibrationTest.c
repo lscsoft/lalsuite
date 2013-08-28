@@ -34,9 +34,9 @@
  * \code
  * FrameCalibrationTest [options]
  * Options:
- *   -h         print this message
- *   -o         write calibration to file
- *   -v         verbose: print extra information
+ * -h         print this message
+ * -o         write calibration to file
+ * -v         verbose: print extra information
  * \endcode
  *
  * \heading{Description}
@@ -81,7 +81,7 @@
  * \heading{Uses}
  * \heading{Notes}
  *
-*/
+ */
 
 
 #include <stdio.h>

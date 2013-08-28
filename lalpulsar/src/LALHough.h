@@ -23,53 +23,52 @@ extern "C" {
 #endif
 
 /**
- *
  * \defgroup LALHough_h Header LALHough.h
-   \ingroup pkg_pulsarHough
-   \author Alicia Sintes, Badri Krishnan
-
-   \brief Routines for building and updating the space of partial
-   Hough map derivatives and related functions needed for the construction
-   of  total Hough maps at different frequencies and
-   possible residual spin down parameters.
-
-   \heading{Synopsis}
-
-   \code
-   #include <lal/LALHough.h>
-   \endcode
-
-   As we mention before,
-   the issue is to build histograms, the Hough map (HM), in the
-   parameter space: for each intrinsic frequency  \f$ f_0 \f$, each residual
-   spin-down parameter, and each refined sky location inside the patch.
-   Notice, from the master equation, that the effect of the residual
-   spin-down parameter is just a change in \f$ F_0\f$ , and, at any given
-   time, \f$  F_0 \f$ can be considered constant.
-   Also, the Hough map is a histogram, thus additive. It can be seen as
-   the sum of several partial Hough maps constructed using just one periodogram.
-
-   Therefore, we can construct  the HM for any  \f$ f_0\f$  and spin-down
-   value by adding together, at different times, partial Hough maps (PHM)
-   corresponding to different \f$ F_0\f$  values (or equivalently, adding their
-   derivatives and then integrating the result).
-
-   In practice this means that in order to obtain the HM for a given
-   frequency and all possible residual spin-down parameters, we  have to construct
-   a CYLINDER of around the frequency \f$ f_0\f$ .   All of the \e phmd coming
-   from data demodulated with the same parameters.
-   The coordinates of the \e phmd locate the position of the source in
-   the sky, and by summing along different directions inside the cylinder we refine
-   the spin-down value.
-   To analyze another frequency, for all possible spin-down parameters,
-   we just need to add a new line to the cylinder (and remove another one, in a
-   circular buffer)
-   and then proceed making all the possible sums again.
-
-   For the case of only 1 spin-down parameter we have to sum
-   following straight lines whose slope is related to the grid in the
-   residual spin-down parameter. We can distinguish (at most) as
-   many lines as the number of the different periodograms used.
+ * \ingroup pkg_pulsarHough
+ * \author Alicia Sintes, Badri Krishnan
+ *
+ * \brief Routines for building and updating the space of partial
+ * Hough map derivatives and related functions needed for the construction
+ * of  total Hough maps at different frequencies and
+ * possible residual spin down parameters.
+ *
+ * \heading{Synopsis}
+ *
+ * \code
+ * #include <lal/LALHough.h>
+ * \endcode
+ *
+ * As we mention before,
+ * the issue is to build histograms, the Hough map (HM), in the
+ * parameter space: for each intrinsic frequency  \f$ f_0 \f$, each residual
+ * spin-down parameter, and each refined sky location inside the patch.
+ * Notice, from the master equation, that the effect of the residual
+ * spin-down parameter is just a change in \f$ F_0\f$ , and, at any given
+ * time, \f$  F_0 \f$ can be considered constant.
+ * Also, the Hough map is a histogram, thus additive. It can be seen as
+ * the sum of several partial Hough maps constructed using just one periodogram.
+ *
+ * Therefore, we can construct  the HM for any  \f$ f_0\f$  and spin-down
+ * value by adding together, at different times, partial Hough maps (PHM)
+ * corresponding to different \f$ F_0\f$  values (or equivalently, adding their
+ * derivatives and then integrating the result).
+ *
+ * In practice this means that in order to obtain the HM for a given
+ * frequency and all possible residual spin-down parameters, we  have to construct
+ * a CYLINDER of around the frequency \f$ f_0\f$ .   All of the \e phmd coming
+ * from data demodulated with the same parameters.
+ * The coordinates of the \e phmd locate the position of the source in
+ * the sky, and by summing along different directions inside the cylinder we refine
+ * the spin-down value.
+ * To analyze another frequency, for all possible spin-down parameters,
+ * we just need to add a new line to the cylinder (and remove another one, in a
+ * circular buffer)
+ * and then proceed making all the possible sums again.
+ *
+ * For the case of only 1 spin-down parameter we have to sum
+ * following straight lines whose slope is related to the grid in the
+ * residual spin-down parameter. We can distinguish (at most) as
+ * many lines as the number of the different periodograms used.
  */
 /*@{*/
 
@@ -142,7 +141,8 @@ extern "C" {
  * 10. Structure, enum, union, etc., typdefs.
  */
 
-/** This structure stores the frequency indexes of the partial-Hough map
+/**
+ * This structure stores the frequency indexes of the partial-Hough map
  * derivatives at different time stamps that have to be combined to form a Hough map
  * for a given (null or) residual spin-down parameters
  */
@@ -152,7 +152,8 @@ typedef struct tagUINT8FrequencyIndexVector{
   UINT8      *data;   /**< the frequency indexes */
 } UINT8FrequencyIndexVector;
 
-/** This structure stores a set of frequency-index vectors. Every set
+/**
+ * This structure stores a set of frequency-index vectors. Every set
  * corresponds to a different spin-down residual value; there will thus be as many
  * sets as many spin-down residuals one wants to search over with the hough stage.
  */
@@ -180,7 +181,8 @@ typedef struct tagHOUGHMapTotalVector{
   HOUGHMapTotal    *ht;    /**< the Hough maps */
 } HOUGHMapTotalVector;
 
-/** This structure contains a vector sequence of partial-Hough maps
+/**
+ * This structure contains a vector sequence of partial-Hough maps
  * derivatives (for different time stamps and different frequencies) representing
  * a circular buffer for the frequency indexes
  */

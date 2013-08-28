@@ -26,47 +26,47 @@
 #include <lal/Inject.h>
 
 /**
-\author Creighton, T. D.
-\addtogroup InjectTimeSeries_c
-
-\brief Injects a time series of floating-point numbers into a time series of integers, with dithering.
-
-The function <tt>LALSI2InjectTimeSeries()</tt> (i.e.\ "Single-precision to INT2")
-dithers each sample in <tt>*output</tt>, adds the
-nearest time sample from <tt>*signalvec</tt>, and rounds to the nearest
-integer, storing the result back in <tt>*output</tt>.  If desired, the
-random parameters for the dithering can be created outside this
-routine and passed in as <tt>*params</tt> (see \ref Random_h); if this
-pointer is \c NULL, the parameters will be generated internally.
-
-The function <tt>LALSSInjectVector()</tt> (i.e.\ "Single-precision to
-single-precision") simply takes each sample from <tt>*output</tt> and
-adds the nearest corresponding time sample from <tt>*signalvec</tt>,
-without performing any dithering.
-
-\heading{Algorithm}
-
-The algorithm is as given in \ref InjectVector_c, with the following
-additional considerations.  Since the two time series each carry their
-own information about epoch and sampling interval, the value to be
-injected at a given point in <tt>*output</tt> is found by taking the
-nearest time sample in <tt>*signalvec</tt>.  Injection is only performed
-over the range in times that <tt>*output</tt> and <tt>*signalvec</tt>
-overlap; other values in <tt>*output</tt> are untouched.
-
-Previous versions of this algorithm found the value to be injected by
-interpolating the two nearest samples in <tt>*signalvec</tt>, which reduces
-high-frequency aliasing noise and ensures that the pre- and
-post-injection signals agree in timing to within a fraction of a
-sample.  However, this interpolation effectively convolved the signal
-with a triangular function of width \f$2\Delta t\f$, where \f$\Delta t\f$ is
-the sampling interval of the \e signal.  This has the effect of a
-low-pass filter with an attenuation factor of \f$\sim0.8\f$ at frequencies
-\f$\sim1/4\Delta t\f$.  Since input signals are typically sampled at or
-near their Nyquist frequencies, this would represent an unacceptable
-level of attenuation.  For this reason, the current version of the
-algorithm eliminates the interpolation procedure.
-*/
+ * \author Creighton, T. D.
+ * \addtogroup InjectTimeSeries_c
+ *
+ * \brief Injects a time series of floating-point numbers into a time series of integers, with dithering.
+ *
+ * The function <tt>LALSI2InjectTimeSeries()</tt> (i.e.\ "Single-precision to INT2")
+ * dithers each sample in <tt>*output</tt>, adds the
+ * nearest time sample from <tt>*signalvec</tt>, and rounds to the nearest
+ * integer, storing the result back in <tt>*output</tt>.  If desired, the
+ * random parameters for the dithering can be created outside this
+ * routine and passed in as <tt>*params</tt> (see \ref Random_h); if this
+ * pointer is \c NULL, the parameters will be generated internally.
+ *
+ * The function <tt>LALSSInjectVector()</tt> (i.e.\ "Single-precision to
+ * single-precision") simply takes each sample from <tt>*output</tt> and
+ * adds the nearest corresponding time sample from <tt>*signalvec</tt>,
+ * without performing any dithering.
+ *
+ * \heading{Algorithm}
+ *
+ * The algorithm is as given in \ref InjectVector_c, with the following
+ * additional considerations.  Since the two time series each carry their
+ * own information about epoch and sampling interval, the value to be
+ * injected at a given point in <tt>*output</tt> is found by taking the
+ * nearest time sample in <tt>*signalvec</tt>.  Injection is only performed
+ * over the range in times that <tt>*output</tt> and <tt>*signalvec</tt>
+ * overlap; other values in <tt>*output</tt> are untouched.
+ *
+ * Previous versions of this algorithm found the value to be injected by
+ * interpolating the two nearest samples in <tt>*signalvec</tt>, which reduces
+ * high-frequency aliasing noise and ensures that the pre- and
+ * post-injection signals agree in timing to within a fraction of a
+ * sample.  However, this interpolation effectively convolved the signal
+ * with a triangular function of width \f$2\Delta t\f$, where \f$\Delta t\f$ is
+ * the sampling interval of the \e signal.  This has the effect of a
+ * low-pass filter with an attenuation factor of \f$\sim0.8\f$ at frequencies
+ * \f$\sim1/4\Delta t\f$.  Since input signals are typically sampled at or
+ * near their Nyquist frequencies, this would represent an unacceptable
+ * level of attenuation.  For this reason, the current version of the
+ * algorithm eliminates the interpolation procedure.
+ */
 /*@{*/
 
 /** \see See documentation in \ref InjectTimeSeries_c */

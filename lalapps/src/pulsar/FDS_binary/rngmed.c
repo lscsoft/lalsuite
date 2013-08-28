@@ -17,45 +17,45 @@
 *  MA  02111-1307  USA
 */
 
-/** \file rngmed.c
-Implementation file for running median.
-\author Soumya D. Mohanty
-\date May 2001
-
-
-Revision 1.2  2004/07/26 14:36:14  bema
-New version by Soumya Mohanty to fix the "same values" bug
-
-Revision 1.6  2004/07/23 16:28:27  mohanty
-Removed print commands used in debugging. Changed some comments.
-
-Revision 1.5  2004/07/23 16:14:16  mohanty
-*** empty log message ***
-
-Revision 1.4  2004/07/23 16:07:22  mohanty
-Major changes in response to bug: segmentation violation
-when the running block comes upon a string of identical values that are
-guaranteed to be the smallest values in the data. (In
-this case, the first check point is guranteed to contain this smallest value.)
-The bug was caused by the fact that the next identical value was placed in the
-sorted list (ascending) *before* an old value.
-This caused the check point to move asynchronously with the pointer
-to the node containing the sequentially first sample. The segmentation
-violation actually happened much later and would not be detected 
-if the total data length were not long enough. This explains why the bug
-was hard to catch.
-Also took this opportunity to reduce over-engineering in the code:
-(1) Combined the nextsample>checks[0]->data and nextsample==checks[0]->data
-cases. Same code works for both except nextsample > checks[k]->data
-needs to be replaced with nextsample >= checks[k]->data
-(2) Combined the deletesample<nextsample and deletesample==nextsample
-cases into one. Same code works for both.
-NOTE: Need to check for this effect in the first block too because
-qsort does not preserve sequence when sorting by value.
-
-Revision 1.3  2004/07/22 17:25:08  mohanty
-
-*/
+/**
+ * \file rngmed.c
+ * Implementation file for running median.
+ * \author Soumya D. Mohanty
+ * \date May 2001
+ *
+ * Revision 1.2  2004/07/26 14:36:14  bema
+ * New version by Soumya Mohanty to fix the "same values" bug
+ *
+ * Revision 1.6  2004/07/23 16:28:27  mohanty
+ * Removed print commands used in debugging. Changed some comments.
+ *
+ * Revision 1.5  2004/07/23 16:14:16  mohanty
+ * empty log message ***
+ *
+ * Revision 1.4  2004/07/23 16:07:22  mohanty
+ * Major changes in response to bug: segmentation violation
+ * when the running block comes upon a string of identical values that are
+ * guaranteed to be the smallest values in the data. (In
+ * this case, the first check point is guranteed to contain this smallest value.)
+ * The bug was caused by the fact that the next identical value was placed in the
+ * sorted list (ascending) *before* an old value.
+ * This caused the check point to move asynchronously with the pointer
+ * to the node containing the sequentially first sample. The segmentation
+ * violation actually happened much later and would not be detected
+ * if the total data length were not long enough. This explains why the bug
+ * was hard to catch.
+ * Also took this opportunity to reduce over-engineering in the code:
+ * (1) Combined the nextsample>checks[0]->data and nextsample==checks[0]->data
+ * cases. Same code works for both except nextsample > checks[k]->data
+ * needs to be replaced with nextsample >= checks[k]->data
+ * (2) Combined the deletesample<nextsample and deletesample==nextsample
+ * cases into one. Same code works for both.
+ * NOTE: Need to check for this effect in the first block too because
+ * qsort does not preserve sequence when sorting by value.
+ *
+ * Revision 1.3  2004/07/22 17:25:08  mohanty
+ *
+ */
 
 
 #include <lal/LALStdlib.h>
@@ -64,20 +64,20 @@ Revision 1.3  2004/07/22 17:25:08  mohanty
 #include <math.h>
 #include "rngmed.h"
 
-/** 
-Computes running median in an efficient manner.
-
-      \param data Pointer to input data array
-
-      \param lendata Length of input data array
-
-      \param nblocks Block size for computing running median
-    
-      \param medians Pointer to output array. Number of elements is 
-                      lendata - nblocks+1. Must be 
-                       allocated outside this function.
-
-*/
+/**
+ * Computes running median in an efficient manner.
+ *
+ * \param data Pointer to input data array
+ *
+ * \param lendata Length of input data array
+ *
+ * \param nblocks Block size for computing running median
+ *
+ * \param medians Pointer to output array. Number of elements is
+ * lendata - nblocks+1. Must be
+ * allocated outside this function.
+ *
+ */
 int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians){
 
 
@@ -465,10 +465,11 @@ the new value.
 /*--------------------------
 This function is passed to qsort
 ----------------------------*/
-/**  This function is passed to \em qsort.
-\param elem1 element of a rngmed_val_index array
-\param elem2 another element of same rngmed_val_index array 
-*/
+/**
+ * This function is passed to \em qsort.
+ * \param elem1 element of a rngmed_val_index array
+ * \param elem2 another element of same rngmed_val_index array
+ */
 int rngmed_sortindex(const void *elem1, const void *elem2){
     /*Used in running qsort*/
     

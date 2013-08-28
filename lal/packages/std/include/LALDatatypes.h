@@ -466,8 +466,8 @@ typedef struct tagLIGOTimeGPS {
 /* *INDENT-ON* */
 #endif /* SWIG */
 
-/** Indices of arrays corresponding to particular units.
- *
+/**
+ * Indices of arrays corresponding to particular units.
  * The ::LALUnit structure has arrays giving the numerators
  * and denominators-minus-one of the powers of various units.
  * These are the indices for the particular units.
@@ -483,7 +483,8 @@ enum {
     LALNumUnits         /**< The number of units. */
 };
 
-/** This structure stores units in the mksA system (plus Kelvin, Strain,
+/**
+ * This structure stores units in the mksA system (plus Kelvin, Strain,
  * and ADC Count).  It also stores an overall power-of-ten scaling factor.
  * Thus, the units are given by
  * \f{equation}{
@@ -939,7 +940,8 @@ typedef struct tagCOMPLEX16ZPGFilter {
 
 #ifndef SWIG    /* exclude from SWIG interface */
 
-/** \ingroup LALStatusMacros_h
+/**
+ * \ingroup LALStatusMacros_h
  * \brief LAL status structure, see \ref ss_LALStatus for more details.
  */
 typedef struct tagLALStatus {

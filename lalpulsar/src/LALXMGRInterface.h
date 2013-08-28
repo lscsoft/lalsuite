@@ -28,25 +28,23 @@
  */
 
 /**
-
-\author Brady P., R., and Brown, D. A.
-\file
-\ingroup pulsarTODO
-
-\heading{Header \ref LALXMGRInterface.h}
-
-Provides protypes, structures and functions to allow visualisation of
-the events generated \c findchirp and the \c inspiral shared
-object.
-
-\heading{Synopsis}
-
-\code
-#include <lal/LALXMGRInterface.h>
-\endcode
-
-
-*/
+ * \author Brady P., R., and Brown, D. A.
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * \heading{Header \ref LALXMGRInterface.h}
+ *
+ * Provides protypes, structures and functions to allow visualisation of
+ * the events generated \c findchirp and the \c inspiral shared
+ * object.
+ *
+ * \heading{Synopsis}
+ *
+ * \code
+ * #include <lal/LALXMGRInterface.h>
+ * \endcode
+ *
+ */
 
 #ifndef _LALXMGRINTERFACEH_H
 #define _LALXMGRINTERFACEH_H

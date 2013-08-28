@@ -259,8 +259,8 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 }
 
 /**
-Compute the chirp time of the "reduced-spin" templates
-*/
+ * Compute the chirp time of the "reduced-spin" templates
+ */
 REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
     const REAL8 fStart,  /**< start GW frequency (Hz) */
     const REAL8 m1_SI,   /**< mass of companion 1 (kg) */

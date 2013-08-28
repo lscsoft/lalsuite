@@ -20,10 +20,10 @@
 /**
  * \author Craig Robinson, Yi Pan
  *
- * \file 
+ * \file
  *
- * \brief Functions for producing SEOBNRv1 waveforms for 
- * spinning binaries, as described in 
+ * \brief Functions for producing SEOBNRv1 waveforms for
+ * spinning binaries, as described in
  * Taracchini et al. ( PRD 86, 024011 (2012), arXiv 1202.0790 ).
  * All equation numbers in this file refer to equations of this paper,
  * unless otherwise specified.
@@ -63,7 +63,7 @@
 /**
  * Stopping condition for the regular resolution EOB orbital evolution
  * -- stop when reaching max orbital frequency in strong field.
- * At each test, 
+ * At each test,
  * if omega starts to decrease, return 1 to stop evolution;
  * if not, update omega with current value and return GSL_SUCCESS to continue evolution.
  */
@@ -94,8 +94,8 @@ XLALEOBSpinAlignedStopCondition(double UNUSED t,  /**< UNUSED */
 /**
  * Stopping condition for the high resolution EOB orbital evolution
  * -- stop when reaching a minimum radius 0.3M out of the EOB horizon (Eqs. 9b, 37)
- *    or when getting nan in any of the four ODE equations
- * At each test, 
+ * or when getting nan in any of the four ODE equations
+ * At each test,
  * if conditions met, return 1 to stop evolution;
  * if not, return GSL_SUCCESS to continue evolution.
  */
@@ -119,14 +119,14 @@ XLALSpinAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
 }
 
 /**
- * This function generates spin-aligned SEOBNRv1 waveforms h+ and hx.  
+ * This function generates spin-aligned SEOBNRv1 waveforms h+ and hx.
  * Currently, only the h22 harmonic is available.
- * STEP 0) Prepare parameters, including pre-computed coefficients 
- *         for EOB Hamiltonian, flux and waveform
+ * STEP 0) Prepare parameters, including pre-computed coefficients
+ * for EOB Hamiltonian, flux and waveform
  * STEP 1) Solve for initial conditions
  * STEP 2) Evolve EOB trajectory until reaching the peak of orbital frequency
- * STEP 3) Step back in time by tStepBack and volve EOB trajectory again 
- *         using high sampling rate, stop at 0.3M out of the "EOB horizon".
+ * STEP 3) Step back in time by tStepBack and volve EOB trajectory again
+ * using high sampling rate, stop at 0.3M out of the "EOB horizon".
  * STEP 4) Locate the peak of orbital frequency for NQC and QNM calculations
  * STEP 5) Calculate NQC correction using hi-sampling data
  * STEP 6) Calculate QNM excitation coefficients using hi-sampling data
@@ -237,7 +237,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   const REAL8 EPS_ABS = 1.0e-10;
   const REAL8 EPS_REL = 1.0e-9;
 
-  /**
+  /*
    * STEP 0) Prepare parameters, including pre-computed coefficients 
    *         for EOB Hamiltonian, flux and waveform  
    */
@@ -412,7 +412,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /**
+  /*
    * STEP 1) Solve for initial conditions
    */
 
@@ -476,7 +476,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /**
+  /*
    * STEP 2) Evolve EOB trajectory until reaching the peak of orbital frequency
    */
 
@@ -513,7 +513,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   }
   fclose( out );*/
 
-  /**
+  /*
    * STEP 3) Step back in time by tStepBack and volve EOB trajectory again 
    *         using high sampling rate, stop at 0.3M out of the "EOB horizon".
    */
@@ -620,7 +620,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   //printf( "We now think the peak is at %d\n", peakIdx );
   finalIdx = retLen - 1;
 
-  /**
+  /*
    * STEP 4) Locate the peak of orbital frequency for NQC and QNM calculations
    */
 
@@ -696,7 +696,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     sigImHi->data[i] =   thisReHi * ssSub2 + thisImHi * csSub2; 
   }
 
-  /**
+  /*
    * STEP 5) Calculate NQC correction using hi-sampling data
    */
 
@@ -755,7 +755,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     timewavePeak = timePeak - timewavePeak;
   }
   
-  /**
+  /*
    * STEP 6) Calculate QNM excitation coefficients using hi-sampling data
    */
 
@@ -796,7 +796,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /**
+  /*
    * STEP 7) Generate full inspiral waveform using desired sampling frequency
    */
 
@@ -844,7 +844,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     sigImVec->data[i] = amp0 * cimag(hLM);
   }
 
-  /**
+  /*
    * STEP 8) Generate full IMR modes -- attaching ringdown to inspiral
    */
 
@@ -855,7 +855,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     sigImVec->data[i+hiSRndx] = sigImHi->data[i*resampFac];
   }
 
-  /**
+  /*
    * STEP 9) Generate full IMR hp and hx waveforms
    */
   

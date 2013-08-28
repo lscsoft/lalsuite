@@ -18,23 +18,23 @@
 */
 
 /**
-\author Chin, David <dwchin@umich.edu> +1-734-730-1274
-\file
-\ingroup TimeDelay_h
-
-\brief Tests \c TimeDelay code.
-
-\heading{Usage}
-
-\code
-TestDelay
-\endcode
-
-\heading{Description}
-
-This program does zero-th order tests for XLALTimeDelayFromEarthCenter().
-
-*/
+ * \author Chin, David <dwchin@umich.edu> +1-734-730-1274
+ * \file
+ * \ingroup TimeDelay_h
+ *
+ * \brief Tests \c TimeDelay code.
+ *
+ * \heading{Usage}
+ *
+ * \code
+ * TestDelay
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * This program does zero-th order tests for XLALTimeDelayFromEarthCenter().
+ *
+ */
 
 #include <math.h>
 #include <stdlib.h>

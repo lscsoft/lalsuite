@@ -18,81 +18,76 @@
 */
 
 /**
-
-\author Yi Pan, Duncan Brown
-\file
-\ingroup LALInspiralBank_h
-
-\brief Module to compute the components of the metric which is used to describe
-distances on Physical Template Family signal manifold.
-
-\heading{Prototypes}
-
-<tt>XLALInspiralComputePTFIntrinsicMetric()</tt>:
-<ul>
-   <li> <tt>metric,</tt> Output, the metric at the lattice point defined by \c params
-   </li><li> <tt>psd,</tt> Input, the power spectral density of the data
-   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
-   in the computation of the metric.</li>
-</ul>
-
-
-<tt>XLALInspiralComputePTFFullMetric()</tt>:
-<ul>
-   <li> <tt>metric,</tt> Output, the metric at the lattice point defined by \c params
-   </li><li> <tt>psd,</tt> Input, the power spectral density of the data
-   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
-   in the computation of the metric.</li>
-</ul>
-
-
-<tt>XLALInspiralComputePTFWaveform()</tt>:
-<ul>
-   <li> <tt>ptfwave,</tt> Output, the waveform at the lattice point defined
-   by \c params
-   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
-   in the computation of the metric.</li>
-</ul>
-
-
-<tt>XLALInspiralComputePTFWDeriv()</tt>:
-<ul>
-   <li> <tt>Wderiv,</tt> Output, the time derivative of waveform at the lattice
-   point defined by \c params
-   </li><li> <tt>psd,</tt>  Input, the power spectral density of the data
-   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
-   in the computation of the metric
-   </li><li> <tt>paramid,</tt> Input, id of the parameter to take derivative on
-   </li><li> <tt>initdelta,</tt> Input, initial difference in parameters
-   </li><li> <tt>tolerance,</tt> Input, stop iteration when difference between two
-   bisections is smaller than tolerance.</li>
-</ul>
-
-
-<tt>XLALInspiralComputePTFQDeriv()</tt>:
-<ul>
-   <li> <tt>Qderiv,</tt> Output, the time derivative of Q at the lattice point
-   defined by \c params
-   </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
-   in the computation of the metric.</li>
-</ul>
-
-\heading{Description}
-We calculate the components of the metric using the procedure outlined
-by Yi.
-
-\heading{Algorithm}
-
-\heading{Uses}
-
-\code
-LALMalloc
-LALFree
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Yi Pan, Duncan Brown
+ * \file
+ * \ingroup LALInspiralBank_h
+ *
+ * \brief Module to compute the components of the metric which is used to describe
+ * distances on Physical Template Family signal manifold.
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>XLALInspiralComputePTFIntrinsicMetric()</tt>:
+ * <ul>
+ * <li> <tt>metric,</tt> Output, the metric at the lattice point defined by \c params
+ * </li><li> <tt>psd,</tt> Input, the power spectral density of the data
+ * </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
+ * in the computation of the metric.</li>
+ * </ul>
+ *
+ * <tt>XLALInspiralComputePTFFullMetric()</tt>:
+ * <ul>
+ * <li> <tt>metric,</tt> Output, the metric at the lattice point defined by \c params
+ * </li><li> <tt>psd,</tt> Input, the power spectral density of the data
+ * </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
+ * in the computation of the metric.</li>
+ * </ul>
+ *
+ * <tt>XLALInspiralComputePTFWaveform()</tt>:
+ * <ul>
+ * <li> <tt>ptfwave,</tt> Output, the waveform at the lattice point defined
+ * by \c params
+ * </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
+ * in the computation of the metric.</li>
+ * </ul>
+ *
+ * <tt>XLALInspiralComputePTFWDeriv()</tt>:
+ * <ul>
+ * <li> <tt>Wderiv,</tt> Output, the time derivative of waveform at the lattice
+ * point defined by \c params
+ * </li><li> <tt>psd,</tt>  Input, the power spectral density of the data
+ * </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
+ * in the computation of the metric
+ * </li><li> <tt>paramid,</tt> Input, id of the parameter to take derivative on
+ * </li><li> <tt>initdelta,</tt> Input, initial difference in parameters
+ * </li><li> <tt>tolerance,</tt> Input, stop iteration when difference between two
+ * bisections is smaller than tolerance.</li>
+ * </ul>
+ *
+ * <tt>XLALInspiralComputePTFQDeriv()</tt>:
+ * <ul>
+ * <li> <tt>Qderiv,</tt> Output, the time derivative of Q at the lattice point
+ * defined by \c params
+ * </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
+ * in the computation of the metric.</li>
+ * </ul>
+ *
+ * \heading{Description}
+ * We calculate the components of the metric using the procedure outlined
+ * by Yi.
+ *
+ * \heading{Algorithm}
+ *
+ * \heading{Uses}
+ *
+ * \code
+ * LALMalloc
+ * LALFree
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdlib.h>

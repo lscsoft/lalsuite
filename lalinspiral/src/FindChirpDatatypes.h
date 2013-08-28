@@ -39,22 +39,23 @@ extern "C" {
 #endif
 
 /**
-\addtogroup FindChirpDatatypes_h
-\author Brown, D. A.
-
-\brief Provides core protypes for the core datatypes using in findchirp.
-
-\heading{Synopsis}
-\code
-#include <lal/FindChirpDatatypes.h>
-\endcode
-
-*/
+ * \addtogroup FindChirpDatatypes_h
+ * \author Brown, D. A.
+ *
+ * \brief Provides core protypes for the core datatypes using in findchirp.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/FindChirpDatatypes.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /* ---------- typedefs of structures used by the findchirp functions ---------- */
 
-/** Struture used to contain a binary inspiral standard candle.
+/**
+ * Struture used to contain a binary inspiral standard candle.
  * \c distance is the distance in Mpc at which an optimally oriented
  * binary with the mass parameters stored in \c tmplt would produce
  * the signal-to-noise ratio squared \c rhosq.
@@ -82,7 +83,8 @@ tagDataSegment
 }
 DataSegment;
 
-/** Structure used to contain an array of ::DataSegment's.
+/**
+ * Structure used to contain an array of ::DataSegment's.
  * Each \c DataSegment contains an <tt>INT4 number</tt>
  * used to identify the data segment and pointers to a data channel
  * (<tt>REAL4TimeSeries *chan</tt>), a power spectral estimate
@@ -98,7 +100,8 @@ tagDataSegmentVector
 DataSegmentVector;
 
 
-/** This structure provides a method of constucting doubly linked
+/**
+ * This structure provides a method of constucting doubly linked
  * lists of \c InspiralTemplate structures.
  */
 typedef struct
@@ -111,7 +114,8 @@ tagInspiralTemplateNode
 InspiralTemplateNode;
 
 
-/** This structure provides a method of constucting linked
+/**
+ * This structure provides a method of constucting linked
  * lists of \c InspiralTemplateNode structures (as if it were not already
  * complicated enough).  Actually it is necessary to create a list of
  * sub banks for the template bank veto so that roughly 20 or so templates
@@ -125,7 +129,8 @@ tagInspiralTemplateNodeList
 }
 InspiralTemplateNodeList;
 
-/** This structure provides contains subbanks for the template bank veto.
+/**
+ * This structure provides contains subbanks for the template bank veto.
  */
 typedef struct
 tagFindChirpSubBank
@@ -137,7 +142,8 @@ tagFindChirpSubBank
 FindChirpSubBank;
 
 
-/** This structure contains the conditioned input data and its
+/**
+ * This structure contains the conditioned input data and its
  * parameters and is one of the inputs to the <tt>FindChirpFilter()</tt>
  * function.
  */
@@ -232,7 +238,8 @@ tagFindChirpSegment
 }
 FindChirpSegment;
 
-/** A vector of \c FindChirpSegment structures, defined above.
+/**
+ * A vector of \c FindChirpSegment structures, defined above.
  */
 typedef struct
 tagFindChirpSegmentVector
@@ -242,11 +249,12 @@ tagFindChirpSegmentVector
 }
 FindChirpSegmentVector;
 
-/** This structure contains a frequency domain template used as input
+/**
+ * This structure contains a frequency domain template used as input
  * to the <tt>FindChirpFilter()</tt> routine. This may either be a template
  * generated in the frequency domain or the Fourier transform of template
  * generated in the time domain.
-*/
+ */
 typedef struct
 tagFindChirpTemplate
 {

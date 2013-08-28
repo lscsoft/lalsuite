@@ -20,33 +20,33 @@
 #include <lal/LALInspiralBank.h>
 
 /**
-\ingroup LALInspiralBank_h
-\brief Function to find the vertices of a rectangle given its centre, half side-lengths and orientation angle.
-\author Sathyaprakash, B. S.
-
-This code computes the vertices of a rectangle for plotting
-a grid of templates with xmgr, useful when looking at the
-minimal-match-rectangles around mesh points in a template bank.
-
-\heading{Algorithm}
-Given the centre \f$(x_0,y_0)\f$ and half-sides \f$(dx,dy),\f$
-the vertices of a rectangle in a \e diagonal coordinate
-system are given by
-\f{eqnarray}{
-x_1 & = & x_0 - dx, \quad y_1 = y_0 - dy, \nonumber \\
-x_2 & = & x_0 + dx, \quad y_2 = y_0 - dy, \nonumber \\
-x_3 & = & x_0 + dx, \quad y_3 = y_0 + dy, \nonumber \\
-x_4 & = & x_0 - dx, \quad y_4 = y_0 + dy. \nonumber
-\f}
-The coordinates of a rectangle oriented at an angle \f$\theta\f$ is
-found by using the formulas
-\f{eqnarray}{
-x' = x \cos(\theta) - y \sin(\theta),\nonumber \\
-y' = y \cos(\theta) + x \sin(\theta).\nonumber
-\f}
-The function returns five coordinate points (1,2,3,4,1),
-and not just the four verticies, to help
-a plotting programme to complete the rectangle.
+ * \ingroup LALInspiralBank_h
+ * \brief Function to find the vertices of a rectangle given its centre, half side-lengths and orientation angle.
+ * \author Sathyaprakash, B. S.
+ *
+ * This code computes the vertices of a rectangle for plotting
+ * a grid of templates with xmgr, useful when looking at the
+ * minimal-match-rectangles around mesh points in a template bank.
+ *
+ * \heading{Algorithm}
+ * Given the centre \f$(x_0,y_0)\f$ and half-sides \f$(dx,dy),\f$
+ * the vertices of a rectangle in a \e diagonal coordinate
+ * system are given by
+ * \f{eqnarray}{
+ * x_1 & = & x_0 - dx, \quad y_1 = y_0 - dy, \nonumber \\
+ * x_2 & = & x_0 + dx, \quad y_2 = y_0 - dy, \nonumber \\
+ * x_3 & = & x_0 + dx, \quad y_3 = y_0 + dy, \nonumber \\
+ * x_4 & = & x_0 - dx, \quad y_4 = y_0 + dy. \nonumber
+ * \f}
+ * The coordinates of a rectangle oriented at an angle \f$\theta\f$ is
+ * found by using the formulas
+ * \f{eqnarray}{
+ * x' = x \cos(\theta) - y \sin(\theta),\nonumber \\
+ * y' = y \cos(\theta) + x \sin(\theta).\nonumber
+ * \f}
+ * The function returns five coordinate points (1,2,3,4,1),
+ * and not just the four verticies, to help
+ * a plotting programme to complete the rectangle.
  */
 void
 LALRectangleVertices(

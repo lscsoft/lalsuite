@@ -639,7 +639,8 @@ int main(int argc, char **argv)
 } /* main() */
 
 
-/** Function to register and read all user input
+/**
+ * Function to register and read all user input
  */
 int
 InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be filled */

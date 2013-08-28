@@ -1,108 +1,107 @@
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup inspiral
-
-\brief The file \c LALInspiralMCMC contains tools to perform a Monte Carlo Markov Chain parameter estimation computation on gravitational wave data.
-
-\heading{Description}
-
-This package contains routines needed for doing a MCMC calculation within the LAL framework. The only functions called from outside this package is to \c XLALMCMCMetro.
-
-The function \c XLALMCMCMetro is the main function to call to start the actual Markov Chain given the parameters in the \c MCMCParameter structure as a set of starting value. This function performs a Metropolis Hasting sampling.
-
-The function \c XLALMCMCSample samples the next element of the chain, i.e. draws a new proposal parameter set using \c XLALMCMCJump and apply the acceptance/rejectance rule.
-
-The function \c XLALMCMCJump computes a proposal parameter set from the current parameter set, using the covariance matrix and a random draw from a multidimensional Student distribution:
-The use of a Student distribution (with n=2) ensures that outliers are more weighted than in a Normal distribution.
-
-The function \c XLALMCMCCheckAnnealing is used for annealing if the flag \c useAnnealing is set to 1. In this function, an 'annealing temparature' \c annealingTemp decreases from an initial temperature of \c annealingTempBegin to unity within \c annealingSteps stepsin an exponential way.
-
-The function \c XLALMCMCCheckBurnin is experimental code to check if the burnin is reached, if \c flagBurnin is set to 1. The last \c burninStep values of the chain are fitted to a line every \c burninNumber steps in the chain, and if the ratio of slope to mean is below a value \c burninThreshold the burnin is reached.
-
-The function \c XLALMCMCCheckUpdate is used to update the covariance matrix. The updating is done by using the actual parameters and a set of mean values (\c mean) and difference values (\c xdiff and \c ndiff ).
-
-The function \c XLALMCMCCheckAcceptRatio is experimental code to check the current acceptance ratio. If this ratio is too small. If, after \c acceptRatioNorm steps the ratio of accepted (\c acceptRatioCounter) to rejected jumps is below \c acceptThreshold, then the annealing temperature is halfed, and the counters are zeroed.
-
-The functions <tt>XLALMCMCAddParam, XLALMCMCGetParam, XLALMCMCGetParameter, XLALMCMCSetParameter, XLALMCMCCopyPara, XLALMCMCFreePara</tt> and \c XLALMXMXDestroyPara are functions to handle the \c MCMCParameter structure. They can be used to add new parameter to this structure (in the initializing step (\c XLALMCMCAddParam) and to set/get parameters. The function \c XLALMCMCCopyPara copies the parameter structure (actually only the current values. The pointer to the core-structure remains the same).
-
-The functions \c XLALMultiStudentDeviates and \c XLALMultiNormalDeviates draw multivariate random values, either Student-distributed or Norla distributed, given a covariance matrix. A function \c XLALCheckPositiveDefinite can be used to check if the function is positive definite, which is required beforehand.
-
-
-To set a different chain for the parameter estimation, just set another random seed.
-
-\heading{Algorithm}
-
-The algorithms used in these functions are explained in detail in [Ref Needed].
-
-\heading{Uses}
-
-This section briefly explains how to set-up the \c MCMCInput and the \c MCMCParameter structure for doing a MCMC sampling.
-
-The first step is to initialize the \c MCMCInput structure with the output from data reading and conditioning, as well with user inputs to define settings for the MCMC. Also, the user is required to set the pointer to three functions which will initialize the parameter structure (\c funcInit), that calculates the logarithm of the likelihood for a given set of parameters (\c funcLikelihood) and that calculates the logarithm of the prior given a set of parameters (\c funcPrior). Below is an example:
-
-\code
-        LALMCMCInput inputMCMC;
-        inputMCMC.fcFilterInput  = fcFilterInput;
-        inputMCMC.fcFilterParams = fcFilterParams;
-        inputMCMC.fcTmpltParams  = fcTmpltParams;
-        inputMCMC.fcDataParams   = fcDataParams;
-        inputMCMC.randParams     = randParams;
-        inputMCMC.approximant    = approximant;
-        inputMCMC.inspiralTable  = inputCurrent;
-
-        inputMCMC.tmpltPtr =
-          (InspiralTemplate*)LALCalloc(sizeof(InspiralTemplate),1);
-
-        inputMCMC.counter=0;
-
-        inputMCMC.useAnnealing = 0;
-        inputMCMC.numberAnneal=iterAnneal;
-        inputMCMC.annealingTempBegin=4.0;
-        inputMCMC.annealingTemp=1.0;
-        inputMCMC.annealingSteps=0;
-
-        inputMCMC.useScaling = 1;
-        inputMCMC.scalePeak=50.0;
-        inputMCMC.scaleNormal=1.0;
-        inputMCMC.scaleQ=0.84;
-        inputMCMC.scalePA=1e-3;
-
-        inputMCMC.flagAcceptRatio=1;
-        inputMCMC.acceptRatioCounter=0;
-
-        inputMCMC.useUpdate=1;
-        inputMCMC.updateNumber=iterCovupdate;
-        inputMCMC.updateOffset=100;
-        inputMCMC.updateCounter=0;
-        inputMCMC.mean=NULL;
-        inputMCMC.xdiff=NULL;
-        inputMCMC.ndiff=NULL;
-
-        inputMCMC.flagBurnin = 1;
-        inputMCMC.burninNumber = 100;
-        inputMCMC.burninStep = 100;
-        inputMCMC.burninTime = 0;
-
-        inputMCMC.numberDraw=iterDraw;
-
-        inputMCMC.verbose=1;
-
-        inputMCMC.funcInit     = MCMCInit0;
-        inputMCMC.funcTemplate = MCMCTemplate0;
-        inputMCMC.funcPrior    = MCMCPrior0;
-
-\endcode
-
-The next step is to initialize a \c MCMCParameter structure as a NULL pointer and pass it along the
-\c MCMCInput structure to \c XLALMCMCMetro. Thats it!
-
-However, you need to point to a function that initializes the parameter structure. This \c funcInit
-function populates the parameter structure with as many parameters as the user whishes, defining
-inital and boundary values. An example of a init function is given here, which also can be found in
-the code \ref LALInspiralMCMCUser.c.
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup inspiral
+ *
+ * \brief The file \c LALInspiralMCMC contains tools to perform a Monte Carlo Markov Chain parameter estimation computation on gravitational wave data.
+ *
+ * \heading{Description}
+ *
+ * This package contains routines needed for doing a MCMC calculation within the LAL framework. The only functions called from outside this package is to \c XLALMCMCMetro.
+ *
+ * The function \c XLALMCMCMetro is the main function to call to start the actual Markov Chain given the parameters in the \c MCMCParameter structure as a set of starting value. This function performs a Metropolis Hasting sampling.
+ *
+ * The function \c XLALMCMCSample samples the next element of the chain, i.e. draws a new proposal parameter set using \c XLALMCMCJump and apply the acceptance/rejectance rule.
+ *
+ * The function \c XLALMCMCJump computes a proposal parameter set from the current parameter set, using the covariance matrix and a random draw from a multidimensional Student distribution:
+ * The use of a Student distribution (with n=2) ensures that outliers are more weighted than in a Normal distribution.
+ *
+ * The function \c XLALMCMCCheckAnnealing is used for annealing if the flag \c useAnnealing is set to 1. In this function, an 'annealing temparature' \c annealingTemp decreases from an initial temperature of \c annealingTempBegin to unity within \c annealingSteps stepsin an exponential way.
+ *
+ * The function \c XLALMCMCCheckBurnin is experimental code to check if the burnin is reached, if \c flagBurnin is set to 1. The last \c burninStep values of the chain are fitted to a line every \c burninNumber steps in the chain, and if the ratio of slope to mean is below a value \c burninThreshold the burnin is reached.
+ *
+ * The function \c XLALMCMCCheckUpdate is used to update the covariance matrix. The updating is done by using the actual parameters and a set of mean values (\c mean) and difference values (\c xdiff and \c ndiff ).
+ *
+ * The function \c XLALMCMCCheckAcceptRatio is experimental code to check the current acceptance ratio. If this ratio is too small. If, after \c acceptRatioNorm steps the ratio of accepted (\c acceptRatioCounter) to rejected jumps is below \c acceptThreshold, then the annealing temperature is halfed, and the counters are zeroed.
+ *
+ * The functions <tt>XLALMCMCAddParam, XLALMCMCGetParam, XLALMCMCGetParameter, XLALMCMCSetParameter, XLALMCMCCopyPara, XLALMCMCFreePara</tt> and \c XLALMXMXDestroyPara are functions to handle the \c MCMCParameter structure. They can be used to add new parameter to this structure (in the initializing step (\c XLALMCMCAddParam) and to set/get parameters. The function \c XLALMCMCCopyPara copies the parameter structure (actually only the current values. The pointer to the core-structure remains the same).
+ *
+ * The functions \c XLALMultiStudentDeviates and \c XLALMultiNormalDeviates draw multivariate random values, either Student-distributed or Norla distributed, given a covariance matrix. A function \c XLALCheckPositiveDefinite can be used to check if the function is positive definite, which is required beforehand.
+ *
+ * To set a different chain for the parameter estimation, just set another random seed.
+ *
+ * \heading{Algorithm}
+ *
+ * The algorithms used in these functions are explained in detail in [Ref Needed].
+ *
+ * \heading{Uses}
+ *
+ * This section briefly explains how to set-up the \c MCMCInput and the \c MCMCParameter structure for doing a MCMC sampling.
+ *
+ * The first step is to initialize the \c MCMCInput structure with the output from data reading and conditioning, as well with user inputs to define settings for the MCMC. Also, the user is required to set the pointer to three functions which will initialize the parameter structure (\c funcInit), that calculates the logarithm of the likelihood for a given set of parameters (\c funcLikelihood) and that calculates the logarithm of the prior given a set of parameters (\c funcPrior). Below is an example:
+ *
+ * \code
+ * LALMCMCInput inputMCMC;
+ * inputMCMC.fcFilterInput  = fcFilterInput;
+ * inputMCMC.fcFilterParams = fcFilterParams;
+ * inputMCMC.fcTmpltParams  = fcTmpltParams;
+ * inputMCMC.fcDataParams   = fcDataParams;
+ * inputMCMC.randParams     = randParams;
+ * inputMCMC.approximant    = approximant;
+ * inputMCMC.inspiralTable  = inputCurrent;
+ *
+ * inputMCMC.tmpltPtr =
+ * (InspiralTemplate*)LALCalloc(sizeof(InspiralTemplate),1);
+ *
+ * inputMCMC.counter=0;
+ *
+ * inputMCMC.useAnnealing = 0;
+ * inputMCMC.numberAnneal=iterAnneal;
+ * inputMCMC.annealingTempBegin=4.0;
+ * inputMCMC.annealingTemp=1.0;
+ * inputMCMC.annealingSteps=0;
+ *
+ * inputMCMC.useScaling = 1;
+ * inputMCMC.scalePeak=50.0;
+ * inputMCMC.scaleNormal=1.0;
+ * inputMCMC.scaleQ=0.84;
+ * inputMCMC.scalePA=1e-3;
+ *
+ * inputMCMC.flagAcceptRatio=1;
+ * inputMCMC.acceptRatioCounter=0;
+ *
+ * inputMCMC.useUpdate=1;
+ * inputMCMC.updateNumber=iterCovupdate;
+ * inputMCMC.updateOffset=100;
+ * inputMCMC.updateCounter=0;
+ * inputMCMC.mean=NULL;
+ * inputMCMC.xdiff=NULL;
+ * inputMCMC.ndiff=NULL;
+ *
+ * inputMCMC.flagBurnin = 1;
+ * inputMCMC.burninNumber = 100;
+ * inputMCMC.burninStep = 100;
+ * inputMCMC.burninTime = 0;
+ *
+ * inputMCMC.numberDraw=iterDraw;
+ *
+ * inputMCMC.verbose=1;
+ *
+ * inputMCMC.funcInit     = MCMCInit0;
+ * inputMCMC.funcTemplate = MCMCTemplate0;
+ * inputMCMC.funcPrior    = MCMCPrior0;
+ *
+ * \endcode
+ *
+ * The next step is to initialize a \c MCMCParameter structure as a NULL pointer and pass it along the
+ * \c MCMCInput structure to \c XLALMCMCMetro. Thats it!
+ *
+ * However, you need to point to a function that initializes the parameter structure. This \c funcInit
+ * function populates the parameter structure with as many parameters as the user whishes, defining
+ * inital and boundary values. An example of a init function is given here, which also can be found in
+ * the code \ref LALInspiralMCMCUser.c.
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

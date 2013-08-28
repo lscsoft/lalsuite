@@ -18,14 +18,14 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
  * Module implementing a probability density function (pdf) object,
  * and useful methods to operate on such objects.
  *
- *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -51,8 +51,8 @@
 
 
 /* ==================== function definitions ==================== */
-/** Function to generate random samples drawn from the given pdf(x)
- *
+/**
+ * Function to generate random samples drawn from the given pdf(x)
  * NOTE: if the 'sampling' field is NULL, it will be set the first call to this function.
  */
 REAL8
@@ -119,10 +119,10 @@ XLALDrawFromPDF1D ( pdf1D_t *pdf,	/**< [in] probability density to sample from *
 
 } /* XLALDrawFromPDF1D() */
 
-/** Checks internal consistency of pdf1D object.
+/**
+ * Checks internal consistency of pdf1D object.
  *
  * If lalDebugLevel > 0, also checks normalization of pdf if it claims to be normalized.
- *
  *
  * Return: XLAL_SUCCESS if pdf seems OK, XLAL-error otherwise
  */
@@ -188,7 +188,8 @@ XLALCheckValidPDF1D ( const pdf1D_t *pdf )
 
 } /* XLALCheckValidPDF1D() */
 
-/** Destructor function for 1-D pdf
+/**
+ * Destructor function for 1-D pdf
  */
 void
 XLALDestroyPDF1D ( pdf1D_t *pdf )
@@ -212,7 +213,8 @@ XLALDestroyPDF1D ( pdf1D_t *pdf )
 } /* XLALDestroyPDF1D() */
 
 
-/** Creator function for a 'singular' 1D pdf, containing a single value with certainty, ie P(x0)=1, and P(x!=x0)=0
+/**
+ * Creator function for a 'singular' 1D pdf, containing a single value with certainty, ie P(x0)=1, and P(x!=x0)=0
  *
  * This is encoded as an xTics array containing just one value: x0, and prob=NULL, sampling=NULL
  */
@@ -240,7 +242,8 @@ XLALCreateSingularPDF1D ( REAL8 x0	/**< domain of pdf is a single point: x0 */
 
 } /* XLALCreateSingularPDF1D() */
 
-/** Creator function for a uniform 1D pdf over [xMin, xMax]
+/**
+ * Creator function for a uniform 1D pdf over [xMin, xMax]
  *
  * This is encoded as an xTics array containing just two values: x[0]=xMin, x[1]=xMax,
  * and prob=NULL, sampling=NULL {not required to draw from this pdf}
@@ -278,7 +281,8 @@ XLALCreateUniformPDF1D ( REAL8 xMin,	/**< lower boundary of domain interval */
 } /* XLALCreateUniformPDF1D() */
 
 
-/** Creator function for a generic discrete 1D pdf over [xMin, xMax], discretized into numBins bins
+/**
+ * Creator function for a generic discrete 1D pdf over [xMin, xMax], discretized into numBins bins
  *
  * NOTE: generates a uniform sampling of the domain [xMin, xMax] in numBins
  * NOTE2: returns the P[i] array 'prob' initialized to 0, so after calling this function
@@ -337,7 +341,8 @@ XLALCreateDiscretePDF1D ( REAL8 xMin,	/**< lower boundary of domain interval */
 
 } /* XLALCreateDiscretePDF1D() */
 
-/** Method to normalize the given pdf1D.
+/**
+ * Method to normalize the given pdf1D.
  * Only does something if necessary, ie if pdf isn't normalized already
  */
 int
@@ -387,7 +392,8 @@ XLALNormalizePDF1D ( pdf1D_t *pdf )
 
 } /* XLALNormalizePDF1D() */
 
-/** Function to write a pdf1D to given filepointer fp.
+/**
+ * Function to write a pdf1D to given filepointer fp.
  *
  * Writes the pdf in octave format as a 2xN matrix, containing
  * values { xtics[i], pdf[i] }
@@ -475,7 +481,8 @@ XLALOutputPDF1D_to_fp ( FILE* fp,		/**< output file-pointer to write into [appen
 
 } /* XLALOutputPDF1D_to_fp() */
 
-/** Find the 'mode' of the probabilty distribution, ie. the value x at which the pdf has its maximum.
+/**
+ * Find the 'mode' of the probabilty distribution, ie. the value x at which the pdf has its maximum.
  *
  * Note1: We return the center-value of the discrete 'bin' containing the maximum of the distribution 'pdf'.
  * (in particular, for an explicitly uniform distribution (2 tics, probDens=NULL) we return the mid-point of the domain).

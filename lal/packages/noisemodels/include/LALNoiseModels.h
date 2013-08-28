@@ -32,22 +32,21 @@ extern "C" {
 #endif
 
 /**
-
-\addtogroup LALNoiseModels_h
-\author Sathyaprakash, B.S.
-
-\brief Header file for model noise generation codes.
-
-\heading{Synopsis}
-\code
-#include <lal/LALNoiseModels.h>
-\endcode
-
-This header file covers routines that are used in
-synthetic background noise  expected in various
-detectors and signals with random parameters in background noise.
-
-*/
+ * \addtogroup LALNoiseModels_h
+ * \author Sathyaprakash, B.S.
+ *
+ * \brief Header file for model noise generation codes.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LALNoiseModels.h>
+ * \endcode
+ *
+ * This header file covers routines that are used in
+ * synthetic background noise  expected in various
+ * detectors and signals with random parameters in background noise.
+ *
+ */
 /* @{ */
 /**\name Error Codes */ /*@{*/
 #define LALNOISEMODELSH_ENULL 	1	/**< Arguments contained an unexpected null pointer */

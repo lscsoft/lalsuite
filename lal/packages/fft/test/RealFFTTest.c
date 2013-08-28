@@ -27,12 +27,12 @@
  * \code
  * RealFFTTest [options]
  * Options:
- *   -h         print this message
- *   -q         quiet: run silently
- *   -v         verbose: print extra information
- *   -d level   set lalDebugLevel to level
- *   -m trials  set number of random trials
- *   -n size    set size of FFTs
+ * -h         print this message
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * -m trials  set number of random trials
+ * -n size    set size of FFTs
  * \endcode
  *
  * Use the <tt>-n</tt> option to specify the size of the test transform and
@@ -49,7 +49,7 @@
  * \heading{Uses}
  * \heading{Notes}
  *
-*/
+ */
 
 /** \cond DONT_DOXYGEN */
 #include <config.h>

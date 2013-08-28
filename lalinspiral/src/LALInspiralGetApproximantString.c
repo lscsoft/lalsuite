@@ -18,36 +18,35 @@
 */
 
 /**
-
-\author Craig Robinson
-\file
-
-\brief Function for creating the approximant string which gets written to output
-files for a given approximant and PN order of the phasing.
-
-\heading{Prototypes}
-
-<tt>XLALXLALInspiralGetApproximantString()</tt>:
-<ul>
-   <li> <tt>output,</tt> Output, Pointer to the string in which to place the output
-   </li><li> <tt>length,</tt> Input, the length of the output string
-   </li><li> <tt>approx,</tt> Input, enumeration of the waveform approximant
-   </li><li> <tt>order,</tt> Input, post-Newtonian order of the phasing.</li>
-</ul>
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-
-\code
-snprintf
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Craig Robinson
+ * \file
+ *
+ * \brief Function for creating the approximant string which gets written to output
+ * files for a given approximant and PN order of the phasing.
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>XLALXLALInspiralGetApproximantString()</tt>:
+ * <ul>
+ * <li> <tt>output,</tt> Output, Pointer to the string in which to place the output
+ * </li><li> <tt>length,</tt> Input, the length of the output string
+ * </li><li> <tt>approx,</tt> Input, enumeration of the waveform approximant
+ * </li><li> <tt>order,</tt> Input, post-Newtonian order of the phasing.</li>
+ * </ul>
+ *
+ * \heading{Description}
+ *
+ * \heading{Algorithm}
+ *
+ * \heading{Uses}
+ *
+ * \code
+ * snprintf
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>

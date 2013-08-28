@@ -42,7 +42,8 @@
 extern "C" {
 #endif
 
-/** \defgroup TrackSearch_h Header TrackSearch.h
+/**
+ * \defgroup TrackSearch_h Header TrackSearch.h
  * \ingroup pkg_tracksearch
  *
  * \heading{Synopsis}
@@ -138,7 +139,7 @@ typedef struct tagTrackSearchStore
   INT4  numLPoints;       /**< A variable which contains the number of possible line points */
 } TrackSearchStore;
 
-  /**
+/**
  * Enum type for the possible operations for curve cutting
  */
 typedef enum tagTrackSearchCut

@@ -40,7 +40,7 @@ extern "C" {
 /**
  * Routines for cleaning SFT files using known spectral disturbances.
  *
- **/
+ */
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately

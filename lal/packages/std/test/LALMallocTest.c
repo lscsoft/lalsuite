@@ -18,30 +18,30 @@
 */
 
 /**
-   \file
-   \ingroup LALMalloc_h
-
-   \brief Tests the routines in \ref LALMalloc_h.
-
-   \heading{Usage}
-   \code
-   LALMallocTest
-   \endcode
-
-   \heading{Description}
-
-   This program has ugly code for testing the LAL memory allocation and freeing
-   routines.
-
-   \heading{Exit codes}
-
-<table>
-<tr><th>Code</th><th>Explanation</th></tr>
-<tr><td> 0</td><td>Success.</td></tr>
-<tr><td> 1</td><td>Failure.</td></tr>
-</table>
-
-*/
+ * \file
+ * \ingroup LALMalloc_h
+ *
+ * \brief Tests the routines in \ref LALMalloc_h.
+ *
+ * \heading{Usage}
+ * \code
+ * LALMallocTest
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * This program has ugly code for testing the LAL memory allocation and freeing
+ * routines.
+ *
+ * \heading{Exit codes}
+ *
+ * <table>
+ * <tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td> 0</td><td>Success.</td></tr>
+ * <tr><td> 1</td><td>Failure.</td></tr>
+ * </table>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 

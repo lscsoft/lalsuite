@@ -304,7 +304,8 @@ main( void )
 } /* main() */
 
 
-/** Function to test equivalence between two loaded ephemeris-data structs.
+/**
+ * Function to test equivalence between two loaded ephemeris-data structs.
  * Note: we compare everything *except* the ephiles fields, which are actually useless.
  */
 int

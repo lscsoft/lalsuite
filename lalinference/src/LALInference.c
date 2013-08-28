@@ -440,8 +440,10 @@ void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr)
 }
 
 void LALInferencePrintVariables(LALInferenceVariables *var)
-/** output contents of a 'LALInferenceVariables' structure * /
-/ * (by now only prints names and types, but no values) */
+/**
+ * output contents of a 'LALInferenceVariables' structure * /
+ * / * (by now only prints names and types, but no values)
+ */
 {
   int i,j;
   LALInferenceVariableItem *ptr = var->head;
@@ -1476,7 +1478,8 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
   return;
 }
 
-/** Append the sample to a file. file pointer is stored in state->algorithmParams as a
+/**
+ * Append the sample to a file. file pointer is stored in state->algorithmParams as a
  * LALInferenceVariable called "outfile", as a void ptr.
  * Caller is responsible for opening and closing file.
  * Variables are alphabetically sorted before being written
@@ -1493,12 +1496,14 @@ void LALInferenceLogSampleToFile(LALInferenceRunState *state, LALInferenceVariab
   fprintf(outfile,"\n");
 }
 
-/** Append the sample to an array which can be later processed by the user.
+/**
+ * Append the sample to an array which can be later processed by the user.
  * Array is stored as a C array in a LALInferenceVariable in state->algorithmParams
  * called "outputarray". Number of items in the array is stored as "N_outputarray".
  * Will create the array and store it in this way if it does not exist.
  * DOES NOT FREE ARRAY, user must clean up after use.
- * Also outputs sample to disk if possible */
+ * Also outputs sample to disk if possible
+ */
 void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
   LALInferenceVariables *output_array=NULL;

@@ -36,7 +36,7 @@
  * This program makes some frames with one ADC channel containing random
  * Gaussian noise.
  *
-*/
+ */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>

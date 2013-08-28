@@ -30,95 +30,95 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup IIRFilter_h
-   \author Creighton, T. D.
-
-   \brief Provides routines to make and apply IIR filters.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/IIRFilter.h>
-   \endcode
-
-This header covers routines that create, destroy, and apply
-generic time-domain filters, given by objects of type
-<tt>\<datatype\>IIRFilter</tt>, where <tt>\<datatype\></tt> is either
-\c REAL4 or \c REAL8.
-
-An IIR (Infinite Impulse Response) filter is a generalized linear
-causal time-domain filter, in which the filter output \f$y_n=y(t_n)\f$ at
-any sampled time \f$t_n=t_0+n\Delta t\f$ is a linear combination of the
-input \f$x\f$ \e and output \f$y\f$ at previous sampled times:
-\f[
-y_n = \sum_{k=0}^M c_k x_{n-k} + \sum_{l=1}^N d_l y_{n-l} \; .
-\f]
-The coefficients \f$c_k\f$ are called the direct filter coefficients, and
-the coefficients \f$d_l\f$ are the recursive filter coefficients.  The
-filter order is the larger of \f$M\f$ or \f$N\f$, and determines how far back
-in time the filter must look to determine its next output.  However,
-the recursive nature of the filter means that the output can depend on
-input arbitrarily far in the past; hence the name "infinite impulse
-response".  Nonetheless, for a well-designed, stable filter, the
-actual filter response to an impulse should diminish rapidly beyond
-some characteristic timescale.
-
-Note that nonrecursive FIR (Finite Impulse Response) filters are
-considered a subset of IIR filters, having \f$N=0\f$.
-
-For practical implementation, it is convenient to express the bilinear
-equation above as two linear equations involving an auxiliary sequence
-\f$w\f$:
-\f[
-w_n = x_n + \sum_{l=1}^N d_l w_{n-l} \; ,
-\f]
-\f[
-y_n = \sum_{k=0}^M c_k w_{n-k} \; .
-\f]
-The equivalence of this to the first expression is not obvious, but
-can be proven by mathematical induction.  The advantage of the
-auxiliary variable representation is twofold.  First, when one is
-feeding data point by point to the filter, the filter needs only
-"remember" the previous \f$M\f$ or \f$N\f$ (whichever is larger) values of
-\f$w\f$, rather than remembering the previous \f$M\f$ values of \f$x\f$ \e and
-the previous \f$N\f$ values of \f$y\f$.  Second, when filtering a large stored
-data vector, the filter response can be computed in place: one first
-runs forward through the vector replacing \f$x\f$ with \f$w\f$, and then
-backward replacing \f$w\f$ with \f$y\f$.
-
-Although the IIR filters in these routines are explicitly real, one
-can consider formally their complex response.  A sinusoidal input can
-thus be written as \f$x_n=X\exp(2\pi ifn\Delta t)=Xz^n\f$, where \f$X\f$ is a
-complex amplitude and \f$z=\exp(2\pi if\Delta t)\f$ is a complex
-parametrization of the frequency.  By linearity, the output must also
-be sinusoidal: \f$y_m=Y\exp(2\pi ifm\Delta t)=Yz^m\f$.  Putting these into
-the bilinear equation, one can easily compute the filter's complex
-transfer function:
-\f[
-T(z) = \frac{Y}{X} = \frac{\sum_{k=0}^M c_k z^{-k}}
-                      {1 - \sum_{l=1}^N d_l z^{-l}}
-\f]
-This can be readily converted to and from the "zeros, poles, gain"
-representation of a filter, which expresses \f$T(z)\f$ as a factored
-rational function of \f$z\f$.
-
-It should also be noted that, in the routines covered by this header,
-I have adopted the convention of including a redundant recursive
-coefficient \f$d_0\f$, in order to make the indexing more intuitive.  For
-formal correctness \f$d_0\f$ should be set to \f$-1\f$, although the filtering
-routines never actually use this coefficient.
-
-*/
+ * \addtogroup IIRFilter_h
+ * \author Creighton, T. D.
+ *
+ * \brief Provides routines to make and apply IIR filters.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/IIRFilter.h>
+ * \endcode
+ *
+ * This header covers routines that create, destroy, and apply
+ * generic time-domain filters, given by objects of type
+ * <tt>\<datatype\>IIRFilter</tt>, where <tt>\<datatype\></tt> is either
+ * \c REAL4 or \c REAL8.
+ *
+ * An IIR (Infinite Impulse Response) filter is a generalized linear
+ * causal time-domain filter, in which the filter output \f$y_n=y(t_n)\f$ at
+ * any sampled time \f$t_n=t_0+n\Delta t\f$ is a linear combination of the
+ * input \f$x\f$ \e and output \f$y\f$ at previous sampled times:
+ * \f[
+ * y_n = \sum_{k=0}^M c_k x_{n-k} + \sum_{l=1}^N d_l y_{n-l} \; .
+ * \f]
+ * The coefficients \f$c_k\f$ are called the direct filter coefficients, and
+ * the coefficients \f$d_l\f$ are the recursive filter coefficients.  The
+ * filter order is the larger of \f$M\f$ or \f$N\f$, and determines how far back
+ * in time the filter must look to determine its next output.  However,
+ * the recursive nature of the filter means that the output can depend on
+ * input arbitrarily far in the past; hence the name "infinite impulse
+ * response".  Nonetheless, for a well-designed, stable filter, the
+ * actual filter response to an impulse should diminish rapidly beyond
+ * some characteristic timescale.
+ *
+ * Note that nonrecursive FIR (Finite Impulse Response) filters are
+ * considered a subset of IIR filters, having \f$N=0\f$.
+ *
+ * For practical implementation, it is convenient to express the bilinear
+ * equation above as two linear equations involving an auxiliary sequence
+ * \f$w\f$:
+ * \f[
+ * w_n = x_n + \sum_{l=1}^N d_l w_{n-l} \; ,
+ * \f]
+ * \f[
+ * y_n = \sum_{k=0}^M c_k w_{n-k} \; .
+ * \f]
+ * The equivalence of this to the first expression is not obvious, but
+ * can be proven by mathematical induction.  The advantage of the
+ * auxiliary variable representation is twofold.  First, when one is
+ * feeding data point by point to the filter, the filter needs only
+ * "remember" the previous \f$M\f$ or \f$N\f$ (whichever is larger) values of
+ * \f$w\f$, rather than remembering the previous \f$M\f$ values of \f$x\f$ \e and
+ * the previous \f$N\f$ values of \f$y\f$.  Second, when filtering a large stored
+ * data vector, the filter response can be computed in place: one first
+ * runs forward through the vector replacing \f$x\f$ with \f$w\f$, and then
+ * backward replacing \f$w\f$ with \f$y\f$.
+ *
+ * Although the IIR filters in these routines are explicitly real, one
+ * can consider formally their complex response.  A sinusoidal input can
+ * thus be written as \f$x_n=X\exp(2\pi ifn\Delta t)=Xz^n\f$, where \f$X\f$ is a
+ * complex amplitude and \f$z=\exp(2\pi if\Delta t)\f$ is a complex
+ * parametrization of the frequency.  By linearity, the output must also
+ * be sinusoidal: \f$y_m=Y\exp(2\pi ifm\Delta t)=Yz^m\f$.  Putting these into
+ * the bilinear equation, one can easily compute the filter's complex
+ * transfer function:
+ * \f[
+ * T(z) = \frac{Y}{X} = \frac{\sum_{k=0}^M c_k z^{-k}}
+ * {1 - \sum_{l=1}^N d_l z^{-l}}
+ * \f]
+ * This can be readily converted to and from the "zeros, poles, gain"
+ * representation of a filter, which expresses \f$T(z)\f$ as a factored
+ * rational function of \f$z\f$.
+ *
+ * It should also be noted that, in the routines covered by this header,
+ * I have adopted the convention of including a redundant recursive
+ * coefficient \f$d_0\f$, in order to make the indexing more intuitive.  For
+ * formal correctness \f$d_0\f$ should be set to \f$-1\f$, although the filtering
+ * routines never actually use this coefficient.
+ *
+ */
 /*@{*/
 
 /**
-@{
-\defgroup CreateIIRFilter_c 	Module CreateIIRFilter.c
-\defgroup DestroyIIRFilter_c 	Module DestroyIIRFilter.c
-\defgroup IIRFilter_c 		Module IIRFilter.c
-\defgroup IIRFilterVector_c 	Module IIRFilterVector.c
-\defgroup IIRFilterVectorR_c 	Module IIRFilterVectorR.c
-@}
-*/
+ * @{
+ * \defgroup CreateIIRFilter_c 	Module CreateIIRFilter.c
+ * \defgroup DestroyIIRFilter_c 	Module DestroyIIRFilter.c
+ * \defgroup IIRFilter_c 		Module IIRFilter.c
+ * \defgroup IIRFilterVector_c 	Module IIRFilterVector.c
+ * \defgroup IIRFilterVectorR_c 	Module IIRFilterVectorR.c
+ * @}
+ */
 
 /** \name Error Codes */
 /*@{*/
@@ -135,7 +135,8 @@ routines never actually use this coefficient.
 #define IIRFILTERH_MSGEPAIR "Input has unpaired nonreal poles or zeros"
 /** \endcond */
 
-/** This structure stores the direct and recursive REAL4 filter coefficients, as
+/**
+ * This structure stores the direct and recursive REAL4 filter coefficients, as
  * well as the history of the auxiliary sequence \f$w\f$.
  * The length of the history vector gives the order of the filter
  */
@@ -150,7 +151,8 @@ typedef struct tagREAL4IIRFilter{
   REAL4Vector *history;    /**< The previous values of w. */
 } REAL4IIRFilter;
 
-/** This structure stores the direct and recursive REAL8 filter coefficients, as
+/**
+ * This structure stores the direct and recursive REAL8 filter coefficients, as
  * well as the history of the auxiliary sequence \f$w\f$.
  * The length of the history vector gives the order of the filter
  */

@@ -19,9 +19,9 @@
 */
 
 /**
-\file
-\ingroup LALInspiral_h
-
+ * \file
+ * \ingroup LALInspiral_h
+ *
  * \brief Module to generate generic spinning binaries waveforms complete with ring-down
  *
  * \heading{Prototypes}
@@ -33,7 +33,6 @@
  * <dt>params:</dt><dd> Input containing binary chirp parameters.</dd>
  * </dl>
  *
- *
  * <tt>LALPSpinInspiralRDTemplates()</tt>
  * <dl>
  * <dt>status:</dt><dd>Input/Output
@@ -41,7 +40,6 @@
  * <dt>signalvec2:</dt><dd>Output containing the \f$\times\f$ inspiral waveform.</dd>
  * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
  * </dl>
- *
  *
  * <tt>LALPSpinInspiralRDInjection()</tt>
  * <dl>
@@ -92,9 +90,10 @@
  *
  * \heading{Notes}
  *
-*/
+ */
 
-/** \defgroup psird Complete phenomenological spin-inspiral waveforms
+/**
+ * \defgroup psird Complete phenomenological spin-inspiral waveforms
  * \ingroup ch_inspiral
  *
  * This code provides complete waveforms for generically spinning binary

@@ -88,8 +88,8 @@ void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan
 
 
 /**
- * Refine the skyRegion to search only at neighboring grid points of the 
- * center of the original skyRegion. 
+ * Refine the skyRegion to search only at neighboring grid points of the
+ * center of the original skyRegion.
  */
 void 
 InitDopplerScanOnRefinedGrid ( LALStatus *status, 		/**< pointer to LALStatus structure */

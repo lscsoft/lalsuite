@@ -33,7 +33,8 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/FindRoot.h>
 
-/** \author Reinhard Prix
+/**
+ * \author Reinhard Prix
  * \file
  * \ingroup ComputeFstat_h
  * \brief Tests for XLALAdd[Multi]BinaryTimes()
@@ -274,12 +275,13 @@ XLALCompareSSBtimes ( REAL8 *err_DeltaT, REAL8 *err_Tdot, const SSBtimes *t1, co
 
 // ---------- obsolete LAL functions LALGet[Multi]Binarytimes() kept here for comparison purposes
 
-/** For a given OrbitalParams, calculate the time-differences
- *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
- *  derivatives \f$Tdot_\alpha \equiv d T / d t (t_\alpha)\f$.
+/**
+ * For a given OrbitalParams, calculate the time-differences
+ * \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
+ * derivatives \f$Tdot_\alpha \equiv d T / d t (t_\alpha)\f$.
  *
- *  \note The return-vectors \a DeltaT and \a Tdot must be allocated already
- *  and have the same length as the input time-series \a DetStates.
+ * \note The return-vectors \a DeltaT and \a Tdot must be allocated already
+ * and have the same length as the input time-series \a DetStates.
  *
  */
 void
@@ -378,8 +380,9 @@ LALGetBinarytimes (LALStatus *status,				/**< pointer to LALStatus structure */
 
 } /* LALGetBinarytimes() */
 
-/** For a given set of binary parameters we solve the following function for
- *  the eccentric anomoly E
+/**
+ * For a given set of binary parameters we solve the following function for
+ * the eccentric anomoly E
  */
 static void EccentricAnomoly(LALStatus *status,
 			     REAL8 *tr,
@@ -396,7 +399,8 @@ static void EccentricAnomoly(LALStatus *status,
   RETURN(status);
 }
 
-/** Multi-IFO version of LALGetBinarytimes().
+/**
+ * Multi-IFO version of LALGetBinarytimes().
  * Get all binary-timings for all input detector-series.
  *
  */

@@ -23,29 +23,30 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
-/** \addtogroup UnitNormalize_c
-    \author J. T. Whelan <john.whelan@ligo.org>
-
-    \brief Brings an \c LALUnit structure into standard form by reducing all of the rational exponents into LCD form.
-
-Since the \c LALUnit structure stores the rational powers of the
-fundamental units as numerator and denominator, it is possible to
-represent the same units in different ways, <em>e.g.</em>, \f$\mathrm{m}^2\f$
-versus \f$\mathrm{m}^{4/2}\f$.  This function reduces all of those fractions to
-convert the structure to its simplest form.
-
-\heading{Algorithm}
-
-The rational powers are reduced using Euclid's algorithm [\ref Geddes_1992].
-
-\heading{Notes}
-
-Note that the functions <tt>LALUnitRaise()</tt>,
-<tt>LALUnitMultiply()</tt>, and <tt>LALUnitCompare()</tt> all call
-<tt>LALUnitNormalize()</tt> themselves, so there is usually no need to
-call it explicitly.
-
-*/
+/**
+ * \addtogroup UnitNormalize_c
+ * \author J. T. Whelan <john.whelan@ligo.org>
+ *
+ * \brief Brings an \c LALUnit structure into standard form by reducing all of the rational exponents into LCD form.
+ *
+ * Since the \c LALUnit structure stores the rational powers of the
+ * fundamental units as numerator and denominator, it is possible to
+ * represent the same units in different ways, <em>e.g.</em>, \f$\mathrm{m}^2\f$
+ * versus \f$\mathrm{m}^{4/2}\f$.  This function reduces all of those fractions to
+ * convert the structure to its simplest form.
+ *
+ * \heading{Algorithm}
+ *
+ * The rational powers are reduced using Euclid's algorithm [\ref Geddes_1992].
+ *
+ * \heading{Notes}
+ *
+ * Note that the functions <tt>LALUnitRaise()</tt>,
+ * <tt>LALUnitMultiply()</tt>, and <tt>LALUnitCompare()</tt> all call
+ * <tt>LALUnitNormalize()</tt> themselves, so there is usually no need to
+ * call it explicitly.
+ *
+ */
 /*@{*/
 
 /* this is an implementation of the Euclidean Algorithm */
@@ -63,7 +64,8 @@ gcd(INT2 numer, UINT2 denom)
    return abs(next_numer);
 }
 
-/** Returns 0 upon success or \c #XLAL_FAILURE
+/**
+ * Returns 0 upon success or \c #XLAL_FAILURE
  * if the input pointer is \c NULL, in which case \c ::xlalErrno
  * is set to \c #XLAL_EFAULT.
  */
@@ -86,7 +88,8 @@ int XLALUnitNormalize( LALUnit *unit )
 }
 
 
-/** Reduce all the rational powers in an LALUnit structure
+/**
+ * Reduce all the rational powers in an LALUnit structure
  * \deprecated Use XLALUnitNormalize() instead.
  */
 void

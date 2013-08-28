@@ -18,14 +18,12 @@
  */
 
 /**
- *
  * \author Chris Pankow
  *
  * \file
  *
  * \brief Testing constant precession code on IMRPhenomB waveform.
- *
- * */
+ */
 
 
 #include <lal/LALSimInspiralPrecess.h>

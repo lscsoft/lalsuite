@@ -28,38 +28,38 @@
  *
  * \brief Tests the routines in \ref SegmentsIO.c.
  *
-\heading{Usage}
-\code
-SegmentsIOTest [ lalDebugLevel ]
-\endcode
-
-The default value of \c lalDebugLevel is 4.
-
-If the \c lalDebugLevel argument is omitted, the test program sets it
-to 4 to turn on info messages only.
-Note that this default value does not enable LAL/XLAL error messages,
-since many of the tests intentionally create error conditions and verify that
-the proper error codes are generated.  If you want to turn on the LAL/XLAL
-error and warning messages, specify a \c lalDebugLevel value of 7,
-or 23 if you also want informational messages related to memory checking.
-If you specify 0, then no messages will be printed under any circumstances.
-However, in all cases, the return status of the program will be 0 if all
-tests passed, 1 if one or more tests failed.
-
-\note This test program does not currently do an exhaustive test of
-functionality and failure modes; it is more like a starting point for
-spot-checking by modifying, recompiling and running this test program
-and inspecting the output.
-
-\heading{Exit codes}
-
-<ul>
-<li>0 if all tests passed.</li>
-
-<li>1 if one or more tests failed.</li>
-</ul>
-
-*/
+ * \heading{Usage}
+ * \code
+ * SegmentsIOTest [ lalDebugLevel ]
+ * \endcode
+ *
+ * The default value of \c lalDebugLevel is 4.
+ *
+ * If the \c lalDebugLevel argument is omitted, the test program sets it
+ * to 4 to turn on info messages only.
+ * Note that this default value does not enable LAL/XLAL error messages,
+ * since many of the tests intentionally create error conditions and verify that
+ * the proper error codes are generated.  If you want to turn on the LAL/XLAL
+ * error and warning messages, specify a \c lalDebugLevel value of 7,
+ * or 23 if you also want informational messages related to memory checking.
+ * If you specify 0, then no messages will be printed under any circumstances.
+ * However, in all cases, the return status of the program will be 0 if all
+ * tests passed, 1 if one or more tests failed.
+ *
+ * \note This test program does not currently do an exhaustive test of
+ * functionality and failure modes; it is more like a starting point for
+ * spot-checking by modifying, recompiling and running this test program
+ * and inspecting the output.
+ *
+ * \heading{Exit codes}
+ *
+ * <ul>
+ * <li>0 if all tests passed.</li>
+ *
+ * <li>1 if one or more tests failed.</li>
+ * </ul>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 

@@ -29,23 +29,23 @@ extern "C" {
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
  *
  * \brief Header file for cleaning routines
-
-Routines for cleaning SFT files using known spectral disturbances.
-
-\heading{Synopsis}
-
-\code
-#include <lal/SFTClean.h>
-\endcode
-
-Format for list of known spectral disturbances and using
-them to clean SFT data
-
-\heading{Error conditions}
-
- Test program. %%
-
-*/
+ *
+ * Routines for cleaning SFT files using known spectral disturbances.
+ *
+ * \heading{Synopsis}
+ *
+ * \code
+ * #include <lal/SFTClean.h>
+ * \endcode
+ *
+ * Format for list of known spectral disturbances and using
+ * them to clean SFT data
+ *
+ * \heading{Error conditions}
+ *
+ * Test program. %%
+ *
+ */
 /*@{*/
 
 /* REVISIONS: */
@@ -136,8 +136,10 @@ them to clean SFT data
     REAL8        *rightWing; /**< width to the right in Hz */
   } LineNoiseInfo;
 
-  /** structure for storing the contents of the input list of known
-      spectral disturbances */
+/**
+ * structure for storing the contents of the input list of known
+ * spectral disturbances
+ */
   typedef struct tagLineHarmonicsInfo{
     INT4         nHarmonicSets; /**< number of sets of harmonics */
     REAL8        *startFreq;    /**< starting frequency of set in Hz */

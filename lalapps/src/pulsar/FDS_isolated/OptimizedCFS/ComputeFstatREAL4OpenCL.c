@@ -20,7 +20,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \author R. Prix, J. T. Whelan
+/**
+ * \author R. Prix, J. T. Whelan
  * \ingroup pulsarCoherent
  * \file
  * \brief
@@ -197,8 +198,8 @@ const char *pclerrorM(cl_int err) {
   }
 } 
 
-/** REAL4 and GPU-ready version of ComputeFStatFreqBand(), extended to loop over segments as well.
- *
+/**
+ * REAL4 and GPU-ready version of ComputeFStatFreqBand(), extended to loop over segments as well.
  * Computes a vector of Fstatistic values for a number of frequency bins, for each segment
  */
 int
@@ -724,9 +725,11 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
 } /* XLALComputeFStatFreqBandVector() */
 
 
-/** Initialize OpenCL workspace
+/**
+ * Initialize OpenCL workspace
  * Create memory objects associated with OpenCL context
- * and memory buffers */
+ * and memory buffers
+ */
 int
 XLALInitCLWorkspace ( CLWorkspace *clW,
                       const MultiSFTVectorSequence *stackMultiSFT )
@@ -1124,9 +1127,11 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
 
 
 
-/** Rearrange SFT data structures
+/**
+ * Rearrange SFT data structures
  * Flatten the SFT data: combine small chunks of memory into a single
- * contiguous array, accessable via 4d-index */
+ * contiguous array, accessable via 4d-index
+ */
 void
 XLALRearrangeSFTData ( CLWorkspace *clW,
                        const REAL4FrequencySeriesVector *fstatBandV )
@@ -1181,8 +1186,10 @@ XLALRearrangeSFTData ( CLWorkspace *clW,
 
 
 
-/** Close OpenCL workspace
- * Free all objects and memory associated with the OpenCL Workspace */
+/**
+ * Close OpenCL workspace
+ * Free all objects and memory associated with the OpenCL Workspace
+ */
 void
 XLALDestroyCLWorkspace ( CLWorkspace *clW,
                          const MultiSFTVectorSequence *stackMultiSFT )

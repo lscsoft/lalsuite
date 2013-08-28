@@ -21,8 +21,7 @@
  * \author B.S. Sathyaprakash
  * \file
  * \ingroup LALInspiral_h
-
-
+ *
  * \brief This module contains a single function <tt>LALBCVWaveform()</tt>.
  *
  * \heading{Prototypes}
@@ -71,9 +70,7 @@
  *
  * %% Any relevant notes.
  *
- *
- *
-*/
+ */
 
 #include <lal/LALInspiral.h>
 

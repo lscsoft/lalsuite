@@ -18,66 +18,66 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief Test routine for codes that generate inspiral waveform from non-spinning black
-hole binaries.
-
-Time domain signals are returned when the \c approximant is
-one of <tt>TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3</tt>
-and frequency domain signals are returned when the \c approximant is
-one of <tt>TaylorF1, TaylorF2, BCV.</tt> This code checks every available approximant
-at every order and reports whether or not there was any problem with the
-generation codes.
-
-To generate a waveform first set the \c InspiralTemplate structure (see
-below for an example).  Next, to measure the length of the array required
-call the function
-\code
-	LALInspiralWaveLength (&status, &n, params)
-\endcode
-The length will be returned in \c n. Finally, call the function
-\code
-	LALInspiralWave(&status, signal1, params);
-\endcode
-to generate the wave, which will be returned in \c signal.
-
-Example values of the parameters that can be set (with options in brackets) is:
-\code
-   params.OmegaS = 0.;     (Unknown 3PN parameter in energy; shown to be 0 by DJS)
-   params.Theta = 0.;      (Unknown 3PN parameter in flux; arbitrarily set to 0)
-   params.ieta=1;          (1 for comparable masses model, 0 for test mass model)
-   params.mass1=1.4;       (masses of the component stars in solar masses)
-   params.mass2=1.4;
-   params.startTime=0.0;   (defined so that the instantaneous GW frequency
-                            is params.fLower at params.startTime)
-   params.startPhase=0.0;  (0 to LAL_PI_2)
-   params.fLower=40.0;     (in Hz)
-   params.fCutoff=1000.0;  (in Hz)
-   params.tSampling=4000.; (in Hz; should be larger than 2 fCutoff or 2 flso,
-                            whichever is smaller)
-   params.signalAmplitude=1.0;
-   params.nStartPad=0;     (number of leading zero bins)
-   params.nEndPad=0;       (number of trailing zero bins)
-   params.approximant=TaylorF2; (TaylorT1, PadeT1=ODE solver;
-                            TaylorT2=implicit phasing formula solved in quadrature;
-                            TaylorT3=explicit time-domain phasing;
-                            TaylorF1=stationary phase approx. using ODEs;
-                            TaylorF2=usual stationary phase approx.;
-                            EOB=effective-one-body approach)
-   params.order=twoPN;     (also newtonian, onePN, oneAndHalfPN, twoPN,
-                            twoAndHalfPN, threePN, threeAndHalfPN)
-   params.massChoice=m1Andm2; (also t0t2, t0t3, t0t4, totalMassAndEta,totalMassAndMu)
-   params.psi0 = 132250.;   (parameter required to generate BCV detection templates)
-   params.psi3 = -1014.2;   (parameter required to generate BCV detection templates)
-   params.alpha = 0.528;    (amplitude correction used in BCV templates)
-   params.fFinal = 868.7;  (frequency at which the BCV template is terminated)
-
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Test routine for codes that generate inspiral waveform from non-spinning black
+ * hole binaries.
+ *
+ * Time domain signals are returned when the \c approximant is
+ * one of <tt>TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3</tt>
+ * and frequency domain signals are returned when the \c approximant is
+ * one of <tt>TaylorF1, TaylorF2, BCV.</tt> This code checks every available approximant
+ * at every order and reports whether or not there was any problem with the
+ * generation codes.
+ *
+ * To generate a waveform first set the \c InspiralTemplate structure (see
+ * below for an example).  Next, to measure the length of the array required
+ * call the function
+ * \code
+ * LALInspiralWaveLength (&status, &n, params)
+ * \endcode
+ * The length will be returned in \c n. Finally, call the function
+ * \code
+ * LALInspiralWave(&status, signal1, params);
+ * \endcode
+ * to generate the wave, which will be returned in \c signal.
+ *
+ * Example values of the parameters that can be set (with options in brackets) is:
+ * \code
+ * params.OmegaS = 0.;     (Unknown 3PN parameter in energy; shown to be 0 by DJS)
+ * params.Theta = 0.;      (Unknown 3PN parameter in flux; arbitrarily set to 0)
+ * params.ieta=1;          (1 for comparable masses model, 0 for test mass model)
+ * params.mass1=1.4;       (masses of the component stars in solar masses)
+ * params.mass2=1.4;
+ * params.startTime=0.0;   (defined so that the instantaneous GW frequency
+ * is params.fLower at params.startTime)
+ * params.startPhase=0.0;  (0 to LAL_PI_2)
+ * params.fLower=40.0;     (in Hz)
+ * params.fCutoff=1000.0;  (in Hz)
+ * params.tSampling=4000.; (in Hz; should be larger than 2 fCutoff or 2 flso,
+ * whichever is smaller)
+ * params.signalAmplitude=1.0;
+ * params.nStartPad=0;     (number of leading zero bins)
+ * params.nEndPad=0;       (number of trailing zero bins)
+ * params.approximant=TaylorF2; (TaylorT1, PadeT1=ODE solver;
+ * TaylorT2=implicit phasing formula solved in quadrature;
+ * TaylorT3=explicit time-domain phasing;
+ * TaylorF1=stationary phase approx. using ODEs;
+ * TaylorF2=usual stationary phase approx.;
+ * EOB=effective-one-body approach)
+ * params.order=twoPN;     (also newtonian, onePN, oneAndHalfPN, twoPN,
+ * twoAndHalfPN, threePN, threeAndHalfPN)
+ * params.massChoice=m1Andm2; (also t0t2, t0t3, t0t4, totalMassAndEta,totalMassAndMu)
+ * params.psi0 = 132250.;   (parameter required to generate BCV detection templates)
+ * params.psi3 = -1014.2;   (parameter required to generate BCV detection templates)
+ * params.alpha = 0.528;    (amplitude correction used in BCV templates)
+ * params.fFinal = 868.7;  (frequency at which the BCV template is terminated)
+ *
+ * \endcode
+ *
+ */
 
 #include <stdio.h>
 #include <lal/LALInspiral.h>

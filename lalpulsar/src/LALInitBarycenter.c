@@ -35,7 +35,8 @@
 
 /* ----- local type definitions ---------- */
 
-/** Generic ephemeris-vector type, holding one timeseries of pos, vel, acceleration.
+/**
+ * Generic ephemeris-vector type, holding one timeseries of pos, vel, acceleration.
  * This is used for the generic ephemeris-reader XLAL-function, at the end the resulting
  * ephemeris-data  will be stored in the 'old type \a EphemerisData for backwards compatibility.
  */
@@ -58,7 +59,8 @@ int XLALCheckEphemerisRanges ( const EphemerisVector *ephemEarth, REAL8 avg[3], 
 
 /* ========== exported API ========== */
 
-/** An XLAL interface for reading a time correction file containing a table
+/**
+ * An XLAL interface for reading a time correction file containing a table
  * of values for converting between Terrestrial Time TT (or TDT) to either
  * TDB (i.e. the file contains time corrections related to the Einstein delay)
  * or Teph (a time system from Irwin and Fukushima, 1999, closely related to
@@ -146,7 +148,8 @@ XLALInitTimeCorrections ( const CHAR *timeCorrectionFile /**< File containing Ea
 
 } /* XLALInitTimeCorrections() */
 
-/** Destructor for TimeCorrectionData struct, NULL robust.
+/**
+ * Destructor for TimeCorrectionData struct, NULL robust.
  * \ingroup LALBarycenter_h
  */
 void
@@ -164,7 +167,8 @@ XLALDestroyTimeCorrectionData ( TimeCorrectionData *tcd )
 
 } /* XLALDestroyTimeCorrectionData() */
 
-/** XLAL interface to reading ephemeris files 'earth' and 'sun', and return
+/**
+ * XLAL interface to reading ephemeris files 'earth' and 'sun', and return
  * ephemeris-data in old backwards-compatible type \a EphemerisData
  *
  * These ephemeris data files contain arrays
@@ -284,7 +288,8 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
 } /* XLALInitBarycenter() */
 
 
-/** Destructor for EphemerisData struct, NULL robust.
+/**
+ * Destructor for EphemerisData struct, NULL robust.
  * \ingroup LALBarycenter_h
  */
 void
@@ -334,7 +339,8 @@ XLALCreateEphemerisVector ( UINT4 length )
 
 } /* XLALCreateEphemerisVector() */
 
-/** Destructor for EphemerisVector, NULL robust.
+/**
+ * Destructor for EphemerisVector, NULL robust.
  */
 void
 XLALDestroyEphemerisVector ( EphemerisVector *ephemV )
@@ -352,7 +358,8 @@ XLALDestroyEphemerisVector ( EphemerisVector *ephemV )
 } /* XLALDestroyEphemerisVector() */
 
 
-/** XLAL function to read ephemeris-data from one file, returning a EphemerisVector.
+/**
+ * XLAL function to read ephemeris-data from one file, returning a EphemerisVector.
  * This is a helper-function to XLALInitBarycenter().
  *
  * NOTE: This function tries to read ephemeris from "<fname>" first, if that fails it also tries
@@ -486,7 +493,8 @@ XLALReadEphemerisFile ( const CHAR *fname )
 } /* XLALReadEphemerisFile() */
 
 
-/** Function to check rough consistency of ephemeris-data with being an actual
+/**
+ * Function to check rough consistency of ephemeris-data with being an actual
  * 'Earth' ephemeris: ie check position, velocity and acceleration are within
  * reasonable ranges {avg +- range}. where 'avg' and 'range' are 3-D arrays
  * with [0]=position, [1]=velocity and [2]=acceleration
@@ -539,7 +547,8 @@ XLALCheckEphemerisRanges ( const EphemerisVector *ephemV, REAL8 avg[3], REAL8 ra
 
 /* ============================= deprecated LAL interface ============================== */
 
-/** \ingroup LALBarycenter_h
+/**
+ * \ingroup LALBarycenter_h
  * \brief [DEPRECATED] Reads Earth and Sun ephemeris files. Simple wrapper around XLALInitBarycenter()
  * \deprecated Use XLALInitBarycenter() instead.
  */

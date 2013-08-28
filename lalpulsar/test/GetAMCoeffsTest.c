@@ -19,12 +19,13 @@
  */
 
 /*********************************************************************************/
-/** \author Reinhard Prix
+/**
+ * \author Reinhard Prix
  * \file
  * \brief Test for LALGetAMCoeffs(): compare results to older, well-tested
  * (but less efficient, and harder to understand) function  LALComputeAM()
  *
- *********************************************************************************/
+ */
 #include <math.h>
 #include <sys/times.h>
 
@@ -83,9 +84,10 @@ static const AMCoeffsParams empty_AMCoeffsParams;
 static const AMCoeffs empty_AMCoeffs;
 
 
-/** Very simple test: pick random skyposition, compute a_i, b_i using
- *  once LALComputeAM() and once LALGetAMCoeffs(), and look at the errors
- *  sum_i (a_i - a_i')^2
+/**
+ * Very simple test: pick random skyposition, compute a_i, b_i using
+ * once LALComputeAM() and once LALGetAMCoeffs(), and look at the errors
+ * sum_i (a_i - a_i')^2
  */
 int main(int argc, char *argv[])
 {

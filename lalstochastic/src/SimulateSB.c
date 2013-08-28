@@ -33,119 +33,118 @@
 #include <lal/DetectorSite.h>
 
 /**
-\author Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
-
-\brief Simulates whitened time-domain signal in a pair of detectors.
-
-Simulates whitened time-domain signal in a pair of detectors that arises purely from  an isotropic and
-unpolarized stochastic background of gravitational radiation with the
-desired power spectrum, \f$\Omega_{\mathrm{GW}}(f)\f$. This module
-will evolve beyond its present funtionality to produce only \c real
-time-series signal for a pair of interferometric detectors.
-
-
-\heading{Description}
-
-The frequency domain strains \f$\widetilde{h}_1(f_i)\f$
-and \f$\widetilde{h}_2(f_j)\f$ caused by
-the stochastic background in two detectors are random variables that have
-zero mean and that obey  [\ref Allen1999]:
-  \f{equation}{
-    \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
-    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{11}(f_i)
-    \Omega_{\mathrm{GW}}(|f_i|)
-  \f}
-  and
-   \f{equation}{
-    \langle\widetilde{h}_2^*(f_i)\widetilde{h}_2(f_j)\rangle
-    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{22}(f_i)
-    \Omega_{\mathrm{GW}}(|f_i|)
-  \f}
-  and
-  \f{equation}{
-    \langle\widetilde{h}_1^*(f_i)\widetilde{h}_2(f_j)\rangle
-    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{12}(f_i)
-    \Omega_{\mathrm{GW}}(|f_i|) \ ,
-  \f}
-where \f$\langle\rangle\f$ denotes ensemble average, \f$T\f$ is the time of
-observation, and \f$\gamma_{AB}\f$ is the overlap reduction function
-[\ref Flanagan1993] of the detector pair comprising detectors \f$A\f$
-and \f$B\f$. Above, \f$\widetilde{h}_1(f_i)\f$ and
-\f$\widetilde{h}_2(f_j)\f$ are the Fourier components of the gravitational strains
-\f$h_1(t)\f$ and \f$h_2(t)\f$ at the two detectors.
-
-The Fourier components that
-obey the above relations are
-  \f{equation}{
-    \widetilde{h}_1(f_i) = \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
-    \Omega^{1/2}_{\mathrm{GW}}(|f_i|) \sqrt{\gamma_{11}(f_i)}
-(x_{1i} + i y_{1i})
-    \,
-  \f}
-  and
-  \f{equation}{
-    \widetilde{h}_2(f_i) = \widetilde{h}_1(f_i)\frac{\gamma_{12}(f_i)}
-{\gamma_{11}(f_i)} +
-    \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
-    \Omega^{1/2}_{\mathrm{GW}}(|f_i|)
-    \sqrt{\gamma_{22}(f_i)-\frac{\gamma^2_{12}(f_i)}{\gamma_{11}(f_i)}}
-(x_{2i} + i y_{2i})
-    \,
-  \f}
-where \f$x_{1i}\f$, \f$y_{1i}\f$, \f$x_{2i}\f$, and \f$y_{2i}\f$ are statistically
-independent real Gaussian random variables, each of zero mean and unit
-variance.
-
-The routine assumes as inputs the data sample length, temporal spacing,
-stochastic background characteristics, detector locations, the appropriate
-representations of the detector response function in each detector, etc.
-The (frequency domain) response functions, \f$\widetilde{R}_1(f_i)\f$ and
-\f$\widetilde{R}_2(f_i)\f$  are used to whiten the strains
-\f$\widetilde{h}_1(f_i)\f$ and
-\f$\widetilde{h}_2(f_i)\f$, respectively, to obtain the whitened
-Fourier components:
-  \f{equation}{
-    \widetilde{o}_1(f_i) = \widetilde{R}_1(f_i)\widetilde{h}_1(f_i)
-    \,
-  \f}
-  and
-  \f{equation}{
-    \widetilde{o}_2(f_i) = \widetilde{R}_2(f_i)\widetilde{h}_2(f_i)
-    \ .
-  \f}
-To obtain the whitened (real)
-outputs \f$o_1(t_i)\f$ and \f$o_2(t_i)\f$ in the time domain, the inverse
-Fourier transforms of the above frequency series are taken.
-
-\heading{Algorithm}
-
-The routine <tt>LALSSSimStochBGTimeSeries()</tt> produces only \c real
-time-series signal for a pair of interferometric detectors. It
-first inputs the frequency
-series describing the power spectrum of the stochastic background,
-\f$\Omega_{\mathrm{GW}}(|f|)\f$, which the simulated
-signal is required to represent. It also inputs two \c COMPLEX8
-frequency series corresponding, respectively, to the two detector
-response functions. As parameters, it takes the two \c LALDetector
-structures corresponding to the two detectors in which the signal is to be
-mimicked. It also takes the time length (given in terms of the number of
-time data samples), the time spacing, a seed (for generating random
-numbers), and a couple of \c LALUnit structures for specifying the
-units of the two time-series signals that the routine outputs.
-
-Using the specified power
-spectrum for the stochastic background, and a random number generator (of
-zero mean, unit variance Gaussian distributions), the routine produces
-\f$\widetilde{h}_1(f_i)\f$ and \f$\widetilde{h}_2(f_i)\f$. The
-response functions of the two detectors are then used to whiten the two
-strains in the Fourier domain. Their inverse transform is then taken to obtain
-at each detector the whitened simulated signal in the time domain.
-
-\heading{Notes}
-
-This routine does not yet support non-zero heterodyning frequencies.
-
-*/
+ * \author Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
+ *
+ * \brief Simulates whitened time-domain signal in a pair of detectors.
+ *
+ * Simulates whitened time-domain signal in a pair of detectors that arises purely from  an isotropic and
+ * unpolarized stochastic background of gravitational radiation with the
+ * desired power spectrum, \f$\Omega_{\mathrm{GW}}(f)\f$. This module
+ * will evolve beyond its present funtionality to produce only \c real
+ * time-series signal for a pair of interferometric detectors.
+ *
+ * \heading{Description}
+ *
+ * The frequency domain strains \f$\widetilde{h}_1(f_i)\f$
+ * and \f$\widetilde{h}_2(f_j)\f$ caused by
+ * the stochastic background in two detectors are random variables that have
+ * zero mean and that obey  [\ref Allen1999]:
+ * \f{equation}{
+ * \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
+ * = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{11}(f_i)
+ * \Omega_{\mathrm{GW}}(|f_i|)
+ * \f}
+ * and
+ * \f{equation}{
+ * \langle\widetilde{h}_2^*(f_i)\widetilde{h}_2(f_j)\rangle
+ * = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{22}(f_i)
+ * \Omega_{\mathrm{GW}}(|f_i|)
+ * \f}
+ * and
+ * \f{equation}{
+ * \langle\widetilde{h}_1^*(f_i)\widetilde{h}_2(f_j)\rangle
+ * = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{12}(f_i)
+ * \Omega_{\mathrm{GW}}(|f_i|) \ ,
+ * \f}
+ * where \f$\langle\rangle\f$ denotes ensemble average, \f$T\f$ is the time of
+ * observation, and \f$\gamma_{AB}\f$ is the overlap reduction function
+ * [\ref Flanagan1993] of the detector pair comprising detectors \f$A\f$
+ * and \f$B\f$. Above, \f$\widetilde{h}_1(f_i)\f$ and
+ * \f$\widetilde{h}_2(f_j)\f$ are the Fourier components of the gravitational strains
+ * \f$h_1(t)\f$ and \f$h_2(t)\f$ at the two detectors.
+ *
+ * The Fourier components that
+ * obey the above relations are
+ * \f{equation}{
+ * \widetilde{h}_1(f_i) = \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
+ * \Omega^{1/2}_{\mathrm{GW}}(|f_i|) \sqrt{\gamma_{11}(f_i)}
+ * (x_{1i} + i y_{1i})
+ * \,
+ * \f}
+ * and
+ * \f{equation}{
+ * \widetilde{h}_2(f_i) = \widetilde{h}_1(f_i)\frac{\gamma_{12}(f_i)}
+ * {\gamma_{11}(f_i)} +
+ * \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
+ * \Omega^{1/2}_{\mathrm{GW}}(|f_i|)
+ * \sqrt{\gamma_{22}(f_i)-\frac{\gamma^2_{12}(f_i)}{\gamma_{11}(f_i)}}
+ * (x_{2i} + i y_{2i})
+ * \,
+ * \f}
+ * where \f$x_{1i}\f$, \f$y_{1i}\f$, \f$x_{2i}\f$, and \f$y_{2i}\f$ are statistically
+ * independent real Gaussian random variables, each of zero mean and unit
+ * variance.
+ *
+ * The routine assumes as inputs the data sample length, temporal spacing,
+ * stochastic background characteristics, detector locations, the appropriate
+ * representations of the detector response function in each detector, etc.
+ * The (frequency domain) response functions, \f$\widetilde{R}_1(f_i)\f$ and
+ * \f$\widetilde{R}_2(f_i)\f$  are used to whiten the strains
+ * \f$\widetilde{h}_1(f_i)\f$ and
+ * \f$\widetilde{h}_2(f_i)\f$, respectively, to obtain the whitened
+ * Fourier components:
+ * \f{equation}{
+ * \widetilde{o}_1(f_i) = \widetilde{R}_1(f_i)\widetilde{h}_1(f_i)
+ * \,
+ * \f}
+ * and
+ * \f{equation}{
+ * \widetilde{o}_2(f_i) = \widetilde{R}_2(f_i)\widetilde{h}_2(f_i)
+ * \ .
+ * \f}
+ * To obtain the whitened (real)
+ * outputs \f$o_1(t_i)\f$ and \f$o_2(t_i)\f$ in the time domain, the inverse
+ * Fourier transforms of the above frequency series are taken.
+ *
+ * \heading{Algorithm}
+ *
+ * The routine <tt>LALSSSimStochBGTimeSeries()</tt> produces only \c real
+ * time-series signal for a pair of interferometric detectors. It
+ * first inputs the frequency
+ * series describing the power spectrum of the stochastic background,
+ * \f$\Omega_{\mathrm{GW}}(|f|)\f$, which the simulated
+ * signal is required to represent. It also inputs two \c COMPLEX8
+ * frequency series corresponding, respectively, to the two detector
+ * response functions. As parameters, it takes the two \c LALDetector
+ * structures corresponding to the two detectors in which the signal is to be
+ * mimicked. It also takes the time length (given in terms of the number of
+ * time data samples), the time spacing, a seed (for generating random
+ * numbers), and a couple of \c LALUnit structures for specifying the
+ * units of the two time-series signals that the routine outputs.
+ *
+ * Using the specified power
+ * spectrum for the stochastic background, and a random number generator (of
+ * zero mean, unit variance Gaussian distributions), the routine produces
+ * \f$\widetilde{h}_1(f_i)\f$ and \f$\widetilde{h}_2(f_i)\f$. The
+ * response functions of the two detectors are then used to whiten the two
+ * strains in the Fourier domain. Their inverse transform is then taken to obtain
+ * at each detector the whitened simulated signal in the time domain.
+ *
+ * \heading{Notes}
+ *
+ * This routine does not yet support non-zero heterodyning frequencies.
+ *
+ */
 void
 LALSSSimStochBGTimeSeries( LALStatus                    *status,
 			   SSSimStochBGOutput           *output,
@@ -797,8 +796,9 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 
 /* ***************************************************************************/
 
-/** UNDOCUMENTED.
- *\see See \ref SimulateSB_h and LALSSSimStochBGTimeSeries() for documentation
+/**
+ * UNDOCUMENTED.
+ * \see See \ref SimulateSB_h and LALSSSimStochBGTimeSeries() for documentation
  */
 void
 LALSSSimStochBGStrainTimeSeries( LALStatus              *status,

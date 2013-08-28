@@ -36,19 +36,20 @@
  * The functions that make up the guts of this module
  */
 
-/** Function for finding bias in median for exponential distribution
-    to be used with any code which uses the running median to estimate PSD.
-
-For the exponential distribution with unit mean and variance, the value of the
-median is \f$\log(2.0)\f$ in the limit of infinite sample size. Thus, if we are
-using the running median to estimate the PSD, there is a correction factor
-of \f$\log(2.0)\f$.  However, for finite sample sizes (i.e. for finite block size
-values), there is a bias in the estimator of the median and the correction
-factor is different.  This program returns the correct normalization factor
-for block sizes from 1 to 1000.  For larger values it returns \f$\log(2.0)\f$ and
-returns and error for smaller values.
-
-*/
+/**
+ * Function for finding bias in median for exponential distribution
+ * to be used with any code which uses the running median to estimate PSD.
+ *
+ * For the exponential distribution with unit mean and variance, the value of the
+ * median is \f$\log(2.0)\f$ in the limit of infinite sample size. Thus, if we are
+ * using the running median to estimate the PSD, there is a correction factor
+ * of \f$\log(2.0)\f$.  However, for finite sample sizes (i.e. for finite block size
+ * values), there is a bias in the estimator of the median and the correction
+ * factor is different.  This program returns the correct normalization factor
+ * for block sizes from 1 to 1000.  For larger values it returns \f$\log(2.0)\f$ and
+ * returns and error for smaller values.
+ *
+ */
 REAL8
 XLALRngMedBias ( INT4 blkSize )
 {
@@ -72,7 +73,8 @@ XLALRngMedBias ( INT4 blkSize )
 
 } // XLALRngMedBias()
 
-/** \deprecated use XLALRngMedBias() instead.
+/**
+ * \deprecated use XLALRngMedBias() instead.
  * Just a wrapper for XLALRngMedBias()
  */
 void

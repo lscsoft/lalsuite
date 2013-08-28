@@ -18,57 +18,55 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief The code \c LALInspiralWave1() generates an time-domain inspiral waveform corresponding to the
-::Approximant #TaylorT1 and #PadeT1 as outlined in the documentation for the function \c LALInspiralWave().
-
-\heading{Prototypes}
-
-<tt>LALInspiralWave1()</tt>
-<ul>
-<li> \c signalvec: Output containing the inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-
-<tt>LALInspiralWave1Templates()</tt>
-<ul>
-<li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
-<li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-\heading{Description}
-
-LALInspiralWave1() is called if the user has specified the
-\c enum ::Approximant to be
-either #TaylorT1 or #PadeT1.
-LALInspiralWave1Templates() is exactly the same as LALInspiralWave1(), except that
-it generates two templates one for which the starting phase is
-<tt>params.startPhase</tt> and the other for which the phase is
-<tt>params.startPhase + \f$\pi/2\f$</tt>.
-
-
-\heading{Algorithm}
-This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
-in Equation.\eqref{eq_ode2}.
-
-\heading{Uses}
-\code
-LALInspiralSetup()
-LALInspiralChooseModel()
-LALInspiralVelocity()
-LALInspiralPhasing1()
-LALInspiralDerivatives()
-LALRungeKutta4()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief The code \c LALInspiralWave1() generates an time-domain inspiral waveform corresponding to the
+ * ::Approximant #TaylorT1 and #PadeT1 as outlined in the documentation for the function \c LALInspiralWave().
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>LALInspiralWave1()</tt>
+ * <ul>
+ * <li> \c signalvec: Output containing the inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * <tt>LALInspiralWave1Templates()</tt>
+ * <ul>
+ * <li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
+ * <li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * \heading{Description}
+ *
+ * LALInspiralWave1() is called if the user has specified the
+ * \c enum ::Approximant to be
+ * either #TaylorT1 or #PadeT1.
+ * LALInspiralWave1Templates() is exactly the same as LALInspiralWave1(), except that
+ * it generates two templates one for which the starting phase is
+ * <tt>params.startPhase</tt> and the other for which the phase is
+ * <tt>params.startPhase + \f$\pi/2\f$</tt>.
+ *
+ * \heading{Algorithm}
+ * This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
+ * in Equation.\eqref{eq_ode2}.
+ *
+ * \heading{Uses}
+ * \code
+ * LALInspiralSetup()
+ * LALInspiralChooseModel()
+ * LALInspiralVelocity()
+ * LALInspiralPhasing1()
+ * LALInspiralDerivatives()
+ * LALRungeKutta4()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 /*
    Interface routine needed to generate time-domain T- or a P-approximant

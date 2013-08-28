@@ -18,80 +18,80 @@
 */
 
 /**
-\author UTB Relativity Group; contact whelan@phys.utb.edu
-\addtogroup StochasticOmegaGW_c
-
-\brief Generates a frequency series containing a simple power law spectrum.
-
-The strength of a stochastic gravitational wave background is
-defined as
-\f{equation}{
-\Omega_{\mathrm{GW}}(f)
-:=\frac{f}{\rho_{\mathrm{crit}}}
-\frac{d\rho_{\mathrm{GW}}}{df}
-\ ,
-\f}
-where
-\f{equation}{
-\rho_{\mathrm{crit}} = \frac{3 H_0^2 c^2}{8\pi G}
-\f}
-is the critical density needed to close the universe.  Since the value
-of \f$\rho_{\mathrm{crit}}\f$ depends on the observed value of the
-Hubble constant \f$H_0\f$, it is traditional to remove this experimental
-uncertainty from the definition by working with
-\f${h_{100}}^2\Omega_{\mathrm{GW}}\f$, where \f$h_{100}\f$ is the Hubble
-constant divided by
-\f$100\,\textrm{km}\,\textrm{s}^{-1}\,\textrm{Mpc}^{-1}\f$.
-
-<tt>LALStochasticOmegaGW()</tt> generates a simple power law spectrum
-\f{equation}{
-{h_{100}}^2\Omega_{\mathrm{GW}}(f)
-=\Omega_{\mathrm{R}}
-\left(
-  \frac{f}{f_{\mathrm{R}}}
-\right)^\alpha
-\f}
-The parameter <tt>parameters.omegaRef</tt> specifies the amplitude
-\f${h_{100}}^2\Omega_{\mathrm{R}}\f$ of the spectrum.  This is simply
-defined as the value of \f${h_{100}}^2\Omega_{\mathrm{GW}}(f)\f$ at the
-reference frequency \f$f_{\mathrm{R}}\f$ which is specified in
-<tt>parameters.omegaRef</tt>.
-
-\heading{Algorithm}
-
-<tt>LALStochasticOmegaGW()</tt> treats the constant spectrum \f$\alpha=0\f$ as a
-special case, and simply sets every element of the output series to
-\f$\Omega_{\mathrm{R}}\f$.
-
-If \f$\alpha\ne 0\f$, the DC value <tt>output->data->data[0]</tt> is set
-to 0 or \c LAL_REAL4_MAX, depending on whether \f$\alpha\f$ is
-positive or negative, respectively.
-
-The output units are set to be dimensionless.
-
-\heading{Uses}
-\code
-LAL_REAL4_MAX
-\endcode
-
-\heading{Notes}
-
-<ul>
-<li> This routine will eventually be generalized to
-include "broken" power law spectra
-\f{equation}{
-{h_{100}}^2\Omega_{\mathrm{GW}}
-= \left\{
-\begin{array}{cc}
-{h_{100}}^2\Omega_1 f^{\alpha_1} & f\le f_c\\
-{h_{100}}^2\Omega_2 f^{\alpha_2} & f\ge f_c
-\end{array}
-\right.
-\f}</li>
-</ul>
-
-@{
-*/
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \addtogroup StochasticOmegaGW_c
+ *
+ * \brief Generates a frequency series containing a simple power law spectrum.
+ *
+ * The strength of a stochastic gravitational wave background is
+ * defined as
+ * \f{equation}{
+ * \Omega_{\mathrm{GW}}(f)
+ * :=\frac{f}{\rho_{\mathrm{crit}}}
+ * \frac{d\rho_{\mathrm{GW}}}{df}
+ * \ ,
+ * \f}
+ * where
+ * \f{equation}{
+ * \rho_{\mathrm{crit}} = \frac{3 H_0^2 c^2}{8\pi G}
+ * \f}
+ * is the critical density needed to close the universe.  Since the value
+ * of \f$\rho_{\mathrm{crit}}\f$ depends on the observed value of the
+ * Hubble constant \f$H_0\f$, it is traditional to remove this experimental
+ * uncertainty from the definition by working with
+ * \f${h_{100}}^2\Omega_{\mathrm{GW}}\f$, where \f$h_{100}\f$ is the Hubble
+ * constant divided by
+ * \f$100\,\textrm{km}\,\textrm{s}^{-1}\,\textrm{Mpc}^{-1}\f$.
+ *
+ * <tt>LALStochasticOmegaGW()</tt> generates a simple power law spectrum
+ * \f{equation}{
+ * {h_{100}}^2\Omega_{\mathrm{GW}}(f)
+ * =\Omega_{\mathrm{R}}
+ * \left(
+ * \frac{f}{f_{\mathrm{R}}}
+ * \right)^\alpha
+ * \f}
+ * The parameter <tt>parameters.omegaRef</tt> specifies the amplitude
+ * \f${h_{100}}^2\Omega_{\mathrm{R}}\f$ of the spectrum.  This is simply
+ * defined as the value of \f${h_{100}}^2\Omega_{\mathrm{GW}}(f)\f$ at the
+ * reference frequency \f$f_{\mathrm{R}}\f$ which is specified in
+ * <tt>parameters.omegaRef</tt>.
+ *
+ * \heading{Algorithm}
+ *
+ * <tt>LALStochasticOmegaGW()</tt> treats the constant spectrum \f$\alpha=0\f$ as a
+ * special case, and simply sets every element of the output series to
+ * \f$\Omega_{\mathrm{R}}\f$.
+ *
+ * If \f$\alpha\ne 0\f$, the DC value <tt>output->data->data[0]</tt> is set
+ * to 0 or \c LAL_REAL4_MAX, depending on whether \f$\alpha\f$ is
+ * positive or negative, respectively.
+ *
+ * The output units are set to be dimensionless.
+ *
+ * \heading{Uses}
+ * \code
+ * LAL_REAL4_MAX
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ * <ul>
+ * <li> This routine will eventually be generalized to
+ * include "broken" power law spectra
+ * \f{equation}{
+ * {h_{100}}^2\Omega_{\mathrm{GW}}
+ * = \left\{
+ * \begin{array}{cc}
+ * {h_{100}}^2\Omega_1 f^{\alpha_1} & f\le f_c\\
+ * {h_{100}}^2\Omega_2 f^{\alpha_2} & f\ge f_c
+ * \end{array}
+ * \right.
+ * \f}</li>
+ * </ul>
+ *
+ * @{
+ */
 
 #include <lal/LALStdlib.h>
 

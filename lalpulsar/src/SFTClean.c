@@ -23,45 +23,45 @@
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
  * \addtogroup SFTClean_h
  * \brief Module containing routines for dealing with spectral disturbances in SFTs
-
-   \heading{Description}
-
-   This module contains routines for dealing with lists of known spectral disturbances
-   in the frequency domain, and using them to clean SFTs.
-
-   The basic input is a text file containing a list of known spectral lines.  An example
-   is the following
-
-   \verbatim
-   0.0      0.25     4000     0.0        0.0   0.25Hzlines
-   0.0      60.0     20       0.5        0.5   60Hzlines
-   0.0      16.0     100      0.0        0.0   16Hzlines
-   166.7    0.0      1        0.0        0.0   Calibrationline
-   345.0    0.0      1        3.0        3.0   violinmodes
-   \endverbatim
-
-   The file consists of rows with 6 columns each.  Each row has information about
-   a set of spectral lines of the form \f$ f_n = f_0 + n\Delta f \f$.  The first column
-   is the start frequency \f$ f_0 \f$, the second column is the spacing \f$ \Delta f \f$,
-   the third column is the total number of lines, the fourth column is the
-   left-width of each line (in Hz), the fifth column is the width on the right, and
-   the last column is a brief comment string (no spaces).  If this file is meant to
-   be used for cleaning SFTs, then certain features which the user must be aware of
-   are explained in the documentation of the function LALCleanCOMPLEX8SFT().
-
-   \heading{Uses}
-   \code
-   void LALFindNumberHarmonics (LALStatus, LineHarmonicsInfo, CHAR)
-   void LALReadHarmonicsInfo (LALStatus, LineHarmonicsInfo, CHAR)
-   void LALHarmonics2Lines (LALStatus, LineNoiseInfo, LineHarmonicsInfo)
-   void LALChooseLines (LALStatus, LineNoiseInfo, LineNoiseInfo, REAL8, REAL8)
-   void LALCheckLines ( LALStatus, INT4, LineNoiseInfo, REAL8)
-   void LALFindNumberLines (LALStatus, LineNoiseInfo, CHAR)
-   void LALReadLineInfo (LALStatus, LineNoiseInfo, CHAR)
-   void LALCleanCOMPLEX8SFT (LALStatus, SFTtype, INT4, INT4, LineNoiseInfo, RandomParams)
-   \endcode
-
-*/
+ *
+ * \heading{Description}
+ *
+ * This module contains routines for dealing with lists of known spectral disturbances
+ * in the frequency domain, and using them to clean SFTs.
+ *
+ * The basic input is a text file containing a list of known spectral lines.  An example
+ * is the following
+ *
+ * \verbatim
+ * 0.0      0.25     4000     0.0        0.0   0.25Hzlines
+ * 0.0      60.0     20       0.5        0.5   60Hzlines
+ * 0.0      16.0     100      0.0        0.0   16Hzlines
+ * 166.7    0.0      1        0.0        0.0   Calibrationline
+ * 345.0    0.0      1        3.0        3.0   violinmodes
+ * \endverbatim
+ *
+ * The file consists of rows with 6 columns each.  Each row has information about
+ * a set of spectral lines of the form \f$ f_n = f_0 + n\Delta f \f$.  The first column
+ * is the start frequency \f$ f_0 \f$, the second column is the spacing \f$ \Delta f \f$,
+ * the third column is the total number of lines, the fourth column is the
+ * left-width of each line (in Hz), the fifth column is the width on the right, and
+ * the last column is a brief comment string (no spaces).  If this file is meant to
+ * be used for cleaning SFTs, then certain features which the user must be aware of
+ * are explained in the documentation of the function LALCleanCOMPLEX8SFT().
+ *
+ * \heading{Uses}
+ * \code
+ * void LALFindNumberHarmonics (LALStatus, LineHarmonicsInfo, CHAR)
+ * void LALReadHarmonicsInfo (LALStatus, LineHarmonicsInfo, CHAR)
+ * void LALHarmonics2Lines (LALStatus, LineNoiseInfo, LineHarmonicsInfo)
+ * void LALChooseLines (LALStatus, LineNoiseInfo, LineNoiseInfo, REAL8, REAL8)
+ * void LALCheckLines ( LALStatus, INT4, LineNoiseInfo, REAL8)
+ * void LALFindNumberLines (LALStatus, LineNoiseInfo, CHAR)
+ * void LALReadLineInfo (LALStatus, LineNoiseInfo, CHAR)
+ * void LALCleanCOMPLEX8SFT (LALStatus, SFTtype, INT4, INT4, LineNoiseInfo, RandomParams)
+ * \endcode
+ *
+ */
 
 /* REVISIONS: */
 /* 09/09/05 gam; if (nLinesOut == 0) still need outLine->nLines = nLinesOut; calling function needs to know this */
@@ -130,9 +130,10 @@ void LALFindNumberHarmonics (LALStatus    *status,	/**< pointer to LALStatus str
 }
 
 
-/** Reads in the contents of the input line-info file and fills up
- *  the LineHarmonicsInfo structure.  Appropriate memory must be allocated for
- *  this structure before this function is called.
+/**
+ * Reads in the contents of the input line-info file and fills up
+ * the LineHarmonicsInfo structure.  Appropriate memory must be allocated for
+ * this structure before this function is called.
  */
 
 void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStatus structure */
@@ -190,8 +191,9 @@ void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStat
 
 }
 
-/** Converts the list of harmonic sets into an explicit list of spectral
- *  lines.
+/**
+ * Converts the list of harmonic sets into an explicit list of spectral
+ * lines.
  */
 
 void  LALHarmonics2Lines (LALStatus          *status,	/**< pointer to LALStatus structure */
@@ -308,8 +310,9 @@ void LALFindNumberLines (LALStatus          *status,
   RETURN (status);
 }
 
-/** Reads information from file containing list of explicit lines - obsolete.
- *  Use instead LALReadHarmonicsInfo()
+/**
+ * Reads information from file containing list of explicit lines - obsolete.
+ * Use instead LALReadHarmonicsInfo()
  */
 
 void  LALReadLineInfo (LALStatus     *status,
@@ -360,7 +363,8 @@ void  LALReadLineInfo (LALStatus     *status,
 }
 
 
-/** Takes a set of spectral lines and a frequency range as input and
+/**
+ * Takes a set of spectral lines and a frequency range as input and
  * returns those lines which lie within the specified frequency range.  The output
  * is a reduced list of spectral lines which either lie completely within the
  * frequency range or whose wings overlap with the frequency range.  This is useful
@@ -445,7 +449,8 @@ void LALChooseLines (LALStatus        *status,	/**< pointer to LALStatus structu
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/** Function to count how many lines affect a given frequency.  Input is a
+/**
+ * Function to count how many lines affect a given frequency.  Input is a
  * list of lines and a frequency.  The output is an integer which is equal to the
  * number of lines which intersect this frequency.  An output of zero indicates
  * that the frequencty is not influenced by the lines.  Note that the doppler
@@ -523,53 +528,52 @@ void LALCheckLines ( LALStatus           *status, /**< pointer to LALStatus stru
  * for historical reasons, and should probably be removed.  Currently, it is recommended
  * to set this sufficiently large (larger that any wing size in bins) so that
  * it has no effect.
-
- \heading{Some "features" that must be kept in mind}
-
- The following is part of a email sent to pulgroup on 4/10/05.  Some of these points
- have already been mentioned above.
-
- i) If the width of the line to be cleaned is specified to be zero and if the central frequency is midway between two exactly resolved bins, then the code
- will only clean one frequency bin and not both as it perhaps should.
-
- ii) The wings size is converted from Hz to frequency bins using the floor function. So some bins are being dropped at the edges due to rounding off.
-
- iii) The cleaning uses data from neighboring bins to generate random noise.  This is a problem if there are other spectral disturbances in the
- neighborhood or if the frequency bin is at the edge of the SFT.  Shouldn't one make sure that the data used to generate the random number are
- un-contaminated?
-
-
- Regarding the first two points, the user is supposed to know the properties of the SFTs which are being cleaned and the list of lines is meant to be
- tailored for a particular set of SFTs. Therefore, the user should know the timebaseline of the SFT to make sure that the central frequency value being
- specified is a resolved frequency bin and
- the wings should be specified correctly.  In many cases, the size of the wings, when it is non-zero, is somewhat uncertain, and this uncertainty is often
- larger that this rounding off error.
-
- Perhaps one should specify the frequency bin index of the central frequency value and the wing size also in bins, but this makes the code more cumbersome
- and non-intuitive to use.
-
- Both of these points can be handled by documenting the code better, so that the user knows exactly what is being done and chooses the input
- appropriately .  I will do this as soon as possible.
-
- The third point is more difficult.  Currently, the code calculates the *median* of the power in the neighboring bins and uses that to generate a random
- number with the appropriate standard deviation.
-
- Let us first consider the cases when there are other spectral disturbances in the neighborhood so that the median estimate might be corrupted.  When
- there are only a small number of narrow (only few bins) disturbances in
- the neighborhood, the use of the median is meant to eliminate the effects of these lines.  However, this might not work for the cases when there is a
- broad spectral disturbance or when there are a large number of narrow disturbances.
-
- If there are a large number of narrow spectral disturbances very close to each other, it might make more sense to group them together and consider them
- to be one single broad disturbance; we probably won't trust a detection near these lines anyway.
-
- In the case of a broad spectral feature, it will certainly corrupt the median value and the random number generated won't be correct.  The alternative is
- to skip the broad feature and take only undisturbed bins further away. This might be ok, but recall that the purpose of the cleaning is to replace a
- spectral disturbance with a random number whose distribution is similar to the noise in the *neighborhood* of the disturbance.  For colored noise, if we
- have to go very far away in frequency to get a undisturbed frequency bin, then the random number distribution won't be correct either.
- Edge effects are taken care by making sure that the SFT being read in is large enough. There
- must be extra wings to the SFT equal to the window size used for cleaning.  If the edge effects are important, then the code using the cleaning routines
- must read in the extra bins.
-
+ *
+ * \heading{Some "features" that must be kept in mind}
+ *
+ * The following is part of a email sent to pulgroup on 4/10/05.  Some of these points
+ * have already been mentioned above.
+ *
+ * i) If the width of the line to be cleaned is specified to be zero and if the central frequency is midway between two exactly resolved bins, then the code
+ * will only clean one frequency bin and not both as it perhaps should.
+ *
+ * ii) The wings size is converted from Hz to frequency bins using the floor function. So some bins are being dropped at the edges due to rounding off.
+ *
+ * iii) The cleaning uses data from neighboring bins to generate random noise.  This is a problem if there are other spectral disturbances in the
+ * neighborhood or if the frequency bin is at the edge of the SFT.  Shouldn't one make sure that the data used to generate the random number are
+ * un-contaminated?
+ *
+ * Regarding the first two points, the user is supposed to know the properties of the SFTs which are being cleaned and the list of lines is meant to be
+ * tailored for a particular set of SFTs. Therefore, the user should know the timebaseline of the SFT to make sure that the central frequency value being
+ * specified is a resolved frequency bin and
+ * the wings should be specified correctly.  In many cases, the size of the wings, when it is non-zero, is somewhat uncertain, and this uncertainty is often
+ * larger that this rounding off error.
+ *
+ * Perhaps one should specify the frequency bin index of the central frequency value and the wing size also in bins, but this makes the code more cumbersome
+ * and non-intuitive to use.
+ *
+ * Both of these points can be handled by documenting the code better, so that the user knows exactly what is being done and chooses the input
+ * appropriately .  I will do this as soon as possible.
+ *
+ * The third point is more difficult.  Currently, the code calculates the *median* of the power in the neighboring bins and uses that to generate a random
+ * number with the appropriate standard deviation.
+ *
+ * Let us first consider the cases when there are other spectral disturbances in the neighborhood so that the median estimate might be corrupted.  When
+ * there are only a small number of narrow (only few bins) disturbances in
+ * the neighborhood, the use of the median is meant to eliminate the effects of these lines.  However, this might not work for the cases when there is a
+ * broad spectral disturbance or when there are a large number of narrow disturbances.
+ *
+ * If there are a large number of narrow spectral disturbances very close to each other, it might make more sense to group them together and consider them
+ * to be one single broad disturbance; we probably won't trust a detection near these lines anyway.
+ *
+ * In the case of a broad spectral feature, it will certainly corrupt the median value and the random number generated won't be correct.  The alternative is
+ * to skip the broad feature and take only undisturbed bins further away. This might be ok, but recall that the purpose of the cleaning is to replace a
+ * spectral disturbance with a random number whose distribution is similar to the noise in the *neighborhood* of the disturbance.  For colored noise, if we
+ * have to go very far away in frequency to get a undisturbed frequency bin, then the random number distribution won't be correct either.
+ * Edge effects are taken care by making sure that the SFT being read in is large enough. There
+ * must be extra wings to the SFT equal to the window size used for cleaning.  If the edge effects are important, then the code using the cleaning routines
+ * must read in the extra bins.
+ *
  */
 
 void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus structure */
@@ -750,8 +754,10 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 
 
 
-/** Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each
-    sft in vector */
+/**
+ * Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each
+ * sft in vector
+ */
 void LALCleanSFTVector (LALStatus       *status,   /**< pointer to LALStatus structure */
 			SFTVector       *sftVect,  /**< SFTVector to be cleaned */
 			INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
@@ -787,8 +793,10 @@ void LALCleanSFTVector (LALStatus       *status,   /**< pointer to LALStatus str
 }
 
 
-/** Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each
-    sft in vector */
+/**
+ * Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each
+ * sft in vector
+ */
 void LALCleanMultiSFTVect (LALStatus       *status,   /**< pointer to LALStatus structure */
 			   MultiSFTVector  *multVect, /**< SFTVector to be cleaned */
 			   INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
@@ -824,8 +832,10 @@ void LALCleanMultiSFTVect (LALStatus       *status,   /**< pointer to LALStatus 
 }
 
 
-/** function to remove lines from a sft vector given a file
-    containing list of lines */
+/**
+ * function to remove lines from a sft vector given a file
+ * containing list of lines
+ */
 void LALRemoveKnownLinesInSFTVect (LALStatus   *status,   /**< pointer to LALStatus structure */
 				   SFTVector   *sftVect,  /**< SFTVector to be cleaned */
 				   INT4        width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
@@ -924,8 +934,10 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,   /**< pointer to LALSta
   RETURN (status);
 }
 
-/** top level function to remove lines from a multi sft vector given a list of files
-    containing list of known spectral lines */
+/**
+ * top level function to remove lines from a multi sft vector given a list of files
+ * containing list of known spectral lines
+ */
 void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< pointer to LALStatus structure */
 					  MultiSFTVector   *MultiSFTVect,  /**< SFTVector to be cleaned */
 					  INT4             width,          /**< maximum width to be cleaned */

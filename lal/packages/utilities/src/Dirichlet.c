@@ -23,33 +23,33 @@
 #include <lal/Dirichlet.h>
 
 
-/** \brief Calculates the values of the Dirichlet kernel [\ref pw93].
-
-\f[
-{\cal D}_N(x):=
-\left\{
-\begin{array}{cl}
-(-1)^{x(N-1)} & \quad x=0, \pm 1, \pm 2, \cdots\\
-\frac{\sin(N\pi x)}{N\sin(\pi x)} & \quad \textrm{otherwise}\ .
-\end{array}
-\right.
-\f]
-
-The magnitude of the Dirichlet kernel is \f$1/N\f$ times the magnitude
-of the discrete Fourier transform of the discrete \f$N\f$-point rectangular
-window.
-
-\heading{Notes}
-The Dirichlet kernel is needed for a rigorous (i.e., exact)
-calculation of the standard cross-correlation statistic, evaluated in
-discrete time.  However, <tt>LALStochasticOptimalFilter()</tt> and
-other routines in the \c stochastic package, as currently
-implemented, do not make use of the Dirichlet kernel; these routines
-are expected to be used in the large observation time continuum limit
-approximation, for which \f${\cal D}_N(x)\f$ can effectively be replaced
-by a Dirac delta function.
-
-*/
+/**
+ * \brief Calculates the values of the Dirichlet kernel [\ref pw93].
+ * \f[
+ * {\cal D}_N(x):=
+ * \left\{
+ * \begin{array}{cl}
+ * (-1)^{x(N-1)} & \quad x=0, \pm 1, \pm 2, \cdots\\
+ * \frac{\sin(N\pi x)}{N\sin(\pi x)} & \quad \textrm{otherwise}\ .
+ * \end{array}
+ * \right.
+ * \f]
+ *
+ * The magnitude of the Dirichlet kernel is \f$1/N\f$ times the magnitude
+ * of the discrete Fourier transform of the discrete \f$N\f$-point rectangular
+ * window.
+ *
+ * \heading{Notes}
+ * The Dirichlet kernel is needed for a rigorous (i.e., exact)
+ * calculation of the standard cross-correlation statistic, evaluated in
+ * discrete time.  However, <tt>LALStochasticOptimalFilter()</tt> and
+ * other routines in the \c stochastic package, as currently
+ * implemented, do not make use of the Dirichlet kernel; these routines
+ * are expected to be used in the large observation time continuum limit
+ * approximation, for which \f${\cal D}_N(x)\f$ can effectively be replaced
+ * by a Dirac delta function.
+ *
+ */
 void
 LALDirichlet(LALStatus*                 status,
              REAL4Vector*               output,

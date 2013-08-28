@@ -18,81 +18,78 @@
 */
 
 /**
-\author Mendell, Greg A.
-\ingroup FoldAmplitudes_h
-
-\heading{Module \ref FoldAmplitudes.c}
-
-\heading{Description}
-
-\code
-Contains source for function LALFoldAmplitudes:
-
-inputs: a vector of amplitudes and a vector of phases.
-
-params: number of phase bins, the minimum phase to bin, and the maximum phase to bin.
-
-action: for each phase, the phase is first reduced by modulo arithmetic to a value
-        between binMin and binMax.  The corresponding amplitudes is then added to
-        the corresponding phase bins.  The width of each bin is (binMax - binMin)/numBins.
-
-output: a vector of folded amplitude; component i is the folded amplitude for phase bin i.
-\endcode
-
-\heading{Algorithm}
-
-%[A description of the method used to perform the calculation.]
-
-\code
-
-  Algorithm for folding amplitudes into phase bins:
-
-  1) Reduce the phase to a value between binMax and binMin. Note that binMax -binMin = binRange.
-  2) Find the bin index corresponding to this phase.
-  3) Add the amplitude from the input data vector to this phase bin.
-
-  Notes:
-  	(i) The function is more efficient if binRange == 1.
-  	(ii) The results are stored in the REAL4Vector output structure data vector.
-  	(iii) Only binMin = 0.0 is currently supported.
-
-  Code:
-
-  if (binRange == 1.0) {
-  	for ( i = 0 ; i < amplitudeVec->length ; ++i )
-  	{
-  		phase = phaseVec->data[i] - floor( phaseVec->data[i] );
-  		binIndex = (INT4) floor( phase/binSize );
-  		output->data[binIndex] += amplitudeVec->data[i];
-  	}
-  } else {
-  	for ( i = 0 ; i < amplitudeVec->length ; ++i )
-  	{
-  		phase = phaseVec->data[i] - floor( phaseVec->data[i]/binRange ) * binRange;
-  		binIndex = (INT4) floor( phase/binSize );
-  		output->data[binIndex] += amplitudeVec->data[i];
-  	}
-  }
-
-\endcode
-
-
-\heading{Uses}
-
-% List any external functions called by this function.
-
-For use in known pulsar search.
-
-\code
-\endcode
-
-\heading{Notes}
-
-%[Any relevant notes]
-
-
-
-*/
+ * \author Mendell, Greg A.
+ * \ingroup FoldAmplitudes_h
+ *
+ * \heading{Module \ref FoldAmplitudes.c}
+ *
+ * \heading{Description}
+ *
+ * \code
+ * Contains source for function LALFoldAmplitudes:
+ *
+ * inputs: a vector of amplitudes and a vector of phases.
+ *
+ * params: number of phase bins, the minimum phase to bin, and the maximum phase to bin.
+ *
+ * action: for each phase, the phase is first reduced by modulo arithmetic to a value
+ * between binMin and binMax.  The corresponding amplitudes is then added to
+ * the corresponding phase bins.  The width of each bin is (binMax - binMin)/numBins.
+ *
+ * output: a vector of folded amplitude; component i is the folded amplitude for phase bin i.
+ * \endcode
+ *
+ * \heading{Algorithm}
+ *
+ * %[A description of the method used to perform the calculation.]
+ *
+ * \code
+ *
+ * Algorithm for folding amplitudes into phase bins:
+ *
+ * 1) Reduce the phase to a value between binMax and binMin. Note that binMax -binMin = binRange.
+ * 2) Find the bin index corresponding to this phase.
+ * 3) Add the amplitude from the input data vector to this phase bin.
+ *
+ * Notes:
+ * (i) The function is more efficient if binRange == 1.
+ * (ii) The results are stored in the REAL4Vector output structure data vector.
+ * (iii) Only binMin = 0.0 is currently supported.
+ *
+ * Code:
+ *
+ * if (binRange == 1.0) {
+ * for ( i = 0 ; i < amplitudeVec->length ; ++i )
+ * {
+ * phase = phaseVec->data[i] - floor( phaseVec->data[i] );
+ * binIndex = (INT4) floor( phase/binSize );
+ * output->data[binIndex] += amplitudeVec->data[i];
+ * }
+ * } else {
+ * for ( i = 0 ; i < amplitudeVec->length ; ++i )
+ * {
+ * phase = phaseVec->data[i] - floor( phaseVec->data[i]/binRange ) * binRange;
+ * binIndex = (INT4) floor( phase/binSize );
+ * output->data[binIndex] += amplitudeVec->data[i];
+ * }
+ * }
+ *
+ * \endcode
+ *
+ * \heading{Uses}
+ *
+ * % List any external functions called by this function.
+ *
+ * For use in known pulsar search.
+ *
+ * \code
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ * %[Any relevant notes]
+ *
+ */
 
 /* ****** INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */

@@ -22,7 +22,7 @@
  * \file ninja.c
  * \author Badri Krishnan
  * \brief Code for parsing and selecting numerical relativity
- *        waves in frame files
+ * waves in frame files
  */
 
 
@@ -669,8 +669,10 @@ static int get_mode_index_from_channel_name(INT4 *mode_l,
   return ret;
 }
 
-/** take a list of numrel group names separated by ";" and parse it to
-    get a vector of NumRelGroup */
+/**
+ * take a list of numrel group names separated by ";" and parse it to
+ * get a vector of NumRelGroup
+ */
 static int parse_group_list(NrParRange *range,
                        CHAR *list)
 {

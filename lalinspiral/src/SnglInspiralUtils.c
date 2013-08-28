@@ -41,145 +41,145 @@
 #include <lal/TimeDelay.h>
 
 /**
-\author Brown, D. A., Fairhurst, S. and Messaritaki, E.
-\file
-
-\brief Provides a set of utilities for manipulating \c snglInspiralTables.
-
-\heading{Description}
-
-The function <tt>LALFreeSnglInspiral()</tt> and XLALFreeSnglInspiral()
-free the memory associated to a single inspiral table.  The single inspiral
-table may point to a linked list of EventIDColumns.  Thus, it is necessary to
-free all event ids associated with the single inspiral.
-
-The function <tt>LALSortSnglInspiral()</tt> and <tt>XLALSortSnglInspiral()</tt>
-sorts a list of single inspiral tables.  The function simply calls qsort with
-the appropriate comparison function, \c comparfunc.  It then ensures that
-the head of the sorted list is returned.  There then follow several comparison
-functions for single inspiral tables.  <tt>LALCompareSnglInspiralByMass()</tt>
-first compares the \c mass1 entry of the two inspiral tables, returning 1
-if the first mass is larger and -1 if the second is larger.  In the case that
-the \c mass1 fields are equal, a similar comparsion is performed on
-\c mass2.  If these also agree, 0 is returned.
-<tt>LALCompareSnglInspiralByPsi()</tt> compares the \c Psi0 and
-\c Psi3 fields in two single inspiral tables.  The function is analogous
-to the mass comparison described above.  \c LALCompareSnglInspiralByTime()
-compares the end times of two single inspiral tables, returnng 1 if the first
-time is larger, 0 if equal and -1 if the second time is larger.
-
-<tt>LALCompareSnglInspiral()</tt> tests whether two single inspiral tables
-pass a coincidence test.  The coincidence parameters are given by
-\c params which is a \c ::SnglInspiralAccuracy structure.  It tests
-first that the \c ifo fields are different.  If they are, it then tests
-for time and mass coincidence, where mass coincidence may be any one of
-\c psi0_and_psi3, \c m1_and_m2, \c mchirp_and_eta.
-Finally, if the test is on \c m1_and_m2, consistency of effective
-distances is also checked.  If the two single inspiral tables pass
-coincidences the <tt>params.match</tt> is set to 1, otherwise it is set to
-zero.
-
-<tt>LALClusterSnglInspiralTable()</tt> clusters single inspiral triggers
-within a time window \c dtimeNS.  The triggers are compared either by
-\c snr, \c snr_and_chisq or \c snrsq_over_chisq.  The
-"loudest" trigger, as determined by the selected algorithm, within each time
-window is returned.
-
-<tt>XLALClusterInEventID</tt> clusters single inspiral triggers with the
-same event ID. The triggers are compared by the clustering choice specified.
-
-<tt>XLALCoincSegCutSnglInspiral</tt> keeps only those single inspiral triggers 
-in the input list that are within the specified time interval.
-
-<tt>LALTimeCutSingleInspiral()</tt> and
-<tt>XLALTimeCutSingleInspiral()</tt>takes in a linked list of single inspiral
-tables and returns only those which occur after the given \c startTime
-and before the \c endTime.
-
-<tt>LALSNRCutSingleInspiral()</tt> and <tt>XLALSNRCutSingleInspiral()</tt>
-take in a linked list of single inspiral tables and returns only those
-triggers which have snr values above a specific snrCut.
-
-<tt>XLALRsqCutSingleInspiral()</tt> performs the R-squared veto on a linked
-list of single inspiral tables.  Triggers whose snr is less than
-\c rsqSnrMax and whose \c rsqveto_duration is greater than
-\c rsqVetoThresh or <tt>(optional)</tt> whose snr is greater than
-\c rsqSnrMax and whose \c rsqveto_duration is greater than
-\f$\mathtt{rsqAboveSnrCoeff} \times \mathtt{snr}^{\mathtt{rsqAboveSnrPow}}\f$
-
-<tt>XLALVetoSingleInspiral()</tt> takes in a linked list of single inspiral
-tables and a list of segments and returns only those triggers which do not lie
-in within the \c vetoSegs.
-
-<tt>LALBCVCVetoSingleInspiral()</tt> takes in a linked list of single inspiral
-tables and returns only those triggers which have alphaF/SNR values below a
-specific threshold and alphaF value between alphaF-hi and alphaF-lo values.  It
-is relevant for the BCVC or BCVU search only.
-
-<tt>LALalphaFCutSingleInspiral()</tt> takes in a linked list of single
-inspiral tables and returns only those triggers which have alphaF values below
-a specific alphaFcut. It is relevant for the BCV search only.
-
-<tt>LALIfoCutSingleInspiral()</tt> scans through a linked list of single
-inspiral tables and returns those which are from the requested \c ifo.
-On input, \c eventHead is a pointer to the head of a linked list of
-single inspiral tables.  On output, this list contains only single inspirals
-from the requested \c ifo.  <tt>XLALIfoCutSingleInspiral()</tt> works
-similarly, although slightly differently.  This function returns the list of
-events from the specified \c ifo, while on completion,
-\c eventHead contains the list of events from \e other ifos.
-
-<tt>LALIfoCountSingleInspiral()</tt> scans through a linked list of single
-inspiral tables and counts the number which are from the requested IFO.
-This count is returned as \c numTrigs.
-
-<tt>XLALTimeSlideSingleInspiral()</tt> performs a time slide on the triggers
-contained in the \c triggerList.  The time slide for each instrument is
-specified by <tt>slideTimes[LAL_NUM_IFO]</tt>.  If \c startTime and
-\c endTime are specified, then the time slide is performed on a ring.  If
-the slide takes any trigger outside of the window
-<tt>[startTime,endTime]</tt>, then the trigger is wrapped to be in
-this time window.
-
-<tt>LALPlayTestSingleInspiral()</tt> and <tt>XLALPlayTestSingleInspiral()</tt>
-test whether single inspiral events occured in playground or non-playground
-times.  It then returns the requested subset of events which occurred in the
-times specified by \c dataType which must be one of
-\c playground_only, \c exclude_play or \c all_data.
-
-<tt>LALCreateTrigBank()</tt> takes in a list of single inspiral tables and
-returns a template bank.  The function tests whether a given template produced
-multiple triggers.  If it did, only one copy of the template is retained.
-Triggers are tested for coincidence in \c m1_and_m2 or
-\c psi0_and_psi3.
-
-<tt>LALIncaCoincidenceTest()</tt> performs a coincidence test between triggers
-from two interferometers.  It tests pairs of events for both time and mass
-coincidence and returns two equal length lists of coincident events.  Note
-that if an event in one detector is coincident with several events in the
-other detector, the output lists will contain several copies of this event.
-
-<tt>LALTamaCoincidenceTest()</tt> also performs a coincidence test between
-triggers from two interferometers, but with a slightly different coincidence
-test.  First, it locates all triggers in the second instrument which are
-coincident with triggers in the first instrument.  Then, it clusters these
-triggers using the appropriate \c clusterchioce.  Finally, it tests for
-mass coincidence between the first trigger and the clustered trigger from the
-second instrument.
-
-<tt>XLALAddSnglInspiralCData</tt> determines if the complex time-series of the 
-matched-filter output, or "CData", for a given trigger has been queued for
-writing into a frame-file. 
-
-\heading{Algorithm}
-
-None.
-
-\heading{Uses}
-
-LALCalloc(), LALFree(), LALINT8NanoSecIsPlayground().
-
-*/
+ * \author Brown, D. A., Fairhurst, S. and Messaritaki, E.
+ * \file
+ *
+ * \brief Provides a set of utilities for manipulating \c snglInspiralTables.
+ *
+ * \heading{Description}
+ *
+ * The function <tt>LALFreeSnglInspiral()</tt> and XLALFreeSnglInspiral()
+ * free the memory associated to a single inspiral table.  The single inspiral
+ * table may point to a linked list of EventIDColumns.  Thus, it is necessary to
+ * free all event ids associated with the single inspiral.
+ *
+ * The function <tt>LALSortSnglInspiral()</tt> and <tt>XLALSortSnglInspiral()</tt>
+ * sorts a list of single inspiral tables.  The function simply calls qsort with
+ * the appropriate comparison function, \c comparfunc.  It then ensures that
+ * the head of the sorted list is returned.  There then follow several comparison
+ * functions for single inspiral tables.  <tt>LALCompareSnglInspiralByMass()</tt>
+ * first compares the \c mass1 entry of the two inspiral tables, returning 1
+ * if the first mass is larger and -1 if the second is larger.  In the case that
+ * the \c mass1 fields are equal, a similar comparsion is performed on
+ * \c mass2.  If these also agree, 0 is returned.
+ * <tt>LALCompareSnglInspiralByPsi()</tt> compares the \c Psi0 and
+ * \c Psi3 fields in two single inspiral tables.  The function is analogous
+ * to the mass comparison described above.  \c LALCompareSnglInspiralByTime()
+ * compares the end times of two single inspiral tables, returnng 1 if the first
+ * time is larger, 0 if equal and -1 if the second time is larger.
+ *
+ * <tt>LALCompareSnglInspiral()</tt> tests whether two single inspiral tables
+ * pass a coincidence test.  The coincidence parameters are given by
+ * \c params which is a \c ::SnglInspiralAccuracy structure.  It tests
+ * first that the \c ifo fields are different.  If they are, it then tests
+ * for time and mass coincidence, where mass coincidence may be any one of
+ * \c psi0_and_psi3, \c m1_and_m2, \c mchirp_and_eta.
+ * Finally, if the test is on \c m1_and_m2, consistency of effective
+ * distances is also checked.  If the two single inspiral tables pass
+ * coincidences the <tt>params.match</tt> is set to 1, otherwise it is set to
+ * zero.
+ *
+ * <tt>LALClusterSnglInspiralTable()</tt> clusters single inspiral triggers
+ * within a time window \c dtimeNS.  The triggers are compared either by
+ * \c snr, \c snr_and_chisq or \c snrsq_over_chisq.  The
+ * "loudest" trigger, as determined by the selected algorithm, within each time
+ * window is returned.
+ *
+ * <tt>XLALClusterInEventID</tt> clusters single inspiral triggers with the
+ * same event ID. The triggers are compared by the clustering choice specified.
+ *
+ * <tt>XLALCoincSegCutSnglInspiral</tt> keeps only those single inspiral triggers
+ * in the input list that are within the specified time interval.
+ *
+ * <tt>LALTimeCutSingleInspiral()</tt> and
+ * <tt>XLALTimeCutSingleInspiral()</tt>takes in a linked list of single inspiral
+ * tables and returns only those which occur after the given \c startTime
+ * and before the \c endTime.
+ *
+ * <tt>LALSNRCutSingleInspiral()</tt> and <tt>XLALSNRCutSingleInspiral()</tt>
+ * take in a linked list of single inspiral tables and returns only those
+ * triggers which have snr values above a specific snrCut.
+ *
+ * <tt>XLALRsqCutSingleInspiral()</tt> performs the R-squared veto on a linked
+ * list of single inspiral tables.  Triggers whose snr is less than
+ * \c rsqSnrMax and whose \c rsqveto_duration is greater than
+ * \c rsqVetoThresh or <tt>(optional)</tt> whose snr is greater than
+ * \c rsqSnrMax and whose \c rsqveto_duration is greater than
+ * \f$\mathtt{rsqAboveSnrCoeff} \times \mathtt{snr}^{\mathtt{rsqAboveSnrPow}}\f$
+ *
+ * <tt>XLALVetoSingleInspiral()</tt> takes in a linked list of single inspiral
+ * tables and a list of segments and returns only those triggers which do not lie
+ * in within the \c vetoSegs.
+ *
+ * <tt>LALBCVCVetoSingleInspiral()</tt> takes in a linked list of single inspiral
+ * tables and returns only those triggers which have alphaF/SNR values below a
+ * specific threshold and alphaF value between alphaF-hi and alphaF-lo values.  It
+ * is relevant for the BCVC or BCVU search only.
+ *
+ * <tt>LALalphaFCutSingleInspiral()</tt> takes in a linked list of single
+ * inspiral tables and returns only those triggers which have alphaF values below
+ * a specific alphaFcut. It is relevant for the BCV search only.
+ *
+ * <tt>LALIfoCutSingleInspiral()</tt> scans through a linked list of single
+ * inspiral tables and returns those which are from the requested \c ifo.
+ * On input, \c eventHead is a pointer to the head of a linked list of
+ * single inspiral tables.  On output, this list contains only single inspirals
+ * from the requested \c ifo.  <tt>XLALIfoCutSingleInspiral()</tt> works
+ * similarly, although slightly differently.  This function returns the list of
+ * events from the specified \c ifo, while on completion,
+ * \c eventHead contains the list of events from \e other ifos.
+ *
+ * <tt>LALIfoCountSingleInspiral()</tt> scans through a linked list of single
+ * inspiral tables and counts the number which are from the requested IFO.
+ * This count is returned as \c numTrigs.
+ *
+ * <tt>XLALTimeSlideSingleInspiral()</tt> performs a time slide on the triggers
+ * contained in the \c triggerList.  The time slide for each instrument is
+ * specified by <tt>slideTimes[LAL_NUM_IFO]</tt>.  If \c startTime and
+ * \c endTime are specified, then the time slide is performed on a ring.  If
+ * the slide takes any trigger outside of the window
+ * <tt>[startTime,endTime]</tt>, then the trigger is wrapped to be in
+ * this time window.
+ *
+ * <tt>LALPlayTestSingleInspiral()</tt> and <tt>XLALPlayTestSingleInspiral()</tt>
+ * test whether single inspiral events occured in playground or non-playground
+ * times.  It then returns the requested subset of events which occurred in the
+ * times specified by \c dataType which must be one of
+ * \c playground_only, \c exclude_play or \c all_data.
+ *
+ * <tt>LALCreateTrigBank()</tt> takes in a list of single inspiral tables and
+ * returns a template bank.  The function tests whether a given template produced
+ * multiple triggers.  If it did, only one copy of the template is retained.
+ * Triggers are tested for coincidence in \c m1_and_m2 or
+ * \c psi0_and_psi3.
+ *
+ * <tt>LALIncaCoincidenceTest()</tt> performs a coincidence test between triggers
+ * from two interferometers.  It tests pairs of events for both time and mass
+ * coincidence and returns two equal length lists of coincident events.  Note
+ * that if an event in one detector is coincident with several events in the
+ * other detector, the output lists will contain several copies of this event.
+ *
+ * <tt>LALTamaCoincidenceTest()</tt> also performs a coincidence test between
+ * triggers from two interferometers, but with a slightly different coincidence
+ * test.  First, it locates all triggers in the second instrument which are
+ * coincident with triggers in the first instrument.  Then, it clusters these
+ * triggers using the appropriate \c clusterchioce.  Finally, it tests for
+ * mass coincidence between the first trigger and the clustered trigger from the
+ * second instrument.
+ *
+ * <tt>XLALAddSnglInspiralCData</tt> determines if the complex time-series of the
+ * matched-filter output, or "CData", for a given trigger has been queued for
+ * writing into a frame-file.
+ *
+ * \heading{Algorithm}
+ *
+ * None.
+ *
+ * \heading{Uses}
+ *
+ * LALCalloc(), LALFree(), LALINT8NanoSecIsPlayground().
+ *
+ */
 
 /*
  * A few quickies for convenience.

@@ -1,4 +1,5 @@
-/** \deprecated Use XLALCreateSFT() instead
+/**
+ * \deprecated Use XLALCreateSFT() instead
  * Allows for numBins == 0.
  */
 void
@@ -25,7 +26,8 @@ LALCreateSFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
 
 } /* LALCreateSFTtype() */
 
-/** \deprecated Use XLALCreateSFTVector() instead
+/**
+ * \deprecated Use XLALCreateSFTVector() instead
  */
 void
 LALCreateSFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -51,7 +53,8 @@ LALCreateSFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
 
 } /* LALCreateSFTVector() */
 
-/** Create an empty multi-IFO SFT vector for given number of IFOs and number of SFTs per IFO
+/**
+ * Create an empty multi-IFO SFT vector for given number of IFOs and number of SFTs per IFO
  */
 void LALCreateMultiSFTVector ( LALStatus *status,     /**< pointer to LALStatus structure */
 			       MultiSFTVector **out,  /**< [out] multi sft vector created */
@@ -101,7 +104,8 @@ void LALCreateMultiSFTVector ( LALStatus *status,     /**< pointer to LALStatus 
 
 } /* LALCreateMultiSFTVector() */
 
-/** \deprecated Use XLALDestroySFT() instead.
+/**
+ * \deprecated Use XLALDestroySFT() instead.
  */
 void
 LALDestroySFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -120,7 +124,8 @@ LALDestroySFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
 
 } /* LALDestroySFTtype() */
 
-/** \deprecated Use XLALDestroySFTVector() instead.
+/**
+ * \deprecated Use XLALDestroySFTVector() instead.
  */
 void
 LALDestroySFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -138,7 +143,8 @@ LALDestroySFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
 
 } /* LALDestroySFTVector() */
 
-/** \deprecated Use XLALDestroyPSDVector() instead
+/**
+ * \deprecated Use XLALDestroyPSDVector() instead
  */
 void
 LALDestroyPSDVector (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -155,7 +161,8 @@ LALDestroyPSDVector (LALStatus *status,	/**< pointer to LALStatus structure */
 
 } /* LALDestroyPSDVector() */
 
-/** \deprecated Use XLALDestroyMultiSFTVector() instead.
+/**
+ * \deprecated Use XLALDestroyMultiSFTVector() instead.
  */
 void
 LALDestroyMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -172,7 +179,8 @@ LALDestroyMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structur
 
 } /* LALDestroyMultiSFTVector() */
 
-/** \deprecate Use XLALDestroyMultiPSDVector() instead.
+/**
+ * \deprecate Use XLALDestroyMultiPSDVector() instead.
  */
 void
 LALDestroyMultiPSDVector (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -188,7 +196,8 @@ LALDestroyMultiPSDVector (LALStatus *status,		/**< pointer to LALStatus structur
 
 } /* LALDestroyMultiPSDVector() */
 
-/** Copy an entire SFT-type into another.
+/**
+ * Copy an entire SFT-type into another.
  * We require the destination-SFT to have a NULL data-entry, as the
  * corresponding data-vector will be allocated here and copied into
  *
@@ -229,7 +238,8 @@ LALCopySFT (LALStatus *status,	/**< pointer to LALStatus structure */
 
 
 
-/** Subtract two SFT-vectors and put the results in a new one (which it allocates).
+/**
+ * Subtract two SFT-vectors and put the results in a new one (which it allocates).
  *
  */
 void
@@ -329,8 +339,8 @@ LALSubtractSFTVectors (LALStatus *status,	/**< pointer to LALStatus structure */
 
 
 
-/** Linearly combine two or more SFT-vectors and put the results in a new one (which it allocates).
- *
+/**
+ * Linearly combine two or more SFT-vectors and put the results in a new one (which it allocates).
  */
 void
 LALLinearlyCombineSFTVectors
@@ -497,7 +507,8 @@ LALCreateTimestampVector (LALStatus *status,		/**< pointer to LALStatus structur
 
 } /* LALCreateTimestampVector() */
 
-/** \deprecated Use XLALDestroyTimestampVector() instead.
+/**
+ * \deprecated Use XLALDestroyTimestampVector() instead.
  */
 void
 LALDestroyTimestampVector (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -519,7 +530,8 @@ LALDestroyTimestampVector (LALStatus *status,		/**< pointer to LALStatus structu
 
 } /* LALDestroyTimestampVector() */
 
-/** \deprecated Use XLALMakeTimestamps() instead.
+/**
+ * \deprecated Use XLALMakeTimestamps() instead.
  */
 void
 LALMakeTimestamps ( LALStatus *status,			/**< pointer to LALStatus structure */
@@ -548,7 +560,8 @@ LALMakeTimestamps ( LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* LALMakeTimestamps() */
 
-/** \deprecated LAL wrapper to XLALExtractTimestampsFromSFTs()
+/**
+ * \deprecated LAL wrapper to XLALExtractTimestampsFromSFTs()
  */
 void
 LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
@@ -576,7 +589,8 @@ LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* LALGetSFTtimestamps() */
 
-/** Computes weight factors arising from SFTs with different noise
+/**
+ * Computes weight factors arising from SFTs with different noise
  * floors -- it multiplies an existing weight vector
  */
 void
@@ -685,7 +699,8 @@ LALComputeNoiseWeights  (LALStatus        *status,
 } /* LALComputeNoiseWeights() */
 
 
-/** \deprecated Use XLALComputeMultiNoiseWeights() instead
+/**
+ * \deprecated Use XLALComputeMultiNoiseWeights() instead
  */
 void LALComputeMultiNoiseWeights  (LALStatus             *status,
 				   MultiNoiseWeights     **out,
@@ -741,8 +756,9 @@ LALDestroyMultiNoiseWeights  (LALStatus         *status,
  * ==================================================
  */
 
-/** upsample a given multi-SFTvector by the given (integer) factor,
- *  _replacing_ the original SFTs
+/**
+ * upsample a given multi-SFTvector by the given (integer) factor,
+ * _replacing_ the original SFTs
  */
 void
 upsampleMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */

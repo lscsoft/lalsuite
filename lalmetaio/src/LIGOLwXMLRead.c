@@ -30,67 +30,66 @@
  */
 
 /**
-
-\author Brown, D. A. and Fairhurst, S.
-\file
-\ingroup lalmetaio
-
-\brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
-
-\heading{Description}
-
-  The routine \c LALSnglInspiralTableFromLIGOLw reads in a
-  \c sngl_inspiral table from the LIGOLwXML file specified in \c fileName.
-  It returns the number of triggers read in and \c eventHead provides a
-  pointer to the head of a linked list of \c SnglInspiralTables containing the
-  events.  It will return all events between the \c startEvent and
-  \c stopEvent; if these are set to 0 and -1 respectively, all events are
-  returned.
-
-  The routine \c InspiralTmpltBankFromLIGOLw reads in a \c sngl_inspiral
-  table from the LIGOLwXML file specified in \c fileName. It returns the
-  number of templates read in and \c bankHead provides a pointer to the head
-  of a linked list of \c InspiralTemplates containing the templates read in.
-  It will return all events between the \c startTmplt and \c stopTmplt; if
-  these are set to 0 and -1 respectively, all events are returned.  Although a
-  \c sngl_inspiral table is read in, only those entries relevant for an
-  InspiralTemplate are read in and stored.
-
-  The routine \c SimInspiralTableFromLIGOLw reads in a \c sim_inspiral
-  table from the LIGOLwXML file specified in \c fileName.  It returns the
-  number of rows read in and \c SimHead provides a pointer to the head of a
-  linked list of \c SimInspiralTables containing the events.  Additionally, a
-  \c startTime and \c endTime are specified.  Only simulated events
-  occuring between these times are returned.  If the \c endTime is set to
-  zero, then all events are returned.
-
-  The routine \c XLALSearchSummaryTableFromLIGOLw reads in a
-  \c search_summary table from the LIGOLwXML file specified in
-  \c fileName.  It returns a pointer to the head of a linked list of
-  \c SearchSummaryTables.
-
-  The routine \c SummValueTableFromLIGOLw reads in a \c summ_value
-  table from the LIGOLwXML file specified in \c fileName.  It returns the
-  number of rows read in and \c sumHead provides a pointer to the head of a
-  linked list of \c SummValueTables.
-
-  \heading{Algorithm}
-
-  None.
-
-  \heading{Uses}
-  Functions in the Metaio library:
-  <ul>
-  <li> \c MetaioFindColumn
-  </li><li> \c MetaioGetRow
-  </li><li> \c MetaioOpenTable
-  </li><li> \c MetaioClose
-  </li></ul>
-  \heading{Notes}
-
-  %% Any relevant notes.
-
-*/
+ * \author Brown, D. A. and Fairhurst, S.
+ * \file
+ * \ingroup lalmetaio
+ *
+ * \brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
+ *
+ * \heading{Description}
+ *
+ * The routine \c LALSnglInspiralTableFromLIGOLw reads in a
+ * \c sngl_inspiral table from the LIGOLwXML file specified in \c fileName.
+ * It returns the number of triggers read in and \c eventHead provides a
+ * pointer to the head of a linked list of \c SnglInspiralTables containing the
+ * events.  It will return all events between the \c startEvent and
+ * \c stopEvent; if these are set to 0 and -1 respectively, all events are
+ * returned.
+ *
+ * The routine \c InspiralTmpltBankFromLIGOLw reads in a \c sngl_inspiral
+ * table from the LIGOLwXML file specified in \c fileName. It returns the
+ * number of templates read in and \c bankHead provides a pointer to the head
+ * of a linked list of \c InspiralTemplates containing the templates read in.
+ * It will return all events between the \c startTmplt and \c stopTmplt; if
+ * these are set to 0 and -1 respectively, all events are returned.  Although a
+ * \c sngl_inspiral table is read in, only those entries relevant for an
+ * InspiralTemplate are read in and stored.
+ *
+ * The routine \c SimInspiralTableFromLIGOLw reads in a \c sim_inspiral
+ * table from the LIGOLwXML file specified in \c fileName.  It returns the
+ * number of rows read in and \c SimHead provides a pointer to the head of a
+ * linked list of \c SimInspiralTables containing the events.  Additionally, a
+ * \c startTime and \c endTime are specified.  Only simulated events
+ * occuring between these times are returned.  If the \c endTime is set to
+ * zero, then all events are returned.
+ *
+ * The routine \c XLALSearchSummaryTableFromLIGOLw reads in a
+ * \c search_summary table from the LIGOLwXML file specified in
+ * \c fileName.  It returns a pointer to the head of a linked list of
+ * \c SearchSummaryTables.
+ *
+ * The routine \c SummValueTableFromLIGOLw reads in a \c summ_value
+ * table from the LIGOLwXML file specified in \c fileName.  It returns the
+ * number of rows read in and \c sumHead provides a pointer to the head of a
+ * linked list of \c SummValueTables.
+ *
+ * \heading{Algorithm}
+ *
+ * None.
+ *
+ * \heading{Uses}
+ * Functions in the Metaio library:
+ * <ul>
+ * <li> \c MetaioFindColumn
+ * </li><li> \c MetaioGetRow
+ * </li><li> \c MetaioOpenTable
+ * </li><li> \c MetaioClose
+ * </li></ul>
+ * \heading{Notes}
+ *
+ * %% Any relevant notes.
+ *
+ */
 
 
 #include <string.h>
@@ -110,16 +109,16 @@
  * BUGS:
  *
  * - This function can't tell the difference between a missing table and an
- *   unparseable document.  This is a limitation in libmetaio.
+ * unparseable document.  This is a limitation in libmetaio.
  *
  * - This function parses the entire file to determine if the table is
- *   present, which is slow.
+ * present, which is slow.
  *
  * - This entire approach to XML I/O is the wrong way to go.  What's needed
- *   is a "load document" function, and a "save document" function.  DO NOT
- *   attempt to write such functions by using this function to test for
- *   every possible table one-by-one and loading the ones that are found.
- *   Put the time into writing a proper XML I/O layer!!
+ * is a "load document" function, and a "save document" function.  DO NOT
+ * attempt to write such functions by using this function to test for
+ * every possible table one-by-one and loading the ones that are found.
+ * Put the time into writing a proper XML I/O layer!!
  */
 int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 {

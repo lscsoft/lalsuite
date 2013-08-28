@@ -27,39 +27,39 @@
  */
 
 /**
-\author Brown D. A.
-\file
-\ingroup FindChirp_h
-
-\brief This module provides memory management functions for creating and
-destroying linked lists of inspiral template nodes for flat and heirarchical
-search management.
-
-It is often convienient to deal with the inspiral templates as a doubly linked
-list.
-
-\heading{Description}
-
-The function <tt>LALFindChirpCreateTmpltNode()</tt> adds the inspiral template
-parameter structure pointed to by \c tmplt to the linked list of
-template nodes \c tmpltNode. On entry \c tmpltNode should be set
-to memory address of the last node of the current linked list (or NULL if it
-is a new linked list) and on exit \c tmpltNode is set to the memory
-address of the last node in the linked list.
-
-The function <tt>LALFindChirpDestroyTmpltNode()</tt> removed the node pointed
-to by \c tmpltNode from the doubly linked list. On exit
-\c tmpltNode is set to the address of the previous node in the list for
-removal of a node in the middle or at the end of the list. If the first node
-is removed \c tmpltNode is set to the address of the new first node.
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-\endcode
-
-*/
+ * \author Brown D. A.
+ * \file
+ * \ingroup FindChirp_h
+ *
+ * \brief This module provides memory management functions for creating and
+ * destroying linked lists of inspiral template nodes for flat and heirarchical
+ * search management.
+ *
+ * It is often convienient to deal with the inspiral templates as a doubly linked
+ * list.
+ *
+ * \heading{Description}
+ *
+ * The function <tt>LALFindChirpCreateTmpltNode()</tt> adds the inspiral template
+ * parameter structure pointed to by \c tmplt to the linked list of
+ * template nodes \c tmpltNode. On entry \c tmpltNode should be set
+ * to memory address of the last node of the current linked list (or NULL if it
+ * is a new linked list) and on exit \c tmpltNode is set to the memory
+ * address of the last node in the linked list.
+ *
+ * The function <tt>LALFindChirpDestroyTmpltNode()</tt> removed the node pointed
+ * to by \c tmpltNode from the doubly linked list. On exit
+ * \c tmpltNode is set to the address of the previous node in the list for
+ * removal of a node in the middle or at the end of the list. If the first node
+ * is removed \c tmpltNode is set to the address of the new first node.
+ *
+ * \heading{Uses}
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * \endcode
+ *
+ */
 
 
 #include <lal/FindChirp.h>

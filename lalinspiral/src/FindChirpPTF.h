@@ -42,17 +42,17 @@ extern "C" {
 
 /**
  * \addtogroup FindChirpPTF_h
- \author Brown, D. A., and Fazi, D.
-
-\brief Provides structures and functions to filter interferometer data using the
-physical template family.
-
-\heading{Synopsis}
-\code
-#include <lal/FindChirpPTF.h>
-\endcode
-
-*/
+ * \author Brown, D. A., and Fazi, D.
+ *
+ * \brief Provides structures and functions to filter interferometer data using the
+ * physical template family.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/FindChirpPTF.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 void

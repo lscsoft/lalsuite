@@ -23,7 +23,7 @@
  * \author Alicia Sintes, Badri Krishnan
  * \brief
  * Monte Carlo signal injections for several h_0 values and
- *  compute the Hough transform for only one point in parameter space each time
+ * compute the Hough transform for only one point in parameter space each time
  */
 
 /* 

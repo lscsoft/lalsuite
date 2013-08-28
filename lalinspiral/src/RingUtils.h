@@ -45,12 +45,12 @@ extern "C" {
  *
  * The ringdown waveform is an exponentially-damped sinusoid
  * \f{equation}{
- *   r(t) = \left\{
- *   \begin{array}{ll}
- *     e^{-\pi ft/Q}\cos(2\pi ft + \phi_0) & \mbox{for } t\ge0 \\
- *     0 & \mbox{for } t<0
- *   \end{array}
- *   \right.
+ * r(t) = \left\{
+ * \begin{array}{ll}
+ * e^{-\pi ft/Q}\cos(2\pi ft + \phi_0) & \mbox{for } t\ge0 \\
+ * 0 & \mbox{for } t<0
+ * \end{array}
+ * \right.
  * \f}
  * where \f$f\f$ is the central frequency of the ringdown waveform, \f$Q\f$ is
  * the quality factor, and \f$\phi_0\f$ is the initial phase of the waveform.
@@ -60,17 +60,17 @@ extern "C" {
  * For a black hole ringdown, the gravitational waveform produced, averaged
  * over the various angles, is
  * \f{equation}{
- *   h(t) = A_qq(t)
+ * h(t) = A_qq(t)
  * \f}
  * where the central frequency and quality of the ringdown are determined from
  * the mass and spin of the black holes.  An analytic approximation
  * yields [\ref EWLeaver85,\ref FEcheverria89]
  * \f{equation}{
- *   f \simeq 32\,\textrm{kHz}\times[1-0.63(1-{\hat{a}})^{3/10}](M_\odot/M)
+ * f \simeq 32\,\textrm{kHz}\times[1-0.63(1-{\hat{a}})^{3/10}](M_\odot/M)
  * \f}
  * and
  * \f{equation}{
- *   Q \simeq 2(1-{\hat{a}})^{-9/20}
+ * Q \simeq 2(1-{\hat{a}})^{-9/20}
  * \f}
  * with the black hole mass given by \f$M\f$ and its spin by \f$S={\hat{a}}GM^2/c\f$
  * (where \f$G\f$ is Newton's constant and \f$c\f$ is the speed of light).  The
@@ -80,10 +80,10 @@ extern "C" {
  * distance \f$r\f$ to the source and the fractional mass loss \f$\epsilon\f$ radiated
  * in gravitational waves [\ref JDECreighton99]:
  * \f{equation}{
- *   A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
- *   \left(\frac{\textrm{Mpc}}{r}\right)
- *   \left(\frac{M}{M_\odot}\right)
- *   \left(\frac{\epsilon}{0.01}\right)^{1/2}.
+ * A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
+ * \left(\frac{\textrm{Mpc}}{r}\right)
+ * \left(\frac{M}{M_\odot}\right)
+ * \left(\frac{\epsilon}{0.01}\right)^{1/2}.
  * \f}
  * Note that this is the amplitude factor for the waveform \f$q(t)\f$, whereas
  * the amplitude factor for \f$r(t)\f$ would be \f$(2\pi)^{1/2}A_q\f$.
@@ -92,8 +92,8 @@ extern "C" {
  * thought of as the line interval for a mismatch-based metric on the \f$(f,Q)\f$
  * parameter space [\ref Owen_96,\ref JDECreighton99]:
  * \f{equation}{
- *   ds^2 = \frac{1}{8} \biggl\{ \frac{3+16Q^4}{Q^2(1+4Q^2)^2}\,dQ^2
- *   - 2\frac{3+4Q^2}{fQ(1+4Q^2)}\,dQ\,df + \frac{3+8Q^2}{f^2}\,df^2 \biggr\}.
+ * ds^2 = \frac{1}{8} \biggl\{ \frac{3+16Q^4}{Q^2(1+4Q^2)^2}\,dQ^2
+ * - 2\frac{3+4Q^2}{fQ(1+4Q^2)}\,dQ\,df + \frac{3+8Q^2}{f^2}\,df^2 \biggr\}.
  * \f}
  * When expressed in terms of \f$\log f\f$ rather than \f$f\f$, the metric coefficients
  * depend on \f$Q\f$ alone.  We can exploit this property for the task of template
@@ -115,7 +115,6 @@ extern "C" {
  *
  * The template placement algorithm is described above.
  *
- *
  */
 /*@{*/
 
@@ -132,7 +131,8 @@ extern "C" {
 #define RINGH_MSGEALOC "Memory allocation error"
 /** \endcond */
 
-/** This structure contains a bank of ringdown waveforms.
+/**
+ * This structure contains a bank of ringdown waveforms.
  */
 typedef struct
 tagRingTemplateBank
@@ -142,7 +142,8 @@ tagRingTemplateBank
 }
 RingTemplateBank;
 
-/** This structure contains the parameters required for generating a ringdown
+/**
+ * This structure contains the parameters required for generating a ringdown
  * template bank.
  */
 typedef struct

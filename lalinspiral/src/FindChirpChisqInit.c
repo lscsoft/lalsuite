@@ -27,46 +27,45 @@
  */
 
 /**
-
-\author Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
-\file
-\ingroup FindChirpChisq_h
-
-\brief Module to initialize the \f$\chi^2\f$ veto for the various templates (SP, BCV,etc.)
-
-\heading{Description}
-
-The function <tt>LALFindChirpChisqVetoInit()</tt> takes as input the number of
-bins required to contruct the \f$\chi^2\f$ veto and the number of points a data
-segment as a parameter. The pointer <tt>*params</tt> must contain the
-address of a structure of type \c FindChirpChisqParams for which storage
-has already been allocated.  On exit this structure will be populated with the
-correct values for execution of the function <tt>LALFindChirpChisqVeto()</tt>.
-The workspace arrays and the inverse FFTW plan used by the veto will be
-created.
-
-The function <tt>LALFindChirpChisqVetoFinalize()</tt> takes the address of a
-structure of type \c FindChirpChisqParams which has been populated by
-<tt>LALFindChirpChisqVetoInit()</tt> as input. It takes the number of bins
-required to contruct the \f$\chi^2\f$ veto and as a parameter. On exit all memory
-allocated by the <tt>LALFindChirpChisqVetoInit()</tt> will be freed.
-
-\heading{Algorithm}
-
-chisq algorithm here
-
-\heading{Uses}
-\code
-LALCreateReverseComplexFFTPlan()
-LALDestroyComplexFFTPlan()
-LALCCreateVector()
-LALCDestroyVector()
-LALCOMPLEX8VectorFFT()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
+ * \file
+ * \ingroup FindChirpChisq_h
+ *
+ * \brief Module to initialize the \f$\chi^2\f$ veto for the various templates (SP, BCV,etc.)
+ *
+ * \heading{Description}
+ *
+ * The function <tt>LALFindChirpChisqVetoInit()</tt> takes as input the number of
+ * bins required to contruct the \f$\chi^2\f$ veto and the number of points a data
+ * segment as a parameter. The pointer <tt>*params</tt> must contain the
+ * address of a structure of type \c FindChirpChisqParams for which storage
+ * has already been allocated.  On exit this structure will be populated with the
+ * correct values for execution of the function <tt>LALFindChirpChisqVeto()</tt>.
+ * The workspace arrays and the inverse FFTW plan used by the veto will be
+ * created.
+ *
+ * The function <tt>LALFindChirpChisqVetoFinalize()</tt> takes the address of a
+ * structure of type \c FindChirpChisqParams which has been populated by
+ * <tt>LALFindChirpChisqVetoInit()</tt> as input. It takes the number of bins
+ * required to contruct the \f$\chi^2\f$ veto and as a parameter. On exit all memory
+ * allocated by the <tt>LALFindChirpChisqVetoInit()</tt> will be freed.
+ *
+ * \heading{Algorithm}
+ *
+ * chisq algorithm here
+ *
+ * \heading{Uses}
+ * \code
+ * LALCreateReverseComplexFFTPlan()
+ * LALDestroyComplexFFTPlan()
+ * LALCCreateVector()
+ * LALCDestroyVector()
+ * LALCOMPLEX8VectorFFT()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>

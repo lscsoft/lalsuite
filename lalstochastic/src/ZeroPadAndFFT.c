@@ -18,111 +18,111 @@
 */
 
 /**
-\author UTB Relativity Group; contact whelan@phys.utb.edu
-\addtogroup ZeroPadAndFFT_c
-
-\brief Routines for zero-padding and Fourier transforming a time series.
-
-As described in \ref StochasticCrossCorrelation_c, data
-streams to be cross-correlated need to be zero-padded to the same
-length as the optimal filter via
-
-\f{equation}{
-\bar{h}[k]=\
-\left\{ \begin{array}{cl}
-w[k] h[k]  &    k = 0, \ldots, N-1 \\
-0     &    k = N \ldots, M-1
-\end{array}
-\right.
-\f}
-
-(where \f$w[k]\f$ is a windowing function)
-before being Fourier transformed via
-\f{equation}{
-\widetilde{h}[\ell] := \sum_{\ell=0}^{M-1}
-\delta t\,h[k]\,e^{-i2\pi k\ell/M}
-\ .
-\f}
-
-<tt>LALSZeroPadAndFFT()</tt> performs this operaton on a
-\c REAL4TimeSeries of length \f$N\f$, zero-padding it to length
-\f$M\f$ and Fourier-transforming it into a
-\c COMPLEX8FrequencySeries of length \f$[M/2]+1\f$.
-
-<tt>LALCZeroPadAndFFT()</tt> performs this operaton on a
-\c COMPLEX8TimeSeries of length \f$N\f$, zero-padding it to length
-\f$M\f$ and Fourier-transforming it into a
-\c COMPLEX8FrequencySeries of length \f$M\f$.
-
-\heading{Algorithm}
-
-<tt>LALSZeroPadAndFFT()</tt> constructs the sequence \f$\bar{h}[k]\f$, and
-then applies a real-to-complex time-to-frequency discrete Fourier
-transform from the \c fft package.
-
-<tt>LALCZeroPadAndFFT()</tt> constructs the sequence \f$\bar{h}[k]\f$, and
-then applies a complex-to-complex time-to-frequency discrete Fourier
-transform from the \c fft package.
-
-\heading{Uses}
-
-<tt>LALSZeroPadAndFFT()\/</tt> calls:
-
-\code
-LALSCreateVector()
-LALSDestroyVector()
-LALTimeFreqRealFFT()
-memset()
-strncpy()
-\endcode
-
-<tt>LALSZeroPadAndFFT()\/</tt> calls:
-
-\code
-LALCCreateVector()
-LALCDestroyVector()
-LALTimeFreqComplexFFT()
-memset()
-strncpy()
-\endcode
-
-\heading{Notes}
-
-<ul>
-
-<li> The Fourier transform is defined to be the discrete
-approximation of a continuous Fourier transorm, which makes it \f$\delta
-t\f$ times the discrete Fourier transform.</li>
-
-<li> The Fourier transform of a series of \f$M\f$ points is calculated
-  with the FFTW [\ref fj_1998] (via the interfaces in
-  the \c fft package), which is efficient for products of small
-  primes, so \f$M\f$ should be chosen to have this property.  The minimum
-  value, \f$2N-1\f$, is odd and can thus be at best a power of 3.
-  Additionally, if \f$2N-1\f$ is a convenient number, \f$N\f$ will likely not
-  be, which is one reason it might be convenient to work with \f$M=2N\f$
-  instead.</li>
-
-<li> <tt>LALCZeroPadAndFFT()</tt> inherits its behavior from
-  <tt>LALTimeFreqComplexFFT()</tt>, which currently does not use the
-  initial phase of the reference oscillator.  The calling routine must
-  therefore remove the effects of this phase explicitly in order to
-  obtain the band-limited FFT of the unheterodyned data.</li>
-
-<li> The output units are determined from the input units, but under
-  normal circumstances in the context of a stochastic background
-  search, we will have
-  \f{eqnarray}{
-    {} [h(t)] &=& \textrm{count}\\
-    {} [\widetilde{\bar{h}}(f)] &:=& [h(t)] \,\textrm{Hz}^{-1}
-    = \textrm{count}\,\textrm{Hz}^{-1}
-  \f}
-
-</li>
-</ul>
-
-@{
-*/
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \addtogroup ZeroPadAndFFT_c
+ *
+ * \brief Routines for zero-padding and Fourier transforming a time series.
+ *
+ * As described in \ref StochasticCrossCorrelation_c, data
+ * streams to be cross-correlated need to be zero-padded to the same
+ * length as the optimal filter via
+ *
+ * \f{equation}{
+ * \bar{h}[k]=\
+ * \left\{ \begin{array}{cl}
+ * w[k] h[k]  &    k = 0, \ldots, N-1 \\
+ * 0     &    k = N \ldots, M-1
+ * \end{array}
+ * \right.
+ * \f}
+ *
+ * (where \f$w[k]\f$ is a windowing function)
+ * before being Fourier transformed via
+ * \f{equation}{
+ * \widetilde{h}[\ell] := \sum_{\ell=0}^{M-1}
+ * \delta t\,h[k]\,e^{-i2\pi k\ell/M}
+ * \ .
+ * \f}
+ *
+ * <tt>LALSZeroPadAndFFT()</tt> performs this operaton on a
+ * \c REAL4TimeSeries of length \f$N\f$, zero-padding it to length
+ * \f$M\f$ and Fourier-transforming it into a
+ * \c COMPLEX8FrequencySeries of length \f$[M/2]+1\f$.
+ *
+ * <tt>LALCZeroPadAndFFT()</tt> performs this operaton on a
+ * \c COMPLEX8TimeSeries of length \f$N\f$, zero-padding it to length
+ * \f$M\f$ and Fourier-transforming it into a
+ * \c COMPLEX8FrequencySeries of length \f$M\f$.
+ *
+ * \heading{Algorithm}
+ *
+ * <tt>LALSZeroPadAndFFT()</tt> constructs the sequence \f$\bar{h}[k]\f$, and
+ * then applies a real-to-complex time-to-frequency discrete Fourier
+ * transform from the \c fft package.
+ *
+ * <tt>LALCZeroPadAndFFT()</tt> constructs the sequence \f$\bar{h}[k]\f$, and
+ * then applies a complex-to-complex time-to-frequency discrete Fourier
+ * transform from the \c fft package.
+ *
+ * \heading{Uses}
+ *
+ * <tt>LALSZeroPadAndFFT()\/</tt> calls:
+ *
+ * \code
+ * LALSCreateVector()
+ * LALSDestroyVector()
+ * LALTimeFreqRealFFT()
+ * memset()
+ * strncpy()
+ * \endcode
+ *
+ * <tt>LALSZeroPadAndFFT()\/</tt> calls:
+ *
+ * \code
+ * LALCCreateVector()
+ * LALCDestroyVector()
+ * LALTimeFreqComplexFFT()
+ * memset()
+ * strncpy()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ * <ul>
+ *
+ * <li> The Fourier transform is defined to be the discrete
+ * approximation of a continuous Fourier transorm, which makes it \f$\delta
+ * t\f$ times the discrete Fourier transform.</li>
+ *
+ * <li> The Fourier transform of a series of \f$M\f$ points is calculated
+ * with the FFTW [\ref fj_1998] (via the interfaces in
+ * the \c fft package), which is efficient for products of small
+ * primes, so \f$M\f$ should be chosen to have this property.  The minimum
+ * value, \f$2N-1\f$, is odd and can thus be at best a power of 3.
+ * Additionally, if \f$2N-1\f$ is a convenient number, \f$N\f$ will likely not
+ * be, which is one reason it might be convenient to work with \f$M=2N\f$
+ * instead.</li>
+ *
+ * <li> <tt>LALCZeroPadAndFFT()</tt> inherits its behavior from
+ * <tt>LALTimeFreqComplexFFT()</tt>, which currently does not use the
+ * initial phase of the reference oscillator.  The calling routine must
+ * therefore remove the effects of this phase explicitly in order to
+ * obtain the band-limited FFT of the unheterodyned data.</li>
+ *
+ * <li> The output units are determined from the input units, but under
+ * normal circumstances in the context of a stochastic background
+ * search, we will have
+ * \f{eqnarray}{
+ * {} [h(t)] &=& \textrm{count}\\
+ * {} [\widetilde{\bar{h}}(f)] &:=& [h(t)] \,\textrm{Hz}^{-1}
+ * = \textrm{count}\,\textrm{Hz}^{-1}
+ * \f}
+ *
+ * </li>
+ * </ul>
+ *
+ * @{
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>

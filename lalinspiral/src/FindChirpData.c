@@ -27,15 +27,14 @@
  */
 
 /**
-
-\author Brown, D. A., BCV-Modifications: Messaritaki E.
-\file
-\ingroup FindChirp_h
-
-\brief This module provides routines to initialize the various data conditioning
-functions.
-
-*/
+ * \author Brown, D. A., BCV-Modifications: Messaritaki E.
+ * \file
+ * \ingroup FindChirp_h
+ *
+ * \brief This module provides routines to initialize the various data conditioning
+ * functions.
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

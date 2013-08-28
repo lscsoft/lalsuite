@@ -90,8 +90,9 @@ typedef struct {
 } PulsarSpinsREAL4;
 
 
-/** Simple container for REAL4-vectors, holding the SSB-timings DeltaT_alpha  and Tdot_alpha,
- *  with one entry per SFT-timestamp. We also store the SSB reference-time tau0.
+/**
+ * Simple container for REAL4-vectors, holding the SSB-timings DeltaT_alpha  and Tdot_alpha,
+ * with one entry per SFT-timestamp. We also store the SSB reference-time tau0.
  * NOTE: this is a REAL4 version of SSBtimes, preserving the required precision by appropriate
  * 'splitting' of REAL8's into pairs of REAL4s.
  */
@@ -110,7 +111,8 @@ typedef struct {
 } MultiSSBtimesREAL4;
 
 
-/** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators).
+/**
+ * Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators).
  * NOTE: this is simply a REAL4 version of Fcomponents.
  */
 typedef struct {
@@ -119,7 +121,8 @@ typedef struct {
   COMPLEX8 Fb;		/**< complex amplitude Fb */
 } FcomponentsREAL4;
 
-/** Struct holding buffered XLALDriverFstatREAL4()-internal quantities
+/**
+ * Struct holding buffered XLALDriverFstatREAL4()-internal quantities
  * to avoid unnecessarily recomputing things that depend ONLY on the skyposition and detector-state series
  * (but not on the spins).
  */
@@ -130,7 +133,8 @@ typedef struct {
   MultiAMCoeffs *multiAMcoef;				/**< antenna-pattern coeffs computed in previous search */
 } ComputeFBufferREAL4;
 
-/** Struct holding buffered XLALComputeFStatFreqBandVector()-internal quantities
+/**
+ * Struct holding buffered XLALComputeFStatFreqBandVector()-internal quantities
  * to avoid unnecessarily recomputing things that depend ONLY on the skyposition and detector-state series
  * (but not on the spins).
  */

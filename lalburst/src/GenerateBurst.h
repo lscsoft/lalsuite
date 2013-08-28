@@ -41,7 +41,8 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \addtogroup GenerateBurst_h
+/**
+ * \addtogroup GenerateBurst_h
  * \brief UNDOCUMENTED
  */
 /*@{*/

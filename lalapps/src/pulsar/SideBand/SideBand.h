@@ -34,8 +34,9 @@ extern "C" {
 #define NPARAMS 9
 #define NPARAMS_IL 3
 
-  /** A structure designed to store all the information required to describe a binary orbit 
-   */
+/**
+ * A structure designed to store all the information required to describe a binary orbit
+ */
   typedef struct {
     REAL8 OrbitalSemiMajorAxis; /**< */
     REAL8 OrbitalPeriod;

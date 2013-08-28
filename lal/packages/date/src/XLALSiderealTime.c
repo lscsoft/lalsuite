@@ -19,7 +19,8 @@
 #include <math.h>
 #include <lal/Date.h>
 
-/** \defgroup XLALSideralTime_c SideralTime
+/**
+ * \defgroup XLALSideralTime_c SideralTime
  * \ingroup Date_h
  * \author Creighton, J., and Cannon, K.
  * \brief XLAL routines for computing the sidereal time.
@@ -32,7 +33,8 @@
 
 /*@{*/
 
-/** Returns the Greenwich Sidereal Time IN RADIANS corresponding to a
+/**
+ * Returns the Greenwich Sidereal Time IN RADIANS corresponding to a
  * specified GPS time.  Aparent sidereal time is computed by providing the
  * equation of equinoxes in units of seconds.  For mean sidereal time, set
  * this parameter to 0.
@@ -46,8 +48,8 @@
  *
  * Aoki, et al. (1982) Astronomy and Astrophysics 105, 359-361.
  * Kaplan, G. H. "NOVAS: Naval Observatory Vector Astrometry
- *   Subroutines"; USNO internal document dated 20 Oct 1988;
- *   revised 15 Mar 1990.
+ * Subroutines"; USNO internal document dated 20 Oct 1988;
+ * revised 15 Mar 1990.
  *
  * See http://aa.usno.navy.mil/software/novas for more information.
  *

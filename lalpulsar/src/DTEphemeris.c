@@ -27,40 +27,41 @@
 
 #include "PulsarTimes.h"
 
-/** \file
-    \author Jones, D. I.,   Owen, B. J.
-    \ingroup PulsarTimes_h
-    \brief Computes the barycentric arrival time of an incoming wavefront using
-    accurate ephemeris-based data files of the Sun and Earth's motions.
-
-\heading{Description}
-
-These routines compute the barycentric time transformation and its
-derivatives.  That is, if a signal originating from a right ascension
-\f$\alpha\f$ and declination \f$\delta\f$ on the sky and arrives at the
-detector at a time \f$t\f$, then it will pass the centre of the solar
-system at a time \f$t_b(t,\alpha,\delta)\f$.
-
-The input/output features of this function are nearly identical to
-those of LALDTBaryPtolemaic(), whose documentation should be
-consulted  for the details. One important difference in calling this
-function is that the user has to supply the initialised ephemeris-data
-in the PulsarTimesParamStruc::ephemeris and the detector-data
-in PulsarTimesParamStruc::site.
-
-LALDTBaryPtolemaic() uses the Ptolemaic approximation to model
-the Earth/Sun system, while LALDTEphemeris() uses accurate
-ephemeris data read in from files in the calling function, and passed
-into LALDTEphemeris() using the EphemerisData
-structure, which is a member of the PulsarTimesParamStruc.
-
-\heading{Uses}
-\code
-lalDebugLevel                LALBarycenterEarth()
-LALBarycenter()
-\endcode
-
-*/
+/**
+ * \file
+ * \author Jones, D. I.,   Owen, B. J.
+ * \ingroup PulsarTimes_h
+ * \brief Computes the barycentric arrival time of an incoming wavefront using
+ * accurate ephemeris-based data files of the Sun and Earth's motions.
+ *
+ * \heading{Description}
+ *
+ * These routines compute the barycentric time transformation and its
+ * derivatives.  That is, if a signal originating from a right ascension
+ * \f$\alpha\f$ and declination \f$\delta\f$ on the sky and arrives at the
+ * detector at a time \f$t\f$, then it will pass the centre of the solar
+ * system at a time \f$t_b(t,\alpha,\delta)\f$.
+ *
+ * The input/output features of this function are nearly identical to
+ * those of LALDTBaryPtolemaic(), whose documentation should be
+ * consulted  for the details. One important difference in calling this
+ * function is that the user has to supply the initialised ephemeris-data
+ * in the PulsarTimesParamStruc::ephemeris and the detector-data
+ * in PulsarTimesParamStruc::site.
+ *
+ * LALDTBaryPtolemaic() uses the Ptolemaic approximation to model
+ * the Earth/Sun system, while LALDTEphemeris() uses accurate
+ * ephemeris data read in from files in the calling function, and passed
+ * into LALDTEphemeris() using the EphemerisData
+ * structure, which is a member of the PulsarTimesParamStruc.
+ *
+ * \heading{Uses}
+ * \code
+ * lalDebugLevel                LALBarycenterEarth()
+ * LALBarycenter()
+ * \endcode
+ *
+ */
 /*@{*/
 
 void

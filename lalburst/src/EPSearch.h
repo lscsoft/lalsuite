@@ -33,11 +33,12 @@
 extern "C" {
 #endif
 
-  /** \defgroup EPSearch_h Header EPSearch.h
-   * \ingroup pkg_burstsearch
-   *
-   * \brief UNDOCUMENTED
-   */
+/**
+ * \defgroup EPSearch_h Header EPSearch.h
+ * \ingroup pkg_burstsearch
+ *
+ * \brief UNDOCUMENTED
+ */
   /*@{*/
 
 

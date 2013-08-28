@@ -18,7 +18,8 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, D. Keitel
+/**
+ * \author R. Prix, D. Keitel
  * \file
  * \brief
  * Generate N samples of various statistics (F-stat, LV-stat,...) drawn from their
@@ -28,7 +29,7 @@
  * This is based on synthesizeBstat and synthesizeTransientStats, and is mostly meant
  * to be used for Monte-Carlos studies of ROC curves
  *
- *********************************************************************************/
+ */
 
 /*
  *
@@ -129,7 +130,8 @@ typedef struct {
   INT4 randSeed;	/**< GSL random-number generator seed value to use */
 } UserInput_t;
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
@@ -614,7 +616,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 } /* XLALInitCode() */
 
 
-/** Load Ephemeris from ephemeris data-files
+/**
+ * Load Ephemeris from ephemeris data-files
  */
 EphemerisData *
 XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
@@ -647,7 +650,8 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
 } /* XLALInitEphemeris() */
 
 
-/** Initialize amplitude-prior pdfs from the user-input
+/**
+ * Initialize amplitude-prior pdfs from the user-input
  */
 int
 XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
@@ -788,7 +792,8 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
 } /* XLALInitAmplitudePrior() */
 
 
-/** Simple creator function for MultiLIGOTimeGPSVector with numDetectors entries
+/**
+ * Simple creator function for MultiLIGOTimeGPSVector with numDetectors entries
  */
 MultiLIGOTimeGPSVector *
 XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
@@ -812,7 +817,8 @@ XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
 } /* XLALCreateMultiLIGOTimeGPSVector() */
 
 
-/** Write one line for given LV candidate into output file.
+/**
+ * Write one line for given LV candidate into output file.
  *
  * NOTE: input dopplerParams can be NULL pointer, then just writes 0 in doppler fields (useful for synthetic LV draws)
  *

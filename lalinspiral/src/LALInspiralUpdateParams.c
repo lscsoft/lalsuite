@@ -19,10 +19,10 @@
 
 #include <lal/LALInspiralBank.h>
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief Function to update the parameters used in creating a coarse bank based on a square lattice.
  * \author Sathyaprakash, B. S., T. Cokelaer
- *
  *
  * While scanning the \f$\tau_0\f$-direction after reaching the
  * boundary of the parameter space, we have to return to the

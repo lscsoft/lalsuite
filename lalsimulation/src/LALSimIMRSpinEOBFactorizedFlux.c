@@ -64,8 +64,8 @@ static REAL8 XLALInspiralSpinFactorizedFlux(
  *------------------------------------------------------------------------------------------
  */
 
-/** 
- * This function calculates the spin factorized-resummed GW energy flux 
+/**
+ * This function calculates the spin factorized-resummed GW energy flux
  * for given dynamical variables.
  */
 

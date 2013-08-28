@@ -27,8 +27,8 @@
  */
 
 
-/** \file
- *
+/**
+ * \file
  * \ingroup LIGOLwXMLArray
  * \author Kipp Cannon
  *
@@ -62,7 +62,6 @@
  *
  * 	return 0;
  * }
- *
  *
  */
 
@@ -315,7 +314,8 @@ static int WriteLIGOLwXMLArray(
  */
 
 
-/** Write a \c REAL4TimeSeries to a \c LIGOLwXMLStream.  Returns 0 on
+/**
+ * Write a \c REAL4TimeSeries to a \c LIGOLwXMLStream.  Returns 0 on
  * success, less than 0 on failure.  If \a comment is not NULL, it will be
  * added to the output as the string in a Comment element.
  */
@@ -333,7 +333,8 @@ int XLALWriteLIGOLwXMLArrayREAL4TimeSeries(
 }
 
 
-/** Write a \c REAL8TimeSeries to a \c LIGOLwXMLStream.  Returns 0 on
+/**
+ * Write a \c REAL8TimeSeries to a \c LIGOLwXMLStream.  Returns 0 on
  * success, less than 0 on failure.  If \a comment is not NULL, it will be
  * added to the output as the string in a Comment element.
  */
@@ -351,7 +352,8 @@ int XLALWriteLIGOLwXMLArrayREAL8TimeSeries(
 }
 
 
-/** Write a \c REAL4FrequencySeries to a \c LIGOLwXMLStream.  Returns 0 on
+/**
+ * Write a \c REAL4FrequencySeries to a \c LIGOLwXMLStream.  Returns 0 on
  * success, less than 0 on failure.  If \a comment is not NULL, it will be
  * added to the output as the string in a Comment element.
  */
@@ -369,7 +371,8 @@ int XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(
 }
 
 
-/** Write a \c REAL8FrequencySeries to a \c LIGOLwXMLStream.  Returns 0 on
+/**
+ * Write a \c REAL8FrequencySeries to a \c LIGOLwXMLStream.  Returns 0 on
  * success, less than 0 on failure.  If \a comment is not NULL, it will be
  * added to the output as the string in a Comment element.
  */
@@ -387,7 +390,8 @@ int XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(
 }
 
 
-/** Write a \c COMPLEX8FrequencySeries to a \c LIGOLwXMLStream.  Returns 0
+/**
+ * Write a \c COMPLEX8FrequencySeries to a \c LIGOLwXMLStream.  Returns 0
  * on success, less than 0 on failure.  If \a comment is not NULL, it will
  * be added to the output as the string in a Comment element.
  */
@@ -405,7 +409,8 @@ int XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(
 }
 
 
-/** Write a \c COMPLEX16FrequencySeries to a \c LIGOLwXMLStream.  Returns 0
+/**
+ * Write a \c COMPLEX16FrequencySeries to a \c LIGOLwXMLStream.  Returns 0
  * on success, less than 0 on failure.  If \a comment is not NULL, it will
  * be added to the output as the string in a Comment element.
  */

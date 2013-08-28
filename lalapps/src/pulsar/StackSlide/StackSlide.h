@@ -26,17 +26,17 @@
 /* 05/06/05 gam; Add function SumStacks with just creates a SUM from the STKs without sliding */
 
 /**
-\author M. Landry, G. Mendell
-\file
-
-\brief Computes frequency model, slide stacks accordingly, and sum them.
-
-\heading{Synopsis}
-\code
-#include <lal/StackSlide.h>
-\endcode
-This is a short summary...
-*/
+ * \author M. Landry, G. Mendell
+ * \file
+ *
+ * \brief Computes frequency model, slide stacks accordingly, and sum them.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/StackSlide.h>
+ * \endcode
+ * This is a short summary...
+ */
 
 #ifndef _STACKSLIDE_H
 #define _STACKSLIDE_H
@@ -81,56 +81,56 @@ extern "C" {
 #define ACC 1e-9
 
 /**
-\heading{Structures}
-
-\code
-struct StackSlideParams
-\endcode
-\c StackSlideParams
-This structure contains the parameters for the <tt>StackSlide()</tt> routine.  The parameters are:
-
-\code
-typedef struct
-tagStackSlideParams
-{
-	REAL8 **skyPosData;
-	REAL8 **freqDerivData;
-        REAL8 *ParamsSMA;
-	REAL8 *ParamsTperi;
-	INT4 numSkyPosTotal;
-	INT4 numFreqDerivTotal;
-	BOOLEAN divideSUMsByNumSTKs;
-	REAL8 f0STK;
-	REAL8 refFreq;
-	REAL8 f0SUM;
-	REAL8 tSTK;
-	REAL8 tSUM;
-	INT4  nBinsPerSUM;
-	INT4  numSTKs;
-	INT2 binaryFlag;
-	REAL8 dfSUM;
-	UINT4 gpsStartTimeSec;
-	UINT4 gpsStartTimeNan;
-	INT4 numSpinDown;
-	EphemerisData *edat;
-	LIGOTimeGPS *timeStamps;
-	BarycenterInput *baryinput;
-        REAL8 		SemiMajorAxis;
-        REAL8           OrbitalPeriod;
-        REAL8           OrbitalEccentricity;
-        REAL8           ArgPeriapse;
-        UINT4 TperiapseSSBSec;
-	UINT4 TperiapseSSBNanoSec;
-	REAL8 deltaSMA;
-	REAL8 SMAcentral;
-        INT4 iFreqDeriv;
-        REAL8 LoudestEvent;
-	REAL8 peakFreq;
-	INT4 nMaxSMA;
-}
-StackSlideParams;
-\endcode
-*/
+ * \heading{Structures}
+ *
+ * \code
+ * struct StackSlideParams
+ * \endcode
+ * \c StackSlideParams
+ * This structure contains the parameters for the <tt>StackSlide()</tt> routine.  The parameters are:
+ *
+ * \code
+ * typedef struct
+ * tagStackSlideParams
+ * {
+ *   REAL8 **skyPosData;
+ *   REAL8 **freqDerivData;
+ *   REAL8 *ParamsSMA;
+ *   REAL8 *ParamsTperi;
+ *   INT4 numSkyPosTotal;
+ *   INT4 numFreqDerivTotal;
+ *   BOOLEAN divideSUMsByNumSTKs;
+ *   REAL8 f0STK;
+ *   REAL8 refFreq;
+ *   REAL8 f0SUM;
+ *   REAL8 tSTK;
+ *   REAL8 tSUM;
+ *   INT4  nBinsPerSUM;
+ *   INT4  numSTKs;
+ *   INT2 binaryFlag;
+ *   REAL8 dfSUM;
+ *   UINT4 gpsStartTimeSec;
+ *   UINT4 gpsStartTimeNan;
+ *   INT4 numSpinDown;
+ *   EphemerisData *edat;
+ *   LIGOTimeGPS *timeStamps;
+ *   BarycenterInput *baryinput;
+ *   REAL8 		SemiMajorAxis;
+ *   REAL8           OrbitalPeriod;
+ *   REAL8           OrbitalEccentricity;
+ *   REAL8           ArgPeriapse;
+ *   UINT4 TperiapseSSBSec;
+ *   UINT4 TperiapseSSBNanoSec;
+ *   REAL8 deltaSMA;
+ *   REAL8 SMAcentral;
+ *   INT4 iFreqDeriv;
+ *   REAL8 LoudestEvent;
+ *   REAL8 peakFreq;
+ *   INT4 nMaxSMA;
+ * }
+ * StackSlideParams;
+ * \endcode
+ */
 
 /* 04/12/05 gam; Simplify StackSlideParams struct; change REAL8 **freqDerivData to REAL8 *freqDerivData; */
 typedef struct

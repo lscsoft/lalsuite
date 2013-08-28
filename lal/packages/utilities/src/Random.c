@@ -29,51 +29,51 @@
  * \ingroup Random_h
  *
  * \brief Functions for generating random numbers.
-
-\heading{Description}
-
-The routines <tt>LALCreateRandomParams()</tt> and <tt>LALDestroyRandomParams()</tt>
-create and destroy a parameter structure for the generation of random
-variables.  The creation routine requires a random number seed \c seed.
-If the seed is zero then a seed is generated using the current time.
-
-The routine <tt>LALUniformDeviate()</tt> returns a single random deviate
-distributed uniformly between zero and unity.
-
-The routine <tt>LALNormalDeviates()</tt> fills a vector with normal (Gaussian)
-     deviates with zero mean and unit variance, whereas the function\c XLALNormalDeviate just returns one normal distributed random number.
-
-\heading{Operating Instructions}
-
-\code
-static LALStatus     status;
-static RandomParams *params;
-static REAL4Vector  *vector;
-UINT4 i;
-INT4 seed = 0;
-
-LALCreateVector( &status, &vector, 9999 );
-LALCreateRandomParams( &status, &params, seed );
-
-/\* fill vector with uniform deviates *\/
-for ( i = 0; i < vector->length; ++i )
-{
-  LALUniformDeviate( &status, vector->data + i, params );
-}
-
-/\* fill vector with normal deviates *\/
-LALNormalDeviates( &status, vector, params );
-
-LALDestroyRandomParams( &status, &params );
-LALDestroyVector( &status, &vector );
-\endcode
-
-\heading{Algorithm}
-
-This is an implementation of the random number generators \c ran1 and
-\c gasdev described in Numerical Recipes [\ref ptvf1992].
-
-*/
+ *
+ * \heading{Description}
+ *
+ * The routines <tt>LALCreateRandomParams()</tt> and <tt>LALDestroyRandomParams()</tt>
+ * create and destroy a parameter structure for the generation of random
+ * variables.  The creation routine requires a random number seed \c seed.
+ * If the seed is zero then a seed is generated using the current time.
+ *
+ * The routine <tt>LALUniformDeviate()</tt> returns a single random deviate
+ * distributed uniformly between zero and unity.
+ *
+ * The routine <tt>LALNormalDeviates()</tt> fills a vector with normal (Gaussian)
+ * deviates with zero mean and unit variance, whereas the function\c XLALNormalDeviate just returns one normal distributed random number.
+ *
+ * \heading{Operating Instructions}
+ *
+ * \code
+ * static LALStatus     status;
+ * static RandomParams *params;
+ * static REAL4Vector  *vector;
+ * UINT4 i;
+ * INT4 seed = 0;
+ *
+ * LALCreateVector( &status, &vector, 9999 );
+ * LALCreateRandomParams( &status, &params, seed );
+ *
+ * /\* fill vector with uniform deviates *\/
+ * for ( i = 0; i < vector->length; ++i )
+ * {
+ * LALUniformDeviate( &status, vector->data + i, params );
+ * }
+ *
+ * /\* fill vector with normal deviates *\/
+ * LALNormalDeviates( &status, vector, params );
+ *
+ * LALDestroyRandomParams( &status, &params );
+ * LALDestroyVector( &status, &vector );
+ * \endcode
+ *
+ * \heading{Algorithm}
+ *
+ * This is an implementation of the random number generators \c ran1 and
+ * \c gasdev described in Numerical Recipes [\ref ptvf1992].
+ *
+ */
 /*@{*/
 
 static const INT4 a = 16807;

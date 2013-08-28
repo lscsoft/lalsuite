@@ -218,7 +218,8 @@ allocate(
 } /* allocate() */
 
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \author Hanna, C. R. and Owen, B. J.
  * \brief This function creates a bank of BCVSpin templates to search for precessing binaries.
  *

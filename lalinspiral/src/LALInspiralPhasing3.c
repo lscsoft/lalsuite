@@ -18,40 +18,36 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief The code \ref LALInspiralPhasing3.c calculates the phase the waveform
-from an inspiralling binary system as a function of time up to second post-Nowtonian
-order.
-
-<tt>LALInspiralPhasing3()</tt>
-<ul>
-<li> \c phase: Output, the phase of the wave at the current epoch.</li>
-<li> \c td: Input, the PN expansion coefficients of phase \f$\phi^t_k\f$ as a function
-of time (cf. Table.\tableref{table_flux}.</li>
-<li> \c ak: Input containing PN expansion coefficients.</li>
-</ul>
-
-
-\heading{Description}
-The phase of the inspiral wave corresponding to the \c Approximant \c TaylorT2
-as in Equation.\eqref{eq_InspiralWavePhase3}.
-
-\heading{Algorithm}
-None.
-
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-None.
-
-
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief The code \ref LALInspiralPhasing3.c calculates the phase the waveform
+ * from an inspiralling binary system as a function of time up to second post-Nowtonian
+ * order.
+ *
+ * <tt>LALInspiralPhasing3()</tt>
+ * <ul>
+ * <li> \c phase: Output, the phase of the wave at the current epoch.</li>
+ * <li> \c td: Input, the PN expansion coefficients of phase \f$\phi^t_k\f$ as a function
+ * of time (cf. Table.\tableref{table_flux}.</li>
+ * <li> \c ak: Input containing PN expansion coefficients.</li>
+ * </ul>
+ *
+ * \heading{Description}
+ * The phase of the inspiral wave corresponding to the \c Approximant \c TaylorT2
+ * as in Equation.\eqref{eq_InspiralWavePhase3}.
+ *
+ * \heading{Algorithm}
+ * None.
+ *
+ * \heading{Uses}
+ * None.
+ *
+ * \heading{Notes}
+ * None.
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>

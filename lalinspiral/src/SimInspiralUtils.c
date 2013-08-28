@@ -43,38 +43,38 @@
 #include <lal/TimeDelay.h>
 
 /**
-\author Brown, D. A.
-\file
-
-\brief Provides a set of utilities for manipulating \c simInspiralTables.
-
-\heading{Description}
-
-The function <tt>LALInspiralSiteTimeAndDist()</tt> calculates detector end
-time (\c endTime) and effective distance (\c effDist) for an
-inspiral signal from a specific location in the sky (\c skyPos) assumed
-to be given in equatorial coordinates.  The detector end time is obtained by
-using <tt>LALTimeDelayFromEarthCenter()</tt>, while the effective distance
-requires calculation of the detector response, calculated using
-<tt>LALComputeDetAMResponse()</tt>.
-
-The function <tt>LALPopulateSimInspiralSiteInfo()</tt> populates the end time
-and effective distance for each of the interferometer sites.  The sky location
-(in equatorial coordinates) is assumed to be already contained in the input
-\c SimInspiralTable.  The end time and effective distance for each site
-is calculated by calling <tt>LALInspiralSiteTimeAndDist()</tt> once for each
-of the detectors, and setting the \c detector appropriately.
-
-\heading{Algorithm}
-
-None.
-
-\heading{Uses}
-
-LALGetInspiralParams(), LALGPStoGMST1(), LALTimeDelayFromEarthCenter(),
-  LALComputeDetAMResponse().
-
-*/
+ * \author Brown, D. A.
+ * \file
+ *
+ * \brief Provides a set of utilities for manipulating \c simInspiralTables.
+ *
+ * \heading{Description}
+ *
+ * The function <tt>LALInspiralSiteTimeAndDist()</tt> calculates detector end
+ * time (\c endTime) and effective distance (\c effDist) for an
+ * inspiral signal from a specific location in the sky (\c skyPos) assumed
+ * to be given in equatorial coordinates.  The detector end time is obtained by
+ * using <tt>LALTimeDelayFromEarthCenter()</tt>, while the effective distance
+ * requires calculation of the detector response, calculated using
+ * <tt>LALComputeDetAMResponse()</tt>.
+ *
+ * The function <tt>LALPopulateSimInspiralSiteInfo()</tt> populates the end time
+ * and effective distance for each of the interferometer sites.  The sky location
+ * (in equatorial coordinates) is assumed to be already contained in the input
+ * \c SimInspiralTable.  The end time and effective distance for each site
+ * is calculated by calling <tt>LALInspiralSiteTimeAndDist()</tt> once for each
+ * of the detectors, and setting the \c detector appropriately.
+ *
+ * \heading{Algorithm}
+ *
+ * None.
+ *
+ * \heading{Uses}
+ *
+ * LALGetInspiralParams(), LALGPStoGMST1(), LALTimeDelayFromEarthCenter(),
+ * LALComputeDetAMResponse().
+ *
+ */
 
   /* a few useful static functions */
 static INT8 geocent_end_time(const SimInspiralTable *x)

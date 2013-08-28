@@ -69,8 +69,7 @@
  *
  * </li></ul>
  *
- *
-*/
+ */
 
 
 #include <math.h>

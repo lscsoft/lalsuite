@@ -19,7 +19,8 @@
  */
 
 /*********************************************************************************/
-/** \author John Whelan (based on code by Reinhard Prix)
+/**
+ * \author John Whelan (based on code by Reinhard Prix)
  * \file
  * \brief Test for LALNewGetAMCoeffs(): compare results to older, well-tested
  * (but less efficient, and harder to understand) function LALComputeAM()
@@ -31,7 +32,7 @@
  * Detector and sky-location are picked at random each time, which allows a minimal
  * Monte-Carlo validation by simply running this script repeatedly.
  *
- *********************************************************************************/
+ */
 #include <config.h>
 
 #ifdef HAVE_UNISTD_H
@@ -101,9 +102,10 @@ static const AMCoeffsParams empty_AMCoeffsParams;
 static const AMCoeffs empty_AMCoeffs;
 
 
-/** Very simple test: pick random skyposition, compute a_i, b_i using
- *  once LALComputeAM() and once LALNewGetAMCoeffs(), and look at the errors
- *  sum_i (a_i - a_i')^2
+/**
+ * Very simple test: pick random skyposition, compute a_i, b_i using
+ * once LALComputeAM() and once LALNewGetAMCoeffs(), and look at the errors
+ * sum_i (a_i - a_i')^2
  */
 int main(int argc, char *argv[])
 {

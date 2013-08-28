@@ -36,8 +36,7 @@
  *
  * \heading{Notes}
  *
- *
-*/
+ */
 
 /**\name Error Codes */ /*@{*/
 #define INSPIRALBCVSPINBANKTESTC_ENORM     0

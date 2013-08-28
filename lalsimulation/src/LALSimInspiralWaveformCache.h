@@ -28,9 +28,11 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** Stores previously-computed waveforms and parameters to take
-    advantage of approximant- and parameter-specific opportunities for
-    accelerating waveform computation. */
+/**
+ * Stores previously-computed waveforms and parameters to take
+ * advantage of approximant- and parameter-specific opportunities for
+ * accelerating waveform computation.
+ */
 typedef struct tagLALSimInspiralWaveformCache LALSimInspiralWaveformCache;
 
 LALSimInspiralWaveformCache *XLALCreateSimInspiralWaveformCache(void);

@@ -64,10 +64,12 @@ pow_int(const REAL8 x, const INT4 n) {
   }
 }
 
-/** Cumulative distribution function for KS statistic.  Algorithm from
-    Numerical Recipes, Third Edition by Press, Teukolsky, Vetterling
-    and Flannery.  Cambridge University Press, 2007. Section
-    6.14.12 */
+/**
+ * Cumulative distribution function for KS statistic.  Algorithm from
+ * Numerical Recipes, Third Edition by Press, Teukolsky, Vetterling
+ * and Flannery.  Cambridge University Press, 2007. Section
+ * 6.14.12
+ */
 REAL8 PKS(const REAL8);
 REAL8
 PKS(const REAL8 z) {
@@ -102,11 +104,13 @@ QKS(const REAL8 z) {
   }
 }
 
-/** Computes the p of the KS-statistic comparing the cumulative
-    distribution given by the discrete points in \a points with the
-    corresponding analytic cumulative distribution values in \a
-    cumValues (assumed to be evaluated at the locations in points).
-    The input array \a points must be sorted. */
+/**
+ * Computes the p of the KS-statistic comparing the cumulative
+ * distribution given by the discrete points in \a points with the
+ * corresponding analytic cumulative distribution values in \a
+ * cumValues (assumed to be evaluated at the locations in points).
+ * The input array \a points must be sorted.
+ */
 REAL8 KSPValue(const REAL8Vector *, const REAL8Vector *);
 REAL8
 KSPValue(const REAL8Vector *points, const REAL8Vector *cumValues) {

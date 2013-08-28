@@ -18,41 +18,40 @@
 */
 
 /**
- *  \author  McKechan D J A
- *  \file
- *  \ingroup LALSimInspiral_h
+ * \author  McKechan D J A
+ * \file
+ * \ingroup LALSimInspiral_h
  *
-
- *  \brief The code \c XLALInspiralREAL4WaveformTaper() and
- *  \c XLALInspiralREAL8WaveTaper() impose a smooth time tapering at the
- *  beginning and/or the end of REAL4 or REAL8 waveforms in the time domain.
+ * \brief The code \c XLALInspiralREAL4WaveformTaper() and
+ * \c XLALInspiralREAL8WaveTaper() impose a smooth time tapering at the
+ * beginning and/or the end of REAL4 or REAL8 waveforms in the time domain.
  *
- *  They take either a ::REAL4Vector or a ::REAL8Vector and search for the
- *  beginning and end points of the signal, in case there are null data points
- *  at either end. They then taper the waveform from the ends to the second
- *  maxima from each end in the waveform, according to formula 3.35 of
- *  <tt>gr-qc/0001023</tt>.
+ * They take either a ::REAL4Vector or a ::REAL8Vector and search for the
+ * beginning and end points of the signal, in case there are null data points
+ * at either end. They then taper the waveform from the ends to the second
+ * maxima from each end in the waveform, according to formula 3.35 of
+ * <tt>gr-qc/0001023</tt>.
  *
- *  If the waveform does has less than 4 maxima, such that it cannot be tapered
- *  from the each end to the second peak then the waveform is tapered from the
- *  ends to the centre of the instead.
+ * If the waveform does has less than 4 maxima, such that it cannot be tapered
+ * from the each end to the second peak then the waveform is tapered from the
+ * ends to the centre of the instead.
  *
- *  The bookends option is an ::LALSimInspiralApplyTaper enumerator and allows the
- *  user to specify whether just the start, just the end or both the start and
- *  end of the signal are tapered. These options are #LAL_SIM_INSPIRAL_TAPER_START,
- *  #LAL_SIM_INSPIRAL_TAPER_END and #LAL_SIM_INSPIRAL_TAPER_STARTEND.
-
- *  \heading{Prototypes}
- *  <tt>XLALInspiralREAL4WaveformTaper()</tt>
- *  <tt>XLALInspiralREAL8WaveformTaper()</tt>
+ * The bookends option is an ::LALSimInspiralApplyTaper enumerator and allows the
+ * user to specify whether just the start, just the end or both the start and
+ * end of the signal are tapered. These options are #LAL_SIM_INSPIRAL_TAPER_START,
+ * #LAL_SIM_INSPIRAL_TAPER_END and #LAL_SIM_INSPIRAL_TAPER_STARTEND.
  *
- *  \heading{Description}
+ * \heading{Prototypes}
+ * <tt>XLALInspiralREAL4WaveformTaper()</tt>
+ * <tt>XLALInspiralREAL8WaveformTaper()</tt>
  *
- *  \heading{Uses}
+ * \heading{Description}
  *
- *   \heading{Notes}
+ * \heading{Uses}
  *
-*/
+ * \heading{Notes}
+ *
+ */
 
 #include <LALSimInspiral.h>
 #include <lal/LALError.h>

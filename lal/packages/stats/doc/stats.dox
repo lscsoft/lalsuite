@@ -1,11 +1,11 @@
 /**
-\addtogroup pkg_stats
-
-\brief This package containts statistical routines.
-
-@{
-\defgroup LALMoment_h 		Header LALMoment.h
-\defgroup LALCorrelation_h 	Header LALCorrelation.h
-@}
-
-*/
+ * \addtogroup pkg_stats
+ *
+ * \brief This package containts statistical routines.
+ *
+ * @{
+ * \defgroup LALMoment_h 		Header LALMoment.h
+ * \defgroup LALCorrelation_h 	Header LALCorrelation.h
+ * @}
+ *
+ */

@@ -28,41 +28,38 @@
  */
 
 /**
-
-\author Brown, D. A.
-\file
-\ingroup FindChirp_h
-
-\brief Provides functions to initialize template creation routines.
-
-\heading{Prototypes}
-
-The function <tt>LALFindChirpTemplateInit()</tt> takes as input the address
-of a structure of type \c FindChirpInitParams containing the correct
-values to intialize a search. It creates a structure of type
-\c FindChirpTmpltParams as described above and returns its address.
-
-The function <tt>LALFindChirpTemplateFinalize()</tt> takes as the address
-of a structure of type \c FindChirpTmpltParams destroys this
-structure and sets the address to NULL.
-
-\heading{Algorithm}
-
-Blah.
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-LALCreateVector()
-LALDestroyVector()
-\endcode
-
-\heading{Notes}
-
-
-
-*/
+ * \author Brown, D. A.
+ * \file
+ * \ingroup FindChirp_h
+ *
+ * \brief Provides functions to initialize template creation routines.
+ *
+ * \heading{Prototypes}
+ *
+ * The function <tt>LALFindChirpTemplateInit()</tt> takes as input the address
+ * of a structure of type \c FindChirpInitParams containing the correct
+ * values to intialize a search. It creates a structure of type
+ * \c FindChirpTmpltParams as described above and returns its address.
+ *
+ * The function <tt>LALFindChirpTemplateFinalize()</tt> takes as the address
+ * of a structure of type \c FindChirpTmpltParams destroys this
+ * structure and sets the address to NULL.
+ *
+ * \heading{Algorithm}
+ *
+ * Blah.
+ *
+ * \heading{Uses}
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * LALCreateVector()
+ * LALDestroyVector()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>

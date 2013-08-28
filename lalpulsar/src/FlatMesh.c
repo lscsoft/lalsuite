@@ -35,7 +35,8 @@ Transform( REAL4 *vectorOut, REAL4 *vectorIn, REAL4 *matrix,
 	   UINT4 dim );
 /** \endcond */
 
-/** \author Creighton, T. D.
+/**
+ * \author Creighton, T. D.
  * \ingroup FlatMesh_h
  * \brief Places a mesh of templates on an \f$n\f$-dimensional rectilinear parameter space.
  *
@@ -78,7 +79,7 @@ Transform( REAL4 *vectorOut, REAL4 *vectorIn, REAL4 *matrix,
  * choose an initial coordinate system that is aligned with the preferred
  * axes of the desired search area, or with the preferred axes of the
  * mismatch metric, whichever will improve performance the most.
-*/
+ */
 void
 LALCreateFlatMesh( LALStatus           *stat,
 		   REAL4VectorSequence **mesh,
@@ -326,7 +327,8 @@ Superset( REAL4 *mesh, REAL4 *matrix, REAL4 *yMin, UINT4 *nMax,
 }
 
 
-/** \author Creighton, T. D.
+/**
+ * \author Creighton, T. D.
  * \ingroup FlatMesh_h
  * \brief Simple routine that restricts a parameter mesh <tt>*mesh</tt> to a rectilinear region.
  *

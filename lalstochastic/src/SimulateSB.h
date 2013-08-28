@@ -31,23 +31,23 @@ extern "C" {
 #endif
 
 /**
-\addtogroup SimulateSB_h
-\author Sukanta Bose
-
-\brief Provides prototype and error code information for the modules needed
-to simulate a stochastic background signal.
-
-Provides prototype and error code information for the modules needed
-to simulate a stochastic background signal (whitened, if desired) in a pair of
-detectors, given the appropriate representations of the
-detector transfer function in each detector.
-
-\heading{Synopsis}
-\code
-#include <lal/SimulateSB.h>
-\endcode
-
-*/
+ * \addtogroup SimulateSB_h
+ * \author Sukanta Bose
+ *
+ * \brief Provides prototype and error code information for the modules needed
+ * to simulate a stochastic background signal.
+ *
+ * Provides prototype and error code information for the modules needed
+ * to simulate a stochastic background signal (whitened, if desired) in a pair of
+ * detectors, given the appropriate representations of the
+ * detector transfer function in each detector.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/SimulateSB.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -98,7 +98,8 @@ detector transfer function in each detector.
    *                                                           *
    *************************************************************/
 
-/** Contains the output data produced by
+/**
+ * Contains the output data produced by
  * <tt>LALSSSimStochBGTimeSeries()</tt>. It comprises of a pair of
  * (real) time-series simulated stochastic background signal in the outputs of
  * a given pair of detectors.
@@ -108,7 +109,8 @@ detector transfer function in each detector.
     REAL4TimeSeries    *SSimStochBG2;	/**< Simulated stochastic background signal in the output of the second detector */
   } SSSimStochBGOutput;
 
-/** Contains the input data needed by <tt>LALSSSimStochBGTimeSeries()</tt>
+/**
+ * Contains the input data needed by <tt>LALSSSimStochBGTimeSeries()</tt>
  * to calculate the whitened stochastic background signal in the output of
  * a detector.
  */
@@ -124,7 +126,8 @@ detector transfer function in each detector.
   } SSSimStochBGStrainInput;
 
 
-/** Contains the parameters used by <tt>LALSSSimStochBGTimeSeries()</tt>
+/**
+ * Contains the parameters used by <tt>LALSSSimStochBGTimeSeries()</tt>
  * to compute the whitened stochastic background signal in the output of an
  * interferometric detector.
  */

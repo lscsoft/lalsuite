@@ -49,11 +49,11 @@
  * \f$k=0\ldots\lfloor{n/2}\rfloor\f$ (\f$n/2\f$ rounded down), of a vector \f$h_j\f$,
  * \f$j=0\ldots n-1\f$, of length \f$n\f$ is defined by
  * \f[
- *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
+ * H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
  * \f]
  * and, similarly, the \e inverse Fourier transform is defined by
  * \f[
- *   h_j = \frac{1}{n} \sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}
+ * h_j = \frac{1}{n} \sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}
  * \f]
  * where \f$H_k\f$ for \f$\lfloor{n/2}\rfloor<k<n\f$ can be obtained from the relation
  * \f$H_k=H_{n-k}^\ast\f$.  The present implementation of the \e reverse FFT
@@ -138,12 +138,11 @@
  * </li>
  * </ol>
  *
- *
- *
-*/
+ */
 /*@{*/
 
-/** \brief Plan to perform FFT of REAL4 data.
+/**
+ * \brief Plan to perform FFT of REAL4 data.
  */
 struct
 tagREAL4FFTPlan
@@ -153,7 +152,8 @@ tagREAL4FFTPlan
   fftwf_plan plan; /**< the FFTW plan */
 };
 
-/** \brief Plan to perform FFT of REAL8 data.
+/**
+ * \brief Plan to perform FFT of REAL8 data.
  */
 struct
 tagREAL8FFTPlan

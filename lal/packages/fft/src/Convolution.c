@@ -41,7 +41,6 @@
  *
  * \brief Apply transfer function to time series
  *
- *
  * This function returns the convolution of the time series with
  * the frequency domain transfer function that has been supplied by
  * the user.  It zero pads the input data by a factor of two to
@@ -139,7 +138,6 @@ REAL4TimeSeries *XLALRespFilt(
 }
 
 /**
- *
  * \brief SHOULD Convolve two time series, but doesn't
  *
  * This function does nothing yet

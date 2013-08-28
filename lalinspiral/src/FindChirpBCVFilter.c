@@ -27,15 +27,14 @@
  */
 
 /**
-
-\author Brown D. A. and Messaritaki E.
-\file
-\ingroup FindChirpBCV_h
-
-\brief This module provides the core of the matched filter for binary inspiral
-chirps for BCV templates.
-
-*/
+ * \author Brown D. A. and Messaritaki E.
+ * \file
+ * \ingroup FindChirpBCV_h
+ *
+ * \brief This module provides the core of the matched filter for binary inspiral
+ * chirps for BCV templates.
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>

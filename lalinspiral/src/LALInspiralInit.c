@@ -18,43 +18,43 @@
 */
 
 /**
-\author Cokelaer T.
-\file
-\ingroup LALInspiral_h
-
-\brief Module to initialize some parameters for waveform generation.
-
-\heading{Description}
-The input parameters is an InspiralTemplate structure which provides the waveform parameters
-such as masses, lower frequency ... . The function \c LALInspiralInit calls the
-\c LALInspiralParameterCalc function in order to  compute all the mass parameters. Then,
-\c LALInspiralRestrictedAmplitude function is called to get the restricted newtonian
-amplitude. LALInspiralWavelength, LALInspiralSetup and LALInspiralChooseModel are also called
-in order to estimate the waveform length which is stored in an output structure called
-\c InspiralInit. We also stored Energy, flux and evolution function of flux and energy in
-that structure.
-
-The  \c LALInspiralChooseModel function might failed or send a non zero status code.
-That function force it to be zero therefore the codes which  use LALInspiralInit (mainly
-injection code right now) won't stopped. Of course, if status code is non zero, we have to keep
-trace of it. Thus, the length of the waveform is fixed to zero in case of problems such as
-negative length, cutoff frequency lower than the lower cutoff frequency ... .
-
-\heading{Uses}
-\code
-LALInspiralParameterCalc
-LALInspiralRestrictedAmplitude
-LALInspiralWaveLength
-LALInspiralChooseModel
-LALInspiralSetup
-\endcode
-
-\heading{Notes}
-There is only one assert on the InspiralTemplate variable since  all relevant asserts
-are already included in the different functions which are called throughout the LALInspiralInit
-function.
-
-*/
+ * \author Cokelaer T.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module to initialize some parameters for waveform generation.
+ *
+ * \heading{Description}
+ * The input parameters is an InspiralTemplate structure which provides the waveform parameters
+ * such as masses, lower frequency ... . The function \c LALInspiralInit calls the
+ * \c LALInspiralParameterCalc function in order to  compute all the mass parameters. Then,
+ * \c LALInspiralRestrictedAmplitude function is called to get the restricted newtonian
+ * amplitude. LALInspiralWavelength, LALInspiralSetup and LALInspiralChooseModel are also called
+ * in order to estimate the waveform length which is stored in an output structure called
+ * \c InspiralInit. We also stored Energy, flux and evolution function of flux and energy in
+ * that structure.
+ *
+ * The  \c LALInspiralChooseModel function might failed or send a non zero status code.
+ * That function force it to be zero therefore the codes which  use LALInspiralInit (mainly
+ * injection code right now) won't stopped. Of course, if status code is non zero, we have to keep
+ * trace of it. Thus, the length of the waveform is fixed to zero in case of problems such as
+ * negative length, cutoff frequency lower than the lower cutoff frequency ... .
+ *
+ * \heading{Uses}
+ * \code
+ * LALInspiralParameterCalc
+ * LALInspiralRestrictedAmplitude
+ * LALInspiralWaveLength
+ * LALInspiralChooseModel
+ * LALInspiralSetup
+ * \endcode
+ *
+ * \heading{Notes}
+ * There is only one assert on the InspiralTemplate variable since  all relevant asserts
+ * are already included in the different functions which are called throughout the LALInspiralInit
+ * function.
+ *
+ */
 
 
 #include <lal/LALInspiral.h>

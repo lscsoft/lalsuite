@@ -35,12 +35,11 @@
  * LALMathNDPlotTest
  * \endcode
  *
- *
  * \heading{Description}
-  * This program generates a set of points simulating a 4-D template bank and calls
+ * This program generates a set of points simulating a 4-D template bank and calls
  * LALMathNDPlot() to generate a MATHEMATICA notebook to display the permutations of
-  * 3D projections of the template bank.  Instructions on how to evaluate the notebook
-  * appear when it is opened.
+ * 3D projections of the template bank.  Instructions on how to evaluate the notebook
+ * appear when it is opened.
  *
  */
 

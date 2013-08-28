@@ -81,10 +81,10 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
  */
 
 /**
- * This function calculates hlm mode factorized-resummed waveform 
+ * This function calculates hlm mode factorized-resummed waveform
  * for given dynamical variables.
  * Eq. 17 and the entire Appendix of the paper.
- */  
+ */
 static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( 
                  COMPLEX16         * restrict hlm,    /**< OUTPUT, hlm waveforms */
                  REAL8Vector       * restrict values, /**< dyanmical variables */
@@ -507,14 +507,14 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 
 /*--------------------------------------------------------------*/
 /**
- *  Spin Factors
- **/
+ * Spin Factors
+ */
 
 /**
- * This function calculates coefficients for hlm mode factorized-resummed waveform. 
+ * This function calculates coefficients for hlm mode factorized-resummed waveform.
  * The coefficients are pre-computed and stored in the SpinEOBParams structure.
  * Appendix of the paper, and papers DIN (PRD 79, 064004 (2009)) and PBFRT (PRD 83, 064003 (2011)).
- */ 
+ */
 
 UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
           FacWaveformCoeffs * const coeffs, /**< OUTPUT, pre-computed waveform coefficients */

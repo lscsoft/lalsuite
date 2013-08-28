@@ -26,27 +26,27 @@
 #endif
 
 /**
-\author Cokelaer T.
-\ingroup LALNoiseModels_h
-\brief Function to calculate the noise power spectral density for the EGO detector.
-
-\heading{Description}
-
-The module takes as an input a frequency \f$f\f$ in Hz, and it
-calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
-for that frequency. The noise PSD is based on data provided by
-grqc/0607092
-\f{equation}{
-   S_h(f) =
-   s_0 \left\{  x^{p_1} + a_1x^{p_2} +a_2 \frac{1+b_1x +b_2x^2+b_3x^3+b_4x^4+b_5x^5+b_6x^6}{1+c_1x+c_2x^2+c_3x^3+c_4x^4} \right\}
-\f}
-where \f$S_0=1.61e-51\f$\\
-\f$p_1=-4.05, p_2=-0.69\f$\\
-\f$a_1=185.62, a_2=232.56\f$\\
-\f$b_1 = 31.18, b_2=-64.72, b_3=52.24, b_4=-42.16, b_5=10.17, b_6=11.53\f$\\
-and \f$c_1=13.58, c_2 = -36.46, c_3=18.56, c_4=27.43\f$
-
-*/
+ * \author Cokelaer T.
+ * \ingroup LALNoiseModels_h
+ * \brief Function to calculate the noise power spectral density for the EGO detector.
+ *
+ * \heading{Description}
+ *
+ * The module takes as an input a frequency \f$f\f$ in Hz, and it
+ * calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
+ * for that frequency. The noise PSD is based on data provided by
+ * grqc/0607092
+ * \f{equation}{
+ * S_h(f) =
+ * s_0 \left\{  x^{p_1} + a_1x^{p_2} +a_2 \frac{1+b_1x +b_2x^2+b_3x^3+b_4x^4+b_5x^5+b_6x^6}{1+c_1x+c_2x^2+c_3x^3+c_4x^4} \right\}
+ * \f}
+ * where \f$S_0=1.61e-51\f$\\
+ * \f$p_1=-4.05, p_2=-0.69\f$\\
+ * \f$a_1=185.62, a_2=232.56\f$\\
+ * \f$b_1 = 31.18, b_2=-64.72, b_3=52.24, b_4=-42.16, b_5=10.17, b_6=11.53\f$\\
+ * and \f$c_1=13.58, c_2 = -36.46, c_3=18.56, c_4=27.43\f$
+ *
+ */
 void LALEGOPsd (LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 {
    REAL8 s0, x, x2, x3, x4, x5, x6;

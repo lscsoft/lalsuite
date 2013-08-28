@@ -20,13 +20,13 @@
 /**
  * \author Craig Robinson, Yi Pan
  *
- * Functions for calculating the effective one-body Hamiltonian for 
- * spinning binaries, as described in 
+ * Functions for calculating the effective one-body Hamiltonian for
+ * spinning binaries, as described in
  * Taracchini et al. ( PRD 86, 024011 (2012), arXiv 1202.0790 ).
  * All equation numbers in this file refer to equations of this paper,
  * unless otherwise specified.
  * This code borrows hugely from a C implementation originally written
- * by Enrico Barausse, following Barausse and Buonanno 
+ * by Enrico Barausse, following Barausse and Buonanno
  * PRD 81, 084024 (2010) and PRD 84, 104027 (2011), henceforth BB1 and BB2
  */
 
@@ -103,9 +103,9 @@ static double GSLSpinAlignedHamiltonianWrapper( double x, void *params );
 /**
  *
  * Function to calculate the value of the spinning Hamiltonian for given values
- * of the dynamical variables (in a Cartesian co-ordinate system). The inputs are 
+ * of the dynamical variables (in a Cartesian co-ordinate system). The inputs are
  * as follows:
- * 
+ *
  * x - the separation vector r expressed in Cartesian co-ordinates
  * p - the momentum vector (with the radial component tortoise pr*)
  * sigmaKerr - spin of the effective Kerr background (a combination of the individual spin vectors)
@@ -565,9 +565,9 @@ static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
 /**
  * Function to calculate the value of omega for the spin-aligned EOB waveform.
  * Can NOT be used in precessing cases. This omega is defined as \f$\dot{y}/r\f$ by setting \f$y=0\f$.
- * The function calculates omega = v/r, by first converting (r,phi,pr,pphi) to Cartesian coordinates 
- * in which rVec={r,0,0} and pVec={0,pphi/r,0}, i.e. the effective-test-particle is positioned at x=r, 
- * and its velocity along y-axis. Then it computes omega, which is now given by dydt/r = (dH/dp_y)/r. 
+ * The function calculates omega = v/r, by first converting (r,phi,pr,pphi) to Cartesian coordinates
+ * in which rVec={r,0,0} and pVec={0,pphi/r,0}, i.e. the effective-test-particle is positioned at x=r,
+ * and its velocity along y-axis. Then it computes omega, which is now given by dydt/r = (dH/dp_y)/r.
  */
 static REAL8
 XLALSimIMRSpinAlignedEOBCalcOmega(

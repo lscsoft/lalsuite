@@ -18,21 +18,21 @@
 */
 
 /**
-\author Cokelaer, T. and Vallisneri, M.
-
-\brief Create a waveform based on SpinTaylor model (LALSTPNWaveform),
-switching to LALSTPNWaveform2 if anything is given as argument.
-
-Outputs a file with three columns corresponding to time (in seconds),
-\f$h_+\f$, and \f$h_\times\f$. The outputfile is <tt>wave1.dat</tt> in the
-current directory. [This is an obsolete test program that should
-be refactored with access to the new frameless LALSTPNWaveform.]
-
-\heading{Usage}
-
-<tt>LALSTPNWaveformTest [switch]</tt>
-
-*/
+ * \author Cokelaer, T. and Vallisneri, M.
+ *
+ * \brief Create a waveform based on SpinTaylor model (LALSTPNWaveform),
+ * switching to LALSTPNWaveform2 if anything is given as argument.
+ *
+ * Outputs a file with three columns corresponding to time (in seconds),
+ * \f$h_+\f$, and \f$h_\times\f$. The outputfile is <tt>wave1.dat</tt> in the
+ * current directory. [This is an obsolete test program that should
+ * be refactored with access to the new frameless LALSTPNWaveform.]
+ *
+ * \heading{Usage}
+ *
+ * <tt>LALSTPNWaveformTest [switch]</tt>
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

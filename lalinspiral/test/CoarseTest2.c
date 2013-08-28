@@ -18,30 +18,30 @@
 */
 
 /**
-\author Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T.
-\file
-\ingroup LALInspiralBank_h
-
-\brief Test code for the \c bank modules.
-
-\heading{Usage}
-\code
-CoarseTest2
-\endcode
-
-\heading{Description}
-
-This test code gives an example of how to generate a template bank and
-generates vertices of the ambiguity 'rectangle' around each lattice point
-suitable for plotting with xmgr or xgrace. This code generates the template
-bank for physical template families such as EOB, TaylorT1, ... save the
-coordinates into a file called CoarseTest2.out and then creates a rectangle
-for each coordinates which is inscribed into the ambiguity ellipse function.
-It can be extended to the BCV case easily by replacing approximant (BCV) and
-parameter space (Psi0andPsi3). The code has to be changed to use psi0/psi3
-inteasd of tau0/tau3 though.
-
-*/
+ * \author Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T.
+ * \file
+ * \ingroup LALInspiralBank_h
+ *
+ * \brief Test code for the \c bank modules.
+ *
+ * \heading{Usage}
+ * \code
+ * CoarseTest2
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * This test code gives an example of how to generate a template bank and
+ * generates vertices of the ambiguity 'rectangle' around each lattice point
+ * suitable for plotting with xmgr or xgrace. This code generates the template
+ * bank for physical template families such as EOB, TaylorT1, ... save the
+ * coordinates into a file called CoarseTest2.out and then creates a rectangle
+ * for each coordinates which is inscribed into the ambiguity ellipse function.
+ * It can be extended to the BCV case easily by replacing approximant (BCV) and
+ * parameter space (Psi0andPsi3). The code has to be changed to use psi0/psi3
+ * inteasd of tau0/tau3 though.
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 

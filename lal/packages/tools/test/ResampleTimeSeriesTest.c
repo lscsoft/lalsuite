@@ -17,7 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-/** \ingroup ResampleTimeSeries_h
+/**
+ * \ingroup ResampleTimeSeries_h
  * \file
  * \author Brown, D. A.
  *
@@ -27,15 +28,15 @@
  * \code
  * Usage: ./ResampleTimeSeriesTest [options] defaults shown in brackets
  * Options:
- *   -h         print this message
- *   -d level   set lalDebugLevel to level
- *   -v         verbose: print extra information
- *   -n points  number of points in the raw time series (1048576)
- *   -i freq    sample rate of input time series (16384)
- *   -o freq    sample rate of output time series (4096)
- *   -f freq    frequency of sine wave to inject as input (1000.0)
- *   -r type    type of filter to use in resampling (ldas)
- *              [ldas|butterworth]
+ * -h         print this message
+ * -d level   set lalDebugLevel to level
+ * -v         verbose: print extra information
+ * -n points  number of points in the raw time series (1048576)
+ * -i freq    sample rate of input time series (16384)
+ * -o freq    sample rate of output time series (4096)
+ * -f freq    frequency of sine wave to inject as input (1000.0)
+ * -r type    type of filter to use in resampling (ldas)
+ * [ldas|butterworth]
  * \endcode
  *
  * \heading{Description}
@@ -58,7 +59,6 @@
  * phase shift of the output. FIXME the legend in the right figure is wrong.
  * It should say 100 Hz, not 10 Hz the output.
  *
- *
  * \image html  resamp_figs2.png "Fig. [f_resamp2]"
  * \image latex resamp_figs2.pdf ""
  *
@@ -77,7 +77,7 @@
  * signal is very close to the output Nyquist frequency. Care should be taken
  * to downsample to a suitable rate to avoid this type of attenuation.
  *
-*/
+ */
 
 /** \cond DONT_DOXYGEN */
 

@@ -1,36 +1,36 @@
 /**
-\addtogroup pkg_stochastic
-@{
-
-\defgroup StochasticCrossCorrelation_h Header StochasticCrossCorrelation.h
-
-\defgroup AstroOmega_h Header AstroOmega.h
-
-\defgroup SimulateSB_h Header SimulateSB.h
-
-\defgroup SimulatePopcorn_h Header SimulatePopcorn.h
-
-\defgroup StochasticMC_h Header StochasticMC.h
-
-@}
-*/
+ * \addtogroup pkg_stochastic
+ * @{
+ *
+ * \defgroup StochasticCrossCorrelation_h Header StochasticCrossCorrelation.h
+ *
+ * \defgroup AstroOmega_h Header AstroOmega.h
+ *
+ * \defgroup SimulateSB_h Header SimulateSB.h
+ *
+ * \defgroup SimulatePopcorn_h Header SimulatePopcorn.h
+ *
+ * \defgroup StochasticMC_h Header StochasticMC.h
+ *
+ * @}
+ */
 
 /**
-\addtogroup StochasticCrossCorrelation_h
-@{
- \defgroup StochasticCrossCorrelation_c Module StochasticCrossCorrelation.c
-
-\defgroup ZeroPadAndFFT_c Module ZeroPadAndFFT.c
-
-\defgroup StochasticOptimalFilter_c Module StochasticOptimalFilter.c
-
-\defgroup StochasticOptimalFilterNormalization_c Module StochasticOptimalFilterNormalization.c
-
-\defgroup StochasticInverseNoise_c Module StochasticInverseNoise.c
-
-\defgroup StochasticOmegaGW_c Module StochasticOmegaGW.c
-
-\defgroup OverlapReductionFunction_c Module OverlapReductionFunction.c
-
-@}
-*/
+ * \addtogroup StochasticCrossCorrelation_h
+ * @{
+ * \defgroup StochasticCrossCorrelation_c Module StochasticCrossCorrelation.c
+ *
+ * \defgroup ZeroPadAndFFT_c Module ZeroPadAndFFT.c
+ *
+ * \defgroup StochasticOptimalFilter_c Module StochasticOptimalFilter.c
+ *
+ * \defgroup StochasticOptimalFilterNormalization_c Module StochasticOptimalFilterNormalization.c
+ *
+ * \defgroup StochasticInverseNoise_c Module StochasticInverseNoise.c
+ *
+ * \defgroup StochasticOmegaGW_c Module StochasticOmegaGW.c
+ *
+ * \defgroup OverlapReductionFunction_c Module OverlapReductionFunction.c
+ *
+ * @}
+ */

@@ -18,114 +18,110 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup Inject_h
-
-\brief Injects inspiral signals into detector noise.
-
-\heading{Usage}
-\code
-BasicInjectTest [-s sourcefile] [-r respfile] [-o outfile] [-e seed]
-                [-i infile | -n sec nsec npt dt sigma] [-d debuglevel]
-\endcode
-
-\heading{Description}
-
-This program generates inspiral waveforms with specified parameters,
-and injects them into ADC data.  The following option flags are
-accepted:
-<ul>
-<li>[<tt>-s</tt>] Reads source information from the file
-\c sourcefile.  If absent, it injects a single
-1.4\f$M_\odot\f$--1.4\f$M_\odot\f$ inspiral, optimally oriented, at a distance
-of \f$10^{-5}\f$ solar Schwarzschild radii (\f$0.00002GM_\odot/c^2\f$).</li>
-<li>[<tt>-r</tt>] Reads a detector response function from the file
-\c respfile.  If absent, it generates raw dimensionless strain.</li>
-<li>[<tt>-i</tt>] Reads ADC input from the file \c infile.  This
-takes precedence over the <tt>-n</tt> option, below.</li>
-<li>[<tt>-n</tt>] Generates random ADC input data starting from a GPS
-epoch of \c sec seconds plus \c nsec nanoseconds, with
-\c npt data sampled at \c dt second intervals, with white
-Gaussian noise having standard deviation \c sigma.  If neither
-<tt>-i</tt> (above) nor <tt>-n</tt> are given, the program assumes
-<tt>-n 0 0 1048576 9.765625e-4 0.0</tt>.</li>
-<li>[<tt>-o</tt>] Writes injected ADC data to the file
-\c outfile.  If absent, the routines are exercised, but no output
-is written.</li>
-<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If not
-specified, level 0 is assumed.</li>
-<li>[<tt>-r</tt>] Sets the random number seed to \c randomseed.
-If not specified, the seed is gerenated from the current time.</li>
-</ul>
-
-\heading{Format for \c sourcefile:} The source file consists
-of any number of lines of data, each specifying a chirp waveform.
-Each line must begin with a character code (\c CHAR equal to one
-of <tt>'i'</tt>, <tt>'f'</tt>, or <tt>'c'</tt>), followed by 6
-whitespace-delimited numerical fields: the GPS epoch of the chirp
-(\c INT8 nanoseconds), the two binary masses (\c REAL4
-\f$M_\odot\f$), the distance to the source (\c REAL4 kpc), and the
-source's inclination and phase at coalescence (\c REAL4 degrees).
-The character codes have the following meanings:
-<ul>
-<li>[<tt>'i'</tt>] The epoch represents the GPS time of the start of
-the chirp waveform.</li>
-<li>[<tt>'f'</tt>] The epoch represents the GPS time of the end of
-the chirp waveform.</li>
-<li>[<tt>'c'</tt>] The epoch represents the GPS time when the
-binaries would coalesce in the point-mass approximation.</li>
-</ul>
-Thus a typical input line for two \f$1.4M_\odot\f$ objects at 11\,000\,kpc
-inclined \f$30^\circ\f$ with an initial phase of \f$45^\circ\f$, coalescing at
-315\,187\,245 GPS seconds, will have the following line in the input
-file:
-\code
-c 315187245000000000 1.4 1.4 11000.0 30.0 45.0
-\endcode
-
-\heading{Format for \c respfile:} The response function \f$R(f)\f$
-gives the real and imaginary components of the transformation
-\e from ADC output \f$o\f$ \e to tidal strain \f$h\f$ via
-\f$\tilde{h}(f)=R(f)\tilde{o}(f)\f$.  It is inverted internally to give
-the detector <em>transfer function</em> \f$T(f)=1/R(f)\f$.  The format
-\c respfile is a header specifying the GPS epoch \f$t_0\f$ at which
-the response was taken (\c INT8 nanoseconds), the lowest frequency
-\f$f_0\f$ at which the response is given (\c REAL8 Hz), and the
-frequency sampling interval \f$\Delta f\f$ (\c REAL8 Hz):
-
-
-<table><tr><td>
-<tt># epoch = </tt>\f$t_0\f$</td></tr>
-<tr><td><tt># f0 = </tt>\f$f_0\f$</td></tr>
-<tr><td><tt># deltaF = </tt>\f$\Delta f\f$
-</td></tr></table>
-
-
-followed by two columns of \c REAL4 data giving the real
-and imaginary components of \f$R(f_0+k\Delta f)\f$.
-
-\heading{Format for \c infile:} The input file consists of a
-header giving the GPS epoch \f$t_0\f$ of the first time sample
-(\c INT8 nanoseconds) and the sampling interval \f$\Delta t\f$
-(\c REAL8 seconds):
-
-
-<table><tr><td>
-<tt># epoch = </tt>\f$t_0\f$</td></tr>
-<tr><td><tt># deltaT = </tt>\f$\Delta t\f$
-</td></tr></table>
-
-
-followed by a single column of ADC data.  The ADC data
-should be integers in the range of an \c INT2 (from \f$-32768\f$ to
-\f$32767\f$), but is assumed to be written in floating-point notation in
-accordance with frame format.
-
-The output file \c outfile containing injected data is written in
-the same format.
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup Inject_h
+ *
+ * \brief Injects inspiral signals into detector noise.
+ *
+ * \heading{Usage}
+ * \code
+ * BasicInjectTest [-s sourcefile] [-r respfile] [-o outfile] [-e seed]
+ * [-i infile | -n sec nsec npt dt sigma] [-d debuglevel]
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * This program generates inspiral waveforms with specified parameters,
+ * and injects them into ADC data.  The following option flags are
+ * accepted:
+ * <ul>
+ * <li>[<tt>-s</tt>] Reads source information from the file
+ * \c sourcefile.  If absent, it injects a single
+ * 1.4\f$M_\odot\f$--1.4\f$M_\odot\f$ inspiral, optimally oriented, at a distance
+ * of \f$10^{-5}\f$ solar Schwarzschild radii (\f$0.00002GM_\odot/c^2\f$).</li>
+ * <li>[<tt>-r</tt>] Reads a detector response function from the file
+ * \c respfile.  If absent, it generates raw dimensionless strain.</li>
+ * <li>[<tt>-i</tt>] Reads ADC input from the file \c infile.  This
+ * takes precedence over the <tt>-n</tt> option, below.</li>
+ * <li>[<tt>-n</tt>] Generates random ADC input data starting from a GPS
+ * epoch of \c sec seconds plus \c nsec nanoseconds, with
+ * \c npt data sampled at \c dt second intervals, with white
+ * Gaussian noise having standard deviation \c sigma.  If neither
+ * <tt>-i</tt> (above) nor <tt>-n</tt> are given, the program assumes
+ * <tt>-n 0 0 1048576 9.765625e-4 0.0</tt>.</li>
+ * <li>[<tt>-o</tt>] Writes injected ADC data to the file
+ * \c outfile.  If absent, the routines are exercised, but no output
+ * is written.</li>
+ * <li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If not
+ * specified, level 0 is assumed.</li>
+ * <li>[<tt>-r</tt>] Sets the random number seed to \c randomseed.
+ * If not specified, the seed is gerenated from the current time.</li>
+ * </ul>
+ *
+ * \heading{Format for \c sourcefile:} The source file consists
+ * of any number of lines of data, each specifying a chirp waveform.
+ * Each line must begin with a character code (\c CHAR equal to one
+ * of <tt>'i'</tt>, <tt>'f'</tt>, or <tt>'c'</tt>), followed by 6
+ * whitespace-delimited numerical fields: the GPS epoch of the chirp
+ * (\c INT8 nanoseconds), the two binary masses (\c REAL4
+ * \f$M_\odot\f$), the distance to the source (\c REAL4 kpc), and the
+ * source's inclination and phase at coalescence (\c REAL4 degrees).
+ * The character codes have the following meanings:
+ * <ul>
+ * <li>[<tt>'i'</tt>] The epoch represents the GPS time of the start of
+ * the chirp waveform.</li>
+ * <li>[<tt>'f'</tt>] The epoch represents the GPS time of the end of
+ * the chirp waveform.</li>
+ * <li>[<tt>'c'</tt>] The epoch represents the GPS time when the
+ * binaries would coalesce in the point-mass approximation.</li>
+ * </ul>
+ * Thus a typical input line for two \f$1.4M_\odot\f$ objects at 11\,000\,kpc
+ * inclined \f$30^\circ\f$ with an initial phase of \f$45^\circ\f$, coalescing at
+ * 315\,187\,245 GPS seconds, will have the following line in the input
+ * file:
+ * \code
+ * c 315187245000000000 1.4 1.4 11000.0 30.0 45.0
+ * \endcode
+ *
+ * \heading{Format for \c respfile:} The response function \f$R(f)\f$
+ * gives the real and imaginary components of the transformation
+ * \e from ADC output \f$o\f$ \e to tidal strain \f$h\f$ via
+ * \f$\tilde{h}(f)=R(f)\tilde{o}(f)\f$.  It is inverted internally to give
+ * the detector <em>transfer function</em> \f$T(f)=1/R(f)\f$.  The format
+ * \c respfile is a header specifying the GPS epoch \f$t_0\f$ at which
+ * the response was taken (\c INT8 nanoseconds), the lowest frequency
+ * \f$f_0\f$ at which the response is given (\c REAL8 Hz), and the
+ * frequency sampling interval \f$\Delta f\f$ (\c REAL8 Hz):
+ *
+ * <table><tr><td>
+ * <tt># epoch = </tt>\f$t_0\f$</td></tr>
+ * <tr><td><tt># f0 = </tt>\f$f_0\f$</td></tr>
+ * <tr><td><tt># deltaF = </tt>\f$\Delta f\f$
+ * </td></tr></table>
+ *
+ * followed by two columns of \c REAL4 data giving the real
+ * and imaginary components of \f$R(f_0+k\Delta f)\f$.
+ *
+ * \heading{Format for \c infile:} The input file consists of a
+ * header giving the GPS epoch \f$t_0\f$ of the first time sample
+ * (\c INT8 nanoseconds) and the sampling interval \f$\Delta t\f$
+ * (\c REAL8 seconds):
+ *
+ * <table><tr><td>
+ * <tt># epoch = </tt>\f$t_0\f$</td></tr>
+ * <tr><td><tt># deltaT = </tt>\f$\Delta t\f$
+ * </td></tr></table>
+ *
+ * followed by a single column of ADC data.  The ADC data
+ * should be integers in the range of an \c INT2 (from \f$-32768\f$ to
+ * \f$32767\f$), but is assumed to be written in floating-point notation in
+ * accordance with frame format.
+ *
+ * The output file \c outfile containing injected data is written in
+ * the same format.
+ *
+ */
 
 /** \name Error Codes */ /*@{*/
 #define BASICINJECTTESTC_ENORM  0	/**< Normal exit */

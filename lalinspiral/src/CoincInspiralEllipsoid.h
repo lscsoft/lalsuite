@@ -36,16 +36,16 @@ extern "C" {
  * \defgroup CoincInspiralEllipsoid_h Header CoincInspiralEllipsoid.h
  * \ingroup pkg_CBC_NEW
  * \author Robinson, C. A.
-
-\brief Provides function definitions for performing inspiral coincidence analysis
-using error ellipsoids.
-
-\heading{Synopsis}
-\code
-#include <lal/CoincInspiralEllipsoid.h>
-\endcode
-
-*/
+ *
+ * \brief Provides function definitions for performing inspiral coincidence analysis
+ * using error ellipsoids.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/CoincInspiralEllipsoid.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 #include    <math.h>
@@ -64,10 +64,11 @@ using error ellipsoids.
 #include    <gsl/gsl_blas.h>
 #include    <gsl/gsl_linalg.h>
 
-/** The \c TriggerErrorList is a linked list used within e-thinca. It
-contains pointers to the \c SnglInspiralTable for a given trigger,
-and its associated error matrix and position vector.
-*/
+/**
+ * The \c TriggerErrorList is a linked list used within e-thinca. It
+ * contains pointers to the \c SnglInspiralTable for a given trigger,
+ * and its associated error matrix and position vector.
+ */
 typedef struct tagTriggerErrorList
 {
   SnglInspiralTable          *trigger;

@@ -2,76 +2,78 @@
 
 /*---------- define the inject package ---------- */
 
-/** \addtogroup pkg_inject
-@{
-\defgroup Inject_h 		Header Inject.h
-\defgroup SkyCoordinates_h 	Header SkyCoordinates.h
-\defgroup SimulateCoherentGW_h 	Header SimulateCoherentGW.h
+/**
+ * \addtogroup pkg_inject
+ * @{
+ * \defgroup Inject_h 		Header Inject.h
+ * \defgroup SkyCoordinates_h 	Header SkyCoordinates.h
+ * \defgroup SimulateCoherentGW_h 	Header SimulateCoherentGW.h
+ *
+ * \defgroup SimulateSB_h 		Header SimulateSB.h
+ * \defgroup SimulatePopcorn_h 	Header SimulatePopcorn.h
+ *
+ * \defgroup GenerateBurst_h 	Header GenerateBurst.h
+ *
+ * \defgroup SimulateInspiral_h 	Header SimulateInspiral.h
+ * \defgroup GenerateInspiral_h 	Header GenerateInspiral.h
+ * \defgroup GeneratePPNInspiral_h Header GeneratePPNInspiral.h
+ * \defgroup GenerateTaylorCW_h 	Header GenerateTaylorCW.h
+ * \defgroup GenerateSpinOrbitCW_h Header GenerateSpinOrbitCW.h
+ * \defgroup GenerateRing_h	Header GenerateRing.h
+ * \defgroup GenerateInspRing_h	Header GenerateInspRing.h
+ * \defgroup InspiralInjectionParams_h Header InspiralInjectionParams.h
+ * \defgroup NRWaveInject_h	Header NRWaveInject.h
+ *
+ * \defgroup GeneratePulsarSignal_h Header GeneratePulsarSignal.h
+ * @}
+ */
 
-\defgroup SimulateSB_h 		Header SimulateSB.h
-\defgroup SimulatePopcorn_h 	Header SimulatePopcorn.h
 
-\defgroup GenerateBurst_h 	Header GenerateBurst.h
-
-\defgroup SimulateInspiral_h 	Header SimulateInspiral.h
-\defgroup GenerateInspiral_h 	Header GenerateInspiral.h
-\defgroup GeneratePPNInspiral_h Header GeneratePPNInspiral.h
-\defgroup GenerateTaylorCW_h 	Header GenerateTaylorCW.h
-\defgroup GenerateSpinOrbitCW_h Header GenerateSpinOrbitCW.h
-\defgroup GenerateRing_h	Header GenerateRing.h
-\defgroup GenerateInspRing_h	Header GenerateInspRing.h
-\defgroup InspiralInjectionParams_h Header InspiralInjectionParams.h
-\defgroup NRWaveInject_h	Header NRWaveInject.h
-
-\defgroup GeneratePulsarSignal_h Header GeneratePulsarSignal.h
-@}
-*/
-
-
-/** \addtogroup pkg_inject
-
-This package provides routines to simulate gravitational waves and
-their effect on a detector.  Conceptually, this can be divided into
-three stages:
-<ol>
-<li> Generating the gravitational waveform as produced by the source.
-The routines currently available are:
-
-  <ul>
-    <li> \ref GeneratePPNInspiral_h : Provides routines to generate
-  parametrized post-Newtonian inspiral waveforms up to 5/2 order.</li>
-    <li> \ref GenerateTaylorCW_h : Provides a routine to generate
-  continuous quasiperiodic waveforms with Taylor-parametrized frequency
-  evolution.</li>
-    <li> \ref GenerateSpinOrbitCW_h :  Provides a routine to generate
-  Taylor-parameterized waveforms, as above, with additional binary orbit
-  Doppler modulations.</li>
-  </ul>
-
-<li> Simulating a detector's theoretical response to an incoming
-gravitational wave.  The routines currently available are:
-
-   - \ref SimulateCoherentGW_h : routines to simulate the
-   detector response to a coherent wave with slowly-varying frequency and
-   amplitude.
-   - \ref SimulateSB_h : Provides routines to simulate the
-   response of a pair of detectors to a stochastic gravitational-wave
-   background.
-
- <li> Injecting the detector's theoretical response with time into a
- (noisy) datastream.  This is done by a single set of generic routines
- in inject.h.
-</ol>
-
-As the package evolves, new source types may be added under item 1,
-and other (perhaps more generic) ways of simulating the detector
-response may be added under item 2.  Item 3, however, is unlikely to
-need much updating.
-
-In addition to these basic divisions, the package may include routines
-that perform other useful tasks in signal injection or source
-simulation, such as combining signal generation, detector simulation,
-and injection into a single function call, or modelling astrophysical
-distributions of sources.
-
-*/
+/**
+ * \addtogroup pkg_inject
+ *
+ * This package provides routines to simulate gravitational waves and
+ * their effect on a detector.  Conceptually, this can be divided into
+ * three stages:
+ * <ol>
+ * <li> Generating the gravitational waveform as produced by the source.
+ * The routines currently available are:
+ *
+ * <ul>
+ * <li> \ref GeneratePPNInspiral_h : Provides routines to generate
+ * parametrized post-Newtonian inspiral waveforms up to 5/2 order.</li>
+ * <li> \ref GenerateTaylorCW_h : Provides a routine to generate
+ * continuous quasiperiodic waveforms with Taylor-parametrized frequency
+ * evolution.</li>
+ * <li> \ref GenerateSpinOrbitCW_h :  Provides a routine to generate
+ * Taylor-parameterized waveforms, as above, with additional binary orbit
+ * Doppler modulations.</li>
+ * </ul>
+ *
+ * <li> Simulating a detector's theoretical response to an incoming
+ * gravitational wave.  The routines currently available are:
+ *
+ * - \ref SimulateCoherentGW_h : routines to simulate the
+ * detector response to a coherent wave with slowly-varying frequency and
+ * amplitude.
+ * - \ref SimulateSB_h : Provides routines to simulate the
+ * response of a pair of detectors to a stochastic gravitational-wave
+ * background.
+ *
+ * <li> Injecting the detector's theoretical response with time into a
+ * (noisy) datastream.  This is done by a single set of generic routines
+ * in inject.h.
+ * </ol>
+ *
+ * As the package evolves, new source types may be added under item 1,
+ * and other (perhaps more generic) ways of simulating the detector
+ * response may be added under item 2.  Item 3, however, is unlikely to
+ * need much updating.
+ *
+ * In addition to these basic divisions, the package may include routines
+ * that perform other useful tasks in signal injection or source
+ * simulation, such as combining signal generation, detector simulation,
+ * and injection into a single function call, or modelling astrophysical
+ * distributions of sources.
+ *
+ */

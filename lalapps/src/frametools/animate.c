@@ -19,8 +19,8 @@
 
 /**
  * \author Jolien D. E. Creighton
-\file
-*/
+ * \file
+ */
 
 #include <stdio.h>
 #include <unistd.h>

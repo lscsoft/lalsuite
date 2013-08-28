@@ -45,18 +45,18 @@ extern "C" {
 #endif
 
 /**
-\addtogroup RngMedBias_h
-\author Krishnan, B., Itoh, Y.
-
-\brief Routine for finding bias in median for exponential distribution
-
-\heading{Synopsis}
-
-\code
-#include <lal/RngMedBias.h>
-\endcode
-
-*/
+ * \addtogroup RngMedBias_h
+ * \author Krishnan, B., Itoh, Y.
+ *
+ * \brief Routine for finding bias in median for exponential distribution
+ *
+ * \heading{Synopsis}
+ *
+ * \code
+ * #include <lal/RngMedBias.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

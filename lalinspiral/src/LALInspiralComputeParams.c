@@ -19,7 +19,8 @@
 
 #include <lal/LALInspiralBank.h>
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief This function takes as input \f$\tau_{0}\f$, \f$\tau_{3}\f$ and \f$f_a\f$ (the lower frequency of the detectors
  * sensitivity), it then calculates \f$m\f$ (the total mass of the binary), \f$\eta\f$ (the
  * symmetric mass ratio) and the individual mass of the compact objects.

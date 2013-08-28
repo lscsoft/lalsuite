@@ -47,38 +47,37 @@
  * \file
  * \ingroup LUT_h
  * \brief Function for tiling  the sky-patch (on the projected plane).
-
-\heading{Description}
-
-This  is a \c provisionalfinal now ? routine for tiling a  sky-pacth
-on the projected plane.
-
-Patch size specified by user
-
-== doc needs to be updated ==
-
-The reason to call it  \c provisional  is because
-the size of the patch depends on the grid used in the
-demodulation stage. Neighbour sky-patches should not be separated
-nor overlapping too much.
-Here for setting the patch size, we  consider only \f$v_{epicycle}\f$,
-the frequency \c f0 and  \c deltaF so that the ` longitudinal'  size
-of the patch is given by <tt>side == deltaF/f0 * c/v_epi</tt>.
-By taking \c f0 to be the maximun frequency considered in that step,
-the patch-size is valid for a whole frequency range.\   \
-
-
-Given input parameters,  the function LALHOUGHPatchGrid() provides
-patch information.
-
-The input <tt>*in1</tt> is a structure of type  \c HOUGHResolutionPar containing
-some resolution parameters such as:
-<tt>in1->f0</tt> a frequency, <tt>in1->deltaF</tt> the frequency resolution, and
-<tt>in1->minWidthRatio</tt>  the ratio between the minimum  annulus width
-for this search and the minimun  annulus width for  1 year integration time.
-This value should be in the interval  [1.0, 25.0].
-
-*/
+ *
+ * \heading{Description}
+ *
+ * This  is a \c provisionalfinal now ? routine for tiling a  sky-pacth
+ * on the projected plane.
+ *
+ * Patch size specified by user
+ *
+ * == doc needs to be updated ==
+ *
+ * The reason to call it  \c provisional  is because
+ * the size of the patch depends on the grid used in the
+ * demodulation stage. Neighbour sky-patches should not be separated
+ * nor overlapping too much.
+ * Here for setting the patch size, we  consider only \f$v_{epicycle}\f$,
+ * the frequency \c f0 and  \c deltaF so that the ` longitudinal'  size
+ * of the patch is given by <tt>side == deltaF/f0 * c/v_epi</tt>.
+ * By taking \c f0 to be the maximun frequency considered in that step,
+ * the patch-size is valid for a whole frequency range.\   \
+ *
+ * Given input parameters,  the function LALHOUGHPatchGrid() provides
+ * patch information.
+ *
+ * The input <tt>*in1</tt> is a structure of type  \c HOUGHResolutionPar containing
+ * some resolution parameters such as:
+ * <tt>in1->f0</tt> a frequency, <tt>in1->deltaF</tt> the frequency resolution, and
+ * <tt>in1->minWidthRatio</tt>  the ratio between the minimum  annulus width
+ * for this search and the minimun  annulus width for  1 year integration time.
+ * This value should be in the interval  [1.0, 25.0].
+ *
+ */
 
 
 #include <lal/LUT.h>

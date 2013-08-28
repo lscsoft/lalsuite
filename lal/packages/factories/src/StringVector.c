@@ -36,7 +36,8 @@ const LALStringVector empty_LALStringVector;
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Append the given string to the string-vector (XLAL interface), return
+/**
+ * Append the given string to the string-vector (XLAL interface), return
  * pointer to the resulting string-vector, or NULL on error.
  *
  * \note It is allowed to pass NULL as the input string-vector 'vect', which corresponds
@@ -89,7 +90,8 @@ XLALAppendString2Vector (LALStringVector *vect,		/**< input string-vector to app
 
 
 
-/** Create a StringVector from the list of strings passed as arguments
+/**
+ * Create a StringVector from the list of strings passed as arguments
  * \note All arguments MUST be CHAR* strings.
  * The last argument MUST be NULL, as C cannot deduce the number of arguments
  * otherwise.
@@ -197,7 +199,8 @@ static int StringCompare (const void *p1, const void *p2)
   return strcmp ( * ( char * const *) p1, * ( char * const *) p2 );
 }
 
-/** Sort string-vector alphabetically *in place*
+/**
+ * Sort string-vector alphabetically *in place*
  */
 int
 XLALSortStringVector (LALStringVector *strings)
@@ -215,7 +218,8 @@ XLALSortStringVector (LALStringVector *strings)
 
 
 
-/** Parse a list of comma-separated values (CSV) into a StringVector
+/**
+ * Parse a list of comma-separated values (CSV) into a StringVector
  * \note surrounding whitespace is removed from the 'values'.
  */
 LALStringVector *
@@ -274,7 +278,8 @@ XLALParseCSV2StringVector ( const CHAR *CSVlist )
 } /* XLALParseCSV2StringVector() */
 
 
-/** Copy (and allocate) string from 'start' with length 'len', removing
+/**
+ * Copy (and allocate) string from 'start' with length 'len', removing
  * all starting- and trailing blanks!
  */
 char *
@@ -310,7 +315,8 @@ XLALDeblankString ( const CHAR *start, UINT4 len )
 
 } /* XLALDeblankString() */
 
-/** Search for string 'needle' in string-vector 'haystack', return index to
+/**
+ * Search for string 'needle' in string-vector 'haystack', return index to
  * first matching vector element if found, -1 outherwise.
  *
  * Note: function allows haystack=NULL input, in which case -1 (=not found) will be returned.

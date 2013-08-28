@@ -17,7 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
+/**
+ * \file
  * \brief Set of routines that have been used to calculate outliers and clusters of outliers in the data.
  * \author  M. A. Papa - AEI August 2003
  * Revision: Y. Itoh - AEI December 2003

@@ -27,25 +27,25 @@
 
 
 /**
-\author Sathyaprakash, B. S.
-\ingroup LALNoiseModels_h
-\brief Module to calculate the noise power spectral density for the initial LIGO detector.
-
-\heading{Description}
-
-This function module takes as an input a frequency \f$f\f$ in Hz, and it
-calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
-for that frequency. The noise PSD is based on data provided by
-Kip Thorne, and the fit by B.S.Sathyaprakash
-
-\f{equation}{
-   S_h(f) = S_0\left\{  \left(\frac{f}{f_0}\right)^{-4.14} - 5\left(\frac{f_0}{f}\right)^2 + 111  \left(\frac{1. -
-   \frac{f}{f_0}^2 + 0.5  \frac{f}{f_0}^4}{1. + 0.5\frac{f}{f_0}^2} \right)\right\};
-\f}
-where, \f$f_0=215\f$Hz
-The returned value is scaled up by \f$S_0 = 10^{49}.\f$
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \ingroup LALNoiseModels_h
+ * \brief Module to calculate the noise power spectral density for the initial LIGO detector.
+ *
+ * \heading{Description}
+ *
+ * This function module takes as an input a frequency \f$f\f$ in Hz, and it
+ * calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
+ * for that frequency. The noise PSD is based on data provided by
+ * Kip Thorne, and the fit by B.S.Sathyaprakash
+ *
+ * \f{equation}{
+ * S_h(f) = S_0\left\{  \left(\frac{f}{f_0}\right)^{-4.14} - 5\left(\frac{f_0}{f}\right)^2 + 111  \left(\frac{1. -
+ * \frac{f}{f_0}^2 + 0.5  \frac{f}{f_0}^4}{1. + 0.5\frac{f}{f_0}^2} \right)\right\};
+ * \f}
+ * where, \f$f_0=215\f$Hz
+ * The returned value is scaled up by \f$S_0 = 10^{49}.\f$
+ *
+ */
 void
 LALAdvLIGOPsd (LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 {

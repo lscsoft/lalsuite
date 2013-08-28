@@ -36,62 +36,62 @@
 #include "CheckStatus.h"
 
 /**
-\author Tibbits, M. M.
-\file
-\ingroup LALMoment_h
-
-\brief A program to test LALDMoment().
-- Note only the double precision is tested because both are derived from the same code.
-
-\heading{Usage}
-
-\code
-./LALMomentTest [options]
-Options:
-  -h             print usage message
-  -q             quiet: run silently
-  -v             verbose: print extra information
-\endcode
-
-This program tests the function
-LALDMoment(), which calculates the moment
-of a given data set.
-
-First, it tests that the correct error codes
-are generated for the following error conditions (tests in
-\e italics are not performed if \c LAL_NDEBUG is set, as
-the corresponding checks in the code are made using the ASSERT macro):
-<ul>
-<li> <em>null pointer to output structure</em></li>
-<li> <em>null pointer to input structure</em></li>
-<li> <em>null pointer to data member of input structure</em></li>
-<li> <em>null pointer to data member of data member of input structure</em></li>
-<li> <em>zero length</em></li>
-</ul>
-
-It then verifies that the correct moment (value and units) is
-generated for each of the following simple test cases:
-<ol>
-<li> data set all same value, find moments 2-5.</li>
-<li> mixed data set, find moments 2-5.</li>
-<li> evenly distributed data set, find moments 2-5.</li>
-</ol>
-
-For each successful test
-(both of these valid data and the invalid ones described above), it
-prints "\c PASS" to standard output; if a test fails, it
-prints "\c FAIL".
-
-\heading{Uses}
-
-\code
-LALDMoment()
-LALSMoment()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Tibbits, M. M.
+ * \file
+ * \ingroup LALMoment_h
+ *
+ * \brief A program to test LALDMoment().
+ * - Note only the double precision is tested because both are derived from the same code.
+ *
+ * \heading{Usage}
+ *
+ * \code
+ * ./LALMomentTest [options]
+ * Options:
+ * -h             print usage message
+ * -q             quiet: run silently
+ * -v             verbose: print extra information
+ * \endcode
+ *
+ * This program tests the function
+ * LALDMoment(), which calculates the moment
+ * of a given data set.
+ *
+ * First, it tests that the correct error codes
+ * are generated for the following error conditions (tests in
+ * \e italics are not performed if \c LAL_NDEBUG is set, as
+ * the corresponding checks in the code are made using the ASSERT macro):
+ * <ul>
+ * <li> <em>null pointer to output structure</em></li>
+ * <li> <em>null pointer to input structure</em></li>
+ * <li> <em>null pointer to data member of input structure</em></li>
+ * <li> <em>null pointer to data member of data member of input structure</em></li>
+ * <li> <em>zero length</em></li>
+ * </ul>
+ *
+ * It then verifies that the correct moment (value and units) is
+ * generated for each of the following simple test cases:
+ * <ol>
+ * <li> data set all same value, find moments 2-5.</li>
+ * <li> mixed data set, find moments 2-5.</li>
+ * <li> evenly distributed data set, find moments 2-5.</li>
+ * </ol>
+ *
+ * For each successful test
+ * (both of these valid data and the invalid ones described above), it
+ * prints "\c PASS" to standard output; if a test fails, it
+ * prints "\c FAIL".
+ *
+ * \heading{Uses}
+ *
+ * \code
+ * LALDMoment()
+ * LALSMoment()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 /**\name Error Codes */ /*@{*/
 #define	LALMOMENTTESTC_ENOM	0	/**< Nominal exit */

@@ -166,8 +166,8 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
  * Input
  *
  * - h+ and hx time series for the injection with their epochs set to the
- *   start of those time series at the geocentre (for simplicity the epochs
- *   must be the same),
+ * start of those time series at the geocentre (for simplicity the epochs
+ * must be the same),
  *
  * - the right ascension and declination of the source in radians.
  *

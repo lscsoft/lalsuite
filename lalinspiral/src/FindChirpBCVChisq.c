@@ -27,35 +27,33 @@
  */
 
 /**
-
-\author Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
-\file
-\ingroup FindChirpBCV_h
-
-\brief Module to implement the \f$\chi^2\f$ veto for the BCV templates.
-
-\heading{Description}
-
-The function <tt>LALFindChirpBCVChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on an
-entire data segment using the corresponding algorithm for the BCV templates,
-described below. On exit the vector \c chisqVec contains the value
-\f$\chi^2(t_j)\f$ for the data segment.
-
-
-\heading{Algorithm}
-
-chisq algorithm here
-
-\heading{Uses}
-\code
-LALCreateReverseComplexFFTPlan()
-LALDestroyComplexFFTPlan()
-LALCCreateVector()
-LALCDestroyVector()
-LALCOMPLEX8VectorFFT()
-\endcode
-
-*/
+ * \author Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
+ * \file
+ * \ingroup FindChirpBCV_h
+ *
+ * \brief Module to implement the \f$\chi^2\f$ veto for the BCV templates.
+ *
+ * \heading{Description}
+ *
+ * The function <tt>LALFindChirpBCVChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on an
+ * entire data segment using the corresponding algorithm for the BCV templates,
+ * described below. On exit the vector \c chisqVec contains the value
+ * \f$\chi^2(t_j)\f$ for the data segment.
+ *
+ * \heading{Algorithm}
+ *
+ * chisq algorithm here
+ *
+ * \heading{Uses}
+ * \code
+ * LALCreateReverseComplexFFTPlan()
+ * LALDestroyComplexFFTPlan()
+ * LALCCreateVector()
+ * LALCDestroyVector()
+ * LALCOMPLEX8VectorFFT()
+ * \endcode
+ *
+ */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>

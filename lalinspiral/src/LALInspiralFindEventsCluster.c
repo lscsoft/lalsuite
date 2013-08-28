@@ -18,38 +18,38 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-
-\brief Module to find all `distinct' events in a given data set with an SNR
-larger than a pre-specified threshold. To select `distinct'
-events the code uses two thresholds; all events crossing a first
-\e lower threshold are clustered. If at least one of the points
-in the clustered event crosses a second \e higher threshold then the clustered
-event is a trigger and what is recorded is the loudest point in the
-clustered event and the number of points above the first threshold in
-the cluster.
-
-The module uses two orthogonal inspiral signals of specified parameters
-with a weight specified in a psd array. The code returns
-the number of events found, and for each event the snr,
-the bin number and the phase of the template at that bin.
-
-\heading{Prototypes}
-
-<tt>LALInspiralFindEventsCluster()</tt>
-
-\heading{Description}
-\heading{Algorithm}
-\heading{Uses}
-\code
-LALInspiralWave()
-LALREAL4VectorFFT()
-LALInspiralWaveNormaliseLSO()
-LALInspiralWaveCorrelate()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ *
+ * \brief Module to find all `distinct' events in a given data set with an SNR
+ * larger than a pre-specified threshold. To select `distinct'
+ * events the code uses two thresholds; all events crossing a first
+ * \e lower threshold are clustered. If at least one of the points
+ * in the clustered event crosses a second \e higher threshold then the clustered
+ * event is a trigger and what is recorded is the loudest point in the
+ * clustered event and the number of points above the first threshold in
+ * the cluster.
+ *
+ * The module uses two orthogonal inspiral signals of specified parameters
+ * with a weight specified in a psd array. The code returns
+ * the number of events found, and for each event the snr,
+ * the bin number and the phase of the template at that bin.
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>LALInspiralFindEventsCluster()</tt>
+ *
+ * \heading{Description}
+ * \heading{Algorithm}
+ * \heading{Uses}
+ * \code
+ * LALInspiralWave()
+ * LALREAL4VectorFFT()
+ * LALInspiralWaveNormaliseLSO()
+ * LALInspiralWaveCorrelate()
+ * \endcode
+ *
+ */
 #include <lal/LALNoiseModelsInspiral.h>
 
 void

@@ -25,13 +25,13 @@
 extern "C" {
 #endif
 
-	/**
-	 * Takes the string list of symbols returned by glibc's
-	 * backtrace_symbols() and prints its content with additional
-	 * information to the given file descriptor.
-	 *
-	 * @return: 0 if success, <0 if error, >0 if warning
-	 */
+/**
+ * Takes the string list of symbols returned by glibc's
+ * backtrace_symbols() and prints its content with additional
+ * information to the given file descriptor.
+ *
+ * @return: 0 if success, <0 if error, >0 if warning
+ */
 	int backtrace_symbols_fd_plus(const char *const *symbols, int size, int fd);
 
 #ifdef __cplusplus

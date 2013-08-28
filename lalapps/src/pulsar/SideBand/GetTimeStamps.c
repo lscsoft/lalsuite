@@ -18,15 +18,16 @@
  */
 
 /*********************************************************************************/
-/** \author C. Messenger
- * \file 
+/**
+ * \author C. Messenger
+ * \file
  * \ingroup pulsarApps
  * \brief
- * Generates posterior pdfs for a subset of the unknown orbital and nuisance 
+ * Generates posterior pdfs for a subset of the unknown orbital and nuisance
  * parameters given a set of candidate regions in frequency of demodulated Fourier
  * transform results.
- *                                                                          
- *********************************************************************************/
+ *
+ */
 
 /* System includes */
 #include <stdio.h>
@@ -80,7 +81,7 @@ void initUserVars (LALStatus *);
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
 
-/** 
+/**
  * MAIN function of SideBandMCMC code
  * Compute the posterior pdfs of the orbital and nuisance parameters of a binary signal
  * in Fstat form

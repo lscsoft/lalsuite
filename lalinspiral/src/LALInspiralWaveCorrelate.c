@@ -18,43 +18,43 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-
-\brief Module to compute the correlation of two data sets.
-
-Suitable only when REAL4VectorFFT is used (i.e. rfftwi_one of fftw).
-
-\c Notation: The input struct has two vectors: \c signal1
-and <tt>signal2.</tt> This module computes the correlation by
-shifting \c signal2 with respect to positive time-direction
-relative to \c signal1. Thus, if \c signal1
-denotes the detector output in which a signal, say <tt>signal2,</tt>
-is present at time \f$t_0,\f$ then the correlation peaks at \f$t_0.\f$
-
-\heading{Prototypes}
-
-<tt>LALInspiralWaveCorrelate()</tt>
-
-\heading{Description}
-The module expects two inputs <tt>signal1, signal2</tt>
-in the Fourier-domain, computes their correlation weighted by
-the noise \c psd,  and returns the correlated output in
-the time-domain. More precisely, given the Discrete
-Fourier transform (in the notation of {\em fftw})
-\f$H_k\f$ and \f$Q_k\f$ of vectors \f$h_k\f$ and \f$q_k,\f$
-\f$k=0,\ldots n-1,\f$ this module computes the inverse Fourier
-transform of the weighted correlation \f$C_k\f$ defined as
-\f[C_k = \frac{H_k Q_k + H_{n-k} Q_{n-k} }{S_k}, \ \
-C_{n-k} = \frac{H_k Q_{n-k} + H_{n-k} Q_k }{S_k}, \ \
-           k=1,\ldots,\frac{n}{2}-1.\f]
-
-\heading{Uses}
-\code
-LALREAL4VectorFFT()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ *
+ * \brief Module to compute the correlation of two data sets.
+ *
+ * Suitable only when REAL4VectorFFT is used (i.e. rfftwi_one of fftw).
+ *
+ * \c Notation: The input struct has two vectors: \c signal1
+ * and <tt>signal2.</tt> This module computes the correlation by
+ * shifting \c signal2 with respect to positive time-direction
+ * relative to \c signal1. Thus, if \c signal1
+ * denotes the detector output in which a signal, say <tt>signal2,</tt>
+ * is present at time \f$t_0,\f$ then the correlation peaks at \f$t_0.\f$
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>LALInspiralWaveCorrelate()</tt>
+ *
+ * \heading{Description}
+ * The module expects two inputs <tt>signal1, signal2</tt>
+ * in the Fourier-domain, computes their correlation weighted by
+ * the noise \c psd,  and returns the correlated output in
+ * the time-domain. More precisely, given the Discrete
+ * Fourier transform (in the notation of {\em fftw})
+ * \f$H_k\f$ and \f$Q_k\f$ of vectors \f$h_k\f$ and \f$q_k,\f$
+ * \f$k=0,\ldots n-1,\f$ this module computes the inverse Fourier
+ * transform of the weighted correlation \f$C_k\f$ defined as
+ * \f[C_k = \frac{H_k Q_k + H_{n-k} Q_{n-k} }{S_k}, \ \
+ * C_{n-k} = \frac{H_k Q_{n-k} + H_{n-k} Q_k }{S_k}, \ \
+ * k=1,\ldots,\frac{n}{2}-1.\f]
+ *
+ * \heading{Uses}
+ * \code
+ * LALREAL4VectorFFT()
+ * \endcode
+ *
+ */
 
 #include <lal/LALNoiseModelsInspiral.h>
 #include <lal/RealFFT.h>

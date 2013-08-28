@@ -43,7 +43,7 @@
  *
  * The following routine specifies the ODE for the Kepler problem:
  * \f[
- *   \frac{d}{dt}\{ x, y, v_x, v_y \} = \{ v_x, v_y, -x/r^3, -y/r^3 \}
+ * \frac{d}{dt}\{ x, y, v_x, v_y \} = \{ v_x, v_y, -x/r^3, -y/r^3 \}
  * \f]
  * \code
  * #include <math.h>
@@ -206,9 +206,7 @@
  * These routines are based on the methods presented in Numerical Recipes
  * [\ref ptvf1992].
  *
- *
- *
-*/
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

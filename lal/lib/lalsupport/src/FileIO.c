@@ -18,48 +18,48 @@
  */
 
 /**
-   \addtogroup FileIO_h
-
-   \heading{Obsolete LAL Prototypes}
-   \code
-   FILE *LALFopen( const char *path, const char *mode );
-   int LALFclose( FILE *stream );
-   \endcode
-
-   \heading{Description}
-
-   The routines <tt>LALFopen()</tt> and <tt>LALFclose()</tt> are macro defined to be
-   the same as the standard C routines <tt>LALFopen()</tt> and <tt>fclose()</tt>.  These
-   should only be used in test programs.
-
-   The routine <tt>LALOpenDataFile()</tt> is used to open a data file for reading.
-   This routine is also to be used in test programs only.  Unless the data file
-   is specified with an absolute path (beginning with a <tt>/</tt>), or a specific
-   path (beginning with a <tt>./</tt> or a <tt>../</tt>), the directory
-   that the file is in is obtained from the environment variable
-   \c LAL_DATA_PATH, which must be set at run-time.  (If the environment
-   variable is not set, the default path is <tt>.</tt> --- i.e., the current
-   directory.)
-
-   \c LAL_DATA_PATH should typically be set to
-   <tt>/usr/local/share/lal</tt>, or wherever LAL data is installed in your system
-   (which may be different if you used a <tt>--prefix</tt> argument when
-   configuring LAL), but when the test suite is run with <tt>make check</tt>, the
-   variable \c LAL_DATA_PATH is set to the current source directory.  If the
-   filename (including the directory path) is too long (more than 256
-   characters), <tt>LALOpenDataFile()</tt> returns \c NULL and sets
-   \c errno to \c ENAMETOOLONG.
-
-   \c LAL_DATA_PATH can be any colon-delimeted list of directories, which
-   are searched in order (just like the \c PATH environment variable).
-   An extra colon inserts the default data directory
-   (\f$\langle\f$prefix\f$\rangle\f$<tt>/share/lal</tt>) into the search path at that
-   point.  E.g., a leading/trailing colon will look for the default data
-   directory at the start/end of the list of directories.
-
-   It is strongly recommended that <tt>LALOpenDataFile()</tt> be used when writing test code.
-
-*/
+ * \addtogroup FileIO_h
+ *
+ * \heading{Obsolete LAL Prototypes}
+ * \code
+ * FILE *LALFopen( const char *path, const char *mode );
+ * int LALFclose( FILE *stream );
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * The routines <tt>LALFopen()</tt> and <tt>LALFclose()</tt> are macro defined to be
+ * the same as the standard C routines <tt>LALFopen()</tt> and <tt>fclose()</tt>.  These
+ * should only be used in test programs.
+ *
+ * The routine <tt>LALOpenDataFile()</tt> is used to open a data file for reading.
+ * This routine is also to be used in test programs only.  Unless the data file
+ * is specified with an absolute path (beginning with a <tt>/</tt>), or a specific
+ * path (beginning with a <tt>./</tt> or a <tt>../</tt>), the directory
+ * that the file is in is obtained from the environment variable
+ * \c LAL_DATA_PATH, which must be set at run-time.  (If the environment
+ * variable is not set, the default path is <tt>.</tt> --- i.e., the current
+ * directory.)
+ *
+ * \c LAL_DATA_PATH should typically be set to
+ * <tt>/usr/local/share/lal</tt>, or wherever LAL data is installed in your system
+ * (which may be different if you used a <tt>--prefix</tt> argument when
+ * configuring LAL), but when the test suite is run with <tt>make check</tt>, the
+ * variable \c LAL_DATA_PATH is set to the current source directory.  If the
+ * filename (including the directory path) is too long (more than 256
+ * characters), <tt>LALOpenDataFile()</tt> returns \c NULL and sets
+ * \c errno to \c ENAMETOOLONG.
+ *
+ * \c LAL_DATA_PATH can be any colon-delimeted list of directories, which
+ * are searched in order (just like the \c PATH environment variable).
+ * An extra colon inserts the default data directory
+ * (\f$\langle\f$prefix\f$\rangle\f$<tt>/share/lal</tt>) into the search path at that
+ * point.  E.g., a leading/trailing colon will look for the default data
+ * directory at the start/end of the list of directories.
+ *
+ * It is strongly recommended that <tt>LALOpenDataFile()</tt> be used when writing test code.
+ *
+ */
 
 #include "config.h"
 
@@ -522,8 +522,8 @@ int XLALFileEOF( LALFILE *file )
   return c;
 }
 
-/** \brief Use gzip to compress a text file
- *
+/**
+ * \brief Use gzip to compress a text file
  * This function will use the gzip compression routines in \c zlib to compress a text file. The compressed file will
  * have the extension ".gz" and the original uncompressed file will be removed.
  *
@@ -599,7 +599,8 @@ int XLALGzipTextFile( const char *filename ){
 }
 
 
-/** \brief Use gzip to uncompress a compressed text file
+/**
+ * \brief Use gzip to uncompress a compressed text file
  *
  * This function will use the gzip compression routines in \c zlib to uncompress a gzipped text file. The compressed
  * file should have the ".gz" extension otherwise it will be rejected. The output will have the same filename with the

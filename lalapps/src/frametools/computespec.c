@@ -19,8 +19,8 @@
 
 /**
  * \author Patrick R Brady
-\file
-*/
+ * \file
+ */
 
 #include <stdio.h>
 #include <unistd.h>

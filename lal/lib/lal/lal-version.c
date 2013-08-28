@@ -18,31 +18,31 @@
 */
 
 /**
-\file
-\author Jolien Creighton
-\brief Prints the version and configure options of the LAL library being used.
-
-\heading{Usage}
-\code
-lal-version
-\endcode
-
-\heading{Description}
-
-This program prints the current version of LAL.\@  If the version information
-in the library differs from the version information in the header file, this
-program prints the two versions and exits with code 1.  This is useful for
-determining which version of the LAL library and header files you are linking
-to.
-
-\heading{Exit codes}
-<table><tr><th> Code</th><th>Explanation</th></tr>
-<tr><td> 0</td><td>Success, normal exit.</td></tr>
-<tr><td> 1</td><td>Version info in library disagrees with header file.</td></tr>
-<tr><td> 2</td><td>Subroutine failed.</td></tr>
-</table>
-
-*/
+ * \file
+ * \author Jolien Creighton
+ * \brief Prints the version and configure options of the LAL library being used.
+ *
+ * \heading{Usage}
+ * \code
+ * lal-version
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * This program prints the current version of LAL.\@  If the version information
+ * in the library differs from the version information in the header file, this
+ * program prints the two versions and exits with code 1.  This is useful for
+ * determining which version of the LAL library and header files you are linking
+ * to.
+ *
+ * \heading{Exit codes}
+ * <table><tr><th> Code</th><th>Explanation</th></tr>
+ * <tr><td> 0</td><td>Success, normal exit.</td></tr>
+ * <tr><td> 1</td><td>Version info in library disagrees with header file.</td></tr>
+ * <tr><td> 2</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ */
 
 #include <stdio.h>
 #include <string.h>

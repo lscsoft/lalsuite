@@ -23,18 +23,18 @@
 
 
 /**
-   \addtogroup DestroyIIRFilter_c
-   \author Creighton, T. D.
-
-   \brief Destroys IIR filter objects.
-
-   \heading{Description}
-
-   These functions destroy an object <tt>**input</tt> of type
-   \c REAL4IIRFilter or \c REAL8IIRFilter, and set
-   <tt>*input</tt> to \c NULL.
-
-*/
+ * \addtogroup DestroyIIRFilter_c
+ * \author Creighton, T. D.
+ *
+ * \brief Destroys IIR filter objects.
+ *
+ * \heading{Description}
+ *
+ * These functions destroy an object <tt>**input</tt> of type
+ * \c REAL4IIRFilter or \c REAL8IIRFilter, and set
+ * <tt>*input</tt> to \c NULL.
+ *
+ */
 /*@{*/
 
 /** \see See \ref DestroyIIRFilter_c for documentation */
@@ -63,8 +63,10 @@ void XLALDestroyREAL8IIRFilter( REAL8IIRFilter *filter )
   return;
 }
 
-/** Deprecated.
- * \deprecated Use XLALDestroyREAL4IIRFilter() instead */
+/**
+ * Deprecated.
+ * \deprecated Use XLALDestroyREAL4IIRFilter() instead
+ */
 void
 LALDestroyREAL4IIRFilter( LALStatus      *stat,
 			  REAL4IIRFilter **input )
@@ -86,8 +88,10 @@ LALDestroyREAL4IIRFilter( LALStatus      *stat,
 }
 
 
-/** Deprecated.
- * \deprecated Use XLALDestroyREAL8IIRFilter() instead */
+/**
+ * Deprecated.
+ * \deprecated Use XLALDestroyREAL8IIRFilter() instead
+ */
 void
 LALDestroyREAL8IIRFilter( LALStatus      *stat,
 			  REAL8IIRFilter **input )

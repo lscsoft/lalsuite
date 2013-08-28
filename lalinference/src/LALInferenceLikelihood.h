@@ -32,7 +32,7 @@
  *
  * \brief Header file for likelihood functions used by LALInference codes
  *
- * LALInferenceLikelihood contains all the necessary routines to compute the likelihood 
+ * LALInferenceLikelihood contains all the necessary routines to compute the likelihood
  * from a template (computed with LALInferenceTemplate) and the data (initialised with LALInferenceReadData).
  *
  * Likelihood functions follow the basic naming convention: LALInference<type_of>LogLikelihood()
@@ -41,18 +41,17 @@
  * - a pointer to a LALInferenceVariable structure containing the parameters to compute the likelihood for,
  * - a pointer to a LALInferenceIFOData structure containing the linked list of interferometer data,
  * - a pointer to the LALInferenceTemplateFunction template function to be used.
- * 
+ *
  * Outputs as a REAL8 the natural logarithm value of the likelihood, as defined by:
- *  
+ *
  * \f[
  * Likelihood(\vec{x}|\vec{\lambda},M)=\exp(-\tfrac{1}{2}<\vec{x}-\vec{h_M}(\vec{\lambda})|\vec{x}-\vec{h_M}(\vec{\lambda})>)
- * \f] 
+ * \f]
  *
  * where: \f$<x|y>=4Re\left ( \int \frac{\tilde{x}\,\tilde{y}^*}{S_f}\, df \right )\f$
- * 
  *
  * Note that the likelihood is reported unnormalised.
- * 
+ *
  */
 /*@{*/
 
@@ -72,9 +71,11 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
 REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
 
-/** For testing purposes (for instance sampling the prior), 
+/**
+ * For testing purposes (for instance sampling the prior),
  * likelihood that returns 0.0 = log(1) every
- * time.  Activated with the --zeroLogLike command flag. */
+ * time.  Activated with the --zeroLogLike command flag.
+ */
 REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
 
 /***********************************************************//**
@@ -174,29 +175,37 @@ REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data);
 REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data,
                                       LALInferenceTemplateFunction templt);
 
-/** An analytic likeilhood that is a correlated Gaussian in 15
-    dimensions.  */
+/**
+ * An analytic likeilhood that is a correlated Gaussian in 15
+ * dimensions.
+ */
 REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
                                                   LALInferenceIFOData *data,
                                                   LALInferenceTemplateFunction templt);
 
-/** An analytic likeilhood that is two correlated Gaussians in 15
-    dimensions.  */
+/**
+ * An analytic likeilhood that is two correlated Gaussians in 15
+ * dimensions.
+ */
 REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
                                                   LALInferenceIFOData *data,
                                                   LALInferenceTemplateFunction templt);
 
-/** 15-D Rosenbrock log(L) function (see Eq (3) of
-    http://en.wikipedia.org/wiki/Rosenbrock_function . */
+/**
+ * 15-D Rosenbrock log(L) function (see Eq (3) of
+ * http://en.wikipedia.org/wiki/Rosenbrock_function .
+ */
 REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
                                           LALInferenceIFOData *data,
                                           LALInferenceTemplateFunction templt);
 
 REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,LALInferenceTemplateFunction templt);
 
-/** Initialisation function which reads runState->commaneLine and sets up the
+/**
+ * Initialisation function which reads runState->commaneLine and sets up the
  * likelihood function accordingly. Can choose between Gaussian, Student-t, marginalised
- * phase likelihoods */
+ * phase likelihoods
+ */
 void LALInferenceInitLikelihood(LALInferenceRunState *runState);
 
 /** Get the intrinsic parameters from currentParams */

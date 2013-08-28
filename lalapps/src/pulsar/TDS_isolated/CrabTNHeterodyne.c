@@ -22,7 +22,7 @@
  * \ingroup pulsarApps
  * \author Matt Pitkin
  * \brief
- * This driver code performs the timing noise heterodyne for 
+ * This driver code performs the timing noise heterodyne for
  * the Crab pulsar on completely heterodyned data.
  * No calibration or noise estimation is needed or performed
  */

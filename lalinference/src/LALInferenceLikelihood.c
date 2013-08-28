@@ -184,8 +184,10 @@ INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 
 
 /* ============ Likelihood computations: ========== */
 
-/** For testing purposes (for instance sampling the prior), likelihood that returns 0.0 = log(1) every
- time.  Activated with the --zeroLogLike command flag. */
+/**
+ * For testing purposes (for instance sampling the prior), likelihood that returns 0.0 = log(1) every
+ * time.  Activated with the --zeroLogLike command flag.
+ */
 REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables UNUSED *currentParams, LALInferenceIFOData UNUSED *data, LALInferenceTemplateFunction UNUSED template) {
   return 0.0;
 }

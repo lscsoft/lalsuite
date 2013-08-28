@@ -26,21 +26,21 @@ extern "C" {
 #endif
 
 /**
-\author Krishnan, B., Sintes, A.M.
-\defgroup Velocity_h Header Velocity.h
-\ingroup pkg_pulsarHough
-\brief Computation of instant and averaged velocities for a given detector and the like.
-
-\heading{Synopsis}
-
-\code
-#include <lal/Velocity.h>
-\endcode
-
-To find the velocity of a given detetector at a given time, or the averaged
-velocity  of a detector in a certain time interval.
-
-*/
+ * \author Krishnan, B., Sintes, A.M.
+ * \defgroup Velocity_h Header Velocity.h
+ * \ingroup pkg_pulsarHough
+ * \brief Computation of instant and averaged velocities for a given detector and the like.
+ *
+ * \heading{Synopsis}
+ *
+ * \code
+ * #include <lal/Velocity.h>
+ * \endcode
+ *
+ * To find the velocity of a given detetector at a given time, or the averaged
+ * velocity  of a detector in a certain time interval.
+ *
+ */
 /*@{*/
 
 
@@ -77,7 +77,8 @@ velocity  of a detector in a certain time interval.
  *   Structure, enum, union, etc., typdefs.
  */
 
-/** This structure stores the parameters required by LALBarycenter() to calculate
+/**
+ * This structure stores the parameters required by LALBarycenter() to calculate
  * Earth velocity at a given detector location.
  */
 typedef struct tagVelocityPar {

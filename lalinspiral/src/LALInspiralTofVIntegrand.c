@@ -18,40 +18,39 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief The function \c LALInspiralTofVIntegrand() calculates the quantity \f$E^{\prime}(v)/\mathcal{F}(v)\f$.
-
-\heading{Prototypes}
-
-<tt>LALInspiralTofVIntegrand()</tt>
-
-\heading{Description}
-
-The function \c LALInspiralTofVIntegrand() calculates the quantity \f$E^{\prime}(v)/\mathcal{F}(v)\f$.
-These are the energy and flux functions which are used in the gravitational wave phasing formula, which is
-defined as
-
-\anchor phasing formula \f{eqnarray}{
-t(v) & = & t_\textrm{ref} + m \int_v^{v_\textrm{ref}} \,
-\frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\
-\phi (v) & = & \phi_\textrm{ref} + 2 \int_v^{v_\textrm{ref}}  v^3 \,
-\frac{E'(v)}{{\cal F}(v)} \, dv,
-\tag{phasing formula}
-\f}
-
-where \f$v=(\pi m F)^{1/3}\f$ is an invariantly defined velocity, \f$F\f$ is the instantaneous GW frequency, and
-\f$m\f$ is the total mass of the binary.
-
-\heading{Uses}
-
-This function calls the function which represents \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$. The pointer to each
-of these functions is set by a call to the function \c LALInspiralChooseModel().
-
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief The function \c LALInspiralTofVIntegrand() calculates the quantity \f$E^{\prime}(v)/\mathcal{F}(v)\f$.
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>LALInspiralTofVIntegrand()</tt>
+ *
+ * \heading{Description}
+ *
+ * The function \c LALInspiralTofVIntegrand() calculates the quantity \f$E^{\prime}(v)/\mathcal{F}(v)\f$.
+ * These are the energy and flux functions which are used in the gravitational wave phasing formula, which is
+ * defined as
+ *
+ * \anchor phasing formula \f{eqnarray}{
+ * t(v) & = & t_\textrm{ref} + m \int_v^{v_\textrm{ref}} \,
+ * \frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\
+ * \phi (v) & = & \phi_\textrm{ref} + 2 \int_v^{v_\textrm{ref}}  v^3 \,
+ * \frac{E'(v)}{{\cal F}(v)} \, dv,
+ * \tag{phasing formula}
+ * \f}
+ *
+ * where \f$v=(\pi m F)^{1/3}\f$ is an invariantly defined velocity, \f$F\f$ is the instantaneous GW frequency, and
+ * \f$m\f$ is the total mass of the binary.
+ *
+ * \heading{Uses}
+ *
+ * This function calls the function which represents \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$. The pointer to each
+ * of these functions is set by a call to the function \c LALInspiralChooseModel().
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

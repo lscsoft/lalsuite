@@ -20,64 +20,64 @@
 /**
  * \file
  * \ingroup pulsarApps
- * \author Badri Krishnan, Alicia Sintes 
+ * \author Badri Krishnan, Alicia Sintes
  * \brief Driver code for performing Hough transform search on non-demodulated
-   data.
- 
-   History:   Created by Sintes and Krishnan July 04, 2003
-              Modifications for S4 January 2006
-
-   \par Description
-   
-   This is the main driver for the Hough transform routines.
-   It takes as input a set of SFTs and search parameters and
-   outputs the number counts using the Hough transform.  
-
-   \par User input
-
-   The user inputs the following parameters:
-
-   - Search frequency range
-
-   - A file containing list of skypatches to search over.  For each skypatch, 
-      the information is:
-      - RA and dec of skypatch center.
-      - Size in RA and dec.
-
-   - Location of Directory containing the SFTs (can be either v1 or v2).
-
-   - Interferometer .
-      -- Not required for v2 SFTs.
-
-   - Location of output directory and basename of output files.
-
-   - Block size of running median for estimating psd.
-
-   - The parameter nfSizeCylinder which determines the range of spindown parameters
-      to be searched over.
-
-   - Boolean variable for deciding if the SFTs should be inverse noise weighed.
-
-   - Boolean variable for deciding whether amplitude modulation weights should be used.
-
-   - Boolean variables for deciding whether the Hough maps, the statistics and list of 
-      events above a threshold should be written
-
-   /par Output
-
-   The output is written in several sub-directories of the specified output directory.  The
-   first two items are default while the rest are written according to the user input:
-
-   - A directory called logfiles records the user input, contents of the skypatch file 
-      and cvs tags contained in the executable
-
-   - A directory called nstarfiles containing the loudest event for each search frequency 
-      bin maximised over all sky-locations and spindown parameters.  An event is said to be
-      the loudest if it has the maximum significance defined as: (number count - mean)/sigma.
-
-   - A directory for each skypatch containing the number count statistics, the histogram, 
-      the list of events, and the Hough maps 
-*/
+ * data.
+ *
+ * History:   Created by Sintes and Krishnan July 04, 2003
+ * Modifications for S4 January 2006
+ *
+ * \par Description
+ *
+ * This is the main driver for the Hough transform routines.
+ * It takes as input a set of SFTs and search parameters and
+ * outputs the number counts using the Hough transform.
+ *
+ * \par User input
+ *
+ * The user inputs the following parameters:
+ *
+ * - Search frequency range
+ *
+ * - A file containing list of skypatches to search over.  For each skypatch,
+ * the information is:
+ * - RA and dec of skypatch center.
+ * - Size in RA and dec.
+ *
+ * - Location of Directory containing the SFTs (can be either v1 or v2).
+ *
+ * - Interferometer .
+ * -- Not required for v2 SFTs.
+ *
+ * - Location of output directory and basename of output files.
+ *
+ * - Block size of running median for estimating psd.
+ *
+ * - The parameter nfSizeCylinder which determines the range of spindown parameters
+ * to be searched over.
+ *
+ * - Boolean variable for deciding if the SFTs should be inverse noise weighed.
+ *
+ * - Boolean variable for deciding whether amplitude modulation weights should be used.
+ *
+ * - Boolean variables for deciding whether the Hough maps, the statistics and list of
+ * events above a threshold should be written
+ *
+ * /par Output
+ *
+ * The output is written in several sub-directories of the specified output directory.  The
+ * first two items are default while the rest are written according to the user input:
+ *
+ * - A directory called logfiles records the user input, contents of the skypatch file
+ * and cvs tags contained in the executable
+ *
+ * - A directory called nstarfiles containing the loudest event for each search frequency
+ * bin maximised over all sky-locations and spindown parameters.  An event is said to be
+ * the loudest if it has the maximum significance defined as: (number count - mean)/sigma.
+ *
+ * - A directory for each skypatch containing the number count statistics, the histogram,
+ * the list of events, and the Hough maps
+ */
 
 
 #include "./DriveHoughColor.h"

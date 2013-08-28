@@ -18,20 +18,20 @@
 */
 
 /**
-\author Dupuis, R. J.
-
-\heading{Module \ref FitToPulsar.c}
-
-\heading{Algorithm}
-To be completed.
-
-\heading{Uses}
-\code
-LALSCreateVector()
-LALSDestroyVector()
-LALComputeDetAMResponse()
-\endcode
-*/ 
+ * \author Dupuis, R. J.
+ *
+ * \heading{Module \ref FitToPulsar.c}
+ *
+ * \heading{Algorithm}
+ * To be completed.
+ *
+ * \heading{Uses}
+ * \code
+ * LALSCreateVector()
+ * LALSDestroyVector()
+ * LALComputeDetAMResponse()
+ * \endcode
+ */
 
 
 #include <math.h>

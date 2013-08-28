@@ -38,7 +38,7 @@
  * \c LAL_FRAME_PATH * (or the current directory if this environment is not
  * set) and prints them to files.
  *
-*/
+ */
 
 #include <stdio.h>
 #include <unistd.h>

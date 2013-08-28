@@ -43,8 +43,8 @@ SpinEOBHCoeffs;
 /**
  * Parameters for the spinning EOB model.
  * 1) eobParams contains parameters common to nonspin and spin EOBNR models,
- *    including mass ratio, masses, pre-computed coefficients for potential, flux and waveforms,
- *    NQC coefficients and Newtonian multiple prefixes.
+ * including mass ratio, masses, pre-computed coefficients for potential, flux and waveforms,
+ * NQC coefficients and Newtonian multiple prefixes.
  * 2) seobCoeffs contans parameters for calculating the spin EOB Hamiltonian.
  * 3) sigmaStar and sigmaKerr are effective spins of the test-particle and background.
  * 4) a is the spin value being used for test-particle limit spin terms.

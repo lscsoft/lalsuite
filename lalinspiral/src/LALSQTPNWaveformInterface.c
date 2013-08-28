@@ -1,8 +1,8 @@
 /**
  * @file LALSQTPNWaveformInterface.c
- *		Contains function definitions to integrate the SpinQuadTaylor code into the other parts of the LALSuit.
- *	If you want to run the program use the \ref LALSQTPNWaveformTest.c file int the
- *	test directory.
+ * Contains function definitions to integrate the SpinQuadTaylor code into the other parts of the LALSuit.
+ * If you want to run the program use the \ref LALSQTPNWaveformTest.c file int the
+ * test directory.
  * @author László Veréb
  * @date 2010.06.27.
  */

@@ -18,14 +18,12 @@
  */
 
 /**
- *
  * \author Chris Pankow
  *
  * \file
  *
  * \brief Testing constant precession code on EOBNRv2 waveform.
- *
- * */
+ */
 
 #include <complex.h>
 

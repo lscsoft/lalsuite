@@ -38,9 +38,8 @@ extern "C" {
  * \addtogroup SphericalHarmonics_h
  * \author S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson, C. Pankow
  *
- * \brief Library of Spin-weighted Spherical Harmonic functions and an 
+ * \brief Library of Spin-weighted Spherical Harmonic functions and an
  * implementation of the Wigner-D matrices
- *
  *
  */
 /*@{*/

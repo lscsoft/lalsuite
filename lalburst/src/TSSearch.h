@@ -47,12 +47,12 @@ extern "C" {
 
 
 /**
-   \defgroup TSSearch_h	Header TSSearch.h
-   \ingroup pkg_tracksearch
-   \author Torres, Cristina
-   \brief no brief description
-
-*/
+ * \defgroup TSSearch_h	Header TSSearch.h
+ * \ingroup pkg_tracksearch
+ * \author Torres, Cristina
+ * \brief no brief description
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -83,19 +83,19 @@ extern "C" {
 /** \endcond */
 
 
-  /**
-   * Enumeration type to hold diagnostic flag information
-   */
+/**
+ * Enumeration type to hold diagnostic flag information
+ */
   typedef enum tagTSDiagnosticType
     {
       quiet, verbose, printFiles, all
     }TSDiagnosticType;
 
 
-  /**
-   * Structure to hold a collection of data segments which may be
-   * overlapped by n points
-   */
+/**
+ * Structure to hold a collection of data segments which may be
+ * overlapped by n points
+ */
   typedef struct
   tagTSSegmentVector
   {
@@ -111,10 +111,10 @@ extern "C" {
 				  */
   }TSSegmentVector;
 
-  /**
-   * Structure that holds all possible parameters for the tracksearch
-   * library functions collectively not just LALTracksearch
-   */
+/**
+ * Structure that holds all possible parameters for the tracksearch
+ * library functions collectively not just LALTracksearch
+ */
   typedef struct
   tagTSSearchParams
   {
@@ -208,10 +208,10 @@ extern "C" {
   }TSSearchParams;
 
 
-  /**
-   * This is a structure which gives detailed information about a
-   * signal candidate.  CURRENTLY NOT USED.
-   */
+/**
+ * This is a structure which gives detailed information about a
+ * signal candidate.  CURRENTLY NOT USED.
+ */
   typedef struct
   tagTrackSearchEvent
   {

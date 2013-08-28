@@ -25,22 +25,22 @@ extern "C" {
 
 
 /**
-\author Krishnan, B., Sintes, A.M.
-\defgroup Statistics_h Statistics
-\ingroup pkg_pulsarHough
-\brief Computes statistics of the Hough maps.
-
-\heading{Synopsis}
-
-\code
-#include <lal/Statistics.h>
-\endcode
-
-Given a total Hough map, this calculates the maximum number count, minimum
-number count, average and standard deviation and produces a histogram of the
-number counts.
-
-*/
+ * \author Krishnan, B., Sintes, A.M.
+ * \defgroup Statistics_h Statistics
+ * \ingroup pkg_pulsarHough
+ * \brief Computes statistics of the Hough maps.
+ *
+ * \heading{Synopsis}
+ *
+ * \code
+ * #include <lal/Statistics.h>
+ * \endcode
+ *
+ * Given a total Hough map, this calculates the maximum number count, minimum
+ * number count, average and standard deviation and produces a histogram of the
+ * number counts.
+ *
+ */
 /*@{*/
 
 

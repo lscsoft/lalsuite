@@ -36,73 +36,73 @@
 #include <lal/Random.h>
 
 /**
-   \author Tibbits, M. M.
-   \file
-   \ingroup Random_h
-
-   \brief A program to test <tt>LALMersenneRandom()</tt> and <tt>LALMersenneRandomVector()</tt>
-
-\heading{Usage}
-
-\code
-./MersenneRandomTest [options]
-Options:
-  -h             print usage message
-  -q             quiet: run silently
-  -v             verbose: print extra information
-  -d level       set lalDebugLevel to level
-\endcode
-
-This program tests the function
-<tt>LALMersenneRandom()</tt>,which generates a random
-number based on the Mersenne Twister algorithm.
-
-First, it tests that the correct error codes
-are generated for the following error conditions passed
-to the function LALMersenneRandom() (tests in \e italics
-are not performed if \c LAL_NEDEBUG is set, as the
-corresponding checks in the code are made using the ASSERT macro):
-
-<ul>
-<li> <em>null pointer to output structure</em></li>
-<li> <em>null pointer to params structure</em></li>
-<li> <em>params not initialized</em></li>
-</ul>
-
-Second, it tests that the correct error codes
-are generated for the following error conditions passed
-to the function LALMersenneRandomVector() (tests in \e italics
-are not performed if \c LAL_NEDEBUG is set, as the
-corresponding checks in the code are made using the ASSERT macro):
-
-<ul>
-<li> <em>null pointer to output structure</em></li>
-<li> <em>null pointer to params structure</em></li>
-<li> <em>params not initialized</em></li>
-<li> <em>outputVector-\f$>\f$length = 0</em></li>
-</ul>
-
-Third, it verifies the output of the generator
-for each of the following simple test cases:
-<ol>
-<li> given a certain seed, does the output match the expected?</li>
-<li> does calling the function again reinitialize it to the new seed properly?</li>
-<li> does it create a vector of random numbers correctly?</li>
-</ol>
-
-For each successful test
-(both of these valid data and the invalid ones described above), it
-prints "\c PASS" to standard output; if a test fails, it
-prints "\c FAIL".
-
-\heading{Notes}
-
-<ul>
-<li>Vector must come in allocated</li>
-<li>params must be initialized before calls can be made.</li>
-</ul>
-
-*/
+ * \author Tibbits, M. M.
+ * \file
+ * \ingroup Random_h
+ *
+ * \brief A program to test <tt>LALMersenneRandom()</tt> and <tt>LALMersenneRandomVector()</tt>
+ *
+ * \heading{Usage}
+ *
+ * \code
+ * ./MersenneRandomTest [options]
+ * Options:
+ * -h             print usage message
+ * -q             quiet: run silently
+ * -v             verbose: print extra information
+ * -d level       set lalDebugLevel to level
+ * \endcode
+ *
+ * This program tests the function
+ * <tt>LALMersenneRandom()</tt>,which generates a random
+ * number based on the Mersenne Twister algorithm.
+ *
+ * First, it tests that the correct error codes
+ * are generated for the following error conditions passed
+ * to the function LALMersenneRandom() (tests in \e italics
+ * are not performed if \c LAL_NEDEBUG is set, as the
+ * corresponding checks in the code are made using the ASSERT macro):
+ *
+ * <ul>
+ * <li> <em>null pointer to output structure</em></li>
+ * <li> <em>null pointer to params structure</em></li>
+ * <li> <em>params not initialized</em></li>
+ * </ul>
+ *
+ * Second, it tests that the correct error codes
+ * are generated for the following error conditions passed
+ * to the function LALMersenneRandomVector() (tests in \e italics
+ * are not performed if \c LAL_NEDEBUG is set, as the
+ * corresponding checks in the code are made using the ASSERT macro):
+ *
+ * <ul>
+ * <li> <em>null pointer to output structure</em></li>
+ * <li> <em>null pointer to params structure</em></li>
+ * <li> <em>params not initialized</em></li>
+ * <li> <em>outputVector-\f$>\f$length = 0</em></li>
+ * </ul>
+ *
+ * Third, it verifies the output of the generator
+ * for each of the following simple test cases:
+ * <ol>
+ * <li> given a certain seed, does the output match the expected?</li>
+ * <li> does calling the function again reinitialize it to the new seed properly?</li>
+ * <li> does it create a vector of random numbers correctly?</li>
+ * </ol>
+ *
+ * For each successful test
+ * (both of these valid data and the invalid ones described above), it
+ * prints "\c PASS" to standard output; if a test fails, it
+ * prints "\c FAIL".
+ *
+ * \heading{Notes}
+ *
+ * <ul>
+ * <li>Vector must come in allocated</li>
+ * <li>params must be initialized before calls can be made.</li>
+ * </ul>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 

@@ -289,8 +289,10 @@ REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant)
 
 void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 
-/** Template function for PhenSpinTaylorRingDown waveforms. 
-    THIS HAS NOT BEEN TESTED! */
+/**
+ * Template function for PhenSpinTaylorRingDown waveforms.
+ * THIS HAS NOT BEEN TESTED!
+ */
 {
   static LALStatus status;
   memset(&status,0,sizeof(LALStatus));

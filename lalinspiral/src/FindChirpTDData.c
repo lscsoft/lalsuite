@@ -27,24 +27,21 @@
  */
 
 /**
-
-\author Brown, D. A., and Creighton, J. D. E.
-\file
-\ingroup FindChirpTD_h
-
-\brief Time domain filtering code.
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-
-\heading{Notes}
-
-
-
-*/
+ * \author Brown, D. A., and Creighton, J. D. E.
+ * \file
+ * \ingroup FindChirpTD_h
+ *
+ * \brief Time domain filtering code.
+ *
+ * \heading{Description}
+ *
+ * \heading{Algorithm}
+ *
+ * \heading{Uses}
+ *
+ * \heading{Notes}
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

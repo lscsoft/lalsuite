@@ -34,7 +34,8 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/SFTfileIO.h>
 
-/** \author John T. Whelan
+/**
+ * \author John T. Whelan
  * \file
  * \ingroup SFTutils_h
  * \brief Tests for XLALComputeMultiNoiseWeights()
@@ -124,8 +125,8 @@ main (  void )
 
 } /* main() */
 
-/** Comparison function for two multiNoiseWeights vectors, return success or failure for given tolerance.
- *
+/**
+ * Comparison function for two multiNoiseWeights vectors, return success or failure for given tolerance.
  * The fractional error is checked for the weights and normalization factors.
  *
  */

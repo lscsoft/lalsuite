@@ -34,7 +34,8 @@
  */
 /*@{*/
 
-/** \brief Read IFO data according to command line arguments.
+/**
+ * \brief Read IFO data according to command line arguments.
  * This function reads command line arguments and returns a \c LALInferenceIFOData linked
  * list.
  * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
@@ -43,7 +44,8 @@
  */
 struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * commandLine);
 
-/** \brief Convenience function to inject a signal into the data, using a SimInspiralTable
+/**
+ * \brief Convenience function to inject a signal into the data, using a SimInspiralTable
  * Injects a signal from a SimInspiralTable into a pre-existing \c IFOdata structure,
  * based on command line arguments (see --help for details).
  * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
@@ -51,13 +53,16 @@ struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * comma
  */
 void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 
-/** \brief Fills the variable in vars with the injection values from theEventTable. Destroys contents of
-    vars. vars cannot be NULL. Resulting variables are LALINFERENCE_PARAM_FIXED. */
+/**
+ * \brief Fills the variable in vars with the injection values from theEventTable. Destroys contents of
+ * vars. vars cannot be NULL. Resulting variables are LALINFERENCE_PARAM_FIXED.
+ */
 void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars);
 
-/** \brief Function to output a sample with logL values etc for the injection, if one is made.
-  * Requires --inj, --outfile and optionally --event (if not 0).
-  */
+/**
+ * \brief Function to output a sample with logL values etc for the injection, if one is made.
+ * Requires --inj, --outfile and optionally --event (if not 0).
+ */
 void LALInferencePrintInjectionSample(LALInferenceRunState *runState);
 
 /*@}*/

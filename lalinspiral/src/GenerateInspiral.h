@@ -36,67 +36,67 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup GenerateInspiral_h
-   \author Cokelaer, T.
-
-   \brief %Header file for the inspiral injection interface code.
-
-The code contained in GenerateInspiral.c is an interface between the
-injection package and the inspiral package. More precisely, the
-function GenerateInspiral.c is used within the FindChirpSimulation.c
-file of the FindChirp package in order to inject waveforms into real
-data. The injection is done through the inject package in order to
-take into account the interferometer position, binary orientation ...
-
-GenerateInspiral has the capability of injecting both waveform designed
-within the inspiral package (TaylorT1, T2, T3, PadeT1, EOB, and spinning
-waveform) and the inject package (so-called PPN waveform).
-also a test code as well which allows to check the output of
-code. It is called InjectionInterfaceTest.c
-
-\heading{Synopsis}
-\code
-#include <lal/GenerateInspiral.h>
-\endcode
-
-<dl>
-<dt><tt>LALGenerateInspiral()</tt></dt><dd> create an inspiral binary
-waveform generated either by the \ref pkg_inspiral (#EOB,
-#EOBNR, #PadeT1, #TaylorT1, #TaylorT2, #TaylorT3, #SpinTaylor, #PhenSpinTaylorRD, #SpinQuadTaylor)
-or the \c inject package (#GeneratePPN).  It is used in the module
-\c FindChirpSimulation in \ref pkg_findchirp.
-
-There are three  parsed arguments
-<ul>
-<li> a ::CoherentGW  structure which stores amplitude,
-frequency and phase of the  waveform (output)</li>
-<li> a \c thisEvent  structure which provides some
-waveform parameters (input)</li>
-<li> a \c PPNParamStruc which gives some input
-parameters needed by the GeneratePPN waveform  generation. That
-arguments is also used as an output by all the different
-approximant  (output/input).</li>
-</ul>
-
-The input must be composed of a valid thisEvent structure as well as
-the  variable deltaT of the PPNParamStruc. All others variables
-of the PPNParamStruc are populated within that function.</dd>
-
-<dt><tt>XLALGenerateInspiralPopulatePPN()</tt></dt><dd> Populate the
-PPNParamsStruc with the input argument \c thisEvent. That
-structure is used by both inspiral waveforms inject waveforms.</dd>
-
-<dt><tt>XLALGenerateInspiralPopulateInspiral()</tt></dt><dd>  Populate the
-InspiralTemplate structure if the model chosen belongs to the
-inspiral package.
-</dd>
-</dl>
-
-\heading{Notes}
-Inject only time-domain waveforms for the time being such as GeneratePPN,
-  TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , SpinTaylor, PhenSpinTaylorRD.
-
-*/
+ * \addtogroup GenerateInspiral_h
+ * \author Cokelaer, T.
+ *
+ * \brief %Header file for the inspiral injection interface code.
+ *
+ * The code contained in GenerateInspiral.c is an interface between the
+ * injection package and the inspiral package. More precisely, the
+ * function GenerateInspiral.c is used within the FindChirpSimulation.c
+ * file of the FindChirp package in order to inject waveforms into real
+ * data. The injection is done through the inject package in order to
+ * take into account the interferometer position, binary orientation ...
+ *
+ * GenerateInspiral has the capability of injecting both waveform designed
+ * within the inspiral package (TaylorT1, T2, T3, PadeT1, EOB, and spinning
+ * waveform) and the inject package (so-called PPN waveform).
+ * also a test code as well which allows to check the output of
+ * code. It is called InjectionInterfaceTest.c
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/GenerateInspiral.h>
+ * \endcode
+ *
+ * <dl>
+ * <dt><tt>LALGenerateInspiral()</tt></dt><dd> create an inspiral binary
+ * waveform generated either by the \ref pkg_inspiral (#EOB,
+ * #EOBNR, #PadeT1, #TaylorT1, #TaylorT2, #TaylorT3, #SpinTaylor, #PhenSpinTaylorRD, #SpinQuadTaylor)
+ * or the \c inject package (#GeneratePPN).  It is used in the module
+ * \c FindChirpSimulation in \ref pkg_findchirp.
+ *
+ * There are three  parsed arguments
+ * <ul>
+ * <li> a ::CoherentGW  structure which stores amplitude,
+ * frequency and phase of the  waveform (output)</li>
+ * <li> a \c thisEvent  structure which provides some
+ * waveform parameters (input)</li>
+ * <li> a \c PPNParamStruc which gives some input
+ * parameters needed by the GeneratePPN waveform  generation. That
+ * arguments is also used as an output by all the different
+ * approximant  (output/input).</li>
+ * </ul>
+ *
+ * The input must be composed of a valid thisEvent structure as well as
+ * the  variable deltaT of the PPNParamStruc. All others variables
+ * of the PPNParamStruc are populated within that function.</dd>
+ *
+ * <dt><tt>XLALGenerateInspiralPopulatePPN()</tt></dt><dd> Populate the
+ * PPNParamsStruc with the input argument \c thisEvent. That
+ * structure is used by both inspiral waveforms inject waveforms.</dd>
+ *
+ * <dt><tt>XLALGenerateInspiralPopulateInspiral()</tt></dt><dd>  Populate the
+ * InspiralTemplate structure if the model chosen belongs to the
+ * inspiral package.
+ * </dd>
+ * </dl>
+ *
+ * \heading{Notes}
+ * Inject only time-domain waveforms for the time being such as GeneratePPN,
+ * TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , SpinTaylor, PhenSpinTaylorRD.
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -115,8 +115,10 @@ Inject only time-domain waveforms for the time being such as GeneratePPN,
 /** \endcond */
 
 
-/** \name Parameter for the EOB at 3PN.
- * In principle, the three following parameter should be set to zero. */
+/**
+ * \name Parameter for the EOB at 3PN.
+ * In principle, the three following parameter should be set to zero.
+ */
 /*@{*/
 #define GENERATEINSPIRAL_ZETA2       0.
 #define GENERATEINSPIRAL_OMEGAS      0.

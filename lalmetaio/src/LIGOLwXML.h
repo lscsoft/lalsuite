@@ -27,18 +27,17 @@
  */
 
 /**
-
-\author Brown, D. A.
-\file
-\ingroup lalmetaio
-\brief Provides functions for writing the LIGO metdata database table structres to LIGO light weight XML files.
-
-\heading{Synopsis}
-\code
-#include <lal/LIGOLwXML.h>
-\endcode
-
-*/
+ * \author Brown, D. A.
+ * \file
+ * \ingroup lalmetaio
+ * \brief Provides functions for writing the LIGO metdata database table structres to LIGO light weight XML files.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LIGOLwXML.h>
+ * \endcode
+ *
+ */
 
 #ifndef _LIGOLWXML_H
 #define _LIGOLWXML_H
@@ -79,17 +78,18 @@ extern "C" {
 #define LIGOLWXMLH_MSGETNOP "Table not begun for writing"
 /*@}*/
 
-/** This structure contains the file stream and current table type for
-writing to LIGO lightweight XML files. It should not be manipulated
-directly, but passed to the \c LIGOLwXML functions for their use.
-<dl>
-<dt>fp</dt><dd> The file stream pointer of the XML file.</dd>
-<dt>first</dt><dd> Is this the first entry in the table.</dd>
-<dt>rowCount</dt><dd> Counter for the number of rows in the current table.</dd>
-<dt>table</dt><dd> The database table currently open.</dd>
-</dl>
-
-*/
+/**
+ * This structure contains the file stream and current table type for
+ * writing to LIGO lightweight XML files. It should not be manipulated
+ * directly, but passed to the \c LIGOLwXML functions for their use.
+ * <dl>
+ * <dt>fp</dt><dd> The file stream pointer of the XML file.</dd>
+ * <dt>first</dt><dd> Is this the first entry in the table.</dd>
+ * <dt>rowCount</dt><dd> Counter for the number of rows in the current table.</dd>
+ * <dt>table</dt><dd> The database table currently open.</dd>
+ * </dl>
+ *
+ */
 typedef struct
 tagLIGOLwXMLStream
 {
@@ -200,13 +200,6 @@ int XLALCreateLIGODataFileName(
         const char* extension
 );
 
-
-/**
-
-
-
- *\/
-*/
 
 #if 0
 { /* so that editors will match succeeding brace */

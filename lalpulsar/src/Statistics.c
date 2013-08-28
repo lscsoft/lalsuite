@@ -23,7 +23,8 @@
  * The functions that make up the guts of this module
  */
 
-/** \ingroup Statistics_h
+/**
+ * \ingroup Statistics_h
  * This function calculates the maximum number count, minimum
  * number count, average and standard deviation of a given total Hough map.
  * The input HOUGHMapTotal *in is  a total Hough map and the output is a
@@ -173,7 +174,8 @@ void LALHoughmapMeanVariance( LALStatus     *status,
   RETURN (status);
 }
 
-/** \ingroup Statistics_h
+/**
+ * \ingroup Statistics_h
  * \brief Produces a histogram of the number counts in a total Hough map.
  * The input is of type <tt>HOUGHMapTotal *in</tt> and the output <tt>UINT4Vector *out</tt>.
  */

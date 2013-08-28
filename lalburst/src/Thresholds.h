@@ -29,11 +29,12 @@
 extern "C" {
 #endif
 
-  /** \defgroup Thresholds_h Header Thresholds.h
-   * \ingroup pkg_burstsearch
-   *
-   * \brief UNDOCUMENTED
-   */
+/**
+ * \defgroup Thresholds_h Header Thresholds.h
+ * \ingroup pkg_burstsearch
+ *
+ * \brief UNDOCUMENTED
+ */
   /*@{*/
 
 REAL8 XLALChisqCdf(

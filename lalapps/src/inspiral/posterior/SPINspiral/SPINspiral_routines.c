@@ -109,7 +109,7 @@ void masses2McEta(double m1, double m2, double *Mc, double *eta)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute Greenwich Mean Sideral time from GPS time.
- * 
+ *
  * Computes the Greenwich Mean Sidereal Time (in radians!) from GPS time (in seconds).
  * See K.R. Lang (1999), p.80sqq.
  */
@@ -141,7 +141,7 @@ double GMST(double GPSsec)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute RA from 'longitude' and GMST
- * 
+ *
  * All quantities are in radians
  */
 double rightAscension(double longi, double gmst)
@@ -155,7 +155,7 @@ double rightAscension(double longi, double gmst)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute 'longitude' from RA and GMST
- * 
+ *
  * Computes the 'longitude' from the right ascension and GMST.
  * All quantities are in radians.
  * In fact, 'longitude' is something like the Greenwich hour angle of the corresponding RA.
@@ -258,7 +258,7 @@ void crossProduct(double vec1[3], double vec2[3], double result[3])
 // ****************************************************************************************************************************************************  
 /**
  * \brief Rotate the vextor x about angle around the normal vector axis
- * 
+ *
  * Rotates vector x clockwise around axis (looking along axis while it is pointing towards you).
  * axis must be a UNIT VECTOR
  */
@@ -292,7 +292,7 @@ void rotate(double x[3], double ang, double axis[3])
 // ****************************************************************************************************************************************************  
 /**
  * \brief Determine whether the vectors x, y and z constitute a right-handed system
- * 
+ *
  * Determines whether vectors x,y & z constitute a right-handed system by checking the sign of the triple product or det(x,y,z).
  */
 int rightHanded(double x[3], double y[3], double z[3])
@@ -344,13 +344,13 @@ double angle(double x[3], double y[3])
 // ****************************************************************************************************************************************************  
 /**
  * \brief Convert geographical spherical coordinates to a Cartesian normal vector
- * 
- * Turns geographical coordinates (latitude & longitude) into a vector - 
+ *
+ * Turns geographical coordinates (latitude & longitude) into a vector -
  * Result is a unit (!) vector referring to the (right-handed) coordinate
- * system spanned by the three vectors pointing from geocenter to:       
- *   x) intersection of greenwich meridian and equator                   
- *   y) intersection of 90 deg. East meridian and equator                
- *   z) north pole                                                       
+ * system spanned by the three vectors pointing from geocenter to:
+ * x) intersection of greenwich meridian and equator
+ * y) intersection of 90 deg. East meridian and equator
+ * z) north pole
  */
 // ****************************************************************************************************************************************************  
 void coord2vec(double sinlati, double longi, double x[3])
@@ -398,7 +398,7 @@ void vec2coord(double x[3], double *sinlati, double *longi)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Grab a random seed from the system clock
- * 
+ *
  * If seed==0, set (randomise) seed using the system clock (hence a random (random seed) :-)
  */
 // ****************************************************************************************************************************************************  

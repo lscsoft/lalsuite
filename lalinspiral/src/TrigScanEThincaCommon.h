@@ -36,21 +36,20 @@ extern "C" {
 #endif
 
 /**
-   \defgroup TrigScanEThincaCommon_h Header TrigScanEThincaCommon.h
-   \ingroup pkg_CBC_NEW
-   \author Robinson, C. A. K.
-
-
-\brief Provides helper functions common to TrigScan and E-thinca.
-
-\heading{Synopsis}
-\code
-#include <lal/TrigScanEThincaCommon.h>
-\endcode
-
-This header provides functions used for creating and destroying the
-linked lists used in TrigScan and E-thinca.
-
+ * \defgroup TrigScanEThincaCommon_h Header TrigScanEThincaCommon.h
+ * \ingroup pkg_CBC_NEW
+ * \author Robinson, C. A. K.
+ *
+ * \brief Provides helper functions common to TrigScan and E-thinca.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/TrigScanEThincaCommon.h>
+ * \endcode
+ *
+ * This header provides functions used for creating and destroying the
+ * linked lists used in TrigScan and E-thinca.
+ *
  */
 /*@{*/
 

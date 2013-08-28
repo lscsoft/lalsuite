@@ -24,7 +24,6 @@
  * \ingroup pulsarTODO
  * \brief Header-file defining the API for the LISA-specific functions
  *
- *
  */
 
 #ifndef _LISASPECIFICS_H  /* Double-include protection. */
@@ -54,7 +53,8 @@ typedef enum {
 } LISAarmT;
 
 
-/** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
+/**
+ * The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
  * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for
  * Earth-based detectors and ECLIPTIC coords for LISA.
  */

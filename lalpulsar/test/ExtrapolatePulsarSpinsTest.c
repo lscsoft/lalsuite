@@ -19,11 +19,12 @@
  */
 
 /*********************************************************************************/
-/** \author Reinhard Prix
+/**
+ * \author Reinhard Prix
  * \file
  * \brief Test for ExtrapolatePulsarSpins().
  *
- *********************************************************************************/
+ */
 #include <math.h>
 
 #include <lal/AVFactories.h>
@@ -77,8 +78,9 @@ do {                                                                 \
 
 
 static LALStatus empty_status;
-/** Very simple test: given spin-params at \f$\tau_0\f$, extrapolate them to
- *  \f$\tau_1\f$ and compare to reference-result...
+/**
+ * Very simple test: given spin-params at \f$\tau_0\f$, extrapolate them to
+ * \f$\tau_1\f$ and compare to reference-result...
  */
 int main(int argc, char *argv[])
 {

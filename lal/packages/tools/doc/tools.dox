@@ -1,20 +1,20 @@
 /**
-    \addtogroup pkg_tools
-
-    \brief This package contains the general purpose LAL tools.
-
-    @{
-    \defgroup Units_h 			Header Units.h
-    \defgroup LALDetectors_h 		Header LALDetectors.h
-    \defgroup DetResponse_h 		Header DetResponse.h
-    \defgroup Calibration_h 		Header Calibration.h
-    \defgroup ResampleTimeSeries_h 	Header ResampleTimeSeries.h
-    \defgroup Segments_h		Header Segments.h
-    \defgroup SequenceManipulation 	Sequence Manipulation
-    \defgroup FrequencySeriesManipulation Frequency Series Manipulation
-    \defgroup TimeSeriesManipulation 	Time Series Manipulation
-    \defgroup TriggerInterpolation 	Trigger Interpolation
-    \defgroup FlatLatticeTiling_h	Header FlatLatticeTiling.h
-    @}
-
-*/
+ * \addtogroup pkg_tools
+ *
+ * \brief This package contains the general purpose LAL tools.
+ *
+ * @{
+ * \defgroup Units_h 			Header Units.h
+ * \defgroup LALDetectors_h 		Header LALDetectors.h
+ * \defgroup DetResponse_h 		Header DetResponse.h
+ * \defgroup Calibration_h 		Header Calibration.h
+ * \defgroup ResampleTimeSeries_h 	Header ResampleTimeSeries.h
+ * \defgroup Segments_h		Header Segments.h
+ * \defgroup SequenceManipulation 	Sequence Manipulation
+ * \defgroup FrequencySeriesManipulation Frequency Series Manipulation
+ * \defgroup TimeSeriesManipulation 	Time Series Manipulation
+ * \defgroup TriggerInterpolation 	Trigger Interpolation
+ * \defgroup FlatLatticeTiling_h	Header FlatLatticeTiling.h
+ * @}
+ *
+ */

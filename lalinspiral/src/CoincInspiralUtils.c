@@ -43,114 +43,113 @@
 #include <lal/CoincInspiralEllipsoid.h>
 
 /**
-   \defgroup CoincInspiralEllipsoid_c Module CoincInspiralEllipsoid.c
-   \ingroup CoincInspiralEllipsoid_h
-   \author Fairhurst, S.
-
-    \brief Blah.
-
-\heading{Description}
-
-<tt>LALCreateTwoIFOCoincList()</tt> takes in a linked list of single inspiral
-tables and returns a list of two instrument coincidences.  The coincidence
-requirements are given by the \c accuracyParams.  When single inspirals
-from two different instruments are found to be coincident, the code creates a
-new \c coincInspiralTable and uses <tt>LALAddSnglInspiralToCoinc()</tt>
-to add the single inspirals to the coinc.  The function returns
-\c coincOutput which is a pointer to the head of a linked list of
-\c CoincInspiralTables.
-
-<tt>LALCreateNIFOCoincList()</tt> takes linked list of
-\c CoincInspiralTables, assumed to contain (N-1) ifo coincidences and
-creates all N ifo coincidences.  Both the input and output list of
-\c CoincInspiralTables are passed as \c coincHead.
-
-<tt>LALRemoveRepeatedCoincs()</tt> will remove any lower order coincidences
-if they are contained in a higher order coincidence.  For example, if an H1-L1
-double coincident trigger is also part of an H1-H2-L1 triple coincident
-trigger, the double coincident trigger will be removed.  The head of the list
-of coincident triggers is passed and returned as \c coincHead.
-
-<tt>XLALFreeCoincInspiral()</tt> <tt>LALFreeCoincInspiral()</tt> and  free the
-memory associated to the \c CoincInspiralTable pointed to by
-\c coincPtr.  This entails freeing the \c CoincInspiralTable as
-well as any \c eventIds which point to the coinc.
-
-<tt>LALAddSnglInspiralToCoinc()</tt> and <tt>XLALAddSnglInspiralToCoinc()</tt>
-add a pointer to a single inspiral table to a coinc inspiral table.  Upon
-entry, if \c coincPtr points to a \c NULL coinc inspiral table, the
-table is created before a pointer to the single inspiral table is added.
-Additionally, an \c eventId table is created for the single inspiral
-table.  This points to both the single and coinc inspirals.  If an
-\c eventId already exists for the single inspiral, another eventId table
-is added to the linked list.  The linked list of \c eventIds associated
-to a single inspiral table allow us to easily determine which coincident events
-each single is a part of.
-
-<tt>LALSnglInspiralCoincTest()</tt> tests for coincidence between a single
-inspiral and a coinc inspiral.  It works by testing for coincidence between
-each non-null entry in the coinc inspiral and the single.  This is done using
-<tt>LALCompareSnglInspiral()</tt>.  If all members of the coinc are found to be
-coincident with the single, the <tt>accuracyParams.match</tt> is set to 1,
-otherwise to 0.
-
-<tt>LALExtractSnglInspiralFromCoinc()</tt> extracts the information from a
-linked list of \c coincInspiralTables and returns it as a linked list of
-\c snglInspiralTables.  Thus, the output \c snglPtr is a pointer to
-a linked list of single inspiral tables.  That list contains only single
-inspirals which are found in coincidence.  In order to preserve the coincidence
-information, we assign to each coincident event an integer value.  This is
-stored in the <tt>UINT8 id</tt> field of the \c eventIDColumn of each
-single inspiral which forms part of the coincidence.  The \c id is set
-equal to \f$10^{9} \times\f$ \c gpsStartTime \f$+ 10^{5} \times\f$
-\c slideNum \f$+\f$ event number. We do not assign multiple \c id
-values to a given single inspiral table, but instead make multiple copies of
-the table, each with a unique \c id.
-
-<tt>XLALRecreateCoincFromSngls()</tt> is used to recreate a list of coinc
-inspirals from a list of \c snglInspiralTables with populated
-\c eventIDColumn.  The code searches for entries in
-\c snglInspiral which have the same numerical value of the \c id
-field in the \c eventIDColumn.
-
-<tt>XLALGenerateCoherentBank()</tt> is used to generate a coherent bank from
-a list of \c coincInspiralTables.  The coherent bank has the same mass
-parameters for each ifo.  These are currently chosen as the mass parameters
-of the trigger in the coinc with the highest \c snr.  If the
-\c ifos field is not \c NULL, then a template is generated for
-every ifo in \c ifos.  If it is \c NULL then templates are only
-generated for those ifos which have triggers in the coinc.
-
-<tt>XLALInspiralDistanceCut()</tt> is used to perform a distance cut between
-the triggers in a coincidence.  The distance cut analyzes triggers from two
-different instruments.  It determines which instrument was the most sensitive
-by comparing the \c sigmasq values of the two triggers, the instrument
-with the greatest range is designated ifo A, the other ifo B.  It then discards
-and triggers for which
-
-\f{equation}{
-\frac{|distB - distA|}{distA} > \frac{epsilonB}{snrB} + kappaB
-\f}
-
-
-<tt>LALCoincCutSnglInspiral()</tt> extracts all single inspirals from a
-specific ifo which are in coinc inspirals.  The output \c snglPtr is a
-pointer to a linked list of single inspiral tables.  That list contains only
-single inspirals from the specified \c ifo which are found in
-coincidence.
-
-<tt>XLALCountCoincInspiral()</tt> scans through a linked list of coincidence
-inspiral table and counts the number of events. This count is returned
-as \c numTrigs.
-
-<tt>XLALCompleteCoincInspiral()</tt> scans through a linked list of coincidence
-inspirals and checks whether the coincs contain a trigger from every ifo in the
-ifoList with a non-zero value.  If a trigger does not exist, it is added at the
-appropriate time for the appropriate ifo, with zero snr.  The code returns a
-linked list of new single inspirals which were created in the process of
-completing the coincs.
-
-*/
+ * \defgroup CoincInspiralEllipsoid_c Module CoincInspiralEllipsoid.c
+ * \ingroup CoincInspiralEllipsoid_h
+ * \author Fairhurst, S.
+ *
+ * \brief Blah.
+ *
+ * \heading{Description}
+ *
+ * <tt>LALCreateTwoIFOCoincList()</tt> takes in a linked list of single inspiral
+ * tables and returns a list of two instrument coincidences.  The coincidence
+ * requirements are given by the \c accuracyParams.  When single inspirals
+ * from two different instruments are found to be coincident, the code creates a
+ * new \c coincInspiralTable and uses <tt>LALAddSnglInspiralToCoinc()</tt>
+ * to add the single inspirals to the coinc.  The function returns
+ * \c coincOutput which is a pointer to the head of a linked list of
+ * \c CoincInspiralTables.
+ *
+ * <tt>LALCreateNIFOCoincList()</tt> takes linked list of
+ * \c CoincInspiralTables, assumed to contain (N-1) ifo coincidences and
+ * creates all N ifo coincidences.  Both the input and output list of
+ * \c CoincInspiralTables are passed as \c coincHead.
+ *
+ * <tt>LALRemoveRepeatedCoincs()</tt> will remove any lower order coincidences
+ * if they are contained in a higher order coincidence.  For example, if an H1-L1
+ * double coincident trigger is also part of an H1-H2-L1 triple coincident
+ * trigger, the double coincident trigger will be removed.  The head of the list
+ * of coincident triggers is passed and returned as \c coincHead.
+ *
+ * <tt>XLALFreeCoincInspiral()</tt> <tt>LALFreeCoincInspiral()</tt> and  free the
+ * memory associated to the \c CoincInspiralTable pointed to by
+ * \c coincPtr.  This entails freeing the \c CoincInspiralTable as
+ * well as any \c eventIds which point to the coinc.
+ *
+ * <tt>LALAddSnglInspiralToCoinc()</tt> and <tt>XLALAddSnglInspiralToCoinc()</tt>
+ * add a pointer to a single inspiral table to a coinc inspiral table.  Upon
+ * entry, if \c coincPtr points to a \c NULL coinc inspiral table, the
+ * table is created before a pointer to the single inspiral table is added.
+ * Additionally, an \c eventId table is created for the single inspiral
+ * table.  This points to both the single and coinc inspirals.  If an
+ * \c eventId already exists for the single inspiral, another eventId table
+ * is added to the linked list.  The linked list of \c eventIds associated
+ * to a single inspiral table allow us to easily determine which coincident events
+ * each single is a part of.
+ *
+ * <tt>LALSnglInspiralCoincTest()</tt> tests for coincidence between a single
+ * inspiral and a coinc inspiral.  It works by testing for coincidence between
+ * each non-null entry in the coinc inspiral and the single.  This is done using
+ * <tt>LALCompareSnglInspiral()</tt>.  If all members of the coinc are found to be
+ * coincident with the single, the <tt>accuracyParams.match</tt> is set to 1,
+ * otherwise to 0.
+ *
+ * <tt>LALExtractSnglInspiralFromCoinc()</tt> extracts the information from a
+ * linked list of \c coincInspiralTables and returns it as a linked list of
+ * \c snglInspiralTables.  Thus, the output \c snglPtr is a pointer to
+ * a linked list of single inspiral tables.  That list contains only single
+ * inspirals which are found in coincidence.  In order to preserve the coincidence
+ * information, we assign to each coincident event an integer value.  This is
+ * stored in the <tt>UINT8 id</tt> field of the \c eventIDColumn of each
+ * single inspiral which forms part of the coincidence.  The \c id is set
+ * equal to \f$10^{9} \times\f$ \c gpsStartTime \f$+ 10^{5} \times\f$
+ * \c slideNum \f$+\f$ event number. We do not assign multiple \c id
+ * values to a given single inspiral table, but instead make multiple copies of
+ * the table, each with a unique \c id.
+ *
+ * <tt>XLALRecreateCoincFromSngls()</tt> is used to recreate a list of coinc
+ * inspirals from a list of \c snglInspiralTables with populated
+ * \c eventIDColumn.  The code searches for entries in
+ * \c snglInspiral which have the same numerical value of the \c id
+ * field in the \c eventIDColumn.
+ *
+ * <tt>XLALGenerateCoherentBank()</tt> is used to generate a coherent bank from
+ * a list of \c coincInspiralTables.  The coherent bank has the same mass
+ * parameters for each ifo.  These are currently chosen as the mass parameters
+ * of the trigger in the coinc with the highest \c snr.  If the
+ * \c ifos field is not \c NULL, then a template is generated for
+ * every ifo in \c ifos.  If it is \c NULL then templates are only
+ * generated for those ifos which have triggers in the coinc.
+ *
+ * <tt>XLALInspiralDistanceCut()</tt> is used to perform a distance cut between
+ * the triggers in a coincidence.  The distance cut analyzes triggers from two
+ * different instruments.  It determines which instrument was the most sensitive
+ * by comparing the \c sigmasq values of the two triggers, the instrument
+ * with the greatest range is designated ifo A, the other ifo B.  It then discards
+ * and triggers for which
+ *
+ * \f{equation}{
+ * \frac{|distB - distA|}{distA} > \frac{epsilonB}{snrB} + kappaB
+ * \f}
+ *
+ * <tt>LALCoincCutSnglInspiral()</tt> extracts all single inspirals from a
+ * specific ifo which are in coinc inspirals.  The output \c snglPtr is a
+ * pointer to a linked list of single inspiral tables.  That list contains only
+ * single inspirals from the specified \c ifo which are found in
+ * coincidence.
+ *
+ * <tt>XLALCountCoincInspiral()</tt> scans through a linked list of coincidence
+ * inspiral table and counts the number of events. This count is returned
+ * as \c numTrigs.
+ *
+ * <tt>XLALCompleteCoincInspiral()</tt> scans through a linked list of coincidence
+ * inspirals and checks whether the coincs contain a trigger from every ifo in the
+ * ifoList with a non-zero value.  If a trigger does not exist, it is added at the
+ * appropriate time for the appropriate ifo, with zero snr.  The code returns a
+ * linked list of new single inspirals which were created in the process of
+ * completing the coincs.
+ *
+ */
 /*@{*/
 
 void

@@ -18,25 +18,22 @@
 */
 
 /**
- *
  * \file PeakSelect.h
- * \author Sintes, A.M., and Krishnan, B. 
+ * \author Sintes, A.M., and Krishnan, B.
  * \brief Header file for  PeakSelect.c
  *
- *
  * History:   Created by Sintes May 21, 2003
- *            Modified by Krishnan Oct 2005
+ * Modified by Krishnan Oct 2005
  *
-
-\heading{Header \ref PeakSelect.h}
-From periodogram to peakgram
-
-\heading{Synopsis}
-
-\code
-#include <lal/PeakSelect.h>
-\endcode
-*/
+ * \heading{Header \ref PeakSelect.h}
+ * From periodogram to peakgram
+ *
+ * \heading{Synopsis}
+ *
+ * \code
+ * #include <lal/PeakSelect.h>
+ * \endcode
+ */
 
 /*
  * 4.  Protection against double inclusion (include-loop protection)

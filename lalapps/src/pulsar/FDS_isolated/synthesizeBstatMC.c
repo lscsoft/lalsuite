@@ -18,7 +18,8 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \ingroup pulsarApps
  * \brief
@@ -27,7 +28,7 @@
  *
  * This is mostly meant to be used for Monte-Carlos studies of ROC curves
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -88,7 +89,8 @@
 
 #define SQ(x) ((x)*(x))
 
-/** Signal (amplitude) parameter ranges
+/**
+ * Signal (amplitude) parameter ranges
  */
 typedef struct {
   REAL8 h0Nat;		/**< h0 in *natural units* ie h0Nat = h0 * sqrt(T/Sn) */
@@ -102,7 +104,8 @@ typedef struct {
   REAL8 phi0Band;
 } AmpParamsRange_t;
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
@@ -543,8 +546,9 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 } /* InitCode() */
 
 
-/** Generate random signal draws with uniform priors in given bands  [h0, cosi, psi, phi0], and
- *  return list of 'numDraws' {s_mu} vectors.
+/**
+ * Generate random signal draws with uniform priors in given bands  [h0, cosi, psi, phi0], and
+ * return list of 'numDraws' {s_mu} vectors.
  */
 int
 XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D line-vectors {A^nu} */
@@ -696,8 +700,9 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 } /* XLALsynthesizeSignals() */
 
 
-/** Generate random-noise draws and combine with (FIXME: single!) signal.
- *  Returns a list of numDraws vectors {x_mu}
+/**
+ * Generate random-noise draws and combine with (FIXME: single!) signal.
+ * Returns a list of numDraws vectors {x_mu}
  */
 int
 XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-vectors of noise-components {n_mu} */
@@ -796,7 +801,8 @@ XLALsynthesizeNoise ( gsl_matrix **n_mu_i,		/**< [OUT] list of numDraws 4D line-
 
 
 
-/** Compute log-likelihood function for given input data
+/**
+ * Compute log-likelihood function for given input data
  */
 int
 XLALcomputeLogLikelihood ( gsl_vector **lnL_i,		/**< [OUT] log-likelihood vector */
@@ -883,7 +889,8 @@ XLALcomputeLogLikelihood ( gsl_vector **lnL_i,		/**< [OUT] log-likelihood vector
 } /* XLALcomputeLogLikelihood() */
 
 
-/** Compute F-statistic for given input data
+/**
+ * Compute F-statistic for given input data
  */
 int
 XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
@@ -1010,7 +1017,8 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
 } /* XLALcomputeFstatistic () */
 
 
-/** Compute the B-statistic for given input data, using Monte-Carlo integration for
+/**
+ * Compute the B-statistic for given input data, using Monte-Carlo integration for
  * the marginalization over {cosi, psi}, while {h0, phi0} have been marginalized analytically.
  *
  * Currently uses the Vegas Monte-Carlo integrator, which samples more densely where the integrand is larger.
@@ -1114,7 +1122,8 @@ XLALcomputeBstatisticMC ( gsl_vector **Bstat_i,		/**< [OUT] vector of numDraws B
 } /* XLALcomputeBstatisticMC() */
 
 
-/** Compute the B-statistic for given input data, using standard Gauss-Kronod integration (gsl_integration_qng)
+/**
+ * Compute the B-statistic for given input data, using standard Gauss-Kronod integration (gsl_integration_qng)
  * for the marginalization over {cosi, psi}, while {h0, phi0} have been marginalized analytically.
  *
  */
@@ -1214,7 +1223,8 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat_i,	/**< [OUT] vector of numDraws
 } /* XLALcomputeBstatisticGauss() */
 
 
-/** log likelihood ratio lnL marginalized over {h0, phi0} (analytical) and integrated over psi in [-pi/4,pi/4], for
+/**
+ * log likelihood ratio lnL marginalized over {h0, phi0} (analytical) and integrated over psi in [-pi/4,pi/4], for
  * given cosi: BstatIntegrandOuter(cosi) = int lnL dh0 dphi0 dpsi
  *
  * This function is of type gsl_function for gsl-integration over cosi
@@ -1265,7 +1275,8 @@ BstatIntegrandOuter ( double cosi, void *p )
 } /* BstatIntegrandOuter() */
 
 
-/** log likelihood ratio lnL marginalized over {h0, phi0} (analytical) for given psi and pars->cosi
+/**
+ * log likelihood ratio lnL marginalized over {h0, phi0} (analytical) for given psi and pars->cosi
  * BstatIntegrandInner(cosi,psi) = int lnL dh0 dphi0
  *
  * This function is of type gsl_function for gsl-integration over psi at fixed cosi,
@@ -1288,7 +1299,8 @@ BstatIntegrandInner ( double psi, void *p )
 } /* BstatIntegrandInner() */
 
 
-/** compute log likelihood ratio lnL for given Amp = {h0, cosi, psi, phi0} and M_{mu,nu}.
+/**
+ * compute log likelihood ratio lnL for given Amp = {h0, cosi, psi, phi0} and M_{mu,nu}.
  * computes lnL = A^mu x_mu - 1/2 A^mu M_mu_nu A^nu.
  *
  * This function is of type gsl_monte_function for gsl Monte-Carlo integration.
@@ -1351,8 +1363,8 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
 } /* BstatIntegrand() */
 
 
-/** Compute an approximation to the full B-statistic, without using any integrations!
- *
+/**
+ * Compute an approximation to the full B-statistic, without using any integrations!
  * Returns Bhat vector of dimensions (numDraws x 1), or NULL on error.
  */
 gsl_vector *
@@ -1459,7 +1471,8 @@ XLALcomputeBhatStatistic ( const gsl_matrix *M_mu_nu,	/**< antenna-pattern matri
 
 } /* XLALcomputeBhatStatistic() */
 
-/** Compute 'Bstat' approximate correction terms with respect to F, ie deltaB in Bstat = F + deltaB
+/**
+ * Compute 'Bstat' approximate correction terms with respect to F, ie deltaB in Bstat = F + deltaB
  */
 REAL8
 XLALComputeBhatCorrection ( const gsl_vector * A_Mu_in, const gsl_matrix *M_mu_nu )

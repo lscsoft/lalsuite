@@ -19,9 +19,9 @@
 
 #include <lal/LALInspiral.h>
 
-/** 
-Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267 
-*/
+/**
+ * Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
+ */
 int XLALTaylorF2ReducedSpin(REAL4Vector *signalvec, 
 		InspiralTemplate *params) {
 
@@ -226,8 +226,8 @@ int XLALTaylorF2ReducedSpin(REAL4Vector *signalvec,
 }
 
 /**
-Generate two orthogonal "reduced-spin" templates 
-*/
+ * Generate two orthogonal "reduced-spin" templates
+ */
 int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signalvec1,
 		REAL4Vector *signalvec2,
 		InspiralTemplate *params) {
@@ -250,9 +250,9 @@ int XLALTaylorF2ReducedSpinTemplates(REAL4Vector *signalvec1,
     return XLAL_SUCCESS;
 }
 
-/**  
-Compute the chirp time of the "reduced-spin" templates 
-*/
+/**
+ * Compute the chirp time of the "reduced-spin" templates
+ */
 REAL8 XLALChirpTimeReducedSpin(REAL8 v, REAL8 m1, REAL8 m2, REAL8 spin1, 
         REAL8 spin2, UINT4 pnOrder) {
 

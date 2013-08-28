@@ -69,7 +69,8 @@ typedef uint32_t UINT4;		/**< Four-byte unsigned integer. */
 typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms this is equivalent to <tt>unsigned long int</tt> instead. */
 
 /* Macros for integer constants */
-/** \def LAL_INT8_C(v) (v ## LL)
+/**
+ * \def LAL_INT8_C(v) (v ## LL)
  * \brief Macro for use in defining \a v as an INT8 constant.
  *
  * This macro affixes the appropriate qualifier to form an INT8 constant.
@@ -80,7 +81,8 @@ typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms thi
  */
 #define LAL_INT8_C INT64_C
 
-/** \def LAL_UINT8_C(v) (v ## ULL)
+/**
+ * \def LAL_UINT8_C(v) (v ## ULL)
  * \brief Macro for use in defining \a v as an UINT8 constant.
  *
  * This macro affixes the appropriate qualifier to form an UINT8 constant.

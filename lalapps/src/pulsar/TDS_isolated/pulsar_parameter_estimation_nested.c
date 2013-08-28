@@ -26,116 +26,116 @@ LALInference tools */
  * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Parameter estimation code for known pulsar searches using the nested sampling algorithm.
-
-\heading{Description}
-This code is used to perform parameter estimation and evidence calculation in targeted/semi-targeted searches for
-gravitational waves from known pulsars. It may also be used to follow-up on signal candidates from semi-coherent all-sky
-searches for unknown sources.
-
-It uses the Bayesian technique of 'Nested Sampling' to sample over a defined prior parameter space (unknown signal
-parameters such as the gravitational wave amplitude). These samples can then be used to create posterior probability
-density functions of the unknown parameters. The samples are also used to calculate the Bayesian evidence, also known as
-the marginal likelihood, for a given signal model. This can be compared with other models, in particular the model that
-the data is described by Gaussian noise alone.
-
-As input the code requires time domain data that has been heterodyned using the known (or close to) phase evolution of
-the pulsar. The time domain input should consist of a three column text file containing the GPS time stamp of the data
-point, the real part of the heterodyned data and the imaginary part of the heterodyned data, e.g.
-900000000.000000  1.867532e-24  -7.675329e-25
-900000060.000000  2.783651e-24  3.654386e-25
-...
-
-Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth of the same amount, but the code can
-accept any rate, or downsample data (by averaging) by a given factor.
-
-The code also requires that you specify which parameters are to be searched over, and the prior ranges over these. Any
-of the signal parameters can be searched over, including frequency, sky position and binary system parameters, although
-the bandwidth of the data and search efficiency need to be taken into account.
-
-The 'Nested Sampling' algorithm (developed by [\ref Skilling2006]) used is that defined in LALinferenceNestedSampler
-(see [\ref VeitchVecchio2010]). It is essentially an efficient way to perform the integral
-\f[
-Z = \int^{\mathbf{\theta}} p(d|\mathbf{\theta}) p(\mathbf{\theta}) \mathrm{d}\mathbf{\theta},
-\f]
-where \f$ \mathbf{\theta} \f$ is a vector of parameters, \f$ p(d|\mathbf{\theta}) \f$ is the likelihood of the data
-given the parameters, and \f$ p(\mathbf{\theta}) \f$ is the prior on the parameters. It does this by changing the
-multi-dimensional integral over N parameters into a one-dimensional integral
-\f[
-Z = \int^X L(X) \mathrm{d}X \approx \sum_i L(X_i) \Delta{}X_i,
-\f]
-where \f$ L(X) \f$ is the likelihood, and \f$ X \f$ is the prior mass. The algorithm will draw a number (\f$ N \f$) of
-samples (live points) from the parameter priors, calculate the likelihood for each point and find the lowest likelihood
-value. The lowest likelihood value will be added to the summation in the above equation, with \f$ \log{\Delta{}X_i}
-\approx 1/N \f$ coming from the fact that the prior would be normalised to unity and therefore each point should occupy
-an equal fraction and at each iteration the prior volume will decrease geometrically (for \f$\log{\Delta{}X_0} = 0\f$).
-A new point is then drawn from the prior with the criterion that it has a higher likelihood than the previous lowest
-point and substitutes that point. To draw the new point a Markov Chain Monte Carlo (MCMC) procedure is used - there are
-two methods used to sample points within this: i) drawing from a proposal distributions based on the covariance matrix
-if the current live points (although to keep things computationally efficient this no updated at every iteration), ii)
-picking a point via differential evolution (two random live points are selected and a new point half way between the two
-is created). The probability of using either method is currently set at 80\% and 20\% respectively. The procedure is
-continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
-\c tolerance value set (see below). The implementation of this can be seen in [\ref VeitchVecchio2010].
-
-\heading{Usage}
-The usage format is given below and can also be found by running the code with
-\code
-lalapps_pulsar_parameter_estimation_nested --help
-\endcode
-
-An example of running the code on to search over the four unknown parameters \f$ h_0 \f$, \f$ \phi_0 \f$, \f$ \psi \f$
-and \f$ \cos{\iota} \f$, for pulsar J0534-2200, given heterodyned time domain data from the H1 detector in the file
-\c finehet_J0534-2200_H1, is:
-\code
-lalapps_pulsar_parameter_estimation_nested --detectors H1 --par-file
-J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200
---prior-file prior_J0534-2200.txt --ephem-earth
-lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
-lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
-100 --Nruns 1 --tolerance 0.25
-\endcode
-The \c par-file is a TEMPO-style file containing the parameters of the pulsar used to perform the heterodyne (the
-frequency parameters are the rotation frequency and therefore not necessarily the gravitational wave frequency) e.g.
-\code
-RA      12:54:31.87523895
-DEC     -54:12:43.6572033
-PMRA    1.7
-PMDEC   2.8
-POSEPOCH 54320.8531
-F0  123.7896438753
-F1  4.592e-15
-PEPOCH 54324.8753
-\endcode
-The \c prior-file is a text file containing a list of the parameters to be searched over, the prior type ("uniform" or
-"gaussian" and their given lower/mean and upper/standard deviation ranges e.g.
-\code
-h0 uniform 0 1e-21
-phi0 uniform 0 6.283185307179586
-cosiota uniform -1 1
-psi uniform -0.785398163397448 0.785398163397448
-\endcode
-Note that if searching over frequency parameters the ranges specified in the \c prior-file should be given in terms of
-the pulsars rotation frequency and not necessarily the gravitational wave frequency e.g. for a triaxial star emitting
-gravitational waves at 100 Hz (which will be at twice the rotation frequency) if you wanted to search over 99.999 to
-100.001 Hz then you should used
-\code
-f0 49.9995 50.0005
-\endcode
-
-An example of running the code as above, but this time on fake data created using the Advanced LIGO design noise curves
-and with a signal injected into the data is:
-\code
-lalapps_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file
-fake.par --par-file fake.par --outfile ns_fake --prior-file prior_fake.txt
---ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
-lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
-100 --Nruns 1 --tolerance 0.25
-\endcode
-In this case the \c inject-file parameter file must contain the values of \c h0, \c phi0, \c psi and \c cosiota,
-otherwise these will be set to zero by default. The parameter files given for \c inject-file and \c par-file do not
-have to be the same - the injection can be offset from the 'heterodyned' values, which will be reflected in the data. If
-an \c inject-output file is also specified then the fake data containing the signal, and a fake signal-only data set,
-will be output.
+ *
+ * \heading{Description}
+ * This code is used to perform parameter estimation and evidence calculation in targeted/semi-targeted searches for
+ * gravitational waves from known pulsars. It may also be used to follow-up on signal candidates from semi-coherent all-sky
+ * searches for unknown sources.
+ *
+ * It uses the Bayesian technique of 'Nested Sampling' to sample over a defined prior parameter space (unknown signal
+ * parameters such as the gravitational wave amplitude). These samples can then be used to create posterior probability
+ * density functions of the unknown parameters. The samples are also used to calculate the Bayesian evidence, also known as
+ * the marginal likelihood, for a given signal model. This can be compared with other models, in particular the model that
+ * the data is described by Gaussian noise alone.
+ *
+ * As input the code requires time domain data that has been heterodyned using the known (or close to) phase evolution of
+ * the pulsar. The time domain input should consist of a three column text file containing the GPS time stamp of the data
+ * point, the real part of the heterodyned data and the imaginary part of the heterodyned data, e.g.
+ * 900000000.000000  1.867532e-24  -7.675329e-25
+ * 900000060.000000  2.783651e-24  3.654386e-25
+ * ...
+ *
+ * Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth of the same amount, but the code can
+ * accept any rate, or downsample data (by averaging) by a given factor.
+ *
+ * The code also requires that you specify which parameters are to be searched over, and the prior ranges over these. Any
+ * of the signal parameters can be searched over, including frequency, sky position and binary system parameters, although
+ * the bandwidth of the data and search efficiency need to be taken into account.
+ *
+ * The 'Nested Sampling' algorithm (developed by [\ref Skilling2006]) used is that defined in LALinferenceNestedSampler
+ * (see [\ref VeitchVecchio2010]). It is essentially an efficient way to perform the integral
+ * \f[
+ * Z = \int^{\mathbf{\theta}} p(d|\mathbf{\theta}) p(\mathbf{\theta}) \mathrm{d}\mathbf{\theta},
+ * \f]
+ * where \f$ \mathbf{\theta} \f$ is a vector of parameters, \f$ p(d|\mathbf{\theta}) \f$ is the likelihood of the data
+ * given the parameters, and \f$ p(\mathbf{\theta}) \f$ is the prior on the parameters. It does this by changing the
+ * multi-dimensional integral over N parameters into a one-dimensional integral
+ * \f[
+ * Z = \int^X L(X) \mathrm{d}X \approx \sum_i L(X_i) \Delta{}X_i,
+ * \f]
+ * where \f$ L(X) \f$ is the likelihood, and \f$ X \f$ is the prior mass. The algorithm will draw a number (\f$ N \f$) of
+ * samples (live points) from the parameter priors, calculate the likelihood for each point and find the lowest likelihood
+ * value. The lowest likelihood value will be added to the summation in the above equation, with \f$ \log{\Delta{}X_i}
+ * \approx 1/N \f$ coming from the fact that the prior would be normalised to unity and therefore each point should occupy
+ * an equal fraction and at each iteration the prior volume will decrease geometrically (for \f$\log{\Delta{}X_0} = 0\f$).
+ * A new point is then drawn from the prior with the criterion that it has a higher likelihood than the previous lowest
+ * point and substitutes that point. To draw the new point a Markov Chain Monte Carlo (MCMC) procedure is used - there are
+ * two methods used to sample points within this: i) drawing from a proposal distributions based on the covariance matrix
+ * if the current live points (although to keep things computationally efficient this no updated at every iteration), ii)
+ * picking a point via differential evolution (two random live points are selected and a new point half way between the two
+ * is created). The probability of using either method is currently set at 80\% and 20\% respectively. The procedure is
+ * continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
+ * \c tolerance value set (see below). The implementation of this can be seen in [\ref VeitchVecchio2010].
+ *
+ * \heading{Usage}
+ * The usage format is given below and can also be found by running the code with
+ * \code
+ * lalapps_pulsar_parameter_estimation_nested --help
+ * \endcode
+ *
+ * An example of running the code on to search over the four unknown parameters \f$ h_0 \f$, \f$ \phi_0 \f$, \f$ \psi \f$
+ * and \f$ \cos{\iota} \f$, for pulsar J0534-2200, given heterodyned time domain data from the H1 detector in the file
+ * \c finehet_J0534-2200_H1, is:
+ * \code
+ * lalapps_pulsar_parameter_estimation_nested --detectors H1 --par-file
+ * J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200
+ * --prior-file prior_J0534-2200.txt --ephem-earth
+ * lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
+ * lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
+ * 100 --Nruns 1 --tolerance 0.25
+ * \endcode
+ * The \c par-file is a TEMPO-style file containing the parameters of the pulsar used to perform the heterodyne (the
+ * frequency parameters are the rotation frequency and therefore not necessarily the gravitational wave frequency) e.g.
+ * \code
+ * RA      12:54:31.87523895
+ * DEC     -54:12:43.6572033
+ * PMRA    1.7
+ * PMDEC   2.8
+ * POSEPOCH 54320.8531
+ * F0  123.7896438753
+ * F1  4.592e-15
+ * PEPOCH 54324.8753
+ * \endcode
+ * The \c prior-file is a text file containing a list of the parameters to be searched over, the prior type ("uniform" or
+ * "gaussian" and their given lower/mean and upper/standard deviation ranges e.g.
+ * \code
+ * h0 uniform 0 1e-21
+ * phi0 uniform 0 6.283185307179586
+ * cosiota uniform -1 1
+ * psi uniform -0.785398163397448 0.785398163397448
+ * \endcode
+ * Note that if searching over frequency parameters the ranges specified in the \c prior-file should be given in terms of
+ * the pulsars rotation frequency and not necessarily the gravitational wave frequency e.g. for a triaxial star emitting
+ * gravitational waves at 100 Hz (which will be at twice the rotation frequency) if you wanted to search over 99.999 to
+ * 100.001 Hz then you should used
+ * \code
+ * f0 49.9995 50.0005
+ * \endcode
+ *
+ * An example of running the code as above, but this time on fake data created using the Advanced LIGO design noise curves
+ * and with a signal injected into the data is:
+ * \code
+ * lalapps_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file
+ * fake.par --par-file fake.par --outfile ns_fake --prior-file prior_fake.txt
+ * --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
+ * lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
+ * 100 --Nruns 1 --tolerance 0.25
+ * \endcode
+ * In this case the \c inject-file parameter file must contain the values of \c h0, \c phi0, \c psi and \c cosiota,
+ * otherwise these will be set to zero by default. The parameter files given for \c inject-file and \c par-file do not
+ * have to be the same - the injection can be offset from the 'heterodyned' values, which will be reflected in the data. If
+ * an \c inject-output file is also specified then the fake data containing the signal, and a fake signal-only data set,
+ * will be output.
  */
 
 #include "pulsar_parameter_estimation_nested.h"
@@ -359,7 +359,8 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 /*                      INITIALISATION FUNCTIONS                              */
 /******************************************************************************/
 
-/** \brief Initialises the nested sampling algorithm control
+/**
+ * \brief Initialises the nested sampling algorithm control
  *
  * Memory is allocated for the parameters, priors and proposals. The nested sampling control parameters are set: the
  * number of live points \c Nlive, the number of points for each MCMC \c Nmcmc, the number of independent runs within
@@ -467,7 +468,8 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
   return;
 }
 
-/** \brief Reads in the input gravitational wave data files, or creates fake data sets.
+/**
+ * \brief Reads in the input gravitational wave data files, or creates fake data sets.
  *
  * The function will check whether data files are being input of fake data is to be generated. If using real data the \c
  * detectors command line input must list the names of the detectors from which each of the data sets comes, with names
@@ -1173,7 +1175,8 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
 }
 
 
-/** \brief Reads in the parameters of the pulsar being searched for
+/**
+ * \brief Reads in the parameters of the pulsar being searched for
  *
  * This function reads in a pulsars parameters from the specified TEMPO-style .par file given by \c par-file using \c
  * XLALReadTEMPOParFile. This file must be specified and should contain at least the pulsars frequency, right
@@ -1328,7 +1331,8 @@ void setupFromParFile( LALInferenceRunState *runState )
 }
 
 
-/** \brief Sets the time vs polarisation angle antenna response lookup table
+/**
+ * \brief Sets the time vs polarisation angle antenna response lookup table
  *
  * This function sets up a lookup table in time vs. polarisation angle \f$\psi\f$ for each detector from which data
  * exists (either real or fake). The time ranges over one sidereal day and the polarisation angle range from
@@ -1445,8 +1449,8 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
 }
 
 
-/** \brief Set up all the allowed variables for a known pulsar search
- *
+/**
+ * \brief Set up all the allowed variables for a known pulsar search
  * This functions sets up all possible variables that are possible in a known pulsar search. Parameter values read in
  * from a .par file and passed in via the \c pars variable will be set. Scale factors will be initialised for all
  * variables (so that they exist) although they will be set to 1.
@@ -1542,7 +1546,8 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
 }
 
 
-/** \brief Adds variables, scale factors and priors
+/**
+ * \brief Adds variables, scale factors and priors
  *
  * This function adds a variable with a name and a value. For all parameters a scale factor and scale minimum range will
  * be set. These are just initialised to 1 and 0 respectively and will be set in \c initialisePrior for any parameters
@@ -1570,7 +1575,8 @@ void add_variable_scale( LALInferenceVariables *var, LALInferenceVariables *scal
 }
 
 
-/** \brief Sets up the parameters to be searched over and their prior ranges
+/**
+ * \brief Sets up the parameters to be searched over and their prior ranges
  *
  * This function sets up any parameters that you require the code to search over and specifies the prior range and type
  * for each. This information is contained in a prior file specified by the command line argument \c prior-file. This
@@ -1579,11 +1585,11 @@ void add_variable_scale( LALInferenceVariables *var, LALInferenceVariables *scal
  * mean, of the prior, for "uniform" and "gaussian" priors respectively; and the fourth has the upper limit, or standard
  * deviation, for "uniform" and "gaussian" priors respectively. E.g.
  * \code
- h0 uniform 0 1e-21
- phi0 uniform 0 6.6.283185307179586
- cosiota uniform -1 1
- psi uniform -0.785398163397448 0.785398163397448
- \endcode
+ * h0 uniform 0 1e-21
+ * phi0 uniform 0 6.6.283185307179586
+ * cosiota uniform -1 1
+ * psi uniform -0.785398163397448 0.785398163397448
+ * \endcode
  *
  * Any parameter specified in the file will have its vary type set to \c LALINFERENCE_PARAM_LINEAR, (except
  * \f$\phi_0\f$, which if it is defined to have a prior covering \f$2\pi\f$ wraps around at the edges of its range and
@@ -1963,16 +1969,17 @@ void initialisePrior( LALInferenceRunState *runState )
 }
 
 
-/** \brief Initialise the MCMC proposal distribution for sampling new points
+/**
+ * \brief Initialise the MCMC proposal distribution for sampling new points
  *
  * There are various proposal distributions that can be used to sample new live points via an MCMC. A combination of
  * different ones can be used to help efficiency for awkward posterior distributions. Here the proposals that can be
  * used are:
- *   \c covariance Drawing from a multi-variate Gaussian described by the covariance matrix of the current live points,
+ * \c covariance Drawing from a multi-variate Gaussian described by the covariance matrix of the current live points,
  * with the spread of the distribution controlled by the \c temperature. One parameter is evolved during a single draw.
- *   \c diffev Drawing a new point by differential evolution of two randomly chosen live points. All parameters are
+ * \c diffev Drawing a new point by differential evolution of two randomly chosen live points. All parameters are
  * evolved during a single draw.
- *   \c kDTree Drawing points from a distributions created from a k-D tree of the current live points, with
+ * \c kDTree Drawing points from a distributions created from a k-D tree of the current live points, with
  * probabilities of each leaf being inversely their volume. All parameters are evolved during a single draw.
  *
  * Note: also add ability to jump between frequency modes.
@@ -1980,7 +1987,7 @@ void initialisePrior( LALInferenceRunState *runState )
  * This function sets up the relative weights with which each of above distributions is used.
  *
  * \param runState [in] A pointer to the run state
-*/
+ */
 void initialiseProposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
   UINT4 covfrac = 0, defrac = 0, kdfrac = 0;
@@ -2052,7 +2059,8 @@ void initialiseProposal( LALInferenceRunState *runState ){
 }
 
 
-/** \brief Adds a correlation matrix for a multi-variate Gaussian prior
+/**
+ * \brief Adds a correlation matrix for a multi-variate Gaussian prior
  *
  * If a TEMPO-style parameter correlation coefficient file has been given, then this function will use it to set the
  * prior distribution for the given parameters. It is assumed that the equivalent par file contained standard
@@ -2148,7 +2156,8 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
 /*                       SOFTWARE INJECTION FUNCTIONS                         */
 /******************************************************************************/
 
-/** \brief Inject a simulated signal into the data
+/**
+ * \brief Inject a simulated signal into the data
  *
  * This function will create an simulated signal (of the required model) to inject into the data from multiple
  * detectors. The parameters of the signal to be injected must be specified in a TEMPO-stype .par file given with the
@@ -2161,7 +2170,7 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
  * The injected signal can be output if \c inject-output is set. Two files will be output: one containing the signal
  * only, and one containing the signal plus noise. These will both be in the format of a standard data input file. The
  * files will have names given by the \c inject-output value, with a prefix of the detector name, and a suffix of of \c
-_* signal_only, respectively.
+ * _* signal_only, respectively.
  *
  * \param runState [in] the program information structure
  *
@@ -2398,7 +2407,8 @@ void injectSignal( LALInferenceRunState *runState ){
 /*                            HELPER FUNCTIONS                                */
 /******************************************************************************/
 
-/** \brief Split the data into segments
+/**
+ * \brief Split the data into segments
  *
  * This function is deprecated to \c chop_n_merge, but gives the functionality of the old code.
  *
@@ -2459,7 +2469,8 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
 
 /* function to use change point analysis to chop up and remerge the data to find stationary chunks (i.e. lengths of data
  * which look like they have the same statistics e.g. the same standard deviation) */
-/** \brief Chops and remerges data into stationary segments
+/**
+ * \brief Chops and remerges data into stationary segments
  *
  * This function finds segments of data that appear to be stationary (have the same standard deviation).
  *
@@ -2543,7 +2554,8 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkM
 }
 
 
-/** \brief Subtract the running median from complex data
+/**
+ * \brief Subtract the running median from complex data
  *
  * This function uses \c gsl_stats_median_from_sorted_data to subtract a running median, calculated from the 30
  * consecutive point around a set point, from the data. At the start of the data running median is calculated from
@@ -2609,7 +2621,8 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
 }
 
 
-/** \brief Chops the data into stationary segments based on Bayesian change point analysis
+/**
+ * \brief Chops the data into stationary segments based on Bayesian change point analysis
  *
  * This function splits data into two (and recursively runs on those two segments) if it is found that the odds ratio
  * for them being from two independent Gaussian distributions is greater than a certain threshold.
@@ -2682,7 +2695,8 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
 }
 
 
-/** \brief Find a change point in complex data
+/**
+ * \brief Find a change point in complex data
  *
  * This function is based in the Bayesian Blocks algorithm of [\ref Scargle1998] that finds "change points" in data -
  * points at which the statistics of the data change. It is based on calculating evidence, or odds, ratios. The
@@ -2787,7 +2801,8 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength )
 }
 
 
-/** \brief Chop up the data into chunks smaller the the maximum allowed length
+/**
+ * \brief Chop up the data into chunks smaller the the maximum allowed length
  *
  * This function chops any chunks that are greater than \c chunkMax into chunks smaller than, or equal to \c chunkMax,
  * and greater than \c chunkMin. On some occasions this might result in a segment smaller than \c chunkMin, but these
@@ -2859,7 +2874,8 @@ void rechop_data( UINT4Vector *chunkIndex, INT4 chunkMax, INT4 chunkMin ){
 }
 
 
-/** \brief Merge adjacent segments
+/**
+ * \brief Merge adjacent segments
  *
  * This function will attempt to remerge adjacent segments if statistically favourable (as calculated by the odds
  * ratio). For each pair of adjacent segments the joint likelihood of them being from two independent distributions is
@@ -2933,7 +2949,8 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
 }
 
 
-/** \brief Calculates the sum of the square of the data
+/**
+ * \brief Calculates the sum of the square of the data
  *
  * This function calculates the sum of the square of the data:
  * \f[
@@ -2987,7 +3004,8 @@ void sumData( LALInferenceRunState *runState ){
 }
 
 
-/** \brief Creates a lookup table of the detector antenna pattern
+/**
+ * \brief Creates a lookup table of the detector antenna pattern
  *
  * This function creates a 2D lookup table of the 'plus' and 'cross' antenna patterns for a given detector orientation
  * and source sky position. The lookup table spans one sidereal day in time (this being the period over which the
@@ -3034,7 +3052,8 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
 }
 
 
-/** \brief Rescale the values output by the Nested Sampling algorithm
+/**
+ * \brief Rescale the values output by the Nested Sampling algorithm
  *
  * This function reads in the file of samples output from the Nested Sampling algorithm (in the file specified by \c
  * outfile) and scales them back to their true values. It removes the string variable "model" from the output and shifts
@@ -3233,7 +3252,8 @@ void rescaleOutput( LALInferenceRunState *runState ){
 }
 
 
-/** \brief Counts the number of comma separated values in a string
+/**
+ * \brief Counts the number of comma separated values in a string
  *
  * This function counts the number of comma separated values in a given input string.
  *
@@ -3263,7 +3283,8 @@ INT4 count_csv( CHAR *csvline ){
 }
 
 
-/** \brief Checks if a given parameter is recognised
+/**
+ * \brief Checks if a given parameter is recognised
  *
  * This function checks whether a given parameter is one of the defined amplitude (\c amppars), frequency (\c freqpars),
  * sky location (\c skypars) or binary system (\c binpars) parameters given in the header file.
@@ -3287,7 +3308,8 @@ INT4 recognised_parameter( CHAR *parname ){
 }
 
 
-/** \brief Calculates the optimal matched filter signal-to-noise ratio for a given signal
+/**
+ * \brief Calculates the optimal matched filter signal-to-noise ratio for a given signal
  *
  * This function calculates the optimal matched filter signal-to-noise ratio (SNR) of a given signal model for a set of
  * detector data via:
@@ -3361,7 +3383,8 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
 }
 
 
-/** \brief Get the signal-to-noise ratio of the maximum likelihood signal
+/**
+ * \brief Get the signal-to-noise ratio of the maximum likelihood signal
  *
  * The function uses the signal with the highest likelihood (which will be the final point in the live points array) and
  * calculates the optimal signal-to-noise ratio (SNR) for it. This is output to a file based on the \c outfile value,
@@ -3462,13 +3485,13 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 }
 
 
-/** \brief Automatically set the solar system ephemeris file based on environment variables and data time span
+/**
+ * \brief Automatically set the solar system ephemeris file based on environment variables and data time span
  *
  * This function will attempt to find Earth and Sun ephemeris files based on LAL environment variables (as set up by
  * <code> lalpulsar-user-env.(c)sh </code>) and a given start and end GPS time (presumably taken from the data that is
  * to be analysed). It requires \c LALPULSAR is installed and the \c LALPULSAR_PREFIX variable is set, which should mean
  * that ephemeris files are installed in the directory \c ${LALPULSAR_PREFIX}/share/lalpulsar/.
- *
  *
  * \param efile [in] a string that will return the Earth ephemeris file
  * \param sfile [in] a string that will return the Sun ephemeris file
@@ -3575,7 +3598,8 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tf
 
 /*----------------------- END OF HELPER FUNCTIONS ----------------------------*/
 
-/** \brief Read in an ascii text file of nested samples, convert to posterior samples and create k-d tree
+/**
+ * \brief Read in an ascii text file of nested samples, convert to posterior samples and create k-d tree
  *
  * This function reads in an ascii file of nested samples, converted them into posterior samples and them add them to a
  * k-d tree. The file name containing the samples must have been given as the command line argument \c sample-file and

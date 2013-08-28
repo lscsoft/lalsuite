@@ -26,7 +26,8 @@
 /** \addtogroup Velocity_h */
 /*@{*/
 
-/** This function outputs the
+/**
+ * This function outputs the
  * average velocity REAL8 v[3] of the detector during a time interval.
  * The input structure is of type VelocityPar containing all the required parmaters.
  */
@@ -87,9 +88,10 @@ void LALAvgDetectorVel( LALStatus *status,	/**< pointer to LALStatus structure *
 
 
 
-/** Given a detector and a time interval, this function outputs the
- *  average position of the detector during the interval by using
- *  the trapeziodal rule for a given fractional accuracy.
+/**
+ * Given a detector and a time interval, this function outputs the
+ * average position of the detector during the interval by using
+ * the trapeziodal rule for a given fractional accuracy.
  */
 void LALAvgDetectorPos( LALStatus *status,
 		        REAL8 x[3],
@@ -186,7 +188,8 @@ void LALAvgDetectorPos( LALStatus *status,
   RETURN (status);
 }
 
-/** This function finds the velocity of a given detector at a
+/**
+ * This function finds the velocity of a given detector at a
  * given time. It is basically a wrapper for LALBarycenter().
  * The output is of the form REAL8 vector v[3] and the input is a
  * time LIGOTimeGPS , the detector LALDetector,

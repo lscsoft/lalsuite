@@ -23,7 +23,8 @@
 extern "C" {
 #endif
 
-/** \defgroup LUT_h Header LUT.h
+/**
+ * \defgroup LUT_h Header LUT.h
  * \ingroup pkg_pulsarHough
  * \date 2001, 2003
  * \brief Provides structures and function prototypes required for the construction of look up tables
@@ -31,92 +32,92 @@ extern "C" {
  * \author Sintes, A.M, Papa, M.A. and Krishnan, B.
  *
  * History:   Created by Sintes May 11, 2001
- *            Modified by Badri Krishnan Feb 2003
+ * Modified by Badri Krishnan Feb 2003
  *
-\heading{Synopsis}
-
-\code
-#include <lal/LUT.h>
-\endcode
-
-Our goal is the construction of Hough maps. In order to produce them
-efficiently, the present implemetation makes use of <tt>lut</tt>s.
-Here we provide the necessary routines for their construction and use.
-
-In principle, the subroutines provided are valid for
-any Hough master equation of the form:
-\f[ \nu-F_0  =\vec\xi (t) \cdot (\hat n -\hat N )\, ,\f]
-where \f$\nu\f$ is the measured frequency of the signal at time \f$t\f$,
-\f$F_0\f$ intrinsic frequency of the signal at that time, \f$\hat n\f$ location of the
-souce in the sky, \f$\hat N\f$ the center of the sky patch used in the
-demodulation procedure,
-and
-\f$\vec\xi (t)\f$ any vector.
-
-The  form of this vector \f$\vec\xi (t)\f$
-depends on the demodulation procedure
-used in the previous  step.  In our case this corresponds to
-\f[\vec\xi (t) = \left( F_0+
-\sum_k F_k \left[ \Delta T  \right]^k\right) \frac{\vec v(t)}{c}
-+ \left( \sum_k k F_k \left[ \Delta  T \right]^{k-1}\right)
-\frac {\vec x(t)- \vec x(\hat t_0)}{c}\, ,\f]
-and
-\f[F_0 \equiv  f_0 + \sum_k \Delta f_k
-\left[ \Delta T \right]^k \, , \f]
-where
-\f$\vec v(t)\f$ is the velocity of the detector, \f$\vec x(t)\f$ is the detector
-position,
-\f$ T_{\hat N}(t)\f$ is the  time  at
-the solar system barycenter (for a given sky
-location \f$\hat N\f$),
-\f$\Delta T \equiv T_{\hat N}(t)-T_{\hat N}(\hat t_0)\f$,
-\f$\Delta f_k = f_k-F_k\f$ the  residual spin-down parameter,
-\f$F_k\f$ the  spin-down parameter used in the demodulation, and \f$f_0\f$, \f$f_k\f$ the
-intrinsic  frequency and spin-down parameters of the source at time \f$\hat t_0\f$.
-
-Looking at the generic Hough master equation, one realizes that
-for a fixed  time, a given value of \f$F_0\f$, and a measured frequency \f$\nu\f$
-p(from a selected peak), the source could be located anywhere on a circle (whose
-center points in the same direction of \f$\vec\xi (t)\f$ and is characterized by
-\f$\phi\f$, the angle between \f$\hat n\f$ and \f$\vec\xi\f$).  Since the Hough transform is performed on a
-set of spectra with discrete frequencies, a peak on the spectrum appearing at
-\f$\nu\f$  could correspond to any source with a demodulated
-frequency in a certain interval. As a consequence, the location of the sources
-compatible with \f$F_0\f$ and \f$\nu\f$ is not a circle but an annulus with a certain
-width.
-
-Our purpose is to map these annuli on a discrete space. An estimation of the
-average thickness of the annuli  tells us that the vast majority of
-annuli will be very thin, and therefore our algorithm should not be
-optimized for drawing
-thick annuli but for thin ones. Also, the mapping implementation should be one with a uniform
-probability distribution in order to avoid discretization errors.
-In order to remove border effects, we use a biunivocal mapping, which
-requires
-that a pixel in a partial Hough map can belong only to one annulus,
-just touched by one peak of the spectrum. The criteria for the biunivocal mapping
-is that if and only if the center of the pixel is inside the annulus, then the pixel
-will be enhanced.
-
-In order to simplify  (reduce the computational cost of) this task we
-construct look up tables (<tt>lut</tt>) where the  borders of these annuli are
-marked for any possible \f$\nu -F_0\f$ value. Since we work on a discrete space these <tt>lut</tt> are
-valid for many \f$F_0\f$ values.
-
-\image html LUTstereo.png "Fig. [fig_stereo]: Stereographic projection. [Credit to: D.Hilbert, S.Cohn-Vossen, P. Nemenyi, ``Geometry and Imagination'', Chelsea Publishing Company, New York 1952.]"
-\image latex LUTstereo.eps "Stereographic projection. [Credit to: D.Hilbert, S.Cohn-Vossen, P. Nemenyi, ``Geometry and Imagination'', Chelsea Publishing Company, New York 1952.]"
-
-At this point we have already chosen a sky tiling to produce the Hough map  efficiently.
-It consists of changing coordinates so that the center of the   patch is located at
-\f$(0,-\pi/2)\f$ in (\f$\alpha-\delta\f$) (or in any other coordinate system), then we make use
-of the stereographic projection (see Fig.\figref{fig_stereo}) and we take horizontal and vertical lines on
-the projected plane at constant space separation.
-This projection is advantageous because it avoids distortions, i.e. the
-pixel size is almost constant independently of the sky location, and makes the
-algorithm simpler. The stereographic projection has the property to map circles
-on the celestial sphere to circles on the projected plane.
-
-*/
+ * \heading{Synopsis}
+ *
+ * \code
+ * #include <lal/LUT.h>
+ * \endcode
+ *
+ * Our goal is the construction of Hough maps. In order to produce them
+ * efficiently, the present implemetation makes use of <tt>lut</tt>s.
+ * Here we provide the necessary routines for their construction and use.
+ *
+ * In principle, the subroutines provided are valid for
+ * any Hough master equation of the form:
+ * \f[ \nu-F_0  =\vec\xi (t) \cdot (\hat n -\hat N )\, ,\f]
+ * where \f$\nu\f$ is the measured frequency of the signal at time \f$t\f$,
+ * \f$F_0\f$ intrinsic frequency of the signal at that time, \f$\hat n\f$ location of the
+ * souce in the sky, \f$\hat N\f$ the center of the sky patch used in the
+ * demodulation procedure,
+ * and
+ * \f$\vec\xi (t)\f$ any vector.
+ *
+ * The  form of this vector \f$\vec\xi (t)\f$
+ * depends on the demodulation procedure
+ * used in the previous  step.  In our case this corresponds to
+ * \f[\vec\xi (t) = \left( F_0+
+ * \sum_k F_k \left[ \Delta T  \right]^k\right) \frac{\vec v(t)}{c}
+ * + \left( \sum_k k F_k \left[ \Delta  T \right]^{k-1}\right)
+ * \frac {\vec x(t)- \vec x(\hat t_0)}{c}\, ,\f]
+ * and
+ * \f[F_0 \equiv  f_0 + \sum_k \Delta f_k
+ * \left[ \Delta T \right]^k \, , \f]
+ * where
+ * \f$\vec v(t)\f$ is the velocity of the detector, \f$\vec x(t)\f$ is the detector
+ * position,
+ * \f$ T_{\hat N}(t)\f$ is the  time  at
+ * the solar system barycenter (for a given sky
+ * location \f$\hat N\f$),
+ * \f$\Delta T \equiv T_{\hat N}(t)-T_{\hat N}(\hat t_0)\f$,
+ * \f$\Delta f_k = f_k-F_k\f$ the  residual spin-down parameter,
+ * \f$F_k\f$ the  spin-down parameter used in the demodulation, and \f$f_0\f$, \f$f_k\f$ the
+ * intrinsic  frequency and spin-down parameters of the source at time \f$\hat t_0\f$.
+ *
+ * Looking at the generic Hough master equation, one realizes that
+ * for a fixed  time, a given value of \f$F_0\f$, and a measured frequency \f$\nu\f$
+ * p(from a selected peak), the source could be located anywhere on a circle (whose
+ * center points in the same direction of \f$\vec\xi (t)\f$ and is characterized by
+ * \f$\phi\f$, the angle between \f$\hat n\f$ and \f$\vec\xi\f$).  Since the Hough transform is performed on a
+ * set of spectra with discrete frequencies, a peak on the spectrum appearing at
+ * \f$\nu\f$  could correspond to any source with a demodulated
+ * frequency in a certain interval. As a consequence, the location of the sources
+ * compatible with \f$F_0\f$ and \f$\nu\f$ is not a circle but an annulus with a certain
+ * width.
+ *
+ * Our purpose is to map these annuli on a discrete space. An estimation of the
+ * average thickness of the annuli  tells us that the vast majority of
+ * annuli will be very thin, and therefore our algorithm should not be
+ * optimized for drawing
+ * thick annuli but for thin ones. Also, the mapping implementation should be one with a uniform
+ * probability distribution in order to avoid discretization errors.
+ * In order to remove border effects, we use a biunivocal mapping, which
+ * requires
+ * that a pixel in a partial Hough map can belong only to one annulus,
+ * just touched by one peak of the spectrum. The criteria for the biunivocal mapping
+ * is that if and only if the center of the pixel is inside the annulus, then the pixel
+ * will be enhanced.
+ *
+ * In order to simplify  (reduce the computational cost of) this task we
+ * construct look up tables (<tt>lut</tt>) where the  borders of these annuli are
+ * marked for any possible \f$\nu -F_0\f$ value. Since we work on a discrete space these <tt>lut</tt> are
+ * valid for many \f$F_0\f$ values.
+ *
+ * \image html LUTstereo.png "Fig. [fig_stereo]: Stereographic projection. [Credit to: D.Hilbert, S.Cohn-Vossen, P. Nemenyi, ``Geometry and Imagination'', Chelsea Publishing Company, New York 1952.]"
+ * \image latex LUTstereo.eps "Stereographic projection. [Credit to: D.Hilbert, S.Cohn-Vossen, P. Nemenyi, ``Geometry and Imagination'', Chelsea Publishing Company, New York 1952.]"
+ *
+ * At this point we have already chosen a sky tiling to produce the Hough map  efficiently.
+ * It consists of changing coordinates so that the center of the   patch is located at
+ * \f$(0,-\pi/2)\f$ in (\f$\alpha-\delta\f$) (or in any other coordinate system), then we make use
+ * of the stereographic projection (see Fig.\figref{fig_stereo}) and we take horizontal and vertical lines on
+ * the projected plane at constant space separation.
+ * This projection is advantageous because it avoids distortions, i.e. the
+ * pixel size is almost constant independently of the sky location, and makes the
+ * algorithm simpler. The stereographic projection has the property to map circles
+ * on the celestial sphere to circles on the projected plane.
+ *
+ */
 /*@{*/
 
 /*
@@ -180,12 +181,14 @@ on the celestial sphere to circles on the projected plane.
  * 9. Constant Declarations. (discouraged)
  */
 
-/** Maximum ``error'' (as a fraction of the width of the thinnest annulus)
+/**
+ * Maximum ``error'' (as a fraction of the width of the thinnest annulus)
  * which allows to represent a circle by  a line.
  */
 #define LINERR     0.001
 
-/** Maximum ``error'' (as a fraction of the width of the thinnest annulus)
+/**
+ * Maximum ``error'' (as a fraction of the width of the thinnest annulus)
  * which allows to consider two border equivalents!
  * It is relevant for determining the LUT frequency range validity
  */
@@ -224,8 +227,10 @@ typedef struct tagHOUGHBorder{
 } HOUGHBorder;
 
 
-/** This structure stores the border indexes corresponding to one frequency
- * bin plus the corrections to be added to the first column of the patch. */
+/**
+ * This structure stores the border indexes corresponding to one frequency
+ * bin plus the corrections to be added to the first column of the patch.
+ */
 typedef struct tagHOUGHBin2Border{
   INT2   leftB1;     	/**< Border index to be used (<em>start-border</em> `\f$+1\f$') */
   INT2   rightB1;    	/**< Border index to be used (<em>stop-border</em> `\f$-1\f$') */
@@ -341,7 +346,8 @@ typedef struct tagHOUGHParamPLUT{
                                  */
 } HOUGHParamPLUT;
 
-/** Demodulation parameters needed for the Hough transform; all
+/**
+ * Demodulation parameters needed for the Hough transform; all
  * coordinates are assumed to be with respect to the same reference system.
  */
 typedef struct tagHOUGHDemodPar{

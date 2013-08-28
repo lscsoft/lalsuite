@@ -12,7 +12,8 @@
 /******************************************************************************/
 /*                     LIKELIHOOD AND PRIOR FUNCTIONS                         */
 /******************************************************************************/
-/** \brief The log likelihood function
+/**
+ * \brief The log likelihood function
  *
  * This function calculates natural logarithm of the likelihood of a signal model (specified by a given set of
  * parameters) given the data from a set of detectors.
@@ -123,7 +124,8 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
   return loglike;
 }
 
-/** \brief The prior function
+/**
+ * \brief The prior function
  *
  * This function calculates the natural logarithm of the prior for a set of parameters. If the prior on a particular
  * parameter is uniform over a given range then \f$p(\theta) = 1/(\theta_{\rm max} - \theta_{\rm min})\f$. If the
@@ -298,7 +300,8 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   return prior;
 }
 
-/** \brief Convert an array of nested samples to posterior samples
+/**
+ * \brief Convert an array of nested samples to posterior samples
  *
  * This function generates an array of posterior samples from the nested samples by drawing points from the nested
  * samples weighted by their prior weighting. This assumes that the nested samples are in the array in ascending
@@ -414,7 +417,8 @@ void ns_to_posterior( LALInferenceRunState *runState ){
                            LALINFERENCE_PARAM_FIXED );
 }
 
-/** \brief Create a k-d tree from prior samples
+/**
+ * \brief Create a k-d tree from prior samples
  *
  * This function creates a k-d tree from prior samples for use as a prior distribution in the algorithm. The ranges of
  * the tree dimensions (parameters) are calculated from the maximum and minimum values of the parameter. If the the
@@ -648,7 +652,8 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
 }
 
 
-/** \brief Check that any parameters with minimum and maximum ranges are within that range
+/**
+ * \brief Check that any parameters with minimum and maximum ranges are within that range
  *
  * This function performs any cylcic/reflective transform and then makes sure that all parameters in \c params, that
  * have a defined minimum and maximum value, are within their allowed prior ranges.

@@ -28,47 +28,43 @@ static const LALStatus empty_LALStatus;
  * \author Badri Krishnan and Alicia Sintes
  * \brief Normalizes SFTs based on their noise floor calculated using the running median
  *
- *
  * History: Created by B. Krishnan Aug, 2004
- *       Taken from SFTbin.c and PeakSelect.c from hough dir in lalapps
+ * Taken from SFTbin.c and PeakSelect.c from hough dir in lalapps
  *
+ * \heading{Description}
  *
+ * This module contains functions for normalizing SFTs.  Currently two normalizations
+ * are supported.  Given SFT data \f$\tilde{x}_k \f$ where \f$ k\f$ labels a frequency bin,
+ * the normalized SFT is either \f$ \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$ or
+ * \f$ \sqrt{2N} \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$, where \f$ N \f$ is the number
+ * of frequency bins in the SFT.   The first normalization
+ * ensures that the SFT power follows an exponential distribution with unit mean
+ * (if the SFT data is distributed normally), while the second normalization is appropriate
+ * in the time domain.  In either case, the mean of \f$ |\tilde{x}_k|^2 \f$ is
+ * estimated using the median, suitably normalized assuming that the power is
+ * distributed is exponentially.
+ *
+ * \heading{Uses}
+ * \code
+ * LALSFTtoPeriodogram ()
+ * LALPeriodoToRngmed ()
+ * LALNormalizeSFT ()
+ * LALNormalizeSFTVect ()
+ * LALNormalizeMultiSFTVect ()
+ * \endcode
+ *
+ * The function LALNormalizeSFTVect() takes as input a vector of SFTs and normalizes
+ * them.  This function calls the functions LALNormalizeSFT() which normalizes a
+ * single SFT, LALSFTtoPeriodogram() which calculates the \f$ |\tilde{x}|^2 \f$ and
+ * LALPeriodoToRngmed () which applies the running median algorithm to find a vector
+ * of medians.  The function LALNormalizeMultiSFTVect() normalizes a multi-IFO collection
+ * of SFT vectors and also returns a collection of power-estimates for these vectors using
+ * the Running median method.
+ *
+ */
 
- \heading{Description}
-
-This module contains functions for normalizing SFTs.  Currently two normalizations
-are supported.  Given SFT data \f$\tilde{x}_k \f$ where \f$ k\f$ labels a frequency bin,
-the normalized SFT is either \f$ \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$ or
-\f$ \sqrt{2N} \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$, where \f$ N \f$ is the number
-of frequency bins in the SFT.   The first normalization
-ensures that the SFT power follows an exponential distribution with unit mean
-(if the SFT data is distributed normally), while the second normalization is appropriate
-in the time domain.  In either case, the mean of \f$ |\tilde{x}_k|^2 \f$ is
-estimated using the median, suitably normalized assuming that the power is
-distributed is exponentially.
-
-
-\heading{Uses}
-\code
-LALSFTtoPeriodogram ()
-LALPeriodoToRngmed ()
-LALNormalizeSFT ()
-LALNormalizeSFTVect ()
-LALNormalizeMultiSFTVect ()
-\endcode
-
-
-The function LALNormalizeSFTVect() takes as input a vector of SFTs and normalizes
-them.  This function calls the functions LALNormalizeSFT() which normalizes a
-single SFT, LALSFTtoPeriodogram() which calculates the \f$ |\tilde{x}|^2 \f$ and
-LALPeriodoToRngmed () which applies the running median algorithm to find a vector
-of medians.  The function LALNormalizeMultiSFTVect() normalizes a multi-IFO collection
-of SFT vectors and also returns a collection of power-estimates for these vectors using
-the Running median method.
-
-*/
-
-/** Normalize an sft based on RngMed estimated PSD, and returns running-median.
+/**
+ * Normalize an sft based on RngMed estimated PSD, and returns running-median.
  */
 int
 XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed periodogram over SFT (Tsft*Sn/2) (must be allocated) */
@@ -104,7 +100,8 @@ XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed
 } /* XLALNormalizeSFT() */
 
 
-/** Function for normalizing a vector of SFTs.
+/**
+ * Function for normalizing a vector of SFTs.
  */
 int
 XLALNormalizeSFTVect ( SFTVector  *sftVect,	/**< [in/out] pointer to a vector of SFTs which will be normalized */
@@ -143,7 +140,8 @@ XLALNormalizeSFTVect ( SFTVector  *sftVect,	/**< [in/out] pointer to a vector of
 } /* XLALNormalizeSFTVect() */
 
 
-/** Function for normalizing a multi vector of SFTs in a multi IFO search and
+/**
+ * Function for normalizing a multi vector of SFTs in a multi IFO search and
  * returns the running-median estimates of the power.
  */
 MultiPSDVector *
@@ -194,7 +192,8 @@ XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft,		/**< [in/out] multi-vector
 } /* XLALNormalizeMultiSFTVect() */
 
 
-/** Calculates a smoothed (running-median) periodogram for the given SFT.
+/**
+ * Calculates a smoothed (running-median) periodogram for the given SFT.
  */
 int
 XLALSFTtoRngmed ( REAL8FrequencySeries *rngmed,	/**< [out] running-median smoothed periodo [must be allocated!] */
@@ -244,7 +243,8 @@ XLALSFTtoRngmed ( REAL8FrequencySeries *rngmed,	/**< [out] running-median smooth
 
 } /* XLALSFTtoRngmed() */
 
-/** Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data.
+/**
+ * Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data.
  */
 int
 XLALSFTtoPeriodogram ( REAL8FrequencySeries    *periodo,	/**< [out] mod squares of SFT data (has to be allocated) */
@@ -287,7 +287,8 @@ XLALSFTtoPeriodogram ( REAL8FrequencySeries    *periodo,	/**< [out] mod squares 
 
 } /* XLALSFTtoPeriodogram() */
 
-/** Calculates running median over a single periodogram.
+/**
+ * Calculates running median over a single periodogram.
  */
 int
 XLALPeriodoToRngmed ( REAL8FrequencySeries  *rngmed,		/**< [out] resulting 'smoothed' periodogram (must be allocated) */
@@ -348,7 +349,8 @@ XLALPeriodoToRngmed ( REAL8FrequencySeries  *rngmed,		/**< [out] resulting 'smoo
 } /* XLALPeriodoToRngmed() */
 
 
-/** Calculate the cross-correlation periodogram from 2 SFTs.
+/**
+ * Calculate the cross-correlation periodogram from 2 SFTs.
  */
 int
 XLALSFTstoCrossPeriodogram ( REAL8FrequencySeries *periodo,		/**< [out] modulus square of SFT data (must be allocated) */
@@ -404,7 +406,8 @@ XLALSFTstoCrossPeriodogram ( REAL8FrequencySeries *periodo,		/**< [out] modulus 
 
 // ****************************** OBSOLETE + DEPRECATED LAL-INTERFACE FUNCTIONS ******************************
 
-/** \deprecated use XLALSFTtoPeriodogram() instead
+/**
+ * \deprecated use XLALSFTtoPeriodogram() instead
  * Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data.
  */
 void
@@ -423,8 +426,9 @@ LALSFTtoPeriodogram (LALStatus    *status,		/**< pointer to LALStatus structure 
 
 } /* end LALSFTtoPeriodogram() */
 
-/** \deprecated use XLALPeriodoToRngmed() instead
-*/
+/**
+ * \deprecated use XLALPeriodoToRngmed() instead
+ */
 void
 LALPeriodoToRngmed (LALStatus  *status,				/**< pointer to LALStatus structure */
 		    REAL8FrequencySeries  *rngmed,		/**< [out] resulting 'smoothed' periodogram */
@@ -443,7 +447,8 @@ LALPeriodoToRngmed (LALStatus  *status,				/**< pointer to LALStatus structure *
 } /* LALPeriodoToRngmed() */
 
 
-/** \deprecated use XLALSFTtoRngmed() instead
+/**
+ * \deprecated use XLALSFTtoRngmed() instead
  */
 void
 LALSFTtoRngmed (LALStatus  *status,		/**< pointer to LALStatus structure */
@@ -463,7 +468,8 @@ LALSFTtoRngmed (LALStatus  *status,		/**< pointer to LALStatus structure */
 } /* LALSFTtoRngmed() */
 
 
-/** \deprecated use XLALNormalizeSFT() instead
+/**
+ * \deprecated use XLALNormalizeSFT() instead
  */
 void
 LALNormalizeSFT (LALStatus           *status,		/**< pointer to LALStatus structure */
@@ -482,7 +488,8 @@ LALNormalizeSFT (LALStatus           *status,		/**< pointer to LALStatus structu
 } /* LALNormalizeSFT() */
 
 
-/** Function for normalizing a vector of SFTs.
+/**
+ * Function for normalizing a vector of SFTs.
  */
 void
 LALNormalizeSFTVect (LALStatus  *status,		/**< pointer to LALStatus structure */
@@ -501,7 +508,8 @@ LALNormalizeSFTVect (LALStatus  *status,		/**< pointer to LALStatus structure */
 } /* LALNormalizeSFTVect() */
 
 
-/** Function for normalizing a multi vector of SFTs in a multi IFO search and also
+/**
+ * Function for normalizing a multi vector of SFTs in a multi IFO search and also
  * returns the running-median estimates of the power.
  */
 void
@@ -528,7 +536,8 @@ LALNormalizeMultiSFTVect (LALStatus      *status,		/**< pointer to LALStatus str
 } /* LALNormalizeMultiSFTVect() */
 
 
-/** Calculate the cross-correlation periodogram from 2 SFTs.
+/**
+ * Calculate the cross-correlation periodogram from 2 SFTs.
  */
 void
 LALSFTstoCrossPeriodogram (LALStatus    *status,		/**< pointer to LALStatus structure */

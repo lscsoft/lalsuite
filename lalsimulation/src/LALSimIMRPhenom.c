@@ -48,7 +48,6 @@ typedef struct tagBBHPhenomParams{
 BBHPhenomParams;
 
 /**
- *
  * private function prototypes; all internal functions use solar masses.
  *
  */
@@ -76,7 +75,6 @@ static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
 
 
 /**
- *
  * main functions
  *
  */
@@ -86,9 +84,9 @@ static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
  * phenomenological waveform IMRPhenomA in the frequency domain.
  *
  * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
+ * - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ * - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ * Table I of http://arxiv.org/pdf/0712.0343
  *
  * All input parameters should be SI units.
  */
@@ -141,9 +139,9 @@ int XLALSimIMRPhenomAGenerateFD(
  * phenomenological waveform IMRPhenomA in the time domain.
  *
  * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
+ * - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ * - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ * Table I of http://arxiv.org/pdf/0712.0343
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -248,8 +246,8 @@ double XLALSimIMRPhenomBComputeChi(
  * phenomenological waveform IMRPhenomB in the time domain.
  *
  * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
+ * - Waveform: Eq.(1)
+ * - Coefficients: Eq.(2) and Table I
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -343,8 +341,8 @@ int XLALSimIMRPhenomBGenerateTD(
  * phenomenological waveform IMRPhenomB in the frequency domain.
  *
  * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
+ * - Waveform: Eq.(1)
+ * - Coefficients: Eq.(2) and Table I
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */

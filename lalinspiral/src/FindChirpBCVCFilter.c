@@ -27,11 +27,10 @@
  */
 
 /**
-
-\author Thomas Cokelaer
-\file
-
-*/
+ * \author Thomas Cokelaer
+ * \file
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>

@@ -29,7 +29,8 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \addtogroup Calibration_h
+/**
+ * \addtogroup Calibration_h
  * \author P. R. Brady, J. D. E. Creighton
  * \brief Calibration API
  *
@@ -121,7 +122,8 @@ tagCalibrationRecord
 }
 CalibrationRecord;
 
-/** The type CalibrationFunctions contains two calibration functions,
+/**
+ * The type CalibrationFunctions contains two calibration functions,
  * the sensing function \f$C(f)\f$ and the response function \f$R(f)\f$.  While the
  * response function is the function that is most often wanted, the sensing
  * function is needed in updating calibration from one epoch to another.
@@ -134,7 +136,8 @@ tagCalibrationFunctions
 }
 CalibrationFunctions;
 
-/** The type \c CalibrationUpdateParams contains two time series
+/**
+ * The type \c CalibrationUpdateParams contains two time series
  * representing an overall gain factor for the open-loop gain function \f$H(f)\f$
  * and the sensing function \f$C(f)\f$.  These transfer functions are known to
  * change (by an overall factor) with time, and these two factors can be

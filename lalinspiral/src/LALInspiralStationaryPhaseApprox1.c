@@ -19,12 +19,12 @@
 
 /**
  * \author B.S. Sathyaprakash
-\file
-\ingroup LALInspiral_h
-
-\brief This module computes the stationary phase approximation to the
-Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourierPhase}.
-
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief This module computes the stationary phase approximation to the
+ * Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourierPhase}.
+ *
  * \heading{Prototypes}
  *
  * <tt>XLALInspiralStationaryPhaseApprox1()</tt>
@@ -65,9 +65,9 @@ Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourie
  * \heading{Uses}
  *
  * \code
-   XLALInspiralSetup()
-   XLALInspiralChooseModel()
-   XLALREAL8RombergIntegrate()
+ * XLALInspiralSetup()
+ * XLALInspiralChooseModel()
+ * XLALREAL8RombergIntegrate()
  * \endcode
  * \heading{Notes}
  *
@@ -77,7 +77,7 @@ Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourie
  * Fourier transform by a factor \f$n/2\f$ to be consistent with the
  * amplitude used in time-domain signal models.
  *
-*/
+ */
 
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>

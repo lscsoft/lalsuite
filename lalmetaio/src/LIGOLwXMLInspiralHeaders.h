@@ -30,34 +30,31 @@
 #include <lal/LALStdlib.h>
 
 /**
-
-\author Brown, D. A.
-\file
-\ingroup lalmetaio
-
-\brief This header provides provides <tt>\#define</tt>s for the inspiral related
-tables of LIGO light weight XML files.
-
-\heading{Synopsis}
-\code
-#include <lal/LIGOLwXMLInspiralHeaders.h>
-\endcode
-
-It will need to be kept up to date with changes in the LIGO database table definitions.
-The quantities which are defined in this file are
-
-<ul>
-<li> LIGOLW_XML_SNGL_INSPIRAL</li>
-<li> SNGL_INSPIRAL_ROW</li>
-<li> LIGOLW_XML_MULTI_INSPIRAL</li>
-<li> MULTI_INSPIRAL_ROW</li>
-<li> LIGOLW_XML_SIM_INSPIRAL</li>
-<li> SIM_INSPIRAL_ROW</li>
-</ul>
-
-
-
-*/
+ * \author Brown, D. A.
+ * \file
+ * \ingroup lalmetaio
+ *
+ * \brief This header provides provides <tt>\#define</tt>s for the inspiral related
+ * tables of LIGO light weight XML files.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LIGOLwXMLInspiralHeaders.h>
+ * \endcode
+ *
+ * It will need to be kept up to date with changes in the LIGO database table definitions.
+ * The quantities which are defined in this file are
+ *
+ * <ul>
+ * <li> LIGOLW_XML_SNGL_INSPIRAL</li>
+ * <li> SNGL_INSPIRAL_ROW</li>
+ * <li> LIGOLW_XML_MULTI_INSPIRAL</li>
+ * <li> MULTI_INSPIRAL_ROW</li>
+ * <li> LIGOLW_XML_SIM_INSPIRAL</li>
+ * <li> SIM_INSPIRAL_ROW</li>
+ * </ul>
+ *
+ */
 
 #ifndef _LIGOLWXMLINSPIRALHEADERS_H
 #define _LIGOLWXMLINSPIRALHEADERS_H

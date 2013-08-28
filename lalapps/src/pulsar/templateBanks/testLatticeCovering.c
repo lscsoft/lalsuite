@@ -21,10 +21,9 @@
  * \author Reinhard Prix
  * \date 2005
  * \ingroup pulsarApps
- * \file 
+ * \file
  * \ingroup moduleLatticeCovering
  * \brief test-functions for the module LatticeCovering
- *
  *
  */
 
@@ -548,8 +547,9 @@ plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric
 
 } /* plot2DCovering() */
 
-/** Monte-Carlo run to measure the covering-radius (and distribution) of 
- * a given covering. 
+/**
+ * Monte-Carlo run to measure the covering-radius (and distribution) of
+ * a given covering.
  * Algorithm: pick a point at random within [-1,1]^n, get the minimal distance
  * to one of the lattice-points, and write this distance into a file, etc.
  * The covering-radius is given as the cutoff-distance of this distribution.

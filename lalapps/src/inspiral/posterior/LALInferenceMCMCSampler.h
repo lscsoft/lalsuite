@@ -26,13 +26,13 @@
  * \file LALInferenceMCMCSampler.h
  * \brief Markov-Chain Monte Carlo sampler written for LALInference. Independent of model.
  * \ingroup LALInference
- * 
- * Markov-Chain Monte Carlo sampler incorporating parallel tempering using MPI and 
+ *
+ * Markov-Chain Monte Carlo sampler incorporating parallel tempering using MPI and
  * the possibility of adaptative jumps.
- * 
- * Provided are a LALAlgorithm function and a 
+ *
+ * Provided are a LALAlgorithm function and a
  * LALEvolveOneStepFunction which implement a single step forward.
- * 
+ *
  */
 
 

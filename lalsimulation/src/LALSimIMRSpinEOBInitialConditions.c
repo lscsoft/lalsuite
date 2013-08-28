@@ -108,11 +108,12 @@ CalculateRotationMatrix(
   if ( ( cosg = cos( g ) ) < 1.0e-16 ) cosg = 0.0;
   if ( ( sing = sin( g ) ) < 1.0e-16 ) sing = 0.0;
 
-  /** Implement the Rotation Matrix following the "x-convention"
-   *  1. rotate about the z-axis by an angle a, rotation matrix Rz(a);
-   *  2. rotate about the former x-axis (now x') by an angle b, rotation matrix Rx(b);
-   *  3. rotate about the former z-axis (now z') by an algle g, rotation matrix Rz(g); 
-   */
+/**
+ * Implement the Rotation Matrix following the "x-convention"
+ * 1. rotate about the z-axis by an angle a, rotation matrix Rz(a);
+ * 2. rotate about the former x-axis (now x') by an angle b, rotation matrix Rx(b);
+ * 3. rotate about the former z-axis (now z') by an algle g, rotation matrix Rz(g);
+ */
   /* populate the matrix */
   gsl_matrix_set( rotMatrix, 0, 0, cosg*cosa - cosb*sina*sing );
   gsl_matrix_set( rotMatrix, 0, 1, cosg*sina + cosb*cosa*sing );
@@ -189,7 +190,7 @@ ApplyRotationMatrix(
 /**
  * Performs a co-ordinate transformation from spherical to Cartesian co-ordinates.
  * In the code from Tyson Littenberg, this was only applicable to the special theta=pi/2, phi=0 case.
- * This special transformation is a static function called only by 
+ * This special transformation is a static function called only by
  * GSLSpinHamiltonianDerivWrapper and XLALSimIMRSpinEOBInitialConditions
  */
 static int SphericalToCartesian(
@@ -278,7 +279,7 @@ static int CartesianToSpherical(
  * The gsl root finder with look for gsl_vector *x position in parameter space
  * where the returned values in gsl_vector *f are zero.
  * The functions on which we search for roots are:
- * dH/dr, dH/dptheta and dH/dpphi-omega, 
+ * dH/dr, dH/dptheta and dH/dpphi-omega,
  * namely, Eqs. 4.8 and 4.9 of Buonanno et al. PRD 74, 104005 (2006).
  */
 static int
@@ -348,10 +349,10 @@ XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl r
 }
 
 
-/** 
+/**
  * Wrapper for calculating specific derivative of the Hamiltonian in spherical co-ordinates,
  * dH/dr, dH/dptheta and dH/dpphi.
- * It only works for the specific co-ord system we use here 
+ * It only works for the specific co-ord system we use here
  */
 static double GSLSpinHamiltonianDerivWrapper( double x,    /**<< Derivative at x */
                                               void  *params /**<< Function parameters */)
@@ -466,33 +467,33 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
 }
 
 /**
- * Main function for calculating the spinning EOB initial conditions, following the 
- * quasi-spherical initial conditions described in Sec. IV A of 
+ * Main function for calculating the spinning EOB initial conditions, following the
+ * quasi-spherical initial conditions described in Sec. IV A of
  * Buonanno, Chen & Damour PRD 74, 104005 (2006).
  * All equation numbers in the comments of this function refer to this paper.
- * Inputs are binary parameters (masses, spin vectors and inclination), 
+ * Inputs are binary parameters (masses, spin vectors and inclination),
  * EOB model parameters and initial frequency.
- * Outputs are initial dynamical variables in a vector 
+ * Outputs are initial dynamical variables in a vector
  * (x, y, z, px, py, pz, S1x, S1y, S1z, S2x, S2y, S2z).
- * In the paper, the initial conditions are solved for a given initial radius, 
- * while in this function, they are solved for a given inital orbital frequency. 
+ * In the paper, the initial conditions are solved for a given initial radius,
+ * while in this function, they are solved for a given inital orbital frequency.
  * This difference is reflected in solving Eq. (4.8).
  * The calculation is done in 5 steps:
- * STEP 1) Rotate to LNhat0 along z-axis and N0 along x-axis frame, where 
- *         LNhat0 and N0 are initial normal to orbital plane and initial orbital separation;
- * STEP 2) After rotation in STEP 1, in spherical coordinates, 
- *         phi0 and theta0 are given directly in Eq. (4.7),
- *         r0, pr0, ptheta0 and pphi0 are obtained by solving Eqs. (4.8) and (4.9) 
- *         (using gsl_multiroot_fsolver).
- *         At this step, we find initial conditions for a spherical orbit without 
- *         radiation reaction.
- * STEP 3) Rotate to L0 along z-axis and N0 along x-axis frame, where 
- *         L0 is the initial orbital angular momentum and
- *         L0 is calculated using initial position and linear momentum obtained in STEP 2.
- * STEP 4) In the L0-N0 frame, we calculate (dE/dr)|sph using Eq. (4.14), 
- *         then initial dr/dt using Eq. (4.10), and finally pr0 using Eq. (4.15).
+ * STEP 1) Rotate to LNhat0 along z-axis and N0 along x-axis frame, where
+ * LNhat0 and N0 are initial normal to orbital plane and initial orbital separation;
+ * STEP 2) After rotation in STEP 1, in spherical coordinates,
+ * phi0 and theta0 are given directly in Eq. (4.7),
+ * r0, pr0, ptheta0 and pphi0 are obtained by solving Eqs. (4.8) and (4.9)
+ * (using gsl_multiroot_fsolver).
+ * At this step, we find initial conditions for a spherical orbit without
+ * radiation reaction.
+ * STEP 3) Rotate to L0 along z-axis and N0 along x-axis frame, where
+ * L0 is the initial orbital angular momentum and
+ * L0 is calculated using initial position and linear momentum obtained in STEP 2.
+ * STEP 4) In the L0-N0 frame, we calculate (dE/dr)|sph using Eq. (4.14),
+ * then initial dr/dt using Eq. (4.10), and finally pr0 using Eq. (4.15).
  * STEP 5) Rotate back to the original inertial frame by inverting the rotation of STEP 3 and
- *         then inverting the rotation of STEP 1.
+ * then inverting the rotation of STEP 1.
  */
 
 static int XLALSimIMRSpinEOBInitialConditions(

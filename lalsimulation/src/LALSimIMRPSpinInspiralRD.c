@@ -995,7 +995,8 @@ static INT4 XLALSimInspiralComputeInclAngle(REAL8 ciota, LALSimInspiralInclAngle
 
 } /* End of XLALSimInspiralComputeInclAngle*/
 
-/** The following lines are necessary in the case L is initially parallel to
+/**
+ * The following lines are necessary in the case L is initially parallel to
  * N so that alpha is undefined at the beginning but different from zero at the first
  * step (this happens if the spins are not aligned with L).
  * Such a discontinuity of alpha would induce
@@ -1004,7 +1005,7 @@ static INT4 XLALSimInspiralComputeInclAngle(REAL8 ciota, LALSimInspiralInclAngle
  * case alpha can be safely set to the previous value, just before L becomes parallel
  * to N. In the case L stays all the time parallel to N than alpha can be
  * safely set to zero, as it is.
- **/
+ */
 
 static INT4 XLALSimInspiralComputeAlpha(LALSimInspiralPhenSpinTaylorT4Coeffs params, REAL8 LNhx, REAL8 LNhy, REAL8 S1x, REAL8 S1y, REAL8 S2x, REAL8 S2y,REAL8 *alpha){
   if ((LNhy*LNhy+LNhx*LNhx)==0.) {
@@ -1025,31 +1026,32 @@ static INT4 XLALSimInspiralComputeAlpha(LALSimInspiralPhenSpinTaylorT4Coeffs par
   return XLAL_SUCCESS;
 } /*End of XLALSimInspiralComputeAlpha*/
 
-/** Here we use the following convention:
- *  the coordinates of the spin vectors spin1,2 and the inclination
- *  variable refers to different physical parameters according to the value of
- *  axisChoice:
- *  * LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L: inclination denotes the angle
- *            between the view direction N and the initial L
- *            (initial L//z, N in the x-z plane) and the spin
- *            coordinates are given with respect to initial L.
- *  * LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:   inclination denotes the angle
- *            between the view direction and J (J is constant during the
- *            evolution, J//z, both N and initial L are in the x-z plane)
- *            and the spin coordinates are given wrt initial L.
- *  * LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:     inclination denotes the angle
- *            between the initial L and N (N//z, initial L in the x-z plane)
- *            and the spin coordinates are given with respect to N.
+/**
+ * Here we use the following convention:
+ * the coordinates of the spin vectors spin1,2 and the inclination
+ * variable refers to different physical parameters according to the value of
+ * axisChoice:
+ * * LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L: inclination denotes the angle
+ * between the view direction N and the initial L
+ * (initial L//z, N in the x-z plane) and the spin
+ * coordinates are given with respect to initial L.
+ * * LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:   inclination denotes the angle
+ * between the view direction and J (J is constant during the
+ * evolution, J//z, both N and initial L are in the x-z plane)
+ * and the spin coordinates are given wrt initial L.
+ * * LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:     inclination denotes the angle
+ * between the initial L and N (N//z, initial L in the x-z plane)
+ * and the spin coordinates are given with respect to N.
  *
- *   In order to reproduce the results of the SpinTaylor code View must be chosen.
- *   The spin magnitude are normalized to the individual mass^2, i.e.
- *   they are dimension-less.
- *   The modulus of the initial angular momentum is fixed by m1,m2 and
- *   initial frequency.
- *   The polarization angle is not used here, it enters the pattern
- *   functions along with the angles marking the sky position of the
- *   source.
- **/
+ * In order to reproduce the results of the SpinTaylor code View must be chosen.
+ * The spin magnitude are normalized to the individual mass^2, i.e.
+ * they are dimension-less.
+ * The modulus of the initial angular momentum is fixed by m1,m2 and
+ * initial frequency.
+ * The polarization angle is not used here, it enters the pattern
+ * functions along with the angles marking the sky position of the
+ * source.
+ */
 
 /*static void rotateX(REAL8 phi,REAL8 *vx, REAL8 *vy, REAL8 *vz){
   REAL8 tmp[3]={*vx,*vy,*vz};
@@ -1194,7 +1196,7 @@ static INT4 XLALSimIMRPhenSpinInspiralSetAxis(REAL8 mass1, /* in MSun units */
 
 /**
  * PhenSpin Initialization
- **/
+ */
 
 static INT4 XLALSimIMRPhenSpinInitialize(REAL8 mass1,                              /* in Msun units */
                                         REAL8 mass2,                              /* in Msun units */
@@ -1908,7 +1910,7 @@ static INT4 XLALUpSampling(REAL8Vector* vHi, REAL8 dtHi, REAL8Vector* v, REAL8 d
 
 /**
  * Driver routine for generating PhenSpinRD waveforms
- **/
+ */
 
 INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,               /**< +-polarization waveform [returned] */
                                           REAL8TimeSeries **hCross,              /**< x-polarization waveform [returned] */

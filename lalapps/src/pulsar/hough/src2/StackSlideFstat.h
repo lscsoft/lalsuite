@@ -22,10 +22,10 @@
 
 /**
  * \file StackSlideFstat.h
- * \brief Header file for StackSlideFstat.c 
+ * \brief Header file for StackSlideFstat.c
  * \author Gregory Mendell
- * 
- ****/
+ *
+ */
 
 
 #ifndef _STACKSLIDEFSTAT_H

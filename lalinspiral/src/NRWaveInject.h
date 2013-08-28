@@ -40,7 +40,8 @@
 extern "C" {
 #endif
 
-/** \addtogroup NRWaveInject_h
+/**
+ * \addtogroup NRWaveInject_h
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *
  * \brief Module for generating h(t) from Numrel waveforms

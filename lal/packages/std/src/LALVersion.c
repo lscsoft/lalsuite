@@ -39,7 +39,8 @@ const int lalVersionDevel = LAL_VERSION_DEVEL;
 const char *const lalConfigureArgs = LAL_CONFIGURE_ARGS;
 const char *const lalConfigureDate = LAL_CONFIGURE_DATE;
 
-/** \ingroup LALVersion_h
+/**
+ * \ingroup LALVersion_h
  * Routine that returns the version of LAL.
  * This function writes a version message into the string buffer of specified
  * size (and is truncated if the buffer is too small).  Configuration information

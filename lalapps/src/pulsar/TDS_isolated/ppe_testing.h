@@ -30,8 +30,10 @@
 extern "C" {
 #endif
 
-/** The usage format for the test case of performing the analysis on a
- * one-dimensional grid. */
+/**
+ * The usage format for the test case of performing the analysis on a
+ * one-dimensional grid.
+ */
 #define USAGEGRID \
 "Usage: %s [options]\n\n"\
 " --grid              perform the posterior evalution on a 1D grid over the\n\

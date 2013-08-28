@@ -24,45 +24,45 @@
 #include <lal/Inject.h>
 
 /**
-\author Creighton, T. D.
-\addtogroup InjectVector_c
-
-\brief Injects a vector of floating-point numbers into a vector of integers, with dithering.
-
-The function <tt>LALSI2InjectVector()</tt> (i.e.\ "Single-precision to INT2")
-dithers the contents of <tt>*output</tt>, adds the
-contents of <tt>*signalvec</tt>, and rounds to the nearest integer, storing
-the result back in <tt>*output</tt>.  If desired, the random parameters
-for the dithering can be created outside this routine and passed in as
-<tt>*params</tt> (see \ref Random_h); if this pointer is \c NULL,
-the parameters will be generated internally.
-
-The function <tt>LALSSInjectVector()</tt> (i.e.\ "Single-precision to
-single-precision") simply adds the contents of <tt>*signalvec</tt> to
-<tt>*output</tt> where they overlap, without performing any dithering.
-
-\heading{Algorithm}
-
-Dithering is done with a flat random distribution as described in
-\ref Inject.h.  Injected values outside the dynamic range of the
-output force the output to its "rails" of \f$-2^{8N-1}\f$ or
-\f$2^{8N-1}-1\f$, where \f$N\f$ is the number of bytes in the integer.  The
-two vectors need not be of equal length; the injection stops when
-either vector reaches its end.
-
-If \c params is \c NULL, a \c RandomParams structure will
-be generated internally using a seed of zero (i.e.\ the current time
-will be used to initialize the pseudorandom sequence).
-
-\heading{Uses}
-\code
-LALCreateRandomParams()
-LALDestroyRandomParams()
-LALUniformDeviate()
-\endcode
-
-@{
-*/
+ * \author Creighton, T. D.
+ * \addtogroup InjectVector_c
+ *
+ * \brief Injects a vector of floating-point numbers into a vector of integers, with dithering.
+ *
+ * The function <tt>LALSI2InjectVector()</tt> (i.e.\ "Single-precision to INT2")
+ * dithers the contents of <tt>*output</tt>, adds the
+ * contents of <tt>*signalvec</tt>, and rounds to the nearest integer, storing
+ * the result back in <tt>*output</tt>.  If desired, the random parameters
+ * for the dithering can be created outside this routine and passed in as
+ * <tt>*params</tt> (see \ref Random_h); if this pointer is \c NULL,
+ * the parameters will be generated internally.
+ *
+ * The function <tt>LALSSInjectVector()</tt> (i.e.\ "Single-precision to
+ * single-precision") simply adds the contents of <tt>*signalvec</tt> to
+ * <tt>*output</tt> where they overlap, without performing any dithering.
+ *
+ * \heading{Algorithm}
+ *
+ * Dithering is done with a flat random distribution as described in
+ * \ref Inject.h.  Injected values outside the dynamic range of the
+ * output force the output to its "rails" of \f$-2^{8N-1}\f$ or
+ * \f$2^{8N-1}-1\f$, where \f$N\f$ is the number of bytes in the integer.  The
+ * two vectors need not be of equal length; the injection stops when
+ * either vector reaches its end.
+ *
+ * If \c params is \c NULL, a \c RandomParams structure will
+ * be generated internally using a seed of zero (i.e.\ the current time
+ * will be used to initialize the pseudorandom sequence).
+ *
+ * \heading{Uses}
+ * \code
+ * LALCreateRandomParams()
+ * LALDestroyRandomParams()
+ * LALUniformDeviate()
+ * \endcode
+ *
+ * @{
+ */
 
 /** \see See documentation in \ref InjectVector_c */
 void

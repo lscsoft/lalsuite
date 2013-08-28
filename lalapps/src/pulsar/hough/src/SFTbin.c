@@ -33,27 +33,27 @@
 /** OBSOLETE -- Use LAL functions from SFTfileIO.c instead */
 
 /**
-\author Sintes, A.M., Krishnan, B.
-
-\heading{\ref SFTbin.c}
-Routines for reading SFT binary files
-
-\heading{Prototypes}
-<tt>ReadSFTbinHeader1()</tt>
-<tt>ReadCOMPLEX8SFTbinData1()</tt>
-<tt>ReadCOMPLEX16SFTbinData1()</tt>
-<tt>COMPLEX8SFT2Periodogram1()</tt>
-<tt>COMPLEX16SFT2Periodogram1()</tt>
-
-\heading{Description}
-
-the output of the periodogram should be properly normalized !!!
-
-\heading{Uses}
-\code
-LALHO()
-\endcode
-*/
+ * \author Sintes, A.M., Krishnan, B.
+ *
+ * \heading{\ref SFTbin.c}
+ * Routines for reading SFT binary files
+ *
+ * \heading{Prototypes}
+ * <tt>ReadSFTbinHeader1()</tt>
+ * <tt>ReadCOMPLEX8SFTbinData1()</tt>
+ * <tt>ReadCOMPLEX16SFTbinData1()</tt>
+ * <tt>COMPLEX8SFT2Periodogram1()</tt>
+ * <tt>COMPLEX16SFT2Periodogram1()</tt>
+ *
+ * \heading{Description}
+ *
+ * the output of the periodogram should be properly normalized !!!
+ *
+ * \heading{Uses}
+ * \code
+ * LALHO()
+ * \endcode
+ */
 
 #include "./SFTbin.h"
 

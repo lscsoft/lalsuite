@@ -1,138 +1,138 @@
 /**
-   \addtogroup LALError_h
-
-   \brief Provides routines to report and handle errors.
-
-   \heading{Synopsis}
-   \code
-      #include <lal/LALError.h>
-   \endcode
-
-   \note These LAL-interface functions are obsolete and deprecated,
-   use the XLAL functions described in \ref XLALError_h instead.
-
-   This header covers routines that print status messages, and
-   that allow functions to abort.
-   These functions should \e not be invoked in
-   production code, except in very specific circumstances.
-
-\heading{Description}
-
-These functions cause LAL to print status messages and perform basic
-error handling.  Their implementation is quite simple but may be
-altered in the future to provide reasonable behaviour when integrated
-with other systems (e.g., LDAS).  As a general rule,
-<tt>LALWarning()</tt> and <tt>LALInfo()</tt> are the only routines that
-programmers should use in their own modules; the other routines are
-used internally by LAL.  Descriptions of the individual functions are
-as follows.
-
-\heading{<tt>LALPrintError()</tt>} prints a formatted string to some
-designated output device (usually the \c stderr stream), returning
-the number of characters printed, or negative if an error occurred.
-The format of the argument list is the same as for the standard C
-routine <tt>printf()</tt>.  By funneling all LAL error printing through
-this one routine, it is easier to adapt LAL to implementations that
-have particular I/O or error-logging requirements.  Most LAL routines
-should use <tt>LALError()</tt>, <tt>LALWarning()</tt>, and
-<tt>LALInfo()</tt> to report their status, rather than calling
-<tt>LALPrintError()</tt> directly.
-
-\heading{<tt>LALRaise()</tt>} prints a formatted string to an error
-logging device, as above, and then raises the requested signal.
-Standard LAL routines should \e not terminate execution, but should
-instead return control to the calling routine, reporting errors through their
-\c LALStatus structure.  Programmers should never
-invoke <tt>LALRaise()</tt> explicitly.
-A hook to a <tt>LALRaise()</tt>-type function, \c lalRaiseHook, is provided,
-should the user wish to change the default behavior of <tt>LALRaise()</tt>
-(i.e., the LAL library always uses \c lalRaiseHook rather than
-\c LALRaise, but \c lalRaiseHook is set to \c LALRaise by
-default).
-
-\heading{<tt>LALAbort()</tt>} prints a formatted string to an error
-logging device, as above, and then terminates program execution.
-Usually this is done by raising a \c SIGABRT signal, but this can
-change in implementations that have different requirements.  Standard
-LAL routines should \e not terminate execution, but should instead
-return control to the calling routine, reporting errors through their
-\c LALStatus structure.  The exception is when a function receives a
-\c NULL status pointer, in which case it has no option but to
-abort.  This is done automatically by the <tt>INITSTATUS()</tt> macro
-(see \ref LALStatusMacros.h), so programmers should never need to
-invoke <tt>LALAbort()</tt> explicitly.
-A hook to a <tt>LALAbort()</tt>-type function, \c lalAbortHook, is provided,
-should the user wish to change the default behavior of <tt>LALAbort()</tt>
-(i.e., the LAL library always uses \c lalAbortHook rather than
-\c LALAbort, but \c lalAbortHook is set to \c LALAbort by
-default).
-
-\heading{<tt>LALError()</tt>} prints the \c statement
-string to the error log, provided that the value of the global
-\c lalDebugLevel is set to allow error messages.  It returns the
-number of characters printed.  This is the standard LAL routine for
-printing error messages.  However, <tt>LALError()</tt> is called
-automatically by the status-handling macros (see
-\ref LALStatusMacros.h) whenever a LAL function returns with
-non-zero error code.  Since an error is, by definition, a condition
-that would cause a routine to terminate abnormally, LAL programmers
-will generally not have to call <tt>LALError()</tt> explicitly.
-
-\heading{<tt>LALWarning()</tt>} prints the \c warning
-string to the error log, provided that the value of the global
-\c lalDebugLevel is set to allow warning messages.  It returns the
-number of characters printed.  A warning message is less serious than
-an error message: it indicates that computation is proceeding
-successfully, but with unusual or unexpected behaviour that may
-invalidate the results of the computation.
-
-\heading{<tt>LALInfo()</tt>} prints the \c info
-string to the error log, provided that the value of the global
-\c lalDebugLevel is set to allow information messages.  It returns
-the number of characters printed.  An information message indicates
-that a computation is proceding normally, and simply provides
-additional information about its progress.
-
-\heading{<tt>LALTrace()</tt>} prints a message providing
-information, taken from the \c status structure, about the
-function currently being executed; it is used to track the progress of
-execution through nested function calls.  It returns the number of
-characters printed.  The message begins with the word \c Enter (if
-\c exitflg = 0) or \c Leave (if \c exitflg \f$\neq0\f$), to indicate
-whether the flow of execution has just entered or is about to leave
-the function.  Tracking information is printed only if the value of
-the global \c lalDebugLevel is set to allow it.  <tt>LALTrace()</tt> is
-called automatically by the status macros when entering or leaving a
-function (see \ref LALStatusMacros.h), so LAL programmers need never
-invoke it explicitly.
-
-\heading{Algorithm}
-
-The functions <tt>LALError()</tt>, <tt>LALWarning()</tt>,
-<tt>LALInfo()</tt>, and <tt>LALTrace()</tt> print status messages
-depending on the value of the global \c lalDebugLevel.  Specifically,
-each type of status message is associated with a particular bit in
-\c lalDebugLevel.  If the value of the bit is 1, that type status
-message will be printed; if it is 0, that type of message will be
-suppressed.  See the documentation in \ref LALStatusMacros.h for
-information about how to set the value of \c lalDebugLevel.
-
-These four functions are also suppressed if a module is compiled with
-the \c NDEBUG flag set.  In this case, however, the function calls
-are actually \e removed from the object code (i.e.\ they are
-replaced with the integer 0, representing their return value).  This
-is used to generate streamlined production code.  Again, see the
-\ref LALStatusMacros.h documentation for more discussion of this
-compilation flag.
-
-\heading{Macro replacement functions}
-
-When a LAL module is compiled with the flag \c NOLALMACROS set,
-the usual status-handling macros defined in \ref LALStatusMacros.h
-are replaced with function calls to specialized support functions that
-perform the same operations.  These functions are necessarily global
-in scope, and so we provide their prototype declarations below.
-However, they will never be invoked explicitly in any LAL function, so
-we will not bother with additional usage information.
-
-*/
+ * \addtogroup LALError_h
+ *
+ * \brief Provides routines to report and handle errors.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LALError.h>
+ * \endcode
+ *
+ * \note These LAL-interface functions are obsolete and deprecated,
+ * use the XLAL functions described in \ref XLALError_h instead.
+ *
+ * This header covers routines that print status messages, and
+ * that allow functions to abort.
+ * These functions should \e not be invoked in
+ * production code, except in very specific circumstances.
+ *
+ * \heading{Description}
+ *
+ * These functions cause LAL to print status messages and perform basic
+ * error handling.  Their implementation is quite simple but may be
+ * altered in the future to provide reasonable behaviour when integrated
+ * with other systems (e.g., LDAS).  As a general rule,
+ * <tt>LALWarning()</tt> and <tt>LALInfo()</tt> are the only routines that
+ * programmers should use in their own modules; the other routines are
+ * used internally by LAL.  Descriptions of the individual functions are
+ * as follows.
+ *
+ * \heading{<tt>LALPrintError()</tt>} prints a formatted string to some
+ * designated output device (usually the \c stderr stream), returning
+ * the number of characters printed, or negative if an error occurred.
+ * The format of the argument list is the same as for the standard C
+ * routine <tt>printf()</tt>.  By funneling all LAL error printing through
+ * this one routine, it is easier to adapt LAL to implementations that
+ * have particular I/O or error-logging requirements.  Most LAL routines
+ * should use <tt>LALError()</tt>, <tt>LALWarning()</tt>, and
+ * <tt>LALInfo()</tt> to report their status, rather than calling
+ * <tt>LALPrintError()</tt> directly.
+ *
+ * \heading{<tt>LALRaise()</tt>} prints a formatted string to an error
+ * logging device, as above, and then raises the requested signal.
+ * Standard LAL routines should \e not terminate execution, but should
+ * instead return control to the calling routine, reporting errors through their
+ * \c LALStatus structure.  Programmers should never
+ * invoke <tt>LALRaise()</tt> explicitly.
+ * A hook to a <tt>LALRaise()</tt>-type function, \c lalRaiseHook, is provided,
+ * should the user wish to change the default behavior of <tt>LALRaise()</tt>
+ * (i.e., the LAL library always uses \c lalRaiseHook rather than
+ * \c LALRaise, but \c lalRaiseHook is set to \c LALRaise by
+ * default).
+ *
+ * \heading{<tt>LALAbort()</tt>} prints a formatted string to an error
+ * logging device, as above, and then terminates program execution.
+ * Usually this is done by raising a \c SIGABRT signal, but this can
+ * change in implementations that have different requirements.  Standard
+ * LAL routines should \e not terminate execution, but should instead
+ * return control to the calling routine, reporting errors through their
+ * \c LALStatus structure.  The exception is when a function receives a
+ * \c NULL status pointer, in which case it has no option but to
+ * abort.  This is done automatically by the <tt>INITSTATUS()</tt> macro
+ * (see \ref LALStatusMacros.h), so programmers should never need to
+ * invoke <tt>LALAbort()</tt> explicitly.
+ * A hook to a <tt>LALAbort()</tt>-type function, \c lalAbortHook, is provided,
+ * should the user wish to change the default behavior of <tt>LALAbort()</tt>
+ * (i.e., the LAL library always uses \c lalAbortHook rather than
+ * \c LALAbort, but \c lalAbortHook is set to \c LALAbort by
+ * default).
+ *
+ * \heading{<tt>LALError()</tt>} prints the \c statement
+ * string to the error log, provided that the value of the global
+ * \c lalDebugLevel is set to allow error messages.  It returns the
+ * number of characters printed.  This is the standard LAL routine for
+ * printing error messages.  However, <tt>LALError()</tt> is called
+ * automatically by the status-handling macros (see
+ * \ref LALStatusMacros.h) whenever a LAL function returns with
+ * non-zero error code.  Since an error is, by definition, a condition
+ * that would cause a routine to terminate abnormally, LAL programmers
+ * will generally not have to call <tt>LALError()</tt> explicitly.
+ *
+ * \heading{<tt>LALWarning()</tt>} prints the \c warning
+ * string to the error log, provided that the value of the global
+ * \c lalDebugLevel is set to allow warning messages.  It returns the
+ * number of characters printed.  A warning message is less serious than
+ * an error message: it indicates that computation is proceeding
+ * successfully, but with unusual or unexpected behaviour that may
+ * invalidate the results of the computation.
+ *
+ * \heading{<tt>LALInfo()</tt>} prints the \c info
+ * string to the error log, provided that the value of the global
+ * \c lalDebugLevel is set to allow information messages.  It returns
+ * the number of characters printed.  An information message indicates
+ * that a computation is proceding normally, and simply provides
+ * additional information about its progress.
+ *
+ * \heading{<tt>LALTrace()</tt>} prints a message providing
+ * information, taken from the \c status structure, about the
+ * function currently being executed; it is used to track the progress of
+ * execution through nested function calls.  It returns the number of
+ * characters printed.  The message begins with the word \c Enter (if
+ * \c exitflg = 0) or \c Leave (if \c exitflg \f$\neq0\f$), to indicate
+ * whether the flow of execution has just entered or is about to leave
+ * the function.  Tracking information is printed only if the value of
+ * the global \c lalDebugLevel is set to allow it.  <tt>LALTrace()</tt> is
+ * called automatically by the status macros when entering or leaving a
+ * function (see \ref LALStatusMacros.h), so LAL programmers need never
+ * invoke it explicitly.
+ *
+ * \heading{Algorithm}
+ *
+ * The functions <tt>LALError()</tt>, <tt>LALWarning()</tt>,
+ * <tt>LALInfo()</tt>, and <tt>LALTrace()</tt> print status messages
+ * depending on the value of the global \c lalDebugLevel.  Specifically,
+ * each type of status message is associated with a particular bit in
+ * \c lalDebugLevel.  If the value of the bit is 1, that type status
+ * message will be printed; if it is 0, that type of message will be
+ * suppressed.  See the documentation in \ref LALStatusMacros.h for
+ * information about how to set the value of \c lalDebugLevel.
+ *
+ * These four functions are also suppressed if a module is compiled with
+ * the \c NDEBUG flag set.  In this case, however, the function calls
+ * are actually \e removed from the object code (i.e.\ they are
+ * replaced with the integer 0, representing their return value).  This
+ * is used to generate streamlined production code.  Again, see the
+ * \ref LALStatusMacros.h documentation for more discussion of this
+ * compilation flag.
+ *
+ * \heading{Macro replacement functions}
+ *
+ * When a LAL module is compiled with the flag \c NOLALMACROS set,
+ * the usual status-handling macros defined in \ref LALStatusMacros.h
+ * are replaced with function calls to specialized support functions that
+ * perform the same operations.  These functions are necessarily global
+ * in scope, and so we provide their prototype declarations below.
+ * However, they will never be invoked explicitly in any LAL function, so
+ * we will not bother with additional usage information.
+ *
+ */

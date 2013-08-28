@@ -102,7 +102,8 @@
 
 /* ---------- local types ---------- */
 
-/** Rudimentary first sketch of a history type, to encode all
+/**
+ * Rudimentary first sketch of a history type, to encode all
  * the history-trail leading to a certain result from primal inputs.
  *
  * This will be extended in the future and moved into LAL.
@@ -394,7 +395,8 @@ initUserVars (UserVariables_t *uvar)
 } /* initUserVars() */
 
 
-/** basic initializations: set-up 'ConfigVariables'
+/**
+ * basic initializations: set-up 'ConfigVariables'
  */
 int
 XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name)
@@ -727,7 +729,8 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
 } /* XLALOutputDopplerMetric() */
 
 
-/** Destructor for ResultHistory type
+/**
+ * Destructor for ResultHistory type
  */
 void
 XLALDestroyResultHistory ( ResultHistory_t * history )

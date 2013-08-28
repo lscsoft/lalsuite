@@ -21,7 +21,7 @@
  * \file
  * \ingroup pulsarApps
  * \author Chris Messenger
- * \brief 
+ * \brief
  * Program to identify a subset of orbital templates in a secondary detector
  * given a single template location in the primary detector.
  */

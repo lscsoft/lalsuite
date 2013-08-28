@@ -28,68 +28,65 @@
  */
 
 /**
-
-\author Brown D. A.
-\file
-\ingroup FindChirp_h
-
-\brief Memory management functions for creating and destroying input data and
-workspace memory for findchirp.
-
-\heading{Description}
-
-The function <tt>LALInitializeDataSegmentVector()</tt> creates a vector of
-\c DataSegment structures of length and dimension specified in the
-\c FindChirpInitParams structure. The data segments are created using
-the input data in \c chan, \c spec and \c resp. No storage
-is allocated for the actual data in the data segments, instead the data
-segment \c chan, \c spec and \c resp pointers are pointed at
-the input data appropriately. This means that the input \c chan,
-\c spec and \c resp time and frequency series must persist for the
-duration of the filtering process.
-
-The function <tt>LALFinalizeDataSegmentVector()</tt> frees any memory
-allocated by the function <tt>LALInitializeDataSegmentVector()</tt>.
-
-The function <tt>LALCreateDataSegmentVector()</tt> creates a vector of
-\c DataSegment structures of length and dimension specified in the
-\c FindChirpInitParams structure.  <tt>**vector</tt> must point to NULL
-on entry and contains a handle to the address of the created
-\c DataSegmentVector on exit.
-
-The function <tt>LALDestroyDataSegmentVector()</tt> frees the memory of the
-\c DataSegmentVector at address <tt>*vector</tt>.
-
-The function <tt>LALCreateFindChirpSegmentVector()</tt> creates a vector of
-\c FindChirpSegment structures of length and dimension specified in the
-\c FindChirpInitParams structure.  <tt>**vector</tt> must point to NULL
-on entry and contains a handle to the address of the created
-\c DataSegmentVector on exit.
-
-The function <tt>LALDestroyFindChirpSegmentVector()</tt> frees the memory of
-the \c FindChirpSegmentVector at address <tt>*vector</tt>.
-
-\heading{Algorithm}
-
-None.
-
-\heading{Uses}
-\code
-LALCalloc()
-LALCreateVector()
-LALCCreateVector()
-LALU4CreateVector()
-LALFree()
-LALDestroyVector()
-LALCDestroyVector()
-LALU4DestroyVector()
-\endcode
-
-\heading{Notes}
-
-
-
-*/
+ * \author Brown D. A.
+ * \file
+ * \ingroup FindChirp_h
+ *
+ * \brief Memory management functions for creating and destroying input data and
+ * workspace memory for findchirp.
+ *
+ * \heading{Description}
+ *
+ * The function <tt>LALInitializeDataSegmentVector()</tt> creates a vector of
+ * \c DataSegment structures of length and dimension specified in the
+ * \c FindChirpInitParams structure. The data segments are created using
+ * the input data in \c chan, \c spec and \c resp. No storage
+ * is allocated for the actual data in the data segments, instead the data
+ * segment \c chan, \c spec and \c resp pointers are pointed at
+ * the input data appropriately. This means that the input \c chan,
+ * \c spec and \c resp time and frequency series must persist for the
+ * duration of the filtering process.
+ *
+ * The function <tt>LALFinalizeDataSegmentVector()</tt> frees any memory
+ * allocated by the function <tt>LALInitializeDataSegmentVector()</tt>.
+ *
+ * The function <tt>LALCreateDataSegmentVector()</tt> creates a vector of
+ * \c DataSegment structures of length and dimension specified in the
+ * \c FindChirpInitParams structure.  <tt>**vector</tt> must point to NULL
+ * on entry and contains a handle to the address of the created
+ * \c DataSegmentVector on exit.
+ *
+ * The function <tt>LALDestroyDataSegmentVector()</tt> frees the memory of the
+ * \c DataSegmentVector at address <tt>*vector</tt>.
+ *
+ * The function <tt>LALCreateFindChirpSegmentVector()</tt> creates a vector of
+ * \c FindChirpSegment structures of length and dimension specified in the
+ * \c FindChirpInitParams structure.  <tt>**vector</tt> must point to NULL
+ * on entry and contains a handle to the address of the created
+ * \c DataSegmentVector on exit.
+ *
+ * The function <tt>LALDestroyFindChirpSegmentVector()</tt> frees the memory of
+ * the \c FindChirpSegmentVector at address <tt>*vector</tt>.
+ *
+ * \heading{Algorithm}
+ *
+ * None.
+ *
+ * \heading{Uses}
+ * \code
+ * LALCalloc()
+ * LALCreateVector()
+ * LALCCreateVector()
+ * LALU4CreateVector()
+ * LALFree()
+ * LALDestroyVector()
+ * LALCDestroyVector()
+ * LALU4DestroyVector()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>

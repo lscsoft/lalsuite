@@ -18,70 +18,65 @@
 */
 
 /**
-
-\author Yi Pan
-\file
-
-\brief Module to compute the ring-down waveform as linear combination
-of quasi-normal-modes decaying waveforms, which can be attached to
-the inspiral part of the compat binary coalescing waveform.
-
-\heading{Prototypes}
-
-
-<tt>XLALXLALInspiralRingdownWave()</tt>
-<ul>
-   <li> <tt>rdwave1,</tt> Output, the real part of the ring-down waveform
-   </li><li> <tt>rdwave2,</tt> Output, the imaginary part of the ring-down waveform
-   </li><li> <tt>params,</tt> Input, the parameters where ring-down waveforms are computed
-   </li><li> <tt>inspwave1,</tt> Input, the real part of the ring-down waveform
-   </li><li> <tt>inspwave2,</tt> Input, the real part of the ring-down waveform
-   </li><li> <tt>modefreqs,</tt> Input, the frequencies of the quasi-normal-modes
-   </li><li> <tt>nmode,</tt> Input, the number of quasi-normal-modes to be combined.</li>
-</ul>
-
-
-<tt>XLALGenerateWaveDerivatives()</tt>
-<ul>
-   <li> <tt>dwave,</tt> Output, time derivative of the input waveform
-   </li><li> <tt>ddwave,</tt> Output, two time derivative of the input waveform
-   </li><li> <tt>wave,</tt> Input, waveform to be differentiated in time
-   </li><li> <tt>params,</tt> Input, the parameters of the input waveform.</li>
-</ul>
-
-
-<tt>XLALGenerateQNMFreq()</tt>
-<ul>
-   <li> <tt>ptfwave,</tt> Output, the frequencies of the quasi-normal-modes
-   </li><li> <tt>params,</tt> Input, the parameters of the binary system
-   </li><li> <tt>l,</tt> Input, the l of the modes
-   </li><li> <tt>m,</tt> Input, the m of the modes
-   </li><li> <tt>nmodes,</tt> Input, the number of overtones considered.</li>
-</ul>
-
-
-<tt>XLALFinalMassSpin()</tt>
-<ul>
-   <li> <tt>finalMass,</tt> Output, the mass of the final Kerr black hole
-   </li><li> <tt>finalSpin,</tt>  Input, the spin of the final Kerr balck hole
-   </li><li> <tt>params,</tt> Input, the parameters of the binary system.</li>
-</ul>
-
-\heading{Description}
-Generating ring-down waveforms.
-
-\heading{Algorithm}
-
-\heading{Uses}
-
-\code
-LALMalloc
-LALFree
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Yi Pan
+ * \file
+ *
+ * \brief Module to compute the ring-down waveform as linear combination
+ * of quasi-normal-modes decaying waveforms, which can be attached to
+ * the inspiral part of the compat binary coalescing waveform.
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>XLALXLALInspiralRingdownWave()</tt>
+ * <ul>
+ * <li> <tt>rdwave1,</tt> Output, the real part of the ring-down waveform
+ * </li><li> <tt>rdwave2,</tt> Output, the imaginary part of the ring-down waveform
+ * </li><li> <tt>params,</tt> Input, the parameters where ring-down waveforms are computed
+ * </li><li> <tt>inspwave1,</tt> Input, the real part of the ring-down waveform
+ * </li><li> <tt>inspwave2,</tt> Input, the real part of the ring-down waveform
+ * </li><li> <tt>modefreqs,</tt> Input, the frequencies of the quasi-normal-modes
+ * </li><li> <tt>nmode,</tt> Input, the number of quasi-normal-modes to be combined.</li>
+ * </ul>
+ *
+ * <tt>XLALGenerateWaveDerivatives()</tt>
+ * <ul>
+ * <li> <tt>dwave,</tt> Output, time derivative of the input waveform
+ * </li><li> <tt>ddwave,</tt> Output, two time derivative of the input waveform
+ * </li><li> <tt>wave,</tt> Input, waveform to be differentiated in time
+ * </li><li> <tt>params,</tt> Input, the parameters of the input waveform.</li>
+ * </ul>
+ *
+ * <tt>XLALGenerateQNMFreq()</tt>
+ * <ul>
+ * <li> <tt>ptfwave,</tt> Output, the frequencies of the quasi-normal-modes
+ * </li><li> <tt>params,</tt> Input, the parameters of the binary system
+ * </li><li> <tt>l,</tt> Input, the l of the modes
+ * </li><li> <tt>m,</tt> Input, the m of the modes
+ * </li><li> <tt>nmodes,</tt> Input, the number of overtones considered.</li>
+ * </ul>
+ *
+ * <tt>XLALFinalMassSpin()</tt>
+ * <ul>
+ * <li> <tt>finalMass,</tt> Output, the mass of the final Kerr black hole
+ * </li><li> <tt>finalSpin,</tt>  Input, the spin of the final Kerr balck hole
+ * </li><li> <tt>params,</tt> Input, the parameters of the binary system.</li>
+ * </ul>
+ *
+ * \heading{Description}
+ * Generating ring-down waveforms.
+ *
+ * \heading{Algorithm}
+ *
+ * \heading{Uses}
+ *
+ * \code
+ * LALMalloc
+ * LALFree
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdlib.h>
@@ -696,7 +691,7 @@ INT4 XLALGenerateQNMFreq(
 /**
  * As with the above function, this generates the quasinormal mode frequencies for a black
  * hole ringdown. However, this function is more general than the other function, which
- * only works for the (2,2) mode, and only the first three overtones. 
+ * only works for the (2,2) mode, and only the first three overtones.
  */
 INT4 XLALGenerateQNMFreqV2(
         COMPLEX8Vector          *modefreqs,

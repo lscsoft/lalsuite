@@ -68,20 +68,19 @@ extern "C" {
  *
  * The result is very readable/changeable source similar in style to most
  * markup languages. An example program might look like:
- *  \code
+ * \code
  * FILE *nb;
  * nb = fopen("YourFileName.nb", "rw");
  * BEG_NOTEBOOK;
  * BEG_TITLECELL;
- *  fprintf(nb, "Sample Program Title");
+ * fprintf(nb, "Sample Program Title");
  * END_TITLECELL_;
  * BEG_SECTIONCELL;
- *   fprintf(nb, "Sample Program Section Name");
+ * fprintf(nb, "Sample Program Section Name");
  * END_SECTIONCELL;
  * END_NOTEBOOK;
  * fclose(nb);
  * \endcode
- *
  *
  * \heading{Notes}
  * <ul>
@@ -93,7 +92,7 @@ extern "C" {
  * are only what is necessary for a <em>bare minimum</em> interface.</li>
  * </ul>
  *
-*/
+ */
 /*@{*/
 
 /**\name Error Codes */ /*@{*/
@@ -108,8 +107,8 @@ extern "C" {
 #define LALMATHEMATICAH_MSGEVAL         "Invalid parameter value"
 /** \endcond */
 
-/** \name Macros
- *
+/**
+ * \name Macros
  * See the source file \ref LALMath3DPlot.c for an example of how to use
  * these macros to generate a MATHEMATICA notebook in your own program.
  *
@@ -138,7 +137,7 @@ extern "C" {
  * word &quot;NULL&quot; printed on a line.  That is an indication that you should
  * use the underscore version of the tag which preceeded the &quot;NULL&quot;
  * statement.
-*/
+ */
 /*@{*/
 #define BEG_NOTEBOOK 		fprintf(nb, "Notebook[{\n")
 #define END_NOTEBOOK		fprintf(nb, "}]\n")
@@ -160,7 +159,8 @@ extern "C" {
 /*@}*/
 
 
-/** This type is used by \ref LALMath3DPlot.c as an input structure to plot 3-dimensional template banks.
+/**
+ * This type is used by \ref LALMath3DPlot.c as an input structure to plot 3-dimensional template banks.
  * It is a linked list with
  * parameters for each coordinate x,y,z and a next pointer.  It also has a
  * parameter called grayLevel which must be \f$\epsilon [0,1]\f$.  It specifies
@@ -176,7 +176,8 @@ typedef struct tagMath3DPointList{
   REAL4 grayLevel;
   }Math3DPointList;
 
-/** This type is similar to Math3DPointList except the coordinates are
+/**
+ * This type is similar to Math3DPointList except the coordinates are
  * stored as data in the REAL4Vector \c coordinates.
  */
 typedef struct tagMathNDPointList{

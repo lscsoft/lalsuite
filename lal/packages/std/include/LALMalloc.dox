@@ -1,265 +1,263 @@
 /**
-
-   \addtogroup LALMalloc_h
-
-   \brief Provides standard LAL memory allocation/deallocation routines.
-
-   \heading{Synopsis}
-   \code
-      #include <lal/LALMalloc.h>
-   \endcode
-
-   This header covers routines that replace the standard
-   <tt>malloc()</tt>, <tt>calloc()</tt>, <tt>realloc()</tt>, and <tt>free()</tt>.
-   All memory allocation and deallocation in LAL should use these
-   replacement functions.  If the \c NDEBUG flag is set at compile
-   time, the LAL routines are <tt>\#define</tt>d to be the same as the
-   standard C routines.
-
-   \heading{Macros}
-
-   \code
-   #if defined NDEBUG || defined LAL_NDEBUG
-
-   #define LALMalloc                           malloc
-   #define LALMallocShort                      malloc
-   #define LALMallocLong( n, file, line )      malloc( n )
-   #define LALCalloc                           calloc
-   #define LALCallocShort                      calloc
-   #define LALCallocLong( m, n, file, line )   calloc( m, n )
-   #define LALRealloc                          realloc
-   #define LALReallocShort                     realloc
-   #define LALReallocLong( p, n, file, line )  realloc( p, n )
-   #define LALFree                             free
-   #define LALCheckMemoryLeaks()
-
-   #else
-
-   #define LALMalloc( n )      LALMallocLong( n, __FILE__, __LINE__ )
-   #define LALCalloc( m, n )   LALCallocLong( m, n, __FILE__, __LINE__ )
-   #define LALRealloc( p, n )  LALReallocLong( p, n, __FILE__, __LINE__ )
-
-   #endif
-   \endcode
-
-   \heading{Description}
-
-   <b>Note:</b> As the <tt>LALxxx()</tt> interface is deprecated, it
-   is recommended to use the corresponding <b>XLALxxx()</b>
-   functions instead, which follow exactly the same API as the
-   functions described in the following.
-
-These functions are the LAL replacements for <tt>malloc()</tt>, <tt>calloc()</tt>,
-<tt>realloc()</tt>, and <tt>free()</tt>, with extra functionality to check for
-memory leaks (i.e.\ unfreed memory and segmentation violations).
-The <tt>LALMallocLong()</tt>, <tt>LALCallocLong()</tt>, and <tt>LALReallocLong()</tt>
-functions have two extra arguments giving the file name and line number of the
-calling statement; <tt>LALMallocShort()</tt>, <tt>LALCallocShort()</tt>, and
-<tt>LALReallocShort()</tt> do not have these extra arguments, and are merely
-call the corresponding long alloc functions with a file name of
-<tt>"unknown"</tt> and a line number of <tt>-1</tt> (they are useful if you want
-to replace hooks to <tt>malloc()</tt>, <tt>calloc()</tt>, and <tt>realloc()</tt> of
-an external package that provides suitable hooks).  <tt>LALMalloc()</tt>,
-<tt>LALCalloc()</tt>, and <tt>LALRealloc()</tt> are actually macros which call the
-functions <tt>LALMallocLong()</tt>, <tt>LALCallocLong()</tt>, and
-\c LALReallocLong with the appropriate file name and line number
-information.  In practice, it is almost sufficient to use <tt>LALMalloc()</tt>,
-<tt>LALCalloc()</tt>, and <tt>LALRealloc()</tt> as you would <tt>malloc()</tt>,
-<tt>calloc()</tt>, and <tt>realloc()</tt>.
-
-Any time an object is freed, <tt>LALFree()</tt> checks to make sure that the
-memory bounds were not over-written, and that the memory address is valid.  The
-function <tt>LALCheckMemoryLeaks()</tt> is to be called at the end of a program
-when all the allocated memory is expected to have been freed.  If there is
-memory that has been allocated but not freed then this routine reports an
-error.  Whenever a memory leak is detected, the routines raise a segmentation
-violation signal \c SIGSEGV.  (The signal is raised using the signal
-raising hook \c lalRaiseHook, which can be reset to a different handler if
-desired.)
-
-Memory leak detection adds significant computational overhead to a
-program.  It also requires the use of static memory, making the code
-non-thread-safe (but it can be made posix-thread-safe using the
-<tt>--enable-pthread-lock</tt> configure option).  Production code should
-suppress memory leak detection at runtime by setting the global
-\c lalDebugLevel equal to zero or by setting the \c LALNMEMDBG bit of
-\c lalDebugLevel, or at compile time by compiling all modules with the
-\c NDEBUG flag set or by using the <tt>--disable-debug</tt> configure option.
-This causes <tt>LALCheckMemoryLeaks()</tt> to do nothing, and the other functions
-to revert to their standard C counterparts.  In addition, you can turn off
-individual components of the memory debugging tools.  Setting the
-\c LALNMEMPAD bit of \c lalDebugLevel prevents the allocation routines
-from "padding out" the arrays in an effort to detect buffer overflows.
-Setting the \c LALNMEMTRK  bit of \c lalDebugLevel prevents tracking
-the allocations/frees.  Setting the \c LALMEMINFO bit of
-\c lalDebugLevel produces copious output describing each memory allocation
-and deallocation.
-
-\heading{Algorithm}
-
-When buffer overflow detection is active, <tt>LALMalloc()</tt> allocates, in
-addition to the requested memory, storage at the beginning of the object where
-a magic number and the size of the object is recorded, and padding at the end
-of the object.  The number of allocations and the total size of allocated
-memory are stored in static memory.  When <tt>LALFree()</tt> is executed, the
-padding at the end of the object and the magic number are examined to see if
-the bounds of the object were over-written.  The total number of allocations
-and the total memory allocated are decreased.  <tt>LALCheckMemoryLeaks()</tt> is
-called when all memory should have been freed.  If the number of allocations or
-the total memory allocated is not zero, this routine reports an error.
-
-When memory tracking is active, <tt>LALMalloc()</tt> keeps a linked list
-containing information about each allocation: the memory address, the size of
-the allocation, and the file name and line number of the calling statement.
-Subsequent calls to <tt>LALFree()</tt> make sure that the address to be freed was
-correctly allocated.  In addition, in the case of a memory leak in which some
-memory that was allocated was not freed, <tt>LALCheckMemoryLeaks()</tt> prints a
-list of all allocations and the information about the allocations.
-
-When any of these routines encounter an error, they will issue an error message
-using <tt>LALPrintError()</tt> and will raise a \c SIGSEGV signal, which will
-normally cause execution to terminate.  The signal is raised using the hook
-\c lalRaiseHook, which can be set to perform a different action if desired.
-
-These routines also issue status messages indicating how much memory is being
-allocated or freed with each function call.  These memory information messages
-are considered a distinct class of status message, and can be activated or
-suppressed independently of other status messages.  See the discussion in
-\ref LALStatusMacros.h.
-
-When \c lalDebugLevel is set to zero or the \c LALNMEMDBG bit is set,
-or when compiled with the \c NDEBUG flag set, these functions revert to
-their standard system versions, and <tt>LALCheckMemoryLeaks()</tt> does nothing.
-
-\heading{Notes}
-
-Memory leak detection only occurs when \c lalDebugLevel\f$\neq0\f$.  To
-turn on leak detection independent of error reporting, simply switch
-on the most-significant bit of \c lalDebugLevel, which is reserved
-not to be associated with any type of status message.  See the
-discussion in \ref LALStatusMacros.h for more information about
-\c lalDebugLevel.
-
-It is assumed that pointers of type <tt>size_t *</tt> have the most restrictive
-alignment.  If this is not true, then this code may not work except in
-non-debugging mode.  (It will probably produce bus errors.)
-
-
-\heading{Debugging memory leak tips}
-
-Programs should end by calling <tt>LALCheckMemoryLeaks()</tt>.  This will
-ensure that all memory that has been allocated has been freed.  Making
-sure that all memory allocated is freed is a good idea in order to
-make sure (i) that memory isn't being "lost" (which may mean that
-the computer will run out of memory when the program is run under more
-extensive use), (ii) that array bounds are not being exceeded (since this
-will usually overwrite the pad area at the end of the array, and this
-overwrite is detected when the array is freed).  <tt>LALCheckMemoryLeaks()</tt>
-should pass silently---if it doesn't, then there is probably some memory
-that has not been freed; <tt>LALCheckMemoryLeaks()</tt> will give information
-about where this memory was allocated.
-
-The most common problem (after forgetting to free some memory) is overwriting
-of array bounds.  When this is detected, <tt>LALFree()</tt> reports the memory
-address that was overwritten, as well as the address of the array that
-<tt>LALFree()</tt> attempted to free.  In order to find out where the overwrite
-occurs, run the program in the debugger and stop the execution as soon as the
-array that is being overwritten has been allocated.  The \c LALMalloc
-module has some secret memory debugging tools (for use in debugging only!).
-One is the global variable \c lalMemDbgUsrPtr, which is of type
-<tt>char *</tt>.  Set this variable to be equal to the memory address
-where the overwrite occurs.  Then watch the contents of the variable
-to find out where the overwrite occurs.  This is done in \c gdb using
-the commands:
-\code
-set var lalMemDbgUsrPtr=0x20f530
-watch *lalMemDgbUsrPtr
-cont
-\endcode
-where \c 0x20f530 is the corrupted memory address.  The program
-will run until the value of this address is changed, thereby allowing
-you to find out where in the program the overwrite occurs.
-
-If you don't know where the memory was allocated, you can locate this
-too.  To do so, set \c lalMemDbgUsrPtr to be the address of the array.
-Then, every time <tt>LALMalloc()</tt> is called, it sets the value of the
-global variable \c lalIsMemDbgRetPtr to be one zero if the array
-address produced by <tt>LALMalloc()</tt> is not the address in
-\c lalMemDbgUsrPtr, and one if it is.  Then you can watch the value
-of \c lalIsMemDbgRetPtr in a debugger until it changes to one, which stops
-execution at that point.  (Note: it is possible that a given address is
-allocated, then freed, the allocated again---you may need to watch
-\c lalIsMemDbgRetPtr for a while.)
-
-Here's an example debugging session: first we run the program, identify
-the address of the array whose bounds are being overwritten, and find
-out where that array is allocated.
-\code
-(gdb) run
-LALFree error: array bounds overwritten
-Byte 4 past end of array has changed
-Corrupted address: 0x1cf530
-Array address: 0x1cf528
-
-Program received signal SIGSEGV, Segmentation fault.
-0x9001b46c in kill ()
-(gdb) list 1,11
-1       #include <lal/LALStdlib.h>
-2       int main( void )
-3       {
-4         char *s;
-6         s = LALMalloc( 5 );
-7         s[8] = 'x';
-8         LALFree( s );
-9         LALCheckMemoryLeaks();
-10        return 0;
-11      }
-(gdb) break 5
-Breakpoint 1 at 0x1b60: file bad.c, line 5.
-(gdb) run
-
-Breakpoint 1, main () at bad.c:5
-(gdb) set var lalMemDbgUsrPtr = 0x1cf528
-(gdb) watch lalIsMemDbgRetPtr
-Hardware watchpoint 2: lalIsMemDbgRetPtr
-(gdb) cont
-Continuing.
-Hardware watchpoint 2: lalIsMemDbgRetPtr
-
-Old value = 0
-New value = 1
-0x0088d63c in LALMallocLong (n=5, file=0x1ff8 "bad.c", line=6) at LALMalloc.c:575
-575       lalIsMemDbgPtr = lalIsMemDbgRetPtr = ( lalMemDbgRetPtr == lalMemDbgUsrPtr );
-(gdb) up
-#1  0x00001b84 in main () at bad.c:6
-6         s = LALMalloc( 5 );
-\endcode
-So here is where the memory is allocated.  We want to find out where the
-memory is being corrupted.
-\code
-(gdb) set var lalMemDbgUsrPtr = 0x1cf530
-(gdb) watch *lalMemDbgUsrPtr
-Hardware watchpoint 3: *lalMemDbgUsrPtr
-(gdb) cont
-Continuing.
-Hardware watchpoint 3: *lalMemDbgUsrPtr
-
-Old value = -25
-New value = 120 'x'
-main () at bad.c:8
-8         LALFree( s );
-(gdb) list
-3       {
-4         char *s;
-6         s = LALMalloc( 5 );
-7         s[8] = 'x';
-8         LALFree( s );
-9         LALCheckMemoryLeaks();
-10        return 0;
-11      }
-\endcode
-
-Notice that the program has stopped just \e after the line in which
-the array bounds were overwritten.
-
-*/
+ * \addtogroup LALMalloc_h
+ *
+ * \brief Provides standard LAL memory allocation/deallocation routines.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LALMalloc.h>
+ * \endcode
+ *
+ * This header covers routines that replace the standard
+ * <tt>malloc()</tt>, <tt>calloc()</tt>, <tt>realloc()</tt>, and <tt>free()</tt>.
+ * All memory allocation and deallocation in LAL should use these
+ * replacement functions.  If the \c NDEBUG flag is set at compile
+ * time, the LAL routines are <tt>\#define</tt>d to be the same as the
+ * standard C routines.
+ *
+ * \heading{Macros}
+ *
+ * \code
+ * #if defined NDEBUG || defined LAL_NDEBUG
+ *
+ * #define LALMalloc                           malloc
+ * #define LALMallocShort                      malloc
+ * #define LALMallocLong( n, file, line )      malloc( n )
+ * #define LALCalloc                           calloc
+ * #define LALCallocShort                      calloc
+ * #define LALCallocLong( m, n, file, line )   calloc( m, n )
+ * #define LALRealloc                          realloc
+ * #define LALReallocShort                     realloc
+ * #define LALReallocLong( p, n, file, line )  realloc( p, n )
+ * #define LALFree                             free
+ * #define LALCheckMemoryLeaks()
+ *
+ * #else
+ *
+ * #define LALMalloc( n )      LALMallocLong( n, __FILE__, __LINE__ )
+ * #define LALCalloc( m, n )   LALCallocLong( m, n, __FILE__, __LINE__ )
+ * #define LALRealloc( p, n )  LALReallocLong( p, n, __FILE__, __LINE__ )
+ *
+ * #endif
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * <b>Note:</b> As the <tt>LALxxx()</tt> interface is deprecated, it
+ * is recommended to use the corresponding <b>XLALxxx()</b>
+ * functions instead, which follow exactly the same API as the
+ * functions described in the following.
+ *
+ * These functions are the LAL replacements for <tt>malloc()</tt>, <tt>calloc()</tt>,
+ * <tt>realloc()</tt>, and <tt>free()</tt>, with extra functionality to check for
+ * memory leaks (i.e.\ unfreed memory and segmentation violations).
+ * The <tt>LALMallocLong()</tt>, <tt>LALCallocLong()</tt>, and <tt>LALReallocLong()</tt>
+ * functions have two extra arguments giving the file name and line number of the
+ * calling statement; <tt>LALMallocShort()</tt>, <tt>LALCallocShort()</tt>, and
+ * <tt>LALReallocShort()</tt> do not have these extra arguments, and are merely
+ * call the corresponding long alloc functions with a file name of
+ * <tt>"unknown"</tt> and a line number of <tt>-1</tt> (they are useful if you want
+ * to replace hooks to <tt>malloc()</tt>, <tt>calloc()</tt>, and <tt>realloc()</tt> of
+ * an external package that provides suitable hooks).  <tt>LALMalloc()</tt>,
+ * <tt>LALCalloc()</tt>, and <tt>LALRealloc()</tt> are actually macros which call the
+ * functions <tt>LALMallocLong()</tt>, <tt>LALCallocLong()</tt>, and
+ * \c LALReallocLong with the appropriate file name and line number
+ * information.  In practice, it is almost sufficient to use <tt>LALMalloc()</tt>,
+ * <tt>LALCalloc()</tt>, and <tt>LALRealloc()</tt> as you would <tt>malloc()</tt>,
+ * <tt>calloc()</tt>, and <tt>realloc()</tt>.
+ *
+ * Any time an object is freed, <tt>LALFree()</tt> checks to make sure that the
+ * memory bounds were not over-written, and that the memory address is valid.  The
+ * function <tt>LALCheckMemoryLeaks()</tt> is to be called at the end of a program
+ * when all the allocated memory is expected to have been freed.  If there is
+ * memory that has been allocated but not freed then this routine reports an
+ * error.  Whenever a memory leak is detected, the routines raise a segmentation
+ * violation signal \c SIGSEGV.  (The signal is raised using the signal
+ * raising hook \c lalRaiseHook, which can be reset to a different handler if
+ * desired.)
+ *
+ * Memory leak detection adds significant computational overhead to a
+ * program.  It also requires the use of static memory, making the code
+ * non-thread-safe (but it can be made posix-thread-safe using the
+ * <tt>--enable-pthread-lock</tt> configure option).  Production code should
+ * suppress memory leak detection at runtime by setting the global
+ * \c lalDebugLevel equal to zero or by setting the \c LALNMEMDBG bit of
+ * \c lalDebugLevel, or at compile time by compiling all modules with the
+ * \c NDEBUG flag set or by using the <tt>--disable-debug</tt> configure option.
+ * This causes <tt>LALCheckMemoryLeaks()</tt> to do nothing, and the other functions
+ * to revert to their standard C counterparts.  In addition, you can turn off
+ * individual components of the memory debugging tools.  Setting the
+ * \c LALNMEMPAD bit of \c lalDebugLevel prevents the allocation routines
+ * from "padding out" the arrays in an effort to detect buffer overflows.
+ * Setting the \c LALNMEMTRK  bit of \c lalDebugLevel prevents tracking
+ * the allocations/frees.  Setting the \c LALMEMINFO bit of
+ * \c lalDebugLevel produces copious output describing each memory allocation
+ * and deallocation.
+ *
+ * \heading{Algorithm}
+ *
+ * When buffer overflow detection is active, <tt>LALMalloc()</tt> allocates, in
+ * addition to the requested memory, storage at the beginning of the object where
+ * a magic number and the size of the object is recorded, and padding at the end
+ * of the object.  The number of allocations and the total size of allocated
+ * memory are stored in static memory.  When <tt>LALFree()</tt> is executed, the
+ * padding at the end of the object and the magic number are examined to see if
+ * the bounds of the object were over-written.  The total number of allocations
+ * and the total memory allocated are decreased.  <tt>LALCheckMemoryLeaks()</tt> is
+ * called when all memory should have been freed.  If the number of allocations or
+ * the total memory allocated is not zero, this routine reports an error.
+ *
+ * When memory tracking is active, <tt>LALMalloc()</tt> keeps a linked list
+ * containing information about each allocation: the memory address, the size of
+ * the allocation, and the file name and line number of the calling statement.
+ * Subsequent calls to <tt>LALFree()</tt> make sure that the address to be freed was
+ * correctly allocated.  In addition, in the case of a memory leak in which some
+ * memory that was allocated was not freed, <tt>LALCheckMemoryLeaks()</tt> prints a
+ * list of all allocations and the information about the allocations.
+ *
+ * When any of these routines encounter an error, they will issue an error message
+ * using <tt>LALPrintError()</tt> and will raise a \c SIGSEGV signal, which will
+ * normally cause execution to terminate.  The signal is raised using the hook
+ * \c lalRaiseHook, which can be set to perform a different action if desired.
+ *
+ * These routines also issue status messages indicating how much memory is being
+ * allocated or freed with each function call.  These memory information messages
+ * are considered a distinct class of status message, and can be activated or
+ * suppressed independently of other status messages.  See the discussion in
+ * \ref LALStatusMacros.h.
+ *
+ * When \c lalDebugLevel is set to zero or the \c LALNMEMDBG bit is set,
+ * or when compiled with the \c NDEBUG flag set, these functions revert to
+ * their standard system versions, and <tt>LALCheckMemoryLeaks()</tt> does nothing.
+ *
+ * \heading{Notes}
+ *
+ * Memory leak detection only occurs when \c lalDebugLevel\f$\neq0\f$.  To
+ * turn on leak detection independent of error reporting, simply switch
+ * on the most-significant bit of \c lalDebugLevel, which is reserved
+ * not to be associated with any type of status message.  See the
+ * discussion in \ref LALStatusMacros.h for more information about
+ * \c lalDebugLevel.
+ *
+ * It is assumed that pointers of type <tt>size_t *</tt> have the most restrictive
+ * alignment.  If this is not true, then this code may not work except in
+ * non-debugging mode.  (It will probably produce bus errors.)
+ *
+ * \heading{Debugging memory leak tips}
+ *
+ * Programs should end by calling <tt>LALCheckMemoryLeaks()</tt>.  This will
+ * ensure that all memory that has been allocated has been freed.  Making
+ * sure that all memory allocated is freed is a good idea in order to
+ * make sure (i) that memory isn't being "lost" (which may mean that
+ * the computer will run out of memory when the program is run under more
+ * extensive use), (ii) that array bounds are not being exceeded (since this
+ * will usually overwrite the pad area at the end of the array, and this
+ * overwrite is detected when the array is freed).  <tt>LALCheckMemoryLeaks()</tt>
+ * should pass silently---if it doesn't, then there is probably some memory
+ * that has not been freed; <tt>LALCheckMemoryLeaks()</tt> will give information
+ * about where this memory was allocated.
+ *
+ * The most common problem (after forgetting to free some memory) is overwriting
+ * of array bounds.  When this is detected, <tt>LALFree()</tt> reports the memory
+ * address that was overwritten, as well as the address of the array that
+ * <tt>LALFree()</tt> attempted to free.  In order to find out where the overwrite
+ * occurs, run the program in the debugger and stop the execution as soon as the
+ * array that is being overwritten has been allocated.  The \c LALMalloc
+ * module has some secret memory debugging tools (for use in debugging only!).
+ * One is the global variable \c lalMemDbgUsrPtr, which is of type
+ * <tt>char *</tt>.  Set this variable to be equal to the memory address
+ * where the overwrite occurs.  Then watch the contents of the variable
+ * to find out where the overwrite occurs.  This is done in \c gdb using
+ * the commands:
+ * \code
+ * set var lalMemDbgUsrPtr=0x20f530
+ * watch *lalMemDgbUsrPtr
+ * cont
+ * \endcode
+ * where \c 0x20f530 is the corrupted memory address.  The program
+ * will run until the value of this address is changed, thereby allowing
+ * you to find out where in the program the overwrite occurs.
+ *
+ * If you don't know where the memory was allocated, you can locate this
+ * too.  To do so, set \c lalMemDbgUsrPtr to be the address of the array.
+ * Then, every time <tt>LALMalloc()</tt> is called, it sets the value of the
+ * global variable \c lalIsMemDbgRetPtr to be one zero if the array
+ * address produced by <tt>LALMalloc()</tt> is not the address in
+ * \c lalMemDbgUsrPtr, and one if it is.  Then you can watch the value
+ * of \c lalIsMemDbgRetPtr in a debugger until it changes to one, which stops
+ * execution at that point.  (Note: it is possible that a given address is
+ * allocated, then freed, the allocated again---you may need to watch
+ * \c lalIsMemDbgRetPtr for a while.)
+ *
+ * Here's an example debugging session: first we run the program, identify
+ * the address of the array whose bounds are being overwritten, and find
+ * out where that array is allocated.
+ * \code
+ * (gdb) run
+ * LALFree error: array bounds overwritten
+ * Byte 4 past end of array has changed
+ * Corrupted address: 0x1cf530
+ * Array address: 0x1cf528
+ *
+ * Program received signal SIGSEGV, Segmentation fault.
+ * 0x9001b46c in kill ()
+ * (gdb) list 1,11
+ * 1       #include <lal/LALStdlib.h>
+ * 2       int main( void )
+ * 3       {
+ * 4         char *s;
+ * 6         s = LALMalloc( 5 );
+ * 7         s[8] = 'x';
+ * 8         LALFree( s );
+ * 9         LALCheckMemoryLeaks();
+ * 10        return 0;
+ * 11      }
+ * (gdb) break 5
+ * Breakpoint 1 at 0x1b60: file bad.c, line 5.
+ * (gdb) run
+ *
+ * Breakpoint 1, main () at bad.c:5
+ * (gdb) set var lalMemDbgUsrPtr = 0x1cf528
+ * (gdb) watch lalIsMemDbgRetPtr
+ * Hardware watchpoint 2: lalIsMemDbgRetPtr
+ * (gdb) cont
+ * Continuing.
+ * Hardware watchpoint 2: lalIsMemDbgRetPtr
+ *
+ * Old value = 0
+ * New value = 1
+ * 0x0088d63c in LALMallocLong (n=5, file=0x1ff8 "bad.c", line=6) at LALMalloc.c:575
+ * 575       lalIsMemDbgPtr = lalIsMemDbgRetPtr = ( lalMemDbgRetPtr == lalMemDbgUsrPtr );
+ * (gdb) up
+ * #1  0x00001b84 in main () at bad.c:6
+ * 6         s = LALMalloc( 5 );
+ * \endcode
+ * So here is where the memory is allocated.  We want to find out where the
+ * memory is being corrupted.
+ * \code
+ * (gdb) set var lalMemDbgUsrPtr = 0x1cf530
+ * (gdb) watch *lalMemDbgUsrPtr
+ * Hardware watchpoint 3: *lalMemDbgUsrPtr
+ * (gdb) cont
+ * Continuing.
+ * Hardware watchpoint 3: *lalMemDbgUsrPtr
+ *
+ * Old value = -25
+ * New value = 120 'x'
+ * main () at bad.c:8
+ * 8         LALFree( s );
+ * (gdb) list
+ * 3       {
+ * 4         char *s;
+ * 6         s = LALMalloc( 5 );
+ * 7         s[8] = 'x';
+ * 8         LALFree( s );
+ * 9         LALCheckMemoryLeaks();
+ * 10        return 0;
+ * 11      }
+ * \endcode
+ *
+ * Notice that the program has stopped just \e after the line in which
+ * the array bounds were overwritten.
+ *
+ */

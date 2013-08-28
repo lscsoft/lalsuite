@@ -18,50 +18,49 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief These modules generate a time-domain chirp waveform of type #TaylorT2.
-
-\heading{Prototypes}
-
-<tt>LALInspiralWave2()</tt>
-<ul>
-<li> \c output: Output containing the inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-
-<tt>LALInspiralWave2Templates()</tt>
-<ul>
-<li> \c output1: Output containing the 0-phase inspiral waveform.</li>
-<li> \c output2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-\heading{Description}
-
-LALInspiralWave2() generates #TaylorT2 approximant wherein
-the phase of the waveform is given as an implicit function of time
-as in Equation.\eqref{eq_InspiralWavePhase2}. A template is required
-to be sampled at equal intervals of time. Thus, first of the equations
-in Equation.\eqref{eq_InspiralWavePhase2} is solved for \f$v\f$ at equally
-spaced values of the time steps
-\f$t_k\f$ and the resulting value of \f$v_k\f$ is used in the second equation to
-obtain the phase \f$\phi_k\f$.
-
-LALInspiralWave2Templates() is exactly the same as LALInspiralWave2()
-except that it generates two waveforms that differ in phase by \f$\pi/2.\f$
-
-\heading{Uses}
-\code
-LALInspiralParameterCalc()
-LALDBisectionFindRoot()
-LALInspiralPhasing2()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief These modules generate a time-domain chirp waveform of type #TaylorT2.
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>LALInspiralWave2()</tt>
+ * <ul>
+ * <li> \c output: Output containing the inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * <tt>LALInspiralWave2Templates()</tt>
+ * <ul>
+ * <li> \c output1: Output containing the 0-phase inspiral waveform.</li>
+ * <li> \c output2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * \heading{Description}
+ *
+ * LALInspiralWave2() generates #TaylorT2 approximant wherein
+ * the phase of the waveform is given as an implicit function of time
+ * as in Equation.\eqref{eq_InspiralWavePhase2}. A template is required
+ * to be sampled at equal intervals of time. Thus, first of the equations
+ * in Equation.\eqref{eq_InspiralWavePhase2} is solved for \f$v\f$ at equally
+ * spaced values of the time steps
+ * \f$t_k\f$ and the resulting value of \f$v_k\f$ is used in the second equation to
+ * obtain the phase \f$\phi_k\f$.
+ *
+ * LALInspiralWave2Templates() is exactly the same as LALInspiralWave2()
+ * except that it generates two waveforms that differ in phase by \f$\pi/2.\f$
+ *
+ * \heading{Uses}
+ * \code
+ * LALInspiralParameterCalc()
+ * LALDBisectionFindRoot()
+ * LALInspiralPhasing2()
+ * \endcode
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>

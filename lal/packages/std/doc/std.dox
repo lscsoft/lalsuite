@@ -1,24 +1,24 @@
 /**
-\addtogroup pkg_std
-
-\brief This package contains headers providing basic datatypes, constants,
-       and macros that support the LAL standard.
-
-@{
-\defgroup LALConfig_h 		Header LALConfig.h
-\defgroup LALStdlib_h 		Header LALStdlib.h
-\defgroup LALDatatypes		Headers LAL(Atomic)Datatypes.h
-\defgroup LALStatusMacros_h	Header LALStatusMacros.h
-\defgroup LALConstants_h	Header LALConstants.h
-\defgroup LALStdio_h		Header LALStdio.h
-\defgroup LALVersion_h		Header LALVersion.h
-\defgroup LALMalloc_h		Header LALMalloc.h
-\defgroup LALError_h		Header LALError.h
-\defgroup XLALError_h		Header XLALError.h
-\defgroup LALGSL_h		Header LALGSL.h
-\defgroup StringInput_h		Header StringInput.h
-\defgroup LALString_h		Header LALString.h
-\defgroup Grid_h		Header Grid.h
-@}
-
-*/
+ * \addtogroup pkg_std
+ *
+ * \brief This package contains headers providing basic datatypes, constants,
+ * and macros that support the LAL standard.
+ *
+ * @{
+ * \defgroup LALConfig_h 		Header LALConfig.h
+ * \defgroup LALStdlib_h 		Header LALStdlib.h
+ * \defgroup LALDatatypes		Headers LAL(Atomic)Datatypes.h
+ * \defgroup LALStatusMacros_h	Header LALStatusMacros.h
+ * \defgroup LALConstants_h	Header LALConstants.h
+ * \defgroup LALStdio_h		Header LALStdio.h
+ * \defgroup LALVersion_h		Header LALVersion.h
+ * \defgroup LALMalloc_h		Header LALMalloc.h
+ * \defgroup LALError_h		Header LALError.h
+ * \defgroup XLALError_h		Header XLALError.h
+ * \defgroup LALGSL_h		Header LALGSL.h
+ * \defgroup StringInput_h		Header StringInput.h
+ * \defgroup LALString_h		Header LALString.h
+ * \defgroup Grid_h		Header Grid.h
+ * @}
+ *
+ */

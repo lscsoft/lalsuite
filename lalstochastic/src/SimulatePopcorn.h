@@ -41,18 +41,18 @@ extern "C" {
 #endif
 
 /**
-\addtogroup SimulatePopcorn_h
-\author Tania Regimbau
-
-\brief Provides prototype for simulating whitened time-domain signals in a pair
-of detectors that arises from low duty cycle astrophysical backgrounds.
-
-\heading{Synopsis}
-\code
-#include <lal/SimulatePopcorn.h>
-\endcode
-
-*/
+ * \addtogroup SimulatePopcorn_h
+ * \author Tania Regimbau
+ *
+ * \brief Provides prototype for simulating whitened time-domain signals in a pair
+ * of detectors that arises from low duty cycle astrophysical backgrounds.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/SimulatePopcorn.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -79,12 +79,14 @@ of detectors that arises from low duty cycle astrophysical backgrounds.
 #define SIMULATEPOPCORN_OMEGAVACUUM 0.7
 /*@}*/
 
-/** These are function pointers to functions that model burst waveforms.
+/**
+ * These are function pointers to functions that model burst waveforms.
  */
 typedef void (REAL4LALWform) (REAL4 *output, REAL4 input);
 
 
-/** This structure contains the input of the simulation.
+/**
+ * This structure contains the input of the simulation.
  */
 typedef struct tagSimPopcornInputStruc {
   REAL4LALWform   *inputwform; 	/**< waveform of a single burst*/
@@ -97,7 +99,8 @@ typedef struct tagSimPopcornInputStruc {
   COMPLEX8FrequencySeries *wfilter1; /**< response of the second detector*/
 } SimPopcornInputStruc;
 
-/** This structure contains the parameters of the simulation.
+/**
+ * This structure contains the parameters of the simulation.
  */
 typedef struct tagSimPopcornParamsStruc {
   UINT4   paramsstarttime; 	/**< starting time*/
@@ -107,7 +110,8 @@ typedef struct tagSimPopcornParamsStruc {
   REAL8   paramsfref; 		/**< reference frequency if normalization, -1 otherwise*/
 } SimPopcornParamsStruc;
 
-/** This structure contains the simulated pair time series and \f$\Omega\f$ spectrum
+/**
+ * This structure contains the simulated pair time series and \f$\Omega\f$ spectrum
  */
 typedef struct tagSimPopcornOutputStruc {
   REAL4TimeSeries   *SimPopcorn0;	/**< UNDOCUMENTED */

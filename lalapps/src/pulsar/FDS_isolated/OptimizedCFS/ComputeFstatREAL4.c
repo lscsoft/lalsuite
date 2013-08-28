@@ -20,7 +20,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \author R. Prix, J. T. Whelan
+/**
+ * \author R. Prix, J. T. Whelan
  * \ingroup pulsarCoherent
  * \file
  * \brief
@@ -107,8 +108,8 @@ void init_sin_cos_LUT_REAL4(void);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** REAL4 and GPU-ready version of ComputeFStatFreqBand(), extended to loop over segments as well.
- *
+/**
+ * REAL4 and GPU-ready version of ComputeFStatFreqBand(), extended to loop over segments as well.
  * Computes a vector of Fstatistic values for a number of frequency bins, for each segment
  */
 int
@@ -303,8 +304,9 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
 
 } /* XLALComputeFStatFreqBandVector() */
 
-/** Host-bound 'driver' function for the central F-stat computation
- *  of a single F-stat value for one parameter-space point.
+/**
+ * Host-bound 'driver' function for the central F-stat computation
+ * of a single F-stat value for one parameter-space point.
  *
  * This is a GPU-adapted replacement for ComputeFstat(), and implements a 'wrapper'
  * around the core F-stat routines that can be executed as kernels on a GPU device.
@@ -420,7 +422,8 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
 } /* XLALDriverFstatREAL4() */
 
 
-/** This function computes a multi-IFO F-statistic value for given frequency (+fkdots),
+/**
+ * This function computes a multi-IFO F-statistic value for given frequency (+fkdots),
  * antenna-pattern functions, SSB-timings and data ("SFTs").
  *
  * It is *only* using single-precision quantities. The aim is that this function can easily
@@ -517,7 +520,8 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
 
 
 
-/** Revamped version of LALDemod() (based on TestLALDemod() in CFS).
+/**
+ * Revamped version of LALDemod() (based on TestLALDemod() in CFS).
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  *
  * Note: this is a single-precision version aimed for GPU parallelization.
@@ -706,10 +710,12 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
       /* if no danger of denominator -> 0 */
 #ifdef __GNUC__
-	/** somehow the branch prediction of gcc-4.1.2 terribly failes
-	    with the current case distinction in the hot-loop,
-	    having a severe impact on runtime of the E@H Linux App.
-	    So let's allow to give gcc a hint which path has a higher probablility */
+/**
+ * somehow the branch prediction of gcc-4.1.2 terribly failes
+ * with the current case distinction in the hot-loop,
+ * having a severe impact on runtime of the E@H Linux App.
+ * So let's allow to give gcc a hint which path has a higher probablility
+ */
       if (__builtin_expect((kappa_star > LD_SMALL4) && (kappa_star < 1.0 - LD_SMALL4), (0==0)))
 #else
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
@@ -832,10 +838,11 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
 
 
-/** Destroy a MultiSSBtimesREAL4 structure.
- *  Note, this is "NULL-robust" in the sense that it will not crash
- *  on NULL-entries anywhere in this struct, so it can be used
- *  for failure-cleanup even on incomplete structs
+/**
+ * Destroy a MultiSSBtimesREAL4 structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs
  */
 void
 XLALDestroyMultiSSBtimesREAL4 ( MultiSSBtimesREAL4 *multiSSB )
@@ -861,10 +868,11 @@ XLALDestroyMultiSSBtimesREAL4 ( MultiSSBtimesREAL4 *multiSSB )
 } /* XLALDestroyMultiSSBtimesREAL4() */
 
 
-/** Destroy a SSBtimesREAL4 structure.
- *  Note, this is "NULL-robust" in the sense that it will not crash
- *  on NULL-entries anywhere in this struct, so it can be used
- *  for failure-cleanup even on incomplete structs
+/**
+ * Destroy a SSBtimesREAL4 structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs
  */
 void
 XLALDestroySSBtimesREAL4 ( SSBtimesREAL4 *tSSB )
@@ -888,7 +896,8 @@ XLALDestroySSBtimesREAL4 ( SSBtimesREAL4 *tSSB )
 } /* XLALDestroySSBtimesREAL4() */
 
 
-/** Multi-IFO version of LALGetSSBtimesREAL4().
+/**
+ * Multi-IFO version of LALGetSSBtimesREAL4().
  * Get all SSB-timings for all input detector-series in REAL4 representation.
  *
  */
@@ -945,8 +954,8 @@ XLALGetMultiSSBtimesREAL4 ( const MultiDetectorStateSeries *multiDetStates, 	/**
 
 
 
-/** XLAL REAL4-version of LALGetSSBtimes()
- *
+/**
+ * XLAL REAL4-version of LALGetSSBtimes()
  */
 SSBtimesREAL4 *
 XLALGetSSBtimesREAL4 ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-states at timestamps t_i */
@@ -1034,10 +1043,12 @@ XLALGetSSBtimesREAL4 ( const DetectorStateSeries *DetectorStates,	/**< [in] dete
 
 
 
-/** Destruction of a ComputeFBufferREAL4 *contents*,
+/**
+ * Destruction of a ComputeFBufferREAL4 *contents*,
  * i.e. the multiSSB and multiAMcoeff, while the
  * buffer-container is not freed (which is why it's passed
- * by value and not by reference...) */
+ * by value and not by reference...)
+ */
 void
 XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb)
 {
@@ -1056,10 +1067,12 @@ XLALEmptyComputeFBufferREAL4 ( ComputeFBufferREAL4 *cfb)
 
 
 
-/** Destruction of a ComputeFBufferREAL4V *contents*,
+/**
+ * Destruction of a ComputeFBufferREAL4V *contents*,
  * i.e. the arrays of multiSSB and multiAMcoeff, while the
  * buffer-container is not freed (which is why it's passed
- * by value and not by reference...) */
+ * by value and not by reference...)
+ */
 void
 XLALEmptyComputeFBufferREAL4V ( ComputeFBufferREAL4V *cfbv )
 {

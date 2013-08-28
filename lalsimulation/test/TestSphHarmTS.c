@@ -18,14 +18,12 @@
  */
 
 /**
- *
  * \author Chris Pankow
  *
  * \file
  *
  * \brief Testing SphHarmTimeSeries code
- *
- * */
+ */
 
 
 #include <lal/LALSimInspiral.h>

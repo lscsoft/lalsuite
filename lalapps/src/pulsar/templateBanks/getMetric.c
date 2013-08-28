@@ -219,7 +219,8 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
 } /* initUserVars() */
 
 /*----------------------------------------------------------------------*/
-/** do some general initializations, 
+/**
+ * do some general initializations,
  * e.g. load ephemeris-files (if required), setup detector etc
  */
 void
@@ -263,7 +264,8 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
 
 } /* initGeneral() */
 
-/** Call LALPulsarMetric(), which is in {f, alpha, delta, f1dot, ...} coordinates
+/**
+ * Call LALPulsarMetric(), which is in {f, alpha, delta, f1dot, ...} coordinates
  * and has non-constant coefficients.
  */
 void

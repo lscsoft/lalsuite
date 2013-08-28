@@ -24,7 +24,7 @@
  * Functions to construct the Newtonian multipolar waveform as given
  * by Damour et al, Phys.Rev.D79:064004,2009.
  *
- * In addition to the function used to do this, 
+ * In addition to the function used to do this,
  * XLALCalculateNewtonianMultipole(), this file also contains a function
  * for calculating the standard scalar spherical harmonics Ylm.
  */

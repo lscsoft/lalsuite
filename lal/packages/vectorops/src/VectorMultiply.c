@@ -25,7 +25,6 @@
 /**
  * \addtogroup VectorMultiply_c
  * \author J. D. E. Creighton, T. D. Creighton, A. M. Sintes
-
  *
  * \brief Multiply two vectors.
  *

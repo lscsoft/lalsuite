@@ -31,36 +31,36 @@
  */
 
 /**
-\author Krishnan, B., Sintes, A.M.
-\file
-\ingroup Statistics_h
-\brief Tests the statistics and the histogram number count of a given total Hough map.
-
-\heading{Program \ref TestStatistics.c}
-
-\heading{Usage}
-\code
-TestStatistics [-d debuglevel] [-o outfile]
-\endcode
-
-\heading{Description}
-This program creates a Hough map and ...
-
-The <b>-d</b> option sets the debug level to the specified value
-\c debuglevel.  The <b>-o</b> flag tells the program to print the histogram
-of the Hough number counts to the specified data file \c outfile.
-
-\heading{Uses}
-\code
-LALHoughStatistics()
-LALHoughHistogram()
-LALPrintError()
-LALMalloc()
-LALFree()
-LALCheckMemoryLeaks()
-\endcode
-
-*/
+ * \author Krishnan, B., Sintes, A.M.
+ * \file
+ * \ingroup Statistics_h
+ * \brief Tests the statistics and the histogram number count of a given total Hough map.
+ *
+ * \heading{Program \ref TestStatistics.c}
+ *
+ * \heading{Usage}
+ * \code
+ * TestStatistics [-d debuglevel] [-o outfile]
+ * \endcode
+ *
+ * \heading{Description}
+ * This program creates a Hough map and ...
+ *
+ * The <b>-d</b> option sets the debug level to the specified value
+ * \c debuglevel.  The <b>-o</b> flag tells the program to print the histogram
+ * of the Hough number counts to the specified data file \c outfile.
+ *
+ * \heading{Uses}
+ * \code
+ * LALHoughStatistics()
+ * LALHoughHistogram()
+ * LALPrintError()
+ * LALMalloc()
+ * LALFree()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ */
 
 #include <lal/LALStdio.h>
 #include <lal/Statistics.h>

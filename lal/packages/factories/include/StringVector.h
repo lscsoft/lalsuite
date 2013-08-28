@@ -36,7 +36,7 @@ extern "C" {
  * \addtogroup StringVector_h
  *
  * \brief Creation/destruction/manipulation API for ::LALStringVector objects,
- *  which are just LAL-type vectors of CHAR * pointers.
+ * which are just LAL-type vectors of CHAR * pointers.
  *
  * \heading{Synopsis}
  * \code

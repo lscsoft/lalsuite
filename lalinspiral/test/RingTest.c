@@ -45,8 +45,7 @@
  * file <tt>bhring.out</tt>.  The program then generates a template bank,
  * which is written to the file <tt>bank.out</tt>.
  *
- *
-*/
+ */
 
 /** \cond DONT_DOXYGEN */
 

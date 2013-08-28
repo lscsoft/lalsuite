@@ -22,83 +22,83 @@
 /* 06/05/04 gam; Add gpsStartTimeSec and gpsStartTimeNan to StackSlideSkyParams; set these to epoch that gives T0 at SSB. */
 
 /**
-\author  Landry, M., and Mendell, G.
-
-\heading{Header \ref ComputeSky.h}
-Computes phase coefficients necessary for a correct demodulation.
-
-\heading{Synopsis}
-\code
-#include <lal/ComputeSky.h>
-\endcode
-
-This is a short summary of the analytical calculations which form the basis for the code in this routine.
-
-Recall that a demodulated Fourier Transform (DeFT) is given by
-\anchor e4 \f{equation}{
-\hat{x}_b({\vec{\lambda}})=
-\sum_{\alpha =0}^{M-1}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
-\tag{e4}
-\f}
-The index \f$b\f$ defines the DeFT frequency bin, the index \f$\alpha\f$ loops through
-the SFTs that build the DeFT, \f$k\f$ runs on all the SFT frequency bins, and \f$j\f$
-is a time index that runs on each SFT.  As shown in section
-\TODOref{s_LALDemod_h}, the next step in the development of the demodulation
-technique involves Taylor expanding the phase model about the temporal
-midpoint of each short segment of data, while retaining only first order
-terms.  The Taylor expansion of \f$\Phi (t)\f$ about the temporal midpoint
-\f$t_{\alpha,1/2}\f$ is
-\anchor taylor2 \f{equation}{
-\Phi_{\alpha}(t) = \Phi(t_{\alpha,1/2})+\left[t-t_{\alpha,1/2}\right]\frac{d\Phi}{dt}(t_{\alpha,1/2})\tag{taylor2} \\
-\f}
-For each value of \f$\alpha\f$, this expression consist of either constant or linear terms in time.  With the particular time discretization chosen in this code, \f$t=t_{0}+(N\alpha+j)\ T_{obs}/NM\f$, we have
-\anchor time \f{equation}{
-\tag{time}
-\left[t-t_{\alpha,1/2}\right]=\frac{\ T_{obs}}{M}\left(\frac{j}{N}-\frac{1}{2}\right)=\mathcal{T}_{s}\left(\frac{j}{N}-\frac{1}{2}\right),
-\f}
-where \f$\mathcal{T}_{s}\f$ is the short time baseline of the \f$M\f$ short FTs.  On
-the other hand, the phase can also be expressed as a function of SSB time \f$T\f$
-(i.e. the time at the solar system barycenter).  We will assume the source to
-be at rest in this reference frame.  Now, if one adopts the notation \f$\Delta
-T_{\alpha}\equiv\left[T(t_{\alpha,1/2})-
-T(t_{0})\right]\f$ and \f$\dot{T}_{\alpha}\equiv
-dT/dt(t_{\alpha,1/2})\f$
-the phase terms in the above equation are (neglecting constants)
-\anchor phi \anchor dphi \f{eqnarray}{
-\Phi(t_{\alpha,1/2})                     & = & f_{0}\Delta T_{\alpha}+\frac{1}{2}f_{1}\Delta T_{\alpha}^{2}
-+\frac{1}{3}f_{2}\Delta T_{\alpha}^{3}+\frac{1}{4}f_{3}\Delta T_{\alpha}^{4}+\frac{1}{5}f_{4}\Delta T_{\alpha}^{5}
-+\frac{1}{6}f_{5}\Delta T_{\alpha}^{6} \nonumber\tag{phi} \\
-                                         &   & \\
-\frac{d\Phi}{dt}(t_{\alpha,1/2})         & = & \dot{T}_{\alpha}\left(f_{0}+ f_{1}\Delta T_{\alpha}
-+f_{2}\Delta T_{\alpha}^{2}+f_{3}\Delta T_{\alpha}^{3}
-+f_{4}\Delta T_{\alpha}^{4}+f_{5}\Delta T_{\alpha}^{5}\right). \tag{dphi}
-\f}
-These constants, for each value of \f$\alpha\f$, require \f$\dot{T}_{\alpha}\f$ and
-\f$\Delta T_{\alpha}\f$, which are calculated by a suitable timing routine.  For
-this demodulation package, this timing routine is provided by <tt>tdb()</tt>.
-Thus, for a given sky position, the timing routine will be called once for
-each short time chunk, each call returning a specific  \f$\dot{T}_{\alpha}\f$ and
-\f$\Delta T_{\alpha}\f$.  By substituting Eq.s\TODOref{time},\TODOref{phi} and
-\TODOref{dphi} in Eq.\eqref{taylor2} and grouping together the terms in \f$j\f$ (linear
-in \f$t\f$) in order to save computations, we have
-\anchor phasecalc \f{equation}{
-\Phi_{\alpha}(t)=\sum_{s=0}^{n_{spin}}f_{s}A_{s\alpha}+\frac{j}{N}\sum_{s=0}^{n_{spin}}f_{s}B_{s\alpha},
-\tag{phasecalc}
-\f}
-where \f$n_{spin}\f$ is the maximum order of spindown parameter.  Rather than
-store the values of \f$\dot{T}_{\alpha}\f$ and \f$\Delta T_{\alpha}\f$ for each value
-of \f$\alpha\f$, it is more efficient to calculate the constants \f$A_{s\alpha}\f$ and
-\f$B_{s\alpha}\f$ only once, and then use these values for every spindown
-parameter set used when searching in a given sky position.  Analytical
-formulae for these constants are easily derived:
-\f{equation}{
-A_{s \alpha}=\frac{1}{s+1}\Delta T_{\alpha}^{s+1}-\frac{1}{2}\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
-\f}
-\f{equation}{
-B_{s \alpha}=\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
-\f}
-
-*/
+ * \author  Landry, M., and Mendell, G.
+ *
+ * \heading{Header \ref ComputeSky.h}
+ * Computes phase coefficients necessary for a correct demodulation.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/ComputeSky.h>
+ * \endcode
+ *
+ * This is a short summary of the analytical calculations which form the basis for the code in this routine.
+ *
+ * Recall that a demodulated Fourier Transform (DeFT) is given by
+ * \anchor e4 \f{equation}{
+ * \hat{x}_b({\vec{\lambda}})=
+ * \sum_{\alpha =0}^{M-1}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
+ * \tag{e4}
+ * \f}
+ * The index \f$b\f$ defines the DeFT frequency bin, the index \f$\alpha\f$ loops through
+ * the SFTs that build the DeFT, \f$k\f$ runs on all the SFT frequency bins, and \f$j\f$
+ * is a time index that runs on each SFT.  As shown in section
+ * \TODOref{s_LALDemod_h}, the next step in the development of the demodulation
+ * technique involves Taylor expanding the phase model about the temporal
+ * midpoint of each short segment of data, while retaining only first order
+ * terms.  The Taylor expansion of \f$\Phi (t)\f$ about the temporal midpoint
+ * \f$t_{\alpha,1/2}\f$ is
+ * \anchor taylor2 \f{equation}{
+ * \Phi_{\alpha}(t) = \Phi(t_{\alpha,1/2})+\left[t-t_{\alpha,1/2}\right]\frac{d\Phi}{dt}(t_{\alpha,1/2})\tag{taylor2} \\
+ * \f}
+ * For each value of \f$\alpha\f$, this expression consist of either constant or linear terms in time.  With the particular time discretization chosen in this code, \f$t=t_{0}+(N\alpha+j)\ T_{obs}/NM\f$, we have
+ * \anchor time \f{equation}{
+ * \tag{time}
+ * \left[t-t_{\alpha,1/2}\right]=\frac{\ T_{obs}}{M}\left(\frac{j}{N}-\frac{1}{2}\right)=\mathcal{T}_{s}\left(\frac{j}{N}-\frac{1}{2}\right),
+ * \f}
+ * where \f$\mathcal{T}_{s}\f$ is the short time baseline of the \f$M\f$ short FTs.  On
+ * the other hand, the phase can also be expressed as a function of SSB time \f$T\f$
+ * (i.e. the time at the solar system barycenter).  We will assume the source to
+ * be at rest in this reference frame.  Now, if one adopts the notation \f$\Delta
+ * T_{\alpha}\equiv\left[T(t_{\alpha,1/2})-
+ * T(t_{0})\right]\f$ and \f$\dot{T}_{\alpha}\equiv
+ * dT/dt(t_{\alpha,1/2})\f$
+ * the phase terms in the above equation are (neglecting constants)
+ * \anchor phi \anchor dphi \f{eqnarray}{
+ * \Phi(t_{\alpha,1/2})                     & = & f_{0}\Delta T_{\alpha}+\frac{1}{2}f_{1}\Delta T_{\alpha}^{2}
+ * +\frac{1}{3}f_{2}\Delta T_{\alpha}^{3}+\frac{1}{4}f_{3}\Delta T_{\alpha}^{4}+\frac{1}{5}f_{4}\Delta T_{\alpha}^{5}
+ * +\frac{1}{6}f_{5}\Delta T_{\alpha}^{6} \nonumber\tag{phi} \\
+ * &   & \\
+ * \frac{d\Phi}{dt}(t_{\alpha,1/2})         & = & \dot{T}_{\alpha}\left(f_{0}+ f_{1}\Delta T_{\alpha}
+ * +f_{2}\Delta T_{\alpha}^{2}+f_{3}\Delta T_{\alpha}^{3}
+ * +f_{4}\Delta T_{\alpha}^{4}+f_{5}\Delta T_{\alpha}^{5}\right). \tag{dphi}
+ * \f}
+ * These constants, for each value of \f$\alpha\f$, require \f$\dot{T}_{\alpha}\f$ and
+ * \f$\Delta T_{\alpha}\f$, which are calculated by a suitable timing routine.  For
+ * this demodulation package, this timing routine is provided by <tt>tdb()</tt>.
+ * Thus, for a given sky position, the timing routine will be called once for
+ * each short time chunk, each call returning a specific  \f$\dot{T}_{\alpha}\f$ and
+ * \f$\Delta T_{\alpha}\f$.  By substituting Eq.s\TODOref{time},\TODOref{phi} and
+ * \TODOref{dphi} in Eq.\eqref{taylor2} and grouping together the terms in \f$j\f$ (linear
+ * in \f$t\f$) in order to save computations, we have
+ * \anchor phasecalc \f{equation}{
+ * \Phi_{\alpha}(t)=\sum_{s=0}^{n_{spin}}f_{s}A_{s\alpha}+\frac{j}{N}\sum_{s=0}^{n_{spin}}f_{s}B_{s\alpha},
+ * \tag{phasecalc}
+ * \f}
+ * where \f$n_{spin}\f$ is the maximum order of spindown parameter.  Rather than
+ * store the values of \f$\dot{T}_{\alpha}\f$ and \f$\Delta T_{\alpha}\f$ for each value
+ * of \f$\alpha\f$, it is more efficient to calculate the constants \f$A_{s\alpha}\f$ and
+ * \f$B_{s\alpha}\f$ only once, and then use these values for every spindown
+ * parameter set used when searching in a given sky position.  Analytical
+ * formulae for these constants are easily derived:
+ * \f{equation}{
+ * A_{s \alpha}=\frac{1}{s+1}\Delta T_{\alpha}^{s+1}-\frac{1}{2}\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
+ * \f}
+ * \f{equation}{
+ * B_{s \alpha}=\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
+ * \f}
+ *
+ */
 
 #ifndef _STACKSLIDE_H
 #define _STACKSLIDE_H
@@ -149,26 +149,26 @@ extern "C" {
 /*@}*/
 
 /**
-\heading{Structures}
-
-\code
-struct CSParams
-\endcode
-\c CSParams
-
-This structure contains the parameters for the <tt>ComputeSky()</tt> routine.  The parameters are:
-
-<dl>
-<dt><tt>INT8 spinDwnOrder</tt></dt><dd> The maximal number of spindown parameters per spindown parameter set.</dd>
-<dt><tt>INT8 mObsSFT</tt></dt><dd> The number of SFTs in the observation time.</dd>
-<dt><tt>REAL8 tSFT</tt></dt><dd> The timescale of one SFT.</dd>
-<dt><tt>LIGOTimeGPS *tGPS</tt></dt><dd> An array containing the GPS times of the first datum from each SFT.</dd>
-<dt><tt>REAL8 *skyPos</tt></dt><dd> The array containing the sky patch coordinates.</dd>
-<dt><tt>CHAR *sw</tt></dt><dd> A switch which turns modulation on/off. </dd>
-<dt><tt>void (*funcName)(REAL8 , REAL8 , REAL8 , REAL8 *, REAL8 *, const CHAR *sw)</tt></dt><dd> A function pointer, to make the use of different timing routines easy.</dd>
-</dl>
-
-*/
+ * \heading{Structures}
+ *
+ * \code
+ * struct CSParams
+ * \endcode
+ * \c CSParams
+ *
+ * This structure contains the parameters for the <tt>ComputeSky()</tt> routine.  The parameters are:
+ *
+ * <dl>
+ * <dt><tt>INT8 spinDwnOrder</tt></dt><dd> The maximal number of spindown parameters per spindown parameter set.</dd>
+ * <dt><tt>INT8 mObsSFT</tt></dt><dd> The number of SFTs in the observation time.</dd>
+ * <dt><tt>REAL8 tSFT</tt></dt><dd> The timescale of one SFT.</dd>
+ * <dt><tt>LIGOTimeGPS *tGPS</tt></dt><dd> An array containing the GPS times of the first datum from each SFT.</dd>
+ * <dt><tt>REAL8 *skyPos</tt></dt><dd> The array containing the sky patch coordinates.</dd>
+ * <dt><tt>CHAR *sw</tt></dt><dd> A switch which turns modulation on/off. </dd>
+ * <dt><tt>void (*funcName)(REAL8 , REAL8 , REAL8 , REAL8 *, REAL8 *, const CHAR *sw)</tt></dt><dd> A function pointer, to make the use of different timing routines easy.</dd>
+ * </dl>
+ *
+ */
 
 /**\name Error Codes */ /*@{*/
 #define COMPUTESKYBINARYH_ENULL 1

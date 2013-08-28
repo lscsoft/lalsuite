@@ -27,98 +27,98 @@ extern "C" {
 #endif
 
 /**
-\author Creighton, T. D.
-\defgroup FlatMesh_h Header FlatMesh.h
-\ingroup pkg_pulsarCovering
-\brief Provides routines to place search meshes for parameter spaces with
-constant parameter metrics.
-
-\heading{Synopsis}
-\code
-#include <lal/FlatMesh.h>
-\endcode
-
-This header covers routines that lay out a mesh of points on
-an \f$n\f$-dimensional parameter space \f$\{\mathsf{x}^a\}\f$.  The mesh
-points are placed in a unit-cube lattice in orthonormalized
-coordinates \f$\mathsf{y}^a=\mathsf{T}^a{}_b\mathsf{x}^b\f$, where
-\f$\mathsf{T}^a{}_b\f$ is an arbitrary but constant transformation matrix.
-This describes a fairly general procedure, but within LAL these
-routines are used for a specific purpose: to define a set of parameter
-values required to search a space of parameterized signals.
-
-In most optimal signal-detection strategies, each signal that one
-might detect is parameterized by an \f$n\f$-tuple of parameters
-\f$\mathsf{x}^a=(x_1,\ldots,x_n)\f$.  To detect a signal whose parameters
-are not known in advance, a typical search algorithm performs a series
-of targeted searches over a discrete set of parameter values
-\f$\mathsf{x}^a_{(1)},\mathsf{x}^a_{(2)},\ldots\f$.  If the unknown
-signal's parameters happen to match one of the target points, it will
-be detected with maximum signal strength; otherwise, its effective
-signal strength is reduced according to the ``distance'' between its
-parameter values and the closest search point.  The \e mismatch
-\f$m(\mathsf{x}^a,\Delta\mathsf{x}^a)\f$ is defined as the fractional
-reduction in effective signal strength of a signal with parameters
-\f$\mathsf{x}^a+\Delta\mathsf{x}^a\f$ in a search targeted at signal
-parameters \f$\mathsf{x}^a\f$.  The mismatch can define a local distance
-measure on the parameter space, since for small values it approaches a
-quadratic form:
-\f[
-m(\mathsf{x}^a,\Delta\mathsf{x}^a) = \mathsf{g}_{bc}(\mathsf{x}^a)
-	\Delta\mathsf{x}^b\Delta\mathsf{x}^c
-	+ O(\Delta\mathsf{x}^a)^3 \; .
-\f]
-The matrix \f$\mathsf{g}_{bc}\f$ is called the mismatch \e metric, and
-in general can vary as a function of the central target point
-\f$\mathsf{x}^a\f$.
-
-One of the main goals in searching the signal parameter space is to
-choose a set of target points that is as small as possible, while
-still ensuring that an unknown signal will lie close enough to a
-target point that it will lose no more than some fraction
-\f$m_\mathrm{thresh}\f$ of its signal strength.  If the mismatch metric
-\f$\mathsf{g_{ab}}\f$ is constant, this is relatively simple: the search
-points can be placed on a mesh that is rectilinear and
-uniformly-spaced in the eigenspace of \f$\mathsf{g_{ab}}\f$.  This is
-described below.
-
-Let \f$\lambda^{(1)},\ldots,\lambda^{(n)}\f$ be the \f$n\f$ eigenvalues of
-\f$\mathsf{g}_{ab}\f$, and \f$\mathsf{e}^a_{(1)},\ldots,\mathsf{e}^a_{(n)}\f$
-be the corresponding unit eigenvectors.  Then the vectors
-\f$\{\mathsf{e}^a_{(i)}/\sqrt{\lambda_{(i)}}\}\f$ define a new coordinate
-basis in which coordinate distances correspond to metric distances.
-The simplest covering of the parameter space is to lay out a cubic
-mesh in this coordinate basis.  If \f$s\f$ is the side length of one of
-these cubes, then the maximum mismatch (in the quadratic
-approximation) between a point in the interior and a vertex is
-\f$(s/2)\sqrt{n}\f$.  We wish this to be no greater than some given
-threshold value \f$m_\mathrm{thresh}\f$.  This means that the eigenvectors
-pointing from a mesh point to its immediate neighbours are of the form
-\f$\pm2m_\mathrm{thresh}[n\lambda_{(i)}]^{-1/2}\,\mathsf{e}^a_{(i)}\f$.
-
-Let us define a transformation matrix \f$\mathsf{M}^a{}_b\f$ by:
-\f[
-M^i{}_j = 2m_\mathrm{thresh}[n\lambda_{(i)}]^{-1/2}\,e^i_{(j)} \; .
-\f]
-Then the parameters \f$\mathsf{x}^a\f$ and the orthonormalized coordinates
-\f$\mathsf{y}^b\f$ are related by:
-\f{eqnarray}{
-\mathsf{x}^a & = & \mathsf{M}^a{}_b \mathsf{y}^b \; , \nonumber\\
-\mathsf{y}^b & = & \mathsf{(M^{-1})}^b{}_a \mathsf{x}^a \; . \nonumber
-\f}
-The search mesh can thus be placed as a unit-cube lattice in the
-\f$\mathsf{y}^b\f$ coordinate basis and then transformed back to find the
-mesh points in the \f$\mathsf{x}^a\f$ coordinates.
-
-This header and its associated modules are placed in the \c pulsar
-package because they were originally intended for use in targeted
-pulsar searches, where the sky position is known but the frequency and
-spindown are not.  In a search over the Taylor coefficients of the
-frequency function, the associated mismatch metric is nearly constant,
-with corrections on the order of the observation time over the
-spindown timescale.
-
-*/
+ * \author Creighton, T. D.
+ * \defgroup FlatMesh_h Header FlatMesh.h
+ * \ingroup pkg_pulsarCovering
+ * \brief Provides routines to place search meshes for parameter spaces with
+ * constant parameter metrics.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/FlatMesh.h>
+ * \endcode
+ *
+ * This header covers routines that lay out a mesh of points on
+ * an \f$n\f$-dimensional parameter space \f$\{\mathsf{x}^a\}\f$.  The mesh
+ * points are placed in a unit-cube lattice in orthonormalized
+ * coordinates \f$\mathsf{y}^a=\mathsf{T}^a{}_b\mathsf{x}^b\f$, where
+ * \f$\mathsf{T}^a{}_b\f$ is an arbitrary but constant transformation matrix.
+ * This describes a fairly general procedure, but within LAL these
+ * routines are used for a specific purpose: to define a set of parameter
+ * values required to search a space of parameterized signals.
+ *
+ * In most optimal signal-detection strategies, each signal that one
+ * might detect is parameterized by an \f$n\f$-tuple of parameters
+ * \f$\mathsf{x}^a=(x_1,\ldots,x_n)\f$.  To detect a signal whose parameters
+ * are not known in advance, a typical search algorithm performs a series
+ * of targeted searches over a discrete set of parameter values
+ * \f$\mathsf{x}^a_{(1)},\mathsf{x}^a_{(2)},\ldots\f$.  If the unknown
+ * signal's parameters happen to match one of the target points, it will
+ * be detected with maximum signal strength; otherwise, its effective
+ * signal strength is reduced according to the ``distance'' between its
+ * parameter values and the closest search point.  The \e mismatch
+ * \f$m(\mathsf{x}^a,\Delta\mathsf{x}^a)\f$ is defined as the fractional
+ * reduction in effective signal strength of a signal with parameters
+ * \f$\mathsf{x}^a+\Delta\mathsf{x}^a\f$ in a search targeted at signal
+ * parameters \f$\mathsf{x}^a\f$.  The mismatch can define a local distance
+ * measure on the parameter space, since for small values it approaches a
+ * quadratic form:
+ * \f[
+ * m(\mathsf{x}^a,\Delta\mathsf{x}^a) = \mathsf{g}_{bc}(\mathsf{x}^a)
+ * \Delta\mathsf{x}^b\Delta\mathsf{x}^c
+ * + O(\Delta\mathsf{x}^a)^3 \; .
+ * \f]
+ * The matrix \f$\mathsf{g}_{bc}\f$ is called the mismatch \e metric, and
+ * in general can vary as a function of the central target point
+ * \f$\mathsf{x}^a\f$.
+ *
+ * One of the main goals in searching the signal parameter space is to
+ * choose a set of target points that is as small as possible, while
+ * still ensuring that an unknown signal will lie close enough to a
+ * target point that it will lose no more than some fraction
+ * \f$m_\mathrm{thresh}\f$ of its signal strength.  If the mismatch metric
+ * \f$\mathsf{g_{ab}}\f$ is constant, this is relatively simple: the search
+ * points can be placed on a mesh that is rectilinear and
+ * uniformly-spaced in the eigenspace of \f$\mathsf{g_{ab}}\f$.  This is
+ * described below.
+ *
+ * Let \f$\lambda^{(1)},\ldots,\lambda^{(n)}\f$ be the \f$n\f$ eigenvalues of
+ * \f$\mathsf{g}_{ab}\f$, and \f$\mathsf{e}^a_{(1)},\ldots,\mathsf{e}^a_{(n)}\f$
+ * be the corresponding unit eigenvectors.  Then the vectors
+ * \f$\{\mathsf{e}^a_{(i)}/\sqrt{\lambda_{(i)}}\}\f$ define a new coordinate
+ * basis in which coordinate distances correspond to metric distances.
+ * The simplest covering of the parameter space is to lay out a cubic
+ * mesh in this coordinate basis.  If \f$s\f$ is the side length of one of
+ * these cubes, then the maximum mismatch (in the quadratic
+ * approximation) between a point in the interior and a vertex is
+ * \f$(s/2)\sqrt{n}\f$.  We wish this to be no greater than some given
+ * threshold value \f$m_\mathrm{thresh}\f$.  This means that the eigenvectors
+ * pointing from a mesh point to its immediate neighbours are of the form
+ * \f$\pm2m_\mathrm{thresh}[n\lambda_{(i)}]^{-1/2}\,\mathsf{e}^a_{(i)}\f$.
+ *
+ * Let us define a transformation matrix \f$\mathsf{M}^a{}_b\f$ by:
+ * \f[
+ * M^i{}_j = 2m_\mathrm{thresh}[n\lambda_{(i)}]^{-1/2}\,e^i_{(j)} \; .
+ * \f]
+ * Then the parameters \f$\mathsf{x}^a\f$ and the orthonormalized coordinates
+ * \f$\mathsf{y}^b\f$ are related by:
+ * \f{eqnarray}{
+ * \mathsf{x}^a & = & \mathsf{M}^a{}_b \mathsf{y}^b \; , \nonumber\\
+ * \mathsf{y}^b & = & \mathsf{(M^{-1})}^b{}_a \mathsf{x}^a \; . \nonumber
+ * \f}
+ * The search mesh can thus be placed as a unit-cube lattice in the
+ * \f$\mathsf{y}^b\f$ coordinate basis and then transformed back to find the
+ * mesh points in the \f$\mathsf{x}^a\f$ coordinates.
+ *
+ * This header and its associated modules are placed in the \c pulsar
+ * package because they were originally intended for use in targeted
+ * pulsar searches, where the sky position is known but the frequency and
+ * spindown are not.  In a search over the Taylor coefficients of the
+ * frequency function, the associated mismatch metric is nearly constant,
+ * with corrections on the order of the observation time over the
+ * spindown timescale.
+ *
+ */
 /*@{*/
 
 /** \name Error Codes */

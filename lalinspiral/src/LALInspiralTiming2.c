@@ -18,40 +18,36 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief Module used in solving the timing and phasing functions in quadrature for the
-::Approximant #TaylorT2.
-
-\heading{Prototypes}
-
-<tt>LALInspiralTiming2()</tt>
-
-\heading{Description}
-
-Given \f$t\f$ and \f$v\f$ this module computes the quantity
-\f{equation}{
-tofv = t - t_C - t_N(v) \sum t_k v^k,
-\f}
-where the coefficients \f$t_k\f$ and the Newtonian value \f$t_N\f$ are all defined
-in Table.\tableref{table_flux}.
-
-\heading{Algorithm}
-None
-
-
-\heading{Uses}
-None
-
-\heading{Notes}
-None
-
-
-
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module used in solving the timing and phasing functions in quadrature for the
+ * ::Approximant #TaylorT2.
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>LALInspiralTiming2()</tt>
+ *
+ * \heading{Description}
+ *
+ * Given \f$t\f$ and \f$v\f$ this module computes the quantity
+ * \f{equation}{
+ * tofv = t - t_C - t_N(v) \sum t_k v^k,
+ * \f}
+ * where the coefficients \f$t_k\f$ and the Newtonian value \f$t_N\f$ are all defined
+ * in Table.\tableref{table_flux}.
+ *
+ * \heading{Algorithm}
+ * None
+ *
+ * \heading{Uses}
+ * None
+ *
+ * \heading{Notes}
+ * None
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>

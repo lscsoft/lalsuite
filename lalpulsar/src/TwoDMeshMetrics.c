@@ -26,34 +26,34 @@
  *
  * \heading{Description}
  *
- This module contains metric computation routines suitable for passing
- into LALCreateTwoDMesh() via the \a params->getMetric
- function parameter.
-
- The routine LALGetNearestMetric() takes as its parameter a
- \a (void *) pointer to a \a REAL4VectorSequence structure,
- containing a list of 5-dimensional vectors
- \f$(x,y,g_{xx},g_{yy},g_{xy})\f$ giving the values of the specified metric
- components evaluated at the specified position.  The function returns
- in \a metric the components at the location in \a params
- nearest to the requested \a position, where ``nearness'' to a
- point refers to proper distance computed from the metric at that
- point.
-
- The routine LALInterpolateMetricGrid() takes as its parameter a
- \a (void *) pointer to a \a REAL4Grid structure of physical
- dimension 2 and data dimension 3, where the first two dimensions refer
- to the \f$(x,y)\f$ grid points, and the third dimension must be of length
- 3, storing the three metric components \f$g_{xx}\f$, \f$g_{yy}\f$, and
- \f$g_{xy}\f$ in that order.  The routine locates the four grid points
- surrounding the specified \a position, and interpolates the metric
- values using a simple bilinear fit \f$f(x,y)=A+Bx+Cy+Dxy\f$, where \f$A\f$,
- \f$B\f$, \f$C\f$, and \f$D\f$ are specified by the four surrounding points.  If
- the point \f$(x,y)\f$ is outside the region, then the metric components
- are interpolated from the two nearest edge points if it is nearest to
- an edge, or the nearest corner point if it is nearest to a corner.
- (``Nearness'' in this case refers to \em coordinate distances.)
-*/
+ * This module contains metric computation routines suitable for passing
+ * into LALCreateTwoDMesh() via the \a params->getMetric
+ * function parameter.
+ *
+ * The routine LALGetNearestMetric() takes as its parameter a
+ * \a (void *) pointer to a \a REAL4VectorSequence structure,
+ * containing a list of 5-dimensional vectors
+ * \f$(x,y,g_{xx},g_{yy},g_{xy})\f$ giving the values of the specified metric
+ * components evaluated at the specified position.  The function returns
+ * in \a metric the components at the location in \a params
+ * nearest to the requested \a position, where ``nearness'' to a
+ * point refers to proper distance computed from the metric at that
+ * point.
+ *
+ * The routine LALInterpolateMetricGrid() takes as its parameter a
+ * \a (void *) pointer to a \a REAL4Grid structure of physical
+ * dimension 2 and data dimension 3, where the first two dimensions refer
+ * to the \f$(x,y)\f$ grid points, and the third dimension must be of length
+ * 3, storing the three metric components \f$g_{xx}\f$, \f$g_{yy}\f$, and
+ * \f$g_{xy}\f$ in that order.  The routine locates the four grid points
+ * surrounding the specified \a position, and interpolates the metric
+ * values using a simple bilinear fit \f$f(x,y)=A+Bx+Cy+Dxy\f$, where \f$A\f$,
+ * \f$B\f$, \f$C\f$, and \f$D\f$ are specified by the four surrounding points.  If
+ * the point \f$(x,y)\f$ is outside the region, then the metric components
+ * are interpolated from the two nearest edge points if it is nearest to
+ * an edge, or the nearest corner point if it is nearest to a corner.
+ * (``Nearness'' in this case refers to \em coordinate distances.)
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/Grid.h>

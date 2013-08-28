@@ -18,7 +18,6 @@
  */
 
 /**
- *
  * \author Chris Pankow
  *
  * \file

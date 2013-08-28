@@ -19,8 +19,7 @@
 
 
 /**
-\file
-
+ * \file
  *
  * \brief Module to compute the ring-down waveform as linear combination
  * of quasi-normal-modes decaying waveforms, which can be attached to
@@ -37,14 +36,12 @@
  * </li><li> <tt>nmodes,</tt> Input, the number of quasi-normal-modes to be combined.
  * </li></ul>
  *
- *
  * <tt>XLALGenerateWaveDerivative()</tt>
  * <ul>
  * <li> <tt>dwave,</tt> Output, time derivative of the input waveform
  * </li><li> <tt>wave,</tt> Input, waveform to be differentiated in time
  * </li><li> <tt>params,</tt> Input, the parameters of the input waveform.
  * </li></ul>
- *
  *
  * <tt>XLALPSpinGenerateQNMFreq()</tt>
  * <ul>
@@ -54,7 +51,6 @@
  * </li><li> <tt>m,</tt> Input, the m of the modes
  * </li><li> <tt>nmodes,</tt> Input, the number of overtones considered.
  * </li></ul>
- *
  *
  * <tt>XLALPSpinFinalMassSpin()</tt>
  * <ul>
@@ -89,7 +85,7 @@
  *
  * \heading{Notes}
  *
-*/
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdlib.h>

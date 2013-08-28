@@ -37,69 +37,69 @@
 #define TEMPERING_SHIFT_L(y)  (y >> 18)
 
 /**
-   \defgroup MersenneRandom_c Module MersenneRandom.c
-   \ingroup Random_h
-   \author Tibbits, M M
-
-   \brief Routine to get a random number based on the Mersenne Twister Algorithm.
-
-\heading{Description}
-
-This was implemented as in the paper listed below.  We have provided two functions,
-each which may be called multiple times.  One returns a single number and the other
-returns a vector of length prescribed by the Vector-\>length.
-
-Below I have listed the abstract from the paper referenced below:
-
-<p>
-A new algorithm called Mersenne Twister (MT) is proposed for generating uniform
-pseudoran-dom numbers. For a particular choice of parameters, the algorithm provides
-a super astronom-ical period of 2 19937 2 1 and 623-dimensional equidistribution up
-to 32-bit accuracy, while using a working area of only 624 words. This is a new
-variant of the previously proposed generators, TGFSR, modified so as to admit a
-Mersenne-prime period. The characteristic polynomial has many terms. The distribution
-up to v bits accuracy for 1 \# v \# 32 is also shown to be good. An algorithm is also
-given that checks the primitivity of the characteristic polynomial of MT with
-computational complexity O( p 2 ) where p is the degree of the polynomial.
-
-<p>
-They implemented this generator in portable C-code. It passed several stringent
-statistical tests, including diehard. Its speed is comparable to other modern
-generators. Its merits are due to the efficient algorithms that are unique to
-polynomial calculations over the two-element field.
-
-\heading{Algorithm}
-
-Please see paper listed below:
-
-M. Matsumoto and T. Nishimura,
-"Mersenne Twister: A 623-Dimensionally Equidistributed Uniform
-Pseudo-Random Number Generator",
-ACM Transactions on Modeling and Computer Simulation,
-Vol. 8, No. 1, January 1998, pp 3--30.
-
-Copyright (C) 1997 Makoto Matsumoto and Takuji Nishimura.
-When you use this, send an email to: matumoto@math.keio.ac.jp
-with an appropriate reference to your work.
-
-\heading{Notes}
-
-Pulled from distributed source code:
-
-A C-program for MT19937: Real number version  (1998/4/6)
-genrand() generates one pseudorandom real number (double)
-which is uniformly distributed on [0,1]-interval, for each
-call. sgenrand(seed) set initial values to the working area
-of 624 words. Before genrand(), sgenrand(seed) must be called
-once. (seed is any 32-bit integer except for 0).  Integer
-generator is obtained by modifying two lines.
-
-Coded by Takuji Nishimura, considering the suggestions by
-Topher Cooper and Marc Rieffel in July-Aug. 1997.
-
-Seed value MAY NOT EQUAL ZERO.
-
-*/
+ * \defgroup MersenneRandom_c Module MersenneRandom.c
+ * \ingroup Random_h
+ * \author Tibbits, M M
+ *
+ * \brief Routine to get a random number based on the Mersenne Twister Algorithm.
+ *
+ * \heading{Description}
+ *
+ * This was implemented as in the paper listed below.  We have provided two functions,
+ * each which may be called multiple times.  One returns a single number and the other
+ * returns a vector of length prescribed by the Vector-\>length.
+ *
+ * Below I have listed the abstract from the paper referenced below:
+ *
+ * <p>
+ * A new algorithm called Mersenne Twister (MT) is proposed for generating uniform
+ * pseudoran-dom numbers. For a particular choice of parameters, the algorithm provides
+ * a super astronom-ical period of 2 19937 2 1 and 623-dimensional equidistribution up
+ * to 32-bit accuracy, while using a working area of only 624 words. This is a new
+ * variant of the previously proposed generators, TGFSR, modified so as to admit a
+ * Mersenne-prime period. The characteristic polynomial has many terms. The distribution
+ * up to v bits accuracy for 1 \# v \# 32 is also shown to be good. An algorithm is also
+ * given that checks the primitivity of the characteristic polynomial of MT with
+ * computational complexity O( p 2 ) where p is the degree of the polynomial.
+ *
+ * <p>
+ * They implemented this generator in portable C-code. It passed several stringent
+ * statistical tests, including diehard. Its speed is comparable to other modern
+ * generators. Its merits are due to the efficient algorithms that are unique to
+ * polynomial calculations over the two-element field.
+ *
+ * \heading{Algorithm}
+ *
+ * Please see paper listed below:
+ *
+ * M. Matsumoto and T. Nishimura,
+ * "Mersenne Twister: A 623-Dimensionally Equidistributed Uniform
+ * Pseudo-Random Number Generator",
+ * ACM Transactions on Modeling and Computer Simulation,
+ * Vol. 8, No. 1, January 1998, pp 3--30.
+ *
+ * Copyright (C) 1997 Makoto Matsumoto and Takuji Nishimura.
+ * When you use this, send an email to: matumoto@math.keio.ac.jp
+ * with an appropriate reference to your work.
+ *
+ * \heading{Notes}
+ *
+ * Pulled from distributed source code:
+ *
+ * A C-program for MT19937: Real number version  (1998/4/6)
+ * genrand() generates one pseudorandom real number (double)
+ * which is uniformly distributed on [0,1]-interval, for each
+ * call. sgenrand(seed) set initial values to the working area
+ * of 624 words. Before genrand(), sgenrand(seed) must be called
+ * once. (seed is any 32-bit integer except for 0).  Integer
+ * generator is obtained by modifying two lines.
+ *
+ * Coded by Takuji Nishimura, considering the suggestions by
+ * Topher Cooper and Marc Rieffel in July-Aug. 1997.
+ *
+ * Seed value MAY NOT EQUAL ZERO.
+ *
+ */
 /*@{*/
 
 typedef struct
@@ -112,7 +112,8 @@ tagGenParams
 }
 GenParams;
 
-/** \ingroup Random_h
+/**
+ * \ingroup Random_h
  * \brief This structure contains the parameters necessary for generating the current
  * sequence of Mersenne twiser random numbers (based on the initial seed).
  * \note The contents should not be manually adjusted.

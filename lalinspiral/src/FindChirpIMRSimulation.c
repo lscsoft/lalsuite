@@ -49,7 +49,8 @@
 #include <lal/TimeSeries.h>
 
 
-/** \brief Provides an interface between code build from \ref pkg_findchirp and
+/**
+ * \brief Provides an interface between code build from \ref pkg_findchirp and
  * various simulation packages for injecting chirps into data.
  * \author Brown, D. A. and Creighton, T. D
  *

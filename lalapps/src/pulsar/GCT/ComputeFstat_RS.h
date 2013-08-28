@@ -29,7 +29,6 @@
  * ComputSky.[ch] by Jolien Creighton, Reinhard Prix, Steve Berukoff
  * LALComputeAM.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens
  *
- *
  */
 
 #ifndef _COMPUTEFSTATRS_H  /* Double-include protection. */
@@ -73,7 +72,8 @@ typedef struct {
   COMPLEX8TimeSeries **data;	    /**< array of COMPLEX8TimeSeries (pointers) */
 } MultiCOMPLEX8TimeSeries;
 
-/** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
+/**
+ * Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStatFreqBand_RS() the pointer-entries should all be NULL.
  */
@@ -90,7 +90,8 @@ struct tagComputeFBuffer_RS {
   MultiCOMPLEX8TimeSeries *multiFb_resampled;                 /**< the buffered multi-detector resampled timeseries weighted by b(t) */
 };
 
-/** Struct holding a vector of buffered ComputeFStat()-internal quantities to avoid unnecessarily
+/**
+ * Struct holding a vector of buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  */
 typedef struct {

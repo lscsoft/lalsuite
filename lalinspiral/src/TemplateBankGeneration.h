@@ -39,23 +39,23 @@
 #include<lal/LIGOMetadataTables.h>
 
 /**
-   \addtogroup TemplateBankGeneration_h
-  \author Hanna, C. R.
-
-  \brief This header file includes all the necessary types and
-  function prototypes for LALNDTemplateBank() and LALMakeTemplateBank().
-
-  \heading{Synopsis}
-  \code
-  #include <lal/TemplateBankGeneration.h>
-  \endcode
-
-  NDTemplateBank() provides a general way to tile a parameter space with
-  a constant metric ( currently only for less than 12 dimensions).
-  MakeTemplateBank() provides a general way for applications to
-  generate a template bank with suitable I/O.
-
-*/
+ * \addtogroup TemplateBankGeneration_h
+ * \author Hanna, C. R.
+ *
+ * \brief This header file includes all the necessary types and
+ * function prototypes for LALNDTemplateBank() and LALMakeTemplateBank().
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/TemplateBankGeneration.h>
+ * \endcode
+ *
+ * NDTemplateBank() provides a general way to tile a parameter space with
+ * a constant metric ( currently only for less than 12 dimensions).
+ * MakeTemplateBank() provides a general way for applications to
+ * generate a template bank with suitable I/O.
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

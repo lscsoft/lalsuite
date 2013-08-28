@@ -1,6 +1,6 @@
 /**
  * @file LALSQTPNWaveform.c
- *		Contains the function definition to create GWforms.
+ * Contains the function definition to create GWforms.
  * @author László Veréb
  * @date 2010.05.21.
  */
@@ -9,7 +9,8 @@
 #include <lal/LALSQTPNIntegrator.h>
 #include <lal/LALSQTPNWaveformInterface.h>
 
-/**		The macro function calculates the scalar product of two vectors.
+/**
+ * The macro function calculates the scalar product of two vectors.
  * @param[in]  a1	: the left vector
  * @param[in]  a2	: the right vector
  * @return	the product
@@ -17,7 +18,8 @@
 #define SCALAR_PRODUCT3(a1, a2) \
 	((a1)[0] * (a2)[0] + (a1)[1] * (a2)[1] + (a1)[2] * (a2)[2]);
 
-/**		The macro function calculates the vector product of two vectors.
+/**
+ * The macro function calculates the vector product of two vectors.
  * @param[in]  left		: the left vector
  * @param[in]  right	: the right vector
  * @param[out] product	: the vector product

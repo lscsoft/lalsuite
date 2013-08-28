@@ -22,7 +22,7 @@
  * \ingroup pulsarApps
  * \author Badri Krishnan, Berit Behnke
  * \brief Little Helper code for getting velocities from v2 SFTs
-*/
+ */
 
 
 /* lalapps includes */

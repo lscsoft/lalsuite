@@ -18,41 +18,40 @@
 */
 
 /**
-   \file
-   \author Itoh, Yousuke  
-   \brief Note on the code
-
-  (1)Description of the algorithm:
-  See the GWDAW8 proceedings.
-    gr-qc/0408092
-    Title: Chi-square test on candidate events from CW signal coherent searches
-    Authors: Y. Itoh, M.A. Papa, B. Krishnan, X. Siemens
-    Comments: proceedings of GWDAW8, 2003 conference, 12pages, 6 figures
- 
-  (2)Note:
-  This is a LALAppsified version of the original code FstatShapeTest.c.
- 
-  Purposes are to make this code more modular to prepare for a 
-  possible future functionization of ComputeFstatistic and 
-  for c-code-based search pipelines including MC experiments.
- 
-  (3)Example:
-  ./FstatShapeTestLAL -o FaFb00.001 -t FaFb01.001 > FST.txt
- 
-  (4)Validation:
-  Generate 10^5 signals of \f$SNR = \sqrt{2F}\f$ ranging from sqrt(20) to ~ 30 with 
-  a Gaussian stationary noise, run ComputeFStatistic with the threshold on 
-  2F being 20.  The code reported 789135 outliers that includes statistical 
-  disturbances. The resulting veto statistics by the original FstatShapeTest 
-  are consistent with those by this LALAppsified code with a relative 
-  difference of 6x10^-8. 
-
-  
-  \todo 
-  <ul>
-  <li>Adopt LALUserInput command line argument parser.   
-  </ul>  
-
+ * \file
+ * \author Itoh, Yousuke
+ * \brief Note on the code
+ *
+ * (1)Description of the algorithm:
+ * See the GWDAW8 proceedings.
+ * gr-qc/0408092
+ * Title: Chi-square test on candidate events from CW signal coherent searches
+ * Authors: Y. Itoh, M.A. Papa, B. Krishnan, X. Siemens
+ * Comments: proceedings of GWDAW8, 2003 conference, 12pages, 6 figures
+ *
+ * (2)Note:
+ * This is a LALAppsified version of the original code FstatShapeTest.c.
+ *
+ * Purposes are to make this code more modular to prepare for a
+ * possible future functionization of ComputeFstatistic and
+ * for c-code-based search pipelines including MC experiments.
+ *
+ * (3)Example:
+ * ./FstatShapeTestLAL -o FaFb00.001 -t FaFb01.001 > FST.txt
+ *
+ * (4)Validation:
+ * Generate 10^5 signals of \f$SNR = \sqrt{2F}\f$ ranging from sqrt(20) to ~ 30 with
+ * a Gaussian stationary noise, run ComputeFStatistic with the threshold on
+ * 2F being 20.  The code reported 789135 outliers that includes statistical
+ * disturbances. The resulting veto statistics by the original FstatShapeTest
+ * are consistent with those by this LALAppsified code with a relative
+ * difference of 6x10^-8.
+ *
+ * \todo
+ * <ul>
+ * <li>Adopt LALUserInput command line argument parser.
+ * </ul>
+ *
  */
 
 #include <stdio.h>

@@ -8,25 +8,24 @@
  */
 
 /**
-
-\author Brown, D. A., and Fazi, D.
-\file
-\ingroup FindChirpPTF_h
-
-\brief Provides functions to create physical template family templates in a
-form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
-
-\heading{Prototypes}
-
-The function <tt>LALFindChirpPTFWaveform()</tt> creates vectors containing the
-evolution of the dynamical variables needed by the physical template family
-template as described by the algorithm below.
-
-\heading{Algorithm}
-
-Blah.
-
-*/
+ * \author Brown, D. A., and Fazi, D.
+ * \file
+ * \ingroup FindChirpPTF_h
+ *
+ * \brief Provides functions to create physical template family templates in a
+ * form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
+ *
+ * \heading{Prototypes}
+ *
+ * The function <tt>LALFindChirpPTFWaveform()</tt> creates vectors containing the
+ * evolution of the dynamical variables needed by the physical template family
+ * template as described by the algorithm below.
+ *
+ * \heading{Algorithm}
+ *
+ * Blah.
+ *
+ */
 
 #include <math.h>
 #include <gsl/gsl_errno.h>

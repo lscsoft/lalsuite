@@ -257,7 +257,7 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
  * \sa LALInferenceVariableItem2VOTParamNode
  *
  * \author John Veitch
- * 
+ *
  */
 xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *const vars)
 {
@@ -294,7 +294,7 @@ xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *con
  * embedded into an existing %node hierarchy or turned into a full VOTable document.
  *
  * \param varitem [in] Pointer to the \c LALInferenceVariables structure to be serialized
- * 
+ *
  * \return A pointer to a \c xmlNode that holds the VOTable fragment that represents
  * the \c LALInferenceVariableItem structure.
  * In case of an error, a null-pointer is returned.\n
@@ -303,9 +303,9 @@ xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *con
  * can be used later on when the returned fragment has been embedded in a XML document.
  *
  * \sa XLALCreateVOTParamNode
- * 
+ *
  * \author John Veitch\n
- * 
+ *
  */
 
 xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varitem)

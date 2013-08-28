@@ -36,7 +36,8 @@
 /** \addtogroup LALHough_h */
 /*@{*/
 
-/** constructs the space of <tt>phmd</tt> <tt>PHMDVectorSequence *phmdVS</tt>, given a
+/**
+ * constructs the space of <tt>phmd</tt> <tt>PHMDVectorSequence *phmdVS</tt>, given a
  * HOUGHPeakGramVector *pgV and HOUGHptfLUTVector *lutV.
  * The minimum frequency bin present corresponds to <tt>phmdVS->fBinMin</tt> and the
  * total number of different frequencies is
@@ -121,7 +122,8 @@ void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to 
   RETURN (status);
 }
 
-/** This function updates the space of <tt>phmd</tt> increasing the frequency <tt>phmdVS->fBinMin</tt> by one.
+/**
+ * This function updates the space of <tt>phmd</tt> increasing the frequency <tt>phmdVS->fBinMin</tt> by one.
  */
 void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 				  PHMDVectorSequence   *phmdVS,
@@ -206,9 +208,11 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 }
 
 
-/** Function for shifting the cylindrical buffer of PHMDs down by one
-    frequency bin -- the highest frequency bin is dropped and an
-    extra frequency bin is added at the lowest frequency */
+/**
+ * Function for shifting the cylindrical buffer of PHMDs down by one
+ * frequency bin -- the highest frequency bin is dropped and an
+ * extra frequency bin is added at the lowest frequency
+ */
 void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 				 PHMDVectorSequence   *phmdVS,
 				 HOUGHPeakGramVector  *pgV,
@@ -291,7 +295,8 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 }
 
 
-/** Given PHMDVectorSequence *phmdVS, the space of \c phmd, and
+/**
+ * Given PHMDVectorSequence *phmdVS, the space of \c phmd, and
  * UINT8FrequencyIndexVector *freqInd, a structure containing the frequency
  * indices  of the   \c phmd at different time stamps that have to be combined
  * to form a Hough map, the function LALHOUGHConstructHMT() produces the
@@ -398,7 +403,8 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,	/**< pointer to 
 
 
 
-/** This function computes the corresponding frequency bin of
+/**
+ * This function computes the corresponding frequency bin of
  * a  \c phmd <tt>UINT8 *fBinMap</tt> for a given  intrinsic
  * frequency bin of a source <tt>UINT8 *f0Bin</tt>, and information regarding the
  * time and the residual spin down parameters HOUGHResidualSpinPar *rs.
@@ -462,10 +468,12 @@ void LALHOUGHComputeFBinMap (LALStatus             *status,
 
 
 
-/** Calculates the total hough map for a given trajectory in the
-    time-frequency plane and a set of partial hough map derivatives allowing
-    each PHMD to have a different weight factor to account for varying
-    sensitivity at different sky-locations. */
+/**
+ * Calculates the total hough map for a given trajectory in the
+ * time-frequency plane and a set of partial hough map derivatives allowing
+ * each PHMD to have a different weight factor to account for varying
+ * sensitivity at different sky-locations.
+ */
 
 void LALHOUGHConstructHMT_W (LALStatus                  *status,	/**< pointer to LALStatus structure */
 			     HOUGHMapTotal              *ht, 		/**< The output hough map */
@@ -568,8 +576,10 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,	/**< pointer to
 
 
 
-/** Adds weight factors for set of partial hough map derivatives -- the
-    weights must be calculated outside this function.  */
+/**
+ * Adds weight factors for set of partial hough map derivatives -- the
+ * weights must be calculated outside this function.
+ */
 
 void LALHOUGHWeighSpacePHMD  (LALStatus            *status,	/**< pointer to LALStatus structure */
 			      PHMDVectorSequence   *phmdVS, 	/**< partial hough map derivatives */
@@ -699,8 +709,10 @@ void LALHOUGHNormalizeWeights  (LALStatus  *status,	/**< pointer to LALStatus st
 
 
 
-/** Computes weight factors arising from amplitude modulation -- it multiplies
-    an existing weight vector */
+/**
+ * Computes weight factors arising from amplitude modulation -- it multiplies
+ * an existing weight vector
+ */
 void LALHOUGHComputeAMWeights  (LALStatus          *status,
 				REAL8Vector        *weightV,
 				LIGOTimeGPSVector  *timeV,
@@ -850,8 +862,10 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
 
 
 
-/** Computes weight factors arising from amplitude modulation -- it multiplies
-    an existing weight vector */
+/**
+ * Computes weight factors arising from amplitude modulation -- it multiplies
+ * an existing weight vector
+ */
 void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
 					REAL8Vector        *weightV,
 					SFTCatalog         *catalog,

@@ -26,7 +26,7 @@
  * into agreement with that of NR simulations. This file contains the functions
  * used to calculate these NQC corrections. The fits to NR peak amplitude,
  * frequency, and their derivatives, are taken from Pan et al, arXiv:1106.1021v1 [gr-qc].
- * 
+ *
  */
 
 #include <lal/LALInspiral.h>
@@ -315,7 +315,7 @@ REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
 
 /**
  * For the 2,2 mode, there are fits available for the NQC coefficients.
- * This function provides the values of these coefficients, so the 
+ * This function provides the values of these coefficients, so the
  * correction can be used in the dynamics prior to finding the more
  * accurate NQC values later on.
  */

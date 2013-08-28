@@ -282,7 +282,8 @@ XLALInitUserVars ( UserVariables_t *uvar )
 } /* XLALInitUserVars() */
 
 
-/** basic initializations: deal with user input and return standardized 'ConfigVariables'
+/**
+ * basic initializations: deal with user input and return standardized 'ConfigVariables'
  */
 int
 XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name)

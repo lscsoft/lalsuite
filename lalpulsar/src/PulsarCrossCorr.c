@@ -137,13 +137,15 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
 } /* CreateSFTPairsIndicesFrom2SFTvectors */
 
 
-/** Correlate a single pair of SFT at a parameter space point. This function calculates Y_alpha
- *  according to Eqn 4.1 in Dhurandar et al 2008, where
- *  Y_alpha = (xI* xJ)/Delta T^2
- *  sft1 and sft2 have been normalised by LALNormalizeSFT in pulsar_crosscorr.c, so they are actually
- *  sft1 = xI/sqrt(psd1), sft2 = xJ/sqrt(psd2)
- *  Therefore, when calculating the output, we need to have
- *  out = sft1*sqrt(psd1)*sft2*sqrt(psd2)/Delta T^2 */
+/**
+ * Correlate a single pair of SFT at a parameter space point. This function calculates Y_alpha
+ * according to Eqn 4.1 in Dhurandar et al 2008, where
+ * Y_alpha = (xI* xJ)/Delta T^2
+ * sft1 and sft2 have been normalised by LALNormalizeSFT in pulsar_crosscorr.c, so they are actually
+ * sft1 = xI/sqrt(psd1), sft2 = xJ/sqrt(psd2)
+ * Therefore, when calculating the output, we need to have
+ * out = sft1*sqrt(psd1)*sft2*sqrt(psd2)/Delta T^2
+ */
 void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       COMPLEX16                *out,
 			       COMPLEX8FrequencySeries  *sft1,

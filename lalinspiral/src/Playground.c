@@ -30,20 +30,21 @@
 #include <lal/Date.h>
 
 
-/** \ingroup Date_h
-    \author Brown D. A.
-
-    \brief Determines if a given time is playground data.
-
-\heading{Algorithm}
-
-The playground algorithm is given in LIGO techincal document T030020-01.
-Briefly, \f$t\f$ is playground if
-\f{equation}{
-t - 729273613 \% 6370 < 600.
-\f}
-
-*/
+/**
+ * \ingroup Date_h
+ * \author Brown D. A.
+ *
+ * \brief Determines if a given time is playground data.
+ *
+ * \heading{Algorithm}
+ *
+ * The playground algorithm is given in LIGO techincal document T030020-01.
+ * Briefly, \f$t\f$ is playground if
+ * \f{equation}{
+ * t - 729273613 \% 6370 < 600.
+ * \f}
+ *
+ */
 int
 XLALINT8NanoSecIsPlayground (
     INT8         ns

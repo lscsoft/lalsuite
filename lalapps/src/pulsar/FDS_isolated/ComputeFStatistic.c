@@ -423,7 +423,7 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
 }
 #endif
 
-/** 
+/**
  * MAIN function of ComputeFStatistic code.
  * Calculate the F-statistic over a given portion of the parameter-space
  * and write a list of 'candidates' into a file(default: 'Fstats').
@@ -1173,7 +1173,7 @@ int main(int argc,char *argv[])
 } /* main() */
 
 
-/** 
+/**
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
@@ -1924,11 +1924,12 @@ writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*b
 } /* writeFLines() */
 
 
-/** Reads in data from SFT-files.
+/**
+ * Reads in data from SFT-files.
  *
- * This function reads in the SFTs from the list of files in \em ConfigVariables GV.filelist 
+ * This function reads in the SFTs from the list of files in \em ConfigVariables GV.filelist
  * or from merged SFTs in uvar_mergedSFTFile.  If user has specified --startTime or --endTime
- * The read SFT-data is stored in the global array \em SFTData and the timestamps 
+ * The read SFT-data is stored in the global array \em SFTData and the timestamps
  * of the SFTs are stored in the global array \em timestamps (both are allocated here).
  *
  * NOTE: this function is obsolete and should be replaced by the use of the SFT-IO lib in LAL.
@@ -2063,7 +2064,8 @@ int ReadSFTData(void)
 
 } /* ReadSFTData() */
 
-/** Upsamples the SFT data
+/**
+ * Upsamples the SFT data
  *
  * This function upsamples the SFTs using the Dirichlet kernel
  *
@@ -2198,12 +2200,13 @@ int UpsampleSFTData(void)
 
 
 /*----------------------------------------------------------------------*/
-/** Do some basic initializations of the F-statistic code before starting the main-loop.
- * Things we do in this function: 
+/**
+ * Do some basic initializations of the F-statistic code before starting the main-loop.
+ * Things we do in this function:
  * \li prepare ephemeris-data and determine SFT input-files to be loaded
- * \li set some defaults + allocate memory 
+ * \li set some defaults + allocate memory
  * \li Return 'derived' configuration settings in the struct \em ConfigVariables
- * 
+ *
  */
 void
 InitFStat (LALStatus *status, ConfigVariables *cfg)
@@ -2751,7 +2754,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
 
 /*----------------------------------------------------------------------*/
-/** Some general consistency-checks on user-input.
+/**
+ * Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
  */
 void
@@ -2875,7 +2879,8 @@ checkUserInputConsistency (LALStatus *lstat)
 
 
 /***********************************************************************/
-/** Log the all relevant parameters of the present search-run to a log-file.
+/**
+ * Log the all relevant parameters of the present search-run to a log-file.
  * The name of the log-file is "Fstats{uvar_outputLabel}.log".
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
@@ -3115,15 +3120,16 @@ int compare(const void *ip, const void *jp)
 
 /*******************************************************************************/
 
-/** Print the values of (f,FF) above a certain threshold 
- * in 2F, called 2Fthr.  If there are more than ReturnMaxN of these, 
- * then it simply returns the top ReturnMaxN of them. If there are 
+/**
+ * Print the values of (f,FF) above a certain threshold
+ * in 2F, called 2Fthr.  If there are more than ReturnMaxN of these,
+ * then it simply returns the top ReturnMaxN of them. If there are
  * none, then it returns none.  It also returns some basic statisical
- * information about the distribution of 2F: the mean and standard 
+ * information about the distribution of 2F: the mean and standard
  * deviation.
- * Returns zero if all is well, else nonzero if a problem was encountered. 
- * Basic strategy: sort the array by values of F, then look at the 
- * top ones. Then search for the points above threshold. 
+ * Returns zero if all is well, else nonzero if a problem was encountered.
+ * Basic strategy: sort the array by values of F, then look at the
+ * top ones. Then search for the points above threshold.
  */
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpos)
 {
@@ -3275,8 +3281,9 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpo
 }
 
 
-/** Find outliers and then clusters in the F-statistic array over frequency. 
- * These clusters get written in the global highFLines. 
+/**
+ * Find outliers and then clusters in the F-statistic array over frequency.
+ * These clusters get written in the global highFLines.
  */
 void
 EstimateFLines(LALStatus *stat)
@@ -3482,9 +3489,10 @@ EstimateFLines(LALStatus *stat)
 
 } /* EstimateFLines() */
 
-/** Normalise the SFT-array \em SFTData by the running median.
- * The running median windowSize in this routine determines 
- * the sample bias which, instead of log(2.0), must be 
+/**
+ * Normalise the SFT-array \em SFTData by the running median.
+ * The running median windowSize in this routine determines
+ * the sample bias which, instead of log(2.0), must be
  * multiplied by F statistics.
  */
 void 
@@ -4029,9 +4037,10 @@ void sighandler(int sig){
 #endif /*USE_BOINC*/
 
 
-/** Check presence and consistency of checkpoint-file and use to set loopcounter if valid.
+/**
+ * Check presence and consistency of checkpoint-file and use to set loopcounter if valid.
  *
- *  The name of the checkpoint-file is FNAME.ckp
+ * The name of the checkpoint-file is FNAME.ckp
  */
 void
 getCheckpointCounters(LALStatus *stat,		/**< pointer to LALStatus structure */
@@ -4197,7 +4206,8 @@ void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc) {
 #endif
 
 
-/** Set up the search-grid and prepare DopplerSkyScan for stepping through parameter-space.
+/**
+ * Set up the search-grid and prepare DopplerSkyScan for stepping through parameter-space.
  * \note this is a bit ugly as it's using global uvar_ User-input variables.
  */
 void

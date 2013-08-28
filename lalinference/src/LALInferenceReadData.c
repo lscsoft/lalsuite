@@ -201,10 +201,11 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
 	return out;
 }
 
-/** Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 40.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 ...
-    It is necessary to use this method instead of the old method for the pipeline to work in DAX mode. Warning: do not mix options between
-    the old and new style.
-*/
+/**
+ * Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 40.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 ...
+ * It is necessary to use this method instead of the old method for the pipeline to work in DAX mode. Warning: do not mix options between
+ * the old and new style.
+ */
 static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***ifos, char ***caches, char ***channels, char ***flows , char ***fhighs, char ***timeslides, UINT4 *N)
 {
     /* Check that the input has no lists with [ifo,ifo] */
@@ -2393,8 +2394,10 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj
     fclose(snrout);
 }
 
-/** Fill the variables passed in vars with the parameters of the injection passed in event
-    will over-write and destroy any existing parameters. Param vary type will be fixed */
+/**
+ * Fill the variables passed in vars with the parameters of the injection passed in event
+ * will over-write and destroy any existing parameters. Param vary type will be fixed
+ */
 void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars)
 {
     UINT4 spinCheck=0;

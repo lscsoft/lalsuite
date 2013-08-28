@@ -1,15 +1,14 @@
 /**
-
-\addtogroup pkg_date
-
-This package provides routines related to date and time manipulations
-(\ref Date_h).  It also provides routines to compute the
-difference in time of arrival of a signal (\ref TimeDelay_h) at two detector locations,
-and also between a detector and the center of the Earth-fixed frame.
-
-@{
-	\defgroup Date_h	Header Date.h
-        \defgroup TimeDelay_h	Header TimeDelay.h
-@}
-
-*/
+ * \addtogroup pkg_date
+ *
+ * This package provides routines related to date and time manipulations
+ * (\ref Date_h).  It also provides routines to compute the
+ * difference in time of arrival of a signal (\ref TimeDelay_h) at two detector locations,
+ * and also between a detector and the center of the Earth-fixed frame.
+ *
+ * @{
+ * \defgroup Date_h	Header Date.h
+ * \defgroup TimeDelay_h	Header TimeDelay.h
+ * @}
+ *
+ */

@@ -19,9 +19,10 @@
 
 #include <lal/LALInspiralBank.h>
 
-/** \ingroup LALInspiralBank_h
- *  \brief Routine to compute the parameters of the template next to the
- *         current template, but in the positive \f$\tau_{2(3)}\f$ axis.
+/**
+ * \ingroup LALInspiralBank_h
+ * \brief Routine to compute the parameters of the template next to the
+ * current template, but in the positive \f$\tau_{2(3)}\f$ axis.
  * \author Sathyaprakash, B. S.
  *
  * The coarse grid algorithm works by starting at one corner of the

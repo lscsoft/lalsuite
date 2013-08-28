@@ -18,38 +18,36 @@
 */
 
 /**
-\author Dupuis, R. J.
-\file
-\ingroup pulsarTODO
-
-\heading{Program \ref HeterodynePulsarTest.c}
-
-This program demonstrates the usage of the functions <tt>LALCoarseHeterodyne()</tt>
-and <tt>LALFineHeterodyneToPulsar()</tt>.
-
-\heading{Usage}
-\code
-HeterodynePulsarTest
-\endcode
-
-\heading{Description}
-
-This test program heterodynes, averages, and resamples an artificial signal using the functions
-<tt>LALCoarseHeterodyne()</tt> and <tt>LALFineHeterodyneToPulsar()</tt>.
-
-\heading{Exit codes}
-
-
-\heading{Uses}
-\code
-LALCoarseHeterodyne()
-LALFineHeterodyneToPulsar()
-\endcode
-
-\heading{Notes}
-
-
-*/
+ * \author Dupuis, R. J.
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * \heading{Program \ref HeterodynePulsarTest.c}
+ *
+ * This program demonstrates the usage of the functions <tt>LALCoarseHeterodyne()</tt>
+ * and <tt>LALFineHeterodyneToPulsar()</tt>.
+ *
+ * \heading{Usage}
+ * \code
+ * HeterodynePulsarTest
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * This test program heterodynes, averages, and resamples an artificial signal using the functions
+ * <tt>LALCoarseHeterodyne()</tt> and <tt>LALFineHeterodyneToPulsar()</tt>.
+ *
+ * \heading{Exit codes}
+ *
+ * \heading{Uses}
+ * \code
+ * LALCoarseHeterodyne()
+ * LALFineHeterodyneToPulsar()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */

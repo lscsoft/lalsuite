@@ -623,7 +623,7 @@ struct generic_list
 };
 
 /**
- * @brief add a node at the head of the list 
+ * @brief add a node at the head of the list
  */
 static void add_node(struct generic_list **list) {
   struct generic_list *new_node = (struct generic_list *) malloc (sizeof (struct generic_list));

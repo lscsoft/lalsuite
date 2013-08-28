@@ -18,46 +18,46 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief Module to calculate the number of data points (to the nearest power of 2)
-needed to store a waveform.
-
-\heading{Prototypes}
-
-<tt>LALInspiralWaveLength()</tt>
-<ul>
-<li> \c length: output, number of bins to the nearest power of 2
-greater than the minimum length required to store a wave of parameters as in \c params.</li>
-<li> \c params: input, parameters of the binary system.</li>
-</ul>
-
-\heading{Description}
-
-This module first calls LALInspiralChooseModel(), which gives the length of the
-waveform in seconds. That function returns an estimated waveform length. However, the
-length might not be appropriate in some extreme cases (large masses and large lower
-cut-off frequency). It is especially true in the EOB case. Therefore, we introduce
-two constants namely LALINSPIRAL_LENGTHOVERESTIMATION (in percentage) which
-overestimate the length of the waveform and LALINSPIRAL_MINIMALWAVELENGTH which is
-the minimal waveform length in seconds. Multiplying this by the sampling rate
-<tt>params.tSampling</tt> gives the minimum number of samples needed to hold the waveform.
-To this are added the number of bins of leading and trailing zeroes requested by the user in
-<tt>params.nStartPad</tt> and <tt>params.nEndPad.</tt> The resulting number is rounded to
-an upward power of 2 and returned in \c length.
-
-\heading{Algorithm}
-
-\heading{Uses}
-This function calls:
-\code
-LALInspiralSetup()
-LALInspiralChooseModel()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module to calculate the number of data points (to the nearest power of 2)
+ * needed to store a waveform.
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>LALInspiralWaveLength()</tt>
+ * <ul>
+ * <li> \c length: output, number of bins to the nearest power of 2
+ * greater than the minimum length required to store a wave of parameters as in \c params.</li>
+ * <li> \c params: input, parameters of the binary system.</li>
+ * </ul>
+ *
+ * \heading{Description}
+ *
+ * This module first calls LALInspiralChooseModel(), which gives the length of the
+ * waveform in seconds. That function returns an estimated waveform length. However, the
+ * length might not be appropriate in some extreme cases (large masses and large lower
+ * cut-off frequency). It is especially true in the EOB case. Therefore, we introduce
+ * two constants namely LALINSPIRAL_LENGTHOVERESTIMATION (in percentage) which
+ * overestimate the length of the waveform and LALINSPIRAL_MINIMALWAVELENGTH which is
+ * the minimal waveform length in seconds. Multiplying this by the sampling rate
+ * <tt>params.tSampling</tt> gives the minimum number of samples needed to hold the waveform.
+ * To this are added the number of bins of leading and trailing zeroes requested by the user in
+ * <tt>params.nStartPad</tt> and <tt>params.nEndPad.</tt> The resulting number is rounded to
+ * an upward power of 2 and returned in \c length.
+ *
+ * \heading{Algorithm}
+ *
+ * \heading{Uses}
+ * This function calls:
+ * \code
+ * LALInspiralSetup()
+ * LALInspiralChooseModel()
+ * \endcode
+ *
+ */
 
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>

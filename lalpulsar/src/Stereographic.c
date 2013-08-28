@@ -42,49 +42,49 @@
  */
 
 /**
-\author Sintes, A. M.
-\file
-\ingroup LUT_h
-\brief Routines to perform rotations on the celestial sphere and stereographic projection.
-
-\heading{Description}
-
-The function LALRotatePolarU() rotates the celestial sphere so that
-a given point, in the rotated coordinates, corresponds to (\f$\alpha = 0\f$, \f$\delta = -\pi/2\f$).
-The inputs are:
-<tt>*par</tt> the reference point (e.g., the center of the sky-patch) of type
- \c REAL8UnitPolarCoor and
-<tt>*in</tt> the point on the celestial sphere we want to rotate. The output is
-<tt>*out</tt> of type \c REAL8UnitPolarCoor containing the coordinates of the
-point in the rotated reference frame.
-
-The function LALInvRotatePolarU() does the inverse rotation. Given the
-reference point <tt>*par</tt> (e.g., the center of the sky-patch) of type
-\c REAL8UnitPolarCoor  and a point <tt>*in</tt> in the rotated reference
-frame, the output <tt>*out</tt> are the coordinates of the point is the
-same reference system as <tt>*par</tt>. All inputs and output being
-of type \c REAL8UnitPolarCoor.
-
-Given a point on the celestial sphere <tt>*in</tt> of type
-\c REAL8UnitPolarCoor, the function LALStereoProjectPolar()
-returns <tt>*out</tt>,
-of type \c REAL8Polar2Coor, the stereographic projection of that point
-in polar coordinates, with the particularity  that <tt>out->radius</tt>  can be positive
-or negative. <tt>in->delta</tt>=\f$\pi/2\f$ is an invalid argument  and an error will
-output.
-
-Given a point on the celestial sphere <tt>*in</tt> of type
-\c REAL8UnitPolarCoor, the function LALStereoProjectCart()
-returns <tt>*out</tt>, of type \c REAL8Cart2Coor, the stereographic projection of that point
-in Cartesian coordinates. <tt>in->delta</tt>=\f$\pi/2\f$ is an invalid argument  and an error will
-output.
-
-Given a point on the projected plane <tt>*in</tt> , the functions
-LALStereoInvProjectPolar()  and LALStereoInvProjectCart()
-provide the corresponding point on the sphere <tt>*out</tt> (corresponding to the inverse
-stereographic  projection) of type \c REAL8UnitPolarCoor.
-
-*/
+ * \author Sintes, A. M.
+ * \file
+ * \ingroup LUT_h
+ * \brief Routines to perform rotations on the celestial sphere and stereographic projection.
+ *
+ * \heading{Description}
+ *
+ * The function LALRotatePolarU() rotates the celestial sphere so that
+ * a given point, in the rotated coordinates, corresponds to (\f$\alpha = 0\f$, \f$\delta = -\pi/2\f$).
+ * The inputs are:
+ * <tt>*par</tt> the reference point (e.g., the center of the sky-patch) of type
+ * \c REAL8UnitPolarCoor and
+ * <tt>*in</tt> the point on the celestial sphere we want to rotate. The output is
+ * <tt>*out</tt> of type \c REAL8UnitPolarCoor containing the coordinates of the
+ * point in the rotated reference frame.
+ *
+ * The function LALInvRotatePolarU() does the inverse rotation. Given the
+ * reference point <tt>*par</tt> (e.g., the center of the sky-patch) of type
+ * \c REAL8UnitPolarCoor  and a point <tt>*in</tt> in the rotated reference
+ * frame, the output <tt>*out</tt> are the coordinates of the point is the
+ * same reference system as <tt>*par</tt>. All inputs and output being
+ * of type \c REAL8UnitPolarCoor.
+ *
+ * Given a point on the celestial sphere <tt>*in</tt> of type
+ * \c REAL8UnitPolarCoor, the function LALStereoProjectPolar()
+ * returns <tt>*out</tt>,
+ * of type \c REAL8Polar2Coor, the stereographic projection of that point
+ * in polar coordinates, with the particularity  that <tt>out->radius</tt>  can be positive
+ * or negative. <tt>in->delta</tt>=\f$\pi/2\f$ is an invalid argument  and an error will
+ * output.
+ *
+ * Given a point on the celestial sphere <tt>*in</tt> of type
+ * \c REAL8UnitPolarCoor, the function LALStereoProjectCart()
+ * returns <tt>*out</tt>, of type \c REAL8Cart2Coor, the stereographic projection of that point
+ * in Cartesian coordinates. <tt>in->delta</tt>=\f$\pi/2\f$ is an invalid argument  and an error will
+ * output.
+ *
+ * Given a point on the projected plane <tt>*in</tt> , the functions
+ * LALStereoInvProjectPolar()  and LALStereoInvProjectCart()
+ * provide the corresponding point on the sphere <tt>*out</tt> (corresponding to the inverse
+ * stereographic  projection) of type \c REAL8UnitPolarCoor.
+ *
+ */
 
 #include <lal/LUT.h>
 

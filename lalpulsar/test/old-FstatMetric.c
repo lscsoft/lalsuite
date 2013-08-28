@@ -612,7 +612,8 @@ computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dPhi, const REAL8Vecto
 
 } /* computePhaseMetric() */
 
-/** basic initializations: set-up 'ConfigVariables'
+/**
+ * basic initializations: set-up 'ConfigVariables'
  * Taken from FstatMetric where it parsed user-input into ConfigVariables,
  * now basically just translates from modern-API 'metricParams' into old-API 'ConfigVariables'
  *
@@ -770,7 +771,8 @@ InitCode ( ConfigVariables *cfg,
 } /* InitFStat() */
 
 
-/** calculate the phase-derivatives \f$\partial_i \phi \f$ for the
+/**
+ * calculate the phase-derivatives \f$\partial_i \phi \f$ for the
  * time-series detStates and the given doppler-point.
  * Has the option of using only the orbital part of the phase (PHASE_ORBITAL)
  * or the full-phase (PHASE_FULL).
@@ -892,7 +894,8 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
 
 } /* getMultiPhaseDerivs() */
 
-/** Calculate the projected metric onto the subspace of 'c' given by
+/**
+ * Calculate the projected metric onto the subspace of 'c' given by
  * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
  * The output-matrix ret must be allocated
  *
@@ -926,7 +929,8 @@ project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const UINT4 c )
 }
 
 
-/** Calculate the outer product ret_ij of vectors u_i and v_j, given by
+/**
+ * Calculate the outer product ret_ij of vectors u_i and v_j, given by
  * ret_ij = u_i v_j
  * The output-matrix ret must be allocated and have dimensions len(u) x len(v)
  *
@@ -1002,7 +1006,8 @@ quad_form ( const gsl_matrix *mat, const gsl_vector *vec )
 } /* quad_form() */
 
 
-/** Get Ptolemaic position and velocity at time tGPS
+/**
+ * Get Ptolemaic position and velocity at time tGPS
  * cut-down version of LALDTBaryPtolemaic()
  */
 

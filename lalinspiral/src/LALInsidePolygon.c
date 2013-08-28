@@ -19,7 +19,8 @@
 
 #include <lal/LALInspiralBank.h>
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief Module to check whether a point with coordinates (x,y) is inside
  * a polygon defined by the vectors (vx, vy), which size (n) must be
  * provided. The functions returns 1 if the point is inside or 0 otherwise.

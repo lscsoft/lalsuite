@@ -23,31 +23,31 @@
  * \ingroup Segments_h
  * \brief Tests the segment and segment list manipulation functions.
  *
-\heading{Usage}
-
-\code
-SegmentsTest [ lalDebugLevel ]
-\endcode
-
-The default value of \c lalDebugLevel is 4.
-
-\heading{Description}
-
-This program tests the various XLAL functions which deal with segments
-and segment lists.
-
-If the \c lalDebugLevel argument is omitted, the test program sets it
-to 4 to turn on info messages only.
-Note that this default value does not enable LAL/XLAL error messages,
-since many of the tests intentionally create error conditions and verify that
-the proper error codes are generated.  If you want to turn on the LAL/XLAL
-error and warning messages, specify a \c lalDebugLevel value of 7,
-or 23 if you also want informational messages related to memory checking.
-If you specify 0, then no messages will be printed under any circumstances.
-However, in all cases, the return status of the program will be 0 if all
-tests passed, 1 if one or more tests failed.
-
-*/
+ * \heading{Usage}
+ *
+ * \code
+ * SegmentsTest [ lalDebugLevel ]
+ * \endcode
+ *
+ * The default value of \c lalDebugLevel is 4.
+ *
+ * \heading{Description}
+ *
+ * This program tests the various XLAL functions which deal with segments
+ * and segment lists.
+ *
+ * If the \c lalDebugLevel argument is omitted, the test program sets it
+ * to 4 to turn on info messages only.
+ * Note that this default value does not enable LAL/XLAL error messages,
+ * since many of the tests intentionally create error conditions and verify that
+ * the proper error codes are generated.  If you want to turn on the LAL/XLAL
+ * error and warning messages, specify a \c lalDebugLevel value of 7,
+ * or 23 if you also want informational messages related to memory checking.
+ * If you specify 0, then no messages will be printed under any circumstances.
+ * However, in all cases, the return status of the program will be 0 if all
+ * tests passed, 1 if one or more tests failed.
+ *
+ */
 
 #include <stdlib.h>
 #include <stdio.h>

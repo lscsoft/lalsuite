@@ -35,7 +35,7 @@
  * similar to the standard C file stream manipulation routines and perform
  * similar functions.
  *
-*/
+ */
 
 #include <stdio.h>
 #include <lal/LALDatatypes.h>

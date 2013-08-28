@@ -309,7 +309,7 @@ static int XLALSimInspiralSpinTaylorT2Setup(
             break;
     }
 
-    /**
+    /*
      * Compute the coefficients of tidal corrections
      * to the evolution equations for omega and binary energy E.
      * Coefficients found from Eqs. 2.11 and 3.10 of
@@ -552,24 +552,24 @@ static int XLALSimInspiralSpinTaylorT4Setup(
 }
 
 /**
- * This function evolves the orbital equations for a precessing binary using 
+ * This function evolves the orbital equations for a precessing binary using
  * the \"TaylorT1/T2/T4\" approximant for solving the orbital dynamics
  * (see arXiv:0907.0700 for a review of the various PN approximants).
  *
- * It returns time series of the \"orbital velocity\", orbital phase, 
+ * It returns time series of the \"orbital velocity\", orbital phase,
  * and components for both individual spin vectors, the \"Newtonian\"
  * orbital angular momentum (which defines the instantaneous plane)
  * and "E1", a basis vector in the instantaneous orbital plane.
  * Note that LNhat and E1 completely specify the instantaneous orbital plane.
  * It also returns the time and phase of the final time step
  *
- * For input, the function takes the two masses, the initial orbital phase, 
+ * For input, the function takes the two masses, the initial orbital phase,
  * Values of S1, S2, LNhat, E1 vectors at starting time,
- * the desired time step size, the starting GW frequency, 
+ * the desired time step size, the starting GW frequency,
  * and PN order at which to evolve the phase,
- * 
- * NOTE: All vectors are given in the so-called "radiation frame", 
- * where the direction of propagation is the z-axis, the principal "+" 
+ *
+ * NOTE: All vectors are given in the so-called "radiation frame",
+ * where the direction of propagation is the z-axis, the principal "+"
  * polarization axis is the x-axis, and the y-axis is given by the RH rule.
  * You must give the initial values in this frame, and the time series of the
  * vector components will also be returned in this frame
@@ -903,11 +903,11 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
 /**
  * Internal function called by the integration routine.
  * Stops the integration if
- * 		1) The energy decreases with increasing orbital frequency
- *		2) The orbital frequency begins decreasing
- *		3) The orbital frequency becomes infinite 
- *		4) The orbital frequency has gone outside the requested bounds
- *      5) The PN parameter v/c becomes >= 1
+ * 1) The energy decreases with increasing orbital frequency
+ * 2) The orbital frequency begins decreasing
+ * 3) The orbital frequency becomes infinite
+ * 4) The orbital frequency has gone outside the requested bounds
+ * 5) The PN parameter v/c becomes >= 1
  * SpinTaylorT4 and SpinTaylorT2 both use this same stopping test
  */
 static int XLALSimInspiralSpinTaylorStoppingTest(
@@ -1033,7 +1033,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
  * so the ODE integrator can take a step
  * All non-dynamical quantities (masses, etc.) are passed in \"mparams\"
  *
- * The derivatives for \f$\omega\f$, L_N, S1, S2 can be found 
+ * The derivatives for \f$\omega\f$, L_N, S1, S2 can be found
  * as Eqs. (1), (8) - (10) of gr-qc/0405090
  * The derivative of E1 is Eq. (15)-(16) of gr-qc/0310034
  */
@@ -1313,7 +1313,7 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
     LNdotS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
     S1dotS2 = (S1x*S2x  + S1y*S2y  + S1z*S2z );
 
-    /**
+    /*
      * domega
      *
      * Note we are actually computing \f$d \hat{\omega} / d \hat{t}\f$
@@ -1392,7 +1392,7 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
             + v3 * ( params->wdottidal5pn
             + v2 * ( params->wdottidal6pn ) ) ) ) ) ) ) ) ) );
 
-    /**
+    /*
      * dLN
      *
      * \f$d \hat{L_N}/d \hat{t} = M * d\hat{L_N} / dt = \Omega_L x \hat{L_N}\f$
@@ -1412,7 +1412,7 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
     dLNhy = (-OmegaLx*LNhz + OmegaLz*LNhx);
     dLNhz = (-OmegaLy*LNhx + OmegaLx*LNhy);
 
-    /**
+    /*
      * dE1
      *
      * d E_1 / d \hat{t} = M * d E_1 / dt
@@ -1429,7 +1429,7 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
     dE1y = (-OmegaEx*E1z + OmegaEz*E1x);
     dE1z = (-OmegaEy*E1x + OmegaEx*E1y);
 
-    /**
+    /*
      * dS1
      *
      * d S_1 / d \hat{t} = M * d S_1 / dt = \Omega_{S1} x S_1
@@ -1452,7 +1452,7 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
     dS1y = (-OmegaSx*S1z + OmegaSz*S1x);
     dS1z = (-OmegaSy*S1x + OmegaSx*S1y);
 
-    /**
+    /*
      * dS2
      *
      * d S_2 / d \hat{t} = M * d S_2 / dt = \Omega_{S2} x S_2
@@ -1515,20 +1515,20 @@ static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start,
  *
  * The reference frequency fRef is used as follows:
  * 1) if fRef = 0: The initial values of s1, s2, lnhat and e1 will be the
- *    values at frequency fStart. The orbital phase of the last sample is set
- *    to phiRef (i.e. phiRef is the "coalescence phase", roughly speaking).
- *    THIS IS THE DEFAULT BEHAVIOR CONSISTENT WITH OTHER APPROXIMANTS
- * 
+ * values at frequency fStart. The orbital phase of the last sample is set
+ * to phiRef (i.e. phiRef is the "coalescence phase", roughly speaking).
+ * THIS IS THE DEFAULT BEHAVIOR CONSISTENT WITH OTHER APPROXIMANTS
+ *
  * 2) If fRef = fStart: The initial values of s1, s2, lnhat and e1 will be the
- *    values at frequency fStart. phiRef is used to set the orbital phase
- *    of the first sample at fStart.
+ * values at frequency fStart. phiRef is used to set the orbital phase
+ * of the first sample at fStart.
  *
  * 3) If fRef > fStart: The initial values of s1, s2, lnhat and e1 will be the
- *    values at frequency fRef. phiRef is used to set the orbital phase at fRef.
- *    The code will integrate forwards and backwards from fRef and stitch the
- *    two together to create a complete waveform. This allows one to specify
- *    the orientation of the binary in-band (or at any arbitrary point).
- *    Otherwise, the user can only directly control the initial orientation.
+ * values at frequency fRef. phiRef is used to set the orbital phase at fRef.
+ * The code will integrate forwards and backwards from fRef and stitch the
+ * two together to create a complete waveform. This allows one to specify
+ * the orientation of the binary in-band (or at any arbitrary point).
+ * Otherwise, the user can only directly control the initial orientation.
  *
  * 4) fRef < 0 or fRef >= Schwarz. ISCO are forbidden and the code will abort.
  */
@@ -1580,23 +1580,23 @@ int XLALSimInspiralSpinTaylorT4(
  *
  * This routine allows the user to specify different pN orders
  * for the phasing, amplitude, spin and tidal effects of the waveform.
- * 
+ *
  * The reference frequency fRef is used as follows:
  * 1) if fRef = 0: The initial values of s1, s2, lnhat and e1 will be the
- *    values at frequency fStart. The orbital phase of the last sample is set
- *    to phiRef (i.e. phiRef is the "coalescence phase", roughly speaking).
- *    THIS IS THE DEFAULT BEHAVIOR CONSISTENT WITH OTHER APPROXIMANTS
- * 
- * 2) If fRef = fStart: The initial values of s1, s2, lnhat and e1 will be the 
- *    values at frequency fStart. phiRef is used to set the orbital phase
- *    of the first sample at fStart.
- * 
+ * values at frequency fStart. The orbital phase of the last sample is set
+ * to phiRef (i.e. phiRef is the "coalescence phase", roughly speaking).
+ * THIS IS THE DEFAULT BEHAVIOR CONSISTENT WITH OTHER APPROXIMANTS
+ *
+ * 2) If fRef = fStart: The initial values of s1, s2, lnhat and e1 will be the
+ * values at frequency fStart. phiRef is used to set the orbital phase
+ * of the first sample at fStart.
+ *
  * 3) If fRef > fStart: The initial values of s1, s2, lnhat and e1 will be the
- *    values at frequency fRef. phiRef is used to set the orbital phase at fRef.
- *    The code will integrate forwards and backwards from fRef and stitch the
- *    two together to create a complete waveform. This allows one to specify
- *    the orientation of the binary in-band (or at any arbitrary point).
- *    Otherwise, the user can only directly control the initial orientation.
+ * values at frequency fRef. phiRef is used to set the orbital phase at fRef.
+ * The code will integrate forwards and backwards from fRef and stitch the
+ * two together to create a complete waveform. This allows one to specify
+ * the orientation of the binary in-band (or at any arbitrary point).
+ * Otherwise, the user can only directly control the initial orientation.
  *
  * 4) fRef < 0 or fRef >= Schwarz. ISCO are forbidden and the code will abort.
  */

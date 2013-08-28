@@ -19,17 +19,17 @@ extern "C" {
 
 /**
  * \addtogroup FindChirpACTD_h
- \author McKechan, D. J. A.
-
-\brief Provides structures and functions for amplitude corrected time domain
-templates using AmpCorPPN.
-
-\heading{Synopsis}
-\code
-#include <lal/FindChirpACTD.h>
-\endcode
-
-*/
+ * \author McKechan, D. J. A.
+ *
+ * \brief Provides structures and functions for amplitude corrected time domain
+ * templates using AmpCorPPN.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/FindChirpACTD.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

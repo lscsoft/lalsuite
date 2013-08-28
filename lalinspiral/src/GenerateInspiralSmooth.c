@@ -39,44 +39,44 @@
  *********************************************************************/
 
 /**
-\author Fairhurst, S.
-
-\brief Smooths the end of an inspiral waveform by adding an exponential
-ringdown at the end.
-
-\heading{Description}
-
-This function creates a smooth ending to an inspiral waveform from
-GeneratePPNInspiral.  It works by reading in <tt>**output</tt> and the
-damping factor <tt>*qfactor</tt>.
-
-It is assumed that the <tt>**output</tt> structure is the output from
-\c LAL_GeneratePPNInspiral so that it contains amplitude, frequency
-and phase information in <tt>(*output)->a</tt>, <tt>(*output)->f</tt> and
-<tt>(*output)->phi</tt> respectively.  These data is then extended by
-keeping the frequency fixed and exponentially damping the amplitude with
-damping factor \c qfactor.
-
-Note:  The length of the injection stored in <tt>**waveform</tt> will be
-correct.  However, the length and time of the inspiral are not updated
-in the \c PPNParamStruc \c params.  Therefore,
-they will still contain the actual end time of the inspiral part of the
-waveform.
-
-\heading{Algorithm}
-
-The function reads in \f$f_{\mathrm{final}}\f$ and
-\f$(a_{+,\times})_{\mathrm{final}}\f$ then it populates additional data
-entries by:
-\f{eqnarray}{
-  f &=& f_{\mathrm{final}} \\
-  a_{+,\times} &=& (a_{+,\times})_{\mathrm{final}} \,
-    \exp( - \pi \, f_{\mathrm{final}} \, t / \mathrm{qfactor}) \\
-  \phi &=& \phi_{\mathrm{final}} + (f_{\mathrm{final}}) \, t \, .
-\f}
-Here, \f$t\f$ is the elapsed time after the end of the inspiral.  The waveform
-ends when its amplitude has been suppressed by a factor of \f$\exp(-10)\f$.
-*/
+ * \author Fairhurst, S.
+ *
+ * \brief Smooths the end of an inspiral waveform by adding an exponential
+ * ringdown at the end.
+ *
+ * \heading{Description}
+ *
+ * This function creates a smooth ending to an inspiral waveform from
+ * GeneratePPNInspiral.  It works by reading in <tt>**output</tt> and the
+ * damping factor <tt>*qfactor</tt>.
+ *
+ * It is assumed that the <tt>**output</tt> structure is the output from
+ * \c LAL_GeneratePPNInspiral so that it contains amplitude, frequency
+ * and phase information in <tt>(*output)->a</tt>, <tt>(*output)->f</tt> and
+ * <tt>(*output)->phi</tt> respectively.  These data is then extended by
+ * keeping the frequency fixed and exponentially damping the amplitude with
+ * damping factor \c qfactor.
+ *
+ * Note:  The length of the injection stored in <tt>**waveform</tt> will be
+ * correct.  However, the length and time of the inspiral are not updated
+ * in the \c PPNParamStruc \c params.  Therefore,
+ * they will still contain the actual end time of the inspiral part of the
+ * waveform.
+ *
+ * \heading{Algorithm}
+ *
+ * The function reads in \f$f_{\mathrm{final}}\f$ and
+ * \f$(a_{+,\times})_{\mathrm{final}}\f$ then it populates additional data
+ * entries by:
+ * \f{eqnarray}{
+ * f &=& f_{\mathrm{final}} \\
+ * a_{+,\times} &=& (a_{+,\times})_{\mathrm{final}} \,
+ * \exp( - \pi \, f_{\mathrm{final}} \, t / \mathrm{qfactor}) \\
+ * \phi &=& \phi_{\mathrm{final}} + (f_{\mathrm{final}}) \, t \, .
+ * \f}
+ * Here, \f$t\f$ is the elapsed time after the end of the inspiral.  The waveform
+ * ends when its amplitude has been suppressed by a factor of \f$\exp(-10)\f$.
+ */
 void
 LALGenerateInspiralSmooth(  LALStatus     *stat,
 			    CoherentGW    **output,

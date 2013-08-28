@@ -19,18 +19,18 @@
 
 
 /**
-\author Tania Regimbau, Sukanta Bose, Jeff Noel
-\addtogroup StochasticMC_h
-
-\brief Routine used by the stochastic DSO to do software injection.
-
-\heading{Synopsis}
-\code
-#include <lal/StochasticMC.h>
-\endcode
-
-@{
-*/
+ * \author Tania Regimbau, Sukanta Bose, Jeff Noel
+ * \addtogroup StochasticMC_h
+ *
+ * \brief Routine used by the stochastic DSO to do software injection.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/StochasticMC.h>
+ * \endcode
+ *
+ * @{
+ */
 
 #ifndef _STOCHASTICMC_H
 #define _STOCHASTICMC_H

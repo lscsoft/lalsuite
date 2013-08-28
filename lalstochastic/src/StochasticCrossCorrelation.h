@@ -18,56 +18,56 @@
 */
 
 /**
-\addtogroup StochasticCrossCorrelation_h
-
-\author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-
-\brief Provides prototype and error code information for the \ref StochasticCrossCorrelation_c.
-
-Provides prototype and error code information for the modules needed
-to calculate the standard optimally-filtered cross-correlation
-statistic for stochastic background searches, given a pair of data
-segments, along with appropriate representations of the detector
-transfer function and the (uncalibrated) power spectral density of the
-noise in each detector.  The relationship among these modules is
-illustrated in Fig.\figref{stochastic_CrossCorrFlowchart}.
-
-\image html stochastic_CrossCorrFlowchart.png "Fig. [stochastic_CrossCorrFlowchart]: Relationship between the modules in StochasticCrossCorrelation.h"
-\image latex stochastic_CrossCorrFlowchart.pdf "Relationship between the modules in StochasticCrossCorrelation.h"
-
-Figure \figref{stochastic_CrossCorrFlowchart} illustrates the relationship among the modules
-dependent on \ref StochasticCrossCorrelation_h, which are used to calculate the cross-correlation
-statistic \f$Y\f$ and its theoretical variance per unit time \f$\sigma^2/T\f$ from (uncalibrated)
-stretches of data \f$h_1(t)\f$, \f$h_2(t)\f$, from two detectors, using metadata on the power
-spectral densities \f$P_1(f)\f$, \f$P_2(f)\f$ and transfer functions \f$\tilde{R}_1(f)\f$,
-\f$\tilde{R}_2(f)\f$ for each detector.
-
-\c CrossCorr represents the \ref StochasticCrossCorrelation_c (containing the functions
-<tt>LALStochasticCrossCorrelationStatistic()</tt>,  <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>,
-and <tt>LALStochasticCrossCorrelationSpectrum()</tt>),
-
-\c ZeroPadAndFFT represents the \ref ZeroPadAndFFT_c (containing the functions
-<tt>LALSZeroPadAndFFT()</tt> and <tt>LALCZeroPadAndFFT()</tt>)
-
-\c OptimalFilter represents the \ref StochasticOptimalFilter_c (containing the function
-<tt>LALStochasticOptimalFilter()</tt>)
-
-\c Normalization represents the \ref StochasticOptimalFilterNormalization_c
-(containing the function <tt>LALStochasticOptimalFilterNormalization()</tt>)
-
-\c InverseNoise represents the \ref StochasticInverseNoise_c  (containing the function
-<tt>LALStochasticInverseNoise()</tt>)
-\c OmegaGW represents the \ref StochasticOmegaGW_c (containing the function <tt>LALStochasticOmegaGW()</tt>)
-
-\c Overlap represents the \ref OverlapReductionFunction_c (containing the function <tt>OverlapReductionFunction()</tt>)
-
-\heading{Synopsis}
-\code
-#include <lal/StochasticCrossCorrelation.h>
-\endcode
-
-@{
-*/
+ * \addtogroup StochasticCrossCorrelation_h
+ *
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+ *
+ * \brief Provides prototype and error code information for the \ref StochasticCrossCorrelation_c.
+ *
+ * Provides prototype and error code information for the modules needed
+ * to calculate the standard optimally-filtered cross-correlation
+ * statistic for stochastic background searches, given a pair of data
+ * segments, along with appropriate representations of the detector
+ * transfer function and the (uncalibrated) power spectral density of the
+ * noise in each detector.  The relationship among these modules is
+ * illustrated in Fig.\figref{stochastic_CrossCorrFlowchart}.
+ *
+ * \image html stochastic_CrossCorrFlowchart.png "Fig. [stochastic_CrossCorrFlowchart]: Relationship between the modules in StochasticCrossCorrelation.h"
+ * \image latex stochastic_CrossCorrFlowchart.pdf "Relationship between the modules in StochasticCrossCorrelation.h"
+ *
+ * Figure \figref{stochastic_CrossCorrFlowchart} illustrates the relationship among the modules
+ * dependent on \ref StochasticCrossCorrelation_h, which are used to calculate the cross-correlation
+ * statistic \f$Y\f$ and its theoretical variance per unit time \f$\sigma^2/T\f$ from (uncalibrated)
+ * stretches of data \f$h_1(t)\f$, \f$h_2(t)\f$, from two detectors, using metadata on the power
+ * spectral densities \f$P_1(f)\f$, \f$P_2(f)\f$ and transfer functions \f$\tilde{R}_1(f)\f$,
+ * \f$\tilde{R}_2(f)\f$ for each detector.
+ *
+ * \c CrossCorr represents the \ref StochasticCrossCorrelation_c (containing the functions
+ * <tt>LALStochasticCrossCorrelationStatistic()</tt>,  <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>,
+ * and <tt>LALStochasticCrossCorrelationSpectrum()</tt>),
+ *
+ * \c ZeroPadAndFFT represents the \ref ZeroPadAndFFT_c (containing the functions
+ * <tt>LALSZeroPadAndFFT()</tt> and <tt>LALCZeroPadAndFFT()</tt>)
+ *
+ * \c OptimalFilter represents the \ref StochasticOptimalFilter_c (containing the function
+ * <tt>LALStochasticOptimalFilter()</tt>)
+ *
+ * \c Normalization represents the \ref StochasticOptimalFilterNormalization_c
+ * (containing the function <tt>LALStochasticOptimalFilterNormalization()</tt>)
+ *
+ * \c InverseNoise represents the \ref StochasticInverseNoise_c  (containing the function
+ * <tt>LALStochasticInverseNoise()</tt>)
+ * \c OmegaGW represents the \ref StochasticOmegaGW_c (containing the function <tt>LALStochasticOmegaGW()</tt>)
+ *
+ * \c Overlap represents the \ref OverlapReductionFunction_c (containing the function <tt>OverlapReductionFunction()</tt>)
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/StochasticCrossCorrelation.h>
+ * \endcode
+ *
+ * @{
+ */
 
 #ifndef _STOCHASTICCROSSCORRELATION_H
 #define _STOCHASTICCROSSCORRELATION_H
@@ -131,57 +131,60 @@ extern "C" {
    *                                                           *
    *************************************************************/
 
-/** Represents a dimensionful number as a 4-byte float with an associated
-units structure, which is the output of
-<tt>LALStochasticCrossCorrelationStatistic()</tt>.  The fields are:
-
-<dl>
-<dt><tt>REAL4 value</tt></dt><dd>
-The numerical value.</dd>
-
-<dt><tt>LALUnit units</tt></dt><dd>
-The units.</dd>
-</dl>
-*/
+/**
+ * Represents a dimensionful number as a 4-byte float with an associated
+ * units structure, which is the output of
+ * <tt>LALStochasticCrossCorrelationStatistic()</tt>.  The fields are:
+ *
+ * <dl>
+ * <dt><tt>REAL4 value</tt></dt><dd>
+ * The numerical value.</dd>
+ *
+ * <dt><tt>LALUnit units</tt></dt><dd>
+ * The units.</dd>
+ * </dl>
+ */
 typedef struct tagREAL4WithUnits {
   REAL4     value;
   LALUnit   units;
 } REAL4WithUnits;
 
-/** Represents a dimensionful number as a single-precision (8-byte) complex
-number with an associated
-units structure, which is the output of
-<tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>.  The fields are:
-
-<dl>
-<dt><tt>COMPLEX8 value</tt></dt><dd>
-The numerical value.</dd>
-
-<dt><tt>LALUnit units</tt></dt><dd>
-The units.</dd>
-</dl>
-*/
+/**
+ * Represents a dimensionful number as a single-precision (8-byte) complex
+ * number with an associated
+ * units structure, which is the output of
+ * <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>.  The fields are:
+ *
+ * <dl>
+ * <dt><tt>COMPLEX8 value</tt></dt><dd>
+ * The numerical value.</dd>
+ *
+ * <dt><tt>LALUnit units</tt></dt><dd>
+ * The units.</dd>
+ * </dl>
+ */
 typedef struct tagCOMPLEX8WithUnits {
   COMPLEX8  value;
   LALUnit   units;
 } COMPLEX8WithUnits;
 
-/** Contains the input data needed by
-<tt>LALStochasticCrossCorrelationStatistic()</tt>
-to calculate the value of the standard optimally-filtered
-cross-correlation statistic.  The fields are:
-
-<dl>
-<dt><tt>COMPLEX8FrequencySeries  *hBarTildeOne</tt></dt><dd>
-Fourier transform of the first zero-padded data stream.</dd>
-
-<dt><tt>COMPLEX8FrequencySeries  *hBarTildeTwo</tt></dt><dd>
-Fourier transform of the second zero-padded data stream.</dd>
-
-<dt><tt>COMPLEX8FrequencySeries  *optimalFilter</tt></dt><dd>
-Optimal filter function in the frequency domain.</dd>
-</dl>
-*/
+/**
+ * Contains the input data needed by
+ * <tt>LALStochasticCrossCorrelationStatistic()</tt>
+ * to calculate the value of the standard optimally-filtered
+ * cross-correlation statistic.  The fields are:
+ *
+ * <dl>
+ * <dt><tt>COMPLEX8FrequencySeries  *hBarTildeOne</tt></dt><dd>
+ * Fourier transform of the first zero-padded data stream.</dd>
+ *
+ * <dt><tt>COMPLEX8FrequencySeries  *hBarTildeTwo</tt></dt><dd>
+ * Fourier transform of the second zero-padded data stream.</dd>
+ *
+ * <dt><tt>COMPLEX8FrequencySeries  *optimalFilter</tt></dt><dd>
+ * Optimal filter function in the frequency domain.</dd>
+ * </dl>
+ */
 typedef struct tagStochasticCrossCorrelationInput {
   COMPLEX8FrequencySeries  *hBarTildeOne;
   COMPLEX8FrequencySeries  *hBarTildeTwo;
@@ -277,37 +280,39 @@ LALStochasticCrossCorrelationSpectrumCal(
    *                                                           *
    *************************************************************/
 
-/** Contains the parameters of <tt>LALSZeroPadAndFFT()</tt>.
-The fields are:
-
-<dl>
-<dt><tt>RealFFTPlan *fftPlan</tt></dt><dd>
-The FFT plan to be used by FFTW</dd>
-<dt><tt>REAL4Vector *window</tt></dt><dd>
-The window which is to be applied to the data</dd>
-<dt><tt>UINT4 length</tt></dt><dd>
-The length of the data after zero-padding</dd>
-</dl>
-*/
+/**
+ * Contains the parameters of <tt>LALSZeroPadAndFFT()</tt>.
+ * The fields are:
+ *
+ * <dl>
+ * <dt><tt>RealFFTPlan *fftPlan</tt></dt><dd>
+ * The FFT plan to be used by FFTW</dd>
+ * <dt><tt>REAL4Vector *window</tt></dt><dd>
+ * The window which is to be applied to the data</dd>
+ * <dt><tt>UINT4 length</tt></dt><dd>
+ * The length of the data after zero-padding</dd>
+ * </dl>
+ */
 typedef struct tagSZeroPadAndFFTParameters {
   RealFFTPlan           *fftPlan;
   REAL4Window           *window;
   UINT4                  length;
 } SZeroPadAndFFTParameters;
 
-/** Contains the parameters of <tt>LALCZeroPadAndFFT()</tt>.
-The fields are:
-
-<dl>
-<dt><tt>ComplexFFTPlan *fftPlan</tt></dt><dd>
-The FFT plan to be used by FFTW</dd>
-<dt><tt>REAL4Vector *window</tt></dt><dd>
-The window which is to be applied to the data</dd>
-<dt><tt>UINT4 length</tt></dt><dd>
-The length of the data after zero-padding</dd>
-</dl>
-
-*/
+/**
+ * Contains the parameters of <tt>LALCZeroPadAndFFT()</tt>.
+ * The fields are:
+ *
+ * <dl>
+ * <dt><tt>ComplexFFTPlan *fftPlan</tt></dt><dd>
+ * The FFT plan to be used by FFTW</dd>
+ * <dt><tt>REAL4Vector *window</tt></dt><dd>
+ * The window which is to be applied to the data</dd>
+ * <dt><tt>UINT4 length</tt></dt><dd>
+ * The length of the data after zero-padding</dd>
+ * </dl>
+ *
+ */
 typedef struct tagCZeroPadAndFFTParameters {
   ComplexFFTPlan        *fftPlan;
   REAL4Window           *window;
@@ -335,31 +340,32 @@ LALCZeroPadAndFFT(LALStatus                *status,
    *                                                           *
    *************************************************************/
 
-/** Contains the inputs of <tt>LALStochasticOptimalFilter()</tt>.
-The fields are:
-
-<dl>
-<dt><tt>REAL4FrequencySeries *overlapReductionFunction</tt></dt><dd>
-The overlap reduction function \f$\gamma(f)\f$ describing the pair of detector
-sites.</dd>
-<dt><tt>REAL4FrequencySeries *omegaGW</tt></dt><dd> The spectrum
-\f$\Omega_{\mathrm{GW}}(f)\f$ of the stochastic gravitational-wave
-background.</dd>
-<dt><tt>COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD1</tt></dt><dd>
- The reciprocal
-\f$1/P_1^{\mathrm{HC}}(f)
-=1/(\tilde{R_1}(f)P_1(f))
-=\tilde{R_1}(f)^* / P_1(f)\f$ of the
-half-calibrated noise power spectral density for the first detector.</dd>
-<dt><tt>COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD2</tt></dt><dd>
- The reciprocal
-\f$1/P_2^{\mathrm{HC}}(f)
-=1/(\tilde{R_2}(f)P_2(f))
-=\tilde{R_2}(f)^* / P_2(f)\f$ of the
-half-calibrated noise power spectral density for the second detector.</dd>
-</dl>
-
-*/
+/**
+ * Contains the inputs of <tt>LALStochasticOptimalFilter()</tt>.
+ * The fields are:
+ *
+ * <dl>
+ * <dt><tt>REAL4FrequencySeries *overlapReductionFunction</tt></dt><dd>
+ * The overlap reduction function \f$\gamma(f)\f$ describing the pair of detector
+ * sites.</dd>
+ * <dt><tt>REAL4FrequencySeries *omegaGW</tt></dt><dd> The spectrum
+ * \f$\Omega_{\mathrm{GW}}(f)\f$ of the stochastic gravitational-wave
+ * background.</dd>
+ * <dt><tt>COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD1</tt></dt><dd>
+ * The reciprocal
+ * \f$1/P_1^{\mathrm{HC}}(f)
+ * =1/(\tilde{R_1}(f)P_1(f))
+ * =\tilde{R_1}(f)^* / P_1(f)\f$ of the
+ * half-calibrated noise power spectral density for the first detector.</dd>
+ * <dt><tt>COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD2</tt></dt><dd>
+ * The reciprocal
+ * \f$1/P_2^{\mathrm{HC}}(f)
+ * =1/(\tilde{R_2}(f)P_2(f))
+ * =\tilde{R_2}(f)^* / P_2(f)\f$ of the
+ * half-calibrated noise power spectral density for the second detector.</dd>
+ * </dl>
+ *
+ */
 typedef struct tagStochasticOptimalFilterInput {
   REAL4FrequencySeries     *overlapReductionFunction;
   REAL4FrequencySeries     *omegaGW;
@@ -399,42 +405,44 @@ LALStochasticOptimalFilterCal(
    *                                                           *
    *************************************************************/
 
-/** Contains the outputs of <tt>LALStochasticOptimalFilterNormalization()</tt>.
-The fields are:
-
-<dl>
-<dt><tt>REAL4WithUnits *normalization</tt></dt><dd>
-The normalization parameter \f$\lambda\f$.</dd>
-<dt><tt>REAL4WithUnits *variance</tt></dt><dd>
-The variance per unit time \f$\sigma^2/T\f$ of the cross-correlation statistic.</dd>
-</dl>
-
-*/
+/**
+ * Contains the outputs of <tt>LALStochasticOptimalFilterNormalization()</tt>.
+ * The fields are:
+ *
+ * <dl>
+ * <dt><tt>REAL4WithUnits *normalization</tt></dt><dd>
+ * The normalization parameter \f$\lambda\f$.</dd>
+ * <dt><tt>REAL4WithUnits *variance</tt></dt><dd>
+ * The variance per unit time \f$\sigma^2/T\f$ of the cross-correlation statistic.</dd>
+ * </dl>
+ *
+ */
 typedef struct tagStochasticOptimalFilterNormalizationOutput {
   REAL4WithUnits           *normalization;
   REAL4WithUnits           *variance;
 } StochasticOptimalFilterNormalizationOutput;
 
-/** Contains the inputs of <tt>LALStochasticOptimalFilterNormalization()</tt>.
-The fields are:
-
-<dl>
-<dt><tt>REAL4FrequencySeries *overlapReductionFunction</tt></dt><dd>
-The overlap reduction function \f$\gamma(f)\f$ describing the pair of detector
-sites.</dd>
-<dt><tt>REAL4FrequencySeries *omegaGW</tt></dt><dd> The spectrum
-\f$\Omega_{\mathrm{GW}}(f)\f$ of the stochastic gravitational-wave
-background.</dd>
-<dt><tt>REAL4FrequencySeries *inverseNoisePSD1</tt></dt><dd>
- The reciprocal
-\f$1/P_1(f)=|\tilde{R_1}(f)|^2/P_1(f)\f$ of the
-ununcalibrated noise power spectral density for the first detector.</dd>
-<dt><tt>REAL4FrequencySeries *inverseNoisePSD2</tt></dt><dd>
- The reciprocal
-\f$1/P_2(f)=|\tilde{R_2}(f)|^2/P_2(f)\f$ of the
-ununcalibrated noise power spectral density for the second detector.</dd>
-</dl>
-*/
+/**
+ * Contains the inputs of <tt>LALStochasticOptimalFilterNormalization()</tt>.
+ * The fields are:
+ *
+ * <dl>
+ * <dt><tt>REAL4FrequencySeries *overlapReductionFunction</tt></dt><dd>
+ * The overlap reduction function \f$\gamma(f)\f$ describing the pair of detector
+ * sites.</dd>
+ * <dt><tt>REAL4FrequencySeries *omegaGW</tt></dt><dd> The spectrum
+ * \f$\Omega_{\mathrm{GW}}(f)\f$ of the stochastic gravitational-wave
+ * background.</dd>
+ * <dt><tt>REAL4FrequencySeries *inverseNoisePSD1</tt></dt><dd>
+ * The reciprocal
+ * \f$1/P_1(f)=|\tilde{R_1}(f)|^2/P_1(f)\f$ of the
+ * ununcalibrated noise power spectral density for the first detector.</dd>
+ * <dt><tt>REAL4FrequencySeries *inverseNoisePSD2</tt></dt><dd>
+ * The reciprocal
+ * \f$1/P_2(f)=|\tilde{R_2}(f)|^2/P_2(f)\f$ of the
+ * ununcalibrated noise power spectral density for the second detector.</dd>
+ * </dl>
+ */
 typedef struct tagStochasticOptimalFilterNormalizationInput {
   REAL4FrequencySeries     *overlapReductionFunction;
   REAL4FrequencySeries     *omegaGW;
@@ -442,20 +450,21 @@ typedef struct tagStochasticOptimalFilterNormalizationInput {
   REAL4FrequencySeries     *inverseNoisePSD2;
 } StochasticOptimalFilterNormalizationInput;
 
-/** Contains the parameters of <tt>LALStochasticOptimalFilterNormalization()</tt>.
-The fields are:
-
-<dl>
-<dt><tt>REAL8 fRef</tt></dt><dd>
-The reference frequency used in defining the normalization.</dd>
-<dt><tt>BOOLEAN heterodyned</tt></dt><dd>
-Indicates whether the filter is to be used on heterodyned data or not.</dd>
-<dt><tt>REAL4Vector window1</tt></dt><dd>
-The windowing function with which the first data stream was windowed</dd>
-<dt><tt>REAL4Vector window2</tt></dt><dd>
-The windowing function with which the second data stream was windowed</dd>
-</dl>
-*/
+/**
+ * Contains the parameters of <tt>LALStochasticOptimalFilterNormalization()</tt>.
+ * The fields are:
+ *
+ * <dl>
+ * <dt><tt>REAL8 fRef</tt></dt><dd>
+ * The reference frequency used in defining the normalization.</dd>
+ * <dt><tt>BOOLEAN heterodyned</tt></dt><dd>
+ * Indicates whether the filter is to be used on heterodyned data or not.</dd>
+ * <dt><tt>REAL4Vector window1</tt></dt><dd>
+ * The windowing function with which the first data stream was windowed</dd>
+ * <dt><tt>REAL4Vector window2</tt></dt><dd>
+ * The windowing function with which the second data stream was windowed</dd>
+ * </dl>
+ */
 typedef struct tagStochasticOptimalFilterNormalizationParameters {
   REAL8               fRef;
   BOOLEAN             heterodyned;
@@ -480,21 +489,22 @@ LALStochasticOptimalFilterNormalization(
    *                                                           *
    *************************************************************/
 
-/** Contains the outputs of <tt>LALStochasticInverseNoise()</tt>.
-The fields are:
-
-<dl>
-<dt><tt>REAL4FrequencySeries *calibratedInverseNoisePSD</tt></dt><dd>
-The reciprocal
-\f$1/P^{\mathrm{C}}(f)=|\tilde{R}(f)|^2/P(f)\f$ of the
-ununcalibrated noise power spectral density.</dd>
-
-<dt><tt>COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD</tt></dt><dd>
-The reciprocal \\
-\f$1/P^{\mathrm{HC}}(f)=\tilde{R}(f)^* / P(f)\f$
-of the half-calibrated noise power spectral density.</dd>
-</dl>
-*/
+/**
+ * Contains the outputs of <tt>LALStochasticInverseNoise()</tt>.
+ * The fields are:
+ *
+ * <dl>
+ * <dt><tt>REAL4FrequencySeries *calibratedInverseNoisePSD</tt></dt><dd>
+ * The reciprocal
+ * \f$1/P^{\mathrm{C}}(f)=|\tilde{R}(f)|^2/P(f)\f$ of the
+ * ununcalibrated noise power spectral density.</dd>
+ *
+ * <dt><tt>COMPLEX8FrequencySeries *halfCalibratedInverseNoisePSD</tt></dt><dd>
+ * The reciprocal \\
+ * \f$1/P^{\mathrm{HC}}(f)=\tilde{R}(f)^* / P(f)\f$
+ * of the half-calibrated noise power spectral density.</dd>
+ * </dl>
+ */
 typedef struct tagStochasticInverseNoiseOutput {
   REAL4FrequencySeries     *calibratedInverseNoisePSD;
   COMPLEX8FrequencySeries  *halfCalibratedInverseNoisePSD;
@@ -504,18 +514,19 @@ typedef struct tagStochasticInverseNoiseCalOutput {
   REAL4FrequencySeries     *calibratedInverseNoisePSD;
 } StochasticInverseNoiseCalOutput;
 
-/** Contains the inputs to <tt>LALStochasticInverseNoise()</tt>.
-The fields are:
-
-<dl>
-<dt><tt>REAL4FrequencySeries *unCalibratedNoisePSD</tt></dt><dd>
-The power spectral density \f$P(f)\f$ of the noise
-contribution to the detector output.</dd>
-
-<dt><tt>COMPLEX8FrequencySeries *responseFunction</tt></dt><dd>
-The frequency-domain reponse function \f$\tilde{R}(f)\f$.</dd>
-</dl>
-*/
+/**
+ * Contains the inputs to <tt>LALStochasticInverseNoise()</tt>.
+ * The fields are:
+ *
+ * <dl>
+ * <dt><tt>REAL4FrequencySeries *unCalibratedNoisePSD</tt></dt><dd>
+ * The power spectral density \f$P(f)\f$ of the noise
+ * contribution to the detector output.</dd>
+ *
+ * <dt><tt>COMPLEX8FrequencySeries *responseFunction</tt></dt><dd>
+ * The frequency-domain reponse function \f$\tilde{R}(f)\f$.</dd>
+ * </dl>
+ */
 typedef struct tagStochasticInverseNoiseInput {
   REAL4FrequencySeries     *unCalibratedNoisePSD ;
   COMPLEX8FrequencySeries  *responseFunction;
@@ -543,31 +554,32 @@ LALStochasticInverseNoiseCal(
    *                                                           *
    *************************************************************/
 
-/** Contains the parameters used by <tt>LALStochasticOmegaGW()</tt> to define a
-power law: \f$\Omega_{\mathrm{GW}}(f)
-= \Omega_{\mathrm{R}}(f/f_{\mathrm{R}})^\alpha\f$.
-The fields are:
-
-<dl>
-<dt><tt>REAL4 alpha</tt></dt><dd> The power-law exponent.</dd>
-
-<dt><tt>REAL8 fRef</tt></dt><dd> The reference frequency \f$f_{\mathrm{R}}\f$ used to define the normalization.</dd>
-
-<dt><tt>REAL4 omegaRef</tt></dt><dd> The amplitude
-\f$\Omega_{\mathrm{R}}</tt>
-=\Omega_{\mathrm{GW}}(f_{\mathrm{R}})\f$
-at reference frequency.</dd>
-
-<dt><tt>UINT4 length</tt></dt><dd>
-The number of points in the output frequency series.</dd>
-
-<dt><tt>REAL8 f0</tt></dt><dd>
-The start frequency of the output frequency series.</dd>
-
-<dt><tt>REAL8 deltaF</tt></dt><dd>
-The frequency spacing of the output frequency series.</dd>
-</dl>
-*/
+/**
+ * Contains the parameters used by <tt>LALStochasticOmegaGW()</tt> to define a
+ * power law: \f$\Omega_{\mathrm{GW}}(f)
+ * = \Omega_{\mathrm{R}}(f/f_{\mathrm{R}})^\alpha\f$.
+ * The fields are:
+ *
+ * <dl>
+ * <dt><tt>REAL4 alpha</tt></dt><dd> The power-law exponent.</dd>
+ *
+ * <dt><tt>REAL8 fRef</tt></dt><dd> The reference frequency \f$f_{\mathrm{R}}\f$ used to define the normalization.</dd>
+ *
+ * <dt><tt>REAL4 omegaRef</tt></dt><dd> The amplitude
+ * \f$\Omega_{\mathrm{R}}</tt>
+ * =\Omega_{\mathrm{GW}}(f_{\mathrm{R}})\f$
+ * at reference frequency.</dd>
+ *
+ * <dt><tt>UINT4 length</tt></dt><dd>
+ * The number of points in the output frequency series.</dd>
+ *
+ * <dt><tt>REAL8 f0</tt></dt><dd>
+ * The start frequency of the output frequency series.</dd>
+ *
+ * <dt><tt>REAL8 deltaF</tt></dt><dd>
+ * The frequency spacing of the output frequency series.</dd>
+ * </dl>
+ */
 typedef struct tagStochasticOmegaGWParameters {
   REAL4     alpha;    /**< exponent in power law: omegaGW(f) = f^alpha */
   UINT4     length;   /**< length of vector containing omegaGW(f) values */
@@ -595,21 +607,22 @@ LALStochasticOmegaGW (
    *                                                           *
    *************************************************************/
 
-/** Contains the parameters used by
-<tt>LALOverlapReductionFunction()</tt> to determine the format of its
-output for the overlap reduction function.  The fields are:
-
-<dl>
-<dt><tt>UINT4 length</tt></dt><dd>
-The number of points in the output frequency series.</dd>
-
-<dt><tt>REAL8 f0</tt></dt><dd>
-The start frequency of the output frequency series.</dd>
-
-<dt><tt>REAL8 deltaF</tt></dt><dd>
-The frequency spacing of the output frequency series.</dd>
-</dl>
-*/
+/**
+ * Contains the parameters used by
+ * <tt>LALOverlapReductionFunction()</tt> to determine the format of its
+ * output for the overlap reduction function.  The fields are:
+ *
+ * <dl>
+ * <dt><tt>UINT4 length</tt></dt><dd>
+ * The number of points in the output frequency series.</dd>
+ *
+ * <dt><tt>REAL8 f0</tt></dt><dd>
+ * The start frequency of the output frequency series.</dd>
+ *
+ * <dt><tt>REAL8 deltaF</tt></dt><dd>
+ * The frequency spacing of the output frequency series.</dd>
+ * </dl>
+ */
 typedef struct tagOverlapReductionFunctionParameters {
   UINT4     length;   /**< length of vector containing overlap red function */
   REAL8     f0;       /**< start frequency */
@@ -617,18 +630,19 @@ typedef struct tagOverlapReductionFunctionParameters {
 }
 OverlapReductionFunctionParameters;
 
-/** Holds structures defining the location and orientation of a
-pair of gravitational wave detectors.  This is the input to
-<tt>LALOverlapReductionFunction()</tt>.  The fields are:
-
-<dl>
-<dt><tt>LALDetector detectorOne</tt></dt><dd>
-The first interferometer.</dd>
-
-<dt><tt>LALDetector detectorTwo</tt></dt><dd>
-The second interferometer.</dd>
-</dl>
-*/
+/**
+ * Holds structures defining the location and orientation of a
+ * pair of gravitational wave detectors.  This is the input to
+ * <tt>LALOverlapReductionFunction()</tt>.  The fields are:
+ *
+ * <dl>
+ * <dt><tt>LALDetector detectorOne</tt></dt><dd>
+ * The first interferometer.</dd>
+ *
+ * <dt><tt>LALDetector detectorTwo</tt></dt><dd>
+ * The second interferometer.</dd>
+ * </dl>
+ */
 typedef struct tagLALDetectorPair {
   LALDetector    detectorOne;
   LALDetector    detectorTwo;

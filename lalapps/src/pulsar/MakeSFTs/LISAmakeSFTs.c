@@ -677,7 +677,8 @@ assembleDescription ( const CHAR *name, const CHAR *miscField )
 
 } /* assembleDescription() */
 
-/** Compute inverse of "transfer function" (i.e. direction-independent part of detector-response),
+/**
+ * Compute inverse of "transfer function" (i.e. direction-independent part of detector-response),
  * which we use to normalize SFTs with.
  *
  * Use long-wavelength-limit (useRAA=false) or the rigid-adiabatic approximation (useRAA=true),

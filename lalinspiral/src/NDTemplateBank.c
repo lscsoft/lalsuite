@@ -19,9 +19,9 @@
 
 /**
  * \author Hanna, C. R.
- \file
- \ingroup TemplateBankGeneration_h
-
+ * \file
+ * \ingroup TemplateBankGeneration_h
+ *
  * \brief This module handles template bank generation for up to searches with
  * \f$<=\f$ 12 dimensional parameter spaces.
  *
@@ -42,7 +42,6 @@
  * within the distorted box. If the point is inside the distorted box, the
  * algorithm adds a template to the linked list. If not, it continues.
  *
- *
  * \heading{Uses}
  *
  * \code
@@ -51,9 +50,8 @@
  * \endcode
  *
  * \heading{Notes}
-
  *
-*/
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

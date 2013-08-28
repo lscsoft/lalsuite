@@ -18,17 +18,17 @@
 */
 
 /**
-   \addtogroup LALStdio_h
-
-   \brief Provides LAL functions similar to the non-file functions in <tt><stdio.h></tt>.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/LALStdio.h>
-   #include <lal/FileIO.h>
-   \endcode
-
-*/
+ * \addtogroup LALStdio_h
+ *
+ * \brief Provides LAL functions similar to the non-file functions in <tt><stdio.h></tt>.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LALStdio.h>
+ * #include <lal/FileIO.h>
+ * \endcode
+ *
+ */
 
 #ifndef _LALSTDIO_H
 #define _LALSTDIO_H

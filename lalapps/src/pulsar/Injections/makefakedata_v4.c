@@ -581,7 +581,7 @@ main(int argc, char *argv[])
 } /* main */
 
 /**
- *  Handle user-input and set up shop accordingly, and do all
+ * Handle user-input and set up shop accordingly, and do all
  * consistency-checks on user-input.
  */
 int
@@ -1497,7 +1497,8 @@ XLALFreeMem ( ConfigVars_t *cfg )
 
 } /* XLALFreeMem() */
 
-/** Log the all relevant parameters of this run into a log-file.
+/**
+ * Log the all relevant parameters of this run into a log-file.
  * The name of the log-file used is uvar_logfile
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */

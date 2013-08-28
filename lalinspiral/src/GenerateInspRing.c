@@ -43,8 +43,10 @@ XLALDeriveRingdownParameters(
     SimRingdownTable    *ringInj
     );
 
-/** Takes an inspiral waveform, and a simInspiralTable and generates a ringdown
- * at an appropriate frequency and quality */
+/**
+ * Takes an inspiral waveform, and a simInspiralTable and generates a ringdown
+ * at an appropriate frequency and quality
+ */
 CoherentGW *
 XLALGenerateInspRing(
     CoherentGW          *waveform,     /**< the inspiral waveform */

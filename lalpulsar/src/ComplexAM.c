@@ -17,7 +17,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \author J. T. Whelan, Reinhard Prix
+/**
+ * \author J. T. Whelan, Reinhard Prix
  * \ingroup pulsarTODO
  * \file
  * \brief
@@ -51,7 +52,8 @@
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
+/**
+ * Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
  * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
  * timestamps.
  *
@@ -129,7 +131,8 @@ LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
 
 } /* LALGetCmplxAMCoeffs() */
 
-/** Multi-IFO version of LALGetCmplxAMCoeffs().
+/**
+ * Multi-IFO version of LALGetCmplxAMCoeffs().
  * Get all antenna-pattern coefficients for all input detector-series.
  *
  * NOTE: contrary to LALGetCmplxAMCoeffs(), this functions *allocates* the output-vector,
@@ -242,7 +245,8 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,				/**< pointer to LALStatus struct
 
 /* ===== Object creation/destruction functions ===== */
 
-/** Destroy a MultiCmplxAMCoeffs structure.
+/**
+ * Destroy a MultiCmplxAMCoeffs structure.
  * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
  * for failure-cleanup even on incomplete structs
@@ -278,7 +282,8 @@ XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
 } /* XLALDestroyMultiCmplxAMCoeffs() */
 
 
-/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
+/**
+ * Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
  * compute the resulting \f$\widehat{A}, \widehat{B}, \widehat{C}, \widehat{E}\f$ by simply *SUMMING* them, i.e.
  * \f$\widehat{A} \equiv \sum_{X,\alpha} w_{X\alpha} a_{X\alpha}^2\f$ etc.
  *

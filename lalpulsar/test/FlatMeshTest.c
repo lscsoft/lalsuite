@@ -18,99 +18,98 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup FlatMesh_h
-\brief Creates a template mesh for an arbitrary but constant \f$n\f$-dimensional mismatch metric.
-
-\heading{Program <tt>FlatMeshTest.c</tt>}
-
-\heading{Usage}
-\code
-FlatMeshTest [-o outfile] [-d debuglevel] [-m mismatch]
-             [eigenvectorfile inversefile rangefile]
-\endcode
-
-\heading{Description}
-
-This test program creates a template mesh for a parameter space with a
-constant mismatch metric.  The following option flags are accepted:
-<ul>
-<li><b>-o</b> Writes the output mesh to the file \c outfile.</li>
-<li><b>-d</b> Sets the debug level to \c debuglevel.</li>
-<li><b>-m</b> Sets the maximum allowed mismatch to
-\c mismatch, a positive number less than 1.</li>
-</ul>
-Once the above options are processed, any remaining command-line
-arguments must be the names of three files containing information
-about the eigenvectors of the metric and the desired search range;
-these files are described below.  They are read using the function
-LALSReadVectorSequence().  If the <b>-o</b> option is not
-specified, results are written to \c stdout; if other options or
-arguments are not specified, the information is taken from
-<tt>\#define</tt>d constants.
-
-\heading{\c eigenvectorfile:} This file contains the
-eigenvectors of the \f$n\f$-dimensional mismatch metric \f$\mathsf{g}_{ab}\f$
-described in \ref FlatMesh_h.  The file format is simply \f$n\f$ lines
-each containing \f$n\f$ whitespace-separated numbers in any standard
-floating-point format.  Each line lists the components of a particular
-eigenvector; the eigenvector must be normalized so that its squared
-magnitude is 1 over the corresponding eigenvalue.
-
-\heading{\c inversefile:} This file also consists of \f$n\f$ lines
-each with \f$n\f$ floating-point numbers.  It is simply the matrix inverse
-of the contents of \c eigenvectorfile taken as an \f$n\times n\f$
-matrix.
-
-\heading{\c rangefile:} This file consists of two lines of \f$n\f$
-floating-point numbers; these specify two opposite corners of a
-rectilinear region in parameter space to be covered by the mesh.
-Additional lines will be ignored.
-
-
-\heading{Algorithm}
-
-For the most part this test program simply reads the input arguments
-and files, passes them to the function LALCreateFlatMesh()
-using LALRectIntersect() to define the parameter-space
-boundary, and prints the resulting mesh.  However, there are two
-additional bits of processing that deserve comment.
-
-The rows of the matrix in \c eigenvectorfile are already of the
-form \f$\mathsf{e}^i_{(j)}/\sqrt{\lambda_{(j)}}\f$, as discussed in
-\ref FlatMesh_h.  To get the proper orthonormalized transformation
-matrix, one must simply multiply each element by
-\f$2m_\mathrm{thresh}/\sqrt{n}\f$.  Similarly, the inverse transformation
-matrix elements should be \e divided by this number.
-
-In order to ensure \e complete coverage of the desired parameter
-space, \c FlatMeshTest extends the boundaries of the rectilinear
-region specified in \c rangefile to include any mesh point whose
-patch volume touches on the desired search region.  If
-\f$\mathsf{M}^a{}_b\f$ is the renormalized transformation matrix described
-above, then the sum of the magnitudes of the components along a
-column, \f$\Delta x_j=\sum_i|M^i{}_j|\f$ represents the maximum extent of
-a mesh point's patch in the \f$j^\mathrm{th}\f$ dimension.  The algorithm
-in \c FlatMeshTest extends the rectangular search region by half
-this amount in each direction to ensure that any patch touching on the
-desired search volume is included.  This assumes that the boundary of
-the search region is ``soft''; i.e.\ that no harm will come of
-stepping slightly outside it.
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALCalloc()                     LALFree()
-LALCreateFlatMesh()             LALSReadVectorSequence()
-LALSCreateVectorSequence()      LALSDestroyVectorSequence()
-LALSCreateVector()              LALSDestroyVector()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup FlatMesh_h
+ * \brief Creates a template mesh for an arbitrary but constant \f$n\f$-dimensional mismatch metric.
+ *
+ * \heading{Program <tt>FlatMeshTest.c</tt>}
+ *
+ * \heading{Usage}
+ * \code
+ * FlatMeshTest [-o outfile] [-d debuglevel] [-m mismatch]
+ * [eigenvectorfile inversefile rangefile]
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * This test program creates a template mesh for a parameter space with a
+ * constant mismatch metric.  The following option flags are accepted:
+ * <ul>
+ * <li><b>-o</b> Writes the output mesh to the file \c outfile.</li>
+ * <li><b>-d</b> Sets the debug level to \c debuglevel.</li>
+ * <li><b>-m</b> Sets the maximum allowed mismatch to
+ * \c mismatch, a positive number less than 1.</li>
+ * </ul>
+ * Once the above options are processed, any remaining command-line
+ * arguments must be the names of three files containing information
+ * about the eigenvectors of the metric and the desired search range;
+ * these files are described below.  They are read using the function
+ * LALSReadVectorSequence().  If the <b>-o</b> option is not
+ * specified, results are written to \c stdout; if other options or
+ * arguments are not specified, the information is taken from
+ * <tt>\#define</tt>d constants.
+ *
+ * \heading{\c eigenvectorfile:} This file contains the
+ * eigenvectors of the \f$n\f$-dimensional mismatch metric \f$\mathsf{g}_{ab}\f$
+ * described in \ref FlatMesh_h.  The file format is simply \f$n\f$ lines
+ * each containing \f$n\f$ whitespace-separated numbers in any standard
+ * floating-point format.  Each line lists the components of a particular
+ * eigenvector; the eigenvector must be normalized so that its squared
+ * magnitude is 1 over the corresponding eigenvalue.
+ *
+ * \heading{\c inversefile:} This file also consists of \f$n\f$ lines
+ * each with \f$n\f$ floating-point numbers.  It is simply the matrix inverse
+ * of the contents of \c eigenvectorfile taken as an \f$n\times n\f$
+ * matrix.
+ *
+ * \heading{\c rangefile:} This file consists of two lines of \f$n\f$
+ * floating-point numbers; these specify two opposite corners of a
+ * rectilinear region in parameter space to be covered by the mesh.
+ * Additional lines will be ignored.
+ *
+ * \heading{Algorithm}
+ *
+ * For the most part this test program simply reads the input arguments
+ * and files, passes them to the function LALCreateFlatMesh()
+ * using LALRectIntersect() to define the parameter-space
+ * boundary, and prints the resulting mesh.  However, there are two
+ * additional bits of processing that deserve comment.
+ *
+ * The rows of the matrix in \c eigenvectorfile are already of the
+ * form \f$\mathsf{e}^i_{(j)}/\sqrt{\lambda_{(j)}}\f$, as discussed in
+ * \ref FlatMesh_h.  To get the proper orthonormalized transformation
+ * matrix, one must simply multiply each element by
+ * \f$2m_\mathrm{thresh}/\sqrt{n}\f$.  Similarly, the inverse transformation
+ * matrix elements should be \e divided by this number.
+ *
+ * In order to ensure \e complete coverage of the desired parameter
+ * space, \c FlatMeshTest extends the boundaries of the rectilinear
+ * region specified in \c rangefile to include any mesh point whose
+ * patch volume touches on the desired search region.  If
+ * \f$\mathsf{M}^a{}_b\f$ is the renormalized transformation matrix described
+ * above, then the sum of the magnitudes of the components along a
+ * column, \f$\Delta x_j=\sum_i|M^i{}_j|\f$ represents the maximum extent of
+ * a mesh point's patch in the \f$j^\mathrm{th}\f$ dimension.  The algorithm
+ * in \c FlatMeshTest extends the rectangular search region by half
+ * this amount in each direction to ensure that any patch touching on the
+ * desired search volume is included.  This assumes that the boundary of
+ * the search region is ``soft''; i.e.\ that no harm will come of
+ * stepping slightly outside it.
+ *
+ * \heading{Uses}
+ * \code
+ * lalDebugLevel
+ * LALPrintError()                 LALCheckMemoryLeaks()
+ * LALCalloc()                     LALFree()
+ * LALCreateFlatMesh()             LALSReadVectorSequence()
+ * LALSCreateVectorSequence()      LALSDestroyVectorSequence()
+ * LALSCreateVector()              LALSDestroyVector()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 
 /** \name Error Codes */ /*@{*/
 #define FLATMESHTESTC_ENORM 0

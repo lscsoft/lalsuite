@@ -18,12 +18,13 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
- *  unit-test for Fstat_v3 module
+ * unit-test for Fstat_v3 module
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -111,9 +112,10 @@ int main(void)
 
 } /* main() */
 
-/** Unit-Test for function XLALSFTVectorToCOMPLEX8TimeSeries().
- *  Generates random data (timeseries + SFTs), feeds the SFTs into XLALSFTVectorToCOMPLEX8TimeSeries()
- *  and checks correctness of output timeseries.
+/**
+ * Unit-Test for function XLALSFTVectorToCOMPLEX8TimeSeries().
+ * Generates random data (timeseries + SFTs), feeds the SFTs into XLALSFTVectorToCOMPLEX8TimeSeries()
+ * and checks correctness of output timeseries.
  *
  * returns TEST_PASSED, TEST_FAILED or TEST_ABORTED
  */

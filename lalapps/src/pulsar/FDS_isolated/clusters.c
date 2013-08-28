@@ -17,8 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
- * Set of routines that have been used to calculate outliers and clusters of outliers in the data.*/
+/**
+ * \file
+ * Set of routines that have been used to calculate outliers and clusters of outliers in the data.
+ */
 /* Author: M. A. Papa - AEI August 2003 */
 /* Revision: Y. Itoh - AEI December 2003  */
 /*           Commented out "if Nclust==0. NclustPoints[Nclust]=k"  */
@@ -46,11 +48,12 @@
 #define CLUSTERSC_MSGETMP		"Something failed in subroutine.(FIXME)"
 #define CLUSTERSC_MSGEINPUT		"Invalid input in function"
 
-/** Estimates the floor of a givendata set by the running median.
- * input : vector (N points) over which the running median code is ran with a  
- * blocksize = windowsize 
- * the output of the running median code has N - blocksize+1 points. 
- * the output of this routine has N points. The missing blocksize points 
+/**
+ * Estimates the floor of a givendata set by the running median.
+ * input : vector (N points) over which the running median code is ran with a
+ * blocksize = windowsize
+ * the output of the running median code has N - blocksize+1 points.
+ * the output of this routine has N points. The missing blocksize points
  * are set equal to the nearest last value of the output of th erunnning median.
  */
 void
@@ -122,8 +125,9 @@ EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector 
 
 
 
-/** Given a set of outliers and their parameters, this routine finds clusters defined by certain parameters. 
- * The main parameter of the cluster algorithm is Dmax: the maximum distance between points above threshold 
+/**
+ * Given a set of outliers and their parameters, this routine finds clusters defined by certain parameters.
+ * The main parameter of the cluster algorithm is Dmax: the maximum distance between points above threshold
  * that belong to the same cluster. The other parameter is "smallblock"
  */
 void

@@ -166,48 +166,48 @@ static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm)
  }
 
 /**
-\author Tania Regimbau
-
-\brief Routine for simulating whitened time-domain signals in a pair
-of detectors that arises from low duty cycle astrophysical backgrounds.
-
-\heading{Description}
-
-This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition
-of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the
-burst duration and the mean arrival time interval between events, such signals may be sequences of
-resolved bursts, 'popcorn noises' or continuous backgrounds.
-
-\heading{Algorithm}
-
-The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
-<ol>
-<li> the arrival time of the events is randomly selected assuming a Poisson statistic.</li>
-<li> for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate.</li>
-<li> for each event, the direction of arrival of the wave as well as the angle of polarization are randomly selected in order to compute the beam factors of the antenna.</li>
-
-<li>the resulting signal is the sum of the individual strain amplitudes expressed in our frame.</li>
-</ol>
-
-The frequency domain strains \f$\widetilde{o}_{1}\f$ and \f$\widetilde{o}_{2}\f$ in the output of the two detectors are constructed as follow:
-\f{equation}{
-\widetilde{o}_{1}  = \widetilde{R}_{1}\widetilde{h}_{1}
-\f}
-\f{equation}{
-\widetilde{o}_{2}  = \widetilde{R}_{2}(\widetilde{h}_{1}\gamma + \widetilde{h}_{1}\sqrt{1-\gamma^{2}})
-\f}
-where  \f$\widetilde{h}_{i}\f$ is the %FFT and \f$\widetilde{R}_{i}\f$  the response function of the ith detector.
-In the second equation,  \f$\gamma\f$ is the overlap reduction function.
-
-Then the inverse %FFTs give the whitened time series \f$o_{1}\f$ and \f$o_{2}\f$.
-
-\heading{Notes}
-
-The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with \f$\Omega_{matter}=0.3\f$,
-\f$\Omega_{vacuum}=0.7\f$ and \f$h_{0}=0.7\f$. The code can be easily adapted to any cosmological model.
-The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 522).
-
-*/
+ * \author Tania Regimbau
+ *
+ * \brief Routine for simulating whitened time-domain signals in a pair
+ * of detectors that arises from low duty cycle astrophysical backgrounds.
+ *
+ * \heading{Description}
+ *
+ * This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition
+ * of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the
+ * burst duration and the mean arrival time interval between events, such signals may be sequences of
+ * resolved bursts, 'popcorn noises' or continuous backgrounds.
+ *
+ * \heading{Algorithm}
+ *
+ * The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
+ * <ol>
+ * <li> the arrival time of the events is randomly selected assuming a Poisson statistic.</li>
+ * <li> for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate.</li>
+ * <li> for each event, the direction of arrival of the wave as well as the angle of polarization are randomly selected in order to compute the beam factors of the antenna.</li>
+ *
+ * <li>the resulting signal is the sum of the individual strain amplitudes expressed in our frame.</li>
+ * </ol>
+ *
+ * The frequency domain strains \f$\widetilde{o}_{1}\f$ and \f$\widetilde{o}_{2}\f$ in the output of the two detectors are constructed as follow:
+ * \f{equation}{
+ * \widetilde{o}_{1}  = \widetilde{R}_{1}\widetilde{h}_{1}
+ * \f}
+ * \f{equation}{
+ * \widetilde{o}_{2}  = \widetilde{R}_{2}(\widetilde{h}_{1}\gamma + \widetilde{h}_{1}\sqrt{1-\gamma^{2}})
+ * \f}
+ * where  \f$\widetilde{h}_{i}\f$ is the %FFT and \f$\widetilde{R}_{i}\f$  the response function of the ith detector.
+ * In the second equation,  \f$\gamma\f$ is the overlap reduction function.
+ *
+ * Then the inverse %FFTs give the whitened time series \f$o_{1}\f$ and \f$o_{2}\f$.
+ *
+ * \heading{Notes}
+ *
+ * The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with \f$\Omega_{matter}=0.3\f$,
+ * \f$\Omega_{vacuum}=0.7\f$ and \f$h_{0}=0.7\f$. The code can be easily adapted to any cosmological model.
+ * The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 522).
+ *
+ */
 void
 LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED */
                            SimPopcornOutputStruc    *output,	/**< UNDOCUMENTED */

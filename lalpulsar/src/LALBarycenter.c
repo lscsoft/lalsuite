@@ -57,7 +57,8 @@ struct tagBarycenterBuffer
 }; // struct tagBarycenterBuffer
 
 
-/** \author Curt Cutler
+/**
+ * \author Curt Cutler
  * \brief Computes the position and orientation of the Earth, at some arrival time
  * \f$t_a\f$, specified <tt>LIGOTimeGPS</tt> input structure.
  *
@@ -464,7 +465,8 @@ XLALBarycenterEarth ( EarthState *earth, 		/**< [out] the earth's state at time 
 } /* XLALBarycenterEarth() */
 
 
-/** \brief Computes the position and orientation of the Earth, at some arrival
+/**
+ * \brief Computes the position and orientation of the Earth, at some arrival
  * time, but unlike \c XLALBarycenterEarth uses look-up tables for the Einstein
  * delay calculation.
  *
@@ -803,7 +805,8 @@ XLALBarycenterEarthNew ( EarthState *earth,                /**< [out] the earth'
 } /* XLALBarycenterEarthNew() */
 
 
-/** \author Curt Cutler
+/**
+ * \author Curt Cutler
  * \brief Transforms from detector arrival time \f$t_a\f$ in GPS (as specified in the
  * LIGOTimeGPS structure) to pulse emission time \f$t_e\f$, in TDB.
  *
@@ -1112,7 +1115,8 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
 
 } /* XLALBarycenter() */
 
-/** \author Curt Cutler, Miroslav Shaltev, R Prix
+/**
+ * \author Curt Cutler, Miroslav Shaltev, R Prix
  * \brief Speed optimized version of XLALBarycenter(),
  * should be fully equivalent except for the additional buffer argument.
  * The 'buffer' is used to keep sky-specific and detector-specific values that can can potentially be re-used
@@ -1457,7 +1461,8 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
 
 /* ==================== deprecated LAL interface (only wrappers to XLAL-fcts now) ==================== */
 
-/** Deprecated LAL wrapper to XLALBarycenterEarth()
+/**
+ * Deprecated LAL wrapper to XLALBarycenterEarth()
  * \deprecated use XLALBarycenterEarth() instead.
  */
 void
@@ -1477,7 +1482,8 @@ LALBarycenterEarth(LALStatus *status,		/**< [in/out] LAL status structure pointe
 
 } /* LALBarycenterEarth() */
 
-/** Deprecated LAL wrapper to XLALBarycenter()
+/**
+ * Deprecated LAL wrapper to XLALBarycenter()
  * \deprecated use XLALBarycenter() instead.
  */
 void
@@ -1497,12 +1503,14 @@ LALBarycenter(LALStatus *status,		/**< [in/out] LAL status structure pointer */
 
 } /* LALBarycenter() */
 
-/** Function to calculate the precession matrix give Earth nutation values
-  * depsilon and dpsi for a given MJD time.
-  *
-  * This function is a slightly modified version of the TEMPO2 function
-  * get_precessionMatrix in get_ObsCoord.C (itself translated from the
-  * TEMPO FORTRAN functions for precession and nutation). */
+/**
+ * Function to calculate the precession matrix give Earth nutation values
+ * depsilon and dpsi for a given MJD time.
+ *
+ * This function is a slightly modified version of the TEMPO2 function
+ * get_precessionMatrix in get_ObsCoord.C (itself translated from the
+ * TEMPO FORTRAN functions for precession and nutation).
+ */
 void precessionMatrix( REAL8 prn[3][3], /**< [out] The precession matrix */
                        REAL8 mjd,       /**< [in] The UT1 local mean siderial time (in MJD format) */
                        REAL8 dpsi,      /**< [in] The dpsi value for the Earth nutation */
@@ -1564,9 +1572,11 @@ void precessionMatrix( REAL8 prn[3][3], /**< [out] The precession matrix */
       prn[j][i] = nut[i][0]*prc[0][j] + nut[i][1]*prc[1][j] + nut[i][2]*prc[2][j];
 }
 
-/** Function to get the observatory site location with respect to the
-  * centre of the Earth, taking into account precession and nutation.
-  * This is based on the routines in the TEMPO2 get_ObsCoord.C code */
+/**
+ * Function to get the observatory site location with respect to the
+ * centre of the Earth, taking into account precession and nutation.
+ * This is based on the routines in the TEMPO2 get_ObsCoord.C code
+ */
 void observatoryEarth( REAL8 obsEarth[3],     /**< [out] The x, y, z coordinates of the observatory from the centre of the Earth */
                        const LALDetector det, /**< [in] The LAL detector site */
                        const LIGOTimeGPS *tgps,     /**< [in] The GPS time at the detector */

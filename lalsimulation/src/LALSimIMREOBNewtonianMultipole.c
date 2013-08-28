@@ -26,7 +26,7 @@
  * All equation numbers in this file refer to equations of this paper,
  * unless otherwise specified.
  *
- * In addition to the function used to do this, 
+ * In addition to the function used to do this,
  * XLALCalculateNewtonianMultipole(), this file also contains a function
  * for calculating the standard scalar spherical harmonics Ylm.
  */
@@ -62,7 +62,7 @@ CalculateThisMultipolePrefix(
 
 /**
  * Function which computes the various coefficients in the Newtonian
- * multipole. The definition of this can be found in Pan et al, 
+ * multipole. The definition of this can be found in Pan et al,
  * arXiv:1106.1021v1 [gr-qc]. Note that, although this function gets passed
  * masses measured in Solar masses (which is fine since it is a static function),
  * the units of mass won't matter so long as they are consistent. This is because
@@ -462,7 +462,7 @@ CalculateThisMultipolePrefix(
    {
      sign = -1;
    }
-   /** 
+   /*
     * Eq. 7 of Damour, Iyer and Nagar 2008. 
     * For odd m, c is proportional to dM = m1-m2. In the equal-mass case, c = dM = 0. 
     * In the equal-mass unequal-spin case, however, when spins are different, the odd m term is generally not zero.

@@ -43,7 +43,7 @@ extern "C" {
  * function \c XLALCreateLanczosTriggerInterpolant as follows:
  *
  * \code{.c}
- *    LanczosTriggerInterpolant *interp = XLALCreateLanczosTriggerInterpolant(5);
+ * LanczosTriggerInterpolant *interp = XLALCreateLanczosTriggerInterpolant(5);
  * \endcode
  *
  * The '5' is the interpolation window. In this example, the interpolation will
@@ -56,7 +56,7 @@ extern "C" {
  * array \c y:
  *
  * \code{.c}
- *    COMPLEX16 y[] = {...};
+ * COMPLEX16 y[] = {...};
  * \endcode
  *
  * and suppose that the maximum of |y[i]| occurs at i = 8.
@@ -64,9 +64,9 @@ extern "C" {
  * the following:
  *
  * \code{.c}
- *    double tmax;
- *    COMPLEX16 ymax;
- *    int result = XLALApplyLanczosTriggerInterpolant(interp, &tmax, &ymax, &y[8]);
+ * double tmax;
+ * COMPLEX16 ymax;
+ * int result = XLALApplyLanczosTriggerInterpolant(interp, &tmax, &ymax, &y[8]);
  * \endcode
  *
  * Upon success, the return value of \c XLALApplyLanczosTriggerInterpolant is
@@ -78,9 +78,8 @@ extern "C" {
  * the interpolant with:
  *
  * \code{.c}
- *    XLALDestroyLanczosTriggerInterpolant(interp);
+ * XLALDestroyLanczosTriggerInterpolant(interp);
  * \endcode
- *
  *
  * \addtogroup TriggerInterpolation
  * \{

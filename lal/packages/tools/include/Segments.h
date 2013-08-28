@@ -29,106 +29,107 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \addtogroup Segments_h
-    \author Peter Shawhan
-
-    \brief Provides data types and functions for manipulating lists of ``segments'' (GPS time intervals).
-
-\heading{Synopsis}
-\code
-#include <lal/Segments.h>
-\endcode
-
-This header defines data structures for segments and lists of
-segments, as well as prototypes for functions that manipulate them.
-
-A segment is a time interval with a start time and an end time.  The end time
-must be equal to or later than the start time.  If the end time is equal to
-the start time, then the segment represents a point in time.  If the end time
-is later than the start time, then the segment represents a half-open time
-interval, inclusive of its starting point and exclusive of its ending point.
-
-All of the segment list manipulation functions are XLAL functions.
-They handle error conditions by invoking the current XLAL error handler
-and setting \c xlalErrno to a nonzero value.
-
-\heading{Error conditions}
-
-<table><tr><th>xlalErrno</th><th>description</th></tr>
-<tr><td>   XLAL_EFAULT</td><td>Null pointer passed for some argument</td></tr>
-<tr><td>   XLAL_EINVAL</td><td>Attempted to use an uninitialized segment list structure</td></tr>
-<tr><td>   XLAL_EDOM</td><td>Pair of GPS times does not represent a valid segment</td></tr>
-</table>
-
-\heading{Notes}
-
-A \c LALSegList must be initialized before it is used.  Initialization
-leaves it in an ``empty'' state, containing no segments. They also must be ''cleared''
-after using \c XLALSegListClear(), and freed with \c LALFree() if it was dynamically allocated.
-Segments can then be added to the list through an ``append'' operation.  The information about
-each segment appended is copied to a memory location managed by the
-\c LALSegList object.  In fact, the segments are stored in the form of
-an array of \c LALSeg structures, with the \c segs field of
-the segment list structure being the base address of the array.
-This allows the segments to be accessed directly using a pointer as an
-iterator, as in the following example code:
-
-\code
-  LALSegList mylist;
-  LALSeg *segp;
-  ...
-  /\* (Append segments to the segment list 'mylist' here) *\/
-  ...
-  for ( segp=mylist.segs; segp<mylist.segs+mylist.length; segp++ ) {
-
-    printf( "The end time of the segment is GPS %d.%09d\n", segp->end.gpsSeconds, segp->end.gpsNanoSeconds );
-
-  }
-\endcode
-
-... or by using an integer array index, as in the following example code:
-
-\code
-  LALSegList mylist;
-  LALSeg *segp;
-  INT4 iseg;
-  LIGOTimeGPS startgps;
-  ...
-  /\* (Append segments to the segment list 'mylist' here) *\/
-  ...
-  for ( iseg=0; iseg<mylist.length; iseg++ ) {
-
-    /\* One way to access the segment... *\/
-    startgps = mylist.segs[iseg].start;
-    printf( "The start time of the segment is GPS %d.%09d\n", startgps.gpsSeconds, startgps.gpsNanoSeconds );
-
-    /\* Another way to access the segment... *\/
-    segp = mylist.segs + iseg;
-    printf( "The end time of the segment is GPS %d.%09d\n", segp->end.gpsSeconds, segp->end.gpsNanoSeconds );
-
-  }
-\endcode
-
-Note that if the segment list is empty, then the \c segs field will
-be NULL and the \c length field will be \f$0\f$.  So be careful not to
-dereference the \c segs pointer unless you know that the length is
-nonzero.
-
-A segment list is considered ``sorted'' if the segments are in ascending
-(or at least non-descending) order according to the comparison done by
-the \c XLALSegCmp() function.  A segment list is considered ``disjoint''
-if no two segments in the list overlap, although they
-may touch at an endpoint due to the half-open nature of the time intervals
-represented by segments.  The \c LALSegList structure includes fields
-which record whether the segment list is sorted and/or disjoint, and these
-are used to search the segment list more efficiently when possible.  Note
-that a segment list could in principle be disjoint but not sorted, but that
-case is not of interest for the code; the \c disjoint field in the
-structure specifically means that the list is sorted \e and disjoint.
-
-Also all segments in a segment list can be time-shifted using \c XLALSegListShift().
-
-*/
+/**
+ * \addtogroup Segments_h
+ * \author Peter Shawhan
+ *
+ * \brief Provides data types and functions for manipulating lists of ``segments'' (GPS time intervals).
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/Segments.h>
+ * \endcode
+ *
+ * This header defines data structures for segments and lists of
+ * segments, as well as prototypes for functions that manipulate them.
+ *
+ * A segment is a time interval with a start time and an end time.  The end time
+ * must be equal to or later than the start time.  If the end time is equal to
+ * the start time, then the segment represents a point in time.  If the end time
+ * is later than the start time, then the segment represents a half-open time
+ * interval, inclusive of its starting point and exclusive of its ending point.
+ *
+ * All of the segment list manipulation functions are XLAL functions.
+ * They handle error conditions by invoking the current XLAL error handler
+ * and setting \c xlalErrno to a nonzero value.
+ *
+ * \heading{Error conditions}
+ *
+ * <table><tr><th>xlalErrno</th><th>description</th></tr>
+ * <tr><td>   XLAL_EFAULT</td><td>Null pointer passed for some argument</td></tr>
+ * <tr><td>   XLAL_EINVAL</td><td>Attempted to use an uninitialized segment list structure</td></tr>
+ * <tr><td>   XLAL_EDOM</td><td>Pair of GPS times does not represent a valid segment</td></tr>
+ * </table>
+ *
+ * \heading{Notes}
+ *
+ * A \c LALSegList must be initialized before it is used.  Initialization
+ * leaves it in an ``empty'' state, containing no segments. They also must be ''cleared''
+ * after using \c XLALSegListClear(), and freed with \c LALFree() if it was dynamically allocated.
+ * Segments can then be added to the list through an ``append'' operation.  The information about
+ * each segment appended is copied to a memory location managed by the
+ * \c LALSegList object.  In fact, the segments are stored in the form of
+ * an array of \c LALSeg structures, with the \c segs field of
+ * the segment list structure being the base address of the array.
+ * This allows the segments to be accessed directly using a pointer as an
+ * iterator, as in the following example code:
+ *
+ * \code
+ * LALSegList mylist;
+ * LALSeg *segp;
+ * ...
+ * /\* (Append segments to the segment list 'mylist' here) *\/
+ * ...
+ * for ( segp=mylist.segs; segp<mylist.segs+mylist.length; segp++ ) {
+ *
+ * printf( "The end time of the segment is GPS %d.%09d\n", segp->end.gpsSeconds, segp->end.gpsNanoSeconds );
+ *
+ * }
+ * \endcode
+ *
+ * ... or by using an integer array index, as in the following example code:
+ *
+ * \code
+ * LALSegList mylist;
+ * LALSeg *segp;
+ * INT4 iseg;
+ * LIGOTimeGPS startgps;
+ * ...
+ * /\* (Append segments to the segment list 'mylist' here) *\/
+ * ...
+ * for ( iseg=0; iseg<mylist.length; iseg++ ) {
+ *
+ * /\* One way to access the segment... *\/
+ * startgps = mylist.segs[iseg].start;
+ * printf( "The start time of the segment is GPS %d.%09d\n", startgps.gpsSeconds, startgps.gpsNanoSeconds );
+ *
+ * /\* Another way to access the segment... *\/
+ * segp = mylist.segs + iseg;
+ * printf( "The end time of the segment is GPS %d.%09d\n", segp->end.gpsSeconds, segp->end.gpsNanoSeconds );
+ *
+ * }
+ * \endcode
+ *
+ * Note that if the segment list is empty, then the \c segs field will
+ * be NULL and the \c length field will be \f$0\f$.  So be careful not to
+ * dereference the \c segs pointer unless you know that the length is
+ * nonzero.
+ *
+ * A segment list is considered ``sorted'' if the segments are in ascending
+ * (or at least non-descending) order according to the comparison done by
+ * the \c XLALSegCmp() function.  A segment list is considered ``disjoint''
+ * if no two segments in the list overlap, although they
+ * may touch at an endpoint due to the half-open nature of the time intervals
+ * represented by segments.  The \c LALSegList structure includes fields
+ * which record whether the segment list is sorted and/or disjoint, and these
+ * are used to search the segment list more efficiently when possible.  Note
+ * that a segment list could in principle be disjoint but not sorted, but that
+ * case is not of interest for the code; the \c disjoint field in the
+ * structure specifically means that the list is sorted \e and disjoint.
+ *
+ * Also all segments in a segment list can be time-shifted using \c XLALSegListShift().
+ *
+ */
 /*@{*/
 
 /*------------------- Compile-time parameters -------------------*/

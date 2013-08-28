@@ -38,7 +38,8 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
 
-/** \author Reinhard Prix, John Whelan
+/**
+ * \author Reinhard Prix, John Whelan
  * \file
  * \ingroup LALComputeAM_h
  *
@@ -222,8 +223,8 @@ int main(int argc, char *argv[])
 
 } /* main() */
 
-/** Comparison function for two multiAM vectors, return success or failure for given tolerance.
- *
+/**
+ * Comparison function for two multiAM vectors, return success or failure for given tolerance.
  * we compare avg() and max of |a1_i - a2_i|^2 and |b1_i - b2_i|^2 respectively,
  * and error in |A1 - A2|, |B1 - B2|, |C1 - C2|.
  * These numbers are typically ~ O(1), so we simply compare these absolute errors to the tolerance.

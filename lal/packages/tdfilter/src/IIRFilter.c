@@ -21,33 +21,34 @@
 #include <lal/IIRFilter.h>
 
 /**
-   \addtogroup IIRFilter_c
-   \author Creighton, T. D.
-
-   \brief Computes an instant-by-instant IIR filter response.
-
-\heading{Description}
-
-These functions pass a time-domain datum to an object <tt>*filter</tt>
-of type \c REAL4IIRFilter or \c REAL8IIRFilter, and return the
-filter response.  This is done using the auxiliary data series
-formalism described in \ref IIRFilter_h.
-
-There are two pairs of routines in this module.  The functions
-<tt>LALIIRFilterREAL4()</tt> and <tt>LALIIRFilterREAL8()</tt> conform to the LAL
-standard, with status handling and error trapping; the input datum is
-passed in as \c input and the response is returned in
-<tt>*output</tt>.  The functions <tt>LALSIIRFilter()</tt> and
-<tt>LALDIIRFilter()</tt> are non-standard lightweight routines, which may
-be more suitable for multiple callings from the inner loops of
-programs; they have no status handling or error trapping.  The input
-datum is passed in by the variable \c x, and the response is
-returned through the function's return statement.
-
-*/
+ * \addtogroup IIRFilter_c
+ * \author Creighton, T. D.
+ *
+ * \brief Computes an instant-by-instant IIR filter response.
+ *
+ * \heading{Description}
+ *
+ * These functions pass a time-domain datum to an object <tt>*filter</tt>
+ * of type \c REAL4IIRFilter or \c REAL8IIRFilter, and return the
+ * filter response.  This is done using the auxiliary data series
+ * formalism described in \ref IIRFilter_h.
+ *
+ * There are two pairs of routines in this module.  The functions
+ * <tt>LALIIRFilterREAL4()</tt> and <tt>LALIIRFilterREAL8()</tt> conform to the LAL
+ * standard, with status handling and error trapping; the input datum is
+ * passed in as \c input and the response is returned in
+ * <tt>*output</tt>.  The functions <tt>LALSIIRFilter()</tt> and
+ * <tt>LALDIIRFilter()</tt> are non-standard lightweight routines, which may
+ * be more suitable for multiple callings from the inner loops of
+ * programs; they have no status handling or error trapping.  The input
+ * datum is passed in by the variable \c x, and the response is
+ * returned through the function's return statement.
+ *
+ */
 /*@{*/
 
-/** WARNING: THIS FUNCTION IS OBSOLETE.
+/**
+ * WARNING: THIS FUNCTION IS OBSOLETE.
  * \deprecated
  */
 void
@@ -103,7 +104,8 @@ LALIIRFilterREAL4( LALStatus      *stat,
 }
 
 
-/** WARNING: THIS FUNCTION IS OBSOLETE.
+/**
+ * WARNING: THIS FUNCTION IS OBSOLETE.
  * \deprecated
  */
 void
@@ -133,7 +135,8 @@ LALIIRFilterREAL8( LALStatus      *stat,
 }
 
 
-/** WARNING: THIS FUNCTION IS OBSOLETE.
+/**
+ * WARNING: THIS FUNCTION IS OBSOLETE.
  * \deprecated
  */
 REAL4

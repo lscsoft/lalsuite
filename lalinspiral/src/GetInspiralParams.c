@@ -26,56 +26,56 @@
 #define LAL_DGALCORE_SI (2.62e20) /* Galactic core distance (metres) */
 
 /**
-\author Creighton, T. D.
-
-\brief Computes the input parameters for a PPN inspiral.
-
-\heading{Description}
-
-This function takes a Galactic location and pair of masses from
-<tt>*input</tt> and uses them to set the \c PPNParamStruc fields
-<tt>output->position</tt>, <tt>output->mTot</tt>, <tt>output->eta</tt>, and
-<tt>output->d</tt>.  The fields <tt>output->psi</tt>, <tt>output->inc</tt>,
-and <tt>output->phi</tt> are set randomly to reflect a uniform
-distribution in solid angle (that is, cosine of inclination is uniform
-between \f$-1\f$ and 1, other angles are uniform between 0 and \f$2\pi\f$).
-The routine uses the random sequence specified by <tt>*params</tt> when
-given, but if <tt>*params</tt>=\c NULL a new sequence is started
-internally using the current execution time as a seed. The field
-<tt>input->geocentEndTime</tt> is ignored by this routine.
-
-The other \c PPNParamStruc input fields are not touched by this
-routine, and must be specified externally before generating a waveform
-with this structure.
-
-\heading{Algorithm}
-
-Galactocentric Galactic axial coordinates \f$\rho\f$, \f$z\f$, and \f$l_G\f$ are
-transformed to geocentric Galactic Cartesian coordinates:
-\f{eqnarray}{
-x_e & = & R_e + \rho\cos l_G \;,\nonumber\\
-y_e & = & \rho\sin l_G \;,\nonumber\\
-z_e & = & z \;,
-\f}
-where
-\f[
-R_e \approx 8.5\,\mathrm{kpc}
-\f]
-is the distance to the Galactic core (this constant will probably
-migrate into \ref LALConstants.h eventually).  These are converted
-to geocentric Galactic spherical coordinates:
-\f{eqnarray}{
-d & = & \sqrt{x_e^2 + y_e^2 + z_e^2} \;,\nonumber\\
-b & = & \arcsin\left(\frac{z_e}{d_e}\right) \;,\nonumber\\
-l & = & \arctan\!2(y_e,x_e) \;.
-\f}
-In the calculation of \f$d\f$ we factor out the leading order term from
-the square root to avoid inadvertent overflow, and check for underflow
-in case the location lies on top of the Earth.  The angular
-coordinates are then transformed to equatorial celestial coordinates
-\f$\alpha\f$ and \f$\delta\f$ using the routines in \ref SkyCoordinates.h.
-
-*/
+ * \author Creighton, T. D.
+ *
+ * \brief Computes the input parameters for a PPN inspiral.
+ *
+ * \heading{Description}
+ *
+ * This function takes a Galactic location and pair of masses from
+ * <tt>*input</tt> and uses them to set the \c PPNParamStruc fields
+ * <tt>output->position</tt>, <tt>output->mTot</tt>, <tt>output->eta</tt>, and
+ * <tt>output->d</tt>.  The fields <tt>output->psi</tt>, <tt>output->inc</tt>,
+ * and <tt>output->phi</tt> are set randomly to reflect a uniform
+ * distribution in solid angle (that is, cosine of inclination is uniform
+ * between \f$-1\f$ and 1, other angles are uniform between 0 and \f$2\pi\f$).
+ * The routine uses the random sequence specified by <tt>*params</tt> when
+ * given, but if <tt>*params</tt>=\c NULL a new sequence is started
+ * internally using the current execution time as a seed. The field
+ * <tt>input->geocentEndTime</tt> is ignored by this routine.
+ *
+ * The other \c PPNParamStruc input fields are not touched by this
+ * routine, and must be specified externally before generating a waveform
+ * with this structure.
+ *
+ * \heading{Algorithm}
+ *
+ * Galactocentric Galactic axial coordinates \f$\rho\f$, \f$z\f$, and \f$l_G\f$ are
+ * transformed to geocentric Galactic Cartesian coordinates:
+ * \f{eqnarray}{
+ * x_e & = & R_e + \rho\cos l_G \;,\nonumber\\
+ * y_e & = & \rho\sin l_G \;,\nonumber\\
+ * z_e & = & z \;,
+ * \f}
+ * where
+ * \f[
+ * R_e \approx 8.5\,\mathrm{kpc}
+ * \f]
+ * is the distance to the Galactic core (this constant will probably
+ * migrate into \ref LALConstants.h eventually).  These are converted
+ * to geocentric Galactic spherical coordinates:
+ * \f{eqnarray}{
+ * d & = & \sqrt{x_e^2 + y_e^2 + z_e^2} \;,\nonumber\\
+ * b & = & \arcsin\left(\frac{z_e}{d_e}\right) \;,\nonumber\\
+ * l & = & \arctan\!2(y_e,x_e) \;.
+ * \f}
+ * In the calculation of \f$d\f$ we factor out the leading order term from
+ * the square root to avoid inadvertent overflow, and check for underflow
+ * in case the location lies on top of the Earth.  The angular
+ * coordinates are then transformed to equatorial celestial coordinates
+ * \f$\alpha\f$ and \f$\delta\f$ using the routines in \ref SkyCoordinates.h.
+ *
+ */
 void
 LALGetInspiralParams( LALStatus                  *stat,
 		      PPNParamStruc              *output,

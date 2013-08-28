@@ -23,7 +23,8 @@
 #define Dim 3
 
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief Uses \f$g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}\f$ to compute the inverse.
  * \author Sathyaprakash, B. S.
  *

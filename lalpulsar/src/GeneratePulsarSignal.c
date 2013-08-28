@@ -61,7 +61,8 @@ const SFTParams empty_SFTParams;
 const SFTandSignalParams empty_SFTandSignalParams;
 static LALUnit empty_LALUnit;
 
-/** Generate a time-series at the detector for a given pulsar.
+/**
+ * Generate a time-series at the detector for a given pulsar.
  */
 REAL4TimeSeries *
 XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
@@ -251,7 +252,8 @@ LALGeneratePulsarSignal (LALStatus *status,		   /**< pointer to LALStatus struct
 
 } /* LALGeneratePulsarSignal() */
 
-/** Turn the given time-series into (v2-)SFTs and add noise if given.
+/**
+ * Turn the given time-series into (v2-)SFTs and add noise if given.
  */
 SFTVector *
 XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
@@ -485,7 +487,7 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
 /**
  * Wrapper for LALComputeSky() and  LALComputeDetAMResponse() that finds the sky
  * constants and \f$F_+\f$ and \f$F_\times\f$ for use with LALFastGeneratePulsarSFTs().
- *  Uses the output of LALComputeSkyAndZeroPsiAMResponse() and the same inputs as
+ * Uses the output of LALComputeSkyAndZeroPsiAMResponse() and the same inputs as
  * LALGeneratePulsarSignal() and LALSignalToSFTs().
  * This function used LALComputeSkyBinary() if params->pSigParams->orbit is not
  * NULL, else it uses LALComputeSky() to find the skyConsts.
@@ -864,7 +866,8 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
 
 /*--------------- some useful helper-functions ---------------*/
 
-/** Convert earth-frame GPS time into barycentric-frame SSB time for given source.
+/**
+ * Convert earth-frame GPS time into barycentric-frame SSB time for given source.
  * \note The only fields used in params are: \a site, \a pulsar.position
  * and \a ephemerides.
  */
@@ -913,7 +916,7 @@ XLALConvertGPS2SSB ( LIGOTimeGPS *SSBout, 		/**< [out] arrival-time in SSB */
  * Convert  barycentric frame SSB time into earth-frame GPS time
  *
  * NOTE: this uses simply the inversion-routine used in the original
- *       makefakedata_v2
+ * makefakedata_v2
  */
 int XLALConvertSSB2GPS ( LIGOTimeGPS *GPSout,			/**< [out] GPS-arrival-time at detector */
                          LIGOTimeGPS SSBin,			/**< [in] input: signal arrival time at SSB */
@@ -1086,9 +1089,10 @@ XLALDestroyMultiREAL4TimeSeries ( MultiREAL4TimeSeries *multiTS )
  * module
  ************************************************************************/
 
-/** Check that all timestamps given lie within the range [t0, t1]
+/**
+ * Check that all timestamps given lie within the range [t0, t1]
  *
- *  return: 0 if ok, ERROR if not
+ * return: 0 if ok, ERROR if not
  */
 int
 XLALcheck_timestamp_bounds ( const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1 )
@@ -1118,7 +1122,8 @@ XLALcheck_timestamp_bounds ( const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0
 
 } /* XLALcheck_timestamp_bounds() */
 
-/** Check if frequency-range and resolution of noiseSFTs is consistent with signal-band [f0, f1]
+/**
+ * Check if frequency-range and resolution of noiseSFTs is consistent with signal-band [f0, f1]
  * \note All frequencies f are required to correspond to integer *bins* f/dFreq, ABORT if not
  *
  * return XLAL_SUCCESS if everything fine, error-code otherwise
@@ -1167,7 +1172,8 @@ XLALcheckNoiseSFTs ( const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF )
 
 
 
-/** Yousuke's phase-correction function, taken from makefakedata_v2
+/**
+ * Yousuke's phase-correction function, taken from makefakedata_v2
  */
 int
 XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne )

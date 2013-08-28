@@ -30,103 +30,104 @@
 #define CAL_S2START 729273613
 #define CAL_S2END 734367613
 
-/** \defgroup ComputeTransfer_c Module ComputeTransfer.c
-    \ingroup Calibration_h
-    \author Patrick Brady, Jolien Creighton
-
-    \brief Computes the transfer function from zero-pole-gain representation.
-
-A transfer function can either be specified as a list of coefficients or a
-list of poles and zeros. The function LALComputeTransfer() computes the
-frequency representation of the transfer function <tt>calrec->transfer</tt>
-described by the zeroes,  poles and gain in <tt>*calrec</tt>.   The memory for
-the frequency series should be allocated before calling this routine which uses
-<tt>calrec->transfer->deltaF</tt> and <tt>calrec->transfer->data->npoints</tt>.
-
-The routine LALUpdateCalibration() updates the response function
-and the sensing function from some reference functions to the current
-functions using information about the calibration lines.  The two calibration
-lines yield two constants (as a slowly-varying function of time) that are
-used as coefficients to the reference response and sensing functions to
-compute the current response and sensing functions.  These coefficients are
-stored in time series in the parameter structure, along with the current
-epoch and duration for which the calibration functions are to be computed.  If
-the duration is zero, the calibration factors are the first ones at or after
-the given epoch.  If the duration is non-zero, then the calibration factors are
-an average of all calibrations between epoch and epoch + duration.
-
-The routine LALResponseConvert() takes a given frequency series
-and converts it to a new frequency series by performing the following steps:
-(i) the original frequency series is interpolated (using linear interpolation
-of the real and imaginary parts independently) to the frequencies required
-in the output frequency series;  (ii) if the output frequency series has units
-that are the inverse of those of the input frequency series, the data is
-inverted;  (iii) the data is scaled by an appropriate power of ten computed
-from the input units and the output units.  For example you can convert from
-strain per count to counts per atto-strain.
-
-\heading{Algorithm}
-
-The transfer function is deduced from the poles and zeros as follows:
-\f{equation}{
-T(f) = c_{\mathrm{gain}}
-{\prod_i \textrm{zero}(f,z_i)}{ \prod_{i} \textrm{pole}(f,p_i)}
-\f}
-where
-\f{equation}{
-\textrm{zero}(f,z) = \left\{ \begin{array}{ll}
-(i f / z) + 1 & \textrm{ when } z\neq 0 \\
-i f & \textrm{ when } z = 0
-\end{array}
-\right.
-\f}
-and
-\f{equation}{
-\textrm{pole}(f,p) = \left\{ \begin{array}{ll}
-\frac{1}{(i f / p) + 1} & \textrm{ when } p \neq 0 \\
-\frac{1}{i f} & \textrm{ when } p = 0
-\end{array}
-\right.
-\f}
-For both the transfer function and the pole-zero notation the units for
-frequency is Hz rather than rad/s (angular frequency).  In particular, poles
-and zeros are specified by their location in frequency space
-
-To update the response function from one epoch to another, two functions are
-needed.  These are the sensing function \f$C(f)\f$ and the response function
-\f$R(f)\f$, which are related by
-\f{equation}{
-  R(f) = \frac{1+H(f)}{C(f)}
-\f}
-where \f$H(f)\f$ is the open-loop gain function.  If the sensing function and
-the open-loop gain function are known at some reference time (\f$C_0(f)\f$ and
-\f$H_0(f)\f$) then the sensing function and open-loop gain function can be
-calculated at a later time.  They are \f$C(f)=\alpha C_0(f)\f$ and
-\f$H(f)=\alpha\beta H_0(f)\f$ where \f$\alpha\f$ and \f$\beta\f$ are slowly varying
-coefficients that account for overall changes in the gains of the sensing
-function and the open-loop gain.  The coefficients \f$\alpha\f$ and \f$\alpha\beta\f$
-can be determined, as slowly-varying functions of time, by monitoring the
-two injected calibration lines.  Thus, an updated sensing function and response
-function can be computed from reference sensing function and response function,
-\f$C_0(f)\f$ and \f$R_0(f)\f$ via:
-\f{equation}{
-  C(f) = \alpha C_0(f)
-\f}
-and
-\f{equation}{
-  R(f) = \frac{1+\alpha\beta[C_0(f)R_0(f)-1]}{\alpha C_0(f)}
-\f}
-where \f$\alpha\f$ and \f$\beta\f$ are those values of the coefficients that are
-appropriate for the particular epoch.
-
-\heading{Uses}
-
-\heading{Notes}
-The DC component of <tt>calrec->transfer</tt> is always filled with \f$1 + i 0\f$.
-In most cases,  this should be irrelevant for gravitational wave data analysis,
-but care should be taken if DC is relevant when this function is used.
-
-*/
+/**
+ * \defgroup ComputeTransfer_c Module ComputeTransfer.c
+ * \ingroup Calibration_h
+ * \author Patrick Brady, Jolien Creighton
+ *
+ * \brief Computes the transfer function from zero-pole-gain representation.
+ *
+ * A transfer function can either be specified as a list of coefficients or a
+ * list of poles and zeros. The function LALComputeTransfer() computes the
+ * frequency representation of the transfer function <tt>calrec->transfer</tt>
+ * described by the zeroes,  poles and gain in <tt>*calrec</tt>.   The memory for
+ * the frequency series should be allocated before calling this routine which uses
+ * <tt>calrec->transfer->deltaF</tt> and <tt>calrec->transfer->data->npoints</tt>.
+ *
+ * The routine LALUpdateCalibration() updates the response function
+ * and the sensing function from some reference functions to the current
+ * functions using information about the calibration lines.  The two calibration
+ * lines yield two constants (as a slowly-varying function of time) that are
+ * used as coefficients to the reference response and sensing functions to
+ * compute the current response and sensing functions.  These coefficients are
+ * stored in time series in the parameter structure, along with the current
+ * epoch and duration for which the calibration functions are to be computed.  If
+ * the duration is zero, the calibration factors are the first ones at or after
+ * the given epoch.  If the duration is non-zero, then the calibration factors are
+ * an average of all calibrations between epoch and epoch + duration.
+ *
+ * The routine LALResponseConvert() takes a given frequency series
+ * and converts it to a new frequency series by performing the following steps:
+ * (i) the original frequency series is interpolated (using linear interpolation
+ * of the real and imaginary parts independently) to the frequencies required
+ * in the output frequency series;  (ii) if the output frequency series has units
+ * that are the inverse of those of the input frequency series, the data is
+ * inverted;  (iii) the data is scaled by an appropriate power of ten computed
+ * from the input units and the output units.  For example you can convert from
+ * strain per count to counts per atto-strain.
+ *
+ * \heading{Algorithm}
+ *
+ * The transfer function is deduced from the poles and zeros as follows:
+ * \f{equation}{
+ * T(f) = c_{\mathrm{gain}}
+ * {\prod_i \textrm{zero}(f,z_i)}{ \prod_{i} \textrm{pole}(f,p_i)}
+ * \f}
+ * where
+ * \f{equation}{
+ * \textrm{zero}(f,z) = \left\{ \begin{array}{ll}
+ * (i f / z) + 1 & \textrm{ when } z\neq 0 \\
+ * i f & \textrm{ when } z = 0
+ * \end{array}
+ * \right.
+ * \f}
+ * and
+ * \f{equation}{
+ * \textrm{pole}(f,p) = \left\{ \begin{array}{ll}
+ * \frac{1}{(i f / p) + 1} & \textrm{ when } p \neq 0 \\
+ * \frac{1}{i f} & \textrm{ when } p = 0
+ * \end{array}
+ * \right.
+ * \f}
+ * For both the transfer function and the pole-zero notation the units for
+ * frequency is Hz rather than rad/s (angular frequency).  In particular, poles
+ * and zeros are specified by their location in frequency space
+ *
+ * To update the response function from one epoch to another, two functions are
+ * needed.  These are the sensing function \f$C(f)\f$ and the response function
+ * \f$R(f)\f$, which are related by
+ * \f{equation}{
+ * R(f) = \frac{1+H(f)}{C(f)}
+ * \f}
+ * where \f$H(f)\f$ is the open-loop gain function.  If the sensing function and
+ * the open-loop gain function are known at some reference time (\f$C_0(f)\f$ and
+ * \f$H_0(f)\f$) then the sensing function and open-loop gain function can be
+ * calculated at a later time.  They are \f$C(f)=\alpha C_0(f)\f$ and
+ * \f$H(f)=\alpha\beta H_0(f)\f$ where \f$\alpha\f$ and \f$\beta\f$ are slowly varying
+ * coefficients that account for overall changes in the gains of the sensing
+ * function and the open-loop gain.  The coefficients \f$\alpha\f$ and \f$\alpha\beta\f$
+ * can be determined, as slowly-varying functions of time, by monitoring the
+ * two injected calibration lines.  Thus, an updated sensing function and response
+ * function can be computed from reference sensing function and response function,
+ * \f$C_0(f)\f$ and \f$R_0(f)\f$ via:
+ * \f{equation}{
+ * C(f) = \alpha C_0(f)
+ * \f}
+ * and
+ * \f{equation}{
+ * R(f) = \frac{1+\alpha\beta[C_0(f)R_0(f)-1]}{\alpha C_0(f)}
+ * \f}
+ * where \f$\alpha\f$ and \f$\beta\f$ are those values of the coefficients that are
+ * appropriate for the particular epoch.
+ *
+ * \heading{Uses}
+ *
+ * \heading{Notes}
+ * The DC component of <tt>calrec->transfer</tt> is always filled with \f$1 + i 0\f$.
+ * In most cases,  this should be irrelevant for gravitational wave data analysis,
+ * but care should be taken if DC is relevant when this function is used.
+ *
+ */
 /*@{*/
 
 /** UNDOCUMENTED */

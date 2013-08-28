@@ -18,106 +18,104 @@
 */
 
 /**
-\author Jones, D. I.,   Owen, B. J.
-\file
-\ingroup PtoleMetric_h
-\brief Tests and showcases the combination of a LAL metric function (of the
-user's specification) and \ref TwoDMesh_h modules by producing a
-template mesh.
-
-\heading{Program <tt>GeneralMeshTest.c</tt>}
-
-\heading{Usage}
-\code
-GeneralMeshTest
-\endcode
-
-\heading{Description}
-
-The <b>-a</b> option determines which LAL metric code is used.  The
-options are:
-<ul>
-<li>1 = LALPtoleMetric() (default),
-<li>2 = (LALCoherentMetric() \& LALDTBaryPtolemaic()),
-<li>3 = (LALCoherentMetric() \& LALDTEphemeris()).
-</ul>
-
-The <b>-b</b> option sets the beginning GPS time of integration to
-the option argument. (Default is \f$731265908\f$ seconds, chosen to lie
-within the S2 run).
-
-The <b>-c</b> option determins the center of the patch.  This option
-is hardcoded to use equatorial coordinates and the argument should be
-given in hh:mm:ss:dd:mm:ss format.  (Default is the center of the
-globular cluster 47 Tuc).
-
-The <b>-d</b> option sets the detector to the option argument. The
-options are:
-<ul>
-<li>1 = LIGO Hanford
-<li>2 = LIGO Livingston
-<li>3 = VIRGO
-<li>4 = GEO600 (default)
-<li>5 = TAMA300
-</ul>
-
-The <b>-e</b> option sets the LAL debug level to 1.  (The default is 0).
-
-The <b>-f</b> option sets the maximum frequency of integration (in Hz) to the
-option argument. (The default value is 1000.)
-
-The <b>-l</b> option determines, for a rectangular search region, the
-limits in right ascension and declination of the grid.  The argument should
-be given in degrees as RA(min):RA(max):dec(min):dec(max).  (The default is
-the octant of the sky defined by \f$0 < \textrm{RA} < 90\f$ and \f$0< \textrm{dec} <
-85\f$; this avoids the coordinate singularity at the poles.) This option
-automatically overrides whatever is specified by the <b>-r</b> option.
-
-The <b>-m</b> option sets the maximum mismatch of the mesh to the option
-argument. (Default is 0.02.)
-
-The texttt{-p} option causes the coordinates of the nodes to be written to
-a file <tt>mesh.dat</tt>, for the benifit of users who don't have
-\c xmgrace installed.  The format is one node per line, (RA, DEC),
-with the angles in degrees.
-
-The <b>-r</b> option sets the radius (in arcminutes) of the circular
-sky patch.  If you specify radius zero you will get a search over a
-rectangular region whose limits in RA and dec are specified by the
-<b>-l</b> option.  (The default value is the radius of the globular
-cluster 47 Tuc).
-
-The <b>-t</b> option sets the duration of integration in seconds. (The
-default is \f$39600\f$ seconds \f$= 11\f$ hours, which is chosen because it is of
-the right size for S2 analyses).
-
-The <b>-x</b> option makes a plot of the mesh points on the sky patch using a
-system call to \c xmgrace. If \c xmgrace is not installed on your
-system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
-
-
-\heading{Algorithm}
-
-\heading{Uses}
-
-\code
-lalDebugLevel                LALDCreateVector()
-LALCheckMemoryLeaks()        LALDDestroyVector()
-LALProjectMetric()           LALGetEarthTimes()
-LALPtoleMetric()             LALInitBarycenter()
-LALCreateTwoDMesh()          LALDestroyTwoDMesh()
-LALFree()                    LALCoherentMetric()
-\endcode
-
-
-\heading{Notes}
-
-For most regions of parameter space the three metric codes seem to
-agree well.  However, for short (less than one day) runs, they are all
-capable of returning (unphysical) negative determinant metrics for
-points very close to the equator.
-
-*/
+ * \author Jones, D. I.,   Owen, B. J.
+ * \file
+ * \ingroup PtoleMetric_h
+ * \brief Tests and showcases the combination of a LAL metric function (of the
+ * user's specification) and \ref TwoDMesh_h modules by producing a
+ * template mesh.
+ *
+ * \heading{Program <tt>GeneralMeshTest.c</tt>}
+ *
+ * \heading{Usage}
+ * \code
+ * GeneralMeshTest
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * The <b>-a</b> option determines which LAL metric code is used.  The
+ * options are:
+ * <ul>
+ * <li>1 = LALPtoleMetric() (default),
+ * <li>2 = (LALCoherentMetric() \& LALDTBaryPtolemaic()),
+ * <li>3 = (LALCoherentMetric() \& LALDTEphemeris()).
+ * </ul>
+ *
+ * The <b>-b</b> option sets the beginning GPS time of integration to
+ * the option argument. (Default is \f$731265908\f$ seconds, chosen to lie
+ * within the S2 run).
+ *
+ * The <b>-c</b> option determins the center of the patch.  This option
+ * is hardcoded to use equatorial coordinates and the argument should be
+ * given in hh:mm:ss:dd:mm:ss format.  (Default is the center of the
+ * globular cluster 47 Tuc).
+ *
+ * The <b>-d</b> option sets the detector to the option argument. The
+ * options are:
+ * <ul>
+ * <li>1 = LIGO Hanford
+ * <li>2 = LIGO Livingston
+ * <li>3 = VIRGO
+ * <li>4 = GEO600 (default)
+ * <li>5 = TAMA300
+ * </ul>
+ *
+ * The <b>-e</b> option sets the LAL debug level to 1.  (The default is 0).
+ *
+ * The <b>-f</b> option sets the maximum frequency of integration (in Hz) to the
+ * option argument. (The default value is 1000.)
+ *
+ * The <b>-l</b> option determines, for a rectangular search region, the
+ * limits in right ascension and declination of the grid.  The argument should
+ * be given in degrees as RA(min):RA(max):dec(min):dec(max).  (The default is
+ * the octant of the sky defined by \f$0 < \textrm{RA} < 90\f$ and \f$0< \textrm{dec} <
+ * 85\f$; this avoids the coordinate singularity at the poles.) This option
+ * automatically overrides whatever is specified by the <b>-r</b> option.
+ *
+ * The <b>-m</b> option sets the maximum mismatch of the mesh to the option
+ * argument. (Default is 0.02.)
+ *
+ * The texttt{-p} option causes the coordinates of the nodes to be written to
+ * a file <tt>mesh.dat</tt>, for the benifit of users who don't have
+ * \c xmgrace installed.  The format is one node per line, (RA, DEC),
+ * with the angles in degrees.
+ *
+ * The <b>-r</b> option sets the radius (in arcminutes) of the circular
+ * sky patch.  If you specify radius zero you will get a search over a
+ * rectangular region whose limits in RA and dec are specified by the
+ * <b>-l</b> option.  (The default value is the radius of the globular
+ * cluster 47 Tuc).
+ *
+ * The <b>-t</b> option sets the duration of integration in seconds. (The
+ * default is \f$39600\f$ seconds \f$= 11\f$ hours, which is chosen because it is of
+ * the right size for S2 analyses).
+ *
+ * The <b>-x</b> option makes a plot of the mesh points on the sky patch using a
+ * system call to \c xmgrace. If \c xmgrace is not installed on your
+ * system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
+ *
+ * \heading{Algorithm}
+ *
+ * \heading{Uses}
+ *
+ * \code
+ * lalDebugLevel                LALDCreateVector()
+ * LALCheckMemoryLeaks()        LALDDestroyVector()
+ * LALProjectMetric()           LALGetEarthTimes()
+ * LALPtoleMetric()             LALInitBarycenter()
+ * LALCreateTwoDMesh()          LALDestroyTwoDMesh()
+ * LALFree()                    LALCoherentMetric()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ * For most regions of parameter space the three metric codes seem to
+ * agree well.  However, for short (less than one day) runs, they are all
+ * capable of returning (unphysical) negative determinant metrics for
+ * points very close to the equator.
+ *
+ */
 
 
 /** \name Error Codes */ /*@{*/

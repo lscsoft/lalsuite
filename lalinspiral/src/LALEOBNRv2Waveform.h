@@ -36,7 +36,8 @@ extern "C" {
 
 #define LALEOB_MAX_MULTIPOLE 8
 
-/** \defgroup LALEOBNRv2Waveform_h Header LALEOBNRv2Waveform.h
+/**
+ * \defgroup LALEOBNRv2Waveform_h Header LALEOBNRv2Waveform.h
  * \ingroup pkg_CBC_NEW
  * \author Craig Robinson
  *
@@ -46,12 +47,12 @@ extern "C" {
 /*@{*/
 
 /**
- *  Structure containing the coefficients for EOBNRv2 A potential function.
- *  The elements in the structure are labelled as follows:
- *  aN, where a is denotes whether the parameter is in the numerator (n)
- *  or denominator (d); and N is the power of r which will multiply this
- *  coefficient. For example, the coefficient of r^5 in the numerator
- *  will be called n5.
+ * Structure containing the coefficients for EOBNRv2 A potential function.
+ * The elements in the structure are labelled as follows:
+ * aN, where a is denotes whether the parameter is in the numerator (n)
+ * or denominator (d); and N is the power of r which will multiply this
+ * coefficient. For example, the coefficient of r^5 in the numerator
+ * will be called n5.
  */
 typedef struct
 tagEOBACoefficients
@@ -68,9 +69,9 @@ tagEOBACoefficients
 EOBACoefficients;
 
 /**
- *  Structure containing the coefficients for calculating the factorized
- *  waveform. The coefficients are precomputed in the function
- *  XLALCalcFacWaveformCoefficients()
+ * Structure containing the coefficients for calculating the factorized
+ * waveform. The coefficients are precomputed in the function
+ * XLALCalcFacWaveformCoefficients()
  */
 typedef struct
 tagFacWaveformCoeffs

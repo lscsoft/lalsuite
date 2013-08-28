@@ -21,7 +21,7 @@
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file 
+ * \file
  * \ingroup pulsarApps
  * \brief Code to dump various SFT-info in human-readable form to stdout.
  */

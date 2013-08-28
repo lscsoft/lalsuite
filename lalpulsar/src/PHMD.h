@@ -23,35 +23,36 @@
 extern "C" {
 #endif
 
-/** \defgroup PHMD_h Header PHMD.h
- *  \ingroup pkg_pulsarHough
- *  \author Sintes, A. M.
- *  \date 2001
- *  \brief Conversion from peaks in a spectrum into a partial Hough map derivative
+/**
+ * \defgroup PHMD_h Header PHMD.h
+ * \ingroup pkg_pulsarHough
+ * \author Sintes, A. M.
+ * \date 2001
+ * \brief Conversion from peaks in a spectrum into a partial Hough map derivative
  *
-\heading{Synopsis}
-
-\code
-#include <lal/PHMD.h>
-\endcode
-
-The Hough map is an histogram, thus additive. It can be seen as the sum of several
-partial Hough maps constructed using just one periodogram, or equivalently, as
-the sum of partial Hough map derivatives (\c phmd) and then integrating the
-result.
-
-A  \c phmd can be represented by a set of borders, here called <em>left</em> and \e right.
-They indicate the beginning and the end of the annuli.
-The position of the so-called left borders should be marked with \f$+1\f$, and
-the position of the right borders should be marked with \f$-1\f$ in the \c phmd.
-To obtain a partial Hough map, one needs to integrate each row of the \c phmd
-from left to right.
-
-The representation of a  \c phmd is simplified by considering
-pointers to the borders in a pre-calculated look-up-table, plus some extra information about
-their character and edge effects when clipping on a finite patch.
-
-*/
+ * \heading{Synopsis}
+ *
+ * \code
+ * #include <lal/PHMD.h>
+ * \endcode
+ *
+ * The Hough map is an histogram, thus additive. It can be seen as the sum of several
+ * partial Hough maps constructed using just one periodogram, or equivalently, as
+ * the sum of partial Hough map derivatives (\c phmd) and then integrating the
+ * result.
+ *
+ * A  \c phmd can be represented by a set of borders, here called <em>left</em> and \e right.
+ * They indicate the beginning and the end of the annuli.
+ * The position of the so-called left borders should be marked with \f$+1\f$, and
+ * the position of the right borders should be marked with \f$-1\f$ in the \c phmd.
+ * To obtain a partial Hough map, one needs to integrate each row of the \c phmd
+ * from left to right.
+ *
+ * The representation of a  \c phmd is simplified by considering
+ * pointers to the borders in a pre-calculated look-up-table, plus some extra information about
+ * their character and edge effects when clipping on a finite patch.
+ *
+ */
 /*@{*/
 
 /*
@@ -122,7 +123,8 @@ typedef REAL8 HoughDT; /* for weighted hough maps */
 /*  typedef INT2  HoughDT; */
 
 
-/** \brief This structure stores the ``peak-gram''
+/**
+ * \brief This structure stores the ``peak-gram''
  */
   typedef struct tagHOUGHPeakGram{
     INT2    timeIndex;  /**< The time index of the peak-gram */
@@ -133,8 +135,9 @@ typedef REAL8 HoughDT; /* for weighted hough maps */
     INT4    *peak;      /**< The peak indices relative to \c fBinIni, i.e., the zero peak  corresponds to \c fBinIni */
   } HOUGHPeakGram;
 
-/** \brief This structure stores a partial Hough map derivative
-*/
+/**
+ * \brief This structure stores a partial Hough map derivative
+ */
 typedef struct tagHOUGHphmd{
   UINT8          fBin;  	/**< Frequency bin of this partial map derivative */
   UINT2          lengthLeft; 	/**< Exact number of \e Left borders */

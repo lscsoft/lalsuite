@@ -35,7 +35,8 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \defgroup BBHPhenomCoeffs_h Header BBHPhenomCoeffs.h
+/**
+ * \defgroup BBHPhenomCoeffs_h Header BBHPhenomCoeffs.h
  * \ingroup pkg_CBC_NEW
  * \author Santamaria L, Krishnan B, Whelan JT, Dias M, Parameswaran A.
  *

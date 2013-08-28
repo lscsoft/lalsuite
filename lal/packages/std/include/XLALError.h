@@ -176,35 +176,47 @@ int XLALVPrintInfo(const char *fmt, va_list ap);
  *
  */
 
-/** Print an error message with standard XLAL formatting (if error messages
- * are enabled by lalDebugLevel).  */
+/**
+ * Print an error message with standard XLAL formatting (if error messages
+ * are enabled by lalDebugLevel).
+ */
 void XLALPrintErrorMessage(const char *func, const char *file, int line,
                            const char *fmt, ...);
 
-/** Print an warning message with standard XLAL formatting (if warning messages
- * are enabled by lalDebugLevel).  */
+/**
+ * Print an warning message with standard XLAL formatting (if warning messages
+ * are enabled by lalDebugLevel).
+ */
 void XLALPrintWarningMessage(const char *func, const char *file, int line,
                              const char *fmt, ...);
 
-/** Print an info message with standard XLAL formatting (if info messages
- * are enabled by lalDebugLevel).  */
+/**
+ * Print an info message with standard XLAL formatting (if info messages
+ * are enabled by lalDebugLevel).
+ */
 void XLALPrintInfoMessage(const char *func, const char *file, int line,
                           const char *fmt, ...);
 
 #ifndef SWIG    /* exclude from SWIG interface */
 
-/** Print an error message with standard XLAL formatting (if error messages
- * are enabled by lalDebugLevel).  */
+/**
+ * Print an error message with standard XLAL formatting (if error messages
+ * are enabled by lalDebugLevel).
+ */
 void XLALVPrintErrorMessage(const char *func, const char *file, int line,
                             const char *fmt, va_list ap);
 
-/** Print an warning message with standard XLAL formatting (if warning messages
- * are enabled by lalDebugLevel).  */
+/**
+ * Print an warning message with standard XLAL formatting (if warning messages
+ * are enabled by lalDebugLevel).
+ */
 void XLALVPrintWarningMessage(const char *func, const char *file, int line,
                               const char *fmt, va_list ap);
 
-/** Print an error message with standard XLAL formatting (if error messages
- * are enabled by lalDebugLevel).  */
+/**
+ * Print an error message with standard XLAL formatting (if error messages
+ * are enabled by lalDebugLevel).
+ */
 void XLALVPrintInfoMessage(const char *func, const char *file, int line,
                            const char *fmt, va_list ap);
 
@@ -223,7 +235,8 @@ int XLALPrintDeprecationWarning(const char *old, const char *replacement);
  *
  */
 
-/** \brief Macro that will print an error message with a standard format.
+/**
+ * \brief Macro that will print an error message with a standard format.
  *
  * Prototype: <b>XLAL_PRINT_ERROR(fmt [, ...])</b>
  *
@@ -235,7 +248,8 @@ int XLALPrintDeprecationWarning(const char *old, const char *replacement);
 #define XLAL_PRINT_ERROR(...) \
 	XLALPrintErrorMessage(__func__, __FILE__, __LINE__, __VA_ARGS__)
 
-/** \brief Macro that will print a warning message with a standard format.
+/**
+ * \brief Macro that will print a warning message with a standard format.
  *
  * Prototype: <b>XLAL_PRINT_WARNING(fmt [, ...])</b>
  *
@@ -247,7 +261,8 @@ int XLALPrintDeprecationWarning(const char *old, const char *replacement);
 #define XLAL_PRINT_WARNING(...) \
 	XLALPrintWarningMessage(__func__, __FILE__, __LINE__, __VA_ARGS__)
 
-/** \brief Macro that will print an info message with a standard format.
+/**
+ * \brief Macro that will print an info message with a standard format.
  *
  * Prototype: <b>XLAL_PRINT_INFO(fmt [, ...])</b>
  *
@@ -578,8 +593,10 @@ int *XLALGetErrnoPtr(void);
  *
  */
 
-/** Routine to set the XLAL error number and invoke the XLAL error handler.
- * It is used by the error macros. */
+/**
+ * Routine to set the XLAL error number and invoke the XLAL error handler.
+ * It is used by the error macros.
+ */
 void XLALError(const char *func,
                           /**< name of function where the error occurs */
                const char *file,
@@ -588,7 +605,8 @@ void XLALError(const char *func,
                int errnum /**< error code */
     );
 
-/** \brief Macro to invoke the <tt>XLALError()</tt> function and return
+/**
+ * \brief Macro to invoke the <tt>XLALError()</tt> function and return
  * with code val (it should not really be used itself, but forms the basis for
  * other macros).
  *
@@ -613,7 +631,8 @@ void XLALError(const char *func,
 		return val; \
 	} while (0)
 
-/** Macro to invoke a failure from a XLAL routine returning an integer.
+/**
+ * Macro to invoke a failure from a XLAL routine returning an integer.
  *
  * Prototype: <b>XLAL_ERROR(errnum [, fmt [, ...]])</b>
  *
@@ -625,7 +644,8 @@ void XLALError(const char *func,
  */
 #define XLAL_ERROR(...) XLAL_ERROR_VAL(XLAL_FAILURE, __VA_ARGS__)
 
-/** Macro to invoke a failure from a XLAL routine returning a pointer.
+/**
+ * Macro to invoke a failure from a XLAL routine returning a pointer.
  *
  * Prototype: <b>XLAL_ERROR_NULL(errnum [, fmt [, ...]])</b>
  *
@@ -637,7 +657,8 @@ void XLALError(const char *func,
  */
 #define XLAL_ERROR_NULL(...) XLAL_ERROR_VAL(NULL, __VA_ARGS__)
 
-/** \brief Macro to invoke a failure from a XLAL routine returning void.
+/**
+ * \brief Macro to invoke a failure from a XLAL routine returning void.
  *
  * Prototype: <b>XLAL_ERROR_VOID(errnum [, fmt [, ...]])</b>
  *
@@ -649,7 +670,8 @@ void XLALError(const char *func,
  */
 #define XLAL_ERROR_VOID(...) XLAL_ERROR_VAL(/* void */, __VA_ARGS__)
 
-/** \brief Macro to invoke a failure from a XLAL routine returning a <tt>REAL4</tt>.
+/**
+ * \brief Macro to invoke a failure from a XLAL routine returning a <tt>REAL4</tt>.
  *
  * Prototype: <b>XLAL_ERROR_REAL4(errnum [, fmt [, ...]])</b>
  *
@@ -661,7 +683,8 @@ void XLALError(const char *func,
  */
 #define XLAL_ERROR_REAL4(...) XLAL_ERROR_VAL(XLAL_REAL4_FAIL_NAN, __VA_ARGS__)
 
-/**  * \brief Macro to invoke a failure from a XLAL routine returning a <tt>REAL8</tt>.
+/**
+ * \brief Macro to invoke a failure from a XLAL routine returning a <tt>REAL8</tt>.
  *
  * Prototype <b>XLAL_ERROR_REAL8(errnum [, fmt [, ...]])</b>
  *
@@ -674,7 +697,8 @@ void XLALError(const char *func,
 #define XLAL_ERROR_REAL8(...) XLAL_ERROR_VAL(XLAL_REAL8_FAIL_NAN, __VA_ARGS__)
 
 
-/** \brief Macro to test an assertion; if it is not true, invoke the
+/**
+ * \brief Macro to test an assertion; if it is not true, invoke the
  * <tt>XLALError()</tt> function and return with code val (it should not really
  * be used itself, but forms the basis for other macros).
  *
@@ -704,7 +728,8 @@ void XLALError(const char *func,
 		} \
 	} while (0)
 
-/**  * \brief Macro to test an assertion and invoke a failure if it is not true
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns an integer.
  *
  * Prototype: <b>XLAL_CHECK(assertion, errnum [, fmt [, ...]])</b>
@@ -719,7 +744,8 @@ void XLALError(const char *func,
 #define XLAL_CHECK(assertion, ...) \
 	XLAL_CHECK_VAL(XLAL_FAILURE, assertion, __VA_ARGS__)
 
-/** \brief Macro to test an assertion and invoke a failure if it is not true
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns a pointer.
  *
  * Prototype: <b>XLAL_CHECK_NULL(assertion, errnum [, fmt [, ...]])</b>
@@ -734,7 +760,8 @@ void XLALError(const char *func,
 #define XLAL_CHECK_NULL(assertion, ...) \
 	XLAL_CHECK_VAL(NULL, assertion, __VA_ARGS__)
 
-/** \brief Macro to test an assertion and invoke a failure if it is not true
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns void.
  *
  * Prototype: <b>XLAL_CHECK_VOID(assertion, errnum [, fmt [, ...]])</b>
@@ -749,7 +776,8 @@ void XLALError(const char *func,
 #define XLAL_CHECK_VOID(assertion, ...) \
 	XLAL_CHECK_VAL(/* void */, assertion, __VA_ARGS__)
 
-/** \brief Macro to test an assertion and invoke a failure if it is not true
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns a <tt>REAL4</tt>.
  *
  * Prototype: <b>XLAL_CHECK_REAL4(assertion, errnum [, fmt [, ...]])</b>
@@ -764,7 +792,8 @@ void XLALError(const char *func,
 #define XLAL_CHECK_REAL4(assertion, ...) \
 	XLAL_CHECK_VAL(XLAL_REAL4_FAIL_NAN, assertion, __VA_ARGS__)
 
-/** \brief Macro to test an assertion and invoke a failure if it is not true
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns a <tt>REAL8</tt>.
  *
  * Prototype: <b>XLAL_CHECK_REAL8(assertion, errnum [, fmt [, ...]])</b>

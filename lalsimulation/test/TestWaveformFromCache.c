@@ -18,14 +18,12 @@
  */
 
 /**
- *
  * \author Evan Ochsner
  *
  * \file
  *
  * \brief Check ChooseTD/FDWaveformFromCache is consistent with ChooseWaveoform
- *
- * */
+ */
 
 #include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/FrequencySeries.h>

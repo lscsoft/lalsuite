@@ -26,33 +26,33 @@
 /* 09/07/05 gam; Add Dterms parameter to LALFastGeneratePulsarSFTs; use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
 
 /**
-\author Mendell, G.
-\file
-\ingroup GeneratePulsarSignal_h
-
-\heading{Usage}
-\code
-GeneratePulsarSignalTest
-\endcode
-
-No command line options are currently supported. However, preprocessor flags
-can be set to print output for debugging purposes.
-
-\heading{Description}
-
-This test program calls and compares the output from LALGeneratePulsarSignal()
-and LALSignalToSFTs() with the output from LALComputeSkyAndZeroPsiAMResponse()
-and LALFastGeneratePulsarSFTs() for a variety of signal parameters.
-
-The current code only compares the modulus of the output SFTs,
-not the phases.
-
-\heading{Notes}
-
-See the pulsar search code in lalapps for more
-example uses of the functions tested by this code.
-
-*/
+ * \author Mendell, G.
+ * \file
+ * \ingroup GeneratePulsarSignal_h
+ *
+ * \heading{Usage}
+ * \code
+ * GeneratePulsarSignalTest
+ * \endcode
+ *
+ * No command line options are currently supported. However, preprocessor flags
+ * can be set to print output for debugging purposes.
+ *
+ * \heading{Description}
+ *
+ * This test program calls and compares the output from LALGeneratePulsarSignal()
+ * and LALSignalToSFTs() with the output from LALComputeSkyAndZeroPsiAMResponse()
+ * and LALFastGeneratePulsarSFTs() for a variety of signal parameters.
+ *
+ * The current code only compares the modulus of the output SFTs,
+ * not the phases.
+ *
+ * \heading{Notes}
+ *
+ * See the pulsar search code in lalapps for more
+ * example uses of the functions tested by this code.
+ *
+ */
 
 /** \name Error Codes */
 /*@{*/

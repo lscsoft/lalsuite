@@ -18,12 +18,13 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \ingroup pulsarApps
  * \brief Calculate the Fourier transform over the total timespan from a set of SFTs
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -55,7 +56,8 @@
 #define CFSV3_ERROR_MSG  "CFSv3 failed"
 
 /* ---------- local types ---------- */
-/** Structure containing input SFTs plus useful meta-data about those SFTs.
+/**
+ * Structure containing input SFTs plus useful meta-data about those SFTs.
  */
 typedef struct {
   MultiSFTVector *multiSFTs;	/**< input SFT vector */

@@ -19,7 +19,8 @@
 
 #include <lal/LALInspiralBank.h>
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief Function to calculate the determinant of a 3-dimensional matrix \f$g_{ij}\f$.
  * \author Sathyaprakash, B. S.
  *

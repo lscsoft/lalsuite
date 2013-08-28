@@ -189,7 +189,8 @@ Phi_i ( double tt, void *params )
 } /* Phi_i() */
 
 
-/** Compute a flat approximation for the continuous-wave metric (by neglecting the z-motion of
+/**
+ * Compute a flat approximation for the continuous-wave metric (by neglecting the z-motion of
  * the detector in ecliptic coordinates.
  *
  * gij has to be an allocated symmetric matrix of dimension \a dim: the order of coordinates
@@ -292,10 +293,11 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
 
 /* [OBSOLETE?] ================================================================================*/
 
-/** [OBSOLETE?] Compute the constant-coefficient approximate pulsar-metric.
- *  The returned metric symmetric matrix \f$g_{\alpha \beta}\f$
+/**
+ * [OBSOLETE?] Compute the constant-coefficient approximate pulsar-metric.
+ * The returned metric symmetric matrix \f$g_{\alpha \beta}\f$
  * is encoded in a 1D vector \f$v_l\f$ in the same
- *  way as in LALPulsarMetric(), namely:
+ * way as in LALPulsarMetric(), namely:
  * \f$g_{\alpha \beta} = v_l\f$, where for \f$\alpha<=\beta\f$
  * the vector-index \f$l\f$ is \f$l = \alpha + \beta \,(\beta + 1)/2\f$.
  *

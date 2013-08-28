@@ -25,7 +25,7 @@
  * coefficients which are required for calculating the factorized waveform
  * in EOBNRv2. Note that for some of the higher modes, the coefficients
  * are changed for the generation of the waveform compared to the generation
- * of the flux. Thus we have a function which adds these additional 
+ * of the flux. Thus we have a function which adds these additional
  * contributions to the already computed coefficients.
  */
 

@@ -19,12 +19,12 @@
 
 /**
  * \author B.S. Sathyaprakash
- \file
- \ingroup LALInspiral_h
-
- \brief This module computes the usual stationary phase approximation to the
- Fourier transform of a chirp waveform given by Eq.\eqref{eq_InspiralFourierPhase_f2}.
-
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief This module computes the usual stationary phase approximation to the
+ * Fourier transform of a chirp waveform given by Eq.\eqref{eq_InspiralFourierPhase_f2}.
+ *
  * \heading{Prototypes}
  *
  * <tt>LALInspiralStationaryPhaseApprox2()</tt>
@@ -63,9 +63,9 @@
  *
  * \heading{Uses}
  * \code
-   XLALInspiralSetup()
-   XLALInspiralChooseModel()
-   XLALInspiralTaylorF2Phasing[0234567]PN()
+ * XLALInspiralSetup()
+ * XLALInspiralChooseModel()
+ * XLALInspiralTaylorF2Phasing[0234567]PN()
  * \endcode
  *
  * \heading{Notes}
@@ -76,9 +76,7 @@
  * Fourier transform by a factor \f$n/2\f$ to be consistent with the
  * amplitude used in time-domain signal models.
  *
- *
- *
-*/
+ */
 
 #include "LALInspiral.h"
 

@@ -19,7 +19,8 @@
 
 #include <lal/LALInspiralBank.h>
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief A routine to transform a second rank tensor under a given transformation.
  * \author Sathyaprakash, B. S.
  *

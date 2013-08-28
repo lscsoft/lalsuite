@@ -28,26 +28,27 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup StreamOutput_h
-\author Creighton, T. D.
-
-   \brief Provides routines to write data from LAL data structures to an open stream.
-
-\heading{Synopsis}
-\code
-#include "StreamOutput.h"
-\endcode
-
-This header provides prototypes for routines that write the
-contents of LAL time/frequency series structures or grid structures to
-a file (or other I/O) stream, in a standard format.  The routines do
-not provide a system-level interface to create files and open or close
-file streams; they simply assume that they have been passed an open,
-writeable stream.  Nonetheless, because they involve I/O stream
-manipulation, these routines are placed in the \c lalsupport
-library rather than in \c lal proper.
-
-*/ /*@{*/
+ * \addtogroup StreamOutput_h
+ * \author Creighton, T. D.
+ *
+ * \brief Provides routines to write data from LAL data structures to an open stream.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include "StreamOutput.h"
+ * \endcode
+ *
+ * This header provides prototypes for routines that write the
+ * contents of LAL time/frequency series structures or grid structures to
+ * a file (or other I/O) stream, in a standard format.  The routines do
+ * not provide a system-level interface to create files and open or close
+ * file streams; they simply assume that they have been passed an open,
+ * writeable stream.  Nonetheless, because they involve I/O stream
+ * manipulation, these routines are placed in the \c lalsupport
+ * library rather than in \c lal proper.
+ *
+ */
+/*@{*/
 
 /** \name Error Codes */ /*@{*/
 #define STREAMOUTPUTH_ENUL 1    /**< Unexpected null pointer in arguments */

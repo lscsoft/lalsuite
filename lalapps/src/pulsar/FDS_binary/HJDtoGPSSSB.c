@@ -17,18 +17,19 @@
  *  MA  02111-1307  USA
  */
 
-/** \author C.Messenger
+/**
+ * \author C.Messenger
  * \ingroup pulsarApps
  * \file
  * \brief
  * This code is converts an HJD (Heliocentric Julian Date) to a GPS time defined at the
- * SSB (solar system barycenter).  
+ * SSB (solar system barycenter).
  *
- * It simply takes the dot product of the vector defining the sun location in the SSB 
- * frame with the unit vector defining the sky position of the source.  The quantity 
+ * It simply takes the dot product of the vector defining the sun location in the SSB
+ * frame with the unit vector defining the sky position of the source.  The quantity
  * (divided by c) is the time difference between a wave-front passing the heliocenter
  * and the SSB i.e the SBS time is equal to the heliocentric time *plus* this correction.
- * 
+ *
  * The accuracy of this code is only good to of order 0.01 seconds.
  *
  */
@@ -61,7 +62,8 @@
 /***********************************************************************************************/
 /* define internal structures */
 
-/** A structure that stores user input variables 
+/**
+ * A structure that stores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -104,8 +106,8 @@ REAL8 LALUTCMJDtoGPS(REAL8 MJDutc);
 /* empty initializers */
 UserInput_t empty_UserInput;
 
-/** The main function of semicoherentbinary.c
- *
+/**
+ * The main function of semicoherentbinary.c
  */
 int main( int argc, char *argv[] )
 {
@@ -263,8 +265,9 @@ int main( int argc, char *argv[] )
   
 } /* end of main */
 
-/** For a given set of binary parameters we solve the following function for
- *  the eccentric anomoly E
+/**
+ * For a given set of binary parameters we solve the following function for
+ * the eccentric anomoly E
  */
 static void TimeOfEmission(LALStatus *status,
 			   REAL8 *tr,
@@ -290,7 +293,8 @@ static void TimeOfEmission(LALStatus *status,
 
 }
 
-/** Read in input user arguments
+/**
+ * Read in input user arguments
  *
  */
 int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */ 
@@ -358,8 +362,8 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   
 }
 
-/** Compute the GPS time from an input UTC time in MJD format 
- *
+/**
+ * Compute the GPS time from an input UTC time in MJD format
  * This is a copy of an octapps code that Reinhard prix originally
  * copied from a lalapps code that no longer exists.
  *

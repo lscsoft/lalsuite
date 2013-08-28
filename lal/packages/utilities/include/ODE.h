@@ -42,11 +42,11 @@ extern "C" {
  *
  * These routines solve ordinary differential equations (ODEs) of the form:
  * \f[
- *   \dot{\mathbf{x}} = {\mathbf{f}}({\mathbf{x}},t,\ldots)
+ * \dot{\mathbf{x}} = {\mathbf{f}}({\mathbf{x}},t,\ldots)
  * \f]
  * where \f$\mathbf{f}\f$ is a specified vector-valued function.
  *
-*/
+ */
 /*@{*/
 
 /**\name Error Codes */

@@ -27,31 +27,29 @@
  */
 
 /**
-
-\author Brown, D. A. and Fairhurst, S.
-\file
-\ingroup lalmetaio
-\brief Provides functions for manipulating the LAL structures that correspond
-to the LIGO metadata database tables defined in \ref LIGOMetadataTables.h.
-
-\heading{Synopsis}
-\code
-#include <lal/LIGOMetadataUtils.h>
-\endcode
-
-This header provides prototypes for routines that perform processing
-on the LAL structures that correspond to the LIGO metadata database tables
-defined in \ref LIGOMetadataTables.h, such as sorting and eliminating
-duplictaes. The functions specific to a particular metadata table (e.g.
-\c sngl_inspiral, \c sngl_burst, etc.) are all prototyped in
-this header.
-
-\heading{Types}
-
-None.
-
-
-*/
+ * \author Brown, D. A. and Fairhurst, S.
+ * \file
+ * \ingroup lalmetaio
+ * \brief Provides functions for manipulating the LAL structures that correspond
+ * to the LIGO metadata database tables defined in \ref LIGOMetadataTables.h.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LIGOMetadataUtils.h>
+ * \endcode
+ *
+ * This header provides prototypes for routines that perform processing
+ * on the LAL structures that correspond to the LIGO metadata database tables
+ * defined in \ref LIGOMetadataTables.h, such as sorting and eliminating
+ * duplictaes. The functions specific to a particular metadata table (e.g.
+ * \c sngl_inspiral, \c sngl_burst, etc.) are all prototyped in
+ * this header.
+ *
+ * \heading{Types}
+ *
+ * None.
+ *
+ */
 
 #ifndef _LIGOMETADATAUTILS_H
 #define _LIGOMETADATAUTILS_H
@@ -88,9 +86,10 @@ extern "C" {
 
 /*@}*/
 
-/** The \c LALPlaygroundDataMask contains an enum type for describing the
-    subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
-*/
+/**
+ * The \c LALPlaygroundDataMask contains an enum type for describing the
+ * subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
+ */
 typedef enum
 {
   unspecified_data_type,

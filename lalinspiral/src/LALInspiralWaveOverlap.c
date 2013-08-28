@@ -18,33 +18,32 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-
-\brief Module to compute the overlap of a given data set with
-two orthogonal inspiral signals of specified parameters
-with a weight specified in a psd array. The code also returns
-in a parameter structure the maximum of the overlap, the bin
-where the maximum occured and the phase at the maximum.
-
-\heading{Prototypes}
-
-<tt>LALInspiralWaveOverlap()</tt>
-
-\heading{Description}
-\heading{Algorithm}
-\heading{Uses}
-\code
-LALInspiralWave()
-LALREAL4VectorFFT()
-LALInspiralWaveNormaliseLSO()
-LALInspiralWaveCorrelate()
-\endcode
-
-\heading{Notes}
-
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ *
+ * \brief Module to compute the overlap of a given data set with
+ * two orthogonal inspiral signals of specified parameters
+ * with a weight specified in a psd array. The code also returns
+ * in a parameter structure the maximum of the overlap, the bin
+ * where the maximum occured and the phase at the maximum.
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>LALInspiralWaveOverlap()</tt>
+ *
+ * \heading{Description}
+ * \heading{Algorithm}
+ * \heading{Uses}
+ * \code
+ * LALInspiralWave()
+ * LALREAL4VectorFFT()
+ * LALInspiralWaveNormaliseLSO()
+ * LALInspiralWaveCorrelate()
+ * \endcode
+ *
+ * \heading{Notes}
+ *
+ */
 #include <lal/LALNoiseModelsInspiral.h>
 
 void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1);

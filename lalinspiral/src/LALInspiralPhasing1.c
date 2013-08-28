@@ -18,42 +18,42 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief This module is used to set the phase of the waveform so that
-it is equal to the user specified phase \f$\phi_0\f$ when the `velocity' of the
-system is equal to \f$v.\f$
-
-\heading{Prototypes}
-
-<tt>XLALInspiralPhasing1()</tt>
-
-\heading{Description}
-
-The function \c XLALInspiralPhasing1() calculates the phase \f$\phi(v)\f$ using
-the phasing formula,
-\anchor phiofv \f{equation}{
-\phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
-\tag{phiofv}
-\f}
-\c XLALInspiralPhasing1() calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,
-\f$v\f$, \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.  The user can specify the phase to
-be of a particular value at an arbitrary point on the waveform when the
-post-Newtonian evolution variable \f$v\f$ reaches a specific value. Choosing
-\f$v=v_0,\f$ the initial velocity, means that the initial phase of the wave is \f$\phi_0;\f$
-Choosing \f$v=v_\textrm{lso}\f$ means that the phase at the last stable orbit is \f$\phi_0\f$ and
-so on.
-
-\heading{Algorithm}
-Numerical integration.
-
-\heading{Uses}
-XLALDRombergIntegrate()
-\heading{Notes}
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief This module is used to set the phase of the waveform so that
+ * it is equal to the user specified phase \f$\phi_0\f$ when the `velocity' of the
+ * system is equal to \f$v.\f$
+ *
+ * \heading{Prototypes}
+ *
+ * <tt>XLALInspiralPhasing1()</tt>
+ *
+ * \heading{Description}
+ *
+ * The function \c XLALInspiralPhasing1() calculates the phase \f$\phi(v)\f$ using
+ * the phasing formula,
+ * \anchor phiofv \f{equation}{
+ * \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
+ * \tag{phiofv}
+ * \f}
+ * \c XLALInspiralPhasing1() calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,
+ * \f$v\f$, \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.  The user can specify the phase to
+ * be of a particular value at an arbitrary point on the waveform when the
+ * post-Newtonian evolution variable \f$v\f$ reaches a specific value. Choosing
+ * \f$v=v_0,\f$ the initial velocity, means that the initial phase of the wave is \f$\phi_0;\f$
+ * Choosing \f$v=v_\textrm{lso}\f$ means that the phase at the last stable orbit is \f$\phi_0\f$ and
+ * so on.
+ *
+ * \heading{Algorithm}
+ * Numerical integration.
+ *
+ * \heading{Uses}
+ * XLALDRombergIntegrate()
+ * \heading{Notes}
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

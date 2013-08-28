@@ -18,28 +18,28 @@
 */
 
 /**
-\file
-\ingroup VectorIndexRange_h
-
-\brief Tests the routines in \ref VectorIndexRange.h, exercises some of the error conditions and makes sure that they work.
-
-\heading{Usage}
-\code
-VectorIndexRangeTest [options]
-Options:
-  -h         print help
-  -q         quiet: run silently
-  -v         verbose: print extra information
-  -d level   set lalDebugLevel to level
-\endcode
-
-\heading{Exit codes}
-<table><tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Success, normal exit.</td></tr>
-<tr><td>1</td><td>Subroutine failed.</td></tr>
-</table>
-
-*/
+ * \file
+ * \ingroup VectorIndexRange_h
+ *
+ * \brief Tests the routines in \ref VectorIndexRange.h, exercises some of the error conditions and makes sure that they work.
+ *
+ * \heading{Usage}
+ * \code
+ * VectorIndexRangeTest [options]
+ * Options:
+ * -h         print help
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * \endcode
+ *
+ * \heading{Exit codes}
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 

@@ -35,54 +35,54 @@
  */
 
 /**
-\author Sintes, A. M., Krishnan, B.
-\file
-\ingroup PHMD_h
-
-\heading{Program \ref TestPeak2PHMD.c}
-
-\brief Tests the construction of Partial-Hough-Map-Derivatives (\c phmd)
-
-\heading{Usage}
-\code
-TestPeak2PHMD [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
-\endcode
-
-\heading{Description}
-
-\%TO BE CHANGED
-
-This program generates a patch grid, calculates the parameters needed for
-building a \c lut, builds the \c lut, constructs a \c phmd at a
-certain frequency (shifted from the frequency at which the \c lut was built),
- and outputs the \c phmd into a file. The sky patch is set at the south pole,
-no spin-down parameters are assumed for the demodulation and
-every third  peak in the spectrum is selected. The peak-gram frequency interval
-is large enough to ensure compatibility with the \c lut and the frequency of the \c phmd.
-
-By default, running this program with no arguments simply tests the subroutines,
-producing an output file called <tt>OutHough.asc</tt>.  All default parameters are set from
-<tt>\#define</tt>d constants.
-
-The <b>-d</b> option sets the debug level to the specified value
-\c debuglevel.  The <b>-o</b> flag tells the program to print the partial Hough map
-derivative  to the specified data file \c outfile.  The
-<b>-f</b> option sets the intrinsic frequency \c f0 at which build the
-<tt>lut</tt>.   The <b>-p</b> option sets the velocity orientation of the detector
-\c alpha, \c delta (in radians).
-
-\heading{Uses}
-\code
-LALHOUGHCalcParamPLUT()
-LALHOUGHConstructPLUT()
-LALHOUGHPeak2PHMD()
-LALPrintError()
-LALMalloc()
-LALFree()
-LALCheckMemoryLeaks()
-\endcode
-
-*/
+ * \author Sintes, A. M., Krishnan, B.
+ * \file
+ * \ingroup PHMD_h
+ *
+ * \heading{Program \ref TestPeak2PHMD.c}
+ *
+ * \brief Tests the construction of Partial-Hough-Map-Derivatives (\c phmd)
+ *
+ * \heading{Usage}
+ * \code
+ * TestPeak2PHMD [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
+ * \endcode
+ *
+ * \heading{Description}
+ *
+ * \%TO BE CHANGED
+ *
+ * This program generates a patch grid, calculates the parameters needed for
+ * building a \c lut, builds the \c lut, constructs a \c phmd at a
+ * certain frequency (shifted from the frequency at which the \c lut was built),
+ * and outputs the \c phmd into a file. The sky patch is set at the south pole,
+ * no spin-down parameters are assumed for the demodulation and
+ * every third  peak in the spectrum is selected. The peak-gram frequency interval
+ * is large enough to ensure compatibility with the \c lut and the frequency of the \c phmd.
+ *
+ * By default, running this program with no arguments simply tests the subroutines,
+ * producing an output file called <tt>OutHough.asc</tt>.  All default parameters are set from
+ * <tt>\#define</tt>d constants.
+ *
+ * The <b>-d</b> option sets the debug level to the specified value
+ * \c debuglevel.  The <b>-o</b> flag tells the program to print the partial Hough map
+ * derivative  to the specified data file \c outfile.  The
+ * <b>-f</b> option sets the intrinsic frequency \c f0 at which build the
+ * <tt>lut</tt>.   The <b>-p</b> option sets the velocity orientation of the detector
+ * \c alpha, \c delta (in radians).
+ *
+ * \heading{Uses}
+ * \code
+ * LALHOUGHCalcParamPLUT()
+ * LALHOUGHConstructPLUT()
+ * LALHOUGHPeak2PHMD()
+ * LALPrintError()
+ * LALMalloc()
+ * LALFree()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ */
 
 #include <lal/PHMD.h>
 

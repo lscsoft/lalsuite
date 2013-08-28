@@ -48,9 +48,8 @@ extern "C" {
  * The definition of the Fourier transform is \f$ e^{2 \pi i f t} \f$
  * and the inline equation version of that is
  * \f[
- *  \tilde{h}_k = \sum
+ * \tilde{h}_k = \sum
  * \f]
- *
  *
  * \heading{Description}
  *
@@ -58,27 +57,27 @@ extern "C" {
  * transform time series \f$h_j\f$, \f$0\le j<n\f$, into a frequency series
  * \f$\tilde{h}_k\f$.  For LALTimeFreqRealFFT(),
  * \f[
- *    \tilde{h}_k = \Delta t \times H_k \;
- *    \mbox{for } 0\le k\le\lfloor n/2\rfloor
+ * \tilde{h}_k = \Delta t \times H_k \;
+ * \mbox{for } 0\le k\le\lfloor n/2\rfloor
  * \f]
  * The packing covers the range from dc (inclusive) to Nyquist (inclusive if
  * \f$n\f$ is even).
  * For LALTimeFreqComplexFFT(),
  * \f[
- *    \tilde{h}_k = \Delta t \left\{
- *    \begin{array}{ll}
- *      H_{k+\lfloor(n+1)/2\rfloor} &
- *        \mbox{for } 0\le k<\lfloor n/2\rfloor, \\
- *      H_{k-\lfloor n/2\rfloor} &
- *        \mbox{for } \lfloor n/2\rfloor\le k<n. \\
- *    \end{array}
- *    \right.
+ * \tilde{h}_k = \Delta t \left\{
+ * \begin{array}{ll}
+ * H_{k+\lfloor(n+1)/2\rfloor} &
+ * \mbox{for } 0\le k<\lfloor n/2\rfloor, \\
+ * H_{k-\lfloor n/2\rfloor} &
+ * \mbox{for } \lfloor n/2\rfloor\le k<n. \\
+ * \end{array}
+ * \right.
  * \f]
  * The packing covers the range from negative Nyquist (inclusive if \f$n\f$ is
  * even) up to (but not including) positive Nyquist.
  * Here \f$H_k\f$ is the DFT of \f$h_j\f$:
  * \f[
- *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}.
+ * H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}.
  * \f]
  * The units of \f$\tilde{h}_k\f$ are equal to the units of \f$h_j\f$ times seconds.
  *
@@ -176,9 +175,7 @@ extern "C" {
  * i.e., the original time series data should have \c f0 equal to zero.
  * </li></ol>
  *
- *
- *
-*/
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -215,7 +212,8 @@ extern "C" {
 /** \endcond */
 
 
-/** This type determines the method the type of average that will be used to
+/**
+ * This type determines the method the type of average that will be used to
  * compute the power sperum estimate by the LALREAL4AverageSpectrum()
  * function. The function computes a series of (possibly overlapping) power
  * spectra and computes the average using one of the following methods.
@@ -229,7 +227,8 @@ typedef enum
 }
 AvgSpecMethod;
 
-/** This structure controls the behaviour of the LALREAL4AverageSpectrum() function.
+/**
+ * This structure controls the behaviour of the LALREAL4AverageSpectrum() function.
  */
 typedef struct
 tagAverageSpectrumParams
