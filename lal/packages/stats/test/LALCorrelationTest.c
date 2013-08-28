@@ -31,25 +31,28 @@
 /* ****** DEFINE LOCAL CONSTANTS AND MACROS ************/
 
 /**
-\author Yakushin, Igor
-\file
-\ingroup LALCorrelation_h
-
-\brief [One-line description of test program]
-
-\heading{Usage}
-\code
-LALCorrelationTest
-\endcode
-
-\heading{Description}
-
-\heading{Uses}
-\code
-LALCorrelationTest()
-\endcode
-
-*/
+ * \author Yakushin, Igor
+ * \file
+ * \ingroup LALCorrelation_h
+ *
+ * \brief [One-line description of test program]
+ *
+ * ### Usage ###
+ *
+ * \code
+ * LALCorrelationTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCorrelationTest()
+ * \endcode
+ *
+ */
 
 /* *\name Error Codes */ /*@{*/
 #define LALCORRELATIONTESTC_ENOM 0	/**< Nominal exit */

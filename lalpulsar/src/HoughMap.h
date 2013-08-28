@@ -28,20 +28,19 @@ extern "C" {
  */
 
 /**
- *
  * \defgroup HoughMap_h Header HoughMap.h
  * \ingroup pkg_pulsarHough
  * \author Alicia M. Sintes and Badri Krishnan
  *
  * \brief Provides subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.
-
-\heading{Synopsis}
-
-\code
-#include <lal/HoughMap.h>
-\endcode
-
-*/
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/HoughMap.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /*
@@ -106,7 +105,8 @@ extern "C" {
  * 10. Structure, enum, union, etc., typdefs.
  */
 
-/** Total Hough Map pixel type.
+/**
+ * Total Hough Map pixel type.
  * Depending of the number of maps to accumulate
  * change both types \c HoughDT and \c HoughTT to \c INT2 or \c UINT2 respectively.
  */

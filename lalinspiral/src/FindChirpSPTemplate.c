@@ -28,34 +28,34 @@
  */
 
 /**
-
-\author Brown, D. A.
-\file
-\ingroup FindChirpSP_h
-
-\brief Provides functions to create stationary phase inspiral templates in a
-form that can be used by the <tt>FindChirpFilter()</tt> function.
-
-\heading{Prototypes}
-
-The function <tt>LALFindChirpSPTemplate()</tt> creates the stationary phase
-template as described by the algorithm below.
-
-\heading{Algorithm}
-
-Blah.
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-LALCreateVector()
-LALDestroyVector()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Brown, D. A.
+ * \file
+ * \ingroup FindChirpSP_h
+ *
+ * \brief Provides functions to create stationary phase inspiral templates in a
+ * form that can be used by the <tt>FindChirpFilter()</tt> function.
+ *
+ * ### Prototypes ###
+ *
+ * The function <tt>LALFindChirpSPTemplate()</tt> creates the stationary phase
+ * template as described by the algorithm below.
+ *
+ * ### Algorithm ###
+ *
+ * Blah.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * LALCreateVector()
+ * LALDestroyVector()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>

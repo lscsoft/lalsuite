@@ -18,31 +18,36 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-
-\brief Module to find events in a given data set with an SNR
-larger than a pre-specified threshold. The module uses
-two orthogonal inspiral signals of specified parameters
-with a weight specified in a psd array. The code returns
-the number of events found, and for each event the snr,
-the bin number and the phase of the template at that bin.
-
-\heading{Prototypes}
-
-<tt>LALInspiralFindEvents()</tt>
-
-\heading{Description}
-\heading{Algorithm}
-\heading{Uses}
-\code
-LALInspiralWave()
-LALREAL4VectorFFT()
-LALInspiralWaveNormalise()
-LALInspiralWaveCorrelate()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ *
+ * \brief Module to find events in a given data set with an SNR
+ * larger than a pre-specified threshold. The module uses
+ * two orthogonal inspiral signals of specified parameters
+ * with a weight specified in a psd array. The code returns
+ * the number of events found, and for each event the snr,
+ * the bin number and the phase of the template at that bin.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralFindEvents()</tt>
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALInspiralWave()
+ * LALREAL4VectorFFT()
+ * LALInspiralWaveNormalise()
+ * LALInspiralWaveCorrelate()
+ * \endcode
+ *
+ */
 #include <lal/LALNoiseModelsInspiral.h>
 
 void

@@ -18,11 +18,11 @@
 */
 
 /**
-\author Sathyaprakash, B. S., Cokelaer T.
-\file
-\brief NONE
-
-*/
+ * \author Sathyaprakash, B. S., Cokelaer T.
+ * \file
+ * \brief NONE
+ *
+ */
 /*-------------------------------------------------------------------*/
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>

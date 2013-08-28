@@ -36,7 +36,8 @@
 
 static int __chainfile_iter;
 
-/** structure holding internal state of the NS integrator
+/**
+ * structure holding internal state of the NS integrator
  */
 typedef struct tagNSintegralState
 {
@@ -95,8 +96,10 @@ static double logadd(double a,double b){
 static UINT4 checkForSingleAdapt(LALInferenceRunState *runState);
 static void SetupEigenProposals(LALInferenceRunState *runState);
 
-/** Update the internal state of the integrator after receiving the lowest logL
- * value logL */
+/**
+ * Update the internal state of the integrator after receiving the lowest logL
+ * value logL
+ */
 REAL8 incrementEvidenceSamples(LALInferenceRunState *runState, REAL8 logL, NSintegralState *s);
 REAL8 incrementEvidenceSamples(LALInferenceRunState *runState, REAL8 logL, NSintegralState *s)
 {

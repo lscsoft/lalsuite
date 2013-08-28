@@ -25,7 +25,6 @@
 /**
  * \addtogroup VectorMultiply_c
  * \author J. D. E. Creighton, T. D. Creighton, A. M. Sintes
-
  *
  * \brief Multiply two vectors.
  *
@@ -50,7 +49,7 @@
  *
  * The double-precison multiply routines (with \c D or \c Z names) work similarly.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithm for complex division is described in
  * Sec. 5.4 of Ref. [\ref ptvf1992].  The formula used is:

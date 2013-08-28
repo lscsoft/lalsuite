@@ -406,10 +406,10 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
  * index for densities > 10^18 kg/m^3.  The base-10 logarithm of the pressure in
  * Pa at a density of 10^17.7 kg/m^3 is specified by logp1_si.
  * @param logp1_si Base 10 logarithm of the pressure in Pa at the reference
- *                 density of 10^17.7 kg/m^3.
+ * density of 10^17.7 kg/m^3.
  * @param gamma1 Adiabatic index for densities below 10^17.7 kg/m^3.
  * @param gamma2 Adiabatic index for densities from 10^17.7 kg/m^3
- *               to 10^18 kg/m^3.
+ * to 10^18 kg/m^3.
  * @param gamma3 Adiabatic index for densities above 10^18 kg/m^3.
  * @return A pointer to a newly created EOS structure.
  */

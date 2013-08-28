@@ -31,21 +31,22 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup BandPassTimeSeries_h
-   \author Creighton, T. D.
-
-   \brief Provides routines to low- or high-pass filter a time series.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/BandPassTimeSeries.h>
-   \endcode
-
-This header covers routines that apply a time-domain low- or
-high-pass filter to a data series of type <tt>\<datatype\>TimeSeries</tt>.
-Further documentation is given in the individual routines' modules.
-
-*/
+ * \addtogroup BandPassTimeSeries_h
+ * \author Creighton, T. D.
+ *
+ * \brief Provides routines to low- or high-pass filter a time series.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/BandPassTimeSeries.h>
+ * \endcode
+ *
+ * This header covers routines that apply a time-domain low- or
+ * high-pass filter to a data series of type <tt>\<datatype\>TimeSeries</tt>.
+ * Further documentation is given in the individual routines' modules.
+ *
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -59,7 +60,8 @@ Further documentation is given in the individual routines' modules.
 #define BANDPASSTIMESERIESH_MSGEBAD "Bad filter parameters"
 /** \endcond */
 
-/** This structure stores data used for constructing a low- or high-pass
+/**
+ * This structure stores data used for constructing a low- or high-pass
  * filter: either the order and characteristic frequency of the filter,
  * or the frequencies and desired attenuations at the ends of some
  * transition band.  In the latter case, a nonzero filter order parameter

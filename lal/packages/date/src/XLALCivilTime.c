@@ -26,7 +26,8 @@
 
 #include "XLALLeapSeconds.h" /* contains the leap second table */
 
-/** \defgroup XLALCivilTime_c CivilTime
+/**
+ * \defgroup XLALCivilTime_c CivilTime
  * \ingroup Date_h
  * \author Chin, D. W. and Creighton, J. D. E.
  *
@@ -42,8 +43,8 @@
  * different reference epoch, which is called the UNIX epoch.
  *
  * The tricky bits are:
- *   - What about time zones?
- *   - What about leap seconds?
+ * - What about time zones?
+ * - What about leap seconds?
  *
  * This code does not deal with time zones at all.  All civil time structures
  * are taken to be in Coordinated Universal Time or UTC.  The user must convert
@@ -174,8 +175,10 @@ int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time
 }
 
 
-/** Returns the GPS seconds since the GPS epoch for a
- * specified UTC time structure. */
+/**
+ * Returns the GPS seconds since the GPS epoch for a
+ * specified UTC time structure.
+ */
 INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
   time_t unixsec;
@@ -202,8 +205,10 @@ INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time
 }
 
 
-/** Returns a pointer to a tm structure representing the time
- * specified in seconds since the GPS epoch.  */
+/**
+ * Returns a pointer to a tm structure representing the time
+ * specified in seconds since the GPS epoch.
+ */
 struct tm * XLALGPSToUTC(
     struct tm *utc, /**< [Out] Pointer to tm struct where result is stored. */
     INT4 gpssec /**< [In] Seconds since the GPS epoch. */
@@ -226,7 +231,8 @@ struct tm * XLALGPSToUTC(
 }
 
 
-/** Returns the Julian Day (JD) corresponding to the date given in a broken
+/**
+ * Returns the Julian Day (JD) corresponding to the date given in a broken
  * down time structure.
  *
  * See \ref esaa1992 and \ref green1985 for details.  First, some
@@ -298,12 +304,13 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
 }
 
 
-/** Returns the Modified Julian Day (MJD) corresponding to the date given
+/**
+ * Returns the Modified Julian Day (MJD) corresponding to the date given
  * in a broken down time structure.
  *
  * Note:
- *   - By convention, MJD is an integer.
- *   - MJD number starts at midnight rather than noon.
+ * - By convention, MJD is an integer.
+ * - MJD number starts at midnight rather than noon.
  *
  * If you want a Modified Julian Day that has a fractional part, simply use
  * the macro:
@@ -321,15 +328,16 @@ INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken 
   return mjd;
 }
 
-/** Fill in missing fields of a C 'tm' broken-down time struct.
+/**
+ * Fill in missing fields of a C 'tm' broken-down time struct.
  *
- *  We want to use the C time functions in to fill in values for 'tm_wday' and
- *  'tm_yday', and normalise the ranges of the other members. mktime() does this,
- *  but it also assumes local time, so that the 'tm' struct members are adjusted
- *  according to the timezone. timegm() would be a more appropriate, but it seems
- *  that it is not portable (BSD/Mac, but not standard GNU); neither is using the
- *  'timezone' variable to get the correct offset (works on GNU but not BSD/Mac!)
- *  The method used here (idea from somewhere on the internet) should be safe.
+ * We want to use the C time functions in to fill in values for 'tm_wday' and
+ * 'tm_yday', and normalise the ranges of the other members. mktime() does this,
+ * but it also assumes local time, so that the 'tm' struct members are adjusted
+ * according to the timezone. timegm() would be a more appropriate, but it seems
+ * that it is not portable (BSD/Mac, but not standard GNU); neither is using the
+ * 'timezone' variable to get the correct offset (works on GNU but not BSD/Mac!)
+ * The method used here (idea from somewhere on the internet) should be safe.
  */
 int XLALFillBrokenDownTime(struct tm *tm /**< Broken-down time struct. */) {
 

@@ -59,7 +59,8 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
-/** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle.
+/**
+ * A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle.
  */
 typedef struct tagSymmTensor3
 {
@@ -69,7 +70,8 @@ typedef struct tagSymmTensor3
 } SymmTensor3;
 
 
-/** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle, using REAL8 precision
+/**
+ * A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle, using REAL8 precision
  */
 typedef struct tagSymmTensor3d
 {
@@ -79,7 +81,8 @@ typedef struct tagSymmTensor3d
 } SymmTensor3d;
 
 
-/** Struct containing pre-computed quantites describing a
+/**
+ * Struct containing pre-computed quantites describing a
  * single detector arm: unit-vector along detector-arm, arm-length,
  * and arm "basis-tensor" n x n. This is used to speed up the
  * computation of LISA detector tensors in the rigid-adiabatic approximation.
@@ -93,7 +96,8 @@ typedef struct tagDetectorArm
 
 typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
 
-/** simple multi-IFO array of detector-information, standard LAL-vector
+/**
+ * simple multi-IFO array of detector-information, standard LAL-vector
  */
 typedef struct tagMultiLALDetector
 {
@@ -117,7 +121,8 @@ typedef struct tagMultiDetectorInfo
 } MultiDetectorInfo;
 
 /* ----- Output types for LALGetDetectorStates() */
-/** State-info about position, velocity and LMST of a detector together
+/**
+ * State-info about position, velocity and LMST of a detector together
  * with corresponding EarthState.
  */
 typedef struct tagDetectorState
@@ -132,7 +137,8 @@ typedef struct tagDetectorState
 } DetectorState;
 
 
-/** Timeseries of DetectorState's, representing the detector-info at different timestamps.
+/**
+ * Timeseries of DetectorState's, representing the detector-info at different timestamps.
  * In addition to the standard 'vector'-fields we also store the detector-info in here.
  */
 typedef struct tagDetectorStateSeries

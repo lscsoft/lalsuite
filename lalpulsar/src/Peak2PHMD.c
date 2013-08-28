@@ -29,35 +29,35 @@
 
 
 /**
-\author Sintes, A. M.
-\brief Construction of Partial-Hough-Map-Derivatives (\c phmd) given a peak-gram and the look-up-table.
-\ingroup PHMD_h
-
-\heading{Description}
-
-This routine produces a \c phmd at a certain frequency for a given  peak-gram and
-look-up-table.
-
-The inputs are:
-
-<tt>phmd->fBin</tt>: The frequency bin of this \c phmd.
-
-<tt>*lut</tt>: The look-up-table (of type  \c HOUGHptfLUT)
-
-<tt>*pg</tt>: The peak-gram  (of type  \c HOUGHPeakGram)
-
-The function LALHOUGHPeak2PHMD() makes sure that the  \c lut, the
-peak-gram and also the frequency of the \c phmd
-are compatible.
-
-The output <tt>HOUGHphmd  *phmd</tt> is  a structure
-containing the frequency bin of this \c phmd,
-the total number of borders of each type (<em>Left and Right</em>) to be
-marked, the pointers to the borders in the corresponding
-look-up-table, plus  \e border effects of clipping  on a finite
-patch.
-
-*/
+ * \author Sintes, A. M.
+ * \brief Construction of Partial-Hough-Map-Derivatives (\c phmd) given a peak-gram and the look-up-table.
+ * \ingroup PHMD_h
+ *
+ * ### Description ###
+ *
+ * This routine produces a \c phmd at a certain frequency for a given  peak-gram and
+ * look-up-table.
+ *
+ * The inputs are:
+ *
+ * <tt>phmd->fBin</tt>: The frequency bin of this \c phmd.
+ *
+ * <tt>*lut</tt>: The look-up-table (of type  \c HOUGHptfLUT)
+ *
+ * <tt>*pg</tt>: The peak-gram  (of type  \c HOUGHPeakGram)
+ *
+ * The function LALHOUGHPeak2PHMD() makes sure that the  \c lut, the
+ * peak-gram and also the frequency of the \c phmd
+ * are compatible.
+ *
+ * The output <tt>HOUGHphmd  *phmd</tt> is  a structure
+ * containing the frequency bin of this \c phmd,
+ * the total number of borders of each type (<em>Left and Right</em>) to be
+ * marked, the pointers to the borders in the corresponding
+ * look-up-table, plus  \e border effects of clipping  on a finite
+ * patch.
+ *
+ */
 void LALHOUGHPeak2PHMD (LALStatus    *status,
 			HOUGHphmd    *phmd, /* partial Hough map derivative */
 			HOUGHptfLUT  *lut, /* Look up table */
@@ -75,8 +75,10 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  /** lots of error checking of arguments -- asserts have been
-      replaced by aborts */
+/**
+ * lots of error checking of arguments -- asserts have been
+ * replaced by aborts
+ */
 
   /*   Make sure the arguments are not NULL: */
   if (phmd == NULL) {

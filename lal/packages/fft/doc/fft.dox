@@ -1,13 +1,13 @@
 /**
-\addtogroup pkg_fft
-
-\brief This package contains various routines for performing FFTs.
-
-@{
-\defgroup RealFFT_h 	Header RealFFT_h
-\defgroup ComplexFFT_h 	Header ComplexFFT_h
-\defgroup TimeFreqFFT_h Header TimeFreqFFT_h
-\defgroup Convolution_c Module Convolution.c
-@}
-
-*/
+ * \addtogroup pkg_fft
+ *
+ * \brief This package contains various routines for performing FFTs.
+ *
+ * @{
+ * \defgroup RealFFT_h 	Header RealFFT_h
+ * \defgroup ComplexFFT_h 	Header ComplexFFT_h
+ * \defgroup TimeFreqFFT_h Header TimeFreqFFT_h
+ * \defgroup Convolution_c Module Convolution.c
+ * @}
+ *
+ */

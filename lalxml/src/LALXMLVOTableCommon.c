@@ -642,7 +642,8 @@ XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of F
 
 } /* XLALCreateVOTTabledataNode () */
 
-/** Function to discover and parse the list of FIELD nodes in a given table,
+/**
+ * Function to discover and parse the list of FIELD nodes in a given table,
  * returns a vector holding the attributes of all read-in FIELD elements (in order)
  */
 VOTFieldVector *
@@ -773,7 +774,8 @@ XLALReadVOTFIELDNodes ( const xmlDocPtr xmlDocument,	/**< [in] The XML document 
 
 } /* XLALReadVOTFIELDNodes() */
 
-/** Function to read a given table column of elementary dataype from a TABLEDATA.
+/**
+ * Function to read a given table column of elementary dataype from a TABLEDATA.
  *
  * Note: this function does not support general array types in the table column.
  * Strings are always handled by returning an array of pointers, irrespective of the
@@ -895,7 +897,8 @@ XLALReadVOTTabledataSimpleColumn ( const xmlDocPtr xmlDocument, 	/**< [in] The X
 
 
 
-/** Creator function for a VOTFieldVector of given number of fields
+/**
+ * Creator function for a VOTFieldVector of given number of fields
  * Should be free'ed using XLALDestroyVOTFieldVector.
  */
 VOTFieldVector *
@@ -918,7 +921,8 @@ XLALCreateVOTFieldVector ( UINT4 numFields )
 } /* XLALCreateVOTFieldVector() */
 
 
-/** Destructor function for a VOTFieldVector.
+/**
+ * Destructor function for a VOTFieldVector.
  * Note: this frees all strings stored in the
  * VOTField elements using xmlFree(), so they must have been alloce'd
  * by an libxml2 function such as xmlGetProp(). Don't alloc them using XLALMalloc()!
@@ -1142,7 +1146,8 @@ XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,	/**< [in] Th
 } /* XLALReadVOTAttributeFromNamedElement() */
 
 
-/** Assemble an xpath-expression to a named elements's attribute, allowing for
+/**
+ * Assemble an xpath-expression to a named elements's attribute, allowing for
  * a hiearachical "path" of parent RESOURCES of the form "resource1.resource2....resourceN",
  */
 CHAR *
@@ -1214,7 +1219,8 @@ XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath,	/**< [in] optional 
 } /* XLALgetXPathToVOTElementAttibute() */
 
 
-/** Generate an xpath statement reflecting a VOT "extended" resource path.
+/**
+ * Generate an xpath statement reflecting a VOT "extended" resource path.
  *
  * Note: the 'extResourcePath' may contain unnamed element types prefixed by '\$', eg
  * 'resource1.resource2....resourceN.\$TABLE', in order to parse element inside \<TABLE\> under
@@ -1279,12 +1285,13 @@ XLALVOTResourcePath2XPath ( const CHAR *extResourcePath )
 
 
 
-/** Convert the given VOTable xmlTree into a complete VOTable XML document string
+/**
+ * Convert the given VOTable xmlTree into a complete VOTable XML document string
  *
  * This function takes a VOTable XML fragment and returns a full-fledged VOTable XML string.
  * Please note that all restrictions described for \ref XLALCreateVOTDocFromTree also apply here!
  *
- *  This function should be used for the final string-formatting of a VOTable XML-tree.
+ * This function should be used for the final string-formatting of a VOTable XML-tree.
  *
  * \author Oliver Bock, Reinhard Prix\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -1336,8 +1343,8 @@ XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
 
 
 
-/** Returns the string representation of the given VOTABLE_DATATYPE.
- *
+/**
+ * Returns the string representation of the given VOTABLE_DATATYPE.
  * Note: the returned string is const and MUST not be freed!
  */
 const char*
@@ -1394,7 +1401,8 @@ XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype )
 } /* XLALVOTDatatype2String() */
 
 
-/** Returns the string representation of the given VOTABLE_DATATYPE.
+/**
+ * Returns the string representation of the given VOTABLE_DATATYPE.
  *
  * Note: the returned string is const and MUST not be freed!
  */
@@ -1433,7 +1441,8 @@ XLALVOTElement2String ( VOTABLE_ELEMENT element )
 
 } /* XLALVOTElement2String() */
 
-/** Simply returns the enum VOTABLE_DATATYPE corresponding to the string representation of 'datatype'
+/**
+ * Simply returns the enum VOTABLE_DATATYPE corresponding to the string representation of 'datatype'
  * returns VOT_DATATYPE_LAST if invalid.
  */
 VOTABLE_DATATYPE
@@ -1477,7 +1486,8 @@ XLALVOTString2Datatype ( const char *datatypeString )
 
 
 
-/** Simply returns the string representation of the given VOTABLE_ATTRIBUTE
+/**
+ * Simply returns the string representation of the given VOTABLE_ATTRIBUTE
  */
 const char*
 XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute )
@@ -1529,7 +1539,8 @@ XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute )
 } /* XLALVOTAttribute2String() */
 
 
-/** Cleans whitespace in VOTable string representation from table-rows.
+/**
+ * Cleans whitespace in VOTable string representation from table-rows.
  *
  * Note: this function decides on the final formatting of the XML string:
  * we use standard lalxml2 indentation, except for successive <TD></TD> elements,
@@ -1644,7 +1655,8 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
 } /* XMLCleanVOTTableWhitespace() */
 
 
-/** Get (static & constant!) format string suitable for writing 'datatype'.
+/**
+ * Get (static & constant!) format string suitable for writing 'datatype'.
  * This is used for default printf-format in table writing.
  *
  * Note: the returned string pointer is static const and MUST *NOT* be free'ed!
@@ -1703,8 +1715,9 @@ XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype )
 } /* XLALgetDefaultFmt4Datatype() */
 
 
-/** Write a VOTable value of given primitive datatype, using element 'index' from array 'dataPtr',
- *  using the (optional) printf format string.
+/**
+ * Write a VOTable value of given primitive datatype, using element 'index' from array 'dataPtr',
+ * using the (optional) printf format string.
  *
  * NOTE: the returned string is a static pointer and MUST not be freed.
  * The livetime of the resulting string is only until the next call of this function.
@@ -1813,7 +1826,8 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
 } /* XLALVOTprintfFromArray() */
 
 
-/** Parse a string into the n'th entry in a given array, according to the given datatype.
+/**
+ * Parse a string into the n'th entry in a given array, according to the given datatype.
  *
  * This function is the 'scanf' analog to XLALVOTprintfFromArray() and is used to parse
  * table entries into an output array.
@@ -2044,7 +2058,8 @@ XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,	/**< [in] xmlDocument t
 } /* XLALFindVOTElementsAtPath() */
 
 
-/** Allocate an array of given datatype and number of elements
+/**
+ * Allocate an array of given datatype and number of elements
  */
 void *
 XLALVOTAllocateArray ( VOTABLE_DATATYPE datatype, UINT4 length )

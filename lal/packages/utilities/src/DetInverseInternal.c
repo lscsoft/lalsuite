@@ -25,65 +25,65 @@
 
 
 /**
-\defgroup \DetInverseInternal_c Module DetInverseInternal.c
-\ingroup MatrixUtils_h
-\author Creighton, T. D.
-
-\brief Internal routines used to compute matrix determinants and inverses.
-
-\heading{Description}
-
-These functions are called by the routines in \ref DetInverse_c to
-compute the determinant and inverse of a nondegenerate square matrix
-<tt>*matrix</tt>.  They are useful routines in their own right, though,
-so they are made publically available.
-
-<tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt> replace <tt>*matrix</tt>
-with an LU decomposition of a <em>row-wise permutation</em> of itself.
-The output parameter <tt>*indx</tt> stores the permutation, and the
-output <tt>*sgn</tt> records the sign of the permutation.
-
-<tt>LALSLUBackSub()</tt> and <tt>LALDLUBackSub()</tt> take the permuted
-LU-decomposed matrix returned by the above routine, and
-back-substitute the vector <tt>*vector</tt> representing \f$\mathsf{v}^a\f$
-in Eq.\eqref{eq_linear_system}, to compute the vector \f$\mathsf{x}^b\f$.
-This is returned in-place in <tt>*vector</tt>.  The input parameter
-<tt>*indx</tt> is the list of row permutations returned by the above
-routines.
-
-\heading{Algorithm}
-
-LU decomposition is performed by Crout's algorithm, described in
-Sec. 2.3 of [\ref ptvf1992]; the routines in this module are
-essentially re-implementations of the Numerical Recipes routines
-<tt>ludcmp()</tt> and <tt>lubksub()</tt>.  For large \f$N\f$, their operation
-counts are approximately \f$N^3/3\f$ and \f$N^2\f$, respectively.
-
-One difference between <tt>ludcmp()</tt> in [\ref ptvf1992] and the
-routines <tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt> in this
-module is the way in which singular matrices are handled.
-In [\ref ptvf1992], there is a distinction between between a
-manifestly singular matrix (where an entire row of the matrix is zero)
-and a numerically singular matrix (if a diagonal element in the
-decomposed matrix turns out to be zero).  In the former case, they
-raise an error signal; in the latter, they replace the offending
-element with a tiny but nonzero number and continue.  This
-treatment does not strike the present author as satisfactory.
-
-Instead, the routines <tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt>
-will \e always return successfully, even with a singular matrix,
-but will \e not adjust away a numerical singularity.  Instead,
-they will signal the presence of the singularity in two ways: First,
-they will set the permutation sign <tt>*sgn</tt> to zero; second, they
-will set \e all elements of the <tt>*indx</tt> vector yo zero.  This
-ensures that routines computing the determinant (whose sign depends on
-<tt>*sgn</tt>) will correctly give a zero determinant, while the
-meaningless <tt>*indx</tt> provides a simple sanity check for routines
-such as <tt>LALSLUBackSub()</tt> and <tt>LALDLUBackSub()</tt> that attempt
-to invert the linear system.  Note that the returned value of
-<tt>*matrix</tt> will be meaningless garbage.
-
-*/
+ * \defgroup \DetInverseInternal_c Module DetInverseInternal.c
+ * \ingroup MatrixUtils_h
+ * \author Creighton, T. D.
+ *
+ * \brief Internal routines used to compute matrix determinants and inverses.
+ *
+ * ### Description ###
+ *
+ * These functions are called by the routines in \ref DetInverse_c to
+ * compute the determinant and inverse of a nondegenerate square matrix
+ * <tt>*matrix</tt>.  They are useful routines in their own right, though,
+ * so they are made publically available.
+ *
+ * <tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt> replace <tt>*matrix</tt>
+ * with an LU decomposition of a <em>row-wise permutation</em> of itself.
+ * The output parameter <tt>*indx</tt> stores the permutation, and the
+ * output <tt>*sgn</tt> records the sign of the permutation.
+ *
+ * <tt>LALSLUBackSub()</tt> and <tt>LALDLUBackSub()</tt> take the permuted
+ * LU-decomposed matrix returned by the above routine, and
+ * back-substitute the vector <tt>*vector</tt> representing \f$\mathsf{v}^a\f$
+ * in Eq.\eqref{eq_linear_system}, to compute the vector \f$\mathsf{x}^b\f$.
+ * This is returned in-place in <tt>*vector</tt>.  The input parameter
+ * <tt>*indx</tt> is the list of row permutations returned by the above
+ * routines.
+ *
+ * ### Algorithm ###
+ *
+ * LU decomposition is performed by Crout's algorithm, described in
+ * Sec. 2.3 of [\ref ptvf1992]; the routines in this module are
+ * essentially re-implementations of the Numerical Recipes routines
+ * <tt>ludcmp()</tt> and <tt>lubksub()</tt>.  For large \f$N\f$, their operation
+ * counts are approximately \f$N^3/3\f$ and \f$N^2\f$, respectively.
+ *
+ * One difference between <tt>ludcmp()</tt> in [\ref ptvf1992] and the
+ * routines <tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt> in this
+ * module is the way in which singular matrices are handled.
+ * In [\ref ptvf1992], there is a distinction between between a
+ * manifestly singular matrix (where an entire row of the matrix is zero)
+ * and a numerically singular matrix (if a diagonal element in the
+ * decomposed matrix turns out to be zero).  In the former case, they
+ * raise an error signal; in the latter, they replace the offending
+ * element with a tiny but nonzero number and continue.  This
+ * treatment does not strike the present author as satisfactory.
+ *
+ * Instead, the routines <tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt>
+ * will \e always return successfully, even with a singular matrix,
+ * but will \e not adjust away a numerical singularity.  Instead,
+ * they will signal the presence of the singularity in two ways: First,
+ * they will set the permutation sign <tt>*sgn</tt> to zero; second, they
+ * will set \e all elements of the <tt>*indx</tt> vector yo zero.  This
+ * ensures that routines computing the determinant (whose sign depends on
+ * <tt>*sgn</tt>) will correctly give a zero determinant, while the
+ * meaningless <tt>*indx</tt> provides a simple sanity check for routines
+ * such as <tt>LALSLUBackSub()</tt> and <tt>LALDLUBackSub()</tt> that attempt
+ * to invert the linear system.  Note that the returned value of
+ * <tt>*matrix</tt> will be meaningless garbage.
+ *
+ */
 /*@{*/
 
 

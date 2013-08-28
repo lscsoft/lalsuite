@@ -20,7 +20,8 @@
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief A routine that fills an \c ::InspiralTemplate structure based on the values in the \c ::InspiralCoarseBankIn structure.
  * \author Churches, D. K and Sathyaprakash, B.S.
  *

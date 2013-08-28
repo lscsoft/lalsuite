@@ -18,61 +18,63 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup StackMetric_h
-
-\heading{Program <tt>StackMetricTest.c</tt>}
-\latexonly\label{ss_StackMetricTest_c}\endlatexonly
-
-\brief Computes the parameter space metric for a coherent pulsar search.
-
-\heading{Usage}
-\code
-StackMetricTest [-p n dt t0] [-l lat lon] [-d debuglevel]
-                [ra dec f0 [f1 [...]]]
-\endcode
-
-\heading{Description}
-
-This test program computes the stack search metric for a particular
-location in parameter space.  The following option flags are accepted:
-<ul>
-<li>[<tt>-p</tt>] Sets the search parameters: the number of stacks
-\c n, the length of each stack \c dt (in seconds), and the
-start time of the first stack \c t0 (in seconds of GPS time).</li>
-<li>[<tt>-l</tt>] Sets the detector latitude to \c lat (in
-radians north from the equator) and longitude to \c lon (in
-radians east of the prime meridian).</li>
-<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.</li>
-</ul>
-Once any of the above options are processed, any remaining
-command-line options are taken to be the parameter-space location of
-the source: its right ascension \c ra (in radians), its
-declination \c dec (in radians), its frequency \c f0 (in Hz),
-and zero or more spindown parameters \c f\f$k\f$ (in \f$\mathrm{Hz}^k\f$),
-all evaluated at the start time of the search \c t0.  If any (or
-all) of the command-line arguments are missing, they will be set from
-<tt>\#define</tt>d defaults.
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALMalloc()                     LALFree()
-LALDCreateVector()              LALDDestroyVector()
-LALStackMetric()                LALProjectMetric()
-LALTBaryPtolemaic()             LALDTBaryPtolemaic()
-LALTSpin()                      LALDTSpin()
-LALDTComp()
-LALGetEarthTimes()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup StackMetric_h
+ *
+ * ### Program <tt>StackMetricTest.c</tt> ###
+ *
+ * \brief Computes the parameter space metric for a coherent pulsar search.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * StackMetricTest [-p n dt t0] [-l lat lon] [-d debuglevel]
+ * [ra dec f0 [f1 [...]]]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test program computes the stack search metric for a particular
+ * location in parameter space.  The following option flags are accepted:
+ * <ul>
+ * <li>[<tt>-p</tt>] Sets the search parameters: the number of stacks
+ * \c n, the length of each stack \c dt (in seconds), and the
+ * start time of the first stack \c t0 (in seconds of GPS time).</li>
+ * <li>[<tt>-l</tt>] Sets the detector latitude to \c lat (in
+ * radians north from the equator) and longitude to \c lon (in
+ * radians east of the prime meridian).</li>
+ * <li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.</li>
+ * </ul>
+ * Once any of the above options are processed, any remaining
+ * command-line options are taken to be the parameter-space location of
+ * the source: its right ascension \c ra (in radians), its
+ * declination \c dec (in radians), its frequency \c f0 (in Hz),
+ * and zero or more spindown parameters \c f\f$k\f$ (in \f$\mathrm{Hz}^k\f$),
+ * all evaluated at the start time of the search \c t0.  If any (or
+ * all) of the command-line arguments are missing, they will be set from
+ * <tt>\#define</tt>d defaults.
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALPrintError()                 LALCheckMemoryLeaks()
+ * LALMalloc()                     LALFree()
+ * LALDCreateVector()              LALDDestroyVector()
+ * LALStackMetric()                LALProjectMetric()
+ * LALTBaryPtolemaic()             LALDTBaryPtolemaic()
+ * LALTSpin()                      LALDTSpin()
+ * LALDTComp()
+ * LALGetEarthTimes()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 /** \name Error Codes */ /*@{*/
 #define STACKMETRICTESTC_ENORM 0

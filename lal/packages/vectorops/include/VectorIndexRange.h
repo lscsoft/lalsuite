@@ -20,7 +20,8 @@ extern "C" {
  * VectorIndexHole() is "complementary" to VectorIndexRange(), in the sense that
  * it returns the two segments of the vector that would remain after VectorIndexRange() acts.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/VectorIndexRange.h>
  * \endcode

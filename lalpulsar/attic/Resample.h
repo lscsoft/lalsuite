@@ -27,86 +27,88 @@ extern "C" {
 #endif
 
 /**
-   \defgroup Resample_h Header Resample.h
-   \ingroup pkg_pulsarCommon
-   \author Creighton, T. D.
-   \brief Provides routines for resampling time series according to a new canonical time coordinate.
-
-\heading{Synopsis}
-\code
-#include <lal/Resample.h>
-\endcode
-
-One of the crucial problems in searching for
-constant-frequency astrophysical signals is removing the effects of
-Doppler modulation due to the Earth's motion.  This is normally
-accomplished by constructing a canonical time coordinate \f$\tau\f$ of an
-inertial frame (i.e.\ the <em>barycentred time</em>), and
-decimating/resampling the data at fixed intervals in \f$\tau\f$.  The
-reconstructed \f$\tau\f$ depends on the direction to the source relative
-to the Earth's motion; in addition, slow intrinsic parameterized
-modulations in the source frequency can also be corrected by this
-coordinate transformation.
-
-Most of the routines in this module assume that \f$\tau\f$ can be
-piecewise expanded as a Taylor series in \f$t\f$.  That is, one defines a
-set of fitting \e regions \f$T_i=[t_{\mathrm{bound}(i-1)},
-t_{\mathrm{bound}(i)}]\f$, and a set of fitting \e points
-\f$t_{(i)}\in T_i\f$.  In each region one then writes:
-\anchor eq_tau
-\f{equation}{
-\label{eq_tau}
-\tau(t) = \sum_{k=0} \frac{1}{k!}c_{k(i)}(t-t_{(i)})^k \; .
-\f}
-Since one is normally interested in tracking the difference
-\f$\tau(t)-t\f$, one can also write the expansion as:
-\anchor eq_delta-tau
-\f{equation}{
-\label{eq_delta-tau}
-\tau(t)-t = \sum_{k=0} a_{k(i)}(t-t_{(i)})^k \; ,
-\f}
-where
-\anchor eq_a_c
-\f{eqnarray}{
-a_{0(i)} & = & c_{0(i)}-t_{(i)}           \; , \nonumber\\
-a_{1(i)} & = & c_{1(i)}-1                 \; , \nonumber\\
-a_{k(i)} & = & c_{k(i)}/k! \; , \; k\geq2 \; . \nonumber
-\label{eq_a_c}
-\f}
-These are the polynomial coefficients normally assumed in the modules
-under this header.
-
-The procedure for resampling according to \f$\tau\f$ is normally combined
-with \e decimating the time series.  That is, one takes a time
-series sampled at constant intervals \f$\Delta t\f$ in \f$t\f$, and samples it
-at constant intervals \f$d\Delta t\f$ in \f$\tau\f$, where the
-<em>decimation factor</em> \f$d\f$ is normally taken to be an integer
-\f$\geq1\f$.  When \f$\tau\f$ and \f$t\f$ are drifting out of phase relatively
-slowly, this means that most of the time every \f$d^\mathrm{th}\f$ sample
-in the original time series becomes the next sample in the decimated
-time series.  However, when \f$\tau\f$ and \f$t\f$ drift out of synch by an
-amount \f$\pm\Delta t\f$, one can force the decimated time series to track
-\f$\tau\f$ (rather than \f$t\f$) by sampling the \f$d\pm1^\mathrm{th}\f$ next
-datum (rather than the \f$d^\mathrm{th}\f$).  If the drift is sufficiently
-rapid or \f$d\f$ is sufficiently large, one may be forced to choose the
-point \f$d\pm2\f$, \f$d\pm3\f$, etc.; the size of this adjustment is called
-the correction \e shift.  The number of (resampled) time intervals
-between one correction point and the next is called the correction
-\e interval.
-
-Unless otherwise specified, all time variables and parameters in the
-functions under this header can be assumed to measure the detector
-time coordinate \f$t\f$.  Canonical times are specified by giving the
-difference \f$\tau-t\f$.
-
-\heading{Caveat emptor:} The inclusion of this header and its
-associated modules into LAL is provisional at this time.  The routines
-and the test code appear to work, but a later standalone code,
-operating on much larger datasets, appeared to encounter a memory
-leak.  I have not yet determined whether this leak was in the
-standalone code or in these LAL routines.
-
-*/
+ * \defgroup Resample_h Header Resample.h
+ * \ingroup pkg_pulsarCommon
+ * \author Creighton, T. D.
+ * \brief Provides routines for resampling time series according to a new canonical time coordinate.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/Resample.h>
+ * \endcode
+ *
+ * One of the crucial problems in searching for
+ * constant-frequency astrophysical signals is removing the effects of
+ * Doppler modulation due to the Earth's motion.  This is normally
+ * accomplished by constructing a canonical time coordinate \f$\tau\f$ of an
+ * inertial frame (i.e.\ the <em>barycentred time</em>), and
+ * decimating/resampling the data at fixed intervals in \f$\tau\f$.  The
+ * reconstructed \f$\tau\f$ depends on the direction to the source relative
+ * to the Earth's motion; in addition, slow intrinsic parameterized
+ * modulations in the source frequency can also be corrected by this
+ * coordinate transformation.
+ *
+ * Most of the routines in this module assume that \f$\tau\f$ can be
+ * piecewise expanded as a Taylor series in \f$t\f$.  That is, one defines a
+ * set of fitting \e regions \f$T_i=[t_{\mathrm{bound}(i-1)},
+ * t_{\mathrm{bound}(i)}]\f$, and a set of fitting \e points
+ * \f$t_{(i)}\in T_i\f$.  In each region one then writes:
+ * \anchor eq_tau
+ * \f{equation}{
+ * \tag{eq_tau}
+ * \tau(t) = \sum_{k=0} \frac{1}{k!}c_{k(i)}(t-t_{(i)})^k \; .
+ * \f}
+ * Since one is normally interested in tracking the difference
+ * \f$\tau(t)-t\f$, one can also write the expansion as:
+ * \anchor eq_delta-tau
+ * \f{equation}{
+ * \tag{eq_delta-tau}
+ * \tau(t)-t = \sum_{k=0} a_{k(i)}(t-t_{(i)})^k \; ,
+ * \f}
+ * where
+ * \anchor eq_a_c
+ * \f{eqnarray}{
+ * a_{0(i)} & = & c_{0(i)}-t_{(i)}           \; , \nonumber\\
+ * a_{1(i)} & = & c_{1(i)}-1                 \; , \nonumber\\
+ * a_{k(i)} & = & c_{k(i)}/k! \; , \; k\geq2 \; . \nonumber
+ * \tag{eq_a_c}
+ * \f}
+ * These are the polynomial coefficients normally assumed in the modules
+ * under this header.
+ *
+ * The procedure for resampling according to \f$\tau\f$ is normally combined
+ * with \e decimating the time series.  That is, one takes a time
+ * series sampled at constant intervals \f$\Delta t\f$ in \f$t\f$, and samples it
+ * at constant intervals \f$d\Delta t\f$ in \f$\tau\f$, where the
+ * <em>decimation factor</em> \f$d\f$ is normally taken to be an integer
+ * \f$\geq1\f$.  When \f$\tau\f$ and \f$t\f$ are drifting out of phase relatively
+ * slowly, this means that most of the time every \f$d^\mathrm{th}\f$ sample
+ * in the original time series becomes the next sample in the decimated
+ * time series.  However, when \f$\tau\f$ and \f$t\f$ drift out of synch by an
+ * amount \f$\pm\Delta t\f$, one can force the decimated time series to track
+ * \f$\tau\f$ (rather than \f$t\f$) by sampling the \f$d\pm1^\mathrm{th}\f$ next
+ * datum (rather than the \f$d^\mathrm{th}\f$).  If the drift is sufficiently
+ * rapid or \f$d\f$ is sufficiently large, one may be forced to choose the
+ * point \f$d\pm2\f$, \f$d\pm3\f$, etc.; the size of this adjustment is called
+ * the correction \e shift.  The number of (resampled) time intervals
+ * between one correction point and the next is called the correction
+ * \e interval.
+ *
+ * Unless otherwise specified, all time variables and parameters in the
+ * functions under this header can be assumed to measure the detector
+ * time coordinate \f$t\f$.  Canonical times are specified by giving the
+ * difference \f$\tau-t\f$.
+ *
+ * \par Caveat emptor:
+ * The inclusion of this header and its
+ * associated modules into LAL is provisional at this time.  The routines
+ * and the test code appear to work, but a later standalone code,
+ * operating on much larger datasets, appeared to encounter a memory
+ * leak.  I have not yet determined whether this leak was in the
+ * standalone code or in these LAL routines.
+ *
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -145,8 +147,9 @@ typedef struct tagResampleRules {
 } ResampleRules;
 
 
-/** Parameters of the piecewise polynomial fit of \f$\tau-t\f$ as a function of \f$t\f$, see
- *  Eq.\eqref{eq_delta-tau} for notation.
+/**
+ * Parameters of the piecewise polynomial fit of \f$\tau-t\f$ as a function of \f$t\f$, see
+ * Eq.\eqref{eq_delta-tau} for notation.
  */
 typedef struct tagPolycoStruc {
   REAL4 ra;  			/**< Right ascension angle of the source, in \e radians in the range \f$[0,2\pi)\f$ */
@@ -172,7 +175,8 @@ typedef struct tagPolycoStruc {
 } PolycoStruc;
 
 
-/** Extra parameters required to construct a ResampleRules object from a PolycoStruc object.
+/**
+ * Extra parameters required to construct a ResampleRules object from a PolycoStruc object.
  */
 typedef struct tagResampleParamStruc{
   LIGOTimeGPS start;    /**< The initial time for which the resample rules will apply */

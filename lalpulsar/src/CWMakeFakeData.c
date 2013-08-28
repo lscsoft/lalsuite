@@ -19,7 +19,6 @@
 
 
 /**
- *
  * \author Reinhard Prix
  * \ingroup CWMakeFakeData_h
  * \brief Functions to generate 'fake' data containing CW signals and/or Gaussian noise.
@@ -598,12 +597,12 @@ XLALDestroyPulsarParams ( PulsarParams *params )
  * defining the following required and optional parameters:
  *
  * REQUIRED:
- *  Alpha, Delta, Freq, refTime
+ * Alpha, Delta, Freq, refTime
  *
  * OPTIONAL:
- *  f1dot, f2dot, f3dot, f4dot, f5dot, f6dot
- *  {h0, cosi} or {aPlus, aCross}, psi, phi0
- *  transientWindowType, transientStartTime, transientTauDays
+ * f1dot, f2dot, f3dot, f4dot, f5dot, f6dot
+ * {h0, cosi} or {aPlus, aCross}, psi, phi0
+ * transientWindowType, transientStartTime, transientTauDays
  *
  * Other config-variables found in the file will ... ?? error or accept?
  */

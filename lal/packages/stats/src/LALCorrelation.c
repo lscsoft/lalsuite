@@ -42,29 +42,30 @@ static REAL4 findCrossProduct( REAL4 data1[], REAL4 mean1, REAL4 data2[], REAL4 
 
 /* ****** DEFINE GLOBAL FUNCTIONS ************/
 
-/** \brief LALCorrelation() is designed to compute a time shifted correlation between two time series given in <tt>input-\>one</tt> and <tt>input-\>two</tt>.
-    \author Yakushin, Igor
-
-The maximum time shift in nanoseconds is given in <tt>params->maxTimeShiftNan</tt>. The output consists of a correlation for each
-time shift in the range <tt>out->timeShiftedCorrelation</tt>, maximum and minimum values of correlations and corresponding time shifts.
-The original intention is to use this function to test coincendence bursts found in two detectors for correlation.
-For this to work one must apply a response function to the raw time series in order to get rid of hardware specific contributions
-to each time series. The signature of the coincendence event is a clear maximum above some threshold in the graph of correlation vs time shift
-(no more than 10 ms).
-
-One might, of course, try to use the code to search for any correlations in the data caused by any kind of gravitational waves but
-that seems to be too computationally expensive.
-
-\heading{Algorithm}
-
-Just a straightforward computation of correlation for different time shifts. This computation is applied to time series of the length
-<tt>originalLength - maxShift</tt>.
-
-\heading{Notes}
-
-One must figure out how to prefilter the raw data, what length of time series s appropriate to use, what
-threshold on the maximum correlation value should be applied to declare a good correlation.
-*/
+/**
+ * \brief LALCorrelation() is designed to compute a time shifted correlation between two time series given in <tt>input-\>one</tt> and <tt>input-\>two</tt>.
+ * \author Yakushin, Igor
+ *
+ * The maximum time shift in nanoseconds is given in <tt>params->maxTimeShiftNan</tt>. The output consists of a correlation for each
+ * time shift in the range <tt>out->timeShiftedCorrelation</tt>, maximum and minimum values of correlations and corresponding time shifts.
+ * The original intention is to use this function to test coincendence bursts found in two detectors for correlation.
+ * For this to work one must apply a response function to the raw time series in order to get rid of hardware specific contributions
+ * to each time series. The signature of the coincendence event is a clear maximum above some threshold in the graph of correlation vs time shift
+ * (no more than 10 ms).
+ *
+ * One might, of course, try to use the code to search for any correlations in the data caused by any kind of gravitational waves but
+ * that seems to be too computationally expensive.
+ *
+ * ### Algorithm ###
+ *
+ * Just a straightforward computation of correlation for different time shifts. This computation is applied to time series of the length
+ * <tt>originalLength - maxShift</tt>.
+ *
+ * ### Notes ###
+ *
+ * One must figure out how to prefilter the raw data, what length of time series s appropriate to use, what
+ * threshold on the maximum correlation value should be applied to declare a good correlation.
+ */
 void
 LALCorrelation( LALStatus                      *status,
 		OutputCorrelation              **out,

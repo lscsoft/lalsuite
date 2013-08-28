@@ -27,36 +27,36 @@
  */
 
 /**
-
-\author Anderson, W. G., and Brown D. A.
-\file
-\ingroup FindChirpChisq_h
-
-\brief Module to implement the \f$\chi^2\f$ veto for the stationary phase chirp.
-
-\heading{Description}
-
-The function <tt>LALFindChirpChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on
-an entire data segment using the algorithm described below. On exit the
-vector \c chisqVec contains the value \f$\chi^2(t_j)\f$ for the data
-segment.
-
-\heading{Algorithm}
-
-chisq algorithm here
-
-\heading{Uses}
-\code
-LALCreateReverseComplexFFTPlan()
-LALDestroyComplexFFTPlan()
-LALCCreateVector()
-LALCDestroyVector()
-LALCOMPLEX8VectorFFT()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Anderson, W. G., and Brown D. A.
+ * \file
+ * \ingroup FindChirpChisq_h
+ *
+ * \brief Module to implement the \f$\chi^2\f$ veto for the stationary phase chirp.
+ *
+ * ### Description ###
+ *
+ * The function <tt>LALFindChirpChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on
+ * an entire data segment using the algorithm described below. On exit the
+ * vector \c chisqVec contains the value \f$\chi^2(t_j)\f$ for the data
+ * segment.
+ *
+ * ### Algorithm ###
+ *
+ * chisq algorithm here
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCreateReverseComplexFFTPlan()
+ * LALDestroyComplexFFTPlan()
+ * LALCCreateVector()
+ * LALCDestroyVector()
+ * LALCOMPLEX8VectorFFT()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>

@@ -26,8 +26,8 @@
 
 #define INSTRUCTIONS    fprintf(nb, "This notebook will produce an animated 3D plot of your template bank.  See the next section to change any user variables before evaluating.  The cells of this notebook must be evaluated sequentially.  If you wish to evaluate the entire notebook at once press Ctrl+A then press Shift+Enter in most operating systems.")
 
-/** \brief This function is for plotting 3D template banks by creating a MATHEMATICA notebook.
- *
+/**
+ * \brief This function is for plotting 3D template banks by creating a MATHEMATICA notebook.
  * \ingroup LALMathematica_h
  * \author Hanna, C. R.
  *
@@ -35,16 +35,16 @@
  * points in a three dimensional lattice.  The plot is animated so the user
  * can see the template bank from different perspectives.  See Fig.\figref{LALMathematicaHplot}.
  *
- \floatfig{htbp,LALMathematicaHplot}
- \image html  LALMathematicaHplot1.png "Fig. [LALMathematicaHplot]: an example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
- \image latex LALMathematicaHplot1.pdf "An example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
+ * \image html  LALMathematicaHplot1.png "Fig. [LALMathematicaHplot]: an example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
+ * \image latex LALMathematicaHplot1.pdf "An example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
  *
  * Currently the plot doesn't show the contour of the templates; it renders them as
  * spheres.  In the case of metrics with disimilar scales along the
  * principle directions you will notice considerable space between points
  * accordingly.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> The output of this function is &quot;Math3DNotebook.nb&quot; and will appear
  * in the directory of the program that called this function.</li>
@@ -55,7 +55,6 @@
  * to avoid overwriting previous files.
  * </li>
  * </ul>
- *
  *
  */
 void

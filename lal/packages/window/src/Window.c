@@ -857,7 +857,8 @@ XLALParseWindowNameAndCheckBeta ( const char *windowName,	//< [in] window-name t
 
 } // XLALParseWindowNameAndCheckBeta()
 
-/** Generic window-function wrapper, allowing to select a window by its name.
+/**
+ * Generic window-function wrapper, allowing to select a window by its name.
  * windowBeta must be set to '0' for windows without parameter.
  */
 REAL8Window *

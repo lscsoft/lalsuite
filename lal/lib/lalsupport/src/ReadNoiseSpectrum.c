@@ -60,30 +60,30 @@ static UINT4 mylocate(REAL8 *farray, REAL8 target, UINT4 n)
  *********************************************************************/
 
 
-/** \ingroup ReadNoiseSpectrum_h
-
-    \brief Function to read in noise spectrum from a formatted ascii file and return the
-    amplitude noise spectrum in \f$\textrm{strain}/\sqrt{\textrm{Hz}}\f$.
-
-\heading{Description}
-
-<tt>LALReadNoiseSpectrum()</tt> fills the contents of the REAL4FrequencySeries
-\c spectrum from data read from formatted ascii file with name \c fname.
-The ascii file should have a header (greater than or equal to one line) which is
-indicated by a \f$\#\f$ at the start of the line.   The first line of the file must
-contain the number of points at which the spectrum is sampled.  If the spectrum
-is sampled at 500 different points,  then the first line would be
-\code
-    # npoints=500
-\endcode
-Replace 500 by the number of sample points in your particular data.
-
-The REAL4FrequencySeries \c spectrum should be allocated before calling the
-routine which uses the \c length and metadata information to determine the
-evenly sampled output that is reqruired.   The function does nearest neighbor
-interpolation to get the points in the outpu frequency series.
-
-*/
+/**
+ * \ingroup ReadNoiseSpectrum_h
+ * \brief Function to read in noise spectrum from a formatted ascii file and return the
+ * amplitude noise spectrum in \f$\textrm{strain}/\sqrt{\textrm{Hz}}\f$.
+ *
+ * ### Description ###
+ *
+ * <tt>LALReadNoiseSpectrum()</tt> fills the contents of the REAL4FrequencySeries
+ * \c spectrum from data read from formatted ascii file with name \c fname.
+ * The ascii file should have a header (greater than or equal to one line) which is
+ * indicated by a \f$\#\f$ at the start of the line.   The first line of the file must
+ * contain the number of points at which the spectrum is sampled.  If the spectrum
+ * is sampled at 500 different points,  then the first line would be
+ * \code
+ * # npoints=500
+ * \endcode
+ * Replace 500 by the number of sample points in your particular data.
+ *
+ * The REAL4FrequencySeries \c spectrum should be allocated before calling the
+ * routine which uses the \c length and metadata information to determine the
+ * evenly sampled output that is reqruired.   The function does nearest neighbor
+ * interpolation to get the points in the outpu frequency series.
+ *
+ */
     void
 LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fname)
 {

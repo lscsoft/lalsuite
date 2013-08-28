@@ -25,7 +25,7 @@
  * a non-quasicircular correction (NQC) to bring the peak of the EOB frequency
  * into agreement with that of NR simulations. This file contains the functions
  * used to calculate these NQC corrections, described in DCC document T1100433.
- * The fits to NR peak amplitude, frequency, and their derivatives, are taken 
+ * The fits to NR peak amplitude, frequency, and their derivatives, are taken
  * from Pan et al. PRD 84 124052 (2011), for EOBNRv2, and
  * from Taracchini et al. PRD 86, 024011 (2012), for SEOBNRv1.
  */
@@ -57,7 +57,7 @@
  * Compute the time offset which should be used in computing the
  * non-quasicircular correction and performing the ringdown attachment.
  * These numbers were tuned to numerical relativity simulations, and
- * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II. 
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II.
  */
  static REAL8 XLALSimIMREOBGetNRPeakDeltaT( 
                          INT4 l,    /**<< Mode l */ 
@@ -120,7 +120,7 @@
 /**
  * Function which returns a value of the expected peak amplitude
  * taken from a fit to numerical relativity simulations. The functions
- * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II.  
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II.
  */
 static inline
 REAL8 GetNRPeakAmplitude( 
@@ -184,7 +184,7 @@ REAL8 GetNRPeakAmplitude(
 /**
  * Function which returns second derivative of the amplitude at the peak
  * taken from a fit to numerical relativity simulations. The functions
- * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II. 
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II.
  */
 static inline
 REAL8 GetNRPeakADDot( 
@@ -249,7 +249,7 @@ REAL8 GetNRPeakADDot(
 /**
  * Function which returns a value of the expected peak frequency
  * taken from a fit to numerical relativity simulations. The functions
- * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II. 
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II.
  */
 static inline 
 REAL8 GetNRPeakOmega( 
@@ -313,7 +313,7 @@ REAL8 GetNRPeakOmega(
 /**
  * Function which returns the derivative of the expected peak frequency
  * taken from a fit to numerical relativity simulations. The functions
- * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II. 
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II.
  */
 static inline 
 REAL8 GetNRPeakOmegaDot( 
@@ -378,7 +378,7 @@ REAL8 GetNRPeakOmegaDot(
 /**
  * For the 2,2 mode, there are fits available for the NQC coefficients,
  * given in Eqs.(40a)-(40c) of Pan et al, PRD84, 124052(2011).
- * This function provides the values of these coefficients, so the 
+ * This function provides the values of these coefficients, so the
  * correction can be used in the dynamics prior to finding the more
  * accurate NQC values later on.
  */
@@ -415,10 +415,10 @@ UNUSED static int XLALSimIMREOBGetCalibratedNQCCoeffs(
 }
 
 /**
- * This function calculates the non-quasicircular correction to apply to 
- * the waveform. The form of this correction can be found in Pan et al, 
+ * This function calculates the non-quasicircular correction to apply to
+ * the waveform. The form of this correction can be found in Pan et al,
  * PRD84, 124052(2011), Eq.(22), and also in the DCC document T1100433. Note
- * that when calling this function, the NQC coefficients should already 
+ * that when calling this function, the NQC coefficients should already
  * have been pre-computed.
  */
 UNUSED static int  XLALSimIMREOBNonQCCorrection(
@@ -464,7 +464,7 @@ UNUSED static int  XLALSimIMREOBNonQCCorrection(
 /**
  * This function computes the coefficients a1, a2, etc. used in the
  * non-quasicircular correction. The details of the calculation of these
- * coefficients are found in the DCC document T1100433. 
+ * coefficients are found in the DCC document T1100433.
  */
 UNUSED static int XLALSimIMREOBCalculateNQCCoefficients(
                  EOBNonQCCoeffs * restrict coeffs,    /**<< OUTPUT, NQC coefficients */
@@ -808,9 +808,9 @@ UNUSED static inline REAL8 GetNRSpinPeakOmegaDot( INT4 UNUSED l, INT4 UNUSED m, 
 }
 
 /**
- * Function to interpolate known amplitude NQC coeffcients of spin terms, 
- * namely a3s, a4 and a5. 
- * The a3s, a4 and a5 values were calculated for 
+ * Function to interpolate known amplitude NQC coeffcients of spin terms,
+ * namely a3s, a4 and a5.
+ * The a3s, a4 and a5 values were calculated for
  * 11 mass ratios q=1,1.5,2,3,4,5,6,10,20,50 and 100, and
  * 19 spin (\f$\chi\f$ defined in Taracchini et al. PRD 86, 024011 (2012)) values
  * chi = -1, -0.9, -0.8, ......, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65.
@@ -1096,8 +1096,8 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict c
 /**
  * This function computes the coefficients a3s, a4, etc. used in the
  * non-quasicircular correction. The details of the calculation of these
- * coefficients are found in the DCC document T1100433. 
- * In brief, this function populates and solves the linear equations 
+ * coefficients are found in the DCC document T1100433.
+ * In brief, this function populates and solves the linear equations
  * Eq. 18 (for amplitude) and Eq. 19 (for phase) of the DCC document T1100433v2.
  */
 UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(

@@ -49,52 +49,53 @@
 #define UNUSED
 #endif
 
-/** \defgroup CoincInspiralEllipsoid_c Module CoincInspiralEllipsoid.c
-    \ingroup CoincInspiralEllipsoid_h
-
-\heading{Description}
-
-<tt>LALCreateTwoIFOCoincListEllipsoid()</tt> takes in a linked list of
-single inspiral tables and returns a list of two instrument coincidences.
-To determine coincidence, the triggers are modelled as ellipsoids in the
-parameter space. Triggers are deemed to be coincident if these ellipsoids
-are found to overlap.The ellipsoid scaling factor is given within the
-\c accuracyParams structure. When single inspirals from two different
-instruments are found to be coincident, the code creates a new
-\c coincInspiralTable and uses <tt>LALAddSnglInspiralToCoinc()</tt>
-to add the single inspirals to the coinc. The function returns
-\c coincOutput which is a pointer to the head of a linked list of
-\c CoincInspiralTables.
-
-<tt>XLALSnglInspiralCoincTestEllipsoid()</tt> is used in the creation of
-multiple IFO coincident events. It is called by <tt>LALCreateNIFOCoincList()</tt>
-when the coincidence test is set to be ellipsoid. Unlike in other coincidence
-tests, coincidence here is determined by the use of event ids as opposed to
-calling the comparison function. This is because the test for ellipsoid overlap
-uses matrix inversions and function maximizations, which are potentially costly
-operations. If all members of the coinc are found to be
-coincident with the single, then <tt>accuracyParams.match</tt> is set to 1,
-otherwise to 0.
-
-<tt>XLALCompareInspiralsEllipsoid()</tt> checks for the overlap of ellipsoids
-associated with two single inspiral tables. The ellipsoid scaling factor is
-provided by \c accuracyParams. If the ellipsoids are found to overlap,
-1 is returned; otherwise 0 is returned.
-
-<tt>XLALCalculateEThincaParameter()</tt> calculates the maximum e-thinca
-parameter between two single inspiral tables. It does this using a bisection
-method, and uses <tt>XLALCompareInspiralsEllipsoid()</tt> to check for overlap.
-The maximum value for the e-thinca parameter is returned. If the two triggers
-do not overlap for an e-thinca parameter of 2.0, the triggers are not
-coincident, and an error is thrown.
-
-<tt>XLALCalculateEThincaParameterForInjection()</tt> takes in a
-\c SnglInspiralTable and a \c SimInspiralTable, and returns the
-e-thinca parameter between the trigger and the injection. This amounts to
-calculating the square of the metric distance between the two points in
-\f$(t_C, \tau_0, \tau_3)\f$ space.
-
-*/
+/**
+ * \defgroup CoincInspiralEllipsoid_c Module CoincInspiralEllipsoid.c
+ * \ingroup CoincInspiralEllipsoid_h
+ *
+ * ### Description ###
+ *
+ * <tt>LALCreateTwoIFOCoincListEllipsoid()</tt> takes in a linked list of
+ * single inspiral tables and returns a list of two instrument coincidences.
+ * To determine coincidence, the triggers are modelled as ellipsoids in the
+ * parameter space. Triggers are deemed to be coincident if these ellipsoids
+ * are found to overlap.The ellipsoid scaling factor is given within the
+ * \c accuracyParams structure. When single inspirals from two different
+ * instruments are found to be coincident, the code creates a new
+ * \c coincInspiralTable and uses <tt>LALAddSnglInspiralToCoinc()</tt>
+ * to add the single inspirals to the coinc. The function returns
+ * \c coincOutput which is a pointer to the head of a linked list of
+ * \c CoincInspiralTables.
+ *
+ * <tt>XLALSnglInspiralCoincTestEllipsoid()</tt> is used in the creation of
+ * multiple IFO coincident events. It is called by <tt>LALCreateNIFOCoincList()</tt>
+ * when the coincidence test is set to be ellipsoid. Unlike in other coincidence
+ * tests, coincidence here is determined by the use of event ids as opposed to
+ * calling the comparison function. This is because the test for ellipsoid overlap
+ * uses matrix inversions and function maximizations, which are potentially costly
+ * operations. If all members of the coinc are found to be
+ * coincident with the single, then <tt>accuracyParams.match</tt> is set to 1,
+ * otherwise to 0.
+ *
+ * <tt>XLALCompareInspiralsEllipsoid()</tt> checks for the overlap of ellipsoids
+ * associated with two single inspiral tables. The ellipsoid scaling factor is
+ * provided by \c accuracyParams. If the ellipsoids are found to overlap,
+ * 1 is returned; otherwise 0 is returned.
+ *
+ * <tt>XLALCalculateEThincaParameter()</tt> calculates the maximum e-thinca
+ * parameter between two single inspiral tables. It does this using a bisection
+ * method, and uses <tt>XLALCompareInspiralsEllipsoid()</tt> to check for overlap.
+ * The maximum value for the e-thinca parameter is returned. If the two triggers
+ * do not overlap for an e-thinca parameter of 2.0, the triggers are not
+ * coincident, and an error is thrown.
+ *
+ * <tt>XLALCalculateEThincaParameterForInjection()</tt> takes in a
+ * \c SnglInspiralTable and a \c SimInspiralTable, and returns the
+ * e-thinca parameter between the trigger and the injection. This amounts to
+ * calculating the square of the metric distance between the two points in
+ * \f$(t_C, \tau_0, \tau_3)\f$ space.
+ *
+ */
 /*@{*/
 
 typedef struct tagEThincaMinimizer

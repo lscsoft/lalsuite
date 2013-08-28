@@ -66,7 +66,7 @@ typedef enum {
 } LALSimInspiralTidalOrder;
 
 
-/** 
+/**
  * Enumeration to specify which interaction will be used in the waveform
  * generation. Their combination also can be used by the bitwise or.
  */
@@ -94,7 +94,7 @@ typedef enum {
     LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L, /**< Set z-axis along the initial orbital angular momentum */
 } LALSimInspiralFrameAxis;
 
-/** 
+/**
  * Enumerator for choosing which modes to include in IMR models.
  *
  * 'ALL' means to use all modes available to that model.
@@ -133,9 +133,9 @@ typedef enum {
 typedef struct tagLALSimInspiralWaveformFlags LALSimInspiralWaveformFlags;
 
 /**
- * Create a new LALSimInspiralWaveformFlags struct 
+ * Create a new LALSimInspiralWaveformFlags struct
  * with all flags set to their default values.
- * 
+ *
  * If you create a struct, remember to destroy it when you are done with it.
  */
 LALSimInspiralWaveformFlags *XLALSimInspiralCreateWaveformFlags(void);

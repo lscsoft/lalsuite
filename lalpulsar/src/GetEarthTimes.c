@@ -40,49 +40,50 @@ static const INT4 equinoxes[NEQUINOXES] = {
 
 
 /**
-\author Creighton, T. D.
-\brief Computes the next sidereal midnight and autumnal equinox.
-
-This function takes a GPS time from
-<tt>tepoch</tt> and uses it to assign
-<tt>tAutumn</tt> and <tt>tMidnight</tt>, which are
-REAL8 representations of the time in seconds from
-<tt>tepoch</tt> to the next autumnal equinox or sidereal midnight,
-respectively.  This routine was written under the \ref PulsarTimes_h
-module because these quantities are vital for performing pulsar
-timing: they characterize the Earth's orbital and rotational phase,
-and hence the Doppler modulation on an incoming signal.  See
-\ref PulsarTimes_h for more information about the
-PulsarTimesParamStruc structure.
-
-\heading{Algorithm}
-
-The routine first computes the Greenwich mean sidereal time at
-<tt>tepoch</tt> using XLALGreenwichMeanSiderealTime(). The next sidereal
-midnight (at the Prime Meridian) is simply 86400 seconds minus that
-sidereal time.
-
-Next the routine computes the time of the next autumnal equinox.  The
-module contains an internal list of GPS times of autumnal equinoxes
-from 1992 to 2020, given to the nearest minute; this is certainly
-enough accuracy for use with the routines in LALTBaryPtolemaic().
-If the specified time <tt>tepoch</tt> is after the 2020 autumnal
-equinox, or more than a year before the 1992 equinox, then the next
-equinox is extrapolated assuming exact periods of length
-\ref LAL_YRSID_SI.
-
-When assigning the fields of <tt>*times</tt>, it is up to the user to
-choose a <tt>tepoch</tt> that is close to the actual times that
-are being considered.  This is important, since many computations use
-a REAL8 time variable whose origin is the time
-<tt>tepoch</tt>.  If this is too far from the times of interest,
-the REAL8 time variables may suffer loss of precision.
-
-\heading{Uses}
-\code
-XLALGreenwichMeanSiderealTime()
-\endcode
-*/
+ * \author Creighton, T. D.
+ * \brief Computes the next sidereal midnight and autumnal equinox.
+ *
+ * This function takes a GPS time from
+ * <tt>tepoch</tt> and uses it to assign
+ * <tt>tAutumn</tt> and <tt>tMidnight</tt>, which are
+ * REAL8 representations of the time in seconds from
+ * <tt>tepoch</tt> to the next autumnal equinox or sidereal midnight,
+ * respectively.  This routine was written under the \ref PulsarTimes_h
+ * module because these quantities are vital for performing pulsar
+ * timing: they characterize the Earth's orbital and rotational phase,
+ * and hence the Doppler modulation on an incoming signal.  See
+ * \ref PulsarTimes_h for more information about the
+ * PulsarTimesParamStruc structure.
+ *
+ * ### Algorithm ###
+ *
+ * The routine first computes the Greenwich mean sidereal time at
+ * <tt>tepoch</tt> using XLALGreenwichMeanSiderealTime(). The next sidereal
+ * midnight (at the Prime Meridian) is simply 86400 seconds minus that
+ * sidereal time.
+ *
+ * Next the routine computes the time of the next autumnal equinox.  The
+ * module contains an internal list of GPS times of autumnal equinoxes
+ * from 1992 to 2020, given to the nearest minute; this is certainly
+ * enough accuracy for use with the routines in LALTBaryPtolemaic().
+ * If the specified time <tt>tepoch</tt> is after the 2020 autumnal
+ * equinox, or more than a year before the 1992 equinox, then the next
+ * equinox is extrapolated assuming exact periods of length
+ * \ref LAL_YRSID_SI.
+ *
+ * When assigning the fields of <tt>*times</tt>, it is up to the user to
+ * choose a <tt>tepoch</tt> that is close to the actual times that
+ * are being considered.  This is important, since many computations use
+ * a REAL8 time variable whose origin is the time
+ * <tt>tepoch</tt>.  If this is too far from the times of interest,
+ * the REAL8 time variables may suffer loss of precision.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * XLALGreenwichMeanSiderealTime()
+ * \endcode
+ */
 int
 XLALGetEarthTimes( const LIGOTimeGPS *tepoch, REAL8 *tMidnight, REAL8 *tAutumn )
 {

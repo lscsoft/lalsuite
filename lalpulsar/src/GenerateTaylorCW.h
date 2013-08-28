@@ -31,59 +31,60 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup GenerateTaylorCW_h
-   \author Creighton, T. D.
-
-   \brief Provides routines to generate Taylor-parameterized continuous waveforms.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/GenerateTaylorCW.h>
-   \endcode
-
-This header covers routines to generate continuous quasiperiodic
-waveforms whose frequency varies slowly and smoothly with time.  For
-such sources the frequency function is normally described by its
-Taylor "spindown" (or spin-up) coefficients.  This type of waveform
-may be typical of objects such as neutron stars that are gradually
-shedding angular momentum, or are accelerating in the gravitational
-potential of a star cluster.  The Taylor expansion is likely
-\e not suitable for long-term modelling of the frequency of waves
-from glitching neutron stars, neutron stars in close binary orbits, or
-neutron stars that are accreting or shedding angular momentum in a
-stochastic manner.
-
-The frequency and phase of such slowly-varying quasiperiodic sources
-are given by their Taylor series:
-\anchor eq_taylorcw-freq \anchor eq_taylorcw-phi \f{eqnarray}{
-\label{eq_taylorcw-freq}
-f(t)    & = & f_0 \left[ 1 + \sum_{k=1}^n f_k(t-t_0)^k \right] \;, \\
-\label{eq_taylorcw-phi}
-\phi(t) & = & \phi_0 + 2\pi f_0 \left[ (t-t_0) +
-		\sum_{k=1}^n \frac{f_k}{k+1}(t-t_0)^{k+1} \right] \;,
-\f}
-where \f$f_k\f$ are the spin-normalized Taylor coefficients.  If the
-source's spin is varying over some timescale \f$\tau\f$, one typically
-expects that \f$f_k\sim\tau^{-k}\f$.  Note that in this and later
-discussions, \f$f\f$ and \f$\phi\f$ refer to the frequency and phase of the
-gravitational wave, which are typically some constant multiple of
-(often twice) the frequency and phase of the rotating source.
-
-The \c PulsarCoherentGW structure allows for a very general
-description of waveforms with modulations in the amplitudes or
-relative phases of the wave polarizations, as described in
-\ref PulsarSimulateCoherentGW_h.  However, in this simplest model of
-quasiperiodic waveforms, we neglect such phenomena as precession that
-would produce these effects.  Thus for any given source one can choose
-a polarization basis (described by some polarization angle \f$\psi\f$) in
-which the wave has a constant elliptical polarization of the form:
-\anchor eq_taylorcw-hplus \anchor eq_taylorcw-hcross \f{eqnarray}{
-\label{eq_taylorcw-hplus}
-h_+(t)      & = & A_+      \cos\phi(t) \;, \\
-\label{eq_taylorcw-hcross}
-h_\times(t) & = & A_\times \sin\phi(t) \;.
-\f}
-*/
+ * \addtogroup GenerateTaylorCW_h
+ * \author Creighton, T. D.
+ *
+ * \brief Provides routines to generate Taylor-parameterized continuous waveforms.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/GenerateTaylorCW.h>
+ * \endcode
+ *
+ * This header covers routines to generate continuous quasiperiodic
+ * waveforms whose frequency varies slowly and smoothly with time.  For
+ * such sources the frequency function is normally described by its
+ * Taylor "spindown" (or spin-up) coefficients.  This type of waveform
+ * may be typical of objects such as neutron stars that are gradually
+ * shedding angular momentum, or are accelerating in the gravitational
+ * potential of a star cluster.  The Taylor expansion is likely
+ * \e not suitable for long-term modelling of the frequency of waves
+ * from glitching neutron stars, neutron stars in close binary orbits, or
+ * neutron stars that are accreting or shedding angular momentum in a
+ * stochastic manner.
+ *
+ * The frequency and phase of such slowly-varying quasiperiodic sources
+ * are given by their Taylor series:
+ * \anchor eq_taylorcw-freq \anchor eq_taylorcw-phi \f{eqnarray}{
+ * \tag{eq_taylorcw-freq}
+ * f(t)    & = & f_0 \left[ 1 + \sum_{k=1}^n f_k(t-t_0)^k \right] \;, \\
+ * \tag{eq_taylorcw-phi}
+ * \phi(t) & = & \phi_0 + 2\pi f_0 \left[ (t-t_0) +
+ * \sum_{k=1}^n \frac{f_k}{k+1}(t-t_0)^{k+1} \right] \;,
+ * \f}
+ * where \f$f_k\f$ are the spin-normalized Taylor coefficients.  If the
+ * source's spin is varying over some timescale \f$\tau\f$, one typically
+ * expects that \f$f_k\sim\tau^{-k}\f$.  Note that in this and later
+ * discussions, \f$f\f$ and \f$\phi\f$ refer to the frequency and phase of the
+ * gravitational wave, which are typically some constant multiple of
+ * (often twice) the frequency and phase of the rotating source.
+ *
+ * The \c PulsarCoherentGW structure allows for a very general
+ * description of waveforms with modulations in the amplitudes or
+ * relative phases of the wave polarizations, as described in
+ * \ref PulsarSimulateCoherentGW_h.  However, in this simplest model of
+ * quasiperiodic waveforms, we neglect such phenomena as precession that
+ * would produce these effects.  Thus for any given source one can choose
+ * a polarization basis (described by some polarization angle \f$\psi\f$) in
+ * which the wave has a constant elliptical polarization of the form:
+ * \anchor eq_taylorcw-hplus \anchor eq_taylorcw-hcross \f{eqnarray}{
+ * \tag{eq_taylorcw-hplus}
+ * h_+(t)      & = & A_+      \cos\phi(t) \;, \\
+ * \tag{eq_taylorcw-hcross}
+ * h_\times(t) & = & A_\times \sin\phi(t) \;.
+ * \f}
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -99,7 +100,8 @@ h_\times(t) & = & A_\times \sin\phi(t) \;.
 #define GENERATETAYLORCWH_MSGEMEM "Out of memory"
 /** \endcond */
 
-/** This structure stores the parameters for constructing a gravitational
+/**
+ * This structure stores the parameters for constructing a gravitational
  * waveform with a Taylor-polynomial frequency and phase.  As with the
  * \c PPNParamStruc type in \ref GeneratePPNInspiral_h, we divide
  * the fields into passed fields (which are supplied to the final

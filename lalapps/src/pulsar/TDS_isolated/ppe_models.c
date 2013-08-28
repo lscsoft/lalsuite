@@ -16,7 +16,8 @@ static BinaryPulsarParams empty_BinaryPulsarParams;
 /*                            MODEL FUNCTIONS                                 */
 /******************************************************************************/
 
-/** \brief Defines the pulsar model/template to use
+/**
+ * \brief Defines the pulsar model/template to use
  *
  * This function is the wrapper for functions defining the pulsar model template to be used in the analysis. It also
  * uses \c rescale_parameter to scale any parameters back to their true values for use in the model and places them into
@@ -130,7 +131,8 @@ void get_pulsar_model( LALInferenceIFOData *data ){
 }
 
 
-/** \brief Rescale parameter back to its true value
+/**
+ * \brief Rescale parameter back to its true value
  *
  * This function will rescale a parameter to its true value using the scale factor and minimum scale value.
  *
@@ -158,7 +160,8 @@ REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname ){
 }
 
 
-/** \brief Generate the model of the neutron star signal
+/**
+ * \brief Generate the model of the neutron star signal
  *
  * The function requires that the pulsar model is set using the \c model-type command line argument (this is set in \c
  * main, and if not specified defaults to a \c triaxial model). Currently the model can be \c triaxial for quadrupole
@@ -282,7 +285,8 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOData *data ){
 }
 
 
-/** \brief The phase evolution of a source
+/**
+ * \brief The phase evolution of a source
  *
  * This function will calculate the phase evolution of a source at a particular sky location as observed at Earth. The
  * phase evolution is described by a Taylor expansion:
@@ -386,7 +390,8 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOData *da
 }
 
 
-/** \brief Computes the delay between a GPS time at Earth and the solar system barycentre
+/**
+ * \brief Computes the delay between a GPS time at Earth and the solar system barycentre
  *
  * This function calculate the time delay between a GPS time at a specific location (e.g. a gravitational wave detector)
  * on Earth and the solar system barycentre. The delay consists of three components: the geometric time delay (Roemer
@@ -491,7 +496,8 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 }
 
 
-/** \brief Computes the delay between a pulsar in a binary system and the barycentre of the system
+/**
+ * \brief Computes the delay between a pulsar in a binary system and the barycentre of the system
  *
  * This function uses \c XLALBinaryPulsarDeltaT to calculate the time delay between for a pulsar in a binary system
  * between the time at the pulsar and the time at the barycentre of the system. This includes Roemer delays and
@@ -536,7 +542,8 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 }
 
 
-/** \brief The amplitude model of a complex heterodyned triaxial neutron star
+/**
+ * \brief The amplitude model of a complex heterodyned triaxial neutron star
  *
  * This function calculates the complex heterodyned time series model for a triaxial neutron star (see [\ref
  * DupuisWoan2005]). It is defined as:
@@ -650,7 +657,8 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData 
 }
 
 
-/** \brief The amplitude model of a complex heterodyned signal from a NS rotating about the pinning axis of its pinned
+/**
+ * \brief The amplitude model of a complex heterodyned signal from a NS rotating about the pinning axis of its pinned
  * superfluid component.
  *
  * This function calculates the complex heterodyned time series model for a triaxial neutron star rotating about the
@@ -829,7 +837,8 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
 }
 
 
-/** \brief The amplitude model of a complex heterodyned signal from the \f$l=2, m=1,2\f$ harmonics of a rotating neutron
+/**
+ * \brief The amplitude model of a complex heterodyned signal from the \f$l=2, m=1,2\f$ harmonics of a rotating neutron
  * star.
  *
  * This function calculates the complex heterodyned time series model for a rotating neutron star. It will currently
@@ -960,8 +969,8 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
 }
 
 
-/** \brief Calculate the natural logarithm of the evidence that the data consists of only Gaussian noise
- *
+/**
+ * \brief Calculate the natural logarithm of the evidence that the data consists of only Gaussian noise
  * The function will calculate the natural logarithm of the evidence that the data (from one or more detectors) consists
  * of stationary segments/chunks described by a Gaussian with zero mean and unknown variance.
  *
@@ -1036,15 +1045,16 @@ REAL8 noise_only_model( LALInferenceRunState *runState ){
 }
 
 
-/** \brief Calculate the phase mismatch between two vectors of phases
+/**
+ * \brief Calculate the phase mismatch between two vectors of phases
  *
  * The function will calculate phase mismatch between two vectors of phases (with phases given in cycles rather than
  * radians).
  *
  * The mismatch is calculated as:
  * \f[
-   M = 1-\frac{1}{T}\int_0^T \cos{2\pi(\phi_1 - \phi_2)} dt.
- \f]
+ * M = 1-\frac{1}{T}\int_0^T \cos{2\pi(\phi_1 - \phi_2)} dt.
+ * \f]
  * In the function the integral is performed using the trapezium rule.
  *
  * PARAM phi1 [in] First phase vector
@@ -1092,7 +1102,8 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
 }
 
 
-/** \brief Get the position and velocity of the Earth at a given time
+/**
+ * \brief Get the position and velocity of the Earth at a given time
  *
  * This function will get the position and velocity of the Earth from the ephemeris data at the time t. It will be
  * returned in an EarthState structure. This is based on the start of the XLALBarycenterEarth function.
@@ -1146,7 +1157,8 @@ edat->nentriesE * edat->dtEtable );
 
 
 /*----------------- FUNCTIONS TO CONVERT BETWEEN PARAMETERS ------------------*/
-/** \brief Convert \f$\phi_0\f$ and \f$\psi\f$ to a new coordinate system
+/**
+ * \brief Convert \f$\phi_0\f$ and \f$\psi\f$ to a new coordinate system
  *
  * This function will convert the initial phase \f$\phi_0\f$ and polarisation angle \f$\psi\f$ into a new coordinate
  * system. As they are currently defined when \f$\psi\f$ wraps around at the limits of its range (\f$ \pm \pi/4 \f$
@@ -1154,11 +1166,11 @@ edat->nentriesE * edat->dtEtable );
  * \f$\phi_0\f$. A new coordinate system that is uni-modal and wraps around at the edges without introduction any phase
  * shift is given by:
  * \f[
- \left( \begin{array}{c} {\phi'}_0 \\ {\psi}' \end{array} \right) =
- \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin{\theta} &
-\cos{\theta} \end{array} \right)
- \left( \begin{array}{c} \phi_0 \\ \psi \end{array} \right),
- \f]
+ * \left( \begin{array}{c} {\phi'}_0 \\ {\psi}' \end{array} \right) =
+ * \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin{\theta} &
+ * \cos{\theta} \end{array} \right)
+ * \left( \begin{array}{c} \phi_0 \\ \psi \end{array} \right),
+ * \f]
  * where \f$\theta = \arctan{(1/2)}\f$.
  *
  * NOTE: This may want to be moved into LALInference at some point.
@@ -1189,21 +1201,22 @@ void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime, REAL8 *psiprim
 }
 
 
-/** \brief Convert new \f${\phi'}_0\f$ and \f$\psi'\f$ coordinate system back
+/**
+ * \brief Convert new \f${\phi'}_0\f$ and \f$\psi'\f$ coordinate system back
  * to \f$\phi_0\f$ and \f$\psi\f$
  *
  * This function will convert the new parameters \f${\phi'}_0\f$ and \f$\psi'\f$, defined in \c phi0_psi_transform()
  * into the original \f$\phi_0\f$ and \f$\psi\f$ coordinates. This is done through the inverse transform:
- \f{eqnarray*}{
- \left( \begin{array}{c} {\phi}_0 \\ {\psi} \end{array} \right) & = &
- \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin(\theta) &
-\cos{\theta} \end{array} \right)^{-1}
- \left( \begin{array}{c} {\phi'}_0 \\ {\psi'} \end{array} \right), \\
- & = & \left( \begin{array}{cc} \frac{1}{2\sin{\theta}} &
--\frac{1}{2\sin{\theta}} \\ \frac{1}{2\cos{\theta}} &
-\frac{1}{2\cos{\theta}} \end{array} \right)
- \left( \begin{array}{c} {\phi'}_0 \\ {\psi'} \end{array} \right),
- \f}
+ * \f{eqnarray*}{
+ * \left( \begin{array}{c} {\phi}_0 \\ {\psi} \end{array} \right) & = &
+ * \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin(\theta) &
+ * \cos{\theta} \end{array} \right)^{-1}
+ * \left( \begin{array}{c} {\phi'}_0 \\ {\psi'} \end{array} \right), \\
+ * & = & \left( \begin{array}{cc} \frac{1}{2\sin{\theta}} &
+ * -\frac{1}{2\sin{\theta}} \\ \frac{1}{2\cos{\theta}} &
+ * \frac{1}{2\cos{\theta}} \end{array} \right)
+ * \left( \begin{array}{c} {\phi'}_0 \\ {\psi'} \end{array} \right),
+ * \f}
  * where \f$\theta = \arctan{(1/2)}\f$.
  *
  * The \f${\phi'}_0\f$ and \f$\psi'\f$ should both be in the range \f$ \pm (\pi/2)\cos{\theta}\f$, which will return
@@ -1253,7 +1266,8 @@ void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime, REAL8 *phi0, R
 }
 
 
-/** \brief Convert sources parameters into amplitude and phase notation parameters
+/**
+ * \brief Convert sources parameters into amplitude and phase notation parameters
  *
  * Convert the physical source parameters into the amplitude and phase notation given in Eqns
  * 76-79 of LIGO T1200265-v3.

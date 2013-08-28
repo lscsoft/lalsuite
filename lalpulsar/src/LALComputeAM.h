@@ -29,7 +29,7 @@ extern "C" {
  * \ingroup pkg_pulsarCoh
  * \author S.J. Berukoff, Reinhard Prix, John Whelan
  * \date 2007
-
+ *
  * \brief Header-file for computing antenna-pattern components for amplitude demodulation.
  *
  * <tt>\#include <lal/LALComputeAM.h></tt>
@@ -77,7 +77,8 @@ extern "C" {
 
 /* ---------- exported data types -------------------- */
 
-/** This structure contains the per-SFT (weighted) antenna-pattern functions
+/**
+ * This structure contains the per-SFT (weighted) antenna-pattern functions
  * \f$\widehat{a}_{X\alpha}, \widehat{b}_{X\alpha}\f$,
  * with \f$\alpha\f$ the SFT-index, and \f$X\f$ the IFO index. The per-IFO summed antenna-pattern coefficients
  * for detector X are
@@ -95,7 +96,8 @@ typedef struct tagAMCoeffs
   REAL4           D;           /**< determinant \f$\widehat{D}_X = \widehat{A}_X \widehat{B}_X - \widehat{C}_X^2\f$  */
 } AMCoeffs;
 
-/** This structure contains the parameters for the routine.  They include:
+/**
+ * This structure contains the parameters for the routine.  They include:
  */
 typedef struct tagAMCoeffsParams
 {
@@ -108,7 +110,8 @@ typedef struct tagAMCoeffsParams
 } AMCoeffsParams;
 
 
-/** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
+/**
+ * Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible as
  * \f{equation}
  * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c}

@@ -18,145 +18,146 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup FlatMesh_h
-\brief Computes the sky-position metric for a coherent or semicoherent pulsar search.
-
-\heading{Program <tt>DirectedMeshTest.c</tt>}
-\latexonly\label{ss_DirectedMeshTest_c}\endlatexonly
-
-\heading{Usage}
-\code
-DirectedMeshTest [-o outfile] [-d debuglevel] [-p n dt t0 f0] [-l lat lon]
-                 [-s ra dec] [-r dra ddec] [-t tau] [-m mismatch]
-\endcode
-
-\heading{Description}
-
-This test program computes template meshes for directed pulsar
-searches with spindown, where it is assumed that the parameter metric
-is constant over the search space.  The following option flags are
-accepted:
-<ul>
-<li><b>-o</b> Prints the template mesh to the file
-\c outfile: each line consists of a sequence of
-whitespace-separated numbers representing the coordinates of the
-template.  If absent, the routines are exercised, but no output is
-written.</li>
-<li><b>-d</b> Sets the debug level to \c debuglevel; if
-absent, <b>-d 0</b> is assumed.</li>
-<li><b>-p</b> Sets the search parameters: the number of stacks
-\c n, the length of each stack \c dt (in seconds), and the
-start time of the first stack \c t0 (in seconds of GPS time), and
-the maximum source frequency \c f0 (in Hz).  If absent,
-<b>-t 1 86400 0 1000</b> is assumed.</li>
-<li><b>-l</b> Sets the detector latitude to \c lat (in
-degrees north from the equator) and longitude to \c lon (in
-degrees east of the prime meridian).  If absent,
-<b>-l 52.247 9.822</b> (GEO600) is assumed.</li>
-<li><b>-s</b> Sets the right ascension and declination of the
-target to \c ra and \c dec degrees, respectively.  If absent,
-<b>-r 192.8594813 27.1282511</b> is assumed (the Galactic core).</li>
-<li><b>-r</b> Sets the range of the sky search to \f$\pm\f$\c dra
-degrees in right ascension and \f$\pm\f$\c ddec degrees in declination
-about the target point.  If absent, <b>-s 0 0</b> is assumed (no
-search over sky position).</li>
-<li><b>-t</b> Sets the range of the spindown search according to
-the spindown timescale \c tau, in seconds: the spindown parameter
-\f$f_k\f$ is constrained by \f$|f_k|\leq\f$\c tau\f${}^{-k}\f$.  If absent,
-<b>-t 3.16e9</b> (century-long spindown) is assumed.</li>
-<li><b>-m</b> Sets the maximum mismatch threshold of the mesh to
-\c mismatch.  If absent, <b>-m 0.25</b> is assumed.</li>
-</ul>
-
-The program automatically determines how many spindown terms are
-required to cover the parameter space, by starting with none (or one
-if the search is \e only over spindown), computing the local
-template density from the parameter metric, and estimating the number
-of templates required to cover the search volume.  The number of
-spindown parameters is then increased and the number of templates
-re-estimated.  Eventually the estimated number of templates will start
-to \e decrease, as the proper width of the parameter space in the
-new dimensions is less than one template width.  The last dimension
-before that happens is the correct dimension to use.
-
-
-\heading{Algorithm}
-
-The program is fairly straightforward.  It uses
-<tt>LALStackMetric()</tt> to compute the parameter metric, passing it a
-canonical time function <tt>LALDTComp()</tt> that composites the
-<tt>LALDTSpin()</tt> and <tt>LALDTBaryPtolemaic()</tt> time
-transformations.  It starts with a single spindown parameter.  (If a
-\e search over sky position is also indicated, it will start with
-\e no spindown parameters, using only the barycentric time
-transformation rather than the composite transformation.)  The
-determinant of the metric is computed, and the number of patches
-estimated as:
-\f{equation}{
-N_\mathrm{patches} \approx \frac{\sqrt{|\mathsf{g}_{ab}|}}
-	{(\mathrm{mismatch}/n)^{n/2}}
-	\left\{\Delta\alpha\Delta\delta\right\}
-	\tau^{-n_s(n_s+1)/2}
-\f}
-where \f$\mathsf{g}_{ab}\f$ is the parameter metric (spindown sector only
-if the sky search space is a single point), \f$n\f$ is the number of
-dimensions in the search, \f$n_s\f$ is the number of spindown terms, and
-\f$\Delta\alpha\f$ and \f$\Delta\delta\f$ are the half-ranges of the search in
-right ascension and declination, respectively (assuming these ranges
-are nonzero).  For the first round we are considering a search
-\e only over sky position (\f$n=2\f$, \f$n_s=0\f$) or a single spindown
-search (\f$n=n_s=1\f$, ignore the term in braces).  The determinant is
-computed using <tt>LALDMatrixDeterminantErr()</tt>, repacking into
-\ref REAL8Array "REAL8Arrays" the metric components and uncertainties returned by
-<tt>LALStackMetric()</tt>.  An error is generated if the determinant is
-non-positive, or a warning if it is smaller than its estimated
-uncertainty.
-
-In subsequent trials, we increase \f$n_s\f$ successivlely by 1, and
-recompute \f$\mathsf{g}_{ab}\f$ and \f$N_\mathrm{patches}\f$.  Eventually,
-when the width of the added dimension is less than one patch witdh,
-\f$N_\mathrm{patches}\f$ will decrease.  When this happend, we back up to
-the value of \f$n_s\f$ that gave the largest number of patches, and use
-that parameter metric.
-
-The program then uses <tt>LALDSymmetricEigenVectors()</tt> to compute
-the eigenvalues and eigenvectors of the metric; these are combined and
-repacked into a \c REAL4VectorSequence used by
-LALCreateFlatMesh(), as described in <tt>FlatMesh.h</tt>.  The inverse
-transformation is computed using <tt>LALDMatrixInverse()</tt>, and again
-repacked into a \c REAL4VectorSequence.  The search area is taken
-to be a rectangular space controled by <tt>LALRectIntersect()</tt>,
-covering the sky area \f$|\alpha-\mathtt{ra}|\leq\mathtt{dra}\f$ and
-\f$|\alpha-\mathtt{ra}|\leq\mathtt{dra}\f$ (provided these ranges are
-nonzero), and the spindown volume \f$|f_k|\leq\mathtt{tau}^{-k}\f$ for
-\f$k=1,\ldots,n_s\f$.  The volume boundaries are increased by half the
-maximum patch size in each direction, to ensure total coverage of the
-edges, as described in FlatMeshTest.c.
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALCalloc()                     LALFree()
-LALU4CreateVector()             LALU4DestroyVector()
-LALSCreateVector()              LALSDestroyVector()
-LALDCreateVector()              LALDDestroyVector()
-LALSCreateVectorSequence()      LALSDestroyVectorSequence()
-LALDCreateArray()               LALDDestroyArray()
-LALDTBaryPtolemaic()            LALTBaryPtolemaic()
-LALDTSpin()                     LALTSpin()
-LALDTComp()                     LALGetEarthTimes()
-LALCreateFlatMesh()             LALRectIntersect()
-LALStackMetric()                LALProjectMetric()
-LALDMatrixDeterminantErr()      LALDMatrixInverse()
-LALDSymmetricEigenVectors()     snprintf()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup FlatMesh_h
+ * \brief Computes the sky-position metric for a coherent or semicoherent pulsar search.
+ *
+ * ### Program <tt>DirectedMeshTest.c</tt> ###
+ *
+ *
+ * ### Usage ###
+ *
+ * \code
+ * DirectedMeshTest [-o outfile] [-d debuglevel] [-p n dt t0 f0] [-l lat lon]
+ * [-s ra dec] [-r dra ddec] [-t tau] [-m mismatch]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test program computes template meshes for directed pulsar
+ * searches with spindown, where it is assumed that the parameter metric
+ * is constant over the search space.  The following option flags are
+ * accepted:
+ * <ul>
+ * <li><b>-o</b> Prints the template mesh to the file
+ * \c outfile: each line consists of a sequence of
+ * whitespace-separated numbers representing the coordinates of the
+ * template.  If absent, the routines are exercised, but no output is
+ * written.</li>
+ * <li><b>-d</b> Sets the debug level to \c debuglevel; if
+ * absent, <b>-d 0</b> is assumed.</li>
+ * <li><b>-p</b> Sets the search parameters: the number of stacks
+ * \c n, the length of each stack \c dt (in seconds), and the
+ * start time of the first stack \c t0 (in seconds of GPS time), and
+ * the maximum source frequency \c f0 (in Hz).  If absent,
+ * <b>-t 1 86400 0 1000</b> is assumed.</li>
+ * <li><b>-l</b> Sets the detector latitude to \c lat (in
+ * degrees north from the equator) and longitude to \c lon (in
+ * degrees east of the prime meridian).  If absent,
+ * <b>-l 52.247 9.822</b> (GEO600) is assumed.</li>
+ * <li><b>-s</b> Sets the right ascension and declination of the
+ * target to \c ra and \c dec degrees, respectively.  If absent,
+ * <b>-r 192.8594813 27.1282511</b> is assumed (the Galactic core).</li>
+ * <li><b>-r</b> Sets the range of the sky search to \f$\pm\f$\c dra
+ * degrees in right ascension and \f$\pm\f$\c ddec degrees in declination
+ * about the target point.  If absent, <b>-s 0 0</b> is assumed (no
+ * search over sky position).</li>
+ * <li><b>-t</b> Sets the range of the spindown search according to
+ * the spindown timescale \c tau, in seconds: the spindown parameter
+ * \f$f_k\f$ is constrained by \f$|f_k|\leq\f$\c tau\f${}^{-k}\f$.  If absent,
+ * <b>-t 3.16e9</b> (century-long spindown) is assumed.</li>
+ * <li><b>-m</b> Sets the maximum mismatch threshold of the mesh to
+ * \c mismatch.  If absent, <b>-m 0.25</b> is assumed.</li>
+ * </ul>
+ *
+ * The program automatically determines how many spindown terms are
+ * required to cover the parameter space, by starting with none (or one
+ * if the search is \e only over spindown), computing the local
+ * template density from the parameter metric, and estimating the number
+ * of templates required to cover the search volume.  The number of
+ * spindown parameters is then increased and the number of templates
+ * re-estimated.  Eventually the estimated number of templates will start
+ * to \e decrease, as the proper width of the parameter space in the
+ * new dimensions is less than one template width.  The last dimension
+ * before that happens is the correct dimension to use.
+ *
+ * ### Algorithm ###
+ *
+ * The program is fairly straightforward.  It uses
+ * <tt>LALStackMetric()</tt> to compute the parameter metric, passing it a
+ * canonical time function <tt>LALDTComp()</tt> that composites the
+ * <tt>LALDTSpin()</tt> and <tt>LALDTBaryPtolemaic()</tt> time
+ * transformations.  It starts with a single spindown parameter.  (If a
+ * \e search over sky position is also indicated, it will start with
+ * \e no spindown parameters, using only the barycentric time
+ * transformation rather than the composite transformation.)  The
+ * determinant of the metric is computed, and the number of patches
+ * estimated as:
+ * \f{equation}{
+ * N_\mathrm{patches} \approx \frac{\sqrt{|\mathsf{g}_{ab}|}}
+ * {(\mathrm{mismatch}/n)^{n/2}}
+ * \left\{\Delta\alpha\Delta\delta\right\}
+ * \tau^{-n_s(n_s+1)/2}
+ * \f}
+ * where \f$\mathsf{g}_{ab}\f$ is the parameter metric (spindown sector only
+ * if the sky search space is a single point), \f$n\f$ is the number of
+ * dimensions in the search, \f$n_s\f$ is the number of spindown terms, and
+ * \f$\Delta\alpha\f$ and \f$\Delta\delta\f$ are the half-ranges of the search in
+ * right ascension and declination, respectively (assuming these ranges
+ * are nonzero).  For the first round we are considering a search
+ * \e only over sky position (\f$n=2\f$, \f$n_s=0\f$) or a single spindown
+ * search (\f$n=n_s=1\f$, ignore the term in braces).  The determinant is
+ * computed using <tt>LALDMatrixDeterminantErr()</tt>, repacking into
+ * \ref REAL8Array "REAL8Arrays" the metric components and uncertainties returned by
+ * <tt>LALStackMetric()</tt>.  An error is generated if the determinant is
+ * non-positive, or a warning if it is smaller than its estimated
+ * uncertainty.
+ *
+ * In subsequent trials, we increase \f$n_s\f$ successivlely by 1, and
+ * recompute \f$\mathsf{g}_{ab}\f$ and \f$N_\mathrm{patches}\f$.  Eventually,
+ * when the width of the added dimension is less than one patch witdh,
+ * \f$N_\mathrm{patches}\f$ will decrease.  When this happend, we back up to
+ * the value of \f$n_s\f$ that gave the largest number of patches, and use
+ * that parameter metric.
+ *
+ * The program then uses <tt>LALDSymmetricEigenVectors()</tt> to compute
+ * the eigenvalues and eigenvectors of the metric; these are combined and
+ * repacked into a \c REAL4VectorSequence used by
+ * LALCreateFlatMesh(), as described in <tt>FlatMesh.h</tt>.  The inverse
+ * transformation is computed using <tt>LALDMatrixInverse()</tt>, and again
+ * repacked into a \c REAL4VectorSequence.  The search area is taken
+ * to be a rectangular space controled by <tt>LALRectIntersect()</tt>,
+ * covering the sky area \f$|\alpha-\mathtt{ra}|\leq\mathtt{dra}\f$ and
+ * \f$|\alpha-\mathtt{ra}|\leq\mathtt{dra}\f$ (provided these ranges are
+ * nonzero), and the spindown volume \f$|f_k|\leq\mathtt{tau}^{-k}\f$ for
+ * \f$k=1,\ldots,n_s\f$.  The volume boundaries are increased by half the
+ * maximum patch size in each direction, to ensure total coverage of the
+ * edges, as described in FlatMeshTest.c.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALPrintError()                 LALCheckMemoryLeaks()
+ * LALCalloc()                     LALFree()
+ * LALU4CreateVector()             LALU4DestroyVector()
+ * LALSCreateVector()              LALSDestroyVector()
+ * LALDCreateVector()              LALDDestroyVector()
+ * LALSCreateVectorSequence()      LALSDestroyVectorSequence()
+ * LALDCreateArray()               LALDDestroyArray()
+ * LALDTBaryPtolemaic()            LALTBaryPtolemaic()
+ * LALDTSpin()                     LALTSpin()
+ * LALDTComp()                     LALGetEarthTimes()
+ * LALCreateFlatMesh()             LALRectIntersect()
+ * LALStackMetric()                LALProjectMetric()
+ * LALDMatrixDeterminantErr()      LALDMatrixInverse()
+ * LALDSymmetricEigenVectors()     snprintf()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 
 /** \name Error Codes */ /*@{*/

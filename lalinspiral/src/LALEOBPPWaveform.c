@@ -19,35 +19,35 @@
 */
 
 /**
-
-\author Craig Robinson
-
-\file
-
-\brief Functions to generate the EOBNRv2 waveforms, as defined in
-Pan et al, arXiv:1106.1021v1 [gr-qc].
-
-\heading{Prototypes}
-<tt>LALEOBPPWaveform()</tt>
-<ul>
-    <li><tt>signalvec: </tt> Output containing the inspiral waveform.
-    <li><tt> params:</tt> Input containing binary chirp parameters.
-</ul>
-
-<tt> LALEOBPPWaveformTemplates() </tt>
-<ul>
-    <li><tt> signalvec1:</tt> Output containing the 0-phase inspiral waveform.
-    <li><tt> signalvec2:</tt> Output containing the \f$\pi/2\f$-phase inspiral waveform.
-    <li><tt> params:</tt> Input containing binary chirp parameters.
-</ul>
-
-<tt> LALEOBPPWaveformForInjection() </tt>
-<ul>
-    <li><tt> waveform: </tt> Coherent GW structure containing output waveform
-    <li><tt> params: </tt> Input containing inspiral template parameters.
-    <li><tt> ppnParams </tt> Input containing other necessary parameters.
-</ul>
-*/
+ * \author Craig Robinson
+ *
+ * \file
+ *
+ * \brief Functions to generate the EOBNRv2 waveforms, as defined in
+ * Pan et al, arXiv:1106.1021v1 [gr-qc].
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALEOBPPWaveform()</tt>
+ * <ul>
+ * <li><tt>signalvec: </tt> Output containing the inspiral waveform.
+ * <li><tt> params:</tt> Input containing binary chirp parameters.
+ * </ul>
+ *
+ * <tt> LALEOBPPWaveformTemplates() </tt>
+ * <ul>
+ * <li><tt> signalvec1:</tt> Output containing the 0-phase inspiral waveform.
+ * <li><tt> signalvec2:</tt> Output containing the \f$\pi/2\f$-phase inspiral waveform.
+ * <li><tt> params:</tt> Input containing binary chirp parameters.
+ * </ul>
+ *
+ * <tt> LALEOBPPWaveformForInjection() </tt>
+ * <ul>
+ * <li><tt> waveform: </tt> Coherent GW structure containing output waveform
+ * <li><tt> params: </tt> Input containing inspiral template parameters.
+ * <li><tt> ppnParams </tt> Input containing other necessary parameters.
+ * </ul>
+ */
 
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>

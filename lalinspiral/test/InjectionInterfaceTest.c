@@ -18,34 +18,39 @@
 */
 
 /**
-\author Cokelaer, T.
-\file
-
-\brief Interface to generate any kind of gravitational waves signal.
-
-\heading{Usage}
-\code
-\c InterfaceTest
-\endcode
-
-\heading{Description}
-Right now this test file read an input xml (injection.xml) file and for
-each valid line it computes the approriate waveform. Those waveforms are
-either produce within the inject package (PPN waveform) or within the
-inspiral package (TaylorT[1,2,3], EOB, SpinTaylor, PadeT1).
-
-Then the function LALGeneralInspiral create the amplitude, freq and phi
-vectors needed for further injection including the data itself (noise, h(t))
-
-Finally, the injections are stored in a vector which is saved in "injection.dat"
-file.
-
-\heading{Uses}
-\code
-
-\endcode
-\heading{Notes}
-*/
+ * \author Cokelaer, T.
+ * \file
+ *
+ * \brief Interface to generate any kind of gravitational waves signal.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * \c InterfaceTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * Right now this test file read an input xml (injection.xml) file and for
+ * each valid line it computes the approriate waveform. Those waveforms are
+ * either produce within the inject package (PPN waveform) or within the
+ * inspiral package (TaylorT[1,2,3], EOB, SpinTaylor, PadeT1).
+ *
+ * Then the function LALGeneralInspiral create the amplitude, freq and phi
+ * vectors needed for further injection including the data itself (noise, h(t))
+ *
+ * Finally, the injections are stored in a vector which is saved in "injection.dat"
+ * file.
+ *
+ * ### Uses ###
+ *
+ * \code
+ *
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 /**\name Error Codes */ /*@{*/
 #define INJECTIONINTERFACETESTC_ENORM 	0

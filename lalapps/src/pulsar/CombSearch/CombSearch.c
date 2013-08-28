@@ -19,12 +19,13 @@
  *  MA  02111-1307  USA
  */
 
-/** \author L.Sammut, C. Messenger
+/**
+ * \author L.Sammut, C. Messenger
  * \file
  * \ingroup pulsarApps
  * \brief
  * Calculates the C-statistic for a given parameter-space of GW signals from binary sources with known sky position.
- * 
+ *
  * Uses outputFStat file of lalapps_ComputeFStatistic_v2.c as input.
  *
  */
@@ -76,7 +77,8 @@
 /***********************************************************************************************/
 /* internal structures */
 
-/** A structure for frequency series 
+/**
+ * A structure for frequency series
  */
 typedef struct {
   REAL8Vector* 	fvect;			/**< frequency series of data, REAL8Vector has components data and length */
@@ -86,7 +88,8 @@ typedef struct {
   CHAR*		comment;		/**< comment field */ 
 } VectorStruct;
 
-/** A structure for template parameters 
+/**
+ * A structure for template parameters
  */
 typedef struct {
   REAL8 freq;				/**< user defined start frequency */
@@ -97,7 +100,8 @@ typedef struct {
   INT4	unitspikes;			/**< number of unit spikes in template */
 } ParamStruct;
 
-/** A structure that stores user input variables 
+/**
+ * A structure that stores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            	/**< trigger to output help string */
@@ -112,7 +116,8 @@ typedef struct {
   REAL8 orbitasini;			/**< amplitude of radial motion */
 } UserInput_t;
 
-/** A structure for information on the exclusion region needed to avoid edge effects in calculation of Cstat 
+/**
+ * A structure for information on the exclusion region needed to avoid edge effects in calculation of Cstat
  */
 typedef struct { 
   INT4 mm;		            	/**< number of sidebands on either side of central spike */
@@ -337,8 +342,9 @@ int checkUserInputConsistency (const UserInput_t *uvar)
 
 
 /*--------------------------------------------------------------- */
-/** ReadInput function 
- * reads user input and Fstat file and assigns parameter values and Fstat array 
+/**
+ * ReadInput function
+ * reads user input and Fstat file and assigns parameter values and Fstat array
  */
 /*----------------------------------------------------------------*/
 int ReadInput(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat, ExRegion *exr)
@@ -502,10 +508,11 @@ int ReadInput(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat, E
 
 
 /*--------------------------------------------------------------- */
-/** createComb function 
+/**
+ * createComb function
  * use userParams to create comb template
  *
- * function creates template of unit amplitude spikes at 1 zero spike +/- mm spikes on either side separated by 1/P 
+ * function creates template of unit amplitude spikes at 1 zero spike +/- mm spikes on either side separated by 1/P
  */
 /*----------------------------------------------------------------*/
 int createComb(ParamStruct *userParams, VectorStruct *comb, ExRegion *exr)
@@ -549,10 +556,11 @@ int createComb(ParamStruct *userParams, VectorStruct *comb, ExRegion *exr)
 
 
 /*--------------------------------------------------------------- */
-/** createTopHat function 
+/**
+ * createTopHat function
  * use userParams to create tophat template if tophat flag is raised
  *
- * function creates template of unit amplitude spikes for a band mm/P on either side of the central zero spike 
+ * function creates template of unit amplitude spikes for a band mm/P on either side of the central zero spike
  */
 /*----------------------------------------------------------------*/
 int createTopHat(ParamStruct *userParams, VectorStruct *tophat, ExRegion *exr)
@@ -598,8 +606,9 @@ int createTopHat(ParamStruct *userParams, VectorStruct *tophat, ExRegion *exr)
 
 
 /*--------------------------------------------------------------- */
-/** ComputeCstat function 
- * uses comb and Fstat structures to calculate the Cstat 
+/**
+ * ComputeCstat function
+ * uses comb and Fstat structures to calculate the Cstat
  */
 /*----------------------------------------------------------------*/
 int ComputeCstat(VectorStruct *template, VectorStruct *Fstat, VectorStruct *Cstat, ExRegion *exr)

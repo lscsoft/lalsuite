@@ -18,23 +18,26 @@
 */
 
 /**
-\author Cokelaer Thomas
-\file
-\brief NONE
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-LALInspiralParameterCalc()
-LALInspiralComputeMetric()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Cokelaer Thomas
+ * \file
+ * \brief NONE
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALInspiralParameterCalc()
+ * LALInspiralComputeMetric()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>

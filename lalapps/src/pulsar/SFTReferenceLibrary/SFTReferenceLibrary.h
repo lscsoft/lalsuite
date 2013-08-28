@@ -17,11 +17,11 @@
  *  MA  02111-1307  USA
  */
 
-/** 
- *  \author Bruce Allen, Reinhard Prix
- *  \file
- *  \brief
- *  This is a reference library for the SFT data format
+/**
+ * \author Bruce Allen, Reinhard Prix
+ * \file
+ * \brief
+ * This is a reference library for the SFT data format
  */
 
 #ifndef REFERENCESFTLIBRARY_H_

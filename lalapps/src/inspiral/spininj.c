@@ -18,11 +18,11 @@
 */
 
 /**
- * Author : 
- * 
+ * Author :
+ *
  * Purpose : generate xml file for binary injections (spinning case)
  *
- * */
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <config.h>

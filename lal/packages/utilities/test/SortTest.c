@@ -27,36 +27,37 @@
  *-----------------------------------------------------------------------*/
 
 /**
-   \file
-   \ingroup Sort_h
-
-   \brief A program to test sorting routines.
-
-   \heading{Usage}
-   \code
-   SortTest [-s seed]
-   \endcode
-
-\heading{Description}
-
-This test program creates rank and index arrays for an unordered list
-of numbers, and then sorts the list.  The data for the list are
-generated randomly, and the output is to \c stdout if <tt>-v</tt> is
-specified (unless redirected).  \c SortTest returns 0 if it executes
-successfully, and 1 if any of the subroutines fail.
-
-The <tt>-s</tt> option sets the seed for the random number generator; if
-\c seed is set to zero (or if no <tt>-s</tt> option is given) then
-the seed is taken from the processor clock.
-
-\heading{Exit codes}
-
-<table><tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Success, normal exit.</td></tr>
-<tr><td>1</td><td>Subroutine failed.</td></tr>
-</table>
-
-*/
+ * \file
+ * \ingroup Sort_h
+ *
+ * \brief A program to test sorting routines.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * SortTest [-s seed]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test program creates rank and index arrays for an unordered list
+ * of numbers, and then sorts the list.  The data for the list are
+ * generated randomly, and the output is to \c stdout if <tt>-v</tt> is
+ * specified (unless redirected).  \c SortTest returns 0 if it executes
+ * successfully, and 1 if any of the subroutines fail.
+ *
+ * The <tt>-s</tt> option sets the seed for the random number generator; if
+ * \c seed is set to zero (or if no <tt>-s</tt> option is given) then
+ * the seed is taken from the processor clock.
+ *
+ * ### Exit codes ###
+ *
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 

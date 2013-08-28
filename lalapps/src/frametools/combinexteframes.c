@@ -17,13 +17,14 @@
  *  MA  02111-1307  USA
  */
 
-/** \author C.Messenger
+/**
+ * \author C.Messenger
  * \ingroup pulsarCoherent
  * \file
  * \brief
  * This code is designed to combine (R)XTE frames from simultaneous observations.
  *
- * A particular observation using (R)XTE can have multiple timeseries generated 
+ * A particular observation using (R)XTE can have multiple timeseries generated
  * simultaneaously each with a different "data mode".  This code combines the data
  * into a single timeseries using user-defined choices regarding the type of combination.
  *
@@ -119,7 +120,8 @@ typedef struct {
   CHAR OBS_ID[STRINGLENGTH];        /**< the OBS_ID of the interval */      
 } FrameChannel;
 
-/** A structure that stores information about a collection of Frame files
+/**
+ * A structure that stores information about a collection of Frame files
  */
 typedef struct { 
   UINT4 length;	                    /**< the number of channels */
@@ -128,7 +130,8 @@ typedef struct {
   FrameChannel *channel;            /**< a pointer to FrameChannel structures */
 } FrameChannelList;
 
-/** A structure that sores user input variables 
+/**
+ * A structure that sores user input variables
  */
 typedef struct { 
   UINT4 length;	                    /**< the number of intervals */
@@ -137,7 +140,8 @@ typedef struct {
   UINT2 *pcucount;                  /**< the number of operational PCUs */
 } GoodPCUIntervals;
 
-/** A structure that contains information regarding how to combine coincident frames
+/**
+ * A structure that contains information regarding how to combine coincident frames
  */
 typedef struct { 
   FrameChannelList channellist;     /**< a list of frame channels */
@@ -148,14 +152,16 @@ typedef struct {
   REAL8 duration;                   /**< combination duration */
 } FrameCombinationPlan;
 
-/** A vector of structures containing information regarding how to combine coincident frames
+/**
+ * A vector of structures containing information regarding how to combine coincident frames
  */
 typedef struct { 
   FrameCombinationPlan *data;       /**< a vector of plans */
   INT4 length;                      /**< the vector length */
 } FrameCombinationPlanVector;
 
-/** A structure that sores user input variables 
+/**
+ * A structure that sores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -198,10 +204,10 @@ int XLALReadFrameHistory(CHAR **history_string, FrFile *file);
 /* empty initializers */
 UserInput_t empty_UserInput;
 
-/** The main function of xtefitstoframe.c
- *
+/**
+ * The main function of xtefitstoframe.c
  * Here we read in a single XTE FITS file containing PCA data, generate a timeseries,
- * barycenter the data if requested, and output as a frame file. 
+ * barycenter the data if requested, and output as a frame file.
  *
  */
 int main( int argc, char *argv[] )
@@ -351,7 +357,8 @@ int main( int argc, char *argv[] )
   
 }
 
-/** Read in input user arguments
+/**
+ * Read in input user arguments
  */
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR *clargs)
 {
@@ -407,7 +414,8 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
 
 }
 
-/** Read in list of frame files from input directory
+/**
+ * Read in list of frame files from input directory
  */
 int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure containing a list of all input frame channels */
 		     CHAR *inputdir,                      /**< [in] the input frame directory */
@@ -701,7 +709,8 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
 }
 
 
-/** Read in pcu counts from FS46 files and generate a vector of PCU numbers 
+/**
+ * Read in pcu counts from FS46 files and generate a vector of PCU numbers
  */
 int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the PCU interval information */
 			    FrameChannelList *framechannels      /**< [in] the framefile list */
@@ -891,7 +900,8 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
   
 }
 
-/** Finds a subset of frame files within a given time interval 
+/**
+ * Finds a subset of frame files within a given time interval
  */
 int XLALFindFramesInInterval(FrameChannelList **subframechannels,   /**< [out] a list of channel names containing data within the interval */
 			     FrameChannelList *framechannels,       /**< [in] the frame channel list */
@@ -1008,7 +1018,8 @@ int XLALFindFramesInInterval(FrameChannelList **subframechannels,   /**< [out] a
   
 }
 
-/** Finds a subset of frame files within a given time interval 
+/**
+ * Finds a subset of frame files within a given time interval
  */
 int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**< [out] a plan of how to combine the frames */
 			      FrameChannelList *framechannels,               /**< [in] the framefile list */
@@ -1354,7 +1365,8 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
   
 }
 
-/** wrapper for XLALGPSCmp for use with qsort
+/**
+ * wrapper for XLALGPSCmp for use with qsort
  */
 static int compareGPS(const void *p1, const void *p2)
 {
@@ -1366,7 +1378,8 @@ static int compareGPS(const void *p1, const void *p2)
   
 }
 
-/** this function combines the files listed in the combination plan into a single REAL4 timeseries 
+/**
+ * this function combines the files listed in the combination plan into a single REAL4 timeseries
  */
 int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [out] the timeseries containing the combined data */
 					 HeaderVector *header,          /**< [out] the combined history fields of all files */
@@ -1514,7 +1527,8 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
   
 }
 
-/** this function combines the files listed in the combination plan into a single timeseries 
+/**
+ * this function combines the files listed in the combination plan into a single timeseries
  */
 int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of output directory */
 			       REAL4TimeSeries *ts,           /**< [in] timeseries to output */
@@ -1671,7 +1685,8 @@ int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of 
   
 }
 
-/** this function reads in the frame history as a string
+/**
+ * this function reads in the frame history as a string
  */
 int XLALReadFrameHistory(CHAR **history_string,     /**< [out] the history field read in as a string */ 
 			 FrFile *file               /**< [in] frame file pointer */

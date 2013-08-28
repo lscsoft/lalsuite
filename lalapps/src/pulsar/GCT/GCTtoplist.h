@@ -61,77 +61,91 @@ typedef enum
 
 /* This has by now been reduced to an interface to the HeapToplist functions */
 
-/** creates a toplist with length elements,
-   returns -1 on error (usually out of memory), else 0 */
+/**
+ * creates a toplist with length elements,
+ * returns -1 on error (usually out of memory), else 0
+ */
 extern int create_gctFStat_toplist(toplist_t**list, UINT8 length, SortBy_t whatToSortBy);
 
 /** frees the space occupied by the toplist */
 extern void free_gctFStat_toplist(toplist_t**list);
 
-/** Inserts an element in to the toplist either if there is space left
-   or the element is larger than the smallest element in the toplist.
-   In the latter case, remove the smallest element from the toplist
-   Returns 1 if the element was actually inserted, 0 if not. */
+/**
+ * Inserts an element in to the toplist either if there is space left
+ * or the element is larger than the smallest element in the toplist.
+ * In the latter case, remove the smallest element from the toplist
+ * Returns 1 if the element was actually inserted, 0 if not.
+ */
 extern int insert_into_gctFStat_toplist(toplist_t*list, GCTtopOutputEntry line);
 
 
-/** Writes the toplist to an (already open) filepointer
-   Returns the number of written charactes
-   sets the checksum if non-NULL
-   Returns something <0 on error */
+/**
+ * Writes the toplist to an (already open) filepointer
+ * Returns the number of written charactes
+ * sets the checksum if non-NULL
+ * Returns something <0 on error
+ */
 extern int write_gctFStat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
 
 
-/** sorts the toplist with an internal sorting function,
-   used before finally writing it */
+/**
+ * sorts the toplist with an internal sorting function,
+ * used before finally writing it
+ */
 extern void sort_gctFStat_toplist(toplist_t*list);
 
 
-/** sorts the toplist with an internal sorting function,
- used before doing the follow-up analysis */
+/**
+ * sorts the toplist with an internal sorting function,
+ * used before doing the follow-up analysis
+ */
 extern void sort_gctFStat_toplist_strongest(toplist_t*list);
 
 
 
 /** Checkpointing */
 
-/** writes a checkpoint:
-    - constructs temporary filename (by appending .TMP)
-    - writes number of elements ("elems") in toplist to tempfile
-    - dumps data to tempfile
-    - appends counter
-    - appends checksum (of elems, data and counter)
-    - renames tempfile to final name
-    returns
-    -1 in case of an I/O error,
-    -2 if out of memory,
-     0 otherwise (successful)
-*/
+/**
+ * writes a checkpoint:
+ * - constructs temporary filename (by appending .TMP)
+ * - writes number of elements ("elems") in toplist to tempfile
+ * - dumps data to tempfile
+ * - appends counter
+ * - appends checksum (of elems, data and counter)
+ * - renames tempfile to final name
+ * returns
+ * -1 in case of an I/O error,
+ * -2 if out of memory,
+ * 0 otherwise (successful)
+ */
 extern int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync);
 
-/** tries to read a checkpoint
-    - tries to open the file, returns 1 if no file found
-    - reads elems, data, counter and checksum
-    - verifies checksum
-    - restores the heap by sorting
-    returns
-     0 if successfully read a checkpoint
-     1 if no checkpoint was found
-    -1 in case of an I/O error
-    -2 if the checksum was wrong or elems was unreasonable
-*/
+/**
+ * tries to read a checkpoint
+ * - tries to open the file, returns 1 if no file found
+ * - reads elems, data, counter and checksum
+ * - verifies checksum
+ * - restores the heap by sorting
+ * returns
+ * 0 if successfully read a checkpoint
+ * 1 if no checkpoint was found
+ * -1 in case of an I/O error
+ * -2 if the checksum was wrong or elems was unreasonable
+ */
 extern int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*counter);
 
-/** removes a checkpoint
-    returns 0 on success, errno on failure
-*/
+/**
+ * removes a checkpoint
+ * returns 0 on success, errno on failure
+ */
 extern int clear_gct_checkpoint(const char*filename);
 
-/** write the final output file:
-    - re-sort the toplist into freq/alpha/delta/fdot order
-    - write out the toplist in ASCII format with end marker to a temporary file
-    - rename the file to the final name
-*/
+/**
+ * write the final output file:
+ * - re-sort the toplist into freq/alpha/delta/fdot order
+ * - write out the toplist in ASCII format with end marker to a temporary file
+ * - rename the file to the final name
+ */
 extern int write_hfs_oputput(const char*filename, toplist_t*tl);
 
 #endif /* GCTFSTATTOPLIST_H - double inclusion protection */

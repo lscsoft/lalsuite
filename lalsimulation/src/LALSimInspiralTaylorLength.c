@@ -18,25 +18,26 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALSimInspiraldEnergyFlux_c
-
-\brief NONE
-
-This module outputs
-\f{equation}{
- tofv = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
-\f}
-where the constants \f$t,\f$ \f$t_0,\f$ \f$v_0,\f$ and functions in the integrand
-\f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in the \c void structure <tt>params.</tt>
-
-\heading{Uses}
-\code
-XLALDRombergIntegrate()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALSimInspiraldEnergyFlux_c
+ *
+ * \brief NONE
+ *
+ * This module outputs
+ * \f{equation}{
+ * tofv = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
+ * \f}
+ * where the constants \f$t,\f$ \f$t_0,\f$ \f$v_0,\f$ and functions in the integrand
+ * \f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in the \c void structure <tt>params.</tt>
+ *
+ * ### Uses ###
+ *
+ * \code
+ * XLALDRombergIntegrate()
+ * \endcode
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

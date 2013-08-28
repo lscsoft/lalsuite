@@ -18,61 +18,64 @@
 */
 
 /**
-\author Cokelaer, T. and Sathyaprakash, B. S.
-\file
-\ingroup inspiral
-
-\brief Code for computing overalps of two waveforms.
-
-\heading{Usage}
-\code
-InspiralOverlap [options]
-
-The options are :
-      -quiet : if this flag is present, the output is minimal
-      -alpha : BCV amplitude correction parameter
--approximant : Post-Newtonian model of signal
-     -signal : same as -approximant
-   -template : Post-Newtonian model of template
-         -fl : lower frequency cutoff
-         -m1 : mass of primary
-         -m2 : mass of companion
-         -m3 : mass of primary
-         -m4 : mass of companion
-      -order : order of PN model
-       -psi0 : Max value of psi0
-       -psi3 : Min value of psi3
-       -fcut : Cutoff frequency for BCV
-\endcode
-
-\heading{Description}
-
-This code helps to compute the overlap of two waveforms with default
-(or user specified) parameters.
-
-\heading{Exit codes}
-
-
-\heading{Uses}
-This code directly uses the following functions (see those functions
-to find out what they call in turn):
-\code
-LALInspiralWaveLength
-LALInspiralCreateCoarseBank
-LALInspiralParameterCalc
-LALInspiralWave
-LALInspiralWaveNormaliseLSO
-LALInspiralWaveOverlap
-LALNoiseSpectralDensity
-LALCreateForwardRealFFTPlan
-LALCreateReverseRealFFTPlan
-LALForwardRealFFT
-LALReverseRealFFT
-LALDestroyRealFFTPlan
-\endcode
-
-\heading{Notes}
-*/
+ * \author Cokelaer, T. and Sathyaprakash, B. S.
+ * \file
+ * \ingroup inspiral
+ *
+ * \brief Code for computing overalps of two waveforms.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * InspiralOverlap [options]
+ *
+ * The options are :
+ * -quiet : if this flag is present, the output is minimal
+ * -alpha : BCV amplitude correction parameter
+ * -approximant : Post-Newtonian model of signal
+ * -signal : same as -approximant
+ * -template : Post-Newtonian model of template
+ * -fl : lower frequency cutoff
+ * -m1 : mass of primary
+ * -m2 : mass of companion
+ * -m3 : mass of primary
+ * -m4 : mass of companion
+ * -order : order of PN model
+ * -psi0 : Max value of psi0
+ * -psi3 : Min value of psi3
+ * -fcut : Cutoff frequency for BCV
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This code helps to compute the overlap of two waveforms with default
+ * (or user specified) parameters.
+ *
+ * ### Exit codes ###
+ *
+ *
+ * ### Uses ###
+ *
+ * This code directly uses the following functions (see those functions
+ * to find out what they call in turn):
+ * \code
+ * LALInspiralWaveLength
+ * LALInspiralCreateCoarseBank
+ * LALInspiralParameterCalc
+ * LALInspiralWave
+ * LALInspiralWaveNormaliseLSO
+ * LALInspiralWaveOverlap
+ * LALNoiseSpectralDensity
+ * LALCreateForwardRealFFTPlan
+ * LALCreateReverseRealFFTPlan
+ * LALForwardRealFFT
+ * LALReverseRealFFT
+ * LALDestroyRealFFTPlan
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 
 #include <stdio.h>

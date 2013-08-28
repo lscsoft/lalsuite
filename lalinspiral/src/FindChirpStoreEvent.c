@@ -28,11 +28,10 @@
  */
 
 /**
-
-\author Brown D. A., Woods D.
-\file
-
-*/
+ * \author Brown D. A., Woods D.
+ * \file
+ *
+ */
 
 #include <math.h>
 #include <lal/LALErrno.h>

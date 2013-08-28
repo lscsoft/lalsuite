@@ -41,7 +41,8 @@ typedef enum {
   UVAR_LAST
 } UserVarType;
 
-/** Linked list to hold the complete information about the user-variables.
+/**
+ * Linked list to hold the complete information about the user-variables.
  */
 typedef struct tagLALUserVariable {
   const CHAR *name;	/**< full name */
@@ -116,16 +117,17 @@ XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, con
 }
 
 
-/** \ingroup UserInput_h
+/**
+ * \ingroup UserInput_h
  * Internal function: Register a user-variable with the module.
- *  Effectively put an appropriate entry into UVAR_vars
+ * Effectively put an appropriate entry into UVAR_vars
  *
  * Checks that long- and short-options are unique, an error is returned
  * if a previous option name collides.
  *
  * \note don't use this function directly, as it is not type-safe!!
- *      ==> use one of the 4 wrappers: XLALRegisterREALUserVar(),
- *    XLALRegisterINTUserVar(), XLALRegisterBOOLUserVar(), XLALRegisterSTRINGUserVar().
+ * ==> use one of the 4 wrappers: XLALRegisterREALUserVar(),
+ * XLALRegisterINTUserVar(), XLALRegisterBOOLUserVar(), XLALRegisterSTRINGUserVar().
  *
  */
 int XLALRegisterUserVar ( const CHAR *name,	/**< name of user-variable to register */
@@ -178,7 +180,8 @@ int XLALRegisterUserVar ( const CHAR *name,	/**< name of user-variable to regist
 
 } /* XLALRegisterUserVar() */
 
-/** Free all memory associated with user-variable linked list
+/**
+ * Free all memory associated with user-variable linked list
  */
 void
 XLALDestroyUserVars( void )
@@ -224,7 +227,8 @@ XLALDestroyUserVars( void )
 } /* XLALDestroyUserVars() */
 
 
-/** Parse command-line into UserVariable array
+/**
+ * Parse command-line into UserVariable array
  */
 int
 XLALUserVarReadCmdline ( int argc, char *argv[] )
@@ -454,8 +458,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 } /* XLALUserVarReadCmdline() */
 
 
-/** Read config-variables from cfgfile and parse into input-structure.
- *
+/**
+ * Read config-variables from cfgfile and parse into input-structure.
  * An error is reported if the config-file reading fails, but the
  * individual variable-reads are treated as optional
  */
@@ -570,7 +574,8 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 #define UVAR_MAXDEFSTR    100 	/* max length of default-string */
 #define UVAR_MAXFMTLEN    128   /* max length of help-line format-string */
 
-/** Assemble all help-info from uvars into a help-string.
+/**
+ * Assemble all help-info from uvars into a help-string.
  */
 CHAR *
 XLALUserVarHelpString ( const CHAR *progname )
@@ -780,7 +785,8 @@ XLALUserVarHelpString ( const CHAR *progname )
 } /* XLALUserVarHelpString() */
 
 
-/** Put all the pieces together, and basically does everything:
+/**
+ * Put all the pieces together, and basically does everything:
  * get config-filename from cmd-line (if found),
  * then interpret config-file and then the command-line
  */
@@ -883,7 +889,8 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
 
 
 
-/** Has this user-variable been set by the user?
+/**
+ * Has this user-variable been set by the user?
  * returns TRUE/FALSE
  */
 int
@@ -913,7 +920,8 @@ XLALUserVarWasSet (const void *cvar)
 } /* XLALUserVarWasSet() */
 
 
-/** Check that all required user-variables have been set successfully.
+/**
+ * Check that all required user-variables have been set successfully.
  * Print error if not
  */
 int
@@ -935,7 +943,8 @@ XLALUserVarCheckRequired (void)
 } /* XLALUserVarCheckRequired() */
 
 
-/** Return a log-string representing the <em>complete</em> user-input.
+/**
+ * Return a log-string representing the <em>complete</em> user-input.
  * <em>NOTE:</em> we only record user-variables that have been set
  * by the user.
  */
@@ -1162,7 +1171,8 @@ XLALUvarValue2String ( LALUserVariable *uvar )
 } /* XLALUvarValue2String() */
 
 
-/** Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
+/**
+ * Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
  * If quotes are present at the beginning of 'in', they must have a matching
  * quote at the end of string, otherwise an error is printed and return=NULL
  */
@@ -1208,7 +1218,8 @@ XLAL_copy_string_unquoted ( const CHAR *in )
 
 } /* XLAL_copy_string_unquoted() */
 
-/** Mark the user-variable as set, check if it has been
+/**
+ * Mark the user-variable as set, check if it has been
  * set previously and issue a warning if set more than once ...
  */
 void
@@ -1356,7 +1367,8 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 
 
 #if 0
-/** Return user log as a process-params table
+/**
+ * Return user log as a process-params table
  *
  * \param[out] **procPar the output ProcessParamsTable
  * \param[in] *progname  name of calling code
@@ -1416,7 +1428,8 @@ LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR 
 #endif
 
 
-/** \deprecated use XLALUserVarHelpString() instead
+/**
+ * \deprecated use XLALUserVarHelpString() instead
  */
 void
 LALUserVarHelpString (LALStatus *status,

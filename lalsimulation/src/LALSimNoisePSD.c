@@ -436,9 +436,9 @@ double XLALSimNoisePSDeLIGOModel(double f /**< frequency (Hz) */)
  * phenomenological fit (from the Virgo webiste) that can be approximated by the
  * following:
  * \f{equation}{
- *  S_h(f) =
- *  s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
- *  + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
+ * S_h(f) =
+ * s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
+ * + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
  * \f}
  * where \f$s_0=10.2e-46\f$.
  *
@@ -457,7 +457,8 @@ double XLALSimNoisePSDVirgo(double f /**< frequency (Hz) */)
   return s0*( pow(7.87*x,-4.8) + 6./17./x + 1. + x*x);
 }
 
-/** Provides a GEO noise power spectrum based on that from Table IV of
+/**
+ * Provides a GEO noise power spectrum based on that from Table IV of
  * \ref dis2001.
  *
  * The comes from the deprecated function LALGEOPsd in the lal noisemodels
@@ -476,7 +477,8 @@ double XLALSimNoisePSDGEO(double f /**< frequency (Hz) */)
 }
 
 
-/** Provides a GEO-HF noise power spectrum based on a fit to Figure 6
+/**
+ * Provides a GEO-HF noise power spectrum based on a fit to Figure 6
  * from \ref Grote2010.
  *
  * The fit is good between 50Hz to 8kHz and errors between the analytic
@@ -490,7 +492,8 @@ double XLALSimNoisePSDGEOHF(double f /**< frequency (Hz) */)
 }
 
 
-/** Provides a TAMA300 noise power spectrum based on that from Table IV of
+/**
+ * Provides a TAMA300 noise power spectrum based on that from Table IV of
  * \ref dis2001.
  *
  * The comes from the deprecated function LALTAMAPsd in the lal noisemodels
@@ -908,7 +911,8 @@ double XLALSimNoisePSDaLIGOHighFrequency(double f /**< frequency (Hz) */)
 }
 
 
-/** Provides the noise power spectrum for KAGRA based on that from Eqn 5 of
+/**
+ * Provides the noise power spectrum for KAGRA based on that from Eqn 5 of
  * \ref md2012. This is a phenomenological fit to the KAGRA spectrum from
  * http://gwcenter.icrr.u-tokyo.ac.jp/en/researcher/parameter
  */
@@ -929,7 +933,8 @@ double XLALSimNoisePSDKAGRA(double f /**< frequency (Hz) */)
 }
 
 
-/** Provides the noise power spectrum for AdvVirgo based on that from Eqn 6 of
+/**
+ * Provides the noise power spectrum for AdvVirgo based on that from Eqn 6 of
  * \ref md2012. This is a phenomenological fit to the AdvVirgo spectrum from
  * http://wwwcascina.virgo.infin.it/advirgo.
  */

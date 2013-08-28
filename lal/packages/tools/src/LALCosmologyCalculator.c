@@ -18,16 +18,16 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALCosmologyCalculator.h>
 
-/** 
-* The set of functions in this module implements the standard cosmological distance measures 
-* defined a Friedmann-Robertson-Walker-Lemaitre metric.
-* For a detailed reference to the various formulae, see Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 ). 
-**/ 
+/**
+ * The set of functions in this module implements the standard cosmological distance measures
+ * defined a Friedmann-Robertson-Walker-Lemaitre metric.
+ * For a detailed reference to the various formulae, see Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 ).
+ */
 
-/** 
-* Computes the luminosity distance as the angular distance divided by (1+z)^2
-* Eq. 21 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 ) 
-**/
+/**
+ * Computes the luminosity distance as the angular distance divided by (1+z)^2
+ * Eq. 21 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
+ */
 
 double XLALLuminosityDistance(
             LALCosmologicalParameters *omega, 
@@ -37,10 +37,10 @@ double XLALLuminosityDistance(
     return XLALComovingTransverseDistance(omega, z)*x;
 }
 
-/** 
-* Computes the angular size distance by dividing the comoving transverse distance by 1+z
-* Eq. 18 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
-**/
+/**
+ * Computes the angular size distance by dividing the comoving transverse distance by 1+z
+ * Eq. 18 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
+ */
 
 double XLALAngularDistance(
             LALCosmologicalParameters *omega, 
@@ -50,10 +50,10 @@ double XLALAngularDistance(
     return XLALComovingTransverseDistance(omega, z)/x;
 }
 
- /** 
-* Computes the comoving line-of-sight distance (usually called the proper distance) by integrating the Hubble parameter.  
-* Eq. 15 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 ).
-**/
+/**
+ * Computes the comoving line-of-sight distance (usually called the proper distance) by integrating the Hubble parameter.
+ * Eq. 15 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 ).
+ */
 
 double XLALComovingLOSDistance(
             LALCosmologicalParameters *omega, 
@@ -63,9 +63,9 @@ double XLALComovingLOSDistance(
     return dH*XLALIntegrateHubbleParameter(omega,z);
 }
 /**
-* Computes the comoving transverse distance from the comoving line-of-sight distance (proper distance) and
-* Eq. 16 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
-**/
+ * Computes the comoving transverse distance from the comoving line-of-sight distance (proper distance) and
+ * Eq. 16 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
+ */
 double XLALComovingTransverseDistance(
             LALCosmologicalParameters *omega, 
             double z)
@@ -95,10 +95,10 @@ double XLALComovingTransverseDistance(
 
 }
 /**
-* Computes the Hubble distance, independent of the redshift. This is the distance with sets the units for all others.
-* It returns the distance in Mpc. 
-* Eq. 4 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
-**/
+ * Computes the Hubble distance, independent of the redshift. This is the distance with sets the units for all others.
+ * It returns the distance in Mpc.
+ * Eq. 4 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
+ */
 double XLALHubbleDistance(
             LALCosmologicalParameters *omega
             )
@@ -108,9 +108,9 @@ double XLALHubbleDistance(
 }
 
 /**
-* Computes the inverse of the Hubble parameter at redshift z 
-* Eq. 14 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
-**/
+ * Computes the inverse of the Hubble parameter at redshift z
+ * Eq. 14 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
+ */
 
 double XLALHubbleParameter(double z,
             void *omega
@@ -130,10 +130,10 @@ double XLALHubbleParameter(double z,
     return  1.0/E; 
 }
 /**
-* Computes the integral of inverse of the Hubble parameter at redshift z.
-* The integral is computed using the built-in function gsl_integration_qag of the gsl library. 
-* The integral is performed using a Gauss-Kronrod adaptive method (see http://www.gnu.org/software/gsl/manual/html_node/QAG-adaptive-integration.html ) 
-**/
+ * Computes the integral of inverse of the Hubble parameter at redshift z.
+ * The integral is computed using the built-in function gsl_integration_qag of the gsl library.
+ * The integral is performed using a Gauss-Kronrod adaptive method (see http://www.gnu.org/software/gsl/manual/html_node/QAG-adaptive-integration.html )
+ */
 double XLALIntegrateHubbleParameter(LALCosmologicalParameters *omega, double z)
 {
     double result = 0.0;
@@ -157,10 +157,10 @@ double XLALIntegrateHubbleParameter(LALCosmologicalParameters *omega, double z)
 
     return result;
 }
-/** 
-* This function computes the value of a uniform probability distribution over the comoving volume.
-* Details of the derivation of these formulae can be found in Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 )
-**/
+/**
+ * This function computes the value of a uniform probability distribution over the comoving volume.
+ * Details of the derivation of these formulae can be found in Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 )
+ */
 double XLALUniformComovingVolumeDistribution(
             LALCosmologicalParameters *omega, 
             double z,
@@ -171,9 +171,9 @@ double XLALUniformComovingVolumeDistribution(
     return unnorm_density/norm;
 }
 
-/** 
-* This function computes the value of a uniform probability density distribution over the comoving volume at redshift z.
-**/
+/**
+ * This function computes the value of a uniform probability density distribution over the comoving volume at redshift z.
+ */
 
 double XLALUniformComovingVolumeDensity( 
             double z,
@@ -189,12 +189,12 @@ double XLALUniformComovingVolumeDensity(
     return unnorm_density;
 }
 /**
-* Function that integrates the uniform in comoving volume density to compute the normalisation factor. 
-* Consistently with Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 ) the integral should be always performed up to infinity.
-* However, if the user specifies a value for zmax, the probability density will be normalised by integrating up to that value. 
-* To let the upper limit of integration go to infinity, specify zmax < 0. 
-* The integration is performed using gsl_integration_qagiu from the gsl library (see http://www.gnu.org/software/gsl/manual/html_node/QAGI-adaptive-integration-on-infinite-intervals.html )
-**/
+ * Function that integrates the uniform in comoving volume density to compute the normalisation factor.
+ * Consistently with Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 ) the integral should be always performed up to infinity.
+ * However, if the user specifies a value for zmax, the probability density will be normalised by integrating up to that value.
+ * To let the upper limit of integration go to infinity, specify zmax < 0.
+ * The integration is performed using gsl_integration_qagiu from the gsl library (see http://www.gnu.org/software/gsl/manual/html_node/QAGI-adaptive-integration-on-infinite-intervals.html )
+ */
 double XLALIntegrateComovingVolumeDensity(LALCosmologicalParameters *omega, double z)
 {
     double result = 0.0;
@@ -222,9 +222,9 @@ double XLALIntegrateComovingVolumeDensity(LALCosmologicalParameters *omega, doub
     return result;
 }
 /**
-* Creates a LALCosmologicalParameters structure from the values of the cosmological parameters.
-* Note that the boundary condition \Omega_m + \Omega_k + \Omega_\Lambda = 1 is imposed here.  
-**/
+ * Creates a LALCosmologicalParameters structure from the values of the cosmological parameters.
+ * Note that the boundary condition \Omega_m + \Omega_k + \Omega_\Lambda = 1 is imposed here.
+ */
 LALCosmologicalParameters *XLALCreateCosmologicalParameters(double h, double om, double ol, double w0, double w1, double w2)
 {
     LALCosmologicalParameters *p = (LALCosmologicalParameters *)malloc(sizeof(LALCosmologicalParameters));
@@ -238,16 +238,16 @@ LALCosmologicalParameters *XLALCreateCosmologicalParameters(double h, double om,
     return p;
 }
 /**
-* Destroys a LALCosmologicalParameters structure.
-**/
+ * Destroys a LALCosmologicalParameters structure.
+ */
 
 void XLALDestroyCosmologicalParameters(LALCosmologicalParameters *omega)
 {
     LALFree(omega);
 }
 /**
-* The next set of functions return specific parameters from the LALCosmologicalParameters structure 
-**/
+ * The next set of functions return specific parameters from the LALCosmologicalParameters structure
+ */
 
 double XLALGetHubbleConstant(LALCosmologicalParameters *omega)
 {
@@ -278,8 +278,8 @@ double XLALGetW2(LALCosmologicalParameters *omega)
     return omega->w2;
 }
 /**
-* Function to set a LALCosmologicalParameters structure to the default LambdaCDM value (see http://arxiv.org/abs/1303.5076 )
-**/
+ * Function to set a LALCosmologicalParameters structure to the default LambdaCDM value (see http://arxiv.org/abs/1303.5076 )
+ */
 void XLALSetCosmologicalParametersDefaultValue(LALCosmologicalParameters *omega)
 {
     omega->h = 0.671;
@@ -291,8 +291,8 @@ void XLALSetCosmologicalParametersDefaultValue(LALCosmologicalParameters *omega)
     omega->w2=0.0;
 }
 /**
-* Function to create a LALCosmologicalRateParameters structure
-**/
+ * Function to create a LALCosmologicalRateParameters structure
+ */
 LALCosmologicalRateParameters *XLALCreateCosmologicalRateParameters(double r0, double W, double Q, double R)
 {
     LALCosmologicalRateParameters *p = (LALCosmologicalRateParameters *)malloc(sizeof(LALCosmologicalRateParameters));
@@ -303,24 +303,24 @@ LALCosmologicalRateParameters *XLALCreateCosmologicalRateParameters(double r0, d
     return p;
 }
 /**
-* Destroys a LALCosmologicalParameters structure.
-**/
+ * Destroys a LALCosmologicalParameters structure.
+ */
 
 void XLALDestroyCosmologicalRateParameters(LALCosmologicalRateParameters *rate)
 {
     LALFree(rate);
 }
 /**
-* Returns the local rate 
-**/
+ * Returns the local rate
+ */
 double XLALGetLocalRate(LALCosmologicalRateParameters *rate)
 {
     return rate->r0;
 }
 /**
-* Implements the fit to the SFR in Eq.7 of Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 )
-* See also Porciani & Madau ( http://arxiv.org/pdf/astro-ph/0008294v2.pdf ) and references therein
-**/
+ * Implements the fit to the SFR in Eq.7 of Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 )
+ * See also Porciani & Madau ( http://arxiv.org/pdf/astro-ph/0008294v2.pdf ) and references therein
+ */
 double XLALStarFormationDensity(double z, void *params)
 {
     LALCosmologicalParametersAndRate *p = (LALCosmologicalParametersAndRate *)params;
@@ -329,9 +329,9 @@ double XLALStarFormationDensity(double z, void *params)
     double hz0 = x*x*x;
     return hz0/hz*p->rate->r0*(1.0+p->rate->W)*exp(p->rate->Q*z)/(exp(p->rate->R*z)+p->rate->W);
 }
-/** 
-* Returns the Rate weighted uniform comoving volume density
-**/
+/**
+ * Returns the Rate weighted uniform comoving volume density
+ */
 double XLALRateWeightedUniformComovingVolumeDensity(double z, void *params)
 {
     LALCosmologicalParametersAndRate *p = (LALCosmologicalParametersAndRate *)params;
@@ -341,12 +341,12 @@ double XLALRateWeightedUniformComovingVolumeDensity(double z, void *params)
 }
 
 /**
-* Function that integrates the uniform in comoving volume density to compute the normalisation factor. 
-* Consistently with Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 ) the integral should be always performed up to infinity.
-* However, if the user specifies a value for zmax, the probability density will be normalised by integrating up to that value. 
-* To let the upper limit of integration go to infinity, specify zmax < 0. 
-* The integration is performed using gsl_integration_qagiu from the gsl library (see http://www.gnu.org/software/gsl/manual/html_node/QAGI-adaptive-integration-on-infinite-intervals.html )
-**/
+ * Function that integrates the uniform in comoving volume density to compute the normalisation factor.
+ * Consistently with Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 ) the integral should be always performed up to infinity.
+ * However, if the user specifies a value for zmax, the probability density will be normalised by integrating up to that value.
+ * To let the upper limit of integration go to infinity, specify zmax < 0.
+ * The integration is performed using gsl_integration_qagiu from the gsl library (see http://www.gnu.org/software/gsl/manual/html_node/QAGI-adaptive-integration-on-infinite-intervals.html )
+ */
 
 double XLALIntegrateRateWeightedComovingVolumeDensity(LALCosmologicalParametersAndRate *p, double z)
 {
@@ -375,9 +375,9 @@ double XLALIntegrateRateWeightedComovingVolumeDensity(LALCosmologicalParametersA
     return result;
 }
 /**
-*  Returns the source redshifts distribution function obtained by normalizing the differential rate dR/dz integrated throughout the cosmos, as seen in our frame. 
-*  It gives the probability density distribution function of an event occurring in the redshift range 0 to z, see Eq.12 in Coward & Burman ( http://arxiv.org/pdf/astro-ph/0505181v1.pdf )
-**/
+ * Returns the source redshifts distribution function obtained by normalizing the differential rate dR/dz integrated throughout the cosmos, as seen in our frame.
+ * It gives the probability density distribution function of an event occurring in the redshift range 0 to z, see Eq.12 in Coward & Burman ( http://arxiv.org/pdf/astro-ph/0505181v1.pdf )
+ */
 double XLALRateWeightedComovingVolumeDistribution(LALCosmologicalParametersAndRate *p, double z, double zmax)
 {
     double norm = XLALIntegrateRateWeightedComovingVolumeDensity(p, zmax);          
@@ -385,8 +385,8 @@ double XLALRateWeightedComovingVolumeDistribution(LALCosmologicalParametersAndRa
     return unnorm_density/norm;
 }
 /**
-* Creates a cosmological parameters and rate structure
-**/ 
+ * Creates a cosmological parameters and rate structure
+ */
 LALCosmologicalParametersAndRate *XLALCreateCosmologicalParametersAndRate(void)
 {
     LALCosmologicalParametersAndRate *p = (LALCosmologicalParametersAndRate *)malloc(sizeof(LALCosmologicalParametersAndRate));
@@ -395,8 +395,8 @@ LALCosmologicalParametersAndRate *XLALCreateCosmologicalParametersAndRate(void)
     return p;
 }
 /**
-* Destroys a cosmological parameters and rate structure
-**/ 
+ * Destroys a cosmological parameters and rate structure
+ */
 void XLALDestroyCosmologicalParametersAndRate(LALCosmologicalParametersAndRate *p)
 {
     XLALDestroyCosmologicalRateParameters(p->rate);
@@ -404,8 +404,8 @@ void XLALDestroyCosmologicalParametersAndRate(LALCosmologicalParametersAndRate *
     LALFree(p);
 }
 /**
-* Function to set a LALCosmologicalRateParameters structure to the default independent of z value 
-**/
+ * Function to set a LALCosmologicalRateParameters structure to the default independent of z value
+ */
 void XLALSetCosmologicalRateParametersDefaultValue(LALCosmologicalRateParameters *params)
 {
     params->r0=5E-12;

@@ -20,25 +20,30 @@
 #include <lal/LALNoiseModels.h>
 
 /**
-\author Sathyaprakash, B. S.
-\ingroup LALNoiseModels_h
-\brief Function to add two vectors with weights.
-
-\heading{Description}
-Given weights \c A1 and \c A2 as in \c AddVectorsIn
-and vectors \c v1 and \c v2 this code returns vector \c v
-given by
-
-<tt>
-v[i] = A1 v1[i] + A2 v2[i];
-</tt>
-\heading{Algorithm}
-\heading{Uses}
-\code
-none
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \ingroup LALNoiseModels_h
+ * \brief Function to add two vectors with weights.
+ *
+ * ### Description ###
+ *
+ * Given weights \c A1 and \c A2 as in \c AddVectorsIn
+ * and vectors \c v1 and \c v2 this code returns vector \c v
+ * given by
+ *
+ * <tt>
+ * v[i] = A1 v1[i] + A2 v2[i];
+ * </tt>
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * none
+ * \endcode
+ *
+ */
 void
 LALAddVectors
    (

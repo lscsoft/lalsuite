@@ -28,20 +28,21 @@ extern "C" {
 #endif
 
 /**
-\addtogroup LALCorrelation_h
-\author Yakushin, Igor
-
-\brief [One sentence briefly defining scope of the header]
-
-\heading{Synopsis}
-\code
-#include <lal/LALCorrelation.h>
-\endcode
-
-[Generic documentation on the header; this is the main place to
-document any stuff not specific to the module]
-
-*/
+ * \addtogroup LALCorrelation_h
+ * \author Yakushin, Igor
+ *
+ * \brief [One sentence briefly defining scope of the header]
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALCorrelation.h>
+ * \endcode
+ *
+ * [Generic documentation on the header; this is the main place to
+ * document any stuff not specific to the module]
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

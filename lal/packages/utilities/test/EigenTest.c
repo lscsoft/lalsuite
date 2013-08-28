@@ -18,72 +18,75 @@
 */
 
 /**
-\file
-\ingroup MatrixUtils_h
-\author Creighton, T. D.
-
-\brief Computes the eigenvalues and eigenvectors of a matrix.
-
-\heading{Usage}
-\code
-EigenTest [-n size | -i infile] [-o outfile] [-v] [-t] [-s] [-d debuglevel]
-\endcode
-
-\heading{Description}
-
-This program computes the eigenvalues and eigenvectors of a symmetric
-real matrix using the routines in \ref Eigen_c and
-\ref EigenInternal_c.  The following option flags are accepted:
-<ul>
-<li>[<tt>-n</tt>] Generates a random symmetric
-\c size\f$\times\f$\c size metric.  If this option is not given,
-<tt>-n 3</tt> is assumed.  This option (or its default) is
-\e overridden by the <tt>-i</tt> option, below.</li>
-<li>[<tt>-i</tt>] Reads a matrix from an input file \c infile
-using the function <tt>LALSReadVector()</tt>.  If the input file is
-specified as \c stdin, the data is read from standard input (not a
-file named \c stdin).</li>
-<li>[<tt>-o</tt>] Writes the eigenvalues (and eigenvectors, if
-<tt>-v</tt> is specified below) to an output file \c outfile.  If
-the output file is specified as \c stdout or \c stderr, the
-data is written to standard output or standard error (not to files
-named \c stdout or \c stderr).  The eigenvalues are written
-as a single row of whitespace-separated numbers, and the eigenvectors
-as a square matrix where each column is the eigenvector of the
-corresponding eigenvalue.  If this option is not specified, no output
-is written.</li>
-<li>[<tt>-v</tt>] Specifies that eigenvectors are to be computed as
-well as eigenvalues.</li>
-<li>[<tt>-t</tt>] Specifies that the computation is to be timed;
-timing information is written to \c stderr.</li>
-<li>[<tt>-s</tt>] Specifies that the calculations are to be done to
-single-precision (\c REAL4) rather than double-precision
-(\c REAL8).</li>
-<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If not
-specified, level 0 is assumed.</li>
-</ul>
-
-\heading{Input format:} If an input file or stream is specified, it
-should consist of \f$N\f$ consecutive lines of \f$N\f$ whitespace-separated
-numbers, that will be parsed using <tt>LALDReadVector()</tt>, or
-<tt>LALSReadVector()</tt> if the <tt>-s</tt> option was given.  The data
-block may be preceded by blank or comment lines (lines containing no
-parseable numbers), but once a parseable number is found, the rest
-should follow in a contiguous block.  If the lines contain different
-numbers of data columns, or if there are fewer lines than columns,
-then an error is returned; if there are \e more lines than
-columns, then the extra lines are ignored.
-
-\heading{Output format:} If an output file or stream is specified,
-the input matrix is first written as \f$N\f$ consecutive lines of \f$N\f$
-whitespace-separated numbers.  This will be followed with a blank
-line, then a single line of \f$N\f$ whitespace-separated numbers
-representing the eigenvalues.  If the <tt>-v</tt> option is specified,
-another blank line will be appended to the output, followed by \f$N\f$
-lines of \f$N\f$ columns specifying the eigenvectors: the column under
-each eigenvalue is the corresponding eigenvector.
-
-*/
+ * \file
+ * \ingroup MatrixUtils_h
+ * \author Creighton, T. D.
+ *
+ * \brief Computes the eigenvalues and eigenvectors of a matrix.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * EigenTest [-n size | -i infile] [-o outfile] [-v] [-t] [-s] [-d debuglevel]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program computes the eigenvalues and eigenvectors of a symmetric
+ * real matrix using the routines in \ref Eigen_c and
+ * \ref EigenInternal_c.  The following option flags are accepted:
+ * <ul>
+ * <li>[<tt>-n</tt>] Generates a random symmetric
+ * \c size\f$\times\f$\c size metric.  If this option is not given,
+ * <tt>-n 3</tt> is assumed.  This option (or its default) is
+ * \e overridden by the <tt>-i</tt> option, below.</li>
+ * <li>[<tt>-i</tt>] Reads a matrix from an input file \c infile
+ * using the function <tt>LALSReadVector()</tt>.  If the input file is
+ * specified as \c stdin, the data is read from standard input (not a
+ * file named \c stdin).</li>
+ * <li>[<tt>-o</tt>] Writes the eigenvalues (and eigenvectors, if
+ * <tt>-v</tt> is specified below) to an output file \c outfile.  If
+ * the output file is specified as \c stdout or \c stderr, the
+ * data is written to standard output or standard error (not to files
+ * named \c stdout or \c stderr).  The eigenvalues are written
+ * as a single row of whitespace-separated numbers, and the eigenvectors
+ * as a square matrix where each column is the eigenvector of the
+ * corresponding eigenvalue.  If this option is not specified, no output
+ * is written.</li>
+ * <li>[<tt>-v</tt>] Specifies that eigenvectors are to be computed as
+ * well as eigenvalues.</li>
+ * <li>[<tt>-t</tt>] Specifies that the computation is to be timed;
+ * timing information is written to \c stderr.</li>
+ * <li>[<tt>-s</tt>] Specifies that the calculations are to be done to
+ * single-precision (\c REAL4) rather than double-precision
+ * (\c REAL8).</li>
+ * <li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If not
+ * specified, level 0 is assumed.</li>
+ * </ul>
+ *
+ * \par Input format:
+ * If an input file or stream is specified, it
+ * should consist of \f$N\f$ consecutive lines of \f$N\f$ whitespace-separated
+ * numbers, that will be parsed using <tt>LALDReadVector()</tt>, or
+ * <tt>LALSReadVector()</tt> if the <tt>-s</tt> option was given.  The data
+ * block may be preceded by blank or comment lines (lines containing no
+ * parseable numbers), but once a parseable number is found, the rest
+ * should follow in a contiguous block.  If the lines contain different
+ * numbers of data columns, or if there are fewer lines than columns,
+ * then an error is returned; if there are \e more lines than
+ * columns, then the extra lines are ignored.
+ *
+ * \par Output format:
+ * If an output file or stream is specified,
+ * the input matrix is first written as \f$N\f$ consecutive lines of \f$N\f$
+ * whitespace-separated numbers.  This will be followed with a blank
+ * line, then a single line of \f$N\f$ whitespace-separated numbers
+ * representing the eigenvalues.  If the <tt>-v</tt> option is specified,
+ * another blank line will be appended to the output, followed by \f$N\f$
+ * lines of \f$N\f$ columns specifying the eigenvectors: the column under
+ * each eigenvalue is the corresponding eigenvector.
+ *
+ */
 
 /** \name Error Codes */
 /*@{*/

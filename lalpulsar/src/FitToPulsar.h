@@ -18,75 +18,76 @@
 */
 
 /**
-\author Dupuis, R.J.
-\file
-\ingroup pulsarTODO
-
-Provides routines for finding the best fit of the measured data to the strain expected from
-non-precessing pulsar.
-
-\heading{Synopsis}
-\code
-#include <lal/FitToPulsar.h>
-\endcode
-
-The model to be fitted to the data after \c LALFineHeterodyneToPulsar has been applied is
-\f{equation}{
-y(t;\mathrm{a}) = F_{+}(t;\psi)h_{0} (1 + \cos^{2}\iota)e^{i2\phi_{0}} - 2iF_{\times}(t;\psi) h_{0} \cos\iota e^{i2\phi_{0}}
-\f}
-
-
-The reduced set of data points is fitted to this model by minimizing
- \f$\chi^2\f$ over \f$h_{0}\f$, \f$\phi_{0}\f$, \f$\iota\f$, and \f$\psi\f$.
-
-\f{equation}{
-\chi^2(\mathrm{a}) = \sum_{k}\left|\frac{B_{k} - y(t;\mathrm{a})}{\sigma_{k}^{2}}\right|^2
-\f}
-
-The minimization of \f$\chi^2\f$ is done in two steps <tt>LALCoarseFitToPulsar()</tt> and <tt>LALFineFitToPulsar()</tt>.
-
-
-More documentation soon.
-\heading{Error conditions}
-
-
-\heading{Structures}
-
-\heading{Structure \c CoarseFitInput}
-
-This structure stores locked data to be fitted by model.
-<dl>
-<dt><tt>COMPLEX16Vector *B</tt></dt><dd> heterodyned, averaged and resampled data</dd>
-<dt><tt>COMPLEX16Vector *var</tt></dt><dd> variance of the rFactor points that were averaged</dd>
-<dt><tt>LIGOTimeGPS *t</tt></dt><dd> time stamp for each data point (not necessarily with equal time steps)</dd>
-</dl>
-
-\heading{Structure \c CoarseFitOutput}
-
-This structure stores the results from the coarse fit of parameters.
-<dl>
-<dt><tt>REAL8 h0</tt></dt><dd> best fit h0</dd>
-<dt><tt>REAL8 eh0[3]</tt></dt><dd> standard error for h0, min standard error, max standard error</dd>
-<dt><tt>REAL8 cosIota</tt></dt><dd> best fit cosIota</dd>
-<dt><tt>REAL8 phase</tt></dt><dd> best fit phase</dd>
-<dt><tt>REAL8 psi</tt></dt><dd> best fit psi (polarization angle)</dd>
-<dt><tt>REAL8 chiSquare</tt></dt><dd> min value of chi square</dd>
-<dt><tt>REAL8Vector *mChiSquare</tt></dt><dd> matrix with chi square values</dd>
-</dl>
-
-\heading{Structure \c CoarseFitParams}
-
-This structure stores the parameters for the coarse fit.
-<dl>
-<dt><tt>REAL8 meshH0[3]</tt></dt><dd> min h0, delta h0, number of steps</dd>
-<dt><tt>REAL8 meshCosIota[3]</tt></dt><dd> min cosIota, delta cosIota, number of steps</dd>
-<dt><tt>REAL8 meshPhase[3]</tt></dt><dd> min phase, delta phase, number of steps</dd>
-<dt><tt>REAL8 meshPsi[3]</tt></dt><dd> min psi, delta psi, number of steps</dd>
-<dt><tt>LALSource pulsarSrc</tt></dt><dd> describes sky position of pulsar</dd>
-<dt><tt>LALDetector detector</tt></dt><dd> detector</dd>
-</dl>
-
-*/
+ * \author Dupuis, R.J.
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * Provides routines for finding the best fit of the measured data to the strain expected from
+ * non-precessing pulsar.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/FitToPulsar.h>
+ * \endcode
+ *
+ * The model to be fitted to the data after \c LALFineHeterodyneToPulsar has been applied is
+ * \f{equation}{
+ * y(t;\mathrm{a}) = F_{+}(t;\psi)h_{0} (1 + \cos^{2}\iota)e^{i2\phi_{0}} - 2iF_{\times}(t;\psi) h_{0} \cos\iota e^{i2\phi_{0}}
+ * \f}
+ *
+ * The reduced set of data points is fitted to this model by minimizing
+ * \f$\chi^2\f$ over \f$h_{0}\f$, \f$\phi_{0}\f$, \f$\iota\f$, and \f$\psi\f$.
+ *
+ * \f{equation}{
+ * \chi^2(\mathrm{a}) = \sum_{k}\left|\frac{B_{k} - y(t;\mathrm{a})}{\sigma_{k}^{2}}\right|^2
+ * \f}
+ *
+ * The minimization of \f$\chi^2\f$ is done in two steps <tt>LALCoarseFitToPulsar()</tt> and <tt>LALFineFitToPulsar()</tt>.
+ *
+ * More documentation soon.
+ *
+ * ### Error conditions ###
+ *
+ *
+ * ### Structures ###
+ *
+ *
+ * ### Structure \c CoarseFitInput ###
+ *
+ * This structure stores locked data to be fitted by model.
+ * <dl>
+ * <dt><tt>COMPLEX16Vector *B</tt></dt><dd> heterodyned, averaged and resampled data</dd>
+ * <dt><tt>COMPLEX16Vector *var</tt></dt><dd> variance of the rFactor points that were averaged</dd>
+ * <dt><tt>LIGOTimeGPS *t</tt></dt><dd> time stamp for each data point (not necessarily with equal time steps)</dd>
+ * </dl>
+ *
+ * ### Structure \c CoarseFitOutput ###
+ *
+ * This structure stores the results from the coarse fit of parameters.
+ * <dl>
+ * <dt><tt>REAL8 h0</tt></dt><dd> best fit h0</dd>
+ * <dt><tt>REAL8 eh0[3]</tt></dt><dd> standard error for h0, min standard error, max standard error</dd>
+ * <dt><tt>REAL8 cosIota</tt></dt><dd> best fit cosIota</dd>
+ * <dt><tt>REAL8 phase</tt></dt><dd> best fit phase</dd>
+ * <dt><tt>REAL8 psi</tt></dt><dd> best fit psi (polarization angle)</dd>
+ * <dt><tt>REAL8 chiSquare</tt></dt><dd> min value of chi square</dd>
+ * <dt><tt>REAL8Vector *mChiSquare</tt></dt><dd> matrix with chi square values</dd>
+ * </dl>
+ *
+ * ### Structure \c CoarseFitParams ###
+ *
+ * This structure stores the parameters for the coarse fit.
+ * <dl>
+ * <dt><tt>REAL8 meshH0[3]</tt></dt><dd> min h0, delta h0, number of steps</dd>
+ * <dt><tt>REAL8 meshCosIota[3]</tt></dt><dd> min cosIota, delta cosIota, number of steps</dd>
+ * <dt><tt>REAL8 meshPhase[3]</tt></dt><dd> min phase, delta phase, number of steps</dd>
+ * <dt><tt>REAL8 meshPsi[3]</tt></dt><dd> min psi, delta psi, number of steps</dd>
+ * <dt><tt>LALSource pulsarSrc</tt></dt><dd> describes sky position of pulsar</dd>
+ * <dt><tt>LALDetector detector</tt></dt><dd> detector</dd>
+ * </dl>
+ *
+ */
 
 #ifndef _FITTOPULSAR_H
 #define _FITTOPULSAR_H

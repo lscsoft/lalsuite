@@ -19,15 +19,15 @@
 
 /**
  * \file MultiWeights.c
- * \author Badri Krishnan, Alicia Sintes 
+ * \author Badri Krishnan, Alicia Sintes
  * \ingroup pulsarApps
- * \brief Utility code for calculating some properties of the noise weights 
-   for the multi-IFO Hough search
-
-   History:   Created by Sintes and Krishnan July 04, 2003
-              Modifications for S4 January 2006
-
-*/
+ * \brief Utility code for calculating some properties of the noise weights
+ * for the multi-IFO Hough search
+ *
+ * History:   Created by Sintes and Krishnan July 04, 2003
+ * Modifications for S4 January 2006
+ *
+ */
 
 #include "./DriveHoughColor.h"
 

@@ -23,7 +23,8 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger, K. Wette
+/**
+ * \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger, K. Wette
  * \file
  * \ingroup pulsarApps
  * \brief
@@ -34,8 +35,7 @@
  * by Bruce Allen, Bernd Machenschalk, David Hammer, Jolien Creighton, Maria Alessandra Papa,
  * Reinhard Prix, Xavier Siemens, Scott Koranda, Yousuke Itoh
  *
- *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -128,7 +128,8 @@ typedef struct {
   REAL4 LVstat;				/**< Line Veto statistic */
 } FstatCandidate;
 
-/** moving 'Scanline window' of candidates on the scan-line,
+/**
+ * moving 'Scanline window' of candidates on the scan-line,
  * which is used to find local 1D maxima.
  */
 typedef struct
@@ -138,7 +139,8 @@ typedef struct
   FstatCandidate *center;		/**< pointer to middle candidate in window */
 } scanlineWindow_t;
 
-/** Struct holding various timing measurements and relevant search parameters.
+/**
+ * Struct holding various timing measurements and relevant search parameters.
  * This is used to fit timing-models with measured times to predict search run-times
  */
 typedef struct
@@ -157,7 +159,8 @@ typedef struct
   REAL8 tauTransMarg;		/**< time to marginalize the Fstat-map to compute transient-search Bayes [s] */
 } timingInfo_t;
 
-/** Enum for which statistic is used to "rank" significance of candidates
+/**
+ * Enum for which statistic is used to "rank" significance of candidates
  */
 typedef enum {
   RANKBY_F  = 0, 	/**< rank candidates by F-statistic */
@@ -166,7 +169,8 @@ typedef enum {
 } RankingStat_t;
 
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
@@ -1430,7 +1434,8 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 
 
 
-/** Initialized Fstat-code: handle user-input and set everything up.
+/**
+ * Initialized Fstat-code: handle user-input and set everything up.
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
 void
@@ -1955,7 +1960,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
 } /* InitFStat() */
 
-/** Produce a log-string describing the present run-setup
+/**
+ * Produce a log-string describing the present run-setup
  */
 void
 getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
@@ -2029,7 +2035,8 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
 
 
 /***********************************************************************/
-/** Log the all relevant parameters of the present search-run to a log-file.
+/**
+ * Log the all relevant parameters of the present search-run to a log-file.
  * The name of the log-file is log_fname
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
@@ -2111,7 +2118,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 
 
 /*----------------------------------------------------------------------*/
-/** Some general consistency-checks on user-input.
+/**
+ * Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
  */
 void
@@ -2357,7 +2365,8 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSerie
   return 0;
 } /* outputBeamTS() */
 
-/** write full 'PulsarCandidate' (i.e. Doppler params + Amplitude params + error-bars + Fa,Fb, F, + A,B,C,D
+/**
+ * write full 'PulsarCandidate' (i.e. Doppler params + Amplitude params + error-bars + Fa,Fb, F, + A,B,C,D
  * RETURN 0 = OK, -1 = ERROR
  */
 int
@@ -2462,7 +2471,8 @@ compareFstatCandidates_LV ( const void *candA, const void *candB )
 
 } /* compareFstatCandidates_LV() */
 
-/** write one 'FstatCandidate' (i.e. only Doppler-params + Fstat) into file 'fp'.
+/**
+ * write one 'FstatCandidate' (i.e. only Doppler-params + Fstat) into file 'fp'.
  * Return: 0 = OK, -1 = ERROR
  */
 int
@@ -2507,7 +2517,8 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
  *
  * --------------------------------------------------------------------------------*/
 
-/** Create a scanline window, with given windowWings >= 0.
+/**
+ * Create a scanline window, with given windowWings >= 0.
  * Note: the actual window-size is 1 + 2 * windowWings
  */
 scanlineWindow_t *
@@ -2548,7 +2559,8 @@ XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow )
 
 } /* XLALDestroyScanlineWindow() */
 
-/** Advance by pushing a new candidate into the scanline-window
+/**
+ * Advance by pushing a new candidate into the scanline-window
  */
 int
 XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow )
@@ -2568,7 +2580,8 @@ XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *sc
 
 } /* XLALAdvanceScanlineWindow() */
 
-/** check wether central candidate in Scanline-window is a local maximum
+/**
+ * check wether central candidate in Scanline-window is a local maximum
  */
 BOOLEAN
 XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingStatistic )
@@ -2608,7 +2621,8 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
 
 } /* XLALCenterIsLocalMax() */
 
-/** Mini helper-function: append string 'str2' to string 'str1',
+/**
+ * Mini helper-function: append string 'str2' to string 'str1',
  * returns pointer to new concatenated string
  */
 CHAR *append_string ( CHAR *str1, const CHAR *str2 )
@@ -2637,7 +2651,8 @@ CHAR *append_string ( CHAR *str1, const CHAR *str2 )
 
 } /* append_string() */
 
-/** Function to append one timing-info line to open output file.
+/**
+ * Function to append one timing-info line to open output file.
  *
  * NOTE: called with NULL timing pointer writes header-comment line.
  */
@@ -2667,7 +2682,8 @@ write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
 } /* write_TimingInfo_to_fp() */
 
 #ifdef HIGHRES_TIMING
-/** Return process User CPU time used.
+/**
+ * Return process User CPU time used.
  */
 REAL8
 XLALGetUserCPUTime ( void )

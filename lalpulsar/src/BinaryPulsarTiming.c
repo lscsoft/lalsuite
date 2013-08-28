@@ -24,60 +24,59 @@
  * \ingroup pulsarTODO
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
-   Functions for calculating the timing delay to a signal from a pulsar in a
-   binary system and reading pulsar parameters from TEMPO .par
-   files.
-   Models are taken from Taylor and Weisberg (1989) and use the
-   naming conventions therein and used by TEMPO .
-
-   \heading{Prototypes}
-
-
-
-   \heading{Description}
-
-   The main function computes the time delay of a signal from a pulsar in a
-   binary system due to doppler shifts and relativistic delays,
-   \f{equation}{
-   \Delta{}t = t_\textrm{Roemer} + t_\textrm{Shapiro} + t_\textrm{Einstein} + t_\textrm{
-   Abberation},
-   \f}
-   where \f$t_\textrm{Roemer}\f$ is the light travel time, \f$t_\textrm{Shapiro}\f$ is the
-   General relativistic time delay, \f$t_\textrm{Einstein}\f$ is the special
-   relativistic time delay, and \f$t_\textrm{Abberation}\f$ is the delay caused by the
-   pulsars' rotation. There are several models of the binary systems, described
-   in [\ref TaylorWeisberg1989], of which the four most common are so far
-   implemented. The four models are the Blandford-Teukolsky model (BT)
-   [\ref BlandfordTeukolsky1976], the low ellipticity model (ELL1)
-   [\ref ChLangeetal2001], Damour-Deruelle model (DD) [\ref DamourDeruelle1985],
-   and the main sequence system model (MSS) [\ref Wex1998].
-   These four models all use the five main binary parameters: the longitude of
-   periastron \f$\omega_0\f$, the eccentricity of the orbit \f$e\f$, the orbital period
-   \f$P\f$, the time of periastron/or the time of ascension of the first node
-   \f$T_0\f$/\f$T_{\textrm{asc}}\f$, and the projected semi-major axis \f$a\sin{}i\f$. The are
-   also many other model dependent parameters. These routines closely follow
-   those used in the radio astronomy package TEMPO. A further model from TEMPO2
-   called T2 is also implemented in a basic form. The model is generally based
-   on the DD model, but will convert to ELL1 if the \c eps parameters are set.
-   At the moment this (T2) does not include multiple companions in the orbit,
-   but does encompass the DDS model. It also can include Kopeikin terms that
-   take account of the effect of the binary orbit on the parallax.
-
-   Radio astronomers fit pulsar parameters using TEMPO which will output
-   the parameters in a <tt>.par</tt> file. The values allowed in this file can be
-   found in the TEMPO documentation. A function is included to extract these
-   parameters from the <tt>.par</tt> files and put them into a
-   \c BinaryPulsarParams structure, it will set any unused parameters to
-   zero or \c NULL. All parameters are in the units used by TEMPO with any
-   conversion to SI units occuring within the binary timing routines. A function
-   is also included which converts a string containing the right ascension or
-   declination in the format <tt>ddd/hh:mm:ss.s</tt> or <tt>ddd/hhmmss.s</tt>
-   (as is given in the <tt>.par</tt> file) into a \c REAL8 value in
-   radians.
-
-   \heading{Notes}
-
-*/
+ * Functions for calculating the timing delay to a signal from a pulsar in a
+ * binary system and reading pulsar parameters from TEMPO .par
+ * files.
+ * Models are taken from Taylor and Weisberg (1989) and use the
+ * naming conventions therein and used by TEMPO .
+ *
+ * ### Prototypes ###
+ *
+ *
+ * ### Description ###
+ *
+ * The main function computes the time delay of a signal from a pulsar in a
+ * binary system due to doppler shifts and relativistic delays,
+ * \f{equation}{
+ * \Delta{}t = t_\textrm{Roemer} + t_\textrm{Shapiro} + t_\textrm{Einstein} + t_\textrm{
+ * Abberation},
+ * \f}
+ * where \f$t_\textrm{Roemer}\f$ is the light travel time, \f$t_\textrm{Shapiro}\f$ is the
+ * General relativistic time delay, \f$t_\textrm{Einstein}\f$ is the special
+ * relativistic time delay, and \f$t_\textrm{Abberation}\f$ is the delay caused by the
+ * pulsars' rotation. There are several models of the binary systems, described
+ * in [\ref TaylorWeisberg1989], of which the four most common are so far
+ * implemented. The four models are the Blandford-Teukolsky model (BT)
+ * [\ref BlandfordTeukolsky1976], the low ellipticity model (ELL1)
+ * [\ref ChLangeetal2001], Damour-Deruelle model (DD) [\ref DamourDeruelle1985],
+ * and the main sequence system model (MSS) [\ref Wex1998].
+ * These four models all use the five main binary parameters: the longitude of
+ * periastron \f$\omega_0\f$, the eccentricity of the orbit \f$e\f$, the orbital period
+ * \f$P\f$, the time of periastron/or the time of ascension of the first node
+ * \f$T_0\f$/\f$T_{\textrm{asc}}\f$, and the projected semi-major axis \f$a\sin{}i\f$. The are
+ * also many other model dependent parameters. These routines closely follow
+ * those used in the radio astronomy package TEMPO. A further model from TEMPO2
+ * called T2 is also implemented in a basic form. The model is generally based
+ * on the DD model, but will convert to ELL1 if the \c eps parameters are set.
+ * At the moment this (T2) does not include multiple companions in the orbit,
+ * but does encompass the DDS model. It also can include Kopeikin terms that
+ * take account of the effect of the binary orbit on the parallax.
+ *
+ * Radio astronomers fit pulsar parameters using TEMPO which will output
+ * the parameters in a <tt>.par</tt> file. The values allowed in this file can be
+ * found in the TEMPO documentation. A function is included to extract these
+ * parameters from the <tt>.par</tt> files and put them into a
+ * \c BinaryPulsarParams structure, it will set any unused parameters to
+ * zero or \c NULL. All parameters are in the units used by TEMPO with any
+ * conversion to SI units occuring within the binary timing routines. A function
+ * is also included which converts a string containing the right ascension or
+ * declination in the format <tt>ddd/hh:mm:ss.s</tt> or <tt>ddd/hhmmss.s</tt>
+ * (as is given in the <tt>.par</tt> file) into a \c REAL8 value in
+ * radians.
+ *
+ * ### Notes ###
+ *
+ */
 
 /* Matt Pitkin 29/04/04 */
 
@@ -99,8 +98,10 @@
 #define DAYSTOSECS 86400.0 /* number of seconds in a day */
 #define AULTSC 499.00478364 /* number of light seconds in AU (from tempo2.h) */
 
-/** XLAL function to compute the eccentric anomaly iteratively from Kelper's
- * equation. */
+/**
+ * XLAL function to compute the eccentric anomaly iteratively from Kelper's
+ * equation.
+ */
 void XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u){
   REAL8 du;
 
@@ -111,8 +112,10 @@ void XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u){
   } while ( fabs(du) > 1.e-14 );
 }
 
-/** XLAL function to compute Kopeikin terms that include the effect of
-  * binary orbital parameters of parallax */
+/**
+ * XLAL function to compute Kopeikin terms that include the effect of
+ * binary orbital parameters of parallax
+ */
 void XLALComputeKopeikinTerms( KopeikinTerms *kop,
                                BinaryPulsarParams *params,
                                BinaryPulsarInput *in ){
@@ -231,8 +234,9 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
 }
 
 
-/** Calculate the binary system time delay using the pulsar parameters in
- *  \c params
+/**
+ * Calculate the binary system time delay using the pulsar parameters in
+ * \c params
  */
 void
 LALBinaryPulsarDeltaT( LALStatus            *status,
@@ -271,8 +275,9 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
 }
 
 
-/** XLAL function to compute the binary time delay
-  */
+/**
+ * XLAL function to compute the binary time delay
+ */
 void
 XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
                         BinaryPulsarInput    *input,

@@ -32,18 +32,19 @@ extern "C" {
 #define LAL_PRINTF_BUFSIZE 4096
 
 /**
-   \addtogroup FileIO_h
-
-   \brief Provides standard LAL support IO functions.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/LALStdio.h>
-   #include <lal/FileIO.h>
-   \endcode
-
-   Only use \ref FileIO.h in test code that links to the \c lalsupport library.
-*/
+ * \addtogroup FileIO_h
+ *
+ * \brief Provides standard LAL support IO functions.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALStdio.h>
+ * #include <lal/FileIO.h>
+ * \endcode
+ *
+ * Only use \ref FileIO.h in test code that links to the \c lalsupport library.
+ */
 /*@{*/
 
 FILE *LALOpenDataFile( const char* );

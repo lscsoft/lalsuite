@@ -27,11 +27,15 @@ events from their native format, either `ASCII` or `ROOT`, into standard
 """
 # [1]: <a href="https://www.lsc-group.phys.uwm.edu/daswg/projects/glue/doc/glue.ligolw-module.html" ref="external">glue.ligolw library</a>
 # \author Duncan Macleod (<duncan.macleod@ligo.org>)
-# \heading{Synopsis}
+#
+# ### Synopsis ###
+#
 # ~~~
 # from laldetchar import triggers
 # ~~~
-# \heading{Example}
+#
+# ### Example ###
+#
 # \code
 # from laldetchar import triggers
 # trigs = triggers.load_triggers("mytrigfile.root", "omicron")

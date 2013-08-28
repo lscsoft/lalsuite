@@ -1,188 +1,177 @@
 // -*- mode: latex -*-
 
-/** \addtogroup SkyCoordinates_h
+/**
+ * \addtogroup SkyCoordinates_h
  * @{
  * \defgroup CelestialCoordinates_c 	Module CelestialCoordinates.c
  * \defgroup TerrestrialCoordinates_c 	Module TerrestrialCoordinates.c
  * \defgroup SkyCoordinates_c 		Module SkyCoordinates.c
  * @}
-*/
+ */
 
-/** \addtogroup SkyCoordinates_h
- *  \author Creighton, T. D.
- *  \date 2002
+/**
+ * \addtogroup SkyCoordinates_h
+ * \author Creighton, T. D.
+ * \date 2002
  *
- *  \brief Module providing routines to convert among various sky coordinate systems.
-
-\latexonly \newpage \endlatexonly
-Most of these routines are discussed in Sec.\ 5.1 of \ref Lang_K1999; we reproduce here
-some of the essential elements of this discussion.
-
-\wrapfig{r,0.55\textwidth,fig_lat_long}
-\image html  inject_lat_long.png "Fig. [fig_lat_long]: Definition of latitude phi and longitude lambda for an arbitrary coordinate system."
-\image latex inject_lat_long.eps "Definition of latitude phi and longitude lambda for an arbitrary coordinate system." width=0.5\textwidth
-A general spatial coordinate system is shown in Fig.\figref{fig_lat_long}.
-It is defined by six parameters: three
-positions specifying the location of the origin \f$O\f$, two angles
-specifying the direction of the <em>pole</em> or \f$z\f$-axis, and one
-further angle specifying a <em>reference meridian</em> or \f$x\f$-axis
-orthogonal to the \f$z\f$-axis.  A \f$y\f$-axis can also be defined such that
-\f$x\f$, \f$y\f$, and \f$z\f$ form an orthogonal right-handed coordinate system;
-however, in astronomy it is more conventional to use spherical
-coordinates, defined as follows:
-
-For any given point \f$P\f$, define a plane (called its meridian)
-containing both the \f$z\f$-axis and the point in question.  The
-<em>longitude</em> \f$\lambda\f$ is the angle in the \f$x\f$-\f$y\f$ plane from the
-\f$x\f$-axis to the line where the object's meridian crosses the \f$x-y\f$
-plane.  The <em>latitude</em> \f$\phi\f$ is the angle in the meridian plane
-between this line and the direction to the object.  The
-<em>distance</em> \f$r\f$ is simply measured in a straight line from the
-origin to the point.  Longitude is defined to increase in the
-right-handed direction about the \f$z\f$-axis (i.e. the \f$y\f$-axis lies at
-<em>positive</em> \f$\pi/2\f$ radians longitude), and is typically given in
-the range \f$[0,2\pi)\f$ radians.  Latitude is defined to increase towards
-the \f$z\f$-axis (i.e. the \f$z\f$-axis lies at <em>positive</em>
-\f$\pi/2\f$ radians latitude), and is typically given in the range
-\f$[-\pi/2,\pi/2]\f$ radians; a point with latitude \f$\pm\pi/2\f$ radians has
-arbitrary (undefined) longitude.  Distance should always be positive.
-This convention is shown in Fig.\figref{fig_lat_long}.
-
-In the routines in this module, we do not perform transformations
-between coordinate systems having different origins.  By default, all
-coordinates are assumed to be centred on the observer; however, one
-may also consider coordinate systems that are <em>geogentric</em>
-(having their origin at the centre of the Earth), <em>heliocentric</em>
-(origin at the centre of the Sun), <em>barycentric</em> (origin at the
-centre of mass of the solar system), and <em>Galactocentric</em> (origin
-at the centre of our Galaxy).  Since we ignore translations in the
-coordinate origin, distances remain unchanged, so these routines only
-consider transformations in latitude and longitude.  To put it another
-way, these routines transform <em>directions</em> in space, not
-<em>locations</em> in space.  These directions are generically stored in
-the <tt>SkyPosition</tt> structure, defined below.
-
-The coordinate systems that we consider are defined as follows:
-\latexonly \newpage \endlatexonly
-
-\wrapfig{r,0.63\textwidth,fig_horizon}
-\image html  inject_horizon.png "Fig. [fig_horizon]: Definition of the horizon coordinate system."
-\image latex inject_horizon.eps "Definition of the horizon coordinate system." width=0.58\textwidth
-\latexonly\textbf{Horizon coordinates:}\endlatexonly
-\htmlonly      <b>Horizon coordinates:</b>\endhtmlonly
-This is a local coordinate system for
-a particular observation point \f$O\f$ on the Earth, as shown in
-Fig.\figref{fig_horizon}.  The \f$z\f$-axis is defined to be the direction
-opposite to the local acceleration due to gravity.  The \f$x\f$-axis is
-defined to lie in the plane formed by the \f$z\f$-axis and the Earth's
-rotational axis, and to be directed into the northern hemisphere.  In
-this coordinate system, the latitude coordinate is called the
-<em>altitude</em> and the longitude coordinate is the <em>negative</em> of
-what astronomers call the <em>azimuth</em>; this sign reversal is due to
-the fact that astronomers define azimuth to increase clockwise, and
-our longitudinal coordinates uniformly increase counterclockwise about
-the \f$z\f$-axis.
-This coordinate system is related to the geographic coordinate system
-(below) by the geographic latitude \f$\phi_z\f$ and longitude \f$\lambda_z\f$
-of the observer's \f$z\f$-axis direction.
-
-\wrapfig{l,0.43\textwidth,fig_geographic}
-\image html  inject_geographic.png "Fig. [fig_geographic]: Definition of the geographic (Earth-fixed) coordinate system."
-\image latex inject_geographic.eps "Definition of the geographic (Earth-fixed) coordinate system." width=0.38\textwidth
-\latexonly\textbf{Geographic coordinates:}\endlatexonly
-\htmlonly      <b>Geographic coordinates:</b>\endhtmlonly
-This is a planetwide Earth-fixed
-coordinate system, shown in Fig.\figref{fig_geographic}.  The \f$z\f$-axis
-is defined to be parallel to the Earth's axis, in the direction of the
-Earth's north pole.  The \f$x\f$-axis is defined to be parallel to the
-direction perpendicular from the Earth's rotation axis to a reference
-point in Greenwich, UK (the <em>prime meridian</em>.  Note that we adopt
-a longitude convention that is consistent with the
-<i>Astronomical Almanac</i>, but opposite to that
-in \ref Lang_K1999, in that our geographic longitudes increase
-<em>eastward</em> (counterclockwise) like the rest of our longitudinal
-coordinates.
-
-The terms ``latitude'' and ``longitude'' without qualification
-normally refer to geographic latitude and longitude.  However, we
-emphasize once again that geographic latitude and longitude as defined
-above refer to directions in space, not to locations on the Earth's
-surface.  This can lead to some confusion.  The <em>geodetic</em>
-latitude and longitude of a point on the Earth's surface are the
-latitude and longitude of its vertical direction; this is the standard
-meaning used by cartographers, and relates directly to the
-horizon-based coordinate system above.  However, one can also define a
-<em>geocentric</em> latitude and longitude for a point on the surface,
-which are the latitude and longitude of the direction from the
-geometric centre of the Earth through that point.  These angles are
-not necessarily the same, due to the Earth's ellipticity, as shown in
-Fig.\figref{fig_geodetic} in \ref TerrestrialCoordinates.c.
-
-Geographic coordinates are related to sky-fixed equatorial coordinates
-by specifying the counterclockwise angle <em>to</em> the prime meridian
-<em>from</em> the reference meridian \f$\Upsilon\f$ of the sky-fixed
-coordinates, as defined below.  This angle is called the Greenwich
-Mean Sidereal Time (GMST), and is often specified in hours, minutes,
-and seconds.
-
-\wrapfig{r,0.46\textwidth,fig_ecliptic}
-\image html  inject_ecliptic.png "Fig. [fig_ecliptic]: Definition of the ecliptic sky-fixed coordinate systems."
-\image latex inject_ecliptic.eps "Definition of the ecliptic sky-fixed coordinate systems." width=0.41\textwidth
-\latexonly\textbf{Equatorial coordinates:}\endlatexonly
-\htmlonly      <b>Equatorial coordinates:</b>\endhtmlonly
-This is the standard sky-fixed coordinate system.  The \f$z\f$-axis is defined as for geographic
-coordinates, above; the plane orthogonal to this passing through the
-Earth's centre is called the <em>equator</em>.  The \f$x\f$-axis is defined
-to be the direction, as viewed from the centre of the Earth, where the
-Sun appears to cross the equator moving north in spring.  This is
-called the <em>vernal equinox</em> \f$\Upsilon\f$, and is shown in
-Fig.\figref{fig_ecliptic}.  In this coordinate system, the latitude coordinate is called the
-<em>declination</em> \f$\delta\f$ and the longitude coordinate is called the
-<em>right ascension</em> \f$\alpha\f$.
-
-\latexonly\textbf{Ecliptic coordinates:}\endlatexonly
-\htmlonly   <p><b>Ecliptic coordinates:</b>\endhtmlonly
-This is another sky-fixed coordinate
-system, shown in Fig.\figref{fig_ecliptic}. The \f$z\f$-axis is defined to
-be the direction orthogonal to the orbital plane of the Earth about
-the Sun, directed such that the Earth orbits in a right-handed sense.
-The \f$x\f$-axis is defined as for equatorial coordinates, above; we note
-that by definition it lies parallel to the intersection of the
-equatorial and orbital planes of the Earth.
-
-The equatorial and ecliptic coordinate systems are related by a single
-angle \f$\epsilon\f$, called the <em>obliquity of the ecliptic</em> (that
-is, the inclination of the Earth's rotation axis relative to its
-orbital axis).  Ecliptic latitude is normally denoted as \f$\beta\f$ and
-ecliptic longitude as \f$\lambda\f$.
-
-\wrapfig{l,0.505\textwidth,fig_galactic}
-\image html  inject_galactic.png "Fig. [fig_galactic]: Definition of the Galactic coordinate system."
-\image latex inject_galactic.eps "Definition of the Galactic coordinate system." width=0.455\textwidth
-\latexonly\textbf{Galactic coordinates:}\endlatexonly
-\htmlonly      <b>Galactic coordinates:</b>\endhtmlonly
-This coordinate system is shown in Fig.\figref{fig_galactic}.
-The \f$z\f$-axis is defined to be the direction
-orthogonal to the plane of our Galaxy and pointing into the northern
-hemisphere of the equatorial coordinate system.  (Unfortunately this
-convention has the unintuitive result that the physical rotation of
-the Galaxy is left-handed about this axis.)  The \f$x\f$-axis is defined
-to be the direction of the Galactic centre as viewed from the Earth.
-The Galactic latitude coordinate is normally denoted as \f$b\f$ and the
-Galactic longitude as \f$l\f$.
-
-The definition of the Galactic coordinate system is completely
-unrelated to any of the the other coordinate systems; thus, the
-relationship between Galactic and equatorial coodinates requires one
-to specify three arbitrary (but constant) angles.  Two of these are
-the right ascension \f$\alpha_\mathrm{NGP}\f$ and declination
-\f$\delta_\mathrm{NPG}\f$ of the North Galactic Pole (\f$z\f$-axis) in the
-equatorial coordinate system, the third is the Galactic longitude
-\f$l_\mathrm{ascend}\f$ of the point where the Galactic plane ascends
-through the equatorial plane; i.e. the \f$l\f$ value for the direction
-along the intersection of the Galactic and equatorial planes, such
-that right-handed rotation about the Galactic \f$z\f$-axis moves you from
-south to north through the equator.
-
-\latexonly \pagebreak \endlatexonly
-*/
+ * \brief Module providing routines to convert among various sky coordinate systems.
+ *
+ * Most of these routines are discussed in Sec.\ 5.1 of \ref Lang_K1999; we reproduce here
+ * some of the essential elements of this discussion.
+ *
+ * \image html  inject_lat_long.png "Fig. [fig_lat_long]: Definition of latitude phi and longitude lambda for an arbitrary coordinate system."
+ * \image latex inject_lat_long.eps "Definition of latitude phi and longitude lambda for an arbitrary coordinate system." width=0.5\textwidth
+ * A general spatial coordinate system is shown in Fig.\figref{fig_lat_long}.
+ * It is defined by six parameters: three
+ * positions specifying the location of the origin \f$O\f$, two angles
+ * specifying the direction of the <em>pole</em> or \f$z\f$-axis, and one
+ * further angle specifying a <em>reference meridian</em> or \f$x\f$-axis
+ * orthogonal to the \f$z\f$-axis.  A \f$y\f$-axis can also be defined such that
+ * \f$x\f$, \f$y\f$, and \f$z\f$ form an orthogonal right-handed coordinate system;
+ * however, in astronomy it is more conventional to use spherical
+ * coordinates, defined as follows:
+ *
+ * For any given point \f$P\f$, define a plane (called its meridian)
+ * containing both the \f$z\f$-axis and the point in question.  The
+ * <em>longitude</em> \f$\lambda\f$ is the angle in the \f$x\f$-\f$y\f$ plane from the
+ * \f$x\f$-axis to the line where the object's meridian crosses the \f$x-y\f$
+ * plane.  The <em>latitude</em> \f$\phi\f$ is the angle in the meridian plane
+ * between this line and the direction to the object.  The
+ * <em>distance</em> \f$r\f$ is simply measured in a straight line from the
+ * origin to the point.  Longitude is defined to increase in the
+ * right-handed direction about the \f$z\f$-axis (i.e. the \f$y\f$-axis lies at
+ * <em>positive</em> \f$\pi/2\f$ radians longitude), and is typically given in
+ * the range \f$[0,2\pi)\f$ radians.  Latitude is defined to increase towards
+ * the \f$z\f$-axis (i.e. the \f$z\f$-axis lies at <em>positive</em>
+ * \f$\pi/2\f$ radians latitude), and is typically given in the range
+ * \f$[-\pi/2,\pi/2]\f$ radians; a point with latitude \f$\pm\pi/2\f$ radians has
+ * arbitrary (undefined) longitude.  Distance should always be positive.
+ * This convention is shown in Fig.\figref{fig_lat_long}.
+ *
+ * In the routines in this module, we do not perform transformations
+ * between coordinate systems having different origins.  By default, all
+ * coordinates are assumed to be centred on the observer; however, one
+ * may also consider coordinate systems that are <em>geogentric</em>
+ * (having their origin at the centre of the Earth), <em>heliocentric</em>
+ * (origin at the centre of the Sun), <em>barycentric</em> (origin at the
+ * centre of mass of the solar system), and <em>Galactocentric</em> (origin
+ * at the centre of our Galaxy).  Since we ignore translations in the
+ * coordinate origin, distances remain unchanged, so these routines only
+ * consider transformations in latitude and longitude.  To put it another
+ * way, these routines transform <em>directions</em> in space, not
+ * <em>locations</em> in space.  These directions are generically stored in
+ * the <tt>SkyPosition</tt> structure, defined below.
+ *
+ * The coordinate systems that we consider are defined as follows:
+ *
+ * \image html  inject_horizon.png "Fig. [fig_horizon]: Definition of the horizon coordinate system."
+ * \image latex inject_horizon.eps "Definition of the horizon coordinate system." width=0.58\textwidth
+ * \par Horizon coordinates:
+ * This is a local coordinate system for
+ * a particular observation point \f$O\f$ on the Earth, as shown in
+ * Fig.\figref{fig_horizon}.  The \f$z\f$-axis is defined to be the direction
+ * opposite to the local acceleration due to gravity.  The \f$x\f$-axis is
+ * defined to lie in the plane formed by the \f$z\f$-axis and the Earth's
+ * rotational axis, and to be directed into the northern hemisphere.  In
+ * this coordinate system, the latitude coordinate is called the
+ * <em>altitude</em> and the longitude coordinate is the <em>negative</em> of
+ * what astronomers call the <em>azimuth</em>; this sign reversal is due to
+ * the fact that astronomers define azimuth to increase clockwise, and
+ * our longitudinal coordinates uniformly increase counterclockwise about
+ * the \f$z\f$-axis.
+ * This coordinate system is related to the geographic coordinate system
+ * (below) by the geographic latitude \f$\phi_z\f$ and longitude \f$\lambda_z\f$
+ * of the observer's \f$z\f$-axis direction.
+ *
+ * \image html  inject_geographic.png "Fig. [fig_geographic]: Definition of the geographic (Earth-fixed) coordinate system."
+ * \image latex inject_geographic.eps "Definition of the geographic (Earth-fixed) coordinate system." width=0.38\textwidth
+ * \par Geographic coordinates:
+ * This is a planetwide Earth-fixed
+ * coordinate system, shown in Fig.\figref{fig_geographic}.  The \f$z\f$-axis
+ * is defined to be parallel to the Earth's axis, in the direction of the
+ * Earth's north pole.  The \f$x\f$-axis is defined to be parallel to the
+ * direction perpendicular from the Earth's rotation axis to a reference
+ * point in Greenwich, UK (the <em>prime meridian</em>.  Note that we adopt
+ * a longitude convention that is consistent with the
+ * <i>Astronomical Almanac</i>, but opposite to that
+ * in \ref Lang_K1999, in that our geographic longitudes increase
+ * <em>eastward</em> (counterclockwise) like the rest of our longitudinal
+ * coordinates.
+ *
+ * The terms ``latitude'' and ``longitude'' without qualification
+ * normally refer to geographic latitude and longitude.  However, we
+ * emphasize once again that geographic latitude and longitude as defined
+ * above refer to directions in space, not to locations on the Earth's
+ * surface.  This can lead to some confusion.  The <em>geodetic</em>
+ * latitude and longitude of a point on the Earth's surface are the
+ * latitude and longitude of its vertical direction; this is the standard
+ * meaning used by cartographers, and relates directly to the
+ * horizon-based coordinate system above.  However, one can also define a
+ * <em>geocentric</em> latitude and longitude for a point on the surface,
+ * which are the latitude and longitude of the direction from the
+ * geometric centre of the Earth through that point.  These angles are
+ * not necessarily the same, due to the Earth's ellipticity, as shown in
+ * Fig.\figref{fig_geodetic} in \ref TerrestrialCoordinates.c.
+ *
+ * Geographic coordinates are related to sky-fixed equatorial coordinates
+ * by specifying the counterclockwise angle <em>to</em> the prime meridian
+ * <em>from</em> the reference meridian \f$\Upsilon\f$ of the sky-fixed
+ * coordinates, as defined below.  This angle is called the Greenwich
+ * Mean Sidereal Time (GMST), and is often specified in hours, minutes,
+ * and seconds.
+ *
+ * \image html  inject_ecliptic.png "Fig. [fig_ecliptic]: Definition of the ecliptic sky-fixed coordinate systems."
+ * \image latex inject_ecliptic.eps "Definition of the ecliptic sky-fixed coordinate systems." width=0.41\textwidth
+ * \par Equatorial coordinates:
+ * This is the standard sky-fixed coordinate system.  The \f$z\f$-axis is defined as for geographic
+ * coordinates, above; the plane orthogonal to this passing through the
+ * Earth's centre is called the <em>equator</em>.  The \f$x\f$-axis is defined
+ * to be the direction, as viewed from the centre of the Earth, where the
+ * Sun appears to cross the equator moving north in spring.  This is
+ * called the <em>vernal equinox</em> \f$\Upsilon\f$, and is shown in
+ * Fig.\figref{fig_ecliptic}.  In this coordinate system, the latitude coordinate is called the
+ * <em>declination</em> \f$\delta\f$ and the longitude coordinate is called the
+ * <em>right ascension</em> \f$\alpha\f$.
+ *
+ * \par Ecliptic coordinates:
+ * This is another sky-fixed coordinate
+ * system, shown in Fig.\figref{fig_ecliptic}. The \f$z\f$-axis is defined to
+ * be the direction orthogonal to the orbital plane of the Earth about
+ * the Sun, directed such that the Earth orbits in a right-handed sense.
+ * The \f$x\f$-axis is defined as for equatorial coordinates, above; we note
+ * that by definition it lies parallel to the intersection of the
+ * equatorial and orbital planes of the Earth.
+ *
+ * The equatorial and ecliptic coordinate systems are related by a single
+ * angle \f$\epsilon\f$, called the <em>obliquity of the ecliptic</em> (that
+ * is, the inclination of the Earth's rotation axis relative to its
+ * orbital axis).  Ecliptic latitude is normally denoted as \f$\beta\f$ and
+ * ecliptic longitude as \f$\lambda\f$.
+ *
+ * \image html  inject_galactic.png "Fig. [fig_galactic]: Definition of the Galactic coordinate system."
+ * \image latex inject_galactic.eps "Definition of the Galactic coordinate system." width=0.455\textwidth
+ * \par Galactic coordinates:
+ * This coordinate system is shown in Fig.\figref{fig_galactic}.
+ * The \f$z\f$-axis is defined to be the direction
+ * orthogonal to the plane of our Galaxy and pointing into the northern
+ * hemisphere of the equatorial coordinate system.  (Unfortunately this
+ * convention has the unintuitive result that the physical rotation of
+ * the Galaxy is left-handed about this axis.)  The \f$x\f$-axis is defined
+ * to be the direction of the Galactic centre as viewed from the Earth.
+ * The Galactic latitude coordinate is normally denoted as \f$b\f$ and the
+ * Galactic longitude as \f$l\f$.
+ *
+ * The definition of the Galactic coordinate system is completely
+ * unrelated to any of the the other coordinate systems; thus, the
+ * relationship between Galactic and equatorial coodinates requires one
+ * to specify three arbitrary (but constant) angles.  Two of these are
+ * the right ascension \f$\alpha_\mathrm{NGP}\f$ and declination
+ * \f$\delta_\mathrm{NPG}\f$ of the North Galactic Pole (\f$z\f$-axis) in the
+ * equatorial coordinate system, the third is the Galactic longitude
+ * \f$l_\mathrm{ascend}\f$ of the point where the Galactic plane ascends
+ * through the equatorial plane; i.e. the \f$l\f$ value for the direction
+ * along the intersection of the Galactic and equatorial planes, such
+ * that right-handed rotation about the Galactic \f$z\f$-axis moves you from
+ * south to north through the equator.
+ *
+ */

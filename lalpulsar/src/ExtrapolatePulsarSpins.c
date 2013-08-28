@@ -30,14 +30,15 @@
  */
 
 /*********************************************************************************/
-/** \file
+/**
+ * \file
  * \ingroup ExtrapolatePulsarSpins
  * \author Reinhard Prix
  *
  * \brief Defines functions to extrapolate the pulsar spin-paramters
  * \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$ from one SSB epoch to another.
  *
- *********************************************************************************/
+ */
 
 /*---------- INCLUDES ---------- */
 #include <math.h>
@@ -58,11 +59,12 @@
 
 /*---------- main functions ---------- */
 
-/** General pulsar-spin extraploation function: given a "spin-range" (ie spins + spin-bands) at time
+/**
+ * General pulsar-spin extraploation function: given a "spin-range" (ie spins + spin-bands) at time
  * \f$\tau_0\f$, propagate the whole spin-range to time \f$\tau_1\f$.
  *
  * NOTE: *range1 is allowed to point to the same spin-range as *range0: the input will be overwritten
- *       with the output.
+ * with the output.
  *
  * NOTE2: The output-range is in the 'canonical' order of \f$[ f^{(k)}, f^{(k)} + \Delta f^{(k)}]\f$,
  * where \f$\Delta f^{(k)} \ge 0\f$.
@@ -130,9 +132,10 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
 } /* ExtrapolatePulsarSpinRange() */
 
 
-/** Extrapolate the Pulsar spin-paramters \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$
- *  (\a fkdotOld) from the initial reference-epoch \f$\tau_0\f$ (\a epoch0)
- *  to the new reference-epoch \f$\tau_1\f$ (\a epoch1).
+/**
+ * Extrapolate the Pulsar spin-paramters \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$
+ * (\a fkdotOld) from the initial reference-epoch \f$\tau_0\f$ (\a epoch0)
+ * to the new reference-epoch \f$\tau_1\f$ (\a epoch1).
  *
  * This is equivalent to LALExtrapolatePulsarSpins(), but uses the fixed-size array-type
  * 'PulsarSpins' = REAL8[PULSAR_MAX_SPINS] instead, which is easier to handle and avoids
@@ -165,7 +168,8 @@ LALExtrapolatePulsarSpins (LALStatus   *status,		/**< pointer to LALStatus struc
 
 } /* LALExtrapolatePulsarSpins() */
 
-/** Lightweight API to extrapolate PulsarSpins by a time-difference 'DeltaTau'.
+/**
+ * Lightweight API to extrapolate PulsarSpins by a time-difference 'DeltaTau'.
  *
  * NOTE: This allows fkdotIn to point to the same memory as fkdotOut !
  */
@@ -211,8 +215,10 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
 
 
 
-/** Extrapolate phase phi0 from epoch0 to epoch1, given the spins fkdot1 at epoch1
- * Returns phi1 in the range [0, 2pi] */
+/**
+ * Extrapolate phase phi0 from epoch0 to epoch1, given the spins fkdot1 at epoch1
+ * Returns phi1 in the range [0, 2pi]
+ */
 void
 LALExtrapolatePulsarPhase (LALStatus *status,		/**< pointer to LALStatus structure */
 			   REAL8 *phi1,			/**< [out] phase at epoch1 */

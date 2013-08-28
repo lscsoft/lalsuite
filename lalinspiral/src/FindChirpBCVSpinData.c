@@ -27,36 +27,34 @@
  */
 
 /**
-
-\author Brown, D. A., Spinning BCV-Modifications: Jones, G.
-\file
-\ingroup FindChirpBCVSpin_h
-
-\brief Provides functions to condition data prior to filtering with spinning BCV
-detection templates.
-
-\heading{Prototypes}
-
-The function <tt>LALFindChirpBCVSpinData()</tt> constions the data
-as described by the algorithm below.
-
-\heading{Algorithm}
-
-Blah.
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-LALCreateVector()
-LALDestroyVector()
-\endcode
-
-\heading{Notes}
-
-
-
-*/
+ * \author Brown, D. A., Spinning BCV-Modifications: Jones, G.
+ * \file
+ * \ingroup FindChirpBCVSpin_h
+ *
+ * \brief Provides functions to condition data prior to filtering with spinning BCV
+ * detection templates.
+ *
+ * ### Prototypes ###
+ *
+ * The function <tt>LALFindChirpBCVSpinData()</tt> constions the data
+ * as described by the algorithm below.
+ *
+ * ### Algorithm ###
+ *
+ * Blah.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * LALCreateVector()
+ * LALDestroyVector()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>

@@ -23,13 +23,14 @@
  */
 
 /*********************************************************************************/
-/** \author Holger Pletsch
+/**
+ * \author Holger Pletsch
  * \file
  * \ingroup pulsarApps
  * \brief Hierarchical semicoherent CW search code based on F-Statistic,
- *  exploiting global-correlation coordinates (Phys.Rev.Lett. 103, 181102, 2009)
+ * exploiting global-correlation coordinates (Phys.Rev.Lett. 103, 181102, 2009)
  *
- *********************************************************************************/
+ */
 
 /* ---------- Includes -------------------- */
 #include <lal/Segments.h>
@@ -1996,8 +1997,10 @@ int MAIN( int argc, char *argv[]) {
 
 
 
-/** Set up stacks, read SFTs, calculate SFT noise weights and calculate
-    detector-state */
+/**
+ * Set up stacks, read SFTs, calculate SFT noise weights and calculate
+ * detector-state
+ */
 void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
                 MultiSFTVectorSequence *stackMultiSFT, /**< output multi sft vector for each stack */
                 MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
@@ -2283,13 +2286,13 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 
-/** \brief Breaks up input sft catalog into specified number of stacks
-
-    Loops over elements of the catalog, assigns a bin index and
-    allocates memory to the output catalog sequence appropriately.  If
-    there are long gaps in the data, then some of the catalogs in the
-    output catalog sequence may be of zero length.
-*/
+/**
+ * \brief Breaks up input sft catalog into specified number of stacks
+ * Loops over elements of the catalog, assigns a bin index and
+ * allocates memory to the output catalog sequence appropriately.  If
+ * there are long gaps in the data, then some of the catalogs in the
+ * output catalog sequence may be of zero length.
+ */
 void SetUpStacks(LALStatus *status,        /**< pointer to LALStatus structure */
                  SFTCatalogSequence  *out, /**< Output catalog of sfts -- one for each stack */
                  REAL8 tStack,             /**< Output duration of each stack */
@@ -2460,7 +2463,8 @@ void PrintStackInfo( LALStatus  *status,
 
 
 
-/** Get SemiCoh candidates into toplist(s)
+/**
+ * Get SemiCoh candidates into toplist(s)
  * This function allows for inserting candidates into up to 2 toplists at once, which might be sorted differently!
  */
 void UpdateSemiCohToplists ( LALStatus *status,
@@ -2606,8 +2610,10 @@ void PrintFstatVec (LALStatus *status,
 
 
 
-/** Calculate Earth orbital position, velocity and acceleration
-    at midpoint of each segment */
+/**
+ * Calculate Earth orbital position, velocity and acceleration
+ * at midpoint of each segment
+ */
 void GetSegsPosVelAccEarthOrb( LALStatus *status,
                                REAL8VectorSequence **posSeg,
                                REAL8VectorSequence **velSeg,
@@ -2717,7 +2723,8 @@ void ComputeU2idx( REAL8 freq_event,
 
 } /* ComputeU2idx */
 
-/** Set up 'segmented' SFT-catalogs for given list of segments and a total SFT-catalog.
+/**
+ * Set up 'segmented' SFT-catalogs for given list of segments and a total SFT-catalog.
  *
  * Note: this function does not allow 'empty' segments to be returned, i.e. if there is any
  * segment that would contain no SFTs from the given SFT-catalog, an error is returned.
@@ -2837,23 +2844,24 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
 
 
 
-/** XLAL function to (multi-IFO) F-statistic over a vector of number of frequency bins,
-    returned in (*fstatSeries)->F.
-
-    if params->returnSingleF==true: also returns per-IFO F-stat values over frequency bins in (*fstatSeries)->FX.
-
-    Note: Contrary to ComputeFStatFreqBand(), the output (*fstatSeries) can be allocated
-    before this function is called, or passed as a NULL pointer, in which case it will be allocated.
-
-    This allows one to re-use the output structure vectors without unneccessary alloc/free's,
-    and simplifies usage of this function for the called.
-
-    Note2: the start frequency, step size in frequency and the number of frequency bins to be
-    computed are *always* read from input 'doppler'.
-
-    Note3: This function is currently simply a wrapper for ComputeFstat(), while future implementations
-    will also include resampling.
-*/
+/**
+ * XLAL function to (multi-IFO) F-statistic over a vector of number of frequency bins,
+ * returned in (*fstatSeries)->F.
+ *
+ * if params->returnSingleF==true: also returns per-IFO F-stat values over frequency bins in (*fstatSeries)->FX.
+ *
+ * Note: Contrary to ComputeFStatFreqBand(), the output (*fstatSeries) can be allocated
+ * before this function is called, or passed as a NULL pointer, in which case it will be allocated.
+ *
+ * This allows one to re-use the output structure vectors without unneccessary alloc/free's,
+ * and simplifies usage of this function for the called.
+ *
+ * Note2: the start frequency, step size in frequency and the number of frequency bins to be
+ * computed are *always* read from input 'doppler'.
+ *
+ * Note3: This function is currently simply a wrapper for ComputeFstat(), while future implementations
+ * will also include resampling.
+ */
 int XLALComputeFStatFreqBand ( MultiFstatFrequencySeries **fstatSeries,	/**< [out] Combined vectors of multi- and single-IFO Fstat values */
                                const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for (and freq band info) */
                                const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
@@ -2954,7 +2962,8 @@ int XLALComputeFStatFreqBand ( MultiFstatFrequencySeries **fstatSeries,	/**< [ou
 
 
 
-/** XLAL function to extrapolate the pulsar spin parameters of all toplist candidates
+/**
+ * XLAL function to extrapolate the pulsar spin parameters of all toplist candidates
  * from reftime of the input toplist ('inRefTime') to a user-specified output reftime 'outRefTime'
  */
 int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,              /**< [out/in] toplist with GCTtopOutputEntry items, 'Freq,F1dot,F2dot' fields will be overwritten  */

@@ -19,27 +19,30 @@
 
 /**
  * \file PeakSelect.c
- * \author Sintes, A.M. and Krishnan, B.  
+ * \author Sintes, A.M. and Krishnan, B.
  * \brief Functions for selecting peaks from SFTs.
  *
  * History:   Created by Sintes May 21, 2003
- *            Modified by Krishnan Oct, 2005
+ * Modified by Krishnan Oct, 2005
  *
-
-\heading{\ref PeakSelect.c}
-Routines for reading SFT binary files
-
-\heading{Prototypes}
-<tt>PeakSelectHeader1()</tt>
-
-\heading{Description}
-the output of the periodogram should be properly normalized !!!
-
-\heading{Uses}
-\code
-LALHO()
-\endcode
-*/
+ * ### \ref PeakSelect.c ###
+ *
+ * Routines for reading SFT binary files
+ *
+ * ### Prototypes ###
+ *
+ * <tt>PeakSelectHeader1()</tt>
+ *
+ * ### Description ###
+ *
+ * the output of the periodogram should be properly normalized !!!
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALHO()
+ * \endcode
+ */
 
 #include "./PeakSelect.h"
 
@@ -357,9 +360,10 @@ void LALSelectPeakColorNoise(LALStatus  *status,
 
 
 
-/** Convert a normalized sft into a peakgram by selecting bins in 
-    which power exceeds a threshold.
-*/
+/**
+ * Convert a normalized sft into a peakgram by selecting bins in
+ * which power exceeds a threshold.
+ */
 
 void SFTtoUCHARPeakGram(LALStatus        *status,
 			UCHARPeakGram    *pg,

@@ -30,7 +30,8 @@
 #include <lal/PtoleMetric.h>
 #include <lal/UniversalDopplerMetric.h>
 
-/** \author Reinhard Prix
+/**
+ * \author Reinhard Prix
  * \file
  * \ingroup UniversalDopplerMetric_h
  * \brief Tests for exported functions in UniversalDopplerMetric
@@ -65,7 +66,8 @@ static gsl_matrix *convert_old_metric_2_new ( const REAL8Vector *m0, REAL8 Freq 
 DopplerMetric *XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
 
 // ---------- function definitions --------------------
-/** MAIN function: calls a number of unit-tests
+/**
+ * MAIN function: calls a number of unit-tests
  */
 int main( void )
 {
@@ -394,7 +396,8 @@ compare_metrics ( const gsl_matrix *g1_ij, const gsl_matrix *g2_ij )
 } /* compare_metrics() */
 
 
-/** Unit test function for XLALComputeOrbitalDerivatives()
+/**
+ * Unit test function for XLALComputeOrbitalDerivatives()
  */
 static int
 test_XLALComputeOrbitalDerivatives ( void )

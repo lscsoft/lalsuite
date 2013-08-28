@@ -1457,22 +1457,22 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
  * needed to specify binary configuration for ChooseTDWaveform.
  *
  * Input:
- *     thetaJN is the inclination between total angular momentum (J) and the
- *         direction of propagation (N)
- *     theta1 and theta2 are the inclinations of S1 and S2
- *         measured from the Newtonian orbital angular momentum (L_N)
- *     phi12 is the difference in azimuthal angles of S1 and S2.
- *     chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$)
- *     phiJL is the azimuthal angle of L_N on its cone about J.
- *     m1, m2, f_ref are the component masses and reference GW frequency,
- *         they are needed to compute the magnitude of L_N, and thus J.
+ * thetaJN is the inclination between total angular momentum (J) and the
+ * direction of propagation (N)
+ * theta1 and theta2 are the inclinations of S1 and S2
+ * measured from the Newtonian orbital angular momentum (L_N)
+ * phi12 is the difference in azimuthal angles of S1 and S2.
+ * chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$)
+ * phiJL is the azimuthal angle of L_N on its cone about J.
+ * m1, m2, f_ref are the component masses and reference GW frequency,
+ * they are needed to compute the magnitude of L_N, and thus J.
  *
  * Output:
- *     incl - inclination angle of L_N relative to N
- *     x, y, z components of E1 (unit vector in the initial orbital plane)
- *     x, y, z components S1 and S2 (unit spin vectors times their
- *         dimensionless spin magnitudes - i.e. they have unit magnitude for
- *         extremal BHs and smaller magnitude for slower spins).
+ * incl - inclination angle of L_N relative to N
+ * x, y, z components of E1 (unit vector in the initial orbital plane)
+ * x, y, z components S1 and S2 (unit spin vectors times their
+ * dimensionless spin magnitudes - i.e. they have unit magnitude for
+ * extremal BHs and smaller magnitude for slower spins).
  *
  * NOTE: Here the \"total\" angular momentum is computed as
  * J = L_N + S1 + S2
@@ -2639,8 +2639,8 @@ int XLALSimInspiralImplementedFDApproximants(
     }
 }
 
-/** 
- * XLAL function to determine approximant from a string.  The string need not 
+/**
+ * XLAL function to determine approximant from a string.  The string need not
  * match exactly, only contain a member of the Approximant enum.
  */
 int XLALGetApproximantFromString(const CHAR *inString)
@@ -2833,9 +2833,9 @@ int XLALGetApproximantFromString(const CHAR *inString)
   }
 }
 
-/** 
- * XLAL function to determine string from approximant enum.  
- * This function needs to be updated when new approximants are added. 
+/**
+ * XLAL function to determine string from approximant enum.
+ * This function needs to be updated when new approximants are added.
  */
 char* XLALGetStringFromApproximant(Approximant approximant)
 {
@@ -2933,8 +2933,8 @@ char* XLALGetStringFromApproximant(Approximant approximant)
     }
 }
 
-/** 
- * XLAL function to determine PN order from a string.  The string need not 
+/**
+ * XLAL function to determine PN order from a string.  The string need not
  * match exactly, only contain a member of the LALPNOrder enum.
  */
 int XLALGetOrderFromString(const CHAR *inString)
@@ -2988,9 +2988,9 @@ int XLALGetOrderFromString(const CHAR *inString)
   }
 }
 
-/** 
- * XLAL function to determine tapering flag from a string.  The string must 
- * match exactly with a member of the LALSimInspiralApplyTaper enum. 
+/**
+ * XLAL function to determine tapering flag from a string.  The string must
+ * match exactly with a member of the LALSimInspiralApplyTaper enum.
  */
 int XLALGetTaperFromString(const CHAR *inString)
 {
@@ -3017,10 +3017,10 @@ int XLALGetTaperFromString(const CHAR *inString)
   }
 }
 
-/** 
+/**
  * XLAL function to determine LALSimInspiralInteraction from a string.
  *
- * TODO: return the bit sum if the string is a concatenation of several 
+ * TODO: return the bit sum if the string is a concatenation of several
  * interaction terms. Also make names match cases of enum.
  */
 int XLALGetInteractionFromString(const CHAR *inString) 
@@ -3053,10 +3053,10 @@ int XLALGetInteractionFromString(const CHAR *inString)
   }
 }
 
-/** 
+/**
  * XLAL function to determine axis choice flag from a string.
- * The string need not match exactly, only contain a member 
- * of the LALSimInspiralFrameAxis enum.  Will return default case 
+ * The string need not match exactly, only contain a member
+ * of the LALSimInspiralFrameAxis enum.  Will return default case
  * 'View' (line of sight) if the string contains no match.
  */
 int XLALGetFrameAxisFromString(const CHAR *inString) 

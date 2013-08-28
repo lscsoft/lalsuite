@@ -45,20 +45,21 @@ extern "C"
  * \addtogroup Date_h
  * \author D.W. Chin, J.D.E. Creighton and Kipp Cannon
  * \brief Provides routines for manipulating date and time information.
-
-\heading{Synopsis}
-\code
-#include <lal/Date.h>
-\endcode
-
-This header covers routines for manipulating date and time
-information.  The various time systems are discussed in [\ref esaa1992].
-
-*/
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/Date.h>
+ * \endcode
+ *
+ * This header covers routines for manipulating date and time
+ * information.  The various time systems are discussed in [\ref esaa1992].
+ *
+ */
 /*@{*/
 
-/** The UNIX time of the GPS origin epoch.
- *
+/**
+ * The UNIX time of the GPS origin epoch.
  * 1980 6 JAN 0h UTC is 3657 days after 1970 1 JAN 0h UTC:
  * 8 standard years of 365 days = 2920 days
  * 2 leap years of 366 days = 734 days
@@ -70,9 +71,9 @@ information.  The various time systems are discussed in [\ref esaa1992].
  * \c time_t \c t and a broken down time \c struct \c tm \c utc as
  * \code
  * t = utc.tm_sec + utc.tm_min*60 + utc.tm_hour*3600
- *     + utc.tm_yday*86400 + (utc.tm_year-70)*31536000
- *     + ((utc.tm_year-69)/4)*86400 - ((utc.tm_year-1)/100)*86400
- *     + ((utc.tm_year+299)/400)*86400;
+ * + utc.tm_yday*86400 + (utc.tm_year-70)*31536000
+ * + ((utc.tm_year-69)/4)*86400 - ((utc.tm_year-1)/100)*86400
+ * + ((utc.tm_year+299)/400)*86400;
  * \endcode
  * so if you were to set \c utc.tm_sec=utc.tm_min=utc.tm_hour=0,
  * \c utc.tm_yday=5, and \c utc.tm_year=80, then you get
@@ -88,7 +89,8 @@ information.  The various time systems are discussed in [\ref esaa1992].
 #define XLAL_MJD_REF 2400000.5                  /**< Reference Julian Day for Mean Julian Day. */
 #define XLAL_MODIFIED_JULIEN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF) /**< Modified Julian Day for specified civil time structure. */
 
-/** This structure stores pointers to a ::LALDetector and a
+/**
+ * This structure stores pointers to a ::LALDetector and a
  * ::LIGOTimeGPS. Its sole purpose is to aggregate these
  * structures for passing to functions.
  */
@@ -121,11 +123,13 @@ LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t );
 /* Returns GPS time as a REAL8. */
 REAL8 XLALGPSGetREAL8( const LIGOTimeGPS *epoch );
 
-/** Breaks the GPS time into REAL8 integral and fractional parts,
+/**
+ * Breaks the GPS time into REAL8 integral and fractional parts,
  * each of which has the same sign as the epoch.  Returns the
  * fractional part, and stores the integral part (as a REAL8)
  * in the object pointed to by iptr.  Like the standard C math
- * library function modf(). */
+ * library function modf().
+ */
 REAL8 XLALGPSModf( REAL8 *iptr, const LIGOTimeGPS *epoch );
 
 /* Adds dt to a GPS time. */

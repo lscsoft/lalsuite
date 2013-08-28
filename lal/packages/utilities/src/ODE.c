@@ -20,7 +20,7 @@
 /**
  * \addtogroup ODE_h
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routines \c LALSRungeKutta4(), \c LALSRungeKutta5(), and
  * \c LALSRungeKutta5Adapt() are used to advance an ODE solution from one
@@ -39,11 +39,11 @@
  * be \c 4 for \c LALSRungeKutta4() and \c 6 for
  * \c LALSRungeKutta5() and \c LALSRungeKutta5Adapt().
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
  *
  * The following routine specifies the ODE for the Kepler problem:
  * \f[
- *   \frac{d}{dt}\{ x, y, v_x, v_y \} = \{ v_x, v_y, -x/r^3, -y/r^3 \}
+ * \frac{d}{dt}\{ x, y, v_x, v_y \} = \{ v_x, v_y, -x/r^3, -y/r^3 \}
  * \f]
  * \code
  * #include <math.h>
@@ -202,13 +202,12 @@
  * }
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * These routines are based on the methods presented in Numerical Recipes
  * [\ref ptvf1992].
  *
- *
- *
-*/
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

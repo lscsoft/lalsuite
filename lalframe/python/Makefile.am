@@ -1,6 +1,7 @@
 pkgpython_PYTHON = \
 	__init__.py \
-	git_version.py
+	git_version.py \
+	frread.py
 
 EXTRA_DIST = \
 	git_version.py

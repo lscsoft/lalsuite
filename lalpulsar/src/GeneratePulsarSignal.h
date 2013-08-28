@@ -49,7 +49,7 @@ extern "C" {
  *
  * \brief Pulsar signal-generation routines for hardware- and software-injections.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * - The main function LALGeneratePulsarSignal() generates a fake
  * pulsar-signal, either for an isolated or a binary pulsar. It returns a
@@ -63,7 +63,6 @@ extern "C" {
  *
  * This module also contains a few more general-purpose helper-functions:
  *
- *
  * - Namely, LALConvertSSB2GPS() and LALConvertGPS2SSB()
  * which convert arrival times for a given source (not necessarily a
  * pulsar!) the detector ("GPS") and the solar-system barycenter ("SSB").
@@ -72,8 +71,7 @@ extern "C" {
  * (<tt>params-\>ephemerides</tt>)are used from the
  * PulsarSignalParams structure.
  *
- *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * LALGeneratePulsarSignal() is basically a wrapper for the two
  * LAL-functions GenerateSpinOrbitCW() to produce the source-signal,
@@ -81,7 +79,6 @@ extern "C" {
  *
  * LALSignalToSFTs() uses LALForwardRealFFT() appropriately on the input-timeseries to
  * produce the required output-SFTs ( v2-normalization! ).
- *
  *
  * \note
  *
@@ -96,7 +93,6 @@ extern "C" {
  * The user could also see this effect in the actual timestamps of the
  * SFTs returned.
  *
- *
  * The FFTW-"plan" is currently created using the \c ESTIMATE flag,
  * which is fast but only yields an approximate plan. Better results
  * might be achieved by using \c MEASURE and an appropriate buffering
@@ -104,137 +100,135 @@ extern "C" {
  * the same). Measuring the plan takes longer but might lead to
  * substantial speedups for many FFTs, which seems the most likely situation.
  *
+ * ### Use of LALFastGeneratePulsarSFTs() ###
  *
+ * The functions LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs()
+ * use approximate analytic formulas to generate SFTs.  This should be significantly
+ * faster than LALGeneratePulsarSignal() and LALSignalToSFTs(), which generate the
+ * time series data and then FFT it.  Simple tests performed by the code in
+ * GeneratePulsarSignalTest.c indicate that the maximum modulus of the SFTs output
+ * by the approximate and exact codes differs by less that 10\%.  Since the tests
+ * are not exhaustive, the user should use caution and conduct their own test
+ * to compare LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs() with
+ * LALGeneratePulsarSignal() and LALSignalToSFTs().
  *
- * \heading{Use of LALFastGeneratePulsarSFTs()}
+ * The strain of a periodic signal at the detector is given by
+ * \f[
+ * h(t) = F_+(t) A_+ {\rm cos}\Phi(t) + F_\times(t) A_\times {\rm sin}\Phi(t),
+ * \f]
+ * where \f$F_+\f$ and \f$F_\times\f$ are the usual beam pattern response functions,
+ * \f$A_+\f$ and \f$A_\times\f$ are the amplitudes of the gravitational wave for the
+ * plus and cross polarizations, and \f$\Phi\f$ is the phase.  The phase contains modulations
+ * from doppler shifts due to the relative motion between the source and the
+ * detector and the spin evolution of the source.  (The functions discussed here
+ * support both isolated sources and those in binary systems. The binary case
+ * has not been tested.)
  *
-The functions LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs()
-use approximate analytic formulas to generate SFTs.  This should be significantly
-faster than LALGeneratePulsarSignal() and LALSignalToSFTs(), which generate the
-time series data and then FFT it.  Simple tests performed by the code in
-GeneratePulsarSignalTest.c indicate that the maximum modulus of the SFTs output
-by the approximate and exact codes differs by less that 10\%.  Since the tests
-are not exhaustive, the user should use caution and conduct their own test
-to compare LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs() with
-LALGeneratePulsarSignal() and LALSignalToSFTs().
-
-The strain of a periodic signal at the detector is given by
-\f[
-h(t) = F_+(t) A_+ {\rm cos}\Phi(t) + F_\times(t) A_\times {\rm sin}\Phi(t),
-\f]
-where \f$F_+\f$ and \f$F_\times\f$ are the usual beam pattern response functions,
-\f$A_+\f$ and \f$A_\times\f$ are the amplitudes of the gravitational wave for the
-plus and cross polarizations, and \f$\Phi\f$ is the phase.  The phase contains modulations
-from doppler shifts due to the relative motion between the source and the
-detector and the spin evolution of the source.  (The functions discussed here
-support both isolated sources and those in binary systems. The binary case
-has not been tested.)
-
-If we Taylor expand the phase out to first order about the time at the midpoint of
-an SFT and approximate \f$F_+\f$ and \f$F_\times\f$ as constants, for one SFT we can write
-\f[
-\Phi(t) \approx \Phi_{1/2} + 2\pi f_{1/2}(t - t_{1/2}).
-\f]
-The strain at discrete time \f$t_j\f$, measured from the start of the SFT, can
-thus be approximated as
-\f[
-h_j \approx F_{+ 1/2} A_+ {\rm cos} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})]
-+ F_{\times 1/2} A_\times {\rm sin} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})],
-\f]
-where \f$t_0\f$ is the time as the start of the SFT, and \f$t_{1/2} - t_0 = T_{\rm sft}/2\f$,
-where \f$T_{\rm sft}\f$ is the duration of one SFT.  This simplifies to
-\f[
-h_j \approx F_{+ 1/2} A_+ {\rm cos} (\Phi_0 + 2\pi f_{1/2}t_j)
-+ F_{\times 1/2} A_\times {\rm sin} (\Phi_0 + 2\pi f_{1/2}t_j),
-\f]
-where \f$\Phi_0\f$ is the phase at the start of the SFT
-(not the initial phase at the start of the observation), i.e.,
-\f[
-\Phi_0 = \Phi_{1/2} - 2 \pi f_{1/2} (T_{\rm sft} / 2).
-\f]
-Note that these are the same approximations used by LALDemod().
-
-One can show that the Discrete Fourier Transform (DFT) of \f$h_j\f$ above is:
-\f[
-\tilde{h}_k = e^{i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
-\frac{ 1 - e^{2\pi i (\kappa - k)}}{1 - e^{2\pi i (\kappa - k)/N} }
-\\
-+ e^{-i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times)
-\frac{ 1 - e^{-2\pi i (\kappa + k)}}{ 1 - e^{-2\pi i (\kappa + k)/N} }
-\f]
-where \f$N\f$ is the number of time samples used to find the
-DFT (i.e., the sample rate times \f$T_{\rm sft}\f$), and
-\f[
-\kappa \equiv f_{1/2} T_{\rm sft},
-\f]
-is usually not an integer.
-
-Note that the factor \f$e^{\pm 2\pi i k}\f$ in the numerators of the equation for \f$\tilde{h}_k\f$
-equals 1.  Furthermore, for \f$0 < \kappa < N/2\f$ and \f$|\kappa - k| << N\f$ the first term
-dominates and can be Taylor expanded to give:
-\f[
-\tilde{h}_k = N e^{i\Phi_0} \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
-\left [ \, \frac{ {\rm sin} (2\pi\kappa)}{2 \pi (\kappa - k) } \,
-+ \, i \frac{ 1 - {\rm cos} (2\pi\kappa)}{2 \pi (\kappa - k) } \, \right ]
-\f]
-Note that the last factor in square brackets is \f$P_{\alpha k}^*\f$ and
-\f$e^{i\Phi_0} = Q_{\alpha}^*\f$ used by LALDemod.
-
-\heading{Example pseudocode}
-
-The structs used by LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs()
-are given in previous sections, and make use of those used by
-LALGeneratePulsarSignal() and LALSignalToSFTs() plus a small number of
-additional parameters.  Thus it is fairly easy to change between the above
-approximate routines the exact routines. See GeneratePulsarSignalTest.c for
-an example implementation of the code.
-
-Note that one needs to call LALComputeSkyAndZeroPsiAMResponse() once per sky position,
-and then call LALFastGeneratePulsarSFTs() for each set of signal parameters at that
-sky position.  Thus, one could perform a Monte Carlo simulation, as shown
-by the pseudo code:
-
-\code
-loop over sky positions {
-   ...
-   LALComputeSkyAndZeroPsiAMResponse();
-   ...
-   loop over spindown {
-      ...
-      loop over frequencies {
-         ...
-         LALFastGeneratePulsarSFTs();
-         ...
-      }
-      ...
-   }
-   ...
-}
-
-\endcode
-
-\heading{Notes on LALFastGeneratePulsarSFTs()}
-
--#  If \c *outputSFTs sent to LALFastGeneratePulsarSFTs() is \c NULL then
-LALFastGeneratePulsarSFTs() allocates memory for the output SFTs; otherwise it assumes
-memory has already been allocated.  Thus, the user does not have to deallocate
-memory for the SFTs until all calls to LALFastGeneratePulsarSFTs() are completed.
-
--# \c fHeterodyne and <tt>0.5 * samplingRate</tt> set in the PulsarSignalParams struct
-give the start frequency and frequency band of the SFTs output from LALFastGeneratePulsarSFTs().
-
--# If \c resTrig is set to zero in the SFTandSignalParams struct, then
-the C math libary \c cos() \c sin() functions are called, else lookup tables (LUTs) are used
-for calls to trig functions.  There may be a slight speedup in using LUTs.
-
--# To maximize the speed of SFT generations, LALFastGeneratePulsarSFTs() only generates
-values for the bins in the band <tt>2*Dterms</tt> centered on the signal frequency in each SFT. Dterms must be
-greater than zero and less than or equal to the number of frequency bins in the output SFTs. Note that
-Dterms is used the same way here as it is in LALDemod(). Nothing is done to the other bins, unless
-\c *outputSFTs is \c NULL; then, since memory is allocates for the output SFTs, the bins
-not in the <tt>2*Dterms</tt> band are initialized to zero.
-
-*/
+ * If we Taylor expand the phase out to first order about the time at the midpoint of
+ * an SFT and approximate \f$F_+\f$ and \f$F_\times\f$ as constants, for one SFT we can write
+ * \f[
+ * \Phi(t) \approx \Phi_{1/2} + 2\pi f_{1/2}(t - t_{1/2}).
+ * \f]
+ * The strain at discrete time \f$t_j\f$, measured from the start of the SFT, can
+ * thus be approximated as
+ * \f[
+ * h_j \approx F_{+ 1/2} A_+ {\rm cos} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})]
+ * + F_{\times 1/2} A_\times {\rm sin} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})],
+ * \f]
+ * where \f$t_0\f$ is the time as the start of the SFT, and \f$t_{1/2} - t_0 = T_{\rm sft}/2\f$,
+ * where \f$T_{\rm sft}\f$ is the duration of one SFT.  This simplifies to
+ * \f[
+ * h_j \approx F_{+ 1/2} A_+ {\rm cos} (\Phi_0 + 2\pi f_{1/2}t_j)
+ * + F_{\times 1/2} A_\times {\rm sin} (\Phi_0 + 2\pi f_{1/2}t_j),
+ * \f]
+ * where \f$\Phi_0\f$ is the phase at the start of the SFT
+ * (not the initial phase at the start of the observation), i.e.,
+ * \f[
+ * \Phi_0 = \Phi_{1/2} - 2 \pi f_{1/2} (T_{\rm sft} / 2).
+ * \f]
+ * Note that these are the same approximations used by LALDemod().
+ *
+ * One can show that the Discrete Fourier Transform (DFT) of \f$h_j\f$ above is:
+ * \f[
+ * \tilde{h}_k = e^{i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
+ * \frac{ 1 - e^{2\pi i (\kappa - k)}}{1 - e^{2\pi i (\kappa - k)/N} }
+ * \\
+ * + e^{-i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times)
+ * \frac{ 1 - e^{-2\pi i (\kappa + k)}}{ 1 - e^{-2\pi i (\kappa + k)/N} }
+ * \f]
+ * where \f$N\f$ is the number of time samples used to find the
+ * DFT (i.e., the sample rate times \f$T_{\rm sft}\f$), and
+ * \f[
+ * \kappa \equiv f_{1/2} T_{\rm sft},
+ * \f]
+ * is usually not an integer.
+ *
+ * Note that the factor \f$e^{\pm 2\pi i k}\f$ in the numerators of the equation for \f$\tilde{h}_k\f$
+ * equals 1.  Furthermore, for \f$0 < \kappa < N/2\f$ and \f$|\kappa - k| << N\f$ the first term
+ * dominates and can be Taylor expanded to give:
+ * \f[
+ * \tilde{h}_k = N e^{i\Phi_0} \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
+ * \left [ \, \frac{ {\rm sin} (2\pi\kappa)}{2 \pi (\kappa - k) } \,
+ * + \, i \frac{ 1 - {\rm cos} (2\pi\kappa)}{2 \pi (\kappa - k) } \, \right ]
+ * \f]
+ * Note that the last factor in square brackets is \f$P_{\alpha k}^*\f$ and
+ * \f$e^{i\Phi_0} = Q_{\alpha}^*\f$ used by LALDemod.
+ *
+ * ### Example pseudocode ###
+ *
+ * The structs used by LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs()
+ * are given in previous sections, and make use of those used by
+ * LALGeneratePulsarSignal() and LALSignalToSFTs() plus a small number of
+ * additional parameters.  Thus it is fairly easy to change between the above
+ * approximate routines the exact routines. See GeneratePulsarSignalTest.c for
+ * an example implementation of the code.
+ *
+ * Note that one needs to call LALComputeSkyAndZeroPsiAMResponse() once per sky position,
+ * and then call LALFastGeneratePulsarSFTs() for each set of signal parameters at that
+ * sky position.  Thus, one could perform a Monte Carlo simulation, as shown
+ * by the pseudo code:
+ *
+ * \code
+ * loop over sky positions {
+ *   ...
+ *   LALComputeSkyAndZeroPsiAMResponse();
+ *   ...
+ *   loop over spindown {
+ *     ...
+ *     loop over frequencies {
+ *       ...
+ *       LALFastGeneratePulsarSFTs();
+ *       ...
+ *     }
+ *     ...
+ *   }
+ *   ...
+ * }
+ *
+ * \endcode
+ *
+ * ### Notes on LALFastGeneratePulsarSFTs() ###
+ *
+ * -#  If \c *outputSFTs sent to LALFastGeneratePulsarSFTs() is \c NULL then
+ * LALFastGeneratePulsarSFTs() allocates memory for the output SFTs; otherwise it assumes
+ * memory has already been allocated.  Thus, the user does not have to deallocate
+ * memory for the SFTs until all calls to LALFastGeneratePulsarSFTs() are completed.
+ *
+ * -# \c fHeterodyne and <tt>0.5 * samplingRate</tt> set in the PulsarSignalParams struct
+ * give the start frequency and frequency band of the SFTs output from LALFastGeneratePulsarSFTs().
+ *
+ * -# If \c resTrig is set to zero in the SFTandSignalParams struct, then
+ * the C math libary \c cos() \c sin() functions are called, else lookup tables (LUTs) are used
+ * for calls to trig functions.  There may be a slight speedup in using LUTs.
+ *
+ * -# To maximize the speed of SFT generations, LALFastGeneratePulsarSFTs() only generates
+ * values for the bins in the band <tt>2*Dterms</tt> centered on the signal frequency in each SFT. Dterms must be
+ * greater than zero and less than or equal to the number of frequency bins in the output SFTs. Note that
+ * Dterms is used the same way here as it is in LALDemod(). Nothing is done to the other bins, unless
+ * \c *outputSFTs is \c NULL; then, since memory is allocates for the output SFTs, the bins
+ * not in the <tt>2*Dterms</tt> band are initialized to zero.
+ *
+ */
 /*@{*/
 
 /** \name Error codes */
@@ -278,7 +272,8 @@ not in the <tt>2*Dterms</tt> band are initialized to zero.
 #define GENERATEPULSARSIGNALH_MSGEDETECTOR	"Unknown detector-name"
 /** \endcond */
 
-/** Input parameters to GeneratePulsarSignal(), defining the source and the time-series
+/**
+ * Input parameters to GeneratePulsarSignal(), defining the source and the time-series
  */
 typedef struct tagPulsarSignalParams {
   /* source-parameters */
@@ -299,7 +294,8 @@ typedef struct tagPulsarSignalParams {
   UINT4 dtPolBy2; 		/**< half-interval for the polarisation response look-up table for LALPulsarSimulateCoherentGW() */
 } PulsarSignalParams;
 
-/** Parameters defining the SFTs to be returned from LALSignalToSFTs().
+/**
+ * Parameters defining the SFTs to be returned from LALSignalToSFTs().
  */
 typedef struct tagSFTParams {
   REAL8 Tsft;			 /**< length of each SFT in seconds */
@@ -308,7 +304,8 @@ typedef struct tagSFTParams {
   const REAL4Window *window;	 /**< window function for the time series (can be NULL, which is equivalent to a rectangular window) */
 } SFTParams;
 
-/** Parameters defining the pulsar signal and SFTs used by LALFastGeneratePulsarSFTs().  Lookup tables (LUTs) are
+/**
+ * Parameters defining the pulsar signal and SFTs used by LALFastGeneratePulsarSFTs().  Lookup tables (LUTs) are
  * used for trig functions if \code resTrig > 0 \endcode the user must then initialize \c trigArg, \c sinVal, and
  * \c cosVal on the domain \f$[-2\pi, 2\pi]\f$ inclusive.  See GeneratePulsarSignalTest.c for an example.
  */
@@ -324,7 +321,8 @@ typedef struct tagSFTandSignalParams {
 } SFTandSignalParams;
 
 
-/** Sky Constants and beam pattern response functions used by LALFastGeneratePulsarSFTs().
+/**
+ * Sky Constants and beam pattern response functions used by LALFastGeneratePulsarSFTs().
  * These are output from LALComputeSkyAndZeroPsiAMResponse().
  */
 typedef struct tagSkyConstAndZeroPsiAMResponse {

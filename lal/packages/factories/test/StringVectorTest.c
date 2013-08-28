@@ -56,7 +56,8 @@ int main( int argc, char *argv[] )
 
 } /* main() */
 
-/** Test various StringVector functions
+/**
+ * Test various StringVector functions
  */
 int
 XLALStringVector_TEST ( void )

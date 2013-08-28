@@ -1679,12 +1679,12 @@ int CreateSFT(struct CommandLineArgsTag CLA)
 #ifdef PSS_ENABLED
 
 /**
-  returns
-  -1 if out of memory
-  -2 if some computation failes
-  -3 if input parameters are invalid
-   0 otherwise (all went well)
-*/
+ * returns
+ * -1 if out of memory
+ * -2 if some computation failes
+ * -3 if input parameters are invalid
+ * 0 otherwise (all went well)
+ */
 int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency, INT4 extendTimeseries) {
   UINT4 samples;                /**< number of samples in the timeseries */
   PSSTimeseries *originalTS;    /**< the timeseries converted to a PSS timeseries */

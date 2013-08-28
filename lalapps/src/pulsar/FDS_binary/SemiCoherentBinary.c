@@ -16,15 +16,16 @@
  *  MA  02111-1307  USA
  */
 
-/** \author C.Messenger
+/**
+ * \author C.Messenger
  * \ingroup pulsarApps
  * \file
  * \brief
  * This code is designed to compute the Bayes factor for a semi-coherent analysis
- * of input SFT data specific to searching for continuous signals in a binary system. 
+ * of input SFT data specific to searching for continuous signals in a binary system.
  *
- * It generates likelihood samples from a coarse grid of templates placed on each SFT and 
- * combines them using a fine binary template band.  The parameter space is integrated over 
+ * It generates likelihood samples from a coarse grid of templates placed on each SFT and
+ * combines them using a fine binary template band.  The parameter space is integrated over
  * and a Bayes factor is produced.
  *
  */
@@ -77,7 +78,8 @@
 /***********************************************************************************************/
 /* define internal structures */
 
-/** A single parameter prior pdf
+/**
+ * A single parameter prior pdf
  */
 typedef struct { 
   REAL8Vector *logpriors;           /**< vector that stores the log of the prior pdf */
@@ -85,14 +87,16 @@ typedef struct {
   BOOLEAN gaussian;                 /**< are we using a Gaussian prior on this parameter */
 } REAL8Priors;
 
-/** A vector of prior pdfs for many dimensions 
+/**
+ * A vector of prior pdfs for many dimensions
  */
 typedef struct { 
   REAL8Priors *data;                /**< points to the prior data */
   UINT4 ndim;                       /**< the dimensionality of the prior space */
 } REAL8PriorsVector;
 
-/** A single parameter dimensions boundaries
+/**
+ * A single parameter dimensions boundaries
  */
 typedef struct { 
   REAL8 min;                        /**< the parameter space minimum */
@@ -104,14 +108,16 @@ typedef struct {
   CHAR name[LALNameLength];         /**< string containing the name of the dimension */
 } REAL8Dimension;
 
-/** A vector of parameter space boundary information 
+/**
+ * A vector of parameter space boundary information
  */
 typedef struct { 
   REAL8Dimension *data;             /**< the boundaries, span, etc for a single dimension */
   UINT4 ndim;                       /**< the number of dimensions */
 } REAL8Space;
 
-/** Stores the gridding parameters for a single dimension 
+/**
+ * Stores the gridding parameters for a single dimension
  */
 typedef struct { 
   REAL8 min;                        /**< the starting points of the grid */
@@ -121,7 +127,8 @@ typedef struct {
   CHAR name[LALNameLength];         /**< string containing the name of the dimension */
 } Grid;
 
-/** Stores the current location in a hyper-cubic parameter space
+/**
+ * Stores the current location in a hyper-cubic parameter space
  */
 typedef struct { 
   REAL8 *x;                         /**< the location in parameter space */
@@ -130,7 +137,8 @@ typedef struct {
   UINT4 currentidx;                 /**< the current index value of the template */
 } Template;
 
-/** Stores the gridding parameters for a hypercubic grid of templates
+/**
+ * Stores the gridding parameters for a hypercubic grid of templates
  */
 typedef struct { 
   Grid *grid;                       /**< stores the parameters defining a single dimension */
@@ -140,14 +148,16 @@ typedef struct {
   REAL8 mismatch;                   /**< the mismatch */
 } GridParameters;
 
-/** Stores the parameters of an injection
+/**
+ * Stores the parameters of an injection
  */
 typedef struct { 
   Template temp;                    /**< stores the parameters of the signal */
   REAL8 amp;                        /**< the injected amplitude */
 } InjectionParameters;
 
-/** contains information regarding the search parameter space
+/**
+ * contains information regarding the search parameter space
  */
 typedef struct { 
   REAL8Space *space;                /**< stores the parameter space boundaries */
@@ -165,21 +175,24 @@ typedef struct {
 
 /*****************************************************************************************/
 
-/** Stores the gridding parameters for a hypercubic grid of templates
+/**
+ * Stores the gridding parameters for a hypercubic grid of templates
  */
 typedef struct { 
   GridParameters **segment;         /**< stores the parameters defining a single dimension */
   UINT4 length;                     /**< the number of segments */
 } GridParametersVector;
 
-/** Stores segment parameters
+/**
+ * Stores segment parameters
  */
 typedef struct { 
   INT4Vector *npcus;                /**< a vector of PCUs */
   REAL8Vector *dt;                  /**< a vector of sampling times */
 } SegmentParams;
 
-/** Stores parameters useful for the efficient calcualtion of the likelihood
+/**
+ * Stores parameters useful for the efficient calcualtion of the likelihood
  */
 typedef struct { 
   REAL8 logsqrtP;                   /**< intermediate variable for the phase and amp marginalised likelihood calculation */
@@ -188,7 +201,8 @@ typedef struct {
   REAL8Vector *alphaX;              /**< another vector of a variable computed for each amplitude value */
 } LikelihoodParams;
 
-/** Stores parameters useful for the efficient calcualtion of the likelihood
+/**
+ * Stores parameters useful for the efficient calcualtion of the likelihood
  */
 typedef struct { 
   LikelihoodParams *data;           /**< a vector of likelihood parameter structures */
@@ -202,7 +216,8 @@ typedef struct {
   gsl_spline *logbesselI0_spline;      /**< gsl interpolation structure for bessel LUT */
 } LikelihoodParamsVector;
 
-/** Stores the results of a Bayesian posterior integration (Bayes factor, evidence, posteriors, etc...)
+/**
+ * Stores the results of a Bayesian posterior integration (Bayes factor, evidence, posteriors, etc...)
  */
 typedef struct { 
   REAL8 logBayesFactor_phaseamp;                /**< the log Bayes factor for phase and amplitude marginalised per segment */
@@ -219,7 +234,8 @@ typedef struct {
   UINT4 nsegments;                              /**< the number of segments used */
 } BayesianProducts;
 
-/** Storage for the demodulated power from a single segment 
+/**
+ * Storage for the demodulated power from a single segment
  */
 typedef struct { 
   REAL4Vector *data;                /**< pointer to the power data stored sequentially */
@@ -231,21 +247,24 @@ typedef struct {
   GridParameters *gridparams;       /**< the grid on which the power was computed */
 } REAL4DemodulatedPower;
 
-/** Storage for the demodulated power 
+/**
+ * Storage for the demodulated power
  */
 typedef struct { 
   REAL4DemodulatedPower **segment;  /**< pointer to a set of REAL4VectorArrays */
   UINT4 length;                     /**< the number of segments */
 } REAL4DemodulatedPowerVector;
 
-/** An array of COMPLEX8TimeSeries 
+/**
+ * An array of COMPLEX8TimeSeries
  */
 typedef struct { 
   COMPLEX8TimeSeries **data;        /**< pointer to a set of COMPLEX8TimeSeries */
   UINT4 length;                     /**< the number of vectors */
 } COMPLEX8TimeSeriesArray;
 
-/** A structure that stores user input variables 
+/**
+ * A structure that stores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -322,8 +341,8 @@ int XLALComputePhaseMargLogLRatioVectorLUT(REAL8Vector *logLratio,REAL8Vector *p
 UserInput_t empty_UserInput;
 ParameterSpace empty_ParameterSpace;
 
-/** The main function of semicoherentbinary.c
- *
+/**
+ * The main function of semicoherentbinary.c
  */
 int main( int argc, char *argv[] )  {
 
@@ -577,8 +596,8 @@ int main( int argc, char *argv[] )  {
   
 } /* end of main */
 
-/** Read in input user arguments
- *
+/**
+ * Read in input user arguments
  */
 int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */ 
 		     char *argv[],        /**< [in] the command line arguments */
@@ -682,10 +701,10 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   
 }
 
-/** Computes the binary parameter space boundaries given the user input args
- *
- * For each search dimension we define the min, max, mid, and span of that dimension 
- * plus we give each dimension a name, define whether it is to be given a flat or 
+/**
+ * Computes the binary parameter space boundaries given the user input args
+ * For each search dimension we define the min, max, mid, and span of that dimension
+ * plus we give each dimension a name, define whether it is to be given a flat or
  * Gaussian prior and specify the sigma of that prior.
  *
  */
@@ -796,8 +815,8 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   return XLAL_SUCCESS;
   
 }
-/** Compute the prior probability density functions on the search parameters
- *
+/**
+ * Compute the prior probability density functions on the search parameters
  * The priors are computed on the search grid and correctly normalised
  *
  */
@@ -886,8 +905,8 @@ int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,        /**< [out] the 
 
 }
 
-/** Compute the prior probability density functions on the search parameters
- *
+/**
+ * Compute the prior probability density functions on the search parameters
  * The priors are computed on the search grid and correctly normalised
  *
  */
@@ -984,10 +1003,10 @@ int XLALComputeBinaryPriors(REAL8PriorsVector **priors,        /**< [out] the pr
   
 }
 
-/** Adds a simulated signal to the existing SFTs
- *
+/**
+ * Adds a simulated signal to the existing SFTs
  * The parameters of the injection are drawn from the binary parameter priors
- * with the exception of the amplitude.  We cannot do this exactly since the 
+ * with the exception of the amplitude.  We cannot do this exactly since the
  * signal is not additive but we approximate this by drawing the signal component
  * from a Poisson distribution and adding it to the existing noise.
  *
@@ -1147,8 +1166,8 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
   
 }
 
-/** Read in SFTs to an SFTVector
- *
+/**
+ * Read in SFTs to an SFTVector
  */
 int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
 		 SegmentParams **segparams, /**< [out] the segment parameters (noise, sampling time, etc..) */
@@ -1358,8 +1377,8 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
 
 }
 
-/** Inverse FFT all narrowband SFTs 
- *
+/**
+ * Inverse FFT all narrowband SFTs
  * In order to apply the frequency derivitive corrections we must work in the time domain
  * so here we convert all SFTs to the complex time domain.
  *
@@ -1452,9 +1471,9 @@ int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, 
 
 }
 
-/** Compute the gridding parameters on spin derivitives for all segments
- *
- * This is simply a wrapper for the single segment function 
+/**
+ * Compute the gridding parameters on spin derivitives for all segments
+ * This is simply a wrapper for the single segment function
  *
  */
 int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /**< [out] the gridding parameters */
@@ -1514,8 +1533,8 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
 
 }
 
-/** Compute the gridding parameters on spin derivitives
- *
+/**
+ * Compute the gridding parameters on spin derivitives
  * The circular orbit binary phase model is phi = 2*pi*nu*( (t-tref) - a*sin( W*(t-tasc) )
  * from which we compute the min and maximum instantaneous spin derivitives.
  *
@@ -1705,9 +1724,9 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 
  } 
 
-/** Compute the demodulated power for all downsampled timeseries 
- *
- * This function is simply a wrapper for XLALComputeDemodulatedPower 
+/**
+ * Compute the demodulated power for all downsampled timeseries
+ * This function is simply a wrapper for XLALComputeDemodulatedPower
  *
  */
 int XLALComputeDemodulatedPowerVector(REAL4DemodulatedPowerVector **power,     /**< [out] the spin derivitive demodulated power */ 
@@ -1761,11 +1780,11 @@ int XLALComputeDemodulatedPowerVector(REAL4DemodulatedPowerVector **power,     /
 
 }
 
-/** Compute the demodulated power for a single SFT 
- *
+/**
+ * Compute the demodulated power for a single SFT
  * This involves taking the downsampled SFT timeseries and multiplying by the
- * timeseries spin-derivitive templates in turn.  Then we inverse FFT the result 
- * and square to obtain the power at a given set of freq derivitive parameters. 
+ * timeseries spin-derivitive templates in turn.  Then we inverse FFT the result
+ * and square to obtain the power at a given set of freq derivitive parameters.
  *
  */
 int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] the spin derivitive demodulated power */ 
@@ -1947,10 +1966,10 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
 
 }
 
-/** Compute the background photon flux for each SFT
- *
- * This uses the median of the power to obtain the quantity r (the background 
- * photon flux). 
+/**
+ * Compute the background photon flux for each SFT
+ * This uses the median of the power to obtain the quantity r (the background
+ * photon flux).
  *
  */
 int XLALEstimateBackgroundFlux(REAL8Vector **background,     /**< [out] the background flux estimate */
@@ -2025,9 +2044,9 @@ int XLALEstimateBackgroundFlux(REAL8Vector **background,     /**< [out] the back
 
 }
 
-/** Compute the grid on binary parameters based on the semi-coherent metric 
- *
- * We use this grid to perform the integration of the posterior and to ultimately 
+/**
+ * Compute the grid on binary parameters based on the semi-coherent metric
+ * We use this grid to perform the integration of the posterior and to ultimately
  * compute the Bayes factor.
  *
  */
@@ -2155,9 +2174,9 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
 
 }
 
-/** Compute the Bayes factor for the semi-coherent search
- *
- * This function performs the integral over the binary parameter space on 
+/**
+ * Compute the Bayes factor for the semi-coherent search
+ * This function performs the integral over the binary parameter space on
  * the posterior probability distribution (likelihood*prior).
  *
  */
@@ -2385,9 +2404,9 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
 
 }
 
-/** Compute some repeatedly used parameters in the likelihood computation 
- *
- * To make the likelihood computation efficient we compute some parameters before 
+/**
+ * Compute some repeatedly used parameters in the likelihood computation
+ * To make the likelihood computation efficient we compute some parameters before
  * cycling over templates.  We also compute the priors.
  *
  */
@@ -2593,10 +2612,10 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
   
 }
 
-/** Compute the next binary template in the grid
- *
+/**
+ * Compute the next binary template in the grid
  * the templates are generated sequentially from the grid parameters file.  The n-dimensional
- * virtual indices of each dimension are also generated  
+ * virtual indices of each dimension are also generated
  *
  */
 int XLALGetNextBinaryTemplate(Template **temp,                        /**< [out] the signal model template parameters */
@@ -2657,8 +2676,8 @@ int XLALGetNextBinaryTemplate(Template **temp,                        /**< [out]
 
 }
 
-/** Compute the instantaneous frequency derivitives for a given binary template and segment
- *
+/**
+ * Compute the instantaneous frequency derivitives for a given binary template and segment
  */
 int XLALComputeBinaryFreqDerivitives(Template *fdots,                        /**< [out] the frequency derivitives */
 				     Template *bintemp,                      /**< [in] the binary template */
@@ -2689,8 +2708,8 @@ int XLALComputeBinaryFreqDerivitives(Template *fdots,                        /**
 
 }
 
-/** Compute the phase and amplitude marginalised log-likelihood for a signal in Poisson noise 
- *
+/**
+ * Compute the phase and amplitude marginalised log-likelihood for a signal in Poisson noise
  * This function computes (as efficiently as possible) the log-likelihood of obtaining a particular
  * power value given Poisson noise and marginalising over an unknown phase and amplitude.
  *
@@ -2706,8 +2725,8 @@ REAL8 XLALComputePhaseAmpMargLogLRatio(REAL8 X,                       /**< [in] 
   
 }
 
-/** Compute the phase and amplitude marginalised log-likelihood for a signal in Poisson noise 
- *
+/**
+ * Compute the phase and amplitude marginalised log-likelihood for a signal in Poisson noise
  * This function computes (as efficiently as possible) the log-likelihood of obtaining a particular
  * power value given Poisson noise and marginalising over an unknown phase and amplitude.
  *
@@ -2725,8 +2744,8 @@ REAL8 XLALComputePhaseAmpMargLogLRatioLUT(REAL8 X,                              
   
 }
 
-/** Compute the phase marginalised log-likelihood for a signal in Poisson noise assuming constant amplitude
- *
+/**
+ * Compute the phase marginalised log-likelihood for a signal in Poisson noise assuming constant amplitude
  * This function computes (as efficiently as possible) the log-likelihood of obtaining a particular
  * power value given Poisson noise and marginalising over an unknown phase only for a vector of amplitudes.
  *
@@ -2748,8 +2767,8 @@ int XLALComputePhaseMargLogLRatio(REAL8Vector *logLratio_phase,  /**< [out] the 
 
 }
 
-/** Compute the phase marginalised log-likelihood for a signal in Poisson noise assuming constant amplitude
- *
+/**
+ * Compute the phase marginalised log-likelihood for a signal in Poisson noise assuming constant amplitude
  * This function computes (as efficiently as possible) the log-likelihood of obtaining a particular
  * power value given Poisson noise and marginalising over an unknown phase only for a vector of amplitudes.
  *
@@ -2773,8 +2792,8 @@ int XLALComputePhaseMargLogLRatioLUT(REAL8Vector *logLratio_phase,         /**< 
 
 }
 
-/** Compute the phase marginalised log-likelihood for a signal in Poisson noise assuming constant amplitude
- *
+/**
+ * Compute the phase marginalised log-likelihood for a signal in Poisson noise assuming constant amplitude
  * This function computes (as efficiently as possible) the log-likelihood of obtaining a particular set of
  * power values given Poisson noise and marginalising over an unknown phase only for a vector of amplitudes.
  *
@@ -2810,9 +2829,9 @@ int XLALComputePhaseMargLogLRatioVectorLUT(REAL8Vector *logLratio_phase,        
 
 }
 
-/** Output the results to file 
- *
- * We choose to output all results from a specific analysis to a single file 
+/**
+ * Output the results to file
+ * We choose to output all results from a specific analysis to a single file
  *
  */
 int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output directory name */
@@ -3039,9 +3058,9 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
 
 }
 
-/** function to compute the log of the bessel function without computing the bessel function directly
- *
- * We compute the log of the Bessel function I0(z) bypassing the computation of the 
+/**
+ * function to compute the log of the bessel function without computing the bessel function directly
+ * We compute the log of the Bessel function I0(z) bypassing the computation of the
  * function and then taking the log.  This avoids numerical problems.  The expansion
  * used is taken from Abramowitz and Stegun P.378
  *
@@ -3137,8 +3156,8 @@ REAL8 XLALLogSumExpLUT(REAL8 logx,                   /**< [in] the log of x */
   
 }
 
-/** Free the memory allocated within a ParameterSpace structure
- *
+/**
+ * Free the memory allocated within a ParameterSpace structure
  */
 int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the parameter space to be freed */
 			   )
@@ -3182,8 +3201,8 @@ int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the param
 
 }
 
-/** Free the memory allocated within a REAL4DemodulatedPowerVector structure
- *
+/**
+ * Free the memory allocated within a REAL4DemodulatedPowerVector structure
  */
 int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power            /**< [in] the data to be freed */
 					)
@@ -3210,8 +3229,8 @@ int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power      
 
 }
 
-/** Free the memory allocated within a BayesianProducts structure 
- *
+/**
+ * Free the memory allocated within a BayesianProducts structure
  */
 int XLALFreeBayesianProducts(BayesianProducts *Bayes            /**< [in] the data to be freed */
 			     )
@@ -3244,9 +3263,9 @@ int XLALFreeBayesianProducts(BayesianProducts *Bayes            /**< [in] the da
   
 }
 
-/** this function initialises the gsl random number generation 
- *
- * If the input seed is zero then a random seed is drawn from 
+/**
+ * this function initialises the gsl random number generation
+ * If the input seed is zero then a random seed is drawn from
  * /dev/urandom.
  *
  */

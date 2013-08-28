@@ -51,51 +51,53 @@
 
 
 /**
-\author Sintes, A. M.
-
-\brief Generates a reference interference signal.
-
-\heading{Description}
-Given the complex vector  <tt>*in1</tt> of length \f$n/2+1\f$, containing
-the Fourier transform of the data \f$\tilde x(\nu)\f$,
-<dl>
-<dt><tt>in1->length</tt></dt><dd> The number of elements in
-            <tt>in1->data</tt> \f$=n/2+1\f$.</dd>
-<dt><tt>in1->data</tt></dt><dd>   The data \f$\tilde x(\nu)\f$,</dd>
-</dl>
- and given another vector <tt>*par</tt> containing the  information related
-to the harmonics from which we want to construct the reference signal
-(i.e., indices, and  initial and final frequency bin locations),
-<dl>
-<dt><tt>par->length</tt></dt><dd> The number of elements in <tt>par->data</tt>.
-       This is equal to three times the number of harmonics that will be
-        used to construct the reference signal \f$M(t)\f$.</dd>
-<dt><tt>par->data</tt></dt><dd>    \f$\{ k,\nu_{ik}, \nu_{fk} \} \f$,
-      e.g.,  \f$\{3, 9868, 9894, 5, 16449, 16487, 9, 29607, 29675\ldots\}\f$,</dd>
-</dl>
-it  generates the time domain
-\f$M(t)\f$ reference interference signal, <tt>*out</tt>. This is a complex
-vector of length \f$n\f$.
-<dl>
-<dt><tt>out->length</tt></dt><dd> The number of elements in
-            <tt>out->data</tt> \f$=n\f$.</dd>
-<dt><tt>out->data</tt></dt><dd>   \f$M(t)\f$ complex data.</dd>
-</dl>
-\f$M(t)\f$ corresponds to a nearly monochromatic function near the
-frequency  \f$f_0\f$, that is implicit in the information
-given in <tt>*par</tt>.
-
-\heading{Algorithm}
-Described before.
-
-\heading{Notes}
-
-The harmonics selected to construct the reference signal
-should not be (if possible) buried with other strong lines,
- such as violin modes. Choose the strongest harmonics, those
-that clearly stand over the noise level.
-
-*/
+ * \author Sintes, A. M.
+ *
+ * \brief Generates a reference interference signal.
+ *
+ * ### Description ###
+ *
+ * Given the complex vector  <tt>*in1</tt> of length \f$n/2+1\f$, containing
+ * the Fourier transform of the data \f$\tilde x(\nu)\f$,
+ * <dl>
+ * <dt><tt>in1->length</tt></dt><dd> The number of elements in
+ * <tt>in1->data</tt> \f$=n/2+1\f$.</dd>
+ * <dt><tt>in1->data</tt></dt><dd>   The data \f$\tilde x(\nu)\f$,</dd>
+ * </dl>
+ * and given another vector <tt>*par</tt> containing the  information related
+ * to the harmonics from which we want to construct the reference signal
+ * (i.e., indices, and  initial and final frequency bin locations),
+ * <dl>
+ * <dt><tt>par->length</tt></dt><dd> The number of elements in <tt>par->data</tt>.
+ * This is equal to three times the number of harmonics that will be
+ * used to construct the reference signal \f$M(t)\f$.</dd>
+ * <dt><tt>par->data</tt></dt><dd>    \f$\{ k,\nu_{ik}, \nu_{fk} \} \f$,
+ * e.g.,  \f$\{3, 9868, 9894, 5, 16449, 16487, 9, 29607, 29675\ldots\}\f$,</dd>
+ * </dl>
+ * it  generates the time domain
+ * \f$M(t)\f$ reference interference signal, <tt>*out</tt>. This is a complex
+ * vector of length \f$n\f$.
+ * <dl>
+ * <dt><tt>out->length</tt></dt><dd> The number of elements in
+ * <tt>out->data</tt> \f$=n\f$.</dd>
+ * <dt><tt>out->data</tt></dt><dd>   \f$M(t)\f$ complex data.</dd>
+ * </dl>
+ * \f$M(t)\f$ corresponds to a nearly monochromatic function near the
+ * frequency  \f$f_0\f$, that is implicit in the information
+ * given in <tt>*par</tt>.
+ *
+ * ### Algorithm ###
+ *
+ * Described before.
+ *
+ * ### Notes ###
+ *
+ * The harmonics selected to construct the reference signal
+ * should not be (if possible) buried with other strong lines,
+ * such as violin modes. Choose the strongest harmonics, those
+ * that clearly stand over the noise level.
+ *
+ */
 void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 		   COMPLEX8Vector     *out,   /**<  M(t), size n */
 		   COMPLEX8Vector     *in1,   /**<  x(f), size n/2+1 */

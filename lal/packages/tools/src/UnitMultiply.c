@@ -23,38 +23,41 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
-/** \addtogroup UnitMultiply_c
-    \author J. T. Whelan <john.whelan@ligo.org>
-
-    \brief Multiplies two \c LALUnit structures.
-
-This function multiplies together the \c LALUnit structures
-<tt>*(input-\>unitOne)</tt> and <tt>*(input-\>unitTwo)</tt>, thus allowing a
-module to <em>e.g.</em>, multiply two \c REAL8TimeSeries and
-give the resulting \c REAL8TimeSeries the correct units.
-
-\heading{Algorithm}
-
-The function first adds together the overall powers of ten in the two
-input unit structures, then adds each of the corresponding rational
-powers in <tt>*(input-\>unitOne)</tt> and <tt>*(input-\>unitTwo)</tt> by naïve
-addition of rational numbers
-\f[
-\frac{N_1}{1+D_1} + \frac{N_2}{1+D_2} =
-\frac{N_1 (1+D_2) +  N_2(1+D_1)}{1 + (1+D_1)(1+D_2)-1}
-\f]
-and then calls <tt>LALUnitNormalize()</tt> to bring the result into
-standard form.
-
-*/
+/**
+ * \addtogroup UnitMultiply_c
+ * \author J. T. Whelan <john.whelan@ligo.org>
+ *
+ * \brief Multiplies two \c LALUnit structures.
+ *
+ * This function multiplies together the \c LALUnit structures
+ * <tt>*(input-\>unitOne)</tt> and <tt>*(input-\>unitTwo)</tt>, thus allowing a
+ * module to <em>e.g.</em>, multiply two \c REAL8TimeSeries and
+ * give the resulting \c REAL8TimeSeries the correct units.
+ *
+ * ### Algorithm ###
+ *
+ * The function first adds together the overall powers of ten in the two
+ * input unit structures, then adds each of the corresponding rational
+ * powers in <tt>*(input-\>unitOne)</tt> and <tt>*(input-\>unitTwo)</tt> by naïve
+ * addition of rational numbers
+ * \f[
+ * \frac{N_1}{1+D_1} + \frac{N_2}{1+D_2} =
+ * \frac{N_1 (1+D_2) +  N_2(1+D_1)}{1 + (1+D_1)(1+D_2)-1}
+ * \f]
+ * and then calls <tt>LALUnitNormalize()</tt> to bring the result into
+ * standard form.
+ *
+ */
 /*@{*/
 
-/** This function multiplies together the \c LALUnit structures
+/**
+ * This function multiplies together the \c LALUnit structures
  * <tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt>, thus allowing a
  * module to eg, multiply two \c REAL8TimeSeries and
  * give the resulting \c REAL8TimeSeries the correct units.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * <tt>XLALUnitNormalize()</tt>
  *
  */
@@ -113,7 +116,8 @@ LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1, const LALUnit *
   return output;
 }
 
-/** DEPRECATED.
+/**
+ * DEPRECATED.
  * \deprecated Use XLALUnitMultiply() instead.
  */
 void

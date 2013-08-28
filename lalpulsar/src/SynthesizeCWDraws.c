@@ -18,7 +18,8 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
  * Generate samples of various statistics (F-stat, B-stat,...) drawn from their
@@ -28,7 +29,7 @@
  * This is based on synthesizeBstat, and is mostly meant to be used for Monte-Carlos
  * studies of ROC curves
  *
- *********************************************************************************/
+ */
 
 /*---------- INCLUDES ----------*/
 
@@ -55,7 +56,8 @@ InjParams_t empty_InjParams_t;
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Generate 4 random-noise draws n_mu = {n_1, n_2, n_3, n_4} with correlations according to
+/**
+ * Generate 4 random-noise draws n_mu = {n_1, n_2, n_3, n_4} with correlations according to
  * the matrix M = L L^T, which is passed in as input.
  *
  * Note: you need to pass a pre-allocated 4-vector n_mu.
@@ -107,7 +109,8 @@ XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu,	/**< [out] 4d vector of nois
 
 } /* XLALDrawCorrelatedNoise() */
 
-/** Generate an FstatAtomVector for given antenna-pattern functions.
+/**
+ * Generate an FstatAtomVector for given antenna-pattern functions.
  * Simply creates FstatAtomVector and initializes with antenna-pattern function.
  */
 FstatAtomVector*
@@ -159,7 +162,8 @@ XLALGenerateFstatAtomVector ( const DetectorStateSeries *detStates,	/**< input d
 } /* XLALGenerateFstatAtomVector() */
 
 
-/** Generate a multi-FstatAtomVector for given antenna-pattern functions.
+/**
+ * Generate a multi-FstatAtomVector for given antenna-pattern functions.
  * Simply creates MultiFstatAtomVector and initializes with antenna-pattern function.
  */
 MultiFstatAtomVector*
@@ -213,7 +217,8 @@ XLALGenerateMultiFstatAtomVector ( const MultiDetectorStateSeries *multiDetState
 
 } /* XLALGenerateMultiFstatAtomVector() */
 
-/** Add Gaussian-noise components to given FstatAtomVector
+/**
+ * Add Gaussian-noise components to given FstatAtomVector
  */
 int
 XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector, noise will be added to this */
@@ -292,7 +297,8 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
 } /* XLALAddNoiseToFstatAtomVector() */
 
 
-/** Add Gaussian-noise components to given multi-FstatAtomVector
+/**
+ * Add Gaussian-noise components to given multi-FstatAtomVector
  */
 int
 XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms,	/**< input multi atoms-vector, noise will be added to this */
@@ -326,8 +332,9 @@ XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms,	/**< inpu
 } /* XLALSynthesizeMultiFstatAtomVector4Noise() */
 
 
-/** Add signal s_mu = M_mu_nu A^nu within the given transient-window
- *  to given atoms.
+/**
+ * Add signal s_mu = M_mu_nu A^nu within the given transient-window
+ * to given atoms.
  *
  * RETURN: SNR^2 of the injected signal
  * and the effective AntennaPatternMatrix M_mu_nu for this signal.
@@ -468,7 +475,8 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
 } /* XLALAddSignalToFstatAtomVector() */
 
 
-/** Add given signal s_mu = M_mu_nu A^nu within the given transient-window
+/**
+ * Add given signal s_mu = M_mu_nu A^nu within the given transient-window
  * to multi-IFO noise-atoms.
  *
  * RETURN: SNR^2 of the injected signal
@@ -530,7 +538,8 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
 
 } /* XLALAddSignalToMultiFstatAtomVector() */
 
-/** Generates a multi-Fstat atoms vector for given parameters, drawing random parameters wherever required.
+/**
+ * Generates a multi-Fstat atoms vector for given parameters, drawing random parameters wherever required.
  *
  * Input: detector states, signal sky-pos (or allsky), amplitudes (or range), transient window range
  *
@@ -681,7 +690,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
 
 } /* XLALSynthesizeTransientAtoms() */
 
-/** Rescale a given multi-Fstat atoms vector {Fa,Fb} by given scalar factor.
+/**
+ * Rescale a given multi-Fstat atoms vector {Fa,Fb} by given scalar factor.
  * This is used to rescale signal atoms to desired fixed SNR.
  */
 int
@@ -722,7 +732,8 @@ XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	/**< [in/out
 } /* XLALRescaleMultiFstatAtomVector() */
 
 
-/** Write an injection-parameters structure to the given file-pointer,
+/**
+ * Write an injection-parameters structure to the given file-pointer,
  * adding one line with the injection parameters
  */
 int

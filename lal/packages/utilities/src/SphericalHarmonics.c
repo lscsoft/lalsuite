@@ -494,7 +494,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
 /**
  * Computes the n-th Jacobi polynomial for polynomial weights alpha and beta.
  * The implementation here is only valid for real x -- enforced by the argument
- * type. An extension to complex values would require evaluation of several 
+ * type. An extension to complex values would require evaluation of several
  * gamma functions.
  *
  * See http://en.wikipedia.org/wiki/Jacobi_polynomials
@@ -517,12 +517,12 @@ double XLALJacobiPolynomial(int n, int alpha, int beta, double x){
 }
 
 /**
- * Computes the 'little' d Wigner matrix for the Euler angle beta. Single angle 
- * small d transform with major index 'l' and minor index transition from m to 
- * mp. 
+ * Computes the 'little' d Wigner matrix for the Euler angle beta. Single angle
+ * small d transform with major index 'l' and minor index transition from m to
+ * mp.
  *
- * Uses a slightly unconventional method since the intuitive version by Wigner 
- * is less suitable to algorthmic development. 
+ * Uses a slightly unconventional method since the intuitive version by Wigner
+ * is less suitable to algorthmic development.
  *
  * See http://en.wikipedia.org/wiki/Wigner_D-matrix#Wigner_.28small.29_d-matrix
  */
@@ -560,10 +560,10 @@ double XLALWignerdMatrix(
 
 /**
  * Computes the full Wigner D matrix for the Euler angle alpha, beta, and gamma
- * with major index 'l' and minor index transition from m to mp. 
+ * with major index 'l' and minor index transition from m to mp.
  *
- * Uses a slightly unconventional method since the intuitive version by Wigner 
- * is less suitable to algorthmic development. 
+ * Uses a slightly unconventional method since the intuitive version by Wigner
+ * is less suitable to algorthmic development.
  *
  * See http://en.wikipedia.org/wiki/Wigner_D-matrix
  *

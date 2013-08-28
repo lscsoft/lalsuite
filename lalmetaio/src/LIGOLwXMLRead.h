@@ -27,18 +27,18 @@
  */
 
 /**
-
-\author Brown, D. A. and Fairhurst, S.
-\file
-\ingroup lalmetaio
-\brief Provides functions for reading LIGO lightweight XML files to LIGO metadata database tables.
-
-\heading{Synopsis}
-\code
-#include <lal/LIGOLwXMLRead.h>
-\endcode
-
-*/
+ * \author Brown, D. A. and Fairhurst, S.
+ * \file
+ * \ingroup lalmetaio
+ * \brief Provides functions for reading LIGO lightweight XML files to LIGO metadata database tables.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LIGOLwXMLRead.h>
+ * \endcode
+ *
+ */
 
 #ifndef _LIGOLWXMLREAD_H
 #define _LIGOLWXMLREAD_H
@@ -83,15 +83,16 @@ extern "C" {
 
 
 
-/** This structure allows for the association of entries in a MetaDataTable
-with columns in an xml file.
-<dl>
-<dt>name</dt><dd> The name of the column in the XML table.</dd>
-<dt>pos</dt><dd> The position of this column in the XML table.</dd>
-<dt>idx</dt><dd> The id number of the column.</dd>
-</dl>
-
-*/
+/**
+ * This structure allows for the association of entries in a MetaDataTable
+ * with columns in an xml file.
+ * <dl>
+ * <dt>name</dt><dd> The name of the column in the XML table.</dd>
+ * <dt>pos</dt><dd> The position of this column in the XML table.</dd>
+ * <dt>idx</dt><dd> The id number of the column.</dd>
+ * </dl>
+ *
+ */
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(IMMUTABLE_MEMBERS(tagMetaTableDirectory, name));
 #endif /* SWIG */

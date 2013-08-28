@@ -18,31 +18,35 @@
 */
 
 /**
-\author B.S. Sathyaprakash
-\file
-
-\brief Creates a template mesh for BCV (or, alternatively, for SPA but
-assuing a constant metric) using the mismatch metric.
-
-\heading{Usage}
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALCalloc()                     LALFree()
-LALCreateFlatMesh()             LALSReadVectorSequence()
-LALSCreateVectorSequence()      LALSDestroyVectorSequence()
-LALSCreateVector()              LALSDestroyVector()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author B.S. Sathyaprakash
+ * \file
+ *
+ * \brief Creates a template mesh for BCV (or, alternatively, for SPA but
+ * assuing a constant metric) using the mismatch metric.
+ *
+ * ### Usage ###
+ *
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALPrintError()                 LALCheckMemoryLeaks()
+ * LALCalloc()                     LALFree()
+ * LALCreateFlatMesh()             LALSReadVectorSequence()
+ * LALSCreateVectorSequence()      LALSDestroyVectorSequence()
+ * LALSCreateVector()              LALSDestroyVector()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 
 /** \name Error Codes */ /*@{*/

@@ -43,14 +43,16 @@
 #include <lal/TimeDelay.h>
 #include <lal/XLALError.h>
 
-/** \defgroup CoincRingdownUtils_c Module CoincRingdownUtils.c
+/**
+ * \defgroup CoincRingdownUtils_c Module CoincRingdownUtils.c
  * \ingroup pkg_CBC_NEW
  * \author Fairhurst, S.
  * \brief Blah.
  */
 /*@{*/
 
-/** Takes in a linked list of single inspiral
+/**
+ * Takes in a linked list of single inspiral
  * tables and returns a list of two instrument coincidences.  The coincidence
  * requirements are given by the \c accuracyParams.  When single inspirals
  * from two different instruments are found to be coincident, the code creates a
@@ -252,7 +254,8 @@ LALCreateTwoIFORingdownCoincList(
   RETURN (status);
 }
 
-/** Takes linked list of
+/**
+ * Takes linked list of
  * \c CoincInspiralTables, assumed to contain (N-1) ifo coincidences and
  * creates all N ifo coincidences.  Both the input and output list of
  * \c CoincInspiralTables are passed as \c coincHead.
@@ -416,7 +419,8 @@ LALCreateNIFORingdownCoincList(
 
 }
 
-/** Will remove any lower order coincidences
+/**
+ * Will remove any lower order coincidences
  * if they are contained in a higher order coincidence.  For example, if an H1-L1
  * double coincident trigger is also part of an H1-H2-L1 triple coincident
  * trigger, the double coincident trigger will be removed.  The head of the list
@@ -540,7 +544,8 @@ LALFreeCoincRingdown(
 }
 
 
-/** Free the
+/**
+ * Free the
  * memory associated to the \c CoincInspiralTable pointed to by
  * \c coincPtr.  This entails freeing the \c CoincInspiralTable as
  * well as any \c eventIds which point to the coinc.
@@ -591,7 +596,8 @@ XLALFreeCoincRingdown(
   LALFree(*coincPtr);
 }
 
-/** Adds a pointer to a single inspiral table
+/**
+ * Adds a pointer to a single inspiral table
  * to a coinc inspiral table.  Upon entry, if \c coincPtr points to a
  * \c NULL coinc inspiral table, the table is created before a pointer to
  * the single inspiral table is added.  Additionally, an \c eventId table is
@@ -715,7 +721,8 @@ XLALAddSnglRingdownToCoinc(
   return coincRingdown;
 }
 
-/** Tests for coincidence between a single
+/**
+ * Tests for coincidence between a single
  * inspiral and a coinc inspiral.  It works by testing for coincidence between
  * each non-null entry in the coinc inspiral and the single.  This is done using
  * <tt>LALCompareSnglInspiral()</tt>.  If all members of the coinc are found to be
@@ -771,7 +778,8 @@ XLALSnglRingdownCoincTest(
 }
 
 
-/** Extracts the information from a
+/**
+ * Extracts the information from a
  * linked list of \c coincInspiralTables and returns it as a linked list of
  * \c snglInspiralTables.  Thus, the output \c snglPtr is a pointer to
  * a linked list of single inspiral tables.  That list contains only single
@@ -1301,7 +1309,8 @@ XLALPlayTestCoincRingdown(
 
 
 
-/** Is used to recreate a list of coinc
+/**
+ * Is used to recreate a list of coinc
  * inspirals from a list of \c snglInspiralTables with populated
  * \c eventIDColumn.  The code searches for entries in
  * \c snglInspiral which have the same numerical value of the \c id
@@ -1418,7 +1427,8 @@ XLALRecreateRingdownCoincFromSngls(
 
 #if 0
 
-/** Is used to generate a coherent bank from
+/**
+ * Is used to generate a coherent bank from
  * a list of \c coincInspiralTables.  The coherent bank has the same mass
  * parameters for each ifo.  These are currently chosen as the mass parameters
  * of the trigger in the coinc with the highest \c snr.  If the
@@ -1528,7 +1538,8 @@ XLALGenerateCoherentBank(
 #endif
 
 
-/** Is used to perform a distance cut between
+/**
+ * Is used to perform a distance cut between
  * the triggers in a coincidence.
  */
 CoincRingdownTable *
@@ -1614,7 +1625,8 @@ XLALRingdownDistanceCut(
 
 #if 0
 
-/** Extracts all single inspirals from a
+/**
+ * Extracts all single inspirals from a
  * specific ifo which are in coinc inspirals.  The output \c snglPtr is a
  * pointer to a linked list of single inspiral tables.  That list contains only
  * single inspirals from the specified \c ifo which are found in

@@ -106,8 +106,9 @@ int main( int argc, char *argv[]) {
 } /* main */
 
 
-/** Test function to compute LV-stat values both from scratch and by XLALComputeLineVeto,
-    compare the results and exit if tolerance is violated.
+/**
+ * Test function to compute LV-stat values both from scratch and by XLALComputeLineVeto,
+ * compare the results and exit if tolerance is violated.
  */
 int
 XLALCompareLVComputations ( const REAL4 TwoF,          /**< multi-detector  Fstat */

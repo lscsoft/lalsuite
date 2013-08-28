@@ -18,72 +18,72 @@
 */
 
 /**
-\author Cokelaer, T. and Sathyaprakash, B. S.
-\file
-
-\brief Test code for the inspiral bank modules.
-
-\heading{Usage}
-\code
-BankEfficiency [options]
-
-The options are :
-   -alpha : BCV amplitude correction parameter
-   -approximant : Post-Newtonian model such as TaylorT1, PadeT1, EOB, BCV ...
--fl : lower frequency cutoff
--mMin : minimal mass of component stars
--mMax : maximal mass of component stars
--mm : minimal match for template bank
--n : number of trials
--order : order of PN model
--quiet : if this flag is present, the output is restricted to the min
--seed : seed for random generation
--sigAmp : amplitude of the signal
--simType : type of simulation, 0, 1 or 2
--x0Max : Max value of psi0
--x1Min : Min value of psi
-
-
-\endcode
-
-\heading{Description}
-
-This test code gives an example of how one might generate inspiral
-waveforms and use them to compute the overlap of a random signal
-(with or witnout simulated noise) of a certain strength. The parameter
-Note that one must calculate the length of the waveform and allocate memory for it
-\e before calling
-\c InspiralWave. The length of the waveform can be calculated by calling the function
-\c InspiralWaveLength beforehand, as shown.
-
-There are only two functions which one can call to generate waveforms. These are
-\c InspiralWave,
-which will return a \e single waveform, and \c InspiralWaveTemplates, which
-returns a \e pair
-of waveforms which have phases which differ by \f$\pi/2\f$.
-
-\heading{Uses}
-This code directly uses the following functions (see those functions
-to find out what they call in turn):
-\code
-LALInspiralWaveLength
-LALInspiralCreateCoarseBank
-LALRandomInspiralSignal
-LALInspiralParameterCalc
-LALNoiseSpectralDensity
-LALCreateForwardRealFFTPlan
-LALCreateReverseRealFFTPlan
-LALForwardRealFFT
-LALReverseRealFFT
-LALDestroyRealFFTPlan
-LALInspiralWaveOverlap
-LALInspiralParameterCalc
-\endcode
-
-\heading{Notes}
-
-
-*/
+ * \author Cokelaer, T. and Sathyaprakash, B. S.
+ * \file
+ *
+ * \brief Test code for the inspiral bank modules.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * BankEfficiency [options]
+ *
+ * The options are :
+ * -alpha : BCV amplitude correction parameter
+ * -approximant : Post-Newtonian model such as TaylorT1, PadeT1, EOB, BCV ...
+ * -fl : lower frequency cutoff
+ * -mMin : minimal mass of component stars
+ * -mMax : maximal mass of component stars
+ * -mm : minimal match for template bank
+ * -n : number of trials
+ * -order : order of PN model
+ * -quiet : if this flag is present, the output is restricted to the min
+ * -seed : seed for random generation
+ * -sigAmp : amplitude of the signal
+ * -simType : type of simulation, 0, 1 or 2
+ * -x0Max : Max value of psi0
+ * -x1Min : Min value of psi
+ *
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test code gives an example of how one might generate inspiral
+ * waveforms and use them to compute the overlap of a random signal
+ * (with or witnout simulated noise) of a certain strength. The parameter
+ * Note that one must calculate the length of the waveform and allocate memory for it
+ * \e before calling
+ * \c InspiralWave. The length of the waveform can be calculated by calling the function
+ * \c InspiralWaveLength beforehand, as shown.
+ *
+ * There are only two functions which one can call to generate waveforms. These are
+ * \c InspiralWave,
+ * which will return a \e single waveform, and \c InspiralWaveTemplates, which
+ * returns a \e pair
+ * of waveforms which have phases which differ by \f$\pi/2\f$.
+ *
+ * ### Uses ###
+ *
+ * This code directly uses the following functions (see those functions
+ * to find out what they call in turn):
+ * \code
+ * LALInspiralWaveLength
+ * LALInspiralCreateCoarseBank
+ * LALRandomInspiralSignal
+ * LALInspiralParameterCalc
+ * LALNoiseSpectralDensity
+ * LALCreateForwardRealFFTPlan
+ * LALCreateReverseRealFFTPlan
+ * LALForwardRealFFT
+ * LALReverseRealFFT
+ * LALDestroyRealFFTPlan
+ * LALInspiralWaveOverlap
+ * LALInspiralParameterCalc
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>

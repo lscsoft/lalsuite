@@ -38,11 +38,11 @@
 #include    <lal/CoincInspiralEllipsoid.h>
 
 /**
-\defgroup LALTrigScanCluster_h Header LALTrigScanCluster.h
-\ingroup pkg_CBC_NEW
-\author Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
-\brief NONE
-*/
+ * \defgroup LALTrigScanCluster_h Header LALTrigScanCluster.h
+ * \ingroup pkg_CBC_NEW
+ * \author Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
+ * \brief NONE
+ */
 /*@{*/
 
 /** UNDOCUMENTED */

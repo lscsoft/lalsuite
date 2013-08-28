@@ -18,25 +18,29 @@
 */
 
 /**
-\author B.S. Sathyaprakash
-\file
-
-\brief Creates a template mesh for BCVSpin using the mismatch metric.
-
-\heading{Usage}
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author B.S. Sathyaprakash
+ * \file
+ *
+ * \brief Creates a template mesh for BCVSpin using the mismatch metric.
+ *
+ * ### Usage ###
+ *
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <stdlib.h>

@@ -18,22 +18,24 @@
 */
 
 /**
-\author Dupuis, R.J.
-
-\heading{Header \ref FitToPulsar.h}
-Provides routines for finding the best fit of the measured data to the strain expected from
-non-precessing pulsar.
-
-\heading{Synopsis}
-\code
-#include <lal/FitToPulsar.h>
-\endcode
-
-Functions in this package calculate the posterior probability of the following model given the data ({Bk})
-\f{equation}{
-y(t;\mathrm{a}) = F_{+}(t;\psi)h_{0} (1 + \cos^{2}\iota)e^{i2\phi_{0}} - 2iF_{\times}(t;\psi) h_{0} \cos\iota e^{i2\phi_{0}}
-\f}
-*/
+ * \author Dupuis, R.J.
+ *
+ * ### Header \ref FitToPulsar.h ###
+ *
+ * Provides routines for finding the best fit of the measured data to the strain expected from
+ * non-precessing pulsar.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/FitToPulsar.h>
+ * \endcode
+ *
+ * Functions in this package calculate the posterior probability of the following model given the data ({Bk})
+ * \f{equation}{
+ * y(t;\mathrm{a}) = F_{+}(t;\psi)h_{0} (1 + \cos^{2}\iota)e^{i2\phi_{0}} - 2iF_{\times}(t;\psi) h_{0} \cos\iota e^{i2\phi_{0}}
+ * \f}
+ */
 
 #ifndef _FITTOPULSAR_H
 #define _FITTOPULSAR_H

@@ -27,65 +27,63 @@
  */
 
 /**
-
-\author Brown, D. A.
-\file
-\ingroup lalmetaio
-\brief General routines for manipulating LIGO metadatabase tables.
-
-\heading{Description}
-
-The function <tt>LALPlaygroundInSearchSummary()</tt> determines the
-ammount of time in the search summary table \c ssTable that overlaps
-with playground data. The time between \c in_start_time and
-\c in_end_time that overlaps with playground is returned in
-\c inPlayTime and the time between \c out_start_time and
-\c out_end_time that overlaps with playground is returned in
-\c outPlayTime.
-
-<tt>LALCompareSearchSummaryByInTime()</tt> is a function to compare the in
-times in two search summary tables.  It returns 1 if the
-\c in_start_time of the first table is after the
-\c in_start_time of the second and -1 if it is before.  If the two
-\c in_start_times are identical, the test is repeated on the
-\c in_end_times.  If these are also equal, the comparison returns 0.
-<tt>LALCompareSearchSummaryByOutTime()</tt> operates in a similar manner, but
-uses the out, rather than in, times.
-
-<tt>LALTimeSortSearchSummary()</tt> will time sort a linked list of search
-summary tables.  You can sort on in our out start time depending which
-\c comparfunc is specified.
-
-<tt>LALIfoScanSearchSummary()</tt> steps through a linked list of search
-summary tables and returns a pointer \c output to a linked list of those
-tables whos \c ifos field matches the string \c ifos.
-
-
-<tt>LALIfoScanSummValue()</tt>, <tt>LALCompareSummValueByTime()</tt> and
-<tt>LALTimeSortSummValue()</tt> performs the same functions as described
-above.  The only difference being that they act on summ value tables.
-
-<tt>LALCheckOutTimeFromSearchSummary()</tt> verifies that all times
-between the specified \c startTime and \c endTime have been
-searched precisely once for the given \c ifo.
-
-Finally, <tt>LALDistanceScanSummValueTable()</tt> scan a summ value table
- searching for a trigger belonging to a given ifo and englobing a give GPS
- time.
-
-
-\heading{Algorithm}
-
-None.
-
-\heading{Uses}
-
-LALCalloc, LALMalloc, LALFree.
-
-\heading{Notes}
-%% Any relevant notes.
-
-*/
+ * \author Brown, D. A.
+ * \file
+ * \ingroup lalmetaio
+ * \brief General routines for manipulating LIGO metadatabase tables.
+ *
+ * ### Description ###
+ *
+ * The function <tt>LALPlaygroundInSearchSummary()</tt> determines the
+ * ammount of time in the search summary table \c ssTable that overlaps
+ * with playground data. The time between \c in_start_time and
+ * \c in_end_time that overlaps with playground is returned in
+ * \c inPlayTime and the time between \c out_start_time and
+ * \c out_end_time that overlaps with playground is returned in
+ * \c outPlayTime.
+ *
+ * <tt>LALCompareSearchSummaryByInTime()</tt> is a function to compare the in
+ * times in two search summary tables.  It returns 1 if the
+ * \c in_start_time of the first table is after the
+ * \c in_start_time of the second and -1 if it is before.  If the two
+ * \c in_start_times are identical, the test is repeated on the
+ * \c in_end_times.  If these are also equal, the comparison returns 0.
+ * <tt>LALCompareSearchSummaryByOutTime()</tt> operates in a similar manner, but
+ * uses the out, rather than in, times.
+ *
+ * <tt>LALTimeSortSearchSummary()</tt> will time sort a linked list of search
+ * summary tables.  You can sort on in our out start time depending which
+ * \c comparfunc is specified.
+ *
+ * <tt>LALIfoScanSearchSummary()</tt> steps through a linked list of search
+ * summary tables and returns a pointer \c output to a linked list of those
+ * tables whos \c ifos field matches the string \c ifos.
+ *
+ * <tt>LALIfoScanSummValue()</tt>, <tt>LALCompareSummValueByTime()</tt> and
+ * <tt>LALTimeSortSummValue()</tt> performs the same functions as described
+ * above.  The only difference being that they act on summ value tables.
+ *
+ * <tt>LALCheckOutTimeFromSearchSummary()</tt> verifies that all times
+ * between the specified \c startTime and \c endTime have been
+ * searched precisely once for the given \c ifo.
+ *
+ * Finally, <tt>LALDistanceScanSummValueTable()</tt> scan a summ value table
+ * searching for a trigger belonging to a given ifo and englobing a give GPS
+ * time.
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Uses ###
+ *
+ * LALCalloc, LALMalloc, LALFree.
+ *
+ * ### Notes ###
+ *
+ * %% Any relevant notes.
+ *
+ */
 
 #include <math.h>
 #include <stdio.h>

@@ -35,31 +35,32 @@
 #include <lal/Random.h>
 
 /**
-   \file
-   \ingroup Random_h
-
-   \brief Tests the routines in \ref Random.h.  Outputs random numbers to a file.
-
-\heading{Usage}
-\code
-RandomTest [options]
-Options:
-  -h         print this message
-  -q         quiet: run silently
-  -v         verbose: print extra information
-  -d level   set lalDebugLevel to level
-  -o         output random numbers to files
-\endcode
-
-\heading{Exit codes}
-
-<table>
-<tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Success, normal exit.</td></tr>
-<tr><td>1</td><td>Subroutine failed.</td></tr>
-</table>
-
-*/
+ * \file
+ * \ingroup Random_h
+ *
+ * \brief Tests the routines in \ref Random.h.  Outputs random numbers to a file.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * RandomTest [options]
+ * Options:
+ * -h         print this message
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * -o         output random numbers to files
+ * \endcode
+ *
+ * ### Exit codes ###
+ *
+ * <table>
+ * <tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ */
 /** \cond DONT_DOXYGEN */
 
 #define CODES_(x) #x

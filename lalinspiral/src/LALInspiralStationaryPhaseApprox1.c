@@ -19,13 +19,13 @@
 
 /**
  * \author B.S. Sathyaprakash
-\file
-\ingroup LALInspiral_h
-
-\brief This module computes the stationary phase approximation to the
-Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourierPhase}.
-
- * \heading{Prototypes}
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief This module computes the stationary phase approximation to the
+ * Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourierPhase}.
+ *
+ * ### Prototypes ###
  *
  * <tt>XLALInspiralStationaryPhaseApprox1()</tt>
  * <ul>
@@ -33,7 +33,7 @@ Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourie
  * </li><li> \c params: Input containing binary chirp parameters.
  * </li></ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module generates the Fourier domain waveform that is analogous of
  * the time-domain approximant <tt>TaylorT1.</tt> Instead of re-expanding the
@@ -50,7 +50,7 @@ Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourie
  * the duration of the signal and \f$\Delta f=1/T\f$ is the frequency resolution.
  * </li></ul>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The lal code \c XLALREAL8RombergIntegrate() is used to solve the
  * integral in Eq.\eqref{eq_InspiralFourierPhase}.
@@ -62,14 +62,15 @@ Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourie
  * </li><li> have an amplitude of \f$n v^2.\f$
  * </li></ul>
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
-   XLALInspiralSetup()
-   XLALInspiralChooseModel()
-   XLALREAL8RombergIntegrate()
+ * XLALInspiralSetup()
+ * XLALInspiralChooseModel()
+ * XLALREAL8RombergIntegrate()
  * \endcode
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  * If it is required to compare the output of this module with a time domain
  * signal one should use an inverse Fourier transform routine that packs data
@@ -77,7 +78,7 @@ Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourie
  * Fourier transform by a factor \f$n/2\f$ to be consistent with the
  * amplitude used in time-domain signal models.
  *
-*/
+ */
 
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>

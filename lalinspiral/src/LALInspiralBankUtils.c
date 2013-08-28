@@ -17,63 +17,66 @@
 *  MA  02111-1307  USA
 */
 
-/** \defgroup LALInspiralBankUtils_c Module LALInspiralBankUtils.c
-\ingroup LALInspiralBank_h
-\author Cokelaer Thomas
-
-\brief NONE
-
-\heading{Description}
-In a parameter space defined by \f$m_1\f$ and \f$m_2\f$, or equivalently, \f$M=m_1+m_2\f$ and \f$\eta=\frac{m_1 m_2}{M^2}\f$, the conversion
-to chirp-time parameter such as \f$\tau_0\f$ and \f$\tau_3\f$ si quite common. In particular, it is interesting to get the value of
-\f$\tau_3\f$ when only \f$\tau_0\f$ is known, and a constraint on the masses exists (e.g., \f$m_1=m_2\f$ or one of the mass equals mMin or mMax.
-This modules contains a few functions to perform these conversion.
-
-\heading{Algorithm}
-We know that
-\anchor eq_tau0a \f{equation}{
-\tau_0 = \frac{A_0}{\eta} M^{-5/2},
-\label{eq_tau0a}
-\f}
-and
- \f{equation}{
-\tau_3 = \frac{A_3}{\eta} M^{-2/3},
-\f}
-where
-\f{equation}{
-A_0 = \frac{5}{256 (\pi *f_L)^{8/3}},
-\f}
-and
-\f{equation}{
-A_3 = \frac{\pi}{8 (\pi *f_L)^{5/3}},
-\f}
-
-Therefore, it is straightforward to express \f$\tau_3\f$ as a function of \f$\tau_0\f$ amd \f$\eta\f$:
-\anchor eq_tau3b \f{equation}{
-\tau_3 = \frac{A3}{\eta} \left( \frac{\tau_0 \eta}{ A_0} \right)^{2/5}
-\label{eq_tau3b}
-\f}
-if \f$\eta=0.25\f$ on the equal-mass line, then
-\anchor eq_tau3a \f{equation}{
-\tau_3 = 4 A3 \left( \frac{\tau_0}{ 4 A_0} \right)^{2/5}
-\label{eq_tau3a}
-\f}
-
-Equation\eqref{eq_tau3b} returns \f$\tau_3\f$ given in \f$M, \eta\f$ and \f$f_L\f$ and is defined
-in\c XLALInspiralTau3FromNonEqualMass().
-
-Equation\eqref{eq_tau3a} returns tau3 in the particular case \f$m_1=m_2\f$, given
-\f$\tau_0\f$ only, and is defined in \c XLALInspiralTau3FromTau0AndEqualMassLine().
-
-Equation\eqref{eq_tau0a} returns \f$tau_0\f$ given \f$M, \eta\f$ and \f$f_L\f$, and is defined
-\c XLALInspiralTau0FromMEta().
-
-Finally, \c XLALInspiralMFromTau0AndNonEqualMass() returns \f$M\f$ when \f$\tau_0\f$ is known
- and a constraint exists on one of the individual mass (e.g., \f$m_1=\textrm{mMax}\f$ or
- \f$m_1=\textrm{mMin}\f$). This functions requires a little more algebra and is used in the
-HybridHexagonal placement. The \ref LALInspiralHybridHexagonalBank_c describes this algebra.
-
-*/
+/**
+ * \defgroup LALInspiralBankUtils_c Module LALInspiralBankUtils.c
+ * \ingroup LALInspiralBank_h
+ * \author Cokelaer Thomas
+ *
+ * \brief NONE
+ *
+ * ### Description ###
+ *
+ * In a parameter space defined by \f$m_1\f$ and \f$m_2\f$, or equivalently, \f$M=m_1+m_2\f$ and \f$\eta=\frac{m_1 m_2}{M^2}\f$, the conversion
+ * to chirp-time parameter such as \f$\tau_0\f$ and \f$\tau_3\f$ si quite common. In particular, it is interesting to get the value of
+ * \f$\tau_3\f$ when only \f$\tau_0\f$ is known, and a constraint on the masses exists (e.g., \f$m_1=m_2\f$ or one of the mass equals mMin or mMax.
+ * This modules contains a few functions to perform these conversion.
+ *
+ * ### Algorithm ###
+ *
+ * We know that
+ * \anchor eq_tau0a \f{equation}{
+ * \tau_0 = \frac{A_0}{\eta} M^{-5/2},
+ * \tag{eq_tau0a}
+ * \f}
+ * and
+ * \f{equation}{
+ * \tau_3 = \frac{A_3}{\eta} M^{-2/3},
+ * \f}
+ * where
+ * \f{equation}{
+ * A_0 = \frac{5}{256 (\pi *f_L)^{8/3}},
+ * \f}
+ * and
+ * \f{equation}{
+ * A_3 = \frac{\pi}{8 (\pi *f_L)^{5/3}},
+ * \f}
+ *
+ * Therefore, it is straightforward to express \f$\tau_3\f$ as a function of \f$\tau_0\f$ amd \f$\eta\f$:
+ * \anchor eq_tau3b \f{equation}{
+ * \tau_3 = \frac{A3}{\eta} \left( \frac{\tau_0 \eta}{ A_0} \right)^{2/5}
+ * \tag{eq_tau3b}
+ * \f}
+ * if \f$\eta=0.25\f$ on the equal-mass line, then
+ * \anchor eq_tau3a \f{equation}{
+ * \tau_3 = 4 A3 \left( \frac{\tau_0}{ 4 A_0} \right)^{2/5}
+ * \tag{eq_tau3a}
+ * \f}
+ *
+ * Equation\eqref{eq_tau3b} returns \f$\tau_3\f$ given in \f$M, \eta\f$ and \f$f_L\f$ and is defined
+ * in\c XLALInspiralTau3FromNonEqualMass().
+ *
+ * Equation\eqref{eq_tau3a} returns tau3 in the particular case \f$m_1=m_2\f$, given
+ * \f$\tau_0\f$ only, and is defined in \c XLALInspiralTau3FromTau0AndEqualMassLine().
+ *
+ * Equation\eqref{eq_tau0a} returns \f$tau_0\f$ given \f$M, \eta\f$ and \f$f_L\f$, and is defined
+ * \c XLALInspiralTau0FromMEta().
+ *
+ * Finally, \c XLALInspiralMFromTau0AndNonEqualMass() returns \f$M\f$ when \f$\tau_0\f$ is known
+ * and a constraint exists on one of the individual mass (e.g., \f$m_1=\textrm{mMax}\f$ or
+ * \f$m_1=\textrm{mMin}\f$). This functions requires a little more algebra and is used in the
+ * HybridHexagonal placement. The \ref LALInspiralHybridHexagonalBank_c describes this algebra.
+ *
+ */
 /*@{*/
 
 #include <stdio.h>

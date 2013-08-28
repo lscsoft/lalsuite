@@ -23,36 +23,37 @@
 #include <lal/AVFactories.h>
 #include <lal/Resample.h>
 
-/** \author Creighton, T. D.
-    \ingroup Resample_h
-    \brief Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a polynomial fit.
-
-This function fills a time series <tt>*difference</tt> with the values
-of the normalized timing difference \f$(\tau-t)/\Delta t\f$ between the
-detector time \f$t\f$ and some canonical time \f$\tau(t)\f$, where \f$\Delta t\f$
-is the sampling interval in \f$t\f$.  The timing difference function is
-computed from the piecewise-polynomial fit stored in <tt>*polyco</tt>,
-via Eq.\eqref{eq_delta-tau}.
-
-\heading{Algorithm}
-
-By storing the timing difference as a dimensionless quantity, it is
-relatively easy to determine rules for resampling the datastream at
-equal intervals in \f$\tau\f$, since it gives the number of \e samples
-difference between the two time coordinates.  When resampling a time
-series in \f$t\f$, simply track the value of \f$(\tau-t)/\Delta t\f$: When
-this value increases by +1, choose the next sample after the one that
-would otherwise have been chosen; when the value decreases by \f$-1\f$,
-choose (or repeat) the sample immediately preceding the one that would
-otherwise have been chosen.
-
-However, this is not a particularly \e efficient routine for
-computing the resampling method, as it requires several floating-point
-opertations <em>per sample</em>, which is an unacceptable computational
-burden for any optimized pulsar search.  It is primarily used to
-visualize and check the pulsar phase modulation model.  See the
-routine in CreateResampleRules.c for a more efficient algorithm.
-*/
+/**
+ * \author Creighton, T. D.
+ * \ingroup Resample_h
+ * \brief Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a polynomial fit.
+ *
+ * This function fills a time series <tt>*difference</tt> with the values
+ * of the normalized timing difference \f$(\tau-t)/\Delta t\f$ between the
+ * detector time \f$t\f$ and some canonical time \f$\tau(t)\f$, where \f$\Delta t\f$
+ * is the sampling interval in \f$t\f$.  The timing difference function is
+ * computed from the piecewise-polynomial fit stored in <tt>*polyco</tt>,
+ * via Eq.\eqref{eq_delta-tau}.
+ *
+ * ### Algorithm ###
+ *
+ * By storing the timing difference as a dimensionless quantity, it is
+ * relatively easy to determine rules for resampling the datastream at
+ * equal intervals in \f$\tau\f$, since it gives the number of \e samples
+ * difference between the two time coordinates.  When resampling a time
+ * series in \f$t\f$, simply track the value of \f$(\tau-t)/\Delta t\f$: When
+ * this value increases by +1, choose the next sample after the one that
+ * would otherwise have been chosen; when the value decreases by \f$-1\f$,
+ * choose (or repeat) the sample immediately preceding the one that would
+ * otherwise have been chosen.
+ *
+ * However, this is not a particularly \e efficient routine for
+ * computing the resampling method, as it requires several floating-point
+ * opertations <em>per sample</em>, which is an unacceptable computational
+ * burden for any optimized pulsar search.  It is primarily used to
+ * visualize and check the pulsar phase modulation model.  See the
+ * routine in CreateResampleRules.c for a more efficient algorithm.
+ */
 void
 LALPolycoToTimingDifference( LALStatus       *stat,
 			     REAL4TimeSeries *difference,

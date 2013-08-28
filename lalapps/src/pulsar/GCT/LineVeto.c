@@ -75,7 +75,8 @@ const LVcomponents empty_LVcomponents;
 
 /* ----- module-local fast lookup-table handling of negative exponentials ----- */
 
-/** Lookup-table for logarithms log(x)
+/**
+ * Lookup-table for logarithms log(x)
  * Holds an array 'data' of 'length' for values log(x) for x in the range (0, xmax]
  */
 #define LOGLUT_XMAX 	3.0	// LUT for range (0,numDetectors+1), currently numDetectors = 2 FIXME: get this dynamically
@@ -260,8 +261,9 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
 
 
-/** XLAL Function to recalculate single-IFO Fstats for all semicoherent search segments, and use them to compute Line Veto statistics
-*/
+/**
+ * XLAL Function to recalculate single-IFO Fstats for all semicoherent search segments, and use them to compute Line Veto statistics
+ */
 int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                                 /**< [out] structure containing multi TwoF, single TwoF, LV stat */
 					const PulsarDopplerParams *dopplerParams,               /**< sky position, frequency and fdot for a given candidate */
 					const MultiSFTVectorSequence *multiSFTsV,               /**< data files (SFTs) for all detectors and segments */
@@ -503,11 +505,12 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 
 
 
-/** XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
- *  this is now a wrapper for XLALComputeLineVetoArray which just translates REAL4Vectors to fixed REAL4 arrays
- *  and linear to logarithmic priors rhomaxline and lX
- *  NOTE: if many LV values at identical priors are required, directly call XLALComputeLineVetoArray for better performance
-*/
+/**
+ * XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
+ * this is now a wrapper for XLALComputeLineVetoArray which just translates REAL4Vectors to fixed REAL4 arrays
+ * and linear to logarithmic priors rhomaxline and lX
+ * NOTE: if many LV values at identical priors are required, directly call XLALComputeLineVetoArray for better performance
+ */
 REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fstat */
                             const REAL4Vector *TwoFXvec,  /**< vector of single-detector Fstats */
                             const REAL8 rhomaxline,    /**< amplitude prior normalization for lines */
@@ -555,14 +558,15 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
 
 
 
-/** XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
- *  LV = F - log ( rhomaxline^4/70 + sum(e^FX) )
- *  implemented by log sum exp formula:
- *  LV = F - max(denom_terms) - log( sum(e^(denom_term-max)) )
- *  from the analytical derivation, there should be a term LV += O_SN^0 + 4.0*log(rhomaxline/rhomaxsig)
- *  but this is irrelevant for toplist sorting, only a normalization which can be replaced arbitrarily
- *  NOTE: priors logRhoTerm, loglX have to be logarithmized already
-*/
+/**
+ * XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
+ * LV = F - log ( rhomaxline^4/70 + sum(e^FX) )
+ * implemented by log sum exp formula:
+ * LV = F - max(denom_terms) - log( sum(e^(denom_term-max)) )
+ * from the analytical derivation, there should be a term LV += O_SN^0 + 4.0*log(rhomaxline/rhomaxsig)
+ * but this is irrelevant for toplist sorting, only a normalization which can be replaced arbitrarily
+ * NOTE: priors logRhoTerm, loglX have to be logarithmized already
+ */
 REAL4
 XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
                            const UINT4 numDetectors, /**< number of detectors */
@@ -620,9 +624,10 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
 } /* XLALComputeLineVetoArray() */
 
 
-/** XLAL function to get a list of detector IDs from multi-segment multiSFT vectors
-* returns all unique detector IDs for cases with some detectors switching on and off
-*/
+/**
+ * XLAL function to get a list of detector IDs from multi-segment multiSFT vectors
+ * returns all unique detector IDs for cases with some detectors switching on and off
+ */
 LALStringVector *
 XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV /**< data files (SFTs) for all detectors and segments */
                      )
@@ -714,7 +719,8 @@ XLALCreateLogLUT ( void )
 
 } /* XLALCreateLogLUT() */
 
-/** Destructor function for logLUT_t lookup table
+/**
+ * Destructor function for logLUT_t lookup table
  */
 void
 XLALDestroyLogLUT ( void )
@@ -730,7 +736,8 @@ XLALDestroyLogLUT ( void )
 
 } /* XLALDestroyLogLUT() */
 
-/** Fast logarithmic function log(x) using lookup-table (LUT).
+/**
+ * Fast logarithmic function log(x) using lookup-table (LUT).
  * We need to compute log(x) for x in (0,xmax], typically in a B-stat
  * integral of the form int e^-x dx: this means that small values e^(-x)
  * will not contribute much to the integral and are less important than

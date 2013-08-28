@@ -18,45 +18,46 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-
-\brief Test code for the inspiral wave generation and noisemodels modules.
-
-\heading{Usage}
-\code
-RandomInspiralSignalTest
-\endcode
-
-\heading{Description}
-
-This test code gives an example of how one might generate an inspiral
-waveform and compute its overlap with simulated detector noise
-(with or witnout the signal present).  Recently, the code
-was modified so that users can output either the time-domain signal,
-noise, or signal+noise and not the correlated output. This is
-done via the variable \c TimeDomain which controls the type of output
-If <tt>TimeDomain=0</tt> then the code fitlers the random signal
-with a template of the same parameters and outputs the
-results of the correlation.
-If <tt>TimeDomain=1</tt> then the code outputs the time-domain
-signal/noise/signal+noise
-
-The parameter<br>
-<tt>randIn.type=0</tt> generates only signal<br>
-<tt>randIn.type=1</tt> generates only noise<br>
-<tt>randIn.type=2</tt> generates <tt>randIn.SignalAmp * signal(t) + randIn.NoiseAmp * noise(t)</tt><br>
-
-Note that one must calculate the length of the waveform and allocate memory for it
-\e before calling \c InspiralWave. The length of the waveform can
-be calculated by calling the function \c InspiralWaveLength beforehand, as shown.
-
-There are only two functions which one can call to generate waveforms. These are
-\c InspiralWave,
-which will return a \e single waveform, and \c InspiralWaveTemplates, which
-returns a \e pair
-of waveforms which have phases that differ by \f$\pi/2\f$.
-
-*/
+ * \author Sathyaprakash, B. S.
+ *
+ * \brief Test code for the inspiral wave generation and noisemodels modules.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * RandomInspiralSignalTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test code gives an example of how one might generate an inspiral
+ * waveform and compute its overlap with simulated detector noise
+ * (with or witnout the signal present).  Recently, the code
+ * was modified so that users can output either the time-domain signal,
+ * noise, or signal+noise and not the correlated output. This is
+ * done via the variable \c TimeDomain which controls the type of output
+ * If <tt>TimeDomain=0</tt> then the code fitlers the random signal
+ * with a template of the same parameters and outputs the
+ * results of the correlation.
+ * If <tt>TimeDomain=1</tt> then the code outputs the time-domain
+ * signal/noise/signal+noise
+ *
+ * The parameter<br>
+ * <tt>randIn.type=0</tt> generates only signal<br>
+ * <tt>randIn.type=1</tt> generates only noise<br>
+ * <tt>randIn.type=2</tt> generates <tt>randIn.SignalAmp * signal(t) + randIn.NoiseAmp * noise(t)</tt><br>
+ *
+ * Note that one must calculate the length of the waveform and allocate memory for it
+ * \e before calling \c InspiralWave. The length of the waveform can
+ * be calculated by calling the function \c InspiralWaveLength beforehand, as shown.
+ *
+ * There are only two functions which one can call to generate waveforms. These are
+ * \c InspiralWave,
+ * which will return a \e single waveform, and \c InspiralWaveTemplates, which
+ * returns a \e pair
+ * of waveforms which have phases that differ by \f$\pi/2\f$.
+ *
+ */
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>

@@ -32,7 +32,8 @@ extern "C" {
  * \ingroup pkg_pulsarCommon
  * \brief Some common useful data-types for pulsar-searches.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/PulsarDataTypes.h>
  * \endcode
@@ -81,8 +82,9 @@ typedef REAL8 PulsarAmplitudeVect[4];
 /** Typedef for fixed-size array holding GW frequency and derivatives fk = d^k Freq/dt^k|(tau_ref) */
 typedef REAL8 PulsarSpins[PULSAR_MAX_SPINS];
 
-/** Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
- *  at a given (SSB) reference GPS-time \f$\tau\f$.
+/**
+ * Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
+ * at a given (SSB) reference GPS-time \f$\tau\f$.
  * "Canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
  */
 typedef struct tagPulsarSpinRange
@@ -143,7 +145,8 @@ typedef struct tagPulsarCandidate {
 } PulsarCandidate;
 
 
-/** DEPRECATED Type defining the parameters of a pulsar-source of Gravitational waves.
+/**
+ * DEPRECATED Type defining the parameters of a pulsar-source of Gravitational waves.
  * \note this type is obsolete and should no longer be used,
  * however, it's too entrenched in LALGeneratePulsarSignal() et al, and codes using it,
  * so we can't easily get rid of it and keep it for now....

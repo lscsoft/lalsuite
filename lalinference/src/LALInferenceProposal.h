@@ -32,7 +32,7 @@
  * \author Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys, John Veitch, and Will M. Farr.
  * \date 2011
  *
- * \brief Jump proposals for exploring the GW signal parameter space. 
+ * \brief Jump proposals for exploring the GW signal parameter space.
  *
  * For exploring the parameter space of GW signals, it is convenient
  * to use many different types of jumps.  For example, we supply in
@@ -110,16 +110,20 @@ extern const char *const distanceQuasiGibbsProposalName;
 extern const char *const extrinsicParamProposalName;
 extern const char *const KDNeighborhoodProposalName;
 
-/** The name of the variable that will store the name of the current
-    proposal function. */
+/**
+ * The name of the variable that will store the name of the current
+ * proposal function.
+ */
 extern const char *const LALInferenceCurrentProposalName;
 
-/** Adds \a weight copies of the proposal \a prop to the end of the
-    proposal cycle. 
-
-    After adding all desired sub-proposals, call
-    LALInferenceRandomizeProposalCycle() to randomize the order of
-    sub-proposal application. */
+/**
+ * Adds \a weight copies of the proposal \a prop to the end of the
+ * proposal cycle.
+ *
+ * After adding all desired sub-proposals, call
+ * LALInferenceRandomizeProposalCycle() to randomize the order of
+ * sub-proposal application.
+ */
 void
 LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction prop, UINT4 weight);
 
@@ -135,23 +139,31 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
 void
 LALInferenceDeleteProposalCycle(LALInferenceRunState *runState);
 
-/** A reasonable default proposal.  Uses adaptation if the --adapt
-    command-line flag active. */
+/**
+ * A reasonable default proposal.  Uses adaptation if the --adapt
+ * command-line flag active.
+ */
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Proposal for rapid sky localization.  Used when --rapidSkyLoc
-    is specified. */
+/**
+ * Proposal for rapid sky localization.  Used when --rapidSkyLoc
+ * is specified.
+ */
 void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Proposal for after annealing is over. */
 void LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Non-adaptive, sigle-variable update proposal with reasonable
-    widths in each dimension. */
+/**
+ * Non-adaptive, sigle-variable update proposal with reasonable
+ * widths in each dimension.
+ */
 void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Like LALInferenceSingleProposal() but will use adaptation if the
-    --adapt command-line flag given. */
+/**
+ * Like LALInferenceSingleProposal() but will use adaptation if the
+ * --adapt command-line flag given.
+ */
 void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Increments the orbital phase by pi. */
@@ -175,28 +187,36 @@ void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVa
 /** Differential evolution, on all non-fixed, non-output parameters. */
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
-/** Perform differential evolution on the parameters of the given
-    names (the names array should be terminated by a NULL pointer).
-    If names == NULL, then perform a
-    LALInferenceDifferentialEvolutionFull() step.*/
+/**
+ * Perform differential evolution on the parameters of the given
+ * names (the names array should be terminated by a NULL pointer).
+ * If names == NULL, then perform a
+ * LALInferenceDifferentialEvolutionFull() step.
+ */
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *proposedParams, const char *names[]);
 
 /** Perform differential evolution on only the intrinsic parameters. */
 void LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
-/** Perform a differential evolution step on only the extrinsic
-    parameters. */
+/**
+ * Perform a differential evolution step on only the extrinsic
+ * parameters.
+ */
 void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
-/** Draws from an approximation to the true prior.  Flat in all
-    variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
-    in sin(dec), dist^2.
-    WARNING: This seems to break detailed balance for the LALInferenceProposalTest */
+/**
+ * Draws from an approximation to the true prior.  Flat in all
+ * variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
+ * in sin(dec), dist^2.
+ * WARNING: This seems to break detailed balance for the LALInferenceProposalTest
+ */
 void LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Reflects the sky location through the plane formed by three
-    detectors.  Should only be used when there are exactly three
-    different locations for detectors. */
+/**
+ * Reflects the sky location through the plane formed by three
+ * detectors.  Should only be used when there are exactly three
+ * different locations for detectors.
+ */
 void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);;
@@ -210,23 +230,29 @@ void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariable
 /** Rotate each spin by random angles about L. */
 void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Samples from the analytic likelihood distribution on u = 1/d with
-    all other variables fixed.  This behaves similarly to a Gibbs
-    sampler for distance (though a Gibbs sampler would sample from the
-    *posterior* in d, not the likelihood in u = 1/d). */
+/**
+ * Samples from the analytic likelihood distribution on u = 1/d with
+ * all other variables fixed.  This behaves similarly to a Gibbs
+ * sampler for distance (though a Gibbs sampler would sample from the
+ * posterior* in d, not the likelihood in u = 1/d).
+ */
 void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Uses a kD tree containing the previously-output points to propose
-    the next sample.  The proposal chooses a stored point at random,
-    finds the kD cell that contains this point and about 64 others,
-    and then chooses the proposed point uniformly within the bounding
-    box of the points contained in this sell. */
+/**
+ * Uses a kD tree containing the previously-output points to propose
+ * the next sample.  The proposal chooses a stored point at random,
+ * finds the kD cell that contains this point and about 64 others,
+ * and then chooses the proposed point uniformly within the bounding
+ * box of the points contained in this sell.
+ */
 void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Proposal for the extrinsic parameters. Uses the sky reflection for 3
- independent detector locations, then computes the corresponding values
- of polarisation, inclination and distance for the proposed sky location.
- See Vivien's thesis for the details of the equations implemented.*/
+/**
+ * Proposal for the extrinsic parameters. Uses the sky reflection for 3
+ * independent detector locations, then computes the corresponding values
+ * of polarisation, inclination and distance for the proposed sky location.
+ * See Vivien's thesis for the details of the equations implemented.
+ */
 void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Helper function to update the adaptive steps after each jump. Set accepted=1 if accepted, 0 otherwise */

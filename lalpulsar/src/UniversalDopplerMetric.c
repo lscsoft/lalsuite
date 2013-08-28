@@ -39,12 +39,10 @@
 #include <lal/UniversalDopplerMetric.h>
 
 /**
- *
  * \author Reinhard Prix, Karl Wette
  * \ingroup UniversalDopplerMetric_h
  * \brief Function to compute the full F-statistic metric, including
- *  antenna-pattern functions from multi-detector, as derived in \ref Prix07.
- *
+ * antenna-pattern functions from multi-detector, as derived in \ref Prix07.
  *
  */
 
@@ -64,7 +62,8 @@
 
 /*---------- LOOKUP ARRAYS ----------*/
 
-/** Array of symbolic 'names' for various detector-motions
+/**
+ * Array of symbolic 'names' for various detector-motions
  */
 static const struct {
   const DetectorMotionType type;
@@ -84,7 +83,8 @@ static const struct {
 #undef DETMOTION_NAMES
 };
 
-/** Array of descriptor structs for each Doppler coordinate name
+/**
+ * Array of descriptor structs for each Doppler coordinate name
  */
 static const struct {
   const char *const name;	/**< coordinate name */
@@ -177,7 +177,8 @@ static const struct {
 /*----- SWITCHES -----*/
 /*---------- internal types ----------*/
 
-/** components of antenna-pattern function: q_l = {a(t), b(t)}
+/**
+ * components of antenna-pattern function: q_l = {a(t), b(t)}
  */
 typedef enum {
   AMCOMP_NONE   = -1,	/**< no antenna pattern function: (equivalent "a = 1") */
@@ -237,7 +238,8 @@ UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
-/** Integrate a general quadruple product CW_am1_am2_Phi_i_Phi_j() from 0 to 1.
+/**
+ * Integrate a general quadruple product CW_am1_am2_Phi_i_Phi_j() from 0 to 1.
  * This implements the expression \f$\langle<q_1 q_2 \phi_i \phi_j\rangle\f$
  * for single-IFO average over the observation time.
  *
@@ -320,7 +322,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
 } /* XLALAverage_am1_am2_Phi_i_Phi_j() */
 
 
-/** For gsl-integration: general quadruple product between two antenna-pattern functions
+/**
+ * For gsl-integration: general quadruple product between two antenna-pattern functions
  * am1, am2 in {a(t),b(t)} and two phase-derivatives phi_i * phi_j,
  * i.e. compute an expression of the form
  * \f$q_1(t) q_2(t) \phi_i(t) \phi_j(t)\f$, where \f$q_i = \{a(t), b(t)\}\f$.
@@ -409,7 +412,8 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 
 
 
-/** Partial derivative of continuous-wave (CW) phase, with respect
+/**
+ * Partial derivative of continuous-wave (CW) phase, with respect
  * to Doppler coordinate 'i' := intparams_t->phderiv
  *
  * Time is in 'natural units' of Tspan, i.e. tt is in [0, 1] corresponding
@@ -620,7 +624,8 @@ CWPhaseDeriv_i ( double tt, void *params )
 } /* CWPhaseDeriv_i() */
 
 
-/** Given a GPS time and detector, return the current position (and velocity) of the detector.
+/**
+ * Given a GPS time and detector, return the current position (and velocity) of the detector.
  */
 int
 XLALDetectorPosVel ( PosVel3D_t *spin_posvel,		/**< [out] instantaneous sidereal position and velocity vector */
@@ -739,7 +744,8 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,		/**< [out] instantaneous sidereal
 
 
 
-/** Compute position and velocity assuming a purely "Ptolemaic" orbital motion
+/**
+ * Compute position and velocity assuming a purely "Ptolemaic" orbital motion
  * (i.e. on a circle) around the sun, approximating Earth's orbit
  */
 int
@@ -784,7 +790,8 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 
 
 
-/** Compute a pure phase-deriv covariance \f$[\phi_i, \phi_j] = \langle phi_i phi_j\rangle - \langle phi_i\rangle\langle phi_j\rangle\f$
+/**
+ * Compute a pure phase-deriv covariance \f$[\phi_i, \phi_j] = \langle phi_i phi_j\rangle - \langle phi_i\rangle\langle phi_j\rangle\f$
  * which gives a component of the "phase metric"
  */
 double
@@ -932,7 +939,8 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
 } /* CWPhase_cov_Phi_ij() */
 
 
-/** Calculate an approximate "phase-metric" with the specified parameters.
+/**
+ * Calculate an approximate "phase-metric" with the specified parameters.
  *
  * Note: if this function is called with multiple detectors, the phase components
  * are averaged over detectors as well as time. This is a somewhat ad-hoc approach;
@@ -1057,7 +1065,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
  * \f[ \overline{g}_{ij} \equiv \frac{1}{N} \sum_{k=1}^{N} g_{ij,k} \f]
  *
  * where \f$g_{ij,k}\f$ is the coherent single-segment metric of segment k
-
+ *
  * Note: The returned DopplerMetric struct contains the matrices
  * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric),
  * m1_ij, m2_ij, m3_ij (auxiliary matrices)
@@ -1135,7 +1143,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
 /**
  * Calculate the *coherent* (single-segment) phase-metric, the *full* (multi-IFO) Fstat-metrix
- *  and the Fisher-matrix derived in \ref Prix07.
+ * and the Fisher-matrix derived in \ref Prix07.
  *
  * Note: The returned DopplerMetric struct contains the matrices
  * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric),
@@ -1270,7 +1278,8 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
 
 } /* XLALDopplerFstatMetricCoh() */
 
-/** Function to the compute the FmetricAtoms_t, from which the F-metric and Fisher-matrix can be computed.
+/**
+ * Function to the compute the FmetricAtoms_t, from which the F-metric and Fisher-matrix can be computed.
  */
 FmetricAtoms_t*
 XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
@@ -1552,7 +1561,8 @@ XLALDestroyDopplerMetric ( DopplerMetric *metric )
 } /* XLALDestroyDopplerMetric() */
 
 
-/** Parse a detector-motion type string into the corresponding enum-number,
+/**
+ * Parse a detector-motion type string into the corresponding enum-number,
  */
 int
 XLALParseDetectorMotionString ( const CHAR *detMotionString )
@@ -1571,7 +1581,8 @@ XLALParseDetectorMotionString ( const CHAR *detMotionString )
 } /* XLALParseDetectorMotionString() */
 
 
-/** Provide a pointer to a static string containing the DopplerCoordinate-name
+/**
+ * Provide a pointer to a static string containing the DopplerCoordinate-name
  * cooresponding to the enum DopplerCoordinateID
  */
 const CHAR *
@@ -1590,7 +1601,8 @@ XLALDetectorMotionName ( DetectorMotionType detMotionType )
 
 
 
-/** Parse a DopplerCoordinate-name into the corresponding DopplerCoordinateID
+/**
+ * Parse a DopplerCoordinate-name into the corresponding DopplerCoordinateID
  */
 int
 XLALParseDopplerCoordinateString ( const CHAR *coordName )
@@ -1612,7 +1624,8 @@ XLALParseDopplerCoordinateString ( const CHAR *coordName )
 
 } /* XLALParseDopplerCoordinateString() */
 
-/** Given a LALStringVector of coordinate-names, parse them into a
+/**
+ * Given a LALStringVector of coordinate-names, parse them into a
  * 'DopplerCoordinateSystem', namely a list of coordinate-IDs
  */
 int
@@ -1639,7 +1652,8 @@ XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys,	/**< [out
 
 
 
-/** Provide a pointer to a static string containing the DopplerCoordinate-name
+/**
+ * Provide a pointer to a static string containing the DopplerCoordinate-name
  * cooresponding to the enum DopplerCoordinateID
  */
 const CHAR *
@@ -1658,7 +1672,8 @@ XLALDopplerCoordinateName ( DopplerCoordinateID coordID )
 } /* XLALDopplerCoordinateName() */
 
 
-/** Provide a pointer to a static string containing the a descriptive
+/**
+ * Provide a pointer to a static string containing the a descriptive
  * 'help-string' describing the coordinate DopplerCoordinateID
  */
 const CHAR *
@@ -1676,7 +1691,8 @@ XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID )
 
 } /* XLALDopplerCoordinateHelp() */
 
-/** Return a string (allocated here) containing a full name - helpstring listing
+/**
+ * Return a string (allocated here) containing a full name - helpstring listing
  * for all doppler-coordinates DopplerCoordinateID allowed by UniversalDopplerMetric.c
  */
 CHAR *
@@ -1730,7 +1746,8 @@ XLALDopplerCoordinateHelpAll ( void )
 
 } /* XLALDopplerCoordinateHelpAll() */
 
-/** Free a FmetricAtoms_t structure, allowing any pointers to be NULL
+/**
+ * Free a FmetricAtoms_t structure, allowing any pointers to be NULL
  */
 void
 XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms )
@@ -1754,7 +1771,8 @@ XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms )
 
 
 
-/** Allocate an FmetricAtoms_t structure for given number of dimension.
+/**
+ * Allocate an FmetricAtoms_t structure for given number of dimension.
  */
 FmetricAtoms_t*
 XLALCreateFmetricAtoms ( UINT4 dim )
@@ -1808,7 +1826,8 @@ XLALCreateFmetricAtoms ( UINT4 dim )
 } /* XLALCreateFmetricAtoms() */
 
 
-/** Compute the 'F-metric' gF_ij (and also gFav_ij, m1_ij, m2_ij, m3_ij)
+/**
+ * Compute the 'F-metric' gF_ij (and also gFav_ij, m1_ij, m2_ij, m3_ij)
  * from the given FmetricAtoms and the signal amplitude parameters.
  *
  */
@@ -1950,8 +1969,9 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 } /* XLALComputeFmetricFromAtoms() */
 
 
-/** Function to compute *full* 4+n dimensional Fisher matric for the
- *  full CW parameter-space of Amplitude + Doppler parameters !
+/**
+ * Function to compute *full* 4+n dimensional Fisher matric for the
+ * full CW parameter-space of Amplitude + Doppler parameters !
  */
 gsl_matrix*
 XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp )
@@ -2068,7 +2088,8 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams 
 } /* XLALComputeFisherFromAtoms() */
 
 
-/** Calculate the projected metric onto the subspace orthogonal to coordinate-axis 'c', namely
+/**
+ * Calculate the projected metric onto the subspace orthogonal to coordinate-axis 'c', namely
  * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
  * The output-matrix is allocate here
  *
@@ -2160,7 +2181,8 @@ XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
 
 } /* XLALmatrix33_in_vect3() */
 
-/** Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
+/**
+ * Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
  * \f$r_{\mathrm{orb}}(t)\f$.
  *
  * Algorithm: using 5-point differentiation expressions on r_orb(t) returned from LALBarycenterEarth().
@@ -2289,10 +2311,11 @@ XLALDestroyVect3Dlist ( vect3Dlist_t *list )
 
 } /* XLALDestroyVect3Dlist() */
 
-/** Return the highest 'global-correlation' spindown order found in this coordinate system.
-    Counting nu0 = order1, nu1 = order2, nu2 = order3, ...,
-    order = 0 therefore means there are no GC spin coordinates at all
-*/
+/**
+ * Return the highest 'global-correlation' spindown order found in this coordinate system.
+ * Counting nu0 = order1, nu1 = order2, nu2 = order3, ...,
+ * order = 0 therefore means there are no GC spin coordinates at all
+ */
 UINT4
 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
 {
@@ -2427,7 +2450,8 @@ gsl_matrix* XLALNaturalizeMetric(
 } /* XLALNaturalizeMetric() */
 
 
-/** "DiagNormalize" a metric matrix.
+/**
+ * "DiagNormalize" a metric matrix.
  * DiagNormalization means normalize metric by its diagonal, namely apply the transformation
  * G_ij = g_ij /sqrt(g_ii * g_jj), to all elements, resulting in lower
  * condition number and unit diagonal elements.
@@ -2497,7 +2521,7 @@ XLALDiagNormalizeMetric ( const gsl_matrix * g_ij )
  * in 'metric2'. The elements are *copied* and the result is allocated here.
  *
  * Note2: the 'meta' field-information of 'metric2' is simply copied into the output,
- *        meta-info consistency is *not* checked.
+ * meta-info consistency is *not* checked.
  */
 int
 XLALAddDopplerMetric ( DopplerMetric **metric1, const DopplerMetric *metric2 )

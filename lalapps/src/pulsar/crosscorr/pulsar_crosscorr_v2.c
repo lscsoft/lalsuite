@@ -24,7 +24,6 @@
  * \ingroup pulsarApps
  * \brief Perform CW cross-correlation search - version 2
  *
- * 
  */
 
 

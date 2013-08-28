@@ -29,39 +29,38 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup LALVersion_h
+ * \addtogroup LALVersion_h
+ *
+ * \brief Provides routines for reporting the LAL version.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALVersion.h>
+ * \endcode
+ *
+ * \section ss_globals Global variables
+ *
+ * \code
+ * extern const char *lalVersion;
+ * extern const int   lalVersionMajor;
+ * extern const int   lalVersionMinor;
+ * extern const char *lalConfigureArgs;
+ * extern const char *lalConfigureDate;
+ * \endcode
+ *
+ * These constant variables are set at compile time and included into the LAL
+ * library.  They contain the information about the version of LAL and the
+ * configuration information.
+ *
+ */
+/*@{*/
 
-   \brief Provides routines for reporting the LAL version.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/LALVersion.h>
-   \endcode
-
-
-\section ss_globals Global variables
-
-\code
-extern const char *lalVersion;
-extern const int   lalVersionMajor;
-extern const int   lalVersionMinor;
-extern const char *lalConfigureArgs;
-extern const char *lalConfigureDate;
-\endcode
-
-These constant variables are set at compile time and included into the LAL
-library.  They contain the information about the version of LAL and the
-configuration information.
-      
-*//*@{ */
-
-                           /**\name Error Codes *//*@{ */
-
+/**\name Error Codes *//*@{ */
 #define LALVERSIONH_ENULL 1     /**< Null string pointer */
 #define LALVERSIONH_ESIZE 2     /**< Zero string size */
 #define LALVERSIONH_ESPRN 4     /**< Error in snprintf */
 #define LALVERSIONH_ESHRT 8     /**< String too short */
-/*@}*/
 /*@}*/
 
 #define LALVERSIONH_MSGENULL "Null string pointer."
@@ -82,6 +81,8 @@ extern const char *const lalConfigureDate;
 
 void LALVersion(LALStatus * status, CHAR * message, UINT4 size,
                 INT4 verbose);
+
+/*@}*/
 
 #if 0
 {       /* so that editors will match succeeding brace */

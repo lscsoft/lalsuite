@@ -136,7 +136,8 @@ typedef struct
 
 } UserVariables_t;
 
-/** Config variables 'derived' from user-input
+/**
+ * Config variables 'derived' from user-input
  */
 typedef struct
 {
@@ -727,7 +728,8 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 } /* initUserVars() */
 
 
-/** Write a multi-PSD into spectrograms for each IFO.
+/**
+ * Write a multi-PSD into spectrograms for each IFO.
  * Using gnuplot 'binary' matrix format
  * The filename for each IFO is generated as 'bname-IFO'
  */
@@ -826,8 +828,9 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
 
 } /* LALfwriteSpectrograms() */
 
-/** Dump complete multi-PSDVector over IFOs, timestamps and frequency-bins into
- *  per-IFO ASCII output-files 'outbname-IFO'
+/**
+ * Dump complete multi-PSDVector over IFOs, timestamps and frequency-bins into
+ * per-IFO ASCII output-files 'outbname-IFO'
  *
  */
 int
@@ -944,13 +947,13 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename 'outbname'
 } /* XLALDumpMultiPSDVector() */
 
 
-/** Load all SFTs according to user-input, returns multi-SFT vector.
- *
+/**
+ * Load all SFTs according to user-input, returns multi-SFT vector.
  * \return cfg:
  * Returns 'effective' range of SFT-bins [firstBin, lastBin], which which the PSD will be estimated:
- *   - if the user input {fStart, fBand} then these are loaded from SFTs and directly translated into bins
- *   - if user input {Freq, FreqBand}, we load a wider frequency-band ADDING running-median/2 on either side
- *     from the SFTs, and firstBind, lastBin correspond to {Freq,FreqBand} (rounded to closest bins)
+ * - if the user input {fStart, fBand} then these are loaded from SFTs and directly translated into bins
+ * - if user input {Freq, FreqBand}, we load a wider frequency-band ADDING running-median/2 on either side
+ * from the SFTs, and firstBind, lastBin correspond to {Freq,FreqBand} (rounded to closest bins)
  * Also returns the 'data-segment' for which SFTs were loaded
  *
  */
@@ -1101,8 +1104,9 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
 
 } /* XLALReadSFTs() */
 
-/** Function that *truncates the PSD in place* to the requested frequency-bin interval [firstBin, lastBin] for the given multiPSDVector.
- *  Now also truncates the original SFT vector, as necessary for correct computation of normalized SFT power.
+/**
+ * Function that *truncates the PSD in place* to the requested frequency-bin interval [firstBin, lastBin] for the given multiPSDVector.
+ * Now also truncates the original SFT vector, as necessary for correct computation of normalized SFT power.
  */
 int
 XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect,
@@ -1190,8 +1194,9 @@ XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect,
 
 } /* XLALCropMultiPSDandSFTVectors() */
 
-/** Compute the "data-quality factor" \f$\mathcal{Q}(f) = \sum_X \frac{\epsilon_X}{\mathcal{S}_X(f)}\f$ over the given SFTs.
- *  The input \a multiPSD is a pre-computed PSD map \f$\mathcal{S}_{X,i}(f)\f$, over IFOs \f$X\f$, SFTs \f$i\f$
+/**
+ * Compute the "data-quality factor" \f$\mathcal{Q}(f) = \sum_X \frac{\epsilon_X}{\mathcal{S}_X(f)}\f$ over the given SFTs.
+ * The input \a multiPSD is a pre-computed PSD map \f$\mathcal{S}_{X,i}(f)\f$, over IFOs \f$X\f$, SFTs \f$i\f$
  * and frequency \f$f\f$.
  *
  * \return the output is a vector \f$\mathcal{Q}(f)\f$.
@@ -1308,7 +1313,8 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
 
 } /* XLALComputeSegmentDataQ() */
 
-/** Write given REAL8FrequencySeries into file
+/**
+ * Write given REAL8FrequencySeries into file
  */
 int
 XLALWriteREAL8FrequencySeries_to_file ( const REAL8FrequencySeries *series,	/**< [in] frequency-series to write to file */

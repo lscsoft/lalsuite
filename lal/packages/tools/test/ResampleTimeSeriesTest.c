@@ -17,39 +17,40 @@
 *  MA  02111-1307  USA
 */
 
-/** \ingroup ResampleTimeSeries_h
+/**
+ * \ingroup ResampleTimeSeries_h
  * \file
  * \author Brown, D. A.
  *
  * \brief Tests the routines in \ref ResampleTimeSeries.h
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * Usage: ./ResampleTimeSeriesTest [options] defaults shown in brackets
  * Options:
- *   -h         print this message
- *   -d level   set lalDebugLevel to level
- *   -v         verbose: print extra information
- *   -n points  number of points in the raw time series (1048576)
- *   -i freq    sample rate of input time series (16384)
- *   -o freq    sample rate of output time series (4096)
- *   -f freq    frequency of sine wave to inject as input (1000.0)
- *   -r type    type of filter to use in resampling (ldas)
- *              [ldas|butterworth]
+ * -h         print this message
+ * -d level   set lalDebugLevel to level
+ * -v         verbose: print extra information
+ * -n points  number of points in the raw time series (1048576)
+ * -i freq    sample rate of input time series (16384)
+ * -o freq    sample rate of output time series (4096)
+ * -f freq    frequency of sine wave to inject as input (1000.0)
+ * -r type    type of filter to use in resampling (ldas)
+ * [ldas|butterworth]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Tests the resampling functions by injecting a sine wave of a given
  * frequency into a time series and downsampling it. The raw and output
  * data are returned as frame files for plotting in matlab.
  *
- * \heading{Sample Results}
+ * ### Sample Results ###
  *
  * Figures.\figref{f_resamp1}-\figref{f_resamp3} show the results of various
  * tests using this program.
  *
- * \floatfig{htb,f_resamp1}
  * \image html  resamp_figs1.png "Fig. [f_resamp1]"
  * \image latex resamp_figs1.pdf ""
  *
@@ -59,8 +60,6 @@
  * phase shift of the output. FIXME the legend in the right figure is wrong.
  * It should say 100 Hz, not 10 Hz the output.
  *
- *
- * \floatfig{htb,f_resamp2}
  * \image html  resamp_figs2.png "Fig. [f_resamp2]"
  * \image latex resamp_figs2.pdf ""
  *
@@ -68,7 +67,6 @@
  * plot shows the start of the time series and the right plot the end. Note
  * the corruption of points due to the time domain filtering.
  *
- * \floatfig{htb,f_resamp3}
  * \image html  resamp_figs3.png "Fig. [f_resamp3]"
  * \image latex resamp_figs3.pdf ""
  *
@@ -80,7 +78,7 @@
  * signal is very close to the output Nyquist frequency. Care should be taken
  * to downsample to a suitable rate to avoid this type of attenuation.
  *
-*/
+ */
 
 /** \cond DONT_DOXYGEN */
 

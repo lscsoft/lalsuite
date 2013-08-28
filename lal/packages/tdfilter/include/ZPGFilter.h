@@ -29,66 +29,67 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup ZPGFilter_h
-   \author Creighton, T. D.
-
-   \brief Provides routines to manipulate ZPG filters.
-
-\heading{Synopsis}
-\code
-#include <lal/ZPGFilter.h>
-\endcode
-
-This header covers routines that create, destroy, and
-transform objects of type <tt>\<datatype\>ZPGFilter</tt>, where
-<tt>\<datatype\></tt> is either \c COMPLEX8 or \c COMPLEX16.
-Generically, these data types can be used to store any rational
-complex function in a factored form.  Normally this function is a
-filter response, or "transfer function" \f$T(z)\f$, expressed in terms
-of a complex frequency parameter \f$z=\exp(2\pi if\Delta t)\f$, where
-\f$\Delta t\f$ is the sampling interval.  The rational function is
-factored as follows:
-\f[
-T(f) = g\times\frac{\prod_k (z-a_k)}{\prod_l (z-b_l)}
-\f]
-where \f$g\f$ is the gain, \f$a_k\f$ are the (finite) zeros, and \f$b_l\f$ are the
-(finite) poles.  It should be noted that rational functions always
-have the same number of zeros as poles if one includes the point
-\f$z=\infty\f$; any excess in the number of finite zeros or poles in the
-rational expression simply indicates that there is a corresponding
-pole or zero of that order at infinity.  It is also worth pointing out
-that the "gain" is just the overall prefactor of this rational
-function, and is not necessarily equal to the actual gain of the
-transfer function at any particular frequency.
-
-Another common complex frequency space is the \f$w\f$-space, obtained
-from the \f$z\f$-space by the bilinear transformation:
-\f[
-w = i\left(\frac{1-z}{1+z}\right) = \tan(\pi f\Delta t) , \quad
-z = \frac{1+iw}{1-iw} \; .
-\f]
-Other variables can also be used to represent the complex frequency
-plane.  The <tt>\<datatype\>ZPGFilter</tt> structure can be used to
-represent the transfer function in any of these spaces by transforming
-the coordinates of the zeros and poles, and incorporating any residual
-factors into the gain.  Care must be taken to include any zeros or
-poles that are brought in from infinity by the transformation, and to
-remove any zeros or poles which were sent to infinity.  Thus the
-number of zeros and poles of the <tt>\<datatype\>ZPGFilter</tt> is not
-necessarily constant under transformations!  Routines invoking the
-<tt>\<datatype\>ZPGFilter</tt> data types should document which complex
-variable is assumed.
-
-*/
+ * \addtogroup ZPGFilter_h
+ * \author Creighton, T. D.
+ *
+ * \brief Provides routines to manipulate ZPG filters.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/ZPGFilter.h>
+ * \endcode
+ *
+ * This header covers routines that create, destroy, and
+ * transform objects of type <tt>\<datatype\>ZPGFilter</tt>, where
+ * <tt>\<datatype\></tt> is either \c COMPLEX8 or \c COMPLEX16.
+ * Generically, these data types can be used to store any rational
+ * complex function in a factored form.  Normally this function is a
+ * filter response, or "transfer function" \f$T(z)\f$, expressed in terms
+ * of a complex frequency parameter \f$z=\exp(2\pi if\Delta t)\f$, where
+ * \f$\Delta t\f$ is the sampling interval.  The rational function is
+ * factored as follows:
+ * \f[
+ * T(f) = g\times\frac{\prod_k (z-a_k)}{\prod_l (z-b_l)}
+ * \f]
+ * where \f$g\f$ is the gain, \f$a_k\f$ are the (finite) zeros, and \f$b_l\f$ are the
+ * (finite) poles.  It should be noted that rational functions always
+ * have the same number of zeros as poles if one includes the point
+ * \f$z=\infty\f$; any excess in the number of finite zeros or poles in the
+ * rational expression simply indicates that there is a corresponding
+ * pole or zero of that order at infinity.  It is also worth pointing out
+ * that the "gain" is just the overall prefactor of this rational
+ * function, and is not necessarily equal to the actual gain of the
+ * transfer function at any particular frequency.
+ *
+ * Another common complex frequency space is the \f$w\f$-space, obtained
+ * from the \f$z\f$-space by the bilinear transformation:
+ * \f[
+ * w = i\left(\frac{1-z}{1+z}\right) = \tan(\pi f\Delta t) , \quad
+ * z = \frac{1+iw}{1-iw} \; .
+ * \f]
+ * Other variables can also be used to represent the complex frequency
+ * plane.  The <tt>\<datatype\>ZPGFilter</tt> structure can be used to
+ * represent the transfer function in any of these spaces by transforming
+ * the coordinates of the zeros and poles, and incorporating any residual
+ * factors into the gain.  Care must be taken to include any zeros or
+ * poles that are brought in from infinity by the transformation, and to
+ * remove any zeros or poles which were sent to infinity.  Thus the
+ * number of zeros and poles of the <tt>\<datatype\>ZPGFilter</tt> is not
+ * necessarily constant under transformations!  Routines invoking the
+ * <tt>\<datatype\>ZPGFilter</tt> data types should document which complex
+ * variable is assumed.
+ *
+ */
 /*@{*/
 
 /**
-@{
-\defgroup CreateZPGFilter_c Module CreateZPGFilter.c
-\defgroup DestroyZPGFilter_c Module DestroyZPGFilter.c
-\defgroup BilinearTransform_c Module BilinearTransform.c
-@}
-*/
+ * @{
+ * \defgroup CreateZPGFilter_c Module CreateZPGFilter.c
+ * \defgroup DestroyZPGFilter_c Module DestroyZPGFilter.c
+ * \defgroup BilinearTransform_c Module BilinearTransform.c
+ * @}
+ */
 
 /** \name Error Codes */
 /*@{*/

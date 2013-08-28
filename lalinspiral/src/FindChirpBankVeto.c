@@ -27,11 +27,10 @@
  */
 
 /**
-
-\author Brown, D. A., and Hanna, C.
-\file
-
-*/
+ * \author Brown, D. A., and Hanna, C.
+ * \file
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

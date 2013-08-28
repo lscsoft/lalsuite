@@ -290,7 +290,7 @@ int XLALFrameUFileCksumValid(LALFrameUFrFile * stream);
  */
 void XLALFrameUFrTOCFree(LALFrameUFrTOC * toc);
 
-/** 
+/**
  * @brief Read the table of contents FrTOC structure for a FrFile stream.
  * @param stream Pointer to the input FrFile stream from which to read FrTOC.
  * @return Pointer to the FrTOC structure.
@@ -309,7 +309,7 @@ void XLALFrameUFrTOCFree(LALFrameUFrTOC * toc);
 LALFrameUFrTOC *XLALFrameUFrTOCRead(LALFrameUFrFile * stream);
 
 
-/** 
+/**
  * @name FrTOC Query Routines
  * @{
  */
@@ -341,7 +341,7 @@ size_t XLALFrameUFrTOCQueryNFrame(const LALFrameUFrTOC * toc);
 double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc,
     size_t pos);
 
-/** 
+/**
  * @brief Query FrTOC structure for duration of a FrameH structure.
  * @param toc Pointer to the FrTOC structure to be queried.
  * @param pos Index position of the FrameH structure.
@@ -474,7 +474,7 @@ const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc,
 /** @} */
 
 
-/** 
+/**
  * @name FrameH Routines
  * @{
  */
@@ -703,7 +703,7 @@ int XLALFrameUFrameHSetRun(LALFrameUFrameH * frame, int run);
 /** @} */
 
 
-/** 
+/**
  * @name FrChan Routines
  * @{
  */
@@ -1023,7 +1023,7 @@ size_t XLALFrameUFrChanVectorQueryNData(const LALFrameUFrChan * channel);
 size_t XLALFrameUFrChanVectorQueryNDim(const LALFrameUFrChan * channel);
 
 /**
- * @brief Query FrChan structure for the number of points in the @a dim 
+ * @brief Query FrChan structure for the number of points in the @a dim
  * dimension of the multi-dimensional data in the FrVect structure.
  * @param channel Pointer to the FrChan structure to be queried.
  * @param dim The dimension of the multi-dimensional data.
@@ -1039,7 +1039,7 @@ size_t XLALFrameUFrChanVectorQueryNx(const LALFrameUFrChan * channel,
     size_t dim);
 
 /**
- * @brief Query FrChan structure for the sampling interval in the @a dim 
+ * @brief Query FrChan structure for the sampling interval in the @a dim
  * dimension of the multi-dimensional data in the FrVect structure.
  * @param channel Pointer to the FrChan structure to be queried.
  * @param dim The dimension of the multi-dimensional data.
@@ -1055,7 +1055,7 @@ double XLALFrameUFrChanVectorQueryDx(const LALFrameUFrChan * channel,
     size_t dim);
 
 /**
- * @brief Query FrChan structure for the starting value of the @a dim 
+ * @brief Query FrChan structure for the starting value of the @a dim
  * dimension of the multi-dimensional data in the FrVect structure.
  * @param channel Pointer to the FrChan structure to be queried.
  * @param dim The dimension of the multi-dimensional data.
@@ -1071,7 +1071,7 @@ double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel,
     size_t dim);
 
 /**
- * @brief Query FrChan structure for the units of the domain of the @a dim 
+ * @brief Query FrChan structure for the units of the domain of the @a dim
  * dimension of the multi-dimensional data in the FrVect structure.
  * @param channel Pointer to the FrChan structure to be queried.
  * @param dim The dimension of the multi-dimensional data.
@@ -1262,7 +1262,7 @@ LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
 
 /**
  * @name FrDetector Query Routines
- * @{ 
+ * @{
  */
 
 /**

@@ -29,10 +29,10 @@
 #include <lal/XLALError.h>
 
 /**
-Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
-Add the tidal phase terms from http://arxiv.org/abs/1101.1673 (Eqs. 3.9, 3.10)
-The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
-*/
+ * Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
+ * Add the tidal phase terms from http://arxiv.org/abs/1101.1673 (Eqs. 3.9, 3.10)
+ * The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
+ */
 int XLALSimInspiralTaylorF2ReducedSpinTidal(
     COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
     const REAL8 phic,                /**< orbital coalescence phase (rad) */

@@ -18,60 +18,61 @@
 */
 
 /**
-   \file
-   \ingroup StreamInput_h
-   \author Creighton, T. D.
-
-\brief Reads a sequence or vector sequence from a file.
-
-\heading{Usage}
-\code
-StreamInputTest [-o outfile] [-d debuglevel] [-t]
-                [-v {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d} infile]
-                [-s {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d | c | z} infile]
-\endcode
-
-\heading{Description}
-
-This test program parses data from an input file or from \c stdin.
-The following option flags are accepted:
-<ul>
-<li>[<tt>-o</tt>] Writes the output to \c outfile.  If
-\c outfile is given as \c stdout, the data is written to
-standard output (\e not to a file named \c stdout).  If the
-<tt>-o</tt> flag is not given, the routines are exercised, but no output
-is written.</li>
-<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel; if
-absent, <tt>-d 0</tt> is assumed.</li>
-<li>[<tt>-t</tt>] Writes to \c stderr the system time required to
-read the file.</li>
-<li>[<tt>-v</tt>] Reads the contents of \c infile as a sequence
-of vectors to be parsed by the routines
-<tt>LAL\<datatype\>ReadVectorSequence()</tt>, where <tt>\<datatype\></tt> is
-determined by the argument immediately following the <tt>-v</tt> option
-flag.  If \c infile is given as \c stdin, the data is read
-from standard input (\e not from a file named \c stdin).</li>
-<li>[<tt>-s</tt>] As <tt>-v</tt>, above, except that the file contents
-are parsed by the routines <tt>LAL\<datatype\>ReadSequence()</tt>.  If
-neither <tt>-v</tt> nor <tt>-s</tt> is specified,
-<tt>-v s StreamInput.dat</tt> is assumed (this file is provided with the
-distribution so that running the code with no arguments, \'a la
-<tt>make check</tt>, will perform a nontrivial test of the algorithm).</li>
-</ul>
-
-For data read in as a character vector sequences, the output will
-consist of a number of lines equal to the length of the sequence, with
-each line being the length of the vector; all non-graphical characters
-in the vector (including the various types of whitespace) will be
-replaced with single spaces.  For character sequences, the output will
-essentially be a copy of the input.  For numerical vector sequences,
-the output will consist of separate lines for each vector of the
-sequence, with each line printing the components of the vector in some
-type-dependent format.  For numerical sequences, each line of output
-contains a single number, or, in the case of complex datatypes, two
-numbers representing the real and imaginary components, again in some
-type-dependent format.
-*/
+ * \file
+ * \ingroup StreamInput_h
+ * \author Creighton, T. D.
+ *
+ * \brief Reads a sequence or vector sequence from a file.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * StreamInputTest [-o outfile] [-d debuglevel] [-t]
+ * [-v {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d} infile]
+ * [-s {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d | c | z} infile]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test program parses data from an input file or from \c stdin.
+ * The following option flags are accepted:
+ * <ul>
+ * <li>[<tt>-o</tt>] Writes the output to \c outfile.  If
+ * \c outfile is given as \c stdout, the data is written to
+ * standard output (\e not to a file named \c stdout).  If the
+ * <tt>-o</tt> flag is not given, the routines are exercised, but no output
+ * is written.</li>
+ * <li>[<tt>-d</tt>] Sets the debug level to \c debuglevel; if
+ * absent, <tt>-d 0</tt> is assumed.</li>
+ * <li>[<tt>-t</tt>] Writes to \c stderr the system time required to
+ * read the file.</li>
+ * <li>[<tt>-v</tt>] Reads the contents of \c infile as a sequence
+ * of vectors to be parsed by the routines
+ * <tt>LAL\<datatype\>ReadVectorSequence()</tt>, where <tt>\<datatype\></tt> is
+ * determined by the argument immediately following the <tt>-v</tt> option
+ * flag.  If \c infile is given as \c stdin, the data is read
+ * from standard input (\e not from a file named \c stdin).</li>
+ * <li>[<tt>-s</tt>] As <tt>-v</tt>, above, except that the file contents
+ * are parsed by the routines <tt>LAL\<datatype\>ReadSequence()</tt>.  If
+ * neither <tt>-v</tt> nor <tt>-s</tt> is specified,
+ * <tt>-v s StreamInput.dat</tt> is assumed (this file is provided with the
+ * distribution so that running the code with no arguments, \'a la
+ * <tt>make check</tt>, will perform a nontrivial test of the algorithm).</li>
+ * </ul>
+ *
+ * For data read in as a character vector sequences, the output will
+ * consist of a number of lines equal to the length of the sequence, with
+ * each line being the length of the vector; all non-graphical characters
+ * in the vector (including the various types of whitespace) will be
+ * replaced with single spaces.  For character sequences, the output will
+ * essentially be a copy of the input.  For numerical vector sequences,
+ * the output will consist of separate lines for each vector of the
+ * sequence, with each line printing the components of the vector in some
+ * type-dependent format.  For numerical sequences, each line of output
+ * contains a single number, or, in the case of complex datatypes, two
+ * numbers representing the real and imaginary components, again in some
+ * type-dependent format.
+ */
 
 /** \name Error Codes */ /*@{*/
 #define STREAMINPUTTESTC_ENORM 0        /**< Normal exit */

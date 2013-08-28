@@ -27,33 +27,33 @@
  */
 
 /**
-
-\author Brown, D. A. and Messaritaki E.
-\ingroup FindChirpBCV_h
-
-\brief Provides functions to condition the input data from the interferometer
-to a form that can be used by the <tt>FindChirpBCVFilter()</tt> function.
-
-At the present time this also includes the template independent part of the
-BCV filter.
-
-\heading{Description}
-
-Placeholder.
-
-\heading{Algorithm}
-
-Blah.
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Brown, D. A. and Messaritaki E.
+ * \ingroup FindChirpBCV_h
+ *
+ * \brief Provides functions to condition the input data from the interferometer
+ * to a form that can be used by the <tt>FindChirpBCVFilter()</tt> function.
+ *
+ * At the present time this also includes the template independent part of the
+ * BCV filter.
+ *
+ * ### Description ###
+ *
+ * Placeholder.
+ *
+ * ### Algorithm ###
+ *
+ * Blah.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>

@@ -24,10 +24,10 @@
 /*               initialze RandomParams *randPar once and avoid repeatly opening /dev/urandom.  */
 
 /**
-\author Krishnan, B.
-\file
-\ingroup SFTClean_h
-*/
+ * \author Krishnan, B.
+ * \file
+ * \ingroup SFTClean_h
+ */
 
 /**\name Error Codes */
 /*@{*/

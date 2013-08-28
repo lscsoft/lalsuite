@@ -23,7 +23,7 @@
  *
  * \brief File containing most of the structures and prototypes which are
  * used in the generation of the EOBNRv2 waveform. These structures and
- * prototypes are used internally within the waveform generation code, 
+ * prototypes are used internally within the waveform generation code,
  * and shouldn't be needed to generate the waveforms from outside the
  * library. Therefore, people generating EOBNRv2 waveforms should only
  * need to include LALSimIMR.h.
@@ -43,17 +43,17 @@ extern "C" {
 #endif
 
 /**
- * The maximum possible l we have 
+ * The maximum possible l we have
  */
 #define LALEOB_MAX_MULTIPOLE 8
 
 /**
- *  Structure containing the coefficients for EOBNRv2 A potential function.
- *  The elements in the structure are labelled as follows:
- *  aN, where a is denotes whether the parameter is in the numerator (n)
- *  or denominator (d); and N is the power of r which will multiply this
- *  coefficient. For example, the coefficient of r^5 in the numerator
- *  will be called n5.
+ * Structure containing the coefficients for EOBNRv2 A potential function.
+ * The elements in the structure are labelled as follows:
+ * aN, where a is denotes whether the parameter is in the numerator (n)
+ * or denominator (d); and N is the power of r which will multiply this
+ * coefficient. For example, the coefficient of r^5 in the numerator
+ * will be called n5.
  */
 typedef struct
 tagEOBACoefficients
@@ -70,9 +70,9 @@ tagEOBACoefficients
 EOBACoefficients;
 
 /**
- *  Structure containing the coefficients for calculating the factorized
- *  waveform. The coefficients are precomputed in the function
- *  XLALCalcFacWaveformCoefficients()
+ * Structure containing the coefficients for calculating the factorized
+ * waveform. The coefficients are precomputed in the function
+ * XLALCalcFacWaveformCoefficients()
  */
 typedef struct
 tagFacWaveformCoeffs
@@ -324,7 +324,7 @@ NewtonMultipolePrefixes;
 
 /**
  * The coefficients which are used in calculating the non-quasicircular
- * correction to the EOBNRv2 model. The precise definitions of these 
+ * correction to the EOBNRv2 model. The precise definitions of these
  * coefficients and their use can be found in DCC document T1100433.
  */
 typedef struct
@@ -366,7 +366,7 @@ EOBParams;
  * Structure containing parameters used to determine
  * r as a function of omega. Since this is determined within
  * a root finding function, it is necessary to place all parameters
- * with the exception of the current guess of the radius within 
+ * with the exception of the current guess of the radius within
  * a structure.
  */
 typedef struct tagrOfOmegaIn {

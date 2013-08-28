@@ -59,8 +59,8 @@ const MultiNoiseWeights empty_MultiNoiseWeights;
 #include "SFTutils-LAL.c"
 // ------------------------------
 
-/** XLAL function to create one SFT-struct.
- *
+/**
+ * XLAL function to create one SFT-struct.
  * Note: Allows for numBins == 0, in which case only the header is
  * allocated, with a NULL data pointer.
  */
@@ -105,7 +105,8 @@ XLALDestroySFT ( SFTtype *sft )
 } /* XLALDestroySFT() */
 
 
-/** XLAL function to create an SFTVector of \c numSFT SFTs with \c SFTlen frequency-bins
+/**
+ * XLAL function to create an SFTVector of \c numSFT SFTs with \c SFTlen frequency-bins
  */
 SFTVector *
 XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
@@ -152,7 +153,8 @@ XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
 } /* XLALCreateSFTVector() */
 
 
-/** XLAL interface to destroy an SFTVector
+/**
+ * XLAL interface to destroy an SFTVector
  */
 void
 XLALDestroySFTVector ( SFTVector *vect )
@@ -179,7 +181,8 @@ XLALDestroySFTVector ( SFTVector *vect )
 } /* XLALDestroySFTVector() */
 
 
-/** Destroy a PSD-vector
+/**
+ * Destroy a PSD-vector
  */
 void
 XLALDestroyPSDVector ( PSDVector *vect )	/**< the PSD-vector to free */
@@ -206,7 +209,8 @@ XLALDestroyPSDVector ( PSDVector *vect )	/**< the PSD-vector to free */
 } /* XLALDestroyPSDVector() */
 
 
-/** Destroy a multi SFT-vector
+/**
+ * Destroy a multi SFT-vector
  */
 void
 XLALDestroyMultiSFTVector ( MultiSFTVector *multvect )	/**< the SFT-vector to free */
@@ -225,7 +229,8 @@ XLALDestroyMultiSFTVector ( MultiSFTVector *multvect )	/**< the SFT-vector to fr
 } /* XLALDestroyMultiSFTVector() */
 
 
-/** Destroy a multi PSD-vector
+/**
+ * Destroy a multi PSD-vector
  */
 void
 XLALDestroyMultiPSDVector ( MultiPSDVector *multvect )	/**< the SFT-vector to free */
@@ -280,8 +285,9 @@ XLALDestroyTimestampVector ( LIGOTimeGPSVector *vect)
 } /* XLALDestroyTimestampVector() */
 
 
-/** Given a start-time, Tspan, Tsft and Toverlap, returns a list of timestamps
- *  covering this time-stretch (allowing for overlapping SFT timestamps).
+/**
+ * Given a start-time, Tspan, Tsft and Toverlap, returns a list of timestamps
+ * covering this time-stretch (allowing for overlapping SFT timestamps).
  *
  * NOTE: boundary-handling: the returned list of timestamps are guaranteed to *cover* the
  * interval [tStart, tStart+duration), assuming a each timestamp covers a length of 'Tsft'
@@ -360,7 +366,8 @@ XLALMakeMultiTimestamps ( LIGOTimeGPS tStart,	/**< GPS start-time */
 } /* XLALMakeMultiTimestamps() */
 
 
-/** Extract timstamps-vector from the given SFTVector
+/**
+ * Extract timstamps-vector from the given SFTVector
  */
 LIGOTimeGPSVector *
 XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vector  */
@@ -390,7 +397,8 @@ XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vec
 
 } /* XLALExtractTimestampsFromSFTs() */
 
-/** Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
+/**
+ * Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
  * SFT timestamps
  */
 MultiLIGOTimeGPSVector *
@@ -434,7 +442,8 @@ XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
 } /* XLALExtractMultiTimestampsFromSFTs() */
 
 
-/** Extract timstamps-vector from the given SFTVector
+/**
+ * Extract timstamps-vector from the given SFTVector
  */
 LIGOTimeGPSVector *
 XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog )		/**< [in] input SFT-catalog  */
@@ -461,7 +470,8 @@ XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog )		/**< [in] input SFT-
 } /* XLALTimestampsFromSFTCatalog() */
 
 
-/** Given a multi-SFTCatalogView, return a MultiLIGOTimeGPSVector holding the
+/**
+ * Given a multi-SFTCatalogView, return a MultiLIGOTimeGPSVector holding the
  * SFT timestamps
  */
 MultiLIGOTimeGPSVector *
@@ -490,7 +500,8 @@ XLALTimestampsFromMultiSFTCatalogView ( const MultiSFTCatalogView *multiView )
 } /* XLALTimestampsFromMultiSFTCatalogView() */
 
 
-/** Destroy a MultiLIGOTimeGPSVector timestamps vector
+/**
+ * Destroy a MultiLIGOTimeGPSVector timestamps vector
  */
 void
 XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS )
@@ -513,7 +524,8 @@ XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS )
 } /* XLALDestroyMultiTimestamps() */
 
 
-/** Extract/construct the unique 2-character "channel prefix" from the given
+/**
+ * Extract/construct the unique 2-character "channel prefix" from the given
  * "detector-name", which unfortunately will not always follow any of the
  * official detector-naming conventions given in the Frames-Spec LIGO-T970130-F-E
  * This function therefore sometime has to do some creative guessing:
@@ -633,7 +645,8 @@ XLALGetChannelPrefix ( const CHAR *name )
 } /* XLALGetChannelPrefix() */
 
 
-/** Find the site geometry-information 'LALDetector' (mis-nomer!) given a detector-name.
+/**
+ * Find the site geometry-information 'LALDetector' (mis-nomer!) given a detector-name.
  * The LALDetector struct is allocated here.
  */
 LALDetector *
@@ -703,7 +716,8 @@ XLALGetSiteInfo ( const CHAR *name )
 } /* XLALGetSiteInfo() */
 
 
-/** Computes weight factors arising from MultiSFTs with different noise
+/**
+ * Computes weight factors arising from MultiSFTs with different noise
  * floors
  */
 MultiNoiseWeights *
@@ -812,8 +826,9 @@ XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights )
 } /* XLALDestroyMultiNoiseWeights() */
 
 
-/** Interpolate frequency-series to newLen frequency-bins.
- *  This is using DFT-interpolation (derived from zero-padding).
+/**
+ * Interpolate frequency-series to newLen frequency-bins.
+ * This is using DFT-interpolation (derived from zero-padding).
  */
 COMPLEX8Vector *
 XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
@@ -975,8 +990,8 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
 
 } /* XLALReadSegmentsFromFile() */
 
-/** Return a vector of SFTs containing only the bins in [fMin, fMin+Band].
- *
+/**
+ * Return a vector of SFTs containing only the bins in [fMin, fMin+Band].
  * Note: the output SFT is guaranteed to "cover" the input boundaries 'fMin'
  * and 'fMin+Band', ie if necessary the output SFT contains one additional
  * bin on either end of the interval.

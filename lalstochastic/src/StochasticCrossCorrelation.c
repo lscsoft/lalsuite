@@ -18,260 +18,262 @@
 */
 
 /**
-\author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-\addtogroup StochasticCrossCorrelation_c
-
-\brief Calculates the value of the standard optimally-filtered
-cross-correlation statistic for stochastic background searches.
-
-\heading{Description}
-
-\heading{LALStochasticCrossCorrelationStatistic()}
-
-The default version of the function, for handling non-heterodyned
-data, calculates the value of the standard optimally-filtered
-cross-correlation statistic
-
-\anchor stochastic_e_ymax
-\f{eqnarray}{
-Y
-&:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
-w_1(t_1)\, h_1(t_1)\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
-&\approx& \sum_{j=0}^{N-1}\delta t\sum_{k=0}^{N-1}\delta t\,
-w_1[j]\, h_1[j]\, Q[j-k]\, w_2[j]\, h_2[k] \nonumber \\
-&=& \sum_{\ell=0}^{M-1} \delta f\,
-\widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
-\widetilde{\bar{h}}_{2}[\ell],
-\label{stochastic_e_ymax}
-\f}
-
-where the sampling period is \f$\delta t=T/N\f$, the frequency spacing is
-\f$\delta f = [M\delta t]^{-1}\f$, the tilde indicates a discrete
-Fourier transform normalized to approximate the continuous Fourier
-transform:
-\f{equation}{
-\widetilde{Q}[\ell] := \sum_{k=0}^{N-1} \delta t\,
-Q[k]\, e^{-i2\pi k\ell/M}
-\f}
-the asterisk indicates complex conjugation, and the overbar indicates
-windowing and zero-padding:
-
-\f{equation}{
-\bar{h}[k]=\
-\left\{ \begin{array}{cl}
-w[k]\,h[k]  &    k = 0, \ldots, N-1 \\
-0     &    k = N, \ldots, M-1
-\end{array}
-\right.
-\f}
-
-which is needed because the range of indices for \f$h[k]\f$ and \f$Q[k]\f$ do
-not match.  \f$M\f$ should be at least \f$2N-1\f$, but may be chosen to be,
-<em>e.g.</em>, \f$2M\f$ for convenience.
-
-The inputs to <tt>LALStochasticCrossCorrelationStatistic()</tt> are
-the (windowed) zero-padded, FFTed data streams
-\f$\widetilde{\bar{h}}_{1}[\ell]\f$ and \f$\widetilde{\bar{h}}_{2}[\ell]\f$,
-along with the optimal filter \f$\widetilde{Q}[\ell]\f$.  Since the
-underlying time series are real, the input series only need to include
-the values for \f$\ell=0,\ldots,P-1\f$ (where
-\f$P=\left[\frac{M+1}{2}\right]\f$ is the number of independent elements
-in the frequency series) with the elements corresponding to negative
-frequencies determined by complex conjugation.  This allows \f$Y\f$ to be
-computed as
-\anchor stochastic_e_shortcut
-\f{equation}{
-Y=\
-\delta f\
-\left(
-\widetilde{\bar{h}}_{1}[0]\
-\widetilde{Q}[0]\
-\widetilde{\bar{h}}_{2}[0]+\
-2\sum_{\ell=1}^{P-1}\
-{\mathrm{Re}} \left\{
-\widetilde{\bar{h}}_{1}[\ell]^* \
-\widetilde{Q}[\ell]\
-\widetilde{\bar{h}}_{2}[\ell]
-\right\}
-\right)\ .
-\label{stochastic_e_shortcut}
-\f}
-
-The routine <tt>LALStochasticCrossCorrelationStatistic()</tt> is
-designed for analyzing non-heterodyned data, so if the input FFTed
-datasets have a positive start frequency, and thus represent a range
-of frequencies \f$f_0\le f< f_0 + (P-1)\delta f\f$, it is assumed that
-they were produced by discarding frequencies below \f$f_0\f$ from a longer
-frequency series, which was still the Fourier transform of a real time
-series.  In this case the cross-correlation statistic is calculated
-as
-[Note that the \f$P\f$-th frequency bin is not treated
-  specially, as would be expected for the Nyquist frequency.  This is
-  the appropriate behavior if \f$M\f$ is an odd number (so that there is
-  no Nyquist bin) or if, as a result of coarse-graining, the Nyquist
-  bin has been removed from \f$\widetilde{Q}\f$.  At any rate, if there's
-  a significant contribution to the cross-correlation statistic from
-  the Nyquist frequency, something is wrong.
-  ]
-
-\anchor stochastic_e_bandlimited
-\f{eqnarray}{
-Y&=&\
-\delta f\
-2\sum_{\ell=0}^{P-1}\
-{\mathrm{Re}} \left\{
-\widetilde{\bar{h}}_{1}[\ell]^* \
-\widetilde{Q}[\ell]\
-\widetilde{\bar{h}}_{2}[\ell]
-\right\} \nonumber
-\\
-&\approx&
-\int_{-f_0-P\delta f}^{-f_0} df\
-\widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
-+ \int_{f_0}^{f_0+P\delta f} df\
-\widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
-\label{stochastic_e_bandlimited}
-\f}
-
-The frequency sampling parameters (start frequency, frequency spacing,
-and number of points) must be the same for both data streams, but if
-the optimal filter is more coarsely sampled (for instance, if it
-varies in frequency too slowly to warrant the finer resolution), the
-data streams will be multiplied in the frequency domain and their
-product coarse-grained
-(cf. \ref CoarseGrainFrequencySeries_h to the
-optimal filter resolution before calculating
-\eqref{stochastic_e_bandlimited}.
-
-If the \c epochsMatch boolean variable is set to a true value,
-the function will confirm that the start times for both time series
-agree.  It can be set to false to allow for cross-correlation of
-time-shifted data as a control case.
-
-\heading{<tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>}
-
-In the case of heterodyned data, one wishes to calculate
-
-\anchor stochastic_e_ymaxhet
-\f{eqnarray}{
-Y
-&:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
-w_1(t_1)\, h_1(t_1)^*\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
-&\approx& \sum_{j=0}^{N-1}\delta t\sum_{k=0}^{N-1}\delta t\,
-w_1[k]\, h_1[j]^*\, Q[j-k]\, w_2[k]\, h_2[k] \nonumber \\
-&=& \sum_{\ell=0}^{M-1} \delta f\,
-\widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
-\widetilde{\bar{h}}_{2}[\ell],
-\label{stochastic_e_ymaxhet}
-\f}
-
-In this case, the Fourier transforms of the zero-padded data streams
-have \f$M\f$ independent elements, which must all be included in the sum,
-which is calculated as
-\anchor stochastic_e_heterodyned
-\f{equation}{
-Y=\
-\sum_{\ell=0}^{M-1}\
-\widetilde{\bar{h}}_{1}[\ell]^* \
-\widetilde{Q}[\ell]\
-\widetilde{\bar{h}}_{2}[\ell]
-\ .
-\label{stochastic_e_heterodyned}
-\f}
-While the mean value of the cross-correlation statistic for
-heterodyned data should be real (assuming both series were heterodyned
-with the same phase), the value for an individual stretch of data will
-be complex, so the output is returned as \c COMPLEX8WithUnits.
-
-\heading{<tt>LALStochasticCrossCorrelationSpectrum()</tt>}
-
-For diagnostic purposes, this function calculates the integrand of
-\eqref{stochastic_e_ymax} or\eqref{stochastic_e_ymaxhet}, i.e.
-\anchor stochastic_e_ccspec
-\f{equation}{
-  \label{stochastic_e_ccspec}
-Y(f)=
-\widetilde{\bar{h}}_{1}(f)^* \
-\widetilde{Q}(f)\
-\widetilde{\bar{h}}_{2}(f)=
-Y[\ell]=
-\widetilde{\bar{h}}_{1}[\ell]^* \
-\widetilde{Q}[\ell]\
-\widetilde{\bar{h}}_{2}[\ell]
-\f}
-and returns it as a frequency series.
-
-\heading{Algorithm}
-
-The function <tt>LALStochasticCrossCorrelationSpectrum()</tt>
-calculates the integrand\eqref{stochastic_e_ccspec} as follows: First
-it calculates \f$\widetilde{\bar{h}}_{1}[\ell]^* \,
-\widetilde{\bar{h}}_{2}[\ell]\f$ with
-<tt>LALCCVectorMultiplyConjugate()</tt> and matches the resolution of
-the result to that of <tt>input->optimalFilter</tt> with
-<tt>LALCCoarseGrainFrequencySeries()</tt>.  Then it uses
-<tt>LALCCVectorMultiply()</tt> to calculate
-\eqref{stochastic_e_ccspec} from the input \f$\widetilde{Q}[\ell]\f$ and
-the coarse-grained \f$\widetilde{\bar{h}}_{1}[\ell]^* \
-\widetilde{\bar{h}}_{2}[\ell]\f$
-
-The functions <tt>LALStochasticCrossCorrelationStatistic()</tt> and\\
-<tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>
-call \\
-<tt>LALStochasticCrossCorrelationSpectrum()</tt> and then
-integrate over all frequencies to  calculate
-\eqref{stochastic_e_shortcut} or\eqref{stochastic_e_heterodyned},
-respectively.
-
-\heading{Uses}
-
-<tt>LALStochasticCrossCorrelationSpectrum()</tt> calls
-\code
-LALCCreateVector()
-LALCCVectorMultiplyConjugate()
-LALCDestroyVector()
-LALCCoarseGrainFrequencySeries()
-LALUnitMultiply()
-\endcode
-
-<tt>LALStochasticCrossCorrelationStatistic()</tt> and
-<tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>
-call
-\code
-LALCCreateVector()
-LALStochasticCrossCorrelationSpectrum()
-LALCDestroyVector()
-LALUnitMultiply()
-\endcode
-
-\heading{Notes}
-<ul>
-<li> When \f$f_0=0\f$, \f$\widetilde{\bar{h}}_{1}[0]\f$, \f$\widetilde{Q}[0]\f$,
-  and \f$\widetilde{\bar{h}}_{2}[0]\f$ are assumed to be real, but this is
-  not checked.</li>
-<li> The optimal filter \f$\widetilde{Q}(f)\f$ is represented by a
-  complex frequency series because it will in general be applied to
-  whitened data include the different complex whitening filters for
-  the two streams.
-  (cf. \ref StochasticOptimalFilter_c)</li>
-<li> The coarse-graining technique produces the same
-  cross-correlation statistic as fine-graining the optimal filter by
-  assuming it is zero outside the coarse-grained frequency range and
-  constant across each coarse-grained frequency bin.</li>
-<li> The output units are constructed by combining the input units,
-  but under normal circumstances the units will be as follows:
-  \f{eqnarray}{
-    {} [\widetilde{Q}] &=& \textrm{count}^{-2} \\
-    {} [\widetilde{\bar{h}}_{1,2}] &=& \textrm{count}\,\textrm{Hz}^{-1} \\
-    {} [Y(f)] &:=& [\widetilde{\bar{h}}_1]
-    [\widetilde{Q}]  [\widetilde{\bar{h}}_2]
-    = \textrm{s}^2 \\
-    {} [Y] &:=& [Y(f)]\, \textrm{Hz}^{-1} = \textrm{s}
-  \f}</li>
-</ul>
-
- @{
-*/
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+ * \addtogroup StochasticCrossCorrelation_c
+ *
+ * \brief Calculates the value of the standard optimally-filtered
+ * cross-correlation statistic for stochastic background searches.
+ *
+ * ### Description ###
+ *
+ *
+ * ### LALStochasticCrossCorrelationStatistic() ###
+ *
+ * The default version of the function, for handling non-heterodyned
+ * data, calculates the value of the standard optimally-filtered
+ * cross-correlation statistic
+ *
+ * \anchor stochastic_e_ymax
+ * \f{eqnarray}{
+ * Y
+ * &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
+ * w_1(t_1)\, h_1(t_1)\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
+ * &\approx& \sum_{j=0}^{N-1}\delta t\sum_{k=0}^{N-1}\delta t\,
+ * w_1[j]\, h_1[j]\, Q[j-k]\, w_2[j]\, h_2[k] \nonumber \\
+ * &=& \sum_{\ell=0}^{M-1} \delta f\,
+ * \widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
+ * \widetilde{\bar{h}}_{2}[\ell],
+ * \tag{stochastic_e_ymax}
+ * \f}
+ *
+ * where the sampling period is \f$\delta t=T/N\f$, the frequency spacing is
+ * \f$\delta f = [M\delta t]^{-1}\f$, the tilde indicates a discrete
+ * Fourier transform normalized to approximate the continuous Fourier
+ * transform:
+ * \f{equation}{
+ * \widetilde{Q}[\ell] := \sum_{k=0}^{N-1} \delta t\,
+ * Q[k]\, e^{-i2\pi k\ell/M}
+ * \f}
+ * the asterisk indicates complex conjugation, and the overbar indicates
+ * windowing and zero-padding:
+ *
+ * \f{equation}{
+ * \bar{h}[k]=\
+ * \left\{ \begin{array}{cl}
+ * w[k]\,h[k]  &    k = 0, \ldots, N-1 \\
+ * 0     &    k = N, \ldots, M-1
+ * \end{array}
+ * \right.
+ * \f}
+ *
+ * which is needed because the range of indices for \f$h[k]\f$ and \f$Q[k]\f$ do
+ * not match.  \f$M\f$ should be at least \f$2N-1\f$, but may be chosen to be,
+ * <em>e.g.</em>, \f$2M\f$ for convenience.
+ *
+ * The inputs to <tt>LALStochasticCrossCorrelationStatistic()</tt> are
+ * the (windowed) zero-padded, FFTed data streams
+ * \f$\widetilde{\bar{h}}_{1}[\ell]\f$ and \f$\widetilde{\bar{h}}_{2}[\ell]\f$,
+ * along with the optimal filter \f$\widetilde{Q}[\ell]\f$.  Since the
+ * underlying time series are real, the input series only need to include
+ * the values for \f$\ell=0,\ldots,P-1\f$ (where
+ * \f$P=\left[\frac{M+1}{2}\right]\f$ is the number of independent elements
+ * in the frequency series) with the elements corresponding to negative
+ * frequencies determined by complex conjugation.  This allows \f$Y\f$ to be
+ * computed as
+ * \anchor stochastic_e_shortcut
+ * \f{equation}{
+ * Y=\
+ * \delta f\
+ * \left(
+ * \widetilde{\bar{h}}_{1}[0]\
+ * \widetilde{Q}[0]\
+ * \widetilde{\bar{h}}_{2}[0]+\
+ * 2\sum_{\ell=1}^{P-1}\
+ * {\mathrm{Re}} \left\{
+ * \widetilde{\bar{h}}_{1}[\ell]^* \
+ * \widetilde{Q}[\ell]\
+ * \widetilde{\bar{h}}_{2}[\ell]
+ * \right\}
+ * \right)\ .
+ * \tag{stochastic_e_shortcut}
+ * \f}
+ *
+ * The routine <tt>LALStochasticCrossCorrelationStatistic()</tt> is
+ * designed for analyzing non-heterodyned data, so if the input FFTed
+ * datasets have a positive start frequency, and thus represent a range
+ * of frequencies \f$f_0\le f< f_0 + (P-1)\delta f\f$, it is assumed that
+ * they were produced by discarding frequencies below \f$f_0\f$ from a longer
+ * frequency series, which was still the Fourier transform of a real time
+ * series.  In this case the cross-correlation statistic is calculated
+ * as
+ * [Note that the \f$P\f$-th frequency bin is not treated
+ * specially, as would be expected for the Nyquist frequency.  This is
+ * the appropriate behavior if \f$M\f$ is an odd number (so that there is
+ * no Nyquist bin) or if, as a result of coarse-graining, the Nyquist
+ * bin has been removed from \f$\widetilde{Q}\f$.  At any rate, if there's
+ * a significant contribution to the cross-correlation statistic from
+ * the Nyquist frequency, something is wrong.
+ * ]
+ *
+ * \anchor stochastic_e_bandlimited
+ * \f{eqnarray}{
+ * Y&=&\
+ * \delta f\
+ * 2\sum_{\ell=0}^{P-1}\
+ * {\mathrm{Re}} \left\{
+ * \widetilde{\bar{h}}_{1}[\ell]^* \
+ * \widetilde{Q}[\ell]\
+ * \widetilde{\bar{h}}_{2}[\ell]
+ * \right\} \nonumber
+ * \\
+ * &\approx&
+ * \int_{-f_0-P\delta f}^{-f_0} df\
+ * \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
+ * + \int_{f_0}^{f_0+P\delta f} df\
+ * \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
+ * \tag{stochastic_e_bandlimited}
+ * \f}
+ *
+ * The frequency sampling parameters (start frequency, frequency spacing,
+ * and number of points) must be the same for both data streams, but if
+ * the optimal filter is more coarsely sampled (for instance, if it
+ * varies in frequency too slowly to warrant the finer resolution), the
+ * data streams will be multiplied in the frequency domain and their
+ * product coarse-grained
+ * (cf. \ref CoarseGrainFrequencySeries_h to the
+ * optimal filter resolution before calculating
+ * \eqref{stochastic_e_bandlimited}.
+ *
+ * If the \c epochsMatch boolean variable is set to a true value,
+ * the function will confirm that the start times for both time series
+ * agree.  It can be set to false to allow for cross-correlation of
+ * time-shifted data as a control case.
+ *
+ * ### <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt> ###
+ *
+ * In the case of heterodyned data, one wishes to calculate
+ *
+ * \anchor stochastic_e_ymaxhet
+ * \f{eqnarray}{
+ * Y
+ * &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
+ * w_1(t_1)\, h_1(t_1)^*\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
+ * &\approx& \sum_{j=0}^{N-1}\delta t\sum_{k=0}^{N-1}\delta t\,
+ * w_1[k]\, h_1[j]^*\, Q[j-k]\, w_2[k]\, h_2[k] \nonumber \\
+ * &=& \sum_{\ell=0}^{M-1} \delta f\,
+ * \widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
+ * \widetilde{\bar{h}}_{2}[\ell],
+ * \tag{stochastic_e_ymaxhet}
+ * \f}
+ *
+ * In this case, the Fourier transforms of the zero-padded data streams
+ * have \f$M\f$ independent elements, which must all be included in the sum,
+ * which is calculated as
+ * \anchor stochastic_e_heterodyned
+ * \f{equation}{
+ * Y=\
+ * \sum_{\ell=0}^{M-1}\
+ * \widetilde{\bar{h}}_{1}[\ell]^* \
+ * \widetilde{Q}[\ell]\
+ * \widetilde{\bar{h}}_{2}[\ell]
+ * \ .
+ * \tag{stochastic_e_heterodyned}
+ * \f}
+ * While the mean value of the cross-correlation statistic for
+ * heterodyned data should be real (assuming both series were heterodyned
+ * with the same phase), the value for an individual stretch of data will
+ * be complex, so the output is returned as \c COMPLEX8WithUnits.
+ *
+ * ### <tt>LALStochasticCrossCorrelationSpectrum()</tt> ###
+ *
+ * For diagnostic purposes, this function calculates the integrand of
+ * \eqref{stochastic_e_ymax} or\eqref{stochastic_e_ymaxhet}, i.e.
+ * \anchor stochastic_e_ccspec
+ * \f{equation}{
+ * \tag{stochastic_e_ccspec}
+ * Y(f)=
+ * \widetilde{\bar{h}}_{1}(f)^* \
+ * \widetilde{Q}(f)\
+ * \widetilde{\bar{h}}_{2}(f)=
+ * Y[\ell]=
+ * \widetilde{\bar{h}}_{1}[\ell]^* \
+ * \widetilde{Q}[\ell]\
+ * \widetilde{\bar{h}}_{2}[\ell]
+ * \f}
+ * and returns it as a frequency series.
+ *
+ * ### Algorithm ###
+ *
+ * The function <tt>LALStochasticCrossCorrelationSpectrum()</tt>
+ * calculates the integrand\eqref{stochastic_e_ccspec} as follows: First
+ * it calculates \f$\widetilde{\bar{h}}_{1}[\ell]^* \,
+ * \widetilde{\bar{h}}_{2}[\ell]\f$ with
+ * <tt>LALCCVectorMultiplyConjugate()</tt> and matches the resolution of
+ * the result to that of <tt>input->optimalFilter</tt> with
+ * <tt>LALCCoarseGrainFrequencySeries()</tt>.  Then it uses
+ * <tt>LALCCVectorMultiply()</tt> to calculate
+ * \eqref{stochastic_e_ccspec} from the input \f$\widetilde{Q}[\ell]\f$ and
+ * the coarse-grained \f$\widetilde{\bar{h}}_{1}[\ell]^* \
+ * \widetilde{\bar{h}}_{2}[\ell]\f$
+ *
+ * The functions <tt>LALStochasticCrossCorrelationStatistic()</tt> and\\
+ * <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>
+ * call \\
+ * <tt>LALStochasticCrossCorrelationSpectrum()</tt> and then
+ * integrate over all frequencies to  calculate
+ * \eqref{stochastic_e_shortcut} or\eqref{stochastic_e_heterodyned},
+ * respectively.
+ *
+ * ### Uses ###
+ *
+ * <tt>LALStochasticCrossCorrelationSpectrum()</tt> calls
+ * \code
+ * LALCCreateVector()
+ * LALCCVectorMultiplyConjugate()
+ * LALCDestroyVector()
+ * LALCCoarseGrainFrequencySeries()
+ * LALUnitMultiply()
+ * \endcode
+ *
+ * <tt>LALStochasticCrossCorrelationStatistic()</tt> and
+ * <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>
+ * call
+ * \code
+ * LALCCreateVector()
+ * LALStochasticCrossCorrelationSpectrum()
+ * LALCDestroyVector()
+ * LALUnitMultiply()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * <ul>
+ * <li> When \f$f_0=0\f$, \f$\widetilde{\bar{h}}_{1}[0]\f$, \f$\widetilde{Q}[0]\f$,
+ * and \f$\widetilde{\bar{h}}_{2}[0]\f$ are assumed to be real, but this is
+ * not checked.</li>
+ * <li> The optimal filter \f$\widetilde{Q}(f)\f$ is represented by a
+ * complex frequency series because it will in general be applied to
+ * whitened data include the different complex whitening filters for
+ * the two streams.
+ * (cf. \ref StochasticOptimalFilter_c)</li>
+ * <li> The coarse-graining technique produces the same
+ * cross-correlation statistic as fine-graining the optimal filter by
+ * assuming it is zero outside the coarse-grained frequency range and
+ * constant across each coarse-grained frequency bin.</li>
+ * <li> The output units are constructed by combining the input units,
+ * but under normal circumstances the units will be as follows:
+ * \f{eqnarray}{
+ * {} [\widetilde{Q}] &=& \textrm{count}^{-2} \\
+ * {} [\widetilde{\bar{h}}_{1,2}] &=& \textrm{count}\,\textrm{Hz}^{-1} \\
+ * {} [Y(f)] &:=& [\widetilde{\bar{h}}_1]
+ * [\widetilde{Q}]  [\widetilde{\bar{h}}_2]
+ * = \textrm{s}^2 \\
+ * {} [Y] &:=& [Y(f)]\, \textrm{Hz}^{-1} = \textrm{s}
+ * \f}</li>
+ * </ul>
+ *
+ * @{
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>

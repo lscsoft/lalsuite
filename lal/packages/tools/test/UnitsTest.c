@@ -18,43 +18,45 @@
 */
 
 /**
-\author J. T. Whelan <john.whelan@ligo.org>
-\file
-\ingroup Units_h
-
-\brief Test Suite for unit manipulation programs
-
-\heading{Usage}
-\code
-UnitsTest [options]
-Options:
-  -h         print help
-  -q         quiet: run silently
-  -v         verbose: print extra information
-  -d level   set lalDebugLevel to level
-\endcode
-
-\heading{Description}
-
-This program tests the various units-manipulation routines, as well as
-the pre-defined units defined in \ref Units.h.  For each
-successful test, it prints "PASS" to standard output.
-
-\heading{Uses}
-\code
-LALCHARCreateVector()
-LALUnitAsString()
-LALParseUnitString()
-LALCHARDestroyVector()
-LALUnitMultiply()
-LALUnitRaise()
-LALUnitNormalize()
-LALUnitCompare()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author J. T. Whelan <john.whelan@ligo.org>
+ * \file
+ * \ingroup Units_h
+ *
+ * \brief Test Suite for unit manipulation programs
+ *
+ * ### Usage ###
+ *
+ * \code
+ * UnitsTest [options]
+ * Options:
+ * -h         print help
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program tests the various units-manipulation routines, as well as
+ * the pre-defined units defined in \ref Units.h.  For each
+ * successful test, it prints "PASS" to standard output.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCHARCreateVector()
+ * LALUnitAsString()
+ * LALParseUnitString()
+ * LALCHARDestroyVector()
+ * LALUnitMultiply()
+ * LALUnitRaise()
+ * LALUnitNormalize()
+ * LALUnitCompare()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 /** @{ */
 /**\name Error Codes */ /*@{*/
 #define UNITSTESTC_ENOM 0

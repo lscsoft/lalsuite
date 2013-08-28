@@ -37,88 +37,90 @@
  * \ingroup pulsarApps
  * \author Papa, M.A.
  * \brief
- Produces fake SFT data.
-
-\heading{Usage}
-\code
-makefakedata [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-I input dir]
-\endcode
-
-\heading{Description}
-
-This program uses Teviet Creighton's LAL CW signal routines in order
-to produce SFT files in the GEO binary format.
-
-The signal parameters are specified in an input file. The default name
-for the input file is In.data, however a file with another name can
-also be used, as long as the name is specified with the -i command
-line argument. The input file must contain the following information:
-<table><tr><td>
-time-baseline of the SFT</td><td>(Tsft_in_sec)</td></tr>
-<tr><td>number of SFTs to be produced</td><td>(nTsft)</td></tr>
-</table>
-
-frequency of first bin of SFTs       (first_SFT_frequency_in_Hz)
-band of produced SFT data            (SFT_freq_band_in_Hz)
-standard deviation of noise
-    (for real and imag) SFT          (std_of_noise.When=0_only_signal_present)
-amplitude of plus polarization       (Aplus)
-amplitude of cross polarization      (Across)
-polarization angle                   (psi)
-initial phase                        (phi0)
-intrinsic emission frequency
-    at the beginning of observation   (f0)
-position of source (eq. coordinates)  (latitude_in_degrees)
-                                     (longitude_in_degrees)
-maximum spin-down order               (max_spin-down_param_order)
-name of time-stamps file              (name_of_time-stamps_file)
-The information in parenthesis above shows what appears in the In.data
-input file as a comment to help you remember what the different
-entries are.
-
-A number of SFTs will be created. The names will be
-NAME.00001
-NAME.00002
-.....
-and so on.
-The default name for the SFT files is TEST_SFT however a different
-name can be specified using the -n command line argument.
-
-How many SFTs will be created is specified in the input file mentioned
-above (In.data is the default).
-
-The time of the first datum of each SFT has to be specified. This is
-done with a time-stamps file. The time-stamps file must have at least
-as many rows as the number of SFTs that one wants to create and it has
-two columns: one column for the gps seconds and one for the gps
-nanoseconds of each time-stamp. The name of the time-stamps file is
-specified in the input file (In.data default name).
-
-If one uses the command line argument -t to specify a filename, say
-TIMEFILES, then a set of files:
-TIMEFILES.00001
-TIMEFILES.00002
-.....
-and so on is created. These contain the time series data that each SFT
-is computed from. Note that Teviet's routines allow idealized
-heterodyning that is used inthis code to reduce the amount of produced
-data.
-
-If sigma in the input file is negative, then the noise data is read in
-from SFT files that are specified in the code.
-
-\heading{Uses}
-\code
-LALGenerateTaylorCW()
-LALPulsarSimulateCoherentGW()
-LALMalloc()
-LALSCreateVector()
-LALSDestroyVector()
-LALFree()
-LALCheckMemoryLeaks()
-\endcode
-
-*/
+ * Produces fake SFT data.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * makefakedata [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-I input dir]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program uses Teviet Creighton's LAL CW signal routines in order
+ * to produce SFT files in the GEO binary format.
+ *
+ * The signal parameters are specified in an input file. The default name
+ * for the input file is In.data, however a file with another name can
+ * also be used, as long as the name is specified with the -i command
+ * line argument. The input file must contain the following information:
+ * <table><tr><td>
+ * time-baseline of the SFT</td><td>(Tsft_in_sec)</td></tr>
+ * <tr><td>number of SFTs to be produced</td><td>(nTsft)</td></tr>
+ * </table>
+ *
+ * frequency of first bin of SFTs       (first_SFT_frequency_in_Hz)
+ * band of produced SFT data            (SFT_freq_band_in_Hz)
+ * standard deviation of noise
+ * (for real and imag) SFT          (std_of_noise.When=0_only_signal_present)
+ * amplitude of plus polarization       (Aplus)
+ * amplitude of cross polarization      (Across)
+ * polarization angle                   (psi)
+ * initial phase                        (phi0)
+ * intrinsic emission frequency
+ * at the beginning of observation   (f0)
+ * position of source (eq. coordinates)  (latitude_in_degrees)
+ * (longitude_in_degrees)
+ * maximum spin-down order               (max_spin-down_param_order)
+ * name of time-stamps file              (name_of_time-stamps_file)
+ * The information in parenthesis above shows what appears in the In.data
+ * input file as a comment to help you remember what the different
+ * entries are.
+ *
+ * A number of SFTs will be created. The names will be
+ * NAME.00001
+ * NAME.00002
+ * .....
+ * and so on.
+ * The default name for the SFT files is TEST_SFT however a different
+ * name can be specified using the -n command line argument.
+ *
+ * How many SFTs will be created is specified in the input file mentioned
+ * above (In.data is the default).
+ *
+ * The time of the first datum of each SFT has to be specified. This is
+ * done with a time-stamps file. The time-stamps file must have at least
+ * as many rows as the number of SFTs that one wants to create and it has
+ * two columns: one column for the gps seconds and one for the gps
+ * nanoseconds of each time-stamp. The name of the time-stamps file is
+ * specified in the input file (In.data default name).
+ *
+ * If one uses the command line argument -t to specify a filename, say
+ * TIMEFILES, then a set of files:
+ * TIMEFILES.00001
+ * TIMEFILES.00002
+ * .....
+ * and so on is created. These contain the time series data that each SFT
+ * is computed from. Note that Teviet's routines allow idealized
+ * heterodyning that is used inthis code to reduce the amount of produced
+ * data.
+ *
+ * If sigma in the input file is negative, then the noise data is read in
+ * from SFT files that are specified in the code.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALGenerateTaylorCW()
+ * LALPulsarSimulateCoherentGW()
+ * LALMalloc()
+ * LALSCreateVector()
+ * LALSDestroyVector()
+ * LALFree()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>

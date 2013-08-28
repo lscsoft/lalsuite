@@ -215,7 +215,7 @@ REAL8 XLALNoncChisqCdf(
 /**
  * Threshold for chi2.  Returns value of chi2 such that
  *
- * 	falseAlarm = 1 - chisqCdf(chi2,dof)
+ * falseAlarm = 1 - chisqCdf(chi2,dof)
  */
 REAL8 XLALChi2Threshold(
 	REAL8 dof,
@@ -259,7 +259,7 @@ static REAL8 NoncChisqCdf(REAL8 lnrho, void *data)
 /**
  * Threshold for rho.  Returns value of rho such that
  *
- * 	falseAlarm = noncChisqCdf(chi2,dof,rho^2)
+ * falseAlarm = noncChisqCdf(chi2,dof,rho^2)
  *
  * note that rho^2 is the same as nonCentral.
  */

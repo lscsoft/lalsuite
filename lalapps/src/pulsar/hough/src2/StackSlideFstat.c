@@ -21,7 +21,7 @@
  * \author Gregory Mendell
  * \file StackSlideFstat.c
  * \brief Module with functions that StackSlide a vector of Fstat values or any REAL8FrequencySeriesVector.
-*/
+ */
 
 /* define preprocessor flags:  */
 /* #define PRINT_STACKSLIDE_BINOFFSETS */
@@ -57,8 +57,9 @@ static int smallerStackSlide(const void *a,const void *b) {
     return(0);
 }
 
-/** Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
-*/
+/**
+ * Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
+ */
 void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
                     SemiCohCandidateList  *out,        /**< output candidates */
                     REAL4FrequencySeriesVector *vecF,  /**< vector with Fstat values or any REAL8FrequencySeriesVector */
@@ -349,8 +350,9 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 
-/** Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
- * This is similar to StackSlideVecF but adapted to calculate the hough number count and to be as 
+/**
+ * Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
+ * This is similar to StackSlideVecF but adapted to calculate the hough number count and to be as
  * similar to Hough as possible but without using the hough look-up-tables.
  */
 void StackSlideVecF_HoughMode(LALStatus *status,		/**< pointer to LALStatus structure */

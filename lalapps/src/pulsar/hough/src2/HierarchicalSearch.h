@@ -22,10 +22,10 @@
 
 /**
  * \file
- * \brief Header file for DriveHoughFStat.c 
+ * \brief Header file for DriveHoughFStat.c
  * \author Badri Krishnan, Alicia Sintes
- * 
- ****/
+ *
+ */
 
 
 #ifndef _DRIVEHOUGHCOLOR_H

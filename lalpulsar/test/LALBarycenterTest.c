@@ -26,14 +26,16 @@
  * \brief  Tests the routine LALBarycenter(): exercises some of the error
  * conditions and makes sure that they work.
  *
- * \heading{Program <tt>LALBarycenterTest.c</tt>}
+ * ### Program <tt>LALBarycenterTest.c</tt> ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * LALBarycenterTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program demonstrates the use of LALBarycenter.c.
  * The two ephemeris files specified in the EphemerisFilenames
@@ -304,7 +306,8 @@ main( void )
 } /* main() */
 
 
-/** Function to test equivalence between two loaded ephemeris-data structs.
+/**
+ * Function to test equivalence between two loaded ephemeris-data structs.
  * Note: we compare everything *except* the ephiles fields, which are actually useless.
  */
 int

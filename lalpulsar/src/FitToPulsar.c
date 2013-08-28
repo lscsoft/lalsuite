@@ -18,47 +18,48 @@
 */
 
 /**
-\author Dupuis, R. J.
-\file
-\ingroup pulsarTODO
-
-\brief Calculates the best fit parameters for a GW signal originating from a
-non-precessing pulsar.
-
-\heading{Prototypes}
-
-\code
-void
-LALFineFitToPulsar	(            LALStatus            *status,
-                                FineFitOutput        *output,
-                                FineFitInput         *input,
-                                FineFitParams        *params )
-\endcode
-
-\heading{Description}
-
-This routine calculates the best fit of parameters by minimizing \f$\chi^2\f$ by going through
-fixed grid for \f$\iota, \psi, \phi_{0}\f$ and  \f$h_{0}\f$.  The best fit parameters
-returned by <tt>LALCoarseFitToPulsar()</tt> are then used as initial parameters for
-<tt>LALFineFitToPulsar()</tt>.
-
-The function <tt>LALFineFitToPulsar()</tt> refines the fit using the Levenberg-Marquardt method for nonlinear fitting. This is
-done by calculating the Hessian and the gradient of \f$\chi^2\f$ ...
-
-\heading{Algorithm}
-To be completed.
-
-\heading{Uses}
-\code
-LALSCreateVector()
-LALSDestroyVector()
-LALComputeDetAMResponse()
-\endcode
-
-\heading{Notes}
-
-
-*/
+ * \author Dupuis, R. J.
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * \brief Calculates the best fit parameters for a GW signal originating from a
+ * non-precessing pulsar.
+ *
+ * ### Prototypes ###
+ *
+ * \code
+ * void
+ * LALFineFitToPulsar	(            LALStatus            *status,
+ * FineFitOutput        *output,
+ * FineFitInput         *input,
+ * FineFitParams        *params )
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This routine calculates the best fit of parameters by minimizing \f$\chi^2\f$ by going through
+ * fixed grid for \f$\iota, \psi, \phi_{0}\f$ and  \f$h_{0}\f$.  The best fit parameters
+ * returned by <tt>LALCoarseFitToPulsar()</tt> are then used as initial parameters for
+ * <tt>LALFineFitToPulsar()</tt>.
+ *
+ * The function <tt>LALFineFitToPulsar()</tt> refines the fit using the Levenberg-Marquardt method for nonlinear fitting. This is
+ * done by calculating the Hessian and the gradient of \f$\chi^2\f$ ...
+ *
+ * ### Algorithm ###
+ *
+ * To be completed.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALSCreateVector()
+ * LALSDestroyVector()
+ * LALComputeDetAMResponse()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */

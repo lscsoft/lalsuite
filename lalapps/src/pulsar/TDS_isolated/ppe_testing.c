@@ -13,7 +13,8 @@
 /*                          TESTING FUNCTIONS                                 */
 /* *****************************************************************************/
 
-/** \brief A test function to calculate a 1D posterior on a grid
+/**
+ * \brief A test function to calculate a 1D posterior on a grid
  *
  * This function is only to be used as a check/test of the code and will be run
  * if the \c grid command line argument is present. It will calculate the
@@ -160,7 +161,8 @@ void gridOutput( LALInferenceRunState *runState ){
   LALInferenceSetVariable( runState->currentParams, parname, &tmpgridval );
 }
 
-/** \brief Test the sampler using a Gaussian likelihood
+/**
+ * \brief Test the sampler using a Gaussian likelihood
  *
  * This is a testing function that can be substituted for the standard
  * likelihood function. It calculates only the \c h0 parameter posterior based
@@ -201,12 +203,13 @@ REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
 }
 
 
-/** \brief Output a number of prior samples based on the initial live points
- * 
+/**
+ * \brief Output a number of prior samples based on the initial live points
+ *
  * This function will output prior samples for variable parameters (as create by
  * the LALInferenceSetupLivePointsArray function) making sure to rescale the
  * values.
- * 
+ *
  * \param runState [in]
  */
 void outputPriorSamples( LALInferenceRunState *runState ){

@@ -120,8 +120,10 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 
 typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
 
-/** compare strings s1 and s2 up to the length of s1 (without the trailing 0!!)
-    and set l to the length */
+/**
+ * compare strings s1 and s2 up to the length of s1 (without the trailing 0!!)
+ * and set l to the length
+ */
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
 
 /** write the FPU status flags / exception mask bits to stderr */
@@ -244,12 +246,13 @@ extern int gpu_device_id;
 #endif
 
 
-/** FLOPS estimation - may be set by command line option --WUfpops=.
-    When set, ((skypoint_counter / total_skypoints) * estimated_flops) is periodically
-    reported to the BOINC Client as the number of flops, so that together with information
-    from the Workunit Genrator, Scheduler and Validator leads to claiming the Credit that
-    the system intends to grant for a Workunit
- **/
+/**
+ * FLOPS estimation - may be set by command line option --WUfpops=.
+ * When set, ((skypoint_counter / total_skypoints) * estimated_flops) is periodically
+ * reported to the BOINC Client as the number of flops, so that together with information
+ * from the Workunit Genrator, Scheduler and Validator leads to claiming the Credit that
+ * the system intends to grant for a Workunit
+ */
 static double estimated_flops = -1.0;
 
 
@@ -332,9 +335,10 @@ static void   set_sse_control_status(const ssew_t cword);
 /*^* FUNCTIONS *^*/
 
 #ifdef _NO_MSC_VER
-/** Attempt to load the dlls that are required to display graphics.
-    returns 0 if successful, -1 in case of a failure.
-*/
+/**
+ * Attempt to load the dlls that are required to display graphics.
+ * returns 0 if successful, -1 in case of a failure.
+ */
 int try_load_dlls(const char*dlls, const char*mess) {
   char *startc = dlls, *endc = dlls;
   char dll_name[13]; /* DLLs should have 8.3 names */
@@ -354,9 +358,10 @@ int try_load_dlls(const char*dlls, const char*mess) {
 #endif
 
 
-/** LAL's REPORTSTATUS just won't work with any of NDEBUG or 
-    LAL_NDEBUG set, so we write our own function that dumps the LALStatus
-    based on LogPrintf()
+/**
+ * LAL's REPORTSTATUS just won't work with any of NDEBUG or
+ * LAL_NDEBUG set, so we write our own function that dumps the LALStatus
+ * based on LogPrintf()
  */
 void ReportStatus(LALStatus *status)
 { 
@@ -398,8 +403,8 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
 
 
 /**
-  our own signal handler
-*/
+ * our own signal handler
+ */
 #ifdef __GLIBC__
   /* needed to define backtrace() which is glibc specific*/
 #include <signal.h>
@@ -551,8 +556,8 @@ static void sighandler(int sig)
 
 
 /**
-  show_progress() just sets some variables,
-  so should be pretty fast and can be called several times a second
+ * show_progress() just sets some variables,
+ * so should be pretty fast and can be called several times a second
  */
 void show_progress(REAL8 rac,   /**< right ascension */
 		   REAL8 dec,   /**< declination */
@@ -595,8 +600,8 @@ void show_progress(REAL8 rac,   /**< right ascension */
 
 
 /**
-  check if given file is a zip archive by looking for the zip-magic header 'PK\003\044'
-  returns 1 if a zip file, 0 if not, -1 if an error occurred
+ * check if given file is a zip archive by looking for the zip-magic header 'PK\003\044'
+ * returns 1 if a zip file, 0 if not, -1 if an error occurred
  */
 static int is_zipped ( const char *fname /**< name of the file to check for being zipped */
 		       ) {
@@ -627,7 +632,7 @@ static int is_zipped ( const char *fname /**< name of the file to check for bein
 
 
 /**
-  prepare an input file for the program, i.e. boinc_resolve and/or unzip it if necessary
+ * prepare an input file for the program, i.e. boinc_resolve and/or unzip it if necessary
  */
 /* better: if the file is a BOINC softlink to a zipped file, (boinc_resolve succeeds),
    first rename the link, then unzip the file, then remove the renamed link.
@@ -759,11 +764,11 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
 
 
 /**
-  The worker() ist called either from main() directly or from boinc_init_graphics
-  (in a separate thread). It does some funny things to the command line (mostly
-  boinc-resolving filenames), then calls MAIN() (from HierarchicalSearch.c), and
-  finally handles the output / result file(s) before exiting with boinc_finish().
-*/
+ * The worker() ist called either from main() directly or from boinc_init_graphics
+ * (in a separate thread). It does some funny things to the command line (mostly
+ * boinc-resolving filenames), then calls MAIN() (from HierarchicalSearch.c), and
+ * finally handles the output / result file(s) before exiting with boinc_finish().
+ */
 static void worker (void) {
   int argc    = global_argc;   /**< as worker is defined void worker(void), ... */
   char**argv  = global_argv;   /**< ...  take argc and argv from global variables */
@@ -1298,9 +1303,9 @@ static void worker (void) {
 
 
 /**
-  the main function of the BOINC App
-  deals with boinc_init(_graphics) and calls the worker
-*/
+ * the main function of the BOINC App
+ * deals with boinc_init(_graphics) and calls the worker
+ */
 
 int main(int argc, char**argv) {
   FILE* fp_debug;
@@ -1542,8 +1547,9 @@ int main(int argc, char**argv) {
 
 #ifdef HIERARCHSEARCHGCT
 
-/** sets a checkpoint.
-*/
+/**
+ * sets a checkpoint.
+ */
 int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync) {
   int ret;
   /* make sure the exception mask isn't messed up by a badly written device driver etc.,
@@ -1661,8 +1667,9 @@ void set_checkpoint (void) {
     }
 }
 
-/** finally writes a minimal (compacted) version of the toplist and cleans up
-    all structures related to the toplist. After that, the toplist is invalid.
+/**
+ * finally writes a minimal (compacted) version of the toplist and cleans up
+ * all structures related to the toplist. After that, the toplist is invalid.
  */
 void write_and_close_checkpointed_file (void) {
   write_hfs_oputput(outfilename,toplist);
@@ -1695,9 +1702,11 @@ void run_gdb(gdb_cmd command) {
 }
 
 
-/** sets the FPU control word.
-    The argument should be a (possibly modified) 
-    fpuw_t gotten from get_fpu_control_word() */
+/**
+ * sets the FPU control word.
+ * The argument should be a (possibly modified)
+ * fpuw_t gotten from get_fpu_control_word()
+ */
 void set_fpu_control_word(const fpuw_t cword) {
   static fpuw_t fpucw;
   fpucw = cword;

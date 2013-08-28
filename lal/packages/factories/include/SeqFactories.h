@@ -10,65 +10,66 @@ extern "C" {
 
 
 /**
-\addtogroup SeqFactories_h
-
-\brief Provides prototype and status code information for use of CreateVectorSequence and DestroyVectorSequence.
-
-\heading{Synopsis}
-\code
-#include <lal/SeqFactories.h>
-\endcode
-
-\section sec_SF_XLALfcts XLAL Functions
-
-\code
-REAL4VectorSequence * XLALCreateVectorSequence(UINT4 length, UINT4 veclen);
-void XLALCreateVectorSequence(REAL4VectorSequence *vecseq);
-
-<vecseqtype> * XLALCreate<vecseqtype>(UINT4 length, UINT4 veclen);
-void XLALCreate<vecseqtype>(<vecseqtype> *vecseq);
-\endcode
-
-Here <tt>\<vecseqtype\></tt> is one of
-\c COMPLEX16VectorSequence,
-\c COMPLEX8VectorSequence,
-\c REAL8VectorSequence,
-\c REAL4VectorSequence,
-\c INT8VectorSequence,
-\c INT4VectorSequence,
-\c INT2VectorSequence,
-\c UINT8VectorSequence,
-\c UINT4VectorSequence,
-\c UINT2VectorSequence, or
-\c CHARVectorSequence.
-
-\subsection ss_SF_desc Description
-
-The <tt>XLALCreate\<type\>VectorSequence</tt> functions create vector sequences
-of type <tt>\<type\></tt>, length and vector length \c veclen.
-The function \c XLALCreateVectorSequence is the same as
-\c XLALCreateREAL4VectorSequence.
-
-The <tt>XLALDestroy\<type\>VectorSequence</tt> functions deallocate the memory
-allocation pointed to by \c vecseq including its contents.  The function
-\c XLALDestroyVectorSequence is the same as
-\c XLALDestroyREAL4VectorSequence.
-
-\subsection ss_SF_ret Return Values
-
-The create functions return a pointer to the created vector sequence if
-successful; upon failure they will return \c NULL and set \c xlalErrno
-to one of the following values: \c #XLAL_ENOMEM if memory allocation
-failed, or \c #XLAL_EBADLEN if the requested \c length or \c veclen
-is zero.
-
-The destroy functions do not have a return value.  They can fail if they are
-passed a \c NULL pointer, in which case \c xlalErrno is set to
-\c #XLAL_EFAULT, or if the vector sequency passed to the destroy routine
-has zero length, vector length, or \c NULL data pointer then
-\c xlalErrno is set to \c #XLAL_EINVAL.
-
-*/
+ * \addtogroup SeqFactories_h
+ *
+ * \brief Provides prototype and status code information for use of CreateVectorSequence and DestroyVectorSequence.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/SeqFactories.h>
+ * \endcode
+ *
+ * \section sec_SF_XLALfcts XLAL Functions
+ *
+ * \code
+ * REAL4VectorSequence * XLALCreateVectorSequence(UINT4 length, UINT4 veclen);
+ * void XLALCreateVectorSequence(REAL4VectorSequence *vecseq);
+ *
+ * <vecseqtype> * XLALCreate<vecseqtype>(UINT4 length, UINT4 veclen);
+ * void XLALCreate<vecseqtype>(<vecseqtype> *vecseq);
+ * \endcode
+ *
+ * Here <tt>\<vecseqtype\></tt> is one of
+ * \c COMPLEX16VectorSequence,
+ * \c COMPLEX8VectorSequence,
+ * \c REAL8VectorSequence,
+ * \c REAL4VectorSequence,
+ * \c INT8VectorSequence,
+ * \c INT4VectorSequence,
+ * \c INT2VectorSequence,
+ * \c UINT8VectorSequence,
+ * \c UINT4VectorSequence,
+ * \c UINT2VectorSequence, or
+ * \c CHARVectorSequence.
+ *
+ * \subsection ss_SF_desc Description
+ *
+ * The <tt>XLALCreate\<type\>VectorSequence</tt> functions create vector sequences
+ * of type <tt>\<type\></tt>, length and vector length \c veclen.
+ * The function \c XLALCreateVectorSequence is the same as
+ * \c XLALCreateREAL4VectorSequence.
+ *
+ * The <tt>XLALDestroy\<type\>VectorSequence</tt> functions deallocate the memory
+ * allocation pointed to by \c vecseq including its contents.  The function
+ * \c XLALDestroyVectorSequence is the same as
+ * \c XLALDestroyREAL4VectorSequence.
+ *
+ * \subsection ss_SF_ret Return Values
+ *
+ * The create functions return a pointer to the created vector sequence if
+ * successful; upon failure they will return \c NULL and set \c xlalErrno
+ * to one of the following values: \c #XLAL_ENOMEM if memory allocation
+ * failed, or \c #XLAL_EBADLEN if the requested \c length or \c veclen
+ * is zero.
+ *
+ * The destroy functions do not have a return value.  They can fail if they are
+ * passed a \c NULL pointer, in which case \c xlalErrno is set to
+ * \c #XLAL_EFAULT, or if the vector sequency passed to the destroy routine
+ * has zero length, vector length, or \c NULL data pointer then
+ * \c xlalErrno is set to \c #XLAL_EINVAL.
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -94,7 +95,8 @@ has zero length, vector length, or \c NULL data pointer then
 #define SEQFACTORIESH_MSGEMALLOC  "Malloc failure."
 /** \endcond */
 
-/** \brief This structure stores the input required for creating a vector
+/**
+ * \brief This structure stores the input required for creating a vector
  * sequence.  This input includes the length of the sequence (i.e., the number of
  * vectors) and the length of each vector.
  */
@@ -104,7 +106,8 @@ typedef struct tagCreateVectorSequenceIn {
 } CreateVectorSequenceIn;
 
 
-/** \brief This structure stores the input required for creating an array
+/**
+ * \brief This structure stores the input required for creating an array
  * sequence.  This input includes the length of the sequence (i.e., the number of
  * array) and the dimensions of each array index.
  */
@@ -116,17 +119,18 @@ typedef struct tagCreateArraySequenceIn {
 /*@}*/
 /* ---------- end:SeqFactories_h ---------- */
 
-/** \defgroup ArraySequenceFactories_c Module ArraySequenceFactories.c
-    \ingroup SeqFactories_h
-
-    \brief Create/destroy \<datatype\>ArraySequence objects.
-
-    \heading{Description}
-
-The \c CreateArraySequence family of functions create a \<datatype\>ArraySequence of the appropriate dimensions.
-
-The \c DestroyArraySequence family of functions return the storage allocated by the \c CreateArraySequence functions to the system.
-*/
+/**
+ * \defgroup ArraySequenceFactories_c Module ArraySequenceFactories.c
+ * \ingroup SeqFactories_h
+ *
+ * \brief Create/destroy \<datatype\>ArraySequence objects.
+ *
+ * ### Description ###
+ *
+ * The \c CreateArraySequence family of functions create a \<datatype\>ArraySequence of the appropriate dimensions.
+ *
+ * The \c DestroyArraySequence family of functions return the storage allocated by the \c CreateArraySequence functions to the system.
+ */
 /*@{*/
 
 /** \name REAL4 prototypes (default name) */
@@ -240,16 +244,17 @@ void LALZDestroyArraySequence ( LALStatus *status,
 /*@}*/
 /* ---------- end: ArraySequenceFactories_c ---------- */
 
-/** \defgroup VectorSequenceFactories_c Module VectorSequenceFactories.c
-    \ingroup SeqFactories_h
-    \brief Create/destroy \<datatype\>VectorSequence objects.
-
-\heading{Description}
-
-The \c CreateVectorSequence family of functions create a \<datatype\>VectorSequence of the appropriate dimensions.
-
-The \c DestroyVectorSequence family of functions return the storage allocated by the \c CreateVectorSequence functions to the system.
-*/
+/**
+ * \defgroup VectorSequenceFactories_c Module VectorSequenceFactories.c
+ * \ingroup SeqFactories_h
+ * \brief Create/destroy \<datatype\>VectorSequence objects.
+ *
+ * ### Description ###
+ *
+ * The \c CreateVectorSequence family of functions create a \<datatype\>VectorSequence of the appropriate dimensions.
+ *
+ * The \c DestroyVectorSequence family of functions return the storage allocated by the \c CreateVectorSequence functions to the system.
+ */
 /*@{*/
 
 /** \name REAL4 prototypes (default name) */

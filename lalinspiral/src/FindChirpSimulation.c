@@ -28,37 +28,39 @@
  */
 
 /**
-
-\author Brown, D. A. and Creighton, T. D
-\file
-\ingroup FindChirp_h
-
-\brief Provides an interface between code build from \c findchirp and
-various simulation packages for injecting chirps into data.
-
-\heading{Prototypes}
-
-<dl>
-<dt><tt>LALFindChirpInjectSignals()</tt></dt><dd> injects the signals described
-in the linked list of \c SimInspiralTable structures \c events
-into the data \c chan. The response function \c resp should
-contain the response function to use when injecting the signals into the data.</dd>
-</dl>
-
-\heading{Algorithm}
-
-None.
-
-\heading{Notes}
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Brown, D. A. and Creighton, T. D
+ * \file
+ * \ingroup FindChirp_h
+ *
+ * \brief Provides an interface between code build from \c findchirp and
+ * various simulation packages for injecting chirps into data.
+ *
+ * ### Prototypes ###
+ *
+ * <dl>
+ * <dt><tt>LALFindChirpInjectSignals()</tt></dt><dd> injects the signals described
+ * in the linked list of \c SimInspiralTable structures \c events
+ * into the data \c chan. The response function \c resp should
+ * contain the response function to use when injecting the signals into the data.</dd>
+ * </dl>
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>

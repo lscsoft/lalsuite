@@ -70,7 +70,8 @@ int XLALXMLFilePrintElements(const char *fname)
 }
 
 
-/** Find next node element of given name within the siblings of the given xmlNode.
+/**
+ * Find next node element of given name within the siblings of the given xmlNode.
  *
  * Note: if the startNode already complies with the constraints, it is returned, ie
  * this function does not do stepping from one valid node to the next!
@@ -96,7 +97,8 @@ XLALfindNextNamedNode ( const xmlNode *startNode, const xmlChar *nodeName )
 
 } /* XLALfindNextNamedNode() */
 
-/** Count number of named nodes siblings of given startNode.
+/**
+ * Count number of named nodes siblings of given startNode.
  *
  * Note: if the startNode already complies with the constraints, it is counted as well,
  * but no previous siblings are counted, ie the count starts at startNode.
@@ -464,7 +466,8 @@ INT4 XLALReconcileDefaultNamespace(const xmlNodePtr xmlRootElement, const xmlNsP
 }
 
 
-/** Convert a general (but complete!) XML-string into an xmlDoc representation.
+/**
+ * Convert a general (but complete!) XML-string into an xmlDoc representation.
  *
  * \author Reinhard Prix\n
  * Albert-Einstein-Institute Hannover, Germany
@@ -494,8 +497,9 @@ XLALXMLString2Doc ( const char *xmlString )
 } /* XLALXMLString2Doc() */
 
 
-/** Convert the given xmlDoc representation of a VOTable into a string representation,
- *  eg for storing the XML into a file.
+/**
+ * Convert the given xmlDoc representation of a VOTable into a string representation,
+ * eg for storing the XML into a file.
  *
  * Note: the returned string must be free'ed using \c xmlFree !
  *

@@ -41,130 +41,129 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
 }
 
 /**
-\author Creighton, T. D.
-
-\brief Computes a continuous waveform with frequency drift and Doppler
-modulation from an elliptical orbital trajectory.
-
-This function computes a quaiperiodic waveform using the spindown and
-orbital parameters in <tt>*params</tt>, storing the result in
-<tt>*output</tt>.
-
-In the <tt>*params</tt> structure, the routine uses all the "input"
-fields specified in \ref GenerateSpinOrbitCW_h, and sets all of the
-"output" fields.  If <tt>params-\>f</tt>=\c NULL, no spindown
-modulation is performed.  If <tt>params-\>oneMinusEcc</tt>\f$\notin(0,1]\f$
-(an open orbit), or if
-<tt>params-\>rPeriNorm</tt>\f$\times\f$<tt>params-\>angularSpeed</tt>\f$\geq1\f$
-(faster-than-light speed at periapsis), an error is returned.
-
-In the <tt>*output</tt> structure, the field <tt>output-\>h</tt> is
-ignored, but all other pointer fields must be set to \c NULL.  The
-function will create and allocate space for <tt>output-\>a</tt>,
-<tt>output-\>f</tt>, and <tt>output-\>phi</tt> as necessary.  The
-<tt>output-\>shift</tt> field will remain set to \c NULL.
-
-\heading{Algorithm}
-
-For elliptical orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
-\eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
-directly as a function of the eccentric anomaly \f$E\f$:
-\anchor eq_tr-e1 \f{eqnarray}{
-t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
-\label{eq_tr-e1}
-	& + & \left(\frac{P}{2\pi}\right) \left( E +
-		\left[v_p(1-e)\cos\omega - e\right]\sin E
-		+ \left[v_p\sqrt{\frac{1-e}{1+e}}\sin\omega\right]
-			[\cos E - 1]\right) \;,
-\f}
-where \f$v_p=r_p\dot{\upsilon}_p\sin i/c\f$ is a normalized velocity at
-periapsis and \f$P=2\pi\sqrt{(1+e)/(1-e)^3}/\dot{\upsilon}_p\f$ is the
-period of the orbit.  For simplicity we write this as:
-\anchor eq_tr-e2 \f{equation}{
-\label{eq_tr-e2}
-t_r = T_p + \frac{1}{n}\left( E + A\sin E + B[\cos E - 1] \right) \;,
-\f}
-
-\wrapfig{r,0.28\textwidth,fig_binary_orbit_ell}
-\image html  inject_eanomaly.png "Fig. [fig_binary_orbit_ell]: Function to be inverted to find eccentric anomaly"
-\image latex inject_eanomaly.pdf "Function to be inverted to find eccentric anomaly" width=0.23\textwidth
-
-where \f$T_p\f$ is the \e observed time of periapsis passage and
-\f$n=2\pi/P\f$ is the mean angular speed around the orbit.  Thus the key
-numerical procedure in this routine is to invert the expression
-\f$x=E+A\sin E+B(\cos E - 1)\f$ to get \f$E(x)\f$.  We note that
-\f$E(x+2n\pi)=E(x)+2n\pi\f$, so we only need to solve this expression in
-the interval \f$[0,2\pi)\f$, sketched to the right.
-
-We further note that \f$A^2+B^2<1\f$, although it approaches 1 when
-\f$e\rightarrow1\f$, or when \f$v_p\rightarrow1\f$ and either \f$e=0\f$ or
-\f$\omega=\pi\f$.  Except in this limit, Newton-Raphson methods will
-converge rapidly for any initial guess.  In this limit, though, the
-slope \f$dx/dE\f$ approaches zero at the point of inflection, and an
-initial guess or iteration landing near this point will send the next
-iteration off to unacceptably large or small values.  However, by
-restricting all initial guesses and iterations to the domain
-\f$E\in[0,2\pi)\f$, one will always end up on a trajectory branch that
-will converge uniformly.  This should converge faster than the more
-generically robust technique of bisection. (Note: the danger with Newton's method
-has been found to be unstable for certain binary orbital parameters. So if
-Newton's method fails to converge, a bisection algorithm is employed.)
-
-In this algorithm, we start the computation with an arbitrary initial
-guess of \f$E=0\f$, and refine it until the we get agreement to within
-0.01 parts in part in \f$N_\mathrm{cyc}\f$ (where \f$N_\mathrm{cyc}\f$ is the
-larger of the number of wave cycles in an orbital period, or the
-number of wave cycles in the entire waveform being generated), or one
-part in \f$10^{15}\f$ (an order of magnitude off the best precision
-possible with \c REAL8 numbers).  The latter case indicates that
-\c REAL8 precision may fail to give accurate phasing, and one
-should consider modeling the orbit as a set of Taylor frequency
-coefficients \'{a} la <tt>LALGenerateTaylorCW()</tt>.  On subsequent
-timesteps, we use the previous timestep as an initial guess, which is
-good so long as the timesteps are much smaller than an orbital period.
-This sequence of guesses will have to readjust itself once every orbit
-(as \f$E\f$ jumps from \f$2\pi\f$ down to 0), but this is relatively
-infrequent; we don't bother trying to smooth this out because the
-additional tests would probably slow down the algorithm overall.
-
-Once a value of \f$E\f$ is found for a given timestep in the output
-series, we compute the system time \f$t\f$ via Eq.\eqref{eq_spinorbit-t},
-and use it to determine the wave phase and (non-Doppler-shifted)
-frequency via Eqs.\eqref{eq_taylorcw-freq}
-and\eqref{eq_taylorcw-phi}.  The Doppler shift on the frequency is
-then computed using Eqs.\eqref{eq_spinorbit-upsilon}
-and\eqref{eq_orbit-rdot}.  We use \f$\upsilon\f$ as an intermediate in
-the Doppler shift calculations, since expressing \f$\dot{R}\f$ directly in
-terms of \f$E\f$ results in expression of the form \f$(1-e)/(1-e\cos E)\f$,
-which are difficult to simplify and face precision losses when
-\f$E\sim0\f$ and \f$e\rightarrow1\f$.  By contrast, solving for \f$\upsilon\f$ is
-numerically stable provided that the system <tt>atan2()</tt> function is
-well-designed.
-
-The routine does not account for variations in special relativistic or
-gravitational time dilation due to the elliptical orbit, nor does it
-deal with other gravitational effects such as Shapiro delay.  To a
-very rough approximation, the amount of phase error induced by
-gravitational redshift goes something like \f$\Delta\phi\sim
-fT(v/c)^2\Delta(r_p/r)\f$, where \f$f\f$ is the typical wave frequency, \f$T\f$
-is either the length of data or the orbital period (whichever is
-\e smaller), \f$v\f$ is the \e true (unprojected) speed at
-periapsis, and \f$\Delta(r_p/r)\f$ is the total range swept out by the
-quantity \f$r_p/r\f$ over the course of the observation.  Other
-relativistic effects such as special relativistic time dilation are
-comparable in magnitude.  We make a crude estimate of when this is
-significant by noting that \f$v/c\gtrsim v_p\f$ but
-\f$\Delta(r_p/r)\lesssim 2e/(1+e)\f$; we take these approximations as
-equalities and require that \f$\Delta\phi\lesssim\pi\f$, giving:
-\anchor eq_relativistic-orbit \f{equation}{
-\label{eq_relativistic-orbit}
-f_0Tv_p^2\frac{4e}{1+e}\lesssim1 \;.
-\f}
-When this critereon is violated, a warning is generated.  Furthermore,
-as noted earlier, when \f$v_p\geq1\f$ the routine will return an error, as
-faster-than-light speeds can cause the emission and reception times to
-be non-monotonic functions of one another.
-*/
+ * \author Creighton, T. D.
+ *
+ * \brief Computes a continuous waveform with frequency drift and Doppler
+ * modulation from an elliptical orbital trajectory.
+ *
+ * This function computes a quaiperiodic waveform using the spindown and
+ * orbital parameters in <tt>*params</tt>, storing the result in
+ * <tt>*output</tt>.
+ *
+ * In the <tt>*params</tt> structure, the routine uses all the "input"
+ * fields specified in \ref GenerateSpinOrbitCW_h, and sets all of the
+ * "output" fields.  If <tt>params-\>f</tt>=\c NULL, no spindown
+ * modulation is performed.  If <tt>params-\>oneMinusEcc</tt>\f$\notin(0,1]\f$
+ * (an open orbit), or if
+ * <tt>params-\>rPeriNorm</tt>\f$\times\f$<tt>params-\>angularSpeed</tt>\f$\geq1\f$
+ * (faster-than-light speed at periapsis), an error is returned.
+ *
+ * In the <tt>*output</tt> structure, the field <tt>output-\>h</tt> is
+ * ignored, but all other pointer fields must be set to \c NULL.  The
+ * function will create and allocate space for <tt>output-\>a</tt>,
+ * <tt>output-\>f</tt>, and <tt>output-\>phi</tt> as necessary.  The
+ * <tt>output-\>shift</tt> field will remain set to \c NULL.
+ *
+ * ### Algorithm ###
+ *
+ * For elliptical orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
+ * \eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
+ * directly as a function of the eccentric anomaly \f$E\f$:
+ * \anchor eq_tr-e1 \f{eqnarray}{
+ * t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
+ * \tag{eq_tr-e1}
+ * & + & \left(\frac{P}{2\pi}\right) \left( E +
+ * \left[v_p(1-e)\cos\omega - e\right]\sin E
+ * + \left[v_p\sqrt{\frac{1-e}{1+e}}\sin\omega\right]
+ * [\cos E - 1]\right) \;,
+ * \f}
+ * where \f$v_p=r_p\dot{\upsilon}_p\sin i/c\f$ is a normalized velocity at
+ * periapsis and \f$P=2\pi\sqrt{(1+e)/(1-e)^3}/\dot{\upsilon}_p\f$ is the
+ * period of the orbit.  For simplicity we write this as:
+ * \anchor eq_tr-e2 \f{equation}{
+ * \tag{eq_tr-e2}
+ * t_r = T_p + \frac{1}{n}\left( E + A\sin E + B[\cos E - 1] \right) \;,
+ * \f}
+ *
+ * \image html  inject_eanomaly.png "Fig. [fig_binary_orbit_ell]: Function to be inverted to find eccentric anomaly"
+ * \image latex inject_eanomaly.pdf "Function to be inverted to find eccentric anomaly" width=0.23\textwidth
+ *
+ * where \f$T_p\f$ is the \e observed time of periapsis passage and
+ * \f$n=2\pi/P\f$ is the mean angular speed around the orbit.  Thus the key
+ * numerical procedure in this routine is to invert the expression
+ * \f$x=E+A\sin E+B(\cos E - 1)\f$ to get \f$E(x)\f$.  We note that
+ * \f$E(x+2n\pi)=E(x)+2n\pi\f$, so we only need to solve this expression in
+ * the interval \f$[0,2\pi)\f$, sketched to the right.
+ *
+ * We further note that \f$A^2+B^2<1\f$, although it approaches 1 when
+ * \f$e\rightarrow1\f$, or when \f$v_p\rightarrow1\f$ and either \f$e=0\f$ or
+ * \f$\omega=\pi\f$.  Except in this limit, Newton-Raphson methods will
+ * converge rapidly for any initial guess.  In this limit, though, the
+ * slope \f$dx/dE\f$ approaches zero at the point of inflection, and an
+ * initial guess or iteration landing near this point will send the next
+ * iteration off to unacceptably large or small values.  However, by
+ * restricting all initial guesses and iterations to the domain
+ * \f$E\in[0,2\pi)\f$, one will always end up on a trajectory branch that
+ * will converge uniformly.  This should converge faster than the more
+ * generically robust technique of bisection. (Note: the danger with Newton's method
+ * has been found to be unstable for certain binary orbital parameters. So if
+ * Newton's method fails to converge, a bisection algorithm is employed.)
+ *
+ * In this algorithm, we start the computation with an arbitrary initial
+ * guess of \f$E=0\f$, and refine it until the we get agreement to within
+ * 0.01 parts in part in \f$N_\mathrm{cyc}\f$ (where \f$N_\mathrm{cyc}\f$ is the
+ * larger of the number of wave cycles in an orbital period, or the
+ * number of wave cycles in the entire waveform being generated), or one
+ * part in \f$10^{15}\f$ (an order of magnitude off the best precision
+ * possible with \c REAL8 numbers).  The latter case indicates that
+ * \c REAL8 precision may fail to give accurate phasing, and one
+ * should consider modeling the orbit as a set of Taylor frequency
+ * coefficients \'{a} la <tt>LALGenerateTaylorCW()</tt>.  On subsequent
+ * timesteps, we use the previous timestep as an initial guess, which is
+ * good so long as the timesteps are much smaller than an orbital period.
+ * This sequence of guesses will have to readjust itself once every orbit
+ * (as \f$E\f$ jumps from \f$2\pi\f$ down to 0), but this is relatively
+ * infrequent; we don't bother trying to smooth this out because the
+ * additional tests would probably slow down the algorithm overall.
+ *
+ * Once a value of \f$E\f$ is found for a given timestep in the output
+ * series, we compute the system time \f$t\f$ via Eq.\eqref{eq_spinorbit-t},
+ * and use it to determine the wave phase and (non-Doppler-shifted)
+ * frequency via Eqs.\eqref{eq_taylorcw-freq}
+ * and\eqref{eq_taylorcw-phi}.  The Doppler shift on the frequency is
+ * then computed using Eqs.\eqref{eq_spinorbit-upsilon}
+ * and\eqref{eq_orbit-rdot}.  We use \f$\upsilon\f$ as an intermediate in
+ * the Doppler shift calculations, since expressing \f$\dot{R}\f$ directly in
+ * terms of \f$E\f$ results in expression of the form \f$(1-e)/(1-e\cos E)\f$,
+ * which are difficult to simplify and face precision losses when
+ * \f$E\sim0\f$ and \f$e\rightarrow1\f$.  By contrast, solving for \f$\upsilon\f$ is
+ * numerically stable provided that the system <tt>atan2()</tt> function is
+ * well-designed.
+ *
+ * The routine does not account for variations in special relativistic or
+ * gravitational time dilation due to the elliptical orbit, nor does it
+ * deal with other gravitational effects such as Shapiro delay.  To a
+ * very rough approximation, the amount of phase error induced by
+ * gravitational redshift goes something like \f$\Delta\phi\sim
+ * fT(v/c)^2\Delta(r_p/r)\f$, where \f$f\f$ is the typical wave frequency, \f$T\f$
+ * is either the length of data or the orbital period (whichever is
+ * \e smaller), \f$v\f$ is the \e true (unprojected) speed at
+ * periapsis, and \f$\Delta(r_p/r)\f$ is the total range swept out by the
+ * quantity \f$r_p/r\f$ over the course of the observation.  Other
+ * relativistic effects such as special relativistic time dilation are
+ * comparable in magnitude.  We make a crude estimate of when this is
+ * significant by noting that \f$v/c\gtrsim v_p\f$ but
+ * \f$\Delta(r_p/r)\lesssim 2e/(1+e)\f$; we take these approximations as
+ * equalities and require that \f$\Delta\phi\lesssim\pi\f$, giving:
+ * \anchor eq_relativistic-orbit \f{equation}{
+ * \tag{eq_relativistic-orbit}
+ * f_0Tv_p^2\frac{4e}{1+e}\lesssim1 \;.
+ * \f}
+ * When this critereon is violated, a warning is generated.  Furthermore,
+ * as noted earlier, when \f$v_p\geq1\f$ the routine will return an error, as
+ * faster-than-light speeds can cause the emission and reception times to
+ * be non-monotonic functions of one another.
+ */
 void
 LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
 				PulsarCoherentGW            *output,

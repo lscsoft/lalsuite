@@ -37,9 +37,9 @@ struct tagLALSimInspiralWaveformFlags
 };
 
 /**
- * Create a new LALSimInspiralWaveformFlags struct 
+ * Create a new LALSimInspiralWaveformFlags struct
  * with all flags set to their default values.
- * 
+ *
  * Remember to destroy the struct when you are done with it.
  */
 LALSimInspiralWaveformFlags *XLALSimInspiralCreateWaveformFlags(void)

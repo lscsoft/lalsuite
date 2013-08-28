@@ -1,11 +1,9 @@
 DOXY_HTML_FILES = \
 	doxy-html-config.cfg \
-	doxy-html-eqns.sty \
 	doxy-html-layout.xml
 
 DOXY_PDF_FILES = \
 	doxy-pdf-config.cfg  \
-	doxy-pdf-header.tex \
 	doxy-pdf-layout.xml
 
 EXTRA_DIST = \

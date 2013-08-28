@@ -17,14 +17,16 @@
  *  MA  02111-1307  USA
  */
 
-/** \defgroup CFSv3 F-statistic (v3)
+/**
+ * \defgroup CFSv3 F-statistic (v3)
  * \ingroup pulsarTODO
  * \author Reinhard Prix
  * \brief Module for FFT-based F-statistic calculation
  *
  */
 
-/** \file
+/**
+ * \file
  * \ingroup CFSv3
  * \author Reinhard Prix
  * \brief Header file defining the API for the CFSv3 module

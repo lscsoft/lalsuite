@@ -576,8 +576,8 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
 }
 
 
-/** \brief Rotate initial phase if polarisation angle is cyclic around ranges
- *
+/**
+ * \brief Rotate initial phase if polarisation angle is cyclic around ranges
  * If the polarisation angle parameter \f$\psi\f$ is cyclic about its upper and
  * lower ranges of \f$-\pi/4\f$ to \f$\pi/4\f$ then the transformation for
  * crossing a boundary requires the initial phase parameter \f$\phi_0\f$ to be
@@ -2759,17 +2759,19 @@ REAL8 LALInferenceNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceV
   return 0.0;
 }
 
-/** Prior that converts from a Cube parameter in [0,1] to the flat prior bounded by x1
-    and x2.
-*/
+/**
+ * Prior that converts from a Cube parameter in [0,1] to the flat prior bounded by x1
+ * and x2.
+ */
 REAL8 LALInferenceCubeToFlatPrior(double r, double x1, double x2)
 {
     return x1 + r * ( x2 - x1 );
 }
 
-/** Prior that converts from a Cube parameter in [0,1] to the flat in log prior bounded
-    by x1 and x2.
-*/
+/**
+ * Prior that converts from a Cube parameter in [0,1] to the flat in log prior bounded
+ * by x1 and x2.
+ */
 REAL8 LALInferenceCubeToLogFlatPrior(double r, double x1, double x2)
 {
     double lx1, lx2;
@@ -2778,9 +2780,10 @@ REAL8 LALInferenceCubeToLogFlatPrior(double r, double x1, double x2)
     return exp( lx1 + r * ( lx2 - lx1 ) );
 }
 
-/** Prior that converts from a Cube parameter in [0,1] to the power prior bounded by x1
-    and x2 with power p.
-*/
+/**
+ * Prior that converts from a Cube parameter in [0,1] to the power prior bounded by x1
+ * and x2 with power p.
+ */
 REAL8 LALInferenceCubeToPowerPrior(double p, double r, double x1, double x2)
 {
     double pp = p + 1.0;

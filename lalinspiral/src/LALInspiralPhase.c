@@ -18,33 +18,35 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-
-\brief The function \c LALInspiralPhase() calculates the phase \f$\phi(v)\f$ of a gravitational wave from an
-inspiralling binary system.
-
-\heading{Description}
-
-It does this using the following equation, which is one of the pair which constitute the gravitational wave
-phasing formula,
-
-\anchor phiofv \f{equation}{
-\phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
-\label{phiofv}
-\f}
-
-\c LALInspiralPhase calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,  \f$v\f$, \f$E^{\prime}(v)\f$ and
-\f$\mathcal{F}(v)\f$.
-
-\heading{Algorithm}
-
-
-\heading{Uses}
-LALDRombergIntegrate()
-\heading{Notes}
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ *
+ * \brief The function \c LALInspiralPhase() calculates the phase \f$\phi(v)\f$ of a gravitational wave from an
+ * inspiralling binary system.
+ *
+ * ### Description ###
+ *
+ * It does this using the following equation, which is one of the pair which constitute the gravitational wave
+ * phasing formula,
+ *
+ * \anchor phiofv \f{equation}{
+ * \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
+ * \tag{phiofv}
+ * \f}
+ *
+ * \c LALInspiralPhase calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,  \f$v\f$, \f$E^{\prime}(v)\f$ and
+ * \f$\mathcal{F}(v)\f$.
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * LALDRombergIntegrate()
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

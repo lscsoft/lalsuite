@@ -31,8 +31,9 @@
  */
 /*@{*/
 
-/** \brief Determine correlated frequency bands using cross correlation.
- * This function reads command line arguments and returns a REAL8 array. 
+/**
+ * \brief Determine correlated frequency bands using cross correlation.
+ * This function reads command line arguments and returns a REAL8 array.
  * \author Michael Coughlin
  */
 
@@ -47,10 +48,11 @@ int LALInferenceXCorrBands(
     char*                        filename
     );
 
-/** \brief Determine non-Gaussian frequency bins using a chi-squared test.
+/**
+ * \brief Determine non-Gaussian frequency bins using a chi-squared test.
  * This function reads command line arguments and returns a REAL8 array.
  * \author Michael Coughlin
-*/
+ */
 
 int LALInferenceRemoveLinesChiSquared(
     REAL8FrequencySeries        *spectrum,
@@ -62,10 +64,11 @@ int LALInferenceRemoveLinesChiSquared(
     REAL8                       *pvalues
     );
 
-/** \brief Determine non-Gaussian frequency bins using a K-S test.
+/**
+ * \brief Determine non-Gaussian frequency bins using a K-S test.
  * This function reads command line arguments and returns a REAL8 array.
  * \author Michael Coughlin
-*/
+ */
 
 int LALInferenceRemoveLinesKS(
     REAL8FrequencySeries        *spectrum,
@@ -77,11 +80,12 @@ int LALInferenceRemoveLinesKS(
     REAL8                       *pvalues
     );
 
-/** \brief Calculate PSD by fitting bins to lines.
+/**
+ * \brief Calculate PSD by fitting bins to lines.
  * This function reads command line arguments and returns a modified
  * REAL8FrequencySeries.
  * \author Michael Coughlin
-*/
+ */
 
 int LALInferenceAverageSpectrumBinFit(
     REAL8FrequencySeries        *spectrum,
@@ -94,7 +98,8 @@ int LALInferenceAverageSpectrumBinFit(
     LIGOTimeGPS                 GPStime
     );
 
-/** \brief Determine large amplitude frequency bins using power law fit.
+/**
+ * \brief Determine large amplitude frequency bins using power law fit.
  * This function reads command line arguments and returns a REAL8 array.
  * \author Michael Coughlin
  */

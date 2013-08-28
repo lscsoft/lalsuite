@@ -32,21 +32,20 @@
  *
  * \brief Calls the various routines in \ref RingUtils_h.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * RingTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The program creates a ring template, which is output to the file
  * <tt>ring.out</tt>, and a black hole ring waveform, which is output to the
  * file <tt>bhring.out</tt>.  The program then generates a template bank,
  * which is written to the file <tt>bank.out</tt>.
  *
- *
-*/
+ */
 
 /** \cond DONT_DOXYGEN */
 

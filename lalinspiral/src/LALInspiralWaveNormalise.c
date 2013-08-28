@@ -18,47 +18,51 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-
-\brief Module to find the norm of a signal and to return a normalised
-array. The original signal is left untouched.
-
-\heading{Prototypes}
-
-<tt>LALInspiralWaveNormalise()</tt>
-
-\heading{Description}
-Given the positive frequency Fourier components
-\f$H_k,\f$ \f$k=0,\ldots,n-1,\f$ of a vector
-and the noise PSD \f$S_m,\f$ \f$m=0,\ldots,n/2,\f$
-this module first computes the norm \f$H\f$ of the vector treating
-\f$S_m\f$ as the measure:
-(note that in {\em fftw} notation, the zeroth frequency
-component is \f$H_0,\f$ Nyquist
-is \f$H_{n/2},\f$ \f$H_k,\f$ \f$k \ne 0,n/2,\f$ (\f$H_{n-k})\f$ is the real (imaginary)
-part of the \f$k\f$th harmonic)
-\anchor eq_inspiralnorm \f{equation}{
-H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
-\label{eq_inspiralnorm}
-\f}
-(Note that the zeroth and Nyquist components are ignored in the
-computation of the norm.)
-It then replaces the original vector \f$H_k\f$ with normalized
-vector using:
-\f{equation}{
-\widehat H_k = \frac {H_k}{\sqrt H},\ \ k=0,\ldots n-1.
-\f}
-
-\heading{Algorithm}
-\heading{Uses}
-\code
-none.
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ *
+ * \brief Module to find the norm of a signal and to return a normalised
+ * array. The original signal is left untouched.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralWaveNormalise()</tt>
+ *
+ * ### Description ###
+ *
+ * Given the positive frequency Fourier components
+ * \f$H_k,\f$ \f$k=0,\ldots,n-1,\f$ of a vector
+ * and the noise PSD \f$S_m,\f$ \f$m=0,\ldots,n/2,\f$
+ * this module first computes the norm \f$H\f$ of the vector treating
+ * \f$S_m\f$ as the measure:
+ * (note that in {\em fftw} notation, the zeroth frequency
+ * component is \f$H_0,\f$ Nyquist
+ * is \f$H_{n/2},\f$ \f$H_k,\f$ \f$k \ne 0,n/2,\f$ (\f$H_{n-k})\f$ is the real (imaginary)
+ * part of the \f$k\f$th harmonic)
+ * \anchor eq_inspiralnorm \f{equation}{
+ * H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
+ * \tag{eq_inspiralnorm}
+ * \f}
+ * (Note that the zeroth and Nyquist components are ignored in the
+ * computation of the norm.)
+ * It then replaces the original vector \f$H_k\f$ with normalized
+ * vector using:
+ * \f{equation}{
+ * \widehat H_k = \frac {H_k}{\sqrt H},\ \ k=0,\ldots n-1.
+ * \f}
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * none.
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 #include <lal/LALNoiseModelsInspiral.h>
 
 void

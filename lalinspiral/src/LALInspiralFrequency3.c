@@ -18,47 +18,48 @@
 */
 
 /**
-
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief The code \ref LALInspiralFrequency3.c calculates the frequency the
-waveform from an inspiralling binary system as a function of time up to 3.5
-post-Nowtonian order.
-
-\heading{Prototypes}
-
-<tt>LALInspiralFrequency3()</tt>
-<ul>
-<li> \c frequency: Output containing the inspiral waveform.</li>
-<li> \c td: Input containing PN expansion coefficients \f$F_k\f$ (cf. Table\tableref{table_flux})
-of frequency as a function of time.</li>
-<li> \c ak: Input containing all PN expansion coefficients.</li>
-</ul>
-
-\heading{Description}
-
-This module computes the instantaneous frequency of an inspiral wave using
-\f{equation}{
-F(t) = F_N(\theta) \sum F_k \theta^k,
-\f}
-where the expansion coefficients \f$F_k,\f$ Newtonian value \f$F_N\f$ and the
-time-variable \f$\theta\f$ are defined in Table\tableref{table_flux}.
-
-\heading{Algorithm}
-
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-The frequency evolution defined by post-Newtonian expansion is not monotonic.
-Indeed, the equations become highly inaccurate close to the last stable orbit (lso)
-and breakdown at or slightly after lso, and the frequency begins to decrease at later times.
-It turns out that the evolution is monotonic at least up to lso.
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief The code \ref LALInspiralFrequency3.c calculates the frequency the
+ * waveform from an inspiralling binary system as a function of time up to 3.5
+ * post-Nowtonian order.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralFrequency3()</tt>
+ * <ul>
+ * <li> \c frequency: Output containing the inspiral waveform.</li>
+ * <li> \c td: Input containing PN expansion coefficients \f$F_k\f$ (cf. Table\tableref{table_flux})
+ * of frequency as a function of time.</li>
+ * <li> \c ak: Input containing all PN expansion coefficients.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * This module computes the instantaneous frequency of an inspiral wave using
+ * \f{equation}{
+ * F(t) = F_N(\theta) \sum F_k \theta^k,
+ * \f}
+ * where the expansion coefficients \f$F_k,\f$ Newtonian value \f$F_N\f$ and the
+ * time-variable \f$\theta\f$ are defined in Table\tableref{table_flux}.
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ * The frequency evolution defined by post-Newtonian expansion is not monotonic.
+ * Indeed, the equations become highly inaccurate close to the last stable orbit (lso)
+ * and breakdown at or slightly after lso, and the frequency begins to decrease at later times.
+ * It turns out that the evolution is monotonic at least up to lso.
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>

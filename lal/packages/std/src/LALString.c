@@ -17,7 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
+/**
+ * \file
  * \addtogroup LALString_h
  * \author Creighton, J. D. E.
  * \brief XLAL string manipulation routines.
@@ -52,12 +53,14 @@ char *XLALStringDuplicate(const char *s)
     return dup;
 }
 
-/** Copy sources string src to destination string dst.
+/**
+ * Copy sources string src to destination string dst.
  * Up to size - 1 characters are copied and destination string dst is
  * guaranteed to be NUL-terminated.
  * Return value is the length of source string src.  If this is greater than
  * or equal to the size of the destination string buffer, size, then truncation
- * has occurred. Should be nearly equivalent to strlcpy. */
+ * has occurred. Should be nearly equivalent to strlcpy.
+ */
 size_t XLALStringCopy(char *dst, const char *src, size_t size)
 {
     size_t srclen;
@@ -75,14 +78,16 @@ size_t XLALStringCopy(char *dst, const char *src, size_t size)
     return srclen;
 }
 
-/** Concatenate sources string src to the end of destination string dst.
+/**
+ * Concatenate sources string src to the end of destination string dst.
  * Characters are added to destination string dst until the source string src
  * is exhausted or the length of destination string dst is size - 1 characters.
  * Destination string dst is guaranteed to be NUL-terminated.
  * Return value is the initial length of destination string dst plus the
  * length of source string src.  If this is greater than
  * or equal to the size of the destination string buffer, size, then truncation
- * has occurred. Should be nearly equivalent to strlcat. */
+ * has occurred. Should be nearly equivalent to strlcat.
+ */
 size_t XLALStringConcatenate(char *dst, const char *src, size_t size)
 {
     size_t srclen;

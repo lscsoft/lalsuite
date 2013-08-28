@@ -36,7 +36,7 @@
  * smear the signal into several neighboring bins centered about the
  * search frequency, consequently losing valuable SNR.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The routine is really simple.  From JKS,
  * \f{eqnarray*}
@@ -75,7 +75,8 @@ static const EarthState empty_EarthState;
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Compute the 'amplitude coefficients' \f$a(t), b(t)\f$ as defined in
+/**
+ * Compute the 'amplitude coefficients' \f$a(t), b(t)\f$ as defined in
  * \ref JKS98 for a series of timestamps.
  *
  * The input consists of the DetectorState-timeseries, which contains
@@ -234,7 +235,8 @@ LALGetAMCoeffs(LALStatus *status,				/**< [in/out] LAL status structure pointer 
 
 } /* LALGetAMCoeffs() */
 
-/** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
+/**
+ * Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
  * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
  * timestamps.
  *
@@ -356,7 +358,8 @@ LALNewGetAMCoeffs(LALStatus *status,			/**< [in/out] LAL status structure pointe
 
 
 
-/** Compute single time-stamp antenna-pattern coefficients a(t), b(t)
+/**
+ * Compute single time-stamp antenna-pattern coefficients a(t), b(t)
  * Note: this function uses REAL8 precision, so this can be used in
  * high-precision integration of the F-metric
  *
@@ -453,7 +456,8 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
 } /* XLALComputeAntennaPatternCoeffs() */
 
 
-/** Multi-IFO version of LALGetAMCoeffs().
+/**
+ * Multi-IFO version of LALGetAMCoeffs().
  * Get all antenna-pattern coefficients for all input detector-series.
  *
  * NOTE: contrary to LALGetAMCoeffs(), this functions *allocates* the output-vector,
@@ -529,7 +533,8 @@ LALGetMultiAMCoeffs (LALStatus *status,			/**< [in/out] LAL status structure poi
 } /* LALGetMultiAMCoeffs() */
 
 
-/** Original antenna-pattern function by S Berukoff
+/**
+ * Original antenna-pattern function by S Berukoff
  */
 void LALComputeAM (LALStatus          *status,
 		   AMCoeffs           *coe,
@@ -606,7 +611,8 @@ void LALComputeAM (LALStatus          *status,
 
 } /* LALComputeAM() */
 
-/** <b>Replace</b> AM-coeffs by weighted AM-coeffs, i.e.
+/**
+ * <b>Replace</b> AM-coeffs by weighted AM-coeffs, i.e.
  * \f$a_{X\alpha} \rightarrow \widehat{a}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}}\f$, and
  * \f$b_{X\alpha} \rightarrow \widehat{b}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}}\f$,
  * where \f$w_{X\alpha}\f$ are the \a multiWeights for SFT \f$\alpha\f$ and detector \f$X\f$.
@@ -716,7 +722,8 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
 } /* XLALWeightMultiAMCoeffs() */
 
 
-/** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
+/**
+ * Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
  * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
  * timestamps.
  *
@@ -808,9 +815,9 @@ XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries
 
 } /* XLALComputeAMCoeffs() */
 
-/** Multi-IFO version of XLALComputeAMCoeffs().
+/**
+ * Multi-IFO version of XLALComputeAMCoeffs().
  * Computes noise-weighted combined multi-IFO antenna pattern functions.
-
  *
  * \note *) contrary to LALGetMultiAMCoeffs(), and XLALComputeAMCoeffs(), this function applies
  * the noise-weights and computes  the multi-IFO antenna-pattern matrix components
@@ -874,7 +881,8 @@ XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, 	/**<
 
 
 /* ---------- creators/destructors for AM-coeffs -------------------- */
-/** Create an AMCeoffs vector for given number of timesteps
+/**
+ * Create an AMCeoffs vector for given number of timesteps
  */
 AMCoeffs *
 XLALCreateAMCoeffs ( UINT4 numSteps )
@@ -903,7 +911,8 @@ XLALCreateAMCoeffs ( UINT4 numSteps )
 } /* XLALCreateAMCoeffs() */
 
 
-/** Destroy a MultiAMCoeffs structure.
+/**
+ * Destroy a MultiAMCoeffs structure.
  *
  * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
@@ -931,7 +940,8 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
 
 } /* XLALDestroyMultiAMCoeffs() */
 
-/** Destroy a AMCoeffs structure.
+/**
+ * Destroy a AMCoeffs structure.
  *
  * \note This function is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used

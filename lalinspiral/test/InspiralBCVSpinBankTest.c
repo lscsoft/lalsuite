@@ -23,7 +23,7 @@
  *
  * \brief Tests InpsiralBCVSpinBankTest().
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * InspiralBCVSpinBankTest
@@ -32,12 +32,12 @@
  * This program uses InspiralBCVSpinBank() to generate a template bank from
  * command line parameter input.
  *
- * \heading{Command line options}
- *
- * \heading{Notes}
+ * ### Command line options ###
  *
  *
-*/
+ * ### Notes ###
+ *
+ */
 
 /**\name Error Codes */ /*@{*/
 #define INSPIRALBCVSPINBANKTESTC_ENORM     0

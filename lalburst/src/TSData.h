@@ -37,18 +37,18 @@ extern "C" {
 
 
 /**
-   \defgroup TSData_h Header TSData.h
-   \ingroup pkg_tracksearch
-   \author C. Torres
-
-   \brief Provides an intermediate level of functions and structures for testing
-   and production use of the tracksearch libraries.
-
-   \code
-   #include <lal/TSData.h>
-   \endcode
-
-*/
+ * \defgroup TSData_h Header TSData.h
+ * \ingroup pkg_tracksearch
+ * \author C. Torres
+ *
+ * \brief Provides an intermediate level of functions and structures for testing
+ * and production use of the tracksearch libraries.
+ *
+ * \code
+ * #include <lal/TSData.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

@@ -18,45 +18,43 @@
 */
 
 /**
-   \file
-   \ingroup Dirichlet_h
-   \author UTB Relativity Group; contact whelan@phys.utb.edu
-
-   \brief Test suite for LALDirichlet().
-
-   \heading{Usage}
-   \code
-   ./DirichletTest
-   \endcode
-
-\heading{Description}
-
-This program tests the function <tt>LALDirichlet()</tt>.
-It tests all error conditions listed in the Error codes table.
-It also writes to files the values of the Dirichlet kernel for three
-different valid test cases.
-See Figs.\figref{utilities_f_dirichlet_fig1}-\figref{utilities_f_dirichlet_fig3}.
-
-\floatfig{htbp!,utilities_f_dirichlet_fig1}
-\image html  utilitiesDirichletFig1.png "Fig. [utilities_f_dirichlet_fig1]: Dirichlet kernel for N=10, Delta x =0.01, and 0 \<= x \<= 1."
-\image latex utilitiesDirichletFig1.pdf "Dirichlet kernel for N=10, Delta x =0.01, and 0 \<= x \<= 1." width=4in
-
-
-\floatfig{htbp!,utilities_f_dirichlet_fig2}
-\image html  utilitiesDirichletFig2.png "Fig. [utilities_f_dirichlet_fig2]: Dirichlet kernel for N=11, Delta x =0.01, and 0\<= x \<= 1."
-\image latex utilitiesDirichletFig2.pdf "Dirichlet kernel for N=11, Delta x =0.01, and 0\<= x \<= 1." width=4in
-
-\floatfig{htbp!,utilities_f_dirichlet_fig3}
-\image html  utilitiesDirichletFig3.png "Fig. [utilities_f_dirichlet_fig3]: Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2."
-\image latex utilitiesDirichletFig3.pdf "Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2." width=4in
-
-\heading{Exit codes}
-<table><tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Success, normal exit.</td></tr>
-<tr><td>1</td><td>Subroutine failed.</td></tr>
-</table>
-
-*/
+ * \file
+ * \ingroup Dirichlet_h
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ *
+ * \brief Test suite for LALDirichlet().
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ./DirichletTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program tests the function <tt>LALDirichlet()</tt>.
+ * It tests all error conditions listed in the Error codes table.
+ * It also writes to files the values of the Dirichlet kernel for three
+ * different valid test cases.
+ * See Figs.\figref{utilities_f_dirichlet_fig1}-\figref{utilities_f_dirichlet_fig3}.
+ *
+ * \image html  utilitiesDirichletFig1.png "Fig. [utilities_f_dirichlet_fig1]: Dirichlet kernel for N=10, Delta x =0.01, and 0 \<= x \<= 1."
+ * \image latex utilitiesDirichletFig1.pdf "Dirichlet kernel for N=10, Delta x =0.01, and 0 \<= x \<= 1." width=4in
+ *
+ * \image html  utilitiesDirichletFig2.png "Fig. [utilities_f_dirichlet_fig2]: Dirichlet kernel for N=11, Delta x =0.01, and 0\<= x \<= 1."
+ * \image latex utilitiesDirichletFig2.pdf "Dirichlet kernel for N=11, Delta x =0.01, and 0\<= x \<= 1." width=4in
+ *
+ * \image html  utilitiesDirichletFig3.png "Fig. [utilities_f_dirichlet_fig3]: Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2."
+ * \image latex utilitiesDirichletFig3.pdf "Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2." width=4in
+ *
+ * ### Exit codes ###
+ *
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 

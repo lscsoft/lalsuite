@@ -1,618 +1,621 @@
 /**
-\author Creighton, J. D. E. and Creighton, T. D.
-\addtogroup LALStatusMacros_h
-
-\brief Provides macros for handling the LALStatus structure.
-
-\heading{Synopsis}
-\code
-#include <lal/LALStatusMacros.h>
-\endcode
-
-This header provides macros and functions for tracking and
-reporting the runtime status of a program.  The intent is
-simultaneously to standardize the error reporting, and to make the
-reporting as transparent as possible to people coding individual
-routines.
-
-\section ss_status_reporting_objects Status-reporting objects
-
-LAL routines make use of two objects in reporting their current
-status: the status structure ::LALStatus, and the global integer
-lalDebugLevel.  These two objects are described in the following
-sections.
-
-\subsection ss_LALStatus The LALStatus structure
-
-The ::LALStatus structure is the means by which LAL functions report their
-success or failure; it provides a useful mechanism for tracking
-progress and errors through nested function calls.  The error
-reporting structure is a linked list of LALStatus structures, with
-each node corresponding to a given function in the current calling
-sequence.  When a function terminates successfully, its node is
-dropped from the list.  If a function encounters an error, it must
-still return control to the calling routine, reporting the error
-through its \c LALStatus.  The calling routine must either deal with
-the error (pruning the linked list if it succeeds), or else return an
-error itself.  A fatal error will thus return a linked list of
-\c LALStatus structures to the top-level routine, where the tail of
-the list identifies the source of the error, and the intermediate
-nodes identify the sequence of nested function calls that led to the
-error.
-
-In almost all circumstances the programmer will \e not have to
-access this structure directly, relying instead on the macros defined
-in this header.  The exception is the \c statusCode field, which
-the programmer may want to query directly.
-
-The \c LALStatus::statusCode field is set to a nonzero value any time an
-error condition arises that would lead to abnormal termination of the
-current function.  Programmers can assign positive error codes to the
-various types of error that may be encountered in their routines.
-
-Additionally, the following following status codes are reserved to
-report certain standard conditions:
-
-
-<table>
-<tr><th>Code</th><th>Message</th><th>Explanation</th></tr>
-<tr><td> 0</td><td></td><td>Nominal execution; the function returned successfully.</td></tr>
-<tr><td> -1</td><td>Recursive error</td><td>The function aborted due to failure of a subroutine.</td></tr>
-<tr><td> -2</td><td>INITSTATUS: non-null status pointer</td><td>The status structure passed to the function had a non-\c NULL
-\c statusPtr field, which blocks the function from calling
-subroutines (it is symptomatic of something screwy going on in the
-calling routine).</td></tr>
-<tr><td> -4</td><td>ATTATCHSTATUSPTR: memory allocation error</td><td>The function was unable to allocate a \c statusPtr field to pass
-down to a subroutine.</td></tr>
-<tr><td>-8</td><td>DETATCHSTATUSPTR: null status pointer</td><td>
-The \c statusPtr field could not be deallocated at the end of all
-subroutine calls; one of the subroutines must have lost it or set it
-to \c NULL.</td></tr>
-<tr><td>-16</td><td>INITSTATUS: non-zero xlalErrno</td><td>
-The \c xlalError variable is non-zero, which suggests that an
-error in an XLAL routine has occured and has not been handled.</td></tr>
-<tr><td>-16</td><td>RETURN: untrapped XLAL error code</td><td>
-The \c xlalError variable is non-zero, which indicates that an
-error in an XLAL routine has occured and has not been handled.</td></tr>
-</table>
-
-
-\subsection ss_lalDebugLevel The lalDebugLevel
-
-The lalDebugLevel is a global variable, set at runtime, that
-determines how much and what kind of debugging information will be
-reported.  It is declared as an <tt>extern int</tt> in the header
-\ref LALStatusMacros.h, and is therefore accessible in any standard
-LAL module that includes this header.  Note, however, that it is
-declared to be of the C type \c int, which is usually but not
-always a 32-bit integer (on some systems it may only be 16 bits).
-
-The value of \c lalDebugLevel should be thought of not as a number,
-but as a <em>bit mask</em>, wherein each bit in the binary
-representation turns on or off a specific type of status reporting.
-At present, there are five types of status reporting, each associated
-with a bit in \c lalDebugLevel.
-
-\heading{Error messages} tell the operator that a computation has
-terminated abnormally, and has failed to produce an acceptable result.
-Normally this is associated with assigning a non-zero
-\c statusCode; an error message is printed automatically whenever
-a function exits with non-zero \c statusCode.
-
-\heading{Warning messages} tell the user that a computation is
-working, but with unusual behaviour that might indicate an unreliable
-or meaningless result.  Warnings do not normally result in a non-zero
-\c statusCode.
-
-\heading{Information messages} tell the operator that the
-computation is proceeding as expected, and simply provide additional
-information about its progress.
-
-\heading{Tracing messages} are printed automatically a subroutine
-is called or returned; they simply track the current sequence of
-function calls.
-
-\heading{Memory information messages} are a special type of
-information message; they tell the operator when and how much memory
-is allocated or freed from the memory heap.
-
-The module \ref LALError.c defines functions for
-printing each of these types of status message.  Each type of message
-is turned on by setting the corrsponding bit in \c lalDebugLevel to
-1, and is suppressed by setting the bit to 0.  This header file
-<tt>\#define</tt>s flags with numerical values designed to switch on the
-appropriate bits.  Combinations of bits can be switched on by
-combining these flags using the bitwise-\e or operator,
-<tt>|</tt>.  The flags are defined as follows:
-
-<table>
-<tr><th>Flag</th><th>Octal</th><th>Decimal</th><th>Meaning</th></tr>
-<tr><td><em>Primitive flags</em></td></tr>
-<tr><td>#LALNDEBUG</td><td>000000</td><td>0</td><td>No debugging or status messages</td></tr>
-<tr><td>#LALERROR</td><td>000001</td><td>1</td><td>Turn on error messages</td></tr>
-<tr><td>#LALWARNING</td><td>000002</td><td>2</td><td>Turn on warning messages</td></tr>
-<tr><td>#LALINFO</td><td>000004</td><td>4</td><td>Turn on info messages</td></tr>
-<tr><td>#LALTRACE</td><td>000010</td><td>8</td><td>Turn on tracing messages</td></tr>
-<tr><td>#LALMEMDBGBIT</td><td>000020</td><td>16</td><td>Turn on memory debugging</td></tr>
-<tr><td>#LALNMEMPADBIT</td><td>000040</td><td>32</td><td>Turn on memory padding (if memory debugging is on)</td></tr>
-<tr><td>#LALNMEMTRKBIT</td><td>000100</td><td>64</td><td>Turn on memory tracking (if memory debuggin is on)</td></tr>
-<tr><td>#LALMEMINFOBIT</td><td>000200</td><td>128</td><td>Turn on memory messages (if memory debugging is on)</td></tr>
-<tr><td><em>Combination flags</em></td></tr>
-<tr><td>#LALMSGLVL1</td><td>000001</td><td>1</td><td>Error messages only</td></tr>
-<tr><td>#LALMSGLVL2</td><td>000003</td><td>3</td><td>Error and warning messages</td></tr>
-<tr><td>#LALMSGLVL3</td><td>000007</td><td>7</td><td>Error, warning, and info messages</td></tr>
-<tr><td>#LALMEMDBG</td><td>000160</td><td>112</td><td>Memory debugging with padding and tracking</td></tr>
-<tr><td>#LALMEMTRACE</td><td>000370</td><td>248</td><td>Memory and tracing messages</td></tr>
-<tr><td>#LALALLDBG</td><td>077777</td><td>32767</td><td>All messages and debugging</td></tr>
-</table>
-
-The most significant bit
-of \c lalDebugLevel has a special meaning in that it is not
-associated with any type of status message.  However, certain pieces
-of debugging or error-tracking code - such as the memory leak
-detection code in \ref LALMalloc.c - do not write status messages
-and are not associated with a \c lalDebugLevel bit; instead, these
-pieces of code are turned on for \e any nonzero value of
-\c lalDebugLevel, unless the #LALNMEMDBG bit is set.
-Switching on only the most significant bit with
-#LALMEMDBG activates this code without turning on any other
-error reporting.
-
-To turn debugging code on or off at compile time (rather than
-runtime), see this the section \ref ss_compilation_flags below.
-
-\section ss_using_status_tools Using the status tools
-
-The following summarizes everything the common programmer needs to
-know in order to follow LAL standard error reporting.  It can be
-treated as a primer on LAL coding conventions.
-
-\subsection ss_LAL_fct_calls LAL function calls
-
-All LAL functions should have return type void.  The first argument of any
-function should be a pointer to a structure of type \c LALStatus.
-Thus:
-\code
-void MyFunction( LALStatus *stat, ... )
-\endcode
-Since the function has no return code, it must report all errors or
-failure through the status structure.  A function that is passed a
-\c NULL pointer in place of the status pointer should terminate
-the program with a \c SIGABRT signal, as this is its only way to
-report the error.  However, this is one of the few circumstances under
-which a function sould deliberately raise a signal.  In all other
-cases the error should be trapped, reported in the status structure,
-and control returned to the calling routine.
-
-\subsection ss_Init_status Initializing the status structure
-
-The first instruction in any function, after variable declarations,
-should be the macro <tt>INITSTATUS()</tt>, which takes three arguments:
-the function's status pointer, the function name (a string literal)
-and the module's RCS <tt>$Id$</tt> string.
-\code
-INITSTATUS( stat, "MyFunction", MYFILEC );
-\endcode
-This macro checks that a valid status pointer has been passed to the
-function, and if so, initializes the other fields to indicate (by
-default) nominal execution.  If \c stat is null, the macro causes
-the program to terminate with a \c SIGABRT signal, as described
-above.
-
-\subsection ss_normal_fct_return Normal return from a function
-
-Upon completion, the function should issue the macro <tt>RETURN()</tt>,
-which takes one argument: the function's status pointer.
-\code
-RETURN( stat );
-\endcode
-This takes the place of any return statements.  If
-<tt>stat->statusCode</tt> is non-zero, the macro calls <tt>LALError()</tt>
-(see \ref LALError.c) to log <tt>stat->statusDescription</tt> and
-other information, depending on implementation and the value of
-\c lalDebugLevel.  Typically <tt>RETURN()</tt> is used only for
-successful completion, with other macros <tt>ABORT()</tt>,
-<tt>ASSERT()</tt>, <tt>CHECKSTATUSPTR()</tt>, and <tt>TRY()</tt> being used
-to report failure.  However, it is possible for the programmer to
-assign the fields of <tt>*stat</tt> by hand, and then issue
-<tt>RETURN()</tt>.
-
-\subsection ss_abnormal_return Abnormal return from a function
-
-The standard method to terminate a function unsuccessfully is with the
-<tt>ABORT()</tt> macro, which takes three arguments: the status pointer,
-the status code, and the status description string.  Normally the
-various error codes and descriptions will be constants defined in the
-function's header file <tt>MyHeader.h</tt>:
-\code
-ABORT( stat, MYHEADERH_EMYERR, MYHEADERH_MSGEMYERR );
-\endcode
-where the error code \c MYHEADERH_EMYERR and the error message
-\c MYHEADERH_MSGEMYERR are defined in <tt>MyHeader.h</tt>.  This
-standard LAL naming convention for error messages prevents namespace
-conflicts between different header files.  Like <tt>RETURN()</tt>,
-<tt>ABORT()</tt> correctly handles any status logging required by the
-implementation and the \c lalDebugLevel.  Note that <tt>ABORT()</tt>
-does \e not raise a \c SIGABRT signal, but instead returns
-control to the calling routine.
-
-\subsection ss_error_checking Error checking within a function
-
-Another way to indicate an unsuccessful termination is with the macro
-<tt>ASSERT()</tt>, which takes as arguments a test statement, a status
-pointer, a status code, and a status description.  The statement
-<tt>ASSERT( assertion, ... );</tt> is in all ways equivalent to the
-statement <tt>if ( !assertion ) ABORT( ... );</tt>, except on a failure
-the <tt>ASSERT()</tt> macro will also report the failed assertion.  In
-the above example, one might have:
-\code
-ASSERT( assertion, stat, MYHEADERH_EMYERR, MYHEADERH_MSGEMYERR );
-\endcode
-
-One subtle but important point is that the <tt>ASSERT()</tt> should be
-used only to trap coding errors, rather than runtime errors, which
-would be trapped using <tt>ABORT()</tt>.  In other words, the assertion
-should always test true in the final debugged program.  This is vital
-because certain compilation flags will remove all <tt>ASSERT()</tt>
-macros at compile time, in order to speed execution of the final code.
-See the section \ref ss_compilation_flags below.
-
-Programmers should also be aware that using <tt>ASSERT()</tt> to exit a
-function in normal runtime can have serious side effects.  For
-example, it is an error to allocate dynamic memory to local variables
-in a function and then fail to free it before returning.  Thus, if you
-have dynamically allocated memory, you cannot then use <tt>ASSERT()</tt>
-for runtime error checking, as this does not permit you to free the
-memory before returning.  Instead, you must explicitly check the
-assertion, and, if it fails, free the memory and call <tt>ABORT()</tt>.
-
-\subsection ss_calling_subroutines Calling subroutines
-
-If the function is to call other LAL functions as subroutines, four
-more macros are used to report possible errors arising in these
-routines.  The macros are <tt>ATTATCHSTATUSPTR()</tt>,
-<tt>DETATCHSTATUSPTR()</tt>, <tt>CHECKSTATUSPTR()</tt>, and <tt>TRY()</tt>.
-The usage of these macros is as follows.
-
-<ol>
-<li> First, before any subroutines are called, the function must call
-the macro <tt>ATTATCHSTATUSPTR()</tt> which takes as its argument the
-status pointer of the current function:
-\code
-ATTATCHSTATUSPTR( stat );
-\endcode
-This allocates <tt>stat->statusPtr</tt>, which is the status pointer
-that will be handed down into any and all subroutines.  If the pointer
-has already been allocated, <tt>ATTATCHSTATUSPTR()</tt> will raise a
-\c SIGABRT, as this is symptomatic of a coding error.
-
-In most cases <tt>ATTATCHSTATUSPTR()</tt> need only be called once in a
-given function, immediately after <tt>INITSTATUS()</tt>, no matter how
-many subroutine calls that function makes.  The exception is if the
-function deals with (or ignores) errors reported by its subroutines.
-In that case, the function should detatch the status pointer using
-<tt>DETATCHSTATUSPTR()</tt> (below), and then re-attatch it.
-
-The macro <tt>ATTATCHSTATUSPTR()</tt> sets the status code to be \f$-1\f$
-and the status message to be <tt>"Recursive error"</tt>.  These flags
-are unset when <tt>DETATCHSTATUSPTR()</tt> (below) is called.  This is
-so that a use of <tt>RETURN()</tt> prior to detatching the status
-pointer will yield an error.</li>
-
-<li> When a subroutine is called, it should be handed the
-\c statusPtr field of the calling function's status structure, to
-report its own errors.  The calling function should test the returned
-status code, and either attempt to deal with any abnormal returns, or
-abort with status code \f$-1\f$.  The macro <tt>CHECKSTATUSPTR()</tt>
-simplifies the latter case.  It takes one arguments: the status
-pointer of the current function (not the subroutine).
-\code
-MySubroutine( stat->statusPtr, ... );
-CHECKSTATUSPTR( stat );
-\endcode
-The <tt>TRY()</tt> macro is a somewhat more streamlined approach but
-with equivalent results.  It takes two arguments.  The first is the
-subroutine call, and the second is the status pointer.  Thus:
-\code
-TRY( MySubroutine( stat->statusPtr, ... ), stat );
-\endcode
-The only practical difference between these two approaches is that
-<tt>TRY()</tt> also reports the name of the failed subroutine call when
-logging errors.
-
-Similar caveats apply when using <tt>CHECKSTATUSPTR()</tt> and
-<tt>TRY()</tt> as when using <tt>ASSERT()</tt>, in that these macros can
-force an immediate return with no additional housekeeping
-instructions.  For instance, if you have dynamically-allocated local
-memory, you should explicitly check the <tt>statusPtr->statusCode</tt>
-field to see if a subroutine failed, then free the memory and call
-<tt>ABORT()</tt> to exit.
-
-If the calling routine attempts to work around an error reported from
-a subroutine, and the attempt fails, the routine should \e not use
-<tt>CHECKSTATUSPTR()</tt> to exit with status code \f$-1\f$.  Instead, it
-should call <tt>ABORT()</tt> with an appropriate (positive) code and
-message to indicate how the attempted workaround failed.</li>
-
-<li> After all subroutines have been called, but before any
-<tt>RETURN()</tt> statement, the function must call the
-<tt>DETATCHSTATUSPTR()</tt> macro, with the status pointer of the
-current function (not the subroutines) as its argument:
-\code
-DETATCHSTATUSPTR( stat );
-\endcode
-This simply deallocates <tt>stat->statusPtr</tt> (and any subsequent
-structures in the list), and sets it to \c NULL.  It is an error
-to exit the function with non-\c NULL \c statusPtr, unless the
-exit was due to a subroutine failure.  <tt>ABORT()</tt> and
-<tt>ASSERT()</tt> check for this automatically; the only place you
-normally need to call <tt>DETATCHSTATUSPTR()</tt> is immediately before
-<tt>RETURN()</tt>.  This macro also sets the status code and the status
-message to nominal values.
-
-Additionally, if a function successfully works around an error
-reported by a subroutine, it should call <tt>DETATCHSTATUSPTR()</tt> and
-<tt>ATTATCHSTATUSPTR()</tt> to create a fresh status pointer before
-calling another subroutine.
-</li>
-</ol>
-
-\subsection ss_cleaning_up Cleaning up after subroutine failure
-
-Although they are convenient, the <tt>TRY()</tt> and
-<tt>CHECKSTATUSPTR()</tt> macros have a serious drawback in that they
-may cause the calling function to return immediately.  If the calling
-function had previously allocated any local memory storage, this
-memory will be cast adrift, with no means of accessing or subsequently
-freeing it (short of terminating the runtime process).  Such a memory
-leak is a violation of the LAL function standard.
-
-The macros <tt>BEGINFAIL()</tt> and <tt>ENDFAIL()</tt> allow a function to
-test the return code of a subroutine, and, if that indicates a
-failure, to execute one or more "cleanup" instructions before itself
-returning.  Each macro takes a single argument: the current function's
-status pointer.  The macros must occur in matched pairs, and use the
-same syntax as a <tt>do ... while</tt> statement: they either span a
-single instruction, or a block of instructions enclosed in braces.
-
-For example, if a function had allocated memory to some pointer
-\c localPointer, any subsequent call to a subroutine
-<tt>LALSubroutine()</tt> would take the following form:
-\code
-LALSubroutine( stat->statusPtr, ... );
-BEGINFAIL( stat )
-  LALFree( localPointer );
-ENDFAIL( stat );
-\endcode
-For another example, if a function had to create three vectors
-<tt>*vector1</tt>, <tt>*vector2</tt>, <tt>*vector3</tt>, the allocation
-would look something like this:
-\code
-TRY( LALSCreateVector( stat->statusPtr, &vector1, 100 ), stat );
-
-LALSCreateVector( stat->statusPtr, &vector2, 100 );
-BEGINFAIL( stat )
-  TRY( LALSDestroyVector( stat->statusPtr, &vector1 ), stat );
-ENDFAIL( stat );
-
-LALSCreateVector( stat->statusPtr, &vector3, 100 );
-BEGINFAIL( stat ) {
-  TRY( LALSDestroyVector( stat->statusPtr, &vector1 ), stat );
-  TRY( LALSDestroyVector( stat->statusPtr, &vector2 ), stat );
-} ENDFAIL( stat );
-\endcode
-As indicated above, the cleanup instructions can include calls to
-other LAL routines.  The <tt>BEGINFAIL( stat )</tt> macro call first
-checks <tt>stat->statusPtr</tt> to see if a subroutine error has
-occured.  If it has, the macro detaches and saves that pointer, then
-attaches a new <tt>stat->statusPtr</tt> to be used in calls to the
-cleanup routines.  After the cleanup instructions have been executed,
-the <tt>ENDFAIL( stat )</tt> macro call reattaches the saved status
-pointer and returns with a subroutine error code.  In this way, the
-returned status list indicates where the original failure occurred,
-rather than giving an uninformative report from the last cleanup
-routine.
-
-Of course a \e second failure in one of the cleanup routines can
-cause serious problems.  If the routine was called using a
-<tt>TRY()</tt> macro, it will force an immediate return from the calling
-function, with a status code and status list indicating how the cleanp
-routine failed.  The original status list saved by <tt>BEGINFAIL()</tt>
-is lost.  While this loss does constitute a memory leak, the failure
-of a cleanup routine in itself indicates that there are serious
-problems with the memory management.
-
-It is possible to nest <tt>BEGINFAIL() ... ENDFAIL();</tt>
-blocks, but this is unlikely to serve any useful purpose.  Once
-cleanup routines start to fail, it is probably beyond the scope of the
-LAL function to deal with the resulting memory leaks.
-
-\subsection ss_issue_status Issuing status messages
-
-The module \ref LALError.c defines the functions <tt>LALError()</tt>,
-<tt>LALWarning()</tt>, <tt>LALInfo()</tt>, and <tt>LALTrace()</tt> to issue
-various types of status message.  This is the preferred means of
-printing status messages, since each type of message can be activated
-or suppressed by setting \c lalDebugLevel appropriately.  In fact,
-<tt>LALError()</tt> and <tt>LALTrace()</tt> are called automatically by
-the status macros whenever they are required, so most LAL modules will
-explicitly invoke only the <tt>LALWarning()</tt> and <tt>LALInfo()</tt>
-functions.
-
-\ref LALStatusMacros.h provides a macro, <tt>REPORTSTATUS()</tt>,
-which is used to report the current state of the \c LALStatus list.
-It takes a status pointer as its argument:
-\code
-REPORTSTATUS( stat );
-\endcode
-This macro iteratively prints the contents of \c stat and all
-subsequent structures in the list to the error log.
-
-The action of <tt>REPORTSTATUS()</tt> is not suppressed by any value of
-\c lalDebugLevel.  Therefore, as a rule, it should only be called by
-test programs, not by LAL routines intended for use in production
-code.
-
-\subsection ss_setting_indiv Setting the initial LALStatus structure and global lalDebugLevel
-
-As mentioned above, any module including \ref LALStatusMacros.h
-includes the global variable \c lalDebugLevel as an
-<tt>extern int</tt>.  At least one module in the final executable
-most cases \c lalDebugLevel will be declared in the module containing
-the %main() function, and will be assigned a value on
-declaration or from command-line arguments to %main().
-Alternatively, if the LAL functions are to be embedded in a non-LAL
-program, \c lalDebugLevel can be declared and set in the topmost
-module that calls LAL functions.
-
-A \c LALStatus structure should also be declared as a local variable
-in the %main() function of a LAL program, or in the topmost
-function calling LAL functions withing a non-LAL program, to pass in
-its LAL function calls.  The structure must be empty (all fields set
-to zero) before being passed into a function.  The \c LALStatus
-structure need only be declared and initialized once, no matter how
-many LAL functions are called.
-
-Thus a typical LAL program might look something like the following:
-
-\code
-
-int main( int argc, char **argv )
-{
-  static LALStatus stat;
-  MyFunction( &stat );
-  REPORTSTATUS( &stat );
-  return stat.statusCode;
-}
-\endcode
-
-Please note that all status macros described above can force a return
-from the calling routine.  This is a Bad Thing if the calling routine
-is %main(), since %main() must normally return \c int
-rather than \c void.  It is therefore recommended that none of
-these macros except <tt>REPORTSTATUS()</tt> be used at the top level.
-
-\subsection ss_non_conformant_fct Non-confomant functions
-
-These standards apply only to functions that will be publicly
-available in the LAL libraries.  Within a module, a programmer may
-define and use subroutines that do not conform to the LAL function
-standards, provided these routines are only visible within that
-module.  Such functions should be declared as \c static to ensure
-this.  A publicly-visible non-conformant function requires special
-dispensation.
-
-\section ss_compilation_flags Compilation flags
-
-
-LAL provides two flags that can be used to exclude or modify debugging
-code at compile time.  Although these flags are typically
-<tt>\#define</tt>d or <tt>\#undef</tt>ined globally and can affect many
-modules (notably modules in the \c support package), their primary
-effect is on the debugging and status-reporting tools defined in this
-header.  The two flags are named \c NDEBUG and \c NOLALMACROS.
-
-\subsection ss_ndebug_flag The NDEBUG flag
-
-Setting the \c NDEBUG (or \c LAL_NDEBUG) flag turns off debugging and
-error-reporting code, in order to get condensed production-line programs.  As
-far as error reporting is concerned, setting the \c NDEBUG flag at compile
-time is similar to setting \c lalDebugLevel equal to zero at runtime, in
-that it suppresses all status messages and memory leak detection.  However,
-the \c NDEBUG flag accoplishes this by telling the compiler preprocessor
-to remove the relevant code from the object file, thus eliminating frequent
-and unnecessary tests on \c lalDebugLevel.  When debugging is turned off,
-the global integer variable \c lalNoDebug is non-zero; otherwise it is
-zero.
-
-Compiling with the \c NDEBUG flag set also removes all
-<tt>ASSERT()</tt> macros from the object code, in keeping with the
-philosophy that <tt>ASSERT()</tt> statements should only be used to
-catch coding bugs, not runtime errors.
-
-\subsection ss_nolalmacros_flag The NOLALMACROS flag
-
-Setting the \c NOLALMACROS flag replaces the status-handling
-macros described above with actual functions that accomplish the same
-results.  These functions are defined in the module \ref LALError.c.
-Function calls introduce computational and memory overheads that are
-absent in macros, since macro replacement occurs at compile time.
-However, there are circumstances in which one might want to use
-function calls rather than macro replacement.
-
-For example, debuggers typically cannot step through the individual
-instructions within a macro.  If a conflict somehow arose between a
-particular piece of code and its status macros, this conflict would be
-easier to catch and resolve by replacing the macros with function
-calls into which the debugger could step.
-
-\subsection ss_compilation_flags Using the compilation flags
-
-There are three ways to set these flags when compiling LAL programs or
-libraries.
-
-When compiling your own modules, the flags can be set using one or
-more <tt>\#define</tt> statements within the module or its header file:
-\code
-#define NDEBUG
-#define NOLALMACROS
-\endcode
-To restrict the scope of these flags, they should later be unset using
-the corresponding <tt>\#undef</tt> statements.
-
-Alternatively, these can be set in the \c Makefile or when
-compiling.  The syntax for most UNIX C compilers is something like the
-following:
-\code
-> gcc ... -DNDEBUG -DNOLALMACROS ...
-\endcode
-
-If you want to compile a large number of modules, or the entire
-library, under the effects of one or more of these flags, you will not
-want to go through and modify every header or \c Makefile.
-Instead, you may add either <tt>-DNDEBUG</tt> or <tt>-DNOLALMACROS</tt>
-(or both) to the environment variable \c CPPFLAGS.  They will then
-automatically be set for all compilations done in that environment.
-The command for doing this in \c sh or \c bash shells is:
-\code
-> CPPFLAGS="\f$CPPFLAGS -DNDEBUG -DNOLALMACROS"
-\endcode
-while in \c csh or \c tcsh shells it is:
-\code
-> setenv CPPFLAGS "\f$CPPFLAGS -DNDEBUG -DNOLALMACROS"
-\endcode
-Note that if you plan to do further LAL code development on the same
-system, you may want to keep two versions of the library around: one
-with the flag(s) set and one without.
-
-\heading{Notes}
-
-Why are the status handling routines written as macros rather than
-functions?  There are three good reasons.
-
-First, many of the handling routines must be able to force an exit
-from the function calling them.  This cannot be done if the routine is
-in its own function, except by raising signal flags (which is a Bad
-Thing according to LAL standards).
-
-Second, it is useful for these routines to assign a status structure's
-file and line fields using the \c __FILE__ and \c __LINE__
-macros.  If the routine is its own function, then these will just give
-the file and line number where the error handling routine is defined.
-If the routine is a macro, then these will give the file and line
-number where the macro was called, which is much more interesting.
-
-Third, by expanding macros at compile time, the runtime performance of
-the resulting code is marginally better.  Most of these macros will,
-under nominal conditions, reduce to a single conditional test of an
-integer value, with no additional overhead from function calling and
-parameter passing.  Thus programmers can be encouraged to include
-extensive error trapping in all their routines, without having to
-worry about compromising performance.
-
-It should be mentioned that, for these reasons, compiling a module
-with the \c NOLALMACROS flag above does not actually eliminate the
-status handling macros.  Rather, the macros are modified to call
-specialized functions that do most (but not all) of the processing.
-
-*/
+ * \author Creighton, J. D. E. and Creighton, T. D.
+ * \addtogroup LALStatusMacros_h
+ *
+ * \brief Provides macros for handling the LALStatus structure.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALStatusMacros.h>
+ * \endcode
+ *
+ * This header provides macros and functions for tracking and
+ * reporting the runtime status of a program.  The intent is
+ * simultaneously to standardize the error reporting, and to make the
+ * reporting as transparent as possible to people coding individual
+ * routines.
+ *
+ * \section ss_status_reporting_objects Status-reporting objects
+ *
+ * LAL routines make use of two objects in reporting their current
+ * status: the status structure ::LALStatus, and the global integer
+ * lalDebugLevel.  These two objects are described in the following
+ * sections.
+ *
+ * \subsection ss_LALStatus The LALStatus structure
+ *
+ * The ::LALStatus structure is the means by which LAL functions report their
+ * success or failure; it provides a useful mechanism for tracking
+ * progress and errors through nested function calls.  The error
+ * reporting structure is a linked list of LALStatus structures, with
+ * each node corresponding to a given function in the current calling
+ * sequence.  When a function terminates successfully, its node is
+ * dropped from the list.  If a function encounters an error, it must
+ * still return control to the calling routine, reporting the error
+ * through its \c LALStatus.  The calling routine must either deal with
+ * the error (pruning the linked list if it succeeds), or else return an
+ * error itself.  A fatal error will thus return a linked list of
+ * \c LALStatus structures to the top-level routine, where the tail of
+ * the list identifies the source of the error, and the intermediate
+ * nodes identify the sequence of nested function calls that led to the
+ * error.
+ *
+ * In almost all circumstances the programmer will \e not have to
+ * access this structure directly, relying instead on the macros defined
+ * in this header.  The exception is the \c statusCode field, which
+ * the programmer may want to query directly.
+ *
+ * The \c LALStatus::statusCode field is set to a nonzero value any time an
+ * error condition arises that would lead to abnormal termination of the
+ * current function.  Programmers can assign positive error codes to the
+ * various types of error that may be encountered in their routines.
+ *
+ * Additionally, the following following status codes are reserved to
+ * report certain standard conditions:
+ *
+ * <table>
+ * <tr><th>Code</th><th>Message</th><th>Explanation</th></tr>
+ * <tr><td> 0</td><td></td><td>Nominal execution; the function returned successfully.</td></tr>
+ * <tr><td> -1</td><td>Recursive error</td><td>The function aborted due to failure of a subroutine.</td></tr>
+ * <tr><td> -2</td><td>INITSTATUS: non-null status pointer</td><td>The status structure passed to the function had a non-\c NULL
+ * \c statusPtr field, which blocks the function from calling
+ * subroutines (it is symptomatic of something screwy going on in the
+ * calling routine).</td></tr>
+ * <tr><td> -4</td><td>ATTATCHSTATUSPTR: memory allocation error</td><td>The function was unable to allocate a \c statusPtr field to pass
+ * down to a subroutine.</td></tr>
+ * <tr><td>-8</td><td>DETATCHSTATUSPTR: null status pointer</td><td>
+ * The \c statusPtr field could not be deallocated at the end of all
+ * subroutine calls; one of the subroutines must have lost it or set it
+ * to \c NULL.</td></tr>
+ * <tr><td>-16</td><td>INITSTATUS: non-zero xlalErrno</td><td>
+ * The \c xlalError variable is non-zero, which suggests that an
+ * error in an XLAL routine has occured and has not been handled.</td></tr>
+ * <tr><td>-16</td><td>RETURN: untrapped XLAL error code</td><td>
+ * The \c xlalError variable is non-zero, which indicates that an
+ * error in an XLAL routine has occured and has not been handled.</td></tr>
+ * </table>
+ *
+ * \subsection ss_lalDebugLevel The lalDebugLevel
+ *
+ * The lalDebugLevel is a global variable, set at runtime, that
+ * determines how much and what kind of debugging information will be
+ * reported.  It is declared as an <tt>extern int</tt> in the header
+ * \ref LALStatusMacros.h, and is therefore accessible in any standard
+ * LAL module that includes this header.  Note, however, that it is
+ * declared to be of the C type \c int, which is usually but not
+ * always a 32-bit integer (on some systems it may only be 16 bits).
+ *
+ * The value of \c lalDebugLevel should be thought of not as a number,
+ * but as a <em>bit mask</em>, wherein each bit in the binary
+ * representation turns on or off a specific type of status reporting.
+ * At present, there are five types of status reporting, each associated
+ * with a bit in \c lalDebugLevel.
+ *
+ * \par Error messages
+ * tell the operator that a computation has
+ * terminated abnormally, and has failed to produce an acceptable result.
+ * Normally this is associated with assigning a non-zero
+ * \c statusCode; an error message is printed automatically whenever
+ * a function exits with non-zero \c statusCode.
+ *
+ * \par Warning messages
+ * tell the user that a computation is
+ * working, but with unusual behaviour that might indicate an unreliable
+ * or meaningless result.  Warnings do not normally result in a non-zero
+ * \c statusCode.
+ *
+ * \par Information messages
+ * tell the operator that the
+ * computation is proceeding as expected, and simply provide additional
+ * information about its progress.
+ *
+ * \par Tracing messages
+ * are printed automatically a subroutine
+ * is called or returned; they simply track the current sequence of
+ * function calls.
+ *
+ * \par Memory information messages
+ * are a special type of
+ * information message; they tell the operator when and how much memory
+ * is allocated or freed from the memory heap.
+ *
+ * The module \ref LALError.c defines functions for
+ * printing each of these types of status message.  Each type of message
+ * is turned on by setting the corrsponding bit in \c lalDebugLevel to
+ * 1, and is suppressed by setting the bit to 0.  This header file
+ * <tt>\#define</tt>s flags with numerical values designed to switch on the
+ * appropriate bits.  Combinations of bits can be switched on by
+ * combining these flags using the bitwise-\e or operator,
+ * <tt>|</tt>.  The flags are defined as follows:
+ *
+ * <table>
+ * <tr><th>Flag</th><th>Octal</th><th>Decimal</th><th>Meaning</th></tr>
+ * <tr><td><em>Primitive flags</em></td></tr>
+ * <tr><td>#LALNDEBUG</td><td>000000</td><td>0</td><td>No debugging or status messages</td></tr>
+ * <tr><td>#LALERROR</td><td>000001</td><td>1</td><td>Turn on error messages</td></tr>
+ * <tr><td>#LALWARNING</td><td>000002</td><td>2</td><td>Turn on warning messages</td></tr>
+ * <tr><td>#LALINFO</td><td>000004</td><td>4</td><td>Turn on info messages</td></tr>
+ * <tr><td>#LALTRACE</td><td>000010</td><td>8</td><td>Turn on tracing messages</td></tr>
+ * <tr><td>#LALMEMDBGBIT</td><td>000020</td><td>16</td><td>Turn on memory debugging</td></tr>
+ * <tr><td>#LALNMEMPADBIT</td><td>000040</td><td>32</td><td>Turn on memory padding (if memory debugging is on)</td></tr>
+ * <tr><td>#LALNMEMTRKBIT</td><td>000100</td><td>64</td><td>Turn on memory tracking (if memory debuggin is on)</td></tr>
+ * <tr><td>#LALMEMINFOBIT</td><td>000200</td><td>128</td><td>Turn on memory messages (if memory debugging is on)</td></tr>
+ * <tr><td><em>Combination flags</em></td></tr>
+ * <tr><td>#LALMSGLVL1</td><td>000001</td><td>1</td><td>Error messages only</td></tr>
+ * <tr><td>#LALMSGLVL2</td><td>000003</td><td>3</td><td>Error and warning messages</td></tr>
+ * <tr><td>#LALMSGLVL3</td><td>000007</td><td>7</td><td>Error, warning, and info messages</td></tr>
+ * <tr><td>#LALMEMDBG</td><td>000160</td><td>112</td><td>Memory debugging with padding and tracking</td></tr>
+ * <tr><td>#LALMEMTRACE</td><td>000370</td><td>248</td><td>Memory and tracing messages</td></tr>
+ * <tr><td>#LALALLDBG</td><td>077777</td><td>32767</td><td>All messages and debugging</td></tr>
+ * </table>
+ *
+ * The most significant bit
+ * of \c lalDebugLevel has a special meaning in that it is not
+ * associated with any type of status message.  However, certain pieces
+ * of debugging or error-tracking code - such as the memory leak
+ * detection code in \ref LALMalloc.c - do not write status messages
+ * and are not associated with a \c lalDebugLevel bit; instead, these
+ * pieces of code are turned on for \e any nonzero value of
+ * \c lalDebugLevel, unless the #LALNMEMDBG bit is set.
+ * Switching on only the most significant bit with
+ * #LALMEMDBG activates this code without turning on any other
+ * error reporting.
+ *
+ * To turn debugging code on or off at compile time (rather than
+ * runtime), see this the section \ref ss_compilation_flags below.
+ *
+ * \section ss_using_status_tools Using the status tools
+ *
+ * The following summarizes everything the common programmer needs to
+ * know in order to follow LAL standard error reporting.  It can be
+ * treated as a primer on LAL coding conventions.
+ *
+ * \subsection ss_LAL_fct_calls LAL function calls
+ *
+ * All LAL functions should have return type void.  The first argument of any
+ * function should be a pointer to a structure of type \c LALStatus.
+ * Thus:
+ * \code
+ * void MyFunction( LALStatus *stat, ... )
+ * \endcode
+ * Since the function has no return code, it must report all errors or
+ * failure through the status structure.  A function that is passed a
+ * \c NULL pointer in place of the status pointer should terminate
+ * the program with a \c SIGABRT signal, as this is its only way to
+ * report the error.  However, this is one of the few circumstances under
+ * which a function sould deliberately raise a signal.  In all other
+ * cases the error should be trapped, reported in the status structure,
+ * and control returned to the calling routine.
+ *
+ * \subsection ss_Init_status Initializing the status structure
+ *
+ * The first instruction in any function, after variable declarations,
+ * should be the macro <tt>INITSTATUS()</tt>, which takes three arguments:
+ * the function's status pointer, the function name (a string literal)
+ * and the module's RCS <tt>$Id$</tt> string.
+ * \code
+ * INITSTATUS( stat, "MyFunction", MYFILEC );
+ * \endcode
+ * This macro checks that a valid status pointer has been passed to the
+ * function, and if so, initializes the other fields to indicate (by
+ * default) nominal execution.  If \c stat is null, the macro causes
+ * the program to terminate with a \c SIGABRT signal, as described
+ * above.
+ *
+ * \subsection ss_normal_fct_return Normal return from a function
+ *
+ * Upon completion, the function should issue the macro <tt>RETURN()</tt>,
+ * which takes one argument: the function's status pointer.
+ * \code
+ * RETURN( stat );
+ * \endcode
+ * This takes the place of any return statements.  If
+ * <tt>stat->statusCode</tt> is non-zero, the macro calls <tt>LALError()</tt>
+ * (see \ref LALError.c) to log <tt>stat->statusDescription</tt> and
+ * other information, depending on implementation and the value of
+ * \c lalDebugLevel.  Typically <tt>RETURN()</tt> is used only for
+ * successful completion, with other macros <tt>ABORT()</tt>,
+ * <tt>ASSERT()</tt>, <tt>CHECKSTATUSPTR()</tt>, and <tt>TRY()</tt> being used
+ * to report failure.  However, it is possible for the programmer to
+ * assign the fields of <tt>*stat</tt> by hand, and then issue
+ * <tt>RETURN()</tt>.
+ *
+ * \subsection ss_abnormal_return Abnormal return from a function
+ *
+ * The standard method to terminate a function unsuccessfully is with the
+ * <tt>ABORT()</tt> macro, which takes three arguments: the status pointer,
+ * the status code, and the status description string.  Normally the
+ * various error codes and descriptions will be constants defined in the
+ * function's header file <tt>MyHeader.h</tt>:
+ * \code
+ * ABORT( stat, MYHEADERH_EMYERR, MYHEADERH_MSGEMYERR );
+ * \endcode
+ * where the error code \c MYHEADERH_EMYERR and the error message
+ * \c MYHEADERH_MSGEMYERR are defined in <tt>MyHeader.h</tt>.  This
+ * standard LAL naming convention for error messages prevents namespace
+ * conflicts between different header files.  Like <tt>RETURN()</tt>,
+ * <tt>ABORT()</tt> correctly handles any status logging required by the
+ * implementation and the \c lalDebugLevel.  Note that <tt>ABORT()</tt>
+ * does \e not raise a \c SIGABRT signal, but instead returns
+ * control to the calling routine.
+ *
+ * \subsection ss_error_checking Error checking within a function
+ *
+ * Another way to indicate an unsuccessful termination is with the macro
+ * <tt>ASSERT()</tt>, which takes as arguments a test statement, a status
+ * pointer, a status code, and a status description.  The statement
+ * <tt>ASSERT( assertion, ... );</tt> is in all ways equivalent to the
+ * statement <tt>if ( !assertion ) ABORT( ... );</tt>, except on a failure
+ * the <tt>ASSERT()</tt> macro will also report the failed assertion.  In
+ * the above example, one might have:
+ * \code
+ * ASSERT( assertion, stat, MYHEADERH_EMYERR, MYHEADERH_MSGEMYERR );
+ * \endcode
+ *
+ * One subtle but important point is that the <tt>ASSERT()</tt> should be
+ * used only to trap coding errors, rather than runtime errors, which
+ * would be trapped using <tt>ABORT()</tt>.  In other words, the assertion
+ * should always test true in the final debugged program.  This is vital
+ * because certain compilation flags will remove all <tt>ASSERT()</tt>
+ * macros at compile time, in order to speed execution of the final code.
+ * See the section \ref ss_compilation_flags below.
+ *
+ * Programmers should also be aware that using <tt>ASSERT()</tt> to exit a
+ * function in normal runtime can have serious side effects.  For
+ * example, it is an error to allocate dynamic memory to local variables
+ * in a function and then fail to free it before returning.  Thus, if you
+ * have dynamically allocated memory, you cannot then use <tt>ASSERT()</tt>
+ * for runtime error checking, as this does not permit you to free the
+ * memory before returning.  Instead, you must explicitly check the
+ * assertion, and, if it fails, free the memory and call <tt>ABORT()</tt>.
+ *
+ * \subsection ss_calling_subroutines Calling subroutines
+ *
+ * If the function is to call other LAL functions as subroutines, four
+ * more macros are used to report possible errors arising in these
+ * routines.  The macros are <tt>ATTATCHSTATUSPTR()</tt>,
+ * <tt>DETATCHSTATUSPTR()</tt>, <tt>CHECKSTATUSPTR()</tt>, and <tt>TRY()</tt>.
+ * The usage of these macros is as follows.
+ *
+ * <ol>
+ * <li> First, before any subroutines are called, the function must call
+ * the macro <tt>ATTATCHSTATUSPTR()</tt> which takes as its argument the
+ * status pointer of the current function:
+ * \code
+ * ATTATCHSTATUSPTR( stat );
+ * \endcode
+ * This allocates <tt>stat->statusPtr</tt>, which is the status pointer
+ * that will be handed down into any and all subroutines.  If the pointer
+ * has already been allocated, <tt>ATTATCHSTATUSPTR()</tt> will raise a
+ * \c SIGABRT, as this is symptomatic of a coding error.
+ *
+ * In most cases <tt>ATTATCHSTATUSPTR()</tt> need only be called once in a
+ * given function, immediately after <tt>INITSTATUS()</tt>, no matter how
+ * many subroutine calls that function makes.  The exception is if the
+ * function deals with (or ignores) errors reported by its subroutines.
+ * In that case, the function should detatch the status pointer using
+ * <tt>DETATCHSTATUSPTR()</tt> (below), and then re-attatch it.
+ *
+ * The macro <tt>ATTATCHSTATUSPTR()</tt> sets the status code to be \f$-1\f$
+ * and the status message to be <tt>"Recursive error"</tt>.  These flags
+ * are unset when <tt>DETATCHSTATUSPTR()</tt> (below) is called.  This is
+ * so that a use of <tt>RETURN()</tt> prior to detatching the status
+ * pointer will yield an error.</li>
+ *
+ * <li> When a subroutine is called, it should be handed the
+ * \c statusPtr field of the calling function's status structure, to
+ * report its own errors.  The calling function should test the returned
+ * status code, and either attempt to deal with any abnormal returns, or
+ * abort with status code \f$-1\f$.  The macro <tt>CHECKSTATUSPTR()</tt>
+ * simplifies the latter case.  It takes one arguments: the status
+ * pointer of the current function (not the subroutine).
+ * \code
+ * MySubroutine( stat->statusPtr, ... );
+ * CHECKSTATUSPTR( stat );
+ * \endcode
+ * The <tt>TRY()</tt> macro is a somewhat more streamlined approach but
+ * with equivalent results.  It takes two arguments.  The first is the
+ * subroutine call, and the second is the status pointer.  Thus:
+ * \code
+ * TRY( MySubroutine( stat->statusPtr, ... ), stat );
+ * \endcode
+ * The only practical difference between these two approaches is that
+ * <tt>TRY()</tt> also reports the name of the failed subroutine call when
+ * logging errors.
+ *
+ * Similar caveats apply when using <tt>CHECKSTATUSPTR()</tt> and
+ * <tt>TRY()</tt> as when using <tt>ASSERT()</tt>, in that these macros can
+ * force an immediate return with no additional housekeeping
+ * instructions.  For instance, if you have dynamically-allocated local
+ * memory, you should explicitly check the <tt>statusPtr->statusCode</tt>
+ * field to see if a subroutine failed, then free the memory and call
+ * <tt>ABORT()</tt> to exit.
+ *
+ * If the calling routine attempts to work around an error reported from
+ * a subroutine, and the attempt fails, the routine should \e not use
+ * <tt>CHECKSTATUSPTR()</tt> to exit with status code \f$-1\f$.  Instead, it
+ * should call <tt>ABORT()</tt> with an appropriate (positive) code and
+ * message to indicate how the attempted workaround failed.</li>
+ *
+ * <li> After all subroutines have been called, but before any
+ * <tt>RETURN()</tt> statement, the function must call the
+ * <tt>DETATCHSTATUSPTR()</tt> macro, with the status pointer of the
+ * current function (not the subroutines) as its argument:
+ * \code
+ * DETATCHSTATUSPTR( stat );
+ * \endcode
+ * This simply deallocates <tt>stat->statusPtr</tt> (and any subsequent
+ * structures in the list), and sets it to \c NULL.  It is an error
+ * to exit the function with non-\c NULL \c statusPtr, unless the
+ * exit was due to a subroutine failure.  <tt>ABORT()</tt> and
+ * <tt>ASSERT()</tt> check for this automatically; the only place you
+ * normally need to call <tt>DETATCHSTATUSPTR()</tt> is immediately before
+ * <tt>RETURN()</tt>.  This macro also sets the status code and the status
+ * message to nominal values.
+ *
+ * Additionally, if a function successfully works around an error
+ * reported by a subroutine, it should call <tt>DETATCHSTATUSPTR()</tt> and
+ * <tt>ATTATCHSTATUSPTR()</tt> to create a fresh status pointer before
+ * calling another subroutine.
+ * </li>
+ * </ol>
+ *
+ * \subsection ss_cleaning_up Cleaning up after subroutine failure
+ *
+ * Although they are convenient, the <tt>TRY()</tt> and
+ * <tt>CHECKSTATUSPTR()</tt> macros have a serious drawback in that they
+ * may cause the calling function to return immediately.  If the calling
+ * function had previously allocated any local memory storage, this
+ * memory will be cast adrift, with no means of accessing or subsequently
+ * freeing it (short of terminating the runtime process).  Such a memory
+ * leak is a violation of the LAL function standard.
+ *
+ * The macros <tt>BEGINFAIL()</tt> and <tt>ENDFAIL()</tt> allow a function to
+ * test the return code of a subroutine, and, if that indicates a
+ * failure, to execute one or more "cleanup" instructions before itself
+ * returning.  Each macro takes a single argument: the current function's
+ * status pointer.  The macros must occur in matched pairs, and use the
+ * same syntax as a <tt>do ... while</tt> statement: they either span a
+ * single instruction, or a block of instructions enclosed in braces.
+ *
+ * For example, if a function had allocated memory to some pointer
+ * \c localPointer, any subsequent call to a subroutine
+ * <tt>LALSubroutine()</tt> would take the following form:
+ * \code
+ * LALSubroutine( stat->statusPtr, ... );
+ * BEGINFAIL( stat )
+ * LALFree( localPointer );
+ * ENDFAIL( stat );
+ * \endcode
+ * For another example, if a function had to create three vectors
+ * <tt>*vector1</tt>, <tt>*vector2</tt>, <tt>*vector3</tt>, the allocation
+ * would look something like this:
+ * \code
+ * TRY( LALSCreateVector( stat->statusPtr, &vector1, 100 ), stat );
+ *
+ * LALSCreateVector( stat->statusPtr, &vector2, 100 );
+ * BEGINFAIL( stat )
+ * TRY( LALSDestroyVector( stat->statusPtr, &vector1 ), stat );
+ * ENDFAIL( stat );
+ *
+ * LALSCreateVector( stat->statusPtr, &vector3, 100 );
+ * BEGINFAIL( stat ) {
+ * TRY( LALSDestroyVector( stat->statusPtr, &vector1 ), stat );
+ * TRY( LALSDestroyVector( stat->statusPtr, &vector2 ), stat );
+ * } ENDFAIL( stat );
+ * \endcode
+ * As indicated above, the cleanup instructions can include calls to
+ * other LAL routines.  The <tt>BEGINFAIL( stat )</tt> macro call first
+ * checks <tt>stat->statusPtr</tt> to see if a subroutine error has
+ * occured.  If it has, the macro detaches and saves that pointer, then
+ * attaches a new <tt>stat->statusPtr</tt> to be used in calls to the
+ * cleanup routines.  After the cleanup instructions have been executed,
+ * the <tt>ENDFAIL( stat )</tt> macro call reattaches the saved status
+ * pointer and returns with a subroutine error code.  In this way, the
+ * returned status list indicates where the original failure occurred,
+ * rather than giving an uninformative report from the last cleanup
+ * routine.
+ *
+ * Of course a \e second failure in one of the cleanup routines can
+ * cause serious problems.  If the routine was called using a
+ * <tt>TRY()</tt> macro, it will force an immediate return from the calling
+ * function, with a status code and status list indicating how the cleanp
+ * routine failed.  The original status list saved by <tt>BEGINFAIL()</tt>
+ * is lost.  While this loss does constitute a memory leak, the failure
+ * of a cleanup routine in itself indicates that there are serious
+ * problems with the memory management.
+ *
+ * It is possible to nest <tt>BEGINFAIL() ... ENDFAIL();</tt>
+ * blocks, but this is unlikely to serve any useful purpose.  Once
+ * cleanup routines start to fail, it is probably beyond the scope of the
+ * LAL function to deal with the resulting memory leaks.
+ *
+ * \subsection ss_issue_status Issuing status messages
+ *
+ * The module \ref LALError.c defines the functions <tt>LALError()</tt>,
+ * <tt>LALWarning()</tt>, <tt>LALInfo()</tt>, and <tt>LALTrace()</tt> to issue
+ * various types of status message.  This is the preferred means of
+ * printing status messages, since each type of message can be activated
+ * or suppressed by setting \c lalDebugLevel appropriately.  In fact,
+ * <tt>LALError()</tt> and <tt>LALTrace()</tt> are called automatically by
+ * the status macros whenever they are required, so most LAL modules will
+ * explicitly invoke only the <tt>LALWarning()</tt> and <tt>LALInfo()</tt>
+ * functions.
+ *
+ * \ref LALStatusMacros.h provides a macro, <tt>REPORTSTATUS()</tt>,
+ * which is used to report the current state of the \c LALStatus list.
+ * It takes a status pointer as its argument:
+ * \code
+ * REPORTSTATUS( stat );
+ * \endcode
+ * This macro iteratively prints the contents of \c stat and all
+ * subsequent structures in the list to the error log.
+ *
+ * The action of <tt>REPORTSTATUS()</tt> is not suppressed by any value of
+ * \c lalDebugLevel.  Therefore, as a rule, it should only be called by
+ * test programs, not by LAL routines intended for use in production
+ * code.
+ *
+ * \subsection ss_setting_indiv Setting the initial LALStatus structure and global lalDebugLevel
+ *
+ * As mentioned above, any module including \ref LALStatusMacros.h
+ * includes the global variable \c lalDebugLevel as an
+ * <tt>extern int</tt>.  At least one module in the final executable
+ * most cases \c lalDebugLevel will be declared in the module containing
+ * the %main() function, and will be assigned a value on
+ * declaration or from command-line arguments to %main().
+ * Alternatively, if the LAL functions are to be embedded in a non-LAL
+ * program, \c lalDebugLevel can be declared and set in the topmost
+ * module that calls LAL functions.
+ *
+ * A \c LALStatus structure should also be declared as a local variable
+ * in the %main() function of a LAL program, or in the topmost
+ * function calling LAL functions withing a non-LAL program, to pass in
+ * its LAL function calls.  The structure must be empty (all fields set
+ * to zero) before being passed into a function.  The \c LALStatus
+ * structure need only be declared and initialized once, no matter how
+ * many LAL functions are called.
+ *
+ * Thus a typical LAL program might look something like the following:
+ *
+ * \code
+ *
+ * int main( int argc, char **argv )
+ * {
+ * static LALStatus stat;
+ * MyFunction( &stat );
+ * REPORTSTATUS( &stat );
+ * return stat.statusCode;
+ * }
+ * \endcode
+ *
+ * Please note that all status macros described above can force a return
+ * from the calling routine.  This is a Bad Thing if the calling routine
+ * is %main(), since %main() must normally return \c int
+ * rather than \c void.  It is therefore recommended that none of
+ * these macros except <tt>REPORTSTATUS()</tt> be used at the top level.
+ *
+ * \subsection ss_non_conformant_fct Non-confomant functions
+ *
+ * These standards apply only to functions that will be publicly
+ * available in the LAL libraries.  Within a module, a programmer may
+ * define and use subroutines that do not conform to the LAL function
+ * standards, provided these routines are only visible within that
+ * module.  Such functions should be declared as \c static to ensure
+ * this.  A publicly-visible non-conformant function requires special
+ * dispensation.
+ *
+ * \section ss_compilation_flags Compilation flags
+ *
+ * LAL provides two flags that can be used to exclude or modify debugging
+ * code at compile time.  Although these flags are typically
+ * <tt>\#define</tt>d or <tt>\#undef</tt>ined globally and can affect many
+ * modules (notably modules in the \c support package), their primary
+ * effect is on the debugging and status-reporting tools defined in this
+ * header.  The two flags are named \c NDEBUG and \c NOLALMACROS.
+ *
+ * \subsection ss_ndebug_flag The NDEBUG flag
+ *
+ * Setting the \c NDEBUG (or \c LAL_NDEBUG) flag turns off debugging and
+ * error-reporting code, in order to get condensed production-line programs.  As
+ * far as error reporting is concerned, setting the \c NDEBUG flag at compile
+ * time is similar to setting \c lalDebugLevel equal to zero at runtime, in
+ * that it suppresses all status messages and memory leak detection.  However,
+ * the \c NDEBUG flag accoplishes this by telling the compiler preprocessor
+ * to remove the relevant code from the object file, thus eliminating frequent
+ * and unnecessary tests on \c lalDebugLevel.  When debugging is turned off,
+ * the global integer variable \c lalNoDebug is non-zero; otherwise it is
+ * zero.
+ *
+ * Compiling with the \c NDEBUG flag set also removes all
+ * <tt>ASSERT()</tt> macros from the object code, in keeping with the
+ * philosophy that <tt>ASSERT()</tt> statements should only be used to
+ * catch coding bugs, not runtime errors.
+ *
+ * \subsection ss_nolalmacros_flag The NOLALMACROS flag
+ *
+ * Setting the \c NOLALMACROS flag replaces the status-handling
+ * macros described above with actual functions that accomplish the same
+ * results.  These functions are defined in the module \ref LALError.c.
+ * Function calls introduce computational and memory overheads that are
+ * absent in macros, since macro replacement occurs at compile time.
+ * However, there are circumstances in which one might want to use
+ * function calls rather than macro replacement.
+ *
+ * For example, debuggers typically cannot step through the individual
+ * instructions within a macro.  If a conflict somehow arose between a
+ * particular piece of code and its status macros, this conflict would be
+ * easier to catch and resolve by replacing the macros with function
+ * calls into which the debugger could step.
+ *
+ * \subsection ss_compilation_flags Using the compilation flags
+ *
+ * There are three ways to set these flags when compiling LAL programs or
+ * libraries.
+ *
+ * When compiling your own modules, the flags can be set using one or
+ * more <tt>\#define</tt> statements within the module or its header file:
+ * \code
+ * #define NDEBUG
+ * #define NOLALMACROS
+ * \endcode
+ * To restrict the scope of these flags, they should later be unset using
+ * the corresponding <tt>\#undef</tt> statements.
+ *
+ * Alternatively, these can be set in the \c Makefile or when
+ * compiling.  The syntax for most UNIX C compilers is something like the
+ * following:
+ * \code
+ * > gcc ... -DNDEBUG -DNOLALMACROS ...
+ * \endcode
+ *
+ * If you want to compile a large number of modules, or the entire
+ * library, under the effects of one or more of these flags, you will not
+ * want to go through and modify every header or \c Makefile.
+ * Instead, you may add either <tt>-DNDEBUG</tt> or <tt>-DNOLALMACROS</tt>
+ * (or both) to the environment variable \c CPPFLAGS.  They will then
+ * automatically be set for all compilations done in that environment.
+ * The command for doing this in \c sh or \c bash shells is:
+ * \code
+ * > CPPFLAGS="\f$CPPFLAGS -DNDEBUG -DNOLALMACROS"
+ * \endcode
+ * while in \c csh or \c tcsh shells it is:
+ * \code
+ * > setenv CPPFLAGS "\f$CPPFLAGS -DNDEBUG -DNOLALMACROS"
+ * \endcode
+ * Note that if you plan to do further LAL code development on the same
+ * system, you may want to keep two versions of the library around: one
+ * with the flag(s) set and one without.
+ *
+ * ### Notes ###
+ *
+ * Why are the status handling routines written as macros rather than
+ * functions?  There are three good reasons.
+ *
+ * First, many of the handling routines must be able to force an exit
+ * from the function calling them.  This cannot be done if the routine is
+ * in its own function, except by raising signal flags (which is a Bad
+ * Thing according to LAL standards).
+ *
+ * Second, it is useful for these routines to assign a status structure's
+ * file and line fields using the \c __FILE__ and \c __LINE__
+ * macros.  If the routine is its own function, then these will just give
+ * the file and line number where the error handling routine is defined.
+ * If the routine is a macro, then these will give the file and line
+ * number where the macro was called, which is much more interesting.
+ *
+ * Third, by expanding macros at compile time, the runtime performance of
+ * the resulting code is marginally better.  Most of these macros will,
+ * under nominal conditions, reduce to a single conditional test of an
+ * integer value, with no additional overhead from function calling and
+ * parameter passing.  Thus programmers can be encouraged to include
+ * extensive error trapping in all their routines, without having to
+ * worry about compromising performance.
+ *
+ * It should be mentioned that, for these reasons, compiling a module
+ * with the \c NOLALMACROS flag above does not actually eliminate the
+ * status handling macros.  Rather, the macros are modified to call
+ * specialized functions that do most (but not all) of the processing.
+ *
+ */

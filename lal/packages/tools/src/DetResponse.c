@@ -31,7 +31,6 @@
 #include <lal/XLALError.h>
 
 /**
- *
  * An implementation of the detector response formulae in Anderson et al
  * PRD 63 042003 (2001) [\ref ABCF2001].
  *
@@ -181,7 +180,8 @@ void XLALComputeDetAMResponseExtraModes(
 	}
 }
 
-/** \deprecated Use XLALComputeDetAMResponse() instead.
+/**
+ * \deprecated Use XLALComputeDetAMResponse() instead.
  */
 void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, const LALDetAndSource * pDetAndSrc, const LIGOTimeGPS * gps)
 {
@@ -210,7 +210,8 @@ void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, c
 }
 
 
-/** Computes REAL4TimeSeries containing time series of response amplitudes.
+/**
+ * Computes REAL4TimeSeries containing time series of response amplitudes.
  * \see XLALComputeDetAMResponse() for more details.
  */
 int XLALComputeDetAMResponseSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** fcross, const REAL4 D[3][3], const double ra, const double dec, const double psi, const LIGOTimeGPS * start, const double deltaT, const int n)
@@ -246,7 +247,8 @@ int XLALComputeDetAMResponseSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** 
 	return 0;
 }
 
-/** Computes REAL4TimeSeries containing time series of the full general
+/**
+ * Computes REAL4TimeSeries containing time series of the full general
  * metric theory of gravity response amplitudes.
  * \see XLALComputeDetAMResponseExtraModes() for more details.
  */
@@ -302,7 +304,8 @@ int XLALComputeDetAMResponseExtraModesSeries(REAL4TimeSeries ** fplus, REAL4Time
 	return 0;
 }
 
-/** Computes REAL4TimeSeries containing time series of response amplitudes.
+/**
+ * Computes REAL4TimeSeries containing time series of response amplitudes.
  * \deprecated Use XLALComputeDetAMResponseSeries() instead.
  */
 void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * pResponseSeries, const LALDetAndSource * pDetAndSource, const LALTimeIntervalAndNSample * pTimeInfo)

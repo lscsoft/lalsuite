@@ -42,12 +42,14 @@ extern "C" {
  */
 /*@{*/
 
-/** Cast macro to use instead of libxml2's 'BAD_CAST' macro,
+/**
+ * Cast macro to use instead of libxml2's 'BAD_CAST' macro,
  * with are more descriptive name.
  */
 #define CAST_XMLCHAR (xmlChar *)
 
-/** Cast macro to use instead of libxml2's BAD_CAST macro for const pointers.
+/**
+ * Cast macro to use instead of libxml2's BAD_CAST macro for const pointers.
  */
 #define CAST_CONST_XMLCHAR (const xmlChar *)
 
@@ -69,7 +71,7 @@ typedef struct tagXML_NAMESPACE {
 
 /**
  * \brief This type represents a vector of XML namespaces
-  *
+ *
  * \sa XML_NAMESPACE
  * \sa XLALGetSingleNodeContentByXPath
  *

@@ -18,7 +18,8 @@
 """Utitilies to find and manipulate triggers from (GSTLAL) ExcessPower
 """
 #
-# \heading{Synopsis}
+# ### Synopsis ###
+#
 # ~~~
 # from laldetchar.triggers import excesspower
 # ~~~

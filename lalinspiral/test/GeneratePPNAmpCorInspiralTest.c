@@ -18,18 +18,19 @@
 */
 
 /**
-\file
-
-\brief Generates a parametrized post-Newtonian inspiral waveform.
-\ingroup GeneratePPNInspiral_h
-
-\heading{Usage}
-\code
-GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f f_min f_max]
-                        [-t dt] [-p order amp] [-d debuglevel] [-o outfile] [-g FF FFTfile]
-                        [-s taper]
-\endcode
-*/
+ * \file
+ *
+ * \brief Generates a parametrized post-Newtonian inspiral waveform.
+ * \ingroup GeneratePPNInspiral_h
+ *
+ * ### Usage ###
+ *
+ * \code
+ * GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f f_min f_max]
+ * [-t dt] [-p order amp] [-d debuglevel] [-o outfile] [-g FF FFTfile]
+ * [-s taper]
+ * \endcode
+ */
 
 /** \name Error Codes */
 /*@{*/

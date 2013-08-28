@@ -17,7 +17,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \author Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens, Holger Pletsch
+/**
+ * \author Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens, Holger Pletsch
  * \ingroup pulsarCoherent
  * \file
  * \brief
@@ -98,13 +99,14 @@ int finite(double x);
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
-/** Function to compute a vector of Fstatistic values for a number of frequency bins.
-    The output, i.e. fstatVector must be properly allocated
-    before this function is called.  The values of the start frequency, the step size
-    in the frequency and the number of frequency values for which the Fstatistic is
-    to be calculated are read from fstatVector.  The other parameters are not checked and
-    they must be correctly set outside this function.
-*/
+/**
+ * Function to compute a vector of Fstatistic values for a number of frequency bins.
+ * The output, i.e. fstatVector must be properly allocated
+ * before this function is called.  The values of the start frequency, the step size
+ * in the frequency and the number of frequency values for which the Fstatistic is
+ * to be calculated are read from fstatVector.  The other parameters are not checked and
+ * they must be correctly set outside this function.
+ */
 void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus structure */
 			       REAL4FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
 			       const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
@@ -536,7 +538,8 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
 
 
 
-/** Turn the given multiSFTvector into multiple long COMPLEX8TimeSeries, properly dealing with gaps.
+/**
+ * Turn the given multiSFTvector into multiple long COMPLEX8TimeSeries, properly dealing with gaps.
  * Memory allocation for the output MultiCOMPLEX8TimeSeries is done within this function.
  *
  * NOTE : We enforce that each detectors timeseries has <b>equal</b> start times and time spans.
@@ -611,9 +614,10 @@ MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries (
 
 
 
-/** Finds the earliest timestamp in a multi-SFT data structure
+/**
+ * Finds the earliest timestamp in a multi-SFT data structure
  *
-*/
+ */
 int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earliest GPS time */
 				 MultiSFTVector *multisfts      /**< [in] multi SFT vector */
 				 )
@@ -660,9 +664,9 @@ int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earli
 
 } /* XLALEarliestMultiSFTsample() */
 
-/** Find the time of the end of the latest SFT in a multi-SFT data structure
- *
-*/
+/**
+ * Find the time of the end of the latest SFT in a multi-SFT data structure
+ */
 int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS time */
 			       MultiSFTVector *multisfts      /**< [in] multi SFT vector */
 			       )
@@ -722,9 +726,9 @@ int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest 
 } /* XLALLatestMultiSFTsample() */
 
 
-/** Computed the weighted timeseries Fa(t) = x(t).a(t) and Fb(t) = x(t).b(t) for a multi-detector timeseries
- *
-*/
+/**
+ * Computed the weighted timeseries Fa(t) = x(t).a(t) and Fb(t) = x(t).b(t) for a multi-detector timeseries
+ */
 int XLALAntennaWeightCOMPLEX8TimeSeries (
             COMPLEX8TimeSeries **Faoft,                   /**< [out] the timeseries weighted by a(t) */
 					  COMPLEX8TimeSeries **Fboft,                   /**< [out] the timeseries weighted by b(t) */
@@ -788,9 +792,9 @@ int XLALAntennaWeightCOMPLEX8TimeSeries (
 
 }
 
-/** Computed the weighted timeseries Fa(t) = x(t).a(t) and Fb(t) = x(t).b(t) for a multi-detector timeseries
- *
-*/
+/**
+ * Computed the weighted timeseries Fa(t) = x(t).a(t) and Fb(t) = x(t).b(t) for a multi-detector timeseries
+ */
 int XLALAntennaWeightMultiCOMPLEX8TimeSeries (
                  MultiCOMPLEX8TimeSeries **Faoft,                        /**< [out] the timeseries weighted by a(t) */
 					       MultiCOMPLEX8TimeSeries **Fboft,                        /**< [out] the timeseries weighted by b(t) */
@@ -854,9 +858,9 @@ int XLALAntennaWeightMultiCOMPLEX8TimeSeries (
 
 }
 
-/** Performs barycentric resampling on a multi-detector timeseries
- *
-*/
+/**
+ * Performs barycentric resampling on a multi-detector timeseries
+ */
 int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft_RS,                         /**< [out] the resampled timeseries Fa(t_SSB) */
 						     MultiCOMPLEX8TimeSeries **Fboft_RS,                         /**< [out] the resampled timeseries Fb(t_SSB) */
 						     const MultiCOMPLEX8TimeSeries *Faoft,                       /**< [in] the detector frame timeseries Fa(t) */
@@ -987,11 +991,11 @@ int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **F
 
 }
 
-/**  Performs barycentric resampling on a COMPLEX8TimeSeries
- *
+/**
+ * Performs barycentric resampling on a COMPLEX8TimeSeries
  * We expect that the output timeseries has already been allocated correctly.
  *
-*/
+ */
 int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,                         /**< [out] the resampled timeseries Fa(t_SSB) */
 						COMPLEX8TimeSeries **Fboft_RS,                         /**< [out] the resampled timeseries Fb(t_SSB) */
 						const COMPLEX8TimeSeries *Faoft,                       /**< [in] the input detector frame timeseries Fa(t) */
@@ -1195,9 +1199,9 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
 
 }
 
-/** Find the earliest timestamp in a multi-SSB data structure
- *
-*/
+/**
+ * Find the earliest timestamp in a multi-SSB data structure
+ */
 int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out,              /**< output earliest GPS time */
 			       const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
 			       const REAL8 Tsft                    /**< the length of an SFT */
@@ -1260,9 +1264,9 @@ int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out,              /**< output earlie
 
 } /* XLALEarliestMultiSSBtime() */
 
-/** Find the latest timestamp in a multi-SSB data structure
- *
-*/
+/**
+ * Find the latest timestamp in a multi-SSB data structure
+ */
 int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output latest GPS time */
 			     const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
 			     const REAL8 Tsft                    /**< the length of an SFT */
@@ -1325,9 +1329,9 @@ int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output lat
 
 } /* XLALLatestMultiSSBtime() */
 
-/** Find the latest timestamp in a multi-SSB data structure
- *
-*/
+/**
+ * Find the latest timestamp in a multi-SSB data structure
+ */
 int XLALGSLInterpolateREAL8Vector( REAL8Vector **yi,
 				   REAL8Vector *xi,
 				   gsl_spline *spline
@@ -1358,9 +1362,9 @@ int XLALGSLInterpolateREAL8Vector( REAL8Vector **yi,
 }
 
 
-/** Find the latest timestamp in a multi-SSB data structure
- *
-*/
+/**
+ * Find the latest timestamp in a multi-SSB data structure
+ */
 int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline,
 				       REAL8Vector *x,
 				       REAL8Vector *y
@@ -1383,9 +1387,9 @@ int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline,
 
 }
 
-/** Shifts an FFT output vector such that the Niquest frequency is the central bin
- *
-*/
+/**
+ * Shifts an FFT output vector such that the Niquest frequency is the central bin
+ */
 int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x)
 {
   UINT4 N = (*x)->length;
@@ -1421,8 +1425,8 @@ int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x)
 
 }
 
-/** Multi-detector wrapper for XLALFrequencyShiftCOMPLEX8TimeSeries
- *
+/**
+ * Multi-detector wrapper for XLALFrequencyShiftCOMPLEX8TimeSeries
  * NOTE: this <b>modifies</b> the MultiCOMPLEX8Timeseries in place
  */
 int
@@ -1453,7 +1457,8 @@ XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **x,	/**< [i
 
 } /* XLALFrequencyShiftMultiCOMPLEX8TimeSeries() */
 
-/** Freq-shift the given COMPLEX8Timeseries by an amount of 'shift' Hz,
+/**
+ * Freq-shift the given COMPLEX8Timeseries by an amount of 'shift' Hz,
  * using the time-domain expression y(t) = x(t) * e^(-i 2pi df t),
  * which shifts x(f) into y(f) = x(f - df)
  *
@@ -1501,7 +1506,8 @@ XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	        /**< [in/
 
 } /* XLALFrequencyShiftCOMPLEX8TimeSeries() */
 
-/** Apply a spin-down correction to the Fa and Fb complex timeseries
+/**
+ * Apply a spin-down correction to the Fa and Fb complex timeseries
  * using the time-domain expression y(t) = x(t) * e^(-i 2pi sum f_k * (t-tref)^(k+1)),
  *
  * NOTE: this <b>modifies</b> the COMPLEX8TimeSeries Fa and Fb in place
@@ -1610,7 +1616,8 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	                
 
 /* ===== Object creation/destruction functions ===== */
 
-/** Destroy a MultiCOMPLEX8TimeSeries structure.
+/**
+ * Destroy a MultiCOMPLEX8TimeSeries structure.
  * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
  * for failure-cleanup even on incomplete structs
@@ -1641,7 +1648,8 @@ XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes )
 
 } /* XLALDestroyMultiCOMPLEX8TimeSeries() */
 
-/** Duplicates a MultiCOMPLEX8TimeSeries structure.
+/**
+ * Duplicates a MultiCOMPLEX8TimeSeries structure.
  * Allocates memory and copies contents.
  */
 MultiCOMPLEX8TimeSeries *
@@ -1676,7 +1684,8 @@ XLALDuplicateMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes )
 
 } /* XLALDuplicateMultiCOMPLEX8TimeSeries() */
 
-/** Duplicates a COMPLEX8TimeSeries structure.
+/**
+ * Duplicates a COMPLEX8TimeSeries structure.
  * Allocates memory and copies contents.
  */
 COMPLEX8TimeSeries *
@@ -1706,10 +1715,12 @@ XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times )
 
 } /* XLALDuplicateCOMPLEX8TimeSeries() */
 
-/** Destruction of a ComputeFBuffer *contents*,
+/**
+ * Destruction of a ComputeFBuffer *contents*,
  * i.e. the multiSSB and multiAMcoeff, while the
  * buffer-container is not freed (which is why it's passed
- * by value and not by reference...) */
+ * by value and not by reference...)
+ */
 void
 XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *buffer)
 {

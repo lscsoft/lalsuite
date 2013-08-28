@@ -27,193 +27,195 @@
 static void evaluateBessels(REAL4 rho[3], REAL4 alpha);
 static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
 
-/** \ingroup OverlapReductionFunction_c
-\author UTB Relativity Group; contact whelan@phys.utb.edu
-
-\brief Calculates the values of the overlap reduction function for a pair
-of gravitational wave detectors.
-
-XLALOverlapReductionFunction() calculates the values of the overlap reduction:
-
-\anchor stochastic_e_gamma \f{equation}{
-\gamma(f):=\frac{5}{8\pi}\sum_A\int_{S^2}d\hat\Omega\
-e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
-F_1^A(\hat\Omega)F_2^A(\hat\Omega)\ ,
-\label{stochastic_e_gamma}
-\f}
-
-where \f$\hat \Omega\f$ is a unit vector specifying a direction on the
-two-sphere, \f$\Delta\vec x:=\vec x_1-\vec x_2\f$ is the separation vector
-between the two detectors, and
-
-\anchor stochastic_e_F_i \f{equation}{
-F_i^A(\hat\Omega):=e_{ab}^A(\hat\Omega)\ d_i^{ab}
-\label{stochastic_e_F_i}
-\f}
-
-is the response of the \f$i\f$th detector \f$(i=1,2)\f$ to the \f$A=+,\times\f$
-polarization.
-Here \f$d_i^{ab}\f$ is the response tensor for the \f$i\f$th detector, which
-relates the "strain" \f$h\f$ measured by the detector to the metric
-perturbation \f$h_{ab}\f$ due to gravitational waves by
-
-\f{equation}{
-h = d_i^{ab} h_{ab}
-\f}
-
-The Cartesian components of \f$d_{ab}\f$ are constant in an earth-fixed
-rotating coördinate system.  \f$\{e_{ab}^A(\hat\Omega)|A=+,\times\}\f$
-are the spin-2 polarization tensors for the "plus" and "cross"
-polarization states, normalized so that \f$e_{ab}^A e^{Bab}=2\delta^{AB}\f$.
-With this definition,
-
-\f{equation}{
-\gamma(f)=d_{1ab}d_2^{cd}\frac{5}{4\pi}\int_{S^2}d\hat\Omega\
-e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
-P^{ab}_{cd}(\hat\Omega)
-\f}
-
-where \f$P^{ab}_{cd}(\hat\Omega)\f$ is a projection operator onto the space
-of symmetric, traceless second-rank tensors orthogonal to \f$\hat\Omega\f$.
-
-The overlap reduction function for a pair of identical detectors is a
-maximum when they are coïncident and coäligned; it
-decreases when the detectors are shifted apart (so there is a phase
-shift between the signals in the two detectors), or rotated out of
-coälignment (so the detectors are sensitive to different
-polarizations).  The overlap reduction function arises naturally when
-calculating the cross-correlated signal due to an isotropic and
-unpolarized stochastic gravitational-wave background.
-
-Given a choice of two detector sites, a frequency spacing \f$\delta f\f$,
-a start frequency \f$f_0\f$, and the number of desired values \f$N\f$, <tt>
-XLALOverlapReductionFunction()\/</tt> calculates the values of \f$\gamma(f)\f$ at the discrete
-frequencies \f$f_i=f_0 + i\Delta f\f$, \f$i=0,1,\cdots, N-1\f$.
-
-\heading{Algorithm}
-
-As shown in Appendix B of [\ref Flanagan1993] and Sec.~III.B of
-[\ref Allen1999], the overlap reduction function can be written in
-closed form in terms of the traceless response tensor
-\f$D_{ab}=d_{ab}-\delta_{ab} d^c_c/3\f$
-as sum of three spherical Bessel functions:
-
-\anchor stochastic_e_closed1 \f{equation}{
-\gamma(f)=\rho_1(\alpha)\ D_1^{ab}D_{2ab}
-+\rho_2(\alpha)\ D_1^{ab}D_{2a}{}^c s_b s_c
-+\rho_3(\alpha)\ D_1^{ab}D_2^{cd}s_a s_b s_c s_d\ ,
-\label{stochastic_e_closed1}
-\f}
-
-where
-
-\anchor stochastic_e_closed2 \f{equation}{
-\left[
-\begin{array}{c}
-\rho_1\\
-\rho_2\\
-\rho_3
-\end{array}
-\right]
-=
-\frac{1}{2\alpha^2}
-\left[
-\begin{array}{rrr}
- 10\alpha^2 & -20\alpha   & 10\\
--20\alpha^2 &  80\alpha   & -100\\
-  5\alpha^2 & -50\alpha   & 175
-\end{array}
-\right]\
-\left[
-\begin{array}{c}
-j_0\\
-j_1\\
-j_2
-\end{array}
-\right]\ ,
-\label{stochastic_e_closed2}
-\f}
-
-\f$j_0\f$, \f$j_1\f$, and \f$j_2\f$ are the standard spherical Bessel functions:
-
-\f{eqnarray*}{
-j_0(\alpha)&=&\frac{\sin\alpha}{\alpha} ,\\
-j_1(\alpha)&=&\frac{\sin\alpha}{\alpha^2}-\frac{\cos\alpha}{\alpha}\ ,\\
-j_2(\alpha)&=&3\ \frac{\sin\alpha}{\alpha^3}-3\ \frac{\cos\alpha}{\alpha^2} -\frac{\sin\alpha}{\alpha}\ ,
-\f}
-
-\f$\vec s\f$ is a unit vector pointing in the direction of
-\f$\Delta \vec x:=\vec x_1-\vec x_2\f$, and \f$\alpha:=2\pi f|\Delta\vec x|/c\f$.
-
-<tt>XLALOverlapReductionFunction()\/</tt> calculates the values of \f$\gamma(f)\f$
-as follows:
-
-<ol>
-
-<li> Gets the locations and response tensors for the two detectors
-  from the \c LALDetector structures in the input.</li>
-
-<li> Constructs the traceless parts \f$D_{iab}\f$ of the two detector
-  response tensors and finds the distance \f$|\Delta\vec x|\f$ and
-  direction \f$s^a\f$ between the sites.</li>
-
-<li> Calculates the frequency-independent coëfficients
-  \f$D_1^{ab}D_{2ab}\f$, \f$D_1^{ab}D_{2a}{}^c s_b s_c\f$, and
-  \f$D_1^{ab}D_2^{cd}s_a s_b s_c s_d\f$ that appear in
-  Eq.\eqref{stochastic_e_closed1}.</li>
-
-<li> Calculates \f$\gamma(f)\f$ at each discrete frequency
-  \f$f_i:=f_0+i\Delta f\f$, \f$i=0,1,\cdots N-1\f$, using the power series
-  expansion
-  \f{eqnarray}{
-    j_0(\alpha) &=& 1 - \frac{\alpha^2}{6} + \frac{\alpha^4}{120} + \mathcal{O}(\alpha^6) \\
-    \frac{j_1(\alpha)}{\alpha} &=& \frac{1}{3} - \frac{\alpha^2}{30} + \frac{\alpha^4}{840} + \mathcal{O}(\alpha^6) \\
-    \frac{j_2(\alpha)}{\alpha^2} &=& \frac{1}{15} - \frac{\alpha^2}{210} + \frac{\alpha^4}{7560} + \mathcal{O}(\alpha^6)
-  \f}
-  for the spherical Bessel functions \f$j_0(\alpha_i)\f$,
-  \f$j_a(\alpha_i)\f$, \f$j_2(\alpha_i)\f$ when \f$\alpha_i=2\pi f_i
-  |\Delta\vec x|/c<0.01\f$.
-</li>
-</ol>
-
-\heading{Uses}
-\code
-LALUnitRaise()
-sin()
-cos()
-sqrt()
-strncpy()
-\endcode
-
-\heading{Notes}
-
-<ul>
-
-<li> The \f$\gamma(f)\f$ here is related to the unnormalized \f$\Gamma(f)\f$
-  defined by Maggiore
-  [\ref Maggiore2000a,\ref Maggiore2000b] by
-  \f$\gamma(f) = \frac{5}{2}\Gamma(f)\f$.  This normalization, which
-  agrees with the literature
-  [\ref Flanagan1993,\ref Allen1997,\ref Allen1999]
-  on interferometers, is chosen so that \f$\gamma(f)\equiv 1\f$ for a pair
-  of coïncident, coäligned interferometers with perpendicular
-  arms.  It means that, for combinations other than a pair of
-  interferometers, our \f$\gamma(f)\f$ is \e not equal to the
-  generalization of \f$\gamma(f)\f$ defined by Maggiore, whose
-  relationship to \f$\Gamma(f)\f$ depends on the type of detector.
-  Defining \f$\gamma(f)\f$ as we do allows us to use the formulae from,
-  e.g., [\ref Allen1999], irrespective of the detector
-  type in question.</li>
-
-<li> While \f$\gamma(f)\f$ is usually considered to be dimensionless,
-  this routine attaches to it units of strain\f$^2\f$.  This is because it
-  contains two powers of the response tensor \f$d^{ab}\f$, which converts
-  the dimensionless metric perturbation \f$h_{ab}\f$ to \f$h=h_{ab}d^{ab}\f$,
-  which has units of strain.
-</li>
-</ul>
-
-*/
+/**
+ * \ingroup OverlapReductionFunction_c
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ *
+ * \brief Calculates the values of the overlap reduction function for a pair
+ * of gravitational wave detectors.
+ *
+ * XLALOverlapReductionFunction() calculates the values of the overlap reduction:
+ *
+ * \anchor stochastic_e_gamma \f{equation}{
+ * \gamma(f):=\frac{5}{8\pi}\sum_A\int_{S^2}d\hat\Omega\
+ * e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
+ * F_1^A(\hat\Omega)F_2^A(\hat\Omega)\ ,
+ * \tag{stochastic_e_gamma}
+ * \f}
+ *
+ * where \f$\hat \Omega\f$ is a unit vector specifying a direction on the
+ * two-sphere, \f$\Delta\vec x:=\vec x_1-\vec x_2\f$ is the separation vector
+ * between the two detectors, and
+ *
+ * \anchor stochastic_e_F_i \f{equation}{
+ * F_i^A(\hat\Omega):=e_{ab}^A(\hat\Omega)\ d_i^{ab}
+ * \tag{stochastic_e_F_i}
+ * \f}
+ *
+ * is the response of the \f$i\f$th detector \f$(i=1,2)\f$ to the \f$A=+,\times\f$
+ * polarization.
+ * Here \f$d_i^{ab}\f$ is the response tensor for the \f$i\f$th detector, which
+ * relates the "strain" \f$h\f$ measured by the detector to the metric
+ * perturbation \f$h_{ab}\f$ due to gravitational waves by
+ *
+ * \f{equation}{
+ * h = d_i^{ab} h_{ab}
+ * \f}
+ *
+ * The Cartesian components of \f$d_{ab}\f$ are constant in an earth-fixed
+ * rotating coördinate system.  \f$\{e_{ab}^A(\hat\Omega)|A=+,\times\}\f$
+ * are the spin-2 polarization tensors for the "plus" and "cross"
+ * polarization states, normalized so that \f$e_{ab}^A e^{Bab}=2\delta^{AB}\f$.
+ * With this definition,
+ *
+ * \f{equation}{
+ * \gamma(f)=d_{1ab}d_2^{cd}\frac{5}{4\pi}\int_{S^2}d\hat\Omega\
+ * e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
+ * P^{ab}_{cd}(\hat\Omega)
+ * \f}
+ *
+ * where \f$P^{ab}_{cd}(\hat\Omega)\f$ is a projection operator onto the space
+ * of symmetric, traceless second-rank tensors orthogonal to \f$\hat\Omega\f$.
+ *
+ * The overlap reduction function for a pair of identical detectors is a
+ * maximum when they are coïncident and coäligned; it
+ * decreases when the detectors are shifted apart (so there is a phase
+ * shift between the signals in the two detectors), or rotated out of
+ * coälignment (so the detectors are sensitive to different
+ * polarizations).  The overlap reduction function arises naturally when
+ * calculating the cross-correlated signal due to an isotropic and
+ * unpolarized stochastic gravitational-wave background.
+ *
+ * Given a choice of two detector sites, a frequency spacing \f$\delta f\f$,
+ * a start frequency \f$f_0\f$, and the number of desired values \f$N\f$, <tt>
+ * XLALOverlapReductionFunction()\/</tt> calculates the values of \f$\gamma(f)\f$ at the discrete
+ * frequencies \f$f_i=f_0 + i\Delta f\f$, \f$i=0,1,\cdots, N-1\f$.
+ *
+ * ### Algorithm ###
+ *
+ * As shown in Appendix B of [\ref Flanagan1993] and Sec.~III.B of
+ * [\ref Allen1999], the overlap reduction function can be written in
+ * closed form in terms of the traceless response tensor
+ * \f$D_{ab}=d_{ab}-\delta_{ab} d^c_c/3\f$
+ * as sum of three spherical Bessel functions:
+ *
+ * \anchor stochastic_e_closed1 \f{equation}{
+ * \gamma(f)=\rho_1(\alpha)\ D_1^{ab}D_{2ab}
+ * +\rho_2(\alpha)\ D_1^{ab}D_{2a}{}^c s_b s_c
+ * +\rho_3(\alpha)\ D_1^{ab}D_2^{cd}s_a s_b s_c s_d\ ,
+ * \tag{stochastic_e_closed1}
+ * \f}
+ *
+ * where
+ *
+ * \anchor stochastic_e_closed2 \f{equation}{
+ * \left[
+ * \begin{array}{c}
+ * \rho_1\\
+ * \rho_2\\
+ * \rho_3
+ * \end{array}
+ * \right]
+ * =
+ * \frac{1}{2\alpha^2}
+ * \left[
+ * \begin{array}{rrr}
+ * 10\alpha^2 & -20\alpha   & 10\\
+ * -20\alpha^2 &  80\alpha   & -100\\
+ * 5\alpha^2 & -50\alpha   & 175
+ * \end{array}
+ * \right]\
+ * \left[
+ * \begin{array}{c}
+ * j_0\\
+ * j_1\\
+ * j_2
+ * \end{array}
+ * \right]\ ,
+ * \tag{stochastic_e_closed2}
+ * \f}
+ *
+ * \f$j_0\f$, \f$j_1\f$, and \f$j_2\f$ are the standard spherical Bessel functions:
+ *
+ * \f{eqnarray*}{
+ * j_0(\alpha)&=&\frac{\sin\alpha}{\alpha} ,\\
+ * j_1(\alpha)&=&\frac{\sin\alpha}{\alpha^2}-\frac{\cos\alpha}{\alpha}\ ,\\
+ * j_2(\alpha)&=&3\ \frac{\sin\alpha}{\alpha^3}-3\ \frac{\cos\alpha}{\alpha^2} -\frac{\sin\alpha}{\alpha}\ ,
+ * \f}
+ *
+ * \f$\vec s\f$ is a unit vector pointing in the direction of
+ * \f$\Delta \vec x:=\vec x_1-\vec x_2\f$, and \f$\alpha:=2\pi f|\Delta\vec x|/c\f$.
+ *
+ * <tt>XLALOverlapReductionFunction()\/</tt> calculates the values of \f$\gamma(f)\f$
+ * as follows:
+ *
+ * <ol>
+ *
+ * <li> Gets the locations and response tensors for the two detectors
+ * from the \c LALDetector structures in the input.</li>
+ *
+ * <li> Constructs the traceless parts \f$D_{iab}\f$ of the two detector
+ * response tensors and finds the distance \f$|\Delta\vec x|\f$ and
+ * direction \f$s^a\f$ between the sites.</li>
+ *
+ * <li> Calculates the frequency-independent coëfficients
+ * \f$D_1^{ab}D_{2ab}\f$, \f$D_1^{ab}D_{2a}{}^c s_b s_c\f$, and
+ * \f$D_1^{ab}D_2^{cd}s_a s_b s_c s_d\f$ that appear in
+ * Eq.\eqref{stochastic_e_closed1}.</li>
+ *
+ * <li> Calculates \f$\gamma(f)\f$ at each discrete frequency
+ * \f$f_i:=f_0+i\Delta f\f$, \f$i=0,1,\cdots N-1\f$, using the power series
+ * expansion
+ * \f{eqnarray}{
+ * j_0(\alpha) &=& 1 - \frac{\alpha^2}{6} + \frac{\alpha^4}{120} + \mathcal{O}(\alpha^6) \\
+ * \frac{j_1(\alpha)}{\alpha} &=& \frac{1}{3} - \frac{\alpha^2}{30} + \frac{\alpha^4}{840} + \mathcal{O}(\alpha^6) \\
+ * \frac{j_2(\alpha)}{\alpha^2} &=& \frac{1}{15} - \frac{\alpha^2}{210} + \frac{\alpha^4}{7560} + \mathcal{O}(\alpha^6)
+ * \f}
+ * for the spherical Bessel functions \f$j_0(\alpha_i)\f$,
+ * \f$j_a(\alpha_i)\f$, \f$j_2(\alpha_i)\f$ when \f$\alpha_i=2\pi f_i
+ * |\Delta\vec x|/c<0.01\f$.
+ * </li>
+ * </ol>
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALUnitRaise()
+ * sin()
+ * cos()
+ * sqrt()
+ * strncpy()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * <ul>
+ *
+ * <li> The \f$\gamma(f)\f$ here is related to the unnormalized \f$\Gamma(f)\f$
+ * defined by Maggiore
+ * [\ref Maggiore2000a,\ref Maggiore2000b] by
+ * \f$\gamma(f) = \frac{5}{2}\Gamma(f)\f$.  This normalization, which
+ * agrees with the literature
+ * [\ref Flanagan1993,\ref Allen1997,\ref Allen1999]
+ * on interferometers, is chosen so that \f$\gamma(f)\equiv 1\f$ for a pair
+ * of coïncident, coäligned interferometers with perpendicular
+ * arms.  It means that, for combinations other than a pair of
+ * interferometers, our \f$\gamma(f)\f$ is \e not equal to the
+ * generalization of \f$\gamma(f)\f$ defined by Maggiore, whose
+ * relationship to \f$\Gamma(f)\f$ depends on the type of detector.
+ * Defining \f$\gamma(f)\f$ as we do allows us to use the formulae from,
+ * e.g., [\ref Allen1999], irrespective of the detector
+ * type in question.</li>
+ *
+ * <li> While \f$\gamma(f)\f$ is usually considered to be dimensionless,
+ * this routine attaches to it units of strain\f$^2\f$.  This is because it
+ * contains two powers of the response tensor \f$d^{ab}\f$, which converts
+ * the dimensionless metric perturbation \f$h_{ab}\f$ to \f$h=h_{ab}d^{ab}\f$,
+ * which has units of strain.
+ * </li>
+ * </ul>
+ *
+ */
 
 void
 XLALOverlapReductionFunction(

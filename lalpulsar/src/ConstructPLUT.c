@@ -24,30 +24,31 @@
  *-----------------------------------------------------------------------
  */
 
-/** \file
+/**
+ * \file
  * \ingroup LUT_h
  * \author Sintes, A and Krishnan, B
  * \brief Construction of the look up table for generating partial Hough maps assuming the
  * use of the stereographic projection.
-
-\heading{Description}
-
-This module is the core of the Hough transform. The LAL function LALHOUGHConstructPLUT()
-constructs the look up tables that will be used to build the so-called
-partial-Hough maps. Each look up table is valid for a given sky-patch, time, and
-frequency range around a certain \a f0 value. The look up table contains
-all the necessary information regarding the borders of the annuli clipped on
-the projected' two dimensional sky-patch.
-
-The inputs are:  HOUGHPatchGrid   containing the grid patch
-information. This is independent of the sky location of the
-patch, and HOUGHParamPLUT  with all the other parameters needed.
-
-The output is the look up table  HOUGHptfLUT
-
-More detailed documentation can be found in the source code itself.
-
-*/
+ *
+ * ### Description ###
+ *
+ * This module is the core of the Hough transform. The LAL function LALHOUGHConstructPLUT()
+ * constructs the look up tables that will be used to build the so-called
+ * partial-Hough maps. Each look up table is valid for a given sky-patch, time, and
+ * frequency range around a certain \a f0 value. The look up table contains
+ * all the necessary information regarding the borders of the annuli clipped on
+ * the projected' two dimensional sky-patch.
+ *
+ * The inputs are:  HOUGHPatchGrid   containing the grid patch
+ * information. This is independent of the sky location of the
+ * patch, and HOUGHParamPLUT  with all the other parameters needed.
+ *
+ * The output is the look up table  HOUGHptfLUT
+ *
+ * More detailed documentation can be found in the source code itself.
+ *
+ */
 
 /*
  * 3. Includes. These should appear in the following order:

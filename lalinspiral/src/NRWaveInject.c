@@ -50,8 +50,10 @@
 int compare_abs_float(const void *a, const void *b);
 int compare_abs_double(const void *a, const void *b);
 
-/** Takes a strain of h+ and hx data and stores it in a temporal
- *  strain in order to perform the sum over l and m modes **/
+/**
+ * Takes a strain of h+ and hx data and stores it in a temporal
+ * strain in order to perform the sum over l and m modes
+ */
 REAL4TimeVectorSeries *
 XLALSumStrain(
     REAL4TimeVectorSeries *tempstrain,     /**< storing variable */
@@ -88,8 +90,10 @@ XLALSumStrainREAL8(
 }
 
 
-/** Takes a (sky averaged) numerical relativity waveform and returns the
- * waveform appropriate for given coalescence phase and inclination angles */
+/**
+ * Takes a (sky averaged) numerical relativity waveform and returns the
+ * waveform appropriate for given coalescence phase and inclination angles
+ */
 /* REAL4TimeVectorSeries */
 INT4
 XLALOrientNRWave(
@@ -128,8 +132,10 @@ XLALOrientNRWave(
   /*   return( strain ); */
 }
 
-/** Takes a (sky averaged) numerical relativity waveform and returns the
- * waveform appropriate for given coalescence phase and inclination angles */
+/**
+ * Takes a (sky averaged) numerical relativity waveform and returns the
+ * waveform appropriate for given coalescence phase and inclination angles
+ */
 void
 XLALOrientNRWaveTimeSeriesREAL8(
     REAL8TimeSeries        *plus,	   /**< NEEDS DOCUMENTATION */
@@ -168,8 +174,10 @@ XLALOrientNRWaveTimeSeriesREAL8(
 }
 
 
-/** Takes a (sky averaged) numerical relativity waveform and returns the
- * waveform appropriate for given coalescence phase and inclination angles */
+/**
+ * Takes a (sky averaged) numerical relativity waveform and returns the
+ * waveform appropriate for given coalescence phase and inclination angles
+ */
 REAL8TimeVectorSeries *
 XLALOrientNRWaveREAL8(
     REAL8TimeVectorSeries *strain,         /**< sky average h+, hx data */
@@ -286,9 +294,10 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
 
 
 
-/** Function for interpolating time series to a given sampling rate.
-  Input vector is destroyed and a new vector is allocated.
-  */
+/**
+ * Function for interpolating time series to a given sampling rate.
+ * Input vector is destroyed and a new vector is allocated.
+ */
   REAL4TimeSeries *
 XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time series */
     INT4            sampleRate     /**< sample rate of time series */)
@@ -363,9 +372,10 @@ XLALInterpolateNRWave( REAL4TimeSeries *in,           /**< input strain time ser
 }
 
 
-/** Function for interpolating time series to a given sampling rate.
-  Input vector is destroyed and a new vector is allocated.
-  */
+/**
+ * Function for interpolating time series to a given sampling rate.
+ * Input vector is destroyed and a new vector is allocated.
+ */
   REAL8TimeSeries *
 XLALInterpolateNRWaveREAL8( REAL8TimeSeries *in,           /**< input strain time series */
     INT4            sampleRate     /**< sample rate of time series */)
@@ -531,10 +541,11 @@ XLALFindNRCoalescencePlusCrossREAL8(REAL8 *tc,  /**< FIXME: !TO BE DOCUMENTED! *
 }
 
 
-/** Function for calculating the coalescence time (defined to be the
-  peak) of a NR wave
-  This uses the peak of h(t)
-  */
+/**
+ * Function for calculating the coalescence time (defined to be the
+ * peak) of a NR wave
+ * This uses the peak of h(t)
+ */
   INT4
 XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,   /**< FIXME: !TO BE DOCUMENTED! */
     const REAL4TimeSeries *in   /**< input strain time series */)
@@ -579,10 +590,11 @@ XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,  /**< FIXME: !TO BE DOCUMENTED! */
 
 
 
-/** For given inspiral parameters, find nearest waveform in
-  catalog of numerical relativity waveforms.  At the moment, only
-  the mass ratio is considered.
-  */
+/**
+ * For given inspiral parameters, find nearest waveform in
+ * catalog of numerical relativity waveforms.  At the moment, only
+ * the mass ratio is considered.
+ */
   INT4
 XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
     NRWaveCatalog    *nrCatalog, /**< input  NR wave catalog  */
@@ -849,8 +861,10 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 }
 
 
-/** construct the channel name corresponding to a particular mode
-  and polarization in frame file containing nr data */
+/**
+ * construct the channel name corresponding to a particular mode
+ * and polarization in frame file containing nr data
+ */
 CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, UINT4 l, INT4 m)
 {
   /* variables */
@@ -884,11 +898,12 @@ CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, UINT4 l, INT4 m)
 }
 
 
-/** Function for parsing numrel group name and converting it into a enum element.
-  This needs to be robust enough to be able to handle the information as submitted
-  by the groups. Is there a cleaner way to do this?
-  add or modify the group names as required
-  */
+/**
+ * Function for parsing numrel group name and converting it into a enum element.
+ * This needs to be robust enough to be able to handle the information as submitted
+ * by the groups. Is there a cleaner way to do this?
+ * add or modify the group names as required
+ */
 NumRelGroup XLALParseNumRelGroupName( CHAR *name)
 {
 

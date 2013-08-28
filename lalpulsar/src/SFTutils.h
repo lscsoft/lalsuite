@@ -31,7 +31,6 @@ extern "C" {
  * \date 2005
  * \brief Utility functions for handling of SFTtype and SFTVectors
  *
- *
  * The helper functions XLALCreateSFT(), XLALDestroySFT(), XLALCreateSFTVector()
  * and XLALDestroySFTVector() respectively allocate and free SFT-structs and SFT-vectors.
  * Similarly, XLALCreateTimestampVector() and XLALDestroyTimestampVector() allocate and free

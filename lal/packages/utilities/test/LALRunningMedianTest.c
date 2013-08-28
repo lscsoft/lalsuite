@@ -28,35 +28,36 @@
 
 
 /**
-\file
-\ingroup LALRunningMedian_h
-\author B. Machenschalk
-
-\brief Program to test running median function
-
-\heading{Usage}
-\code
-LALRunningMedianTest [length blocksize [lalDebugLevel]]
-\endcode
-
-\heading{Description}
-
-This program test the LALRunningMedian functions
-First the proper function of the input checks is tested.
-Then it reads an array size and a block size from the command
-line, fills an array of the given size with random numbers,
-computes medians of all blocks with blocksize using the
-LALRunningMedian functions and compares the results against
-inividually calculated medians. The test is repeated with
-blocksize - 1 (to check for even/odd errors).
-The default values for array length and window
-width are 1024 and 512.
-If a value for lalDebugLevel is given, the program
-outputs the values of the input and median arrays
-to files, using the PrintVector functions
-from the support package.
-
-*/
+ * \file
+ * \ingroup LALRunningMedian_h
+ * \author B. Machenschalk
+ *
+ * \brief Program to test running median function
+ *
+ * ### Usage ###
+ *
+ * \code
+ * LALRunningMedianTest [length blocksize [lalDebugLevel]]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program test the LALRunningMedian functions
+ * First the proper function of the input checks is tested.
+ * Then it reads an array size and a block size from the command
+ * line, fills an array of the given size with random numbers,
+ * computes medians of all blocks with blocksize using the
+ * LALRunningMedian functions and compares the results against
+ * inividually calculated medians. The test is repeated with
+ * blocksize - 1 (to check for even/odd errors).
+ * The default values for array length and window
+ * width are 1024 and 512.
+ * If a value for lalDebugLevel is given, the program
+ * outputs the values of the input and median arrays
+ * to files, using the PrintVector functions
+ * from the support package.
+ *
+ */
 
 /**\name Error Codes */
 /*@{*/

@@ -17,16 +17,16 @@
  *  MA  02111-1307  USA
  */
 
-/** 
- *  \author Bruce Allen, Reinhard Prix
- *  \file
- *  \ingroup pulsarApps
- *  \brief
- *  Dump the header information from a set of SFT files
+/**
+ * \author Bruce Allen, Reinhard Prix
+ * \file
+ * \ingroup pulsarApps
+ * \brief
+ * Dump the header information from a set of SFT files
  *
- *  The exit status will be zero if all SFTs are valid.  The exit status
- *  will be non-zero if any of the SFTs was invalid.  grep SFTE
- *  SFTReferenceLibrary.h will show the return values.
+ * The exit status will be zero if all SFTs are valid.  The exit status
+ * will be non-zero if any of the SFTs was invalid.  grep SFTE
+ * SFTReferenceLibrary.h will show the return values.
  */
 
 #include <stdio.h>

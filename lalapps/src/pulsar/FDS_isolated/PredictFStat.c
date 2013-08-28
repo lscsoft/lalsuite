@@ -18,7 +18,8 @@
  */
 
 /*********************************************************************************/
-/** \author I. Gholami, R. Prix
+/**
+ * \author I. Gholami, R. Prix
  * \file
  * \ingroup pulsarApps
  * \brief
@@ -27,7 +28,7 @@
  * Contrary to SemiAnalyticF this code can use (multi-IFO) SFTs to specify the startTime,
  * duration, detectors and noise-floors to use in the estimation.
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -87,7 +88,8 @@
 
 #define LAL_INT4_MAX 2147483647
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {

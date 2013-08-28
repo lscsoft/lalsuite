@@ -27,8 +27,7 @@
  * This is supposed to provide a high-level interface for search authors to obtain a
  * response function in the desired form.
  *
- * \heading{Prototypes}
- *
+ * ### Prototypes ###
  *
  * The routine <tt>LALFrameExtractResponse()</tt> extracts the necessary
  * calibration information from the frames. The frames used to construct
@@ -89,7 +88,7 @@
  * for SenseMon type frames.  If both types of frame are present in the cache,
  * SenseMon frames are used in preference.
  * </li></ol>
-*/
+ */
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <string.h>

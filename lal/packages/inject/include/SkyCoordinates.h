@@ -26,8 +26,10 @@
 extern "C" {
 #endif
 
-/** \addtogroup SkyCoordinates_h
-    @{*/
+/**
+ * \addtogroup SkyCoordinates_h
+ * @{
+ */
 
 /** \name Error codes */
 /*@{*/
@@ -47,8 +49,10 @@ extern "C" {
 
 /*---------- exported types ---------- */
 
-/** This enumerated type is used to identify data as being in one of the
- *  coordinate systems discussed in \ref SkyCoordinates_h.  */
+/**
+ * This enumerated type is used to identify data as being in one of the
+ * coordinate systems discussed in \ref SkyCoordinates_h.
+ */
 typedef enum {
   COORDINATESYSTEM_HORIZON,	/**< A horizon coordinate system. */
   COORDINATESYSTEM_GEOGRAPHIC,	/**< The Earth-fixed geographic coordinate system. */
@@ -57,7 +61,8 @@ typedef enum {
   COORDINATESYSTEM_GALACTIC	/**< The galactic coordinate system. */
 } CoordinateSystem;
 
-/** This structure stores the two spherical coordinates of a sky position;
+/**
+ * This structure stores the two spherical coordinates of a sky position;
  * ie a generic latitude and longitude; the structure is not defined
  * specific to a particular coordinate system, but maintains a tag
  * indicating which coordinate system it is expressed in.
@@ -68,7 +73,8 @@ typedef struct tagSkyPosition {
   CoordinateSystem system; 	/**< The coordinate system in which latitude/longitude are expressed. */
 } SkyPosition;
 
-/** This structure stores the location of a point on (or near) the surface
+/**
+ * This structure stores the location of a point on (or near) the surface
  * of the Earth in both geodetic and geocentric coordinates, as described
  * in TerrestrialCoordinates.c .
  */
@@ -91,7 +97,8 @@ typedef struct tagEarthPosition {
 } EarthPosition;
 
 
-/** This structure stores parameters for the function <tt>LALConvertSkyPosition()</tt>.
+/**
+ * This structure stores parameters for the function <tt>LALConvertSkyPosition()</tt>.
  */
 typedef struct tagConvertSkyParams {
   CoordinateSystem system;	/**<  The coordinate system to which one is transforming. */

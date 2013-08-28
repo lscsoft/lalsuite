@@ -26,12 +26,12 @@
  * As such, it is necessary to calculate the derivatives numerically. This
  * function provides the means to do that for the SEOBNRv1 Hamiltonian
  * in the spin-aligned case, i.e. equatorial orbits with four dynamical variables:
- * r, phi, pr and pphi. It then combines energy flux and numerical derivatives of 
+ * r, phi, pr and pphi. It then combines energy flux and numerical derivatives of
  * the Hamiltonian to calculate the right hand side of the ODEs given by
- * Eqs. 10a - 10d of Pan et al. PRD 84, 124052 (2011). 
- * Since SEOBNRv1 is a spin-aligned model, the ODEs are written 
+ * Eqs. 10a - 10d of Pan et al. PRD 84, 124052 (2011).
+ * Since SEOBNRv1 is a spin-aligned model, the ODEs are written
  * in the same format as ODEs of a nonspinning model.
- * 
+ *
  */
 
 #ifndef LALSIMIMRSPINALIGNEDEOBHCAPDERIVATIVE_C
@@ -71,8 +71,8 @@ static int XLALSpinAlignedHcapDerivative(
 /**
  * Function to calculate R.H.S. of the ODEs, given dyanmical variables,
  * their derivatives and EOB parameters. Since SEOBNRv1 spin Hamiltonian
- * was implemented for Cartesean coordinates while dynamical evolution was 
- * implemented in polar coordinates, we need to perform a transform. 
+ * was implemented for Cartesean coordinates while dynamical evolution was
+ * implemented in polar coordinates, we need to perform a transform.
  * This is done in a particular transform in which
  * x = r, y = z = 0, px = pr, py = pphi/r, pz = 0, and
  * omega = v/r = (dy/dt)/r = (dH/dpy)/r, dr/dt = dx/dt = dH/dpx, etc.

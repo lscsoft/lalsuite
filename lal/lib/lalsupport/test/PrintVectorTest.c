@@ -18,30 +18,32 @@
 */
 
 /**
-   \file
-   \ingroup PrintVector_h
-
-   \brief Tests the routines in \ref PrintVector.c.
-
-   \heading{Usage}
-   \code
-PrintVectorTest
-   \endcode
-
-   \heading{Description}
-
-This program generates and prints a sequence of
-   <tt>\<datatype\></tt>Vectors; the program itself always
-returns success, so the testing function is actually served by
-examinaton of the output files.
-
-\heading{Exit codes}
-<table>
-<tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Always returned.</td></tr>
-/table>
-
-*/
+ * \file
+ * \ingroup PrintVector_h
+ *
+ * \brief Tests the routines in \ref PrintVector.c.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * PrintVectorTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program generates and prints a sequence of
+ * <tt>\<datatype\></tt>Vectors; the program itself always
+ * returns success, so the testing function is actually served by
+ * examinaton of the output files.
+ *
+ * ### Exit codes ###
+ *
+ * <table>
+ * <tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Always returned.</td></tr>
+ * /table>
+ *
+ */
 /** \cond DONT_DOXYGEN */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS

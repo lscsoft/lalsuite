@@ -96,7 +96,8 @@ just the ones that the user requested.  The actual parameters that
 will be used are computed as exact integers, which correspond as closely as
 possible to the users request, but are not the same.  Don't use these variables! */
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {

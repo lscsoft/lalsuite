@@ -18,25 +18,29 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\brief NONE
-
-\heading{Prototypes}
-
-<tt>LALInspiralComputeChisq()</tt>
-
-\heading{Description}
-\heading{Algorithm}
-\heading{Uses}
-\code
-LALREAL4VectorFFT
-\endcode
-
-\heading{Notes}
-
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \brief NONE
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralComputeChisq()</tt>
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALREAL4VectorFFT
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <lal/AVFactories.h>
 #include <lal/LALNoiseModelsInspiral.h>

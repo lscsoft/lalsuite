@@ -27,7 +27,7 @@
  * \author Karl Wette
  * \brief Static tables of the factorial and double-factorial functions, and derived quantities.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The following tables of the factorial function are provided:
  * <ul>

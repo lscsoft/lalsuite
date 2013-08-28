@@ -29,37 +29,38 @@ pthread_mutex_t lalGSLPthreadMutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 /**
-   \ingroup LALGSL_h
-   \brief LAL GSL error handler.
-
-   \heading{Synopsis}
-   \code
-   extern LALStatus *lalGSLGlobalStatusPtr;
-   #include <lal/LALConfig.h>
-   #ifdef LAL_PTHREAD_LOCK
-   #include <pthread.h>
-   extern pthread_mutex_t lalGSLPthreadMutex;
-   #endif
-   \endcode
-
-   \heading{Description}
-
-The function \c LALGSLErrorHandler() is the standard GSL error handler
-for GSL functions called within LAL.  Its function is to take the GSL
-error code and information and translate them into equivalent aspects of
-the LAL status structure.  The status structure that is currently identified
-by \c lalGSLGlobalStatusPtr is populated.  This global variable is to
-be set to the current status pointer prior to invocation of the GSL function.
-In addition, the GSL error handler must be set to the LAL GSL error handler
-prior to the invocation of the GSL function.  Both of these tasks can be
-done with the macros provided in the header \ref LALGSL_h.
-However, doing so is not thread-safe.  Thus the macros use the mutex
-\c lalGSLPthreadMutex to block other threads from making GSL calls
-<em>from within LAL functions</em> while one thread has set the GSL error
-handler and global status pointer.  This mutex must also be used to block
-any non-LAL GSL function calls from other threads or else they may be called
-with the LAL GSL error handler in effect.
-*/
+ * \ingroup LALGSL_h
+ * \brief LAL GSL error handler.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * extern LALStatus *lalGSLGlobalStatusPtr;
+ * #include <lal/LALConfig.h>
+ * #ifdef LAL_PTHREAD_LOCK
+ * #include <pthread.h>
+ * extern pthread_mutex_t lalGSLPthreadMutex;
+ * #endif
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * The function \c LALGSLErrorHandler() is the standard GSL error handler
+ * for GSL functions called within LAL.  Its function is to take the GSL
+ * error code and information and translate them into equivalent aspects of
+ * the LAL status structure.  The status structure that is currently identified
+ * by \c lalGSLGlobalStatusPtr is populated.  This global variable is to
+ * be set to the current status pointer prior to invocation of the GSL function.
+ * In addition, the GSL error handler must be set to the LAL GSL error handler
+ * prior to the invocation of the GSL function.  Both of these tasks can be
+ * done with the macros provided in the header \ref LALGSL_h.
+ * However, doing so is not thread-safe.  Thus the macros use the mutex
+ * \c lalGSLPthreadMutex to block other threads from making GSL calls
+ * <em>from within LAL functions</em> while one thread has set the GSL error
+ * handler and global status pointer.  This mutex must also be used to block
+ * any non-LAL GSL function calls from other threads or else they may be called
+ * with the LAL GSL error handler in effect.
+ */
 void
 LALGSLErrorHandler(const char *reason,
                    const char *file, int line, int my_gsl_error)

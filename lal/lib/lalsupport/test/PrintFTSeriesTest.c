@@ -18,32 +18,33 @@
 */
 
 /**
-   \file
-   \ingroup PrintFTSeries_h
-   \author J. T. Whelan <jtwhelan@loyno.edu>
-
-   \brief Tests the routines in \ref PrintTimeSeries_c and \ref PrintFrequencySeries_c.
-
-   \heading{Usage}
-   \code
-PrintFTSeriesTest
-   \endcode
-
-   \heading{Description}
-
-This program generates and prints a sequence of frequency and time
-series; the program only detects errors coming from other LAL
-functions, so more in-depth testing requires  examinaton of
-   the output files.  (The program \c ReadFTSeriesTest also tests
-   the routines in \ref PrintFrequencySeries_c and
-   \ref ReadFrequencySeries_c.)
-
-   \heading{Notes}
-
-The program as written generates and prints single and double
-precision real and complex time and frequency series.  The routines
-for integers are not tested.
-*/
+ * \file
+ * \ingroup PrintFTSeries_h
+ * \author J. T. Whelan <jtwhelan@loyno.edu>
+ *
+ * \brief Tests the routines in \ref PrintTimeSeries_c and \ref PrintFrequencySeries_c.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * PrintFTSeriesTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program generates and prints a sequence of frequency and time
+ * series; the program only detects errors coming from other LAL
+ * functions, so more in-depth testing requires  examinaton of
+ * the output files.  (The program \c ReadFTSeriesTest also tests
+ * the routines in \ref PrintFrequencySeries_c and
+ * \ref ReadFrequencySeries_c.)
+ *
+ * ### Notes ###
+ *
+ * The program as written generates and prints single and double
+ * precision real and complex time and frequency series.  The routines
+ * for integers are not tested.
+ */
 
 /**\name Error Codes */ /*@{*/
 #define PRINTFTSERIESTESTC_ENOM 0       /**< Nominal exit */

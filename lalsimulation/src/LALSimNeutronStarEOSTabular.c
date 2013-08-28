@@ -343,9 +343,9 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * @details A known, installed, named tabulated equation of state data file is
  * read and the used to create the equation of state structure.  Presently
  * the known equations of state are:
- *     - AP4
- *     - FPS
- *     - SLY4
+ * - AP4
+ * - FPS
+ * - SLY4
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */

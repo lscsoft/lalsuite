@@ -111,14 +111,15 @@ static double gsl_E_solver ( REAL8 E, void *par )
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
-/** Function to compute a vector of Fstatistic values for a number of frequency bins.
-    This function is simply a wrapper for ComputeFstat() which is called repeatedly for
-    every frequency value.  The output, i.e. fstatVector must be properly allocated
-    before this function is called.  The values of the start frequency, the step size
-    in the frequency and the number of frequency values for which the Fstatistic is
-    to be calculated are read from fstatVector.  The other parameters are not checked and
-    they must be correctly set outside this function.
-*/
+/**
+ * Function to compute a vector of Fstatistic values for a number of frequency bins.
+ * This function is simply a wrapper for ComputeFstat() which is called repeatedly for
+ * every frequency value.  The output, i.e. fstatVector must be properly allocated
+ * before this function is called.  The values of the start frequency, the step size
+ * in the frequency and the number of frequency values for which the Fstatistic is
+ * to be calculated are read from fstatVector.  The other parameters are not checked and
+ * they must be correctly set outside this function.
+ */
 void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus structure */
 			    REAL4FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
 			    const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
@@ -154,9 +155,11 @@ void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus stru
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
     }
 
-  /** something to improve/cleanup -- the start frequency is available both
-      from the fstatvector and from the input doppler point -- they could be inconsistent
-      or the user of this function could misunderstand */
+/**
+ * something to improve/cleanup -- the start frequency is available both
+ * from the fstatvector and from the input doppler point -- they could be inconsistent
+ * or the user of this function could misunderstand
+ */
 
   /* a check that the f0 values from thisPoint and fstatVector are
      at least close to each other -- this is only meant to catch
@@ -194,9 +197,10 @@ void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus stru
 
 
 
-/** Function to compute (multi-IFO) F-statistic for given parameter-space point \a doppler,
- *  normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
- *  and detector state-series
+/**
+ * Function to compute (multi-IFO) F-statistic for given parameter-space point \a doppler,
+ * normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
+ * and detector state-series
  *
  * NOTE: for better efficiency some quantities that need to be recomputed only for different
  * sky-positions are buffered in \a cfBuffer if given.
@@ -498,7 +502,8 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 } /* ComputeFStat() */
 
 
-/** Revamped version of LALDemod() (based on TestLALDemod() in CFS).
+/**
+ * Revamped version of LALDemod() (based on TestLALDemod() in CFS).
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
 int
@@ -788,7 +793,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 } /* XLALComputeFaFb() */
 
 
-/** Revamped version of XLALComputeFaFb() for the case where a and b
+/**
+ * Revamped version of XLALComputeFaFb() for the case where a and b
  * are complex.
  * Compute JKS's Fa and Fb, which are ingredients for
  * calculating the F-statistic.
@@ -1048,7 +1054,8 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 } /* XLALComputeFaFbCmplx() */
 
 
-/** Modified version of ComputeFaFb() based on Xavies trick:
+/**
+ * Modified version of ComputeFaFb() based on Xavies trick:
  * need sufficiently oversampled SFTs and uses ZERO Dterms.
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
@@ -1244,9 +1251,9 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
  * the binary orbital motion *added* to it.
  *
  * NOTE: the output vector 'tSSBOut' can be passed either
- *    - unallocated (where it must be (*tSSBOut)==NULL), and it gets allocated here, or
- *    - it can also contain a pre-existing vector, which must then be consistent (same vector lenghts)
- *      than the input SSB-vectors.
+ * - unallocated (where it must be (*tSSBOut)==NULL), and it gets allocated here, or
+ * - it can also contain a pre-existing vector, which must then be consistent (same vector lenghts)
+ * than the input SSB-vectors.
  * This is intended to minimize unnecessary repeated memory allocs+frees on successive binary templates.
  *
  * NOTE2: it is allowed to pass the same in- and output-vectors, i.e. (*tSSBOut) = tSSBIn,
@@ -1378,9 +1385,9 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			/**< [out] SSB timings tSSBIn with bi
  * the binary orbital motion *added* to it.
  *
  * NOTE: the output vector 'multiSSBOut' can be passed either
- *    - unallocated (where it must be (*multiSSBOut)==NULL), and it gets allocated here, or
- *    - it can also contain a pre-existing vector, which must then be consistent (same vector lenghts)
- *      than the input SSB-vectors.
+ * - unallocated (where it must be (*multiSSBOut)==NULL), and it gets allocated here, or
+ * - it can also contain a pre-existing vector, which must then be consistent (same vector lenghts)
+ * than the input SSB-vectors.
  * This is intended to minimize unnecessary repeated memory allocs+frees on successive binary templates.
  *
  * NOTE2: it is allowed to pass the same in- and output-vectors, i.e. (*multiSSBOut) = multiSSBIn,
@@ -1428,7 +1435,8 @@ XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut,
 } /* XLALAddMultiBinaryTimes() */
 
 
-/** Duplicate (ie allocate + copy) an input SSBtimes structure.
+/**
+ * Duplicate (ie allocate + copy) an input SSBtimes structure.
  * This can be useful for creating a copy before adding binary-orbital corrections in XLALAddBinaryTimes()
  */
 SSBtimes *
@@ -1464,7 +1472,8 @@ XLALDuplicateSSBtimes ( const SSBtimes *tSSB )
 } /* XLALDuplicateSSBtimes() */
 
 
-/** Duplicate (ie allocate + copy) an input MultiSSBtimes structure.
+/**
+ * Duplicate (ie allocate + copy) an input MultiSSBtimes structure.
  */
 MultiSSBtimes *
 XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB )
@@ -1491,11 +1500,12 @@ XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB )
 
 } /* XLALDuplicateMultiSSBtimes() */
 
-/** For a given DetectorStateSeries, calculate the time-differences
- *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
- *  derivatives \f$\dot{T}_\alpha \equiv d T / d t (t_\alpha)\f$.
+/**
+ * For a given DetectorStateSeries, calculate the time-differences
+ * \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
+ * derivatives \f$\dot{T}_\alpha \equiv d T / d t (t_\alpha)\f$.
  *
- *  \note The return-vector is allocated here
+ * \note The return-vector is allocated here
  *
  */
 SSBtimes *
@@ -1624,7 +1634,8 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
 
 } /* XLALGetSSBtimes() */
 
-/** Multi-IFO version of LALGetSSBtimes().
+/**
+ * Multi-IFO version of LALGetSSBtimes().
  * Get all SSB-timings for all input detector-series.
  *
  * NOTE: this functions *allocates* the output-vector,
@@ -1665,7 +1676,8 @@ XLALGetMultiSSBtimes ( const MultiDetectorStateSeries *multiDetStates, /**< [in]
 
 /* ===== Object creation/destruction functions ===== */
 
-/** Destroy a MultiSSBtimes structure.
+/**
+ * Destroy a MultiSSBtimes structure.
  * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
  * for failure-cleanup even on incomplete structs
@@ -1701,10 +1713,12 @@ XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
 } /* XLALDestroyMultiSSBtimes() */
 
 
-/** Destruction of a ComputeFBuffer *contents*,
+/**
+ * Destruction of a ComputeFBuffer *contents*,
  * i.e. the multiSSB and multiAMcoeff, while the
  * buffer-container is not freed (which is why it's passed
- * by value and not by reference...) */
+ * by value and not by reference...)
+ */
 void
 XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb)
 {
@@ -1721,7 +1735,8 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb)
 
 /* ===== General internal helper functions ===== */
 
-/** Calculate sin(x) and cos(x) to roughly 1e-7 precision using
+/**
+ * Calculate sin(x) and cos(x) to roughly 1e-7 precision using
  * a lookup-table and Taylor-expansion.
  *
  * NOTE: this function will fail for arguments larger than
@@ -1800,7 +1815,8 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 
 
 
-/** Parameter-estimation: based on large parts on Yousuke's notes and implemention (in CFSv1),
+/**
+ * Parameter-estimation: based on large parts on Yousuke's notes and implemention (in CFSv1),
  * extended for error-estimation.
  */
 void
@@ -2057,7 +2073,8 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 
 } /* LALEstimatePulsarAmplitudeParams() */
 
-/** Function to allocate a 'FstatAtomVector' struct of num timestamps, pre-initialized to zero!
+/**
+ * Function to allocate a 'FstatAtomVector' struct of num timestamps, pre-initialized to zero!
  */
 FstatAtomVector *
 XLALCreateFstatAtomVector ( UINT4 num )
@@ -2083,7 +2100,8 @@ XLALCreateFstatAtomVector ( UINT4 num )
 
 } /* XLALCreateFstatAtomVector() */
 
-/** Function to destroy an FstatAtomVector
+/**
+ * Function to destroy an FstatAtomVector
  */
 void
 XLALDestroyFstatAtomVector ( FstatAtomVector *atoms )
@@ -2099,7 +2117,8 @@ XLALDestroyFstatAtomVector ( FstatAtomVector *atoms )
 } /* XLALDestroyFstatAtomVector() */
 
 
-/** Function to destroy a multi-FstatAtom struct
+/**
+ * Function to destroy a multi-FstatAtom struct
  */
 void
 XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiFstatAtoms )
@@ -2119,7 +2138,8 @@ XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiFstatAtoms )
 } /* XLALDestroyMultiFstatAtoms() */
 
 
-/** Convert amplitude-params from 'physical' coordinates {h0, cosi, psi, phi0} into
+/**
+ * Convert amplitude-params from 'physical' coordinates {h0, cosi, psi, phi0} into
  * 'canonical' coordinates A^mu = {A1, A2, A3, A4}. The equations are found in
  * \ref JKS98 or \ref Prix07 Eq.(2).
  *
@@ -2146,9 +2166,10 @@ XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu,		/**< [out] canonical ampli
 } /* XLALAmplitudeParams2Vect() */
 
 
-/** Compute amplitude params \f$A^{\tilde{\mu}} = \{h_0,cosi,\psi,\phi_0\}\f$ from amplitude-vector \f$A^\mu\f$
+/**
+ * Compute amplitude params \f$A^{\tilde{\mu}} = \{h_0,cosi,\psi,\phi_0\}\f$ from amplitude-vector \f$A^\mu\f$
  * Adapted from algorithm in LALEstimatePulsarAmplitudeParams().
-*/
+ */
 int
 XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,	  /**< [out] output physical amplitude parameters {h0,cosi,psi,phi} */
                            const PulsarAmplitudeVect A_Mu /**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */

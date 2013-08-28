@@ -22,7 +22,8 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-/** \defgroup XLALTime_c GPS Time
+/**
+ * \defgroup XLALTime_c GPS Time
  * \ingroup Date_h
  *
  * \brief GPS time manipulation functions.
@@ -77,11 +78,13 @@ REAL8 XLALGPSGetREAL8( const LIGOTimeGPS *epoch )
   return epoch->gpsSeconds + (epoch->gpsNanoSeconds / XLAL_BILLION_REAL8);
 }
 
-/** Breaks the GPS time into REAL8 integral and fractional parts,
+/**
+ * Breaks the GPS time into REAL8 integral and fractional parts,
  * each of which has the same sign as the epoch.  Returns the
  * fractional part, and stores the integral part (as a REAL8)
  * in the object pointed to by iptr.  Like the standard C math
- * library function modf(). */
+ * library function modf().
+ */
 REAL8 XLALGPSModf( REAL8 *iptr, const LIGOTimeGPS *epoch )
 {
   INT8 ns = XLALGPSToINT8NS(epoch);
@@ -124,11 +127,12 @@ REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 }
 
 
-/** Compares two GPS times.
+/**
+ * Compares two GPS times.
  * Returns:
- *  - -1 if t0 < t1
- *  - 0 if t0 == t1
- *  - 1 if t0 > t1.
+ * - -1 if t0 < t1
+ * - 0 if t0 == t1
+ * - 1 if t0 > t1.
  * A NULL GPS time is always less than a non-NULL GPS time,
  * and two NULL GPS times are considered equal.
  */

@@ -18,42 +18,43 @@
 */
 
 /**
-\author Thomas Cokelaer
-\file
-\ingroup LALInspiralBank_h
-
-\brief Test code for the \c bank modules.
-
-\heading{Usage}
-\code
-SpaceCovering
---template [TaylorT1, EOB ....]
---grid-spacing [square, hexagonal, squareOriented, hexagonalOriented]
-\endcode
-
---template BCV --grid-spacing Hexagonal gives 178 templates
-and --template EOB grid-spacing Hexagonal gives 532 templates
-
-\heading{Description}
-This test code gives an example of how to generate a template bank and
-generates vertices of the ambiguity 'rectangle' around each lattice point
-suitable for plotting with xmgr or xgrace.
-
-This is valid for various template bank placement (Hexagonal, SquareNorOriented).
-This is valid for BCV and physical template families.
-
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALRectangleVertices
-LALInspiralCreateCoarseBank
-\endcode
-
-\heading{Notes}
-
-
-*/
+ * \author Thomas Cokelaer
+ * \file
+ * \ingroup LALInspiralBank_h
+ *
+ * \brief Test code for the \c bank modules.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * SpaceCovering
+ * --template [TaylorT1, EOB ....]
+ * --grid-spacing [square, hexagonal, squareOriented, hexagonalOriented]
+ * \endcode
+ *
+ * --template BCV --grid-spacing Hexagonal gives 178 templates
+ * and --template EOB grid-spacing Hexagonal gives 532 templates
+ *
+ * ### Description ###
+ *
+ * This test code gives an example of how to generate a template bank and
+ * generates vertices of the ambiguity 'rectangle' around each lattice point
+ * suitable for plotting with xmgr or xgrace.
+ *
+ * This is valid for various template bank placement (Hexagonal, SquareNorOriented).
+ * This is valid for BCV and physical template families.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALRectangleVertices
+ * LALInspiralCreateCoarseBank
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <stdio.h>
 #include <lal/AVFactories.h>

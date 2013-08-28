@@ -1,4 +1,4 @@
-/**
+/*
 *  Copyright (C) 2007
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -18,58 +18,56 @@
 */
 
 /**
-\author Devanka Pathak and Thomas Cokelaer
-\file
-
-\brief The code \c LALInspiralEccentricity generates a time-domain inspiral waveform corresponding to the
-\c approximant \c Eccentricity as outlined PRD 60 for the Newtonian case.
-
-\heading{Prototypes}
-
-<tt>LALInspiralEccentricity()</tt>
-<ul>
-<li> \c signalvec: Output containing the inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters and eccentricity.</li>
-</ul>
-
-
-<tt>LALInspiralEccentricityTemplates()</tt>
-<ul>
-<li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
-<li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-\heading{Description}
-
-\c LALInspiralEccentricity is called if the user has specified the
-\c enum \c approximant to be
-either \c TaylorT1 or \c PadeT1.
-\c LALInspiralEccentricityTemplates is exactly the same as <tt>LALInspiralEccentricity,</tt> except that
-it generates two templates one for which the starting phase is
-<tt>params.startPhase</tt> and the other for which the phase is
-<tt>params.startPhase + \f$\pi/2\f$</tt>.
-
-
-\heading{Algorithm}
-This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
-in Equation\eqref{eq_ode2}.
-
-\heading{Uses}
-
-\code
-LALInspiralSetup()
-LALInspiralChooseModel()
-LALInspiralVelocity()
-LALInspiralPhasing1()
-LALInspiralDerivatives()
-LALRungeKutta4()
-\endcode
-
-\heading{Notes}
-
-
-*/
+ * \author Devanka Pathak and Thomas Cokelaer
+ * \file
+ *
+ * \brief The code \c LALInspiralEccentricity generates a time-domain inspiral waveform corresponding to the
+ * \c approximant \c Eccentricity as outlined PRD 60 for the Newtonian case.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralEccentricity()</tt>
+ * <ul>
+ * <li> \c signalvec: Output containing the inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters and eccentricity.</li>
+ * </ul>
+ *
+ * <tt>LALInspiralEccentricityTemplates()</tt>
+ * <ul>
+ * <li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
+ * <li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * \c LALInspiralEccentricity is called if the user has specified the
+ * \c enum \c approximant to be
+ * either \c TaylorT1 or \c PadeT1.
+ * \c LALInspiralEccentricityTemplates is exactly the same as <tt>LALInspiralEccentricity,</tt> except that
+ * it generates two templates one for which the starting phase is
+ * <tt>params.startPhase</tt> and the other for which the phase is
+ * <tt>params.startPhase + \f$\pi/2\f$</tt>.
+ *
+ * ### Algorithm ###
+ *
+ * This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
+ * in Equation\eqref{eq_ode2}.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALInspiralSetup()
+ * LALInspiralChooseModel()
+ * LALInspiralVelocity()
+ * LALInspiralPhasing1()
+ * LALInspiralDerivatives()
+ * LALRungeKutta4()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 /*
    Interface routine needed to generate time-domain T- or a P-approximant

@@ -18,102 +18,103 @@
 */
 
 /**
-\author Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T
-\file
-\ingroup LALInspiralBank_h
-
-\brief Test code for the inspiral modules.
-
-A template bank can be created either using
-a full range for component masses of the binary \f$m_1\f$ and \f$m_2\f$, that is
-<tt>(mMin,mMax),</tt> OR minimum value of the component masses \c mMin and
-maximum value of the total mass <tt>MMax.</tt> In the first case chirptimes
-satisfying the constraint \c mMin\ \f$\le m_1, m_2 \le\f$\ \c mMax are accepted
-as valid systems. In the second case chirptimes satisfying the
-constraint \c mMin\ \f$\le m_1, m_2,\f$ and \c MMax\f$\le m=m_1+m_2,\f$
-are treated as valid.  Users are expected to provide both \c mMax and \c MMax.
-
-For \c LALLIGOIPsd the choice \c mMin\f$=1M_\odot\f$ \c mMax\f$=20 M_\odot\f$
-gives 2292 templates, while the same \c mMin but choosing \c MMax\f$=40 M_\odot\f$
-instead gives 2512 templates -- about 10\% incrase. However, the extra templates are ALL
-short-lived templates and therefore potentially trigger a large number of false alarms,
-as noted by Brown in E7 analysis.
-
-This test code creates a template bank and stores it into CoarseTest.out . Then, it creates
-a finer template bank around a sub-set of the original template bank and stores it in the
-same output file.
-
-\heading{Usage}
-Input the following values of the InspiralCoarseBankIn structure to
-create a template bank:
-
-<ul>
-   <li> Minimum component mass in solar masses.
-   <tt>mMin = 1.0;</tt>
-
-   </li><li> Maximum component mass in solar masses.
-   <tt>mMax = 20.0;</tt>
-
-   </li><li> Maximum total mass. <tt>This should be specified independently of
-   whether or not mMax is specified.</tt> It is used in setting up a
-   rectangular area in the space of chirptimes where the templates will
-   be laid.
-   <tt>MMax = 40.0;  </tt>
-
-   </li><li> The type of search space.
-   <tt>massRange = MinComponentMassMaxTotalMass;</tt> OR
-   <tt>massRange = MinMaxComponentMasses;</tt>
-
-   </li><li> Coarse bank minimal match
-   <tt>coarseIn->mmCoarse = 0.80;</tt>
-
-   </li><li> Fine bank minimal match
-   <tt>mmFine = 0.97;</tt>
-
-   </li><li> Lower frequency cutoff
-   <tt>fLower = 40.;</tt>
-
-   </li><li> Upper frequency cutoff
-   <tt>fUpper = 1024L;</tt>
-
-   </li><li> Whether or not lso should be used as an upper frequency cutoff
-   (Currently not used; so please specify \c fUpper.
-   <tt>coarseIn->iflso = 0;</tt>
-
-   </li><li> Sampling rate
-   <tt>tSampling = 4000L;</tt>
-
-   </li><li> Space in which templates should be created: whether \f$(\tau_0,\tau_2)\f$
-   or \f$(\tau_0, \tau_3).\f$
-   <tt>coarseIn->space = Tau0Tau2;</tt> OR
-   <tt>coarseIn->space = Tau0Tau3;</tt> OR
-
-   </li><li> Order and type of the approximant to be used in template generation.
-   These members will NOT be used in creating a template bank but in
-   filling up the \c InspiralTemplate structure created by the bank.
-
-   <tt>order = twoPN;</tt>
-   <tt>coarseIn->approximant = TaylorT1;</tt>
-
-   </li><li> minimum value of eta
-   <tt>etamin = mMin * ( MMax - mMin)/pow(MMax,2.);</tt>
-
-   </li><li> Finally, fill the psd structure (see test code for an example).
-   This involves allocating memory to vector <tt>shf.data</tt> and filling it with
-   noise PSD as also choosing the starting frequency and the frequency resolution.
-</li>
-</ul>
-
-\code
-CoarseTest
-\endcode
-
-\heading{Description}
-
-This test code gives an example of how one calls \c LALInspiralCreateCoarseBank
-and \c LALInspiralCreateFineBank modules.
-
-*/
+ * \author Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T
+ * \file
+ * \ingroup LALInspiralBank_h
+ *
+ * \brief Test code for the inspiral modules.
+ *
+ * A template bank can be created either using
+ * a full range for component masses of the binary \f$m_1\f$ and \f$m_2\f$, that is
+ * <tt>(mMin,mMax),</tt> OR minimum value of the component masses \c mMin and
+ * maximum value of the total mass <tt>MMax.</tt> In the first case chirptimes
+ * satisfying the constraint \c mMin\ \f$\le m_1, m_2 \le\f$\ \c mMax are accepted
+ * as valid systems. In the second case chirptimes satisfying the
+ * constraint \c mMin\ \f$\le m_1, m_2,\f$ and \c MMax\f$\le m=m_1+m_2,\f$
+ * are treated as valid.  Users are expected to provide both \c mMax and \c MMax.
+ *
+ * For \c LALLIGOIPsd the choice \c mMin\f$=1M_\odot\f$ \c mMax\f$=20 M_\odot\f$
+ * gives 2292 templates, while the same \c mMin but choosing \c MMax\f$=40 M_\odot\f$
+ * instead gives 2512 templates -- about 10\% incrase. However, the extra templates are ALL
+ * short-lived templates and therefore potentially trigger a large number of false alarms,
+ * as noted by Brown in E7 analysis.
+ *
+ * This test code creates a template bank and stores it into CoarseTest.out . Then, it creates
+ * a finer template bank around a sub-set of the original template bank and stores it in the
+ * same output file.
+ *
+ * ### Usage ###
+ *
+ * Input the following values of the InspiralCoarseBankIn structure to
+ * create a template bank:
+ *
+ * <ul>
+ * <li> Minimum component mass in solar masses.
+ * <tt>mMin = 1.0;</tt>
+ *
+ * </li><li> Maximum component mass in solar masses.
+ * <tt>mMax = 20.0;</tt>
+ *
+ * </li><li> Maximum total mass. <tt>This should be specified independently of
+ * whether or not mMax is specified.</tt> It is used in setting up a
+ * rectangular area in the space of chirptimes where the templates will
+ * be laid.
+ * <tt>MMax = 40.0;  </tt>
+ *
+ * </li><li> The type of search space.
+ * <tt>massRange = MinComponentMassMaxTotalMass;</tt> OR
+ * <tt>massRange = MinMaxComponentMasses;</tt>
+ *
+ * </li><li> Coarse bank minimal match
+ * <tt>coarseIn->mmCoarse = 0.80;</tt>
+ *
+ * </li><li> Fine bank minimal match
+ * <tt>mmFine = 0.97;</tt>
+ *
+ * </li><li> Lower frequency cutoff
+ * <tt>fLower = 40.;</tt>
+ *
+ * </li><li> Upper frequency cutoff
+ * <tt>fUpper = 1024L;</tt>
+ *
+ * </li><li> Whether or not lso should be used as an upper frequency cutoff
+ * (Currently not used; so please specify \c fUpper.
+ * <tt>coarseIn->iflso = 0;</tt>
+ *
+ * </li><li> Sampling rate
+ * <tt>tSampling = 4000L;</tt>
+ *
+ * </li><li> Space in which templates should be created: whether \f$(\tau_0,\tau_2)\f$
+ * or \f$(\tau_0, \tau_3).\f$
+ * <tt>coarseIn->space = Tau0Tau2;</tt> OR
+ * <tt>coarseIn->space = Tau0Tau3;</tt> OR
+ *
+ * </li><li> Order and type of the approximant to be used in template generation.
+ * These members will NOT be used in creating a template bank but in
+ * filling up the \c InspiralTemplate structure created by the bank.
+ *
+ * <tt>order = twoPN;</tt>
+ * <tt>coarseIn->approximant = TaylorT1;</tt>
+ *
+ * </li><li> minimum value of eta
+ * <tt>etamin = mMin * ( MMax - mMin)/pow(MMax,2.);</tt>
+ *
+ * </li><li> Finally, fill the psd structure (see test code for an example).
+ * This involves allocating memory to vector <tt>shf.data</tt> and filling it with
+ * noise PSD as also choosing the starting frequency and the frequency resolution.
+ * </li>
+ * </ul>
+ *
+ * \code
+ * CoarseTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test code gives an example of how one calls \c LALInspiralCreateCoarseBank
+ * and \c LALInspiralCreateFineBank modules.
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 

@@ -18,33 +18,36 @@
 */
 
 /**
-\author Mendell, Greg A.
-\file
-\ingroup FoldAmplitudes_h
-
-\heading{Program \ref FoldAmplitudesTest.c}
-
-%[One-line description of test program]
-
-The test program test each of the error conditions, and then test the output
-of known input with the expected output.
-
-\heading{Usage}
-\code
-FoldAmplitudesTest
-\endcode
-
-\heading{Description}
-
-\heading{Exit codes}
-
-
-\heading{Uses}
-\code
-LALFoldAmplitudes()
-\endcode
-
-*/
+ * \author Mendell, Greg A.
+ * \file
+ * \ingroup FoldAmplitudes_h
+ *
+ * ### Program \ref FoldAmplitudesTest.c ###
+ *
+ * %[One-line description of test program]
+ *
+ * The test program test each of the error conditions, and then test the output
+ * of known input with the expected output.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * FoldAmplitudesTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ *
+ * ### Exit codes ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALFoldAmplitudes()
+ * \endcode
+ *
+ */
 
 /* ****** INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */

@@ -26,107 +26,109 @@
 extern "C" {
 #endif
 
-/** \addtogroup LALDetectors_h
-    \author J. T. Whelan and J. D. E. Creighton
-
-    \brief This header defines structures to hold the basic data describing a gravitational wave detector.
-
-    \heading{Synopsis}
-    \code
-    #include <lal/LALDetectors.h>
-    \endcode
-
-According to the common frame format specification
-[\ref LIGOVIRGO_2000] the geometry of an interferometric
-detector will be stored in a \c FrDetector structure, specifying
-the location of the detector vertex and the orientation of its arms in
-geodetic coördinates suited to geographical surveying.  Resonant
-bars and other sorts of detectors, if they write their data to frames,
-are expected to fill this structure with their location and
-orientation in some way suited to the detector type.
-
-For most data analysis tasks, however, any gravitational wave detector
-can be described by its location in an Earth-fixed rotating reference
-frame, as well as a <em>response tensor</em> \f$d^{ab}\f$, constant in the
-same frame, which defines the "strain" \f$h\f$ measured by the detector in
-terms of the metric perturbation \f$h_{ab}\f$ as
-\f{equation}{
-h = h_{ab} \, d^{ab}
-\ .
-\f}
-
-This header defines a \c ::LALFrDetector structure which contains
-essentially the same information as the \c FrDetector structure,
-as well as a \c LALDetector structure which contains the
-Cartesian coördinates of the detector along with the components of
-the response tensor \f$d^{ab}\f$ in the same coördinate system.
-
-\heading{The Geodetic Coördinate System}
-
-Geodetic coördinates are spheroidal coördinates
-based on the WGS-84 Earth Model, which is an
-oblate spheroid with equatorial radius \f$a=6.378137\times
-10^6\,\textrm{m}\f$ and polar radius \f$b=6.356752314\times
-10^6\,\textrm{m}\f$.  Any point in space can be located according to its
-longitude, latitude, and elevation.  The \e longitude \f$\lambda\f$
-is the angle between the half-plane bounded by the symmetry axis of
-the reference ellipsoid containing the point in question and the
-half-plane plane containing the Prime Meridian; it is measured in
-radians, increases to the East, and ranges from
-\f$-\pi\f$ to \f$\pi\f$.  The \e latitude \f$\beta\f$ is the
-angle between the ray which is normal to the ellipsoid and passes
-through the point in question and the equatorial plane; it is measured
-in radians, increases to the North, and ranges
-from \f$-\pi/2\f$ to \f$\pi/2\f$.  The \e elevation \f$h\f$ is the
-signed distance along this ray from the reference ellipsoid to the
-point in question.  This coördinate system is described in more
-detail in [\ref Althouse_1999].
-
-\heading{Altitude and Azimuth Angles}
-
-The \c LALFrDetector structure stores the directions along the
-two arms of an interferometer in an altitude/azimuth representation
-with respect to the local tangent plane to the reference ellipsoid,
-known as the local horizontal.  The altitude \f${\mathcal{A}}\f$ is the angle the
-direction vector makes with the horizontal, \f${\mathcal{A}} > 0\f$ meaning above
-horizontal, \f${\mathcal{A}} < 0\f$ below.  The azimuth angle \f$\zeta\f$ is found by
-projecting the direction onto the local horizontal plane, then
-measuring the angle clockwise from North to this projected direction.
-
-\heading{The Cartesian Coördinate System}
-
-The position vector and response tensor contained in the
-\c LALDetector structure are defined in
- a simple orthonormal coördinate system with its origin at
-the center of the earth, an \f$x^1\f$ axis which pierces the Earth's
-surface at the intersection of the equator and the prime meridian, an
-\f$x^2\f$ axis which pierces the earth's surface at \f$\pi/2\f$ radians East
-longitude on the equator, and an \f$x^3\f$ axis which pierces the Earth's
-surface at the North Pole.  The coördinates \f$x^1\f$, \f$x^2\f$, \f$x^3\f$
-correspond to the Earth-fixed coördinates \f$X_E\f$, \f$Y_E\f$, \f$Z_E\f$
-defined in [\ref Althouse_1999], respectively.
-
-The relationship between geodetic and Cartesian coördinates is
-given by
-\anchor tools_e_cart1
-\anchor tools_e_cart2
-\anchor tools_e_cart3
-\f{align}{
-x^1 &=\left(
-          \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
-          + h
-       \right) \cos\beta\cos\lambda             \label{tools_e_cart1}\\
-x^2 &=\left(
-          \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
-          + h
-       \right) \cos\beta\sin\lambda             \label{tools_e_cart2}\\
-x^3 &=\left(
-          \frac{b^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
-          + h
-       \right) \sin\beta  \label{tools_e_cart3} \\
-\f}
-
- * \heading{Cached Detectors}
+/**
+ * \addtogroup LALDetectors_h
+ * \author J. T. Whelan and J. D. E. Creighton
+ *
+ * \brief This header defines structures to hold the basic data describing a gravitational wave detector.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALDetectors.h>
+ * \endcode
+ *
+ * According to the common frame format specification
+ * [\ref LIGOVIRGO_2000] the geometry of an interferometric
+ * detector will be stored in a \c FrDetector structure, specifying
+ * the location of the detector vertex and the orientation of its arms in
+ * geodetic coördinates suited to geographical surveying.  Resonant
+ * bars and other sorts of detectors, if they write their data to frames,
+ * are expected to fill this structure with their location and
+ * orientation in some way suited to the detector type.
+ *
+ * For most data analysis tasks, however, any gravitational wave detector
+ * can be described by its location in an Earth-fixed rotating reference
+ * frame, as well as a <em>response tensor</em> \f$d^{ab}\f$, constant in the
+ * same frame, which defines the "strain" \f$h\f$ measured by the detector in
+ * terms of the metric perturbation \f$h_{ab}\f$ as
+ * \f{equation}{
+ * h = h_{ab} \, d^{ab}
+ * \ .
+ * \f}
+ *
+ * This header defines a \c ::LALFrDetector structure which contains
+ * essentially the same information as the \c FrDetector structure,
+ * as well as a \c LALDetector structure which contains the
+ * Cartesian coördinates of the detector along with the components of
+ * the response tensor \f$d^{ab}\f$ in the same coördinate system.
+ *
+ * ### The Geodetic Coördinate System ###
+ *
+ * Geodetic coördinates are spheroidal coördinates
+ * based on the WGS-84 Earth Model, which is an
+ * oblate spheroid with equatorial radius \f$a=6.378137\times
+ * 10^6\,\textrm{m}\f$ and polar radius \f$b=6.356752314\times
+ * 10^6\,\textrm{m}\f$.  Any point in space can be located according to its
+ * longitude, latitude, and elevation.  The \e longitude \f$\lambda\f$
+ * is the angle between the half-plane bounded by the symmetry axis of
+ * the reference ellipsoid containing the point in question and the
+ * half-plane plane containing the Prime Meridian; it is measured in
+ * radians, increases to the East, and ranges from
+ * \f$-\pi\f$ to \f$\pi\f$.  The \e latitude \f$\beta\f$ is the
+ * angle between the ray which is normal to the ellipsoid and passes
+ * through the point in question and the equatorial plane; it is measured
+ * in radians, increases to the North, and ranges
+ * from \f$-\pi/2\f$ to \f$\pi/2\f$.  The \e elevation \f$h\f$ is the
+ * signed distance along this ray from the reference ellipsoid to the
+ * point in question.  This coördinate system is described in more
+ * detail in [\ref Althouse_1999].
+ *
+ * ### Altitude and Azimuth Angles ###
+ *
+ * The \c LALFrDetector structure stores the directions along the
+ * two arms of an interferometer in an altitude/azimuth representation
+ * with respect to the local tangent plane to the reference ellipsoid,
+ * known as the local horizontal.  The altitude \f${\mathcal{A}}\f$ is the angle the
+ * direction vector makes with the horizontal, \f${\mathcal{A}} > 0\f$ meaning above
+ * horizontal, \f${\mathcal{A}} < 0\f$ below.  The azimuth angle \f$\zeta\f$ is found by
+ * projecting the direction onto the local horizontal plane, then
+ * measuring the angle clockwise from North to this projected direction.
+ *
+ * ### The Cartesian Coördinate System ###
+ *
+ * The position vector and response tensor contained in the
+ * \c LALDetector structure are defined in
+ * a simple orthonormal coördinate system with its origin at
+ * the center of the earth, an \f$x^1\f$ axis which pierces the Earth's
+ * surface at the intersection of the equator and the prime meridian, an
+ * \f$x^2\f$ axis which pierces the earth's surface at \f$\pi/2\f$ radians East
+ * longitude on the equator, and an \f$x^3\f$ axis which pierces the Earth's
+ * surface at the North Pole.  The coördinates \f$x^1\f$, \f$x^2\f$, \f$x^3\f$
+ * correspond to the Earth-fixed coördinates \f$X_E\f$, \f$Y_E\f$, \f$Z_E\f$
+ * defined in [\ref Althouse_1999], respectively.
+ *
+ * The relationship between geodetic and Cartesian coördinates is
+ * given by
+ * \anchor tools_e_cart1
+ * \anchor tools_e_cart2
+ * \anchor tools_e_cart3
+ * \f{align}{
+ * x^1 &=\left(
+ * \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
+ * + h
+ * \right) \cos\beta\cos\lambda             \tag{tools_e_cart1}\\
+ * x^2 &=\left(
+ * \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
+ * + h
+ * \right) \cos\beta\sin\lambda             \tag{tools_e_cart2}\\
+ * x^3 &=\left(
+ * \frac{b^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
+ * + h
+ * \right) \sin\beta  \tag{tools_e_cart3} \\
+ * \f}
+ *
+ * ### Cached Detectors ###
  *
  * In practice, we will often be
  * working with fixed unchanging site geometry, e.g., for the LIGO
@@ -144,7 +146,6 @@ x^3 &=\left(
  *
  * For example, the \c LALDetector representing LIGO Hanford 4km (H1) in
  * differential mode is <tt>lalCachedDetectors[LAL_LHO_4K_DETECTOR]</tt>.
- *
  *
  */
 /*@{*/
@@ -195,8 +196,8 @@ enum {
 };
 
 
-/** Detector type, which determines how the detector response is determined.
- *
+/**
+ * Detector type, which determines how the detector response is determined.
  * Since data from bars as well as interferometers can be written to
  * frames, we need an additional piece of information to interpret the
  * site geometry data specified in the \c LALFrDetector
@@ -216,8 +217,8 @@ typedef enum {
 LALDetectorType;
 
 
-/** Detector frame data structure
- *
+/**
+ * Detector frame data structure
  * Structure to contain the data that appears in a FrDetector structure
  * in frame data.
  */
@@ -238,7 +239,8 @@ typedef struct tagLALFrDetector
 LALFrDetector;
 
 
-/** Detector structure
+/**
+ * Detector structure
  *
  * Structure to contain detector data in the format most easily used
  * by the LAL routines.
@@ -267,7 +269,8 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 
 /* Interferometric Detectors */
 
-/** \defgroup DetectorConstants Detector Constants
+/**
+ * \defgroup DetectorConstants Detector Constants
  * \ingroup LALDetectors_h
  * \brief Constants describing various gravitational wave detectors
  *
@@ -277,8 +280,8 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  * detectors.
  * <ul>
  * <li> Data for the resonant mass detectors is taken from:
- *      http://igec.lnl.infn.it/cgi-bin/browser.pl?Level=0,3,1
- *      and [\ref FinnLazzarini_2001]
+ * http://igec.lnl.infn.it/cgi-bin/browser.pl?Level=0,3,1
+ * and [\ref FinnLazzarini_2001]
  *
  * <li> Data for LIGO detectors is taken from [\ref Althouse_1999]
  *
@@ -286,7 +289,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  *
  * <li> Data for the GEO detector is taken from:
  *
- *      http://www.geo600.uni-hannover.de/geo600/project/location.html
+ * http://www.geo600.uni-hannover.de/geo600/project/location.html
  *
  * <li> Data for the TAMA detector is provided by Masa-Katsu Fujimoto
  *
@@ -301,9 +304,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  */
 /*@{*/
 
-/** \name TAMA 300m Interferometric Detector constants
+/**
+ * \name TAMA 300m Interferometric Detector constants
  * The following constants describe the location and geometry of the
- * TAMA 300m Interferometric Detector. */
+ * TAMA 300m Interferometric Detector.
+ */
 /*@{*/
 #define LAL_TAMA_300_DETECTOR_NAME               	"TAMA_300"	/**< TAMA_300 detector name string */
 #define LAL_TAMA_300_DETECTOR_PREFIX             	"T1"	/**< TAMA_300 detector prefix string */
@@ -328,9 +333,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 /*@}*/
 
 
-/** \name VIRGO 3km Interferometric Detector constants
+/**
+ * \name VIRGO 3km Interferometric Detector constants
  * The following constants describe the location and geometry of the
- * VIRGO 3km Interferometric Detector. */
+ * VIRGO 3km Interferometric Detector.
+ */
 /*@{*/
 #define LAL_VIRGO_DETECTOR_NAME               	"VIRGO"	/**< VIRGO detector name string */
 #define LAL_VIRGO_DETECTOR_PREFIX             	"V1"	/**< VIRGO detector prefix string */
@@ -355,9 +362,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 /*@}*/
 
 
-/** \name GEO 600m Interferometric Detector constants
+/**
+ * \name GEO 600m Interferometric Detector constants
  * The following constants describe the location and geometry of the
- * GEO 600m Interferometric Detector. */
+ * GEO 600m Interferometric Detector.
+ */
 /*@{*/
 #define LAL_GEO_600_DETECTOR_NAME               	"GEO_600"	/**< GEO_600 detector name string */
 #define LAL_GEO_600_DETECTOR_PREFIX             	"G1"	/**< GEO_600 detector prefix string */
@@ -382,9 +391,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 /*@}*/
 
 
-/** \name LIGO Hanford Observatory 2km Interferometric Detector constants
+/**
+ * \name LIGO Hanford Observatory 2km Interferometric Detector constants
  * The following constants describe the location and geometry of the
- * LIGO Hanford Observatory 2km Interferometric Detector. */
+ * LIGO Hanford Observatory 2km Interferometric Detector.
+ */
 /*@{*/
 #define LAL_LHO_2K_DETECTOR_NAME               	"LHO_2k"	/**< LHO_2k detector name string */
 #define LAL_LHO_2K_DETECTOR_PREFIX             	"H2"	/**< LHO_2k detector prefix string */
@@ -409,9 +420,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 /*@}*/
 
 
-/** \name LIGO Hanford Observatory 4km Interferometric Detector constants
+/**
+ * \name LIGO Hanford Observatory 4km Interferometric Detector constants
  * The following constants describe the location and geometry of the
- * LIGO Hanford Observatory 4km Interferometric Detector. */
+ * LIGO Hanford Observatory 4km Interferometric Detector.
+ */
 /*@{*/
 #define LAL_LHO_4K_DETECTOR_NAME               	"LHO_4k"	/**< LHO_4k detector name string */
 #define LAL_LHO_4K_DETECTOR_PREFIX             	"H1"	/**< LHO_4k detector prefix string */
@@ -436,9 +449,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 /*@}*/
 
 
-/** \name LIGO Livingston Observatory 4km Interferometric Detector constants
+/**
+ * \name LIGO Livingston Observatory 4km Interferometric Detector constants
  * The following constants describe the location and geometry of the
- * LIGO Livingston Observatory 4km Interferometric Detector. */
+ * LIGO Livingston Observatory 4km Interferometric Detector.
+ */
 /*@{*/
 #define LAL_LLO_4K_DETECTOR_NAME               	"LLO_4k"	/**< LLO_4k detector name string */
 #define LAL_LLO_4K_DETECTOR_PREFIX             	"L1"	/**< LLO_4k detector prefix string */
@@ -463,9 +478,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 /*@}*/
 
 
-/** \name Caltech 40m Prototype Detector constants
+/**
+ * \name Caltech 40m Prototype Detector constants
  * The following constants describe the location and geometry of the
- * Caltech 40m Prototype Detector. */
+ * Caltech 40m Prototype Detector.
+ */
 /*@{*/
 #define LAL_CIT_40_DETECTOR_NAME               	"CIT_40"	/**< CIT_40 detector name string */
 #define LAL_CIT_40_DETECTOR_PREFIX             	"P1"	/**< CIT_40 detector prefix string */
@@ -493,9 +510,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 /* Resonant Mass (Bar) Detectors */
 
 
-/** \name ALLEGRO Resonant Mass Detector with 320 degree azimuth "IGEC axis" constants
+/**
+ * \name ALLEGRO Resonant Mass Detector with 320 degree azimuth "IGEC axis" constants
  * The following constants describe the location and geometry of the
- * ALLEGRO Resonant Mass Detector with 320 degree azimuth "IGEC axis". */
+ * ALLEGRO Resonant Mass Detector with 320 degree azimuth "IGEC axis".
+ */
 /*@{*/
 #define LAL_ALLEGRO_320_DETECTOR_NAME               	"ALLEGRO_320"	/**< ALLEGRO_320 detector name string */
 #define LAL_ALLEGRO_320_DETECTOR_PREFIX             	"A1"	/**< ALLEGRO_320 detector prefix string */
@@ -516,9 +535,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_ALLEGRO_320_AXIS_DIRECTION_Z            	0.66063901000	/**< ALLEGRO_320 z-component of unit vector pointing along axis in Earth-centered frame */
 /*@}*/
 
-/** \name AURIGA Resonant Mass Detector constants
+/**
+ * \name AURIGA Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
- * AURIGA Resonant Mass Detector. */
+ * AURIGA Resonant Mass Detector.
+ */
 /*@{*/
 #define LAL_AURIGA_DETECTOR_NAME               	"AURIGA"	/**< AURIGA detector name string */
 #define LAL_AURIGA_DETECTOR_PREFIX             	"O1"	/**< AURIGA detector prefix string */
@@ -539,9 +560,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_AURIGA_AXIS_DIRECTION_Z            	0.50550364038	/**< AURIGA z-component of unit vector pointing along axis in Earth-centered frame */
 /*@}*/
 
-/** \name EXPLORER Resonant Mass Detector constants
+/**
+ * \name EXPLORER Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
- * EXPLORER Resonant Mass Detector. */
+ * EXPLORER Resonant Mass Detector.
+ */
 /*@{*/
 #define LAL_EXPLORER_DETECTOR_NAME               	"EXPLORER"	/**< EXPLORER detector name string */
 #define LAL_EXPLORER_DETECTOR_PREFIX             	"E1"	/**< EXPLORER detector prefix string */
@@ -562,9 +585,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_EXPLORER_AXIS_DIRECTION_Z            	0.53544371484	/**< EXPLORER z-component of unit vector pointing along axis in Earth-centered frame */
 /*@}*/
 
-/** \name Nautilus Resonant Mass Detector constants
+/**
+ * \name Nautilus Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
- * Nautilus Resonant Mass Detector. */
+ * Nautilus Resonant Mass Detector.
+ */
 /*@{*/
 #define LAL_NAUTILUS_DETECTOR_NAME               	"Nautilus"	/**< Nautilus detector name string */
 #define LAL_NAUTILUS_DETECTOR_PREFIX             	"N1"	/**< Nautilus detector prefix string */
@@ -585,9 +610,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_NAUTILUS_AXIS_DIRECTION_Z            	0.53605060283	/**< Nautilus z-component of unit vector pointing along axis in Earth-centered frame */
 /*@}*/
 
-/** \name NIOBE Resonant Mass Detector constants
+/**
+ * \name NIOBE Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
- * NIOBE Resonant Mass Detector. */
+ * NIOBE Resonant Mass Detector.
+ */
 /*@{*/
 #define LAL_NIOBE_DETECTOR_NAME               	"NIOBE"	/**< NIOBE detector name string */
 #define LAL_NIOBE_DETECTOR_PREFIX             	"B1"	/**< NIOBE detector prefix string */

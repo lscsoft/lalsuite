@@ -20,7 +20,8 @@ The module provides a method to import triggers from `ASCII` into a
 `SnglBurstTable`. Eventually, writing to `ASCII` will be supported also.
 """
 #
-# \heading{Synopsis}
+# ### Synopsis ###
+#
 # ~~~
 # from laldetchar.triggers import kw
 # ~~~

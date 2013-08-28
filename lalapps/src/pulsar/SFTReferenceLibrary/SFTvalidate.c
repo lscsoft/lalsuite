@@ -17,16 +17,16 @@
  *  MA  02111-1307  USA
  */
 
-/** 
- *  \author Bruce Allen
- *  \file
- *  \ingroup pulsarApps
- *  \brief
- *  Verify that a set of SFT files is valid
+/**
+ * \author Bruce Allen
+ * \file
+ * \ingroup pulsarApps
+ * \brief
+ * Verify that a set of SFT files is valid
  *
- *  The exit status will be zero if all SFTs are valid.  The exit status
- *  will be non-zero if any of the SFTs was invalid.  grep SFTE
- *  SFTReferenceLibrary.h will show the return values.
+ * The exit status will be zero if all SFTs are valid.  The exit status
+ * will be non-zero if any of the SFTs was invalid.  grep SFTE
+ * SFTReferenceLibrary.h will show the return values.
  */
 
 #include <math.h>

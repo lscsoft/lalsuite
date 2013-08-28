@@ -65,7 +65,8 @@ const char *cfgfile_content = \
 
 
 
-/** some basic consistency checks of the (XLAL) UserInput module, far from exhaustive,
+/**
+ * some basic consistency checks of the (XLAL) UserInput module, far from exhaustive,
  * but should be enough to catch big obvious malfunctions
  */
 int

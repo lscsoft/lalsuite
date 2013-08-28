@@ -35,38 +35,42 @@
  */
 
 /**
-\author Krishnan, B., Sintes, A.M.
-\file
-\ingroup Velocity_h
-\brief Tests the calculation of the averaged velocity of a given detector.
-
-\heading{Program \ref TestVelocity.c}
-
-\heading{Usage}
-\code
-TestVelocity  [-d debuglevel] [-a accuracy]
-\endcode
-
-\heading{Description}
-This program computes the averaged velocity  of the GEO600 detector
-between the times 730000044 and 730003644 with a default accuracy of 0.01.
-The two ephemeris files (e.g., for data taken in 2003, <tt>sun03.dat</tt> and
-<tt>earth03.dat</tt>) are assumed to be in the  directory
-<tt>lal/packages/pulsar/test/</tt>.
-
-The <b>-d</b> option sets the debug level to the specified value
-\c debuglevel.  The <b>-a</b> flag tells the program which accuracy to use.
-
-\heading{Uses}
-\code
-LALAvgDetectorVel()
-LALPrintError()
-LALMalloc()
-LALFree()
-LALCheckMemoryLeaks()
-\endcode
-
-*/
+ * \author Krishnan, B., Sintes, A.M.
+ * \file
+ * \ingroup Velocity_h
+ * \brief Tests the calculation of the averaged velocity of a given detector.
+ *
+ * ### Program \ref TestVelocity.c ###
+ *
+ *
+ * ### Usage ###
+ *
+ * \code
+ * TestVelocity  [-d debuglevel] [-a accuracy]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program computes the averaged velocity  of the GEO600 detector
+ * between the times 730000044 and 730003644 with a default accuracy of 0.01.
+ * The two ephemeris files (e.g., for data taken in 2003, <tt>sun03.dat</tt> and
+ * <tt>earth03.dat</tt>) are assumed to be in the  directory
+ * <tt>lal/packages/pulsar/test/</tt>.
+ *
+ * The <b>-d</b> option sets the debug level to the specified value
+ * \c debuglevel.  The <b>-a</b> flag tells the program which accuracy to use.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALAvgDetectorVel()
+ * LALPrintError()
+ * LALMalloc()
+ * LALFree()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ */
 
 /* #include "./Velocity.h" */
 #include <lal/Velocity.h>

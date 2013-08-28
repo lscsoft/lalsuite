@@ -18,12 +18,12 @@
  */
 
 
-/** \file NRWaveIOTest.c
+/**
+ * \file NRWaveIOTest.c
  * \ingroup NRWaveIO_h
  * \author S.Fairhurst, B.Krishnan, L.Santamaria
  *
  * \brief Test-code for NRWaveIO
- *
  *
  */
 

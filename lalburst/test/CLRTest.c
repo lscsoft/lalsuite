@@ -71,35 +71,39 @@
 
 
 /**
-\author Sintes, A. M.
-\file
-\ingroup CLR_h
-
-\brief Test for CLR  operations.
-
-\heading{Usage}
-\code
-CLRTest
-\endcode
-
-\heading{Description}
-This program is just an example of the usage of the different prototypes.
-
- The program reads some data from the file
-<tt>CLRindata.asc</tt>, finds
-the position of several harmonics, builds a reference signal,
-cleans the initial data of all interference harmonics and
-writes the clean data into the file
-<tt>CLRoutdata.asc</tt>.
-
-\heading{Exit codes}
-
-\heading{Notes}
-Take this program just as an example,  build
-your own one  and feed it  with the data of your interest.
-The CLR functions work on stretches of data from a few seconds up to a
-couple of minutes.
-*/
+ * \author Sintes, A. M.
+ * \file
+ * \ingroup CLR_h
+ *
+ * \brief Test for CLR  operations.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * CLRTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program is just an example of the usage of the different prototypes.
+ *
+ * The program reads some data from the file
+ * <tt>CLRindata.asc</tt>, finds
+ * the position of several harmonics, builds a reference signal,
+ * cleans the initial data of all interference harmonics and
+ * writes the clean data into the file
+ * <tt>CLRoutdata.asc</tt>.
+ *
+ * ### Exit codes ###
+ *
+ *
+ * ### Notes ###
+ *
+ * Take this program just as an example,  build
+ * your own one  and feed it  with the data of your interest.
+ * The CLR functions work on stretches of data from a few seconds up to a
+ * couple of minutes.
+ */
 
 
 

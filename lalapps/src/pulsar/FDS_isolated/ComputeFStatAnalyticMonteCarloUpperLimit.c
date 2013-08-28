@@ -22,7 +22,7 @@
  * \file
  * \ingroup pulsarApps
  * \brief Computes an upper limit using Monte Carlo integration
-          of the analytic F statistic signal model
+ * of the analytic F statistic signal model
  */
 
 #include "config.h"

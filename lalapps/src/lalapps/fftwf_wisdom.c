@@ -17,82 +17,82 @@
  *
  */
 
-/** \file
+/**
+ * \file
+ * \author Josh Willis
  *
- *  \author Josh Willis
+ * \brief Utility to create single-precision FFTW wisdom files
  *
- *  \brief Utility to create single-precision FFTW wisdom files
+ * This utility is designed to serve as a replacement for the utility fftwf-wisdom that
+ * comes with FFTW.  It will generate only the kind of plans that LAL supports, as well
+ * as a detailed, human readable description of those plans that is sent to stdout.  This
+ * description can then be saved so that the user knows what transforms are included in
+ * the wisdom file (which is not itself human-readable).
  *
- *  This utility is designed to serve as a replacement for the utility fftwf-wisdom that
- *  comes with FFTW.  It will generate only the kind of plans that LAL supports, as well
- *  as a detailed, human readable description of those plans that is sent to stdout.  This
- *  description can then be saved so that the user knows what transforms are included in
- *  the wisdom file (which is not itself human-readable).
+ * The transforms to be planned must be specified in an input file, with one transform
+ * per line.  The format is:
  *
- *  The transforms to be planned must be specified in an input file, with one transform
- *  per line.  The format is:
+ * \<type\>\<direc\>\<size\>
  *
- *  \<type\>\<direc\>\<size\>
+ * where:
  *
- *  where:
+ * - \<type\>     may be 'c' for a complex transform, or 'r' for a real transform
+ * - \<direc\>    may be 'f' for a forward transform, or either 'r' or 'b' for a reverse or
+ * backward transform. The latter two are equivalent; the dual notation is
+ * designed to support both the 'backward' terminology of FFTW and the
+ * 'reverse' terminology of LAL.
+ * - \<size\>     is the size of the desired transform.
  *
- *  - \<type\>     may be 'c' for a complex transform, or 'r' for a real transform
- *  - \<direc\>    may be 'f' for a forward transform, or either 'r' or 'b' for a reverse or
- *               backward transform. The latter two are equivalent; the dual notation is
- *               designed to support both the 'backward' terminology of FFTW and the
- *               'reverse' terminology of LAL.
- *  - \<size\>     is the size of the desired transform.
+ * Both the \<type\> and \<direc\> specifiers are insensitive to case.
  *
- *  Both the \<type\> and \<direc\> specifiers are insensitive to case.
+ * The invocation must also specify an output file, where the wisdom itself will be
+ * written.  You may redirect stdout to save the human-readable description. This should
+ * always be APPENDED to the human readable description of any existing wisdom files
+ * (system or otherwise) that were read in as part of the execution; there is no way
+ * for lalapps_fftwf_wisdom to print out the human readable description of any existing
+ * wisdom read in.
  *
- *  The invocation must also specify an output file, where the wisdom itself will be
- *  written.  You may redirect stdout to save the human-readable description. This should
- *  always be APPENDED to the human readable description of any existing wisdom files
- *  (system or otherwise) that were read in as part of the execution; there is no way
- *  for lalapps_fftwf_wisdom to print out the human readable description of any existing
- *  wisdom read in.
+ * So, as an example, suppose that there is an existing system-wide file in
+ * /etc/fftw/wisdomf, and that its human readable description is
+ * /etc/fftw/wisdomf_description.  Then if there is presently no plan for a complex,
+ * reverse transform of size 1048576 (or 2^20), then put the line:
  *
- *  So, as an example, suppose that there is an existing system-wide file in
- *  /etc/fftw/wisdomf, and that its human readable description is
- *  /etc/fftw/wisdomf_description.  Then if there is presently no plan for a complex,
- *  reverse transform of size 1048576 (or 2^20), then put the line:
+ * cb1048576
  *
- *  cb1048576
+ * into the file input_plans (say) and run:
  *
- *  into the file input_plans (say) and run:
+ * cp /etc/fftw/wisdomf_description new_description
  *
- *        cp /etc/fftw/wisdomf_description new_description
+ * lalapps_fftwf_wisdom -i input_plans -o new_wisdom -l 3 \>\> new_description
  *
- *        lalapps_fftwf_wisdom -i input_plans -o new_wisdom -l 3 \>\> new_description
+ * When this has finished you can (as root) move new_wisdom to /etc/fftw/wisdomf and
+ * new_description to /etc/fftw/wisdomf_description.  The same results could also be
+ * achieved by specifying any of cr1048576, CB1048576, etc, in input_plans.
  *
- *  When this has finished you can (as root) move new_wisdom to /etc/fftw/wisdomf and
- *  new_description to /etc/fftw/wisdomf_description.  The same results could also be
- *  achieved by specifying any of cr1048576, CB1048576, etc, in input_plans.
+ * Aside from the options specifying input and output files (which are mandatory) there
+ * are three other optional arguments.  They are:
  *
- *  Aside from the options specifying input and output files (which are mandatory) there
- *  are three other optional arguments.  They are:
+ * - -n or --no-system-wisdom  This disables reading in /etc/fftw/wisdomf.  Use this only
+ * if you do NOT want the wisdom there to be incorporated into the wisdom file you generate
+ * (for instance, if it is outdated because of hardware or FFTW library change). In such a
+ * case you should also not append to the existing human readable description, but replace it.
+ * - -w \<FILE\> or --wisdom=\<FILE\>  Read in existing wisdom from \<FILE\>.  Program exits if this
+ * option is given but the corresponding file is not readable. As with the system wisdom, you
+ * should append to a human readable description of the wisdom in this file; what is there
+ * already will not be descirbed in the output of lalapps_fftwf_wisdom.
+ * - -l \<int\> or --measurelvl=\<int\>  The planning measure level used in creating the plans.
+ * Defaults to 3 (exhaustive) if not given.  Levels 0 or 1 (estimate and measure, respectively)
+ * are possible, but not appropriate for a system-wide wisdom file, as plans of those levels
+ * can be efficiently generated on the fly in application code. Level 3 (exhaustive) is the
+ * highest level and would normally be expected to give the best performance, though for large
+ * transform sizes it can take hours or even days to create the plans.  The human readable
+ * description of the generated wisdom will note the measure level at which it was created.
  *
- *  - -n or --no-system-wisdom  This disables reading in /etc/fftw/wisdomf.  Use this only
- *    if you do NOT want the wisdom there to be incorporated into the wisdom file you generate
- *    (for instance, if it is outdated because of hardware or FFTW library change). In such a
- *    case you should also not append to the existing human readable description, but replace it.
- *  - -w \<FILE\> or --wisdom=\<FILE\>  Read in existing wisdom from \<FILE\>.  Program exits if this
- *    option is given but the corresponding file is not readable. As with the system wisdom, you
- *    should append to a human readable description of the wisdom in this file; what is there
- *    already will not be descirbed in the output of lalapps_fftwf_wisdom.
- *  - -l \<int\> or --measurelvl=\<int\>  The planning measure level used in creating the plans.
- *    Defaults to 3 (exhaustive) if not given.  Levels 0 or 1 (estimate and measure, respectively)
- *    are possible, but not appropriate for a system-wide wisdom file, as plans of those levels
- *    can be efficiently generated on the fly in application code. Level 3 (exhaustive) is the
- *    highest level and would normally be expected to give the best performance, though for large
- *    transform sizes it can take hours or even days to create the plans.  The human readable
- *    description of the generated wisdom will note the measure level at which it was created.
- *
- *  \note All of the human readable descriptions will also indicate that the wisdom was created
- *        with FFTW_UNALIGNED.  Users unfamiliar with this may safely ignore it; all LAL plans
- *        are presently created with this flag.  The notation is there in case that should change
- *        at some point in the future, so that the record of the created wisdom preserves the
- *        distinction.
+ * \note All of the human readable descriptions will also indicate that the wisdom was created
+ * with FFTW_UNALIGNED.  Users unfamiliar with this may safely ignore it; all LAL plans
+ * are presently created with this flag.  The notation is there in case that should change
+ * at some point in the future, so that the record of the created wisdom preserves the
+ * distinction.
  */
 
 #include <stdlib.h>
@@ -147,7 +147,8 @@ void print_help(void)
 }
 
 
-/** Function used only internally, to create an FFTW plan for a specified problem (thereby adding to wisdom)
+/**
+ * Function used only internally, to create an FFTW plan for a specified problem (thereby adding to wisdom)
  */
 int plan_problem(char type,            /**< 'r' for real or 'c' for complex transform */
 		 char direc,           /**< 'f' for forward or 'b'/'r' for backward/reverse transform */
@@ -250,13 +251,14 @@ int plan_problem(char type,            /**< 'r' for real or 'c' for complex tran
     }
 }
 
-/** Main function
+/**
+ * Main function
  *
- *  Reads command line specifying input and output files, and optionally wisdom file,
- *  measure level, and flag preventing import of system wide wisdom, and then creates
- *  plans for each problem specified in the input file.  Accumulated wisdom is written
- *  to the output file, and a human readable description of the plans successfully
- *  created is written to stdout.  Any warnings or errors are written to stderr.
+ * Reads command line specifying input and output files, and optionally wisdom file,
+ * measure level, and flag preventing import of system wide wisdom, and then creates
+ * plans for each problem specified in the input file.  Accumulated wisdom is written
+ * to the output file, and a human readable description of the plans successfully
+ * created is written to stdout.  Any warnings or errors are written to stderr.
  */
 int main(int argc, char **argv)
 {

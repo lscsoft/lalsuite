@@ -27,167 +27,168 @@
  */
 
 /**
-
-\author Brown, D. A.
-\file
-\ingroup FindChirpSP_h
-
-\brief Provides functions to condition the input data from the interferometer
-to a form that can be used by the <tt>FindChirpFilter()</tt> function.
-
-At the present time this also includes the template independent part of the
-stationary phase filter.
-
-\section sec_fcd_desc Description
-
-<dl>
-<dt><tt> LALFindChirpSPDataInit()</tt></dt><dd> takes as input the address
-of a structure of type \c FindChirpInitParams containing the correct
-values to intialize a search. It creates a structure of type
-\c FindChirpSPDataParams as described above and returns its address.</dd>
-
-<dt><tt>LALFindChirpSPDataFinalize()</tt></dt><dd> takes as the address
-of a structure of type \c FindChirpSPDataParams destroys this
-structure and sets the address to NULL.</dd>
-
-<dt><tt>LALFindChirpSPData()</tt></dt><dd> conditions the interferometer data
-as described by the algorithm below.</dd>
-
-<dt><tt>LALFindChirpBCVData()</tt></dt><dd> conditions the interferometer data
-as described by the algorithm below.</dd>
-</dl>
-
-\subsection sec_fcd_alg Algorithm for SP templates
-
-The <tt>LALFindChirpSPData()</tt> function takes as input three quantities
-<ol>
-<li> An uncallibrated input data channel \f$v_j\f$ (typically LSC-AS_Q).</li>
-<li> A one sided power spectral density of the input data \f$S_v(|f_k|)\f$.</li>
-<li> The frequency domain response function of the input data channel
-\f$R(f_k)\f$ which is used to convert from an uncallibrated input data into
-strain.</li>
-</ol>
-
-The input parameters also contain a dynmaic range scaling parameter
-\c dynRange. This is used to keep the quantities in the range of
-\c REAL4 and cancells from the filter output. It is typically \f$2^{69}\f$
-for the LIGO channel \c AS_Q.
-
-The discrete low frequency cutoff is computed from \c fLow by
-\f{equation}{
-k_{\mathrm{low}} = \frac{\mathtt{fLow}}{\Delta f}.
-\f}
-\f$k_{\mathrm{low}}\f$ is set to unity if this quantity is less than one.
-
-\heading{Computation of strain and inverse power spectrum}
-
-The uncallibrated input data channel \f$v_j\f$ is Fourier transformed into the
-frequency domain to obtain \f$\tilde{v}_k\f$. This is then converted into strain
-\f$\tilde{h}_k\f$ by computing
-\f{equation}{
-\tilde{h}_k = \mathtt{dynRange} \times R(f_k) \tilde{v}_k.
-\f}
-The inverse power spectrum \f$S^{-1}_v(|f_k|)\f$ is computed between the low
-frequency cutoff \f$f_{\mathrm{low}}\f$ and the Nyquist frequency. Below
-\f$f_{\mathrm{low}}\f$, the inverse power spectrum is set to zero. If the low
-frequency cutoff is set to \f$0\f$, then the DC component of the spectrum is
-set to zero.
-
-\heading{Truncation of the Inverse Power Spectrum in the Time Domain}
-
-Recall that the FFT we use to compute the match filter treats the data as
-being periodic and that we had to ignore part of the filter output that was
-corrupted due to wraparound of the filter output from the chirp signal.
-
-As well as the chirp, we are also filtering the data against the inverse power
-spectrum. The chirp has a duration that is typically much less than then
-length of the data segment. It only corrupts a region that is the length of
-the chirp at the start of the data segment. However, in the time domain the
-inverse power spectrum is the same length of the data segmemt. This will cause
-the filter output to be corrupted for all times, as it is non-zero over the
-entire data segment.
-
-To prevent this, we truncate the inverse power spectrum to a specified length
-in the time domain. This has the effect of smoothing out the high \f$Q\f$ features
-which and restructing the corruption of the filter to the part of the data
-segment where the power spectrum is non-zero. These regions can then be
-ignored when searching for chirps in the filter output.
-
-The parameter that controls the duration of the power spectrum in the time
-domain is \c invSpecTrunc and the algorithm used to perform the
-truncation is as follows:
-<ol>
-<li> Compute the square root of the inverse power spectrum,
-\f$\sqrt{S^{-1}_v(|f_k|)}\f$.</li>
-<li> Set the Nyquist, \f$k = N/2\f$ and DC \f$k = 0\f$ components of this to zero.</li>
-<li> Inverse FFT to to obtain the time domain inverse PSD of length \f$N\f$
-points.</li>
-<li> Zero the spectrum between the points \f$j = \mathtt{invSpecTrunc}/2\f$ and
-\f$j = N - \mathtt{invSpecTrunc}/2\f$. This sets the length of the inverse
-spectrum in the time domain to be \c invSpecTrunc points.</li>
-<li> FFT the time domain quantity back to the frequency domain.</li>
-<li> Divide by \f$N\f$ so that to recover the quantity before the inverse FFT.</li>
-<li> Square this quantity to recover \f$S^{-1}_v(|f_k|)\f$.</li>
-<li> Set the Nyqist and DC frequencies to zero and zero the inverse power
-spectrum below \f$f_{\mathrm{low}}\f$.</li>
-</ol>
-
-The strain inverse power spectral density is then computed by
-\f{equation}{
-S^{-1}_h(|f_k|) = \frac{1}{\left|\mathtt{dynRange} \times R(f_k)\right|^2}
- S^{-1}_v(|f_k|).
-\f}
-
-\heading{Output Data}
-The quantity \c segNorm is computed by
-\f{equation}{
-\mathtt{segNorm} =
-   \sum_{k = k_{\mathrm{low}}}^{N/2} \frac{k^{-\frac{7}{3}}}
-   {\left|\mathtt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
-\f}
-
-The output data is given by
-\f{equation}{
-\mathtt{outputData[k]} =
-\frac{k^{-7/6} \times \mathtt{dynRange} \times R(f_k)\tilde{v}_k}
-{\left|\mathtt{dynRange} \times R(f_k)\right|^2 S_v(|f_k|)}
-\f}
-and is stored in the \c FindChirpSegmentVector structure. Note the
-quantity \f$k^{-\frac{7}{6}}\f$ which is specific to the stationary phase chirps
-used.
-
-\heading{Calculation of the \f$\chi^2\f$ Bins}
-
-If a \f$\chi^2\f$ veto is requested, the bin boundaries for the veto are computed
-at this point. The indices \f$k\f$ in the frequency domain that divide the power
-in the quantity
-\f{equation}{
-\frac{k^{-\frac{7}{3}}}
-{\left|\mathtt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
-\f}
-into equal intervals are stored in the array \c chisqBin.
-
-\subsection sec_fcd_bcv Algorithm for BCV templates
-
-The <tt>LALFindChirpBCVData()</tt> function takes as input...
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-LALCreateVector()
-LALDestroyVector()
-LALCreateForwardRealFFTPlan()
-LALDestroyRealFFTPlan()
-LALCCreateVector()
-LALCDestroyVector()
-LALForwardRealFFT()
-LALReverseRealFFT()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Brown, D. A.
+ * \file
+ * \ingroup FindChirpSP_h
+ *
+ * \brief Provides functions to condition the input data from the interferometer
+ * to a form that can be used by the <tt>FindChirpFilter()</tt> function.
+ *
+ * At the present time this also includes the template independent part of the
+ * stationary phase filter.
+ *
+ * \section sec_fcd_desc Description
+ *
+ * <dl>
+ * <dt><tt> LALFindChirpSPDataInit()</tt></dt><dd> takes as input the address
+ * of a structure of type \c FindChirpInitParams containing the correct
+ * values to intialize a search. It creates a structure of type
+ * \c FindChirpSPDataParams as described above and returns its address.</dd>
+ *
+ * <dt><tt>LALFindChirpSPDataFinalize()</tt></dt><dd> takes as the address
+ * of a structure of type \c FindChirpSPDataParams destroys this
+ * structure and sets the address to NULL.</dd>
+ *
+ * <dt><tt>LALFindChirpSPData()</tt></dt><dd> conditions the interferometer data
+ * as described by the algorithm below.</dd>
+ *
+ * <dt><tt>LALFindChirpBCVData()</tt></dt><dd> conditions the interferometer data
+ * as described by the algorithm below.</dd>
+ * </dl>
+ *
+ * \subsection sec_fcd_alg Algorithm for SP templates
+ *
+ * The <tt>LALFindChirpSPData()</tt> function takes as input three quantities
+ * <ol>
+ * <li> An uncallibrated input data channel \f$v_j\f$ (typically LSC-AS_Q).</li>
+ * <li> A one sided power spectral density of the input data \f$S_v(|f_k|)\f$.</li>
+ * <li> The frequency domain response function of the input data channel
+ * \f$R(f_k)\f$ which is used to convert from an uncallibrated input data into
+ * strain.</li>
+ * </ol>
+ *
+ * The input parameters also contain a dynmaic range scaling parameter
+ * \c dynRange. This is used to keep the quantities in the range of
+ * \c REAL4 and cancells from the filter output. It is typically \f$2^{69}\f$
+ * for the LIGO channel \c AS_Q.
+ *
+ * The discrete low frequency cutoff is computed from \c fLow by
+ * \f{equation}{
+ * k_{\mathrm{low}} = \frac{\mathtt{fLow}}{\Delta f}.
+ * \f}
+ * \f$k_{\mathrm{low}}\f$ is set to unity if this quantity is less than one.
+ *
+ * ### Computation of strain and inverse power spectrum ###
+ *
+ * The uncallibrated input data channel \f$v_j\f$ is Fourier transformed into the
+ * frequency domain to obtain \f$\tilde{v}_k\f$. This is then converted into strain
+ * \f$\tilde{h}_k\f$ by computing
+ * \f{equation}{
+ * \tilde{h}_k = \mathtt{dynRange} \times R(f_k) \tilde{v}_k.
+ * \f}
+ * The inverse power spectrum \f$S^{-1}_v(|f_k|)\f$ is computed between the low
+ * frequency cutoff \f$f_{\mathrm{low}}\f$ and the Nyquist frequency. Below
+ * \f$f_{\mathrm{low}}\f$, the inverse power spectrum is set to zero. If the low
+ * frequency cutoff is set to \f$0\f$, then the DC component of the spectrum is
+ * set to zero.
+ *
+ * ### Truncation of the Inverse Power Spectrum in the Time Domain ###
+ *
+ * Recall that the FFT we use to compute the match filter treats the data as
+ * being periodic and that we had to ignore part of the filter output that was
+ * corrupted due to wraparound of the filter output from the chirp signal.
+ *
+ * As well as the chirp, we are also filtering the data against the inverse power
+ * spectrum. The chirp has a duration that is typically much less than then
+ * length of the data segment. It only corrupts a region that is the length of
+ * the chirp at the start of the data segment. However, in the time domain the
+ * inverse power spectrum is the same length of the data segmemt. This will cause
+ * the filter output to be corrupted for all times, as it is non-zero over the
+ * entire data segment.
+ *
+ * To prevent this, we truncate the inverse power spectrum to a specified length
+ * in the time domain. This has the effect of smoothing out the high \f$Q\f$ features
+ * which and restructing the corruption of the filter to the part of the data
+ * segment where the power spectrum is non-zero. These regions can then be
+ * ignored when searching for chirps in the filter output.
+ *
+ * The parameter that controls the duration of the power spectrum in the time
+ * domain is \c invSpecTrunc and the algorithm used to perform the
+ * truncation is as follows:
+ * <ol>
+ * <li> Compute the square root of the inverse power spectrum,
+ * \f$\sqrt{S^{-1}_v(|f_k|)}\f$.</li>
+ * <li> Set the Nyquist, \f$k = N/2\f$ and DC \f$k = 0\f$ components of this to zero.</li>
+ * <li> Inverse FFT to to obtain the time domain inverse PSD of length \f$N\f$
+ * points.</li>
+ * <li> Zero the spectrum between the points \f$j = \mathtt{invSpecTrunc}/2\f$ and
+ * \f$j = N - \mathtt{invSpecTrunc}/2\f$. This sets the length of the inverse
+ * spectrum in the time domain to be \c invSpecTrunc points.</li>
+ * <li> FFT the time domain quantity back to the frequency domain.</li>
+ * <li> Divide by \f$N\f$ so that to recover the quantity before the inverse FFT.</li>
+ * <li> Square this quantity to recover \f$S^{-1}_v(|f_k|)\f$.</li>
+ * <li> Set the Nyqist and DC frequencies to zero and zero the inverse power
+ * spectrum below \f$f_{\mathrm{low}}\f$.</li>
+ * </ol>
+ *
+ * The strain inverse power spectral density is then computed by
+ * \f{equation}{
+ * S^{-1}_h(|f_k|) = \frac{1}{\left|\mathtt{dynRange} \times R(f_k)\right|^2}
+ * S^{-1}_v(|f_k|).
+ * \f}
+ *
+ * ### Output Data ###
+ *
+ * The quantity \c segNorm is computed by
+ * \f{equation}{
+ * \mathtt{segNorm} =
+ * \sum_{k = k_{\mathrm{low}}}^{N/2} \frac{k^{-\frac{7}{3}}}
+ * {\left|\mathtt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
+ * \f}
+ *
+ * The output data is given by
+ * \f{equation}{
+ * \mathtt{outputData[k]} =
+ * \frac{k^{-7/6} \times \mathtt{dynRange} \times R(f_k)\tilde{v}_k}
+ * {\left|\mathtt{dynRange} \times R(f_k)\right|^2 S_v(|f_k|)}
+ * \f}
+ * and is stored in the \c FindChirpSegmentVector structure. Note the
+ * quantity \f$k^{-\frac{7}{6}}\f$ which is specific to the stationary phase chirps
+ * used.
+ *
+ * ### Calculation of the \f$\chi^2\f$ Bins ###
+ *
+ * If a \f$\chi^2\f$ veto is requested, the bin boundaries for the veto are computed
+ * at this point. The indices \f$k\f$ in the frequency domain that divide the power
+ * in the quantity
+ * \f{equation}{
+ * \frac{k^{-\frac{7}{3}}}
+ * {\left|\mathtt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
+ * \f}
+ * into equal intervals are stored in the array \c chisqBin.
+ *
+ * \subsection sec_fcd_bcv Algorithm for BCV templates
+ *
+ * The <tt>LALFindChirpBCVData()</tt> function takes as input...
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * LALCreateVector()
+ * LALDestroyVector()
+ * LALCreateForwardRealFFTPlan()
+ * LALDestroyRealFFTPlan()
+ * LALCCreateVector()
+ * LALCDestroyVector()
+ * LALForwardRealFFT()
+ * LALReverseRealFFT()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>

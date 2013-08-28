@@ -1,39 +1,44 @@
 /**
-\file
-\ingroup AVFactories_h
-
-\brief A program to test create/destroy array routines.
-
-\heading{Usage}
-\code
-ArrayFactoriesTest [options]
-Options:
-  -h         print help
-  -q         quiet: run silently
-  -v         verbose: print extra information
-  -d level   set lalDebugLevel to level
-\endcode
-
-\heading{Description}
-
-\heading{Exit codes}
-<table><tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Success, normal exit.</td></tr>
-<tr><td>1</td><td>Subroutine failed.</td></tr>
-</table>
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\<datatype\>CreateArray()
-\<datatype\>DestroyArray()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \file
+ * \ingroup AVFactories_h
+ *
+ * \brief A program to test create/destroy array routines.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ArrayFactoriesTest [options]
+ * Options:
+ * -h         print help
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * \endcode
+ *
+ * ### Description ###
+ *
+ *
+ * ### Exit codes ###
+ *
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \<datatype\>CreateArray()
+ * \<datatype\>DestroyArray()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 /** \cond DONT_DOXYGEN */
 #include <config.h>
 

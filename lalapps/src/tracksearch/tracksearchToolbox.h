@@ -18,9 +18,9 @@
 */
 
 /**
-\author Torres. C
-\file
-*/
+ * \author Torres. C
+ * \file
+ */
 
 #ifndef TRACKSEARCHTOOLBOX_H
 #define TRACKSEARCHTOOLBOX_H

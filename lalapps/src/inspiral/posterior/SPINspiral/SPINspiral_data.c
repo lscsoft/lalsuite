@@ -117,10 +117,10 @@ void setIFOdata(struct runPar *run, struct interferometer ifo[])
  *
  * Determines interferometer arm (unit-) vectors (and others), given position (lat/long) and arm angles.
  * Vectors refer to the (right-handed) Earth coordinate system spanned by the three vectors:
- *   x) from geocenter to intersection of greenwich meridian with equator plane;
- *   y) from geocenter to intersection of 90E meridian with equator plane;
- *   z) from geocenter to north pole.
- * 
+ * x) from geocenter to intersection of greenwich meridian with equator plane;
+ * y) from geocenter to intersection of 90E meridian with equator plane;
+ * z) from geocenter to north pole.
+ *
  */
 // ****************************************************************************************************************************************************  
 void IFOinit(struct interferometer **ifo, int networkSize, struct runPar run)
@@ -249,7 +249,7 @@ void IFOinit(struct interferometer **ifo, int networkSize, struct runPar run)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Free allocated IFO variables
- * 
+ *
  */
 // ****************************************************************************************************************************************************  
 void IFOdispose(struct interferometer *ifo, struct runPar run)
@@ -277,7 +277,7 @@ void IFOdispose(struct interferometer *ifo, struct runPar run)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute FIR filter coefficients.
- * 
+ *
  * The filter has a total of N=(order+order-1) coefficients that are symmetric, i.e. coef[k] = coef[N-k].
  * For details & filter properties see the function downsampling() below.
  */
@@ -328,7 +328,7 @@ double* filter(int *order, int samplerate, double upperlimit, struct runPar run)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Downsample a time series by a factor downsampleFactor
- * 
+ *
  * Downsamples a time series by factor downsampleFactor by first low-pass filtering it using a finite-impulse-response (FIR) filter and then thinning the data.
  * Filter coefficients are determined using the 'Parks-McClellan' or 'Remez exchange' algorithm.
  * The resulting data vector is shorter than original.
@@ -363,10 +363,10 @@ double* downsample(double data[], int *datalength, double filtercoef[], int ncoe
 
 // ****************************************************************************************************************************************************  
 /**
- * \brief Apply a 'Hann window' to data 
- * 
+ * \brief Apply a 'Hann window' to data
+ *
  * Window data using a Hann window.
- * j = 0, ..., N-1                  
+ * j = 0, ..., N-1
  */
 // ****************************************************************************************************************************************************  
 double hannWindow(int j, int N)
@@ -380,8 +380,8 @@ double hannWindow(int j, int N)
 
 // ****************************************************************************************************************************************************  
 /**
- * \brief Apply a 'Tukey window' to data 
- * 
+ * \brief Apply a 'Tukey window' to data
+ *
  * Window data using a Tukey window.
  * For r=0 equal to rectangular window, for r=1 equal to Hann window (0<r<1 denotes the fraction of the window in which it behaves sinusoidal).
  * j = 0, ..., N-1
@@ -400,8 +400,8 @@ double tukeyWindow(int j, int N, double r)
 
 // ****************************************************************************************************************************************************  
 /**
- * \brief Apply a 'Tukey window' to data 
- * 
+ * \brief Apply a 'Tukey window' to data
+ *
  * Window data using a Tukey window. r1 for lower frequency windowing, r2 for upper frequency windowing.
  * For r=0 equal to rectangular window, for r=1 equal to Hann window (0<r<1 denotes the fraction of the window in which it behaves sinusoidal).
  * j = 0, ..., N-1
@@ -424,7 +424,7 @@ double modifiedTukeyWindow(int j, int N, double r1, double r2)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Read the data and do a software injection if wanted
- * 
+ *
  * Computes the Fourier Transform for the specified range of the specified Frame (".gwf") file,
  * after adding up the two (signal & noise) channels, or injecting a waveform template into the noise.
  * Also takes care of preparing FT stuff  (ifo[ifonr]->FTplan, ->FTin, ->FTout, ...).
@@ -726,7 +726,7 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
 // ****************************************************************************************************************************************************  
 /**
  * \brief Returns a (smoothed) estimate of the log- Power Spectral Density.
- * 
+ *
  * Data is split into K segments of M seconds, and K-1 overlapping segments of length 2M are eventually windowed and transformed.
  */
 // ****************************************************************************************************************************************************  
@@ -1018,7 +1018,7 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run
 // ****************************************************************************************************************************************************  
 /**
  * \brief Returns a linearly interpolated (log-) noise PSD.
- * 
+ *
  */
 // ****************************************************************************************************************************************************  
 double interpolLogNoisePSD(double f, struct interferometer *ifo)
@@ -1041,7 +1041,7 @@ double interpolLogNoisePSD(double f, struct interferometer *ifo)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Write windowed, time-domain data (signal + noise) to disc.
- * 
+ *
  */
 // ****************************************************************************************************************************************************  
 void writeDataToFiles(struct interferometer *ifo[], int networkSize, struct runPar run) {
@@ -1095,7 +1095,7 @@ void writeDataToFiles(struct interferometer *ifo[], int networkSize, struct runP
 // ****************************************************************************************************************************************************  
 /**
  * \brief Write noise ASD to disc
- * 
+ *
  * The noise ASD is the square root of the estimated noise PSD  (no injected signal).
  */
 // ****************************************************************************************************************************************************  
@@ -1131,7 +1131,7 @@ void writeNoiseToFiles(struct interferometer *ifo[], int networkSize, struct run
 // ****************************************************************************************************************************************************  
 /**
  * \brief Write signal and its FFT to disc
- * 
+ *
  * Write a signal with the injection parameters and its FFT to disc, as *-signal.dat.* and *-signalFFT.dat.*.
  */
 // ****************************************************************************************************************************************************  
@@ -1203,7 +1203,7 @@ void writeSignalsToFiles(struct interferometer *ifo[], int networkSize, struct r
 // ****************************************************************************************************************************************************  
 /**
  * \brief Write an optional header when saving data, ASD or signal to disc.
- * 
+ *
  * The header idendtifies the (waveform) parameters.
  */
 // ****************************************************************************************************************************************************  

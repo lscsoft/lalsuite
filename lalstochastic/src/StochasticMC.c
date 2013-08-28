@@ -19,280 +19,281 @@
 
 
 /**
-\author Tania Regimbau, Sukanta Bose, Jeff Noel
-\addtogroup StochasticMC_h
-
-\heading{Description}
-
-This routine simulates time-domain signal in a pair
-of detectors using Sukanta Bose's code SimulateSB.c, whitened with the adequate response function that can be used in LALwrapper.
-
-In this version, long time-series are constructed by concatenating short segments of simulated data
-whitened with the adequate response function. Segments are sinusoidally spliced into consecutive
-segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final
-time serie.
-
-\heading{Algorithm}
-
-The following program shows how to use the routines LALStochasticMCDso and LALStochasticMCDsoSplice
-
-\code
-#include <math.h>
-#include <string.h>
-#include <stdio.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-#include <FrameL.h>
-#include <lal/LALStdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
-#include <lal/PrintFTSeries.h>
-#include <lal/LALFrStream.h>
-#include <lal/FrameCalibration.h>
-#include <lal/Calibration.h>
-#include <lal/LALConstants.h>
-#include <lal/LALStatusMacros.h>
-#include <lal/StochasticCrossCorrelation.h>
-#include <lal/RealFFT.h>
-#include <lal/ComplexFFT.h>
-#include <lal/Units.h>
-#include <lal/StreamInput.h>
-#include <lal/PrintVector.h>
-#include <lal/Random.h>
-#include <lal/SimulateSB.h>
-#include <lal/StochasticMC.h>
-
-int main( ){
-
-  static LALStatus status;
-  SSSimStochBGOutput MCoutput;
-  StochasticMCParams MCparams;
-  StochasticMCSInput MCinput;
-
-  //output structure
-  REAL4TimeSeries SimStochBG1;
-  REAL4TimeSeries SimStochBG2;
-
-  //input structure
-  CalibrationFunctions calfuncs1,calfuncs2;
-  CalibrationUpdateParams  calfacts1,calfacts2;
-  COMPLEX8FrequencySeries responseFunction1,responseFunction2,sensingFunction1,sensingFunction2;
-  LIGOTimeGPS epoch;
-  COMPLEX8TimeSeries oloopfactor1,sfactor1,oloopfactor2,sfactor2;
-  COMPLEX8Vector *response[2]={NULL,NULL};
-  COMPLEX8Vector *sensing[2]={NULL,NULL};
-  COMPLEX8Vector *oloopfactor[2]={NULL,NULL};
-  COMPLEX8Vector *sfactor[2]={NULL,NULL};
-
-  //parameters
-  UINT4 timeref, starttime, caltime;
-  UINT4 freqlen,length,lengthseg,caloffset;
-  REAL8 sRate,deltaT, deltaF;
-
-  INT4 i, j;
-  LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-
-  CHAR Outfile1[LALNameLength];
-  CHAR Outfile2[LALNameLength];
-  FILE *pfone, *pftwo;
-
-  status.statusPtr = NULL;
-  lengthseg = 61440;
-  sRate = 1024.;
-  starttime = 729331170;
-
-  //write parameters
-  MCparams.lengthseg = lengthseg; MCparams.numseg = 3;
-  MCparams.sRate = sRate;
-  MCparams.starttime = starttime;
-  MCparams.seed = 173;
-  MCparams.fRef = 100.; MCparams.f0 = 0.;
-  MCparams.omegaRef = 1.; MCparams.alpha = 0;
-  MCparams.site1 = 0; MCparams.site2 = 0;
-
-  //set other parameters
-  length = MCparams.numseg * lengthseg;
-  deltaT = 1./sRate;
-  freqlen = lengthseg / 2 + 1;
-  caloffset =  lengthseg / (2 * sRate);
-  deltaF = 1.0/(deltaT*lengthseg);
-  timeref = 0;
-  caltime = starttime + caloffset;
-  for (i=0;i<2;i++)
-  {
-    LALCCreateVector(&status,&response[i],freqlen);
-    LALCCreateVector(&status,&sensing[i],freqlen);
-  }
-
- for (i=0;i<2;i++)
-  {
-    LALCCreateVector(&status,&oloopfactor[i],length);
-    LALCCreateVector(&status,&sfactor[i],length);
-  }
-
- for (i=0;i<2;i++)
-  {
-    for (j=0; j < freqlen; j++)
-     {
-      response[i]->data[j].re = 1.;
-      response[i]->data[j].im = 1.;
-      sensing[i]->data[j].re = 1.;
-      sensing[i]->data[j].im = 1.;
-     }
-  }
-
-  for (i=0;i<2;i++)
-  {
-    for (j=0; j < length; j++)
-     {
-      oloopfactor[i]->data[j].re = 1.;
-      oloopfactor[i]->data[j].im = 1.;
-      sfactor[i]->data[j].re = 1.;
-      sfactor[i]->data[j].im = 1.;
-     }
-  }
-
-  memset(&responseFunction1,0,sizeof(COMPLEX8FrequencySeries));
-  memset(&responseFunction2,0,sizeof(COMPLEX8FrequencySeries));
-  memset(&sensingFunction1,0,sizeof(COMPLEX8FrequencySeries));
-  memset(&sensingFunction2,0,sizeof(COMPLEX8FrequencySeries));
-
-  responseFunction1.epoch.gpsSeconds = timeref;
-  responseFunction1.epoch.gpsNanoSeconds = 0;
-  responseFunction1.deltaF = deltaF;
-  responseFunction1.f0 = 0;
-  responseFunction1.sampleUnits = countPerStrain;
-  responseFunction1.data = response[0];
-
-  responseFunction2.epoch.gpsSeconds = timeref;
-  responseFunction2.epoch.gpsNanoSeconds = 0;
-  responseFunction2.deltaF = deltaF;
-  responseFunction2.f0 = 0;
-  responseFunction2.sampleUnits = countPerStrain;
-  responseFunction2.data = response[1];
-
-  sensingFunction1.epoch.gpsSeconds = timeref;
-  sensingFunction1.epoch.gpsNanoSeconds = 0;
-  sensingFunction1.deltaF = deltaF;
-  sensingFunction1.f0 = 0;
-  sensingFunction1.sampleUnits = countPerStrain;
-  sensingFunction1.data = sensing[0];
-
-  sensingFunction2.epoch.gpsSeconds = timeref;
-  sensingFunction2.epoch.gpsNanoSeconds = 0;
-  sensingFunction2.deltaF = deltaF;
-  sensingFunction2.f0 = 0;
-  sensingFunction2.sampleUnits = countPerStrain;
-  sensingFunction2.data = sensing[1];
-
-  memset(&oloopfactor1,0,sizeof(COMPLEX8TimeSeries));
-  memset(&oloopfactor2,0,sizeof(COMPLEX8TimeSeries));
-  memset(&sfactor1,0,sizeof(COMPLEX8TimeSeries));
-  memset(&sfactor2,0,sizeof(COMPLEX8TimeSeries));
-
-  oloopfactor1.epoch.gpsSeconds = timeref;
-  oloopfactor1.epoch.gpsNanoSeconds = 0;
-  oloopfactor1.deltaT = 1. / sRate;
-  oloopfactor1.f0 = 0;
-  oloopfactor1.sampleUnits = lalADCCountUnit;
-  oloopfactor1.data = oloopfactor[0];
-
-  oloopfactor2.epoch.gpsSeconds = timeref;
-  oloopfactor2.epoch.gpsNanoSeconds = 0;
-  oloopfactor2.deltaT = 1. / sRate;
-  oloopfactor2.f0 = 0;
-  oloopfactor2.sampleUnits = lalADCCountUnit;
-  oloopfactor2.data = oloopfactor[1];
-
-  sfactor1.epoch.gpsSeconds = timeref;
-  sfactor1.epoch.gpsNanoSeconds = 0;
-  sfactor1.deltaT = 1. / sRate;
-  sfactor1.f0 = 0;
-  sfactor1.sampleUnits = lalADCCountUnit;
-  sfactor1.data = sfactor[0];
-
-  sfactor2.epoch.gpsSeconds = timeref;
-  sfactor2.epoch.gpsNanoSeconds = 0;
-  sfactor2.deltaT = 1. / sRate;
-  sfactor2.f0 = 0;
-  sfactor2.sampleUnits = lalADCCountUnit;
-  sfactor2.data = sfactor[1];
-
-  calfuncs1.responseFunction = &responseFunction1;
-  calfuncs1.sensingFunction = &sensingFunction1;
-  calfuncs2.responseFunction = &responseFunction2;
-  calfuncs2.sensingFunction = &sensingFunction2;
-
-  calfacts1.openLoopFactor = &oloopfactor1;
-  calfacts1.sensingFactor = &sfactor1;
-  calfacts2.openLoopFactor = &oloopfactor2;
-  calfacts2.sensingFactor = &sfactor2;
-
-  epoch.gpsSeconds = caltime;
-  epoch.gpsNanoSeconds = 0;
-  calfacts1.epoch = epoch;calfacts2.epoch = epoch;
-
-  //write input parameters
-  MCinput.calfuncs1 = calfuncs1;
-  MCinput.calfuncs2 = calfuncs2;
-  MCinput.calfacts1 = calfacts1;
-  MCinput.calfacts2 = calfacts2;
-
-  SimStochBG1.data = NULL;
-  LALSCreateVector(&status, &(SimStochBG1.data), length);
-  SimStochBG2.data = NULL;
-  LALSCreateVector(&status, &(SimStochBG2.data), length);
-
-  MCoutput.SSimStochBG1 = &SimStochBG1;
-  MCoutput.SSimStochBG2 = &SimStochBG2;
-
-  LALStochasticMCDso (&status,&MCoutput,&MCinput,&MCparams);
-
-  //create output files
-
-  if (print){
-  snprintf( Outfile1, LALNameLength * sizeof(CHAR),
-            "%s_1_%d.ilwd",_IFO1,starttime);
-  snprintf( Outfile2, LALNameLength * sizeof(CHAR),
-            "%s_2_%d.ilwd",_IFO2,starttime);
-
-  //print output to ilwds
-
-   if (print)
-    {
-     pfone=LALFopen(Outfile1,"w");pftwo=LALFopen(Outfile2,"w");
-     fprintf(pfone,"<?ilwd?>\n");fprintf(pftwo,"<?ilwd?>\n");
-     fprintf(pfone,"<ilwd comment='%s'",Outfile1);
-     fprintf(pfone," name='%s' size='1'>\n",Outfile1);
-     fprintf(pfone," <real_8 dims='%d' name='%s'>",length,Outfile1);
-     fprintf(pftwo,"<ilwd comment='%s'",Outfile2);
-     fprintf(pftwo," name='%s' size='1'>\n",Outfile2);
-     fprintf(pftwo," <real_8 dims='%d' name='%s'>",length,Outfile2);
-
-     for(i=0;(UINT4)i<length;i++)
-       {
-        fprintf(pfone,"% e",SimStochBG1.data->data[i]);
-        fprintf(pftwo,"% e",SimStochBG2.data->data[i]);
-       }
-     fprintf(pfone,"</real_8>");fprintf(pftwo,"</real_8>");
-     fprintf(pfone," </ilwd>");fprintf(pftwo," </ilwd>");
-     LALFclose(pfone);LALFclose(pftwo);
-    }
-  }
-}
-\endcode
-
-\heading{Uses}
-\code
-LALSSSimStochBGTimeSeries()
-LALUpdateCalibration()
-LALResponseConvert()
-\endcode
-*/
+ * \author Tania Regimbau, Sukanta Bose, Jeff Noel
+ * \addtogroup StochasticMC_h
+ *
+ * ### Description ###
+ *
+ * This routine simulates time-domain signal in a pair
+ * of detectors using Sukanta Bose's code SimulateSB.c, whitened with the adequate response function that can be used in LALwrapper.
+ *
+ * In this version, long time-series are constructed by concatenating short segments of simulated data
+ * whitened with the adequate response function. Segments are sinusoidally spliced into consecutive
+ * segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final
+ * time serie.
+ *
+ * ### Algorithm ###
+ *
+ * The following program shows how to use the routines LALStochasticMCDso and LALStochasticMCDsoSplice
+ *
+ * \code
+ * #include <math.h>
+ * #include <string.h>
+ * #include <stdio.h>
+ * #ifdef HAVE_UNISTD_H
+ * #include <unistd.h>
+ * #endif
+ * #ifdef HAVE_GETOPT_H
+ * #include <getopt.h>
+ * #endif
+ * #include <FrameL.h>
+ * #include <lal/LALStdio.h>
+ * #include <lal/LALStdlib.h>
+ * #include <lal/AVFactories.h>
+ * #include <lal/PrintFTSeries.h>
+ * #include <lal/LALFrStream.h>
+ * #include <lal/FrameCalibration.h>
+ * #include <lal/Calibration.h>
+ * #include <lal/LALConstants.h>
+ * #include <lal/LALStatusMacros.h>
+ * #include <lal/StochasticCrossCorrelation.h>
+ * #include <lal/RealFFT.h>
+ * #include <lal/ComplexFFT.h>
+ * #include <lal/Units.h>
+ * #include <lal/StreamInput.h>
+ * #include <lal/PrintVector.h>
+ * #include <lal/Random.h>
+ * #include <lal/SimulateSB.h>
+ * #include <lal/StochasticMC.h>
+ *
+ * int main( ){
+ *
+ *   static LALStatus status;
+ *   SSSimStochBGOutput MCoutput;
+ *   StochasticMCParams MCparams;
+ *   StochasticMCSInput MCinput;
+ *
+ *   //output structure
+ *   REAL4TimeSeries SimStochBG1;
+ *   REAL4TimeSeries SimStochBG2;
+ *
+ *   //input structure
+ *   CalibrationFunctions calfuncs1,calfuncs2;
+ *   CalibrationUpdateParams  calfacts1,calfacts2;
+ *   COMPLEX8FrequencySeries responseFunction1,responseFunction2,sensingFunction1,sensingFunction2;
+ *   LIGOTimeGPS epoch;
+ *   COMPLEX8TimeSeries oloopfactor1,sfactor1,oloopfactor2,sfactor2;
+ *   COMPLEX8Vector *response[2]={NULL,NULL};
+ *   COMPLEX8Vector *sensing[2]={NULL,NULL};
+ *   COMPLEX8Vector *oloopfactor[2]={NULL,NULL};
+ *   COMPLEX8Vector *sfactor[2]={NULL,NULL};
+ *
+ *   //parameters
+ *   UINT4 timeref, starttime, caltime;
+ *   UINT4 freqlen,length,lengthseg,caloffset;
+ *   REAL8 sRate,deltaT, deltaF;
+ *
+ *   INT4 i, j;
+ *   LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+ *
+ *   CHAR Outfile1[LALNameLength];
+ *   CHAR Outfile2[LALNameLength];
+ *   FILE *pfone, *pftwo;
+ *
+ *   status.statusPtr = NULL;
+ *   lengthseg = 61440;
+ *   sRate = 1024.;
+ *   starttime = 729331170;
+ *
+ *   //write parameters
+ *   MCparams.lengthseg = lengthseg; MCparams.numseg = 3;
+ *   MCparams.sRate = sRate;
+ *   MCparams.starttime = starttime;
+ *   MCparams.seed = 173;
+ *   MCparams.fRef = 100.; MCparams.f0 = 0.;
+ *   MCparams.omegaRef = 1.; MCparams.alpha = 0;
+ *   MCparams.site1 = 0; MCparams.site2 = 0;
+ *
+ *   //set other parameters
+ *   length = MCparams.numseg * lengthseg;
+ *   deltaT = 1./sRate;
+ *   freqlen = lengthseg / 2 + 1;
+ *   caloffset =  lengthseg / (2 * sRate);
+ *   deltaF = 1.0/(deltaT*lengthseg);
+ *   timeref = 0;
+ *   caltime = starttime + caloffset;
+ *   for (i=0;i<2;i++)
+ *   {
+ *     LALCCreateVector(&status,&response[i],freqlen);
+ *     LALCCreateVector(&status,&sensing[i],freqlen);
+ *   }
+ *
+ *   for (i=0;i<2;i++)
+ *   {
+ *     LALCCreateVector(&status,&oloopfactor[i],length);
+ *     LALCCreateVector(&status,&sfactor[i],length);
+ *   }
+ *
+ *   for (i=0;i<2;i++)
+ *   {
+ *     for (j=0; j < freqlen; j++)
+ *     {
+ *       response[i]->data[j].re = 1.;
+ *       response[i]->data[j].im = 1.;
+ *       sensing[i]->data[j].re = 1.;
+ *       sensing[i]->data[j].im = 1.;
+ *     }
+ *   }
+ *
+ *   for (i=0;i<2;i++)
+ *   {
+ *     for (j=0; j < length; j++)
+ *     {
+ *       oloopfactor[i]->data[j].re = 1.;
+ *       oloopfactor[i]->data[j].im = 1.;
+ *       sfactor[i]->data[j].re = 1.;
+ *       sfactor[i]->data[j].im = 1.;
+ *     }
+ *   }
+ *
+ *   memset(&responseFunction1,0,sizeof(COMPLEX8FrequencySeries));
+ *   memset(&responseFunction2,0,sizeof(COMPLEX8FrequencySeries));
+ *   memset(&sensingFunction1,0,sizeof(COMPLEX8FrequencySeries));
+ *   memset(&sensingFunction2,0,sizeof(COMPLEX8FrequencySeries));
+ *
+ *   responseFunction1.epoch.gpsSeconds = timeref;
+ *   responseFunction1.epoch.gpsNanoSeconds = 0;
+ *   responseFunction1.deltaF = deltaF;
+ *   responseFunction1.f0 = 0;
+ *   responseFunction1.sampleUnits = countPerStrain;
+ *   responseFunction1.data = response[0];
+ *
+ *   responseFunction2.epoch.gpsSeconds = timeref;
+ *   responseFunction2.epoch.gpsNanoSeconds = 0;
+ *   responseFunction2.deltaF = deltaF;
+ *   responseFunction2.f0 = 0;
+ *   responseFunction2.sampleUnits = countPerStrain;
+ *   responseFunction2.data = response[1];
+ *
+ *   sensingFunction1.epoch.gpsSeconds = timeref;
+ *   sensingFunction1.epoch.gpsNanoSeconds = 0;
+ *   sensingFunction1.deltaF = deltaF;
+ *   sensingFunction1.f0 = 0;
+ *   sensingFunction1.sampleUnits = countPerStrain;
+ *   sensingFunction1.data = sensing[0];
+ *
+ *   sensingFunction2.epoch.gpsSeconds = timeref;
+ *   sensingFunction2.epoch.gpsNanoSeconds = 0;
+ *   sensingFunction2.deltaF = deltaF;
+ *   sensingFunction2.f0 = 0;
+ *   sensingFunction2.sampleUnits = countPerStrain;
+ *   sensingFunction2.data = sensing[1];
+ *
+ *   memset(&oloopfactor1,0,sizeof(COMPLEX8TimeSeries));
+ *   memset(&oloopfactor2,0,sizeof(COMPLEX8TimeSeries));
+ *   memset(&sfactor1,0,sizeof(COMPLEX8TimeSeries));
+ *   memset(&sfactor2,0,sizeof(COMPLEX8TimeSeries));
+ *
+ *   oloopfactor1.epoch.gpsSeconds = timeref;
+ *   oloopfactor1.epoch.gpsNanoSeconds = 0;
+ *   oloopfactor1.deltaT = 1. / sRate;
+ *   oloopfactor1.f0 = 0;
+ *   oloopfactor1.sampleUnits = lalADCCountUnit;
+ *   oloopfactor1.data = oloopfactor[0];
+ *
+ *   oloopfactor2.epoch.gpsSeconds = timeref;
+ *   oloopfactor2.epoch.gpsNanoSeconds = 0;
+ *   oloopfactor2.deltaT = 1. / sRate;
+ *   oloopfactor2.f0 = 0;
+ *   oloopfactor2.sampleUnits = lalADCCountUnit;
+ *   oloopfactor2.data = oloopfactor[1];
+ *
+ *   sfactor1.epoch.gpsSeconds = timeref;
+ *   sfactor1.epoch.gpsNanoSeconds = 0;
+ *   sfactor1.deltaT = 1. / sRate;
+ *   sfactor1.f0 = 0;
+ *   sfactor1.sampleUnits = lalADCCountUnit;
+ *   sfactor1.data = sfactor[0];
+ *
+ *   sfactor2.epoch.gpsSeconds = timeref;
+ *   sfactor2.epoch.gpsNanoSeconds = 0;
+ *   sfactor2.deltaT = 1. / sRate;
+ *   sfactor2.f0 = 0;
+ *   sfactor2.sampleUnits = lalADCCountUnit;
+ *   sfactor2.data = sfactor[1];
+ *
+ *   calfuncs1.responseFunction = &responseFunction1;
+ *   calfuncs1.sensingFunction = &sensingFunction1;
+ *   calfuncs2.responseFunction = &responseFunction2;
+ *   calfuncs2.sensingFunction = &sensingFunction2;
+ *
+ *   calfacts1.openLoopFactor = &oloopfactor1;
+ *   calfacts1.sensingFactor = &sfactor1;
+ *   calfacts2.openLoopFactor = &oloopfactor2;
+ *   calfacts2.sensingFactor = &sfactor2;
+ *
+ *   epoch.gpsSeconds = caltime;
+ *   epoch.gpsNanoSeconds = 0;
+ *   calfacts1.epoch = epoch;calfacts2.epoch = epoch;
+ *
+ *   //write input parameters
+ *   MCinput.calfuncs1 = calfuncs1;
+ *   MCinput.calfuncs2 = calfuncs2;
+ *   MCinput.calfacts1 = calfacts1;
+ *   MCinput.calfacts2 = calfacts2;
+ *
+ *   SimStochBG1.data = NULL;
+ *   LALSCreateVector(&status, &(SimStochBG1.data), length);
+ *   SimStochBG2.data = NULL;
+ *   LALSCreateVector(&status, &(SimStochBG2.data), length);
+ *
+ *   MCoutput.SSimStochBG1 = &SimStochBG1;
+ *   MCoutput.SSimStochBG2 = &SimStochBG2;
+ *
+ *   LALStochasticMCDso (&status,&MCoutput,&MCinput,&MCparams);
+ *
+ *   //create output files
+ *
+ *   if (print){
+ *     snprintf( Outfile1, LALNameLength * sizeof(CHAR),
+ *               "%s_1_%d.ilwd",_IFO1,starttime);
+ *     snprintf( Outfile2, LALNameLength * sizeof(CHAR),
+ *               "%s_2_%d.ilwd",_IFO2,starttime);
+ *
+ *     //print output to ilwds
+ *
+ *     if (print)
+ *     {
+ *       pfone=LALFopen(Outfile1,"w");pftwo=LALFopen(Outfile2,"w");
+ *       fprintf(pfone,"<?ilwd?>\n");fprintf(pftwo,"<?ilwd?>\n");
+ *       fprintf(pfone,"<ilwd comment='%s'",Outfile1);
+ *       fprintf(pfone," name='%s' size='1'>\n",Outfile1);
+ *       fprintf(pfone," <real_8 dims='%d' name='%s'>",length,Outfile1);
+ *       fprintf(pftwo,"<ilwd comment='%s'",Outfile2);
+ *       fprintf(pftwo," name='%s' size='1'>\n",Outfile2);
+ *       fprintf(pftwo," <real_8 dims='%d' name='%s'>",length,Outfile2);
+ *
+ *       for(i=0;(UINT4)i<length;i++)
+ *       {
+ *         fprintf(pfone,"% e",SimStochBG1.data->data[i]);
+ *         fprintf(pftwo,"% e",SimStochBG2.data->data[i]);
+ *       }
+ *       fprintf(pfone,"</real_8>");fprintf(pftwo,"</real_8>");
+ *       fprintf(pfone," </ilwd>");fprintf(pftwo," </ilwd>");
+ *       LALFclose(pfone);LALFclose(pftwo);
+ *     }
+ *   }
+ * }
+ * \endcode
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALSSSimStochBGTimeSeries()
+ * LALUpdateCalibration()
+ * LALResponseConvert()
+ * \endcode
+ */
 
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS

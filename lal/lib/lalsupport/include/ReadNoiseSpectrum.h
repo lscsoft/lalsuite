@@ -40,18 +40,20 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup ReadNoiseSpectrum_h
-   \author Brady, P. R.
-
-   \brief Provides function to read in a file containing a possibly unequally sampled
-   noise amplitude spectrum (\f$\textrm{strain}/\sqrt(\textrm{Hz})\f$) and return as
-   a frequency series.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/ReadNoiseSpectrum.h>
-   \endcode
-*/ /*@{*/
+ * \addtogroup ReadNoiseSpectrum_h
+ * \author Brady, P. R.
+ *
+ * \brief Provides function to read in a file containing a possibly unequally sampled
+ * noise amplitude spectrum (\f$\textrm{strain}/\sqrt(\textrm{Hz})\f$) and return as
+ * a frequency series.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/ReadNoiseSpectrum.h>
+ * \endcode
+ */
+/*@{*/
 
 /**\name Error Codes */ /*@{*/
 #define LALREADNOISESPECTRUMH_ENULL 1   /**< Null pointer */

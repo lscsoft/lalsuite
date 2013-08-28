@@ -18,7 +18,8 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
  * Generate samples of various statistics (F-stat, F-atoms, B-stat,...) drawn from their
@@ -28,7 +29,7 @@
  * This is based on synthesizeBstat, and is mostly meant to be used for efficient
  * Monte-Carlos studies, ROC curves etc
  *
- *********************************************************************************/
+ */
 
 #ifndef _SYNTHESIZE_CW_DRAWS_H  /* Double-include protection. */
 #define _SYNTHESIZE_CW_DRAWS_H
@@ -52,7 +53,8 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
-/** Enumeration of allowed amplitude-prior types
+/**
+ * Enumeration of allowed amplitude-prior types
  */
 typedef enum {
   AMP_PRIOR_TYPE_PHYSICAL = 0,	/**< 'physical' priors: isotropic pdf{cosi,psi,phi0} AND flat pdf(h0) */
@@ -60,7 +62,8 @@ typedef enum {
   AMP_PRIOR_TYPE_LAST
 } AmpPriorType_t;
 
-/** Signal (amplitude) parameter ranges
+/**
+ * Signal (amplitude) parameter ranges
  */
 typedef struct tagAmplitudePrior_t {
   pdf1D_t *pdf_h0Nat;	/**< pdf for h0/sqrt{Sn} */
@@ -72,14 +75,16 @@ typedef struct tagAmplitudePrior_t {
   pdf1D_t *pdf_phi0;	/**< pdf(phi0) */
 } AmplitudePrior_t;
 
-/** struct for buffering of AM-coeffs, if signal for same sky-position is injected
+/**
+ * struct for buffering of AM-coeffs, if signal for same sky-position is injected
  */
 typedef struct tagmultiAMBuffer_t {
   SkyPosition skypos;		/**< sky-position for which we have AM-coeffs computed already */
   MultiAMCoeffs *multiAM;;	/**< pre-computed AM-coeffs for skypos */
 } multiAMBuffer_t;
 
-/** Hold all (generally) randomly drawn injection parameters: skypos, amplitude-params, M_mu_nu, transient-window, SNR
+/**
+ * Hold all (generally) randomly drawn injection parameters: skypos, amplitude-params, M_mu_nu, transient-window, SNR
  */
 typedef struct tagInjParams_t
 {

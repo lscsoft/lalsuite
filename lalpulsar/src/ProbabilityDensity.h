@@ -18,12 +18,13 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
  * Header file containing the exported API for the ProbabilityDensity Module.
  *
- *********************************************************************************/
+ */
 
 #ifndef _PROBABILITY_DENSITY_H
 #define _PROBABILITY_DENSITY_H
@@ -47,13 +48,13 @@ extern "C" {
 
 /* ---------- exported API types ---------- */
 
-/** Encode a pdf(x) as a discretized function probDens[i] = pdf( x[i] ) with user-specified bins xBin[i].
- *
+/**
+ * Encode a pdf(x) as a discretized function probDens[i] = pdf( x[i] ) with user-specified bins xBin[i].
  * We store the actual probability *density values, such that prob(x in xBin[i]) = probDens[i] * xBin[i].
  *
  * NOTE: Allows for some special encodings for simplicity and efficiency:
- *    - one x0 known with certainty:  pdf(x) = delta(x-x0): ==> xTics = {x0},         probDens=NULL
- *    - uniform pdf over [xMin,xMax]: pdf(x) = const.       ==> xTics = {xMin, xMax}, probDens=NULL
+ * - one x0 known with certainty:  pdf(x) = delta(x-x0): ==> xTics = {x0},         probDens=NULL
+ * - uniform pdf over [xMin,xMax]: pdf(x) = const.       ==> xTics = {xMin, xMax}, probDens=NULL
  *
  * NOTE2: the optional field 'sampling' is used to buffer gsl-precomputed internals to allow using
  * gsl_ran_discrete() to efficiently draw samples from that distribution (cost ~ O(1)).
@@ -70,8 +71,8 @@ struct tagpdf1D_t
 };
 
 
-/** Probability-density function object type.
- *
+/**
+ * Probability-density function object type.
  * This could be made into an *opaque* type, such that only methods defined in ProbabilityDensity.c
  * can operate on the internals of such objects. Everyone would only be able to pass them around.
  * This requires lots more methods though to be useful, so for now this move is postponed.

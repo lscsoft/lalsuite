@@ -43,17 +43,18 @@ extern "C" {
 
 /**
  * \addtogroup FindChirpSP_h
-\author Brown, D. A.
-
-\brief Provides structures and functions to condition interferometer data
-and generate binary inspiral chirps using the stationary phase approximation.
-
-\heading{Synopsis}
-\code
-#include <lal/FindChirpSP.h>
-\endcode
-
-*/
+ * \author Brown, D. A.
+ *
+ * \brief Provides structures and functions to condition interferometer data
+ * and generate binary inspiral chirps using the stationary phase approximation.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/FindChirpSP.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

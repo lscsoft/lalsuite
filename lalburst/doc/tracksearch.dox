@@ -1,17 +1,16 @@
 /**
-\addtogroup pkg_tracksearch
-
-A collection of functions for the implementation of tracksearch
-analysis. These function can be found in
-<ul>
-<li> \ref TSData_h</li>
-<li> \ref TSSearch_h</li>
-<li> \ref TrackSearch_h</li>
-</ul>
-
- Section of technical howTos for functions
-
-Text Here
-
-
-*/
+ * \addtogroup pkg_tracksearch
+ *
+ * A collection of functions for the implementation of tracksearch
+ * analysis. These function can be found in
+ * <ul>
+ * <li> \ref TSData_h</li>
+ * <li> \ref TSSearch_h</li>
+ * <li> \ref TrackSearch_h</li>
+ * </ul>
+ *
+ * Section of technical howTos for functions
+ *
+ * Text Here
+ *
+ */

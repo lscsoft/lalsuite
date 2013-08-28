@@ -21,22 +21,22 @@
  * \author Jolien D. E. Creighton
  * \file
  *
- * \heading{Program \ref MakeFrames.c}
+ * ### Program \ref MakeFrames.c ###
  *
  * Make some frames with random Gaussian noise.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * MakeFrames
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program makes some frames with one ADC channel containing random
  * Gaussian noise.
  *
-*/
+ */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>

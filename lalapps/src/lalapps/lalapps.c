@@ -175,8 +175,9 @@ static int version_compare(
   return 0;
 }
 
-/** Function that assembles a default VCS info/version string from LAL and LALapps
- *  Also checks LAL header<>library version consistency and returns NULL on error.
+/**
+ * Function that assembles a default VCS info/version string from LAL and LALapps
+ * Also checks LAL header<>library version consistency and returns NULL on error.
  *
  * The VCS version string is allocated here and must be freed by caller.
  */
@@ -703,7 +704,8 @@ XLALGetVersionString( int level )
 } /* XLALGetVersionString() */
 
 
-/** Simply outputs version information to fp.
+/**
+ * Simply outputs version information to fp.
  *
  * Returns != XLAL_SUCCESS on error (version-mismatch or writing to fp)
  */

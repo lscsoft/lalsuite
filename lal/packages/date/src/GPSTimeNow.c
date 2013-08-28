@@ -21,7 +21,8 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-/** \ingroup Date_h
+/**
+ * \ingroup Date_h
  * \brief Populate the LIGOTimeGPS argument with the current system time as
  * returned by time(2) converted to GPS seconds.  Returns the address of
  * the LIGOTimeGPS argument or NULL on error.  On error, the GPS time is

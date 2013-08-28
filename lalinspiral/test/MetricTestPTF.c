@@ -18,26 +18,29 @@
 */
 
 /**
-
-\author Duncan Brown, Yi Pan
-\file
-
-\brief Creates the PTF metric for a single point in the parameter space.
-
-\heading{Usage}
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Duncan Brown, Yi Pan
+ * \file
+ *
+ * \brief Creates the PTF metric for a single point in the parameter space.
+ *
+ * ### Usage ###
+ *
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <stdlib.h>

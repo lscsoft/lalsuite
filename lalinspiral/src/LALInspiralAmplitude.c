@@ -18,36 +18,38 @@
 */
 
 /**
-\author Cokelaer T.
-\file
-\ingroup LALInspiral_h
-
-\brief Given an inspiral template structure containing the binary distance
-and a set of mass parameters, that module provides functions to compute
-the related amplitude.
-
-\heading{Description}
-The inspiral template structure can stored (1) the distance of the binary (2)
-a set of binary masses such as the two masses or the total mass and eta and (3)
-an amplitude which is arbitrary fixed to unity when templates are computed.
-
-However we might need to have a template with the physical amplitude (for instance
-to deal with injections). The function \c XLALInspiralRestrictedAmplitude
-takes an InspiralTemplate structure as input/output to return the restricted
-Newtonian amplitude by using the following formula.
-
-\f{equation}{
-A = \frac{4c}{d \eta} M^{-5./3.}
-\f}
-
-where \f$d\f$ is in Mpc and \f$M\f$ in solar mass. The result is stored in the signalAmplitude
-variable of the inspiral template structure.
-
-\heading{Uses}
-When appropriate this function calls:\\
-\c XLALInspiralParameterCalc
-
-*/
+ * \author Cokelaer T.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Given an inspiral template structure containing the binary distance
+ * and a set of mass parameters, that module provides functions to compute
+ * the related amplitude.
+ *
+ * ### Description ###
+ *
+ * The inspiral template structure can stored (1) the distance of the binary (2)
+ * a set of binary masses such as the two masses or the total mass and eta and (3)
+ * an amplitude which is arbitrary fixed to unity when templates are computed.
+ *
+ * However we might need to have a template with the physical amplitude (for instance
+ * to deal with injections). The function \c XLALInspiralRestrictedAmplitude
+ * takes an InspiralTemplate structure as input/output to return the restricted
+ * Newtonian amplitude by using the following formula.
+ *
+ * \f{equation}{
+ * A = \frac{4c}{d \eta} M^{-5./3.}
+ * \f}
+ *
+ * where \f$d\f$ is in Mpc and \f$M\f$ in solar mass. The result is stored in the signalAmplitude
+ * variable of the inspiral template structure.
+ *
+ * ### Uses ###
+ *
+ * When appropriate this function calls:\\
+ * \c XLALInspiralParameterCalc
+ *
+ */
 
 #include <lal/LALInspiral.h>
 

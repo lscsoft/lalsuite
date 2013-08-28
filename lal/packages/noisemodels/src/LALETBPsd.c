@@ -19,7 +19,8 @@
 
 #include <lal/LALNoiseModels.h>
 
-/** \author Craig Robinson
+/**
+ * \author Craig Robinson
  * \ingroup LALNoiseModels_h
  * \brief Function to calculate the noise power spectral density of the projected ET-B detector.
  *

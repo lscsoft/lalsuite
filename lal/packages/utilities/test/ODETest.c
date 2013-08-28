@@ -26,8 +26,7 @@
  * The orbits so integrated are output to files containing the integrated
  * and expected orbits.
  *
- *
-*/
+ */
 
 /** \cond DONT_DOXYGEN */
 

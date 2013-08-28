@@ -18,14 +18,12 @@
  */
 
 /**
- *
  * \author Chris Pankow
  *
  * \file
  *
  * \brief Testing constant precession code on TaylorT1 waveform.
- *
- * */
+ */
 
 
 #include <lal/LALSimInspiralPrecess.h>

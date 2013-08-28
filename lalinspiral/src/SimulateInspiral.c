@@ -36,137 +36,137 @@
 #define SIMULATEINSPIRALC_CUTOFF (0.000001)
 
 /**
-\author Creighton, T. D.
-
-\brief Injects inspiral waveforms into detector output.
-
-\heading{Description}
-
-<tt>LALSimulateInspiral()</tt>:
-This function generates a binary inspiral signal using the parameters
-in <tt>*params</tt>, simulates an instrument's response to that signal
-using the instrument transfer function <tt>*transfer</tt>, and injects
-the resulting waveform into detector output stored in <tt>*output</tt>.
-
-The <tt>*output</tt> time series should have all of its fields set to
-their desired values, and should have a data sequence already
-allocated; the function <tt>LALSimulateInspiral()</tt> simply adds the
-inspiral waveform on top of the existing data. The \c epoch and
-\c deltaT fields must be set, as they are used to determine the
-sample rate and time positioning of the injected signal.  The
-\c sampleUnits field must be set to \c lalADCCountUnit for
-consistency.
-
-The <tt>*transfer</tt> frequency series should define the complex
-frequency response function \f$T(f)\f$ taking the differential strain
-signal \f$\tilde{h}(f)\f$ to detector response
-\f$\tilde{o}(f)=T(f)\tilde{h}(f)\f$, and should have units of ADC counts
-per strain.  It is treated as zero outside its frequency domain, and
-is linearly interpolated between its frequency samples.
-
-The <tt>*params</tt> structure represents the parameters of an inspiral
-signal to be injected (if <tt>params->next</tt>=\c NULL), or the
-head of a linked list of parameter structures for multiple injections.
-For each structure, if the \c signalAmplitude field is \f$\geq0\f$,
-the injected waveform will be scaled to give it the correct
-characteristic detection amplitude, and the \c effDist field is
-set appropriately.  If \c signalAmplitude\f$<0\f$ and
-\c effDist\f$>0\f$, the waveform is injected with that effective
-distance, and the \c signalAmplitude field is set appropriately.
-If \c signalAmplitude\f$<0\f$ and \c effDist\f$\leq0\f$, an error is
-returned (that and all subsequent injections are skipped).
-
-An error is also returned (and no injections performed) if any of the
-fields of <tt>*output</tt> and <tt>*transfer</tt> are not set to usable
-values, including such things as wrong units or bad sampling
-intervals.
-
-\heading{Usage}
-
-One of the most useful applications of this routine is to generate
-simulated noise containing a signal.  The following code snippet
-generates white Gaussian noise with rms amplitude \c SIGMA, and
-injects a signal with intrinsic signal-to-noise ratio
-\f$\sqrt{(h|h)}=\f$\c SNR into it, coalescing at a time \c DT
-seconds from the start of the time series, with a wave phase
-\c PHI at coalescence.  The <tt>REAL4TimeSeries output</tt> and
-<tt>COMPLEX8FrequencySeries transfer</tt> structures are assumed to be
-defined and allocated outside of this block.
-
-\code
-{
-  UINT4 i;
-  SimulateInspiralParamStruc inspParams;
-  RandomParams *randParams = NULL;
-
-  // Generate white Gaussian noise.
-  LALCreateRandomParams( status->statusPtr, &randParams, 0 );
-  LALNormalDeviates( status->statusPtr, output.data, randParams );
-  for ( i = 0; i < output.data->length; i++ )
-    output.data->data[i] *= SIGMA;
-  LALDestroyRandomParams( status->statusPtr, &randParams );
-
-  // Inject signal.
-  inspParams.timeC = output.epoch;
-  inspParams.timeC.gpsSeconds += DT;
-  inspParams.phiC = PHI; inspParams.mass1 = M1; inspParams.mass2 = M2;
-  inspParams.signalAmplitude = SNR*SIGMA;
-  inspParams.next = NULL;
-  LALSimulateInspiral( status->statusPtr, &output, &transfer, &inspParams );
-}
-\endcode
-
-\heading{Algorithm}
-
-The default mode of operation, when one specifies the desired
-amplitude, is as follows:
-
-First, <tt>LALGeneratePPNInspiral()</tt> is called to generate the
-signal, placing the source at a distance of 1Mpc with optimal
-orientation.  For lack of anything better, the amplitude and phase
-functions are sampled at the full sampling interval as the output data
-stream.  This function call also returns the time at coalescence.
-
-Second, the waveform produced by the signal in the detector output
-stream is calculated.  The basic algorithm is the same as that in
-<tt>LALSimulateCoherentGW()</tt>, but we can simplify it significantly
-because we ignore polarization responses, time delays, and
-interpolation between time samples.  Thus we have only to compute the
-effect of the frequency transfer function \f${\cal T}(f)\f$.  As stated in
-the \ref SimulateCoherentGW.h header, for quasiperiodic waveforms
-\f$h(t)=\mathrm{Re}[{\cal H}(t)e^{i\phi(t)}]\f$ we can approximate the
-instrument response (in the absence of noise) as:
-\f[
-o(t) \approx \mathrm{Re}[{\cal T}\{f(t)\}{\cal H}(t)e^{i\phi(t)}] \;.
-\f]
-In our case we are only sensitive to a single polarization (let's say
-\f$h_+\f$), so we take \f${\cal H}(t)=A_+(t)\f$, where the phase of \f$\cal H\f$
-is absorbed into the coalescence phase of \f$\phi\f$.  Then we can write
-the instrument response as:
-\f[
-o(t) \approx A_+(t)[ T_\mathrm{re}\{f(t)\}\cos\phi(t)
-	- T_\mathrm{im}\{f(t)\}\sin\phi(t) ] \;.
-\f]
-This calculation can be done in place and stored in one of the arrays
-for the amplitude, phase, or frequency functions, since they are
-already sampled at the correct rate and have the correct length.
-
-Third, the characteristic detection amplitude is computed, and the
-whole waveform is scaled so that it has the correct value.
-Simultaneously, the effective distance is set to 1Mpc/(the scale factor).
-The epoch is also adjusted to give the waveform the correct
-coalescence time.
-
-Finally, LALSSInjectTimeSeries() is called to inject the
-waveform into the output time series.  The whole procedure is repeated
-for any other nodes in the linked list of parameters.
-
-If any parameter structure specifies the effective distance in place
-of the characteristic detection amplitude, then the signal is injected
-with that effective distance and is not rescaled.  The characteristic
-detection amplitude field is set to the measured value.
-
-*/
+ * \author Creighton, T. D.
+ *
+ * \brief Injects inspiral waveforms into detector output.
+ *
+ * ### Description ###
+ *
+ * <tt>LALSimulateInspiral()</tt>:
+ * This function generates a binary inspiral signal using the parameters
+ * in <tt>*params</tt>, simulates an instrument's response to that signal
+ * using the instrument transfer function <tt>*transfer</tt>, and injects
+ * the resulting waveform into detector output stored in <tt>*output</tt>.
+ *
+ * The <tt>*output</tt> time series should have all of its fields set to
+ * their desired values, and should have a data sequence already
+ * allocated; the function <tt>LALSimulateInspiral()</tt> simply adds the
+ * inspiral waveform on top of the existing data. The \c epoch and
+ * \c deltaT fields must be set, as they are used to determine the
+ * sample rate and time positioning of the injected signal.  The
+ * \c sampleUnits field must be set to \c lalADCCountUnit for
+ * consistency.
+ *
+ * The <tt>*transfer</tt> frequency series should define the complex
+ * frequency response function \f$T(f)\f$ taking the differential strain
+ * signal \f$\tilde{h}(f)\f$ to detector response
+ * \f$\tilde{o}(f)=T(f)\tilde{h}(f)\f$, and should have units of ADC counts
+ * per strain.  It is treated as zero outside its frequency domain, and
+ * is linearly interpolated between its frequency samples.
+ *
+ * The <tt>*params</tt> structure represents the parameters of an inspiral
+ * signal to be injected (if <tt>params->next</tt>=\c NULL), or the
+ * head of a linked list of parameter structures for multiple injections.
+ * For each structure, if the \c signalAmplitude field is \f$\geq0\f$,
+ * the injected waveform will be scaled to give it the correct
+ * characteristic detection amplitude, and the \c effDist field is
+ * set appropriately.  If \c signalAmplitude\f$<0\f$ and
+ * \c effDist\f$>0\f$, the waveform is injected with that effective
+ * distance, and the \c signalAmplitude field is set appropriately.
+ * If \c signalAmplitude\f$<0\f$ and \c effDist\f$\leq0\f$, an error is
+ * returned (that and all subsequent injections are skipped).
+ *
+ * An error is also returned (and no injections performed) if any of the
+ * fields of <tt>*output</tt> and <tt>*transfer</tt> are not set to usable
+ * values, including such things as wrong units or bad sampling
+ * intervals.
+ *
+ * ### Usage ###
+ *
+ * One of the most useful applications of this routine is to generate
+ * simulated noise containing a signal.  The following code snippet
+ * generates white Gaussian noise with rms amplitude \c SIGMA, and
+ * injects a signal with intrinsic signal-to-noise ratio
+ * \f$\sqrt{(h|h)}=\f$\c SNR into it, coalescing at a time \c DT
+ * seconds from the start of the time series, with a wave phase
+ * \c PHI at coalescence.  The <tt>REAL4TimeSeries output</tt> and
+ * <tt>COMPLEX8FrequencySeries transfer</tt> structures are assumed to be
+ * defined and allocated outside of this block.
+ *
+ * \code
+ * {
+ * UINT4 i;
+ * SimulateInspiralParamStruc inspParams;
+ * RandomParams *randParams = NULL;
+ *
+ * // Generate white Gaussian noise.
+ * LALCreateRandomParams( status->statusPtr, &randParams, 0 );
+ * LALNormalDeviates( status->statusPtr, output.data, randParams );
+ * for ( i = 0; i < output.data->length; i++ )
+ * output.data->data[i] *= SIGMA;
+ * LALDestroyRandomParams( status->statusPtr, &randParams );
+ *
+ * // Inject signal.
+ * inspParams.timeC = output.epoch;
+ * inspParams.timeC.gpsSeconds += DT;
+ * inspParams.phiC = PHI; inspParams.mass1 = M1; inspParams.mass2 = M2;
+ * inspParams.signalAmplitude = SNR*SIGMA;
+ * inspParams.next = NULL;
+ * LALSimulateInspiral( status->statusPtr, &output, &transfer, &inspParams );
+ * }
+ * \endcode
+ *
+ * ### Algorithm ###
+ *
+ * The default mode of operation, when one specifies the desired
+ * amplitude, is as follows:
+ *
+ * First, <tt>LALGeneratePPNInspiral()</tt> is called to generate the
+ * signal, placing the source at a distance of 1Mpc with optimal
+ * orientation.  For lack of anything better, the amplitude and phase
+ * functions are sampled at the full sampling interval as the output data
+ * stream.  This function call also returns the time at coalescence.
+ *
+ * Second, the waveform produced by the signal in the detector output
+ * stream is calculated.  The basic algorithm is the same as that in
+ * <tt>LALSimulateCoherentGW()</tt>, but we can simplify it significantly
+ * because we ignore polarization responses, time delays, and
+ * interpolation between time samples.  Thus we have only to compute the
+ * effect of the frequency transfer function \f${\cal T}(f)\f$.  As stated in
+ * the \ref SimulateCoherentGW.h header, for quasiperiodic waveforms
+ * \f$h(t)=\mathrm{Re}[{\cal H}(t)e^{i\phi(t)}]\f$ we can approximate the
+ * instrument response (in the absence of noise) as:
+ * \f[
+ * o(t) \approx \mathrm{Re}[{\cal T}\{f(t)\}{\cal H}(t)e^{i\phi(t)}] \;.
+ * \f]
+ * In our case we are only sensitive to a single polarization (let's say
+ * \f$h_+\f$), so we take \f${\cal H}(t)=A_+(t)\f$, where the phase of \f$\cal H\f$
+ * is absorbed into the coalescence phase of \f$\phi\f$.  Then we can write
+ * the instrument response as:
+ * \f[
+ * o(t) \approx A_+(t)[ T_\mathrm{re}\{f(t)\}\cos\phi(t)
+ * - T_\mathrm{im}\{f(t)\}\sin\phi(t) ] \;.
+ * \f]
+ * This calculation can be done in place and stored in one of the arrays
+ * for the amplitude, phase, or frequency functions, since they are
+ * already sampled at the correct rate and have the correct length.
+ *
+ * Third, the characteristic detection amplitude is computed, and the
+ * whole waveform is scaled so that it has the correct value.
+ * Simultaneously, the effective distance is set to 1Mpc/(the scale factor).
+ * The epoch is also adjusted to give the waveform the correct
+ * coalescence time.
+ *
+ * Finally, LALSSInjectTimeSeries() is called to inject the
+ * waveform into the output time series.  The whole procedure is repeated
+ * for any other nodes in the linked list of parameters.
+ *
+ * If any parameter structure specifies the effective distance in place
+ * of the characteristic detection amplitude, then the signal is injected
+ * with that effective distance and is not rescaled.  The characteristic
+ * detection amplitude field is set to the measured value.
+ *
+ */
 void
 LALSimulateInspiral( LALStatus                  *stat,
 		     REAL4TimeSeries            *output,

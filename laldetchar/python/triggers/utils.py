@@ -23,7 +23,8 @@ This package includes ways of determining the correct LIGO_LW table
 for a given trigger generator, and a few helper functions.
 """
 #
-#\heading{Synopsis}
+# ### Synopsis ###
+#
 #~~~
 #from laldetchar.triggers import utils
 #~~~
@@ -65,7 +66,8 @@ SNGL_RING_REGEX = re.compile('ringdown', re.I)
 def _which_etg(etg):
     """Find the correct trigger generator name based on the input
 
-    \heading{Example:}
+    ### Example: ###
+
     \code
     >>> which_etg("EP")
     'excesspower'
@@ -99,7 +101,8 @@ def _which_etg(etg):
 def which_table(etg):
     """Find the correct table to use for a given trigger generator
 
-    \heading{Example:}
+    ### Example: ###
+
     @code
     >>> which_table("ExcessPower")
     'sngl_burst'

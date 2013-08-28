@@ -204,8 +204,8 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
 } /* ComputeF() */
 
 
-/** 
- * register all our "user-variables" 
+/**
+ * register all our "user-variables"
  */
 void
 InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
@@ -311,9 +311,9 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   RETURN(status);
 } /* InitUserVars() */
   
-/** 
- * Handle user-input and check its validity. 
- * Load ephemeris and calculate AM-coefficients (stored globally) 
+/**
+ * Handle user-input and check its validity.
+ * Load ephemeris and calculate AM-coefficients (stored globally)
  */
 void
 Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
@@ -473,7 +473,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
 } /* ParseUserInput() */
 
 
-/** 
+/**
  * Check validity of user-input
  */
 void

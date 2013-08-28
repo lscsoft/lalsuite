@@ -19,7 +19,8 @@
 
 #include <lal/LALInspiralBank.h>
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief This function takes as input \f$\tau_{0}\f$, \f$\tau_{3}\f$ and \f$f_a\f$ (the lower frequency of the detectors
  * sensitivity), it then calculates \f$m\f$ (the total mass of the binary), \f$\eta\f$ (the
  * symmetric mass ratio) and the individual mass of the compact objects.
@@ -45,12 +46,12 @@
  *
  * \anchor mass1 \f{equation}{
  * m = m_{1} + m_{2}
- * \label{mass1}
+ * \tag{mass1}
  * \f}
  * and
  * \anchor eta1 \f{equation}{
  * \eta = \frac{m_{1} m_{2}}{(m_{1} + m_{2})^{2}}
- * \label{eta1}
+ * \tag{eta1}
  * \f}
  * From Eq.\eqref{mass1} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
  * \f{equation}{

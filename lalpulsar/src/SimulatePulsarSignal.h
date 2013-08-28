@@ -32,7 +32,7 @@ extern "C" {
  * \date 2004, 2013
  *
  * \brief New pulsar signal-generation routines
-*/
+ */
 /*@{*/
 
 #include <lal/GeneratePulsarSignal.h>

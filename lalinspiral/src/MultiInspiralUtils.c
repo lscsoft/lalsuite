@@ -22,12 +22,12 @@
 #include <lal/TimeDelay.h>
 
 /**
-\author Bose, S.
-\file
-
-\brief Provides a set of utilities for manipulating \c multiInspiralTables.
-
-*/
+ * \author Bose, S.
+ * \file
+ *
+ * \brief Provides a set of utilities for manipulating \c multiInspiralTables.
+ *
+ */
 
   /* a few useful static functions */
 static INT8 geocent_end_time(const SimInspiralTable *x)

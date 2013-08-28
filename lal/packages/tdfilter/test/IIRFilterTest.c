@@ -34,145 +34,145 @@
 
 
 /**
-   \author Creighton, T. D.
-   \file
-   \ingroup IIRFilter_h
-
-   \brief Tests the routines in \ref IIRFilter_h.
-
-   \heading{Usage}
-   \code
-   IIRFilterTest [-f filtertag] [-o] [-t] [-d debuglevel] [-n npts] [-r reps] [-w freq]
-   \endcode
-
-\heading{Description}
-
-This program generates a time series vector, and passes it through a
-third-order Butterworth low-pass filter.  By default, running this
-program with no arguments simply passes an impulse function to the
-filter routines, producing no output.  All filter parameters are set
-from <tt>\#define</tt>d constants.  The following option flags are
-accepted:
-<ul>
-<li>[<tt>-f</tt>] Specifies which filter(s) to be used:
-\c filtertag is a token containing one or more character codes
-from \c a to \c f and/or from \c A to \c D, each
-corresponding to a different filter:
-
-<table>
-<tr><td>\c a</td><td>=</td><td><tt>LALSIIRFilter()</tt></td><td>\c A</td><td>=</td><td><tt>LALDIIRFilter()</tt></td></tr>
-<tr><td>\c b</td><td>=</td><td><tt>LALIIRFilterREAL4()</tt></td><td>\c B</td><td>=</td><td><tt>LALIIRFilterREAL8()</tt></td></tr>
-<tr><td>\c c</td><td>=</td><td><tt>LALIIRFilterREAL4Vector()</tt></td><td>\c C</td><td>=</td><td><tt>LALIIRFilterREAL8Vector()</tt></td></tr>
-<tr><td>\c d</td><td>=</td><td><tt>LALIIRFilterREAL4VectorR()</tt></td><td>\c D</td><td>=</td><td><tt>LALIIRFilterREAL8VectorR()</tt></td></tr>
-<tr><td>\c e</td><td>=</td><td><tt>LALDIIRFilterREAL4Vector()</tt></td><td></td><td></td><td></td></tr>
-<tr><td>\c f</td><td>=</td><td><tt>LALDIIRFilterREAL4VectorR()</tt></td><td></td><td></td><td></td></tr>
-</table>
-
-If not specified, <tt>-f abcd</tt> is assumed.</li>
-
-<li>[<tt>-o</tt>] Prints the input and output vectors to data files:
-<tt>out.0</tt> stores the initial impulse, <tt>out.</tt>\f$c\f$ the response
-computed using the filter with character code \f$c\f$ (above).  If not
-specified, the routines are exercised, but no output is written.</li>
-
-<li>[<tt>-t</tt>] Causes \c IIRFilterTest to fill the time series
-vector with Gaussian random deviates, and prints execution times for
-the various filter subroutines to \c stdout.  To generate useful
-timing data, the default size of the time vector is increased (unless
-explicitly set, below).</li>
-
-<li>[<tt>-d</tt>] Changes the debug level from 0 to the specified
-value \c debuglevel.</li>
-
-<li>[<tt>-n</tt>] Sets the size of the time vectors to \c npts.
-If not specified, 4096 points are used (4194304 if the <tt>-t</tt>
-option was also given).</li>
-
-<li>[<tt>-r</tt>] Applies each filter to the data \c reps times
-instead of just once.</li>
-
-<li>[<tt>-w</tt>] Sets the characteristic frequency of the filter to
-\c freq in the \f$w\f$-plane (described in \ref ZPGFilter.h).  If
-not specified, <tt>-w 0.01</tt> is assumed (i.e.\ a characteristic
-frequency of 2\% of Nyquist).</li>
-</ul>
-
-\heading{Algorithm}
-
-\wrapfig{r,0.6\textwidth,fig_iirfiltertest}
-\image html tdfilter_iirfiltertest.png "Fig.[fig_iirfiltertest]: Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option."
-\image latex tdfilter_iirfiltertest.pdf "Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option." width=0.55\textwidth
-
-A third-order Butterworth low-pass filter is defined by the following
-power response function:
-\f[
-|T(w)|^2 = \frac{1}{1+(w/w_c)^6}\;,
-\f]
-where the frequency parameter \f$w=\tan(\pi f\Delta t)\f$ maps the Nyquist
-interval onto the entire real axis, and \f$w_c\f$ is the (transformed)
-characteristic frequency set by the <tt>-w</tt> option above.  A stable
-time-domain filter has poles with \f$|z|<1\f$ in the \f$z\f$-plane
-representation, which means that the \f$w\f$-plane poles should have
-\f$\Im(w)>0\f$.  We construct a transfer function using only the
-positive-imaginary poles of the power response function:
-\f[
-T(w) = \frac{iw_c^3}{\prod_{k=0}^2
-	\left[w-w_c e^{(2k+1)i\pi/6}\right]}\;,
-\f]
-where we have chosen a phase coefficient \f$i\f$ in the numerator in order
-to get a purely real DC response.  This ensures that the \f$z\f$-plane
-representation of the filter will have a real gain, resulting in a
-physically-realizable IIR filter.
-
-The poles and gain of the transfer function \f$T(w)\f$ are simply read off
-of the equation above, and are stored in a \c COMPLEX8ZPGFilter.
-This is transformed from the \f$w\f$-plane to the \f$z\f$-plane representation
-using <tt>LALWToZCOMPLEX8ZPGFilter()</tt>, and then used to create an
-IIR filter with <tt>LALCreateREAL4IIRFilter()</tt>.  This in turn is
-used by the routines <tt>LALSIIRFilter()</tt>,
-<tt>LALIIRFilterREAL4()</tt>, <tt>LALIIRFilterREAL4Vector()</tt>, and
-<tt>LALIIRFilterREAL4VectorR()</tt> to filter a data vector containing
-either a unit impulse or white Gaussian noise (for more useful timing
-information).
-
-\heading{Sample output}
-
-Running this program on a 1.3 GHz Intel machine with no optimization
-produced the following typical timing information:
-\code
-> IIRFilterTest -r 5 -t -f abcdefABCD
-Filtering 4194304 points 5 times:
-Elapsed time for LALSIIRFilter():             1.39 s
-Elapsed time for LALDIIRFilter():             1.79 s
-Elapsed time for LALIIRFilterREAL4():         2.86 s
-Elapsed time for LALIIRFilterREAL8():         3.25 s
-Elapsed time for LALIIRFilterREAL4Vector():   1.52 s
-Elapsed time for LALIIRFilterREAL8Vector():   2.13 s
-Elapsed time for LALIIRFilterREAL4VectorR():  1.33 s
-Elapsed time for LALIIRFilterREAL8VectorR():  1.96 s
-Elapsed time for LALDIIRFilterREAL4Vector():  1.12 s
-Elapsed time for LALDIIRFilterREAL4VectorR(): 1.06 s
-\endcode
-From these results it is clear that the mixed-precision vector
-filtering routines are the most efficient, outperforming even the
-purely single-precision vector filtering routines by 20\%--30\%.  This
-was unanticipated; by my count the main inner loop of the
-single-precision routines contain \f$2M+2N+1\f$ dereferences and \f$2M+2N-3\f$
-floating-point operations per vector element, where \f$M\f$ and \f$N\f$ are
-the direct and recursive filter orders, whereas the mixed-precision
-routines contain \f$2\max\{M,N\}+2M+2\f$ dereferences and \f$2M+2N-1\f$
-floating-point operations per element.  However, most of the
-dereferences in the mixed-precision routines are to short internal
-arrays rather than to the larger data vector, which might cause some
-speedup.
-
-Running the same command with the <tt>-t</tt> flag replaced with
-<tt>-o</tt> generates files containing the impulse response of the
-filters.  The frequency-domain impulse response is shown in
-Fig.\figref{fig_iirfiltertest}.  This shows the steady improvement in
-truncation error from single- to mixed- to double-precision filtering.
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup IIRFilter_h
+ *
+ * \brief Tests the routines in \ref IIRFilter_h.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * IIRFilterTest [-f filtertag] [-o] [-t] [-d debuglevel] [-n npts] [-r reps] [-w freq]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program generates a time series vector, and passes it through a
+ * third-order Butterworth low-pass filter.  By default, running this
+ * program with no arguments simply passes an impulse function to the
+ * filter routines, producing no output.  All filter parameters are set
+ * from <tt>\#define</tt>d constants.  The following option flags are
+ * accepted:
+ * <ul>
+ * <li>[<tt>-f</tt>] Specifies which filter(s) to be used:
+ * \c filtertag is a token containing one or more character codes
+ * from \c a to \c f and/or from \c A to \c D, each
+ * corresponding to a different filter:
+ *
+ * <table>
+ * <tr><td>\c a</td><td>=</td><td><tt>LALSIIRFilter()</tt></td><td>\c A</td><td>=</td><td><tt>LALDIIRFilter()</tt></td></tr>
+ * <tr><td>\c b</td><td>=</td><td><tt>LALIIRFilterREAL4()</tt></td><td>\c B</td><td>=</td><td><tt>LALIIRFilterREAL8()</tt></td></tr>
+ * <tr><td>\c c</td><td>=</td><td><tt>LALIIRFilterREAL4Vector()</tt></td><td>\c C</td><td>=</td><td><tt>LALIIRFilterREAL8Vector()</tt></td></tr>
+ * <tr><td>\c d</td><td>=</td><td><tt>LALIIRFilterREAL4VectorR()</tt></td><td>\c D</td><td>=</td><td><tt>LALIIRFilterREAL8VectorR()</tt></td></tr>
+ * <tr><td>\c e</td><td>=</td><td><tt>LALDIIRFilterREAL4Vector()</tt></td><td></td><td></td><td></td></tr>
+ * <tr><td>\c f</td><td>=</td><td><tt>LALDIIRFilterREAL4VectorR()</tt></td><td></td><td></td><td></td></tr>
+ * </table>
+ *
+ * If not specified, <tt>-f abcd</tt> is assumed.</li>
+ *
+ * <li>[<tt>-o</tt>] Prints the input and output vectors to data files:
+ * <tt>out.0</tt> stores the initial impulse, <tt>out.</tt>\f$c\f$ the response
+ * computed using the filter with character code \f$c\f$ (above).  If not
+ * specified, the routines are exercised, but no output is written.</li>
+ *
+ * <li>[<tt>-t</tt>] Causes \c IIRFilterTest to fill the time series
+ * vector with Gaussian random deviates, and prints execution times for
+ * the various filter subroutines to \c stdout.  To generate useful
+ * timing data, the default size of the time vector is increased (unless
+ * explicitly set, below).</li>
+ *
+ * <li>[<tt>-d</tt>] Changes the debug level from 0 to the specified
+ * value \c debuglevel.</li>
+ *
+ * <li>[<tt>-n</tt>] Sets the size of the time vectors to \c npts.
+ * If not specified, 4096 points are used (4194304 if the <tt>-t</tt>
+ * option was also given).</li>
+ *
+ * <li>[<tt>-r</tt>] Applies each filter to the data \c reps times
+ * instead of just once.</li>
+ *
+ * <li>[<tt>-w</tt>] Sets the characteristic frequency of the filter to
+ * \c freq in the \f$w\f$-plane (described in \ref ZPGFilter.h).  If
+ * not specified, <tt>-w 0.01</tt> is assumed (i.e.\ a characteristic
+ * frequency of 2\% of Nyquist).</li>
+ * </ul>
+ *
+ * ### Algorithm ###
+ *
+ * \image html tdfilter_iirfiltertest.png "Fig.[fig_iirfiltertest]: Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option."
+ * \image latex tdfilter_iirfiltertest.pdf "Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option." width=0.55\textwidth
+ *
+ * A third-order Butterworth low-pass filter is defined by the following
+ * power response function:
+ * \f[
+ * |T(w)|^2 = \frac{1}{1+(w/w_c)^6}\;,
+ * \f]
+ * where the frequency parameter \f$w=\tan(\pi f\Delta t)\f$ maps the Nyquist
+ * interval onto the entire real axis, and \f$w_c\f$ is the (transformed)
+ * characteristic frequency set by the <tt>-w</tt> option above.  A stable
+ * time-domain filter has poles with \f$|z|<1\f$ in the \f$z\f$-plane
+ * representation, which means that the \f$w\f$-plane poles should have
+ * \f$\Im(w)>0\f$.  We construct a transfer function using only the
+ * positive-imaginary poles of the power response function:
+ * \f[
+ * T(w) = \frac{iw_c^3}{\prod_{k=0}^2
+ * \left[w-w_c e^{(2k+1)i\pi/6}\right]}\;,
+ * \f]
+ * where we have chosen a phase coefficient \f$i\f$ in the numerator in order
+ * to get a purely real DC response.  This ensures that the \f$z\f$-plane
+ * representation of the filter will have a real gain, resulting in a
+ * physically-realizable IIR filter.
+ *
+ * The poles and gain of the transfer function \f$T(w)\f$ are simply read off
+ * of the equation above, and are stored in a \c COMPLEX8ZPGFilter.
+ * This is transformed from the \f$w\f$-plane to the \f$z\f$-plane representation
+ * using <tt>LALWToZCOMPLEX8ZPGFilter()</tt>, and then used to create an
+ * IIR filter with <tt>LALCreateREAL4IIRFilter()</tt>.  This in turn is
+ * used by the routines <tt>LALSIIRFilter()</tt>,
+ * <tt>LALIIRFilterREAL4()</tt>, <tt>LALIIRFilterREAL4Vector()</tt>, and
+ * <tt>LALIIRFilterREAL4VectorR()</tt> to filter a data vector containing
+ * either a unit impulse or white Gaussian noise (for more useful timing
+ * information).
+ *
+ * ### Sample output ###
+ *
+ * Running this program on a 1.3 GHz Intel machine with no optimization
+ * produced the following typical timing information:
+ * \code
+ * > IIRFilterTest -r 5 -t -f abcdefABCD
+ * Filtering 4194304 points 5 times:
+ * Elapsed time for LALSIIRFilter():             1.39 s
+ * Elapsed time for LALDIIRFilter():             1.79 s
+ * Elapsed time for LALIIRFilterREAL4():         2.86 s
+ * Elapsed time for LALIIRFilterREAL8():         3.25 s
+ * Elapsed time for LALIIRFilterREAL4Vector():   1.52 s
+ * Elapsed time for LALIIRFilterREAL8Vector():   2.13 s
+ * Elapsed time for LALIIRFilterREAL4VectorR():  1.33 s
+ * Elapsed time for LALIIRFilterREAL8VectorR():  1.96 s
+ * Elapsed time for LALDIIRFilterREAL4Vector():  1.12 s
+ * Elapsed time for LALDIIRFilterREAL4VectorR(): 1.06 s
+ * \endcode
+ * From these results it is clear that the mixed-precision vector
+ * filtering routines are the most efficient, outperforming even the
+ * purely single-precision vector filtering routines by 20\%--30\%.  This
+ * was unanticipated; by my count the main inner loop of the
+ * single-precision routines contain \f$2M+2N+1\f$ dereferences and \f$2M+2N-3\f$
+ * floating-point operations per vector element, where \f$M\f$ and \f$N\f$ are
+ * the direct and recursive filter orders, whereas the mixed-precision
+ * routines contain \f$2\max\{M,N\}+2M+2\f$ dereferences and \f$2M+2N-1\f$
+ * floating-point operations per element.  However, most of the
+ * dereferences in the mixed-precision routines are to short internal
+ * arrays rather than to the larger data vector, which might cause some
+ * speedup.
+ *
+ * Running the same command with the <tt>-t</tt> flag replaced with
+ * <tt>-o</tt> generates files containing the impulse response of the
+ * filters.  The frequency-domain impulse response is shown in
+ * Fig.\figref{fig_iirfiltertest}.  This shows the steady improvement in
+ * truncation error from single- to mixed- to double-precision filtering.
+ *
+ */
 
 /** \name Error Codes */
 /*@{*/

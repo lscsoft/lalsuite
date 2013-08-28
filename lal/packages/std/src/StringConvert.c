@@ -18,123 +18,123 @@
 */
 
 /**
-   \file
-   \ingroup StringInput_h
-   \authors Creighton, T. D.
-   \authors Shawhan, P. S.
-
-   \brief Converts a string into a numerical value.
-
-\heading{Description}
-
-These routines parse the string <tt>*string</tt> and compute a numerical
-value <tt>*value</tt> of the appropriate datatype.  If
-\c endptr\f$\neq\f$\c NULL, then after conversion <tt>*endptr</tt>
-will point to the character after the last character used in the
-conversion.  The routine will always return without error if the
-arguments are valid, regardless of the contents of \c string;
-failure to parse a number is indicated by <tt>*endptr</tt> being set
-equal to \c string (provided \c endptr\f$\neq\f$\c NULL).
-
-For integer or floating-point conversion to occur, \c string must
-consist of zero or more whitespace characters followed by a number in
-any standard base-ten integer or floating-point representation
-(described in detail below); the conversion will stop as soon as the
-routine encounters a character that is not part of the number.  For
-instance, parsing the string <tt>"   123bad"</tt> will return
-<tt>*value</tt>=123, and <tt>*endptr</tt> will point to the substring
-<tt>"bad"</tt>; it is up to the calling routine to determine whether
-this is an acceptable input.  By contrast, parsing the string
-<tt>" bad"</tt> will leave <tt>*value</tt> unchanged and <tt>*endptr</tt>
-pointing to the start of the original string.  In general, if the
-routine returns with <tt>*endptr</tt>\f$\neq\f$\c string and
-<tt>**endptr</tt> is a whitespace or <tt>'\0'</tt> character, then the
-format was unambiguously acceptable.
-
-Complex conversion is essentially equivalent to performing
-floating-point conversion on \c string to get the real part, and
-again on <tt>*endptr</tt> to get the imaginary part.  Normally this
-means that an acceptable format is two floating-point representations
-separated by (and possibly preceded with) whitespace, although the
-intervening whitespace can be omitted if the separation between the
-two numbers is unambiguous.  Thus the string <tt>"-1.0+3.5"</tt> will be
-unambiguously read as \f$-1.0+3.5i\f$, but <tt>"-1.03.5"</tt> will be read
-as \f$-1.03+0.5i\f$ (since the conversion of the real part stops at the
-second <tt>'.'</tt> character), which may or may not be the intended
-conversion.
-
-GPS conversion is similar to floating-point conversion, but the result
-is stored in a \c LIGOTimeGPS structure as two integer values
-representing seconds and nanoseconds.  The \c LALStringToGPS
-function does \e not convert the string to an intermediate
-\c REAL8 value, but parses the string specially to retain the
-full precision of the string representation to the nearest nanosecond.
-
-\heading{Algorithm}
-
-These functions (other than \c LALStringToGPS())
-emulate the standard C functions <tt>strtol()</tt>,
-<tt>strtoul()</tt>, and <tt>strtod()</tt>, except that they follow LAL
-calling conventions and return values of the appropriate LAL
-datatypes.  For integer conversion, only base-ten (decimal)
-representations are supported.  Otherwise, the valid format is as for
-the corresponding C functions, which we summarize below:
-
-A string to be converted to an \c INT\f$n\f$ (where \f$n\f$=2, 4, or 8)
-consists of zero or more whitespace characters as determined by
-<tt>isspace()</tt>, followed optionally by a single <tt>'+'</tt> or
-<tt>'-'</tt> character, followed by one or more decimal digits;
-conversion stops at the first non-digit character after this.  If the
-result would overflow or underflow the \c INT\f$n\f$ representation,
-then the value is set to \c LAL_INT\f$n\f$\c _MAX\f$=2^{8n-1}-1\f$ or
-\c LAL_INT\f$n\f$\c _MIN\f$=-2^{8n-1}\f$, respectively.
-
-A string to be converted to a \c UINT\f$n\f$ follows the same format,
-except that a leading negative sign character <tt>'-'</tt> is
-\e ignored (the routine will compute the magnitude of the result),
-and the return value is capped at
-\c LAL_UINT\f$n\f$\c _MAX\f$=2^{8n}-1\f$.
-
-A string to be converted to a floating-point number (\c REAL4 or
-\c REAL8) consists of zero or more whitespace characters as
-determined by <tt>isspace()</tt>, followed optionally by a single
-<tt>'+'</tt> or <tt>'-'</tt> character, followed by a sequence of one or
-more decimal digits optionally containing a decimal point <tt>'.'</tt>,
-optionally followed by an exponent.  An exponent consists of a single
-<tt>'E'</tt> or <tt>'e'</tt> character, followed optionally by a single
-<tt>'+'</tt> or <tt>'-'</tt> character, followed by a sequence of one or
-more decimal digits.  If the converted value would overflow,
-\f$\pm\f$\c LAL_REAL\f$n\f$\c _MAX is returned, as appropriate.  If
-the value would underflow, 0 is returned.
-
-A string to be converted to a complex number (\c COMPLEX8 or
-\c COMPLEX16) consists of two floating-point format substrings
-concatenated together, where the first character of the second
-substring cannot be interpreted as a continuation of the first number.
-Usually this means that the second substring will contain at least one
-leading whitespace character, though this is not strictly necessary.
-Overflow or underflow is dealt with as above.
-
-A string to be converted to a GPS time can have the format of an integer
-or a floating-point number, as described above.  The optional exponent
-in the floating-point form is supported, and both positive and negative
-GPS times are permitted.  If the result would overflow the
-\c LIGOTimeGPS representation (too far in the future), then the
-\c gpsSeconds and \c gpsNanoSeconds fields are set to
-\c LAL_INT4_MAX and \f$999999999\f$, respectively.
-For an underflow (too far in the past), the fields
-are set to \c LAL_INT4_MIN and \f$0\f$.
-
-Internally, the floating-point conversion routines call
-<tt>strtod()</tt>, then cap and cast the result as necessary.  The
-complex conversion routines simply call their floating-point
-counterpart twice.  The integer routines call an internal function
-<tt>LALStringToU8AndSign()</tt>, which does what you would expect, then
-cap and cast the result as necessary.  (The C routines <tt>strtol()</tt>
-and <tt>strtol()</tt> are not used as they are not guaranteed to have
-8-byte precision.)
-
-*/
+ * \file
+ * \ingroup StringInput_h
+ * \authors Creighton, T. D.
+ * \authors Shawhan, P. S.
+ *
+ * \brief Converts a string into a numerical value.
+ *
+ * ### Description ###
+ *
+ * These routines parse the string <tt>*string</tt> and compute a numerical
+ * value <tt>*value</tt> of the appropriate datatype.  If
+ * \c endptr\f$\neq\f$\c NULL, then after conversion <tt>*endptr</tt>
+ * will point to the character after the last character used in the
+ * conversion.  The routine will always return without error if the
+ * arguments are valid, regardless of the contents of \c string;
+ * failure to parse a number is indicated by <tt>*endptr</tt> being set
+ * equal to \c string (provided \c endptr\f$\neq\f$\c NULL).
+ *
+ * For integer or floating-point conversion to occur, \c string must
+ * consist of zero or more whitespace characters followed by a number in
+ * any standard base-ten integer or floating-point representation
+ * (described in detail below); the conversion will stop as soon as the
+ * routine encounters a character that is not part of the number.  For
+ * instance, parsing the string <tt>"   123bad"</tt> will return
+ * <tt>*value</tt>=123, and <tt>*endptr</tt> will point to the substring
+ * <tt>"bad"</tt>; it is up to the calling routine to determine whether
+ * this is an acceptable input.  By contrast, parsing the string
+ * <tt>" bad"</tt> will leave <tt>*value</tt> unchanged and <tt>*endptr</tt>
+ * pointing to the start of the original string.  In general, if the
+ * routine returns with <tt>*endptr</tt>\f$\neq\f$\c string and
+ * <tt>**endptr</tt> is a whitespace or <tt>'\0'</tt> character, then the
+ * format was unambiguously acceptable.
+ *
+ * Complex conversion is essentially equivalent to performing
+ * floating-point conversion on \c string to get the real part, and
+ * again on <tt>*endptr</tt> to get the imaginary part.  Normally this
+ * means that an acceptable format is two floating-point representations
+ * separated by (and possibly preceded with) whitespace, although the
+ * intervening whitespace can be omitted if the separation between the
+ * two numbers is unambiguous.  Thus the string <tt>"-1.0+3.5"</tt> will be
+ * unambiguously read as \f$-1.0+3.5i\f$, but <tt>"-1.03.5"</tt> will be read
+ * as \f$-1.03+0.5i\f$ (since the conversion of the real part stops at the
+ * second <tt>'.'</tt> character), which may or may not be the intended
+ * conversion.
+ *
+ * GPS conversion is similar to floating-point conversion, but the result
+ * is stored in a \c LIGOTimeGPS structure as two integer values
+ * representing seconds and nanoseconds.  The \c LALStringToGPS
+ * function does \e not convert the string to an intermediate
+ * \c REAL8 value, but parses the string specially to retain the
+ * full precision of the string representation to the nearest nanosecond.
+ *
+ * ### Algorithm ###
+ *
+ * These functions (other than \c LALStringToGPS())
+ * emulate the standard C functions <tt>strtol()</tt>,
+ * <tt>strtoul()</tt>, and <tt>strtod()</tt>, except that they follow LAL
+ * calling conventions and return values of the appropriate LAL
+ * datatypes.  For integer conversion, only base-ten (decimal)
+ * representations are supported.  Otherwise, the valid format is as for
+ * the corresponding C functions, which we summarize below:
+ *
+ * A string to be converted to an \c INT\f$n\f$ (where \f$n\f$=2, 4, or 8)
+ * consists of zero or more whitespace characters as determined by
+ * <tt>isspace()</tt>, followed optionally by a single <tt>'+'</tt> or
+ * <tt>'-'</tt> character, followed by one or more decimal digits;
+ * conversion stops at the first non-digit character after this.  If the
+ * result would overflow or underflow the \c INT\f$n\f$ representation,
+ * then the value is set to \c LAL_INT\f$n\f$\c _MAX\f$=2^{8n-1}-1\f$ or
+ * \c LAL_INT\f$n\f$\c _MIN\f$=-2^{8n-1}\f$, respectively.
+ *
+ * A string to be converted to a \c UINT\f$n\f$ follows the same format,
+ * except that a leading negative sign character <tt>'-'</tt> is
+ * \e ignored (the routine will compute the magnitude of the result),
+ * and the return value is capped at
+ * \c LAL_UINT\f$n\f$\c _MAX\f$=2^{8n}-1\f$.
+ *
+ * A string to be converted to a floating-point number (\c REAL4 or
+ * \c REAL8) consists of zero or more whitespace characters as
+ * determined by <tt>isspace()</tt>, followed optionally by a single
+ * <tt>'+'</tt> or <tt>'-'</tt> character, followed by a sequence of one or
+ * more decimal digits optionally containing a decimal point <tt>'.'</tt>,
+ * optionally followed by an exponent.  An exponent consists of a single
+ * <tt>'E'</tt> or <tt>'e'</tt> character, followed optionally by a single
+ * <tt>'+'</tt> or <tt>'-'</tt> character, followed by a sequence of one or
+ * more decimal digits.  If the converted value would overflow,
+ * \f$\pm\f$\c LAL_REAL\f$n\f$\c _MAX is returned, as appropriate.  If
+ * the value would underflow, 0 is returned.
+ *
+ * A string to be converted to a complex number (\c COMPLEX8 or
+ * \c COMPLEX16) consists of two floating-point format substrings
+ * concatenated together, where the first character of the second
+ * substring cannot be interpreted as a continuation of the first number.
+ * Usually this means that the second substring will contain at least one
+ * leading whitespace character, though this is not strictly necessary.
+ * Overflow or underflow is dealt with as above.
+ *
+ * A string to be converted to a GPS time can have the format of an integer
+ * or a floating-point number, as described above.  The optional exponent
+ * in the floating-point form is supported, and both positive and negative
+ * GPS times are permitted.  If the result would overflow the
+ * \c LIGOTimeGPS representation (too far in the future), then the
+ * \c gpsSeconds and \c gpsNanoSeconds fields are set to
+ * \c LAL_INT4_MAX and \f$999999999\f$, respectively.
+ * For an underflow (too far in the past), the fields
+ * are set to \c LAL_INT4_MIN and \f$0\f$.
+ *
+ * Internally, the floating-point conversion routines call
+ * <tt>strtod()</tt>, then cap and cast the result as necessary.  The
+ * complex conversion routines simply call their floating-point
+ * counterpart twice.  The integer routines call an internal function
+ * <tt>LALStringToU8AndSign()</tt>, which does what you would expect, then
+ * cap and cast the result as necessary.  (The C routines <tt>strtol()</tt>
+ * and <tt>strtol()</tt> are not used as they are not guaranteed to have
+ * 8-byte precision.)
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 #include <complex.h>

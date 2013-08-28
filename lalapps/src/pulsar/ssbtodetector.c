@@ -28,16 +28,16 @@
  * it to a GPS time at a given detector for a given sky position. The input detectors can be any of the standard
  * acronyms for gravitational wave detectors, but can also include several radio telescopes (these use position
  * information from TEMPO2):
- *   - the Robert C. Byrd Greeen Bank Telescope (GBT),
- *   - the Parkes Telescope (PKS),
- *   - the Lovell Telescope at Jodrell Bank (JBO),
- *   - the Arecibo Telescope (AO),
- *   - the Effelsberg 100m Radio Telescope (EFF),
- *   - the Nancay Decimetre Radio Telescope (NRT),
- *   - the Mount Pleasant Radio Observatory, Hobart (HOB),
- *   - the Hartebeesthoek Radio Astronomy Observatory (HART),
- *   - the Very Large Array (VLA),
- *   - and the Westerbork Synthesis Radio Telescope (WSRT).
+ * - the Robert C. Byrd Greeen Bank Telescope (GBT),
+ * - the Parkes Telescope (PKS),
+ * - the Lovell Telescope at Jodrell Bank (JBO),
+ * - the Arecibo Telescope (AO),
+ * - the Effelsberg 100m Radio Telescope (EFF),
+ * - the Nancay Decimetre Radio Telescope (NRT),
+ * - the Mount Pleasant Radio Observatory, Hobart (HOB),
+ * - the Hartebeesthoek Radio Astronomy Observatory (HART),
+ * - the Very Large Array (VLA),
+ * - and the Westerbork Synthesis Radio Telescope (WSRT).
  */
 
 #include <stdlib.h>

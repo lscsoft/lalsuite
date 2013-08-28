@@ -107,14 +107,15 @@ LocalComputeFStatFreqBand ( LALStatus *status,
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
-/** Function to compute a vector of Fstatistic values for a number of frequency bins.
-    This function is simply a wrapper for LocalComputeFstat() which is called repeatedly for
-    every frequency value.  The output, i.e. fstatVector must be properly allocated
-    before this function is called.  The values of the start frequency, the step size
-    in the frequency and the number of frequency values for which the Fstatistic is 
-    to be calculated are read from fstatVector.  The other parameters are not checked and 
-    they must be correctly set outside this function. 
-*/
+/**
+ * Function to compute a vector of Fstatistic values for a number of frequency bins.
+ * This function is simply a wrapper for LocalComputeFstat() which is called repeatedly for
+ * every frequency value.  The output, i.e. fstatVector must be properly allocated
+ * before this function is called.  The values of the start frequency, the step size
+ * in the frequency and the number of frequency values for which the Fstatistic is
+ * to be calculated are read from fstatVector.  The other parameters are not checked and
+ * they must be correctly set outside this function.
+ */
 void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus structure */
 				 REAL4FrequencySeries *fstatVector, /**< [out] Vector of Fstat values */
 				 const PulsarDopplerParams *doppler,/**< parameter-space point to compute F for */
@@ -163,9 +164,11 @@ void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus 
     }
   }
 
-  /** something to improve/cleanup -- the start frequency is available both 
-      from the fstatvector and from the input doppler point -- they could be inconsistent
-      or the user of this function could misunderstand */
+/**
+ * something to improve/cleanup -- the start frequency is available both
+ * from the fstatvector and from the input doppler point -- they could be inconsistent
+ * or the user of this function could misunderstand
+ */
 
   /* copy values from 'doppler' to local variable 'thisPoint' */
   thisPoint = *doppler;
@@ -194,9 +197,10 @@ void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus 
 
 
 
-/** Function to compute (multi-IFO) F-statistic for given parameter-space point ::doppler,
- *  normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
- *  and detector state-series
+/**
+ * Function to compute (multi-IFO) F-statistic for given parameter-space point ::doppler,
+ * normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
+ * and detector state-series
  *
  * NOTE: for better efficiency some quantities that need to be recomputed only for different
  * sky-positions are buffered in \a cfBuffer if given.
@@ -402,7 +406,8 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 } /* LocalComputeFStat() */
 
 
-/** Revamped version of LALDemod() (based on TestLALDemod() in CFS).
+/**
+ * Revamped version of LALDemod() (based on TestLALDemod() in CFS).
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
 static int
@@ -575,7 +580,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	/* if no danger of denominator -> 0 */
 #ifdef __GNUC__
-	/** somehow the branch prediction of gcc-4.1.2 terribly failes
+	/*  somehow the branch prediction of gcc-4.1.2 terribly failes
 	    with the current case distinction in the hot-loop,
 	    having a severe impact on runtime of the E@H Linux App.
 	    So let's allow to give gcc a hint which path has a higher probablility */

@@ -17,14 +17,15 @@
  *  MA  02111-1307  USA
  */
 
-/** \author C.Messenger
+/**
+ * \author C.Messenger
  * \ingroup pulsarCoherent
  * \file
  * \brief
- * This code is designed to compute statistical quantities from a specified channel in a given 
+ * This code is designed to compute statistical quantities from a specified channel in a given
  * frame file.
  *
- * It reads in the timeseries from the frame file and returns the quantiles of the timeseries 
+ * It reads in the timeseries from the frame file and returns the quantiles of the timeseries
  * distribution as well as the min, max, mean and standard deviation values.
  *
  */
@@ -67,7 +68,8 @@
 /***********************************************************************************************/
 /* define internal structures */
 
-/** A structure that stores statistical information gathered from a timeseries
+/**
+ * A structure that stores statistical information gathered from a timeseries
  */
 typedef struct { 
   CHAR filename[1024];              /**< the frame filename */
@@ -83,14 +85,16 @@ typedef struct {
   REAL8 quant[NQUANTILE+1];         /**< the quantiles of the samples in the timeseries */
 } Stats;
 
-/** A structure that stores statistical information gathered from a timeseries
+/**
+ * A structure that stores statistical information gathered from a timeseries
  */
 typedef struct { 
   Stats *data;                      /**< a vector of stats info */
   INT4 length;                      /**< the length of the vector */
 } StatsVector;
 
-/** A structure that sores user input variables 
+/**
+ * A structure that sores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -122,10 +126,10 @@ int XLALReadXTEFrameINT4Keyword(INT4 *value, CHAR *filename, const CHAR *keyword
 /* empty initializers */
 UserInput_t empty_UserInput;
 
-/** The main function of framestats.c
- *
- * Here we read in a channel from a single frame file and return statistical quantities 
- * computed from the timeseries.  
+/**
+ * The main function of framestats.c
+ * Here we read in a channel from a single frame file and return statistical quantities
+ * computed from the timeseries.
  *
  */
 int main( int argc, char *argv[] )
@@ -225,7 +229,8 @@ int main( int argc, char *argv[] )
   
 }
 
-/** Read in input user arguments
+/**
+ * Read in input user arguments
  */
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar)
 {
@@ -269,7 +274,8 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar)
 
 }
 
-/** Read in list of frame files from input directory
+/**
+ * Read in list of frame files from input directory
  */
 int XLALReadFrameDir(glob_t *filelist,         /**< [out] a structure containing a list of all input frame channels */
 		     CHAR *inputfile           /**< [in] the input frame file pattern */
@@ -307,7 +313,8 @@ int XLALReadFrameDir(glob_t *filelist,         /**< [out] a structure containing
   
 }
 
-/** this function combines the files listed in the combination plan into a single timeseries 
+/**
+ * this function combines the files listed in the combination plan into a single timeseries
  */
 int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the timeseries */
 				CHAR *filename,                /**< [in] the input frame file name */
@@ -365,7 +372,8 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
   
 }
 
-/** this function extracts a keyword value from the history field in a frame
+/**
+ * this function extracts a keyword value from the history field in a frame
  */
 int XLALReadXTEFrameINT4Keyword(INT4 *value,          /**< [out] the keyword value */
 				CHAR *filename,       /**< [in] the input frame file name */
@@ -430,7 +438,8 @@ int XLALReadXTEFrameINT4Keyword(INT4 *value,          /**< [out] the keyword val
   
 }
 
-/** this function computes a series of statistics based on the input timeseries
+/**
+ * this function computes a series of statistics based on the input timeseries
  */
 int XLALComputeINT4TimeSeriesStats(Stats *stats,             /**< [out] the timeseries statistics */
 				   INT4TimeSeries *ts,       /**< [in] the input timeseries */ 
@@ -507,7 +516,8 @@ int XLALComputeINT4TimeSeriesStats(Stats *stats,             /**< [out] the time
   
 }
 
-/** comparison function for use with qsort
+/**
+ * comparison function for use with qsort
  */
 static int compareINT4(const void *a, const void *b)
 {
@@ -520,7 +530,8 @@ static int compareINT4(const void *a, const void *b)
 	and positive if a > b */
    
 }
-/** function to output the stats results to file
+/**
+ * function to output the stats results to file
  */
 int XLALOutputStats(StatsVector *stats,      /**< [in] the output stats results */
 		    CHAR *outputfile         /**< [in] the output filename */
@@ -554,7 +565,8 @@ int XLALOutputStats(StatsVector *stats,      /**< [in] the output stats results 
   
 }
 
-/** this function reads in the frame history as a string
+/**
+ * this function reads in the frame history as a string
  */
 int XLALReadFrameHistory(CHAR **history_string,     /**< [out] the history field read in as a string */ 
 			 FrFile *file               /**< [in] frame file pointer */

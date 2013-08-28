@@ -1,18 +1,19 @@
 /**
-\author Dietz, A. & Veitch, J.
-\file
-\ingroup inspiral
-
-\brief Header file for the MCMC user code.
-
-\heading{Synopsis}
-\code
-#include <lal/LALInspiralMCMCUser.h>
-\endcode
-
-This header file covers user routines that are used for the Markov Chain Monte Carlo algorithm tools.
-
-*/
+ * \author Dietz, A. & Veitch, J.
+ * \file
+ * \ingroup inspiral
+ *
+ * \brief Header file for the MCMC user code.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALInspiralMCMCUser.h>
+ * \endcode
+ *
+ * This header file covers user routines that are used for the Markov Chain Monte Carlo algorithm tools.
+ *
+ */
 
 #ifndef _LALINSPIRALMCMCUSER_H
 #define _LALINSPIRALMCMCUSER_H

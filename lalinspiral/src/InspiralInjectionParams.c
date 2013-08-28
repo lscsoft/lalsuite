@@ -16,13 +16,13 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-/** \file InspiralInjectionParams.c
- *  \ingroup InspiralInjectionParams
- *  \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
+/**
+ * \file InspiralInjectionParams.c
+ * \ingroup InspiralInjectionParams
+ * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
  *
- *  \brief Functions for generating random distributions of inspiral parameters
- *  for injection purposes
- *
+ * \brief Functions for generating random distributions of inspiral parameters
+ * for injection purposes
  *
  */
 
@@ -43,8 +43,10 @@
 #include <lal/InspiralInjectionParams.h>
 #include <lal/VectorOps.h>
 
-/** Generates the geocent_end_time for an inspiral injection, based on the
- * given startTime and timeWindow */
+/**
+ * Generates the geocent_end_time for an inspiral injection, based on the
+ * given startTime and timeWindow
+ */
 SimInspiralTable* XLALRandomInspiralTime(
     SimInspiralTable *inj,   /**< injection for which time will be set */
     RandomParams *randParams,/**< random parameter details*/
@@ -61,8 +63,10 @@ SimInspiralTable* XLALRandomInspiralTime(
   return ( inj );
 }
 
-/** Generates the distance for an inspiral injection, based on the requested
- * distribution and max/min distances */
+/**
+ * Generates the distance for an inspiral injection, based on the requested
+ * distribution and max/min distances
+ */
 SimInspiralTable* XLALRandomInspiralDistance(
     SimInspiralTable *inj,     /**< injection for which distance will be set */
     RandomParams *randParams,  /**< random parameter details*/
@@ -112,8 +116,10 @@ SimInspiralTable* XLALRandomInspiralDistance(
 }
 
 
-/** Generates a random sky location (right ascension=longitude,
-     delta=latitude) for an inspiral injection */
+/**
+ * Generates a random sky location (right ascension=longitude,
+ * delta=latitude) for an inspiral injection
+ */
 SimInspiralTable* XLALRandomInspiralSkyLocation(
     SimInspiralTable *inj,  /**< injection for which sky location will be set*/
     RandomParams *randParams/**< random parameter details*/
@@ -125,8 +131,10 @@ SimInspiralTable* XLALRandomInspiralSkyLocation(
   return ( inj );
 }
 
-/** Generates a location within the Milky Way
-     for an inspiral injection */
+/**
+ * Generates a location within the Milky Way
+ * for an inspiral injection
+ */
 void XLALRandomInspiralMilkywayLocation(
     REAL8 *rightAscension,  /**< right ascension of the milky-way source */
     REAL8 *declination,     /**< declination of the milky-way source */
@@ -174,9 +182,11 @@ void XLALRandomInspiralMilkywayLocation(
   *distance       = dist/1000.0; /* convert to Mpc */
 }
 
-/** Generates a random orientation (polarization, inclination, coa_phase)
+/**
+ * Generates a random orientation (polarization, inclination, coa_phase)
  * for an inspiral injection.  If inclinationPeak is non-zero, then peak the
- * inclination around o with width inclinationPeak */
+ * inclination around o with width inclinationPeak
+ */
 SimInspiralTable* XLALRandomInspiralOrientation(
     SimInspiralTable *inj,   /**< injection for which orientation will be set*/
     RandomParams *randParams,/**< random parameter details*/
@@ -310,8 +320,10 @@ SimInspiralTable* XLALRandomInspiralMasses(
   return ( inj );
 }
 
-/** Generates masses for an inspiral injection. Masses are Gaussian distributed
- * with the requested mean and standard deviation. */
+/**
+ * Generates masses for an inspiral injection. Masses are Gaussian distributed
+ * with the requested mean and standard deviation.
+ */
 SimInspiralTable* XLALGaussianInspiralMasses(
     SimInspiralTable *inj,   /**< injection for which masses will be set*/
     RandomParams *randParams,/**< random parameter details*/
@@ -347,8 +359,10 @@ SimInspiralTable* XLALGaussianInspiralMasses(
   return ( inj );
 }
 
-/** Generates masses for an inspiral injection. Total mass and mass ratio
- * are uniformly distributed */
+/**
+ * Generates masses for an inspiral injection. Total mass and mass ratio
+ * are uniformly distributed
+ */
 SimInspiralTable* XLALRandomInspiralTotalMassRatio(
     SimInspiralTable *inj,   /**< injection for which masses will be set */
     RandomParams *randParams,/**< random parameter details */
@@ -387,8 +401,10 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
   return ( inj );
 }
 
-/** Generates masses for an inspiral injection. Total mass and mass fraction
- * m1 / M are uniformly distributed */
+/**
+ * Generates masses for an inspiral injection. Total mass and mass fraction
+ * m1 / M are uniformly distributed
+ */
 SimInspiralTable* XLALRandomInspiralTotalMassFraction(
     SimInspiralTable *inj,   /**< injection for which masses will be set */
     RandomParams *randParams,/**< random parameter details */
@@ -424,16 +440,17 @@ SimInspiralTable* XLALRandomInspiralTotalMassFraction(
   return ( inj );
 }
 
-/** Generates spins for an inspiral injection.
+/**
+ * Generates spins for an inspiral injection.
  * Spin magnitudes lie between the specified max and min values.
  *
  * The parameter alignInj controls whether spins are aligned with the orbital
  * angular momentum according to two separate coordinate conventions (along z-axis
  * as for IMRPhenom, or in x-z plane as for SpinTaylor).
  *
- * For single-spin-like systems as treated in the 'PTF' paper (Pan, Buonanno, Chen and 
+ * For single-spin-like systems as treated in the 'PTF' paper (Pan, Buonanno, Chen and
  * Vallisneri, gr-qc/03100034) the component of spin1 along the direction of orbital
- * angular momentum (where m1>m2) is specified by the kappa1 bounds. 
+ * angular momentum (where m1>m2) is specified by the kappa1 bounds.
  *
  * Otherwise, orientations for spin1 and spin2 are random.
  */
@@ -686,8 +703,10 @@ SimInspiralTable *XLALInspiralSiteTimeAndDist(
   return ( inj );
 }
 
-/** Set the end time and effective distance for all detectors for this
- * injection */
+/**
+ * Set the end time and effective distance for all detectors for this
+ * injection
+ */
 SimInspiralTable *XLALPopulateSimInspiralSiteInfo(
     SimInspiralTable           *inj /**< the injection */
     )
@@ -729,8 +748,10 @@ SimInspiralTable *XLALPopulateSimInspiralSiteInfo(
   return ( inj );
 }
 
-/** Populate a frequency series with the actuation response.  Here, we just use
- * the pendulum part of the actuation function */
+/**
+ * Populate a frequency series with the actuation response.  Here, we just use
+ * the pendulum part of the actuation function
+ */
 COMPLEX8FrequencySeries *generateActuation(
     COMPLEX8FrequencySeries *resp, /* the frequency series to be populated */
     REAL4                    ETMcal,/* the ETM calibration */

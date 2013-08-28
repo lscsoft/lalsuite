@@ -24,9 +24,8 @@
  * \ingroup pulsarTODO
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
- *
  * The main function in this code - <tt>XLALBinaryPulsarDeltaT</tt> - is for
- *  calculating the time delay on a pulsar signal caused by its orbit within a
+ * calculating the time delay on a pulsar signal caused by its orbit within a
  * binary system. It tranforms a signal from the binary system barycentre to the
  * pulsar proper time. It is equivalent to the <tt>LALBarycenter()</tt>
  * functions for transforming the Earth reference frame to the solar system
@@ -88,9 +87,10 @@ not be in the binary timing routine"
 
 /*@}*/
 
-/** A structure to contain all pulsar parameters and associated errors.
-    The structure does not have to be used for a binary pulsar, but can just contain the parameters for
-   an isolated pulsar. All parameters are in the same units as given by TEMPO.
+/**
+ * A structure to contain all pulsar parameters and associated errors.
+ * The structure does not have to be used for a binary pulsar, but can just contain the parameters for
+ * an isolated pulsar. All parameters are in the same units as given by TEMPO.
  */
 typedef struct
 tagBinaryPulsarParams
@@ -347,28 +347,31 @@ tagBinaryPulsarOutput
 }BinaryPulsarOutput;
 
 /**** DEFINE FUNCTIONS ****/
-/** \brief This function will iteratively calculate the eccentric anomaly from
-  * Kelper's equation
-  *
-  * The equation is solved using a Newton-Raphson technique and the S9
-  * starting value in Odell & Gooding  1986 CeMec 38 307. This is taken from the
-  * TEMPO2 code T2model.C
-  */
+/**
+ * \brief This function will iteratively calculate the eccentric anomaly from
+ * Kelper's equation
+ *
+ * The equation is solved using a Newton-Raphson technique and the S9
+ * starting value in Odell & Gooding  1986 CeMec 38 307. This is taken from the
+ * TEMPO2 code T2model.C
+ */
 void
 XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u);
 
-/** \brief This function will compute the effect of binary parameters on the
-  * pulsar parallax
-  *
-  * This function is based on the terms given in Kopeikin, Ap. J. Lett, 439,
-  * 1995. The computation is copied from the KopeikinTerms function in the
-  * T2model.C file of TEMPO2.
-  */
+/**
+ * \brief This function will compute the effect of binary parameters on the
+ * pulsar parallax
+ *
+ * This function is based on the terms given in Kopeikin, Ap. J. Lett, 439,
+ * 1995. The computation is copied from the KopeikinTerms function in the
+ * T2model.C file of TEMPO2.
+ */
 void XLALComputeKopeikinTerms( KopeikinTerms *kop,
                                BinaryPulsarParams *params,
                                BinaryPulsarInput *input );
 
-/** function to calculate the binary system delay
+/**
+ * function to calculate the binary system delay
  */
 void
 XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
@@ -381,7 +384,8 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
                        BinaryPulsarInput    *input,
                        BinaryPulsarParams   *params );
 
-/** function to read in a TEMPO parameter file
+/**
+ * function to read in a TEMPO parameter file
  */
 void
 XLALReadTEMPOParFile( BinaryPulsarParams    *output,
@@ -392,17 +396,18 @@ LALReadTEMPOParFile( LALStatus              *status,
                      BinaryPulsarParams    *output,
                      CHAR                  *pulsarAndPath );
 
-/** \brief This function will read in a TEMPO-style parameter correlation matrix
+/**
+ * \brief This function will read in a TEMPO-style parameter correlation matrix
  *
  * This function will read in a TEMPO-style parameter correlation matrix file,
  * which contains the correlations between parameters as fit by TEMPO. An
  * example the format would be:
-\verbatim
-     RA     DEC    F0
-RA   1.000
-DEC  0.954  1.000
-F0   -0.007 0.124  1.000
-\endverbatim
+ * \verbatim
+ * RA     DEC    F0
+ * RA   1.000
+ * DEC  0.954  1.000
+ * F0   -0.007 0.124  1.000
+ * \endverbatim
  *
  * In the output all parameter names will sometimes be
  * converted to a more convenient naming convention. If non-diagonal parameter
@@ -412,12 +417,13 @@ F0   -0.007 0.124  1.000
  *
  * \param cormat [out] A REAL8 array into which the correlation matrix will be output
  * \param corfile [in] A string containing the path and filename of the
- * 			TEMPO-style correlation matrix file
+ * TEMPO-style correlation matrix file
  */
 LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
 
 
-/** \brief Convert a string containing an angle in "hours:minutes:seconds" format into radians
+/**
+ * \brief Convert a string containing an angle in "hours:minutes:seconds" format into radians
  *
  * This function will covert a string containing an angle given in "hours:minutes:seconds"
  * format (e.g. a right ascension) into radians. It requires that the hours value is positive
@@ -429,7 +435,8 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
 REAL8 XLALhmsToRads( const CHAR *hms );
 
 
-/** \brief Convert a string containing an angle in "degrees:minutes:seconds" format into radians
+/**
+ * \brief Convert a string containing an angle in "degrees:minutes:seconds" format into radians
  *
  * This function will covert a string containing an angle given in "degrees:minutes:seconds"
  * format (e.g. a declination) into radians. It requires that the minutes and seconds values
@@ -441,7 +448,8 @@ REAL8 XLALhmsToRads( const CHAR *hms );
 REAL8 XLALdmsToRads( const CHAR *dms );
 
 
-/** \deprecated Use XLALdmsToRads() or XLALhmsToRads() instead.
+/**
+ * \deprecated Use XLALdmsToRads() or XLALhmsToRads() instead.
  *
  * A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
  * number of degrees as a float degs is the string containing the
@@ -450,7 +458,8 @@ REAL8 XLALdmsToRads( const CHAR *dms );
 REAL8
 LALDegsToRads(CHAR *degs, const CHAR *coords);
 
-/** Functions for converting times given in Terrestrial time TT, TDB, or TCB in
+/**
+ * Functions for converting times given in Terrestrial time TT, TDB, or TCB in
  * MJD to times in GPS - this is important for epochs given in <tt>.par</tt>
  * files which are in TDB(MJD). TT and GPS are different by a factor of 51.184
  * secs, this is just the historical factor of 32.184 secs between TT and TAI
@@ -469,7 +478,8 @@ REAL8
 XLALTCBMJDtoGPS(REAL8 MJD);
 /*@}*/
 
-/** function to print out all the pulsar parameters read in from a par file
+/**
+ * function to print out all the pulsar parameters read in from a par file
  */
 void
 PrintPulsarParameters( BinaryPulsarParams params );

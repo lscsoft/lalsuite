@@ -29,7 +29,7 @@
 /**
  * \addtogroup ComplexFFT_h
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This package provides a (X)LAL-style interface with the FFTW fast Fourier
  * transform package [\ref fj_1998].
@@ -47,16 +47,16 @@
  * \f$k=0\ldots n-1\f$ of a vector \f$h_j\f$, \f$j=0\ldots n-1\f$, of length \f$n\f$ is defined
  * by
  * \f[
- *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
+ * H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
  * \f]
  * and, similarly, the \e inverse Fourier transform is defined by
  * \f[
- *   h_j = \frac{1}{n}\sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}.
+ * h_j = \frac{1}{n}\sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}.
  * \f]
  * However, the present implementation of the \e reverse FFT omits the
  * factor of \f$1/n\f$.  The input and output vectors must be distinct.
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
  *
  * \code
  * const UINT4 n = 17;
@@ -85,13 +85,14 @@
  * LALCDestroyVector( &status, &cvec );
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The FFTW [\ref fj_1998] is used.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  * <ol>
  * <li> The sign convention used here is the opposite of the definition in
@@ -110,12 +111,11 @@
  * be distinct.
  * </li></ol>
  *
- *
- *
-*/
+ */
 /*@{*/
 
-/** Plan to perform an FFT of COMPLEX8 data
+/**
+ * Plan to perform an FFT of COMPLEX8 data
  */
 struct
 tagCOMPLEX8FFTPlan
@@ -125,7 +125,8 @@ tagCOMPLEX8FFTPlan
   fftwf_plan plan; /**< the FFTW plan */
 };
 
-/** Plan to perform an FFT of COMPLEX16 data
+/**
+ * Plan to perform an FFT of COMPLEX16 data
  */
 struct
 tagCOMPLEX16FFTPlan

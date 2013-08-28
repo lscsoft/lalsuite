@@ -47,11 +47,11 @@ LAL_TYPE_FROM_STR = dict((v,k) for k, v in LAL_TYPE_STR.iteritems())
 
 # map numpy dtypes to LAL type codes
 LAL_TYPE_FROM_NUMPY = {numpy.int16:lal.LAL_I2_TYPE_CODE,
-                       numpy.int32:lal.LAL_I2_TYPE_CODE,
-                       numpy.int64:lal.LAL_I2_TYPE_CODE,
-                       numpy.uint16:lal.LAL_I2_TYPE_CODE,
-                       numpy.uint32:lal.LAL_I2_TYPE_CODE,
-                       numpy.uint64:lal.LAL_I2_TYPE_CODE,
+                       numpy.int32:lal.LAL_I4_TYPE_CODE,
+                       numpy.int64:lal.LAL_I8_TYPE_CODE,
+                       numpy.uint16:lal.LAL_U2_TYPE_CODE,
+                       numpy.uint32:lal.LAL_U4_TYPE_CODE,
+                       numpy.uint64:lal.LAL_U8_TYPE_CODE,
                        numpy.float32:lal.LAL_S_TYPE_CODE,
                        numpy.float64:lal.LAL_D_TYPE_CODE,
                        numpy.complex64:lal.LAL_C_TYPE_CODE,

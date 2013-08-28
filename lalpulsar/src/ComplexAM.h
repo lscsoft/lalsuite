@@ -62,7 +62,8 @@ extern "C" {
 
 /* ---------- exported data types -------------------- */
 
-/** This structure contains the AM coefficients \f$a\f$ and \f$b\f$
+/**
+ * This structure contains the AM coefficients \f$a\f$ and \f$b\f$
  * in the case of a complex detector tensor, and some relevant scalar
  * products. That is:
  */
@@ -72,8 +73,9 @@ typedef struct tagCmplxAMCoeffs
   COMPLEX8Vector     *b;          /**< the b coefficient evaluated at the relevant times  */
 } CmplxAMCoeffs;
 
-/** Convenience container for precomputed pi f L/c  and skyposition vector
-*/
+/**
+ * Convenience container for precomputed pi f L/c  and skyposition vector
+ */
 typedef struct tagFreqSkypos_t
 {
   REAL4 Freq;		/**< signal frequency */
@@ -82,7 +84,8 @@ typedef struct tagFreqSkypos_t
   SymmTensor3 eCross;	/**< eCross polarization tensor (skypos-dependent) */
 } FreqSkypos_t;
 
-/** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
+/**
+ * Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible, in the case of complex AM co\"{e}fficients, as
  * \f{equation}
  * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c}

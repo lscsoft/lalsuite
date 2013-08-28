@@ -18,93 +18,94 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief Given a pair of masses (or other equivalent parameters) compute
-related chirp parameters.
-
-\heading{Prototypes}
-
-<tt>XLALInspiralParameterCalc()</tt>
-<ul>
-<li>\c params: Input/Output, given a pair of binary parameters and a lower
-frequency cutoff, other equivalent parameters are computed by this function.</li>
-</ul>
-
-\heading{Description}
-
-The code takes as its input <tt>params->fLower</tt> in Hz and
-a pair of masses (in units of \f$M_\odot\f$) or chirptimes (in seconds measured from <tt>params->fLower</tt>)
-and computes all the other {\em mass} parameters in the \c params structure.
-Users choice of input pair of {\em masses} should be specified by appropriately setting
-the variable <tt>params->massChoice</tt> as described in the Table below:
-
-<table align="center" class="doxtable">
-<caption align="top" style="text-align: left; font-weight: normal;">
-Table I. For a given <tt>params->massChoice</tt> in column 1 the user should specify the
-parameters as in column 2, in units as in column 3. Column 4 gives the conventional meaning
-of the parameters. Chirp times are measured from a lower frequency cutoff given
-in <tt>params->fLower.</tt></caption>
-<tr><th><tt>params->massChoice</tt></th><th>User should set</th><th>in units</th><th>which means</th></tr>
-<tr><td>m1Andm2</td><td>(<tt>mass1, mass2</tt>)</td><td>\f$(M_\odot, M_\odot)\f$</td><td>\f$(m_1,m_2)\f$</td></tr>
-<tr><td>totalMassAndEta</td><td>(<tt>totalmass, eta</tt>)</td><td>\f$(M_\odot, 0 < \eta \le 1/4)\f$</td><td>\f$(m, \eta)\f$</td></tr>
-<tr><td>totalMassAndMu</td><td>(<tt>totalmass, mu</tt>)</td><td>\f$(M_\odot, M_\odot)\f$</td><td>\f$(m, \mu)\f$</td></tr>
-<tr><td>t02</td><td>(<tt>t0, t2</tt>)</td><td>(sec, sec)</td><td>\f$(\tau_0, \tau_2)\f$</td></tr>
-<tr><td>t03</td><td>(<tt>t0, t3</tt>)</td><td>(sec, sec)</td><td>\f$(\tau_0, \tau_3)\f$</td></tr>
-<tr><td>t04</td><td>(<tt>t0, t4</tt>)</td><td>(sec, sec)</td><td>\f$(\tau_0, \tau_4)\f$</td></tr>
-</table>
-
-If \c massChoice is not set properly an error condition will occur and
-the function is aborted with status code defined by
-#LALINSPIRALH_EMASSCHOICE in \ref LALInspiral.h.
-In the above list \f$m_{1}\f$ and \f$m_{2}\f$ are the masses of
-the two compact objects, \f$m=m_{1}+m_{2}\f$ is the total
-mass, \f$\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}\f$ is the
-symmetric mass ratio, \f$\mu=m_{1}m_{2}/(m_{1}+m_{2})\f$ is
-the reduced mass and \f$\tau\f$'s are the chirptimes
-defined in terms of \f$f_{a}\f$=\c fLower by:
-\f{eqnarray}{
-\tau_{0} = \frac{5}{256 \eta m^{5/3} (\pi f_{a})^{8/3}}, \ \ \
-\tau_{2} = \frac{(3715 + 4620 \eta)}{64512 \eta m (\pi f_{a})^{2}}, \ \ \
-\tau_{3} = \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}\nonumber \\
-\tau_{4} = \frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} +
-\frac{5429}{1008} \eta + \frac{617}{144} \eta^{2} \right],\ \ \
-\tau_5 = \frac {5}{256\eta f_a}  \left (\frac {7729}{252} + \eta \right ).
-\f}
-%% Beyond 2.5 PN order, chirp times do not have an
-%% explicit expression in terms of the masses and \f$f_a.\f$
-Whichever pair of parameters is given to the function as an input, the function
-calculates the rest.  Apart from the various masses and chirptimes the function
-also calculates the chirp mass \f$\mathcal{M}=(\mu^{3} m^{2})^{1/5}\f$ and
-the total chirp time \f$\tau_C\f$ consistent with the approximation chosen:
-
-
-<table align="center" class="doxtable">
-<caption align="top" style="text-align: left; font-weight: normal;">
-Table II: \f$t_C\f$ will be set according to the PN order chosen in <tt>params->approximant.</tt>
-</caption>
-<tr><th></th><th>Newtonian</th><th>onePN</th><th>onePointFivePN</th><th>twoPN</th><th>twoPointFivePN</th></tr>
-<tr><td>\f$\tau_C\f$</td><td>\f$\tau_0\f$</td><td>\f$\tau_0 + \tau_2\f$</td><td>\f$\tau_0 + \tau_2-\tau_3\f$
-</td><td>\f$\tau_0 + \tau_2-\tau_3 + \tau_4\f$</td><td>\f$\tau_0 + \tau_2-\tau_3 + \tau_4 - \tau_5\f$</td></tr>
-</table>
-
-\heading{Algorithm}
-Root finding by bisection method is used to solve for mass ratio \f$\eta\f$ when
-chirptimes \f$(\tau_0,\, \tau_2)\f$ or \f$(\tau_0,\, \tau_4)\f$ is input.
-
-\heading{Uses}
-When appropriate this function calls:
-<code>
-XLALDBisectionFindRoot()
-XLALEtaTau02()
-XLALEtaTau04()
-</code>
-
-\heading{Notes}
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Given a pair of masses (or other equivalent parameters) compute
+ * related chirp parameters.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>XLALInspiralParameterCalc()</tt>
+ * <ul>
+ * <li>\c params: Input/Output, given a pair of binary parameters and a lower
+ * frequency cutoff, other equivalent parameters are computed by this function.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * The code takes as its input <tt>params->fLower</tt> in Hz and
+ * a pair of masses (in units of \f$M_\odot\f$) or chirptimes (in seconds measured from <tt>params->fLower</tt>)
+ * and computes all the other {\em mass} parameters in the \c params structure.
+ * Users choice of input pair of {\em masses} should be specified by appropriately setting
+ * the variable <tt>params->massChoice</tt> as described in the Table below:
+ *
+ * <table align="center" class="doxtable">
+ * <caption align="top" style="text-align: left; font-weight: normal;">
+ * Table I. For a given <tt>params->massChoice</tt> in column 1 the user should specify the
+ * parameters as in column 2, in units as in column 3. Column 4 gives the conventional meaning
+ * of the parameters. Chirp times are measured from a lower frequency cutoff given
+ * in <tt>params->fLower.</tt></caption>
+ * <tr><th><tt>params->massChoice</tt></th><th>User should set</th><th>in units</th><th>which means</th></tr>
+ * <tr><td>m1Andm2</td><td>(<tt>mass1, mass2</tt>)</td><td>\f$(M_\odot, M_\odot)\f$</td><td>\f$(m_1,m_2)\f$</td></tr>
+ * <tr><td>totalMassAndEta</td><td>(<tt>totalmass, eta</tt>)</td><td>\f$(M_\odot, 0 < \eta \le 1/4)\f$</td><td>\f$(m, \eta)\f$</td></tr>
+ * <tr><td>totalMassAndMu</td><td>(<tt>totalmass, mu</tt>)</td><td>\f$(M_\odot, M_\odot)\f$</td><td>\f$(m, \mu)\f$</td></tr>
+ * <tr><td>t02</td><td>(<tt>t0, t2</tt>)</td><td>(sec, sec)</td><td>\f$(\tau_0, \tau_2)\f$</td></tr>
+ * <tr><td>t03</td><td>(<tt>t0, t3</tt>)</td><td>(sec, sec)</td><td>\f$(\tau_0, \tau_3)\f$</td></tr>
+ * <tr><td>t04</td><td>(<tt>t0, t4</tt>)</td><td>(sec, sec)</td><td>\f$(\tau_0, \tau_4)\f$</td></tr>
+ * </table>
+ *
+ * If \c massChoice is not set properly an error condition will occur and
+ * the function is aborted with status code defined by
+ * #LALINSPIRALH_EMASSCHOICE in \ref LALInspiral.h.
+ * In the above list \f$m_{1}\f$ and \f$m_{2}\f$ are the masses of
+ * the two compact objects, \f$m=m_{1}+m_{2}\f$ is the total
+ * mass, \f$\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}\f$ is the
+ * symmetric mass ratio, \f$\mu=m_{1}m_{2}/(m_{1}+m_{2})\f$ is
+ * the reduced mass and \f$\tau\f$'s are the chirptimes
+ * defined in terms of \f$f_{a}\f$=\c fLower by:
+ * \f{eqnarray}{
+ * \tau_{0} = \frac{5}{256 \eta m^{5/3} (\pi f_{a})^{8/3}}, \ \ \
+ * \tau_{2} = \frac{(3715 + 4620 \eta)}{64512 \eta m (\pi f_{a})^{2}}, \ \ \
+ * \tau_{3} = \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}\nonumber \\
+ * \tau_{4} = \frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} +
+ * \frac{5429}{1008} \eta + \frac{617}{144} \eta^{2} \right],\ \ \
+ * \tau_5 = \frac {5}{256\eta f_a}  \left (\frac {7729}{252} + \eta \right ).
+ * \f}
+ * %% Beyond 2.5 PN order, chirp times do not have an
+ * %% explicit expression in terms of the masses and \f$f_a.\f$
+ * Whichever pair of parameters is given to the function as an input, the function
+ * calculates the rest.  Apart from the various masses and chirptimes the function
+ * also calculates the chirp mass \f$\mathcal{M}=(\mu^{3} m^{2})^{1/5}\f$ and
+ * the total chirp time \f$\tau_C\f$ consistent with the approximation chosen:
+ *
+ * <table align="center" class="doxtable">
+ * <caption align="top" style="text-align: left; font-weight: normal;">
+ * Table II: \f$t_C\f$ will be set according to the PN order chosen in <tt>params->approximant.</tt>
+ * </caption>
+ * <tr><th></th><th>Newtonian</th><th>onePN</th><th>onePointFivePN</th><th>twoPN</th><th>twoPointFivePN</th></tr>
+ * <tr><td>\f$\tau_C\f$</td><td>\f$\tau_0\f$</td><td>\f$\tau_0 + \tau_2\f$</td><td>\f$\tau_0 + \tau_2-\tau_3\f$
+ * </td><td>\f$\tau_0 + \tau_2-\tau_3 + \tau_4\f$</td><td>\f$\tau_0 + \tau_2-\tau_3 + \tau_4 - \tau_5\f$</td></tr>
+ * </table>
+ *
+ * ### Algorithm ###
+ *
+ * Root finding by bisection method is used to solve for mass ratio \f$\eta\f$ when
+ * chirptimes \f$(\tau_0,\, \tau_2)\f$ or \f$(\tau_0,\, \tau_4)\f$ is input.
+ *
+ * ### Uses ###
+ *
+ * When appropriate this function calls:
+ * <code>
+ * XLALDBisectionFindRoot()
+ * XLALEtaTau02()
+ * XLALEtaTau04()
+ * </code>
+ *
+ * ### Notes ###
+ *
+ */
 
 
 

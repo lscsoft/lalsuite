@@ -19,12 +19,12 @@
 */
 
 /**
-\file
-\ingroup LALInspiral_h
-
+ * \file
+ * \ingroup LALInspiral_h
+ *
  * \brief Module to generate generic spinning binaries waveforms complete with ring-down
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALPSpinInspiralRD()</tt>
  * <dl>
@@ -33,7 +33,6 @@
  * <dt>params:</dt><dd> Input containing binary chirp parameters.</dd>
  * </dl>
  *
- *
  * <tt>LALPSpinInspiralRDTemplates()</tt>
  * <dl>
  * <dt>status:</dt><dd>Input/Output
@@ -41,7 +40,6 @@
  * <dt>signalvec2:</dt><dd>Output containing the \f$\times\f$ inspiral waveform.</dd>
  * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
  * </dl>
- *
  *
  * <tt>LALPSpinInspiralRDInjection()</tt>
  * <dl>
@@ -57,7 +55,8 @@
  * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
  * </dl>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This codes provide complete waveforms for generically spinning binary systems.
  * In order to construct the waveforms three phases are joined together:
  * an initial inspiral phase, a phenomenological phase encompassing the description
@@ -71,9 +70,11 @@
  * ensure continuity of the phase, the frequency and its first and second
  * derivatives. Finally a ring-down phase is attached.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * LALPSpinInspiralRDderivatives()
  * LALInspiralSetup()
@@ -90,11 +91,12 @@
  * XLALSpinInspiralFillH4Modes()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
-*/
+ */
 
-/** \defgroup psird Complete phenomenological spin-inspiral waveforms
+/**
+ * \defgroup psird Complete phenomenological spin-inspiral waveforms
  * \ingroup ch_inspiral
  *
  * This code provides complete waveforms for generically spinning binary

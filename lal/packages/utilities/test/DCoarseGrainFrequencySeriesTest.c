@@ -41,89 +41,89 @@
 #include "CheckStatus.h"
 
 /**
-   \file
-   \ingroup CoarseGrainFrequencySeries_h
-   \author UTB Relativity Group; contact whelan@phys.utb.edu
-
-
-   \brief Test suite for <tt>LALDCoarseGrainFrequencySeries()</tt>.
-
-\heading{Usage}
-\code
-./DCoarseGrainFrequencySeriesTest
-Options:
-  -h             print usage message
-  -q             quiet: run silently
-  -v             verbose: print extra information
-  -d level       set lalDebugLevel to level
-  -i filename    read fine grained series from file filename
-  -o filename    print coarse grained  series to file filename
-  -n length      input series contains length points
-  -m length      output series contains length points
-  -e deltaF      set coarse grained frequency spacing to deltaF
-  -f f0          set start frequency of output to f0
-\endcode
-
-\heading{Description}
-
-This program tests the routine
-<tt>LALDCoarseGrainFrequencySeries()</tt>, which coarse-grains a
-frequency series.
-
-First, it tests that the correct error codes
-(cf \ref CoarseGrainFrequencySeries_h
-are generated for the following error conditions (tests in
-\e italics are not performed if \c LAL_NDEBUG is set, as
-the corresponding checks in the code are made using the ASSERT macro):
-<ul>
-<li> <em>null pointer to output series</em></li>
-<li> <em>null pointer to input series</em></li>
-<li> <em>null pointer to data member of output series</em></li>
-<li> <em>null pointer to data member of input series</em></li>
-<li> <em>null pointer to data member of data member of input series</em></li>
-<li> <em>null pointer to data member of data member of output series</em>
-</li>
-<li> <em>zero length</em></li>
-<li> <em>negative frequency spacing</em></li>
-<li> <em>zero frequency spacing</em></li>
-</ul>
-
-It then verifies that the correct
-values are obtained for some simple test cases
-<ul>
-<li> \f$\{h_\ell'\}=\{0,1,2,3,4,5,6,7\}\f$, \f$f'_0=f_0\f$, \f$\delta f'=1\f$, \f$\delta
-f=2\f$, \f$N=3\f$; the expected output is \f$\{h_k\}=\{1/2,2,4,6\}\f$.</li>
-<li> \f$\{h_\ell'\}=\{0,1,2,3,4,5,6,7\}\f$, \f$f'_0=f_0\f$, \f$\delta f'=1\f$, \f$\delta
-f=3\f$, \f$N=3\f$; the expected output is \f$\{h_k\}=\{2/3,3,6\}\f$.</li>
-</ul>
-For each successful test (both of these valid data and the invalid
-ones described above), it prints \c PASS to standard output;
-if a test fails, it prints \c FAIL.
-
-If the \c filename arguments are present, it also reads a
-frequency series from a file, calls
-<tt>LALDCoarseGrainFrequencySeries()</tt>, and writes the results to
-the specified output file.
-
-\heading{Notes}
-
-<ul>
-<li> In addition to the error checks tested in this routine, the
-  function checks for errors related to inconsistency of coarse
-  graining parameters.  Tests of these error checks are still to be
-  added to this test program.</li>
-<li> No specific error checking is done on user-specified data.  If
-  \c length is missing, the resulting default will cause a bad
-  data error.</li>
-<li> The length of the user-provided series must be specified, even
-  though it could in principle be deduced from the input file, because
-  the data sequences must be allocated before the
-  <tt>LALDReadFrequencySeries()</tt> function is called.</li>
-<li> If one \c filename argument, but not both, is present,
-  the user-specified data will be silently ignored.</li>
-</ul>
-
-*/
+ * \file
+ * \ingroup CoarseGrainFrequencySeries_h
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ *
+ * \brief Test suite for <tt>LALDCoarseGrainFrequencySeries()</tt>.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ./DCoarseGrainFrequencySeriesTest
+ * Options:
+ * -h             print usage message
+ * -q             quiet: run silently
+ * -v             verbose: print extra information
+ * -d level       set lalDebugLevel to level
+ * -i filename    read fine grained series from file filename
+ * -o filename    print coarse grained  series to file filename
+ * -n length      input series contains length points
+ * -m length      output series contains length points
+ * -e deltaF      set coarse grained frequency spacing to deltaF
+ * -f f0          set start frequency of output to f0
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program tests the routine
+ * <tt>LALDCoarseGrainFrequencySeries()</tt>, which coarse-grains a
+ * frequency series.
+ *
+ * First, it tests that the correct error codes
+ * (cf \ref CoarseGrainFrequencySeries_h
+ * are generated for the following error conditions (tests in
+ * \e italics are not performed if \c LAL_NDEBUG is set, as
+ * the corresponding checks in the code are made using the ASSERT macro):
+ * <ul>
+ * <li> <em>null pointer to output series</em></li>
+ * <li> <em>null pointer to input series</em></li>
+ * <li> <em>null pointer to data member of output series</em></li>
+ * <li> <em>null pointer to data member of input series</em></li>
+ * <li> <em>null pointer to data member of data member of input series</em></li>
+ * <li> <em>null pointer to data member of data member of output series</em>
+ * </li>
+ * <li> <em>zero length</em></li>
+ * <li> <em>negative frequency spacing</em></li>
+ * <li> <em>zero frequency spacing</em></li>
+ * </ul>
+ *
+ * It then verifies that the correct
+ * values are obtained for some simple test cases
+ * <ul>
+ * <li> \f$\{h_\ell'\}=\{0,1,2,3,4,5,6,7\}\f$, \f$f'_0=f_0\f$, \f$\delta f'=1\f$, \f$\delta
+ * f=2\f$, \f$N=3\f$; the expected output is \f$\{h_k\}=\{1/2,2,4,6\}\f$.</li>
+ * <li> \f$\{h_\ell'\}=\{0,1,2,3,4,5,6,7\}\f$, \f$f'_0=f_0\f$, \f$\delta f'=1\f$, \f$\delta
+ * f=3\f$, \f$N=3\f$; the expected output is \f$\{h_k\}=\{2/3,3,6\}\f$.</li>
+ * </ul>
+ * For each successful test (both of these valid data and the invalid
+ * ones described above), it prints \c PASS to standard output;
+ * if a test fails, it prints \c FAIL.
+ *
+ * If the \c filename arguments are present, it also reads a
+ * frequency series from a file, calls
+ * <tt>LALDCoarseGrainFrequencySeries()</tt>, and writes the results to
+ * the specified output file.
+ *
+ * ### Notes ###
+ *
+ * <ul>
+ * <li> In addition to the error checks tested in this routine, the
+ * function checks for errors related to inconsistency of coarse
+ * graining parameters.  Tests of these error checks are still to be
+ * added to this test program.</li>
+ * <li> No specific error checking is done on user-specified data.  If
+ * \c length is missing, the resulting default will cause a bad
+ * data error.</li>
+ * <li> The length of the user-provided series must be specified, even
+ * though it could in principle be deduced from the input file, because
+ * the data sequences must be allocated before the
+ * <tt>LALDReadFrequencySeries()</tt> function is called.</li>
+ * <li> If one \c filename argument, but not both, is present,
+ * the user-specified data will be silently ignored.</li>
+ * </ul>
+ *
+ */
 
 /**\name Error Codes */
 /*@{*/

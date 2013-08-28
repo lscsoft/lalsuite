@@ -23,7 +23,8 @@
  *
  * \brief Low-level routines for manipulating frame data streams.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <stdio.h>
  * #include <lal/LALFrStream.h>
@@ -35,7 +36,7 @@
  * similar to the standard C file stream manipulation routines and perform
  * similar functions.
  *
-*/
+ */
 
 #include <stdio.h>
 #include <lal/LALDatatypes.h>

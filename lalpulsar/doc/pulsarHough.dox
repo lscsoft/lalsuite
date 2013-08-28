@@ -1,52 +1,52 @@
 // -*- mode: c -*-
 
 /**
-   \addtogroup pkg_pulsarHough
-   \brief Routines implementing the Hough-transform as a search-method for unknown pulsars.
-   \author Alicia M. Sintes, M. Alessandra Papa., Krishnan, B.
-
-The  hierarchical Hough transform search strategy is
-an efficient and highly parallel computer algorithm
-\ref Schutz1998, \ref Papa2001.
-This package provides the necessary routines for the Hough incoherent search
-(the second stage of the search) to track the frequency evolution of
-peaks in the spectra, which is known in advance for some choice of the
-source parameters.
-
-<i>The Hough transform</i> is  a transformation
-between the data and the space of parameters that describe the signal.
-
-\par Input:
-Set of points in time-frequency plane that have been obtained
-from the demodulated FT.
-The demodulation  has been performed with respect to a certain sky
-location and certain spin-down parameters,
-in such a way  that, if a source was located in
-the center of the patch and having the same spin-down parameters
-for which it has been
-demodulated, we will observe a set of points forming a horizontal
-line at the intrinsic frequency  of the source \f$f_0\f$.
-Due to the mismatch between the source  parameters
-and the demodulated parameters we will observe a certain pattern in the time
-frequency diagram following the<i>Hough transform master equation</i>.
-
-\par Output:
-Histograms in the parameter space:
-for each \f$f_0\f$, residual spin-down and refined sky location.
-
-The principle is the following: for every point in the <i>time-frequency</i>
-plane, we enhance the number count in the  histogram in the pixels
-that are <i>consistent</i>. At the end of this procedure, significant
-clustering in a pixel in parameter space indicates likelihood of the
-data containing a signal having the parameters of that pixel.
-
-The package  is organized under the modules
-\ref LUT_h, \ref PHMD_h, \ref HoughMap_h, \ref LALHough_h and
-the files \ref PatchGrid.c, \ref Stereographic.c, \ref ParamPLUT.c, \ref NDParamPLUT.c,
-\ref ConstructPLUT.c, \ref Peak2PHMD.c, \ref HoughMap.c, and \ref DriveHough.c.
-
-<b>Acknowledgment:</b>
-The authors thank S. Frasca and  C. Palomba for helpful discussions,
-F. Massaioli for helping in the initial stages of code development,
-and B. Allen and J. Creighton for their valuable implementation advice.
-*/
+ * \addtogroup pkg_pulsarHough
+ * \brief Routines implementing the Hough-transform as a search-method for unknown pulsars.
+ * \author Alicia M. Sintes, M. Alessandra Papa., Krishnan, B.
+ *
+ * The  hierarchical Hough transform search strategy is
+ * an efficient and highly parallel computer algorithm
+ * \ref Schutz1998, \ref Papa2001.
+ * This package provides the necessary routines for the Hough incoherent search
+ * (the second stage of the search) to track the frequency evolution of
+ * peaks in the spectra, which is known in advance for some choice of the
+ * source parameters.
+ *
+ * <i>The Hough transform</i> is  a transformation
+ * between the data and the space of parameters that describe the signal.
+ *
+ * \par Input:
+ * Set of points in time-frequency plane that have been obtained
+ * from the demodulated FT.
+ * The demodulation  has been performed with respect to a certain sky
+ * location and certain spin-down parameters,
+ * in such a way  that, if a source was located in
+ * the center of the patch and having the same spin-down parameters
+ * for which it has been
+ * demodulated, we will observe a set of points forming a horizontal
+ * line at the intrinsic frequency  of the source \f$f_0\f$.
+ * Due to the mismatch between the source  parameters
+ * and the demodulated parameters we will observe a certain pattern in the time
+ * frequency diagram following the<i>Hough transform master equation</i>.
+ *
+ * \par Output:
+ * Histograms in the parameter space:
+ * for each \f$f_0\f$, residual spin-down and refined sky location.
+ *
+ * The principle is the following: for every point in the <i>time-frequency</i>
+ * plane, we enhance the number count in the  histogram in the pixels
+ * that are <i>consistent</i>. At the end of this procedure, significant
+ * clustering in a pixel in parameter space indicates likelihood of the
+ * data containing a signal having the parameters of that pixel.
+ *
+ * The package  is organized under the modules
+ * \ref LUT_h, \ref PHMD_h, \ref HoughMap_h, \ref LALHough_h and
+ * the files \ref PatchGrid.c, \ref Stereographic.c, \ref ParamPLUT.c, \ref NDParamPLUT.c,
+ * \ref ConstructPLUT.c, \ref Peak2PHMD.c, \ref HoughMap.c, and \ref DriveHough.c.
+ *
+ * \par Acknowledgment:
+ * The authors thank S. Frasca and  C. Palomba for helpful discussions,
+ * F. Massaioli for helping in the initial stages of code development,
+ * and B. Allen and J. Creighton for their valuable implementation advice.
+ */

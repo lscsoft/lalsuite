@@ -36,8 +36,9 @@ extern "C" {
 /* (2x) Highest available PN order - UPDATE IF NEW ORDERS ADDED!!*/
 #define LAL_MAX_PN_ORDER 8
 
-/** Enum that specifies the PN approximant to be used in computing the waveform.
-*/
+/**
+ * Enum that specifies the PN approximant to be used in computing the waveform.
+ */
 typedef enum {
    TaylorT1, 		/**< Time domain Taylor approximant in which the energy and flux are both kept
                          * as Taylor expansions and a first order ordinary differential equation is solved
@@ -765,8 +766,8 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 		);
 
 /**
- * Given time series for a binary's orbital dynamical variables, 
- * construct the waveform polarizations h+ and hx as a sum of 
+ * Given time series for a binary's orbital dynamical variables,
+ * construct the waveform polarizations h+ and hx as a sum of
  * -2 spin-weighted spherical harmonic modes, h_lm.
  * NB: Valid only for non-precessing systems!
  *
@@ -791,17 +792,17 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 		);
 
 /**
- * Given time series for a binary's orbital dynamical variables, 
+ * Given time series for a binary's orbital dynamical variables,
  * construct the waveform polarizations h+ and hx directly.
  * NB: Valid only for non-precessing binaries!
  *
  * Implements Equations (8.8) - (8.10) of:
- * Luc Blanchet, Guillaume Faye, Bala R. Iyer and Siddhartha Sinha, 
- * \"The third post-Newtonian gravitational wave polarisations 
- * and associated spherical harmonic modes for inspiralling compact binaries 
+ * Luc Blanchet, Guillaume Faye, Bala R. Iyer and Siddhartha Sinha,
+ * \"The third post-Newtonian gravitational wave polarisations
+ * and associated spherical harmonic modes for inspiralling compact binaries
  * in quasi-circular orbits\", Class. Quant. Grav. 25 165003 (2008);
  * arXiv:0802.1249
- * 
+ *
  * Note however, that we do not include the constant \"memory\" terms
  */
 
@@ -822,18 +823,18 @@ int XLALSimInspiralPNPolarizationWaveforms(
  * Computes polarizations h+ and hx for a spinning, precessing binary
  * when provided time series of all the dynamical quantities.
  * Amplitude can be chosen between 1.5PN and Newtonian orders (inclusive).
- * 
+ *
  * Based on K.G. Arun, Alesssandra Buonanno, Guillaume Faye and Evan Ochsner
- * \"Higher-order spin effects in the amplitude and phase of gravitational 
- * waveforms emitted by inspiraling compact binaries: Ready-to-use 
+ * \"Higher-order spin effects in the amplitude and phase of gravitational
+ * waveforms emitted by inspiraling compact binaries: Ready-to-use
  * gravitational waveforms\", Phys Rev. D 79, 104023 (2009), arXiv:0810.5336
- * 
+ *
  * HOWEVER, the formulae have been adapted to use the output of the so-called
- * \"Frameless\" convention for evolving precessing binary dynamics, 
+ * \"Frameless\" convention for evolving precessing binary dynamics,
  * which is not susceptible to hitting coordinate singularities.
  *
  * FIXME: Clean up and commit Mathematica NB Showing correctness. Cite here.
- * 
+ *
  * NOTE: The vectors MUST be given in the so-called radiation frame where
  * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
  */
@@ -931,34 +932,34 @@ int XLALSimInspiralImplementedFDApproximants(
     Approximant approximant /**< post-Newtonian approximant for use in waveform production */
     );
 
-/** 
- * XLAL function to determine approximant from a string.  The string need not 
+/**
+ * XLAL function to determine approximant from a string.  The string need not
  * match exactly, only contain a member of the Approximant enum.
  */
 int XLALGetApproximantFromString(const CHAR *inString);
 
-/** 
- * XLAL function to determine string from approximant enum.  
- * This function needs to be updated when new approximants are added. 
+/**
+ * XLAL function to determine string from approximant enum.
+ * This function needs to be updated when new approximants are added.
  */
 char* XLALGetStringFromApproximant(Approximant approximant);
 
-/** 
- * XLAL function to determine PN order from a string.  The string need not 
+/**
+ * XLAL function to determine PN order from a string.  The string need not
  * match exactly, only contain a member of the LALPNOrder enum.
  */
 int XLALGetOrderFromString(const CHAR *inString);
 
-/** 
- * XLAL function to determine tapering flag from a string.  The string must 
- * match exactly with a member of the LALSimInspiralApplyTaper enum. 
+/**
+ * XLAL function to determine tapering flag from a string.  The string must
+ * match exactly with a member of the LALSimInspiralApplyTaper enum.
  */
 int XLALGetTaperFromString(const CHAR *inString);
 
-/** 
+/**
  * XLAL function to determine LALSimInspiralInteraction from a string.
  *
- * TODO: return the bit sum if the string is a concatenation of several 
+ * TODO: return the bit sum if the string is a concatenation of several
  * interaction terms. Also make names match cases of enum.
  */
 int XLALGetInteractionFromString(const CHAR *inString);
@@ -966,7 +967,7 @@ int XLALGetInteractionFromString(const CHAR *inString);
 /** XLAL function to determine axis choice flag from a string */
 int XLALGetFrameAxisFromString(const CHAR *inString);
 
-/** 
+/**
  * XLAL function to determine mode flag from a string.
  * Returns one of enum values as name matches case of enum.
  */
@@ -1810,29 +1811,29 @@ int XLALSimInspiralSpinTaylorF2(
 	);
 
 /**
- * Functions for generic spinning waveforms. 
- * Reproduce and extend old SpinTaylor(Frameless) and SQTPN waveforms 
+ * Functions for generic spinning waveforms.
+ * Reproduce and extend old SpinTaylor(Frameless) and SQTPN waveforms
  */
 
 /**
- * This function evolves the orbital equations for a precessing binary using 
+ * This function evolves the orbital equations for a precessing binary using
  * the \"TaylorT1/T2/T4\" approximant for solving the orbital dynamics
  * (see arXiv:0907.0700 for a review of the various PN approximants).
  *
- * It returns time series of the \"orbital velocity\", orbital phase, 
+ * It returns time series of the \"orbital velocity\", orbital phase,
  * and components for both individual spin vectors, the \"Newtonian\"
  * orbital angular momentum (which defines the instantaneous plane)
  * and \"E1\", a basis vector in the instantaneous orbital plane.
  * Note that LNhat and E1 completely specify the instantaneous orbital plane.
  * It also returns the time and phase of the final time step
  *
- * For input, the function takes the two masses, the initial orbital phase, 
+ * For input, the function takes the two masses, the initial orbital phase,
  * Components for S1, S2, LNhat, E1 vectors at starting time,
- * the desired time step size, the starting GW frequency, 
+ * the desired time step size, the starting GW frequency,
  * and PN order at which to evolve the phase,
- * 
- * NOTE: All vectors are given in the so-called \"radiation frame\", 
- * where the direction of propagation is the z-axis, the principal \"+\" 
+ *
+ * NOTE: All vectors are given in the so-called \"radiation frame\",
+ * where the direction of propagation is the z-axis, the principal \"+\"
  * polarization axis is the x-axis, and the y-axis is given by the RH rule.
  * You must give the initial values in this frame, and the time series of the
  * vector components will also be returned in this frame
@@ -1885,23 +1886,23 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
  *
  * This routine allows the user to specify different pN orders
  * for the phasing and amplitude of the waveform.
- * 
+ *
  * The reference frequency fRef is used as follows:
  * 1) if fRef = 0: The initial values of s1, s2, lnhat and e1 will be the
- *    values at frequency fStart. The orbital phase of the last sample is set
- *    to phiRef (i.e. phiRef is the "coalescence phase", roughly speaking).
- *    THIS IS THE DEFAULT BEHAVIOR CONSISTENT WITH OTHER APPROXIMANTS
- * 
- * 2) If fRef = fStart: The initial values of s1, s2, lnhat and e1 will be the 
- *    values at frequency fStart. phiRef is used to set the orbital phase
- *    of the first sample at fStart.
- * 
+ * values at frequency fStart. The orbital phase of the last sample is set
+ * to phiRef (i.e. phiRef is the "coalescence phase", roughly speaking).
+ * THIS IS THE DEFAULT BEHAVIOR CONSISTENT WITH OTHER APPROXIMANTS
+ *
+ * 2) If fRef = fStart: The initial values of s1, s2, lnhat and e1 will be the
+ * values at frequency fStart. phiRef is used to set the orbital phase
+ * of the first sample at fStart.
+ *
  * 3) If fRef > fStart: The initial values of s1, s2, lnhat and e1 will be the
- *    values at frequency fRef. phiRef is used to set the orbital phase at fRef.
- *    The code will integrate forwards and backwards from fRef and stitch the
- *    two together to create a complete waveform. This allows one to specify
- *    the orientation of the binary in-band (or at any arbitrary point).
- *    Otherwise, the user can only directly control the initial orientation.
+ * values at frequency fRef. phiRef is used to set the orbital phase at fRef.
+ * The code will integrate forwards and backwards from fRef and stitch the
+ * two together to create a complete waveform. This allows one to specify
+ * the orientation of the binary in-band (or at any arbitrary point).
+ * Otherwise, the user can only directly control the initial orientation.
  *
  * 4) fRef < 0 or fRef >= Schwarz. ISCO are forbidden and the code will abort.
  */
@@ -2026,22 +2027,22 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
  * needed to specify binary configuration for ChooseTDWaveform.
  *
  * Input:
- *     thetaJN is the inclination between total angular momentum (J) and the
- *         direction of propagation (N)
- *     theta1 and theta2 are the inclinations of S1 and S2
- *         measured from the Newtonian orbital angular momentum (L_N)
- *     phi12 is the difference in azimuthal angles of S1 and S2.
- *     chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$)
- *     phiJL is the azimuthal angle of L_N on its cone about J.
- *     m1, m2, f_ref are the component masses and reference GW frequency,
- *         they are needed to compute the magnitude of L_N, and thus J.
+ * thetaJN is the inclination between total angular momentum (J) and the
+ * direction of propagation (N)
+ * theta1 and theta2 are the inclinations of S1 and S2
+ * measured from the Newtonian orbital angular momentum (L_N)
+ * phi12 is the difference in azimuthal angles of S1 and S2.
+ * chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$)
+ * phiJL is the azimuthal angle of L_N on its cone about J.
+ * m1, m2, f_ref are the component masses and reference GW frequency,
+ * they are needed to compute the magnitude of L_N, and thus J.
  *
  * Output:
- *     incl - inclination angle of L_N relative to N
- *     x, y, z components of E1 (unit vector in the initial orbital plane)
- *     x, y, z components S1 and S2 (unit spin vectors times their
- *         dimensionless spin magnitudes - i.e. they have unit magnitude for
- *         extremal BHs and smaller magnitude for slower spins).
+ * incl - inclination angle of L_N relative to N
+ * x, y, z components of E1 (unit vector in the initial orbital plane)
+ * x, y, z components S1 and S2 (unit spin vectors times their
+ * dimensionless spin magnitudes - i.e. they have unit magnitude for
+ * extremal BHs and smaller magnitude for slower spins).
  *
  * NOTE: Here the \"total\" angular momentum is computed as
  * J = L_N + S1 + S2
@@ -2129,7 +2130,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
  * Generate the \"reduced-spin templates\" proposed in http://arxiv.org/abs/1107.1267
  * Add the tidal phase terms from http://arxiv.org/abs/1101.1673 (Eqs. 3.9, 3.10)
  * The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
-*/
+ */
 int XLALSimInspiralTaylorF2ReducedSpinTidal(
 		COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
 		const REAL8 phic,        /**< orbital coalescence phase (rad) */
@@ -2148,7 +2149,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
 /**
  * Compute the chirp time of the \"reduced-spin\" templates, described in
  * http://arxiv.org/abs/1107.1267.
-*/
+ */
 REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
 		const REAL8 fStart,  /**< start GW frequency (Hz) */
 		const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
@@ -2169,7 +2170,7 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinComputeChi(
     const REAL8 s2z                          /**< dimensionless spin of companion 2 */
 );
 
-/** 
+/**
  * Compute the template-space metric of \"reduced-spin\" PN templates in
  * Mchirp-eta-chi parameter space.
  */

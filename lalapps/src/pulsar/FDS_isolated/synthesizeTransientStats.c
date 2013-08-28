@@ -18,7 +18,8 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
  * Generate N samples of various statistics (F-stat, B-stat,...) drawn from their
@@ -28,7 +29,7 @@
  * This is based on synthesizeBstat, and is mostly meant to be used for Monte-Carlos
  * studies of ROC curves
  *
- *********************************************************************************/
+ */
 
 /*
  *
@@ -133,7 +134,8 @@ typedef struct {
   INT4 randSeed;	/**< GSL random-number generator seed value to use */
 } UserInput_t;
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
@@ -843,7 +845,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 } /* XLALInitCode() */
 
 
-/** Load Ephemeris from ephemeris data-files
+/**
+ * Load Ephemeris from ephemeris data-files
  */
 EphemerisData *
 XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
@@ -876,7 +879,8 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
 } /* XLALInitEphemeris() */
 
 
-/** Initialize amplitude-prior pdfs from the user-input
+/**
+ * Initialize amplitude-prior pdfs from the user-input
  */
 int
 XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )

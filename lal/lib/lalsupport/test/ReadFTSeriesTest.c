@@ -18,29 +18,30 @@
 */
 
 /**
-   \file
-   \ingroup ReadFTSeries_h
-   \author Torres, C. W.
-
-   \brief Tests the routines in \ref ReadTimeSeries_c and \ref ReadFrequencySeries_c.
-
-   \heading{Usage}
-   \code
-ReadFTSeriesTest
-   \endcode
-
-   \heading{Description}
-
-For each of the real and complex datatypes (single and double
-precision), this program fills a Time- and FrequencySeries, prints
-them to disk with the appropriate
-   \c LALPrint<datatype><tt>FrequencySeries()</tt>
-   and \c LALPrint<datatype><tt>TimeSeries()</tt>
-routines, then reads them back in with the appropriate
-   \c LALRead<datatype><tt>FrequencySeries()</tt>
-   and \c LALRead<datatype><tt>TimeSeries()</tt>
-routines and checks to make sure the resulting series agree, printing the results to standard error.
-*/
+ * \file
+ * \ingroup ReadFTSeries_h
+ * \author Torres, C. W.
+ *
+ * \brief Tests the routines in \ref ReadTimeSeries_c and \ref ReadFrequencySeries_c.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ReadFTSeriesTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * For each of the real and complex datatypes (single and double
+ * precision), this program fills a Time- and FrequencySeries, prints
+ * them to disk with the appropriate
+ * \c LALPrint<datatype><tt>FrequencySeries()</tt>
+ * and \c LALPrint<datatype><tt>TimeSeries()</tt>
+ * routines, then reads them back in with the appropriate
+ * \c LALRead<datatype><tt>FrequencySeries()</tt>
+ * and \c LALRead<datatype><tt>TimeSeries()</tt>
+ * routines and checks to make sure the resulting series agree, printing the results to standard error.
+ */
 
 /**\name Error Codes */ /*@{*/
 #define READFTSERIESTESTC_ENOM 0        /**< Nominal exit */

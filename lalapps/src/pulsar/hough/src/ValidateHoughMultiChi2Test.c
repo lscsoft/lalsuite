@@ -21,12 +21,12 @@
 /**
  * \file
  * \ingroup pulsarApps
- * \author Badri Krishnan, Alicia Sintes 
+ * \author Badri Krishnan, Alicia Sintes
  * \brief Driver code for performing Hough transform search on non-demodulated
-   data using SFTs from possible multiple IFOs
-
-   History: Created by Sancho de la Jordana, Sintes and Krishnan December 15, 2006
-*/
+ * data using SFTs from possible multiple IFOs
+ *
+ * History: Created by Sancho de la Jordana, Sintes and Krishnan December 15, 2006
+ */
 
 
 #include "./DriveHoughColor.h"

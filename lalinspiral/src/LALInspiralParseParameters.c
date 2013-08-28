@@ -18,41 +18,42 @@
 */
 
 /**
-  \author  Cokelaer, T.
-  \file
-  \ingroup LALInspiral_h
-
-  \brief Module to work with the ::InspiralTemplate Structure.
-
-\heading{Description}
-This module is a set of functions to play with the ::InspiralTemplate structure of the
-inspiral package. It allows to set default values to the inspiral strcuture, to parse
-parameters from the inspiral strcuture and to print the inspiral structure.
-
-Has to check and finalized...
-
-<ul>
-<li>  The \c LALInspiralITStructureParseParameters() function allows
-the user to parse string with respect to that structure. Each variable in the
-inspiralTemplate structure might be parse with a string like "--(name of the variable)+(value)"
- i.e. <em>--approximant TaylorT1</em>. Each argument starts with a double dash character
-followed by a key word which is exactly as written in the InspiralTemplate Structure such as
- --order, --mass1, --mass2, --fCutoff ...
-
-Once the string is parsed, the checking function is called.</li>
-
-<li> The \c LALInspiralITStructurePrint() function will print on the stdout the value
-of the InspiralTemplate structure.</li>
-<li> The \c LALInspiralITStructureSetDefault() set default values to the variables.
-Those values are written in the C-code.</li>
-<li> \c LALInspiralITStructureHelp()</li>
-</ul>
-
-
-\heading{Algorithm}
-None
-
-*/
+ * \author  Cokelaer, T.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module to work with the ::InspiralTemplate Structure.
+ *
+ * ### Description ###
+ *
+ * This module is a set of functions to play with the ::InspiralTemplate structure of the
+ * inspiral package. It allows to set default values to the inspiral strcuture, to parse
+ * parameters from the inspiral strcuture and to print the inspiral structure.
+ *
+ * Has to check and finalized...
+ *
+ * <ul>
+ * <li>  The \c LALInspiralITStructureParseParameters() function allows
+ * the user to parse string with respect to that structure. Each variable in the
+ * inspiralTemplate structure might be parse with a string like "--(name of the variable)+(value)"
+ * i.e. <em>--approximant TaylorT1</em>. Each argument starts with a double dash character
+ * followed by a key word which is exactly as written in the InspiralTemplate Structure such as
+ * --order, --mass1, --mass2, --fCutoff ...
+ *
+ * Once the string is parsed, the checking function is called.</li>
+ *
+ * <li> The \c LALInspiralITStructurePrint() function will print on the stdout the value
+ * of the InspiralTemplate structure.</li>
+ * <li> The \c LALInspiralITStructureSetDefault() set default values to the variables.
+ * Those values are written in the C-code.</li>
+ * <li> \c LALInspiralITStructureHelp()</li>
+ * </ul>
+ *
+ * ### Algorithm ###
+ *
+ * None
+ *
+ */
 
 #include <lal/LALInspiral.h>
 #include <lal/StringInput.h>

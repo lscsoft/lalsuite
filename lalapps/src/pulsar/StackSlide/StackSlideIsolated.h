@@ -18,8 +18,8 @@
 */
 
 /**
-\author G. Mendell
-*/
+ * \author G. Mendell
+ */
 
 /* REVISIONS: */
 /* 04/12/05 gam; Move from using StackSlideOld to using StackSlide function. */

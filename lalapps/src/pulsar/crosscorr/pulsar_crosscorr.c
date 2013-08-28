@@ -27,9 +27,10 @@
  *
  * Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp
  *
+ */
 
 
-/ lalapps includes */
+/* lalapps includes */
 #include <lalapps.h>
 #include <pulsar_crosscorr.h>
 #include <lal/PulsarCrossCorr.h>
@@ -1147,9 +1148,11 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 } /* main */
 
 
-/** Set up location of skypatch centers and sizes
-    If user specified skyRegion then use DopplerScan function
-    to construct an isotropic grid. Otherwise use skypatch file. */
+/**
+ * Set up location of skypatch centers and sizes
+ * If user specified skyRegion then use DopplerScan function
+ * to construct an isotropic grid. Otherwise use skypatch file.
+ */
 void SetUpRadiometerSkyPatches(LALStatus           *status,	/**< pointer to LALStatus structure */
 			       SkyPatchesInfo      *out,   /**< output skypatches info */
 			       CHAR                *skyFileName, /**< name of skypatch file */

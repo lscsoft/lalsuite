@@ -154,8 +154,8 @@ static void rotateVector(double a[3], double b[3], double phi, double theta, dou
 
 
 /**
-Generate time-domain generic spinnin PN waveforms in the SpinTaylorT5 approximaton. 
-*/
+ * Generate time-domain generic spinnin PN waveforms in the SpinTaylorT5 approximaton.
+ */
 int XLALSimInspiralSpinTaylorT5 (
 		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
 		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
@@ -370,8 +370,8 @@ int XLALSimInspiralSpinTaylorT5 (
 }
 
 /**
-Evolution of dynamical variables in the SpinTaylorT5 
-*/
+ * Evolution of dynamical variables in the SpinTaylorT5
+ */
 static int XLALSimInspiralSpinTaylorT5Derivatives(
 		double t, 
 		const double y[],
@@ -468,9 +468,9 @@ static int XLALSimInspiralSpinTaylorT5Derivatives(
 }
 
 
-/** 
-Compute the re-expanded (dEnergy/dv)/Flux for generic spinning binaries 
-*/
+/**
+ * Compute the re-expanded (dEnergy/dv)/Flux for generic spinning binaries
+ */
 static REAL8 XLALdEnergyByFluxSpinPrec(
 		double v, 
 		double *chi1, 
@@ -552,8 +552,8 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 }
 
 /**
-Compute the GW polarizations in the radiation frame
-*/
+ * Compute the GW polarizations in the radiation frame
+ */
 static int polarizationsInRadiationFrame(
 		REAL8TimeSeries **hplus,  	/**< +-polarization waveform [returned] */
 		REAL8TimeSeries **hcross, 	/**< x-polarization waveform [returned] */
@@ -665,8 +665,8 @@ static int polarizationsInRadiationFrame(
 }
 
 /**
-Compute the orbital phase as an explicit function of v (TaylorT2 approximant) 
-*/
+ * Compute the orbital phase as an explicit function of v (TaylorT2 approximant)
+ */
 static int computeOrbitalPhase(
         SpinTaylorT5Params *params, 
 		REAL8TimeSeries *V, 
@@ -764,8 +764,8 @@ static int computeOrbitalPhase(
 }
 
 /**
-Initialize the non-dynamical variables required for the SpinTaylorT5 evolution
-*/
+ * Initialize the non-dynamical variables required for the SpinTaylorT5 evolution
+ */
 static int spinTaylorT5Init(
 		REAL8 m1, 
 		REAL8 m2, 
@@ -826,8 +826,8 @@ static int spinTaylorT5Init(
 /**
  * Internal function called by the integration routine.
  * Stops the integration if
- * 		1) The energy decreases with increasing orbital frequency
- *		3) The orbital frequency becomes infinite 
+ * 1) The energy decreases with increasing orbital frequency
+ * 3) The orbital frequency becomes infinite
  */
 static int XLALSimInspiralSpinTaylorT5StoppingTest(
 		double t, 

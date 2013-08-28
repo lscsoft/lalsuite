@@ -56,8 +56,8 @@
 /* local prototypes */
 static void cleanConfig ( char *text );
 
-/** Parse an ASCII data-file into a pre-cleaned array of lines.
- *
+/**
+ * Parse an ASCII data-file into a pre-cleaned array of lines.
  * The cleaning gets rid of comments ('\#', '\%'), empty lines,
  * and performs line-continuation if '\\' is found at EOL
  *
@@ -136,7 +136,8 @@ XLALParseDataFileContent (LALParsedDataFile **cfgdata, 	/**< [out] pre-parsed da
 } // XLALParseDataFileContent()
 
 
-/** Free memory associated with a LALParsedDataFile structure.
+/**
+ * Free memory associated with a LALParsedDataFile structure.
  */
 void
 XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata)	/**< [in] config-file data */
@@ -156,7 +157,8 @@ XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata)	/**< [in] config-file dat
 } /* XLALDestroyParsedDataFile() */
 
 
-/** Function to determine whether a given section secName exists in the parsed
+/**
+ * Function to determine whether a given section secName exists in the parsed
  * config-file contents cfgdata.
  *
  * \note: this function tolerates NULL input as secName, cfgdata, or cfgdata->lines,
@@ -257,16 +259,17 @@ XLALListConfigFileSections ( const LALParsedDataFile *cfgdata )    /**< [in] pre
 
 
 
-/** Parser for config-file: can read config-variables of the form
- *	VARIABLE [=:] VALUE.
+/**
+ * Parser for config-file: can read config-variables of the form
+ * VARIABLE [=:] VALUE.
  * Input is a TokenList containing the 'logical' lines of the cleaned config-file
  *
  * - <tt>param->varName</tt> is the name of the config-variable to read
  * - <tt>param->fmt</tt>     is the format string to use for reading
  *
  * \note a special format-string is FMT_STRING, which means read the whole remaining line
- *   which is different from \"\%s\"! (reads only one word)
- *   In this case, this also does the memory-allocation!
+ * which is different from \"\%s\"! (reads only one word)
+ * In this case, this also does the memory-allocation!
  *
  */
 int
@@ -442,7 +445,8 @@ XLALReadConfigVariable ( void *varp,                      /**< [out] result gets
 } /* XLALReadConfigVariable() */
 
 
-/** Type-specialization of generic reading-function XLALReadConfigVariable() to BOOLEAN variables.
+/**
+ * Type-specialization of generic reading-function XLALReadConfigVariable() to BOOLEAN variables.
  */
 int
 XLALReadConfigBOOLVariable (BOOLEAN *varp,                 /**< [out] variable to store result */
@@ -498,7 +502,8 @@ XLALReadConfigBOOLVariable (BOOLEAN *varp,                 /**< [out] variable t
 } /* XLALReadConfigBOOLVariable() */
 
 
-/** Type-specialization of generic reading-function LALReadConfigVariable() to INT4 variables.
+/**
+ * Type-specialization of generic reading-function LALReadConfigVariable() to INT4 variables.
  */
 int
 XLALReadConfigINT4Variable (INT4 *varp,
@@ -519,7 +524,8 @@ XLALReadConfigINT4Variable (INT4 *varp,
 } /* XLALReadConfigINT4Variable() */
 
 
-/** Type-specialization of generic reading-function LALReadConfigVariable() to REAL8 variables.
+/**
+ * Type-specialization of generic reading-function LALReadConfigVariable() to REAL8 variables.
  */
 int
 XLALReadConfigREAL8Variable (REAL8 *varp,
@@ -540,11 +546,12 @@ XLALReadConfigREAL8Variable (REAL8 *varp,
 } /* XLALReadConfigREAL8Variable() */
 
 
-/** Type-specialization of generic reading-function XLALReadConfigVariable() to
+/**
+ * Type-specialization of generic reading-function XLALReadConfigVariable() to
  * STRING variables
  * \note this means the rest of the line, NOT "%s"! (but excluding comments of course),
  * \par Note2: if string is quoted by ", everything within quotes is read,
- *       and the quotes are removed here
+ * and the quotes are removed here
  *
  */
 int
@@ -623,7 +630,8 @@ XLALReadConfigSTRINGVariable (CHAR ** varp,		/**< [out] string, allocated here! 
 } /* XLALReadConfigSTRINGVariable() */
 
 
-/** Type-specialization of generic reading-function XLALReadConfigVariable() to
+/**
+ * Type-specialization of generic reading-function XLALReadConfigVariable() to
  * reading of <em>fixed-length</em> strings.
  * Another variant of string-reading:similar to ReadConfigSTRINGVariable(), but
  * here a fixed-size CHAR-array is used as input, no memory is allocated by
@@ -632,11 +640,11 @@ XLALReadConfigSTRINGVariable (CHAR ** varp,		/**< [out] string, allocated here! 
  * (this is basically a wrapper for ReadConfigSTRINGVariable())
  *
  * \par Note 2: the behaviour is similar to strncpy, i.e. we silently clip the
- *       string to the right length, BUT we also 0-terminate it properly.
- *       No error or warning is generated when clipping occurs!
+ * string to the right length, BUT we also 0-terminate it properly.
+ * No error or warning is generated when clipping occurs!
  *
  * \par Note 3: at return, the value <tt>varp->length</tt> is set to the length of the
- *              string copied (*including* the trailing 0)
+ * string copied (*including* the trailing 0)
  *
  */
 int
@@ -682,7 +690,8 @@ XLALReadConfigSTRINGNVariable (CHARVector *varp,        /**< [out] must be alloc
 } /* XLALReadConfigSTRINGNVariable() */
 
 
-/** Check if all lines of config-file have been successfully read in
+/**
+ * Check if all lines of config-file have been successfully read in
  * and issue a warning or error (depending on strictness) if not.
  */
 int
@@ -857,7 +866,8 @@ cleanConfig ( char *text )
  * These functions are just wrappers around the XLAL functions
  */
 
-/** \deprecated use XLALParseDataFile() instead
+/**
+ * \deprecated use XLALParseDataFile() instead
  */
 void
 LALParseDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -878,7 +888,8 @@ LALParseDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
 } /* LALLoadConfigFile() */
 
 
-/** \deprecated used XLALDestroyParsedDataFile() instead
+/**
+ * \deprecated used XLALDestroyParsedDataFile() instead
  */
 void
 LALDestroyParsedDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -896,7 +907,8 @@ LALDestroyParsedDataFile (LALStatus *status,		/**< pointer to LALStatus structur
 
 
 
-/** \deprecated use XLALReadConfigVariable() instead
+/**
+ * \deprecated use XLALReadConfigVariable() instead
  */
 void
 LALReadConfigVariable (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -919,7 +931,8 @@ LALReadConfigVariable (LALStatus *status,		/**< pointer to LALStatus structure *
 } /* LALReadConfigVariable() */
 
 
-/** \deprecated use XLALReadConfigBOOLVariable() instead
+/**
+ * \deprecated use XLALReadConfigBOOLVariable() instead
  */
 void
 LALReadConfigBOOLVariable (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -941,7 +954,8 @@ LALReadConfigBOOLVariable (LALStatus *status,		/**< pointer to LALStatus structu
 } /* LALReadConfigBOOLVariable() */
 
 
-/** \deprecated use XLALReadConfigINT4Variable() instead
+/**
+ * \deprecated use XLALReadConfigINT4Variable() instead
  */
 void
 LALReadConfigINT4Variable (LALStatus *status,
@@ -963,7 +977,8 @@ LALReadConfigINT4Variable (LALStatus *status,
 
 } /* LALReadConfigINT4Variable() */
 
-/** \deprecated use XLALReadConfigREAL8Variable() instead
+/**
+ * \deprecated use XLALReadConfigREAL8Variable() instead
  */
 void
 LALReadConfigREAL8Variable (LALStatus *status,
@@ -985,7 +1000,8 @@ LALReadConfigREAL8Variable (LALStatus *status,
 
 } /* LALReadConfigREAL8Variable() */
 
-/** \deprecated use XLALReadConfigSTRINGVariable() instead
+/**
+ * \deprecated use XLALReadConfigSTRINGVariable() instead
  */
 void
 LALReadConfigSTRINGVariable (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -1008,7 +1024,8 @@ LALReadConfigSTRINGVariable (LALStatus *status,		/**< pointer to LALStatus struc
 } /* LALReadConfigSTRINGVariable() */
 
 
-/** \deprecated use XLALReadConfigSTRINGNVariable() instead
+/**
+ * \deprecated use XLALReadConfigSTRINGNVariable() instead
  */
 void
 LALReadConfigSTRINGNVariable (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -1030,7 +1047,8 @@ LALReadConfigSTRINGNVariable (LALStatus *status,	/**< pointer to LALStatus struc
 
 } /* LALReadConfigSTRINGNVariable() */
 
-/** \deprecated use XLALCheckConfigReadComplete() instead
+/**
+ * \deprecated use XLALCheckConfigReadComplete() instead
  */
 void
 LALCheckConfigReadComplete (LALStatus *status,			/**< pointer to LALStatus structure */

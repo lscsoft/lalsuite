@@ -28,36 +28,38 @@ extern "C" {
 
 
 /**
-\addtogroup LALRunningMedian_h
-\author Somya D. Mohanty, B. Machenschalk
-
-\brief Provides routines to efficiently calculate the running median
-
-\heading{Synopsis}
-\code
-#include <lal/LALRunningMedian.h>
-\endcode
-
-This header covers routines to efficiently calculate the
-running median of REAL4 and REAL8 sequences
-
-The routine <tt>LALDRunningMedian()</tt> calculates the running medians of a
-REAL8Sequence. The routine <tt>LALSRunningMedian()</tt> does the same for a REAL4Sequence.
-\c input ist a REAL4/REAL8Sequence containing the input array, \c blocksize
-is the length of the block the medians are calculated of.
-With n being the lenght of the input array and b being the blocksize,
-the medians array must be a REAL4/REAL8 sequence of length (n-b+1).
-<tt>LALDRunningMedian2()</tt> and <tt>LALSRunningMedian2()</tt> are a
-different implentation of the same algorithm. It should behave exactly like
-<tt>LALDRunningMedian()</tt>, but has proven to be a
-little faster and more stable. Check if it works for you.
-\heading{Algorithm}
-
-For a detailed description of the algorithm see the
-LIGO document T-030168-00-D, Somya D. Mohanty:
-Efficient Algorithm for computing a Running Median
-
-*/
+ * \addtogroup LALRunningMedian_h
+ * \author Somya D. Mohanty, B. Machenschalk
+ *
+ * \brief Provides routines to efficiently calculate the running median
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALRunningMedian.h>
+ * \endcode
+ *
+ * This header covers routines to efficiently calculate the
+ * running median of REAL4 and REAL8 sequences
+ *
+ * The routine <tt>LALDRunningMedian()</tt> calculates the running medians of a
+ * REAL8Sequence. The routine <tt>LALSRunningMedian()</tt> does the same for a REAL4Sequence.
+ * \c input ist a REAL4/REAL8Sequence containing the input array, \c blocksize
+ * is the length of the block the medians are calculated of.
+ * With n being the lenght of the input array and b being the blocksize,
+ * the medians array must be a REAL4/REAL8 sequence of length (n-b+1).
+ * <tt>LALDRunningMedian2()</tt> and <tt>LALSRunningMedian2()</tt> are a
+ * different implentation of the same algorithm. It should behave exactly like
+ * <tt>LALDRunningMedian()</tt>, but has proven to be a
+ * little faster and more stable. Check if it works for you.
+ *
+ * ### Algorithm ###
+ *
+ * For a detailed description of the algorithm see the
+ * LIGO document T-030168-00-D, Somya D. Mohanty:
+ * Efficient Algorithm for computing a Running Median
+ *
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -91,11 +93,12 @@ Efficient Algorithm for computing a Running Median
 
 /* Structures. */
 
-/** This is the parameter structure for the LALRunningMedian functions.
-Currently the only parameter supported is the blocksize, the number
-of elements a single median is calculated from. The current
-implementation requires the blocksize to be \< 2.
-*/
+/**
+ * This is the parameter structure for the LALRunningMedian functions.
+ * Currently the only parameter supported is the blocksize, the number
+ * of elements a single median is calculated from. The current
+ * implementation requires the blocksize to be \< 2.
+ */
 typedef struct tagLALRunningMedianPar
 {
   UINT4 blocksize;	/**< the number of elements a single median is calculated from */

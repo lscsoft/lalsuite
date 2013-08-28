@@ -18,159 +18,158 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup pulsarTODO
-
-\heading{Module \ref PulsarCat.c}
-\latexonly\label{ss_PulsarCat_c}\endlatexonly
-
-Manipulates a catalogue of pulsar data.
-
-\heading{Prototypes}
-
-
-\heading{Description}
-
-The routine <tt>LALUpdatePulsarCatNode()</tt> updates all time-varying
-properties of the pulsar system to a new epoch specified by the input
-<tt>*time</tt>.  The interpretation of this input is specified below,
-and can involve the time-varying position of the Earth, as specified
-in <tt>*edat</tt>.  Right ascension and declination are udated based on
-the specified proper motion, and the pulsar frequency and its
-derivatives are updated based on the higher-order derivatives.  For
-companion objects, a new periapsis epoch is chosen that is as close as
-possible (within half an orbit) of the desired epoch, and all other
-time-dependent orbital parameters are updated to this epoch.  All
-updates are done "in place", to eliminate memory usage and
-computation that are, in most cases, unnecessary.
-
-The routine <tt>LALUpdatePulsarCat()</tt> does the same thing as above,
-but to all nodes in the list pointed to by \c head.
-
-The routine <tt>LALDestroyPulsarCat()</tt> iteratively frees all memory
-allocated to the list pointed to by <tt>*head</tt>, and then sets
-<tt>*head</tt> to \c NULL.
-
-\heading{Interpretation of <tt>*time</tt>:} The epoch of a
-catalogue update is specified by a \c LALPlaceAndGPS structure
-<tt>*time</tt>, which contains both a GPS time and a detector site.  The
-interpretation is as follows: The desired properties are those
-properties of the system, as measured by an observer at the solar
-system barycentre, that the system had when it emitted the waves that
-arrive at the specified detector at the specified GPS time.  By
-contrast, the properties listed in the catalogue are those properties
-of the system, as measured by an observer at the solar system
-barycentre, that the system had when it emitted the waves that arrive
-at the solar system barycentre at the GPS time given in the catalogue.
-Having specified (in the <tt>*time</tt> structure) the instant that the
-wave fronts reach the detector, <tt>LALUpdatePulsarCatNode()</tt> first
-computes the time when those waves pass the solar system barycentre,
-and uses that time as the new catalogue epoch.  Thus, after calling
-<tt>LALUpdatePulsarCatNode()</tt>, the GPS times in <tt>*node</tt> will in
-general \e not be the same as the GPS time in <tt>*time</tt>, but
-will differ by a light propagation time.
-
-If the <tt>time->p_detector</tt> field is \c NULL, then
-<tt>time->p_gps</tt> is assumed to be the time when the waves reach the
-solar system barycentre, and the complication described above does not
-arise.  If the <tt>time->p_gps</tt> field is \c NULL, then the
-routine will return an error.  If \c edat is \c NULL, then
-<tt>time->p</tt> must also be \c NULL, or an error is returned.
-
-\heading{Algorithm}
-
-The function <tt>LALUpdatePulsarCatNode()</tt> first computes the
-correct epoch for the pulsar data, taking into account the difference
-between the detector time specified in <tt>*time</tt> and the
-barycentric time specified in <tt>*node</tt>: a propagation time delay
-id computed using <tt>LALTimeDelayFromEarthCenter()</tt>,
-<tt>LALBarycenterEarth()</tt>, and <tt>LALBarycenter()</tt>, with the
-pulsar position taken from <tt>*node</tt> and the Earth ephemeris given
-in <tt>*edat</tt>.  This is done in a loop (since updating the epoch can
-conceivably change the pulsar location), until the correct epoch is
-determined to within \f$3\mu\f$s, the percision of <tt>LALBarycenter()</tt>.
-
-Next, the pulsar location \f$\vec{\lambda}\f$ is updated using its proper
-motions \f$\dot{\vec{\lambda}}\f$, and an uncertainty is computed using
-linear error propagation (assuming uncorrelated position and proper
-motion errors):
-\f{eqnarray}{
-\lambda_i|_{t=t_2} & = & \lambda_i|_{t=t_1} + \dot{\lambda}_i(t_2-t_1)
-	\;,\nonumber\\
-\sigma_{\lambda_i}|_{t=t_2} & = & \sqrt{
-	\left[\sigma_{\lambda_i}|_{t=t_2}\right]^2 +
-	\left[\sigma_{\dot{\lambda}_i} (t_2-t_1)\right]^2}
-	\;,\nonumber
-\f}
-where \f$t_1\f$ is the old position epoch and \f$t_2\f$ is the new epoch.
-Similarly, the \f$k^\mathrm{th}\f$ frequency derivative
-\f$f^{(k)}=d^kf/dt^k\f$ is updated and its uncertainty computed using the
-following formulae:
-\f{eqnarray}{
-f^{(k)}|_{t=t_2} & = & \sum_{j=k}^N \frac{(t_2-t_1)^{j-k}}{(j-k)!}
-	f^{(j)}|_{t=t_1} \;,\nonumber\\
-\sigma_{f^{(k)}}|_{t=t_2} & = & \sqrt{\sum_{j=k}^N
-	\left[\frac{(t_2-t_1)^{j-k}}{(j-k)!}
-	\sigma_{f^{(j)}}|_{t=t_1}\right]^2} \;,\nonumber
-\f}
-where \f$t_1\f$ is the old spin epoch and \f$t_2\f$ is the new epoch.  An
-additional spin uncertainty is assessed based on the assumption that
-there may be unmeasured higher-order derivatives of the spin.  The
-inverse spin timescale \f$\tau^{-1}=\max_{k=1}^N\{(f^{(k)}/f)^{1/k}\}\f$
-is roughly the time that the spin frequency will change by an amount
-comparable to its initial value.  Na\"ively, the next higher frequency
-derivative will be of order \f$f^{(N+1)}\sim f(\tau^{-1})^{N+1}\f$, and
-will introduce a further error in \f$f^{(k)}\f$ equal to: %"
-\f[
-\delta_{f^{(k)}} \approx f\left[\tau^{-1}(t_2-t_1)\right]^{N+1}
-	(t_2-t_1)^{-k} \;.
-\f]
-This uncertainty is added in quadrature to the other errors.
-
-In both position and spin uncertainty calculations, the uncertainty in
-the time shift, \f$\sigma_{\Delta t}\sim3\mu\f$s or \f$\sim10^{-15}\Delta t\f$
-(whichever is larger), is assumed to be negligible.  This is a good
-assumption as long as spin frequencies are much less than 300kHz and
-observation times will not be much greater than spindown timescales.
-
-Finally, the properties of any companion orbits are updated using
-their first time derivatives, under the implicit assumption that
-higher-order derivatives have negligible effects over the interval of
-the update.  In the catalogue, all orbital properties are referred to
-an epoch of periapsis passage \f$t_0\f$.  Keeping only first-order time
-derivative corrections to the period, the number of orbits at some
-later time \f$t_0+\Delta t\f$ is:
-\f[
-n = \frac{\Delta t}{P_0}\left(1-\frac{\dot{P}t}{2P_0}\right) \;,
-\f]
-where \f$P_0=P(t=t_0)\f$.  This number is rounded to an integer to get a
-periapsis passage near the desired time, and the epoch of this passage
-is determined by inverting the formula (and again expanding only to
-first order):
-\f[
-t = nP_0\left(1+\frac{1}{2}n\dot{P}\right) \;.
-\f]
-Once the new epoch is determined, the period and longitude of
-periapsis will be updated using their first derivatives.
-
-\e Note: I am assuming that the orbital period given in the pulsar
-catalogue is from periapsis to periapsis.  If it is not, then a
-\f$\dot{w}\f$ correction will have to be included when computing the
-updated epoch.
-
-\heading{Uses}
-\code
-lalDebugLevel                 LALConvertSkyCoordinates()
-LALBarycenterEarth()          LALBarycenter()
-LALDDestroyVector()           LALFree()
-\endcode
-
-\heading{Notes}
-
-
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * ### Module \ref PulsarCat.c ###
+ *
+ * Manipulates a catalogue of pulsar data.
+ *
+ * ### Prototypes ###
+ *
+ *
+ * ### Description ###
+ *
+ * The routine <tt>LALUpdatePulsarCatNode()</tt> updates all time-varying
+ * properties of the pulsar system to a new epoch specified by the input
+ * <tt>*time</tt>.  The interpretation of this input is specified below,
+ * and can involve the time-varying position of the Earth, as specified
+ * in <tt>*edat</tt>.  Right ascension and declination are udated based on
+ * the specified proper motion, and the pulsar frequency and its
+ * derivatives are updated based on the higher-order derivatives.  For
+ * companion objects, a new periapsis epoch is chosen that is as close as
+ * possible (within half an orbit) of the desired epoch, and all other
+ * time-dependent orbital parameters are updated to this epoch.  All
+ * updates are done "in place", to eliminate memory usage and
+ * computation that are, in most cases, unnecessary.
+ *
+ * The routine <tt>LALUpdatePulsarCat()</tt> does the same thing as above,
+ * but to all nodes in the list pointed to by \c head.
+ *
+ * The routine <tt>LALDestroyPulsarCat()</tt> iteratively frees all memory
+ * allocated to the list pointed to by <tt>*head</tt>, and then sets
+ * <tt>*head</tt> to \c NULL.
+ *
+ * \par Interpretation of <tt>*time</tt>:
+ * The epoch of a
+ * catalogue update is specified by a \c LALPlaceAndGPS structure
+ * <tt>*time</tt>, which contains both a GPS time and a detector site.  The
+ * interpretation is as follows: The desired properties are those
+ * properties of the system, as measured by an observer at the solar
+ * system barycentre, that the system had when it emitted the waves that
+ * arrive at the specified detector at the specified GPS time.  By
+ * contrast, the properties listed in the catalogue are those properties
+ * of the system, as measured by an observer at the solar system
+ * barycentre, that the system had when it emitted the waves that arrive
+ * at the solar system barycentre at the GPS time given in the catalogue.
+ * Having specified (in the <tt>*time</tt> structure) the instant that the
+ * wave fronts reach the detector, <tt>LALUpdatePulsarCatNode()</tt> first
+ * computes the time when those waves pass the solar system barycentre,
+ * and uses that time as the new catalogue epoch.  Thus, after calling
+ * <tt>LALUpdatePulsarCatNode()</tt>, the GPS times in <tt>*node</tt> will in
+ * general \e not be the same as the GPS time in <tt>*time</tt>, but
+ * will differ by a light propagation time.
+ *
+ * If the <tt>time->p_detector</tt> field is \c NULL, then
+ * <tt>time->p_gps</tt> is assumed to be the time when the waves reach the
+ * solar system barycentre, and the complication described above does not
+ * arise.  If the <tt>time->p_gps</tt> field is \c NULL, then the
+ * routine will return an error.  If \c edat is \c NULL, then
+ * <tt>time->p</tt> must also be \c NULL, or an error is returned.
+ *
+ * ### Algorithm ###
+ *
+ * The function <tt>LALUpdatePulsarCatNode()</tt> first computes the
+ * correct epoch for the pulsar data, taking into account the difference
+ * between the detector time specified in <tt>*time</tt> and the
+ * barycentric time specified in <tt>*node</tt>: a propagation time delay
+ * id computed using <tt>LALTimeDelayFromEarthCenter()</tt>,
+ * <tt>LALBarycenterEarth()</tt>, and <tt>LALBarycenter()</tt>, with the
+ * pulsar position taken from <tt>*node</tt> and the Earth ephemeris given
+ * in <tt>*edat</tt>.  This is done in a loop (since updating the epoch can
+ * conceivably change the pulsar location), until the correct epoch is
+ * determined to within \f$3\mu\f$s, the percision of <tt>LALBarycenter()</tt>.
+ *
+ * Next, the pulsar location \f$\vec{\lambda}\f$ is updated using its proper
+ * motions \f$\dot{\vec{\lambda}}\f$, and an uncertainty is computed using
+ * linear error propagation (assuming uncorrelated position and proper
+ * motion errors):
+ * \f{eqnarray}{
+ * \lambda_i|_{t=t_2} & = & \lambda_i|_{t=t_1} + \dot{\lambda}_i(t_2-t_1)
+ * \;,\nonumber\\
+ * \sigma_{\lambda_i}|_{t=t_2} & = & \sqrt{
+ * \left[\sigma_{\lambda_i}|_{t=t_2}\right]^2 +
+ * \left[\sigma_{\dot{\lambda}_i} (t_2-t_1)\right]^2}
+ * \;,\nonumber
+ * \f}
+ * where \f$t_1\f$ is the old position epoch and \f$t_2\f$ is the new epoch.
+ * Similarly, the \f$k^\mathrm{th}\f$ frequency derivative
+ * \f$f^{(k)}=d^kf/dt^k\f$ is updated and its uncertainty computed using the
+ * following formulae:
+ * \f{eqnarray}{
+ * f^{(k)}|_{t=t_2} & = & \sum_{j=k}^N \frac{(t_2-t_1)^{j-k}}{(j-k)!}
+ * f^{(j)}|_{t=t_1} \;,\nonumber\\
+ * \sigma_{f^{(k)}}|_{t=t_2} & = & \sqrt{\sum_{j=k}^N
+ * \left[\frac{(t_2-t_1)^{j-k}}{(j-k)!}
+ * \sigma_{f^{(j)}}|_{t=t_1}\right]^2} \;,\nonumber
+ * \f}
+ * where \f$t_1\f$ is the old spin epoch and \f$t_2\f$ is the new epoch.  An
+ * additional spin uncertainty is assessed based on the assumption that
+ * there may be unmeasured higher-order derivatives of the spin.  The
+ * inverse spin timescale \f$\tau^{-1}=\max_{k=1}^N\{(f^{(k)}/f)^{1/k}\}\f$
+ * is roughly the time that the spin frequency will change by an amount
+ * comparable to its initial value.  Na\"ively, the next higher frequency
+ * derivative will be of order \f$f^{(N+1)}\sim f(\tau^{-1})^{N+1}\f$, and
+ * will introduce a further error in \f$f^{(k)}\f$ equal to: %"
+ * \f[
+ * \delta_{f^{(k)}} \approx f\left[\tau^{-1}(t_2-t_1)\right]^{N+1}
+ * (t_2-t_1)^{-k} \;.
+ * \f]
+ * This uncertainty is added in quadrature to the other errors.
+ *
+ * In both position and spin uncertainty calculations, the uncertainty in
+ * the time shift, \f$\sigma_{\Delta t}\sim3\mu\f$s or \f$\sim10^{-15}\Delta t\f$
+ * (whichever is larger), is assumed to be negligible.  This is a good
+ * assumption as long as spin frequencies are much less than 300kHz and
+ * observation times will not be much greater than spindown timescales.
+ *
+ * Finally, the properties of any companion orbits are updated using
+ * their first time derivatives, under the implicit assumption that
+ * higher-order derivatives have negligible effects over the interval of
+ * the update.  In the catalogue, all orbital properties are referred to
+ * an epoch of periapsis passage \f$t_0\f$.  Keeping only first-order time
+ * derivative corrections to the period, the number of orbits at some
+ * later time \f$t_0+\Delta t\f$ is:
+ * \f[
+ * n = \frac{\Delta t}{P_0}\left(1-\frac{\dot{P}t}{2P_0}\right) \;,
+ * \f]
+ * where \f$P_0=P(t=t_0)\f$.  This number is rounded to an integer to get a
+ * periapsis passage near the desired time, and the epoch of this passage
+ * is determined by inverting the formula (and again expanding only to
+ * first order):
+ * \f[
+ * t = nP_0\left(1+\frac{1}{2}n\dot{P}\right) \;.
+ * \f]
+ * Once the new epoch is determined, the period and longitude of
+ * periapsis will be updated using their first derivatives.
+ *
+ * \e Note: I am assuming that the orbital period given in the pulsar
+ * catalogue is from periapsis to periapsis.  If it is not, then a
+ * \f$\dot{w}\f$ correction will have to be included when computing the
+ * updated epoch.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel                 LALConvertSkyCoordinates()
+ * LALBarycenterEarth()          LALBarycenter()
+ * LALDDestroyVector()           LALFree()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

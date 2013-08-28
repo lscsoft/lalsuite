@@ -18,38 +18,42 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief Module to generate all the Taylor and Pade coefficients needed in
-waveform generation.
-
-\heading{Prototypes}
-
-<tt>XLALInspiralSetup()</tt>
-<ul>
-<li> \c ak: Output containing PN expansion coefficients of various physical
-quantities such as energy, flux, frequency, phase and timing.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-\heading{Description}
-
-Module to generate all the coefficiants needed in the Taylor and Pade expressions
-for the energy and flux functions \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.
-These are used to solve the gravitational wave phasing formula.
-The coefficients are used by the function \c LALInspiralChooseModel to define
-the energy and flux functions by accessing the structure \c ak and are tabulated
-in the two Tables\tableref{table_energy} and\tableref{table_flux}.
-
-\heading{Algorithm}
-None.
-\heading{Uses}
-None.
-\heading{Notes}
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module to generate all the Taylor and Pade coefficients needed in
+ * waveform generation.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>XLALInspiralSetup()</tt>
+ * <ul>
+ * <li> \c ak: Output containing PN expansion coefficients of various physical
+ * quantities such as energy, flux, frequency, phase and timing.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * Module to generate all the coefficiants needed in the Taylor and Pade expressions
+ * for the energy and flux functions \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.
+ * These are used to solve the gravitational wave phasing formula.
+ * The coefficients are used by the function \c LALInspiralChooseModel to define
+ * the energy and flux functions by accessing the structure \c ak and are tabulated
+ * in the two Tables\tableref{table_energy} and\tableref{table_flux}.
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Uses ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ */
 
 
 

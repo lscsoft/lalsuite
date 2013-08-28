@@ -107,7 +107,8 @@ LogPrintfVerbatim (LogLevel_t level, const char* format, ...)
 } /* LogPrintfVerbatim() */
 
 
-/** prefix the log-message by a timestamp and level
+/**
+ * prefix the log-message by a timestamp and level
  */
 void
 LogPrintf (LogLevel_t level, const char* format, ...)
@@ -122,7 +123,8 @@ LogPrintf (LogLevel_t level, const char* format, ...)
 } /* LogPrintf() */
 
 
-/** Low-level log-printing function: prefix message by timestamp if given.
+/**
+ * Low-level log-printing function: prefix message by timestamp if given.
  */
 void
 LogPrintf_va (LogLevel_t level, const char* format, va_list va )
@@ -169,7 +171,8 @@ LogTimeToString ( double t )
 } /* LogTimeToString() */
 
 
-/** Return time of day (seconds since 1970) as a double.
+/**
+ * Return time of day (seconds since 1970) as a double.
  * Taken from BOINC's dtime():
  *
  */
@@ -245,7 +248,8 @@ LogFormatLevel( LogLevel_t level )
 
 
 
-/** Output gsl_matrix in octave-format, using the given format for the matrix-entries
+/**
+ * Output gsl_matrix in octave-format, using the given format for the matrix-entries
  * return -1 on error, 0 if OK.
  */
 int
@@ -286,7 +290,8 @@ XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij )
 } /* XLALprintGSLmatrix() */
 
 
-/** Output gsl_matrix in octave-format, using the given format for the matrix-entries
+/**
+ * Output gsl_matrix in octave-format, using the given format for the matrix-entries
  * return -1 on error, 0 if OK.
  */
 int
@@ -342,7 +347,8 @@ XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *vect
 } /* XLALprintGSLvector_int() */
 
 
-/** Returns input string with line-breaks '\n' removed (replaced by space)
+/**
+ * Returns input string with line-breaks '\n' removed (replaced by space)
  * The original string is unmodified. The returned string is allocated here.
  */
 char *

@@ -32,7 +32,6 @@
  *
  * The function calc_crc64() here is based on crc64() in SFTReferenceLibrary.c.
  *
- *
  */
 
 /*---------- INCLUDES ----------*/
@@ -177,7 +176,6 @@ int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
  * - 'detector':      	which detector
  * - 'time-span':    	GPS start- and end-times
  * - 'timestamps':    	list of GPS start-times
- *
  *
  * ==> The returned SFTCatalog can be used directly as input to XLALLoadSFTs()
  * to load a single-IFO SFTVector, or XLALLoadMultiSFTs() to load a
@@ -522,7 +520,8 @@ LALSFTdataFind ( LALStatus *status,			/**< pointer to LALStatus structure */
   RETURN(status);
 } /* LALSFTdataFind() */
 
-/** Extract a timstamps-vector from the given SFTCatalog.
+/**
+ * Extract a timstamps-vector from the given SFTCatalog.
  *
  * \note A list of *unique* timestamps is returned, i.e. only a single copy of a timestamp
  * is returned, even if there are multiple occurrances of this timestamp in the catalog,
@@ -743,7 +742,8 @@ typedef struct {
 } SFTReadSegment;
 
 
-/** Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
+/**
+ * Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
  * SFT-'catalogue' ( returned by LALSFTdataFind() ).
  *
  * Note: \a fMin (or \a fMax) is allowed to be set to \c -1, which means to read in all
@@ -759,7 +759,7 @@ typedef struct {
  * Note 4: The 'fudge region' allowing for numerical noise is fudge= 10*LAL_REAL8_EPS ~2e-15
  * relative deviation: ie if the SFT contains a bin at 'fi', then we consider for example
  * "fMin == fi" if  fabs(fi - fMin)/fi < fudge.
-*/
+ */
 SFTVector*
 XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
 	      REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
@@ -1151,7 +1151,8 @@ XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView,/**< The
 } // XLALLoadMultiSFTsFromView()
 
 
-/** Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
+/**
+ * Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
  * SFT-'catalogue' ( returned by LALSFTdataFind() ).
  *
  * Note: \a fMin (or \a fMax) is allowed to be set to \c -1, which means to read in all
@@ -1163,7 +1164,7 @@ XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView,/**< The
  *
  * Note 3: This function has the capability to read sequences of (v2-)SFT segments and
  * putting them together to single SFTs while reading.
-*/
+ */
 void
 LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	      SFTVector **outsfts,	   /**< [out] vector of read-in SFTs */
@@ -1413,16 +1414,17 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 } /* LALLoadSFTs() */
 
 
-/** Function to load a catalog of SFTs from possibly different detectors.
-    This is similar to LALLoadSFTs except that the input SFT catalog is
-    allowed to contain multiple ifos.  The output is the structure
-    MultiSFTVector which is a vector of (pointers to) SFTVectors, one for
-    each ifo found in the catalog.   As in LALLoadSFTs, fMin and fMax can be
-    set to -1 to get the full SFT from the lowest to the highest frequency
-    bin found in the SFT.
-    *
-    * output SFTvectors are sorted alphabetically by detector-name
-    *
+/**
+ * Function to load a catalog of SFTs from possibly different detectors.
+ * This is similar to LALLoadSFTs except that the input SFT catalog is
+ * allowed to contain multiple ifos.  The output is the structure
+ * MultiSFTVector which is a vector of (pointers to) SFTVectors, one for
+ * each ifo found in the catalog.   As in LALLoadSFTs, fMin and fMax can be
+ * set to -1 to get the full SFT from the lowest to the highest frequency
+ * bin found in the SFT.
+ *
+ * output SFTvectors are sorted alphabetically by detector-name
+ *
  */
 void LALLoadMultiSFTs ( LALStatus *status,		/**< pointer to LALStatus structure */
 			MultiSFTVector **out,             /**< [out] vector of read-in SFTs -- one sft vector for each ifo found in catalog*/
@@ -1635,14 +1637,15 @@ void LALLoadMultiSFTs ( LALStatus *status,		/**< pointer to LALStatus structure 
 } /* LALLoadMultiSFTs() */
 
 
-/** Function to check validity of SFTs listed in catalog.
+/**
+ * Function to check validity of SFTs listed in catalog.
  * This function simply reads in those SFTs and checks their CRC64 checksum, which
  * is the only check that has not yet been done by the operations up to this point.
  *
  * Returns the LAL-return code of a failure (or 0 on success) in 'check_result'.
  *
  * \note: because this function has to read the complete SFT-data into memory for the
- *  whole set of matching SFTs, it is potentially slow and memory-intensive.
+ * whole set of matching SFTs, it is potentially slow and memory-intensive.
  *
  * This function will NOT fail if one of the SFT-operations fails, instead it returns
  * the status-code of this failure in 'check_result'. The function will fail, however,
@@ -1839,8 +1842,8 @@ XLALReadMultiTimestampsFiles ( const LALStringVector *fnames )
 
 
 
-/**  [DEPRECATED] Read timestamps file and returns timestamps vector (alloc'ed in here!).
- *
+/**
+ * [DEPRECATED] Read timestamps file and returns timestamps vector (alloc'ed in here!).
  * \deprecated Use XLALReadTimestampsFile() instead.
  */
 void
@@ -1901,8 +1904,9 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
 } /* LALReadTimestampsFile() */
 
 
-/** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a FILE pointer.
- *  Add the comment to SFT if SFTcomment != NULL.
+/**
+ * Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a FILE pointer.
+ * Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
  * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file()
@@ -2003,8 +2007,9 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
 
 } /* XLALWriteSFT2fp() */
 
-/** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
- *  Add the comment to SFT if SFTcomment != NULL.
+/**
+ * Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
+ * Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
  * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file()
@@ -2070,8 +2075,9 @@ LALWriteSFT2file (LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 
-/** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a directory.
- *  Add the comment to SFT if SFTcomment != NULL.
+/**
+ * Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a directory.
+ * Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
  * If you need to write a v1-SFT, you should use LALWriteSFTfile()
@@ -2131,8 +2137,9 @@ LALWriteSFTVector2Dir (LALStatus *status,			/**< pointer to LALStatus structure 
   RETURN (status);
 }
 
-/** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
- *  Add the comment to SFT if SFTcomment != NULL.
+/**
+ * Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
+ * Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: user specifies output directory, but the output SFT-filename follows the SFT-v2 naming convention,
  * see XLALOfficialSFTFilename() for details.
@@ -2165,8 +2172,9 @@ XLALWriteSFTVector2File ( const SFTVector *sftVect,	//!< SFT vector to write to 
 } // XLALWriteSFTVector2File()
 
 
-/** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
- *  Add the comment to SFT if SFTcomment != NULL.
+/**
+ * Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
+ * Add the comment to SFT if SFTcomment != NULL.
  *
  * Allows specifying a filename for the output merged-SFT file.
  */
@@ -2204,12 +2212,13 @@ XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect,	/**< SFT vector to writ
 
 
 
-/** For backwards-compatibility: write a *v2-normalized* (ie dt x DFT) SFTtype
+/**
+ * For backwards-compatibility: write a *v2-normalized* (ie dt x DFT) SFTtype
  * to a v1-SFT file.
  *
  * NOTE: the only difference to WriteSFTfile() is that the data-normalization
- *      is changed back to v1-type 'DFT', by dividing the dt corresponding to the
- *      frequency-band contained in the SFTtype.
+ * is changed back to v1-type 'DFT', by dividing the dt corresponding to the
+ * frequency-band contained in the SFTtype.
  */
 void
 LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structure */
@@ -2263,7 +2272,8 @@ LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structu
 
 
 
-/** [OBSOLETE] Write a *v1-normalized* (i.e. raw DFT) SFTtype to a SFT-v1 file.
+/**
+ * [OBSOLETE] Write a *v1-normalized* (i.e. raw DFT) SFTtype to a SFT-v1 file.
  *
  * \note:only SFT-spec v1.0 is supported, and the SFTtype must follow the
  * *obsolete* v1-normalization. => Use LALWriteSFT2file() to write v2 SFTs !
@@ -2458,7 +2468,8 @@ XLALDestroySFTCatalog ( SFTCatalog *catalog  /**< the 'catalogue' to free */ )
 } /* XLALDestroySFTCatalog() */
 
 
-/** Mostly for *debugging* purposes: provide a user-API to allow inspecting the SFT-locator
+/**
+ * Mostly for *debugging* purposes: provide a user-API to allow inspecting the SFT-locator
  * [which is an OPAQUE entry in the SFTCatalog!]
  *
  * NOTE: this returns a STATIC string, so don't try to FREE it, and make a copy if you need
@@ -2848,7 +2859,8 @@ XLALCheckValidDescriptionField ( const char *desc )
  * OBSOLETE and deprecated SFT-v1 API :
  *================================================================================*/
 
-/** [DEPRECATED] Function to read and return a list of SFT-headers for given
+/**
+ * [DEPRECATED] Function to read and return a list of SFT-headers for given
  * filepattern and start/end times.
  *
  * The \a startTime and \a endTime entries are allowed to be NULL,
@@ -2950,9 +2962,10 @@ LALGetSFTheaders (LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 
-/** [DEPRECATED] Basic SFT reading-function.
- *  Given a filename \a fname and frequency-limits [\a fMin, \a fMax],
- *  returns an SFTtype \a sft containing the SFT-data.
+/**
+ * [DEPRECATED] Basic SFT reading-function.
+ * Given a filename \a fname and frequency-limits [\a fMin, \a fMax],
+ * returns an SFTtype \a sft containing the SFT-data.
  *
  * \note 1) the actual returned frequency-band is
  * <tt>[floor(Tsft * fMin), ceil(Tsft * fMax)] / Tsft</tt>,
@@ -3051,7 +3064,8 @@ LALReadSFTfile (LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 
-/** [DEPRECATED] Higher-level SFT-reading function to read a whole vector of SFT files
+/**
+ * [DEPRECATED] Higher-level SFT-reading function to read a whole vector of SFT files
  * and return an SFTvector \a sftvect. The handling of
  * [fMin, fMax] is identical to LALReadSFTfile().
  *
@@ -3160,8 +3174,8 @@ LALReadSFTfiles (LALStatus *status,			/**< pointer to LALStatus structure */
  * LOW-level internal SFT-handling functions, should *NOT* be used outside this file!
  *================================================================================*/
 
-/** Open an "SFT" defined by the SFT-locator, return a FILE-pointer to the beginning of this SFT.
- *
+/**
+ * Open an "SFT" defined by the SFT-locator, return a FILE-pointer to the beginning of this SFT.
  * \note The returned filepointer could point to an SFT-block within a merged SFT-file,
  * so you should not assume that SEEK_SET takes you to the beginning of this block!
  * (instead you'd have to save the current position returned by this function, which \
@@ -3199,8 +3213,9 @@ fopen_SFTLocator ( const struct tagSFTLocator *locator )
 } /* fopen_SFTLocator() */
 
 
-/** Check the v2 SFT-block starting at fp for valid crc64 checksum.
- *  Restores filepointer before leaving.
+/**
+ * Check the v2 SFT-block starting at fp for valid crc64 checksum.
+ * Restores filepointer before leaving.
  */
 BOOLEAN
 has_valid_v2_crc64 ( FILE *fp )
@@ -3271,7 +3286,8 @@ has_valid_v2_crc64 ( FILE *fp )
 } /* has_valid_v2_crc64 */
 
 
-/** [DEPRECATED]: Low-level function to read only the SFT-header of a given file.
+/**
+ * [DEPRECATED]: Low-level function to read only the SFT-header of a given file.
  *
  * NOTE: don't use! This function is obsolete and SFT-v1-specific and only kept for
  * backwards-compatibility with Hough-codes.
@@ -3402,12 +3418,13 @@ LALReadSFTheader (LALStatus  *status,			/**< pointer to LALStatus structure */
 
 
 
-/** [DEPRECATED] This is a function for low-level SFT data-reading:
+/**
+ * [DEPRECATED] This is a function for low-level SFT data-reading:
  * the SFT-data is read starting from fminBinIndex and filled
  * into the pre-allocate vector sft of length N
  *
  * NOTE: !! NO re-normalization is done here!! this remains up
- *       to the caller of this function!!
+ * to the caller of this function!!
  *
  */
 void
@@ -3622,7 +3639,8 @@ consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTty
 } /* consistent_mSFT_header() */
 
 
-/** Read bins from an SFT, leave filepointer at the end of the read SFT if successful,
+/**
+ * Read bins from an SFT, leave filepointer at the end of the read SFT if successful,
  * leave fp at initial position if failure
  *
  * This uses read_sft_header_from_fp() for reading the header, and then reads the data.
@@ -3640,7 +3658,7 @@ consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTty
  *
  * NOTE2:  The returned SFT is always normalized correctly according to SFT-v2 spec
  * (see LIGO-T040164-01-Z, and LIGO-T010095-00), irrespective of the input-files.
-*/
+ */
 static void
 lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp )
 {
@@ -4760,7 +4778,8 @@ compareDetNameCatalogs ( const void *ptr1, const void *ptr2 )
 
 
 
-/** Read valid SFT version-number at position fp, and determine if we need to
+/**
+ * Read valid SFT version-number at position fp, and determine if we need to
  * endian-swap the data.
  * Restores filepointer to original position before returning.
  *

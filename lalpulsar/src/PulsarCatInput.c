@@ -18,104 +18,99 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup pulsarTODO
-
-\heading{Module \ref PulsarCatInput.c}
-\latexonly\label{ss_PulsarCatInput_c}\endlatexonly
-
-Parses a catalogue of pulsar data.
-
-\heading{Prototypes}
-
-
-
-
-
-\heading{Description}
-
-The routine <tt>LALReadPulsarCatHead()</tt> takes a set of tokens
-<tt>*list</tt> (as generated from an input line by
-<tt>LALCreateTokenList()</tt>, and determines which tokens correspond to
-the pulsar catalogue fields enumerated by <tt>indx[]</tt>: each element
-of <tt>indx[]</tt> stores the number of the corresponding token.  Each
-token should be a field name corresponding to one of the enumeration
-constants in \c PulsarCatIndex (e.g.\ <tt>"RAJ"</tt>,
-<tt>"POSEPOCH"</tt>, <tt>"F"</tt>), or <tt>"e"</tt> to represent an
-uncertainty in the preceding field.  Unrecognized tokens are
-ignored. If any pusar catalogue field does not have a corresponding
-token in <tt>indx[]</tt> is set to \f$-1\f$.
-
-The routine <tt>LALReadPulsarCatLine()</tt> takes the input
-<tt>*line</tt>, splits it into whitespace-separated tokens, and parses
-each token into the corresponding field of <tt>*node</tt>, using
-<tt>indx[]</tt> to determine which tokens correspond to which fields.
-In general, each field has a distinct parsing algorithm, as specified
-below:
-<dl>
-<dt>NAME</dt><dd> A standard B1950 or J2000 pulsar name (e.g.\
-<tt>"B0021-72C"</tt>, <tt>"J0024-7203U"</tt>), copied directly into
-<tt>node->bname</tt> or <tt>node->jname</tt>.</dd>
-<dt>RAJ</dt><dd> J2000 right ascencion in the form
-<tt>"</tt>hours\c :minutes\c :seconds<tt>"</tt>, where hours is a
-signed integer, minutes an unsigned integer, and seconds is an
-unsigned floating-point number in normal place-index notation (i.e.\
-integral part, optional decimal place, and optional fractional part;
-no exponential notation).</dd>
-<dt>DECJ</dt><dd> J2000 declination in the form
-<tt>"</tt>degrees\c :minutes\c :seconds<tt>"</tt>, where degrees
-is a signed integer, minutes an unsigned integer, and seconds is an
-unsigned floating-point number in normal place-index notation (i.e.\
-integral part, optional decimal place, and optional fractional part;
-no exponential notation).</dd>
-<dt>PMRA</dt><dd> Right ascension component of proper motion in
-milliarcseconds per year, as a floating-point number (any notation).</dd>
-<dt>PMDEC</dt><dd> Declination component of proper motion in
-milliarcseconds per year, as a floating-point number (any notation).</dd>
-<dt>POSEPOCH</dt><dd> Epoch of position/proper motion measurements
-in Julian days, as a floating-point number (any notation).  If the
-number is less than 2~million, then it is assumed that the actual
-Julian day is 2~million plus the number given.</dd>
-<dt>F</dt><dd> The pulsar spin frequency in Hz, as a floating-point
-number (any notation).</dd>
-<dt>F1</dt><dd> The first derivative of the pulsar spin frequency
-in Hz\f${}^2\f$, as a floating-point number (any notation).</dd>
-<dt>F2</dt><dd> The pulsar spin frequency in Hz\f${}^3\f$, as a
-floating-point number (any notation).</dd>
-<dt>PEPOCH</dt><dd> Epoch of frequency and frequency-derivative
-measurements in Julian days, as a floating-point number (any
-notation).  If the number is less than 2~million, then it is assumed
-that the actual Julian day is 2~million plus the number given.</dd>
-<dt>e</dt><dd> Uncertainty in any of the preceding quantities.
-This is given as an unsigned integer corresponding to the uncertainty
-in the last 1 or 2 significant digits of the corresponding quantity.
-Thus, the parsing routine for that quantity is also responsible for
-reading its uncertainty, accounting for the number of significant
-digits.</dd>
-</dl>
-An asterisk <tt>*</tt> in any field means that the quantity is not
-measured.  In most cases this means it will be treated as zero.
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALWarning()                  LALStringToU2()
-XLALGPSLeapSeconds()
-LALDCreateVector()            LALDDestroyVector()
-\endcode
-
-\heading{Notes}
-
-At present, <tt>LALLeapSecs()</tt> fails for times prior to the GPS
-epoch (1980-01-06 00:00:00, or JD2444244.5000), which prevents earlier
-Julian dates from being converted into \c LIGOTimeGPS structures.
-Pulsar catalogue entries with epochs earlier than this date will cause
-<tt>LALReadPulsarCatLine()</tt> to fail.
-
-
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * ### Module \ref PulsarCatInput.c ###
+ *
+ * Parses a catalogue of pulsar data.
+ *
+ * ### Prototypes ###
+ *
+ *
+ * ### Description ###
+ *
+ * The routine <tt>LALReadPulsarCatHead()</tt> takes a set of tokens
+ * <tt>*list</tt> (as generated from an input line by
+ * <tt>LALCreateTokenList()</tt>, and determines which tokens correspond to
+ * the pulsar catalogue fields enumerated by <tt>indx[]</tt>: each element
+ * of <tt>indx[]</tt> stores the number of the corresponding token.  Each
+ * token should be a field name corresponding to one of the enumeration
+ * constants in \c PulsarCatIndex (e.g.\ <tt>"RAJ"</tt>,
+ * <tt>"POSEPOCH"</tt>, <tt>"F"</tt>), or <tt>"e"</tt> to represent an
+ * uncertainty in the preceding field.  Unrecognized tokens are
+ * ignored. If any pusar catalogue field does not have a corresponding
+ * token in <tt>indx[]</tt> is set to \f$-1\f$.
+ *
+ * The routine <tt>LALReadPulsarCatLine()</tt> takes the input
+ * <tt>*line</tt>, splits it into whitespace-separated tokens, and parses
+ * each token into the corresponding field of <tt>*node</tt>, using
+ * <tt>indx[]</tt> to determine which tokens correspond to which fields.
+ * In general, each field has a distinct parsing algorithm, as specified
+ * below:
+ * <dl>
+ * <dt>NAME</dt><dd> A standard B1950 or J2000 pulsar name (e.g.\
+ * <tt>"B0021-72C"</tt>, <tt>"J0024-7203U"</tt>), copied directly into
+ * <tt>node->bname</tt> or <tt>node->jname</tt>.</dd>
+ * <dt>RAJ</dt><dd> J2000 right ascencion in the form
+ * <tt>"</tt>hours\c :minutes\c :seconds<tt>"</tt>, where hours is a
+ * signed integer, minutes an unsigned integer, and seconds is an
+ * unsigned floating-point number in normal place-index notation (i.e.\
+ * integral part, optional decimal place, and optional fractional part;
+ * no exponential notation).</dd>
+ * <dt>DECJ</dt><dd> J2000 declination in the form
+ * <tt>"</tt>degrees\c :minutes\c :seconds<tt>"</tt>, where degrees
+ * is a signed integer, minutes an unsigned integer, and seconds is an
+ * unsigned floating-point number in normal place-index notation (i.e.\
+ * integral part, optional decimal place, and optional fractional part;
+ * no exponential notation).</dd>
+ * <dt>PMRA</dt><dd> Right ascension component of proper motion in
+ * milliarcseconds per year, as a floating-point number (any notation).</dd>
+ * <dt>PMDEC</dt><dd> Declination component of proper motion in
+ * milliarcseconds per year, as a floating-point number (any notation).</dd>
+ * <dt>POSEPOCH</dt><dd> Epoch of position/proper motion measurements
+ * in Julian days, as a floating-point number (any notation).  If the
+ * number is less than 2~million, then it is assumed that the actual
+ * Julian day is 2~million plus the number given.</dd>
+ * <dt>F</dt><dd> The pulsar spin frequency in Hz, as a floating-point
+ * number (any notation).</dd>
+ * <dt>F1</dt><dd> The first derivative of the pulsar spin frequency
+ * in Hz\f${}^2\f$, as a floating-point number (any notation).</dd>
+ * <dt>F2</dt><dd> The pulsar spin frequency in Hz\f${}^3\f$, as a
+ * floating-point number (any notation).</dd>
+ * <dt>PEPOCH</dt><dd> Epoch of frequency and frequency-derivative
+ * measurements in Julian days, as a floating-point number (any
+ * notation).  If the number is less than 2~million, then it is assumed
+ * that the actual Julian day is 2~million plus the number given.</dd>
+ * <dt>e</dt><dd> Uncertainty in any of the preceding quantities.
+ * This is given as an unsigned integer corresponding to the uncertainty
+ * in the last 1 or 2 significant digits of the corresponding quantity.
+ * Thus, the parsing routine for that quantity is also responsible for
+ * reading its uncertainty, accounting for the number of significant
+ * digits.</dd>
+ * </dl>
+ * An asterisk <tt>*</tt> in any field means that the quantity is not
+ * measured.  In most cases this means it will be treated as zero.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALWarning()                  LALStringToU2()
+ * XLALGPSLeapSeconds()
+ * LALDCreateVector()            LALDDestroyVector()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * At present, <tt>LALLeapSecs()</tt> fails for times prior to the GPS
+ * epoch (1980-01-06 00:00:00, or JD2444244.5000), which prevents earlier
+ * Julian dates from being converted into \c LIGOTimeGPS structures.
+ * Pulsar catalogue entries with epochs earlier than this date will cause
+ * <tt>LALReadPulsarCatLine()</tt> to fail.
+ *
+ */
 
 #include <math.h>
 #include <ctype.h>

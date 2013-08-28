@@ -26,27 +26,27 @@
 #endif
 
 /**
-\author Sathyaprakash, B. S.
-\ingroup LALNoiseModels_h
-\brief Module to calculate the expected noise power spectral density for the GEO600 detector.
-
-\heading{Description}
-
-The module takes as an input a frequency \f$f\f$ in Hz, and it
-calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
-for that frequency. The noise PSD is based on data provided by
-J. Hough and G. Cagnoli (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
-Phys. Rev. D 63, 044023 (2001)) and is approximated by
-the following:
-\f{equation}{
-   S_h(f) = 10^{-16} \left ( \frac{f}{f_0} \right)^{-30} +
-            34 \frac{f_0 }{ f } +
-   \frac{20 \left [1 - (f/f_0)^2 + 0.5 (f/f_0)^4 \right ] }{ 1 + 0.5 (f/f_0)^2}
-\f}
-The returned value is scaled up by \f$s_0 = 10^{46}.\f$ In otherwords,
-the expected noise PSD is a factor \f$10^{46}\f$ lower.
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \ingroup LALNoiseModels_h
+ * \brief Module to calculate the expected noise power spectral density for the GEO600 detector.
+ *
+ * ### Description ###
+ *
+ * The module takes as an input a frequency \f$f\f$ in Hz, and it
+ * calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
+ * for that frequency. The noise PSD is based on data provided by
+ * J. Hough and G. Cagnoli (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
+ * Phys. Rev. D 63, 044023 (2001)) and is approximated by
+ * the following:
+ * \f{equation}{
+ * S_h(f) = 10^{-16} \left ( \frac{f}{f_0} \right)^{-30} +
+ * 34 \frac{f_0 }{ f } +
+ * \frac{20 \left [1 - (f/f_0)^2 + 0.5 (f/f_0)^4 \right ] }{ 1 + 0.5 (f/f_0)^2}
+ * \f}
+ * The returned value is scaled up by \f$s_0 = 10^{46}.\f$ In otherwords,
+ * the expected noise PSD is a factor \f$10^{46}\f$ lower.
+ *
+ */
 
 void
 LALGEOPsd(LALStatus UNUSED *status, REAL8 *psd, REAL8 f)

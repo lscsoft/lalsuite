@@ -41,8 +41,8 @@
 #endif
 
 /**
- * This structure contains the intrinsic parameters and post-newtonian 
- * co-efficients for the energy and angular acceleration expansions. 
+ * This structure contains the intrinsic parameters and post-newtonian
+ * co-efficients for the energy and angular acceleration expansions.
  * These are computed by XLALSimInspiralTaylorT4Setup routine.
  */
 
@@ -72,7 +72,7 @@ typedef REAL8 (SimInspiralAngularAcceleration4)(
 /**
  * This strucuture contains pointers to the functions for calculating
  * the post-newtonian terms at the desired order. They can be set by
- * XLALSimInspiralTaylorT4Setup by passing an appropriate PN order. 
+ * XLALSimInspiralTaylorT4Setup by passing an appropriate PN order.
  */
 
 typedef struct
@@ -289,7 +289,7 @@ typedef struct
     expnCoeffsTaylorT4 ak;
 }XLALSimInspiralTaylorT4PNEvolveOrbitParams;
 
-/** 
+/**
  * This function is used in the call to the GSL integrator.
  */
 static int 
@@ -306,7 +306,7 @@ XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y[],
 /**
  * Set up the expnCoeffsTaylorT4 and expnFuncTaylorT4 structures for
  * generating a TaylorT4 waveform and select the post-newtonian
- * functions corresponding to the desired order. 
+ * functions corresponding to the desired order.
  *
  * Inputs given in SI units.
  */

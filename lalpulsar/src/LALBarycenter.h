@@ -41,7 +41,8 @@ extern "C" {
  * \brief Provides routines for transforming from arrival time at detector (GPS) to pulse emission time (TDB); ie
  * for ``barycentering'' the measured astronomical time series.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALInitBarycenter.h>
  * #include <lal/LALBarycenter.h>
@@ -67,7 +68,8 @@ extern "C" {
 #define LALBARYCENTERH_MSGEXLAL 	"XLAL function failed."
 /** \endcond */
 
-/** \brief Enumerated type denoting the time system type to be produced in
+/**
+ * \brief Enumerated type denoting the time system type to be produced in
  * the solar system barycentring routines.
  *
  * The type denotes the time system in which solar system barycentred times
@@ -82,7 +84,8 @@ extern "C" {
  * Coordinate Barycentric Time (TCB) system, where the conversion has been
  * performed using a time correction ephemeris look-up table as used by TEMPO2
  * (\c TIMECORRECTION_TEMPO2 is so-called because the pulsar timing software
- * TEMPO2 uses the TCB time system by default). */
+ * TEMPO2 uses the TCB time system by default).
+ */
 typedef enum{
   TIMECORRECTION_NONE = 0,
   TIMECORRECTION_TDB,
@@ -93,7 +96,8 @@ typedef enum{
   TIMECORRECTION_LAST
 } TimeCorrectionType;
 
-/** \brief Enumerated type denoting the JPL solar system ephemeris to be used
+/**
+ * \brief Enumerated type denoting the JPL solar system ephemeris to be used
  * in calculating barycentre time corrections.
  */
 typedef enum {
@@ -105,8 +109,10 @@ typedef enum {
   EPHEM_LAST
 } EphemerisType;
 
-/** \name Constants from Irwin and Fukushima, A&A, 348, 1999 (taken from TEMPO2)
- * used for ephemeris conversions. */
+/**
+ * \name Constants from Irwin and Fukushima, A&A, 348, 1999 (taken from TEMPO2)
+ * used for ephemeris conversions.
+ */
 /*@{*/
 #define IFTE_JD0  2443144.5003725 /**< Epoch of TCB, TCG and TT in Julian Days */
 #define IFTE_MJD0 43144.0003725 /**< Epoch of TCB, TCG and TT in Modified Julian Days */
@@ -120,7 +126,8 @@ typedef enum {
 #define JPL_AU_DE200 149597870.6600000 	/**< Definition of 1 AU from the JPL DE200 ephemeris in km */
 #define CURT_AU 149597870.6600 		/**< 1 AU from create_solar_system_barycenter.c as used in Curt's original routines */
 
-/** \brief This structure contains
+/**
+ * \brief This structure contains
  * two pointers to the ephemeris data files containing arrays
  * of center-of-mass positions for the Earth and Sun, respectively.
  *
@@ -153,7 +160,8 @@ typedef struct tagPosVelAcc
 }
 PosVelAcc;
 
-/** This structure contains all information about the
+/**
+ * This structure contains all information about the
  * center-of-mass positions of the Earth and Sun, listed at regular
  * time intervals.
  */
@@ -180,8 +188,10 @@ typedef struct tagEphemerisData
 EphemerisData;
 
 
-/** This structure will contain a vector of time corrections
- * used during conversion from TT to TDB/TCB/Teph */
+/**
+ * This structure will contain a vector of time corrections
+ * used during conversion from TT to TDB/TCB/Teph
+ */
 typedef struct tagTimeCorrectionData{
   CHAR *timeEphemeris;   /**< File containing the time ephemeris */
 
@@ -192,7 +202,8 @@ typedef struct tagTimeCorrectionData{
 } TimeCorrectionData;
 
 
-/** Basic output structure of LALBarycenterEarth.c.
+/**
+ * Basic output structure of LALBarycenterEarth.c.
  */
 typedef struct tagEarthState
 {
@@ -226,7 +237,8 @@ typedef struct tagEarthState
 }
 EarthState;
 
-/** Basic input structure to LALBarycenter.c.
+/**
+ * Basic input structure to LALBarycenter.c.
  */
 typedef struct tagBarycenterInput
 {
@@ -259,7 +271,8 @@ But most users would immediately add back the one anyway.
 way out in empty space, if you renormalized  and zero-ed the latter
 to give, on average, the same arrival time as the GPS clock on Earth'' */
 
-/**  Basic output structure produced by LALBarycenter.c.
+/**
+ * Basic output structure produced by LALBarycenter.c.
  */
 typedef struct tagEmissionTime
 {

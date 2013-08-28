@@ -22,14 +22,15 @@
  */
 
 /*********************************************************************************/
-/** \author P.Patel, X.Siemens, R. Prix, I. Gholami, Y. Ioth,M. Papa
+/**
+ * \author P.Patel, X.Siemens, R. Prix, I. Gholami, Y. Ioth,M. Papa
  * \file
  * \ingroup pulsarApps
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in \ref JKS98.
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -123,7 +124,8 @@ typedef struct {
 } FstatCandidate;
 
 
-/** moving 'Scanline window' of candidates on the scan-line,
+/**
+ * moving 'Scanline window' of candidates on the scan-line,
  * which is used to find local 1D maxima.
  */
 typedef struct
@@ -133,7 +135,8 @@ typedef struct
   FstatCandidate *center;		/**< pointer to middle candidate in window */
 } scanlineWindow_t;
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
@@ -932,7 +935,8 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 
 
 
-/** Initialized Fstat-code: handle user-input and set everything up.
+/**
+ * Initialized Fstat-code: handle user-input and set everything up.
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
 void
@@ -1247,7 +1251,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
 } /* InitFStat() */
 
-/** Produce a log-string describing the present run-setup
+/**
+ * Produce a log-string describing the present run-setup
  */
 void
 getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
@@ -1329,7 +1334,8 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
 
 
 /***********************************************************************/
-/** Log the all relevant parameters of the present search-run to a log-file.
+/**
+ * Log the all relevant parameters of the present search-run to a log-file.
  * The name of the log-file is log_fname
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
@@ -1424,7 +1430,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 
 
 /*----------------------------------------------------------------------*/
-/** Some general consistency-checks on user-input.
+/**
+ * Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
  */
 void
@@ -1548,7 +1555,8 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSerie
   return 0;
 } /* outputBeamTS() */
 
-/** write full 'PulsarCandidate' (i.e. Doppler params + Amplitude params + error-bars + Fa,Fb, F, + A,B,C,D
+/**
+ * write full 'PulsarCandidate' (i.e. Doppler params + Amplitude params + error-bars + Fa,Fb, F, + A,B,C,D
  * RETURN 0 = OK, -1 = ERROR
  */
 int
@@ -1615,7 +1623,8 @@ compareFstatCandidates ( const void *candA, const void *candB )
 
 } /* compareFstatCandidates() */
 
-/** write one 'FstatCandidate' (i.e. only Doppler-params + Fstat) into file 'fp'.
+/**
+ * write one 'FstatCandidate' (i.e. only Doppler-params + Fstat) into file 'fp'.
  * Return: 0 = OK, -1 = ERROR
  */
 int
@@ -1640,7 +1649,8 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
  *
  * --------------------------------------------------------------------------------*/
 
-/** Create a scanline window, with given windowWings >= 0.
+/**
+ * Create a scanline window, with given windowWings >= 0.
  * Note: the actual window-size is 1 + 2 * windowWings
  */
 scanlineWindow_t *
@@ -1681,7 +1691,8 @@ XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow )
 
 } /* XLALDestroyScanlineWindow() */
 
-/** Advance by pushing a new candidate into the scanline-window
+/**
+ * Advance by pushing a new candidate into the scanline-window
  */
 int
 XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow )
@@ -1701,7 +1712,8 @@ XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *sc
 
 } /* XLALAdvanceScanlineWindow() */
 
-/** check wether central candidate in Scanline-window is a local maximum
+/**
+ * check wether central candidate in Scanline-window is a local maximum
  */
 BOOLEAN
 XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow )
@@ -1832,10 +1844,12 @@ void XLALDestroyFFTWCOMPLEXSeries(FFTWCOMPLEXSeries *X)
 }
 
 
-/** Destruction of a ReSampBuffer *contents*,
+/**
+ * Destruction of a ReSampBuffer *contents*,
  * i.e. the multiSSB and multiAMcoeff, while the
  * buffer-container is not freed (which is why it's passed
- * by value and not by reference...) */
+ * by value and not by reference...)
+ */
 void XLALDestroyReSampBuffer ( ReSampBuffer *cfb)
 {
   XLALDestroyMultiSSBtimes ( cfb->multiSSB );

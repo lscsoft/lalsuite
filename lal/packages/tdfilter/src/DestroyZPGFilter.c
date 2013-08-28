@@ -23,18 +23,18 @@
 
 
 /**
-   \addtogroup DestroyZPGFilter_c
-   \author Creighton, T. D.
-
-   \brief Destroys ZPG filter objects.
-
-\heading{Description}
-
-These functions destroy an object <tt>**output</tt> of type
-\c COMPLEX8ZPGFilter or \c COMPLEX16ZPGFilter, and set
-<tt>*output</tt> to \c NULL.
-
-*/
+ * \addtogroup DestroyZPGFilter_c
+ * \author Creighton, T. D.
+ *
+ * \brief Destroys ZPG filter objects.
+ *
+ * ### Description ###
+ *
+ * These functions destroy an object <tt>**output</tt> of type
+ * \c COMPLEX8ZPGFilter or \c COMPLEX16ZPGFilter, and set
+ * <tt>*output</tt> to \c NULL.
+ *
+ */
 /*@{*/
 
 /** \see See \ref DestroyZPGFilter_c for documentation */

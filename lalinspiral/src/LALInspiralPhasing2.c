@@ -18,38 +18,41 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief The code \ref LALInspiralPhasing2.c calculates the phase of an inspiral
-waveform as a function of the
-instantaneous frequency of the wave, up to \f$2^{nd}\f$ post--Newtonian order.
-
-\heading{Prototypes}
-
-<tt>LALInspiralPhasing2()</tt>
-<ul>
-<li> \c phase: Output, the phase of the wave at the current epoch.</li>
-<li> \c v: Input, the PN expansion parameter at the current epoch.</li>
-<li> \c ak: Input containing PN expansion coefficients.</li>
-</ul>
-
-\heading{Description}
-
-The phase of the inspiral wave corresponding to the ::Approximant #TaylorT2
-as in Equation\eqref{eq_InspiralWavePhase2} (<tt>correct equation?</tt>)
-
-\heading{Algorithm}
-None.
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-None.
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief The code \ref LALInspiralPhasing2.c calculates the phase of an inspiral
+ * waveform as a function of the
+ * instantaneous frequency of the wave, up to \f$2^{nd}\f$ post--Newtonian order.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralPhasing2()</tt>
+ * <ul>
+ * <li> \c phase: Output, the phase of the wave at the current epoch.</li>
+ * <li> \c v: Input, the PN expansion parameter at the current epoch.</li>
+ * <li> \c ak: Input containing PN expansion coefficients.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * The phase of the inspiral wave corresponding to the ::Approximant #TaylorT2
+ * as in Equation\eqref{eq_InspiralWavePhase2} (<tt>correct equation?</tt>)
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Uses ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ * None.
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>

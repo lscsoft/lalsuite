@@ -18,26 +18,29 @@
 */
 
 /**
-
-\author Yi Pan
-\file
-
-\brief Generate a full waveform from inspiral to ring-down.
-
-\heading{Usage}
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Yi Pan
+ * \file
+ *
+ * \brief Generate a full waveform from inspiral to ring-down.
+ *
+ * ### Usage ###
+ *
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <stdlib.h>

@@ -36,7 +36,8 @@
 
 #define INSTRUCTIONS    fprintf(nb, "Running this entire notebook using ctrl+A and shift+enter may crash your computer.  Evaluate each section as needed.  The Initialization and User Variables sections must be evaluated first.  The 3-dimensional projections are represented in the sections below User Varibles as PointList (x1, x2, x3) etc.  Evaluating the entire Image Generation sections creates animated plots (if AnimationPlot := True).  If (AnimationPlot := False) you get only still plots, saving time and memory.")
 
-/** \brief This function is for plotting N-Dimensional template banks by creating
+/**
+ * \brief This function is for plotting N-Dimensional template banks by creating
  * a MATHEMATICA notebook.
  *
  * \ingroup LALMathematica_h
@@ -46,7 +47,8 @@
  * 3-Dimensional projection permutations. Each projection may be animated so the user
  * can see the template bank from different perspectives.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> The output of this function is &quot;MathNDNotebook.nb&quot; will appear in the
  * directory of the program that called this function.</li>

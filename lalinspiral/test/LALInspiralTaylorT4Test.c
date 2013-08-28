@@ -18,22 +18,22 @@
 */
 
 /**
-\author Keppel, D.
-
-\brief Create waveforms based on the TaylorT4 model.
-
-Outputs a two files with three columns corresponding to time (in seconds),
-\f$h_+\f$, and \f$h_\times\f$. The first output file is <tt>T4wave1.dat</tt> in
-the current directory. This is generated using the
-XLALSimInspiralTaylorT4PNRestricted routine. The seond output file is
-<tt>T4wave2.dat</tt> in the current directory. This is generated using the
-LALInspiralWave4Templates routine.
-
-\heading{Usage}
-
-<tt>LALInspiralTaylorT4Test</tt>
-
-*/
+ * \author Keppel, D.
+ *
+ * \brief Create waveforms based on the TaylorT4 model.
+ *
+ * Outputs a two files with three columns corresponding to time (in seconds),
+ * \f$h_+\f$, and \f$h_\times\f$. The first output file is <tt>T4wave1.dat</tt> in
+ * the current directory. This is generated using the
+ * XLALSimInspiralTaylorT4PNRestricted routine. The seond output file is
+ * <tt>T4wave2.dat</tt> in the current directory. This is generated using the
+ * LALInspiralWave4Templates routine.
+ *
+ * ### Usage ###
+ *
+ * <tt>LALInspiralTaylorT4Test</tt>
+ *
+ */
 
 #include <time.h>
 #include <math.h>

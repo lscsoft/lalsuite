@@ -911,9 +911,10 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*c
 } /* read_gct_checkpoint() */
 
 
-/** removes a checkpoint
-    returns 0 on success, errno on failure
-*/
+/**
+ * removes a checkpoint
+ * returns 0 on success, errno on failure
+ */
 int clear_gct_checkpoint(const char*filename) {
   FILE*fp=NULL; /* referenced in LOGIOERROR */
 

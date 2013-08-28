@@ -52,8 +52,8 @@
 #define LALSIMINSPIRAL_T1_RELATIVE_TOLERANCE 1.e-12
 
 /**
- * This structure contains the intrinsic parameters and post-newtonian 
- * co-efficients for the denergy/dv and flux expansions. 
+ * This structure contains the intrinsic parameters and post-newtonian
+ * co-efficients for the denergy/dv and flux expansions.
  * These are computed by XLALSimInspiralTaylorT1Setup routine.
  */
 
@@ -87,7 +87,7 @@ typedef REAL8 (SimInspiralTaylorT1Flux)(
 /**
  * This strucuture contains pointers to the functions for calculating
  * the post-newtonian terms at the desired order. They can be set by
- * XLALSimInspiralTaylorT1Setup by passing an appropriate PN order. 
+ * XLALSimInspiralTaylorT1Setup by passing an appropriate PN order.
  */
 
 typedef struct
@@ -105,7 +105,7 @@ typedef struct
 	expnCoeffsTaylorT1 ak;
 }XLALSimInspiralTaylorT1PNEvolveOrbitParams;
 
-/** 
+/**
  * This function is used in the call to the integrator.
  */
 static int 
@@ -134,7 +134,7 @@ XLALSimInspiralTaylorT1StoppingTest(double UNUSED t, const double y[], double UN
 /**
  * Set up the expnCoeffsTaylorT1 and expnFuncTaylorT1 structures for
  * generating a TaylorT1 waveform and select the post-newtonian
- * functions corresponding to the desired order. 
+ * functions corresponding to the desired order.
  *
  * Inputs given in SI units.
  */

@@ -18,12 +18,13 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file Fstat_v3.c
  * \brief
  * Calculate the Fourier transform over the total timespan from a set of SFTs
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -63,7 +64,8 @@ static LALUnit empty_LALUnit;
 
 /* ---------- function definitions ---------- */
 
-/** Turn the given multi-IFO SFTvectors into one long Fourier transform (LFT) over the total observation time
+/**
+ * Turn the given multi-IFO SFTvectors into one long Fourier transform (LFT) over the total observation time
  */
 SFTtype *
 XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
@@ -298,8 +300,8 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 
 
 
-/** Turn the given SFTvector into one long time-series, properly dealing with gaps.
- *
+/**
+ * Turn the given SFTvector into one long time-series, properly dealing with gaps.
  * NOTE: this function <b>modifies</b> the input SFTs in the process!
  * If you need to reuse the SFTvector afterwards, you need to copy it before
  * passing it into this function.
@@ -528,7 +530,8 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
 } /* XLALSFTVectorToCOMPLEX8TimeSeries() */
 
 
-/** Change frequency-bin order from fftw-convention to a 'SFT'
+/**
+ * Change frequency-bin order from fftw-convention to a 'SFT'
  * ie. from FFTW: f[0], f[1],...f[N/2], f[-(N-1)/2], ... f[-2], f[-1]
  * to: f[-(N-1)/2], ... f[-1], f[0], f[1], .... f[N/2]
  */
@@ -572,7 +575,8 @@ XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
 
 }  /* XLALReorderFFTWtoSFT() */
 
-/** Change frequency-bin order from 'SFT' to fftw-convention
+/**
+ * Change frequency-bin order from 'SFT' to fftw-convention
  * ie. from f[-(N-1)/2], ... f[-1], f[0], f[1], .... f[N/2]
  * to FFTW: f[0], f[1],...f[N/2], f[-(N-1)/2], ... f[-2], f[-1]
  */
@@ -617,7 +621,8 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
 }  /* XLALReorderSFTtoFFTW() */
 
 
-/** Multiply SFT frequency bins by given complex factor.
+/**
+ * Multiply SFT frequency bins by given complex factor.
  *
  * NOTE: this <b>modifies</b> the given SFT in place
  */
@@ -650,7 +655,8 @@ XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft,	/**< [in/out] SFT */
 } /* XLALMultiplySFTbyCOMPLEX8() */
 
 
-/** Time-shift the given SFT by an amount of 'shift' seconds,
+/**
+ * Time-shift the given SFT by an amount of 'shift' seconds,
  * using the frequency-domain expression y(f) = x(f) * e^(-i 2pi f tau),
  * which shifts x(t) into y(t) = x(t - tau)
  *

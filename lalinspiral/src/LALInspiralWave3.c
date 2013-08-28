@@ -18,52 +18,52 @@
 */
 
 /**
-
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief These modules generate a time-domain chirp waveform of type #TaylorT3.
-
-\heading{Prototypes}
-
-<tt>LALInspiralWave3()</tt>
-<ul>
-<li> \c output: Output containing the inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-
-<tt>LALInspiralWave3Templates()</tt>
-<ul>
-<li> \c output1: Output containing the 0-phase inspiral waveform.</li>
-<li> \c output2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-
-\heading{Description}
-LALInspiralWave3() generates #TaylorT3 approximant which
-corresponds to the case wherein
-the phase of the waveform is given as an explicit function of time
-as in Equation.\eqref{eq_InspiralWavePhase3}.
-
-LALInspiralWave3Templates() simultaneously generates
-two inspiral waveforms and the two differ in
-phase by \f$\pi/2\f$.
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-LALInspiralParameterCalc()
-LALInspiralChooseModel()
-LALInspiralSetup()
-LALInspiralPhasing3 (via expnFunc)()
-LALInspiralFrequency3 (via expnFunc)()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief These modules generate a time-domain chirp waveform of type #TaylorT3.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralWave3()</tt>
+ * <ul>
+ * <li> \c output: Output containing the inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * <tt>LALInspiralWave3Templates()</tt>
+ * <ul>
+ * <li> \c output1: Output containing the 0-phase inspiral waveform.</li>
+ * <li> \c output2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * LALInspiralWave3() generates #TaylorT3 approximant which
+ * corresponds to the case wherein
+ * the phase of the waveform is given as an explicit function of time
+ * as in Equation.\eqref{eq_InspiralWavePhase3}.
+ *
+ * LALInspiralWave3Templates() simultaneously generates
+ * two inspiral waveforms and the two differ in
+ * phase by \f$\pi/2\f$.
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALInspiralParameterCalc()
+ * LALInspiralChooseModel()
+ * LALInspiralSetup()
+ * LALInspiralPhasing3 (via expnFunc)()
+ * LALInspiralFrequency3 (via expnFunc)()
+ * \endcode
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>

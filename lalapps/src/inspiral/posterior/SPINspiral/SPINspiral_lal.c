@@ -95,9 +95,9 @@
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute a 12-parameter (one spin) LAL waveform
- * 
+ *
  * \todo Merge this routine with LALHpHc12() ?
- * 
+ *
  * Use the LAL <=3.5 PN spinning waveform, with 1 spinning object (12 parameters)
  */
 // ****************************************************************************************************************************************************  
@@ -190,10 +190,10 @@ void templateLAL12(struct parSet *par, struct interferometer *ifo[], int ifonr, 
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute waveform for a 12-parameter (one spin) LAL waveform
- * 
+ *
  * \todo Merge this routine with templateLAL12() ?
- * 
- * Compute h_+ and h_x from the parameters in par and interferometer information in ifo. 
+ *
+ * Compute h_+ and h_x from the parameters in par and interferometer information in ifo.
  * l is a pointer to get the lenght of the waveform computed, this length is also available as waveform->phi->data->length.
  */
 // ****************************************************************************************************************************************************  
@@ -492,10 +492,10 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute waveform for a 15-parameter (two spins) LAL waveform
- * 
+ *
  * \todo Merge this routine with LALHpHc15() ? - Done: new routine now called templateLAL15()
  *
- * Use the LAL 3.5/2.5 PN spinning waveform, with 2 spinning objects (15 parameters) 
+ * Use the LAL 3.5/2.5 PN spinning waveform, with 2 spinning objects (15 parameters)
  */
 // ****************************************************************************************************************************************************  
 void templateLAL15old(struct parSet *par, struct interferometer *ifo[], int ifonr, int injectionWF, struct runPar run)
@@ -589,10 +589,10 @@ void templateLAL15old(struct parSet *par, struct interferometer *ifo[], int ifon
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute a waveform for a 15-parameter (two spins) LAL waveform
- * 
+ *
  * \todo Merge this routine with templateLAL15() ?  - Done: new routine is templateLAL15(), old one templateLAL15old()
- * 
- * Compute h_+ and h_x form the parameters in par and interferometer information in ifo. 
+ *
+ * Compute h_+ and h_x form the parameters in par and interferometer information in ifo.
  * l is a pointer to get the lenght of the waveform computed, this length is also available in waveform->phi->data->length.
  */
 // ****************************************************************************************************************************************************  
@@ -778,8 +778,8 @@ void LALHpHc15(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute waveform for a 15-parameter (two spins) LAL waveform
- * 
- * Use the LAL 3.5/2.5 PN spinning waveform, with 2 spinning objects (15 parameters) 
+ *
+ * Use the LAL 3.5/2.5 PN spinning waveform, with 2 spinning objects (15 parameters)
  */
 // ****************************************************************************************************************************************************  
 void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, int injectionWF, struct runPar run)
@@ -956,7 +956,7 @@ void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, 
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute waveform for a 15-parameter (two spins) LAL PhenSpinTaylorRD waveform
- * 
+ *
  * Use the LAL 3.5/2.5 PN spinning hybrid PhenSpinTaylorRD waveform, with 2 spinning objects (15 parameters). Phenomenological ring-down attached
  */
 // ****************************************************************************************************************************************************  
@@ -1410,7 +1410,7 @@ void templateLALPhenSpinTaylorRD(struct parSet *par, struct interferometer *ifo[
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute waveform template for a LAL non-spinning inspiral waveform
- * 
+ *
  * Uses GeneratePPN approximant.
  */
 // ****************************************************************************************************************************************************  
@@ -1578,7 +1578,7 @@ void templateLALnonSpinning(struct parSet *par, struct interferometer *ifo[], in
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute detector response for a given detector and given h_+,h_x
- * 
+ *
  * Compute the detector response for a given detector (ifonr) and h_+,h_x. the structure waveform must already hold the computed values of h+,x (or just a1, a2, phi and shift as a function of time)
  */
 // ****************************************************************************************************************************************************  

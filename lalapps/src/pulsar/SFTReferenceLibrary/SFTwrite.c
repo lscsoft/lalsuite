@@ -17,18 +17,18 @@
  *  MA  02111-1307  USA
  */
 
-/** 
- *  \author Bruce Allen
- *  \file
- *  \brief
- *  Makes a test SFT (called SFT-test)
+/**
+ * \author Bruce Allen
+ * \file
+ * \brief
+ * Makes a test SFT (called SFT-test)
  *
- *  You can do this on little-endian and big-endian machines to generate
- *  both flavors.  This produces a set of good and a set of bad SFTs.  The
- *  good SFTs are:
- *  SFT-test[1234567] and SFT-good
- *  and the bad SFTs are
- *  SFT-bad[123456789] and SFT-bad1[0-4]
+ * You can do this on little-endian and big-endian machines to generate
+ * both flavors.  This produces a set of good and a set of bad SFTs.  The
+ * good SFTs are:
+ * SFT-test[1234567] and SFT-good
+ * and the bad SFTs are
+ * SFT-bad[123456789] and SFT-bad1[0-4]
  */
 
 #include <stdio.h>

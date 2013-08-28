@@ -143,7 +143,8 @@ XLALLorentzian (
 
 
 
-/** This function contains the coeffs from the matching with the LONG
+/**
+ * This function contains the coeffs from the matching with the LONG
  * Jena waveforms (those are not the ones published in the paper)
  */
 void

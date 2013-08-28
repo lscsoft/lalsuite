@@ -20,17 +20,16 @@
 /**
  * \file DriveHoughColor.h
  * \author Alicia Sintes, Badri Krishnan
-   \brief Header file for non-demodulated Hough search
-
+ * \brief Header file for non-demodulated Hough search
+ *
  * File Name: DRIVEHOUGHCOLOR.h
  *
  * Authors: Sintes, A.M., Krishnan, B.
  *
- *
  * History:   Created by Sintes June 16, 2003
- *    to test part of the Hough-Driver code.
- *    
- *-----------------------------------------------------------------------
+ * to test part of the Hough-Driver code.
+ *
+ * -----------------------------------------------------------------------
  */
  
 /*
@@ -174,8 +173,10 @@ char *lalWatch;
     REAL8 *deltaSize;
   } HoughSkyPatchesInfo;
     
-  /** struct fo storing all the variables affected by the 
-      selection of a subset of SFTs */
+/**
+ * struct fo storing all the variables affected by the
+ * selection of a subset of SFTs
+ */
   typedef struct tagBestVariables{
     UINT4 length;   /**< the number of SFTs to be selected */
     REAL8Vector *weightsV; /**< noise and AM weights */

@@ -28,77 +28,77 @@
 #include <lal/SkyCoordinates.h>
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup SkyCoordinates_h
-
-\brief Tests geocentric to geodetic conversion.
-
-\heading{Usage}
-\code
-GeocentricGeodeticTest [-x xmin xmax nx] [-y ymin ymax ny]
-                       [-z zmin zmax nz] [-v] [-d debuglevel]
-\endcode
-
-\heading{Description}
-
-This program converts a point or set of points from geocentric to
-geodetic coordinates and back, using the routines
-<tt>LALGeocentricToGeodetic()</tt> and <tt>LALGeodeticToGeocentric()</tt>.
-The reconverted position is compared with the original, and the
-maximum difference (in metres) reported to \c stderr.  The
-following option flags are accepted:
-<ul>
-<li><tt>-x</tt> Specifies a range and number of points to span in
-the geocentric Cartesian \f$x\f$-coordinate.  Range limits are given in
-Earth radii, and the number of points must be at least 1.  If not
-specified, a single value of 0 is assumed.</li>
-<li><tt>-y</tt> As <tt>-x</tt>, above, but for the \f$y\f$-coordinate.</li>
-<li><tt>-z</tt> As <tt>-x</tt>, above, but for the \f$z\f$-coordinate.</li>
-<li><tt>-v</tt> Specifies verbosity level.  The default is level 0,
-printing only the maximum difference to \c stderr.  Level 1 in
-addition prints to \c stdout the difference measured at each
-point.  Level 2 prints the elevation of the point, followed by the
-difference, both in metres (this is to facilitate shaded diagrams such
-as Fig.\figref{fig_geodetictest}.  Level 3 prints the \f$x\f$, \f$y\f$, and \f$z\f$
-coordinates of each point followed by the difference measured at that
-point (all in metres).  Level 4 prints the geocentric Cartesian
-coordinates, above, folowed by the geodetic elevation, latitude and
-longitude, followed by the difference (in metres or degrees as
-appropriate).</li>
-<li><tt>-d</tt> Sets the debug level to \c debuglevel.  If not
-specified, level 0 is assumed.</li>
-</ul>
-If neither <tt>-x</tt>, <tt>-y</tt>, or <tt>-z</tt> were specified, then the
-program will test a single randomly generated position between 0.5 and
-2 Earth radii, and return an error if the conversion produces a
-difference greater than a micron.
-
-\heading{Algorithm}
-
-\wrapfig{r,0.6\textwidth,fig_geodetictest}
-\image html  inject_geodetictest.png "Fig.[fig_geodetictest]: Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required."
-\image latex inject_geodetictest.eps "Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required." width=0.55\textwidth
-
-See \ref TerrestrialCoordinates_c for documentation about the
-geocentric/geodetic conversion algorithm.  Since
-<tt>LALGeodeticToGeocentric()</tt> is fairly straightforward and
-numerically robust, this program is basically a test of the
-<tt>LALGeocentricToGeodetic()</tt> algorithm.
-
-Running with verbosity level 2 gives error data that can be used to
-generate figures such as Fig.\figref{fig_geodetictest}.  First we note
-that for points near the surface of the Earth, the position error is
-never greater than a micron, or about one part in \f$10^{12}\f$ --- a
-reasonable expectation for double-precision arithmetic.  The largest
-errors occur near the equator, where the expression for \f$v\f$
-experiences loss of precision.  In this limit we replace the "exact"
-expression for \f$v\f$ with a power series, as described in
-<tt>TerrestrialCoordinates.c()</tt>.  This restores precision near the
-equatorial plane.  The point of transition has been tuned by hand, so
-that the errors due to series truncation just within the wedge are
-about the same as the numerical loss of precision just outside of it.
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup SkyCoordinates_h
+ *
+ * \brief Tests geocentric to geodetic conversion.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * GeocentricGeodeticTest [-x xmin xmax nx] [-y ymin ymax ny]
+ * [-z zmin zmax nz] [-v] [-d debuglevel]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program converts a point or set of points from geocentric to
+ * geodetic coordinates and back, using the routines
+ * <tt>LALGeocentricToGeodetic()</tt> and <tt>LALGeodeticToGeocentric()</tt>.
+ * The reconverted position is compared with the original, and the
+ * maximum difference (in metres) reported to \c stderr.  The
+ * following option flags are accepted:
+ * <ul>
+ * <li><tt>-x</tt> Specifies a range and number of points to span in
+ * the geocentric Cartesian \f$x\f$-coordinate.  Range limits are given in
+ * Earth radii, and the number of points must be at least 1.  If not
+ * specified, a single value of 0 is assumed.</li>
+ * <li><tt>-y</tt> As <tt>-x</tt>, above, but for the \f$y\f$-coordinate.</li>
+ * <li><tt>-z</tt> As <tt>-x</tt>, above, but for the \f$z\f$-coordinate.</li>
+ * <li><tt>-v</tt> Specifies verbosity level.  The default is level 0,
+ * printing only the maximum difference to \c stderr.  Level 1 in
+ * addition prints to \c stdout the difference measured at each
+ * point.  Level 2 prints the elevation of the point, followed by the
+ * difference, both in metres (this is to facilitate shaded diagrams such
+ * as Fig.\figref{fig_geodetictest}.  Level 3 prints the \f$x\f$, \f$y\f$, and \f$z\f$
+ * coordinates of each point followed by the difference measured at that
+ * point (all in metres).  Level 4 prints the geocentric Cartesian
+ * coordinates, above, folowed by the geodetic elevation, latitude and
+ * longitude, followed by the difference (in metres or degrees as
+ * appropriate).</li>
+ * <li><tt>-d</tt> Sets the debug level to \c debuglevel.  If not
+ * specified, level 0 is assumed.</li>
+ * </ul>
+ * If neither <tt>-x</tt>, <tt>-y</tt>, or <tt>-z</tt> were specified, then the
+ * program will test a single randomly generated position between 0.5 and
+ * 2 Earth radii, and return an error if the conversion produces a
+ * difference greater than a micron.
+ *
+ * ### Algorithm ###
+ *
+ * \image html  inject_geodetictest.png "Fig.[fig_geodetictest]: Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required."
+ * \image latex inject_geodetictest.eps "Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required." width=0.55\textwidth
+ *
+ * See \ref TerrestrialCoordinates_c for documentation about the
+ * geocentric/geodetic conversion algorithm.  Since
+ * <tt>LALGeodeticToGeocentric()</tt> is fairly straightforward and
+ * numerically robust, this program is basically a test of the
+ * <tt>LALGeocentricToGeodetic()</tt> algorithm.
+ *
+ * Running with verbosity level 2 gives error data that can be used to
+ * generate figures such as Fig.\figref{fig_geodetictest}.  First we note
+ * that for points near the surface of the Earth, the position error is
+ * never greater than a micron, or about one part in \f$10^{12}\f$ --- a
+ * reasonable expectation for double-precision arithmetic.  The largest
+ * errors occur near the equator, where the expression for \f$v\f$
+ * experiences loss of precision.  In this limit we replace the "exact"
+ * expression for \f$v\f$ with a power series, as described in
+ * <tt>TerrestrialCoordinates.c()</tt>.  This restores precision near the
+ * equatorial plane.  The point of transition has been tuned by hand, so
+ * that the errors due to series truncation just within the wedge are
+ * about the same as the numerical loss of precision just outside of it.
+ */
 
 /** \name Error Codes */
 /*@{*/

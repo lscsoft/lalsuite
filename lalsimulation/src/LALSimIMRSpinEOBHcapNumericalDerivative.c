@@ -25,7 +25,7 @@
  * do not have an analytic expression for the derivative of the waveform.
  * As such, it is necessary to calculate the derivatives numerically. This
  * function provides the means to do just that.
- * 
+ *
  */
 
 #ifndef _LALSIMIMRSPINEOBHCAPNUMERICALDERIVATIVE_C
@@ -86,7 +86,7 @@ static REAL8 XLALSpinHcapNumDerivWRTParam(
  * which correspond to time derivatives of the dynamical variables in conservative dynamcis.
  * All derivatives, including those on two terms of the orbital phase, are returned together.
  * The derivatives are combined with energy flux to give right hand side of the ODEs
- * of a generic spin EOB model, as decribed in Eqs. 21, 22, 26 and 27 of 
+ * of a generic spin EOB model, as decribed in Eqs. 21, 22, 26 and 27 of
  * Pan et al. PRD 81, 084041 (2010)
  * This function is not used by the spin-aligned SEOBNRv1 model.
  */
@@ -387,8 +387,8 @@ static REAL8 XLALSpinHcapNumDerivWRTParam(
 }
 
 
-/** 
- * Wrapper for GSL to call the Hamiltonian function 
+/**
+ * Wrapper for GSL to call the Hamiltonian function
  */
 static double GSLSpinHamiltonianWrapper( double x, void *params )
 {

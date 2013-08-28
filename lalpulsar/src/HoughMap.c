@@ -23,7 +23,8 @@
  * The functions that make up the guts of this module
  */
 
-/** This function initializes the Hough map derivative
+/**
+ * This function initializes the Hough map derivative
  * space  HOUGHMapDeriv *hd to zero. Note that the length of the map
  * hd->map should be hd->ySide * (hd->xSide + 1).
  */
@@ -63,7 +64,8 @@ void LALHOUGHInitializeHD (LALStatus      *status,
   RETURN (status);
 }
 
-/** This function initializes the total Hough map
+/**
+ * This function initializes the total Hough map
  * HOUGHMapTotal *ht  to zero and checks consistency between
  * the number of physical pixels in the
  * map  and  those given by the grid information structure
@@ -111,7 +113,8 @@ void LALHOUGHInitializeHT (LALStatus      *status,
 }
 
 
-/** Given an initial Hough map derivative HOUGHMapDeriv *hd and a representation
+/**
+ * Given an initial Hough map derivative HOUGHMapDeriv *hd and a representation
  * of a phmd HOUGHphmd *phmd, the function  LALHOUGHAddPHMD2HD() accumulates
  * the partial Hough map derivative *phmd to *hd by adding +1 or
  * -1 to the pixels corresponding to the left or right borders respectively.
@@ -221,8 +224,10 @@ void LALHOUGHAddPHMD2HD (LALStatus      *status, 	/**< the status pointer */
 }
 
 
-/** Adds a hough map derivative into a total hough map derivative taking into
- * account the weight of the partial hough map */
+/**
+ * Adds a hough map derivative into a total hough map derivative taking into
+ * account the weight of the partial hough map
+ */
 void LALHOUGHAddPHMD2HD_W (LALStatus      *status, 	/**< the status pointer */
 			   HOUGHMapDeriv  *hd,  	/**< the Hough map derivative */
 			   HOUGHphmd      *phmd) 	/**< info from a partial map */
@@ -340,7 +345,8 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, 	/**< the status pointer */
   RETURN (status);
 }
 
-/** This function constructs a total Hough map
+/**
+ * This function constructs a total Hough map
  * HOUGHMapTotal *ht from its derivative HOUGHMapDeriv *hd by
  * integrating each row (x-direction).
  */

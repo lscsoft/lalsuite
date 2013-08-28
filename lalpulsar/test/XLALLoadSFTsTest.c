@@ -25,12 +25,12 @@
 #include <lal/Units.h>
 #include <stdlib.h>
 
-/** \file
+/**
+ * \file
  * \ingroup SFTfileIO_h
  * \author R. Prix, B. Machenschalk, A.M. Sintes
  *
  * \brief Test-code for SFT-fileIO library
- *
  *
  */
 

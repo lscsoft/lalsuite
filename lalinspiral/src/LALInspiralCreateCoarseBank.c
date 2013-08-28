@@ -17,153 +17,154 @@
 *  MA  02111-1307  USA
 */
 
-/** \defgroup LALInspiralCreateCoarseBank_c Module LALInspiralCreateCoarseBank.c
+/**
+ * \defgroup LALInspiralCreateCoarseBank_c Module LALInspiralCreateCoarseBank.c
  * \ingroup LALInspiralBank_h
-   \author Churches, D. K and Sathyaprakash, B.S.
-   \brief Functions to create a coarse grid of templates.
-
-The coarse grid algorithm works in two stages:
-After computing the minimum and maximum chirp-times corresponding to the
-search space: \f$(\tau_0^\mathrm{min}, \tau_0^\mathrm{max}),\f$
-\f$(\tau_2^\mathrm{min}, \tau_2^\mathrm{max})\f$ (or [Note: In what follows
-we will only mention \f$\tau_3\f$; however, the algorithm is itself valid,
-and has been implemented, in the case of \f$(\tau_0,\tau_2)\f$ too. However,
-we recommend that the space \f$\tau_0\f$-\f$\tau_3\f$ be used.]
-\f$(\tau_3^\mathrm{min}, \tau_3^\mathrm{max})\f$) the algorithm
-<ol>
-<li> chooses a lattice of templates along the equal mass curve and then</li>
-
-<li> lays a rectangular grid in the rectangular region defined by
-the minimum and maximum values of the chirp-times and retain only
-if (a) the point lies in the parameter space, OR (b) one of the
-vertices defined by the rectangle lies in the parameter space.</li>
-</ol>
-
-\heading{Templates along the equal mass curve}
-The algorithm works in two
-stages: In the first stage, templates are built along the equal
-mass (that is, \f$\eta=1/4\f$) curve starting from the minimum value
-of the Newtonian chirp-time and stopping at its maximum value.
-Given the \f$n\f$\ th template at \f$O\f$ with parameters \f$(\tau_0^{(n)},\tau_3^{(n)}),\f$
-and given also the distance between templates in our preferred coordinates
-\f$(D\tau_0^{(n)},D\tau_3^{(n)}),\f$
-consider lines \f$\tau_0 = \tau_0^{(n)} + D\tau_0^{(n)}\f$
-(\f$QA\f$ of Fig.\figref{fig_equal_mass_algo}) and
-\f$\tau_3 = \tau_3^{(n)} + D\tau_3^{(n)}\f$
-(\f$PB\f$ of Fig.\figref{fig_equal_mass_algo}).
-
-\floatfig{h,fig_equal_mass_algo}
-\image html  LALInspiralBankHequalmass.png "Fig.[fig_equal_mass_algo]: Algorithm sketching the placement of templates along eta=1/4 curve"
-\image latex LALInspiralBankHequalmass.pdf "Algorithm sketching the placement of templates along eta=1/4 curve" width=4.0in
-
-The template next to
-\f$(\tau_0^{(n)},\tau_3^{(n)}),\f$ on the equal mass curve, must lie
-either along \f$PB\f$ or along \f$QA\f$ (cf. Fig.\figref{fig_equal_mass_algo} in order
-that all the signals that may lie on \f$OAB\f$
-are spanned by at least one of the two templates.  Clearly, if we were
-to place the \f$(n+1)\f$\ th template at \f$B,\f$ some of the signals won't
-have the required minimal match. However, placing the \f$(n+1)\f$\ th template at
-\f$A\f$ suffices our requirement.
-(Note, however, that there is
-no guarantee that this will always work; it works only if the curve
-along which templates are being laid is a slowly varying function.)
-To locate the \f$(n+1)\f$\ th template we
-compute the following pairs of coordinates:
-\f{eqnarray}{
-\tau_0^{(n+1)} = \tau_0^{(n)} + D\tau_0^{(n)}, \ \
-\tau_3^{(n+1)} =  4A_3 \left ( \frac{\tau_0^{(n+1)}}{4A_0} \right )^{2/5}
-\nonumber \\
-\tau_3^{(n+1)} = \tau_3^{(n)} + D\tau_3^{(n)}, \ \
-\tau_0^{(n+1)} =  4A_0 \left ( \frac{\tau_3^{(n+1)}}{4A_3} \right )^{5/2},
-\f}
-where
-\f{equation}{
-A_0=\frac{5}{256 (\pi f_0)^{8/3}}, \ \ A_3=\frac{\pi}{8 (\pi f_0)^{5/3}}.
-\f}
-Of the two pairs, the required pair is the one that is closer to the
-starting point \f$(\tau_0^{(n)},\tau_3^{(n)}).\f$
-
-\heading{Templates in the rest of the parameter space}
-In the second stage, the algorithm begins again at the point
-\f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{min}),\f$
-corresponding distance between templates
-\f$(D\tau_0^\mathrm{min}, D\tau_3^\mathrm{min}),\f$ and chooses a rectangular lattice
-of templates in the rectangular region defined by
-\f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{min})\f$
-\f$(\tau_0^\mathrm{max}, \tau_3^\mathrm{min})\f$
-\f$(\tau_0^\mathrm{max}, \tau_3^\mathrm{max})\f$  and
-\f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{max})\f$.
-The implementation of the algorithm along the equal mass curve and
-in a rectangular lattice in the rest of the parameter space is shown
-plotted in Fig.\figref{fig_coarse}, where the templates
-chosen are represented as points.
-
-\floatfig{h,fig_coarse}
-\image html  LALInspiralBankHCoarse2.png "Fig.[fig_coarse]: Algorithm sketching the construction of a rectangular lattice of templates"
-\image latex LALInspiralBankHCoarse2.pdf "Algorithm sketching the construction of a rectangular lattice of templates" width=4.5in
-
-\heading{Algorithm}
-
-The algorithm to lay templates along the equal-mass curve is as follows:
-<tt>
-<ul>
-<li> Begin at \f$\tau_0 = \tau_0^\mathrm{min}\f$
-<li> do while \f$(\tau_0 < \tau_0^\mathrm{max})\f$<br>
-   {
-   <ul>
-   <li> \f$\tau_0^A = \tau_0 + D\tau_0, \ \ \tau_3^A = 4A_3 \left ( {\tau_0^A}/{4A_0} \right )^{2/5}\f$
-   <li> \f$\tau_3^B = \tau_3 + D\tau_3, \ \ \tau_0^B = 4A_0 \left ( {\tau_3^B}/{4A_3} \right )^{5/2}\f$
-   <li> if (\f$(\tau_0^A,\tau_3^A)\f$ is closer \f$(\tau_0,\tau_3)\f$ than \f$(\tau_0^B,\tau_3^B)\f$)<br>
-        {<br>
-           \f$\tau_0 = \tau_0^A, \tau_3 = \tau_3^A\f$<br>
-        }<br>
-   <li> else <br>
-        {<br>
-        \f$\tau_0 = \tau_0^B, \tau_3 = \tau_3^B\f$ <br>
-        }<br>
-   <li> Add \f$(\tau_0, \tau_3)\f$ to InspiralTemplateList
-   <li> numTemplates++
-   <li> Compute metric at \f$(\tau_0, \tau_3)\f$
-   <li> Compute distance between templates at  new point: \f$(D\tau_0, D\tau_3)\f$
-   </ul>
-}
-</ul>
-</tt>
-
-The algorithm to lay templates in the rest of the parameter space
-is as follows:
-<tt>
-<ul>
-<li> Begin at \f$\tau_0 = \tau_0^\mathrm{min}, \tau_3 = \tau_3^\mathrm{min}\f$
-<li> Compute metric at \f$(\tau_0, \tau_3)\f$
-<li> Compute distance between templates at  new point: \f$(D\tau_0, D\tau_3)\f$
-<li> Add \f$(\tau_0, \tau_3)\f$ to InspiralTemplateList
-<li> numTemplates++
-<li> do while (\f$\tau_3 <= \tau_3^\mathrm{max}\f$)<br>
-   {<br>
-   <ul>
-   <li> do while (\f$\tau_0 <= \tau_0^\mathrm{max}\f$)<br>
-       {<br>
-       <ul>
-       <li> if (\f$(\tau_0, \tau_3)\f$ is inside the parameter space)<br>
-            {<br>
-            <ul>
-            <li> Compute metric at (\f$\tau_0, \tau_3\f$)
-            <li> Compute distance between templates at  new point: (\f$D\tau_0, D\tau_3\f$)
-            <li> Add (\f$\tau_0, \tau_3\f$) to InspiralTemplateList
-            <li> numTemplates++
-            </ul>
-            }<br>
-       <li> Increment \f$\tau_0:\f$ \f$\tau_0 = \tau_0 + D\tau_0\f$<br>
-       </ul>
-       }<br>
-   <li> Increment \f$\tau_3:\f$ \f$\tau_3 = \tau_3 + D\tau_3\f$
-   <li> Get next template along \f$\tau_3=\mathrm{const.}\f$: \f$(\tau_0, \tau_3)\f$<br>
-   </ul>
-   }<br>
-</ul>
-</tt>
-*/
+ * \author Churches, D. K and Sathyaprakash, B.S.
+ * \brief Functions to create a coarse grid of templates.
+ *
+ * The coarse grid algorithm works in two stages:
+ * After computing the minimum and maximum chirp-times corresponding to the
+ * search space: \f$(\tau_0^\mathrm{min}, \tau_0^\mathrm{max}),\f$
+ * \f$(\tau_2^\mathrm{min}, \tau_2^\mathrm{max})\f$ (or [Note: In what follows
+ * we will only mention \f$\tau_3\f$; however, the algorithm is itself valid,
+ * and has been implemented, in the case of \f$(\tau_0,\tau_2)\f$ too. However,
+ * we recommend that the space \f$\tau_0\f$-\f$\tau_3\f$ be used.]
+ * \f$(\tau_3^\mathrm{min}, \tau_3^\mathrm{max})\f$) the algorithm
+ * <ol>
+ * <li> chooses a lattice of templates along the equal mass curve and then</li>
+ *
+ * <li> lays a rectangular grid in the rectangular region defined by
+ * the minimum and maximum values of the chirp-times and retain only
+ * if (a) the point lies in the parameter space, OR (b) one of the
+ * vertices defined by the rectangle lies in the parameter space.</li>
+ * </ol>
+ *
+ * ### Templates along the equal mass curve ###
+ *
+ * The algorithm works in two
+ * stages: In the first stage, templates are built along the equal
+ * mass (that is, \f$\eta=1/4\f$) curve starting from the minimum value
+ * of the Newtonian chirp-time and stopping at its maximum value.
+ * Given the \f$n\f$\ th template at \f$O\f$ with parameters \f$(\tau_0^{(n)},\tau_3^{(n)}),\f$
+ * and given also the distance between templates in our preferred coordinates
+ * \f$(D\tau_0^{(n)},D\tau_3^{(n)}),\f$
+ * consider lines \f$\tau_0 = \tau_0^{(n)} + D\tau_0^{(n)}\f$
+ * (\f$QA\f$ of Fig.\figref{fig_equal_mass_algo}) and
+ * \f$\tau_3 = \tau_3^{(n)} + D\tau_3^{(n)}\f$
+ * (\f$PB\f$ of Fig.\figref{fig_equal_mass_algo}).
+ *
+ * \image html  LALInspiralBankHequalmass.png "Fig.[fig_equal_mass_algo]: Algorithm sketching the placement of templates along eta=1/4 curve"
+ * \image latex LALInspiralBankHequalmass.pdf "Algorithm sketching the placement of templates along eta=1/4 curve" width=4.0in
+ *
+ * The template next to
+ * \f$(\tau_0^{(n)},\tau_3^{(n)}),\f$ on the equal mass curve, must lie
+ * either along \f$PB\f$ or along \f$QA\f$ (cf. Fig.\figref{fig_equal_mass_algo} in order
+ * that all the signals that may lie on \f$OAB\f$
+ * are spanned by at least one of the two templates.  Clearly, if we were
+ * to place the \f$(n+1)\f$\ th template at \f$B,\f$ some of the signals won't
+ * have the required minimal match. However, placing the \f$(n+1)\f$\ th template at
+ * \f$A\f$ suffices our requirement.
+ * (Note, however, that there is
+ * no guarantee that this will always work; it works only if the curve
+ * along which templates are being laid is a slowly varying function.)
+ * To locate the \f$(n+1)\f$\ th template we
+ * compute the following pairs of coordinates:
+ * \f{eqnarray}{
+ * \tau_0^{(n+1)} = \tau_0^{(n)} + D\tau_0^{(n)}, \ \
+ * \tau_3^{(n+1)} =  4A_3 \left ( \frac{\tau_0^{(n+1)}}{4A_0} \right )^{2/5}
+ * \nonumber \\
+ * \tau_3^{(n+1)} = \tau_3^{(n)} + D\tau_3^{(n)}, \ \
+ * \tau_0^{(n+1)} =  4A_0 \left ( \frac{\tau_3^{(n+1)}}{4A_3} \right )^{5/2},
+ * \f}
+ * where
+ * \f{equation}{
+ * A_0=\frac{5}{256 (\pi f_0)^{8/3}}, \ \ A_3=\frac{\pi}{8 (\pi f_0)^{5/3}}.
+ * \f}
+ * Of the two pairs, the required pair is the one that is closer to the
+ * starting point \f$(\tau_0^{(n)},\tau_3^{(n)}).\f$
+ *
+ * ### Templates in the rest of the parameter space ###
+ *
+ * In the second stage, the algorithm begins again at the point
+ * \f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{min}),\f$
+ * corresponding distance between templates
+ * \f$(D\tau_0^\mathrm{min}, D\tau_3^\mathrm{min}),\f$ and chooses a rectangular lattice
+ * of templates in the rectangular region defined by
+ * \f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{min})\f$
+ * \f$(\tau_0^\mathrm{max}, \tau_3^\mathrm{min})\f$
+ * \f$(\tau_0^\mathrm{max}, \tau_3^\mathrm{max})\f$  and
+ * \f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{max})\f$.
+ * The implementation of the algorithm along the equal mass curve and
+ * in a rectangular lattice in the rest of the parameter space is shown
+ * plotted in Fig.\figref{fig_coarse}, where the templates
+ * chosen are represented as points.
+ *
+ * \image html  LALInspiralBankHCoarse2.png "Fig.[fig_coarse]: Algorithm sketching the construction of a rectangular lattice of templates"
+ * \image latex LALInspiralBankHCoarse2.pdf "Algorithm sketching the construction of a rectangular lattice of templates" width=4.5in
+ *
+ * ### Algorithm ###
+ *
+ * The algorithm to lay templates along the equal-mass curve is as follows:
+ * <tt>
+ * <ul>
+ * <li> Begin at \f$\tau_0 = \tau_0^\mathrm{min}\f$
+ * <li> do while \f$(\tau_0 < \tau_0^\mathrm{max})\f$<br>
+ * {
+ * <ul>
+ * <li> \f$\tau_0^A = \tau_0 + D\tau_0, \ \ \tau_3^A = 4A_3 \left ( {\tau_0^A}/{4A_0} \right )^{2/5}\f$
+ * <li> \f$\tau_3^B = \tau_3 + D\tau_3, \ \ \tau_0^B = 4A_0 \left ( {\tau_3^B}/{4A_3} \right )^{5/2}\f$
+ * <li> if (\f$(\tau_0^A,\tau_3^A)\f$ is closer \f$(\tau_0,\tau_3)\f$ than \f$(\tau_0^B,\tau_3^B)\f$)<br>
+ * {<br>
+ * \f$\tau_0 = \tau_0^A, \tau_3 = \tau_3^A\f$<br>
+ * }<br>
+ * <li> else <br>
+ * {<br>
+ * \f$\tau_0 = \tau_0^B, \tau_3 = \tau_3^B\f$ <br>
+ * }<br>
+ * <li> Add \f$(\tau_0, \tau_3)\f$ to InspiralTemplateList
+ * <li> numTemplates++
+ * <li> Compute metric at \f$(\tau_0, \tau_3)\f$
+ * <li> Compute distance between templates at  new point: \f$(D\tau_0, D\tau_3)\f$
+ * </ul>
+ * }
+ * </ul>
+ * </tt>
+ *
+ * The algorithm to lay templates in the rest of the parameter space
+ * is as follows:
+ * <tt>
+ * <ul>
+ * <li> Begin at \f$\tau_0 = \tau_0^\mathrm{min}, \tau_3 = \tau_3^\mathrm{min}\f$
+ * <li> Compute metric at \f$(\tau_0, \tau_3)\f$
+ * <li> Compute distance between templates at  new point: \f$(D\tau_0, D\tau_3)\f$
+ * <li> Add \f$(\tau_0, \tau_3)\f$ to InspiralTemplateList
+ * <li> numTemplates++
+ * <li> do while (\f$\tau_3 <= \tau_3^\mathrm{max}\f$)<br>
+ * {<br>
+ * <ul>
+ * <li> do while (\f$\tau_0 <= \tau_0^\mathrm{max}\f$)<br>
+ * {<br>
+ * <ul>
+ * <li> if (\f$(\tau_0, \tau_3)\f$ is inside the parameter space)<br>
+ * {<br>
+ * <ul>
+ * <li> Compute metric at (\f$\tau_0, \tau_3\f$)
+ * <li> Compute distance between templates at  new point: (\f$D\tau_0, D\tau_3\f$)
+ * <li> Add (\f$\tau_0, \tau_3\f$) to InspiralTemplateList
+ * <li> numTemplates++
+ * </ul>
+ * }<br>
+ * <li> Increment \f$\tau_0:\f$ \f$\tau_0 = \tau_0 + D\tau_0\f$<br>
+ * </ul>
+ * }<br>
+ * <li> Increment \f$\tau_3:\f$ \f$\tau_3 = \tau_3 + D\tau_3\f$
+ * <li> Get next template along \f$\tau_3=\mathrm{const.}\f$: \f$(\tau_0, \tau_3)\f$<br>
+ * </ul>
+ * }<br>
+ * </ul>
+ * </tt>
+ */
 /*@{*/
 
 
@@ -285,7 +286,8 @@ LALInspiralCreateCoarseBank(
   RETURN (status);
 }
 
-/** Anand: 26 October 2006
+/**
+ * Anand: 26 October 2006
  * This function nudges the templates in the list to
  * the (max-total-mass = constant) line.
  * This is done only for those templates whose total

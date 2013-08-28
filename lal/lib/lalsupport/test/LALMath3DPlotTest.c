@@ -27,7 +27,6 @@
  */
 
 /**
- *
  * \author Hanna, C.R.
  * \file
  * \ingroup LALMathematica_h
@@ -38,15 +37,16 @@
  * LALMath3DPlotTest
  * \endcode
  *
- * \heading{Description}
-  * This program generates a set of points simulating a template bank and calls
+ * ### Description ###
+ *
+ * This program generates a set of points simulating a template bank and calls
  * LALMath3DPlot() to generate a MATHEMATICA notebook to display a 3D image of the
-  * bank.  Instructions on how to evaluate the notebook appear when it is opened.
+ * bank.  Instructions on how to evaluate the notebook appear when it is opened.
  *
+ * ### Notes ###
  *
- * \heading{Notes}
  * For a more interesting test of LALMath3DPlot() see \ref InspiralSpinBankTest.c in
-  * the bank package.
+ * the bank package.
  *
  */
 

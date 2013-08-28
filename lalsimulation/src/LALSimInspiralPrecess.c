@@ -23,7 +23,7 @@
 /**
  * Takes in the h_lm spherical harmonic decomposed modes and rotates the modes
  * by Euler angles alpha, beta, and gamma using the Wigner D matrices.
- * 
+ *
  * e.g.
  *
  * \f$\tilde{h}_{l,m}(t) = D^l_{m',m} h_{l,m'}(t)\f$
@@ -79,7 +79,7 @@ int XLALSimInspiralPrecessionRotateModes(
  * Future revisions will change the first two pointers to this:
  * COMPLEX16TimeSeries** h_lm
  *
- * and add 
+ * and add
  * unsigned int l
  *
  * Thus the input h_lm will be considered a list of pointers to the h_lm for a
@@ -201,7 +201,7 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 /**
  * Takes in the spherical harmonic decomposed modes as a strain time series and
  * imposes the effect of a constant cone of precession. The result is returned
- * in the physical waveforms hp, hx, after they have been resummed from the 
+ * in the physical waveforms hp, hx, after they have been resummed from the
  * modified h_lm waveforms.
  *
  * NOTE: the h_lm modes will be modified in place
@@ -288,7 +288,7 @@ int XLALSimInspiralOrientationMatrixForL2(
 /**
  * Determine a direction vector from the orientation matrix.
  *
- * NOTE: vec should be *initialized* to be a unit vector -- its value is used, 
+ * NOTE: vec should be *initialized* to be a unit vector -- its value is used,
  * then replaced
  */
 int XLALSimInspiralOrientationMatrixDirection(

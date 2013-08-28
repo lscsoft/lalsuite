@@ -42,20 +42,20 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup FindChirpBCVSpin_h
-   \author Brown, D. A. and Jones, G
-
-\brief Provides structures and functions to condition interferometer data
-and generate binary inspiral chirps using the spinning BCV detection
-template family.
-
-\heading{Synopsis}
-
-\code
-#include <lal/FindChirpBCVSpin.h>
-\endcode
-
-*/
+ * \addtogroup FindChirpBCVSpin_h
+ * \author Brown, D. A. and Jones, G
+ *
+ * \brief Provides structures and functions to condition interferometer data
+ * and generate binary inspiral chirps using the spinning BCV detection
+ * template family.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/FindChirpBCVSpin.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

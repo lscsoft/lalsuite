@@ -36,7 +36,6 @@ extern "C" {
  * ComputSky.[ch] by Jolien Creighton, Reinhard Prix, Steve Berukoff
  * LALComputeAM.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens
  *
- *
  */
 /*@{*/
 
@@ -69,7 +68,8 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
-/** Simple container for two REAL8-vectors, namely the SSB-timings DeltaT_alpha  and Tdot_alpha,
+/**
+ * Simple container for two REAL8-vectors, namely the SSB-timings DeltaT_alpha  and Tdot_alpha,
  * with one entry per SFT-timestamp. These are required input for XLALNewDemod().
  * We also store the SSB reference-time tau0.
  */
@@ -144,7 +144,8 @@ typedef struct tagComputeFParams {
 } ComputeFParams;
 
 
-/** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
+/**
+ * Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStat() the pointer-entries should all be NULL.
  */

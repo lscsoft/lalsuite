@@ -28,11 +28,10 @@
  */
 
 /**
-
-\author Brown D. A., BCV-Modifications by Messaritaki E.
-\file
-
-*/
+ * \author Brown D. A., BCV-Modifications by Messaritaki E.
+ * \file
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdio.h>

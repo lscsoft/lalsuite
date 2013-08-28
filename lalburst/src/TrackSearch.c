@@ -786,7 +786,7 @@ ConnectLinePoints(LALStatus *status,
 	  /* check if the pixel is a valid continuation */
 	  nextIndex=label[nextRow][nextCol]-1;
 	  differ=(REAL4)fabs((double)linePoints[lal_index].angle-linePoints[nextIndex].angle);
-	  /**
+	  /*
 	   * Cristina:Tue-Jun-09-2009:200906091041
 	   * The if(differ>LAL_PI/2.0) IF I think allows for
 	   * connection of zig-zaggy type triggers.  I think this if

@@ -18,77 +18,82 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief Module to set the pointers to the required energy and flux functions.
-Normally, a user is not required to call this function to generate a waveform.
-
-\heading{Prototypes}
-
-<tt>LALInspiralChooseModel()</tt>
-<ul>
-<li> \c f: Output containing the pointers to the appropriate
-energy, flux, frequency, timing and phasing functions.</li>
-<li> \c ak: Output containing the PN expnasion coefficients.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-\heading{Description}
-This module gives the post-Newtonian expansions and/or P-approximants
-to the energy, its derivative and gravitational-wave flux functions. More
-specifically, the <tt>static REAL8</tt> functions below give Taylor expansions
-of \f$dE/dv,\f$ and \f${\cal F}(v),\f$ P-approximants of \f$e(v),\f$ \f$dE/dv\f$
-(derived from \f$e(v)\f$) and \f${\cal F}(v).\f$
-
-\c LALInspiralChooseModel
-is used to set pointers to the required energy and flux functions
-\f$E^{\prime}_T(v),\f$ \f$\mathcal{F}_T(v),\f$ \f$E^{\prime}_P(v)\f$ and \f$\mathcal{F}_P(v),\f$
-in <tt>expnFunc,</tt> as also the GW phasing and frequency fucntions used in
-the various approximants to generate the waveform.
-More specifically pointers are set to the following functions in the structure
-\c expnFunc:
-<ul>
-  <li> <tt>EnergyFunction *dEnergy</tt>
-  </li><li> <tt>FluxFunction *flux</tt>
-  </li><li> <tt>InspiralTiming2 *timing2</tt>
-  </li><li> <tt>InspiralPhasing2 *phasing2</tt>
-  </li><li> <tt>InspiralPhasing3 *phasing3</tt>
-  </li><li> <tt>InspiralFrequency3 *frequency3</tt></li>
-</ul>
-\c LALInspiralChooseModel also outputs in \c ak the
-last stable orbit (LSO) velocity \f$v_\textrm{LSO}\f$ (as <tt>ak->vn</tt>)
-defined by the equation \f$E'(v_\textrm{LSO})=0,\f$
-the values of the GW frequency \f$f_\textrm{LSO}=v_\textrm{LSO}^3/(\pi m)\f$
-(as <tt>ak->fn</tt>) and time (as <tt>ak->tn</tt>) elapsed from <tt>params->fLower</tt>
-to smaller of \c fCutOff and <tt>ak->fn</tt> by evaluating the integral
-\f{equation}{
-t_n = t_{0} - m \int^{v_n}_{v_0} \frac{E^{\prime}(v)}{\mathcal{F}(v)} \, dv\,,
-\f}
-where \f$t_{0}\f$ (usually equal to zero) is the user specified starting
-time for the waveform when the wave frequency reaches <tt>params->fLower</tt>
-and \f$v_{0}= (\pi m f)^{1/3}\f$ (with \f$f=<tt>params->fLower</tt>\f$) is the  velocity
-at time \f$t_{0}.\f$  Note that \f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in
-<tt>f->dEnergy</tt> and <tt>f->flux.</tt>
-
-\heading{Algorithm}
-Numerical integration is used to compute <tt>ak->tn.</tt>
-\heading{Uses}
-LALInspiralTofV
-
-\heading{Notes}
-<ul>
-<li> See Damour, Iyer and Sathyaprakash, PRD 57, 885, 1998 for further details.
-Damour, Iyer and Sathyaprakash, PRD 63, 044023, 2001 is a resource paper that
-summarizes how to generate waveforms in different approximations to the dynamics
-of a compact binary under radiation reaction.</li>
-<li> The Pade Approximant for the 1PN expansion is undefined as also
-EOB at orders less than 2PN. BCV is independent of the PN order.
-Spinning waveforms are only defined at the highest PN order.</li>
-</ul>
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module to set the pointers to the required energy and flux functions.
+ * Normally, a user is not required to call this function to generate a waveform.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralChooseModel()</tt>
+ * <ul>
+ * <li> \c f: Output containing the pointers to the appropriate
+ * energy, flux, frequency, timing and phasing functions.</li>
+ * <li> \c ak: Output containing the PN expnasion coefficients.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * This module gives the post-Newtonian expansions and/or P-approximants
+ * to the energy, its derivative and gravitational-wave flux functions. More
+ * specifically, the <tt>static REAL8</tt> functions below give Taylor expansions
+ * of \f$dE/dv,\f$ and \f${\cal F}(v),\f$ P-approximants of \f$e(v),\f$ \f$dE/dv\f$
+ * (derived from \f$e(v)\f$) and \f${\cal F}(v).\f$
+ *
+ * \c LALInspiralChooseModel
+ * is used to set pointers to the required energy and flux functions
+ * \f$E^{\prime}_T(v),\f$ \f$\mathcal{F}_T(v),\f$ \f$E^{\prime}_P(v)\f$ and \f$\mathcal{F}_P(v),\f$
+ * in <tt>expnFunc,</tt> as also the GW phasing and frequency fucntions used in
+ * the various approximants to generate the waveform.
+ * More specifically pointers are set to the following functions in the structure
+ * \c expnFunc:
+ * <ul>
+ * <li> <tt>EnergyFunction *dEnergy</tt>
+ * </li><li> <tt>FluxFunction *flux</tt>
+ * </li><li> <tt>InspiralTiming2 *timing2</tt>
+ * </li><li> <tt>InspiralPhasing2 *phasing2</tt>
+ * </li><li> <tt>InspiralPhasing3 *phasing3</tt>
+ * </li><li> <tt>InspiralFrequency3 *frequency3</tt></li>
+ * </ul>
+ * \c LALInspiralChooseModel also outputs in \c ak the
+ * last stable orbit (LSO) velocity \f$v_\textrm{LSO}\f$ (as <tt>ak->vn</tt>)
+ * defined by the equation \f$E'(v_\textrm{LSO})=0,\f$
+ * the values of the GW frequency \f$f_\textrm{LSO}=v_\textrm{LSO}^3/(\pi m)\f$
+ * (as <tt>ak->fn</tt>) and time (as <tt>ak->tn</tt>) elapsed from <tt>params->fLower</tt>
+ * to smaller of \c fCutOff and <tt>ak->fn</tt> by evaluating the integral
+ * \f{equation}{
+ * t_n = t_{0} - m \int^{v_n}_{v_0} \frac{E^{\prime}(v)}{\mathcal{F}(v)} \, dv\,,
+ * \f}
+ * where \f$t_{0}\f$ (usually equal to zero) is the user specified starting
+ * time for the waveform when the wave frequency reaches <tt>params->fLower</tt>
+ * and \f$v_{0}= (\pi m f)^{1/3}\f$ (with \f$f=<tt>params->fLower</tt>\f$) is the  velocity
+ * at time \f$t_{0}.\f$  Note that \f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in
+ * <tt>f->dEnergy</tt> and <tt>f->flux.</tt>
+ *
+ * ### Algorithm ###
+ *
+ * Numerical integration is used to compute <tt>ak->tn.</tt>
+ *
+ * ### Uses ###
+ *
+ * LALInspiralTofV
+ *
+ * ### Notes ###
+ *
+ * <ul>
+ * <li> See Damour, Iyer and Sathyaprakash, PRD 57, 885, 1998 for further details.
+ * Damour, Iyer and Sathyaprakash, PRD 63, 044023, 2001 is a resource paper that
+ * summarizes how to generate waveforms in different approximations to the dynamics
+ * of a compact binary under radiation reaction.</li>
+ * <li> The Pade Approximant for the 1PN expansion is undefined as also
+ * EOB at orders less than 2PN. BCV is independent of the PN order.
+ * Spinning waveforms are only defined at the highest PN order.</li>
+ * </ul>
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

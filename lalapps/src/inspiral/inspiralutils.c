@@ -349,12 +349,13 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
 
 }
 
-/** Main function for injecting numetrical relativity waveforms.
-    Takes as input a list of injections, and adds h(t) to a given
-    timeseries for a specified ifo and a dynamic range factor.
-    Updated/generalized version of InjectNumRelWaveforms that allows
-    arbitrary LIGO and Virgo PSDs and integration starting frequencies
-*/
+/**
+ * Main function for injecting numetrical relativity waveforms.
+ * Takes as input a list of injections, and adds h(t) to a given
+ * timeseries for a specified ifo and a dynamic range factor.
+ * Updated/generalized version of InjectNumRelWaveforms that allows
+ * arbitrary LIGO and Virgo PSDs and integration starting frequencies
+ */
 void InjectNumRelWaveformsUsingPSDREAL8(LALStatus *status,         /**< pointer to LALStatus structure */
                             REAL8TimeSeries      *chan,         /**< [out] the output time series */
                             SimInspiralTable     *injections,   /**< [in] list of injections */
@@ -472,10 +473,11 @@ void InjectNumRelWaveformsUsingPSDREAL8(LALStatus *status,         /**< pointer 
 }
 
 
-/** Main function for injecting numetrical relativity waveforms.
-    Takes as input a list of injections, and adds h(t) to a given
-    timeseries for a specified ifo and a dynamic range factor.
-*/
+/**
+ * Main function for injecting numetrical relativity waveforms.
+ * Takes as input a list of injections, and adds h(t) to a given
+ * timeseries for a specified ifo and a dynamic range factor.
+ */
 void InjectNumRelWaveforms (LALStatus           *status,       /**< pointer to LALStatus structure */
                             REAL4TimeSeries     *chan,         /**< [out] the output time series */
                             SimInspiralTable    *injections,   /**< [in] list of injections */
@@ -579,10 +581,11 @@ void InjectNumRelWaveforms (LALStatus           *status,       /**< pointer to L
 
 }
 
-/** Main function for injecting numetrical relativity waveforms.
-    Takes as input a list of injections, and adds h(t) to a given
-    timeseries for a specified ifo and a dynamic range factor.
-*/
+/**
+ * Main function for injecting numetrical relativity waveforms.
+ * Takes as input a list of injections, and adds h(t) to a given
+ * timeseries for a specified ifo and a dynamic range factor.
+ */
 void InjectNumRelWaveformsREAL8 (LALStatus      *status,       /**< pointer to LALStatus structure */
                             REAL8TimeSeries     *chan,         /**< [out] the output time series */
                             SimInspiralTable    *injections,   /**< [in] list of injections */
@@ -977,8 +980,9 @@ XLALPsdFromFile(REAL8FrequencySeries **psd,  /**< [out] The PSD */
 }
 
 
-/** Function for interpolating PSD to a given sample rate
-  */
+/**
+ * Function for interpolating PSD to a given sample rate
+ */
 REAL8FrequencySeries *
 XLALInterpolatePSD( REAL8FrequencySeries *in,      /**< input strain time series */
                     REAL8                deltaFout /**< sample rate of time series */)

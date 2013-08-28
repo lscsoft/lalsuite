@@ -1,26 +1,25 @@
 /**
-
-\addtogroup pkg_utilities
-
-\brief This package contains various numerical utilities for use in LAL.
-
-@{
-  \defgroup Factorial_h                 Header Factorial.h
-  \defgroup Random_h 			Header Random.h
-  \defgroup FindRoot_h 			Header FindRoot.h
-  \defgroup Integrate_h 		Header Integrate.h
-  \defgroup LALAdaptiveRungeKutta4_h	Header LALAdaptiveRungeKutta4.h
-  \defgroup Interpolate_h 		Header Interpolate.h
-  \defgroup Sort_h 			Header Sort.h
-  \defgroup ODE_h 			Header ODE.h
-  \defgroup Dirichlet_h 		Header Dirichlet.h
-  \defgroup CoarseGrainFrequencySeries_h Header CoarseGrainFrequencySeries.h
-  \defgroup MatrixUtils_h 		Header MatrixUtils.h
-  \defgroup LALRunningMedian_h 		Header LALRunningMedian.h
-  \defgroup RngMedBias_h 		Header RngMedBias.h
-  \defgroup BitField_h			Header BitField.h
-  \defgroup GSLSupport_h		Header GSLSupport.h
-  \defgroup SphericalHarmonics_h 	Header SphericalHarmonics.h
-@}
-
-*/
+ * \addtogroup pkg_utilities
+ *
+ * \brief This package contains various numerical utilities for use in LAL.
+ *
+ * @{
+ * \defgroup Factorial_h                 Header Factorial.h
+ * \defgroup Random_h 			Header Random.h
+ * \defgroup FindRoot_h 			Header FindRoot.h
+ * \defgroup Integrate_h 		Header Integrate.h
+ * \defgroup LALAdaptiveRungeKutta4_h	Header LALAdaptiveRungeKutta4.h
+ * \defgroup Interpolate_h 		Header Interpolate.h
+ * \defgroup Sort_h 			Header Sort.h
+ * \defgroup ODE_h 			Header ODE.h
+ * \defgroup Dirichlet_h 		Header Dirichlet.h
+ * \defgroup CoarseGrainFrequencySeries_h Header CoarseGrainFrequencySeries.h
+ * \defgroup MatrixUtils_h 		Header MatrixUtils.h
+ * \defgroup LALRunningMedian_h 		Header LALRunningMedian.h
+ * \defgroup RngMedBias_h 		Header RngMedBias.h
+ * \defgroup BitField_h			Header BitField.h
+ * \defgroup GSLSupport_h		Header GSLSupport.h
+ * \defgroup SphericalHarmonics_h 	Header SphericalHarmonics.h
+ * @}
+ *
+ */

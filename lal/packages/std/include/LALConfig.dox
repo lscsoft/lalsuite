@@ -1,53 +1,54 @@
 /**
-\author J. D. E. Creighton, T. D. Creighton
-\addtogroup LALConfig_h
-
-\brief Defines configuration macro constants.
-
-\heading{Synopsis}
-\code
-#include <lal/LALConfig.h>
-\endcode
-
-This header (which is not technically in the \c std package;
-rather it is generated directly in the <tt>include/lal</tt> directory during
-configuration) is included in essentially every other header file.  It
-contains macro constants that are defined at configuration time.  They are:
-
-<dl>
-<dt>LAL_VERSION</dt><dd> Constant string containing the version of LAL.</dd>
-<dt>LAL_VERSION_MAJOR</dt><dd> Integer representing the major version
-  number of LAL.</dd>
-<dt>LAL_VERSION_MINOR</dt><dd> Integer representing the minor version
-  number of LAL.</dd>
-<dt>LAL_CONFIGURE_ARGS</dt><dd> Constant string containing the arguments
-  given to the configure script.</dd>
-<dt>LAL_CONFIGURE_DATE</dt><dd> Constant string containing the date
-  when LAL was configured.</dd>
-<dt>LAL_CVS_TAG</dt><dd> Constant string containing the CVS tag used to
-  checkout LAL (blank if none).</dd>
-<dt>LAL_SIZEOF_DOUBLE</dt><dd> Integer representing the size of a
-  double precision floating point number.</dd>
-<dt>LAL_SIZEOF_FLOAT</dt><dd> Integer representing the size of a
-  single precision floating point number.</dd>
-<dt>LAL_SIZEOF_INT</dt><dd> Integer representing the size of a
-  integer.</dd>
-<dt>LAL_SIZEOF_LONG</dt><dd> Integer representing the size of a
-  long integer.</dd>
-<dt>LAL_SIZEOF_LONG_LONG</dt><dd> Integer representing the size of a
-  long long integer.</dd>
-<dt>LAL_SIZEOF_SHORT</dt><dd> Integer representing the size of a
-  short integer.</dd>
-<dt>LAL_NDEBUG</dt><dd> Defined if debugging is turned off (use the
-  configure argument <tt>--disable-debug</tt> to do this).</dd>
-<dt>NOLALMACROS</dt><dd> Defined if status macros are replaced by functions
-  (where possible) (use the configure argument <tt>--disable-macros</tt> to do
-  this).</dd>
-<dt>LAL_PTHREAD_LOCK</dt><dd> Defined if POSIX thread mutex locking is
-  to be used for threadsafety (use the configure argument
-  <tt>--enable-pthread-lock</tt> to do this).</dd>
-<dt>LAL_MPI_ENABLED</dt><dd> Defined if LAL MPI routines will be compiled
-  (use the configure argument <tt>--enable-mpi</tt> to do this).</dd>
-</dl>
-
-*/
+ * \author J. D. E. Creighton, T. D. Creighton
+ * \addtogroup LALConfig_h
+ *
+ * \brief Defines configuration macro constants.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALConfig.h>
+ * \endcode
+ *
+ * This header (which is not technically in the \c std package;
+ * rather it is generated directly in the <tt>include/lal</tt> directory during
+ * configuration) is included in essentially every other header file.  It
+ * contains macro constants that are defined at configuration time.  They are:
+ *
+ * <dl>
+ * <dt>LAL_VERSION</dt><dd> Constant string containing the version of LAL.</dd>
+ * <dt>LAL_VERSION_MAJOR</dt><dd> Integer representing the major version
+ * number of LAL.</dd>
+ * <dt>LAL_VERSION_MINOR</dt><dd> Integer representing the minor version
+ * number of LAL.</dd>
+ * <dt>LAL_CONFIGURE_ARGS</dt><dd> Constant string containing the arguments
+ * given to the configure script.</dd>
+ * <dt>LAL_CONFIGURE_DATE</dt><dd> Constant string containing the date
+ * when LAL was configured.</dd>
+ * <dt>LAL_CVS_TAG</dt><dd> Constant string containing the CVS tag used to
+ * checkout LAL (blank if none).</dd>
+ * <dt>LAL_SIZEOF_DOUBLE</dt><dd> Integer representing the size of a
+ * double precision floating point number.</dd>
+ * <dt>LAL_SIZEOF_FLOAT</dt><dd> Integer representing the size of a
+ * single precision floating point number.</dd>
+ * <dt>LAL_SIZEOF_INT</dt><dd> Integer representing the size of a
+ * integer.</dd>
+ * <dt>LAL_SIZEOF_LONG</dt><dd> Integer representing the size of a
+ * long integer.</dd>
+ * <dt>LAL_SIZEOF_LONG_LONG</dt><dd> Integer representing the size of a
+ * long long integer.</dd>
+ * <dt>LAL_SIZEOF_SHORT</dt><dd> Integer representing the size of a
+ * short integer.</dd>
+ * <dt>LAL_NDEBUG</dt><dd> Defined if debugging is turned off (use the
+ * configure argument <tt>--disable-debug</tt> to do this).</dd>
+ * <dt>NOLALMACROS</dt><dd> Defined if status macros are replaced by functions
+ * (where possible) (use the configure argument <tt>--disable-macros</tt> to do
+ * this).</dd>
+ * <dt>LAL_PTHREAD_LOCK</dt><dd> Defined if POSIX thread mutex locking is
+ * to be used for threadsafety (use the configure argument
+ * <tt>--enable-pthread-lock</tt> to do this).</dd>
+ * <dt>LAL_MPI_ENABLED</dt><dd> Defined if LAL MPI routines will be compiled
+ * (use the configure argument <tt>--enable-mpi</tt> to do this).</dd>
+ * </dl>
+ *
+ */

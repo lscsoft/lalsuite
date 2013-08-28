@@ -27,7 +27,6 @@
  * This code is partly based on work done by
  * Reinhard Prix, Maria Alessandra Papa, M. Siddiqi
  *
- *
  */
 
 #ifndef _LINEVETO_H  /* Double-include protection. */

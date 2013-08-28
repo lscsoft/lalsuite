@@ -18,7 +18,8 @@
 */
 
 /* vim: set noet ts=4 sw=4: */
-/** \file
+/**
+ * \file
  * \ingroup std
  * \author Creighton, J. D. E.
  * \brief Routines for exporting time series data as sound files.

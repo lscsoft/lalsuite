@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 /**
- * The number of e-folds of ringdown which should be attached for 
+ * The number of e-folds of ringdown which should be attached for
  * EOBNR models
  */
 #define EOB_RD_EFOLDS 10.0
@@ -40,9 +40,9 @@ extern "C" {
  * phenomenological waveform IMRPhenomA in the frequency domain.
  *
  * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
+ * - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ * - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ * Table I of http://arxiv.org/pdf/0712.0343
  *
  * All input parameters should be SI units.
  */
@@ -62,9 +62,9 @@ int XLALSimIMRPhenomAGenerateFD(
  * phenomenological waveform IMRPhenomA in the time domain.
  *
  * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
+ * - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ * - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ * Table I of http://arxiv.org/pdf/0712.0343
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -98,8 +98,8 @@ double XLALSimIMRPhenomBComputeChi(
  * phenomenological waveform IMRPhenomB in the frequency domain.
  *
  * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
+ * - Waveform: Eq.(1)
+ * - Coefficients: Eq.(2) and Table I
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -120,8 +120,8 @@ int XLALSimIMRPhenomBGenerateFD(
  * phenomenological waveform IMRPhenomB in the time domain.
  *
  * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
+ * - Waveform: Eq.(1)
+ * - Coefficients: Eq.(2) and Table I
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -144,8 +144,8 @@ int XLALSimIMRPhenomBGenerateTD(
  * phenomenological waveform IMRPhenomC in the frequency domain.
  *
  * Reference: http://arxiv.org/abs/1005.3306
- *   - Waveform: Eq.(5.1) - (5.13)
- *   - Coefficients: Eq.(5.14) and Table II
+ * - Waveform: Eq.(5.1) - (5.13)
+ * - Coefficients: Eq.(5.14) and Table II
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -219,7 +219,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
      );
 
 /**
- * Routine to compute the mass and spin of the final black hole given 
+ * Routine to compute the mass and spin of the final black hole given
  * the masses, spins, binding energy, and orbital angular momentum vector.
  */
 int XLALSimIMRPhenSpinFinalMassSpin(REAL8 *finalMass,

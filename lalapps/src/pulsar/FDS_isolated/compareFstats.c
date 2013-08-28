@@ -174,7 +174,8 @@ initUserVars (LALStatus *status)
 } /* initUserVars() */
 
 
-/** comparison specific to cluster-output files (7 entries )
+/**
+ * comparison specific to cluster-output files (7 entries )
  */
 void
 compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2 )
@@ -268,7 +269,8 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
 } /* compareClusterFiles() */
 
 
-/** comparison specific to pure Fstat-output files (5 entries )
+/**
+ * comparison specific to pure Fstat-output files (5 entries )
  */
 void
 compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2, REAL8 Ftol)

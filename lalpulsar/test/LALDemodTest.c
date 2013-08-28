@@ -18,206 +18,205 @@
 */
 
 /**
-\author Berukoff, S.J., Papa, M.A.,
-\file
-\ingroup pulsarTODO
-
-\brief Performs required tests of LALDemod().
-
-   \heading{Usage}
-   \code
-   LALDemodTest -i <input data file> [-d <gap>] [-n] [-o]
-   \endcode
-
-   \heading{Description}
-
-   This routine performs tests on the routine <tt>LALDemod()</tt>.
-   Options:
-   <ul>
-   <li> <tt>-i</tt> -- the input data file (default is 'in.data'; an example is included, format below)</li>
-   <li> <tt>-n</tt> -- add zero-mean Gaussian noise to the signal</li>
-   <li> <tt>-d \<gap\></tt> -- simulate gaps in the data.  The number <tt>\<gaps\></tt> refers to the integral number of SFT timescales between adjacent timestamps.</li>
-   <li> <tt>-o</tt> -- print out result data files</li>
-   </ul>
-
-   Structure:
-   In more detail, let us begin with a discussion of the structure of the test
-   code, which is composed of several modules.
-   <ul>
-   <li> The first module reads in data from an input parameter data file.
-   The parameters must be listed in the input file in the following order,
-   with the corresponding format:
-   \code
-   total observation time -- float
-   coherent search time -- float
-   factor by which to modify SFT timescale -- float
-   Cross amplitude -- float
-   Plus amplitude -- float
-   DeFT frequency band (centered by default around f0) -- float
-   f0, intrinsic frequency of the signal at the beginning of the
-   observation -- float
-   maximum order of signal spindown parameters -- int
-   signal spindown parameter 1 --  scientific notation
-   signal spindown parameter 2 --  scientific notation
-   signal spindown parameter 3 --  scientific notation
-   signal spindown parameter 4 --  scientific notation
-   signal spindown parameter 5 --  scientific notation
-   signal source right ascension (alpha) -- float (value in DEGREES)
-   signal source declination (delta) -- float (value in DEGREES)
-   maximum order of template spindown parameters -- int
-   template spindown parameter 1 --  scientific notation (NOT
-   template spindown parameter 2 --  scientific notation (NOT scaled by f0)
-   template spindown parameter 3 --  scientific notation (NOT scaled by f0)
-   template spindown parameter 4 --  scientific notation (NOT scaled by f0)
-   template spindown parameter 5 --  scientific notation (NOT scaled by f0)
-   template source right ascension (alpha) -- float (value in DEGREES)
-   template source declination (delta) -- float (value in DEGREES)
-   \endcode
-   Note: Above, the *signal* spindown parameters are scaled by the intrinsic frequency, while the
-   *template* spindown parameters are not.  This is due to the difference in definitions between the
-   PulsarSimulateCoherentGW() package, which generates the signal, and this package.
-
-   </li><li> The next module in the test code, which is optionally executed with
-   the '<tt>-n</tt>' switch, creates noise using LALs
-   <tt>LALNormalDeviates()</tt> routine.  By design, the noise is created in
-   single
-   precision, and is zero-mean and Gaussian.  This noise is added,
-   datum-by-datum, to the time series created in
-   the next module, after the amplitude of the time series has been
-   changed by a
-   factor of \c SNR, which is specified in the input data file.
-
-   </li><li> The next module to be invoked creates a time series, according to
-   the standard model for pulsars with spindown.  This is done by using the
-   <tt>LALGenerateTaylorCW()</tt> and <tt>LALPulsarSimulateCoherentGW()</tt> functions.  This time series
-   undergoes an FFT, and this transformed data then constitutes the SFT data to be
-   input to the demodulation code.  The fake signal data is characterized
-   by an intrinsic frequency at the beginning of the observation plus some
-   other source parameters.  The DeFT is produced in a band \c f0Band
-   (as specified as an input parameter) and centered at this frequency.
-   The width of the band (plus some extra width of \f$2\cdot 10^{-4}f0 \f$ Hz) determines the
-   sampling frequency of the time series (Nyquist theorem).  In practice this
-   would be the inverse FFT of a data set that has been band-passed around
-   \c f0 and then appropriately down-sampled (e.g. with a lock-in).  The
-   normalization rule for FFT data is the following: if sinusoidal data over a
-   time \f$T\f$ and with amplitude \f$A\f$ is FFT-ed, the sum of the square amplitude of
-   the output of the FFT (power) is equal to \f${A^2 T}\f$.  Thus, the power peak at
-   the sinusoids frequency should be expected to be \f$\sim\f$ \f$\frac{A^2}{2} T\f$,
-   within a factor of 2.  The same normalization rule applies to the DeFT data.
-   Thus by piecing together \f$N\f$ SFTs we expect a DeFT power peak \f$\sim N\f$ higher
-   than that of the SFTs - at least in the case of perfect signal-template match.
-
-
-   Let us now spend a few words on the choice of the SFT time baseline.  Given an
-   intrinsic search frequency one can compute the longest time baseline which is
-   still compatible with the requirement that the instantaneous signal frequency
-   during such time baseline does not shift by more than a frequency bin.  This
-   is the default choice for the SFT length, having assumed that the modulation
-   is due to the spin of the Earth and having taken a simple epicyclic model to
-   evaluate the magnitude of this effect.  It is possible to choose a different
-   time baseline by specifying a value for
-   the variable \c gap other than 1.  Note that the SFT time baseline is
-   approximated to the nearest value such that the number of SFT samples is a
-   power of two.  This is also well documented in the code.
-
-
-   The set of SFTs does not necessarily come from contiguous data sets: a set of
-   time stamps is created that defines the time of the first sample of each SFT
-   data chunk.  The timestamps which are required in many parts of the code are
-   generated in a small subroutine <tt>times2()</tt>.  This routine takes as input
-   the SFT timescale \c tSFT, the number of SFTs which will be created,
-   \c mObsSFT, and a switch which lets the code know whether to make even
-   timestamps, or timestamps with gaps (see below for more on this).  The
-   subroutine then writes the times to the \c LIGOTimeGPS vector containing
-   the timestamps for the entire test code, and returns this vector.  Note that
-   each datum of the  \c LIGOTimeGPS vector is comprised of two fields; if
-   accessing the \f$i^{th}\f$ datum, the seconds part of the timestamp vector
-   \c ts is <tt>ts[i].gpsSeconds</tt> and the nanoseconds part is
-   <tt>ts[i].gpsNanoSeconds</tt>.  These are the fields which are written in this
-   <tt>times()</tt>.
-
-
-   As an important side note, let us discuss the effect that a vector of
-   timestamps with gaps has on the resulting transformed data.  Since each of the
-   timestamps refers to the first datum of each SFT, the existence of the gaps
-   means that instead of transforming a continuous set of data, we are reduced to
-   transforming a piecewise continuous set.  Since we can envision these gaps as
-   simply replacing real data with zeros, we correspondingly should see a power
-   loss in the resulting FFTs signal bins and a broadening of the power spectrum.
-   Since real detectors will clearly have gaps in the data, this effect is
-   obviously something we seek to minimize or eliminate if possible.  This work
-   continues to be under development.
-
-
-   The total observation time determines how many SFTs and how many DeFTs are
-   created.  The actual time baseline for both the DeFTs and the total
-   observation time might differ from the ones defined in the input file, the
-   reason being that they are rounded to the nearest multiple of the SFT time
-   baseline.
-
-   Note that use is made of the <tt>LALBarycenter()</tt> routine (see
-   \ref LALBarycenter.h), which (among other things) provides,  at any given
-   time, the actual instantaneous position and velocity of a  detector at any
-   specified location of the Earth with respect to the SSB.
-
-   </li><li> Following the creation of a short chunk of time series data, an FFT is
-   performed with the internal FFTW routines.  This outputs a frequency domain
-   chunk which is placed into the \c SFTData array of structures.  This will
-   contain all of the SFT data we need to demodulate, and in the future, will be
-   the storage area for the real data.
-
-   </li><li> The next module begins the demodulation process.  First, the parameters
-   for the demodulation routine are assigned from values previously calculated in
-   the test code.  Similarly, parameters for the <tt>LALComputeSky()</tt> routine are
-   assigned.  This routine computes the coefficients \f$A_{s\alpha}\f$ and
-   \f$B_{s\alpha}\f$ (see \ref ComputeSky.h) of the spindown parameters
-   for the phase model weve assumed.  These coefficients are used within the
-   <tt>LALDemod()</tt> routine itself. Since they only depend on the template sky
-   position, in a search over many different spin-down parameters they are
-   reused, thus one needs compute them only once.  Then, the <tt>LALComputeAM()</tt>
-   routine is called, to calculate the amplitude modulation filter information.  Finally, at last, the
-   demodulation routine itself is called, and, if the command line option
-   '<tt>-o</tt>' is used,  output are several data files containing demodulated
-   data (these are by default named '<tt>xhat_#</tt>').  These output files have two columns, one
-   for the value of the periodogram and one for the frequency.
-
-   </li></ul>
-
-
-   \heading{Exit codes}
-
-   \heading{Uses}
-   \code
-   lalDebugLevel
-   LALMalloc()
-   LALFopen()
-   LALFclose()
-   LALSCreateVector()
-   LALCreateRandomParams()
-   LALNormalDeviates()
-   LALDestroyRandomParams()
-   LALSDestroyVector()
-   LALCCreateVector()
-   LALCreateForwardRealFFTPlan()
-   LALREAL4VectorFFT()
-   LALCDestroyVector()
-   LALDestroyRealFFTPlan()
-   LALGenerateTaylorCW()
-   LALPulsarSimulateCoherentGW()
-   LALComputeSky()
-   LALFree()
-   LALDemod()
-   LALBarycenter()
-   LALComputeAM()
-   \endcode
-
-   \heading{Notes}
-   The implementation of the code here is intended to give a general outline of
-   what the demodulation code needs to work.  Most of this test function performs
-   steps (e.g., noise, time- and frequency-series generation) that will be already
-   present in the data.
-
-*/
+ * \author Berukoff, S.J., Papa, M.A.,
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * \brief Performs required tests of LALDemod().
+ *
+ * ### Usage ###
+ *
+ * \code
+ * LALDemodTest -i <input data file> [-d <gap>] [-n] [-o]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This routine performs tests on the routine <tt>LALDemod()</tt>.
+ * Options:
+ * <ul>
+ * <li> <tt>-i</tt> -- the input data file (default is 'in.data'; an example is included, format below)</li>
+ * <li> <tt>-n</tt> -- add zero-mean Gaussian noise to the signal</li>
+ * <li> <tt>-d \<gap\></tt> -- simulate gaps in the data.  The number <tt>\<gaps\></tt> refers to the integral number of SFT timescales between adjacent timestamps.</li>
+ * <li> <tt>-o</tt> -- print out result data files</li>
+ * </ul>
+ *
+ * Structure:
+ * In more detail, let us begin with a discussion of the structure of the test
+ * code, which is composed of several modules.
+ * <ul>
+ * <li> The first module reads in data from an input parameter data file.
+ * The parameters must be listed in the input file in the following order,
+ * with the corresponding format:
+ * \code
+ * total observation time -- float
+ * coherent search time -- float
+ * factor by which to modify SFT timescale -- float
+ * Cross amplitude -- float
+ * Plus amplitude -- float
+ * DeFT frequency band (centered by default around f0) -- float
+ * f0, intrinsic frequency of the signal at the beginning of the
+ * observation -- float
+ * maximum order of signal spindown parameters -- int
+ * signal spindown parameter 1 --  scientific notation
+ * signal spindown parameter 2 --  scientific notation
+ * signal spindown parameter 3 --  scientific notation
+ * signal spindown parameter 4 --  scientific notation
+ * signal spindown parameter 5 --  scientific notation
+ * signal source right ascension (alpha) -- float (value in DEGREES)
+ * signal source declination (delta) -- float (value in DEGREES)
+ * maximum order of template spindown parameters -- int
+ * template spindown parameter 1 --  scientific notation (NOT
+ * template spindown parameter 2 --  scientific notation (NOT scaled by f0)
+ * template spindown parameter 3 --  scientific notation (NOT scaled by f0)
+ * template spindown parameter 4 --  scientific notation (NOT scaled by f0)
+ * template spindown parameter 5 --  scientific notation (NOT scaled by f0)
+ * template source right ascension (alpha) -- float (value in DEGREES)
+ * template source declination (delta) -- float (value in DEGREES)
+ * \endcode
+ * Note: Above, the *signal* spindown parameters are scaled by the intrinsic frequency, while the
+ * template* spindown parameters are not.  This is due to the difference in definitions between the
+ * PulsarSimulateCoherentGW() package, which generates the signal, and this package.
+ *
+ * </li><li> The next module in the test code, which is optionally executed with
+ * the '<tt>-n</tt>' switch, creates noise using LALs
+ * <tt>LALNormalDeviates()</tt> routine.  By design, the noise is created in
+ * single
+ * precision, and is zero-mean and Gaussian.  This noise is added,
+ * datum-by-datum, to the time series created in
+ * the next module, after the amplitude of the time series has been
+ * changed by a
+ * factor of \c SNR, which is specified in the input data file.
+ *
+ * </li><li> The next module to be invoked creates a time series, according to
+ * the standard model for pulsars with spindown.  This is done by using the
+ * <tt>LALGenerateTaylorCW()</tt> and <tt>LALPulsarSimulateCoherentGW()</tt> functions.  This time series
+ * undergoes an FFT, and this transformed data then constitutes the SFT data to be
+ * input to the demodulation code.  The fake signal data is characterized
+ * by an intrinsic frequency at the beginning of the observation plus some
+ * other source parameters.  The DeFT is produced in a band \c f0Band
+ * (as specified as an input parameter) and centered at this frequency.
+ * The width of the band (plus some extra width of \f$2\cdot 10^{-4}f0 \f$ Hz) determines the
+ * sampling frequency of the time series (Nyquist theorem).  In practice this
+ * would be the inverse FFT of a data set that has been band-passed around
+ * \c f0 and then appropriately down-sampled (e.g. with a lock-in).  The
+ * normalization rule for FFT data is the following: if sinusoidal data over a
+ * time \f$T\f$ and with amplitude \f$A\f$ is FFT-ed, the sum of the square amplitude of
+ * the output of the FFT (power) is equal to \f${A^2 T}\f$.  Thus, the power peak at
+ * the sinusoids frequency should be expected to be \f$\sim\f$ \f$\frac{A^2}{2} T\f$,
+ * within a factor of 2.  The same normalization rule applies to the DeFT data.
+ * Thus by piecing together \f$N\f$ SFTs we expect a DeFT power peak \f$\sim N\f$ higher
+ * than that of the SFTs - at least in the case of perfect signal-template match.
+ *
+ * Let us now spend a few words on the choice of the SFT time baseline.  Given an
+ * intrinsic search frequency one can compute the longest time baseline which is
+ * still compatible with the requirement that the instantaneous signal frequency
+ * during such time baseline does not shift by more than a frequency bin.  This
+ * is the default choice for the SFT length, having assumed that the modulation
+ * is due to the spin of the Earth and having taken a simple epicyclic model to
+ * evaluate the magnitude of this effect.  It is possible to choose a different
+ * time baseline by specifying a value for
+ * the variable \c gap other than 1.  Note that the SFT time baseline is
+ * approximated to the nearest value such that the number of SFT samples is a
+ * power of two.  This is also well documented in the code.
+ *
+ * The set of SFTs does not necessarily come from contiguous data sets: a set of
+ * time stamps is created that defines the time of the first sample of each SFT
+ * data chunk.  The timestamps which are required in many parts of the code are
+ * generated in a small subroutine <tt>times2()</tt>.  This routine takes as input
+ * the SFT timescale \c tSFT, the number of SFTs which will be created,
+ * \c mObsSFT, and a switch which lets the code know whether to make even
+ * timestamps, or timestamps with gaps (see below for more on this).  The
+ * subroutine then writes the times to the \c LIGOTimeGPS vector containing
+ * the timestamps for the entire test code, and returns this vector.  Note that
+ * each datum of the  \c LIGOTimeGPS vector is comprised of two fields; if
+ * accessing the \f$i^{th}\f$ datum, the seconds part of the timestamp vector
+ * \c ts is <tt>ts[i].gpsSeconds</tt> and the nanoseconds part is
+ * <tt>ts[i].gpsNanoSeconds</tt>.  These are the fields which are written in this
+ * <tt>times()</tt>.
+ *
+ * As an important side note, let us discuss the effect that a vector of
+ * timestamps with gaps has on the resulting transformed data.  Since each of the
+ * timestamps refers to the first datum of each SFT, the existence of the gaps
+ * means that instead of transforming a continuous set of data, we are reduced to
+ * transforming a piecewise continuous set.  Since we can envision these gaps as
+ * simply replacing real data with zeros, we correspondingly should see a power
+ * loss in the resulting FFTs signal bins and a broadening of the power spectrum.
+ * Since real detectors will clearly have gaps in the data, this effect is
+ * obviously something we seek to minimize or eliminate if possible.  This work
+ * continues to be under development.
+ *
+ * The total observation time determines how many SFTs and how many DeFTs are
+ * created.  The actual time baseline for both the DeFTs and the total
+ * observation time might differ from the ones defined in the input file, the
+ * reason being that they are rounded to the nearest multiple of the SFT time
+ * baseline.
+ *
+ * Note that use is made of the <tt>LALBarycenter()</tt> routine (see
+ * \ref LALBarycenter.h), which (among other things) provides,  at any given
+ * time, the actual instantaneous position and velocity of a  detector at any
+ * specified location of the Earth with respect to the SSB.
+ *
+ * </li><li> Following the creation of a short chunk of time series data, an FFT is
+ * performed with the internal FFTW routines.  This outputs a frequency domain
+ * chunk which is placed into the \c SFTData array of structures.  This will
+ * contain all of the SFT data we need to demodulate, and in the future, will be
+ * the storage area for the real data.
+ *
+ * </li><li> The next module begins the demodulation process.  First, the parameters
+ * for the demodulation routine are assigned from values previously calculated in
+ * the test code.  Similarly, parameters for the <tt>LALComputeSky()</tt> routine are
+ * assigned.  This routine computes the coefficients \f$A_{s\alpha}\f$ and
+ * \f$B_{s\alpha}\f$ (see \ref ComputeSky.h) of the spindown parameters
+ * for the phase model weve assumed.  These coefficients are used within the
+ * <tt>LALDemod()</tt> routine itself. Since they only depend on the template sky
+ * position, in a search over many different spin-down parameters they are
+ * reused, thus one needs compute them only once.  Then, the <tt>LALComputeAM()</tt>
+ * routine is called, to calculate the amplitude modulation filter information.  Finally, at last, the
+ * demodulation routine itself is called, and, if the command line option
+ * '<tt>-o</tt>' is used,  output are several data files containing demodulated
+ * data (these are by default named '<tt>xhat_#</tt>').  These output files have two columns, one
+ * for the value of the periodogram and one for the frequency.
+ *
+ * </li></ul>
+ *
+ * ### Exit codes ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALMalloc()
+ * LALFopen()
+ * LALFclose()
+ * LALSCreateVector()
+ * LALCreateRandomParams()
+ * LALNormalDeviates()
+ * LALDestroyRandomParams()
+ * LALSDestroyVector()
+ * LALCCreateVector()
+ * LALCreateForwardRealFFTPlan()
+ * LALREAL4VectorFFT()
+ * LALCDestroyVector()
+ * LALDestroyRealFFTPlan()
+ * LALGenerateTaylorCW()
+ * LALPulsarSimulateCoherentGW()
+ * LALComputeSky()
+ * LALFree()
+ * LALDemod()
+ * LALBarycenter()
+ * LALComputeAM()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * The implementation of the code here is intended to give a general outline of
+ * what the demodulation code needs to work.  Most of this test function performs
+ * steps (e.g., noise, time- and frequency-series generation) that will be already
+ * present in the data.
+ *
+ */
 
 #ifndef LALDEMODTEST_C
 #define LALDEMODTEST_C

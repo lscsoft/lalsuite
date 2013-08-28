@@ -20,11 +20,11 @@
 #include <lal/LALNoiseModels.h>
 
 /**
-\author Sathyaprakash, B. S.
-\ingroup LALNoiseModels_h
-\brief Module to compute the mean, rms, minimum and maximum of a \c REAL4Vector.
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \ingroup LALNoiseModels_h
+ * \brief Module to compute the mean, rms, minimum and maximum of a \c REAL4Vector.
+ *
+ */
 void
 LALStatsREAL4Vector
    (

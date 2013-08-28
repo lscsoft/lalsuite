@@ -18,13 +18,14 @@
  */
 
 /*********************************************************************************/
-/** \author C. Messenger
- * \file 
+/**
+ * \author C. Messenger
+ * \file
  * \ingroup pulsarApps
  * \brief
  * Generate a frequency domain template for a binary signal as recieved at the SSB.
- *                                                                          
- *********************************************************************************/
+ *
+ */
 
 /* System includes */
 #include <stdio.h>
@@ -104,9 +105,9 @@ void checkUserInputConsistency (LALStatus *);
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
 
-/** 
+/**
  * MAIN function of GenerateBinaryFDTemplate code.
- * Compute the waveform of binary signal in the frequency domain as recieved at the SSB 
+ * Compute the waveform of binary signal in the frequency domain as recieved at the SSB
  */
 int main(int argc,char *argv[]) 
 {
@@ -351,7 +352,7 @@ int main(int argc,char *argv[])
 } /* main() */
 
 
-/** 
+/**
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
@@ -436,7 +437,8 @@ initUserVars (LALStatus *status)
 
 
 /*----------------------------------------------------------------------*/
-/** Some general consistency-checks on user-input.
+/**
+ * Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
  */
 void

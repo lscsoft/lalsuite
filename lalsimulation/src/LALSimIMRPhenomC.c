@@ -105,7 +105,6 @@ typedef struct tagBBHPhenomCParams{
 BBHPhenomCParams;
 
 /**
- *
  * private function prototypes; all internal functions use solar masses.
  *
  */
@@ -122,10 +121,8 @@ static int IMRPhenomCGenerateAmpPhase( REAL8 *amplitude, REAL8 *phasing, REAL8 f
 static int IMRPhenomCGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 deltaF, const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const BBHPhenomCParams *params);
 
 /**
- *
  * Internal functions
- *
- * */
+ */
 
 /*********************************************************************/
 /* Compute PN coefficients for non-precessing binaries               */
@@ -409,7 +406,6 @@ static size_t NextPow2(const size_t n) {
 }
 
 /**
- *
  * main functions
  *
  */
@@ -420,8 +416,8 @@ static size_t NextPow2(const size_t n) {
  * phenomenological waveform IMRPhenomC in the frequency domain.
  *
  * Reference: http://arxiv.org/pdf/1005.3306v3.pdf
- *   - Waveform: Eq.(5.3)-(5.13)
- *   - Coefficients: Eq.(5.14) and Table II
+ * - Waveform: Eq.(5.3)-(5.13)
+ * - Coefficients: Eq.(5.14) and Table II
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
