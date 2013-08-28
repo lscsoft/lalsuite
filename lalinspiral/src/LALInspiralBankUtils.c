@@ -24,13 +24,15 @@
  *
  * \brief NONE
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * In a parameter space defined by \f$m_1\f$ and \f$m_2\f$, or equivalently, \f$M=m_1+m_2\f$ and \f$\eta=\frac{m_1 m_2}{M^2}\f$, the conversion
  * to chirp-time parameter such as \f$\tau_0\f$ and \f$\tau_3\f$ si quite common. In particular, it is interesting to get the value of
  * \f$\tau_3\f$ when only \f$\tau_0\f$ is known, and a constraint on the masses exists (e.g., \f$m_1=m_2\f$ or one of the mass equals mMin or mMax.
  * This modules contains a few functions to perform these conversion.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * We know that
  * \anchor eq_tau0a \f{equation}{
  * \tau_0 = \frac{A_0}{\eta} M^{-5/2},

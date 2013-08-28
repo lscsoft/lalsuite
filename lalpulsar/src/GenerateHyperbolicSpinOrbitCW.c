@@ -51,7 +51,7 @@
  * <tt>output-\>f</tt>, and <tt>output-\>phi</tt> as necessary.  The
  * <tt>output-\>shift</tt> field will remain set to \c NULL.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * For hyperbolic orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
  * \eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$

@@ -23,15 +23,17 @@
  * \ingroup FlatMesh_h
  * \brief Computes the sky-position metric for a coherent or semicoherent pulsar search.
  *
- * \heading{Program <tt>DirectedMeshTest.c</tt>}
+ * ### Program <tt>DirectedMeshTest.c</tt> ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * DirectedMeshTest [-o outfile] [-d debuglevel] [-p n dt t0 f0] [-l lat lon]
  * [-s ra dec] [-r dra ddec] [-t tau] [-m mismatch]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program computes template meshes for directed pulsar
  * searches with spindown, where it is assumed that the parameter metric
@@ -80,7 +82,7 @@
  * new dimensions is less than one template width.  The last dimension
  * before that happens is the correct dimension to use.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The program is fairly straightforward.  It uses
  * <tt>LALStackMetric()</tt> to compute the parameter metric, passing it a
@@ -133,7 +135,8 @@
  * maximum patch size in each direction, to ensure total coverage of the
  * edges, as described in FlatMeshTest.c.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALPrintError()                 LALCheckMemoryLeaks()
@@ -152,7 +155,7 @@
  * LALDSymmetricEigenVectors()     snprintf()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

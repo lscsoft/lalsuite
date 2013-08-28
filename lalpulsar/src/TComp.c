@@ -26,7 +26,7 @@
  * \ingroup PulsarTimes_h
  * \brief Computes the composition of two time transformations.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines compute the value and derivatives of a time
  * transformation \f$t_c(t)\f$ that is the composition of two other
@@ -75,7 +75,7 @@
  * <tt>*dtComp</tt> must always have a length exactly one greater than
  * <tt>*variables</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Computing the value of \f$t_c\f$ is trivial:
  * \f[
@@ -124,7 +124,8 @@
  * represent the same physical quantity.  Such a scheme is not
  * implemented at present.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * \endcode

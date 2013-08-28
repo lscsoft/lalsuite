@@ -45,7 +45,8 @@ extern "C" {
  * <tt>LALMathNDPlot()</tt> which plots the 3-dimensional projections of a
  * bank that is N-dimensional.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALMathematica.h>
  * \endcode
@@ -82,7 +83,8 @@ extern "C" {
  * fclose(nb);
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> Obviously the definitions and functions associated with this header
  * are NOT LAL compliant and thus do not belong in any lal routines except

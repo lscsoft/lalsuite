@@ -40,14 +40,17 @@
  * \ingroup Velocity_h
  * \brief Tests the calculation of the averaged velocity of a given detector.
  *
- * \heading{Program \ref TestVelocity.c}
+ * ### Program \ref TestVelocity.c ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * TestVelocity  [-d debuglevel] [-a accuracy]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This program computes the averaged velocity  of the GEO600 detector
  * between the times 730000044 and 730003644 with a default accuracy of 0.01.
  * The two ephemeris files (e.g., for data taken in 2003, <tt>sun03.dat</tt> and
@@ -57,7 +60,8 @@
  * The <b>-d</b> option sets the debug level to the specified value
  * \c debuglevel.  The <b>-a</b> flag tells the program which accuracy to use.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALAvgDetectorVel()
  * LALPrintError()

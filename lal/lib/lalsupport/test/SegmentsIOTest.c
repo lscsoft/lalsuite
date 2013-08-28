@@ -28,7 +28,8 @@
  *
  * \brief Tests the routines in \ref SegmentsIO.c.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * SegmentsIOTest [ lalDebugLevel ]
  * \endcode
@@ -51,7 +52,7 @@
  * spot-checking by modifying, recompiling and running this test program
  * and inspecting the output.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
  * <ul>
  * <li>0 if all tests passed.</li>

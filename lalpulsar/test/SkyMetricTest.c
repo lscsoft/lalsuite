@@ -22,17 +22,18 @@
  * \file
  * \ingroup StackMetric_h
  *
- * \heading{Program <tt>SkyMetricTest.c</tt>}
+ * ### Program <tt>SkyMetricTest.c</tt> ###
  *
  * \brief Computes the sky-position metric for a coherent or semicoherent pulsar search.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * SkyMetricTest [-o metricfile rangefile] [-p n dt t0 f0] [-l lat lon]
  * [-r ra1 ra2 dec1 dec2] [-d debuglevel]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program computes the parameter metric for the
  * two-dimensional sky-position pulsar stack search, over a grid of
@@ -62,7 +63,8 @@
  * absent, <tt>-d 0</tt> is assumed.</li>
  * </ul>
  *
- * \heading{Grid formats:} The metric grid is stored as a
+ * \par Grid formats:
+ * The metric grid is stored as a
  * \c REAL4Grid with physical dimension 2 and data dimesnion 3: for
  * each point in the two-dimensional sky grid \f$(\delta,\alpha)\f$,
  * representing declination and right ascension, it stores a 3-element
@@ -77,7 +79,7 @@
  * consisting of the lower and upper values of declination for that right
  * ascension.  Both coordinates are given in degrees.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * After parsing the command-line inputs, this program defines a grid
  * covering the desired space, and determines the metric using the
@@ -102,7 +104,8 @@
  * <tt>LALSReadGrid()</tt> in template-placement programs such as
  * \c TwoDMeshTest.c
  *
- * \heading{Note:} This program, like the LALDTBaryPtolemaic()
+ * \par Note:
+ * This program, like the LALDTBaryPtolemaic()
  * phase model it relies on, uses right ascension and declination as its
  * parameter basis.  Since these are polar coordinates, they will go
  * singular at the poles regardless of the actual Doppler phase
@@ -120,7 +123,8 @@
  * space so that declination runs along the first (\f$x\f$) axis and right
  * ascension along the second (\f$y\f$) axis.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALPrintError()                 LALCheckMemoryLeaks()
@@ -133,7 +137,7 @@
  * LALDTBaryPtolemaic()            LALGetEarthTimes()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

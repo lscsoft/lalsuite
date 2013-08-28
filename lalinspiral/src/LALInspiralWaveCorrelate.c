@@ -32,11 +32,12 @@
  * denotes the detector output in which a signal, say <tt>signal2,</tt>
  * is present at time \f$t_0,\f$ then the correlation peaks at \f$t_0.\f$
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralWaveCorrelate()</tt>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * The module expects two inputs <tt>signal1, signal2</tt>
  * in the Fourier-domain, computes their correlation weighted by
  * the noise \c psd,  and returns the correlated output in
@@ -49,7 +50,8 @@
  * C_{n-k} = \frac{H_k Q_{n-k} + H_{n-k} Q_k }{S_k}, \ \
  * k=1,\ldots,\frac{n}{2}-1.\f]
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALREAL4VectorFFT()
  * \endcode

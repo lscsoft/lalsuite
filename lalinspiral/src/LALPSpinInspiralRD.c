@@ -24,7 +24,7 @@
  *
  * \brief Module to generate generic spinning binaries waveforms complete with ring-down
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALPSpinInspiralRD()</tt>
  * <dl>
@@ -55,7 +55,8 @@
  * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
  * </dl>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This codes provide complete waveforms for generically spinning binary systems.
  * In order to construct the waveforms three phases are joined together:
  * an initial inspiral phase, a phenomenological phase encompassing the description
@@ -69,9 +70,11 @@
  * ensure continuity of the phase, the frequency and its first and second
  * derivatives. Finally a ring-down phase is attached.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * LALPSpinInspiralRDderivatives()
  * LALInspiralSetup()
@@ -88,7 +91,7 @@
  * XLALSpinInspiralFillH4Modes()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

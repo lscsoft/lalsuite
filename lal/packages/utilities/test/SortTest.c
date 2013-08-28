@@ -32,12 +32,13 @@
  *
  * \brief A program to test sorting routines.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * SortTest [-s seed]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program creates rank and index arrays for an unordered list
  * of numbers, and then sorts the list.  The data for the list are
@@ -49,7 +50,7 @@
  * \c seed is set to zero (or if no <tt>-s</tt> option is given) then
  * the seed is taken from the processor clock.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
  * <table><tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Success, normal exit.</td></tr>

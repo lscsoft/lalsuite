@@ -47,7 +47,7 @@
  * \ingroup LUT_h
  * \brief Routines to perform rotations on the celestial sphere and stereographic projection.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function LALRotatePolarU() rotates the celestial sphere so that
  * a given point, in the rotated coordinates, corresponds to (\f$\alpha = 0\f$, \f$\delta = -\pi/2\f$).

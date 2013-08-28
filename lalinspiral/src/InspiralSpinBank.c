@@ -223,7 +223,7 @@ allocate(
  * \author Hanna, C. R. and Owen, B. J.
  * \brief This function creates a bank of BCVSpin templates to search for precessing binaries.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The code checks <tt>coarseIn-\>mMin</tt> to determine whether the limits on
  * the target region are in terms of masses or phenomenological parameters.
@@ -255,7 +255,7 @@ allocate(
  * If \f$(\psi_0, \psi_3, \beta)\f$ limits are used, the tiling is done in the
  * given box with a bcc lattice.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * Currently we use a static function for the metric based on an
  * approximation that is good only for large \f$\beta\f$. We should update it

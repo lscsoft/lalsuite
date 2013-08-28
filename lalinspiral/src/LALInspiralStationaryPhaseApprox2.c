@@ -25,7 +25,7 @@
  * \brief This module computes the usual stationary phase approximation to the
  * Fourier transform of a chirp waveform given by Eq.\eqref{eq_InspiralFourierPhase_f2}.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralStationaryPhaseApprox2()</tt>
  * <ul>
@@ -33,7 +33,7 @@
  * </li><li> \c params: Input containing binary chirp parameters.
  * </li></ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Computes the Fourier transform of the chirp signal in the stationary
  * phase approximation and returns the real and imaginary parts of the
@@ -47,7 +47,7 @@
  * the duration of the signal and \f$\Delta f=1/T\f$ is the frequency resolution.
  * </li></ul>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The standard SPA is given by Eq.\eqref{eq_InspiralFourierPhase_f2}.
  * We define a variable function pointer \c LALInspiralTaylorF2Phasing and point
@@ -61,14 +61,15 @@
  * </li><li> have an amplitude of \f$n v^2.\f$
  * </li></ul>
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * XLALInspiralSetup()
  * XLALInspiralChooseModel()
  * XLALInspiralTaylorF2Phasing[0234567]PN()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * If it is required to compare the output of this module with a time domain
  * signal one should use an inverse Fourier transform routine that packs data

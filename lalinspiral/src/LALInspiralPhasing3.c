@@ -34,17 +34,21 @@
  * <li> \c ak: Input containing PN expansion coefficients.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * The phase of the inspiral wave corresponding to the \c Approximant \c TaylorT2
  * as in Equation.\eqref{eq_InspiralWavePhase3}.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * None.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * None.
  *
  */

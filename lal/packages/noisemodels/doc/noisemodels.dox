@@ -13,7 +13,8 @@
  * <li> FilterTest</li>
  * </ol>
  *
- * \heading{NoisePSDTest}
+ * ### NoisePSDTest ###
+ *
  * This test code makes four
  * successive calls to the function \c LALNoiseSpectralDensity()
  * successively passing a pointer to the functions LALGEOPsd(),
@@ -26,7 +27,8 @@
  * \image html NoisePSDTest.png ""
  * \image latex NoisePSDTest.pdf "" width=4truein
  *
- * \heading{RandomSignal} This test code makes three
+ * \par RandomSignal
+ * This test code makes three
  * successive calls to LALRandomInspiralSignal() generating
  * (1) only signal, (2) only noise and (3) signal + noise, each
  * time filtering the generated data with a orthogonal set of templates
@@ -37,7 +39,8 @@
  * \image html  RandomSignal.png "" width=4truein
  * \image latex RandomSignal.pdf "" width=4truein
  *
- * \heading{FilterTest} This test code generates
+ * \par FilterTest
+ * This test code generates
  * a lattice of template coordinates at a given <em>minimal match</em>
  * and for a given total maximum mass \f$M_\mathrm{max}\f$ and minimum of components
  * masses \f$m_\mathrm{min},\f$ it then filters signals with random parameters

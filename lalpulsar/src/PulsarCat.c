@@ -22,13 +22,14 @@
  * \file
  * \ingroup pulsarTODO
  *
- * \heading{Module \ref PulsarCat.c}
+ * ### Module \ref PulsarCat.c ###
  *
  * Manipulates a catalogue of pulsar data.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
- * \heading{Description}
+ *
+ * ### Description ###
  *
  * The routine <tt>LALUpdatePulsarCatNode()</tt> updates all time-varying
  * properties of the pulsar system to a new epoch specified by the input
@@ -50,7 +51,8 @@
  * allocated to the list pointed to by <tt>*head</tt>, and then sets
  * <tt>*head</tt> to \c NULL.
  *
- * \heading{Interpretation of <tt>*time</tt>:} The epoch of a
+ * \par Interpretation of <tt>*time</tt>:
+ * The epoch of a
  * catalogue update is specified by a \c LALPlaceAndGPS structure
  * <tt>*time</tt>, which contains both a GPS time and a detector site.  The
  * interpretation is as follows: The desired properties are those
@@ -76,7 +78,7 @@
  * routine will return an error.  If \c edat is \c NULL, then
  * <tt>time->p</tt> must also be \c NULL, or an error is returned.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The function <tt>LALUpdatePulsarCatNode()</tt> first computes the
  * correct epoch for the pulsar data, taking into account the difference
@@ -157,14 +159,15 @@
  * \f$\dot{w}\f$ correction will have to be included when computing the
  * updated epoch.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel                 LALConvertSkyCoordinates()
  * LALBarycenterEarth()          LALBarycenter()
  * LALDDestroyVector()           LALFree()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

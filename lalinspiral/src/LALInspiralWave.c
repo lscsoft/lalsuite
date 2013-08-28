@@ -32,7 +32,7 @@
  * Either a time- or a frequency-domain signal is returned depending upon the
  * \c approximant requested (see Notes below).
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralWave()</tt>
  * <ul>
@@ -47,7 +47,7 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The code LALInspiralWave() is the user interface to the inspiral codes. It takes from the user all
  * the physical parameters which specify the binary, and calls the relevent wave generation function.
@@ -81,10 +81,12 @@
  *
  * See the test codes for examples of how to generate different approximations.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Simple use of \c switch statement to access different PN approximations.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * Depending on the user inputs one of the following functions is called:
  * \code
  * LALInspiralWave1()
@@ -97,7 +99,7 @@
  * LALInspiralSpinModulatedWave()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> A time-domain waveform is returned when the ::Approximant is one of

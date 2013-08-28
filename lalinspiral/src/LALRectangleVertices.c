@@ -28,7 +28,8 @@
  * a grid of templates with xmgr, useful when looking at the
  * minimal-match-rectangles around mesh points in a template bank.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Given the centre \f$(x_0,y_0)\f$ and half-sides \f$(dx,dy),\f$
  * the vertices of a rectangle in a \e diagonal coordinate
  * system are given by

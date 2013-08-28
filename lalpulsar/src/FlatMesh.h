@@ -33,7 +33,8 @@ extern "C" {
  * \brief Provides routines to place search meshes for parameter spaces with
  * constant parameter metrics.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/FlatMesh.h>
  * \endcode

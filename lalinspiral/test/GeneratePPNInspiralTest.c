@@ -24,13 +24,14 @@
  *
  * \brief Generates a parametrized post-Newtonian inspiral waveform.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * GeneratePPNInspiralTest [-m m1 m2] [-r dist] [-i inc phii] [-f f_min f_max]
  * [-t dt] [-w deltat] [-p order] [-d debuglevel] [-o outfile]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program generates the amplitude, phase, and frequency of a
  * post-Newtonian inspiral waveform as functions of time.  The following
@@ -58,7 +59,7 @@
  * default no output is produced).</li>
  * </ul>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This program simply parses the command line, sets the appropriate
  * fields of a \c PPNParamStruc, and passes it in to

@@ -33,7 +33,8 @@ extern "C" {
  *
  * \brief [One sentence briefly defining scope of the header]
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALCorrelation.h>
  * \endcode

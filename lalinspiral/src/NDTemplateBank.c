@@ -25,16 +25,16 @@
  * \brief This module handles template bank generation for up to searches with
  * \f$<=\f$ 12 dimensional parameter spaces.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALNDTemplateBank()</tt>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module tiles up to a 12 dimensional space when given a metric and a
  * function that determines the search region.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithm first draws a rectilinear box in the primed coordinates
  * which includes the distorted box, then steps through along the directions
@@ -42,14 +42,14 @@
  * within the distorted box. If the point is inside the distorted box, the
  * algorithm adds a template to the linked list. If not, it continues.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
  * LALCalloc()
  * LALFree()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

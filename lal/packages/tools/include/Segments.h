@@ -35,7 +35,8 @@ extern "C" {
  *
  * \brief Provides data types and functions for manipulating lists of ``segments'' (GPS time intervals).
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Segments.h>
  * \endcode
@@ -53,7 +54,7 @@ extern "C" {
  * They handle error conditions by invoking the current XLAL error handler
  * and setting \c xlalErrno to a nonzero value.
  *
- * \heading{Error conditions}
+ * ### Error conditions ###
  *
  * <table><tr><th>xlalErrno</th><th>description</th></tr>
  * <tr><td>   XLAL_EFAULT</td><td>Null pointer passed for some argument</td></tr>
@@ -61,7 +62,7 @@ extern "C" {
  * <tr><td>   XLAL_EDOM</td><td>Pair of GPS times does not represent a valid segment</td></tr>
  * </table>
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * A \c LALSegList must be initialized before it is used.  Initialization
  * leaves it in an ``empty'' state, containing no segments. They also must be ''cleared''

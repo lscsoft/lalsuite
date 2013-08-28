@@ -55,7 +55,7 @@ static const INT4 equinoxes[NEQUINOXES] = {
  * \ref PulsarTimes_h for more information about the
  * PulsarTimesParamStruc structure.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The routine first computes the Greenwich mean sidereal time at
  * <tt>tepoch</tt> using XLALGreenwichMeanSiderealTime(). The next sidereal
@@ -78,7 +78,8 @@ static const INT4 equinoxes[NEQUINOXES] = {
  * <tt>tepoch</tt>.  If this is too far from the times of interest,
  * the REAL8 time variables may suffer loss of precision.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * XLALGreenwichMeanSiderealTime()
  * \endcode

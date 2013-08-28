@@ -35,7 +35,8 @@ extern "C" {
  *
  * \brief Provides routines to inject a signal into detector output.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Inject.h>
  * \endcode

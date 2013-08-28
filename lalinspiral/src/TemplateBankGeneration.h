@@ -45,7 +45,8 @@
  * \brief This header file includes all the necessary types and
  * function prototypes for LALNDTemplateBank() and LALMakeTemplateBank().
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/TemplateBankGeneration.h>
  * \endcode

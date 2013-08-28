@@ -24,7 +24,8 @@
  *
  * \brief Module to work with the ::InspiralTemplate Structure.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This module is a set of functions to play with the ::InspiralTemplate structure of the
  * inspiral package. It allows to set default values to the inspiral strcuture, to parse
  * parameters from the inspiral strcuture and to print the inspiral structure.
@@ -48,7 +49,8 @@
  * <li> \c LALInspiralITStructureHelp()</li>
  * </ul>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * None
  *
  */

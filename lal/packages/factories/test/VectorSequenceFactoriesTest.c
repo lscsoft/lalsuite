@@ -4,7 +4,8 @@
  *
  * \brief A program to test create/destroy vector sequence routines.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * VectorSequenceFactoriesTest [options]
  * Options:
@@ -14,22 +15,25 @@
  * -d level   set lalDebugLevel to level
  * \endcode
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * <table><tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Success, normal exit.</td></tr>
  * <tr><td>1</td><td>Subroutine failed.</td></tr>
  * </table>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * <datatype>CreateVectorSequence()
  * <datatype>DestroyVectorSequence()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

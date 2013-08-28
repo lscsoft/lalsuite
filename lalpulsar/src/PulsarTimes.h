@@ -34,7 +34,8 @@ extern "C" {
  * \ingroup pkg_pulsarCommon
  * \brief Provides routines to transform among various time coordinates used in a pulsar search.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/PulsarTimes.h>
  * \endcode

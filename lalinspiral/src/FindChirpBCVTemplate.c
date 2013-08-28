@@ -35,16 +35,17 @@
  * \brief Provides functions to create BCV detection templates in a form that can be
  * used by the <tt>FindChirpBCVFilter()</tt> function.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * The function <tt>LALFindChirpBCVTemplate()</tt> creates the BCV
  * template as described by the algorithm below.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Blah.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()
@@ -52,7 +53,7 @@
  * LALDestroyVector()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

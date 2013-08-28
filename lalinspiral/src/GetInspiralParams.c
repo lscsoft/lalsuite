@@ -30,7 +30,7 @@
  *
  * \brief Computes the input parameters for a PPN inspiral.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This function takes a Galactic location and pair of masses from
  * <tt>*input</tt> and uses them to set the \c PPNParamStruc fields
@@ -48,7 +48,7 @@
  * routine, and must be specified externally before generating a waveform
  * with this structure.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Galactocentric Galactic axial coordinates \f$\rho\f$, \f$z\f$, and \f$l_G\f$ are
  * transformed to geocentric Galactic Cartesian coordinates:

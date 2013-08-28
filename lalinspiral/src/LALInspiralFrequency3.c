@@ -26,7 +26,7 @@
  * waveform from an inspiralling binary system as a function of time up to 3.5
  * post-Nowtonian order.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralFrequency3()</tt>
  * <ul>
@@ -36,7 +36,7 @@
  * <li> \c ak: Input containing all PN expansion coefficients.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module computes the instantaneous frequency of an inspiral wave using
  * \f{equation}{
@@ -45,12 +45,15 @@
  * where the expansion coefficients \f$F_k,\f$ Newtonian value \f$F_N\f$ and the
  * time-variable \f$\theta\f$ are defined in Table\tableref{table_flux}.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * None.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * The frequency evolution defined by post-Newtonian expansion is not monotonic.
  * Indeed, the equations become highly inaccurate close to the last stable orbit (lso)
  * and breakdown at or slightly after lso, and the frequency begins to decrease at later times.

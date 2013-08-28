@@ -36,21 +36,22 @@
  * At the present time this also includes the template independent part of the
  * BCV filter.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Placeholder.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Blah.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

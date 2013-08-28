@@ -34,12 +34,12 @@
  * \brief Provides functions to create physical template family templates in a
  * form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * The function <tt>LALFindChirpPTFTemplate()</tt> creates a physical template
  * family template as described by the algorithm below.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Blah.
  *

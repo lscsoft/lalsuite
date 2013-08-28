@@ -25,11 +25,11 @@
  * \brief The function \c XLALInspiralVelocity() calculates the velocity \f$v\f$ which corresponds to a time \f$t\f$ in
  * the inspiralling binary system.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>XLALInspiralVelocity()</tt>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function \c XLALInspiralVelocity() calculates the velocity \f$v\f$ corresponding to a time \f$t\f$
  * in the evolution of an inspiralling binary system.  It does this by iteratively solving
@@ -40,13 +40,14 @@
  * \c LALInspiralVelocity() calculates \f$v\f$, given \f$t(v)\f$,
  * \f$t_{0}\f$, \f$m\f$, \f$v_{0}\f$, \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
  *
  * \c XLALDBisectionFindRoot()
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

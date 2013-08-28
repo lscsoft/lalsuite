@@ -34,7 +34,7 @@
  * module to <em>e.g.</em>, multiply two \c REAL8TimeSeries and
  * give the resulting \c REAL8TimeSeries the correct units.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The function first adds together the overall powers of ten in the two
  * input unit structures, then adds each of the corresponding rational
@@ -56,7 +56,8 @@
  * module to eg, multiply two \c REAL8TimeSeries and
  * give the resulting \c REAL8TimeSeries the correct units.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * <tt>XLALUnitNormalize()</tt>
  *
  */

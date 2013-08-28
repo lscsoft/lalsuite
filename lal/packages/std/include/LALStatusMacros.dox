@@ -4,7 +4,8 @@
  *
  * \brief Provides macros for handling the LALStatus structure.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALStatusMacros.h>
  * \endcode
@@ -91,26 +92,31 @@
  * At present, there are five types of status reporting, each associated
  * with a bit in \c lalDebugLevel.
  *
- * \heading{Error messages} tell the operator that a computation has
+ * \par Error messages
+ * tell the operator that a computation has
  * terminated abnormally, and has failed to produce an acceptable result.
  * Normally this is associated with assigning a non-zero
  * \c statusCode; an error message is printed automatically whenever
  * a function exits with non-zero \c statusCode.
  *
- * \heading{Warning messages} tell the user that a computation is
+ * \par Warning messages
+ * tell the user that a computation is
  * working, but with unusual behaviour that might indicate an unreliable
  * or meaningless result.  Warnings do not normally result in a non-zero
  * \c statusCode.
  *
- * \heading{Information messages} tell the operator that the
+ * \par Information messages
+ * tell the operator that the
  * computation is proceeding as expected, and simply provide additional
  * information about its progress.
  *
- * \heading{Tracing messages} are printed automatically a subroutine
+ * \par Tracing messages
+ * are printed automatically a subroutine
  * is called or returned; they simply track the current sequence of
  * function calls.
  *
- * \heading{Memory information messages} are a special type of
+ * \par Memory information messages
+ * are a special type of
  * information message; they tell the operator when and how much memory
  * is allocated or freed from the memory heap.
  *
@@ -582,7 +588,7 @@
  * system, you may want to keep two versions of the library around: one
  * with the flag(s) set and one without.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * Why are the status handling routines written as macros rather than
  * functions?  There are three good reasons.

@@ -46,7 +46,7 @@
  *
  * \brief Provides a set of utilities for manipulating \c snglInspiralTables.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function <tt>LALFreeSnglInspiral()</tt> and XLALFreeSnglInspiral()
  * free the memory associated to a single inspiral table.  The single inspiral
@@ -171,11 +171,11 @@
  * matched-filter output, or "CData", for a given trigger has been queued for
  * writing into a frame-file.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * LALCalloc(), LALFree(), LALINT8NanoSecIsPlayground().
  *

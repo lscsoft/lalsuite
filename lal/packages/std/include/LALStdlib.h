@@ -23,7 +23,8 @@
  *
  * \brief Includes the standard LAL header files.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALStdlib.h>
  * \endcode

@@ -24,14 +24,15 @@
  *
  * \brief Reads a sequence or vector sequence from a file.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * StreamInputTest [-o outfile] [-d debuglevel] [-t]
  * [-v {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d} infile]
  * [-s {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d | c | z} infile]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program parses data from an input file or from \c stdin.
  * The following option flags are accepted:

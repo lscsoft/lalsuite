@@ -32,7 +32,8 @@
  * \ingroup lalmetaio
  * \brief Provides functions for writing the LIGO metdata database table structres to LIGO light weight XML files.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LIGOLwXML.h>
  * \endcode

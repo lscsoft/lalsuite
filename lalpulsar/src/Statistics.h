@@ -30,7 +30,7 @@ extern "C" {
  * \ingroup pkg_pulsarHough
  * \brief Computes statistics of the Hough maps.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Statistics.h>

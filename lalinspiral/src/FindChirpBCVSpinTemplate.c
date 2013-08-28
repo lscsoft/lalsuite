@@ -41,12 +41,12 @@
  * \brief Provides functions to create spinning BCV detection templates in a form that
  * can be used by the <tt>FindChirpBCVSpinFilter()</tt> function.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * The function <tt>LALFindChirpBCVSpinTemplate()</tt> creates the
  * spinning BCV template as described by the algorithm below.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This code calculates a number of quantities required by the
  * <tt>LALFindChirpBCVSpinFilterSegment()</tt> function.
@@ -110,7 +110,8 @@
  * \f$\mathcal{\widehat{A}}_2(f) = \mathcal{\widehat{A}}_3(f) = 0\f$
  * when \f$\beta = 0\f$.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()
@@ -118,7 +119,7 @@
  * LALDestroyVector()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

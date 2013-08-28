@@ -5,7 +5,7 @@
  *
  * \brief Writes a time or frequency series to an output stream.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * \code
  * void
@@ -29,7 +29,7 @@
  * <datatype>FrequencySeries *series )
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines write the data and metadata in a time or frequency
  * series <tt>*series</tt> to an output stream <tt>*stream</tt> in a standard
@@ -49,7 +49,8 @@
  * <tr><td>  D</td><td> REAL8</td><td>  Z</td><td> COMPLEX16</td></tr>
  * </table>
  *
- * \heading{Format for <tt>*stream</tt>:} The data written to the
+ * \par Format for <tt>*stream</tt>:
+ * The data written to the
  * output stream will be formatted in a manner consistent with the input
  * routines in \ref StreamSeriesInput.c.  That is, it will begin with a
  * metadata header, consisting of multiple lines of the form:
@@ -88,7 +89,8 @@
  * characters.  Thus the value of <tt>series-\>data-\>length</tt> will always
  * equal the number of lines following the metadata header.
  *
- * \heading{Format for metadata fields:} Here we summarize briefly the
+ * \par Format for metadata fields:
+ * Here we summarize briefly the
  * format for the individual field values in the metadata header.
  *
  * <dl>

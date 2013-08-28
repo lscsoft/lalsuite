@@ -82,7 +82,8 @@
  * If both these criteria are met at a given <em>t\f$_j\f$</em>, an inspiral "trigger" is
  * recorded.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * The algorithm inputs the the vector \c chisqVec (which is actually \f$r^2\f$)
  * for the whole data segment and searches a time window (\c rsqvetoWindow)
  * prior to the inferred coalescence time of the trigger up to the trigger time
@@ -95,9 +96,11 @@
  * calculated value and decide whether or not to store the trigger
  * for future analysis.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
- * \heading{Notes}
+ *
+ * ### Notes ###
+ *
  * The same test described here could also be employed for monitoring the
  * behavior of the signal to noise time series, \f$\rho(<em>t\f$_j\f$</em>)\f$, about a
  * trigger, therefore the inclusion of \c qVec and \c qNorm as

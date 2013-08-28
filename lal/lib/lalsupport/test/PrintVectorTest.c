@@ -23,19 +23,21 @@
  *
  * \brief Tests the routines in \ref PrintVector.c.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * PrintVectorTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program generates and prints a sequence of
  * <tt>\<datatype\></tt>Vectors; the program itself always
  * returns success, so the testing function is actually served by
  * examinaton of the output files.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * <table>
  * <tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Always returned.</td></tr>

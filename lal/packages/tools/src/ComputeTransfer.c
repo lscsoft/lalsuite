@@ -66,7 +66,7 @@
  * from the input units and the output units.  For example you can convert from
  * strain per count to counts per atto-strain.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The transfer function is deduced from the poles and zeros as follows:
  * \f{equation}{
@@ -120,9 +120,11 @@
  * where \f$\alpha\f$ and \f$\beta\f$ are those values of the coefficients that are
  * appropriate for the particular epoch.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
- * \heading{Notes}
+ *
+ * ### Notes ###
+ *
  * The DC component of <tt>calrec->transfer</tt> is always filled with \f$1 + i 0\f$.
  * In most cases,  this should be irrelevant for gravitational wave data analysis,
  * but care should be taken if DC is relevant when this function is used.

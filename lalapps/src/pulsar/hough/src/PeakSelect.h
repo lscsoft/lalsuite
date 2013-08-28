@@ -25,10 +25,11 @@
  * History:   Created by Sintes May 21, 2003
  * Modified by Krishnan Oct 2005
  *
- * \heading{Header \ref PeakSelect.h}
+ * ### Header \ref PeakSelect.h ###
+ *
  * From periodogram to peakgram
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/PeakSelect.h>

@@ -23,18 +23,22 @@
  *
  * \brief Generate a full waveform from inspiral to ring-down.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
- * \heading{Description}
  *
- * \heading{Algorithm}
+ * ### Description ###
  *
- * \heading{Uses}
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

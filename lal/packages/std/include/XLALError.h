@@ -38,7 +38,7 @@ extern "C" {
  * \brief This header covers routines to provide the XLAL interface error
  * handling.
  *
- * \heading{XLAL Errors}
+ * ### XLAL Errors ###
  *
  * When an XLAL routine fails, the routine should set the <tt>xlalErrno</tt> to
  * an appropriate error number and return with the appropriate error code.  The
@@ -108,7 +108,7 @@ extern "C" {
  * }
  * \endcode
  *
- * \heading{XLAL Function Return Codes}
+ * ### XLAL Function Return Codes ###
  *
  * XLAL functions that return an integer-type will return <tt>#XLAL_FAILURE</tt>
  * on failure.  XLAL functions that return a pointer will return <tt>NULL</tt>
@@ -133,7 +133,7 @@ extern "C" {
  * return the result of the comparison.  The cmparison itself is done with the
  * hexadecimal representation.
  *
- * \heading{XLAL Error Codes}
+ * ### XLAL Error Codes ###
  *
  * The LAL specification requires particular return code and error values.
  * These are implemented here as enumeration constants in the

@@ -23,7 +23,7 @@
  * \ingroup TwoDMesh_h
  * \brief Some range computation routines suitable for use in LALCreateTwoDMesh()
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module contains range computation routines suitable for passing
  * into LALCreateTwoDMesh() via the <tt>params->getRange</tt>
@@ -48,17 +48,18 @@
  * grid, then both range values are set equal to the average of the range
  * points at the nearest endpoint of the grid.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The LALInterpolateRangePolygon() function is just a stub at
  * present; it returns [0,1] as its range regardless of inputs.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

@@ -23,7 +23,7 @@
  *
  * \brief This code generates the two GW polarizations of the inspiral waveform for a given phase model.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralHplus()</tt>
  * <ul>
@@ -33,13 +33,16 @@
  * <li> \c v: PN expansion parameter</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
- * \heading{Algorithm}
  *
- * \heading{Uses}
+ * ### Algorithm ###
  *
- * \heading{Notes}
+ *
+ * ### Uses ###
+ *
+ *
+ * ### Notes ###
  *
  */
 

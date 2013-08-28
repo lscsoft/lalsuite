@@ -56,12 +56,12 @@ static REAL4 findCrossProduct( REAL4 data1[], REAL4 mean1, REAL4 data2[], REAL4 
  * One might, of course, try to use the code to search for any correlations in the data caused by any kind of gravitational waves but
  * that seems to be too computationally expensive.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Just a straightforward computation of correlation for different time shifts. This computation is applied to time series of the length
  * <tt>originalLength - maxShift</tt>.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * One must figure out how to prefilter the raw data, what length of time series s appropriate to use, what
  * threshold on the maximum correlation value should be applied to declare a good correlation.

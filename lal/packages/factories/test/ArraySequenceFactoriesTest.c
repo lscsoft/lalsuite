@@ -4,7 +4,8 @@
  *
  * \brief A program to test create/destroy array sequence routines.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ArraySequenceFactoriesTest [options]
  * Options:
@@ -14,22 +15,25 @@
  * -d level   set lalDebugLevel to level
  * \endcode
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * <table><tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Success, normal exit.</td></tr>
  * <tr><td>1</td><td>Subroutine failed.</td></tr>
  * </table>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * <datatype>CreateArraySequence()
  * <datatype>DestroyArraySequence()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 /** \cond DONT_DOXYGEN */

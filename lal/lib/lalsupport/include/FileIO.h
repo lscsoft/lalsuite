@@ -36,7 +36,8 @@ extern "C" {
  *
  * \brief Provides standard LAL support IO functions.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALStdio.h>
  * #include <lal/FileIO.h>

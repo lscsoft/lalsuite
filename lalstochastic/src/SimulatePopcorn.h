@@ -47,7 +47,8 @@ extern "C" {
  * \brief Provides prototype for simulating whitened time-domain signals in a pair
  * of detectors that arises from low duty cycle astrophysical backgrounds.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/SimulatePopcorn.h>
  * \endcode

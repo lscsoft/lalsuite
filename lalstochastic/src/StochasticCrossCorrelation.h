@@ -61,7 +61,8 @@
  *
  * \c Overlap represents the \ref OverlapReductionFunction_c (containing the function <tt>OverlapReductionFunction()</tt>)
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/StochasticCrossCorrelation.h>
  * \endcode

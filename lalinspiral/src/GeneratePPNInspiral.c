@@ -144,7 +144,7 @@ do {                                                                 \
  *
  * \brief Computes a parametrized post-Newtonian inspiral waveform.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This function computes an inspiral waveform using the parameters in
  * <tt>*params</tt>, storing the result in <tt>*output</tt>.
@@ -162,7 +162,7 @@ do {                                                                 \
  * <tt>output->shift</tt> field will remain set to \c NULL, as it is
  * not required to describe a nonprecessing binary.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This function is a fairly straightforward calculation of
  * Eqs.\eqref{eq_ppn_freq}--\eqref{eq_ppn_across} in

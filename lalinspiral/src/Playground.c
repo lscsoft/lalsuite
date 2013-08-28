@@ -36,7 +36,7 @@
  *
  * \brief Determines if a given time is playground data.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The playground algorithm is given in LIGO techincal document T030020-01.
  * Briefly, \f$t\f$ is playground if

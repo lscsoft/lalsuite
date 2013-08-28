@@ -23,17 +23,18 @@
  *
  * \brief Tests the routines in \ref LALMalloc_h.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * LALMallocTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program has ugly code for testing the LAL memory allocation and freeing
  * routines.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
  * <table>
  * <tr><th>Code</th><th>Explanation</th></tr>

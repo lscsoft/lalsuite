@@ -22,7 +22,7 @@
  * \author Tania Regimbau, Sukanta Bose, Jeff Noel
  * \addtogroup StochasticMC_h
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This routine simulates time-domain signal in a pair
  * of detectors using Sukanta Bose's code SimulateSB.c, whitened with the adequate response function that can be used in LALwrapper.
@@ -32,7 +32,7 @@
  * segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final
  * time serie.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The following program shows how to use the routines LALStochasticMCDso and LALStochasticMCDsoSplice
  *
@@ -286,7 +286,8 @@
  * }
  * \endcode
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALSSSimStochBGTimeSeries()
  * LALUpdateCalibration()

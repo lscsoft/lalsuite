@@ -171,14 +171,14 @@ static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm)
  * \brief Routine for simulating whitened time-domain signals in a pair
  * of detectors that arises from low duty cycle astrophysical backgrounds.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition
  * of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the
  * burst duration and the mean arrival time interval between events, such signals may be sequences of
  * resolved bursts, 'popcorn noises' or continuous backgrounds.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
  * <ol>
@@ -201,7 +201,7 @@ static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm)
  *
  * Then the inverse %FFTs give the whitened time series \f$o_{1}\f$ and \f$o_{2}\f$.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with \f$\Omega_{matter}=0.3\f$,
  * \f$\Omega_{vacuum}=0.7\f$ and \f$h_{0}=0.7\f$. The code can be easily adapted to any cosmological model.

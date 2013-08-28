@@ -24,12 +24,13 @@
  *
  * \brief Reads a time or frequency series from a file, and writes it to another file.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * StreamSeriesInputTest [-o outfile] [-i infile stype dtype] [-d debuglevel]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program parses data from an input file or from \c stdin,
  * using the routines in \ref StreamSeriesInput.c, and possibly

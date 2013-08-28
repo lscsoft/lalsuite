@@ -33,7 +33,8 @@ extern "C" {
  *
  * \brief Provides routines to write data from LAL data structures to an open stream.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include "StreamOutput.h"
  * \endcode

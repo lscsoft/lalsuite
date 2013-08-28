@@ -43,7 +43,8 @@ extern "C" {
  * \brief Provides coëfficients for the phenomenological waveforms
  * introduced by Ajith et al. in arXiv:0710.2335 [gr-qc]
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/BBHPhenomCoeffs.h>
  * \endcode

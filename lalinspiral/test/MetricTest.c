@@ -24,18 +24,22 @@
  * \brief Creates a template mesh for BCV (or, alternatively, for SPA but
  * assuing a constant metric) using the mismatch metric.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
- * \heading{Description}
  *
- * \heading{Algorithm}
+ * ### Description ###
  *
- * \heading{Uses}
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

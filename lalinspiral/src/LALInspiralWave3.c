@@ -24,7 +24,7 @@
  *
  * \brief These modules generate a time-domain chirp waveform of type #TaylorT3.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralWave3()</tt>
  * <ul>
@@ -39,7 +39,8 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * LALInspiralWave3() generates #TaylorT3 approximant which
  * corresponds to the case wherein
  * the phase of the waveform is given as an explicit function of time
@@ -49,9 +50,11 @@
  * two inspiral waveforms and the two differ in
  * phase by \f$\pi/2\f$.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * LALInspiralParameterCalc()
  * LALInspiralChooseModel()

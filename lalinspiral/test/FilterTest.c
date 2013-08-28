@@ -23,7 +23,8 @@
  *
  * \brief Test code for the inspiral bank modules.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * BankEfficiency [options]
  *
@@ -45,7 +46,7 @@
  *
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test code gives an example of how one might generate inspiral
  * waveforms and use them to compute the overlap of a random signal
@@ -61,7 +62,8 @@
  * returns a \e pair
  * of waveforms which have phases which differ by \f$\pi/2\f$.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * This code directly uses the following functions (see those functions
  * to find out what they call in turn):
  * \code
@@ -79,7 +81,7 @@
  * LALInspiralParameterCalc
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

@@ -24,12 +24,13 @@
  *
  * \brief Test code for the \c bank modules.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ./getOrientationEllipse
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This code illustrates the use of several functions such as
  * \c LALInspiralParameterCalc(), \c LALGetInspiralMoments(),
@@ -48,7 +49,7 @@
  * or not in this code but one could have use a function such as
  * \c LALInspiralValidtemplate to do so.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

@@ -36,7 +36,7 @@
  * smear the signal into several neighboring bins centered about the
  * search frequency, consequently losing valuable SNR.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The routine is really simple.  From JKS,
  * \f{eqnarray*}

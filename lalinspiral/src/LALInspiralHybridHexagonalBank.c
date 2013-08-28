@@ -23,13 +23,15 @@
  * \author Cokelaer Thomas
  * \brief Hybrid hexagonal template bank.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This code does almost the same as the standard Hexagonal Bank code. However,
  * once the templates cover both the equal line and an other line (\f$m_1=\textrm{mMin}\f$
  * or \f$m_2 =\textrm{mMax}\f$), then there is no need to carry on any square/hexagonal
  * placement. One can simply populate templates along a bissectrice.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * The algorithm is identical to the hexagonal placement. However, once a template covers
  * both the equal mass line and the upper boundary, then the hexagonal placement stops.
  * So, an additional placement is needed to finalise the bank. In principle the placement

@@ -33,16 +33,17 @@
  * \brief Provides functions to create time domain inspiral templates in a
  * form that can be used by the <tt>FindChirpFilter()</tt> function.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * The function <tt>LALFindChirpTDTemplate()</tt> creates a time domain template
  * template using the inspiral package.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Blah.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()
@@ -50,7 +51,7 @@
  * LALDestroyVector()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

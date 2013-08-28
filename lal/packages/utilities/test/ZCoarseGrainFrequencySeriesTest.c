@@ -48,7 +48,8 @@
  *
  * \brief Test suite for <tt>LALZCoarseGrainFrequencySeries()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ./ZCoarseGrainFrequencySeriesTest
  * Options:
@@ -64,7 +65,7 @@
  * -f f0          set start frequency of output to f0
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the routine
  * <tt>LALZCoarseGrainFrequencySeries()</tt>, which coarse-grains a
@@ -113,7 +114,7 @@
  * <tt>LALZCoarseGrainFrequencySeries()</tt>, and writes the results to
  * the specified output file.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> In addition to the error checks tested in this routine, the

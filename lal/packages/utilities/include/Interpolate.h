@@ -37,12 +37,13 @@ extern "C" {
  *
  * \brief This header covers the routines for interpolation.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Interpolate.h>
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routine <tt>LALSPolynomialInterpolation()</tt> computes the interpolated \f$y\f$
  * value \c output at the \f$x\f$ value \c target by fitting a polynomial of
@@ -51,7 +52,7 @@ extern "C" {
  * an estimate of the error <tt>output.dy</tt>.  The routine
  * <tt>LALDPolynomialInterpolation()</tt> is the same but for double precision.
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
  *
  * The following program fits a fourth-order polynomial to the five data points
  * \f$\{(0,0),(1,1),(2,3),(3,4),(4,3)\}\f$, and interpolates the value at \f$x=2.4\f$.
@@ -76,7 +77,7 @@ extern "C" {
  * }
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This is an implementation of the Neville algroithm, see \c polint in
  * Numerical Recipes [\ref ptvf1992].

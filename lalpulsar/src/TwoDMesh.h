@@ -34,7 +34,8 @@ extern "C" {
  * \ingroup pkg_pulsarCovering
  * \brief Provides routines to place search meshes for two-dimensional parameter spaces with varying metric.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/TwoDMesh.h>
  * \endcode

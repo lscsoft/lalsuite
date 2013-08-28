@@ -31,7 +31,7 @@
  * first template in the bank. These coordinates are \f$\tau_{0}=\tau_{0min}\f$,
  * \f$\tau_{3}=\tau_{3min}\f$.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * We start with the definition of the chirp times \f$\tau_{0}\f$ and \f$\tau_{3}\f$,
  * \f{equation}{

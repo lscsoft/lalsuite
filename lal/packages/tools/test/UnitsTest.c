@@ -24,7 +24,8 @@
  *
  * \brief Test Suite for unit manipulation programs
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * UnitsTest [options]
  * Options:
@@ -34,13 +35,14 @@
  * -d level   set lalDebugLevel to level
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the various units-manipulation routines, as well as
  * the pre-defined units defined in \ref Units.h.  For each
  * successful test, it prints "PASS" to standard output.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCHARCreateVector()
  * LALUnitAsString()
@@ -52,7 +54,7 @@
  * LALUnitCompare()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 /** @{ */

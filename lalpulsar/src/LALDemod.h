@@ -33,7 +33,8 @@ extern "C" {
  *
  * \brief Computes a demodulated transform.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALDemod.h>
  * \endcode
@@ -130,9 +131,10 @@ extern "C" {
  * the statistics of\eqref{eq_e1} at the same time.  After all the iterations of the \f$\alpha\f$ loop
  * are complete, that is, when all SFTs have been exhausted, the final statistic is computed.
  *
- * \heading{Types}
+ * ### Types ###
  *
- * \heading{Structure \c DemodPar}
+ *
+ * ### Structure \c DemodPar ###
  *
  * This structure contains the parameters for the demodulation routine.   The parameters are:
  *
@@ -151,7 +153,7 @@ extern "C" {
  * <dt><tt>BOOLEAN returnFaFb</tt></dt><dd> Wether or not to include the values Fa/Fb in the return-structure Fstat.</dd>
  * </dl>
  *
- * \heading{Structure \c LALFstat}
+ * ### Structure \c LALFstat ###
  *
  * This structure contains the results from LALDemod: either
  * only the value of the \f$\mathcal{F}\f$-statistic \f$F\f$, or also the values

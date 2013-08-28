@@ -40,12 +40,13 @@
  * \brief
  * Produces fake SFT data.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * makefakedata [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-I input dir]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program uses Teviet Creighton's LAL CW signal routines in order
  * to produce SFT files in the GEO binary format.
@@ -108,7 +109,8 @@
  * If sigma in the input file is negative, then the noise data is read in
  * from SFT files that are specified in the code.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALGenerateTaylorCW()
  * LALPulsarSimulateCoherentGW()

@@ -37,7 +37,8 @@ extern "C" {
  *
  * \brief Provides routines to generate ringdown waveforms.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/GenerateRing.h>
  * \endcode

@@ -25,7 +25,8 @@
  * Provides routines for finding the best fit of the measured data to the strain expected from
  * non-precessing pulsar.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/FitToPulsar.h>
  * \endcode
@@ -45,11 +46,14 @@
  * The minimization of \f$\chi^2\f$ is done in two steps <tt>LALCoarseFitToPulsar()</tt> and <tt>LALFineFitToPulsar()</tt>.
  *
  * More documentation soon.
- * \heading{Error conditions}
  *
- * \heading{Structures}
+ * ### Error conditions ###
  *
- * \heading{Structure \c CoarseFitInput}
+ *
+ * ### Structures ###
+ *
+ *
+ * ### Structure \c CoarseFitInput ###
  *
  * This structure stores locked data to be fitted by model.
  * <dl>
@@ -58,7 +62,7 @@
  * <dt><tt>LIGOTimeGPS *t</tt></dt><dd> time stamp for each data point (not necessarily with equal time steps)</dd>
  * </dl>
  *
- * \heading{Structure \c CoarseFitOutput}
+ * ### Structure \c CoarseFitOutput ###
  *
  * This structure stores the results from the coarse fit of parameters.
  * <dl>
@@ -71,7 +75,7 @@
  * <dt><tt>REAL8Vector *mChiSquare</tt></dt><dd> matrix with chi square values</dd>
  * </dl>
  *
- * \heading{Structure \c CoarseFitParams}
+ * ### Structure \c CoarseFitParams ###
  *
  * This structure stores the parameters for the coarse fit.
  * <dl>

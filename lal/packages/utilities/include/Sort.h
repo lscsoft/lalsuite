@@ -41,12 +41,13 @@ extern "C" {
  *
  * \brief Provides routines for sorting, indexing, and ranking real vector elements.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Sort.h>
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines sort a vector <tt>*data</tt> (of type \c REAL4Vector
  * or \c REAL8Vector) into ascending order using the in-place
@@ -93,7 +94,7 @@ extern "C" {
  * \c params of \c XLALHeapSort(), \c XLALHeapIndex(), and
  * \c XLALHeapRank().
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * These routines use the standard heap sort algorithm described in
  * Sec. 8.3 of Ref. [\ref ptvf1992].

@@ -60,7 +60,8 @@ extern "C" {
  * \defgroup TimeFreq_h Header TimeFreq.h
  * \ingroup pkg_TFR
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/TimeFreq.h>
  * \endcode

@@ -24,7 +24,7 @@
  * \brief The function \c LALInspiralPhase() calculates the phase \f$\phi(v)\f$ of a gravitational wave from an
  * inspiralling binary system.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * It does this using the following equation, which is one of the pair which constitute the gravitational wave
  * phasing formula,
@@ -37,11 +37,14 @@
  * \c LALInspiralPhase calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,  \f$v\f$, \f$E^{\prime}(v)\f$ and
  * \f$\mathcal{F}(v)\f$.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * LALDRombergIntegrate()
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  */
 

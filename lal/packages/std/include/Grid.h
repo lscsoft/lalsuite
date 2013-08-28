@@ -34,7 +34,8 @@ extern "C" {
  *
  * \brief Provides a structured datatype for a multidimensional rectilinear grid.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Grid.h>
  * \endcode
@@ -45,7 +46,7 @@ extern "C" {
  * etc.), representing evenly-sampled data over some physical parameter
  * space.
  *
- * \heading{Structure <tt>\<datatype\>Grid</tt>}
+ * ### Structure <tt>\<datatype\>Grid</tt> ###
  *
  * This structure is a generalization of the LAL series types,
  * storing data on an \f$m\f$-dimensional rectangular grid on a physical
@@ -92,7 +93,7 @@ extern "C" {
  * \ref LALDatatypes.h.</dd>
  * </dl>
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * \code
  * void
@@ -106,7 +107,7 @@ extern "C" {
  * <datatype>Grid **grid )
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines create or destroy a <tt>\<datatype\>Grid</tt> structure.
  * The input vector \c dimLength stores the lengths of each dimension

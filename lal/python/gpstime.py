@@ -19,7 +19,8 @@
 package
 """
 #
-#\heading{Synopsis}
+# ### Synopsis ###
+#
 #~~~
 #from lal import gpstime
 #~~~

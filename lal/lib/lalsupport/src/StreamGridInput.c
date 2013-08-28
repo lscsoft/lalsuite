@@ -5,14 +5,14 @@
  *
  * \brief Converts an input stream into a LAL grid structure.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * \code
  * void
  * LAL<typecode>ReadGrid( LALStatus *stat, <datatype>Grid **grid, FILE *stream )
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines parse an input stream <tt>*stream</tt> to create a grid
  * structure <tt>**grid</tt>, and fill in its data and metadata fields.
@@ -32,7 +32,8 @@
  * <tr><td> D</td><td>REAL8</td><td> Z</td><td>COMPLEX16</td></tr>
  * </table>
  *
- * \heading{Format for *stream:} The input stream is assumed
+ * \par Format for *stream:
+ * The input stream is assumed
  * to be a text stream (ASCII) consisting of a header containing metadata
  * followed by numerical data in standard integer or floating-point
  * format, as recognized by the routines in \ref StringConvert.c.  The
@@ -63,7 +64,8 @@
  * found, the routine will assign some default value.  The various fields
  * and their required formats are given below:
  *
- * \heading{Required fields:}
+ * ### Required fields: ###
+ *
  * <dl>
  * <dt>dimLength:</dt><dd> \e value consists of a sequence of
  * \c UINT4s separated by whitespace (but \e not a newline
@@ -91,7 +93,8 @@
  * \c offset, \c interval, and \c dimUnits fields.</dd>
  * </dl>
  *
- * \heading{Optional fields:}
+ * ### Optional fields: ###
+ *
  * <dl>
  *
  * <dt>name:</dt><dd> \e value is a string surrounded by double-quotes,
@@ -145,7 +148,8 @@
  * </dd>
  * </dl>
  *
- * \heading{Data format:} The first line that is neither blank nor
+ * \par Data format:
+ * The first line that is neither blank nor
  * beginning with a <tt>\#</tt> character is assumed to be the start of
  * the grid data, and is parsed as a sequence of whitespace-separated
  * integers or real numbers.  For complex datatypes, the numbers read are
@@ -157,7 +161,7 @@
  * routine encounters an unparseable number or the end-of-input before
  * filling the structure, an error is returned.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * These routines use LALCHARReadVector() to read the header lines
  * and the first line of data.  The metadata are stored in temporary

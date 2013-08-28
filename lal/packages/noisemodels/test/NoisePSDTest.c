@@ -27,7 +27,8 @@
  * See the beginning of the NoiseModels module to see details on how
  * this test program works.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALDCreateVector
  * LALNoiseSpectralDensity

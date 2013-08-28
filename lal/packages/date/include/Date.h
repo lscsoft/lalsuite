@@ -46,7 +46,8 @@ extern "C"
  * \author D.W. Chin, J.D.E. Creighton and Kipp Cannon
  * \brief Provides routines for manipulating date and time information.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Date.h>
  * \endcode

@@ -36,21 +36,25 @@
  * \ingroup Statistics_h
  * \brief Tests the statistics and the histogram number count of a given total Hough map.
  *
- * \heading{Program \ref TestStatistics.c}
+ * ### Program \ref TestStatistics.c ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * TestStatistics [-d debuglevel] [-o outfile]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This program creates a Hough map and ...
  *
  * The <b>-d</b> option sets the debug level to the specified value
  * \c debuglevel.  The <b>-o</b> flag tells the program to print the histogram
  * of the Hough number counts to the specified data file \c outfile.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALHoughStatistics()
  * LALHoughHistogram()

@@ -31,7 +31,7 @@
  * \brief Construction of the look up table for generating partial Hough maps assuming the
  * use of the stereographic projection.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module is the core of the Hough transform. The LAL function LALHOUGHConstructPLUT()
  * constructs the look up tables that will be used to build the so-called

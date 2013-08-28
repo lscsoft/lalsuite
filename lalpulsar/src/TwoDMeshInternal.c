@@ -23,7 +23,7 @@
  * \ingroup TwoDMesh_h
  * \brief Low-level routines to place a mesh of templates on an 2-dimensional parameter space.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These are low-level ``internal'' routines called by
  * LALCreateTwoDMesh() to lay out an unevenly-spaced mesh on a
@@ -58,9 +58,10 @@
  * recursive calls to LALTwoDNodeCopy().  On an error, the copy is
  * destroyed and <tt>*new</tt> left unchanged.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{LALTwoDMesh():} This routine starts placing mesh
+ * \par LALTwoDMesh():
+ * This routine starts placing mesh
  * points at the left side of the parameter region, \f$x=x_\mathrm{min}\f$.
  * It calls <tt>params->getRange()</tt> to get the bottom and top of the
  * left edge of the first column.  It also calls <tt>params->getMetric</tt>
@@ -87,7 +88,8 @@
  * its right edge lies exactly at \f$x_\mathrm{max}\f$; once it is filled,
  * the mesh is deemed complete, and no further columns are generated.
  *
- * \heading{LALTwoDColumn():} This routine first locates the
+ * \par LALTwoDColumn():
+ * This routine first locates the
  * centreline of the column, and uses <tt>params->getRange()</tt> to see
  * how much of this centreline is taken up by the requested parameter
  * region, restricted by any clipping area specified in <tt>*column</tt>.
@@ -132,7 +134,8 @@
  * LALTwoDColumn() updates <tt>*tail</tt> to the new tail of the
  * list, and returns.
  *
- * \heading{LALTwoDNodeCopy():} This routine works by a simple
+ * \par LALTwoDNodeCopy():
+ * This routine works by a simple
  * recursive algorithm.  First, a copy of the node is allocated and the
  * output handle is pointed to it.  Next, all non-pointer fields are
  * copied over.  Then, if <tt>new->subMesh</tt> exists,
@@ -142,7 +145,8 @@
  * detected, <tt>*new</tt> is destroyed via LALDestroyTwoDMesh(),
  * restoring it to \c NULL.
  *
- * \heading{Computing tile sizes:} Given a positive-definite
+ * \par Computing tile sizes:
+ * Given a positive-definite
  * 2-dimensional metric \f$\mathsf{g}_{ab}\f$, the elliptical contour
  * corresponding to a maximum mismatch \f$m_\mathrm{thresh}\f$ is given by
  * the set of points offset from the centre point by amounts \f$(\Delta
@@ -191,14 +195,15 @@
  * constant-mismatch contour as an ellipse.  The routines here do not do
  * any sophisticated sanity-checking, though.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALInfo()                   XLALPrintError()
  * LALMalloc()                 LALDestroyTwoDMesh()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

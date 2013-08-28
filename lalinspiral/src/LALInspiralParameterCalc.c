@@ -25,7 +25,7 @@
  * \brief Given a pair of masses (or other equivalent parameters) compute
  * related chirp parameters.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>XLALInspiralParameterCalc()</tt>
  * <ul>
@@ -33,7 +33,7 @@
  * frequency cutoff, other equivalent parameters are computed by this function.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The code takes as its input <tt>params->fLower</tt> in Hz and
  * a pair of masses (in units of \f$M_\odot\f$) or chirptimes (in seconds measured from <tt>params->fLower</tt>)
@@ -89,11 +89,13 @@
  * </td><td>\f$\tau_0 + \tau_2-\tau_3 + \tau_4\f$</td><td>\f$\tau_0 + \tau_2-\tau_3 + \tau_4 - \tau_5\f$</td></tr>
  * </table>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Root finding by bisection method is used to solve for mass ratio \f$\eta\f$ when
  * chirptimes \f$(\tau_0,\, \tau_2)\f$ or \f$(\tau_0,\, \tau_4)\f$ is input.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * When appropriate this function calls:
  * <code>
  * XLALDBisectionFindRoot()
@@ -101,7 +103,7 @@
  * XLALEtaTau04()
  * </code>
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

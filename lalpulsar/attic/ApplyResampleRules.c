@@ -34,7 +34,7 @@
  * is not a subset of the timespan covered by <tt>*input</tt> or
  * <tt>*rules</tt>, the data at the nonintersecting times are set to zero.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * At present this routine is just a stub.  It does not apply or even
  * check <tt>*rules</tt>, and instead simply makes <tt>*output</tt>

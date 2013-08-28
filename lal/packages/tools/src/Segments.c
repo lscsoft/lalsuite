@@ -26,20 +26,20 @@
 /**
  * \addtogroup Segments_h
  *
- * \heading{Functions for handling segments}
+ * ### Functions for handling segments ###
  *
  * The first few functions listed deal with \e segments:
  *
  * XLALSegSet(), XLALSegCreate(), XLALGPSInSeg(), XLALSegCmp()
  *
- * \heading{Functions for handling segment lists}
+ * ### Functions for handling segment lists ###
  *
  * The rest of the functions listed deal with <em>segment lists</em>:
  *
  * XLALSegListInit(), XLALSegListClear(), XLALSegListAppend(), XLALSegListSort()
  * XLALSegListCoalesce(), XLALSegListSearch()
  *
- * \heading{Error codes and return values}
+ * ### Error codes and return values ###
  *
  * Each XLAL function listed above, if it fails invokes the current XLAL error
  * handler, sets \c xlalErrno to the appropriate XLAL error code, and

@@ -40,7 +40,7 @@
  *
  * \brief Injects inspiral waveforms into detector output.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * <tt>LALSimulateInspiral()</tt>:
  * This function generates a binary inspiral signal using the parameters
@@ -81,7 +81,7 @@
  * values, including such things as wrong units or bad sampling
  * intervals.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * One of the most useful applications of this routine is to generate
  * simulated noise containing a signal.  The following code snippet
@@ -116,7 +116,7 @@
  * }
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The default mode of operation, when one specifies the desired
  * amplitude, is as follows:

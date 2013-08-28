@@ -107,13 +107,14 @@
  * LALSDestroyVector( &status, &Pvec );
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The FFTW [\ref fj_1998] is used.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  * <ol>
  * <li> The sign convention used here is the opposite of

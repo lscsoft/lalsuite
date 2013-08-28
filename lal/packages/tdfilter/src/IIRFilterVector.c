@@ -26,7 +26,7 @@
  *
  * \brief Applies an IIR filter to a data stream.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions apply a generic time-domain filter given by an object
  * <tt>*filter</tt> of type \c REAL4IIRFilter or \c REAL8IIRFilter
@@ -44,7 +44,7 @@
  * reduces roundoff error by keeping \e all intermediate results to
  * double-precision.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The implementation of <tt>LALDIIRFilterREAL4Vector()</tt> not only has
  * lower truncation errors than <tt>LALIIRFilterREAL4Vector()</tt>, but

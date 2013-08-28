@@ -33,7 +33,8 @@
  * \brief Provides functions for manipulating the LAL structures that correspond
  * to the LIGO metadata database tables defined in \ref LIGOMetadataTables.h.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LIGOMetadataUtils.h>
  * \endcode
@@ -45,7 +46,7 @@
  * \c sngl_inspiral, \c sngl_burst, etc.) are all prototyped in
  * this header.
  *
- * \heading{Types}
+ * ### Types ###
  *
  * None.
  *

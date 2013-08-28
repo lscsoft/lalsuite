@@ -33,7 +33,8 @@ extern "C" {
  *
  * \brief This is a simple utility to print time and frequency series into a file.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/PrintFTSeries.h>
  * \endcode
@@ -48,7 +49,7 @@ extern "C" {
  * Print a \<datatype\>TimeSeries object into a
  * file.  For use in non-production and test code only.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Each member of this family of functions prints the elements of
  * \f$\langle\mbox{datatype}\rangle\f$\c TimeSeries into a file.  Note:
@@ -56,7 +57,7 @@ extern "C" {
  * for debugging use only: its arguments do not conform to LAL standards
  * so it should not be used in any real analysis codes.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * This function's arguments do not conform to the LAL spec.  For this
  * reason it should only be used for debugging purposes in test
@@ -104,7 +105,7 @@ void LALZPrintTimeSeries( COMPLEX16TimeSeries *series , const CHAR *filename );
  * Print a \<datatype\>FrequencySeries object into a
  * file.  For use in non-production and test code only.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Each member of this family of functions prints the elements of
  * \<datatype\>FrequencySeries into a file.
@@ -112,7 +113,7 @@ void LALZPrintTimeSeries( COMPLEX16TimeSeries *series , const CHAR *filename );
  * function is for debugging use only: its arguments do not conform to
  * LAL standards so it should not be used in any real analysis codes.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * This function's arguments do not conform to the LAL spec.  For this
  * reason it should only be used for debugging purposes in test

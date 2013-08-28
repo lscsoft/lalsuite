@@ -24,7 +24,8 @@
  *
  * \brief Test suite for <tt>LALStochasticOptimalFilterNormalization()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ./StochasticOptimalFilterNormalizationTest [options]
  * Options:
@@ -41,7 +42,7 @@
  * -y             use normalization appropriate to heterodyned data
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the function
  * <tt>LALStochasticOptimalFilterNormalization()</tt>, which calculates
@@ -106,9 +107,11 @@
  * \f$\sigma^2\,T^{-1}=.700859760794\f$</li>
  * </ol>
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * LALStochasticOptimalFilterNormalization()
  * LALCheckMemoryLeaks()
@@ -128,7 +131,8 @@
  * fabs()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> No specific error checking is done on user-specified data.  If
  * \c length is missing, the resulting default will cause a bad

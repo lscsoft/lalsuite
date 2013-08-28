@@ -28,13 +28,18 @@
  * the number of events found, and for each event the snr,
  * the bin number and the phase of the template at that bin.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralFindLoudestEvent()</tt>
  *
- * \heading{Description}
- * \heading{Algorithm}
- * \heading{Uses}
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * LALInspiralWave()
  * LALREAL4VectorFFT()

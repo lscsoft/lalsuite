@@ -29,7 +29,7 @@
  *
  * \brief Routines to compute matrix determinants and inverses.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * <tt>LALSMatrixDeterminant()</tt> and <tt>LALDMatrixDeterminant()</tt>
  * compute the determinant <tt>*det</tt> of the square matrix
@@ -55,7 +55,7 @@
  * and uses an internal matrix in its computations, so the contents of
  * <tt>*matrix</tt> and <tt>*matrixErr</tt> will not be changed.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * A linear system of equations is written in matrix terms as:
  * \anchor eq_linear_system \f{equation}{
@@ -133,7 +133,8 @@
  * back-substitution from \f$N^2\f$ to \f$2N^2/3\f$, for a total operation count
  * of \f$N^3\f$.
  *
- * \heading{Computing determinant uncertainties:} To determine the
+ * \par Computing determinant uncertainties:
+ * To determine the
  * dependence of the determinant on any one element of the matrix, we
  * take advantage of the fact that the determinant \f$|\mathsf{M}^a{}_b|\f$
  * can be written as:

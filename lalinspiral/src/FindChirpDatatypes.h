@@ -44,7 +44,8 @@ extern "C" {
  *
  * \brief Provides core protypes for the core datatypes using in findchirp.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/FindChirpDatatypes.h>
  * \endcode

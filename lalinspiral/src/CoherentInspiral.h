@@ -53,11 +53,12 @@ extern "C" {
  * \brief Provides core prototypes, structures and functions to filter
  * data from multiple interferometers coherently for binary inspiral chirps.
  *
- * \heading{Coherent search statistic for binary neutron stars}
+ * ### Coherent search statistic for binary neutron stars ###
  *
  * The coherent statistic will be defined here.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/CoherentInspiral.h>
  * \endcode

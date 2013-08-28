@@ -27,7 +27,7 @@
  *
  * \brief Creates ZPG filter objects.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions create an object <tt>**output</tt>, of type
  * \c COMPLEX8ZPGFilter or \c COMPLEX16ZPGFilter, having

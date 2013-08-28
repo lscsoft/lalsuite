@@ -23,13 +23,14 @@
  * \file
  * \brief Transforms coordinates among various systems.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * SkyCoordinatesTest [-i system lat lon] [-o system] [-z lat lon]
  * [-a altitude] [-c lat lon rad] [-t sec nsec] [-d debuglevel]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program converts between any two celestial coordinate systems, or
  * between geocentric and geodetic terrestrial coordinates, using the

@@ -34,7 +34,7 @@
  * \brief Computes the barycentric arrival time of an incoming wavefront using
  * accurate ephemeris-based data files of the Sun and Earth's motions.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines compute the barycentric time transformation and its
  * derivatives.  That is, if a signal originating from a right ascension
@@ -55,7 +55,8 @@
  * into LALDTEphemeris() using the EphemerisData
  * structure, which is a member of the PulsarTimesParamStruc.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel                LALBarycenterEarth()
  * LALBarycenter()

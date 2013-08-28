@@ -32,14 +32,15 @@ extern "C" {
  *
  * \brief Root finding routines.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/FindRoot.h>
  * \endcode
  *
  * This header covers the routines for root finding.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routine <tt>LALSBracketRoot()</tt> expands the specified domain until a root
  * is contained.  The routine <tt>LALDBracketRoot()</tt> is the same but for a
@@ -49,7 +50,7 @@ extern "C" {
  * root) until the root is found with the desired accuracy.  The routine
  * <tt>LALDBisectionFindRoot()</tt> is the same but for a double-precision function.
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
  *
  * Suppose we want to find the root of the function \f$y = F(x;y_0) = y_0 + x^2\f$.
  * Define the function:
@@ -84,7 +85,7 @@ extern "C" {
  * LALSBisectionFindRoot( &status, &x0, &input, &y0 );
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This is an implementation of the root bracketing and bisection finding
  * routines \c zbrac and \c rtbis in Numerical Recipes [\ref ptvf1992].

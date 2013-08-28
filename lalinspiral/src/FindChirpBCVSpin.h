@@ -49,7 +49,7 @@ extern "C" {
  * and generate binary inspiral chirps using the spinning BCV detection
  * template family.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/FindChirpBCVSpin.h>

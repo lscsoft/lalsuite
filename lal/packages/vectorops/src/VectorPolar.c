@@ -51,7 +51,7 @@
  *
  * The double-precision functions are similar.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithm for LALUnwrapREAL4Angle() and LALUnwrapREAL8Angle()
  * (Inspired from the MATLAP function unwrap):
@@ -81,7 +81,7 @@
  *
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * For the LALUnwrapREAL4Angle() and LALUnwrapREAL8Angle() functions, \c a,
  * and \c b should  not point to the same memory location (<tt>a != b</tt>).

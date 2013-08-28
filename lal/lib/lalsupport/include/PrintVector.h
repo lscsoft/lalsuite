@@ -38,14 +38,15 @@ extern "C" {
  *
  * \brief This is a simple utility to print vectors into a file.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/PrintVector.h>
  * \endcode
  *
  * Contains the prototypes for the LAL <tt>\<datatype\>PrintVector</tt> functions
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Each member of this family of functions prints the elements of
  * \f$\langle\mbox{datatype}\rangle\f$\c Vector into a file.  Note: the
@@ -57,7 +58,7 @@ extern "C" {
  * use only: it uses a static internal variable to keep track of the file
  * number so it should not be used in any real analysis codes.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * This function uses an internal static variable to keep track of file
  * numbers.  For this reason it should only be used for debugging

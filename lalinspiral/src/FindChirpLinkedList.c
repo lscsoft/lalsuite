@@ -38,7 +38,7 @@
  * It is often convienient to deal with the inspiral templates as a doubly linked
  * list.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function <tt>LALFindChirpCreateTmpltNode()</tt> adds the inspiral template
  * parameter structure pointed to by \c tmplt to the linked list of
@@ -53,7 +53,8 @@
  * removal of a node in the middle or at the end of the list. If the first node
  * is removed \c tmpltNode is set to the address of the new first node.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()

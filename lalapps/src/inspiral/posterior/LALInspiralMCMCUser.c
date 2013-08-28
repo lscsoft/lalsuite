@@ -4,13 +4,13 @@
  * \ingroup inspiral
  * \brief The file \c LALInspiralMCMCUser contains user algorithms for the MCMC computation.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The only functions called from outside this package are \c XLALMCMCMetro, as well as functions to set up and initialize the parameter structure.
  *
  * To set a different chain for the parameter estimation, just set another random seed.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithms used in these functions are explained in detail in [Ref Needed].
  *

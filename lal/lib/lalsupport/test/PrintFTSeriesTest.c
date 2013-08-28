@@ -24,12 +24,13 @@
  *
  * \brief Tests the routines in \ref PrintTimeSeries_c and \ref PrintFrequencySeries_c.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * PrintFTSeriesTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program generates and prints a sequence of frequency and time
  * series; the program only detects errors coming from other LAL
@@ -38,7 +39,7 @@
  * the routines in \ref PrintFrequencySeries_c and
  * \ref ReadFrequencySeries_c.)
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * The program as written generates and prints single and double
  * precision real and complex time and frequency series.  The routines

@@ -43,7 +43,7 @@
  *
  * \brief Routine to get a random number based on the Mersenne Twister Algorithm.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This was implemented as in the paper listed below.  We have provided two functions,
  * each which may be called multiple times.  One returns a single number and the other
@@ -68,7 +68,7 @@
  * generators. Its merits are due to the efficient algorithms that are unique to
  * polynomial calculations over the two-element field.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Please see paper listed below:
  *
@@ -82,7 +82,7 @@
  * When you use this, send an email to: matumoto@math.keio.ac.jp
  * with an appropriate reference to your work.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * Pulled from distributed source code:
  *

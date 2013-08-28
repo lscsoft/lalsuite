@@ -27,7 +27,7 @@
  * \ingroup PulsarTimes_h
  * \brief Computes the rotation-synchronized time coordinate for an object with smoothly-varying spin.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines compute the value and derivatives of a time
  * transformation \f$t_s(t)\f$ from a physical (inertial) time coordinate to
@@ -47,7 +47,7 @@
  * <tt>*variables</tt> can be a vector of arbitrary length; for
  * consistency, <tt>*dtSpin</tt> must be one element longer.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * If the frequency of a rotating body is varying in some suitably smooth
  * manner, then it can be represented as a Taylor series:
@@ -80,7 +80,8 @@
  * \frac{\partial t_s(t)}{\partial f_k} = \frac{(t-t_0)^{k+1}}{k+1} \; .
  * \f]
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * \endcode

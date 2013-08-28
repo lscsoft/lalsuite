@@ -54,7 +54,8 @@ extern "C" {
  * also a test code as well which allows to check the output of
  * code. It is called InjectionInterfaceTest.c
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/GenerateInspiral.h>
  * \endcode
@@ -92,7 +93,8 @@ extern "C" {
  * </dd>
  * </dl>
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * Inject only time-domain waveforms for the time being such as GeneratePPN,
  * TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , SpinTaylor, PhenSpinTaylorRD.
  *

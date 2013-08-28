@@ -24,12 +24,13 @@
  *
  * \brief Tests the routines in \ref ReadTimeSeries_c and \ref ReadFrequencySeries_c.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ReadFTSeriesTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * For each of the real and complex datatypes (single and double
  * precision), this program fills a Time- and FrequencySeries, prints

@@ -24,13 +24,13 @@
  *
  * \brief Tests \c TimeDelay code.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * TestDelay
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program does zero-th order tests for XLALTimeDelayFromEarthCenter().
  *

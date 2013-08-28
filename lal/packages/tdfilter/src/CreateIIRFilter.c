@@ -30,7 +30,7 @@
  *
  * \brief Creates IIR filter objects.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions create an object <tt>**output</tt> of type
  * <tt>\<datatype\>IIRFilter</tt>, where <tt>\<datatype\></tt> is \c REAL4 or
@@ -44,7 +44,7 @@
  * but should not point to an existing object
  * (<tt>*output</tt>=\c NULL)
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * An IIR filter is a real time-domain filter, which imposes certain
  * constraints on the zeros, poles, and gain of the filter transfer

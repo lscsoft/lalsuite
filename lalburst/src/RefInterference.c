@@ -55,7 +55,8 @@
  *
  * \brief Generates a reference interference signal.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Given the complex vector  <tt>*in1</tt> of length \f$n/2+1\f$, containing
  * the Fourier transform of the data \f$\tilde x(\nu)\f$,
  * <dl>
@@ -85,10 +86,11 @@
  * frequency  \f$f_0\f$, that is implicit in the information
  * given in <tt>*par</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Described before.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * The harmonics selected to construct the reference signal
  * should not be (if possible) buried with other strong lines,

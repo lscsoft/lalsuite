@@ -44,7 +44,7 @@
  * (spherical) sky-position (in radians), which means it projects the
  * angles into \f$[0, 2\pi) \times [-\pi/2, \pi/2]\f$ if they lie outside.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * <tt>LALConvertSkyCoordinates()</tt> is structured as a simple loop over
  * transformations, each

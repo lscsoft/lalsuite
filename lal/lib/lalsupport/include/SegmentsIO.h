@@ -23,13 +23,15 @@
  *
  * \brief Provides segment list reading and writing functions as part of the \c lalsupport library.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Segments.h>
  * #include <lal/SegmentsIO.h>
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * The baseline format of a segment list file is described at
  * <tt>http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/seglist_format.html</tt> .
  */

@@ -22,18 +22,23 @@
  * \file
  * \brief NONE
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralComputeChisq()</tt>
  *
- * \heading{Description}
- * \heading{Algorithm}
- * \heading{Uses}
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * LALREAL4VectorFFT
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

@@ -32,7 +32,8 @@ extern "C" {
  * \author Creighton, T. D.
  * \brief Provides routines for resampling time series according to a new canonical time coordinate.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Resample.h>
  * \endcode
@@ -99,7 +100,8 @@ extern "C" {
  * time coordinate \f$t\f$.  Canonical times are specified by giving the
  * difference \f$\tau-t\f$.
  *
- * \heading{Caveat emptor:} The inclusion of this header and its
+ * \par Caveat emptor:
+ * The inclusion of this header and its
  * associated modules into LAL is provisional at this time.  The routines
  * and the test code appear to work, but a later standalone code,
  * operating on much larger datasets, appeared to encounter a memory

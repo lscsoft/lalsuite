@@ -29,7 +29,7 @@
 /**
  * \addtogroup ComplexFFT_h
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This package provides a (X)LAL-style interface with the FFTW fast Fourier
  * transform package [\ref fj_1998].
@@ -56,7 +56,7 @@
  * However, the present implementation of the \e reverse FFT omits the
  * factor of \f$1/n\f$.  The input and output vectors must be distinct.
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
  *
  * \code
  * const UINT4 n = 17;
@@ -85,13 +85,14 @@
  * LALCDestroyVector( &status, &cvec );
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The FFTW [\ref fj_1998] is used.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  * <ol>
  * <li> The sign convention used here is the opposite of the definition in

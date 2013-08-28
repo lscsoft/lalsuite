@@ -33,7 +33,7 @@
  * \brief Construction of Partial-Hough-Map-Derivatives (\c phmd) given a peak-gram and the look-up-table.
  * \ingroup PHMD_h
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This routine produces a \c phmd at a certain frequency for a given  peak-gram and
  * look-up-table.

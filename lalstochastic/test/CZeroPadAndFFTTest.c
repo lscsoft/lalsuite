@@ -24,7 +24,8 @@
  *
  * \brief Test suite for <tt>LALCZeroPadAndFFT()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ./CZeroPadAndFFTTest
  * Options:
@@ -38,7 +39,7 @@
  * -m             measure plan
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the routine <tt>LALCZeroPadAndFFT()</tt>, which
  * zero-pads and Fourier transforms a complex time series of length \f$N\f$ to
@@ -81,7 +82,8 @@
  * series from a file, calls <tt>LALCZeroPadAndFFT()</tt>, and writes the
  * results to the specified output file.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCZeroPadAndFFT()
  * LALCheckMemoryLeaks()
@@ -102,7 +104,7 @@
  * fabs()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> No specific error checking is done on user-specified data.  If

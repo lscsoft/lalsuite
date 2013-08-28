@@ -20,13 +20,14 @@
 /**
  * \addtogroup FileIO_h
  *
- * \heading{Obsolete LAL Prototypes}
+ * ### Obsolete LAL Prototypes ###
+ *
  * \code
  * FILE *LALFopen( const char *path, const char *mode );
  * int LALFclose( FILE *stream );
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routines <tt>LALFopen()</tt> and <tt>LALFclose()</tt> are macro defined to be
  * the same as the standard C routines <tt>LALFopen()</tt> and <tt>fclose()</tt>.  These

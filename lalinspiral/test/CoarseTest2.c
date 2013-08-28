@@ -24,12 +24,13 @@
  *
  * \brief Test code for the \c bank modules.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * CoarseTest2
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test code gives an example of how to generate a template bank and
  * generates vertices of the ambiguity 'rectangle' around each lattice point

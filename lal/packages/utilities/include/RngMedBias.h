@@ -50,7 +50,7 @@ extern "C" {
  *
  * \brief Routine for finding bias in median for exponential distribution
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/RngMedBias.h>

@@ -23,7 +23,7 @@
  * \ingroup TwoDMesh_h
  * \brief Creates or destroys a hierarchical mesh of templates on an 2-dimensional parameter space.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routine <tt>LALCreateTwoDMesh()</tt> lays out an unevenly-spaced
  * mesh on a 2-dimensional parameter space, according to the method
@@ -52,7 +52,7 @@
  * just too much overhead involved in maintaining an uncorrupted copy of
  * the \c coarseMesh list for it to be worthwhile.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * \c LALCreateTwoDMesh() simply creates a dummy node to serve as the
  * head of the linked list, and calls <tt>LALTwoDMesh()</tt> in
@@ -78,7 +78,8 @@
  * the next finest, add that to the next finest, and so on up to the
  * coarsest mesh.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel               XLALPrintError()
  * LALWarning()                LALInfo()
@@ -86,7 +87,7 @@
  * LALFree()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

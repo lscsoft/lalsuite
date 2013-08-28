@@ -25,14 +25,16 @@
  * user's specification) and \ref TwoDMesh_h modules by producing a
  * template mesh.
  *
- * \heading{Program <tt>GeneralMeshTest.c</tt>}
+ * ### Program <tt>GeneralMeshTest.c</tt> ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * GeneralMeshTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The <b>-a</b> option determines which LAL metric code is used.  The
  * options are:
@@ -95,9 +97,10 @@
  * system call to \c xmgrace. If \c xmgrace is not installed on your
  * system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
  *
  * \code
  * lalDebugLevel                LALDCreateVector()
@@ -108,7 +111,7 @@
  * LALFree()                    LALCoherentMetric()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * For most regions of parameter space the three metric codes seem to
  * agree well.  However, for short (less than one day) runs, they are all

@@ -23,7 +23,7 @@
  * \ingroup Segments_h
  * \brief Tests the segment and segment list manipulation functions.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * SegmentsTest [ lalDebugLevel ]
@@ -31,7 +31,7 @@
  *
  * The default value of \c lalDebugLevel is 4.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the various XLAL functions which deal with segments
  * and segment lists.

@@ -91,7 +91,7 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
  * XLALOverlapReductionFunction()\/</tt> calculates the values of \f$\gamma(f)\f$ at the discrete
  * frequencies \f$f_i=f_0 + i\Delta f\f$, \f$i=0,1,\cdots, N-1\f$.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * As shown in Appendix B of [\ref Flanagan1993] and Sec.~III.B of
  * [\ref Allen1999], the overlap reduction function can be written in
@@ -177,7 +177,8 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
  * </li>
  * </ol>
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALUnitRaise()
  * sin()
@@ -186,7 +187,7 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
  * strncpy()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  *

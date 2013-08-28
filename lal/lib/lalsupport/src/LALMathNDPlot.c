@@ -47,7 +47,8 @@
  * 3-Dimensional projection permutations. Each projection may be animated so the user
  * can see the template bank from different perspectives.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> The output of this function is &quot;MathNDNotebook.nb&quot; will appear in the
  * directory of the program that called this function.</li>

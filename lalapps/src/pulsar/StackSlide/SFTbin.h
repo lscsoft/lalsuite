@@ -38,10 +38,12 @@
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
 
 /**
- * \heading{Header \ref SFTbin.h}
+ *
+ * ### Header \ref SFTbin.h ###
+ *
  * Routines for reading SFT binary files
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/SFTbin.h>

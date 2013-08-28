@@ -30,9 +30,10 @@
  * Models are taken from Taylor and Weisberg (1989) and use the
  * naming conventions therein and used by TEMPO .
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
- * \heading{Description}
+ *
+ * ### Description ###
  *
  * The main function computes the time delay of a signal from a pulsar in a
  * binary system due to doppler shifts and relativistic delays,
@@ -73,7 +74,7 @@
  * (as is given in the <tt>.par</tt> file) into a \c REAL8 value in
  * radians.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

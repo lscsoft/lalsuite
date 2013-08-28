@@ -46,7 +46,8 @@ extern "C" {
  * \defgroup TrackSearch_h Header TrackSearch.h
  * \ingroup pkg_tracksearch
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/TrackSearch.h>
  * \endcode

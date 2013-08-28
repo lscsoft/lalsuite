@@ -37,7 +37,8 @@ extern "C" {
  *
  * \brief Header file for model noise generation codes.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALNoiseModels.h>
  * \endcode

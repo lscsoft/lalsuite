@@ -216,7 +216,7 @@ sub toDoxygen {
         }sge;
 
         # special treatment of 'Synopsis/Prototypes/Description/Uses/Algorithm/Notes' sections: turn into 'heading'
-        $text =~ s!\\(?:sub)*section\*?{(Synopsis|Description|Prototypes|Algorithm|Notes|Uses|Usage)}!\\heading{$1}!g;
+        $text =~ s!\\(?:sub)*section\*?{(Synopsis|Description|Prototypes|Algorithm|Notes|Uses|Usage)}!\n### $1 ###\n!g;
 
         # rephrase (sub)section commands, turning labels (if present) into anchors
         $text =~ s{\\((?:sub)*section)\*?\s*$wbbr\n(?<LBL>\\label\s*$bbr)?}{
@@ -234,7 +234,7 @@ sub toDoxygen {
         }sge;
 
         # replace paragraph command by 'heading'
-        $text =~ s!\\paragraph\*?$wbbr!\\heading{$1}!mg;
+        $text =~ s!\\paragraph\*?$wbbr!\n### $1 ###\n!mg;
 
         # preserve references
         $text =~ s{[~ ]*\(*\\(?:eq)?ref$wbbr\)*}{

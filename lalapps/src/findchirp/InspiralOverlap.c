@@ -24,7 +24,8 @@
  *
  * \brief Code for computing overalps of two waveforms.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * InspiralOverlap [options]
  *
@@ -45,14 +46,16 @@
  * -fcut : Cutoff frequency for BCV
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This code helps to compute the overlap of two waveforms with default
  * (or user specified) parameters.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * This code directly uses the following functions (see those functions
  * to find out what they call in turn):
  * \code
@@ -70,7 +73,8 @@
  * LALDestroyRealFFTPlan
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  */
 
 

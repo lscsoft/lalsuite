@@ -24,7 +24,8 @@
  *
  * \brief Test code for the \c bank modules.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * SpaceCovering
  * --template [TaylorT1, EOB ....]
@@ -34,7 +35,8 @@
  * --template BCV --grid-spacing Hexagonal gives 178 templates
  * and --template EOB grid-spacing Hexagonal gives 532 templates
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This test code gives an example of how to generate a template bank and
  * generates vertices of the ambiguity 'rectangle' around each lattice point
  * suitable for plotting with xmgr or xgrace.
@@ -42,14 +44,15 @@
  * This is valid for various template bank placement (Hexagonal, SquareNorOriented).
  * This is valid for BCV and physical template families.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALRectangleVertices
  * LALInspiralCreateCoarseBank
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

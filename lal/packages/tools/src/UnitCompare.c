@@ -125,13 +125,14 @@ int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
  * programs and programmers can verify that quantities have the expected
  * units.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The function first uses <tt>LALUnitNormalize()</tt> to bring both unit
  * structures into standard form, then compares the powers of ten and the
  * numerator and denominator of each exponent of a fundamental unit in
  * turn.
- * \heading{Uses}
+ *
+ * ### Uses ###
  *
  * <tt>LALUnitNormalize()</tt>
  *

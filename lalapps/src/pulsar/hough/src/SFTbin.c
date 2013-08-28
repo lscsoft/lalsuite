@@ -35,21 +35,24 @@
 /**
  * \author Sintes, A.M., Krishnan, B.
  *
- * \heading{\ref SFTbin.c}
+ * ### \ref SFTbin.c ###
+ *
  * Routines for reading SFT binary files
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
+ *
  * <tt>ReadSFTbinHeader1()</tt>
  * <tt>ReadCOMPLEX8SFTbinData1()</tt>
  * <tt>ReadCOMPLEX16SFTbinData1()</tt>
  * <tt>COMPLEX8SFT2Periodogram1()</tt>
  * <tt>COMPLEX16SFT2Periodogram1()</tt>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * the output of the periodogram should be properly normalized !!!
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALHO()
  * \endcode

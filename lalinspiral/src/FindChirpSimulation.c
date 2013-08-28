@@ -35,7 +35,7 @@
  * \brief Provides an interface between code build from \c findchirp and
  * various simulation packages for injecting chirps into data.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <dl>
  * <dt><tt>LALFindChirpInjectSignals()</tt></dt><dd> injects the signals described
@@ -44,18 +44,21 @@
  * contain the response function to use when injecting the signals into the data.</dd>
  * </dl>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Notes}
- * \heading{Uses}
+ * ### Notes ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

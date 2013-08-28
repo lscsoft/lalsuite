@@ -32,7 +32,8 @@ pthread_mutex_t lalGSLPthreadMutex = PTHREAD_MUTEX_INITIALIZER;
  * \ingroup LALGSL_h
  * \brief LAL GSL error handler.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * extern LALStatus *lalGSLGlobalStatusPtr;
  * #include <lal/LALConfig.h>
@@ -42,7 +43,7 @@ pthread_mutex_t lalGSLPthreadMutex = PTHREAD_MUTEX_INITIALIZER;
  * #endif
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function \c LALGSLErrorHandler() is the standard GSL error handler
  * for GSL functions called within LAL.  Its function is to take the GSL

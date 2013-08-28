@@ -24,7 +24,7 @@
  *
  * \brief NONE
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALRungeKutta4()</tt>
  * <ul>
@@ -35,7 +35,8 @@
  * <li> \c params Parameters to be passed to the derivative function</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * The code \ref LALRungeKutta4.c solves a system of \f$n\f$ coupled first--order differential equations.
  * Internally, it uses the gsl routines for performing adaptive step evolution of the system, but to the outside
  * user, it returns results for a fixed step size.
@@ -44,12 +45,14 @@
  * XLALRungeKutta4Init(). Once the evolution of the system has finished, this integrator should then
  * be freed using XLALRungeKutta4Free().
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * None.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

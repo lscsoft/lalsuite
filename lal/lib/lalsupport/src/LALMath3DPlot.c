@@ -43,7 +43,8 @@
  * principle directions you will notice considerable space between points
  * accordingly.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> The output of this function is &quot;Math3DNotebook.nb&quot; and will appear
  * in the directory of the program that called this function.</li>

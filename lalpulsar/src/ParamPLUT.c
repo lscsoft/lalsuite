@@ -47,7 +47,8 @@
  * \ingroup LUT_h
  * \brief Function that calculates the parameters needed for generating the look-up-table.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This routine calculates the parameters needed for generating the look-up-table.
  * It is valid for all cases in which the Hough transform
  * master equation is of the form:
@@ -57,7 +58,8 @@
  * \f$\vec\xi\f$, hereafter \c xi, is calculated according to the demodulation procedure used in a
  * first stage.\\
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALRotatePolarU()
  * \endcode

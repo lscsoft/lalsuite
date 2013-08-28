@@ -41,19 +41,21 @@ extern "C" {
  * (D - double precision )
  * \endcode
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALMoment.h>
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The data structure passed in is either a REAL8 or a REAL4 Sequence.  The only parameter is which
  * moment to calculate. The function the sums the data, calculates the average and then it returns the
  * average for the first moment, it returns the variance for the second moment, and it returns the n-th
  * moment about the mean for higher order moments.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * <ul>
  * <li> Find the mean (here referred to as \f$ \overline{x} \f$).</li>
  * <li> Sum, over all the elements, the quantity: \f$(x[k] - \overline{x})^{n}\f$</li>
@@ -66,11 +68,11 @@ extern "C" {
  * <li>Return moment-n</li>
  * </ul>
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * Determination of a specific moment of a set of data.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> <em>Moments less than two are not allowed.</em></li>

@@ -24,15 +24,18 @@
  * \brief Compute the energy density spectrum of stochastic backgrounds produced
  * by cosmological population of astrophysical sources.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/AstroOmega.h>
  * \endcode
  *
- * \heading{Error conditions}
+ * ### Error conditions ###
+ *
  * the errors that may occur in this module are integration errors already defined in Integrate.h
  *
- * \heading{Structures}
+ * ### Structures ###
+ *
  * These are function pointers corresponding to the spectral energy density of a single source.
  * \code
  * typedef void (REAL8LALSDensity) (REAL8 *output, REAL8 input);

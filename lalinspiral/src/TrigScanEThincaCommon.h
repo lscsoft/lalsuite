@@ -42,7 +42,8 @@ extern "C" {
  *
  * \brief Provides helper functions common to TrigScan and E-thinca.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/TrigScanEThincaCommon.h>
  * \endcode

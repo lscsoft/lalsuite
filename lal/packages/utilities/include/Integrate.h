@@ -32,14 +32,15 @@ extern "C" {
  *
  * \brief Integrates a function.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Integrate.h>
  * \endcode
  *
  * This header covers the routines for integrating a function.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routine \c LALSRombergIntegrate() performs the integral specified by the
  * structure \c input and the result is returned as \c result.  Any
@@ -48,7 +49,7 @@ extern "C" {
  * \c params but just passes it to the integrand.  The routine
  * \c LALDRombergIntegrate() is the same but for double precision.
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
  *
  * The following program performs the integral \f$\int_0^2F(x)dx\f$ where
  * \f$F(x)=x^4\log(x+\sqrt{x^2+1})\f$.
@@ -92,7 +93,7 @@ extern "C" {
  * }
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This is an implementation of the Romberg integrating function \c qromb in
  * Numerical Recipes [\ref ptvf1992].

@@ -34,7 +34,8 @@ extern "C" {
  * \ingroup pkg_pulsarMetric
  * \brief Provides routines to compute parameter-space metrics for coherent or stacked pulsar searches.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/StackMetric.h>
  * \endcode

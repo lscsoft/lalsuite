@@ -153,7 +153,7 @@
  * \tag{tools_e_e3ez}
  * \f}
  *
- * \heading{Cached Detectors}
+ * ### Cached Detectors ###
  *
  * To avoid repeatedly calculating the Cartesian coördinates and
  * response tensor of known detectors, the constant array
@@ -161,7 +161,8 @@
  * response tensors of the most commonly used detectors.  These are
  * defined in this file and listed in Table.\tableref{tools_tab_cached}.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * <tt>XLALCreateDetector()</tt> first checks the
  * <tt>lalCachedDetectors[]</tt> array to see if the specified type and
  * the name in the input \c LALFrDetector match any of the
@@ -190,7 +191,7 @@
  * The calculation of \f$x^a\f$ is done to double precision, that of \f$d^{ab}\f$
  * to single precision.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> The conventions in the \c LALFrDetector structure are based

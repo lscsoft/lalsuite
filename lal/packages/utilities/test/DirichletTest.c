@@ -24,12 +24,13 @@
  *
  * \brief Test suite for LALDirichlet().
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ./DirichletTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the function <tt>LALDirichlet()</tt>.
  * It tests all error conditions listed in the Error codes table.
@@ -46,7 +47,8 @@
  * \image html  utilitiesDirichletFig3.png "Fig. [utilities_f_dirichlet_fig3]: Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2."
  * \image latex utilitiesDirichletFig3.pdf "Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2." width=4in
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * <table><tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Success, normal exit.</td></tr>
  * <tr><td>1</td><td>Subroutine failed.</td></tr>

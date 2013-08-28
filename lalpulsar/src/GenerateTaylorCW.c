@@ -31,7 +31,7 @@
  *
  * \brief Computes a Taylor-parametrized continuous waveform.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This function computes a quaiperiodic waveform using the parameters in
  * <tt>*params</tt>, storing the result in <tt>*output</tt>.
@@ -47,7 +47,7 @@
  * <tt>output->f</tt>, and <tt>output->phi</tt> as necessary.  The
  * <tt>output->shift</tt> field will remain set to \c NULL.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This function is a fairly straightforward calculation of
  * Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi} in

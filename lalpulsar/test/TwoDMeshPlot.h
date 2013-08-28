@@ -35,7 +35,8 @@ extern "C" {
  * \ingroup pkg_pulsarMetric
  * \brief Provides routines to plot two-dimensional parameter meshes.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include "TwoDMeshPlot.h"
  * \endcode

@@ -52,7 +52,8 @@
  *
  * \brief Gets data cleaned from line harmonic interference given  a time domain reference signal.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This routine cleans data in the time domain from line harmonic interference
  * (from the first harmonic up to the Nyquist frequency). The inputs are:
  *
@@ -82,7 +83,8 @@
  * <dt><tt>out->data</tt></dt><dd>    The clean (real) time domain data.</dd>
  * </dl>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * It takes the reference signal \f$M(t)\f$ and, for all possible harmonics
  * \f$j\f$
  * (\f$j=1,\ldots,\f$<tt>floor(1.0/fabs( 2.02* in1->deltaT * in1->fLine))</tt> ),

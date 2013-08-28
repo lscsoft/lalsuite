@@ -24,7 +24,8 @@
  * \ingroup LALNoiseModels_h
  * \brief Function to add two vectors with weights.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Given weights \c A1 and \c A2 as in \c AddVectorsIn
  * and vectors \c v1 and \c v2 this code returns vector \c v
  * given by
@@ -32,8 +33,12 @@
  * <tt>
  * v[i] = A1 v1[i] + A2 v2[i];
  * </tt>
- * \heading{Algorithm}
- * \heading{Uses}
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * none
  * \endcode

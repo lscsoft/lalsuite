@@ -33,7 +33,8 @@ extern "C" {
  *
  * \brief Provides routines to efficiently calculate the running median
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALRunningMedian.h>
  * \endcode
@@ -51,7 +52,8 @@ extern "C" {
  * different implentation of the same algorithm. It should behave exactly like
  * <tt>LALDRunningMedian()</tt>, but has proven to be a
  * little faster and more stable. Check if it works for you.
- * \heading{Algorithm}
+ *
+ * ### Algorithm ###
  *
  * For a detailed description of the algorithm see the
  * LIGO document T-030168-00-D, Somya D. Mohanty:

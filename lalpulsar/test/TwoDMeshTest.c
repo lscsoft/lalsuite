@@ -23,14 +23,15 @@
  * \ingroup TwoDMeshPlot_h
  * \brief Creates a 2-dimensional template mesh for linearly-changing mismatch ellipses.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug] [-m mismatch nmax cmax]
  * [-i metricfile rangefile] [-b x1 y1 x2 y2 ] [-e a b c]
  * [-x dadx dbdx dcdx] [-y dady dbdy dcdy]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program creates a template mesh for a parameter space with
  * an arbitrary mismatch metric.  The following option flags are
@@ -74,7 +75,7 @@
  * zero.</li>
  * </ul>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The test program reads the input arguments and creates a parameter
  * structure <tt>*params</tt> to be passed to LALCreateTwoDMesh().
@@ -85,7 +86,8 @@
  * value of the command-line number \c flags to set the plotting
  * parameters.  Each of these functions is discussed below.
  *
- * \heading{Metric and range grid files:}  If the <b>-i</b> option was
+ * \par Metric and range grid files:
+ * If the <b>-i</b> option was
  * given, the metric and parameter ranges are read from the files named
  * by the \c metricfile and \c rangefile arguments.  These two
  * files must be in a format parseable by LALSReadGrid(); see the
@@ -111,7 +113,8 @@
  * settings that can be overridden using command-line options <b>-p</b>,
  * <b>-e</b>, <b>-x</b>, and <b>-y</b>.
  *
- * \heading{Parameter ranges:} The parameter space boundary can be
+ * \par Parameter ranges:
+ * The parameter space boundary can be
  * specified by input parameters \c x1\f$=x_1\f$, \c x2\f$=x_2\f$,
  * \c y1\f$=y_1\f$, and \c y2\f$=y_2\f$.  The parameter space is then
  * defined to be a parallelogram with one corner on the origin, and two
@@ -169,7 +172,8 @@
  * algorithm above, sorts them, and returns them ordered from lower to
  * higher.
  *
- * \heading{Metric values:} The main program takes the input parameters
+ * \par Metric values:
+ * The main program takes the input parameters
  * \c a, \c b, \c c, \c dadx, \c dbdx, and
  * \c dcdx, stores them in a 9-dimensional array, and assigns a
  * \c void pointer to it.  The routine LALTwoDMetricTest()
@@ -190,7 +194,8 @@
  * \f$m_\mathrm{thresh}=1\f$ mismatch ellipse.  It computes and returns
  * \f$g_{xx}\f$, \f$g_{yy}\f$, and \f$g_{xy}\f$ in a 3-dimensional array.
  *
- * \heading{PostScript flags:} The parameter \c flags is an
+ * \par PostScript flags:
+ * The parameter \c flags is an
  * unsigned integer whose lowest-order bits contain parameters to be
  * passed to LALPlotTwoDMesh().  The bits and their meanings are:
  * <dl>
@@ -214,7 +219,8 @@
  * the function \f$\arctan\!2(y,x)\f$ returns the argument of the complex
  * number \f$x+iy\f$ in the range \f$[-\pi,\pi]\f$.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALPrintError()                 LALCheckMemoryLeaks()
@@ -223,7 +229,7 @@
  * LALPlotTwoDMesh()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

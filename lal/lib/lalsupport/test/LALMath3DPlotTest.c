@@ -37,12 +37,14 @@
  * LALMath3DPlotTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This program generates a set of points simulating a template bank and calls
  * LALMath3DPlot() to generate a MATHEMATICA notebook to display a 3D image of the
  * bank.  Instructions on how to evaluate the notebook appear when it is opened.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * For a more interesting test of LALMath3DPlot() see \ref InspiralSpinBankTest.c in
  * the bank package.
  *

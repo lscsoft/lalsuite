@@ -25,7 +25,7 @@
  * \brief The code \c LALInspiralWave1() generates an time-domain inspiral waveform corresponding to the
  * ::Approximant #TaylorT1 and #PadeT1 as outlined in the documentation for the function \c LALInspiralWave().
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralWave1()</tt>
  * <ul>
@@ -40,7 +40,7 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * LALInspiralWave1() is called if the user has specified the
  * \c enum ::Approximant to be
@@ -50,11 +50,13 @@
  * <tt>params.startPhase</tt> and the other for which the phase is
  * <tt>params.startPhase + \f$\pi/2\f$</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
  * in Equation.\eqref{eq_ode2}.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALInspiralSetup()
  * LALInspiralChooseModel()
@@ -64,7 +66,7 @@
  * LALRungeKutta4()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

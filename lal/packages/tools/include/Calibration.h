@@ -34,7 +34,8 @@ extern "C" {
  * \author P. R. Brady, J. D. E. Creighton
  * \brief Calibration API
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Calibration.h>
  * \endcode

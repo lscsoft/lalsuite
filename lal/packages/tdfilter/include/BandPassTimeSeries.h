@@ -36,7 +36,8 @@ extern "C" {
  *
  * \brief Provides routines to low- or high-pass filter a time series.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/BandPassTimeSeries.h>
  * \endcode

@@ -34,12 +34,13 @@
  *
  * \brief Program to test running median function
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * LALRunningMedianTest [length blocksize [lalDebugLevel]]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program test the LALRunningMedian functions
  * First the proper function of the input checks is tested.

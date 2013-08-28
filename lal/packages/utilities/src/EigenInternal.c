@@ -39,7 +39,7 @@ fabs( a )*sqrt( 1.0 + ((b)/(a))*((b)/(a)) ) :                        \
  *
  * \brief Internal routines used to compute eigenvalues and eigenvectors.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions are called by the routines in \ref Eigen_c to
  * compute eigenvalues and eigenvectors of a symmetric square matrix
@@ -72,7 +72,7 @@ fabs( a )*sqrt( 1.0 + ((b)/(a))*((b)/(a)) ) :                        \
  * orthogonal transformation matrix that diagonalizes the original
  * matrix: its columns are the eigenvectors of the original matrix.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The tri-diagonalizing routines follow the Householder reduction method
  * described in Sec. 11.2 of [\ref ptvf1992]; they are essentially

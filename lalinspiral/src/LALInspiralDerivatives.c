@@ -25,7 +25,7 @@
  * \brief Module to calculate the RHS of the differential equations
  * in Eq.\eqref{eq_ode2}.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralDerivatives()</tt>:
  * <ul>
@@ -38,7 +38,7 @@
  * </li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module calculates the right-hand sides of
  * the follwoing two coupled first-order differential equations which are
@@ -51,12 +51,14 @@
  * \tag{ode2}
  * \f}
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * None.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> This function has been intentionally made non-LAL compliant in the sense that it

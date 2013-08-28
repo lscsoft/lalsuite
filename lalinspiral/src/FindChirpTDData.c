@@ -33,13 +33,16 @@
  *
  * \brief Time domain filtering code.
  *
- * \heading{Description}
+ * ### Description ###
  *
- * \heading{Algorithm}
  *
- * \heading{Uses}
+ * ### Algorithm ###
  *
- * \heading{Notes}
+ *
+ * ### Uses ###
+ *
+ *
+ * ### Notes ###
  *
  */
 

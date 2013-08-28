@@ -32,13 +32,13 @@
  *
  * \brief Calls the various routines in \ref RingUtils_h.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * RingTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The program creates a ring template, which is output to the file
  * <tt>ring.out</tt>, and a black hole ring waveform, which is output to the

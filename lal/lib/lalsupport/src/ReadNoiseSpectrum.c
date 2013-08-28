@@ -65,7 +65,7 @@ static UINT4 mylocate(REAL8 *farray, REAL8 target, UINT4 n)
  * \brief Function to read in noise spectrum from a formatted ascii file and return the
  * amplitude noise spectrum in \f$\textrm{strain}/\sqrt{\textrm{Hz}}\f$.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * <tt>LALReadNoiseSpectrum()</tt> fills the contents of the REAL4FrequencySeries
  * \c spectrum from data read from formatted ascii file with name \c fname.

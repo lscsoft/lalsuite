@@ -44,7 +44,8 @@ extern "C" {
  * time-domain or frequency-domain data, for use in the excess
  * power search technique.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include "TFTransform.h"
  * \endcode

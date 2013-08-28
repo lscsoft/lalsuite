@@ -32,13 +32,13 @@
  * \file
  * \ingroup pulsarTODO
  *
- * \heading{Header \ref LALXMGRInterface.h}
+ * ### Header \ref LALXMGRInterface.h ###
  *
  * Provides protypes, structures and functions to allow visualisation of
  * the events generated \c findchirp and the \c inspiral shared
  * object.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/LALXMGRInterface.h>

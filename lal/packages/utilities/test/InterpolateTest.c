@@ -23,7 +23,8 @@
  *
  * \brief Tests the routines in \ref Interpolate.h.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * InterpolateTest [options]
  * Options:
@@ -33,7 +34,7 @@
  * -d level   set lalDebugLevel to level
  * \endcode
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
  * <table><tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Success, normal exit.</td></tr>

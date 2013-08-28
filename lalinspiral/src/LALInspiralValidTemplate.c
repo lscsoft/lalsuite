@@ -25,7 +25,8 @@
  * \brief Function which checks whether or not a given template should be kept in the template list.
  * \author Churches, D. K. and Sathyaprakash, B.S.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Given the parameter values \f$\tau_{0}\f$ and \f$\tau_{2(3)}\f$ this code
  * checks to see if they correspond to physical values of the masses of
  * a binary and their symmetric mass ratio \f$\eta.\f$ The parameter values
@@ -35,7 +36,7 @@
  * in the positive-\f$\tau_{2(3)}\f$ direction only. We have found
  * that placing templates in other directions is redundant.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Consider the point \f$(\tau_0,\tau_{2(3)})\f$ describing the template, and
  * also a point at \f$(\tau_0,\tau_{2(3)}\mbox{bankParams.dx1/2})\f$ ,

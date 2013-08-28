@@ -5,7 +5,7 @@
  *
  * \brief Routines to perform basic matrix operations.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * \code
  * void
@@ -26,7 +26,7 @@
  * <datatype>Array *in )
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routines <tt>LAL\<datatype\>MatrixAdd()</tt> add the matrices
  * <tt>*in1</tt> and <tt>*in2</tt> element-by-element, storing the result in
@@ -64,7 +64,7 @@
  * <tr><td> D</td><td>REAL8</td><td>  Z</td><td>COMPLEX16</td></tr>
  * </table>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Matrix addition is simply carried through element-by-element.  It
  * involves one addition operation per element of the output matrix.

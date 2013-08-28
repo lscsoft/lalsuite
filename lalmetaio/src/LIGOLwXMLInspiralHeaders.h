@@ -37,7 +37,8 @@
  * \brief This header provides provides <tt>\#define</tt>s for the inspiral related
  * tables of LIGO light weight XML files.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LIGOLwXMLInspiralHeaders.h>
  * \endcode

@@ -24,7 +24,7 @@
  *
  * \brief A program to test <tt>LALStochasticCrossCorrelationSpectrum()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * ./StochasticCrossCorrelationSpectrumTest [options]
@@ -90,7 +90,7 @@
  * use the specified parameters to calculate the cross-correlation
  * statistic.  The result is printed to the specified output file.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
  * LALStochasticCrossCorrelationSpectrum()
@@ -109,7 +109,7 @@
  * fabs()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> No specific error checking is done on user-specified data.  If

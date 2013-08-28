@@ -24,9 +24,10 @@
  * \brief Calculates the value of the standard optimally-filtered
  * cross-correlation statistic for stochastic background searches.
  *
- * \heading{Description}
+ * ### Description ###
  *
- * \heading{LALStochasticCrossCorrelationStatistic()}
+ *
+ * ### LALStochasticCrossCorrelationStatistic() ###
  *
  * The default version of the function, for handling non-heterodyned
  * data, calculates the value of the standard optimally-filtered
@@ -148,7 +149,7 @@
  * agree.  It can be set to false to allow for cross-correlation of
  * time-shifted data as a control case.
  *
- * \heading{<tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>}
+ * ### <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt> ###
  *
  * In the case of heterodyned data, one wishes to calculate
  *
@@ -183,7 +184,7 @@
  * with the same phase), the value for an individual stretch of data will
  * be complex, so the output is returned as \c COMPLEX8WithUnits.
  *
- * \heading{<tt>LALStochasticCrossCorrelationSpectrum()</tt>}
+ * ### <tt>LALStochasticCrossCorrelationSpectrum()</tt> ###
  *
  * For diagnostic purposes, this function calculates the integrand of
  * \eqref{stochastic_e_ymax} or\eqref{stochastic_e_ymaxhet}, i.e.
@@ -201,7 +202,7 @@
  * \f}
  * and returns it as a frequency series.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The function <tt>LALStochasticCrossCorrelationSpectrum()</tt>
  * calculates the integrand\eqref{stochastic_e_ccspec} as follows: First
@@ -223,7 +224,7 @@
  * \eqref{stochastic_e_shortcut} or\eqref{stochastic_e_heterodyned},
  * respectively.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * <tt>LALStochasticCrossCorrelationSpectrum()</tt> calls
  * \code
@@ -244,7 +245,8 @@
  * LALUnitMultiply()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> When \f$f_0=0\f$, \f$\widetilde{\bar{h}}_{1}[0]\f$, \f$\widetilde{Q}[0]\f$,
  * and \f$\widetilde{\bar{h}}_{2}[0]\f$ are assumed to be real, but this is

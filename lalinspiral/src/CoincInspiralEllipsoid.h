@@ -40,7 +40,8 @@ extern "C" {
  * \brief Provides function definitions for performing inspiral coincidence analysis
  * using error ellipsoids.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/CoincInspiralEllipsoid.h>
  * \endcode

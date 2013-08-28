@@ -32,7 +32,8 @@ extern "C" {
  *
  * \brief Provides routines to solve linear systems.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/MatrixUtils.h>
  * \endcode
@@ -44,7 +45,7 @@ extern "C" {
  * Routines for inverting or computing the determinant of arbitrary
  * square matrices will likely follow.
  *
- * \heading{Notation}
+ * ### Notation ###
  *
  * A \e matrix is represented in LAL by a <tt>\<datatype\>Array</tt>
  * structure with a <tt>dimLength-\>length</tt> field of 2; the
@@ -85,7 +86,7 @@ extern "C" {
  * vector must be determined from context; it is not specified by the
  * datatype.
  *
- * \heading{Properties}
+ * ### Properties ###
  *
  * The basic matrix operations are addition, scalar multiplication, and
  * vector multiplication.  We assume the reader is familiar with these.

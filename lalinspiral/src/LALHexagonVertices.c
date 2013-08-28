@@ -24,7 +24,7 @@
  * \brief Module to find the vertices of an hexagon inscribed in an ellipse
  * given its centre, half side-lengths and orientation angle.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALHexagonVertices()</tt>
  * <ul>
@@ -32,14 +32,15 @@
  * </li><li> <tt>in,</tt> Input.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This code computes the vertices of an hexagon for plotting
  * a grid of templates with xmgr, useful when looking at the
  * minimal-match-Hexagons around mesh points in a template bank.
  * Used by SpaceCovering in the test directory.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Given the centre \f$(x_0,y_0)\f$ and half-sides \f$(dx,dy),\f$
  * the vertices of a Hexagon in a \e diagonal coordinate
  * system are given by
@@ -59,10 +60,11 @@
  * and not just the 6 verticies, to help a plotting programme
  * to complete the Hexagon.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * None.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

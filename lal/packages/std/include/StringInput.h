@@ -36,7 +36,8 @@ extern "C" {
  *
  * \brief Provides routines to parse \c CHARVectors into other LAL datatypes.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include "StringInput.h"
  * \endcode
@@ -67,7 +68,7 @@ extern "C" {
  * fully LAL-compliant and use only LAL types, so they are included in
  * \c liblal proper.
  *
- * \heading{Constants}
+ * ### Constants ###
  *
  * The following constants are format strings that can be used by the
  * various C <tt>scanf()</tt> or <tt>printf()</tt> functions to parse or

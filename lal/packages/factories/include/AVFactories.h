@@ -20,7 +20,8 @@ extern "C" {
  * \brief Provides prototype and status code information for use of CreateVector,
  * CreateArray, ResizeVector, ResizeArray, DestroyVector and DestroyArray
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/AVFactories.h>
  * \endcode
@@ -194,7 +195,7 @@ extern "C" {
  *
  * \brief Create/destroy \<datatype\>Array objects.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The \c CreateArray family of functions create a \<datatype\>Array of the appropriate dimensions.
  *
@@ -369,7 +370,7 @@ void LALZDestroyArray ( LALStatus *, COMPLEX16Array ** );
  *
  * \brief Create/destroy \<datatype\>%Vector objects.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The \c CreateVector family of functions create a \<datatype\>%Vector of the appropriate dimensions.
  *

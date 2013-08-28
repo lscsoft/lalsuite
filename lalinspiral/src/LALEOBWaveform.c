@@ -25,7 +25,7 @@
  *
  * \brief Module to generate effective-one-body waveforms.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALEOBWaveform()</tt>
  * <ul>
@@ -49,7 +49,8 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * By solving four coupled ordinary differential equations in
  * Eq.\eqref{eq_3_28}-\eqref{eq_3_31} this module computes the
  * waveform in Eq.\eqref{eq_4_1} (see discussion in sec_EOB
@@ -58,16 +59,19 @@
  * No quasi-normal mode oscillations are added to the plunge signal
  * so the waveform is terminated around \f$2.8\,M\f$.
  *
- * \heading{3PN vs 2PN}
+ * ### 3PN vs 2PN ###
+ *
  * At 3PN, two additional parameters exist namely OmegaS and Zeta2.
  * The first parameters should be set to zero. If the  second parameter
  * is also set to zero then the waveform correponds to the standard
  * waveforms.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * A fourth order Runge-Kutta is used to solve the differential equations.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALInspiralSetup
  * LALInspiralChooseModel
@@ -92,7 +96,8 @@
  * LALrOfOmegaP4PN
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * The length of the waveform returned by \c LALInspiralWaveLength is
  * occassionally smaller than what is required to hold an EOB waveform.
  * This is because EOB goes beyond the last stable orbit up to the light

@@ -33,12 +33,13 @@ extern "C" {
  *
  * \brief Provides prototype, structure and error code information for routines which coarse-grain a frequency series.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/CoarseGrainFrequencySeries.h>
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions are designed to facilitate approximation of integrals
  * such as
@@ -150,13 +151,14 @@ extern "C" {
  * \right]
  * \f}
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * These routines move through the output series, using
  * \eqref{utilities_e_coarseapprox} to add up the contributions from the
  * bins in the fine-grained series.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> The coarse graining ratio must obey \f$\rho\ge 1\f$ (so the
  * coarse-grained frequency spacing must be less than the fine-grained

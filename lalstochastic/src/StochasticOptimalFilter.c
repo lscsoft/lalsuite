@@ -107,13 +107,13 @@
  * \f$\{1/P^{\mathrm{HC}}_i(f)|i=1,2\}\f$, and as a real parameter
  * the normalization constant \f$\lambda\f$.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The routine <tt>LALStochasticOptimalFilter()</tt> fills its output
  * series is filled with the values corresponding to the definition
  * \eqref{stochastic_e_QW}.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
  * LALUnitMultiply()
@@ -121,7 +121,7 @@
  * LALUnitCompare()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> If \f$f_0=0\f$, the DC element \f$Q(0)\f$ is set to zero, regardless of

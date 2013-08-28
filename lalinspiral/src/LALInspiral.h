@@ -46,7 +46,8 @@ extern "C" {
  *
  * \brief %Header file for the template generation codes.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALInspiral.h>
  * \endcode

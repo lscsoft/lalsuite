@@ -30,7 +30,8 @@
  * \file
  * \ingroup GeneratePulsarSignal_h
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * GeneratePulsarSignalTest
  * \endcode
@@ -38,7 +39,7 @@
  * No command line options are currently supported. However, preprocessor flags
  * can be set to print output for debugging purposes.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program calls and compares the output from LALGeneratePulsarSignal()
  * and LALSignalToSFTs() with the output from LALComputeSkyAndZeroPsiAMResponse()
@@ -47,7 +48,7 @@
  * The current code only compares the modulus of the output SFTs,
  * not the phases.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * See the pulsar search code in lalapps for more
  * example uses of the functions tested by this code.

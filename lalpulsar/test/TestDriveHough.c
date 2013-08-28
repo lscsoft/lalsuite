@@ -40,14 +40,16 @@
  * \ingroup LALHough_h
  * \brief Tests the construction
  *
- * \heading{Program \ref TestDriveHough.c}
+ * ### Program \ref TestDriveHough.c ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * TestDriveHough [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * \%TO BE CHANGED
  *
@@ -73,7 +75,8 @@
  * The <b>-p</b> option sets the velocity orientation of the detector
  * \c alpha, \c delta (in radians) for the first \c lut (time-stamp).
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALHOUGHCalcParamPLUT()
  * LALHOUGHConstructPLUT()

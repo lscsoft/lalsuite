@@ -22,17 +22,18 @@
  * \file
  * \ingroup StackMetric_h
  *
- * \heading{Program <tt>StackMetricTest.c</tt>}
+ * ### Program <tt>StackMetricTest.c</tt> ###
  *
  * \brief Computes the parameter space metric for a coherent pulsar search.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * StackMetricTest [-p n dt t0] [-l lat lon] [-d debuglevel]
  * [ra dec f0 [f1 [...]]]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program computes the stack search metric for a particular
  * location in parameter space.  The following option flags are accepted:
@@ -54,9 +55,11 @@
  * all) of the command-line arguments are missing, they will be set from
  * <tt>\#define</tt>d defaults.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALPrintError()                 LALCheckMemoryLeaks()
@@ -69,7 +72,7 @@
  * LALGetEarthTimes()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

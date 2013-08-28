@@ -22,18 +22,19 @@
  * \file
  * \ingroup pulsarTODO
  *
- * \heading{Program \ref PulsarCatTest.c}
+ * ### Program \ref PulsarCatTest.c ###
  *
  * Tests routines to manipulate pulsar data.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * PulsarCatTest [-p posepoch ra dec pmra pmdec] [-l site earthfile sunfile] [-h]
  * [-t newepoch] [-i infile] [-o outfile] [-d debuglevel]
  * [fepoch f0 [f1 ...]]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program reads in or randomly generates pulsar parameters, stores
  * them in a pulsar catalogue structure, and manipulates them based on
@@ -93,7 +94,7 @@
  * tokenized) by <tt>LALReadPulsarCatLine()</tt>.  Blank lines (with no
  * tokens) or divider lines (with only one token) will be skipped.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This routine simply parses the input arguments, stuffs the data into a
  * \c PulsarCatNode structure, and then calls
@@ -106,7 +107,8 @@
  * Output via the <tt>-o</tt> option is in a custom human-readable format,
  * which should be easy to figure out.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALPrintError()                 LALCheckMemoryLeaks()
@@ -122,7 +124,7 @@
  * snprintf()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * At present the routine is kludged up to ignore pulsar position and
  * frequency information from the command line, using hardwired

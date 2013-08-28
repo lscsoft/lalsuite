@@ -22,30 +22,33 @@
  * \file
  * \ingroup pulsarTODO
  *
- * \heading{Program \ref HeterodynePulsarTest.c}
+ * ### Program \ref HeterodynePulsarTest.c ###
  *
  * This program demonstrates the usage of the functions <tt>LALCoarseHeterodyne()</tt>
  * and <tt>LALFineHeterodyneToPulsar()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * HeterodynePulsarTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program heterodynes, averages, and resamples an artificial signal using the functions
  * <tt>LALCoarseHeterodyne()</tt> and <tt>LALFineHeterodyneToPulsar()</tt>.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * LALCoarseHeterodyne()
  * LALFineHeterodyneToPulsar()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

@@ -49,7 +49,7 @@
  *
  * \brief Blah.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * <tt>LALCreateTwoIFOCoincList()</tt> takes in a linked list of single inspiral
  * tables and returns a list of two instrument coincidences.  The coincidence

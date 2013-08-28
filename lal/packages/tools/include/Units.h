@@ -33,7 +33,8 @@ extern "C" {
  * \brief Provides prototypes for manipulation of units and declares
  * \c extern constants for the basic and derived SI units.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Units.h>
  * \endcode
@@ -55,7 +56,7 @@ extern "C" {
  * units (meters, kilograms, seconds, Amperes, and Kelvins) and two
  * custom units (strain and ADC counts).
  *
- * \heading{XLAL interface to Units.h functions}
+ * ### XLAL interface to Units.h functions ###
  *
  * XLALUnitAsString() converts a ::LALUnit structure into a character
  * string of maximum length \c length (including NUL termination)
@@ -81,7 +82,7 @@ extern "C" {
  * XLALUnitSquare() produces the square of a ::LALUnit structure.
  * XLALUnitSqrt() produces the square-root of a ::LALUnit structure.
  *
- * \heading{Return Values}
+ * ### Return Values ###
  *
  * XLALUnitAsString() returns the pointer to the input \c string, which
  * is populated with the unit string if successful.  If there is a failure,

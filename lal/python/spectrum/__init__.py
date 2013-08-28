@@ -19,11 +19,15 @@
 of the LAL FFT module
 """
 # \author Duncan Macleod (<duncan.macleod@ligo.org>)
-# \heading{Synopsis}
+#
+# ### Synopsis ###
+#
 # ~~~
 # from lal import spectrum
 # ~~~
-# \heading{Example}
+#
+# ### Example ###
+#
 # \code
 # from lal import spectrum
 # psd = spectrum.median_mean(timeseries, 16384, 8192)

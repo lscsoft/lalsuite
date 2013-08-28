@@ -26,14 +26,16 @@
  * point in parameter space, and also producing an array of ellipses of
  * constant mismatch.
  *
- * \heading{Program <tt>GeneralMetricTest.c</tt>}
+ * ### Program <tt>GeneralMetricTest.c</tt> ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * GeneralMetricTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program computes metric components using a metric function of the
  * user's specification.  The ordering of the components is \f$(f_0,
@@ -104,9 +106,10 @@
  * system call to the \c xmgrace program, and will not work if that
  * program is not installed on your system.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
  *
  * \code
  * lalDebugLevel
@@ -120,7 +123,7 @@
  * xmgrace
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * The code does not yet really work with more than one spindown parameter.
  *

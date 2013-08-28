@@ -24,13 +24,14 @@
  *
  * \brief Injects inspiral signals into detector noise.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * BasicInjectTest [-s sourcefile] [-r respfile] [-o outfile] [-e seed]
  * [-i infile | -n sec nsec npt dt sigma] [-d debuglevel]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program generates inspiral waveforms with specified parameters,
  * and injects them into ADC data.  The following option flags are
@@ -59,7 +60,8 @@
  * If not specified, the seed is gerenated from the current time.</li>
  * </ul>
  *
- * \heading{Format for \c sourcefile:} The source file consists
+ * \par Format for \c sourcefile:
+ * The source file consists
  * of any number of lines of data, each specifying a chirp waveform.
  * Each line must begin with a character code (\c CHAR equal to one
  * of <tt>'i'</tt>, <tt>'f'</tt>, or <tt>'c'</tt>), followed by 6
@@ -84,7 +86,8 @@
  * c 315187245000000000 1.4 1.4 11000.0 30.0 45.0
  * \endcode
  *
- * \heading{Format for \c respfile:} The response function \f$R(f)\f$
+ * \par Format for \c respfile:
+ * The response function \f$R(f)\f$
  * gives the real and imaginary components of the transformation
  * \e from ADC output \f$o\f$ \e to tidal strain \f$h\f$ via
  * \f$\tilde{h}(f)=R(f)\tilde{o}(f)\f$.  It is inverted internally to give
@@ -103,7 +106,8 @@
  * followed by two columns of \c REAL4 data giving the real
  * and imaginary components of \f$R(f_0+k\Delta f)\f$.
  *
- * \heading{Format for \c infile:} The input file consists of a
+ * \par Format for \c infile:
+ * The input file consists of a
  * header giving the GPS epoch \f$t_0\f$ of the first time sample
  * (\c INT8 nanoseconds) and the sampling interval \f$\Delta t\f$
  * (\c REAL8 seconds):

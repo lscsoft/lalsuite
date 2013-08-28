@@ -29,7 +29,7 @@
  * <tt>T2wave2.dat</tt> in the current directory. This is generated using the
  * LALInspiralWave3Templates routine.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * <tt>LALInspiralTaylor22Test</tt>
  *

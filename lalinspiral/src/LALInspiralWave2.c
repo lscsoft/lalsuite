@@ -24,7 +24,7 @@
  *
  * \brief These modules generate a time-domain chirp waveform of type #TaylorT2.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralWave2()</tt>
  * <ul>
@@ -39,7 +39,7 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * LALInspiralWave2() generates #TaylorT2 approximant wherein
  * the phase of the waveform is given as an implicit function of time
@@ -53,7 +53,8 @@
  * LALInspiralWave2Templates() is exactly the same as LALInspiralWave2()
  * except that it generates two waveforms that differ in phase by \f$\pi/2.\f$
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALInspiralParameterCalc()
  * LALDBisectionFindRoot()

@@ -26,10 +26,12 @@
  * \brief Compute the energy density spectrum of stochastic backgrounds produced
  * by cosmological population of astrophysical sources.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALAstroOmega()</tt>
- * \heading{Description}
+ *
+ * ### Description ###
+ *
  * The function of this module computes the energy density parameter \f$\Omega_{gw}(\nu_{o})\f$ for a given source and a given cosmological model.
  * The spectral properties of the stochastic background are characterized by the dimensionless parameter
  * \f{equation}{
@@ -106,7 +108,8 @@
  * modeled above. This restriction is without significant consequence
  * since objects with \f$z>5 \f$ contribute very little to the integrated signal.
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
+ *
  * the following program shows how to use the function LALAstroOmega
  *
  * \code

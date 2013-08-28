@@ -24,7 +24,8 @@
  *
  * \brief Routine used by the stochastic DSO to do software injection.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/StochasticMC.h>
  * \endcode

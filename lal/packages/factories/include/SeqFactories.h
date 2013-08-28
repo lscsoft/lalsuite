@@ -14,7 +14,8 @@ extern "C" {
  *
  * \brief Provides prototype and status code information for use of CreateVectorSequence and DestroyVectorSequence.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/SeqFactories.h>
  * \endcode
@@ -124,7 +125,7 @@ typedef struct tagCreateArraySequenceIn {
  *
  * \brief Create/destroy \<datatype\>ArraySequence objects.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The \c CreateArraySequence family of functions create a \<datatype\>ArraySequence of the appropriate dimensions.
  *
@@ -248,7 +249,7 @@ void LALZDestroyArraySequence ( LALStatus *status,
  * \ingroup SeqFactories_h
  * \brief Create/destroy \<datatype\>VectorSequence objects.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The \c CreateVectorSequence family of functions create a \<datatype\>VectorSequence of the appropriate dimensions.
  *

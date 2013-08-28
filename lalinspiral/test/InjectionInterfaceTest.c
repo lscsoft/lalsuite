@@ -23,12 +23,14 @@
  *
  * \brief Interface to generate any kind of gravitational waves signal.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * \c InterfaceTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Right now this test file read an input xml (injection.xml) file and for
  * each valid line it computes the approriate waveform. Those waveforms are
  * either produce within the inject package (PPN waveform) or within the
@@ -40,11 +42,14 @@
  * Finally, the injections are stored in a vector which is saved in "injection.dat"
  * file.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  *
  * \endcode
- * \heading{Notes}
+ *
+ * ### Notes ###
+ *
  */
 
 /**\name Error Codes */ /*@{*/

@@ -36,7 +36,8 @@ extern "C" {
  *
  * \brief Matlab Routines to handle Matrices \& Vectors.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Matrix.h>
  * \endcode
@@ -89,13 +90,13 @@ extern "C" {
  * input.  This being said, I have yet to script the complex actions and their
  * counterparts.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This file is to help make the conversion from Matlab to c much earier.
  * In this file, we have created all of the versions of .* that we plan on
  * using.
  *
- * \heading{Algorithms}
+ * ### Algorithms ###
  *
  * The algorithm is the same as it is in matlab.  The dot in front of an operator
  * in matlab signifies that if either or both of the operands are vectors, then
@@ -119,7 +120,7 @@ extern "C" {
  * etc.
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * At the current time none of the operations have been specified for neither the
  * complex datatypes nor the unsigned datatypes.
@@ -557,13 +558,13 @@ void LALI8ArrayDotStarI8Array (
  * input.  This being said, I have yet to script the complex actions and their
  * counterparts.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This file is to help make the conversion from Matlab to c much earier.
  * In this file, we have created all of the versions of ./ that we plan on
  * using.
  *
- * \heading{Algorithms}
+ * ### Algorithms ###
  *
  * The algorithm is the same as it is in matlab.  The dot in front of an operator
  * in matlab signifies that if either or both of the operands are vectors, then
@@ -587,7 +588,7 @@ void LALI8ArrayDotStarI8Array (
  * etc.
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * At the current time none of the operations have been specified for neither the
  * complex datatypes nor the unsigned datatypes.
@@ -1236,13 +1237,13 @@ void LALI8ArrayDotSlashI8Array (
  * input.  This being said, I have yet to script the complex actions and their
  * counterparts.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This file is to help make the conversion from Matlab to c much earier.
  * In this file, we have created all of the versions of .^ that we plan on
  * using.
  *
- * \heading{Algorithms}
+ * ### Algorithms ###
  *
  * The algorithm is the same as it is in matlab.  The dot in front of an operator
  * in matlab signifies that if either or both of the operands are vectors, then
@@ -1266,7 +1267,7 @@ void LALI8ArrayDotSlashI8Array (
  * etc.
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * At the current time none of the operations have been specified for neither the
  * complex datatypes nor the unsigned datatypes.
@@ -1916,7 +1917,7 @@ void LALI8ArrayDotPowerI8Array (
  * and the final function, FlipVector returns a result vector that has been flipped in
  * that same manner.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This file reproduces the last few matlab functions that we needed for our purposes.
  * It creates useable forms of cumsum, sum, max, and finally an implemenation of the
@@ -1924,7 +1925,7 @@ void LALI8ArrayDotPowerI8Array (
  * and the final function, FlipVector returns a result vector that has been flipped in
  * that same manner.
  *
- * \heading{Algorithms}
+ * ### Algorithms ###
  *
  * The algorithms are the same as in matlab.  Flip vector was discussed above.  Sum
  * takes the sum of all of the elements in a vector.  Cum sum takes an input vector:
@@ -1939,7 +1940,7 @@ void LALI8ArrayDotPowerI8Array (
  * etc
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * At the current time none of the operations have been specified for neither the
  * complex datatypes nor the unsigned datatypes.

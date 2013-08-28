@@ -24,7 +24,7 @@
  *
  * \brief A program to test <tt>LALSSSimStochBGTimeSeries()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * ./SimulateSBTest [options]
@@ -46,7 +46,7 @@
  *
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the function <tt>LALSSSimStochBGTimeSeries()\/</tt>, which
  * calculates the signal from a stochastic background in the outputs of a pair of

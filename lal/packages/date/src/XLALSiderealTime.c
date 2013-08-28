@@ -25,7 +25,8 @@
  * \author Creighton, J., and Cannon, K.
  * \brief XLAL routines for computing the sidereal time.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Date.h>
  * \endcode

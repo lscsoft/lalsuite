@@ -34,7 +34,8 @@ extern "C" {
  * a routine which calculates the values of the Dirichlet kernel
  * \f${\cal D}_N(x)\f$.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include "Dirichlet.h"
  * \endcode

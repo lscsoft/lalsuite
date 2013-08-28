@@ -50,7 +50,8 @@ extern "C" {
 
 /**
  * \name Creation Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/FrequencySeries.h>
@@ -59,7 +60,7 @@ extern "C" {
  * LALCreate<frequencyseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions create LAL frequency series.  An XLAL function returns a
  * pointer to the newly created series or \c NULL on failure.  The LAL
@@ -84,7 +85,8 @@ UINT8FrequencySeries *XLALCreateUINT8FrequencySeries ( const CHAR *name, const L
 
 /**
  * \name Destruction Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/FrequencySeries.h>
@@ -93,7 +95,7 @@ UINT8FrequencySeries *XLALCreateUINT8FrequencySeries ( const CHAR *name, const L
  * LALDestroy<frequencyseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions free all memory associated with a LAL frequency series.  It
  * is safe to pass \c NULL to these functions.
@@ -115,7 +117,8 @@ void XLALDestroyUINT8FrequencySeries ( UINT8FrequencySeries *series );
 
 /**
  * \name Cutting Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/FrequencySeries.h>
@@ -123,7 +126,7 @@ void XLALDestroyUINT8FrequencySeries ( UINT8FrequencySeries *series );
  * XLALCut<frequencyseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions create a new frequency series by extracting a section of an
  * existing frequency series.
@@ -145,7 +148,8 @@ UINT8FrequencySeries *XLALCutUINT8FrequencySeries ( const UINT8FrequencySeries *
 
 /**
  * \name Resizing Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/FrequencySeries.h>
@@ -155,7 +159,7 @@ UINT8FrequencySeries *XLALCutUINT8FrequencySeries ( const UINT8FrequencySeries *
  * LALShrink<frequencyseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions resize an existing frequency series.  The new frequency
  * series will have the given length, and its contents will consist of that
@@ -196,7 +200,8 @@ UINT8FrequencySeries *XLALShrinkUINT8FrequencySeries ( UINT8FrequencySeries *ser
 
 /**
  * \name Addition Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/FrequencySeries.h>
@@ -204,7 +209,7 @@ UINT8FrequencySeries *XLALShrinkUINT8FrequencySeries ( UINT8FrequencySeries *ser
  * XLALAdd<frequencyseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions add the second argument to the first argument, returning a
  * pointer to the first argument on success or NULL on failure.  The two
@@ -227,7 +232,8 @@ UINT8FrequencySeries *XLALAddUINT8FrequencySeries ( UINT8FrequencySeries *arg1, 
 
 /**
  * \name Conjugation Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/FrequencySeries.h>
@@ -235,7 +241,7 @@ UINT8FrequencySeries *XLALAddUINT8FrequencySeries ( UINT8FrequencySeries *arg1, 
  * XLALConjugate<frequencyseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions replace a frequency series with its complex conjugate.
  *
@@ -247,7 +253,8 @@ COMPLEX16FrequencySeries *XLALConjugateCOMPLEX16FrequencySeries ( COMPLEX16Frequ
 
 /**
  * \name Multiplication Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/FrequencySeries.h>
@@ -255,7 +262,7 @@ COMPLEX16FrequencySeries *XLALConjugateCOMPLEX16FrequencySeries ( COMPLEX16Frequ
  * XLALMultiply<frequencyseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions multiply the first argument by the second argument,
  * returning a pointer to the first argument on success or NULL on failure.

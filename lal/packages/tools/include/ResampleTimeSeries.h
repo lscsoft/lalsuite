@@ -37,7 +37,8 @@ extern "C" {
  *
  * At present only integer downsampling of ::REAL4TimeSeries by a power of two is supported.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ResampleTimeSeries.h>
  * \endcode

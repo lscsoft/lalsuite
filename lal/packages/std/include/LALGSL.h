@@ -23,7 +23,8 @@
  *
  * \brief Provides macros for integrating the GSL error handler with the LAL status structure.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALGSL.h>
  * \endcode
@@ -39,7 +40,7 @@
  * same behaviour and will also ensure that the LAL functions are reenterant
  * and threadsafe (when LAL is configured appropriately).</em>
  *
- * \heading{GSL function calls}
+ * ### GSL function calls ###
  *
  * The behaviour of GSL functions depends on the error handler that has been
  * assigned.  In order that LAL functions always have the same behaviour, it

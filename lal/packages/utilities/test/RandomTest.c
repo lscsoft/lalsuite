@@ -40,7 +40,8 @@
  *
  * \brief Tests the routines in \ref Random.h.  Outputs random numbers to a file.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * RandomTest [options]
  * Options:
@@ -51,7 +52,7 @@
  * -o         output random numbers to files
  * \endcode
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
  * <table>
  * <tr><th>Code</th><th>Explanation</th></tr>

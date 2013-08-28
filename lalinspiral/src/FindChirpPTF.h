@@ -47,7 +47,8 @@ extern "C" {
  * \brief Provides structures and functions to filter interferometer data using the
  * physical template family.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/FindChirpPTF.h>
  * \endcode

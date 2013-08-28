@@ -77,12 +77,14 @@
  *
  * \brief Test for CLR  operations.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * CLRTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This program is just an example of the usage of the different prototypes.
  *
  * The program reads some data from the file
@@ -92,9 +94,11 @@
  * writes the clean data into the file
  * <tt>CLRoutdata.asc</tt>.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
- * \heading{Notes}
+ *
+ * ### Notes ###
+ *
  * Take this program just as an example,  build
  * your own one  and feed it  with the data of your interest.
  * The CLR functions work on stretches of data from a few seconds up to a

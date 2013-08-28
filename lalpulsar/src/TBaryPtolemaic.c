@@ -51,7 +51,7 @@
  * computed is determined by <tt>*dtBary->length-1</tt>.
  * All elements beyond the fourth will be set to zero.
  *
- * <b>Algorithm</b>
+ * ### Algorithm ###
  *
  * Let \f$\mathbf{\hat{n}}(\alpha,\delta)\f$ be the unit vector to the source
  * on the sky, and \f$\mathbf{x}(t)\f$ be the position of the detector
@@ -133,7 +133,8 @@
  * where \f$\partial\mathbf{n}/\partial\alpha\f$ is easily obtained from
  * Eqs.\eqref{eq_n-alphadelta}.  Similarly for \f$\delta\f$.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * \endcode

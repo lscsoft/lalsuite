@@ -88,7 +88,8 @@ static BOOLEAN isSymmetric (const gsl_matrix *Sij);
  * which is the best known covering-lattice up to dimension 23,
  * see \ref CS99 "[CS99]"
  *
- * \heading{Algorithm:}
+ * ### Algorithm: ###
+ *
  * \li 1) use XLALFindCoveringGenerator() to get the generator
  * of the given lattice.
  *
@@ -148,12 +149,14 @@ LALLatticeCovering (LALStatus *status,			/**< pointer to LALStatus structure */
  * Fill the given parameter-space by a lattice defined by the specified
  * generating matrix.
  *
- * \heading{Note1:}
+ * ### Note1: ###
+ *
  * The input generating-matrix (generator) must already be scaled
  * correctly to the required covering radius, also, it needs to be in
  * canonical full-rank square matrix form.
  *
- * \heading{Note2:}
+ * ### Note2: ###
+ *
  * As always in this module, the generating matrix contains the lattice-vectors as <em>rows</em>
  *
  */
@@ -320,7 +323,8 @@ LALLatticeFill (LALStatus *status,		/**< pointer to LALStatus structure */
  * the l-th row of the generating matrix, i.e.
  * \f${M_i}^j = {\lambda_{(i)}}^j\f$
  *
- * \heading{Note:} The memory for physicalPoint needs to be allocated already, and the
+ * \par Note:
+ * The memory for physicalPoint needs to be allocated already, and the
  * dimensions of all vectors and matrices passed to this functions must agree!
  */
 int
@@ -441,12 +445,14 @@ XLALMetricScalarProduct (const gsl_vector *v1,
  * Gram-Schmidt orthogonalization of linearly indepenent vectors using a given metric.
  * As usual the vectors in input and output are stored as the matrix-rows!
  *
- * \heading{Note1:}
+ * ### Note1: ###
+ *
  * this is a straightforward, probably naive implementation of the basic
  * algorithm, completely ignorant about numerically more robust or faster algorithms
  * to do this... [FIXME?].
  *
- * \heading{Note2:}
+ * ### Note2: ###
+ *
  * the memory for outvects is allocated in here by gsl_matrix_alloc()
  * and needs to be free'ed by the caller via gsl_matrix_free() !
  */
@@ -567,15 +573,18 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
  * Construct the full-rank generating matrix of given type, for covering
  * a space of given (constant) metric and a given covering Radius.
  *
- * \heading{Note1:}
+ * ### Note1: ###
+ *
  * the returned generator is a square matrix, with lattice-vectors
  * in the matrix-rows (as always in this module!)
  *
- * \heading{Note2:}
+ * ### Note2: ###
+ *
  * the memory for 'outmatrix' is allocated here with gsl_matrix_alloc()
  * and needs to be free by the caller via gsl_matrix_free()
  *
- * \heading{Algorithm:}
+ * ### Algorithm: ###
+ *
  * \li 1) get the (generally non-square) generating matrix
  * for the lattice
  * \li 2) reduce it to a full-rank square generating matrix by expressing the
@@ -683,7 +692,8 @@ XLALFindCoveringGenerator (gsl_matrix **outmatrix, /**< [out] generating matrix 
  * of the lattice vectors (using GramSchmidt), and then expressing the lattice-vectors
  * in this new basis.
  *
- * \heading{Note:} the memory for 'outmatrix' is allocated in here via gsl_matrix_alloc()
+ * \par Note:
+ * the memory for 'outmatrix' is allocated in here via gsl_matrix_alloc()
  * and has to be free'ed by the caller via gsl_matrix_free() !
  */
 int
@@ -778,7 +788,8 @@ XLALReduceGenerator2FullRank (gsl_matrix **outmatrix, 	/**< [out] full-rank squa
  * for one of several possible lattices (currently possible: cubic or \f$A_n^*\f$).
  * See \ref CS99 "[CS99]" for the definition and properties of these lattices.
  *
- * \heading{Note1:}
+ * ### Note1: ###
+ *
  * Because these lattices are intended for covering, we scale
  * them so that their covering-radius is unity.
  * This allows the user to later-on scale these easily to any
@@ -786,7 +797,8 @@ XLALReduceGenerator2FullRank (gsl_matrix **outmatrix, 	/**< [out] full-rank squa
  * (Remembering that if you scale the generator \f$M\f$ of a lattice by \f$M' = c M\f$,
  * then the covering radius R scales as \f$R' = c R\f$)
  *
- * \heading{Note2:}
+ * ### Note2: ###
+ *
  * The memory for 'outmatrix' is allocated in here via gsl_matrix_alloc()
  * and has to be free'ed by the caller via gsl_matrix_free() !
  *
@@ -890,7 +902,8 @@ XLALGetLatticeGenerator (gsl_matrix **outmatrix,	/**< [out] generating matrix */
  * Add a new element at the end of the list 'head', _copy_ the given entry there,
  * and return pointer to the new list-entry.
  *
- * \heading{Note:} This function is rather permissive in that it takes the vector-dimension
+ * \par Note:
+ * This function is rather permissive in that it takes the vector-dimension
  * from the new entry, without requiring this to be equal to the dimension of the
  * other list-entries...
  */
@@ -933,7 +946,8 @@ INT4VectorListAddEntry (INT4VectorList *head, const INT4Vector *entry)
  * Add a new element at the end of the list 'head', _copy_ the given entry there,
  * and return pointer to the new list-entry.
  *
- * \heading{Note:} This function is rather permissive in that it takes the vector-dimension
+ * \par Note:
+ * This function is rather permissive in that it takes the vector-dimension
  * from the new entry 'el', without requiring this to be equal to the dimension of the
  * other list-entries...
  */
@@ -1030,7 +1044,8 @@ INT4VectorListRemoveElement (INT4VectorList *element)
 /**
  * 'List-destructor' for INT4VectorList: free a complete list.
  *
- * \heading{Note:} 'head' will be freed too, so make
+ * \par Note:
+ * 'head' will be freed too, so make
  * sure not to pass a non-freeable head (like an automatic variabe)
  */
 void
@@ -1061,7 +1076,8 @@ INT4VectorListDestroy (INT4VectorList *head)
 /**
  * 'List-destructor' for REAL8VectorList: free a complete list.
  *
- * \heading{Note:} 'head' will be freed too, so make
+ * \par Note:
+ * 'head' will be freed too, so make
  * sure not to pass a non-freeable head (like an automatic variabe)
  */
 void

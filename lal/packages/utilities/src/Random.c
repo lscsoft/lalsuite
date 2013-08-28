@@ -30,7 +30,7 @@
  *
  * \brief Functions for generating random numbers.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routines <tt>LALCreateRandomParams()</tt> and <tt>LALDestroyRandomParams()</tt>
  * create and destroy a parameter structure for the generation of random
@@ -43,7 +43,7 @@
  * The routine <tt>LALNormalDeviates()</tt> fills a vector with normal (Gaussian)
  * deviates with zero mean and unit variance, whereas the function\c XLALNormalDeviate just returns one normal distributed random number.
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
  *
  * \code
  * static LALStatus     status;
@@ -68,7 +68,7 @@
  * LALDestroyVector( &status, &vector );
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This is an implementation of the random number generators \c ran1 and
  * \c gasdev described in Numerical Recipes [\ref ptvf1992].

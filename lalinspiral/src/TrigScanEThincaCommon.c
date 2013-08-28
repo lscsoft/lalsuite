@@ -34,7 +34,8 @@
  *
  * \brief Provides helper functions used in TrigScan and E-thinca.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * The function <tt>XLALCreateTriggerErrorList()</tt> creates a linked list of
  * structures pointing to the trigger and their associated position vector and
  * shape matrix. If required, the maximum difference in tC associated with the

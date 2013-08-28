@@ -36,7 +36,8 @@ extern "C" {
  *
  * \brief Provides routines to generate Taylor-parameterized continuous waveforms.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/GenerateTaylorCW.h>
  * \endcode

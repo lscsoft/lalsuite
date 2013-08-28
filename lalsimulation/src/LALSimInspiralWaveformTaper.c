@@ -41,15 +41,18 @@
  * end of the signal are tapered. These options are #LAL_SIM_INSPIRAL_TAPER_START,
  * #LAL_SIM_INSPIRAL_TAPER_END and #LAL_SIM_INSPIRAL_TAPER_STARTEND.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
+ *
  * <tt>XLALInspiralREAL4WaveformTaper()</tt>
  * <tt>XLALInspiralREAL8WaveformTaper()</tt>
  *
- * \heading{Description}
+ * ### Description ###
  *
- * \heading{Uses}
  *
- * \heading{Notes}
+ * ### Uses ###
+ *
+ *
+ * ### Notes ###
  *
  */
 

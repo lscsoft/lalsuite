@@ -24,7 +24,7 @@
  *
  * \brief A program to test <tt>LALStochasticHeterodynedCrossCorrelationStatistic()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * ./StochasticHeterodynedCrossCorrelationStatisticTest [options]
@@ -101,7 +101,7 @@
  * statistic.  The result is printed to standard output along with the
  * resulting units in terms of the basic SI units.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
  * LALStochasticHeterodynedCrossCorrelationStatistic()
@@ -120,7 +120,7 @@
  * fabs()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> No specific error checking is done on user-specified data.  If

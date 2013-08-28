@@ -28,7 +28,7 @@
  *
  * \brief Destroys ZPG filter objects.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions destroy an object <tt>**output</tt> of type
  * \c COMPLEX8ZPGFilter or \c COMPLEX16ZPGFilter, and set

@@ -45,7 +45,7 @@
  * overhead, it is simple to use the equatorial coordinate system as an
  * intermediate step.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions perform the specified coordinate transformation on the
  * contents of \a input and store the result in \a output.  The
@@ -61,7 +61,7 @@
  * overhead, it is simple to use the equatorial coordinate system as an
  * intermediate step.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * These routines follow the spherical angle relations on p. 13
  * of \ref Lang_K1999.  Note that the actual formulae for Galactic
@@ -71,7 +71,8 @@
  * Sec. 12.3 of \ref GRASP2000.  All positions are assumed to
  * be in the J2000 epoch.
  *
- * <b>Galactic coordinates:</b> The following formulae relate
+ * \par Galactic coordinates:
+ * The following formulae relate
  * Galactic latitude \f$b\f$ and longitude \f$l\f$ to declination \f$\delta\f$ and
  * right ascension \f$\alpha\f$:
  * \f{eqnarray}
@@ -122,7 +123,8 @@
  * \f$b=90^\circ\f$ (Galactic north), then
  * \f$\mathbf{u} \times \mathbf{v}\f$ points along the ascending node.
  *
- * <b>Ecliptic coordinates:</b> The following formulae relate
+ * \par Ecliptic coordinates:
+ * The following formulae relate
  * Ecliptic latitude \f$\beta\f$ and longitude \f$\lambda\f$ to declination
  * \f$\delta\f$ and right ascension \f$\alpha\f$:
  * \f{eqnarray}

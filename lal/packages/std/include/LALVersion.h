@@ -33,7 +33,8 @@ extern "C" {
  *
  * \brief Provides routines for reporting the LAL version.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALVersion.h>
  * \endcode

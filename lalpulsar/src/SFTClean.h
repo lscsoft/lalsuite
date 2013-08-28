@@ -32,7 +32,7 @@ extern "C" {
  *
  * Routines for cleaning SFT files using known spectral disturbances.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/SFTClean.h>
@@ -41,7 +41,7 @@ extern "C" {
  * Format for list of known spectral disturbances and using
  * them to clean SFT data
  *
- * \heading{Error conditions}
+ * ### Error conditions ###
  *
  * Test program. %%
  *

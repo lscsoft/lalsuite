@@ -32,7 +32,8 @@
  * \ingroup lalmetaio
  * \brief Provides functions for reading LIGO lightweight XML files to LIGO metadata database tables.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LIGOLwXMLRead.h>
  * \endcode

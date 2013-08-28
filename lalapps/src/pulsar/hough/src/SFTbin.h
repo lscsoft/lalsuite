@@ -33,10 +33,12 @@
 /**
  * \author A.M. Sintes
  *
- * \heading{Header \ref SFTbin.h}
+ * ### Header \ref SFTbin.h ###
+ *
  * Routines for reading SFT binary files
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/SFTbin.h>
  * \endcode

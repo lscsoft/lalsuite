@@ -57,7 +57,7 @@
  * reference frequency \f$f_{\mathrm{R}}\f$ which is specified in
  * <tt>parameters.omegaRef</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * <tt>LALStochasticOmegaGW()</tt> treats the constant spectrum \f$\alpha=0\f$ as a
  * special case, and simply sets every element of the output series to
@@ -69,12 +69,13 @@
  *
  * The output units are set to be dimensionless.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LAL_REAL4_MAX
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> This routine will eventually be generalized to

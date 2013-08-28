@@ -22,12 +22,13 @@
  *
  * \brief Test code for the inspiral wave generation and noisemodels modules.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * RandomInspiralSignalTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test code gives an example of how one might generate an inspiral
  * waveform and compute its overlap with simulated detector noise

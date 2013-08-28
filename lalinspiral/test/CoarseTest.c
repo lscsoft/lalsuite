@@ -43,7 +43,8 @@
  * a finer template bank around a sub-set of the original template bank and stores it in the
  * same output file.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * Input the following values of the InspiralCoarseBankIn structure to
  * create a template bank:
  *
@@ -108,7 +109,7 @@
  * CoarseTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test code gives an example of how one calls \c LALInspiralCreateCoarseBank
  * and \c LALInspiralCreateFineBank modules.

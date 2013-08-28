@@ -25,7 +25,7 @@
  * Calculates the best fit parameters for a GW signal originating from a
  * non-precessing pulsar.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * \code
  * void
@@ -35,7 +35,7 @@
  * FineFitParams        *params )
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This routine calculates the best fit of parameters by minimizing \f$\chi^2\f$ by going through
  * fixed grid for \f$\iota, \psi, \phi_{0}\f$ and  \f$h_{0}\f$.  The best fit parameters
@@ -45,17 +45,19 @@
  * The function <tt>LALFineFitToPulsar()</tt> refines the fit using the Levenberg-Marquardt method for nonlinear fitting. This is
  * done by calculating the Hessian and the gradient of \f$\chi^2\f$ ...
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * To be completed.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALSCreateVector()
  * LALSDestroyVector()
  * LALComputeDetAMResponse()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 
@@ -293,22 +295,27 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
  * \brief This test program demonstrates the correct usage of the functions
  * \c LALCoarseFitToPulsar and \c LALFineFitToPulsar.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * FitToPulsarTest
  * \endcode
  *
- * \heading{Description}
- * To be completed.
- * \heading{Exit codes}
+ * ### Description ###
  *
- * \heading{Uses}
+ * To be completed.
+ *
+ * ### Exit codes ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * LALCoarseFitToPulsar()
  * LALFineFitToPulsar()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

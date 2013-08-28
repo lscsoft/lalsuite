@@ -53,7 +53,7 @@
  * \defgroup CoincInspiralEllipsoid_c Module CoincInspiralEllipsoid.c
  * \ingroup CoincInspiralEllipsoid_h
  *
- * \heading{Description}
+ * ### Description ###
  *
  * <tt>LALCreateTwoIFOCoincListEllipsoid()</tt> takes in a linked list of
  * single inspiral tables and returns a list of two instrument coincidences.

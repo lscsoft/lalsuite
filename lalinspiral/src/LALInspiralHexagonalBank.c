@@ -22,17 +22,20 @@
  * \file
  * \brief NONE
  *
- * \heading{Description}
+ * ### Description ###
  *
- * \heading{Algorithm}
  *
- * \heading{Uses}
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * LALInspiralParameterCalc()
  * LALInspiralComputeMetric()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

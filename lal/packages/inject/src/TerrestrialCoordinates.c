@@ -77,12 +77,13 @@
  * <tt>LALGeodeticToGeocentric()</tt> does the reverse, and also sets the
  * fields <tt>location->position</tt> and <tt>location->radius</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * These routines follow the formulae in Sec. 5.1 of [\ref Lang_K1999],
  * which we reproduce below.
  *
- * \heading{Geographic coordinates:} Since geographic and equatorial
+ * \par Geographic coordinates:
+ * Since geographic and equatorial
  * coordinates share the same \f$z\f$-axis, the geographic latitude \f$\phi\f$ of
  * a direction in space is the same as its declination \f$\delta\f$, and
  * longitude \f$\lambda\f$ and right ascension \f$\alpha\f$ differ only through
@@ -98,7 +99,8 @@
  * simple enough, it does involve several function calls, so it is
  * convenient to collect these into one routine.
  *
- * \heading{Horizon coordinates:} We correct a typographical
+ * \par Horizon coordinates:
+ * We correct a typographical
  * error on the second line of Eq. 5.45 of [\ref Lang_K1999], (it should
  * have \f$\cos A\f$, not \f$\sin A\f$).  We also note that while our latitudinal
  * coordinate is just the altitude \f$a\f$ in this system, our longitudinal
@@ -136,7 +138,8 @@
  * \image html  inject_geodetic.png "Fig. [fig_geodetic]: The difference between geodetic and geocentric latitude."
  * \image latex inject_geodetic.eps "The difference between geodetic and geocentric latitude." width=0.3\textwidth
  *
- * \heading{Geocentric coordinates:} As shown in
+ * \par Geocentric coordinates:
+ * As shown in
  * Fig.\figref{fig_geodetic}, the ellipticity of the Earth means that the
  * vertical axis of a point on the Earth's surface does not pass through
  * the geometric centre of the Earth.  This means that the geodetic
@@ -311,7 +314,8 @@
  * come up in practice.</li>
  * </ul>
  *
- * \heading{Ellipsoidal vs. orthometric elevation:} In this module it
+ * \par Ellipsoidal vs. orthometric elevation:
+ * In this module it
  * is assumed that all elevations refer heights above the reference
  * ellipsoid.  This is the elevation computed by such techniques as GPS
  * triangulation.  However, the "true" orthometric elevation refers to
@@ -327,7 +331,8 @@
  * gravitational field.  For this reason we will ignore the undulation of
  * the geoid.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * XLALGreenwichMeanSiderealTime()
  * \endcode

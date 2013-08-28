@@ -26,11 +26,11 @@
  * it is equal to the user specified phase \f$\phi_0\f$ when the `velocity' of the
  * system is equal to \f$v.\f$
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>XLALInspiralPhasing1()</tt>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function \c XLALInspiralPhasing1() calculates the phase \f$\phi(v)\f$ using
  * the phasing formula,
@@ -46,12 +46,15 @@
  * Choosing \f$v=v_\textrm{lso}\f$ means that the phase at the last stable orbit is \f$\phi_0\f$ and
  * so on.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Numerical integration.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * XLALDRombergIntegrate()
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  */
 

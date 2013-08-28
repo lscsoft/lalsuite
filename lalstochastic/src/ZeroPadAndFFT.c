@@ -54,7 +54,7 @@
  * \f$M\f$ and Fourier-transforming it into a
  * \c COMPLEX8FrequencySeries of length \f$M\f$.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * <tt>LALSZeroPadAndFFT()</tt> constructs the sequence \f$\bar{h}[k]\f$, and
  * then applies a real-to-complex time-to-frequency discrete Fourier
@@ -64,7 +64,7 @@
  * then applies a complex-to-complex time-to-frequency discrete Fourier
  * transform from the \c fft package.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * <tt>LALSZeroPadAndFFT()\/</tt> calls:
  *
@@ -86,7 +86,7 @@
  * strncpy()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  *

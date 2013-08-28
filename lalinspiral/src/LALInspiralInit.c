@@ -24,7 +24,8 @@
  *
  * \brief Module to initialize some parameters for waveform generation.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * The input parameters is an InspiralTemplate structure which provides the waveform parameters
  * such as masses, lower frequency ... . The function \c LALInspiralInit calls the
  * \c LALInspiralParameterCalc function in order to  compute all the mass parameters. Then,
@@ -40,7 +41,8 @@
  * trace of it. Thus, the length of the waveform is fixed to zero in case of problems such as
  * negative length, cutoff frequency lower than the lower cutoff frequency ... .
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALInspiralParameterCalc
  * LALInspiralRestrictedAmplitude
@@ -49,7 +51,8 @@
  * LALInspiralSetup
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * There is only one assert on the InspiralTemplate variable since  all relevant asserts
  * are already included in the different functions which are called throughout the LALInspiralInit
  * function.

@@ -30,7 +30,7 @@
  * \ingroup LALNoiseModels_h
  * \brief Function to calculate the noise power spectral density for the EGO detector.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The module takes as an input a frequency \f$f\f$ in Hz, and it
  * calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$

@@ -24,7 +24,8 @@
  *
  * \brief Test suite for <tt>LALStochasticOptimalFilter()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ./StochasticOptimalFilterTest [options]
  * Options:
@@ -44,7 +45,7 @@
  * -y             use normalization appropriate to heterodyned data
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the function <tt>LALStochasticOptimalFilter()</tt>,
  * which generates a normalized optimal filter from a stochastic
@@ -112,7 +113,8 @@
  * \f$\widetilde{Q}(f)=\textrm{constant}\f$.</li>
  * </ol>
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALStochasticOptimalFilter()
  * LALCheckMemoryLeaks()
@@ -132,7 +134,8 @@
  * fabs()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> No specific error checking is done on user-specified data.  If
  * \c length is missing, the resulting default will cause a bad

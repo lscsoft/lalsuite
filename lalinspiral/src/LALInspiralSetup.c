@@ -25,7 +25,7 @@
  * \brief Module to generate all the Taylor and Pade coefficients needed in
  * waveform generation.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>XLALInspiralSetup()</tt>
  * <ul>
@@ -34,7 +34,7 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Module to generate all the coefficiants needed in the Taylor and Pade expressions
  * for the energy and flux functions \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.
@@ -43,11 +43,15 @@
  * the energy and flux functions by accessing the structure \c ak and are tabulated
  * in the two Tables\tableref{table_energy} and\tableref{table_flux}.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * None.
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * None.
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  */
 

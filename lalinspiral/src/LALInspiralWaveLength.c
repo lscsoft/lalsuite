@@ -25,7 +25,7 @@
  * \brief Module to calculate the number of data points (to the nearest power of 2)
  * needed to store a waveform.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralWaveLength()</tt>
  * <ul>
@@ -34,7 +34,7 @@
  * <li> \c params: input, parameters of the binary system.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module first calls LALInspiralChooseModel(), which gives the length of the
  * waveform in seconds. That function returns an estimated waveform length. However, the
@@ -48,9 +48,11 @@
  * <tt>params.nStartPad</tt> and <tt>params.nEndPad.</tt> The resulting number is rounded to
  * an upward power of 2 and returned in \c length.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * This function calls:
  * \code
  * LALInspiralSetup()

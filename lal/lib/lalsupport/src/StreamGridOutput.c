@@ -5,14 +5,14 @@
  *
  * \brief Writes a LAL grid structure to an output stream.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * \code
  * void
  * LAL<typecode>WriteGrid( LALStatus *stat, FILE *stream, <datatype>Grid *grid )
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines write the data and metadata in a grid structure
  * <tt>*grid</tt> to an output stream <tt>*stream</tt> in a standard format,
@@ -32,7 +32,8 @@
  * <tr><td> D</td><td> REAL8</td><td>  Z</td><td> COMPLEX16</td></tr>
  * </table>
  *
- * \heading{Format for <tt>*stream</tt>:} The data written to the
+ * \par Format for <tt>*stream</tt>:
+ * The data written to the
  * output stream will be formatted in a manner consistent with the input
  * routines in \ref StreamGridInput_c.  That is, it will begin with a
  * metadata header, consisting of multiple lines of the form:

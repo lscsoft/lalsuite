@@ -39,15 +39,17 @@
  * \file
  * \ingroup PHMD_h
  *
- * \heading{Program \ref TestNDPeak2PHMD.c}
+ * ### Program \ref TestNDPeak2PHMD.c ###
+ *
  * \brief Tests the construction of Partial-Hough-Map-Derivatives (\c phmd)
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * TestNDPeak2PHMD [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * \%TO BE CHANGED
  *
@@ -71,7 +73,8 @@
  * lut</tt>.   The <b>-p</b> option sets the velocity orientation of the detector
  * \c alpha, \c delta (in radians).
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALNDHOUGHParamPLUT()
  * LALHOUGHConstructPLUT()

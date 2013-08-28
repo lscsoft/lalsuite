@@ -25,7 +25,7 @@
  * of quasi-normal-modes decaying waveforms, which can be attached to
  * the phenomenological spin Taylor waveform.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>XLALXLALPSpinInspiralRingdownWave()</tt>
  * <ul>
@@ -72,18 +72,21 @@
  * </li> <li> <tt>finalSpin,</tt> Input, estimated final spin of the black hole</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This module generate ring-down waveforms.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * LALMalloc
  * LALFree
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

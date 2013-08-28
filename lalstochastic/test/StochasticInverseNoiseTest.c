@@ -24,7 +24,7 @@
  *
  * \brief Test suite for <tt>LALStochasticInverseNoise()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * ./StochasticInverseNoiseTest [options]
@@ -40,7 +40,7 @@
  * -m filename    print half-calibrated inverse noise PSD to file filename
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the function <tt>LALStochasticInverseNoise()</tt>,
  * which outputs an uncalibrated and "half-calibrated" inverse noise spectra
@@ -93,7 +93,7 @@
  * calculates a spectrum based on user-specified data and it prints the
  * noise spectra to the files specified by the user.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
  * getopt()
@@ -111,7 +111,8 @@
  * LALCheckMemoryLeaks()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> No specific error checking is done on user-specified data.  If
  * the \c length argument missing, the resulting defaults

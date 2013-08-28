@@ -40,14 +40,16 @@
  * \ingroup HoughMap_h
  * \brief Tests the construction of Hough maps.
  *
- * \heading{Program \ref TestNDHoughMap.c}
+ * ### Program \ref TestNDHoughMap.c ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * TestNDHoughMap [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * \%TO BE CHANGED
  *
@@ -80,7 +82,8 @@
  * The <b>-p</b> option sets the velocity orientation of the detector
  * \c alpha, \c delta (in radians).
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALNDHOUGHParamPLUT()
  * LALHOUGHConstructPLUT()

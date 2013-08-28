@@ -5,7 +5,7 @@
  *
  * \brief The file \c LALInspiralMCMC contains tools to perform a Monte Carlo Markov Chain parameter estimation computation on gravitational wave data.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This package contains routines needed for doing a MCMC calculation within the LAL framework. The only functions called from outside this package is to \c XLALMCMCMetro.
  *
@@ -30,11 +30,11 @@
  *
  * To set a different chain for the parameter estimation, just set another random seed.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithms used in these functions are explained in detail in [Ref Needed].
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * This section briefly explains how to set-up the \c MCMCInput and the \c MCMCParameter structure for doing a MCMC sampling.
  *

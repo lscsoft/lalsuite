@@ -25,7 +25,7 @@
  * of quasi-normal-modes decaying waveforms, which can be attached to
  * the inspiral part of the compat binary coalescing waveform.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>XLALXLALInspiralRingdownWave()</tt>
  * <ul>
@@ -62,19 +62,21 @@
  * </li><li> <tt>params,</tt> Input, the parameters of the binary system.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Generating ring-down waveforms.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
  *
  * \code
  * LALMalloc
  * LALFree
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

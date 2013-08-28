@@ -24,7 +24,7 @@
  * \brief The code \c LALInspiralEccentricity generates a time-domain inspiral waveform corresponding to the
  * \c approximant \c Eccentricity as outlined PRD 60 for the Newtonian case.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralEccentricity()</tt>
  * <ul>
@@ -39,7 +39,7 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * \c LALInspiralEccentricity is called if the user has specified the
  * \c enum \c approximant to be
@@ -49,11 +49,12 @@
  * <tt>params.startPhase</tt> and the other for which the phase is
  * <tt>params.startPhase + \f$\pi/2\f$</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
  * in Equation\eqref{eq_ode2}.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
  * LALInspiralSetup()
@@ -64,7 +65,7 @@
  * LALRungeKutta4()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

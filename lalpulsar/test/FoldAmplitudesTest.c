@@ -22,23 +22,27 @@
  * \file
  * \ingroup FoldAmplitudes_h
  *
- * \heading{Program \ref FoldAmplitudesTest.c}
+ * ### Program \ref FoldAmplitudesTest.c ###
  *
  * %[One-line description of test program]
  *
  * The test program test each of the error conditions, and then test the output
  * of known input with the expected output.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * FoldAmplitudesTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
- * \heading{Exit codes}
  *
- * \heading{Uses}
+ * ### Exit codes ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * LALFoldAmplitudes()
  * \endcode

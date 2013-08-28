@@ -78,7 +78,7 @@
  * \f}
  * \f$k_{\mathrm{low}}\f$ is set to unity if this quantity is less than one.
  *
- * \heading{Computation of strain and inverse power spectrum}
+ * ### Computation of strain and inverse power spectrum ###
  *
  * The uncallibrated input data channel \f$v_j\f$ is Fourier transformed into the
  * frequency domain to obtain \f$\tilde{v}_k\f$. This is then converted into strain
@@ -92,7 +92,7 @@
  * frequency cutoff is set to \f$0\f$, then the DC component of the spectrum is
  * set to zero.
  *
- * \heading{Truncation of the Inverse Power Spectrum in the Time Domain}
+ * ### Truncation of the Inverse Power Spectrum in the Time Domain ###
  *
  * Recall that the FFT we use to compute the match filter treats the data as
  * being periodic and that we had to ignore part of the filter output that was
@@ -137,7 +137,8 @@
  * S^{-1}_v(|f_k|).
  * \f}
  *
- * \heading{Output Data}
+ * ### Output Data ###
+ *
  * The quantity \c segNorm is computed by
  * \f{equation}{
  * \mathtt{segNorm} =
@@ -155,7 +156,7 @@
  * quantity \f$k^{-\frac{7}{6}}\f$ which is specific to the stationary phase chirps
  * used.
  *
- * \heading{Calculation of the \f$\chi^2\f$ Bins}
+ * ### Calculation of the \f$\chi^2\f$ Bins ###
  *
  * If a \f$\chi^2\f$ veto is requested, the bin boundaries for the veto are computed
  * at this point. The indices \f$k\f$ in the frequency domain that divide the power
@@ -170,7 +171,8 @@
  *
  * The <tt>LALFindChirpBCVData()</tt> function takes as input...
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()
@@ -184,7 +186,7 @@
  * LALReverseRealFFT()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

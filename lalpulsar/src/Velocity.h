@@ -31,7 +31,7 @@ extern "C" {
  * \ingroup pkg_pulsarHough
  * \brief Computation of instant and averaged velocities for a given detector and the like.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Velocity.h>

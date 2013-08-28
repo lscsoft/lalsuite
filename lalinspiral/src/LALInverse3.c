@@ -28,13 +28,14 @@
  * \brief Uses \f$g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}\f$ to compute the inverse.
  * \author Sathyaprakash, B. S.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Uses \f$g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}\f$ to compute
  * the inverse; though not efficient, it is good enough for the
  * 3-d matrix that we have. Prevents the need for having a new library.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * Do not generalise to more than 3 dimensions.
  */
 void LALInverse3(LALStatus *status,	/**< LAL status pointer */

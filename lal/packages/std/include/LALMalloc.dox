@@ -3,7 +3,8 @@
  *
  * \brief Provides standard LAL memory allocation/deallocation routines.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALMalloc.h>
  * \endcode
@@ -15,7 +16,7 @@
  * time, the LAL routines are <tt>\#define</tt>d to be the same as the
  * standard C routines.
  *
- * \heading{Macros}
+ * ### Macros ###
  *
  * \code
  * #if defined NDEBUG || defined LAL_NDEBUG
@@ -41,9 +42,10 @@
  * #endif
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
- * <b>Note:</b> As the <tt>LALxxx()</tt> interface is deprecated, it
+ * \par Note:
+ * As the <tt>LALxxx()</tt> interface is deprecated, it
  * is recommended to use the corresponding <b>XLALxxx()</b>
  * functions instead, which follow exactly the same API as the
  * functions described in the following.
@@ -94,7 +96,7 @@
  * \c lalDebugLevel produces copious output describing each memory allocation
  * and deallocation.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * When buffer overflow detection is active, <tt>LALMalloc()</tt> allocates, in
  * addition to the requested memory, storage at the beginning of the object where
@@ -130,7 +132,7 @@
  * or when compiled with the \c NDEBUG flag set, these functions revert to
  * their standard system versions, and <tt>LALCheckMemoryLeaks()</tt> does nothing.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * Memory leak detection only occurs when \c lalDebugLevel\f$\neq0\f$.  To
  * turn on leak detection independent of error reporting, simply switch
@@ -143,7 +145,7 @@
  * alignment.  If this is not true, then this code may not work except in
  * non-debugging mode.  (It will probably produce bus errors.)
  *
- * \heading{Debugging memory leak tips}
+ * ### Debugging memory leak tips ###
  *
  * Programs should end by calling <tt>LALCheckMemoryLeaks()</tt>.  This will
  * ensure that all memory that has been allocated has been freed.  Making

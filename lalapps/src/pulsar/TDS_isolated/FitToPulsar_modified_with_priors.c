@@ -20,12 +20,15 @@
 /**
  * \author Dupuis, R. J.
  *
- * \heading{Module \ref FitToPulsar.c}
+ * ### Module \ref FitToPulsar.c ###
  *
- * \heading{Algorithm}
+ *
+ * ### Algorithm ###
+ *
  * To be completed.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALSCreateVector()
  * LALSDestroyVector()

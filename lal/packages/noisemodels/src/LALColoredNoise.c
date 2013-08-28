@@ -25,7 +25,8 @@
  * \brief This function colors a given white noise input into a colored noise
  * of power spectral density \c psd.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Given the Fourier transform \f$N(f)\f$ of  white noise, the
  * Fourier transform of noise of power spectral density \f$S(f)\f$ is
  * given by \f${\cal N}(f) = N(f) \times \sqrt{S(f)}.\f$

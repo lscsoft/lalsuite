@@ -32,7 +32,7 @@ extern "C" {
  * of  total Hough maps at different frequencies and
  * possible residual spin down parameters.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/LALHough.h>

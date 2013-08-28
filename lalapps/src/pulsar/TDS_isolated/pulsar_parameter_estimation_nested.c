@@ -27,7 +27,8 @@ LALInference tools */
  *
  * \brief Parameter estimation code for known pulsar searches using the nested sampling algorithm.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This code is used to perform parameter estimation and evidence calculation in targeted/semi-targeted searches for
  * gravitational waves from known pulsars. It may also be used to follow-up on signal candidates from semi-coherent all-sky
  * searches for unknown sources.
@@ -77,7 +78,8 @@ LALInference tools */
  * continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
  * \c tolerance value set (see below). The implementation of this can be seen in [\ref VeitchVecchio2010].
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * The usage format is given below and can also be found by running the code with
  * \code
  * lalapps_pulsar_parameter_estimation_nested --help

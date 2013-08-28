@@ -45,13 +45,15 @@
  *
  * \brief Routines to read the various ringdown search XML data into LAL structures.
  *
- * \heading{Description}
+ * ### Description ###
  *
- * \heading{Algorithm}
+ *
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * Functions in the Metaio library:
  * <ul>
  * <li>MetaioFindColumn()</li>
@@ -59,7 +61,8 @@
  * <li>MetaioOpenTable()</li>
  * <li>MetaioClose()</li>
  * </ul>
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  */
 

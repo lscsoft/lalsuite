@@ -34,11 +34,12 @@
  *
  * In all cases the returned vector is the Fourier transform of the relevant signal.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALRandomInspiralSignal()</tt>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * The function receives input struct of type ::RandomInspiralSignalIn
  * whose members are
  * \code
@@ -139,9 +140,12 @@
  * <tt>param.massChoice=bhns</tt>. The function therefore checks the mass range validity
  * i.e. randIn.mMin must be less than 3 and randIn.mMax greater than 3.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * No special algorithm, only a series of calls to pre-existing functions.
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * random()
  * LALInspiralParameterCalc()
@@ -156,7 +160,7 @@
  * LALAddVectors()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 #include <lal/LALStdlib.h>

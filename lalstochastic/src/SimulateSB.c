@@ -43,7 +43,7 @@
  * will evolve beyond its present funtionality to produce only \c real
  * time-series signal for a pair of interferometric detectors.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The frequency domain strains \f$\widetilde{h}_1(f_i)\f$
  * and \f$\widetilde{h}_2(f_j)\f$ caused by
@@ -116,7 +116,7 @@
  * outputs \f$o_1(t_i)\f$ and \f$o_2(t_i)\f$ in the time domain, the inverse
  * Fourier transforms of the above frequency series are taken.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The routine <tt>LALSSSimStochBGTimeSeries()</tt> produces only \c real
  * time-series signal for a pair of interferometric detectors. It
@@ -140,7 +140,7 @@
  * strains in the Fourier domain. Their inverse transform is then taken to obtain
  * at each detector the whitened simulated signal in the time domain.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * This routine does not yet support non-zero heterodyning frequencies.
  *

@@ -23,18 +23,22 @@
  *
  * \brief Creates a template mesh for BCVSpin using the mismatch metric.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
- * \heading{Description}
  *
- * \heading{Algorithm}
+ * ### Description ###
  *
- * \heading{Uses}
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

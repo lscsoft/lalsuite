@@ -24,7 +24,8 @@ extern "C" {
  * \brief Provides structures and functions for amplitude corrected time domain
  * templates using AmpCorPPN.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/FindChirpACTD.h>
  * \endcode

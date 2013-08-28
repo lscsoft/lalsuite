@@ -40,7 +40,8 @@
  * vertices defined by the rectangle lies in the parameter space.</li>
  * </ol>
  *
- * \heading{Templates along the equal mass curve}
+ * ### Templates along the equal mass curve ###
+ *
  * The algorithm works in two
  * stages: In the first stage, templates are built along the equal
  * mass (that is, \f$\eta=1/4\f$) curve starting from the minimum value
@@ -83,7 +84,8 @@
  * Of the two pairs, the required pair is the one that is closer to the
  * starting point \f$(\tau_0^{(n)},\tau_3^{(n)}).\f$
  *
- * \heading{Templates in the rest of the parameter space}
+ * ### Templates in the rest of the parameter space ###
+ *
  * In the second stage, the algorithm begins again at the point
  * \f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{min}),\f$
  * corresponding distance between templates
@@ -101,7 +103,7 @@
  * \image html  LALInspiralBankHCoarse2.png "Fig.[fig_coarse]: Algorithm sketching the construction of a rectangular lattice of templates"
  * \image latex LALInspiralBankHCoarse2.pdf "Algorithm sketching the construction of a rectangular lattice of templates" width=4.5in
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithm to lay templates along the equal-mass curve is as follows:
  * <tt>

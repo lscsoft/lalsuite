@@ -18,7 +18,8 @@
 """Read Coherent WaveBurst events from `ROOT` files
 """
 #
-# \heading{Synopsis}
+# ### Synopsis ###
+#
 # ~~~
 # from laldetchar.triggers import cwb
 # ~~~

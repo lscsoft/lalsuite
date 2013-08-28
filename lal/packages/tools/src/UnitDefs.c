@@ -47,7 +47,7 @@
  * of the string and is not intended for use in parsing user-entered
  * strings.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * LALUnitAsString() moves through the unit structure, appending
  * the appropriate text to the string as it goes along.
@@ -56,7 +56,7 @@
  * character at a time, building an ::LALUnit structure as a it
  * goes along, so long as it encounters precisely the syntax expected.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * This file also defines a number of \c constant unit structures
  * (declared \c extern in \ref Units_h).  Zeroth is

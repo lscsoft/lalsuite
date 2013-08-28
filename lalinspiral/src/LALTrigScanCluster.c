@@ -34,7 +34,7 @@
  *
  * \brief Functions for trigScan clustering
  *
- * \heading{Description}
+ * ### Description ###
  *
  * <tt>XLALTrigScanClusterTriggers()</tt> is the main function for invoking
  * trigScan clustering. It takes in the ::SnglInspiralTable to be clustered,

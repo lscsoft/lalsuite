@@ -25,11 +25,11 @@
  * \brief Module used in solving the timing and phasing functions in quadrature for the
  * ::Approximant #TaylorT2.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralTiming2()</tt>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Given \f$t\f$ and \f$v\f$ this module computes the quantity
  * \f{equation}{
@@ -38,13 +38,16 @@
  * where the coefficients \f$t_k\f$ and the Newtonian value \f$t_N\f$ are all defined
  * in Table.\tableref{table_flux}.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * None
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * None
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * None
  *
  */

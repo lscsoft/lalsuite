@@ -24,10 +24,12 @@
 /**
  * \author  Landry, M., and Mendell, G.
  *
- * \heading{Header \ref ComputeSky.h}
+ * ### Header \ref ComputeSky.h ###
+ *
  * Computes phase coefficients necessary for a correct demodulation.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ComputeSky.h>
  * \endcode
@@ -149,7 +151,8 @@ extern "C" {
 /*@}*/
 
 /**
- * \heading{Structures}
+ *
+ * ### Structures ###
  *
  * \code
  * struct CSParams

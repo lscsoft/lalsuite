@@ -39,7 +39,7 @@
  * time series.  Thus a shift of \f$\pm1\f$ in the resampling rules
  * corresponds to a change of \f$\pm1\f$ in the normalized timing difference.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This routine is quite simple: it increments a time counter
  * \c tNext by resampling rule intervals until it finds the next

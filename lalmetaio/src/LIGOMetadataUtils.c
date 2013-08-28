@@ -32,7 +32,7 @@
  * \ingroup lalmetaio
  * \brief General routines for manipulating LIGO metadatabase tables.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function <tt>LALPlaygroundInSearchSummary()</tt> determines the
  * ammount of time in the search summary table \c ssTable that overlaps
@@ -71,15 +71,16 @@
  * searching for a trigger belonging to a given ifo and englobing a give GPS
  * time.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * LALCalloc, LALMalloc, LALFree.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * %% Any relevant notes.
  *
  */

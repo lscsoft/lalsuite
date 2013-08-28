@@ -24,7 +24,7 @@
  *
  * \brief Converts a string into a series of tokens, for use by other routines.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routine <tt>XLALCreateTokenList()</tt> parses <tt>*string</tt> as a
  * sequence of tokens (substrings of non-null characters that do not
@@ -47,7 +47,7 @@
  * created by <tt>XLALCreateTokenList()</tt>, setting <tt>*list</tt> to
  * \c NULL.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The <tt>XLALCreateTokenList()</tt> function is not particularly
  * memory-efficient, requiring internal storage up to twice the length of

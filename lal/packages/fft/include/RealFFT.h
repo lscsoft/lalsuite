@@ -33,7 +33,8 @@ extern "C" {
  * \addtogroup RealFFT_h
  * \brief Performs real-to-complex and complex-to-real FFTs.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/RealFFT.h>
  * \endcode
@@ -44,7 +45,8 @@ extern "C" {
  *
  * \section sec_RealFFT_XLAL XLAL Functions
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/RealFFT.h>
  *
@@ -69,7 +71,7 @@ extern "C" {
  * int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data, REAL8FFTPlan *plan );
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The \c REAL4 routines are described below.  These use single-precision
  * FFTs, i.e., they convert \c REAL4Vectors into \c COMPLEX8Vectors
@@ -114,7 +116,7 @@ extern "C" {
  * XLALREAL4PowerSpectrum() computes a real power spectrum of the
  * input real vector and a forward FFT plan.
  *
- * \heading{Return Values}
+ * ### Return Values ###
  *
  * Upon success,
  * XLALCreateREAL4FFTPlan(),

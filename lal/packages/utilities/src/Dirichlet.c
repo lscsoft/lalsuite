@@ -39,7 +39,8 @@
  * of the discrete Fourier transform of the discrete \f$N\f$-point rectangular
  * window.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * The Dirichlet kernel is needed for a rigorous (i.e., exact)
  * calculation of the standard cross-correlation statistic, evaluated in
  * discrete time.  However, <tt>LALStochasticOptimalFilter()</tt> and

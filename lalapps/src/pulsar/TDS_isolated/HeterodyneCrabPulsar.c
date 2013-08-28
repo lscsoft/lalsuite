@@ -36,7 +36,7 @@
  * Functions for reading the Crab Ephemeris, interpolating between these values and
  * heterodyning the timing noise phase difference.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The first function will read the data from a file containing the Crab
  * pulsar ephemeris (<tt>crab_ephemeris.txt</tt>) which has four columns with

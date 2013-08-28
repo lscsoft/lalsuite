@@ -21,11 +21,11 @@
  * \author Jolien D. E. Creighton
  * \file
  *
- * \heading{Module \ref LALFrStream.c}
+ * ### Module \ref LALFrStream.c ###
  *
  * These are the low-level functions for manipulating a frame stream.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Many of these routines perform functions that are similar to standard C
  * file stream manipulation routines.  The names have been chosen to also be

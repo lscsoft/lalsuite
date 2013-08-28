@@ -31,7 +31,8 @@
  *
  * \brief Computes frequency model, slide stacks accordingly, and sum them.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/StackSlide.h>
  * \endcode
@@ -81,7 +82,8 @@ extern "C" {
 #define ACC 1e-9
 
 /**
- * \heading{Structures}
+ *
+ * ### Structures ###
  *
  * \code
  * struct StackSlideParams

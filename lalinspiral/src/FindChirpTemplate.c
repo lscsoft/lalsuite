@@ -34,7 +34,7 @@
  *
  * \brief Provides functions to initialize template creation routines.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * The function <tt>LALFindChirpTemplateInit()</tt> takes as input the address
  * of a structure of type \c FindChirpInitParams containing the correct
@@ -45,11 +45,12 @@
  * of a structure of type \c FindChirpTmpltParams destroys this
  * structure and sets the address to NULL.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Blah.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()
@@ -57,7 +58,7 @@
  * LALDestroyVector()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

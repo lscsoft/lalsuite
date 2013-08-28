@@ -98,7 +98,7 @@ choose( UINT4 a, UINT4 b )
  * <tt>output-\>f</tt>, and <tt>output-\>phi</tt> as necessary.  The
  * <tt>output-\>shift</tt> field will remain set to \c NULL.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This routine calls <tt>LALGenerateCircularSpinOrbitCW()</tt>,
  * <tt>LALGenerateCircularSpinOrbitCW()</tt>,

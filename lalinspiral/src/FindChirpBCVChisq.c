@@ -33,18 +33,19 @@
  *
  * \brief Module to implement the \f$\chi^2\f$ veto for the BCV templates.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function <tt>LALFindChirpBCVChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on an
  * entire data segment using the corresponding algorithm for the BCV templates,
  * described below. On exit the vector \c chisqVec contains the value
  * \f$\chi^2(t_j)\f$ for the data segment.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * chisq algorithm here
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCreateReverseComplexFFTPlan()
  * LALDestroyComplexFFTPlan()

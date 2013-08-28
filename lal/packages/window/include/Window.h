@@ -33,13 +33,13 @@ extern "C" {
  * \brief This header file provides routines and structures to create and store window functions (also called a taper,
  * lag window, or apodization function).
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Window.h>
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions create or destroy a time-domain window function in a vector
  * of specified length.  If you wish to construct a custom window, call
@@ -52,31 +52,36 @@ extern "C" {
  * domain \f$y \in [-1, 1]\f$.  The window is zero outside this domain.  The
  * window functions defined in this package are as follows.
  *
- * \heading{Rectangle}
+ * ### Rectangle ###
+ *
  * \f{equation}{
  * w(y)
  * = 1.
  * \f}</dd>
  *
- * \heading{Hann}
+ * ### Hann ###
+ *
  * \f{equation}{
  * w(y)
  * = \cos^2 \frac{\pi}{2} y.
  * \f}</dd>
  *
- * \heading{Welch}
+ * ### Welch ###
+ *
  * \f{equation}{
  * w(y)
  * = 1 - y^2.
  * \f}</dd>
  *
- * \heading{Bartlett}
+ * ### Bartlett ###
+ *
  * \f{equation}{
  * w(y)
  * = 1 - |y|.
  * \f}</dd>
  *
- * \heading{Parzen}
+ * ### Parzen ###
+ *
  * \f{equation}{
  * w(y)
  * = \left\{ \begin{array}{ll}
@@ -85,13 +90,15 @@ extern "C" {
  * \end{array}\right.
  * \f}</dd>
  *
- * \heading{Papoulis}
+ * ### Papoulis ###
+ *
  * \f{equation}{
  * w(y)
  * = \frac{1}{\pi} \sin \pi |y| + (1 - |y|) \cos \pi |y|.
  * \f}</dd>
  *
- * \heading{Hamming}
+ * ### Hamming ###
+ *
  * \f{equation}{
  * w(y)
  * = 0.08 + 0.92 \cos^{2} \frac{\pi}{2} y.
@@ -99,7 +106,8 @@ extern "C" {
  * This is the same as the Hann window, but with an additional DC bias, or
  * &quot;foot,&quot; of 0.08.</dd>
  *
- * \heading{Kaiser}
+ * ### Kaiser ###
+ *
  * \f{equation}{
  * w(y)
  * = I_0 \left( \beta \sqrt{1-y^2} \right) / I_0(\beta),
@@ -114,7 +122,8 @@ extern "C" {
  * 705\f$.  Finite-difference derivatives of the window with respect to \f$\beta\f$
  * are unlikely to work well in this regime.</dd>
  *
- * \heading{Creighton}
+ * ### Creighton ###
+ *
  * \f{equation}{
  * w(y)
  * = \exp \left( -\beta \frac{y^2}{1 - y^2} \right).
@@ -126,7 +135,8 @@ extern "C" {
  * 0\f$ yields the rectangle window, \f$\beta \rightarrow \infty\f$ yields a
  * \f$\delta\f$ function with a single non-zero sample in the middle.</dd>
  *
- * \heading{Tukey}
+ * ### Tukey ###
+ *
  * \f{equation}{
  * w(y)
  * = \left\{ \begin{array}{ll}
@@ -140,7 +150,8 @@ extern "C" {
  * spanned by the tapers.  \f$\beta = 0\f$ yields the rectangle window, \f$\beta =
  * 1\f$ yields the Hann window.</dd>
  *
- * \heading{Gauss}
+ * ### Gauss ###
+ *
  * \f{equation}{
  * w(y)
  * = \exp \left( -\frac{1}{2} \beta^{2} y^{2} \right).

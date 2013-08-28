@@ -34,7 +34,8 @@ extern "C" {
  *
  * \brief Provides routines to manipulate ZPG filters.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ZPGFilter.h>
  * \endcode

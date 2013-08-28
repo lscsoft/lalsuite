@@ -47,7 +47,8 @@ extern "C" {
  * noise amplitude spectrum (\f$\textrm{strain}/\sqrt(\textrm{Hz})\f$) and return as
  * a frequency series.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ReadNoiseSpectrum.h>
  * \endcode

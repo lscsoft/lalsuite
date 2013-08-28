@@ -33,7 +33,7 @@ extern "C" {
  * \author Reinhard Prix
  * \brief Module for general parsing of simple ASCII-based config-files.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module provides routines for reading formatted
  * config-files containing definitions of the form <tt>variable = value</tt>.

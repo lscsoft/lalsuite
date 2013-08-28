@@ -24,7 +24,7 @@
  * \brief Function for creating the approximant string which gets written to output
  * files for a given approximant and PN order of the phasing.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>XLALXLALInspiralGetApproximantString()</tt>:
  * <ul>
@@ -34,17 +34,19 @@
  * </li><li> <tt>order,</tt> Input, post-Newtonian order of the phasing.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
- * \heading{Algorithm}
  *
- * \heading{Uses}
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
  *
  * \code
  * snprintf
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

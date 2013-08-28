@@ -42,7 +42,7 @@
  *
  * \brief Blah.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * <tt>XLALGetErrorMatrixFromSnglInspiral()</tt> takes in a
  * \c SnglInspiralTable, and a value for the e-thinca parameter. It returns

@@ -37,7 +37,7 @@
  *
  * \brief Transforms the complex frequency coordinate of a ZPG filter.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions perform an in-place bilinear transformation on an
  * object <tt>*filter</tt> of type <tt>\<datatype\>ZPGFilter</tt>, transforming
@@ -48,7 +48,7 @@
  * incorporated into the gain of the filter (i.e.\ the leading
  * coefficient of the rational function).
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The vectors <tt>filter->zeros</tt> and <tt>filter->poles</tt> only record
  * those zeros and poles that have finite value.  If one includes the

@@ -40,7 +40,8 @@ extern "C" {
  *
  * \brief %Header file for the template placement codes.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALInspiralBank.h>
  * \endcode

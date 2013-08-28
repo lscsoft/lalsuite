@@ -34,13 +34,14 @@
  *
  * \brief Tests geocentric to geodetic conversion.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * GeocentricGeodeticTest [-x xmin xmax nx] [-y ymin ymax ny]
  * [-z zmin zmax nz] [-v] [-d debuglevel]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program converts a point or set of points from geocentric to
  * geodetic coordinates and back, using the routines
@@ -74,7 +75,7 @@
  * 2 Earth radii, and return an error if the conversion produces a
  * difference greater than a micron.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * \image html  inject_geodetictest.png "Fig.[fig_geodetictest]: Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required."
  * \image latex inject_geodetictest.eps "Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required." width=0.55\textwidth

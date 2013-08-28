@@ -39,7 +39,8 @@ extern "C" {
  * \brief Provides routines to compute pulsar parameter-space metrics using the
  * ``Ptolemaic'' approximation.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/PtoleMetric.h>
  * \endcode

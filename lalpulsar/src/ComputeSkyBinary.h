@@ -24,7 +24,8 @@
  *
  * \brief Computes phase coefficients necessary for a correct demodulation for a source in a binary system.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ComputeSkyBinary.h>
  * \endcode

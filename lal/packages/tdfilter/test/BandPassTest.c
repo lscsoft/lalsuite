@@ -34,13 +34,14 @@
  *
  * \brief Tests time-domain high- and low-pass filters.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * BandPassTest [-d debuglevel] [-i infile | -n npts dt offset] [-o outfile]
  * [-f f1 f2 a1 a2 order]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program applies a Butterworth time-domain low-pass or high-pass
  * filter to a time series, using the routine

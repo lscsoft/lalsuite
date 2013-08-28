@@ -3,7 +3,8 @@
  *
  * \brief Provides routines to report and handle errors.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALError.h>
  * \endcode
@@ -16,7 +17,7 @@
  * These functions should \e not be invoked in
  * production code, except in very specific circumstances.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions cause LAL to print status messages and perform basic
  * error handling.  Their implementation is quite simple but may be
@@ -27,7 +28,8 @@
  * used internally by LAL.  Descriptions of the individual functions are
  * as follows.
  *
- * \heading{<tt>LALPrintError()</tt>} prints a formatted string to some
+ * \par <tt>LALPrintError()</tt>
+ * prints a formatted string to some
  * designated output device (usually the \c stderr stream), returning
  * the number of characters printed, or negative if an error occurred.
  * The format of the argument list is the same as for the standard C
@@ -38,7 +40,8 @@
  * <tt>LALInfo()</tt> to report their status, rather than calling
  * <tt>LALPrintError()</tt> directly.
  *
- * \heading{<tt>LALRaise()</tt>} prints a formatted string to an error
+ * \par <tt>LALRaise()</tt>
+ * prints a formatted string to an error
  * logging device, as above, and then raises the requested signal.
  * Standard LAL routines should \e not terminate execution, but should
  * instead return control to the calling routine, reporting errors through their
@@ -50,7 +53,8 @@
  * \c LALRaise, but \c lalRaiseHook is set to \c LALRaise by
  * default).
  *
- * \heading{<tt>LALAbort()</tt>} prints a formatted string to an error
+ * \par <tt>LALAbort()</tt>
+ * prints a formatted string to an error
  * logging device, as above, and then terminates program execution.
  * Usually this is done by raising a \c SIGABRT signal, but this can
  * change in implementations that have different requirements.  Standard
@@ -67,7 +71,8 @@
  * \c LALAbort, but \c lalAbortHook is set to \c LALAbort by
  * default).
  *
- * \heading{<tt>LALError()</tt>} prints the \c statement
+ * \par <tt>LALError()</tt>
+ * prints the \c statement
  * string to the error log, provided that the value of the global
  * \c lalDebugLevel is set to allow error messages.  It returns the
  * number of characters printed.  This is the standard LAL routine for
@@ -78,7 +83,8 @@
  * that would cause a routine to terminate abnormally, LAL programmers
  * will generally not have to call <tt>LALError()</tt> explicitly.
  *
- * \heading{<tt>LALWarning()</tt>} prints the \c warning
+ * \par <tt>LALWarning()</tt>
+ * prints the \c warning
  * string to the error log, provided that the value of the global
  * \c lalDebugLevel is set to allow warning messages.  It returns the
  * number of characters printed.  A warning message is less serious than
@@ -86,14 +92,16 @@
  * successfully, but with unusual or unexpected behaviour that may
  * invalidate the results of the computation.
  *
- * \heading{<tt>LALInfo()</tt>} prints the \c info
+ * \par <tt>LALInfo()</tt>
+ * prints the \c info
  * string to the error log, provided that the value of the global
  * \c lalDebugLevel is set to allow information messages.  It returns
  * the number of characters printed.  An information message indicates
  * that a computation is proceding normally, and simply provides
  * additional information about its progress.
  *
- * \heading{<tt>LALTrace()</tt>} prints a message providing
+ * \par <tt>LALTrace()</tt>
+ * prints a message providing
  * information, taken from the \c status structure, about the
  * function currently being executed; it is used to track the progress of
  * execution through nested function calls.  It returns the number of
@@ -106,7 +114,7 @@
  * function (see \ref LALStatusMacros.h), so LAL programmers need never
  * invoke it explicitly.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The functions <tt>LALError()</tt>, <tt>LALWarning()</tt>,
  * <tt>LALInfo()</tt>, and <tt>LALTrace()</tt> print status messages
@@ -125,7 +133,7 @@
  * \ref LALStatusMacros.h documentation for more discussion of this
  * compilation flag.
  *
- * \heading{Macro replacement functions}
+ * ### Macro replacement functions ###
  *
  * When a LAL module is compiled with the flag \c NOLALMACROS set,
  * the usual status-handling macros defined in \ref LALStatusMacros.h

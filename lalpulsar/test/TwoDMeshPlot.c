@@ -52,14 +52,14 @@ AdjustBBox( REAL4 x, REAL4 y, TwoDMeshPlotStruc *params );
  * \ingroup TwoDMeshPlot_h
  * \brief Plots a hierarchical mesh of templates on an 2-dimensional parameter space.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This routine creates a PostScript plot of the parameter mesh list
  * pointed to by \c mesh, using the plotting parameters given in
  * <tt>*params</tt>.  The PostScript output is printed to the writable
  * output stream <tt>*stream</tt> using <tt>fprintf()</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithm is set up so that it requires only one pass through the
  * list.  After defining PostScript macros to plot mesh points, mesh
@@ -85,12 +85,13 @@ AdjustBBox( REAL4 x, REAL4 y, TwoDMeshPlotStruc *params );
  * LALPlotTwoDMesh() will divide the plot area up into pages of
  * this side, calling the plotting macros on each page.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALMalloc()             LALFree()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 void

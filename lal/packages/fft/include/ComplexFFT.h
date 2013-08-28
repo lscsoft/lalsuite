@@ -34,7 +34,8 @@ extern "C" {
  *
  * \brief Performs complex-to-complex FFTs.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ComplexFFT.h>
  * \endcode

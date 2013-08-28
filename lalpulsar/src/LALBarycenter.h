@@ -41,7 +41,8 @@ extern "C" {
  * \brief Provides routines for transforming from arrival time at detector (GPS) to pulse emission time (TDB); ie
  * for ``barycentering'' the measured astronomical time series.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALInitBarycenter.h>
  * #include <lal/LALBarycenter.h>

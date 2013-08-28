@@ -36,7 +36,8 @@ extern "C" {
  *
  * \brief Performs real-to-complex, complex-to-real FFTs and average power spectrum estimation.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/TimeFreqFFT.h>
  * \endcode
@@ -51,7 +52,7 @@ extern "C" {
  * \tilde{h}_k = \sum
  * \f]
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routines LALTimeFreqRealFFT() and LALTimeFreqComplexFFT()
  * transform time series \f$h_j\f$, \f$0\le j<n\f$, into a frequency series
@@ -117,7 +118,7 @@ extern "C" {
  * same as returned by the LDAS datacondAPI <tt>psd()</tt> action for a real
  * sequence without detrending.
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
  *
  * \code
  * const UINT4 n  = 65536;
@@ -168,7 +169,7 @@ extern "C" {
  * LALSDestroyVector( &status, &x.data );
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ol>
  * <li> The routines do not presently work properly with heterodyned data,

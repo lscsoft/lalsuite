@@ -23,12 +23,13 @@
  *
  * \brief Prints the version and configure options of the LAL library being used.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * LALVersionTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program prints the current version of LAL.\@  If the version information
  * in the library differs from the version information in the header file, this
@@ -36,7 +37,7 @@
  * determining which version of the LAL library and header files you are linking
  * to.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
  * <table>
  * <tr><th>Code</th><th>Explanation</th></tr>

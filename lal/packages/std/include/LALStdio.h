@@ -22,7 +22,8 @@
  *
  * \brief Provides LAL functions similar to the non-file functions in <tt><stdio.h></tt>.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALStdio.h>
  * #include <lal/FileIO.h>

@@ -31,7 +31,7 @@
  *
  * \brief Internal routines used to compute matrix determinants and inverses.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions are called by the routines in \ref DetInverse_c to
  * compute the determinant and inverse of a nondegenerate square matrix
@@ -51,7 +51,7 @@
  * <tt>*indx</tt> is the list of row permutations returned by the above
  * routines.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * LU decomposition is performed by Crout's algorithm, described in
  * Sec. 2.3 of [\ref ptvf1992]; the routines in this module are

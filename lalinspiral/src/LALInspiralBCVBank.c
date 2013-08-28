@@ -42,7 +42,8 @@
  * of the parameters \f$(\psi_0, \psi_3)\f$ in \c coarseIn structure
  * \author Cokelaer, T
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Given the range of the parameters \f$(\psi_0, \psi_3),\f$
  * the number of templates in the \c fCut direction,
  * \e minimalMatch, noise spectral density, upper and
@@ -50,7 +51,8 @@
  * this routine outputs the list of templates in the BCV bank
  * for the parameters \f$(\psi_0, \psi_3, f_{\mathrm{cut}}).\f$
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * A flat signal manifold is assumed and templates are laid
  * uniform in the three dimensions.  See below for an explanation
  * of how templates are chosen in the \c fcut direction.
@@ -229,14 +231,16 @@ LALInspiralCreateBCVBank (
  * contain the \f$x_0\f$-coordinates of the grid and data points <tt>list-\>data[2j+1]</tt>,
  * contain the \f$x_1\f$-coordinates of the grid.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Given the \c metric and the \c minimalMatch this routine calls
  * <tt>bank/LALInspiralUpdateParams</tt> to get the spacings in user coordinates (which are
  * not necessarily the eigen-directions) and lays a uniform grid of templates in
  * the range specified in (<tt>bankParams-\>x0Min</tt>, <tt>bankParams-\>x0Max</tt>) and
  * (<tt>bankParams-\>x1Min</tt>, <tt>bankParams-\>x1Max</tt>).
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * The algorithm to lay templates is as follows: Given the increments \f$Dx_0\f$ and
  * \f$Dx_1\f$ found from calling <tt>bank/LALInspiralUpdateParams</tt> lay a rectangular
  * grid in the space of \f$(x_0, x_1).\f$
@@ -320,7 +324,7 @@ LALInspiralCreateFlatBank (
  * A call to this function should be preceeded by a call to LALInspiralCreateFlatBank()
  * or a similar function, that gives a grid in \f$(\psi_0, \psi_3)\f$ space.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * A lattice of templates for BCV models should include,
  * in addition to the values of \f$(\psi_0, \psi_3)\f$
@@ -360,7 +364,8 @@ LALInspiralCreateFlatBank (
  * Thus, the number of templates returned by this routine could
  * be larger or fewer than the input number of templates.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Given \f$(\psi_0, \psi_3)\f$ one can solve for \f$(M, \eta)\f$ using:
  * \f{equation}{
  * M = \frac{-\psi_3}{16 \pi^2 \psi_0},\ \ \eta = \frac{3}{128 \psi_0 (\pi M)^{5/3}}.

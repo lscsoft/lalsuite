@@ -36,7 +36,8 @@
  *
  * \brief This header provides provides <tt>\#define</tt>s for the common elements of LIGO light weight XML files.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LIGOLwXMLHeaders.h>
  * \endcode

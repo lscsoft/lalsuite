@@ -23,7 +23,8 @@
  *
  * \brief Tests the routines in \ref RealFFT.h.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * RealFFTTest [options]
  * Options:
@@ -40,14 +41,17 @@
  * (Default is to test transforms of size 1 to 128 in unit steps and then
  * powers of two up to 65536.)
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * <table><tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Success, normal exit.</td></tr>
  * <tr><td>1</td><td>Subroutine failed.</td></tr>
  * </table>
  *
- * \heading{Uses}
- * \heading{Notes}
+ * ### Uses ###
+ *
+ *
+ * ### Notes ###
  *
  */
 

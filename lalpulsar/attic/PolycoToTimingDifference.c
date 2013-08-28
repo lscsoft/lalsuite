@@ -35,7 +35,7 @@
  * computed from the piecewise-polynomial fit stored in <tt>*polyco</tt>,
  * via Eq.\eqref{eq_delta-tau}.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * By storing the timing difference as a dimensionless quantity, it is
  * relatively easy to determine rules for resampling the datastream at

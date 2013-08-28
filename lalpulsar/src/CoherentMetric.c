@@ -66,7 +66,7 @@ static REAL8 Average(REAL8Vector *integrand, REAL8 *uncertainty);
  * The argument \a *params stores the remaining parameters for
  * computing the metric, as given in the Structures section of StackMetric.h.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This routine simply computes the function given in Eq.\eqref{eq_gab_phi}
  * of \ref StackMetric_h.  Most of the work is done by the

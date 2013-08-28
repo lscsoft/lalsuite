@@ -45,7 +45,7 @@
  * the files \ref PatchGrid.c, \ref Stereographic.c, \ref ParamPLUT.c, \ref NDParamPLUT.c,
  * \ref ConstructPLUT.c, \ref Peak2PHMD.c, \ref HoughMap.c, and \ref DriveHough.c.
  *
- * <b>Acknowledgment:</b>
+ * \par Acknowledgment:
  * The authors thank S. Frasca and  C. Palomba for helpful discussions,
  * F. Massaioli for helping in the initial stages of code development,
  * and B. Allen and J. Creighton for their valuable implementation advice.

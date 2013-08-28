@@ -4,7 +4,8 @@
  *
  * \brief Defines configuration macro constants.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALConfig.h>
  * \endcode

@@ -24,7 +24,7 @@
  *
  * \brief Module containing the energy and flux functions for waveform generation.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>REAL8 SAMPLEFUNCTION()</tt>
  * <ul>
@@ -32,14 +32,16 @@
  * <li> \c ak: Input containing the PN expnasion coefficients.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This module gives the post-Newtonian expansions and/or P-approximants
  * to the energy, its derivative and gravitational-wave flux functions. More
  * specifically, the <tt>REAL8</tt> functions below give Taylor expansions
  * of \f$dE/dv,\f$ and \f${\cal F}(v),\f$ P-approximants of \f$e(v),\f$ \f$dE/dv\f$
  * (derived from \f$e(v)\f$) and \f${\cal F}(v).\f$
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> See Damour, Iyer and Sathyaprakash, PRD 57, 885, 1998 for further details.
  * Damour, Iyer and Sathyaprakash, PRD 63, 044023, 2001 is a resource paper that

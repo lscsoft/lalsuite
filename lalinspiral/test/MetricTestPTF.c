@@ -23,18 +23,22 @@
  *
  * \brief Creates the PTF metric for a single point in the parameter space.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
- * \heading{Description}
  *
- * \heading{Algorithm}
+ * ### Description ###
  *
- * \heading{Uses}
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

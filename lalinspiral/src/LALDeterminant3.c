@@ -26,12 +26,14 @@
  *
  * This code computes the determinant of a 3-dimensional matrix.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Given a matrix \f$g_{ij}\f$ its determinant
  * is computed using  the formula \f$g = \epsilon^{ijk} g_{i1} g_{j2} g_{k3},\f$
  * where \f$\epsilon\f$ is the totally anti-symmetric tensor in 3-dimensions.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * Don't ever generalise this to higher dimensions since this
  * would take many more operations than some of the standard routines.
  */

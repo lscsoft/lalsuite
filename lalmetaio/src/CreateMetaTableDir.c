@@ -32,7 +32,7 @@
  * \ingroup lalmetaio
  * \brief Construct a \c MetaTableDirectory for a given LIGOLwXML table.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routine \c LALCreateMetaTableDir constructs a
  * \c MetaTableDirectory for a given LIGOLwXML table.  It determines the
@@ -43,11 +43,12 @@
  * \c LALCreateMetaTableDir.  For all other tables, the directory is
  * constructed internally by the reading code.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * Functions in the Metaio library:
  * <ul>
  * <li> \c MetaioFindColumn()</li>
@@ -55,7 +56,8 @@
  * <li> \c MetaioOpenTable()</li>
  * <li> \c MetaioClose()</li>
  * </ul>
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  */
 

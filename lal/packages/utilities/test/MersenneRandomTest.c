@@ -42,7 +42,7 @@
  *
  * \brief A program to test <tt>LALMersenneRandom()</tt> and <tt>LALMersenneRandomVector()</tt>
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * ./MersenneRandomTest [options]
@@ -95,7 +95,7 @@
  * prints "\c PASS" to standard output; if a test fails, it
  * prints "\c FAIL".
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li>Vector must come in allocated</li>

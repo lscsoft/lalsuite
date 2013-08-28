@@ -32,7 +32,8 @@ extern "C" {
  *
  * \brief This header defines structures to hold the basic data describing a gravitational wave detector.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALDetectors.h>
  * \endcode
@@ -62,7 +63,7 @@ extern "C" {
  * Cartesian coördinates of the detector along with the components of
  * the response tensor \f$d^{ab}\f$ in the same coördinate system.
  *
- * \heading{The Geodetic Coördinate System}
+ * ### The Geodetic Coördinate System ###
  *
  * Geodetic coördinates are spheroidal coördinates
  * based on the WGS-84 Earth Model, which is an
@@ -83,7 +84,7 @@ extern "C" {
  * point in question.  This coördinate system is described in more
  * detail in [\ref Althouse_1999].
  *
- * \heading{Altitude and Azimuth Angles}
+ * ### Altitude and Azimuth Angles ###
  *
  * The \c LALFrDetector structure stores the directions along the
  * two arms of an interferometer in an altitude/azimuth representation
@@ -94,7 +95,7 @@ extern "C" {
  * projecting the direction onto the local horizontal plane, then
  * measuring the angle clockwise from North to this projected direction.
  *
- * \heading{The Cartesian Coördinate System}
+ * ### The Cartesian Coördinate System ###
  *
  * The position vector and response tensor contained in the
  * \c LALDetector structure are defined in
@@ -127,7 +128,7 @@ extern "C" {
  * \right) \sin\beta  \tag{tools_e_cart3} \\
  * \f}
  *
- * \heading{Cached Detectors}
+ * ### Cached Detectors ###
  *
  * In practice, we will often be
  * working with fixed unchanging site geometry, e.g., for the LIGO

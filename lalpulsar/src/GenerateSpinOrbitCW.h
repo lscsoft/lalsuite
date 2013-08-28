@@ -36,7 +36,8 @@ extern "C" {
  *
  * \brief Provides routines to generate continuous waveforms with spindown and orbital modulation.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/GenerateSpinOrbitCW.h>
  * \endcode
@@ -80,7 +81,7 @@ extern "C" {
  * \e revolution, which we regard as completely independent from its
  * rotation.
  *
- * \heading{Orbital motion}
+ * ### Orbital motion ###
  *
  * \image html  inject_binary.png "Fig.[fig_binary_orbit]: Binary orbit orientation parameters"
  * \image latex inject_binary.pdf "Binary orbit orientation parameters" width=0.47\textwidth
@@ -195,7 +196,7 @@ extern "C" {
  * both \f$t\f$, \f$\upsilon\f$, and hence \f$t_r\f$, and then refine directly on
  * \f$E\f$.
  *
- * \heading{Other notation conventions}
+ * ### Other notation conventions ###
  *
  * Since we may deal with highly eccentric or open orbits, we will
  * specify these orbits with parameters that are definable for all

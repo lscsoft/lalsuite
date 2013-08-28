@@ -38,7 +38,8 @@ extern "C" {
  * \brief Creation/destruction/manipulation API for ::LALStringVector objects,
  * which are just LAL-type vectors of CHAR * pointers.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/StringVector.h>
  * \endcode

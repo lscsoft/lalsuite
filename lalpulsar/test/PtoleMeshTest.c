@@ -23,14 +23,16 @@
  * \ingroup PtoleMetric_h
  * \brief Tests and showcases the combination of \ref PtoleMetric_h and \ref TwoDMesh_h modules.
  *
- * \heading{Program \c PtoleMeshTest}
+ * ### Program \c PtoleMeshTest ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * PtoleMeshTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The <tt>-b</tt> option sets the beginning time of integration to the option
  * argument. (Default is \f$0\f$ seconds)
@@ -73,9 +75,10 @@
  * system call to \c xmgrace. If \c xmgrace is not installed on your
  * system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
  *
  * \code
  * lalDebugLevel
@@ -85,7 +88,7 @@
  * LALXMGRPlotMesh()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

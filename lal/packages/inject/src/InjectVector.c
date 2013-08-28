@@ -41,7 +41,7 @@
  * single-precision") simply adds the contents of <tt>*signalvec</tt> to
  * <tt>*output</tt> where they overlap, without performing any dithering.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Dithering is done with a flat random distribution as described in
  * \ref Inject.h.  Injected values outside the dynamic range of the
@@ -54,7 +54,8 @@
  * be generated internally using a seed of zero (i.e.\ the current time
  * will be used to initialize the pseudorandom sequence).
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCreateRandomParams()
  * LALDestroyRandomParams()

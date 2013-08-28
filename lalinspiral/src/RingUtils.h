@@ -36,7 +36,8 @@ extern "C" {
  *
  * \brief Black hole ringdown waveform generation.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/RingUtils.h>
  * \endcode
@@ -108,7 +109,7 @@ extern "C" {
  * cover the entire parameter region with no point in the region being farther
  * than \f$ds^2_{\mathrm{\scriptstyle threshold}}\f$ from the nearest template.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The waveform generation routines use recurrance relations for both the
  * exponentially-decaying envelope and for the co-sinusoid.

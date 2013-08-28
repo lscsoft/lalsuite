@@ -23,20 +23,25 @@ extern "C" {
  * ...</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * The code \ref LALAdaptiveRungeKutta4.c evolves a system of \f$n\f$ coupled first--order differential equations.
  * Internally, it uses GSL routines to perform adaptive-step evolution, and then interpolates the resulting
  * trajectories to a fixed step size.
  *
  * Prior to evolving a system using <tt>XLALAdaptiveRungeKutta4()</tt>, it is necessary to create an integrator structure using
  * <tt>XLALAdaptiveRungeKutta4Init()</tt>. Once you are done with the integrator, free it with <tt>XLALAdaptiveRungeKutta4Free()</tt>.
- * \heading{Algorithm}
+ *
+ * ### Algorithm ###
+ *
  * TBF.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * For updated SpinTaylor waveforms.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * None so far...
  *
  */

@@ -30,7 +30,7 @@
  *
  * \brief Routines to compute eigenvalues and eigenvectors.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * <tt>LALSSymmetricEigenVectors()</tt> and
  * <tt>LALDSymmetricEigenVectors()</tt> compute the eigenvalues and
@@ -52,7 +52,7 @@
  * used as auxiliary storage for the in-place algorithm; if you don't
  * want the input matrix to be changed, make a copy of it first.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * A square matrix \f$\mathsf{M}^a{}_b\f$ is said to have an eigenvalue
  * \f$\lambda\f$ and associated eigenvector \f$\mathsf{x}^a\f$ if the following

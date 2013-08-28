@@ -33,7 +33,7 @@
  *
  * \brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routine \c LALOpenLIGOLwXMLFile
  *
@@ -66,17 +66,17 @@
  * is written using the row format for the specified table given in
  * LIGOLwXMLHeaders.h.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * <tt>fopen()</tt>
  * <tt>fprintf()</tt>
  * <tt>fclose()</tt>
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * In order to change a table definition in LAL, changes must be made in
  * several places.  It is necessary to update the structure which is used to store

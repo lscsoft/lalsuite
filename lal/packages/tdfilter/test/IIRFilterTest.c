@@ -40,12 +40,13 @@
  *
  * \brief Tests the routines in \ref IIRFilter_h.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * IIRFilterTest [-f filtertag] [-o] [-t] [-d debuglevel] [-n npts] [-r reps] [-w freq]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program generates a time series vector, and passes it through a
  * third-order Butterworth low-pass filter.  By default, running this
@@ -97,7 +98,7 @@
  * frequency of 2\% of Nyquist).</li>
  * </ul>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * \image html tdfilter_iirfiltertest.png "Fig.[fig_iirfiltertest]: Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option."
  * \image latex tdfilter_iirfiltertest.pdf "Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option." width=0.55\textwidth
@@ -134,7 +135,7 @@
  * either a unit impulse or white Gaussian noise (for more useful timing
  * information).
  *
- * \heading{Sample output}
+ * ### Sample output ###
  *
  * Running this program on a 1.3 GHz Intel machine with no optimization
  * produced the following typical timing information:

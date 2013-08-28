@@ -52,21 +52,23 @@
  * along with a \c COMPLEX8FrequencySeries describing the
  * half-calibrated inverse PSD \f$1/P^{\mathrm{HC}}(f)\f$.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The output series are filled according to a straightforward
  * implemementation of
  * \eqref{stochastic_e_halfCalibratedPSD}-\eqref{stochastic_e_calibratedPSD}.
  * The DC components, if included in the series, are set to zero.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALUnitRaise()
  * LALUnitMultiply()
  * strncpy()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> Note that although \f$P^{\mathrm{C}}(f)\f$
  * and \f$P(f)\f$

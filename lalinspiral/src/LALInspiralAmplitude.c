@@ -26,7 +26,8 @@
  * and a set of mass parameters, that module provides functions to compute
  * the related amplitude.
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * The inspiral template structure can stored (1) the distance of the binary (2)
  * a set of binary masses such as the two masses or the total mass and eta and (3)
  * an amplitude which is arbitrary fixed to unity when templates are computed.
@@ -43,7 +44,8 @@
  * where \f$d\f$ is in Mpc and \f$M\f$ in solar mass. The result is stored in the signalAmplitude
  * variable of the inspiral template structure.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * When appropriate this function calls:\\
  * \c XLALInspiralParameterCalc
  *

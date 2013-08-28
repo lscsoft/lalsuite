@@ -20,12 +20,13 @@
 /**
  * \author Pitkin, M. D.
  *
- * \heading{Header \ref HeterodyneCrabPulsar.h}
+ * ### Header \ref HeterodyneCrabPulsar.h ###
  *
  * Calculates and heterodynes the timing noise component of the Crab pulsar
  * phase.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/HeterodyneCrabPulsar.h>
  * \endcode
@@ -83,7 +84,8 @@ extern "C" {
 /*@}*/
 
 /**
- * \heading{Structures}
+ *
+ * ### Structures ###
  *
  * \code
  * typedef struct tagGetCrabEphemerisInput GetCrabEphemerisInput;

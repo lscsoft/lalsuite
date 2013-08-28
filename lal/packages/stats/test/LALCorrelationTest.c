@@ -37,14 +37,17 @@
  *
  * \brief [One-line description of test program]
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * LALCorrelationTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * LALCorrelationTest()
  * \endcode

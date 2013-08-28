@@ -5,7 +5,7 @@
  *
  * \brief Converts an input stream into a time or frequency series.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * \code
  * void
@@ -29,7 +29,7 @@
  * FILE                      *stream )
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines parse an input stream <tt>*stream</tt> to fill in the
  * data and metadata fields of a time or frequency series <tt>*series</tt>.
@@ -53,7 +53,8 @@
  * <tr><td> D</td><td>REAL8</td><td>  Z</td><td>COMPLEX16</td></tr>
  * </table>
  *
- * \heading{Format for <tt>*stream</tt>:} The input stream is assumed
+ * \par Format for <tt>*stream</tt>:
+ * The input stream is assumed
  * to be a text stream (ASCII) consisting of a header containing metadata
  * followed by numerical data in standard integer or floating-point
  * format, as recognized by the routines in \ref StringConvert.c.  The
@@ -83,7 +84,7 @@
  * How the data is packed into the <tt>series-\>data</tt> structure depends
  * on what metadata has been provided, as described below.
  *
- * <b>Required, conditional, and optional metadata:</b>
+ * ### Required, conditional, and optional metadata: ###
  *
  * The input stream need not contain a complete set of metadata, allowing some
  * metadata to be read from <tt>*stream</tt> and others to be set
@@ -126,7 +127,8 @@
  * Below we describe the required format for the field values, as well as
  * what occurs if a conditional field is or isn't present.
  *
- * \heading{Required fields:}
+ * ### Required fields: ###
+ *
  * <dl>
  * <dt>dimLength</dt><dd> (\c TimeArraySeries only):
  * \e value consists of a sequence of \c UINT4s separated by
@@ -136,7 +138,8 @@
  * the dimension of the corresponding array index.</dd>
  * </dl>
  *
- * \heading{Conditional fields:}
+ * ### Conditional fields: ###
+ *
  * <dl>
  * <dt>arrayDim</dt><dd> (\c TimeArraySeries only): \e value
  * is a single \c UINT4, to be stored in
@@ -167,7 +170,7 @@
  * element is discarded.)</dd>
  * </dl>
  *
- * \heading{Optional fields:}
+ * ### Optional fields: ###
  *
  * <dl>
  * <dt>name:</dt><dd>\c value is a string surrounded by double-quotes,
@@ -211,7 +214,8 @@
  *
  * </dl>
  *
- * \heading{Data format:} The data portion of <tt>*stream</tt> consists
+ * \par Data format:
+ * The data portion of <tt>*stream</tt> consists
  * of whitespace-separated integer or real numbers.  For complex input
  * routines, the real data are parsed as alternately the real and
  * imaginary parts of successive complex numbers.  By convention, each
@@ -233,7 +237,7 @@
  * is discarded, and <tt>series-\>data-\>length</tt> set to the number of
  * elements read.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * These routines use <tt>LALCHARReadVector()</tt> to read the header lines
  * and the first line of data.  After this, data are parsed directly from

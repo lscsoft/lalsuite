@@ -24,7 +24,8 @@
  *
  * \brief Tests the routines in \ref ResampleTimeSeries.h
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * Usage: ./ResampleTimeSeriesTest [options] defaults shown in brackets
  * Options:
@@ -39,13 +40,13 @@
  * [ldas|butterworth]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Tests the resampling functions by injecting a sine wave of a given
  * frequency into a time series and downsampling it. The raw and output
  * data are returned as frame files for plotting in matlab.
  *
- * \heading{Sample Results}
+ * ### Sample Results ###
  *
  * Figures.\figref{f_resamp1}-\figref{f_resamp3} show the results of various
  * tests using this program.

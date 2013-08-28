@@ -25,7 +25,7 @@
  * \brief Module to compute the components of the metric which is used to describe
  * distances on Physical Template Family signal manifold.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>XLALInspiralComputePTFIntrinsicMetric()</tt>:
  * <ul>
@@ -72,20 +72,22 @@
  * in the computation of the metric.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * We calculate the components of the metric using the procedure outlined
  * by Yi.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
  *
  * \code
  * LALMalloc
  * LALFree
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

@@ -25,7 +25,7 @@
  * \brief Module to set the pointers to the required energy and flux functions.
  * Normally, a user is not required to call this function to generate a waveform.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralChooseModel()</tt>
  * <ul>
@@ -35,7 +35,8 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This module gives the post-Newtonian expansions and/or P-approximants
  * to the energy, its derivative and gravitational-wave flux functions. More
  * specifically, the <tt>static REAL8</tt> functions below give Taylor expansions
@@ -72,12 +73,16 @@
  * at time \f$t_{0}.\f$  Note that \f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in
  * <tt>f->dEnergy</tt> and <tt>f->flux.</tt>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Numerical integration is used to compute <tt>ak->tn.</tt>
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * LALInspiralTofV
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * <ul>
  * <li> See Damour, Iyer and Sathyaprakash, PRD 57, 885, 1998 for further details.
  * Damour, Iyer and Sathyaprakash, PRD 63, 044023, 2001 is a resource paper that

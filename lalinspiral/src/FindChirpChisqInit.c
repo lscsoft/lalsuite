@@ -33,7 +33,7 @@
  *
  * \brief Module to initialize the \f$\chi^2\f$ veto for the various templates (SP, BCV,etc.)
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function <tt>LALFindChirpChisqVetoInit()</tt> takes as input the number of
  * bins required to contruct the \f$\chi^2\f$ veto and the number of points a data
@@ -50,11 +50,12 @@
  * required to contruct the \f$\chi^2\f$ veto and as a parameter. On exit all memory
  * allocated by the <tt>LALFindChirpChisqVetoInit()</tt> will be freed.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * chisq algorithm here
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCreateReverseComplexFFTPlan()
  * LALDestroyComplexFFTPlan()
@@ -63,7 +64,7 @@
  * LALCOMPLEX8VectorFFT()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

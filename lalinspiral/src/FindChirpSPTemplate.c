@@ -35,16 +35,17 @@
  * \brief Provides functions to create stationary phase inspiral templates in a
  * form that can be used by the <tt>FindChirpFilter()</tt> function.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * The function <tt>LALFindChirpSPTemplate()</tt> creates the stationary phase
  * template as described by the algorithm below.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Blah.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()
@@ -52,7 +53,7 @@
  * LALDestroyVector()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

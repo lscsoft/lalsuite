@@ -25,7 +25,7 @@
  * \c approximant \c TaylorT1 and \c PadeT1 as outlined in the
  * documentation for the function \c LALInspiralWave.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralAmplitudeCorrectedWave()</tt>
  * <ul>
@@ -40,7 +40,7 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * \c LALInspiralAmplitudeCorrectedWave is called if the user has specified the
  * \c enum \c approximant to be
@@ -50,11 +50,12 @@
  * <tt>params.startPhase</tt> and the other for which the phase is
  * <tt>params.startPhase + \f$\pi/2\f$</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
  * in Equation\eqref{eq_ode2}.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \c LALInspiralSetup\\
  * \c LALInspiralChooseModel\\
@@ -63,7 +64,7 @@
  * \c LALInspiralDerivatives\\
  * \c LALRungeKutta4.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

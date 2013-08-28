@@ -24,21 +24,21 @@
  *
  * \brief The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralPhiofVIntegrand()</tt>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * This function calls \c dEnergy and \c flux functions that are defined in the
  * \c expnFunc structure  and represent \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$, respectively,
  * and pointed to the appropriate PN functions with a call to <tt>XLALInspiralChooseModel().</tt>
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

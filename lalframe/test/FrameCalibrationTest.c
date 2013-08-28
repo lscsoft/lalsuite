@@ -24,13 +24,14 @@
  * \brief Tests the hig-level function to obtain an up-to-date calibration from
  * frame files.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * FrameCalibrationTest
  * \endcode
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * FrameCalibrationTest [options]
  * Options:
@@ -39,7 +40,7 @@
  * -v         verbose: print extra information
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * For each interferometer in the array \c ifoCode the program does the
  * following: For each GPS time in the array \c calTime, an attempt is
@@ -70,7 +71,8 @@
  * <tt>H1AlphaBeta.txt</tt> and <tt>L1AlphaBeta.txt</tt> which can be found on the
  * calibration home page.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * <table>
  * <tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>\c 0</td><td>Success, normal exit.</td></tr>
@@ -78,8 +80,10 @@
  * <tr><td>\c 77</td><td>Ignored failure: Test frame data not found.</td></tr>
  * </table>
  *
- * \heading{Uses}
- * \heading{Notes}
+ * ### Uses ###
+ *
+ *
+ * ### Notes ###
  *
  */
 

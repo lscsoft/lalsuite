@@ -30,7 +30,7 @@ extern "C" {
  * \date 2001
  * \brief Conversion from peaks in a spectrum into a partial Hough map derivative
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/PHMD.h>

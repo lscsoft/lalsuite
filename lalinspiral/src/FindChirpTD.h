@@ -48,7 +48,8 @@ extern "C" {
  * \brief Provides structures and functions to condition interferometer data
  * and generate binary inspiral chirps using time domain waveforms.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/FindChirpTD.h>
  * \endcode

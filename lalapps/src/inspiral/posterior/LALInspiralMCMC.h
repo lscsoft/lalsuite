@@ -35,14 +35,15 @@ extern "C" {
  * \ingroup inspiral
  * \brief Header file for the MCMC tools code.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALInspiralMCMC.h>
  * \endcode
  *
  * This header file covers routines that are used for the Markov Chain Monte Carlo algorithm tools.
  *
- * \heading{Structures}
+ * ### Structures ###
  *
  * <ol>
  * <li> \c LALMCMCParameter:

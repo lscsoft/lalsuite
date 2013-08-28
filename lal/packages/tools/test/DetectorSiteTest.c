@@ -25,7 +25,7 @@
  * \brief Tests the detector response and site parameter structures and the
  * routine to create one from the other.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * DetectorSiteTest [options]
@@ -36,7 +36,7 @@
  * -d level   set lalDebugLevel to level
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Right now the test routine does very little.  It contains a static
  * function <tt>PrintLALDetector()</tt> which will print the fields of a
@@ -50,7 +50,8 @@
  * old and new structures.  The program currently performs this check
  * for the two LIGO sites.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCreateDetector()
  * \endcode

@@ -24,12 +24,13 @@
  *
  * \brief Performs required tests of LALDemod().
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * LALDemodTest -i <input data file> [-d <gap>] [-n] [-o]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This routine performs tests on the routine <tt>LALDemod()</tt>.
  * Options:
@@ -179,9 +180,11 @@
  *
  * </li></ul>
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALMalloc()
@@ -206,7 +209,8 @@
  * LALComputeAM()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * The implementation of the code here is intended to give a general outline of
  * what the demodulation code needs to work.  Most of this test function performs
  * steps (e.g., noise, time- and frequency-series generation) that will be already

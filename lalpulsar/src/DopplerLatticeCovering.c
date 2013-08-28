@@ -1202,20 +1202,24 @@ findCenterOfMass ( vect3D_t *center, const vect3Dlist_t *points )
  * Function for checking if a given vect2D-point lies inside or outside a given vect2D-polygon.
  * This is basically indentical to 'pointInPolygon()' only using different data-types.
  *
- * \heading{Note1:}
+ * ### Note1: ###
+ *
  * The list of polygon-points must not close on itself, the last point
  * is automatically assumed to be connected to the first
  *
- * \heading{Algorithm:}
+ * ### Algorithm: ###
+ *
  * Count the number of intersections of rays emanating to the right
  * from the point with the lines of the polygon: even =\> outside, odd =\> inside
  *
- * \heading{Note2:}
+ * ### Note2: ###
+ *
  * we try to get this algorith to count all boundary-points as 'inside'
  * we do this by counting intersection to the left _AND_ to the right
  * and consider the point inside if either of those says its inside...
  *
- * \heading{Note3:}
+ * ### Note3: ###
+ *
  * correctly handles the case of a 1-point 'polygon', in which the two
  * points must agree within eps=1e-10 relative precision.
  *

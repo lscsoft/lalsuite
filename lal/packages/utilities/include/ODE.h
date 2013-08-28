@@ -35,7 +35,8 @@ extern "C" {
  *
  * \brief Routines for solving ordinary differential equations (ODEs).
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ODE.h>
  * \endcode

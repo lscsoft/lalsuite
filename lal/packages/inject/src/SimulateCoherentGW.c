@@ -103,7 +103,7 @@
  * This routine will convert <tt>signal-\>position</tt> to equatorial
  * coordinates, if necessary.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The routine first accounts for the time delay between the detector and
  * the solar system barycentre, based on the detector position
@@ -160,7 +160,8 @@
  * \f$o=(o_+F_+)+(o_\times F_\times)\f$.</li>
  * </ul>
  *
- * \heading{A note on interpolation:}
+ * ### A note on interpolation: ###
+ *
  * Much of the computational work in this routine involves interpolating
  * various time series to find their values at specific output times.
  * The algorithm is summarized below.
@@ -184,7 +185,7 @@
  * A(t_k) = f \times A_{j+1} + (1-f) \times A_j \; .
  * \f]
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * The major computational hit in this routine comes from computing the
  * sine and cosine of the phase angle in

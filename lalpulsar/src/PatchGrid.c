@@ -48,7 +48,7 @@
  * \ingroup LUT_h
  * \brief Function for tiling  the sky-patch (on the projected plane).
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This  is a \c provisionalfinal now ? routine for tiling a  sky-pacth
  * on the projected plane.

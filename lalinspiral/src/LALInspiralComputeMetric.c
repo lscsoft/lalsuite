@@ -277,7 +277,7 @@ LALInspiralComputeMetric (
  * g_{mn} = \gamma_{mn} - \frac{\gamma_{0m} \gamma_{0n}}{\gamma_{00}}.
  * \f}
  *
- * \heading{Metric computation in the \f$\tau_0-\tau_3\f$ space}
+ * ### Metric computation in the \f$\tau_0-\tau_3\f$ space ###
  *
  * The metric cannot be directly computed in the \f$(\tau_0,\tau_2)\f$ space.
  * Therefore, in the previous Section we first computed the metric

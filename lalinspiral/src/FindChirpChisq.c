@@ -33,18 +33,19 @@
  *
  * \brief Module to implement the \f$\chi^2\f$ veto for the stationary phase chirp.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function <tt>LALFindChirpChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on
  * an entire data segment using the algorithm described below. On exit the
  * vector \c chisqVec contains the value \f$\chi^2(t_j)\f$ for the data
  * segment.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * chisq algorithm here
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCreateReverseComplexFFTPlan()
  * LALDestroyComplexFFTPlan()
@@ -53,7 +54,7 @@
  * LALCOMPLEX8VectorFFT()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

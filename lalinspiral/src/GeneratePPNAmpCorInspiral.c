@@ -162,7 +162,7 @@ do {                                                                 \
  * \brief Computes a parametrized post-Newtonian inspiral waveform
  * with ampltidude corrections.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * See \ref GeneratePPNInspiral.c
  *

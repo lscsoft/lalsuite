@@ -24,11 +24,11 @@
  *
  * \brief The function \c LALInspiralTofVIntegrand() calculates the quantity \f$E^{\prime}(v)/\mathcal{F}(v)\f$.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralTofVIntegrand()</tt>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function \c LALInspiralTofVIntegrand() calculates the quantity \f$E^{\prime}(v)/\mathcal{F}(v)\f$.
  * These are the energy and flux functions which are used in the gravitational wave phasing formula, which is
@@ -45,7 +45,7 @@
  * where \f$v=(\pi m F)^{1/3}\f$ is an invariantly defined velocity, \f$F\f$ is the instantaneous GW frequency, and
  * \f$m\f$ is the total mass of the binary.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * This function calls the function which represents \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$. The pointer to each
  * of these functions is set by a call to the function \c LALInspiralChooseModel().

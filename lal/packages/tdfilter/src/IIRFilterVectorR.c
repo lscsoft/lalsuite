@@ -27,7 +27,7 @@
  *
  * \brief Applies a time-reversed IIR filter to a data stream.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions apply a generic time-domain filter <tt>*filter</tt> to a
  * time series <tt>*vector</tt>, as with the routines
@@ -38,7 +38,7 @@
  * while canceling the phase shift.  This can be significant when one
  * wishes to preserve phase correlations across wide frequency bands.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Because these filter routines are inherently acausal, the
  * <tt>filter-\>history</tt> vector is meaningless and unnecessary.  These

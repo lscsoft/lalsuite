@@ -59,7 +59,7 @@
  * have the vertices of the ambiguity rectangle inside the parameter
  * space, are kept and others are discarded.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The Fine grid algorithm works as follows:
  * <tt>

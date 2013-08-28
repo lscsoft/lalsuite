@@ -24,7 +24,7 @@
  *
  * \brief This module contains a single function <tt>LALBCVWaveform()</tt>.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALLALBCVWaveform():</tt>
  * <ul>
@@ -44,7 +44,8 @@
  * <tt>psi0, psi3, alpha1, alpha2, beta, fendBCV(fFinal), nStartPad, fLower, tSampling</tt>.
  * All other parameters in \c params are ignored.  </li></ul> *
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This module can be used to generate <em>detection template
  * family</em> of Buonanno, Chen and Vallisneri [\ref BCV03,BCV03b].
  * There are two modules: <tt>LALBCVWaveform.</tt> and <tt>LALBCVSpinWaveform.</tt>
@@ -52,12 +53,14 @@
  * it implements is given in Eq.\eqref{eq_BCV_NonSpinning} and the latter
  * to generate spinning waveforms (Eq.\eqref{eq_BCV_Spinning}.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * A straightforward implementation of the formula. Note that the routine returns
  * <tt>Fourier transform</tt> of the signal as opposed to most other modules in this
  * package which return time-domain signals. Also, the amplitude is quite arbitrary.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * ASSERT
  * ATTATCHSTATUSPTR
@@ -66,7 +69,7 @@
  * RETURN
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * %% Any relevant notes.
  *

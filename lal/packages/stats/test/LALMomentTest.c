@@ -43,7 +43,7 @@
  * \brief A program to test LALDMoment().
  * - Note only the double precision is tested because both are derived from the same code.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * ./LALMomentTest [options]
@@ -82,14 +82,14 @@
  * prints "\c PASS" to standard output; if a test fails, it
  * prints "\c FAIL".
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
  * LALDMoment()
  * LALSMoment()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

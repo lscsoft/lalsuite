@@ -24,7 +24,8 @@
  *
  * \brief Provides structures and routines to store and manipulate pulsar properties.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/PulsarCat.h>
  * \endcode
@@ -43,7 +44,8 @@
  * instant of time at the solar system barycentre; i.e.\ when the wave
  * fronts carrying that information pass the solar system barycentre.
  *
- * \heading{A note on companion orbits:} Several known pulsars exist in
+ * \par A note on companion orbits:
+ * Several known pulsars exist in
  * multiple systems, and radio-pulsar catalogues include detailed models
  * of the companion orbits, as determined from the pulsar timing.  See
  * \ref GenerateSpinOrbitCW.h in the \c inject package for a

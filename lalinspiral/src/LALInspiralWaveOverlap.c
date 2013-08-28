@@ -27,13 +27,18 @@
  * in a parameter structure the maximum of the overlap, the bin
  * where the maximum occured and the phase at the maximum.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralWaveOverlap()</tt>
  *
- * \heading{Description}
- * \heading{Algorithm}
- * \heading{Uses}
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * LALInspiralWave()
  * LALREAL4VectorFFT()
@@ -41,7 +46,7 @@
  * LALInspiralWaveCorrelate()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 #include <lal/LALNoiseModelsInspiral.h>

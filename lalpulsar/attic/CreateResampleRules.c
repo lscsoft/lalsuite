@@ -76,9 +76,11 @@ FreeTempRules( INT4 **tempRules, INT4 nSqrt );
  * valid handle (\c rules\f$\neq\f$\c NULL) but should not point to
  * an existing object (<tt>*rules</tt>=\c NULL).
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Formulae for computing \c ResampleRules:}
+ *
+ * ### Formulae for computing \c ResampleRules: ###
+ *
  * Since the resampling rules can be expected to be applied to datasets
  * with a huge number of sample times, the primary concern when designing
  * the algorithm was to maintain a low operation count per sample.  For
@@ -177,7 +179,8 @@ FreeTempRules( INT4 **tempRules, INT4 nSqrt );
  * shift is computed from the value of \f$n=dA_0\f$ at middle of the fitting
  * region (\f$T=0\f$).
  *
- * \heading{Computational details:}
+ * ### Computational details: ###
+ *
  * The basic structure of the algorithm is an inner loop and an outer
  * loop.  The inner loop is iterated once each time that \f$n\f$ is
  * incremented or decremented and a new \f$T\f$ is computed; it terminates

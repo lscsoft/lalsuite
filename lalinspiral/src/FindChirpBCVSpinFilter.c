@@ -33,12 +33,12 @@
  *
  * \brief Provides functions to filter data for spinning BCV templates.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * The function <tt>LALFindChirpBCVSpinFilterSegment()</tt> filters data for
  * spinning BCV templates as described by the algorithm below.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Using the quantities calculated in <tt>LALFindChirpBCVSpinTemplate()</tt> we
  * construct a template and filter our data producing a clustered
@@ -95,7 +95,8 @@
  * These obey \f$\sum_{i=1}^6 \alpha_i = 1\f$ and might prove useful in future
  * signal based vetoe studies.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALFree()
@@ -103,7 +104,7 @@
  * LALDestroyVector()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

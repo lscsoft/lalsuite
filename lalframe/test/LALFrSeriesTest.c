@@ -21,17 +21,17 @@
  * \author Jolien D. E. Creighton
  * \file
  *
- * \heading{Program \ref FrameStreamTest.c}
+ * ### Program \ref FrameStreamTest.c ###
  *
  * Tests the low-level frame stream routines.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * FrameStreamTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program reads the channels <tt>H1:LSC-AS_Q</tt> from all the fake frames
  * <tt>F-TEST-*.gwf</tt> in the directory set in the environment

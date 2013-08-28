@@ -40,12 +40,13 @@
  * \ingroup LUT_h
  * \brief Tests the construction of the Look up Table (\c LUT)
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * TestConstructPLUT [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * \%TO BE CHANGED
  *
@@ -66,7 +67,8 @@
  * The <b>-p</b> option sets the velocity orientation of the detector
  * \c alpha, \c delta (in radians).
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALHOUGHCalcParamPLUT()
  * LALHOUGHConstructPLUT()

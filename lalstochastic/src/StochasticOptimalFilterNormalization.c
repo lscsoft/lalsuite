@@ -89,7 +89,7 @@
  * variance per unit time \f$\sigma^2/T\f$ of the cross-correlation
  * statistic.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The routine <tt>LALStochasticOptimalFilterNormalization()</tt> first uses
  * \eqref{stochastic_e_lambda} to find the normalization constant
@@ -140,7 +140,7 @@
  * of heterodyned and <tt>StochasticCrossCorrelationStatistic()</tt> in
  * the case of non-heterodyned data.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
  * LALUnitMultiply()
@@ -148,7 +148,7 @@
  * LALUnitCompare()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> The reference frequency \f$f_{\mathrm{R}}\f$ must lie

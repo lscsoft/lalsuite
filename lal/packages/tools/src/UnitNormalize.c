@@ -35,11 +35,11 @@
  * versus \f$\mathrm{m}^{4/2}\f$.  This function reduces all of those fractions to
  * convert the structure to its simplest form.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The rational powers are reduced using Euclid's algorithm [\ref Geddes_1992].
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * Note that the functions <tt>LALUnitRaise()</tt>,
  * <tt>LALUnitMultiply()</tt>, and <tt>LALUnitCompare()</tt> all call

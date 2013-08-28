@@ -24,7 +24,7 @@
  * \ingroup TwoDMesh_h
  * \brief Some metric computation routines suitable for use in LALCreateTwoDMesh()
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module contains metric computation routines suitable for passing
  * into LALCreateTwoDMesh() via the \a params->getMetric

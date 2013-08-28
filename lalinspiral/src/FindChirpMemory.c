@@ -35,7 +35,7 @@
  * \brief Memory management functions for creating and destroying input data and
  * workspace memory for findchirp.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function <tt>LALInitializeDataSegmentVector()</tt> creates a vector of
  * \c DataSegment structures of length and dimension specified in the
@@ -68,11 +68,12 @@
  * The function <tt>LALDestroyFindChirpSegmentVector()</tt> frees the memory of
  * the \c FindChirpSegmentVector at address <tt>*vector</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALCalloc()
  * LALCreateVector()
@@ -84,7 +85,7 @@
  * LALU4DestroyVector()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

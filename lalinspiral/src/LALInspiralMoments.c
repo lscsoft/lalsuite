@@ -42,7 +42,8 @@
  * J(q) \equiv \frac{I(q)}{I(7/3)} \,.
  * \f}
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Given the exponent <tt>pars.ndx</tt> and limits of integration
  * <tt>pars.xmin</tt> and <tt>pars.xmax</tt> this function returns the moment of
  * the power spectral density specified by the frequency series

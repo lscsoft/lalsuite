@@ -46,7 +46,7 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
  * \brief Computes metric components for a pulsar search in the ``Ptolemaic''
  * approximation; both the Earth's spin and orbit are included.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This function computes metric components in a way that yields results
  * very similar to those of LALCoherentMetric() called with the
@@ -57,7 +57,7 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
  * Taylor series expansion is used to improve the accuracy with which several
  * terms are computed.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * For speed and checking reasons, a minimum of numerical computation is
  * involved. The metric components can be expressed analytically (though not
@@ -74,7 +74,7 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
  * scheme as in LALCoherentMetric(). The order of the parameters is
  * \f$(f_0, \alpha, \delta)\f$.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * The analytic metric components were derived separately by Jones and
  * Whitbeck (and partly by Owen) and found to agree.  Also, the output of this

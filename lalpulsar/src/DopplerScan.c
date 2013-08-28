@@ -707,15 +707,18 @@ plotSkyGrid (LALStatus *status,
  * Function for checking if a given point lies inside or outside a given
  * polygon, which is specified by a list of points in a SkyPositionVector.
  *
- * \heading{Note1:}
+ * ### Note1: ###
+ *
  * The list of polygon-points must not close on itself, the last point
  * is automatically assumed to be connected to the first
  *
- * \heading{Algorithm:}
+ * ### Algorithm: ###
+ *
  * Count the number of intersections of rays emanating to the right
  * from the point with the lines of the polygon: even =\> outside, odd =\> inside
  *
- * \heading{Note2:}
+ * ### Note2: ###
+ *
  * we try to get this algorith to count all boundary-points as 'inside'
  * we do this by counting intersection to the left _AND_ to the right
  * and consider the point inside if either of those says its inside...

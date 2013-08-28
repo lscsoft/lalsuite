@@ -66,7 +66,7 @@
  * Users should take care to truncate these points from the time series before
  * using the output in subsequent filtering applications.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The input time series is first low passed to remove any power above the new
  * Nyquist frequency. There are two available low pass filters:

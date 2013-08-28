@@ -32,7 +32,8 @@ extern "C" {
  *
  * \brief This is a simple utility to Read time and frequency series into a file.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ReadFTSeries.h>
  * \endcode
@@ -73,7 +74,7 @@ enum enumMaxLineLength {
  *
  * \brief Each member of this family of functions reads from a file the output of the corresponding \c PrintTimeSeries routine.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * These functions perform I/O operations, which are not a part of LAL
  * proper They should only be used for debugging purposes in test
@@ -93,7 +94,7 @@ void LALZReadTimeSeries(LALStatus* status,  COMPLEX16TimeSeries *series , const 
  *
  * \brief Each member of this family of functions reads from a file the output of the corresponding \c PrintFrequencySeries routine.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * These functions perform I/O operations, which are not a part of LAL
  * proper. They should only be used for debugging purposes in test

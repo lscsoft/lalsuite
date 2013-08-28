@@ -34,7 +34,8 @@ extern "C" {
  *
  * \brief Basic vector manipulation operations.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/VectorOps.h>
  * \endcode

@@ -36,7 +36,7 @@
  *
  * \brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The routine \c LALSnglInspiralTableFromLIGOLw reads in a
  * \c sngl_inspiral table from the LIGOLwXML file specified in \c fileName.
@@ -73,11 +73,12 @@
  * number of rows read in and \c sumHead provides a pointer to the head of a
  * linked list of \c SummValueTables.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * Functions in the Metaio library:
  * <ul>
  * <li> \c MetaioFindColumn
@@ -85,7 +86,8 @@
  * </li><li> \c MetaioOpenTable
  * </li><li> \c MetaioClose
  * </li></ul>
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  * %% Any relevant notes.
  *

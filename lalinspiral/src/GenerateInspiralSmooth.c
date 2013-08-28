@@ -44,7 +44,7 @@
  * \brief Smooths the end of an inspiral waveform by adding an exponential
  * ringdown at the end.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This function creates a smooth ending to an inspiral waveform from
  * GeneratePPNInspiral.  It works by reading in <tt>**output</tt> and the
@@ -63,7 +63,7 @@
  * they will still contain the actual end time of the inspiral part of the
  * waveform.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The function reads in \f$f_{\mathrm{final}}\f$ and
  * \f$(a_{+,\times})_{\mathrm{final}}\f$ then it populates additional data

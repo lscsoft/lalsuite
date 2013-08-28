@@ -25,16 +25,20 @@
  * History:   Created by Sintes May 21, 2003
  * Modified by Krishnan Oct, 2005
  *
- * \heading{\ref PeakSelect.c}
+ * ### \ref PeakSelect.c ###
+ *
  * Routines for reading SFT binary files
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
+ *
  * <tt>PeakSelectHeader1()</tt>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * the output of the periodogram should be properly normalized !!!
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALHO()
  * \endcode

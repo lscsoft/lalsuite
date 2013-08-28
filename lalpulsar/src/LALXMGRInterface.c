@@ -32,7 +32,7 @@
  * \file
  * \ingroup pulsarTODO
  *
- * \heading{Module \ref LALXMGRInterface.c}
+ * ### Module \ref LALXMGRInterface.c ###
  *
  * Functions for creating XMGR graphs from LAL structures and functions.
  *

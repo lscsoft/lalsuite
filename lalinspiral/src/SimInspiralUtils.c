@@ -48,7 +48,7 @@
  *
  * \brief Provides a set of utilities for manipulating \c simInspiralTables.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function <tt>LALInspiralSiteTimeAndDist()</tt> calculates detector end
  * time (\c endTime) and effective distance (\c effDist) for an
@@ -65,11 +65,11 @@
  * is calculated by calling <tt>LALInspiralSiteTimeAndDist()</tt> once for each
  * of the detectors, and setting the \c detector appropriately.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * LALGetInspiralParams(), LALGPStoGMST1(), LALTimeDelayFromEarthCenter(),
  * LALComputeDetAMResponse().

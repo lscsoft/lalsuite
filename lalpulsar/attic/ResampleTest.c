@@ -25,7 +25,8 @@
  *
  * \par Program <tt>ResampleTest.c</tt>
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ResampleTest [-d debuglevel] [-p psfile] [-t tfile] [-c n a f] [-m dec df fm]
  * \endcode

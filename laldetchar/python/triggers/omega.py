@@ -17,7 +17,8 @@
 """Read and write `ASCII` files written by the Omega-pipeline.
 """
 #
-# \heading{Synopsis}
+# ### Synopsis ###
+#
 # ~~~
 # from laldetchar.triggers import omega
 # ~~~

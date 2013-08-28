@@ -42,7 +42,8 @@ extern "C" {
  * detectors, given the appropriate representations of the
  * detector transfer function in each detector.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/SimulateSB.h>
  * \endcode

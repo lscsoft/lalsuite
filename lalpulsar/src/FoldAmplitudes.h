@@ -31,7 +31,7 @@ extern "C" {
  * \defgroup FoldAmplitudes_h Header FoldAmplitudes.h
  * \ingroup pkg_pulsarFold
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/FoldAmplitudes.h>
@@ -48,7 +48,7 @@ extern "C" {
  * %[Generic documentation on the header; this is the main place to
  * %document any stuff not specific to the module]
  *
- * \heading{Structures}
+ * ### Structures ###
  *
  * %[Document here any structures defined in the header.
  * %Also include any of them in the index; e.g.:]

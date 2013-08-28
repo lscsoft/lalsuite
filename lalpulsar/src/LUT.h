@@ -34,7 +34,7 @@ extern "C" {
  * History:   Created by Sintes May 11, 2001
  * Modified by Badri Krishnan Feb 2003
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/LUT.h>

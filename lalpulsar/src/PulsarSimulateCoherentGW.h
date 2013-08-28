@@ -38,7 +38,8 @@ extern "C" {
  * \brief Provides routines to simulate generic gravitational waveforms
  * originating from a particular source.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/PulsarSimulateCoherentGW.h>
  * \endcode
@@ -62,7 +63,8 @@ extern "C" {
  * tidal displacement \f$\delta x=(xh_+ + yh_\times)/2\f$, \f$\delta
  * y=(xh_\times - yh_+)/2\f$.
  *
- * \heading{Quasiperiodic waves:} Most astrophysical sources of
+ * \par Quasiperiodic waves:
+ * Most astrophysical sources of
  * gravitational radiation are described as \e quasiperiodic (or,
  * less accurately, as "adiabatic"), in that they can be said to have
  * an instantaneous frequency, amplitude, and polarization, all of which
@@ -162,7 +164,8 @@ extern "C" {
  * interest.</li>
  * </ol>
  *
- * \heading{The polarization response:} The relative strain induced in
+ * \par The polarization response:
+ * The relative strain induced in
  * the test masses of a detector by a passing gravitational wave depends
  * not only on the amplitudes \f$h_{+,\times}\f$ of the gravitational wave,
  * but also on the design of the detector and its orientation with
@@ -182,7 +185,8 @@ extern "C" {
  * We will not discuss the computation of these functions \f$F_{+,\times}\f$,
  * as these are covered under the header \ref DetResponse_h.
  *
- * \heading{The transfer function:} All gravitational wave detectors
+ * \par The transfer function:
+ * All gravitational wave detectors
  * incorporate a set of analog and digital filters that convert a
  * gravitational excitation on the test masses into a measurable output
  * time series.  The effects of these functions are aggregated into a
@@ -225,7 +229,8 @@ extern "C" {
  * polarization response (above) are linear operators, we can apply them
  * in either order.
  *
- * \heading{A note on terminology:} We use the word "coherent" in the
+ * \par A note on terminology:
+ * We use the word "coherent" in the
  * name of this header in the loosest possible sense, refering to any
  * wave with a well-defined direction of propagation, whose wave
  * amplitudes \f$h_{+,\times}\f$ are deterministic functions of retarded

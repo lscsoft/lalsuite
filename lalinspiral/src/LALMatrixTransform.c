@@ -27,7 +27,8 @@
  * Given the matrix of transformation in \c data1 and a second rank tensor
  * \c data2, this routine computes the transformed tensor in \c data3.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * \f[ C_{ij} = A_{im} A_{jl}  B_{ml}.\f]
  */
 void LALMatrixTransform (LALStatus *status,	/**< LAL status pointer */

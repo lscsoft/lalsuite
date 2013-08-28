@@ -22,13 +22,14 @@
  * \file
  * \ingroup pulsarTODO
  *
- * \heading{Module \ref PulsarCatInput.c}
+ * ### Module \ref PulsarCatInput.c ###
  *
  * Parses a catalogue of pulsar data.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
- * \heading{Description}
+ *
+ * ### Description ###
  *
  * The routine <tt>LALReadPulsarCatHead()</tt> takes a set of tokens
  * <tt>*list</tt> (as generated from an input line by
@@ -92,7 +93,8 @@
  * An asterisk <tt>*</tt> in any field means that the quantity is not
  * measured.  In most cases this means it will be treated as zero.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALWarning()                  LALStringToU2()
@@ -100,7 +102,7 @@
  * LALDCreateVector()            LALDDestroyVector()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * At present, <tt>LALLeapSecs()</tt> fails for times prior to the GPS
  * epoch (1980-01-06 00:00:00, or JD2444244.5000), which prevents earlier

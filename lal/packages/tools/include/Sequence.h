@@ -44,7 +44,8 @@ extern "C" {
 
 /**
  * \name Creation Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Sequence.h>
@@ -53,7 +54,7 @@ extern "C" {
  * LALCreate<sequencetype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions create LAL sequences.  The parameter \c length
  * specifies the length of the desired sequence.  The return value is a
@@ -75,7 +76,7 @@ UINT8Sequence *XLALCreateUINT8Sequence ( size_t length );
 /**
  * \name Destruction Functions
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Sequence.h>
@@ -83,7 +84,7 @@ UINT8Sequence *XLALCreateUINT8Sequence ( size_t length );
  * XLALDestroy<sequencetype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions free all memory associated with a LAL sequence.  It is safe
  * to pass \c NULL to these functions.
@@ -104,7 +105,8 @@ void XLALDestroyUINT8Sequence ( UINT8Sequence *sequence );
 
 /**
  * \name Cutting Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Sequence.h>
@@ -113,7 +115,7 @@ void XLALDestroyUINT8Sequence ( UINT8Sequence *sequence );
  * XLALCopy<sequencetype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions create a new sequence by extracting a section of an
  * existing sequence.
@@ -145,7 +147,8 @@ UINT8Sequence *XLALCopyUINT8Sequence ( UINT8Sequence *sequence );
 
 /**
  * \name Shifting Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Sequence.h>
@@ -153,7 +156,7 @@ UINT8Sequence *XLALCopyUINT8Sequence ( UINT8Sequence *sequence );
  * XLALShift<sequencetype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions shift the samples in a sequence, with zeros being placed in
  * the space that is freed.
@@ -174,7 +177,7 @@ void XLALShiftUINT8Sequence ( UINT8Sequence *sequence, int count );
 /**
  * \name Resizing Functions
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Sequence.h>
@@ -183,7 +186,7 @@ void XLALShiftUINT8Sequence ( UINT8Sequence *sequence, int count );
  * XLALShrink<sequencetype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The resize functions alter the size of an existing sequence.  The sequence
  * is adjusted to have the specified length, and that part of the original
@@ -224,7 +227,8 @@ UINT8Sequence *XLALShrinkUINT8Sequence ( UINT8Sequence *sequence, size_t first, 
 
 /**
  * \name Summing Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Sequence.h>
@@ -235,7 +239,7 @@ UINT8Sequence *XLALShrinkUINT8Sequence ( UINT8Sequence *sequence, size_t first, 
  * XLAL<sequencetype>SumSquares()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The \c XLAL\<datatype\>Sum() and
  * \c XLAL\<datatype\>SumSquares() functions sum the
@@ -250,7 +254,7 @@ UINT8Sequence *XLALShrinkUINT8Sequence ( UINT8Sequence *sequence, size_t first, 
  * In the case of the sequence-related functions, if the sum extends beyond
  * the bounds of the sequence, then the missing values are assumed to be 0.
  *
- * \heading{Bugs}
+ * ### Bugs ###
  *
  * Because the LAL library must conform to the C89 specification, aggregate
  * data types cannot be returned from functions so the COMPLEX8 and COMPLEX16
@@ -303,7 +307,7 @@ UINT8 XLALUINT8SequenceSumSquares ( const UINT8Sequence *sequence, size_t first,
 /**
  * \name Conjugate Functions
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/Sequence.h>
@@ -311,7 +315,7 @@ UINT8 XLALUINT8SequenceSumSquares ( const UINT8Sequence *sequence, size_t first,
  * XLAL<datatype>Conjugate()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions replace a sequence with its complex conjugate.
  *

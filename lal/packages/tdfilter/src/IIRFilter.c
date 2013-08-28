@@ -26,7 +26,7 @@
  *
  * \brief Computes an instant-by-instant IIR filter response.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions pass a time-domain datum to an object <tt>*filter</tt>
  * of type \c REAL4IIRFilter or \c REAL8IIRFilter, and return the

@@ -26,7 +26,7 @@
  *
  * \brief Computes a demodulated Fourier transform (DeFT) given a set of input short Fourier transforms (SFT).
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This routine computes the \f$F\f$ statistic for a set of templates that
  * are defined by: one sky position, a set of spin-down parameters and a
@@ -54,7 +54,7 @@
  * will be returned in addition.  (Memory has to be allocated correctly
  * beforehand!)
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The routine implements the analytical result of Eq.\eqref{DeFT_algo}.
  * It thus uses a nested-loop structure, which computes \f$F\f$ for all the

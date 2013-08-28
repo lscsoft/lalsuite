@@ -58,19 +58,25 @@
 /*********************************************/
 
 /**
- * \heading{Module \ref StackSlide.c}
+ *
+ * ### Module \ref StackSlide.c ###
+ *
  * Computes frequency model, slide stacks accordingly, and sum them.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
+ *
  * <tt>StackSlideComputeSky()</tt>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Slide 'em.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * Sum them.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  */
 
 #include "StackSlide.h"/*This includes isolated/binary info*/

@@ -25,10 +25,12 @@
  *
  * \brief This programs verifies that the routine LALAstroOmega() gives the expected results (computed separetly with mathematica) for a set of input parameters.
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * returns 0 on success, otherwise returns 1.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALAstroOmega()

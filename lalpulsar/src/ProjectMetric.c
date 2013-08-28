@@ -27,7 +27,7 @@
  * \date 2000
  * \ingroup StackMetric_h
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This function takes a metric \f$g_{\alpha\beta}\f$, where
  * \f$\alpha,\beta=0,1,\ldots,n\f$, and computes the projected metric
@@ -47,7 +47,7 @@
  * \f$\gamma_{\alpha0} = \gamma_{0\alpha}\f$ (and their uncertainties) set
  * identically to zero.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The function simply implements Eq.\eqref{eq_gij_gab} in
  * \ref StackMetric_h.  The formula used to convert uncertainties

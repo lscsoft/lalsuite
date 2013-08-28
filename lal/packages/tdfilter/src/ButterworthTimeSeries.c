@@ -33,7 +33,7 @@
  *
  * \brief Applies a low- or high-pass Butterworth filter to a time series.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines perform an in-place time-domain band-pass filtering of
  * a data sequence <tt>*series</tt>, using a Butterworth filter generated
@@ -48,7 +48,7 @@
  * <tt>LALDIIRFilterREAL4Vector()</tt> and
  * <tt>LALDIIRFilterREAL4VectorR()</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The frequency response of a Butterworth low-pass filter is easiest to
  * express in terms of the transformed frequency variable \f$w=\tan(\pi

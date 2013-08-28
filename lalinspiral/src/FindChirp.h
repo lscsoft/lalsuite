@@ -53,7 +53,8 @@ extern "C" {
  * \brief This header provides core prototypes, structures and functions to
  * filter interferometer data for binary inspiral chirps.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/FindChirp.h>
  * \endcode

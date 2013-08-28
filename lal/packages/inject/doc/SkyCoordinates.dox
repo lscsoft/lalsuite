@@ -66,7 +66,7 @@
  *
  * \image html  inject_horizon.png "Fig. [fig_horizon]: Definition of the horizon coordinate system."
  * \image latex inject_horizon.eps "Definition of the horizon coordinate system." width=0.58\textwidth
- * <b>Horizon coordinates:</b>
+ * \par Horizon coordinates:
  * This is a local coordinate system for
  * a particular observation point \f$O\f$ on the Earth, as shown in
  * Fig.\figref{fig_horizon}.  The \f$z\f$-axis is defined to be the direction
@@ -85,7 +85,7 @@
  *
  * \image html  inject_geographic.png "Fig. [fig_geographic]: Definition of the geographic (Earth-fixed) coordinate system."
  * \image latex inject_geographic.eps "Definition of the geographic (Earth-fixed) coordinate system." width=0.38\textwidth
- * <b>Geographic coordinates:</b>
+ * \par Geographic coordinates:
  * This is a planetwide Earth-fixed
  * coordinate system, shown in Fig.\figref{fig_geographic}.  The \f$z\f$-axis
  * is defined to be parallel to the Earth's axis, in the direction of the
@@ -122,7 +122,7 @@
  *
  * \image html  inject_ecliptic.png "Fig. [fig_ecliptic]: Definition of the ecliptic sky-fixed coordinate systems."
  * \image latex inject_ecliptic.eps "Definition of the ecliptic sky-fixed coordinate systems." width=0.41\textwidth
- * <b>Equatorial coordinates:</b>
+ * \par Equatorial coordinates:
  * This is the standard sky-fixed coordinate system.  The \f$z\f$-axis is defined as for geographic
  * coordinates, above; the plane orthogonal to this passing through the
  * Earth's centre is called the <em>equator</em>.  The \f$x\f$-axis is defined
@@ -133,7 +133,7 @@
  * <em>declination</em> \f$\delta\f$ and the longitude coordinate is called the
  * <em>right ascension</em> \f$\alpha\f$.
  *
- * <b>Ecliptic coordinates:</b>
+ * \par Ecliptic coordinates:
  * This is another sky-fixed coordinate
  * system, shown in Fig.\figref{fig_ecliptic}. The \f$z\f$-axis is defined to
  * be the direction orthogonal to the orbital plane of the Earth about
@@ -150,7 +150,7 @@
  *
  * \image html  inject_galactic.png "Fig. [fig_galactic]: Definition of the Galactic coordinate system."
  * \image latex inject_galactic.eps "Definition of the Galactic coordinate system." width=0.455\textwidth
- * <b>Galactic coordinates:</b>
+ * \par Galactic coordinates:
  * This coordinate system is shown in Fig.\figref{fig_galactic}.
  * The \f$z\f$-axis is defined to be the direction
  * orthogonal to the plane of our Galaxy and pointing into the northern

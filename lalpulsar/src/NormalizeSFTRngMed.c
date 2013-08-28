@@ -31,7 +31,7 @@ static const LALStatus empty_LALStatus;
  * History: Created by B. Krishnan Aug, 2004
  * Taken from SFTbin.c and PeakSelect.c from hough dir in lalapps
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module contains functions for normalizing SFTs.  Currently two normalizations
  * are supported.  Given SFT data \f$\tilde{x}_k \f$ where \f$ k\f$ labels a frequency bin,
@@ -44,7 +44,8 @@ static const LALStatus empty_LALStatus;
  * estimated using the median, suitably normalized assuming that the power is
  * distributed is exponentially.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * LALSFTtoPeriodogram ()
  * LALPeriodoToRngmed ()

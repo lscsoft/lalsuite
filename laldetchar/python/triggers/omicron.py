@@ -18,7 +18,8 @@
 """Read Omicron events from ROOT files
 """
 #
-# \heading{Synopsis}
+# ### Synopsis ###
+#
 # ~~~
 # from laldetchar.triggers import omicron
 # ~~~

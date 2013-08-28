@@ -46,7 +46,8 @@ static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
  * coefficients are calculated, and can then be applied to the relevant spindown
  * parameter sets one is using in their search.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * The routine uses a simplistic nested for-loop structure.  The outer loop is
  * over the number of SFTs in the observation timescale; this accounts for the
  * temporal variability of the phase model coefficients.  The inner loop is over
@@ -54,7 +55,7 @@ static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
  * values are calculated using the analytical formulae given in the
  * \ref ComputeSky.h documentation.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * The reference-time, at which the pulsar spin-parameters are defined, is
  * taken to be the start-time *INTERPRETED* as an SSB time (i.e. no translation

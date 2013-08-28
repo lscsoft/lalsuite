@@ -26,7 +26,8 @@
  * \brief Functions to generate the EOBNRv2 waveforms, as defined in
  * Pan et al, arXiv:1106.1021v1 [gr-qc].
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
+ *
  * <tt>LALEOBPPWaveform()</tt>
  * <ul>
  * <li><tt>signalvec: </tt> Output containing the inspiral waveform.

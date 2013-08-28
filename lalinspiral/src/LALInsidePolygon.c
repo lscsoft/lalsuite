@@ -27,7 +27,8 @@
  *
  * \author Cokelaer. T
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * Tested in matlab codes and some BCV tests within lal/lalapps.
  *
  */

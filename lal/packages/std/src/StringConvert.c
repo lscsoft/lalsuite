@@ -25,7 +25,7 @@
  *
  * \brief Converts a string into a numerical value.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines parse the string <tt>*string</tt> and compute a numerical
  * value <tt>*value</tt> of the appropriate datatype.  If
@@ -70,7 +70,7 @@
  * \c REAL8 value, but parses the string specially to retain the
  * full precision of the string representation to the nearest nanosecond.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * These functions (other than \c LALStringToGPS())
  * emulate the standard C functions <tt>strtol()</tt>,

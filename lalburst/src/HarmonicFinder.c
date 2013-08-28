@@ -66,7 +66,8 @@
  * \brief  Given certain harmonic indices \f$\{ k\} \f$  finds the frequency interval
  * location (in bins) of the interference (around \f$k\times f_0\f$).
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This routine determines the lower and upper frequency limit (in bins)
  * of each harmonic line considered, \f$(\nu_{ik}, \nu_{fk})\f$, from the power
  * spectrum.
@@ -96,7 +97,7 @@
  * <dt><tt>out->data</tt></dt><dd>    \f$\{ k,\nu_{ik}, \nu_{fk} \} \f$,       e.g.,  \f$\{3, 9868, 9894, 5, 16449, 16487, 9, 29607, 29675 \ldots\}\f$.</dd>
  * </dl>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * It looks for the location of interference harmonics assuming that
  * the fundamental harmonic is located somewhere in the interval

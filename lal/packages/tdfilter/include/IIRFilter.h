@@ -35,7 +35,8 @@ extern "C" {
  *
  * \brief Provides routines to make and apply IIR filters.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/IIRFilter.h>
  * \endcode

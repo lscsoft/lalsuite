@@ -47,7 +47,8 @@
  *
  * \brief Test suite for <tt>LALDCoarseGrainFrequencySeries()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ./DCoarseGrainFrequencySeriesTest
  * Options:
@@ -63,7 +64,7 @@
  * -f f0          set start frequency of output to f0
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the routine
  * <tt>LALDCoarseGrainFrequencySeries()</tt>, which coarse-grains a
@@ -104,7 +105,7 @@
  * <tt>LALDCoarseGrainFrequencySeries()</tt>, and writes the results to
  * the specified output file.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> In addition to the error checks tested in this routine, the

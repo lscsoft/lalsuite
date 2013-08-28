@@ -39,12 +39,13 @@ extern "C" {
  * \brief Provides routines to generate restricted parametrized
  * post\f${}^{5/2}\f$-Newtonian inspiral waveforms.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/GeneratePPNInspiral.h>
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This header covers routines to generate a "restricted" parametrized
  * post\f${}^{5/2}\f$-Newtonian binary inspiral waveform in the time domain.

@@ -21,9 +21,10 @@
  * \author Mendell, Greg A.
  * \ingroup FoldAmplitudes_h
  *
- * \heading{Module \ref FoldAmplitudes.c}
+ * ### Module \ref FoldAmplitudes.c ###
  *
- * \heading{Description}
+ *
+ * ### Description ###
  *
  * \code
  * Contains source for function LALFoldAmplitudes:
@@ -39,7 +40,7 @@
  * output: a vector of folded amplitude; component i is the folded amplitude for phase bin i.
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * %[A description of the method used to perform the calculation.]
  *
@@ -76,7 +77,7 @@
  *
  * \endcode
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * % List any external functions called by this function.
  *
@@ -85,7 +86,7 @@
  * \code
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * %[Any relevant notes]
  *

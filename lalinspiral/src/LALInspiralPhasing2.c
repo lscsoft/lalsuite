@@ -26,7 +26,7 @@
  * waveform as a function of the
  * instantaneous frequency of the wave, up to \f$2^{nd}\f$ post--Newtonian order.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralPhasing2()</tt>
  * <ul>
@@ -35,18 +35,21 @@
  * <li> \c ak: Input containing PN expansion coefficients.</li>
  * </ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The phase of the inspiral wave corresponding to the ::Approximant #TaylorT2
  * as in Equation\eqref{eq_InspiralWavePhase2} (<tt>correct equation?</tt>)
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
+ *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * None.
  *
- * \heading{Notes}
+ * ### Notes ###
+ *
  * None.
  *
  */

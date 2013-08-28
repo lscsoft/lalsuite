@@ -33,7 +33,7 @@
  * the rational power <tt>*power</tt>.  In this way, units such as
  * \f$\mathrm{s}^{1/2}\f$ and \f$\mathrm{m}^{-1}\f$ can be created using existing units.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The function first multiplies the overall power of ten
  * <tt>input-\>powerOfTen</tt> by the rational number <tt>*power</tt>,

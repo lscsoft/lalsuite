@@ -31,7 +31,8 @@
  * where the constants \f$t,\f$ \f$t_0,\f$ \f$v_0,\f$ and functions in the integrand
  * \f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in the \c void structure <tt>params.</tt>
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * XLALDRombergIntegrate()
  * \endcode

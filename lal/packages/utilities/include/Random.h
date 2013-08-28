@@ -34,7 +34,8 @@ extern "C" {
  *
  * \brief Generates random numbers.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Random.h>
  * \endcode

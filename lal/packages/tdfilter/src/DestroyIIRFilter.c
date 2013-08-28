@@ -28,7 +28,7 @@
  *
  * \brief Destroys IIR filter objects.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions destroy an object <tt>**input</tt> of type
  * \c REAL4IIRFilter or \c REAL8IIRFilter, and set

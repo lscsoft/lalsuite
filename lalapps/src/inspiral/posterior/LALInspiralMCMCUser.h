@@ -5,7 +5,8 @@
  *
  * \brief Header file for the MCMC user code.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALInspiralMCMCUser.h>
  * \endcode

@@ -23,15 +23,17 @@
  * \ingroup FlatMesh_h
  * \brief Creates a template mesh for an arbitrary but constant \f$n\f$-dimensional mismatch metric.
  *
- * \heading{Program <tt>FlatMeshTest.c</tt>}
+ * ### Program <tt>FlatMeshTest.c</tt> ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * FlatMeshTest [-o outfile] [-d debuglevel] [-m mismatch]
  * [eigenvectorfile inversefile rangefile]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This test program creates a template mesh for a parameter space with a
  * constant mismatch metric.  The following option flags are accepted:
@@ -50,7 +52,8 @@
  * arguments are not specified, the information is taken from
  * <tt>\#define</tt>d constants.
  *
- * \heading{\c eigenvectorfile:} This file contains the
+ * \par \c eigenvectorfile:
+ * This file contains the
  * eigenvectors of the \f$n\f$-dimensional mismatch metric \f$\mathsf{g}_{ab}\f$
  * described in \ref FlatMesh_h.  The file format is simply \f$n\f$ lines
  * each containing \f$n\f$ whitespace-separated numbers in any standard
@@ -58,17 +61,19 @@
  * eigenvector; the eigenvector must be normalized so that its squared
  * magnitude is 1 over the corresponding eigenvalue.
  *
- * \heading{\c inversefile:} This file also consists of \f$n\f$ lines
+ * \par \c inversefile:
+ * This file also consists of \f$n\f$ lines
  * each with \f$n\f$ floating-point numbers.  It is simply the matrix inverse
  * of the contents of \c eigenvectorfile taken as an \f$n\times n\f$
  * matrix.
  *
- * \heading{\c rangefile:} This file consists of two lines of \f$n\f$
+ * \par \c rangefile:
+ * This file consists of two lines of \f$n\f$
  * floating-point numbers; these specify two opposite corners of a
  * rectilinear region in parameter space to be covered by the mesh.
  * Additional lines will be ignored.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * For the most part this test program simply reads the input arguments
  * and files, passes them to the function LALCreateFlatMesh()
@@ -97,7 +102,8 @@
  * the search region is ``soft''; i.e.\ that no harm will come of
  * stepping slightly outside it.
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
  * lalDebugLevel
  * LALPrintError()                 LALCheckMemoryLeaks()
@@ -107,7 +113,7 @@
  * LALSCreateVector()              LALSDestroyVector()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 

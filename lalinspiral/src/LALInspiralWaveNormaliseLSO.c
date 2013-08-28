@@ -24,11 +24,12 @@
  * \brief Module to find the norm of a signal and to return a normaliseLSOd
  * array. The original signal is left untouched.
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALInspiralWaveNormaliseLSO()</tt>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * Given the positive frequency Fourier components
  * \f$H_k,\f$ \f$k=0,\ldots,n-1,\f$ of a vector
  * and the noise PSD \f$S_m,\f$ \f$m=0,\ldots,n/2,\f$
@@ -55,13 +56,17 @@
  * & = & 0, \ \ \ \mathrm{k \times in\rightarrow df} > \mathrm{in\rightarrow fCutoff}.
  * \f}
  * In addition, the 0th and Nyquist frequency components are also set to zero.
- * \heading{Algorithm}
- * \heading{Uses}
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
  * \code
  * none.
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  */
 #include <lal/LALNoiseModelsInspiral.h>

@@ -77,7 +77,7 @@ extern "C" {
  * generating a reference interference signal, and removing
  * all the interference harmonics.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include "CLR.h"

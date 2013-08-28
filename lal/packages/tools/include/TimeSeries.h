@@ -50,7 +50,8 @@ extern "C" {
 
 /**
  * \name Creation Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/TimeSeries.h>
@@ -59,7 +60,7 @@ extern "C" {
  * LALCreate<timeseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions create LAL frequency series.  An XLAL function returns a
  * pointer to the newly created series or \c NULL on failure.  The LAL
@@ -84,7 +85,8 @@ UINT8TimeSeries *XLALCreateUINT8TimeSeries ( const CHAR *name, const LIGOTimeGPS
 /**
  * \name Destruction Functions
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/TimeSeries.h>
  *
@@ -92,7 +94,7 @@ UINT8TimeSeries *XLALCreateUINT8TimeSeries ( const CHAR *name, const LIGOTimeGPS
  * LALDestroy<timeseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions free all memory associated with a LAL time series.  It is
  * safe to pass \c NULL to these functions.
@@ -114,7 +116,8 @@ void XLALDestroyUINT8TimeSeries ( UINT8TimeSeries *series );
 
 /**
  * \name Cutting Functions
- * \heading{Synopsis}
+ *
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/TimeSeries.h>
@@ -123,7 +126,7 @@ void XLALDestroyUINT8TimeSeries ( UINT8TimeSeries *series );
  * LALCut<timeseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions create a new time series by extracting a section of an
  * existing time series.
@@ -144,7 +147,7 @@ UINT8TimeSeries *XLALCutUINT8TimeSeries ( const UINT8TimeSeries *series, size_t 
 /**
  * \name Resizing Functions
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/TimeSeries.h>
@@ -155,7 +158,7 @@ UINT8TimeSeries *XLALCutUINT8TimeSeries ( const UINT8TimeSeries *series, size_t 
  * LALShrink<timeseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions resize an existing time series.  The new time series will
  * have the given length, and its contents will consist of that part of the
@@ -190,14 +193,15 @@ UINT8TimeSeries *XLALShrinkUINT8TimeSeries ( UINT8TimeSeries *series, size_t fir
 /**
  * \name Addition Functions
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/TimeSeries.h>
  *
  * XLALAdd<timeseriestype>()
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These functions add the second argument to the first argument, returning a
  * pointer to the first argument on success or NULL on failure.  The two

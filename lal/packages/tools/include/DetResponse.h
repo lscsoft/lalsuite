@@ -41,20 +41,20 @@ extern "C"
  * polarized planar gravitational wave originating from a given source,
  * detected at a given time.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/DetResponse.h>
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines compute the antenna beam pattern for all supported detector
  * types.  <tt>XLALComputeDetAMResponse()</tt> computes the response at one
  * instance in time, and <tt>XLALComputeDetAMResponseSeries()</tt> computes a
  * vector of response for some length of time.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * This code is a translation of the algorithm in the Maple worksheet by
  * Anderson, <em>et al.</em> [\ref Anderson_2000].  We compute the \f$h\f$-tensors for
@@ -66,7 +66,7 @@ extern "C"
  * \c LALDetector structures representing most current detectors,
  * including LIGO (Hanford and Livingston), and GEO.
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * For examples of usage, please see the test programs in the \c test directory.
  *

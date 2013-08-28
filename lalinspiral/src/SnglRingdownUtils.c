@@ -47,7 +47,7 @@
  *
  * \brief Provides a set of utilities for manipulating \c snglRingdownTables.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function <tt>LALFreeSnglInspiral()</tt> frees the memory associated to a
  * single inspiral table.  The single inspiral table may point to a linked list
@@ -124,11 +124,11 @@
  * Triggers are tested for coincidence in \c m1_and_m2 or
  * \c psi0_and_psi3.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * None.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * LALCalloc(), LALFree(), LALINT8NanoSecIsPlayground().
  *

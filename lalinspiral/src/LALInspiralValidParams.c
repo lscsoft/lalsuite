@@ -36,7 +36,7 @@
  * constraint \c mMin\f$\le m_1, m_2,\f$ and \c MMax\f$\le m=m_1+m_2\f$
  * are treated as valid.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * We start with the definition of the chirp times \f$\tau_{0}\f$ and \f$\tau_{3}\f$,
  * \f{equation}{

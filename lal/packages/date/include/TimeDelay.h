@@ -35,12 +35,13 @@ extern "C"
  *
  * \brief Provides routines to compute time delay between two detectors
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/TimeDelay.h>
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The function XLALTimeDelayFromEarthCenter() Computes difference in arrival
  * time of the same signal at detector and at center of Earth-fixed frame.
@@ -53,7 +54,7 @@ extern "C"
  * populated with the \c real travel time of a putative signal for the given time and the given sky
  * location (in right ascension and declination, both given in degrees).
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * TBA. See Anderson, <em>et al.</em> [\ref ABCF2000] in the mean time.
  *

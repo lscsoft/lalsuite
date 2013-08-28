@@ -44,7 +44,7 @@
  * adds the nearest corresponding time sample from <tt>*signalvec</tt>,
  * without performing any dithering.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithm is as given in \ref InjectVector_c, with the following
  * additional considerations.  Since the two time series each carry their

@@ -28,7 +28,7 @@
  * current directory. [This is an obsolete test program that should
  * be refactored with access to the new frameless LALSTPNWaveform.]
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * <tt>LALSTPNWaveformTest [switch]</tt>
  *

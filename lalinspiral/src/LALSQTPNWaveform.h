@@ -22,7 +22,7 @@ extern "C" {
  * \ingroup pkg_CBC_NEW
  * \brief Contains the enumerations, structures and functions declarations to create GWforms.
  *
- * \heading{Notations}
+ * ### Notations ###
  *
  * \f$M=M_{in}M_\odot G/c^3\f$<br />
  * \f$\hat{L_N}=\left(\sin\iota,0,\cos\iota\right)\f$ is the direction of the

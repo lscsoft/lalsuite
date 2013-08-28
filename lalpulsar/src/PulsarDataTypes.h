@@ -32,7 +32,8 @@ extern "C" {
  * \ingroup pkg_pulsarCommon
  * \brief Some common useful data-types for pulsar-searches.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/PulsarDataTypes.h>
  * \endcode

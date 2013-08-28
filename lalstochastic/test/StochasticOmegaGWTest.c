@@ -24,7 +24,7 @@
  *
  * \brief A program to test <tt>LALStochasticOmegaGW()</tt>.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * ./StochasticOmegaGWTest [options]
@@ -42,7 +42,7 @@
  * -o filename    print gravitational-wave spectrum to file filename
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program tests the function <tt>LALStochasticOmegaGW()</tt>, which outputs a
  * power law spectrum
@@ -92,7 +92,7 @@
  * \image html  stochasticOmegaGWQuadratic.png "Fig. [stochastic_quadOmega]: A quadratic stochastic gravitational-wave background spectrum."
  * \image latex stochasticOmegaGWQuadratic.pdf "A quadratic stochastic gravitational-wave background spectrum."  width=4in
  *
- * \heading{Uses}
+ * ### Uses ###
  *
  * \code
  * lalDebugLevel
@@ -104,7 +104,7 @@
  * LALCheckMemoryLeaks()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  * <li> No specific error checking is done on user-specified data.  If

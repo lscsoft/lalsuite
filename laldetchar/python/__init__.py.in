@@ -5,7 +5,9 @@
 """This package provides a variety of tools for manipulating data for
 detector charaterisation purposes.
 """
-#\heading{Synopsis}
+#
+# ### Synopsis ###
+#
 #~~~
 #import laldetchar
 #~~~

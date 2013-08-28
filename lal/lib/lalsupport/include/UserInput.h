@@ -35,7 +35,7 @@ extern "C" {
  * \author Reinhard Prix
  * \brief Module for simple unified handling of user-input from config-file and/or command-line.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This module provides simple function and macros to 'register' a set of C-variables as 'User Variables',
  * which can then be read in from the commandline and/or an input config file, as parsed by \ref ConfigFile_h.
@@ -43,7 +43,7 @@ extern "C" {
  * The module handles generating and outputting a help-string on the available inputs when requested, and
  * can deal with required inputs and providing defaults.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * The general approach consists of these steps
  * <ol>

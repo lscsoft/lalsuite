@@ -33,7 +33,7 @@
  * The \f$dx_i\f$ returned by this function gives the spacing for a
  * square lattice (e.g., \f$dx_i\f$ as given in [\ref Owen_96].
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * Copy the parameters in the temporary parameter structure
  * to the current parameter structure.

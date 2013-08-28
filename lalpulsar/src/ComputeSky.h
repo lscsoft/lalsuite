@@ -24,7 +24,8 @@
  *
  * \brief Computes phase coefficients necessary for a correct demodulation.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ComputeSky.h>
  * \endcode

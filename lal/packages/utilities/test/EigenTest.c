@@ -24,12 +24,13 @@
  *
  * \brief Computes the eigenvalues and eigenvectors of a matrix.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * EigenTest [-n size | -i infile] [-o outfile] [-v] [-t] [-s] [-d debuglevel]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program computes the eigenvalues and eigenvectors of a symmetric
  * real matrix using the routines in \ref Eigen_c and
@@ -63,7 +64,8 @@
  * specified, level 0 is assumed.</li>
  * </ul>
  *
- * \heading{Input format:} If an input file or stream is specified, it
+ * \par Input format:
+ * If an input file or stream is specified, it
  * should consist of \f$N\f$ consecutive lines of \f$N\f$ whitespace-separated
  * numbers, that will be parsed using <tt>LALDReadVector()</tt>, or
  * <tt>LALSReadVector()</tt> if the <tt>-s</tt> option was given.  The data
@@ -74,7 +76,8 @@
  * then an error is returned; if there are \e more lines than
  * columns, then the extra lines are ignored.
  *
- * \heading{Output format:} If an output file or stream is specified,
+ * \par Output format:
+ * If an output file or stream is specified,
  * the input matrix is first written as \f$N\f$ consecutive lines of \f$N\f$
  * whitespace-separated numbers.  This will be followed with a blank
  * line, then a single line of \f$N\f$ whitespace-separated numbers

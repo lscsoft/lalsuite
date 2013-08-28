@@ -23,14 +23,16 @@
  * \ingroup PtoleMetric_h
  * \brief Tests the LALPtoleMetric() function.
  *
- * \heading{Program \c PtoleMetricTest}
+ * ### Program \c PtoleMetricTest ###
  *
- * \heading{Usage}
+ *
+ * ### Usage ###
+ *
  * \code
  * PtoleMetricTest
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program computes metric components using LALPtoleMetric(). The
  * ordering of the components is \f$(f_0, \alpha, \delta, f_1, \ldots)\f$ for the
@@ -69,9 +71,10 @@
  * system call to the \c xmgrace program, and will not work if that
  * program is not installed on your system.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
  *
  * \code
  * lalDebugLevel
@@ -85,7 +88,7 @@
  * xmgrace
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * The graph shows that the patches' overall area is independent of right
  * ascension but that those near the equator rotate, which adds a new

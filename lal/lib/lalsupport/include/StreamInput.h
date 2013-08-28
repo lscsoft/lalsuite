@@ -33,7 +33,8 @@ extern "C" {
  *
  * \brief Provides routines to read data from an open stream and store it in LAL data structures.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include "StreamInput.h"
  * \endcode
@@ -111,7 +112,7 @@ extern "C" {
  *
  * \brief Reads data from a single line in an input stream.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines read ASCII data from the I/O stream <tt>*stream</tt>
  * until a newline or the end-of-input is reached.  (The line can be of
@@ -179,7 +180,7 @@ void LALDReadVector( LALStatus  *status, REAL8Vector **vector, FILE *stream, BOO
  *
  * \brief Reads the entire contents of an input stream into a vector sequence.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines read data from the I/O stream <tt>*stream</tt> until the
  * end-of-input is reached.  Each line is stored as a data vector, and
@@ -203,7 +204,7 @@ void LALDReadVector( LALStatus  *status, REAL8Vector **vector, FILE *stream, BOO
  * allocated (and padded with zeros, if it is shorter than the longest
  * line).
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * These functions first create a linked list of vectors, using the
  * routines in \ref StreamVectorInput.c to read them in.  Once the list
@@ -241,7 +242,7 @@ void LALDReadVectorSequence( LALStatus  *status, REAL8VectorSequence **sequence,
  *
  * \brief Converts an input stream into a data sequence.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * These routines read data from the I/O stream <tt>*stream</tt> until the
  * end-of-input is reached.  (The input can be of arbitrary length; the
@@ -274,7 +275,7 @@ void LALDReadVectorSequence( LALStatus  *status, REAL8VectorSequence **sequence,
  * these routines have no mechanism to deal with comments; every
  * whitespace-delimited substring will be treated as a number.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * These routines read data into a linked list of buffers, to allow
  * memory allocation to occur in batches for improved efficiency.  The

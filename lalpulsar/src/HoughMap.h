@@ -34,7 +34,7 @@ extern "C" {
  *
  * \brief Provides subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
  *
  * \code
  * #include <lal/HoughMap.h>
