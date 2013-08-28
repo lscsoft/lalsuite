@@ -46,10 +46,11 @@
 
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
-#include "ComputeFstat_RS.h"
-#include "../FDS_isolated/Fstat_v3.h"
+#include <lal/LFTandTSutils.h>
 #include <lal/ComplexAM.h>
 #include <lal/TimeSeries.h>
+
+#include "ComputeFstat_OldResampAPI.h"
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)

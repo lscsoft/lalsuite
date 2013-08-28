@@ -63,7 +63,6 @@
 
 /* more efficient toplist using heaps */
 #include "GCTtoplist.h"
-#include "ComputeFstat_RS.h"
 
 
 /******************************************************

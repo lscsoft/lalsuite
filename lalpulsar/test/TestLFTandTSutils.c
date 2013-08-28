@@ -21,8 +21,7 @@
 /**
  * \author R. Prix
  * \file
- * \brief
- * unit-test for Fstat_v3 module
+ * \brief Unit tests for TestLFTandTSutils module
  *
  */
 #include "config.h"
@@ -50,9 +49,7 @@
 
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/ComputeFstat.h>
-#include "Fstat_v3.h"
-
-#include <lalapps.h>
+#include <lal/LFTandTSutils.h>
 
 /* local includes */
 
@@ -180,8 +177,8 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
 
   /* debug output */
   {
-    const CHAR *fnameTS = "testFstat_v3-timeseries.dat";
-    const CHAR *fnameLFT = "testFstat_v3-LFT.sft";
+    const CHAR *fnameTS = "testLFTandTSutils-timeseries.dat";
+    const CHAR *fnameLFT = "testLFTandTSutils-LFT.sft";
     FILE *fp;
 
     if ( (fp = fopen(fnameTS, "wb")) == NULL ) {
@@ -192,7 +189,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
     fclose ( fp );
 
     /*
-    LALWriteSFTVector2Dir (&status, sfts, "./", "test SFTs with random data", "testFstat_v3" );
+    LALWriteSFTVector2Dir (&status, sfts, "./", "test SFTs with random data", "testLFTandTSutils" );
     if ( status.statusCode ) {
       XLALPrintError("\n%s: LALWriteSFTVector2Dir() failed, with LAL error %d\n", __func__, status.statusCode );
       return TEST_ABORTED;

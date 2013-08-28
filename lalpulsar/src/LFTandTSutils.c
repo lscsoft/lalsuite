@@ -17,32 +17,19 @@
  *  MA  02111-1307  USA
  */
 
-/*********************************************************************************/
-/**
- * \author R. Prix
- * \file Fstat_v3.c
- * \brief
- * Calculate the Fourier transform over the total timespan from a set of SFTs
- *
- */
 #include "config.h"
 
 /* System includes */
 #include <stdio.h>
 
 /* LAL-includes */
+#include <lal/LFTandTSutils.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
 #include <lal/TimeSeries.h>
 #include <lal/ComplexFFT.h>
-
 #include <lal/ComputeFstat.h>
-#include "Fstat_v3.h"
-
-#include <lalapps.h>
-
-/* local includes */
 
 /*---------- DEFINES ----------*/
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )

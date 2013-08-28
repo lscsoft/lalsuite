@@ -23,6 +23,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat_OldDemodAPI.h>
+#include <lal/ComputeFstat_OldResampAPI.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -11,6 +11,7 @@ lalpulsarinclude_HEADERS = \
 	ComplexAM.h \
 	ComputeFstat.h \
 	ComputeFstat_OldDemodAPI.h \
+	ComputeFstat_OldResampAPI.h \
 	ComputeSky.h \
 	ComputeSkyBinary.h \
 	DetectorStates.h \
@@ -37,6 +38,7 @@ lalpulsarinclude_HEADERS = \
 	LALPulsarLibVCSInfo.h \
 	LALPulsarVCSInfo.h \
 	LALXMGRInterface.h \
+	LFTandTSutils.h \
 	LISAspecifics.h \
 	LUT.h \
 	LatticeCovering.h \
@@ -72,6 +74,7 @@ liblalpulsar_la_SOURCES = \
 	ComplexAM.c \
 	ComputeFstat.c \
 	ComputeFstat_OldDemodAPI.c \
+	ComputeFstat_OldResampAPI.c \
 	ComputeSky.c \
 	ComputeSkyBinary.c \
 	ConstructPLUT.c \
@@ -102,6 +105,7 @@ liblalpulsar_la_SOURCES = \
 	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
+	LFTandTSutils.c \
 	LISAspecifics.c \
 	LatticeCovering.c \
 	CWMakeFakeData.c \

@@ -15,8 +15,6 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_synthesizeBstatMC lalapps_synthesizeTransientStats \
 	lalapps_synthesizeLVStats lalapps_ComputeFStatistic_v2_SSE
 
-check_PROGRAMS = testFstat_v3
-
 EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat eah_ComputeFStatistic_v2 \
 		 lalapps_ComputeFStatistic_v2_cuda
 
@@ -60,8 +58,7 @@ lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 lalapps_compareFstats_SOURCES = compareFstats.c
 
 ComputeFStatisticV2Sources = ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h \
-	$(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h \
-	../GCT/ComputeFstat_RS.c Fstat_v3.c Fstat_v3.h
+	$(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h
 
 
 lalapps_ComputeFStatistic_v2_SOURCES = $(ComputeFStatisticV2Sources)
@@ -93,15 +90,13 @@ lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c \
 				  HeapToplist.c HeapToplist.h \
 				  $(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h
 
-lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
-
-testFstat_v3_SOURCES = testFstat_v3.c Fstat_v3.c Fstat_v3.h
+lalapps_CFSv3_SOURCES = CFSv3.c
 
 
 EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2_resamp.sh
 
 
-TESTS = testFStat.sh testPredictFStat.sh testFstat_v3
+TESTS = testFStat.sh testPredictFStat.sh
 
 if !CONDOR_ENABLED
 TESTS += testCFSv2.sh testCFSv2_resamp.sh testGridv2.sh
@@ -111,8 +106,6 @@ endif
 TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
-
-CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
 
 # how to compile CUDA files (.cu)
 NVCC ?= nvcc

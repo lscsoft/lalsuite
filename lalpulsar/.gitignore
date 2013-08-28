@@ -58,6 +58,7 @@ test/TestConstructPLUT
 test/TestDriveHough
 test/TestDriveNDHough
 test/TestHoughMap
+test/TestLFTandTSutils
 test/TestNDConstructPLUT
 test/TestNDHoughMap
 test/TestNDPeak2PHMD
@@ -72,3 +73,5 @@ test/outputsft_v1.sft
 test/outputsft_v2.sft
 test/outputsftv2_v1.sft
 test/outputsftv2_v2.sft
+test/testLFTandTSutils-LFT.sft
+test/testLFTandTSutils-timeseries.dat

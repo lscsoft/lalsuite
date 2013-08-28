@@ -56,8 +56,11 @@ int finite(double);
 #include <lal/GSLSupport.h>
 
 #include <lal/NormalizeSFTRngMed.h>
-#include <lal/ComputeFstat.h>
 #include <lal/LALHough.h>
+
+// hack to prevent LALPulsar resampling code from being included
+#define _COMPUTEFSTAT_OLDRESAMPAPI_H
+#include <lal/ComputeFstat.h>
 
 #include <lal/LogPrintf.h>
 #include <lal/DopplerFullScan.h>

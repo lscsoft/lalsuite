@@ -18,27 +18,20 @@
  */
 
 /**
- * \defgroup CFSv3 F-statistic (v3)
- * \ingroup pulsarTODO
+ * \defgroup LFTandTSutils_h Header LFTandTSutils.h
+ * \ingroup pkg_SFTIO
  * \author Reinhard Prix
- * \brief Module for FFT-based F-statistic calculation
- *
+ * \date 2009
+ * \brief Utility functions for working with Long Fourier Transforms and Time Series.
  */
+/*@{*/
 
-/**
- * \file
- * \ingroup CFSv3
- * \author Reinhard Prix
- * \brief Header file defining the API for the CFSv3 module
- */
-
-#ifndef _FSTAT_V3_H  /* Double-include protection. */
-#define _FSTAT_V3_H
+#ifndef _LFTANDTSUTILS_H  /* Double-include protection. */
+#define _LFTANDTSUTILS_H
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
-
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/SFTutils.h>
@@ -66,12 +59,10 @@ int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
 int XLALTimeShiftSFT ( SFTtype *sft, REAL8 shift );
 int XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft, COMPLEX8 factor );
 
+/*@}*/
 
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */
 
 #endif  /* Double-include protection. */
-
-
-

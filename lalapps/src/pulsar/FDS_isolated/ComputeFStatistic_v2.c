@@ -75,7 +75,6 @@ int finite(double);
 #include "HeapToplist.h"
 
 #include "../GCT/LineVeto.h"
-#include "../GCT/ComputeFstat_RS.h"
 
 /*---------- DEFINES ----------*/
 

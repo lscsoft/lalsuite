@@ -17,8 +17,7 @@ EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc
 HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
                           GCTtoplist.c GCTtoplist.h \
                           $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
-                          $(CFSsrc)/ComputeFStatistic.h $(OPTsrc)/LocalComputeFstat.c $(CFSsrc)/Fstat_v3.c \
-			  ComputeFstat_RS.c ComputeFstat_RS.h \
+                          $(CFSsrc)/ComputeFStatistic.h \
 			  LineVeto.c LineVeto.h
 
 lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
@@ -75,7 +74,6 @@ NVCC ?= nvcc
 eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
     eah_HierarchSearchGCT-GCTtoplist.o \
     eah_HierarchSearchGCT-HeapToplist.o \
-    eah_HierarchSearchGCT-Fstat_v3.o \
     eah_HierarchSearchGCT-ComputeFstat_RS.o \
     eah_HierarchSearchGCT-LineVeto.o \
     eah_HierarchSearchGCT-hs_boinc_extras.o \

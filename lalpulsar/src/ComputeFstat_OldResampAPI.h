@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef _COMPUTEFSTATRS_H  /* Double-include protection. */
-#define _COMPUTEFSTATRS_H
+#ifndef _COMPUTEFSTAT_OLDRESAMPAPI_H  /* Double-include protection. */
+#define _COMPUTEFSTAT_OLDRESAMPAPI_H
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -67,9 +67,9 @@ extern "C" {
 /*---------- exported types ----------*/
 
 /** Multi-IFO container for COMPLEX8 resampled timeseries */
-typedef struct {
-  UINT4 length;		                /**< number of IFOs */
-  COMPLEX8TimeSeries **data;	    /**< array of COMPLEX8TimeSeries (pointers) */
+typedef struct tagMultiCOMPLEX8TimeSeries {
+  UINT4 length;                         /**< number of IFOs */
+  COMPLEX8TimeSeries **data;        /**< array of COMPLEX8TimeSeries (pointers) */
 } MultiCOMPLEX8TimeSeries;
 
 /**
@@ -94,7 +94,7 @@ struct tagComputeFBuffer_RS {
  * Struct holding a vector of buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  */
-typedef struct {
+typedef struct tagComputeFBufferVector_RS {
   ComputeFBuffer_RS **data;                                    /**< pointer to a series of ComputeFBuffer_RS structures */
   UINT4 length;                                               /**< the length of the vector */
 } ComputeFBufferVector_RS;
