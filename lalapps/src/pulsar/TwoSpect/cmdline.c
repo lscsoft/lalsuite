@@ -93,8 +93,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --useSSE                  Use SSE functions (caution: user needs to have \n                                  compiled for SSE or program fails)  \n                                  (default=off)",
   "      --followUpOutsideULrange  Follow up outliers outside the range of the UL \n                                  values  (default=off)",
   "\nInjection options:",
-  "      --timestampsFile=@path/filename\n                                File to read timestamps from (file-format: \n                                  lines with <seconds> <nanoseconds>; conflicts \n                                  with --sftDir/--sftFile options) with a \n                                  required preceding @ symbol",
-  "      --injectionSources=path/filename\n                                File containing sources to inject",
+  "      --timestampsFile=path/filename\n                                File to read timestamps from (file-format: \n                                  lines with <seconds> <nanoseconds>; conflicts \n                                  with --sftDir/--sftFile options)",
+  "      --injectionSources=@path/filename\n                                File containing sources to inject with a \n                                  required preceding @ symbol",
   "      --injRandSeed=INT         Random seed value for reproducable noise \n                                  (conflicts with --sftDir/--sftFile options)  \n                                  (default=`0')",
   "\nHidden options:",
   "      --signalOnly              SFTs contain only signal, no noise  \n                                  (default=off)",
@@ -2418,7 +2418,7 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) with a required preceding @ symbol.  */
+          /* File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options).  */
           else if (strcmp (long_options[option_index].name, "timestampsFile") == 0)
           {
           
@@ -2432,7 +2432,7 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* File containing sources to inject.  */
+          /* File containing sources to inject with a required preceding @ symbol.  */
           else if (strcmp (long_options[option_index].name, "injectionSources") == 0)
           {
           

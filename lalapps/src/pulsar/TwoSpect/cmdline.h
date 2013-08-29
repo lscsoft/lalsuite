@@ -188,12 +188,12 @@ struct gengetopt_args_info
   const char *useSSE_help; /**< @brief Use SSE functions (caution: user needs to have compiled for SSE or program fails) help description.  */
   int followUpOutsideULrange_flag;	/**< @brief Follow up outliers outside the range of the UL values (default=off).  */
   const char *followUpOutsideULrange_help; /**< @brief Follow up outliers outside the range of the UL values help description.  */
-  char * timestampsFile_arg;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) with a required preceding @ symbol.  */
-  char * timestampsFile_orig;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) with a required preceding @ symbol original value given at command line.  */
-  const char *timestampsFile_help; /**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) with a required preceding @ symbol help description.  */
-  char * injectionSources_arg;	/**< @brief File containing sources to inject.  */
-  char * injectionSources_orig;	/**< @brief File containing sources to inject original value given at command line.  */
-  const char *injectionSources_help; /**< @brief File containing sources to inject help description.  */
+  char * timestampsFile_arg;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options).  */
+  char * timestampsFile_orig;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) original value given at command line.  */
+  const char *timestampsFile_help; /**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) help description.  */
+  char * injectionSources_arg;	/**< @brief File containing sources to inject with a required preceding @ symbol.  */
+  char * injectionSources_orig;	/**< @brief File containing sources to inject with a required preceding @ symbol original value given at command line.  */
+  const char *injectionSources_help; /**< @brief File containing sources to inject with a required preceding @ symbol help description.  */
   int injRandSeed_arg;	/**< @brief Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options) (default='0').  */
   char * injRandSeed_orig;	/**< @brief Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options) original value given at command line.  */
   const char *injRandSeed_help; /**< @brief Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options) help description.  */
