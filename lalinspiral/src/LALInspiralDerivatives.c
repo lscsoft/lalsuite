@@ -23,7 +23,7 @@
  * \ingroup LALInspiral_h
  *
  * \brief Module to calculate the RHS of the differential equations
- * in Eq.\eqref{eq_ode2}.
+ * in \eqref{eq_ode2}.
  *
  * ### Prototypes ###
  *
@@ -45,10 +45,10 @@
  * solved to obtain the gravitational wave phasing equation,
  * as described in the documentation for the function \c LALInspiralWave1:
  * The equations are
- * \anchor ode2 \f{equation}{
+ * \f{equation}{
+ * \label{ode2}
  * \frac{dv}{dt} = - \frac{\mathcal{F}(v)}{m E^{\prime}(v)},\ \ \ \
  * \frac{d \phi(t)}{dt} = \frac{2v^{3}}{m}.
- * \tag{ode2}
  * \f}
  *
  * ### Algorithm ###

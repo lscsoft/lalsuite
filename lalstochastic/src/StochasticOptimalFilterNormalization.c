@@ -28,7 +28,8 @@
  * As described in \ref StochasticOptimalFilter_c,
  * the optimal filter for stochastic searches is defined as
  *
- * \anchor stochastic_e_Q \f{equation}{\tag{stochastic_e_Q}
+ * \f{equation}{
+ * \label{stochastic_e_Q}
  * \widetilde{Q}{}^{\mathrm{C}}(f)=\lambda\,
  * \frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
  * {|f|^3\,P^{\mathrm{C}}_1(f)\,P^{\mathrm{C}}_2(f)}
@@ -36,21 +37,21 @@
  *
  * The normalization constant \f$\lambda\f$ is chosen so that the expected mean
  * value of the cross-correlation statistic is [\ref Allen1999]
- * \anchor stochastic_e_mu \f{equation}{
+ * \f{equation}{
+ * \label{stochastic_e_mu}
  * \mu = \frac{3 {H_0}^2}{20\pi^2}\, T \,\overline{w_1w_2}
  * \int_{-\infty}^{\infty} df\, |f|^{-3}\,
  * \gamma(f)\,\Omega_{\mathrm{GW}}(f)
  * \widetilde{Q}{}^{\mathrm{C}}(f) = \Omega_{\mathrm{R}} T
- * \tag{stochastic_e_mu}
  * \f}
  * where \f$T\f$ is the integration time
- * (cf.\eqref{stochastic_e_ymax}, \f$w_1\f$ and \f$w_2\f$ are the functions
+ * (cf. \eqref{stochastic_e_ymax}, \f$w_1\f$ and \f$w_2\f$ are the functions
  * used to window the data, and
  * \f$\Omega_{\mathrm{R}} =\Omega_{\mathrm{GW}}(f_{\mathrm{R}})\f$ is the overall strength of the
  * stochastic background (see \ref OverlapReductionFunction_c).  This sets the
  * value at
- * \anchor stochastic_e_lambda \f{equation}{
- * \tag{stochastic_e_lambda}
+ * \f{equation}{
+ * \label{stochastic_e_lambda}
  * \lambda = \frac{20\pi^2\, \Omega_{\mathrm{R}}}
  * {3\,{H_0}^2 \overline{w_1w_2}}
  * \left(
@@ -62,7 +63,8 @@
  * The same integral used to calculate \f$\lambda\f$ also allows one to
  * calculate the expected variance per unit integration time of the
  * cross-correlation statistic, since
- * \anchor stochastic_e_variance \f{eqnarray}{
+ * \f{eqnarray}{
+ * \label{stochastic_e_variance}
  * \frac{\sigma^2}{T}
  * &=& \frac{\overline{(w_1w_2)^2}}{4T}\int_{-\infty}^{\infty} df
  * \, P^{\mathrm{C}}_1(f)\, P^{\mathrm{C}}_2(f)\,
@@ -71,21 +73,18 @@
  * \right)^2
  * = \frac{\lambda}{4T} \overline{(w_1w_2)^2}
  * \int_{-\infty}^{\infty} \frac{df}{|f|^3}\,\gamma(f)\,
- * \Omega_{\mathrm{GW}}(f)\,\widetilde{Q}{}^{\mathrm{C}}(f)
- * \nonumber
- * \\
- * \tag{stochastic_e_variance}
+ * \Omega_{\mathrm{GW}}(f)\,\widetilde{Q}{}^{\mathrm{C}}(f) \\
  * &=& \frac{5\pi^2}{3 {H_0}^2}
  * \,\frac{\overline{(w_1w_2)^2}}{\overline{w_1w_2}}
  * \,\Omega_{\mathrm{R}} \,\lambda
  * \f}
- * where we have used\eqref{stochastic_e_Q} to replace one of the two
- * factors of \f$\widetilde{Q}{}^{\mathrm{C}}(f)\f$ and\eqref{stochastic_e_mu} to replace
+ * where we have used \eqref{stochastic_e_Q} to replace one of the two
+ * factors of \f$\widetilde{Q}{}^{\mathrm{C}}(f)\f$ and \eqref{stochastic_e_mu} to replace
  * the integral.
  *
  * <tt>LALStochasticOptimalFilterNormalization()</tt> uses
  * \eqref{stochastic_e_lambda} to calculate the normalization constant
- * \f$\lambda\f$ and\eqref{stochastic_e_variance} to calculate the expected
+ * \f$\lambda\f$ and \eqref{stochastic_e_variance} to calculate the expected
  * variance per unit time \f$\sigma^2/T\f$ of the cross-correlation
  * statistic.
  *
@@ -109,9 +108,7 @@
  * \delta f\sum_{k=0}^{N-1}
  * (f_0 + k\,\delta f)^{-6}
  * \frac{(\gamma[k]\,\Omega_{\mathrm{GW}}[k])^2}{P^{\mathrm{C}}_1[k]P^{\mathrm{C}}_2[k]}
- * \right)^{-1}
- * \nonumber
- * \\
+ * \right)^{-1} \\
  * &\approx&
  * \frac{20\pi^2\, \Omega_{\mathrm{R}}}{3\,{H_0}^2}
  * \left(
@@ -135,7 +132,7 @@
  * \f}
  * which includes negative frequencies as well.  The difference
  * between the two is because the cross-correlation statistic appearing
- * in the definition\eqref{stochastic_e_mu} is the one calculated by
+ * in the definition \eqref{stochastic_e_mu} is the one calculated by
  * <tt>StochasticHeterodynedCrossCorrelationStatistic()</tt> in the case
  * of heterodyned and <tt>StochasticCrossCorrelationStatistic()</tt> in
  * the case of non-heterodyned data.
@@ -188,7 +185,7 @@
  * points.  However, the limited dynamic range can pose a problem,
  * especially in this routine, which uses numbers like \f$H_0^2\f$ which
  * are far from unity when expressed in the standard SI units.  To
- * avoid this problem, the application of\eqref{stochastic_e_lambda}
+ * avoid this problem, the application of \eqref{stochastic_e_lambda}
  * takes the units \f$H_0\f$ of to be \f$10^{-18}\,\textrm{s}^{-1}\f$ rather
  * than \f$\textrm{s}^{-1}\f$.  In these units \f$h_{100}H_0\f$ has a numerical
  * value of \f$3.2407792903\f$, and inclusion of \f$(h_{100}H_0)^2\f$ in an

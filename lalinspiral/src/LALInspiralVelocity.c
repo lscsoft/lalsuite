@@ -33,9 +33,9 @@
  *
  * The function \c XLALInspiralVelocity() calculates the velocity \f$v\f$ corresponding to a time \f$t\f$
  * in the evolution of an inspiralling binary system.  It does this by iteratively solving
- * \anchor tofv \f{equation}{
+ * \f{equation}{
+ * \label{tofv}
  * t(v) =  t_{0} - m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
- * \tag{tofv}
  * \f}
  * \c LALInspiralVelocity() calculates \f$v\f$, given \f$t(v)\f$,
  * \f$t_{0}\f$, \f$m\f$, \f$v_{0}\f$, \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.

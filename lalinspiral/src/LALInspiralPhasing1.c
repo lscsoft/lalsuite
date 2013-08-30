@@ -34,9 +34,9 @@
  *
  * The function \c XLALInspiralPhasing1() calculates the phase \f$\phi(v)\f$ using
  * the phasing formula,
- * \anchor phiofv \f{equation}{
+ * \f{equation}{
+ * \label{phiofv}
  * \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
- * \tag{phiofv}
  * \f}
  * \c XLALInspiralPhasing1() calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,
  * \f$v\f$, \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.  The user can specify the phase to

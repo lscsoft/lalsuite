@@ -44,7 +44,7 @@
  * LALInspiralWave3() generates #TaylorT3 approximant which
  * corresponds to the case wherein
  * the phase of the waveform is given as an explicit function of time
- * as in Equation.\eqref{eq_InspiralWavePhase3}.
+ * as in \eqref{eq_InspiralWavePhase3}.
  *
  * LALInspiralWave3Templates() simultaneously generates
  * two inspiral waveforms and the two differ in

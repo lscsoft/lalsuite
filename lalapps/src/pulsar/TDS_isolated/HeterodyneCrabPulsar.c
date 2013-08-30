@@ -66,7 +66,8 @@
  * either point as boundary conditions. The evolution of the phase, frequency
  * and higher order derivatives are given by the following matrix:
  *
- * \anchor numatrix \f{equation}{\tag{numatrix}
+ * \f{equation}{
+ * \label{numatrix}
  * \left( \begin{array}{c} \phi \\ f \\ \dot{f} \\ \ddot{f} \\
  * \dddot{f} \\ \ddddot{f}
  * \end{array} \right) =
@@ -88,7 +89,8 @@
  * and \f$\mathbf{X}\f$ is the matrix of coefficients, it follows that \f$\vec{b} =
  * \mathbf{X}^{-1}\vec{a}\f$. The inverse matrix \f$\mathbf{X}^{-1}\f$ is
  *
- * \anchor nu2matrix \f{equation}{\tag{nu2matrix}
+ * \f{equation}{
+ * \label{nu2matrix}
  * \mathbf{X}^{-1} =
  * \left( \begin{array}{cccccc} 1 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 &
  * \frac{1}{24}t^4 & -\frac{1}{120}t^5 \\
@@ -107,15 +109,16 @@
  * on the phase at each data point, the boundary conditions for the known
  * parameters can be used to calculate the values of the unknowns \f$\ddot{f}\f$,
  * \f$\ddot{f_0}\f$, \f$\dddot{f}\f$, and \f$\dddot{f_0}\f$. Taking the \f$4\times 4\f$
- * matrices in the centres of\eqref{numatrix} and\eqref{nu2matrix} and vectors
+ * matrices in the centres of \eqref{numatrix} and \eqref{nu2matrix} and vectors
  * of \f$f\f$ and its first three derivatives, one can then construct 4 equations
  * containing the 4 unknowns by equating the equations, when worked out at a
  * time \f$t\f$ halfway between consecutive points and solving them
  * simultaneously using the boundary conditions (by inverting the matrix in
- * \eqref{simult1} to give\eqref{inverse1} and solving as above). The values
- * could then be used to calculate a value of \f$\phi\f$ from\eqref{phi}.
+ * \eqref{simult1} to give \eqref{inverse1} and solving as above). The values
+ * could then be used to calculate a value of \f$\phi\f$ from \eqref{phi}.
  *
- * \anchor simult1 \f{equation}{\tag{simult1}
+ * \f{equation}{
+ * \label{simult1}
  * \left( \begin{array}{c} f_0 + \dot{f_0}t - f + \dot{f}t \\
  * \dot{f_0} - \dot{f} \\ 0 \\ 0 \end{array} \right) = \left(
  * \begin{array}{cccc}
@@ -127,7 +130,8 @@
  * \end{array} \right).
  * \f}
  *
- * \anchor inverse1 \f{equation}{\tag{inverse1}
+ * \f{equation}{
+ * \label{inverse1}
  * \mathbf{X}^{-1}
  * \left( \begin{array}{cccc}
  * -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 \\
@@ -136,12 +140,13 @@
  * 0 & -1 & 0 & 1 \end{array} \right)
  * \f}
  *
- * Equating the whole of equations\eqref{numatrix} and\eqref{nu2matrix} at a
+ * Equating the whole of \eqref{numatrix} and \eqref{nu2matrix} at a
  * point halfway inbetween consecutive points, gave the six equations necessary
  * to work out the six unknowns, which are shown in matrix form in equation
  * \eqref{simult2}.
  *
- * \anchor simult2 \f{equation}{\tag{simult2}
+ * \f{equation}{
+ * \label{simult2}
  * \left( \begin{array}{c} \phi_0 + f_0 t + \frac{\dot{f_0}}{2}t^2 - \phi + f t - \frac{\dot{f}}{2} \\ f_0 + \dot{f_0}t - f + \dot{f}t \\ \dot{f_0} - \dot{f} \\ 0 \\ 0 \\ 0 \end{array} \right) = \left( \begin{array}{cccccc}
  * -\frac{1}{6}t^3 & -\frac{1}{24}t^4 & -\frac{1}{120}t^5 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 & \frac{1}{120}t^5 \\
  * -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & -\frac{1}{24}t^4 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 \\
@@ -155,7 +160,8 @@
  *
  * The matrix has an inverse,
  *
- * \anchor inverse2 \f{equation}{\tag{inverse2}
+ * \f{equation}{
+ * \label{inverse2}
  * \mathbf{X}^{-1} =
  * \left( \begin{array}{cccccc}
  * -\frac{15}{2}\frac{1}{t^3} & -\frac{3}{2}\frac{1}{t^2} &

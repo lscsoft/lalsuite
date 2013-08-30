@@ -1,0 +1,37 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{doxy-pdf-extra}
+
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+
+\RequirePackage{wrapfig}
+
+% Create a new DoxyImage environment, replacing the definition in the Doxygen style file. This
+% environment uses the macros \doxyextrafigbegin and \doxyextrafigend to setup the figure environment.
+% The definitions of \doxyextrafig{begin,end} are set as appropriate by the macro \doxyextrafig. They
+% are undefined after use, so that an error is generated if a \doxyextrafig is not included before
+% every DoxyImage environment.
+\renewenvironment{DoxyImage}{%
+  \doxyextrafigbegin%
+}{%
+  \doxyextrafigend%
+  \let\doxyextrafigbegin\undefined%
+  \let\doxyextrafigend\undefined%
+}
+\let\doxyextrafigbegin\undefined
+\let\doxyextrafigend\undefined
+
+% This macro sets up the new DoxyImage environment. It takes as arguments the figure label (#1) and
+% its width (#2). If width is less than 0.5, it creates a right-aligned wrapped figure, otherwise it
+% creates a standard floating figure. It is called by the Doxygen \figure alias.
+\newdimen\doxyextrafigwidth
+\def\doxyextrafig#1#2{%
+  \doxyextrafigwidth=#2\textwidth%
+  \ifdim\doxyextrafigwidth < 0.5\textwidth%
+    \def\doxyextrafigbegin{\wrapfigure{r}{\doxyextrafigwidth}\center}%
+    \def\doxyextrafigend{\label{#1}\endcenter\endwrapfigure}%
+  \else%
+    \def\doxyextrafigbegin{\figure\center}%
+    \def\doxyextrafigend{\label{#1}\endcenter\endfigure}%
+  \fi%
+}

@@ -86,9 +86,9 @@ extern "C" {
  * The principal of  \c clr is the following:
  *
  * We assume that the interference has the form
- * \anchor e3 \f{equation}{
+ * \f{equation}{
+ * \label{e3}
  * y(t)=\sum_n a_n m(t)^n + \left( a_n m(t)^n\right)^* \ ,
- * \tag{e3}
  * \f}
  * where \f$a_n\f$ are
  * complex amplitudes and  \f$m(t)\f$ is a nearly monochromatic function
@@ -108,23 +108,23 @@ extern "C" {
  *
  * We assume that the data produced by the system
  * is just the sum of the interference plus  noise
- * \anchor e6 \f{equation}{
+ * \f{equation}{
+ * \label{e6}
  * x(t)=y(t)+n(t) \ ,
- * \tag{e6}
  * \f}
- * where \f$y(t)\f$ is given by Eq.\eqref{e3} and the noise \f$n(t)\f$ in the
+ * where \f$y(t)\f$ is given by \eqref{e3} and the noise \f$n(t)\f$ in the
  * detector  is a zero-mean stationary
  * stochastic process.
  * The procedure consists in   defining a set of functions \f$\tilde z_k(\nu)\f$
  * in the frequency domain as
- * \anchor e8 \f{equation}{
+ * \f{equation}{
+ * \label{e8}
  * \tilde z_k(\nu)\equiv \left\{
  * \begin{array}{cc}
  * \tilde x(\nu) & \nu_{ik}<\nu <\nu_{fk}\\
  * 0 & \mbox{elsewhere}\ ,
  * \end{array}
  * \right.
- * \tag{e8}
  * \f}
  * where  \f$(\nu_{ik}, \nu_{fk})\f$ correspond to the upper and lower frequency
  * limits of the harmonics of the interference
@@ -141,14 +141,15 @@ extern "C" {
  * Since  \f$m(t)\f$ is supposed to be a narrow-band function near a frequency \f$f_0\f$,
  * each \f$z_k(t)\f$ is a  narrow-band function near \f$kf_0\f$.
  * Then, we  define
- * \anchor e10a \f{equation}{
- * B_k(t)\equiv \left[ z_k(t)\right]^{1/k}\ ,\tag{e10a}
+ * \f{equation}{
+ * \label{e10a}
+ * B_k(t)\equiv \left[ z_k(t)\right]^{1/k}\ ,
  * \f}
  * that can be rewritten as
- * \anchor e10 \f{equation}{
+ * \f{equation}{
+ * \label{e10}
  * B_k(t)= (a_k)^{1/k}m(t) \beta_k(t) \ , \qquad
  * \beta_k(t)=\left[ 1+ \frac{n_k(t)}{a_k m(t)^k}\right]^{1/k} \ .
- * \tag{e10}
  * \f}
  * All these  functions, \f$\{B_k(t)\}\f$, are almost monochromatic around the
  * fundamental frequency, \f$f_0\f$, but they differ basically by a certain

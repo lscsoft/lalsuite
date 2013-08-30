@@ -75,31 +75,26 @@
  * The following formulae relate
  * Galactic latitude \f$b\f$ and longitude \f$l\f$ to declination \f$\delta\f$ and
  * right ascension \f$\alpha\f$:
- * \f{eqnarray}
- * \tag{eq:b-galactic}
+ * \f{eqnarray}{
  * b & = & \arcsin[\cos\delta\cos\delta_\mathrm{NGP}
  * \cos(\alpha-\alpha_\mathrm{NGP}) +
  * \sin\delta\sin\delta_\mathrm{NGP}] \;,\\
  * l & = & \arctan\!2[\sin\delta\cos\delta_\mathrm{NGP} -
  * \cos\delta\cos(\alpha-\alpha_\mathrm{NGP})
  * \sin\delta_\mathrm{NGP},
- * \cos\delta\sin(\alpha-\alpha_\mathrm{NGP})] \nonumber\\
- * \tag{eq:l-galactic}
+ * \cos\delta\sin(\alpha-\alpha_\mathrm{NGP})]\\
  * & & \quad + \; l_\mathrm{ascend} \;,
  * \f}
  * where \f$\arctan\!2(y,x)\f$ can be thought of as the argument of the
  * complex number \f$x+iy\f$; unlike \f$\arctan(y/x)\f$, it ranges over the full
  * range \f$[0,2\pi)\f$ instead of just half of it.  The inverse
  * transformations are:
- * \f{eqnarray}
- * \tag{eq:delta-galactic}
+ * \f{eqnarray}{
  * \delta & = & \arcsin[\cos b\cos\delta_\mathrm{NGP}\sin(l-l_\mathrm{ascend}) +
  * \sin b\sin\delta_\mathrm{NGP}] \;,\\
  * \alpha & = & \arctan\!2[\cos b\cos(l-l_\mathrm{ascend}),
  * \sin b\cos\delta_\mathrm{NGP} -
- * \cos b\sin(l-l_\mathrm{ascend})\sin\delta_\mathrm{NGP}]
- * \nonumber\\
- * \tag{eq:alpha-galactic}
+ * \cos b\sin(l-l_\mathrm{ascend})\sin\delta_\mathrm{NGP}] \\
  * & & \quad + \; \alpha_\mathrm{NGP} \;.
  * \f}
  * In these equations we have defined the orientation of the Galaxy with
@@ -127,20 +122,16 @@
  * The following formulae relate
  * Ecliptic latitude \f$\beta\f$ and longitude \f$\lambda\f$ to declination
  * \f$\delta\f$ and right ascension \f$\alpha\f$:
- * \f{eqnarray}
- * \tag{eq:beta-ecliptic}
+ * \f{eqnarray}{
  * \beta & = & \arcsin(\sin\delta\cos\epsilon -
  * \cos\delta\sin\alpha\sin\epsilon) \;, \\
- * \tag{eq:l-ecliptic}
  * \lambda & = & \arctan\!2(\cos\delta\sin\alpha\cos\epsilon +
  * \sin\delta\sin\epsilon, \cos\delta\cos\alpha) \;.
  * \f}
  * The inverse transformations are:
- * \f{eqnarray}
- * \tag{eq:delta-ecliptic}
+ * \f{eqnarray}{
  * \delta & = & \arcsin(\cos\beta\sin\lambda\sin\epsilon +
  * \sin\beta\cos\epsilon) \;, \\
- * \tag{eq:alpha-ecliptic}
  * \alpha & = & \arctan\!2(\cos\beta\sin\lambda\cos\epsilon -
  * \sin\beta\sin\epsilon, \cos\beta\cos\lambda) \;.
  * \f}

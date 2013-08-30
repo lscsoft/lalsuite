@@ -19,9 +19,9 @@
  * Most of these routines are discussed in Sec.\ 5.1 of \ref Lang_K1999; we reproduce here
  * some of the essential elements of this discussion.
  *
- * \image html  inject_lat_long.png "Fig. [fig_lat_long]: Definition of latitude phi and longitude lambda for an arbitrary coordinate system."
- * \image latex inject_lat_long.eps "Definition of latitude phi and longitude lambda for an arbitrary coordinate system." width=0.5\textwidth
- * A general spatial coordinate system is shown in Fig.\figref{fig_lat_long}.
+ * \figure{inject_lat_long,eps,0.5,Definition of latitude phi and longitude lambda for an arbitrary coordinate system.}
+ *
+ * A general spatial coordinate system is shown in \figref{inject_lat_long}.
  * It is defined by six parameters: three
  * positions specifying the location of the origin \f$O\f$, two angles
  * specifying the direction of the <em>pole</em> or \f$z\f$-axis, and one
@@ -46,7 +46,7 @@
  * \f$\pi/2\f$ radians latitude), and is typically given in the range
  * \f$[-\pi/2,\pi/2]\f$ radians; a point with latitude \f$\pm\pi/2\f$ radians has
  * arbitrary (undefined) longitude.  Distance should always be positive.
- * This convention is shown in Fig.\figref{fig_lat_long}.
+ * This convention is shown in \figref{inject_lat_long}.
  *
  * In the routines in this module, we do not perform transformations
  * between coordinate systems having different origins.  By default, all
@@ -64,12 +64,12 @@
  *
  * The coordinate systems that we consider are defined as follows:
  *
- * \image html  inject_horizon.png "Fig. [fig_horizon]: Definition of the horizon coordinate system."
- * \image latex inject_horizon.eps "Definition of the horizon coordinate system." width=0.58\textwidth
+ * \figure{inject_horizon,eps,0.58,Definition of the horizon coordinate system.}
+ *
  * \par Horizon coordinates:
  * This is a local coordinate system for
  * a particular observation point \f$O\f$ on the Earth, as shown in
- * Fig.\figref{fig_horizon}.  The \f$z\f$-axis is defined to be the direction
+ * \figref{inject_horizon}.  The \f$z\f$-axis is defined to be the direction
  * opposite to the local acceleration due to gravity.  The \f$x\f$-axis is
  * defined to lie in the plane formed by the \f$z\f$-axis and the Earth's
  * rotational axis, and to be directed into the northern hemisphere.  In
@@ -83,11 +83,11 @@
  * (below) by the geographic latitude \f$\phi_z\f$ and longitude \f$\lambda_z\f$
  * of the observer's \f$z\f$-axis direction.
  *
- * \image html  inject_geographic.png "Fig. [fig_geographic]: Definition of the geographic (Earth-fixed) coordinate system."
- * \image latex inject_geographic.eps "Definition of the geographic (Earth-fixed) coordinate system." width=0.38\textwidth
+ * \figure{inject_geographic,eps,0.38,Definition of the geographic (Earth-fixed) coordinate system.}
+ *
  * \par Geographic coordinates:
  * This is a planetwide Earth-fixed
- * coordinate system, shown in Fig.\figref{fig_geographic}.  The \f$z\f$-axis
+ * coordinate system, shown in \figref{inject_geographic}.  The \f$z\f$-axis
  * is defined to be parallel to the Earth's axis, in the direction of the
  * Earth's north pole.  The \f$x\f$-axis is defined to be parallel to the
  * direction perpendicular from the Earth's rotation axis to a reference
@@ -111,7 +111,7 @@
  * which are the latitude and longitude of the direction from the
  * geometric centre of the Earth through that point.  These angles are
  * not necessarily the same, due to the Earth's ellipticity, as shown in
- * Fig.\figref{fig_geodetic} in \ref TerrestrialCoordinates.c.
+ * \figref{inject_geodetic} in \ref TerrestrialCoordinates.c.
  *
  * Geographic coordinates are related to sky-fixed equatorial coordinates
  * by specifying the counterclockwise angle <em>to</em> the prime meridian
@@ -120,8 +120,8 @@
  * Mean Sidereal Time (GMST), and is often specified in hours, minutes,
  * and seconds.
  *
- * \image html  inject_ecliptic.png "Fig. [fig_ecliptic]: Definition of the ecliptic sky-fixed coordinate systems."
- * \image latex inject_ecliptic.eps "Definition of the ecliptic sky-fixed coordinate systems." width=0.41\textwidth
+ * \figure{inject_ecliptic,eps,0.41,Definition of the ecliptic sky-fixed coordinate systems.}
+ *
  * \par Equatorial coordinates:
  * This is the standard sky-fixed coordinate system.  The \f$z\f$-axis is defined as for geographic
  * coordinates, above; the plane orthogonal to this passing through the
@@ -129,13 +129,13 @@
  * to be the direction, as viewed from the centre of the Earth, where the
  * Sun appears to cross the equator moving north in spring.  This is
  * called the <em>vernal equinox</em> \f$\Upsilon\f$, and is shown in
- * Fig.\figref{fig_ecliptic}.  In this coordinate system, the latitude coordinate is called the
+ * \figref{inject_ecliptic}.  In this coordinate system, the latitude coordinate is called the
  * <em>declination</em> \f$\delta\f$ and the longitude coordinate is called the
  * <em>right ascension</em> \f$\alpha\f$.
  *
  * \par Ecliptic coordinates:
  * This is another sky-fixed coordinate
- * system, shown in Fig.\figref{fig_ecliptic}. The \f$z\f$-axis is defined to
+ * system, shown in \figref{inject_ecliptic}. The \f$z\f$-axis is defined to
  * be the direction orthogonal to the orbital plane of the Earth about
  * the Sun, directed such that the Earth orbits in a right-handed sense.
  * The \f$x\f$-axis is defined as for equatorial coordinates, above; we note
@@ -148,10 +148,10 @@
  * orbital axis).  Ecliptic latitude is normally denoted as \f$\beta\f$ and
  * ecliptic longitude as \f$\lambda\f$.
  *
- * \image html  inject_galactic.png "Fig. [fig_galactic]: Definition of the Galactic coordinate system."
- * \image latex inject_galactic.eps "Definition of the Galactic coordinate system." width=0.455\textwidth
+ * \figure{inject_galactic,eps,0.455,Definition of the Galactic coordinate system.}
+ *
  * \par Galactic coordinates:
- * This coordinate system is shown in Fig.\figref{fig_galactic}.
+ * This coordinate system is shown in \figref{inject_galactic}.
  * The \f$z\f$-axis is defined to be the direction
  * orthogonal to the plane of our Galaxy and pointing into the northern
  * hemisphere of the equatorial coordinate system.  (Unfortunately this

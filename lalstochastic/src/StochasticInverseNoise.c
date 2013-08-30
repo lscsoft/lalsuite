@@ -31,14 +31,14 @@
  * \f$\widetilde{R}(f)=h(f)/h(f)\f$ to use in
  * constructing an optimal filter are the inverse half-calibrated power
  * spectral density
- * \anchor stochastic_e_halfCalibratedPSD \f{equation}{
- * \tag{stochastic_e_halfCalibratedPSD}
+ * \f{equation}{
+ * \label{stochastic_e_halfCalibratedPSD}
  * \frac{1}{P^{\mathrm{HC}}(f)}=\frac{1}{\widetilde{R}(f)\,P^{\mathrm{C}}(f)}
  * =\frac{\widetilde{R}(f)^*}{P(f)}
  * \f}
  * and the inverse calibrated PSD
- * \anchor stochastic_e_calibratedPSD \f{equation}{
- * \tag{stochastic_e_calibratedPSD}
+ * \f{equation}{
+ * \label{stochastic_e_calibratedPSD}
  * \frac{1}{P^{\mathrm{C}}(f)}
  * =\frac{|\widetilde{R}(f)|^2}{P(f)}
  * \f}
@@ -56,7 +56,7 @@
  *
  * The output series are filled according to a straightforward
  * implemementation of
- * \eqref{stochastic_e_halfCalibratedPSD}-\eqref{stochastic_e_calibratedPSD}.
+ * \eqref{stochastic_e_halfCalibratedPSD}--\eqref{stochastic_e_calibratedPSD}.
  * The DC components, if included in the series, are set to zero.
  *
  * ### Uses ###

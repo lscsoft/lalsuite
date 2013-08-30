@@ -75,8 +75,7 @@ extern "C" {
  * + B_{+,\times}(t)\sin\phi(t) \; ,
  * \f]
  *
- * \image html inject_phase_diagram.png "Fig. [fig_phase_diagram]: Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+,h_x plane; the parameters A1, A2 and Phi remain roughly constant over many cycles in phi."
- * \image latex inject_phase_diagram.eps "Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+,h_x plane; the parameters A1, A2 and Phi remain roughly constant over many cycles in phi." width=0.42\textwidth
+ * \figure{inject_phase_diagram,eps,0.42,Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+\,h_x plane; the parameters A1\, A2 and Phi remain roughly constant over many cycles in phi.}
  *
  * where \f$\phi(t)=2\pi\int f(t)\,dt\f$, and the <em>evolution timescale</em>
  * \f$\tau=\min\{A/\dot{A},B/\dot{B},f/\dot{f}\}\f$ is much greater than
@@ -98,14 +97,14 @@ extern "C" {
  * instantaneous frequency.  We therefore write the waveforms in terms of
  * two polarization amplitudes \f$A_1(t)\f$ and \f$A_2(t)\f$, a single phase
  * function \f$\phi(t)\f$, and a polarization shift \f$\Phi(t)\f$:
- * \anchor eq_quasiperiodic_hpluscross \f{eqnarray}{
- * \tag{eq_quasiperiodic_hpluscross}
+ * \f{eqnarray}{
+ * \label{eq_quasiperiodic_hpluscross}
  * h_+(t) & = & A_1(t)\cos\Phi(t)\cos\phi(t)
  * - A_2(t)\sin\Phi(t)\sin\phi(t) \; , \\
  * h_\times(t) & = & A_1(t)\sin\Phi(t)\cos\phi(t)
  * + A_2(t)\cos\Phi(t)\sin\phi(t) \; .
  * \f}
- * The physical meaning of these functions is shown in Fig.\figref{fig_phase_diagram}.
+ * The physical meaning of these functions is shown in \figref{inject_phase_diagram}.
  *
  * There is a close relationship between the polarization shift \f$\Phi\f$
  * and the orientation of the \f$x\f$-\f$y\f$ coordinates used to define our

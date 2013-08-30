@@ -104,8 +104,8 @@ extern "C" {
  * Then the parameters \f$\mathsf{x}^a\f$ and the orthonormalized coordinates
  * \f$\mathsf{y}^b\f$ are related by:
  * \f{eqnarray}{
- * \mathsf{x}^a & = & \mathsf{M}^a{}_b \mathsf{y}^b \; , \nonumber\\
- * \mathsf{y}^b & = & \mathsf{(M^{-1})}^b{}_a \mathsf{x}^a \; . \nonumber
+ * \mathsf{x}^a & = & \mathsf{M}^a{}_b \mathsf{y}^b \; ,\\
+ * \mathsf{y}^b & = & \mathsf{(M^{-1})}^b{}_a \mathsf{x}^a \; .
  * \f}
  * The search mesh can thus be placed as a unit-cube lattice in the
  * \f$\mathsf{y}^b\f$ coordinate basis and then transformed back to find the

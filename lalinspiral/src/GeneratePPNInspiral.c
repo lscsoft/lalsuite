@@ -165,7 +165,7 @@ do {                                                                 \
  * ### Algorithm ###
  *
  * This function is a fairly straightforward calculation of
- * Eqs.\eqref{eq_ppn_freq}--\eqref{eq_ppn_across} in
+ * \eqref{eq_ppn_freq}--\eqref{eq_ppn_across} in
  * \ref GeneratePPNInspiral.h.  However, there are some nontrivial
  * issues involved, which are discussed in some depth in Secs.\ 6.4, 6.6,
  * and 6.9.2 of [\ref GRASP2000].  What follows is a brief
@@ -176,7 +176,7 @@ do {                                                                 \
  * When building a waveform for data analysis, one would generally like
  * to start the waveform at some well-defined frequency where it first
  * enters the band of interest; one then defines the start time of the
- * integration by inverting Eq.\eqref{eq_ppn_freq} if
+ * integration by inverting \eqref{eq_ppn_freq} if
  * \ref GeneratePPNInspiral.h.  The current algorithm follows this
  * standard approach by requiring the calling routine to specify
  * <tt>params->fStartIn</tt>, which is then inverted to find
@@ -187,19 +187,19 @@ do {                                                                 \
  * To help clarify the problem, let us rewrite the equation in
  * dimensionless parameters \f$y=8\pi fT_\odot m_\mathrm{tot}/M_\odot\f$ and
  * \f$x=\Theta^{-1/8}\f$:
- * \anchor eq_ppn_fnorm \f{equation}{
- * \tag{eq_ppn_fnorm}
+ * \f{equation}{
+ * \label{eq_ppn_fnorm}
  * y = \sum_{k=0}^{5} C_k x^{k+3} \; ,
  * \f}
  * where:
  * \f{eqnarray}{
- * C_0 & = & p_0 \;,\nonumber\\
- * C_1 & = & p_1 \;,\nonumber\\
- * C_2 & = & p_2\left(\frac{743}{2688}+\frac{11}{32}\eta\right) \;,\nonumber\\
- * C_3 & = & p_3\frac{3\pi}{10} \;,\nonumber\\
+ * C_0 & = & p_0 \;,\\
+ * C_1 & = & p_1 \;,\\
+ * C_2 & = & p_2\left(\frac{743}{2688}+\frac{11}{32}\eta\right) \;,\\
+ * C_3 & = & p_3\frac{3\pi}{10} \;,\\
  * C_4 & = & p_4\left(\frac{1855099}{14450688}+\frac{56975}{258048}\eta+
- * \frac{371}{2048}\eta^2\right) \;,\nonumber\\
- * C_5 & = & p_5\left(\frac{7729}{21504}+\frac{3}{256}\eta\right)\pi \;.\nonumber
+ * \frac{371}{2048}\eta^2\right) \;,\\
+ * C_5 & = & p_5\left(\frac{7729}{21504}+\frac{3}{256}\eta\right)\pi \;.
  * \f}
  * We note that \f$x\f$ is a time parameter mapping the range
  * \f$t=-\infty\rightarrow t_c\f$ to \f$x=0\rightarrow\infty\f$.
@@ -234,7 +234,7 @@ do {                                                                 \
  * exceeds the leading-order term in magnitude.  We can therefore limit
  * the range of \f$x\f$ to values less than \f$x_\mathrm{max}\f$, which is the
  * minimum of \f$\sqrt{2}\f$ and all \f$x_k\f$.  We note that even if we were
- * to extend the post-Newtonian expansion in Eq.\eqref{eq_ppn_fnorm} to an
+ * to extend the post-Newtonian expansion in \eqref{eq_ppn_fnorm} to an
  * infinite number of terms, this definition of \f$x_\mathrm{max}\f$ implies
  * that the frequency is guaranteed to be monotonic up to
  * \f$x_\mathrm{max}(5-\sqrt{7})/6\f$, and positive up to \f$x_\mathrm{max}/2\f$.
@@ -268,8 +268,8 @@ do {                                                                 \
  * Once we have \f$x_\mathrm{start}\f$, we can find \f$\Theta_\mathrm{start}\f$,
  * and begin incrementing it; at each timestep we compute \f$x\f$ and hence
  * \f$f\f$, \f$\phi\f$, \f$A_+\f$, and \f$A_\times\f$ according to
- * Eqs.\eqref{eq_ppn_freq},\eqref{eq_ppn_phi},\eqref{eq_ppn_aplus},
- * and\eqref{eq_ppn_across}.  The routine progressively creates a list of
+ * \eqref{eq_ppn_freq}, \eqref{eq_ppn_phi}, \eqref{eq_ppn_aplus},
+ * and \eqref{eq_ppn_across}.  The routine progressively creates a list of
  * length-1024 arrays and fills them.  The process stops when any of the
  * following occurs:
  * <ol>

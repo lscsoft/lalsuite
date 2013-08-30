@@ -97,11 +97,11 @@
  * motion errors):
  * \f{eqnarray}{
  * \lambda_i|_{t=t_2} & = & \lambda_i|_{t=t_1} + \dot{\lambda}_i(t_2-t_1)
- * \;,\nonumber\\
+ * \;,\\
  * \sigma_{\lambda_i}|_{t=t_2} & = & \sqrt{
  * \left[\sigma_{\lambda_i}|_{t=t_2}\right]^2 +
  * \left[\sigma_{\dot{\lambda}_i} (t_2-t_1)\right]^2}
- * \;,\nonumber
+ * \;,
  * \f}
  * where \f$t_1\f$ is the old position epoch and \f$t_2\f$ is the new epoch.
  * Similarly, the \f$k^\mathrm{th}\f$ frequency derivative
@@ -109,10 +109,10 @@
  * following formulae:
  * \f{eqnarray}{
  * f^{(k)}|_{t=t_2} & = & \sum_{j=k}^N \frac{(t_2-t_1)^{j-k}}{(j-k)!}
- * f^{(j)}|_{t=t_1} \;,\nonumber\\
+ * f^{(j)}|_{t=t_1} \;,\\
  * \sigma_{f^{(k)}}|_{t=t_2} & = & \sqrt{\sum_{j=k}^N
  * \left[\frac{(t_2-t_1)^{j-k}}{(j-k)!}
- * \sigma_{f^{(j)}}|_{t=t_1}\right]^2} \;,\nonumber
+ * \sigma_{f^{(j)}}|_{t=t_1}\right]^2} \;,
  * \f}
  * where \f$t_1\f$ is the old spin epoch and \f$t_2\f$ is the new epoch.  An
  * additional spin uncertainty is assessed based on the assumption that

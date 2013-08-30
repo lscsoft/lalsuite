@@ -53,8 +53,8 @@
  * Galactocentric Galactic axial coordinates \f$\rho\f$, \f$z\f$, and \f$l_G\f$ are
  * transformed to geocentric Galactic Cartesian coordinates:
  * \f{eqnarray}{
- * x_e & = & R_e + \rho\cos l_G \;,\nonumber\\
- * y_e & = & \rho\sin l_G \;,\nonumber\\
+ * x_e & = & R_e + \rho\cos l_G \;,\\
+ * y_e & = & \rho\sin l_G \;,\\
  * z_e & = & z \;,
  * \f}
  * where
@@ -65,8 +65,8 @@
  * migrate into \ref LALConstants.h eventually).  These are converted
  * to geocentric Galactic spherical coordinates:
  * \f{eqnarray}{
- * d & = & \sqrt{x_e^2 + y_e^2 + z_e^2} \;,\nonumber\\
- * b & = & \arcsin\left(\frac{z_e}{d_e}\right) \;,\nonumber\\
+ * d & = & \sqrt{x_e^2 + y_e^2 + z_e^2} \;,\\
+ * b & = & \arcsin\left(\frac{z_e}{d_e}\right) \;,\\
  * l & = & \arctan\!2(y_e,x_e) \;.
  * \f}
  * In the calculation of \f$d\f$ we factor out the leading order term from

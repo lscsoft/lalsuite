@@ -173,9 +173,9 @@ LALInspiralComputeMetric (
  * If we want to express \f$\Psi\f$ in terms of \f$f\f$ rather than \f$v\f$ we simply substitute \f$v = (\pi m
  * f)^{1/3}\f$
  * to obtain
- * \anchor phaselabel \f{equation}{
+ * \f{equation}{
+ * \label{phaselabel}
  * \Psi(f) = 2 \pi f t_{c} + \sum_{k} \theta^{\prime}_{k} f^{(k-5)/3}
- * \tag{phaselabel}
  * \f}
  * where
  * \f{equation}{
@@ -186,7 +186,7 @@ LALInspiralComputeMetric (
  * \f{equation}{
  * \psi_{j} \equiv \frac{\partial \Delta \Psi}{\partial \Delta \lambda^{j}}
  * \f}
- * where \f$\Psi\f$ is given by Eq.\eqref{phaselabel}. Therefore we may write
+ * where \f$\Psi\f$ is given by \eqref{phaselabel}. Therefore we may write
  * \f{equation}{
  * \Delta \Psi = \Delta \theta^{\prime}_{0} f^{-5/3} + \Delta \theta^{\prime}_{2} f^{-1} + \Delta
  * \theta^{\prime}_{3} f^{-2/3} + \Delta \theta^{\prime}_{4} f^{-1/3}
@@ -293,7 +293,7 @@ LALInspiralComputeMetric (
  * \f{eqnarray}{
  * \Psi(f; \theta_1, \theta_2) & = & a_{01}\theta_1 v^{-5}
  * + \left [a_{21} \frac {\theta_1}{\theta_2} + a_{22} \left ( \theta_1 \theta_2^2 \right )^{1/3} \right ] v^{-3}
- * + a_{31} \theta_2 v^{-2} \nonumber \\
+ * + a_{31} \theta_2 v^{-2} \\
  * & + & \left [a_{41} \frac {\theta_1}{\theta_2^2} + a_{42} \left ( \frac {\theta_1}{\theta_2} \right )^{1/3}
  * + a_{43} \left ( \frac{\theta_2^4}{\theta_1} \right )^{1/3} \right ] v^{-1},
  * \f}
@@ -302,7 +302,7 @@ LALInspiralComputeMetric (
  * of Owen and Sathyaprakash defined in Eq.\ (3.3) there and the \f$a\f$ coefficients are given by:
  * \f{eqnarray}{
  * a_{01} = \frac{3}{5}, \ \ a_{21} = \frac{11\pi}{12}, \ \
- * a_{22} = \frac{743}{2016} \left ( \frac {25}{2\pi^2} \right )^{1/3}, \ \ a_{31} = -\frac{3}{2}, \nonumber \\
+ * a_{22} = \frac{743}{2016} \left ( \frac {25}{2\pi^2} \right )^{1/3}, \ \ a_{31} = -\frac{3}{2}, \\
  * a_{41} = \frac {617}{384} \pi^2, \ \ a_{42} = \frac{5429}{5376} \left ( \frac{25 \pi}{2} \right )^{1/3},\ \
  * a_{43} = \frac {15293365}{10838016} \left ( \frac{5}{4\pi^4} \right )^{1/3}.
  * \f}
@@ -338,7 +338,7 @@ LALInspiralComputeMetric (
  * metric introduced earlier and projecting out the \f$t_c\f$ coordinate, one finds that
  * \f{eqnarray}{
  * g_{mn}  & = & \frac{1}{2}\sum_{k,l=0}^N \Psi_{mk} \Psi_{nl}
- * \biggl  [ J(17-k-l) - J(12-k) J(12-l) \biggr . \nonumber \\
+ * \biggl  [ J(17-k-l) - J(12-k) J(12-l) \biggr . \\
  * & - & 	\biggl . \frac { \left ( J(9-k) - J(4)J(12-k) \right )
  * \left ( J(9-l) - J(4)J(12-l) \right )} {\left (J(1) - J(4)^2 \right)}
  * \biggr ]

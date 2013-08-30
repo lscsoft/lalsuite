@@ -35,12 +35,12 @@
  * \f$d\phi/dt = 2\pi F\f$ and the energy balance equation relating the
  * luminosity in gravitational waves to the rate of change of
  * binding energy \f${\cal F} = - dE/dt\f$ , to obtain a phasing formula [\ref dis2002]:
- * \anchor InspiralWavePhasingFormula \f{eqnarray}{
+ * \f{eqnarray}{
+ * \label{InspiralWavePhasingFormula}
  * t(v) & = & t_\textrm{ref} + m \int_v^{v_\textrm{ref}} \,
- * \frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\
+ * \frac{E'(v)}{{\cal F}(v)} \, dv, \\
  * \phi (v) & = & \phi_\textrm{ref} + 2 \int_v^{v_\textrm{ref}}  v^3 \,
  * \frac{E'(v)}{{\cal F}(v)} \, dv,
- * \tag{InspiralWavePhasingFormula}
  * \f}
  * where \f$E'(v)=dE/dv,\f$ \f$v=(\pi m F)^{1/3}\f$ is an invariantly defined velocity,
  * \f$F\f$ is the instantaneous GW frequency, and \f$m\f$ is the total mass
@@ -53,10 +53,10 @@
  * [\ref dis2002,\ref dis1998] then one generates the approximant called <tt>PadeT1.</tt>
  * In reality, it is computationally cheaper to use two ordinary differential
  * equations instead of the integrals. These are:
- * \anchor eq_ode2 \f{equation}{
+ * \f{equation}{
+ * \label{eq_ode2}
  * \frac{dv}{dt} = - \frac{\mathcal{F}(v)}{m E^{\prime}(v)},\ \ \ \
  * \frac{d \phi(t)}{dt} = \frac{2v^{3}}{m}.
- * \tag{eq_ode2}
  * \f}
  * These are implemented in module \ref LALInspiralWave1.c.
  * </li>
@@ -65,25 +65,25 @@
  * in which case the integrals can be solved analytically to obtain a
  * \e parametric representation of the phasing formula in terms of
  * polynomial expressions in the auxiliary variable \f$v\f$
- * \anchor eq_InspiralWavePhase2 \f{eqnarray}{
+ * \f{eqnarray}{
+ * \label{eq_InspiralWavePhase2}
  * \phi(v)&=& \phi_\textrm{ref} +
- * \phi^v_N (v)\sum_{k=0}^{n} {\phi}^v_k v^k, \nonumber\\
+ * \phi^v_N (v)\sum_{k=0}^{n} {\phi}^v_k v^k,\\
  * t(v)&=& t_\textrm{ref} +t_N(v) \sum_{k=0}^{n} {t}_k v^k,
- * \tag{eq_InspiralWavePhase2}
  * \f}
  * This corresponds to \c TaylorT2 in the enum \c Approximant [\ref dis2002].
  * These are implemented in module \ref LALInspiralWave2.c
  * </li>
  *
- * <li> The second of the polynomials in Eq.\eqref{eq_InspiralWavePhase2} can
+ * <li> The second of the polynomials in \eqref{eq_InspiralWavePhase2} can
  * be inverted and the resulting polynomial for \f$v\f$ in terms of
  * \f$t\f$ can be substituted in \f$\phi(v)\f$ to arrive at an explicit  time-domain
  * phasing formula
- * \anchor eq_InspiralWavePhase3 \f{equation}{
+ * \f{equation}{
+ * \label{eq_InspiralWavePhase3}
  * \phi(t)=\phi_\textrm{ref}+\phi_N^t \sum_{k=0}^{n}
  * {\phi}^t_k\theta^k, \ \ \
  * F(t)= F_N \sum_{k=0}^{n} {F}_k \theta^k,
- * \tag{eq_InspiralWavePhase3}
  * \f}
  * where \f$\theta=[\eta (t_\textrm{ref}-t)/(5m)]^{-1/8}\f$,
  * \f$F \equiv d \phi/ 2 \pi dt =v^3/(\pi m)\f$ is the instantaneous GW frequency
@@ -93,7 +93,7 @@
  * </li>
  * </ol>
  * The expansion coefficients in PN expansions of the various physical
- * quantities are summarized in Tables\tableref{table_energy} and \tableref{table_flux}.
+ * quantities are summarized in \tableref{table_energy} and \tableref{table_flux}.
  *
  * <br>
  * \anchor table_energy
@@ -195,20 +195,20 @@
  * The above transform can be computed in the stationary
  * phase approximation (SPA). For positive frequencies only the first term
  * on the right  contributes and yields the following \e usual SPA:
- * \anchor eq_inspiralspa1 \f{equation}{
+ * \f{equation}{
+ * \label{eq_inspiralspa1}
  * \tilde{h}^\textrm{uspa}(f)= \frac {a(t_f)} {\sqrt {\dot{F}(t_f)}}
  * e^{ i\left[ \psi_f(t_f) -\pi/4\right]},\ \
  * \psi_f(t) \equiv  2 \pi f t -\phi(t),
- * \tag{eq_inspiralspa1}
  * \f}
  * and \f$t_f\f$ is the saddle point defined by solving for \f$t\f$, \f$ d \psi_f(t)/d t = 0\f$,
  * i.e. the time \f$t_f\f$ when the GW frequency \f$F(t)\f$ becomes equal to the
  * Fourier variable \f$f\f$. In the adiabatic approximation where
  * the value of \f$t_f\f$ is given by the following integral:
- * \anchor eq_InspiralTimeAndPhaseFuncs \f{equation}{
+ * \f{equation}{
+ * \label{eq_InspiralTimeAndPhaseFuncs}
  * t_f = t_\textrm{ref} + m \int_{v_f}^{v_\textrm{ref}} \frac{E'(v)}{{\cal F}(v)} dv,
  * \phi (v) = \phi_\textrm{ref} + 2 \int_v^{v_\textrm{ref}} dv v^3 \, \frac{E'(v)}{{\cal F}(v)},
- * \tag{eq_InspiralTimeAndPhaseFuncs}
  * \f}
  * where \f$v_\textrm{ref}\f$ is a fiducial reference point that sets the origin of
  * time, \f$v_f \equiv (\pi m f)^{1/3},\f$ \f$E'(v)\equiv dE/dv\f$ is the derivative of
@@ -216,11 +216,11 @@
  * flux.
  * Using \f$t_f\f$ and \f$\phi(t_f)\f$ in the above equation and
  * using it in the expression for \f$\psi_f(t)\f$ we find
- * \anchor eq_InspiralFourierPhase \f{equation}{
+ * \f{equation}{
+ * \label{eq_InspiralFourierPhase}
  * \psi_f(t_f) = 2 \pi f t_\textrm{ref} - \phi_\textrm{ref} + 2\int_{v_f}^{v_\textrm{ref}}
  * (v_f^3 - v^3)
  * \frac{E'(v)}{{\cal {\cal F}}(v)} dv .
- * \tag{eq_InspiralFourierPhase}
  * \f}
  * This is the general form of the stationary phase approximation which
  * can be applied to \e all time-domain signals, including the P-approximant
@@ -228,13 +228,13 @@
  * can be worked out explicitly, which we now give:
  *
  * Using PN expansions of energy and flux but
- * re-expanding the ratio \f$E'(v)/{\cal F}(v)\f$ in Eq.\eqref{eq_InspiralFourierPhase} one
+ * re-expanding the ratio \f$E'(v)/{\cal F}(v)\f$ in \eqref{eq_InspiralFourierPhase} one
  * can solve the integral explicitly. This leads to the following
  * explicit, Taylor-like, Fourier domain phasing formula:
- * \anchor eq_InspiralFourierPhase_f2 \f{equation}{
+ * \f{equation}{
+ * \label{eq_InspiralFourierPhase_f2}
  * \psi_f(t_f) = 2 \pi f t_\textrm{ref} - \phi_\textrm{ref} +
  * \psi_N \sum_{k=0}^5 {\psi}_k (\pi m f)^{(k-5)/3}
- * \tag{eq_InspiralFourierPhase_f2}
  * \f}
  * where the coefficients \f${\psi}_k\f$ up to 2.5 post-Newtonian approximation are given by:
  * \f[\psi_N =  \frac{3}{128\eta},\ \ \ \psi_0 = 1,\ \ \ \psi_1 = 0,\ \ \
@@ -245,24 +245,24 @@
  * \f[\psi_5 =  \frac{5}{3} \left ( \frac{7729}{252} + \eta \right ) \pi +
  * \frac{8}{3} \left ( \frac{38645}{672} + \frac{15}{8} \eta \right )
  * \ln \left ( \frac{v}{v_\textrm{ref}} \right )\pi.\f]
- * Eq.\eqref{eq_InspiralFourierPhase_f2} is (one of) the  standardly used frequency-domain phasing formulas.
+ * \eqref{eq_InspiralFourierPhase_f2} is (one of) the  standardly used frequency-domain phasing formulas.
  * This is what is implemented in \c LALInspiralStationaryPhaseApprox2()
  * and corresponds to \c TaylorF2 in the enum <tt>Approximant.</tt>
  *
  * Alternatively, substituting (without doing any re-expansion or re-summation)
  * for the energy and flux functions their PN expansions
  * or the P-approximants of energy and flux functions
- * and solving the integral in Eq.\eqref{eq_InspiralFourierPhase} numerically
+ * and solving the integral in \eqref{eq_InspiralFourierPhase} numerically
  * one obtains the T-approximant SPA or P-approximant SPA, respectively.
  * However, just as in the time-domain, the frequency-domain phasing is
  * most efficiently computed by a pair of coupled, non-linear, ODE's:
- * \anchor eq_frequencyDomainODE \f{equation}{
+ * \f{equation}{
+ * \label{eq_frequencyDomainODE}
  * \frac{d\psi}{df} - 2\pi t = 0, \ \ \ \
  * \frac{dt}{df} + \frac{\pi m^2}{3v^2} \frac{E'(f)}{{\cal F}(f)} = 0,
- * \tag{eq_frequencyDomainODE}
  * \f}
  * rather  than by numerically computing the integral in
- * Eqs.\eqref{eq_InspiralFourierPhase}.  However, the current implementation
+ * \eqref{eq_InspiralFourierPhase}.  However, the current implementation
  * in \c LALInspiralStationaryPhaseApproximation1 solves the integral
  * and corresponds to \c TaylorF1 in the  <tt>enum Approximant.</tt>
  *
@@ -270,7 +270,7 @@
  *
  * The derivative of the frequency that occurs in the
  * amplitude of the Fourier transform, namely
- * \f$1/\sqrt{\dot{F}(t)},\f$ in Eq.\eqref{eq_inspiralspa1},
+ * \f$1/\sqrt{\dot{F}(t)},\f$ in \eqref{eq_inspiralspa1},
  * is computed using
  * \f{equation}{
  * \dot{F(t)} = \frac{dF}{dt}
@@ -294,7 +294,7 @@
  *
  * The Fourier transform of a chirp waveform in the restricted post-Newtonian
  * approximation in the stationary phase approximation is given, for
- * positive frequencies \f$f,\f$ by [cf. Eq.\eqref{eq_InspiralFourierPhase_f2}]
+ * positive frequencies \f$f,\f$ by [cf. \eqref{eq_InspiralFourierPhase_f2}]
  * \f{equation}{
  * \tilde h(f) = h_0 f^{-7/6} \exp \left [ \sum_k \psi_k f^{(k-5)/3} \right ],
  * \f}
@@ -333,10 +333,10 @@
  * \subsection sec_NonSpin DTF for non-spinning sources
  *
  * The proposed waveform has structure similar to the one above:
- * \anchor eq_BCV_NonSpinning \f{equation}{
+ * \f{equation}{
+ * \label{eq_BCV_NonSpinning}
  * \tilde h(f) = h_0 f^{-7/6} \left (1 - \alpha f^{2/3} \right) \theta(f-f_\textrm{cut})
  * \exp \left [ \psi_0 f^{-5/3} + \psi_3 f^{-2/3} \right ],
- * \tag{eq_BCV_NonSpinning}
  * \f}
  * where the motivation to include an amplitude correction term \f$\alpha\f$ is based on the
  * fact that the first post-Newtonian correction to the amplitude would induce a term like this.
@@ -355,13 +355,13 @@
  * the full structure of the spinning black hole binary
  * waveforms. BCV suggested [\ref BCV03b] that one could use a DTF of waveforms that resembles
  * the non-spinning case. Their proposal has the following structure:
- * \anchor eq_BCV_Spinning \f{equation}{
+ * \f{equation}{
+ * \label{eq_BCV_Spinning}
  * \tilde h(f) = h_0 f^{-7/6}
  * \left [1 + \alpha_1 \cos ( \beta f^{-2/3} )
  * + \alpha_2 \sin ( \beta f^{-2/3} ) \right]
  * \theta(f-f_\textrm{cut})
  * \exp \left [ \psi_0 f^{-5/3} + \psi_3 f^{-2/3} \right ],
- * \tag{eq_BCV_Spinning}
  * \f}
  * where \f$\alpha_1,\f$ \f$\alpha_2\f$ and \f$\beta\f$ are the parameters designed
  * to capture the spin-induced modulation of the waveform.
@@ -379,8 +379,8 @@
  *
  * In practical terms, the time-domain waveform
  * is obtained as the following function of the reduced time \f$\hat{t}=t/m\f$:
- * \anchor eq_4_1 \f{equation}{
- * \tag{eq_4_1}
+ * \f{equation}{
+ * \label{eq_4_1}
  * \quad h(\hat{t}) = {\cal
  * C} \, v_{\omega}^2 (\hat{t}) \cos (\phi (\hat{t}))\,, \quad v_{\omega}
  * \equiv \left( \frac{d \varphi}{d \hat{t}} \right)^{\frac{1}{3}}\,, \quad \phi
@@ -389,36 +389,38 @@
  * (The amplitude \f$\cal C\f$ is chosen to be equal to 1 in our codes.)
  * The four ODEs correspond to the evolution of the radial and angular
  * coordinates and the corresponding momenta:
- * \anchor eq_3_28 \anchor eq_3_29 \anchor eq_3_30 \anchor eq_3_31 \f{eqnarray}{
- * \tag{eq_3_28}
+ * \f{eqnarray}{
+ * \label{eq_3_28}
  * &&\frac{dr}{d \hat{t}} = \frac{\partial \widehat{H}}{\partial p_r}
  * (r,p_r,p_\varphi)\,, \\
- * \tag{eq_3_29}
+ * \label{eq_3_29}
  * && \frac{d \varphi}{d \hat{t}} = \widehat{\omega} \equiv \frac{\partial \widehat{H}}{\partial p_\varphi}
  * (r,p_r,p_\varphi)\,, \\
- * \tag{eq_3_30}
+ * \label{eq_3_30}
  * && \frac{d p_r}{d \hat{t}} + \frac{\partial \widehat{H}}{\partial r}
  * (r,p_r,p_\varphi)=0\,, \\
+ * \label{eq_3_31}
  * && \frac{d p_\varphi}{d \hat{t}} = \widehat{\cal F}_\varphi(\widehat{\omega} (r,p_r,p_{\varphi}))\,.
- * \tag{eq_3_31}
  * \f}
  * The reduced Hamiltonian \f$\widehat{H}\f$ (of the one-body problem)
  * is given, at the 2PN approximation, by
- * \anchor eq_3_32 \anchor eq_3_34 \f{eqnarray}{
- * \tag{eq_3_32}
+ * \f{equation}{
+ * \label{eq_3_32}
  * \widehat{H}(r,p_r,p_\varphi) = \frac{1}{\eta}\,\sqrt{1 + 2\eta\,\left [
  * \sqrt{A(r)\,\left (1 + \frac{p_r^2}{B(r)} + \frac{p_\varphi^2}{r^2} \right )} -1 \right ]}\,,\\
- * \tag{eq_3_34}
- * \textrm{where}\;\;
+ * \f}
+ * where
+ * \f{equation}{
+ * \label{eq_3_34}
  * A(r) \equiv 1 - \frac{2}{r} + \frac{2\eta}{r^3} \,,
  * \quad \quad B(r) \equiv \frac{1}{A(r)}\,\left (1 - \frac{6\eta}{r^2}
  * \right )\,.
  * \f}
  * The damping force \f$\cal{F}_{\varphi}\f$ is approximated by
- * \anchor eq_damp \f{equation}{
+ * \f{equation}{
+ * \label{eq_damp}
  * \widehat{{\cal F}}_{\varphi}
  * =-\frac{1}{\eta v_\omega ^3}{\cal F}_{P_n}(v_\omega)\,,
- * \tag{eq_damp}
  * \f}
  * where \f$
  * {\cal F}_{P_n} (v_{\omega})
@@ -440,9 +442,9 @@
  * \f}
  * The plunge waveform is terminated when the radial coordinate attains the value
  * at the light ring \f$r_\textrm{lr}\f$ given by the solution to the equation,
- * \anchor eq_LightRing \f{equation}{
+ * \f{equation}{
+ * \label{eq_LightRing}
  * r_\textrm{lr}^3 - 3 r_\textrm{lr}^2 + 5 \eta = 0.
- * \tag{eq_LightRing}
  * \f}
  *
  * \section sec_smirches Spinning Modulated Chirps
@@ -465,36 +467,36 @@
  * \f${\mathbf S}_2=(s_2,\, \theta_2, \, \varphi_2),\f$ orbital angular momentum
  * \f${\mathbf L}=(L,\, \theta_0, \, \varphi_0),\f$ is governed by a
  * set of differential equations given by:
- * \anchor eqn_precession1 \f{eqnarray}{
+ * \f{eqnarray}{
+ * \label{eqn_precession1}
  * \dot{\mathbf {L}} =
  * \left [
  * \left ( \frac{4m_1+3m_2}{2m_1m^3} - \frac{3\,  {\mathbf S}_2 \cdot {\mathbf L}}{2\, L^2m^3} \right ) {\mathbf S}_1 +
  * \left ( \frac{4m_2+3m_1}{2m_2m^3} - \frac{3}{2}\frac{ {\mathbf S}_1 \cdot {\mathbf L}}{L^2m^3} \right ) {\mathbf S}_2
  * \right ] \times {\mathbf L} v^6 -\frac{32\eta^2 m}{5L} {\mathbf L} v^7,
- * \tag{eqn_precession1}
  * \f}
- * \anchor eqn_precession2 \f{equation}{
+ * \f{equation}{
+ * \label{eqn_precession2}
  * \dot{ \mathbf  S}_1  =
  * \left [ \left ( \frac{4m_1+3m_2}{2m_1m^3} - \frac{3\, {\mathbf S}_2 \cdot {\mathbf L} }{2\, L^2m^3}
  * \right ) {\mathbf L} \times {\mathbf S}_1 + \frac{ {\mathbf S}_2 \times {\mathbf S}_1 }{2m^3} \right ] v^6,
- * \tag{eqn_precession2}
  * \f}
- * \anchor eqn_precession3 \f{equation}{
+ * \f{equation}{
+ * \label{eqn_precession3}
  * \dot{ \mathbf  S}_2  =
  * \left [ \left ( \frac{4m_2+3m_1}{2m_2m^3} - \frac{3\, {\mathbf S}_1 \cdot {\mathbf L} }{2\, L^2m^3}
  * \right ) {\mathbf L} \times {\mathbf S}_2 + \frac{ {\mathbf S}_1 \times {\mathbf S}_2 }{2m^3} \right ] v^6.
- * \tag{eqn_precession3}
  * \f}
  * where as before \f$v=(\pi m f)^{1/3},\f$ \f$f\f$ is the gravitational wave frequency,
  * \f$m = m_1+m_2\f$ is the total mass, and \f$\eta = m_1m_2/m^2\f$ is
  * the (symmetric) mass ratio.  An overdot denotes the time-derivative.
  * In the evolution of the orbital angular momentum we have included
  * the lowest order dissipative term [the second term containing
- * \f$v^7\f$ in Equation\eqref{eqn_precession1}]
+ * \f$v^7\f$ in \eqref{eqn_precession1}]
  * while keeping the non-dissipative modulation effects
  * caused by spin-orbit and spin-spin couplings
  * [the first term within square brackets containing
- * \f$v^6\f$ in Equation\eqref{eqn_precession1}].
+ * \f$v^6\f$ in \eqref{eqn_precession1}].
  * The spins evolve non-dissipatively but their orientations change due to
  * spin-orbit and spin-spin couplings.
  * Though the non-dissipative terms are not responsible for
@@ -510,9 +512,9 @@
  * a \e smirch (an anagram of \e sm and \e chir).
  *
  * The strain \f$h(t)\f$ produced by a smirch at the antenna is given by
- * \anchor eqn_waveform \f{eqnarray}{
+ * \f{eqnarray}{
+ * \label{eqn_waveform}
  * h(t) & = & -A(t)\cos[\phi(t)+\varphi(t)],
- * \tag{eqn_waveform}
  * \f}
  * where \f$A(t)\f$ is the precession-modulated amplitude of the signal,
  * \f$\phi(t)\f$ is its post-Newtonian carrier phase that
@@ -521,20 +523,20 @@
  * neglected the Thomas precession of the orbit which induces additional, but
  * small, corrections in the phase.) For a source with position vector
  * \f${\mathbf N} = (D,\, \theta_S,\, \varphi_S)\f$ the amplitude is given by,
- * \anchor eqn_amplitude \f{equation}{
+ * \f{equation}{
+ * \label{eqn_amplitude}
  * A(t) = \frac{2\eta m v^2}{D}
  * \left[ \left( 1 + (\hat {\mathbf L}\cdot \hat {\mathbf N})^2\right )^2 F_{+}^2(\theta_S,\varphi_S,\psi)
  * + 4 \left ( \hat {\mathbf L}\cdot \hat {\mathbf N} \right )^2 F_\times^2(\theta_S,\varphi_S,\psi) \right]^{1/2}.
- * \tag{eqn_amplitude}
  * \f}
  * Here \f$\hat{\mathbf L} = {\mathbf L}/L,\f$ \f$\hat{\mathbf N} = {\mathbf N}/D\f$ (\f$D\f$ is the distance to
  * the source) and \f$\psi(t)\f$ is the precession-modulated polarization angle given by
- * \anchor eqn_psi \f{equation}{
+ * \f{equation}{
+ * \label{eqn_psi}
  * \tan \psi(t) =
  * \frac{\hat{\mathbf L}(t)\cdot\hat{\mathbf z} - (\hat{\mathbf L}(t)\cdot\hat{\mathbf N})
  * (\hat{\mathbf z}\cdot\hat{\mathbf N})}
  * {\hat{\mathbf N}\cdot(\hat{\mathbf L}(t)\times\hat{\mathbf z})}.
- * \tag{eqn_psi}
  * \f}
  * Also, \f$F_+\f$ and \f$F_\times\f$ are the antenna beam pattern functions are given by
  * \f{equation}{
@@ -547,23 +549,23 @@
  * + \cos\theta_S\sin{2\phi_S}\sin{2\psi}.
  * \f}
  * Next, the polarization phase \f$\varphi(t)\f$ is
- * \anchor eqn_varphi \f{equation}{
+ * \f{equation}{
+ * \label{eqn_varphi}
  * \tan \varphi(t) =
  * \frac{ 2 \hat {\mathbf L}(t) \cdot \hat {\mathbf N}\, F_\times(\theta_S,\varphi_S,\psi)}
  * {\left [ 1 + \left ({\mathbf L}(t)\cdot {\mathbf N} \right )^2 \right ] F_{+}(\theta_S,\varphi_S,\psi)}.
- * \tag{eqn_varphi}
  * \f}
  * And finally, for the carrier phase we use the post-Newtonian
  * expression, but without the spin-orbit and
  * spin-spin couplings. These spin couplings modify the carrier phase
  * by amounts much smaller than the post-Newtonian effects.
  * To second post-Newtonian order the carrier phase is given by
- * \anchor eqn_phi \f{equation}{
+ * \f{equation}{
+ * \label{eqn_phi}
  * \phi(t) =
  * \frac{-2}{\eta\theta^5}\left[1+\left(\frac{3715}{8064}+\frac
  * {55}{96}\eta\right)\theta^2-\frac{3\pi}{4}\theta^3
  * +\left(\frac{9275495}{14450688}+\frac{284875}{258048}\eta+\frac{1855}{2048}\eta^2\right)\theta^4\right].
- * \tag{eqn_phi}
  * \f}
  * where \f$\theta=[\eta (t_C-t)/(5m)]^{-1/8},\f$ \f$t_C\f$ being the time at which the two stars
  * merge together and the gravitational wave frequency formally diverges.

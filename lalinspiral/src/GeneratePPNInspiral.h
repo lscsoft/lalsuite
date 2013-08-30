@@ -65,13 +65,13 @@ extern "C" {
  * of [\ref GRASP2000]; here we work entirely in terms of the
  * <em>gravitational-wave</em> frequency, which is twice the orbital
  * frequency:
- * \anchor eq_ppn_freq \f{eqnarray}{
+ * \f{eqnarray}{
+ * \label{eq_ppn_freq}
  * f(t) & = & \frac{M_\odot}{8\pi T_\odot m_\mathrm{tot}}\left\{
  * p_0\Theta^{-3/8}+
  * p_1\Theta^{-1/2}+
  * p_2\left(\frac{743}{2688}+\frac{11}{32}\eta\right)\Theta^{-5/8}-
- * p_3\frac{3\pi}{10}\Theta^{-3/4} \right. \nonumber \\
- * \tag{eq_ppn_freq}
+ * p_3\frac{3\pi}{10}\Theta^{-3/4} \right. \\
  * & & \left.+ p_4\left(\frac{1855099}{14450688}+\frac{56975}{258048}\eta+
  * \frac{371}{2048}\eta^2\right)\Theta^{-7/8}-
  * p_5\left(\frac{7729}{21504}+\frac{3}{256}\eta\right)\pi\Theta^{-1}
@@ -82,8 +82,8 @@ extern "C" {
  * solar mass in time units, \f$m_\mathrm{tot}=m_1+m_2\f$ is the total mass
  * of the binary, \f$\eta=m_1m_2/m_\mathrm{tot}^2\f$ is the (symmetric) mass
  * ratio parameter, and \f$\Theta\f$ is a dimensionless time parameter:
- * \anchor eq_ppn_theta \f{equation}{
- * \tag{eq_ppn_theta}
+ * \f{equation}{
+ * \label{eq_ppn_theta}
  * \Theta(t) = \frac{\eta M_\odot}{5T_\odot m_\mathrm{tot}}(t_c-t) \; .
  * \f}
  * Here \f$t_c\f$ is the time of coalescence of the two masses in the
@@ -98,14 +98,14 @@ extern "C" {
  * post-Newtonian expansion.
  *
  * The wave phase as a function of time can be computed analytically from
- * Eq.\eqref{eq_ppn_freq} as \f$\phi_\mathrm{orb}=2\pi\int f\,dt\f$:
- * \anchor eq_ppn_phi \f{eqnarray}{
+ * \eqref{eq_ppn_freq} as \f$\phi_\mathrm{orb}=2\pi\int f\,dt\f$:
+ * \f{eqnarray}{
+ * \label{eq_ppn_phi}
  * \phi(t) & = & \phi_c - \frac{2}{\eta}\left\{
  * p_0\Theta^{5/8}+
  * p_1\frac{5}{4}\Theta^{1/2}+
  * p_2\left(\frac{3715}{8064}+\frac{55}{96}\eta\right)\Theta^{3/8}-
- * p_3\frac{3\pi}{4}\Theta^{1/4} \right. \nonumber \\
- * \tag{eq_ppn_phi}
+ * p_3\frac{3\pi}{4}\Theta^{1/4} \right. \\
  * & & \left.+ p_4\left(\frac{9275495}{14450688}+\frac{284875}{258048}\eta+
  * \frac{1855}{2048}\eta^2\right)\Theta^{1/8}-
  * p_5\left(\frac{38645}{172032}+\frac{15}{2048}\eta\right)\pi
@@ -133,13 +133,13 @@ extern "C" {
  * To leading order, then, the amplitude of the + and \f$\times\f$
  * polarizations of the wave are given by Eqs.\ 6.6.1--6.6.4
  * of\ [\ref GRASP2000] as:
- * \anchor eq_ppn_aplus \anchor eq_ppn_across \f{eqnarray}{
- * \tag{eq_ppn_aplus}
+ * \f{eqnarray}{
+ * \label{eq_ppn_aplus}
  * A_+(t) & = & -\frac{2T_\odot c}{D}(1+\cos^2 i)
  * \left(\frac{\eta m_\mathrm{tot}}{M_\odot}\right)
  * \left[\frac{\pi T_\odot	m_\mathrm{tot}f(t)}{M_\odot}
  * \right]^{2/3} \; , \\
- * \tag{eq_ppn_across}
+ * \label{eq_ppn_across}
  * A_\times(t) & = & -\frac{2T_\odot c}{D}(2\cos i)
  * \left(\frac{\eta m_\mathrm{tot}}{M_\odot}\right)
  * \left[\frac{\pi T_\odot	m_\mathrm{tot}f(t)}{M_\odot}
@@ -152,10 +152,10 @@ extern "C" {
  * ascending node of the rotational plane as it crosses the plane
  * transverse to the propagation direction.  This convention implies that
  * the + and \f$\times\f$ waveforms are elliptically polarized as follows:
- * \anchor eq_ppn_hplus \anchor eq_ppn_hcross \f{eqnarray}{
- * \tag{eq_ppn_hplus}
+ * \f{eqnarray}{
+ * \label{eq_ppn_hplus}
  * h_+(t) & = & A_+(t)\cos\phi(t) \; , \\
- * \tag{eq_ppn_hcross}
+ * \label{eq_ppn_hcross}
  * h_\times(t) & = & A_\times(t)\sin\phi(t) \; .
  * \f}
  *

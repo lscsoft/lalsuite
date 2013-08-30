@@ -34,9 +34,9 @@
  * ### Algorithm ###
  *
  * We know that
- * \anchor eq_tau0a \f{equation}{
+ * \f{equation}{
+ * \label{eq_tau0a}
  * \tau_0 = \frac{A_0}{\eta} M^{-5/2},
- * \tag{eq_tau0a}
  * \f}
  * and
  * \f{equation}{
@@ -52,23 +52,23 @@
  * \f}
  *
  * Therefore, it is straightforward to express \f$\tau_3\f$ as a function of \f$\tau_0\f$ amd \f$\eta\f$:
- * \anchor eq_tau3b \f{equation}{
+ * \f{equation}{
+ * \label{eq_tau3b}
  * \tau_3 = \frac{A3}{\eta} \left( \frac{\tau_0 \eta}{ A_0} \right)^{2/5}
- * \tag{eq_tau3b}
  * \f}
  * if \f$\eta=0.25\f$ on the equal-mass line, then
- * \anchor eq_tau3a \f{equation}{
+ * \f{equation}{
+ * \label{eq_tau3a}
  * \tau_3 = 4 A3 \left( \frac{\tau_0}{ 4 A_0} \right)^{2/5}
- * \tag{eq_tau3a}
  * \f}
  *
- * Equation\eqref{eq_tau3b} returns \f$\tau_3\f$ given in \f$M, \eta\f$ and \f$f_L\f$ and is defined
+ * \eqref{eq_tau3b} returns \f$\tau_3\f$ given in \f$M, \eta\f$ and \f$f_L\f$ and is defined
  * in\c XLALInspiralTau3FromNonEqualMass().
  *
- * Equation\eqref{eq_tau3a} returns tau3 in the particular case \f$m_1=m_2\f$, given
+ * \eqref{eq_tau3a} returns tau3 in the particular case \f$m_1=m_2\f$, given
  * \f$\tau_0\f$ only, and is defined in \c XLALInspiralTau3FromTau0AndEqualMassLine().
  *
- * Equation\eqref{eq_tau0a} returns \f$tau_0\f$ given \f$M, \eta\f$ and \f$f_L\f$, and is defined
+ * \eqref{eq_tau0a} returns \f$tau_0\f$ given \f$M, \eta\f$ and \f$f_L\f$, and is defined
  * \c XLALInspiralTau0FromMEta().
  *
  * Finally, \c XLALInspiralMFromTau0AndNonEqualMass() returns \f$M\f$ when \f$\tau_0\f$ is known

@@ -21,11 +21,9 @@
  * (NO, SO, SS, SELF, QM, ALL(default))</li>
  * </ul>
  * The output file contains three coloums: elapsed time, \f$h_+\f$, \f$h_\times\f$.
- * \f{center}
- * \begin{gather*}
+ * \f{gather}{
  * h_+=a_1\cos\left(2\alpha\right)\cos\left(2\Phi\right)-a_2\sin\left(2\alpha\right)\sin\left(2\Phi\right),\\
  * h_\times=a_1\sin\left(2\alpha\right)\cos\left(2\Phi\right)+a_2\cos\left(2\alpha\right)\sin\left(2\Phi\right)
- * \end{gather*}
  * \f}
  * with \f$a_i\f$ amplitudes, \f$\alpha\f$ polarization shift, \f$\Phi\f$ phase (Eq. (4.28)-(4.30) of [3] up to leading order (The \f$\Phi\f$ is shifted by \f$\pi\f$ with respect to [3]). We note that \f$\Theta=0\f$ in leading order because we use radiation frame).<br />
  * \f$a_1\f$, \f$a_2\f$ are defined in LALSQTPNGenerator() function, \f$\alpha\f$ and \f$\Phi\f$ phase is defined in LALSQTPNDerivator() function.<br />

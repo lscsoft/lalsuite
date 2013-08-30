@@ -108,10 +108,10 @@
  * using analog low-pass filters before the signal is digitized. Therefore
  * \f$v(t_j)\f$ completely determines the signal \f$v(t)\f$ in the band of interest. We
  * may approximate the Fourier transform of this band limited signal \f$v(t_j)\f$ by
- * \anchor eq_fftapprox \f{equation}{
+ * \f{equation}{
+ * \label{eq_fftapprox}
  * \tilde{v}(f_k) \rightarrow \sum_{j=0}^{N-1} \Delta t\, v(t_j) e^{-2 \pi i f_k t_j}
  * = \Delta t \sum_{j=0}^{N-1} v_j e^{-2 \pi i j k / N},
- * \tag{eq_fftapprox}
  * \f}
  * where \f$-(N/2 + 1) \le k \le N/2\f$ and the symbol \f$\rightarrow\f$ means
  * equal to under discretization.  Notice that the approximation to the
@@ -126,9 +126,9 @@
  * value of the Fourier transform at both \f$-f_\mathrm{Ny}\f$ and \f$f_\mathrm{Ny}\f$;
  * both these values are equal due to the periodicity of the discrete transform
  * defined by
- * \anchor eq_dftdef \f{equation}{
+ * \f{equation}{
+ * \label{eq_dftdef}
  * \tilde{v}_k = \sum_{j=0}^{N-1} v_j e^{-i 2 \pi j k / N}.
- * \tag{eq_dftdef}
  * \f}
  * We may estimate the discrete inverse Fourier transform
  * in a similar way, using the relation
@@ -161,17 +161,17 @@
  * Therefore we see that \f$S_n(|f|)\f$ has units of \f$(\mathrm{time})\times U^2\f$.
  * If we replace \f$\tilde{n}(f_k)\f$ with the discretely sampled quantities
  * \f$\tilde{n}_k = \tilde{n}(f_k)\f$, we obtain
- * \anchor eq_ospsddisc \f{equation}{
+ * \f{equation}{
+ * \label{eq_ospsddisc}
  * \left\langle\tilde{n}_k \tilde{n}_{k'}^\ast\right\rangle =
  * \frac{N}{2\Delta t}{{S\left(\left|f_{k}\right|\right)}}\delta_{kk'}
- * \tag{eq_ospsddisc}
  * \f}
  * where \f$\delta_{kk'}\f$ is the dimensionless Kronecker \f$\delta\f$-function,
  * obtained by discretization of the continuous \f$\delta\f$-function:
  * \f{equation}{
  * \delta(f-f') \rightarrow N\Delta t\delta_{kk'}
  * \f}
- * Equation\eqref{eq_ospsddisc} defines \f${S\left(\left|f_{k}\right|\right)}\f$ in terms of the discrete
+ * \eqref{eq_ospsddisc} defines \f${S\left(\left|f_{k}\right|\right)}\f$ in terms of the discrete
  * frequency domain quantities.
  *
  * @{

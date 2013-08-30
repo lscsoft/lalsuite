@@ -110,22 +110,22 @@ extern "C" {
  *
  * The relationship between geodetic and Cartesian coördinates is
  * given by
- * \anchor tools_e_cart1
- * \anchor tools_e_cart2
- * \anchor tools_e_cart3
  * \f{align}{
+ * \label{tools_e_cart1}
  * x^1 &=\left(
  * \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
  * + h
- * \right) \cos\beta\cos\lambda             \tag{tools_e_cart1}\\
+ * \right) \cos\beta\cos\lambda \\
+ * \label{tools_e_cart2}
  * x^2 &=\left(
  * \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
  * + h
- * \right) \cos\beta\sin\lambda             \tag{tools_e_cart2}\\
+ * \right) \cos\beta\sin\lambda \\
+ * \label{tools_e_cart3}
  * x^3 &=\left(
  * \frac{b^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
  * + h
- * \right) \sin\beta  \tag{tools_e_cart3} \\
+ * \right) \sin\beta \\
  * \f}
  *
  * ### Cached Detectors ###

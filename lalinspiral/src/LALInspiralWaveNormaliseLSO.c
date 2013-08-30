@@ -39,9 +39,9 @@
  * component is \f$H_0,\f$ Nyquist
  * is \f$H_{n/2},\f$ \f$H_k,\f$ \f$k \ne 0,n/2,\f$ (\f$H_{n-k})\f$ is the real (imaginary)
  * part of the \f$k\f$th harmonic)
- * \anchor eq_inspiralnorm \f{equation}{
+ * \f{equation}{
+ * \label{eq_inspiralnorm}
  * H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
- * \tag{eq_inspiralnorm}
  * \f}
  * <tt>The above sum is limited to frequency</tt> <tt>in->fCutoff.</tt>
  * Also, note that the zeroth and Nyquist frequency components
@@ -52,7 +52,7 @@
  * vector</em> using:
  * \f{eqnarray}{
  * \widehat H_k & = & \frac {H_k}{\sqrt H},
- * \ \ \ \mathrm{k \times in\rightarrow\mathrm df} \le \mathrm{in\rightarrow fCutoff},\nonumber \\
+ * \ \ \ \mathrm{k \times in\rightarrow\mathrm df} \le \mathrm{in\rightarrow fCutoff}, \\
  * & = & 0, \ \ \ \mathrm{k \times in\rightarrow df} > \mathrm{in\rightarrow fCutoff}.
  * \f}
  * In addition, the 0th and Nyquist frequency components are also set to zero.

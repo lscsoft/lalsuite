@@ -23,7 +23,7 @@
  * \ingroup LALInspiral_h
  *
  * \brief This module computes the usual stationary phase approximation to the
- * Fourier transform of a chirp waveform given by Eq.\eqref{eq_InspiralFourierPhase_f2}.
+ * Fourier transform of a chirp waveform given by \eqref{eq_InspiralFourierPhase_f2}.
  *
  * ### Prototypes ###
  *
@@ -49,7 +49,7 @@
  *
  * ### Algorithm ###
  *
- * The standard SPA is given by Eq.\eqref{eq_InspiralFourierPhase_f2}.
+ * The standard SPA is given by \eqref{eq_InspiralFourierPhase_f2}.
  * We define a variable function pointer \c LALInspiralTaylorF2Phasing and point
  * it to one of the \c static functions defined within this function
  * that explicitly calculates the Fourier phase at the PN order chosen by the user.

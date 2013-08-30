@@ -281,7 +281,7 @@ sf2_spin_corr sf2_spin_corrections(
 }
 /**
  * Computes the stationary phase approximation to the Fourier transform of
- * a chirp waveform with phase given by Eq.\eqref{eq_InspiralFourierPhase_f2}
+ * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}
  * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
  * set to -1, then the highest implemented order is used.
  * \author B.S. Sathyaprakash

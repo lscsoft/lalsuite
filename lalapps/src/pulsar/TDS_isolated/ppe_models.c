@@ -547,7 +547,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
  *
  * This function calculates the complex heterodyned time series model for a triaxial neutron star (see [\ref
  * DupuisWoan2005]). It is defined as:
- * \f{eqnarray*}{
+ * \f{eqnarray}{
  * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
  * (1+\cos^2\iota)\exp{i\phi_0} - iF_{\times}(t,\psi)\cos{\iota}\exp{i\phi_0}
  * \right),
@@ -556,7 +556,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
  *
  * The antenna pattern functions are contained in a 2D lookup table, so within this function the correct value for the
  * given time and \f$\psi\f$ are interpolated from this lookup table using bilinear interpolation (e.g.):
- * \f{eqnarray*}{
+ * \f{eqnarray}{
  * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
  * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
  * \f}
@@ -671,7 +671,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData 
  * As for the standard triaxial model, the antenna pattern functions are contained in a 2D lookup table, so within this
  * function the correct value for the given time and \f$\psi\f$ are interpolated from this lookup table using bilinear
  * interpolation (e.g.):
- * \f{eqnarray*}{
+ * \f{eqnarray}{
  * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
  * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
  * \f}
@@ -849,7 +849,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
  *
  * The antenna pattern functions are contained in a 2D lookup table, so within this function the correct value for the
  * given time and \f$\psi\f$ is interpolated from this lookup table using bilinear interpolation (e.g.):
- * \f{eqnarray*}{
+ * \f{eqnarray}{
  * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
  * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
  * \f}
@@ -1207,7 +1207,7 @@ void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime, REAL8 *psiprim
  *
  * This function will convert the new parameters \f${\phi'}_0\f$ and \f$\psi'\f$, defined in \c phi0_psi_transform()
  * into the original \f$\phi_0\f$ and \f$\psi\f$ coordinates. This is done through the inverse transform:
- * \f{eqnarray*}{
+ * \f{eqnarray}{
  * \left( \begin{array}{c} {\phi}_0 \\ {\psi} \end{array} \right) & = &
  * \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin(\theta) &
  * \cos{\theta} \end{array} \right)^{-1}

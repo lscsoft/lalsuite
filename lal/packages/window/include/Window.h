@@ -141,8 +141,7 @@ extern "C" {
  * w(y)
  * = \left\{ \begin{array}{ll}
  * \sin^2 \left[ \frac{\pi}{2} (|y| - 1) / \beta \right] & |y| \geq 1 -
- * \beta,
- * \\
+ * \beta, \\
  * 1 & |y| < 1 - \beta.
  * \end{array} \right.
  * \f}
@@ -160,12 +159,11 @@ extern "C" {
  * central peak.  \f$\beta = 0\f$ yields the rectangle window, \f$\beta \rightarrow \infty\f$ yields a \f$\delta\f$ function with a single non-zero sample in the
  * middle.
  *
- * These window functions are shown in Fig.\figref{f_window_t}, showing various windows as functions of the normalized
+ * These window functions are shown in \figref{window_t}, showing various windows as functions of the normalized
  * independend variable \f$y\f$, choosing \f$\beta = 6\f$ for the Kaiser window, \f$\beta = 2\f$ for the Creighton window,
  * \f$\beta = 0.5\f$ for the Tukey window, and \f$\beta = 3\f$ for the Gauss window.
  *
- * \image html  window_t.png "Fig. [f_window_t]: Various windows as functions of the normalized independend variable y"
- * \image latex window_t.pdf "Various windows as functions of the normalized independend variable y"
+ * \figure{window_t,pdf,0.6,Various windows as functions of the normalized independend variable y}
  *
  * For a vector of length \f$L\f$ (an integer), the mapping from integer array
  * index \f$i\f$ to normalized co-ordinate \f$y\f$ is
@@ -186,17 +184,16 @@ extern "C" {
  * integer sample \f$i\f$.
  *
  * The Fourier transforms of the windows are shown as functions of \f$1 / y\f$ in
- * Fig.\figref{f_window_f}, showing frequency behaviour of various windows as functions
+ * \figref{window_f}, showing frequency behaviour of various windows as functions
  * of the inverse of the normalized independend variable \f$y\f$, choosing \f$\beta = 6\f$
  * for the Kaiser window, \f$\beta = 2\f$ for the Creighton window, \f$\beta = 0.5\f$ for
  * the Tukey window, and \f$\beta = 3\f$ for the Gauss window.
  *
- * \image html  window_f.png "Fig. [f_window_f]: Frequency behaviour of various windows as functions of the inverse of the normalized independend variable y"
- * \image latex window_f.pdf "Frequency behaviour of various windows as functions of the inverse of the normalized independend variable y"
+ * \figure{window_f,pdf,0.6,Frequency behaviour of various windows as functions of the inverse of the normalized independend variable y}
  *
  * Since the Fourier transform of windowed data is the Fourier transform of
  * the data convolved with the Fourier transform of the window,
- * Fig.\figref{f_window_f} is the major guideline for selecting a window.  One
+ * \figref{window_f} is the major guideline for selecting a window.  One
  * can see that windows with a narrow central lobe tend to have higher
  * sidelobes, and windows which suppress their low-order sidelobes tend to
  * have more power in the high-order sidelobes.  The choice of window thus

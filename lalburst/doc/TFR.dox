@@ -37,21 +37,21 @@
  * <tt>TfrSp()</tt>, type: \c Spectrogram)
  * \f$S_x^h(t,f)=|F_x^h(t,f)|^2\f$ is defined as the
  * square modulus of the short-time Fourier transform :
- * \anchor sp \f{equation}{
- * \tag{sp}
+ * \f{equation}{
+ * \label{sp}
  * F_x^h(t,f)=\int{x(s)h(t-s)e^{-2i\pi sf}\,ds}.
  * \f}</li>
  * <li> the Wigner-Ville distribution (function: <tt>TfrWv()</tt>, type:
  * \c WignerVille) is defined as :
- * \anchor wv \f{equation}{
- * \tag{wv}
+ * \f{equation}{
+ * \label{wv}
  * W_x(t,f)=\int{x(t+s/2)x(t-s/2)e^{-2i\pi sf}\,ds}.
  * \f}</li>
  * <li> the pseudo smoothed Wigner-Ville distribution (function:
  * <tt>TfrPswv()</tt>, type: \c PSWignerVille) is a smoothed
  * version of the previous TFR. Its definition reads :
- * \anchor pswv \f{equation}{
- * \tag{pswv}
+ * \f{equation}{
+ * \label{pswv}
  * PSW_x^{h,g}(t,f)=\int{h(\tau)\int{g(s-t)x(t+s/2)x(t-s/2)\,ds}\:e^{-2i\pi \tau
  * f}\,d\tau}.
  * \f}</li>
@@ -59,8 +59,8 @@
  * \c RSpectrogram) is modified version of the spectrogram (see
  * above) by the reassignment method through the following transformation
  * operation :
- * \anchor rsp \f{equation}{
- * \tag{rsp}
+ * \f{equation}{
+ * \label{rsp}
  * \check{S}_x^h(t,f)=\int{\!\!\!\int{S_x^{h}(s,\xi)\delta(t-\hat{t}(s,\xi),f-\hat{f}(s,\xi))\,dsd\xi}},
  * \f}
  * where the reassignment operators can be written for the time operator as :
@@ -147,7 +147,7 @@
  * \c tCol columns and \c fRow rows.
  *
  * We summarize the memory allocation and the intput and output of the
- * computation stage in Table.\tableref{tfr_tablea}.
+ * computation stage in \tableref{tfr_tablea}.
  *
  * Notes:
  * <ol>
@@ -171,7 +171,7 @@
  * <tr><td></td><td><tt>type = Spectrogram</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
  * <tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
  * <tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
- * <tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt> \f$\equiv h(t)\f$ in eq.\eqref{sp}</td><td></td></tr>
+ * <tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt> \f$\equiv h(t)\f$ in \eqref{sp}</td><td></td></tr>
  * <tr><td><tt>TfrWv()</tt></td><td></td><td></td><td></td></tr>
  * <tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
  * <tr><td></td><td><tt>type = WignerVille</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
@@ -182,14 +182,14 @@
  * <tr><td></td><td><tt>type = PSWignerVille</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
  * <tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
  * <tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
- * <tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt> \f$\equiv g(t)\f$ in eq.\eqref{pswv}</td><td></td></tr>
- * <tr><td></td><td>\c wlengthF</td><td><tt>windowF*</tt> \f$\equiv h(t)\f$ in eq.\eqref{pswv}</td><td></td></tr>
+ * <tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt> \f$\equiv g(t)\f$ in \eqref{pswv}</td><td></td></tr>
+ * <tr><td></td><td>\c wlengthF</td><td><tt>windowF*</tt> \f$\equiv h(t)\f$ in \eqref{pswv}</td><td></td></tr>
  * <tr><td><tt>TfrRsp()</tt></td><td></td><td></td><td></td></tr>
  * <tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
  * <tr><td></td><td><tt>type = RSpectrogram</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
  * <tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
  * <tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
- * <tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt>\f$ \equiv h(t)\f$ in eq.\eqref{rsp}</td><td></td></tr>
+ * <tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt>\f$ \equiv h(t)\f$ in \eqref{rsp}</td><td></td></tr>
  * </table>
  *
  * ### Operating Instructions ###
@@ -245,7 +245,7 @@
  * <li> \c tfrIn is the time-frequency input structure (for memory
  * allocation).
  * \begin{itemize}</li>
- * <li> \c type is the type of the chosen TFR (see Table.\tableref{tfr_tablea}.</li>
+ * <li> \c type is the type of the chosen TFR (see \tableref{tfr_tablea}.</li>
  * <li> \c fRow is the number of frequency bins.</li>
  * <li> \c tCol is the number of time bins.</li>
  * <li> \c wlengthT is the (time-smoothing) window length (for Sp,
@@ -254,7 +254,7 @@
  * </ul>
  * \item \c tfr is the time-frequency representation structure.
  * <ul>
- * <li> \c type is the type of the chosen TFR (see Table.\tableref{tfr_tablea}.</li>
+ * <li> \c type is the type of the chosen TFR (see \tableref{tfr_tablea}.</li>
  * <li> \c fRow is the number of frequency bins.</li>
  * <li> \c tCol is the number of time bins.</li>
  * <li> \c freqBin defines the centers of each frequency bins.</li>
@@ -263,7 +263,7 @@
  * </ul>
  * \item \c param is the time-frequency parameter structure.
  * <ul>
- * <li> \c type is the type of the chosen TFR (see Table.\tableref{tfr_tablea}.</li>
+ * <li> \c type is the type of the chosen TFR (see \tableref{tfr_tablea}.</li>
  * <li> \c windowT is the (time-smoothing) window (for Sp,
  * Rsp and Pswv).</li>
  * <li> \c windowF is the (frequency-smoothing) window length (for
@@ -274,7 +274,7 @@
  * ### Error conditions ###
  *
  * These functions all set the universal status structure on return.
- * Error conditions are described in the tables.\tableref{tfr_tableb} and
+ * Error conditions are described in the \tableref{tfr_tableb} and
  * \tableref{tfr_tablec}.
  *
  * \anchor tfr_tableb

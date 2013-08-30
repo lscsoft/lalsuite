@@ -46,7 +46,7 @@
  * <tt>LALSLUBackSub()</tt> and <tt>LALDLUBackSub()</tt> take the permuted
  * LU-decomposed matrix returned by the above routine, and
  * back-substitute the vector <tt>*vector</tt> representing \f$\mathsf{v}^a\f$
- * in Eq.\eqref{eq_linear_system}, to compute the vector \f$\mathsf{x}^b\f$.
+ * in \eqref{eq_linear_system}, to compute the vector \f$\mathsf{x}^b\f$.
  * This is returned in-place in <tt>*vector</tt>.  The input parameter
  * <tt>*indx</tt> is the list of row permutations returned by the above
  * routines.

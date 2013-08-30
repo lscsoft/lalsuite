@@ -28,7 +28,7 @@
  * the optimal filter \f$\widetilde{Q}^{\mathrm{C}}(f)\f$ which maximizes the ratio of the
  * mean \f$\mu=\langle Y\rangle\f$ to the standard deviation
  * \f$\sigma=\sqrt{\langle (Y-\mu)^2\rangle}\f$ of the cross-correlation
- * statistic\eqref{stochastic_e_ymax} is
+ * statistic \eqref{stochastic_e_ymax} is
  *
  * \f{equation}{
  * \widetilde{Q}^{\mathrm{C}}(f)=\lambda\,
@@ -79,15 +79,13 @@
  * \widetilde{\bar{h}}{}_{2}(f)
  * \f}
  * where the "uncalibrated optimal filter" is
- * \anchor stochastic_e_QW \f{eqnarray}{
- * \tag{stochastic_e_QW}
+ * \f{eqnarray}{
+ * \label{stochastic_e_QW}
  * \widetilde{Q}(f)
  * &=&\frac{\widetilde{Q}^{\mathrm{C}}(f)}{\widetilde{R}_1(f)^*\widetilde{R}_2(f)}
  * =\lambda\,\left(\frac{1}{\widetilde{R}_1(f)^*P^{\mathrm{C}}_1(f)}\right)
  * \frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
- * {|f|^3}\left(\frac{1}{\widetilde{R}_2(f)P^{\mathrm{C}}_2(f)}\right)
- * \nonumber
- * \\
+ * {|f|^3}\left(\frac{1}{\widetilde{R}_2(f)P^{\mathrm{C}}_2(f)}\right) \\
  * &=&\lambda\,
  * \frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
  * {|f|^3\,P^{\mathrm{HC}}_1(f)^*\,P^{\mathrm{HC}}_2(f)}

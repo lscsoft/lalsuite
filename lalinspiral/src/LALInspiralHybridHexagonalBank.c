@@ -76,11 +76,9 @@
  * + \left(-\frac{q}{2}+\frac{1}{2}*\sqrt{\frac{27 q^2 + 4 p^3}{27}}\right)^{\frac{1}{3}};
  * \f}
  *
- * \image html  LALInspiralHybridHexa2.png "Fig.[fig_hybridhexa1]: Example of hybrid hexagonal placement. Once an ellipse covers the upper and lower boundary, then the hexagonal placement stops. This occurs neccesseraly at low and high mass range."
- * \image latex LALInspiralHybridHexa2.pdf "Example of hybrid hexagonal placement. Once an ellipse covers the upper and lower boundary, then the hexagonal placement stops. This occurs neccesseraly at low and high mass range." width=3.5in
+ * \figure{LALInspiralHybridHexa2,pdf,0.6,Example of hybrid hexagonal placement. Once an ellipse covers the upper and lower boundary\, then the hexagonal placement stops. This occurs neccesseraly at low and high mass range.}
  *
- * \image html  LALInspiralHybridHexa1.png "Fig.[fig_hybridhexa1]: Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at tau0=3.6 and tau0=0.4), then the placement is switched from the hexagonal to a placement along the bissectric of the upper/lower boundaries as described in the text."
- * \image latex LALInspiralHybridHexa1.pdf "Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at tau0=3.6 and tau0=0.4), then the placement is switched from the hexagonal to a placement along the bissectric of the upper/lower boundaries as described in the text." width=3.5in
+ * \figure{LALInspiralHybridHexa1,pdf,0.6,Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at tau0=3.6 and tau0=0.4)\, then the placement is switched from the hexagonal to a placement along the bissectric of the upper/lower boundaries as described in the text.}
  */
 /*@{*/
 

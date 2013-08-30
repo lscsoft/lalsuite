@@ -119,14 +119,11 @@ choose( UINT4 a, UINT4 b )
  * parameters for the new epoch are:
  * \f{eqnarray}{
  * \phi_0^{(2)} & = & \phi_0^{(1)} + 2\pi f_0^{(1)}t \left( 1 +
- * \sum_{k=1}^N \frac{1}{k+1}f_k^{(1)} \Delta t^k \right)
- * \nonumber\\
+ * \sum_{k=1}^N \frac{1}{k+1}f_k^{(1)} \Delta t^k \right) \\
  * f_0^{(2)} & = & f_0^{(1)} \left( 1 +
- * \sum_{k=1}^N f_k^{(1)} \Delta t^k \right)
- * \nonumber\\
+ * \sum_{k=1}^N f_k^{(1)} \Delta t^k \right) \\
  * f_k^{(2)} & = & \frac{f_0^{(1)}}{f_0^{(2)}} \left( f_k^{(1)} +
  * \sum_{j=k+1}{N} \binom{j}{k} f_j^{(1)}\Delta t^{j-k} \right)
- * \nonumber
  * \f}
  * The phase function \f$\phi(t)=\phi_0^{(i)}+2\pi
  * f_0^{(i)}\left[t-t^{(i)}+\sum_{k=1}^N

@@ -66,8 +66,8 @@ extern "C" {
  * \f]
  * The central idea in our definitions of coarse graining will thus be
  * the correspondence
- * \anchor utilities_e_coarse \f{equation}{
- * \tag{utilities_e_coarse}
+ * \f{equation}{
+ * \label{utilities_e_coarse}
  * h_k \approx \frac{1}{\delta f}
  * \int_{f_k-\delta f/2}^{f_k+\delta f/2} h(f)\,df
  * \f}
@@ -79,10 +79,9 @@ extern "C" {
  * element of the coarse-grained series, which represents a frequency
  * range from \f$f_k-\delta f/2\f$ to \f$f_k+\delta f/2\f$, we consider the
  * elements of the fine-grained series whose frequency ranges overlap
- * with this.  (Fig.\figref{utilities_f_coarse}
+ * with this (\figref{utilitiesCoarseGrain}).
  *
- * \image html  utilitiesCoarseGrain.png "Fig. [utilities_f_coarse]: Coarse graining a frequency series"
- * \image latex utilitiesCoarseGrain.pdf "Coarse graining a frequency series"
+ * \figure{utilitiesCoarseGrain,pdf,0.6,Coarse graining a frequency series}
  *
  * We define \f$\ell^{\scriptstyle\textrm{min}}_k\f$ and \f$\ell^{\scriptstyle{\rm  min}}_k\f$
  * to be the indices of the first and last elements of
@@ -92,7 +91,7 @@ extern "C" {
  * \f$\lambda^{\scriptstyle\textrm{max}}_k\f$ which correspond to the locations
  * of fine-grained elements which would exactly reach the edges of the
  * coarse-grained element with index \f$k\f$.  These are defined by
- * \f{eqnarray*}{
+ * \f{eqnarray}{
  * f_0 + \left(k-\frac{1}{2}\right) \delta f
  * &=& f'_0 + \left(\lambda^{\scriptstyle\textrm{min}}_k-\frac{1}{2}\right)
  * \delta f' \\
@@ -102,14 +101,14 @@ extern "C" {
  * \f}
  * or, defining the offset \f$\Omega=(f_0-f'_0)/\delta f'\f$ and the coarse
  * graining ratio \f$\rho = \delta f / \delta f'\f$,
- * \f{eqnarray*}{
+ * \f{eqnarray}{
  * \lambda^{\scriptstyle\textrm{min}}_k &=&
  * \Omega + \left(k-\frac{1}{2}\right) \rho + \frac{1}{2}\\
  * \lambda^{\scriptstyle\textrm{max}}_k &=&
  * \Omega + \left(k+\frac{1}{2}\right) \rho - \frac{1}{2}
  * \ .
  * \f}
- * Examination of Fig.\figref{utilities_f_coarse} shows that
+ * Examination of \figref{utilitiesCoarseGrain} shows that
  * \f$\ell^{\scriptstyle\textrm{min}}_k\f$ is the smallest integer not less than
  * \f$\lambda^{\scriptstyle\textrm{min}}_k\f$ and \f$\ell^{\scriptstyle{\rm
  * min}}_k\f$ is the largest integer not greater than
@@ -117,7 +116,8 @@ extern "C" {
  *
  * With these definitions, approximating the integral in
  * \eqref{utilities_e_coarse} gives
- * \anchor utilities_e_coarseapprox \f{equation}{\tag{utilities_e_coarseapprox}
+ * \f{equation}{
+ * \label{utilities_e_coarseapprox}
  * h_k = \frac{1}{\rho}
  * \left(
  * (\ell^{\scriptstyle\textrm{min}}_k - \lambda^{\scriptstyle\textrm{min}}_k)
@@ -168,7 +168,7 @@ extern "C" {
  * of the coarse-grained series is \f$f_{\scriptstyle{\rm min}}=f_0-\delta f/2\f$
  * and the last is \f$f_{\scriptstyle{\rm max}}=f_0 + (N-1) \delta f +\delta f/2\f$
  * (taking into account the width of the bins), the conitions are
- * \f{eqnarray*}{
+ * \f{eqnarray}{
  * f_0 - \frac{\delta f}{2} &\ge& f'_0 - \frac{\delta f'}{2}\\
  * f_0 + \left(N-\frac{1}{2}\right)\,\delta f &\le&
  * f'_0 + \left(N'-\frac{1}{2}\right)\,\delta f'

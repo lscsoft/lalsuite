@@ -36,16 +36,13 @@
  * It tests all error conditions listed in the Error codes table.
  * It also writes to files the values of the Dirichlet kernel for three
  * different valid test cases.
- * See Figs.\figref{utilities_f_dirichlet_fig1}-\figref{utilities_f_dirichlet_fig3}.
+ * See \figref{utilitiesDirichletFig1}--\figref{utilitiesDirichletFig3}.
  *
- * \image html  utilitiesDirichletFig1.png "Fig. [utilities_f_dirichlet_fig1]: Dirichlet kernel for N=10, Delta x =0.01, and 0 \<= x \<= 1."
- * \image latex utilitiesDirichletFig1.pdf "Dirichlet kernel for N=10, Delta x =0.01, and 0 \<= x \<= 1." width=4in
+ * \figure{utilitiesDirichletFig1,pdf,0.6,Dirichlet kernel for N=10\, Delta x =0.01\, and 0 \<= x \<= 1.}
  *
- * \image html  utilitiesDirichletFig2.png "Fig. [utilities_f_dirichlet_fig2]: Dirichlet kernel for N=11, Delta x =0.01, and 0\<= x \<= 1."
- * \image latex utilitiesDirichletFig2.pdf "Dirichlet kernel for N=11, Delta x =0.01, and 0\<= x \<= 1." width=4in
+ * \figure{utilitiesDirichletFig2,pdf,0.6,Dirichlet kernel for N=11\, Delta x =0.01\, and 0\<= x \<= 1.}
  *
- * \image html  utilitiesDirichletFig3.png "Fig. [utilities_f_dirichlet_fig3]: Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2."
- * \image latex utilitiesDirichletFig3.pdf "Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2." width=4in
+ * \figure{utilitiesDirichletFig3,pdf,0.6,Dirichlet kernel for N=10\, Delta x =0.01\, and 0\<= x \<= 2.}
  *
  * ### Exit codes ###
  *

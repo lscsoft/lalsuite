@@ -44,9 +44,9 @@
  * ### Algorithm ###
  *
  * This code uses a fourth-order Runge-Kutta algorithm to solve the nine
- * first-order, coupled, ordinary differential equations in Eq.\eqref{eqn_precession1}
- * Eq.\eqref{eqn_precession2} and Eq.\eqref{eqn_precession3}. The solution is then used
- * in Eq.\eqref{eqn_waveform} (and following equations) to get the waveform  emitted
+ * first-order, coupled, ordinary differential equations in \eqref{eqn_precession1}
+ * \eqref{eqn_precession2} and \eqref{eqn_precession3}. The solution is then used
+ * in \eqref{eqn_waveform} (and following equations) to get the waveform  emitted
  * by a spinning black hole binary.
  *
  * ### Uses ###

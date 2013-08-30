@@ -63,10 +63,9 @@ extern "C" {
  * in the time domain, with sampling time \f$\Delta t\f$, so that the data point
  * \f$h_j\f$ corresponds to a time \f$t_j = t_\textrm{start} + j \Delta t\f$.  Taking the
  * standard DFT yields complex data
- * \anchor standarddft
  * \f{equation}{
+ * \label{standarddft}
  * {\tilde h}_\gamma = \sum_{j=0}^{n-1} \, e^{-2 \pi i j \gamma / n} \, h_j
- * \tag{standarddft}
  * \f}
  * in the Fourier domain, for \f$0 \le \gamma \le [n/2]+1\f$.  Here the data point
  * \f${\tilde h}_\gamma\f$ corresponds to a frequency \f$f_\gamma = \gamma \Delta f\f$,
@@ -96,10 +95,10 @@ extern "C" {
  * and then taking the forward DFT of each chunk.  Then, \f$H_{J\Gamma}\f$ is just
  * the \f$\Gamma\f$th element of the \f$J\f$th chunk.  In terms of formulae this
  * corresponds to
- * \anchor verticalTFP \f{equation}{
+ * \f{equation}{
+ * \label{verticalTFP}
  * H_{J\Sigma} = \sum_{k=0}^{2 N_F-1} \, \exp \left[ 2 \pi i k \Sigma / (2
  * N_F) \right] \, h_{2 N_F J + k},
- * \tag{verticalTFP}
  * \f}
  * for \f$0 \le J < N_T\f$ and \f$0 \le \Sigma < N_F\f$.  We call this first type
  * of TF plane a vertical TF plane, since it corresponds to a series of
@@ -110,14 +109,15 @@ extern "C" {
  * domain data to obtain frequency domain data, then dividing the frequency
  * domain data into \f$N_F\f$ equal-sized chunks, then taking the inverse DFT of each
  * chunk.  We call the resulting TF plane a horizontal TF plane. In terms of
- * formulae the TF plane elements are \anchor horizontalTFP
+ * formulae the TF plane elements are
  * \f{equation}{
+ * \label{horizontalTFP}
  * H_{J\Sigma} =
  * \sum_{\gamma=0}^{N_T-1} \, \exp \left[ -2 \pi i J \gamma / N_T \right] \,
- * {\tilde h}_{N_T \Sigma + \gamma}, \tag{horizontalTFP}
+ * {\tilde h}_{N_T \Sigma + \gamma},
  * \f}
  * for \f$0 \le J < N_T\f$ and \f$0 \le \Sigma < N_F\f$, where \f${\tilde h}_\gamma\f$ is given by
- * Eq. \eqref{standarddft}.
+ * \eqref{standarddft}.
  *
  */
 /*@{*/

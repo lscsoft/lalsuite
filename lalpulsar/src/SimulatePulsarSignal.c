@@ -53,7 +53,6 @@ static LALUnit emptyUnit;
  *
  * We want to calculate \f$h(t)\f$, given by
  * \f[
- * \tag{eq:1}
  * h(t) = F_+(t)\, h_+(t) + F_\times(t) \,h_\times(t)\,,
  * \f]
  * where \f$F_+\f$ and \f$F_x\f$ are called the <em>beam-pattern</em> functions,
@@ -61,12 +60,12 @@ static LALUnit emptyUnit;
  * the source position \f$\alpha\f$, \f$\delta\f$ and the detector position and
  * orientation (\f$\gamma\f$, \f$\lambda\f$, \f$L\f$ and \f$\xi\f$). The expressions for
  * the beam-pattern functions are given in [\ref JKS98], which we write as
- * \f{eqnarray}
+ * \f{eqnarray}{
  * F_+(t) = \sin \zeta \cos 2\psi \, a(t)  + \sin \zeta \sin 2\psi \, b(t)\,,\\
  * F_\times(t) = \sin\zeta  \cos 2\psi \,b(t) - \sin\zeta \sin 2\psi \, a(t) \,,
  * \f}
  * where \f$\zeta\f$ is the angle between the interferometer arms, and
- * \f{eqnarray}
+ * \f{eqnarray}{
  * a(t) &=& a_1 \cos[ 2 (\alpha - T)) ] + a_2 \sin[ 2(\alpha - T)]
  * + a_3 \cos[ \alpha - T ] + a_4 \sin [ \alpha - T ] + a_5\,,\\
  * b(t) &=& b_1 \cos[ 2(\alpha - T)] + b_2 \sin[ 2(\alpha - T) ]
@@ -74,7 +73,7 @@ static LALUnit emptyUnit;
  * \f}
  * where \f$T\f$ is the local (mean) sidereal time of the detector, and the
  * time-independent coefficients \f$a_i\f$ and \f$b_i\f$ are given by
- * \f{eqnarray}
+ * \f{eqnarray}{
  * a_1 &=& \frac{1}{16} \sin 2\gamma \,(3- \cos 2\lambda)\,(3 - \cos 2\delta)\,,\\
  * a_2 &=& -\frac{1}{4}\cos 2\gamma \,\sin \lambda \,(3 - \cos 2\delta) \,,\\
  * a_3 &=& \frac{1}{4} \sin 2\gamma \,\sin 2\lambda \,\sin 2\delta  \,\\
@@ -82,7 +81,7 @@ static LALUnit emptyUnit;
  * a_5 &=& \frac{3}{4} \sin 2\gamma \, \cos^2 \lambda \,\cos^2 \delta\,,
  * \f}
  * and
- * \f{eqnarray}
+ * \f{eqnarray}{
  * b_1 &=& \cos 2\gamma \,\sin \lambda \,\sin \delta\,,\\
  * b_2 &=& \frac{1}{4} \sin 2\gamma \,(3-\cos 2\lambda)\, \sin \delta\,,\\
  * b_3 &=& \cos 2\gamma \,\cos \lambda \,\cos\delta \,, \\
@@ -90,13 +89,13 @@ static LALUnit emptyUnit;
  * \f}
  *
  * The source model considered is a plane-wave
- * \f{eqnarray}
+ * \f{eqnarray}{
  * h_+(t) &=& A_+\, \cos \Psi(t)\,,\\
  * h_\times(t) &=& A_\times \, \sin \Psi(t)\,,
  * \f}
  * where the wave-phase is \f$\Psi(t) = \Phi_0 + \Phi(t)\f$, and for an
  * isolated pulsar we have
- * \f{equation}
+ * \f{equation}{
  * \Phi(t) = 2\pi \left[\sum_{s=0} \frac{f^{(s)}(\tau_\mathrm{ref})}{
  * (s+1)!} \left( \tau(t) - \tau_\mathrm{ref} \right)^{s+1} \right]\,,
  * \f}
@@ -105,7 +104,7 @@ static LALUnit emptyUnit;
  * (SSB), and \f$\tau(t)\f$ is the SSB-time of the phase arriving at the
  * detector at UTC-time \f$t\f$, which depends on the source-position
  * (\f$\alpha\f$, \f$\delta\f$) and the detector-position, namely
- * \f{equation}
+ * \f{equation}{
  * \tau (t) = t + \frac{ \vec{r}(t)\cdot\vec{n}}{c}\,,
  * \f}
  * where \f$\vec{r}(t)\f$ is the vector from SSB to the detector, and \f$\vec{n}\f$

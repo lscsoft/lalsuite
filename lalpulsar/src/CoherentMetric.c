@@ -68,18 +68,17 @@ static REAL8 Average(REAL8Vector *integrand, REAL8 *uncertainty);
  *
  * ### Algorithm ###
  *
- * This routine simply computes the function given in Eq.\eqref{eq_gab_phi}
+ * This routine simply computes the function given in \eqref{eq_gab_phi}
  * of \ref StackMetric_h.  Most of the work is done by the
  * function \a params->dtCanon(), which computes the value and
  * parameter derivatives of the canonical time coordinate
  * \f$\tau[t;\vec{\lambda}]\f$.  Since the phase function is simply
  * \f$\phi[t;\mathbf{\lambda}]=2\pi\lambda^0 \tau[t;\vec\lambda]\f$, where
  * \f$\lambda^0=f_0\f$, the metric components are simply:
- * \f{eqnarray}
+ * \f{eqnarray}{
  * g_{00}(\mathbf{\lambda}) & = &
  * 4\pi^2\bigg\langle\!(\tau[t;\vec\lambda])^2\bigg\rangle -
- * 4\pi^2\bigg\langle\!\tau[t;\vec\lambda]\bigg\rangle^2 \; ,
- * \nonumber\\
+ * 4\pi^2\bigg\langle\!\tau[t;\vec\lambda]\bigg\rangle^2 \; , \\
  * g_{i0}(\mathbf{\lambda}) \;\; = \;\;
  * g_{0i}(\mathbf{\lambda}) & = &
  * 4\pi^2 f_0\bigg\langle\!
@@ -92,7 +91,7 @@ static REAL8 Average(REAL8Vector *integrand, REAL8 *uncertainty);
  * \bigg\rangle
  * \bigg\langle
  * \frac{\partial\tau[t;\vec\lambda]}{\partial\lambda^i}
- * \bigg\rangle \; , \nonumber\\
+ * \bigg\rangle \; ,\\
  * g_{ij}(\mathbf{\lambda}) & = &
  * 4\pi^2 f_0^2\bigg\langle
  * \frac{\partial\tau[t;\vec\lambda]}{\partial\lambda^i}
@@ -104,23 +103,23 @@ static REAL8 Average(REAL8Vector *integrand, REAL8 *uncertainty);
  * \bigg\rangle
  * \bigg\langle
  * \frac{\partial\tau[t;\vec\lambda]}{\partial\lambda^j}
- * \bigg\rangle \; , \nonumber
+ * \bigg\rangle \; ,
  * \f}
  * where the indecies \f$i\f$ and \f$j\f$ run from 1 to \f$n\f$.
  *
  * In the rigorous definition of the metric, the angle brackets denote an
  * average over the \em canonical time, not the detector time, so we have:
- * \f{eqnarray}
+ * \f{eqnarray}{
  * \bigg\langle\ldots\bigg\rangle
  * & = & \frac{1}{\tau(t_\mathrm{start}+\Delta t)-\tau(t_\mathrm{start})}
  * \int_{\tau(t_\mathrm{start})}^{\tau(t_\mathrm{start}+\Delta t)}
- * \ldots\,d\tau \nonumber\\
+ * \ldots\,d\tau\\
  * & = & \frac{1}{\tau(t_\mathrm{start}+\Delta t)-\tau(t_\mathrm{start})}
  * \int_{t_\mathrm{start}}^{t_\mathrm{start}+\Delta t}
- * \ldots\frac{\partial\tau}{\partial t}\,dt \nonumber\\
+ * \ldots\frac{\partial\tau}{\partial t}\,dt\\
  * & \approx & \frac{1}{\Delta t}
  * \int_{t_\mathrm{start}}^{t_\mathrm{start}+\Delta t}
- * \ldots\,dt \nonumber \; ,
+ * \ldots\,dt \; ,
  * \f}
  * where the approximation is good to order \f$\epsilon\f$ equal to the
  * maximum difference between 1 and \f$\partial\tau/\partial t\f$.  For an

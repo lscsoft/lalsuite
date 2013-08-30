@@ -39,9 +39,9 @@
  * component is \f$H_0,\f$ Nyquist
  * is \f$H_{n/2},\f$ \f$H_k,\f$ \f$k \ne 0,n/2,\f$ (\f$H_{n-k})\f$ is the real (imaginary)
  * part of the \f$k\f$th harmonic)
- * \anchor eq_inspiralnorm \f{equation}{
+ * \f{equation}{
+ * \label{eq_inspiralnorm}
  * H = \sum_{k=1}^{n/2-1} \frac{H_k^2 + H^2_{n-k}}{S_k}.
- * \tag{eq_inspiralnorm}
  * \f}
  * (Note that the zeroth and Nyquist components are ignored in the
  * computation of the norm.)
