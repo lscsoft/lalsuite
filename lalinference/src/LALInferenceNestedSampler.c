@@ -718,10 +718,14 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     {
       if(__ns_exitFlag) fprintf(stdout,"Saving state to %s.\n",resumefilename);
       WriteNSCheckPoint(resumefilename,runState,s);
+      fflush(fpout);
       __ns_saveStateFlag=0;
     }
    /* Have we been told to quit? */
-  if(__ns_exitFlag) {exit(0);}
+  if(__ns_exitFlag) {
+    fclose(fpout);
+    exit(0);
+  }
   
   /* Update the proposal */
   if(!(iter%(Nlive/4))) {
