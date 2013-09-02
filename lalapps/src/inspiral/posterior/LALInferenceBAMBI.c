@@ -61,7 +61,7 @@ void initStudentt(LALInferenceRunState *state);
 extern float *omicron,tol,thL[3],logLRange;
 extern double *maxsigma,logZero;
 extern int nNN,nNNerr,totpar,loglcalls,ncheck,myid,nproc;
-extern char root[100],networkinputs[100];
+extern char root[200],networkinputs[200];
 extern bool likenetinit,converged,lastconverged,netres,firstrun,discardpts;
 extern int ignoredbambicalls,counter;
 extern size_t nlayers,nnodes[10];
@@ -83,7 +83,6 @@ void LogLike(double *Cube, int *ndim, int *npars, double *lnew, void *context);
 int bambi(int *ndata, int *ndim, double **BAMBIData, double *lowlike);
 void dumper(int *nSamples, int *nlive, int *nPar, double **physLive, double **posterior, double **paramConstr, double *maxLogLike, double *logZ, double *logZerr, void *context);
 void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState);
-//char root[100],networkinputs[100];
 
 /******** Defined for BAMBI (end) **********/
 
@@ -96,7 +95,7 @@ void (*dumper2)(int *, int *, int *, double **, double **, double **, double *, 
 int (*bambi2)(int *, int *, double **, double *), void *context)
 {
     int i;
-    char rootformn[100];
+    char rootformn[200];
     strcpy(rootformn, root2);
     for (i = strlen(rootformn); i < 100; i++) rootformn[i] = ' ';
 
@@ -143,7 +142,7 @@ void dumper(UNUSED int *nSamples, UNUSED int *nlive, UNUSED int *nPar, UNUSED do
     char **info = (char **)context;
     char *root2=&info[0][0];
     char *header=&info[1][0];
-    char outfile[100];
+    char outfile[200];
     FILE *fileout;
 
     /* Write evidence to file for use by post-processing */
@@ -309,10 +308,10 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
                 pWrap[k] = 0;
         }
     }
-    for( int j = 0; j < 100; j++ )
+    for( int j = 0; j < 200; j++ )
         root[j] = outfilestr[j];
     if (netfilestr!=NULL)
-        for( int j = 0; j < 100; j++ )
+        for( int j = 0; j < 200; j++ )
             networkinputs[j] = netfilestr[j];
     int rseed = -1;
     int fb = verbose;
