@@ -36,7 +36,7 @@
  * ### Description ###
  *
  * Using the formalism described in Apostolatos
- * et al [\ref ACST94] and Blanchet et al. [\ref BDIWW1995] and formulas
+ * et al \cite ACST94 and Blanchet et al. \cite BDIWW1995 and formulas
  * summarized in Sec.\ \ref sec_smirches this module computes
  * the spin-modulated chirps from a pair of compact stars in orbit around
  * each other.

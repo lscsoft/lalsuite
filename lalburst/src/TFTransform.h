@@ -86,7 +86,7 @@ extern "C" {
  * \f${\overline {\Delta t}} \ {\overline {\Delta f}} =1\f$, and are given by
  * \f${\overline {\Delta t}} = 2 N_F \Delta t\f$ and \f${\overline {\Delta f}} = N_T
  * \Delta f\f$.  Note that there are many other time-frequency representations
- * of data that are not of this type; see [\ref ab1999].
+ * of data that are not of this type; see \cite ab1999.
  *
  * There are many possible choices of linear transformations from the data \f$h_j\f$
  * to data \f$H_{J\Gamma}\f$ satisfying the above properties.  Here we have

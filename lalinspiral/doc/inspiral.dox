@@ -34,7 +34,7 @@
  * One can use kinematical equations \f$dt = (dt/dE)(dE/dv) dv,\f$ and
  * \f$d\phi/dt = 2\pi F\f$ and the energy balance equation relating the
  * luminosity in gravitational waves to the rate of change of
- * binding energy \f${\cal F} = - dE/dt\f$ , to obtain a phasing formula [\ref dis2002]:
+ * binding energy \f${\cal F} = - dE/dt\f$ , to obtain a phasing formula \cite dis2002:
  * \f{eqnarray}{
  * \label{InspiralWavePhasingFormula}
  * t(v) & = & t_\textrm{ref} + m \int_v^{v_\textrm{ref}} \,
@@ -50,7 +50,7 @@
  * equations numerically. Using standard PN expansions for the
  * energy and flux functions one generates the \c Approximant called <tt>TaylorT1.</tt>
  * If instead one uses the P-approximant for the energy and flux functions
- * [\ref dis2002,\ref dis1998] then one generates the approximant called <tt>PadeT1.</tt>
+ * \cite dis2002,\cite dis1998 then one generates the approximant called <tt>PadeT1.</tt>
  * In reality, it is computationally cheaper to use two ordinary differential
  * equations instead of the integrals. These are:
  * \f{equation}{
@@ -71,7 +71,7 @@
  * \phi^v_N (v)\sum_{k=0}^{n} {\phi}^v_k v^k,\\
  * t(v)&=& t_\textrm{ref} +t_N(v) \sum_{k=0}^{n} {t}_k v^k,
  * \f}
- * This corresponds to \c TaylorT2 in the enum \c Approximant [\ref dis2002].
+ * This corresponds to \c TaylorT2 in the enum \c Approximant \cite dis2002.
  * These are implemented in module \ref LALInspiralWave2.c
  * </li>
  *
@@ -88,7 +88,7 @@
  * where \f$\theta=[\eta (t_\textrm{ref}-t)/(5m)]^{-1/8}\f$,
  * \f$F \equiv d \phi/ 2 \pi dt =v^3/(\pi m)\f$ is the instantaneous GW frequency
  * and \f$\eta=m_1 m_2/m^2\f$ is the symmetric mass ratio.
- * This corresponds to the \c Approximant \c TaylorT3  [\ref BDIWW1995,\ref BIWW1996,\ref dis2002].
+ * This corresponds to the \c Approximant \c TaylorT3  \cite BDIWW1995,\cite BIWW1996,\cite dis2002.
  * These are implemented in module \ref LALInspiralWave3.c
  * </li>
  * </ol>
@@ -183,7 +183,7 @@
  * \f}
  * where \f$\phi(t)\f$ is the phasing formula, either specified as an explicit
  * function of time or given implicitly by a set of differential equations
- * [\ref dis2002].  The quantity \f$2\pi F(t) = {d\phi(t)}/{dt}\f$ defines the instantaneous
+ * \cite dis2002.  The quantity \f$2\pi F(t) = {d\phi(t)}/{dt}\f$ defines the instantaneous
  * GW frequency \f$F(t)\f$, and is assumed to be
  * continuously increasing. (We assume \f$F(t)>0\f$.)
  * Now the Fourier transform \f$\tilde h(f)\f$ of \f$h(t)\f$ is defined as
@@ -288,7 +288,7 @@
  * This is the amplitude used in most of literature. However, including the
  * full PN expansion in \f$\dot{F}(t),\f$ gives a better agreement between the
  * time-domain and Fourier domains signals and this code therefore uses the full
- * PN expansion [\ref dis2002].
+ * PN expansion \cite dis2002.
  *
  * \section sec_BCV Detection template family
  *
@@ -319,14 +319,14 @@
  * filtering is sensitive to the phasing of the waves. It is not clear which model
  * best describes the true GW signal from a compact binary inspiral although some,
  * like the EOB, are more robust in their predictions than others. Thus, Buonanno,
- * Chen and Vallisneri proposed [\ref BCV03,\ref BCV03b]
+ * Chen and Vallisneri proposed \cite BCV03,\cite BCV03b
  * a \e phenomenological model as a detection template
  * family (DTF) based on the above expression for the Fourier transform. Indeed, they
  * proposed to use a DTF that depends on four parameters
- * \f$(\psi_0,\, \psi_3,\, f_\textrm{cut},\, \alpha)\f$ for non-spinning sources [\ref BCV03]
+ * \f$(\psi_0,\, \psi_3,\, f_\textrm{cut},\, \alpha)\f$ for non-spinning sources \cite BCV03
  * and on six parameters
  * \f$(\psi_0,\, \psi_3,\, f_\textrm{cut},\, \alpha_1,\, \alpha_2,\, \beta)\f$
- * for spinning sources [\ref BCV03b].
+ * for spinning sources \cite BCV03b.
  * We have implemented both the non-spinning and spinning waveforms
  * in \c LALBCVWaveform and <tt>LALBCVSpinWaveform,</tt> respectively.
  *
@@ -350,10 +350,10 @@
  * parameters characterizing the waveform amplitude and shape
  * (see Sec. \ref sec_smirches).  However, the phasing
  * of the waves is determined, in general, by about 10 parameters. Apostolatos
- * et al. [\ref ACST94] studied the time-evolution based on which Apostolatos
- * found [\ref TAA96] that far fewer parameters can be used to capture
+ * et al. \cite ACST94 studied the time-evolution based on which Apostolatos
+ * found \cite TAA96 that far fewer parameters can be used to capture
  * the full structure of the spinning black hole binary
- * waveforms. BCV suggested [\ref BCV03b] that one could use a DTF of waveforms that resembles
+ * waveforms. BCV suggested \cite BCV03b that one could use a DTF of waveforms that resembles
  * the non-spinning case. Their proposal has the following structure:
  * \f{equation}{
  * \label{eq_BCV_Spinning}
@@ -370,7 +370,7 @@
  *
  * The entry \c EOB in the <tt>enum Approximant</tt> corresponds to the
  * effective one-body (EOB) approach of Buonanno and Damour
- * [\ref BD99,\ref BD00,\ref DJS00,\ref TD02]. The EOB formalism allows one to evolve
+ * \cite BD99,\cite BD00,\cite DJS00,\cite TD02. The EOB formalism allows one to evolve
  * the dynamics of two black holes beyond the last stable orbit into
  * the plunge phase thereby increasing the number of
  * wave cycles, and the signal-to-noise ratio, that can be extracted.
@@ -451,13 +451,13 @@
  *
  * Waveforms from spinning black hole binaries at 2PN order can be
  * generated using the choice \c SpinTaylorT3 in the <tt>enum
- * Approximant.</tt> Current implementation closely follows Ref. [\ref ACST94].
+ * Approximant.</tt> Current implementation closely follows Ref. \cite ACST94.
  * The orbital plane of a binary consisting of rapidly spinning compact
  * objects precesses causing the polarization of the wave received at an
  * antenna to continually change. This change depends on the source location
  * on the sky and it might therefore be possible to resolve the direction
  * to a source. It is therefore essential to specify the coordinate system
- * employed in the description of the waveform. As in Ref. [\ref ACST94]
+ * employed in the description of the waveform. As in Ref. \cite ACST94
  * the coordinate system is adapted to the detector with the x-y plane
  * in the plane of the interferometer with the axes along the two arms.
  *

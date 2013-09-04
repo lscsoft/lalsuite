@@ -196,7 +196,7 @@
  *
  * <ul>
  * <li> The conventions in the \c LALFrDetector structure are based
- * on version 6 of the frame specification [\ref LIGOVIRGO_2000].</li>
+ * on version 6 of the frame specification \cite LIGOVIRGO_2000.</li>
  * <li> If the location and response tensor information for a
  * \c ::LALDetector are filled in by hand (e.g., for testing
  * purposes), the \c type field should be set to
@@ -204,14 +204,14 @@
  * <li> The range of \c ::LALDetectorType could be expanded to
  * include the  monopole and five quadrupole modes for a spherical
  * resonant detector
- * [\ref Maggiore_2000b, \ref Zhou_1995, \ref Bianchi_1998, \ref Maggiore_2000a].</li>
+ * \cite Maggiore2000b, \cite Zhou_1995, \cite Bianchi_1998, \cite Maggiore2000a.</li>
  * </ul>
  *
  * <b>Table tools_tab_cached:</b> Selected redefined gravitational wave detectors, contained in the ::lalCachedDetectors array.
  * Not shown in the table are the LHO 2km detector (H2) and the bar detectors ALLEGRO, AURIGA, EXPLORER, NIOBE and NAUTILUS.
- * The LIGO site data come directly from [\ref Althouse_1999], including the Cartesian position vectors \f$x^a\f$ and the response tensor
+ * The LIGO site data come directly from \cite Althouse_1999, including the Cartesian position vectors \f$x^a\f$ and the response tensor
  * \f$d^{ab}\f$, which was dermined from the quoted components of the detector frame basis vectors \f$\hat{x}_G\equiv\hat{u}_X\f$ and
- * \f$\hat{y}_G\equiv\hat{u}_Y\f$.  The data on the other detectors comes from [\ref Anderson_2000].
+ * \f$\hat{y}_G\equiv\hat{u}_Y\f$.  The data on the other detectors comes from \cite ABCCRW_2001.
  * \anchor tools_tab_cached
  * <table>
  * <tr><th>index</th><th>\c LAL_LHO_4K_DETECTOR</th><th>\c LAL_LLO_4K_DETECTOR</th></tr>

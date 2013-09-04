@@ -36,7 +36,7 @@
  * \f}
  *
  * The normalization constant \f$\lambda\f$ is chosen so that the expected mean
- * value of the cross-correlation statistic is [\ref Allen1999]
+ * value of the cross-correlation statistic is \cite Allen1999
  * \f{equation}{
  * \label{stochastic_e_mu}
  * \mu = \frac{3 {H_0}^2}{20\pi^2}\, T \,\overline{w_1w_2}
@@ -156,11 +156,11 @@
  * assumes a large observation time continuum-limit approximation.  In
  * this limit, the Dirichlet kernels (which appear in an exact
  * expression for the standard cross-correlation statistic, when
- * evaluated in discrete time [\ref Finn2001]; see also
+ * evaluated in discrete time \cite Finn2001; see also
  * the documentation for the module Dirichlet.c in the utilities package)
  * may be replaced by Dirac delta functions.</li>
  * <li> The units of the input series are checked for consistency; since
- * [\ref Allen1999]
+ * \cite Allen1999
  * \f{equation}{
  * \langle\widetilde{h}{}^{\mathrm{C}}_1(f)^*
  * \widetilde{h}{}^{\mathrm{C}}_2(f')\rangle

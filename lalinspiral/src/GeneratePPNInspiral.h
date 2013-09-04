@@ -62,7 +62,7 @@ extern "C" {
  * amplitude and frequency that vary over timescales longer than one wave
  * period.  The \e orbital frequency of the system to
  * post\f${}^{5/2}\f$-Newtonian order is given in Eqs.\ 6.4.1 and 6.9.1
- * of [\ref GRASP2000]; here we work entirely in terms of the
+ * of \cite GRASP2000; here we work entirely in terms of the
  * <em>gravitational-wave</em> frequency, which is twice the orbital
  * frequency:
  * \f{eqnarray}{
@@ -117,7 +117,7 @@ extern "C" {
  * the interpretation of \f$\phi_c\f$ as "phase at coalescence"; in our
  * convention we define \f$\phi_c\f$ to correspond to the case \f$\Theta_0=1\f$.
  *
- * We refer the interested reader to Sec.\ 6.6 of\ [\ref GRASP2000]
+ * We refer the interested reader to Sec.\ 6.6 of\ \cite GRASP2000
  * for a discussion of how propagation effects shift the phase of the
  * waveform relative to the orbital phase.  To summarize, though: A
  * changing propagation delay does introduce a time-dependent phase shift
@@ -132,7 +132,7 @@ extern "C" {
  *
  * To leading order, then, the amplitude of the + and \f$\times\f$
  * polarizations of the wave are given by Eqs.\ 6.6.1--6.6.4
- * of\ [\ref GRASP2000] as:
+ * of\ \cite GRASP2000 as:
  * \f{eqnarray}{
  * \label{eq_ppn_aplus}
  * A_+(t) & = & -\frac{2T_\odot c}{D}(1+\cos^2 i)
@@ -147,7 +147,7 @@ extern "C" {
  * \f}
  * where \f$D\f$ is the distance to the source and \f$i\f$ is the inclination of
  * the axis of the source to the line of sight.  The normal polarization
- * convention in\ [\ref Will_C_1996] is used, where the reference
+ * convention in\ \cite Will_C_1996 is used, where the reference
  * \f$x\f$-coordinate axis for the + and \f$\times\f$ polarization tensors is the
  * ascending node of the rotational plane as it crosses the plane
  * transverse to the propagation direction.  This convention implies that

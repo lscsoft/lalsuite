@@ -54,15 +54,15 @@
  * ### Algorithm ###
  *
  * LU decomposition is performed by Crout's algorithm, described in
- * Sec. 2.3 of [\ref ptvf1992]; the routines in this module are
+ * Sec. 2.3 of \cite ptvf1992; the routines in this module are
  * essentially re-implementations of the Numerical Recipes routines
  * <tt>ludcmp()</tt> and <tt>lubksub()</tt>.  For large \f$N\f$, their operation
  * counts are approximately \f$N^3/3\f$ and \f$N^2\f$, respectively.
  *
- * One difference between <tt>ludcmp()</tt> in [\ref ptvf1992] and the
+ * One difference between <tt>ludcmp()</tt> in \cite ptvf1992 and the
  * routines <tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt> in this
  * module is the way in which singular matrices are handled.
- * In [\ref ptvf1992], there is a distinction between between a
+ * In \cite ptvf1992, there is a distinction between between a
  * manifestly singular matrix (where an entire row of the matrix is zero)
  * and a numerically singular matrix (if a diagonal element in the
  * decomposed matrix turns out to be zero).  In the former case, they

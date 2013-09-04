@@ -313,7 +313,7 @@ REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 lal_ring_ds_
  * \f}
  * where the parameters \f$f\f$ and \f$Q\f$ are specified in the input structure.
  * The output must have an appropriate amount of memory allocated, and must
- * have the desired temporal spacing set.  Note: Ref.\ [\ref JDECreighton99]
+ * have the desired temporal spacing set.  Note: Ref.\ \cite JDECreighton99
  * used a different convention for the ringdown normlization: there the
  * ringdown waveform was taken to be \f$q(t)=(2\pi)^{1/2}r(t)\f$.
  */
@@ -375,7 +375,7 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
  * radiation expressed as a percent, and the distance to the typical source
  * (angle-averaged waveform) \f$r\f$ given in megaparsecs (Mpc).  The central
  * frequency and quality of the ringdown are approximated
- * as\ [\ref EWLeaver85,\ref EBertiEtAl06]:
+ * as\ \cite EWLeaver85,\cite EBertiEtAl06:
  * \f{equation}{
  * f \simeq 32\,\textrm{kHz}\times[f_1+f_2(1-{\hat{a}})^{f_3}](M_\odot/M)
  * \f}
@@ -384,9 +384,9 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
  * Q \simeq q_1+q_2(1-{\hat{a}})^{q_3},
  * \f}
  * where the values of the constants (f_1,f_2,f_3) and (q_1,q_2,q_3) are
- * given for each of (l,m,n) in\ [\ref EBertiEtAl06].
+ * given for each of (l,m,n) in\ \cite EBertiEtAl06.
  * The strain waveform produced is \f$h(t)=A_q q(t)\f$ where the amplitude factor
- * is\ [\ref JDECreighton99]
+ * is\ \cite JDECreighton99
  * \f{equation}{
  * A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
  * \left(\frac{\textrm{Mpc}}{r}\right)

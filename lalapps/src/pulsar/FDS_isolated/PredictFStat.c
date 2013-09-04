@@ -24,7 +24,7 @@
  * \ingroup pulsarApps
  * \brief
  * Calculate the *expected* (multi-IFO) F-statistic for pulsar GW signals, without actually
- * performing a search. The "F-statistic" was introduced in \ref JKS98 and Cutler-Schutz 2005.
+ * performing a search. The "F-statistic" was introduced in \cite JKS98 and Cutler-Schutz 2005.
  * Contrary to SemiAnalyticF this code can use (multi-IFO) SFTs to specify the startTime,
  * duration, detectors and noise-floors to use in the estimation.
  *

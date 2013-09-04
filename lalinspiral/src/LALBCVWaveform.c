@@ -47,7 +47,7 @@
  * ### Description ###
  *
  * This module can be used to generate <em>detection template
- * family</em> of Buonanno, Chen and Vallisneri [\ref BCV03,BCV03b].
+ * family</em> of Buonanno, Chen and Vallisneri \cite BCV03,BCV03b].
  * There are two modules: <tt>LALBCVWaveform.</tt> and <tt>LALBCVSpinWaveform.</tt>
  * The former can be used to generate non-spinning waveforms and the DTF
  * it implements is given in \eqref{eq_BCV_NonSpinning} and the latter

@@ -47,7 +47,7 @@ extern "C" {
  * demodulation.
  *
  * The method for determining the parameter metric is discussed in detail
- * in Sec.\ II of \ref Brady_P2000; we present the key results here in
+ * in Sec.\ II of \cite Brady_P2000; we present the key results here in
  * brief.  We assume that a model waveform in our search is described by
  * an overall frequency scale \f$f_0\f$, and by some modulation about that
  * frequency described by ``shape'' parameters

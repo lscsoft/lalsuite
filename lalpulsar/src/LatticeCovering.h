@@ -31,7 +31,7 @@ extern "C" {
  * \brief Module implementing a practical (approximate) solution to the "covering problem".
  * This is achieved by producing a lattice-covering with the \f$A_n^*\f$ lattice,
  * which is the best known covering up to dimension \f$n\le 23\f$
- * (see \ref CS99 for details).
+ * (see \cite CS99 for details).
  */
 /*@{*/
 

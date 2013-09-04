@@ -53,8 +53,8 @@ LALInference tools */
  * of the signal parameters can be searched over, including frequency, sky position and binary system parameters, although
  * the bandwidth of the data and search efficiency need to be taken into account.
  *
- * The 'Nested Sampling' algorithm (developed by [\ref Skilling2006]) used is that defined in LALinferenceNestedSampler
- * (see [\ref VeitchVecchio2010]). It is essentially an efficient way to perform the integral
+ * The 'Nested Sampling' algorithm (developed by \cite Skilling2006) used is that defined in LALinferenceNestedSampler
+ * (see \cite VeitchVecchio2010). It is essentially an efficient way to perform the integral
  * \f[
  * Z = \int^{\mathbf{\theta}} p(d|\mathbf{\theta}) p(\mathbf{\theta}) \mathrm{d}\mathbf{\theta},
  * \f]
@@ -76,7 +76,7 @@ LALInference tools */
  * picking a point via differential evolution (two random live points are selected and a new point half way between the two
  * is created). The probability of using either method is currently set at 80\% and 20\% respectively. The procedure is
  * continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
- * \c tolerance value set (see below). The implementation of this can be seen in [\ref VeitchVecchio2010].
+ * \c tolerance value set (see below). The implementation of this can be seen in \cite VeitchVecchio2010.
  *
  * ### Usage ###
  *
@@ -497,11 +497,11 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
  * type, which is specified by the number of frequency harmonics given by the \c harmonics command line argument. This
  * should be a list of comma separated values giving the frequency of the signal harmonics to be included. E.g.
  * <ol>
- * <li>For a model with \f$l=m=2\f$ (i.e. a triaxial star with a signal defined in e.g. [\ref DupuisWoan2005]), which
+ * <li>For a model with \f$l=m=2\f$ (i.e. a triaxial star with a signal defined in e.g. \cite DupuisWoan2005), which
  * purely emits at twice the rotation frequency, the \c harmonics input would just be \c 2. This requires that for each
  * specified detector there is <b>one</b> input file containing data heterodyned at twice the rotation frequency of the
  * pulsar.</li>
- * <li>For a model including the two harmonics \f$l=2\f$, \f$m=1,2\f$ (see e.g. [\ref Jones2010]), which produces
+ * <li>For a model including the two harmonics \f$l=2\f$, \f$m=1,2\f$ (see e.g. \cite Jones2010), which produces
  * emission at both the rotation frequency <i>and</i> twice the rotation frequency, the \c harmonics input would be \c
  * 1,2. This requires that for each specified detector there are two input files containing data heterodyned and the
  * rotation frequency <i>and</i> twice the rotation frequency (these must be in the same order as the harmonics
@@ -2700,7 +2700,7 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
 /**
  * \brief Find a change point in complex data
  *
- * This function is based in the Bayesian Blocks algorithm of [\ref Scargle1998] that finds "change points" in data -
+ * This function is based in the Bayesian Blocks algorithm of \cite Scargle1998 that finds "change points" in data -
  * points at which the statistics of the data change. It is based on calculating evidence, or odds, ratios. The
  * function first computes the marginal likelihood (or evidence) that the whole of the data is described by a single
  * Gaussian (with mean of zero). This comes from taking a Gaussian likelihood function and analytically marginalising

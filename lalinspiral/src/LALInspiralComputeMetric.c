@@ -85,7 +85,7 @@ LALInspiralComputeMetric (
  * \author Churches, D. K., Cokelaer, T., Sathyaprakash, B. S.
  *
  * We calculate the components of the metric using the procedure outlined
- * in Owen [\ref Owen_96].
+ * in Owen \cite Owen_96.
  * This uses the moments of the noise curve,
  * \f{equation}{
  * I(q) \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q/3}}{S_{h}(x)}

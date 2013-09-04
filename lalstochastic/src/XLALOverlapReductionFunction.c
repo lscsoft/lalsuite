@@ -93,8 +93,8 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
  *
  * ### Algorithm ###
  *
- * As shown in Appendix B of [\ref Flanagan1993] and Sec.~III.B of
- * [\ref Allen1999], the overlap reduction function can be written in
+ * As shown in Appendix B of \cite Flanagan1993 and Sec.~III.B of
+ * \cite Allen1999, the overlap reduction function can be written in
  * closed form in terms of the traceless response tensor
  * \f$D_{ab}=d_{ab}-\delta_{ab} d^c_c/3\f$
  * as sum of three spherical Bessel functions:
@@ -193,10 +193,10 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
  *
  * <li> The \f$\gamma(f)\f$ here is related to the unnormalized \f$\Gamma(f)\f$
  * defined by Maggiore
- * [\ref Maggiore2000a,\ref Maggiore2000b] by
+ * \cite Maggiore2000a,\cite Maggiore2000b by
  * \f$\gamma(f) = \frac{5}{2}\Gamma(f)\f$.  This normalization, which
  * agrees with the literature
- * [\ref Flanagan1993,\ref Allen1997,\ref Allen1999]
+ * \cite Flanagan1993,\cite Allen1997,\cite Allen1999
  * on interferometers, is chosen so that \f$\gamma(f)\equiv 1\f$ for a pair
  * of coïncident, coäligned interferometers with perpendicular
  * arms.  It means that, for combinations other than a pair of
@@ -204,7 +204,7 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
  * generalization of \f$\gamma(f)\f$ defined by Maggiore, whose
  * relationship to \f$\Gamma(f)\f$ depends on the type of detector.
  * Defining \f$\gamma(f)\f$ as we do allows us to use the formulae from,
- * e.g., [\ref Allen1999], irrespective of the detector
+ * e.g., \cite Allen1999, irrespective of the detector
  * type in question.</li>
  *
  * <li> While \f$\gamma(f)\f$ is usually considered to be dimensionless,

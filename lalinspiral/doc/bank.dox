@@ -15,7 +15,7 @@
  * and/or black holes.
  *
  * Template placement is based on the geometrical
- * formalism [\ref Owen_96,\ref OwenAndSathyaprakash99].  A user
+ * formalism \cite Owen_96,\cite OwenAndSathyaprakash99.  A user
  * calls either LALInspiralCreateCoarseBank(),
  * to create a coarse bank, or LALInspiralCreateFineBank(),
  * to create a fine bank, at specified minimal matches.
@@ -39,7 +39,7 @@
  * templates as possible, subject to the constraint that every signal
  * that lies within the space has an overlap greater
  * than or equal to a certain <em>minimal match</em> with at least one template in
- * the grid. Past studies [\ref SathyaprakashDhurandhar1991,\ref Sathyaprakash1994,\ref OwenAndSathyaprakash99]
+ * the grid. Past studies \cite SathyaprakashDhurandhar1991,\cite Sathyaprakash1994,\cite OwenAndSathyaprakash99
  * have shown that this is most easily achieved by using the space of
  * <em>chirp-times</em> to lay templates rather than the space of component masses.
  *
@@ -198,7 +198,7 @@
  * #TaylorT3, #TaylorF1, #TaylorF2, or #PadeT1, #PadeF1, #EOB. Note that
  * the placement algorithm is guaranteed to work with only #TaylorF2
  * approximants. A detailed study of approximants that are well captured by
- * this template placement algorithm is described elsewhere [\ref Sathyaprakash2001a].</li>
+ * this template placement algorithm is described elsewhere \cite dis2001.</li>
  * <li> ::GridSpacing, specify the type of placement to be used. For the
  * physical template families placement, it must be #SquareNotOriented,
  * #Hexagonal, #HybridHexagonal. For the non-BCV case, it could be #Square,

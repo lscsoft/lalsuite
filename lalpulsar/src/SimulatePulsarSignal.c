@@ -59,7 +59,7 @@ static LALUnit emptyUnit;
  * which depend of the wave polarization \f$\psi\f$,
  * the source position \f$\alpha\f$, \f$\delta\f$ and the detector position and
  * orientation (\f$\gamma\f$, \f$\lambda\f$, \f$L\f$ and \f$\xi\f$). The expressions for
- * the beam-pattern functions are given in [\ref JKS98], which we write as
+ * the beam-pattern functions are given in \cite JKS98, which we write as
  * \f{eqnarray}{
  * F_+(t) = \sin \zeta \cos 2\psi \, a(t)  + \sin \zeta \sin 2\psi \, b(t)\,,\\
  * F_\times(t) = \sin\zeta  \cos 2\psi \,b(t) - \sin\zeta \sin 2\psi \, a(t) \,,

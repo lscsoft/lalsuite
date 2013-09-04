@@ -130,7 +130,7 @@ extern "C" {
  * \f}
  * This window function is based on a fairly standard \f$C_{\infty}\f$ test
  * function used in distribution theory, e.g.\ <em>Green's Functions and
- * Boundary Value Problems</em> [\ref stakgold79], by Stakgold.  The shape parameter
+ * Boundary Value Problems</em> \cite stakgold79, by Stakgold.  The shape parameter
  * \f$\beta \in [0, \infty]\f$ sets the sharpness of the central peak.  \f$\beta =
  * 0\f$ yields the rectangle window, \f$\beta \rightarrow \infty\f$ yields a
  * \f$\delta\f$ function with a single non-zero sample in the middle.</dd>
@@ -176,7 +176,7 @@ extern "C" {
  * \f}
  * where \f$0 \le i < L\f$, and floating-point division is used.  This agrees with
  * J. G. Proakis and D. G. Manolakis, <em>Digital Signal Processing</em>
- * [\ref pm95], and \c MatLab.  The first sample is \f$y = -1\f$, the last
+ * \cite pm95, and \c MatLab.  The first sample is \f$y = -1\f$, the last
  * sample is \f$y = +1\f$.  For odd-lengthed vectors, the middle sample is \f$y =
  * 0\f$, while for even-lengthed vectors \f$y = 0\f$ occurs half-way between the two
  * middle samples.  Substituting \f$y(i)\f$ into the definitions of the window

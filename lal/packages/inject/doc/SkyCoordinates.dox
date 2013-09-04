@@ -16,7 +16,7 @@
  *
  * \brief Module providing routines to convert among various sky coordinate systems.
  *
- * Most of these routines are discussed in Sec.\ 5.1 of \ref Lang_K1999; we reproduce here
+ * Most of these routines are discussed in Sec.\ 5.1 of \cite Lang_K1999; we reproduce here
  * some of the essential elements of this discussion.
  *
  * \figure{inject_lat_long,eps,0.5,Definition of latitude phi and longitude lambda for an arbitrary coordinate system.}
@@ -94,7 +94,7 @@
  * point in Greenwich, UK (the <em>prime meridian</em>.  Note that we adopt
  * a longitude convention that is consistent with the
  * <i>Astronomical Almanac</i>, but opposite to that
- * in \ref Lang_K1999, in that our geographic longitudes increase
+ * in \cite Lang_K1999, in that our geographic longitudes increase
  * <em>eastward</em> (counterclockwise) like the rest of our longitudinal
  * coordinates.
  *

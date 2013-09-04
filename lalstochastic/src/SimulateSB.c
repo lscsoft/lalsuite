@@ -48,7 +48,7 @@
  * The frequency domain strains \f$\widetilde{h}_1(f_i)\f$
  * and \f$\widetilde{h}_2(f_j)\f$ caused by
  * the stochastic background in two detectors are random variables that have
- * zero mean and that obey  [\ref Allen1999]:
+ * zero mean and that obey  \cite Allen1999:
  * \f{equation}{
  * \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
  * = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{11}(f_i)
@@ -68,7 +68,7 @@
  * \f}
  * where \f$\langle\rangle\f$ denotes ensemble average, \f$T\f$ is the time of
  * observation, and \f$\gamma_{AB}\f$ is the overlap reduction function
- * [\ref Flanagan1993] of the detector pair comprising detectors \f$A\f$
+ * \cite Flanagan1993 of the detector pair comprising detectors \f$A\f$
  * and \f$B\f$. Above, \f$\widetilde{h}_1(f_i)\f$ and
  * \f$\widetilde{h}_2(f_j)\f$ are the Fourier components of the gravitational strains
  * \f$h_1(t)\f$ and \f$h_2(t)\f$ at the two detectors.

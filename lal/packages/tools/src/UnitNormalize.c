@@ -37,7 +37,7 @@
  *
  * ### Algorithm ###
  *
- * The rational powers are reduced using Euclid's algorithm [\ref Geddes_1992].
+ * The rational powers are reduced using Euclid's algorithm \cite Geddes_1992.
  *
  * ### Notes ###
  *

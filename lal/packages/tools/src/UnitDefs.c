@@ -75,7 +75,7 @@
  * <tr><td>\c #lalADCCountUnit</td><td>ADC count</td><td>count</td><td>A-to-D converter counts</td></tr>
  * </table>
  *
- * Next, the named derived units in the SI [\ref Halliday_2001]:
+ * Next, the named derived units in the SI \cite Halliday_2001:
  *
  * <table><tr><th>Constant</th><th>Name</th><th>Abbr.</th><th>Physical Quantity</th><th>Def.</th><th>Fundamental</th></tr>
  * <tr><td>\c #lalHertzUnit</td><td>hertz</td><td>Hz</td><td>frequency</td><td> s\f$^{-1}\f$</td><td>s\f$^{-1}\f$</td></tr>

@@ -25,7 +25,7 @@
  * \brief Computes quantities for amplitude demodulation.
  *
  * This routine computes the quantities \f$a(t)\f$ and \f$b(t)\f$ as defined in
- * Jaranowski, Krolak, and Schutz \ref JKS98, hereafter JKS.  These
+ * Jaranowski, Krolak, and Schutz \cite JKS98, hereafter JKS.  These
  * functions quantify the dependence of the detector output on the
  * beam-pattern functions \f$F_{+}\f$ and \f$F_{\times}\f$; in fact, \f$a(t)\f$ and
  * \f$b(t)\f$ <i>are</i> the beam-pattern functions, without the dependence
@@ -77,7 +77,7 @@ static const EarthState empty_EarthState;
 
 /**
  * Compute the 'amplitude coefficients' \f$a(t), b(t)\f$ as defined in
- * \ref JKS98 for a series of timestamps.
+ * \cite JKS98 for a series of timestamps.
  *
  * The input consists of the DetectorState-timeseries, which contains
  * the detector-info and the LMST's corresponding to the different times.
@@ -89,7 +89,7 @@ static const EarthState empty_EarthState;
  * \note This is an alternative implementation to LALComputeAM() with
  * the aim to be both simpler and faster.
  * The difference being that we don't implicitly re-derive the final expression
- * here but simply try to implement the final expressions (12), (13) in \ref JKS98
+ * here but simply try to implement the final expressions (12), (13) in \cite JKS98
  * in the most economical way possible.
  */
 void
@@ -237,7 +237,7 @@ LALGetAMCoeffs(LALStatus *status,				/**< [in/out] LAL status structure pointer 
 
 /**
  * Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
- * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
+ * \f$b(t)\sin\zeta\f$ as defined in \cite JKS98 for a series of
  * timestamps.
  *
  * The input consists of the DetectorState-timeseries, which contains
@@ -724,7 +724,7 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
 
 /**
  * Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
- * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
+ * \f$b(t)\sin\zeta\f$ as defined in \cite JKS98 for a series of
  * timestamps.
  *
  * The input consists of the DetectorState-timeseries, which contains

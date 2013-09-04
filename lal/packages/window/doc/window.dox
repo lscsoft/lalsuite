@@ -14,10 +14,10 @@
  * The use of window functions in signal analysis is well documented in many
  * places.
  *
- * Definitions of most of the window functions can be found in Numerical Recipes [\ref ptvf1992]
+ * Definitions of most of the window functions can be found in Numerical Recipes \cite ptvf1992
  * equations 13.4.13-13.4.15.  Definitions of the
  * remaining windows can be found in <em>Spectral analysis for physical
- * applications</em> [\ref pw93] Section 6.11.  Definition of the Kaiser window can
+ * applications</em> \cite pw93 Section 6.11.  Definition of the Kaiser window can
  * be found in <em>Discrete-time Signal Processing</em> by Oppenheim and
  * Schafer, p.474.
  *

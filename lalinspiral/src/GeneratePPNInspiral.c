@@ -168,7 +168,7 @@ do {                                                                 \
  * \eqref{eq_ppn_freq}--\eqref{eq_ppn_across} in
  * \ref GeneratePPNInspiral.h.  However, there are some nontrivial
  * issues involved, which are discussed in some depth in Secs.\ 6.4, 6.6,
- * and 6.9.2 of [\ref GRASP2000].  What follows is a brief
+ * and 6.9.2 of \cite GRASP2000.  What follows is a brief
  * discussion of these issues and how this routine deals with them.
  *
  * <tt>Computing the start time:</tt>

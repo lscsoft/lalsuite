@@ -79,7 +79,7 @@
  *
  * ### Algorithm ###
  *
- * These routines follow the formulae in Sec. 5.1 of [\ref Lang_K1999],
+ * These routines follow the formulae in Sec. 5.1 of \cite Lang_K1999,
  * which we reproduce below.
  *
  * \par Geographic coordinates:
@@ -101,11 +101,11 @@
  *
  * \par Horizon coordinates:
  * We correct a typographical
- * error on the second line of Eq. 5.45 of [\ref Lang_K1999], (it should
+ * error on the second line of Eq. 5.45 of \cite Lang_K1999, (it should
  * have \f$\cos A\f$, not \f$\sin A\f$).  We also note that while our latitudinal
  * coordinate is just the altitude \f$a\f$ in this system, our longitudinal
  * coordinate increases counterclockwise, and thus corresponds to the
- * \e negative of the azimuth \f$A\f$ as defined by [\ref Lang_K1999].
+ * \e negative of the azimuth \f$A\f$ as defined by \cite Lang_K1999.
  * So we have:
  * \f{eqnarray}{
  * \label{eq_altitude_horizon}
@@ -194,7 +194,7 @@
  * Earth.
  *
  * The inverse transformation is somewhat trickier.  Eq. 5.29
- * of [\ref Lang_K1999] conveniently gives the transformation in terms
+ * of \cite Lang_K1999 conveniently gives the transformation in terms
  * of a sequence of intermediate variables, but unfortunately these
  * variables are not particularly computer-friendly, in that they are
  * prone to underflow or overflow errors.  The following equations

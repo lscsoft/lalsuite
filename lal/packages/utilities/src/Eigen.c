@@ -118,7 +118,7 @@
  * diagonal or immediately adjacent to it); this transformation
  * \e can be accomplished deterministically in a finite number of
  * steps.  This is the approach advocated in Chapter 11
- * of [\ref ptvf1992], and taken in this module.
+ * of \cite ptvf1992, and taken in this module.
  *
  * The routines in \ref Eigen_c simply call the routines in
  * \ref EigenInternal_c, first to reduce the matrix to tridiagonal

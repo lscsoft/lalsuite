@@ -33,7 +33,7 @@
  * \sum_{i=1}^j 1 + m_{i-1}\f$ (with \f$m_0 = 0\f$) is the index of the first data point in each chunk. The product of
  * this for each detector will give the full joint likelihood. In the calculation here the unnecessary proportionality
  * factors are left out (this would effect the actual value of the marginal likelihood/evidence, but since we are only
- * interested in evidence ratios/Bayes factors these factors would cancel out anyway. See [\ref DupuisWoan2005] for a
+ * interested in evidence ratios/Bayes factors these factors would cancel out anyway. See \cite DupuisWoan2005 for a
  * more detailed description.
  *
  * In this function data in chunks smaller than a certain minimum length \c chunkMin are ignored.

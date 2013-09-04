@@ -24,7 +24,7 @@
  * \brief Calculates the values of the optimal filter function for the standard cross-correlation statistic.
  *
  * As described in
- * \ref Allen1997, \ref Allen1999, \ref Finn2001,
+ * \cite Allen1997, \cite Allen1999, \cite Finn2001,
  * the optimal filter \f$\widetilde{Q}^{\mathrm{C}}(f)\f$ which maximizes the ratio of the
  * mean \f$\mu=\langle Y\rangle\f$ to the standard deviation
  * \f$\sigma=\sqrt{\langle (Y-\mu)^2\rangle}\f$ of the cross-correlation
@@ -131,7 +131,7 @@
  * assumes a large observation time continuum-limit approximation.  In
  * this limit, the Dirichlet kernels (which appear in an exact
  * expression for the standard cross-correlation statistic, when
- * evaluated in discrete time [\ref Finn2001]; see also
+ * evaluated in discrete time \cite Finn2001; see also
  * the documentation for the module Dirichlet.c in the utilities package)
  * may be replaced by Dirac delta functions.</li>
  * <li> Although \f$Q^{\mathrm{C}}(f)\f$ is real by construction, the uncalibrated optimal

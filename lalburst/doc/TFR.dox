@@ -4,7 +4,7 @@
  * \brief Compute a time-frequency representation (TFR) of a given signal.
  *
  * Four types of TFRs are currently available. The algorithms are inspired by
- * the Time-Frequency toolbox for Matlab [\ref tftb].
+ * the Time-Frequency toolbox for Matlab \cite tftb.
  *
  * ### Synopsis ###
  *
@@ -27,7 +27,7 @@
  * This package is part of the so-called "Signal Track Algorithm" which
  * is a time-frequency based detector of unmodeled gravitational wave
  * sources. It provides a LAL-style C version of some functions of the
- * Time-Frequency toolbox for Matlab [\ref tftb].
+ * Time-Frequency toolbox for Matlab \cite tftb.
  *
  * Four different TFRs are currently available (see
  * [\ref flandrin99_tf_ts] for a detailed description of what the
@@ -312,7 +312,7 @@
  *
  * ### Algorithms ###
  *
- * The algorithm are taken from the Time-Frequency toolbox for Matlab [\ref tftb].
+ * The algorithm are taken from the Time-Frequency toolbox for Matlab \cite tftb.
  *
  * ### Tests ###
  *
