@@ -230,8 +230,6 @@ struct gengetopt_args_info
   const char *noiseWeightOff_help; /**< @brief Turn off noise weighting if this flag is used help description.  */
   int gaussTemplatesOnly_flag;	/**< @brief Gaussian templates only throughout the pipeline if this flag is used (default=off).  */
   const char *gaussTemplatesOnly_help; /**< @brief Gaussian templates only throughout the pipeline if this flag is used help description.  */
-  int validateSSE_flag;	/**< @brief Validate the use of SSE functions (default=off).  */
-  const char *validateSSE_help; /**< @brief Validate the use of SSE functions help description.  */
   int ULoff_flag;	/**< @brief Turn off upper limits computation (default=off).  */
   const char *ULoff_help; /**< @brief Turn off upper limits computation help description.  */
   int printSFTtimes_flag;	/**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs (default=off).  */
@@ -319,7 +317,6 @@ struct gengetopt_args_info
   unsigned int antennaOff_given ;	/**< @brief Whether antennaOff was given.  */
   unsigned int noiseWeightOff_given ;	/**< @brief Whether noiseWeightOff was given.  */
   unsigned int gaussTemplatesOnly_given ;	/**< @brief Whether gaussTemplatesOnly was given.  */
-  unsigned int validateSSE_given ;	/**< @brief Whether validateSSE was given.  */
   unsigned int ULoff_given ;	/**< @brief Whether ULoff was given.  */
   unsigned int printSFTtimes_given ;	/**< @brief Whether printSFTtimes was given.  */
   unsigned int printUsedSFTtimes_given ;	/**< @brief Whether printUsedSFTtimes was given.  */

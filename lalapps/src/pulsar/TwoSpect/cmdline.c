@@ -111,7 +111,6 @@ const char *gengetopt_args_info_full_help[] = {
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
   "      --noiseWeightOff          Turn off noise weighting if this flag is used  \n                                  (default=off)",
   "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
-  "      --validateSSE             Validate the use of SSE functions  \n                                  (default=off)",
   "      --ULoff                   Turn off upper limits computation  \n                                  (default=off)",
   "      --printSFTtimes           Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of input SFTs  (default=off)",
   "      --printUsedSFTtimes       Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of the SFTs passing tests  \n                                  (default=off)",
@@ -319,7 +318,6 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->antennaOff_given = 0 ;
   args_info->noiseWeightOff_given = 0 ;
   args_info->gaussTemplatesOnly_given = 0 ;
-  args_info->validateSSE_given = 0 ;
   args_info->ULoff_given = 0 ;
   args_info->printSFTtimes_given = 0 ;
   args_info->printUsedSFTtimes_given = 0 ;
@@ -426,7 +424,6 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->antennaOff_flag = 0;
   args_info->noiseWeightOff_flag = 0;
   args_info->gaussTemplatesOnly_flag = 0;
-  args_info->validateSSE_flag = 0;
   args_info->ULoff_flag = 0;
   args_info->printSFTtimes_flag = 0;
   args_info->printUsedSFTtimes_flag = 0;
@@ -514,14 +511,13 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->antennaOff_help = gengetopt_args_info_full_help[76] ;
   args_info->noiseWeightOff_help = gengetopt_args_info_full_help[77] ;
   args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[78] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[79] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[80] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[81] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[82] ;
-  args_info->printData_help = gengetopt_args_info_full_help[83] ;
-  args_info->printUninitialized_help = gengetopt_args_info_full_help[84] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[85] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[86] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[79] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[80] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[81] ;
+  args_info->printData_help = gengetopt_args_info_full_help[82] ;
+  args_info->printUninitialized_help = gengetopt_args_info_full_help[83] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[84] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[85] ;
   
 }
 
@@ -944,8 +940,6 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "noiseWeightOff", 0, 0 );
   if (args_info->gaussTemplatesOnly_given)
     write_into_file(outfile, "gaussTemplatesOnly", 0, 0 );
-  if (args_info->validateSSE_given)
-    write_into_file(outfile, "validateSSE", 0, 0 );
   if (args_info->ULoff_given)
     write_into_file(outfile, "ULoff", 0, 0 );
   if (args_info->printSFTtimes_given)
@@ -1700,7 +1694,6 @@ cmdline_parser_internal (
         { "antennaOff",	0, NULL, 0 },
         { "noiseWeightOff",	0, NULL, 0 },
         { "gaussTemplatesOnly",	0, NULL, 0 },
-        { "validateSSE",	0, NULL, 0 },
         { "ULoff",	0, NULL, 0 },
         { "printSFTtimes",	0, NULL, 0 },
         { "printUsedSFTtimes",	0, NULL, 0 },
@@ -2634,18 +2627,6 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->gaussTemplatesOnly_flag), 0, &(args_info->gaussTemplatesOnly_given),
                 &(local_args_info.gaussTemplatesOnly_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "gaussTemplatesOnly", '-',
-                additional_error))
-              goto failure;
-          
-          }
-          /* Validate the use of SSE functions.  */
-          else if (strcmp (long_options[option_index].name, "validateSSE") == 0)
-          {
-          
-          
-            if (update_arg((void *)&(args_info->validateSSE_flag), 0, &(args_info->validateSSE_given),
-                &(local_args_info.validateSSE_given), optarg, 0, 0, ARG_FLAG,
-                check_ambiguity, override, 1, 0, "validateSSE", '-',
                 additional_error))
               goto failure;
           

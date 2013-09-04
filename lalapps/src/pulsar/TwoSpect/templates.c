@@ -779,9 +779,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       //REAL8 prefact0 = scale1 * 2.0 * LAL_TWOPI * s * s;
       //REAL4 prefact0 = log(scale1 * 2.0 * LAL_TWOPI * s * s);     //We are going to do exp(log(Eq. 18))
       REAL4 prefact0 = log4pi + 2.0*logf((REAL4)(scale1*s));
-      
-      INT4 needtocomputecos = 0;    //Do we need to compute the cosine not from a look up table? 1 = !LUT, 0 = LUT
-      
+
       if (params->useSSE) {
          //Compute exp(log(4*pi*s*s*exp(-s*s*omegapr_squared))) = exp(log(4*pi*s*s)-s*s*omegapr_squared)
          sseScaleREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, omegapr_squared, -s*s);
@@ -809,112 +807,57 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          
          //Start computing the datavector values
          INT4 maxindex = max_index(phi_times_fpr);
-         if (phi_times_fpr->data[maxindex]>2.147483647e9) {
-            needtocomputecos = 1;
-         } else {
+         if (phi_times_fpr->data[maxindex]<=2.147483647e9) {
             //Compute cos(2*pi*phi_actual*fpr) using LUT and SSE
             sse_sin_cos_2PI_LUT_REAL4Vector(sin_phi_times_omega_pr, cos_phi_times_omega_pr, phi_times_fpr);
             if (xlalErrno!=0) {
                fprintf(stderr, "%s: sse_sin_cos_2PI_LUT_REAL4Vector() failed.\n", __func__);
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
-            
-            //datavector = cos(phi_actual*omega_pr) + 1.0
-            sseAddScalarToREAL4Vector(datavector, cos_phi_times_omega_pr, 1.0);
-            if (xlalErrno!=0) {
-               fprintf(stderr, "%s: sseAddScalarToREAL4Vector() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            //datavector = prefact0 * exp(-s*s*omega_pr*omega_pr) * [cos(phi_actual*omega_pr) + 1.0]
-            sseSSVectorMultiply(datavector, datavector, exp_neg_sigma_sq_times_omega_pr_sq);
-            if (xlalErrno!=0) {
-               fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            //datavector = scale * exp(-s*s*omega_pr*omega_pr) * [cos(phi_actual*omega_pr) + 1.0]
-            sseScaleREAL4Vector(datavector, datavector, scale->data[ii+fnumstart]);
-            if (xlalErrno!=0) {
-               fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            
-            //datavector *= cos_ratio
-            sseSSVectorMultiply(datavector, datavector, cos_ratio);
-            if (xlalErrno!=0) {
-               fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-         } /* else we are allowed to make the sse LUT computation */
-      } /* if useSSE */
-      
-      //If we didn't use SSE above
-      //or if we did use SSE and we want to validate it
-      //or if we used SSE and max(phi_times_fpr)>2.147483648e9
-      if (!params->useSSE || (params->useSSE && params->validateSSE) || (params->useSSE && needtocomputecos==1)) {
-         if (!params->useSSE) {
-            for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
-               //Do all or nothing if the exponential is too negative
-               if ((prefact0-s*s*omegapr_squared->data[jj])>-88.0) {
-                  exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = expf((REAL4)(prefact0-s*s*omegapr_squared->data[jj]));
-                  twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
-                  cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
-                  datavector->data[jj] = scale->data[ii+fnumstart]*exp_neg_sigma_sq_times_omega_pr_sq->data[jj]*(cos_phi_times_omega_pr->data[jj]+1.0)*cos_ratio->data[jj];
-               } else {
-                  datavector->data[jj] = 0.0;
-               }
-               
-            }
-         } else if (params->useSSE && params->validateSSE) {
-            for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
-               REAL4 val = 0.0;
-               if ((prefact0-s*s*omegapr_squared->data[jj])>-88.0) val = expf((REAL4)(prefact0-s*s*omegapr_squared->data[jj]));
-               if (fabsf(exp_neg_sigma_sq_times_omega_pr_sq->data[jj]-val)>2.0*epsval_float(val)+1.0) {
-                  fprintf(stderr, "%s: Validation of sseScaleREAL4Vector() and sse_exp_REAL4Vector() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               
-               twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
-               if (needtocomputecos==1) cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
-               else {
-                  if (fabsf(cos_phi_times_omega_pr->data[jj]-(REAL4)cos2pix)>1.0e-6) {
-                     fprintf(stderr, "%s: Validation of sseScaleREAL4Vector() and sse_sin_cos_2PI_LUT_REAL4Vector() failed.\n", __func__);
-                     XLAL_ERROR_VOID(XLAL_EFUNC);
-                  }
-               }
-               
-               val = scale->data[ii+fnumstart]*exp_neg_sigma_sq_times_omega_pr_sq->data[jj]*(cos_phi_times_omega_pr->data[jj]+1.0)*cos_ratio->data[jj];
-               if (fabsf(datavector->data[jj]-val)>2.0*epsval_float(val)+1.0) {
-                  fprintf(stderr, "%s: Validation of sseAddScalarToREAL4Vector(), sseSSVectorMultiply(), and sseScaleREAL4Vector() failed. %f != %f\n", __func__, datavector->data[jj], val);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-            }
          } else {
+            //Compute cos(2*pi*phi_actual*fpr) using LUT
             for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
                twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_times_fpr->data[jj]);
                cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
             }
-            sseAddScalarToREAL4Vector(datavector, cos_phi_times_omega_pr, 1.0);
-            if (xlalErrno!=0) {
-               fprintf(stderr, "%s: sseAddScalarToREAL4Vector() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            sseSSVectorMultiply(datavector, datavector, exp_neg_sigma_sq_times_omega_pr_sq);
-            if (xlalErrno!=0) {
-               fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            sseScaleREAL4Vector(datavector, datavector, scale->data[ii+fnumstart]);
-            if (xlalErrno!=0) {
-               fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
-            sseSSVectorMultiply(datavector, datavector, cos_ratio);
-            if (xlalErrno!=0) {
-               fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
          }
-      } /* If no sse, if sse and validate sse, or if cosine needs to be computed */
+         //datavector = cos(phi_actual*omega_pr) + 1.0
+         sseAddScalarToREAL4Vector(datavector, cos_phi_times_omega_pr, 1.0);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: sseAddScalarToREAL4Vector() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+         //datavector = prefact0 * exp(-s*s*omega_pr*omega_pr) * [cos(phi_actual*omega_pr) + 1.0]
+         sseSSVectorMultiply(datavector, datavector, exp_neg_sigma_sq_times_omega_pr_sq);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+         //datavector = scale * exp(-s*s*omega_pr*omega_pr) * [cos(phi_actual*omega_pr) + 1.0]
+         sseScaleREAL4Vector(datavector, datavector, scale->data[ii+fnumstart]);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+         //datavector *= cos_ratio
+         sseSSVectorMultiply(datavector, datavector, cos_ratio);
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+      } else {
+         for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
+            //Do all or nothing if the exponential is too negative
+            if ((prefact0-s*s*omegapr_squared->data[jj])>-88.0) {
+               exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = expf((REAL4)(prefact0-s*s*omegapr_squared->data[jj]));
+               twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
+               cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
+               datavector->data[jj] = scale->data[ii+fnumstart]*exp_neg_sigma_sq_times_omega_pr_sq->data[jj]*(cos_phi_times_omega_pr->data[jj]+1.0)*cos_ratio->data[jj];
+            } else {
+               datavector->data[jj] = 0.0;
+            }
+         } /* for jj = 0 --> omegapr_squared->length */
+      } /* use SSE or not */
       
       //Now loop through the second FFT frequencies, starting with index 4
       for (jj=4; jj<(INT4)omegapr->length; jj++) {

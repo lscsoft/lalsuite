@@ -80,7 +80,6 @@ typedef struct
    INT4 fastchisqinv;
    INT4 useSSE;
    INT4 followUpOutsideULrange;
-   INT4 validateSSE;
    INT4 randSeed;
    INT4 ULsolver;
    INT4 signalOnly;

@@ -2972,7 +2972,6 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->fastchisqinv = args_info.fastchisqinv_given;                          //Use faster chi-sq inversion (default = 0)
    params->useSSE = args_info.useSSE_given;                                      //Use SSE optimized functions (dafualt = 0)
    params->followUpOutsideULrange = args_info.followUpOutsideULrange_given;      //Follow up outliers outside of UL range (default = 0)
-   params->validateSSE = args_info.validateSSE_given;                            //Validate SSE functions (default = 0)
    params->noNotchHarmonics = args_info.noNotchHarmonics_given;                  //Do not notch the daily/sidereal harmonics (default = 0)
    params->harmonicNumToSearch = args_info.harmonicNumToSearch_arg;              //Search the number of harmonics specified by the Pmin-->Pmax range (default = 1 meaning search only the range of Pmin-->Pmax)
    params->ULsolver = args_info.ULsolver_arg;                                    //Solver function for UL calculation (default = 0)
@@ -3085,10 +3084,6 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    if (args_info.gaussTemplatesOnly_given) {
       fprintf(LOG,"WARNING: Only Gaussian templates will be used\n");
       fprintf(stderr,"WARNING: Only Gaussian templates will be used\n");
-   }
-   if (args_info.validateSSE_given) {
-      fprintf(LOG,"WARNING: SSE computations will be validated\n");
-      fprintf(stderr,"WARNING: SSE computations will be validated\n");
    }
    if (args_info.ULoff_given) {
       fprintf(LOG,"WARNING: --ULoff has been specifed; no upper limits will be produced\n");
