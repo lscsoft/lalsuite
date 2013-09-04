@@ -232,10 +232,16 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
 
          if (pplus<=*(computedprob)*err || counterint<0) return;
 
-         Pint *= counterint*oneoverhalfdelta;
+         counterint--;
+         Pint *= (counterint+1)*oneoverhalfdelta;
+         Eint *= (halfdof + counterint+1)*oneoverhalfx;
+         Cint += Eint;
+
+         //This part below is wrong!
+         /* Pint *= (counterint)*oneoverhalfdelta;
          Eint *= (halfdof + counterint)*oneoverhalfx;
          Cint += Eint;
-         counterint--;
+         counterint--; */
       }
    } else {
       while (counterint!=-1) {
@@ -244,10 +250,16 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
 
          if (pplus<=*(computedprob)*err) return;
 
+         counterint++;
          Pint *= halfdelta/counterint;
+         Eint *= halfx/(halfdof+counterint-1);
+         Cint -= Eint;
+
+         //This part below is wrong!
+         /* Pint *= halfdelta/counterint;
          Eint *= halfx/(halfdof+counterint);
          Cint -= Eint;
-         counterint++;
+         counterint++; */
       }
    }
 
@@ -626,10 +638,12 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
 {
 
    //Fail if bad input
-   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta) || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments p=%f, dof=%f, delta=%f.\n", __func__, p, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
    }
+
+   if (delta==0.0) return gsl_cdf_chisq_Pinv(p, dof);
 
    REAL8 pk = p;
    INT4 count_limit = 100;
@@ -679,7 +693,7 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
       F = newF;
    }
 
-   fprintf(stderr, "%s: Warning! ncx2inv() failed to converge!\n", __func__);
+   fprintf(stderr, "%s: Warning! ncx2inv(%g, %g, %g) failed to converge!\n", __func__, p, dof, delta);
    return xk;
 
 }
@@ -690,10 +704,12 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
 {
 
    //Fail if bad input
-   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta) || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments p=%f, dof=%f, delta=%f.\n", __func__, p, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
    }
+
+   if (delta==0.0) return (REAL4)gsl_cdf_chisq_Pinv(p, dof);
    
    REAL8 pk = p;
    INT4 count_limit = 100;
