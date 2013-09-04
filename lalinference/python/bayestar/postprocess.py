@@ -92,7 +92,7 @@ def find_injection(sky_map, true_ra, true_dec, contours=()):
     # For each of the given confidence levels, compute the area of the
     # smallest region containing that probability.
     contour_areas = (deg2perpix * (np.searchsorted(
-	cum_sky_map, contours, side='right') + 1)).tolist()
+        cum_sky_map, contours, side='right') + 1)).tolist()
 
     # Find the angular offset between the mode and true locations.
     offset = np.rad2deg(angle_distance(true_theta, true_phi,
