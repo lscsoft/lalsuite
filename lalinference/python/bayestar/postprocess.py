@@ -27,6 +27,56 @@ import healpy as hp
 import collections
 
 
+def iterative_dfs(start, bin_sky_map):
+    """ Iterative depth-first search of a skymap from starting value skymap[start] """
+
+    # "path" is a subset of the graph of the PDF that lies within the given contour
+    path = [start]
+
+    # set condition to determine whether any new pixels are connected within the contour
+    atLeastOneIsConnected = True
+
+    # get neighbours of the starting pixel
+    nside = hp.npix2nside(len(bin_sky_map))
+    pixels = hp.get_all_neighbours(nside,start).tolist()
+    bin_sky_map[start] = False
+
+    while atLeastOneIsConnected:
+        if True not in [bin_sky_map[pixel] for pixel in pixels]:
+            atLeastOneIsConnected = False
+
+        else:
+            neighbours = []
+
+            for pixel in pixels:
+                if pixel == -1: pixel = len(bin_sky_map) - 1
+                if bin_sky_map[pixel] == True:
+                    path = path + [pixel]
+                    bin_sky_map[pixel] = False
+                    neighbours = neighbours + hp.get_all_neighbours(nside,pixel).tolist()
+
+            pixels = neighbours
+
+    # hand this result back to the mode counter
+    return list(set(path))
+
+def count_modes(start, bin_sky_map, length):
+    """ Count the smallest number of simply connected regions in a given confidence
+        contour on a 2-dimensional PDF of sky location, projected onto the unit sphere
+
+        start:      index of that pixel in the skymap with the highest probability density
+        bin_sky_map:  a one-to-one Boolean list of pixels in the skymap of interest whose value
+                      is True if that pixel lies in the given contour, and False elsewise
+        length:     total number of pixels contained in the given contour """
+
+    count, modes = 0, [] # counter, list of lists of pixels in each mode
+    while count < length:
+        modes.append(iterative_dfs(start, bin_sky_map))
+        count += len(modes[-1])
+        if count < length: start = bin_sky_map.index(True)
+
+    return len(modes)
+
 def angle_distance(theta0, phi0, theta1, phi1):
     """Angular separation in radians between two points on the unit sphere."""
     cos_angle_distance = (np.cos(phi1 - phi0) * np.sin(theta0) * np.sin(theta1)
@@ -41,7 +91,7 @@ def angle_distance(theta0, phi0, theta1, phi1):
 
 # Class to hold return value of find_injection method
 FoundInjection = collections.namedtuple('FoundInjection',
-    'searched_area searched_prob offset contour_areas')
+    'searched_area searched_prob offset searched_modes contour_areas contour_modes')
 
 
 def find_injection(sky_map, true_ra, true_dec, contours=()):
@@ -50,8 +100,8 @@ def find_injection(sky_map, true_ra, true_dec, contours=()):
     find the smallest area in deg^2 that would have to be searched to find the
     source, the smallest posterior mass, and the angular offset in degrees from
     the true location to the maximum (mode) of the posterior. Optionally, also
-    compute the areas of the smallest contours containing a given total
-    probability.
+    compute the areas of and numbers of modes within the smallest contours
+    containing a given total probability.
     """
 
     # Compute the HEALPix lateral resolution parameter for this sky map.
@@ -89,15 +139,23 @@ def find_injection(sky_map, true_ra, true_dec, contours=()):
     # the true location.
     searched_prob = cum_sky_map[idx]
 
+    # Get the total number of pixels that lie inside each contour.
+    count_pixels = np.searchsorted(cum_sky_map, contours)
+
     # For each of the given confidence levels, compute the area of the
     # smallest region containing that probability.
-    contour_areas = (deg2perpix * (np.searchsorted(
-        cum_sky_map, contours, side='right') + 1)).tolist()
+    contour_areas = (deg2perpix * count_pixels).tolist()
 
     # Find the angular offset between the mode and true locations.
     offset = np.rad2deg(angle_distance(true_theta, true_phi,
         mode_theta, mode_phi))
 
-    # Done.
-    return FoundInjection(searched_area, searched_prob, offset, contour_areas)
+    # Count up the number of modes in each of the given contours.
+    cum_sky_map = cum_sky_map[np.argsort(indices)]
+    searched_modes = count_modes(indices[0], (cum_sky_map <= searched_prob).tolist(),
+        idx + 1)
+    contour_modes = [count_modes(indices[0], (cum_sky_map <= p).tolist(),
+        N) for p, N in zip(contours, count_pixels)]
 
+    # Done.
+    return FoundInjection(searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes)

@@ -28,7 +28,7 @@ summary values for each sky map:
  * searched posterior probability
  * angle between true sky location and maximum a posteriori estimate
  * runtime in seconds
- * (optional) areas of specified probability contours
+ * (optional) areas of and numbers of modes within specified probability contours
 
 The filenames of the sky maps may be provided as positional command line
 arguments, and may also be provided as globs (such as '*.fits.gz').
@@ -52,8 +52,8 @@ if __name__ == '__main__':
                 help="Number of threads [default: %default]"),
             Option("-p", "--contour", default=[], action="append",
                 type=float, metavar="PERCENT",
-                help="Report the area of the smallest contour containing this "
-                + "much probability. Can be repeated mulitple times")
+                help="Report the area of the smallest contour and the number of modes"
+                + "containing this much probability. Can be repeated mulitple times")
         ]
     )
     opts, args = parser.parse_args()
@@ -100,10 +100,10 @@ def process(fitsfilename):
         WHERE cem1.table_name = 'sim_inspiral'
         AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
         (coinc_event_id,)).fetchone()
-    searched_area, searched_prob, offset, contour_areas = postprocess.find_injection(
+    searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes  = postprocess.find_injection(
         sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours])
 
-    return [coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime] + contour_areas
+    return [coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime, searched_modes] + contour_areas + contour_modes
 
 
 if __name__ == '__main__':
@@ -125,8 +125,8 @@ if __name__ == '__main__':
         for fitsfileglob in fitsfileglobs))
 
     colnames = ['coinc_event_id', 'simulation_id', 'far', 'searched_area',
-        'searched_prob', 'offset', 'runtime'] + ["area({0:g})".format(p)
-        for p in contours]
+        'searched_prob', 'offset', 'runtime', 'searched_modes'] + ["area({0:g})".format(p)
+        for p in contours] + ["modes({0:g})".format(p) for p in contours]
     print(*colnames, sep="\t", file=outfile)
 
     count_records = 0
