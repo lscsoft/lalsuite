@@ -60,17 +60,15 @@ import healpy as hp
 import lal
 from lalinference.bayestar import fits
 from lalinference.bayestar import plot
+import pylal.progress
 
-fig = plt.figure(figsize=(opts.figure_width, opts.figure_height), frameon=False)
-ax = plt.subplot(111, projection='mollweide')
-ax.cla()
-ax.grid()
 
 def _healpix_lookup(map, lon, lat, dlon):
     """Look up the value of a HEALPix map in the pixel containing the point
     with the specified longitude and latitude."""
     nside = hp.npix2nside(len(map))
     return map[hp.ang2pix(nside, 0.5 * np.pi - lat, lon - dlon)]
+
 
 def healpix_contour(map, *args, **kwargs):
     """Produce a contour plot from a HEALPix map."""
@@ -82,8 +80,22 @@ def healpix_contour(map, *args, **kwargs):
     return plot.contour(functools.partial(_healpix_lookup, map, dlon=dlon),
         *args, **kwargs)
 
-for infilename in args:
-    skymap, metadata = fits.read_sky_map(infilename)
+
+fig = plt.figure(figsize=(opts.figure_width, opts.figure_height), frameon=False)
+ax = plt.subplot(111, projection='mollweide')
+ax.cla()
+ax.grid()
+
+progress = pylal.progress.ProgressBar()
+
+progress.update(-1, 'obtaining filenames of sky maps')
+fitsfilenames = tuple(command.chainglob(args))
+
+progress.max = len(fitsfilenames)
+
+for count_records, fitsfilename in enumerate(fitsfilenames):
+    progress.update(count_records, fitsfilename)
+    skymap, metadata = fits.read_sky_map(fitsfilename)
     nside = hp.npix2nside(len(skymap))
     gmst = lal.GreenwichMeanSiderealTime(metadata['gps_time']) % (2*np.pi)
 
@@ -92,6 +104,8 @@ for infilename in args:
     region[indices] = 100 * np.cumsum(skymap[indices])
     healpix_contour(region, dlon=-gmst, colors='k', linewidths=0.5,
         levels=[opts.contour], alpha=opts.alpha)
+
+progress.update(-1, 'saving figure')
 
 fig.patch.set_alpha(0.)
 ax.patch.set_alpha(0.)

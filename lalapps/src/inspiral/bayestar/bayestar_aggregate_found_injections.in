@@ -107,8 +107,6 @@ def process(fitsfilename):
 
 
 if __name__ == '__main__':
-    import glob
-    import itertools
     import pylal.progress
     progress = pylal.progress.ProgressBar()
 
@@ -121,8 +119,7 @@ if __name__ == '__main__':
     startup(dbfilename, opts.contour)
 
     progress.update(-1, 'obtaining filenames of sky maps')
-    fitsfilenames = tuple(itertools.chain.from_iterable(glob.iglob(fitsfileglob)
-        for fitsfileglob in fitsfileglobs))
+    fitsfilenames = tuple(command.chainglob(fitsfileglobs))
 
     colnames = ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
         'searched_prob', 'offset', 'runtime', 'searched_modes'] + ["area({0:g})".format(p)

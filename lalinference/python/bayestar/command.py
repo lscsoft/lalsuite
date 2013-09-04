@@ -22,6 +22,8 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 from optparse import IndentedHelpFormatter
+import glob
+import itertools
 
 
 class NewlinePreservingHelpFormatter(IndentedHelpFormatter):
@@ -54,3 +56,8 @@ def get_input_filename(parser, args):
     else:
         parser.error("Too many command line arguments.")
     return infilename
+
+
+def chainglob(patterns):
+    """Generate a list of all files matching a list of globs."""
+    return itertools.chain.from_iterable(glob.iglob(s) for s in patterns)
