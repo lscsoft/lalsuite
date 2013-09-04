@@ -24,7 +24,8 @@ my $injskydec = '';
 my $ihsfactor = 5;
 my $seedstart = 42;
 my $scox1switch = 0;
-GetOptions('jobnum=i' => \$jobnum, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min=f' => \$h0min, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch);
+my $directory = '';
+GetOptions('dir=s' => \$directory, 'jobnum=i' => \$jobnum, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min=f' => \$h0min, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch);
 
 die "Must set only one of randpolswitch, linpolswitch, or circpolswitch" if ($randpolswitch==1 && $linpolswitch==1); 
 
@@ -80,12 +81,14 @@ for(my $ii=0; $ii<10; $ii++) {
    my $phi0 = sprintf("%.6f",2.0*pi*rand());
    my $alpha = 0.0;
    my $delta = 0.0;
-   if ($injskyra!='' && $injskydec!='') {
+   if ($injskyra eq "" && $injskydec eq "") {
       $alpha = sprintf("%.6f",2.0*pi*rand());
       $delta = sprintf("%.6f",acos(2.0*rand()-1.0)-0.5*pi);
-   } else {
+   } elsif ($injskyra ne "" && $injskydec ne "") {
       $alpha = $injskyra;
       $delta = $injskydec;
+   } else {
+      die "Need both --injskyra and --injskydec";
    }
    my $f0 = $fmin + 0.25*rand();
 
@@ -151,7 +154,7 @@ refTime 900000000
 EOF
    close(MFDCONFIG);
    
-   open(INJECTION, ">>/home/egoetz/TwoSpect/UL/$jobnum/injections.dat") or die "Cannot write to /home/egoetz/TwoSpect/UL/$jobnum/injections.dat $!";
+   open(INJECTION, ">>$directory/$jobnum/injections.dat") or die "Cannot write to $directory/$jobnum/injections.dat $!";
    print INJECTION "$alpha $delta $h0 $cosi $psi $phi0 $f0 $asini $ecc $P $argp $f1dot $df\n";
    close(INJECTION);
    
@@ -169,7 +172,6 @@ Pmin 7200
 Pmax 8110260
 dfmin 0.0002
 dfmax 0.1
-skyRegion ($alpha,$delta)
 t0 $t0
 blksize 101
 avesqrtSh 1.0e-23
@@ -177,7 +179,7 @@ minTemplateLength 1
 maxTemplateLength 500
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
-outdirectory /home/egoetz/TwoSpect/UL/$jobnum
+outdirectory $directory/$jobnum
 IFO $ifokey
 FFTplanFlag 1
 fastchisqinv

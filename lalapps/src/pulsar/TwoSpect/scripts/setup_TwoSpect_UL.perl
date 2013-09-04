@@ -29,7 +29,7 @@ die "mkdir failed: $?" if $?;
 system("mkdir $directory/err");
 die "mkdir failed: $?" if $?;
 
-open(DAGFILE,">$directory") or die "Cannot write to $directory $!";
+open(DAGFILE,">$directory/dag") or die "Cannot write to $directory/dag $!";
 for(my $ii=0; $ii<$jobs; $ii++) {
    print DAGFILE<<EOF;
 JOB A$ii $directory/condor
@@ -53,7 +53,7 @@ request_memory=2500
 notification=Never
 EOF
 
-print CONDORFILE "arguments=--jobnum=\$(JOBNUM) --ifo=H1 --fmin=$fmin --h0min=$h0min";
+print CONDORFILE "arguments=\"--dir=$directory --jobnum=\$(JOBNUM) --ifo=H1 --fmin=$fmin --h0min=$h0min";
 if ($noiseswitch!=0) {
    print CONDORFILE " --realnoise";
 }
@@ -75,7 +75,7 @@ if ($spindownswitch!=0) {
 if ($skylocations!=0) {
    print CONDORFILE " --skylocations=$skylocations";
 }
-if ($timestampsfile!='') {
+if ($timestampsfile~='') {
    print CONDORFILE " --timestampsfile=$timestampsfile";
 }
 if ($injskyra!='' && $injskydec!='') {
@@ -90,7 +90,7 @@ if ($seedstart!=42) {
 if ($scox1switch!=0) {
    print CONDORFILE " --scox1";
 }
-print CONDORFILE "\n";
+print CONDORFILE "\"\n";
 
 print CONDORFILE "queue\n";
 close(CONDORFILE);
