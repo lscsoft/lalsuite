@@ -650,6 +650,7 @@ void initializeMN(LALInferenceRunState *runState)
     /* Number of live points */
     //printf("set number of live points.\n");
     ppt=LALInferenceGetProcParamVal(commandLine,"--Nlive");
+    if (!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nlive");
     if(ppt)
         tmpi=atoi(ppt->value);
     else {
@@ -664,7 +665,7 @@ void initializeMN(LALInferenceRunState *runState)
     if(ppt)
         tmpd=atof(ppt->value);
     else {
-        tmpd=0.5;
+        tmpd=0.1;
     }
     LALInferenceAddVariable(runState->algorithmParams,"eff",&tmpd, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
