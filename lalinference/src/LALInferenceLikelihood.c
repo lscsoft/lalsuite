@@ -1884,17 +1884,6 @@ static double logaddexp(double x, double y) {
   }
 }
 
-static double logaddexpsum(double *xs, size_t n) {
-  size_t i;
-  double sum = -INFINITY;
-
-  for (i = 0; i < n; i++) {
-    sum = logaddexp(sum, xs[i]);
-  }
-
-  return sum;
-}
-
 /* Integrates y(x) using spline interpolation on log(y(x)).  The log
    of the integral is returned, and has an estimated error (in the
    log) of eps. */
@@ -1947,7 +1936,18 @@ static double integrate_interpolated_log(double *xs, double *log_ys, size_t n, d
   return log_int;
 }
 
+static void reverse_array(double *xs, size_t n) {
+  size_t i;
+
+  for (i = 0; i < n - 1 - i; i++) {
+    double tmp = xs[i];
+    xs[i] = xs[n-1-i];
+    xs[n-1-i] = tmp;
+  }
+}
+
 double do_nothing(void);
 double do_nothing() {
-  return integrate_interpolated_log(NULL, NULL, 0, 1e-8);
+  reverse_array(NULL, 0);
+  return integrate_interpolated_log(NULL, NULL, 0, 0, 1, 1e-8);
 }
