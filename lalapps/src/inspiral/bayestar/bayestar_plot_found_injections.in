@@ -54,16 +54,18 @@ dataset_names = [os.path.splitext(arg)[0] for arg in args]
 
 # For each of the quantities that we are going to plot, find their range
 # over all of the datasets.
-combined_datasets = np.hstack(datasets_)
-min_searched_area = np.min(combined_datasets['searched_area'])
-max_searched_area = np.max(combined_datasets['searched_area'])
-min_offset = np.min(combined_datasets['offset'])
-max_offset = np.max(combined_datasets['offset'])
-min_runtime = np.min(combined_datasets['runtime'])
-max_runtime = np.max(combined_datasets['runtime'])
-log10_min_far = int(np.ceil(np.log10(np.min(combined_datasets['far']))))
-log10_max_far = int(np.ceil(np.log10(np.max(combined_datasets['far']))))
-del combined_datasets
+combined = np.concatenate([dataset['searched_area'] for dataset in datasets_])
+min_searched_area = np.min(combined)
+max_searched_area = np.max(combined)
+combined = np.concatenate([dataset['offset'] for dataset in datasets_])
+min_offset = np.min(combined)
+max_offset = np.max(combined)
+combined = np.concatenate([dataset['runtime'] for dataset in datasets_])
+min_runtime = np.min(combined)
+max_runtime = np.max(combined)
+combined = np.concatenate([dataset['far'] for dataset in datasets_])
+log10_min_far = int(np.ceil(np.log10(np.min(combined))))
+log10_max_far = int(np.ceil(np.log10(np.max(combined))))
 
 # Set maximum range of progress bar: one tick for each of 5 figures, for each
 # false alarm rate bin.
