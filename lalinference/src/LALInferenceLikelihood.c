@@ -33,6 +33,7 @@
 #include <lal/TimeFreqFFT.h>
 
 #include <gsl/gsl_sf_bessel.h>
+#include <gsl/gsl_interp.h>
 
 #include <lal/LALInferenceTemplate.h>
 
@@ -1870,4 +1871,83 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   loglikeli=thislogL;
   LALInferenceClearVariables(&intrinsicParams);
   return(loglikeli);
+}
+
+static double logaddexp(double x, double y) {
+  if (x == -INFINITY && y == -INFINITY) {
+    /* 0 + 0 == 0 */
+    return -INFINITY;
+  } else if (x > y) {
+    return x + log1p(exp(y-x));
+  } else {
+    return y + log1p(exp(x-y));
+  }
+}
+
+static double logaddexpsum(double *xs, size_t n) {
+  size_t i;
+  double sum = -INFINITY;
+
+  for (i = 0; i < n; i++) {
+    sum = logaddexp(sum, xs[i]);
+  }
+
+  return sum;
+}
+
+/* Integrates y(x) using spline interpolation on log(y(x)).  The log
+   of the integral is returned, and has an estimated error (in the
+   log) of eps. */
+static double integrate_interpolated_log(double *xs, double *log_ys, size_t n, double x0, double x1, double eps) {
+  double h = x1-x0;
+  size_t nh = 1;
+  double log_int = -INFINITY;
+  double old_log_int = -INFINITY;
+  gsl_interp *interp = gsl_interp_alloc(gsl_interp_cspline, n);
+  gsl_interp_accel *accel = gsl_interp_accel_alloc();
+
+  if (interp == NULL || accel == NULL) {
+    gsl_interp_accel_free(accel);
+    gsl_interp_free(interp);
+    XLAL_ERROR_REAL8(XLAL_ENOMEM, "out of memory in integrate_interpolated_log, %s: line %d", __FILE__, __LINE__);
+  }
+
+  gsl_interp_init(interp, xs, log_ys, n);
+
+  log_int = log(h) - log(2.0) + logaddexp(gsl_interp_eval(interp, xs, log_ys, x0, accel),
+					  gsl_interp_eval(interp, xs, log_ys, x1, accel));
+
+  do {
+    size_t i;
+    double log_increment = -INFINITY;
+
+    old_log_int = log_int;
+    h /= 2.0;
+    nh *= 2;
+
+    for (i = 1; i < nh; i += 2) {
+      double log_y;
+      double x = x0 + i*h;
+
+      log_y = gsl_interp_eval(interp, xs, log_ys, x, accel);
+
+      log_increment = logaddexp(log_increment, log_y);
+    }
+
+    log_increment += log(h);
+    log_int -= log(2.0);
+
+    log_int = logaddexp(log_increment, log_int);
+
+  } while (fabs(log_int - old_log_int) >= eps);
+
+  gsl_interp_accel_free(accel);
+  gsl_interp_free(interp);
+
+  return log_int;
+}
+
+double do_nothing(void);
+double do_nothing() {
+  return integrate_interpolated_log(NULL, NULL, 0, 1e-8);
 }
