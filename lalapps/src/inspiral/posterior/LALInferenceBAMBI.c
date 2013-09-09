@@ -587,50 +587,6 @@ void initializeMN(LALInferenceRunState *runState)
     runState->algorithm=&LALInferenceMultiNestAlgorithm;
 
 
-    /* Choose the template generator for inspiral signals */
-    /*runState->template=&LALInferenceTemplateLAL;
-      if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation")){
-        runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
-        fprintf(stdout,"Template function called is \"LALInferenceTemplateXLALSimInspiralChooseWaveform\"\n");
-      }else{
-            ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
-        if(ppt){
-              if(strstr(ppt->value,"TaylorF2") || strstr(ppt->value,"TaylorF2RedSpin")) {
-                runState->template=&LALInferenceTemplateLAL;
-                fprintf(stdout,"Template function called is \"LALInferenceTemplateLAL\"\n");
-              }else if(strstr(ppt->value,"35phase_25amp")) {
-                runState->template=&LALInferenceTemplate3525TD;
-                fprintf(stdout,"Template function called is \"LALInferenceTemplate3525TD\"\n");
-              }else{
-                runState->template=&LALInferenceTemplateLALGenerateInspiral;
-                fprintf(stdout,"Template function called is \"LALInferenceTemplateLALGenerateInspiral\"\n");
-              }
-        }
-      }*/
-
-
-    /* Set up the loglike function */
-    /*if (LALInferenceGetProcParamVal(commandLine,"--tdlike")) {
-        fprintf(stderr, "Computing likelihood in the time domain.\n");
-        runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
-    } else */
-    if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
-        /* Use zero log(L) */
-        runState->likelihood=&LALInferenceZeroLogLikelihood;
-    } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
-        runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
-    } else if (LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood")) {
-        runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
-    } else if (LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood")) {
-        runState->likelihood=&LALInferenceRosenbrockLogLikelihood;
-    } else if (LALInferenceGetProcParamVal(commandLine, "--studentTLikelihood")) {
-        fprintf(stderr, "Using Student's T Likelihood.\n");
-        runState->likelihood=&LALInferenceFreqDomainStudentTLogLikelihood;
-    } else {
-        runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
-    }
-
-
     /* Set up the prior function */
     if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
         runState->prior=&LALInferenceInspiralSkyLocPrior;
@@ -644,6 +600,14 @@ void initializeMN(LALInferenceRunState *runState)
     } else {
         runState->prior = &LALInferenceInspiralPriorNormalised;
         runState->CubeToPrior = &LALInferenceInspiralPriorNormalisedCubeToPrior;
+    }
+
+    if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") ||
+        LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood") ||
+        LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood"))
+    {
+        runState->prior = &LALInferenceAnalyticNullPrior;
+        runState->CubeToPrior = &LALInferenceAnalyticCubeToPrior;
     }
 
 
@@ -764,18 +728,18 @@ Arguments for each section follow:\n\n";
     /* Review task needs special priors */
     if(LALInferenceGetProcParamVal(procParams,"--correlatedGaussianLikelihood"))
         LALInferenceInitVariablesReviewEvidence(state);
-        else if(LALInferenceGetProcParamVal(procParams,"--bimodalGaussianLikelihood"))
-            LALInferenceInitVariablesReviewEvidence_bimod(state);
-        else if(LALInferenceGetProcParamVal(procParams,"--rosenbrockLikelihood"))
-            LALInferenceInitVariablesReviewEvidence_banana(state);
+    else if(LALInferenceGetProcParamVal(procParams,"--bimodalGaussianLikelihood"))
+        LALInferenceInitVariablesReviewEvidence_bimod(state);
+    else if(LALInferenceGetProcParamVal(procParams,"--rosenbrockLikelihood"))
+        LALInferenceInitVariablesReviewEvidence_banana(state);
     else
         LALInferenceInitCBCVariables(state);
 
-    /* Check for student-t and apply */
-    initStudentt(state);
+    /* Choose the likelihood */
+    LALInferenceInitLikelihood(state);
 
     /* Exit if help requested */
-        if(LALInferenceGetProcParamVal(state->commandLine,"--help")) exit(0);
+    if(LALInferenceGetProcParamVal(state->commandLine,"--help")) exit(0);
 
     /* Call MultiNest algorithm */
     state->algorithm(state);
