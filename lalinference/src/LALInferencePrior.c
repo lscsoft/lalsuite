@@ -200,15 +200,18 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     }
 
     // phi
-    item = LALInferenceGetItem(params, "phase");
-    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    if (LALInferenceCheckVariable(params, "phase"))
     {
-        LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
-        double phi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
-        LALInferenceSetVariable(params, "phase", &phi);
-        Cube[i] = phi;
-        i++;
-        strcat(header,"phi0 ");
+        item = LALInferenceGetItem(params, "phase");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
+            double phi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phase", &phi);
+            Cube[i] = phi;
+            i++;
+            strcat(header,"phi0 ");
+        }
     }
 
     // psi
@@ -853,15 +856,18 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
     }
 
     // phi
-    item = LALInferenceGetItem(params, "phase");
-    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    if (LALInferenceCheckVariable(params,"phase"))
     {
-        LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
-        double phi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
-        LALInferenceSetVariable(params, "phase", &phi);
-        Cube[i] = phi;
-        i++;
-        strcat(header,"phi0 ");
+        item = LALInferenceGetItem(params, "phase");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
+            double phi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phase", &phi);
+            Cube[i] = phi;
+            i++;
+            strcat(header,"phi0 ");
+        }
     }
 
     // psi
@@ -1634,15 +1640,18 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
     }
 
     // phi
-    item = LALInferenceGetItem(params, "phase");
-    if(item->vary != LALINFERENCE_PARAM_FIXED)
+    if (LALInferenceCheckVariable(params,"phase"))
     {
-        LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
-        double phi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
-        LALInferenceSetVariable(params, "phase", &phi);
-        Cube[i] = phi;
-        i++;
-        strcat(header,"phi0 ");
+        item = LALInferenceGetItem(params, "phase");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phase", (void *)&min, (void *)&max);
+            double phi = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phase", &phi);
+            Cube[i] = phi;
+            i++;
+            strcat(header,"phi0 ");
+        }
     }
 
     // psi
