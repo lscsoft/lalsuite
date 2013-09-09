@@ -32,6 +32,7 @@
 #include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
+#include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/SphericalHarmonics.h>
 
@@ -403,6 +404,69 @@ UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts ){
 		itr = itr ->next;
     }
     return maxl;
+}
+
+/**
+ * For every (l,m) node in the SphHarmTimeSeries linked list,
+ * call XLALResizeCOMPLEX16TimeSeries(ts->mode, first, length)
+ *
+ * The TimeSeries of each (l,m) mode will have the given length,
+ * and its contents will consist of that part of the original time series
+ * that started at sample first. If first is negative, then the new time
+ * series is padded at the start by that many samples. The time series' epoch
+ * is adjusted appropriately.
+ */
+SphHarmTimeSeries *XLALResizeSphHarmTimeSeries(
+        SphHarmTimeSeries *ts, /**< SphHarmTimeSeries to be resized */
+        int first, /**< index of first time sample to be copied over */
+        size_t length /**< length to resize all COMPLEX16TimeSeries to */
+        )
+{
+    SphHarmTimeSeries *this = ts;
+    while( this ) {
+        this->mode = XLALResizeCOMPLEX16TimeSeries(this->mode, first, length);
+        this = this->next;
+    }
+
+    return ts;
+}
+
+/**
+ * Create a SphHarmFrequencySeries from a SphHarmTimeSeries
+ * by performing an FFT on each mode in the SphHarmTimeSeries.
+ */
+SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
+        SphHarmTimeSeries *hlms_TD /**< SphHarmTimeSeries to be FFT'd */
+        )
+{
+    UINT4 l, Lmax, length;
+    int m;
+    COMPLEX16TimeSeries *ht;
+    COMPLEX16FrequencySeries *hf;
+    SphHarmFrequencySeries *hlms_FD = NULL;
+    REAL8 deltaF;
+    if( !hlms_TD ) // Check head of linked list is valid
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+
+    Lmax = XLALSphHarmTimeSeriesGetMaxL(hlms_TD);
+    length = hlms_TD->mode->data->length; // N.B. Assuming all hlms same length
+    deltaF = 1./hlms_TD->mode->deltaT/length;
+    COMPLEX16FFTPlan *fwdplan = XLALCreateForwardCOMPLEX16FFTPlan(length, 0);
+    hf = XLALCreateCOMPLEX16FrequencySeries( "FD Mode", &hlms_TD->mode->epoch,
+            0., deltaF, &lalHertzUnit, length);
+    // Loop over TD modes, FFT, add to SphHarmFrequencySeries
+    for(l = 2; l <= Lmax; l++) {
+        for(m = -l; m <= (int) l; m++) {
+            ht = XLALSphHarmTimeSeriesGetMode(hlms_TD, l, m);
+            if( ht ) {
+                XLALCOMPLEX16TimeFreqFFT(hf, ht, fwdplan);
+                hlms_FD = XLALSphHarmFrequencySeriesAddMode(hlms_FD, hf, l, m);
+            }
+        }
+    }
+
+    return hlms_FD;
+
 }
 
 /**

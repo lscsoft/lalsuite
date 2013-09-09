@@ -208,6 +208,16 @@ COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode(
 				INT4 m 
 );
 
+SphHarmTimeSeries *XLALResizeSphHarmTimeSeries(
+        SphHarmTimeSeries *ts,
+        int first,
+        size_t length
+        );
+
+SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
+        SphHarmTimeSeries *hlms_TD
+        );
+
 /* 
  * Create a SphHarmFrequencySeries. If appended is not NULL, this will prepend a new
  * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
