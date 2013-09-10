@@ -90,9 +90,9 @@ def process(fitsfilename):
     except KeyError:
         runtime = None
 
-    simulation_id, true_ra, true_dec, far = db.execute("""
+    simulation_id, true_ra, true_dec, far, snr = db.execute("""
         SELECT DISTINCT sim.simulation_id AS simulation_id, sim.longitude AS ra, sim.latitude AS dec,
-        ci.combined_far AS far
+        ci.combined_far AS far, ci.snr AS snr
         FROM coinc_event_map AS cem1 INNER JOIN coinc_event_map AS cem2
         ON (cem1.coinc_event_id = cem2.coinc_event_id)
         INNER JOIN sim_inspiral AS sim ON (cem1.event_id = sim.simulation_id)
@@ -103,7 +103,7 @@ def process(fitsfilename):
     searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes = postprocess.find_injection(
         sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours])
 
-    return [coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime, searched_modes] + contour_areas + contour_modes
+    return [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime, searched_modes] + contour_areas + contour_modes
 
 
 if __name__ == '__main__':
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     fitsfilenames = tuple(itertools.chain.from_iterable(glob.iglob(fitsfileglob)
         for fitsfileglob in fitsfileglobs))
 
-    colnames = ['coinc_event_id', 'simulation_id', 'far', 'searched_area',
+    colnames = ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
         'searched_prob', 'offset', 'runtime', 'searched_modes'] + ["area({0:g})".format(p)
         for p in contours] + ["modes({0:g})".format(p) for p in contours]
     print(*colnames, sep="\t", file=outfile)
