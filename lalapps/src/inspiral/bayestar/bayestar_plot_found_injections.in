@@ -129,7 +129,7 @@ for i, log10_far in enumerate(range(log10_min_far, log10_max_far + 1)):
     plt.figure(5, figsize=(4, 3))
     plt.xscale('log')
     plt.subplots_adjust(bottom=0.15)
-    plt.xlabel('run time')
+    plt.xlabel('run time (s)')
     plt.ylabel('number of injections')
 
     # Plot a histogram from each dataset onto each of the 5 figures.
