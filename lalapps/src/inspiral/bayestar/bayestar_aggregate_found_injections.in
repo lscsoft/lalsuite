@@ -100,7 +100,7 @@ def process(fitsfilename):
         WHERE cem1.table_name = 'sim_inspiral'
         AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
         (coinc_event_id,)).fetchone()
-    searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes  = postprocess.find_injection(
+    searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes = postprocess.find_injection(
         sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours])
 
     return [coinc_event_id, simulation_id, far, searched_area, searched_prob, offset, runtime, searched_modes] + contour_areas + contour_modes
